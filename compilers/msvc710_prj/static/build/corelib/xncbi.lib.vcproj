@@ -1,682 +1,1929 @@
 <?xml version="1.0" encoding="Windows-1252"?>
-<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="xncbi.lib" Keyword="Win32Proj">
-  <Platforms>
-    <Platform Name="Win32"></Platform>
-  </Platforms>
-  <Configurations>
-    <Configuration Name="Debug|Win32" OutputDirectory="..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="5" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="3" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="TRUE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
-      <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCCustomBuildTool"></Tool>
-      <Tool Name="VCMIDLTool"></Tool>
-      <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
-      <Tool Name="VCPreLinkEventTool"></Tool>
-      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="" Culture="" AdditionalIncludeDirectories="" AdditionalOptions=""></Tool>
-      <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
-      <Tool Name="VCXMLDataGeneratorTool"></Tool>
-      <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
-      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
-    </Configuration>
-    <Configuration Name="DebugDLL|Win32" OutputDirectory="..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="3" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="3" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="TRUE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
-      <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCCustomBuildTool"></Tool>
-      <Tool Name="VCMIDLTool"></Tool>
-      <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
-      <Tool Name="VCPreLinkEventTool"></Tool>
-      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="" Culture="" AdditionalIncludeDirectories="" AdditionalOptions=""></Tool>
-      <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
-      <Tool Name="VCXMLDataGeneratorTool"></Tool>
-      <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
-      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
-    </Configuration>
-    <Configuration Name="DebugMT|Win32" OutputDirectory="..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="1" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="3" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="TRUE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
-      <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCCustomBuildTool"></Tool>
-      <Tool Name="VCMIDLTool"></Tool>
-      <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
-      <Tool Name="VCPreLinkEventTool"></Tool>
-      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="" Culture="" AdditionalIncludeDirectories="" AdditionalOptions=""></Tool>
-      <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
-      <Tool Name="VCXMLDataGeneratorTool"></Tool>
-      <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
-      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
-    </Configuration>
-    <Configuration Name="Release|Win32" OutputDirectory="..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="4" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
-      <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCCustomBuildTool"></Tool>
-      <Tool Name="VCMIDLTool"></Tool>
-      <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
-      <Tool Name="VCPreLinkEventTool"></Tool>
-      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="" Culture="" AdditionalIncludeDirectories="" AdditionalOptions=""></Tool>
-      <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
-      <Tool Name="VCXMLDataGeneratorTool"></Tool>
-      <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
-      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
-    </Configuration>
-    <Configuration Name="ReleaseDLL|Win32" OutputDirectory="..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="2" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
-      <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCCustomBuildTool"></Tool>
-      <Tool Name="VCMIDLTool"></Tool>
-      <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
-      <Tool Name="VCPreLinkEventTool"></Tool>
-      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="" Culture="" AdditionalIncludeDirectories="" AdditionalOptions=""></Tool>
-      <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
-      <Tool Name="VCXMLDataGeneratorTool"></Tool>
-      <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
-      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
-    </Configuration>
-    <Configuration Name="ReleaseMT|Win32" OutputDirectory="..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="0" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
-      <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
-      <Tool Name="VCCustomBuildTool"></Tool>
-      <Tool Name="VCMIDLTool"></Tool>
-      <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool" CommandLine=""></Tool>
-      <Tool Name="VCPreLinkEventTool"></Tool>
-      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="" Culture="" AdditionalIncludeDirectories="" AdditionalOptions=""></Tool>
-      <Tool Name="VCWebServiceProxyGeneratorTool"></Tool>
-      <Tool Name="VCXMLDataGeneratorTool"></Tool>
-      <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
-      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
-    </Configuration>
-  </Configurations>
-  <References></References>
-  <Files>
-    <Filter Name="Source Files" Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx">
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbithr.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="1" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="1" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="1" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="1" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="1" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="1" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbidiag.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbiexpt.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbistre.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbiapp.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbireg.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbienv.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbiargs.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbistr.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbiobj.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbitime.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbimtx.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbi_safe_static.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbi_system.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbifile.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbidbg.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbidll.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbiexec.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ddumpable.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\version.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\metareg.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbiatomic.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbi_process.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\plugin_manager.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbidiag_p.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbi_config.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-    </Filter>
-    <Filter Name="Header Files" Filter="h;hpp;hxx;hm;inc;xsd">
-      <File RelativePath="..\..\..\..\..\include\corelib\mswin_export.h"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbicfg.h"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbifloat.h"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbitype.h"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_limits.h"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ddumpable.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\guard.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\metareg.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbiapp.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbiargs.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbiatomic.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbicntr.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbidbg.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbidiag.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbidll.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbienv.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbiexec.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbiexpt.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbifile.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbimisc.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbimtx.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbiobj.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbireg.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbistd.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbistl.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbistr.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbistre.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbithr.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbithr_conf.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbitime.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbiutil.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_bswap.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_config.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_limits.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_mac.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_mswin.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_unix.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_process.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_safe_static.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_system.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_tree.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\plugin_manager.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\plugin_manager_impl.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\test_mt.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\version.hpp"></File>
-      <Filter Name="Private" Filter="h;hpp;hxx;hm;inc;xsd">
-        <File RelativePath="..\..\..\..\..\src\corelib\ncbiargs_p.hpp"></File>
-        <File RelativePath="..\..\..\..\..\src\corelib\ncbidbg_p.hpp"></File>
-        <File RelativePath="..\..\..\..\..\src\corelib\ncbidiag_p.hpp"></File>
-      </Filter>
-    </Filter>
-    <Filter Name="Inline Files" Filter="inl">
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbidiag.inl"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbimtx.inl"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbiobj.inl"></File>
-    </Filter>
-    <Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"></Filter>
-  </Files>
-  <Globals></Globals>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="xncbi.lib"
+	Keyword="Win32Proj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="..\..\lib\$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=""
+				Optimization="0"
+				GlobalOptimizations="FALSE"
+				InlineFunctionExpansion="0"
+				FavorSizeOrSpeed="0"
+				OmitFramePointers="FALSE"
+				OptimizeForProcessor="0"
+				AdditionalIncludeDirectories="..\..\..\..\..\include\"
+				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;"
+				IgnoreStandardIncludePath="FALSE"
+				StringPooling="FALSE"
+				MinimalRebuild="TRUE"
+				ExceptionHandling="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="5"
+				StructMemberAlignment="0"
+				BufferSecurityCheck="TRUE"
+				EnableFunctionLevelLinking="FALSE"
+				RuntimeTypeInfo="TRUE"
+				UsePrecompiledHeader="0"
+				BrowseInformation="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"
+				CallingConvention="0"
+				CompileAs="0"
+				DisableSpecificWarnings=""
+				UndefinePreprocessorDefinitions=""/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				AdditionalOptions=""
+				OutputFile="$(OutDir)\xncbi.lib"
+				AdditionalLibraryDirectories=""
+				IgnoreAllDefaultLibraries="FALSE"
+				IgnoreDefaultLibraryNames="FALSE"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				AdditionalOptions=""
+				PreprocessorDefinitions=""
+				AdditionalIncludeDirectories=""/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="DebugDLL|Win32"
+			OutputDirectory="..\..\lib\$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=""
+				Optimization="0"
+				GlobalOptimizations="FALSE"
+				InlineFunctionExpansion="0"
+				FavorSizeOrSpeed="0"
+				OmitFramePointers="FALSE"
+				OptimizeForProcessor="0"
+				AdditionalIncludeDirectories="..\..\..\..\..\include\"
+				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;"
+				IgnoreStandardIncludePath="FALSE"
+				StringPooling="FALSE"
+				MinimalRebuild="TRUE"
+				ExceptionHandling="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				StructMemberAlignment="0"
+				BufferSecurityCheck="TRUE"
+				EnableFunctionLevelLinking="FALSE"
+				RuntimeTypeInfo="TRUE"
+				UsePrecompiledHeader="0"
+				BrowseInformation="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"
+				CallingConvention="0"
+				CompileAs="0"
+				DisableSpecificWarnings=""
+				UndefinePreprocessorDefinitions=""/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				AdditionalOptions=""
+				OutputFile="$(OutDir)\xncbi.lib"
+				AdditionalLibraryDirectories=""
+				IgnoreAllDefaultLibraries="FALSE"
+				IgnoreDefaultLibraryNames="FALSE"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				AdditionalOptions=""
+				PreprocessorDefinitions=""
+				AdditionalIncludeDirectories=""/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="DebugMT|Win32"
+			OutputDirectory="..\..\lib\$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=""
+				Optimization="0"
+				GlobalOptimizations="FALSE"
+				InlineFunctionExpansion="0"
+				FavorSizeOrSpeed="0"
+				OmitFramePointers="FALSE"
+				OptimizeForProcessor="0"
+				AdditionalIncludeDirectories="..\..\..\..\..\include\"
+				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;"
+				IgnoreStandardIncludePath="FALSE"
+				StringPooling="FALSE"
+				MinimalRebuild="TRUE"
+				ExceptionHandling="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				StructMemberAlignment="0"
+				BufferSecurityCheck="TRUE"
+				EnableFunctionLevelLinking="FALSE"
+				RuntimeTypeInfo="TRUE"
+				UsePrecompiledHeader="0"
+				BrowseInformation="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"
+				CallingConvention="0"
+				CompileAs="0"
+				DisableSpecificWarnings=""
+				UndefinePreprocessorDefinitions=""/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				AdditionalOptions=""
+				OutputFile="$(OutDir)\xncbi.lib"
+				AdditionalLibraryDirectories=""
+				IgnoreAllDefaultLibraries="FALSE"
+				IgnoreDefaultLibraryNames="FALSE"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				AdditionalOptions=""
+				PreprocessorDefinitions=""
+				AdditionalIncludeDirectories=""/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="..\..\lib\$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=""
+				Optimization="2"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="TRUE"
+				OptimizeForProcessor="0"
+				AdditionalIncludeDirectories="..\..\..\..\..\include\"
+				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;"
+				IgnoreStandardIncludePath="FALSE"
+				StringPooling="FALSE"
+				MinimalRebuild="FALSE"
+				ExceptionHandling="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="4"
+				StructMemberAlignment="0"
+				BufferSecurityCheck="TRUE"
+				EnableFunctionLevelLinking="TRUE"
+				RuntimeTypeInfo="TRUE"
+				UsePrecompiledHeader="0"
+				BrowseInformation="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="0"
+				CallingConvention="0"
+				CompileAs="0"
+				DisableSpecificWarnings=""
+				UndefinePreprocessorDefinitions=""/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				AdditionalOptions=""
+				OutputFile="$(OutDir)\xncbi.lib"
+				AdditionalLibraryDirectories=""
+				IgnoreAllDefaultLibraries="FALSE"
+				IgnoreDefaultLibraryNames="FALSE"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				AdditionalOptions=""
+				PreprocessorDefinitions=""
+				AdditionalIncludeDirectories=""/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|Win32"
+			OutputDirectory="..\..\lib\$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=""
+				Optimization="2"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="TRUE"
+				OptimizeForProcessor="0"
+				AdditionalIncludeDirectories="..\..\..\..\..\include\"
+				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;"
+				IgnoreStandardIncludePath="FALSE"
+				StringPooling="FALSE"
+				MinimalRebuild="FALSE"
+				ExceptionHandling="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="2"
+				StructMemberAlignment="0"
+				BufferSecurityCheck="TRUE"
+				EnableFunctionLevelLinking="TRUE"
+				RuntimeTypeInfo="TRUE"
+				UsePrecompiledHeader="0"
+				BrowseInformation="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="0"
+				CallingConvention="0"
+				CompileAs="0"
+				DisableSpecificWarnings=""
+				UndefinePreprocessorDefinitions=""/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				AdditionalOptions=""
+				OutputFile="$(OutDir)\xncbi.lib"
+				AdditionalLibraryDirectories=""
+				IgnoreAllDefaultLibraries="FALSE"
+				IgnoreDefaultLibraryNames="FALSE"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				AdditionalOptions=""
+				PreprocessorDefinitions=""
+				AdditionalIncludeDirectories=""/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseMT|Win32"
+			OutputDirectory="..\..\lib\$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=""
+				Optimization="2"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="TRUE"
+				OptimizeForProcessor="0"
+				AdditionalIncludeDirectories="..\..\..\..\..\include\"
+				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;"
+				IgnoreStandardIncludePath="FALSE"
+				StringPooling="FALSE"
+				MinimalRebuild="FALSE"
+				ExceptionHandling="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="0"
+				StructMemberAlignment="0"
+				BufferSecurityCheck="TRUE"
+				EnableFunctionLevelLinking="TRUE"
+				RuntimeTypeInfo="TRUE"
+				UsePrecompiledHeader="0"
+				BrowseInformation="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="0"
+				CallingConvention="0"
+				CompileAs="0"
+				DisableSpecificWarnings=""
+				UndefinePreprocessorDefinitions=""/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				AdditionalOptions=""
+				OutputFile="$(OutDir)\xncbi.lib"
+				AdditionalLibraryDirectories=""
+				IgnoreAllDefaultLibraries="FALSE"
+				IgnoreDefaultLibraryNames="FALSE"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				AdditionalOptions=""
+				PreprocessorDefinitions=""
+				AdditionalIncludeDirectories=""/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx">
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ddumpable.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\metareg.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbi_config.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbi_process.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbi_safe_static.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbi_system.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbiapp.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbiargs.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbiatomic.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbicfg.c.in">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="1"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbidbg.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbidiag.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbidiag_p.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbidll.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbienv.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbiexec.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbiexpt.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbifile.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbimtx.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbiobj.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbireg.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbistr.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbistre.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbithr.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="1"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="1"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="1"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="1"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="1"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="1"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbitime.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\plugin_manager.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\version.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inc;xsd">
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ddumpable.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\guard.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\metareg.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\mswin_export.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_bswap.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_config.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_limits.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_limits.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_os_mac.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_os_mswin.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_os_unix.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_process.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_safe_static.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_system.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_tree.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbiapp.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbiargs.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbiatomic.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbicfg.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbicntr.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbidbg.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbidiag.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbidll.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbienv.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbiexec.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbiexpt.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbifile.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbifloat.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbimisc.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbimtx.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbiobj.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbireg.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbistd.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbistl.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbistr.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbistre.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbithr.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbithr_conf.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbitime.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbitype.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbiutil.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\plugin_manager.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\plugin_manager_impl.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\test_mt.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\version.hpp">
+			</File>
+			<Filter
+				Name="Private"
+				Filter="h;hpp;hxx;hm;inc;xsd">
+				<File
+					RelativePath="..\..\..\..\..\src\corelib\ncbiargs_p.hpp">
+				</File>
+				<File
+					RelativePath="..\..\..\..\..\src\corelib\ncbidbg_p.hpp">
+				</File>
+				<File
+					RelativePath="..\..\..\..\..\src\corelib\ncbidiag_p.hpp">
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="Inline Files"
+			Filter="inl">
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbidiag.inl">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbimtx.inl">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbiobj.inl">
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx">
+		</Filter>
+	</Files>
+	<Globals>
+	</Globals>
 </VisualStudioProject>
