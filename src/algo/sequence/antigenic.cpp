@@ -85,15 +85,15 @@ void x_PredictAGSites(const Seq& seq, CAntigenic::TLocVec& results,
     double local_sum = 0, global_sum = 0;
 
     for (int i = 0;  i < 7;  i++) {
-        local_sum += CAntigenic::sm_Pa_table[seq[i]];
-        global_sum += CAntigenic::sm_Pa_table[seq[i]];
+        local_sum += CAntigenic::sm_Pa_table[static_cast<unsigned>(seq[i])];
+        global_sum += CAntigenic::sm_Pa_table[static_cast<unsigned>(seq[i])];
     }
     Pa[3] = local_sum / 7;
     
     for (unsigned int i = 4;  i < seq.size() - 3;  i++) {
-        local_sum -= CAntigenic::sm_Pa_table[seq[i-4]];
-        local_sum += CAntigenic::sm_Pa_table[seq[i+3]];
-        global_sum += CAntigenic::sm_Pa_table[seq[i+3]];
+        local_sum -= CAntigenic::sm_Pa_table[static_cast<unsigned>(seq[i-4])];
+        local_sum += CAntigenic::sm_Pa_table[static_cast<unsigned>(seq[i+3])];
+        global_sum += CAntigenic::sm_Pa_table[static_cast<unsigned>(seq[i+3])];
         Pa[i] = local_sum / 7;
     }
 
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/01/04 17:47:49  jcherry
+ * Casts to eliminate compiler warnings
+ *
  * Revision 1.4  2004/05/21 21:41:04  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -88,18 +88,22 @@ void CCoil_ComputeScores(const Seq& seq, vector<double>& scores,
         for (TSeqPos start = 0;  start < seq.size() - win_len + 1;  start++) {
             double prod;
             if (start > 0  &&
-                CCoiledCoil::sm_Propensities[seq[start - 1]]
+                CCoiledCoil::sm_Propensities
+                    [static_cast<unsigned>(seq[start - 1])]
                     [(start - 1 + frame) % 7] != 0) {
                 // compute product using last result, avoiding repeating mults
-                prod /= CCoiledCoil::sm_Propensities[seq[start - 1]]
+                prod /= CCoiledCoil::sm_Propensities
+                    [static_cast<unsigned>(seq[start - 1])]
                     [(start - 1 + frame) % 7];
-                prod *= CCoiledCoil::sm_Propensities[seq[start + win_len - 1]]
+                prod *= CCoiledCoil::sm_Propensities
+                    [static_cast<unsigned>(seq[start + win_len - 1])]
                     [(start + win_len - 1 + frame) % 7];
             } else {
                 // compute product from scratch
                 prod = 1;
                 for (TSeqPos i = start;  i < start + win_len;  i++) {
-                    prod *= CCoiledCoil::sm_Propensities[seq[i]]
+                    prod *= CCoiledCoil::sm_Propensities
+                        [static_cast<unsigned>(seq[i])]
                         [(i + frame) % 7];
                 }
             }
@@ -301,6 +305,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/01/04 17:47:49  jcherry
+ * Casts to eliminate compiler warnings
+ *
  * Revision 1.4  2004/05/21 21:41:04  gorelenk
  * Added PCH ncbi_pch.hpp
  *
