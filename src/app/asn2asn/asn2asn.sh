@@ -2,10 +2,9 @@
 # $Id$
 #
 
-mainDir=/net/hawthorn/export/home/vasilche/c++/src/objects/asn2asn
-
-d=$mainDir/data
-r=$mainDir/res
+base="${TEST_DATA_DIR:-/net/sampson/m5/test_data/objects}"
+d="$base/data"
+r="$base/res"
 
 tool="./asn2asn $@"
 
