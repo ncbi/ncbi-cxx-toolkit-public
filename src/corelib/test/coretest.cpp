@@ -30,6 +30,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1998/12/03 16:40:15  vakatov
+* Initial revision
+* Aux. function "Getline()" to read from "istream" to a "string"
+* Adopted standard I/O "string" <--> "istream" for old-fashioned streams
+*
 * Revision 1.19  1998/12/01 00:27:21  vakatov
 * Made CCgiRequest::ParseEntries() to read ISINDEX data, too.
 * Got rid of now redundant CCgiRequest::ParseIndexesAsEntries()
@@ -103,6 +108,44 @@
 // This is to use the ANSI C++ standard templates without the "std::" prefix
 // and to use NCBI C++ entities without the "ncbi::" prefix
 USING_NCBI_SCOPE;
+
+
+
+/////////////////////////////////
+// I/O stream extensions
+//
+
+static void TestIostream(void)
+{
+    CNcbiIstrstream is("abc\nx0123456789\ny012345\r \tcba");
+    string str;
+
+    NcbiGetline(is, str, '\n');
+    _ASSERT( is.good() );
+    _ASSERT( str.compare("abc") == 0 );
+
+    is >> str;
+    _ASSERT( is.good() );
+    _ASSERT( str.compare("x0123456789") == 0 );
+
+    is >> str;
+    _ASSERT( is.good() );
+    _ASSERT( str.compare("y012345") == 0 );
+
+    is >> str;
+    _ASSERT( is.eof() );
+    _ASSERT( str.compare("cba") == 0 );
+
+    is >> str;
+    _ASSERT( !is.good() );
+
+    is.clear();
+    is >> str;
+    _ASSERT( !is.good() );
+
+    str = "0 1 2 3 4 5\n6 7 8 9";
+    NcbiCout << "String output: "  << str << NcbiEndl;
+}
 
 
 /////////////////////////////////
@@ -566,6 +609,7 @@ extern int main(int argc, char* argv[])
 {
     TestDiag();
     TestException();
+    TestIostream();
     TestCgi(argc, argv);
 
     SetDiagStream(0);
