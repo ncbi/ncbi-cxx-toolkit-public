@@ -33,49 +33,6 @@
  *   using specifications from the ASN data definition file
  *   'seq.asn'.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.12  2002/06/07 12:09:21  clausen
- * Modified GetTitle comment
- *
- * Revision 1.11  2002/05/22 14:03:33  grichenk
- * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
- *
- * Revision 1.10  2002/04/22 20:09:56  grichenk
- * -ConstructExcludedSequence() -- use
- * CBioseq_Handle::GetSequenceView() instead
- *
- * Revision 1.9  2002/03/18 21:46:11  grichenk
- * +ConstructExcludedSequence()
- *
- * Revision 1.8  2001/12/20 20:00:28  grichenk
- * CObjectManager::ConstructBioseq(CSeq_loc) -> CBioseq::CBioseq(CSeq_loc ...)
- *
- * Revision 1.7  2001/10/12 19:32:55  ucko
- * move BREAK to a central location; move CBioseq::GetTitle to object manager
- *
- * Revision 1.6  2001/10/04 19:11:54  ucko
- * Centralize (rudimentary) code to get a sequence's title.
- *
- * Revision 1.5  2001/07/25 19:11:07  grichenk
- * Equals() and Assign() re-declared as protected
- *
- * Revision 1.4  2001/07/16 16:22:42  grichenk
- * Added CSerialUserOp class to create Assign() and Equals() methods for
- * user-defind classes.
- * Added SerialAssign<>() and SerialEquals<>() functions.
- *
- * Revision 1.3  2001/06/25 18:51:59  grichenk
- * Prohibited copy constructor and assignment operator
- *
- * Revision 1.2  2001/06/21 19:47:34  grichenk
- * Copy constructor and operator=() moved to "private" section
- *
- * Revision 1.1  2001/06/13 15:00:06  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
  */
 
 #ifndef OBJECTS_SEQ_BIOSEQ_HPP
@@ -95,6 +52,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CSeq_entry;
 class CSeq_loc;
 class CDelta_ext;
+class CSeq_id;
 
 class CBioseq : public CBioseq_Base, public CSerialUserOp
 {
@@ -118,6 +76,17 @@ public:
     // locations (intervals, points, whole-s etc.) and put into
     // ext::delta.
     CBioseq(const CSeq_loc& loc, string str_id = "");
+    
+    enum ELabelType {
+        eType, 
+        eContent,
+        eBoth
+    };
+    
+    // Append a label to label for a CBioseq based on type, content or both
+    void GetLabel(string* label, ELabelType type, bool worst = false) const;
+    
+    const CSeq_id* GetFirstId() const;
 
 protected:
     // From CSerialUserOp
@@ -170,6 +139,55 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.13  2002/10/03 16:59:04  clausen
+ * Added GetLabel() and GetFirstId()
+ *
+ * Revision 1.12  2002/06/07 12:09:21  clausen
+ * Modified GetTitle comment
+ *
+ * Revision 1.11  2002/05/22 14:03:33  grichenk
+ * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
+ *
+ * Revision 1.10  2002/04/22 20:09:56  grichenk
+ * -ConstructExcludedSequence() -- use
+ * CBioseq_Handle::GetSequenceView() instead
+ *
+ * Revision 1.9  2002/03/18 21:46:11  grichenk
+ * +ConstructExcludedSequence()
+ *
+ * Revision 1.8  2001/12/20 20:00:28  grichenk
+ * CObjectManager::ConstructBioseq(CSeq_loc) -> CBioseq::CBioseq(CSeq_loc ...)
+ *
+ * Revision 1.7  2001/10/12 19:32:55  ucko
+ * move BREAK to a central location; move CBioseq::GetTitle to object manager
+ *
+ * Revision 1.6  2001/10/04 19:11:54  ucko
+ * Centralize (rudimentary) code to get a sequence's title.
+ *
+ * Revision 1.5  2001/07/25 19:11:07  grichenk
+ * Equals() and Assign() re-declared as protected
+ *
+ * Revision 1.4  2001/07/16 16:22:42  grichenk
+ * Added CSerialUserOp class to create Assign() and Equals() methods for
+ * user-defind classes.
+ * Added SerialAssign<>() and SerialEquals<>() functions.
+ *
+ * Revision 1.3  2001/06/25 18:51:59  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
+ * Revision 1.2  2001/06/21 19:47:34  grichenk
+ * Copy constructor and operator=() moved to "private" section
+ *
+ * Revision 1.1  2001/06/13 15:00:06  grichenk
+ * Initial revision
+ *
+ *
+ * ===========================================================================
+ */
 
 #endif // OBJECTS_SEQ_BIOSEQ_HPP
 /* Original file checksum: lines: 85, chars: 2191, CRC32: 21fd3921 */

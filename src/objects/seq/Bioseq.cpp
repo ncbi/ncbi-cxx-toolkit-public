@@ -33,44 +33,18 @@
  *   using specifications from the ASN data definition file
  *   'seq.asn'.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.11  2002/05/22 14:03:38  grichenk
- * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
- *
- * Revision 6.10  2002/04/22 20:09:57  grichenk
- * -ConstructExcludedSequence() -- use
- * CBioseq_Handle::GetSequenceView() instead
- *
- * Revision 6.9  2002/03/28 21:21:49  grichenk
- * Fixed range exclusion
- *
- * Revision 6.8  2002/03/18 21:46:13  grichenk
- * +ConstructExcludedSequence()
- *
- * Revision 6.7  2002/01/16 18:56:31  grichenk
- * Removed CRef<> argument from choice variant setter, updated sources to
- * use references instead of CRef<>s
- *
- * Revision 6.6  2001/12/20 20:00:31  grichenk
- * CObjectManager::ConstructBioseq(CSeq_loc) -> CBioseq::CBioseq(CSeq_loc ...)
- *
- * Revision 6.5  2001/10/12 19:32:57  ucko
- * move BREAK to a central location; move CBioseq::GetTitle to object manager
- *
- * Revision 6.4  2001/10/04 19:11:54  ucko
- * Centralize (rudimentary) code to get a sequence's title.
- *
- * Revision 6.3  2001/07/16 16:20:19  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
  */
 
 // standard includes
+#include <vector>
+#include <serial/enumvalues.hpp>
+#include <serial/typeinfo.hpp>
+#include <corelib/ncbiutil.hpp>
+
+// generated includes
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/general/Object_id.hpp>
@@ -78,11 +52,8 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-
-// generated includes
 #include <objects/seq/Bioseq.hpp>
 
-#include <serial/typeinfo.hpp>
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -193,9 +164,103 @@ CBioseq::CBioseq(const CSeq_loc& loc, string str_id)
 }
 
 
+void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
+{
+    if (type != eType  &&  !GetId().empty()) {
+        const CSeq_id* id;
+        if (!worst) {
+            id = GetId().begin()->GetPointer();
+        } else {
+            const CSeq_id* wid = 
+                FindBestChoice(GetId(), CSeq_id::WorstRank).GetPointer();
+            if (wid) {
+                CNcbiOstrstream wos;
+                wid->WriteAsFasta(wos);
+                string sid = CNcbiOstrstreamToString(wos);
+                CSeq_id worst_id(sid);
+                CTextseq_id* tid = 
+                    const_cast<CTextseq_id*>(worst_id.GetTextseq_Id());
+                if (tid) {
+                    tid->ResetAccession();
+                }
+                id = &worst_id;
+            }           
+        }
+        CNcbiOstrstream os;
+        if (id) {
+            id->WriteAsFasta(os);
+            (*label) += CNcbiOstrstreamToString(os);
+        }
+    }
+    
+    if (type == eContent) {
+        return;
+    }
+    
+    (*label) += ": ";
+    const CEnumeratedTypeValues* tv;
+    tv = CSeq_inst::GetTypeInfo_enum_ERepr();
+    (*label) += tv->FindName(GetInst().GetRepr(), true) + ",";
+    tv = CSeq_inst::GetTypeInfo_enum_EMol();
+    (*label) += tv->FindName(GetInst().GetMol(), true);
+    if (GetInst().IsSetLength()) {
+        (*label) += string(" len=") + NStr::IntToString(GetInst().GetLength());
+    }
+}
+
+
+const CSeq_id* CBioseq::GetFirstId() const
+{
+    // If no ids for Bioseq, return 0 -- should not happen
+    if (GetId().empty()) {
+        return 0;
+    }
+    
+    return *GetId().begin();
+}    
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.12  2002/10/03 16:57:50  clausen
+ * Added GetLabel() and GetFirstId()
+ *
+ * Revision 6.11  2002/05/22 14:03:38  grichenk
+ * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
+ *
+ * Revision 6.10  2002/04/22 20:09:57  grichenk
+ * -ConstructExcludedSequence() -- use
+ * CBioseq_Handle::GetSequenceView() instead
+ *
+ * Revision 6.9  2002/03/28 21:21:49  grichenk
+ * Fixed range exclusion
+ *
+ * Revision 6.8  2002/03/18 21:46:13  grichenk
+ * +ConstructExcludedSequence()
+ *
+ * Revision 6.7  2002/01/16 18:56:31  grichenk
+ * Removed CRef<> argument from choice variant setter, updated sources to
+ * use references instead of CRef<>s
+ *
+ * Revision 6.6  2001/12/20 20:00:31  grichenk
+ * CObjectManager::ConstructBioseq(CSeq_loc) -> CBioseq::CBioseq(CSeq_loc ...)
+ *
+ * Revision 6.5  2001/10/12 19:32:57  ucko
+ * move BREAK to a central location; move CBioseq::GetTitle to object manager
+ *
+ * Revision 6.4  2001/10/04 19:11:54  ucko
+ * Centralize (rudimentary) code to get a sequence's title.
+ *
+ * Revision 6.3  2001/07/16 16:20:19  grichenk
+ * Initial revision
+ *
+ *
+ * ===========================================================================
+ */
 /* Original file checksum: lines: 61, chars: 1871, CRC32: 1d5d7d05 */
