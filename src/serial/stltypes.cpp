@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/09/01 13:16:21  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.28  2000/08/15 19:44:51  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -234,54 +238,6 @@ const CClassTypeInfo* CStlClassInfoMapImpl::GetElementClassType(void) const
                                           GetValueTypeInfo());
     }
     return m_ElementType.get();
-}
-
-void CReadStlMapContainerHook::ReadContainerElement(CObjectIStream& in,
-                                                    const CObjectInfo& container)
-{
-    // get map type info
-    _ASSERT(dynamic_cast<const CStlClassInfoMapImpl*>(container.GetTypeInfo()));
-    const CStlClassInfoMapImpl* mapType =
-        static_cast<const CStlClassInfoMapImpl*>(container.GetTypeInfo());
-    const CClassTypeInfo* elementType = mapType->GetElementClassType();
-
-    CObjectStackClass cls(in, elementType);
-    in.BeginClass(cls, elementType);
-    ReadClassElement(in, container, mapType);
-    in.EndClass(cls);
-}
-
-void CStlClassInfoMapImpl::ReadKey(CObjectIStream& in,
-                                   TObjectPtr keyPtr) const
-{
-    CObjectStackClassMember m(in);
-    CObjectIStream::CClassMemberPosition pos;
-    const CMembersInfo& members = GetElementClassType()->GetMembers();
-    if ( in.BeginClassMember(m, members, pos) != members.FirstMemberIndex() ) {
-        in.ThrowError(CObjectIStream::eFormatError, "map key expected");
-    }
-    in.ReadObject(keyPtr, GetKeyTypeInfo());
-    in.EndClassMember(m);
-    _ASSERT(pos.GetLastIndex() == members.FirstMemberIndex());
-}
-
-void CStlClassInfoMapImpl::ReadValue(CObjectIStream& in,
-                                     TObjectPtr valuePtr) const
-{
-    CObjectStackClassMember m(in);
-    CObjectIStream::CClassMemberPosition pos;
-    const CMembersInfo& members = GetElementClassType()->GetMembers();
-    pos.SetLastIndex(members.FirstMemberIndex());
-    if ( in.BeginClassMember(m, members, pos) != members.LastMemberIndex() ) {
-        in.ThrowError(CObjectIStream::eFormatError, "map value expected");
-    }
-    in.ReadObject(valuePtr, GetValueTypeInfo());
-    in.EndClassMember(m);
-    _ASSERT(pos.GetLastIndex() == members.LastMemberIndex());
-    if ( in.BeginClassMember(m, members, pos) != kInvalidMember ) {
-        in.ThrowError(CObjectIStream::eFormatError,
-                      "end of map entry expected");
-    }
 }
 
 END_NCBI_SCOPE

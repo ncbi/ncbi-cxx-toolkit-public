@@ -12,16 +12,19 @@ tool=./asn2asn
 do_test() {
     cmd="$tool -i $d/$1 -o out"
     echo $cmd
-    $cmd
-    if test $? != 0; then
+    if time $cmd; then
+        :
+    else
         echo "asn2asn failed!"
         exit 1
     fi
-    cmp out $r/$2
-    if test $? != 0; then
+    if cmp out $r/$2; then
+        :
+    else
         echo "wrong result!"
         exit 1
     fi
+    rm out
 }
 
 for i in "set.ent" "set.bin -b" "set.xml -X"; do

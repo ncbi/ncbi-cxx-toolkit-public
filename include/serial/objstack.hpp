@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/01 13:16:02  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.4  2000/08/15 19:44:41  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -60,51 +64,11 @@
 
 BEGIN_NCBI_SCOPE
 
-class COStreamBuffer;
+class CObjectStack;
 
-class CObjectStackFrame;
-class CObjectStackNamedFrame;
-class CObjectStackArray;
-class CObjectStackArrayElement;
-class CObjectStackClass;
-class CObjectStackClassMember;
-class CObjectStackChoice;
-class CObjectStackChoiceVariant;
-
-class CObjectStack {
+class CObjectStackFrame
+{
 public:
-    CObjectStack(void)
-        : m_Top(0)
-        {
-        }
-    virtual ~CObjectStack(void);
-
-protected:
-    virtual void UnendedFrame(void);
-
-    CObjectStackFrame* GetTop() const
-        {
-            return m_Top;
-        }
-
-    void Clear(void);
-
-private:
-    friend class CObjectStackFrame;
-
-    CObjectStackFrame* m_Top;
-};
-
-class CObjectStackFrame {
-public:
-    enum ENameType {
-        eNameNone,
-        eNameCharPtr,
-        eNameString,
-        eNameId,
-        eNameChar,
-        eNameTypeInfo
-    };
     enum EFrameType {
         eFrameOther,
         eFrameNamed,
@@ -116,232 +80,76 @@ public:
         eFrameChoiceVariant
     };
 
-public:
-    bool Ended(void) const
-        {
-            return m_Ended;
-        }
-
-    void End(void);
-    void Begin(void);
-
-    bool FirstChild(void)
-        {
-            bool firstChild = m_FirstChild;
-            m_FirstChild = false;
-            return firstChild;
-        }
-    void SetFirstChild(void)
-        {
-            m_FirstChild = true;
-        }
+    void Reset(void);
     
+    EFrameType GetFrameType(void) const;
+    TTypeInfo GetTypeInfo(void) const;
+    const CMemberId& GetMemberId(void) const;
+    void SetMemberId(const CMemberId& memberid);
+
+private:
+    friend class CObjectStack;
+
+    EFrameType m_FrameType;
+    TTypeInfo m_TypeInfo;
+    const CMemberId* m_MemberId;
+};
+
+class CObjectStack
+{
 public:
-    void SetNoName(void);
-    void SetName(const char* name);
-    void SetName(char name);
-    void SetName(const string& name);
-    void SetName(TTypeInfo type);
-    void SetName(const CMemberId& name);
+    typedef CObjectStackFrame TFrame;
+    typedef TFrame::EFrameType EFrameType;
+
+    CObjectStack(void);
+    virtual ~CObjectStack(void);
 
 protected:
-    CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                      bool ended = false);
-    CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                      const string& name);
-    CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                      const char* name);
-    CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                      char name, bool ended = false);
-    CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                      const CMemberId& name);
-    CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                      TTypeInfo type);
-public:
+    size_t GetStackDepth(void) const;
+    bool StackIsEmpty(void) const;
 
-    ~CObjectStackFrame(void);
+    TFrame& PushFrame(EFrameType type);
+    TFrame& PushFrame(EFrameType type, TTypeInfo typeInfo);
+    TFrame& PushFrame(EFrameType type, const CMemberId& memberId);
+    void PopFrame(void);
+    void PopErrorFrame(void);
 
-    EFrameType GetFrameType(void) const
-        {
-            return EFrameType(m_FrameType);
-        }
+    void ClearStack(void);
 
-    ENameType GetNameType(void) const
-        {
-            return ENameType(m_NameType);
-        }
-    bool HaveName(void) const
-        {
-            return m_NameType != eNameNone;
-        }
+    string GetStackTraceASN(void) const;
 
-    const char* GetNameCharPtr(void) const
-        {
-            _ASSERT(m_NameType == eNameCharPtr);
-            return m_NameCharPtr;
-        }
-    const string& GetNameString(void) const
-        {
-            _ASSERT(m_NameType == eNameString);
-            return *m_NameString;
-        }
-    const CMemberId& GetNameId(void) const
-        {
-            _ASSERT(m_NameType == eNameId);
-            return *m_NameId;
-        }
-    char GetNameChar(void) const
-        {
-            _ASSERT(m_NameType == eNameChar);
-            return m_NameChar;
-        }
-    TTypeInfo GetNameTypeInfo(void) const
-        {
-            _ASSERT(m_NameType == eNameTypeInfo);
-            return m_NameTypeInfo;
-        }
-    
-    CObjectStackFrame* GetPrevous(void) const
-        {
-            return m_Previous;
-        }
-    
-    bool AppendStackTo(string& s) const;
-    void AppendTo(string& s) const;
-    void AppendTo(COStreamBuffer& out) const;
-    
-    operator CObjectStack&(void) const
-        {
-            return m_Stack;
-        }
-    
-private:
-    void Push(CObjectStack& stack, EFrameType frameType, bool ended = false);
-    void Pop(void);
-    void PopUnended(void);
+    TFrame& FetchFrameFromTop(size_t index);
+    const TFrame& FetchFrameFromTop(size_t index) const;
+    const TFrame& TopFrame(void) const;
+    TFrame& TopFrame(void);
+    const TFrame& FetchFrameFromBottom(size_t index) const;
 
-    CObjectStack& m_Stack;
-    CObjectStackFrame* m_Previous;
-    
-    union {
-        char m_NameChar;
-        const char* m_NameCharPtr;
-        const string* m_NameString;
-        const CMemberId* m_NameId;
-        TTypeInfo m_NameTypeInfo;
-    };
-    char m_NameType;
-    char m_FrameType;
-    bool m_Ended;
-    bool m_FirstChild;
-    
-private:
-    // to prevent allocation in heap
-    void *operator new(size_t size);
-    void *operator new(size_t size, size_t count);
-    // to prevent copying
-    CObjectStackFrame(const CObjectStackFrame&);
-    CObjectStackFrame& operator=(const CObjectStackFrame&);
-};
-
-class CObjectStackNamedFrame : public CObjectStackFrame
-{
-public:
-    CObjectStackNamedFrame(CObjectStack& stack, TTypeInfo type);
-};
-
-class CObjectStackBlock : public CObjectStackFrame
-{
-public:
-    CObjectStackBlock(CObjectStack& stack, EFrameType frameType,
-                      TTypeInfo typeInfo);
-    
-    bool IsEmpty(void) const
-        {
-            return m_Empty;
-        }
-    void SetNonEmpty(void)
-        {
-            m_Empty = false;
-        }
-
-    TTypeInfo GetTypeInfo(void) const
-        {
-            return GetNameTypeInfo();
-        }
+    virtual void UnendedFrame(void);
 
 private:
-    bool m_Empty;
-};
+    TFrame& PushFrame(void);
+    TFrame& PushFrameLong(void);
 
-class CObjectStackArray : public CObjectStackBlock
-{
-public:
-    CObjectStackArray(CObjectStack& stack, TTypeInfo arrayType);
-};
-
-class CObjectStackArrayElement : public CObjectStackFrame
-{
-public:
-    CObjectStackArrayElement(CObjectStack& stack,
-                             bool ended = true);
-    CObjectStackArrayElement(CObjectStackArray& array,
-                             TTypeInfo elementType, bool ended = true);
-
-    CObjectStackArray& GetArrayFrame(void) const
-        {
-            return *static_cast<CObjectStackArray*>(GetPrevous());
-        }
-
-    TTypeInfo GetElementType(void) const
-        {
-            return m_ElementType;
-        }
-
-private:
-    TTypeInfo m_ElementType;
-};
-
-class CObjectStackClass : public CObjectStackBlock
-{
-public:
-    CObjectStackClass(CObjectStack& stack,
-                      TTypeInfo classInfo);
-};
-
-class CObjectStackClassMember : public CObjectStackFrame
-{
-public:
-    CObjectStackClassMember(CObjectStack& stack, bool ended = true);
-    CObjectStackClassMember(CObjectStack& stack, const CMemberId& id);
-    CObjectStackClassMember(CObjectStackClass& cls);
-    CObjectStackClassMember(CObjectStackClass& cls, const CMemberId& id);
-    
-    CObjectStackClass& GetClassFrame(void) const
-        {
-            return *static_cast<CObjectStackClass*>(GetPrevous());
-        }
-};
-
-class CObjectStackChoice : public CObjectStackFrame
-{
-public:
-    CObjectStackChoice(CObjectStack& stack, TTypeInfo choiceInfo);
-
-    TTypeInfo GetChoiceType(void) const
-        {
-            return GetNameTypeInfo();
-        }
-};
-
-class CObjectStackChoiceVariant : public CObjectStackFrame
-{
-public:
-    CObjectStackChoiceVariant(CObjectStack& stack);
-    CObjectStackChoiceVariant(CObjectStack& stack, const CMemberId& id);
+    TFrame* m_Stack;
+    TFrame* m_StackPtr;
+    TFrame* m_StackEnd;
 };
 
 #include <serial/objstack.inl>
+
+#define BEGIN_OBJECT_FRAME_OFx(Stream, Args) \
+    (Stream).PushFrame Args; try {
+#define END_OBJECT_FRAME_OF(Stream) \
+    } catch (...) { (Stream).PopErrorFrame(); throw; } (Stream).PopFrame()
+
+#define BEGIN_OBJECT_FRAME_OF(Stream, Type) \
+    BEGIN_OBJECT_FRAME_OFx(Stream, (CObjectStackFrame::Type))
+#define BEGIN_OBJECT_FRAME_OF2(Stream, Type, Arg) \
+    BEGIN_OBJECT_FRAME_OFx(Stream, (CObjectStackFrame::Type, Arg))
+
+#define BEGIN_OBJECT_FRAME(Type) BEGIN_OBJECT_FRAME_OF(*this, Type)
+#define BEGIN_OBJECT_FRAME2(Type, Arg) BEGIN_OBJECT_FRAME_OF2(*this, Type, Arg)
+#define END_OBJECT_FRAME() END_OBJECT_FRAME_OF(*this)
 
 END_NCBI_SCOPE
 

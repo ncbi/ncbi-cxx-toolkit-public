@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/09/01 13:15:57  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.31  2000/08/15 19:44:37  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -183,8 +187,10 @@ public:
 
     virtual TTypeInfo GetElementType(void) const;
 
-    CConstContainerElementIterator* Elements(TConstObjectPtr object) const;
-    CContainerElementIterator* Elements(TObjectPtr object) const;
+    CConstIterator* NewConstIterator(void) const;
+    CIterator* NewIterator(void) const;
+    void AddElement(TObjectPtr container, TConstObjectPtr element) const;
+    void AddElement(TObjectPtr container, CObjectIStream& in) const;
 
     size_t GetNextOffset(void) const
         {
@@ -232,8 +238,6 @@ public:
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr object1,
-                        TConstObjectPtr object2) const;
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst,
                         TConstObjectPtr src) const;
@@ -256,6 +260,8 @@ protected:
                           TObjectPtr object) const;
 
     virtual void SkipData(CObjectIStream& in) const;
+
+    virtual void CopyData(CObjectStreamCopier& copier) const;
 
 private:
     TTypeInfo m_DataType;
@@ -308,6 +314,8 @@ protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
     void SkipData(CObjectIStream& in) const;
+
+    void CopyData(CObjectStreamCopier& copier) const;
 };
 
 class COldAsnTypeInfo : public CPrimitiveTypeInfo
@@ -352,6 +360,8 @@ protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
     void SkipData(CObjectIStream& in) const;
+
+    void CopyData(CObjectStreamCopier& copier) const;
 
 private:
     TNewProc m_NewProc;

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/09/01 13:16:13  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.44  2000/08/15 19:44:46  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -208,6 +212,7 @@
 #include <serial/objstack.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objcopy.hpp>
 #include <serial/classinfob.hpp>
 #include <serial/typemap.hpp>
 #include <asn.h>
@@ -331,28 +336,26 @@ TTypeInfo CSequenceOfTypeInfo::GetElementType(void) const
     return GetDataTypeInfo();
 }
 
-class CConstSequenceElementIterator : public CConstContainerElementIterator
+class CSequenceConstIterator : public CContainerTypeInfo::CConstIterator
 {
+    typedef CContainerTypeInfo::CConstIterator CParent;
 public:
-    CConstSequenceElementIterator(const CSequenceOfTypeInfo* seqInfo,
-                                  TConstObjectPtr objectPtr)
-        : CConstContainerElementIterator(seqInfo->GetDataTypeInfo()),
-          m_SequenceInfo(seqInfo),
-          m_NodePtr(seqInfo->FirstNode(objectPtr))
+    CSequenceConstIterator(const CSequenceOfTypeInfo* seqInfo)
+        : m_SequenceInfo(seqInfo)
         {
         }
-    CConstContainerElementIterator* Clone(void) const
+    CParent* Clone(void) const
         {
-            return new CConstSequenceElementIterator(*this);
+            return new CSequenceConstIterator(*this);
         }
 
-    bool Valid(void) const
+    bool Init(TConstObjectPtr objectPtr)
         {
-            return m_NodePtr != 0;
+            return (m_NodePtr = m_SequenceInfo->FirstNode(objectPtr)) != 0;
         }
-    void Next(void)
+    bool Next(void)
         {
-            m_NodePtr = m_SequenceInfo->NextNode(m_NodePtr);
+            return (m_NodePtr = m_SequenceInfo->NextNode(m_NodePtr)) != 0;
         }
     TConstObjectPtr GetElementPtr(void) const
         {
@@ -363,34 +366,34 @@ private:
     TConstObjectPtr m_NodePtr;
 };
 
-class CSequenceElementIterator : public CContainerElementIterator
+class CSequenceIterator : public CContainerTypeInfo::CIterator
 {
+    typedef CContainerTypeInfo::CIterator CParent;
 public:
-    CSequenceElementIterator(const CSequenceOfTypeInfo* seqInfo,
-                             TObjectPtr objectPtr)
-        : CContainerElementIterator(seqInfo->GetDataTypeInfo()),
-          m_SequenceInfo(seqInfo),
-          m_NodePtrPtr(&seqInfo->FirstNode(objectPtr))
+    CSequenceIterator(const CSequenceOfTypeInfo* seqInfo)
+        : m_SequenceInfo(seqInfo)
         {
         }
-    CContainerElementIterator* Clone(void) const
+    CParent* Clone(void) const
         {
-            return new CSequenceElementIterator(*this);
+            return new CSequenceIterator(*this);
         }
 
-    bool Valid(void) const
+    bool Init(TObjectPtr objectPtr)
         {
-            return *m_NodePtrPtr != 0;
+            return
+                *(m_NodePtrPtr = &m_SequenceInfo->FirstNode(objectPtr)) != 0;
         }
-    void Next(void)
+    bool Next(void)
         {
-            m_NodePtrPtr = &m_SequenceInfo->NextNode(*m_NodePtrPtr);
+            return
+                *(m_NodePtrPtr = &m_SequenceInfo->NextNode(*m_NodePtrPtr)) != 0;
         }
     TObjectPtr GetElementPtr(void) const
         {
             return m_SequenceInfo->Data(*m_NodePtrPtr);
         }
-    void Erase(void)
+    bool Erase(void)
         {
             THROW1_TRACE(runtime_error, "unimplemented");
         }
@@ -399,16 +402,14 @@ private:
     TObjectPtr* m_NodePtrPtr;
 };
 
-CConstContainerElementIterator*
-CSequenceOfTypeInfo::Elements(TConstObjectPtr object) const
+CContainerTypeInfo::CConstIterator* CSequenceOfTypeInfo::NewConstIterator(void) const
 {
-    return new CConstSequenceElementIterator(this, object);
+    return new CSequenceConstIterator(this);
 }
 
-CContainerElementIterator*
-CSequenceOfTypeInfo::Elements(TObjectPtr object) const
+CContainerTypeInfo::CIterator* CSequenceOfTypeInfo::NewIterator(void) const
 {
-    return new CSequenceElementIterator(this, object);
+    return new CSequenceIterator(this);
 }
 
 size_t CSequenceOfTypeInfo::GetSize(void) const
@@ -434,20 +435,6 @@ bool CSequenceOfTypeInfo::IsDefault(TConstObjectPtr object) const
     return FirstNode(object) == 0;
 }
 
-bool CSequenceOfTypeInfo::Equals(TConstObjectPtr object1,
-                                 TConstObjectPtr object2) const
-{
-    for ( object1 = FirstNode(object1), object2 = FirstNode(object2);
-          object1 != 0;
-          object1 = NextNode(object1), object2 = NextNode(object2) ) {
-        if ( object2 == 0 )
-            return false;
-        if ( !GetDataTypeInfo()->Equals(Data(object1), Data(object2)) )
-            return false;
-    }
-    return object2 == 0;
-}
-
 void CSequenceOfTypeInfo::SetDefault(TObjectPtr dst) const
 {
     FirstNode(dst) = 0;
@@ -470,28 +457,17 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     }
 }
 
-class CWriteSequenceHook : public CWriteContainerElementsHook
+void CSequenceOfTypeInfo::AddElement(TObjectPtr /*containerPtr*/,
+                                     TConstObjectPtr /*elementPtr*/) const
 {
-public:
-    void WriteContainerElements(CObjectOStream& out,
-                                const CConstObjectInfo& container)
-        {
-            // get sequence type info
-            TTypeInfo containerType = container.GetTypeInfo();
-            _ASSERT(dynamic_cast<const CSequenceOfTypeInfo*>(containerType));
-            const CSequenceOfTypeInfo* sequenceType =
-                static_cast<const CSequenceOfTypeInfo*>(containerType);
+    THROW1_TRACE(runtime_error, "illegal call");
+}
 
-            TTypeInfo elementType = sequenceType->GetDataTypeInfo();
-            for ( TConstObjectPtr node =
-                      sequenceType->FirstNode(container.GetObjectPtr());
-                  node; node = sequenceType->NextNode(node) ) {
-                out.WriteContainerElement(CConstObjectInfo(sequenceType->Data(node),
-                                                           elementType,
-                                                           CObjectInfo::eNonCObject));
-            }
-        }
-};
+void CSequenceOfTypeInfo::AddElement(TObjectPtr /*containerPtr*/,
+                                     CObjectIStream& /*in*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
 
 class CReadSequenceHook : public CReadContainerElementHook
 {
@@ -542,10 +518,7 @@ private:
 void CSequenceOfTypeInfo::WriteData(CObjectOStream& out,
                                     TConstObjectPtr object) const
 {
-    CWriteSequenceHook hook;
-    out.WriteContainer(CConstObjectInfo(object, this,
-                                        CObjectInfo::eNonCObject),
-                       hook);
+    out.WriteContainer(object, this);
 }
 
 void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
@@ -559,6 +532,11 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
 void CSequenceOfTypeInfo::SkipData(CObjectIStream& in) const
 {
     in.SkipContainer(this);
+}
+
+void CSequenceOfTypeInfo::CopyData(CObjectStreamCopier& copier) const
+{
+    copier.CopyContainer(this);
 }
 
 static CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo_map;
@@ -679,6 +657,11 @@ void COctetStringTypeInfo::SkipData(CObjectIStream& in) const
     in.SkipByteBlock();
 }
 
+void COctetStringTypeInfo::CopyData(CObjectStreamCopier& copier) const
+{
+    copier.CopyByteBlock();
+}
+
 void COctetStringTypeInfo::GetValueOctetString(TConstObjectPtr objectPtr,
                                                vector<char>& value) const
 {
@@ -773,6 +756,11 @@ void COldAsnTypeInfo::SetDefault(TObjectPtr dst) const
 void COldAsnTypeInfo::Assign(TObjectPtr , TConstObjectPtr ) const
 {
     THROW1_TRACE(runtime_error, "cannot assign non default value");
+}
+
+void COldAsnTypeInfo::CopyData(CObjectStreamCopier& copier) const
+{
+    THROW1_TRACE(runtime_error, "not implemented");
 }
 
 void COldAsnTypeInfo::WriteData(CObjectOStream& out,

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/01 13:16:13  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.9  2000/08/15 19:44:46  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -79,6 +83,7 @@
 #include <serial/typemap.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -127,6 +132,11 @@ void CAutoPointerTypeInfo::ReadData(CObjectIStream& in,
 void CAutoPointerTypeInfo::SkipData(CObjectIStream& in) const
 {
     GetDataTypeInfo()->SkipData(in);
+}
+
+void CAutoPointerTypeInfo::CopyData(CObjectStreamCopier& copier) const
+{
+    GetDataTypeInfo()->CopyData(copier);
 }
 
 END_NCBI_SCOPE

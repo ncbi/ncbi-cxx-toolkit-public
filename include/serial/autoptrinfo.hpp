@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/01 13:15:57  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.6  2000/03/07 14:05:27  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -79,6 +83,8 @@ protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
     void SkipData(CObjectIStream& in) const;
+
+    void CopyData(CObjectStreamCopier& copier) const;
 };
 
 //#include <serial/autoptrinfo.inl>

@@ -1,5 +1,5 @@
-#if defined(MEMBERID__HPP)  &&  !defined(MEMBERID__INL)
-#define MEMBERID__INL
+#ifndef OBJCOPY__HPP
+#define OBJCOPY__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,54 +33,68 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.8  2000/09/01 13:15:59  vasilche
+* Revision 1.1  2000/09/01 13:15:59  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.7  2000/07/03 18:42:34  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.6  2000/06/16 16:31:05  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.5  2000/05/24 20:08:12  vasilche
-* Implemented XML dump.
-*
-* Revision 1.4  1999/12/17 19:04:53  vasilche
-* Simplified generation of GetTypeInfo methods.
-*
-* Revision 1.3  1999/07/13 20:18:06  vasilche
-* Changed types naming.
-*
-* Revision 1.2  1999/07/01 17:55:18  vasilche
-* Implemented ASN.1 binary write.
-*
-* Revision 1.1  1999/06/30 16:04:25  vasilche
-* Added support for old ASN.1 structures.
 *
 * ===========================================================================
 */
 
-inline
-const string& CMemberId::GetName(void) const
-{
-    return m_Name;
-}
+#include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
+#include <serial/typeinfo.hpp>
 
-inline
-CMemberId::TTag CMemberId::GetExplicitTag(void) const
-{
-    return m_ExplicitTag;
-}
+BEGIN_NCBI_SCOPE
 
-inline
-CMemberId::TTag CMemberId::GetTag(void) const
-{
-    TTag tag = m_Tag;
-    if ( tag != eNoExplicitTag )
-        return tag;
-    return GetTagLong();
-}
+class CContainerTypeInfo;
+class CClassTypeInfo;
+class CChoiceTypeInfo;
 
-#endif /* def MEMBERID__HPP  &&  ndef MEMBERID__INL */
+class CObjectStreamCopier
+{
+public:
+    CObjectStreamCopier(CObjectIStream& in, CObjectOStream& out);
+
+    CObjectIStream& In(void) const;
+    CObjectOStream& Out(void) const;
+
+    // main copy
+    void Copy(TTypeInfo type);
+
+    enum ENoTypeName {
+        eNoTypeName
+    };
+    // copy without source typename
+    void Copy(TTypeInfo type, ENoTypeName noTypeName);
+
+    // copy object
+    void CopyObject(TTypeInfo type);
+
+    // primitive types copy
+    void CopyString(void);
+    void CopyStringStore(void);
+    void CopyByteBlock(void);
+
+    // complex types copy
+    void CopyNamedType(TTypeInfo namedTypeInfo, TTypeInfo type);
+
+    void CopyPointer(TTypeInfo declaredType);
+
+    void CopyContainer(const CContainerTypeInfo* containerType);
+
+    void CopyClass(const CClassTypeInfo* classType);
+    void CopyClassMembersRandom(const CClassTypeInfo* classType);
+    void CopyClassMembersSequential(const CClassTypeInfo* classType);
+
+    void CopyChoice(const CChoiceTypeInfo* choiceType);
+
+private:
+    CObjectIStream& m_In;
+    CObjectOStream& m_Out;
+};
+
+#include <serial/objcopy.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* OBJCOPY__HPP */

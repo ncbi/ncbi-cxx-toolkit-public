@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/09/01 13:16:01  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.43  2000/08/15 19:44:41  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -220,6 +224,7 @@ class CWriteChoiceVariantHook;
 class CContainerTypeInfo;
 class CClassTypeInfo;
 class CChoiceTypeInfo;
+class CObjectStreamCopier;
 
 class CObjectOStream : public CObjectStack
 {
@@ -279,6 +284,8 @@ public:
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
 
     // container writer
+    virtual void WriteContainer(TConstObjectPtr containerPtr,
+                                const CContainerTypeInfo* containerType) = 0;
     virtual void WriteContainer(const CConstObjectInfo& container,
                                 CWriteContainerElementsHook& hook) = 0;
     virtual void WriteContainerElement(const CConstObjectInfo& element) = 0;
@@ -302,8 +309,8 @@ public:
 
     // choice writer
     virtual void WriteChoice(const CConstObjectInfo& choice,
-                             CWriteChoiceVariantHook& hook) = 0;
-    virtual void WriteChoice(const CConstObjectInfo& choice) = 0;
+                             CWriteChoiceVariantHook& hook);
+    virtual void WriteChoice(const CConstObjectInfo& choice);
 
     // choice variant writer
     void WriteChoiceVariantNoHook(const CConstObjectInfo& choice,
@@ -355,10 +362,12 @@ public:
                                     TConstObjectPtr memberPtr,
                                     TTypeInfo memberType);
 
-    virtual void WriteTypeName(const string& name);
+    virtual void WriteTypeName(TTypeInfo type);
+    virtual void EndOfWrite(void);
 
     // try to write enum value name, false if none
-    virtual bool WriteEnum(const CEnumeratedTypeValues& values, long value);
+    virtual void WriteEnum(const CEnumeratedTypeValues& values,
+                           long value) = 0;
 
     // std C types readers
     void WriteStd(const bool& data)
@@ -483,6 +492,8 @@ public:
 #endif
 
     // named type interface
+    virtual void BeginNamedType(TTypeInfo namedTypeInfo);
+    virtual void EndNamedType(void);
     virtual void WriteNamedType(TTypeInfo namedTypeInfo,
                                 TTypeInfo typeInfo, TConstObjectPtr object);
 
@@ -490,14 +501,21 @@ public:
     void WriteContainerElements(const CConstObjectInfo& container,
                                 CWriteContainerElementsHook& hook);
 
-    // class interface
-    virtual void BeginClass(CObjectStackClass& cls,
-                            const CClassTypeInfo* classInfo) = 0;
-    virtual void EndClass(CObjectStackClass& cls);
+    virtual void BeginContainer(const CContainerTypeInfo* containerType) = 0;
+    virtual void EndContainer(void);
+    virtual void BeginContainerElement(TTypeInfo elementType);
+    virtual void EndContainerElement(void);
 
-    virtual void BeginClassMember(CObjectStackClassMember& member,
-                                  const CMemberId& id) = 0;
-    virtual void EndClassMember(CObjectStackClassMember& member);
+    // class interface
+    virtual void BeginClass(const CClassTypeInfo* classInfo) = 0;
+    virtual void EndClass(void);
+
+    virtual void BeginClassMember(const CMemberId& id) = 0;
+    virtual void EndClassMember(void);
+
+    virtual void BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
+                                    const CMemberId& id) = 0;
+    virtual void EndChoiceVariant(void);
 
 	// write byte blocks
 	virtual void BeginBytes(const ByteBlock& block);
@@ -506,6 +524,8 @@ public:
 	virtual void EndBytes(const ByteBlock& block);
 
 protected:
+    friend class CObjectStreamCopier;
+
     // low level writers
     virtual void WritePointer(CWriteObjectInfo& info,
                               TTypeInfo declaredTypeInfo);
@@ -513,8 +533,9 @@ protected:
     virtual void WriteObjectReference(TObjectIndex index) = 0;
     virtual void WriteThis(TConstObjectPtr object,
                            TTypeInfo typeInfo);
-    virtual void WriteOther(TConstObjectPtr object,
-                            TTypeInfo typeInfo) = 0;
+    virtual void WriteOtherBegin(TTypeInfo typeInfo) = 0;
+    virtual void WriteOtherEnd(TTypeInfo typeInfo);
+    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
 
     virtual void WriteBool(bool data) = 0;
     virtual void WriteChar(char data) = 0;
@@ -531,6 +552,7 @@ protected:
 	virtual void WriteCString(const char* str);
     virtual void WriteString(const string& str) = 0;
 
+    void RegisterObject(TTypeInfo typeInfo);
     void RegisterAndWrite(TConstObjectPtr object, TTypeInfo typeInfo);
     void RegisterAndWrite(const CConstObjectInfo& object);
 

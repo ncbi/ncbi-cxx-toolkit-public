@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/01 13:16:01  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.5  2000/08/15 19:44:40  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -92,7 +96,7 @@ protected:
     virtual double ReadDouble(void);
     virtual void ReadNull(void);
     virtual void ReadString(string& s);
-    pair<long, bool> ReadEnum(const CEnumeratedTypeValues& values);
+    long ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void SkipBool(void);
     virtual void SkipChar(void);
@@ -107,33 +111,45 @@ protected:
     CLightString SkipTagName(CLightString tag, const char* s, size_t length);
     CLightString SkipTagName(CLightString tag, const char* s);
     CLightString SkipTagName(CLightString tag, const string& s);
-    CLightString SkipTagName(CLightString tag, const CObjectStackFrame& e);
+    CLightString SkipTagName(CLightString tag, size_t level);
 
     bool NextTagIsClosing(void);
     void OpenTag(const string& e);
     void CloseTag(const string& e);
-    void OpenTag(const CObjectStackFrame& e);
-    void CloseTag(const CObjectStackFrame& e);
+    void OpenTag(size_t level);
+    void CloseTag(size_t level);
 
+    virtual void ReadContainer(TObjectPtr containerPtr,
+                               const CContainerTypeInfo* containerType);
     virtual void ReadContainer(const CObjectInfo& container,
                                CReadContainerElementHook& hook);
+    virtual void SkipContainer(const CContainerTypeInfo* containerType);
+    void ReadContainerContents(TObjectPtr containerPtr,
+                               const CContainerTypeInfo* containerType);
     void ReadContainerContents(const CObjectInfo& container,
                                CReadContainerElementHook& hook);
+    void SkipContainerContents(const CContainerTypeInfo* containerType);
 
+    virtual void BeginNamedType(TTypeInfo namedTypeInfo);
+    virtual void EndNamedType(void);
     void ReadNamedType(TTypeInfo namedTypeInfo,
                        TTypeInfo typeInfo,
                        TObjectPtr object);
 
-    void BeginClass(CObjectStackClass& cls,
-                    const CClassTypeInfo* classInfo);
-    void EndClass(CObjectStackClass& cls);
-    TMemberIndex BeginClassMember(CObjectStackClassMember& m,
-                                  const CMembersInfo& members);
-    TMemberIndex BeginClassMember(CObjectStackClassMember& m,
-                                  const CMembersInfo& members,
-                                  CClassMemberPosition& pos);
-    void EndClassMember(CObjectStackClassMember& m);
+    virtual void BeginContainer(const CContainerTypeInfo* containerType);
+    virtual void EndContainer(void);
+    virtual bool BeginContainerElement(TTypeInfo elementType);
+    virtual void EndContainerElement(void);
 
+    void BeginClass(const CClassTypeInfo* classInfo);
+    void EndClass(void);
+    TMemberIndex BeginClassMember(const CMembersInfo& members);
+    TMemberIndex BeginClassMember(const CMembersInfo& members,
+                                  TMemberIndex pos);
+    void EndClassMember(void);
+
+    virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
+    virtual void EndChoiceVariant(void);
     virtual void DoReadChoice(const CObjectInfo& choice,
                               CReadChoiceVariantHook& hook);
     void ReadChoiceContents(const CObjectInfo& choice,

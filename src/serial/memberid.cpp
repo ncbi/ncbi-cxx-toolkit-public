@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/09/01 13:16:15  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.10  2000/08/15 19:44:47  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -123,7 +127,6 @@ CMemberId& CMemberId::operator=(const CMemberId& id)
 {
     m_MemberList = id.m_MemberList;
     m_Name = id.m_Name;
-    m_XmlName.reset(0);
     m_ExplicitTag = id.m_ExplicitTag;
     m_Tag = eNoExplicitTag;
     return *this;
@@ -141,20 +144,11 @@ string CMemberId::ToString(void) const
         return '[' + NStr::IntToString(GetTag()) + ']';
 }
 
-CMemberId::TTag CMemberId::GetTag(void) const
+CMemberId::TTag CMemberId::GetTagLong(void) const
 {
-    TTag tag = m_Tag;
-    if ( tag != eNoExplicitTag )
-        return tag;
-
     _ASSERT(m_MemberList != 0);
     m_MemberList->UpdateMemberTags();
     return m_Tag;
-}
-
-const string& CMemberId::GetXmlName(void) const
-{
-    return m_Name;
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/01 13:16:03  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.3  2000/07/03 20:47:18  vasilche
 * Removed unused variables/functions.
 *
@@ -50,6 +54,7 @@
 #include <serial/stdtypes.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -142,6 +147,12 @@ protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
             out.WriteStd(Get(object));
+        }
+    virtual void CopyData(CObjectStreamCopier& copier) const
+        {
+            TObjectType data;
+            copier.In().ReadStd(data);
+            copier.Out().WriteStd(data);
         }
 };
 
@@ -291,6 +302,7 @@ protected:
     virtual void SkipData(CObjectIStream& in) const;
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+    virtual void CopyData(CObjectStreamCopier& copier) const;
 };
 
 template<typename T>
@@ -345,6 +357,7 @@ protected:
     virtual void SkipData(CObjectIStream& in) const;
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+    virtual void CopyData(CObjectStreamCopier& copier) const;
 };
 
 class CNullBoolTypeInfo : public CPrimitiveTypeInfoBool
@@ -353,6 +366,7 @@ protected:
     virtual void SkipData(CObjectIStream& in) const;
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+    virtual void CopyData(CObjectStreamCopier& copier) const;
 };
 
 template<typename Char>
@@ -467,6 +481,11 @@ protected:
     virtual void SkipData(CObjectIStream& in) const
         {
             in.SkipByteBlock();
+        }
+
+    virtual void CopyData(CObjectStreamCopier& copier) const
+        {
+            copier.CopyByteBlock();
         }
 };
 

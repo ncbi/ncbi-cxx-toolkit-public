@@ -37,22 +37,22 @@ int CTestSerial::Run(void)
             {
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("webenv.ent",
                                                                  eSerial_AsnText));
-                in->Read(&env, GetSequenceTypeRef(&env));
+                in->Read(&env, GetSequenceTypeRef(&env).Get());
             }
             {
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open("webenv.bino",
                                                                   eSerial_AsnBinary));
-                out->Write(&env, GetSequenceTypeRef(&env));
+                out->Write(&env, GetSequenceTypeRef(&env).Get());
             }
             {
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("webenv.bin",
                                                                  eSerial_AsnBinary));
-                in->Read(&env, GetSequenceTypeRef(&env));
+                in->Read(&env, GetSequenceTypeRef(&env).Get());
             }
             {
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open("webenv.ento",
                                                                   eSerial_AsnText));
-                out->Write(&env, GetSequenceTypeRef(&env));
+                out->Write(&env, GetSequenceTypeRef(&env).Get());
             }
             {
                 CNcbiOfstream out("webenv.ento2");
@@ -396,10 +396,7 @@ void PrintAsnPrimitiveValue(CNcbiOstream& out, const CConstObjectInfo& object)
 {
     switch ( object.GetPrimitiveValueType() ) {
     case CPrimitiveTypeInfo::eBool:
-        if ( object.GetPrimitiveValueBool() )
-            out << "TRUE";
-        else
-            out << "FALSE";
+        out << (object.GetPrimitiveValueBool()? "TRUE": "FALSE");
         break;
     case CPrimitiveTypeInfo::eChar:
         out << '\'' << object.GetPrimitiveValueChar() << '\'';
@@ -450,16 +447,15 @@ void PrintAsnClassValue(CNcbiOstream& out, const CConstObjectInfo& object)
 {
     AsnBlock block(out);
 
-    for ( CConstObjectInfo::CMemberIterator i(object); i; i.Next() ) {
+    for ( CConstObjectInfo::CMemberIterator i(object); i; ++i ) {
         if ( i.IsSet() ) {
             // print member separator
             block.NextElement();
 
             // print member id if any
-            const CMemberId& id =
-                object.GetMemberInfo(i.GetMemberIndex())->GetId();
-            if ( !id.GetName().empty() )
-                out << id.GetName() << ' ';
+            const string& alias = i.GetAlias();
+            if ( !alias.empty() )
+                out << alias << ' ';
 
             // print member value
             PrintAsnValue(out, *i);
@@ -469,17 +465,18 @@ void PrintAsnClassValue(CNcbiOstream& out, const CConstObjectInfo& object)
 
 void PrintAsnChoiceValue(CNcbiOstream& out, const CConstObjectInfo& object)
 {
-    int index = object.WhichChoice();
-    _ASSERT(index >= 0);
-    out << object.GetMemberInfo(index)->GetId().GetName() << ' ';
-    PrintAsnValue(out, object.GetCurrentChoiceVariant());
+    CConstObjectInfo::CChoiceVariant variant(object);
+    if ( !variant )
+        THROW1_TRACE(runtime_error, "cannot print empty choice");
+    out << variant.GetAlias() << ' ';
+    PrintAsnValue(out, *variant);
 }
 
 void PrintAsnContainerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 {
     AsnBlock block(out);
     
-    for ( CConstObjectInfo::CElementIterator i(object); i; i.Next() ) {
+    for ( CConstObjectInfo::CElementIterator i(object); i; ++i ) {
         block.NextElement();
         
         PrintAsnValue(out, *i);
@@ -488,8 +485,5 @@ void PrintAsnContainerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 
 void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 {
-    const CPointerTypeInfo* info = object.GetPointerTypeInfo();
-    CConstObjectInfo pointedObject(object);
-    info->GetPointedObject(pointedObject);
     PrintAsnValue(out, object.GetPointedObject());
 }

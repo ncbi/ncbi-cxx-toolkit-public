@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/09/01 13:16:02  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.20  2000/07/03 18:42:37  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -176,6 +180,8 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
     virtual void SkipData(CObjectIStream& in) const;
+
+    virtual void CopyData(CObjectStreamCopier& copier) const;
 
 private:
     TTypeInfo m_DataType;

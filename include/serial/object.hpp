@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/01 13:16:00  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.11  2000/08/15 19:44:39  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -98,15 +102,26 @@ BEGIN_NCBI_SCOPE
 class CObjectTypeInfo;
 class CConstObjectInfo;
 class CObjectInfo;
+
 class CPrimitiveTypeInfo;
 class CClassTypeInfoBase;
 class CClassTypeInfo;
 class CChoiceTypeInfo;
 class CContainerTypeInfo;
 class CPointerTypeInfo;
+
 class CMemberId;
 class CMemberInfo;
+
 class CContainerElementReadHook;
+
+class CObjectTypeInfoMI;
+class CConstObjectInfoMI;
+class CConstObjectInfoCV;
+class CConstObjectInfoEI;
+class CObjectInfoMI;
+class CObjectInfoCV;
+class CObjectInfoEI;
 
 class CObjectGetTypeInfo
 {
@@ -117,124 +132,58 @@ public:
 class CObjectTypeInfo
 {
 public:
-    CObjectTypeInfo(TTypeInfo typeinfo = 0)
-        : m_TypeInfo(typeinfo)
-        {
-        }
+    typedef CObjectTypeInfoMI CMemberIterator;
+    typedef CTypeInfo::ETypeFamily ETypeFamily;
+    typedef CPrimitiveTypeInfo::EValueType EValueType;
 
-    TTypeInfo GetTypeInfo(void) const
-        {
-            return m_TypeInfo;
-        }
-    CTypeInfo::ETypeFamily GetTypeFamily(void) const
-        {
-            return GetTypeInfo()->GetTypeFamily();
-        }
+    CObjectTypeInfo(TTypeInfo typeinfo = 0);
+
+    TTypeInfo GetTypeInfo(void) const;
+    ETypeFamily GetTypeFamily(void) const;
+
+    // primitive type interface
+    // only when GetTypeFamily() == CTypeInfo::eTypePrimitive
+    EValueType GetPrimitiveValueType(void) const;
+    bool IsPrimitiveValueSigned(void) const;
+
+    // container interface
+    // only when GetTypeFamily() == CTypeInfo::eTypeContainer
+    CObjectTypeInfo GetElementType(void) const;
+
+    // class/choice interface
+    // only when GetTypeFamily() == CTypeInfo::eTypeClass ||
+    //           GetTypeFamily() == CTypeInfo::eTypeChoice
+    CMemberIterator BeginMembers(void) const;
+    CMemberIterator GetMemberIterator(TMemberIndex index) const;
+    CMemberIterator FindMember(const string& memberName) const;
+    CMemberIterator FindMemberByTag(int memberTag) const;
+
+public: // mostly for internal use
     const CPrimitiveTypeInfo* GetPrimitiveTypeInfo(void) const;
     const CClassTypeInfoBase* GetClassTypeInfoBase(void) const;
     const CClassTypeInfo* GetClassTypeInfo(void) const;
     const CChoiceTypeInfo* GetChoiceTypeInfo(void) const;
     const CContainerTypeInfo* GetContainerTypeInfo(void) const;
     const CPointerTypeInfo* GetPointerTypeInfo(void) const;
-    
-    // primitive type interface
-    CPrimitiveTypeInfo::EValueType GetPrimitiveValueType(void) const;
-    bool IsPrimitiveValueSigned(void) const;
-    // class/choice interface
-    const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
-    TMemberIndex FindMember(const string& memberName) const; // -1 if not found
-    TMemberIndex FindMemberByTag(int memberTag) const;       // -1 if not found
-    const CMemberInfo* GetMemberInfo(const string& memberName) const;
 
-    // class interface
-    class CMemberIterator
-    {
-    public:
-        CMemberIterator(void)
-            : m_ClassTypeInfo(0),
-              m_MemberIndex(kFirstMemberIndex),
-              m_LastMemberIndex(kFirstMemberIndex - 1)
-            {
-                _DEBUG_ARG(m_LastCall = eNone);
-            }
-        CMemberIterator(const CObjectTypeInfo& info)
-            {
-                Init(info);
-            }
-
-        const CClassTypeInfo* GetClassTypeInfo(void) const
-            {
-                return m_ClassTypeInfo;
-            }
-        TMemberIndex GetMemberIndex(void) const
-            {
-                _ASSERT(CheckValid());
-                return m_MemberIndex;
-            }
-
-        operator bool(void) const
-            {
-                _DEBUG_ARG(m_LastCall = eValid);
-                return CheckValid();
-            }
-
-        void Next(void)
-            {
-                _ASSERT(CheckValid());
-                _DEBUG_ARG(m_LastCall = eNext);
-                ++m_MemberIndex;
-            }
-
-    protected:
-        void Init(const CObjectTypeInfo& info);
-
-    protected:
-        bool IsSet(const CConstObjectInfo& object) const;
-
-    private:
-        const CClassTypeInfo* m_ClassTypeInfo;
-        TMemberIndex m_MemberIndex;
-        TMemberIndex m_LastMemberIndex;
-
-    protected:
-#if _DEBUG
-        mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
-#endif
-
-        bool CheckValid(void) const
-            {
-#if _DEBUG
-                if ( m_LastCall != eValid)
-                    ERR_POST("CMemberIterator was used without checking its validity");
-#endif
-                return m_MemberIndex >= kFirstMemberIndex &&
-                    m_MemberIndex <= m_LastMemberIndex;
-            }
-    };
+    TMemberIndex FindMemberIndex(const string& name) const;
+    TMemberIndex FindMemberIndex(int tag) const;
 
 protected:
-    void ResetTypeInfo(void)
-        {
-            m_TypeInfo = 0;
-        }
-    void SetTypeInfo(TTypeInfo typeinfo)
-        {
-            m_TypeInfo = typeinfo;
-        }
-    
+    void ResetTypeInfo(void);
+    void SetTypeInfo(TTypeInfo typeinfo);
+
 private:
     TTypeInfo m_TypeInfo;
 };
-
-class CConstObjectMemberIterator;
-class CConstObjectElementIterator;
 
 class CConstObjectInfo : public CObjectTypeInfo
 {
 public:
     typedef TConstObjectPtr TObjectPtrType;
-    typedef CConstObjectMemberIterator CMemberIterator;
-    typedef CConstObjectElementIterator CElementIterator;
+    typedef CConstObjectInfoEI CElementIterator;
+    typedef CConstObjectInfoMI CMemberIterator;
+    typedef CConstObjectInfoCV CChoiceVariant;
     
     enum ENonCObject {
         eNonCObject
@@ -244,10 +193,12 @@ public:
     CConstObjectInfo(void);
     // initialize CObjectInfo
     CConstObjectInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo);
-    CConstObjectInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo,
-                     ENonCObject nonCObject);
     CConstObjectInfo(pair<TConstObjectPtr, TTypeInfo> object);
     CConstObjectInfo(pair<TObjectPtr, TTypeInfo> object);
+    // initialize CObjectInfo when we are sure that object 
+    // is not inherited from CObject (for efficiency)
+    CConstObjectInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo,
+                     ENonCObject nonCObject);
 
     // reset CObjectInfo to empty state
     void Reset(void);
@@ -256,25 +207,14 @@ public:
     CConstObjectInfo& operator=(pair<TObjectPtr, TTypeInfo> object);
 
     // check if CObjectInfo initialized with valid object
-    operator bool(void) const
-        {
-            return m_ObjectPtr != 0;
-        }
-    void ResetObjectPtr(void)
-        {
-            m_ObjectPtr = 0;
-        }
+    bool Valid(void) const;
+    operator bool(void) const;
+
+    void ResetObjectPtr(void);
 
     // get pointer to object
-    TConstObjectPtr GetObjectPtr(void) const
-        {
-            return m_ObjectPtr;
-        }
-
-    pair<TConstObjectPtr, TTypeInfo> GetPair(void) const
-        {
-            return make_pair(GetObjectPtr(), GetTypeInfo());
-        }
+    TConstObjectPtr GetObjectPtr(void) const;
+    pair<TConstObjectPtr, TTypeInfo> GetPair(void) const;
 
     // primitive type interface
     bool GetPrimitiveValueBool(void) const;
@@ -285,12 +225,17 @@ public:
     void GetPrimitiveValueString(string& value) const;
     string GetPrimitiveValueString(void) const;
     void GetPrimitiveValueOctetString(vector<char>& value) const;
+
     // class interface
-    bool ClassMemberIsSet(TMemberIndex index) const;
-    CConstObjectInfo GetClassMember(TMemberIndex index) const;
+    CMemberIterator BeginMembers(void) const;
+    CMemberIterator GetClassMemberIterator(TMemberIndex index) const;
+    CMemberIterator FindClassMember(const string& memberName) const;
+    CMemberIterator FindClassMemberByTag(int memberTag) const;
+
     // choice interface
-    TMemberIndex WhichChoice(void) const;
-    CConstObjectInfo GetCurrentChoiceVariant(void) const;
+    TMemberIndex GetCurrentChoiceVariantIndex(void) const;
+    CChoiceVariant GetCurrentChoiceVariant(void) const;
+
     // pointer interface
     CConstObjectInfo GetPointedObject(void) const;
     
@@ -302,39 +247,33 @@ private:
     CConstRef<CObject> m_Ref; // hold reference to CObject for correct removal
 };
 
-class CObjectMemberIterator;
-class CObjectElementIterator;
-
-class CObjectInfo : public CConstObjectInfo {
+class CObjectInfo : public CConstObjectInfo
+{
+    typedef CConstObjectInfo CParent;
 public:
     typedef TObjectPtr TObjectPtrType;
-    typedef CObjectMemberIterator CMemberIterator;
-    typedef CObjectElementIterator CElementIterator;
+    typedef CObjectInfoEI CElementIterator;
+    typedef CObjectInfoMI CMemberIterator;
+    typedef CObjectInfoCV CChoiceVariant;
 
     // create empty CObjectInfo
     CObjectInfo(void);
-    // create CObjectInfo with new object
-    CObjectInfo(TTypeInfo typeInfo);
     // initialize CObjectInfo
     CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo);
+    CObjectInfo(pair<TObjectPtr, TTypeInfo> object);
+    // initialize CObjectInfo when we are sure that object 
+    // is not inherited from CObject (for efficiency)
     CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo,
                 ENonCObject nonCObject);
-    CObjectInfo(pair<TObjectPtr, TTypeInfo> object);
+    // create CObjectInfo with new object
+    explicit CObjectInfo(TTypeInfo typeInfo);
 
-
-    // set CObjectInfo
+    // set CObjectInfo to point to another object
     CObjectInfo& operator=(pair<TObjectPtr, TTypeInfo> object);
     
     // get pointer to object
-    TObjectPtr GetObjectPtr(void) const
-        {
-            return const_cast<TObjectPtr>(CConstObjectInfo::GetObjectPtr());
-        }
-
-    pair<TObjectPtr, TTypeInfo> GetPair(void) const
-        {
-            return make_pair(GetObjectPtr(), GetTypeInfo());
-        }
+    TObjectPtr GetObjectPtr(void) const;
+    pair<TObjectPtr, TTypeInfo> GetPair(void) const;
 
     // read
     void Read(CObjectIStream& in);
@@ -347,244 +286,267 @@ public:
     void SetPrimitiveValueDouble(double value);
     void SetPrimitiveValueString(const string& value);
     void SetPrimitiveValueOctetString(const vector<char>& value);
+
     // class interface
-    CObjectInfo GetClassMember(TMemberIndex index) const;
-    void EraseClassMember(TMemberIndex index);
+    CMemberIterator BeginMembers(void) const;
+    CMemberIterator GetClassMemberIterator(TMemberIndex index) const;
+    CMemberIterator FindClassMember(const string& memberName) const;
+    CMemberIterator FindClassMemberByTag(int memberTag) const;
+
     // choice interface
-    CObjectInfo GetCurrentChoiceVariant(void) const;
+    CChoiceVariant GetCurrentChoiceVariant(void) const;
+
     // pointer interface
     CObjectInfo GetPointedObject(void) const;
+
     // container interface
     void ReadContainer(CObjectIStream& in, CContainerElementReadHook& hook);
 };
 
-class CConstObjectMemberIterator : public CObjectTypeInfo::CMemberIterator
+class CConstObjectInfoEI
 {
-    typedef CObjectTypeInfo::CMemberIterator CParent;
 public:
-    CConstObjectMemberIterator(void)
-        {
-        }
-    CConstObjectMemberIterator(const CConstObjectInfo& object)
-        : CParent(object), m_Object(object)
-        {
-            _ASSERT(object);
-        }
+    CConstObjectInfoEI(void);
+    CConstObjectInfoEI(const CConstObjectInfo& object);
+
+    CConstObjectInfoEI& operator=(const CConstObjectInfo& object);
+
+    bool Valid(void) const;
+    operator bool(void) const;
+
+    void Next(void);
+    CConstObjectInfoEI& operator++(void);
+
+    CConstObjectInfo GetElement(void) const;
+    CConstObjectInfo operator*(void) const;
+
+private:
+    bool CheckValid(void) const;
+
+    CConstContainerElementIterator m_Iterator;
+#if _DEBUG
+    mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
+#endif
+};
+
+class CObjectInfoEI
+{
+public:
+    CObjectInfoEI(void);
+    CObjectInfoEI(const CObjectInfo& object);
+
+    CObjectInfoEI& operator=(const CObjectInfo& object);
+
+    bool Valid(void) const;
+    operator bool(void) const;
+
+    void Next(void);
+    CObjectInfoEI& operator++(void);
+
+    CObjectInfo GetElement(void) const;
+    CObjectInfo operator*(void) const;
+
+    void Erase(void);
+
+private:
+    bool CheckValid(void) const;
+
+    CContainerElementIterator m_Iterator;
+#if _DEBUG
+    mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
+#endif
+};
+
+class CObjectTypeInfoMI
+{
+public:
+    CObjectTypeInfoMI(void);
+    CObjectTypeInfoMI(const CObjectTypeInfo& info);
+    CObjectTypeInfoMI(const CObjectTypeInfo& info, TMemberIndex index);
+
+    TMemberIndex GetMemberIndex(void) const;
+
+    const string& GetAlias(void) const;
+
+    bool Valid(void) const;
+    operator bool(void) const;
+
+    bool Optional(void) const;
+
+    bool operator==(const CObjectTypeInfoMI& iter) const;
+    bool operator!=(const CObjectTypeInfoMI& iter) const;
+
+    void Next(void);
+    CObjectTypeInfoMI& operator++(void);
+
+    CObjectTypeInfoMI& operator=(const CObjectTypeInfo& info);
+
+    CObjectTypeInfo GetClassType(void) const;
+
+    CObjectTypeInfo GetMemberType(void) const;
+    CObjectTypeInfo operator*(void) const;
+
+public: // mostly for internal use
+    const CMemberInfo* GetMemberInfo(void) const;
+
+protected:
+    const CClassTypeInfoBase* GetClassTypeInfoBase(void) const;
+
+    void Init(const CObjectTypeInfo& info);
+    void Init(const CObjectTypeInfo& info, TMemberIndex index);
+
+protected:
+    bool IsSet(const CConstObjectInfo& object) const;
+
+private:
+    const CClassTypeInfoBase* m_ClassTypeInfoBase;
+    TMemberIndex m_MemberIndex;
+    TMemberIndex m_LastMemberIndex;
+        
+protected:
+#if _DEBUG
+    mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
+#endif
+    bool CheckValid(void) const;
+};
+
+class CConstObjectInfoMI : public CObjectTypeInfoMI
+{
+    typedef CObjectTypeInfoMI CParent;
+public:
+    CConstObjectInfoMI(void);
+    CConstObjectInfoMI(const CConstObjectInfo& object);
+    CConstObjectInfoMI(const CConstObjectInfo& object, TMemberIndex index);
     
-    const CConstObjectInfo& GetClassObject(void) const
-        {
-            return m_Object;
-        }
+    const CConstObjectInfo& GetClassObject(void) const;
     
-    CConstObjectMemberIterator& operator=(const CConstObjectInfo& object)
-        {
-            _ASSERT(object);
-            CParent::Init(object);
-            m_Object = object;
-            return *this;
-        }
+    CConstObjectInfoMI& operator=(const CConstObjectInfo& object);
     
-    bool IsSet(void) const
-        {
-            return GetClassObject().ClassMemberIsSet(GetMemberIndex());
-        }
-    
-    CConstObjectInfo operator*(void) const
-        {
-            return GetClassObject().GetClassMember(GetMemberIndex());
-        }
+    bool IsSet(void) const;
+
+    CConstObjectInfo GetMember(void) const;
+    CConstObjectInfo operator*(void) const;
 
 private:
     CConstObjectInfo m_Object;
 };
 
-class CObjectMemberIterator : public CObjectTypeInfo::CMemberIterator
+class CObjectInfoMI : public CObjectTypeInfoMI
 {
-    typedef CObjectTypeInfo::CMemberIterator CParent;
+    typedef CObjectTypeInfoMI CParent;
 public:
-    CObjectMemberIterator(void)
-        {
-        }
-    CObjectMemberIterator(const CObjectInfo& object)
-        : CParent(object), m_Object(object)
-        {
-            _ASSERT(object);
-        }
-
-    const CObjectInfo& GetClassObject(void) const
-        {
-            return m_Object;
-        }
-
-    CObjectMemberIterator& operator=(const CObjectInfo& object)
-        {
-            _ASSERT(object);
-            CParent::Init(object);
-            m_Object = object;
-            return *this;
-        }
-
-    bool IsSet(void) const
-        {
-            return m_Object.ClassMemberIsSet(GetMemberIndex());
-        }
-
-    CObjectInfo operator*(void) const
-        {
-            return m_Object.GetClassMember(GetMemberIndex());
-        }
+    CObjectInfoMI(void);
+    CObjectInfoMI(const CObjectInfo& object);
+    CObjectInfoMI(const CObjectInfo& object, TMemberIndex index);
     
-    void Erase(void)
-        {
-            m_Object.EraseClassMember(GetMemberIndex());
-            Next();
-        }
+    const CObjectInfo& GetClassObject(void) const;
     
+    CObjectInfoMI& operator=(const CObjectInfo& object);
+    
+    bool IsSet(void) const;
+
+    CObjectInfo GetMember(void) const;
+    CObjectInfo operator*(void) const;
+
+    // reset value of member to default state
+    void Erase(void);
+    void Reset(void);
+
 private:
     CObjectInfo m_Object;
 };
 
-class CConstObjectElementIterator
+class CObjectTypeInfoCV
 {
 public:
-    CConstObjectElementIterator(void)
-        {
-            _DEBUG_ARG(m_LastCall = eNone);
-        }
-    CConstObjectElementIterator(const CConstObjectElementIterator& iterator)
-        : m_Iterator(iterator.CloneIterator())
-        {
-            _DEBUG_ARG(m_LastCall = iterator.m_LastCall);
-        }
-    CConstObjectElementIterator(const CConstObjectInfo& object);
+    CObjectTypeInfoCV(void);
+    CObjectTypeInfoCV(const CObjectTypeInfo& info);
+    CObjectTypeInfoCV(const CObjectTypeInfo& info, TMemberIndex index);
+    CObjectTypeInfoCV(const CConstObjectInfo& object);
 
-    CConstObjectElementIterator& operator=(const CConstObjectElementIterator& iterator)
-        {
-            m_Iterator.reset(iterator.CloneIterator());
-            _DEBUG_ARG(m_LastCall = iterator.m_LastCall);
-            return *this;
-        }
-    CConstObjectElementIterator& operator=(const CConstObjectInfo& object);
+    TMemberIndex GetVariantIndex(void) const;
 
-    operator bool(void) const
-        {
-            _DEBUG_ARG(m_LastCall = eValid);
-            return CheckValid();
-        }
+    const string& GetAlias(void) const;
 
-    void Next(void)
-        {
-            _ASSERT(CheckValid());
-            m_Iterator->Next();
-        }
+    bool Valid(void) const;
+    operator bool(void) const;
 
-    CConstObjectInfo operator*(void) const
-        {
-            _ASSERT(CheckValid());
-            return m_Iterator->Get();
-        }
+    bool operator==(const CObjectTypeInfoCV& iter) const;
+    bool operator!=(const CObjectTypeInfoCV& iter) const;
+
+    CObjectTypeInfoCV& operator=(const CObjectTypeInfo& info);
+    CObjectTypeInfoCV& operator=(const CConstObjectInfo& object);
+
+    CObjectTypeInfo GetChoiceType(void) const;
+
+    CObjectTypeInfo GetVariantType(void) const;
+    CObjectTypeInfo operator*(void) const;
+
+public: // mostly for internal use
+    const CMemberInfo* GetVariantInfo(void) const;
+
+protected:
+    const CChoiceTypeInfo* GetChoiceTypeInfo(void) const;
+
+    void Init(const CObjectTypeInfo& info);
+    void Init(const CObjectTypeInfo& info, TMemberIndex index);
+    void Init(const CConstObjectInfo& object);
 
 private:
-    CConstContainerElementIterator* CloneIterator(void) const
-        {
-            const CConstContainerElementIterator* i = m_Iterator.get();
-            if ( i )
-                return i->Clone();
-            else
-                return 0;
-        }
-    bool CheckValid(void) const
-        {
-#if _DEBUG
-            if ( m_LastCall != eValid)
-                ERR_POST("CElementIterator was used without checking its validity");
-#endif
-            const CConstContainerElementIterator* i = m_Iterator.get();
-            return i && i->Valid();
-        }
-
-    auto_ptr<CConstContainerElementIterator> m_Iterator;
-#if _DEBUG
-    mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
-#endif
+    const CChoiceTypeInfo* m_ChoiceTypeInfo;
+    TMemberIndex m_VariantIndex;
 };
 
-class CObjectElementIterator
+class CConstObjectInfoCV : public CObjectTypeInfoCV
 {
+    typedef CObjectTypeInfoCV CParent;
 public:
-    CObjectElementIterator(void)
-        {
-            _DEBUG_ARG(m_LastCall = eNone);
-        }
-    CObjectElementIterator(const CObjectElementIterator& iterator)
-        : m_Iterator(iterator.CloneIterator())
-        {
-            _DEBUG_ARG(m_LastCall = iterator.m_LastCall);
-        }
-    CObjectElementIterator(const CObjectInfo& object);
+    CConstObjectInfoCV(void);
+    CConstObjectInfoCV(const CConstObjectInfo& object);
+    CConstObjectInfoCV(const CConstObjectInfo& object, TMemberIndex index);
 
-    CObjectElementIterator& operator=(const CObjectElementIterator& iterator)
-        {
-            m_Iterator.reset(iterator.CloneIterator());
-            _DEBUG_ARG(m_LastCall = iterator.m_LastCall);
-            return *this;
-        }
-    CObjectElementIterator& operator=(const CObjectInfo& object);
-
-    operator bool(void) const
-        {
-            _DEBUG_ARG(m_LastCall = eValid);
-            return CheckValid();
-        }
-
-    void Next(void)
-        {
-            _ASSERT(CheckValid());
-            _DEBUG_ARG(m_LastCall = eNext);
-            m_Iterator->Next();
-        }
-
-    CObjectInfo operator*(void) const
-        {
-            _ASSERT(CheckValid());
-            return m_Iterator->Get();
-        }
-
-    void Erase(void)
-        {
-            _ASSERT(CheckValid());
-            _DEBUG_ARG(m_LastCall = eErase);
-            m_Iterator->Erase();
-        }
+    const CConstObjectInfo& GetChoiceObject(void) const;
+    
+    CConstObjectInfoCV& operator=(const CConstObjectInfo& object);
+    
+    CConstObjectInfo GetVariant(void) const;
+    CConstObjectInfo operator*(void) const;
 
 private:
-    CContainerElementIterator* CloneIterator(void) const
-        {
-            const CContainerElementIterator* i = m_Iterator.get();
-            if ( i )
-                return i->Clone();
-            else
-                return 0;
-        }
-    bool CheckValid(void) const
-        {
-#if _DEBUG
-            if ( m_LastCall != eValid)
-                ERR_POST("CElementIterator was used without checking its validity");
-#endif
-            const CContainerElementIterator* i = m_Iterator.get();
-            return i && i->Valid();
-        }
+    CConstObjectInfo m_Object;
+};
 
-    auto_ptr<CContainerElementIterator> m_Iterator;
-#if _DEBUG
-    mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
-#endif
+class CObjectInfoCV : public CObjectTypeInfoCV
+{
+    typedef CObjectTypeInfoCV CParent;
+public:
+    CObjectInfoCV(void);
+    CObjectInfoCV(const CObjectInfo& object);
+    CObjectInfoCV(const CObjectInfo& object, TMemberIndex index);
+
+    const CObjectInfo& GetChoiceObject(void) const;
+    
+    CObjectInfoCV& operator=(const CObjectInfo& object);
+    
+    CObjectInfo GetVariant(void) const;
+    CObjectInfo operator*(void) const;
+
+    void Erase(void);
+
+private:
+    CObjectInfo m_Object;
 };
 
 #include <serial/object.inl>
 
 // get starting point of object hierarchy
+template<class C>
+inline
+TTypeInfo ObjectType(const C& /*obj*/)
+{
+    return C::GetTypeInfo();
+}
+
 template<class C>
 inline
 pair<TObjectPtr, TTypeInfo> ObjectInfo(C& obj)

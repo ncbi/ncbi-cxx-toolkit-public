@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/01 13:15:58  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.4  2000/08/15 19:44:38  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -100,10 +104,6 @@ public:
         }
 
     virtual size_t GetSize(void) const;
-
-    // returns type info of pointer to this type
-    static TTypeInfo GetPointerTypeInfo(const type_info& id,
-                                        const CTypeRef& typeRef);
 
     CMembersInfo& GetMembers(void)
         {

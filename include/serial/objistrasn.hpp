@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/09/01 13:16:00  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.37  2000/08/15 19:44:40  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -212,7 +216,7 @@ public:
     virtual string GetPosition(void) const;
 
     virtual string ReadTypeName(void);
-    virtual pair<long, bool> ReadEnum(const CEnumeratedTypeValues& values);
+    virtual long ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void ReadNull(void);
 
@@ -258,22 +262,27 @@ protected:
 #endif
 
 protected:
+    virtual void ReadContainer(TObjectPtr containerPtr,
+                               const CContainerTypeInfo* containerType);
     virtual void ReadContainer(const CObjectInfo& container,
                                CReadContainerElementHook& hook);
+    virtual void SkipContainer(const CContainerTypeInfo* containerType);
 
-    virtual void BeginClass(CObjectStackClass& cls,
-                            const CClassTypeInfo* classInfo);
-    virtual void EndClass(CObjectStackClass& cls);
-    virtual TMemberIndex BeginClassMember(CObjectStackClassMember& m,
-                                          const CMembersInfo& members);
-    virtual TMemberIndex BeginClassMember(CObjectStackClassMember& m,
-                                          const CMembersInfo& members,
-                                          CClassMemberPosition& pos);
+    virtual void BeginContainer(const CContainerTypeInfo* containerType);
+    virtual void EndContainer(void);
+    virtual bool BeginContainerElement(TTypeInfo elementType);
+
+    virtual void BeginClass(const CClassTypeInfo* classInfo);
+    virtual void EndClass(void);
+    virtual TMemberIndex BeginClassMember(const CMembersInfo& members);
+    virtual TMemberIndex BeginClassMember(const CMembersInfo& members,
+                                          TMemberIndex pos);
     virtual void ReadClassRandom(const CObjectInfo& object,
                                  CReadClassMemberHook& hook);
     virtual void ReadClassSequential(const CObjectInfo& object,
                                      CReadClassMemberHook& hook);
 
+    virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
     virtual void DoReadChoice(const CObjectInfo& choice,
                               CReadChoiceVariantHook& hook);
 
@@ -293,10 +302,6 @@ private:
 
 public:
     // low level methods
-    CIStreamBuffer& GetInput(void)
-        {
-            return m_Input;
-        }
     char GetChar(void);
     char PeekChar(void);
 
@@ -317,6 +322,12 @@ private:
     char SkipWhiteSpaceAndGetChar(void);
     void SkipComments(void);
     void UnexpectedMember(const CLightString& id, const CMembersInfo& members);
+
+    void StartBlock(void);
+    bool NextElement(void);
+    void EndBlock(void);
+
+    bool m_BlockStart;
 };
 
 //#include <objistrb.inl>

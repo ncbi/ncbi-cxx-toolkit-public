@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/09/01 13:15:57  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.14  2000/08/15 19:44:38  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -170,6 +174,8 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
     virtual void SkipData(CObjectIStream& in) const;
+
+    void CopyData(CObjectStreamCopier& copier) const;
 
 private:
     TWhichFunction m_WhichFunction;

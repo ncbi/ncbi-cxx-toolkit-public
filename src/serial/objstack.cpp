@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/01 13:16:20  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.2  2000/08/15 19:44:51  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -49,106 +53,95 @@
 
 BEGIN_NCBI_SCOPE
 
+static size_t KInitialStackSize = 16;
+
+CObjectStack::CObjectStack(void)
+{
+    TFrame* stack = m_Stack = m_StackPtr = new TFrame[KInitialStackSize];
+    m_StackEnd = stack + KInitialStackSize;
+    for ( size_t i = 0; i < KInitialStackSize; ++i ) {
+        m_Stack[i].Reset();
+    }
+}
+
 CObjectStack::~CObjectStack(void)
 {
-    _ASSERT(m_Top == 0);
+    delete[] m_Stack;
 }
 
 void CObjectStack::UnendedFrame(void)
 {
 }
 
-void CObjectStack::Clear(void)
+void CObjectStack::ClearStack(void)
 {
-    while ( m_Top ) {
-        if ( !m_Top->Ended() )
-            m_Top->End();
-        delete m_Top;
-    }
+    m_StackPtr = m_Stack;
 }
 
-void CObjectStackFrame::PopUnended(void)
+string CObjectStack::GetStackTraceASN(void) const
 {
-    _ASSERT(m_Stack.m_Top == this);
+    _ASSERT(FetchFrameFromBottom(0).m_FrameType == TFrame::eFrameNamed);
+    _ASSERT(FetchFrameFromBottom(0).m_TypeInfo);
+    string stack = FetchFrameFromBottom(0).m_TypeInfo->GetName();
+    for ( size_t i = 1; i < GetStackDepth(); ++i ) {
+        const TFrame& frame = FetchFrameFromBottom(i);
+        switch ( frame.m_FrameType ) {
+        case TFrame::eFrameClassMember:
+        case TFrame::eFrameChoiceVariant:
+            {
+                _ASSERT(frame.m_MemberId);
+                const CMemberId& id = *frame.m_MemberId;
+                stack += '.';
+                if ( !id.GetName().empty() ) {
+                    stack += id.GetName();
+                }
+                else {
+                    stack += '[';
+                    stack += NStr::IntToString(id.GetTag());
+                    stack += ']';
+                }
+            }
+            break;
+        case TFrame::eFrameArrayElement:
+            stack += ".E";
+            break;
+        default:
+            break;
+        }
+    }
+    return stack;
+}
+
+CObjectStack::TFrame& CObjectStack::PushFrameLong(void)
+{
+    size_t depth = m_StackPtr - m_Stack;
+    size_t oldSize = m_StackEnd - m_Stack;
+    size_t newSize = oldSize * 2;
+    TFrame* newStack = new TFrame[newSize];
+
+    for ( size_t i = 0; i < oldSize; ++i )
+        newStack[i] = m_Stack[i];
+    for ( size_t i = oldSize; i < newSize; ++i )
+        newStack[i].Reset();
+
+    delete[] m_Stack;
+
+    m_Stack = newStack;
+    m_StackEnd = newStack + newSize;
+
+    return *(m_StackPtr = (newStack + depth + 1));
+}
+
+void CObjectStack::PopErrorFrame(void)
+{
     try {
-        m_Stack.UnendedFrame();
+        UnendedFrame();
     }
     catch (...) {
-        Pop();
+        PopFrame();
         throw;
     }
-    Pop();
-}
-
-bool CObjectStackFrame::AppendStackTo(string& s) const
-{
-    bool haveStack = m_Previous && m_Previous->AppendStackTo(s);
-    if ( !HaveName() )
-        return haveStack;
-    if ( haveStack )
-        s += '.';
-    AppendTo(s);
-    return true;
-}
-
-void CObjectStackFrame::AppendTo(string& s) const
-{
-    switch ( m_NameType ) {
-    case eNameChar:
-        s += m_NameChar;
-        break;
-    case eNameCharPtr:
-        s += m_NameCharPtr;
-        break;
-    case eNameString:
-        s += *m_NameString;
-        break;
-    case eNameId:
-        if ( m_NameId->GetName().empty() ) {
-            s += '[';
-            s += NStr::IntToString(m_NameId->GetTag());
-            s += ']';
-        }
-        else {
-            s += m_NameId->GetName();
-        }
-        break;
-    case eNameTypeInfo:
-        s += m_NameTypeInfo->GetName();
-        break;
-    default:
-        break;
-    }
-}
-
-void CObjectStackFrame::AppendTo(COStreamBuffer& out) const
-{
-    switch ( m_NameType ) {
-    case eNameChar:
-        out.PutChar(m_NameChar);
-        break;
-    case eNameCharPtr:
-        out.PutString(m_NameCharPtr);
-        break;
-    case eNameString:
-        out.PutString(*m_NameString);
-        break;
-    case eNameId:
-        if ( m_NameId->GetName().empty() ) {
-            out.PutChar('[');
-            out.PutInt(m_NameId->GetTag());
-            out.PutChar(']');
-        }
-        else {
-            out.PutString(m_NameId->GetName());
-        }
-        break;
-    case eNameTypeInfo:
-        out.PutString(m_NameTypeInfo->GetName());
-        break;
-    default:
-        break;
-    }
+    PopFrame();
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/09/01 13:16:41  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.18  2000/08/15 19:46:57  vasilche
 * Added Read/Write hooks.
 *
@@ -95,6 +99,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 #include <serial/serial.hpp>
 #include <serial/objhook.hpp>
 
@@ -164,6 +169,7 @@ void PrintUsage(void)
         "  -o  Filename for asn.1 output\n"
         "  -s  Output asnfile in binary mode\n"
         "  -x  Output XML file\n"
+        "  -C  Convert data without full read in memory\n"
         "  -l  Log errors to file named\n"
         "  -c <number>  Repeat action <number> times\n"
         "  -hi Read Bioseq-set via Seq-entry hook\n"
@@ -232,6 +238,7 @@ int CAsn2Asn::Run(void)
     int count = 1;
     bool readHook = false;
     bool writeHook = false;
+    bool convert = false;
 
     CNcbiDiagStream logStream(&NcbiCerr);
 	SetDiagPostLevel(eDiag_Error);
@@ -267,6 +274,9 @@ int CAsn2Asn::Run(void)
                     break;
                 case 'S':
                     skip = true;
+                    break;
+                case 'C':
+                    convert = true;
                     break;
                 case 'l':
                     logFile = StringArgument(GetArguments(), ++i);
@@ -314,7 +324,8 @@ int CAsn2Asn::Run(void)
     }
 
     for ( int i = 0; i < count; ++i ) {
-        NcbiCerr << "Step " << (i + 1) << ':' << NcbiEndl;
+        if ( count != 1 )
+            NcbiCerr << "Step " << (i + 1) << ':' << NcbiEndl;
         auto_ptr<CObjectIStream> in(CObjectIStream::Open(inFormat, inFile,
                                                          eSerial_StdWhenAny));
         auto_ptr<CObjectOStream> out(outFile.empty()? 0:
@@ -323,28 +334,45 @@ int CAsn2Asn::Run(void)
 
         if ( inSeqEntry ) { /* read one Seq-entry */
             if ( skip ) {
-                NcbiCerr << "Skipping Seq-entry..." << NcbiEndl;
+                if ( count != 1 )
+                    NcbiCerr << "Skipping Seq-entry..." << NcbiEndl;
                 in->Skip(CSeq_entry::GetTypeInfo());
+            }
+            else if ( convert && out.get() ) {
+                if ( count != 1 )
+                    NcbiCerr << "Copying Seq-entry..." << NcbiEndl;
+                CObjectStreamCopier copier(*in, *out);
+                copier.Copy(CSeq_entry::GetTypeInfo());
             }
             else {
                 CSeq_entry entry;
-                NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
+                if ( count != 1 )
+                    NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
                 *in >> entry;
                 SeqEntryProcess(entry);     /* do any processing */
                 if ( out.get() ) {
-                    NcbiCerr << "Writing Seq-entry..." << NcbiEndl;
+                    if ( count != 1 )
+                        NcbiCerr << "Writing Seq-entry..." << NcbiEndl;
                     *out << entry;
                 }
             }
         }
         else {              /* read Seq-entry's from a Bioseq-set */
             if ( skip ) {
-                NcbiCerr << "Skipping Bioseq-set..." << NcbiEndl;
+                if ( count != 1 )
+                    NcbiCerr << "Skipping Bioseq-set..." << NcbiEndl;
                 in->Skip(CBioseq_set::GetTypeInfo());
+            }
+            else if ( convert && out.get() ) {
+                if ( count != 1 )
+                    NcbiCerr << "Copying Bioseq-set..." << NcbiEndl;
+                CObjectStreamCopier copier(*in, *out);
+                copier.Copy(CBioseq_set::GetTypeInfo());
             }
             else {
                 CBioseq_set entries;
-                NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
+                if ( count != 1 )
+                    NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
                 if ( readHook ) {
                     CObjectTypeInfo hookType(CBioseq_set::GetTypeInfo());
                     TMemberIndex memberIndex = hookType.FindMember("seq-set");
@@ -363,7 +391,8 @@ int CAsn2Asn::Run(void)
                     }
                 }
                 if ( out.get() ) {
-                    NcbiCerr << "Writing Bioseq-set..." << NcbiEndl;
+                    if ( count != 1 )
+                        NcbiCerr << "Writing Bioseq-set..." << NcbiEndl;
                     if ( writeHook ) {
                     }
                     else {
@@ -396,10 +425,11 @@ void CReadSeqSetHook::ReadClassMember(CObjectIStream& in,
     //    NcbiCerr << "+Level: " << m_Level << NcbiEndl;
     if ( m_Level == 1 ) {
         CReadSeqEntryHook hook;
-        in.ReadContainer(object.GetClassMember(memberIndex), hook);
+        in.ReadContainer(*CObjectInfo::CMemberIterator(object, memberIndex),
+                         hook);
     }
     else {
-        in.ReadObject(object.GetClassMember(memberIndex));
+        in.ReadObject(*CObjectInfo::CMemberIterator(object, memberIndex));
     }
     //    NcbiCerr << "-Level: " << m_Level << NcbiEndl;
     --m_Level;

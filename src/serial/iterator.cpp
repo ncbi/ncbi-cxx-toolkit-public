@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/01 13:16:15  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.9  2000/07/03 18:42:43  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -197,10 +201,13 @@ CConstTreeLevelIterator::Create(const CConstObjectInfo& obj)
     case CTypeInfo::eTypePointer:
         return CreateOne(obj.GetPointedObject());
     case CTypeInfo::eTypeChoice:
-        if ( obj.WhichChoice() >= 0 )
-            return CreateOne(obj.GetCurrentChoiceVariant());
-        else
-            return 0;
+        {
+            CConstObjectInfo::CChoiceVariant v(obj);
+            if ( v )
+                return CreateOne(*v);
+            else
+                return 0;
+        }
     default:
         return 0;
     }
@@ -242,10 +249,13 @@ CTreeLevelIterator::Create(const CObjectInfo& obj)
     case CTypeInfo::eTypePointer:
         return CreateOne(obj.GetPointedObject());
     case CTypeInfo::eTypeChoice:
-        if ( obj.WhichChoice() >= 0 )
-            return CreateOne(obj.GetCurrentChoiceVariant());
-        else
-            return 0;
+        {
+            CObjectInfo::CChoiceVariant v(obj);
+            if ( v )
+                return CreateOne(*v);
+            else
+                return 0;
+        }
     default:
         return 0;
     }

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/09/01 13:16:14  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.19  2000/08/15 19:44:46  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -120,6 +124,7 @@
 #include <serial/classinfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 #include <serial/typemap.hpp>
 #include <serial/ptrinfo.hpp>
 
@@ -288,6 +293,12 @@ void CNullTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 void CNullTypeInfo::SkipData(CObjectIStream& in) const
 {
     in.SkipNull();
+}
+
+void CNullTypeInfo::CopyData(CObjectStreamCopier& copier) const
+{
+    copier.In().ReadNull();
+    copier.Out().WriteNull();
 }
 
 END_NCBI_SCOPE

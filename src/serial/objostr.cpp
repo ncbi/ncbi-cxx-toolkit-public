@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/09/01 13:16:18  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.44  2000/08/15 19:44:50  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -289,29 +293,30 @@ void CObjectOStream::Close(void)
 {
     m_Output.Close();
     m_Objects.Clear();
-    CObjectStack::Clear();
+    ClearStack();
 }
+
+void CObjectOStream::EndOfWrite(void)
+{
+#if NCBISER_ALLOW_CYCLES
+    m_Objects.CheckAllWritten();
+#endif
+    FlushBuffer();
+    m_Objects.Clear();
+}    
 
 void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 {
     // root writer
-    try {
-        CObjectStackNamedFrame m(*this, typeInfo);
-        _TRACE("CObjectOStream::Write(" << NStr::PtrToString(object) << ", "
-               << typeInfo->GetName() << ')');
-        WriteTypeName(typeInfo->GetName());
-        WriteObject(object, typeInfo);
-#if NCBISER_ALLOW_CYCLES
-        m_Objects.CheckAllWritten();
-#endif
-        FlushBuffer();
-        m_Objects.Clear();
-        m.End();
-    }
-    catch (...) {
-        m_Objects.Clear();
-        throw;
-    }
+    BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+    
+    WriteTypeName(typeInfo);
+
+    WriteObject(object, typeInfo);
+
+    EndOfWrite();
+    
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, const CTypeRef& type)
@@ -450,6 +455,13 @@ void CObjectOStream::WriteObject(CWriteObjectInfo& info)
 }
 #endif
 
+void CObjectOStream::RegisterObject(TTypeInfo typeInfo)
+{
+#if NCBISER_ALLOW_CYCLES
+    m_Objects.RegisterObject(typeInfo);
+#endif
+}
+
 void CObjectOStream::RegisterAndWrite(TConstObjectPtr object,
                                       TTypeInfo typeInfo)
 {
@@ -492,19 +504,9 @@ bool CObjectOStream::Write(const CRef<CByteSource>& source)
     return true;
 }
 
-void CObjectOStream::WriteTypeName(const string& )
+void CObjectOStream::WriteTypeName(TTypeInfo /*type*/)
 {
     // do nothing by default
-}
-
-bool CObjectOStream::WriteEnum(const CEnumeratedTypeValues& values, long value)
-{
-    if ( values.IsInteger() ) {
-        return false;
-    }
-    values.FindName(value, false);
-    WriteLong(value);
-    return true;
 }
 
 void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
@@ -611,6 +613,14 @@ void CObjectOStream::WriteThis(TConstObjectPtr object, TTypeInfo typeInfo)
     WriteObject(object, typeInfo);
 }
 
+void CObjectOStream::BeginNamedType(TTypeInfo /*namedTypeInfo*/)
+{
+}
+
+void CObjectOStream::EndNamedType(void)
+{
+}
+
 void CObjectOStream::WriteNamedType(TTypeInfo /*namedTypeInfo*/,
                                     TTypeInfo typeInfo,
                                     TConstObjectPtr object)
@@ -618,14 +628,86 @@ void CObjectOStream::WriteNamedType(TTypeInfo /*namedTypeInfo*/,
     WriteObject(object, typeInfo);
 }
 
-void CObjectOStream::EndClass(CObjectStackClass& cls)
+void CObjectOStream::WriteOther(TConstObjectPtr object,
+                                TTypeInfo typeInfo)
 {
-    cls.End();
+    WriteOtherBegin(typeInfo);
+    WriteObject(object, typeInfo);
+    WriteOtherEnd(typeInfo);
 }
 
-void CObjectOStream::EndClassMember(CObjectStackClassMember& m)
+void CObjectOStream::WriteOtherEnd(TTypeInfo /*typeInfo*/)
 {
-    m.End();
+}
+
+void CObjectOStream::EndContainer(void)
+{
+}
+
+void CObjectOStream::BeginContainerElement(TTypeInfo /*elementType*/)
+{
+}
+
+void CObjectOStream::EndContainerElement(void)
+{
+}
+
+void CObjectOStream::WriteContainer(TConstObjectPtr containerPtr,
+                                    const CContainerTypeInfo* containerType)
+{
+    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    BeginContainer(containerType);
+        
+    TTypeInfo elementType = containerType->GetElementType();
+    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+
+    auto_ptr<CContainerTypeInfo::CConstIterator> i(containerType->NewConstIterator());
+    if ( i->Init(containerPtr) ) {
+        do {
+            BeginContainerElement(elementType);
+            
+            WriteObject(i->GetElementPtr(), elementType);
+            
+            EndContainerElement();
+        } while ( i->Next() );
+    }
+
+    END_OBJECT_FRAME();
+
+    EndContainer();
+    END_OBJECT_FRAME();
+}
+
+void CObjectOStream::WriteContainer(const CConstObjectInfo& container,
+                                    CWriteContainerElementsHook& hook)
+{
+    const CContainerTypeInfo* containerType = container.GetContainerTypeInfo();
+    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    BeginContainer(containerType);
+    
+    BEGIN_OBJECT_FRAME2(eFrameArrayElement, containerType->GetElementType());
+
+    WriteContainerElements(container, hook);
+    
+    END_OBJECT_FRAME();
+
+    EndContainer();
+    END_OBJECT_FRAME();
+}
+
+void CObjectOStream::WriteContainerElement(const CConstObjectInfo& element)
+{
+    BeginContainerElement(element.GetTypeInfo());
+    WriteObject(element);
+    EndContainerElement();
+}
+
+void CObjectOStream::EndClass(void)
+{
+}
+
+void CObjectOStream::EndClassMember(void)
+{
 }
 
 class CDelayedBufferWriter : public CVoidTypeInfo
@@ -723,24 +805,25 @@ void CObjectOStream::WriteClassMembers(TConstObjectPtr objectPtr,
 void CObjectOStream::DoWriteClass(TConstObjectPtr objectPtr,
                                   const CClassTypeInfo* objectType)
 {
-    CObjectStackClass cls(*this, objectType);
-    BeginClass(cls, objectType);
+    BEGIN_OBJECT_FRAME2(eFrameClass, objectType);
+    BeginClass(objectType);
     
     WriteClassMembers(objectPtr, objectType);
     
-    EndClass(cls);
+    EndClass();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStream::DoWriteClass(const CConstObjectInfo& object,
                                   CWriteClassMembersHook& hook)
 {
-    const CClassTypeInfo* classType = object.GetClassTypeInfo();
-    CObjectStackClass cls(*this, classType);
-    BeginClass(cls, classType);
+    BEGIN_OBJECT_FRAME2(eFrameClass, object.GetTypeInfo());
+    BeginClass(object.GetClassTypeInfo());
     
     hook.WriteClassMembers(*this, object);
     
-    EndClass(cls);
+    EndClass();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStream::WriteClassMember(const CConstObjectInfo& object,
@@ -815,24 +898,67 @@ void CObjectOStream::DoWriteClassMember(const CMemberId& id,
                                         TMemberIndex index,
                                         CWriteClassMemberHook& hook)
 {
-    CObjectStackClassMember m(*this, id);
-    BeginClassMember(m, id);
-
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, id);
+    BeginClassMember(id);
+    
     hook.WriteClassMember(*this, object, index);
     
-    EndClassMember(m);
+    EndClassMember();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStream::DoWriteClassMember(const CMemberId& id,
                                         TConstObjectPtr memberPtr,
                                         TTypeInfo memberType)
 {
-    CObjectStackClassMember m(*this, id);
-    BeginClassMember(m, id);
-
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, id);
+    BeginClassMember(id);
+    
     WriteObject(memberPtr, memberType);
     
-    EndClassMember(m);
+    EndClassMember();
+    END_OBJECT_FRAME();
+}
+
+void CObjectOStream::EndChoiceVariant(void)
+{
+}
+
+void CObjectOStream::WriteChoice(const CConstObjectInfo& choice,
+                                 CWriteChoiceVariantHook& hook)
+{
+    const CChoiceTypeInfo* choiceType = choice.GetChoiceTypeInfo();
+    BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+    TMemberIndex index = choiceType->GetIndex(choice.GetObjectPtr());
+    const CMemberId& variantId = choiceType->GetMemberInfo(index)->GetId();
+
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantId);
+    BeginChoiceVariant(choiceType, variantId);
+
+    hook.WriteChoiceVariant(*this, choice, index);
+
+    EndChoiceVariant();
+    END_OBJECT_FRAME();
+
+    END_OBJECT_FRAME();
+}
+
+void CObjectOStream::WriteChoice(const CConstObjectInfo& choice)
+{
+    const CChoiceTypeInfo* choiceType = choice.GetChoiceTypeInfo();
+    BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+    TMemberIndex index = choiceType->GetIndex(choice.GetObjectPtr());
+    const CMemberId& variantId = choiceType->GetMemberInfo(index)->GetId();
+
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantId);
+    BeginChoiceVariant(choiceType, variantId);
+
+    WriteChoiceVariant(choice, index);
+
+    EndChoiceVariant();
+    END_OBJECT_FRAME();
+
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStream::WriteChoiceVariantNoHook(const CConstObjectInfo& choice,

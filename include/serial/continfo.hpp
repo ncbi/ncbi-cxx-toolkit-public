@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/01 13:15:58  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.2  2000/08/15 19:44:38  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -47,6 +51,8 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <serial/typeinfo.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -78,73 +84,210 @@ public:
         {
             return m_RandomOrder;
         }
+    
+    class CConstIterator
+    {
+    public:
+        virtual ~CConstIterator(void);
+        
+        virtual bool Init(TConstObjectPtr containerPtr) = 0;
+        virtual bool Next(void) = 0;
+        
+        virtual TConstObjectPtr GetElementPtr(void) const = 0;
+        
+        virtual CConstIterator* Clone(void) const = 0;
+    };
+    
+    class CIterator
+    {
+    public:
+        virtual ~CIterator(void);
+        
+        virtual bool Init(TObjectPtr containerPtr) = 0;
+        virtual bool Next(void) = 0;
+        
+        virtual TObjectPtr GetElementPtr(void) const = 0;
+        
+        virtual CIterator* Clone(void) const = 0;
+        
+        virtual bool Erase(void) = 0;
+    };
 
-    virtual
-    CConstContainerElementIterator* Elements(TConstObjectPtr object) const = 0;
-    virtual
-    CContainerElementIterator* Elements(TObjectPtr object) const = 0;
+    virtual CConstIterator* NewConstIterator(void) const = 0;
+    virtual CIterator* NewIterator(void) const;
+
+    void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+    bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
+
+    virtual void AddElement(TObjectPtr containerPtr,
+                            TConstObjectPtr elementPtr) const = 0;
+    virtual void AddElement(TObjectPtr containerPtr,
+                            CObjectIStream& in) const = 0;
+
+protected:
+    void ThrowDuplicateElementError(void) const;
+
+    void ReadData(CObjectIStream& in, TObjectPtr containerPtr) const;
+    void SkipData(CObjectIStream& in) const;
+    void WriteData(CObjectOStream& out, TConstObjectPtr containerPtr) const;
+    void CopyData(CObjectStreamCopier& copier) const;
 
 private:
     bool m_RandomOrder;
 };
 
-class CConstContainerElementIterator
-{
-public:
-    CConstContainerElementIterator(TTypeInfo elementTypeInfo)
-        : m_ElementTypeInfo(elementTypeInfo)
-        {
-        }
-    virtual ~CConstContainerElementIterator(void);
-    virtual CConstContainerElementIterator* Clone(void) const = 0;
-
-    TTypeInfo GetElementTypeInfo(void) const
-        {
-            return m_ElementTypeInfo;
-        }
-
-    virtual bool Valid(void) const = 0;
-    pair<TConstObjectPtr, TTypeInfo> Get(void) const
-        {
-            return make_pair(GetElementPtr(), GetElementTypeInfo());
-        }
-    virtual void Next(void) = 0;
-
-protected:
-    virtual TConstObjectPtr GetElementPtr(void) const = 0;
-
-private:
-    TTypeInfo m_ElementTypeInfo;
-};
-
 class CContainerElementIterator
 {
 public:
-    CContainerElementIterator(TTypeInfo elementTypeInfo)
-        : m_ElementTypeInfo(elementTypeInfo)
+    typedef CContainerTypeInfo::CIterator TIterator;
+
+    CContainerElementIterator(void)
+        : m_ElementType(0), m_Valid(false)
         {
         }
-    virtual ~CContainerElementIterator(void);
-    virtual CContainerElementIterator* Clone(void) const = 0;
-
-    TTypeInfo GetElementTypeInfo(void) const
+    CContainerElementIterator(TObjectPtr containerPtr,
+                              const CContainerTypeInfo* containerType)
+        : m_ElementType(containerType->GetElementType()),
+          m_Iterator(containerType->NewIterator()),
+          m_Valid(m_Iterator->Init(containerPtr))
         {
-            return m_ElementTypeInfo;
+        }
+    CContainerElementIterator(const CContainerElementIterator& src)
+        : m_ElementType(src.m_ElementType),
+          m_Iterator(src.CloneIterator()),
+          m_Valid(src.m_Valid)
+        {
         }
 
-    virtual bool Valid(void) const = 0;
+    CContainerElementIterator& operator=(const CContainerElementIterator& src)
+        {
+            m_Valid = false;
+            m_ElementType = src.m_ElementType;
+            m_Iterator = src.CloneIterator();
+            m_Valid = src.m_Valid;
+            return *this;
+        }
+    
+    void Init(TObjectPtr containerPtr,
+              const CContainerTypeInfo* containerType)
+        {
+            m_Valid = false;
+            m_ElementType = containerType->GetElementType();
+            m_Iterator.reset(containerType->NewIterator());
+            m_Valid = m_Iterator->Init(containerPtr);
+        }
+
+    TTypeInfo GetElementType(void) const
+        {
+            return m_ElementType;
+        }
+    
+    bool Valid(void) const
+        {
+            return m_Valid;
+        }
+    void Next(void)
+        {
+            _ASSERT(m_Valid);
+            m_Valid = m_Iterator->Next();
+        }
+    void Erase(void)
+        {
+            _ASSERT(m_Valid);
+            m_Valid = m_Iterator->Erase();
+        }
+
     pair<TObjectPtr, TTypeInfo> Get(void) const
         {
-            return make_pair(GetElementPtr(), GetElementTypeInfo());
+            _ASSERT(m_Valid);
+            return make_pair(m_Iterator->GetElementPtr(), GetElementType());
         }
-    virtual void Next(void) = 0;
-    virtual void Erase(void) = 0;
-
-protected:
-    virtual TObjectPtr GetElementPtr(void) const = 0;
 
 private:
-    TTypeInfo m_ElementTypeInfo;
+    TIterator* CloneIterator(void) const
+        {
+            TIterator* i = m_Iterator.get();
+            return i? i->Clone(): 0;
+        }
+
+    TTypeInfo m_ElementType;
+    AutoPtr<TIterator> m_Iterator;
+    bool m_Valid;
+};
+
+class CConstContainerElementIterator
+{
+public:
+    typedef CContainerTypeInfo::CConstIterator TIterator;
+
+    CConstContainerElementIterator(void)
+        : m_ElementType(0), m_Valid(false)
+        {
+        }
+    CConstContainerElementIterator(TConstObjectPtr containerPtr,
+                                   const CContainerTypeInfo* containerType)
+        : m_ElementType(containerType->GetElementType()),
+          m_Iterator(containerType->NewConstIterator()),
+          m_Valid(m_Iterator->Init(containerPtr))
+        {
+        }
+    CConstContainerElementIterator(const CConstContainerElementIterator& src)
+        : m_ElementType(src.m_ElementType),
+          m_Iterator(src.CloneIterator()),
+          m_Valid(src.m_Valid)
+        {
+        }
+
+    CConstContainerElementIterator&
+    operator=(const CConstContainerElementIterator& src)
+        {
+            m_Valid = false;
+            m_ElementType = src.m_ElementType;
+            m_Iterator.reset(src.CloneIterator());
+            m_Valid = src.m_Valid;
+            return *this;
+        }
+    
+    void Init(TConstObjectPtr containerPtr,
+              const CContainerTypeInfo* containerType)
+        {
+            m_Valid = false;
+            m_ElementType = containerType->GetElementType();
+            m_Iterator.reset(containerType->NewConstIterator());
+            m_Valid = m_Iterator->Init(containerPtr);
+        }
+
+    TTypeInfo GetElementType(void) const
+        {
+            return m_ElementType;
+        }
+    
+    bool Valid(void) const
+        {
+            return m_Valid;
+        }
+    void Next(void)
+        {
+            _ASSERT(m_Valid);
+            m_Valid = m_Iterator->Next();
+        }
+
+    pair<TConstObjectPtr, TTypeInfo> Get(void) const
+        {
+            _ASSERT(m_Valid);
+            return make_pair(m_Iterator->GetElementPtr(), GetElementType());
+        }
+
+private:
+    TIterator* CloneIterator(void) const
+        {
+            TIterator* i = m_Iterator.get();
+            return i? i->Clone(): 0;
+        }
+
+    TTypeInfo m_ElementType;
+    AutoPtr<TIterator> m_Iterator;
+    bool m_Valid;
 };
 
 //#include <serial/continfo.inl>

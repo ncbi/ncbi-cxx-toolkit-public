@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/09/01 13:15:59  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.15  2000/08/15 19:44:39  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -101,6 +105,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <serial/lightstr.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
@@ -154,13 +159,11 @@ public:
 
     const CMemberInfo* GetMemberInfo(TMemberIndex index) const
         {
-            _ASSERT(index >= FirstMemberIndex() && index <= LastMemberIndex());
-            return m_Members[index - kFirstMemberIndex].get();
+            return x_GetMemberInfo(index);
         }
 
     const TMembersByName& GetMembersByName(void) const;
-    const TMembersByTag& GetMembersByTag(void) const;
-    void UpdateMemberTags(void);
+    void UpdateMemberTags(void) const;
 
     const TMembersByOffset& GetMembersByOffset(void) const;
     size_t GetFirstMemberOffset(void) const;
@@ -171,8 +174,15 @@ public:
     TMemberIndex FindMember(TTag tag, TMemberIndex pos) const;
 
 private:
+    CMemberInfo* x_GetMemberInfo(TMemberIndex index) const
+        {
+            _ASSERT(index >= FirstMemberIndex() && index <= LastMemberIndex());
+            return m_Members[index - FirstMemberIndex()].get();
+        }
+
     TMembers m_Members;
     mutable auto_ptr<TMembersByName> m_MembersByName;
+    mutable TMemberIndex m_ZeroTagIndex;
     mutable auto_ptr<TMembersByTag> m_MembersByTag;
     mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/09/01 13:15:57  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.18  2000/08/15 19:44:38  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -175,6 +179,7 @@ protected:
 
     void SkipData(CObjectIStream& in) const;
 
+    void CopyData(CObjectStreamCopier& copier) const;
 };
 
 //#include <serial/choiceptr.inl>

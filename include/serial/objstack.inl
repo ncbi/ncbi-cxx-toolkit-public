@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/01 13:16:02  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.4  2000/08/15 19:44:42  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -55,230 +59,143 @@
 */
 
 inline
-void CObjectStackFrame::End(void)
+void CObjectStackFrame::Reset(void)
 {
-    _ASSERT(!m_Ended);
-    m_Ended = true;
+    m_FrameType = eFrameOther;
+    m_TypeInfo = 0;
+    m_MemberId = 0;
 }
 
 inline
-void CObjectStackFrame::Begin(void)
+CObjectStackFrame::EFrameType CObjectStackFrame::GetFrameType(void) const
 {
-    _ASSERT(m_Ended);
-    m_Ended = false;
+    return m_FrameType;
 }
 
 inline
-void CObjectStackFrame::Push(CObjectStack& stack,
-                             EFrameType frameType, bool ended)
+TTypeInfo CObjectStackFrame::GetTypeInfo(void) const
 {
-    m_Previous = stack.m_Top;
-    stack.m_Top = this;
-    m_FrameType = frameType;
-    m_Ended = ended;
+    _ASSERT(m_FrameType != eFrameOther &&
+            m_FrameType != eFrameClassMember &&
+            m_FrameType != eFrameChoiceVariant);
+    _ASSERT(m_TypeInfo != 0);
+    return m_TypeInfo;
 }
 
 inline
-void CObjectStackFrame::Pop(void)
+const CMemberId& CObjectStackFrame::GetMemberId(void) const
 {
-    _ASSERT(m_Stack.m_Top == this);
-    m_Stack.m_Top = m_Previous;
+    _ASSERT(m_FrameType == eFrameClassMember ||
+            m_FrameType == eFrameChoiceVariant);
+    _ASSERT(m_MemberId != 0);
+    return *m_MemberId;
 }
 
 inline
-void CObjectStackFrame::SetNoName(void)
+void CObjectStackFrame::SetMemberId(const CMemberId& memberid)
 {
-    m_NameType = eNameNone;
+    _ASSERT(m_FrameType == eFrameClassMember ||
+            m_FrameType == eFrameChoiceVariant);
+    m_MemberId = &memberid;
 }
 
 inline
-void CObjectStackFrame::SetName(const char* name)
+size_t CObjectStack::GetStackDepth(void) const
 {
-    m_NameType = eNameCharPtr;
-    m_NameCharPtr = name;
+    return m_StackPtr - m_Stack;
 }
 
 inline
-void CObjectStackFrame::SetName(char name)
+bool CObjectStack::StackIsEmpty(void) const
 {
-    m_NameType = eNameChar;
-    m_NameChar = name;
+    return m_Stack == m_StackPtr;
 }
 
 inline
-void CObjectStackFrame::SetName(const string& name)
+CObjectStack::TFrame& CObjectStack::PushFrame(void)
 {
-    m_NameType = eNameString;
-    m_NameString = &name;
+    TFrame* newPtr = m_StackPtr + 1;
+    if ( newPtr >= m_StackEnd )
+        return PushFrameLong();
+    m_StackPtr = newPtr;
+    return *newPtr;
 }
 
 inline
-void CObjectStackFrame::SetName(TTypeInfo type)
+CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type)
 {
-    m_NameType = eNameTypeInfo;
-    m_NameTypeInfo = type;
+    TFrame& frame = PushFrame();
+    frame.m_FrameType = type;
+    return frame;
 }
 
 inline
-void CObjectStackFrame::SetName(const CMemberId& name)
+CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type,
+                                              TTypeInfo typeInfo)
 {
-    m_NameType = eNameId;
-    m_NameId = &name;
+    _ASSERT(type != TFrame::eFrameOther &&
+            type != TFrame::eFrameClassMember &&
+            type != TFrame::eFrameChoiceVariant);
+    _ASSERT(typeInfo != 0);
+    TFrame& frame = PushFrame(type);
+    frame.m_TypeInfo = typeInfo;
+    return frame;
 }
 
 inline
-CObjectStackFrame::CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                                     bool ended)
-    : m_Stack(stack)
+CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type,
+                                              const CMemberId& memberId)
 {
-    Push(stack, frameType, ended);
-    SetNoName();
+    _ASSERT(type == TFrame::eFrameClassMember ||
+            type == TFrame::eFrameChoiceVariant);
+    TFrame& frame = PushFrame(type);
+    frame.m_MemberId = &memberId;
+    return frame;
 }
 
 inline
-CObjectStackFrame::CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                                     const string& name)
-    : m_Stack(stack)
+void CObjectStack::PopFrame(void)
 {
-    Push(stack, frameType);
-    SetName(name);
+    _ASSERT(!StackIsEmpty());
+    --m_StackPtr;
 }
 
 inline
-CObjectStackFrame::CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                                     const char* name)
-    : m_Stack(stack)
+CObjectStack::TFrame& CObjectStack::FetchFrameFromTop(size_t index)
 {
-    Push(stack, frameType);
-    SetName(name);
+    TFrame* ptr = m_StackPtr - index;
+    _ASSERT(ptr > m_Stack);
+    return *ptr;
 }
 
 inline
-CObjectStackFrame::CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                                     char name, bool ended)
-    : m_Stack(stack)
+const CObjectStack::TFrame& CObjectStack::FetchFrameFromTop(size_t index) const
 {
-    Push(stack, frameType, ended);
-    SetName(name);
+    TFrame* ptr = m_StackPtr - index;
+    _ASSERT(ptr > m_Stack);
+    return *ptr;
 }
 
 inline
-CObjectStackFrame::CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                                     const CMemberId& name)
-    : m_Stack(stack)
+const CObjectStack::TFrame& CObjectStack::TopFrame(void) const
 {
-    Push(stack, frameType);
-    SetName(name);
+    _ASSERT(!StackIsEmpty());
+    return *m_StackPtr;
 }
 
 inline
-CObjectStackFrame::CObjectStackFrame(CObjectStack& stack, EFrameType frameType,
-                                     TTypeInfo type)
-    : m_Stack(stack)
+CObjectStack::TFrame& CObjectStack::TopFrame(void)
 {
-    Push(stack, frameType);
-    SetName(type);
+    _ASSERT(!StackIsEmpty());
+    return *m_StackPtr;
 }
 
 inline
-CObjectStackFrame::~CObjectStackFrame(void)
+const CObjectStack::TFrame& CObjectStack::FetchFrameFromBottom(size_t index) const
 {
-    if ( m_Ended )
-        Pop();
-    else
-        PopUnended();
-}
-
-inline
-CObjectStackNamedFrame::CObjectStackNamedFrame(CObjectStack& stack,
-                                               TTypeInfo type)
-    : CObjectStackFrame(stack, eFrameNamed, type)
-{
-}
-
-inline
-CObjectStackBlock::CObjectStackBlock(CObjectStack& stack, EFrameType frameType,
-                                     TTypeInfo typeInfo)
-    : CObjectStackFrame(stack, frameType, typeInfo),
-      m_Empty(true)
-{
-}
-
-inline
-CObjectStackArray::CObjectStackArray(CObjectStack& stack,
-                                     TTypeInfo arrayType)
-    : CObjectStackBlock(stack, eFrameArray, arrayType)
-{
-}
-
-inline
-CObjectStackArrayElement::CObjectStackArrayElement(CObjectStack& stack,
-                                                   bool ended)
-    : CObjectStackFrame(stack, eFrameArrayElement, 'E', ended)
-{
-}
-
-inline
-CObjectStackArrayElement::CObjectStackArrayElement(CObjectStackArray& array,
-                                                   TTypeInfo elementType,
-                                                   bool ended)
-    : CObjectStackFrame(array, eFrameArrayElement, 'E', ended),
-      m_ElementType(elementType)
-{
-}
-
-inline
-CObjectStackClass::CObjectStackClass(CObjectStack& stack,
-                                     TTypeInfo classInfo)
-    : CObjectStackBlock(stack, eFrameClass, classInfo)
-{
-}
-
-inline
-CObjectStackClassMember::CObjectStackClassMember(CObjectStack& stack,
-                                                 bool ended)
-    : CObjectStackFrame(stack, eFrameClassMember, ended)
-{
-}
-
-inline
-CObjectStackClassMember::CObjectStackClassMember(CObjectStack& stack,
-                                                 const CMemberId& id)
-    : CObjectStackFrame(stack, eFrameClassMember, id)
-{
-}
-
-inline
-CObjectStackClassMember::CObjectStackClassMember(CObjectStackClass& cls)
-    : CObjectStackFrame(cls, eFrameClassMember, true)
-{
-}
-
-inline
-CObjectStackClassMember::CObjectStackClassMember(CObjectStackClass& cls,
-                                                 const CMemberId& id)
-    : CObjectStackFrame(cls, eFrameClassMember, id)
-{
-}
-
-inline
-CObjectStackChoice::CObjectStackChoice(CObjectStack& stack,
-                                       TTypeInfo choiceInfo)
-    : CObjectStackFrame(stack, eFrameChoice, choiceInfo)
-{
-}
-
-inline
-CObjectStackChoiceVariant::CObjectStackChoiceVariant(CObjectStack& stack)
-    : CObjectStackFrame(stack, eFrameChoiceVariant)
-{
-}
-
-inline
-CObjectStackChoiceVariant::CObjectStackChoiceVariant(CObjectStack& stack,
-                                                     const CMemberId& id)
-    : CObjectStackFrame(stack, eFrameChoiceVariant, id)
-{
+    TFrame* ptr = m_Stack + 1 + index;
+    _ASSERT(ptr <= m_StackPtr);
+    return *ptr;
 }
 
 #endif /* def OBJSTACK__HPP  &&  ndef OBJSTACK__INL */

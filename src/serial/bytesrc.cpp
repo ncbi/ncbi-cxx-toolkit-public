@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/01 13:16:14  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.5  2000/07/03 18:42:42  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -114,6 +118,8 @@ CFStreamByteSource::CFStreamByteSource(ECanDelete canDelete,
                         *new CNcbiIfstream(fileName.c_str(),
                                            IFStreamFlags(binary)))
 {
+    if ( !*m_Stream )
+        THROW1_TRACE(runtime_error, "file not found: "+fileName);
 }
 
 CFStreamByteSource::~CFStreamByteSource(void)
@@ -160,6 +166,8 @@ CFileByteSourceReader::CFileByteSourceReader(ECanDelete canDelete,
       m_FStream(source->GetFileName().c_str(),
                 IFStreamFlags(source->IsBinary()))
 {
+    if ( !m_FStream )
+        THROW1_TRACE(runtime_error, "file not found: "+source->GetFileName());
     m_Stream = &m_FStream;
 }
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/09/01 13:16:19  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.40  2000/08/15 19:44:50  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -370,7 +374,7 @@ void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value, size_t count)
 }
 
 template<typename T>
-static inline
+inline
 void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value)
 {
     WriteBytesOf(out, value, sizeof(value));
@@ -473,6 +477,7 @@ void CObjectOStreamAsnBinary::WriteLength(size_t length)
     }
 }
 
+inline
 void CObjectOStreamAsnBinary::WriteEndOfContent(void)
 {
     WriteSysTag(eNone);
@@ -650,20 +655,21 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
 	}
 }
 
-bool CObjectOStreamAsnBinary::WriteEnum(const CEnumeratedTypeValues& values,
+void CObjectOStreamAsnBinary::WriteEnum(const CEnumeratedTypeValues& values,
                                         long value)
 {
     if ( values.IsInteger() ) {
-        return false;
+        WriteSysTag(eInteger);
     }
-    values.FindName(value, false); // check value
-    WriteSysTag(eEnumerated);
+    else {
+        values.FindName(value, false); // check value
+        WriteSysTag(eEnumerated);
+    }
 #if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
     WriteSNumberValue(*this, int(value));
 #else
     WriteSNumberValue(*this, value);
 #endif
-    return true;
 }
 
 void CObjectOStreamAsnBinary::WriteObjectReference(TObjectIndex index)
@@ -678,6 +684,17 @@ void CObjectOStreamAsnBinary::WriteNullPointer(void)
     WriteShortLength(0);
 }
 
+void CObjectOStreamAsnBinary::WriteOtherBegin(TTypeInfo typeInfo)
+{
+    WriteClassTag(typeInfo);
+    WriteIndefiniteLength();
+}
+
+void CObjectOStreamAsnBinary::WriteOtherEnd(TTypeInfo /*typeInfo*/)
+{
+    WriteEndOfContent();
+}
+
 void CObjectOStreamAsnBinary::WriteOther(TConstObjectPtr object,
                                          TTypeInfo typeInfo)
 {
@@ -687,25 +704,66 @@ void CObjectOStreamAsnBinary::WriteOther(TConstObjectPtr object,
     WriteEndOfContent();
 }
 
+void CObjectOStreamAsnBinary::BeginContainer(const CContainerTypeInfo* containerType)
+{
+    if ( containerType->RandomElementsOrder() )
+        WriteShortTag(eUniversal, true, eSet);
+    else
+        WriteShortTag(eUniversal, true, eSequence);
+    WriteIndefiniteLength();
+}
+
+void CObjectOStreamAsnBinary::EndContainer(void)
+{
+    WriteEndOfContent();
+}
+
+void CObjectOStreamAsnBinary::WriteContainer(TConstObjectPtr containerPtr,
+                                             const CContainerTypeInfo* containerType)
+{
+    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    if ( containerType->RandomElementsOrder() )
+        WriteShortTag(eUniversal, true, eSet);
+    else
+        WriteShortTag(eUniversal, true, eSequence);
+    WriteIndefiniteLength();
+        
+    TTypeInfo elementType = containerType->GetElementType();
+    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+
+    auto_ptr<CContainerTypeInfo::CConstIterator> i(containerType->NewConstIterator());
+    if ( i->Init(containerPtr) ) {
+        do {
+            WriteObject(i->GetElementPtr(), elementType);
+        } while ( i->Next() );
+    }
+
+    END_OBJECT_FRAME();
+
+    WriteEndOfContent();
+    END_OBJECT_FRAME();
+}
+
 void
 CObjectOStreamAsnBinary::WriteContainer(const CConstObjectInfo& container,
                                         CWriteContainerElementsHook& hook)
 {
-    CObjectStackArray array(*this, container.GetTypeInfo());
-    if ( container.GetContainerTypeInfo()->RandomElementsOrder() )
+    const CContainerTypeInfo* containerType = container.GetContainerTypeInfo();
+    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    if ( containerType->RandomElementsOrder() )
         WriteShortTag(eUniversal, true, eSet);
     else
         WriteShortTag(eUniversal, true, eSequence);
     WriteIndefiniteLength();
     
-    CObjectStackArrayElement element(array, container.GetContainerTypeInfo()->GetElementType(), false);
+    BEGIN_OBJECT_FRAME2(eFrameArrayElement, containerType->GetElementType());
 
     WriteContainerElements(container, hook);
-    
-    element.End();
+
+    END_OBJECT_FRAME();
 
     WriteEndOfContent();
-    array.End();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStreamAsnBinary::WriteContainerElement(const CConstObjectInfo& element)
@@ -713,8 +771,7 @@ void CObjectOStreamAsnBinary::WriteContainerElement(const CConstObjectInfo& elem
     WriteObject(element);
 }
 
-void CObjectOStreamAsnBinary::BeginClass(CObjectStackClass& /*cls*/,
-                                         const CClassTypeInfo* classInfo)
+void CObjectOStreamAsnBinary::BeginClass(const CClassTypeInfo* classInfo)
 {
     if ( classInfo->RandomOrder() )
         WriteShortTag(eUniversal, true, eSet);
@@ -723,23 +780,20 @@ void CObjectOStreamAsnBinary::BeginClass(CObjectStackClass& /*cls*/,
     WriteIndefiniteLength();
 }
 
-void CObjectOStreamAsnBinary::EndClass(CObjectStackClass& cls)
+void CObjectOStreamAsnBinary::EndClass(void)
 {
     WriteEndOfContent();
-    cls.End();
 }
 
-void CObjectOStreamAsnBinary::BeginClassMember(CObjectStackClassMember& /*m*/,
-                                               const CMemberId& id)
+void CObjectOStreamAsnBinary::BeginClassMember(const CMemberId& id)
 {
     WriteTag(eContextSpecific, true, id.GetTag());
     WriteIndefiniteLength();
 }
 
-void CObjectOStreamAsnBinary::EndClassMember(CObjectStackClassMember& m)
+void CObjectOStreamAsnBinary::EndClassMember(void)
 {
     WriteEndOfContent();
-    m.End();
 }
 
 void CObjectOStreamAsnBinary::DoWriteClass(const CConstObjectInfo& object,
@@ -776,15 +830,14 @@ CObjectOStreamAsnBinary::DoWriteClassMember(const CMemberId& id,
                                             TMemberIndex index,
                                             CWriteClassMemberHook& hook)
 {
-    CObjectStackClassMember m(*this, id);
-
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, id);
     WriteTag(eContextSpecific, true, id.GetTag());
     WriteIndefiniteLength();
-    
+        
     hook.WriteClassMember(*this, object, index);
     
     WriteEndOfContent();
-    m.End();
+    END_OBJECT_FRAME();
 }
 
 void
@@ -792,48 +845,57 @@ CObjectOStreamAsnBinary::DoWriteClassMember(const CMemberId& id,
                                             TConstObjectPtr memberPtr,
                                             TTypeInfo memberType)
 {
-    CObjectStackClassMember m(*this, id);
-
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, id);
     WriteTag(eContextSpecific, true, id.GetTag());
     WriteIndefiniteLength();
     
     WriteObject(memberPtr, memberType);
-
+    
     WriteEndOfContent();
-    m.End();
+    END_OBJECT_FRAME();
+}
+
+void CObjectOStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* /*choiceType*/,
+                                                 const CMemberId& id)
+{
+    WriteTag(eContextSpecific, true, id.GetTag());
+    WriteIndefiniteLength();
+}
+
+void CObjectOStreamAsnBinary::EndChoiceVariant(void)
+{
+    WriteEndOfContent();
 }
 
 void CObjectOStreamAsnBinary::WriteChoice(const CConstObjectInfo& choice,
                                           CWriteChoiceVariantHook& hook)
 {
-    TMemberIndex index = choice.WhichChoice();
-    const CMemberId& id = choice.GetMemberInfo(index)->GetId();
-    CObjectStackChoiceVariant v(*this, id);
+    CConstObjectInfo::CChoiceVariant v = choice.GetCurrentChoiceVariant();
+    const CMemberId& id = v.GetVariantInfo()->GetId();
 
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, id);
     WriteTag(eContextSpecific, true, id.GetTag());
     WriteIndefiniteLength();
-
-    hook.WriteChoiceVariant(*this, choice, index);
-
+    
+    hook.WriteChoiceVariant(*this, choice, v.GetVariantIndex());
+    
     WriteEndOfContent();
-
-    v.End();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStreamAsnBinary::WriteChoice(const CConstObjectInfo& choice)
 {
-    TMemberIndex index = choice.WhichChoice();
-    const CMemberId& id = choice.GetMemberInfo(index)->GetId();
-    CObjectStackChoiceVariant v(*this, id);
+    CConstObjectInfo::CChoiceVariant v = choice.GetCurrentChoiceVariant();
+    const CMemberId& id = v.GetVariantInfo()->GetId();
 
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, id);
     WriteTag(eContextSpecific, true, id.GetTag());
     WriteIndefiniteLength();
-
-    WriteChoiceVariant(choice, index);
-
+    
+    WriteChoiceVariant(choice, v.GetVariantIndex());
+    
     WriteEndOfContent();
-
-    v.End();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStreamAsnBinary::BeginBytes(const ByteBlock& block)

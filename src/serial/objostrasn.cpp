@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/09/01 13:16:19  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.43  2000/08/15 19:44:50  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -247,23 +251,22 @@ ESerialDataFormat CObjectOStreamAsn::GetDataFormat(void) const
     return eSerial_AsnText;
 }
 
-void CObjectOStreamAsn::WriteTypeName(const string& name)
+void CObjectOStreamAsn::WriteTypeName(TTypeInfo type)
 {
-    if ( m_Output.ZeroIndentLevel() ) {
-        WriteId(name);
+    if ( true || m_Output.ZeroIndentLevel() ) {
+        WriteId(type->GetName());
         m_Output.PutString(" ::= ");
     }
 }
 
-bool CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
+void CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
                                   long value)
 {
     const string& name = values.FindName(value, values.IsInteger());
-    if ( !name.empty() ) {
+    if ( !name.empty() )
 		m_Output.PutString(name);
-        return true;
-    }
-    return false;
+    else
+        m_Output.PutLong(value);
 }
 
 void CObjectOStreamAsn::WriteBool(bool data)
@@ -406,77 +409,122 @@ void CObjectOStreamAsn::WriteObjectReference(TObjectIndex index)
     m_Output.PutInt(index);
 }
 
+void CObjectOStreamAsn::WriteOtherBegin(TTypeInfo typeInfo)
+{
+    m_Output.PutString(": ");
+    WriteId(typeInfo->GetName());
+    m_Output.PutChar(' ');
+}
+
 void CObjectOStreamAsn::WriteOther(TConstObjectPtr object,
                                    TTypeInfo typeInfo)
 {
     m_Output.PutString(": ");
     WriteId(typeInfo->GetName());
     m_Output.PutChar(' ');
-    WriteObject(object, typeInfo);
+    RegisterAndWrite(object, typeInfo);
+}
+
+void CObjectOStreamAsn::StartBlock(void)
+{
+    m_Output.PutChar('{');
+    m_Output.IncIndentLevel();
+    m_BlockStart = true;
+}
+
+void CObjectOStreamAsn::EndBlock(void)
+{
+    m_Output.DecIndentLevel();
+    m_Output.PutEol();
+    m_Output.PutChar('}');
+    m_BlockStart = false;
+}
+
+void CObjectOStreamAsn::NextElement(void)
+{
+    if ( m_BlockStart )
+        m_BlockStart = false;
+    else
+        m_Output.PutChar(',');
+    m_Output.PutEol();
+}
+
+void CObjectOStreamAsn::BeginContainer(const CContainerTypeInfo* /*containerType*/)
+{
+    StartBlock();
+}
+
+void CObjectOStreamAsn::EndContainer(void)
+{
+    EndBlock();
+}
+
+void CObjectOStreamAsn::BeginContainerElement(TTypeInfo /*elementType*/)
+{
+    NextElement();
+}
+
+void CObjectOStreamAsn::WriteContainer(TConstObjectPtr containerPtr,
+                                       const CContainerTypeInfo* containerType)
+{
+    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    StartBlock();
+        
+    TTypeInfo elementType = containerType->GetElementType();
+    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+
+    auto_ptr<CContainerTypeInfo::CConstIterator> i(containerType->NewConstIterator());
+    if ( i->Init(containerPtr) ) {
+        do {
+            NextElement();
+            
+            WriteObject(i->GetElementPtr(), elementType);
+        } while ( i->Next() );
+    }
+
+    END_OBJECT_FRAME();
+
+    EndBlock();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStreamAsn::WriteContainer(const CConstObjectInfo& container,
                                        CWriteContainerElementsHook& hook)
 {
-    CObjectStackArray array(*this, container.GetTypeInfo());
-    _ASSERT(array.GetFrameType() == CObjectStackFrame::eFrameArray);
-    array.SetFirstChild();
-    m_Output.PutChar('{');
-    
-    CObjectStackArrayElement element(array, container.GetContainerTypeInfo()->GetElementType(), false);
+    const CContainerTypeInfo* containerType = container.GetContainerTypeInfo();
+    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    StartBlock();
         
-    m_Output.IncIndentLevel();
+    BEGIN_OBJECT_FRAME2(eFrameArrayElement, containerType->GetElementType());
 
     WriteContainerElements(container, hook);
-
-    m_Output.DecIndentLevel();
     
-    element.End();
-    m_Output.PutEol();
-    m_Output.PutChar('}');
-    array.End();
+    END_OBJECT_FRAME();
+
+    EndBlock();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStreamAsn::WriteContainerElement(const CConstObjectInfo& element)
 {
-    _ASSERT(GetTop());
-    _ASSERT(GetTop()->GetFrameType() == CObjectStackFrame::eFrameArrayElement);
-    _ASSERT(GetTop()->GetPrevous());
-    _ASSERT(GetTop()->GetPrevous()->GetFrameType() == CObjectStackFrame::eFrameArray);
-    if ( !GetTop()->GetPrevous()->FirstChild() )
-        m_Output.PutChar(',');
-
-    m_Output.PutEol();
+    NextElement();
     WriteObject(element);
 }
 
-void CObjectOStreamAsn::BeginClass(CObjectStackClass& cls,
-                                   const CClassTypeInfo* /*classInfo*/)
+void CObjectOStreamAsn::BeginClass(const CClassTypeInfo* /*classInfo*/)
 {
-    _ASSERT(cls.GetFrameType() == CObjectStackFrame::eFrameClass);
-    cls.SetFirstChild();
-    m_Output.PutChar('{');
-    m_Output.IncIndentLevel();
+    StartBlock();
 }
 
-void CObjectOStreamAsn::EndClass(CObjectStackClass& cls)
+void CObjectOStreamAsn::EndClass(void)
 {
-    m_Output.DecIndentLevel();
-    m_Output.PutEol();
-    m_Output.PutChar('}');
-    cls.End();
+    EndBlock();
 }
 
-void CObjectOStreamAsn::BeginClassMember(CObjectStackClassMember& m,
-                                         const CMemberId& id)
+void CObjectOStreamAsn::BeginClassMember(const CMemberId& id)
 {
-    _ASSERT(m.GetFrameType() == CObjectStackFrame::eFrameClassMember);
-    _ASSERT(m.GetPrevous());
-    _ASSERT(m.GetPrevous()->GetFrameType() == CObjectStackFrame::eFrameClass);
-    if ( !m.GetPrevous()->FirstChild() )
-        m_Output.PutChar(',');
-    
-    m_Output.PutEol();
+    NextElement();
+
     if ( !id.GetName().empty() ) {
         m_Output.PutString(id.GetName());
         m_Output.PutChar(' ');
@@ -486,31 +534,21 @@ void CObjectOStreamAsn::BeginClassMember(CObjectStackClassMember& m,
 void CObjectOStreamAsn::DoWriteClass(const CConstObjectInfo& object,
                                      CWriteClassMembersHook& hook)
 {
-    _ASSERT(GetTop());
-    GetTop()->SetFirstChild();
-    m_Output.PutChar('{');
-    m_Output.IncIndentLevel();
+    StartBlock();
     
     hook.WriteClassMembers(*this, object);
     
-    m_Output.DecIndentLevel();
-    m_Output.PutEol();
-    m_Output.PutChar('}');
+    EndBlock();
 }
 
 void CObjectOStreamAsn::DoWriteClass(TConstObjectPtr objectPtr,
                                      const CClassTypeInfo* objectType)
 {
-    _ASSERT(GetTop());
-    GetTop()->SetFirstChild();
-    m_Output.PutChar('{');
-    m_Output.IncIndentLevel();
+    StartBlock();
     
     WriteClassMembers(objectPtr, objectType);
     
-    m_Output.DecIndentLevel();
-    m_Output.PutEol();
-    m_Output.PutChar('}');
+    EndBlock();
 }
 
 void CObjectOStreamAsn::DoWriteClassMember(const CMemberId& id,
@@ -518,67 +556,74 @@ void CObjectOStreamAsn::DoWriteClassMember(const CMemberId& id,
                                            TMemberIndex index,
                                            CWriteClassMemberHook& hook)
 {
-    if ( !GetTop()->FirstChild() )
-        m_Output.PutChar(',');
-    CObjectStackClassMember m(*this, id);
+    NextElement();
+
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, id);
     
-    m_Output.PutEol();
     if ( !id.GetName().empty() ) {
         m_Output.PutString(id.GetName());
         m_Output.PutChar(' ');
     }
-
-    hook.WriteClassMember(*this, object, index);
     
-    m.End();
+    hook.WriteClassMember(*this, object, index);
+
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStreamAsn::DoWriteClassMember(const CMemberId& id,
                                            TConstObjectPtr memberPtr,
                                            TTypeInfo memberType)
 {
-    if ( !GetTop()->FirstChild() )
-        m_Output.PutChar(',');
-    CObjectStackClassMember m(*this, id);
+    NextElement();
+
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, id);
     
-    m_Output.PutEol();
     if ( !id.GetName().empty() ) {
         m_Output.PutString(id.GetName());
         m_Output.PutChar(' ');
     }
-
+    
     WriteObject(memberPtr, memberType);
 
-    m.End();
+    END_OBJECT_FRAME();
+}
+
+void CObjectOStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* /*choiceType*/,
+                                           const CMemberId& id)
+{
+    m_Output.PutString(id.GetName());
+    m_Output.PutChar(' ');
 }
 
 void CObjectOStreamAsn::WriteChoice(const CConstObjectInfo& choice,
                                     CWriteChoiceVariantHook& hook)
 {
-    TMemberIndex index = choice.WhichChoice();
-    const CMemberId& id = choice.GetMemberInfo(index)->GetId();
-    CObjectStackChoiceVariant v(*this, id);
+    CConstObjectInfo::CChoiceVariant v = choice.GetCurrentChoiceVariant();
+    const CMemberId& id = v.GetVariantInfo()->GetId();
+
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, id);
 
     m_Output.PutString(id.GetName());
     m_Output.PutChar(' ');
+    
+    hook.WriteChoiceVariant(*this, choice, v.GetVariantIndex());
 
-    hook.WriteChoiceVariant(*this, choice, index);
-
-    v.End();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStreamAsn::WriteChoice(const CConstObjectInfo& choice)
 {
-    TMemberIndex index = choice.WhichChoice();
-    const CMemberId& id = choice.GetMemberInfo(index)->GetId();
-    CObjectStackChoiceVariant v(*this, id);
+    CConstObjectInfo::CChoiceVariant v = choice.GetCurrentChoiceVariant();
+    const CMemberId& id = v.GetVariantInfo()->GetId();
+
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, id);
 
     m_Output.PutString(id.GetName());
     m_Output.PutChar(' ');
+    
+    WriteChoiceVariant(choice, v.GetVariantIndex());
 
-    WriteChoiceVariant(choice, index);
-
-    v.End();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStreamAsn::BeginBytes(const ByteBlock& )

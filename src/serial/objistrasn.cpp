@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/09/01 13:16:17  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.52  2000/08/15 19:44:49  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -525,24 +529,20 @@ string CObjectIStreamAsn::ReadTypeName()
     return s;
 }
 
-pair<long, bool>
-CObjectIStreamAsn::ReadEnum(const CEnumeratedTypeValues& values)
+long CObjectIStreamAsn::ReadEnum(const CEnumeratedTypeValues& values)
 {
     // not integer
     CLightString id = ReadLCaseId(SkipWhiteSpace());
     if ( !id.Empty() ) {
         // enum element by name
-        return make_pair(values.FindValue(id), true);
+        return values.FindValue(id);
     }
-    if ( values.IsInteger() ) {
-        // allow any integer
-        return make_pair(0l, false);
-    }
-    
     // enum element by value
     long value = m_Input.GetLong();
-    values.FindName(value, false);
-    return make_pair(value, true);
+    if ( !values.IsInteger() ) // check value
+        values.FindName(value, false);
+    
+    return value;
 }
 
 bool CObjectIStreamAsn::ReadBool(void)
@@ -845,46 +845,103 @@ void CObjectIStreamAsn::SkipByteBlock(void)
 	Expect('H', true);
 }
 
+void CObjectIStreamAsn::StartBlock(void)
+{
+    Expect('{', true);
+    m_BlockStart = true;
+}
+
+bool CObjectIStreamAsn::NextElement(void)
+{
+    char c = SkipWhiteSpace();
+    if ( m_BlockStart ) {
+        m_BlockStart = false;
+    }
+    else {
+        if ( c == ',' ) {
+            m_Input.SkipChar();
+            return true;
+        }
+    }
+    return c != '}';
+}
+
+void CObjectIStreamAsn::EndBlock(void)
+{
+    Expect('}');
+}
+
+void CObjectIStreamAsn::BeginContainer(const CContainerTypeInfo* /*containerType*/)
+{
+    StartBlock();
+}
+
+void CObjectIStreamAsn::EndContainer(void)
+{
+    EndBlock();
+}
+
+bool CObjectIStreamAsn::BeginContainerElement(TTypeInfo /*elementType*/)
+{
+    return NextElement();
+}
+
+void CObjectIStreamAsn::ReadContainer(TObjectPtr containerPtr,
+                                      const CContainerTypeInfo* containerType)
+{
+    StartBlock();
+    
+    BEGIN_OBJECT_FRAME(eFrameArrayElement);
+
+    while ( NextElement() ) {
+        containerType->AddElement(containerPtr, *this);
+    }
+
+    END_OBJECT_FRAME();
+
+    EndBlock();
+}
+
+void CObjectIStreamAsn::SkipContainer(const CContainerTypeInfo* containerType)
+{
+    StartBlock();
+
+    TTypeInfo elementType = containerType->GetElementType();
+    BEGIN_OBJECT_FRAME(eFrameArrayElement);
+
+    while ( NextElement() ) {
+        SkipObject(elementType);
+    }
+
+    END_OBJECT_FRAME();
+
+    EndBlock();
+}
+
 void CObjectIStreamAsn::ReadContainer(const CObjectInfo& container,
                                       CReadContainerElementHook& hook)
 {
-    Expect('{', true);
+    StartBlock();
     
-    char c = SkipWhiteSpace();
-    if ( c != '}' ) {
-        CObjectStackArrayElement e(*this, false);
+    BEGIN_OBJECT_FRAME(eFrameArrayElement);
 
-        for ( ;; ) {
-            hook.ReadContainerElement(*this, container);
-            c = SkipWhiteSpace();
-            if ( c == ',' ) {
-                // next element
-                m_Input.SkipChar();
-            }
-            else {
-                // no more elements
-                break;
-            }
-        }
-
-        if ( c != '}' )
-            ThrowError(eFormatError, "'}' expected");
-
-        e.End();
+    while ( NextElement() ) {
+        hook.ReadContainerElement(*this, container);
     }
-    m_Input.SkipChar(); // '}'
+
+    END_OBJECT_FRAME();
+
+    EndBlock();
 }
 
-void CObjectIStreamAsn::BeginClass(CObjectStackClass& /*cls*/,
-                                   const CClassTypeInfo* /*classInfo*/)
+void CObjectIStreamAsn::BeginClass(const CClassTypeInfo* /*classInfo*/)
 {
-    Expect('{', true);
+    StartBlock();
 }
 
-void CObjectIStreamAsn::EndClass(CObjectStackClass& cls)
+void CObjectIStreamAsn::EndClass(void)
 {
-    Expect('}');
-    cls.End();
+    EndBlock();
 }
 
 void CObjectIStreamAsn::UnexpectedMember(const CLightString& id,
@@ -899,111 +956,61 @@ void CObjectIStreamAsn::UnexpectedMember(const CLightString& id,
     ThrowError(eFormatError, message);
 }
 
-TMemberIndex CObjectIStreamAsn::BeginClassMember(CObjectStackClassMember& m,
-                                                 const CMembersInfo& members)
+TMemberIndex CObjectIStreamAsn::BeginClassMember(const CMembersInfo& members)
 {
-    char c = SkipWhiteSpace();
-    if ( m.GetClassFrame().IsEmpty() ) {
-        if ( c == '}' )
-            return kInvalidMember;
-        m.GetClassFrame().SetNonEmpty();
-    }
-    else {
-        if ( c != ',' )
-            return kInvalidMember;
-        m_Input.SkipChar();
-        c = SkipWhiteSpace();
-    }
+    if ( !NextElement() )
+        return kInvalidMember;
 
-    CLightString id = ReadMemberId(c);
+    CLightString id = ReadMemberId(SkipWhiteSpace());
     TMemberIndex index = members.FindMember(id);
     if ( index == kInvalidMember )
         UnexpectedMember(id, members);
-    m.SetName(members.GetMemberInfo(index)->GetId());
-    m.Begin();
     return index;
 }
 
-TMemberIndex CObjectIStreamAsn::BeginClassMember(CObjectStackClassMember& m,
-                                                 const CMembersInfo& members,
-                                                 CClassMemberPosition& pos)
+TMemberIndex CObjectIStreamAsn::BeginClassMember(const CMembersInfo& members,
+                                                 TMemberIndex pos)
 {
-    char c = SkipWhiteSpace();
-    if ( pos.GetLastIndex() < kFirstMemberIndex ) {
-        if ( c == '}' )
-            return kInvalidMember;
-    }
-    else {
-        if ( c != ',' )
-            return kInvalidMember;
-        m_Input.SkipChar();
-        c = SkipWhiteSpace();
-    }
+    if ( !NextElement() )
+        return kInvalidMember;
 
-    CLightString id = ReadMemberId(c);
-    TMemberIndex index = members.FindMember(id, pos.GetLastIndex());
+    CLightString id = ReadMemberId(SkipWhiteSpace());
+    TMemberIndex index = members.FindMember(id, pos);
     if ( index == kInvalidMember )
         UnexpectedMember(id, members);
-    m.SetName(members.GetMemberInfo(index)->GetId());
-    m.Begin();
-    pos.SetLastIndex(index);
     return index;
 }
 
 void CObjectIStreamAsn::ReadClassRandom(const CObjectInfo& object,
                                          CReadClassMemberHook& hook)
 {
-    Expect('{', true);
+    StartBlock();
 
     const CClassTypeInfo* objectType = object.GetClassTypeInfo();
     const CMembersInfo& members = objectType->GetMembers();
     TMemberIndex lastIndex = members.LastMemberIndex();
 
-    char c = SkipWhiteSpace();
-    if ( c == '}' ) {
-        m_Input.SkipChar();
-        // empty block
-        // init all absent members
-        for ( TMemberIndex i = members.FirstMemberIndex();
-              i <= lastIndex; ++i ) {
-            hook.SetClassMemberDefault(*this, object, i);
-        }
-        return;
-    }
-
     vector<bool> read(lastIndex + 1);
     
-    CObjectStackClassMember m(*this, false);
-    
-    for (;;) {
-        CLightString id = ReadMemberId(c);
+    BEGIN_OBJECT_FRAME(eFrameClassMember);
+
+    while ( NextElement() ) {
+        CLightString id = ReadMemberId(SkipWhiteSpace());
         TMemberIndex index = members.FindMember(id);
         if ( index == kInvalidMember )
             UnexpectedMember(id, members);
-        m.SetName(members.GetMemberInfo(index)->GetId());
-
-        if ( read[index] )
-            DuplicatedMember(members, index);
-        read[index] = true;
-
-        hook.ReadClassMember(*this, object, index);
-
-        c = SkipWhiteSpace();
-        if ( c == ',' ) {
-            m_Input.SkipChar();
-            c = SkipWhiteSpace();
-        }
-        else if ( c == '}' ) {
-            // end of block
-            m_Input.SkipChar();
-            break;
-        }
-        else {
-            ThrowError(eFormatError, "',' or '}' expected");
-        }
-    }
         
-    m.End();
+        const CMemberInfo* memberInfo = members.GetMemberInfo(index);
+        TopFrame().SetMemberId(memberInfo->GetId());
+        
+        if ( read[index] )
+            DuplicatedMember(memberInfo);
+        read[index] = true;
+        
+        hook.ReadClassMember(*this, object, index);
+    }
+
+    END_OBJECT_FRAME();
 
     // init all absent members
     for ( TMemberIndex i = members.FirstMemberIndex(); i <= lastIndex; ++i ) {
@@ -1011,66 +1018,58 @@ void CObjectIStreamAsn::ReadClassRandom(const CObjectInfo& object,
             hook.SetClassMemberDefault(*this, object, i);
         }
     }
+
+    EndBlock();
 }
 
 void CObjectIStreamAsn::ReadClassSequential(const CObjectInfo& object,
-                                         CReadClassMemberHook& hook)
+                                            CReadClassMemberHook& hook)
 {
-    Expect('{', true);
+    StartBlock();
 
     const CClassTypeInfo* objectType = object.GetClassTypeInfo();
     const CMembersInfo& members = objectType->GetMembers();
     TMemberIndex lastIndex = members.LastMemberIndex();
-    TMemberIndex pos = members.FirstMemberIndex() - 1;
-    char c = SkipWhiteSpace();
-    if ( c != '}' ) {
-        CObjectStackClassMember m(*this, false);
+    TMemberIndex pos = members.FirstMemberIndex();
+    
+    BEGIN_OBJECT_FRAME(eFrameClassMember);
 
-        for (;;) {
-            CLightString id = ReadMemberId(c);
-            TMemberIndex index = members.FindMember(id, pos);
-            if ( index == kInvalidMember )
-                UnexpectedMember(id, members);
-            m.SetName(members.GetMemberInfo(index)->GetId());
-
-            for ( TMemberIndex i = pos + 1; i < index; ++i ) {
-                // init missing member
-                hook.SetClassMemberDefault(*this, object, i);
-            }
-            pos = index;
-
-            hook.ReadClassMember(*this, object, index);
-
-            c = SkipWhiteSpace();
-            if ( c == ',' ) {
-                m_Input.SkipChar();
-                c = SkipWhiteSpace();
-            }
-            else if ( c == '}' ) {
-                // end of block
-                break;
-            }
-            else {
-                ThrowError(eFormatError, "',' or '}' expected");
-            }
+    while ( NextElement() ) {
+        CLightString id = ReadMemberId(SkipWhiteSpace());
+        TMemberIndex index = members.FindMember(id, pos);
+        if ( index == kInvalidMember )
+            UnexpectedMember(id, members);
+        
+        TopFrame().SetMemberId(members.GetMemberInfo(index)->GetId());
+        
+        for ( TMemberIndex i = pos; i < index; ++i ) {
+            // init missing member
+            hook.SetClassMemberDefault(*this, object, i);
         }
-        if ( c != '}' )
-            ThrowError(eFormatError, "'}' expected");
 
-        m.End();
+        hook.ReadClassMember(*this, object, index);
+
+        pos = index + 1;
     }
-    m_Input.SkipChar();
+
+    END_OBJECT_FRAME();
 
     // init all absent members
-    for ( TMemberIndex i = pos + 1; i <= lastIndex; ++i ) {
+    for ( TMemberIndex i = pos; i <= lastIndex; ++i ) {
         hook.SetClassMemberDefault(*this, object, i);
     }
+
+    EndBlock();
+}
+
+TMemberIndex CObjectIStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
+{
+    return choiceType->GetMembers().FindMember(ReadMemberId(SkipWhiteSpace()));
 }
 
 void CObjectIStreamAsn::DoReadChoice(const CObjectInfo& choice,
                                      CReadChoiceVariantHook& hook)
 {
-    CObjectStackChoiceVariant v(*this);
     CLightString id = ReadMemberId(SkipWhiteSpace());
     if ( id.Empty() )
         ThrowError(eFormatError, "choice variant id expected");
@@ -1079,9 +1078,13 @@ void CObjectIStreamAsn::DoReadChoice(const CObjectInfo& choice,
     TMemberIndex index = variants.FindMember(id);
     if ( index == kInvalidMember )
         UnexpectedMember(id, variants);
-    v.SetName(variants.GetMemberInfo(index)->GetId());
+
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant,
+                       variants.GetMemberInfo(index)->GetId());
+
     hook.ReadChoiceVariant(*this, choice, index);
-    v.End();
+
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStreamAsn::BeginBytes(ByteBlock& )

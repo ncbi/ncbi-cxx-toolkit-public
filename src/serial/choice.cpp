@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/09/01 13:16:14  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.19  2000/08/15 19:44:46  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -124,6 +128,7 @@
 #include <serial/choice.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objcopy.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
 #include <serial/bytesrc.hpp>
@@ -213,6 +218,11 @@ void CChoiceTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 void CChoiceTypeInfo::SkipData(CObjectIStream& in) const
 {
     in.SkipChoice(this);
+}
+
+void CChoiceTypeInfo::CopyData(CObjectStreamCopier& copier) const
+{
+    copier.CopyChoice(this);
 }
 
 void CChoiceTypeInfo::WriteData(CObjectOStream& out,

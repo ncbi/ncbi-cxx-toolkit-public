@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2000/09/01 13:16:17  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.58  2000/08/15 19:44:48  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -392,7 +396,7 @@ void CObjectIStream::Close(void)
 {
     m_Input.Close();
     m_Objects.clear();
-    CObjectStack::Clear();
+    ClearStack();
     m_Fail = eNotOpen;
 }
 
@@ -438,40 +442,9 @@ void CObjectIStream::UnendedFrame(void)
     Unended("internal error: unended object stack frame");
 }
 
-static
-bool AppendASNStackTo(CObjectStackFrame* top, string& s)
-{
-    if ( !top )
-        return false;
-    CObjectStackFrame* prev = top->GetPrevous();
-    bool haveStack = AppendASNStackTo(prev, s);
-    switch ( top->GetFrameType() ) {
-    case CObjectStackFrame::eFrameNamed:
-        if ( prev )
-            return haveStack; // only top named frame will be displayed
-        break;
-    case CObjectStackFrame::eFrameArray:
-    case CObjectStackFrame::eFrameClass:
-    case CObjectStackFrame::eFrameChoice:
-        // do not display these frames
-        return haveStack;
-    default:
-        break;
-    }
-    if ( !top->HaveName() )
-        return haveStack;
-    if ( haveStack )
-        s += '.';
-    top->AppendTo(s);
-    return true;
-}
-
 string CObjectIStream::GetStackTrace(void) const
 {
-    string stack;
-    if ( !AppendASNStackTo(GetTop(), stack) )
-        stack += '?';
-    return stack;
+    return GetStackTraceASN();
 }
 
 void CObjectIStream::ThrowError1(EFailFlags fail, const char* message)
@@ -649,6 +622,12 @@ CObjectIStream::ResetReadChoiceVariantHook(const CChoiceTypeInfo* choiceType,
     }
 }
 
+void CObjectIStream::RegisterObject(TTypeInfo typeInfo)
+{
+#if NCBISER_ALLOW_CYCLES
+    m_Objects.push_back(CObjectInfo(0, typeInfo, CObjectInfo::eNonCObject));
+#endif
+}
 void CObjectIStream::RegisterAndRead(TObjectPtr object, TTypeInfo typeInfo)
 {
 #if NCBISER_ALLOW_CYCLES
@@ -693,87 +672,77 @@ CObjectIStream::GetRegisteredObject(TObjectIndex index) const
 }
 
 // root reader
+void CObjectIStream::SkipTypeName(TTypeInfo typeInfo)
+{
+    BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+    
+    string name = ReadTypeName();
+    if ( !name.empty() && name != typeInfo->GetName() ) {
+        THROW1_TRACE(runtime_error,
+                     "incompatible type "+name+"<>"+typeInfo->GetName());
+    }
+
+    END_OBJECT_FRAME();
+}
+
+void CObjectIStream::EndOfRead(void)
+{
+    m_Objects.clear();
+}
+
+void CObjectIStream::Read(const CObjectInfo& object, ENoTypeName)
+{
+    // root object
+    BEGIN_OBJECT_FRAME2(eFrameNamed, object.GetTypeInfo());
+    
+    ReadObject(object);
+
+    EndOfRead();
+    
+    END_OBJECT_FRAME();
+}
+
 void CObjectIStream::Read(const CObjectInfo& object)
 {
     // root object
-    try {
-        CObjectStackNamedFrame m(*this, object.GetTypeInfo());
-        _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object.GetObjectPtr()) << ", "
-               << object.GetTypeInfo()->GetName() << ")");
-        string name = ReadTypeName();
-        if ( !name.empty() && name != object.GetTypeInfo()->GetName() )
-            THROW1_TRACE(runtime_error,
-                         "incompatible type " + name + "<>" +
-                         object.GetTypeInfo()->GetName());
-        
-        ReadObject(object);
-        
-        m_Objects.clear();
-        m.End();
-    }
-    catch (...) {
-        m_Objects.clear();
-        SetFailFlags(eFail);
-        throw;
-    }
+    SkipTypeName(object.GetTypeInfo());
+    Read(object, eNoTypeName);
+}
+
+void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo, ENoTypeName)
+{
+    // root object
+    BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+
+    ReadObject(object, typeInfo);
+    
+    EndOfRead();
+
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
     // root object
-    try {
-        CObjectStackNamedFrame m(*this, typeInfo);
-        _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
-               << typeInfo->GetName() << ")");
-        string name = ReadTypeName();
-        if ( !name.empty() && name != typeInfo->GetName() )
-            THROW1_TRACE(runtime_error,
-                         "incompatible type " + name + "<>" +
-                         typeInfo->GetName());
-        
-        ReadObject(object, typeInfo);
-        
-        m_Objects.clear();
-        m.End();
-    }
-    catch (...) {
-        m_Objects.clear();
-        SetFailFlags(eFail);
-        throw;
-    }
+    SkipTypeName(typeInfo);
+    Read(object, typeInfo, eNoTypeName);
 }
 
-void CObjectIStream::Read(TObjectPtr object, const CTypeRef& type)
+void CObjectIStream::Skip(TTypeInfo typeInfo, ENoTypeName)
 {
-    Read(object, type.Get());
+    BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+
+    SkipObject(typeInfo);
+    
+    EndOfRead();
+
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStream::Skip(TTypeInfo typeInfo)
 {
-    try {
-        CObjectStackNamedFrame m(*this, typeInfo);
-        _TRACE("CObjectIStream::Skip(" << typeInfo->GetName() << ")");
-        string name = ReadTypeName();
-        if ( !name.empty() && name != typeInfo->GetName() )
-            THROW1_TRACE(runtime_error,
-                         "incompatible type " + name + "<>" +
-                         typeInfo->GetName());
-
-        SkipObject(typeInfo);
-
-        m_Objects.clear();
-        m.End();
-    }
-    catch (...) {
-        m_Objects.clear();
-        SetFailFlags(eFail);
-        throw;
-    }
-}
-
-void CObjectIStream::Skip(const CTypeRef& type)
-{
-    Skip(type.Get());
+    SkipTypeName(typeInfo);
+    Skip(typeInfo, eNoTypeName);
 }
 
 void CObjectIStream::ReadClassMemberNoHook(const CObjectInfo& object,
@@ -805,16 +774,25 @@ void CObjectIStream::ReadClassMemberNoHook(const CObjectInfo& object,
     memberInfo->UpdateSetFlag(object.GetObjectPtr(), true);
 }
 
+void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
+{
+    ThrowError(eFormatError,
+               "member "+memberInfo->GetId().ToString()+" expected");
+}
+
+void CObjectIStream::DuplicatedMember(const CMemberInfo* memberInfo)
+{
+    ThrowError(eFormatError,
+               "duplicated member: "+memberInfo->GetId().ToString());
+}
+
 void CObjectIStream::SetClassMemberDefaultNoHook(const CObjectInfo& object,
                                                  TMemberIndex index)
 {
     const CMemberInfo* memberInfo =
         object.GetClassTypeInfo()->GetMemberInfo(index);
-    if ( !memberInfo->Optional() ) {
-        ThrowError(eFormatError,
-                   "member "+memberInfo->GetId().ToString()+
-                   " expected");
-    }
+    if ( !memberInfo->Optional() )
+        ExpectedMember(memberInfo);
 #if 0
     bool haveSetFlag = memberInfo->HaveSetFlag();
     if ( haveSetFlag && !memberInfo->GetSetFlag(object.GetObjectPtr()) )
@@ -843,11 +821,8 @@ void CObjectIStream::SkipClassMemberDefault(const CClassTypeInfo* classType,
                                             TMemberIndex index)
 {
     const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
-    if ( !memberInfo->Optional() ) {
-        ThrowError(eFormatError,
-                   "member "+memberInfo->GetId().ToString()+
-                   " expected");
-    }
+    if ( !memberInfo->Optional() )
+        ExpectedMember(memberInfo);
 }
 
 void CObjectIStream::ReadChoiceVariantNoHook(const CObjectInfo& object,
@@ -906,18 +881,15 @@ void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
 
 CObjectInfo CObjectIStream::ReadObject(void)
 {
-    try {
-        TTypeInfo typeInfo = MapType(ReadTypeName());
-        CObjectStackNamedFrame m(*this, typeInfo);
-        CObjectInfo object(typeInfo);
-        RegisterAndRead(object);
-        m.End();
-        return object;
-    }
-    catch (...) {
-        SetFailFlags(eFail);
-        throw;
-    }
+    TTypeInfo typeInfo = MapType(ReadTypeName());
+    CObjectInfo object;
+    BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+
+    object = make_pair(typeInfo->Create(), typeInfo);
+    RegisterAndRead(object);
+
+    END_OBJECT_FRAME();
+    return object;
 }
 
 string CObjectIStream::ReadTypeName(void)
@@ -925,100 +897,84 @@ string CObjectIStream::ReadTypeName(void)
     return NcbiEmptyString;
 }
 
-pair<long, bool> CObjectIStream::ReadEnum(const CEnumeratedTypeValues& values)
-{
-    if ( values.IsInteger() ) {
-        // allow any integer
-        return make_pair(0l, false);
-    }
-    
-    // enum element by value
-    long value = ReadLong();
-    values.FindName(value, false); // check value
-    return make_pair(value, true);
-}
-
 CObjectInfo CObjectIStream::ReadPointer(TTypeInfo declaredType)
 {
-    try {
-        _TRACE("CObjectIStream::ReadPointer("<<declaredType->GetName()<<")");
-        TReadObjectInfo info;
-        switch ( ReadPointerType() ) {
-        case eNullPointer:
-            _TRACE("CObjectIStream::ReadPointer: null");
-            return CObjectInfo();
-        case eObjectPointer:
-            {
-                _TRACE("CObjectIStream::ReadPointer: @...");
-                TObjectIndex index = ReadObjectPointer();
-                _TRACE("CObjectIStream::ReadPointer: @" << index);
-                info = GetRegisteredObject(index);
-                break;
-            }
+    _TRACE("CObjectIStream::ReadPointer("<<declaredType->GetName()<<")");
+    TReadObjectInfo info;
+    switch ( ReadPointerType() ) {
+    case eNullPointer:
+        _TRACE("CObjectIStream::ReadPointer: null");
+        return CObjectInfo();
+    case eObjectPointer:
+        {
+            _TRACE("CObjectIStream::ReadPointer: @...");
+            TObjectIndex index = ReadObjectPointer();
+            _TRACE("CObjectIStream::ReadPointer: @" << index);
+            info = GetRegisteredObject(index);
+            break;
+        }
 #if 0
-        case eMemberPointer:
-            {
-                _TRACE("CObjectIStream::ReadPointer: member...");
-                info = ReadObjectInfo();
-                SelectMember(info);
-                if ( info.GetTypeInfo() != declaredType ) {
-                    SetFailFlags(eFormatError);
-                    THROW1_TRACE(runtime_error,
-                                 "incompatible member type: " +
-                                 info.GetTypeInfo()->GetName() +
-                                 " need: " + declaredType->GetName());
-                }
-                return info;
+    case eMemberPointer:
+        {
+            _TRACE("CObjectIStream::ReadPointer: member...");
+            info = ReadObjectInfo();
+            SelectMember(info);
+            if ( info.GetTypeInfo() != declaredType ) {
+                SetFailFlags(eFormatError);
+                THROW1_TRACE(runtime_error,
+                             "incompatible member type: " +
+                             info.GetTypeInfo()->GetName() +
+                             " need: " + declaredType->GetName());
             }
+            return info;
+        }
 #endif
-        case eThisPointer:
-            {
-                _TRACE("CObjectIStream::ReadPointer: new");
-                TObjectPtr object = declaredType->Create();
-                RegisterAndRead(object, declaredType);
-                ReadThisPointerEnd();
-                return make_pair(object, declaredType);
-            }
-        case eOtherPointer:
-            {
-                _TRACE("CObjectIStream::ReadPointer: new...");
-                string className = ReadOtherPointer();
-                _TRACE("CObjectIStream::ReadPointer: new " << className);
-                TTypeInfo typeInfo = MapType(className);
-                CObjectStackNamedFrame m(*this, typeInfo);
-                TObjectPtr object = typeInfo->Create();
-                RegisterAndRead(object, typeInfo);
-                m.End();
-                ReadOtherPointerEnd();
-                info = make_pair(object, typeInfo);
-                break;
-            }
-        default:
+    case eThisPointer:
+        {
+            _TRACE("CObjectIStream::ReadPointer: new");
+            info = make_pair(declaredType->Create(), declaredType);
+            RegisterAndRead(info);
+            ReadThisPointerEnd();
+            return info;
+        }
+    case eOtherPointer:
+        {
+            _TRACE("CObjectIStream::ReadPointer: new...");
+            string className = ReadOtherPointer();
+            _TRACE("CObjectIStream::ReadPointer: new " << className);
+            TTypeInfo typeInfo = MapType(className);
+
+            BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+                
+            info = make_pair(typeInfo->Create(), typeInfo);
+            RegisterAndRead(info);
+                
+            END_OBJECT_FRAME();
+
+            ReadOtherPointerEnd();
+            break;
+        }
+    default:
+        SetFailFlags(eFormatError);
+        THROW1_TRACE(runtime_error, "illegal pointer type");
+    }
+    while ( info.GetTypeInfo() != declaredType ) {
+        // try to check parent class pointer
+        if ( info.GetTypeInfo()->GetTypeFamily()!=CTypeInfo::eTypeClass ) {
             SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "illegal pointer type");
+            THROW1_TRACE(runtime_error, "incompatible member type");
         }
-        while ( info.GetTypeInfo() != declaredType ) {
-            // try to check parent class pointer
-            if ( info.GetTypeInfo()->GetTypeFamily()!=CTypeInfo::eTypeClass ) {
-                SetFailFlags(eFormatError);
-                THROW1_TRACE(runtime_error, "incompatible member type");
-            }
-            const CClassTypeInfo* parentClass =
-                info.GetClassTypeInfo()->GetParentClassInfo();
-            if ( parentClass ) {
-                info = CObjectInfo(info.GetObjectPtr(), parentClass);
-            }
-            else {
-                SetFailFlags(eFormatError);
-                THROW1_TRACE(runtime_error, "incompatible member type");
-            }
+        const CClassTypeInfo* parentClass =
+            info.GetClassTypeInfo()->GetParentClassInfo();
+        if ( parentClass ) {
+            info = CObjectInfo(info.GetObjectPtr(), parentClass);
         }
-        return info;
+        else {
+            SetFailFlags(eFormatError);
+            THROW1_TRACE(runtime_error, "incompatible member type");
+        }
     }
-    catch (...) {
-        SetFailFlags(eFail);
-        throw;
-    }
+    return info;
 }
 
 CObjectIStream::TReadObjectInfo CObjectIStream::ReadObjectInfo(void)
@@ -1045,12 +1001,16 @@ CObjectIStream::TReadObjectInfo CObjectIStream::ReadObjectInfo(void)
             string className = ReadOtherPointer();
             _TRACE("CObjectIStream::ReadPointer: new " << className);
             TTypeInfo typeInfo = MapType(className);
-            CObjectStackNamedFrame m(*this, typeInfo);
-            TObjectPtr object = typeInfo->Create();
-            RegisterAndRead(object, typeInfo);
-            m.End();
+            CObjectInfo object;
+            BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+            
+            object = make_pair(typeInfo->Create(), typeInfo);
+            RegisterAndRead(object);
+
+            END_OBJECT_FRAME();
+
             ReadOtherPointerEnd();
-            return make_pair(object, typeInfo);
+            return object;
         }
     default:
         break;  // error
@@ -1076,47 +1036,43 @@ void CObjectIStream::SkipExternalObject(TTypeInfo typeInfo)
 
 void CObjectIStream::SkipPointer(TTypeInfo declaredType)
 {
-    try {
-        _TRACE("CObjectIStream::SkipPointer("<<declaredType->GetName()<<")");
-        switch ( ReadPointerType() ) {
-        case eNullPointer:
-            _TRACE("CObjectIStream::SkipPointer: null");
-            return;
-        case eObjectPointer:
-            {
-                _TRACE("CObjectIStream::SkipPointer: @...");
-                TObjectIndex index = ReadObjectPointer();
-                _TRACE("CObjectIStream::SkipPointer: @" << index);
-                GetRegisteredObject(index);
-                break;
-            }
-        case eThisPointer:
-            {
-                _TRACE("CObjectIStream::ReadPointer: new");
-                RegisterAndSkip(declaredType);
-                ReadThisPointerEnd();
-                break;
-            }
-        case eOtherPointer:
-            {
-                _TRACE("CObjectIStream::ReadPointer: new...");
-                string className = ReadOtherPointer();
-                _TRACE("CObjectIStream::ReadPointer: new " << className);
-                TTypeInfo typeInfo = MapType(className);
-                CObjectStackNamedFrame m(*this, typeInfo);
-                RegisterAndSkip(typeInfo);
-                m.End();
-                ReadOtherPointerEnd();
-                break;
-            }
-        default:
-            SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "illegal pointer type");
+    _TRACE("CObjectIStream::SkipPointer("<<declaredType->GetName()<<")");
+    switch ( ReadPointerType() ) {
+    case eNullPointer:
+        _TRACE("CObjectIStream::SkipPointer: null");
+        return;
+    case eObjectPointer:
+        {
+            _TRACE("CObjectIStream::SkipPointer: @...");
+            TObjectIndex index = ReadObjectPointer();
+            _TRACE("CObjectIStream::SkipPointer: @" << index);
+            GetRegisteredObject(index);
+            break;
         }
-    }
-    catch (...) {
-        SetFailFlags(eFail);
-        throw;
+    case eThisPointer:
+        {
+            _TRACE("CObjectIStream::ReadPointer: new");
+            RegisterAndSkip(declaredType);
+            ReadThisPointerEnd();
+            break;
+        }
+    case eOtherPointer:
+        {
+            _TRACE("CObjectIStream::ReadPointer: new...");
+            string className = ReadOtherPointer();
+            _TRACE("CObjectIStream::ReadPointer: new " << className);
+            TTypeInfo typeInfo = MapType(className);
+            BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+                
+            RegisterAndSkip(typeInfo);
+
+            END_OBJECT_FRAME();
+            ReadOtherPointerEnd();
+            break;
+        }
+    default:
+        SetFailFlags(eFormatError);
+        THROW1_TRACE(runtime_error, "illegal pointer type");
     }
 }
 
@@ -1136,9 +1092,11 @@ void CObjectIStream::SkipObjectInfo(void)
             string className = ReadOtherPointer();
             _TRACE("CObjectIStream::ReadPointer: new " << className);
             TTypeInfo typeInfo = MapType(className);
-            CObjectStackNamedFrame m(*this, typeInfo);
+            BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+
             RegisterAndSkip(typeInfo);
-            m.End();
+
+            END_OBJECT_FRAME();
             ReadOtherPointerEnd();
             return;
         }
@@ -1156,23 +1114,12 @@ void CObjectIStream::SkipValue(void)
     THROW1_TRACE(runtime_error, "cannot skip value");
 }
 
-class CContainerElementSkipper : public CReadContainerElementHook
+void CObjectIStream::BeginNamedType(TTypeInfo /*namedTypeInfo*/)
 {
-public:
-    void ReadContainerElement(CObjectIStream& in,
-                              const CObjectInfo& container)
-        {
-            in.SkipObject(container.GetContainerTypeInfo()->GetElementType());
-        }
-};
+}
 
-static CContainerElementSkipper containerElementSkipper;
-
-void CObjectIStream::SkipContainer(const CContainerTypeInfo* containerType)
+void CObjectIStream::EndNamedType(void)
 {
-    ReadContainer(CObjectInfo(0, containerType,
-                              CObjectInfo::eNonCObject),
-                  containerElementSkipper);
 }
 
 void CObjectIStream::ReadNamedType(TTypeInfo /*namedTypeInfo*/,
@@ -1187,90 +1134,153 @@ void CObjectIStream::SkipNamedType(TTypeInfo /*namedTypeInfo*/,
     SkipObject(typeInfo);
 }
 
-void CObjectIStream::EndClass(CObjectStackClass& cls)
+void CObjectIStream::EndContainerElement(void)
 {
-    cls.End();
 }
 
-void CObjectIStream::EndClassMember(CObjectStackClassMember& m)
+void CObjectIStream::ReadContainer(TObjectPtr containerPtr,
+                                   const CContainerTypeInfo* containerType)
 {
-    m.End();
+    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    BeginContainer(containerType);
+
+    TTypeInfo elementType = containerType->GetElementType();
+    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+
+    while ( BeginContainerElement(elementType) ) {
+        containerType->AddElement(containerPtr, *this);
+        EndContainerElement();
+    }
+
+    END_OBJECT_FRAME();
+
+    EndContainer();
+    END_OBJECT_FRAME();
 }
 
-void CObjectIStream::DuplicatedMember(const CMembersInfo& members, int index)
+void CObjectIStream::SkipContainer(const CContainerTypeInfo* containerType)
 {
-    ThrowError(eFormatError,
-               "duplicated member: "+
-               members.GetMemberInfo(index)->GetId().ToString());
+    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    BeginContainer(containerType);
+
+    TTypeInfo elementType = containerType->GetElementType();
+    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+
+    while ( BeginContainerElement(elementType) ) {
+        SkipObject(elementType);
+        EndContainerElement();
+    }
+
+    END_OBJECT_FRAME();
+
+    EndContainer();
+    END_OBJECT_FRAME();
+}
+
+void CObjectIStream::ReadContainer(const CObjectInfo& container,
+                                   CReadContainerElementHook& hook)
+{
+    const CContainerTypeInfo* containerType = container.GetContainerTypeInfo();
+    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    BeginContainer(containerType);
+
+    TTypeInfo elementType = containerType->GetElementType();
+    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+
+    while ( BeginContainerElement(elementType) ) {
+        hook.ReadContainerElement(*this, container);
+        EndContainerElement();
+    }
+
+    END_OBJECT_FRAME();
+
+    EndContainer();
+    END_OBJECT_FRAME();
+}
+
+void CObjectIStream::EndClass(void)
+{
+}
+
+void CObjectIStream::EndClassMember(void)
+{
 }
 
 void CObjectIStream::ReadClassRandom(const CObjectInfo& object,
                                      CReadClassMemberHook& hook)
 {
     const CClassTypeInfo* objectType = object.GetClassTypeInfo();
-
-    CObjectStackClass cls(*this, objectType);
-    BeginClass(cls, objectType);
-
+    BEGIN_OBJECT_FRAME2(eFrameClass, objectType);
+    BeginClass(objectType);
+    
     const CMembersInfo& members = objectType->GetMembers();
     TMemberIndex lastIndex = members.LastMemberIndex();
     vector<bool> read(lastIndex + 1);
-    for ( ;; ) {
-        CObjectStackClassMember m(cls);
-        TMemberIndex index = BeginClassMember(m, members);
-        if ( index == kInvalidMember )
-            break;
-        
+    
+    BEGIN_OBJECT_FRAME(eFrameClassMember);
+    TMemberIndex index;
+    while ( (index = BeginClassMember(members)) != kInvalidMember ) {
+        const CMemberInfo* memberInfo = objectType->GetMemberInfo(index);
+        TopFrame().SetMemberId(memberInfo->GetId());
+
         if ( read[index] )
-            DuplicatedMember(members, index);
+            DuplicatedMember(memberInfo);
         else {
             read[index] = true;
             hook.ReadClassMember(*this, object, index);
         }
-
-        EndClassMember(m);
+        
+        EndClassMember();
     }
+    END_OBJECT_FRAME();
 
     // init all absent members
-    for ( TMemberIndex i = members.FirstMemberIndex(); i <= lastIndex; ++i ) {
+    for ( TMemberIndex i = members.FirstMemberIndex();
+          i <= lastIndex; ++i ) {
         if ( !read[i] ) {
             hook.SetClassMemberDefault(*this, object, i);
         }
     }
-
-    EndClass(cls);
+    
+    EndClass();
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStream::ReadClassSequential(const CObjectInfo& object,
                                          CReadClassMemberHook& hook)
 {
     const CClassTypeInfo* objectType = object.GetClassTypeInfo();
-
-    CObjectStackClass cls(*this, objectType);
-    BeginClass(cls, objectType);
+    BEGIN_OBJECT_FRAME2(eFrameClass, objectType);
+    BeginClass(objectType);
     
     const CMembersInfo& members = objectType->GetMembers();
     TMemberIndex lastIndex = members.LastMemberIndex();
-    CClassMemberPosition pos;
-    for ( ;; ) {
-        CObjectStackClassMember m(cls);
-        TMemberIndex index = BeginClassMember(m, members, pos);
-        if ( index == kInvalidMember )
-            break;
-        
-        for ( TMemberIndex i = pos.GetLastIndex() + 1; i < index; ++i ) {
+    TMemberIndex pos = members.FirstMemberIndex();
+
+    BEGIN_OBJECT_FRAME(eFrameClassMember);
+    TMemberIndex index;
+    while ( (index = BeginClassMember(members, pos)) != kInvalidMember ) {
+        TopFrame().SetMemberId(objectType->GetMemberInfo(index)->GetId());
+
+        for ( TMemberIndex i = pos; i < index; ++i ) {
             // init missing member
             hook.SetClassMemberDefault(*this, object, i);
         }
         hook.ReadClassMember(*this, object, index);
         
-        EndClassMember(m);
+        EndClassMember();
+
+        pos = index + 1;
     }
+    END_OBJECT_FRAME();
+
     // init all absent members
-    for ( TMemberIndex i = pos.GetLastIndex() + 1; i <= lastIndex; ++i ) {
+    for ( TMemberIndex i = pos; i <= lastIndex; ++i ) {
         hook.SetClassMemberDefault(*this, object, i);
     }
-    EndClass(cls);
+
+    EndClass();
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStream::ReadClass(const CObjectInfo& object,
@@ -1363,6 +1373,31 @@ static CChoiceVariantReader choiceVariantReader;
 void CObjectIStream::ReadChoice(const CObjectInfo& object)
 {
     ReadChoice(object, choiceVariantReader);
+}
+
+void CObjectIStream::EndChoiceVariant(void)
+{
+}
+
+void CObjectIStream::DoReadChoice(const CObjectInfo& choice,
+                                  CReadChoiceVariantHook& hook)
+{
+    const CChoiceTypeInfo* choiceType = choice.GetChoiceTypeInfo();
+    BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+
+    TMemberIndex index = BeginChoiceVariant(choiceType);
+    if ( index == kInvalidMember )
+        ThrowError(eFormatError, "choice variant id expected");
+
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, 
+                        choiceType->GetMemberInfo(index)->GetId());
+
+    hook.ReadChoiceVariant(*this, choice, index);
+
+    EndChoiceVariant();
+    END_OBJECT_FRAME();
+
+    END_OBJECT_FRAME();
 }
 
 class CChoiceVariantSkipper : public CReadChoiceVariantHook

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/09/01 13:16:04  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.29  2000/08/15 19:44:43  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -157,6 +161,7 @@ BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
 class CObjectOStream;
+class CObjectStreamCopier;
 class CClassTypeInfo;
 class COObjectList;
 class CTypeRef;
@@ -252,6 +257,7 @@ public:
     // write object
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const = 0;
+    virtual void CopyData(CObjectStreamCopier& copier) const = 0;
 
     virtual bool IsType(TTypeInfo type) const;
     virtual bool MayContainType(TTypeInfo type) const;

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/01 13:15:59  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.11  2000/08/15 19:44:39  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -80,7 +84,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -89,13 +92,14 @@ class CMembersInfo;
 // CMemberId class holds information about logical object member access:
 //     name and/or tag (ASN.1)
 // default value of name is empty string
-// default value of tag is -1
+// default value of tag is eNoExplicitTag
 class CMemberId {
 public:
     typedef int TTag;
     enum {
         eNoExplicitTag = -1,
-        eParentTag = 0
+        eParentTag = 0,
+        eFirstTag = 0
     };
 
     CMemberId(void);
@@ -108,16 +112,17 @@ public:
     CMemberId& operator=(const CMemberId& id);
     ~CMemberId(void);
 
-    const string& GetName(void) const;       // ASN.1 tag name
-    TTag GetExplicitTag(void) const;         // ASN.1 explicit binary tag value
-    TTag GetTag(void) const;                 // ASN.1 binary tag value
-    const string& GetXmlName(void) const;    // XML element name
+    const string& GetName(void) const;     // ASN.1 tag name
+    TTag GetExplicitTag(void) const;       // ASN.1 explicit binary tag value
+    TTag GetTag(void) const;               // ASN.1 effective binary tag value
 
     // return visible representation of CMemberId (as in ASN.1)
     string ToString(void) const;
 
 private:
-    CMembersInfo* m_MemberList;
+    TTag GetTagLong(void) const;  // update and return effective binary tag
+    
+    CMembersInfo* m_MemberList; // member list
 
     // identification
     string m_Name;
@@ -125,7 +130,6 @@ private:
 
     friend class CMembersInfo;
 
-    mutable AutoPtr<string> m_XmlName;
     mutable TTag m_Tag;
 };
 

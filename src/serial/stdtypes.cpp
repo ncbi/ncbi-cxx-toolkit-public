@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/09/01 13:16:21  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.18  2000/07/03 18:42:47  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -108,6 +112,7 @@
 #include <serial/stdtypesimpl.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -350,6 +355,11 @@ void CVoidTypeInfo::WriteData(CObjectOStream& , TConstObjectPtr ) const
     ThrowIllegalCall();
 }
 
+void CVoidTypeInfo::CopyData(CObjectStreamCopier& ) const
+{
+    ThrowIllegalCall();
+}
+
 CPrimitiveTypeInfo::EValueType CPrimitiveTypeInfoString::GetValueType(void) const
 {
     return eString;
@@ -410,6 +420,11 @@ void CPrimitiveTypeInfoString::WriteData(CObjectOStream& out,
 	out.WriteStd(Get(object));
 }
 
+void CPrimitiveTypeInfoString::CopyData(CObjectStreamCopier& copier) const
+{
+    copier.CopyString();
+}
+
 void CPrimitiveTypeInfoString::GetValueString(TConstObjectPtr object,
                                               string& value) const
 {
@@ -439,6 +454,11 @@ void CStringStoreTypeInfo::WriteData(CObjectOStream& out,
 	out.WriteStringStore(Get(object));
 }
 
+void CStringStoreTypeInfo::CopyData(CObjectStreamCopier& copier) const
+{
+    copier.CopyStringStore();
+}
+
 void CNullBoolTypeInfo::ReadData(CObjectIStream& in,
                                  TObjectPtr object) const
 {
@@ -457,6 +477,12 @@ void CNullBoolTypeInfo::WriteData(CObjectOStream& out,
     if ( !Get(object) )
         THROW1_TRACE(runtime_error, "cannot store FALSE as NULL"); 
 	out.WriteNull();
+}
+
+void CNullBoolTypeInfo::CopyData(CObjectStreamCopier& copier) const
+{
+    copier.In().ReadNull();
+    copier.Out().WriteNull();
 }
 
 TTypeInfo CCharVectorTypeInfo<char>::GetTypeInfo(void)

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/01 13:16:15  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.11  2000/08/15 19:44:47  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -58,6 +62,7 @@
 #include <serial/enumerated.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -239,31 +244,23 @@ void CEnumeratedTypeInfo::SetValueString(TObjectPtr objectPtr,
 
 void CEnumeratedTypeInfo::SkipData(CObjectIStream& in) const
 {
-    if ( !in.ReadEnum(Values()).second ) {
-        // plain integer
-        m_ValueType->SkipData(in);
-    }
+    in.ReadEnum(Values());
 }
 
 void CEnumeratedTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    pair<long, bool> value = in.ReadEnum(Values());
-    if ( value.second ) {
-        // value already read
-        m_ValueType->SetValueLong(object, value.first);
-    }
-    else {
-        // plain integer
-        in.ReadObject(object, m_ValueType);
-    }
+    m_ValueType->SetValueLong(object, in.ReadEnum(Values()));
 }
 
-void CEnumeratedTypeInfo::WriteData(CObjectOStream& out, TConstObjectPtr object) const
+void CEnumeratedTypeInfo::WriteData(CObjectOStream& out,
+                                    TConstObjectPtr object) const
 {
-    if ( !out.WriteEnum(Values(), m_ValueType->GetValueLong(object)) ) {
-        // plain integer
-        out.WriteObject(object, m_ValueType);
-    }
+    out.WriteEnum(Values(), m_ValueType->GetValueLong(object));
+}
+
+void CEnumeratedTypeInfo::CopyData(CObjectStreamCopier& copier) const
+{
+    copier.Out().WriteEnum(Values(), copier.In().ReadEnum(Values()));
 }
 
 END_NCBI_SCOPE

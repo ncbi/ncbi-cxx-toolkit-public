@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/01 13:16:17  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.6  2000/08/15 19:44:47  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -73,27 +77,49 @@
 
 BEGIN_NCBI_SCOPE
 
-void CObjectTypeInfo::CMemberIterator::Init(const CObjectTypeInfo& info)
+// container iterators
+
+CConstObjectInfoEI::CConstObjectInfoEI(const CConstObjectInfo& object)
+    : m_Iterator(object.GetObjectPtr(), object.GetContainerTypeInfo())
 {
-    m_MemberIndex = CMembersInfo::FirstMemberIndex();
-    m_ClassTypeInfo = info.GetClassTypeInfo();
-    m_LastMemberIndex = GetClassTypeInfo()->GetMembers().LastMemberIndex();
     _DEBUG_ARG(m_LastCall = eNone);
 }
 
-bool CConstObjectInfo::ClassMemberIsSet(TMemberIndex index) const
+CConstObjectInfoEI& CConstObjectInfoEI::operator=(const CConstObjectInfo& object)
 {
-    const CMemberInfo* mInfo = GetClassTypeInfo()->GetMemberInfo(index);
+    m_Iterator.Init(object.GetObjectPtr(), object.GetContainerTypeInfo());
+    _DEBUG_ARG(m_LastCall = eNone);
+    return *this;
+}
+
+CObjectInfoEI::CObjectInfoEI(const CObjectInfo& object)
+    : m_Iterator(object.GetObjectPtr(), object.GetContainerTypeInfo())
+{
+    _DEBUG_ARG(m_LastCall = eNone);
+}
+
+CObjectInfoEI& CObjectInfoEI::operator=(const CObjectInfo& object)
+{
+    m_Iterator.Init(object.GetObjectPtr(), object.GetContainerTypeInfo());
+    _DEBUG_ARG(m_LastCall = eNone);
+    return *this;
+}
+
+// class iterators
+
+bool CObjectTypeInfoMI::IsSet(const CConstObjectInfo& object) const
+{
+    const CMemberInfo* mInfo = GetMemberInfo();
     if ( mInfo->HaveSetFlag() )
-        return mInfo->GetSetFlag(GetObjectPtr());
+        return mInfo->GetSetFlag(object.GetObjectPtr());
     
     if ( mInfo->CanBeDelayed() &&
-         mInfo->GetDelayBuffer(GetObjectPtr()).Delayed() )
+         mInfo->GetDelayBuffer(object.GetObjectPtr()).Delayed() )
         return true;
 
     if ( mInfo->Optional() ) {
         TConstObjectPtr defaultPtr = mInfo->GetDefault();
-        TConstObjectPtr memberPtr = mInfo->GetMember(GetObjectPtr());
+        TConstObjectPtr memberPtr = mInfo->GetMember(object.GetObjectPtr());
         TTypeInfo memberType = mInfo->GetTypeInfo();
         if ( !defaultPtr ) {
             if ( memberType->IsDefault(memberPtr) )
@@ -107,90 +133,90 @@ bool CConstObjectInfo::ClassMemberIsSet(TMemberIndex index) const
     return true;
 }
 
-CConstObjectInfo CConstObjectInfo::GetClassMember(TMemberIndex index) const
+CConstObjectInfo CConstObjectInfoMI::GetMember(void) const
 {
-    const CClassTypeInfo* classInfo = GetClassTypeInfo();
-    const CMemberInfo* mInfo = classInfo->GetMemberInfo(index);
-    return make_pair(mInfo->GetMember(GetObjectPtr()), mInfo->GetTypeInfo());
+    const CMemberInfo* mInfo = GetMemberInfo();
+    return make_pair(mInfo->GetMember(m_Object.GetObjectPtr()),
+                     mInfo->GetTypeInfo());
 }
 
-CObjectInfo CObjectInfo::GetClassMember(TMemberIndex index) const
+CConstObjectInfo CConstObjectInfoMI::operator*(void) const
 {
-    const CClassTypeInfo* classInfo = GetClassTypeInfo();
-    const CMemberInfo* mInfo = classInfo->GetMemberInfo(index);
-    mInfo->UpdateSetFlag(GetObjectPtr(), true);
-    return make_pair(mInfo->GetMember(GetObjectPtr()), mInfo->GetTypeInfo());
+    const CMemberInfo* mInfo = GetMemberInfo();
+    return make_pair(mInfo->GetMember(m_Object.GetObjectPtr()),
+                     mInfo->GetTypeInfo());
 }
 
-void CObjectInfo::EraseClassMember(TMemberIndex index)
+CObjectInfo CObjectInfoMI::GetMember(void) const
 {
-    const CClassTypeInfo* classInfo = GetClassTypeInfo();
-    const CMemberInfo* mInfo = classInfo->GetMemberInfo(index);
-    if ( !mInfo->Optional() || mInfo->GetDefault() ) {
-        THROW1_TRACE(runtime_error, "cannot erase non OPTIONAL member");
-    }
+    const CMemberInfo* mInfo = GetMemberInfo();
+    mInfo->UpdateSetFlag(mInfo->GetMember(m_Object.GetObjectPtr()), true);
+    return make_pair(mInfo->GetMember(m_Object.GetObjectPtr()),
+                     mInfo->GetTypeInfo());
+}
+
+CObjectInfo CObjectInfoMI::operator*(void) const
+{
+    const CMemberInfo* mInfo = GetMemberInfo();
+    mInfo->UpdateSetFlag(mInfo->GetMember(m_Object.GetObjectPtr()), true);
+    return make_pair(mInfo->GetMember(m_Object.GetObjectPtr()),
+                     mInfo->GetTypeInfo());
+}
+
+void CObjectInfoMI::Erase(void)
+{
+    const CMemberInfo* mInfo = GetMemberInfo();
+    if ( !mInfo->Optional() || mInfo->GetDefault() )
+        THROW1_TRACE(runtime_error, "cannot reset non OPTIONAL member");
     
+    TObjectPtr objectPtr = m_Object.GetObjectPtr();
     // check 'set' flag
     bool haveSetFlag = mInfo->HaveSetFlag();
-    if ( haveSetFlag && !mInfo->GetSetFlag(GetObjectPtr()) ) {
+    if ( haveSetFlag && !mInfo->GetSetFlag(objectPtr) ) {
         // member not set
         return;
     }
 
     // reset member
-    mInfo->GetTypeInfo()->SetDefault(mInfo->GetMember(GetObjectPtr()));
+    mInfo->GetTypeInfo()->SetDefault(mInfo->GetMember(objectPtr));
 
     // update 'set' flag
     if ( haveSetFlag )
-        mInfo->GetSetFlag(GetObjectPtr()) = false;
+        mInfo->GetSetFlag(objectPtr) = false;
 }
 
-CConstObjectInfo CConstObjectInfo::GetCurrentChoiceVariant(void) const
+// choice iterators
+
+CConstObjectInfo CConstObjectInfoCV::GetVariant(void) const
 {
     const CChoiceTypeInfo* choiceInfo = GetChoiceTypeInfo();
-    TMemberIndex index = choiceInfo->GetIndex(GetObjectPtr());
-    return make_pair(choiceInfo->GetData(GetObjectPtr(), index),
+    TMemberIndex index = GetVariantIndex();
+    return make_pair(choiceInfo->GetData(m_Object.GetObjectPtr(), index),
                      choiceInfo->GetMemberInfo(index)->GetTypeInfo());
 }
 
-CObjectInfo CObjectInfo::GetCurrentChoiceVariant(void) const
+CConstObjectInfo CConstObjectInfoCV::operator*(void) const
 {
     const CChoiceTypeInfo* choiceInfo = GetChoiceTypeInfo();
-    TMemberIndex index = choiceInfo->GetIndex(GetObjectPtr());
-    return make_pair(choiceInfo->GetData(GetObjectPtr(), index),
+    TMemberIndex index = GetVariantIndex();
+    return make_pair(choiceInfo->GetData(m_Object.GetObjectPtr(), index),
                      choiceInfo->GetMemberInfo(index)->GetTypeInfo());
 }
 
-CConstObjectElementIterator::CConstObjectElementIterator(const CConstObjectInfo& object)
-    : m_Iterator(object.GetContainerTypeInfo()->
-                 Elements(object.GetObjectPtr()))
+CObjectInfo CObjectInfoCV::GetVariant(void) const
 {
-    _DEBUG_ARG(m_LastCall = eNone);
+    const CChoiceTypeInfo* choiceInfo = GetChoiceTypeInfo();
+    TMemberIndex index = GetVariantIndex();
+    return make_pair(choiceInfo->GetData(m_Object.GetObjectPtr(), index),
+                     choiceInfo->GetMemberInfo(index)->GetTypeInfo());
 }
 
-CConstObjectElementIterator&
-CConstObjectElementIterator::operator=(const CConstObjectInfo& object)
+CObjectInfo CObjectInfoCV::operator*(void) const
 {
-    m_Iterator.reset(object.GetContainerTypeInfo()->
-                     Elements(object.GetObjectPtr()));
-    _DEBUG_ARG(m_LastCall = eNone);
-    return *this;
-}
-
-CObjectElementIterator::CObjectElementIterator(const CObjectInfo& object)
-    : m_Iterator(object.GetContainerTypeInfo()->
-                 Elements(object.GetObjectPtr()))
-{
-    _DEBUG_ARG(m_LastCall = eNone);
-}
-
-CObjectElementIterator&
-CObjectElementIterator::operator=(const CObjectInfo& object)
-{
-    m_Iterator.reset(object.GetContainerTypeInfo()->
-                     Elements(object.GetObjectPtr()));
-    _DEBUG_ARG(m_LastCall = eNone);
-    return *this;
+    const CChoiceTypeInfo* choiceInfo = GetChoiceTypeInfo();
+    TMemberIndex index = GetVariantIndex();
+    return make_pair(choiceInfo->GetData(m_Object.GetObjectPtr(), index),
+                     choiceInfo->GetMemberInfo(index)->GetTypeInfo());
 }
 
 END_NCBI_SCOPE

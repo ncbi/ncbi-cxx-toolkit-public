@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/09/01 13:16:18  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.41  2000/08/15 19:44:49  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -785,26 +789,26 @@ unsigned CObjectIStreamAsnBinary::ReadUInt(void)
 
 long CObjectIStreamAsnBinary::ReadLong(void)
 {
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    return ReadInt();
-#else
     ExpectSysTag(eInteger);
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    int data;
+#else
     long data;
+#endif
     ReadStdSigned(*this, data);
     return data;
-#endif
 }
 
 unsigned long CObjectIStreamAsnBinary::ReadULong(void)
 {
-#if ULONG_MAX == UINT_MAX
-    return ReadUInt();
-#else
     ExpectSysTag(eInteger);
+#if ULONG_MAX == UINT_MAX
+    unsigned data;
+#else
     unsigned long data;
+#endif
     ReadStdUnsigned(*this, data);
     return data;
-#endif
 }
 
 double CObjectIStreamAsnBinary::ReadDouble(void)
@@ -869,6 +873,65 @@ bool CObjectIStreamAsnBinary::HaveMoreElements(void)
     return PeekTagByte() != KEndOfContentsByte;
 }
 
+void CObjectIStreamAsnBinary::BeginContainer(const CContainerTypeInfo* containerType)
+{
+    if ( containerType->RandomElementsOrder() )
+        ExpectSysTag(eUniversal, true, eSet);
+    else
+        ExpectSysTag(eUniversal, true, eSequence);
+    ExpectIndefiniteLength();
+}
+
+void CObjectIStreamAsnBinary::EndContainer(void)
+{
+    ExpectEndOfContent();
+}
+
+bool CObjectIStreamAsnBinary::BeginContainerElement(TTypeInfo elementType)
+{
+    return HaveMoreElements();
+}
+
+void CObjectIStreamAsnBinary::ReadContainer(TObjectPtr containerPtr,
+                                            const CContainerTypeInfo* containerType)
+{
+    if ( containerType->RandomElementsOrder() )
+        ExpectSysTag(eUniversal, true, eSet);
+    else
+        ExpectSysTag(eUniversal, true, eSequence);
+    ExpectIndefiniteLength();
+
+    BEGIN_OBJECT_FRAME(eFrameArrayElement);
+
+    while ( HaveMoreElements() ) {
+        containerType->AddElement(containerPtr, *this);
+    }
+
+    END_OBJECT_FRAME();
+
+    ExpectEndOfContent();
+}
+
+void CObjectIStreamAsnBinary::SkipContainer(const CContainerTypeInfo* containerType)
+{
+    if ( containerType->RandomElementsOrder() )
+        ExpectSysTag(eUniversal, true, eSet);
+    else
+        ExpectSysTag(eUniversal, true, eSequence);
+    ExpectIndefiniteLength();
+
+    TTypeInfo elementType = containerType->GetElementType();
+    BEGIN_OBJECT_FRAME(eFrameArrayElement);
+
+    while ( HaveMoreElements() ) {
+        SkipObject(elementType);
+    }
+
+    END_OBJECT_FRAME();
+
+    ExpectEndOfContent();
+}
+
 void CObjectIStreamAsnBinary::ReadContainer(const CObjectInfo& container,
                                             CReadContainerElementHook& hook)
 {
@@ -878,21 +941,18 @@ void CObjectIStreamAsnBinary::ReadContainer(const CObjectInfo& container,
         ExpectSysTag(eUniversal, true, eSequence);
     ExpectIndefiniteLength();
 
-    {
-        CObjectStackArrayElement e(*this, false);
-        
-        while ( HaveMoreElements() ) {
-            hook.ReadContainerElement(*this, container);
-        }
-        
-        e.End();
+    BEGIN_OBJECT_FRAME(eFrameArrayElement);
+
+    while ( HaveMoreElements() ) {
+        hook.ReadContainerElement(*this, container);
     }
+
+    END_OBJECT_FRAME();
 
     ExpectEndOfContent();
 }
 
-void CObjectIStreamAsnBinary::BeginClass(CObjectStackClass& /*cls*/,
-                                         const CClassTypeInfo* classInfo)
+void CObjectIStreamAsnBinary::BeginClass(const CClassTypeInfo* classInfo)
 {
     if ( classInfo->RandomOrder() )
         ExpectSysTag(eUniversal, true, eSet);
@@ -901,10 +961,9 @@ void CObjectIStreamAsnBinary::BeginClass(CObjectStackClass& /*cls*/,
     ExpectIndefiniteLength();
 }
 
-void CObjectIStreamAsnBinary::EndClass(CObjectStackClass& cls)
+void CObjectIStreamAsnBinary::EndClass(void)
 {
     ExpectEndOfContent();
-    cls.End();
 }
 
 void CObjectIStreamAsnBinary::UnexpectedMember(TTag tag)
@@ -914,8 +973,7 @@ void CObjectIStreamAsnBinary::UnexpectedMember(TTag tag)
 }
 
 TMemberIndex
-CObjectIStreamAsnBinary::BeginClassMember(CObjectStackClassMember& m,
-                                          const CMembersInfo& members)
+CObjectIStreamAsnBinary::BeginClassMember(const CMembersInfo& members)
 {
     if ( !HaveMoreElements() )
         return kInvalidMember;
@@ -925,34 +983,27 @@ CObjectIStreamAsnBinary::BeginClassMember(CObjectStackClassMember& m,
     TMemberIndex index = members.FindMember(tag);
     if ( index == kInvalidMember )
         UnexpectedMember(tag);
-    m.SetName(members.GetMemberInfo(index)->GetId());
-    m.Begin();
     return index;
 }
 
 TMemberIndex
-CObjectIStreamAsnBinary::BeginClassMember(CObjectStackClassMember& m,
-                                          const CMembersInfo& members,
-                                          CClassMemberPosition& pos)
+CObjectIStreamAsnBinary::BeginClassMember(const CMembersInfo& members,
+                                          TMemberIndex pos)
 {
     if ( !HaveMoreElements() )
         return kInvalidMember;
 
     TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
-    TMemberIndex index = members.FindMember(tag, pos.GetLastIndex());
+    TMemberIndex index = members.FindMember(tag, pos);
     if ( index == kInvalidMember )
         UnexpectedMember(tag);
-    m.SetName(members.GetMemberInfo(index)->GetId());
-    m.Begin();
-    pos.SetLastIndex(index);
     return index;
 }
 
-void CObjectIStreamAsnBinary::EndClassMember(CObjectStackClassMember& m)
+void CObjectIStreamAsnBinary::EndClassMember(void)
 {
     ExpectEndOfContent();
-    m.End();
 }
 
 void CObjectIStreamAsnBinary::ReadClassRandom(const CObjectInfo& object,
@@ -966,7 +1017,7 @@ void CObjectIStreamAsnBinary::ReadClassRandom(const CObjectInfo& object,
     TMemberIndex lastIndex = members.LastMemberIndex();
 
     vector<bool> read(lastIndex + 1);
-    CObjectStackClassMember m(*this, false);
+    BEGIN_OBJECT_FRAME(eFrameClassMember);
 
     while ( HaveMoreElements() ) {
         TTag tag = PeekTag(eContextSpecific, true);
@@ -974,17 +1025,19 @@ void CObjectIStreamAsnBinary::ReadClassRandom(const CObjectInfo& object,
         TMemberIndex index = members.FindMember(tag);
         if ( index == kInvalidMember )
             UnexpectedMember(tag);
-        m.SetName(members.GetMemberInfo(index)->GetId());
+
+        const CMemberInfo* memberInfo = members.GetMemberInfo(index);
+        TopFrame().SetMemberId(memberInfo->GetId());
         
         if ( read[index] )
-            DuplicatedMember(members, index);
+            DuplicatedMember(memberInfo);
         read[index] = true;
         hook.ReadClassMember(*this, object, index);
         
         ExpectEndOfContent();
     }
-    
-    m.End();
+
+    END_OBJECT_FRAME();
 
     // init all absent members
     for ( TMemberIndex i = members.FirstMemberIndex();
@@ -1005,43 +1058,56 @@ void CObjectIStreamAsnBinary::ReadClassSequential(const CObjectInfo& object,
 
     const CClassTypeInfo* objectType = object.GetClassTypeInfo();
     const CMembersInfo& members = objectType->GetMembers();
-    TMemberIndex pos = members.FirstMemberIndex() - 1;
+    TMemberIndex pos = members.FirstMemberIndex();
     TMemberIndex lastIndex = members.LastMemberIndex();
 
-    CObjectStackClassMember m(*this, false);
+    BEGIN_OBJECT_FRAME(eFrameClassMember);
+
     while ( HaveMoreElements() ) {
         TTag tag = PeekTag(eContextSpecific, true);
         ExpectIndefiniteLength();
         TMemberIndex index = members.FindMember(tag, pos);
         if ( index == kInvalidMember )
             UnexpectedMember(tag);
-        m.SetName(members.GetMemberInfo(index)->GetId());
+
+        TopFrame().SetMemberId(members.GetMemberInfo(index)->GetId());
         
-        for ( TMemberIndex i = pos + 1; i < index; ++i ) {
+        for ( TMemberIndex i = pos; i < index; ++i ) {
             // init missing member
             hook.SetClassMemberDefault(*this, object, i);
         }
-        pos = index;
-        
         hook.ReadClassMember(*this, object, index);
+        
+        pos = index + 1;
         
         ExpectEndOfContent();
     }
-    
-    m.End();
+
+    END_OBJECT_FRAME();
 
     // init all absent members
-    for ( TMemberIndex i = pos + 1; i <= lastIndex; ++i ) {
+    for ( TMemberIndex i = pos; i <= lastIndex; ++i ) {
         hook.SetClassMemberDefault(*this, object, i);
     }
 
     ExpectEndOfContent();
 }
 
+TMemberIndex CObjectIStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
+{
+    TTag tag = PeekTag(eContextSpecific, true);
+    ExpectIndefiniteLength();
+    return choiceType->GetMembers().FindMember(tag);
+}
+
+void CObjectIStreamAsnBinary::EndChoiceVariant(void)
+{
+    ExpectEndOfContent();
+}
+
 void CObjectIStreamAsnBinary::DoReadChoice(const CObjectInfo& choice,
                                      CReadChoiceVariantHook& hook)
 {
-    CObjectStackChoiceVariant v(*this);
     TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
     const CChoiceTypeInfo* choiceType = choice.GetChoiceTypeInfo();
@@ -1049,10 +1115,15 @@ void CObjectIStreamAsnBinary::DoReadChoice(const CObjectInfo& choice,
     TMemberIndex index = variants.FindMember(tag);
     if ( index == kInvalidMember )
         UnexpectedMember(tag);
-    v.SetName(variants.GetMemberInfo(index)->GetId());
+
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant,
+                        variants.GetMemberInfo(index)->GetId());
+
     hook.ReadChoiceVariant(*this, choice, index);
+
+    END_OBJECT_FRAME();
+
     ExpectEndOfContent();
-    v.End();
 }
 
 void CObjectIStreamAsnBinary::BeginBytes(ByteBlock& block)
@@ -1104,26 +1175,25 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
     return eThisPointer;
 }
 
-pair<long, bool>
-CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
+long CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
 {
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    int value;
+#else
+    long value;
+#endif
     if ( values.IsInteger() ) {
         // allow any integer
-        return make_pair(0l, false);
+        ExpectSysTag(eInteger);
+        ReadStdSigned(*this, value);
     }
-    
-    // enum element by value
-    ExpectSysTag(eEnumerated);
-    long value;
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    int data;
-    ReadStdSigned(*this, data);
-    value = data;
-#else
-    ReadStdSigned(*this, value);
-#endif
-    values.FindName(value, false); // check value
-    return make_pair(value, true);
+    else {
+        // enum element by value
+        ExpectSysTag(eEnumerated);
+        ReadStdSigned(*this, value);
+        values.FindName(value, false); // check value
+    }
+    return value;
 }
 
 CObjectIStream::TObjectIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)

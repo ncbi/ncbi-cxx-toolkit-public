@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/01 13:16:20  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.11  2000/08/15 19:44:51  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -268,13 +272,13 @@ CClassTypeInfo* CClassInfoHelperBase::CreateAsnStructInfo(const char* name,
 static TMemberIndex WhichAsn(TConstObjectPtr object)
 {
     const valnode* node = static_cast<const valnode*>(object);
-    return node->choice + (kInvalidMember - 0);
+    return node->choice + (kEmptyChoice - 0);
 }
 
 static void SelectAsn(TObjectPtr object, TMemberIndex index)
 {
     valnode* node = static_cast<valnode*>(object);
-    node->choice = index - (kInvalidMember - 0);
+    node->choice = index - (kEmptyChoice - 0);
 }
 
 CChoiceTypeInfo* CClassInfoHelperBase::CreateAsnChoiceInfo(const char* name)

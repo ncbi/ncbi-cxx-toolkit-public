@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/09/01 13:16:02  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.26  2000/08/15 19:44:41  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -156,7 +160,7 @@ public:
 
     ESerialDataFormat GetDataFormat(void) const;
 
-    virtual bool WriteEnum(const CEnumeratedTypeValues& values, long value);
+    virtual void WriteEnum(const CEnumeratedTypeValues& values, long value);
 
     void WriteNull(void);
     void WriteByte(TByte byte);
@@ -192,19 +196,23 @@ protected:
 
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TObjectIndex index);
-    virtual void WriteOther(TConstObjectPtr object,
-                            TTypeInfo typeInfo);
+    virtual void WriteOtherBegin(TTypeInfo typeInfo);
+    virtual void WriteOtherEnd(TTypeInfo typeInfo);
+    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
 
+    virtual void BeginContainer(const CContainerTypeInfo* containerType);
+    virtual void EndContainer(void);
+
+    virtual void WriteContainer(TConstObjectPtr containerPtr,
+                                const CContainerTypeInfo* containerType);
     virtual void WriteContainer(const CConstObjectInfo& container,
                                 CWriteContainerElementsHook& hook);
     virtual void WriteContainerElement(const CConstObjectInfo& element);
 
-    virtual void BeginClass(CObjectStackClass& cls,
-                            const CClassTypeInfo* classInfo);
-    virtual void EndClass(CObjectStackClass& cls);
-    virtual void BeginClassMember(CObjectStackClassMember& m,
-                                  const CMemberId& id);
-    virtual void EndClassMember(CObjectStackClassMember& m);
+    virtual void BeginClass(const CClassTypeInfo* classInfo);
+    virtual void EndClass(void);
+    virtual void BeginClassMember(const CMemberId& id);
+    virtual void EndClassMember(void);
     virtual void DoWriteClass(const CConstObjectInfo& object,
                               CWriteClassMembersHook& hook);
     virtual void DoWriteClass(TConstObjectPtr objectPtr,
@@ -217,6 +225,9 @@ protected:
                                     TConstObjectPtr memberPtr,
                                     TTypeInfo memberType);
 
+    virtual void BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
+                                    const CMemberId& id);
+    virtual void EndChoiceVariant(void);
     virtual void WriteChoice(const CConstObjectInfo& choice,
                              CWriteChoiceVariantHook& hook);
     virtual void WriteChoice(const CConstObjectInfo& choice);

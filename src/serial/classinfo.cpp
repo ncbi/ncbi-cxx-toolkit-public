@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2000/09/01 13:16:14  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.50  2000/08/15 19:44:46  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -235,6 +239,7 @@
 #include <serial/member.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/stdtypes.hpp>
 
@@ -405,8 +410,7 @@ void CClassTypeInfo::WriteData(CObjectOStream& out,
         // special case: class contains only one implicit member
         // we'll behave as this one member
         const CMemberInfo* memberInfo = GetImplicitMember(GetMembers());
-        out.WriteNamedType(this,
-                           memberInfo->GetTypeInfo(),
+        out.WriteNamedType(this, memberInfo->GetTypeInfo(),
                            memberInfo->GetMember(object));
     }
     else {
@@ -433,8 +437,7 @@ void CClassTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
         // special case: class contains only one implicit member
         // we'll behave as this one member
         const CMemberInfo* memberInfo = GetImplicitMember(GetMembers());
-        in.ReadNamedType(this,
-                         memberInfo->GetTypeInfo(),
+        in.ReadNamedType(this, memberInfo->GetTypeInfo(),
                          memberInfo->GetMember(object));
     }
     else {
@@ -442,6 +445,19 @@ void CClassTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
                                  CObjectInfo::eNonCObject));
     }
     DoPostRead(object);
+}
+
+void CClassTypeInfo::CopyData(CObjectStreamCopier& copier) const
+{
+    if ( Implicit() ) {
+        // special case: class contains only one implicit member
+        // we'll behave as this one member
+        const CMemberInfo* memberInfo = GetImplicitMember(GetMembers());
+        copier.CopyNamedType(this, memberInfo->GetTypeInfo());
+    }
+    else {
+        copier.CopyClass(this);
+    }
 }
 
 bool CClassTypeInfo::IsDefault(TConstObjectPtr /*object*/) const

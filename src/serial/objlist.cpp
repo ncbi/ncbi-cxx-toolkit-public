@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/09/01 13:16:18  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.18  2000/08/15 20:04:05  vasilche
 * Fixed typo.
 *
@@ -130,6 +134,18 @@ void COObjectList::Clear(void)
     m_ObjectsByPtr.clear();
 }
 
+CWriteObjectInfo& COObjectList::RegisterObject(TTypeInfo typeInfo)
+{
+    TObjectIndex newIndex = m_Objects.size();
+    _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
+    m_Objects.push_back(CConstObjectInfo(0, typeInfo,
+                                         CConstObjectInfo::eNonCObject));
+    CWriteObjectInfo& info = m_Objects.back();
+    MarkObjectWritten(info);
+    info.m_Index = newIndex;
+    return info;
+}
+
 CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
                                                TTypeInfo typeInfo)
 {
@@ -157,7 +173,8 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
 #endif
             // new object
             _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
-            m_Objects.push_back(CWriteObjectInfo(CConstObjectInfo(object, typeInfo, CConstObjectInfo::eNonCObject)));
+            m_Objects.push_back(CConstObjectInfo(object, typeInfo,
+                                                 CConstObjectInfo::eNonCObject));
             return m_Objects.back();
         }
         else if ( cObject->Referenced() ) {

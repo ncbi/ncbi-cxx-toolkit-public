@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/09/01 13:16:15  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.17  2000/08/15 19:44:47  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -112,6 +116,7 @@
 BEGIN_NCBI_SCOPE
 
 CMembersInfo::CMembersInfo(void)
+    : m_ZeroTagIndex(kInvalidMember)
 {
 }
 
@@ -123,6 +128,7 @@ CMemberInfo* CMembersInfo::AddMember(CMemberInfo* member)
 {
     // clear cached maps (byname and bytag)
     m_MembersByName.reset(0);
+    m_ZeroTagIndex = kInvalidMember;
     m_MembersByTag.reset(0);
     m_MembersByOffset.reset(0);
     m_Members.push_back(AutoPtr<CMemberInfo>(member));
@@ -174,46 +180,15 @@ const CMembersInfo::TMembersByName& CMembersInfo::GetMembersByName(void) const
         m_MembersByName.reset(members = new TMembersByName);
         // TMembers is vector so we'll use index access instead iterator
         // because we need index value to inser in map too
-        for ( TMemberIndex i = 0, size = m_Members.size(); i < size; ++i ) {
-            const CMemberId& id = m_Members[i]->GetId();
-            TMemberIndex index = i + kFirstMemberIndex;
-            const string& name = id.GetName();
+        TMemberIndex lastIndex = LastMemberIndex();
+        for ( TMemberIndex index = FirstMemberIndex();
+              index <= lastIndex; ++index ) {
+            const string& name = GetMemberInfo(index)->GetId().GetName();
             if ( !members->insert(TMembersByName::value_type(name,
                                                              index)).second ) {
                 if ( !name.empty() )
                     THROW1_TRACE(runtime_error, "duplicated member name");
             }
-        }
-    }
-    return *members;
-}
-
-const CMembersInfo::TMembersByTag& CMembersInfo::GetMembersByTag(void) const
-{
-    TMembersByTag* members = m_MembersByTag.get();
-    if ( !members ) {
-        m_MembersByTag.reset(members = new TMembersByTag);
-        TTag currentTag = CMemberId::eNoExplicitTag;
-        // TMembers is vector so we'll use index access instead iterator
-        // because we need index value to inser in map too
-        for ( size_t i = 0, size = m_Members.size(); i < size; ++i ) {
-            const CMemberId& id = m_Members[i]->GetId();
-            TMemberIndex index = i + kFirstMemberIndex;
-            TTag t = id.GetTag();
-            if ( t == CMemberId::eNoExplicitTag ) {
-                if ( i == 0 && id.GetName().empty() ) {
-                    // parent class - skip it
-                    t = CMemberId::eParentTag;
-                }
-                else {
-                    t = currentTag + 1;
-                }
-            }
-            if ( !members->insert(TMembersByTag::value_type(t,
-                                                            index)).second ) {
-                THROW1_TRACE(runtime_error, "duplicated member tag");
-            }
-            currentTag = t;
         }
     }
     return *members;
@@ -228,9 +203,10 @@ CMembersInfo::GetMembersByOffset(void) const
         m_MembersByOffset.reset(members = new TMembersByOffset);
         // fill map
         
-        for ( TMemberIndex i = 0, size = m_Members.size(); i != size; ++i ) {
-            const CMemberInfo* memberInfo = m_Members[i].get();
-            TMemberIndex index = i + kFirstMemberIndex;
+        TMemberIndex lastIndex = LastMemberIndex();
+        for ( TMemberIndex index = FirstMemberIndex();
+              index <= lastIndex; ++index ) {
+            const CMemberInfo* memberInfo = GetMemberInfo(index);
             size_t offset = memberInfo->GetOffset();
             if ( !members->insert(TMembersByOffset::value_type(offset, index)).second ) {
                 THROW1_TRACE(runtime_error, "conflict member offset");
@@ -253,26 +229,41 @@ CMembersInfo::GetMembersByOffset(void) const
     return *members;
 }
 
-void CMembersInfo::UpdateMemberTags(void)
+void CMembersInfo::UpdateMemberTags(void) const
 {
-    TTag currentTag = CMemberId::eNoExplicitTag;
-    // TMembers is vector so we'll use index access instead iterator
-    // because we need index value to inser in map too
-    non_const_iterate ( TMembers, i, m_Members ) {
-        CMemberId& id = (*i)->GetId();
-        TTag t = id.GetExplicitTag();
-        if ( t == CMemberId::eNoExplicitTag ) {
-            if ( i == m_Members.begin() && id.GetName().empty() ) {
+    m_ZeroTagIndex = kInvalidMember;
+    m_MembersByTag.reset(0);
+
+    TMemberIndex zeroTagIndex = kInvalidMember;
+
+    TTag nextTag = CMemberId::eFirstTag;
+    TMemberIndex lastIndex = LastMemberIndex();
+    for ( TMemberIndex index = FirstMemberIndex();
+          index <= lastIndex; ++index ) {
+        CMemberId& id = x_GetMemberInfo(index)->GetId();
+        TTag tag = id.GetExplicitTag();
+        if ( tag == CMemberId::eNoExplicitTag ) {
+            if ( index == FirstMemberIndex() && id.GetName().empty() ) {
                 // parent class
-                t = CMemberId::eParentTag;
+                tag = CMemberId::eParentTag;
             }
             else {
-                t = currentTag + 1;
+                tag = nextTag;
             }
         }
-        id.m_Tag = t;
-        currentTag = t;
+        if ( zeroTagIndex == kInvalidMember ) {
+            if ( index == FirstMemberIndex() )
+                zeroTagIndex = index - tag;
+        }
+        else {
+            if ( zeroTagIndex != index - tag )
+                zeroTagIndex = kInvalidMember;
+        }
+        id.m_Tag = tag;
+        nextTag = tag + 1;
     }
+
+    m_ZeroTagIndex = zeroTagIndex;
 }
 
 TMemberIndex CMembersInfo::FindMember(const CLightString& name) const
@@ -287,29 +278,66 @@ TMemberIndex CMembersInfo::FindMember(const CLightString& name) const
 TMemberIndex CMembersInfo::FindMember(const CLightString& name,
                                       TMemberIndex pos) const
 {
-    for ( TMemberIndex i = pos + 1, size = m_Members.size(); i <= size; ++i ) {
-        const CMemberId& id = m_Members[i - kFirstMemberIndex]->GetId();
+    TMemberIndex lastIndex = LastMemberIndex();
+    for ( TMemberIndex index = pos; index <= lastIndex; ++index ) {
+        const CMemberId& id = GetMemberInfo(index)->GetId();
         if ( name == id.GetName() )
-            return i;
+            return index;
     }
     return kInvalidMember;
 }
 
 TMemberIndex CMembersInfo::FindMember(TTag tag) const
 {
-    const TMembersByTag& members = GetMembersByTag();
-    TMembersByTag::const_iterator i = members.find(tag);
-    if ( i == members.end() )
+    if ( m_ZeroTagIndex == kInvalidMember && !m_MembersByTag.get() )
+        UpdateMemberTags();
+
+    if ( m_ZeroTagIndex != kInvalidMember ) {
+        TMemberIndex index = tag + m_ZeroTagIndex;
+        if ( index < FirstMemberIndex() || index > LastMemberIndex() )
+            return kInvalidMember;
+        return index;
+    }
+
+    TMembersByTag* members = m_MembersByTag.get();
+    if ( !members ) {
+        m_MembersByTag.reset(members = new TMembersByTag);
+        TTag nextTag = CMemberId::eFirstTag;
+        TMemberIndex lastIndex = LastMemberIndex();
+        for ( TMemberIndex index = FirstMemberIndex();
+              index <= lastIndex; ++index ) {
+            const CMemberId& id = GetMemberInfo(index)->GetId();
+            TTag tag = id.GetTag();
+            if ( tag == CMemberId::eNoExplicitTag ) {
+                if ( index == FirstMemberIndex() && id.GetName().empty() ) {
+                    // parent class - skip it
+                    tag = CMemberId::eParentTag;
+                }
+                else {
+                    tag = nextTag;
+                }
+            }
+            if ( !members->insert(TMembersByTag::value_type(tag,
+                                                            index)).second ) {
+                THROW1_TRACE(runtime_error, "duplicated member tag");
+            }
+            nextTag = tag + 1;
+        }
+    }
+
+    TMembersByTag::const_iterator mi = members->find(tag);
+    if ( mi == members->end() )
         return kInvalidMember;
-    return i->second;
+    return mi->second;
 }
 
 TMemberIndex CMembersInfo::FindMember(TTag tag, TMemberIndex pos) const
 {
-    for ( TMemberIndex i = pos + 1, size = m_Members.size(); i <= size; ++i ) {
-        const CMemberId& id = m_Members[i - kFirstMemberIndex]->GetId();
+    TMemberIndex lastIndex = LastMemberIndex();
+    for ( TMemberIndex index = pos; index <= lastIndex; ++index ) {
+        const CMemberId& id = GetMemberInfo(index)->GetId();
         if ( id.GetTag() == tag )
-            return i;
+            return index;
     }
     return kInvalidMember;
 }

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/09/01 13:16:27  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.36  2000/08/25 15:59:20  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -110,6 +114,7 @@
 #include <corelib/ncbistre.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 #include <memory>
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/parser.hpp>
@@ -143,6 +148,7 @@ void Help(void)
         "  -p <file>    write value in ASN.1 text format (optional)\n"
         "  -vx <file>   read value in XML format (optional)\n"
         "  -px <file>   write value in XML format (optional)\n"
+        "  -F           read fully into memory before write (optional)\n"
         "  -d <file>    read value in ASN.1 binary format (type required) (optional)\n"
         "  -t <type>    binary value type (optional)\n"
         "  -e <file>    write value in ASN.1 binary format (optional)\n" <<
@@ -207,9 +213,12 @@ static void LoadDefinitions(CFileSet& fileSet,
                             const string& modulesDir,
                             const list<FileInfo>& file);
 static void StoreDefinition(const CFileSet& types, const FileInfo& file);
-static TObject LoadValue(CFileSet& types, const FileInfo& file,
-                         const string& typeName);
-static void StoreValue(const TObject& object, const FileInfo& file);
+static TObject LoadValue(CFileSet& types, const string& typeName,
+                         const FileInfo& fileIn);
+static void CopyValue(CFileSet& types, const string& typeName,
+                      const FileInfo& fileIn, const FileInfo& fileOut);
+static void StoreValue(const TObject& object,
+                       const FileInfo& fileOut);
 
 static
 ESerialDataFormat FileType(const char* arg,
@@ -270,6 +279,7 @@ int main(int argc, const char*argv[])
     FileInfo dataIn;
     string dataInTypeName;
     FileInfo dataOut;
+    bool fullReadBeforeWrite = false;
     bool ignoreErrors = false;
     list<string> additionalDefinitions;
 
@@ -310,6 +320,9 @@ int main(int argc, const char*argv[])
                 break;
             case 'e':
                 GetFileOut(dataOut, arg, argv[++i], eSerial_AsnBinary);
+                break;
+            case 'F':
+                fullReadBeforeWrite = true;
                 break;
             case 't':
                 dataInTypeName = StringArgument(argv[++i]);
@@ -438,11 +451,19 @@ int main(int argc, const char*argv[])
             generator.IncludeAllMainTypes();
 
         if ( dataIn ) {
-            TObject object = LoadValue(generator.GetMainModules(),
-                                       dataIn, dataInTypeName);
-            
-            if ( dataOut )
-                StoreValue(object, dataOut);
+            if ( !fullReadBeforeWrite && dataOut  ) {
+                CopyValue(generator.GetMainModules(), dataInTypeName,
+                          dataIn, dataOut);
+            }
+            else {
+                TObject object =
+                    LoadValue(generator.GetMainModules(), dataInTypeName,
+                              dataIn);
+                if ( dataOut ) {
+                    StoreValue(object,
+                               dataOut);
+                }
+            }
         }
 
         generator.GenerateCode();
@@ -500,10 +521,11 @@ void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
     }
 }
 
-TObject LoadValue(CFileSet& types, const FileInfo& file,
-                  const string& defTypeName)
+TObject LoadValue(CFileSet& types, const string& defTypeName,
+                  const FileInfo& fileIn)
 {
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(file.type, file.name,
+    auto_ptr<CObjectIStream> in(CObjectIStream::Open(fileIn.type,
+                                                     fileIn.name,
                                                      eSerial_StdWhenAny));
     //    in->SetTypeMapper(&types);
     string typeName = in->ReadTypeName();
@@ -515,17 +537,37 @@ TObject LoadValue(CFileSet& types, const FileInfo& file,
     TTypeInfo typeInfo =
         types.ResolveInAnyModule(typeName, true)->GetTypeInfo().Get();
     AnyType value;
-    CObjectStackNamedFrame m(*in, typeInfo);
-    in->ReadExternalObject(&value, typeInfo);
-    m.End();
+    in->Read(&value, typeInfo, CObjectIStream::eNoTypeName);
     return make_pair(value, typeInfo);
 }
 
-void StoreValue(const TObject& object, const FileInfo& file)
+void StoreValue(const TObject& object, const FileInfo& fileOut)
 {
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(file.type, file.name,
+    auto_ptr<CObjectOStream> out(CObjectOStream::Open(fileOut.type,
+                                                      fileOut.name,
                                                       eSerial_StdWhenAny));
     out->Write(&object.first, object.second);
+}
+
+void CopyValue(CFileSet& types, const string& defTypeName,
+               const FileInfo& fileIn, const FileInfo& fileOut)
+{
+    auto_ptr<CObjectIStream> in(CObjectIStream::Open(fileIn.type,
+                                                     fileIn.name,
+                                                     eSerial_StdWhenAny));
+    auto_ptr<CObjectOStream> out(CObjectOStream::Open(fileOut.type,
+                                                      fileOut.name,
+                                                      eSerial_StdWhenAny));
+    CObjectStreamCopier copier(*in, *out);
+    string typeName = in->ReadTypeName();
+    if ( typeName.empty() ) {
+        if ( defTypeName.empty() )
+            ERR_POST(Fatal << "ASN.1 value type must be specified (-t)");
+        typeName = defTypeName;
+    }
+    TTypeInfo typeInfo =
+        types.ResolveInAnyModule(typeName, true)->GetTypeInfo().Get();
+    copier.Copy(typeInfo, CObjectStreamCopier::eNoTypeName);
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/01 13:16:01  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
 * Revision 1.11  2000/08/15 19:44:40  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -157,6 +161,7 @@ protected:
 
     // add object to object list
     // may throw an exception if there is error in objects placements
+    CWriteObjectInfo& RegisterObject(TTypeInfo typeInfo);
     CWriteObjectInfo& RegisterObject(TConstObjectPtr object,
                                      TTypeInfo typeInfo);
     CWriteObjectInfo& RegisterObject(const CConstObjectInfo& object)
