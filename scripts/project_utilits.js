@@ -47,7 +47,7 @@ function EscapeBackSlashes(str)
 // tree object constructor
 function Tree(oShell, oTask)
 {
-    this.TreeRoot              = oShell.CurrentDirectory + "\\" + oTask.ProjectName;
+    this.TreeRoot              = oShell.CurrentDirectory + "\\" + oTask.ProjectFolder;
     this.CompilersBranch       = this.TreeRoot + "\\compilers\\msvc710_prj";
     this.CompilersBranchStatic = this.CompilersBranch + "\\static";
     this.BinPathStatic         = this.CompilersBranchStatic + "\\bin";
@@ -56,10 +56,10 @@ function Tree(oShell, oTask)
 
     this.IncludeRootBranch     = this.TreeRoot + "\\include";
     this.IncludeConfig         = this.IncludeRootBranch + "\\corelib\\config";
-    this.IncludeProjectBranch  = this.IncludeRootBranch + "\\" + oTask.ProjectName;
+    this.IncludeProjectBranch  = this.IncludeRootBranch + "\\" + BackSlashes(oTask.ProjectName);
 
     this.SrcRootBranch         = this.TreeRoot + "\\src";
-    this.SrcProjectBranch      = this.SrcRootBranch + "\\" + oTask.ProjectName;
+    this.SrcProjectBranch      = this.SrcRootBranch + "\\" + BackSlashes(oTask.ProjectName);
 }
 // diagnostic dump of the tree object
 function DumpTree(oTree)
@@ -518,5 +518,3 @@ function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
     execute(oShell, "copy /Y \"temp\\" + cvs_file + "\" \""+ target_abs_dir + "\"");
     RemoveFolder(oShell, oFso, "temp");
 }
-
-
