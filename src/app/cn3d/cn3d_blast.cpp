@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/09/05 17:39:53  thiessen
+* add bit score printout for BLAST/PSSM
+*
 * Revision 1.21  2002/09/05 13:04:33  thiessen
 * restore output stream precision
 *
@@ -484,6 +487,11 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                         // raw score
                         if ((*sc)->GetValue().IsInt() && (*sc)->GetId().GetStr() == "score") {
                             scores.Printf("%s raw: %i", scores.c_str(), (*sc)->GetValue().GetInt());
+                        }
+
+                        // bit score
+                        if ((*sc)->GetValue().IsReal() && (*sc)->GetId().GetStr() == "bit_score") {
+                            scores.Printf("%s bit score: %g", scores.c_str(), (*sc)->GetValue().GetReal());
                         }
                     }
                 }
