@@ -31,6 +31,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/11/01 20:37:16  vasilche
+* Fixed detection of heap objects.
+* Removed ECanDelete enum and related constructors.
+* Disabled sync_with_stdio ad the beginning of AppMain.
+*
 * Revision 1.9  2000/10/17 17:59:08  vasilche
 * Detected misuse of CObject constructors will be reported via ERR_POST and will
 * not throw exception.
@@ -67,6 +72,8 @@
 
 #include <corelib/ncbiobj.hpp>
 
+#define STACK_THRESHOLD (16*1024)
+
 BEGIN_NCBI_SCOPE
 
 CNullPointerError::CNullPointerError(void)
@@ -85,159 +92,163 @@ const char* CNullPointerError::what() const
     return "null pointer error";
 }
 
-#if _DEBUG
-inline
-bool PossiblyInStack(const void* object)
-{
-    enum {
-        KStackThreshold = 16*1024 // 16K
-    };
-
-    char stackObject;
-    const char* stackObjectPtr = &stackObject;
-    const char* objectPtr = static_cast<const char*>(object);
-    return objectPtr < stackObjectPtr + KStackThreshold &&
-        objectPtr > stackObjectPtr - KStackThreshold;
-}
-
-// initialization in debug mode
-void CObject::InitInStack(void)
-{
-    if ( m_Counter != eObjectNewInHeapValue || PossiblyInStack(this) ) {
-        // surely not in heap
-        m_Counter = eObjectInStack;
-    }
-    else {
-        m_Counter = eObjectInStackUnsure;
-    }
-}
-
-void CObject::InitInHeap(void)
-{
-    if ( m_Counter != eObjectNewInHeapValue || PossiblyInStack(this) ) {
-        // surely not in heap
-        ERR_POST("CObject not in heap: fix CObject() constructor arguments");
-        m_Counter = eObjectInHeapUnsure;
-    }
-    else {
-        m_Counter = eObjectInHeap;
-    }
-}
-#endif
-
 // CObject local new operator to mark allocation in heap
 void* CObject::operator new(size_t size)
 {
+    _ASSERT(size >= sizeof(CObject));
     void* ptr = ::operator new(size);
-    if ( size < sizeof(CObject) ) {
-        ERR_POST("CObject::operator new(): size too small");
-    }
-    else {
-        static_cast<CObject*>(ptr)->m_Counter = eObjectNewInHeapValue;
-    }
+    memset(ptr, 0, size);
+    static_cast<CObject*>(ptr)->m_Counter = eCounterNew;
     return ptr;
 }
 
+void* CObject::operator new[](size_t size)
+{
+    void* ptr = ::operator new[](size);
+    memset(ptr, 0, size);
+    return ptr;
+}
+
+#ifdef _DEBUG
 void CObject::operator delete(void* ptr)
 {
     CObject* objectPtr = static_cast<CObject*>(ptr);
-    if ( objectPtr->m_Counter != TCounter(eObjectDeletedValue) ) {
-        THROW1_TRACE(runtime_error,
-                     "deletion of CObject without destructor call");
-    }
+    _ASSERT(objectPtr->m_Counter == TCounter(eCounterDeleted));
     ::operator delete(ptr);
+}
+
+void CObject::operator delete[](void* ptr)
+{
+    ::operator delete[](ptr);
+}
+#endif
+
+// initialization in debug mode
+void CObject::InitCounter(void)
+{
+    if ( m_Counter != eCounterNew ) {
+        m_Counter = eCounterNotInHeap;
+    }
+    else {
+        // m_Counter == eCounterNew -> possibly in heap
+        char stackObject;
+        const char* stackObjectPtr = &stackObject;
+        const char* objectPtr = reinterpret_cast<const char*>(this);
+        bool inStack =
+            (objectPtr < stackObjectPtr + STACK_THRESHOLD) &&
+            (objectPtr > stackObjectPtr - STACK_THRESHOLD);
+
+        // surely not in heap
+        if ( inStack )
+            m_Counter = eCounterNotInHeap;
+        else
+            m_Counter = eCounterInHeap;
+    }
+}
+
+CObject::CObject(void)
+{
+    InitCounter();
+}
+
+CObject::CObject(const CObject& /*src*/)
+{
+    InitCounter();
 }
 
 CObject::~CObject(void)
 {
-#if _DEBUG
     TCounter counter = m_Counter;
-    if ( ObjectStateIsInvalid(counter) ) {
-        if ( counter == TCounter(eObjectDeletedValue) )
-            THROW1_TRACE(runtime_error, "double deletion of CObject");
-        else
-            THROW1_TRACE(runtime_error, "deletion of corrupted CObject");
+    if ( counter == TCounter(eCounterInHeap) ||
+         counter == TCounter(eCounterNotInHeap) ) {
+        // reference counter is zero -> ok
     }
-    if ( ObjectStateReferenced(counter) )
-        THROW1_TRACE(runtime_error, "deletion of referenced CObject");
-#endif
+    else if ( ObjectStateValid(counter) ) {
+        _ASSERT(ObjectStateReferenced(counter));
+        // referenced object
+        THROW1_TRACE(runtime_error,
+                     "deletion of referenced CObject");
+    }
+    else if ( counter == TCounter(eCounterDeleted) ) {
+        // deleted object
+        THROW1_TRACE(runtime_error,
+                     "double deletion of CObject");
+    }
+    else {
+        // bad object
+        THROW1_TRACE(runtime_error,
+                     "deletion of corrupted CObject");
+    }
     // mark object as deleted
-    m_Counter = TCounter(eObjectDeletedValue);
-}
-
-void CObject::InvalidObject(void) const
-{
-    if ( m_Counter == TCounter(eObjectDeletedValue) )
-        THROW1_TRACE(runtime_error, "using of deleted CObject");
-    else
-        THROW1_TRACE(runtime_error, "using of corrupted CObject");
+    m_Counter = TCounter(eCounterDeleted);
 }
 
 void CObject::AddReferenceOverflow(void) const
 {
     TCounter counter = m_Counter;
-    if ( ObjectStateIsInvalid(counter) )
-        InvalidObject();
-    else
-        THROW1_TRACE(runtime_error, "AddReferenceOverflow");
-}
-
-void CObject::SetCanDeleteLong(void) const
-{
-    TCounter counter = m_Counter;
-    if ( ObjectStateIsInvalid(counter) )
-        InvalidObject();
-    else if ( ObjectStateUnsure(counter) ) {
-#if _DEBUG
-        if ( PossiblyInStack(this) )
-            THROW1_TRACE(runtime_error, "SetCanDelete for CObject in stack");
-#endif
-        // reset unsure bit and set inHeap bit
-        m_Counter = TCounter(counter & ~eStateBitsUnsure | eStateBitsInHeap);
+    if ( ObjectStateValid(counter) ) {
+        // counter overflow
+        THROW1_TRACE(runtime_error,
+                     "AddReference: CObject reference counter overflow");
     }
-    else
-        THROW1_TRACE(runtime_error, "SetCanDelete for used CObject");
+    else {
+        // bad object
+        THROW1_TRACE(runtime_error,
+                     "AddReference of invalid CObject");
+    }
 }
 
 void CObject::RemoveLastReference(void) const
 {
-    switch ( m_Counter ) {
-    case TCounter(eObjectInHeap + eCounterStep):
+    TCounter counter = m_Counter;
+    if ( counter == TCounter(eCounterInHeap + eCounterStep) ) {
         // last reference to heap object -> delete
-        m_Counter = eObjectInHeap;
+        m_Counter = eCounterInHeap;
         delete this;
-        return;
-    case TCounter(eObjectInHeapUnsure + eCounterStep):
-        // last reference to heap object -> delete
-#if _DEBUG
-        ERR_POST("deletion of CObject which is not assured to be in heap");
-#endif
-        m_Counter = eObjectInHeapUnsure;
-        delete this;
-        return;
-    case TCounter(eObjectInStack + eCounterStep):
-    case TCounter(eObjectInStackUnsure + eCounterStep):
-        // last reference to stack object
-        m_Counter = eObjectInStack;
-        return;
     }
-    if ( ObjectStateIsInvalid(m_Counter) )
-        InvalidObject();
-    else
-        THROW1_TRACE(runtime_error, "RemoveReference of unreferenced CObject");
+    else if ( counter == TCounter(eCounterNotInHeap + eCounterStep) ) {
+        // last reference to non heap object -> do nothing
+        m_Counter = eCounterNotInHeap;
+    }
+    else {
+        _ASSERT(!ObjectStateValid(counter));
+        // bad object
+        THROW1_TRACE(runtime_error,
+                     "RemoveReference of unreferenced CObject");
+    }
 }
 
 void CObject::ReleaseReference(void) const
 {
     TCounter counter = m_Counter;
-    if ( counter == TCounter(eObjectInHeap + eCounterStep) ) {
+    if ( ObjectStateReferenced(counter) ) {
         // release reference to object in heap
-        m_Counter = eObjectInHeap;
+        m_Counter = TCounter(counter - eCounterStep);
     }
-    else if ( ObjectStateIsInvalid(counter) )
-        InvalidObject();
-    else
-        THROW1_TRACE(runtime_error, "Illegal ReleaseReference to CObject");
+    else if ( !ObjectStateValid(counter) ) {
+        THROW1_TRACE(runtime_error,
+                     "ReleaseReference of corrupted CObject");
+    }
+    else {
+        THROW1_TRACE(runtime_error,
+                     "ReleaseReference of unreferenced CObject");
+    }
+}
+
+void CObject::DoNotDeleteThisObject(void)
+{
+    TCounter counter = m_Counter;
+    if ( !ObjectStateValid(counter) ) {
+        THROW1_TRACE(runtime_error,
+                     "DoNotDeleteThisObject of corrupted CObject");
+    }
+    else if ( ObjectStateReferenced(counter) ) {
+        THROW1_TRACE(runtime_error,
+                     "DoNotDeleteThisObject of referenced CObject");
+    }
+    else {
+        m_Counter = eCounterNotInHeap;
+    }
 }
 
 END_NCBI_SCOPE

@@ -34,6 +34,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2000/11/01 20:37:15  vasilche
+ * Fixed detection of heap objects.
+ * Removed ECanDelete enum and related constructors.
+ * Disabled sync_with_stdio ad the beginning of AppMain.
+ *
  * Revision 1.17  2000/10/30 22:26:29  vakatov
  * Get rid of "s_IsAvailableExtra()" -- not used anymore
  *
@@ -132,7 +137,6 @@ CArgException::CArgException(const string& what, const string& arg_value)
 //  CArgValue::
 
 CArgValue::CArgValue(const string& value, bool is_default)
-    : CObject(eCanDelete)
 {
     m_String         = value;
     m_IsDefaultValue = is_default;

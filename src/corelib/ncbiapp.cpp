@@ -31,6 +31,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/11/01 20:37:15  vasilche
+* Fixed detection of heap objects.
+* Removed ECanDelete enum and related constructors.
+* Disabled sync_with_stdio ad the beginning of AppMain.
+*
 * Revision 1.23  2000/06/09 18:41:04  vakatov
 * FlushDiag() -- check for empty diag.buffer
 *
@@ -200,6 +205,11 @@ int CNcbiApplication::AppMain
  const char*        conf,
  const string&      name)
 {
+    // SUN WorkShop STL stream library has significant performance loss when
+    // sync_with_stdio is true (default)
+    // So we turn off sync_with_stdio here:
+    IOS_BASE::sync_with_stdio(false);
+
     // Reset command-line args and application name
     m_Args->Reset(argc, argv, name);
 
