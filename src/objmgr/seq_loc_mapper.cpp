@@ -132,6 +132,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
                                  CScope*           scope)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
       m_Dst_width(0)
 {
     _ASSERT(map_feat.IsSetProduct());
@@ -154,6 +155,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
                                  CScope* scope)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
       m_Dst_width(0)
 {
     x_Initialize(source, target);
@@ -166,6 +168,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
                                  CScope*           scope)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
       m_Dst_width(0)
 {
     x_Initialize(map_align, to_id);
@@ -178,6 +181,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
                                  CScope*           scope)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
       m_Dst_width(0)
 {
     x_Initialize(map_align, to_row);
@@ -188,6 +192,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
 CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq)
     : m_Scope(&target_seq.GetScope()),
       m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
       m_Dst_width(0)
 {
     CConstRef<CSeq_id> dst_id = target_seq.GetSeqId();
@@ -217,6 +222,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap& seq_map,
                                  CScope*        scope)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
       m_Dst_width(0)
 {
     x_Initialize(seq_map, dst_id);
@@ -228,6 +234,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t          depth,
                                  CBioseq_Handle& source_seq)
     : m_Scope(&source_seq.GetScope()),
       m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
       m_Dst_width(0)
 {
     if (depth > 0) {
@@ -261,6 +268,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t         depth,
                                  CScope*        scope)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
       m_Dst_width(0)
 {
     if (depth > 0) {
@@ -1175,9 +1183,14 @@ void CSeq_loc_Mapper::x_PushLocToDstMix(CRef<CSeq_loc> loc)
         }
     }
     CSeq_loc_mix::Tdata& mix = m_Dst_loc->SetMix().Set();
-    if ( loc->IsNull()  &&  mix.size() > 0  &&  (*mix.rbegin())->IsNull() ) {
-        // do not create duplicate NULLs
-        return;
+    if ( loc->IsNull() ) {
+        if ( m_GapFlag == eGapRemove ) {
+            return;
+        }
+        if ( mix.size() > 0  &&  (*mix.rbegin())->IsNull() ) {
+            // do not create duplicate NULLs
+            return;
+        }
     }
     mix.push_back(loc);
 }
@@ -1205,9 +1218,13 @@ CRef<CSeq_align> CSeq_loc_Mapper::Map(const CSeq_align& src_align)
 void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
 {
     switch ( src_loc.Which() ) {
+    case CSeq_loc::e_Null:
+        if (m_GapFlag == eGapRemove) {
+            return;
+        }
+        // Proceed to seq-loc duplication
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Feat:
-    case CSeq_loc::e_Null:
     {
         x_PushRangesToDstMix();
         CRef<CSeq_loc> loc(new CSeq_loc);
@@ -1479,9 +1496,11 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
     CSeq_loc_mix::Tdata& dst_mix = dst_loc->SetMix().Set();
     NON_CONST_ITERATE(TRangesById, id_it, m_MappedLocs) {
         if ( !id_it->first ) {
-            CRef<CSeq_loc> null_loc(new CSeq_loc);
-            null_loc->SetNull();
-            dst_mix.push_back(null_loc);
+            if (m_GapFlag == eGapPreserve) {
+                CRef<CSeq_loc> null_loc(new CSeq_loc);
+                null_loc->SetNull();
+                dst_mix.push_back(null_loc);
+            }
             continue;
         }
         for (int str = 0; str < (int)id_it->second.size(); ++str) {
@@ -1549,6 +1568,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/04/06 13:56:33  grichenk
+* Added possibility to remove gaps (NULLs) from mapped location
+*
 * Revision 1.11  2004/03/31 20:44:26  grichenk
 * Fixed warnings about unhandled cases in switch.
 *

@@ -152,6 +152,9 @@ public:
     CSeq_loc_Mapper& SetMergeAbutting(void);
     CSeq_loc_Mapper& SetMergeAll(void);
 
+    CSeq_loc_Mapper& SetGapPreserve(void);
+    CSeq_loc_Mapper& SetGapRemove(void);
+
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
     CRef<CSeq_align> Map(const CSeq_align& src_align);
 
@@ -168,6 +171,10 @@ private:
         eMergeNone,      // no merging
         eMergeAbutting,  // merge only abutting intervals, keep overlapping
         eMergeAll        // merge both abutting and overlapping intervals
+    };
+    enum EGapFlags {
+        eGapPreserve,    // Leave gaps as-is
+        eGapRemove       // Remove gaps (NULLs)
     };
 
     enum EWidthFlags {
@@ -276,6 +283,7 @@ private:
     CRef<CScope>    m_Scope;
     // CSeq_loc_Conversion_Set m_Cvt;
     EMergeFlags     m_MergeFlag;
+    EGapFlags       m_GapFlag;
     // Sources may have different widths, e.g. in an alignment
     TWidthById      m_Widths;
     int             m_Dst_width;
@@ -327,6 +335,22 @@ CSeq_loc_Mapper& CSeq_loc_Mapper::SetMergeAll(void)
 
 
 inline
+CSeq_loc_Mapper& CSeq_loc_Mapper::SetGapPreserve(void)
+{
+    m_GapFlag = eGapPreserve;
+    return *this;
+}
+
+
+inline
+CSeq_loc_Mapper& CSeq_loc_Mapper::SetGapRemove(void)
+{
+    m_GapFlag = eGapRemove;
+    return *this;
+}
+
+
+inline
 bool CSeq_loc_Mapper::LastIsPartial(void)
 {
     return m_Partial;
@@ -339,6 +363,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/04/06 13:56:33  grichenk
+* Added possibility to remove gaps (NULLs) from mapped location
+*
 * Revision 1.7  2004/03/30 21:21:09  grichenk
 * Reduced number of includes.
 *
