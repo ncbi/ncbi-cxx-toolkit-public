@@ -113,12 +113,12 @@ BlastNaExtendRightAndLeft(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
  * @return Has this hit been extended? 
  */
 Boolean
-MB_ExtendInitialHit(BLAST_SequenceBlk* query, 
-                    BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
-                    const BlastInitialWordParameters* word_params, 
-                    Int4** matrix, Blast_ExtendWord* ewp, 
-                    Int4 q_off, Int4 s_off,
-                    BlastInitHitList* init_hitlist);
+MB_ExtendInitialHits(const Uint4* query_offsets, const Uint4* subject_offsets,
+                     Int4 num_hits, BLAST_SequenceBlk* query, 
+                     BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
+                     const BlastInitialWordParameters* word_params, 
+                     Int4** matrix, Blast_ExtendWord* ewp, 
+                     BlastInitHitList* init_hitlist);
 
 
 /** Allocates memory for the BLAST_DiagTable*. This function also 
