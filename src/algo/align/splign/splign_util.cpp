@@ -305,6 +305,8 @@ string RLE(const string& in)
 CNWAligner::TScore ScoreByTranscript(const CNWAligner& aligner,
 				     const char* transcript)
 {
+  static const string kBadSymMsg = "Unknown symbol in transcript: ";
+
   const int Wg  = aligner.GetWg();
   const int Ws  = aligner.GetWs();
   const int Wm  = aligner.GetWm();
@@ -325,12 +327,8 @@ CNWAligner::TScore ScoreByTranscript(const CNWAligner& aligner,
     break;
     case 'D':  state1 = 0; state2 = 1; score += Wg;
     break;
-    default: {
-      CNcbiOstrstream oss;
-      oss << "Unknown symbol in transcript: " << transcript[0];
-      const string err_msg =  CNcbiOstrstreamToString(oss);
-      NCBI_THROW(CAlgoAlignException, eInternal, err_msg.c_str());
-    }
+    default:
+      NCBI_THROW(CAlgoAlignException, eInternal, kBadSymMsg + transcript[0]);
   }
 
   for(size_t i = 0; i < dim; ++i) {
@@ -363,11 +361,8 @@ CNWAligner::TScore ScoreByTranscript(const CNWAligner& aligner,
       }
       break;
 
-      default: {
-        char buf [1024];
-        sprintf(buf, "Unknown symbol in transcript: %c", transcript[i]);
-        NCBI_THROW(CAlgoAlignException, eInternal, buf);
-      }
+      default:
+        NCBI_THROW(CAlgoAlignException, eInternal, kBadSymMsg + transcript[i]);
     }
   }
 
@@ -381,6 +376,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/04/23 20:33:32  ucko
+ * Fix remaining use of sprintf.
+ *
  * Revision 1.5  2004/04/23 18:43:58  ucko
  * <cmath> -> <math.h>, since some older compilers (MIPSpro) lack the wrappers.
  *
