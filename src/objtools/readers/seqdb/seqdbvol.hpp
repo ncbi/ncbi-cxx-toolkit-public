@@ -58,6 +58,8 @@ using namespace ncbi::objects;
 
 class CSeqDBVol {
 public:
+    typedef CSeqDBAtlas::TIndx TIndx;
+    
     CSeqDBVol(CSeqDBAtlas   & atlas,
               const string  & name,
               char            prot_nucl);
@@ -114,9 +116,7 @@ private:
     char   x_GetSeqType(void) const;
 
     bool   x_GetAmbChar(Uint4 oid, vector<Int4> ambchars, CSeqDBLockHold & locked) const;
-
-    Int4   x_GetSequence(Int4 oid, const char ** buffer, bool keep, CSeqDBLockHold & locked) const;
-
+    
     Int4   x_GetAmbigSeq(Int4               oid,
                          char            ** buffer,
                          Uint4              nucl_code,
@@ -126,6 +126,11 @@ private:
     char * x_AllocType(Uint4             length,
                        ESeqDBAllocType   alloc_type,
                        CSeqDBLockHold  & locked) const;
+    
+    Int4 x_GetSequence(Int4             oid,
+                       const char    ** buffer,
+                       bool             keep,
+                       CSeqDBLockHold & locked) const;
     
     CSeqDBAtlas        & m_Atlas;
     string               m_VolName;

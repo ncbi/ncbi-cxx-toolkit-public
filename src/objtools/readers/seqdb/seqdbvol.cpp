@@ -55,12 +55,12 @@ char CSeqDBVol::x_GetSeqType(void) const
 
 Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx, CSeqDBLockHold & locked) const
 {
-    Uint8 start_offset = 0;
-    Uint8 end_offset   = 0;
+    TIndx start_offset = 0;
+    TIndx end_offset   = 0;
     
     Int8 length = -1;
     
-    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset, locked))
+    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset /*, locked*/))
         return -1;
     
     char seqtype = m_Idx.GetSeqType();
@@ -841,25 +841,28 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
     return base_length;
 }
 
-Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer, bool keep, CSeqDBLockHold & locked) const
+Int4 CSeqDBVol::x_GetSequence(Int4             oid,
+                              const char    ** buffer,
+                              bool             keep,
+                              CSeqDBLockHold & locked) const
 {
-    Uint8 start_offset = 0;
-    Uint8 end_offset   = 0;
+    TIndx start_offset = 0;
+    TIndx end_offset   = 0;
     
     Int4 length = -1;
     
-    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset, locked))
+    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
         return -1;
     
     char seqtype = m_Idx.GetSeqType();
     
     if (kSeqTypeProt == seqtype) {
         // Subtract one, for the inter-sequence null.
-                
+        
         end_offset --;
-                
+        
         length = end_offset - start_offset;
-            
+        
         *buffer = m_Seq.GetRegion(start_offset, end_offset, keep, locked);
     } else if (kSeqTypeNucl == seqtype) {
         // The last byte is partially full; the last two bits of
@@ -871,6 +874,7 @@ Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer, bool keep, CSeqDBL
         Int4 whole_bytes = end_offset - start_offset - 1;
         
         char last_char = (*buffer)[whole_bytes];
+        
         Int4 remainder = last_char & 3;
         length = (whole_bytes * 4) + remainder;
     }
@@ -909,10 +913,10 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid, CSeqDBLockHold & locked
 {
     CRef<CBlast_def_line_set> nullret;
     
-    Uint8 hdr_start = 0;
-    Uint8 hdr_end   = 0;
+    TIndx hdr_start = 0;
+    TIndx hdr_end   = 0;
     
-    if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end, locked)) {
+    if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end/*, locked*/)) {
         return nullret;
     }
     
@@ -944,10 +948,10 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid, CSeqDBLockHold & locked
 
 bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars, CSeqDBLockHold & locked) const
 {
-    Uint8 start_offset = 0;
-    Uint8 end_offset   = 0;
+    TIndx start_offset = 0;
+    TIndx end_offset   = 0;
     
-    bool ok = m_Idx.GetAmbStartEnd(oid, start_offset, end_offset, locked);
+    bool ok = m_Idx.GetAmbStartEnd(oid, start_offset, end_offset/*, locked*/);
     
     if (! ok) {
         return false;
