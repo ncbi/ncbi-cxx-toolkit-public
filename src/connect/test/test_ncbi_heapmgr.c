@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/05/16 15:21:03  lavr
+ * Cleaned up with format - argument correspondence; #include <time.h> added
+ *
  * Revision 6.1  2000/05/12 19:35:13  lavr
  * First working revision
  *
@@ -39,6 +42,7 @@
 #include <connect/ncbi_heapmgr.h>
 #include "../ncbi_misc.h"
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 
 
@@ -90,7 +94,7 @@ int main(void)
                 } while (rand() & 0x7);
                 if (blk && (short)blk->flag) {
                     Message("Deleting block #%d, size %u", i,
-                            blk->size - sizeof(*blk));
+                            (unsigned)(blk->size - sizeof(*blk)));
                     HEAP_Free(heap, blk);
                     Message("Done\n");
                 }
@@ -103,7 +107,7 @@ int main(void)
                     if (blk)
                         Message("Block #%d (%s), size %u", ++i,
                                 (short)blk->flag ? "used" : "free",
-                                blk->size - sizeof(*blk));
+                                (unsigned)(blk->size - sizeof(*blk)));
                 } while (blk);
                 Message("Total of %d block%s\n", i, i == 1 ? "" : "s");
             } else if (r == 6) {
@@ -117,7 +121,7 @@ int main(void)
                     if (blk)
                         Message("Block #%d (%s), size %u", ++i,
                                 (short)blk->flag ? "used" : "free",
-                                blk->size - sizeof(*blk));
+                                (unsigned)(blk->size - sizeof(*blk)));
                 } while (blk);
                 Message("Total of %d block%s\n", i, i == 1 ? "" : "s");
                 HEAP_Detach(newheap);
