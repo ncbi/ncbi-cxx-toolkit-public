@@ -32,13 +32,14 @@ Author: Alejandro Schaffer
 
 Contents: header file for block IMPALA
 
+
+*****************************************************************************/
+
 /*
  * $Id$
  *
- * This file is modified very slightly from Alejandro's blocka.h as of 7/24/02
- *
-
-*****************************************************************************/
+ * This file is the same as Alejandro's blocka.h as of 7/29/02
+ */
 
 #include <ncbi.h>
 #include <math.h>
@@ -61,6 +62,7 @@ typedef struct alignBlocks {
   Int4 extendedBackScore;
   Int4 extendedForwardScore;
   Int4 score;
+  Int4 numBlocksMatched;
   struct alignBlocks *next;
 } alignBlocks;
 

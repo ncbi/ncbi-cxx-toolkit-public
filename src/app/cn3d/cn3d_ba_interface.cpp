@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/07/29 13:25:42  thiessen
+* add range restriction to block aligner
+*
 * Revision 1.2  2002/07/27 12:29:51  thiessen
 * fix block aligner crash
 *
@@ -65,8 +68,9 @@ extern "C" {
 extern void allocateAlignPieceMemory(Int4 numBlocks);
 void findAllowedGaps(SeqAlign *listOfSeqAligns, Int4 numBlocks, Int4 *allowedGaps,
     Nlm_FloatHi percentile, Int4 gapAddition);
-extern void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength, Int4 numBlocks, Int4 *blockStarts,
-    Int4 *blockEnds, Int4 masterLength, BLAST_Score **posMatrix, BLAST_Score scoreThresholdSingleBlock);
+extern void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
+    Int4 startQueryPosition, Int4 endQueryPosition, Int4 numBlocks, Int4 *blockStarts, Int4 *blockEnds,
+    Int4 masterLength, BLAST_Score **posMatrix, BLAST_Score scoreThreshold);
 extern void LIBCALL sortAlignPieces(Int4 numBlocks);
 extern SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks, Int4 queryLength, Uint1Ptr seq,
     Int4 seqLength, Int4 *blockStarts, Int4 *blockEnds, Int4 *allowedGaps, Int4 scoreThresholdMultipleBlock,
@@ -217,6 +221,8 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
     Nlm_FloatHi percentile = 0.9;
     Int4 gapAddition = 10;
     Nlm_FloatHi scaleMult = 1.0;
+    Int4 startQueryPosition;
+    Int4 endQueryPosition;
 
     searchSpaceSize = 0;
 
@@ -267,9 +273,15 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
         for (i=0; i<queryLength; i++)
             convertedQuery[i] = ResToInt(query->sequenceString[i]);
         query_id = query->parentSet->GetOrCreateBioseq(query)->id;
+        startQueryPosition =
+            ((*s)->alignFrom >= 0 && (*s)->alignFrom < query->Length()) ?
+                (*s)->alignFrom : 0;
+        endQueryPosition =
+            ((*s)->alignTo >= 0 && (*s)->alignTo < query->Length()) ?
+                ((*s)->alignTo + 1) : query->Length();
 
         // actually do the block alignment
-        findAlignPieces(convertedQuery, queryLength, numBlocks,
+        findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition, numBlocks,
             blockStarts, blockEnds, masterLength, thisScoreMat, scoreThresholdSingleBlock);
         sortAlignPieces(numBlocks);
         results = makeMultiPieceAlignments(convertedQuery, numBlocks,

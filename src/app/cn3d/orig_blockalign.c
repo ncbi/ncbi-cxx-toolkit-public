@@ -448,7 +448,9 @@ void insertPiece(alignPiece *newPiece, Int4 blockIndex)
 }
 
 /*find all high scoring single-block gapless alignments*/
-void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength, Int4 numBlocks,
+void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength, 
+		     Int4 startQueryPosition, Int4 endQueryPosition,
+		     Int4 numBlocks,
                      Int4 *blockStarts, Int4 *blockEnds, Int4 masterLength,
 		     BLAST_Score **posMatrix, BLAST_Score scoreThreshold)
 {
@@ -461,7 +463,7 @@ void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength, Int4 numBlocks,
    alignPiece *newPiece;
 
    for(blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
-     for(queryPos = 0; queryPos < queryLength; queryPos++) {
+     for(queryPos = startQueryPosition; queryPos < endQueryPosition; queryPos++) {
        score = 0;
        for (dbPos = blockStarts[blockIndex], incrementedQueryPos = queryPos; 
 	    ((dbPos <= blockEnds[blockIndex]) && (incrementedQueryPos < queryLength));
@@ -512,7 +514,9 @@ static void alignBlocks_bbsort(alignBlocks **qs, Int4 i, Int4 j)
 
     for (x = j; x > i; x--) {
       for (y = i; y < x; y++) {
-	if (qs[y]->score > qs[y+1]->score) {
+	if ((qs[y]->score > qs[y+1]->score) ||
+            ((qs[y]->score == qs[y+1]->score) &&
+	     (qs[y]->numBlocksMatched > qs[y+1]->numBlocksMatched))) {
 	  /*swap pointers for inverted adjacent elements*/
 	  sp = qs[y];
 	  qs[y] = qs[y+1]; 
@@ -567,20 +571,30 @@ static void  alignBlocksmedianOfThree(alignBlocks **qs, Int4 i, Int4 j)
   alignBlocks *swapTemp;
 
   middle = (i+j)/2;
-  if (qs[i]->score < qs[middle]->score) {
-    if (qs[middle]->score < qs[j]->score)
+  if ((qs[i]->score < qs[middle]->score) ||
+      ((qs[i]->score == qs[middle]->score) &&
+       (qs[i]->numBlocksMatched < qs[middle]->numBlocksMatched))) {
+    if ((qs[middle]->score < qs[j]->score) ||
+	((qs[middle]->score == qs[j] ->score) &&
+	 (qs[middle]->numBlocksMatched < qs[j]->numBlocksMatched)))
       swapIndex = middle;
     else
-      if (qs[i]->score < qs[j]->score)
+      if ((qs[i]->score < qs[j]->score) ||
+	  ((qs[i]->score == qs[j]->score) &&
+	   (qs[i]->numBlocksMatched < qs[j]->numBlocksMatched)))
         swapIndex = j;
       else
         swapIndex = i;
   }
   else {
-    if (qs[j]->score < qs[middle]->score)
+    if ((qs[j]->score < qs[middle]->score) ||
+	((qs[j]->score == qs[middle]->score) &&
+	 (qs[j]->numBlocksMatched < qs[middle]->numBlocksMatched)))
       swapIndex = middle;
     else
-      if (qs[j]->score < qs[i]->score)
+      if ((qs[j]->score < qs[i]->score) ||
+	  (qs[j]->score == qs[i]->score) &&
+	  (qs[j]->numBlocksMatched < qs[i]->numBlocksMatched))
         swapIndex = j;
       else
         swapIndex = i;
@@ -646,6 +660,7 @@ static void alignBlocks_quicksort(alignBlocks **qs, Int4 i, Int4 j)
 {
     Int4 lf, rt;  /*left and right fingers into the array*/
     Nlm_FloatHi partitionScore; /*score to partition around*/
+    Int4 partitionBlocksMatched; /*secondary key for breaking ties*/
     alignBlocks * tp; /*temporary pointer for swapping*/
     if (j-i <= SORT_THRESHOLD) {
       alignBlocks_bbsort(qs, i,j);
@@ -658,11 +673,16 @@ static void alignBlocks_quicksort(alignBlocks **qs, Int4 i, Int4 j)
     alignBlocksmedianOfThree(qs, i, j);
     /*implicitly choose qs[i] as the partition element*/    
     partitionScore = qs[i]->score;
+    partitionBlocksMatched = qs[i]->numBlocksMatched;
     /*partititon around partitionScore = qs[i]->score*/
     while (lf <= rt) {
-      while (qs[lf]->score <=  partitionScore) 
+      while ((qs[lf]->score <  partitionScore) ||
+	     ((qs[lf]->score == partitionScore) &&
+	      (qs[lf]->numBlocksMatched <= partitionBlocksMatched)))
 	lf++;
-      while (qs[rt]->score >  partitionScore)
+      while ((qs[rt]->score >  partitionScore) ||
+	     ((qs[rt]->score == partitionScore) &&
+	      qs[rt]->numBlocksMatched > partitionBlocksMatched))
 	rt--;
       if (lf < rt) {
 	/*swap elements on wrong side of partition*/
@@ -761,6 +781,7 @@ alignBlocks * alignBlocksNew(numBlocks)
   returnValue->extendedBackScore = 0;
   returnValue->extendedForwardScore = 0;
   returnValue->score = 0;
+  returnValue->numBlocksMatched = 0;
   returnValue->next = NULL;
   return(returnValue);
 
@@ -808,6 +829,7 @@ void initializeBestPairs(Int4 numBlocks, Int4 queryLength)
     while (NULL != thisAlignPiece) {
       nextAlignBlock = alignBlocksNew(numBlocks);
       nextAlignBlock->score = thisAlignPiece->score;
+      nextAlignBlock->numBlocksMatched = 1;
       nextAlignBlock->queryStarts[blockIndex] = thisAlignPiece->queryStart;
       nextAlignBlock->queryEnds[blockIndex] = thisAlignPiece->queryEnd;
       if (NULL == thisAlignBlock) {
@@ -908,6 +930,8 @@ void updateBestPairs(Int4 numBlocks, Int4 queryLength, Int4 *allowedGaps,
 		secondBlockCandidate->queryEnds[blockIndex2];
 	      newAlignBlocks->score = firstBlockCandidate->score +
 		                      secondBlockCandidate->score;
+	      newAlignBlocks->numBlocksMatched = firstBlockCandidate->numBlocksMatched +
+		                      secondBlockCandidate->numBlocksMatched;
 	      if (newAlignBlocks->score > firstBlockCandidate->extendedForwardScore)
 		firstBlockCandidate->extendedForwardScore = newAlignBlocks->score;
 	      if (newAlignBlocks->score > secondBlockCandidate->extendedBackScore)
@@ -943,6 +967,7 @@ alignBlocks *copyAlignBlock(alignBlocks *oldAlignBlock, Int4 numBlocks)
     returnAlignBlock->queryStarts[i] = oldAlignBlock->queryStarts[i];
     returnAlignBlock->queryEnds[i] = oldAlignBlock->queryEnds[i];
     returnAlignBlock->score = oldAlignBlock->score;
+    returnAlignBlock->numBlocksMatched = oldAlignBlock->numBlocksMatched;
     returnAlignBlock->extendedForwardScore = oldAlignBlock->extendedForwardScore;
     returnAlignBlock->extendedBackScore = oldAlignBlock->extendedBackScore;
   }
@@ -1193,7 +1218,11 @@ static Args myargs [] = {
     { "K for scoring system", /*25*/
       "0.0", NULL, NULL, FALSE, 'K', ARG_FLOAT, 0.0, 0, NULL},
     { "Multiplicative scaling factor for scores", /*26*/
-      "1.0", NULL, NULL, FALSE, 'S', ARG_FLOAT, 0.0, 0, NULL}
+      "1.0", NULL, NULL, FALSE, 'S', ARG_FLOAT, 0.0, 0, NULL},
+    { "Start of desired region in query", /* 27 */
+      "1", NULL, NULL, FALSE, 'Q', ARG_INT, 0.0, 0, NULL},
+    { "End of required region in query (-1 indicates end of query)", /* 28 */
+      "-1", NULL, NULL, FALSE, 'R', ARG_INT, 0.0, 0, NULL}
 };
 
 Int2  Main(void)
@@ -1244,6 +1273,9 @@ Int2  Main(void)
    Int4 bestFirstBlock, bestLastBlock; /*to store extent of highest scoring
                                          alignment*/
    Int4 searchSpaceSize; /*size of search space for getting E-values*/
+   Int4 i; /*loop index*/
+   Int4 startQueryRegion, endQueryRegion; /*start and end positions of query 
+					    desired in alignments*/
 
    if (! GetArgs ("blockalign", NUMARG, myargs))
      {
@@ -1349,8 +1381,12 @@ Int2  Main(void)
    local_sequence_id = SeqIdFindBest(SeqLocId(private_slp), SEQID_GI);
    query_id = SeqIdDup(local_sequence_id);
 
+   startQueryRegion = MAX(0,myargs[27].intvalue -1);
+   endQueryRegion = queryLength;
+   if (1 <= myargs[28].intvalue) 
+     endQueryRegion = MIN(queryLength, myargs[28].intvalue);
    allocateAlignPieceMemory(numBlocks);
-   findAlignPieces(convertedQuery,queryLength, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, myargs[17].intvalue);
+   findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, myargs[17].intvalue);
    sortAlignPieces(numBlocks);
    results = makeMultiPieceAlignments(convertedQuery, numBlocks, 
       queryLength, masterSequence, masterLength,
@@ -1449,6 +1485,12 @@ Int2  Main(void)
 
    ReadDBBioseqFetchDisable();
 
+   for (i = 0; i < masterLength; i++) {
+     if (NULL != thisPosFreqs[i])
+       MemFree(thisPosFreqs[i]);
+     if (NULL != thisScoreMat[i])
+       MemFree(thisScoreMat[i]);
+   }
    freeBestScores(numBlocks);
    freeBestPairs(numBlocks);
    freeAlignPieceLists(numBlocks);
@@ -1457,6 +1499,5 @@ Int2  Main(void)
    FileClose(diagfp);
    return 0;
 }
-
 
 
