@@ -127,6 +127,7 @@ bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBina
     SetDiagTrace(eDT_Disable);
     try {
         *outObject << ASNobject;
+        outStream->flush();
     } catch (std::exception& e) {
         *err = e.what();
         okay = false;
@@ -180,6 +181,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/10/20 16:53:54  thiessen
+* flush output after writing
+*
 * Revision 1.16  2003/08/22 14:33:38  thiessen
 * remove static decl from templates
 *
