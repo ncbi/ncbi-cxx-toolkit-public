@@ -500,7 +500,7 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
 			Uint1* word, Int4 offset)
 {
   Uint1* s = lookup->neighbors;
-  Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize;
+  Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize + 1;
   Uint1* w = word;
   Uint1 different;
   Int4 score;
