@@ -513,7 +513,7 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
                 CBioseq_Handle prod =
                     m_Scope->GetBioseqHandleFromTSE(prod_id, m_Imp.GetTSE());
                 if ( !prod ) {
-                    eDiag_Info;
+                    sev = eDiag_Info;
                 }
             }
                         
@@ -2673,6 +2673,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2004/03/25 20:10:13  shomrat
+* Fix statement with no effect
+*
 * Revision 1.51  2004/03/25 18:33:47  shomrat
 * Bug fix
 *
