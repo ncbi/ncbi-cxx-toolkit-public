@@ -209,25 +209,6 @@ BlastInitHitListPtr BLAST_InitHitListNew(void);
   /** Free memory for the BlastInitList structure */
 BlastInitHitListPtr BLAST_InitHitListDestruct(BlastInitHitListPtr init_hitlist);
 
-/** Traditional Mega BLAST initial word extension
- * @param word_options Options for the initial word extension [in]
- * @param scan_step The stride for scanning the database (1 or 4) [in]
- * @param hit_length The length of the initial words found in the lookup 
- *        table [in]
- * @param word_length The length which the hit must reach before it can be 
- *        saved [in]
- * @param ewp The structure holding the information about previously found
- *        initial hits, that have not qualified for saving yet [in] [out]
- * @param s_off The word offset in the subject sequence [in]
- * @param q_off The word offset in the query sequence [in]
- * @param init_hitlist The structure where the hits are saved [in] [out]
- */
-Int4
-MB_ExtendInitialHit(BlastInitialWordOptionsPtr word_options, 
-             Uint1 scan_step, Int4 hit_length, Int4 word_length, 
-             BLAST_ExtendWordPtr ewp, Int4 s_off, Int4 q_off,
-             BlastInitHitListPtr init_hitlist);
-
 /** Finds all words for a given subject sequence, satisfying the wordsize and 
  *  discontiguous template conditions, and performs initial (exact match) 
  *  extension.
@@ -339,6 +320,9 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject,
  */
 Boolean BLAST_SaveInitialHit(BlastInitHitListPtr init_hitlist, 
            Int4 q_off, Int4 s_off, BlastUngappedDataPtr ungapped_data); 
+
+/** Deallocate memory for the word extension structure */
+BLAST_ExtendWordPtr BlastExtendWordFree(BLAST_ExtendWordPtr ewp);
 
 #ifdef __cplusplus
 }
