@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.216 2003/09/09 14:41:07 ucko Exp $
+#  $Id: configure.ac,v 1.217 2003/09/11 18:26:28 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2329,8 +2329,8 @@ if test "$with_bdb" != "no" ; then
 #include <db.h>
 ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PATCH
           ]])])
-          eval "$ac_cpp conftest.$ac_ext" 2>&AS_MESSAGE_LOG_FD \
-             | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
+          eval "$ac_cpp $BERKELEYDB_INCLUDE conftest.$ac_ext" \
+             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
           . ./conftest.sh
           rm -f contest*
          ])
@@ -3034,6 +3034,13 @@ NCBI_CHECK_THIRD_PARTY_LIB(sablot,
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
+### SQLite
+: ${SQLITE_PATH=$NCBI/sqlite}
+NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
+ AC_LANG_PROGRAM([#include <sqlite.h>],
+    [sqlite* db = sqlite_open("foo.db", 0, NULL);]))
+
+
 ### Image libraries
 : ${JPEG_PATH=$NCBI/gd}
 # Grr... jpeglib.h isn't especially well-behaved.
@@ -3080,7 +3087,7 @@ else
    GIF_LIBS=$UNGIF_LIBS
 fi
 
-: ${XPM_PATH=`dirname $x_includes`}
+test -n "$x_includes"  &&  : ${XPM_PATH=`dirname "$x_includes"`}
 NCBI_CHECK_THIRD_PARTY_LIB(Xpm,
  AC_LANG_PROGRAM([#include <X11/xpm.h>],
     [XpmImage image; XpmInfo info;
