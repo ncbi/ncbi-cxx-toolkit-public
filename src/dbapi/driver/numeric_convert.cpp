@@ -106,4 +106,19 @@ Int8 numeric_to_longlong(unsigned int precision, unsigned char* cs_num)
 }
 
 
+void swap_numeric_endian(unsigned int precision, unsigned char* num)
+{
+    if(precision == 0) return;
+
+    int BYTE_NUM= s_NumericBytesPerPrec[precision - 1] - 1;
+    unsigned char c;
+    int i, j;
+
+    for(i= 0, j= BYTE_NUM-1; i < j; i++, j--) {
+        c= num[i];
+        num[i]= num[j];
+        num[j]= c;
+    }
+}
+
 END_NCBI_SCOPE

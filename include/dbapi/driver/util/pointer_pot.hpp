@@ -33,6 +33,7 @@
  */
 
 
+#include <stdlib.h>
 #include <corelib/ncbistl.hpp>
 
 
@@ -113,6 +114,27 @@ private:
     void x_SimpleSort(TPotItem* arr, int nof_items, FPotCompare cf);
 };
 
+class CMemPot 
+{
+public:
+    void* Alloc(size_t nof_bytes) {
+        char* c= new char[nof_bytes];
+        m_Pot.Add((TPotItem) c);
+        return c;
+    }
+	    
+    void Free(void* ptr) {
+        delete []ptr;
+        m_Pot.Remove(ptr);
+    }
+    
+    ~CMemPot() {
+        for(int i= m_Pot.NofItems(); i--; delete[]m_Pot.Get(i));
+    }
+    
+private:
+    CPointerPot m_Pot;
+};
 
 END_NCBI_SCOPE
 
@@ -121,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/06/20 18:37:23  soussov
+ * odbc related changes
+ *
  * Revision 1.2  2001/11/06 17:58:07  lavr
  * Formatted uniformly as the rest of the library
  *

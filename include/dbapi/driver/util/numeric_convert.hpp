@@ -44,6 +44,7 @@ unsigned char*  longlong_to_numeric (Int8 l_num, unsigned int prec,
 // long long numeric_to_longlong(CS_NUMERIC* cs_num);
 Int8 numeric_to_longlong(unsigned int precision, unsigned char* cs_num);
 
+void swap_numeric_endian(unsigned int precision, unsigned char* num);
 
 END_NCBI_SCOPE
 
@@ -54,6 +55,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/06/20 18:37:49  soussov
+ * odbc related changes
+ *
  * Revision 1.4  2001/12/28 21:22:39  sapojnik
  * Made compatible with MS compiler: long long to Int8, static const within class def to enum
  *
