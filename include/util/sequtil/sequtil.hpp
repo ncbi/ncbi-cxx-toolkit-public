@@ -37,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CSeqUtil
+class NCBI_XUTIL_EXPORT CSeqUtil
 {
 public:
     enum ECoding {
@@ -82,6 +82,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/17 13:21:58  dicuccio
+* Added export specifier
+*
 * Revision 1.2  2003/11/06 16:10:09  shomrat
 * added e_not_set as a coding option
 *
