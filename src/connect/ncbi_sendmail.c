@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/02/28 17:48:53  lavr
+ * Some fixes; larger intermediate buffer for message body
+ *
  * Revision 6.1  2001/02/28 00:52:26  lavr
  * Initial revision
  *
@@ -43,6 +46,7 @@
 #include <stdlib.h>
 #include <string.h>
 #ifdef NCBI_OS_UNIX
+#include <pwd.h>
 #include <unistd.h>
 #endif
 
@@ -107,7 +111,7 @@ static int s_SockRead(SOCK sock, char* reply, size_t replylen)
             
         } while (buf[0] != '\n');
 
-        // At least '\n' should sit in buffer
+        /* At least '\n' should sit in buffer */
         assert(n);
         
         if (done)
@@ -174,10 +178,18 @@ static char* s_ComposeFrom(char* buf, size_t buf_size)
 {
     size_t buflen, hostnamelen;
 #ifdef NCBI_OS_UNIX
+    struct passwd *pwd;
     /* Get the user login name. FIXME: not MT-safe */
     const char* login_name = getlogin();
-    if (!login_name)
-        return 0;
+    if (!login_name) {
+        pwd = getpwuid(getuid());
+        if (!pwd) {
+            if (!(login_name = getenv("USER")) &&
+                !(login_name = getenv("LOGNAME")))
+                return 0;
+        } else
+            login_name = pwd->pw_name;
+    }
 #else
     /* Temporary solution for login name */
     const char* login_name = "anonymous";
@@ -239,7 +251,6 @@ const char* CORE_SendMailEx(const char*          to,
                             const char*          body,
                             const SSendMailInfo* uinfo)
 {
-    const char x_mailer[] = "X-Mailer: CORE_SendMail(NCBI C++ Toolkit)"MX_CRLF;
     const SSendMailInfo* info;
     SSendMailInfo ainfo;
     char buffer[1024];
@@ -248,6 +259,11 @@ const char* CORE_SendMailEx(const char*          to,
     info = uinfo ? uinfo : SendMailInfo_Init(&ainfo);
     if (info->magic_number != MX_MAGIC_NUMBER)
         SENDMAIL_RETURN("Invalid magic number");
+
+    if ((!to || !*to) &&
+        (!info->cc || !*info->cc) &&
+        (!info->bcc || !*info->bcc))
+        SENDMAIL_RETURN("At least one message recipient must be specified");
     
     /* Open connection to sendmail */
     if (SOCK_Create(info->mx_host, info->mx_port, &info->mx_timeout, &sock)
@@ -274,78 +290,106 @@ const char* CORE_SendMailEx(const char*          to,
         SENDMAIL_RETURN("Write error in MAIL command");
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in MAIL command", buffer);
-    
-    if (!s_SockWrite(sock, "RCPT TO: <") ||
-        !s_SockWrite(sock, to) ||
-        !s_SockWrite(sock, ">" MX_CRLF))
-        SENDMAIL_RETURN("Write error in RCPT command");
-    if (!SENDMAIL_READ_RESPONSE(250, 251, buffer))
-        SENDMAIL_RETURN2("Protocol error in RCPT command", buffer);
+
+    if (to && *to) {
+        if (!s_SockWrite(sock, "RCPT TO: <") ||
+            !s_SockWrite(sock, to) ||
+            !s_SockWrite(sock, ">" MX_CRLF))
+            SENDMAIL_RETURN("Write error in RCPT (To) command");
+        if (!SENDMAIL_READ_RESPONSE(250, 251, buffer))
+            SENDMAIL_RETURN2("Protocol error in RCPT (To) command", buffer);
+    }
+
+    if (info->cc && *info->cc) {
+        if (!s_SockWrite(sock, "RCPT TO: <") ||
+            !s_SockWrite(sock, info->cc) ||
+            !s_SockWrite(sock, ">" MX_CRLF))
+            SENDMAIL_RETURN("Write error in RCPT (Cc) command");
+        if (!SENDMAIL_READ_RESPONSE(250, 251, buffer))
+            SENDMAIL_RETURN2("Protocol error in RCPT (Cc) command", buffer);
+    }
+
+    if (info->bcc && *info->bcc) {
+        if (!s_SockWrite(sock, "RCPT TO: <") ||
+            !s_SockWrite(sock, info->bcc) ||
+            !s_SockWrite(sock, ">" MX_CRLF))
+            SENDMAIL_RETURN("Write error in RCPT (Bcc) command");
+        if (!SENDMAIL_READ_RESPONSE(250, 251, buffer))
+            SENDMAIL_RETURN2("Protocol error in RCPT (Bcc) command", buffer);
+    }
     
     if (!s_SockWrite(sock, "DATA" MX_CRLF))
         SENDMAIL_RETURN("Write error in DATA command");
     if (!SENDMAIL_READ_RESPONSE(354, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in DATA command", buffer);
     
-    if (!s_SockWrite(sock, x_mailer))
-        SENDMAIL_RETURN("Write error in sending mailer information");
-    
+    /* Follow RFC822 to compose message headers. Note that
+     * 'Date:'and 'From:' are both added by sendmail automatically.
+     */ 
     if (!s_SockWrite(sock, "Subject: ") ||
         (subject && !s_SockWrite(sock, subject)) ||
         !s_SockWrite(sock, MX_CRLF))
         SENDMAIL_RETURN("Write error in sending subject");
-    
-    if (info->cc) {
+
+    if (to && *to) {
+        if (!s_SockWrite(sock, "To: ") ||
+            !s_SockWrite(sock, to) ||
+            !s_SockWrite(sock, MX_CRLF))
+            SENDMAIL_RETURN("Write error in sending To");
+    }
+
+    if (info->cc && *info->cc) {
         if (!s_SockWrite(sock, "Cc: ") ||
             !s_SockWrite(sock, info->cc) ||
             !s_SockWrite(sock, MX_CRLF))
-            SENDMAIL_RETURN("Write error in sending cc");
+            SENDMAIL_RETURN("Write error in sending Cc");
     }
-    
-    if (info->bcc) {
-        if (!s_SockWrite(sock, "Bcc: ") ||
-            !s_SockWrite(sock, info->bcc) ||
-            !s_SockWrite(sock, MX_CRLF))
-            SENDMAIL_RETURN("Write error in sending bcc");
-    }
-    
-    if (info->header) {
+
+    if (!s_SockWrite(sock,
+                     "X-Mailer: CORE_SendMail (NCBI C++ Toolkit)" MX_CRLF))
+        SENDMAIL_RETURN("Write error in sending mailer information");
+
+    if (info->header && *info->header) {
         if (!s_SockWrite(sock, info->header) ||
             !s_SockWrite(sock, MX_CRLF))
             SENDMAIL_RETURN("Write error in sending custom header");
     }
     
-    if (body) {
-        size_t n, l = strlen(body);
+    if (body && *body) {
+        size_t n = 0, l = strlen(body);
         int/*bool*/ newline = 0/*false*/;
         
         if (!s_SockWrite(sock, MX_CRLF))
             SENDMAIL_RETURN("Write error in sending text body delimiter");
-        for (n = 0; n <= l; n++) {
-            if (n == l) {
-                if ((!newline && !s_SockWrite(sock, MX_CRLF)) ||
-                    !s_SockWrite(sock, "." MX_CRLF))
-                    SENDMAIL_RETURN("Write error in finishing text body");
-            } else {
-                char ch[sizeof(MX_CRLF)];
-                
+        while (n < l) {
+            char ch[(sizeof(MX_CRLF) - 1)*512];
+            size_t m = 0, k = sizeof(ch);
+            
+            assert(sizeof(MX_CRLF) >= 3);
+            while (n < l && m < k - sizeof(MX_CRLF)) {
                 if (body[n] == '\n') {
-                    strcpy(ch, MX_CRLF);
+                    strcpy(&ch[m], MX_CRLF);
+                    m += sizeof(MX_CRLF) - 1;
                     newline = 1/*true*/;
                 } else {
                     if (body[n] == '.' && (newline || !n)) {
-                        ch[0] = ch[1] = '.';
-                        ch[2] = '\0';
+                        ch[m]   = '.';
+                        ch[++m] = '.';
+                        ch[++m] = '\0';
                     } else {
-                        ch[0] = body[n];
-                        ch[1] = '\0';
+                        ch[m]   = body[n];
+                        ch[++m] = '\0';
                     }
                     newline = 0/*false*/;
                 }
-                if (!s_SockWrite(sock, ch))
-                    SENDMAIL_RETURN("Write error in sending text body");
+                n++;
             }
+            if (!s_SockWrite(sock, ch))
+                SENDMAIL_RETURN("Write error in sending text body");
         }
+        if ((!newline && !s_SockWrite(sock, MX_CRLF)) ||
+            !s_SockWrite(sock, "." MX_CRLF))
+            SENDMAIL_RETURN("Write error in finishing text body");
     } else if (!s_SockWrite(sock, MX_CRLF "." MX_CRLF))
         SENDMAIL_RETURN("Write error in finishing message");
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
