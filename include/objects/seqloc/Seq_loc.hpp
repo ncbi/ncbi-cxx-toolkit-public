@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2002/06/06 20:40:51  clausen
+ * Moved methods using object manager to objects/util
+ *
  * Revision 1.8  2002/05/03 21:28:04  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -73,17 +76,13 @@
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Packed_seqpnt.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 //
 #include <util/range.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Na_strand.hpp>
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-class CScope;
 
 class CSeq_loc : public CSeq_loc_Base
 {
@@ -98,40 +97,9 @@ public:
     // destructor
     virtual ~CSeq_loc(void);
 
-    class CException : public runtime_error
-    {
-    public:
-        CException(const string& s) : runtime_error(s) { }
-    };
-
-    // Method to determine the containment relationship between CSeq_locs
-    enum ECompare {
-        eNoOverlap = 0, // Sequences do not overlap
-        eContained,     // *this contained by seqloc
-        eContains,      // *this contains seqloc
-        eSame,          // *this and seqloc contain each other
-        eOverlap        // Sequences overlap each other
-    };
-    ECompare Compare(const CSeq_loc& seqloc, CScope* scope = 0) const;
-
-    TSeqPos GetLength(void) const THROWS((CException));
 
     typedef CRange<TSeqPos> TRange;
     TRange GetTotalRange(void) const;
-    
-    // Returns true if all CSeq_ids contained in this CSeq_loc represent the
-    // same CBioseq within scope. CSeq_id::Compare used if scope == 0.
-    bool IsOneBioseq(CScope* scope = 0) const;
-    
-    // Returns lowest residue position in this CSeq_loc if this represents
-    // one CBioseq, else -1. Also returns -1 for e_not_set, e_Null, 
-    // e_Feat, and e_Empty. For a bond, returns the lowest residue position of
-    // the A member of the bond
-    TSeqPos GetStart(CScope* scope = 0) const THROWS((CException));
-    
-    // Returns a pointer to the first CSeq_id found in this CSeq_loc
-    // if exactly one CBioseq is represented, else returns a null pointer
-    const CSeq_id* GetId(CScope* scope = 0) const;
 
 private:
     // Prohibit copy constructor & assignment operator
