@@ -359,6 +359,7 @@ property demo_font : {name:"demo_font", path:"gui:opengl:demo", inc:{"font_demo.
 property demo_gl3d : {name:"demo_gl3d", path:"gui:opengl:demo", inc:{"gl3d_demo.cpp", "gl3d_demo_ui.cpp", "gl3d_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:false}
 property demo_spline : {name:"demo_spline", path:"gui:opengl:demo", inc:{"spline_demo.cpp", "spline_demo_ui.cpp", "spline_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:false}
 property demo_tex : {name:"demo_texture", path:"gui:opengl:demo", inc:{"tex_demo.cpp", "tex_demo_ui.cpp", "tex_window.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:false}
+property demo_tex_font : {name:"demo_texture_fonts", path:"gui:opengl:demo", inc:{"tex_font_demo.cpp", "tex_font_demo_ui.cpp", "tex_font_window.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:false}
 property demo_gltest : {name:"demo_gltest", path:"gui:opengl:test", dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:true}
 
 
@@ -378,7 +379,7 @@ property allCTools : {datatool, gbench_plugin_scan, test_ncbi_tree, test_plugins
 
 
 -- Application packs
-property allApps : {gbench, demo_seqgraphic, demo_crossaln, demo_hitmatrix, demo_workspace, demo_win_manager, demo_phylo_tree, demo_serial_browse, demo_tooltip, demo_treebrowser, demo_table, demo_taxtree, demo_font, demo_gl3d, demo_spline, demo_tex, demo_gltest}
+property allApps : {gbench, demo_seqgraphic, demo_crossaln, demo_hitmatrix, demo_workspace, demo_win_manager, demo_phylo_tree, demo_serial_browse, demo_tooltip, demo_treebrowser, demo_table, demo_taxtree, demo_font, demo_gl3d, demo_spline, demo_tex, demo_tex_font, demo_gltest}
 --property allApps : {gui_demos}
 
 
@@ -397,6 +398,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/02/02 12:42:56  lebedev
+ * demo_tex_font added
+ *
  * Revision 1.40  2004/12/22 16:42:36  lebedev
  * gui_dlg_seq_goto added
  *
