@@ -60,7 +60,8 @@ public:
                                    const string&            project_dir,
                                    const string&            tree_root,
                                    const string&            subtree_to_build,
-                                   const string&            solution_to_build);
+                                   const string&            solution_to_build,
+                                   bool  build_ptb);
 
     ~CMsvcConfigureProjectGenerator(void);
 
@@ -89,6 +90,7 @@ private:
     const string m_SrcFileName;
 
     const string m_FilesSubdir;
+    bool m_BuildPtb;
 
     void CreateProjectFileItem(void) const;    
 
@@ -106,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/23 19:32:32  gouriano
+ * Make it possible to exclude PTB build when configuring
+ *
  * Revision 1.4  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

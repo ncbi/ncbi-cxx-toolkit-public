@@ -99,6 +99,7 @@ private:
     auto_ptr<CProjectItemsTree> m_WholeTree;
 
     auto_ptr<CDllSrcFilesDistr> m_DllSrcFilesDistr;
+    bool m_BuildPtb;
 
 public:
 
@@ -188,6 +189,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/03/23 19:32:32  gouriano
+ * Make it possible to exclude PTB build when configuring
+ *
  * Revision 1.19  2005/02/14 18:52:45  gouriano
  * Generate a file with all features and packages listed
  *

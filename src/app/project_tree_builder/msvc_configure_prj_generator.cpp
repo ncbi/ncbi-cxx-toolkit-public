@@ -42,7 +42,8 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                                    const string&            project_dir,
                                    const string&            tree_root,
                                    const string&            subtree_to_build,
-                                   const string&            solution_to_build)
+                                   const string&            solution_to_build,
+                                   bool  build_ptb)
 :m_Name          ("-CONFIGURE-"),
  m_OutputDir     (output_dir),
  m_Configs       (configs),
@@ -53,7 +54,8 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
  m_SolutionToBuild(solution_to_build),
  m_ProjectItemExt("._"),
  m_SrcFileName   ("configure"),
- m_FilesSubdir   ("UtilityProjectsFiles")
+ m_FilesSubdir   ("UtilityProjectsFiles"),
+ m_BuildPtb(build_ptb)
 {
     m_CustomBuildCommand = "@echo on\n";
 
@@ -79,36 +81,38 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     //
 
     // Build command for project_tree_builder.sln
-    m_CustomBuildCommand += 
-        "devenv /build Release /project project_tree_builder.exe ";
-//        "devenv /build $(ConfigurationName) /project project_tree_builder.exe ";
+    if (m_BuildPtb) {
+        m_CustomBuildCommand += 
+            "devenv /build Release /project project_tree_builder.exe ";
+//         "devenv /build $(ConfigurationName) /project project_tree_builder.exe ";
 
-    string project_tree_builder_sln_dir = 
-        GetApp().GetProjectTreeInfo().m_Compilers;
-    project_tree_builder_sln_dir = 
-        CDirEntry::ConcatPath(project_tree_builder_sln_dir,
-                              GetApp().GetRegSettings().m_CompilersSubdir);
-    project_tree_builder_sln_dir = 
-        CDirEntry::ConcatPath(project_tree_builder_sln_dir, "static");
-    project_tree_builder_sln_dir = 
-        CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                              GetApp().GetRegSettings().m_ProjectsSubdir);
-    project_tree_builder_sln_dir = 
-        CDirEntry::ConcatPath(project_tree_builder_sln_dir, "app");
-    project_tree_builder_sln_dir = 
-        CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                              "project_tree_builder");
-    project_tree_builder_sln_dir = 
-        CDirEntry::AddTrailingPathSeparator(project_tree_builder_sln_dir);
-    
-    string project_tree_builder_sln_path = 
-        CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                              "project_tree_builder.sln");
-    project_tree_builder_sln_path = 
-        CDirEntry::CreateRelativePath(project_dir, 
-                                      project_tree_builder_sln_path);
-    
-    m_CustomBuildCommand += project_tree_builder_sln_path + "\n";
+        string project_tree_builder_sln_dir = 
+            GetApp().GetProjectTreeInfo().m_Compilers;
+        project_tree_builder_sln_dir = 
+            CDirEntry::ConcatPath(project_tree_builder_sln_dir,
+                                GetApp().GetRegSettings().m_CompilersSubdir);
+        project_tree_builder_sln_dir = 
+            CDirEntry::ConcatPath(project_tree_builder_sln_dir, "static");
+        project_tree_builder_sln_dir = 
+            CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                                GetApp().GetRegSettings().m_ProjectsSubdir);
+        project_tree_builder_sln_dir = 
+            CDirEntry::ConcatPath(project_tree_builder_sln_dir, "app");
+        project_tree_builder_sln_dir = 
+            CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                                "project_tree_builder");
+        project_tree_builder_sln_dir = 
+            CDirEntry::AddTrailingPathSeparator(project_tree_builder_sln_dir);
+        
+        string project_tree_builder_sln_path = 
+            CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                                "project_tree_builder.sln");
+        project_tree_builder_sln_path = 
+            CDirEntry::CreateRelativePath(project_dir, 
+                                        project_tree_builder_sln_path);
+        
+        m_CustomBuildCommand += project_tree_builder_sln_path + "\n";
+    }
 
     // Make *.bat file from source file of this custom build.
     // This file ( see CreateProjectFileItem below )
@@ -195,6 +199,9 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
 
     if ( m_DllBuild )
         ofs << " -dll";
+    if (!m_BuildPtb) {
+        ofs << " -nobuildptb";
+    }
 
     ofs << " -logfile %SLN_PATH%_configuration_log.txt"
         << " -conffile %PTB_PATH%\\..\\..\\..\\project_tree_builder.ini "
@@ -225,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/03/23 19:33:20  gouriano
+ * Make it possible to exclude PTB build when configuring
+ *
  * Revision 1.17  2005/03/18 16:16:29  gouriano
  * Run CONFIGURE in Release mode always
  *

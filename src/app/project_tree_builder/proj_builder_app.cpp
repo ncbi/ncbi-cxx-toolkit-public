@@ -247,12 +247,15 @@ void CProjBulderApp::Init(void)
                             CArgDescriptions::eString);
 
     arg_desc->AddPositional("solution", 
-                            "MSVC Solution to buld.",
+                            "MSVC Solution to build.",
 						    CArgDescriptions::eString);
 
     arg_desc->AddFlag      ("dll", 
-                            "Dll(s) will be buit instead of static libraries.",
+                            "Dll(s) will be built instead of static libraries.",
 						    true);
+
+    arg_desc->AddFlag      ("nobuildptb", 
+                            "Exclude \"build PTB\" step from CONFIGURE project.");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -409,7 +412,8 @@ int CProjBulderApp::Run(void)
                                                utility_projects_dir,
                                                GetProjectTreeInfo().m_Root,
                                                GetArgs()["subtree"].AsString(),
-                                               m_Solution);
+                                               m_Solution,
+                                               m_BuildPtb);
         configure_generator.SaveProject();
 
         // INDEX dummy project
@@ -499,7 +503,8 @@ int CProjBulderApp::Run(void)
                                utility_projects_dir,
                                GetProjectTreeInfo().m_Root,
                                GetArgs()["subtree"].AsString(),
-                               m_Solution);
+                               m_Solution,
+                               m_BuildPtb);
         configure_generator.SaveProject();
 
         // INDEX dummy project
@@ -631,6 +636,7 @@ void CProjBulderApp::ParseArguments(void)
     // Solution
     m_Solution = CDirEntry::NormalizePath(args["solution"].AsString());
     LOG_POST(Info << "Solution: " << m_Solution);
+    m_BuildPtb = !((bool)args["nobuildptb"]);
 }
 
 
@@ -950,6 +956,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/03/23 19:33:20  gouriano
+ * Make it possible to exclude PTB build when configuring
+ *
  * Revision 1.52  2005/02/16 19:28:28  gouriano
  * Corrected logging DLL feature
  *
