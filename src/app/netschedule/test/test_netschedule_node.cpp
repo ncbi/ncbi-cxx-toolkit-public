@@ -141,7 +141,7 @@ int CTestNetScheduleNode::Run(void)
     // specified UDP port on the machine.
 
     while (1) {
-        job_exists = cl.WaitJob(&job_key, &input, 60, udp_port);
+        job_exists = cl.WaitJob(&job_key, &input, 180, udp_port);
         if (job_exists) {
             if (first_try) {
                 NcbiCout << "\nProcessing." << NcbiEndl;
@@ -209,6 +209,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/15 14:53:35  kuznets
+ * Reduced wait time
+ *
  * Revision 1.6  2005/03/04 12:09:08  kuznets
  * Use WaitJob instead of GetJob
  *
