@@ -1,0 +1,2 @@
+MODULE_PATH = objects/proj
+MODULE_IMPORT = objects/general/general objects/biblio/biblio objects/pubmed/pubmed objects/seqloc/seqloc objects/seq/seq objects/seqset/seqset

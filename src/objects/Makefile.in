@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("objects" project)
+#################################
+
+SUB_PROJ = general biblio medline medlars pub pubmed seqloc seqalign seqblock seqfeat seqres seqset seq submit proj mmdb1 mmdb2 mmdb3 cdd ncbimime access featdef objprt seqcode testmedline
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

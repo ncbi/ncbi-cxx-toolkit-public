@@ -1,0 +1,2 @@
+MODULE_PATH = objects/mmdb1
+MODULE_IMPORT = objects/general/general objects/biblio/biblio objects/pub/pub objects/seqset/seqset objects/seqloc/seqloc objects/seqfeat/seqfeat objects/mmdb2/mmdb2 objects/mmdb3/mmdb3

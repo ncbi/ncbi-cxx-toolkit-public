@@ -1,0 +1,3 @@
+APP_PROJ = testmedline
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
