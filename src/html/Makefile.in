@@ -6,5 +6,5 @@
 #################################
 
 PROJECT = Makefile.html
-SUBPROJ = test
+SUBPROJ = test tool
 include @builddir@/Makefile.meta
