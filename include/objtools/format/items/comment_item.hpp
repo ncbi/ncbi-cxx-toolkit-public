@@ -93,6 +93,8 @@ public:
     bool IsFirst(void) const { return m_First; }
     const string& GetComment(void) const { return m_Comment; }
 
+    void AddPeriod(void);
+
     static const string kNsAreGaps;
 
     static string GetStringForTPA(const CUser_object& uo, CFFContext& ctx);
@@ -165,14 +167,25 @@ class CGsdbComment : public CCommentItem
 public:
     CGsdbComment(const CDbtag& dbtag, CFFContext& ctx);
 
-    void AddPeriod(void);
-
 private:
     void x_GatherInfo(CFFContext& ctx);
 
     // data
     CConstRef<CDbtag> m_Dbtag;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  inline methods
+
+inline
+void CCommentItem::AddPeriod(void)
+{
+    if ( !NStr::EndsWith(m_Comment, ".") ) {
+        m_Comment += ".";
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -182,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/26 17:21:06  shomrat
+* + AddPeriod()
+*
 * Revision 1.3  2004/03/18 15:26:19  shomrat
 * Added missing forward declerations
 *
