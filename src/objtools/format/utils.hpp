@@ -46,9 +46,10 @@ class CBioseq_Handle;
 bool IsBlankString(const string& str);
 
 enum ETildeStyle {
-    eTilde_tilde,  // no-op
-    eTilde_space,  // '~' -> ' ', except before /[ (]?\d/
-    eTilde_newline // '~' -> '\n' but "~~" -> "~"
+    eTilde_tilde,   // no-op
+    eTilde_space,   // '~' -> ' ', except before /[ (]?\d/
+    eTilde_newline, // '~' -> '\n' but "~~" -> "~"
+    eTilde_comment  // '~' -> '\n' always
 };
 string ExpandTildes(const string& s, ETildeStyle style);
 
@@ -116,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/08/23 15:50:38  shomrat
+* + new tilde format
+*
 * Revision 1.8  2004/08/19 16:32:36  shomrat
 * + AddPeriod, ConvertQuotes and IsBlankString
 *

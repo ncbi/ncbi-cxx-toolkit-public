@@ -104,7 +104,16 @@ string ExpandTildes(const string& s, ETildeStyle style)
                 start = tilde + 1;
             }
             break;
-            
+
+        case eTilde_comment:
+            if (tilde > 0  &&  tilde - 1 == '`') {
+                result[result.length() - 1] = '~';
+            } else {
+                result += '\n';
+            }
+            start = tilde + 1;
+            break;
+
         default: // just keep it, for lack of better ideas
             result += '~';
             start = tilde + 1;
@@ -173,15 +182,11 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
 void AddPeriod(string& str)
 {
     static const string kChars = " \t~.\n";
-
-    size_t pos = 0;
-    for (pos = str.length() - 1; pos >= 0; --pos) {
-        if (kChars.find(str[pos]) == NPOS) {
-            break;
-        }
+    size_t pos = str.find_last_not_of(kChars);
+    if (pos != NPOS) {
+        str.erase(pos + 1);
+        str += '.';
     }
-    str.erase(pos + 1);
-    str += '.';
 }
 
 
@@ -415,8 +420,8 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
                         }
                     }
                     if ( !unk ) {
-                        text << "* " << from << " " << len << ": gap of "
-                             << lit_len << " bp~";
+                        text << "* " << setw(8) << from << " " << setw(8) << len
+                             << ": gap of " << lit_len << " bp~";
                     }
                 }
             }}
@@ -592,6 +597,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/08/23 15:50:53  shomrat
+* + new tilde format
+*
 * Revision 1.11  2004/08/19 16:33:02  shomrat
 * + AddPeriod, ConvertQuotes and IsBlankString
 *
