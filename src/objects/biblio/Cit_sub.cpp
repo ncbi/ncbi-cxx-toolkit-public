@@ -54,14 +54,13 @@ CCit_sub::~CCit_sub(void)
 }
 
 
-void CCit_sub::GetLabel(string* label) const
+void CCit_sub::GetLabel(string* label, bool unique) const
 {
     string date;
     if ( IsSetDate() ) {
-        // get full date
-        GetDate().GetDate(&date);
+        GetDate().GetDate(&date, "%{%M-%D-%}%Y");
     }
-    GetLabelContent(label, false, &GetAuthors(),
+    GetLabelContent(label, unique, &GetAuthors(),
         IsSetImp() ? &GetImp() : 0,
         0, 0, 0, 0, 0, 0, IsSetDate() ? &date : 0);
 }
@@ -76,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/10/22 14:15:39  shomrat
+* GetLabel - add unique, changed date format
+*
 * Revision 1.2  2004/05/19 17:18:17  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *
