@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.94 2002/06/18 17:52:04 ucko Exp $
+#  $Id: configure.ac,v 1.95 2002/06/18 18:38:25 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1711,6 +1711,7 @@ if test "$with_ftds" = "no" ; then
    FTDS_PATH=
    FTDS_INCLUDE=
    FTDS_LIBS=
+   freetds=
    WithoutPackages="$WithoutPackages FreeTDS"
 else
    AC_DEFINE(HAVE_LIBFTDS, 1,

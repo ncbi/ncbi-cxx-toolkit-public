@@ -9229,6 +9229,7 @@ if test "$with_ftds" = "no" ; then
    FTDS_PATH=
    FTDS_INCLUDE=
    FTDS_LIBS=
+   freetds=
    WithoutPackages="$WithoutPackages FreeTDS"
 else
 
