@@ -156,7 +156,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
           m_CombineMethod(eCombine_None),
           m_LimitObjectType(eLimit_None),
           m_IdResolving(eIgnoreUnresolved),
-          m_MaxSize(0)
+          m_MaxSize(0),
+          m_NoMapping(false)
     {
     }
 
@@ -172,7 +173,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
           m_CombineMethod(eCombine_None),
           m_LimitObjectType(eLimit_None),
           m_IdResolving(eIgnoreUnresolved),
-          m_MaxSize(0)
+          m_MaxSize(0),
+          m_NoMapping(false)
     {
     }
     
@@ -323,6 +325,13 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
                 m_Sources->m_Sources.end();
         }
 
+    // Do not create mapped locations. Used by CAnnot_CI.
+    SAnnotSelector& SetNoMapping(void)
+        {
+            m_NoMapping = true;
+            return *this;
+        }
+
 protected:
     int                   m_ResolveDepth;
     TFeatSubtype          m_FeatSubtype;  // Seq-feat subtype
@@ -336,6 +345,7 @@ protected:
     CConstRef<CObject>    m_LimitObject;
     int                   m_MaxSize;
     CRef<SSources>        m_Sources;
+    bool                  m_NoMapping;
 };
 
 
@@ -345,6 +355,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/08/22 14:58:55  grichenk
+* Added NoMapping flag (to be used by CAnnot_CI for faster fetching).
+* Added GetScope().
+*
 * Revision 1.14  2003/07/17 21:01:43  vasilche
 * Fixed ambiguity on Windows
 *

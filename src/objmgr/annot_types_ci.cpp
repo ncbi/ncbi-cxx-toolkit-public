@@ -1018,9 +1018,14 @@ void CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
             return;
     }}
 
-    CSeq_loc_Conversion cvt(master_id.GetSeqId(),
-                            seg, ref_id, m_Scope);
-    x_Search(ref_loc, &cvt);
+    if (m_NoMapping) {
+        x_Search(ref_loc, 0);
+    }
+    else {
+        CSeq_loc_Conversion cvt(master_id.GetSeqId(),
+                                seg, ref_id, m_Scope);
+        x_Search(ref_loc, &cvt);
+    }
 }
 
 
@@ -1030,6 +1035,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2003/08/22 14:58:57  grichenk
+* Added NoMapping flag (to be used by CAnnot_CI for faster fetching).
+* Added GetScope().
+*
 * Revision 1.81  2003/08/15 19:19:16  vasilche
 * Fixed memory leak in string packing hooks.
 * Fixed processing of 'partial' flag of features.
