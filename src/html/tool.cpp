@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/01 23:31:14  vakatov
+* Got rid of <ncbi.h> etc. ald C toolit headers
+*
 * Revision 1.2  1998/12/01 19:10:39  lewisg
 * uses CCgiApplication and new page factory
 *
@@ -39,10 +42,7 @@
 * ===========================================================================
 */
 
-#include <stdio.h>
 #include <ncbistd.hpp>
-#include <ncbi.h>
-#include <ncbienv.h>
 #include <ncbicgi.hpp>
 #include <html.hpp>
 #include <page.hpp>
