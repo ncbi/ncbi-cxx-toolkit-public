@@ -415,14 +415,14 @@ int CBlast2seqApplication::Run(void)
         InitObjMgr();
         int counter = 0;
         const CArgs args = GetArgs();
-        Uint1 program_number;
+        EBlastProgramType program_number;
 
         if (args["trace"])
             SetDiagTrace(eDT_Enable);
 
         BlastProgram2Number(args["program"].AsString().c_str(), 
                             &program_number);
-        EProgram program = static_cast<EProgram>(program_number);
+        EProgram program = GetProgramFromBlastProgramType(program_number);
         ENa_strand query_strand = eNa_strand_unknown;
         ENa_strand subject_strand = eNa_strand_unknown;
 
@@ -500,6 +500,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2004/07/06 15:52:07  dondosha
+ * Distinguish between 2 different enumerations for program
+ *
  * Revision 1.47  2004/06/08 15:21:44  dondosha
  * Set traceback algorithm properly
  *

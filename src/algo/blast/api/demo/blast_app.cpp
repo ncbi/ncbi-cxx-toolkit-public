@@ -76,9 +76,6 @@ Contents: C++ driver for running BLAST
 // For repeats filtering
 #include <algo/blast/api/repeats_filter.hpp>
 
-// For locking mechanism
-#include <algo/blast/api/blast_mtlock.hpp>
-
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
@@ -96,7 +93,7 @@ private:
                                 BlastSeqSrc* bssp, RPSInfo *rps_info);
     int BlastSearch(void);
     void RegisterBlastDbLoader(char* dbname, bool is_na);
-    void FormatResults(CDbBlast& blaster, TSeqAlignVector& seqalignv);
+    void FormatResults(const CDbBlast* blaster, TSeqAlignVector& seqalignv);
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>         m_Scope;
 };
@@ -540,7 +537,7 @@ slp[index].seqloc, slp[index].scope))));
     return retval;
 }
 
-void CBlastApplication::FormatResults(CDbBlast& blaster, 
+void CBlastApplication::FormatResults(const CDbBlast* blaster, 
                                       TSeqAlignVector& seqalignv)
 {
     if (seqalignv.size() == 0)
@@ -561,7 +558,7 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
     }
 
     if (args["out"]) {
-        EProgram program = blaster.SetOptions().GetProgram();
+        EProgram program = blaster->GetOptions().GetProgram();
 
         char* dbname = const_cast<char*>(args["db"].AsString().c_str());
         bool db_is_na = (program == eBlastn || program == eTblastn || 
@@ -594,11 +591,11 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
         RegisterBlastDbLoader(dbname, db_is_na);
         /* Format the results */
         TSeqLocInfoVector maskv =
-            BlastMaskLoc2CSeqLoc(blaster.GetFilteredQueryRegions(), 
-                              blaster.GetQueries(), program);
+            BlastMaskLoc2CSeqLoc(blaster->GetFilteredQueryRegions(), 
+                              blaster->GetQueries(), program);
         
-        if (BLAST_FormatResults(seqalignv, program, blaster.GetQueries(), 
-                maskv, format_options, blaster.GetOptions().GetOutOfFrameMode())) {
+        if (BLAST_FormatResults(seqalignv, program, blaster->GetQueries(), 
+                maskv, format_options, blaster->GetOptions().GetOutOfFrameMode())) {
             NCBI_THROW(CBlastException, eInternal, 
                        "Error in formatting results");
         }
@@ -606,7 +603,7 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
 #ifdef C_FORMATTING
         PrintOutputFooter(program, format_options, score_options, 
             m_sbp, lookup_options, word_options, ext_options, hit_options, 
-            blaster.GetQueryInfo(), dbname, blaster.GetDiagnostics());
+            blaster->GetQueryInfo(), dbname, blaster->GetDiagnostics());
 #endif
         
     }
@@ -698,14 +695,14 @@ static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
 
 int CBlastApplication::Run(void)
 {
-    Uint1 program_number;
+    EBlastProgramType program_number;
     int status = 0;
 
     // Process command line args
     const CArgs& args = GetArgs();
     
     BlastProgram2Number(args["program"].AsString().c_str(), &program_number);
-    EProgram program = static_cast<EProgram>(program_number);
+    EProgram program = GetProgramFromBlastProgramType(program_number);
 
     Int4 strand_number = args["strand"].AsInteger();
     ENa_strand strand;
@@ -792,9 +789,8 @@ int CBlastApplication::Run(void)
         blaster.Reset(new CDbBlast(query_loc, seq_src, *opts, rps_info, 
                                    hsp_stream));
     } else {
-        MT_LOCK lock = Blast_CMT_LOCKInit();
         blaster.Reset(new CDbBlast(query_loc, seq_src, *opts, rps_info, 
-                                   hsp_stream, lock));
+                                   hsp_stream, true));
     }
     TSeqAlignVector seqalignv;
 
@@ -802,7 +798,7 @@ int CBlastApplication::Run(void)
         blaster->SetupSearch();
         // Start the on-the-fly formatting thread
         CBlastTabularFormatThread* tab_thread = 
-            new CBlastTabularFormatThread(*blaster, query_loc, 
+            new CBlastTabularFormatThread(blaster, query_loc, 
                                           args["out"].AsOutputFile());
         tab_thread->Run();
         blaster->RunSearchEngine();
@@ -825,7 +821,7 @@ int CBlastApplication::Run(void)
         sfree(rps_info);
     }
 
-    FormatResults(*blaster, seqalignv);
+    FormatResults(blaster, seqalignv);
 
     return status;
 }
