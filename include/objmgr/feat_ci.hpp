@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/04/16 19:59:45  grichenk
+* Updated comments
+*
 * Revision 1.6  2002/04/05 21:26:16  grichenk
 * Enabled iteration over annotations defined on segments of a
 * delta-sequence.
@@ -69,12 +72,16 @@ class CFeat_CI : public CAnnotTypes_CI
 {
 public:
     CFeat_CI(void);
-    // Search all TSEs in all datasources
+    // Search all TSEs in all datasources. By default do not search
+    // sequence segments (for constructed sequences). Use
+    // CFeat_CI::eResolve_All flag to search features on all referenced
+    // sequences.
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
              SAnnotSelector::TFeatChoice feat_choice,
                    EResolveMethod resolve = eResolve_None);
-    // Search only in TSE, containing the bioseq
+    // Search only in TSE, containing the bioseq. If both start & stop are 0,
+    // the whole bioseq is searched.
     CFeat_CI(CBioseq_Handle& bioseq,
              int start, int stop,
              SAnnotSelector::TFeatChoice feat_choice,
