@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2003/07/17 18:48:01  gouriano
+* re-enabled initialization verification
+*
 * Revision 1.84  2003/06/25 17:49:05  gouriano
 * fixed verification flag initialization, disabled verification
 *
@@ -463,8 +466,8 @@ bool CObjectOStream::x_GetVerifyDataDefault(void)
             if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
 
                 // change the default here, if you wish
-                //ms_VerifyDataDefault = eSerialVerifyData_Yes;
-                ms_VerifyDataDefault = eSerialVerifyData_No;
+                ms_VerifyDataDefault = eSerialVerifyData_Yes;
+                //ms_VerifyDataDefault = eSerialVerifyData_No;
 
                 const char* str = getenv(SERIAL_VERIFY_DATA_WRITE);
                 if (str) {
