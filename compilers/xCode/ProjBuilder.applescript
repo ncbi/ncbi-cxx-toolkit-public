@@ -309,7 +309,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		try -- are we building a loadable module?
 			if bundle of lib_info then set libraryStyle to "BUNDLE"
 			set linkerFlags to "" -- do not suppress undefined symbols. Bundles should be fully resolved
-			set linkerFlags to "-framework Carbon -framework AGL -framework OpenGL"
+			--set linkerFlags to "-framework Carbon -framework AGL -framework OpenGL"
 			set symRoot to TheOUTPath & "/bin/gbench.app/Contents/MacOS/plugins"
 			set isBundle to true
 		end try
@@ -478,6 +478,8 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 				set linkFlags to linkFlags & " -l" & d
 			end repeat
 		end try
+		
+		set linkFlags to linkFlags & " -framework Carbon -framework AGL -framework OpenGL"
 		return linkFlags
 	end x_CreateLinkerFlags
 	
@@ -569,6 +571,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/09/13 11:46:15  lebedev
+ * Allways specify frameworks in the lnk path (A Framework Build Phase sometimes does not work)
+ *
  * Revision 1.12  2004/09/03 14:35:21  lebedev
  * Explicitly link frameworks for bundles (gbench plugins)
  *
