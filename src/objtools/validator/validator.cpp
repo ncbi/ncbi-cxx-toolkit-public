@@ -990,6 +990,10 @@ These need to be consistent.",
 //  SEQ_FEAT_DifferntIdTypesInSeqLoc
 "All ids in a single seq-loc which refer to the same bioseq should be of the \
 same id type",
+//  SEQ_FEAT_MissingCDSproduct
+"The CDS should have a product, but does not.  Pseudo or short CDSs (less than 6 \
+amino acids), or those marked with a rearrangement required for product exception, \
+are exempt from needing a product.",
 
 /* SEQ_ALIGN */
 
@@ -1107,6 +1111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/05/05 15:32:16  shomrat
+* Added SEQ_FEAT_MissingCDSproduct
+*
 * Revision 1.21  2003/04/29 14:56:08  shomrat
 * Changes to SeqAlign related validation
 *
