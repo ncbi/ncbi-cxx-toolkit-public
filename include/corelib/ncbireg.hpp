@@ -143,12 +143,13 @@ public:
         const;
 
     // Like "GetString()", plus convert the value into 'int', 'bool', etc.
-    // "fmt_throw" controls what to do if value is present but cannot be
+    // "err_action" controls what to do if value is present but cannot be
     // converted into the requested type.
     enum EErrAction {
-        eThrow,  // throw an exception   if conversion error occurs
-        eErrPost,// log the error message if conversion error occurs
-        eReturn  // return default value if conversion error occurs
+        //  If a conversion error occurs, then:
+        eThrow,   // throw an exception
+        eErrPost, // log the error message and return default value
+        eReturn   // return default value
     };
 
     const int     GetInt    (const string& section, const string& name,
@@ -232,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/01/17 20:46:28  vakatov
+ * Fixed/improved description of "EErrAction"
+ *
  * Revision 1.20  2003/01/17 20:26:59  kuznets
  * CNcbiRegistry added ErrPost error action
  *
