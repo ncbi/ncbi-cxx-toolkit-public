@@ -1,4 +1,4 @@
---$Revision: 4.1 $
+--$Revision: 4.2 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -322,7 +322,8 @@ OrgName ::= SEQUENCE {
     mod SEQUENCE OF OrgMod OPTIONAL ,
     lineage VisibleString OPTIONAL ,       -- lineage with semicolon separators
     gcode INTEGER OPTIONAL ,               -- genetic code (see CdRegion)
-    mgcode INTEGER OPTIONAL }              -- mitochondrial genetic code
+    mgcode INTEGER OPTIONAL ,              -- mitochondrial genetic code
+	div VisibleString OPTIONAL }           -- GenBank division code
     
 
 OrgMod ::= SEQUENCE {
@@ -409,8 +410,9 @@ BioSource ::= SEQUENCE {
         plasmid (9) ,
         transposon (10) ,
         insertion-seq (11) ,
-	cyanelle (12) ,
-	proviral (13) } DEFAULT unknown ,
+		cyanelle (12) ,
+		proviral (13) ,
+		virion (14) } DEFAULT unknown ,
     origin INTEGER {
       unknown (0) ,
       natural (1) ,                    -- normal biological entity
@@ -481,7 +483,9 @@ Prot-ref ::= SEQUENCE {
     processed ENUMERATED {             -- processing status
        not-set (0) ,
        preprotein (1) ,
-       mature (2) } DEFAULT not-set }
+       mature (2) ,
+	   signal-peptide (3) ,
+	   transit-peptide (4) } DEFAULT not-set }
 
 
 
