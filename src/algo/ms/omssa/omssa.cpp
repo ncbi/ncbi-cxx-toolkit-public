@@ -885,8 +885,8 @@ void CSearch::MakeModString(string& seqstring, string& modseqstring, CMSHit *MSH
 	int i;
 	modseqstring = seqstring;
 	for (i = 0; i < MSHit->GetNumModInfo(); i++) {
-		modseqstring += NStr::IntToString(MSHit->GetModInfo(i).GetSite()) +
-			NStr::IntToString(MSHit->GetModInfo(i).GetModEnum());
+		modseqstring += NStr::IntToString(MSHit->GetModInfo(i).GetSite()) + ":" +
+			NStr::IntToString(MSHit->GetModInfo(i).GetModEnum()) + ",";
 	}
 }
 
@@ -1242,6 +1242,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.32  2004/12/06 23:35:16  lewisg
+get rid of file charge
+
 Revision 1.31  2004/11/30 23:39:57  lewisg
 fix interval query
 

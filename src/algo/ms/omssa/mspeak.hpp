@@ -605,7 +605,7 @@ public:
     int GetNumCharges(void) { return NumCharges; }
     // Truncate the at the precursor if plus one and set charge to 1
     // if charge is erronously set to 1, set it to 2
-    void TruncatePlus1(void);
+//    void TruncatePlus1(void);
     
     unsigned GetNum(int Which = MSORIGINAL);
     CMZI *GetMZI(int Which = MSORIGINAL);
@@ -647,7 +647,7 @@ public:
     // gets a calculated neutral mass
     int CalcPrecursorMass(int PrecursorCharge);
     // get charge that came from input file
-    int GetCharge(void);
+//    int GetCharge(void);
 	// gets min precursor charge to consider multiply charged product ions
 	int GetConsiderMult(void);  
     EMSHitError GetError(void);
@@ -681,7 +681,7 @@ private:
     CMZI ** IntensitySort;  // points to CMZI original, sorted.
 //    int TotalMass;  // neutral mass
     int Precursormz;
-    int Charge;    // Charge from input file
+//    int Charge;    // Charge from input file
     int Charges[MSMAXCHARGE];  // Computed allowed charges
     int NumCharges;  // array size of Charges[]
     int tol;        // error tolerance of peptide
@@ -766,14 +766,16 @@ inline int CMSPeak::GetPrecursormz(void)
 
 inline int CMSPeak::CalcPrecursorMass(int PrecursorCharge)
 {
-    return Precursormz * Charge - Charge * kProton * MSSCALE;
+    return Precursormz * PrecursorCharge - PrecursorCharge * kProton * MSSCALE;
 }
 
+#if 0
 // get charge that came from input file
 inline int CMSPeak::GetCharge(void) 
 { 
     return Charge; 
 }
+#endif
 
 inline
 int CMSPeak::GetConsiderMult(void)  
@@ -959,6 +961,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.23  2004/12/06 23:35:16  lewisg
+  get rid of file charge
+
   Revision 1.22  2004/12/06 22:57:34  lewisg
   add new file formats
 

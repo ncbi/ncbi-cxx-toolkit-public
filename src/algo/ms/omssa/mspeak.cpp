@@ -434,7 +434,7 @@ int CMSPeak::Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale)
     try {
 //	TotalMass = Spectrum.GetPrecursormz()*MSSCALE/Scale;
 	SetTolerance(MSMSTolerance);
-	Charge = *(Spectrum.GetCharge().begin());
+//	Charge = *(Spectrum.GetCharge().begin());
     Precursormz = MSSCALE * (Spectrum.GetPrecursormz()/(double)Scale);  
 	Num[MSORIGINAL] = 0;   
     
@@ -553,7 +553,7 @@ void CMSPeak::InitHitList(int Minhit)
 
 void CMSPeak::xWrite(std::ostream& FileOut, CMZI *Temp, int Num)
 {
-    FileOut << CalcPrecursorMass(Charge)/(double)MSSCALE + kProton << " " << Charge << endl;
+    FileOut << CalcPrecursorMass(1)/(double)MSSCALE + kProton << " " << 1 << endl;
 
     int i;
     unsigned Intensity;
@@ -589,7 +589,7 @@ int CMSPeak::AboveThresh(double Threshold, int Which)
     return i;
 }
 
-
+#if 0
 // Truncate the at the precursor if plus one and set charge to 1
 // if charge is erronously set to 1, set it to 2
 
@@ -602,6 +602,7 @@ void CMSPeak::TruncatePlus1(void)
     }
     else if(Charge == 1) Charge = 2;
 }
+#endif 
 
 // functions used in SmartCull
 // take out original peaks below a threshold.  assumes original peaks sorted by intensity
