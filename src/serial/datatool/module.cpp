@@ -1,5 +1,6 @@
 #include "module.hpp"
 #include "moduleset.hpp"
+#include "exceptions.hpp"
 #include "type.hpp"
 
 void Warning(const string& message)
@@ -7,8 +8,8 @@ void Warning(const string& message)
     cerr << message << endl;
 }
 
-ASNModule::ASNModule()
-    : moduleSet(0)
+ASNModule::ASNModule(CModuleSet& ms, const string& n)
+    : moduleSet(ms), name(n)
 {
 }
 
@@ -106,12 +107,12 @@ bool ASNModule::CheckNames()
           e != exports.end(); ++e ) {
         const string& n = *e;
         TTypes::iterator it = types.find(n);
-        if ( it == types.end() ) {
+        if ( it == types.end() || !it->second.type ) {
             Warning("undefined export type: " + n);
             ok = false;
         }
         else {
-            it->second.exported = true;
+            it->second.type->exported = true;
         }
     }
     for ( TImports::const_iterator i = imports.begin();
@@ -133,4 +134,17 @@ bool ASNModule::CheckNames()
         }
     }
     return ok;
+}
+
+ASNType* ASNModule::Resolve(const string& name) const
+{
+    const TypeInfo* typeInfo =  FindType(name);
+    if ( !typeInfo ) {
+        THROW1_TRACE(CTypeNotFound, "undefined type: " + name);
+    }
+
+    if ( typeInfo->type )
+        return typeInfo->type;
+    
+    return moduleSet.Resolve(typeInfo->module, name);
 }

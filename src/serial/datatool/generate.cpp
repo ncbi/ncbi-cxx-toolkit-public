@@ -37,13 +37,14 @@ void CCodeGenerator::GetAllTypes(void)
     for ( CModuleSet::TModules::const_iterator mi = m_Modules.modules.begin();
           mi != m_Modules.modules.end();
           ++mi ) {
-        const ASNModule* module = mi->get();
+        const ASNModule* module = mi->second.get();
         for ( ASNModule::TDefinitions::const_iterator ti =
                   module->definitions.begin();
               ti != module->definitions.end();
               ++ti ) {
             const ASNType* type = ti->get();
-            if ( !type->name.empty() && type->ClassName(m_Config) != "-" )
+            if ( !type->name.empty() && type->main &&
+                 type->ClassName(m_Config) != "-" )
                 m_GenerateTypes.insert(module->name + '.' + type->name);
         }
     }
@@ -81,13 +82,7 @@ void CCodeGenerator::GenerateCode(void)
     for ( TTypeNames::const_iterator ti = m_GenerateTypes.begin();
           ti != m_GenerateTypes.end();
           ++ti ) {
-        const ASNModule::TypeInfo* typeInfo = m_Modules.FindType(*ti);
-        const ASNType* type = typeInfo->type;
-        if ( !type ) {
-            ERR_POST("Type " << *ti << " not found");
-            continue;
-        }
-        CollectTypes(type);
+        CollectTypes(m_Modules.ResolveFull(*ti));
     }
     
     // generate output files
@@ -157,6 +152,7 @@ void CCodeGenerator::CollectTypes(const ASNType* type, bool force)
 
     const ASNUserType* user = dynamic_cast<const ASNUserType*>(type);
     if ( user != 0 ) {
+        // reference to another type
         CollectTypes(user->Resolve());
         return;
     }
@@ -218,4 +214,3 @@ void CCodeGenerator::CollectTypes(const ASNType* type, bool force)
     if ( !AddType(type) )
         return;
 }
-

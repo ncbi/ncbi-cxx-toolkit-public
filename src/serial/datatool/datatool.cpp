@@ -184,7 +184,7 @@ const char* FileOutArgument(const char* arg)
     return StringArgument(arg);
 }
 
-static void LoadDefinition(CModuleSet& types, const FileInfo& file);
+static void LoadDefinition(const FileInfo& file, CModuleSet& types);
 static void StoreDefinition(const CModuleSet& types, const FileInfo& file);
 static TObject LoadValue(CModuleSet& types, const FileInfo& file,
                          const string& typeName);
@@ -326,20 +326,23 @@ int main(int argc, const char*argv[])
         if ( !moduleIn )
             Error("Module file not specified");
 
-        LoadDefinition(generator.m_Modules, moduleIn);
-
+        LoadDefinition(moduleIn, generator.m_Modules);
         if ( moduleOut )
             StoreDefinition(generator.m_Modules, moduleOut);
 
-        if ( generateAllTypes )
-            generator.GetAllTypes();
+        generator.m_Modules.SetMainTypes();
 
         for ( list<FileInfo>::const_iterator fi = importModules.begin();
               fi != importModules.end();
               ++fi ) {
-            LoadDefinition(generator.m_Modules, *fi);
+            LoadDefinition(*fi, generator.m_Modules);
         }
+        if ( !generator.m_Modules.Check() )
+            Error("Errors was found...");
     
+        if ( generateAllTypes )
+            generator.GetAllTypes();
+
         if ( dataIn ) {
             TObject object = LoadValue(generator.m_Modules,
                                        dataIn, dataInTypeName);
@@ -363,7 +366,7 @@ int main(int argc, const char*argv[])
 }
 
 
-void LoadDefinition(CModuleSet& types, const FileInfo& file)
+void LoadDefinition(const FileInfo& file, CModuleSet& types)
 {
     if ( file.type != eASNText )
         Error("data definition format not supported");
@@ -372,7 +375,7 @@ void LoadDefinition(CModuleSet& types, const FileInfo& file)
     ASNLexer lexer(in);
     ASNParser parser(lexer);
     try {
-        parser.Modules(CFilePosition(file.name), types);
+        parser.Modules(CFilePosition(file.name), types, types.modules);
     }
     catch (...) {
         NcbiCerr << "Current token: " << parser.Next() << " '" <<
@@ -391,7 +394,7 @@ void StoreDefinition(const CModuleSet& types, const FileInfo& file)
     
     for ( CModuleSet::TModules::const_iterator i = types.modules.begin();
           i != types.modules.end(); ++i ) {
-        (*i)->Print(out);
+        i->second->Print(out);
     }
 }
 
@@ -418,13 +421,8 @@ TObject LoadValue(CModuleSet& types, const FileInfo& file,
             Error("ASN.1 value type must be specified (-t)");
         typeName = defTypeName;
     }
-    const ASNModule::TypeInfo* asnTypeInfo = types.FindType(typeName);
-    TTypeInfo typeInfo = CTypeRef(new CAnyTypeSource(asnTypeInfo->type)).Get();
-/*    
-    TTypeInfo typeInfo = types.MapType(type);
-    if ( typeInfo == 0 )
-        Error("type not found: ", type.c_str());
-*/
+    TTypeInfo typeInfo =
+        CTypeRef(new CAnyTypeSource(types.ResolveFull(typeName))).Get();
     AnyType value;
     objIn->ReadExternalObject(&value, typeInfo);
     return make_pair(value, typeInfo);

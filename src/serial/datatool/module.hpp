@@ -17,7 +17,7 @@ void Warning(const string& message);
 
 class ASNModule {
 public:
-    ASNModule();
+    ASNModule(CModuleSet& moduleSet, const string& name);
     virtual ~ASNModule();
 
     typedef list< string > TExports;
@@ -36,6 +36,8 @@ public:
     bool Check();
     bool CheckNames();
 
+    CModuleSet& moduleSet;
+
     string name;
     TExports exports;
     TImports imports;
@@ -44,21 +46,19 @@ public:
     class TypeInfo {
     public:
         TypeInfo(const string& n)
-            : name(n), type(0), exported(false)
+            : name(n), type(0)
             {
             }
         string name;
         string module;  // non empty for imports
         ASNType* type;  // non empty for non imports
-        bool exported;  // true for exports
     };
 
     const TypeInfo* FindType(const string& name) const;
+    ASNType* Resolve(const string& name) const;
 
     typedef map<string, TypeInfo> TTypes;
     TTypes types;
-
-    CModuleSet* moduleSet;
 };
 
 #endif

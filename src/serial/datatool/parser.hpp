@@ -4,6 +4,7 @@
 #include "aparser.hpp"
 #include "autoptr.hpp"
 #include "typecontext.hpp"
+#include "moduleset.hpp"
 #include <list>
 
 class CModuleSet;
@@ -22,8 +23,10 @@ public:
         {
         }
 
-    void Modules(const CFilePosition& filePos, CModuleSet& moduleSet);
-    void Module(const CDataTypeContext& ctx, CModuleSet& moduleSet);
+    void Modules(const CFilePosition& filePos, CModuleSet& moduleSet,
+                 CModuleSet::TModules& modules);
+    void Module(const CDataTypeContext& ctx, CModuleSet& moduleSet,
+                CModuleSet::TModules& modules);
     void Imports(const CDataTypeContext& ctx);
     void Exports(const CDataTypeContext& ctx);
     void ModuleBody(const CDataTypeContext& ctx);

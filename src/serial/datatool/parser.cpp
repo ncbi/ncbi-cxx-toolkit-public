@@ -5,30 +5,28 @@
 #include "type.hpp"
 #include "value.hpp"
 
-void ASNParser::Modules(const CFilePosition& filePos, CModuleSet& moduleSet)
+void ASNParser::Modules(const CFilePosition& filePos, CModuleSet& moduleSet,
+                        CModuleSet::TModules& modules)
 {
     CDataTypeContext ctx(filePos);
     while ( Next() != T_EOF ) {
-        Module(ctx, moduleSet);
+        Module(ctx, moduleSet, modules);
     }
 }
 
-void ASNParser::Module(const CDataTypeContext& ctx, CModuleSet& moduleSet)
+void ASNParser::Module(const CDataTypeContext& ctx, CModuleSet& moduleSet,
+                       CModuleSet::TModules& modules)
 {
-    AutoPtr<ASNModule> module(new ASNModule());
-    module->moduleSet = &moduleSet;
-    module->name = ModuleReference();
-    {
-        Consume(K_DEFINITIONS, "DEFINITIONS");
-        Consume(T_DEFINE, "::=");
-        Consume(K_BEGIN, "BEGIN");
-        ModuleBody(CDataTypeContext(ctx, *module));
-        Consume(K_END, "END");
-    }
-    if ( !module->Check() )
-        Warning("Errors was found in module " + module->name);
-        
-    moduleSet.modules.push_back(module);
+    string moduleName = ModuleReference();
+    AutoPtr<ASNModule>& module = modules[moduleName];
+    if ( !module )
+        module = new ASNModule(moduleSet, moduleName);
+
+    Consume(K_DEFINITIONS, "DEFINITIONS");
+    Consume(T_DEFINE, "::=");
+    Consume(K_BEGIN, "BEGIN");
+    ModuleBody(CDataTypeContext(ctx, *module));
+    Consume(K_END, "END");
 }
 
 void ASNParser::Imports(const CDataTypeContext& ctx)

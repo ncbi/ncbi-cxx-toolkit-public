@@ -116,7 +116,12 @@ public:
 
     virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
 
+    virtual const ASNType* Resolve(void) const;
+    virtual ASNType* Resolve(void);
+
     string name; // for named type
+    bool main;      // true for types defined in main module
+    bool exported;  // true for types listed in EXPORT statements
     CDataTypeContext context;
 
     // tree info
@@ -280,9 +285,10 @@ public:
 
     virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
 
-    string userTypeName;
+    virtual const ASNType* Resolve(void) const;
+    virtual ASNType* Resolve(void);
 
-    ASNType* Resolve(void) const;
+    string userTypeName;
 };
 
 class ASNOfType : public ASNType {

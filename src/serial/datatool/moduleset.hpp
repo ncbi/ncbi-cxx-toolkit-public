@@ -13,22 +13,25 @@ USING_NCBI_SCOPE;
 class CModuleSet : public CTypeMapper
 {
 public:
-    typedef list< AutoPtr<ASNModule> > TModules;
+    typedef map<string, AutoPtr<ASNModule> > TModules;
     typedef map<string, const CTypeInfo*> TTypes;
 
     CModuleSet(void);
     virtual ~CModuleSet(void);
 
+    void SetMainTypes(void);
+
+    bool Check(void) const;
+
     TTypeInfo MapType(const string& name);
 
+    // main types
     TModules modules;
-    TModules imports;
+
     string rootTypeName;
 
-    const ASNModule::TypeInfo* FindType(const string& moduleName,
-                                        const string& typeName) const;
-    const ASNModule::TypeInfo* FindType(const string& fullName) const;
-    const ASNModule::TypeInfo* FindType(const ASNModule::TypeInfo* t) const;
+    ASNType* Resolve(const string& moduleName, const string& typeName) const;
+    ASNType* ResolveFull(const string& fullName) const;
 
 private:
     TTypes m_Types;

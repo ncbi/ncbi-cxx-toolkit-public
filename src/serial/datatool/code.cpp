@@ -197,8 +197,10 @@ bool CFileCode::AddType(const ASNType* type)
            " AddType: " << type->name << '(' << long(type) << ')');
 */
     AutoPtr<CClassCode>& cls = m_Classes[type->name];
-    if ( cls )
+    if ( cls ) {
+        _ASSERT(cls->GetType() == type);
         return false;
+    }
 
     cls = new CClassCode(*this, type);
 

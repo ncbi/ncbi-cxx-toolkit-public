@@ -11,6 +11,7 @@
 #include "module.hpp"
 #include "moduleset.hpp"
 #include "code.hpp"
+#include "exceptions.hpp"
 
 TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 {
@@ -104,64 +105,6 @@ string GetTemplateMacro(const string& tmpl)
     if ( tmpl == "auto_ptr" )
         return "STL_CHOICE_auto_ptr";
     return "STL_" + tmpl;
-}
-
-const string& ASNType::GetVar(const CNcbiRegistry& registry,
-                              const string& value) const
-{
-    return context.GetConfigPos().GetVar(registry, GetModule().name, value);
-}
-
-string ASNType::ClassName(const CNcbiRegistry& registry) const
-{
-    const string& s = GetVar(registry, "_class");
-    if ( !s.empty() )
-        return s;
-    if ( !name.empty() )
-        return Identifier(name);
-    const CConfigPosition& config = context.GetConfigPos();
-    return Identifier(config.GetSection() +
-                      replace(config.GetKeyPrefix(), '.', '_'));
-}
-
-string ASNType::FileName(const CNcbiRegistry& registry) const
-{
-    const string& s = GetVar(registry, "_file");
-    if ( !s.empty() )
-        return s;
-    return ClassName(registry);
-}
-
-string ASNType::Namespace(const CNcbiRegistry& registry) const
-{
-    return GetVar(registry, "_namespace");
-}
-
-string ASNType::ParentClass(const CNcbiRegistry& registry) const
-{
-    return GetVar(registry, "_parent_class");
-}
-
-const ASNType* ASNType::ParentType(const CNcbiRegistry& registry) const
-{
-    const string& parentName = GetVar(registry, "_parent");
-    if ( parentName.empty() )
-        return 0;
-
-    const ASNModule::TypeInfo* typeInfo =  GetModule().FindType(parentName);
-    if ( !typeInfo )
-        THROW1_TRACE(runtime_error,
-                     name + ": parent type " + parentName + " undefined");
-    
-    if ( typeInfo->type )
-        return typeInfo->type;
-
-    typeInfo = GetModule().moduleSet->FindType(typeInfo);
-    if ( !typeInfo->type )
-        THROW1_TRACE(runtime_error,
-                     name + ": parent type " + parentName + " undefined");
-
-    return typeInfo->type;
 }
 
 inline
@@ -286,19 +229,23 @@ void CTypeStrings::x_AddMember(CClassCode& code,
 }
 
 ASNType::ASNType(const CDataTypeContext& c)
-    : context(c), inSet(false)
+    : main(false), exported(false), context(c), inSet(false)
 {
+/*
     _TRACE(c.GetFilePos().ToString() << ": ASNType() in [" <<
            c.GetConfigPos().GetSection() << ']' <<
            c.GetConfigPos().GetKeyPrefix());
+*/
 }
 
 ASNType::ASNType(const CDataTypeContext& c, const string& n)
-    : name(n), context(c), inSet(false)
+    : name(n), main(false), exported(false), context(c), inSet(false)
 {
+/*
     _TRACE(c.GetFilePos().ToString() << ": ASNType(" << name << ") in [" <<
            c.GetConfigPos().GetSection() << ']' <<
            c.GetConfigPos().GetKeyPrefix());
+*/
 }
 
 ASNType::~ASNType()
@@ -321,6 +268,61 @@ ostream& ASNType::NewLine(ostream& out, int indent)
     for ( int i = 0; i < indent; ++i )
         out << "  ";
     return out;
+}
+
+const string& ASNType::GetVar(const CNcbiRegistry& registry,
+                              const string& value) const
+{
+    return context.GetConfigPos().GetVar(registry, GetModule().name, value);
+}
+
+string ASNType::ClassName(const CNcbiRegistry& registry) const
+{
+    const string& s = GetVar(registry, "_class");
+    if ( !s.empty() )
+        return s;
+    if ( !name.empty() )
+        return Identifier(name);
+    const CConfigPosition& config = context.GetConfigPos();
+    return Identifier(config.GetSection() +
+                      replace(config.GetKeyPrefix(), '.', '_'));
+}
+
+string ASNType::FileName(const CNcbiRegistry& registry) const
+{
+    const string& s = GetVar(registry, "_file");
+    if ( !s.empty() )
+        return s;
+    return ClassName(registry);
+}
+
+string ASNType::Namespace(const CNcbiRegistry& registry) const
+{
+    return GetVar(registry, "_namespace");
+}
+
+string ASNType::ParentClass(const CNcbiRegistry& registry) const
+{
+    return GetVar(registry, "_parent_class");
+}
+
+const ASNType* ASNType::ParentType(const CNcbiRegistry& registry) const
+{
+    const string& parentName = GetVar(registry, "_parent");
+    if ( parentName.empty() )
+        return 0;
+
+    return GetModule().Resolve(parentName);
+}
+
+ASNType* ASNType::Resolve(void)
+{
+    return this;
+}
+
+const ASNType* ASNType::Resolve(void) const
+{
+    return this;
 }
 
 TTypeInfo ASNType::GetTypeInfo(void)
@@ -730,22 +732,18 @@ ostream& ASNUserType::Print(ostream& out, int ) const
 
 bool ASNUserType::Check(void)
 {
-    const ASNModule::TypeInfo* typeInfo =  GetModule().FindType(userTypeName);
-    if ( typeInfo == 0 ) {
-        Warning("type " + userTypeName + " undefined");
-        return false;
-    }
-    return true;
+    return GetModule().FindType(userTypeName);
 }
 
 bool ASNUserType::CheckValue(const ASNValue& value)
 {
-    const ASNModule::TypeInfo* typeInfo =  GetModule().FindType(userTypeName);
-    if ( !typeInfo || !typeInfo->type ) {
-        Warning("type " + userTypeName + " undefined");
+    try {
+        return Resolve()->CheckValue(value);
+    }
+    catch (CTypeNotFound& exc) {
+        Warning(exc.what());
         return false;
     }
-    return typeInfo->type->CheckValue(value);
 }
 
 TTypeInfo ASNUserType::GetTypeInfo(void)
@@ -785,20 +783,14 @@ void ASNUserType::GetCType(CTypeStrings& tType, CClassCode& code) const
     }
 }
 
-ASNType* ASNUserType::Resolve(void) const
+const ASNType* ASNUserType::Resolve(void) const
 {
-    const ASNModule::TypeInfo* typeInfo =  GetModule().FindType(userTypeName);
-    if ( !typeInfo )
-        THROW1_TRACE(runtime_error, "type " + userTypeName + " undefined");
-    
-    if ( typeInfo->type )
-        return typeInfo->type;
+    return GetModule().Resolve(userTypeName);
+}
 
-    typeInfo = GetModule().moduleSet->FindType(typeInfo);
-    if ( !typeInfo->type )
-        THROW1_TRACE(runtime_error, "type " + userTypeName + " undefined");
-
-    return typeInfo->type;
+ASNType* ASNUserType::Resolve(void)
+{
+    return GetModule().Resolve(userTypeName);
 }
 
 ASNOfType::ASNOfType(const CDataTypeContext& context, const string& kw)
@@ -814,7 +806,7 @@ ostream& ASNOfType::Print(ostream& out, int indent) const
 
 bool ASNOfType::Check(void)
 {
-    type->inSet = true;
+    type->Resolve()->inSet = true;
     return type->Check();
 }
 
@@ -1107,7 +1099,7 @@ bool ASNChoiceType::Check(void)
 {
     for ( TMembers::const_iterator m = members.begin();
           m != members.end(); ++m ) {
-        (*m)->type->choices.insert(this);
+        (*m)->type->Resolve()->choices.insert(this);
     }
     return CParent::Check();
 }
@@ -1149,7 +1141,7 @@ void ASNChoiceType::GenerateCode(CClassCode& code) const
         if ( fieldName.empty() ) {
             continue;
         }
-        ASNType* variant = m->type.get();
+        ASNType* variant = m->type->Resolve();
         code.AddCPPInclude(variant->FileName(code));
         code.CPP() <<
             "    ADD_SUB_CLASS2(\"" << m->name << "\", " <<
