@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2002/11/21 22:31:25  hurwitz
+ * added another delete rows function
+ *
  * Revision 1.15  2002/11/20 17:16:06  hurwitz
  * added functions for getting multiple row indices that match a seq-id
  *
@@ -157,6 +160,7 @@ public:
     int    GetSeqIndex(CRef<CSeq_id>& SeqID);         // get index into sequence list
     bool   GetMmdbId(int SeqIndex, int& id);          // get mmdb-id from sequence list
     bool   EraseRows(std::deque<int>& KeepRows);      // erase rows from alignment
+    bool   EraseRows2(std::deque<int>& TossRows);     // another way to erase rows
     bool   EraseRow(int RowIndex);                    // erase a row from alignment
     bool   MoveToTop(int RowIndex);                   // move row to top of alignment
     bool   MoveToBottom(int RowIndex);                // move row to bottom of alignment

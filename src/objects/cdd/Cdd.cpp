@@ -476,11 +476,31 @@ bool CCdd::SeqIdsMatch(CRef< CSeq_id >& ID1, CRef< CSeq_id >& ID2) {
 }
 
 
+bool CCdd::EraseRows2(std::deque<int>& TossRows) {
+//-------------------------------------------------------------------------
+// erase rows from the alignment.
+// EraseRows is a list of rows that are deleted from this CD.
+// EraseRows won't contain the master (0 index) row.
+//-------------------------------------------------------------------------
+  int  i;
+
+  int Count = 0;
+  int Test = TossRows.size();
+  for (i=TossRows.size()-1; i>=0; i--) {
+    if (TossRows[i] == 0) return(false);  // return false if master row is to be deleted
+    if (!EraseRow(TossRows[i])) return(false);  // return false if problem deleting a row
+    Count++;
+  }
+  return(true);
+}
+
+
 bool CCdd::EraseRows(std::deque<int>& KeepRows) {
 //-------------------------------------------------------------------------
 // erase rows from the alignment.
 // KeepRows is a list of rows that are NOT deleted from this CD.
 // KeepRows won't contain the master (0 index) row.
+// return of true means successful completion.
 //-------------------------------------------------------------------------
   list< CRef< CSeq_annot > >::iterator i;
   int   j, k, NumRows;
@@ -1635,6 +1655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2002/11/21 22:32:02  hurwitz
+ * added another delete rows function
+ *
  * Revision 1.24  2002/11/20 17:34:27  hurwitz
  * added functions for getting multiple row indices that match a seq-id,
  * got rid of "new" for some CRef's where not needed
