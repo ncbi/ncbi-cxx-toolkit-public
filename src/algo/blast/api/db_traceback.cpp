@@ -110,7 +110,7 @@ CDbBlastTraceback::RunSearchEngine()
         BLAST_ComputeTraceback(GetOptionsHandle().GetOptions().GetProgram(), 
             m_ipResults, m_iclsQueries, m_iclsQueryInfo,
             GetSeqSrc(), m_ipGapAlign, m_ipScoringParams, m_ipExtParams, 
-            m_ipHitParams, m_ipEffLenParams, GetDbOpts());
+            m_ipHitParams, m_ipEffLenParams, GetDbOpts(), NULL);
 }
 
 /// Resets query data structures; does only part of the work in the base 
@@ -139,6 +139,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/05/12 12:19:33  madden
+ * Add (NULL) psi_options to call to BLAST_ComputeTraceback
+ *
  * Revision 1.7  2004/05/07 15:30:09  papadopo
  * use BlastScoringParameters instead of BlastScoringOptions
  *
