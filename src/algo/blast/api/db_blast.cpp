@@ -339,7 +339,6 @@ CDbBlast::x_InitHSPStream()
         if (m_iNumThreads > 1)
             lock = Blast_CMT_LOCKInit();
         int num_results;
-        EProgram program = GetOptions().GetProgram();
 
         num_results = m_tQueries.size();
 
@@ -715,6 +714,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.45  2004/10/26 16:05:20  dondosha
+ * Removed unused variable
+ *
  * Revision 1.44  2004/10/26 15:31:41  dondosha
  * Removed RPSInfo argument from constructors;
  * RPSInfo is now initialized inside the CDbBlast class if RPS search is requested;
