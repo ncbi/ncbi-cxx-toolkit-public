@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2001/03/26 18:37:09  lavr
+ * #include <ctype.h> not used, removed
+ *
  * Revision 6.17  2001/03/02 20:08:05  lavr
  * Typo fixed
  *
@@ -96,10 +99,8 @@
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_ansi_ext.h>
-
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 
 static const char* s_GetValue(const char* service, const char* param,
