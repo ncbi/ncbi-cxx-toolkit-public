@@ -75,7 +75,7 @@ void CFlatSeqLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
                      CFFContext& ctx)
 {
     string accn;
-    switch (loc.Which()) {
+    switch ( loc.Which() ) {
     case CSeq_loc::e_Null:
     case CSeq_loc::e_Empty:
         oss << "gap()";
@@ -85,12 +85,9 @@ void CFlatSeqLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
     case CSeq_loc::e_Whole:
     {
         x_AddID(loc.GetWhole(), oss, ctx, &accn);
-        TSeqPos l;
-        if (accn == ctx.GetAccession()) {
-            l = ctx.GetHandle().GetBioseqCore()->GetInst().GetLength();
-        } else {
-            l = sequence::GetLength(loc.GetWhole());
-        }
+        TSeqPos l = (accn == ctx.GetAccession()) ? 
+            ctx.GetHandle().GetBioseqCore()->GetInst().GetLength() :
+            sequence::GetLength(loc.GetWhole(), &ctx.GetScope());
         oss << "1.." << l;
         x_AddInt(0, l - 1, accn);
         break;
@@ -289,7 +286,7 @@ void CFlatSeqLoc::x_AddInt(TSeqPos from, TSeqPos to, const string& accn,
 void CFlatSeqLoc::x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
                        CFFContext& ctx, string* s)
 {
-    const CSeq_id& id2 = id; // !!!ctx.GetPreferredSynonym(id);
+    const CSeq_id& id2 = ctx.GetPreferredSynonym(id);
     string         acc = id2.GetSeqIdString(true);
     if (&id2 != ctx.GetPrimaryId()) {
         oss << acc << ':';
@@ -307,6 +304,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/14 16:14:01  shomrat
+* minor fixes
+*
 * Revision 1.2  2003/12/18 17:43:33  shomrat
 * context.hpp moved
 *
