@@ -175,7 +175,6 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 #if _DEBUG
     dsp->Validate(true);
 #endif    
-    m_InputDSsMap[(void *)dsp] = dsp;
 
     // check if scope was given
     if ( !(flags & fDontUseObjMgr  ||  m_Scope != 0) ) {
@@ -209,8 +208,8 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     }
     m_AddFlags = flags;
 
+    m_InputDSsMap[(void *)dsp] = dsp;
     int ds_index = m_InputDSs.size();
-
     vector<CRef<CAlnMixSeq> > ds_seq;
 
     // check the widths
@@ -574,7 +573,10 @@ void CAlnMix::x_Merge()
 
     refseq = *(m_Seqs.begin());
     TMatches::iterator match_i = m_Matches.begin();
-
+#if _ALNMGR_DEBUG
+    m_MatchIdx = 0;
+#endif
+    
     CRef<CAlnMixSegment> seg;
     CAlnMixSeq::TStarts::iterator start_i, lo_start_i, hi_start_i, tmp_start_i;
 
@@ -655,6 +657,9 @@ void CAlnMix::x_Merge()
 
         // save the match info into the segments map
         if (seq1) {
+#if _ALNMGR_DEBUG
+            m_MatchIdx++;
+#endif
             // order the match
             match->m_AlnSeq1 = seq1;
             match->m_Start1 = start1;
@@ -918,6 +923,12 @@ void CAlnMix::x_Merge()
                                 }
                             }
                         }
+#if _DEBUG && _ALNMGR_DEBUG                        
+                        x_SegmentStartItsConsistencyCheck(*prev_seg,
+                                                          *seq1,
+                                                          start);
+#endif
+
 
                         hi_start_i = start_i; // DONE!
                     } else if (curr_len == prev_seg->m_Len) {
@@ -1064,6 +1075,11 @@ void CAlnMix::x_Merge()
                                 start_i->second->m_StartIts[tmp_seq] =
                                     tmp_start_i;
                             }
+#if _DEBUG && _ALNMGR_DEBUG                        
+                            x_SegmentStartItsConsistencyCheck(*start_i->second,
+                                                              *seq2,
+                                                              start);
+#endif
                         }
                     } else {
                         // this position does not exist, create it
@@ -1075,6 +1091,11 @@ void CAlnMix::x_Merge()
                         
                         // point this segment's row start iterator
                         start_i->second->m_StartIts[seq2] = start2_i;
+#if _DEBUG && _ALNMGR_DEBUG                        
+                        x_SegmentStartItsConsistencyCheck(*(start_i->second),
+                                                          *seq2,
+                                                          start);
+#endif
                     }
 
                     // increment values
@@ -1099,6 +1120,7 @@ void CAlnMix::x_Merge()
     x_CreateSegmentsVector();
     x_CreateDenseg();
 }
+
 
 void
 CAlnMix::x_SetSeqFrame(CAlnMixMatch* match, CAlnMixSeq*& seq)
@@ -1138,10 +1160,8 @@ CAlnMix::x_SetSeqFrame(CAlnMixMatch* match, CAlnMixSeq*& seq)
 CAlnMix::TSecondRowFits
 CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
 {
-    CAlnMixSeq::TStarts&          starts1 = match->m_AlnSeq1->m_Starts;
-    CAlnMixSeq::TStarts&          starts2 = match->m_AlnSeq2->m_Starts;
-    CAlnMixSeq                  * seq1    = match->m_AlnSeq1,
-                                * seq2    = match->m_AlnSeq2;
+    CAlnMixSeq*&                  seq1    = match->m_AlnSeq1;
+    CAlnMixSeq*&                  seq2    = match->m_AlnSeq2;
     TSeqPos&                      start1  = match->m_Start1;
     TSeqPos&                      start2  = match->m_Start2;
     TSeqPos&                      len     = match->m_Len;
@@ -1164,14 +1184,22 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
         }
     }
 
-    if ( !starts2.empty() ) {
+    if ( !seq2->m_Starts.empty() ) {
 
         // check strand
-        if (seq2->m_PositiveStrand !=
-            (seq1->m_PositiveStrand ?
-             !match->m_StrandsDiffer :
-             match->m_StrandsDiffer)) {
-            return eInconsistentStrand;
+        while (true) {
+            if (seq2->m_PositiveStrand !=
+                (seq1->m_PositiveStrand ?
+                 !match->m_StrandsDiffer :
+                 match->m_StrandsDiffer)) {
+                if (seq2->m_ExtraRow) {
+                    seq2 = seq2->m_ExtraRow;
+                } else {
+                    return eInconsistentStrand;
+                }
+            } else {
+                break;
+            }
         }
 
         // check frame
@@ -1179,10 +1207,10 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
             return eInconsistentFrame;
         }
 
-        start_i = starts2.lower_bound(start2);
+        start_i = seq2->m_Starts.lower_bound(start2);
 
         // check below
-        if (start_i != starts2.begin()) {
+        if (start_i != seq2->m_Starts.begin()) {
             start_i--;
             
             // check for inconsistency on the first row
@@ -1257,13 +1285,13 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
                     return eSecondRowOverlap;
                 }
             }
-            if (start_i != starts2.end()) {
+            if (start_i != seq2->m_Starts.end()) {
                 start_i++;
             }
         }
 
         // check the overlapping area for consistency
-        while (start_i != starts2.end()  &&  
+        while (start_i != seq2->m_Starts.end()  &&  
                start_i->first < start2 + len * width2) {
             if ( !m_IndependentDSs ) {
                 CAlnMixSegment::TStartIterators::iterator start_it_i =
@@ -1301,7 +1329,7 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
         }
 
         // check above for consistency
-        if (start_i != starts2.end()) {
+        if (start_i != seq2->m_Starts.end()) {
             if ( !m_IndependentDSs ) {
                 CAlnMixSegment::TStartIterators::iterator start_it_i =
                     start_i->second->m_StartIts.find(seq1);
@@ -1348,17 +1376,17 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
         }
 
         // check for inconsistent matches
-        if ((start_i = starts1.find(start1)) == starts1.end() ||
+        if ((start_i = seq1->m_Starts.find(start1)) == seq1->m_Starts.end() ||
             start_i->first != start1) {
             // commenting out for now, since moved the function call ahead            
 //             NCBI_THROW(CAlnException, eMergeFailure,
 //                        "CAlnMix::x_SecondRowFits(): "
-//                        "Internal error: starts1 do not match");
+//                        "Internal error: seq1->m_Starts do not match");
         } else {
             CAlnMixSegment::TStartIterators::iterator it;
             TSeqPos tmp_start =
                 match->m_StrandsDiffer ? start2 + len * width2 : start2;
-            while (start_i != starts1.end()  &&
+            while (start_i != seq1->m_Starts.end()  &&
                    start_i->first < start1 + len * width1) {
 
                 CAlnMixSegment::TStartIterators& its = 
@@ -1456,20 +1484,9 @@ void CAlnMix::x_CreateSegmentsVector()
 #if _DEBUG
     ITERATE (TSeqs, row_i, m_Rows) {
         ITERATE (CAlnMixSegment::TStarts, st_i, (*row_i)->m_Starts) {
-            ITERATE(CAlnMixSegment::TStartIterators,
-                    st_it_i, (*st_i).second->m_StartIts) {
-                // both should point to the same seg
-                if ((*st_it_i).second->second != (*st_i).second) {
-                    string errstr =
-                        string("CAlnMix::x_CreateSegmentsVector():")
-                        + " Internal error: Segments messed up."
-                        + " row=" + NStr::IntToString((*row_i)->m_RowIndex)
-                        + " seq=" + NStr::IntToString((*row_i)->m_SeqIndex)
-                        + " strand=" +
-                        ((*row_i)->m_PositiveStrand ? "plus" : "minus");
-                    NCBI_THROW(CAlnException, eMergeFailure, errstr);
-                }
-            }
+            x_SegmentStartItsConsistencyCheck(*(st_i->second),
+                                              **row_i,
+                                              st_i->first);
         }
          
     }       
@@ -2123,6 +2140,41 @@ void CAlnMix::ChooseSeqId(CSeq_id& id1, const CSeq_id& id2)
 }    
 
 
+#ifdef _DEBUG
+void CAlnMix::x_SegmentStartItsConsistencyCheck(const CAlnMixSegment& seg,
+                                                const CAlnMixSeq&     seq,
+                                                const TSeqPos&        start)
+{
+    ITERATE(CAlnMixSegment::TStartIterators,
+            st_it_i, seg.m_StartIts) {
+        // both should point to the same seg
+        if ((*st_it_i).second->second != &seg) {
+            string errstr =
+                string("CAlnMix::x_SegmentStartItsConsistencyCheck")
+#if _ALNMGR_DEBUG
+                + " [match_idx=" + NStr::IntToString(m_MatchIdx) + "]"
+#endif
+                + " The internal consistency check failed for"
+                + " the segment containing ["
+                + " row=" + NStr::IntToString((*st_it_i).first->m_RowIndex)
+                + " seq=" + NStr::IntToString((*st_it_i).first->m_SeqIndex)
+                + " strand=" +
+                ((*st_it_i).first->m_PositiveStrand ? "plus" : "minus")
+                + " start=" + NStr::IntToString((*st_it_i).second->first)
+                + "] aligned to: ["
+                + " row=" + NStr::IntToString(seq.m_RowIndex)
+                + " seq=" + NStr::IntToString(seq.m_SeqIndex)
+                + " strand=" +
+                (seq.m_PositiveStrand ? "plus" : "minus")
+                + " start=" + NStr::IntToString(start)
+                + "].";
+            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+        }
+    }
+}
+#endif
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -2130,6 +2182,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.110  2004/10/13 16:29:17  todorov
+* 1) Added x_SegmentStartItsConsistencyCheck.
+* 2) Within x_SecondRowFits, iterate through seq2->m_ExtraRow to find
+*    the proper strand, if such exists.
+*
 * Revision 1.109  2004/10/12 19:55:14  rsmith
 * make x_CompareAlnSeqScores arguments match the container it compares on.
 *
