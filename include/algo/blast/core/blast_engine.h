@@ -115,7 +115,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 
      (Uint1, BLAST_SequenceBlk*, BlastQueryInfo* query_info,
-      BLAST_SequenceBlk*, BlastGapAlignStruct*, const BlastScoringOptions*,
+      BLAST_SequenceBlk*, BlastGapAlignStruct*, const BlastScoringParameters*,
       const BlastExtensionParameters*, const BlastHitSavingParameters*,
       BlastInitHitList*, BlastHSPList**);
      
