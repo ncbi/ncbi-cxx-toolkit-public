@@ -1,4 +1,4 @@
---$Revision: 1.5 $
+--$Revision: 1.6 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -40,7 +40,7 @@ Seq-descr ::= SET OF CHOICE {
     name VisibleString ,         -- a name for this sequence
     title VisibleString ,        -- a title for this sequence
     org Org-ref ,                -- if all from one organism
-    comment VisibleString ,      -- a more extensive comment
+    comment StringStore ,        -- a more extensive comment
     num Numbering ,              -- a numbering system
     maploc Dbtag ,               -- map location of this sequence
     pir PIR-block ,              -- PIR specific info
