@@ -281,12 +281,13 @@ fltk_libdir=`$fltk_config --exec-prefix`/lib
 COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}
 COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan -strict ${target_dir}/plugins
 
-echo "Making links to executable plugins"
+echo "Copying executable plugins:"
 # don't make links for *~ (emacs backup files) or #*# (autosave)
 for f in ${source_dir}/../plugins/algo/executables/*[^~#]; do
     if [ ! -d $f ]; then
         echo copying executable: `basename $f`
-        COMMON_ExecRB cp -p $f ${target_dir}/executables
+        rm -f ${target_dir}/executables/`basename $f`
+        DoCopy $f ${target_dir}/executables
     fi
 done
 
