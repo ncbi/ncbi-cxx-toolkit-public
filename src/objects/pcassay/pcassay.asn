@@ -1,4 +1,4 @@
--- $Id: pcassay.asn,v 1.2 2004/07/13 14:31:17 bolton Exp $
+ -- $Id: pcassay.asn,v 1.3 2005/02/04 15:04:39 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -94,12 +94,14 @@ PC-AssayResults ::= SEQUENCE {
 
     -- Assay Result Data for this Sample
     --   Note: Users need populate only those "tid"s, for which there is data, in any order.
-    activity          INTEGER {                            -- Activity Summary
+    outcome           INTEGER {                            -- Assay Outcome
                           inactive        (1),             -- Substance is considered Inactive
                           active          (2),             -- Substance is considered Active
                           inconclusive    (3),             -- Substance is Inconclusive
-                          unknown         (4)              -- Substance Activity is Unknown
+                          unspecified     (4)              -- Substance Outcome is Unspecified
                       }                          OPTIONAL,
+    rank              INTEGER                    OPTIONAL, -- Numeric Rank of Assay Outcome
+                                                           --   Note: Larger numbers are more active
     data              SEQUENCE OF PC-AssayData             -- Data Values (vector)
 }
 
@@ -157,6 +159,71 @@ PC-AssayDescription ::= SEQUENCE {
     -- Allowed Assay Result Types
     results           SEQUENCE OF PC-ResultType,           -- Allowed Result Definitions (vector)
     summary           SEQUENCE OF PC-ActSummary  OPTIONAL  -- Activity Summary Definitions (for result filtering)
+}
+
+
+-- Definition of Allowed Result Types for a given Assay
+PC-ResultType ::= SEQUENCE {
+    -- Tracking or Description Information
+    tid               INTEGER,                             -- Assay Result Field Type ID
+                                                           --   [Either valid ID or a "0" dummy value]
+                                                           --   Note: Must be greater than "0" or invalid, "0"
+                                                           --   Note: Initial deposition must give a dummy value
+    name              VisibleString,                       -- Name of the Result Field
+    description       SEQUENCE OF VisibleString  OPTIONAL, -- Description of the Result Field
+    attribution       SEQUENCE OF Pub            OPTIONAL, -- Citation or Xref Information
+
+    -- Result Data Type or Validation Information
+    type             INTEGER {                             -- Result Data Type
+                         float            (1),
+                         int              (2),
+                         bool             (3),
+                         string           (4),
+                         parsedfloat      (5),             -- String that is interpreted into a real
+                         parsedint        (6)              -- String that is interpreted into an integer
+                     },
+    allowed          CHOICE {                              -- Allowed Result Values
+                         fset             SEQUENCE OF REAL,
+                         iset             SEQUENCE OF INTEGER,
+                         sset             SEQUENCE OF VisibleString
+                     }                           OPTIONAL,
+    unit             INTEGER {                             -- Units for Value
+                         ppt              (1),             -- Parts per Thousand
+                         ppm              (2),             -- Parts per Million
+                         ppb              (3),             -- Parts per Billion
+                         mm               (4),             -- milliM
+                         um               (5),             -- microM
+                         nm               (6),             -- nanoM
+                         pm               (7),             -- picoM
+                         fm               (8),             -- femtoM
+                         mgml             (9),             -- milligrams per mL
+                         ugml            (10),             -- micrograms per mL
+                         ngml            (11),             -- nanograms per mL
+                         pgml            (12),             -- picograms per mL
+                         fgml            (13),             -- femtograms per mL
+                         m               (14),             -- Molar
+                         percent         (15),             -- Percent
+                         ratio           (16),             -- Ratio
+                         sec             (17),             -- Seconds
+                         rsec            (18),             -- Reciprocal Seconds
+                         min             (19),             -- Minutes
+                         rmin            (20),             -- Reciprocal Minutes
+                         day             (21),             -- Days
+                         rday            (22),             -- Reciprocal Days
+                         none           (254),
+                         unspecified    (255)
+                     }                           OPTIONAL,
+    sunit            VisibleString               OPTIONAL, -- Unit Type (as a String)
+    transform        INTEGER {                             -- Value Transformation Details
+                         linear           (1),             -- Linear Scale (x)
+                         ln               (2),             -- Natural Log Scale (ln x)
+                         log              (3),             -- Log Base 10 Scale (log10 x)
+                         reciprocal       (4),             -- Reciprocal Scale (1/x)
+                         negative         (5),             -- Negative Linear Scale (-x)
+                         nlog             (6),             -- Negative Log Base 10 Scale (-log10 x)
+                         nln              (7)              -- Negative Natural Log Scane (-ln x)
+                     }                           OPTIONAL,
+    stransform       VisibleString               OPTIONAL  -- Value Transform Type (as a String)
 }
 
 
@@ -225,74 +292,13 @@ PC-ActOperator ::= INTEGER {
 }
 
 
--- Definition of Allowed Result Types for a given Assay
-PC-ResultType ::= SEQUENCE {
-    -- Tracking or Description Information
-    tid               INTEGER,                             -- Assay Result Field Type ID
-                                                           --   [Either valid ID or a "0" dummy value]
-                                                           --   Note: Must be greater than "0" or invalid, "0"
-                                                           --   Note: Initial deposition must give a dummy value
-    name              VisibleString,                       -- Name of the Result Field
-    description       SEQUENCE OF VisibleString  OPTIONAL, -- Description of the Result Field
-    attribution       SEQUENCE OF Pub            OPTIONAL, -- Citation or Xref Information
-
-    -- Result Data Type or Validation Information
-    type             INTEGER {                             -- Result Data Type
-                         float            (1),
-                         int              (2),
-                         bool             (3),
-                         string           (4),
-                         parsedfloat      (5),             -- String that is interpreted into a real
-                         parsedint        (6)              -- String that is interpreted into an integer
-                     },
-    allowed          CHOICE {                              -- Allowed Result Values
-                         fset             SEQUENCE OF REAL,
-                         iset             SEQUENCE OF INTEGER,
-                         sset             SEQUENCE OF VisibleString
-                     }                           OPTIONAL,
-    unit             INTEGER {                             -- Units for Value
-                         ppt              (1),             -- Parts per Thousand
-                         ppm              (2),             -- Parts per Million
-                         ppb              (3),             -- Parts per Billion
-                         mm               (4),             -- milliM
-                         um               (5),             -- microM
-                         nm               (6),             -- nanoM
-                         pm               (7),             -- picoM
-                         fm               (8),             -- femtoM
-                         mgml             (9),             -- milligrams per mL
-                         ugml            (10),             -- micrograms per mL
-                         ngml            (11),             -- nanograms per mL
-                         pgml            (12),             -- picograms per mL
-                         fgml            (13),             -- femtograms per mL
-                         m               (14),             -- Molar
-                         percent         (15),             -- Percent
-                         ratio           (16),             -- Ratio
-                         sec             (17),             -- Seconds
-                         rsec            (18),             -- Reciprocal Seconds
-                         min             (19),             -- Minutes
-                         rmin            (20),             -- Reciprocal Minutes
-                         day             (21),             -- Days
-                         rday            (22),             -- Reciprocal Days
-                         none           (254),
-                         unspecified    (255)
-                     }                           OPTIONAL,
-    sunit            VisibleString               OPTIONAL, -- Unit Type (as a String)
-    transform        INTEGER {                             -- Value Transformation Details
-                         linear           (1),             -- Linear Scale (x)
-                         ln               (2),             -- Natural Log Scale (ln x)
-                         log              (3),             -- Log Base 10 Scale (log10 x)
-                         reciprocal       (4),             -- Reciprocal Scale (1/x)
-                         negative         (5),             -- Negative Linear Scale (-x)
-                         nlog             (6),             -- Negative Log Base 10 Scale (-log10 x)
-                         nln              (7)              -- Negative Natural Log Scane (-ln x)
-                     }                           OPTIONAL,
-    stransform       VisibleString               OPTIONAL  -- Value Transform Type (as a String)
-}
-
 END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
+-- Revision 1.3  2005/02/04 15:04:39  bolton
+-- Added assay result ranking.  Reorganized order of object definitions.
+--
 -- Revision 1.2  2004/07/13 14:31:17  bolton
 -- Added PC-XRefData, imported from the PCSubstance specification, to the
 -- DataSession and AssayDescription blocks.
@@ -355,5 +361,6 @@ END
 -- Minor changes to make "pcassay" library compile.
 --
 -- ===========================================================================
+
 
 
