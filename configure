@@ -4973,7 +4973,7 @@ fi
 case "$host_os" in
    linux*)
       kver=`uname -r`
-      libcver=`locale --version | awk 'NR == 1 { print $NF }'`
+      libcver=`ldd --version | awk 'NR == 1 { print $NF }'`
       verbose_host=$host_cpu-$host_vendor-linux$kver-gnu$libcver
       ;;
    *) verbose_host=$host ;;
