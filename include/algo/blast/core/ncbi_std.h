@@ -76,7 +76,7 @@ extern "C" {
 /* MSVC and (older) MIPSpro always require leading underscores */
 #define NCBI_INLINE __inline
 #else
-/* "inline" seems to work on our remaining in-house compilers
+/** "inline" seems to work on our remaining in-house compilers
    (WorkShop, Compaq, ICC, MPW) */
 #define NCBI_INLINE inline
 #endif
@@ -88,6 +88,7 @@ extern "C" {
 #endif
 
 #ifndef _NCBISTD_ /* if we're not in the C toolkit... */
+/** bool replacment for C */
 typedef Uint1 Boolean;
 #ifndef TRUE
 /** bool replacment for C indicating true. */
@@ -99,8 +100,9 @@ typedef Uint1 Boolean;
 #endif
 #endif
 
+/** macro for assert. */
 #ifndef ASSERT
-#define ASSERT assert  /** macro for assert. */
+#define ASSERT assert
 #endif
 
 #ifndef MIN
@@ -141,9 +143,11 @@ typedef Uint1 Boolean;
 #define INT2_MIN    (-32768)
 
 #ifndef DIM
+/** dimension of an array. */
 #define DIM(A) (sizeof(A)/sizeof((A)[0]))
 #endif
 
+/** terminating byte of a char* string. */
 #define NULLB '\0'
 
 #endif /* _NCBISTD_ */
@@ -189,13 +193,13 @@ ListNode* ListNodeAdd (ListNode** head);
 ListNode* ListNodeAddPointer (ListNode** head, Uint1 choice, void *value);
 
 /** Free all list's nodes, does not attempt to free data. 
- * @param objects to be freed [in]
+ * @param vnp objects to be freed [in]
  * @return NULL
  */
 ListNode* ListNodeFree (ListNode* vnp);
 
 /** Free nodes as well as data (vnp->ptr) assuming it is one contiguous chunk.
- * @param objects to be freed [in] 
+ * @param vnp objects to be freed [in] 
  * @return NULL
  */
 ListNode* ListNodeFreeData (ListNode* vnp);
