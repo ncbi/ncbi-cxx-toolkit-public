@@ -69,7 +69,7 @@ pcre_memmove(unsigned char *dest, const unsigned char *src, size_t n)
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pcre.h"
+#include <util/regexp/pcre.h>
 
 /* In case there is no definition of offsetof() provided - though any proper
 Standard C system should have one. */

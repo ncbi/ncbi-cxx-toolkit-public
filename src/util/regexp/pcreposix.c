@@ -36,7 +36,7 @@ restrictions:
 */
 
 #include "pcre_internal.h"
-#include "pcreposix.h"
+#include <util/regexp/pcreposix.h>
 #include "stdlib.h"
 
 
