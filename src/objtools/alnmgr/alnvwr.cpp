@@ -136,6 +136,7 @@ void CAlnVwr::Chunks(const CAlnMap& alnmap,
             if (chunk->GetType() & CAlnMap::fNoSeqOnLeft) out << "(NoSeqOnLeft)";
             if (chunk->GetType() & CAlnMap::fEndOnRight) out << "(EndOnRight)";
             if (chunk->GetType() & CAlnMap::fEndOnLeft) out << "(EndOnLeft)";
+            if (chunk->GetType() & CAlnMap::fUnaligned) out << "(Unaligned)";
             out << NcbiEndl;
         }
     }
@@ -161,7 +162,9 @@ void CAlnVwr::PopsetStyle(const CAlnVec& alnvec,
                 aln_seq_str.reserve(scrn_width + 1);
                 // for each sequence
                 for (CAlnMap::TNumrow row = 0; row < alnvec.GetNumRows(); row++) {
-                    out << alnvec.GetSeqId(row).AsFastaString()
+                    out << row 
+                        << "\t"
+                        << alnvec.GetSeqId(row).AsFastaString()
                         << "\t" 
                         << alnvec.GetSeqPosFromAlnPos(row, rng.GetFrom(),
                                                       CAlnMap::eLeft)
@@ -206,12 +209,15 @@ void CAlnVwr::PopsetStyle(const CAlnVec& alnvec,
                 }
             
                 for (seg = 0, pos = row;  seg < nsegs; ++seg, pos += nrows) {
-                    len = lens[seg];
+                    len = lens[row];
                     if ((start = starts[pos]) >= 0) {
                     
                         left_seg = seg; // ending left seg is at most here
                     
-                        alnvec.GetSeqString(buff, row, start, start + len - 1);
+                        alnvec.GetSeqString(buff,
+                                            row,
+                                            start,
+                                            start + len * alnvec.GetWidth(row) - 1);
                         buffer[row] += buff;
                     } else {
                         // add appropriate number of gap/end chars
@@ -233,7 +239,9 @@ void CAlnVwr::PopsetStyle(const CAlnVec& alnvec,
             TSeqPos pos = 0;
             do {
                 for (CAlnMap::TNumrow row = 0; row < nrows; row++) {
-                    out << alnvec.GetSeqId(row).AsFastaString()
+                    out << row 
+                        << "\t"
+                        << alnvec.GetSeqId(row).AsFastaString()
                         << "\t"
                         << alnvec.GetSeqPosFromAlnPos(row, pos, CAlnMap::eLeft)
                         << "\t"
@@ -309,6 +317,9 @@ void CAlnVwr::PopsetStyle(const CAlnVec& alnvec,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/09/15 20:12:09  todorov
+ * Extended Get{Aln,Seq}Chunks with the ability to obtain [implicit] unaligned regions. Also fixed a but related to tranlated sequences.
+ *
  * Revision 1.2  2004/08/30 12:31:35  todorov
  * Made CNcbiOstream& a required param. Changed the order of params. Changed name of the speed-optimized algrorithm. Changed the default value for PopStyle
  *
