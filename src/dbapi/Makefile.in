@@ -3,8 +3,6 @@
 SUB_PROJ = driver
 #SUB_PROJ = driver kholodov_dbapi butanaev_dbapi cslink
 
-LIB_PROJ = dbapi
-
 EXPENDABLE_LIB_PROJ = dbapi
 
 srcdir = @srcdir@
