@@ -59,18 +59,21 @@ USING_NCBI_SCOPE;
 static string s_ReadPipe(CPipe& pipe) 
 {
     char buf[BUFFER_SIZE];
-    size_t read = 0;
+    size_t total = 0;
     size_t size = BUFFER_SIZE-1;
     for (;;) {
-        size_t cnt = pipe.Read(buf+read, size);
-        read += cnt;
-        size -= cnt;
+        size_t cnt = pipe.Read(buf+total, size,CPipe::eStdOut);
+        cerr << "Read from pipe: " << cnt << endl;
+        total += cnt;
+        size  -= cnt;
         if (size == 0  ||  cnt == 0 )
             break;
     }
-    buf[read] = 0;
+    buf[total] = 0;
     string str = buf;
-    cerr << "Read from pipe: " << str << endl;
+    cerr << "Read from pipe (total): " << total << endl;
+    cerr << "Read from pipe = " << str << endl;
+    cerr.flush();
     return str;
 }
 
@@ -80,6 +83,7 @@ static void s_WritePipe(CPipe& pipe, string message)
 {
     pipe.Write(message.c_str(), message.length());
     cerr << "Wrote to pipe: " << message << endl;
+    cerr << "Wrote to pipe (total): " << message.length() << endl;
 }
 
 
@@ -90,6 +94,7 @@ static string s_ReadFile(FILE* fs)
     size_t cnt = read(fileno(fs), buf, BUFFER_SIZE-1);
     buf[cnt] = 0;
     string str = buf;
+    cerr << "Read from file (total): " << cnt << endl;
     cerr << "Read from file stream: " << str << endl;
     return str;
 }
@@ -99,7 +104,9 @@ static string s_ReadFile(FILE* fs)
 static void s_WriteFile(FILE* fs, string message) 
 {
     write(fileno(fs), message.c_str(), message.length());
-    cerr << "Wrote to file stream: " << message << endl;
+    cerr << "Wrote to file: " << message << endl;
+    cerr << "Wrote to file (total): " << message.length() << endl;
+    cerr.flush();
 }
 
 
@@ -107,20 +114,23 @@ static void s_WriteFile(FILE* fs, string message)
 static string s_ReadStream(istream& ios)
 {
     char buf[BUFFER_SIZE];
-    size_t read = 0;
-    size_t size = BUFFER_SIZE-1;
+    size_t total = 0;
+    size_t size  = BUFFER_SIZE-1;
     for (;;) {
-        ios.read(buf+read, size);
+        ios.read(buf+total, size);
         size_t cnt = ios.gcount();
-        read += cnt;
-        size -= cnt;
+        cerr << "Read from iostream: " << cnt << endl;
+        total += cnt;
+        size  -= cnt;
         if (size == 0  ||  (cnt == 0 && ios.eof()))
             break;
         ios.clear();
     }
-    buf[read] = 0;
+    buf[total] = 0;
     string str = buf;
-    cerr << "Read from iostream: " << str << endl;
+    cerr << "Read from iostream (total): " << total << endl;
+    cerr << "Read from iostream = " << str << endl;
+    cerr.flush();
     return str;
 }
 
@@ -194,7 +204,7 @@ int CTest::Run(void)
     assert(pipe.Close() == 0);
 
 #else
-#error "Pipe tests configured for Windows or Unix only."
+#   error "Pipe tests configured for Windows or Unix only."
 #endif
 
     // Pipe for writing (direct from pipe)
@@ -266,6 +276,7 @@ int CTest::Run(void)
 int main(int argc, const char* argv[])
 {
     string command;
+
     // Spawned process for unidirectional test
     if (argc == 2) {
         cerr << endl << "--- CPipe unidirectional test ---" << endl;
@@ -279,6 +290,7 @@ int main(int argc, const char* argv[])
     // Spawned process for bidirectional test (direct from pipe)
     if (argc == 3) {
         cerr << endl << "--- CPipe bidirectional test (pipe) ---" << endl;
+        Delay();
         command = s_ReadFile(stdin);
         assert(command == "Child, are you ready again?");
         s_WriteFile(stdout, "Ok. Test 2 running.");
@@ -287,7 +299,7 @@ int main(int argc, const char* argv[])
 
     // Spawned process for bidirectional test (iostream)
     if (argc == 4) {
-        //cerr << endl << "--- CPipe bidirectional test (iostream) ---" << endl;
+        //cerr << endl << "--- CPipe bidirectional test (iostream) ---"<<endl;
         for (int i = 5; i<=10; i++) {
             int value;
             cin >> value;
@@ -307,8 +319,12 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2003/04/23 20:57:45  ivanov
+ * Slightly changed static read/write functions. Minor cosmetics.
+ *
  * Revision 6.12  2003/03/07 16:24:44  ivanov
- * Simplify Delay(). Added a delays before checking exit code of a pipe'd application.
+ * Simplify Delay(). Added a delays before checking exit code of a
+ * pipe'd application.
  *
  * Revision 6.11  2003/03/06 21:19:16  ivanov
  * Added comment for R6.10:
