@@ -114,15 +114,6 @@ bool CDataLoaderFactory::ValidParams(
     if (!params) {
         return false;
     }
-    // Check param tree name
-    const string& tree_id = params->GetId();
-    if (NStr::CompareNocase(tree_id, m_DriverName) != 0) {
-        LOG_POST(Warning
-          << "CDataLoaderFactory: Top level Id does not match driver name."
-          << " Id = " << tree_id << " driver=" << m_DriverName
-          << " parameters ignored." );
-        return false;
-    }
     return true;
 }
 
@@ -133,6 +124,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/12/22 19:34:19  grichenk
+* Do not check node id of params
+*
 * Revision 1.2  2004/08/02 21:08:31  grichenk
 * Check params before calling GetParam().
 *
