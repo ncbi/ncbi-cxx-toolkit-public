@@ -641,7 +641,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
     Uint1** edit_script;
     Uint1* edit_script_row;
     Int4 orig_b_index;
-    Int1 script, next_script, script_row, script_col;
+    Uint1 script, next_script, script_row, script_col;
     Int4 align_len;
 
     matrix = gap_align->sbp->matrix;
