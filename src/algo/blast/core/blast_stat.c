@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.59  2004/04/23 13:49:20  madden
+ * Cleaned up ifndef in BlastKarlinLHtoK
+ *
  * Revision 1.58  2004/04/23 13:21:25  madden
  * Rewrote BlastKarlinLHtoK to do the following and more:
  * 1. fix a bug whereby the wrong formula was used when high score == 1
@@ -1826,11 +1829,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double lambda, double H)
       score in an alignment of fixed length; the array is shifted
       during part of the computation, so that
       entry 0 is for score 0.  */
-#ifndef BLAST_KARLIN_STACKP
     double         *alignmentScoreProbabilities = NULL;
-#else
-    double          alignmentScoreProbabilities [DIMOFP0_MAX];
-#endif
     Int4            low;    /* Lowest score (must be negative) */
     Int4            high;   /* Highest score (must be positive) */
     Int4            range;  /* range of scores, computed as high - low*/
@@ -1919,15 +1918,10 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double lambda, double H)
     if (DIMOFP0 > DIMOFP0_MAX) {
         return -1.;
     }
-#ifndef BLAST_KARLIN_STACKP
     alignmentScoreProbabilities =
         (double *)calloc(DIMOFP0, sizeof(*alignmentScoreProbabilities));
     if (alignmentScoreProbabilities == NULL)
         return -1.;
-#else
-    memset((char*)alignmentScoreProbabilities, 0,
-               DIMOFP0*sizeof(alignmentScoreProbabilities[0]));
-#endif
 
     outerSum = 0.;
     lowAlignmentScore = highAlignmentScore = 0;
@@ -1984,7 +1978,9 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double lambda, double H)
         ratio = oldsum / oldsum2;
         if (ratio >= (1.0 - sumlimit*0.001)) {
             K = -1.;
-            goto CleanUp;
+            if (alignmentScoreProbabilities != NULL)
+                sfree(alignmentScoreProbabilities);
+            return K;
         }
         sumlimit *= 0.01;
         while (innerSum > sumlimit) {
@@ -2002,11 +1998,8 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double lambda, double H)
             (firstTermClosedForm*BLAST_Expm1(-(double)lambda));
     }
 
- CleanUp:
-#ifndef BLAST_KARLIN_K_STACKP
     if (alignmentScoreProbabilities != NULL)
         sfree(alignmentScoreProbabilities);
-#endif
 
     return K;
 }
