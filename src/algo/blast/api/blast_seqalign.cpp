@@ -1126,7 +1126,6 @@ static void
 x_GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
                          const BlastSeqSrc* bssp,    // [in]
                          int oid,                    // [in] 
-                         bool is_gapped,             // [in]
                          CSeq_id** seqid,            // [out]
                          TSeqPos* length)            // [out]
 {
@@ -1137,19 +1136,14 @@ x_GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
     if ( !bssp ) {
         *seqid = const_cast<CSeq_id*>(&sequence::GetId(*ss->seqloc,
                                                        ss->scope));
-
-        if ( !is_gapped ) {
-            *length = sequence::GetLength(*ss->seqloc, ss->scope);
-        }
+        *length = sequence::GetLength(*ss->seqloc, ss->scope);
     } else {
         char* id = BLASTSeqSrcGetSeqIdStr(bssp, (void*) &oid);
         string id_str(id);
         *seqid = new CSeq_id(id_str);
         sfree(id);
 
-        if ( !is_gapped ) {
-            *length = BLASTSeqSrcGetSeqLen(bssp, (void*) &oid);
-        }
+        *length = BLASTSeqSrcGetSeqLen(bssp, (void*) &oid);
     }
     return;
 }
@@ -1187,10 +1181,12 @@ x_RemapAlignmentCoordinates(CRef<CSeq_align> sar,
     const int query_dimension = 0;
     const int subject_dimension = 1;
 
-    for (CTypeIterator<CDense_seg> itr(Begin(*sar)); itr; ++itr) {
-        itr->RemapToLoc(query_dimension, *query->seqloc);
-        if (subject) {
-            itr->RemapToLoc(subject_dimension, *subject->seqloc);
+    if (!query->seqloc->IsWhole()) {
+        for (CTypeIterator<CDense_seg> itr(Begin(*sar)); itr; ++itr) {
+            itr->RemapToLoc(query_dimension, *query->seqloc);
+            if (subject) {
+                itr->RemapToLoc(subject_dimension, *subject->seqloc);
+            }
         }
     }
 }
@@ -1212,14 +1208,14 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
     TSeqPos query_length = 0;
     CSeq_id* qid = NULL;
     CConstRef<CSeq_id> query_id;
-    x_GetSequenceLengthAndId(&query, NULL, 0, is_gapped, &qid, &query_length);
+    x_GetSequenceLengthAndId(&query, NULL, 0, &qid, &query_length);
     query_id.Reset(qid);
 
     TSeqPos subj_length = 0;
     CSeq_id* sid = NULL;
     CConstRef<CSeq_id> subject_id;
     if ( !bssp ) {
-        x_GetSequenceLengthAndId(subject, NULL, 0, is_gapped, &sid, 
+        x_GetSequenceLengthAndId(subject, NULL, 0, &sid, 
                                &subj_length);
         subject_id.Reset(sid);
     }
@@ -1230,7 +1226,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
             continue;
 
         if (bssp) {
-            x_GetSequenceLengthAndId(NULL, bssp, hsp_list->oid, is_gapped, 
+            x_GetSequenceLengthAndId(NULL, bssp, hsp_list->oid, 
                                    &sid, &subj_length);
             subject_id.Reset(sid);
         }
@@ -1292,6 +1288,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/12/19 20:16:10  dondosha
+* Get length in x_GetSequenceLengthAndId regardless of whether search is gapped; do not call RemapToLoc for whole Seq-locs
+*
 * Revision 1.28  2003/12/03 16:43:47  dondosha
 * Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
 *
