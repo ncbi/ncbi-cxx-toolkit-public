@@ -84,8 +84,8 @@ struct SDllHandle;
 /// NOTE: All methods of this class except the destructor throw exception
 /// CCoreException::eDll on error.
 
-class CDll {
-
+class CDll
+{
 public:
     /// When to load DLL.
     enum ELoad {
@@ -103,8 +103,8 @@ public:
     ///
     /// Transformation is done according to the following:
     ///
-    ///    UNIX:        <name>  --->  lib<name>.so
-    ///    MS Windows:  <name>  --->  <name>.dll
+    ///   UNIX:        <name>  --->  lib<name>.so
+    ///   MS Windows:  <name>  --->  <name>.dll
     enum EBasename {
         eBasename,  ///< Treat as basename (if it looks like one)
         eExactName  ///< Use the name "as is" (no prefix/suffix adding)
@@ -173,39 +173,51 @@ public:
     /// Do nothing and do not generate errors if the DLL is not loaded.
     NCBI_XNCBI_EXPORT void Unload(void);
 
-    /// Get DLLs entry point.
+    /// Get DLLs entry point (function).
     ///
-    /// Get the entry point (e.g. a function) with name "name" in the DLL and
+    /// Get the entry point (a function) with name "name" in the DLL and
     /// return the entry point's address on success, or return NULL on error.
     /// If the DLL is not loaded yet, then this method will call Load(),
     /// which can result in throwing an exception if Load() fails.
-    template <class TPointer>
-    TPointer GetEntryPoint(const string& name, TPointer* entry_ptr) {
-        union {
-            TPointer type_ptr;
-            void*    void_ptr;
-        } ptr;
-        ptr.void_ptr = x_GetEntryPoint(name, sizeof(TPointer));
-        if ( entry_ptr ) {
-            *entry_ptr = ptr.type_ptr; 
-        }
-        return ptr.type_ptr;
-    }
-
-    /// Get the name of the DLL file 
-    const string& GetName() const { return m_Name; }
-
-    /// Get DLLs entry point.
-    ///
-    /// Same as GetEntryPoint, but returns a raw (void*) pointer on the 
-    /// resolved entry function.
-    /// @sa GetEntryPoint
-    void* GetVoidEntryPoint(const string& name) 
+    /// @sa
+    ///   GetEntryPoint_Data()
+    template <class TFunc>
+    TFunc GetEntryPoint_Func(const string& name, TFunc* func)
     {
-        return x_GetEntryPoint(name, sizeof(void*)); 
+        TEntryPoint ptr = GetEntryPoint(name);
+        if ( func ) {
+            *func = (TFunc)ptr.func; 
+        }
+        return (TFunc)ptr.func;
     }
 
-private:
+    /// Get DLLs entry point (data).
+    ///
+    /// Get the entry point (a data) with name "name" in the DLL and
+    /// return the entry point's address on success, or return NULL on error.
+    /// If the DLL is not loaded yet, then this method will call Load(),
+    /// which can result in throwing an exception if Load() fails.
+    /// @sa
+    ///   GetEntryPoint_Func()
+    template <class TData>
+    TData GetEntryPoint_Data(const string& name, TData* data)
+    {
+        TEntryPoint ptr = GetEntryPoint(name);
+        if ( data ) {
+            *data = static_cast<TData> (ptr.data); 
+        }
+        return static_cast<TData> (ptr.data);
+    }
+
+    /// Fake, uncallable function pointer
+    typedef void (*FEntryPoint)(char**** Do_Not_Call_This);
+
+    /// Entry point -- pointer to either a function or a data
+    union TEntryPoint {
+        FEntryPoint func;  ///< Do not call this func without type cast!
+        void*       data;
+    };
+
     /// Helper find method for getting a DLLs entry point.
     ///
     /// Get the entry point (e.g. a function) with name "name" in the DLL.
@@ -215,9 +227,15 @@ private:
     ///   Size of pointer.
     /// @return
     ///   The entry point's address on success, or return NULL on error.
+    /// @sa
+    ///   GetEntryPoint_Func(), GetEntryPoint_Data()
     NCBI_XNCBI_EXPORT
-    void* x_GetEntryPoint(const string& name, size_t pointer_size);
+    TEntryPoint GetEntryPoint(const string& name);
 
+    /// Get the name of the DLL file 
+    const string& GetName() const { return m_Name; }
+
+private:
     /// Helper method to throw exception with system-specific error message.
     void  x_ThrowException(const string& what);
 
@@ -270,8 +288,8 @@ public:
     /// DLL resolution descriptor.
     struct SResolvedEntry
     {
-        CDll*    dll;           ///! Loaded DLL instance
-        void*    entry_point;   ///! Entry point pointer
+        CDll*    dll;           ///< Loaded DLL instance
+        void*    entry_point;   ///< Entry point pointer
 
         SResolvedEntry(CDll* dll_ptr = 0, 
                        void* entry_point_ptr = 0)
@@ -284,38 +302,40 @@ public:
     typedef vector<SResolvedEntry>  TEntries;
 
 
-    /// Constructor
+    /// Constructor.
     ///
     /// @param entry_point_name
-    ///    - name of the DLL entry point
+    ///   Name of the DLL entry point.
     CDllResolver(const string& entry_point_name);
 
-    /// Constructor
+    /// Constructor.
     ///
     /// @param entry_point_names
-    ///    - list of alternative DLL entry points
+    ///   List of alternative DLL entry points.
     CDllResolver(const vector<string>& entry_point_names); 
 
     
     ~CDllResolver();
 
-    /// Try to load DLL from the specified file and resolve the entry point
+    /// Try to load DLL from the specified file and resolve the entry point.
     ///
     /// If DLL resolution successfull loaded entry point is registered in the
     /// internal list of resolved entries.
     ///
     /// @param file_name
-    ///     Name of the DLL file. Can be full name with path of the base name
+    ///   Name of the DLL file. Can be full name with path of the base name.
     /// @return
-    ///     TRUE if DLL is succesfully loaded and entry point resolved
-    /// @sa GetResolvedEntries
+    ///   TRUE if DLL is succesfully loaded and entry point resolved.
+    /// @sa
+    ///   GetResolvedEntries
     bool TryCandidate(const string& file_name);
 
-    /// Try to resolve file candidates
+    /// Try to resolve file candidates.
     ///
     /// @param candidates
-    ///    container with file names to try
-    /// @sa GetResolvedEntries
+    ///    Container with file names to try.
+    /// @sa
+    ///   GetResolvedEntries
     template<class TClass>
     void Try(const TClass& candidates)
     {
@@ -330,10 +350,11 @@ public:
     /// specified directories.
     ///
     /// @param paths
-    ///    container with directory names
+    ///   Container with directory names.
     /// @param masks
-    ///    container with file candidate masks
-    /// @sa GetResolvedEntries
+    ///   Container with file candidate masks.
+    /// @sa
+    ///   GetResolvedEntries
     template<class TClass1, class TClass2>
     void FindCandidates(const TClass1& paths, const TClass2& masks)
     {
@@ -343,19 +364,19 @@ public:
         Try(candidates);
     }
 
-    /// Get all resolved entry points
+    /// Get all resolved entry points.
     const TEntries& GetResolvedEntries() const 
     { 
         return m_ResolvedEntries; 
     }
 
-    /// Get all resolved entry points
+    /// Get all resolved entry points.
     TEntries& GetResolvedEntries() 
     { 
         return m_ResolvedEntries; 
     }
 
-    /// Unload all resolved DLLs
+    /// Unload all resolved DLLs.
     void Unload();
 
 private:
@@ -363,7 +384,7 @@ private:
     CDllResolver& operator=(const CDllResolver&);
 
 protected:
-    vector<string>  m_EntryPoinNames;   ///! Candidate entry points
+    vector<string>  m_EntryPoinNames;   ///< Candidate entry points
     TEntries        m_ResolvedEntries;
 };
 
@@ -377,6 +398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/11/19 13:50:28  ivanov
+ * GetEntryPoint() revamp: added GetEntryPoin_[Func|Data]()
+ *
  * Revision 1.17  2003/11/12 17:40:36  kuznets
  * + CDllResolver::Unload()
  *

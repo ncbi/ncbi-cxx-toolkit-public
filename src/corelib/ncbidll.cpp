@@ -171,14 +171,8 @@ void CDll::Unload(void)
 }
 
 
-void* CDll::x_GetEntryPoint(const string& name, size_t pointer_size)
+CDll::TEntryPoint CDll::GetEntryPoint(const string& name)
 {
-    // Check pointer size
-    if (pointer_size != sizeof(void*)) {
-        NCBI_THROW(CCoreException,eDll,
-            "Dll entry point's address size does not match"
-            " the size of provided memory buffer");
-    }
     // If DLL is not yet loaded
     if ( !m_Handle ) {
         Load();
@@ -189,16 +183,21 @@ void* CDll::x_GetEntryPoint(const string& name, size_t pointer_size)
 #else
     const string entry_name = name;
 #endif
-    // Return address of function
+    TEntryPoint entry;
+    // Return address of entry (function or data)
 #if defined(NCBI_OS_MSWIN)
-    return GetProcAddress(m_Handle->handle, entry_name.c_str());
+    FARPROC ptr = GetProcAddress(m_Handle->handle, entry_name.c_str());
 #elif defined(NCBI_OS_UNIX)
-#  ifdef HAVE_DLFCN_H
-    return dlsym(m_Handle->handle, entry_name.c_str());
-#  else
-    return 0;
+    void* ptr = 0;
+#  if defined(HAVE_DLFCN_H)
+    ptr = dlsym(m_Handle->handle, entry_name.c_str());
 #  endif
+#else
+    void* ptr = 0;
 #endif
+    entry.func = (FEntryPoint)ptr;
+    entry.data = ptr;
+    return entry;
 }
 
 
@@ -253,7 +252,7 @@ bool CDllResolver::TryCandidate(const string& file_name)
             const string& entry_point_name = *it;
             if (entry_point_name.empty())
                 continue;
-            p = dll->GetVoidEntryPoint(entry_point_name);
+            p = dll->GetEntryPoint_Data(entry_point_name, &p);
             if (p) { 
                 break;
             }
@@ -291,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/11/19 13:50:42  ivanov
+ * GetEntryPoint() revamp: added GetEntryPoin_[Func|Data]()
+ *
  * Revision 1.15  2003/11/12 17:40:54  kuznets
  * + CDllResolver::Unload()
  *
