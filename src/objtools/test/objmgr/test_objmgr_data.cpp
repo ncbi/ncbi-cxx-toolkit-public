@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/08/31 14:43:21  vasilche
+* Added options -no_seq_map, -no_named, -verbose -adaptive.
+*
 * Revision 1.8  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
@@ -204,9 +207,13 @@ protected:
     TIds m_Ids;
 
     bool m_load_only;
+    bool m_no_seq_map;
     bool m_no_snp;
+    bool m_no_named;
+    bool m_adaptive;
     int  m_pause;
     bool m_prefetch;
+    bool m_verbose;
 };
 
 
@@ -297,6 +304,9 @@ bool CTestOM::Thread_Run(int idx)
         if ( i != from && pause ) {
             SleepSec(pause);
         }
+        if ( m_verbose ) {
+            NcbiCout << abs(i-from) << ": " << sih.AsString() << NcbiFlush;
+        }
         try {
             // load sequence
             CBioseq_Handle handle;
@@ -321,7 +331,7 @@ bool CTestOM::Thread_Run(int idx)
                 int count = 0;
 
                 // check CSeqMap_CI
-                {{
+                if ( !m_no_seq_map ) {
                     /*
                       CSeqMap_CI it =
                       handle.GetSeqMap().BeginResolved(&scope,
@@ -337,7 +347,7 @@ bool CTestOM::Thread_Run(int idx)
                         _ASSERT(it.GetType() == CSeqMap::eSeqRef);
                         ++it;
                     }
-                }}
+                }
 
                 // check seqvector
                 if ( 0 ) {{
@@ -374,14 +384,23 @@ bool CTestOM::Thread_Run(int idx)
                     sel.SetOverlapType(sel.eOverlap_Intervals);
                     sel.SetResolveMethod(sel.eResolve_All);
                 }
-                if ( m_no_snp ) {
-                    sel.ExcludedAnnotName("SNP");
+                if ( m_no_named ) {
+                    sel.ResetAnnotsNames().AddUnnamedAnnots();
+                }
+                else if ( m_no_snp ) {
+                    sel.ExcludeNamedAnnots("SNP");
+                }
+                if ( m_adaptive ) {
+                    sel.SetAdaptiveDepth();
                 }
 
                 count = 0;
                 if ( idx%2 == 0 ) {
                     for ( CFeat_CI it(scope, loc, sel); it; ++it ) {
                         count++;
+                    }
+                    if ( m_verbose ) {
+                        NcbiCout << " features: " << count << NcbiEndl;
                     }
                     // verify result
                     SetValue(m_mapGiToFeat0, sih, count);
@@ -446,7 +465,11 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
          "File with list of Seq-ids to test",
          CArgDescriptions::eInputFile);
     args.AddFlag("load_only", "Do not work with sequences - only load them");
+    args.AddFlag("no_seq_map", "Do not scan CSeqMap on the sequence");
     args.AddFlag("no_snp", "Exclude SNP features from processing");
+    args.AddFlag("no_named", "Exclude features from named Seq-annots");
+    args.AddFlag("adaptive", "Use adaptive depth for feature iteration");
+    args.AddFlag("verbose", "Print each Seq-id before processing");
     args.AddDefaultKey
         ("pause", "Pause",
          "Pause between requests in seconds",
@@ -496,9 +519,13 @@ bool CTestOM::TestApp_Init(void)
             "gi from " << gi_from << " to " << gi_to << ")..." << NcbiEndl;
     }
     m_load_only = args["load_only"];
+    m_no_seq_map = args["no_seq_map"];
     m_no_snp = args["no_snp"];
+    m_no_named = args["no_named"];
+    m_adaptive = args["adaptive"];
     m_pause    = args["pause"].AsInteger();
     m_prefetch = args["prefetch"];
+    m_verbose = args["verbose"];
 
     m_ObjMgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
