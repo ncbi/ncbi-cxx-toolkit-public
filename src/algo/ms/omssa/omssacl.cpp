@@ -76,12 +76,13 @@ private:
     virtual int Run();
     virtual void Init();
     void PrintMods(void);
+    void PrintEnzymes(void);
     void InsertMods(TStringList& List, CMSSearchSettings::TVariable& Mods);
 };
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(0, 9, 1));
+    SetVersion(CVersionInfo(0, 9, 3));
 }
 
 ///
@@ -110,8 +111,19 @@ void COMSSA::InsertMods(TStringList& List, CMSSearchSettings::TVariable& Mods)
 void COMSSA::PrintMods(void)
 {
     int i;
-    for(i = 0; i < kNumMods; i++)
+    for(i = 0; i < eMSMod_max; i++)
 	cout << i << ": " << kModNames[i] << endl;
+}
+
+
+///
+/// print out a list of enzymes that can be used in OMSSA
+///
+void COMSSA::PrintEnzymes(void)
+{
+    int i;
+    for(i = 0; i < eMSEnzymes_max; i++)
+	cout << i << ": " << kEnzymeNames[i] << endl;
 }
 
 
@@ -199,6 +211,11 @@ void COMSSA::Init()
 			   CArgDescriptions::eString,
 			   "");
     argDesc->AddFlag("ml", "print a list of modifications and their corresponding id number");
+    argDesc->AddDefaultKey("e", "enzyme", 
+			   "id number of enzyme to use",
+			   CArgDescriptions::eInteger, 
+			   NStr::IntToString(eMSEnzymes_trypsin));
+    argDesc->AddFlag("el", "print a list of enzymes and their corresponding id number");
 
 
     SetupArgDescriptions(argDesc.release());
@@ -224,6 +241,12 @@ int COMSSA::Run()
 	// print out the modification list
 	if(args["ml"]) {
 	    PrintMods();
+	    return 0;
+	}
+
+	// print out the enzymes list
+	if(args["el"]) {
+	    PrintEnzymes();
 	    return 0;
 	}
 
@@ -294,7 +317,7 @@ int COMSSA::Run()
 	Request.SetSettings().SetDoublewin(args["w2"].AsInteger());
 	Request.SetSettings().SetSinglenum(args["h1"].AsInteger());
 	Request.SetSettings().SetDoublenum(args["h2"].AsInteger());
-	Request.SetSettings().SetEnzyme(eMSEnzymes_trypsin);
+	Request.SetSettings().SetEnzyme(args["e"].AsInteger());
 	Request.SetSettings().SetMissedcleave(args["v"].AsInteger());
 	Request.SetSpectra(*Spectrumset);
 	{
@@ -434,6 +457,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.15  2004/06/23 22:34:36  lewisg
+  add multiple enzymes
+
   Revision 1.14  2004/06/08 19:46:21  lewisg
   input validation, additional user settable parameters
 

@@ -175,16 +175,15 @@ typedef std::deque <int> TCleave;
 
 class NCBI_XOMSSA_EXPORT CCleave {
 public:
-    CCleave();
-    virtual ~CCleave() {};
+    CCleave(void);
 
     // cleaves the sequence.  Note that output is 0 and the positions
     // of the aa's to be cleaved.  Should be interpreted as [0, pos1],
     // (pos1, pos2], ..., (posn, end].  This weirdness is historical --
     // the C++ string class uses an identifier for end-of-string and has
     // no identifier for before start of string.  
-    virtual void Cleave(char *Seq, int SeqLen, TCleave& Positions) = 0;
-    virtual bool CalcAndCut(const char *SeqStart, 
+
+    bool CalcAndCut(const char *SeqStart, 
 			    const char *SeqEnd,  // the end, not beyond the end
 			    const char **PepStart,  // return value
 			    int *Masses,  // Masses, indexed by miss cleav, mods
@@ -196,8 +195,15 @@ public:
 			    const char **Site,
 			    int *DeltaMass,
 			    const int *IntCalcMass  // array of int AA masses
-			    ) { return false; }
-    
+		    );
+
+    ///
+    ///  Check to see if we are at a cleavage point
+    ///  Used by CalcAndCut
+    ///
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart) = 0;
+
     void CalcMass(char SeqChar,
 		  int *Masses,
 		  const int *IntCalcMass
@@ -316,81 +322,121 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
 
 class NCBI_XOMSSA_EXPORT CCNBr: public CCleave {
 public:
-    CCNBr();
-    ~CCNBr();
-    virtual void Cleave(char *Seq, int SeqLen, TCleave& Positions);
+    CCNBr(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
-
-///////////////////   CCNBr inline methods
-
-inline CCNBr::CCNBr() 
-{
-    CleaveAt = "\x0c";
-    kCleave = 1;
-}
-
-inline CCNBr::~CCNBr() 
-{}
-
-/////////////////// end of  CCNBr inline methods
-
 
 
 class NCBI_XOMSSA_EXPORT CFormicAcid: public CCleave {
 public:
-    CFormicAcid();
-    ~CFormicAcid();
-    virtual void Cleave(char *Seq, int SeqLen, TCleave& Positions);
+    CFormicAcid(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
-
-///////////////////   CCNBr inline methods
-
-inline CFormicAcid::CFormicAcid()
-{
-    CleaveAt = "\x04";
-    kCleave = 1;
-}
-
-inline CFormicAcid::~CFormicAcid()
-{}
-
-/////////////////// end of  CCNBr inline methods
 
 
 class NCBI_XOMSSA_EXPORT CTrypsin: public CCleave {
 public:
-    CTrypsin();
-    ~CTrypsin();
+    CTrypsin(void);
 
-    virtual void Cleave(char *Seq, int SeqLen, TCleave& Positions);
-    virtual bool CalcAndCut(const char *SeqStart, 
-			    const char *SeqEnd,  // the end, not beyond the end
-			    const char **PepStart,  // return value
-			    int *Masses,
-			    int& NumMod,
-			    int MaxNumMod,
-			    int *EndMasses,
-			    CMSMod &VariableMods,
-			    CMSMod &FixedMods,
-			    const char **Site,
-			    int *DeltaMass,
-			    const int *IntCalcMass  // array of int AA masses
-			    );
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
 };
 
-///////////////////  CCNBr  inline methods
 
-inline CTrypsin::CTrypsin() 
+class NCBI_XOMSSA_EXPORT CArgC: public CCleave {
+public:
+    CArgC(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+
+class NCBI_XOMSSA_EXPORT CChymotrypsin: public CCleave {
+public:
+    CChymotrypsin(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+
+class NCBI_XOMSSA_EXPORT CLysC: public CCleave {
+public:
+    CLysC(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+
+class NCBI_XOMSSA_EXPORT CLysCP: public CCleave {
+public:
+    CLysCP(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+
+class NCBI_XOMSSA_EXPORT CPepsinA: public CCleave {
+public:
+    CPepsinA(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+
+class NCBI_XOMSSA_EXPORT CTrypCNBr: public CCleave {
+public:
+    CTrypCNBr(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+
+class NCBI_XOMSSA_EXPORT CTrypChymo: public CCleave {
+public:
+    CTrypChymo(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+
+class NCBI_XOMSSA_EXPORT CTrypsinP: public CCleave {
+public:
+    CTrypsinP(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+
+///
+/// factory to return back object for enzyme
+///
+
+class NCBI_XOMSSA_EXPORT CCleaveFactory
 {
-    CleaveAt = "\x0a\x10";
-    kCleave = 2;
-}
+public:
+  static CCleave *CleaveFactory(const EMSEnzymes enzyme);
 
-inline CTrypsin::~CTrypsin()
-{}
+};
 
-/////////////////// end of  CCNBr inline methods
 
+///
+/// the names of the enzymes codified in the asn.1
+///
+
+char const * const kEnzymeNames[eMSEnzymes_max] = {
+    "Trypsin",
+    "Arg-C",
+    "CNBr",
+    "Chymotrypsin",
+    "Formic Acid",
+    "Lys-C",
+    "Lys-C/P",
+    "Pepsin A",
+    "Trypsin-CNBr",
+    "Trypsin-Chymotrypsin",
+    "Trypsin/P"
+};
 
 
 // used to scale all float masses into ints
@@ -404,6 +450,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.9  2004/06/23 22:34:36  lewisg
+  add multiple enzymes
+
   Revision 1.8  2004/06/21 21:19:27  lewisg
   new mods (including n term) and sample perl parser
 

@@ -90,47 +90,19 @@ int CCleave::findfirst(char* Seq, int Pos, int SeqLen)
 }
 
 
-void CTrypsin::Cleave(char *Seq, int SeqLen, TCleave& Positions)
-{
-    int Pos = 0;
-    Positions.clear();
-    Pos = findfirst(Seq, Pos, SeqLen);
-    Positions.push_back(0);  // beginning of sequence
-    while(Pos < SeqLen - 1) {
-	if(Seq[Pos+1] == 'P' ||
-	   Seq[Pos+1] == '\x0e' ) { // not before proline
-	    Pos = findfirst(Seq, Pos+1, SeqLen);
-	    continue;
-	}
-	Positions.push_back(Pos);
-	Pos = findfirst(Seq, Pos+1, SeqLen);
-    }
-}
-
-
-// - cuts trypsin and calculates mass using integer arithmetic
-// - needs to take variable mods into account (i.e. different masses)
+// - cuts and calculates mass using integer arithmetic
 // - MassArray contains corrected masses for the fixed mods that
 // are not position specific
 // - FixedMods contain position specific mods.
 //   - open question on how to deal with C terminal fixed mods.  E.g. how do
 //     you know you are at the Cterm K?  Doesn't matter for mass, as ANY k will
 //     increase total mass, but does matter for ladder.
-// - charge is an array of ints for indeterminate charge states
-// - the api will also eventually create or extend CLadders for large 
-//   search datasets, as most peptides will be examined.
 // dealing with missed cleavages:
 // - starts with existing mass array
-// - extends and shifts existing ladders
-//
-// - needs to be made into a general method
-//
+// - returns true on end of sequence
+// - note that the coordinates are inclusive, i.e. [start, end]
 
-// returns true on end of sequence
-
-// note that the coordinates are inclusive, i.e. [start, end]
-
-bool CTrypsin::CalcAndCut(const char *SeqStart, 
+bool CCleave::CalcAndCut(const char *SeqStart, 
 			  const char *SeqEnd,  // the end, not beyond the end
 			  const char **PepStart,  // return value
 			  int *Masses,
@@ -145,10 +117,6 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
 			  )
 {
     char SeqChar;
-    // iterator thru mods
-    CMSSearchSettings::TVariable::iterator iMods;
-    // iterate thru mods characters
-    int iChar;
 
     // iterate through sequence
     // note that this loop doesn't check at the end of the sequence
@@ -165,6 +133,7 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
 	    // check non-specific mods
 	    CheckNonSpecificMods(eModN, VariableMods, NumMod, MaxNumMod, Site,
 				 DeltaMass, *PepStart);
+	    // todo: treat n-term fixed mods as true fixed mods
 	    CheckNonSpecificMods(eModN, FixedMods, NumMod, MaxNumMod, Site,
 				 DeltaMass, *PepStart);
 
@@ -176,12 +145,11 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
 	CalcMass(SeqChar, Masses, IntCalcMass);
 
 	// check for cleavage point
-	if(SeqChar == CleaveAt[0] ||  
-	   SeqChar == CleaveAt[1] ) { 
-	    if(*(*PepStart+1) == '\x0e' )  continue;  // not before proline
-	    EndMass(EndMasses);
-	    return false;
+	if(CheckCleave(SeqChar, *PepStart)) { 
+	  EndMass(EndMasses);
+	  return false;
 	}
+
     }
 
     // todo: deal with mods on the end
@@ -191,34 +159,293 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
     return true;  // end of sequence
 }
 
-void CCNBr::Cleave(char *Seq, int SeqLen, TCleave& Positions)
+
+///
+///  CTrypsin
+///
+
+CTrypsin::CTrypsin(void)
 {
-    int Pos = 0;
-    Positions.clear();
-    Positions.push_back(0);  // beginning of sequence
-    Pos = findfirst(Seq, Pos, SeqLen);
-    while(Pos < SeqLen) {
-	Positions.push_back(Pos);
-	Pos = findfirst(Seq, Pos+1, SeqLen);
-    }
+    CleaveAt = "\x0a\x10";
+    kCleave = 2;
 }
 
-void CFormicAcid::Cleave(char *Seq, int SeqLen, TCleave& Positions)
+bool CTrypsin::CheckCleave(char SeqChar, const char *iPepStart)
 {
-    int Pos = 0;
-    Positions.clear();
-    Pos = findfirst(Seq, Pos, SeqLen);
-    Positions.push_back(0);  // beginning of sequence
-    while(Pos < SeqLen - 1) {
-	if(Seq[Pos+1] != 'P' &&
-	   Seq[Pos+1] != '\x0e' ) { //  before proline
-	    Pos = findfirst(Seq, Pos+1, SeqLen);
-	    continue;
-	}
-	Positions.push_back(Pos);
-	Pos = findfirst(Seq, Pos+1, SeqLen);
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0] || SeqChar == CleaveAt[1] ) { 
+        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
+        return true;
     }
+    return false;
 }
+
+
+///
+///  CNBr
+///
+
+CCNBr::CCNBr(void) 
+{
+    CleaveAt = "\x0c";
+    kCleave = 1;
+}
+
+bool CCNBr::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0]) { 
+        return true;
+    }
+    return false;
+}
+
+
+///
+///  CFormicAcid
+///
+
+CFormicAcid::CFormicAcid(void)
+{
+    CleaveAt = "\x04";
+    kCleave = 1;
+}
+
+bool CFormicAcid::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0]) { 
+        return true;
+    }
+    return false;
+}
+
+
+///
+///  CArgC
+///
+
+CArgC::CArgC(void)
+{
+    CleaveAt = "\x010";
+    kCleave = 1;
+}
+
+bool CArgC::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0] ) { 
+        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
+        return true;
+    }
+    return false;
+}
+
+
+///
+///  CChymotrypsin
+///
+
+CChymotrypsin::CChymotrypsin(void)
+{
+    CleaveAt = "\x06\x16\x15\x0b\x09\x13\x0c";
+    kCleave = 7;
+}
+
+bool CChymotrypsin::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0] ||
+       SeqChar == CleaveAt[1] ||
+       SeqChar == CleaveAt[2] ||
+       SeqChar == CleaveAt[3] ||
+       SeqChar == CleaveAt[4] ||
+       SeqChar == CleaveAt[5] ||
+       SeqChar == CleaveAt[6]) { 
+        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
+        return true;
+    }
+    return false;
+}
+
+
+///
+///  CLysC
+///
+
+CLysC::CLysC(void)
+{
+    CleaveAt = "\x0a";
+    kCleave = 1;
+}
+
+bool CLysC::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0] ) { 
+        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
+        return true;
+    }
+    return false;
+}
+
+
+///
+///  CLysCP
+///
+
+CLysCP::CLysCP(void)
+{
+    CleaveAt = "\x0a";
+    kCleave = 1;
+}
+
+bool CLysCP::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0]) { 
+        return true;
+    }
+    return false;
+}
+
+
+///
+///  CCPepsinA
+///
+
+CPepsinA::CPepsinA(void)
+{
+    CleaveAt = "\x06\x0b";
+    kCleave = 2;
+}
+
+bool CPepsinA::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0] || SeqChar == CleaveAt[1]) { 
+        return true;
+    }
+    return false;
+}
+
+
+///
+///  CTrypCNBr
+///
+
+CTrypCNBr::CTrypCNBr(void)
+{
+    CleaveAt = "\x0a\x10\x0c";
+    kCleave = 3;
+}
+
+bool CTrypCNBr::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0] ||
+       SeqChar == CleaveAt[1] ||
+       SeqChar == CleaveAt[2]) { 
+        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
+        return true;
+    }
+    return false;
+}
+
+
+///
+///  CTrypChymo
+///
+
+CTrypChymo::CTrypChymo(void)
+{
+    CleaveAt = "\x06\x16\x15\x0b\x0a\10";
+    kCleave = 6;
+}
+
+bool CTrypChymo::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0] ||
+       SeqChar == CleaveAt[1] ||
+       SeqChar == CleaveAt[2] ||
+       SeqChar == CleaveAt[3] ||
+       SeqChar == CleaveAt[4] ||
+       SeqChar == CleaveAt[5]) { 
+        if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
+        return true;
+    }
+    return false;
+}
+
+
+///
+///  CTrypsinP
+///
+
+CTrypsinP::CTrypsinP(void)
+{
+    CleaveAt = "\x0a\x10";
+    kCleave = 2;
+}
+
+bool CTrypsinP::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    // check for cleavage point
+    if(SeqChar == CleaveAt[0] || SeqChar == CleaveAt[1] ) { 
+        return true;
+    }
+    return false;
+}
+
+///
+/// Simple minded factory to return back object for enzyme
+///
+
+CCleave *  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
+{
+  if(enzyme >= eMSEnzymes_max) return 0;
+  switch(enzyme) {
+  case eMSEnzymes_trypsin:
+    return new CTrypsin;
+    break;
+  case eMSEnzymes_argc:
+    return new CArgC;
+    break;
+  case eMSEnzymes_cnbr:
+    return new CCNBr;
+    break;
+  case eMSEnzymes_chymotrypsin:
+    return new CChymotrypsin;
+    break;
+  case eMSEnzymes_formicacid:
+    return new CFormicAcid;
+    break;
+  case eMSEnzymes_lysc:
+    return new CLysC;
+    break;
+  case eMSEnzymes_lysc_p:
+    return new CLysCP;
+    break;
+  case eMSEnzymes_pepsin_a:
+    return new CPepsinA;
+    break;
+  case eMSEnzymes_tryp_cnbr:
+    return new CTrypCNBr;
+    break;
+  case eMSEnzymes_tryp_chymo:
+    return new CTrypChymo;
+    break;
+  case eMSEnzymes_trypsin_p:
+    return new CTrypsinP;
+    break;
+  default:
+    return 0;
+    break;
+  }
+  return 0;
+}
+     
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -271,6 +498,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.9  2004/06/23 22:34:36  lewisg
+  add multiple enzymes
+
   Revision 1.8  2004/06/21 21:19:27  lewisg
   new mods (including n term) and sample perl parser
 

@@ -385,7 +385,9 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
     try {
 
 	int length;
-	CTrypsin trypsin;
+	CCleave* enzyme =
+		  CCleaveFactory::CleaveFactory(static_cast <EMSEnzymes> 
+				 (MyRequest.GetSettings().GetEnzyme()));
 	unsigned header;
 
 #ifdef CHECKGI
@@ -522,7 +524,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			
 		// calculate new stop and mass
 		SequenceDone = 
-		    trypsin.CalcAndCut((const char *)Sequence,
+		    enzyme->CalcAndCut((const char *)Sequence,
 				       (const char *)Sequence + length - 1, 
 				       &(PepEnd[Missed - 1]),
 				       &(Masses[Missed - 1]),
@@ -1061,6 +1063,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.23  2004/06/23 22:34:36  lewisg
+add multiple enzymes
+
 Revision 1.22  2004/06/21 21:19:27  lewisg
 new mods (including n term) and sample perl parser
 

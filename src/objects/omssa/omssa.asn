@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.9 2004/06/21 21:19:49 lewisg Exp $
+-- $Id: omssa.asn,v 1.10 2004/06/23 22:34:36 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -37,17 +37,16 @@ MSSpectrumset ::= SEQUENCE OF MSSpectrum
 MSEnzymes ::= INTEGER {
 	trypsin (0),
 	argc (1),
-	aspn (2),
+        cnbr (2),
 	chymotrypsin (3),
 	formicacid (4),
 	lysc (5),
-	lyscp (6),
-	pepsina (7),
+	lysc-p (6),
+	pepsin-a (7),
 	tryp-cnbr (8),
-	trychymo (9),
-	trypsinp (10),
-	v8de (11),
-	v8e (12),
+	tryp-chymo (9),
+	trypsin-p (10),
+        max(11),
 	none (255)
 	}
 
@@ -71,6 +70,7 @@ MSMod ::= INTEGER {
     dmethythiol (13),     -- beta methythiolation of D
     qmethyl (14),         -- methylation of Q
     ktrimethyl (15),      -- trimethylation of K
+    max(16),
     none(255)
     }
 

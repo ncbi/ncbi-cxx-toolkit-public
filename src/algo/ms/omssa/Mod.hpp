@@ -48,10 +48,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-///
-/// the number of mods defined in asn.1 spec
-///
-const int kNumMods = 16;
 
 ///
 /// Modification types
@@ -83,7 +79,7 @@ enum EMSModType {
 ///
 /// categorizes existing mods as the types listed above
 ///
-const EMSModType ModTypes[kNumMods] = {
+const EMSModType ModTypes[eMSMod_max] = {
     eModAA,
     eModAA,
     eModAA,
@@ -105,7 +101,7 @@ const EMSModType ModTypes[kNumMods] = {
 ///
 /// the names of the various modifications codified in the asn.1
 ///
-char const * const kModNames[kNumMods] = {
+char const * const kModNames[eMSMod_max] = {
     "methylation of K",
     "oxidation of M",
     "carboxymethyl C",
@@ -129,7 +125,7 @@ char const * const kModNames[kNumMods] = {
 /// rows are indexed by mod
 /// column are the AA's modified (if any)
 ///
-const char ModChar [3][kNumMods] = {
+const char ModChar [3][eMSMod_max] = {
     {'\x0a','\x0c','\x03','\x03','\x0d','\x03','\x11','\x12','\x16','\x0c','\x00','\x00','\x00','\x04','\x0f','\x0a' },
     {'\x00','\x00','\x00','\x00','\x0f','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' },
     {'\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' }
@@ -138,12 +134,12 @@ const char ModChar [3][kNumMods] = {
 ///
 /// the number of characters to compare
 ///
-const int NumModChars[] = { 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1 };
+const int NumModChars[eMSMod_max] = { 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1 };
 
 ///
 /// the modification masses
 ///
-const int ModMass[] = { 1402, 1600, 5801, 5702, 98, 7104, 7997, 7997, 7997, -13104, 4201, 1402, 4205, 4599, 1402, 4205};
+const int ModMass[eMSMod_max] = { 1402, 1600, 5801, 5702, 98, 7104, 7997, 7997, 7997, -13104, 4201, 1402, 4205, 4599, 1402, 4205};
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -181,6 +177,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/06/23 22:34:36  lewisg
+* add multiple enzymes
+*
 * Revision 1.5  2004/06/21 21:19:27  lewisg
 * new mods (including n term) and sample perl parser
 *
