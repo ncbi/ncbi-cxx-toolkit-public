@@ -131,8 +131,8 @@ void CSeqMap_Delta_seqs::x_SetSeq_data(size_t index, CSeq_data& data)
 }
 
 
-void CSeqMap_Delta_seqs::x_SetSubSeqMap(size_t index,
-                                        CSeqMap_Delta_seqs* subMap)
+void CSeqMap_Delta_seqs::x_SetSubSeqMap(size_t /*index*/,
+                                        CSeqMap_Delta_seqs* /*subMap*/)
 {
 /*
     // check segment type
@@ -321,6 +321,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/02/19 17:19:35  vasilche
+* Removed 'unused argument' warning.
+*
 * Revision 1.10  2003/11/12 16:53:17  grichenk
 * Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
 *

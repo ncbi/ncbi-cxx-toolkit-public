@@ -87,7 +87,7 @@ CSeqMap::CSeqMap(void)
 }
 
 
-CSeqMap::CSeqMap(CSeqMap* parent, size_t /*index*/)
+CSeqMap::CSeqMap(CSeqMap* /*parent*/, size_t /*index*/)
     : m_Resolved(0),
       m_Mol(CSeq_inst::eMol_not_set),
       m_SeqLength(kInvalidSeqPos)
@@ -809,6 +809,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/02/19 17:19:10  vasilche
+* Removed 'unused argument' warning.
+*
 * Revision 1.50  2003/11/19 22:18:04  grichenk
 * All exceptions are now CException-derived. Catch "exception" rather
 * than "runtime_error".
