@@ -408,6 +408,38 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
     return dbopen(m_Login, (char*) srv_name.c_str());
 }
 
+///////////////////////////////////////////////////////////////////////
+// Driver manager related functions
+//
+
+I_DriverContext* DBLIB_CreateContext(map<string,string>* attr = 0)
+{
+    DBINT version= DBVERSION_UNKNOWN;
+
+    if(attr) {
+	string vers= (*attr)["version"];
+	if(vers.find("46") != string::npos)
+	    version= DBVERSION_46;
+	else if(vers.find("100") != string::npos)
+	    version= DBVERSION_100;
+
+    }
+    return (I_DriverContext*)(new CDBLibContext(version));
+}
+
+void DBAPI_DBLIB_Register(I_DriverMgr* mgr)
+{
+    if(mgr) {
+	mgr->RegisterDriver("dblib", DBLIB_CreateContext);
+    }
+}
+
+extern "C" {
+    void* DBAPI_E_dblib()
+    {
+	return (void*)DBAPI_DBLIB_Register;
+    }
+} 
 
 END_NCBI_SCOPE
 
@@ -416,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/01/11 20:25:08  soussov
+ * driver manager support added
+ *
  * Revision 1.6  2002/01/08 18:10:18  sapojnik
  * Syabse to MSSQL name translations moved to interface_p.hpp
  *

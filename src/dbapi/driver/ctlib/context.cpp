@@ -589,8 +589,6 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 }
 
 
-
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //  Miscellaneous
@@ -774,6 +772,38 @@ bool g_CTLIB_AssignCmdParam(CS_COMMAND*   cmd,
     return (ret_code == CS_SUCCEED);
 }
 
+///////////////////////////////////////////////////////////////////////
+// Driver manager related functions
+//
+
+I_DriverContext* CTLIB_CreateContext(map<string,string>* attr = 0)
+{
+    bool reuse_context= true;
+    CS_INT version= CS_VERSION_110;
+
+    if(attr) {
+	reuse_context= (*attr)["reuse_context"] != "false";
+	string vers= (*attr)["version"];
+	if(vers.find("100") != string::npos) 
+	    version= CS_VERSION_100;
+    }
+    return (I_DriverContext*)(new CTLibContext(reuse_context, version));
+}
+
+void DBAPI_CTLIB_Register(I_DriverMgr* mgr)
+{
+    if(mgr) {
+	mgr->RegisterDriver("ctlib", CTLIB_CreateContext);
+    }
+}
+
+extern "C" {
+    void* DBAPI_E_ctlib()
+    {
+	return (void*)DBAPI_CTLIB_Register;
+    }
+} 
+
 
 END_NCBI_SCOPE
 
@@ -782,6 +812,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/01/11 20:24:33  soussov
+ * driver manager support added
+ *
  * Revision 1.8  2001/11/06 18:02:00  lavr
  * Added methods formely inline (moved from header files)
  *

@@ -36,7 +36,7 @@
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
-
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
@@ -524,6 +524,20 @@ public:
 };
 
 
+typedef I_DriverContext* FDBAPI_CreateContext(map<string,string>* attr = 0);
+
+class I_DriverMgr
+{
+public:
+    virtual void RegisterDriver(const string& driver_name,
+				FDBAPI_CreateContext driver_ctx_func)= 0;
+};
+
+void DBAPI_CTLIB_Register(I_DriverMgr* mgr);
+void DBAPI_DBLIB_Register(I_DriverMgr* mgr);
+void DBAPI_TDS_Register(I_DriverMgr* mgr);
+
+
 END_NCBI_SCOPE
 
 
@@ -531,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/01/11 20:22:41  soussov
+ * driver manager support added
+ *
  * Revision 1.6  2001/11/06 17:58:03  lavr
  * Formatted uniformly as the rest of the library
  *
