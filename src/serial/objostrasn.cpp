@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2003/08/13 15:47:45  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.79  2003/05/22 20:10:02  gouriano
 * added UTF8 strings
 *
@@ -532,6 +535,20 @@ void CObjectOStreamAsn::WriteFloat(float data)
 void CObjectOStreamAsn::WriteNull(void)
 {
     m_Output.PutString("NULL");
+}
+
+void CObjectOStreamAsn::WriteAnyContentObject(const CAnyContentObject& )
+{
+    NCBI_THROW(CSerialException,eNotImplemented,
+        "CObjectOStreamAsn::WriteAnyContentObject: "
+        "unable to write AnyContent object in ASN");
+}
+
+void CObjectOStreamAsn::CopyAnyContentObject(CObjectIStream& )
+{
+    NCBI_THROW(CSerialException,eNotImplemented,
+        "CObjectOStreamAsn::CopyAnyContentObject: "
+        "unable to copy AnyContent object in ASN");
 }
 
 void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)

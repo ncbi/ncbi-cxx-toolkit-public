@@ -86,6 +86,10 @@ protected:
     virtual char* ReadCString(void);
     TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
+    void ReadAnyContentTo(string& value, const CLightString& tagName);
+    virtual void ReadAnyContentObject(CAnyContentObject& obj);
+    virtual void SkipAnyContentObject(void);
+
     virtual void SkipBool(void);
     virtual void SkipChar(void);
     virtual void SkipSNumber(void);
@@ -242,6 +246,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.27  2003/06/30 15:40:18  gouriano
 * added encoding (utf-8 or iso-8859-1)
 *

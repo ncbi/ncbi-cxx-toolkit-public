@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/08/13 15:47:45  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.58  2003/07/02 13:01:29  gouriano
 * added ability to read/write XML files with reference to schema
 *
@@ -396,15 +399,17 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
         m_Output.PutString("<");
         m_Output.PutString(type->GetName());
         m_Output.PutEol();
-        m_Output.PutString("xmlns=\"");
+        m_Output.PutString("    xmlns=\"");
         m_Output.PutString(GetDefaultSchemaNamespace() + "\"");
         m_Output.PutEol();
-        m_Output.PutString("xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"");
+        m_Output.PutString("    xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"");
         m_Output.PutEol();
-        m_Output.PutString("xs:schemaLocation=\"");
+        m_Output.PutString("    xs:schemaLocation=\"");
         m_Output.PutString(GetDefaultSchemaNamespace() + " ");
         m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
-        m_Output.PutString(".xsd\">");
+        m_Output.PutString(".xsd\"");
+        m_Output.PutEol();
+        m_Output.PutString(">");
 
         m_LastTagAction = eSchemaTag;
     } else {
@@ -616,6 +621,30 @@ void CObjectOStreamXml::WriteNull(void)
 {
     OpenTagEndBack();
     SelfCloseTagEnd();
+}
+
+void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
+{
+    m_Output.PutEol();
+// open tag
+    m_Output.PutChar('<');
+    m_Output.PutString(obj.GetName());
+    m_Output.PutChar('>');
+// value
+// no verification on write!
+    m_Output.PutString(obj.GetValue());
+// close tag
+    m_Output.PutString("</");
+    m_Output.PutString(obj.GetName());
+    m_Output.PutChar('>');
+
+    m_Output.PutEol(false);
+    m_EndTag = true;
+}
+
+void CObjectOStreamXml::CopyAnyContentObject(CObjectIStream& in)
+{
+    NCBI_THROW(CSerialException,eNotImplemented,"not yet");
 }
 
 void CObjectOStreamXml::WriteCString(const char* str)

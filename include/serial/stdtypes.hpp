@@ -33,6 +33,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serialbase.hpp>
 #include <serial/typeinfo.hpp>
 #include <vector>
 
@@ -334,6 +335,14 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
+EMPTY_TEMPLATE
+class NCBI_XSERIAL_EXPORT CStdTypeInfo<ncbi::CAnyContentObject>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
+};
+
 
 /* @} */
 
@@ -348,6 +357,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.29  2003/05/22 20:08:42  gouriano
 * added UTF8 strings
 *

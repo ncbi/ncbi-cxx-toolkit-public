@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/08/13 15:47:45  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.61  2003/05/22 20:10:02  gouriano
 * added UTF8 strings
 *
@@ -1133,6 +1136,20 @@ void CObjectIStreamAsnBinary::ReadNull(void)
     ExpectSysTag(eNull);
     ExpectShortLength(0);
     EndOfTag();
+}
+
+void CObjectIStreamAsnBinary::ReadAnyContentObject(CAnyContentObject& )
+{
+    NCBI_THROW(CSerialException,eNotImplemented,
+        "CObjectIStreamAsnBinary::ReadAnyContentObject: "
+        "unable to read AnyContent object in ASN");
+}
+
+void CObjectIStreamAsnBinary::SkipAnyContentObject(void)
+{
+    NCBI_THROW(CSerialException,eNotImplemented,
+        "CObjectIStreamAsnBinary::SkipAnyContentObject: "
+        "unable to skip AnyContent object in ASN");
 }
 
 CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)

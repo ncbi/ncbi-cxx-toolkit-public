@@ -244,6 +244,10 @@ public:
     virtual void CopyEnum(const CEnumeratedTypeValues& values,
                           CObjectIStream& in) = 0;
 
+    // any content object
+    virtual void WriteAnyContentObject(const CAnyContentObject& obj) = 0;
+    virtual void CopyAnyContentObject(CObjectIStream& in) = 0;
+
     // delayed buffer
     virtual bool Write(CByteSource& source);
 
@@ -505,6 +509,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.76  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

@@ -103,6 +103,12 @@ void CObjectStreamCopier::CopyStringStore(void)
 }
 
 inline
+void CObjectStreamCopier::CopyAnyContentObject(void)
+{
+    Out().CopyAnyContentObject(In());
+}
+
+inline
 void CObjectStreamCopier::CopyNamedType(TTypeInfo namedTypeInfo,
                                         TTypeInfo objectType)
 {
@@ -139,6 +145,9 @@ void CObjectStreamCopier::CopyChoice(const CChoiceTypeInfo* choiceType)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.8  2003/03/10 18:52:37  gouriano
 * use new structured exceptions (based on CException)
 *

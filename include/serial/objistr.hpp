@@ -283,6 +283,10 @@ public:
     virtual void ReadNull(void) = 0;
     virtual void SkipNull(void) = 0;
 
+    // any content object
+    virtual void ReadAnyContentObject(CAnyContentObject& obj) = 0;
+    virtual void SkipAnyContentObject(void) = 0;
+
     // octet string
     virtual void SkipByteBlock(void) = 0;
 
@@ -571,6 +575,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.84  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

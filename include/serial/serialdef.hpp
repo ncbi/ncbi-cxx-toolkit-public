@@ -113,7 +113,8 @@ enum EPrimitiveValueType {
     ePrimitiveValueReal,           // float|double
     ePrimitiveValueString,         // string|char*|const char*
     ePrimitiveValueEnum,           // enum
-    ePrimitiveValueOctetString     // vector<(signed|unsigned)? char>
+    ePrimitiveValueOctetString,    // vector<(signed|unsigned)? char>
+    ePrimitiveValueOther
 };
 
 enum EContainerType {
@@ -174,6 +175,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.22  2003/04/29 18:29:06  gouriano
 * object data member initialization verification
 *

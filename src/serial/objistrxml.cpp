@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/08/13 15:47:45  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.44  2003/07/02 13:01:29  gouriano
 * added ability to read/write XML files with reference to schema
 *
@@ -793,6 +796,43 @@ void CObjectIStreamXml::ReadNull(void)
         ThrowError(fFormatError, "empty tag expected");
 }
 
+void CObjectIStreamXml::ReadAnyContentTo(
+    string& value, const CLightString& tagName)
+{
+    while (!NextTagIsClosing()) {
+        while (NextIsTag()) {
+            CLightString tagAny;
+            tagAny = ReadName(BeginOpeningTag());
+            value += '<';
+            value += tagAny;
+            value += '>';
+            ReadAnyContentTo(value,tagAny);
+            value += "</";
+            value += tagAny;
+            value += '>';
+        }
+        ReadTagData(value);
+    }
+    CloseTag(tagName);
+}
+
+void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
+{
+    CLightString tagName;
+    tagName = ReadName(BeginOpeningTag());
+    obj.SetName( tagName);
+    string value;
+    ReadAnyContentTo(value,tagName);
+    obj.SetValue(value);
+}
+
+void CObjectIStreamXml::SkipAnyContentObject(void)
+{
+    NCBI_THROW(CSerialException,eNotImplemented,
+        "CObjectIStreamXml::SkipAnyContentObject: "
+        "unable to skip AnyContent object in ASN");
+}
+
 void CObjectIStreamXml::ReadString(string& str, EStringType type)
 {
     str.erase();
@@ -1078,7 +1118,7 @@ bool CObjectIStreamXml::HasAttlist(void)
 bool CObjectIStreamXml::NextIsTag(void)
 {
     BeginData();
-    return SkipWSAndComments() == '<';
+    return SkipWSAndComments() == '<' && m_Input.PeekChar(1) != '/';
 }
 
 bool CObjectIStreamXml::NextTagIsClosing(void)

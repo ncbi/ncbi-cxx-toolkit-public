@@ -64,6 +64,9 @@ public:
 
     virtual void ReadNull(void);
 
+    virtual void ReadAnyContentObject(CAnyContentObject& obj);
+    virtual void SkipAnyContentObject(void);
+
     Uint1 ReadByte(void);
     void ReadBytes(Uint1* bytes, unsigned size);
     EFixNonPrint FixNonPrint(EFixNonPrint how)
@@ -206,6 +209,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.56  2003/05/22 20:08:41  gouriano
 * added UTF8 strings
 *

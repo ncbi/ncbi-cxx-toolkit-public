@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/08/13 15:47:45  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.12  2003/07/17 18:48:01  gouriano
 * re-enabled initialization verification
 *
@@ -200,6 +203,56 @@ void CSerialObject::ThrowUnassigned(TMemberIndex index) const
         }
         NCBI_THROW(CUnassignedMember,eGet,CNcbiOstrstreamToString(s));
     }
+}
+
+
+CAnyContentObject::CAnyContentObject(void)
+{
+}
+
+CAnyContentObject::CAnyContentObject(const CAnyContentObject& other)
+{
+    m_Name = other.m_Name;
+    m_Value= other.m_Value;
+}
+
+CAnyContentObject::~CAnyContentObject(void)
+{
+}
+
+void CAnyContentObject::Reset(void)
+{
+    m_Name.erase();
+    m_Value.erase();
+}
+
+CAnyContentObject& CAnyContentObject::operator= (const CAnyContentObject& other)
+{
+    m_Name = other.GetName();
+    m_Value= other.GetValue();
+    return *this;
+}
+
+bool CAnyContentObject::operator== (const CAnyContentObject& other) const
+{
+    return m_Name == other.GetName() && m_Value == other.GetValue();
+}
+
+void CAnyContentObject::SetName(const string& name)
+{
+    m_Name = name;
+}
+const string& CAnyContentObject::GetName(void) const
+{
+    return m_Name;
+}
+void CAnyContentObject::SetValue(const string& value)
+{
+    m_Value = value;
+}
+const string& CAnyContentObject::GetValue(void) const
+{
+    return m_Value;
 }
 
 /////////////////////////////////////////////////////////////////////////////

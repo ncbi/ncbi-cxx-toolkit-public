@@ -390,6 +390,20 @@ void CObjectIStreamAsn::ReadNull(void)
         ThrowError(fFormatError, "'NULL' expected");
 }
 
+void CObjectIStreamAsn::ReadAnyContentObject(CAnyContentObject& )
+{
+    NCBI_THROW(CSerialException,eNotImplemented,
+        "CObjectIStreamAsn::ReadAnyContentObject: "
+        "unable to read AnyContent object in ASN");
+}
+
+void CObjectIStreamAsn::SkipAnyContentObject(void)
+{
+    NCBI_THROW(CSerialException,eNotImplemented,
+        "CObjectIStreamAsn::SkipAnyContentObject: "
+        "unable to skip AnyContent object in ASN");
+}
+
 string CObjectIStreamAsn::ReadFileHeader()
 {
     CLightString id = ReadTypeId(SkipWhiteSpace());
@@ -1204,6 +1218,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2003/08/13 15:47:44  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.82  2003/05/22 20:10:02  gouriano
 * added UTF8 strings
 *

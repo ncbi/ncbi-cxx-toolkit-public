@@ -95,6 +95,8 @@ protected:
     void WriteId(const string& str);
 
     void WriteNull(void);
+    virtual void WriteAnyContentObject(const CAnyContentObject& obj);
+    virtual void CopyAnyContentObject(CObjectIStream& in);
 
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void WriteContainer(const CContainerTypeInfo* containerType,
@@ -172,6 +174,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.45  2003/05/22 20:08:42  gouriano
 * added UTF8 strings
 *

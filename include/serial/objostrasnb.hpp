@@ -72,6 +72,9 @@ public:
                           CObjectIStream& in);
 
     void WriteNull(void);
+    virtual void WriteAnyContentObject(const CAnyContentObject& obj);
+    virtual void CopyAnyContentObject(CObjectIStream& in);
+
     void WriteByte(Uint1 byte);
     void WriteBytes(const char* bytes, size_t size);
 
@@ -209,6 +212,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.41  2003/05/22 20:08:42  gouriano
 * added UTF8 strings
 *

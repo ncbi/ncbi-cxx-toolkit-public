@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/08/13 15:47:45  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.35  2003/05/22 20:10:02  gouriano
 * added UTF8 strings
 *
@@ -1525,6 +1528,66 @@ CTypeInfo* CStdTypeInfo< vector<signed char> >::CreateTypeInfo(void)
 CTypeInfo* CStdTypeInfo< vector<unsigned char> >::CreateTypeInfo(void)
 {
     return new CCharVectorTypeInfo<unsigned char>;
+}
+
+
+class CAnyContentFunctions : public CPrimitiveTypeFunctions<ncbi::CAnyContentObject>
+{
+public:
+    static TObjectPtr Create(TTypeInfo )
+        {
+            return new TObjectType();
+        }
+    static bool IsDefault(TConstObjectPtr objectPtr)
+        {
+            return Get(objectPtr) == TObjectType();
+        }
+    static void SetDefault(TObjectPtr objectPtr)
+        {
+            Get(objectPtr) = TObjectType();
+        }
+    static void Read(CObjectIStream& in, TTypeInfo , TObjectPtr objectPtr)
+        {
+            in.ReadAnyContentObject(Get(objectPtr));
+        }
+    static void Write(CObjectOStream& out, TTypeInfo ,
+                      TConstObjectPtr objectPtr)
+        {
+            out.WriteAnyContentObject(Get(objectPtr));
+        }
+    static void Copy(CObjectStreamCopier& copier, TTypeInfo )
+        {
+            copier.CopyAnyContentObject();
+        }
+    static void Skip(CObjectIStream& in, TTypeInfo )
+        {
+            in.SkipAnyContentObject();
+        }
+};
+
+CPrimitiveTypeInfoAnyContent::CPrimitiveTypeInfoAnyContent(void)
+    : CParent(sizeof(CAnyContentObject), ePrimitiveValueOther)
+{
+    typedef CPrimitiveTypeFunctions<ncbi::CAnyContentObject> TFunctions;
+    SetMemFunctions(&CAnyContentFunctions::Create,
+                    &CAnyContentFunctions::IsDefault,
+                    &CAnyContentFunctions::SetDefault,
+                    &TFunctions::Equals, &TFunctions::Assign);
+    SetIOFunctions(&CAnyContentFunctions::Read,
+                   &CAnyContentFunctions::Write,
+                   &CAnyContentFunctions::Copy,
+                   &CAnyContentFunctions::Skip);
+}
+
+TTypeInfo CStdTypeInfo<CAnyContentObject>::GetTypeInfo(void)
+{
+    static TTypeInfo info = CreateTypeInfo();
+    return info;
+}
+
+CTypeInfo* CStdTypeInfo<ncbi::CAnyContentObject>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoAnyContent();
 }
 
 END_NCBI_SCOPE

@@ -90,6 +90,8 @@ public:
     void CopyStringStore(void);
     void CopyByteBlock(void);
 
+    void CopyAnyContentObject(void);
+
     // complex types copy
     void CopyNamedType(TTypeInfo namedTypeInfo, TTypeInfo objectType);
 
@@ -136,6 +138,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.11  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

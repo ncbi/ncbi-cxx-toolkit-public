@@ -109,6 +109,25 @@ private:
     static ESerialVerifyData ms_VerifyDataDefault;
 };
 
+class NCBI_XSERIAL_EXPORT CAnyContentObject
+{
+public:
+    CAnyContentObject(void);
+    CAnyContentObject(const CAnyContentObject& other);
+    virtual ~CAnyContentObject(void);
+
+    void Reset(void);
+    CAnyContentObject& operator= (const CAnyContentObject& other);
+    bool operator== (const CAnyContentObject& other) const;
+
+    void SetName(const string& name);
+    const string& GetName(void) const;
+    void SetValue(const string& value);
+    const string& GetValue(void) const;
+private:
+    string m_Name;
+    string m_Value;
+};
 
 // Base class for user-defined serializable classes
 // to allow for objects assignment and comparison.
@@ -237,6 +256,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.19  2003/04/29 18:29:06  gouriano
 * object data member initialization verification
 *

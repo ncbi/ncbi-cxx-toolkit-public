@@ -256,6 +256,12 @@ public:
                              const vector<char>& value) const;
 };
 
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoAnyContent : public CPrimitiveTypeInfo
+{
+    typedef CPrimitiveTypeInfo CParent;
+public:
+    CPrimitiveTypeInfoAnyContent(void);
+};
 
 /* @} */
 
@@ -270,6 +276,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/08/13 15:47:02  gouriano
+* implemented serialization of AnyContent objects
+*
 * Revision 1.11  2003/05/22 20:08:42  gouriano
 * added UTF8 strings
 *
