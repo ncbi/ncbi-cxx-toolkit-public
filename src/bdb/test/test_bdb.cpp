@@ -48,6 +48,7 @@
 #include <bdb/bdb_filedump.hpp>
 #include <bdb/bdb_trans.hpp>
 #include <bdb/bdb_query.hpp>
+#include <bdb/bdb_util.hpp>
 
 #include <bdb/bdb_query_parser.hpp>
 
@@ -206,6 +207,7 @@ void s_TEST_BDB_Transaction(void)
     CBDB_Env env;
     env.OpenWithTrans(".", CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
     env.OpenErrFile("err_test.txt");
+    env.CleanLog();
     
     TestDBF3  dbf3;
     
@@ -262,6 +264,10 @@ void s_TEST_BDB_Transaction(void)
     idata = dbf3.idata;
     assert(idata == 11);
 
+    env.TransactionCheckpoint();
+
+    env.CleanLog();
+
     cout << "======== Transactions test ok." << endl;
 }
 
@@ -317,7 +323,7 @@ static void s_TEST_BDB_IdTable_Fill(void)
     cout << "======== Id table filling test." << endl;
 
     CBDB_Env env;
-    env.OpenWithLocks(0);
+    env.OpenWithLocks(".");
     env.OpenErrFile("err_test.txt");
 
     TestDBF1  dbf1;
@@ -442,10 +448,23 @@ static void s_TEST_BDB_IdTable_FillStress(void)
     cout << "======== Id table filling stress test." << endl;
 
     CBDB_Env env;
+    {{
     env.SetCacheSize(150 * (1024 * 1024));
-    env.OpenWithLocks(0);
+    env.OpenErrFile("err.txt");
+
+    env.OpenWithTrans(".", CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
+    cout << "Removing LOG files" << endl;
+    env.CleanLog();
+//    env.OpenWithLocks(0);
+    cout << "Removing LOG files. ok." << endl;
+
+    env.SetLockTimeout(30 * 1000000);
+    env.SetTransactionTimeout(30 * 1000000);
 
     TestDBF1  dbf1;
+
+    CBDB_Transaction trans(env);
+    dbf1.SetTransaction(&trans);
 
     dbf1.SetEnv(env);
 
@@ -456,9 +475,16 @@ static void s_TEST_BDB_IdTable_FillStress(void)
 
     unsigned i;
 
-    const unsigned int recs = 1000000;
+    //const unsigned int recs = 1000000;
+    const unsigned int recs = 100000;
 
     s_IdTableFill(dbf1, recs);
+
+    trans.Commit();
+    env.TransactionCheckpoint();
+    cout << "Removing LOG files." << endl;
+    env.CleanLog();
+    cout << "Removing LOG files. ok." << endl;
 
     cout << "Table loaded..." << endl;    
 
@@ -494,6 +520,9 @@ static void s_TEST_BDB_IdTable_FillStress(void)
 
     } // for
 
+    }}
+
+    env.Remove();
 
     cout << "======== Id table stress filling test ok." << endl;
 
@@ -1821,6 +1850,7 @@ static void s_TEST_ICache(void)
 }
 
 
+
 ////////////////////////////////
 // Test application
 //
@@ -1835,9 +1865,14 @@ public:
 
 void CBDB_Test::Init(void)
 {
+    SetDiagTrace(eDT_Enable); 
+
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_File);
     SetDiagPostFlag(eDPF_Line);
+    SetDiagPostFlag(eDPF_Trace);
+
+
     auto_ptr<CArgDescriptions> d(new CArgDescriptions);
     d->SetUsageContext("test_bdb",
                        "test BDB library");
@@ -1851,6 +1886,7 @@ int CBDB_Test::Run(void)
 
     try
     {
+
         s_TEST_BDB_Types();
 
         s_TEST_BDB_IdTable_Fill();
@@ -1913,6 +1949,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2004/08/13 11:13:48  kuznets
+ * changes in tests
+ *
  * Revision 1.48  2004/06/21 15:11:15  kuznets
  * Added recovery flag to the transactional test
  *
