@@ -782,7 +782,9 @@ AC_MSG_RESULT()
 AC_MSG_CHECKING(for gethostbyname_r)
 AC_TRY_COMPILE(
    [#include <netdb.h>],
-   [ struct hostent x_hp;
+   [
+     void* dummy = (void*) &gethostbyname_r;
+     struct hostent x_hp;
      char   x_buf[1024];
      int    x_err;
      struct hostent *hp =
@@ -794,16 +796,21 @@ AC_MSG_RESULT()
 
 AC_MSG_CHECKING(for gethostbyaddr_r)
 AC_TRY_COMPILE(
-   [#include <netdb.h>
-    #include <sys/socket.h>
+   [
+     #include <netdb.h>
+     #include <sys/types.h>
+     #include <sys/socket.h>
    ],
-   [ struct hostent  x_hp;
+   [
+     void* dummy = (void*) &gethostbyaddr_r;
+     struct hostent  x_hp;
      char            x_buf[1024];
      int             x_err;
      unsigned int    x_host;
      struct hostent* hp =
          gethostbyaddr_r((char *) &x_host, sizeof(x_host), AF_INET,
-                         &x_hp, x_buf, sizeof(x_buf), &x_err); ],
+                         &x_hp, x_buf, sizeof(x_buf), &x_err);
+   ],
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, 1)
 )
 AC_MSG_RESULT()
@@ -811,9 +818,11 @@ AC_MSG_RESULT()
 
 AC_MSG_CHECKING(for pthread_setconcurrency)
 AC_TRY_COMPILE(
-   [#include <pthread.h>
+   [#include <pthread.h>],
+   [
+     void* dummy = (void*) &pthread_setconcurrency;
+     int ret_value = pthread_setconcurrency(5);
    ],
-   [ int ret_value = pthread_setconcurrency(5); ],
    AC_DEFINE_UNQUOTED(HAVE_PTHREAD_SETCONCURRENCY, 1)
 )
 AC_MSG_RESULT()
@@ -822,8 +831,11 @@ AC_MSG_RESULT()
 AC_MSG_CHECKING(for strdup)
 AC_TRY_COMPILE(
    [#include <string.h>],
-   [ const char s[] = "abc";
-     char* s1 = strdup(s); ],
+   [
+     void* dummy = (void*) &strdup;
+     const char s[] = "abc";
+     char* s1 = strdup(s);
+   ],
    AC_DEFINE_UNQUOTED(HAVE_STRDUP, 1)
 )
 AC_MSG_RESULT()
@@ -832,8 +844,11 @@ AC_MSG_RESULT()
 AC_MSG_CHECKING(for Linux-like sysinfo with 1 arg)
 AC_TRY_COMPILE(
    [#include <sys/sysinfo.h>],
-   [ struct sysinfo* info = 0;
-     int retval = sysinfo(info); ],
+   [
+     void* dummy = (void*) &sysinfo;
+     struct sysinfo* info = 0;
+     int retval = sysinfo(info);
+   ],
    AC_DEFINE_UNQUOTED(HAVE_SYSINFO_1, 1)
 )
 AC_MSG_RESULT()
@@ -842,7 +857,11 @@ AC_MSG_RESULT()
 AC_MSG_CHECKING(for getloadavg)
 AC_TRY_COMPILE(
    [#include <sys/loadavg.h>],
-   [ double loadavg[3];  int i = getloadavg(loadavg, 3); ],
+   [
+     void* dummy = (void*) &getloadavg;
+     double loadavg[3];
+     int i = getloadavg(loadavg, 3);
+   ],
    AC_DEFINE_UNQUOTED(HAVE_GETLOADAVG, 1)
 )
 AC_MSG_RESULT()
@@ -850,10 +869,15 @@ AC_MSG_RESULT()
 
 AC_MSG_CHECKING(for sysmp)
 AC_TRY_COMPILE(
-   [#include <sys/sysinfo.h>
-    #include <sys/sysmp.h>
+   [
+     #include <sys/sysinfo.h>
+     #include <sys/sysmp.h>
    ],
-   [ struct sysinfo si;  sysmp(MP_SAGET, MPSA_SINFO, &si, sizeof(si)); ],
+   [ 
+     void* dummy = (void*) &sysmp;
+     struct sysinfo si;
+     sysmp(MP_SAGET, MPSA_SINFO, &si, sizeof(si));
+   ],
    AC_DEFINE_UNQUOTED(HAVE_SYSMP, 1)
 )
 AC_MSG_RESULT()
@@ -862,7 +886,12 @@ AC_MSG_RESULT()
 AC_MSG_CHECKING(for strcasecmp)
 AC_TRY_COMPILE(
    [#include <string.h>],
-   [ const char* s1 = 0;  const char* s2 = 0;  int i = strcasecmp(s1, s2) ],
+   [
+     void* dummy = (void*) &strcasecmp;
+     const char* s1 = 0;
+     const char* s2 = 0;
+     int i = strcasecmp(s1, s2);
+   ],
    AC_DEFINE_UNQUOTED(HAVE_STRCASECMP, 1)
 )
 AC_MSG_RESULT()
