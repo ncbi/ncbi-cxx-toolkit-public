@@ -78,6 +78,9 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const EProgram & v)
     switch(opt) {
     case eBlastOpt_Program:
         return;
+        
+    default:
+        break;
     }
     
     char errbuf[1024];
@@ -164,6 +167,9 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
     case eBlastOpt_WordThreshold:
         x_SetParam("WordThreshold", v);
         return;
+        
+    default:
+        break;
     }
     
     char errbuf[1024];
@@ -193,6 +199,9 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
     case eBlastOpt_PercentIdentity:
         x_SetParam("PercentIdentity", v);
         return;
+        
+    default:
+        break;
     }
     
     char errbuf[1024];
@@ -216,6 +225,9 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
     case eBlastOpt_MatrixName:
         x_SetParam("MatrixName", v);
         return;
+        
+    default:
+        break;
     }
     
     char errbuf[1024];
@@ -286,6 +298,9 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
     case eBlastOpt_SkipTraceback:
         x_SetParam("SkipTraceback", v);
         return;
+        
+    default:
+        break;
     }
     
     char errbuf[1024];
@@ -305,6 +320,9 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const Int8 & v)
     case eBlastOpt_EffectiveSearchSpace:
         x_SetParam("EffectiveSearchSpace", v);
         return;
+        
+    default:
+        break;
     }
     
     char errbuf[1024];
@@ -561,6 +579,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2004/02/04 22:33:36  bealer
+* - Add 'noop' default cases to eliminate compiler warnings.
+*
 * Revision 1.37  2004/01/20 17:53:01  bealer
 * - Add SkipTraceback option.
 *
