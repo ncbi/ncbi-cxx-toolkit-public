@@ -42,13 +42,15 @@ enum seqdb_debug_bits {
     debug_rh    = 1,
     debug_rhsum = 2,
     debug_mvol  = 4,
-    debug_alias = 8
+    debug_alias = 8,
+    debug_oid   = 16
 };
 
 #define ifdebug_rh    if (seqdb_debug_class & debug_rh)    cerr
 #define ifdebug_rhsum if (seqdb_debug_class & debug_rhsum) cerr
 #define ifdebug_mvol  if (seqdb_debug_class & debug_mvol)  cerr
 #define ifdebug_alias if (seqdb_debug_class & debug_alias) cerr
+#define ifdebug_oid   if (seqdb_debug_class & debug_oid)   cerr
 
 // Protein / Nucleotide / Unknown are represented by 'p', 'n', and '-'.
 

@@ -91,7 +91,10 @@ public:
         return m_Length;
     }
     
-    operator bool();
+    operator bool()
+    {
+        return m_Length != (Uint4)-1;
+    }
     
     CSeqDBIter(const CSeqDBIter &);
     
