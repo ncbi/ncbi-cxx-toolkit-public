@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.1 2000/07/27 17:16:52 thiessen Exp $
+	$Id: maketests.met,v 1.2 2000/07/27 17:23:07 thiessen Exp $
 	
    ================================================================================ *)
 
@@ -12,10 +12,10 @@
 property CREATEDEBUGPROJECTS : "TRUE" (* whether to create debug projects from scratch *)
 property BUILDDEBUGBINS : "TRUE" (* whether to compile debug binaries *)
 
-property CREATERELEASEPROJECTS : "TRUE" (* whether to create release projects from scratch *)
-property BUILDRELEASEBINS : "TRUE" (* whether to compile optimized release binaries *)
+property CREATERELEASEPROJECTS : "FALSE" (* whether to create release projects from scratch *)
+property BUILDRELEASEBINS : "FALSE" (* whether to compile optimized release binaries *)
 
-property CPPROOT : "internal:c++:" (* head of C++ toolkit tree within CodeWarrior folder *)
+property CPPROOT : "cxx:" (* head of C++ toolkit tree within CodeWarrior folder *)
 
 --property DOSOCKETS : "FALSE" (* whether to create/compile socket libs *)
 --property NCSASOCKDIR : "ncbi:connect:ncsasock:" (* location of ncsasock files within CodeWarrior folder *)
@@ -45,7 +45,7 @@ on DoSetGlobals()
 	tell application "Finder"
 		
 		set HARDDISK to startup disk as string
-		set METRO to HARDDISK & "CodeWarrior Pro 5:" as string
+		set METRO to HARDDISK & "Metrowerks CodeWarrior 6.0:" as string
 		set METROWERKSCW to METRO & "Metrowerks CodeWarrior:" as string
 		--set OTLIB to METROWERKSCW & "MacOS Support:OpenTransport:Open Tpt Client Developer:PPC Libraries:"
 		
@@ -84,7 +84,7 @@ on CreateFolders()
 end CreateFolders
 
 on DoSetDebugPreferences()
-	tell application "CodeWarrior IDE 4.0.4"
+	tell application "CodeWarrior IDE 4.1"
 		
 		(* ==== ONLY settings that are directly relevant to debugging and optimization should go here! ==== *)
 		
@@ -122,7 +122,7 @@ on DoSetDebugPreferences()
 end DoSetDebugPreferences
 
 on DoSetPreferences()
-	tell application "CodeWarrior IDE 4.0.4"
+	tell application "CodeWarrior IDE 4.1"
 		
 		(* ===== Panel Target ===== *)
 		Set Preferences of panel "Target Settings" to {Linker:"MacOS PPC Linker"}
@@ -169,8 +169,7 @@ on DoSetPreferences()
 		
 		(* ===== Panel Debugger =====  *)
 		Set Preferences of panel "Debugger Target" to Â
-			{Log System Messages:false Â
-				, Stop At Watchpoints:true}
+			{Log System Messages:false}
 		
 		(* ===== Panel C/C++ Language =====  *)
 		Set Preferences of panel "C/C++ Compiler" to Â
@@ -212,7 +211,7 @@ on DoSetPreferences()
 end DoSetPreferences
 
 on DoSetPaths1()
-	tell application "CodeWarrior IDE 4.0.4"
+	tell application "CodeWarrior IDE 4.1"
 		
 		(* ===== Panel Access Paths ===== *)
 		-- We need to be able to move the default system compiler folder to the end of the list
@@ -227,7 +226,7 @@ on DoSetPaths1()
 end DoSetPaths1
 
 on DoSetPaths2()
-	tell application "CodeWarrior IDE 4.0.4"
+	tell application "CodeWarrior IDE 4.1"
 		
 		-- After we have added all paths, reinsert compiler default at end of list
 		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:Headers:", recursive:true, origin:shell relative}}}
@@ -246,7 +245,7 @@ on DoSetPaths2()
 end DoSetPaths2
 
 on AddLibraries()
-	tell application "CodeWarrior IDE 4.0.4"
+	tell application "CodeWarrior IDE 4.1"
 		
 		Add Files {METROWERKSCW & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C.PPC.Lib"} To Segment 1
 		Add Files {METROWERKSCW & "MSL:MSL_C++:MSL_MacOS:Lib:PPC:MSL C++.PPC.Lib"} To Segment 1
@@ -261,7 +260,7 @@ end AddLibraries
 (* ==== This function creates a project with the given name and object files ==== *)
 
 on DoCreateDefaultProject(projName, projPath, projFiles, projNCBILibs)
-	tell application "CodeWarrior IDE 4.0.4"
+	tell application "CodeWarrior IDE 4.1"
 		
 		if DODEBUG = "TRUE" then
 			Create Project {BINARIES & projName & " debug.µ"}
@@ -276,6 +275,8 @@ on DoCreateDefaultProject(projName, projPath, projFiles, projNCBILibs)
 		else
 			Set Preferences of panel "PPC Project" to {File Name:projName}
 		end if
+		Set Preferences of panel "PPC Project" to {SIZE Flags:22720, File Creator:"NCBI", File Type:"APPL"}
+		Set Preferences of panel "PPC Project" to {Preferred Size:8000, Minimum Size:5000, Stack Size:64}
 		my DoSetPaths2()
 		
 		my AddLibraries()
@@ -302,7 +303,7 @@ end DoCreateDefaultProject
 (* ==== This section populates and builds the libraries ==== *)
 
 on DoCreateProjects()
-	tell application "CodeWarrior IDE 4.0.4"
+	tell application "CodeWarrior IDE 4.1"
 		
 		activate
 		
@@ -311,13 +312,21 @@ on DoCreateProjects()
 		my DoCreateDefaultProject("coretest", "corelib:test", Â
 			{"coretest"}, {"corelib"})
 		
+		my DoCreateDefaultProject("datatool", "serial:datatool", Â
+			{"datatool", "type", "namespace", "statictype", "enumtype", "reftype", "unitype", Â
+				"blocktype", "choicetype", "typestr", "ptrstr", "stdstr", "classstr", Â
+				"enumstr", "stlstr", "choicestr", "choiceptrstr", "value", "mcontainer", Â
+				"module", "moduleset", "generate", "filecode", "code", "fileutil", Â
+				"alexer", "aparser", "parser", "lexer", "exceptions"}, Â
+			{"corelib", "serial"})
+		
 	end tell
 end DoCreateProjects
 
 (* ==== This function compiles a project ==== *)
 
 on DoCompileBinary(projName)
-	tell application "CodeWarrior IDE 4.0.4"
+	tell application "CodeWarrior IDE 4.1"
 		
 		if DODEBUG = "TRUE" then
 			open (BINARIES & projName & " debug.µ")
@@ -343,6 +352,7 @@ on DoCompileBinaries()
 *)
 	
 	my DoCompileBinary("coretest")
+	my DoCompileBinary("datatool")
 	
 end DoCompileBinaries
 
