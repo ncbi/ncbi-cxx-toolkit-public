@@ -219,7 +219,25 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
                 include_dirs->push_back(dir);    
             }
         }
+
+        // process additional include dirs for LibChoices
+        if(CSymResolver::IsDefine(flag)) {
+            string sflag = CSymResolver::StripDefine(flag);
+            list<string> libchoices_abs_includes ;
+            GetApp().GetSite().GetLibChoiceIncludes(sflag, 
+                                                    &libchoices_abs_includes);
+
+            ITERATE(list<string>, n, libchoices_abs_includes) {
+                const string& dir = *n;
+
+                if ( !dir.empty() && CDirEntry(dir).IsDir() ) {
+                    include_dirs->push_back(dir);    
+                }
+            }
+        }
     }
+    include_dirs->sort();
+    include_dirs->unique();
 }
 
 
@@ -1207,6 +1225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/13 14:55:35  gorelenk
+ * Changed SMakeProjectT::CreateIncludeDirs .
+ *
  * Revision 1.6  2004/05/10 19:50:42  gorelenk
  * Implemented SMsvcProjectT .
  *
