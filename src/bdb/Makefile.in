@@ -9,7 +9,7 @@
 REQUIRES = BerkeleyDB
 
 LIB_PROJ = bdb ncbi_xcache_bdb
-EXPENDABLE_SUB_PROJ = test demo dumper cache_verify
+SUB_PROJ = test demo dumper cache_verify
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
