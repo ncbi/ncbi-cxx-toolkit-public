@@ -41,7 +41,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <util/tables/raw_scoremat.h>
-#include <algo/align/nw_aligner.hpp>
+#include <algo/align/nw/nw_aligner.hpp>
 
 #include <vector>
 #include <string>
@@ -133,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/12/15 20:16:50  kapustin
+ * Fix after algo/align rearrangement
+ *
  * Revision 1.3  2004/11/29 15:41:40  ucko
  * Remove declaration of obsolete virtual method CNWAligner::x_ScoreByTranscript.
  *
