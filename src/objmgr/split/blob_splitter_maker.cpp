@@ -517,7 +517,10 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
     TChunkContent chunk_content;
 
     typedef set<TPlaceId> TPlaces;
-    TPlaces all_descrs;
+    typedef unsigned TDescTypeMask;
+    _ASSERT(CSeqdesc::e_MaxChoice < 32);
+    typedef map<TDescTypeMask, TPlaces> TDescPlaces;
+    TDescPlaces all_descrs;
     TPlaces all_annot_places;
     typedef map<CAnnotName, SAllAnnots> TAllAnnots;
     TAllAnnots all_annots;
@@ -528,12 +531,17 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
 
     ITERATE ( SChunkInfo::TChunkSeq_descr, it, info.m_Seq_descr ) {
         TPlaceId place_id = it->first;
-        all_descrs.insert(place_id);
+        TDescTypeMask desc_type_mask = 0;
         CID2S_Chunk_Data::TDescrs& dst =
             GetChunkData(chunk_data, place_id).SetDescrs();
         ITERATE ( SChunkInfo::TPlaceSeq_descr, dit, it->second ) {
-            dst.push_back(Ref(const_cast<CSeq_descr*>(&*dit->m_Descr)));
+            CSeq_descr& descr = const_cast<CSeq_descr&>(*dit->m_Descr);
+            dst.push_back(Ref(&descr));
+            ITERATE ( CSeq_descr::Tdata, i, descr.Get() ) {
+                desc_type_mask |= (1<<(**i).Which());
+            }
         }
+        all_descrs[desc_type_mask].insert(place_id);
     }
 
     ITERATE ( SChunkInfo::TChunkAnnots, it, info.m_Annots ) {
@@ -665,19 +673,21 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
     }
 
     if ( !all_descrs.empty() ) {
-        CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
-        CID2S_Seq_descr_Info& info = content->SetSeq_descr();
-        info.SetType_mask(-1);
-        int start = *all_descrs.begin()-1, end = start-2;
-        ITERATE ( TPlaces, it, all_descrs ) {
-            if ( *it != end+1 ) {
-                AddIdRange(info, start, end);
-                start = *it;
+        ITERATE ( TDescPlaces, tmit, all_descrs ) {
+            CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
+            CID2S_Seq_descr_Info& info = content->SetSeq_descr();
+            info.SetType_mask(tmit->first);
+            int start = *tmit->second.begin()-1, end = start-2;
+            ITERATE ( TPlaces, it, tmit->second ) {
+                if ( *it != end+1 ) {
+                    AddIdRange(info, start, end);
+                    start = *it;
+                }
+                end = *it;
             }
-            end = *it;
+            AddIdRange(info, start, end);
+            chunk_content.push_back(content);
         }
-        AddIdRange(info, start, end);
-        chunk_content.push_back(content);
     }
 
     if ( !all_annot_places.empty() ) {
@@ -888,6 +898,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/10/07 14:04:06  vasilche
+* Generate correct desc mask in split info.
+*
 * Revision 1.16  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *
