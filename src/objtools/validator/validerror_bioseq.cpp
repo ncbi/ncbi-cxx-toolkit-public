@@ -310,10 +310,11 @@ void CValidError_bioseq::ValidateSeqIds
                             "Bad accession " + acc, seq);
                     } else if ( is_NZ  &&  num_letters == 4  && 
                         num_digits == 8  &&  num_underscores == 0 ) {
-                    } else if ( num_letters == 2  &&  num_digits == 6  &&
+                        // valid accession - do nothing!
+                    } else if ( num_letters == 2  &&
+                        (num_digits == 6  ||  num_digits == 8  || num_digits == 9)  &&
                         num_underscores == 1 ) {
-                    } else if ( num_letters == 2  &&  num_digits == 8  &&
-                        num_underscores == 1 ) {
+                        // valid accession - do nothing!
                     } else {
                         PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                             "Bad accession " + acc, seq);
@@ -3662,6 +3663,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2004/05/26 14:06:37  shomrat
+* SEQ_INST_BadSeqIdFormat allow 2 letters + underscore + 9 digits
+*
 * Revision 1.77  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *
