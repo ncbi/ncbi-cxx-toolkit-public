@@ -442,7 +442,7 @@ SeqDbSrcInit(const char* dbname, Boolean is_prot, Int4 first_seq,
     SSeqDbSrcNewArgs* seqdb_args = 
         (SSeqDbSrcNewArgs*) calloc(1, sizeof(SSeqDbSrcNewArgs));;
     seqdb_args->dbname = strdup(dbname);
-    seqdb_args->is_protein = is_prot;
+	seqdb_args->is_protein = is_prot ? true : false;
     seqdb_args->first_db_seq = first_seq;
     seqdb_args->final_db_seq = last_seq; 
     bssn_info.constructor = &SeqDbSrcNew;
@@ -465,6 +465,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/05/24 17:26:08  camacho
+ * Fix PC warning
+ *
  * Revision 1.10  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

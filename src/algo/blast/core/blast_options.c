@@ -261,7 +261,7 @@ BlastInitialWordParametersUpdate(Uint1 program_number,
       
       e2 = GetUngappedCutoff(program_number);
 
-      BLAST_Cutoffs(&s2, &e2, kbp, MIN(subj_length, qlen)*subj_length, TRUE, 
+      BLAST_Cutoffs(&s2, &e2, kbp, MIN(subj_length, (Uint4) qlen)*subj_length, TRUE, 
                     hit_params->gap_decay_rate);
       s2 *= (Int4)sbp->scale_factor;
       parameters->cutoff_score = MIN(hit_params->cutoff_score, s2);
@@ -1329,6 +1329,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.110  2004/05/24 17:26:21  camacho
+ * Fix PC warning
+ *
  * Revision 1.109  2004/05/20 16:29:30  madden
  * Make searchsp an Int8 consistent with rest of blast
  *
