@@ -128,12 +128,8 @@ public:
                 MID_SHOW_UNALIGNED_ALN_DOMAIN,
             MID_SHOW_SELECTED_RESIDUES,
             MID_SHOW_SELECTED_DOMAINS,
-            MID_SELECT_MOLECULE,
             MID_DIST_SELECT,
-                MID_DIST_SELECT_RESIDUES,
-                MID_DIST_SELECT_ALL,
-                MID_DIST_SELECT_OTHER_RESIDUES,
-                MID_DIST_SELECT_OTHER_ALL,
+            MID_SELECT_MOLECULE,
         // Structure Alignments menu
         // Style menu
             MID_EDIT_STYLE,
@@ -225,7 +221,7 @@ private:
     void OnAlignStructures(wxCommandEvent& event);
     void OnAdjustView(wxCommandEvent& event);
     void OnShowHide(wxCommandEvent& event);
-    void OnDistanceSelect(wxCommandEvent& event);
+    void OnSelect(wxCommandEvent& event);
     void OnSetStyle(wxCommandEvent& event);
     void OnEditFavorite(wxCommandEvent& event);
     void OnSelectFavorite(wxCommandEvent& event);
@@ -270,6 +266,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/10/05 14:57:54  thiessen
+* add distance selection dialog
+*
 * Revision 1.14  2004/08/04 18:58:30  thiessen
 * add -s command line option for preferred favorite style
 *

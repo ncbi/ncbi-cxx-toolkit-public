@@ -114,6 +114,13 @@ const unsigned int
     StructureSet::eCDDData                    = 0x100,
     StructureSet::eOtherData                  = 0x200;
 
+const unsigned int
+    StructureSet::eSelectProtein              = 0x01,
+    StructureSet::eSelectNucleotide           = 0x02,
+    StructureSet::eSelectHeterogen            = 0x04,
+    StructureSet::eSelectSolvent              = 0x08,
+    StructureSet::eSelectOtherMoleculesOnly   = 0x10;
+
 StructureSet::StructureSet(CNcbi_mime_asn1 *mime, int structureLimit, OpenGLRenderer *r) :
     StructureBase(NULL), renderer(r)
 {
@@ -986,14 +993,14 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     }
 }
 
-void StructureSet::SelectByDistance(double cutoff, bool biopolymersOnly, bool otherMoleculesOnly) const
+void StructureSet::SelectByDistance(double cutoff, unsigned int options) const
 {
     StructureObject::ResidueMap residuesToHighlight;
 
     // add residues to highlight to master list, based on proximities within objects
     ObjectList::const_iterator o, oe = objects.end();
     for (o=objects.begin(); o!=oe; ++o)
-        (*o)->SelectByDistance(cutoff, biopolymersOnly, otherMoleculesOnly, &residuesToHighlight);
+        (*o)->SelectByDistance(cutoff, options, &residuesToHighlight);
 
     // now actually add highlights for new selected residues
     StructureObject::ResidueMap::const_iterator r, re = residuesToHighlight.end();
@@ -1430,7 +1437,7 @@ void StructureObject::RealignStructure(int nCoords,
     delete oss.str();
 }
 
-void StructureObject::SelectByDistance(double cutoff, bool biopolymersOnly, bool otherMoleculesOnly,
+void StructureObject::SelectByDistance(double cutoff, unsigned int options,
     ResidueMap *selectedResidues) const
 {
     // first make a list of coordinates of atoms in selected residues,
@@ -1465,14 +1472,17 @@ void StructureObject::SelectByDistance(double cutoff, bool biopolymersOnly, bool
     for (m=graph->molecules.begin(); m!=me; ++m) {
         Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
 
-        if (otherMoleculesOnly &&
+        if ((options & StructureSet::eSelectOtherMoleculesOnly) &&
                 moleculesWithHighlights.find(m->second) != moleculesWithHighlights.end())
             continue;
 
         for (r=m->second->residues.begin(); r!=re; ++r) {
 
             if (!GlobalMessenger()->IsHighlighted(m->second, r->second->id) &&
-                    (!biopolymersOnly || m->second->IsProtein() || m->second->IsNucleotide()))
+                    (((options & StructureSet::eSelectProtein) && m->second->IsProtein()) ||
+                     ((options & StructureSet::eSelectNucleotide) && m->second->IsNucleotide()) ||
+                     ((options & StructureSet::eSelectHeterogen) && m->second->IsHeterogen()) ||
+                     ((options & StructureSet::eSelectSolvent) && m->second->IsSolvent())))
                 unhighlightedResidues.push_back(r->second);
         }
     }
@@ -1513,6 +1523,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.144  2004/10/05 14:57:54  thiessen
+* add distance selection dialog
+*
 * Revision 1.143  2004/09/28 14:17:47  thiessen
 * make _RemoveChild private
 *

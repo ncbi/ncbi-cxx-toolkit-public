@@ -84,6 +84,7 @@
 #include "command_processor.hpp"
 #include "animation_controls.hpp"
 #include "cn3d_cache.hpp"
+#include "dist_select_dialog.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
@@ -135,14 +136,14 @@ BEGIN_EVENT_TABLE(StructureWindow, wxFrame)
     EVT_MENU_RANGE(MID_OPEN, MID_NETWORK_OPEN,              StructureWindow::OnOpen)
     EVT_MENU_RANGE(MID_SAVE_SAME, MID_SAVE_AS,              StructureWindow::OnSave)
     EVT_MENU      (MID_PNG,                                 StructureWindow::OnPNG)
-    EVT_MENU_RANGE(MID_ZOOM_IN,  MID_STEREO,                StructureWindow::OnAdjustView)
-    EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SELECT_MOLECULE,     StructureWindow::OnShowHide)
-    EVT_MENU_RANGE(MID_DIST_SELECT_RESIDUES, MID_DIST_SELECT_OTHER_ALL, StructureWindow::OnDistanceSelect)
+    EVT_MENU_RANGE(MID_ZOOM_IN, MID_STEREO,                 StructureWindow::OnAdjustView)
+    EVT_MENU_RANGE(MID_SHOW_HIDE, MID_SHOW_SELECTED_DOMAINS,StructureWindow::OnShowHide)
+    EVT_MENU_RANGE(MID_DIST_SELECT, MID_SELECT_MOLECULE,    StructureWindow::OnSelect)
     EVT_MENU      (MID_REFIT_ALL,                           StructureWindow::OnAlignStructures)
     EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            StructureWindow::OnSetStyle)
     EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,    StructureWindow::OnEditFavorite)
     EVT_MENU_RANGE(MID_FAVORITES_BEGIN, MID_FAVORITES_END,  StructureWindow::OnSelectFavorite)
-    EVT_MENU_RANGE(MID_SHOW_LOG,   MID_SHOW_SEQ_V,          StructureWindow::OnShowWindow)
+    EVT_MENU_RANGE(MID_SHOW_LOG, MID_SHOW_SEQ_V,            StructureWindow::OnShowWindow)
     EVT_MENU_RANGE(MID_CDD_OVERVIEW, MID_CDD_SHOW_REJECTS,  StructureWindow::OnCDD)
     EVT_MENU      (MID_PREFERENCES,                         StructureWindow::OnPreferences)
     EVT_MENU_RANGE(MID_OPENGL_FONT, MID_SEQUENCE_FONT,      StructureWindow::OnSetFont)
@@ -240,13 +241,8 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     subMenu->Append(MID_SHOW_UNALIGNED_ALN_DOMAIN, "Show in Aligned &Domains");
     menu->Append(MID_SHOW_UNALIGNED, "&Unaligned Residues", subMenu);
     menu->AppendSeparator();
-    subMenu = new wxMenu;
-    subMenu->Append(MID_DIST_SELECT_RESIDUES, "&Residues Only");
-    subMenu->Append(MID_DIST_SELECT_ALL, "&All Molecules");
-    subMenu->Append(MID_DIST_SELECT_OTHER_RESIDUES, "&Other Residues");
-    subMenu->Append(MID_DIST_SELECT_OTHER_ALL, "Other &Molecules");
-    menu->Append(MID_DIST_SELECT, "Select by Dis&tance...", subMenu);
-    menu->Append(MID_SELECT_MOLECULE, "Select Molecule...\tm");
+    menu->Append(MID_DIST_SELECT, "Select by Dis&tance...");
+    menu->Append(MID_SELECT_MOLECULE, "Select M&olecule...\tm");
     menuBar->Append(menu, "Show/&Hide");
 
     // Style menu
@@ -546,17 +542,76 @@ void StructureWindow::OnHelp(wxCommandEvent& event)
     }
 }
 
-void StructureWindow::OnDistanceSelect(wxCommandEvent& event)
+void StructureWindow::OnSelect(wxCommandEvent& event)
 {
     if (!glCanvas->structureSet) return;
-    static double latestCutoff = 5.0;
-    GetFloatingPointDialog dialog(this, "Enter a distance cutoff (in Angstroms):", "Distance?",
-        0.0, 1000.0, 0.5, latestCutoff);
-    if (dialog.ShowModal() == wxOK) {
-        latestCutoff = dialog.GetValue();
-        glCanvas->structureSet->SelectByDistance(latestCutoff,
-            (event.GetId() == MID_DIST_SELECT_RESIDUES || event.GetId() == MID_DIST_SELECT_OTHER_RESIDUES),
-            (event.GetId() == MID_DIST_SELECT_OTHER_RESIDUES || event.GetId() == MID_DIST_SELECT_OTHER_ALL));
+
+    if (event.GetId() == MID_SELECT_MOLECULE) {
+        if (glCanvas->structureSet->objects.size() > 1)
+            return;
+        wxString idStr = wxGetTextFromUser("Enter an MMDB molecule ID or PDB code:", "Select molecule");
+        if (idStr.size() == 0)
+            return;
+        unsigned long num;
+        bool isNum = idStr.ToULong(&num);
+        if (!isNum)
+            idStr.MakeUpper();  // PDB names are all caps
+        GlobalMessenger()->RemoveAllHighlights(true);
+        ChemicalGraph::MoleculeMap::const_iterator m, me =
+            glCanvas->structureSet->objects.front()->graph->molecules.end();
+        for (m=glCanvas->structureSet->objects.front()->graph->molecules.begin(); m!=me; ++m) {
+            if ((isNum && m->second->id == (int) num) ||
+                (!isNum && (
+                    ((m->second->type == Molecule::eDNA || m->second->type == Molecule::eRNA ||
+                      m->second->type == Molecule::eProtein || m->second->type == Molecule::eBiopolymer)
+                        && idStr.Cmp(m->second->name.c_str()) == 0) ||
+                    ((m->second->type == Molecule::eSolvent || m->second->type == Molecule::eNonpolymer ||
+                      m->second->type == Molecule::eOther)
+                        && m->second->residues.size() == 1
+                        && (((wxString) m->second->residues.begin()->second->
+                            nameGraph.c_str()).Strip(wxString::both) == idStr)))))
+            {
+                if (m->second->sequence) {
+                    GlobalMessenger()->AddHighlights(m->second->sequence, 0, m->second->sequence->Length() - 1);
+                } else {
+                    Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
+                    for (r=m->second->residues.begin(); r!=re; ++r)
+                        GlobalMessenger()->ToggleHighlight(m->second, r->second->id);
+                }
+            }
+        }
+    }
+
+    else if (event.GetId() == MID_DIST_SELECT) {
+        static double latestCutoff = 5.0;
+        static unsigned int latestOptions = (StructureSet::eSelectProtein | StructureSet::eSelectOtherMoleculesOnly);
+
+        // setup dialog with initial values
+        DistanceSelectDialog dialog(this);
+        dialog.fpSpinCtrl->SetDouble(latestCutoff);
+        dialog.m_Protein->SetValue((latestOptions & StructureSet::eSelectProtein) > 0);
+        dialog.m_Nucleotide->SetValue((latestOptions & StructureSet::eSelectNucleotide) > 0);
+        dialog.m_Heterogen->SetValue((latestOptions & StructureSet::eSelectHeterogen) > 0);
+        dialog.m_Solvent->SetValue((latestOptions & StructureSet::eSelectSolvent) > 0);
+        dialog.m_Other->SetValue((latestOptions & StructureSet::eSelectOtherMoleculesOnly) > 0);
+
+        // get user input
+        double cutoff;
+        if (dialog.ShowModal() == wxID_OK && dialog.fpSpinCtrl->GetDouble(&cutoff)) {
+            latestCutoff = cutoff;
+            latestOptions = 0;
+            if (dialog.m_Protein->GetValue())
+                latestOptions |= StructureSet::eSelectProtein;
+            if (dialog.m_Nucleotide->GetValue())
+                latestOptions |= StructureSet::eSelectNucleotide;
+            if (dialog.m_Heterogen->GetValue())
+                latestOptions |= StructureSet::eSelectHeterogen;
+            if (dialog.m_Solvent->GetValue())
+                latestOptions |= StructureSet::eSelectSolvent;
+            if (dialog.m_Other->GetValue())
+                latestOptions |= StructureSet::eSelectOtherMoleculesOnly;
+            glCanvas->structureSet->SelectByDistance(latestCutoff, latestOptions);
+        }
     }
 }
 
@@ -1140,44 +1195,6 @@ void StructureWindow::OnShowHide(wxCommandEvent& event)
             break;
         }
 
-        case MID_SELECT_MOLECULE:
-        {
-            if (!glCanvas->structureSet || glCanvas->structureSet->objects.size() > 1)
-                return;
-            wxString idStr = wxGetTextFromUser("Enter an MMDB molecule ID or PDB code:", "Select molecule");
-            if (idStr.size() == 0)
-                return;
-            unsigned long num;
-            bool isNum = idStr.ToULong(&num);
-            if (!isNum)
-                idStr.MakeUpper();  // PDB names are all caps
-            GlobalMessenger()->RemoveAllHighlights(true);
-            ChemicalGraph::MoleculeMap::const_iterator m, me =
-                glCanvas->structureSet->objects.front()->graph->molecules.end();
-            for (m=glCanvas->structureSet->objects.front()->graph->molecules.begin(); m!=me; ++m) {
-                if ((isNum && m->second->id == (int) num) ||
-                    (!isNum && (
-                        ((m->second->type == Molecule::eDNA || m->second->type == Molecule::eRNA ||
-                          m->second->type == Molecule::eProtein || m->second->type == Molecule::eBiopolymer)
-                            && idStr.Cmp(m->second->name.c_str()) == 0) ||
-                        ((m->second->type == Molecule::eSolvent || m->second->type == Molecule::eNonpolymer ||
-                          m->second->type == Molecule::eOther)
-                            && m->second->residues.size() == 1
-                            && (((wxString) m->second->residues.begin()->second->
-                                nameGraph.c_str()).Strip(wxString::both) == idStr)))))
-                {
-                    if (m->second->sequence) {
-                        GlobalMessenger()->AddHighlights(m->second->sequence, 0, m->second->sequence->Length() - 1);
-                    } else {
-                        Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
-                        for (r=m->second->residues.begin(); r!=re; ++r)
-                            GlobalMessenger()->ToggleHighlight(m->second, r->second->id);
-                    }
-                }
-            }
-            break;
-        }
-
         case MID_SHOW_ALL:
             glCanvas->structureSet->showHideManager->MakeAllVisible();
             break;
@@ -1619,6 +1636,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/10/05 14:57:54  thiessen
+* add distance selection dialog
+*
 * Revision 1.36  2004/09/27 22:02:09  thiessen
 * add highlight cache
 *

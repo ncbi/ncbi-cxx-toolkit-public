@@ -147,9 +147,14 @@ public:
     // the atom's location is used as the global rotation center
     void SelectedAtom(unsigned int name, bool setCenter);
 
-    // select either biopolymer residues only or all residues/molecules within cutoff distance
-    // of currently selected residues
-    void SelectByDistance(double cutoff, bool biopolymersOnly, bool otherMoleculesOnly) const;
+    // select various components based on distance
+    static const unsigned int
+        eSelectProtein,
+        eSelectNucleotide,
+        eSelectHeterogen,
+        eSelectSolvent,
+        eSelectOtherMoleculesOnly;
+    void SelectByDistance(double cutoff, unsigned int options) const;
 
     // updates sequences in the asn, to remove any sequences
     // that are not used by the current alignmentSet or updates
@@ -282,8 +287,7 @@ public:
     // public methods
 
     typedef std::map < const Residue *, const Molecule * > ResidueMap;
-    void SelectByDistance(double cutoff, bool biopolymersOnly, bool otherMoleculesOnly,
-        ResidueMap *selectedResidues) const;
+    void SelectByDistance(double cutoff, unsigned int options, ResidueMap *selectedResidues) const;
 
     // set transform based on asn1 data
     bool SetTransformToMaster(const ncbi::objects::CBiostruc_annot_set& annot, int masterMMDBID);
@@ -305,6 +309,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2004/10/05 14:57:54  thiessen
+* add distance selection dialog
+*
 * Revision 1.79  2004/05/21 17:29:51  thiessen
 * allow conversion of mime to cdd data
 *
