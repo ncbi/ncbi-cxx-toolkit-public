@@ -118,7 +118,8 @@ CAnnotObject_Info::CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
       m_Object(&chunk_info),
       m_FeatSubtype(sel.GetFeatSubtype()),
       m_FeatType(sel.GetFeatType()),
-      m_AnnotType(sel.GetAnnotType())
+      m_AnnotType(sel.GetAnnotType()),
+      m_MultiId(0)
 {
     _ASSERT(IsChunkStub());
 }
@@ -428,6 +429,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/04/01 20:33:58  grichenk
+* One more m_MultiId initialization
+*
 * Revision 1.36  2004/04/01 20:18:12  grichenk
 * Added initialization of m_MultiId member.
 *
