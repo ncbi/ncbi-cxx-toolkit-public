@@ -70,6 +70,10 @@ public:
 
     DECLARE_OPERATOR_BOOL(m_Annot);
 
+    bool operator ==(const CSeq_feat_Handle& feat) const;
+    bool operator !=(const CSeq_feat_Handle& feat) const;
+    bool operator <(const CSeq_feat_Handle& feat) const;
+
     /// Get scope this handle belongs to
     CScope& GetScope(void) const;
 
@@ -157,6 +161,35 @@ private:
 
 
 inline
+bool CSeq_feat_Handle::operator ==(const CSeq_feat_Handle& feat) const
+{
+    return m_Annot == feat.m_Annot
+        && m_AnnotInfoType == feat.m_AnnotInfoType
+        && m_Index == feat.m_Index;
+}
+
+
+inline
+bool CSeq_feat_Handle::operator !=(const CSeq_feat_Handle& feat) const
+{
+    return !(*this == feat);
+}
+
+
+inline
+bool CSeq_feat_Handle::operator <(const CSeq_feat_Handle& feat) const
+{
+    if (m_Annot != feat.m_Annot) {
+        return m_Annot < feat.m_Annot;
+    }
+    if (m_AnnotInfoType != feat.m_AnnotInfoType) {
+        return m_AnnotInfoType < feat.m_AnnotInfoType;
+    }
+    return m_Index < feat.m_Index;
+}
+
+
+inline
 bool CSeq_feat_Handle::IsTableSNP(void) const
 {
     return m_AnnotInfoType == eType_Seq_annot_SNP_Info;
@@ -215,7 +248,7 @@ bool CSeq_feat_Handle::IsSetPartial(void) const
 inline
 bool CSeq_feat_Handle::GetPartial(void) const
 {
-    return x_GetSeq_feat().GetPartial();
+    return IsSetPartial()  &&  x_GetSeq_feat().GetPartial();
 }
 
 
@@ -229,7 +262,7 @@ bool CSeq_feat_Handle::IsSetExcept(void) const
 inline
 bool CSeq_feat_Handle::GetExcept(void) const
 {
-    return x_GetSeq_feat().GetExcept();
+    return IsSetExcept()  &&  x_GetSeq_feat().GetExcept();
 }
 
 
@@ -376,7 +409,7 @@ bool CSeq_feat_Handle::IsSetPseudo(void) const
 inline
 bool CSeq_feat_Handle::GetPseudo(void) const
 {
-    return x_GetSeq_feat().GetPseudo();
+    return IsSetPseudo()  &&  x_GetSeq_feat().GetPseudo();
 }
 
 
@@ -416,6 +449,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/02/23 20:02:55  grichenk
+* Added operators ==, != and <. Bool GetXXXX also check IsSetXXXX.
+*
 * Revision 1.8  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *
