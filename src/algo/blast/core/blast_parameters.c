@@ -39,12 +39,23 @@ static char const rcsid[] =
 #include <algo/blast/core/phi_lookup.h>
 #include <algo/blast/core/blast_rps.h>
 
+/** Returns true if the Karlin-Altschul block doesn't have its lambda, K, and H
+ * fields set to negative values. -1 is the sentinel used to mark them as
+ * invalid. This can happen if a query sequence is completely masked for
+ * example.
+ * @param kbp Karlin-Altschul block to examine [in]
+ * @return TRUE if its valid, else FALSE
+ */
+static Boolean s_BlastKarlinBlkIsValid(const Blast_KarlinBlk* kbp)
+{
+    return (kbp->Lambda > 0 && kbp->K > 0 && kbp->H > 0);
+}
 
-/** Looks for a "valid" Karlin Blk within the list of blocks.
- * Valid means that Lambda, K, and H are not all -1.
- * Invalid blocks are often caused by completely masked sequences.
+/** Returns the first valid Karlin-Altchul block from the list of blocks.
+ * @sa s_BlastKarlinBlkIsValid
  * @param kbp_in array of Karlin blocks to be searched [in]
- * @param query_info information on number of queries [in]
+ * @param query_info information on number of queries (specifies number of
+ * elements in above array) [in]
  * @param kbp_ret the object to be pointed at [out]
  * @return zero on success, 1 if no valid block found
  */
@@ -52,21 +63,19 @@ static char const rcsid[] =
 static Int2
 s_BlastFindValidKarlinBlk(Blast_KarlinBlk** kbp_in, const BlastQueryInfo* query_info, Blast_KarlinBlk** kbp_ret)
 {
-        Int4 index;   /* Look for the first valid kbp. */
-        Int2 status=1;  /* 1 means no valid block found. */
+    Int4 i;   /* Look for the first valid kbp. */
+    Int2 status=1;  /* 1 means no valid block found. */
 
-        ASSERT(kbp_in && query_info && kbp_ret);
+    ASSERT(kbp_in && query_info && kbp_ret);
 
-        for (index=query_info->first_context; index<=query_info->last_context; index++)
-        {
-             if (kbp_in[index]->Lambda > 0 && kbp_in[index]->K > 0 && kbp_in[index]->H > 0)
-             {
-                  *kbp_ret = kbp_in[index];
-                  status = 0;
-                  break;
-             }
-        }
-        return status;
+    for (i=query_info->first_context; i<=query_info->last_context; i++) {
+         if (s_BlastKarlinBlkIsValid(kbp_in[i])) {
+              *kbp_ret = kbp_in[i];
+              status = 0;
+              break;
+         }
+    }
+    return status;
 }
 
 /** Determines optimal extension method given 1.) the type of
@@ -317,15 +326,20 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
    if (sbp->kbp_gap) {
       if (s_BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp_gap) != 0)
          return -1;
-      params->gap_x_dropoff = 
-         (Int4) (options->gap_x_dropoff*NCBIMATH_LN2 / kbp_gap->Lambda);
+      params->gap_x_dropoff = (Int4) 
+          (options->gap_x_dropoff*NCBIMATH_LN2 / kbp_gap->Lambda);
+      // Note that this convertion from bits to raw score is done prematurely 
+      // here when rescaling and composition based statistics is applied, as we
+      // loose precision, therefore this is redone in Kappa_RedoAlignmentCore 
       params->gap_x_dropoff_final = (Int4) 
-         (options->gap_x_dropoff_final*NCBIMATH_LN2 / kbp_gap->Lambda);
+          (options->gap_x_dropoff_final*NCBIMATH_LN2 / kbp_gap->Lambda);
    }
    
    if (sbp->scale_factor > 1.0) {
-      params->gap_x_dropoff *= (Int4)sbp->scale_factor;
-      params->gap_x_dropoff_final *= (Int4)sbp->scale_factor;
+       ASSERT(program_number == eBlastTypeRpsBlast ||
+              program_number == eBlastTypeRpsTblastn);
+       params->gap_x_dropoff *= (Int4)sbp->scale_factor;
+       params->gap_x_dropoff_final *= (Int4)sbp->scale_factor;
    }
    return 0;
 }
@@ -731,6 +745,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/02/03 22:23:37  camacho
+ * Minor refactorings, add comments
+ *
  * Revision 1.5  2005/01/31 21:35:21  camacho
  * doxygen fix
  *
