@@ -149,10 +149,7 @@ void CSeqMap::x_GetSegmentException(size_t /*index*/) const
 
 CSeqMap::CSegment& CSeqMap::x_SetSegment(size_t index)
 {
-    if ( index >= x_GetSegmentsCount() ) {
-        NCBI_THROW(CSeqMapException, eInvalidIndex,
-                   "Invalid segment index");
-    }
+    _ASSERT(index < m_Segments.size());
     return m_Segments[index];
 }
 
@@ -200,8 +197,7 @@ TSeqPos CSeqMap::x_ResolveSegmentLength(size_t index, CScope* scope) const
 TSeqPos CSeqMap::x_ResolveSegmentPosition(size_t index, CScope* scope) const
 {
     if ( index > x_GetSegmentsCount() ) {
-        NCBI_THROW(CSeqMapException, eInvalidIndex,
-                   "Invalid segment index");
+        x_GetSegmentException(index);
     }
     size_t resolved = m_Resolved;
     if ( index <= resolved )
@@ -808,8 +804,7 @@ void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
     while ( length ) {
         // get segment
         if ( index > x_GetSegmentsCount() ) {
-            NCBI_THROW(CSeqMapException, eDataError,
-                       "split chunk beyond SeqMap bounds");
+            x_GetSegmentException(index);
         }
         const CSegment& seg = x_GetSegment(index);
 

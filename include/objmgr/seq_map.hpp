@@ -338,9 +338,7 @@ size_t CSeqMap::x_GetFirstEndSegmentIndex(void) const
 inline
 const CSeqMap::CSegment& CSeqMap::x_GetSegment(size_t index) const
 {
-    if ( index > x_GetSegmentsCount() ) {
-        x_GetSegmentException(index);
-    }
+    _ASSERT(index < m_Segments.size());
     return m_Segments[index];
 }
 
