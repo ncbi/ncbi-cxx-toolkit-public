@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/12/17 16:26:34  gouriano
+* added new flags to CMemberInfo in CDataContainerType::CreateClassInfo
+*
 * Revision 1.39  2002/11/19 19:48:29  gouriano
 * added support of XML attributes of choice variants
 *
@@ -339,6 +342,15 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
                 memInfo->SetOptional();
             }
             memInfo->SetSetFlag(typeInfo->GetSetFlagPtr(index++));
+        }
+        if (mem->NoPrefix()) {
+            memInfo->SetNoPrefix();
+        }
+        if (mem->Attlist()) {
+            memInfo->SetAttlist();
+        }
+        if (mem->Notag()) {
+            memInfo->SetNotag();
         }
     }
     if ( HaveModuleName() )
