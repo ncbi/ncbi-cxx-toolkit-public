@@ -86,7 +86,7 @@ class CNamedPipeHandle;
 /// For UNIXs the pipe name is a generic file name (with or without path).
 ///
 /// @sa
-///   CNamedPipeClient, CNamedPipeServer
+///   CNamedPipeClient, CNamedPipeServer, CPipe
 
 class NCBI_XCONNECT_EXPORT CNamedPipe
 {
@@ -303,7 +303,10 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log
+ * $Log$
+ * Revision 1.3  2003/08/20 19:01:05  ivanov
+ * Fixed cvs log
+ *
  * ===========================================================================
  */
 
