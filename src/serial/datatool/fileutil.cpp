@@ -161,7 +161,7 @@ DestinationFile::~DestinationFile(void)
 #endif
 
 inline
-bool IsDiskSeparator(char /* c */)
+bool IsDiskSeparator(char c)
 {
 #ifdef DISK_SEPARATOR_CHAR
     if ( c == DISK_SEPARATOR_CHAR )
@@ -564,6 +564,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/02/01 22:24:11  grichenk
+* Reversed last change
+*
 * Revision 1.30  2005/02/01 21:47:14  grichenk
 * Fixed warnings
 *
