@@ -1151,10 +1151,11 @@ bool BlockMultipleAlignment::DeleteRow(unsigned int row)
     }
 
     // remove sequence from list
-    SequenceList::iterator s = m_sequences.begin();
-    for (unsigned int i=0; i<row; ++i)
-        ++s;
-    m_sequences.erase(s);
+    vector < bool > removeRows(NRows(), false);
+    removeRows[row] = true;
+    VectorRemoveElements(m_sequences, removeRows, 1);
+    VectorRemoveElements(m_rowDoubles, removeRows, 1);
+    VectorRemoveElements(m_rowStrings, removeRows, 1);
 
     // delete row from all m_blocks, removing any zero-m_width m_blocks
     BlockList::iterator b = m_blocks.begin(), br, be = m_blocks.end();
@@ -1647,6 +1648,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/06/23 00:56:08  thiessen
+* fix delete row vector synchronization problem
+*
 * Revision 1.11  2004/06/22 19:27:54  lanczyck
 * switch diagnostic post level back to oldLevel in ExtractRows()
 *
