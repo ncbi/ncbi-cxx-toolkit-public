@@ -3,7 +3,7 @@
 # Meta-makefile
 #################################
 
-SUB_PROJ = basic cgi dbapi objects objmgr alnmgr
+APP_PROJ = alnmgr_sample
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

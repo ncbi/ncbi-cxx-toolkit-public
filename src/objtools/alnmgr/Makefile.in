@@ -1,0 +1,6 @@
+# $Id$
+
+LIB_PROJ = alnmgr
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
