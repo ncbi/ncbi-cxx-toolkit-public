@@ -4,9 +4,9 @@
 # Build library "xomssa"
 #################################
 
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir) $(NCBI_C_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 
-SRC = SpectrumSet msladder msms mspeak nrutil omssa Mod
+SRC = SpectrumSet msladder msms mspeak omssa Mod
 
 LIB = xomssa
 
