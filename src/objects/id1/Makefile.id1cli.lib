@@ -1,0 +1,2 @@
+LIB = id1cli
+SRC = id1_client id1_client_
