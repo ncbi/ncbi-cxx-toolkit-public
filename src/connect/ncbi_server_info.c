@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2001/03/05 23:10:11  lavr
+ * SERV_WriteInfo & SERV_ReadInfo both take only one argument now
+ *
  * Revision 6.21  2001/03/02 20:09:14  lavr
  * Typo fixed
  *
@@ -48,7 +51,8 @@
  * order, whereas binary port addresses now use native (host) representation
  *
  * Revision 6.16  2000/12/04 17:34:19  beloslyu
- * the order of include files is important, especially on other Unixes! Look the man on inet_ntoa
+ * the order of include files is important, especially on other Unixes!
+ * Look the man on inet_ntoa
  *
  * Revision 6.15  2000/10/20 17:13:30  lavr
  * Service descriptor parse bug fixed
@@ -171,49 +175,39 @@ const char* SERV_ReadType(const char* str, ESERV_Type* type)
  */
 
 
-/* Utility routine to read host:port from a string.
- * The string has not to contain host if 'default_host' provided non-zero,
- * in which case the port number (with preceding ':') can be absent from the
- * string (return value in the case coincides with argument 'str', meaning no
- * information has been read, default value for the port number must be used).
- * Both 'default_host' and 'host' are in network byte order; 'port' is in
- * host (native) byte order.
+/* Utility routine, which tries to read [host][:port] from a string.
+ * If successful, this routine returns advanced pointer past the
+ * host/port been read. Otherwise, it returns exactly the input pointer,
+ * and assigns values neither to host nor to port. On success, returned 'host'
+ * is in network byte order; 'port' is in host (native) byte order.
  */
-static const char* s_Read_HostPort(const char* str, unsigned int default_host,
+static const char* s_Read_HostPort(const char* str,
                                    unsigned int* host, unsigned short* port)
 {
     const char *s = strchr(str, ':');
-    unsigned short p;
-    unsigned int h;
-    int n;
+    char abuf[MAX_IP_ADDR_LEN];
+    unsigned short p = 0;
+    unsigned int h = 0;
+    size_t alen;
+    int n = 0;
 
-    if (!default_host) {
-        char abuf[MAX_IP_ADDR_LEN];
-        size_t alen;
-
-        if (!s || (alen = (size_t)(s - str)) > sizeof(abuf) - 1)
-            return 0;
+    if (!s && !(s = strchr(str, ' ')))
+        return str;
+    if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
+        return str;
+    if (alen) {
         strncpy(abuf, str, alen);
         abuf[alen] = '\0';
         if (strchr(abuf, ' ') || !(h = SOCK_gethostaddr(abuf)))
-            return 0;
-    } else if (s && s != str) {
-        return 0;
-    } else { /* default_host && (!s || s == str) */
-        h = default_host;
+            return str;
     }
-
-    if (!s) {
-        p = 0;
-        s = str;
-        n = 0;
-    } else if (sscanf(++s, "%hu%n", &p, &n) < 1) {
-        return 0;
+    if (*s == ':') {
+        if (sscanf(++s, "%hu%n", &p, &n) < 1)
+            return str;
     }
-
     *host = h;
     *port = p;
-    return str + (int)(s - str) + n;
+    return s + n;
 }
 
 
@@ -246,7 +240,7 @@ static const char *k_FlagTag[N_FLAG_TAGS] = {
  *  Generic methods based on the server info's virtual functions
  */
 
-char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
+char* SERV_WriteInfo(const SSERV_Info* info)
 {
     const SSERV_Attr* attr = s_GetAttrByType(info->type);
     size_t reserve = attr->tag_len+1 + MAX_IP_ADDR_LEN + 5+1/*port*/ +
@@ -261,7 +255,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
         memcpy(s, attr->tag, attr->tag_len);
         s += attr->tag_len;
         *s++ = ' ';
-        s += s_Write_HostPort(s, skip_host ? 0 : info->host, info->port);
+        s += s_Write_HostPort(s, info->host, info->port);
         *s++ = ' ';
         if ((n = strlen(str + reserve)) != 0) {
             memmove(s, str + reserve, n+1);
@@ -279,34 +273,30 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
 }
 
 
-SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
+SSERV_Info* SERV_ReadInfo(const char* info_str)
 {
     /* detect server type */
     ESERV_Type  type;
     const char* str = SERV_ReadType(info_str, &type);
     int/*bool*/ sful, rate, time;
-    int/*bool*/ default_port;
     unsigned short port;                /* host (native) byte order */
     unsigned int host;                  /* network byte order       */
     SSERV_Info *info;
-    const char *s;
     int n;
 
     if (!str || (*str && !isspace((unsigned char)(*str))))
         return 0;
     while (*str && isspace((unsigned char)(*str)))
         str++;
-    if (!(s = s_Read_HostPort(str, default_host, &host, &port)))
+    if (!(str = s_Read_HostPort(str, &host, &port)))
         return 0;
-    default_port = (s == str);
-    str = s;
     while (*str && isspace((unsigned char)(*str)))
         str++;
     /* read server-specific info according to the detected type */
     if (!(info = s_GetAttrByType(type)->vtable.Read(&str)))
         return 0;
     info->host = host;
-    if (!default_port)
+    if (port)
         info->port = port;
     time = rate = sful = 0; /* unassigned */
     /* continue reading server info: optional parts: ... */

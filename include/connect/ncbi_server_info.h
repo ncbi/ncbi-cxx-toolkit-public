@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/03/05 23:09:20  lavr
+ * SERV_WriteInfo & SERV_ReadInfo both take only one argument now
+ *
  * Revision 6.15  2001/03/02 20:06:26  lavr
  * Typos fixed
  *
@@ -201,16 +204,18 @@ SSERV_Info* SERV_CreateHttpInfo
 /* Dump server info to a string.
  * The server type goes first, and it is followed by a single space.
  * The returned string is '\0'-terminated, and must be deallocated by 'free()'.
- * If 'skip_host' is true, no host address is put to the string
- * (neither it will be if the server info has the host address as 0).
  */
-char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host);
+char* SERV_WriteInfo(const SSERV_Info* info);
 
 
 /* Server specification consists of the following:
- * TYPE [server-specific_parameters] [tags]
+ * TYPE [host][:port] [server-specific_parameters] [tags]
  *
  * TYPE := { STANDALONE | NCBID | HTTP | HTTP_GET | HTTP_POST }
+ *
+ * Host should be specified in a dotted notation as an IP address.
+ * Port number must be preceded by a colon.
+ * Both host and port get their default values if not specified.
  *
  * Server-specific parameters:
  *
@@ -248,6 +253,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host);
  *           for the entire family of servers for the same service.
  *           (If equal to 0 then defaulted by the LBSM Daemon to 1000.0
  *           if the server is running and to 0, if not.)
+ *           Note that negative values are reserved for LBSMD private use.
  *
  * Note that optional arguments can be omitted along with all preceding
  * optional arguments, that is the following 2 server specifications are
@@ -262,7 +268,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host);
  * NCBID Regular
  *
  * because here 'Regular' is treated as an argument, not as a tag.
- * To make the preceding specification equivalent to those two, one has
+ * To make the latter specification equivalent to the former two, one has
  * to use the following form:
  *
  * NCBID '' Regular
@@ -271,11 +277,10 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host);
 
 /* Read full server info (including type) from string "str"
  * (e.g. composed by SERV_WriteInfo). Result can be later freed by 'free()'.
- * If 'default_host' is not 0, the server info will be assigned this
- * value, and a host address should NOT be specified in the input textual
- * server representation. 'default_host' must be in network byte order.
+ * If host is not found in the server specification, info->host is
+ * set to 0; if port is not found, type-specific default value is used.
  */
-SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host);
+SSERV_Info* SERV_ReadInfo(const char* info_str);
 
 
 /* Return an actual size (in bytes) the server info occupies
