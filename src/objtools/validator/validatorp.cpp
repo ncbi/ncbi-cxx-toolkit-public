@@ -151,7 +151,16 @@ CValidError_imp::CValidError_imp
       m_IsNT(false),
       m_IsNW(false),
       m_IsXR(false),
-      m_IsGI(false)
+      m_IsGI(false),
+      m_PrgCallback(0),
+      m_NumAlign(0),
+      m_NumAnnot(0),
+      m_NumBioseq(0),
+      m_NumBioseq_set(0),
+      m_NumDesc(0),
+      m_NumDescr(0),
+      m_NumFeat(0),
+      m_NumGraph(0)
 {
     InitializeSourceQualTags();
 }
@@ -399,24 +408,31 @@ void CValidError_imp::PostErr
 }
 
 
-void CValidError_imp::Validate
+bool CValidError_imp::Validate
 (const CSeq_entry& se,
  const CCit_sub* cs,
  CScope* scope)
 {
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Initializing;
+        if ( m_PrgCallback(&m_PrgInfo) ) {
+            return false;
+        }
+    }
+
     // Check that CSeq_entry has data
     if (se.Which() == CSeq_entry::e_not_set) {
         ERR_POST(Warning << "Seq_entry not set");
-        return;
+        return false;
     }
 
     // Get first CBioseq object pointer for PostErr below.
     CTypeConstIterator<CBioseq> seq(ConstBegin(se));
     if (!seq) {
         ERR_POST("No Bioseq anywhere on this Seq-entry");
-        return;
+        return false;
     }
-    
+
     Setup(se, scope);
  
     // If m_NonASCII is true, then this flag was set by the caller
@@ -434,102 +450,222 @@ void CValidError_imp::Validate
 
     // Iterate thru components of record and validate each
 
+    // Features:
+
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Feat;
+        m_PrgInfo.m_Current = m_NumFeat;
+        m_PrgInfo.m_CurrentDone = 0;
+        if ( m_PrgCallback(&m_PrgInfo) ) {
+            return false;
+        }
+    }
     CValidError_feat feat_validator(*this);
-    for (CTypeConstIterator <CSeq_feat> fi (se); fi; ++fi) {
+    for (CTypeConstIterator<CSeq_feat> fi(se); fi; ++fi) {
         try {
             feat_validator.ValidateSeqFeat(*fi);
+            if ( m_PrgCallback ) {
+                m_PrgInfo.m_CurrentDone++;
+                m_PrgInfo.m_TotalDone++;
+                if ( m_PrgCallback(&m_PrgInfo) ) {
+                    return false;
+                }
+            }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
-                string("Exeption while validating feature. EXCEPTION: ") + 
+        PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            string("Exeption while validating feature. EXCEPTION: ") +
                 e.what(), *fi);
-            return;
+            return true;
         }
     }
 
+    // Descriptors:
+
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Desc;
+        m_PrgInfo.m_Current = m_NumDesc;
+        m_PrgInfo.m_CurrentDone = 0;
+        m_PrgCallback(&m_PrgInfo);
+    }
     CValidError_desc desc_validator(*this);
-    for (CTypeConstIterator <CSeqdesc> di (se); di; ++di) {
+    for (CTypeConstIterator<CSeqdesc> di(se); di; ++di) {
         try {
             desc_validator.ValidateSeqDesc(*di);
+            if ( m_PrgCallback ) {
+                m_PrgInfo.m_CurrentDone++;
+                m_PrgInfo.m_TotalDone++;
+                if ( m_PrgCallback(&m_PrgInfo) ) {
+                    return false;
+                }
+            }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
-                string("Exeption while validating decriptor. EXCEPTION: ") + 
+        PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            string("Exeption while validating descriptor. EXCEPTION: ") +
                 e.what(), *di);
-            return;
+            return true;
         }
     }
     
+    // Bioseqs:
+
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Bioseq;
+        m_PrgInfo.m_Current = m_NumBioseq;
+        m_PrgInfo.m_CurrentDone = 0;
+        m_PrgCallback(&m_PrgInfo);
+    }
     CValidError_bioseq bioseq_validator(*this);
-    for (CTypeConstIterator <CBioseq> bi (se); bi; ++bi) {
+    for (CTypeConstIterator<CBioseq> bi(se); bi; ++bi) {
         try {
             bioseq_validator.ValidateSeqIds(*bi);
             bioseq_validator.ValidateInst(*bi);
             bioseq_validator.ValidateBioseqContext(*bi);
             bioseq_validator.ValidateHistory(*bi);
+            if ( m_PrgCallback ) {
+                m_PrgInfo.m_CurrentDone++;
+                m_PrgInfo.m_TotalDone++;
+                if ( m_PrgCallback(&m_PrgInfo) ) {
+                    return false;
+                }
+            }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
-                string("Exeption while validating bioseq. EXCEPTION: ") + 
+        PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            string("Exeption while validating bioseq. EXCEPTION: ") +
                 e.what(), *bi);
-            return;
+            return true;
         }
     }
 
+    // Bioseq sets:
+
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Bioseq_set;
+        m_PrgInfo.m_Current = m_NumBioseq_set;
+        m_PrgInfo.m_CurrentDone = 0;
+        m_PrgCallback(&m_PrgInfo);
+    }
     CValidError_bioseqset bioseqset_validator(*this);
-    for (CTypeConstIterator <CBioseq_set> si (se); si; ++si) {
+    for (CTypeConstIterator<CBioseq_set> si(se); si; ++si) {
         try {
             bioseqset_validator.ValidateBioseqSet(*si);
+            if ( m_PrgCallback ) {
+                m_PrgInfo.m_CurrentDone++;
+                m_PrgInfo.m_TotalDone++;
+                if ( m_PrgCallback(&m_PrgInfo) ) {
+                    return false;
+                }
+            }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
-                string("Exeption while validating bioseq set. EXCEPTION: ") + 
+        PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            string("Exeption while validating bioseq set. EXCEPTION: ") +
                 e.what(), *si);
-            return;
+            return true;
         }
     }
 
+    // Alignments:
+
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Align;
+        m_PrgInfo.m_Current = m_NumAlign;
+        m_PrgInfo.m_CurrentDone = 0;
+        m_PrgCallback(&m_PrgInfo);
+    }
     CValidError_align align_validator(*this);
-    for (CTypeConstIterator <CSeq_align> ai (se); ai; ++ai) {
+    for (CTypeConstIterator<CSeq_align> ai(se); ai; ++ai) {
         try {
             align_validator.ValidateSeqAlign(*ai);
+            if ( m_PrgCallback ) {
+                m_PrgInfo.m_CurrentDone++;
+                m_PrgInfo.m_TotalDone++;
+                if ( m_PrgCallback(&m_PrgInfo) ) {
+                    return false;
+                }
+            }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
-                string("Exeption while validating alignment. EXCEPTION: ") + 
+        PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            string("Exeption while validating alignment. EXCEPTION: ") +
                 e.what(), *ai);
-            return;
-        }
-    }
-    
-    CValidError_graph graph_validator(*this);
-    for (CTypeConstIterator <CSeq_graph> gi (se); gi; ++gi) {
-        try {
-            graph_validator.ValidateSeqGraph(*gi);
-        } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
-                string("Exeption while validating graph. EXCEPTION: ") + 
-                e.what(), *gi);
-            return;
+            return true;
         }
     }
 
-    CValidError_annot annot_validator(*this);
-    for (CTypeConstIterator <CSeq_annot> ni (se); ni; ++ni) {
+    // Graphs:
+
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Graph;
+        m_PrgInfo.m_Current = m_NumGraph;
+        m_PrgInfo.m_CurrentDone = 0;
+        m_PrgCallback(&m_PrgInfo);
+    }
+    CValidError_graph graph_validator(*this);
+    for (CTypeConstIterator<CSeq_graph> gi(se); gi; ++gi) {
         try {
-            annot_validator.ValidateSeqAnnot(*ni);
+            graph_validator.ValidateSeqGraph(*gi);
+            if ( m_PrgCallback ) {
+                m_PrgInfo.m_CurrentDone++;
+                m_PrgInfo.m_TotalDone++;
+                if ( m_PrgCallback(&m_PrgInfo) ) {
+                    return false;
+                }
+            }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
-                string("Exeption while validating annotation. EXCEPTION: ") + 
-                e.what(), *ni);
-            return;
+        PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            string("Exeption while validating graph. EXCEPTION: ") +
+                e.what(), *gi);
+            return true;
         }
     }
-    
+    // Annotation:
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Annot;
+        m_PrgInfo.m_Current = m_NumAnnot;
+        m_PrgInfo.m_CurrentDone = 0;
+        m_PrgCallback(&m_PrgInfo);
+    }
+    CValidError_annot annot_validator(*this);
+    for (CTypeConstIterator<CSeq_annot> ni(se); ni; ++ni) {
+        try {
+            annot_validator.ValidateSeqAnnot(*ni);
+            if ( m_PrgCallback ) {
+                m_PrgInfo.m_CurrentDone++;
+                m_PrgInfo.m_TotalDone++;
+                if ( m_PrgCallback(&m_PrgInfo) ) {
+                    return false;
+                }
+            }
+        } catch ( const exception& e ) {
+        PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            string("Exeption while validating annotation. EXCEPTION: ") +
+                e.what(), *ni);
+            return true;
+        }
+    }
+
+    // Descriptor lists:
+
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Descr;
+        m_PrgInfo.m_Current = m_NumDescr;
+        m_PrgInfo.m_CurrentDone = 0;
+        m_PrgCallback(&m_PrgInfo);
+    }
     CValidError_descr descr_validator(*this);
-    for (CTypeConstIterator <CSeq_descr> ei (se); ei; ++ei) {
+    for (CTypeConstIterator<CSeq_descr> ei(se); ei; ++ei) {
         try {
             descr_validator.ValidateSeqDescr(*ei);
+            if ( m_PrgCallback ) {
+                m_PrgInfo.m_CurrentDone++;
+                m_PrgInfo.m_TotalDone++;
+                if ( m_PrgCallback(&m_PrgInfo) ) {
+                    return false;
+                }
+            }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception, 
-                string("Exeption while validating descriptor list. EXCEPTION: ")
-                + e.what(), *ei);
-            return;
+        PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            string("Exeption while validating annotation. EXCEPTION: ") +
+                e.what(), *ei);
+            return true;
         }
     }
 
@@ -537,6 +673,7 @@ void CValidError_imp::Validate
     ReportMissingBiosource(se);
     ReportProtWithoutFullRef();
     ReportBioseqsWithNoMolinfo();
+    return true;
 }
 
 
@@ -581,6 +718,15 @@ void CValidError_imp::Validate(const CSeq_annot& sa, CScope* scope)
     for (CTypeConstIterator <CSeq_graph> gi (sa); gi; ++gi) {
         graph_validator.ValidateSeqGraph(*gi);
     }
+}
+
+
+void CValidError_imp::SetProgressCallback
+(CValidator::TProgressCallback callback,
+ void* user_data)
+{
+    m_PrgCallback = callback;
+    m_PrgInfo.m_UserData = user_data;
 }
 
 
@@ -1149,7 +1295,6 @@ void CValidError_imp::ValidateSeqLoc
             seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular;
     }
     
-    
     bool ordered = true, adjacent = false, chk = true,
         unmarked_strand = false, mixed_strand = false;
     const CSeq_id* id_cur = 0, *id_prv = 0;
@@ -1263,14 +1408,49 @@ void CValidError_imp::ValidateSeqLoc
         
     }
 
-    // Warn if different parts of a seq-loc refer to the smae bioseq using 
+    // Warn if different parts of a seq-loc refer to the same bioseq using 
     // differnt id types (i.e. gi and accession)
     ValidateSeqLocIds(loc, obj);
     
+    bool exception = false;
+    const CSeq_feat* sfp = dynamic_cast<const CSeq_feat*>(&obj);
+    if (sfp != 0) {
+        
+        // Publication intervals ordering does not matter
+        
+        if ( sfp->GetData().GetSubtype() == CSeqFeatData::eSubtype_pub ) {
+            ordered = true;
+            adjacent = false;
+        }
+        
+        // ignore ordering of heterogen bonds
+        
+        if ( sfp->GetData().GetSubtype() == CSeqFeatData::eSubtype_het ) {
+            ordered = true;
+            adjacent = false;
+        }
+        
+        // misc_recomb intervals SHOULD be in reverse order
+        if ( sfp->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_recomb ) {
+            ordered = true;
+        }
+        
+        // primer_bind intervals MAY be in on opposite strands
+        
+        if ( sfp->GetData().GetSubtype() == CSeqFeatData::eSubtype_primer_bind ) {
+            mixed_strand = false;
+            unmarked_strand = false;
+            ordered = true;
+        }
+        
+        exception = sfp->IsSetExcept() ?  sfp->GetExcept() : false;
+    }
+
     string loc_lbl;
     if (adjacent) {
         loc.GetLabel(&loc_lbl);
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_AbuttingIntervals,
+        EDiagSev sev = exception ? eDiag_Warning : eDiag_Error;
+        PostErr(sev, eErr_SEQ_FEAT_AbuttingIntervals,
             prefix + ": Adjacent intervals in SeqLoc [" +
             loc_lbl + "]", seq);
     }
@@ -1655,7 +1835,7 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
     m_NoPubs = !pub;
     CTypeConstIterator<CBioSource> src(ConstBegin(se));
     m_NoBioSource = !src;
-
+    
     // Look for genomic product set
     for (CTypeConstIterator <CBioseq_set> si (se); si; ++si) {
         if (si->IsSetClass ()) {
@@ -1768,7 +1948,46 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
             }
         }
     }
+
+    if ( m_PrgCallback ) {
+        m_NumAlign = 0;
+        for (CTypeConstIterator<CSeq_align> i(se); i; ++i) {
+            m_NumAlign++;
+        }
+        m_NumAnnot = 0;
+        for (CTypeConstIterator<CSeq_annot> i(se); i; ++i) {
+            m_NumAnnot++;
+        }
+        m_NumBioseq = 0;
+        for (CTypeConstIterator<CBioseq> i(se); i; ++i) {
+            m_NumBioseq++;
+        }
+        m_NumBioseq_set = 0;
+        for (CTypeConstIterator<CBioseq_set> i(se); i; ++i) {
+            m_NumBioseq_set++;
+        }
+        m_NumDesc = 0;
+        for (CTypeConstIterator<CSeqdesc> i(se); i; ++i) {
+            m_NumDesc++;
+        }
+        m_NumDescr = 0;
+        for (CTypeConstIterator<CSeq_descr> i(se); i; ++i) {
+            m_NumDescr++;
+        }
+        m_NumFeat = 0;
+        for (CTypeConstIterator<CSeq_feat> i(se); i; ++i) {
+            m_NumFeat++;
+        }
+        m_NumGraph = 0;
+        for (CTypeConstIterator<CSeq_graph> i(se); i; ++i) {
+            m_NumGraph++;
+        }
+        m_PrgInfo.m_Total = m_NumAlign + m_NumAnnot + m_NumBioseq + 
+            m_NumBioseq_set + m_NumDesc + m_NumDescr + m_NumFeat + 
+            m_NumGraph;
+    } 
 }
+
 
 
 void CValidError_imp::SetScope(const CSeq_entry& se)
@@ -2070,6 +2289,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/04/15 14:53:57  shomrat
+* Implemented a progress callback mechanism
+*
 * Revision 1.29  2003/04/07 14:56:33  shomrat
 * Added Seq-loc ids validation
 *

@@ -46,7 +46,9 @@ BEGIN_SCOPE(validator)
 
 
 CValidator::CValidator(CObjectManager& objmgr) :
-    m_ObjMgr(&objmgr)
+    m_ObjMgr(&objmgr),
+    m_PrgCallback(0),
+    m_UserData(0)
 {
 }
 
@@ -63,7 +65,10 @@ auto_ptr<CValidError> CValidator::Validate
 {
     auto_ptr<CValidError> errors(new CValidError());
     CValidError_imp imp(*m_ObjMgr, errors.get(), options);
-    imp.Validate(se, 0, scope);
+    imp.SetProgressCallback(m_PrgCallback, m_UserData);
+    if ( !imp.Validate(se, 0, scope) ) {
+        errors.reset();
+    }
     return errors;
 }
 
@@ -89,6 +94,13 @@ auto_ptr<CValidError> CValidator::Validate
     CValidError_imp imp(*m_ObjMgr, errors.get(), options);
     imp.Validate(sa, scope);
     return errors;
+}
+
+
+void CValidator::SetProgressCallback(TProgressCallback callback, void* user_data)
+{
+    m_PrgCallback = callback;
+    m_UserData = user_data;
 }
 
 
@@ -1099,6 +1111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/04/15 14:55:37  shomrat
+* Implemented a progress callback mechanism
+*
 * Revision 1.19  2003/04/07 14:55:17  shomrat
 * Added SEQ_FEAT_DifferntIdTypesInSeqLoc
 *
