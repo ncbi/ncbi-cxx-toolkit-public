@@ -391,11 +391,9 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
     if (!(hdr = (char*) info->http_user_header) || !(hdrlen = strlen(hdr))) {
         if (op == eUserHeaderOp_Delete)
             return 1/*success*/;
-        if (!hdr) {
-            if (!(hdr = strdup("")))
-                return 0/*failure*/;
-            hdrlen = 0;
-        }
+        if (!hdr && !(hdr = strdup("")))
+            return 0/*failure*/;
+        hdrlen = 0;
     }
 
     if (op != eUserHeaderOp_Delete) {
@@ -1459,9 +1457,12 @@ extern size_t HostPortToString(unsigned int   host,
 
     if (!buf || !buflen)
         return 0;
-    if (!host || SOCK_ntoa(host, abuf, sizeof(abuf)) != 0)
+    if (!host)
         *abuf = 0;
-    sprintf(abuf + strlen(abuf), ":%hu", port);
+    else if (SOCK_ntoa(host, abuf, sizeof(abuf)) != 0)
+        return 0;
+    if (port || !host)
+        sprintf(abuf + strlen(abuf), ":%hu", port);
     n = strlen(abuf);
     assert(n < sizeof(abuf));
     if (n >= buflen)
@@ -1475,6 +1476,10 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.53  2003/03/06 21:55:31  lavr
+ * s_ModifyUserHeader(): Heed uninitted usage warning
+ * HostPortToString():   Do not append :0 (for zero port) if host is not empty
+ *
  * Revision 6.52  2003/02/28 14:47:41  lavr
  * Bugfix: proper bool -> eIO_Status conversion in s_BUF_IO()
  *
