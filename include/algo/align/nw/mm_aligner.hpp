@@ -109,6 +109,8 @@ protected:
                            bool direction,
                            list<ETranscriptSymbol>& subpath) const;
 
+    virtual bool x_CheckMemoryLimit();
+
     friend class CThreadRunOnTop;
     friend class CThreadDoSM;
 
@@ -133,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/03/18 15:11:22  kapustin
+ * Declare virtual memory limit checking function
+ *
  * Revision 1.5  2003/02/21 16:41:11  dicuccio
  * Added Win32 export specifier
  *
