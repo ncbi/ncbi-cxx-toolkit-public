@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2001/07/18 17:41:25  lavr
+ * BUGFIX: In code for selecting services by preferred host
+ *
  * Revision 6.25  2001/07/03 20:49:44  lavr
  * RAND_MAX included in the interval search
  *
@@ -399,12 +402,13 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env)
         info = data->s_node[i].info;
         status = info->rate;
         assert(status != 0.0);
+
         if (info->host == iter->preferred_host) {
             if (info->coef <= 0.0) {
-                status *=SERV_DISPD_LOCAL_SVC_BONUS;
+                status *= SERV_DISPD_LOCAL_SVC_BONUS;
                 if (info->coef < 0.0 && access < status) {
-                    access = status;
-                    point  = total; /* Latch this local server */
+                    access =  status;
+                    point  =  total + status; /* Latch this local server */
                     p      = -info->coef;
                 }
             } else
