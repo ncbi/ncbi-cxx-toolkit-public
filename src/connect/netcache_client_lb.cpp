@@ -41,31 +41,61 @@
 
 BEGIN_NCBI_SCOPE
 
+/// @internal
+static
+bool s_ConnectClient(CNetCacheClient* nc_client, 
+                     unsigned int     host,
+                     unsigned short   port,
+                     STimeout&        to)
+{
+    auto_ptr<CSocket> sock(new CSocket(host, port, &to));
+    EIO_Status st = sock->GetStatus(eIO_Open);
+    if (st != eIO_Success) {
+        return false;
+    }
+
+    nc_client->SetSocket(sock.release(), eTakeOwnership);
+    return true;
+}
+
+/// @internal
+static
+bool s_ConnectClient(CNetCacheClient* nc_client, 
+                     const string&    host,
+                     unsigned short   port,
+                     STimeout&        to)
+{
+    auto_ptr<CSocket> sock(new CSocket(host, port, &to));
+    EIO_Status st = sock->GetStatus(eIO_Open);
+    if (st != eIO_Success) {
+        return false;
+    }
+
+    nc_client->SetSocket(sock.release(), eTakeOwnership);
+    return true;
+}
+
+
 void NetCache_ConfigureWithLB(CNetCacheClient* nc_client, 
                               const string&    service_name)
 {
     SERV_ITER srv_it = SERV_OpenSimple(service_name.c_str());
 
     if (srv_it == 0) {
-        goto err;
+        goto static_connect;
     }
+    STimeout& to = nc_client->SetCommunicationTimeout();
 
     {{
     const SSERV_Info* sinfo;
-    STimeout& to = nc_client->SetCommunicationTimeout();
 
     while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0) {
 
         try {
-            auto_ptr<CSocket> sock(
-                new CSocket(sinfo->host, sinfo->port, &to));
-            EIO_Status st = sock->GetStatus(eIO_Open);
-            if (st != eIO_Success) {
+
+            if ( !s_ConnectClient(nc_client, sinfo->host, sinfo->port, to)){
                 continue;
             }
-
-            nc_client->SetSocket(sock.release(), 
-                                 eTakeOwnership);
             SERV_Close(srv_it);
             return;
             
@@ -77,7 +107,18 @@ void NetCache_ConfigureWithLB(CNetCacheClient* nc_client,
 
     SERV_Close(srv_it);
     }}
-err:
+
+static_connect:
+    // LB failed to provide any alive services
+    // lets try to call "emergency numbers"
+
+    if (s_ConnectClient(nc_client, "netcache.ncbi.nlm.nih.gov", 9009, to)) {
+        return;
+    }
+    if (s_ConnectClient(nc_client, "service1", 9009, to)) {
+        return;
+    }
+
     // cannot connect
     NCBI_THROW(CNetServiceException, eCommunicationError, 
                "Cannot connect to service using load balancer.");
@@ -318,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/07 15:16:26  kuznets
+ * Added service1:9009 as an emergency instance when LB is down
+ *
  * Revision 1.6  2005/02/07 13:01:48  kuznets
  * Part of functionality moved to netservice_client.hpp(cpp)
  *
