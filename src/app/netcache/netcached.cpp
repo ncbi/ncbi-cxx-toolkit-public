@@ -213,6 +213,10 @@ private:
     bool x_CheckBlobId(CSocket&       sock,
                        CNetCache_Key* blob_id, 
                        const string&  blob_key);
+
+    void x_WriteBuf(CSocket& sock,
+                    char*    buf,
+                    size_t   bytes);
 private:
     /// Host name where server runs
     string          m_Host;
@@ -385,6 +389,32 @@ void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
     m_Cache->Remove(req_id);
 }
 
+void CNetCacheServer::x_WriteBuf(CSocket& sock,
+                                 char*    buf,
+                                 size_t   bytes)
+{
+    do {
+        size_t n_written;
+        EIO_Status io_st;
+        io_st = sock.Write(buf, bytes, &n_written);
+        switch (io_st) {
+        case eIO_Success:
+            break;
+        case eIO_Timeout:
+            NCBI_THROW(CNetCacheException, 
+                       eTimeout, "Communication timeout error");
+            break;
+        default:
+            NCBI_THROW(CNetCacheException, 
+              eCommunicationError, "Communication error (cannot send data)");
+            break;
+        } // switch
+        bytes -= n_written;
+        buf += n_written;
+    } while (bytes > 0);
+}
+
+
 void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
 {
     const string& req_id = req.req_id;
@@ -397,23 +427,60 @@ void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
     CNetCache_Key blob_id;
     if (!x_CheckBlobId(sock, &blob_id, req_id))
         return;
+
     CIdBusyGuard guard(&m_UsedIds, blob_id.id, m_InactivityTimeout);
 
-    size_t blob_size = m_Cache->GetSize(req_id, 0, kEmptyStr);
-
-    auto_ptr<IReader> rdr(m_Cache->GetReadStream(req_id, 0, kEmptyStr));
-    if (!rdr.get()) {
-blob_not_found:
-        WriteMsg(sock, "ERR:", "BLOB not found.");
-        return;
-    }
-    
     ThreadData* tdata = s_tls->GetValue();
     _ASSERT(tdata);
     char* buf = tdata->buffer.get();
 
+    ICache::BlobAccessDescr ba_descr;
+    buf += 100;
+    ba_descr.buf = buf;
+    ba_descr.buf_size = kNetCacheBufSize - 100;
+
+    m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
+    if (ba_descr.blob_size == 0) { // not found
+blob_not_found:
+        WriteMsg(sock, "ERR:", "BLOB not found.");
+        return;
+    }
+
+    if (ba_descr.reader == 0) {  // all in buffer
+        string msg("OK:BLOB found. SIZE=");
+        string sz;
+        NStr::UIntToString(sz, ba_descr.blob_size);
+        msg += sz;
+
+        const char* msg_begin = msg.c_str();
+        const char* msg_end = msg_begin + msg.length();
+
+        for (; msg_end >= msg_begin; --msg_end) {
+            --buf;
+            *buf = *msg_end;
+            ++ba_descr.blob_size;
+        }
+
+        // translate BLOB fragment to the network
+        x_WriteBuf(sock, buf, ba_descr.blob_size);
+
+        return;
+
+    } // inline BLOB
+
+
+    // re-translate reader to the network
+
+    auto_ptr<IReader> rdr(ba_descr.reader);
+    if (!rdr.get()) {
+        goto blob_not_found;
+    }
+    size_t blob_size = ba_descr.blob_size;
 
     bool read_flag = false;
+    
+    buf = tdata->buffer.get();
+
     size_t bytes_read;
     do {
         ERW_Result io_res = rdr->Read(buf, kNetCacheBufSize, &bytes_read);
@@ -428,33 +495,16 @@ blob_not_found:
             }
 
             // translate BLOB fragment to the network
-            do {
-                size_t n_written;
-                EIO_Status io_st;
-                io_st = sock.Write(buf, bytes_read, &n_written);
-                switch (io_st) {
-                case eIO_Success:
-                    break;
-                case eIO_Timeout:
-                    NCBI_THROW(CNetCacheException, 
-                                    eTimeout, kEmptyStr);
-                    break;
-                default:
-                    NCBI_THROW(CNetCacheException, 
-                                    eCommunicationError, kEmptyStr);
-                    break;
-                } // switch
-                bytes_read -= n_written;
-            } while (bytes_read > 0);
+            x_WriteBuf(sock, buf, bytes_read);
 
         } else {
             break;
         }
     } while(1);
-
     if (!read_flag) {
         goto blob_not_found;
     }
+
 }
 
 void CNetCacheServer::ProcessPut(CSocket& sock, Request& req)
@@ -866,6 +916,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/12/22 14:36:13  kuznets
+ * Performance optimization (ProcessGet)
+ *
  * Revision 1.25  2004/11/08 16:02:53  kuznets
  * BLOB timeout passed to ICache
  *
