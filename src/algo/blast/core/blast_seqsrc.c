@@ -45,7 +45,7 @@ struct BlastSeqSrc {
     GetInt8FnPtr    GetTotLen;      /**< Get total length of all seqs in set */
     GetSeqBlkFnPtr  GetSequence;    /**< Retrieve individual sequence */
     GetSeqIdFnPtr   GetSeqIdStr;    /**< Retrieve sequence identifier */
-
+    GetInt4FnPtr    GetSeqLen;      /**< Retrieve given sequence length */
     void*           DataStructure;  /**< ADT holding the sequence data */
 
 };
@@ -113,3 +113,4 @@ DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*)

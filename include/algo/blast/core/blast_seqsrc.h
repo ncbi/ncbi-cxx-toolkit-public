@@ -128,6 +128,8 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
     (*GetGetSequence(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetSeqIdStr(bssp, arg) \
     (*GetGetSeqIdStr(bssp))(GetDataStructure(bssp), arg)
+#define BLASTSeqSrcGetSeqLen(bssp, arg) \
+    (*GetGetSeqLen(bssp))(GetDataStructure(bssp), arg)
 
 #define DECLARE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
 DECLARE_ACCESSOR(member_type, member, data_structure_type); \
@@ -148,6 +150,7 @@ DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
 
 #ifdef __cplusplus
 }
