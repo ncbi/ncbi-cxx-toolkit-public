@@ -108,9 +108,6 @@ void CDustApplication::Init(void)
     arg_desc->AddDefaultKey( "level", "level", "minimum level",
                              CArgDescriptions::eInteger, "20" );
 
-    arg_desc->AddDefaultKey( "minwin", "minwin", "minimum window size reported",
-                             CArgDescriptions::eInteger, "4" );
-
     arg_desc->AddDefaultKey( "linker", "linker", "link windows apart by <linker> bp",
                              CArgDescriptions::eInteger, "1" );
 
@@ -169,7 +166,6 @@ int CDustApplication::Run(void)
     CArgs args = GetArgs();
     Int2 window = args["window"].AsInteger();
     Int2 level = args["level"].AsInteger();
-    Int2 minwin = args["minwin"].AsInteger();
     Int2 linker = args["linker"].AsInteger();
     Boolean PrintSegments = args["segments"].AsBoolean();
 
