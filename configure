@@ -5209,9 +5209,9 @@ echo "${ECHO_T}$ac_cv_prog_egrep" >&6
 
 echo "$as_me:$LINENO: checking how to run $EGREP quietly" >&5
 echo $ECHO_N "checking how to run $EGREP quietly... $ECHO_C" >&6
-if test -z `echo foo | $EGREP -q fo+ 2>>config.log || echo $?`; then
+if test -z "`echo foo | $EGREP -q fo+ 2>>config.log || echo $?`"; then
    EGREP_Q="$EGREP -q"
-elif test -z `echo foo | $EGREP -s fo+ 2>>config.log || echo $?`; then
+elif test -z "`echo foo | $EGREP -s fo+ 2>>config.log || echo $?`"; then
    EGREP_Q="$EGREP -s"
 else
    EGREP_Q=">/dev/null $EGREP"

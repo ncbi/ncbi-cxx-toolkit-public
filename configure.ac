@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.351 2005/03/02 16:26:18 ucko Exp $
+#  $Id: configure.ac,v 1.352 2005/03/03 19:35:14 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1392,9 +1392,9 @@ fi
 
 AC_PROG_EGREP
 AC_MSG_CHECKING([how to run $EGREP quietly])
-if test -z `echo foo | $EGREP -q fo+ 2>>config.log || echo $?`; then
+if test -z "`echo foo | $EGREP -q fo+ 2>>config.log || echo $?`"; then
    EGREP_Q="$EGREP -q"
-elif test -z `echo foo | $EGREP -s fo+ 2>>config.log || echo $?`; then
+elif test -z "`echo foo | $EGREP -s fo+ 2>>config.log || echo $?`"; then
    EGREP_Q="$EGREP -s"
 else
    EGREP_Q=">/dev/null $EGREP"
