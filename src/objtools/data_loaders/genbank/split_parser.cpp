@@ -96,41 +96,111 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
 }
 
 
-void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
-                            const CID2S_Seq_descr_Info& place)
-{
-    CID2S_Seq_descr_Info::TType_mask types = place.GetType_mask();
-    if ( place.IsSetBioseqs() ) {
-        ITERATE ( CID2_Bioseq_Ids::Tdata, it, place.GetBioseqs().Get() ) {
-            const CID2_Id_Range& range = **it;
-            for( int id = range.GetStart(), n = range.GetCount(); n--; ++id ) {
-                chunk.x_AddDescrPlace(types, CTSE_Chunk_Info::eBioseq, id);
+namespace {
+    template<class Func>
+    void ForEach(const CID2S_Bioseq_Ids& ids, Func func)
+    {
+        ITERATE ( CID2S_Bioseq_Ids::Tdata, it, ids.Get() ) {
+            const CID2S_Bioseq_Ids::C_E& e = **it;
+            switch ( e.Which() ) {
+            case CID2S_Bioseq_Ids::C_E::e_Gi:
+                func(CSeq_id_Handle::GetGiHandle(e.GetGi()));
+                break;
+            case CID2S_Bioseq_Ids::C_E::e_Seq_id:
+                func(CSeq_id_Handle::GetHandle(e.GetSeq_id()));
+                break;
+            case CID2S_Bioseq_Ids::C_E::e_Gi_range:
+            {
+                const CID2S_Gi_Range& r = e.GetGi_range();
+                for( int id = r.GetStart(), n = r.GetCount(); n--; ++id ) {
+                    func(CSeq_id_Handle::GetGiHandle(id));
+                }
+                break;
+            }
+            default:
+                NCBI_THROW(CLoaderException, eOtherError,
+                           "unknown bioseq id type");
             }
         }
     }
-    if ( place.IsSetBioseq_sets() ) {
-        ITERATE(CID2_Bioseq_set_Ids::Tdata, it, place.GetBioseq_sets().Get()) {
-            chunk.x_AddDescrPlace(types, CTSE_Chunk_Info::eBioseq_set, *it);
-        }            
+
+
+    template<class Func>
+    void ForEach(const CID2S_Bioseq_set_Ids& ids, Func func)
+    {
+        ITERATE ( CID2S_Bioseq_set_Ids::Tdata, it, ids.Get() ) {
+            func(*it);
+        }
     }
+
+    struct FAddDescInfo
+    {
+        FAddDescInfo(CTSE_Chunk_Info& chunk, unsigned type_mask)
+            : m_Chunk(chunk), m_TypeMask(type_mask)
+            {
+            }
+        void operator()(const CSeq_id_Handle& id) const
+            {
+                m_Chunk.x_AddDescInfo(m_TypeMask, id);
+            }
+        void operator()(int id) const
+            {
+                m_Chunk.x_AddDescInfo(m_TypeMask, id);
+            }
+        CTSE_Chunk_Info& m_Chunk;
+        unsigned m_TypeMask;
+    };
+    struct FAddAnnotPlace
+    {
+        FAddAnnotPlace(CTSE_Chunk_Info& chunk)
+            : m_Chunk(chunk)
+            {
+            }
+        void operator()(const CSeq_id_Handle& id) const
+            {
+                m_Chunk.x_AddAnnotPlace(id);
+            }
+        void operator()(int id) const
+            {
+                m_Chunk.x_AddAnnotPlace(id);
+            }
+        CTSE_Chunk_Info& m_Chunk;
+    };
+    struct FAddBioseqId
+    {
+        FAddBioseqId(CTSE_Chunk_Info& chunk)
+            : m_Chunk(chunk)
+            {
+            }
+        void operator()(const CSeq_id_Handle& id) const
+            {
+                m_Chunk.x_AddBioseqId(id);
+            }
+        CTSE_Chunk_Info& m_Chunk;
+    };
 }
 
+
+void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
+                            const CID2S_Seq_descr_Info& place)
+{
+    CID2S_Seq_descr_Info::TType_mask type_mask = place.GetType_mask();
+    if ( place.IsSetBioseqs() ) {
+        ForEach(place.GetBioseqs(), FAddDescInfo(chunk, type_mask));
+    }
+    if ( place.IsSetBioseq_sets() ) {
+        ForEach(place.GetBioseq_sets(), FAddDescInfo(chunk, type_mask));
+    }
+}
 
 void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
                             const CID2S_Seq_annot_place_Info& place)
 {
     if ( place.IsSetBioseqs() ) {
-        ITERATE ( CID2_Bioseq_Ids::Tdata, it, place.GetBioseqs().Get() ) {
-            const CID2_Id_Range& range = **it;
-            for( int id = range.GetStart(), n = range.GetCount(); n--; ++id ) {
-                chunk.x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq, id);
-            }
-        }
+        ForEach(place.GetBioseqs(), FAddAnnotPlace(chunk));
     }
     if ( place.IsSetBioseq_sets() ) {
-        ITERATE(CID2_Bioseq_set_Ids::Tdata, it, place.GetBioseq_sets().Get()) {
-            chunk.x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq_set, *it);
-        }            
+        ForEach(place.GetBioseq_sets(), FAddAnnotPlace(chunk));
     }
 }
 
@@ -139,9 +209,7 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
                             const CID2S_Bioseq_place_Info& place)
 {
     chunk.x_AddBioseqPlace(place.GetBioseq_set());
-    ITERATE ( CID2S_Bioseq_place_Info::TSeq_ids, it, place.GetSeq_ids() ) {
-        chunk.x_AddBioseqId(CSeq_id_Handle::GetHandle(**it));
-    }
+    ForEach(place.GetSeq_ids(), FAddBioseqId(chunk));
 }
 
 
@@ -215,26 +283,32 @@ void CSplitParser::x_AddGiInterval(TLocationSet& vec, int gi,
 
 
 void CSplitParser::x_ParseLocation(TLocationSet& vec,
-                                   const CID2_Seq_loc& loc)
+                                   const CID2S_Seq_loc& loc)
 {
     switch ( loc.Which() ) {
-    case CID2_Seq_loc::e_Gi_whole:
+    case CID2S_Seq_loc::e_Whole_gi:
     {
-        x_AddGiWhole(vec, loc.GetGi_whole());
+        x_AddGiWhole(vec, loc.GetWhole_gi());
         break;
     }
     
-    case CID2_Seq_loc::e_Gi_whole_range:
+    case CID2S_Seq_loc::e_Whole_seq_id:
     {
-        const CID2_Id_Range& wr = loc.GetGi_whole_range();
+        x_AddWhole(vec, CSeq_id_Handle::GetHandle(loc.GetWhole_seq_id()));
+        break;
+    }
+    
+    case CID2S_Seq_loc::e_Whole_gi_range:
+    {
+        const CID2S_Gi_Range& wr = loc.GetWhole_gi_range();
         for ( int gi = wr.GetStart(), end = gi+wr.GetCount(); gi < end; ++gi )
             x_AddGiWhole(vec, gi);
         break;
     }
 
-    case CID2_Seq_loc::e_Interval:
+    case CID2S_Seq_loc::e_Gi_interval:
     {
-        const CID2_Interval& interval = loc.GetInterval();
+        const CID2S_Gi_Interval& interval = loc.GetGi_interval();
         x_AddGiInterval(vec,
                         interval.GetGi(),
                         interval.GetStart(),
@@ -242,45 +316,50 @@ void CSplitParser::x_ParseLocation(TLocationSet& vec,
         break;
     }
 
-    case CID2_Seq_loc::e_Packed_ints:
+    case CID2S_Seq_loc::e_Seq_id_interval:
     {
-        const CID2_Packed_Seq_ints& ints = loc.GetPacked_ints();
-        ITERATE ( CID2_Packed_Seq_ints::TIntervals, it, ints.GetIntervals() ) {
-            const CID2_Seq_range& interval = **it;
-            x_AddGiInterval(vec,
-                            ints.GetGi(),
-                            interval.GetStart(),
-                            interval.GetLength());
+        const CID2S_Seq_id_Interval& interval = loc.GetSeq_id_interval();
+        x_AddInterval(vec,
+                      CSeq_id_Handle::GetHandle(interval.GetSeq_id()),
+                      interval.GetStart(),
+                      interval.GetLength());
+        break;
+    }
+
+    case CID2S_Seq_loc::e_Gi_ints:
+    {
+        const CID2S_Gi_Ints& ints = loc.GetGi_ints();
+        int gi = ints.GetGi();
+        ITERATE ( CID2S_Gi_Ints::TInts, it, ints.GetInts() ) {
+            const CID2S_Interval& interval = **it;
+            x_AddGiInterval(vec, gi,
+                            interval.GetStart(), interval.GetLength());
         }
         break;
     }
 
-    case CID2_Seq_loc::e_Loc_set:
+    case CID2S_Seq_loc::e_Seq_id_ints:
     {
-        const CID2_Seq_loc::TLoc_set& loc_set = loc.GetLoc_set();
-        ITERATE ( CID2_Seq_loc::TLoc_set, it, loc_set ) {
+        const CID2S_Seq_id_Ints& ints = loc.GetSeq_id_ints();
+        CSeq_id_Handle id = CSeq_id_Handle::GetHandle(ints.GetSeq_id());
+        ITERATE ( CID2S_Seq_id_Ints::TInts, it, ints.GetInts() ) {
+            const CID2S_Interval& interval = **it;
+            x_AddInterval(vec, id,
+                          interval.GetStart(), interval.GetLength());
+        }
+        break;
+    }
+
+    case CID2S_Seq_loc::e_Loc_set:
+    {
+        const CID2S_Seq_loc::TLoc_set& loc_set = loc.GetLoc_set();
+        ITERATE ( CID2S_Seq_loc::TLoc_set, it, loc_set ) {
             x_ParseLocation(vec, **it);
         }
         break;
     }
 
-    case CID2_Seq_loc::e_Seq_loc:
-    {
-        CHandleRangeMap hrm;
-        hrm.AddLocation(loc.GetSeq_loc());
-        ITERATE ( CHandleRangeMap, i, hrm ) {
-            ITERATE ( CHandleRange, j, i->second ) {
-                const CHandleRange::TRange& range = j->first;
-                x_AddInterval(vec,
-                              i->first,
-                              range.GetFrom(),
-                              range.GetLength());
-            }
-        }
-        break;
-    }
-
-    case CID2_Seq_loc::e_not_set:
+    case CID2S_Seq_loc::e_not_set:
         break;
     }
 }
@@ -293,26 +372,31 @@ void CSplitParser::Load(CTSE_Chunk_Info& chunk,
         const CID2S_Chunk_Data& data = **dit;
 
         CTSE_Chunk_Info::TPlace place;
-        if ( data.GetId().IsGi() ) {
-            place.first = CTSE_Chunk_Info::eBioseq;
-            place.second = data.GetId().GetGi();
-        }
-        else {
-            place.first = CTSE_Chunk_Info::eBioseq_set;
+        switch ( data.GetId().Which() ) {
+        case CID2S_Chunk_Data::TId::e_Gi:
+            place.first = CSeq_id_Handle::GetGiHandle(data.GetId().GetGi());
+            break;
+        case CID2S_Chunk_Data::TId::e_Seq_id:
+            place.first = CSeq_id_Handle::GetHandle(data.GetId().GetSeq_id());
+            break;
+        case CID2S_Chunk_Data::TId::e_Bioseq_set:
             place.second = data.GetId().GetBioseq_set();
+            break;
+        default:
+            NCBI_THROW(CLoaderException, eOtherError,
+                       "Unexpected place type");
         }
 
-        ITERATE ( CID2S_Chunk_Data::TDescrs, it, data.GetDescrs() ) {
-            chunk.x_LoadDescr(place, **it);
+        if ( data.IsSetDescr() ) {
+            chunk.x_LoadDescr(place, data.GetDescr());
         }
 
         ITERATE ( CID2S_Chunk_Data::TAnnots, it, data.GetAnnots() ) {
             chunk.x_LoadAnnot(place, Ref(new CSeq_annot_Info(**it)));
         }
 
-        ITERATE ( CID2S_Chunk_Data::TAssembly, it, data.GetAssembly() ) {
-            NCBI_THROW(CLoaderException, eOtherError,
-                       "split assembly is not supported");
+        if ( data.IsSetAssembly() ) {
+            chunk.x_LoadAssembly(place, data.GetAssembly());
         }
 
         ITERATE ( CID2S_Chunk_Data::TSeq_map, it, data.GetSeq_map() ) {
@@ -338,6 +422,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.13  2004/10/18 14:01:28  vasilche
+ * Updated split parser for new SeqSplit specs.
+ *
  * Revision 1.12  2004/10/07 14:08:10  vasilche
  * Use static GetConfigXxx() functions.
  * Try to deal with withdrawn and private blobs without exceptions.

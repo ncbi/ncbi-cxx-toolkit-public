@@ -46,7 +46,7 @@ class CID2S_Seq_annot_Info;
 class CID2S_Seq_annot_place_Info;
 class CID2S_Bioseq_place_Info;
 class CID2S_Seq_data_Info;
-class CID2_Seq_loc;
+class CID2S_Seq_loc;
 
 class CTSE_Info;
 class CTSE_Chunk_Info;
@@ -77,7 +77,7 @@ public:
     typedef pair<TLocationId, TLocationRange> TLocation;
     typedef vector<TLocation> TLocationSet;
 
-    static void x_ParseLocation(TLocationSet& vec, const CID2_Seq_loc& loc);
+    static void x_ParseLocation(TLocationSet& vec, const CID2S_Seq_loc& loc);
 
 protected:
     static void x_AddWhole(TLocationSet& vec, const TLocationId& id);
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.7  2004/10/18 14:01:28  vasilche
+* Updated split parser for new SeqSplit specs.
+*
 * Revision 1.6  2004/08/19 14:18:36  vasilche
 * Added splitting of whole Bioseqs.
 *
