@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/03/01 00:30:23  lavr
+ * Toolkit configuration moved to ncbi_sendmail_.c
+ *
  * Revision 6.3  2001/02/28 21:11:47  lavr
  * Bugfix: buffer overrun
  *
@@ -42,7 +45,6 @@
  * ==========================================================================
  */
 
-#include <ncbiconf.h>
 #include "ncbi_priv.h"
 #include <connect/ncbi_sendmail.h>
 #include <connect/ncbi_socket.h>
