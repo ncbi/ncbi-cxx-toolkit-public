@@ -79,7 +79,7 @@ clean:
 	-$(RMDIR) ii_files
 	-$(RMDIR) ti_files
 	-$(RM) .make.state
-	-$(RM) *@obj_ext@
+	-$(RM) $(XOBJ)
 	-$(RM) $(XAPP)
 	-$(RM) $(SOURCES:=.d)
 	-$(RM) core
