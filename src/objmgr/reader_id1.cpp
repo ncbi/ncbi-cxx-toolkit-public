@@ -297,6 +297,9 @@ int CId1Seqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
 
 CId1Reader::CId1Reader(unsigned noConn)
 {
+#if !defined(_REENTRANT)
+  noConn=1;
+#endif
   for(unsigned i = 0; i < noConn; ++i)
     m_Pool.push_back(NewID1Service());
 }
@@ -344,6 +347,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.21  2002/05/09 21:40:59  kimelman
+* MT tuning
+*
 * Revision 1.20  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *

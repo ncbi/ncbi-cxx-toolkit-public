@@ -49,13 +49,16 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 #if !defined(NDEBUG) && defined(DEBUG_SYNC)
-#if defined(_REENTRANT)
-#define GBLOG_POST(x) LOG_POST(CThread::GetSelf() << ":: " << x)
+#  if defined(_REENTRANT)
+#    define GBLOG_POST(x) LOG_POST(CThread::GetSelf() << ":: " << x)
+#  else
+#    define GBLOG_POST(x) LOG_POST("0:: " << x)
+#  endif 
 #else
-#define GBLOG_POST(x) LOG_POST("0:: " << x)
-#endif 
-#else
-#define GBLOG_POST(x)
+#  ifdef DEBUG_SYNC
+#    undef DEBUG_SYNC
+#  endif
+#  define GBLOG_POST(x)
 #endif
   
 /////////////////////////////////////////////////////////////////////////////////
@@ -194,9 +197,11 @@ private:
   public:
     MyMutex(void) : m_() {};
     ~MyMutex(void) {};
-    void Lock(const string& /*loc*/)
+    void Lock(const string& loc)
       {
-        //GBLOG_POST("MyLock  tried  at "  << loc);
+        if(loc.size())
+          //GBLOG_POST("MyLock  tried  at "  << loc)
+            ;
         m_.Lock();
         //GBLOG_POST("MyLock  locked");
       }
@@ -244,6 +249,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.20  2002/05/09 21:41:01  kimelman
+ * MT tuning
+ *
  * Revision 1.19  2002/05/06 03:30:35  vakatov
  * OM/OM1 renaming
  *

@@ -81,15 +81,39 @@ int CPubseqSeqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
   return 0;
 }
 
+
+#if !defined(HAVE_SYBASE_REENTRANT) && defined(_REENTRANT)
+// we have non MT-safe library used in MT application
+static CMutex s_readers_mutex;
+static int    s_pubseq_readers=0;
+#endif
+
 CPubseqReader::CPubseqReader(unsigned noConn,const string& server,const string& user,const string& pswd)
   : m_Server(server) , m_User(user), m_Password(pswd), m_Context(NULL)
 {
+#if !defined(HAVE_SYBASE_REENTRANT)
+  noConn=1;
+#endif
+#if defined(_REENTRANT) && !defined(HAVE_SYBASE_REENTRANT)
+  {{
+    CMutexGuard g(s_readers_mutex);
+    if(s_pubseq_readers>0)
+      throw runtime_error("Attempt to open multiple pubseq_readers without MT-safe DB library");
+    s_pubseq_readers++;
+  }}
+#endif
   for(unsigned i = 0; i < noConn; ++i)
     m_Pool.push_back(NewConn());
 }
 
 CPubseqReader::~CPubseqReader()
 {
+#if !defined(HAVE_SYBASE_REENTRANT) && defined(_REENTRANT)
+  {{
+    CMutexGuard g(s_readers_mutex);
+    s_pubseq_readers--;
+  }}
+#endif
   for(unsigned i = 0; i < m_Pool.size(); ++i)
     delete m_Pool[i];
 }
@@ -121,7 +145,16 @@ CDB_Connection *CPubseqReader::NewConn()
     if(! createContextFunc)
       {
         LOG_POST(errmsg);
+#if defined(HAVE_SYBASE_REENTRANT) && defined(_REENTRANT)
         throw runtime_error("No ctlib available");
+#else
+        createContextFunc = drvMgr.GetDriver("dblib",&errmsg);
+        if(! createContextFunc)
+          {
+            LOG_POST(errmsg);
+            throw runtime_error("Neither ctlib nor dblib are available");
+          }
+#endif
       }
 
     m_Context.reset((*createContextFunc)(0));
@@ -376,6 +409,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.12  2002/05/09 21:40:59  kimelman
+* MT tuning
+*
 * Revision 1.11  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *
