@@ -96,11 +96,6 @@ struct NCBI_BDB_EXPORT SIntCacheDB : public CBDB_BLobFile
         BindKey("key1",       &key1);
         BindKey("key2",       &key2);
         BindKey("time_stamp", &time_stamp);
-
-        // Here we formally exclude time stamp field from the key
-        // only key1 and key2 will work, time_stamp will just co-locate
-        // in the same buffer
-        SetFieldCompareLimit(2);
     }
 };
 
@@ -210,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/10/21 11:56:41  kuznets
+ * Fixed bug with non-updated Int cache timestamp.
+ *
  * Revision 1.7  2003/10/16 19:27:04  kuznets
  * Added Int cache (AKA id resolution cache)
  *
