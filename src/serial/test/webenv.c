@@ -2,11 +2,11 @@
 
 #define NLM_GENERATED_CODE_PROTO
 
-#include <webenv.h>
+#include "webenv.h"
 
 static Boolean loaded = FALSE;
 
-#include <webenvasn.h>
+#include "webenvasn.h"
 
 #ifndef NLM_EXTERN_LOADS
 #define NLM_EXTERN_LOADS {}

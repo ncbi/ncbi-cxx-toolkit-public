@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/10/04 19:39:45  vasilche
+* Fixed bug in CObjectOStreamBinary.
+* Start using of BSRead/BSWrite.
+* Added ASNCALL macro for prototypes of old ASN.1 functions.
+*
 * Revision 1.28  1999/10/04 16:22:15  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -149,46 +154,6 @@ T* Alloc(T*& ptr)
 {
 	return ptr = static_cast<T*>(Alloc(sizeof(T)));
 }
-
-class BytestorePtr {
-public:
-    BytestorePtr(const bytestore* bs)
-        : unit(bs->chain), pos(0)
-        {
-        }
-
-    bool End(void) const
-        {
-            return unit == 0;
-        }
-
-    void* Ptr(void) const
-        {
-            return static_cast<char*>(unit->str) + pos;
-        }
-
-    size_t Available(void) const
-        {
-            return unit->len - pos;
-        }
-
-    void Next(void)
-        {
-            _ASSERT(Available() == 0);
-            unit = unit->next;
-            pos = 0;
-        }
-
-    void operator+=(size_t skip)
-        {
-            _ASSERT(skip < Available());
-            pos += skip;
-        }
-
-private:
-    bsunit* unit;
-    size_t pos;
-};
 
 CTypeInfoMap<CSequenceOfTypeInfo> CSequenceOfTypeInfo::sm_Map;
 
@@ -455,28 +420,23 @@ bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
     if ( bs1 == 0 || bs2 == 0 )
 		return bs1 == bs2;
 
-    if ( bs1->totlen != bs2->totlen )
+	Int4 len = BSLen(bs1);
+    if ( len != BSLen(bs2) )
         return false;
     
-    BytestorePtr p1(bs1), p2(bs2);
-    while ( !p1.End() ) {
-        size_t c1 = p1.Available();
-        if ( c1 == 0 ) {
-            p1.Next();
-            continue;
-        }
-        size_t c2 = p2.Available();
-        if ( c2 == 0 ) {
-            p2.Next();
-            continue;
-        }
-        size_t count = min(c1, c2);
-        if ( memcmp(p1.Ptr(), p2.Ptr(), count) != 0 )
-            return false;
-        p1 += count;
-        p2 += count;
-    }
-    _ASSERT(p2.End());
+	BSSeek(bs1, 0, SEEK_SET);
+	BSSeek(bs2, 0, SEEK_SET);
+	char buff1[1024], buff2[1024];
+	while ( len > 0 ) {
+		Int4 chunk = sizeof(buff1);
+		if ( chunk > len )
+			chunk = len;
+		BSRead(bs1, buff1, chunk);
+		BSRead(bs2, buff2, chunk);
+		if ( memcmp(buff1, buff2, chunk) != 0 )
+			return false;
+		len -= chunk;
+	}
 	return true;
 }
 
@@ -502,12 +462,20 @@ void COctetStringTypeInfo::CollectExternalObjects(COObjectList& ,
 void COctetStringTypeInfo::WriteData(CObjectOStream& out,
                                      TConstObjectPtr object) const
 {
-	const bytestore* bs = Get(object);
+	bytestore* bs = const_cast<bytestore*>(Get(object));
 	if ( bs == 0 )
 		THROW1_TRACE(runtime_error, "null bytestore pointer");
-	CObjectOStream::ByteBlock block(out, bs->totlen);
-	for ( const bsunit* unit = bs->chain; unit; unit = unit->next ) {
-		block.Write(unit->str, unit->len);
+	Int4 len = BSLen(bs);
+	CObjectOStream::ByteBlock block(out, len);
+	BSSeek(bs, 0, SEEK_SET);
+	char buff[1024];
+	while ( len > 0 ) {
+		Int4 chunk = sizeof(buff);
+		if ( chunk > len )
+			chunk = len;
+		BSRead(bs, buff, chunk);
+		block.Write(buff, chunk);
+		len -= chunk;
 	}
 }
 
@@ -515,26 +483,12 @@ void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
 	CObjectIStream::ByteBlock block(in);
 	BSFree(Get(object));
-    if ( block.KnownLength() ) {
-        size_t length = block.GetExpectedLength();
-        bytestore* bs = Get(object) = BSNew(length);
-        bsunit* unit = bs->chain;
-        _ASSERT(unit != 0 && size_t(unit->len_avail) >= length);
-        if ( block.Read(unit->str, length) != length )
-            THROW1_TRACE(runtime_error, "read fault");
-        unit->len = length;
-        bs->totlen = length;
-        bs->curchain = unit;
-    }
-    else {
-        // length is known -> copy via buffer
-        char buffer[1024];
-        size_t count = block.Read(buffer, sizeof(buffer));
-        bytestore* bs = Get(object) = BSNew(count);
+    char buffer[1024];
+    size_t count = block.Read(buffer, sizeof(buffer));
+    bytestore* bs = Get(object) = BSNew(count);
+    BSWrite(bs, buffer, count);
+    while ( (count = block.Read(buffer, sizeof(buffer))) != 0 ) {
         BSWrite(bs, buffer, count);
-        while ( (count = block.Read(buffer, sizeof(buffer))) != 0 ) {
-            BSWrite(bs, buffer, count);
-        }
     }
 }
 

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/10/04 19:39:45  vasilche
+* Fixed bug in CObjectOStreamBinary.
+* Start using of BSRead/BSWrite.
+* Added ASNCALL macro for prototypes of old ASN.1 functions.
+*
 * Revision 1.21  1999/09/24 18:19:19  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -336,12 +341,12 @@ void CObjectOStreamBinary::WriteCString(const char* str)
 
 void CObjectOStreamBinary::WriteIndex(TIndex index)
 {
-    WriteStdUnsigned(this, index);
+    WriteUnsigned(this, index);
 }
 
 void CObjectOStreamBinary::WriteSize(unsigned size)
 {
-    WriteStdUnsigned(this, size);
+    WriteUnsigned(this, size);
 }
 
 void CObjectOStreamBinary::WriteStringValue(const string& str)

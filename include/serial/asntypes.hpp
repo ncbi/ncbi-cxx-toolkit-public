@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/10/04 19:39:45  vasilche
+* Fixed bug in CObjectOStreamBinary.
+* Start using of BSRead/BSWrite.
+* Added ASNCALL macro for prototypes of old ASN.1 functions.
+*
 * Revision 1.18  1999/10/04 16:22:07  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -260,14 +265,20 @@ protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 };
 
+#ifdef HAVE_WINDOWS_H
+# define ASNCALL __stdcall
+#else
+# define ASNCALL
+#endif
+
 class COldAsnTypeInfo : public CTypeInfoTmpl<void*>
 {
     typedef CTypeInfoTmpl<void*> CParent;
 public:
-    typedef TObjectPtr (*TNewProc)(void);
-    typedef TObjectPtr (*TFreeProc)(TObjectPtr);
-    typedef TObjectPtr (*TReadProc)(asnio*, asntype*);
-    typedef unsigned char (*TWriteProc)(TObjectPtr, asnio*, asntype*);
+    typedef TObjectPtr (ASNCALL*TNewProc)(void);
+    typedef TObjectPtr (ASNCALL*TFreeProc)(TObjectPtr);
+    typedef TObjectPtr (ASNCALL*TReadProc)(asnio*, asntype*);
+    typedef unsigned char (ASNCALL*TWriteProc)(TObjectPtr, asnio*, asntype*);
 
     COldAsnTypeInfo(const string& name,
                     TNewProc newProc, TFreeProc freeProc,

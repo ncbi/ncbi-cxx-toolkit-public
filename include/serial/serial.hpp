@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  1999/10/04 19:39:45  vasilche
+* Fixed bug in CObjectOStreamBinary.
+* Start using of BSRead/BSWrite.
+* Added ASNCALL macro for prototypes of old ASN.1 functions.
+*
 * Revision 1.31  1999/10/04 16:22:10  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -385,9 +390,10 @@ CTypeRef GetChoiceTypeRef(TTypeInfo (*func)(void))
 template<typename T>
 inline
 CTypeRef GetOldAsnTypeRef(const string& name,
-                          T* (*newProc)(void), T* (*freeProc)(T*),
-                          T* (*readProc)(asnio*, asntype*),
-                          unsigned char (*writeProc)(T*, asnio*, asntype*))
+                          T* (ASNCALL*newProc)(void),
+						  T* (ASNCALL*freeProc)(T*),
+                          T* (ASNCALL*readProc)(asnio*, asntype*),
+                          unsigned char (ASNCALL*writeProc)(T*, asnio*, asntype*))
 {
     return new COldAsnTypeInfo(name,
         reinterpret_cast<COldAsnTypeInfo::TNewProc>(newProc),
@@ -620,9 +626,10 @@ CMemberInfo* ChoiceMemberInfo(const valnode* const* member,
 template<typename T>
 inline
 CMemberInfo* OldAsnMemberInfo(const T* const* member, const string& name,
-                              T* (*newProc)(void), T* (*freeProc)(T*),
-                              T* (*readProc)(asnio*, asntype*),
-                              unsigned char (*writeProc)(T*, asnio*, asntype*))
+                              T* (ASNCALL*newProc)(void),
+							  T* (ASNCALL*freeProc)(T*),
+                              T* (ASNCALL*readProc)(asnio*, asntype*),
+                              unsigned char (ASNCALL*writeProc)(T*, asnio*, asntype*))
 {
     return MemberInfo(member,
                       GetOldAsnTypeRef(name, newProc, freeProc,
@@ -739,8 +746,8 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
 
 #define OLD_ASN_MEMBER(Member, Name, Type) \
     OldAsnMemberInfo(MEMBER_PTR(Member), Name, \
-                     NAME2(Type, New), NAME2(Type, Free), \
-                     NAME2(Type, AsnRead), NAME2(Type, AsnWrite))
+                     &NAME2(Type, New), &NAME2(Type, Free), \
+                     &NAME2(Type, AsnRead), &NAME2(Type, AsnWrite))
 #define ADD_OLD_ASN_MEMBER2(Name, Member, TypeName, Type) \
 	info->AddMember(Name, OLD_ASN_MEMBER(Member, TypeName, Type))
 #define ADD_OLD_ASN_MEMBER(Member, Type) \
