@@ -60,7 +60,7 @@ public:
         fPromote_GenProdSet      = 0x1,
         fPromote_IncludeStop     = 0x2,
         fPromote_RemoveTrailingX = 0x4,
-        fCopyCdregionTomRNA      = 0x8,
+        fCopyCdregionTomRNA      = 0x8
     };
     typedef Uint4 TFlags;  // Binary OR of EFleshOutFlags
     static const Uint4 kDefaultFlags = (fPromote_IncludeStop | fCopyCdregionTomRNA);
@@ -176,6 +176,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/03/02 13:44:52  shomrat
+* Fixed warning
+*
 * Revision 1.1  2004/06/16 15:19:08  shomrat
 * Initial Revision
 *

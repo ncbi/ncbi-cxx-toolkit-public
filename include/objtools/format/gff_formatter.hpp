@@ -67,7 +67,7 @@ public:
     enum EGFFFlags {
         fGTFCompat = 0x1, ///< Represent CDSs (and exons) per GTF.
         fGTFOnly   = 0x3, ///< Omit all other features.
-        fShowSeq   = 0x4, ///< Show the actual sequence in a "##" comment.
+        fShowSeq   = 0x4  ///< Show the actual sequence in a "##" comment.
     };
     typedef int TGFFFlags; ///< Binary OR of EGFFFlags
 
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/03/02 13:45:20  shomrat
+* Fixed warning
+*
 * Revision 1.4  2004/06/21 18:52:13  ucko
 * Refactor to ease subclassing by the GFF 3 formatter.
 *
