@@ -1,0 +1,11 @@
+*.ncb
+*.suo
+*.log
+Debug*
+Release*
+test
+soap
+xcser.vcproj
+
+
+

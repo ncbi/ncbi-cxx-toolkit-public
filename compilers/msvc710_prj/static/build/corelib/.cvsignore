@@ -1,0 +1,9 @@
+*.ncb
+*.suo
+*.log
+Debug*
+Release*
+test
+test_mt.vcproj
+
+

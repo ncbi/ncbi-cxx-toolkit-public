@@ -1,0 +1,16 @@
+*.ncb
+*.suo
+*.log
+Debug*
+Release*
+compress
+creaders
+image
+msvc
+regexp
+sequtil
+tables
+test
+xregexp.vcproj
+
+

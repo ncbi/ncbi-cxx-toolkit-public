@@ -1,0 +1,15 @@
+*.ncb
+*.suo
+*.log
+Debug*
+Release*
+asn2asn
+asn2flat
+blast_client
+convert_seq
+gi2taxid
+id1_fetch
+nmer_repeats
+sample
+
+
