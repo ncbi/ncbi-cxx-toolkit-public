@@ -40,7 +40,6 @@
 
 BEGIN_NCBI_SCOPE
 
-using namespace ncbi;
 using namespace ncbi::objects;
 
 class CSeqDBOIDList : public CObject {

@@ -41,8 +41,6 @@
 
 BEGIN_NCBI_SCOPE
 
-using namespace ncbi;
-
 class CSeqDBMemPool {
 public:
     CSeqDBMemPool(void)

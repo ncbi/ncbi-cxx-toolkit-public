@@ -55,7 +55,6 @@
 
 BEGIN_NCBI_SCOPE
 
-using namespace ncbi;
 using namespace ncbi::objects;
 
 class CSeqDBVol : public CObject {
