@@ -45,6 +45,7 @@
 #define HAVE_FSTREAM_H   1
 #define HAVE_IOSTREAM    1
 #define HAVE_IOSTREAM_H  1
+#define HAVE_LIMITS      1
 #define HAVE_STRSTREA_H  1
 #define HAVE_STRSTREAM   1
 #define HAVE_WINDOWS_H   1

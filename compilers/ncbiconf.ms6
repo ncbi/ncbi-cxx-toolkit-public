@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.ms6,v 1.18 2003/05/05 20:45:29 ucko Exp $
+/* $Id: ncbiconf.ms6,v 1.19 2003/05/08 14:18:06 ucko Exp $
  * By Denis Vakatov, NCBI (vakatov@ncbi.nlm.nih.gov)
  *
  * Win32, MSVC++ 6.0
@@ -45,6 +45,7 @@
 #define HAVE_FSTREAM_H   1
 #define HAVE_IOSTREAM    1
 #define HAVE_IOSTREAM_H  1
+#define HAVE_LIMITS      1
 #define HAVE_STRSTREA_H  1
 #define HAVE_STRSTREAM   1
 #define HAVE_WINDOWS_H   1
