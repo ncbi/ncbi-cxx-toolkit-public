@@ -68,7 +68,7 @@
 #include <objmgr/impl/synonyms.hpp>
 
 // cache
-#include <objmgr/reader_id1_cache.hpp>
+#include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
 #include <bdb/bdb_blobcache.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -715,6 +715,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/01/05 18:14:03  vasilche
+* Fixed name of project and path to header.
+*
 * Revision 1.51  2003/12/30 20:00:41  vasilche
 * Added test for CGBDataLoader::GetSatSatKey().
 *
