@@ -273,7 +273,6 @@ extern void CONNECT_Init(CNcbiRegistry*    reg,
 extern void CONNECT_InitInternal(void)
 {
     s_ConnectInitMutex.Lock();
-    CORE_LOCK_READ;
     if (!g_CORE_Registry  &&  !g_CORE_Log  &&  !g_CORE_MT_Lock) {
         try {
             if (s_ConnectInit == eConnectInit_Intact) {
@@ -285,7 +284,6 @@ extern void CONNECT_InitInternal(void)
     } else {
         s_ConnectInit = eConnectInit_Explicit;
     }
-    CORE_UNLOCK;
     s_ConnectInitMutex.Unlock();
 }
 
@@ -296,6 +294,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2004/09/23 12:25:50  lavr
+ * CONNECT_InitInternal(): Do not use CORE_LOCK_READ/UNLOCK
+ *
  * Revision 6.23  2004/09/22 18:35:11  ucko
  * Fix typo in previous revision.
  *
