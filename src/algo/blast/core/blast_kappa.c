@@ -3141,6 +3141,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
     } /* end if any alignments were found */
 
     Kappa_MatchingSequenceRelease(&matchingSeq);
+    thisMatch = Blast_HSPListFree(thisMatch);
   }
   /* end for all matching sequences */
   SWheapToFlatList( &significantMatches, results,
