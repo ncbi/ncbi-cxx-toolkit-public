@@ -127,6 +127,10 @@
  *  @ingroup CORELIB
  */
 
+/** @defgroup Tree Tree Templates
+ *  @ingroup CORELIB
+ */
+
 
 /* ========================================================================= */
 
