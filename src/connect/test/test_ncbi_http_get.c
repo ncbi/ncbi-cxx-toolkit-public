@@ -67,6 +67,10 @@ int main(int argc, char* argv[])
     if (!(net_info = ConnNetInfo_Create(0)))
         CORE_LOG(eLOG_Fatal, "Cannot create network info structure");
     net_info->req_method = eReqMethod_Get;
+    if ((s = getenv("CONN_TIMEOUT"))  &&  strcmp(s, "0") == 0) {
+        memcpy(&net_info->tmo, &s_ZeroTmo, sizeof(s_ZeroTmo));
+        net_info->timeout = &net_info->tmo;
+    }
 
     CORE_LOGF(eLOG_Note,
               ("Parsing URL \"%s\" into network info structure", argv[1]));
@@ -87,21 +91,19 @@ int main(int argc, char* argv[])
     CORE_LOG(eLOG_Note, "Creating connection");
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot create connection");
-    CONN_SetTimeout(conn, eIO_Open, &s_ZeroTmo);
-    CONN_SetTimeout(conn, eIO_ReadWrite, &s_ZeroTmo);
+    CONN_SetTimeout(conn, eIO_Open,      net_info->timeout);
+    CONN_SetTimeout(conn, eIO_ReadWrite, net_info->timeout);
 
     t = time(0);
     for (;;) {
         char blk[512];
-        EIO_Status status = CONN_Wait(conn, eIO_Read, &s_ZeroTmo);
+        EIO_Status status = CONN_Wait(conn, eIO_Read, net_info->timeout);
 
         if (status != eIO_Success) {
             if (status == eIO_Closed)
                 break;
-            if ((unsigned long)(time(0) - t) > net_info->timeout->sec +
-                (net_info->timeout->usec + 500000)/1000000) {
+            if ((unsigned long)(time(0) - t) > 30)
                 CORE_LOG(eLOG_Fatal, "Timed out");
-            }
 #ifdef NCBI_OS_UNIX
             usleep(500);
 #endif
@@ -133,6 +135,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/09/30 20:57:15  lavr
+ * Allow to zet zero timeout via environment
+ *
  * Revision 6.10  2003/05/20 23:52:01  lavr
  * Explicit cast "time_t"->"unsigned" to avoid GCC warning
  *
