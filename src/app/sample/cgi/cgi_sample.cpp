@@ -66,6 +66,8 @@ void CSampleCgiApplication::Init()
     // Standard CGI framework initialization
     CCgiApplication::Init();
 
+    SetRequestFlags(CCgiRequest::fCaseInsensitiveArgs);
+
     // Allows CGI client to put the diagnostics to:
     //   HTML body (as comments) -- using CGI arg "&diag-destination=comments"
     RegisterDiagFactory("comments", new CCommentDiagFactory);
@@ -127,8 +129,9 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
     CCgiResponse&      response = ctx.GetResponse();
 
     // Try to retrieve the message ('message=...') from the URL args
+    // (case sensitivity was turned off)
     bool   is_message = false;
-    string message    = request.GetEntry("message", &is_message);
+    string message    = request.GetEntry("Message", &is_message);
     if ( is_message ) {
         message = "'" + message + "'";
     } else {
@@ -192,6 +195,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/12/08 12:50:36  kuznets
+ * Case sensitivity turned off
+ *
  * Revision 1.10  2004/12/03 14:38:40  kuznets
  * Use multiple args
  *
