@@ -679,6 +679,7 @@ START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -1929,6 +1930,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.18  2004/08/24 16:05:19  shomrat
+* Added operon qual to otherRNA
+*
 * Revision 6.17  2004/08/24 15:21:44  shomrat
 * Add legal qualifiers for comment (same as misc_feat)
 *
