@@ -656,6 +656,25 @@ Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer)
     return length;
 }
 
+list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid)
+{
+    CFastMutexGuard guard(m_Lock);
+    
+    list< CRef< CSeq_id > > seqids;
+    
+    CRef<CBlast_def_line_set> defline_set(x_GetHdr(oid));
+    
+    if ((! defline_set.Empty()) && defline_set->CanGet()) {
+        CRef<CBlast_def_line> defline = defline_set->Get().front();
+        
+        if (defline->CanGetSeqid()) {
+            seqids = defline->GetSeqid();
+        }
+    }
+    
+    return seqids;
+}
+
 Uint8 CSeqDBVol::GetTotalLength(void)
 {
     CFastMutexGuard guard(m_Lock);

@@ -88,6 +88,8 @@ public:
     
     Int4 GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code);
     
+    list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid);
+    
     string GetTitle(void);
     
     string GetDate(void);

@@ -127,6 +127,11 @@ bool CSeqDB::CheckOrFindOID(TOID & oid)
     return m_Impl->CheckOrFindOID(oid);
 }
 
+list< CRef<CSeq_id> > CSeqDB::GetSeqIDs(TOID oid)
+{
+    return m_Impl->GetSeqIDs(oid);
+}
+
 CSeqDBIter::CSeqDBIter(CSeqDB * db, TOID oid)
     : m_DB    (db),
       m_OID   (oid),

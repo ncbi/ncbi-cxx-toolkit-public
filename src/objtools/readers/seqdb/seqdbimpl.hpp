@@ -70,6 +70,8 @@ public:
     
     void RetSequence(const char ** buffer);
     
+    list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid);
+    
     string GetTitle(void);
     
     string GetDate(void);

@@ -117,6 +117,17 @@ Int4 CSeqDBImpl::GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code)
     return -1;
 }
 
+list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(Uint4 oid)
+{
+    Uint4 vol_oid = 0;
+    
+    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+        return vol->GetSeqIDs(vol_oid);
+    }
+    
+    return list< CRef<CSeq_id> >();
+}
+
 Uint4 CSeqDBImpl::GetNumSeqs(void)
 {
     return m_Aliases.GetNumSeqs(m_VolSet);
