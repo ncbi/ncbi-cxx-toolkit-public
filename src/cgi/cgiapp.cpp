@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 
 CCgiApplication* CCgiApplication::Instance(void)
 {
-    return dynamic_cast<CCgiApplication*>(CParent::Instance());
+    return dynamic_cast<CCgiApplication*> (CParent::Instance());
 }
 
 
@@ -57,8 +57,15 @@ int CCgiApplication::Run(void)
         return result;
     }
 
-    // Run as a plain CGI application
+    /// Run as a plain CGI application
 
+    // Make sure to restore old diagnostic state after the Run()
+    CDiagRestorer diag_restorer;
+
+    // Show value of the specified env.var. in all of the diagnostics as prefix
+    PushDiagPostPrefix(GetEnvironment().Get(m_DiagPrefixEnv).c_str());
+
+    // Timing
     CTime start_time(CTime::eCurrent);
 
     // Logging for statistics
@@ -69,16 +76,14 @@ int CCgiApplication::Run(void)
     // Logging
     ELogOpt logopt = GetLogOpt();
     if (logopt == eLog) {
-        x_LogPost("(plain CGI) CCgiApplication::Run ",
+        x_LogPost("(CGI) CCgiApplication::Run ",
                   0, start_time, &GetEnvironment(), fBegin);
     }
 
     try {
-        _TRACE("(plain CGI) CCgiApplication::Run: calling ProcessRequest");
+        _TRACE("(CGI) CCgiApplication::Run: calling ProcessRequest");
 
         m_Context.reset( CreateContext() );
-        // Restore old diagnostic state when done.
-        CDiagRestorer diag_restorer;
         ConfigureDiagnostics(*m_Context);
         x_AddLBCookie();
         result = ProcessRequest(*m_Context);
@@ -87,26 +92,33 @@ int CCgiApplication::Run(void)
         _TRACE("CCgiApplication::Run: return " << result);
     }
     catch (exception& e) {
-        string msg = "(plain CGI) CCgiApplication::ProcessRequest() failed: ";
-        msg += e.what();
+        // Call the exception handler and set the CGI exit code
+        result = OnException(e, NcbiCout);
 
         // Logging
-        if (logopt != eNoLog) {
-            x_LogPost(msg.c_str(), 0, start_time, 0, fBegin|fEnd);
-        } else {
-            ERR_POST(msg);  // Post error notification even if no logging
-        }
-        if ( is_stat_log ) {
-            stat->Reset(start_time, result, &e);
-            msg = stat->Compose();
-            stat->Submit(msg);
-        }
+        {{
+            string msg = "(CGI) CCgiApplication::ProcessRequest() failed: ";
+            msg += e.what();
 
-        CException* ex = dynamic_cast<CException*> (&e);
-        if ( ex ) {
-            NCBI_RETHROW_SAME((*ex), "(plain CGI) CCgiApplication::Run");
-        }
-        throw;
+            if (logopt != eNoLog) {
+                x_LogPost(msg.c_str(), 0, start_time, 0, fBegin|fEnd);
+            } else {
+                ERR_POST(msg);  // Post error notification even if no logging
+            }
+            if ( is_stat_log ) {
+                stat->Reset(start_time, result, &e);
+                msg = stat->Compose();
+                stat->Submit(msg);
+            }
+        }}
+
+        // Exception reporting
+        {{
+            CException* ex = dynamic_cast<CException*> (&e);
+            if ( ex ) {
+                NCBI_RETHROW_SAME((*ex), "(CGI) CCgiApplication::Run");
+            }
+        }}
     }
 
     // Logging
@@ -148,7 +160,10 @@ CNcbiResource& CCgiApplication::x_GetResource( void ) const
 void CCgiApplication::Init(void)
 {
     CParent::Init();
+
     m_Resource.reset(LoadResource());
+
+    m_DiagPrefixEnv = GetConfig().Get("CGI", "DiagPrefixEnv");
 }
 
 
@@ -180,9 +195,9 @@ CCgiContext* CCgiApplication::CreateContext
  int               ofd)
 {
     int errbuf_size =
-        GetConfig().GetInt("CGI", "RequestErrBufSize", 256, 
-                            CNcbiRegistry::eReturn);
-    
+        GetConfig().GetInt("CGI", "RequestErrBufSize", 256,
+                           CNcbiRegistry::eReturn);
+
     return new CCgiContext(*this, args, env, inp, out, ifd, ofd,
                            (errbuf_size >= 0) ? (size_t) errbuf_size : 256);
 }
@@ -190,7 +205,7 @@ CCgiContext* CCgiApplication::CreateContext
 
 void CCgiApplication::SetCafService(CCookieAffinity* caf)
 {
-    m_caf.reset(caf);
+    m_Caf.reset(caf);
 }
 
 
@@ -224,7 +239,7 @@ private:
 };
 
 
-CCgiApplication::CCgiApplication(void) : m_hostIP(0), m_Iteration(0)
+CCgiApplication::CCgiApplication(void) : m_HostIP(0), m_Iteration(0)
 {
     DisableArgDescriptions();
     RegisterDiagFactory("stderr", new CStderrDiagFactory);
@@ -237,7 +252,21 @@ CCgiApplication::~CCgiApplication(void)
     ITERATE (TDiagFactoryMap, it, m_DiagFactories) {
         delete it->second;
     }
-    if ( m_hostIP ) free(m_hostIP);
+    if ( m_HostIP )
+        free(m_HostIP);
+}
+
+
+int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
+{
+    os << "Content-Type: text/html" HTTP_EOL HTTP_EOL;
+    os << e.what();
+    if ( !os.good() ) {
+        ERR_POST("CCgiApplication::OnException() failed to send error page"
+                 "back to the client");
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -363,8 +392,7 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
 
 CCgiApplication::ELogOpt CCgiApplication::GetLogOpt() const
 {
-    string log =
-        GetConfig().GetString("CGI", "Log", kEmptyStr, CNcbiRegistry::eReturn);
+    string log = GetConfig().Get("CGI", "Log");
 
     CCgiApplication::ELogOpt logopt = eNoLog;
     if ((NStr::CompareNocase(log, "On") == 0) ||
@@ -421,8 +449,7 @@ void CCgiApplication::x_LogPost(const char*             msg_header,
     }
 
     if ((flags & fBegin)  &&  env) {
-        string print_env = reg.GetString("CGI", "PrintEnv", kEmptyStr,
-                                         CNcbiRegistry::eErrPost);
+        string print_env = reg.Get("CGI", "PrintEnv");
         if ( !print_env.empty() ) {
             if (NStr::CompareNocase(print_env, "all") == 0) {
                 // TODO
@@ -451,17 +478,14 @@ void CCgiApplication::x_AddLBCookie()
 {
     const CNcbiRegistry& reg = GetConfig();
 
-    string cookie_name =
-        GetConfig().GetString("CGI-LB", "Name", kEmptyStr,
-                              CNcbiRegistry::eReturn);
-
-    if ( cookie_name.empty() ) return;
+    string cookie_name = GetConfig().Get("CGI-LB", "Name");
+    if ( cookie_name.empty() )
+        return;
 
     int life_span = reg.GetInt("CGI-LB", "LifeSpan", 0,
                                CNcbiRegistry::eReturn);
 
-    string domain = reg.GetString("CGI-LB", "Domain", "ncbi.nlm.nih.gov",
-                                  CNcbiRegistry::eReturn);
+    string domain = reg.GetString("CGI-LB", "Domain", ".ncbi.nlm.nih.gov");
 
     if ( domain.empty() ) {
         ERR_POST("CGI-LB: 'Domain' not specified.");
@@ -471,8 +495,7 @@ void CCgiApplication::x_AddLBCookie()
         }
     }
 
-    string path = reg.GetString("CGI-LB", "Path", kEmptyStr,
-                                CNcbiRegistry::eReturn);
+    string path = reg.Get("CGI-LB", "Path");
 
     bool secure = reg.GetBool("CGI-LB", "Secure", false,
                               CNcbiRegistry::eErrPost);
@@ -481,20 +504,19 @@ void CCgiApplication::x_AddLBCookie()
 
     // Getting host configuration can take some time
     // for fast CGIs we try to avoid overhead and call it only once
-    // m_hostIP variable keeps the cached value
+    // m_HostIP variable keeps the cached value
 
-    if ( m_hostIP ) {     // repeated call
-        host = m_hostIP;
+    if ( m_HostIP ) {     // repeated call
+        host = m_HostIP;
     }
     else {               // first time call
-        host = reg.GetString("CGI-LB", "Host", kEmptyStr,
-                             CNcbiRegistry::eReturn);
+        host = reg.Get("CGI-LB", "Host");
         if ( host.empty() ) {
-            if ( m_caf.get() ) {
+            if ( m_Caf.get() ) {
                 char  host_ip[64] = {0,};
-                m_caf->GetHostIP(host_ip, sizeof(host_ip));
-                m_hostIP = m_caf->Encode(host_ip, 0);
-                host = m_hostIP;
+                m_Caf->GetHostIP(host_ip, sizeof(host_ip));
+                m_HostIP = m_Caf->Encode(host_ip, 0);
+                host = m_HostIP;
             }
             else {
                 ERR_POST("CGI-LB: 'Host' not specified.");
@@ -630,8 +652,7 @@ string CCgiStatistics::Compose_Entries(void)
     // When alias is provided we use it for logging purposes (this feature
     // can be used to save logging space or reduce the net traffic).
     const CNcbiRegistry& reg = m_CgiApp.GetConfig();
-    string log_args = reg.GetString("CGI", "LogArgs", kEmptyStr,
-                                    CNcbiRegistry::eReturn);
+    string log_args = reg.Get("CGI", "LogArgs");
     if ( log_args.empty() )
         return kEmptyStr;
 
@@ -687,10 +708,21 @@ string CCgiStatistics::Compose_ErrMessage(void)
 
 END_NCBI_SCOPE
 
+
+
+
 /*
 * ===========================================================================
-*
 * $Log$
+* Revision 1.47  2003/05/21 17:38:34  vakatov
+*    If an exception is thrown while processing the request, then
+* call OnException() and use its return as the CGI exit code (rather
+* than re-throwing the exception).
+*    Restore diagnostics setting after processing the request.
+*    New configuration parameter '[CGI].DiagPrefixEnv' to prefix all
+* diagnostic messages with a value of an arbitrary env.variable.
+*    Fixed wrong flags used in most calls to GetConfig().GetString().
+*
 * Revision 1.46  2003/04/16 21:48:19  vakatov
 * Slightly improved logging format, and some minor coding style fixes.
 *
