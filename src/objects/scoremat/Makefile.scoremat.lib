@@ -1,3 +1,3 @@
 LIB = $(TMPL)
-SRC = $(LIB)__ $(LIB)___ 
+SRC = $(LIB)__ $(LIB)___
 
