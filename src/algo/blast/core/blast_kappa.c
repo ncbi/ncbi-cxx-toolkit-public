@@ -184,8 +184,7 @@ struct Kappa_MatchRecord {
 typedef struct Kappa_MatchRecord Kappa_MatchRecord;
 
 
-/**
- * Initialize a Kappa_MatchRecord.  Parameters to this function correspond
+/** Initialize a Kappa_MatchRecord.  Parameters to this function correspond
  *    directly to fields of Kappa_MatchRecord. 
  * @param self the record to be modified [in][out]
  * @param eValue expect value of this alignment [in]
@@ -466,12 +465,12 @@ SWheapifyDown(SWheapRecord * heapArray,
 }
 
 
-/* On entry, all but the last element of the array heapArray[i]
+/** On entry, all but the last element of the array heapArray[i]
  *   .. heapArray[n] are in valid heap order.  This routine rearranges
  *   the elements so that on exit they all are in heap order.
  * @param heapArray holds the heap [in][out]
- * @param i ?? [in]
- * @param n ?? [in]
+ * @param i the largest element to work with [in]
+ * @param n the largest element in the heap [in]
  */
 static void
 SWheapifyUp(SWheapRecord * heapArray,
@@ -490,8 +489,7 @@ SWheapifyUp(SWheapRecord * heapArray,
   KAPPA_ASSERT(SWheapIsValid(heapArray, 1, n));
 }
 
-/**
- * A SWheap represents a collection of alignments between one query
+/** A SWheap represents a collection of alignments between one query
  * sequence and several matching subject sequences.  
  *
  * Each matching sequence is allocated one record in a SWheap.  The
@@ -688,8 +686,13 @@ SWheapWillAcceptOnlyBelowCutoff(SWheap * self)
 }
 
 
-/* Initialize a new SWheap; parameters to this function correspond
- * directly to fields in the SWheap */
+/** Initialize a new SWheap; parameters to this function correspond
+ * directly to fields in the SWheap 
+ * @param self the object to be filled [in|out]
+ * @param capacity size of heap [in]
+ * @param heapThreshold  items always inserted if fewer than this number in heap [in]
+ * @param ecutoff items with a expect value less than this will always be inserted into heap [in]
+ */
 static void
 SWheapInitialize(SWheap * self,
                  Int4 capacity,
@@ -813,6 +816,7 @@ typedef struct SWpairs {
  *  to find optimal starting positions [in]
  * @param score is used to pass back the optimal score [in]
  * @param kbp holds the Karlin-Altschul parameters [in]
+ * @param effSearchSpace effective search space for calculation of expect value [in]
  * @param positionSpecific determines whether matrix is position specific or not [in]
  * @return the expect value of the alignment
 */
@@ -1129,7 +1133,6 @@ static double BLspecialSmithWatermanScoreOnly(Uint1 * matchSeq,
  * @param matchSeq is the matchSeq sequence [in]
  * @param matchSeqLength is the length of matchSeq in amino acids [in]
  * @param query is the sequence corresponding to some matrix profile [in]
- * @param queryLength is the length of dbSequnece [in]
  * @param matrix is the position-specific matrix associated with query [in]
  * @param gapOpen is the cost of opening a gap [in]
  * @param gapExtend is the cost of extending an existing gap by 1 position [in]
@@ -1744,7 +1747,6 @@ struct Kappa_MatchingSequence {
 typedef struct Kappa_MatchingSequence Kappa_MatchingSequence;
 
 
-#define BLASTP_MASK_RESIDUE 21
 #define BLASTP_MASK_INSTRUCTIONS "S 10 1.8 2.1"
 
 /** Initialize a new matching sequence, obtaining the data from an
@@ -1909,7 +1911,7 @@ Kappa_ForbiddenRangesRelease(Kappa_ForbiddenRanges * self)
 }
 
 
-/* Redo a S-W alignment using an x-drop alignment.  The result will
+/** Redo a S-W alignment using an x-drop alignment.  The result will
  * usually be the same as the S-W alignment. The call to ALIGN
  * attempts to force the endpoints of the alignment to match the
  * optimal endpoints determined by the Smith-Waterman algorithm.
@@ -2116,8 +2118,14 @@ Kappa_SearchParametersNew(
 }
 
 
-/* Record the initial value of the search parameters that are to be
- * adjusted. */
+/** Record the initial value of the search parameters that are to be
+ * adjusted. 
+ * @param searchParams the object to be filled in [in|out]
+ * @param queryBlk query sequence [in]
+ * @param queryInfo query sequence information [in]
+ * @param sbp Scoring Blk (contains Karlin-Altschul parameters) [in]
+ * @param scoring gap-open/extend/decline_align information [in]
+ */
 static void
 Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams, 
                           BLAST_SequenceBlk * queryBlk,
@@ -2168,8 +2176,15 @@ Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
   }
 }
 
-/* Rescale the search parameters in the search object and options object to
-   obtain more precision. */
+/** Rescale the search parameters in the search object and options object to
+ * obtain more precision.
+ * @param sp record of parameters used and frequencies [in|out]
+ * @param queryBlk query sequence [in]
+ * @param queryInfo query sequence information [in]
+ * @param sbp Scoring Blk (contains Karlin-Altschul parameters) [in]
+ * @param scoring gap-open/extend/decline_align information [in]
+ * @return scaling-factor to be used.
+ */
 static double
 Kappa_RescaleSearch(Kappa_SearchParameters * sp,
                     BLAST_SequenceBlk* queryBlk,
@@ -2254,7 +2269,14 @@ Kappa_RescaleSearch(Kappa_SearchParameters * sp,
  * is too small, or to fail entirely returning -1*/
 #define LambdaRatioLowerBound 0.5
 
-/* Adjust the search parameters */
+/** Adjust the search parameters
+ * @param searchParams a record of the initial search parameters [in|out]
+ * @param queryLength length of query sequence [in]
+ * @param filteredSequence a filtered subject sequence [in] 
+ * @param length length of the filtered sequence  [in]
+ * @param matrix a scoring matrix to be adjusted [out]
+ * @return scaling-factor to be used.
+ */
 static Int4
 Kappa_AdjustSearch(
   Kappa_SearchParameters * sp,  /* a record of the initial search parameters */
@@ -2356,6 +2378,12 @@ Kappa_RestoreSearch(
     }
   }
 }
+
+/** Gets best expect value of the list
+ *
+ * @param hsplist the list to be examined [in]
+ * @return the best (lowest) expect value found 
+ */
 
 static double
 BlastHitsGetBestEvalue(BlastHSPList* hsplist)
