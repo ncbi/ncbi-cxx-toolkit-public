@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.33  2001/07/24 23:33:14  vakatov
+ * Use _DEBUG_ARG() to get rid of the compiler warnings in Release mode
+ *
  * Revision 1.32  2001/03/16 16:40:18  vakatov
  * Moved <corelib/ncbi_limits.h> to the header
  *
@@ -324,7 +327,7 @@ inline CArg_Integer::CArg_Integer(const string& name, const string& value)
 {
     try {
         m_Integer = NStr::StringToInt(value);
-    } catch (exception& e) {
+    } catch (exception& _DEBUG_ARG(e)) {
         _TRACE(e.what());
         ARG_THROW("Integer value expected", value);
     }
@@ -346,7 +349,7 @@ inline CArg_Double::CArg_Double(const string& name, const string& value)
 {
     try {
         m_Double = NStr::StringToDouble(value);
-    } catch (exception& e) {
+    } catch (exception& _DEBUG_ARG(e)) {
         _TRACE(e.what());
         ARG_THROW("Floating point value expected", value);
     }
@@ -375,7 +378,7 @@ inline CArg_Boolean::CArg_Boolean(const string& name, const string& value)
 {
     try {
         m_Boolean = NStr::StringToBool(value);
-    } catch (exception& e) {
+    } catch (exception& _DEBUG_ARG(e)) {
         _TRACE(e.what());
         ARG_THROW("Boolean value expected", value);
     }
