@@ -182,6 +182,12 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_Read
 
 
 /*!
+ * Make the buffer empty.
+ */
+extern NCBI_XCONNECT_EXPORT void BUF_Erase(BUF buf);
+
+
+/*!
  * Destroy all internal data.
  * NOTE: do nothing if "buf" == NULL
  */
@@ -199,6 +205,9 @@ extern NCBI_XCONNECT_EXPORT void BUF_Destroy(BUF buf);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2004/10/27 18:43:45  lavr
+ * +BUF_Erase()
+ *
  * Revision 6.10  2004/10/27 18:09:57  lavr
  * +BUF_Prepend(), +BUF_Append()
  *

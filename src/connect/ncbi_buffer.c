@@ -329,7 +329,7 @@ extern size_t BUF_Read(BUF buf, void* data, size_t size)
 }
 
 
-extern void BUF_Destroy(BUF buf)
+extern void BUF_Erase(BUF buf)
 {
     if ( !buf )
         return;
@@ -339,14 +339,25 @@ extern void BUF_Destroy(BUF buf)
         buf->list = pChunk->next;
         free(pChunk);
     }
+    buf->last = 0;
+}
 
-    free(buf);
+
+extern void BUF_Destroy(BUF buf)
+{
+    if (buf) {
+        BUF_Erase(buf);
+        free(buf);
+    }
 }
 
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2004/10/27 18:43:50  lavr
+ * +BUF_Erase()
+ *
  * Revision 6.14  2004/10/27 18:09:58  lavr
  * +BUF_Prepend(), +BUF_Append()
  *
