@@ -45,6 +45,7 @@
 
 #include <objects/general/Object_id.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <serial/iterator.hpp>
 
 #ifndef SMALLEST_EVALUE
 #define SMALLEST_EVALUE 1.0e-180
@@ -358,6 +359,7 @@ x_CorrectUASequence(GapEditBlock* edit_block)
 }
 
 /// C++ version of GXEMakeSeqAlign (tools/gapxdrop.c)
+/// Creates a Seq-align for a single HSP
 static CRef<CSeq_align>
 x_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
     vector<TSignedSeqPos> starts, vector<TSeqPos> lengths,
@@ -1121,12 +1123,12 @@ BLASTHspListToSeqAlign(EProgram program,
 }
 
 static void
-GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
-                       const BlastSeqSrc* bssp,    // [in]
-                       int oid,                    // [in] 
-                       bool is_gapped,             // [in]
-                       CSeq_id** seqid,            // [out]
-                       TSeqPos* length)            // [out]
+x_GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
+                         const BlastSeqSrc* bssp,    // [in]
+                         int oid,                    // [in] 
+                         bool is_gapped,             // [in]
+                         CSeq_id** seqid,            // [out]
+                         TSeqPos* length)            // [out]
 {
     ASSERT(ss || bssp);
     ASSERT(seqid);
@@ -1155,7 +1157,7 @@ GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
 /// Constructs an empty seq-align-set containing an empty discontinuous
 /// seq-align.
 static CSeq_align_set*
-BLAST_CreateEmptySeq_align_set(CSeq_align_set* sas)
+x_CreateEmptySeq_align_set(CSeq_align_set* sas)
 {
     CSeq_align_set* retval = NULL;
 
@@ -1173,6 +1175,26 @@ BLAST_CreateEmptySeq_align_set(CSeq_align_set* sas)
     return retval;
 }
 
+// Always remap the query, the subject is remapped if it's given (assumes
+// alignment created by BLAST 2 Sequences API)
+static void
+x_RemapAlignmentCoordinates(CRef<CSeq_align> sar, 
+                            const SSeqLoc* query,
+                            const SSeqLoc* subject = NULL)
+{
+    ASSERT(sar);
+    ASSERT(query);
+    const int query_dimension = 0;
+    const int subject_dimension = 1;
+
+    for (CTypeIterator<CDense_seg> itr(Begin(*sar)); itr; ++itr) {
+        itr->RemapToLoc(query_dimension, *query->seqloc);
+        if (subject) {
+            itr->RemapToLoc(subject_dimension, *subject->seqloc);
+        }
+    }
+}
+
 CSeq_align_set*
 BLAST_HitList2CSeqAlign(const BlastHitList* hit_list, 
     EProgram prog, SSeqLoc &query,
@@ -1184,20 +1206,20 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
     bool is_gapped = static_cast<bool>(score_options->gapped_calculation);
 
     if (!hit_list) {
-        return BLAST_CreateEmptySeq_align_set(seq_aligns);
+        return x_CreateEmptySeq_align_set(seq_aligns);
     }
 
     TSeqPos query_length = 0;
     CSeq_id* qid = NULL;
     CConstRef<CSeq_id> query_id;
-    GetSequenceLengthAndId(&query, NULL, 0, is_gapped, &qid, &query_length);
+    x_GetSequenceLengthAndId(&query, NULL, 0, is_gapped, &qid, &query_length);
     query_id.Reset(qid);
 
     TSeqPos subj_length = 0;
     CSeq_id* sid = NULL;
     CConstRef<CSeq_id> subject_id;
     if ( !bssp ) {
-        GetSequenceLengthAndId(subject, NULL, 0, is_gapped, &sid, 
+        x_GetSequenceLengthAndId(subject, NULL, 0, is_gapped, &sid, 
                                &subj_length);
         subject_id.Reset(sid);
     }
@@ -1208,7 +1230,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
             continue;
 
         if (bssp) {
-            GetSequenceLengthAndId(NULL, bssp, hsp_list->oid, is_gapped, 
+            x_GetSequenceLengthAndId(NULL, bssp, hsp_list->oid, is_gapped, 
                                    &sid, &subj_length);
             subject_id.Reset(sid);
         }
@@ -1224,6 +1246,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
                 BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id, 
                     subject_id, query_length, subj_length, score_options, sbp);
         }
+        x_RemapAlignmentCoordinates(hit_align, &query, subject);
         seq_aligns->Set().push_back(hit_align);
     }
     return seq_aligns;
@@ -1269,6 +1292,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/11/24 17:14:58  camacho
+* Remap alignment coordinates to original Seq-locs
+*
 * Revision 1.24  2003/11/04 18:37:36  dicuccio
 * Fix for brain-dead MSVC (operator && is ambiguous)
 *
