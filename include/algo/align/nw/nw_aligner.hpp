@@ -36,10 +36,9 @@
 *
 */
 
-#include <corelib/ncbiobj.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.hpp>
-#include <algo/align/align_exception.hpp>
 #include <util/tables/raw_scoremat.h>
 
 #include <vector>
@@ -225,8 +224,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/05/17 14:50:46  kapustin
+ * Add/remove/rearrange some includes and object declarations
+ *
  * Revision 1.32  2003/12/29 13:02:39  kapustin
- * Make x_GetElemSize() public and rename. Return string from GetTranscriptString().
+ * Make x_GetElemSize() public and rename.
+ * Return string from GetTranscriptString().
  *
  * Revision 1.31  2003/10/27 20:46:21  kapustin
  * Derive from CObject. Add more getters.

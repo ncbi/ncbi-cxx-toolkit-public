@@ -31,11 +31,11 @@
  *
  */
 
-#include <corelib/ncbimtx.hpp>
-#include <corelib/ncbi_limits.h>
-#include <corelib/ncbi_system.hpp>
-
 #include "mm_aligner_threads.hpp"
+
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <algo/align/align_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -960,6 +960,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/05/17 14:50:56  kapustin
+ * Add/remove/rearrange some includes and object declarations
+ *
  * Revision 1.17  2003/09/30 19:50:04  kapustin
  * Make use of standard score matrix interface
  *

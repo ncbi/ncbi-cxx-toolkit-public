@@ -35,6 +35,7 @@
 #include <algo/align/splign/splign_simple.hpp>
 #include <algo/align/splign/splign_formatter.hpp>
 #include <algo/align/nw_spliced_aligner16.hpp>
+#include <algo/align/align_exception.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objmgr/scope.hpp>
@@ -186,6 +187,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.5  2004/05/17 14:50:57  kapustin
+* Add/remove/rearrange some includes and object declarations
+*
 * Revision 1.4  2004/05/12 16:59:13  johnson
 * CSplignObjMgrAccessor falls back to id strings if IsSynonym fails
 *

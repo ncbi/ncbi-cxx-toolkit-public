@@ -30,17 +30,21 @@
  */
 
 #include <algo/align/nw_formatter.hpp>
-#include <corelib/ncbi_limits.h>
+#include <algo/align/nw_aligner.hpp>
+#include <algo/align/align_exception.hpp>
+
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
 
 #include <iterator>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 
 CNWFormatter::CNWFormatter (const CNWAligner& aligner):
@@ -478,6 +482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 14:50:56  kapustin
+ * Add/remove/rearrange some includes and object declarations
+ *
  * Revision 1.7  2004/03/18 16:30:24  grichenk
  * Changed type of seq-align containers from list to vector.
  *

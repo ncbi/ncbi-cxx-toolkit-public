@@ -33,7 +33,7 @@
 
 
 #include <algo/align/nw_spliced_aligner32.hpp>
-#include <corelib/ncbi_limits.h>
+#include <algo/align/align_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -606,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/17 14:50:57  kapustin
+ * Add/remove/rearrange some includes and object declarations
+ *
  * Revision 1.12  2004/04/23 14:39:47  kapustin
  * Add Splign library and other changes
  *

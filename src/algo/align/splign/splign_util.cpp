@@ -33,6 +33,8 @@
 #include "splign_util.hpp"
 #include "splign_hitparser.hpp"
 
+#include <algo/align/align_exception.hpp>
+
 #include <algorithm>
 #include <math.h>
 
@@ -376,6 +378,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/05/17 14:50:57  kapustin
+ * Add/remove/rearrange some includes and object declarations
+ *
  * Revision 1.6  2004/04/23 20:33:32  ucko
  * Fix remaining use of sprintf.
  *

@@ -37,10 +37,9 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
+#include <algo/align/align_exception.hpp>
 
 BEGIN_NCBI_SCOPE
-
-
 
 // Exceptions
 //
@@ -101,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 14:50:57  kapustin
+ * Add/remove/rearrange some includes and object declarations
+ *
  * Revision 1.8  2004/04/30 12:49:47  kuznets
  * throw -> THROWS (fixes warning in MSVC7)
  *

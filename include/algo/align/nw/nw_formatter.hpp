@@ -32,19 +32,21 @@
 *   Library's formatting functionality.
 */
 
-#include <algo/align/nw_aligner.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-
-
 /** @addtogroup AlgoAlignFormat
  *
  * @{
  */
 
-
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+
+class CNWAligner;
+
+BEGIN_SCOPE(objects)
+    class CSeq_align;
+END_SCOPE(objects)
 
 
 class NCBI_XALGOALIGN_EXPORT CNWFormatter: public CObject
@@ -72,7 +74,7 @@ public:
     void AsText(string* output, ETextFormatType type,
                 size_t line_width = 100) const;
 
-    void AsSeqAlign(CSeq_align* output) const;
+    void AsSeqAlign(objects::CSeq_align* output) const;
 
 private:
     const CNWAligner* m_aligner;
@@ -91,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/17 14:50:46  kapustin
+ * Add/remove/rearrange some includes and object declarations
+ *
  * Revision 1.4  2003/10/27 20:46:41  kapustin
  * Derive from CObject.
  *
