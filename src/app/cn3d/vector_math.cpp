@@ -99,10 +99,10 @@ void ApplyTransformation(Vector* v, const Matrix& m)
 // C = A x B
 void ComposeInto(Matrix* C, const Matrix& A, const Matrix& B)
 {
-    for (int i=0; i<4; i++) {
-        for (int j=0; j<4; j++) {
+    for (int i=0; i<4; ++i) {
+        for (int j=0; j<4; ++j) {
             C->m[4*i+j]=0;
-            for (int s=0; s<4; s++) {
+            for (int s=0; s<4; ++s) {
                 C->m[4*i+j] += (A.m[4*i+s])*(B.m[4*s+j]);
             }
         }
@@ -190,7 +190,7 @@ void RigidBodyFit(
     cgref *= 0;
     cgvar *= 0;
     an2 = 0.;
-    for (iatv=0; iatv<natx; iatv++) {
+    for (iatv=0; iatv<natx; ++iatv) {
         if (weights[iatv] <= 0.) continue;
         an2 += weights[iatv];
         cgref += *(xref[iatv]) * weights[iatv];
@@ -200,17 +200,17 @@ void RigidBodyFit(
     cgvar /= an2;
 
     // compute correlation matrix
-    for (i=0; i<3; i++) {
+    for (i=0; i<3; ++i) {
         cosin[i] = 1.;
-        for (j=0; j<3; j++) {
+        for (j=0; j<3; ++j) {
             corlnmatrx[i][j] = 0.;
         }
     }
-    for (iatv=0; iatv<natx; iatv++) {
-        for (i=0; i<3; i++) {
+    for (iatv=0; iatv<natx; ++iatv) {
+        for (i=0; i<3; ++i) {
             if (weights[iatv] <= 0.) continue;
             xx = ((*(xvar[iatv]))[i] - cgvar[i]) * weights[iatv];
-            for (j=0; j<3; j++) {
+            for (j=0; j<3; ++j) {
                 corlnmatrx[i][j] += xx * ((*(xref[iatv]))[j] - cgref[j]);
             }
         }
@@ -238,8 +238,8 @@ void RigidBodyFit(
 
         // compute the trace of (rot x corlnmatrix)
         f = 0.;
-        for (i=0; i<3; i++) {
-            for (j=0; j<3; j++) {
+        for (i=0; i<3; ++i) {
+            for (j=0; j<3; ++j) {
                 f += rot[i][j] * corlnmatrx[i][j];
             }
         }
@@ -275,7 +275,7 @@ void RigidBodyFit(
         flag1 = false;
         if (ix < 2) {
             // apply the same del to the next Euler angle
-            ix++;
+            ++ix;
             phibes = phi[ix];
             phi[ix] = phix = phibes + sgn * del;
             continue;
@@ -297,8 +297,8 @@ void RigidBodyFit(
 
     // store computed rotation matrix in rotMat
     rotMat.SetToIdentity();
-    for (i=0; i<3; i++) {
-        for (j=0; j<3; j++) {
+    for (i=0; i<3; ++i) {
+        for (j=0; j<3; ++j) {
             rotMat[4*i + j] = rot[j][i];
         }
     }
@@ -309,6 +309,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/15 18:38:52  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.6  2004/02/19 17:05:22  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

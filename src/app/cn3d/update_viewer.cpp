@@ -153,7 +153,7 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
     // populate successive lines of the display with each alignment, with blank lines inbetween
     AlignmentList::const_iterator a, ae = newAlignments.end();
     int nViolations = 0;
-    for (a=newAlignments.begin(); a!=ae; a++) {
+    for (a=newAlignments.begin(); a!=ae; ++a) {
         if ((*a)->NRows() != 2) {
             ERRORMSG("UpdateViewer::AddAlignments() - got alignment with "
                 << (*a)->NRows() << " rows");
@@ -166,7 +166,7 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
         // add alignment to the display, including block row since editor is always on
         if (display->NRows() != 0) display->AddRowFromString("");
         display->AddBlockBoundaryRow(*a);
-        for (int row=0; row<2; row++)
+        for (int row=0; row<2; ++row)
             display->AddRowFromAlignment(row, *a);
     }
 
@@ -190,7 +190,7 @@ void UpdateViewer::DeleteAlignment(BlockMultipleAlignment *toDelete)
 {
     AlignmentList keepAlignments;
     AlignmentList::const_iterator a, ae = GetCurrentAlignments().end();
-    for (a=GetCurrentAlignments().begin(); a!=ae; a++)
+    for (a=GetCurrentAlignments().begin(); a!=ae; ++a)
         if (*a != toDelete)
             keepAlignments.push_back((*a)->Clone());
 
@@ -206,7 +206,7 @@ void UpdateViewer::SaveAlignments(void)
     map < CUpdate_align * , bool > usedUpdateAligns;
 
     AlignmentList::const_iterator a, ae = GetCurrentAlignments().end();
-    for (a=GetCurrentAlignments().begin(); a!=ae; a++) {
+    for (a=GetCurrentAlignments().begin(); a!=ae; ++a) {
 
         // create a Seq-align (with Dense-diags) out of this update
         if ((*a)->NRows() != 2) {
@@ -297,7 +297,7 @@ const Sequence * UpdateViewer::GetMasterSequence(void) const
             } else {
                 wxString *titles = new wxString[chains.size()];
                 int choice;
-                for (choice=0; choice<chains.size(); choice++)
+                for (choice=0; choice<chains.size(); ++choice)
                     titles[choice] = chains[choice]->identifier->ToString().c_str();
                 choice = wxGetSingleChoiceIndex("Align to which protein chain?",
                     "Select Chain", chains.size(), titles);
@@ -390,7 +390,7 @@ void UpdateViewer::MakeEmptyAlignments(const SequenceList& newSequences,
 {
     newAlignments->clear();
     SequenceList::const_iterator s, se = newSequences.end();
-    for (s=newSequences.begin(); s!=se; s++) {
+    for (s=newSequences.begin(); s!=se; ++s) {
         BlockMultipleAlignment *newAlignment = MakeEmptyAlignment(master, *s);
         if (newAlignment) newAlignments->push_back(newAlignment);
     }
@@ -451,7 +451,7 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
     }
 
     SequenceList::const_iterator s, se = newSequences.end();
-    for (s=newSequences.begin(); s!=se; s++) {
+    for (s=newSequences.begin(); s!=se; ++s) {
         if ((*s)->identifier->pdbID.size() == 0) {
             WARNINGMSG("UpdateViewer::GetVASTAlignments() - "
                 "can't be called with non-MMDB slave " << (*s)->identifier->ToString());
@@ -539,7 +539,7 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
             CResidue_pntrs::TInterval::const_iterator i, j,
                 ie = alignment.GetAlignment().front()->GetResidues().GetInterval().end();
             for (i=alignment.GetAlignment().front()->GetResidues().GetInterval().begin(),
-                 j=alignment.GetAlignment().back()->GetResidues().GetInterval().begin(); i!=ie; i++, j++)
+                 j=alignment.GetAlignment().back()->GetResidues().GetInterval().begin(); i!=ie; ++i, ++j)
             {
                 if ((*i)->GetMolecule_id().Get() != master->identifier->moleculeID ||
                     (*j)->GetMolecule_id().Get() != (*s)->identifier->moleculeID)
@@ -668,14 +668,14 @@ void UpdateViewer::ImportStructure(void)
     CBiostruc_graph::TDescr::const_iterator d, de;
     CBiostruc_graph::TMolecule_graphs::const_iterator
         m, me = biostruc->GetChemical_graph().GetMolecule_graphs().end();
-    for (m=biostruc->GetChemical_graph().GetMolecule_graphs().begin(); m!=me; m++) {
+    for (m=biostruc->GetChemical_graph().GetMolecule_graphs().begin(); m!=me; ++m) {
         bool isProtein = false;
         const CSeq_id *sid = NULL;
         char name = 0;
 
         // check descr for chain name/type
         de = (*m)->GetDescr().end();
-        for (d=(*m)->GetDescr().begin(); d!=de; d++) {
+        for (d=(*m)->GetDescr().begin(); d!=de; ++d) {
             if ((*d)->IsName())
                 name = (*d)->GetName()[0];
             else if ((*d)->IsMolecule_type() &&
@@ -702,7 +702,7 @@ void UpdateViewer::ImportStructure(void)
     // get protein name (PDB identifier)
     string pdbID;
     CBiostruc::TDescr::const_iterator n, ne = biostruc->GetDescr().end();
-    for (n=biostruc->GetDescr().begin(); n!=ne; n++) {
+    for (n=biostruc->GetDescr().begin(); n!=ne; ++n) {
         if ((*n)->IsName()) {
             pdbID = (*n)->GetName();    // assume first 'name' is pdb id
             break;
@@ -716,24 +716,24 @@ void UpdateViewer::ImportStructure(void)
     } else {
         wxString *choices = new wxString[chains.size()];
         int choice;
-        for (choice=0; choice<chains.size(); choice++)
+        for (choice=0; choice<chains.size(); ++choice)
             choices[choice].Printf("%s_%c %s",
                 pdbID.c_str(), chains[choice].second, chains[choice].first->GetSeqIdString().c_str());
         wxArrayInt selections;
         int nsel = wxGetMultipleChoices(selections, "Which chain do you want to align?",
             "Select Chain", chains.size(), choices, *viewerWindow);
         if (nsel == 0) return;
-        for (choice=0; choice<nsel; choice++)
+        for (choice=0; choice<nsel; ++choice)
             sids.push_back(chains[selections[choice]].first);
     }
 
     SequenceList newSequences;
     SequenceSet::SequenceList::const_iterator s, se = master->parentSet->sequenceSet->sequences.end();
     map < const Sequence * , const CSeq_id * > seq2id;
-    for (int j=0; j<sids.size(); j++) {
+    for (int j=0; j<sids.size(); ++j) {
 
         // first check to see if this sequence is already present
-        for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
+        for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; ++s) {
             if ((*s)->identifier->MatchesSeqId(*(sids[j]))) {
                 TRACEMSG("using existing sequence for " << sids[j]->GetSeqIdString());
                 newSequences.push_back(*s);
@@ -745,9 +745,9 @@ void UpdateViewer::ImportStructure(void)
         if (s == se) {
             // if not, find the sequence in the list from the structure file
             BioseqRefList::iterator b, be = bioseqs.end();
-            for (b=bioseqs.begin(); b!=be; b++) {
+            for (b=bioseqs.begin(); b!=be; ++b) {
                 CBioseq::TId::const_iterator i, ie = (*b)->GetId().end();
-                for (i=(*b)->GetId().begin(); i!=ie; i++) {
+                for (i=(*b)->GetId().begin(); i!=ie; ++i) {
                     if ((*i)->Match(*(sids[j])))
                         break;
                 }
@@ -769,15 +769,15 @@ void UpdateViewer::ImportStructure(void)
     }
 
     SequenceList::const_iterator w, we = newSequences.end();
-    for (w=newSequences.begin(); w!=we; w++) {
+    for (w=newSequences.begin(); w!=we; ++w) {
 
         // add MMDB id tag to Bioseq if not present already
         CBioseq::TAnnot::const_iterator a, ae = (*w)->bioseqASN->GetAnnot().end();
         CSeq_annot::C_Data::TIds::const_iterator i, ie;
         bool found = false;
-        for (a=(*w)->bioseqASN->GetAnnot().begin(); a!=ae; a++) {
+        for (a=(*w)->bioseqASN->GetAnnot().begin(); a!=ae; ++a) {
             if ((*a)->GetData().IsIds()) {
-                for (i=(*a)->GetData().GetIds().begin(), ie=(*a)->GetData().GetIds().end(); i!=ie; i++) {
+                for (i=(*a)->GetData().GetIds().begin(), ie=(*a)->GetData().GetIds().end(); i!=ie; ++i) {
                     if ((*i)->IsGeneral() && (*i)->GetGeneral().GetDb() == "mmdb" &&
                             (*i)->GetGeneral().GetTag().IsId() &&
                             (*i)->GetGeneral().GetTag().GetId() == mmdbID) {
@@ -888,7 +888,7 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
 
     // find alignment, and replace it with BLAST result
     AlignmentList::iterator a, ae = GetCurrentAlignments().end();
-    for (a=GetCurrentAlignments().begin(); a!=ae; a++) {
+    for (a=GetCurrentAlignments().begin(); a!=ae; ++a) {
         if (*a != alignment) continue;
 
         // run BLAST between master and first slave (should be only one slave...)
@@ -930,11 +930,11 @@ static void MapSlaveToMaster(const BlockMultipleAlignment *alignment,
     BlockMultipleAlignment::UngappedAlignedBlockList uaBlocks;
     alignment->GetUngappedAlignedBlocks(&uaBlocks);
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = uaBlocks.end();
-    for (b=uaBlocks.begin(); b!=be; b++) {
+    for (b=uaBlocks.begin(); b!=be; ++b) {
         const Block::Range
             *masterRange = (*b)->GetRangeOfRow(0),
             *slaveRange = (*b)->GetRangeOfRow(slaveRow);
-        for (int i=0; i<(*b)->width; i++)
+        for (int i=0; i<(*b)->width; ++i)
             (*slave2master)[slaveRange->from + i] = masterRange->from + i;
     }
 }
@@ -952,7 +952,7 @@ static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
     const BlockMultipleAlignment *bestMatchFromMultiple = NULL;
     int b, bestRow = -1;
     BLASTer::AlignmentList::const_iterator p, pe = rowAlignments.end();
-    for (b=0, p=rowAlignments.begin(); p!=pe; b++, p++) {
+    for (b=0, p=rowAlignments.begin(); p!=pe; ++b, ++p) {
         if (!bestMatchFromMultiple || (*p)->GetRowDouble(0) < bestMatchFromMultiple->GetRowDouble(0)) {
             bestMatchFromMultiple = *p;
             bestRow = b;
@@ -986,7 +986,7 @@ static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
 
     // create maximally sized blocks
     int masterStart, importStart, importLoc, slaveLoc, masterLoc, len;
-    for (importStart=-1, importLoc=0; importLoc<=importSeq->Length(); importLoc++) {
+    for (importStart=-1, importLoc=0; importLoc<=importSeq->Length(); ++importLoc) {
 
         // map import -> slave -> master
         slaveLoc = (importLoc<importSeq->Length()) ? import2slave[importLoc] : -1;
@@ -997,7 +997,7 @@ static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
 
             // add another residue to a continuously aligned block
             if (masterLoc >= 0 && masterLoc-masterStart == importLoc-importStart) {
-                len++;
+                ++len;
             }
 
             // terminate block
@@ -1048,13 +1048,13 @@ void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
 
     // find alignment, to replace it with BLAST result
     AlignmentList::iterator a, ae = GetCurrentAlignments().end();
-    for (a=GetCurrentAlignments().begin(); a!=ae; a++)
+    for (a=GetCurrentAlignments().begin(); a!=ae; ++a)
         if (*a == update) break;
     if (a == GetCurrentAlignments().end()) return;
 
     // set up BLAST-2-sequences between update slave and each sequence from the multiple
     BLASTer::AlignmentList toRealign;
-    for (int row=0; row<multiple->NRows(); row++) {
+    for (int row=0; row<multiple->NRows(); ++row) {
         BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
         (*seqs)[0] = multiple->GetSequenceOfRow(row);
         (*seqs)[1] = updateSeq;
@@ -1143,7 +1143,7 @@ void UpdateViewer::SortUpdates(void)
     vector < BlockMultipleAlignment * > sortedVector(currentAlignments.size());
     AlignmentList::const_iterator a, ae = currentAlignments.end();
     int i = 0;
-    for (a=currentAlignments.begin(); a!=ae; a++) sortedVector[i++] = *a;
+    for (a=currentAlignments.begin(); a!=ae; ++a) sortedVector[i++] = *a;
 
     // sort them
     stable_sort(sortedVector.begin(), sortedVector.end(), updateComparisonFunction);
@@ -1154,7 +1154,7 @@ void UpdateViewer::SortUpdates(void)
     GetCurrentDisplay()->Empty();
 
     AlignmentList sortedList;
-    for (i=0; i<sortedVector.size(); i++) sortedList.push_back(sortedVector[i]);
+    for (i=0; i<sortedVector.size(); ++i) sortedList.push_back(sortedVector[i]);
     AddAlignments(sortedList);
 }
 
@@ -1164,6 +1164,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2004/03/15 18:38:52  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.70  2004/02/19 17:05:20  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -164,7 +164,7 @@ void ViewerWindowBase::SetupFontFromRegistry(void)
 void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)
 {
     int i;
-    for (i=MID_SPLIT_BLOCK; i<=MID_SYNC_STRUCS_ON; i++)
+    for (i=MID_SPLIT_BLOCK; i<=MID_SYNC_STRUCS_ON; ++i)
         menuBar->Enable(i, enabled);
     menuBar->Enable(MID_DRAG_HORIZ, enabled);
     if (!enabled) CancelBaseSpecialModesExcept(-1);
@@ -295,7 +295,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
 void ViewerWindowBase::OnMouseMode(wxCommandEvent& event)
 {
     const wxMenuItemList& items = mouseModeMenu->GetMenuItems();
-    for (int i=0; i<items.GetCount(); i++)
+    for (int i=0; i<items.GetCount(); ++i)
         items.Item(i)->GetData()->Check(
             (items.Item(i)->GetData()->GetId() == event.GetId()) ? true : false);
 
@@ -313,7 +313,7 @@ void ViewerWindowBase::OnMouseMode(wxCommandEvent& event)
 
 void ViewerWindowBase::OnJustification(wxCommandEvent& event)
 {
-    for (int i=MID_LEFT; i<=MID_SPLIT; i++)
+    for (int i=MID_LEFT; i<=MID_SPLIT; ++i)
         menuBar->Check(i, (i == event.GetId()) ? true : false);
 
     switch (event.GetId()) {
@@ -336,7 +336,7 @@ void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
 
     ViewerBase::AlignmentList::const_iterator a, ae = alignments.end();
     int nViolations = 0;
-    for (a=alignments.begin(); a!=ae; a++)
+    for (a=alignments.begin(); a!=ae; ++a)
         nViolations += (*a)->ShowGeometryViolations(showGeometryViolations);
     if (showGeometryViolations)
         INFOMSG("Found " << nViolations << " geometry violation"
@@ -363,7 +363,7 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
     map < const Sequence * , bool > usedSequences;
     const SequenceDisplay *display = viewer->GetCurrentDisplay();
 
-    for (int i=0; i<display->NRows(); i++) {
+    for (int i=0; i<display->NRows(); ++i) {
 
         const Sequence *sequence = display->GetSequenceForRow(i);
         if (!sequence || usedSequences.find(sequence) != usedSequences.end()) continue;
@@ -376,7 +376,7 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
 void ViewerWindowBase::MakeSequenceVisible(const MoleculeIdentifier *identifier)
 {
     const SequenceDisplay *display = viewer->GetCurrentDisplay();
-    for (int i=0; i<display->NRows(); i++) {
+    for (int i=0; i<display->NRows(); ++i) {
         const Sequence *sequence = display->GetSequenceForRow(i);
         if (sequence && sequence->identifier == identifier) {
             viewerWidget->MakeCharacterVisible(-1, i);
@@ -391,6 +391,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2004/03/15 18:38:52  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.48  2004/02/19 17:05:22  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -222,7 +222,7 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
             const ViewerBase::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
             if (currentUpdates.size() > 0) {
                 ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
-                for (u=currentUpdates.begin(); u!=ue; u++) all[*u] = true;
+                for (u=currentUpdates.begin(); u!=ue; ++u) all[*u] = true;
                 updateViewer->alignmentManager->MergeUpdates(all, false);
             }
             break;
@@ -333,7 +333,7 @@ void UpdateViewerWindow::OnSetRegion(wxCommandEvent& event)
 
     else if (event.GetId() == MID_RESET_REGIONS) {
 		UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
-        for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; a++) {
+        for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; ++a) {
             (*a)->alignSlaveFrom = -1;
             (*a)->alignSlaveTo = -1;
         }
@@ -624,6 +624,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2004/03/15 18:38:52  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.59  2004/02/19 17:05:21  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -178,7 +178,7 @@ TaxonomyTree::~TaxonomyTree(void)
     taxonomyServer.Fini();
 
     TaxonomyWindowList::iterator w, we = taxonomyWindows.end();
-    for (w=taxonomyWindows.begin(); w!=we; w++) {
+    for (w=taxonomyWindows.begin(); w!=we; ++w) {
         if (**w) {
             (**w)->handle = NULL;
             (**w)->Destroy();
@@ -211,7 +211,7 @@ static void AppendChildrenToTree(wxTreeCtrl *tree, const TaxonomyTreeMap& treeMa
     // add sequence nodes
     if (node.sequences.size() > 0) {
         TaxonomyTreeNode::SequenceMap::const_iterator s, se = node.sequences.end();
-        for (s=node.sequences.begin(); s!=se; s++) {
+        for (s=node.sequences.begin(); s!=se; ++s) {
             wxString name(s->first->identifier->ToString().c_str());
             if (s->second > 1) {
 	    	wxString tmp = name;
@@ -225,7 +225,7 @@ static void AppendChildrenToTree(wxTreeCtrl *tree, const TaxonomyTreeMap& treeMa
     // add heirarchy nodes
     if (node.childTaxids.size() > 0) {
         TaxonomyTreeNode::ChildTaxIDMap::const_iterator c, ce = node.childTaxids.end();
-        for (c=node.childTaxids.begin(); c!=ce; c++) {
+        for (c=node.childTaxids.begin(); c!=ce; ++c) {
             const TaxonomyTreeNode *childNode = &(treeMap.find(c->first)->second);
             wxString name = childNode->name.c_str();
             if (abbreviated) {
@@ -253,14 +253,14 @@ static void AddNode(TaxonomyTreeMap *taxTree, const Sequence *seq,
     node.name = (taxData->IsSetOrg() && taxData->GetOrg().IsSetTaxname()) ?
         taxData->GetOrg().GetTaxname() : string("(error getting node name!)");
     if (seq) {
-        node.sequences[seq]++;
-        node.nDescendentLeaves++;
+        ++(node.sequences[seq]);
+        ++(node.nDescendentLeaves);
     }
 
     // set info for parent node
     TaxonomyTreeNode& parentNode = (*taxTree)[parent];
     parentNode.childTaxids[taxid] = true;
-    parentNode.nDescendentLeaves++;
+    ++(parentNode.nDescendentLeaves);
 }
 
 void TaxonomyTree::ShowTreeForAlignment(wxFrame *windowParent,
@@ -274,7 +274,7 @@ void TaxonomyTree::ShowTreeForAlignment(wxFrame *windowParent,
     // build a tree of all sequences with known taxonomy
     int row, taxid, parent;
     const CTaxon2_data *taxData;
-    for (row=0; row<alignment->NRows(); row++) {
+    for (row=0; row<alignment->NRows(); ++row) {
         const Sequence *seq = alignment->GetSequenceOfRow(row);
         taxid = GetTaxIDForSequence(seq);
         taxData = (taxid != 0) ? GetTaxInfoForTaxID(taxid) : NULL;
@@ -338,7 +338,7 @@ int TaxonomyTree::GetTaxIDForSequence(const Sequence *seq)
     // otherwise, try to get it from org info in Bioseq
     if (taxid == 0 && seq->bioseqASN->IsSetDescr()) {
         CBioseq::TDescr::Tdata::const_iterator d, de = seq->bioseqASN->GetDescr().Get().end();
-        for (d=seq->bioseqASN->GetDescr().Get().begin(); d!=de; d++) {
+        for (d=seq->bioseqASN->GetDescr().Get().begin(); d!=de; ++d) {
             const COrg_ref *org = NULL;
             if ((*d)->IsOrg())
                 org = &((*d)->GetOrg());
@@ -409,6 +409,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/03/15 18:38:52  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.11  2004/02/19 17:05:20  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

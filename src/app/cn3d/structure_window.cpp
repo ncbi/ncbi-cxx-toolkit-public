@@ -474,7 +474,7 @@ void StructureWindow::SendCommand(const std::string& toApp,
     // for now, just assign command id's in numerical order
     static unsigned long nextCommandID = 1;
     INFOMSG("sending command " << nextCommandID << " to " << toApp << ": " << command);
-    fileMessenger->SendCommand(toApp, nextCommandID++, command, data);
+    fileMessenger->SendCommand(toApp, ++nextCommandID, command, data);
 }
 
 void StructureWindow::OnSendSelection(wxCommandEvent& event)
@@ -748,7 +748,7 @@ void StructureWindow::OnEditFavorite(wxCommandEvent& event)
         // replace style of same name
         CCn3d_style_settings *settings;
         CCn3d_style_settings_set::Tdata::iterator f, fe = favoriteStyles.Set().end();
-        for (f=favoriteStyles.Set().begin(); f!=fe; f++) {
+        for (f=favoriteStyles.Set().begin(); f!=fe; ++f) {
             if (Stricmp((*f)->GetName().c_str(), name.c_str()) == 0) {
                 settings = f->GetPointer();
                 break;
@@ -776,12 +776,12 @@ void StructureWindow::OnEditFavorite(wxCommandEvent& event)
         wxString *choices = new wxString[favoriteStyles.Get().size()];
         int i = 0;
         CCn3d_style_settings_set::Tdata::iterator f, fe = favoriteStyles.Set().end();
-        for (f=favoriteStyles.Set().begin(); f!=fe; f++)
+        for (f=favoriteStyles.Set().begin(); f!=fe; ++f)
             choices[i++] = (*f)->GetName().c_str();
         int picked = wxGetSingleChoiceIndex("Choose a style to remove from the Favorites list:",
             "Select for removal", favoriteStyles.Set().size(), choices, this);
         if (picked < 0 || picked >= favoriteStyles.Set().size()) return;
-        for (f=favoriteStyles.Set().begin(), i=0; f!=fe; f++, i++) {
+        for (f=favoriteStyles.Set().begin(), i=0; f!=fe; ++f, ++i) {
             if (i == picked) {
                 favoriteStyles.Set().erase(f);
                 favoriteStylesChanged = true;
@@ -808,13 +808,13 @@ void StructureWindow::OnEditFavorite(wxCommandEvent& event)
 void StructureWindow::SetupFavoritesMenu(void)
 {
     int i;
-    for (i=MID_FAVORITES_BEGIN; i<=MID_FAVORITES_END; i++) {
+    for (i=MID_FAVORITES_BEGIN; i<=MID_FAVORITES_END; ++i) {
         wxMenuItem *item = favoritesMenu->FindItem(i);
         if (item) favoritesMenu->Delete(item);
     }
 
     CCn3d_style_settings_set::Tdata::const_iterator f, fe = favoriteStyles.Get().end();
-    for (f=favoriteStyles.Get().begin(), i=0; f!=fe; f++, i++)
+    for (f=favoriteStyles.Get().begin(), i=0; f!=fe; ++f, ++i)
         favoritesMenu->Append(MID_FAVORITES_BEGIN + i, (*f)->GetName().c_str());
 }
 
@@ -826,7 +826,7 @@ void StructureWindow::OnSelectFavorite(wxCommandEvent& event)
         int index = event.GetId() - MID_FAVORITES_BEGIN;
         CCn3d_style_settings_set::Tdata::const_iterator f, fe = favoriteStyles.Get().end();
         int i = 0;
-        for (f=favoriteStyles.Get().begin(); f!=fe; f++, i++) {
+        for (f=favoriteStyles.Get().begin(); f!=fe; ++f, ++i) {
             if (i == index) {
                 INFOMSG("using favorite: " << (*f)->GetName());
                 glCanvas->structureSet->styleManager->SetGlobalStyle(**f);
@@ -1034,16 +1034,16 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
             const StructureSet::RejectList *rejects = glCanvas->structureSet->GetRejects();
             SequenceSet::SequenceList::const_iterator
                 s, se = glCanvas->structureSet->sequenceSet->sequences.end();
-            for (s=glCanvas->structureSet->sequenceSet->sequences.begin(); s!=se; s++) {
+            for (s=glCanvas->structureSet->sequenceSet->sequences.begin(); s!=se; ++s) {
                 if ((*s)->identifier != master) {
 
                     // make sure this sequence isn't already rejected
                     bool rejected = false;
                     if (rejects) {
                         StructureSet::RejectList::const_iterator r, re = rejects->end();
-                        for (r=rejects->begin(); r!=re; r++) {
+                        for (r=rejects->begin(); r!=re; ++r) {
                             CReject_id::TIds::const_iterator i, ie = (*r)->GetIds().end();
-                            for (i=(*r)->GetIds().begin(); i!=ie; i++) {
+                            for (i=(*r)->GetIds().begin(); i!=ie; ++i) {
                                 if ((*s)->identifier->MatchesSeqId(**i)) {
                                     rejected = true;
                                     break;
@@ -1068,7 +1068,7 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
             // user dialogs for selection and reason
             wxString *choices = new wxString[seqsDescrs.size()];
             int choice;
-            for (choice=0; choice<seqsDescrs.size(); choice++) choices[choice] = seqsDescrs[choice].second;
+            for (choice=0; choice<seqsDescrs.size(); ++choice) choices[choice] = seqsDescrs[choice].second;
             choice = wxGetSingleChoiceIndex("Reject which sequence?", "Reject Sequence",
                 seqsDescrs.size(), choices, this);
             if (choice >= 0) {
@@ -1124,7 +1124,7 @@ void StructureWindow::OnShowHide(wxCommandEvent& event)
             vector < bool > structureVisibilities;
             glCanvas->structureSet->showHideManager->GetShowHideInfo(&structureNames, &structureVisibilities);
             wxString *titles = new wxString[structureNames.size()];
-            for (int i=0; i<structureNames.size(); i++) titles[i] = structureNames[i].c_str();
+            for (int i=0; i<structureNames.size(); ++i) titles[i] = structureNames[i].c_str();
 
             ShowHideDialog dialog(
                 titles, &structureVisibilities, glCanvas->structureSet->showHideManager, false,
@@ -1535,6 +1535,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/03/15 18:38:52  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.28  2004/03/09 14:30:47  thiessen
 * change network load type choice order
 *
