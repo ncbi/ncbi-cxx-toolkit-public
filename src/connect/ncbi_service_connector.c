@@ -51,10 +51,11 @@ typedef struct SServiceConnectorTag {
     SConnNetInfo*      net_info;        /* Connection information            */
     SERV_ITER          iter;            /* Dispatcher information            */
     SMetaConnector     meta;            /* Low level comm.conn and its VT    */
-    unsigned int       host;            /* from parsed connection info...    */
+    unsigned int       host;            /* Parsed connection info...         */
     unsigned short     port;
     ticket_t           ticket;
     SSERVICE_Extra     params;
+    char               myargs[1];       /* additional parameters             */
 } SServiceConnector;
 
 
@@ -82,8 +83,46 @@ extern "C" {
 
 static const char* s_VT_GetType(CONNECTOR connector)
 {
-    SServiceConnector* xxx = (SServiceConnector*) connector->handle;
-    return xxx->name ? xxx->name : "SERVICE";
+    SServiceConnector* uuu = (SServiceConnector*) connector->handle;
+    return uuu->name ? uuu->name : "SERVICE";
+}
+
+
+static char* s_GetMyargs(void)
+{
+    static const char platform[] = "&platform=";
+    static const char address[] = "address=";
+    size_t nodelen, archlen, buflen;
+    const char* arch;
+    char node[128];
+    char* p;
+
+    buflen = 0;
+    if (SOCK_gethostbyaddr(0, node, sizeof(node)) && *node) {
+        nodelen = strlen(node);
+        buflen += sizeof(address) - 1 + nodelen;
+    } else
+        nodelen = 0;
+    if ((arch = CORE_GetPlatform()) != 0 && *arch) {
+        archlen = strlen(arch);
+        buflen += sizeof(platform) - 1 + archlen;
+    } else
+        archlen = 0;
+    if (!buflen || !(p = malloc(buflen + 1)))
+        return 0;
+    buflen = 0;
+    if (nodelen) {
+        strcpy(&p[buflen], address);
+        buflen += sizeof(address) - 1;
+        strcpy(&p[buflen], node);
+        buflen += nodelen;
+    }
+    if (archlen) {
+        strcpy(&p[buflen], nodelen ? platform : platform + 1);
+        buflen += nodelen ? sizeof(platform)-1 : sizeof(platform)-2;
+        strcpy(&p[buflen], arch);
+    }
+    return p;
 }
 
 
@@ -275,7 +314,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
     const char* user_header = 0;
     const SSERV_Info* info;
 
-    assert(n != 0); /* paranoia assertion :-) */
+    assert(n != 0); /* paranoid assertion :-) */
     if (net_info->firewall && !net_info->stateless)
         return 0; /*cannot adjust firewall stateful client*/
 
@@ -295,7 +334,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
         case fSERV_Ncbid:
             user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
             user_header = s_AdjustNetParams(net_info, eReqMethod_Post,
-                                            NCBID_NAME,
+                                            NCBID_WEBPATH,
                                             "service", uuu->service,
                                             SERV_NCBID_ARGS(&info->u.ncbid),
                                             user_header, info->mime_t,
@@ -388,7 +427,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                 req_method = eReqMethod_Get;
             }
             user_header = s_AdjustNetParams(net_info, req_method,
-                                            NCBID_NAME,
+                                            NCBID_WEBPATH,
                                             "service", uuu->service,
                                             SERV_NCBID_ARGS(&info->u.ncbid),
                                             user_header, info->mime_t,
@@ -693,12 +732,15 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 {
     CONNECTOR          ccc;
     SServiceConnector* xxx;
+    char*           myargs;
 
     if (!service || !*service)
         return 0;
 
+    myargs = s_GetMyargs();
     ccc = (SConnector*)        malloc(sizeof(SConnector));
-    xxx = (SServiceConnector*) malloc(sizeof(SServiceConnector));
+    xxx = (SServiceConnector*) malloc(sizeof(SServiceConnector) +
+                                      (myargs ? strlen(myargs) : 0));
     xxx->name     = 0;
     xxx->service  = SERV_ServiceName(service);
     xxx->net_info = net_info
@@ -714,6 +756,12 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     else
         memset(&xxx->params, 0, sizeof(xxx->params));
     memset(&xxx->meta, 0, sizeof(xxx->meta));
+
+    if (myargs) {
+        strcpy(xxx->myargs, myargs);
+        free(myargs);
+    } else
+        xxx->myargs[0] = '\0';
 
     assert(xxx->net_info->http_user_header == 0);
 
@@ -740,6 +788,10 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2002/10/11 19:56:42  lavr
+ * Add "myargs" into connector structure (for later use in requests to
+ * show address and platform of the dispatcher's requestors)
+ *
  * Revision 6.42  2002/09/06 17:45:33  lavr
  * Include <connect/ncbi_priv.h> unconditionally (reported by J.Kans)
  *
