@@ -50,6 +50,10 @@ your own local ASN.1 spec and a pre-built C++ Toolkit</a></li>
 <li>
 <a href="#ref_AddingASN">How to add new ASN.1 module from the C Toolkit
 to the C++ Toolkit?</a></li>
+
+<li>
+<a href="#ref_CToCxxASN">Converting ASN.1 object in memory from <i>C</i> to <i>C++</i> representation</a></li>
+
 </ol>
 
 <hr><!-- **************************************************************** -->
@@ -427,6 +431,64 @@ file]</tt></i></li>
 <li>
 <i>c++/compilers/msvc_prj/<b>ncbi_cpp.dsw</b></i></li>
 </ul>
+
+<hr><!-- **************************************************************** -->
+<h4>
+<a NAME="ref_CToCxxASN"></a> Converting ASN.1 object in memory from
+<i>C</i> to <i>C++</i> representation
+</h4>
+
+Here is a sketchy example on how to convert <i>Bioseq</i>
+data from <i>"C" </i> <tt>(BioseqPtr)</tt> to <i>"C++"</i>
+<tt>(class CBioseq)</tt> representation by serializing it
+through a memory buffer <tt>(BUF)</tt>.
+
+<pre>
+CBioseq* BioseqPtr2CBioseq(BioseqPtr bioseq_c)
+{
+    // Create memory (BUF) based connector, connection and stream
+    CONNECTOR       memory_connector = MEMORY_CreateConnector(0);
+    CConn_IOStream  memory_stream(memory_connector);
+
+    // Write C object BioseqPtr to the memory buffer
+    AsnIoPtr asn_c_stream = CreateAsnConn(memory_stream->GetCONN(),
+                                          eAsnConn_Output, eAsnConn_Binary);
+    BioseqAsnWrite(bioseq_c, asn_c_stream, 0);
+    AsnIoFlush(asn_c_stream);
+    
+    // Read C++ object CBioseq from the memory buffer
+    CRef<CBioseq> bioseq_cxx = new CBioseq;
+    CObjectIStreamAsnBinary memory_cxx_stream(memory_stream);
+    memory_cxx_stream >> *bioseq_cxx;
+    return bioseq_cxx.Release();
+}
+</pre>
+
+<pre>
+BioseqPtr BioseqPtr2CBioseq(const CBioseq& bioseq_cxx)
+{
+    // Create memory (BUF) based connector, connection and stream
+    CONNECTOR       memory_connector = MEMORY_CreateConnector(0);
+    CConn_IOStream  memory_stream(memory_connector);
+
+    // Write C++ object CBioseq to the memory buffer
+    CObjectOStreamAsnBinary memory_cxx_stream(memory_stream);
+    memory_cxx_stream << bioseq_cxx;
+    memory_cxx_stream.Flush();
+
+    // Read C object BioseqPtr from the memory buffer
+    AsnIoPtr asn_c_stream = CreateAsnConn(memory_stream->GetCONN(),
+                                           eAsnConn_Input, eAsnConn_Binary);
+    BioseqPtr bioseq_c = BioseqAsnRead(asn_c_stream, 0);
+    
+    return bioseq_c;
+}
+</pre>
+
+The same technique can be used to convert other ASN.1-serializable objects.
+
+
+
 <!-- **************************************************************** -->
 <p>
 
