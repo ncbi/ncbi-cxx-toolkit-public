@@ -56,6 +56,7 @@
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/items/reference_item.hpp>
 #include <objtools/format/context.hpp>
+#include "utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -329,42 +330,54 @@ void CReferenceItem::Format
 
 bool CReferenceItem::Matches(const CPub_set& ps) const
 {
-    // compare IDs
-    CTypesConstIterator it;
-    CType<CCit_gen>::AddTo(it);
-    CType<CMedlineUID>::AddTo(it);
-    CType<CMedline_entry>::AddTo(it);
-    CType<CPub>::AddTo(it);
-    CType<CPubMedId>::AddTo(it);
+    if ( !ps.IsPub() ) {
+        return false;
+    }
 
-    for (it = ps;  it;  ++it) {
-        if (CType<CCit_gen>::Match(it)) {
-            const CCit_gen& gen = *CType<CCit_gen>::Get(it);
-            if ( gen.IsSetMuid()  &&  gen.GetMuid() == GetMUID() ) {
-                return true;
-            }
-        } else if (CType<CMedlineUID>::Match(it)) {
-            if ( CType<CMedlineUID>::Get(it)->Get() == GetMUID() ) {
-                return true;
-            }
-        } else if (CType<CMedline_entry>::Match(it)) {
-            if ( CType<CMedline_entry>::Get(it)->GetUid() == GetMUID() ) {
-                return true;
-            }
-        } else if (CType<CPub>::Match(it)) {
-            const CPub& pub = *CType<CPub>::Get(it);
-            if ( pub.IsMuid()  &&  pub.GetMuid() == GetMUID() ) {
-                return true;
-            }
-        } else if (CType<CPubMedId>::Match(it)) {
-            if ( CType<CPubMedId>::Get(it)->Get() == GetPMID() ) {
+    ITERATE (CPub_set::TPub, it, ps.GetPub()) {
+        if ( x_Matches(**it) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CReferenceItem::x_Matches(const CPub& pub) const
+{
+    switch ( pub.Which() ) {
+    case CPub::e_Muid:
+        return pub.GetMuid() == GetMUID();
+    case CPub::e_Pmid:
+        return pub.GetPmid() == GetPMID();
+    case CPub::e_Equiv:
+        ITERATE (CPub::TEquiv::Tdata, it, pub.GetEquiv().Get()) {
+            if ( x_Matches(**it) ) {
                 return true;
             }
         }
+        break;
+    default:
+        {
+            if ( !m_UniqueStr.empty() ) {
+                string unique;
+                pub.GetLabel(&unique, CPub::eContent, true);
+                size_t len = unique.length();
+                if ( len > 0  &&  unique[len - 1] == '>' ) {
+                    --len;
+                }
+                len = min(len , m_UniqueStr.length());
+                unique.resize(len);
+                if ( NStr::StartsWith(m_UniqueStr, unique, NStr::eNocase) ) {
+                    return true;
+                }
+            }
+        break;
+        }
     }
-
     return false;
 }
+
 
 
 void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
@@ -377,8 +390,29 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
         m_Title = "Direct Submission";
         m_Category = eSubmission;
     }
+    CPub_equiv::Tdata::const_iterator last = m_Pubdesc->GetPub().Get().end()--;
     ITERATE (CPub_equiv::Tdata, it, m_Pubdesc->GetPub().Get()) {
         x_Init(**it, ctx);
+
+        // set unique str
+        // skip over just serial number
+        if ( (*it)->IsGen()  &&  it != last ) {
+            const CCit_gen& gen = (*it)->GetGen();
+
+            if ( !gen.CanGetCit()  ||
+                 !NStr::StartsWith(gen.GetCit(), "BackBone id_pub", NStr::eNocase) ) {
+                if ( !gen.CanGetCit()  &&
+                      !gen.CanGetJournal()  &&
+                      !gen.CanGetDate()  &&
+                      gen.CanGetSerial_number()  &&
+                      gen.GetSerial_number() > 0 ) {
+                     continue;
+                }
+            }
+        }
+        if ( m_UniqueStr.empty() ) {
+            (*it)->GetLabel(&m_UniqueStr, CPub::eContent, true);
+        }
     }
     x_CleanData();
 
@@ -648,34 +682,59 @@ void CReferenceItem::x_Init
 
 void CReferenceItem::x_Init(const CCit_pat& pat, CBioseqContext& ctx)
 {
+    bool embl = ctx.Config().IsFormatEMBL();
+    m_Category = ePublished;
+
     m_Title = pat.GetTitle();
     x_AddAuthors(pat.GetAuthors());
-    int seqid = 0;
+
+    m_Journal = (embl ? "Patent number " : "Patent: ") + pat.GetCountry() + ' ';
+    if ( pat.CanGetNumber()  &&  !pat.GetNumber().empty() ) {
+        m_Journal += pat.GetNumber();
+    } else if ( pat.CanGetApp_number()  &&  !pat.GetApp_number().empty() ) {
+        m_Journal += pat.GetApp_number();
+    }
+    if ( pat.CanGetDoc_type()  &&  !pat.GetDoc_type().empty() ) {
+        m_Journal += '-';
+        m_Journal += pat.GetDoc_type();
+    }
+
+    CPatent_seq_id::TSeqid seqid = 0;
     ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
         if ((*it)->IsPatent()) {
             seqid = (*it)->GetPatent().GetSeqid();
         }
     }
-    // !!!XXX - same for EMBL?
-    if (pat.CanGetNumber()) {
-        m_Category = ePublished;
-        m_Journal = "Patent: " + pat.GetCountry() + ' ' + pat.GetNumber()
-            + '-' + pat.GetDoc_type() + ' ' + NStr::IntToString(seqid);
-        if (pat.CanGetDate_issue()) {
-            // !!!ctx.GetFormatter().FormatDate(pat.GetDate_issue(), m_Journal);
+    if ( seqid > 0 ) {
+        m_Journal += embl ? '/' : ' ';
+        m_Journal += NStr::IntToString(seqid);
+        if ( embl ) {
+            m_Journal += ", ";
         }
-        m_Journal += ';';
     } else {
-        // !!!...
+        m_Journal += ' ';
     }
+    if ( pat.CanGetDate_issue() ) {
+        m_Journal += ' ';
+        DateToString(pat.GetDate_issue(), m_Journal);
+    } else if ( pat.CanGetApp_date() ) {
+        m_Journal += ' ';
+        DateToString(pat.GetApp_date(), m_Journal);
+    }
+    m_Journal += (embl ? '.' : ';');
 }
 
 
 void CReferenceItem::x_Init(const CCit_let& man, CBioseqContext& ctx)
 {
     x_Init(man.GetCit(), ctx);
+
     if (man.CanGetType()  &&  man.GetType() == CCit_let::eType_thesis) {
         const CImprint& imp = man.GetCit().GetImp();
+        if ( !m_Journal.empty() ) {
+            m_Title = m_Journal;
+            m_Journal.clear();
+        }
         m_Journal = "Thesis (";
         imp.GetDate().GetDate(&m_Journal, "%Y");
         m_Journal += ')';
@@ -689,6 +748,7 @@ void CReferenceItem::x_Init(const CCit_let& man, CBioseqContext& ctx)
             replace(affil.begin(), affil.end(), '\"', '\'');
             m_Journal += ' ' + affil;
         }
+        m_Date.Reset();
     }
 }
 
@@ -1169,6 +1229,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/05/20 13:47:54  shomrat
+* Fixed Pub-set match
+*
 * Revision 1.15  2004/05/15 13:22:45  ucko
 * Sort sc_RemarkText, and note the requirement.
 *
