@@ -71,6 +71,20 @@ typedef struct {
 extern DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks);
 extern void DP_DestroyBlockInfo(DP_BlockInfo *blocks);
 
+/* standard function for calculating max loop length, given a list of the sizes of all the
+   corresponding loops in each sequence/row of an existing multiple alignment:
+
+        if percentile < 1.0:
+            max = (len such that <percentile>% of loops are <= len) + extension
+        else if percentile >= 1.0:
+            max = (<percentile> * max loop len)(rounded) + extension
+
+        if cutoff > 0, max will be truncated to be <= cutoff
+*/
+extern unsigned int DP_CalculateMaxLoopLength(
+        unsigned int nLoops, const unsigned int *loopLengths,   /* based on existing alignment */
+        double percentile, unsigned int extension, unsigned int cutoff);
+
 /* callback function to get the score for a block at a specified position; should
    return DP_NEGATIVE_INFINITY if the block can't be aligned at this position. For
    local alignments, the average expected score for a random match must be <= zero. */
@@ -116,6 +130,9 @@ DP_LocalBlockAlign(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/08/22 14:28:49  thiessen
+* add standard loop calculating function
+*
 * Revision 1.7  2003/07/11 15:27:48  thiessen
 * add DP_ prefix to globals
 *

@@ -36,8 +36,9 @@
 #include <corelib/ncbi_limits.h>
 
 #include <vector>
+#include <algorithm>
 
-#include <struct_dp/struct_dp.h>
+#include "struct_dp/struct_dp.h"
 
 USING_NCBI_SCOPE;
 
@@ -471,9 +472,36 @@ void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
     delete alignment;
 }
 
+unsigned int DP_CalculateMaxLoopLength(
+        unsigned int nLoops, const unsigned int *loops,
+        double percentile, unsigned int extension, unsigned int cutoff)
+{
+    vector < unsigned int > loopLengths(nLoops);
+    unsigned int index, max;
+    for (index=0; index<nLoops; index++)
+        loopLengths[index] = loops[index];
+
+    stable_sort(loopLengths.begin(), loopLengths.end());
+
+    if (percentile < 1.0) {
+        index = (unsigned int)(percentile * (nLoops - 1) + 0.5);
+        max = loopLengths[index] + extension;
+    } else {  // percentile >= 1.0
+        max = ((unsigned int)(percentile * loopLengths[nLoops - 1] + 0.5)) + extension;
+    }
+
+    if (cutoff > 0 && max > cutoff)
+        max = cutoff;
+
+    return max;
+}
+
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/08/22 14:28:49  thiessen
+* add standard loop calculating function
+*
 * Revision 1.10  2003/08/19 19:36:48  thiessen
 * avoid annoying 'might be used uninitialized' warnings
 *
