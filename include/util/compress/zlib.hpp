@@ -35,13 +35,11 @@
  */
 
 #include <util/compress/stream.hpp>
-#ifdef NCBI_COMPILER_MSVC
-#  include <util/compress/zlib/zlib.h>
-#else
-#  include <zlib.h>
-#endif
+
 #ifdef USE_LOCAL_ZLIB
 #  include <util/compress/zlib/zutil.h>
+#else
+#  include <zlib.h>
 #endif
 
 #ifndef DEF_MEM_LEVEL
@@ -387,6 +385,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/14 15:16:46  vakatov
+ * Take into account only USE_LOCAL_ZLIB, and not NCBI_COMPILER_MSVC
+ *
  * Revision 1.9  2004/05/10 11:56:24  ivanov
  * Added gzip file format support
  *
