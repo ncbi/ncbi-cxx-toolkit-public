@@ -158,7 +158,7 @@ interface, which is responsible for the connection to the database. It
 is highly recommended to specify the database name as an argument to the<span class="ncbi_func">CreateConnction()</span>
 method, or use the&nbsp;<span class="ncbi_func">SetDatabase()</span> method
 of a <a href="../docxx/CConnection.html" class="ncbi_class">CConneciton</a>
-object instead of using a reqular SQL statement. In the later case, the
+object instead of using a reqular SQL statement. In the latter case, the
 library won't be able to track the current database.
 <blockquote>
 <pre class="ncbi_code">IDataSource *ds = dm.CreateDs("ctlib");
@@ -222,26 +222,18 @@ Input and Output Parameters</h3>
 The method&nbsp;<span class="ncbi_func"><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetParam(const
 CVariant&amp; v, const string&amp; name)</span> is used to pass parameters
 to stored procedures and dynamic SQL statements. To ensure the correct
-&lt;&lt;&lt;&lt;&lt;&lt;&lt; dbapi_user.html parameter type it is recommended
-to use <tt><a href="../docxx/CVariant.html">CVariant</a></tt> type factories
-(static methods) to create a <tt><a href="../docxx/CVariant.html">CVariant</a></tt>
-of the required internal type. Here are a few examples: <tt><a href="../docxx/CVariant.html">CVariant</a>::Int4(Int4
-*p), <a href="../docxx/CVariant.html">CVariant</a>::TinyInt(UInt1 *p),</tt>
-<br><tt><a href="../docxx/CVariant.html">CVariant</a>::VarChar(const char
-*p, size_t len )</tt> etc.
-<p>There are also corresponding constructors, like <tt><a href="../docxx/CVariant.html">CVariant</a>::CVariant(Int4
-v), <a href="../docxx/CVariant.html">CVariant</a>::CVariant(const string&amp;
-s), ...</tt>, but the user must ensure the proper type conversion in the
-======= parameter type it is recommended to use <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a>
+parameter type it is recommended to use <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a>
 type factories (static methods) to create a <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a>
-of the required internal type. Here are a few examples:&nbsp;<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::Int4(Int4
+of the required internal type. There is no internal representation for the BIT parameter type, 
+please use TinyInt of Int types with 0 for false and 1 for true respectively.
+Here are a few examples:&nbsp;<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::Int4(Int4
 *p)</span>,&nbsp;<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::TinyInt(UInt1
 *p)</span>,<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::VarChar(const
 char *p, size_t len )</span> etc.
 <p>There are also corresponding constructors, like&nbsp;<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::CVariant(Int4
 v)</span>,&nbsp;<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::CVariant(const
 string&amp; s), ...</span>, but the user must ensure the proper type conversion
-in the >>>>>>> 1.11 arguments, and not all internal types can be created
+in the arguments, and not all internal types can be created
 using constructors.
 <br>Output parameters are set by the&nbsp;<span class="ncbi_func"><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetOutputParam(const
 CVariant&amp; v, const string&amp; name)</span> method, where the first
