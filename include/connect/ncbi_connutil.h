@@ -60,6 +60,11 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/08 22:47:13  lavr
+ * ReqMethod constants changed (to conform to coding standard)
+ * ClientMode removed; replaced by 2 booleans: stateless and firewall
+ * in SConnInfo structure
+ *
  * Revision 6.5  2000/12/29 17:47:46  lavr
  * NCBID stuff removed; ClientMode enum added;
  * ConnNetInfo_SetUserHeader added; http_user_header is now
@@ -94,17 +99,10 @@ extern "C" {
 
 
 typedef enum {
-    eReqMethodAny = 0,
-    eReqMethodPost,
-    eReqMethodGet
+    eReqMethod_Any = 0,
+    eReqMethod_Post,
+    eReqMethod_Get
 } EReqMethod;
-
-
-typedef enum {
-    eClientModeStatelessOnly = 0,
-    eClientModeStatefulCapable,
-    eClientModeFirewall
-} EClientMode;
 
 
 /* Network connection related configurable info struct
@@ -122,8 +120,9 @@ typedef struct {
     unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
     char           proxy_host[64];   /* host of CERN-like firewall proxy srv */
     int/*bool*/    debug_printout;   /* printout some debug info             */
+    int/*bool*/    stateless;        /* to connect in HTTP-like fashion only */
+    int/*bool*/    firewall;         /* to use firewall/relay in connects    */
     int/*bool*/    lb_disable;       /* to disable local load-balancing      */
-    EClientMode    client_mode;      /* how to connect to the server         */
     const char*    http_user_header; /* user header to add to HTTP request   */
 
     /* the following field(s) are for the internal use only! */
@@ -156,21 +155,24 @@ typedef struct {
 #define REG_CONN_MAX_TRY          "MAX_TRY"
 #define DEF_CONN_MAX_TRY          3
                                   
-#define REG_CONN_PROXY_HOST       "PROXY_HOST"
-#define DEF_CONN_PROXY_HOST       ""
-                                  
 #define REG_CONN_HTTP_PROXY_HOST  "HTTP_PROXY_HOST"
 #define DEF_CONN_HTTP_PROXY_HOST  ""
                                   
 #define REG_CONN_HTTP_PROXY_PORT  "HTTP_PROXY_PORT"
 #define DEF_CONN_HTTP_PROXY_PORT  80
                                   
+#define REG_CONN_PROXY_HOST       "PROXY_HOST"
+#define DEF_CONN_PROXY_HOST       ""
+                                  
 #define REG_CONN_DEBUG_PRINTOUT   "DEBUG_PRINTOUT"
 #define DEF_CONN_DEBUG_PRINTOUT   ""
                                   
-#define REG_CONN_CLIENT_MODE      "CLIENT_MODE"
-#define DEF_CONN_CLIENT_MODE      ""
-                                  
+#define REG_CONN_STATELESS        "STATELESS"
+#define DEF_CONN_STATELESS        "TRUE"
+
+#define REG_CONN_FIREWALL         "FIREWALL"
+#define DEF_CONN_FIREWALL         ""
+
 #define REG_CONN_LB_DISABLE       "LB_DISABLE"
 #define DEF_CONN_LB_DISABLE       ""
 
@@ -193,8 +195,6 @@ typedef struct {
  *   debug_printout     DEBUG_PRINTOUT
  *   client_mode        CLIENT_MODE
  *   lb_disable         LB_DISABLE
- *   ncbid_port         NCBID_PORT
- *   ncbid_path         NCBID_PATH
  *
  * For default values see right above, in macros DEF_CONN_<NAME>.
  */
