@@ -51,12 +51,13 @@ CFLAGS_ALL = $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 $(XLIB): $(XLIBOBJ)
 	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ) $(XLOBJ)
 	$(RANLIB) $(XLIB)
+	$(BINCOPY) $(XLIB) $(libdir)
 
 
 ### Standard targets
 
 all: $(XLIB) $(XOBJ)
-	$(BINCOPY) $(XLIB) $(XOBJ) $(libdir)
+	@$(BINCOPY) $(XOBJ) $(libdir)
 
 clean:
 	-$(RMDIR) SunWS_cache
