@@ -239,7 +239,7 @@ CNCBINode* CPager::GetPageInfo(void) const
 
 CNCBINode* CPager::GetItemInfo(void) const
 {
-    CHTML_div* node(new CHTML_div);
+    CHTML_div* node = new CHTML_div;
     node->SetClass("medium2");
     
     if( m_ItemCount == 0 ) {
