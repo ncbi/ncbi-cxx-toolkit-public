@@ -42,9 +42,8 @@
       <tr><td><i><b>U</b>UnionTypeName</i></td><td>union UMyUnion { ..... };</td></tr>
       <tr><td><i><b>E</b>EnumTypeName</i></td><td>enum EMyEnum { ..... };</td></tr>
       <tr><td><i><b>F</b>FunctionTypeName</i></td><td>void (*FMyFunc)(void) { ..... };</td></tr>
-      <tr><td><i><b>T</b>AuxiliaryTypedef</i></td><td>typedef map&lt;int,string&gt; TMapIntStr;</td></tr>
-      <tr><td><i><b>N</b><a href="#ref_Prefix">QuasiNamespace</a>
-		  </i></td><td>struct NMyNamespace { ..... }; </td></tr>
+      <tr><td><i><b>T</b>AuxiliaryTypedef <a href="#ref_AuxType">(see also)</a></i></td><td>typedef map&lt;int,string&gt; TMapIntStr;</td></tr>
+      <tr><td><i><b>N</b>QuasiNamespace <a href="#ref_Prefix">(see also)</a></i></td><td>struct NMyNamespace { ..... }; </td></tr>
 
 		<a name="ref_NamingConst">
       <tr><th>Constants</th></tr>
@@ -67,7 +66,15 @@
 
 	 </table>
 
-	 <br></br> <br></br>
+	 <a name="ref_AuxType">
+
+	 <p>
+	 (*) The auxiliary typedefs(like <i><b>T</b>AuxiliaryTypedef</i>) are usually
+	 used for an ad-hoc type mappings(especially when using templates) and
+	 not when a real type definition takes place.
+
+
+		<br></br> <br></br>
 
 	 <a name="ref_Prefix">
     <h2>Name prefixing and/or the use of quasi-namespaces</h2>
