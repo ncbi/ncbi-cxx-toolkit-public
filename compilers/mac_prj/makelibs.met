@@ -199,7 +199,7 @@ on SetProjectData()
 				"data_loader", "handle_range", "seq_id_handle", "tse_info"})
 		
 		
-		AddSimpleProject("xobjutil", {"C++"}, "objects:util", {"feature", "seqtitle", "gbqual", "sequence", "genbank", "weight"})
+		AddSimpleProject("xobjutil", {"C++"}, "objects:util", {"feature", "seqtitle", "gbqual", "sequence", "genbank", "validate", "weight"})
 		
 	end if
 	
