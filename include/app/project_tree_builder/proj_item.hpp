@@ -64,7 +64,7 @@ public:
     CProjItem(void);
     CProjItem(const CProjItem& item);
     CProjItem& operator= (const CProjItem& item);
-    
+
     CProjItem(TProjType type,
               const string& name,
               const string& id,
@@ -72,8 +72,9 @@ public:
               const list<string>& sources, 
               const list<string>& depends,
               const list<string>& requires,
-              const list<CDataToolGeneratedSrc> datatool_src);
-
+              const list<string>& libs_3_party,
+              const list<string>& include_dirs);
+    
     ~CProjItem(void);
 
     /// Name of atomic project.
@@ -94,11 +95,18 @@ public:
     /// What projects this project is depend upon (IDs).
     list<string> m_Depends;
 
-    /// What this project requires to have.
+    /// What this project requires to have (in user site).
     list<string> m_Requires;
+
+    /// Resolved contents of LIBS flag (Third-party libs)
+    list<string> m_Libs3Party;
+
+    /// Resolved contents of CPPFLAG ( -I$(include)<m_IncludeDir> -I$(srcdir)/..)
+    list<string>  m_IncludeDirs;
 
     /// Source files *.asn , *.dtd to be processed by datatool app
     list<CDataToolGeneratedSrc> m_DatatoolSources;
+
 
 private:
     void Clear(void);
@@ -140,13 +148,7 @@ public:
     /// Get depends that are not inside this project tree.
     void GetExternalDepends(list<string>* externalDepends) const;
 
-    /// Navigation through the tree:
-    /// Root items.
-    void GetRoots(list<string>* ids) const;
-
-    /// First children.
-    void GetSiblings(const string& parent_id, 
-                     list<string>* ids) const;
+    // for navigation through the tree use class CProjectTreeFolders below.
 
     friend class CProjectTreeBuilder;
 
@@ -326,6 +328,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/03 17:05:08  gorelenk
+ * Added members to class CProjItem
+ *
  * Revision 1.6  2004/01/30 20:42:21  gorelenk
  * Added support of ASN projects
  *
