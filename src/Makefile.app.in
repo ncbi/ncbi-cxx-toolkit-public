@@ -69,15 +69,10 @@ $(XAPP): $(XOBJ) $(XLIBDEP)
 
 ### Standard targets (non-recursive)
 
-all: rebuild-libs .WAIT $(XAPP)
-
-# Ensure that gmake -j and Sun dmake -j will complete rebuild-libs
-# before considering $(XAPP).  (Unfortunately, this means gmake -j
-# will also build only one object at a time; finer-grained control is
-# impossible.)
-.NOTPARALLEL:
-.WAIT:
-	@:
+# Kludge: done this way to force proper serialization
+MAKEFILE = $(builddir)/Makefile.app.tmpl
+all: rebuild-libs
+	@$(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP)
 
 clean:
 	-$(RMDIR) SunWS_cache
