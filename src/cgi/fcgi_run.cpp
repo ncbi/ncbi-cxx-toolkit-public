@@ -246,7 +246,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     unsigned int max_iterations;
     {{
         int x_iterations =
-            reg.GetInt("FastCGI", "Iterations", (int) def_iter,
+            reg.GetInt("FastCGI", "Iterations", (int) def_iter, 0,
                        CNcbiRegistry::eErrPost);
 
         if (x_iterations > 0) {
@@ -570,6 +570,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.53  2005/03/23 22:36:21  ucko
+ * Fix call to GetInto for [FastCGI]Iterations -- err_action was
+ * accidentally being passed as flags.
+ *
  * Revision 1.52  2004/12/27 20:31:38  vakatov
  * + CCgiApplication::OnEvent() -- to allow one catch and handle a variety of
  *   states and events happening in the CGI and Fast-CGI applications
