@@ -116,7 +116,8 @@ public:
           m_BitOffset(0) {}
     CResizingIterator(const TRawIterator& start, const TRawIterator& end,
                       size_t new_size)
-        : m_RawIterator(it), m_End(end), m_NewSize(new_size), m_BitOffset(0) {}
+        : m_RawIterator(start), m_End(end), m_NewSize(new_size), m_BitOffset(0)
+        {}
 
     CResizingIterator<TSeq, TVal> & operator++(); // prefix
     CResizingIterator<TSeq, TVal> operator++(int); // postfix
@@ -401,6 +402,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/04/26 14:50:59  ucko
+* Fix a typo caught by GCC 3.4.
+*
 * Revision 1.8  2004/03/05 18:25:26  dicuccio
 * Fixed logic in AtEnd(): return avail < goal
 *
