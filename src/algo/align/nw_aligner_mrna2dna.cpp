@@ -67,8 +67,6 @@ const unsigned char kMaskDnr   = 0x20;
 
 int CNWAlignerMrna2Dna::Run()
 {
-    x_LoadScoringMatrix();
-
     const int N1 = m_SeqLen1 + 1;
     const int N2 = m_SeqLen2 + 1;
 
@@ -282,6 +280,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/01/30 20:32:06  kapustin
+ * Call x_LoadScoringMatrix() from the base class constructor.
+ *
  * Revision 1.5  2003/01/21 12:41:38  kapustin
  * Use class neg infinity constant to specify least possible score
  *

@@ -63,7 +63,6 @@ CNWAligner::TScore CMMAligner::Run()
     m_TransList.clear();
     m_TransList.push_back(eNone);
 
-    x_LoadScoringMatrix();
     SCoordRect m (0, 0, m_SeqLen1 - 1, m_SeqLen2 - 1);
     x_DoSubmatrix(m, m_TransList.end(), false, false); // top-level call
 
@@ -789,6 +788,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/01/30 20:32:06  kapustin
+ * Call x_LoadScoringMatrix() from the base class constructor.
+ *
  * Revision 1.4  2003/01/28 12:37:40  kapustin
  * Move m_score to the base class
  *
