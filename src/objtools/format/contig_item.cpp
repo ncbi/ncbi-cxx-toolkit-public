@@ -78,7 +78,7 @@ void CContigItem::x_GatherInfo(CBioseqContext& ctx)
     //}
     const CSeq_ext& ext = ctx.GetHandle().GetInst_Ext();
 
-    if ( ctx.IsSegmented()  &&  ctx.HasParts() ) {
+    if (ctx.IsSegmented()) {
         ITERATE (CSeg_ext::Tdata, it, ext.GetSeg().Get()) {
             data.push_back(*it);
         }
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/08/30 13:37:19  shomrat
+* allow contig for segmented with far segments
+*
 * Revision 1.5  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
