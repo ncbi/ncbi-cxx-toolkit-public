@@ -62,28 +62,53 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-template <class TBlock>
-inline
-void SFlatKeywords::x_AddKeys(const TBlock& block)
-{
-    if (block.IsSetKeywords()) {
-        m_Keywords.insert(m_Keywords.end(), block.GetKeywords().begin(),
-                          block.GetKeywords().end());
-    }
-}
-
-
 SFlatKeywords::SFlatKeywords(const SFlatContext& ctx)
 {
     for (CSeqdesc_CI it(ctx.m_Handle);  it;  ++it) {
         switch (it->Which()) {
-        // Yay for templates!
-        case CSeqdesc::e_Pir:      x_AddKeys(it->GetPir());      break;
-        case CSeqdesc::e_Genbank:  x_AddKeys(it->GetGenbank());  break;
-        case CSeqdesc::e_Sp:       x_AddKeys(it->GetSp());       break;
-        case CSeqdesc::e_Embl:     x_AddKeys(it->GetEmbl());     break;
-        case CSeqdesc::e_Prf:      x_AddKeys(it->GetPrf());      break;
-        default:                                                 break;
+        // Grr, MSVC won't let me handle everything with a single template.
+        case CSeqdesc::e_Pir:
+          if (it->GetPir().IsSetKeywords()) {
+              m_Keywords.insert(m_Keywords.end(),
+                                it->GetPir().GetKeywords().begin(),
+                                it->GetPir().GetKeywords().end());
+          }
+	  break;
+
+        case CSeqdesc::e_Genbank:
+          if (it->GetGenbank().IsSetKeywords()) {
+              m_Keywords.insert(m_Keywords.end(),
+                                it->GetGenbank().GetKeywords().begin(),
+                                it->GetGenbank().GetKeywords().end());
+          }
+	  break;
+
+        case CSeqdesc::e_Sp:
+          if (it->GetSp().IsSetKeywords()) {
+              m_Keywords.insert(m_Keywords.end(),
+                                it->GetSp().GetKeywords().begin(),
+                                it->GetSp().GetKeywords().end());
+          }
+	  break;
+
+        case CSeqdesc::e_Embl:
+          if (it->GetEmbl().IsSetKeywords()) {
+              m_Keywords.insert(m_Keywords.end(),
+                                it->GetEmbl().GetKeywords().begin(),
+                                it->GetEmbl().GetKeywords().end());
+          }
+	  break;
+
+        case CSeqdesc::e_Prf:
+          if (it->GetPrf().IsSetKeywords()) {
+              m_Keywords.insert(m_Keywords.end(),
+                                it->GetPrf().GetKeywords().begin(),
+                                it->GetPrf().GetKeywords().end());
+          }
+	  break;
+
+        default:
+            break;
         }
     }
 }
@@ -303,6 +328,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/10 22:04:43  ucko
+* Expand out x_AddKeys manually because MSVC wouldn't.
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *
