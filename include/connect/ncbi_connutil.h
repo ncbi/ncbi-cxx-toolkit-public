@@ -207,6 +207,7 @@ typedef struct {
  *  debug_printout    DEBUG_PRINTOUT
  *  client_mode       CLIENT_MODE
  *  lb_disable        LB_DISABLE
+ *  http_user_header  HTTP_USER_HEADER  "\r\n" if missing is appended
  *
  * A value of the field NAME is first looked for in the environment variable
  * of the form service_CONN_NAME; then in the current corelib registry,
@@ -646,6 +647,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2005/02/24 19:51:24  lavr
+ * Document CONN_HTTP_USER_HEADER environment
+ *
  * Revision 6.37  2005/02/24 19:00:33  lavr
  * +CONN_HTTP_USER_HEADER
  *
