@@ -410,7 +410,10 @@ CValidError_CI& CValidError_CI::operator= (const CValidError_CI& iter)
 
 CValidError_CI& CValidError_CI::operator++ (void)
 {
-    ++m_ErrIter;
+    if (m_ErrIter != m_ValidError->m_ErrItems.end()) {
+        ++m_ErrIter;
+    }
+    
     for (; m_ErrIter != m_ValidError->m_ErrItems.end(); ++m_ErrIter) {
         if ((m_ErrCodeFilter == eErr_ALL  ||
             (**m_ErrIter).GetErrCode() == CValidErrItem::sm_Terse[m_ErrCodeFilter])  &&
@@ -4653,6 +4656,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2002/10/22 19:28:44  clausen
+* Fixed CValidError_CI::operator++ to prevent  m_ErrIter from going beyond end()
+*
 * Revision 1.13  2002/10/14 20:44:35  kans
 * use WriteAsFasta and CNcbiOstrstreamToString in ValidateSeqIds
 *
