@@ -56,6 +56,7 @@ BEGIN_SCOPE(blast)
 class IBlastSeqInfoSrc
 {
 public:
+	virtual ~IBlastSeqInfoSrc() {}
     /// Method to retrieve a sequence identifier given its ordinal number.
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const = 0;
     /// Method to retrieve a sequence length given its ordinal number.
@@ -69,6 +70,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/11/29 20:08:29  camacho
+ * + virtual destructor, as the class is meant to be subclassed
+ *
  * Revision 1.3  2004/10/06 17:47:34  dondosha
  * Removed ncbi_pch.hpp
  *
