@@ -54,6 +54,31 @@ BEGIN_NCBI_SCOPE
 ///
 /// CCgiRedirectApplication inherits its basic functionality from
 /// CCgiApplication and defines additional method for remapping CGI entries.
+///
+/// The CCgiRedirectApplication class uses registry file to get settings,
+/// and rules to entries changing.
+///
+/// Class map some registry entries to HTML page tags.
+/// The list of mapped tags:
+///
+///     _TITLE_   - Page title;
+///     _HEADER_  - Main header;
+///     _MESSAGE_ - Some additional message;
+///     _BASEURL_ - New base URL to redirect to;
+///     _URL_     - Full new URL with all parameters;
+///     _TIMER_   - Wait time (in seconds) before redirecting
+///                 (if this feature is implemented by template).
+///
+///     Also, all CGI variables will be mapped with its names.
+///     So they can be used inside HTML forms to redirect requests by
+///     GET/POST methods.
+///
+/// For an explanation of the syntax of the Registry file, see the
+/// C++ Toolkit documentation.
+///
+/// For an examples of the registry and template files, see 
+/// directory "/src/misc/cgi_redirect". It also contains standart
+/// CGI redirect application.
 
 class NCBI_XCGI_REDIRECT_EXPORT CCgiRedirectApplication:public CCgiApplication
 {
@@ -102,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/10 15:26:17  ivanov
+ * Added comments
+ *
  * Revision 1.3  2004/02/09 19:37:45  ivanov
  * Moved from "cgi/redirect" to "misc/cgi_redirect" directory
  *
