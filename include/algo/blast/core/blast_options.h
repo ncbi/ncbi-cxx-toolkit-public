@@ -330,6 +330,22 @@ typedef struct BlastScoringOptions {
                         gapping */
 } BlastScoringOptions;
 
+/** Scoring parameters block
+ *  Contains scoring-related information that is actually used
+ *  for the blast search
+ */
+typedef struct BlastScoringParameters {
+   BlastScoringOptions *options; /**< User-provided values for these params */
+   Int2 reward;      /**< Reward for a match */
+   Int2 penalty;     /**< Penalty for a mismatch */
+   Int4 gap_open;    /**< Extra penalty for starting a gap (scaled version) */
+   Int4 gap_extend;  /**< Penalty for each gap residue  (scaled version) */
+   Int4 decline_align; /**< Cost for declining alignment  (scaled version) */
+   Int4 shift_pen;   /**< Penalty for shifting a frame in out-of-frame 
+                        gapping (scaled version) */
+   double scale_factor; /**< multiplier for all cutoff scores */
+} BlastScoringParameters;
+
 /** Options for setting up effective lengths and search spaces.  
  * The values are those the user has specified to override the real sizes.
  */
@@ -576,7 +592,6 @@ BLAST_FillScoringOptions(BlastScoringOptions* options, Uint1 program,
    Boolean greedy_extension, Int4 penalty, Int4 reward, const char *matrix, 
    Int4 gap_open, Int4 gap_extend);
 
-
 /** Validate contents of BlastScoringOptions.
  * @param program_number Type of BLAST program [in]
  * @param options Options to be validated [in]
@@ -591,6 +606,21 @@ BlastScoringOptionsValidate(Uint1 program_number,
  * @param BlastScoringOptions to be copied [in]
 */
 Int2 BlastScoringOptionsDup(BlastScoringOptions* *new_opt, const BlastScoringOptions* old_opt);
+
+/**  Deallocate memory for BlastScoringParameters.
+ * @param parameters Structure to free [in]
+ */
+BlastScoringParameters* BlastScoringParametersFree(
+                                     BlastScoringParameters* parameters);
+
+/** Calculate scaled cutoff scores and gap penalties
+ * @param options Already allocated scoring options [in]
+ * @param sbp Structure containing scale factor [in]
+ * @param parameters Scoring parameters [out]
+ */
+Int2 BlastScoringParametersNew(const BlastScoringOptions *options,
+                               BlastScoreBlk* sbp, 
+                               BlastScoringParameters* *parameters);
 
 /** Deallocate memory for BlastEffectiveLengthsOptions*. 
  * @param options Structure to free [in]
@@ -815,14 +845,12 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
  *                   scores [in] [out]
  * @param db_length Total length of database (non-database search if 0) [in]
  * @param subject_length Length of the subject sequence. [in]
- * @param psi_options PSI BLAST options, containing scaling factor [in]
  * 
 */
 void
 CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params, 
-   Int8 db_length, Int4 subject_length, 
-   const PSIBlastOptions* psi_options);
+   Int8 db_length, Int4 subject_length);
 
 #ifdef __cplusplus
 }
