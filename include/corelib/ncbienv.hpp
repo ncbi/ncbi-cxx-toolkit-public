@@ -163,8 +163,8 @@ public:
     /// Constructor.
     CNcbiArguments(int argc,                ///< Standard argument count
                    const char* const* argv, ///< Standard argument vector
-                   const string& program_name = NcbiEmptyString
-                                            ///< Program name
+                   const string& program_name = kEmptyStr, ///< Program name
+                   const string& real_name = kEmptyStr ///< Resolved name
                   );
 
     /// Destructor.
@@ -179,11 +179,11 @@ public:
     /// Reset arguments.
     ///
     /// Delete all cached args and program name.  Load new ones from "argc",
-    /// "argv" and "program_name".
+    /// "argv", "program_name", and "real_name".
     void Reset(int argc,                    ///< Standard argument count
                const char* const* argv,     ///< Standard argument vector
-               const string& program_name = NcbiEmptyString
-                                            ///< Program name
+               const string& program_name = kEmptyStr, ///< Program name
+               const string& real_name = kEmptyStr ///< Resolved name
               );
 
     /// Get size (number) of arguments.
@@ -207,8 +207,11 @@ public:
     /// Program name includes the last '/'.
     string GetProgramDirname (EFollowLinks follow_links = eIgnoreLinks) const;
 
-    /// Set program name.
-    void SetProgramName(const string& program_name);
+    /// Set program name.  If real_name is supplied, it should be the
+    /// fully resolved path to the executable (whereas program_name
+    /// may legitimately involve symlinks).
+    void SetProgramName(const string& program_name,
+                        const string& real_name = kEmptyStr);
 
 private:
     string        m_ProgramName;  ///< Program name if different from the
@@ -229,6 +232,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/08/09 19:06:42  ucko
+ * CNcbiArguments: add an optional argument for the fully-resolved
+ * program name (which is already being cached) to several functions.
+ *
  * Revision 1.14  2004/01/06 18:17:21  dicuccio
  * Added APIs for setting environment variables
  *

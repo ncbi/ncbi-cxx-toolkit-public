@@ -138,9 +138,10 @@ string CNcbiEnvironment::Load(const string& name) const
 
 
 CNcbiArguments::CNcbiArguments(int argc, const char* const* argv,
-                               const string& program_name)
+                               const string& program_name,
+                               const string& real_name)
 {
-    Reset(argc, argv, program_name);
+    Reset(argc, argv, program_name, real_name);
 }
 
 
@@ -152,7 +153,8 @@ CNcbiArguments::~CNcbiArguments(void)
 
 CNcbiArguments::CNcbiArguments(const CNcbiArguments& args)
     : m_ProgramName(args.m_ProgramName),
-      m_Args(args.m_Args)
+      m_Args(args.m_Args),
+      m_ResolvedName(args.m_ResolvedName)
 {
     return;
 }
@@ -171,7 +173,7 @@ CNcbiArguments& CNcbiArguments::operator= (const CNcbiArguments& args)
 
 
 void CNcbiArguments::Reset(int argc, const char* const* argv,
-                           const string& program_name)
+                           const string& program_name, const string& real_name)
 {
     // check args
     if (argc < 0) {
@@ -200,7 +202,7 @@ void CNcbiArguments::Reset(int argc, const char* const* argv,
     }
 
     // set application name
-    SetProgramName(program_name);
+    SetProgramName(program_name, real_name);
 }
 
 
@@ -249,11 +251,12 @@ string CNcbiArguments::GetProgramDirname(EFollowLinks follow_links) const
 }
 
 
-void CNcbiArguments::SetProgramName(const string& program_name)
+void CNcbiArguments::SetProgramName(const string& program_name,
+                                    const string& real_name)
 {
     m_ProgramName = program_name;
     CFastMutexGuard LOCK(m_ResolvedNameMutex);
-    m_ResolvedName.erase();
+    m_ResolvedName = real_name;
 }
 
 
@@ -269,6 +272,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/08/09 19:06:56  ucko
+ * CNcbiArguments: add an optional argument for the fully-resolved
+ * program name (which is already being cached) to several functions.
+ *
  * Revision 1.12  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
