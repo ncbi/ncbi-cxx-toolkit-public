@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2002/09/19 14:00:37  grichenk
+* Implemented CObjectHookGuard for write and copy hooks
+* Added DefaultRead/Write/Copy methods to base hook classes
+*
 * Revision 1.62  2002/08/26 18:32:24  grichenk
 * Added Get/SetAutoSeparator() to CObjectOStream to control
 * output of separators.
@@ -363,6 +367,9 @@ public:
 
 	// member interface
 	void WriteClassMember(const CConstObjectInfoMI& member);
+
+    // choice variant interface
+    void WriteChoiceVariant(const CConstObjectInfoCV& member);
 
     // Separator management
     string GetSeparator(void) const;

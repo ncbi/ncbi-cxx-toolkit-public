@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/09/19 14:00:38  grichenk
+* Implemented CObjectHookGuard for write and copy hooks
+* Added DefaultRead/Write/Copy methods to base hook classes
+*
 * Revision 1.5  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -64,6 +68,7 @@
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 #include <serial/member.hpp>
 #include <serial/memberid.hpp>
 
@@ -121,5 +126,73 @@ void CCopyClassMemberHook::CopyMissingClassMember(CObjectStreamCopier& copier,
 CCopyChoiceVariantHook::~CCopyChoiceVariantHook(void)
 {
 }
+
+
+void CReadObjectHook::DefaultRead(CObjectIStream& in,
+                                  const CObjectInfo& object)
+{
+    object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
+}
+
+void CReadObjectHook::DefaultSkip(CObjectIStream& in,
+                                  const CObjectInfo& object)
+{
+    object.GetTypeInfo()->DefaultSkipData(in);
+}
+
+void CReadClassMemberHook::DefaultRead(CObjectIStream& in,
+                                       const CObjectInfoMI& object)
+{
+    in.ReadClassMember(object);
+}
+
+void CReadClassMemberHook::DefaultSkip(CObjectIStream& in,
+                                       const CObjectInfoMI& object)
+{
+    in.SkipObject(object.GetMember());
+}
+
+void CReadChoiceVariantHook::DefaultRead(CObjectIStream& in,
+                                         const CObjectInfoCV& object)
+{
+    in.ReadChoiceVariant(object);
+}
+
+void CWriteObjectHook::DefaultWrite(CObjectOStream& out,
+                                    const CConstObjectInfo& object)
+{
+    object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
+}
+
+void CWriteClassMemberHook::DefaultWrite(CObjectOStream& out,
+                                         const CConstObjectInfoMI& member)
+{
+    out.WriteClassMember(member);
+}
+
+void CWriteChoiceVariantHook::DefaultWrite(CObjectOStream& out,
+                                           const CConstObjectInfoCV& variant)
+{
+    out.WriteChoiceVariant(variant);
+}
+
+void CCopyObjectHook::DefaultCopy(CObjectStreamCopier& copier,
+                                  const CObjectTypeInfo& type)
+{
+    type.GetTypeInfo()->DefaultCopyData(copier);
+}
+
+void CCopyClassMemberHook::DefaultCopy(CObjectStreamCopier& copier,
+                                       const CObjectTypeInfoMI& member)
+{
+    member.GetMemberInfo()->DefaultCopyMember(copier);
+}
+
+void CCopyChoiceVariantHook::DefaultCopy(CObjectStreamCopier& copier,
+                                         const CObjectTypeInfoCV& variant)
+{
+    variant.GetVariantInfo()->DefaultCopyVariant(copier);
+}
+
 
 END_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2002/09/19 14:00:38  grichenk
+* Implemented CObjectHookGuard for write and copy hooks
+* Added DefaultRead/Write/Copy methods to base hook classes
+*
 * Revision 1.65  2002/08/30 16:22:22  vasilche
 * Removed excessive _TRACEs
 *
@@ -487,6 +491,13 @@ void CObjectOStream::WriteClassMember(const CConstObjectInfo::CMemberIterator& m
     WriteClassMember(memberInfo->GetId(),
                      memberInfo->GetTypeInfo(),
                      memberInfo->GetMemberPtr(classPtr));
+}
+
+void CObjectOStream::WriteChoiceVariant(const CConstObjectInfoCV& object)
+{
+    const CVariantInfo* variantInfo = object.GetVariantInfo();
+    TConstObjectPtr choicePtr = object.GetChoiceObject().GetObjectPtr();
+    variantInfo->DefaultWriteVariant(*this, choicePtr);
 }
 
 void CObjectOStream::Write(const CConstObjectInfo& object)
