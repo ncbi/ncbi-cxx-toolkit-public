@@ -156,6 +156,8 @@ CNetCacheClient::~CNetCacheClient()
 {
 }
 
+
+
 void CNetCacheClient::CheckConnect(const string& key)
 {
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
@@ -247,6 +249,7 @@ IWriter* CNetCacheClient::PutData(string* key, unsigned int  time_to_live)
 
     PutInitiate(key, time_to_live);
 
+    m_Sock->DisableOSSendDelay(false);
     IWriter* writer = new CNetCacheSock_RW(m_Sock);
     return writer;
 }
@@ -602,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/03/22 14:59:22  kuznets
+ * Enable TCP/IP buffering when using IWriter
+ *
  * Revision 1.35  2005/03/21 16:46:35  didenko
  * + creating from PluginManager
  *
