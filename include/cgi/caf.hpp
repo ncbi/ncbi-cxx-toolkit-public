@@ -31,7 +31,7 @@
 */
 
 
-/** @addtogroup CookieAfinity
+/** @addtogroup CookieAffinity
  *
  * @{
  */
@@ -69,6 +69,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2003/04/14 11:24:57  siyan
+* Fixed group name
+*
 * Revision 1.3  2003/04/10 19:01:34  siyan
 * Added doxygen support
 *
