@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.32 2002/04/12 13:53:14 kholodov Exp $
+-- $Id: docsum.asn,v 1.33 2002/06/12 14:02:54 kholodov Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.33  2002/06/12 14:02:54  kholodov
+-- sts-info and unigene-info added
+--
 -- Revision 1.32  2002/04/12 13:53:14  kholodov
 -- Fixed wrong type name NSE-date to NSE-Date
 --
@@ -231,6 +234,7 @@ NSE-ExchangeSet ::= SEQUENCE {
 	dbSNP-build-number INTEGER,		-- build number of database for this export
 	generated NSE-Date OPTIONAL ,		-- Date set-list generated
 	query VisibleString OPTIONAL ,		-- Query terms or search constraints
+	source-dbs SET OF VisibleString OPTIONAL ,	-- List of source databases
 	set-type INTEGER {
        		full-dump (1),			-- Complete set of records in dbSNP
         	from-query (2),			-- Set that satisfies query
@@ -238,7 +242,16 @@ NSE-ExchangeSet ::= SEQUENCE {
 	set-depth INTEGER {
 		brief-set (1),			-- only summary information included in NSE-rs objects
 		full-set (2) } ,		-- all information included in NSE-rs objects (data on subsnps in rs group)
-	rs-set SET OF NSE-rs  			-- Set of Reference SNP docsums and grouped subSNP members
+	rs-set SET OF NSE-rs,  			-- Set of Reference SNP docsums and grouped subSNP members
+	num-refsnp-ids INTEGER OPTIONAL ,	-- Total number of refsnp-ids
+	total-seq-length INTEGER OPTIONAL ,	-- Total length of exemplar flanking sequences
+	num-contig-locs INTEGER OPTIONAL ,	-- Total number of contig locations from SNPContigLoc
+	num-locus-ids INTEGER OPTIONAL ,	-- Total number of locus ids from SNPContigLocusId
+	num-gi-hits INTEGER OPTIONAL ,		-- Total number of gi hits from MapLink
+	num-3d-structs INTEGER OPTIONAL ,	-- Total number of 3D structures from SNP3D
+	num-allele-freqs INTEGER OPTIONAL ,	-- Total number of allele frequences from SubPopAllele
+	num-sts-hits INTEGER OPTIONAL ,		-- Total number of STS hits from SnpInSts
+	num-unigene-cids INTEGER OPTIONAL 	-- Total number of unigene cluster ids from UnigeneSnp
 }
 
 
@@ -293,11 +306,6 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	ncbi-num-ctg-hits INTEGER OPTIONAL,		-- total number of distinct contig-ids in contig-mapset
 	ncbi-num-seq-loc INTEGER OPTIONAL,		-- total number of distinct seq-loc's in contig-mapset
 	ncbi-mapweight INTEGER OPTIONAL,		-- location quality score for NCBI map display
-	ucsc-build-id INTEGER OPTIONAL,		-- UCSC build number for data on genome mapping to synchronize with UCSC genome browser
-	ucsc-num-chr-hits INTEGER OPTIONAL,		-- total number of distinct chromosomes in ucsc-mapset
-	ucsc-num-ctg-hits INTEGER OPTIONAL,		-- total number of distinct contig-ids in ucsc-mapset
-	ucsc-num-seq-loc INTEGER OPTIONAL,		-- total number of distinct seq-loc's in ucsc-mapset
-	ucsc-mapweight INTEGER OPTIONAL,		-- location quality score for ucsc build analysis
 
 	het REAL OPTIONAL,			-- average heterozygosity 
 	het-SE REAL OPTIONAL,			-- standard error of heterozygosity 
@@ -317,12 +325,12 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	contig-mapset SET OF NSE-rsContigHit OPTIONAL, -- list of hits to genome in NT_ contig coordinates and functional relationships
 						-- between variations and genes as annotated on contig sequence
 						-- data from SNPContigLoc & ContigInfo tables
-	ucsc-mapset SET OF NSE-rsContigHit OPTIONAL, -- list of hits to genome in golden path contig coordinates 
-						-- data from SNPGoldenPathContigLoc and GoldenPathContigInfo
 	sequence-mapset SET OF  NSE-rsSeqHit OPTIONAL, -- list of hits to genome in sequence component coordinates from MapLink and MapLinkArchive
 	gene-info SET OF NSE-rsLocusID OPTIONAL, -- set of gene information inferred by blast similarity of variation and GenBank sequences.
 						-- analysis is independent of annotation of genome sequence (contig-mapset, above) and
 						-- includes variations mapped to mRNAs or genomic sequences that do not yet have a reference contig.
+	sts-info SET OF INTEGER OPTIONAL,	-- set of STS ids from SnpInSts
+	unigene-info SET OF NSE-rsUnigene OPTIONAL, -- Unigene info from UnigeneSnp
  	structure-data SET OF NSE-rsStruct OPTIONAL -- set of snp to protein structure data based on map coordinates 
                                                 -- and protein structure neighbors
 
@@ -518,15 +526,19 @@ NSE-rsLocusID ::= SEQUENCE {
 NSE-rsStruct ::= SEQUENCE {
 	prot-acc VisibleString,             -- accession of the protein with variation (SNP3D.protein_acc)
 	prot-gi INTEGER,                    -- GI of the protein with variation (SNP3D.master_gi)
-    prot-loc INTEGER,                   -- position of the residue for the protein GI (SNP3D.aa_position)
-    prot-res VisibleString,             -- residue specified for protein at prot-loc location (SNP3D.contig_res)
-    rs-res VisibleString,               -- alternative residue specified by variation sequence (SNP3D.var_res)
+    	prot-loc INTEGER,                   -- position of the residue for the protein GI (SNP3D.aa_position)
+    	prot-res VisibleString,             -- residue specified for protein at prot-loc location (SNP3D.contig_res)
+    	rs-res VisibleString,               -- alternative residue specified by variation sequence (SNP3D.var_res)
 	struct-gi INTEGER,                  -- GI of the structure neighbor (SNP3D.neighbor_gi)
 	struct-loc INTEGER,                 -- position of the residue for the structure GI (SNP3D.neighbor_pos)
 	struct-res VisibleString            -- residue specified for protein at struct-loc location (SNP3D.neighbor_res)
 }
 	
-    
+   
+NSE-rsUnigene ::= SEQUENCE {
+	cluster-id INTEGER,		   -- unigene_cid from UnigeneSnp
+	gi-set SET OF INTEGER		   -- list of gi's per unigene cluster
+} 
 
 
 
