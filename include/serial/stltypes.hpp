@@ -290,7 +290,7 @@ public:
     static void SetCountFunctions(CStlOneArgTemplate* info)
         {
             info->SetCountFunctions(&CParent::GetElementCount,
-                                    &CParent::ReserveElements);
+                                    &ReserveElements);
         }
 };
 
@@ -764,6 +764,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2004/07/27 15:26:28  ucko
+* Correct previous fix, which was somewhat overzealous.
+*
 * Revision 1.71  2004/07/27 15:22:02  ucko
 * Fix CStlClassInfoFunctions_vec to satisfy GCC 3.4.
 *
