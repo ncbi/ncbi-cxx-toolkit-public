@@ -1,0 +1,614 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>Thread manipulation and synchronization</title>
+</head>
+
+<body>
+
+
+<h2>Thread manipulation and synchronization</h2>
+<p>
+
+<ul>
+<li><a href=#usingthreads>Using threads</a>
+    <ul>
+    <li><a href=#cthreadpublic><i><b>CThread</b></i> class public methods</a>
+    <li><a href=#cthreadprotected><i><b>CThread</i></b> class protected methods</a>
+    <li><a href=#threadlifecycle>Thread life cycle</a>
+    <li><a href=#threadref>Referencing thread objects</a>
+    </ul>
+<li><a href=#synchronization>Synchronization</a>
+    <ul>
+    <li><a href=#cfastmutex><i><b>CFastMutex, CFastMutexGuard</i></b></a>
+    <li><a href=#cmutex><i><b>CMutex, CAutoMutex, CMutexGuard</i></b></a>
+    <li><a href=#crwlock><i><b>CRWLock, CAutoRW, CReadLockGuard, CWriteLockGuard</i></b></a>
+    </ul>
+<li><a href=#tls>Thread local storage (CTls&lt;&gt; class)</a>
+</ul>
+
+<p>
+This page describes how to add multithreading to your
+application and how to use basic synchronization objects.
+All classes are defined in
+<a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbimtx.hpp><i>include/corelib/ncbithr.hpp</i></a>
+and
+<a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbimtx.hpp><i>include/corelib/ncbimtx.hpp</i></a>.
+<p>
+
+
+<hr>
+<p>
+
+
+<a name=usingthreads>
+<h3>Using threads</h3>
+
+<p>
+<i><b>CThread</i></b> class is defined in
+<i><b>include/corelib/ncbithr.hpp</b></i>.
+The <i><b>CThread</i></b> class provides all basic thread
+functionality: thread creation, launching,
+termination, and cleanup. To create user-defined
+thread one needs only to provide the thread's
+<i><b>Main()</b></i> function and, in some cases,
+create a new constructor to transfer data to the
+thread object, and override <i><b>OnExit()</b></i>
+method for thread-specific data cleanup. To
+create a custom thread:
+<p>
+
+<ol>
+<li>Derive your class from <i><b>CThread</i></b>, override
+<i><b>Main()</b></i> and, if necessary, <i><b>OnExit()</b></i>
+methods.
+<li>Create thread object in your application.
+You can do this only with <tt>new</tt> operator,
+since static or in-stack thread objects are prohibited
+(see below). The best way to reference thread objects
+is to use <i><b>CRef<CThread></i></b> class.
+<li>Call <i><b>Run()</b></i> to start the thread execution.
+<li>Call <i><b>Detach()</b></i> to let the thread
+run independently (it will destroy itself on termination then),
+or use <i><b>Join()</b></i> to wait for the thread termination.
+</ol>
+<p>
+
+The code should look like:
+<p>
+
+<pre><font color="#008080">
+#include &lt;corelib/ncbistd.hpp&gt;
+#include &lt;corelib/ncbithr.hpp&gt;
+
+USING_NCBI_SCOPE;
+
+class CMyThread : public CThread
+{
+public:
+    CMyThread(int index) : m_Index(index) {}
+    virtual void* Main(void);
+    virtual void OnExit(void);
+private:
+    int m_Index;
+    int* heap_var;
+};
+
+
+void* CMyThread::Main(void)
+{
+    cout << "Thread " << m_Index << endl;
+
+    heap_var = new int; // to be destroyed by OnExit()
+    *heap_var = 12345;
+
+    int* return_value = new int; // return to the main thread
+    *return_value = m_Index;
+    return return_value;
+}
+
+void CMyThread::OnExit(void)
+{
+    delete heap_var;
+}
+
+int main(void)
+{
+    CMyThread* thread = new CMyThread(33);
+    thread->Run();
+    int* result;
+    thread->Join(reinterpret_cast<void**>(&result));
+    cout << "Returned value: " << *result << endl;
+    delete result;
+    return 0;
+}
+
+</font></pre>
+<p>
+
+The above simple application will start one child thread,
+passing 33 as the <tt>index</tt> value.
+The thread prints "Thread 33" message, allocates and
+initializes two integer variables, and terminates.
+The thread's <i><b>Main()</i></b> function returns a pointer
+to one of the allocated values. This pointer is then passed to
+<i><b>Join()</b></i> method and can be used by another thread.
+the other integer allocated by <i><b>Main()</i></b> is
+destroyed by <i><b>OnExit()</i></b> method.
+<p>
+
+It is important not to terminate the program until there are
+running threads. Program termination will cause all the running
+threads to terminate also. In the above example <i><b>Join()</i></b>
+function is used to wait for the child thread termination.
+<p>
+
+
+<a name=cthreadpublic>
+<h4><a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CThread>CThread</a>
+class public methods</h4>
+<p>
+
+<dl>
+
+<dt><i><b>CThread(void)</b></i>
+<dd>Create the thread object (without running it).
+
+<dt><i><b>bool Run(void)</b></i>
+<dd>Spawn the new thread, initialize internal <i><b>CThread</i></b> data
+and launch user-provided <i><b>Main()</i></b>. The method
+guarantees that the new thread will start before it returns
+to the calling function.
+
+<dt><i><b>void Detach(void)</b></i>
+<dd>Inform the thread that user does not need to wait for
+its termination. Detached thread will
+destroy itself after termination. If Detach() is called for
+a thread, which has already terminated, it will be scheduled
+for destruction immediately. Only one call to <i><b>Detach()</i></b>
+is allowed for each thread object.
+
+<dt><i><b>void Join(void** exit_data)</b></i>
+<dd>Wait for the thread termination. <i><b>Join()</i></b> will store the
+<tt>void</tt> pointer as returned by the user's <i><b>Main()</i></b>
+method, or passed to the <i><b>Exit()</i></b> function to the
+<tt>exit_data</tt>. Then the thread will be scheduled for destruction.
+Only one call to <i><b>Join()</i></b> is allowed for each
+thread object. If called more than once, <i><b>Join()</i></b> will
+cause a runtime error.
+
+<dt><i><b>static void Exit(void* exit_data)</b></i>
+<dd>This function may be called by a thread object itself
+to terminate the thread. The thread will be terminated
+and, if already detached, scheduled for destruction.
+<tt>exit_data</tt> value is transferred to the <i><b>Join()</i></b>
+function as if it was returned by the <i><b>Main()</i></b>.
+<i><b>Exit()</i></b> will also call virtual method
+<i><b>OnExit()</b></i> to execute user-provided cleanup code (if any).
+
+<dt><i><b>bool Discard(void)</b></i>
+<dd>Schedules the thread object for destruction if it
+has not been run yet. This function is provided since
+there is no other way to delete a thread object without
+running it. On success, return <tt>true</tt>.
+If the thread has already been run, <i><b>Discard()</i></b> do
+nothing and return <tt>false</tt>.
+
+<dt><i><b>static CThread::TID GetSelf(void)</b></i>
+<dd>This method returns a unique thread ID. This ID may
+be then used to identify threads, for example, to track the
+owner of a shared resource. Since the  main thread
+has no associated <i><b>CThread</i></b> object, a special value of 0
+(zero) is reserved for the main thread ID.
+
+</dl>
+<p>
+
+
+
+<a name=cthreadprotected>
+<h4><a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CThread>CThread</a> class protected methods</h4>
+<p>
+
+<dl>
+<dt><i><b>virtual void* Main(void)</b></i>
+<dd><i><b>Main()</i></b> is the thread's main function
+(just like an application <i><b>main()</i></b> function).
+This method is not defined in the <i><b>CThread</i></b> class.
+It must be provided by derived user-defined class. The return
+value is passed to the <i><b>Join()</i></b> function (and thus
+may be used by another thread for some sort of inter-thread
+communication).
+
+<dt><i><b>virtual void OnExit(void)</b></i>
+<dd>This method is called (in the context of the thread) just before
+the thread termination to cleanup thread-specific resources.
+<i><b>OnExit()</i></b> is NOT called by <i><b>Discard()</i></b>, since the thread
+has not been run in this case and there are no thread-specific
+data to destroy.
+
+<dt><i><b>virtual ~CThread(void)</b></i>
+<dd>The destructor is protected to avoid
+thread object premature destruction. For this reason,
+no thread object can be static or stack-allocated.
+It is important to declare any <i><b>CThread</i></b>-derived
+class destructor as <tt>protected</tt>.
+</dl>
+<p>
+
+
+
+<a name=threadlifecycle>
+<h4>Thread life cycle</h4>
+<p>
+
+The following diagram shows typical thread life
+cycle.
+
+<pre><font color="#000080" size=-1>
+Parent thread                Child thread                Parent thread                Child thread
+    |                                                        |
+    |                                                        |
+    constructor                                              constructor
+    |                                                        |
+    |                                                        |
+    Run()------------------------                            Run()------------------------
+    |                            |                           |                            |
+    |                            Main()                      |                            Main()
+    Join()                       |                           |                            |
+    .                            |                           |                            |
+    .                            Exit(), OnExit()            |                            Exit(), OnExit()
+    .----------------------------X                           |----------------------------X
+    destructor                                               |
+    |                                                        Join(), destructor
+    |                                                        |
+                                                             |
+                                                     
+                                                     
+Parent thread                Child thread                Parent thread                Child thread
+    |                                                        |
+    |                                                        |
+    constructor                                              constructor
+    |                                                        |
+    |                                                        |
+    Run()------------------------                            Run()------------------------
+    |                            |                           |                            |
+    |                            Main()                      |                            Main()
+    Detach()                     |                           |                            |
+    |                            |                           |                            |
+    |                            Exit(), OnExit(),           |                            Exit(), OnExit()
+    |                            destructor                  |----------------------------X
+    |----------------------------X                           |
+    |                                                        Detach(), destructor
+    |                                                        |
+                                                             |
+
+</font></pre>
+<p>
+
+The diagram demonstrates that thread constructoris called from the parent
+thread. The child thread is spawned by the <i><b>Run()</i></b> function only.
+Then, the user-provided <i><b>Main()</i></b> method (containing code created
+by user) gets executed. The thread's destructor may be called in the
+context of either parent or child thread depending on the state of the thread
+at the moment when <i><b>Join()</i></b> or <i><b>Detach()</i></b> is called.
+<p>
+
+There are two possible ways to terminate a thread. By default,
+after user-provided <i><b>Main()</i></b> function return, the <i><b>Exit()</i></b> is called
+implicitly to terminate the thread. User functions can call
+<i><b>CThread::Exit()</i></b> directly. Since <i><b>Exit()</i></b> is a static method,
+the calling function does not need to be a thread class member or
+have a reference to the thread object. <i><b>Exit()</b></i> will terminate
+the thread in which context it is called.
+<p>
+
+The <i><b>CThread</i></b> destructor is <tt>protected</tt>. The same
+must be true for any user-defined thread class in order to prohibit
+creation of static or automatic thread objects. For the same reason,
+a thread object can not be destroyed by explicit <tt>delete</tt>.
+All threads destroy themselves on termination, detaching,
+or joining.
+<p>
+
+On thread termination, <i><b>Exit()</i></b> checks if the thread has been detached
+and, if this is true, destroys the thread object. If the thread
+has not been detached, the thread object will remain "zombie"
+unless detached or joined. Either <i><b>Detach()</i></b> or <i><b>Join()</i></b> will
+destroy the object if the thread has been terminated. One should
+keep in mind, that it is not safe to use the thread object
+after a call to <i><b>Join()</i></b> or <i><b>Detach()</i></b> since the object may happen
+to be destroyed. To avoid this situation, the <i><b>CRef<CThread></i></b> can
+be used. The thread object will not be destroyed until there is
+at least one <i><b>CRef</i></b> to the object (although it may be terminated
+and scheduled for destruction).
+<p>
+
+In other words, a thread object will be destroyed when all
+of the following conditions are satisfied:
+<p>
+
+<ul>
+<li>the thread has been run and terminated by an implicit or
+explicit call to <i><b>Exit()</i></b>
+<li>the thread has been detached or joined
+<li>no <i><b>CRef</i></b> references the thread object
+</ul>
+<p>
+
+Which thread will actually destroy a thread object depends on several
+conditions. If the thread has been detached before termination,
+the <i><b>Exit()</i></b> method will destroy it, provided there
+are no <i><b>CRef</i></b> references to the object. When joined, the thread
+will be destroyed in the context of a joining thread. If
+<i><b>Detach()</i></b> is called after thread termination, it will destroy
+the thread in the context of detaching thread. And, finally,
+if there are several <i><b>CRef</i></b> objects referencing the same thread,
+it will be destroyed after the last <i><b>CRef</i></b> release.
+<p>
+
+This means that cleaning up thread-specific data can not be
+done from the thread destructor. One should override <i><b>OnExit()</i></b>
+method instead. <i><b>OnExit()</i></b> is guaranteed to be called in the
+context of the thread before the thread termination. The destructor
+can be used to cleanup non-thread-local data only.
+<p>
+
+There is one more possibility to destroy a thread. If a thread has been
+created, but does not need to be run, one can use
+<i><b>Discard()</i></b> method to destroy the thread object without
+running it. Again, the object will not be destroyed until there
+are <i><b>CRef</i></b>s referencing it.
+<p>
+
+
+<a name=threadref>
+<h4>Referencing thread objects</h4>
+<p>
+
+It should be emphasized that regular (C) pointer to a thread object
+is not reliable. The thread may terminate at unpredictable
+moment, destroying itself. There is no possibility to safely
+access thread object after <i><b>Join()</b></i> using C pointers. The only
+solution to this problem is to use <i><b>CRef</i></b> class. <i><b>CThread</i></b>
+class provides a mechanism to prevent premature destruction
+if there are <i><b>CRef</i></b> references to the thread object.
+<p>
+
+
+<hr>
+<p>
+
+
+<a name=synchronization>
+<h3>Synchronization</h3>
+
+The following classes implement threads synchronization mechanisms:
+<p>
+
+<ul>
+<li><i><b>CFastMutex, CFastMutexGuard</b></i>
+<li><i><b>CMutex, CAutoMutex, CMutexGuard</b></i>
+<li><i><b>CRWLock, CAutoRW, CReadLockGuard, CWriteLockGuard</b></i>
+</ul>
+<p>
+
+
+
+<a name=cfastmutex>
+<h4><a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CFastMutex>CFastMutex</a>,
+<a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CFastMutexGuard>CFastMutexGuard</a></h4>
+<p>
+
+<i><b>CFastMutex</i></b> class is defined in
+<a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbimtx.hpp><i>include/corelib/ncbimtx.hpp</i></a>.
+This class implements basic mutex behavior with minimum performance overheads.
+<i><b>Lock()</i></b> and <i><b>Unlock()</i></b>
+methods will acquire and release the mutex
+for the calling thread. No checks of nesting or unlocking of a
+non-acquired mutex are performed. For this reason, <i><b>CFastMutex</i></b>
+should be used only to protect small and simple parts of code.
+To guarantee for the mutex release the <i><b>CFastMutexGuard</i></b> class
+may be used. The mutex is locked by the <i><b>CFastMutexGuard</i></b>
+constructor and unlocked by its destructor. The example below demonstrates how to protect
+an integer variable with the fast mutex:
+<p>
+
+<pre><font color="#008080">
+void ThreadSafe(void)
+{
+    static int Count = 0;
+    static CFastMutex CountMutex;
+    ...
+    {{
+        CFastMutexGuard guard(CountMutex);
+        Count++;
+    }}
+    ...
+}
+
+</font></pre>
+<p>
+
+
+
+<a name=cmutex>
+<h4><a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CMutex>CMutex</a>,
+<a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CAutoMutex>CAutoMutex</a>,
+<a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CMutexGuard>CMutexGuard</a></h4>
+<p>
+
+<i><b>CMutex</i></b> uses the functionality of <i><b>CFastMutex</i></b>.
+It also allows nested locks and performs checks of mutex owner.
+This makes <i><b>CMutex</i></b> somewhat slower than <i><b>CFastMutex</i></b>,
+but capable of protecting complicated code, and safer to use. To guarantee
+for a mutex release, <i><b>CAutoMutex</i></b> can be used. <i><b>CAutoMutex</i></b>
+unlocks the associated mutex on destruction, but unlike <i><b>CFastMutexGuard</i></b>,
+it does not lock the mutex when created. To both acquire a mutex and guarantee
+for its release, <i><b>CMutexGuard</i></b> can be used instead.
+The following example demonstrates usage of <i><b>CMutex</i></b>, including
+lock nesting:
+<p>
+
+<pre><font color="#008080">
+static int Count = 0;
+static CMutex CountMutex;
+
+void Add2(void)
+{
+    CMutexGuard guard(CountMutex);
+    Count += 2;
+    if (Count < 20) {
+        Add3();
+    }
+}
+
+void Add3(void)
+{
+    CMutexGuard guard(CountMutex);
+    Count += 3;
+    if (Count < 20) {
+        Add2();
+    }
+}
+
+</font></pre>
+<p>
+
+This example will result in several nested locks of the same mutex
+with the guaranteed release of each lock.
+<p>
+
+It is important not to unlock the mutex protected by a mutex guard.
+<i><b>CFastMutexGuard</i></b> and <i><b>CMutexGuard</i></b> both unlock
+the associated mutex on destruction. It the mutex is already unlocked
+this will cause a runtime error. Instead of unlocking the mutex directly
+one can use <i><b>CFastMutexGuard::Release()</i></b> or
+<i><b>CMutexGuard::Release()</i></b> method. This
+methods unlock the mutex and unlink it from the guard.
+<p>
+
+In addition to usual <i><b>Lock()</i></b> and <i><b>Unlock()</i></b> methods,
+the <i><b>CMutex</i></b> class implements a method to test the mutex state before
+locking it. <i><b>TryLock()</i></b> method attempts to acquire the mutex
+for the calling thread and returns <tt>true</tt> on success (this
+includes nested locks by the same thread) or <tt>false</tt> if the
+mutex has been acquired by another thread. After a successful
+<i><b>TryLock()</i></b> the mutex should be unlocked like after
+regular <i><b>Lock()</i></b>.
+<p>
+
+
+<a name=crwlock>
+<h4><a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CRWLock>CRWLock</a>,
+<a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CAutoRW>CAutoRW</a>,
+<a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CReadLockGuard>CReadLockGuard</a>,
+<a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CWriteLockGuard>CWriteLockGuard</a></h4>
+<p>
+
+This class implements sharing a resource between multiple
+reading and writing threads. The following rules are used
+for locking:
+<p>
+
+<ul>
+<li>if unlocked, the RWLock can be acquired for either
+R-lock or W-lock
+<li>if R-locked, the RWLock can be R-locked
+by the same thread or other threads
+<li>if W-locked, the RWLock can not be acquired by other
+threads (a call to <i><b>ReadLock()</i></b> or <i><b>WriteLock()</i></b>
+by another thread will suspend that thread until the RW-lock release).
+<li>R-lock after W-lock by the same thread is allowed but treated
+as a nested W-lock
+<li>W-lock after R-lock by the same thread results in a runtime error
+</ul>
+<p>
+
+Like <i><b>CMutex</i></b>, CRWLock also provides methods for checking its current
+state: <i><b>TryReadLock()</i></b> and <i><b>TryWriteLock()</i></b>.
+Both methods try to acquire the RW-lock, returning <tt>true</tt>
+on success (the RW-lock becomes R-locked or W-locked) or
+<tt>false</tt> if the RW-lock can not be acquired for the calling thread.
+<p>
+
+
+<hr>
+<p>
+
+
+<a name=tls>
+<h3>Thread local storage
+(<a href=http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CTls>CTls&lt;&gt;</a> class)</h3>
+
+The library provides a template class to store
+thread specific data: <i><b>CTls&lt;&gt;</i></b>. This means that each
+thread can keep its own data in the same TLS object.
+To perform any kind of cleanup one can provide
+cleanup function and additional cleanup data when
+storing a value in the TLS object.
+The following example demonstrates the usage of TLS:
+<p>
+
+<pre><font color="#008080">
+CRef&lt; CTls&lt;int&gt; &gt; tls;
+
+void TlsCleanup(int* p_value, void* /* data */ )
+{
+    delete p_value;
+}
+
+...
+void* CMyThread::Main()
+{
+    int* p_value = new int;
+    *p_value = 1;
+    tls->SetValue(p_value, TlsCleanup);
+    ...
+    p_value = new int;
+    *p_value = 2;
+    tls->SetValue(p_value, TlsCleanup);
+    ...
+    if (*tls->GetValue() == 2) {
+        ...
+    }
+    ...
+}
+
+</font></pre>
+<p>
+
+In the above example the second call to <i><b>SetValue()</i></b> will cause
+the <i><b>TlsCleanup</i></b> to deallocate the first integer variable.
+To cleanup the last value stored in each TLS, the
+<i><b>CThread::Exit()</i></b> function will automatically call
+<i><b>CTls<>::Reset()</i></b> for
+each TLS used by the thread.
+<p>
+
+By default, all TLS objects are destroyed on program
+termination, since in most cases it is not guaranteed that
+a TLS object is not (or will not be) used by a thread.
+For the same reason the <i><b>CTls&lt;&gt;</i></b> destructor is
+protected, so that no TLS can be created in the stack memory. The best
+way of keeping TLS objects is to use <i><b>CRef</i></b>.
+<p>
+
+Calling <i><b>Discard()</i></b> will schedule the TLS to be destroyed
+as soon as there are no <i><b>CRef</i></b> references to the object left.
+The method should be used with care.
+<p>
+
+<hr>
+
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:grichenk@ncbi.nlm.nih.gov">Aleksey Grichenko</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+<td align=right><i>$Date$</i></td>
+</tr>
+</table>
+</body>
+</html>
