@@ -288,8 +288,9 @@ private:
 };
 
 
-CPipeStreambuf::CPipeStreambuf(const CPipe& pipe, const streamsize buf_size)
-    : m_Pipe(&pipe), m_Buf(0), m_BufSize(buf_size ? buf_size : 1), m_ReadHandle(CPipe::eStdOut)
+CPipeStreambuf::CPipeStreambuf(const CPipe& pipe, streamsize buf_size)
+    : m_Pipe(&pipe), m_Buf(0), m_BufSize(buf_size ? buf_size : 1), 
+    m_ReadHandle(CPipe::eStdOut)
 {
     auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[2 * m_BufSize]);
 
@@ -414,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/06/12 13:48:56  ivanov
+ * Fixed contradiction in types of constructor CPipeStreambuf and it realization
+ *
  * Revision 1.3  2002/06/11 19:25:35  ivanov
  * Added class CPipeIOStream, CPipeStreambuf
  *
