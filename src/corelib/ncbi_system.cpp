@@ -50,6 +50,14 @@
 #  define USE_SETCPULIMIT
 #endif
 
+#ifdef NCBI_OS_DARWIN
+extern "C" {
+#  include <mach/mach.h>
+#  include <mach/mach_host.h>
+#  include <mach/host_info.h>
+}
+#endif
+
 #ifdef USE_SETCPULIMIT
 #  include <signal.h>
 #endif
@@ -340,10 +348,6 @@ unsigned int GetCpuCount(void)
     return (unsigned int) sysInfo.dwNumberOfProcessors;
 
 #elif defined(NCBI_OS_DARWIN)
-    #include <mach/mach.h>
-    #include <mach/mach_host.h>
-    #include <mach/host_info.h>
-
     host_basic_info_data_t hinfo;
     mach_msg_type_number_t hinfo_count = HOST_BASIC_INFO_COUNT;
     kern_return_t rc;
@@ -412,6 +416,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/03/06 23:46:50  ucko
+ * Move extra NCBI_OS_DARWIN headers up with the rest, and surround them
+ * with extern "C" because they seem to lack it.
+ *
  * Revision 1.24  2003/03/06 15:46:46  ivanov
  * Added George Coulouris's GetCpuCount() implementation for NCBI_OS_DARWIN
  *
