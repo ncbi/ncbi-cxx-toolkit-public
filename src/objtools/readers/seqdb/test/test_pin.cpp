@@ -1321,6 +1321,61 @@ int test1(int argc, char ** argv)
             continue;
         } else desc += " [-nt]";
         
+        if (s == "-db") {
+            if (args.empty()) {
+                cerr << "Option -db needs an argument." << endl;
+                return 0;
+            } else {
+                dbname = *args.begin();
+                args.pop_front();
+            }
+            continue;
+        } else desc += " [-db]";
+        
+        if (s == "-nucl") {
+            seqtype = 'n';
+            continue;
+        } else desc += " [-nucl]";
+        
+        if (s == "-prot") {
+            seqtype = 'p';
+            continue;
+        } else desc += " [-prot]";
+
+        if (s == "-show-ambig") {
+            CSeqDB db(dbname.c_str(), seqtype);
+            
+            const char * datap = 0;
+            Uint4 len0 = db.GetAmbigSeq(0, & datap, kSeqDBNuclBlastNA8);
+            
+            int j = 0;
+            
+            for(Uint4 i = 0; i<(len0+2); i++) {
+                //cout << "number " << int(datap[i]) << endl;
+                
+                j++;
+                
+                switch(int(datap[i])) {
+                case 15: cout << "!\n"; j=0; break;
+                case 0:  cout << "A"; break;
+                case 1:  cout << "C"; break;
+                case 2:  cout << "G"; break;
+                case 3:  cout << "T"; break;
+                default:
+                    cout << "<" << int(datap[i] & 0xFF) << ">";
+                }
+                if (j >= 80) {
+                    j = 0;
+                    cout << "\n";
+                }
+            }
+            cout << endl;
+            
+            db.RetSequence(& datap);
+            
+            return 0;
+        } else desc += " [-show-ambig]";
+        
         if ((s == "-nt,est,gss") || (s == "-nt,gss,est") || (s == "-est,gss,nt")) {
             dbname = "nt est gss";
             seqtype = 'n';
