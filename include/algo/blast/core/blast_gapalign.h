@@ -59,7 +59,6 @@ extern "C" {
 /** Structure supporting the gapped alignment */
 typedef struct BlastGapAlignStruct {
    Boolean positionBased; /**< Is this PSI-BLAST? */
-   Int4 position_offset; /**< Offset into the PSSM for the present sequence */
    GapStateArrayStruct* state_struct; /**< Structure to keep extension 
                                                 state information */
    GapEditBlock* edit_block; /**< The traceback (gap) information */
