@@ -224,7 +224,7 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
     dst.Reset();
     int id = 0;
     if ( src.IsSetId() ) {
-        dst.SetId(NonConst(dst.GetId()));
+        dst.SetId(NonConst(src.GetId()));
         if ( src.GetId().IsId() ) {
             id = src.GetId().GetId();
         }
@@ -522,6 +522,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/07/12 19:04:10  vasilche
+* Fixed typo.
+*
 * Revision 1.11  2004/07/01 15:42:59  vasilche
 * Put Seq-data of short sequences (proteins) tegether with annotations.
 *
