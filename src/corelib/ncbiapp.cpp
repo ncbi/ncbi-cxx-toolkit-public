@@ -37,10 +37,13 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp.hpp>
 
-#if defined(NCBI_OS_DARWIN)
+#if defined(NCBI_OS_UNIX)
+#  include <unistd.h>
+#elif defined(NCBI_OS_DARWIN)
 #  define __NOEXTENSIONS__
 #  include <Carbon/Carbon.h>
 #endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -719,6 +722,20 @@ string CNcbiApplication::FindProgramExecutablePath
 
     string app_path = argv[0];
 
+#  if defined(NCBI_OS_LINUX)
+    // Linux OS: Try more accurate method of detection
+    {{
+        char   buf[FILENAME_MAX + 1];
+        string procfile = "/proc/" + NStr::IntToString(getpid()) + "/exe";
+        int    ncount   = readlink((procfile).c_str(), buf, FILENAME_MAX);
+        if ( ncount != -1 ) {
+            buf[ncount] = 0;
+            return buf;
+        }
+    }}
+    // This method don't work -- use standard method
+#  endif
+
     if ( !CDirEntry::IsAbsolutePath(app_path) ) {
 #  if defined(NCBI_OS_MSWIN)
         // Add default ".exe" extention to the name of executable file
@@ -757,7 +774,8 @@ string CNcbiApplication::FindProgramExecutablePath
     }
     ret_val = CDirEntry::NormalizePath(app_path.empty() ? argv[0] : app_path);
 
-#else
+#else  // defined (NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+
 #  error "Platform unrecognized"
 #endif
     return ret_val;
@@ -809,6 +827,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2003/09/16 20:55:33  ivanov
+ * FindProgramExecutablePath:  try more accurate method of detection on Linux.
+ *
  * Revision 1.67  2003/09/16 16:35:38  ivanov
  * FindProgramExecutablePath(): added implementation for UNIX and MS-Windows
  *
