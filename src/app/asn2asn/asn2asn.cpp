@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/09/05 21:23:22  vasilche
+* Added mutex for arguments
+*
 * Revision 1.41  2002/08/30 16:22:47  vasilche
 * Added MT mode to asn2asn
 *
@@ -431,8 +434,12 @@ int CAsn2Asn::Run(void)
     return 0;
 }
 
+static CFastMutex s_ArgsMutex;
+
 void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
 {
+    CFastMutexGuard GUARD(s_ArgsMutex);
+
     const CArgs& args = GetArgs();
 
     string inFile = args["i"].AsString();
@@ -461,10 +468,14 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
     bool readHook = args["ih"];
     bool writeHook = args["oh"];
 
+    bool quiet = args["q"];
+
     size_t count = args["c"].AsInteger();
+
+    GUARD.Release();
     
     for ( size_t i = 1; i <= count; ++i ) {
-        bool displayMessages = count != 1 && !args["q"];
+        bool displayMessages = count != 1 && !quiet;
         if ( displayMessages )
             NcbiCerr << "Step " << i << ':' << NcbiEndl;
         auto_ptr<CObjectIStream> in(CObjectIStream::Open(inFormat, inFile,
