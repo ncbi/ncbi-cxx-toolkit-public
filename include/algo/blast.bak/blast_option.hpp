@@ -298,7 +298,7 @@ protected:
 
 private:
     /// Prohibit copy c-tor 
-    CBlastOption(const CBlastOption& bo) { operator=(bo); }
+    CBlastOption(const CBlastOption& bo);
     /// Prohibit assignment operator
     CBlastOption& operator=(const CBlastOption& bo);
 };
@@ -999,6 +999,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/08/04 16:14:10  dicuccio
+* Truly unimplement the private forbidden copy ctor
+*
 * Revision 1.3  2003/08/04 15:42:56  dicuccio
 * Added export specifiers
 *
