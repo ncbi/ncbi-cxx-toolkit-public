@@ -546,9 +546,11 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             switch (pfx[1]) {
             case 'A': case 'B': case 'D': case 'F':
             case 'K':                               return eAcc_gb_est;
-            case 'C': case 'E': case 'G':           return eAcc_gb_gss;
+            case 'C': case 'E': case 'G': case 'L': return eAcc_gb_gss;
             case 'H':                               return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
+                // no specific assignment for CM-CP yet
+            case 'M': case 'N': case 'O': case 'P': return eAcc_gb_other_nuc;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1350,6 +1352,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.65  2003/12/16 16:00:16  ucko
+ * CSeq_id::IdentifyAccession: CL is GenBank GSS, CM-CP are GenBank
+ * nucleotides to be assigned to specific projects as needed.
+ *
  * Revision 6.64  2003/11/10 15:05:42  ucko
  * +CK to eAcc_gb_est
  *
