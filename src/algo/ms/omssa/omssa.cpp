@@ -1034,7 +1034,8 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		if(accession[0] != '\0') Pephit->SetAccession(accession);
 
 		bestid = SeqIdFindBest(sip, SEQID_GI);
-		if(bestid) Pephit->SetGi(bestid->data.intvalue);
+		if(bestid && bestid->choice == SEQID_GI)
+             Pephit->SetGi(bestid->data.intvalue);
 
 		Pephit->SetStart(MSHit->GetStart());
 		Pephit->SetStop(MSHit->GetStop());;
@@ -1262,6 +1263,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.40  2005/04/05 21:02:52  lewisg
+increase number of mods, fix gi problem, fix empty scan bug
+
 Revision 1.39  2005/03/17 23:37:08  lewisg
 more tinkering with the poisson
 

@@ -52,7 +52,7 @@ BEGIN_SCOPE(omssa)
 // should be no bigger than the number of bits in unsigned
 #define MAXMOD 32
 // maximum number of calculable ladders
-#define MAXMOD2 64
+#define MAXMOD2 1024
 
 // max length of sequence accession
 const int kAccLen = 20;
@@ -305,6 +305,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.21  2005/04/05 21:02:52  lewisg
+  increase number of mods, fix gi problem, fix empty scan bug
+
   Revision 1.20  2005/03/14 22:29:54  lewisg
   add mod file input
 

@@ -100,7 +100,6 @@ int CSpectrumSet::LoadFile(EFileType FileType, std::istream& DTA, int Max)
 ///
 int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
 {   
-    CRef <CMSSpectrum> MySpectrum;
     int iIndex(-1); // the spectrum index
     int Count(0);  // total number of spectra
     string Line;
@@ -109,6 +108,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
     try {
         //       DTA.exceptions(ios_base::failbit | ios_base::badbit);
         do {
+
             do {
                 getline(DTA, Line);
             } while (NStr::Compare(Line, 0, 4, "<dta") != 0 && DTA && !DTA.eof());
@@ -129,7 +129,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
                 return -1;  // too many
             }
 
-            MySpectrum = new CMSSpectrum;
+            CRef <CMSSpectrum> MySpectrum(new CMSSpectrum);
             CRegexp RxpGetNum("\\sid\\s*=\\s*(\"(\\S+)\"|(\\S+)\b)");
             string Match;
             if ((Match = RxpGetNum.GetMatch(Line.c_str(), 0, 2)) != "" ||
@@ -190,7 +190,6 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
 ///
 int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
 {   
-    CRef <CMSSpectrum> MySpectrum;
     int iIndex(0); // the spectrum index
     int Count(0);  // total number of spectra
     string Line;
@@ -198,12 +197,12 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
     try {
 //        DTA.exceptions(ios_base::failbit | ios_base::badbit);
         do {
-//            GotOne = true;
+            bool GotThisOne(false);  // was the most recent spectrum read?
             Count++;
             if (Max > 0 && Count > Max) 
                 return -1;  // too many
 
-            MySpectrum = new CMSSpectrum;
+            CRef <CMSSpectrum> MySpectrum(new CMSSpectrum);
             MySpectrum->SetNumber(iIndex);
             iIndex++;
             {
@@ -211,7 +210,7 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
                 CNcbiIstrstream istr(Line.c_str());
 
                 if (!GetDTAHeader(istr, MySpectrum, isPKL)) 
-                    if(DTA.eof() && GotOne) 
+                    if(GotOne) 
                         break;  // probably the end of the file
                     else
                         return 1;
@@ -226,14 +225,16 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
             }
 
             TInputPeaks InputPeaks;
-            while (Line != "") {
+            // loop while line is long (the > 1 deals with eol issues)
+            while (Line.size() > 1) {
                 CNcbiIstrstream istr(Line.c_str());
                 if (!GetDTABody(istr, InputPeaks)) 
                     break;
                 GotOne = true;
+                GotThisOne = true;
                 getline(DTA, Line);
             } 
-            if(GotOne) {
+            if(GotThisOne) {
                 Peaks2Spectrum(InputPeaks, MySpectrum);
                 Set().push_back(MySpectrum);
             }
@@ -399,7 +400,6 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
 
 int CSpectrumSet::LoadMGF(std::istream& DTA, int Max)
 {
-    CRef <CMSSpectrum> MySpectrum;
     int iIndex(0); // the spectrum index
     int Count(0);  // total number of spectra
     int retval;
@@ -407,11 +407,11 @@ int CSpectrumSet::LoadMGF(std::istream& DTA, int Max)
     try {
         
         do {
+            CRef <CMSSpectrum> MySpectrum(new CMSSpectrum);
             Count++;
             if (Max > 0 && Count > Max) 
                 return -1;  // too many
 
-            MySpectrum = new CMSSpectrum;
             MySpectrum->SetNumber(iIndex);
             iIndex++;
             retval = GetMGFBlock(DTA, MySpectrum);
@@ -423,7 +423,8 @@ int CSpectrumSet::LoadMGF(std::istream& DTA, int Max)
                 return 1;  // something went wrong
             }
             // retval = -1 means no more records found
-            if (retval != -1) Set().push_back(MySpectrum);
+            // retval = -2 means empty block
+            if (retval != -1 && retval != -2) Set().push_back(MySpectrum);
 
         } while (DTA && !DTA.eof() && retval != -1);
 
@@ -480,7 +481,11 @@ int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
                 MySpectrum->SetCharge().push_back(1);   // required in asn.1 (but shouldn't be)
                 }
             else return 1;
-            }
+        }
+        // check for an empty scan
+        else if(NStr::CompareNocase(Line, 0, 8, "END IONS") == 0) {
+            return -2;
+        }
         // keep looping while the first character is not numeric
     } while (Line.substr(0, 1).find_first_not_of("0123456789.-") == 0);
 
@@ -517,6 +522,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2005/04/05 21:02:52  lewisg
+ * increase number of mods, fix gi problem, fix empty scan bug
+ *
  * Revision 1.19  2005/03/22 19:30:00  lewisg
  * add better iostream error checking
  *

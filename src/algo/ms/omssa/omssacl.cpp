@@ -463,7 +463,9 @@ int COMSSA::Run()
 		for(iPephit = (*iHit)->GetPephits().begin();
 		    iPephit != (*iHit)->GetPephits().end();
 		    iPephit++) {
-		    ERR_POST(Info << (*iPephit)->GetGi() << ": " << (*iPephit)->GetStart() << "-" << (*iPephit)->GetStop() << ":" << (*iPephit)->GetDefline());
+		    ERR_POST(Info << ((*iPephit)->CanGetGi()?(*iPephit)->GetGi():0) << 
+                     ": " << (*iPephit)->GetStart() << "-" << (*iPephit)->GetStop() << 
+                     ":" << (*iPephit)->GetDefline());
 		}
     
 	    }
@@ -527,6 +529,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.31  2005/04/05 21:02:52  lewisg
+  increase number of mods, fix gi problem, fix empty scan bug
+
   Revision 1.30  2005/03/25 22:02:34  lewisg
   fix code to honor lower charge bound
 

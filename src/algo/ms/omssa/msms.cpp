@@ -260,8 +260,8 @@ bool CArgC::CheckCleave(char SeqChar, const char *iPepStart)
 
 CChymotrypsin::CChymotrypsin(void)
 {
-    CleaveAt = "\x06\x16\x15\x0b\x09\x13\x0c";
-    kCleave = 7;
+    CleaveAt = "\x06\x16\x14\x0b";
+    kCleave = 4;
 }
 
 bool CChymotrypsin::CheckCleave(char SeqChar, const char *iPepStart)
@@ -270,10 +270,7 @@ bool CChymotrypsin::CheckCleave(char SeqChar, const char *iPepStart)
     if(SeqChar == CleaveAt[0] ||
        SeqChar == CleaveAt[1] ||
        SeqChar == CleaveAt[2] ||
-       SeqChar == CleaveAt[3] ||
-       SeqChar == CleaveAt[4] ||
-       SeqChar == CleaveAt[5] ||
-       SeqChar == CleaveAt[6]) { 
+       SeqChar == CleaveAt[3]  ) { 
         if(*(iPepStart+1) == '\x0e' )  return false;  // not before proline
         return true;
     }
@@ -371,7 +368,7 @@ bool CTrypCNBr::CheckCleave(char SeqChar, const char *iPepStart)
 
 CTrypChymo::CTrypChymo(void)
 {
-    CleaveAt = "\x06\x16\x15\x0b\x0a\10";
+    CleaveAt = "\x06\x16\x14\x0b\x0a\x10";
     kCleave = 6;
 }
 
@@ -539,6 +536,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.18  2005/04/05 21:02:52  lewisg
+  increase number of mods, fix gi problem, fix empty scan bug
+
   Revision 1.17  2005/03/14 22:29:54  lewisg
   add mod file input
 
