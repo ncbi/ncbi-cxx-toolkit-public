@@ -445,6 +445,8 @@ string NStr::PrintableString(const string& str)
             s += "\\r";
         } else if (*it == '\v') {
             s += "\\v";
+        } else if (*it == '"') {
+            s += "\\\"";
         } else if ( isprint(*it) ) {
             s += *it;
         } else {
@@ -477,6 +479,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2002/09/04 15:16:57  lavr
+ * Backslashed double quote (\") in PrintableString()
+ *
  * Revision 1.50  2002/07/15 18:17:25  gouriano
  * renamed CNcbiException and its descendents
  *
