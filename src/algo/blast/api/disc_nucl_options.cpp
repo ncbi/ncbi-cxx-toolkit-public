@@ -80,7 +80,13 @@ CDiscNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
     SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
-    SetGapExtnAlgorithm(EXTEND_GREEDY);
+    SetGapExtnAlgorithm(EXTEND_DYN_PROG);
+}
+
+void
+CDiscNucleotideOptionsHandle::SetMBScoringOptionsDefaults()
+{
+    CBlastNucleotideOptionsHandle::SetScoringOptionsDefaults();
 }
 
 void
@@ -100,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/22 20:14:22  dondosha
+ * Make dynamic programming gapped extension default for discontiguous megablast
+ *
  * Revision 1.5  2004/03/19 15:13:34  camacho
  * Move to doxygen group AlgoBlast
  *
