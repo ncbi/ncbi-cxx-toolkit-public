@@ -277,6 +277,8 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     NCBI_NS_NCBI::Check<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::PtrPtr(MEMBER_PTR(MemberName)), SERIAL_REF(TypeMacro)TypeMacroArgs
 #define SERIAL_REF_CHOICE_VARIANT(MemberName,ClassName) \
     NCBI_NS_NCBI::Check<SERIAL_TYPE(CLASS)(ClassName)>::ObjectPtrPtr(MEMBER_PTR(MemberName)), SERIAL_REF(CLASS)(ClassName)
+#define SERIAL_BASE_CLASS(ClassName) \
+    CLASS_PTR(ClassName),&(CLASS_PTR(ClassName)->GetTypeInfo)
 
 // ADD_NAMED_*_MEMBER macros    
 #define ADD_NAMED_MEMBER(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
@@ -297,6 +299,9 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define ADD_NAMED_REF_MEMBER(MemberAlias,MemberName,ClassName) \
     NCBI_NS_NCBI::AddMember(info,MemberAlias, \
                             SERIAL_REF_MEMBER(MemberName,ClassName))
+#define ADD_NAMED_BASE_CLASS(MemberAlias,ClassName) \
+    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
+                            SERIAL_BASE_CLASS(ClassName))
 
 // ADD_*_MEMBER macros    
 #define ADD_MEMBER(MemberName,TypeMacro,TypeMacroArgs) \
@@ -479,75 +484,75 @@ void SetModuleName(CEnumeratedTypeValues* info, const char* name);
 
 // internal methods
 // add member
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfo t);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter f);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        const CTypeRef& r);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
                        TTypeInfoGetter1 f3,
