@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.47 2002/03/19 21:46:36 vakatov Exp $
+#  $Id: configure.ac,v 1.48 2002/03/22 19:58:06 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1309,6 +1309,8 @@ AC_TRY_COMPILE(
 )
 AC_MSG_RESULT()
 
+
+AC_CHECK_FUNCS(timegm)
 
 ### Check for typedefs, structures, and compiler features.
 AC_C_CONST
