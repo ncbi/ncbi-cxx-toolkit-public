@@ -135,7 +135,7 @@ int CSearch::CreateLadders(unsigned char *Sequence, int iSearch, int position,
 int CSearch::CompareLadders(CLadder& BLadder,
 			    CLadder& YLadder, CLadder& B2Ladder,
 			    CLadder& Y2Ladder, CMSPeak *Peaks,
-			    bool OrLadders,  TMassPeak *MassPeak)
+			    bool OrLadders,  const TMassPeak *MassPeak)
 {
     if(MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
 		Peaks->CompareSorted(BLadder, MSCULLED2, 0); 
@@ -158,7 +158,7 @@ int CSearch::CompareLadders(CLadder& BLadder,
 bool CSearch::CompareLaddersTop(CLadder& BLadder,
 			    CLadder& YLadder, CLadder& B2Ladder,
 			    CLadder& Y2Ladder, CMSPeak *Peaks,
-			    TMassPeak *MassPeak)
+			    const TMassPeak *MassPeak)
 {
     if(MassPeak && MassPeak->Charge >=  Peaks->GetConsiderMult() ) {
 		if(Peaks->CompareTop(BLadder)) return true; 
@@ -174,12 +174,12 @@ bool CSearch::CompareLaddersTop(CLadder& BLadder,
 }
 
 #ifdef _DEBUG
-#define CHECKGI
+//#define CHECKGI
 #endif
 #ifdef CHECKGI
 bool CheckGi(int gi)
 {
-    if(/*gi == 6325234 || gi == 6322848 */ gi == 6325234 || gi == 1709159 || gi == 1039454 || gi == 2132152){
+    if( gi == 6323273){
 	ERR_POST(Info << "test seq");
 	return true;
     }
@@ -497,7 +497,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	
 	
 	CMSPeakSet PeakSet;
-	TMassPeak *MassPeak; // peak currently in consideration
+	const TMassPeak *MassPeak; // peak currently in consideration
 	CMSPeak* Peaks;
 	
 	Spectrum2Peak(MyRequest, PeakSet);
@@ -587,8 +587,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			    header = 0;
 			    readdb_get_header(rdfp, iSearch, &header, &sip, &blastdefline);
 			    bestid = SeqIdFindBest(sip, SEQID_GI);
-			    if(CheckGi(bestid->data.intvalue) && ((PepStart[iMissed] - (const char *)Sequence) == 0 ||
-                   (PepStart[iMissed] - (const char *)Sequence) == 355))
+			    if(CheckGi(bestid->data.intvalue) /*&& ((PepStart[iMissed] - (const char *)Sequence) == 355) */ )
 				cerr << "hello" << endl;
 			    //			int testgi = bestid->data.intvalue;
 			    MemFree(blastdefline);
@@ -623,6 +622,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 
 		int OldMass;  // keeps the old peptide mass for comparison
 		bool NoMassMatch;  // was there a match to the old mass?
+        CIntervalTree::const_iterator im; // iterates over interval tree
 
 		for(iMissed = 0; iMissed < Missed; iMissed++) {	    
 		    if(PepStart[iMissed] == (const char *)-1) continue;  // skip start
@@ -647,14 +647,24 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			NoMassMatch = true;
 			OldMass = MassAndMask[iMissed][iMod].Mass;
 			// return peak where theoretical mass is < precursor mass + tol
+            for(im = PeakSet.SetIntervalTree().IntervalsContaining(OldMass); im; ++im )
+            {
+                // im.GetValue();
+                //const ncbi::CConstRef<ncbi::CObject>& myref = im.GetValue();
+                MassPeak = static_cast <const TMassPeak *> (im.GetValue().GetPointerOrNull());
+
+#if 0
 			MassPeak = PeakSet.GetIndexLo(OldMass);
 					
 			for(;MassPeak < PeakSet.GetEndMassPeak() && 
 				OldMass > MassPeak->Mass - MassPeak->Peptol;
 			    MassPeak++) {
+#endif
 			    Peaks = MassPeak->Peak;
 			    // make sure we look thru other mod masks with the same mass
 			    NoMassMatch = false;
+//                if(Peaks->GetNumber() == 1338) cout << "1338:index=" << iSearch << /*" hits=" <<
+//                     hits << */ " start=" << position << " stop=" << endposition << endl;
 						
 #ifdef CHECKGI
 {
@@ -972,7 +982,6 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		     iseq++) {
 		    seqstring += UniqueAA[Sequence[iseq]];
 		}
-
 		MakeModString(seqstring, modseqstring, MSHit);
 
 		if(PepDone.find(modseqstring) != PepDone.end()) {
@@ -994,6 +1003,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		    CRef<CMSHits> hitref(Hit);
 		    HitSet->SetHits().push_back(hitref);  
 		    PepDone[modseqstring] = Hit;
+
 		}
 		
 		Pephit = new CMSPepHit;
@@ -1012,6 +1022,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		Pephit->SetDefline(deflinestring);
 		CRef<CMSPepHit> pepref(Pephit);
 		Hit->SetPephits().push_back(pepref);
+
 		MemFree(blastdefline);
 		SeqIdSetFree(sip);
 	    }
@@ -1231,6 +1242,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.31  2004/11/30 23:39:57  lewisg
+fix interval query
+
 Revision 1.30  2004/11/22 23:10:36  lewisg
 add evalue cutoff, fix fixed mods
 

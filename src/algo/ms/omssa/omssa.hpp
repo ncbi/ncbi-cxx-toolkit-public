@@ -116,11 +116,11 @@ public:
     int CompareLadders(CLadder& BLadder,
 		       CLadder& YLadder, CLadder& B2Ladder,
 		       CLadder& Y2Ladder, CMSPeak *Peaks,
-		       bool OrLadders,  TMassPeak *MassPeak);
+		       bool OrLadders,  const TMassPeak *MassPeak);
     bool CompareLaddersTop(CLadder& BLadder,
 		       CLadder& YLadder, CLadder& B2Ladder,
 		       CLadder& Y2Ladder, CMSPeak *Peaks,
-		       TMassPeak *MassPeak);
+		       const TMassPeak *MassPeak);
 
     void InitModIndex(int *ModIndex, int& iMod, int NumMod, int *IsFixed);
     unsigned MakeBoolMask(int *ModIndex, int iMod);
@@ -290,6 +290,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.18  2004/11/30 23:39:57  lewisg
+  fix interval query
+
   Revision 1.17  2004/11/22 23:10:36  lewisg
   add evalue cutoff, fix fixed mods
 

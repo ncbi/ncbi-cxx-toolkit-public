@@ -121,7 +121,7 @@ char const * const kModNames[eMSMod_max] = {
     "oxidation of M",
     "carboxymethyl C",
     "carbamidomethyl C",
-    "deamidation of K and Q",
+    "deamidation of N and Q",
     "propionamide C",
     "phosphorylation of S",
     "phosphorylation of T",
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/11/30 23:39:57  lewisg
+* fix interval query
+*
 * Revision 1.8  2004/11/17 23:42:11  lewisg
 * add cterm pep mods, fix prob for tophitnum
 *

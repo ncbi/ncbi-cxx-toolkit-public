@@ -83,7 +83,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(0, 9, 4));
+    SetVersion(CVersionInfo(0, 9, 5));
 }
 
 
@@ -494,6 +494,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.22  2004/11/30 23:39:57  lewisg
+  fix interval query
+
   Revision 1.21  2004/11/22 23:10:36  lewisg
   add evalue cutoff, fix fixed mods
 

@@ -1007,7 +1007,7 @@ CMSPeakSet::~CMSPeakSet()
 	PeakSet.pop_front();
     }
 }
-
+#if 0
 // compares m/z.  Lower m/z first in sort.
 struct CMassPeakCompareHi {
     bool operator() (TMassPeak x, TMassPeak y)
@@ -1016,42 +1016,50 @@ struct CMassPeakCompareHi {
 	return false;
     }
 };
-
+#endif
 void CMSPeakSet::SortPeaks(int Peptol)
 {
     int iCharges;
     CMSPeak* Peaks;
     TPeakSet::iterator iPeakSet;
     int CalcMass; // the calculated mass
-    TMassPeak temp;
+    TMassPeak *temp;
     int ptol; // charge corrected mass tolerance
+
+    MassIntervals.Clear();
 
     // first sort
     for(iPeakSet = GetPeaks().begin();
 	iPeakSet != GetPeaks().end();
 	iPeakSet++ ) {
-	Peaks = *iPeakSet;
-	// skip empty spectra
-	if(Peaks->GetError() == eMSHitError_notenuffpeaks) continue;
-
-	// loop thru possible charges
-	for(iCharges = 0; iCharges < Peaks->GetNumCharges(); iCharges++) {
-	    // correction for incorrect charge determination.
-	    // see 12/13/02 notebook, pg. 135
-	    ptol = Peaks->GetCharges()[iCharges] * Peptol;
-	    CalcMass = static_cast <int> ((Peaks->GetMass() +
-					   Peaks->GetCharge()*kProton*MSSCALE) * 
-					  Peaks->GetCharges()[iCharges]/(double)(Peaks->GetCharge()) - 
-					  Peaks->GetCharges()[iCharges]*kProton*MSSCALE);
-	    temp.Mass = CalcMass;
-	    temp.Peptol = ptol;
-	    temp.Charge = Peaks->GetCharges()[iCharges];
-	    temp.Peak = Peaks;
-	    // order by upper bound
-	    MassMap.insert(pair <const int, TMassPeak>(temp.Mass + temp.Peptol, temp)); 
-	}
+    	Peaks = *iPeakSet;
+    	// skip empty spectra
+    	if(Peaks->GetError() == eMSHitError_notenuffpeaks) continue;
+    
+    	// loop thru possible charges
+    	for(iCharges = 0; iCharges < Peaks->GetNumCharges(); iCharges++) {
+    	    // correction for incorrect charge determination.
+    	    // see 12/13/02 notebook, pg. 135
+    	    ptol = Peaks->GetCharges()[iCharges] * Peptol;
+    	    CalcMass = static_cast <int> ((Peaks->GetMass() +
+    					   Peaks->GetCharge()*kProton*MSSCALE) * 
+    					  Peaks->GetCharges()[iCharges]/(double)(Peaks->GetCharge()) - 
+    					  Peaks->GetCharges()[iCharges]*kProton*MSSCALE);
+            temp = new TMassPeak;
+    	    temp->Mass = CalcMass;
+    	    temp->Peptol = ptol;
+    	    temp->Charge = Peaks->GetCharges()[iCharges];
+    	    temp->Peak = Peaks;
+            // save the TMassPeak info
+            const CRange<ncbi::TSignedSeqPos> myrange(temp->Mass - temp->Peptol, temp->Mass + temp->Peptol);
+            const ncbi::CConstRef<ncbi::CObject> myobject(static_cast <CObject *> (temp));   
+            MassIntervals.Insert(myrange,
+                                         myobject);
+    	}
     } 
 
+
+#if 0
     // then create static array
 
     ArraySize = MassMap.size();
@@ -1060,17 +1068,18 @@ void CMSPeakSet::SortPeaks(int Peptol)
     TMassPeakMap::iterator iMassMap;
     int i(0);
     for(iMassMap = MassMap.begin(); iMassMap != MassMap.end(); iMassMap++, i++) {
-	GetMassPeak(i).Mass =
- iMassMap->second.Mass;
-	GetMassPeak(i).Peptol = iMassMap->second.Peptol;
-	GetMassPeak(i).Peak = iMassMap->second.Peak;
-	GetMassPeak(i).Charge = iMassMap->second.Charge;
+    	GetMassPeak(i).Mass =
+     iMassMap->second.Mass;
+    	GetMassPeak(i).Peptol = iMassMap->second.Peptol;
+    	GetMassPeak(i).Peak = iMassMap->second.Peak;
+    	GetMassPeak(i).Charge = iMassMap->second.Charge;
     }
 
     MassMap.clear();
-
+#endif
 }
 
+#if 0
 
 // Get the first index into the sorted array where the mass
 // + tolerance is >= the given calculated mass. 
@@ -1092,3 +1101,4 @@ CMSPeak *CMSPeakSet::GetPeak(int Index)
     if(Index < 0 || Index >= ArraySize) return 0;
     return GetMassPeak(Index).Peak;
 }
+#endif

@@ -36,6 +36,8 @@
 
 #include <corelib/ncbimisc.hpp>
 #include <objects/omssa/omssa__.hpp>
+#include <util/rangemap.hpp>
+#include <util/itree.hpp>
 
 #include <set>
 #include <iostream>
@@ -841,15 +843,21 @@ inline int CMSPeak::GetWhich(int Charge)
 
 typedef deque <CMSPeak *> TPeakSet;
 
-typedef struct _MassPeak {
+class _MassPeak: public CObject {
+public:
     int Mass, Peptol;
     int Charge;
     CMSPeak *Peak;
-} TMassPeak;
+};
 
-typedef AutoPtr <TMassPeak, ArrayDeleter<TMassPeak> > TAPMassPeak;
+typedef _MassPeak TMassPeak;
 
-typedef multimap <int, TMassPeak> TMassPeakMap;
+//typedef AutoPtr <TMassPeak, ArrayDeleter<TMassPeak> > TAPMassPeak;
+
+//typedef multimap <int, TMassPeak *> TMassPeakMap;
+
+// range type for peptide mass +/- some tolerance
+typedef CRange<TSignedSeqPos> TMassRange;
 
 class NCBI_XOMSSA_EXPORT CMSPeakSet {
 public:
@@ -864,25 +872,26 @@ public:
 		   int Peptol  // the precursor mass tolerance
 		   );
 
-    int GetArraySize(void);
+//    int GetArraySize(void);
     // Get the first index into the sorted array where the mass
     // is >= the given mass.  Remember to subtract the tolerance and
     // check for out of bounds
 
-    TMassPeak *GetIndexLo(int Mass);
+//    TMassPeak *GetIndexLo(int Mass);
     // get peak for sorted list by index into list
 
-    CMSPeak *GetPeak(int Index);  
-    TMassPeak *GetEndMassPeak(void); 
+//    CMSPeak *GetPeak(int Index);  
+//    TMassPeak *GetEndMassPeak(void); 
     // get a particular MassPeak
-    TMassPeak& GetMassPeak(int i);
+//    TMassPeak& GetMassPeak(int i);
     TPeakSet& GetPeaks(void);
+    CIntervalTree& SetIntervalTree(void);
 
 private:
     TPeakSet PeakSet;  // peak list for deletion
-    TMassPeakMap MassMap;
-    TAPMassPeak MassPeak; // array of neutral masses
-    int ArraySize;  // size of above array
+//    TAPMassPeak MassPeak; // array of neutral masses
+//    int ArraySize;  // size of above array
+    CIntervalTree MassIntervals;
 };
 
 ///////////////////   CMSPeakSet inline methods
@@ -894,7 +903,7 @@ inline void CMSPeakSet::AddPeak(CMSPeak *PeakIn)
 { 
     PeakSet.push_back(PeakIn); 
 }
-
+#if 0
 inline int CMSPeakSet::GetArraySize(void) 
 { 
     return ArraySize; 
@@ -909,8 +918,16 @@ inline TMassPeak& CMSPeakSet::GetMassPeak(int i)
 { 
     return *(MassPeak.get()+i); 
 }
+#endif
 
-inline TPeakSet& CMSPeakSet::GetPeaks(void) 
+inline
+CIntervalTree& CMSPeakSet::SetIntervalTree(void)
+{
+    return MassIntervals;
+}
+
+inline 
+TPeakSet& CMSPeakSet::GetPeaks(void) 
 { 
     return PeakSet; 
 }
@@ -925,6 +942,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.20  2004/11/30 23:39:57  lewisg
+  fix interval query
+
   Revision 1.19  2004/11/22 23:10:36  lewisg
   add evalue cutoff, fix fixed mods
 
