@@ -1405,6 +1405,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/01/03 17:01:56  sapojnik
+ * fixing CR/LF mixup
+ *
  * Revision 1.6  2002/01/03 15:46:23  sapojnik
  * ported to MS SQL (about 12 'ifdef NCBI_OS_MSWIN' in 6 files)
  *

@@ -61,6 +61,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/01/03 17:01:57  sapojnik
+ * fixing CR/LF mixup
+ *
  * Revision 1.5  2002/01/03 15:46:23  sapojnik
  * ported to MS SQL (about 12 'ifdef NCBI_OS_MSWIN' in 6 files)
  *
