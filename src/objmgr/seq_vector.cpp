@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/22 20:03:08  grichenk
+* Updated comments
+*
 * Revision 1.11  2002/04/17 21:07:59  grichenk
 * String pre-allocation added
 *
@@ -190,7 +193,7 @@ size_t CSeqVector::size(void)
 CSeqVector::TResidue CSeqVector::operator[] (int pos)
 {
     if ( !m_PlusStrand ) {
-        //### Is this enough?
+        //### The character needs to be converted to its complement
         pos = size() - pos - 1;
     }
     if (m_CurData.dest_start > pos  ||
