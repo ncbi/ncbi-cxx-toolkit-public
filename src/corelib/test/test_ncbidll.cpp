@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/03/22 20:00:44  ucko
+ * Tweak to build on Cygwin.  (Still doesn't run successfully. :-/)
+ *
  * Revision 6.3  2002/01/17 15:50:48  ivanov
  * Added #include <windows.h> on MS Windows platform
  *
@@ -50,7 +53,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbidll.hpp>
 
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN) && !defined(__CYGWIN__)
 #  include <windows.h>
 #endif
 
@@ -125,7 +128,7 @@ static void s_TEST_SimpleDll(void)
 
 static void s_TEST_WinSystemDll(void)
 {
-#if defined NCBI_OS_MSWIN
+#if defined NCBI_OS_MSWIN && !defined(__CYGWIN__)
 
     CDll dll_user32("USER32", CDll::eLoadLater);
     CDll dll_userenv("userenv.dll", CDll::eLoadNow, CDll::eAutoUnload);
