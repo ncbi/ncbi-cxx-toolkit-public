@@ -1,0 +1,13 @@
+#################################
+# $Id$
+# Author:  Anatoliy Kuznetsov (kuznets@ncbi.nlm.nih.gov)
+#################################
+
+# Meta-makefile for the "BDB" lib
+#################################
+
+LIB_PROJ = bdb
+#SUB_PROJ = demo test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
