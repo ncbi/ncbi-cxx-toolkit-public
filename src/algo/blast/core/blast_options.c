@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.105  2004/05/14 13:14:15  camacho
+ * Use correct definition for inclusion threshold
+ *
  * Revision 1.104  2004/05/12 12:18:06  madden
  * Clean out PSIBlast options, add fields to ExtensionOptions to support smith-waterman and composition-based stats
  *
@@ -1543,7 +1546,7 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
       return 0;
    options = (PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions));
    *psi_options = options;
-   options->inclusion_ethresh = PSI_ETHRESH;
+   options->inclusion_ethresh = PSI_INCLUSION_ETHRESH;
    options->pseudo_count = PSI_PSEUDO_COUNT_CONST;
    
    return 0;
