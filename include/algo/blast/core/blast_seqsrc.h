@@ -68,6 +68,12 @@ typedef BlastSeqSrc* (*BlastSeqSrcConstructor) (BlastSeqSrc*, void*);
  * Argument is the BlastSeqSrc structure to free, always returns NULL. */
 typedef BlastSeqSrc* (*BlastSeqSrcDestructor) (BlastSeqSrc*);
 
+/** Function pointer typedef to modify whatever is necessary in a copy of a 
+ * BlastSeqSrc structure to achieve multi-thread safety.
+ * Argument is the already copied BlastSeqSrc structure; 
+ * returns the modified structure. */
+typedef BlastSeqSrc* (*BlastSeqSrcCopier) (BlastSeqSrc*);
+
 /** Function pointer typedef to return a 4-byte integer.
  * First argument is the BlastSeqSrc structure used, second argument is
  * passed to user-defined implementation */
@@ -223,6 +229,10 @@ BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info);
  */
 BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
 
+/** Copy function: needed to guarantee thread safety. 
+ */
+BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src);
+
 /** Convenience macros call function pointers (TODO: needs to be more robust)
  * Currently, this defines the API */
 #define BLASTSeqSrcGetNumSeqs(bssp) \
@@ -271,6 +281,7 @@ void Set##member(data_structure_type var, member_type arg) \
 
 DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcCopier, CopyFnPtr, BlastSeqSrc*);
 
 DECLARE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*);
