@@ -31,7 +31,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include "tse_info.hpp"
+#include <objects/objmgr/tse_info.hpp>
 #include "handle_range_map.hpp"
 #include "data_source.hpp"
 #include "annot_object.hpp"
@@ -450,26 +450,30 @@ CGBDataLoader::GC(void)
 CGBDataLoader::TInt
 CGBDataLoader::x_Request2SeqrefMask(const EChoice choice)
 {
-  switch(choice)
+    /** ignore choice for now
+    switch(choice)
     {
       // split code
     default:
-      return ~0;
+        return ~0;
     }
-  return 0;
+    **/
+    return ~0;
 }
 
 CGBDataLoader::TInt
 CGBDataLoader::x_Request2BlobMask(const EChoice choice)
 {
-  // split code
-  switch(choice)
+    /** ignore choice for now
+    // split code
+    switch(choice)
     {
-      // split code
+        // split code
     default:
-      return 1;
+        return 1;
     }
-  return 1;
+    **/
+    return 1;
 }
 
 bool
@@ -820,6 +824,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2002/12/26 20:53:02  dicuccio
+* Moved tse_info.hpp -> include/ tree.  Minor tweaks to relieve compiler
+* warnings in MSVC.
+*
 * Revision 1.43  2002/11/08 19:43:35  grichenk
 * CConstRef<> constructor made explicit
 *
