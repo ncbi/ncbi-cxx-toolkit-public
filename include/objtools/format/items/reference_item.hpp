@@ -117,6 +117,7 @@ public:
     const string&       GetIssue     (void) const { return m_Issue;      }
     const CCit_book*    GetBook      (void) const { return m_Book;       }
     bool                JustUids     (void) const { return m_JustUids;   }
+    const string&       GetUniqueStr (void) const { return m_UniqueStr;  }
 
     static string GetAuthString(const CAuth_list* alp);
     static void GetAuthNames(list<string>& authors, const CAuth_list* alp);
@@ -167,7 +168,7 @@ private:
     bool                  m_JustUids;
     CConstRef<CCit_book>  m_Book;
     CImprint::TPrepub     m_Prepub;
-    string        m_UniqueStr;
+    string                m_UniqueStr;
 };
 
 
@@ -190,6 +191,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/08/30 13:33:18  shomrat
+* + GetUniqueStr()
+*
 * Revision 1.9  2004/05/20 13:47:08  shomrat
 * Added m_UniqueStr to be used for citation matching
 *
