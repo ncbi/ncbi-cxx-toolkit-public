@@ -79,7 +79,11 @@ CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
                                                const string& file_full_path)
 {
     m_RootSrcDir = root_src_dir;
+    InitFromFile(file_full_path);
+}
 
+void CProjectsLstFileFilter::InitFromFile(const string& file_full_path)
+{
     CNcbiIfstream ifs(file_full_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !ifs )
         NCBI_THROW(CProjBulderAppException, eFileOpen, file_full_path);
@@ -92,23 +96,34 @@ CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
             continue;
 
         TPath project_path;
-        NStr::Split(strline, " \r\n\t$/", project_path);
+        NStr::Split(strline, " \r\n\t$", project_path);
         if ( !project_path.empty() ) {
-            if ( NStr::StartsWith(project_path.front(), "-") ) {
-                
-                // exclusion statement
-                SLstElement elt;
-                // erase '-'
-                project_path.front().erase(0, 1);
-                elt.m_Path      = project_path;
-                elt.m_Recursive = true;
-                m_LstFileContentsExclude.push_back(elt);
+            if (project_path.front() == "#include") {
+                project_path.erase( project_path.begin() );
+                string name = project_path.front();
+                if (CDirEntry::IsAbsolutePath(name)) {
+                    InitFromFile( name );
+                } else {
+                    CDirEntry d(file_full_path);
+                    InitFromFile( CDirEntry::ConcatPathEx( d.GetDir(), name) );
+                }
             } else {
-                // inclusion statement
-                SLstElement elt;
-                elt.m_Path      = project_path;
-                elt.m_Recursive = strline.find("$") == NPOS;
-                m_LstFileContentsInclude.push_back(elt);
+                if ( NStr::StartsWith(project_path.front(), "-") ) {
+                    
+                    // exclusion statement
+                    SLstElement elt;
+                    // erase '-'
+                    project_path.front().erase(0, 1);
+                    elt.m_Path      = project_path;
+                    elt.m_Recursive = true;
+                    m_LstFileContentsExclude.push_back(elt);
+                } else {
+                    // inclusion statement
+                    SLstElement elt;
+                    elt.m_Path      = project_path;
+                    elt.m_Recursive = strline.find("$") == NPOS;
+                    m_LstFileContentsInclude.push_back(elt);
+                }
             }
         }
     }
@@ -184,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/29 20:41:18  gouriano
+ * Allow inclusion of LST file into LST file
+ *
  * Revision 1.10  2004/12/20 15:29:39  gouriano
  * Fixed errors in project list processing
  *

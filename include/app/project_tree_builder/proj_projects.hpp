@@ -125,7 +125,7 @@ private:
     TLstFileContents m_LstFileContentsExclude;
     
 
-
+    void InitFromFile(const string& file_full_path);
     static bool CmpLstElementWithPath(const SLstElement& elt, 
                                       const TPath&       path,
                                       bool* weak);
@@ -142,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/03/29 20:40:35  gouriano
+ * Allow inclusion of LST file into LST file
+ *
  * Revision 1.9  2004/09/14 17:27:28  gouriano
  * Corrected ProjectsLstFileFilter
  *
