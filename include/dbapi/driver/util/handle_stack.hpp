@@ -49,7 +49,7 @@ public:
     void Push(CDBUserHandler* h);
     void Pop (CDBUserHandler* h, bool last = true);
 
-    void PostMsg(const CDB_Exception* ex);
+    void PostMsg(CDB_Exception* ex);
 
     ~CDBHandlerStack() {
         delete [] m_Stack;
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/27 16:46:31  vakatov
+ * Non-const (was const) exception object to pass to the user handler
+ *
  * Revision 1.1  2001/09/21 23:39:54  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)

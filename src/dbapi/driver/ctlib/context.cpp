@@ -45,14 +45,14 @@ BEGIN_NCBI_SCOPE
 class C_DefCntxErrHandler : public CDBUserHandler
 {
 public:
-    virtual bool HandleIt(const CDB_Exception* ex);
+    virtual bool HandleIt(CDB_Exception* ex);
 };
 
 
 static C_DefCntxErrHandler s_DefErrHandler;
 
 
-bool C_DefCntxErrHandler::HandleIt(const CDB_Exception* ex)
+bool C_DefCntxErrHandler::HandleIt(CDB_Exception* ex)
 {
     if ( !ex ) {
         return false;
@@ -114,8 +114,7 @@ bool C_DefCntxErrHandler::HandleIt(const CDB_Exception* ex)
         break;
     }
     case CDB_Exception::eMulti : {
-        CDB_MultiEx& e = const_cast<CDB_MultiEx&>
-            (dynamic_cast<const CDB_MultiEx&> (*ex));
+        CDB_MultiEx& e = dynamic_cast<CDB_MultiEx&> (*ex);
         while ( s_DefErrHandler.HandleIt(e.Pop()) ) {
             continue;
         }
@@ -844,6 +843,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/09/27 16:46:34  vakatov
+ * Non-const (was const) exception object to pass to the user handler
+ *
  * Revision 1.2  2001/09/26 23:23:31  vakatov
  * Moved the err.message handlers' stack functionality (generic storage
  * and methods) to the "abstract interface" level.

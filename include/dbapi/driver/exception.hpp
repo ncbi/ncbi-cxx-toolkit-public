@@ -245,7 +245,7 @@ class CDBUserHandler
 {
 public:
     // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
-    virtual bool HandleIt(const CDB_Exception* ex) = 0;
+    virtual bool HandleIt(CDB_Exception* ex) = 0;
     virtual ~CDBUserHandler();
 };
 
@@ -258,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/09/27 16:46:29  vakatov
+ * Non-const (was const) exception object to pass to the user handler
+ *
  * Revision 1.2  2001/09/24 20:52:18  vakatov
  * Fixed args like "string& s = 0" to "string& s = kEmptyStr"
  *

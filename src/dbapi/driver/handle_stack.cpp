@@ -102,7 +102,7 @@ CDBHandlerStack& CDBHandlerStack::operator= (const CDBHandlerStack& s)
 }
 
 
-void CDBHandlerStack::PostMsg(const CDB_Exception* ex)
+void CDBHandlerStack::PostMsg(CDB_Exception* ex)
 {
     for (int i = m_TopItem;  --i >= 0; ) {
         if ( m_Stack[i]->HandleIt(ex) )
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/27 16:46:32  vakatov
+ * Non-const (was const) exception object to pass to the user handler
+ *
  * Revision 1.1  2001/09/21 23:39:59  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
