@@ -165,7 +165,7 @@ public:
     CDatagramSocket(void);
 
     // NOTE: the created underlying "SOCK" will be owned by the object.
-    CDatagramSocket(unsigned short  port   = 0,  // always in host byte order
+    CDatagramSocket(unsigned short  port,  // always in host byte order
                     ESwitch         do_log = eDefault);
 
     EIO_Status Connect(const string& host, unsigned short port);
@@ -528,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/01/26 04:28:37  lavr
+ * Quick fix CDatagramSocket ctor ambiguity
+ *
  * Revision 6.16  2003/01/24 23:01:32  lavr
  * Added class CDatagramSocket
  *
