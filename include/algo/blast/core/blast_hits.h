@@ -402,7 +402,8 @@ BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results);
   * of the blast engine. RPS blast takes a single query and the
   * concatenation of all DB sequences; the DB sequences are the
   * query input to the engine, and the single query is treated as
-  * a single subject sequence.
+  * a single subject sequence. This function should be invoked 
+  * after BLAST_SearchEngineCore() but before BLAST_RPSTraceback().
   *
   *   BEFORE THIS CALL      AFTER THIS CALL
   *  - many HitLists        - one HitList
