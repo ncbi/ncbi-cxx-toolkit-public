@@ -8,6 +8,9 @@
 /* Define to empty if the keyword does not work.  */
 #undef const
 
+/* Define if your system has its own `getloadavg' function.  */
+#undef HAVE_GETLOADAVG
+
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
 #undef size_t
 
@@ -38,11 +41,20 @@
 #undef NCBI_COMPILER_UNKNOWN
 #undef NCBI_COMPILER_VERSION
 
-/* There is gethostbyname_r() */
+/* gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
 
-/* There is strdup() */
+/* strdup() */
 #undef HAVE_STRDUP
+
+/* sysinfo() -- Linux-like, with 1 arg */
+#undef HAVE_SYSINFO_1
+
+/* getloadavg() */
+#undef HAVE_GETLOADAVG
+
+/* sysmp() */
+#undef HAVE_SYSMP
 
 /* Does not give enough support to the in-class template functions */
 #undef NO_INCLASS_TMPL
@@ -62,6 +74,12 @@
 /* SYBASE libraries are available */
 #undef HAVE_LIBSYBASE
 
+/* KSTAT library is available */
+#undef HAVE_LIBKSTAT
+
+/* RPCSVC library is available */
+#undef HAVE_LIBRPCSVC
+
 /* NCBI C Toolkit libs are available */
 #undef HAVE_NCBI_C
 
@@ -79,6 +97,9 @@
 
 /* New C++ streams dont have ios_base:: */
 #undef HAVE_NO_IOS_BASE
+
+/* Have union semun */
+#undef HAVE_SEMUN
 
 /* This is good for the GNU compiler on Solaris */ 
 #undef __EXTENSIONS__

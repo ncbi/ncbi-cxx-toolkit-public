@@ -18,11 +18,20 @@
 #undef NCBI_COMPILER_UNKNOWN
 #undef NCBI_COMPILER_VERSION
 
-/* There is gethostbyname_r() */
+/* gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
 
-/* There is strdup() */
+/* strdup() */
 #undef HAVE_STRDUP
+
+/* sysinfo() -- Linux-like, with 1 arg */
+#undef HAVE_SYSINFO_1
+
+/* getloadavg() */
+#undef HAVE_GETLOADAVG
+
+/* sysmp() */
+#undef HAVE_SYSMP
 
 /* Microsoft C++ specific */
 #undef SIZEOF___INT64
@@ -45,6 +54,12 @@
 /* SYBASE libraries are available */
 #undef HAVE_LIBSYBASE
 
+/* KSTAT library is available */
+#undef HAVE_LIBKSTAT
+
+/* RPCSVC library is available */
+#undef HAVE_LIBRPCSVC
+
 /* NCBI C Toolkit libs are available */
 #undef HAVE_NCBI_C
 
@@ -62,6 +77,9 @@
 
 /* New C++ streams dont have ios_base:: */
 #undef HAVE_NO_IOS_BASE
+
+/* Have union semun */
+#undef HAVE_SEMUN
 
 /* This is good for the GNU compiler on Solaris */ 
 #undef __EXTENSIONS__
