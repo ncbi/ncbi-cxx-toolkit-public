@@ -40,6 +40,8 @@ BEGIN_SCOPE(objects)
 class CDate;
 class CBioseq;
 class CScope;
+class CSeq_feat;
+class CBioseq_Handle;
 
 
 enum ETildeStyle {
@@ -106,6 +108,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/25 20:47:59  shomrat
+* Add class forwarding
+*
 * Revision 1.3  2004/03/18 15:34:54  shomrat
 * Meaningful argument names
 *
