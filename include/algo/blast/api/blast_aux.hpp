@@ -49,8 +49,15 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-typedef pair< CRef<CSeq_loc>, CScope*> TSeqLoc;
-typedef vector<TSeqLoc>   TSeqLocVector;
+struct SSeqLoc {
+    CConstRef<CSeq_loc>     m_Seqloc;
+    mutable CRef<CScope>    m_Scope;
+
+    SSeqLoc() : m_Seqloc(NULL), m_Scope(NULL) {}
+    SSeqLoc(CConstRef<CSeq_loc> sl, CRef<CScope> s) 
+        : m_Seqloc(sl), m_Scope(s) {}
+};
+typedef vector<SSeqLoc>   TSeqLocVector;
 
 /** Converts a CSeq_loc into a BlastMaskPtr structure used in NewBlast
  * @param sl CSeq_loc to convert [in]
@@ -131,6 +138,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/08/18 17:07:41  camacho
+* Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
+* Change in function to read seqlocs from files.
+*
 * Revision 1.12  2003/08/14 19:08:45  dondosha
 * Use CRef instead of pointer to CSeq_loc in the TSeqLoc type definition
 *

@@ -628,7 +628,7 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
         CBlastOption::EProgram prog,
         TSeqLocVector &query,
         const BlastSeqSrc* bssp,
-        const TSeqLoc *subject,
+        const SSeqLoc *subject,
         const BlastScoringOptions* score_options, 
         const BlastScoreBlk* sbp, bool is_gapped)
 {
@@ -642,11 +642,11 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
     CConstRef<CSeq_id> query_id;
 
     if (!bssp) {
-        subject_id.Reset(&sequence::GetId(*subject->first, 
-                                          subject->second));
+        subject_id.Reset(&sequence::GetId(*subject->m_Seqloc, 
+                                          subject->m_Scope));
         if (!is_gapped)
            subject_length = 
-              sequence::GetLength(*subject->first, subject->second);
+              sequence::GetLength(*subject->m_Seqloc, subject->m_Scope);
     }
 
     // Process each query's hit list
@@ -655,11 +655,11 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
        BlastHitList* hit_list = results->hitlist_array[query_index];
        if (!hit_list)
           continue;
-       query_id.Reset(&sequence::GetId(*query[query_index].first, 
-                                  query[query_index].second));
+       query_id.Reset(&sequence::GetId(*query[query_index].m_Seqloc, 
+                                  query[query_index].m_Scope));
        if (!is_gapped)
-          query_length = sequence::GetLength(*query[query_index].first, 
-                                             query[query_index].second);
+          query_length = sequence::GetLength(*query[query_index].m_Seqloc, 
+                                             query[query_index].m_Scope);
        
        for (subject_index = 0; subject_index < hit_list->hsplist_count;
             ++subject_index) {
@@ -711,6 +711,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/08/18 17:07:41  camacho
+* Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
+* Change in function to read seqlocs from files.
+*
 * Revision 1.11  2003/08/15 15:56:32  dondosha
 * Corrections in implementation of results-to-seqalign function
 *

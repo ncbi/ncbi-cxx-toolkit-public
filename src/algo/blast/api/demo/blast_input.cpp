@@ -41,13 +41,13 @@
 
 BEGIN_NCBI_SCOPE
 
-TSeqLocVector*
+TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope, 
     ENa_strand strand, int from, int to, int *counter, 
     BlastMask** lcase_mask)
 {
     _ASSERT(scope);
-    TSeqLocVector *retval = new TSeqLocVector();
+    TSeqLocVector retval;
     CRef<CSeq_entry> seq_entry;
     vector <CConstRef<CSeq_loc> > mask_loc;
 
@@ -75,16 +75,24 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
         } else {
             seqloc->SetWhole(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
         }
-        retval->push_back(make_pair(seqloc, scope));
+        CRef<CScope> s(scope);
+        SSeqLoc sl(seqloc, s);
+        retval.push_back(sl);
 
         // Add this seqentry to the scope
+        CBioseq_Handle bh;
+        try {
+            bh = scope->GetBioseqHandle(*seqloc);
+        } catch (CException& e) {
+            scope->AddTopLevelSeqEntry(*seq_entry);
+        }
     }
 
     if (lcase_mask) {
         *lcase_mask = NULL;
         BlastMask* last_mask = NULL, *new_mask = NULL;
 
-        for (unsigned int i = 0; i < retval->size(); i++) {
+        for (unsigned int i = 0; i < retval.size(); i++) {
             new_mask = CSeqLoc2BlastMask(mask_loc[i], i);
             if ( !last_mask )
                 *lcase_mask = last_mask = new_mask;

@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-TSeqLocVector*
+TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope, 
     ENa_strand strand, int from, int to, int* counter, 
     BlastMask** lcase_mask = NULL);

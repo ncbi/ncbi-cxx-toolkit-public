@@ -272,11 +272,11 @@ int CBlast2seqApplication::Run(void)
     BlastMask* lcase_mask;
 
     // Retrieve input sequences
-    TSeqLocVector *query_loc = 
+    TSeqLocVector query_loc = 
         BLASTGetSeqLocFromStream(args["query"].AsInputFile(), m_Scope,
           eNa_strand_unknown, 0, 0, &counter, &lcase_mask);
 
-    TSeqLocVector *subject_loc = 
+    TSeqLocVector subject_loc = 
         BLASTGetSeqLocFromStream(args["subject"].AsInputFile(), m_Scope,
           eNa_strand_unknown, 0, 0, &counter, &lcase_mask);
 
@@ -285,7 +285,7 @@ int CBlast2seqApplication::Run(void)
         GetBlastProgramNum(args["program"].AsString());
 
     sw.Start();
-    CBl2Seq blaster(*query_loc, *subject_loc, prog);
+    CBl2Seq blaster(query_loc, subject_loc, prog);
     CRef<CSeq_align_set> seqalign = blaster.Run();
     double t = sw.Elapsed();
     cerr << "CBl2seq run took " << t << " seconds" << endl;
@@ -364,6 +364,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/08/18 17:07:42  camacho
+ * Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
+ * Change in function to read seqlocs from files.
+ *
  * Revision 1.11  2003/08/15 16:03:00  dondosha
  * TSeqLoc and TSeqLocVector types no longer belong to class CBl2Seq, but are common to all BLAST applications
  *

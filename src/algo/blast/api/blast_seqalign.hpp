@@ -65,7 +65,7 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
                           CBlastOption::EProgram prog,
                           TSeqLocVector &query, 
                           const BlastSeqSrc* bssp, 
-                          const TSeqLoc* subject,
+                          const SSeqLoc* subject,
                           const BlastScoringOptions* score_options, 
                           const BlastScoreBlk* sbp, bool is_gapped);
 
@@ -76,6 +76,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/08/18 17:07:41  camacho
+* Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
+* Change in function to read seqlocs from files.
+*
 * Revision 1.11  2003/08/15 15:54:55  dondosha
 * Pass seqloc-scope pairs to results2seqalign conversion functions
 *

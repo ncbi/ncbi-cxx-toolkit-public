@@ -51,26 +51,27 @@ public:
     typedef CBlastOption::EProgram          TProgram;
 
     /// Constructor to compare 2 sequences
-    CBl2Seq(TSeqLoc& query, TSeqLoc& subject, TProgram p);
+    CBl2Seq(SSeqLoc& query, SSeqLoc& subject, TProgram p);
 
     /// Constructor to compare query against all subject sequences
-    CBl2Seq(TSeqLoc& query, TSeqLocVector& subjects, TProgram p);
+    CBl2Seq(SSeqLoc& query, const TSeqLocVector& subjects, TProgram p);
 
     /// Contructor to allow query concatenation
-    CBl2Seq(TSeqLocVector& queries, TSeqLocVector& subjects, TProgram p);
+    CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
+            TProgram p);
 
     virtual ~CBl2Seq();
 
-    void SetQuery(TSeqLoc& query);
-    const TSeqLoc& GetQuery() const;
+    void SetQuery(SSeqLoc& query);
+    const SSeqLoc& GetQuery() const;
 
-    void SetQueries(TSeqLocVector& queries);
+    void SetQueries(const TSeqLocVector& queries);
     const TSeqLocVector& GetQueries() const;
 
-    void SetSubject(TSeqLoc& subject);
-    const TSeqLoc& GetSubject() const;
+    void SetSubject(SSeqLoc& subject);
+    const SSeqLoc& GetSubject() const;
 
-    void SetSubjects(TSeqLocVector& subjects);
+    void SetSubjects(const TSeqLocVector& subjects);
     const TSeqLocVector& GetSubjects() const;
 
     void SetProgram(TProgram p);
@@ -84,7 +85,7 @@ public:
 
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
-    const vector<CSeq_loc>& GetFilteredQueryRegions() const;
+    const vector< CConstRef<CSeq_loc> >& GetFilteredQueryRegions() const;
 
 protected:
     virtual void SetupSearch();
@@ -100,7 +101,7 @@ private:
     TProgram             m_eProgram;         //< Blast program FIXME ?needed?
 
     ///< Common initialization code for all c-tors
-    void x_Init(TSeqLocVector& queries, TSeqLocVector& subjects);      
+    void x_Init(const TSeqLocVector& queries, const TSeqLocVector& subjects);
 
     /// Prohibit copy constructor
     CBl2Seq(const CBl2Seq& rhs);
@@ -133,7 +134,7 @@ private:
 
     /// Regions filtered out from the query sequence
     //TSeqLocVector                       mi_vFilteredRegions;
-    vector<CSeq_loc>                    mi_vFilteredRegions;
+    vector< CConstRef<CSeq_loc> >       mi_vFilteredRegions;
 
     //void x_SetupQuery();    // FIXME: should be setup_queries
     void x_SetupQueries();
@@ -158,20 +159,20 @@ CBl2Seq::GetProgram() const
 }
 
 inline void
-CBl2Seq::SetQuery(TSeqLoc& query)
+CBl2Seq::SetQuery(SSeqLoc& query)
 {
     x_ResetQueryDs();
     m_tQueries.push_back(query);
 }
 
-inline const TSeqLoc&
+inline const SSeqLoc&
 CBl2Seq::GetQuery() const
 {
     return m_tQueries.front();
 }
 
 inline void
-CBl2Seq::SetQueries(TSeqLocVector& queries)
+CBl2Seq::SetQueries(const TSeqLocVector& queries)
 {
     x_ResetQueryDs();
     m_tQueries = queries;
@@ -184,20 +185,20 @@ CBl2Seq::GetQueries() const
 }
 
 inline void
-CBl2Seq::SetSubject(TSeqLoc& subject)
+CBl2Seq::SetSubject(SSeqLoc& subject)
 {
     x_ResetSubjectDs();
     m_tSubjects.push_back(subject);
 }
 
-inline const TSeqLoc&
+inline const SSeqLoc&
 CBl2Seq::GetSubject() const
 {
     return m_tSubjects.front();
 }
 
 inline void
-CBl2Seq::SetSubjects(TSeqLocVector& subjects)
+CBl2Seq::SetSubjects(const TSeqLocVector& subjects)
 {
     x_ResetSubjectDs();
     m_tSubjects = subjects;
@@ -230,7 +231,7 @@ CBl2Seq::GetOptions() const
     return *m_pOptions;
 }
 
-inline const vector<CSeq_loc>&
+inline const vector< CConstRef<CSeq_loc> >&
 CBl2Seq::GetFilteredQueryRegions() const
 {
     return mi_vFilteredRegions;
@@ -242,6 +243,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/08/18 17:07:41  camacho
+* Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
+* Change in function to read seqlocs from files.
+*
 * Revision 1.10  2003/08/15 16:01:02  dondosha
 * TSeqLoc and TSeqLocVector types definitions moved to blast_aux.hpp, so all applications can use them
 *
