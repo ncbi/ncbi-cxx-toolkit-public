@@ -369,7 +369,7 @@ void CTestCompressor<TCompression, TCompressionFile,
             assert(!stm.eof()  &&  stm.good());
             assert(!zip.eof()  &&  zip.good());
             assert(zip.GetProcessedSize(CCompressionStream::eWrite)
-				   == kDataLen);
+                   == kDataLen);
             assert(zip.GetProcessedSize(CCompressionStream::eRead) == 0);
             assert(zip.GetOutputSize(CCompressionStream::eWrite) > 0);
             assert(zip.GetOutputSize(CCompressionStream::eRead) == 0);
@@ -390,7 +390,7 @@ void CTestCompressor<TCompression, TCompressionFile,
             }
             assert(!zip.eof());
             assert(zip.GetProcessedSize(CCompressionStream::eWrite)
-				   == kDataLen);
+                   == kDataLen);
             assert(zip.GetProcessedSize(CCompressionStream::eRead) > 0);
             assert(zip.GetOutputSize(CCompressionStream::eWrite) > 0);
             assert(zip.GetOutputSize(CCompressionStream::eRead) == kDataLen);
@@ -488,11 +488,11 @@ void CTestCompressor<TCompression, TCompressionFile,
 {
     cout << (type == eCompress) ? "Compress   ": 
                                   "Decompress ";
-	cout << "errcode = ";
-	cout << ((last_errcode == kUnknownErr) ? '?' : last_errcode) << ", ";
-	cout << ((src_len == kUnknown) ? '?' : src_len) << " -> ";
-	cout << ((out_len == kUnknown) ? '?' : out_len) << ", limit ";
-	cout << ((dst_len == kUnknown) ? '?' : dst_len) << endl;
+    cout << "errcode = ";
+    cout << ((last_errcode == kUnknownErr) ? '?' : last_errcode) << ", ";
+    cout << ((src_len == kUnknown) ? '?' : src_len) << " -> ";
+    cout << ((out_len == kUnknown) ? '?' : out_len) << ", limit ";
+    cout << ((dst_len == kUnknown) ? '?' : dst_len) << endl;
 }
 
 
@@ -560,13 +560,15 @@ int main(int argc, const char* argv[])
 {
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
-
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/13 13:56:05  ivanov
+ * Cosmetic changes
+ *
  * Revision 1.7  2004/05/10 12:07:26  ivanov
  * Added tests for GetProcessedSize() and GetOutputSize()
  *
