@@ -725,10 +725,12 @@ BLAST_SearchEngine(Uint1 program_number,
             return status;
       }
 
-      /* Calculate cutoff scores for linking HSPs */
-      if (hit_params->do_sum_stats) {
+      /* Calculate cutoff scores for linking HSPs. Do this only for ungapped
+         translated searches. */
+      if (hit_params->do_sum_stats && program_number != blast_type_blastn &&
+          !score_options->gapped_calculation) {
          CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
-                                 hit_params, ext_params, db_length, seq_arg.seq->length); 
+            hit_params, ext_params, db_length, seq_arg.seq->length); 
       }
 
       BLAST_SearchEngineCore(program_number, query, query_info,
