@@ -61,7 +61,7 @@ class NCBI_XBLAST_EXPORT CBlastNucleotideOptionsHandle :
 public:
 
     /// Creates object with default options set
-    CBlastNucleotideOptionsHandle();
+    CBlastNucleotideOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CBlastNucleotideOptionsHandle() {}
     CBlastNucleotideOptionsHandle(const CBlastNucleotideOptionsHandle& rhs);
     CBlastNucleotideOptionsHandle& operator=(const CBlastNucleotideOptionsHandle& rhs);
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/16 20:42:59  bealer
+ * - Add locality flag for blast options handle classes.
+ *
  * Revision 1.4  2003/12/15 23:41:35  dondosha
  * Added [gs]etters of database (subject) length and number of sequences to general options handle
  *

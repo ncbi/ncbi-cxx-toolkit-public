@@ -58,7 +58,7 @@ class NCBI_XBLAST_EXPORT CTBlastxOptionsHandle :
 public:
 
     /// Creates object with default options set
-    CTBlastxOptionsHandle();
+    CTBlastxOptionsHandle(EAPILocality locality);
     ~CTBlastxOptionsHandle() {}
     CTBlastxOptionsHandle(const CTBlastxOptionsHandle& rhs);
     CTBlastxOptionsHandle& operator=(const CTBlastxOptionsHandle& rhs);
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/16 20:42:57  bealer
+ * - Add locality flag for blast options handle classes.
+ *
  * Revision 1.3  2003/12/09 12:40:23  camacho
  * Added windows export specifiers
  *

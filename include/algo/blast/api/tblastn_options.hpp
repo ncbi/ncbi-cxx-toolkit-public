@@ -55,7 +55,7 @@ class NCBI_XBLAST_EXPORT CTBlastnOptionsHandle :
 public:
 
     /// Creates object with default options set
-    CTBlastnOptionsHandle();
+    CTBlastnOptionsHandle(EAPILocality locality);
     ~CTBlastnOptionsHandle() {}
     CTBlastnOptionsHandle(const CTBlastnOptionsHandle& rhs);
     CTBlastnOptionsHandle& operator=(const CTBlastnOptionsHandle& rhs);
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/16 20:42:57  bealer
+ * - Add locality flag for blast options handle classes.
+ *
  * Revision 1.4  2003/12/15 18:42:06  dondosha
  * Added longest intron length setter/getter
  *
