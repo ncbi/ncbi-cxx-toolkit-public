@@ -28,13 +28,17 @@
  *
  * Author:  Denis Vakatov
  *
- * File Description:
- *   NCBI C++ diagnostic API
  *
- *   More elaborate documentation could be found in:
- *     http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/
- *            programming_manual/diag.html
  */
+
+/// @file ncbidiag.hpp
+///
+///   Defines NCBI C++ diagnostic APIs, classes, and macros.
+///
+///   More elaborate documentation could be found in:
+///     http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/
+///            programming_manual/diag.html
+
 
 #include <corelib/ncbistre.hpp>
 #include <list>
@@ -51,205 +55,290 @@
 BEGIN_NCBI_SCOPE
 
 
-// Auxiliary macros for a "standard" error posting
+/// Error posting with file, line number information but without error codes.
+///
+/// @sa
+///   ERR_POST_EX macro
 #define ERR_POST(message) \
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << message << NCBI_NS_NCBI::Endm )
 
+/// Log message only without severity, location, prefix information.
+///
+/// @sa
+///   LOG_POST_EX macro
 #define LOG_POST(message) \
     ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) << message << NCBI_NS_NCBI::Endm )
 
-// ...with error codes
+/// Error posting with error codes.
+///
+/// @sa
+///   ERR_POST
 #define ERR_POST_EX(err_code, err_subcode, message) \
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << NCBI_NS_NCBI::ErrCode(err_code, err_subcode) << message << NCBI_NS_NCBI::Endm )
 
+/// Log posting with error codes.
+///
+/// @sa
+///   LOG_POST
 #define LOG_POST_EX(err_code, err_subcode, message) \
     ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) << NCBI_NS_NCBI::ErrCode(err_code, err_subcode) << message << NCBI_NS_NCBI::Endm )
 
 
-// Severity level for the posted diagnostics
+/// Severity level for the posted diagnostics.
 enum EDiagSev {
-    eDiag_Info = 0,
-    eDiag_Warning,
-    eDiag_Error,
-    eDiag_Critical,
-    eDiag_Fatal,   // guarantees to exit(or abort)
-    eDiag_Trace,
-    // limits
-    eDiagSevMin = eDiag_Info,
-    eDiagSevMax = eDiag_Trace
+    eDiag_Info = 0, ///< Informational message
+    eDiag_Warning,  ///< Warning message
+    eDiag_Error,    ///< Error message
+    eDiag_Critical, ///< Critical error message
+    eDiag_Fatal,    ///< Fatal error -- guarantees exit(or abort)
+    eDiag_Trace,    ///< Trace message
+    // Limits
+    eDiagSevMin = eDiag_Info,  ///< Verbosity level for min. severity
+    eDiagSevMax = eDiag_Trace  ///< Verbosity level for max. severity
 };
 
 
-// Severity level change state
+/// Severity level change state.
 enum EDiagSevChange {
-    eDiagSC_Unknown,  // Status of changing severity is unknown (first call)
-    eDiagSC_Disable,  // Disable change severity level 
-    eDiagSC_Enable    // Enable change severity level 
+    eDiagSC_Unknown, ///< Status of changing severity is unknown (first call)
+    eDiagSC_Disable, ///< Disable change severity level 
+    eDiagSC_Enable   ///< Enable change severity level 
 };
 
 
-// Which parts of the diagnostic context should be posted, and which are not...
-// The generic appearance of the posted message is as follows:
-//   "<file>", line <line>: <severity>: (<err_code>.<err_subcode>)
-//    [<prefix1>::<prefix2>::<prefixN>] <message>\n
-//    <err_code_message>\n
-//    <err_code_explanation>
-//
-// e.g. if all flags are set, and prefix string is set to "My prefix", and
-// ERR_POST(eDiag_Warning, "Take care!"):
-//   "/home/iam/myfile.cpp", line 33: Warning: (2.11) [aa::bb::cc] Take care!
-//
-// See also SDiagMessage::Compose().
+/// Which parts of the diagnostic context should be posted.
+///
+/// Generic appearance of the posted message is as follows:
+///
+///   "<file>", line <line>: <severity>: (<err_code>.<err_subcode>)
+///    [<prefix1>::<prefix2>::<prefixN>] <message>\n
+///    <err_code_message>\n
+///    <err_code_explanation>
+///
+/// Example: 
+///
+/// - If all flags are set, and prefix string is set to "My prefix", and
+///   ERR_POST(eDiag_Warning, "Take care!"):
+///   "/home/iam/myfile.cpp", line 33: Warning: (2.11) [aa::bb::cc] Take care!
+///
+/// @sa
+///   SDiagMessage::Compose()
 enum EDiagPostFlag {
-    eDPF_File               = 0x1,   // set by default #if _DEBUG; else not set
-    eDPF_LongFilename       = 0x2,   // set by default #if _DEBUG; else not set
-    eDPF_Line               = 0x4,   // set by default #if _DEBUG; else not set
-    eDPF_Prefix             = 0x8,   // set by default (always)
-    eDPF_Severity           = 0x10,  // set by default (always)
-    eDPF_ErrCode            = 0x20,  // set by default (always)
-    eDPF_ErrSubCode         = 0x40,  // set by default (always)
-    eDPF_ErrCodeMessage     = 0x100, // set by default (always)
-    eDPF_ErrCodeExplanation = 0x200, // set by default (always)
-    eDPF_ErrCodeUseSeverity = 0x400, // set by default (always)
-    eDPF_DateTime           = 0x80,  //
-    eDPF_OmitInfoSev        = 0x4000,// no severity indication if eDiag_Info 
+    eDPF_File               = 0x1, ///< Set by default #if _DEBUG; else not set
+    eDPF_LongFilename       = 0x2, ///< Set by default #if _DEBUG; else not set
+    eDPF_Line               = 0x4, ///< Set by default #if _DEBUG; else not set
+    eDPF_Prefix             = 0x8, ///< Set by default (always)
+    eDPF_Severity           = 0x10,  ///< Set by default (always)
+    eDPF_ErrCode            = 0x20,  ///< Set by default (always)
+    eDPF_ErrSubCode         = 0x40,  ///< Set by default (always)
+    eDPF_ErrCodeMessage     = 0x100, ///< Set by default (always)
+    eDPF_ErrCodeExplanation = 0x200, ///< Set by default (always)
+    eDPF_ErrCodeUseSeverity = 0x400, ///< Set by default (always)
+    eDPF_DateTime           = 0x80,  ///< Include date and time
+    eDPF_OmitInfoSev        = 0x4000,///< No severity indication if eDiag_Info 
 
-    // set all flags
+    /// Set all flags.
     eDPF_All                = 0x3FFF,
-    // set all flags for using with __FILE__ and __LINE__
+
+    /// Set all flags for using with __FILE__ and __LINE__.
     eDPF_Trace              = 0x1F,
-    // print the posted message only;  without severity, location, prefix, etc.
+
+    /// Print the posted message only;  without severity, location, prefix, etc.
     eDPF_Log                = 0x0,
-    // ignore all other flags, use global flags
+
+    /// Ignore all other flags, use global flags.
     eDPF_Default            = 0x8000
 };
 
-typedef int TDiagPostFlags;  // binary OR of "EDiagPostFlag"
+typedef int TDiagPostFlags;  ///< Binary OR of "EDiagPostFlag"
 
 
-// Forward declaration of some classes
+// Forward declaration of some classes.
 class CDiagBuffer;
 class CDiagErrCodeInfo;
 
 
 
-///////////////////////////////////////////////////////
-//  ErrCode - class for manipulator ErrCode
+/////////////////////////////////////////////////////////////////////////////
+///
+/// ErrCode --
+///
+/// Define composition of error code.
+///
+/// Currently the error code is an ordered pair of <code, subcode> numbers.
 
 class ErrCode
 {
 public:
+    /// Constructor.
     ErrCode(int code, int subcode = 0)
         : m_Code(code), m_SubCode(subcode)
     { }
-    int m_Code;
-    int m_SubCode;
+    int m_Code;         ///< Major error code number
+    int m_SubCode;      ///< Minor error code number
 };
 
 
 
-//////////////////////////////////////////////////////////////////
-// The diagnostics class
-
 class CException;
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CNcbiDiag --
+///
+/// Define the main NCBI Diagnostic class.
 
 class CNcbiDiag
 {
 public:
+    /// Constructor.
     NCBI_XNCBI_EXPORT
-    CNcbiDiag(EDiagSev       sev        = eDiag_Error,
-              TDiagPostFlags post_flags = eDPF_Default);
+    CNcbiDiag(EDiagSev       sev        = eDiag_Error,  ///< Severity level
+              TDiagPostFlags post_flags = eDPF_Default  ///< What info.
+             );
+
+
+    /// Constructor -- includes file and line# information.
     NCBI_XNCBI_EXPORT
-    CNcbiDiag(const char*  file, size_t line,
-              EDiagSev       sev        = eDiag_Error,
-              TDiagPostFlags post_flags = eDPF_Default);
+    CNcbiDiag(const char*  file,    ///< File to write diag. messages
+              size_t       line,    ///< Line number
+              EDiagSev     sev          = eDiag_Error,  ///< Severity level
+              TDiagPostFlags post_flags = eDPF_Default  ///< What info.
+             );
+
+    /// Destructor.
     NCBI_XNCBI_EXPORT
     ~CNcbiDiag(void);
 
-    // formatted output
+    /// Put object to be formatted to diagnostic stream.
     template<class X> const CNcbiDiag& operator<< (const X& x) const {
         m_Buffer.Put(*this, x);
         return *this;
     }
 
-    // manipulator to set error code(s), like:  CNcbiDiag() << ErrCode(5,3);
+    /// Insert specified error code into diagnostic stream.
+    ///
+    /// Example:
+    ///   CNcbiDiag() << ErrCode(5,3);
     const CNcbiDiag& operator<< (const ErrCode& err_code) const;
+
+    /// Report specified exception to diagnostic stream.
     const CNcbiDiag& operator<< (const CException& ex) const;
 
-    // other (function-based) manipulators
+    /// Function-based manipulators.
     const CNcbiDiag& operator<< (const CNcbiDiag& (*f)(const CNcbiDiag&))
         const
     {
         return f(*this);
     }
 
-    // Output manipulators for CNcbiDiag
+    // Output manipulators for CNcbiDiag.
 
-    // reset the content of current message
+    /// Reset the content of current message.
     friend const CNcbiDiag& Reset  (const CNcbiDiag& diag);
-    // flush currend message, start new one
+
+    /// Flush current message, start new one.
     friend const CNcbiDiag& Endm   (const CNcbiDiag& diag);
-    // flush currend message, then
-    // set a severity for the next diagnostic message
+
+    /// Flush current message, then  set a severity for the next diagnostic
+    /// message to Info.
     friend const CNcbiDiag& Info    (const CNcbiDiag& diag);
+
+    /// Flush current message, then  set a severity for the next diagnostic
+    /// message to Warning.
     friend const CNcbiDiag& Warning (const CNcbiDiag& diag);
+
+    /// Flush current message, then  set a severity for the next diagnostic
+    /// message to Error.
     friend const CNcbiDiag& Error   (const CNcbiDiag& diag);
+
+    /// Flush current message, then  set a severity for the next diagnostic
+    /// message to Critical.
     friend const CNcbiDiag& Critical(const CNcbiDiag& diag);
+
+    /// Flush current message, then  set a severity for the next diagnostic
+    /// message to Fatal.
     friend const CNcbiDiag& Fatal   (const CNcbiDiag& diag);
+
+    /// Flush current message, then  set a severity for the next diagnostic
+    /// message to Trace.
     friend const CNcbiDiag& Trace   (const CNcbiDiag& diag);
 
-    // get a common symbolic name for the severity levels
+    /// Get a common symbolic name for the severity levels.
     static const char* SeverityName(EDiagSev sev);
 
-    // get severity from string. "str_sev" can be the numeric value
-    // or a symbolic name (see CDiagBuffer::sm_SeverityName[])
+    /// Get severity from string.
+    ///
+    /// @param str_sev
+    ///   Can be the numeric value or a symbolic name (see
+    ///   CDiagBuffer::sm_SeverityName[]).
+    /// @param sev
+    ///   Severity level. 
+    /// @return
+    ///   Return TRUE if severity level known; FALSE, otherwise.
     static bool StrToSeverityLevel(const char* str_sev, EDiagSev& sev);
 
-    // specify file name and line number to post
-    // they are active for this message only, and they will be reset to
-    // zero after this message is posted
+    /// Set file name to post.
     const CNcbiDiag& SetFile(const char* file) const;
+
+    /// Set line number for post.
     const CNcbiDiag& SetLine(size_t line) const;
 
+    /// Set error code and subcode numbers.
     const CNcbiDiag& SetErrorCode(int code = 0, int subcode = 0) const;
 
-    // get severity, file , line and error code of the current message
-    EDiagSev       GetSeverity    (void) const;
-    const char*    GetFile        (void) const;
-    size_t         GetLine        (void) const;
-    int            GetErrorCode   (void) const;
-    int            GetErrorSubCode(void) const;
+    /// Get severity of the current message.
+    EDiagSev GetSeverity(void) const;
+
+    /// Get file used for the current message.
+    const char* GetFile(void) const;
+
+    /// Get line number for the current message.
+    size_t GetLine(void) const;
+
+    /// Get error code of the current message.
+    int GetErrorCode(void) const;
+
+    /// Get error subcode of the current message.
+    int GetErrorSubCode(void) const;
+
+    /// Get post flags for the current message.
     TDiagPostFlags GetPostFlags   (void) const;
 
-    // display error message
+    /// Display fatal error message.
     NCBI_XNCBI_EXPORT
-    static void DiagFatal   (const char* file, size_t line,
+    static void DiagFatal(const char* file, size_t line,
                              const char* message);
+    /// Display trouble error message.
     NCBI_XNCBI_EXPORT
-    static void DiagTrouble (const char* file, size_t line);
+    static void DiagTrouble(const char* file, size_t line);
+
+    /// Assert specfied expression and report results.
     NCBI_XNCBI_EXPORT
-    static void DiagAssert  (const char* file, size_t line,
+    static void DiagAssert(const char* file, size_t line,
                              const char* expression);
+
+    /// Display validation message.
     NCBI_XNCBI_EXPORT
     static void DiagValidate(const char* file, size_t line,
                              const char* expression, const char* message);
 
 private:
-    mutable EDiagSev       m_Severity;   // severity level of current message
-    mutable char           m_File[256];  // file name
-    mutable size_t         m_Line;       // line #
-    mutable int            m_ErrCode;    // error code
-    mutable int            m_ErrSubCode; // error subcode
-    mutable CDiagBuffer&   m_Buffer;     // this thread's error message buffer
-    mutable TDiagPostFlags m_PostFlags;  // bitwise OR of "EDiagPostFlag"
+    mutable EDiagSev       m_Severity;   ///< Severity level of current msg.
+    mutable char           m_File[256];  ///< File name
+    mutable size_t         m_Line;       ///< Line number
+    mutable int            m_ErrCode;    ///< Error code
+    mutable int            m_ErrSubCode; ///< Error subcode
+    mutable CDiagBuffer&   m_Buffer;     ///< This thread's error msg. buffer
+    mutable TDiagPostFlags m_PostFlags;  ///< Bitwise OR of "EDiagPostFlag"
 
-    // prohibit copy-constructor and assignment
+    /// Private copy constructor to prohibit copy.
     CNcbiDiag(const CNcbiDiag&);
+
+    /// Private assignment operator to prohibit assignment.
     CNcbiDiag& operator= (const CNcbiDiag&);
 };
 
-
-/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -258,263 +347,398 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 
-// Return "true" if the specified "flag" is set in global "flags"(to be posted)
-// If eDPF_Default is set in "flags" then use the current global flags as
-// specified by SetDiagPostFlag()/UnsetDiagPostFlag()
-inline bool IsSetDiagPostFlag(EDiagPostFlag  flag,
+/// Check if a specified flag is set.
+///
+/// @param flag
+///   Flag to check
+/// @param flags
+///   If eDPF_Default is set for "flags" then use the current global flags as
+///   specified by SetDiagPostFlag()/UnsetDiagPostFlag().
+/// @return
+///   "TRUE" if the specified "flag" is set in global "flags" that describes
+///   the post settings.
+inline bool IsSetDiagPostFlag(EDiagPostFlag  flag, 
                               TDiagPostFlags flags = eDPF_Default);
 
-// Set all global post flags to "flags";  return previously set flags
+/// Set all global post flags to "flags".
+///
+/// @return
+///   Previously set flags
 NCBI_XNCBI_EXPORT
 extern TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
 
-// Set/unset the specified flag (globally)
+/// Set the specified flag (globally).
 NCBI_XNCBI_EXPORT
 extern void SetDiagPostFlag  (EDiagPostFlag flag);
 
+/// Unset the specified flag (globally).
 NCBI_XNCBI_EXPORT
 extern void UnsetDiagPostFlag(EDiagPostFlag flag);
 
-// Specify a string to prefix all subsequent error postings with
+/// Specify a string to prefix all subsequent error postings with.
 NCBI_XNCBI_EXPORT
 extern void SetDiagPostPrefix(const char* prefix);
 
-// Push/pop a string to/from the list of message prefixes
+/// Push a string to the list of message prefixes.
 NCBI_XNCBI_EXPORT
 extern void PushDiagPostPrefix(const char* prefix);
 
+/// Pop a string from the list of message prefixes.
 NCBI_XNCBI_EXPORT
 extern void PopDiagPostPrefix (void);
 
-// Auxiliary class to temporarily add a prefix.
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CDiagAutoPrefix --
+///
+/// Define the auxiliary class to temporarily add a prefix.
+
 class NCBI_XNCBI_EXPORT CDiagAutoPrefix
 {
 public:
-    // Add prefix "prefix"
+    /// Constructor.
     CDiagAutoPrefix(const string& prefix);
+
+    /// Constructor.
     CDiagAutoPrefix(const char*   prefix);
-    // Remove the prefix (automagically, when the object gets out of scope)
+
+    /// Remove the prefix automagically, when the object gets out of scope.
     ~CDiagAutoPrefix(void);
 };
 
 
-// Do not post messages which severity is less than "min_sev"
-// Return previous post-level.
-// This function have effect only if:
-//   1)  environment variable $DIAG_POST_LEVEL is not set, and
-//   2)  registry value of DIAG_POST_LEVEL, section DEBUG is not set 
-// The value of DIAG_POST_LEVEL can be a digital value (0-9) or 
-// string value from CDiagBuffer::sm_SeverityName[] in any case.
+/// Diagnostic post severity level.
+///
+/// The value of DIAG_POST_LEVEL can be a digital value (0-9) or 
+/// string value from CDiagBuffer::sm_SeverityName[].
 #define DIAG_POST_LEVEL "DIAG_POST_LEVEL"
+
+/// Set severity of post messages.
+///
+/// This function has effect only if:
+///   - Environment variable $DIAG_POST_LEVEL is not set, and
+///   - Registry value of DIAG_POST_LEVEL, section DEBUG is not set 
+///
+/// Do not post messages where severity is less than "min_sev"
+/// @return
+///   Return previous post-level.
 NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 
-// Disable change the diagnostic post level.
-// Consecutive using SetDiagPostLevel() will not have effect.
+/// Disable change the diagnostic post level.
+///
+/// Consecutive using SetDiagPostLevel() will not have effect.
 NCBI_XNCBI_EXPORT
 extern bool DisableDiagPostLevelChange(bool disable_change = true);
 
-// Abrupt the application if severity is >= "max_sev".
-// Throw an exception if die_sev is not in the range [eDiagSevMin..eDiag_Fatal]
-// Return previous die-level.
+/// Set the "die" (abort) level for the program.
+///
+/// Abort the application if severity is >= "max_sev".
+/// Throw an exception if die_sev is not in the range
+/// [eDiagSevMin..eDiag_Fatal].
+/// @return
+///   Return previous die-level.
 NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
 
-// WARNING!!! -- not recommended to use unless you are real desperate:
-// By passing TRUE to this function you can make your application
-// to never exit/abort regardless of the level set by SetDiagDieLevel().
-// But be warned this is usually a VERY BAD thing to do!
-// -- because any library code counts on at least "eDiag_Fatal" to exit
-// unconditionally, and thus what happens after "eDiag_Fatal" is posted is
-// in general totally unpredictable! Therefore, use it on your own risk.
+/// Ignore the die level settings.
+///
+/// WARNING!!! -- not recommended for use unless you are real desperate:
+/// By passing TRUE to this function you can make your application
+/// never exit/abort regardless of the level set by SetDiagDieLevel().
+/// But be warned this is usually a VERY BAD thing to do!
+/// -- because any library code counts on at least "eDiag_Fatal" to exit
+/// unconditionally, and thus what happens after "eDiag_Fatal" is posted is
+/// in general totally unpredictable! Therefore, use it on your own risk.
 NCBI_XNCBI_EXPORT
 extern void IgnoreDiagDieLevel(bool ignore, EDiagSev* prev_sev = 0);
 
-// Set/unset abort handler.
-// If "func"==0 that will be used default handler
+/// Abort handler function type.
 typedef void (*FAbortHandler)(void);
+
+/// Set/unset abort handler.
+///
+/// If "func"==0 use default handler.
 NCBI_XNCBI_EXPORT
 extern void SetAbortHandler(FAbortHandler func = 0);
 
-// Smart abort function.
-// It can process user abort handler and don't popup assert windows
-// if specified (environment variable DIAG_SILENT_ABORT is "Y" or "y")
+/// Smart abort function.
+///
+/// Processes user abort handler and does not popup assert windows
+/// if specified (environment variable DIAG_SILENT_ABORT is "Y" or "y").
 NCBI_XNCBI_EXPORT
 extern void Abort(void);
 
-// Disable/enable posting of "eDiag_Trace" messages.
-// By default, these messages are disabled unless:
-//   1)  environment variable $DIAG_TRACE is set (to any value), or
-//   2)  registry value of DIAG_TRACE, section DEBUG is set (to any value)
+/// Diagnostic trace setting.
 #define DIAG_TRACE "DIAG_TRACE"
+
+/// Which setting disables/enables posting of "eDiag_Trace" messages.
+///
+/// By default, trace messages are disabled unless:
+/// - Environment variable $DIAG_TRACE is set (to any value), or
+/// - Registry value of DIAG_TRACE, section DEBUG is set (to any value)
 enum EDiagTrace {
-    eDT_Default = 0,  // restores the default tracing context
-    eDT_Disable,      // ignore messages of severity "eDiag_Trace"
-    eDT_Enable        // enable messages of severity "eDiag_Trace"
+    eDT_Default = 0,  ///< Restores the default tracing context
+    eDT_Disable,      ///< Ignore messages of severity "eDiag_Trace"
+    eDT_Enable        ///< Enable messages of severity "eDiag_Trace"
 };
+
+
+/// Set the diagnostic trace settings.
 NCBI_XNCBI_EXPORT
 extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 
 
-// Set new message handler("func"), data("data") and destructor("cleanup").
-// The "func(..., data)" to be called when any instance of "CNcbiDiagBuffer"
-// has a new diagnostic message completed and ready to post.
-// "cleanup(data)" will be called whenever this hook gets replaced and
-// on the program termination.
-// NOTE 1:  "func()", "cleanup()" and "g_SetDiagHandler()" calls are
-//          MT-protected, so that they would never be called simultaneously
-//          from different threads.
-// NOTE 2:  By default, the errors will be written to standard error stream.
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SDiagMessage --
+///
+/// Diagnostic message structure.
+///
+/// Defines structure of the "data" message that is used with message handler
+/// function("func"),  and destructor("cleanup").
+/// The "func(..., data)" to be called when any instance of "CNcbiDiagBuffer"
+/// has a new diagnostic message completed and ready to post.
+/// "cleanup(data)" will be called whenever this hook gets replaced and
+/// on the program termination.
+/// NOTE 1:  "func()", "cleanup()" and "g_SetDiagHandler()" calls are
+///          MT-protected, so that they would never be called simultaneously
+///          from different threads.
+/// NOTE 2:  By default, the errors will be written to standard error stream.
+
 struct SDiagMessage {
+    /// Initalize SDiagMessage fields.
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
                  const char* file = 0, size_t line = 0,
                  TDiagPostFlags flags = eDPF_Default, const char* prefix = 0,
                  int err_code = 0, int err_subcode = 0,
                  const char* err_text = 0);
 
-    mutable EDiagSev m_Severity;
-    const char*      m_Buffer;  // not guaranteed to be '\0'-terminated!
-    size_t           m_BufferLen;
-    const char*      m_File;
-    size_t           m_Line;
-    int              m_ErrCode;
-    int              m_ErrSubCode;
-    TDiagPostFlags   m_Flags;   // bitwise OR of "EDiagPostFlag"
-    const char*      m_Prefix;
-    const char*      m_ErrText; // sometimes 'error' has no numeric code,
-                                // still it can be represented as text
+    mutable EDiagSev m_Severity;   ///< Severity level
+    const char*      m_Buffer;     ///< Not guaranteed to be '\0'-terminated!
+    size_t           m_BufferLen;  ///< Length of m_Buffer
+    const char*      m_File;       ///< File name
+    size_t           m_Line;       ///< Line number in file
+    int              m_ErrCode;    ///< Error code
+    int              m_ErrSubCode; ///< Sub Error code
+    TDiagPostFlags   m_Flags;      ///< Bitwise OR of "EDiagPostFlag"
+    const char*      m_Prefix;     ///< Prefix string
+    const char*      m_ErrText;    ///< Sometimes 'error' has no numeric code,
+                                   ///< but can be represented as text
 
     // Compose a message string in the standard format(see also "flags"):
     //    "<file>", line <line>: <severity>: [<prefix>] <message> [EOL]
     // and put it to string "str", or write to an output stream "os".
-    enum EDiagWriteFlags {
-        fNone   = 0x0,
-        fNoEndl = 0x01
-    };
-    typedef int TDiagWriteFlags;  // binary OR of "EDiagWriteFlags"
 
-    void          Write(string& str,      TDiagWriteFlags flags = fNone) const;
+    /// Which write flags should be output in diagnostic message.
+    enum EDiagWriteFlags {
+        fNone   = 0x0,      ///< No flags
+        fNoEndl = 0x01      ///< No end of line
+    };
+
+    typedef int TDiagWriteFlags; /// Binary OR of "EDiagWriteFlags"
+
+    /// Write to string.
+    void Write(string& str, TDiagWriteFlags flags = fNone) const;
+    
+    /// Write to stream.
     CNcbiOstream& Write(CNcbiOstream& os, TDiagWriteFlags flags = fNone) const;
 };
 
+/// Insert message in output stream.
 inline CNcbiOstream& operator<< (CNcbiOstream& os, const SDiagMessage& mess) {
     return mess.Write(os);
 }
 
 
-// Base diag.handler class
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CDiagHandler --
+///
+/// Base diagnostic handler class.
+
 class NCBI_XNCBI_EXPORT CDiagHandler
 {
 public:
+    /// Destructor.
     virtual ~CDiagHandler(void) {}
+
+    /// Post message to handler.
     virtual void Post(const SDiagMessage& mess) = 0;
 };
 
+/// Diagnostic handler function type.
 typedef void (*FDiagHandler)(const SDiagMessage& mess);
+
+/// Diagnostic cleanup function type.
 typedef void (*FDiagCleanup)(void* data);
 
+/// Set the diagnostic handler using the specified diagnostic handler class.
 NCBI_XNCBI_EXPORT
-extern void          SetDiagHandler(CDiagHandler* handler,
-                                    bool can_delete = true);
+extern void SetDiagHandler(CDiagHandler* handler,
+                           bool can_delete = true);
+
+/// Get the currently set diagnostic handler class.
 NCBI_XNCBI_EXPORT
 extern CDiagHandler* GetDiagHandler(bool take_ownership = false);
 
+/// Set the diagnostic handler using the specified diagnostic handler
+/// and cleanup functions.
 NCBI_XNCBI_EXPORT
 extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
                            FDiagCleanup cleanup);
 
-// Return TRUE if user has ever set (or unset) diag. handler
+/// Check if diagnostic handler is set.
+///
+/// @return 
+///   Return TRUE if user has ever set (or unset) diag. handler.
 NCBI_XNCBI_EXPORT
 extern bool IsSetDiagHandler(void);
 
 
-// Specialization of "CDiagHandler" for the stream-based diagnostics
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CStreamDiagHandler --
+///
+/// Specialization of "CDiagHandler" for the stream-based diagnostics.
+
 class NCBI_XNCBI_EXPORT CStreamDiagHandler : public CDiagHandler
 {
 public:
-    // This does *not* own the stream; users will need to clean it up
-    // themselves if appropriate.
+    /// Constructor.
+    ///
+    /// This does *not* own the stream; users will need to clean it up
+    /// themselves if appropriate. 
+    /// @param os
+    ///   Output stream.
+    /// @param quick_flush
+    ///   Do stream flush after every message. 
     CStreamDiagHandler(CNcbiOstream* os, bool quick_flush = true)
         : m_Stream(os), m_QuickFlush(quick_flush) {}
+
+    /// Post message to the handler.
     virtual void Post(const SDiagMessage& mess);
 
     NCBI_XNCBI_EXPORT friend bool IsDiagStream(const CNcbiOstream* os);
 
 protected:
-    CNcbiOstream* m_Stream;
+    CNcbiOstream* m_Stream;         ///< Diagnostic stream
 
 private:
-    bool          m_QuickFlush;
+    bool          m_QuickFlush;     ///< Quick flush of stream flag
 };
 
 
-// Write the error diagnostics to output stream "os"
-// (this uses the SetDiagHandler() functionality)
+
+/// Set diagnostic stream.
+///
+/// Error diagnostics are written to output stream "os".
+/// This uses the SetDiagHandler() functionality.
 NCBI_XNCBI_EXPORT
 extern void SetDiagStream
 (CNcbiOstream* os,
- bool          quick_flush  = true,// do stream flush after every message
- FDiagCleanup  cleanup      = 0,   // call "cleanup(cleanup_data)" if diag.
- void*         cleanup_data = 0    // stream is changed (see SetDiagHandler)
+ bool          quick_flush  = true,///< Do stream flush after every message
+ FDiagCleanup  cleanup      = 0,   ///< Call "cleanup(cleanup_data)" if diag.
+ void*         cleanup_data = 0    ///< Stream is changed (see SetDiagHandler)
  );
 
-// Return TRUE if "os" is the current diag. stream
+// Return TRUE if "os" is the current diag. stream.
 NCBI_XNCBI_EXPORT 
 extern bool IsDiagStream(const CNcbiOstream* os);
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CDiagHandler --
+///
+/// Diagnostic handler factory.
+
 class NCBI_XNCBI_EXPORT CDiagFactory
 {
 public:
+    /// Factory method interface.
     virtual CDiagHandler* New(const string& s) = 0;
 };
 
 
-// Auxiliary class to limit the duration of changes to diagnostic settings.
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CDiagRestorer --
+///
+/// Auxiliary class to limit the duration of changes to diagnostic settings.
+
 class NCBI_XNCBI_EXPORT CDiagRestorer
 {
 public:
-    CDiagRestorer (void); // captures current settings
-    ~CDiagRestorer(void); // restores captured settings
+    CDiagRestorer (void); ///< Captures current settings
+    ~CDiagRestorer(void); ///< Restores captured settings
 private:
-    // Prohibit dynamic allocation; there's no good reason to allow it,
-    // and out-of-order destruction is problematic
+    /// Private new operator.
+    ///
+    /// Prohibit dynamic allocation because there's no good reason to allow
+    /// it, and out-of-order destruction is problematic.
     void* operator new      (size_t)  { throw runtime_error("forbidden"); }
+
+    /// Private new[] operator.
+    ///
+    /// Prohibit dynamic allocation because there's no good reason to allow
+    /// it, and out-of-order destruction is problematic.
     void* operator new[]    (size_t)  { throw runtime_error("forbidden"); }
+
+    /// Private delete operator.
+    ///
+    /// Prohibit dynamic deallocation (and allocation) because there's no
+    /// good reason to allow it, and out-of-order destruction is problematic.
     void  operator delete   (void*)   { throw runtime_error("forbidden"); }
+
+    /// Private delete[] operator.
+    ///
+    /// Prohibit dynamic deallocation (and allocation) because there's no
+    /// good reason to allow it, and out-of-order destruction is problematic.
     void  operator delete[] (void*)   { throw runtime_error("forbidden"); }
 
-    string            m_PostPrefix;
-    list<string>      m_PrefixList;
-    TDiagPostFlags    m_PostFlags;
-    EDiagSev          m_PostSeverity;
-    EDiagSevChange    m_PostSeverityChange;
-    EDiagSev          m_DieSeverity;
-    EDiagTrace        m_TraceDefault;
-    bool              m_TraceEnabled;
-    CDiagHandler*     m_Handler;
-    bool              m_CanDeleteHandler;
-    CDiagErrCodeInfo* m_ErrCodeInfo;
-    bool              m_CanDeleteErrCodeInfo;
+    string            m_PostPrefix;         ///< Message prefix
+    list<string>      m_PrefixList;         ///< List of prefixs
+    TDiagPostFlags    m_PostFlags;          ///< Post flags
+    EDiagSev          m_PostSeverity;       ///< Post severity
+    EDiagSevChange    m_PostSeverityChange; ///< Severity change
+    EDiagSev          m_DieSeverity;        ///< Die level severity
+    EDiagTrace        m_TraceDefault;       ///< Default trace setting
+    bool              m_TraceEnabled;       ///< Trace enabled?
+    CDiagHandler*     m_Handler;            ///< Class handler
+    bool              m_CanDeleteHandler;   ///< Can handler be deleted?
+    CDiagErrCodeInfo* m_ErrCodeInfo;        ///< Error code information
+    bool              m_CanDeleteErrCodeInfo; 
+                                       ///< Can error code info. be deleted?
 };
 
 
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// CDiagErrCodeInfo class
-//
-// Auxilary class for CNcbiDiag. Using for read error messages from message 
-// file and explain error on base the error code and subcode.
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SDiagErrCodeDescription --
+///
+/// Structure used to store the errors code and subcode description.
 
-
-// Structure using for store the errors code and subcode description.
 struct SDiagErrCodeDescription {
+    /// Constructor.
     SDiagErrCodeDescription(void);
-    SDiagErrCodeDescription(const string& message,
-                            const string& explanation,
-                            int           severity = -1/*do not override*/)
+
+    /// Destructor.
+    SDiagErrCodeDescription(const string& message,     ///< Message
+                            const string& explanation, ///< Explanation of msg.
+                            int           severity = -1
+                                                       ///< Do not override
+                                                       ///< if set to -1
+                           )
         : m_Message(message),
           m_Explanation(explanation),
           m_Severity(severity)
@@ -523,70 +747,105 @@ struct SDiagErrCodeDescription {
     }
 
 public:
-    string m_Message;     // Error message (short)
-    string m_Explanation; // Error message (with detailed explanation)
-    int    m_Severity;    // Message severity (if less that 0, then use 
-                          // current diagnostic severity level)
+    string m_Message;     ///< Error message (short)
+    string m_Explanation; ///< Error message (with detailed explanation)
+    int    m_Severity;    
+                          ///< Message severity (if less that 0, then use
+                          ///< current diagnostic severity level)
 };
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CDiagErrCodeInfo --
+///
+/// Stores mapping of error codes and their descriptions.
 
 class NCBI_XNCBI_EXPORT CDiagErrCodeInfo
 {
 public:
-    // Constructors
+    /// Constructor.
     CDiagErrCodeInfo(void);
-    CDiagErrCodeInfo(const string& file_name);  // can throw runtime_error
-    CDiagErrCodeInfo(CNcbiIstream& is);         // can throw runtime_error
 
-    // Destructor
+    /// Constructor -- can throw runtime_error.
+    CDiagErrCodeInfo(const string& file_name);  
+
+    /// Constructor -- can throw runtime_error.
+    CDiagErrCodeInfo(CNcbiIstream& is);
+
+    /// Destructor.
     ~CDiagErrCodeInfo(void);
 
-    // Read error descriptions from the specified file/stream,
-    // store it in memory.
+    /// Read error description from specified file.
+    ///
+    /// Read error descriptions from the specified file,
+    /// store it in memory.
     bool Read(const string& file_name);
+
+    /// Read error description from specified stream.
+    ///
+    /// Read error descriptions from the specified stream,
+    /// store it in memory.
     bool Read(CNcbiIstream& is);
     
-    // Delete all stored descriptions from memory
+    /// Delete all stored error descriptions from memory.
     void Clear(void);
 
-    // Get description message for the error by its code.
-    // Return TRUE if error description exists for this code;
-    // return FALSE otherwise.
+    /// Get description for specified error code.
+    ///
+    /// Get description message for the error by its code.
+    /// @return
+    ///   TRUE if error description exists for this code;
+    ///   return FALSE otherwise.
     bool GetDescription(const ErrCode&           err_code, 
                         SDiagErrCodeDescription* description) const;
 
-    // Set error description for specified error code.
-    // If description for this code already exist, then it will be overwritten.
+    /// Set error description for specified error code.
+    ///
+    /// If description for this code already exist, then it
+    /// will be overwritten.
     void SetDescription(const ErrCode&                 err_code, 
                         const SDiagErrCodeDescription& description);
 
-    // Return TRUE if description for specified error code exists, 
-    // otherwise return FALSE.
+    /// Check if error description exists.
+    ///
+    ///  Return TRUE if description for specified error code exists, 
+    /// otherwise return FALSE.
     bool HaveDescription(const ErrCode& err_code) const;
 
 private:
-    // Map for error messages
+
+    /// Define map for error messages.
     typedef map<ErrCode, SDiagErrCodeDescription> TInfo;
+
+    /// Map storing error codes and descriptions.
     TInfo m_Info;
 };
 
 
-// Set/get handler for processing error codes. 
-// By default this handler is unset. 
-// NcbiApplication can init itself only if registry key DIAG_MESSAGE_FILE
-// section DEBUG) is specified. The value of this key should be a name 
-// of the file with the error codes explanations.
-// http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/programming_manual/diag.html#errcodes
 
+/// Diagnostic message file.
 #define DIAG_MESSAGE_FILE "MessageFile"
 
+/// Set handler for processing error codes.
+///
+/// By default this handler is unset. 
+/// NcbiApplication can init itself only if registry key DIAG_MESSAGE_FILE
+/// section DEBUG) is specified. The value of this key should be a name 
+/// of the file with the error codes explanations.
+/// @sa
+///   http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/programming_manual/diag.html#errcodes
 NCBI_XNCBI_EXPORT
 extern void SetDiagErrCodeInfo(CDiagErrCodeInfo* info,
                                bool              can_delete = true);
 
+/// Get handler for processing error codes.
 NCBI_XNCBI_EXPORT
 extern CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership = false);
 
+
+/* @} */
 
 
 ///////////////////////////////////////////////////////
@@ -605,6 +864,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.59  2003/07/21 18:42:29  siyan
+ * Documentation changes.
+ *
  * Revision 1.58  2003/04/25 20:52:34  lavr
  * Introduce draft version of IgnoreDiagDieLevel()
  *
