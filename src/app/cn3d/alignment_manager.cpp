@@ -1079,11 +1079,12 @@ static bool CreateNewPairwiseAlignmentsByBlockExtension(const BlockMultipleAlign
             const Block::Range *pairRange = pairBlocks[pb]->GetRangeOfRow(0);
             if (prevRange && prevRange->to == pairRange->from - 1 && multiple.IsAligned(0, prevRange->to)) {
                 // justification is irrelevant since this is an aligned block
-                int mAlnIdx = multiple.GetAlignmentIndex(0, prevRange->to, BlockMultipleAlignment::eLeft),
+                int mAlnIdx1 = multiple.GetAlignmentIndex(0, prevRange->to, BlockMultipleAlignment::eLeft),
+                    mAlnIdx2 = multiple.GetAlignmentIndex(0, pairRange->from, BlockMultipleAlignment::eLeft),
                     pAlnIdx1 = p->GetAlignmentIndex(0, prevRange->to, BlockMultipleAlignment::eLeft),
                     pAlnIdx2 = p->GetAlignmentIndex(0, pairRange->from, BlockMultipleAlignment::eLeft);
                 if (pAlnIdx1 == pAlnIdx2 - 1 &&
-                    multiple.GetAlignedBlockNumber(mAlnIdx) == multiple.GetAlignedBlockNumber(mAlnIdx + 1))
+                    multiple.GetAlignedBlockNumber(mAlnIdx1) == multiple.GetAlignedBlockNumber(mAlnIdx2))
                 {
                     TRACEMSG("merging blocks " << pb << " and " << (pb+1));
                     // just flag to merge later, since actually merging would mess up pb block indexes
@@ -1160,6 +1161,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2004/09/27 01:43:52  thiessen
+* fix alignment index bug
+*
 * Revision 1.98  2004/09/27 01:00:43  thiessen
 * extend "complete contained" blocks ; merge adjacent blocks after extension"
 *
