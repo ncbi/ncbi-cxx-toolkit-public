@@ -182,7 +182,7 @@ CScope_Impl::x_AttachEntry(const CBioseq_set_EditHandle& seqset,
                            CRef<CSeq_entry_Info> entry,
                            int index)
 {
-    _ASSERT(seqset && entry);
+    _ASSERT(seqset && bool(entry));
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
 
@@ -218,7 +218,7 @@ CBioseq_EditHandle
 CScope_Impl::x_SelectSeq(const CSeq_entry_EditHandle& entry,
                          CRef<CBioseq_Info> bioseq)
 {
-    _ASSERT(entry && bioseq);
+    _ASSERT(entry && bool(bioseq));
     _ASSERT(entry.Which() == CSeq_entry::e_not_set);
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
@@ -236,7 +236,7 @@ CBioseq_set_EditHandle
 CScope_Impl::x_SelectSet(const CSeq_entry_EditHandle& entry,
                          CRef<CBioseq_set_Info> seqset)
 {
-    _ASSERT(entry && seqset);
+    _ASSERT(entry && bool(seqset));
     _ASSERT(entry.Which() == CSeq_entry::e_not_set);
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
@@ -254,7 +254,7 @@ CSeq_annot_EditHandle
 CScope_Impl::x_AttachAnnot(const CSeq_entry_EditHandle& entry,
                            CRef<CSeq_annot_Info> annot)
 {
-    _ASSERT(entry && annot);
+    _ASSERT(entry && bool(annot));
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
 
@@ -265,36 +265,6 @@ CScope_Impl::x_AttachAnnot(const CSeq_entry_EditHandle& entry,
     return CSeq_annot_EditHandle(*m_HeapScope, *annot);
 }
 
-/*
-CBioseq_EditHandle
-CScope_Impl::AttachBioseq(const CBioseq_set_EditHandle& seqset,
-                          CBioseq& seq,
-                          int index)
-{
-    return x_AttachBioseq(seqset, Ref(new CBioseq_Info(seq)), index);
-}
-
-
-CBioseq_EditHandle
-CScope_Impl::CopyBioseq(const CBioseq_set_EditHandle& seqset,
-                        const CBioseq_Handle& seq,
-                        int index)
-{
-    return x_AttachBioseq(seqset, Ref(new CBioseq_Info(seq.x_GetInfo())),
-                          index);
-}
-
-
-CBioseq_EditHandle
-CScope_Impl::TakeBioseq(const CBioseq_set_EditHandle& seqset,
-                        const CBioseq_EditHandle& seq,
-                        int index)
-{
-    CRef<CBioseq_Info> info(&seq.x_GetInfo());
-    seq.Remove();
-    return x_AttachBioseq(seqset, info, index);
-}
-*/
 
 CSeq_entry_EditHandle
 CScope_Impl::AttachEntry(const CBioseq_set_EditHandle& seqset,
@@ -336,7 +306,6 @@ CBioseq_EditHandle CScope_Impl::SelectSeq(const CSeq_entry_EditHandle& entry,
 CBioseq_EditHandle CScope_Impl::CopySeq(const CSeq_entry_EditHandle& entry,
                                         const CBioseq_Handle& seq)
 {
-    _ASSERT(seq.m_Scope != this);
     return x_SelectSeq(entry, Ref(new CBioseq_Info(seq.x_GetInfo())));
 }
 
@@ -1338,6 +1307,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/29 20:51:19  vasilche
+* Fixed ambiguity on MSVC.
+*
 * Revision 1.5  2004/03/29 20:13:06  vasilche
 * Implemented whole set of methods to modify Seq-entry object tree.
 * Added CBioseq_Handle::GetExactComplexityLevel().
