@@ -30,6 +30,14 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/05/03 20:32:29  vakatov
+* Use the (newly introduced) macro from <corelib/ncbidbg.h>:
+*   RETHROW_TRACE,
+*   THROW0_TRACE(exception_class),
+*   THROW1_TRACE(exception_class, exception_arg),
+*   THROW_TRACE(exception_class, exception_args)
+* instead of the former (now obsolete) macro _TRACE_THROW.
+*
 * Revision 1.26  1999/04/30 19:21:03  vakatov
 * Added more details and more control on the diagnostics
 * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
@@ -660,15 +668,13 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
         str.resize(len);
         for ( size_t pos = 0; pos < len; ) {
             if ( !istr ) {
-                _TRACE_THROW();
-                throw runtime_error("\
+                THROW1_TRACE(runtime_error, "\
 CCgiRequest::x_Init() -- error in reading POST content: bad stream state");
             }
             istr->read(&str[pos], len - pos);
             size_t count = istr->gcount();
             if ( count == 0 ) {
-                _TRACE_THROW();
-                throw runtime_error("\
+                THROW1_TRACE(runtime_error, "\
 CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
             }
             pos += count;

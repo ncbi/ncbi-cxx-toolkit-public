@@ -33,6 +33,14 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/05/03 20:32:25  vakatov
+* Use the (newly introduced) macro from <corelib/ncbidbg.h>:
+*   RETHROW_TRACE,
+*   THROW0_TRACE(exception_class),
+*   THROW1_TRACE(exception_class, exception_arg),
+*   THROW_TRACE(exception_class, exception_args)
+* instead of the former (now obsolete) macro _TRACE_THROW.
+*
 * Revision 1.13  1999/04/30 19:20:56  vakatov
 * Added more details and more control on the diagnostics
 * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
@@ -98,9 +106,35 @@ BEGIN_NCBI_SCOPE
 #  define _VERIFY(expr) _ASSERT(expr)
 
 extern int TraceThrow(void);
-#  define _TRACE_THROW() do { \
-    _TRACE("_TRACE_THROW"); \
+
+// Example:  RETHROW_TRACE;
+#  define RETHROW_TRACE do { \
+    _TRACE("EXCEPTION: re-throw"); \
     TraceThrow(); \
+    throw; \
+} while(0)
+
+// Example:  THROW0_TRACE("Throw just a string");
+#  define THROW0_TRACE(exception_class) do { \
+    _TRACE("EXCEPTION: " << #exception_class);\
+    TraceThrow(); \
+    throw exception_class; \
+} while(0)
+
+// Example:  THROW1_TRACE(runtime_error, "Something is wrong...");
+#  define THROW1_TRACE(exception_class, exception_arg) do { \
+    _TRACE("EXCEPTION: " << #exception_class << "(" << #exception_arg << ")");\
+    TraceThrow(); \
+    throw exception_class(exception_arg); \
+} while(0)
+
+// Example:  THROW_TRACE(bad_alloc, ());
+// Example:  THROW_TRACE(runtime_error, ("Something is weird..."));
+// Example:  THROW_TRACE(CParseExceprion, ("Some parse error", 123));
+#  define THROW_TRACE(exception_class, exception_args) do { \
+    _TRACE("EXCEPTION: " << #exception_class << #exception_args); \
+    TraceThrow(); \
+    throw exception_class exception_args; \
 } while(0)
 
 #else  /* _DEBUG */
@@ -109,7 +143,15 @@ extern int TraceThrow(void);
 #  define _TROUBLE
 #  define _ASSERT(expr) ((void)0)
 #  define _VERIFY(expr) ((void)(expr))
-#  define _TRACE_THROW() ((void)0)
+
+#  define RETHROW_TRACE \
+    throw
+#  define THROW0_TRACE(exception_class) \
+    throw exception_class
+#  define THROW1_TRACE(exception_class, exception_arg) \
+    throw exception_class(exception_arg)
+#  define THROW_TRACE(exception_class, exception_args) \
+    throw exception_class exception_args
 
 #endif  /* else!_DEBUG */
 

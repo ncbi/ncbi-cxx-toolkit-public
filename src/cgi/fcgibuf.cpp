@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/05/03 20:32:28  vakatov
+* Use the (newly introduced) macro from <corelib/ncbidbg.h>:
+*   RETHROW_TRACE,
+*   THROW0_TRACE(exception_class),
+*   THROW1_TRACE(exception_class, exception_arg),
+*   THROW_TRACE(exception_class, exception_args)
+* instead of the former (now obsolete) macro _TRACE_THROW.
+*
 * Revision 1.2  1999/04/28 16:54:41  vasilche
 * Implemented stream input processing for FastCGI applications.
 * Fixed POST request parsing
@@ -52,8 +60,7 @@ CCgiObuffer::CCgiObuffer(FCGX_Stream* out)
     : m_out(out)
 {
     if ( !out || out->isReader ) {
-        _TRACE_THROW();
-        throw runtime_error("CCgiObuffer: out is not writer");
+        THROW1_TRACE(runtime_error, "CCgiObuffer: out is not writer");
     }
 }
 
@@ -73,8 +80,8 @@ CCgiObuffer::int_type CCgiObuffer::overflow(int_type c)
             out->emptyBuffProc(out, false);
             if ( out->stop == out->wrNext ) {
                 if ( !out->isClosed ) {
-                    _TRACE_THROW();
-                    throw runtime_error("CCgiObuffer::overflow: error in emptyBuffProc");
+                    THROW1_TRACE(runtime_error, "\
+CCgiObuffer::overflow: error in emptyBuffProc");
                 }
             }
         }
@@ -95,8 +102,8 @@ CCgiObuffer::int_type CCgiObuffer::overflow(int_type c)
         out->emptyBuffProc(out, false);
         if ( out->wrNext == out->stop ) {
             if ( !out->isClosed ) {
-                _TRACE_THROW();
-                throw runtime_error("CCgiObuffer::overflow: error in emptyBuffProc");
+                THROW1_TRACE(runtime_error,
+                             "CCgiObuffer::overflow: error in emptyBuffProc");
             }
             return traits_type::eof();
         }
@@ -109,8 +116,7 @@ CCgiIbuffer::CCgiIbuffer(FCGX_Stream* in)
     : m_in(in)
 {
     if ( !in || !in->isReader ) {
-        _TRACE_THROW();
-        throw runtime_error("CCgiObuffer: out is not reader");
+        THROW1_TRACE(runtime_error, "CCgiObuffer: out is not reader");
     }
 }
 

@@ -30,6 +30,14 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  1999/05/03 20:32:31  vakatov
+* Use the (newly introduced) macro from <corelib/ncbidbg.h>:
+*   RETHROW_TRACE,
+*   THROW0_TRACE(exception_class),
+*   THROW1_TRACE(exception_class, exception_arg),
+*   THROW_TRACE(exception_class, exception_args)
+* instead of the former (now obsolete) macro _TRACE_THROW.
+*
 * Revision 1.39  1999/04/30 19:21:06  vakatov
 * Added more details and more control on the diagnostics
 * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
@@ -428,6 +436,45 @@ static void TestException_Aux(void)
         throw CParseException("Failed parsing(at pos. 123)", 123);
     }
     STD_CATCH ("TEST CParseException ---> ");
+}
+
+
+static void TestException_AuxTrace(void)
+{
+    try {
+        _VERIFY( !strtod("1e-999999", 0) );
+        THROW1_TRACE(CErrnoException, "Failed strtod('1e-999999', 0)");
+    }
+    catch (CErrnoException& e) {
+        NcbiCerr << "THROW1_TRACE CErrnoException ---> " << e.what()
+                 << NcbiEndl;
+    }
+
+    try {
+        try {
+            THROW0_TRACE("Throw a string");
+        } catch (const char* e) {
+            _TRACE("THROW0_TRACE: " << e);
+            RETHROW_TRACE;
+        }
+    } catch (const char* e) {
+        _TRACE("RETHROW_TRACE: " << e);
+    }
+
+    try {
+        THROW_TRACE(bad_alloc, ());
+    }
+    STD_CATCH ("THROW_TRACE  bad_alloc ---> ");
+
+    try {
+        THROW_TRACE(runtime_error, ("Some message..."));
+    }
+    STD_CATCH ("THROW_TRACE  runtime_error ---> ");
+
+    try {
+        THROW_TRACE(CParseException, ("Failed parsing(at pos. 123)", 123));
+    }
+    STD_CATCH ("THROW_TRACE CParseException ---> ");
 }
 
 
@@ -841,6 +888,7 @@ int CTestApplication::Run(void)
     TestDiag();
 
     TestException();
+    TestException_AuxTrace();
     TestIostream();
     TestRegistry();
 
