@@ -217,6 +217,25 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetInterruptOnSignal
 
 
 /******************************************************************************
+ *   Address reuse: EXPERIMENTAL and may be removed in the upcoming releases!
+ */
+
+
+/* By default ("on_off" == eDefault,eOff), address is not marked for reuse
+ * in SOCK, but is always reused for LSOCK.
+ */
+extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddressAPI(ESwitch on_off);
+
+
+/* Control sockets individually (Note: only boolean value is available here.)
+ */
+extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
+(SOCK        sock,
+ int/*bool*/ on_off);
+
+
+
+/******************************************************************************
  *  API Initialization and Shutdown/Cleanup
  */
 
@@ -237,6 +256,11 @@ extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
  *  Usually, SOCK API does not require an explicit initialization -- as it is
  *  guaranteed to initialize itself automagically, in one of API functions,
  *  when necessary. Yet, see the "Multi Thread safety" remark above.
+ * NOTE:
+ *  This call, when used for the very first time in the application, enqueues
+ *  SOCK_ShutdownAPI() to be called upon application exit on plaftorms that
+ *  provide this functionality. In any case, the application can opt for
+ *  explicit SOCK_ShutdownAPI() call when it is done with all sockets.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_InitializeAPI(void);
 
@@ -331,8 +355,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
  * (file descriptor on Unix). Returned socket is not reopenable to its
  * default peer (SOCK_Reconnect may not specify zeros for the connection
  * point).  All timeouts are set to its default [infinite] values.
- * SOCK_Close() closes the "handle" only if the "close_on_close" parameter
- * is passes non-zero.
+ * SOCK_Close() will close the "handle" only if the "close_on_close"
+ * parameter is passed non-zero (eSCOT_CloseOnClose).
  * Return eIO_Success on success; otherwise: eIO_Closed if the "handle" does
  * not refer to an open socket [but e.g. to a normal file or a pipe];
  * other error codes in case of other errors.
@@ -361,15 +385,17 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
  );
 
 
-/* [CLIENT-side]  Close the socket referred by "sock" and then connect
- * it to another "host:port";  fail if it takes more than "timeout".
+/* [CLIENT-side]  Close the socket referred to by "sock" and then connect
+ * it to another "host:port";  fail if it takes more than "timeout"
  * (close() + connect() [+ select()])
  *
  * HINT:  if "host" is NULL then connect to the same host address as before;
  *        if "port" is zero then connect to the same port # as before.
  *
- * NOTE1: "new" socket inherits the old i/o timeouts.
+ * NOTE1: "new" socket inherits the old I/O timeouts.
  * NOTE2: the call is applicable to stream [not datagram] sockets only.
+ * NOTE3: "timeout"==NULL is infinite; "timeout"=={0,0} causes no wait for
+ *        connection to be established and to return immediately.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Reconnect
 (SOCK            sock,    /* [in] handle of the socket to reconnect      */
@@ -436,6 +462,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Wait
  * NOTE4: For datagram sockets, the readiness for reading is determined by
  *        message data latched since last message receive call (DSOCK_RecvMsg).
  * NOTE5: This call allows intermixture of stream and datagram sockets.
+ * NOTE6: This call can cause some socket I/O in those sockets marked for
+ *        read-on-write and those with pending connection or output data.
  */
 
 typedef struct {
@@ -474,25 +502,48 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  );
 
 
-/* Read up to "size" bytes from "sock" to the mem.buffer pointed by "buf".
+/* Read/peek up to "size" bytes from "sock" to the mem.buffer pointed by "buf".
  * In "*n_read", return the number of successfully read bytes.
+ * Read method "how" can be either of the following:
+ * eIO_ReadPlain   -- read as many as "size" bytes and return (eIO_Success);
+ *                    if no data are readily available then wait at most
+ *                    read timeout and return (eIO_Timeout) if no data still
+ *                    could not be get; eIO_Success if some data were obtained.
+ * eIO_ReadPeek    -- same as "eIO_ReadPlain" but do not extract the data from
+ *                    the socket (so that the next read operation will see the
+ *                    data again), with one important exception noted below.
+ * eIO_ReadPersist -- read exactly "size" bytes and return eIO_Success; if less
+ *                    data received then return an error condition (including
+ *                    eIO_Timeout).
+ *
  * If there is no data available to read (also, if eIO_ReadPersist and cannot
  * read exactly "size" bytes) and the timeout(see SOCK_SetTimeout) is expired
  * then return eIO_Timeout.
- * If "buf" is passed NULL, then:
- *   1) if PEEK -- read up to "size" bytes and store them in internal buffer;
- *   2) else -- discard up to "size" bytes from internal buffer and socket.
- * NOTE1: "Read" and "Peek" methods differ:  if "read" is performed and not
+ *
+ * Both eIO_ReadPlain and eIO_ReadPeek return eIO_Success iff some data have
+ * been read (perhaps within the time allowance specified by eIO_Read timeout).
+ * Both mothods return any other code when no data at all were available.
+ * eIO_ReadPersist differs from the other two methods as it can return an
+ * error condition even if some data were actually obtained from the socket.
+ * Hence, as a rule of thumb, an application should always check the number
+ * of read bytes BEFORE checking the return status, which merely advises
+ * whether it is okay to read again.
+ *
+ * As a special case, "buf" may passed as NULL:
+ *   eIO_ReadPeek      -- read up to "size" bytes and store them
+ *                        in internal buffer;
+ *   eIO_Read[Persist] -- discard up to "size" bytes from internal buffer
+ *                        and socket (check "*n_read" to know how many).
+ *
+ * NOTE1: "Read" and "peek" methods differ:  if "read" is performed and not
  *        enough but some data available immediately from the internal buffer,
- *        then the call completes with eIO_Success status. For "peek", if
- *        not all requested data are available, the real I/O occurs to pick up
+ *        then the call completes with eIO_Success status.  For "peek", if
+ *        not all requested data were available, the real I/O occurs to pick up
  *        additional data (if any) from the system. Keep this difference in
  *        mind when programming loops that heavily use "peek"s without "read"s.
- * NOTE2: If on input "size" == 0, then "*n_read" is set to 0, and
+ * NOTE2: If on input "size" == 0, then "*n_read" is set to 0, and the
  *        return value can be either of eIO_Success, eIO_Closed or
  *        eIO_Unknown depending on connection status of the socket.
- * NOTE3: Theoretically, eIO_Closed may indicate an empty message
- *        rather than a real closure of the connection...
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
 (SOCK           sock,
@@ -544,7 +595,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
  * Return status: eIO_Success -- some bytes were written successfully  [Plain]
  *                            -- all bytes were written successfully [Persist]
  *                other code denotes an error, but some bytes might have
- *                been sent (check *n_written to know).
+ *                been sent nevertheless (always check *n_written to know).
+ *
+ * NOTE: With eIO_WritePlain the call returns eIO_Success iff some data
+ *       were actually written to the socket. If no data could be written
+ *       (and perhaps timeout expired) this call always returns an error.
+ * NOTE: eIO_WritePlain and eIO_WritePersist differs that the latter can
+ *       flag an error condition even if some data were actually written
+ *       (see "the rule of thumb" in the comments for SOCK_Read() above).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
 (SOCK            sock,
@@ -556,9 +614,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
 
 
 /* If there is outstanding connection or output data pending, cancel it.
- * Mark the socket as been shut down for both reading and writing.
+ * Mark the socket as if it has been shut down for both reading and writing.
  * Do not attempt to send anything upon SOCK_Close().
- * This call is applicable to stream sockets only.
+ * This call is available for stream sockets only.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
 (SOCK sock                  /* [in]  data to write to the socket             */
@@ -816,6 +874,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2003/05/19 16:42:07  lavr
+ * +SOCK_SetReuseAddress[API]() - both EXPERIMENTAL!
+ *
  * Revision 6.36  2003/05/14 03:46:15  lavr
  * Revised API to include {0,0} connect timeouts, initial data block
  * Revised datagram socket API
