@@ -35,8 +35,8 @@
 #include <util/reader_writer.hpp>
 #include <dbapi/driver/public.hpp>
 
-
 BEGIN_NCBI_SCOPE
+
 
 enum ECompressMethod {
     eNone,
@@ -44,8 +44,8 @@ enum ECompressMethod {
     eBZLib
 };
 
-class CBlobReader : public IReader {
- public:
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobReader : public IReader {
+public:
     CBlobReader(CDB_Result* res, I_BaseCmd* cmd= 0, I_Connection* con= 0) {
         m_Res= res;
         m_Cmd= cmd;
@@ -69,7 +69,8 @@ class CBlobReader : public IReader {
     virtual ERW_Result PendingCount(size_t* count);
 
     virtual ~CBlobReader();
- private:
+
+private:
     CBlobReader();
     CDB_Result* m_Res;
     I_BaseCmd* m_Cmd;
@@ -78,15 +79,17 @@ class CBlobReader : public IReader {
     bool m_AllDone;
 };
 
-class ItDescriptorMaker {
- public:
+
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT ItDescriptorMaker {
+public:
     virtual bool Init(CDB_Connection* con)= 0;
     virtual I_ITDescriptor& ItDescriptor(void)= 0;
     virtual bool Fini(void)= 0;
     virtual ~ItDescriptorMaker(){};
 };
 
-class CBlobWriter : public IWriter
+
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobWriter : public IWriter
 {
 public:
     enum EFlags {
@@ -115,7 +118,8 @@ public:
     virtual ERW_Result Flush(void);
 
     virtual ~CBlobWriter();
- private:
+
+private:
     CBlobWriter();
     bool storeBlob(void);
     CDB_Image m_Blob;
@@ -127,8 +131,9 @@ public:
     bool m_DelCon;
 };
 
-class CBlobRetriever {
- public:
+
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobRetriever {
+public:
     CBlobRetriever(I_DriverContext* pCntxt,
                    const string& server,
                    const string& user,
@@ -139,7 +144,8 @@ class CBlobRetriever {
     }
     bool Dump(ostream& s, ECompressMethod cm= eNone);
     ~CBlobRetriever();
- private:
+
+private:
     CBlobRetriever();
     CDB_Connection* m_Conn;
     CDB_LangCmd* m_Cmd;
@@ -147,8 +153,9 @@ class CBlobRetriever {
     bool m_IsGood;
 };
 
-class CBlobLoader {
- public:
+
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobLoader {
+public:
     CBlobLoader(I_DriverContext* pCntxt,
                 const string& server,
                 const string& user,
@@ -163,12 +170,14 @@ class CBlobLoader {
     ~CBlobLoader() {
         if(m_Conn) delete m_Conn;
     }
- private:
+
+private:
     CBlobLoader();
     CDB_Connection* m_Conn;
     ItDescriptorMaker* m_dMaker;
     bool m_IsGood;
 };
+
 
 /***************************************************************************************
  * The SimpleBlobStore is a ready to use implementation of ItDescriptorMaker
@@ -179,8 +188,8 @@ class CBlobLoader {
  * DATA1 image NULL, ... DATAn image NULL)
  *
  */
-class CMY_ITDescriptor : public CDB_ITDescriptor {
- public:
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CMY_ITDescriptor : public CDB_ITDescriptor {
+public:
     CMY_ITDescriptor(const string& table_name) :
         CDB_ITDescriptor(table_name, kEmptyStr, kEmptyStr)
     {};
@@ -193,8 +202,9 @@ class CMY_ITDescriptor : public CDB_ITDescriptor {
 };
 
 
-class CSimpleBlobStore : public ItDescriptorMaker {
- public:
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CSimpleBlobStore
+    : public ItDescriptorMaker {
+public:
     CSimpleBlobStore(const string& table_name,
                      const string& key_col_name,
                      const string& num_col_name,
@@ -208,7 +218,8 @@ class CSimpleBlobStore : public ItDescriptorMaker {
     virtual I_ITDescriptor& ItDescriptor(void);
     virtual bool Fini(void);
     virtual ~CSimpleBlobStore();
- protected:
+
+protected:
     string m_TableName;
     string m_KeyColName;
     string m_NumColName;
@@ -223,15 +234,14 @@ class CSimpleBlobStore : public ItDescriptorMaker {
     CMY_ITDescriptor m_Desc;
 };
 
+
 /***************************************************************************************
  * CBlobStoreBase - the abstract base interface to deal with reading and writing
  * the image/text data from a C++ application.
  */
 
-
-class CBlobStoreBase {
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobStoreBase {
 public:
-
     bool Exists(const string& blob_id);
     //user has to delete istream
     istream* OpenForRead(const string& blob_id);
@@ -251,7 +261,6 @@ public:
     static const size_t g_16MB;
 
 protected:
-
     CBlobStoreBase(const string& table_name,
                    ECompressMethod cm = eNone,
                    size_t image_limit = g_16MB,
@@ -270,7 +279,6 @@ protected:
     virtual bool ReleaseConn(CDB_Connection*) = 0;
 
 private:
-
     string m_Table;
     ECompressMethod m_Cm;
     size_t m_Limit;
@@ -290,7 +298,8 @@ private:
  * It uses connection to DB from an external pool.
  */
 
-class CBlobStoreStatic : public CBlobStoreBase
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobStoreStatic
+    : public CBlobStoreBase
 {
 public:
     CBlobStoreStatic(CDB_Connection* pConn,
@@ -313,13 +322,13 @@ public:
     virtual ~CBlobStoreStatic();
 
 protected:
-
     virtual CDB_Connection* GetConn();
     virtual bool ReleaseConn(CDB_Connection*) { return false; }
 
 private:
     CDB_Connection* m_pConn;
 };
+
 
 /***************************************************************************************
  * CBlobStoreDynamic - the simple interface to deal with reading and writing
@@ -328,7 +337,8 @@ private:
  * connection use.
  */
 
-class CBlobStoreDynamic : public CBlobStoreBase
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobStoreDynamic
+    : public CBlobStoreBase
 {
 public:
     CBlobStoreDynamic(I_DriverContext* pCntxt,
@@ -343,12 +353,10 @@ public:
     virtual ~CBlobStoreDynamic();
 
 protected:
-
     virtual CDB_Connection* GetConn();
     virtual bool ReleaseConn(CDB_Connection*);
 
 private:
-
     I_DriverContext* m_Cntxt;
     string m_Server;
     string m_User;
@@ -364,7 +372,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/20 18:21:28  ivanov
+ * Added export specifier to all class declaratons
+ *
  * Revision 1.3  2004/10/18 23:17:28  ivanovsk
+ *
  * Rename class CBlobStore to CBlobStoreBase and make it abstract. Add two descendants CBlobStoreStatic and CBlobStoreDynamic for different types of DB connection usage.
  *
  * Revision 1.2  2004/05/24 19:40:47  soussov
@@ -372,7 +384,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.1  2004/05/03 16:47:10  soussov
  * initial commit
- *
  *
  * ===========================================================================
  */
