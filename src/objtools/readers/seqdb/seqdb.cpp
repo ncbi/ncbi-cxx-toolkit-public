@@ -170,6 +170,11 @@ list< CRef<CSeq_id> > CSeqDB::GetSeqIDs(TOID oid) const
     return m_Impl->GetSeqIDs(oid);
 }
 
+void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)
+{
+    return m_Impl->SetMemoryBound(membound, slice_size);
+}
+
 CSeqDBIter::CSeqDBIter(const CSeqDB * db, TOID oid)
     : m_DB    (db),
       m_OID   (oid),

@@ -48,6 +48,11 @@ BEGIN_NCBI_SCOPE
 
 class CSeqDBAtlas;
 
+class CSeqDBFlushCB {
+public:
+    virtual void operator()(void) = 0;
+};
+
 class CSeqDBSpinLock {
 public:
     CSeqDBSpinLock()
@@ -118,8 +123,8 @@ public:
     
     ~CRegionMap();
     
-    bool MapMmap();
-    bool MapFile();
+    bool MapMmap(CSeqDBAtlas *);
+    bool MapFile(CSeqDBAtlas *);
     
     void AddRef()
     {
@@ -190,9 +195,9 @@ public:
                 TIndx          & begin,
                 TIndx          & end,
                 const char    ** start);
-        
+    
     void Show();
-        
+    
     void GetBoundaries(const char ** p,
                        TIndx      &  begin,
                        TIndx      &  end)
@@ -202,12 +207,13 @@ public:
         end   = m_End;
     }
         
-    void x_Roundup(TIndx & begin,
-                   TIndx & end,
-                   int   & penalty,
-                   TIndx   file_size,
-                   bool    use_mmap);
-        
+    void x_Roundup(TIndx       & begin,
+                   TIndx       & end,
+                   Int4        & penalty,
+                   TIndx         file_size,
+                   bool          use_mmap,
+                   CSeqDBAtlas * atlas);
+    
     inline bool operator < (const CRegionMap & other) const;
         
 private:
@@ -225,9 +231,9 @@ private:
     // The GC adds "clock" and "penalty" together and removes
     // regions with the highest resulting value first.
         
-    int m_Ref;
-    int m_Clock;
-    int m_Penalty;
+    Int4 m_Ref;
+    Int4 m_Clock;
+    Int4 m_Penalty;
 };
 
 class CSeqDBMemLease {
@@ -294,15 +300,16 @@ private:
 
 class CSeqDBAtlas {
     enum {
-        eTriggerGC    = 1024 * 1024 * 256,
-        eMemoryBound  = 1024 * 1024 * 512 * 3 // 1.5 GB
+        eTriggerGC        = 1024 * 1024 * 256,
+        eDefaultBound     = 1024 * 1024 * 1024,
+        eDefaultSliceSize = 1024 * 1024 * 128
     };
     
 public:
     typedef CRegionMap::TIndx TIndx;
     
     /// Create an empty atlas.
-    CSeqDBAtlas(bool use_mmap);
+    CSeqDBAtlas(bool use_mmap, CSeqDBFlushCB * cb);
     
     /// The destructor unmaps and frees all associated memory.
     ~CSeqDBAtlas();
@@ -383,6 +390,14 @@ public:
         }
     }
     
+    void SetMemoryBound(Uint8 mb, Uint8 ss);
+    
+    void PossiblyGarbageCollect(Uint8 space_needed, const char * msg);
+    
+    Uint8 GetLargeSliceSize()
+    {
+        return m_SliceSize;
+    }
     
 private:
     typedef map<const char *, Uint4>::iterator TPoolIter;
@@ -407,13 +422,6 @@ private:
     /// Clean up unreferenced objects (non-locking version.)
     // Assumes lock is held
     void x_GarbageCollect(TIndx reduce_to);
-    
-    /// Possibly adjust mapping request to cover larger area.
-    void x_Roundup(TIndx  & begin,
-                   TIndx  & end,
-                   int    & penalty,
-                   TIndx    file_size,
-                   bool     use_mmap);
     
     // Assumes lock is held
     Uint4 x_LookupFile(const string  & fname,
@@ -526,6 +534,13 @@ private:
     
     enum { eNumRecent = 8 };
     CRegionMap * m_Recent[ eNumRecent ];
+    
+    // Max memory permitted
+    
+    Uint8 m_MemoryBound;
+    Uint8 m_SliceSize;
+    
+    CSeqDBFlushCB * m_FlushCB;
 };
 
 // Assumes lock is held.

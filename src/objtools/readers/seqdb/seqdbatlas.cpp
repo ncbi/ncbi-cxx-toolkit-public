@@ -74,10 +74,13 @@ TOut SeqDB_CheckLength(TIn value)
     return result;
 }
 
-CSeqDBAtlas::CSeqDBAtlas(bool use_mmap)
-    : m_UseMmap   (use_mmap),
-      m_CurAlloc  (0),
-      m_LastFID   (0)
+CSeqDBAtlas::CSeqDBAtlas(bool use_mmap, CSeqDBFlushCB * cb)
+    : m_UseMmap    (use_mmap),
+      m_CurAlloc   (0),
+      m_LastFID    (0),
+      m_MemoryBound(eDefaultBound),
+      m_SliceSize  (eDefaultSliceSize),
+      m_FlushCB    (cb)
 {
     for(Uint4 i = 0; i < eNumRecent; i++) {
         m_Recent[i] = 0;
@@ -199,13 +202,17 @@ void CSeqDBAtlas::GarbageCollect(CSeqDBLockHold & locked)
 
 void CSeqDBAtlas::x_GarbageCollect(TIndx reduce_to)
 {
-    x_ClearRecent();
-    
-    int max_distinct_clock = 10;
-    
     if (m_CurAlloc <= reduce_to) {
         return;
     }
+    
+    if (m_FlushCB) {
+        (*m_FlushCB)();
+    }
+    
+    x_ClearRecent();
+    
+    int max_distinct_clock = 10;
     
     int  num_gcs  = 1;
     
@@ -311,18 +318,27 @@ void CSeqDBAtlas::x_GarbageCollect(TIndx reduce_to)
 // portion of a file, or whole mappings of short files. (KMB)
 
 
-void CRegionMap::x_Roundup(TIndx & begin,
-                           TIndx & end,
-                           int   & penalty,
-                           TIndx   file_size,
-                           bool    use_mmap)
+void CRegionMap::x_Roundup(TIndx       & begin,
+                           TIndx       & end,
+                           Int4        & penalty,
+                           TIndx         file_size,
+                           bool          use_mmap,
+                           CSeqDBAtlas * atlas)
 {
     // These should be made available to some kind of interface to
     // allow memory-usage tuning.
     
-    const Uint4 large_slice = 1024 * 1024 * 256;
-    const Uint4 small_slice = 1024 * 8;
     const Uint4 block_size  = 1024 * 512;
+    Uint4 large_slice = atlas->GetLargeSliceSize();
+    Uint4 small_slice = large_slice / 16;
+    
+    if (small_slice < block_size) {
+        small_slice = block_size;
+    }
+    
+    if (large_slice < small_slice) {
+        large_slice = small_slice * 16;
+    }
     
     _ASSERT(begin <  end);
     _ASSERT(end   <= file_size);
@@ -467,6 +483,21 @@ const char * CSeqDBAtlas::x_FindRegion(Uint4         fid,
     return 0;
 }
 
+// Assumes locked.
+
+void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed)
+{
+    // Use Int8 to avoid "unsigned rollover."
+    
+    Int8 capacity_left = m_MemoryBound;
+    capacity_left -= m_CurAlloc;
+    
+    if (Int8(space_needed) > capacity_left) {
+        x_GarbageCollect(m_MemoryBound - space_needed);
+    }
+}
+
+
 const char *
 CSeqDBAtlas::x_GetRegion(const string   & fname,
                          TIndx          & begin,
@@ -494,18 +525,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
     
     // Need to add the range, so GC first.
     
-    {
-        // Use Int8 to avoid "unsigned rollover."
-        
-        Int8 space_needed = end-begin;
-        
-        Int8 capacity_left = eMemoryBound;
-        capacity_left -= m_CurAlloc;
-        
-        if (space_needed > capacity_left) {
-            x_GarbageCollect(eMemoryBound - (end-begin));
-        }
-    }
+    PossiblyGarbageCollect(end - begin);
     
     CRegionMap * nregion = new CRegionMap(strp, fid, begin, end);
     
@@ -517,7 +537,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
         *rmap = nregion;
     
     if (m_UseMmap) {
-        if (newmap->MapMmap()) {
+        if (newmap->MapMmap(this)) {
             retval = newmap->Data(begin, end);
             newmap->AddRef();
         }
@@ -529,7 +549,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
     }
 #endif
     
-    if (retval == 0 && newmap->MapFile()) {
+    if (retval == 0 && newmap->MapFile(this)) {
         retval = newmap->Data(begin, end);
         newmap->AddRef();
     }
@@ -723,7 +743,7 @@ void CRegionMap::Show()
 #if VERBOSE
     cout << " [" << static_cast<const void*>(m_Data) << "]-["
          << static_cast<const void*>(m_Data + m_End - m_Begin) << "]: "
-         << m_Fname << ", ref=" << m_Ref;
+         << *m_Fname << ", ref=" << m_Ref << " size=" << (m_End - m_Begin) << endl;
 #endif
 }
 
@@ -761,7 +781,7 @@ CRegionMap::~CRegionMap()
     }
 }
 
-bool CRegionMap::MapMmap()
+bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
 {
     bool rv = false;
     
@@ -781,7 +801,9 @@ bool CRegionMap::MapMmap()
     }
     
     if (! rv) {
-        x_Roundup(m_Begin, m_End, m_Penalty, flength, true);
+        x_Roundup(m_Begin, m_End, m_Penalty, flength, true, atlas);
+        
+        atlas->PossiblyGarbageCollect(m_End - m_Begin);
         
 #if defined(NCBI_OS_UNIX)
         // Use default attributes (we were going to anyway)
@@ -820,7 +842,7 @@ bool CRegionMap::MapMmap()
     return rv;
 }
 
-bool CRegionMap::MapFile()
+bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
 {
     // Okay, rethink:
     
@@ -867,7 +889,14 @@ bool CRegionMap::MapFile()
     // file, where we would be storing regions consisting of only 4 or
     // 8 bytes.
     
-    x_Roundup(m_Begin, m_End, m_Penalty, SeqDB_CheckLength<Uint8,TIndx>(file.GetLength()), false);
+    x_Roundup(m_Begin,
+              m_End,
+              m_Penalty,
+              SeqDB_CheckLength<Uint8,TIndx>(file.GetLength()),
+              false,
+              atlas);
+    
+    atlas->PossiblyGarbageCollect(m_End - m_Begin);
     
     istr.seekg(m_Begin);
     
@@ -927,6 +956,28 @@ Uint4 CSeqDBAtlas::x_LookupFile(const string  & fname,
     
     return (*i).second;
 }
+
+void CSeqDBAtlas::SetMemoryBound(Uint8 mb, Uint8 ss)
+{
+    SeqDB_CheckLength<Uint8,size_t>(mb);
+    SeqDB_CheckLength<Uint8,size_t>(ss);
+    
+    if (ss > (mb/4)) {
+        ss = mb / 4;
+    }
+    
+    if (ss < 4096*4) {
+        ss = 4096*4;
+        
+        if (ss > (mb/4)) {
+            mb = ss * 4;
+        }
+    }
+    
+    m_MemoryBound = mb;
+    m_SliceSize   = ss;
+}
+
 
 END_NCBI_SCOPE
 
