@@ -286,18 +286,30 @@ private:
 class CDllResolver
 {
 public:
+
+    /// DLL entry point name -> function pair
+    struct SNamedEntryPoint
+    {
+        string               name;          ///< Entry point name
+        CDll::TEntryPoint    entry_point;   ///< DLL entry point
+
+        SNamedEntryPoint(const string&       x_name,
+                         CDll::TEntryPoint   x_entry_point)
+        : name(x_name)
+        {
+            entry_point.data = x_entry_point.data;
+        }
+    };
+
     /// DLL resolution descriptor.
     struct SResolvedEntry
     {
-        CDll*                       dll;    ///< Loaded DLL instance
-        CDll::TEntryPoint    entry_point;   ///< DLL entry point
+        CDll*                     dll;           ///< Loaded DLL instance
+        vector<SNamedEntryPoint>  entry_points;  ///< list of DLL entry points
 
-        SResolvedEntry(CDll* dll_ptr = 0, 
-                       void* entry_point_ptr = 0)
+        SResolvedEntry(CDll* dll_ptr = 0)
         : dll(dll_ptr)
-        {
-            entry_point.data = entry_point_ptr;
-        }
+        {}
     };
 
     /// Container, keeps list of all resolved entry points.
@@ -403,6 +415,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/12/01 16:39:00  kuznets
+ * CDllResolver changed to try all entry points
+ * (prev. version stoped on first successfull).
+ *
  * Revision 1.20  2003/11/19 16:49:26  ivanov
  * Specify NCBI_XNCBI_EXPORT for each method in the CDll and CDllResolver.
  * In the MSVC, templates cannot be used with functions declared with

@@ -247,23 +247,26 @@ bool CDllResolver::TryCandidate(const string& file_name)
 {
     try {
         CDll* dll = new CDll(file_name, CDll::eLoadNow, CDll::eAutoUnload);
-        void* p = 0;
+        CDll::TEntryPoint p;
+
+        SResolvedEntry entry_point(dll);
+
         ITERATE(vector<string>, it, m_EntryPoinNames) {
             const string& entry_point_name = *it;
             if (entry_point_name.empty())
                 continue;
-            p = dll->GetEntryPoint_Data(entry_point_name, &p);
-            if (p) { 
-                break;
+            p = dll->GetEntryPoint(entry_point_name);
+            if (p.data) { 
+                entry_point.entry_points.push_back(SNamedEntryPoint(entry_point_name, p));
             }
         } // ITERATE
 
-        if (p == 0) {
+        if (entry_point.entry_points.empty()) {
             delete dll;
             return false;
         }
 
-        m_ResolvedEntries.push_back(SResolvedEntry(dll, p));
+        m_ResolvedEntries.push_back(entry_point);
     } 
     catch (CCoreException& ex)
     {
@@ -290,6 +293,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/12/01 16:39:15  kuznets
+ * CDllResolver changed to try all entry points
+ * (prev. version stoped on first successfull).
+ *
  * Revision 1.16  2003/11/19 13:50:42  ivanov
  * GetEntryPoint() revamp: added GetEntryPoin_[Func|Data]()
  *
