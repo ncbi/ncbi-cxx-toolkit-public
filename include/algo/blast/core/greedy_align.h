@@ -41,6 +41,12 @@
 extern "C" {
 #endif
 
+/** Macro for a formula estimating maximal gap length in the greedy algorithm. */
+#define ICEIL(x,y) ((((x)-1)/(y))+1)
+
+/** Fraction of the sequence length in calculation of maximal cost (= 2). */
+#define GREEDY_MAX_COST_FRACTION 2
+
 /** Type of editing operation: deletion, insertion, substitution */
 typedef Uint4 MBEditOpType; /* 32 bits */
 
