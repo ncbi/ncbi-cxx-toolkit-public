@@ -46,6 +46,30 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+inline
+list<string>& CFlatEMBLFormatter::Wrap(list<string>& l, const string& tag,
+                                       const string& body, EPadContext where)
+{
+    NStr::TWrapFlags flags = DoHTML() ? NStr::fWrap_HTMLPre : 0;
+    string tag2;
+    Pad(tag, tag2, where);
+    NStr::Wrap(body, m_Stream->GetWidth(), l, flags, tag2);
+    return l;
+}
+
+
+inline
+void CFlatEMBLFormatter::x_AddXX(void)
+{
+    static list<string> l;
+    if (l.empty()) {
+        string tmp;
+        l.push_back(Pad("XX", tmp, ePara));
+    }
+    m_Stream->AddParagraph(l);
+}
+
+
 void CFlatEMBLFormatter::FormatHead(const CFlatHead& head)
 {
     list<string> l;
@@ -341,6 +365,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/03/29 04:14:23  ucko
+* Move private inline methods from .hpp to .cpp.
+*
 * Revision 1.3  2003/03/21 18:49:17  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.
