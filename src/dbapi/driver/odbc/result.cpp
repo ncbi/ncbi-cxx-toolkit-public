@@ -453,7 +453,15 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         switch (  item_buf->GetType()  ) {
         case eDB_Numeric: {
             SQL_NUMERIC_STRUCT v;
-            outlen= xGetData(SQL_C_NUMERIC, &v, sizeof(SQL_NUMERIC_STRUCT));
+			SQLHDESC hdesc;
+			SQLGetStmtAttr(m_Cmd, SQL_ATTR_APP_ROW_DESC,&hdesc, 0, NULL);
+			SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_TYPE,(VOID*)SQL_C_NUMERIC,0);
+			SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_PRECISION,
+					(VOID*)(m_ColFmt[m_CurrItem].ColumnSize),0);
+			SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_SCALE,
+					(VOID*)(m_ColFmt[m_CurrItem].DecimalDigits),0);
+
+            outlen= xGetData(SQL_ARD_TYPE, &v, sizeof(SQL_NUMERIC_STRUCT));
             if (outlen <= 0) item_buf->AssignNULL();
             else xConvert2CDB_Numeric((CDB_Numeric*)item_buf, v);
             break;
@@ -1036,6 +1044,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/01/30 20:00:39  soussov
+ * fixes GetItem for CDB_Numeric
+ *
  * Revision 1.10  2003/12/09 17:35:29  sapojnik
  * data sizes returned by SQLGetData() adjusted to fit within the buffer
  *
