@@ -252,6 +252,10 @@ public:
         }
 
     // test
+    operator bool(void) THROWS_NONE
+        {
+            return NotEmpty();
+        }
     operator bool(void) const THROWS_NONE
         {
             return NotEmpty();
@@ -469,6 +473,10 @@ public:
         }
 
     // test
+    operator bool(void) THROWS_NONE
+        {
+            return NotEmpty();
+        }
     operator bool(void) const THROWS_NONE
         {
             return NotEmpty();
@@ -762,8 +770,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.44  2003/05/18 03:36:37  vakatov
- * Remove seemingly useless non-const versions of C[Const]Ref::operator bool()
+ * Revision 1.45  2003/05/18 04:47:09  vakatov
+ * Rollback to R1.43, as R1.44 created another, more problematic warning --
+ * that "operator T*()" would be chosen over "operator bool()" for non-const
  *
  * Revision 1.43  2003/04/01 14:19:58  siyan
  * Added doxygen support
