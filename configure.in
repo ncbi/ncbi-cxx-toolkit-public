@@ -42,6 +42,7 @@ AC_INIT(include/corelib/ncbitype.h)
 
 #############################################################################
 
+
 #### Describe all "--with-*" arguments -- for the usage printout on "--help"
 
 ## Title
@@ -97,6 +98,45 @@ AC_ARG_WITH(objects,
    [ --with-objects          do not generate/build serializeable objects from ASNs])
 AC_ARG_WITH(internal,
    [ --with-internal         build all projects including the internal ones])
+
+
+#### Check the passed arguments against the list of available ones
+x_with_list="\
+debug optimization dll mt autodep suffix hostspec \
+ncbi-c fastcgi sss sssdb sssutils pubmed sybase serial objects internal"
+
+changequote(, )dnl
+x_with_list=`echo "$x_with_list" | sed 's/\([^ ]*\)/--with-\1 --without-\1/g'`
+changequote([, ])dnl
+
+
+for x_arg in "$@" ; do
+   x_okay=
+   for x_desc in $x_with_list ; do
+      if test "$x_arg" = "$x_desc" ; then
+         x_okay="okay"
+         break
+      fi
+   done
+   if test "$x_okay" = "okay" ; then
+      continue
+   fi
+
+   case "$x_arg" in
+      --with-extra-action= | --exec-prefix= \
+      | --cache-file= | --build= | --host= | --target= )
+      AC_MSG_ERROR(["  $x_arg:  requires value\;  use --help to show usage"])
+      ;;
+
+      --with-extra-action=* | --exec-prefix=* \
+      | --cache-file=* | --build=* | --host=* | --target=* )
+      ;;
+
+      * )
+      AC_MSG_ERROR(["  $x_arg:  unknown option\;  use --help to show usage"])
+      ;;
+   esac
+done
 
 
 #### Check for special options
@@ -1236,10 +1276,10 @@ fi
 dnl printout additional configuration options
 cat << EOCONF
 ===============================================================================
-Overall NCBI C++ Toolkit documentation:    doc/index.html 
+Overall NCBI C++ Toolkit documentation:     ./doc/index.html 
 
-For the available optional configuration flags
-run "./configure --help" or consult documentation:  doc/config.html#ref_Running
+For the available configuration flags run:  ./configure --help
+or consult documentation at:                ./doc/config.html#ref_Running
 
 CFLAGS   = $CFLAGS
 CXXFLAGS = $CXXFLAGS
@@ -1251,7 +1291,7 @@ Configuration  header:  $ncbiconf
 
 To build everything:  cd $builddir && make all_r
 
-CONFIGURATION SUCCESFULLY COMPLETED.
+******* CONFIGURATION SUCCESSFUL *******
 EOCONF
 ,
 
