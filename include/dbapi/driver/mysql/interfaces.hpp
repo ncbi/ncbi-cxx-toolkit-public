@@ -63,6 +63,7 @@ public:
 
   virtual unsigned int NofConnections(const string &srv_name = kEmptyStr) const;
 
+
 private:
   friend class CMySQL_Connection;
 };
@@ -199,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/08/28 17:17:57  butanaev
+ * Improved error handling, demo app.
+ *
  * Revision 1.1  2002/08/13 20:21:59  butanaev
  * The beginning.
  *

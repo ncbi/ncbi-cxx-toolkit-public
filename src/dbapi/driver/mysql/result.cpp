@@ -69,6 +69,11 @@ m_Connect(conn),
 m_CurrItem(0)
 {
   m_Result = mysql_use_result(&m_Connect->m_MySQL);
+  if(m_Result == NULL)
+    throw CDB_ClientEx(eDB_Warning, 800004,
+                       "CMySQL_RowResult::CMySQL_RowResult",
+                       "Failed: mysql_use_result");
+
   m_NofCols = mysql_num_fields(m_Result);
   m_ColFmt = new SMySQL_ColDescr[m_NofCols];
   MYSQL_FIELD *fields = mysql_fetch_fields(m_Result);
@@ -112,9 +117,18 @@ EDB_Type CMySQL_RowResult::ItemDataType(unsigned int item_num) const
 bool CMySQL_RowResult::Fetch()
 {
   bool fetched = (m_Row = mysql_fetch_row(m_Result));
+  if(fetched && m_Row == NULL)
+    throw CDB_ClientEx(eDB_Warning, 800005,
+                       "CMySQL_RowResult::Fetch",
+                       "Failed: mysql_fetch_row");
   if(fetched)
+  {
     m_Lengths = mysql_fetch_lengths(m_Result);
-
+    if(m_Lengths == NULL)
+      throw CDB_ClientEx(eDB_Warning, 800006,
+                         "CMySQL_RowResult::Fetch",
+                         "Failed: mysql_fetch_lengths");
+  }
   m_CurrItem = 0;
   return fetched;
 }
@@ -271,6 +285,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/08/28 17:18:20  butanaev
+ * Improved error handling, demo app.
+ *
  * Revision 1.1  2002/08/13 20:23:14  butanaev
  * The beginning.
  *

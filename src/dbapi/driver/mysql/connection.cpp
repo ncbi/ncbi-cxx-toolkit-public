@@ -40,11 +40,18 @@ CMySQL_Connection::CMySQL_Connection(CMySQLContext* cntx,
                                      const string &passwd) :
 m_Context(cntx)
 {
-  mysql_init(&m_MySQL);
-  mysql_real_connect(&m_MySQL,
-                     srv_name.c_str(),
-                     user_name.c_str(), passwd.c_str(),
-                     NULL, 0, NULL, 0);
+  if(NULL == mysql_init(&m_MySQL))
+    throw CDB_ClientEx(eDB_Warning, 800001,
+                       "CMySQL_Connection::CMySQL_Connection",
+                       "Failed: mysql_init");
+
+  if(NULL == mysql_real_connect(&m_MySQL,
+                                srv_name.c_str(),
+                                user_name.c_str(), passwd.c_str(),
+                                NULL, 0, NULL, 0))
+    throw CDB_ClientEx(eDB_Warning, 800002,
+                       "CMySQL_Connection::CMySQL_Connection",
+                       "Failed: mysql_real_connect");
 }
 
 CMySQL_Connection::~CMySQL_Connection()
@@ -61,7 +68,7 @@ void CMySQL_Connection::Release()
 {
 }
 
-CDB_SendDataCmd* CMySQL_Connection::SendDataCmd(I_ITDescriptor &descr_in,
+CDB_SendDataCmd *CMySQL_Connection::SendDataCmd(I_ITDescriptor &descr_in,
                                                 size_t data_size, bool log_it)
 {
   return 0;
@@ -85,21 +92,21 @@ bool CMySQL_Connection::Refresh()
   return true;
 }
 
-const string tmp = "";
+static const string empty = "";
 
 const string &CMySQL_Connection::ServerName() const
 {
-  return tmp;
+  return empty;
 }
 
 const string &CMySQL_Connection::UserName() const
 {
-  return tmp;
+  return empty;
 }
 
 const string &CMySQL_Connection::Password() const
 {
-  return tmp;
+  return empty;
 }
 
 I_DriverContext::TConnectionMode CMySQL_Connection::ConnectMode() const
@@ -114,7 +121,7 @@ bool CMySQL_Connection::IsReusable() const
 
 const string &CMySQL_Connection::PoolName() const
 {
-  return tmp;
+  return empty;
 }
 
 I_DriverContext* CMySQL_Connection::Context() const
@@ -164,6 +171,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/08/28 17:18:20  butanaev
+ * Improved error handling, demo app.
+ *
  * Revision 1.1  2002/08/13 20:23:14  butanaev
  * The beginning.
  *

@@ -34,15 +34,87 @@
 
 USING_NCBI_SCOPE;
 
-int main()
+int main(int argc, char **argv)
 {
+  if(argc != 4)
+  {
+    cerr << "Usage: " << argv[0] << " <host> <user_name> <passwd>" << endl;
+    return 1;
+  }
+
   try
   {
     CMySQLContext my_context;
-    auto_ptr<CDB_Connection> con(my_context.Connect("chopin", "test_user", "test", 0));
+    auto_ptr<CDB_Connection> con(my_context.Connect(argv[1], argv[2], argv[3], 0));
 
+    // changing database
     {
-      auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from trace.Trace limit 3"));
+      auto_ptr<CDB_LangCmd>
+        lcmd(con->LangCmd("use trace"));
+      lcmd->Send();
+      cout << "Database changed" << endl;
+    }
+
+    // creating table
+    {
+      auto_ptr<CDB_LangCmd>
+        lcmd(con->LangCmd(
+                          "create temporary table tmp_t1("
+                          "a int,"
+                          "b datetime,"
+                          "c varchar(100),"
+                          "d text,"
+                          "e double)"
+                         ));
+      lcmd->Send();
+      cout << "Table created" << endl;
+    }
+
+    // inserting data
+    {
+      auto_ptr<CDB_LangCmd>
+        lcmd(con->LangCmd(
+                          "insert into tmp_t1 values"
+                          "(1, '2002-11-25 12:45:59', 'Hello, world', 'SOME TEXT', 3.1415)"
+                         ));
+      lcmd->Send();
+      cout << "Data inserted" << endl;
+    }
+
+    // selecting data
+    {
+      auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from tmp_t1"));
+      lcmd->Send();
+      while (lcmd->HasMoreResults())
+      {
+        auto_ptr<CDB_Result> r(lcmd->Result());
+        while (r->Fetch())
+        {
+          CDB_Int a;
+          CDB_DateTime b;
+          CDB_VarChar c;
+          CDB_VarChar d;
+          CDB_Double e;
+
+          r->GetItem(&a);
+          r->GetItem(&b);
+          r->GetItem(&c);
+          r->GetItem(&d);
+          r->GetItem(&e);
+
+          cout
+            << "a=" << a.Value() << endl
+            << "b=" << b.Value().AsString() << endl
+            << "c=" << c.Value() << endl
+            << "d=" << d.Value() << endl
+            << "e=" << e.Value() << endl;
+        }
+      }
+    }
+
+    // selecting data as strings
+    {
+      auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from tmp_t1"));
       lcmd->Send();
       while (lcmd->HasMoreResults())
       {
@@ -63,7 +135,6 @@ int main()
               cout << "NULL\n";
 
           }
-          cout << endl;
         }
       }
     }
@@ -80,6 +151,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/08/28 17:18:20  butanaev
+ * Improved error handling, demo app.
+ *
  * Revision 1.2  2002/08/13 20:30:24  butanaev
  * Username/password changed.
  *

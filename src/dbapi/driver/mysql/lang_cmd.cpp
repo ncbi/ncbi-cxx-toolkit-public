@@ -61,7 +61,10 @@ bool CMySQL_LangCmd::SetParam(const string& param_name, CDB_Object* param_ptr)
 
 bool CMySQL_LangCmd::Send()
 {
-  mysql_query(&m_Connect->m_MySQL, m_Query.c_str());
+  if(0 != mysql_real_query(&m_Connect->m_MySQL, m_Query.c_str(), m_Query.length()))
+    throw CDB_ClientEx(eDB_Warning, 800003,
+                       "CMySQL_LangCmd::Send",
+                       "Failed: mysql_real_query");
   m_HasResults = true;
   return false;
 }
@@ -111,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/08/28 17:18:20  butanaev
+ * Improved error handling, demo app.
+ *
  * Revision 1.1  2002/08/13 20:23:14  butanaev
  * The beginning.
  *
