@@ -32,7 +32,6 @@
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 #include <objtools/data_loaders/genbank/split_parser.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/seqref.hpp>
 
 #include <corelib/ncbitime.hpp>
 
@@ -160,7 +159,7 @@ void CCachedId1Reader::SetIdCache(ICache* id_cache)
 string CCachedId1Reader::GetBlobKey(const CBlob_id& blob_id) const
 {
     char szBlobKeyBuf[256];
-    if ( blob_id.GetSubSat() == CSeqref::eSubSat_main ) {
+    if ( blob_id.GetSubSat() == eSubSat_main ) {
         sprintf(szBlobKeyBuf, "%i-%i", blob_id.GetSat(), blob_id.GetSatKey());
     }
     else {
@@ -376,7 +375,7 @@ static const int IDS_MAGIC = 0x32fc0104;
 static const size_t IDS_SIZE = 4;
 
 /*
-  CSeqrefs are stored as vector of ints in the following order:
+  Blobs' ids are stored as vector of ints in the following order:
   
   IDS_MAGIC
   zero or more of {
@@ -542,7 +541,7 @@ void CCachedId1Reader::GetTSEBlob(CTSE_Info& tse_info,
             return;
         }
 #else
-        if ( blob_id.GetSubSat() == CSeqref::eSubSat_SNP ) {
+        if ( blob_id.GetSubSat() == eSubSat_SNP ) {
             if ( LoadSNPBlob(tse_info, key, version) ) {
                 return;
             }

@@ -164,6 +164,22 @@ public:
     virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CBlob_id& blob_id,
                                                   TConn conn) = 0;
     
+    enum ESat {
+        eSat_SNP        = 15,
+        eSat_ANNOT      = 26,
+        eSat_TRACE      = 28,
+        eSat_TRACE_ASSM = 29,
+        eSat_TR_ASSM_CH = 30,
+        eSat_TRACE_CHGR = 31
+    };
+
+    enum ESubSat {
+        eSubSat_main =    0,
+        eSubSat_SNP  = 1<<0,
+        eSubSat_CDD  = 1<<3,
+        eSubSat_MGC  = 1<<4
+    };
+
     enum {
         kSNP_EntryId = 0,
         kSNP_ChunkId = 0,

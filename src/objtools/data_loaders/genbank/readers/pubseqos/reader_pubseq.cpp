@@ -32,7 +32,6 @@
 #include <objtools/data_loaders/genbank/readers/pubseqos/seqref_pubseq.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/seqref.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -299,12 +298,12 @@ void CPubseqReader::ResolveSeq_id(CLoadLockBlob_ids& ids,
                 }
             }
 
-            _ASSERT(satGot.Value() != CSeqref::eSat_SNP);
+            _ASSERT(satGot.Value() != eSat_SNP);
             int gi = giGot.Value();
             int sat = satGot.Value();
             int sat_key = satKeyGot.Value();
 
-            if ( TrySNPSplit() && sat != CSeqref::eSat_ANNOT ) {
+            if ( TrySNPSplit() && sat != eSat_ANNOT ) {
                 {{
                     // main blob
                     CBlob_id blob_id;
@@ -318,13 +317,13 @@ void CPubseqReader::ResolveSeq_id(CLoadLockBlob_ids& ids,
                         int bit = ext_feat & ~(ext_feat-1);
                         ext_feat -= bit;
 #ifdef GENBANK_USE_SNP_SATELLITE_15
-                        if ( bit == CSeqref::eSubSat_SNP ) {
+                        if ( bit == eSubSat_SNP ) {
                             AddSNPBlob_id(ids, gi);
                             continue;
                         }
 #endif
                         CBlob_id blob_id;
-                        blob_id.SetSat(CSeqref::eSat_ANNOT);
+                        blob_id.SetSat(eSat_ANNOT);
                         blob_id.SetSatKey(gi);
                         blob_id.SetSubSat(bit);
                         ids.AddBlob_id(blob_id, fBlobHasExternal);
@@ -455,7 +454,7 @@ void CPubseqReader::x_ReceiveMainBlob(CTSE_Info& tse_info,
     CReader::SetSeqEntryReadHooks(in);
     in >> *seq_entry;
 #else
-    if ( blob_id.GetSubSat() == CSeqref::eSubSat_SNP ) {
+    if ( blob_id.GetSubSat() == eSubSat_SNP ) {
         CSeq_annot_SNP_Info_Reader::Parse(in, Begin(*seq_entry), snps);
     }
     else {

@@ -46,8 +46,6 @@
 
 #include <objmgr/split/blob_splitter_params.hpp>
 
-#include <objtools/data_loaders/genbank/seqref.hpp>
-
 BEGIN_NCBI_SCOPE
 
 class ICache;
@@ -181,6 +179,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/08/19 17:00:51  vasilche
+* Moved Sat/SatKey enums from obsolete class CSeqref.
+*
 * Revision 1.14  2004/08/04 14:55:18  vasilche
 * Changed TSE locking scheme.
 * TSE cache is maintained by CDataSource.
