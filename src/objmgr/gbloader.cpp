@@ -400,7 +400,7 @@ void CGBDataLoader::x_ExcludeFromDropList(CRef<STSEinfo> tse)
 {
     _ASSERT(tse);
     _TRACE("x_ExcludeFromDropList("<<DUMP(*tse)<<")");
-    if ( tse->next || tse->prev ) {
+    if ( bool(tse->next) || bool(tse->prev) ) {
         x_Check(tse);
         if ( tse->next ) {
             _ASSERT(tse != m_UseListTail);
@@ -501,7 +501,7 @@ void CGBDataLoader::GC(void)
     unsigned skip=0;
     unsigned skip_max = (int)(0.1*m_TseCount + 1); /* scan 10% of least recently used pile before giving up */
     CRef<STSEinfo> cur_tse = m_UseListHead;
-    while (cur_tse && skip<skip_max) {
+    while ( bool(cur_tse) && skip<skip_max) {
         CRef<STSEinfo> tse_to_drop(cur_tse);
         cur_tse = cur_tse->next;
         ++skip;
@@ -535,7 +535,7 @@ void CGBDataLoader::GC(void)
         //g.Lock();
 #if defined(NCBI_THREADS)
         unsigned i=0;
-        for(cur_tse = m_UseListHead;cur_tse && i<skip; ++i) {
+        for(cur_tse = m_UseListHead; bool(cur_tse) && i<skip; ++i) {
             cur_tse = cur_tse->next;
         }
 #endif
@@ -922,6 +922,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2003/05/20 18:27:29  vasilche
+* Fixed ambiguity on MSVC.
+*
 * Revision 1.70  2003/05/20 16:18:42  vasilche
 * Fixed compilation errors on GCC.
 *
