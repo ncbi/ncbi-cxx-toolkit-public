@@ -219,6 +219,8 @@ unsigned int CBDB_BufferManager::Unpack()
             break;
     }
 
+    m_PackedSize -= m_NullSetSize;
+
     _ASSERT(m_PackedSize == 0);
     return m_BufferSize;
 }
@@ -265,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/02 14:12:11  kuznets
+ * Bug fix
+ *
  * Revision 1.4  2003/04/29 19:07:22  kuznets
  * Cosmetics..
  *
