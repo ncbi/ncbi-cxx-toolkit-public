@@ -104,6 +104,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_th
 {
   GBLOG_POST( "CGBDataLoader");
   
+#if 0
   if(!m_Driver)
     {
       try
@@ -121,6 +122,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_th
           m_Driver=0;
         }
     }
+#endif
   if(!m_Driver) m_Driver=new CId1Reader;
   
   m_UseListHead = m_UseListTail = 0;
@@ -788,6 +790,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/04/12 22:54:28  kimelman
+* pubseq_reader auto call commented per Denis request
+*
 * Revision 1.28  2002/04/12 21:10:33  kimelman
 * traps for coredumps
 *
