@@ -77,7 +77,7 @@ template<class X>
 inline X* NotNull(X* object)
 {
     if ( !object ) {
-        NCBI_THROW(CCorelibException,eNullPtr,kEmptyStr);
+        NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
     }
     return object;
 }
@@ -196,6 +196,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2002/07/15 18:54:40  gouriano
+ * typo correction
+ *
  * Revision 1.22  2002/07/15 18:17:52  gouriano
  * renamed CNcbiException and its descendents
  *
