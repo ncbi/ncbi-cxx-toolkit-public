@@ -241,24 +241,53 @@ public:
 
     const string& GetValue(void) const { return m_Value; }
 
-private:
+protected:
     string  m_Value;
     TStyle  m_Style;
+};
+
+
+class CFlatNumberQVal : public CFlatStringQVal
+{
+public:
+    CFlatNumberQVal(const string& value) :
+        CFlatStringQVal(value, CFormatQual::eUnquoted)
+    {}
+        
+    void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
+                TFlags flags) const;
 };
 
 
 class CFlatStringListQVal : public IFlatQVal
 {
 public:
+    typedef list<string>    TValue;
+
     CFlatStringListQVal(const list<string>& value,
         TStyle style = CFormatQual::eQuoted)
         :   m_Value(value), m_Style(style) { }
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
 
-private:
-    list<string> m_Value;
-    TStyle       m_Style;
+    const TValue& GetValue(void) const { return m_Value; }
+    TValue& SetValue(void) { return m_Value; }
+
+protected:
+    TValue   m_Value;
+    TStyle   m_Style;
+};
+
+
+class CFlatGeneSynonymsQVal : public CFlatStringListQVal
+{
+public:
+    CFlatGeneSynonymsQVal(const CGene_ref::TSyn& syns) :
+        CFlatStringListQVal(syns)
+    {}
+
+    void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
+                TFlags flags) const;
 };
 
 
@@ -503,6 +532,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/08/19 16:26:15  shomrat
+* + CFlatGeneSynonymsQVal and CFlatNumberQVal
+*
 * Revision 1.12  2004/05/19 14:44:38  shomrat
 * + CQualContainer::Erase(..)
 *
