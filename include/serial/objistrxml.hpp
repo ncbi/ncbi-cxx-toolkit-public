@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/11/26 22:01:38  gouriano
+* added HasMoreElements method
+*
 * Revision 1.17  2002/11/20 21:21:58  gouriano
 * corrected processing of unnamed sequences as choice variants
 *
@@ -184,6 +187,7 @@ protected:
                                TTypeInfo typeInfo,
                                TObjectPtr object);
 
+    bool HasMoreElements(TTypeInfo elementType);
     virtual void ReadContainer(const CContainerTypeInfo* containerType,
                                TObjectPtr containerPtr);
     virtual void SkipContainer(const CContainerTypeInfo* containerType);
