@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/05/17 16:11:02  lavr
+ * Reorganized for use of HAVE_* defines
+ *
  * Revision 6.1  2000/05/15 19:03:41  lavr
  * Initial revision
  *
@@ -42,7 +45,8 @@
 #include <string.h>
 
 
-char *NCBI_strdup(const char *str)
+#ifndef HAVE_STRDUP
+char *strdup(const char *str)
 {
     size_t size = strlen(str) + 1;
     char *newstr = (char *)malloc(size);
@@ -50,9 +54,11 @@ char *NCBI_strdup(const char *str)
         memcpy(newstr, str, size);
     return newstr;
 }
+#endif /* HAVE_STRDUP */
 
 
-int NCBI_strcasecmp(const char *s1, const char *s2)
+#ifndef HAVE_STRCASECMP
+int strcasecmp(const char *s1, const char *s2)
 {
     const unsigned char *p1 = (const unsigned char *)s1;
     const unsigned char *p2 = (const unsigned char *)s2;
@@ -69,8 +75,7 @@ int NCBI_strcasecmp(const char *s1, const char *s2)
     return c1 - c2;
 }
 
-
-int NCBI_strncasecmp(const char *s1, const char *s2, size_t n)
+int strncasecmp(const char *s1, const char *s2, size_t n)
 {
     const unsigned char *p1 = (const unsigned char *)s1;
     const unsigned char *p2 = (const unsigned char *)s2;
@@ -86,3 +91,4 @@ int NCBI_strncasecmp(const char *s1, const char *s2, size_t n)
 
     return c1 - c2;
 }
+#endif /* HAVE_STRCASECMP */
