@@ -35,6 +35,7 @@
 
 /// @file reader_writer.hpp
 /// Abstract reader-writer interface classes
+/// Slightly adapted, however, to build std::streambuf on top of it.
 
 
 #include <corelib/ncbistl.hpp>
@@ -56,8 +57,6 @@ enum ERW_Result {
 
 
 /// A very basic data-read interface.
-///
-/// It is however slightly adapted to build std::istreambuf on top of it.
 
 class IReader
 {
@@ -125,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/17 15:48:24  lavr
+ * Comments slightly rearranged
+ *
  * Revision 1.11  2004/04/01 14:14:01  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *
