@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/11/22 21:29:27  vasilche
+* Fixed compilation on Windows
+*
 * Revision 1.1  1999/11/22 21:04:42  vasilche
 * Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
 *
@@ -50,6 +53,8 @@
 #include <serial/asntypes.hpp>
 
 BEGIN_NCBI_SCOPE
+
+#if HAVE_NCBI_C
 
 TTypeInfo COctetStringTypeInfoGetTypeInfo(void)
 {
@@ -79,5 +84,7 @@ TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
 {
     return new COldAsnTypeInfo(name, newProc, freeProc, readProc, writeProc);
 }
+
+#endif
 
 END_NCBI_SCOPE
