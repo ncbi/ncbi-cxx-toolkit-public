@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/05/24 20:09:28  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.5  2000/04/17 19:11:08  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -98,13 +101,13 @@
 
 BEGIN_NCBI_SCOPE
 
-CEnumTypeStrings::CEnumTypeStrings(const string& enumName,
-                                   const string& cType,
-                                   bool isInteger,
+CEnumTypeStrings::CEnumTypeStrings(const string& externalName,
+                                   const string& enumName,
+                                   const string& cType, bool isInteger,
                                    const TValues& values,
                                    const string& valuePrefix)
-    : m_EnumName(enumName), m_CType(cType),
-      m_IsInteger(isInteger),
+    : m_ExternalName(externalName), m_EnumName(enumName),
+      m_CType(cType), m_IsInteger(isInteger),
       m_Values(values), m_ValuesPrefix(valuePrefix)
 {
 }
@@ -132,9 +135,12 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     hpp <<
         "enum "<<m_EnumName<<" {";
     cpp <<
-        "BEGIN_ENUM_INFO("<<methodPrefix<<"GetEnumInfo_"<<m_EnumName<<
-        ", "<<m_EnumName<<", "<<(m_IsInteger?"true":"false")<<")\n"
-        "{\n";
+        "const NCBI_NS_NCBI::CEnumeratedTypeValues* "<<methodPrefix<<"GetEnumInfo_"<<m_EnumName<<"(void)\n"
+        "{\n"
+        "    static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = 0;\n"
+        "    if ( !enumInfo ) {\n"
+        "        enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(\""<<GetExternalName()<<"\", "<<m_IsInteger<<");\n"
+        "        "<<m_EnumName<<" enumValue;\n";
     iterate ( TValues, i, m_Values ) {
         if ( i != m_Values.begin() )
             hpp << ',';
@@ -142,7 +148,7 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         hpp << "\n"
             "    "<<m_ValuesPrefix<<id<<" = "<<i->second;
         cpp <<
-            "    ADD_ENUM_VALUE(\""<<i->first<<"\", "<<m_ValuesPrefix<<id<<");\n";
+            "        enumInfo->AddValue(\""<<i->first<<"\", enumValue = "<<m_ValuesPrefix<<id<<");\n";
     }
     hpp << "\n"
         "};\n"
@@ -151,9 +157,9 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
          <<m_EnumName<<"(void);\n"
         "\n";
     cpp <<
-        "}\n"
-        "END_ENUM_INFO\n"
-        "\n";
+        "    }\n"
+        "    return enumInfo;\n"
+        "}\n";
     ctx.AddHPPCode(hpp);
     ctx.AddCPPCode(cpp);
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/05/24 20:09:30  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.10  2000/04/10 18:39:00  vasilche
 * Fixed generation of map<> from SEQUENCE/SET OF SEQUENCE.
 *
@@ -79,6 +82,7 @@
 #include <serial/tool/blocktype.hpp>
 #include <serial/tool/stlstr.hpp>
 #include <serial/tool/value.hpp>
+#include <serial/tool/reftype.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -105,10 +109,30 @@ void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
     GetElementType()->PrintASN(out, indent);
 }
 
+void CUniSequenceDataType::PrintDTD(CNcbiOstream& out) const
+{
+    const CDataType* data = GetElementType();
+    const CReferenceDataType* ref =
+        dynamic_cast<const CReferenceDataType*>(data);
+    out <<
+        "<!ELEMENT "<<XmlTagName()<<" ( ";
+    if ( ref )
+        out << ref->UserTypeXmlTagName();
+    else
+        out << data->XmlTagName();
+    out << "+ ) >\n";
+    if ( !ref ) {
+        // array of internal type, we should generate tag for element type
+        if ( GetParentType() == 0 )
+            out << '\n';
+        data->PrintDTD(out);
+    }
+}
+
 void CUniSequenceDataType::FixTypeTree(void) const
 {
     CParent::FixTypeTree();
-    m_ElementType->SetParent(this, "_E");
+    m_ElementType->SetParent(this, "E");
     m_ElementType->SetInSet(this);
 }
 
@@ -140,9 +164,12 @@ TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
 
 CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
 {
-    return new CAutoPointerTypeInfo(
-        new CStlClassInfo_list<AnyType>(
-            new CAnyTypeSource(m_ElementType.get())));
+    return new CStlClassInfo_list<AnyType>(m_ElementType->GetTypeInfo());
+}
+
+bool CUniSequenceDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
+{
+    return true;
 }
 
 AutoPtr<CTypeStrings> CUniSequenceDataType::GetFullCType(void) const
@@ -169,10 +196,8 @@ const char* CUniSetDataType::GetASNKeyword(void) const
 
 CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
 {
-    CStlClassInfo_list<AnyType>* l =
-        new CStlClassInfo_list<AnyType>(new CAnyTypeSource(GetElementType()),
-                                        true);
-    return new CAutoPointerTypeInfo(l);
+    return new CStlClassInfo_list<AnyType>(GetElementType()->GetTypeInfo(),
+                                           true);
 }
 
 AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/05/24 20:09:28  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.10  2000/04/17 19:11:08  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -110,6 +113,31 @@ void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
     out << "}";
 }
 
+void CEnumDataType::PrintDTD(CNcbiOstream& out) const
+{
+    string tag = XmlTagName();
+    out <<
+        "<!ELEMENT "<<tag<<" ";
+    if ( IsInteger() )
+        out << "( %INTEGER; )";
+    else
+        out << "%ENUM;";
+    out <<
+        " >\n"
+        "<!ATTLIST "<<tag<<" value (\n";
+    iterate ( TValues, i, m_Values ) {
+        if ( i != m_Values.begin() )
+            out << " |\n";
+        out << "               " << i->first;
+    }
+    out << " ) ";
+    if ( IsInteger() )
+        out << "#IMPLIED";
+    else
+        out << "#REQUIRED";
+    out << " >\n";
+}
+
 bool CEnumDataType::CheckValue(const CDataValue& value) const
 {
     const CIdDataValue* id = dynamic_cast<const CIdDataValue*>(&value);
@@ -173,8 +201,8 @@ string CEnumDataType::GetDefaultString(const CDataValue& value) const
 
 CTypeInfo* CEnumDataType::CreateTypeInfo(void)
 {
-    AutoPtr<CEnumeratedTypeValues> info(new CEnumeratedTypeValues(IdName(),
-                                                                  IsInteger()));
+    AutoPtr<CEnumeratedTypeValues>
+        info(new CEnumeratedTypeValues(GlobalName(), IsInteger()));
     for ( TValues::const_iterator i = m_Values.begin();
           i != m_Values.end(); ++i ) {
         info->AddValue(i->first, i->second);
@@ -231,12 +259,10 @@ AutoPtr<CTypeStrings> CEnumDataType::GetRefCType(void) const
 AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
 {
     SEnumCInfo enumInfo = GetEnumCInfo();
-    AutoPtr<CEnumTypeStrings> e(new CEnumTypeStrings(enumInfo.enumName,
-                                                     enumInfo.cType,
-                                                     IsInteger(),
-                                                     m_Values,
-                                                     enumInfo.valuePrefix));
-
+    AutoPtr<CEnumTypeStrings> 
+        e(new CEnumTypeStrings(GlobalName(), enumInfo.enumName,
+                               enumInfo.cType, IsInteger(),
+                               m_Values, enumInfo.valuePrefix));
     return AutoPtr<CTypeStrings>(e.release());
 }
 

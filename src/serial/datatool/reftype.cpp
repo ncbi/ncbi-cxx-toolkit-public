@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/05/24 20:09:29  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.10  2000/04/07 19:26:33  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -72,6 +75,9 @@
 #include <serial/tool/value.hpp>
 #include <serial/tool/module.hpp>
 #include <serial/tool/exceptions.hpp>
+#include <serial/tool/blocktype.hpp>
+#include <serial/tool/enumtype.hpp>
+#include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -83,6 +89,12 @@ CReferenceDataType::CReferenceDataType(const string& n)
 void CReferenceDataType::PrintASN(CNcbiOstream& out, int ) const
 {
     out << m_UserTypeName;
+}
+
+void CReferenceDataType::PrintDTD(CNcbiOstream& out) const
+{
+    out <<
+        "<!ELEMENT "<<XmlTagName()<<" ( "<<UserTypeXmlTagName()<<" ) >\n";
 }
 
 void CReferenceDataType::FixTypeTree(void) const
@@ -113,9 +125,23 @@ bool CReferenceDataType::CheckValue(const CDataValue& value) const
     return resolved->CheckValue(value);
 }
 
-TTypeInfo CReferenceDataType::GetTypeInfo(void)
+TTypeInfo CReferenceDataType::GetRealTypeInfo(void)
 {
-    return ResolveOrThrow()->GetTypeInfo();
+    CDataType* dataType = ResolveOrThrow();
+    if ( dynamic_cast<CDataMemberContainerType*>(dataType) ||
+         dynamic_cast<CEnumDataType*>(dataType) )
+        return dataType->GetRealTypeInfo();
+    return CParent::GetRealTypeInfo();
+}
+
+CTypeInfo* CReferenceDataType::CreateTypeInfo(void)
+{
+    CClassInfoTmpl* info = new CClassInfoTmpl(m_UserTypeName,
+                                              typeid(void),
+                                              sizeof(AnyType));
+    info->SetImplicit(true);
+    info->GetMembers().AddMember("", 0, ResolveOrThrow()->GetTypeInfo());
+    return info;
 }
 
 TObjectPtr CReferenceDataType::CreateDefault(const CDataValue& value) const

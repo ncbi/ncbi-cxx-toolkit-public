@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/05/24 20:09:30  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.47  2000/05/03 14:38:18  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -125,12 +128,23 @@
 
 BEGIN_NCBI_SCOPE
 
+class CAnyTypeSource : public CTypeInfoSource
+{
+public:
+    CAnyTypeSource(CDataType* type)
+        : m_Type(type)
+        {
+        }
+
+    TTypeInfo GetTypeInfo(void);
+
+private:
+    CDataType* m_Type;
+};
+
 TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 {
-    TTypeInfo typeInfo = m_Type->GetTypeInfo();
-    if ( typeInfo->GetSize() > sizeof(AnyType) )
-        typeInfo = new CAutoPointerTypeInfo(typeInfo);
-    return typeInfo;
+    return m_Type->GetAnyTypeInfo();
 }
 
 CDataType::CDataType(void)
@@ -254,6 +268,37 @@ string CDataType::IdName(void) const
         // member
         return parent->IdName() + '.' + m_MemberName;
     }
+}
+
+string CDataType::XmlTagName(void) const
+{
+    const CDataType* parent = GetParentType();
+    if ( !parent ) {
+        // root type
+        return m_MemberName;
+    }
+    else {
+        // member
+        return parent->XmlTagName() + '_' + m_MemberName;
+    }
+}
+
+/*
+void CDataType::PrintDTD(CNcbiOstream& out) const
+{
+    out <<
+        "<!ELEMENT "<<XmlTagName()<<" >\n"
+        "\n";
+    
+}
+*/
+
+const string& CDataType::GlobalName(void) const
+{
+    if ( !GetParentType() )
+        return m_MemberName;
+    else
+        return NcbiEmptyString;
 }
 
 string CDataType::GetKeyPrefix(void) const
@@ -381,19 +426,49 @@ const CDataType* CDataType::Resolve(void) const
     return this;
 }
 
-TTypeInfo CDataType::GetTypeInfo(void)
+CTypeRef CDataType::GetTypeInfo(void)
 {
-    if ( !m_CreatedTypeInfo ) {
-        m_CreatedTypeInfo = CreateTypeInfo();
-        if ( !m_CreatedTypeInfo )
-            THROW1_TRACE(runtime_error, "type undefined");
+    if ( !m_TypeRef )
+        m_TypeRef = CTypeRef(new CAnyTypeSource(this));
+    return m_TypeRef;
+}
+
+TTypeInfo CDataType::GetAnyTypeInfo(void)
+{
+    TTypeInfo typeInfo = m_AnyTypeInfo.get();
+    if ( !typeInfo ) {
+        typeInfo = GetRealTypeInfo();
+        if ( NeedAutoPointer(typeInfo) ) {
+            m_AnyTypeInfo.reset(new CAutoPointerTypeInfo(typeInfo));
+            typeInfo = m_AnyTypeInfo.get();
+        }
     }
-    return m_CreatedTypeInfo.get();
+    return typeInfo;
+}
+
+bool CDataType::NeedAutoPointer(TTypeInfo typeInfo) const
+{
+    return typeInfo->GetSize() > sizeof(AnyType);
+}
+
+TTypeInfo CDataType::GetRealTypeInfo(void)
+{
+    TTypeInfo typeInfo = m_RealTypeInfo.get();
+    if ( !typeInfo ) {
+        m_RealTypeInfo.reset(CreateTypeInfo());
+        typeInfo = m_RealTypeInfo.get();
+    }
+    return typeInfo;
+}
+
+CTypeInfo* CDataType::CreateTypeInfo(void)
+{
+    THROW1_TRACE(runtime_error, "cannot create type info of "+IdName());
 }
 
 AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
 {
-    AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
+    AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
                                                           ClassName()));
     AutoPtr<CTypeStrings> dType = GetFullCType();
     code->AddMember(dType);
@@ -427,11 +502,6 @@ string CDataType::GetDefaultString(const CDataValue& ) const
 {
     Warning("Default is not supported by this type");
     return "...";
-}
-
-CTypeInfo* CDataType::CreateTypeInfo(void)
-{
-    return 0;
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/05/24 20:08:31  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.4  2000/04/17 19:11:04  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -87,11 +90,14 @@ class CEnumTypeStrings : public CTypeStrings
     typedef CTypeStrings CParent;
 public:
     typedef list< pair<string, long> > TValues;
-    CEnumTypeStrings(const string& enumName,
-                     const string& cType,
-                     bool isInteger,
-                     const TValues& values,
-                     const string& valuesPrefix);
+    CEnumTypeStrings(const string& externalName, const string& enumName,
+                     const string& cType, bool isInteger,
+                     const TValues& values, const string& valuesPrefix);
+
+    const string& GetExternalName(void) const
+        {
+            return m_ExternalName;
+        }
 
     void SetEnumNamespace(const CNamespace& ns);
 
@@ -104,6 +110,7 @@ public:
     void GenerateTypeCode(CClassContext& ctx) const;
 
 private:
+    string m_ExternalName;
     string m_EnumName;
     string m_CType;
     bool m_IsInteger;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/05/24 20:08:31  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.2  2000/04/07 19:26:10  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -110,6 +113,7 @@ public:
     void AddImports(const string& module, const list<string>& types);
 
     virtual void PrintASN(CNcbiOstream& out) const;
+    virtual void PrintDTD(CNcbiOstream& out) const;
 
     bool Check();
     bool CheckNames();

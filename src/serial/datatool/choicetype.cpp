@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/05/24 20:09:28  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.11  2000/05/03 14:38:17  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -84,10 +87,45 @@
 
 #include <serial/tool/choicetype.hpp>
 #include <serial/autoptrinfo.hpp>
+#include <serial/choice.hpp>
 #include <serial/tool/value.hpp>
 #include <serial/tool/choicestr.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CChoiceTypeInfoAnyType : public CChoiceTypeInfoBase
+{
+    typedef CChoiceTypeInfoBase CParent;
+public:
+    typedef AnyType TDataType;
+    typedef struct {
+        TMemberIndex index;
+        TDataType data;
+    } TObjectType;
+    typedef CType<TObjectType> TType;
+
+    CChoiceTypeInfoAnyType(const string& name);
+    CChoiceTypeInfoAnyType(const char* name);
+    ~CChoiceTypeInfoAnyType(void);
+
+    // object getters:
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+
+    size_t GetSize(void) const;
+    virtual TObjectPtr Create(void) const;
+
+protected:
+    virtual TMemberIndex GetIndex(TConstObjectPtr object) const;
+    virtual void SetIndex(TObjectPtr object, TMemberIndex index) const;
+    virtual TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
+};
 
 CChoiceTypeInfoAnyType::CChoiceTypeInfoAnyType(const string& name)
     : CParent(name)
@@ -146,6 +184,11 @@ void CChoiceDataType::FixTypeTree(void) const
     }
 }
 
+const char* CChoiceDataType::XmlMemberSeparator(void) const
+{
+    return "|";
+}
+
 bool CChoiceDataType::CheckValue(const CDataValue& value) const
 {
     const CNamedDataValue* choice =
@@ -164,15 +207,15 @@ bool CChoiceDataType::CheckValue(const CDataValue& value) const
 
 CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
 {
-    auto_ptr<CChoiceTypeInfoBase> typeInfo(
-        new CChoiceTypeInfoAnyType(IdName()));
+    auto_ptr<CChoiceTypeInfoBase>
+        typeInfo(new CChoiceTypeInfoAnyType(GlobalName()));
     for ( TMembers::const_iterator i = GetMembers().begin();
           i != GetMembers().end(); ++i ) {
         CDataMember* member = i->get();
         typeInfo->AddVariant(member->GetName(),
-                             new CAnyTypeSource(member->GetType()));
+                             member->GetType()->GetTypeInfo());
     }
-    return new CAutoPointerTypeInfo(typeInfo.release());
+    return typeInfo.release();
 }
 
 AutoPtr<CTypeStrings> CChoiceDataType::GenerateCode(void) const
@@ -190,7 +233,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetRefCType(void) const
 AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
 {
     bool rootClass = GetParentType() == 0;
-    AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(IdName(),
+    AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(GlobalName(),
                                                             ClassName()));
 
     bool haveUserClass = rootClass;

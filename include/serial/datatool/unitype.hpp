@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/05/24 20:08:32  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.2  2000/04/07 19:26:15  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -65,6 +68,7 @@ public:
     CUniSequenceDataType(const AutoPtr<CDataType>& elementType);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintDTD(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;
@@ -82,6 +86,7 @@ public:
     void SetElementType(const AutoPtr<CDataType>& type);
 
     CTypeInfo* CreateTypeInfo(void);
+    bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;

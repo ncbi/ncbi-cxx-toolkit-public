@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/05/24 20:08:31  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.3  2000/04/07 19:26:12  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -73,7 +76,6 @@
 */
 
 #include <serial/tool/type.hpp>
-#include <serial/stltypes.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -81,10 +83,12 @@ class CStaticDataType : public CDataType {
     typedef CDataType CParent;
 public:
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintDTD(CNcbiOstream& out) const;
 
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const = 0;
+    virtual const char* GetXMLContents(void) const;
 };
 
 class CNullDataType : public CStaticDataType {
@@ -93,10 +97,11 @@ public:
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
 
-    const CTypeInfo* GetTypeInfo(void);
+    CTypeRef GetTypeInfo(void);
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetXMLContents(void) const;
 };
 
 class CBoolDataType : public CStaticDataType {
@@ -106,7 +111,8 @@ public:
     TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual string GetDefaultString(const CDataValue& value) const;
 
-    const CTypeInfo* GetTypeInfo(void);
+    void PrintDTD(CNcbiOstream& out) const;
+    CTypeRef GetTypeInfo(void);
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
 };
@@ -117,9 +123,10 @@ public:
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
 
-    const CTypeInfo* GetTypeInfo(void);
+    const CTypeInfo* GetRealTypeInfo(void);
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetXMLContents(void) const;
 };
 
 class CStringDataType : public CStaticDataType {
@@ -131,10 +138,12 @@ public:
     TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual string GetDefaultString(const CDataValue& value) const;
 
-    const CTypeInfo* GetTypeInfo(void);
+    const CTypeInfo* GetRealTypeInfo(void);
+    bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetXMLContents(void) const;
 };
 
 class CStringStoreDataType : public CStringDataType {
@@ -142,7 +151,8 @@ class CStringStoreDataType : public CStringDataType {
 public:
     CStringStoreDataType(void);
 
-    const CTypeInfo* GetTypeInfo(void);
+    const CTypeInfo* GetRealTypeInfo(void);
+    bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetASNKeyword(void) const;
 };
@@ -153,6 +163,7 @@ public:
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetXMLContents(void) const;
 };
 
 class COctetStringDataType : public CStaticDataType {
@@ -160,9 +171,11 @@ class COctetStringDataType : public CStaticDataType {
 public:
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
-    const CTypeInfo* GetTypeInfo(void);
+    const CTypeInfo* GetRealTypeInfo(void);
+    bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
-    const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetXMLContents(void) const;
 };
 
 class CIntDataType : public CStaticDataType {
@@ -172,9 +185,10 @@ public:
     TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual string GetDefaultString(const CDataValue& value) const;
 
-    const CTypeInfo* GetTypeInfo(void);
+    CTypeRef GetTypeInfo(void);
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetXMLContents(void) const;
 };
 
 END_NCBI_SCOPE

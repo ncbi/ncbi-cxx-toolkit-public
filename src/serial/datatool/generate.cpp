@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/05/24 20:09:28  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.29  2000/04/10 19:33:22  vakatov
 * Get rid of a minor compiler warning
 *
@@ -236,7 +239,7 @@ void CCodeGenerator::IncludeAllMainTypes(void)
 {
     iterate ( CFileSet::TModuleSets, msi, m_MainFiles.GetModuleSets() ) {
         iterate ( CFileModules::TModules, mi, (*msi)->GetModules() ) {
-            const CDataTypeModule* module = mi->second.get();
+            const CDataTypeModule* module = mi->get();
             iterate ( CDataTypeModule::TDefinitions, ti,
                       module->GetDefinitions() ) {
                 const string& name = ti->first;

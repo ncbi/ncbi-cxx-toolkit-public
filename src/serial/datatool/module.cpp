@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/05/24 20:09:29  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.19  2000/04/07 19:26:29  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -102,8 +105,10 @@ void CDataTypeModule::AddDefinition(const string& name,
         m_Errors = true;
         return;
     }
-    oldType = type.get();
+    CDataType* dataType = type.get();
+    oldType = dataType;
     m_Definitions.push_back(make_pair(name, type));
+    dataType->SetParent(this, name);
 }
 
 void CDataTypeModule::AddExports(const TExports& exports)
@@ -181,6 +186,40 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
         "\n";
 }
 
+void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
+{
+    out <<
+        "<!-- ============================================ -->\n"
+        "<!-- This section mapped from ASN.1 module "<<GetName()<<" -->\n"
+        "\n";
+
+    if ( !m_Exports.empty() ) {
+        out <<
+            "<!-- Elements used by other modules:\n";
+
+        for ( TExports::const_iterator begin = m_Exports.begin(),
+                  end = m_Exports.end(), i = begin; i != end; ++i ) {
+            if ( i != begin )
+                out << ",\n";
+            out << "          " << *i;
+        }
+
+        out <<
+            " -->\n"
+            "\n";
+    }
+
+    for ( TDefinitions::const_iterator i = m_Definitions.begin();
+          i != m_Definitions.end(); ++i ) {
+        i->second->PrintDTD(out);
+        out << "\n";
+    }
+
+    out <<
+        "\n"
+        "\n";
+}
+
 bool CDataTypeModule::Check()
 {
     bool ok = true;
@@ -194,9 +233,6 @@ bool CDataTypeModule::Check()
 
 bool CDataTypeModule::CheckNames()
 {
-    iterate ( TDefinitions, d, m_Definitions ) {
-        d->second->SetParent(this, d->first);
-    }
     bool ok = true;
     for ( TExports::const_iterator e = m_Exports.begin();
           e != m_Exports.end(); ++e ) {

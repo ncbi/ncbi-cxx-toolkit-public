@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/05/24 20:09:27  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.16  2000/05/03 14:38:17  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -103,24 +106,44 @@ BEGIN_NCBI_SCOPE
 class CContainerTypeInfo : public CClassInfoTmpl
 {
 public:
-    CContainerTypeInfo(const string& name, size_t size)
-        : CClassInfoTmpl(name, typeid(void), size_t(NullMemberPtr(size))),
-          m_Size(size)
+    CContainerTypeInfo(const string& name, size_t memberCount)
+        : CClassInfoTmpl(name, typeid(void), 0),
+          m_MemberCount(memberCount), m_IsSetCount(0)
         {
+        }
+
+    size_t GetOffsetOfIsSetArray(void) const
+        {
+            return sizeof(AnyType)*m_MemberCount;
+        }
+
+    size_t GetSize(void) const
+        {
+            return GetOffsetOfIsSetArray() + sizeof(bool) * m_IsSetCount;
         }
 
     TObjectPtr Create(void) const
         {
-            return new AnyType[m_Size];
+            size_t size = GetSize();
+            TObjectPtr obj = new char[size];
+            memset(obj, 0, size);
+            return obj;
         }
 
-    static const AnyType* NullMemberPtr(size_t index)
+    const AnyType* GetMemberPtr(size_t index) const
         {
             return &static_cast<const AnyType*>(0)[index];
         }
+    const bool* AddIsSetFlag(void)
+        {
+            const bool* isSetArray =
+                reinterpret_cast<const bool*>(GetOffsetOfIsSetArray());
+            return isSetArray + m_IsSetCount++;
+        }
 
 private:
-    size_t m_Size;
+    size_t m_MemberCount;
+    size_t m_IsSetCount;
 };
 
 void CDataMemberContainerType::AddMember(const AutoPtr<CDataMember>& member)
@@ -141,6 +164,27 @@ void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
     }
     NewLine(out, indent - 1);
     out << "}";
+}
+
+void CDataMemberContainerType::PrintDTD(CNcbiOstream& out) const
+{
+    string tag = XmlTagName();
+    out <<
+        "<!ELEMENT "<<tag<<" (\n";
+    const char* separator = XmlMemberSeparator();
+    iterate ( TMembers, i, m_Members ) {
+        if ( i != m_Members.begin() )
+            out << ' '<<separator<<'\n';
+        out << "               "<<tag<<'_'<<(*i)->GetName();
+        if ( (*i)->Optional() )
+            out << '?';
+    }
+    out << " )>\n";
+    if ( GetParentType() == 0 )
+        out << '\n';
+    iterate ( TMembers, i, m_Members ) {
+        (*i)->GetType()->PrintDTD(out);
+    }
 }
 
 void CDataMemberContainerType::FixTypeTree(void) const
@@ -167,6 +211,11 @@ TObjectPtr CDataMemberContainerType::CreateDefault(const CDataValue& ) const
                  GetASNKeyword() + string(" default not implemented"));
 }
 
+const char* CDataContainerType::XmlMemberSeparator(void) const
+{
+    return ",";
+}
+
 CTypeInfo* CDataContainerType::CreateTypeInfo(void)
 {
     return CreateClassInfo();
@@ -174,24 +223,24 @@ CTypeInfo* CDataContainerType::CreateTypeInfo(void)
 
 CClassInfoTmpl* CDataContainerType::CreateClassInfo(void)
 {
-    auto_ptr<CClassInfoTmpl> typeInfo(new CContainerTypeInfo(IdName(),
-                                                      GetMembers().size()));
+    auto_ptr<CContainerTypeInfo>
+        typeInfo(new CContainerTypeInfo(GlobalName(), GetMembers().size()));
     int index = 0;
     for ( TMembers::const_iterator i = GetMembers().begin();
           i != GetMembers().end(); ++i, ++index ) {
-        CDataMember* member = i->get();
-        CMemberInfo* memberInfo =
-            typeInfo->GetMembers().AddMember(member->GetName(),
-                new CRealMemberInfo(size_t(CContainerTypeInfo::NullMemberPtr(index)),
-                                    new CAnyTypeSource(member->GetType())));
-        if ( member->GetDefault() ) {
-            memberInfo->SetDefault(member->GetType()->
-                                   CreateDefault(*member->GetDefault()));
-            memberInfo->SetSetFlag(&CContainerTypeInfo::NullMemberPtr(index)->isSet);
+        CDataMember* mem = i->get();
+        CDataType* memType = mem->GetType();
+        CMemberInfo* memInfo =
+            typeInfo->GetMembers().AddMember(mem->GetName(),
+                                             new CRealMemberInfo(size_t(typeInfo->GetMemberPtr(index)),
+                                                                 memType->GetTypeInfo()));
+        if ( mem->GetDefault() ) {
+            memInfo->SetDefault(memType->CreateDefault(*mem->GetDefault()));
+            memInfo->SetSetFlag(typeInfo->AddIsSetFlag());
         }
-        else if ( member->Optional() ) {
-            memberInfo->SetOptional();
-            memberInfo->SetSetFlag(&CContainerTypeInfo::NullMemberPtr(index)->isSet);
+        else if ( mem->Optional() ) {
+            memInfo->SetOptional();
+            memInfo->SetSetFlag(typeInfo->AddIsSetFlag());
         }
     }
     return typeInfo.release();
@@ -205,7 +254,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GenerateCode(void) const
 AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
 {
     bool isRootClass = GetParentType() == 0;
-    AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
+    AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
                                                           ClassName()));
 
     bool haveUserClass = isRootClass;

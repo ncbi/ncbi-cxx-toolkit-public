@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/05/24 20:08:32  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.4  2000/04/07 19:26:14  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -83,7 +86,6 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/typeref.hpp>
-#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -99,35 +101,18 @@ class CFileCode;
 class CClassTypeStrings;
 class CNamespace;
 
-typedef int TInteger;
 
 struct AnyType {
+    typedef long TInteger;
     union {
         bool booleanValue;
         TInteger integerValue;
-        double realValue;
         void* pointerValue;
     };
-    bool isSet;
     AnyType(void)
-        : isSet(false)
         {
             pointerValue = 0;
         }
-};
-
-class CAnyTypeSource : public CTypeInfoSource
-{
-public:
-    CAnyTypeSource(CDataType* type)
-        : m_Type(type)
-        {
-        }
-
-    TTypeInfo GetTypeInfo(void);
-
-private:
-    CDataType* m_Type;
 };
 
 class CDataType {
@@ -158,6 +143,8 @@ public:
 
     string GetKeyPrefix(void) const;
     string IdName(void) const;
+    string XmlTagName(void) const;
+    const string& GlobalName(void) const; // name of type or empty
     bool Skipped(void) const;
     string ClassName(void) const;
     string FileName(void) const;
@@ -169,8 +156,13 @@ public:
     bool InChoice(void) const;
 
     virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
+    virtual void PrintDTD(CNcbiOstream& out) const = 0;
 
-    virtual const CTypeInfo* GetTypeInfo(void);
+    virtual CTypeRef GetTypeInfo(void);
+    virtual const CTypeInfo* GetAnyTypeInfo(void);
+    virtual bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
+    virtual const CTypeInfo* GetRealTypeInfo(void);
+    virtual CTypeInfo* CreateTypeInfo(void);
 
     static CNcbiOstream& NewLine(CNcbiOstream& out, int indent);
 
@@ -231,7 +223,6 @@ public:
     virtual bool CheckType(void) const;
     virtual bool CheckValue(const CDataValue& value) const = 0;
     virtual TObjectPtr CreateDefault(const CDataValue& value) const = 0;
-    virtual CTypeInfo* CreateTypeInfo(void);
 
 private:
     const CDataType* m_ParentType;       // parent type
@@ -246,7 +237,9 @@ private:
 
     bool m_Checked;
 
-    AutoPtr<CTypeInfo> m_CreatedTypeInfo;
+    CTypeRef m_TypeRef;
+    AutoPtr<CTypeInfo> m_AnyTypeInfo;
+    AutoPtr<CTypeInfo> m_RealTypeInfo;
     mutable string m_CachedFileName;
     mutable auto_ptr<CNamespace> m_CachedNamespace;
 

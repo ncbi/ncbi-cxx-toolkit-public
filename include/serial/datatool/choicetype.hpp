@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/05/24 20:08:30  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.2  2000/04/07 19:26:07  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -59,7 +62,6 @@
 */
 
 #include <serial/tool/blocktype.hpp>
-#include <serial/choice.hpp>
 #include <serial/tool/statictype.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -70,45 +72,13 @@ public:
     void FixTypeTree(void) const;
     bool CheckValue(const CDataValue& value) const;
 
+    virtual const char* XmlMemberSeparator(void) const;
+
     CTypeInfo* CreateTypeInfo(void);
     AutoPtr<CTypeStrings> GenerateCode(void) const;
     AutoPtr<CTypeStrings> GetRefCType(void) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
-};
-
-class CChoiceTypeInfoAnyType : public CChoiceTypeInfoBase
-{
-    typedef CChoiceTypeInfoBase CParent;
-public:
-    typedef AnyType TDataType;
-    typedef struct {
-        TMemberIndex index;
-        TDataType data;
-    } TObjectType;
-    typedef CType<TObjectType> TType;
-
-    CChoiceTypeInfoAnyType(const string& name);
-    CChoiceTypeInfoAnyType(const char* name);
-    ~CChoiceTypeInfoAnyType(void);
-
-    // object getters:
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-
-    size_t GetSize(void) const;
-    virtual TObjectPtr Create(void) const;
-
-protected:
-    virtual TMemberIndex GetIndex(TConstObjectPtr object) const;
-    virtual void SetIndex(TObjectPtr object, TMemberIndex index) const;
-    virtual TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
 };
 
 END_NCBI_SCOPE

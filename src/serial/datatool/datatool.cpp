@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/05/24 20:09:29  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.32  2000/04/28 16:58:16  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -119,12 +122,12 @@ void Help(void)
         "  -H           display this message (optional)\n"
         "  -oH          display code generation arguments (optional)\n"
         "  -m <file>    ASN.1 module file\n"
-        "  -mx <file>   XML module file\n"
+        "  -mx <file>   XML DTD file\n"
         "  -M <files>   external ASN.1 module files (optional)\n"
         "  -Mx <files>  external XML module files (optional)\n"
         "  -i           ignore unresolved symbols (optional)\n"
         "  -f <file>    write ASN.1 module file (optional)\n"
-        "  -fx <file>   write XML module file (optional)\n"
+        "  -fx <file>   write XML DTD file (optional)\n"
         "  -v <file>    read value in ASN.1 text format (optional)\n"
         "  -p <file>    write value in ASN.1 text format (optional)\n"
         "  -vx <file>   read value in XML format (optional)\n"
@@ -464,11 +467,18 @@ void LoadDefinitions(CFileSet& fileSet,
 
 void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
 {
-    if ( file.type != eSerial_AsnText )
-        ERR_POST(Fatal << "data definition format not supported");
-    
     DestinationFile out(file);
-    fileSet.PrintASN(out);
+    switch ( file.type ) {
+    case eSerial_AsnText:
+    case eSerial_AsnBinary:
+        fileSet.PrintASN(out);
+        break;
+    case eSerial_Xml:
+        fileSet.PrintDTD(out);
+        break;
+    default:
+        break;
+    }
 }
 
 TObject LoadValue(CFileSet& types, const FileInfo& file,
@@ -484,9 +494,11 @@ TObject LoadValue(CFileSet& types, const FileInfo& file,
         typeName = defTypeName;
     }
     TTypeInfo typeInfo =
-        CTypeRef(new CAnyTypeSource(types.ResolveInAnyModule(typeName, true))).Get();
+        types.ResolveInAnyModule(typeName, true)->GetTypeInfo().Get();
     AnyType value;
+    CObjectStackNamedFrame m(*in, typeInfo);
     in->ReadExternalObject(&value, typeInfo);
+    m.End();
     return make_pair(value, typeInfo);
 }
 

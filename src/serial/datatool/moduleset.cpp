@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/05/24 20:09:29  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.20  2000/04/07 19:26:29  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -85,13 +88,14 @@ CFileModules::CFileModules(const string& name)
 void CFileModules::AddModule(const AutoPtr<CDataTypeModule>& module)
 {
     module->SetModuleContainer(this);
-    AutoPtr<CDataTypeModule>& mptr = m_Modules[module->GetName()];
+    CDataTypeModule*& mptr = m_ModulesByName[module->GetName()];
     if ( mptr ) {
         ERR_POST(GetSourceFileName() << ": duplicate module: " <<
                  module->GetName());
     }
     else {
-        mptr = module;
+        mptr = module.get();
+        m_Modules.push_back(module);
     }
 }
 
@@ -100,7 +104,7 @@ bool CFileModules::Check(void) const
     bool ok = true;
     for ( TModules::const_iterator mi = m_Modules.begin();
           mi != m_Modules.end(); ++mi ) {
-        if ( !mi->second->Check() )
+        if ( !(*mi)->Check() )
             ok = false;
     }
     return ok;
@@ -111,7 +115,7 @@ bool CFileModules::CheckNames(void) const
     bool ok = true;
     for ( TModules::const_iterator mi = m_Modules.begin();
           mi != m_Modules.end(); ++mi ) {
-        if ( !mi->second->CheckNames() )
+        if ( !(*mi)->CheckNames() )
             ok = false;
     }
     return ok;
@@ -121,7 +125,15 @@ void CFileModules::PrintASN(CNcbiOstream& out) const
 {
     for ( TModules::const_iterator mi = m_Modules.begin();
           mi != m_Modules.end(); ++mi ) {
-        mi->second->PrintASN(out);
+        (*mi)->PrintASN(out);
+    }
+}
+
+void CFileModules::PrintDTD(CNcbiOstream& out) const
+{
+    for ( TModules::const_iterator mi = m_Modules.begin();
+          mi != m_Modules.end(); ++mi ) {
+        (*mi)->PrintDTD(out);
     }
 }
 
@@ -132,7 +144,6 @@ const string& CFileModules::GetSourceFileName(void) const
 
 string CFileModules::GetFileNamePrefix(void) const
 {
-    _TRACE("file " << m_SourceFileName << ": " << GetModuleContainer().GetFileNamePrefixSource());
     if ( MakeFileNamePrefixFromSourceFileName() ) {
         if ( m_PrefixFromSourceFileName.empty() ) {
             m_PrefixFromSourceFileName = DirName(m_SourceFileName);
@@ -161,8 +172,8 @@ CDataType* CFileModules::ExternalResolve(const string& moduleName,
                                        bool allowInternal) const
 {
     // find module definition
-    TModules::const_iterator mi = m_Modules.find(moduleName);
-    if ( mi == m_Modules.end() ) {
+    TModulesByName::const_iterator mi = m_ModulesByName.find(moduleName);
+    if ( mi == m_ModulesByName.end() ) {
         // no such module
         THROW1_TRACE(CModuleNotFound, "module not found: " + moduleName +
                      " for type " + typeName);
@@ -177,7 +188,7 @@ CDataType* CFileModules::ResolveInAnyModule(const string& typeName,
     for ( TModules::const_iterator i = m_Modules.begin();
           i != m_Modules.end(); ++i ) {
         try {
-            types.Add(i->second->ExternalResolve(typeName, allowInternal));
+            types.Add((*i)->ExternalResolve(typeName, allowInternal));
         }
         catch ( CAmbiguiousTypes& exc ) {
             types.Add(exc);
@@ -199,6 +210,30 @@ void CFileSet::PrintASN(CNcbiOstream& out) const
     for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
           i != m_ModuleSets.end(); ++i ) {
         (*i)->PrintASN(out);
+    }
+}
+
+void CFileSet::PrintDTD(CNcbiOstream& out) const
+{
+    out <<
+        "<!-- ======================== -->\n"
+        "<!-- NCBI DTD                 -->\n"
+        "<!-- NCBI ASN.1 mapped to XML -->\n"
+        "<!-- ======================== -->\n"
+        "\n"
+        "<!-- Entities used to give specificity to #PCDATA -->\n"
+        "<!ENTITY % INTEGER '#PCDATA'>\n"
+        "<!ENTITY % ENUM 'EMPTY'>\n"
+        "<!ENTITY % BOOLEAN 'EMPTY'>\n"
+        "<!ENTITY % NULL 'EMPTY'>\n"
+        "<!ENTITY % REAL '#PCDATA'>\n"
+        "<!ENTITY % OCTETS '#PCDATA'>\n"
+        "<!-- ============================================ -->\n"
+        "\n";
+
+    for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
+          i != m_ModuleSets.end(); ++i ) {
+        (*i)->PrintDTD(out);
     }
 }
 

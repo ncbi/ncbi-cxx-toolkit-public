@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/05/24 20:08:31  vasilche
+* Implemented DTD generation.
+*
 * Revision 1.2  2000/04/07 19:26:10  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -69,7 +72,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/typemapper.hpp>
 #include <serial/tool/mcontainer.hpp>
 #include <list>
 #include <map>
@@ -84,7 +86,8 @@ class CFileSet;
 class CFileModules : public CModuleContainer
 {
 public:
-    typedef map<string, AutoPtr<CDataTypeModule> > TModules;
+    typedef list< AutoPtr<CDataTypeModule> > TModules;
+    typedef map<string, CDataTypeModule*> TModulesByName;
 
     CFileModules(const string& fileName);
 
@@ -92,6 +95,7 @@ public:
     bool CheckNames(void) const;
 
     void PrintASN(CNcbiOstream& out) const;
+    void PrintDTD(CNcbiOstream& out) const;
 
     const string& GetSourceFileName(void) const;
     string GetFileNamePrefix(void) const;
@@ -111,6 +115,7 @@ public:
 
 private:
     TModules m_Modules;
+    TModulesByName m_ModulesByName;
     string m_SourceFileName;
     mutable string m_PrefixFromSourceFileName;
 
@@ -137,6 +142,7 @@ public:
     bool CheckNames(void) const;
 
     void PrintASN(CNcbiOstream& out) const;
+    void PrintDTD(CNcbiOstream& out) const;
 
     CDataType* ExternalResolve(const string& moduleName,
                                const string& typeName,
