@@ -124,7 +124,7 @@ protected:
 private:
     TCandidates         m_Candidates;  // Possible candidates for type probing
     TTopLevelMapVector  m_TopLevelMap; // Vector of level object descriptions
-    size_t              m_StreamOffset;// Stream offset of the
+    size_t              m_StreamOffset;// Stream offset of the top level object
 };
 
 
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/07/14 19:25:20  kuznets
+ * Cosmetic fix.
+ *
  * Revision 1.8  2003/06/06 20:26:56  kuznets
  * Added inline function FormatGuess2Serial
  *
