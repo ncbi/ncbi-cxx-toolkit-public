@@ -302,7 +302,7 @@ bool CAnnotObject_Ref::IsPartial(void) const
 inline
 bool CAnnotObject_Ref::IsMappedLocation(int index) const
 {
-    return bool(m_MappedLocation) && m_MappedIndex == index;
+    return bool(m_MappedLocation) && m_MappedIndex == Uint4(index);
 }
 
 
@@ -462,6 +462,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/08/27 21:23:35  vasilche
+* Fixed warning.
+*
 * Revision 1.48  2003/08/27 14:28:50  vasilche
 * Reduce amount of object allocations in feature iteration.
 *
