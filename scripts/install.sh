@@ -107,7 +107,12 @@ fi
 
 
 # Setup an empty install dir (create a new one, or purge an existing one)
-if test -r "$install_dir" ; then
+if test "$with_purge" = "yes" ; then
+   # Delete previous builds' installation, or whatever else happened
+   # to be there...
+   rm -rf "$install_dir"
+   mkdir "$install_dir"
+elif test -r "$install_dir" ; then
    # Must be a directory...
    test -d "$install_dir"  ||  Usage "$install_dir is not a directory"
 
@@ -122,18 +127,6 @@ if test -r "$install_dir" ; then
          test ! -r "$install_dir/$d"  ||  rm -r "$install_dir/$d"  ||  \
             Usage "Cannot delete $install_dir/$d"
       done
-
-      # Delete previous builds' installation
-      if test "$with_purge" = "yes" ; then
-         purge_dirs=`ls $install_dir/*/inc/ncbiconf.h 2>/dev/null | \
-                     sed 's%/inc/ncbiconf\.h *$%%g'`
-         if test "$purge_dirs" != "" ; then
-            for d in $purge_dirs ; do
-               test -h $d  ||  rm -r $d  ||  \
-                 Usage "Failed to purge build dir $d"
-            done
-         fi
-      fi
    fi
 else
    # Create new install dir
