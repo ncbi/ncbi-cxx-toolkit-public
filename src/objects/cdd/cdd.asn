@@ -1,4 +1,4 @@
---$Revision: 1.22 $
+--$Revision: 1.23 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -43,8 +43,10 @@ IMPORTS  Date                    FROM NCBI-General
 -- dealing with lists of preferred tax-nodes 
 
 Cdd-org-ref ::= SEQUENCE {
-  reference   Org-ref,
-  active      BOOLEAN DEFAULT TRUE 
+  reference     Org-ref,
+  active        BOOLEAN DEFAULT TRUE,
+  parent-tax-id INTEGER OPTIONAL,
+  rank          VisibleString OPTIONAL
 }
 Cdd-org-ref-set ::= SET OF Cdd-org-ref
 
