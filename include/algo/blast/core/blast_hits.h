@@ -124,9 +124,11 @@ Int2 BLAST_ReapHitlistByEvalue(BlastHSPListPtr hsp_list,
  * @param program_number Type of BLAST program [in]
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param query_info Auxiliary query information [in]
+ * @param is_ooframe Is out-of-frame gapping used? [in]
 */
-void BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPListPtr hsp_list, 
-                              BlastQueryInfoPtr query_info);
+void 
+BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPListPtr hsp_list, 
+   BlastQueryInfoPtr query_info, Boolean is_ooframe);
 
 /** Adjust subject offsets in an HSP list if only part of the subject sequence
  * was searched.
@@ -168,7 +170,6 @@ BlastHSPListPtr BlastHSPListFree(BlastHSPListPtr hsp_list);
 
 /** Deallocate memory for BLAST results */
 BlastResultsPtr BLAST_ResultsFree(BlastResultsPtr results);
-
 
 #ifdef __cplusplus
 }
