@@ -149,7 +149,6 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
     else {
         x_Initialize(map_feat.GetProduct(), map_feat.GetLocation(), frame);
     }
-    x_CreateSelfMapping();
 }
 
 
@@ -163,7 +162,6 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
       m_Dst_width(0)
 {
     x_Initialize(source, target);
-    x_CreateSelfMapping();
 }
 
 
@@ -177,7 +175,6 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_Dst_width(0)
 {
     x_Initialize(map_align, to_id);
-    x_CreateSelfMapping();
 }
 
 
@@ -191,7 +188,6 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_Dst_width(0)
 {
     x_Initialize(map_align, to_row);
-    x_CreateSelfMapping();
 }
 
 
@@ -220,7 +216,6 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq)
         m_DstRanges[0][target_seq.GetSeq_id_Handle()]
             .push_back(TRange::GetWhole());
     }
-    x_CreateSelfMapping();
 }
 
 
@@ -234,7 +229,6 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap& seq_map,
       m_Dst_width(0)
 {
     x_Initialize(seq_map, dst_id);
-    x_CreateSelfMapping();
 }
 
 
@@ -267,7 +261,6 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t          depth,
                 .push_back(TRange::GetWhole());
         }
     }
-    x_CreateSelfMapping();
 }
 
 
@@ -297,13 +290,53 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t         depth,
             }
         }
     }
-    x_CreateSelfMapping();
 }
 
 
 CSeq_loc_Mapper::~CSeq_loc_Mapper(void)
 {
     return;
+}
+
+
+void CSeq_loc_Mapper::PreserveDestinationLocs(void)
+{
+    for (size_t str_idx = 0; str_idx < m_DstRanges.size(); str_idx++) {
+        NON_CONST_ITERATE(TDstIdMap, id_it, m_DstRanges[str_idx]) {
+            id_it->second.sort();
+            TSeqPos dst_start = kInvalidSeqPos;
+            TSeqPos dst_stop = kInvalidSeqPos;
+            ITERATE(TDstRanges, rg_it, id_it->second) {
+                // Collect and merge ranges
+                if (dst_start == kInvalidSeqPos) {
+                    dst_start = rg_it->GetFrom();
+                    dst_stop = rg_it->GetTo();
+                    continue;
+                }
+                if (rg_it->GetFrom() <= dst_stop + 1) {
+                    // overlapping or abutting ranges, continue collecting
+                    dst_stop = max(dst_stop, rg_it->GetTo());
+                    continue;
+                }
+                // Separate ranges, add conversion and restart collecting
+                CRef<CMappingRange> cvt(new CMappingRange(
+                    id_it->first, dst_start, dst_stop - dst_start + 1,
+                    ENa_strand(str_idx),
+                    *id_it->first.GetSeqId(), dst_start, ENa_strand(str_idx)));
+                m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
+                    TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
+            }
+            if (dst_start < dst_stop) {
+                CRef<CMappingRange> cvt(new CMappingRange(
+                    id_it->first, dst_start, dst_stop - dst_start + 1,
+                    ENa_strand(str_idx),
+                    *id_it->first.GetSeqId(), dst_start, ENa_strand(str_idx)));
+                m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
+                    TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
+            }
+        }
+    }
+    m_DstRanges.clear();
 }
 
 
@@ -525,47 +558,6 @@ void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
         src_id, cvt_src_start, src_strand,
         dst_id, cvt_dst_start, dst_strand,
         cvt_length);
-}
-
-
-void CSeq_loc_Mapper::x_CreateSelfMapping(void)
-{
-    for (size_t str_idx = 0; str_idx < m_DstRanges.size(); str_idx++) {
-        NON_CONST_ITERATE(TDstIdMap, id_it, m_DstRanges[str_idx]) {
-            id_it->second.sort();
-            TSeqPos dst_start = kInvalidSeqPos;
-            TSeqPos dst_stop = kInvalidSeqPos;
-            ITERATE(TDstRanges, rg_it, id_it->second) {
-                // Collect and merge ranges
-                if (dst_start == kInvalidSeqPos) {
-                    dst_start = rg_it->GetFrom();
-                    dst_stop = rg_it->GetTo();
-                    continue;
-                }
-                if (rg_it->GetFrom() <= dst_stop + 1) {
-                    // overlapping or abutting ranges, continue collecting
-                    dst_stop = max(dst_stop, rg_it->GetTo());
-                    continue;
-                }
-                // Separate ranges, add conversion and restart collecting
-                CRef<CMappingRange> cvt(new CMappingRange(
-                    id_it->first, dst_start, dst_stop - dst_start + 1,
-                    ENa_strand(str_idx),
-                    *id_it->first.GetSeqId(), dst_start, ENa_strand(str_idx)));
-                m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
-                    TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
-            }
-            if (dst_start < dst_stop) {
-                CRef<CMappingRange> cvt(new CMappingRange(
-                    id_it->first, dst_start, dst_stop - dst_start + 1,
-                    ENa_strand(str_idx),
-                    *id_it->first.GetSeqId(), dst_start, ENa_strand(str_idx)));
-                m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
-                    TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
-            }
-        }
-    }
-    m_DstRanges.clear();
 }
 
 
@@ -1584,6 +1576,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/04/23 15:34:49  grichenk
+* Added PreserveDestinationLocs().
+*
 * Revision 1.13  2004/04/12 14:35:59  grichenk
 * Fixed mapping of alignments between nucleotides and proteins
 *

@@ -155,6 +155,10 @@ public:
     CSeq_loc_Mapper& SetGapPreserve(void);
     CSeq_loc_Mapper& SetGapRemove(void);
 
+    // Create target-to-target mapping to avoid truncation of ranges
+    // already on the target sequence(s).
+    void PreserveDestinationLocs(void);
+
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
     CRef<CSeq_align> Map(const CSeq_align& src_align);
 
@@ -245,10 +249,6 @@ private:
     void x_InitAlign(const CStd_seg& sseg, size_t to_row);
     void x_InitAlign(const CPacked_seg& pseg, size_t to_row);
 
-    // Create target-to-target mapping to avoid truncation of ranges
-    // already on the target sequence(s).
-    void x_CreateSelfMapping(void);
-
     TRangeIterator x_BeginMappingRanges(CSeq_id_Handle id,
                                         TSeqPos from,
                                         TSeqPos to);
@@ -281,10 +281,11 @@ private:
 
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
 
-    CRef<CScope>    m_Scope;
+    CRef<CScope>      m_Scope;
     // CSeq_loc_Conversion_Set m_Cvt;
-    EMergeFlags     m_MergeFlag;
-    EGapFlags       m_GapFlag;
+    EMergeFlags       m_MergeFlag;
+    EGapFlags         m_GapFlag;
+
     // Sources may have different widths, e.g. in an alignment
     TWidthById      m_Widths;
     bool            m_UseWidth;
@@ -293,8 +294,8 @@ private:
     bool            m_Partial;
 
     mutable TRangesById m_MappedLocs;
-    CRef<CSeq_loc>  m_Dst_loc;
-    TDstStrandMap   m_DstRanges;
+    CRef<CSeq_loc>      m_Dst_loc;
+    TDstStrandMap       m_DstRanges;
 };
 
 
@@ -365,6 +366,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/04/23 15:34:49  grichenk
+* Added PreserveDestinationLocs().
+*
 * Revision 1.9  2004/04/12 14:35:59  grichenk
 * Fixed mapping of alignments between nucleotides and proteins
 *
