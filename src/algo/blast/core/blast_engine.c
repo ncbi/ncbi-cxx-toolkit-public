@@ -44,7 +44,6 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/phi_extend.h>
 #include <algo/blast/core/link_hsps.h>
-#include <algo/blast/core/blast_psi.h>
 
 /** Deallocates all memory in BlastCoreAuxStruct */
 static BlastCoreAuxStruct* 
