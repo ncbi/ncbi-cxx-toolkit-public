@@ -53,7 +53,8 @@ static char const rcsid[] =
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
-#include "blast_input.hpp"
+#include <algo/blast/api/disc_nucl_options.hpp>
+#include "blast_input.hpp" // From working directory
 
 #include <objects/seqalign/Seq_align_set.hpp>
 
@@ -147,9 +148,12 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddDefaultKey("window","window", "Window size for two-hit extension",
                             CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("scantype", "scantype", 
-        "Method for scanning the database: 0 traditional, 1 AG",
-        CArgDescriptions::eInteger, "1");
-    arg_desc->SetConstraint("scantype", new CArgAllow_Integers(0,1));
+        "Method for scanning the database: 0 default; "
+        "1 AG - extension in both directions, \n"
+        "2 traditional - extension to the right,\n"
+        "3 Update of word length on diagonal entries.",
+        CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("scantype", new CArgAllow_Integers(0,3));
 
     arg_desc->AddDefaultKey("varword", "varword", 
         "Should variable word size be used?",
@@ -221,6 +225,9 @@ void
 CBlast2seqApplication::InitObjMgr(void)
 {
     m_ObjMgr = CObjectManager::GetInstance();
+    if (!m_ObjMgr) {
+         throw std::runtime_error("Could not initialize object manager");
+    }
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 }
 
@@ -246,6 +253,12 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
     CArgs args = GetArgs();
 
     EProgram prog = GetBlastProgramNum(args["program"].AsString());
+
+    if (args["lookup"].AsInteger() == 1) {
+        prog = eMegablast;
+        if (args["templen"].AsInteger() > 0) 
+            prog = eDiscMegablast;
+    }
     CBlastOptionsHandle* retval = CBlastOptionsFactory::Create(prog);
     if ( !retval ) {
         NCBI_THROW(CBlastException, eOutOfMemory, "");
@@ -295,26 +308,42 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
     if (program == "blastn") {
+        if (args["templen"].AsInteger()) {
+            // Setting template length involves changing the scanning 
+            // stride as well, which is handled in the derived 
+            // CDiscNucleotideOptionsHandle class, but not in the base
+            // CBlastOptionsHandle class.
+            CDiscNucleotideOptionsHandle* disc_nucl_handle =
+                dynamic_cast<CDiscNucleotideOptionsHandle*>(retval);
+
+            disc_nucl_handle->SetTemplateLength(args["templen"].AsInteger());
+        }
+        if (args["templtype"].AsInteger()) {
+            opt.SetMBTemplateType(args["templtype"].AsInteger());
+        }
         // Setting seed extension method involves changing the scanning 
         // stride as well, which is handled in the derived 
         // CBlastNucleotideOptionsHandle class, but not in the base
         // CBlastOptionsHandle class.
-        CBlastNucleotideOptionsHandle* opts_handle = 
+        CBlastNucleotideOptionsHandle* nucl_handle =
             dynamic_cast<CBlastNucleotideOptionsHandle*>(retval);
-        if (!args["templen"].AsInteger()) {
-            opt.SetVariableWordSize(args["varword"].AsBoolean());
-            switch(args["scantype"].AsInteger()) {
-            case 1:
-                opts_handle->SetSeedExtensionMethod(eRightAndLeft);
-                break;
-            default:
-                opts_handle->SetSeedExtensionMethod(eRight);
-                break;
-            }
-        } else {
-            // Discontiguous Mega BLAST: only one extension method.
-            opts_handle->SetSeedExtensionMethod(eRight); 
+        switch(args["scantype"].AsInteger()) {
+        case 1:
+            nucl_handle->SetSeedExtensionMethod(eRightAndLeft);
+            break;
+        case 2:
+            nucl_handle->SetSeedExtensionMethod(eRight);
+            break;
+        case 3:
+            nucl_handle->SetSeedExtensionMethod(eUpdateDiag);
+            break;
+        default:
+            break;
         }
+        nucl_handle->SetSeedContainerType(eDiagArray);
+
+        opt.SetVariableWordSize(args["varword"].AsBoolean());
+
         // Override the scan step value if it is set by user
         if (args["stride"].AsInteger()) {
             opt.SetScanStep(args["stride"].AsInteger());
@@ -500,6 +529,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2004/08/11 15:25:14  dondosha
+ * Use appropriate derived class for options handle in case of megablast and discontiguous megablast; use scantype argument 0 for default setting and 1-3 for specific types
+ *
  * Revision 1.49  2004/07/21 15:51:24  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added
