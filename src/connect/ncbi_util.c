@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2002/05/07 18:22:10  lavr
+ * Use fLOG_None in LOG_ComposeMessage()
+ *
  * Revision 6.19  2002/02/11 20:36:44  lavr
  * Use "ncbi_config.h"
  *
@@ -215,7 +218,7 @@ extern char* LOG_ComposeMessage
     size_t total_len;
 
     /* Adjust formatting flags */
-    if (call_data->level == eLOG_Trace) {
+    if (call_data->level == eLOG_Trace  &&  format_flags != fLOG_None) {
         format_flags |= fLOG_Full;
     } else if (format_flags == fLOG_Default) {
 #ifdef NDEBUG
