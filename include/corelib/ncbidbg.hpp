@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/11/19 22:17:41  vakatov
+* Forgot "()" in the _ASSERT macro
+*
 * Revision 1.7  1998/11/18 21:00:24  vakatov
 * [_DEBUG]  Fixed a typo in _ASSERT macro
 *
@@ -70,7 +73,7 @@ BEGIN_NCBI_SCOPE
     _diag_ << _FILE_LINE << "Trouble!"; \
 }
 #  define _ASSERT(expr)  { \
-    if ( !expr ) \
+    if ( !(expr) ) \
         { \
               CNcbiDiag _diag_(eDiag_Fatal); \
               _diag_ << _FILE_LINE << "Assertion failed: " << #expr; \
