@@ -3,3 +3,10 @@ _export = NCBI_ID2_EXPORT
 
 [ID2S-Chunk-Id]
 _type = int
+
+[ID2S-Sequence-Piece]
+start._type = TSeqPos
+
+[ID2-Seq-range]
+start._type = TSeqPos
+length._type = TSeqPos
