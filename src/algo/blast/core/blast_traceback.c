@@ -306,15 +306,17 @@ GetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk, BlastHSP* hsp,
    *subject_ptr = subject;
 }
 
-/** Check whether an HSP is already contain within another higher scoring HSP.
+/** Check whether an HSP is already contained within another higher scoring HSP.
  * "Containment" is defined by the macro CONTAINED_IN_HSP.  
  * the implicit assumption here is that HSP's are sorted by score
  * The main goal of this routine is to eliminate double gapped extensions of HSP's.
  *
  * @param hsp_array Full Array of all HSP's found so far. [in]
  * @param hsp HSP to be compared to other HSP's [in]
- * @param max_index compare above HSP to all HSP's in hsp_array up to max_index [in]
- * @param is_ooframe true if out-of-frame gapped alignment (blastx and tblastn only). [in]
+ * @param max_index Compare above HSP to all HSP's in hsp_array up to 
+ *                  max_index [in]
+ * @param is_ooframe TRUE if out-of-frame gapped alignment 
+ *                   (blastx and tblastn only). [in]
  */
 static Boolean
 HSPContainedInHSPCheck(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_index, Boolean is_ooframe)
@@ -415,9 +417,14 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
        align_length < hit_options->min_hit_length) {
       keep = FALSE;
    }
-            
+   
+   /* If we keep this HSP, recalculate its e-value. Even if we use sum 
+      statistics, the individual HSP e-values need to be calculated here,
+      because the scores and the extent of HSPs might have changed, so 
+      linking will have to be done again. */
    if (keep == TRUE) {
       Int4 context;
+      Blast_KarlinBlk** kbp;
       /* For RPS tblastn query and subject are switched, so context for Karlin 
          block should be derived from subject frame. */
       if (program_number == eBlastTypeRpsTblastn)
@@ -425,46 +432,35 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
       else
          context = hsp->context;
 
-      /* If sum statistics is not used, calcualte e-values here. */
-      if (!hit_params->link_hsp_params) {
          
-         Blast_KarlinBlk** kbp;
-         if (score_options->gapped_calculation)
-            kbp = sbp->kbp_gap;
-         else
-            kbp = sbp->kbp;
-         
-         if (hit_options->phi_align) {
-            Blast_HSPPHIGetEvalue(hsp, sbp);
-         } else {
-            /* Divide lambda by the scaling factor, so e-value is 
-               calculated correctly from a scaled score. Since score
-               is an integer, adjusting score before the e-value 
-               calculation would have lead to loss of precision.*/
-            kbp[context]->Lambda /= scale_factor;
-            hsp->evalue = 
-               BLAST_KarlinStoE_simple(hsp->score, kbp[context],
-                  query_info->eff_searchsp_array[context]);
-            kbp[context]->Lambda *= scale_factor;
-         }
-         if (hsp->evalue > hit_options->expect_value) {
-            /* put in for comp. based stats. */
-            keep = FALSE;
-         }
-      }
-
-      /* only one alignment considered for blast[np]. */
-      /* This may be changed by LinkHsps for blastx or tblastn. */
-      hsp->num = 1;
-      if (hit_options->longest_intron > 0) {
-         /* For uneven version of LinkHsps, the individual e-values
-            need to be calculated for each HSP. */
+      if (score_options->gapped_calculation)
+         kbp = sbp->kbp_gap;
+      else
+         kbp = sbp->kbp;
+      
+      if (hit_options->phi_align) {
+         Blast_HSPPHIGetEvalue(hsp, sbp);
+      } else {
+         /* Divide lambda by the scaling factor, so e-value is 
+            calculated correctly from a scaled score. Since score
+            is an integer, adjusting score before the e-value 
+            calculation would have lead to loss of precision.*/
+         kbp[context]->Lambda /= scale_factor;
          hsp->evalue = 
-            BLAST_KarlinStoE_simple(hsp->score, sbp->kbp_gap[context],
-               query_info->eff_searchsp_array[context]);
+            BLAST_KarlinStoE_simple(hsp->score, kbp[context],
+                                    query_info->eff_searchsp_array[context]);
+         kbp[context]->Lambda *= scale_factor;
+      }
+      if (hsp->evalue > hit_options->expect_value) {
+         /* put in for comp. based stats. */
+         keep = FALSE;
       }
 
-      /* remove any scaling of the calculated score */
+      /* only one alignment considered for blast[np].
+         This may be changed by LinkHsps for blastx or tblastn. */
+      hsp->num = 1;
+
+      /* Remove any scaling of the calculated score */
       hsp->score = (Int4) ((hsp->score+(0.5*score_params->scale_factor)) / 
 			   score_params->scale_factor);
    }
