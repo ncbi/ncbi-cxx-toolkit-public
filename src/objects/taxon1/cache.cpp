@@ -262,47 +262,81 @@ s_AfterPrefix( const string& str1, const string& prefix )
     return str1.find_first_not_of( " \t\n\r", pos );
 }
 
-static const string s_sSubspCf( "subsp. cf." );
-static const string s_sSubspAff( "subsp. aff." );
-static const string s_sSubsp( "subsp." );
-static const string s_sSsp( "ssp." );
-static const string s_sF_Sp( "f. sp." );
-static const string s_sFSp( "f.sp." );
-static const string s_sStr( "str." );
-static const string s_sSubstr( "substr." );
-static const string s_sVar( "var." );
-static const string s_sSv( "sv.");
-static const string s_sCv( "cv.");
-static const string s_sPv( "pv.");
-static const string s_sBv( "bv.");
-static const string s_sF( "f.");
-static const string s_sFo( "fo.");
-static const string s_sGrp( "grp.");
+static const char s_achSubsp[] = "subsp.";
+static const char s_achSsp[] = "ssp.";
+static const char s_achF_Sp[] = "f. sp.";
+static const char s_achFSp[] = "f.sp.";
+static const char s_achStr[] = "str.";
+static const char s_achSubstr[] = "substr.";
+static const char s_achVar[] = "var.";
+static const char s_achSv[] = "sv.";
+static const char s_achCv[] = "cv.";
+static const char s_achPv[] = "pv.";
+static const char s_achBv[] = "bv.";
+static const char s_achF[] = "f.";
+static const char s_achFo[] = "fo.";
+static const char s_achGrp[] = "grp.";
 
-static struct SSubtypeAbbr {
-    const string&     m_sAbbr;
+struct SSubtypeAbbr {
+    const char*       m_pchAbbr;
+    size_t            m_nAbbrLen;
     COrgMod::ESubtype m_eSubtype;
-} s_subtypes[] = {
-    { s_sSubsp, COrgMod::eSubtype_sub_species },
-    { s_sSsp,   COrgMod::eSubtype_sub_species },
-    { s_sF_Sp,  COrgMod::eSubtype_forma_specialis },
-    { s_sFSp,   COrgMod::eSubtype_forma_specialis },
-    { s_sStr,   COrgMod::eSubtype_strain },
-    { s_sSubstr,COrgMod::eSubtype_substrain },
-    { s_sVar,   COrgMod::eSubtype_variety },
-    { s_sSv,    COrgMod::eSubtype_serovar },
-    { s_sCv,    COrgMod::eSubtype_cultivar },
-    { s_sPv,    COrgMod::eSubtype_pathovar },
-    { s_sBv,    COrgMod::eSubtype_biovar },
-    { s_sF,     COrgMod::eSubtype_forma },
-    { s_sFo,    COrgMod::eSubtype_forma },
-    { s_sGrp,   COrgMod::eSubtype_group },
-    { s_sGrp,   COrgMod::eSubtype_other } // Means end of array
+};
+
+static SSubtypeAbbr s_Subsp =
+    { s_achSubsp, sizeof(s_achSubsp), COrgMod::eSubtype_sub_species };
+static SSubtypeAbbr s_Ssp =
+    { s_achSsp,   sizeof(s_achSsp),   COrgMod::eSubtype_sub_species };
+static SSubtypeAbbr s_F_Sp =
+    { s_achF_Sp,  sizeof(s_achF_Sp),  COrgMod::eSubtype_forma_specialis };
+static SSubtypeAbbr s_FSp =
+    { s_achFSp,   sizeof(s_achFSp),   COrgMod::eSubtype_forma_specialis };
+static SSubtypeAbbr s_Str =
+    { s_achStr,   sizeof(s_achStr),   COrgMod::eSubtype_strain };
+static SSubtypeAbbr s_Substr=
+    { s_achSubstr,sizeof(s_achSubstr),COrgMod::eSubtype_substrain };
+static SSubtypeAbbr s_Var =
+    { s_achVar,   sizeof(s_achVar),   COrgMod::eSubtype_variety };
+static SSubtypeAbbr s_Sv =
+    { s_achSv,    sizeof(s_achSv),    COrgMod::eSubtype_serovar };
+static SSubtypeAbbr s_Cv =
+    { s_achCv,    sizeof(s_achCv),    COrgMod::eSubtype_cultivar };
+static SSubtypeAbbr s_Pv =
+    { s_achPv,    sizeof(s_achPv),    COrgMod::eSubtype_pathovar };
+static SSubtypeAbbr s_Bv =
+    { s_achBv,    sizeof(s_achBv),    COrgMod::eSubtype_biovar };
+static SSubtypeAbbr s_F =
+    { s_achF,     sizeof(s_achF),     COrgMod::eSubtype_forma };
+static SSubtypeAbbr s_Fo =
+    { s_achFo,    sizeof(s_achFo),    COrgMod::eSubtype_forma };
+static SSubtypeAbbr s_Grp =
+    { s_achGrp,   sizeof(s_achGrp),   COrgMod::eSubtype_group };
+static SSubtypeAbbr s_Endl = { NULL,0,COrgMod::eSubtype_other };
+
+static SSubtypeAbbr* s_apSubtypes[] = {
+    &s_Subsp,
+    &s_Ssp,
+    &s_F_Sp,
+    &s_FSp,
+    &s_Str,
+    &s_Substr,
+    &s_Var,
+    &s_Sv,
+    &s_Cv,
+    &s_Pv,
+    &s_Bv,
+    &s_F,
+    &s_Fo,
+    &s_Grp,
+    &s_Endl
 };
 
 COrgMod::ESubtype
 COrgRefCache::GetSubtypeFromName( string& sName )
 {
+    static const string s_sSubspCf( "subsp. cf." );
+    static const string s_sSubspAff( "subsp. aff." );
+
     string::size_type pos;
     if( sName.find('.') == string::npos ) {
 	return COrgMod::eSubtype_other;
@@ -316,14 +350,16 @@ COrgRefCache::GetSubtypeFromName( string& sName )
     }
 
     /* check for subsp */
-    SSubtypeAbbr* pSubtypeAbbr = &s_subtypes[0];
-    while( pSubtypeAbbr->m_eSubtype != COrgMod::eSubtype_other ) {
-	if( (pos=NStr::FindNoCase( sName, pSubtypeAbbr->m_sAbbr )) != NPOS ) {
-	    sName.erase( pos, pSubtypeAbbr->m_sAbbr.size() );
+    SSubtypeAbbr** ppSubtypeAbbr = &s_apSubtypes[0];
+    while( (*ppSubtypeAbbr)->m_eSubtype != COrgMod::eSubtype_other ) {
+	if( (pos=NStr::FindNoCase( sName,
+	       string((*ppSubtypeAbbr)->m_pchAbbr,
+		      (*ppSubtypeAbbr)->m_nAbbrLen) )) != NPOS ) {
+	    sName.erase( pos, (*ppSubtypeAbbr)->m_nAbbrLen );
 	    sName = NStr::TruncateSpaces( sName, NStr::eTrunc_Begin );
-	    return pSubtypeAbbr->m_eSubtype;
+	    return (*ppSubtypeAbbr)->m_eSubtype;
 	}
-	++pSubtypeAbbr;
+	++ppSubtypeAbbr;
     }
     return COrgMod::eSubtype_other;
 }
@@ -1007,6 +1043,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.13  2003/03/06 16:01:20  domrach
+ * Static initialization corrected for msvc
+ *
  * Revision 6.12  2003/03/05 21:33:52  domrach
  * Enhanced orgref processing. Orgref cache capacity control added.
  *
