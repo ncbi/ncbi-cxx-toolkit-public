@@ -105,5 +105,6 @@ clean:
 	-$(RM) $(SOURCES:=.d)
 
 purge: clean
-	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XDLL) \
-		$(libdir)/$(XLIBDEP) $(libdir)/$(XDLLDEP)
+	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XDLL) $(libdir)/$(XLIBLINK) \
+		$(libdir)/$(XLIBDEP) $(libdir)/$(XDLLDEP) \
+		$(libdir)/$(XLIBDEPLINK)
