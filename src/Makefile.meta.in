@@ -161,7 +161,7 @@ PROJECTS = @PROJECTS@ # File listing relevant project directories.
 RELEVANT_FILE = $(builddir)/relevant.patterns
 $(RELEVANT_FILE): $(PROJECTS)
 	@if test -n "$(PROJECTS)" ; then \
-	    sed -e '/ update-only$$/d; s/^$$/d; s@^@build/@' $(PROJECTS); \
+	    sed -e '/ update-only$$/d; /^$$/d; s@^@build/@' $(PROJECTS); \
 	else \
 	    echo '.*'; \
 	fi > $(RELEVANT_FILE)
