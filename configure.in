@@ -315,6 +315,12 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
+if test "$with_internal" = "yes" ; then
+   internal="internal"   
+else
+   internal=
+fi
+
 
 dnl Check for C standard types
 dnl ---------------------------------
@@ -368,6 +374,7 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 
+AC_SUBST(internal)
 AC_SUBST(script_shell)
 AC_SUBST(make_shell)
 AC_SUBST(obj_ext)
@@ -443,6 +450,7 @@ echo ""
 echo "Optional configure flags:"
 echo " --without-debug    to build the release versions of libs and apps"
 echo " --without-fastcgi  to explicitely prohibit the use of Fast-CGI library"
+echo " --with-internal    to build all projects including internal ones"
 echo ""
 echo "Tools / flags / paths:  $builddir/Makefile.mk"
 echo "Preprocessor defines:   $ncbiconf"
