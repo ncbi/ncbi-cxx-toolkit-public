@@ -53,7 +53,7 @@ COMMON_SetupRunDirCmd()
 
 
 #
-#  Execute a command;  on error, post error message to STDERR and abort.
+#  Post error message to STDERR and abort.
 #  NOTE:  call "COMMON_SetupScriptName()" beforehand for nicer diagnostics.
 #
 
@@ -79,7 +79,7 @@ COMMON_Error()
 
 
 #
-#  Post error message to STDERR and abort.
+#  Execute a command;  on error, post error message to STDERR and abort.
 #  NOTE:  call "COMMON_SetupScriptName()" beforehand for nicer diagnostics.
 #
 
