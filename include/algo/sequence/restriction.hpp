@@ -52,16 +52,19 @@ class CRSite
 {
 public:
     CRSite(int start, int end);
+
     // location of recognition sequence
     void SetStart(const int pos);
     int GetStart(void) const;
     void SetEnd(const int pos);
     int GetEnd(void) const;
+
     // cleavage locations
     // 0 is the bond just before the recognition sequence
-    vector<int>& SetPlusCuts(void);
+    vector<int>&       SetPlusCuts(void);
     const vector<int>& GetPlusCuts(void) const;
-    vector<int>& SetMinusCuts(void);
+
+    vector<int>&       SetMinusCuts(void);
     const vector<int>& GetMinusCuts(void) const;
 private:
     int m_start;
@@ -157,12 +160,14 @@ public:
     void SetSeq(const string& s);
     string& SetSeq(void);
     const string& GetSeq(void) const;
+
     // cleavage locations
     // 0 is the bond just before the recognition sequence
-    vector<int>& SetPlusCuts(void);
+    vector<int>&       SetPlusCuts(void);
     const vector<int>& GetPlusCuts(void) const;
-    vector<int>& SetMinusCuts(void);
+    vector<int>&       SetMinusCuts(void);
     const vector<int>& GetMinusCuts(void) const;
+
     // reset everything
     void Reset(void);
 private:
@@ -238,10 +243,12 @@ public:
     void SetName(const string& s);
     string& SetName(void);
     const string& GetName(void) const;
+
     // cleavage specificities
     // (usually just one, but TaqII has two)
     vector<CRSpec>& SetSpecs(void);
     const vector<CRSpec>& GetSpecs(void) const;
+
     // reset everything
     void Reset(void);
 private:
@@ -300,8 +307,8 @@ class CREnzResult
 {
 public:
     CREnzResult(const string& enzyme_name,
-                const vector<CRSite> definite_sites,
-                const vector<CRSite> possible_sites);
+                const vector<CRSite>& definite_sites,
+                const vector<CRSite>& possible_sites);
     // member access functions
     const string& GetEnzymeName(void) const {return m_enzyme_name;}
     const vector<CRSite>& GetDefiniteSites(void) const {return m_definite_sites;}
@@ -320,8 +327,8 @@ private:
 
 inline
 CREnzResult::CREnzResult(const string& enzyme_name,
-                         const vector<CRSite> definite_sites,
-                         const vector<CRSite> possible_sites)
+                         const vector<CRSite>& definite_sites,
+                         const vector<CRSite>& possible_sites)
 {
     m_enzyme_name = enzyme_name;
     m_definite_sites = definite_sites;
@@ -353,9 +360,14 @@ public:
                      vector<CREnzResult>& results)
     {
         // iterate over enzymes
+        vector<CRSite> definite_sites;
+        vector<CRSite> possible_sites;
+
+        results.reserve(results.size() + enzymes.size());
+
         ITERATE (vector<CREnzyme>, enzyme, enzymes) {
-            vector<CRSite> definite_sites;
-            vector<CRSite> possible_sites;
+            definite_sites.clear();
+            possible_sites.clear();
             const vector<CRSpec>& specs = enzyme->GetSpecs();
             // iterate over specificities for this enzyme
             ITERATE (vector<CRSpec>, spec, specs) {
@@ -503,6 +515,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/13 17:40:26  dicuccio
+ * Formatting fixes.  Changes some pass-by-val to pass-by-reference.  Fixed
+ * complement table
+ *
  * Revision 1.3  2003/08/13 16:42:11  dicuccio
  * Compilation fixes for MSVC
  *
