@@ -58,6 +58,7 @@
  *  SOCK_Shutdown
  *  SOCK_Close
  *  SOCK_Wait
+ *  SOCK_Poll
  *  SOCK_SetTimeout
  *  SOCK_GetReadTimeout
  *  SOCK_GetWriteTimeout
@@ -228,7 +229,7 @@ extern EIO_Status SOCK_ShutdownAPI(void);
 
 /* [SERVER-side]  Create and initialize the server-side(listening) socket
  * (socket() + bind() + listen())
- * NOTE:  on some systems, "backlog" can be silently limited down to 128(or 5).
+ * NOTE: on some systems, "backlog" can be silently limited down to 128 (or 5).
  */
 extern EIO_Status LSOCK_Create
 (unsigned short port,    /* [in]  the port to listen at                  */
@@ -238,8 +239,8 @@ extern EIO_Status LSOCK_Create
 
 
 /* [SERVER-side]  Accept connection from a client.
- * NOTE: the "*timeout" is for this accept() only.  To set i/o timeout,
- *       use SOCK_SetTimeout();  the timeout is infinite by default.
+ * NOTE: the "*timeout" is for this accept() only.  To set I/O timeout,
+ *       use SOCK_SetTimeout();  all I/O timeouts are infinite by default.
  */
 extern EIO_Status LSOCK_Accept
 (LSOCK           lsock,    /* [in]  handle of a listening socket */
@@ -325,13 +326,19 @@ extern EIO_Status SOCK_Wait
  );
 
 
-/* Block until at least one of the sockets enlisted in "socks" array
+/* Block until at least one of the sockets enlisted in "polls" array
  * (of size "n") becomes available for requested operation (event),
  * or until timeout expires (wait indefinitely if timeout is passed NULL).
  * Return eIO_Success if at least one socket was found ready; eIO_Timeout
  * if timeout expired; eIO_Unknown if underlying system call(s) failed.
- * NOTE: for a socket found not ready for an operation, eIO_Open is returned
- *       in its "revent"; for a failing socket, eIO_Close is returned.
+ * NOTE1: for a socket found not ready for an operation, eIO_Open is returned
+ *        in its "revent"; for a failing socket, eIO_Close is returned;
+ * NOTE2: this call can return eIO_InvalidArg if a non-NULL socket polled with
+ *        a bad "event" (like eIO_Open or eIO_Close);
+ * NOTE3: if either both "n" and "polls" are NULL, or all sockets in "polls"
+ *        are NULL, then the returned result is either
+ *        eIO_Timeout (after the specified amount of time was spent idle), or
+ *        eIO_Interrupted (if signal came while the waiting was in progress).
  */
 
 typedef struct {
@@ -341,8 +348,8 @@ typedef struct {
 } SSOCK_Poll;
 
 extern EIO_Status SOCK_Poll
-(size_t          n,         /* [in]      # of SSOCK_Poll elems in "socks"    */
- SSOCK_Poll      socks[],   /* [in|out]  array of query/result structures    */
+(size_t          n,         /* [in]      # of SSOCK_Poll elems in "polls"    */
+ SSOCK_Poll      polls[],   /* [in|out]  array of query/result structures    */
  const STimeout* timeout,   /* [in]      max time to wait (infinite if NULL) */
  size_t*         n_ready    /* [out]     # of ready sockets  (can be NULL)   */
  );
@@ -552,6 +559,9 @@ extern char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2002/08/15 18:44:18  lavr
+ * SOCK_Poll() documented in more details
+ *
  * Revision 6.19  2002/08/12 14:59:12  lavr
  * Additional (last) argument for SOCK_Write: write_mode
  *
