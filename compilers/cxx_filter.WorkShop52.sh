@@ -23,10 +23,7 @@ egrep -v -e '
 '$std_incpath_Cstd'\./sstream", line 126:
 ^"/netopt/ncbi_tools/include/..*\.h", line [0-9]*: Warning \(Anachronism\): Attempt to redefine .* without using #undef\.$
 ^"/netopt/Sybase/clients/current/include/sybdb\.h", line [0-9]*: Warning: There are two consecutive underbars in "db__
-: Warning: Could not find source for std::basic_string.*::npos
-: Warning: Could not find source for std::is[a-z][a-z]*\(int\)
-: Warning: Could not find source for std::toupper\(int\)\.
-: Warning: Could not find source for std::tolower\(int\)\.
+: Warning: Could not find source for
 : Warning: String literal converted to char\* in
 :     Where: While specializing "std::basic_.*stream<char, std::char_traits<char>
 :     Where: Specialized in non-template code\.
