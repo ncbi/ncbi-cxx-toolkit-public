@@ -61,6 +61,14 @@ public:
 
     void SetColumnSeparator(const string& col_separator);
 
+    enum EPrintFieldNames
+    {
+        ePrintNames,
+        eDropNames
+    };
+
+    void SetColumnNames(EPrintFieldNames print_names);
+
     /// Convert BDB file into text file
     void Dump(const string& dump_file_name, CBDB_File& db);
 
@@ -68,13 +76,18 @@ public:
     void Dump(CNcbiOstream& out, CBDB_File& db);
 
 protected:
-    string     m_ColumnSeparator;
+    string               m_ColumnSeparator;
+    EPrintFieldNames     m_PrintNames;
 }; 
+
+/* @} */
+
 
 
 inline
 CBDB_FileDumper::CBDB_FileDumper(const string& col_separator)
-: m_ColumnSeparator(col_separator)
+: m_ColumnSeparator(col_separator),
+  m_PrintNames(ePrintNames) 
 {
 }
 
@@ -97,7 +110,13 @@ void CBDB_FileDumper::SetColumnSeparator(const string& col_separator)
     m_ColumnSeparator = col_separator;
 }
 
-/* @} */
+inline
+void CBDB_FileDumper::SetColumnNames(EPrintFieldNames print_names)
+{
+    m_PrintNames = print_names;
+}
+
+
 
 END_NCBI_SCOPE
 
@@ -106,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/28 14:56:51  kuznets
+ * Added option to print field names when dumping the data
+ *
  * Revision 1.2  2003/10/27 14:27:07  kuznets
  * Minor compilation bug fixed.
  *
