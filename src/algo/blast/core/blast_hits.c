@@ -86,7 +86,7 @@ BlastHSP* BlastHSPFree(BlastHSP* hsp)
 }
 
 Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
-        BlastHSPList* hsp_list, const BlastScoringOptions* score_options, 
+        BlastHSPList* hsp_list, Boolean gapped_calculation, 
         BlastScoreBlk* sbp)
 {
    BlastHSP* hsp;
@@ -98,7 +98,7 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
    if (hsp_list == NULL)
       return 1;
    
-   if (score_options->gapped_calculation)
+   if (gapped_calculation)
       kbp = sbp->kbp_gap_std;
    else
       kbp = sbp->kbp_std;
@@ -986,10 +986,10 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
       context_factor = 1;
    }
 
-   /* Sort the HSPs by e-value */
+   /* Sort the HSPs by score */
    if (hsp_list->hspcnt > 1) {
       qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
-               score_compare_hsps);
+            score_compare_hsps);
    }
 
    /* Rearrange HSPs into multiple hit lists if more than one query */

@@ -297,7 +297,8 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          be zero. */
       if (gap_align->rps_blast == FALSE)
          status = BLAST_GetNonSumStatsEvalue(program_number, query_info, 
-                     hsp_list, score_options, gap_align->sbp);
+                     hsp_list, score_options->gapped_calculation, 
+                     gap_align->sbp);
    }
    
    /* Discard HSPs that don't pass the e-value test */

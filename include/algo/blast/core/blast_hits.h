@@ -147,11 +147,11 @@ Int2 BLAST_SortResults(BlastHSPResults* results);
  * @param query_info Auxiliary query information - needed only for effective
                      search space calculation if it is not provided [in]
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
- * @param score_options Needed only to check if gapped calculation is done [in]
+ * @param gapped_calculation Is this for a gapped or ungapped search? [in]
  * @param sbp Structure containing statistical information [in]
  */
 Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
-        BlastHSPList* hsp_list, const BlastScoringOptions* score_options, 
+        BlastHSPList* hsp_list, Boolean gapped_calculation, 
         BlastScoreBlk* sbp);
 
 /** Calculate e-value for an HSP found by PHI BLAST.
