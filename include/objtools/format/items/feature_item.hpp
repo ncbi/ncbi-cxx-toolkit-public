@@ -209,7 +209,8 @@ private:
     pair<TQCI, TQCI> x_GetQual(EFeatureQualifier slot) const {
         return const_cast<const TQuals&>(m_Quals).GetQuals(slot);
     }
-    
+    void x_DropIllegalQuals(void) const;
+
     // format
     void x_FormatQuals(CFlatFeature& ff) const;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
@@ -300,6 +301,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/05/19 14:42:38  shomrat
+* + x_DropIllegalQuals
+*
 * Revision 1.15  2004/05/07 15:21:50  shomrat
 * + Helper function x_GetStringQual(..)
 *
