@@ -158,10 +158,81 @@ void SSystemFastMutex::ThrowTryLockFailed(void)
                "Mutex check (TryLock) failed");
 }
 
+void SSystemMutex::Destroy(void)
+{
+    xncbi_Validate(m_Count == 0, "Destruction of locked mutex");
+    m_Mutex.Destroy();
+}
+
+#if !defined(NCBI_NO_THREADS)
+void SSystemMutex::Lock(void)
+{
+    m_Mutex.CheckInitialized();
+
+    CThreadSystemID owner = CThreadSystemID::GetCurrent();
+    if ( m_Count > 0 && owner == m_Owner ) {
+        // Don't lock twice, just increase the counter
+        m_Count++;
+        return;
+    }
+
+    // Lock the mutex and remember the owner
+    m_Mutex.Lock();
+    _ASSERT(m_Count == 0);
+    m_Owner = owner;
+    m_Count = 1;
+}
+
+bool SSystemMutex::TryLock(void)
+{
+    m_Mutex.CheckInitialized();
+
+    CThreadSystemID owner = CThreadSystemID::GetCurrent();
+    if ( m_Count > 0 && owner == m_Owner ) {
+        // Don't lock twice, just increase the counter
+        m_Count++;
+        return true;
+    }
+
+    // If TryLock is successful, remember the owner
+    if ( m_Mutex.TryLock() ) {
+        _ASSERT(m_Count == 0);
+        m_Owner = owner;
+        m_Count = 1;
+        return true;
+    }
+
+    // Cannot lock right now
+    return false;
+}
+
+void SSystemMutex::Unlock(void)
+{
+    m_Mutex.CheckInitialized();
+
+    // No unlocks by threads other than owner.
+    // This includes no unlocks of unlocked mutex.
+    CThreadSystemID owner = CThreadSystemID::GetCurrent();
+    if ( m_Count == 0 || owner != m_Owner ) {
+        ThrowNotOwned();
+    }
+
+    // No real unlocks if counter > 1, just decrease it
+    if (--m_Count > 0) {
+        return;
+    }
+
+    _ASSERT(m_Count == 0);
+    // This was the last lock - clear the owner and unlock the mutex
+    m_Mutex.Unlock();
+}
+#endif
+
 void SSystemMutex::ThrowNotOwned(void)
 {
+    abort();
     NCBI_THROW(CMutexException, eOwner,
-               "Mutex is not owner by current thread");
+               "Mutex is not owned by current thread");
 }
 
 bool CAutoInitializeStaticBase::NeedInitialization(void)
@@ -954,6 +1025,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/09/02 16:08:49  vasilche
+ * Fixed race condition with optimization on some compilers - added 'volatile'.
+ * Moved mutex Lock/Unlock methods out of inline section - they are quite complex.
+ *
  * Revision 1.10  2003/05/06 16:12:24  vasilche
  * Added check for mutexes located in stack.
  *

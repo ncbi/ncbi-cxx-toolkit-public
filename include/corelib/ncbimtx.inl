@@ -169,78 +169,26 @@ void SSystemMutex::InitializeDynamic(void)
     m_Count = 0;
 }
 
-inline
-void SSystemMutex::Destroy(void)
-{
-    m_Mutex.Destroy();
-}
-
+#if defined(NCBI_NO_THREADS)
+// empty version of Lock/Unlock methods for inlining
 inline
 void SSystemMutex::Lock(void)
 {
-    m_Mutex.CheckInitialized();
-
-    CThreadSystemID owner = CThreadSystemID::GetCurrent();
-    if ( m_Count > 0 && owner == m_Owner ) {
-        // Don't lock twice, just increase the counter
-        m_Count++;
-        return;
-    }
-
-    // Lock the mutex and remember the owner
-    m_Mutex.Lock();
-    _ASSERT(m_Count == 0);
-    m_Owner = owner;
-    m_Count = 1;
 }
 
 
 inline
 bool SSystemMutex::TryLock(void)
 {
-    m_Mutex.CheckInitialized();
-
-    CThreadSystemID owner = CThreadSystemID::GetCurrent();
-    if ( m_Count > 0 && owner == m_Owner ) {
-        // Don't lock twice, just increase the counter
-        m_Count++;
-        return true;
-    }
-
-    // If TryLock is successful, remember the owner
-    if ( m_Mutex.TryLock() ) {
-        _ASSERT(m_Count == 0);
-        m_Owner = owner;
-        m_Count = 1;
-        return true;
-    }
-
-    // Cannot lock right now
-    return false;
+    return true;
 }
 
 
 inline
 void SSystemMutex::Unlock(void)
 {
-    m_Mutex.CheckInitialized();
-
-    // No unlocks by threads other than owner.
-    // This includes no unlocks of unlocked mutex.
-    CThreadSystemID owner = CThreadSystemID::GetCurrent();
-    if ( m_Count == 0 || owner != m_Owner ) {
-        ThrowNotOwned();
-    }
-
-    // No real unlocks if counter > 1, just decrease it
-    if (--m_Count > 0) {
-        return;
-    }
-
-    _ASSERT(m_Count == 0);
-    // This was the last lock - clear the owner and unlock the mutex
-    m_Mutex.Unlock();
 }
+#endif
 
 #if defined(NEED_AUTO_INITIALIZE_MUTEX)
 
@@ -476,6 +424,10 @@ void CMutexGuard::Guard(SSystemMutex& mtx)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/09/02 16:08:48  vasilche
+ * Fixed race condition with optimization on some compilers - added 'volatile'.
+ * Moved mutex Lock/Unlock methods out of inline section - they are quite complex.
+ *
  * Revision 1.4  2003/09/02 15:41:05  ucko
  * Re-sync preprocessor guards with ncbimtx.hpp.
  *

@@ -127,14 +127,35 @@ public:
             return id;
         }
 
+    /// Assignment operator for thread ID.
+    const CThreadSystemID& operator=(const CThreadSystemID& id)
+        {
+            m_ID = id.m_ID;
+            return *this;
+        }
+    const volatile CThreadSystemID&
+    operator=(const volatile CThreadSystemID& id) volatile
+        {
+            m_ID = id.m_ID;
+            return *this;
+        }
+
     /// Equality operator for thread ID.
     bool operator==(const CThreadSystemID& id) const
+        {
+            return m_ID == id.m_ID;
+        }
+    bool operator==(const volatile CThreadSystemID& id) const volatile
         {
             return m_ID == id.m_ID;
         }
 
     /// Non-equality operator for thread ID.
     bool operator!=(const CThreadSystemID& id) const
+        {
+            return m_ID != id.m_ID;
+        }
+    bool operator!=(const volatile CThreadSystemID& id) const volatile
         {
             return m_ID != id.m_ID;
         }
@@ -303,9 +324,9 @@ class CMutexGuard;
 
 struct NCBI_XNCBI_EXPORT SSystemMutex
 {
-    SSystemFastMutex m_Mutex;   ///< Mutex value
-    CThreadSystemID  m_Owner;   ///< Platform-dependent owner thread ID
-    int              m_Count;   ///< # of recursive (in the same thread) locks
+    SSystemFastMutex m_Mutex; ///< Mutex value
+    volatile CThreadSystemID m_Owner; ///< Platform-dependent owner thread ID
+    volatile int m_Count; ///< # of recursive (in the same thread) locks
 
     /// Acquire mutex for the current thread.
     void Lock(void);
@@ -908,9 +929,9 @@ private:
     
     auto_ptr<CInternalRWLock>  m_RW;    ///< Platform-dependent RW-lock data
     
-    CThreadSystemID            m_Owner; ///< Writer ID, one of the readers ID
+    volatile CThreadSystemID   m_Owner; ///< Writer ID, one of the readers ID
     
-    int                        m_Count; ///< Number of readers (if >0) or
+    volatile int               m_Count; ///< Number of readers (if >0) or
                                         ///< writers (if <0)
 
     
@@ -1081,6 +1102,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/09/02 16:08:48  vasilche
+ * Fixed race condition with optimization on some compilers - added 'volatile'.
+ * Moved mutex Lock/Unlock methods out of inline section - they are quite complex.
+ *
  * Revision 1.24  2003/09/02 15:06:14  siyan
  * Minor comment changes.
  *
