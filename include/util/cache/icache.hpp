@@ -1,0 +1,290 @@
+#ifndef UTIL___ICACHE__HPP
+#define UTIL___ICACHE__HPP
+
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Anatoliy Kuznetsov
+ *
+ * File Description: cache interface specs.
+ *
+ */
+
+/// @file icache.hpp
+/// Cache interface specs. 
+///
+/// File describes interfaces used to create local cache of 
+/// binary large objects (BLOBS).
+
+
+#include <util/reader_writer.hpp>
+#include <string>
+
+
+BEGIN_NCBI_SCOPE
+
+
+
+/// BLOB cache read/write/maintanance interface.
+///
+/// ICache describes caching service. Any large binary object
+/// can be stored in cache and later retrived. Such cache is a 
+/// temporary storage and some objects can be purged from cache based
+/// on an immediate request, version or access time 
+/// based replacement (or another implementation specific depreciation rule).
+///
+/// Cache elements are accesed by key-subkey pair. 
+/// 
+class ICache
+{
+public:
+    
+    /// ICache can keeps timestamps of every cache entry.
+    /// This enum defines the policy how it is managed.
+    /// Different policies can be combined by OR (|)
+    /// @sa SetTimeStampPolicy
+    enum ETimeStampPolicy {
+
+        /// Timestamp management disabled
+        fNoTimeStamp       = 0,
+
+        /// Cache element is created with a certain timestamp (default)
+        fTimeStampOnCreate = (1 << 0),
+
+        /// Timestamp is updated every on every access (read or write)
+        fTimeStampOnRead   = (1 << 1),
+        
+        /// Timestamp full key-subkey pair. By default only key is taken
+        /// into account
+        fTrackSubKey       = (1 << 2),
+
+        /// Expire objects older than a certain time frame
+        /// Example: If object is not accessed within a week it is 
+        ///          droped from the cache.
+        fExpireLeastFrequentlyUsed  = (1 << 3),
+
+        /// Expired objects should be deleted on cache mount (Open)
+        fPurgeOnStartup             = (1 << 4),
+
+        /// Expiration timeout is checked on any access to cache element
+        fCheckExpirationAlways      = (1 << 5)
+    };
+
+    typedef int TTimeStampFlags;
+
+    /// Set timestamp update policy
+    /// @param policy
+    ///   ORed combination of TimeStampUpdatePolicy masks.
+    virtual void SetTimeStampPolicy(TTimeStampFlags policy, int timeout) = 0;
+
+    /// Get timestamp policy
+    /// @return
+    ///    Timestamp policy
+    virtual TTimeStampFlags GetTimeStampPolicy() const = 0;
+
+    /// Get expiration timeout
+    /// @return
+    ///    Expiration timeout in seconds
+    /// @sa GetExpirationPolicy(), SetExpirationPolicy()
+    virtual int GetTimeout() = 0;
+
+
+    /// If to keep already cached versions of the BLOB when storing
+    /// another version of it (not necessarily a newer one)
+    /// @sa Store(), GetWriteStream()
+    enum EKeepVersions {
+        /// Do not delete other versions of cache entries
+        eKeepAll,
+        /// Delete the earlier (than the one being stored) versions of
+        /// the BLOB
+        eDropOlder,
+        /// Delete all versions of the BLOB, even those which are newer
+        /// than the one being stored
+        eDropAll
+    };
+
+    /// Set version retention policy
+    ///
+    /// @param policy
+    ///    Version retetion mode
+    virtual void SetVersionRetention(EKeepVersions policy) = 0;
+
+    /// Get version retention
+    EKeepVersions GetVersionRetention() const = 0;
+
+    /// Add or replace BLOB
+    ///
+    /// @param key 
+    ///    BLOB identification key
+    /// @param key 
+    ///    BLOB identification sub-key
+    /// @param version 
+    ///    BLOB version
+    /// @param data 
+    ///    pointer on data buffer
+    /// @param size 
+    ///    data buffer size
+    /// @param flag 
+    ///    indicator to keep old BLOBs or drop it from the cache
+    virtual void Store(const string&  key,
+                       const string&  subkey,
+                       int            version,
+                       const void*    data,
+                       size_t         size) = 0;
+
+    /// Check if BLOB exists, return BLOB size.
+    ///
+    /// @param key 
+    ///    BLOB identification key
+    /// @param subkey
+    ///    BLOB identification subkey
+    /// @param version 
+    ///    BLOB version
+    /// @return 
+    ///    BLOB size or 0 if it doesn't exist
+    virtual size_t GetSize(const string&  key,
+                           const string&  subkey,
+                           int            version) = 0;
+
+    /// Fetch the BLOB
+    ///
+    /// @param key 
+    ///    BLOB identification key
+    /// @param subkey
+    ///    BLOB identification subkey
+    /// @param version 
+    ///    BLOB version
+    /// @param 
+    ///    buf pointer on destination buffer
+    /// @param 
+    ///    size buffer size
+    /// @return 
+    ///    FALSE if BLOB doesn't exist
+    ///
+    /// @note Throws an exception if provided memory buffer is insufficient 
+    /// to read the BLOB
+    virtual bool Read(const string& key, 
+                      const string& subkey,
+                      int           version, 
+                      void*         buf, 
+                      size_t        buf_size) = 0;
+
+    /// Return sequential stream interface to read BLOB data.
+    /// 
+    /// @param key 
+    ///    BLOB identification key
+    /// @param subkey
+    ///    BLOB identification subkey
+    /// @param version 
+    ///    BLOB version
+    /// @return Interface pointer or NULL if BLOB does not exist
+    virtual IReader* GetReadStream(const string&  key, 
+                                   const string&  subkey,
+                                   int   version) = 0;
+
+    /// Return sequential stream interface to write BLOB data.
+    ///
+    /// @param key 
+    ///    BLOB identification key
+    /// @param subkey
+    ///    BLOB identification subkey
+    /// @param version 
+    ///    BLOB version
+    /// @return Interface pointer or NULL if BLOB does not exist
+    virtual IWriter* GetWriteStream(const string&    key,
+                                    const string&    subkey,
+                                    int              version) = 0;
+
+    /// Remove all versions of the specified BLOB
+    ///
+    /// @param key BLOB identification key
+    virtual void Remove(const string& key) = 0;
+
+    /// Return last access time for the specified cache entry
+    ///
+    /// Class implementation may want to implement access time based
+    /// aging scheme for cache managed objects. In this case it needs to
+    /// track time of every request to BLOB data.
+    ///
+    /// @param key 
+    ///    BLOB identification key
+    /// @param subkey
+    ///    BLOB identification subkey
+    /// @param version 
+    ///    BLOB version
+    /// @return 
+    ///    last access time
+    /// @sa TimeStampUpdatePolicy
+    virtual time_t GetAccessTime(const string&  key,
+                                 const string&  subkey,
+                                 int            version) = 0;
+
+    /// Delete all BLOBs with access time older than specified
+    ///
+    /// @param access_time 
+    ///    time point (objects newer than that to keep in cache)
+    /// @param keep_last_version 
+    ///    type of cleaning action
+    virtual void Purge(time_t           access_time,
+                       EKeepVersions    keep_last_version = eDropAll) = 0;
+
+    /// Delete BLOBs with access time older than specified
+    /// 
+    /// Function finds all BLOB versions with the specified key
+    /// and removes the old instances.
+    /// @param key
+    ///    BLOB key
+    /// @param subkey
+    ///    BLOB identification subkey
+    /// @param access_time 
+    ///    time point (objects newer than that to keep in cache)
+    /// @param keep_last_version 
+    ///    type of cleaning action
+    virtual void Purge(const string&    key,
+                       const string&    subkey,
+                       time_t           access_time,
+                       EKeepVersions    keep_last_version = eDropAll) = 0;
+
+
+    virtual ~ICache() {}
+};
+
+
+END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2003/11/21 12:51:31  kuznets
+ * Added new refactored interface for local caching.
+ * It's supposed after some work to replace the existing BLOB cache and Int
+ * cache and work for all our caching needs.
+ * Interface is in the design stage now, all comments are welcome.
+ *
+ * ===========================================================================
+ */
+
+#endif  /* UTIL___BLOB_CACHE__HPP */
