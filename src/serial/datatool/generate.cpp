@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/10/22 15:18:19  grichenk
+* Fixed combined HPP generation.
+*
 * Revision 1.36  2001/10/18 20:10:34  grichenk
 * Save combining header on -oc
 *
@@ -360,7 +363,8 @@ void CCodeGenerator::GenerateCode(void)
                 ERR_POST(Fatal << "Cannot create file: "<<fileName);
             
             iterate ( TOutputFiles, filei, m_Files ) {
-                out << "#include \""<<BaseName(filei->first)<<suffix<<"\"\n";
+                out << "#include \""<<BaseName(filei->first)<<
+                    suffix<<"\"\n";
             }
 
             out.close();
@@ -379,7 +383,9 @@ void CCodeGenerator::GenerateCode(void)
             ERR_POST(Fatal << "Cannot create file: " << fileName);
 
         iterate ( TOutputFiles, filei, m_Files ) {
-            out << "#include \"" << BaseName(filei->first) << suffix << "\"\n";
+            out << "#include <" <<
+                Path(m_FileNamePrefix, BaseName(filei->first)) <<
+                suffix << ">\n";
         }
 
         out.close();
