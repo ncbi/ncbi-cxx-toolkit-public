@@ -1,0 +1,119 @@
+<!--#set var="TITLE" value="NCBI C++ CGI library" -->
+<!--#set var="DOCROOT" value="../.." -->
+<!--#include virtual="../../ssi/header.shtml" -->
+
+
+<div align="Center">
+<H1>Object Manager.</H1>
+</div>
+<div align="Left">
+<H2>Framework setup.</H2>
+</div>
+
+<p>
+This document describes framework setup for UNIX operating system.
+<br>
+First step in using <var>Object Manager</var> is creation of a separate project folder
+and a makefile. On CVS C++ tree we have created a special folder, in which we would
+suggest putting your first <var>Object Manager</var> - related projects. There is also a sample
+project, which could serve as a starting point.
+<br>
+So, what you should do first is
+</p>
+<ul>
+<li>extract <VAR>Object Manager</VAR> sample project from the C++ tree,</li>
+<li>create your own project folder,</li>
+<li>copy sample project files into your folder,</li>
+<li>generate a makefile,</li>
+<li>build the project.</li>
+</ul>
+
+<hr>
+<p>
+1. Create a working folder. Let us suggest this folder is called <i>omlab</i> and is located
+in your home directory.
+<pre>
+mkdir ~/<i>omlab</i>
+cd ~/<i>omlab</i>
+</pre>
+</p>
+
+
+<hr>
+<p>
+2. Extract <VAR>Object Manager</VAR> sample project from the C++ tree.
+<pre>
+$NCBI/c++/scripts/import_project.sh internal/objmgr_lab
+</pre>
+</p>
+
+
+<hr>
+<p>
+3. Create your own project folder - we suggest using your user name, so let us call it <i>userid</i>, -
+add it to the CVS tree:
+<pre>
+cd ~/<i>omlab</i>/internal/c++/src/internal/objmgr_lab
+mkdir <i>userid</i>
+cvs add <i>userid</i>
+</pre>
+</p>
+
+
+<hr>
+<p>
+4. Copy sample files, add them to the CVS tree as well.
+<pre>
+cd <i>userid</i>
+cp ../sample/Makefile.in .
+cp ../sample/Makefile.task.app .
+cp ../sample/task.cpp .
+cvs add Makefile.in Makefile.task.app task.cpp
+cvs commit -m "Object Manager sample project. Initial revision"
+</pre>
+</p>
+
+
+<hr>
+<p>
+5. Generate a makefile using <i>import_project.sh</i> shell script
+<pre>
+cd ~/omlab
+$NCBI/c++/scripts/import_project.sh internal/objmgr_lab
+</pre>
+</p>
+
+
+<hr>
+<p>
+6. Build your project.
+<pre>
+cd ~/<i>omlab</i>/internal/c++/src/internal/objmgr_lab/<i>userid</i>
+make
+</pre>
+</p>
+
+
+<hr>
+<p>
+7. Run the sample application.
+<pre>
+./omtask1 -gi 2
+</pre>
+The output looks like this:
+<pre>
+First ID = emb|A00002.1|A00002
+Sequence: length=194 data=\0\0\x03\x03\x01\0\x03\x02\x01\x02
+Desc count: 1
+Feat count (whole, any):       0
+Feat count (whole, gene):      0
+Feat count (int. 0..9, any):   0
+Feat count (TSE only, 0..9):   0
+Annot count (whole, any):      0
+Done
+</pre>
+</p>
+
+
+
+<!--#include virtual="../../ssi/footer.shtml" -->
