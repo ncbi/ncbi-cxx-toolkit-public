@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2000/10/20 17:03:49  lavr
+ * Added 'const' to SConnNetInfo in 'SERV_OpenEx'
+ *
  * Revision 6.7  2000/10/05 22:40:06  lavr
  * Additional parameter 'info' in a call to 'Open' for service mapper
  *
@@ -79,23 +82,23 @@ typedef struct SSERV_IterTag* SERV_ITER;
  * failed. This scheme permits to use any combination of service mappers.
  */
 SERV_ITER SERV_OpenSimple
-(const char*       service          /* service name */
+(const char*         service        /* service name */
  );
 
 SERV_ITER SERV_Open
-(const char*       service,         /* service name */
- TSERV_Type        type,            /* mask of type of servers requested */
- unsigned int      preferred_host,  /* preferred host to use service on */
- SConnNetInfo*     info             /* connection information */
+(const char*         service,       /* service name */
+ TSERV_Type          type,          /* mask of type of servers requested */
+ unsigned int        preferred_host,/* preferred host to use service on */
+ const SConnNetInfo* info           /* connection information */
  );
 
 SERV_ITER SERV_OpenEx
-(const char*        service,        /* service name */
- TSERV_Type         type,           /* mask of type of servers requested */
- unsigned int       preferred_host, /* preferred host to use service on */
- SConnNetInfo*      info,           /* connection information */
- const SSERV_Info** skip,           /* array of servers NOT to select */
- size_t             n_skip          /* number of servers in preceding array */
+(const char*         service,       /* service name */
+ TSERV_Type          type,          /* mask of type of servers requested */
+ unsigned int        preferred_host,/* preferred host to use service on */
+ const SConnNetInfo* info,          /* connection information */
+ const SSERV_Info**  skip,          /* array of servers NOT to select */
+ size_t              n_skip         /* number of servers in preceding array */
  );
 
 
@@ -104,7 +107,7 @@ SERV_ITER SERV_OpenEx
  * it will be freed automatically upon iterator destruction.
  */
 const SSERV_Info* SERV_GetNextInfo
-(SERV_ITER         iter             /* handle obtained via 'SERV_Open*' call */
+(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
  );
 
 
@@ -112,7 +115,7 @@ const SSERV_Info* SERV_GetNextInfo
  * Must be called to finish lookup process.
  */
 void SERV_Close
-(SERV_ITER         iter             /* handle obtained via 'SERV_Open*' call */
+(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
  );
 
 
