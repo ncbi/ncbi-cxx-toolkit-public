@@ -100,6 +100,7 @@ void CEmblGatherer::x_DoSingleSection(const CBioseq& seq) const
 
     // Features
     ItemOS() << new CFeatHeaderItem(ctx);
+    x_GatherSourceFeatures();
     x_GatherFeatures();
     // Base count
     TMode mode = ctx.GetMode();
@@ -123,6 +124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 16:50:31  shomrat
+* gather source features separately
+*
 * Revision 1.3  2004/01/14 16:11:48  shomrat
 * using ctrl_items
 *
