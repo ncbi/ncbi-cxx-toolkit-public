@@ -37,35 +37,38 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CFeat_CI::CFeat_CI(CScope& scope,
-                   const CSeq_loc& loc,
-                   SAnnotSelector::TFeatChoice feat_choice,
-                   CAnnot_CI::EOverlapType overlap_type,
-                   EResolveMethod resolve,
-                   EFeat_Location loc_type)
-    : CAnnotTypes_CI(scope, loc,
-          SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
-                         feat_choice,
-                         loc_type == e_Product),
-          overlap_type, resolve)
+CMappedFeat& CMappedFeat::Set(const CAnnotObject& annot)
 {
-    return;
+    _ASSERT(annot.IsFeat());
+    m_Feat = &annot.GetFeat();
+    m_MappedFeat.Reset();
+    m_Partial = annot.IsPartial();
+    if ( annot.IsMappedLoc() )
+        m_MappedLoc = &annot.GetMappedLoc();
+    else
+        m_MappedLoc.Reset();
+    if ( annot.IsMappedProd() )
+        m_MappedProd = &annot.GetMappedProd();
+    else
+        m_MappedProd.Reset();
+    return *this;
 }
 
 
-const CSeq_feat& CFeat_CI::operator* (void) const
+const CMappedFeat& CFeat_CI::operator* (void) const
 {
     const CAnnotObject* annot = Get();
-    _ASSERT(annot  &&  annot->IsFeat());
-    return annot->GetFeat();
+    _ASSERT(annot);
+    return m_Feat.Set(*annot);
 }
 
 
-const CSeq_feat* CFeat_CI::operator-> (void) const
+const CMappedFeat* CFeat_CI::operator-> (void) const
 {
     const CAnnotObject* annot = Get();
-    _ASSERT(annot  &&  annot->IsFeat());
-    return &annot->GetFeat();
+    _ASSERT(annot);
+    m_Feat.Set(*annot);
+    return &m_Feat;
 }
 
 END_SCOPE(objects)
@@ -74,6 +77,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/02/10 15:50:45  grichenk
+* + CMappedFeat, CFeat_CI resolves to CMappedFeat
+*
 * Revision 1.12  2002/12/20 20:54:24  grichenk
 * Added optional location/product switch to CFeat_CI
 *

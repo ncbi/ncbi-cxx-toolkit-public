@@ -34,10 +34,157 @@
 */
 
 #include <objects/objmgr/annot_types_ci.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+class CMappedFeat
+{
+public:
+    CMappedFeat(void)
+        : m_Feat(0),
+          m_MappedFeat(0),
+          m_Partial(false),
+          m_MappedLoc(0),
+          m_MappedProd(0)
+        { return; }
+    CMappedFeat(const CMappedFeat& feat)
+        : m_Feat(feat.m_Feat),
+          m_MappedFeat(feat.m_MappedFeat),
+          m_Partial(feat.m_Partial),
+          m_MappedLoc(feat.m_MappedLoc),
+          m_MappedProd(feat.m_MappedProd)
+        { return; }
+    CMappedFeat& operator= (const CMappedFeat& feat)
+        {
+            if (this != &feat) {
+                m_Feat = feat.m_Feat;
+                m_MappedFeat = feat.m_MappedFeat;
+                m_Partial = feat.m_Partial;
+                m_MappedLoc = feat.m_MappedLoc;
+                m_MappedProd = feat.m_MappedProd;
+            }
+            return *this;
+        }
+
+    // Original feature with unmapped location/product
+    const CSeq_feat& GetOriginalFeature(void) const
+        {
+            return *m_Feat;
+        }
+    // Feature mapped to the master sequence.
+    // WARNING! The function is rather slow and should be used with care.
+    const CSeq_feat& GetMappedFeature(void) const
+        {
+            if (!m_MappedFeat) {
+                if (m_MappedLoc.GetPointer()  ||  m_MappedProd.GetPointer()) {
+                    CSeq_feat* tmp = new CSeq_feat;
+                    m_MappedFeat = tmp;
+                    tmp->Assign(*m_Feat);
+                    if (m_MappedLoc)
+                        tmp->SetLocation().Assign(*m_MappedLoc);
+                    if (m_MappedProd)
+                        tmp->SetProduct().Assign(*m_MappedProd);
+                }
+                else {
+                    m_MappedFeat = m_Feat;
+                }
+            }
+            return *m_MappedFeat;
+        }
+
+    bool IsSetId(void) const
+        { return m_Feat->IsSetId(); }
+    const CFeat_id& GetId(void) const
+        { return m_Feat->GetId(); }
+
+    const CSeqFeatData& GetData(void) const
+        { return m_Feat->GetData(); }
+
+    bool IsSetPartial(void) const
+        { return m_Feat->IsSetPartial()  ||  m_Partial; }
+    const bool GetPartial(void) const
+        { return m_Feat->GetPartial()  ||  m_Partial; }
+
+    bool IsSetExcept(void) const
+        { return m_Feat->IsSetExcept(); }
+    const bool GetExcept(void) const
+        { return m_Feat->GetExcept(); }
+
+    bool IsSetComment(void) const
+        { return m_Feat->IsSetComment(); }
+    const string& GetComment(void) const
+        { return m_Feat->GetComment(); }
+
+    bool IsSetProduct(void) const
+        { return m_Feat->IsSetProduct(); }
+    const CSeq_loc& GetProduct(void) const
+        //### Check mapped location
+        { return m_MappedProd ? *m_MappedProd : m_Feat->GetProduct(); }
+
+    const CSeq_loc& GetLocation(void) const
+        { return m_MappedLoc ? *m_MappedLoc : m_Feat->GetLocation(); }
+
+    bool IsSetQual(void) const
+        { return m_Feat->IsSetQual(); }
+    const list< CRef< CGb_qual > >& GetQual(void) const
+        { return m_Feat->GetQual(); }
+
+    bool IsSetTitle(void) const
+        { return m_Feat->IsSetTitle(); }
+    const string& GetTitle(void) const
+        { return m_Feat->GetTitle(); }
+
+    bool IsSetExt(void) const
+        { return m_Feat->IsSetExt(); }
+    const CUser_object& GetExt(void) const
+        { return m_Feat->GetExt(); }
+
+    bool IsSetCit(void) const
+        { return m_Feat->IsSetCit(); }
+    const CPub_set& GetCit(void) const
+        { return m_Feat->GetCit(); }
+
+    bool IsSetExp_ev(void) const
+        { return m_Feat->IsSetExp_ev(); }
+    const CSeq_feat::EExp_ev& GetExp_ev(void) const
+        { return m_Feat->GetExp_ev(); }
+
+    bool IsSetXref(void) const
+        { return m_Feat->IsSetXref(); }
+    const list< CRef< CSeqFeatXref > >& GetXref(void) const
+        { return m_Feat->GetXref(); }
+
+    bool IsSetDbxref(void) const
+        { return m_Feat->IsSetDbxref(); }
+    const list< CRef< CDbtag > >& GetDbxref(void) const
+        { return m_Feat->GetDbxref(); }
+
+    bool IsSetPseudo(void) const
+        { return m_Feat->IsSetPseudo(); }
+    const bool GetPseudo(void) const
+        { return m_Feat->GetPseudo(); }
+
+    bool IsSetExcept_text(void) const
+        { return m_Feat->IsSetExcept_text(); }
+    const string& GetExcept_text(void) const
+        { return m_Feat->GetExcept_text(); }
+
+private:
+    friend class CFeat_CI;
+    CMappedFeat& Set(const CAnnotObject& annot);
+
+    CConstRef<CSeq_feat>         m_Feat;
+    mutable CConstRef<CSeq_feat> m_MappedFeat;
+    bool                         m_Partial;
+    CConstRef<CSeq_loc>          m_MappedLoc;
+    CConstRef<CSeq_loc>          m_MappedProd;
+};
+
 
 
 class NCBI_XOBJMGR_EXPORT CFeat_CI : public CAnnotTypes_CI
@@ -78,13 +225,30 @@ public:
 
     CFeat_CI& operator++ (void);
     operator bool (void) const;
-    const CSeq_feat& operator* (void) const;
-    const CSeq_feat* operator-> (void) const;
+    const CMappedFeat& operator* (void) const;
+    const CMappedFeat* operator-> (void) const;
+
+private:
+    mutable CMappedFeat m_Feat; // current feature object returned by operator->()
 };
+
 
 
 inline
 CFeat_CI::CFeat_CI(void)
+{
+    return;
+}
+
+inline
+CFeat_CI::CFeat_CI(const CFeat_CI& iter)
+    : CAnnotTypes_CI(iter)
+{
+    return;
+}
+
+inline
+CFeat_CI::~CFeat_CI(void)
 {
     return;
 }
@@ -107,14 +271,17 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
 }
 
 inline
-CFeat_CI::CFeat_CI(const CFeat_CI& iter)
-    : CAnnotTypes_CI(iter)
-{
-    return;
-}
-
-inline
-CFeat_CI::~CFeat_CI(void)
+CFeat_CI::CFeat_CI(CScope& scope,
+                   const CSeq_loc& loc,
+                   SAnnotSelector::TFeatChoice feat_choice,
+                   CAnnot_CI::EOverlapType overlap_type,
+                   EResolveMethod resolve,
+                   EFeat_Location loc_type)
+    : CAnnotTypes_CI(scope, loc,
+          SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
+                         feat_choice,
+                         loc_type == e_Product),
+          overlap_type, resolve)
 {
     return;
 }
@@ -146,6 +313,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/02/10 15:50:44  grichenk
+* + CMappedFeat, CFeat_CI resolves to CMappedFeat
+*
 * Revision 1.17  2002/12/26 20:50:18  dicuccio
 * Added Win32 export specifier.  Removed unimplemented (private) operator++(int)
 *
