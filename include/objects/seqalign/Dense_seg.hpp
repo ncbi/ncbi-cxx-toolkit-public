@@ -91,10 +91,17 @@ public:
     /// Swap two rows (changing *order*, not content)
     void SwapRows(TDim row1, TDim row2);
 
+    /// Extract a slice of the alignment that includes the specified range
+    CRef<CDense_seg> ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const;
+
     /// Remap row coords according to a given seq-loc
     /// Optionally, ignore the strand of the loc
     void RemapToLoc(TDim row, const CSeq_loc& loc,
                     bool ignore_strand = false);
+
+protected:
+    TNumseg x_FindSegment(TDim row, TSignedSeqPos pos) const;
+
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -188,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/06/29 18:42:59  johnson
+* +ExtractSlice
+*
 * Revision 1.9  2004/06/14 22:09:02  johnson
 * Added GetSeqStrand method (analogous to GetSeq_id)
 *

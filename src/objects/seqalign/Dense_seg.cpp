@@ -309,6 +309,126 @@ void CDense_seg::SwapRows(TDim row1, TDim row2)
 }
 
 
+/*---------------------------------------------------------------------------*/
+// PRE : this is a validated dense seg; row & sequence position on row in
+// alignment
+// POST: the number of the segment in which this sequence position falls
+CDense_seg::TNumseg CDense_seg::
+x_FindSegment(CDense_seg::TDim row, TSignedSeqPos pos) const
+{
+    bool found = false;
+    CDense_seg::TNumseg seg;
+    for (seg = 0;  seg < GetNumseg()  &&  !found;  ++seg) {
+        TSignedSeqPos start = GetStarts()[seg * GetDim() + row];
+        TSignedSeqPos len   = GetLens()[seg];
+        if (start != -1) {
+            if (pos >= start  &&  pos < start + len) {
+                found = true;
+            }
+        }
+    }
+    if (!found) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_seg::x_FindSegment(): "
+                   "Can't find a segment containing position " +
+                   NStr::IntToString(pos));
+    }
+
+    return seg - 1;
+}
+
+
+//-----------------------------------------------------------------------------
+// PRE : range on a row in the alignment
+// POST: dst Dense_seg reset & 
+CRef<CDense_seg> CDense_seg::
+ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
+{
+    if (row < 0  ||  row >= GetDim()) {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                   "CDense_seg::ExtractSlice():"
+                   " Invalid row number");
+    }
+
+    if (from > to) {
+        swap(from, to);
+    }
+    if (from < GetSeqStart(row)) {
+        NCBI_THROW(CSeqalignException, eOutOfRange,
+                   "CDense_seg::ExtractSlice(): "
+                   "start position (" + NStr::IntToString(from) +
+                   ") off end of alignment");
+    }
+    if (to > GetSeqStop(row)) {
+        NCBI_THROW(CSeqalignException, eOutOfRange,
+                   "CDense_seg::ExtractSlice(): "
+                   "stop position (" + NStr::IntToString(to) +
+                   ") off end of alignment");
+    }
+
+ 
+    CRef<CDense_seg> ds(new CDense_seg);    
+    ds->SetDim(GetDim());
+    ds->SetNumseg(0);
+    ITERATE(CDense_seg::TIds, idI, GetIds()) {
+        CSeq_id *si = new CSeq_id;
+        si->Assign(**idI);
+        ds->SetIds().push_back(CRef<CSeq_id>(si));
+    }
+
+    //find start/stop segments
+    CDense_seg::TNumseg startSeg = x_FindSegment(row, from);
+    CDense_seg::TNumseg stopSeg  = x_FindSegment(row, to);
+
+    TSeqPos startOffset = from - GetStarts()[startSeg * GetDim() + row];
+    TSeqPos stopOffset  = GetStarts()[stopSeg * GetDim() + row] +
+        GetLens()[stopSeg] - 1 - to;
+    if (GetStrands()[row] == eNa_strand_minus) {
+        swap(startOffset, stopOffset);
+        swap(startSeg, stopSeg); // make sure startSeg is first
+    }
+
+    for (CDense_seg::TNumseg seg = startSeg;  seg <= stopSeg;  ++seg) {
+        //starts
+        for (CDense_seg::TDim dim = 0;  dim < GetDim();  ++dim) {
+            TSignedSeqPos start = GetStarts()[seg * GetDim() + dim];
+            if (start != -1) {
+                if (seg == startSeg  &&
+                    GetStrands()[seg * GetDim() + dim] == eNa_strand_plus) {
+                    start += startOffset;
+                }
+                if (seg == stopSeg  &&
+                    GetStrands()[seg * GetDim() + dim] == eNa_strand_minus) {
+                    start += stopOffset;
+                }
+            }
+            ds->SetStarts().push_back(start);
+        }
+
+        //len
+        TSeqPos len = GetLens()[seg];
+        if (seg == startSeg) {
+            len -= startOffset;
+        }
+        if (seg == stopSeg) {
+            len -= stopOffset;
+        }
+        ds->SetLens().push_back(len);
+
+        //strands
+        for (CDense_seg::TDim dim = 0;  dim < GetDim();  ++dim) {
+            ds->SetStrands().push_back(GetStrands()[seg * GetDim() + dim]);
+        }
+        ++ds->SetNumseg();
+    }
+
+#ifdef _DEBUG
+    ds->Validate(true);
+#endif
+    return ds;
+}
+
+
 void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
                             bool ignore_strand)
 {
@@ -504,6 +624,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/06/29 18:42:59  johnson
+* +ExtractSlice
+*
 * Revision 1.14  2004/06/14 22:09:03  johnson
 * Added GetSeqStrand method (analogous to GetSeq_id)
 *
