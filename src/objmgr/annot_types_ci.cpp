@@ -778,7 +778,7 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
         m_LimitObjectType = eLimit_None;
 
     x_Search(master_loc, 0);
-    if ( m_ResolveMethod != eResolve_None ) {
+    if ( m_ResolveMethod != eResolve_None && m_ResolveDepth > 0 ) {
         ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
             //### Check for eLoadedOnly
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
@@ -796,7 +796,7 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
             const CSeqMap& seqMap = bh.GetSeqMap();
             CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
                                                 m_Scope,
-                                                m_ResolveDepth,
+                                                m_ResolveDepth-1,
                                                 CSeqMap::fFindRef));
             while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
                 _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
@@ -1035,6 +1035,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2003/07/08 15:09:22  vasilche
+* Annotations iterator erroneously was resolving one level of segments
+* deeper than requested.
+*
 * Revision 1.74  2003/07/01 18:00:13  vasilche
 * Fixed unsigned/signed comparison.
 *
