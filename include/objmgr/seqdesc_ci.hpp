@@ -34,7 +34,7 @@
 */
 
 
-#include <objects/objmgr/desc_ci.hpp>
+#include <objmgr/desc_ci.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -77,6 +77,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/06/02 16:01:36  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.6  2002/12/26 20:51:36  dicuccio
 * Added Win32 export specifier
 *

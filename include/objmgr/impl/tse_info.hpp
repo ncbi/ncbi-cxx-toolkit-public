@@ -34,9 +34,9 @@
 */
 
 
-#include <objects/objmgr/impl/seq_entry_info.hpp>
-#include <objects/objmgr/impl/handle_range_map.hpp>
-#include <objects/objmgr/annot_selector.hpp>
+#include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/annot_selector.hpp>
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
@@ -256,6 +256,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/06/02 16:01:37  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.30  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.

@@ -35,8 +35,8 @@
  */
 
 
-#include <objects/alnmgr/alnmap.hpp>
-#include <objects/objmgr/seq_vector.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -344,6 +344,15 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2003/06/02 16:01:38  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
+ *
  * Revision 1.19  2003/02/11 21:32:37  todorov
  * fMinGap optional merging algorithm
  *

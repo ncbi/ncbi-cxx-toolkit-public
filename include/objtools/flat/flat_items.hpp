@@ -36,8 +36,8 @@
 
 // Complex enough to get their own headers
 // (flat_reference.hpp already included indirectly)
-#include <objects/flat/flat_head.hpp>
-#include <objects/flat/flat_feature.hpp>
+#include <objtools/flat/flat_head.hpp>
+#include <objtools/flat/flat_feature.hpp>
 
 #include <objects/general/User_object.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -275,6 +275,15 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/06/02 16:01:39  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.4  2003/04/10 20:08:22  ucko
 * Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
 *

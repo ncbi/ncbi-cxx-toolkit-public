@@ -33,8 +33,8 @@
 *
 */
 
-#include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/seq_map.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_map.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <vector>
 
@@ -158,6 +158,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/06/02 16:01:36  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.33  2003/05/27 19:44:04  grichenk
 * Added CSeqVector_CI class
 *

@@ -1,180 +1,54 @@
-#ifndef BIOSEQ_CI__HPP
-#define BIOSEQ_CI__HPP
-
+#ifndef OBJECTS_OBJMGR___OBJECTS_OBJMGR__BIOSEQ_CI_HPP
+#define OBJECTS_OBJMGR___OBJECTS_OBJMGR__BIOSEQ_CI_HPP
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author: Aleksey Grichenko
-*
-* File Description:
-*   Iterates over bioseqs from a given seq-entry and scope
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Mike DiCuccio
+ *
+ * File Description:
+ *
+ */
 
 
-#include <objects/objmgr/scope.hpp>
-#include <corelib/ncbistd.hpp>
+#warning "Please redirect your code to include @header@"
+#include <objmgr//bioseq_ci.hpp>
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-
-
-class NCBI_XOBJMGR_EXPORT CBioseq_CI
-{
-public:
-    // 'ctors
-    CBioseq_CI(void);
-    // Iterate over bioseqs from the entry taken from the scope. Use optional
-    // filter to iterate over selected bioseq types only.
-    CBioseq_CI(CScope& scope, const CSeq_entry& entry,
-        CSeq_inst::EMol filter = CSeq_inst::eMol_not_set);
-    CBioseq_CI(const CBioseq_CI& bioseq_ci);
-    ~CBioseq_CI(void);
-
-    CBioseq_CI& operator= (const CBioseq_CI& bioseq_ci);
-    CBioseq_CI& operator++ (void);
-    operator bool (void) const;
-
-    const CBioseq_Handle& operator* (void) const;
-    const CBioseq_Handle* operator-> (void) const;
-
-private:
-    typedef set<CBioseq_Handle>              TBioseqHandleSet;
-    typedef TBioseqHandleSet::const_iterator THandleIterator;
-
-    CScope*          m_Scope;
-    TBioseqHandleSet m_Handles;
-    THandleIterator  m_Current;
-};
-
-
-inline
-CBioseq_CI::CBioseq_CI(void)
-    : m_Scope(0)
-{
-    m_Current = m_Handles.end();
-}
-
-inline
-CBioseq_CI::CBioseq_CI(CScope& scope, const CSeq_entry& entry, CSeq_inst::EMol filter)
-    : m_Scope(&scope)
-{
-    m_Scope->x_PopulateBioseq_HandleSet(entry, m_Handles, filter);
-    m_Current = m_Handles.begin();
-}
-
-inline
-CBioseq_CI::CBioseq_CI(const CBioseq_CI& bioseq_ci)
-{
-    *this = bioseq_ci;
-}
-
-inline
-CBioseq_CI::~CBioseq_CI(void)
-{
-}
-
-inline
-CBioseq_CI& CBioseq_CI::operator= (const CBioseq_CI& bioseq_ci)
-{
-    if (this != &bioseq_ci) {
-        m_Scope = bioseq_ci.m_Scope;
-        ITERATE (TBioseqHandleSet, it, bioseq_ci.m_Handles) {
-            m_Handles.insert(*it);
-        }
-        if (bioseq_ci) {
-            m_Current = m_Handles.find(*bioseq_ci.m_Current);
-        }
-        else {
-            m_Current = m_Handles.end();
-        }
-    }
-    return *this;
-}
-
-inline
-CBioseq_CI& CBioseq_CI::operator++ (void)
-{
-    if ( m_Scope  &&  m_Current != m_Handles.end() ) {
-        m_Current++;
-    }
-    return *this;
-}
-
-inline
-CBioseq_CI::operator bool (void) const
-{
-    return m_Scope  &&  m_Current != m_Handles.end();
-}
-
-inline
-const CBioseq_Handle& CBioseq_CI::operator* (void) const
-{
-    return *m_Current;
-}
-
-inline
-const CBioseq_Handle* CBioseq_CI::operator-> (void) const
-{
-    return &(*m_Current);
-}
-
-
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
 
 /*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2003/03/10 17:51:36  kuznets
-* iterate->ITERATE
-*
-* Revision 1.7  2003/02/25 14:48:06  vasilche
-* Added Win32 export modifier to object manager classes.
-*
-* Revision 1.6  2003/02/04 16:01:48  dicuccio
-* Removed export specification so that MSVC won't try to export an inlined class
-*
-* Revision 1.5  2002/12/26 20:42:55  dicuccio
-* Added Win32 export specifier.  Removed unimplemented (private) operator++(int)
-*
-* Revision 1.4  2002/12/05 19:28:29  grichenk
-* Prohibited postfix operator ++()
-*
-* Revision 1.3  2002/10/15 13:37:28  grichenk
-* Fixed inline declarations
-*
-* Revision 1.2  2002/10/02 17:58:21  grichenk
-* Added sequence type filter to CBioseq_CI
-*
-* Revision 1.1  2002/09/30 20:00:48  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ * $Log$
+ * Revision 1.9  2003/06/02 16:01:33  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
+ *
+ * ===========================================================================
+ */
 
-#endif  // BIOSEQ_CI__HPP
+#endif  // OBJECTS_OBJMGR___OBJECTS_OBJMGR__BIOSEQ_CI_HPP

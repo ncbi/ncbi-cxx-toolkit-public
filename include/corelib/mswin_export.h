@@ -130,10 +130,10 @@
 #ifdef NCBI_MMDB_EXPORTS
 #  define NCBI_CDD_EXPORTS
 #  define NCBI_CN3D_EXPORTS
+#  define NCBI_MMDB1_EXPORT
+#  define NCBI_MMDB2_EXPORT
+#  define NCBI_MMDB3_EXPORT
 #  define NCBI_NCBIMIME_EXPORTS
-#  define NCBI_MMDB1_EXPORTS
-#  define NCBI_MMDB2_EXPORTS
-#  define NCBI_MMDB3_EXPORTS
 #endif
 
 
@@ -685,8 +685,8 @@
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_EXPORT
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
-#  define NCBI_DBAPIDRIVER_ODBC_EXPORT
 #  define NCBI_DBAPIDRIVER_MYSQL_EXPORT
+#  define NCBI_DBAPIDRIVER_ODBC_EXPORT
 #  define NCBI_DOCSUM_EXPORT
 #  define NCBI_ENTREZ2_EXPORT
 #  define NCBI_ENTREZGENE_EXPORT
@@ -743,6 +743,15 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.24  2003/06/02 16:01:29  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
+ *
  * Revision 1.23  2003/05/23 16:19:48  ivanov
  * Fixed typo
  *

@@ -40,9 +40,9 @@
 *
 */
 
-#include <objects/objmgr/impl/priority.hpp>
+#include <objmgr/impl/priority.hpp>
 #include <objects/seq/Seq_inst.hpp>
-#include <objects/objmgr/bioseq_handle.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <set>
@@ -269,6 +269,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/06/02 16:01:36  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.49  2003/05/27 19:44:04  grichenk
 * Added CSeqVector_CI class
 *

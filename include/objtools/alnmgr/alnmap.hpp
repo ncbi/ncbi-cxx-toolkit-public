@@ -34,7 +34,7 @@
 */
 
 #include <objects/seqalign/Dense_seg.hpp>
-#include <objects/alnmgr/alnexception.hpp>
+#include <objtools/alnmgr/alnexception.hpp>
 #include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -579,6 +579,15 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/06/02 16:01:38  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.20  2003/05/23 18:10:38  todorov
 * +fChunkSameAsSeg
 *

@@ -30,7 +30,8 @@
 *
 */
 
-#include <objects/objmgr/reader.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <objmgr/reader.hpp>
 
 #include <objects/id1/ID1server_back.hpp>
 #include <objects/id1/ID1server_request.hpp>
@@ -121,6 +122,15 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2003/06/02 16:01:37  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.3  2003/05/29 17:57:32  lavr
 * Remove unnecessary headers
 *

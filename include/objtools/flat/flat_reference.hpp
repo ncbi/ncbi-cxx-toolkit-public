@@ -33,7 +33,7 @@
 *
 */
 
-#include <objects/flat/flat_item.hpp>
+#include <objtools/flat/flat_item.hpp>
 
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
@@ -156,6 +156,15 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/06/02 16:01:39  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.3  2003/04/10 20:06:46  ucko
 * GetLoc: return a pointer rather than a reference, as it's usually NULL.
 *

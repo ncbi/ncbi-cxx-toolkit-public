@@ -33,10 +33,10 @@
 *
 */
 
-#include <objects/objmgr/impl/tse_info.hpp>
-#include <objects/objmgr/seq_id_mapper.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/data_loader.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/seq_id_mapper.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/data_loader.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <set>
 #include <map>
@@ -474,6 +474,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/06/02 16:01:37  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.55  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.

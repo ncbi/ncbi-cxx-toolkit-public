@@ -52,8 +52,8 @@
 #   include <sys/types.h>
 #endif
 
-#include <objects/objmgr/data_loader.hpp>
-#include <objects/objmgr/reader.hpp>
+#include <objmgr/data_loader.hpp>
+#include <objmgr/reader.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -293,6 +293,15 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.38  2003/06/02 16:01:36  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
+ *
  * Revision 1.37  2003/05/20 19:53:49  vasilche
  * Added private assignment operator to make it compilable on MSVC with DLL.
  *

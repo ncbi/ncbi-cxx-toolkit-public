@@ -36,7 +36,7 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
 #include <util/bytesrc.hpp>
-#include <objects/objmgr/reader.hpp>
+#include <objmgr/reader.hpp>
 
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/exception.hpp>
@@ -150,6 +150,15 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2003/06/02 16:01:37  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.3  2003/04/15 16:31:37  dicuccio
 * Placed CResultByteSourceReader in XOBJMGR Win32 export namespace (was
 * erroneously in XUTIL)

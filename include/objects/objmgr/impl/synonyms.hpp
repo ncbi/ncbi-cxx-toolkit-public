@@ -1,6 +1,5 @@
-#ifndef OBJECTS_OBJMGR_IMPL___SYNONYMS__HPP
-#define OBJECTS_OBJMGR_IMPL___SYNONYMS__HPP
-
+#ifndef OBJECTS_OBJMGR___OBJECTS_OBJMGR_IMPL_SYNONYMS_HPP
+#define OBJECTS_OBJMGR___OBJECTS_OBJMGR_IMPL_SYNONYMS_HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -26,148 +25,30 @@
  *
  * ===========================================================================
  *
- * Author: Aleksey Grichenko
+ * Authors:  Mike DiCuccio
  *
  * File Description:
- *   Set of seq-id synonyms for CScope cache
  *
  */
 
-#include <corelib/ncbiobj.hpp>
-#include <objects/objmgr/seq_id_handle.hpp>
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
+#warning "Please redirect your code to include @header@"
+#include <objmgr/impl/synonyms.hpp>
 
-////////////////////////////////////////////////////////////////////
-//
-//  CSynonymsSet::
-//
-//    Set of seq-id synonyms for CScope cache
-//
-
-class NCBI_XOBJMGR_EXPORT CSynonymsSet : public CObject
-{
-public:
-    typedef set<CSeq_id_Handle>    TIdSet;
-    typedef TIdSet::iterator       iterator;
-    typedef TIdSet::const_iterator const_iterator;
-
-    CSynonymsSet(void);
-    ~CSynonymsSet(void);
-
-    iterator begin(void);
-    const_iterator begin(void) const;
-    iterator end(void);
-    const_iterator end(void) const;
-    iterator find(const CSeq_id_Handle& id);
-    const_iterator find(const CSeq_id_Handle& id) const;
-    bool empty(void) const;
-    //size_t size(void) const;
-
-    void AddSynonym(const CSeq_id_Handle& id);
-    void RemoveSynonym(const CSeq_id_Handle& id);
-    bool ContainsSynonym(const CSeq_id_Handle& id);
-
-private:
-    // Prohibit copy functions
-    CSynonymsSet(const CSynonymsSet&);
-    CSynonymsSet& operator=(const CSynonymsSet&);
-
-    TIdSet m_IdSet;
-};
-
-/////////////////////////////////////////////////////////////////////
-//
-//  Inline methods
-//
-/////////////////////////////////////////////////////////////////////
-
-inline
-CSynonymsSet::iterator CSynonymsSet::begin(void)
-{
-    return m_IdSet.begin();
-}
-
-inline
-CSynonymsSet::const_iterator CSynonymsSet::begin(void) const
-{
-    return m_IdSet.begin();
-}
-
-inline
-CSynonymsSet::iterator CSynonymsSet::end(void)
-{
-    return m_IdSet.end();
-}
-
-inline
-CSynonymsSet::const_iterator CSynonymsSet::end(void) const
-{
-    return m_IdSet.end();
-}
-
-inline
-CSynonymsSet::iterator CSynonymsSet::find(const CSeq_id_Handle& id)
-{
-    return m_IdSet.find(id);
-}
-
-inline
-CSynonymsSet::const_iterator CSynonymsSet::find(const CSeq_id_Handle& id) const
-{
-    return m_IdSet.find(id);
-}
 
 /*
-inline
-size_t CSynonymsSet::size(void) const
-{
-    return m_IdSet.size();
-}
-*/
-
-inline
-bool CSynonymsSet::empty(void) const
-{
-    return m_IdSet.empty();
-}
-
-inline
-void CSynonymsSet::AddSynonym(const CSeq_id_Handle& id)
-{
-    m_IdSet.insert(id);
-}
-
-inline
-void CSynonymsSet::RemoveSynonym(const CSeq_id_Handle& id)
-{
-    m_IdSet.erase(id);
-}
-
-inline
-bool CSynonymsSet::ContainsSynonym(const CSeq_id_Handle& id)
-{
-    return find(id) != end();
-}
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
-
-/*
- * ---------------------------------------------------------------------------
+ * ===========================================================================
  * $Log$
- * Revision 1.3  2003/05/12 19:18:28  vasilche
- * Fixed locking of object manager classes in multi-threaded application.
- *
- * Revision 1.2  2003/02/28 21:54:16  grichenk
- * +CSynonymsSet::empty(), removed _ASSERT() in CScope::GetSynonyms()
- *
- * Revision 1.1  2003/02/28 20:02:03  grichenk
- * Initial revision
- *
+ * Revision 1.4  2003/06/02 16:01:34  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
  *
  * ===========================================================================
  */
 
-#endif  /* OBJECTS_OBJMGR_IMPL___SYNONYMS__HPP */
+#endif  // OBJECTS_OBJMGR___OBJECTS_OBJMGR_IMPL_SYNONYMS_HPP

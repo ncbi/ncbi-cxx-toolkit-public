@@ -33,13 +33,13 @@
 *
 */
 
-#include <objects/flat/flat_loc.hpp>
-#include <objects/flat/flat_reference.hpp>
+#include <objtools/flat/flat_loc.hpp>
+#include <objtools/flat/flat_reference.hpp>
 
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/MolInfo.hpp>
 
-#include <objects/objmgr/bioseq_handle.hpp>
+#include <objmgr/bioseq_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -130,6 +130,15 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/06/02 16:01:39  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.2  2003/03/21 18:47:47  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.

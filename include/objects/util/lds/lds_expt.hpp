@@ -1,5 +1,5 @@
-#ifndef LDS_EXPT_HPP__
-#define LDS_EXPT_HPP__
+#ifndef OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_EXPT_HPP
+#define OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_EXPT_HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -25,60 +25,30 @@
  *
  * ===========================================================================
  *
- * Author: Anatoliy Kuznetsov
+ * Authors:  Mike DiCuccio
  *
- * File Description: LDS exception.
+ * File Description:
  *
  */
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
 
 
-//////////////////////////////////////////////////////////////////
-//
-// LDS exception. 
-// Thrown if error is specific to the local data storage.
-//
+#warning "Please redirect your code to include @header@"
+#include <objmgr/util/lds/lds_expt.hpp>
 
-class CLDS_Exception : public CBDB_Exception
-{
-public:
-    enum EErrCode {
-        eRecordNotFound,
-        eFileNotFound,
-        eNull
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch ( GetErrCode() ) {
-        case eRecordNotFound:    return "eRecordNotFound";
-        case eFileNotFound:      return "eFileNotFound";
-        case eNull:              return "eNull";
-        default:                 return  CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CLDS_Exception, CBDB_Exception);
-};
-
-
-#define LDS_THROW(errcode, message) \
-    throw CLDS_Exception(__FILE__, __LINE__, 0, CLDS_Exception::errcode, \
-                          (message))
-
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.1  2003/05/22 13:24:45  kuznets
- * Initial revision
- *
+ * Revision 1.2  2003/06/02 16:01:35  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
  *
  * ===========================================================================
  */
 
-#endif
+#endif  // OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_EXPT_HPP

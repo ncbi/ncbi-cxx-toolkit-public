@@ -1,5 +1,5 @@
-#ifndef LDS_COREOBJREADER_HPP__
-#define LDS_COREOBJREADER_HPP__
+#ifndef OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_COREOBJREADER_HPP
+#define OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_COREOBJREADER_HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -25,130 +25,30 @@
  *
  * ===========================================================================
  *
- * Author: Anatoliy Kuznetsov
+ * Authors:  Mike DiCuccio
  *
- * File Description: Core bio objects reader.
+ * File Description:
  *
  */
 
 
-#include <objects/util/obj_sniff.hpp>
-#include <stack>
+#warning "Please redirect your code to include @header@"
+#include <objmgr/util/lds/lds_coreobjreader.hpp>
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-
-//////////////////////////////////////////////////////////////////
-//
-// Try and fail parser, used for discovery of files structure.
-//
-
-class CLDS_CoreObjectsReader : public CObjectsSniffer
-{
-public:
-    CLDS_CoreObjectsReader();
-
-    // Event function called when parser finds a top level object
-    virtual void OnTopObjectFoundPre(const CObjectInfo& object, 
-                                     size_t stream_offset);
-
-    // Event function alled after top object deserialization
-    virtual void OnTopObjectFoundPost(const CObjectInfo& object);
-
-    // Overload from CObjectsSniffer
-    virtual void OnObjectFoundPre(const CObjectInfo& object, 
-                                  size_t stream_offset);
-
-    // Overload from CObjectsSniffer
-    virtual void OnObjectFoundPost(const CObjectInfo& object);
-
-public:
-
-    struct SObjectDetails
-    {
-        CObjectInfo   info;
-        size_t        offset;
-        size_t        parent_offset;
-        size_t        top_level_offset;
-        bool          is_top_level;
-        int           ext_id;  // Database id or any other external id
-
-        SObjectDetails(const  CObjectInfo& object_info,
-                       size_t stream_offset,
-                       size_t p_offset,
-                       size_t top_offset,
-                       bool   is_top)
-        : info(object_info),
-          offset(stream_offset),
-          parent_offset(p_offset),
-          top_level_offset(top_offset),
-          is_top_level(is_top),
-          ext_id(0)
-        {}
-    };
-
-    typedef vector<SObjectDetails>    TObjectVector;
-
-    // Find object information based on the stream offset.
-    // Return NULL if not found.
-    SObjectDetails* FindObjectInfo(size_t stream_offset);
-
-    TObjectVector& GetObjectsVector() { return m_Objects; }
-
-protected:
-
-    struct SObjectParseDescr
-    {
-        const CObjectInfo*  object_info;
-        size_t              stream_offset;
-
-        SObjectParseDescr(const CObjectInfo* oi,
-                          size_t offset)
-        : object_info(oi),
-          stream_offset(offset)
-        {}
-        SObjectParseDescr() 
-        : object_info(0),
-          stream_offset(0)
-        {}
-    };
-
-    typedef stack<SObjectParseDescr>  TParseStack;
-
-protected:
-    // Find object in the objects vector (m_Objects) by the stream 
-    // offset. Returns objects' index in vector, -1 if "not found".
-    // This function works on the fact that only one object can 
-    // be found in one particular offset, and offset udentifies any
-    // object unqiely in its file.
-    int FindObject(size_t stream_offset);
-
-private:
-    TParseStack         m_Stack;
-    SObjectParseDescr   m_TopDescr;
-    TObjectVector       m_Objects;
-
-};
-
-
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.4  2003/05/30 20:31:51  kuznets
- * Added SObjectDetails::ext_id (database id)
- *
- * Revision 1.2  2003/05/23 20:33:33  kuznets
- * Bulk changes in lds library, code reorganizations, implemented top level
- * objects read, metainformation persistance implemented for top level objects...
- *
- * Revision 1.1  2003/05/22 18:57:17  kuznets
- * Work in progress
+ * Revision 1.5  2003/06/02 16:01:35  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
  *
  * ===========================================================================
  */
 
-#endif
+#endif  // OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_COREOBJREADER_HPP

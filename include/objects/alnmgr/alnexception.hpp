@@ -1,6 +1,5 @@
-#ifndef OBJECTS_ALNMGR___ALNEXCEPTION__HPP
-#define OBJECTS_ALNMGR___ALNEXCEPTION__HPP
-
+#ifndef OBJECTS_OBJMGR___OBJECTS_ALNMGR_ALNEXCEPTION_HPP
+#define OBJECTS_OBJMGR___OBJECTS_ALNMGR_ALNEXCEPTION_HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -26,78 +25,30 @@
  *
  * ===========================================================================
  *
- * Author:  Mike DiCuccio, NCBI
+ * Authors:  Mike DiCuccio
  *
  * File Description:
- *    Exception for various alignment manager related issues
  *
  */
 
-#include <corelib/ncbiexpt.hpp>
 
-BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
+#warning "Please redirect your code to include @header@"
+#include <objtools/alnmgr/alnexception.hpp>
 
-
-class NCBI_XALNMGR_EXPORT CAlnException : EXCEPTION_VIRTUAL_BASE public CException
-{
-public:
-    enum EErrCode {
-        eInvalidRequest,
-        eConsensusNotPresent,
-        eInvalidRow,
-        eInvalidSegment,
-        eInvalidDenseg,
-        eMergeFailure,
-        eUnknownMergeFailure
-    };
-
-    NCBI_EXCEPTION_DEFAULT(CAlnException,CException);
-
-    virtual const char *GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eInvalidRequest:       return "eInvalidRequest";
-        case eConsensusNotPresent:  return "eConsensusNotPresent";
-        case eInvalidRow:           return "eInvalidRow";
-        case eInvalidSegment:       return "eInvalidSegment";
-        case eInvalidDenseg:        return "eInvalidDenseg";
-        case eMergeFailure:         return "eMergeFailure";
-        case eUnknownMergeFailure:  return "eUnknownMergeFailure";
-        default:                    return CException::GetErrCodeString();
-        }
-    }
-};
-
-
-END_objects_SCOPE
-END_NCBI_SCOPE
-
-#endif  /* OBJECTS_ALNMGR___ALNEXCEPTION__HPP */
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.6  2003/03/05 16:20:13  todorov
- * +eInvalidRequest
- *
- * Revision 1.5  2002/12/26 12:38:07  dicuccio
- * Added Win32 export specifiers
- *
- * Revision 1.4  2002/12/18 15:00:26  ucko
- * +eMergeFailure
- *
- * Revision 1.3  2002/09/27 17:35:44  todorov
- * added a merge exception
- *
- * Revision 1.2  2002/09/26 18:13:52  todorov
- * introducing a few new exceptions
- *
- * Revision 1.1  2002/09/25 18:16:26  dicuccio
- * Reworked computation of consensus sequence - this is now stored directly
- * in the underlying CDense_seg
- * Added exception class; currently used only on access of non-existent
- * consensus.
+ * Revision 1.7  2003/06/02 16:01:32  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
  *
  * ===========================================================================
  */
+
+#endif  // OBJECTS_OBJMGR___OBJECTS_ALNMGR_ALNEXCEPTION_HPP

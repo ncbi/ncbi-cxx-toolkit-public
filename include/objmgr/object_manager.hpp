@@ -35,56 +35,10 @@
 * File Description:
 *           Object manager manages data objects,
 *           provides them to Scopes when needed
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.13  2003/04/09 16:04:29  grichenk
-* SDataSourceRec replaced with CPriorityNode
-* Added CScope::AddScope(scope, priority) to allow scope nesting
-*
-* Revision 1.12  2003/03/26 20:59:22  grichenk
-* Removed commented-out code
-*
-* Revision 1.11  2003/03/11 14:15:49  grichenk
-* +Data-source priority
-*
-* Revision 1.10  2003/01/29 22:03:43  grichenk
-* Use single static CSeq_id_Mapper instead of per-OM model.
-*
-* Revision 1.9  2002/12/26 20:51:35  dicuccio
-* Added Win32 export specifier
-*
-* Revision 1.8  2002/08/28 17:05:13  vasilche
-* Remove virtual inheritance
-*
-* Revision 1.7  2002/06/04 17:18:32  kimelman
-* memory cleanup :  new/delete/Cref rearrangements
-*
-* Revision 1.6  2002/05/28 18:01:10  gouriano
-* DebugDump added
-*
-* Revision 1.5  2002/05/06 03:30:36  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.4  2002/02/21 19:27:00  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.3  2002/01/23 21:59:29  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.2  2002/01/16 16:26:36  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:04:02  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
-#include <objects/objmgr/data_loader.hpp>
-#include <objects/objmgr/impl/priority.hpp>
+#include <objmgr/data_loader.hpp>
+#include <objmgr/impl/priority.hpp>
 
 #include <corelib/ncbiobj.hpp>
 #include <set>
@@ -208,5 +162,61 @@ private:
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/* ===========================================================================
+* $Log$
+* Revision 1.14  2003/06/02 16:01:36  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
+* Revision 1.13  2003/04/09 16:04:29  grichenk
+* SDataSourceRec replaced with CPriorityNode
+* Added CScope::AddScope(scope, priority) to allow scope nesting
+*
+* Revision 1.12  2003/03/26 20:59:22  grichenk
+* Removed commented-out code
+*
+* Revision 1.11  2003/03/11 14:15:49  grichenk
+* +Data-source priority
+*
+* Revision 1.10  2003/01/29 22:03:43  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
+* Revision 1.9  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
+* Revision 1.8  2002/08/28 17:05:13  vasilche
+* Remove virtual inheritance
+*
+* Revision 1.7  2002/06/04 17:18:32  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
+* Revision 1.6  2002/05/28 18:01:10  gouriano
+* DebugDump added
+*
+* Revision 1.5  2002/05/06 03:30:36  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.4  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.3  2002/01/23 21:59:29  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.2  2002/01/16 16:26:36  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:04:02  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/
 
 #endif // OBJECT_MANAGER__HPP

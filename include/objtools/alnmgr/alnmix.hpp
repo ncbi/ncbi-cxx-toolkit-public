@@ -33,7 +33,7 @@
 *
 */
 
-#include <objects/alnmgr/alnvec.hpp>
+#include <objtools/alnmgr/alnvec.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <serial/iterator.hpp>
 
@@ -299,6 +299,15 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/06/02 16:01:38  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.23  2003/05/30 17:42:45  todorov
 * x_CreateSegmentsVector now uses a stack to order the segs
 *

@@ -1,7 +1,6 @@
-#if !defined(OBJECTS_OBJMGR___SEQ_MAP__INL)
-#define OBJECTS_OBJMGR___SEQ_MAP__INL
-
-/* $Id$
+#ifndef OBJECTS_OBJMGR___OBJECTS_OBJMGR__SEQ_MAP_INL
+#define OBJECTS_OBJMGR___OBJECTS_OBJMGR__SEQ_MAP_INL
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -26,78 +25,30 @@
  *
  * ===========================================================================
  *
- * Author: Eugene Vasilchenko
+ * Authors:  Mike DiCuccio
  *
  * File Description:
- *   Inline methods of CSeqMap class.
  *
  */
 
 
-/////////////////////////////////////////////////////////////////////
-//  CSeqMap: inline methods
-
-inline
-size_t CSeqMap::x_GetSegmentsCount(void) const
-{
-    return m_Segments.size() - 1;
-}
-
-
-inline
-const CSeqMap::CSegment& CSeqMap::x_GetSegment(size_t index) const
-{
-    if ( index > x_GetSegmentsCount() ) {
-        x_GetSegmentException(index);
-    }
-    return m_Segments[index];
-}
-
-
-inline
-TSeqPos CSeqMap::x_GetSegmentPosition(size_t index, CScope* scope) const
-{
-    if ( index <= m_Resolved )
-        return m_Segments[index].m_Position;
-    return x_ResolveSegmentPosition(index, scope);
-}
-
-
-inline
-TSeqPos CSeqMap::x_GetSegmentLength(size_t index, CScope* scope) const
-{
-    TSeqPos length = x_GetSegment(index).m_Length;
-    if ( length == kInvalidSeqPos ) {
-        length = x_ResolveSegmentLength(index, scope);
-    }
-    return length;
-}
-
-
-inline
-TSeqPos CSeqMap::GetLength(CScope* scope) const
-{
-    return x_GetSegmentPosition(x_GetSegmentsCount(), scope);
-}
+#warning "Please redirect your code to include @header@"
+#include <objmgr//seq_map.inl>
 
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.2  2003/01/22 20:11:53  vasilche
- * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
- * CSeqMap_CI now supports resolution and iteration over sequence range.
- * Added several caches to CScope.
- * Optimized CSeqVector().
- * Added serveral variants of CBioseqHandle::GetSeqVector().
- * Tried to optimize annotations iterator (not much success).
- * Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
- *
- * Revision 1.1  2002/12/26 16:39:22  vasilche
- * Object manager class CSeqMap rewritten.
- *
+ * Revision 1.3  2003/06/02 16:01:34  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
  *
  * ===========================================================================
  */
 
-#endif
+#endif  // OBJECTS_OBJMGR___OBJECTS_OBJMGR__SEQ_MAP_INL

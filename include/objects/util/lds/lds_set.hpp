@@ -1,5 +1,5 @@
-#ifndef LDS_SET_HPP__
-#define LDS_SET_HPP__
+#ifndef OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_SET_HPP
+#define OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_SET_HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -25,32 +25,30 @@
  *
  * ===========================================================================
  *
- * Author: Anatoliy Kuznetsov
+ * Authors:  Mike DiCuccio
  *
- * File Description: Set related definitions used in LDS.  
+ * File Description:
  *
  */
 
-#include <corelib/ncbistd.hpp>
-#include <set>
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
+#warning "Please redirect your code to include @header@"
+#include <objmgr/util/lds/lds_set.hpp>
 
-typedef set<int>   CLDS_Set;
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.1  2003/05/22 13:24:45  kuznets
- * Initial revision
- *
+ * Revision 1.2  2003/06/02 16:01:35  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
  *
  * ===========================================================================
  */
 
-END_SCOPE(objects)
-END_NCBI_SCOPE
-
-#endif
-
+#endif  // OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_SET_HPP

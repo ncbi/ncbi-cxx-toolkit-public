@@ -34,7 +34,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
-#include <objects/objmgr/seq_id_handle.hpp>
+#include <objmgr/seq_id_handle.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -146,6 +146,15 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2003/06/02 16:01:37  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
+ *
  * Revision 1.12  2003/04/29 19:51:12  vasilche
  * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
  * Made some typedefs more consistent.

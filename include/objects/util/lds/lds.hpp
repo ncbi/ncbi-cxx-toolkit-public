@@ -1,5 +1,5 @@
-#ifndef LDS_HPP__
-#define LDS_HPP__
+#ifndef OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_HPP
+#define OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -25,82 +25,30 @@
  *
  * ===========================================================================
  *
- * Author: Anatoliy Kuznetsov
+ * Authors:  Mike DiCuccio
  *
- * File Description: Main LDS include file.
+ * File Description:
  *
  */
 
-#include <objects/util/lds/lds_db.hpp>
-#include <objects/util/lds/lds_expt.hpp>
-#include <objects/util/lds/lds_files.hpp>
 
-#include <map>
+#warning "Please redirect your code to include @header@"
+#include <objmgr/util/lds/lds.hpp>
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-
-//////////////////////////////////////////////////////////////////
-//
-// LDS database.
-//
-
-class CLDS_Database
-{
-public:
-    // Object type string to database id map
-    typedef map<string, int> TObjTypeMap;
-
-public:
-
-    CLDS_Database(string db_name)
-    : m_LDS_DbName(db_name)
-    {}
-
-    // Create the database. If the LDS database already exists all data will
-    // be cleaned up.
-    void Create();
-
-    // Open LDS database (Read/Write mode)
-    void Open();
-
-    // Syncronize LDS database content with directory. 
-    // Function will do format guessing, files parsing, etc
-    void SyncWithDir(const string& dir_name);
-private:
-    // Loads types map from m_ObjectTypeDB to memory.
-    void x_LoadTypeMap();
-private:
-    CLDS_Database(const CLDS_Database&);
-    CLDS_Database& operator=(const CLDS_Database&);
-private:
-    string                 m_LDS_DbName;
-
-    SLDS_TablesCollection  m_db;
-
-    TObjTypeMap            m_ObjTypeMap;
-};
-
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.3  2003/05/23 20:33:33  kuznets
- * Bulk changes in lds library, code reorganizations, implemented top level
- * objects read, metainformation persistance implemented for top level objects...
- *
- * Revision 1.2  2003/05/22 18:57:17  kuznets
- * Work in progress
- *
- * Revision 1.1  2003/05/22 13:24:45  kuznets
- * Initial revision
- *
+ * Revision 1.4  2003/06/02 16:01:35  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
  *
  * ===========================================================================
  */
 
-#endif
-
+#endif  // OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_HPP

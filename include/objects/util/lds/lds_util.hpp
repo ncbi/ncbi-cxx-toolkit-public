@@ -1,5 +1,5 @@
-#ifndef LDS_UTIL_HPP__
-#define LDS_UTIL_HPP__
+#ifndef OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_UTIL_HPP
+#define OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_UTIL_HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -25,47 +25,30 @@
  *
  * ===========================================================================
  *
- * Author: Anatoliy Kuznetsov
+ * Authors:  Mike DiCuccio
  *
- * File Description:  LDS utilities.
+ * File Description:
  *
  */
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
 
-#define LDS_GETMAXID(id, db, id_name) \
-    { \
-        id = 0; \
-        CBDB_FileCursor cur(db); \
-        cur.SetCondition(CBDB_FileCursor::eLast); \
-        if (cur.Fetch() == eBDB_Ok) { \
-            id = db.id_name; \
-        } else { \
-            id = 0; \
-        } \
-    }
+#warning "Please redirect your code to include @header@"
+#include <objmgr/util/lds/lds_util.hpp>
 
-// Return TRUE if id belongs to the set
-inline bool LDS_SetTest(const CLDS_Set& s, int id)
-{
-    return s.find(id) != s.end();
-}
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.2  2003/05/23 20:33:33  kuznets
- * Bulk changes in lds library, code reorganizations, implemented top level
- * objects read, metainformation persistance implemented for top level objects...
- *
- * Revision 1.1  2003/05/22 20:53:12  kuznets
- * Initial revision.
+ * Revision 1.3  2003/06/02 16:01:35  dicuccio
+ * Rearranged include/objects/ subtree.  This includes the following shifts:
+ *     - include/objects/alnmgr --> include/objtools/alnmgr
+ *     - include/objects/cddalignview --> include/objtools/cddalignview
+ *     - include/objects/flat --> include/objtools/flat
+ *     - include/objects/objmgr/ --> include/objmgr/
+ *     - include/objects/util/ --> include/objmgr/util/
+ *     - include/objects/validator --> include/objtools/validator
  *
  * ===========================================================================
  */
 
-#endif
+#endif  // OBJECTS_OBJMGR___OBJECTS_UTIL_LDS_LDS_UTIL_HPP

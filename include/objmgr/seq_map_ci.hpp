@@ -35,8 +35,8 @@
 *
 */
 
-#include <objects/objmgr/seq_map.hpp>
-#include <objects/objmgr/seq_id_handle.hpp>
+#include <objmgr/seq_map.hpp>
+#include <objmgr/seq_id_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -223,7 +223,7 @@ private:
 };
 
 
-#include <objects/objmgr/seq_map_ci.inl>
+#include <objmgr/seq_map_ci.inl>
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -231,6 +231,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/06/02 16:01:36  dicuccio
+* Rearranged include/objects/ subtree.  This includes the following shifts:
+*     - include/objects/alnmgr --> include/objtools/alnmgr
+*     - include/objects/cddalignview --> include/objtools/cddalignview
+*     - include/objects/flat --> include/objtools/flat
+*     - include/objects/objmgr/ --> include/objmgr/
+*     - include/objects/util/ --> include/objmgr/util/
+*     - include/objects/validator --> include/objtools/validator
+*
 * Revision 1.6  2003/05/20 20:36:13  vasilche
 * Added FindResolved() with strand argument.
 *
