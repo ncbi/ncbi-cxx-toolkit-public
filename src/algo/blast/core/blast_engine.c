@@ -68,6 +68,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/phi_extend.h>
 #include <algo/blast/core/link_hsps.h>
+#include "blast_gapalign_priv.h"
 
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
