@@ -215,8 +215,8 @@ public:
     bool operator<=(const CSeqMap_CI& seg) const;
     bool operator>=(const CSeqMap_CI& seg) const;
 
-    // go to next/next segment, return false if no more segments
-    // if no_resolve_current == true, do not resolve current segment
+    /// go to next/next segment, return false if no more segments
+    /// if no_resolve_current == true, do not resolve current segment
     bool Next(bool resolveExternal = true);
     bool Prev(void);
 
@@ -226,21 +226,23 @@ public:
     CSeqMap_CI& operator++(void);
     CSeqMap_CI& operator--(void);
 
-    // return position of current segment in sequence
+    /// return position of current segment in sequence
     TSeqPos      GetPosition(void) const;
-    // return length of current segment
+    /// return length of current segment
     TSeqPos      GetLength(void) const;
-    // return end position of current segment in sequence (exclusive)
+    /// return true if current segment is a gap of unknown length
+    bool         IsUnknownLength(void) const;
+    /// return end position of current segment in sequence (exclusive)
     TSeqPos      GetEndPosition(void) const;
 
     CSeqMap::ESegmentType GetType(void) const;
-    // will allow only regular data segments (whole, plus strand)
+    /// will allow only regular data segments (whole, plus strand)
     const CSeq_data& GetData(void) const;
-    // will allow any data segments, user should check for position and strand
+    /// will allow any data segments, user should check for position and strand
     const CSeq_data& GetRefData(void) const;
 
-    // The following function makes sense only
-    // when the segment is a reference to another seq.
+    /// The following function makes sense only
+    /// when the segment is a reference to another seq.
     CSeq_id_Handle GetRefSeqid(void) const;
     TSeqPos GetRefPosition(void) const;
     TSeqPos GetRefEndPosition(void) const;
@@ -315,6 +317,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/11/22 16:04:47  grichenk
+* Added IsUnknownLength()
+*
 * Revision 1.18  2004/10/14 17:43:12  vasilche
 * Use one initialization method in all constructors.
 *

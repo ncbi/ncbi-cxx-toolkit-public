@@ -181,7 +181,7 @@ CSeqMap_Seq_data::CSeqMap_Seq_data(const TObject& obj)
     }
     else {
         // split Seq-data
-        x_AddGap(obj.GetLength());
+        x_AddGap(obj.GetLength(), false);
     }
     x_AddEnd();
 }
@@ -370,6 +370,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/11/22 16:04:47  grichenk
+* Added IsUnknownLength()
+*
 * Revision 1.14  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

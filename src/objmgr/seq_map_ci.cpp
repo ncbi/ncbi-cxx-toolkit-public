@@ -225,6 +225,16 @@ const CSeq_data& CSeqMap_CI::GetRefData(void) const
 }
 
 
+bool CSeqMap_CI::IsUnknownLength(void) const
+{
+    if ( !*this ) {
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "Iterator out of range");
+    }
+    return x_GetSegment().m_UnknownLength;
+}
+
+
 CSeq_id_Handle CSeqMap_CI::GetRefSeqid(void) const
 {
     if ( !*this ) {
@@ -540,6 +550,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/11/22 16:04:47  grichenk
+* Added IsUnknownLength()
+*
 * Revision 1.30  2004/10/14 17:44:02  vasilche
 * Use one initialization method in all constructors.
 * Fixed reverse iteration from end().

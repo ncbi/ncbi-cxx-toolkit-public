@@ -69,9 +69,11 @@ BEGIN_SCOPE(objects)
 
 inline
 CSeqMap::CSegment::CSegment(ESegmentType seg_type,
-                            TSeqPos length)
+                            TSeqPos      length,
+                            bool         unknown_len)
     : m_Position(kInvalidSeqPos),
       m_Length(length),
+      m_UnknownLength(unknown_len),
       m_SegType(seg_type),
       m_ObjType(seg_type),
       m_RefMinusStrand(false),
@@ -127,7 +129,7 @@ CSeqMap::CSeqMap(TSeqPos length)
       m_SeqLength(length)
 {
     x_AddEnd();
-    x_AddGap(length);
+    x_AddGap(length, false);
     x_AddEnd();
 }
 
@@ -637,9 +639,11 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_AddSegment(ESegmentType type, TSeqPos len)
+CSeqMap::CSegment& CSeqMap::x_AddSegment(ESegmentType type,
+                                         TSeqPos len,
+                                         bool unknown_len)
 {
-    m_Segments.push_back(CSegment(type, len));
+    m_Segments.push_back(CSegment(type, len, unknown_len));
     return m_Segments.back();
 }
 
@@ -673,9 +677,9 @@ void CSeqMap::x_AddEnd(void)
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_AddGap(TSeqPos len)
+CSeqMap::CSegment& CSeqMap::x_AddGap(TSeqPos len, bool unknown_len)
 {
-    return x_AddSegment(eSeqGap, len);
+    return x_AddSegment(eSeqGap, len, unknown_len);
 }
 
 
@@ -756,7 +760,7 @@ CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_literal& seq)
     }
     else {
         // No data exist - treat it like a gap
-        return x_AddGap(seq.GetLength()); //???
+        return x_AddGap(seq.GetLength(), seq.CanGetFuzz()); //???
     }
 }
 
@@ -767,7 +771,7 @@ CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_loc& loc)
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
     case CSeq_loc::e_Empty:
-        return x_AddGap(0); // Add gap ???
+        return x_AddGap(0, false); // Add gap ???
     case CSeq_loc::e_Whole:
         return x_Add(loc.GetWhole());
     case CSeq_loc::e_Int:
@@ -863,6 +867,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2004/11/22 16:04:47  grichenk
+* Added IsUnknownLength()
+*
 * Revision 1.61  2004/09/30 15:03:41  grichenk
 * Fixed segments resolving
 *

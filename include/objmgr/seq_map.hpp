@@ -94,10 +94,10 @@ class NCBI_XOBJMGR_EXPORT CSeqMap : public CObject
 public:
     // typedefs
     enum ESegmentType {
-        eSeqGap,              // gap
-        eSeqData,             // real sequence data
-        eSeqSubMap,           // sub seqmap
-        eSeqRef,              // reference to Bioseq
+        eSeqGap,              ///< gap
+        eSeqData,             ///< real sequence data
+        eSeqSubMap,           ///< sub seqmap
+        eSeqRef,              ///< reference to Bioseq
         eSeqEnd,
         eSeqChunk
     };
@@ -116,12 +116,14 @@ protected:
     {
     public:
         CSegment(ESegmentType seg_type = eSeqEnd,
-                 TSeqPos length = kInvalidSeqPos);
+                 TSeqPos length = kInvalidSeqPos,
+                 bool unknown_len = false);
 
         // Relative position of the segment in seqmap
         mutable TSeqPos      m_Position;
         // Length of the segment (kInvalidSeqPos if unresolved)
         mutable TSeqPos      m_Length;
+        bool                 m_UnknownLength;
 
         // Segment type
         char                 m_SegType;
@@ -233,12 +235,14 @@ protected:
     CSeqMap(TSeqPos len); // gap
 
     void x_AddEnd(void);
-    CSegment& x_AddSegment(ESegmentType type, TSeqPos len);
+    CSegment& x_AddSegment(ESegmentType type,
+                           TSeqPos      len,
+                           bool         unknown_len = false);
     CSegment& x_AddSegment(ESegmentType type, TSeqPos len, const CObject* object);
     CSegment& x_AddSegment(ESegmentType type, const CObject* object,
                            TSeqPos refPos, TSeqPos len,
                            ENa_strand strand = eNa_strand_plus);
-    CSegment& x_AddGap(TSeqPos len);
+    CSegment& x_AddGap(TSeqPos len, bool unknown_len);
     CSegment& x_Add(CSeqMap* submap);
     CSegment& x_Add(const CSeq_data& data, TSeqPos len);
     CSegment& x_Add(const CPacked_seqint& seq);
@@ -331,6 +335,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2004/11/22 16:04:47  grichenk
+* Added IsUnknownLength()
+*
 * Revision 1.53  2004/11/16 21:41:11  grichenk
 * Removed default value for CScope* argument in CSeqMap methods
 *
