@@ -969,7 +969,7 @@ CBDB_Field* CBDB_FieldFactory::Create(EType etype) const
 	case eInt2:
 		return new CBDB_FieldInt2();
 	case eUint1:
-		return new CBDB_FieldUInt1();
+		return new CBDB_FieldUint1();
 	case eFloat:
 		return 	new CBDB_FieldFloat();
 	case eDouble:
@@ -1003,6 +1003,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/09/02 15:37:02  rotmistr
+ * Fixed name for UInt1 to Uint1
+ *
  * Revision 1.31  2004/07/09 15:14:49  kuznets
  * Fixed warnings (MSVC 7)
  *

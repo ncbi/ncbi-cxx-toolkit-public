@@ -830,10 +830,10 @@ public:
     }
 };
 
-/// UInt1 field type
+/// Uint1 field type
 ///
 
-class CBDB_FieldUInt1:public CBDB_FieldUChar
+class CBDB_FieldUint1:public CBDB_FieldUChar
 {
 public:
     const CBDB_FieldUChar& operator = (unsigned char val) 
@@ -850,7 +850,7 @@ public:
 
     virtual CBDB_Field * Construct(size_t) const
     { 
-        return new CBDB_FieldUInt1(); 
+        return new CBDB_FieldUint1(); 
     }
     
     virtual string GetString() const  
@@ -2036,6 +2036,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2004/09/02 15:37:02  rotmistr
+ * Fixed name for UInt1 to Uint1
+ *
  * Revision 1.46  2004/08/17 14:33:38  dicuccio
  * Use NStr::CompareNocase() instead of NStr::strcasecmp() because the latter
  * gives SWIG an especially hard time in Windows.
