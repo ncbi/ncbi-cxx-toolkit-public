@@ -327,7 +327,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	BlastHSP hp_start;
    BlastHSP** hsp_array;
 	BLAST_KarlinBlk** kbp;
-	BLAST_Score maxscore, cutoff[2];
+	Int4 maxscore, cutoff[2];
 	Boolean frame_change, linked_set, ignore_small_gaps;
 	double gap_decay_rate, gap_prob, prob[2];
 	Int4 index, index1, ordering_method, num_links, frame_index, number_of_query_frames;
@@ -619,7 +619,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                      } /* end for H2... */
                   }
                   { 
-                     BLAST_Score score=H->score;
+                     Int4 score=H->score;
                      double new_xsum = H_hsp_xsum + (score*(kbp[H->context]->Lambda));
                      Int4 new_sum = H_hsp_sum + (score - cutoff[index]);
                      
@@ -731,7 +731,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                   } /* end for H2_index... */
                } /* end if(H->score>cuttof[]) */
                { 
-                  BLAST_Score score=H->score;
+                  Int4 score=H->score;
                   double new_xsum = H_hsp_xsum + (score*(kbp[H->context]->Lambda));
                   Int4 new_sum = H_hsp_sum + (score - cutoff[index]);
                   
