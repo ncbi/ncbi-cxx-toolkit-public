@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/12/20 20:00:31  grichenk
+ * CObjectManager::ConstructBioseq(CSeq_loc) -> CBioseq::CBioseq(CSeq_loc ...)
+ *
  * Revision 6.5  2001/10/12 19:32:57  ucko
  * move BREAK to a central location; move CBioseq::GetTitle to object manager
  *
@@ -49,10 +52,20 @@
  */
 
 // standard includes
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_point.hpp>
 
 // generated includes
 #include <objects/seq/Bioseq.hpp>
 
+#include <serial/typeinfo.hpp>
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -74,6 +87,91 @@ bool CBioseq::Equals(const CSerialUserOp& object) const
 {
     const CBioseq& obj = dynamic_cast<const CBioseq&>(object);
     return m_ParentEntry == obj.m_ParentEntry;
+}
+
+
+int CBioseq::sm_ConstructedId = 0;
+
+void CBioseq::x_SeqLoc_To_DeltaExt(CSeq_loc& loc,
+                                   CDelta_ext& ext)
+{
+    switch ( loc.Which() ) {
+    case CSeq_loc::e_Packed_int:
+        {
+            // extract each range, create and add simple location
+            iterate ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
+                CSeq_loc* int_loc = new CSeq_loc;
+                SerialAssign<CSeq_id>
+                    (int_loc->SetInt().SetId(), (*ii)->GetId());
+                int_loc->SetInt().SetFrom((*ii)->GetFrom());
+                int_loc->SetInt().SetTo((*ii)->GetTo());
+                if ( (*ii)->IsSetStrand() )
+                    int_loc->SetInt().SetStrand((*ii)->GetStrand());
+                CDelta_seq* dseq = new CDelta_seq;
+                dseq->SetLoc(int_loc);
+                ext.Set().push_back(dseq);
+            }
+            break;
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            // extract each point
+            iterate ( CPacked_seqpnt::TPoints, pi,
+                      loc.GetPacked_pnt().GetPoints() ) {
+                CSeq_loc* pnt_loc = new CSeq_loc;
+                SerialAssign<CSeq_id>
+                    (pnt_loc->SetPnt().SetId(), loc.GetPacked_pnt().GetId());
+                pnt_loc->SetPnt().SetPoint(*pi);
+                if ( loc.GetPacked_pnt().IsSetStrand() ) {
+                    pnt_loc->SetPnt().SetStrand(
+                        loc.GetPacked_pnt().GetStrand());
+                }
+                CDelta_seq* dseq = new CDelta_seq;
+                dseq->SetLoc(pnt_loc);
+                ext.Set().push_back(dseq);
+            }
+        }
+    case CSeq_loc::e_Mix:
+        {
+            // extract sub-locations
+            iterate ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
+                x_SeqLoc_To_DeltaExt(**li, ext);
+            }
+            return;
+        }
+    default:
+        {
+            // Just add the location
+            CDelta_seq* dseq = new CDelta_seq;
+            dseq->SetLoc(CRef<CSeq_loc>(&loc));
+            ext.Set().push_back(dseq);
+        }
+    }
+}
+
+
+CBioseq::CBioseq(CSeq_loc& loc, string str_id)
+    : m_ParentEntry(0)
+{
+    CBioseq::TId& id_list = SetId();
+
+    // Id
+    CSeq_id* id = new CSeq_id;
+    if ( str_id.empty() ) {
+        id->SetLocal().SetStr("constructed" + NStr::IntToString(sm_ConstructedId++));
+    }
+    else {
+        id->SetLocal().SetStr(str_id);
+    }
+    id_list.push_back(id);
+
+    // Inst
+    CSeq_inst& inst = SetInst();
+    inst.SetRepr(CSeq_inst::eRepr_const);
+    inst.SetMol(CSeq_inst::eMol_other);
+
+    CDelta_ext& ext = inst.SetExt().SetDelta();
+    x_SeqLoc_To_DeltaExt(loc, ext);
 }
 
 

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2001/12/20 20:00:28  grichenk
+ * CObjectManager::ConstructBioseq(CSeq_loc) -> CBioseq::CBioseq(CSeq_loc ...)
+ *
  * Revision 1.7  2001/10/12 19:32:55  ucko
  * move BREAK to a central location; move CBioseq::GetTitle to object manager
  *
@@ -76,6 +79,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CSeq_entry;
+class CSeq_loc;
+class CDelta_ext;
 
 class CBioseq : public CBioseq_Base, public CSerialUserOp
 {
@@ -91,6 +96,15 @@ public:
     // see CScope::GetTitle in object manager.
     // string GetTitle(void) const;
 
+    // Construct bioseq from seq-loc. The constructed bioseq
+    // has id = "local|"+str_id or "local|constructed###", where
+    // ### is a generated number; inst::repr = const,
+    // inst::mol = other (since it is impossible to check sequence
+    // type by seq-loc). The location is splitted into simple
+    // locations (intervals, points, whole-s etc.) and put into
+    // ext::delta.
+    CBioseq(CSeq_loc& loc, string str_id = "");
+
 protected:
     // From CSerialUserOp
     virtual void Assign(const CSerialUserOp& source);
@@ -104,6 +118,11 @@ private:
     // Seq-entry containing the Bioseq
     void SetParentEntry(CSeq_entry* entry);
     CSeq_entry* m_ParentEntry;
+
+    void x_SeqLoc_To_DeltaExt(CSeq_loc& loc, CDelta_ext& ext);
+
+    static int sm_ConstructedId;
+
     friend class CSeq_entry;
 };
 
