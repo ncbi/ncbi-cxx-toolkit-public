@@ -582,6 +582,8 @@ string CreateProjectName(const CProjKey& project_id)
         return project_id.Id() + ".lib";
     case CProjKey::eDll:
         return project_id.Id() + ".dll";
+    case CProjKey::eMsvc:
+        return project_id.Id() + ".vcproj";
     default:
         NCBI_THROW(CProjBulderAppException, eProjectType, project_id.Id());
         return "";
@@ -626,6 +628,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/05/10 19:53:43  gorelenk
+ * Changed CreateProjectName .
+ *
  * Revision 1.19  2004/05/10 14:29:03  gorelenk
  * Implemented CSourceFileToProjectInserter .
  *
