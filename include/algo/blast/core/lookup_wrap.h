@@ -66,6 +66,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
 /** Deallocate memory for the lookup table */
 LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup);
 
+/** Default size of offset arrays filled in a single ScanSubject call. */
 #define OFFSET_ARRAY_SIZE 4096
 
 /** Determine the size of the offsets arrays to be filled by
