@@ -771,3 +771,25 @@ void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info)
     return;
 }
 
+Int2 BLAST_ContextToFrame(Uint1 prog_number, Int2 context_number)
+{
+   Int2 frame=255;
+
+   if (prog_number == blast_type_blastn) {
+      if (context_number % 2 == 0)
+         frame = 1;
+      else
+         frame = -1;
+   } else if (prog_number == blast_type_blastp ||
+              prog_number == blast_type_tblastn ||
+              prog_number == blast_type_psitblastn) {
+      /* Query and subject are protein, no frame. */
+      frame = 0;
+   } else if (prog_number == blast_type_blastx || 
+              prog_number == blast_type_tblastx) {
+      context_number = context_number % 6;
+      frame = (context_number < 3) ? context_number+1 : -context_number+2;
+   }
+   
+   return frame;
+}

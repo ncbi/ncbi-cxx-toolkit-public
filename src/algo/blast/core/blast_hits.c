@@ -45,42 +45,12 @@ static char const rcsid[] = "$Id$";
 #include <blast_options.h>
 #include <blast_extend.h>
 #include <blast_hits.h>
+#include <blast_util.h>
 
 extern Int4 BinarySearchInt4 PROTO((Int4 n, Int4Ptr A, Int4 size));
 extern Int4 LIBCALL 
 HspArrayPurge PROTO((BlastHSPPtr PNTR hsp_array, Int4 hspcnt, 
                      Boolean clear_num));
-
-/** This function translates the context number of a context into the frame of 
- * the sequence.
- * @param prog_number Integer corresponding to the BLAST program
- * @param context_number Context number 
- * @return Sequence frame (+-1 for nucleotides, -3..3 for translations)
-*/
-static Int2
-ContextToFrame(Uint1 prog_number, Int2 context_number)
-
-{
-   Int2 frame=255;
-
-   if (prog_number == blast_type_blastn) {
-      if (context_number % 2 == 0)
-         frame = 1;
-      else
-         frame = -1;
-   } else if (prog_number == blast_type_blastp ||
-              prog_number == blast_type_tblastn ||
-              prog_number == blast_type_psitblastn) {
-      /* Query and subject are protein, no frame. */
-      frame = 0;
-   } else if (prog_number == blast_type_blastx || 
-              prog_number == blast_type_tblastx) {
-      context_number = context_number % 6;
-      frame = (context_number < 3) ? context_number+1 : -context_number+2;
-   }
-   
-   return frame;
-}
 
 void BLAST_AdjustQueryOffsets(Uint1 program_number, 
         BlastHSPListPtr hsp_list, BlastQueryInfoPtr query_info)
@@ -99,7 +69,7 @@ void BLAST_AdjustQueryOffsets(Uint1 program_number,
          BinarySearchInt4(hsp->query.gapped_start, 
             query_info->context_offsets, 
             (Int4) (query_info->last_context+1));   
-      hsp->query.frame = ContextToFrame(program_number, context);
+      hsp->query.frame = BLAST_ContextToFrame(program_number, context);
       offset_shift = query_info->context_offsets[context];
       hsp->query.offset -= offset_shift;
       hsp->query.gapped_start -= offset_shift;
