@@ -37,6 +37,33 @@
 BEGIN_NCBI_SCOPE
 
 
+string CRefArgs::GetDefaultDefinitions(void)
+{
+    const char* kDefaultEngineDefinitions =
+        ".google. q, query\n"
+        ".yahoo. p\n"
+        ".msn. q, p\n"
+        ".altavista. q\n"
+        "aolsearch. query\n"
+        ".scirus. q\n"
+        ".lycos. query\n"
+        "search.netscape query\n";
+    return kDefaultEngineDefinitions;
+}
+
+
+CRefArgs::CRefArgs(const string& definitions)
+{
+    AddDefinitions(definitions);
+}
+
+
+CRefArgs::~CRefArgs(void)
+{
+    return;
+}
+
+
 void CRefArgs::AddDefinitions(const string& definitions)
 {
     typedef list<string> TDefList;
@@ -57,53 +84,46 @@ void CRefArgs::AddDefinitions(const string& host_mask,
     typedef list<string> TArgList;
     TArgList arg_list;
     NStr::Split(arg_names, ",", arg_list);
-    TArgNames& names = m_HostMap[host_mask];
     ITERATE(TArgList, arg, arg_list) {
-        names.push_back(NStr::TruncateSpaces(*arg));
+        m_HostMap.insert(
+            THostMap::value_type(host_mask, NStr::TruncateSpaces(*arg)));
     }
 }
 
 string CRefArgs::GetQueryString(const string& referrer) const
 {
-    string ret = "";
+    // Remove http:// prefix
     SIZE_TYPE pos = NStr::Find(referrer, "://");
-    string host, args;
-    if (pos != NPOS) {
-        // Remove http:// prefix
-        host = referrer.substr(pos+3, referrer.size());
-    }
-    else {
-        host = referrer;
-    }
+    string host =  (pos != NPOS) ?
+        referrer.substr(pos+3, referrer.size()) : referrer;
+
     // Find end of host name
     pos = NStr::Find(host, "/");
     if (pos == NPOS) {
-        return ret;
+        return kEmptyStr;
     }
-    args = host.substr(pos+1, host.size());
-    host = host.substr(0, pos-1);
+
+    string args = host.substr(pos + 1, host.size());
+    host = host.substr(0, pos - 1);
     // Find arguments if any
     pos = NStr::Find(args, "?");
     if (pos == NPOS) {
         // No arguments - nothing to process
-        return ret;
+        return kEmptyStr;
     }
-    args = args.substr(pos+1, args.size());
+    args = args.substr(pos + 1, args.size());
     ITERATE(THostMap, it, m_HostMap) {
         if (NStr::FindNoCase(host, it->first) == NPOS) {
             continue;
         }
-        const TArgNames& names = it->second;
         TCgiEntries entries;
         CCgiRequest::ParseEntries(args, entries);
-        ITERATE(TArgNames, name, names) {
-            TCgiEntriesCI query = entries.find(*name);
-            if (query != entries.end()) {
-                return string(query->second);
-            }
+        TCgiEntriesCI query = entries.find(it->second);
+        if (query != entries.end()) {
+            return string(query->second);
         }
     }
-    return ret;
+    return kEmptyStr;
 }
 
 
@@ -114,6 +134,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2004/12/09 16:35:45  grichenk
+* Added GetDefaultDefinitions. Doxygenized comments.
+*
 * Revision 1.1  2004/12/07 18:51:58  grichenk
 * Initial revision
 *

@@ -34,7 +34,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <vector>
 #include <map>
 
 /** @addtogroup CGIReqRes
@@ -55,13 +54,13 @@ BEGIN_NCBI_SCOPE
 class CRefArgs
 {
 public:
-    CRefArgs(void);
     /// Create referrer parser from a set of definitions.
-    /// Multiple definitions should be separated by new line.
-    /// Host mask should be followed by space(s).
-    /// Multiple argument names should be separated with commas.
-    /// E.g. ".google. q, query".
-    CRefArgs(const string& definitions);
+    /// @param definitions
+    ///  Multiple definitions should be separated by new line ('\n').
+    ///  Host mask should be followed by space(s).
+    ///  Multiple argument names should be separated with commas.
+    ///  E.g. ".google. q, query\n.foo. bar".
+    CRefArgs(const string& definitions = kEmptyStr);
     ~CRefArgs(void);
 
     /// Add mappings between host mask and CGI argument name for query string.
@@ -69,48 +68,22 @@ public:
     void AddDefinitions(const string& definitions);
     void AddDefinitions(const string& host_mask, const string& arg_names);
 
-    /// Return query string in the referrer or empty string.
+    /// Find query string in the referrer.
+    /// @param referrer
+    ///  Full HTTP referrer
+    /// @return
+    ///  Query string assigned to one of the names associated with the host
+    ///  in the referrer or empty string.
     string GetQueryString(const string& referrer) const;
 
+    /// Get default set of search engine definitions.
+    static string GetDefaultDefinitions(void);
+
 private:
-    typedef vector<string>         TArgNames;
-    typedef map<string, TArgNames> THostMap;
+    typedef multimap<string, string> THostMap;
 
     THostMap    m_HostMap;
 };
-
-
-/// Default set of search engine definitions.
-const string kDefaultEngineDefinitions =
-    ".google. q, query\n"
-    ".yahoo. p\n"
-    ".msn. q, p\n"
-    ".altavista. q\n"
-    "aolsearch. query\n"
-    ".scirus. q\n"
-    ".lycos. query\n"
-    "search.netscape query\n";
-
-
-inline
-CRefArgs::CRefArgs(void)
-{
-    return;
-}
-
-
-inline
-CRefArgs::CRefArgs(const string& definitions)
-{
-    AddDefinitions(definitions);
-}
-
-
-inline
-CRefArgs::~CRefArgs(void)
-{
-    return;
-}
 
 
 END_NCBI_SCOPE
@@ -118,6 +91,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2004/12/09 16:35:45  grichenk
+* Added GetDefaultDefinitions. Doxygenized comments.
+*
 * Revision 1.1  2004/12/07 18:51:58  grichenk
 * Initial revision
 *
