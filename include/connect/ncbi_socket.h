@@ -1,5 +1,5 @@
-#ifndef NCBI_SOCKET__H
-#define NCBI_SOCKET__H
+#ifndef CONNECT___NCBI_SOCKET__H
+#define CONNECT___NCBI_SOCKET__H
 
 /*  $Id$
  * ===========================================================================
@@ -91,22 +91,16 @@
  *
  */
 
+#if defined(NCBISOCK__H)
+#  error "<ncbisock.h> and <ncbi_socket.h> must never be #include'd together"
+#endif
+
 #include <connect/ncbi_core.h>
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-/******************************************************************************
- *  CONSISTENCY CHECK
- */
-
-#if defined(NCBISOCK__H)
-#  error "<ncbisock.h> and <ncbi_socket.h> must never be #include'd together"
-#endif
-
 
 
 /******************************************************************************
@@ -560,6 +554,7 @@ extern char* SOCK_gethostbyaddr
  size_t       namelen  /* [in]  size (bytes) of the buffer above             */
  );
 
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -568,6 +563,9 @@ extern char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2002/09/19 18:07:06  lavr
+ * Consistency check moved up to be the first thing
+ *
  * Revision 6.21  2002/08/27 03:15:01  lavr
  * Deprecate SOCK_{nh}to{hn}{ls}, define more elaborate call names
  * SOCK_{Net|Host}To{Host|Net}{Long|Short} instead
@@ -645,4 +643,4 @@ extern char* SOCK_gethostbyaddr
  * ===========================================================================
  */
 
-#endif /* NCBI_SOCKET__H */
+#endif /* CONNECT___NCBI_SOCKET__H */
