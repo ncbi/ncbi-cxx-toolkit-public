@@ -31,20 +31,13 @@
 * ===========================================================================
 */
 
-// C-toolkit stuff
 #include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
 #include <corelib/ncbistl.hpp>
-#include <objseq.h>
-#include <objalign.h>
-#include <thrdatd.h>
-#include <thrddecl.h>
-#include <cddutil.h>
-#include <ncbistr.h>
 
 #include <memory>
 
-#include "cn3d/cn3d_threader.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
+#include "cn3d/cn3d_threader.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/structure_set.hpp"
@@ -53,6 +46,14 @@
 #include "cn3d/atom_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
+
+// C-toolkit stuff
+#include <objseq.h>
+#include <objalign.h>
+#include <thrdatd.h>
+#include <thrddecl.h>
+#include <cddutil.h>
+#include <ncbistr.h>
 
 USING_NCBI_SCOPE;
 
@@ -1232,6 +1233,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/11/04 18:09:17  thiessen
+* rearrange headers for OSX build
+*
 * Revision 1.38  2003/07/14 18:37:07  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

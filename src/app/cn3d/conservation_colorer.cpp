@@ -34,14 +34,14 @@
 #include <corelib/ncbistd.hpp>  // must come before C-toolkit stuff
 #include <corelib/ncbi_limits.h>
 
+#include "cn3d/block_multiple_alignment.hpp"
+#include "cn3d/conservation_colorer.hpp"
+#include "cn3d/cn3d_tools.hpp"
+#include "cn3d/cn3d_blast.hpp"
+
 #include <blastkar.h>           // for BLAST standard probability routines
 #include <objseq.h>
 #include <math.h>
-
-#include "cn3d/conservation_colorer.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/cn3d_blast.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -549,6 +549,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/11/04 18:09:17  thiessen
+* rearrange headers for OSX build
+*
 * Revision 1.30  2003/02/13 18:31:39  thiessen
 * separate basic from fit color calculation
 *
