@@ -225,6 +225,8 @@ property w_feat_compare : {name:"w_feat_compare", path:"gui:widgets:feat_compare
 property w_feat_table : {name:"w_feat_table", path:"gui:widgets:feat_table"}
 property w_config : {name:"w_config", path:"gui:widgets:config"}
 property w_controls : {name:"w_controls", path:"gui:widgets:controls"}
+property w_html : {name:"w_html", path:"gui:widgets:html"}
+
 
 (* GUI Plugins *)
 property gui_doc_basic : {name:"gui_doc_basic", path:"gui:plugins:doc:basic"}
@@ -287,7 +289,7 @@ property ncbi_xobjsimple : {name:"ncbi_xobjsimple", libs:{xobjsimple}, dep:"ncbi
 property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui_math}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_image ncbi_general", req:true}
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", req:true}
-property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls}, dep:"gui_utils ncbi_image ncbi_core", req:true}
+property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_html}, dep:"gui_utils ncbi_image ncbi_core", req:true}
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_basic, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_utils gui_graph gui_widgets gui_config", req:true}
@@ -404,6 +406,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/04/05 14:46:53  lebedev
+ * gui_widgets += w_html
+ *
  * Revision 1.50  2005/03/30 14:05:36  lebedev
  * gui_config += ncbi_general
  *
