@@ -1,5 +1,5 @@
-#ifndef NCBI_INET_APP__HPP
-#define NCBI_INET_APP__HPP
+#ifndef NCBI_CGI_APP__HPP
+#define NCBI_CGI_APP__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/09 17:27:44  sandomir
+* tool should be changed to work with the new CCgiApplication
+*
 * Revision 1.5  1998/12/09 16:49:55  sandomir
 * CCgiApplication added
 *
@@ -83,6 +86,6 @@ protected:
 
 END_NCBI_SCOPE
 
-#endif // NCBI_INET_APP__HPP
+#endif // NCBI_CGI_APP__HPP
 
 

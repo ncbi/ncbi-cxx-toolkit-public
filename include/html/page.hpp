@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/09 17:27:44  sandomir
+* tool should be changed to work with the new CCgiApplication
+*
 * Revision 1.3  1998/12/08 00:34:55  lewisg
 * cleanup
 *
@@ -47,7 +50,7 @@
 
 #include <ncbistd.hpp>
 #include <html.hpp>
-#include <ncbiapp.hpp>
+#include <cgiapp.hpp>
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////
