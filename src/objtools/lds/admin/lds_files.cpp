@@ -59,6 +59,7 @@ void CLDS_File::SyncWithDir(const string& path,
     }
 
     CLDS_Query lds_query(m_db);
+    CChecksum checksum(CChecksum::eCRC32);
 
     set<string> files;
 
@@ -90,7 +91,11 @@ void CLDS_File::SyncWithDir(const string& path,
 
         if (!found) {  // new file arrived
             CFormatGuess fg;
-            Uint4 crc = ComputeFileCRC32(entry);
+
+            checksum.Reset();
+            ComputeFileChecksum(entry, checksum);
+            Uint4 crc = checksum.GetChecksum();
+
             CFormatGuess::EFormat format = fg.Format(entry);
 
             FindMaxRecId();
@@ -116,7 +121,11 @@ void CLDS_File::SyncWithDir(const string& path,
             updated->insert(m_FileDB.file_id);
             UpdateEntry(m_FileDB.file_id, entry, 0, tm, file_size);
         } else {
-            Uint4 crc = ComputeFileCRC32(entry);
+
+            checksum.Reset();
+            ComputeFileChecksum(entry, checksum);
+            Uint4 crc = checksum.GetChecksum();
+
             if (crc != m_FileDB.CRC) {
                 updated->insert(m_FileDB.file_id);
                 UpdateEntry(m_FileDB.file_id, entry, crc, tm, file_size);
@@ -202,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/11 20:02:43  kuznets
+ * Reworked CRC32 calculation in order to get better performance
+ *
  * Revision 1.4  2003/07/02 12:07:42  dicuccio
  * Fix for implicit conversion/assignment in gcc
  *
