@@ -52,7 +52,7 @@ public:
     // Request features from our database corresponding to a given
     // CSeq_id_Handle
     virtual void GetRecords(const objects::CSeq_id_Handle& handle,
-                            const EChoice choice);
+                            EChoice choice);
 
 private:
     enum {
@@ -104,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/28 13:40:40  dicuccio
+ * Fixed to match new API in CDataLoader
+ *
  * Revision 1.3  2003/11/13 20:59:59  dicuccio
  * Use multimap instead of map for accession strings - corrects errors with
  * identical accessions presented with different qualifiers

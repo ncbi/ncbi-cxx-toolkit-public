@@ -176,7 +176,7 @@ CUsrFeatDataLoader::CUsrFeatDataLoader(const string& input_file,
 // Request from a datasource using handles and ranges instead of seq-loc
 // The TSEs loaded in this call will be added to the tse_set.
 void CUsrFeatDataLoader::GetRecords(const CSeq_id_Handle& idh,
-                                    const EChoice choice)
+                                    EChoice choice)
 {
     //
     // find out if we've already loaded annotations for this seq-id
@@ -336,6 +336,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/28 13:41:10  dicuccio
+ * Fixed to match new API in CDataLoader
+ *
  * Revision 1.1  2003/11/14 19:09:18  jcherry
  * Initial version
  *

@@ -58,7 +58,7 @@ CCddDataLoader::CCddDataLoader()
 // PRE : ??
 // POST: ??
 void CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
-                                const EChoice choice)
+                                EChoice choice)
 {
     CConstRef<CSeq_id> id = idh.GetSeqId();
     if ( !id  ||  !id->IsGeneral()  ||  id->GetGeneral().GetDb() != "CDD") {
@@ -109,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/28 13:41:09  dicuccio
+ * Fixed to match new API in CDataLoader
+ *
  * Revision 1.1  2003/10/20 17:47:49  dicuccio
  * Initial revision
  *

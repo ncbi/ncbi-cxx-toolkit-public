@@ -157,7 +157,7 @@ CSageDataLoader::CSageDataLoader(const string& input_file,
 // Request from a datasource using handles and ranges instead of seq-loc
 // The TSEs loaded in this call will be added to the tse_set.
 void CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
-                                 const EChoice choice)
+                                 EChoice choice)
 {
     string acc_col = "col" + NStr::IntToString(m_ColIdx[eAccession]);
 
@@ -296,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/28 13:41:10  dicuccio
+ * Fixed to match new API in CDataLoader
+ *
  * Revision 1.3  2003/11/13 21:01:03  dicuccio
  * Altered to support finding multiple accession strings matching a single handle
  *

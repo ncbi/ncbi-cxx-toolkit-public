@@ -62,7 +62,7 @@ public:
     virtual ~CLDS_DataLoader();
 
     virtual void GetRecords(const CSeq_id_Handle& idh,
-                            const EChoice choice);
+                            EChoice choice);
     
     virtual void DropTSE(const CTSE_Info& tse_info);
 
@@ -80,6 +80,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/28 13:40:40  dicuccio
+ * Fixed to match new API in CDataLoader
+ *
  * Revision 1.6  2003/10/28 14:00:13  kuznets
  * Added constructor parameter name of the dataloader
  *

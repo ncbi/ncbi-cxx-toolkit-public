@@ -64,7 +64,7 @@ public:
     // Request features from our database corresponding to a given
     // CSeq_id_Handle
     virtual void GetRecords(const objects::CSeq_id_Handle& handle,
-                            const EChoice choice);
+                            EChoice choice);
     // Request an annot by CSeq_id_Handle
     CRef<objects::CSeq_annot> GetAnnot(const objects::CSeq_id_Handle& idh);
 private:
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/28 13:40:40  dicuccio
+ * Fixed to match new API in CDataLoader
+ *
  * Revision 1.1  2003/11/14 19:09:16  jcherry
  * Initial version
  *

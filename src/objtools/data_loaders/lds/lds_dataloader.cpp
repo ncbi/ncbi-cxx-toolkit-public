@@ -180,7 +180,7 @@ CLDS_DataLoader::~CLDS_DataLoader()
 }
 
 void CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
-                                 const EChoice choice)
+                                 EChoice choice)
 {
     CHandleRangeMap hrmap;
     hrmap.AddRange(idh, CRange<TSeqPos>::GetWhole(), eNa_strand_unknown);
@@ -238,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/11/28 13:41:10  dicuccio
+ * Fixed to match new API in CDataLoader
+ *
  * Revision 1.10  2003/10/28 14:01:20  kuznets
  * Added constructor parameter name of the dataloader
  *
