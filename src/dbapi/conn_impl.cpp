@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.10  2002/06/24 18:06:49  kholodov
+* Added more detailed diagnostics on connections
+*
 * Revision 1.9  2002/06/21 14:42:31  kholodov
 * Added: reporting connection deletions in debug mode
 *
@@ -79,13 +82,13 @@ BEGIN_NCBI_SCOPE
 CConnection::CConnection(CDataSource* ds)
     : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false)
 {
-
+    _TRACE("Default connection " << (void *)this << " created...");
 }
 
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
     : m_ds(ds), m_connection(conn), m_connCounter(-1), m_connUsed(false)
 {
-
+    _TRACE("Auxiliary connection " << (void *)this << " created...");
 }
 
 
@@ -108,7 +111,9 @@ void CConnection::Connect(const string& user,
 CConnection::~CConnection()
 {
     if( IsAux() ) {
-        _TRACE("Auxiliary connection is being deleted...");
+        _TRACE("Auxiliary connection " << (void*)this << " is being deleted...");
+    } else {
+        _TRACE("Default connection " << (void*)this << " is being deleted...");
     }
     Close();
     Notify(CDbapiDeletedEvent(this));
@@ -231,12 +236,15 @@ CConnection* CConnection::GetAuxConn()
     CConnection *conn = this;
     if( m_connUsed ) {
         conn = Clone();
+        _TRACE("GetAuxconn(): Server: " << GetCDB_Connection()->ServerName()
+               << ", open aux connection, total: " << m_connCounter);
     }
-    else
+    else {
         m_connUsed = true;
 
-    _TRACE("GetAuxconn(): server: " << GetCDB_Connection()->ServerName()
-           << ", total connections: " << m_connCounter);
+        _TRACE("GetAuxconn(): server: " << GetCDB_Connection()->ServerName()
+               << ", no aux connections necessary, using default...");
+    }
 
 
 
