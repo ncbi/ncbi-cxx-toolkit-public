@@ -59,9 +59,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-const string IFlatQVal::kSemicolon = "; ";
-const string IFlatQVal::kComma     = ", ";
+const string IFlatQVal::kSpace     = " ";
+const string IFlatQVal::kSemicolon = ";";
+const string IFlatQVal::kComma     = ",";
 const string IFlatQVal::kEOL       = "\n";
 
 
@@ -145,6 +145,30 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
 }
 
 
+static void s_ReplaceUforT(string& codon)
+{
+    NON_CONST_ITERATE (string, base, codon) {
+        if (*base == 'T') {
+            *base = 'U';
+        }
+    }
+}
+
+
+static char s_MakeDegenerateBase(const string &str1, const string& str2)
+{
+    static const char kIdxToSymbol[] = "?ACMGRSVUWYHKDBN";
+    
+    vector<char> symbol_to_idx(256, 0);
+    for (size_t i = 0; i < sizeof(kIdxToSymbol) - 1; ++i) {
+        symbol_to_idx[kIdxToSymbol[i]] = i;
+    }
+
+    size_t idx = symbol_to_idx[str1[2]] | symbol_to_idx[str2[2]];
+    return kIdxToSymbol[idx];
+}
+
+
 static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recognized)
 {
     recognized.erase();
@@ -157,12 +181,7 @@ static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recogni
     
     ITERATE (CTrna_ext::TCodon, it, trna.GetCodon()) {
         string codon = CGen_code_table::IndexToCodon(*it);
-        // replace U for T
-        NON_CONST_ITERATE (string, base, codon) {
-            if (*base == 'T') {
-                *base = 'U';
-            }
-        }
+        s_ReplaceUforT(codon);
         if (!codon.empty()) {
             codons.push_back(codon);
         }
@@ -170,50 +189,27 @@ static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recogni
     if (codons.empty()) {
         return 0;
     }
+    size_t size = codons.size();
+    if (size > 1) {
+        codons.sort();
 
-    codons.sort();
+        list<string>::iterator it = codons.begin();
+        list<string>::iterator prev = it++;
+        while (it != codons.end()) {
+            string& codon1 = *prev;
+            string& codon2 = *it;
+            if (codon1.compare(0, 2, codon2, 0, 2) == 0) {
+                codon1[2] = s_MakeDegenerateBase(codon1, codon2);
+                it = codons.erase(it);
+            } else {
+                prev = it;
+                ++it;
+            }
+        }
+    }
 
     recognized = NStr::Join(codons, ", ");
-    return codons.size();
-    /*
-  for (i = 0; i < 256; i++) {
-    chrToInt [i] = 0;
-  }
-  for (i = 1; i < 16; i++) {
-    ch = intToChr [i];
-    chrToInt [(int) ch] = i;
-  }
-
-  count = ValNodeLen (head);
-  str1 = (CharPtr) head->data.ptrvalue;
-  vnp = head->next;
-  prev = (Pointer PNTR) &(head->next);
-  while (vnp != NULL) {
-    next = vnp->next;
-    str2 = (CharPtr) vnp->data.ptrvalue;
-    if (str1 != NULL && str2 != NULL &&
-        str1 [0] == str2 [0] && str1 [1] == str2 [1]) {
-      str1 [2] = MakeDegenerateBase (str1 [2], str2 [2], chrToInt, intToChr);
-      *prev = next;
-      vnp->next = NULL;
-      ValNodeFreeData (vnp);
-    } else {
-      str1 = str2;
-      prev = (Pointer PNTR) &(vnp->next);
-    } 
-    vnp = next;
-  }
-
-  for (vnp = head, ptr = buf, i = 0, prefix = NULL; vnp != NULL;
-       vnp = vnp->next, prefix = ", ", i++) {
-    ptr = StringMove (ptr, prefix);
-    ptr = StringMove (ptr, (CharPtr) vnp->data.ptrvalue);
-  }
-
-  ValNodeFreeData (head);
-  
-  return count;
-  */
+    return size;
 }
 
 
@@ -229,20 +225,22 @@ CFormatQual::CFormatQual
     m_Name(name), m_Value(value), m_Prefix(prefix), m_Suffix(suffix),
     m_Style(style)
 {
+    NStr::TruncateSpaces(m_Value, NStr::eTrunc_End);
 }
 
 
 CFormatQual::CFormatQual(const string& name, const string& value, TStyle style) :
-    m_Name(name), m_Value(value), m_Prefix(kEmptyStr), m_Suffix(kEmptyStr),
+    m_Name(name), m_Value(value), m_Prefix(" "), m_Suffix(kEmptyStr),
     m_Style(style)
 {
+    NStr::TruncateSpaces(m_Value, NStr::eTrunc_End);
 }
 
 
 // === CFlatStringQVal ======================================================
 
 CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style)
-    :  IFlatQVal(&kEmptyStr, &kSemicolon),
+    :  IFlatQVal(&kSpace, &kSemicolon),
        m_Value(NStr::TruncateSpaces(value)), m_Style(style)
 {
 }
@@ -277,7 +275,7 @@ void CFlatNumberQVal::Format
  TFlags flags) const
 {
     if (ctx.Config().CheckQualSyntax()) {
-        if (IsBlankString(m_Value)) {
+        if (NStr::IsBlank(m_Value)) {
             return;
         }
         bool has_space = false;
@@ -477,8 +475,13 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
     ConvertQuotes(subname);
 
     if ( s_IsNote(flags) ) {
-        m_Suffix = (m_Value->GetSubtype() == COrgMod::eSubtype_other ? &kEOL : &kSemicolon);
-        if ( name != "orgmod_note" ) {
+        bool is_orgmod_note = (name == "orgmod_note");
+        if (flags & IFlatQVal::fIsSource) {
+            m_Suffix = is_orgmod_note ? &kEOL : &kEmptyStr;
+        } else {
+            m_Suffix = (m_Value->GetSubtype() == COrgMod::eSubtype_other ? &kEOL : &kSemicolon);
+        }
+        if (!is_orgmod_note) {
             x_AddFQ(q, "note", name + ": " + subname);
         } else {
             x_AddFQ(q, "note", subname);
@@ -779,6 +782,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/10/05 15:51:05  shomrat
+* Fixed codon and orgmod formatting
+*
 * Revision 1.17  2004/08/20 16:28:27  shomrat
 * fixed mol type for pre_RNA biomol
 *
