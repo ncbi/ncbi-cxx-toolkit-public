@@ -100,7 +100,8 @@ void CBlastApplication::Init(void)
         CArgDescriptions::eString);
     arg_desc->SetConstraint
         ("program", &(*new CArgAllow_Strings, 
-                "blastp", "blastn", "blastx", "tblastn", "tblastx"));
+                "blastp", "blastn", "blastx", "tblastn", "tblastx", 
+                "rpsblast", "rpstblastn"));
     arg_desc->AddDefaultKey("query", "query", "Query file name",
                      CArgDescriptions::eInputFile, "stdin");
     arg_desc->AddKey("db", "database", "BLAST database name",
@@ -115,7 +116,7 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("lcase", "lcase", "Should lower case be masked?",
                             CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("lookup", "lookup", 
-        "Type of lookup table: 0 default, 1 megablast, 2 RPS",
+        "Type of lookup table: 0 default, 1 megablast",
         CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("matrix", "matrix", "Scoring matrix name",
                             CArgDescriptions::eString, "BLOSUM62");
@@ -277,14 +278,10 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
     // FIXME: Handle lcase masking
 
     // If lookup table type argument value is 0, the type will be set correctly
-    // automatically. Value 1 corresponds to megablast lookup table; 
-    // value 2 is RPS lookup table.
+    // automatically. Value 1 corresponds to megablast lookup table;
     switch (args["lookup"].AsInteger()) {
     case 1:
         opt.SetLookupTableType(MB_LOOKUP_TABLE);
-        break;
-    case 2:
-        opt.SetLookupTableType(RPS_LOOKUP_TABLE);
         break;
     default:
         break;
@@ -531,9 +528,20 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
 
     if (args["out"]) {
         EProgram program = blaster.SetOptions().GetProgram();
+
         char* dbname = const_cast<char*>(args["db"].AsString().c_str());
         bool db_is_na = (program == eBlastn || program == eTblastn || 
                          program == eTblastx);
+
+        /* Revert RPS program names to their conventional
+           counterparts, to avoid confusing the C toolkit
+           formatter */
+
+        if (program == eRPSBlast)
+            program = eBlastp;
+        if (program == eRPSTblastn)
+            program = eTblastn;
+
         CBlastFormatOptions* format_options = 
             new CBlastFormatOptions(program, args["out"].AsOutputFile());
         
@@ -690,7 +698,8 @@ int CBlastApplication::Run(void)
 
     BlastSeqSrc* seq_src = 
         ReaddbBlastSeqSrcInit(args["db"].AsString().c_str(), 
-                              (program == eBlastp || program == eBlastx),
+                              (program == eBlastp || program == eBlastx ||
+                               program == eRPSBlast || program == eRPSTblastn),
                               first_oid, last_oid, NULL);
 
     CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
@@ -700,7 +709,7 @@ int CBlastApplication::Run(void)
     Nlm_MemMapPtr rps_pssm_mmap = NULL;
     RPSInfo *rps_info = NULL;
     // Need to set up the RPS database information structure too
-    if ((opts->GetOptions().GetLookupTableType() == RPS_LOOKUP_TABLE) &&
+    if ((program == eRPSBlast || program == eRPSTblastn) &&
         BLAST_FillRPSInfo(&rps_info, &rps_mmap,
             &rps_pssm_mmap, args["db"].AsString().c_str()) != 0) 
     {
