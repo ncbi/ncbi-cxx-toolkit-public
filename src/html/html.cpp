@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  1999/06/09 20:57:58  golikov
+* RowSpan fixed by Vasilche
+*
 * Revision 1.43  1999/06/07 15:21:05  vasilche
 * Fixed some warnings.
 *
@@ -818,12 +821,18 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
 
                 // then store span number
                 for ( TIndex i = col; i < colEnd; ++i ) {
-                    rowSpans[i] = max(rowSpans[i], rowSpan - 1);
+                    rowSpans[i] = rowSpan - 1;
                 }
             }
             // skip this cell's columns
             col += colSpan;
         }
+	
+        // skip all used cells
+        while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
+            --rowSpans[col++];
+        }
+
         if ( info )
             info->AddRowSize(col);
         ++row;
