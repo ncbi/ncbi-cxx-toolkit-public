@@ -245,7 +245,7 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
  * @param mixed_seq_ptr Pointer to buffer for the mixed frame sequence [out]
  */
 Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
-        Int4 nucl_length, Uint1* genetic_code, 
+        Int4 nucl_length, const Uint1* genetic_code, 
         Uint1** translation_buffer_ptr, Int4** frame_offsets_ptr,
         Uint1** mixed_seq_ptr);
 
@@ -263,7 +263,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
  *                      not NULL. [out]
  */
 int GetPartialTranslation(const Uint1* nucl_seq,
-        Int4 nucl_length, Int2 frame, Uint1* genetic_code,
+        Int4 nucl_length, Int2 frame, const Uint1* genetic_code,
         Uint1** translation_buffer_ptr, Int4* protein_length, 
         Uint1** mixed_seq_ptr);
 
