@@ -50,3 +50,5 @@
 #define HAVE_WINDOWS_H   1
 
 #define HAVE_OPENGL      1
+
+#define HAVE_IOS_XALLOC  1

@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to 1 if C++ streams delete their buffers. */
+#undef AUTOMATIC_STREAMBUF_DESTRUCTION
+
 /* Define to 1 if necessary to get FIONBIO (e.g., on Solaris) */
 #undef BSD_COMP
 
@@ -59,6 +62,9 @@
 
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
+
+/* Define to 1 if ios(_base)::xalloc et al. exist. */
+#undef HAVE_IOS_XALLOC
 
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.177 2003/03/29 00:19:21 ucko Exp $
+#  $Id: configure.ac,v 1.178 2003/04/01 20:59:32 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1694,6 +1694,46 @@ if test "$ncbi_cv_type_ios_base" = no; then
    AC_DEFINE(HAVE_NO_IOS_BASE, 1,
              [Define to 1 if new C++ streams lack `ios_base::'.])
 fi
+
+
+AC_CACHE_CHECK([for ios(_base)::xalloc and related functions],
+   ncbi_cv_func_ios_xalloc,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <iostream>]],
+       [[std::cout.pword(std::ios::xalloc());
+         std::cout.register_callback(0, std::ios::erase_event);]])],
+       [ncbi_cv_func_ios_xalloc=yes], [ncbi_cv_func_ios_xalloc=no])])
+if test "$ncbi_cv_func_ios_xalloc" = yes; then
+   AC_DEFINE(HAVE_IOS_XALLOC, 1,
+             [Define to 1 if ios(_base)::xalloc et al. exist.])
+fi
+
+
+AC_CACHE_CHECK([whether C++ streams delete their buffers],
+   ncbi_cv_cxx_auto_sb_dest,
+   [AC_RUN_IFELSE([AC_LANG_PROGRAM(
+       [[#include <iostream>
+         int status = 1;
+         class mybuf : public std::streambuf
+         {
+         public:
+             ~mybuf() { status = 0; }
+         };
+         class mystream : public std::iostream
+         {
+         public:
+               mystream() { init(new mybuf); }
+         };
+         ]],
+       [[{ mystream s; }  return status;]])],
+       [ncbi_cv_cxx_auto_sb_dest=yes], [ncbi_cv_cxx_auto_sb_dest=no],
+       [ncbi_cv_cxx_auto_sb_dest=no])])
+# Rare, so assume "no" when cross-compiling
+if test "$ncbi_cv_cxx_auto_sb_dest" = yes; then
+   AC_DEFINE(AUTOMATIC_STREAMBUF_DESTRUCTION, 1,
+             [Define to 1 if C++ streams delete their buffers.])
+fi
+
 
 
 AC_CACHE_CHECK([for std::char_traits::], ncbi_cv_type_char_traits,
