@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2002/11/25 15:02:21  thiessen
+* changes for cdd annotation evidence show
+*
 * Revision 1.69  2002/11/22 19:54:29  thiessen
 * fixes for wxMac/OSX
 *
@@ -380,7 +383,8 @@ public:
             MID_SHOW_UNALIGNED,
                 MID_SHOW_UNALIGNED_ALL,
                 MID_SHOW_UNALIGNED_ALN_DOMAIN,
-            MID_SHOW_SELECTED,
+            MID_SHOW_SELECTED_RESIDUES,
+            MID_SHOW_SELECTED_DOMAINS,
             MID_DIST_SELECT,
                 MID_DIST_SELECT_RESIDUES,
                 MID_DIST_SELECT_ALL,

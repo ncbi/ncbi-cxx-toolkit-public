@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.171  2002/11/25 15:02:20  thiessen
+* changes for cdd annotation evidence show
+*
 * Revision 1.170  2002/11/22 19:54:29  thiessen
 * fixes for wxMac/OSX
 *
@@ -1149,7 +1152,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_SAVE_SAME, MID_SAVE_AS,              Cn3DMainFrame::OnSave)
     EVT_MENU      (MID_PNG,                                 Cn3DMainFrame::OnPNG)
     EVT_MENU_RANGE(MID_ZOOM_IN,  MID_ALL_FRAMES,            Cn3DMainFrame::OnAdjustView)
-    EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
+    EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED_DOMAINS,           Cn3DMainFrame::OnShowHide)
     EVT_MENU_RANGE(MID_DIST_SELECT_RESIDUES, MID_DIST_SELECT_OTHER_ALL, Cn3DMainFrame::OnDistanceSelect)
     EVT_MENU      (MID_REFIT_ALL,                           Cn3DMainFrame::OnAlignStructures)
     EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            Cn3DMainFrame::OnSetStyle)
@@ -1237,7 +1240,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_SHOW_ALL, "Show &Everything");
     menu->Append(MID_SHOW_DOMAINS, "Show Aligned &Domains");
     menu->Append(MID_SHOW_ALIGNED, "Show &Aligned Residues");
-    menu->Append(MID_SHOW_SELECTED, "Show &Selected Residues");
+    menu->Append(MID_SHOW_SELECTED_RESIDUES, "Show &Selected Residues");
+    menu->Append(MID_SHOW_SELECTED_DOMAINS, "Show Selected Do&mains");
     subMenu = new wxMenu;
     subMenu->Append(MID_SHOW_UNALIGNED_ALL, "Show &All");
     subMenu->Append(MID_SHOW_UNALIGNED_ALN_DOMAIN, "Show in Aligned &Domains");
@@ -1957,8 +1961,11 @@ void Cn3DMainFrame::OnShowHide(wxCommandEvent& event)
             glCanvas->structureSet->showHideManager->
                 ShowUnalignedResiduesInAlignedDomains(glCanvas->structureSet);
             break;
-        case MID_SHOW_SELECTED:
+        case MID_SHOW_SELECTED_RESIDUES:
             glCanvas->structureSet->showHideManager->ShowSelectedResidues(glCanvas->structureSet);
+            break;
+        case MID_SHOW_SELECTED_DOMAINS:
+            glCanvas->structureSet->showHideManager->ShowDomainsWithHighlights(glCanvas->structureSet);
             break;
         }
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/11/25 15:02:20  thiessen
+* changes for cdd annotation evidence show
+*
 * Revision 1.30  2002/11/21 18:07:25  thiessen
 * show whole objects again on evidence show
 *
@@ -754,63 +757,106 @@ void CDDAnnotateDialog::EditEvidence(void)
     }
 }
 
-static int HighlightResidues(const StructureSet *set, const CBiostruc_annot_set& annot)
+typedef struct {
+    int alignedMoleculeID;
+    int from, to;
+    int hits;
+} ChainInfo;
+
+static const StructureObject * HighlightResidues(const StructureSet *set, const CBiostruc_annot_set& annot)
 {
     try {
         if (!annot.IsSetId() || annot.GetId().size() == 0 || !annot.GetId().front()->IsMmdb_id())
             throw "no MMDB ID found in annotation";
         int mmdbID = annot.GetId().front()->GetMmdb_id().Get();
 
-        // find the first object with the annotation's mmdbID
-        StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
-        for (o=set->objects.begin(); o!=oe; o++) {
-            if ((*o)->mmdbID == mmdbID) {
+        // map object to aligned molecule ID and interval of alignment on that chain
+        typedef std::map < const StructureObject * , ChainInfo > ObjectMap;
+        ObjectMap annotObjects;
 
-                // iterate over molecule/residue intervals
-                if (annot.GetFeatures().size() > 0 &&
-                    annot.GetFeatures().front()->GetFeatures().size() > 0 &&
-                    annot.GetFeatures().front()->GetFeatures().front()->IsSetLocation() &&
-                    annot.GetFeatures().front()->GetFeatures().front()->GetLocation().IsSubgraph() &&
-                    annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
-                        GetSubgraph().IsResidues() &&
-                    annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
-                        GetSubgraph().GetResidues().IsInterval() &&
-                    annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
-                        GetSubgraph().GetResidues().GetInterval().size() > 0)
-                {
-                    GlobalMessenger()->RemoveAllHighlights(true);
-
-                    CResidue_pntrs::TInterval::const_iterator i, ie =
-                        annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
-                            GetSubgraph().GetResidues().GetInterval().end();
-                    ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
-                    for (i=annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
-                            GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; i++) {
-
-                        // find molecule with moleculeID
-                        for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
-                            if (m->second->id == (*i)->GetMolecule_id().Get()) {
-
-                                // highlight residues in interval
-                                for (int r=(*i)->GetFrom().Get(); r<=(*i)->GetTo().Get(); r++)
-                                    GlobalMessenger()->ToggleHighlight(m->second, r);
-                                break;
-                            }
-                        }
-                        if (m == (*o)->graph->molecules.end())
-                            throw "molecule with given ID not found";
-                    }
-                    return (*o)->mmdbID; // finished - return the object highlighted
-                }
-                throw "unrecognized annotation structure";
-            }
+        // first find all objects with the annotation's mmdbID; fill out chain id and interval
+        const BlockMultipleAlignment *alignment = set->alignmentManager->GetCurrentMultipleAlignment();
+        if (!alignment) throw "no alignment";
+        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+            alignedBlocks(alignment->GetUngappedAlignedBlocks());
+        if (alignedBlocks->size() == 0) throw "no aligned blocks";
+        for (int row=0; row<alignment->NRows(); row++) {
+            const StructureObject *object;
+            const Sequence *seq = alignment->GetSequenceOfRow(row);
+            if (!seq->molecule || seq->molecule->identifier->mmdbID != mmdbID ||
+                !seq->molecule->GetParentOfType(&object))
+                continue;
+            ChainInfo& ci = annotObjects[object];
+            ci.alignedMoleculeID = seq->molecule->id;
+            ci.from = alignedBlocks->front()->GetRangeOfRow(row)->from;
+            ci.to = alignedBlocks->back()->GetRangeOfRow(row)->to;
+            ci.hits = 0;
         }
-        throw "no object of annotation's MMDB ID";
+        if (annotObjects.size() == 0)
+            throw "no chain of annotation's MMDB ID in the alignment";
+
+        GlobalMessenger()->RemoveAllHighlights(true);
+
+        // iterate over molecule/residue intervals
+        if (annot.GetFeatures().size() > 0 &&
+            annot.GetFeatures().front()->GetFeatures().size() > 0 &&
+            annot.GetFeatures().front()->GetFeatures().front()->IsSetLocation() &&
+            annot.GetFeatures().front()->GetFeatures().front()->GetLocation().IsSubgraph() &&
+            annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
+                GetSubgraph().IsResidues() &&
+            annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
+                GetSubgraph().GetResidues().IsInterval() &&
+            annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
+                GetSubgraph().GetResidues().GetInterval().size() > 0)
+        {
+
+            ObjectMap::iterator o, oe = annotObjects.end();
+            CResidue_pntrs::TInterval::const_iterator i, ie =
+                annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
+                    GetSubgraph().GetResidues().GetInterval().end();
+            for (i=annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
+                    GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; i++)
+            {
+                // for each object
+                for (o=annotObjects.begin(); o!=oe; o++) {
+
+                    // find molecule with annotation's moleculeID
+                    ChemicalGraph::MoleculeMap::const_iterator
+                        m = o->first->graph->molecules.find((*i)->GetMolecule_id().Get());
+                    if (m == o->first->graph->molecules.end())
+                        throw "molecule with annotation's specified molecule ID not found in object";
+
+                    for (int r=(*i)->GetFrom().Get(); r<=(*i)->GetTo().Get(); r++) {
+                        // highlight residues in interval
+                        if (o == annotObjects.begin()) {
+                            if (r >= 1 && r <= m->second->NResidues())
+                                GlobalMessenger()->ToggleHighlight(m->second, r);
+                            else
+                                throw "annotation's residue ID out of molecule's residue range";
+                        }
+
+                        // count hits of annotated residues in aligned chain+interval
+                        if (o->second.alignedMoleculeID == m->second->id &&
+                                r >= o->second.from && r <= o->second.to)
+                            (o->second.hits)++;
+                    }
+                }
+            }
+
+            // return object with most hits of annotation to aligned chain region
+            const StructureObject *bestObject = NULL;
+            for (o=annotObjects.begin(); o!=oe; o++)
+                if (!bestObject || o->second.hits > annotObjects[bestObject].hits)
+                    bestObject = o->first;
+            return bestObject;
+
+        } else
+            throw "unrecognized annotation structure";
 
     } catch (const char *err) {
         ERR_POST(Error << "HighlightResidues() - " << err);
     }
-    return 0;
+    return NULL;
 }
 
 void CDDAnnotateDialog::ShowEvidence(void)
@@ -836,13 +882,32 @@ void CDDAnnotateDialog::ShowEvidence(void)
 
     // highlight residues if structure evidence
     else if (IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvidence)) {
-        int mmdbID = HighlightResidues(structureSet, selectedEvidence->GetBsannot());
-        if (mmdbID > 0) {
+        const StructureObject *bestObject = HighlightResidues(structureSet, selectedEvidence->GetBsannot());
+        if (bestObject) {
+
+            // first, set show/hide to make only objects of this mmdb id visible
             structureSet->showHideManager->MakeAllVisible();
             StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
             for (o=structureSet->objects.begin(); o!=oe; o++)
-                if ((*o)->mmdbID != mmdbID)
+                if ((*o)->mmdbID != bestObject->mmdbID)
                     structureSet->showHideManager->Show(*o, false);
+            // now force redrawing of structures, so the frames that contains
+            // these objects aren't empty (otherwise, renderer won't show selected frame)
+            GlobalMessenger()->ProcessRedraws();
+
+            // now show the frame containing the "best" object (get display list from first molecule)
+            unsigned int displayList = bestObject->graph->molecules.find(1)->second->displayLists.front();
+            for (int frame=0; frame<structureSet->frameMap.size(); frame++) {
+                StructureSet::DisplayLists::const_iterator d, de = structureSet->frameMap[frame].end();
+                for (d=structureSet->frameMap[frame].begin(); d!=de; d++) {
+                    if (*d == displayList) { // is display list in this frame?
+                        structureSet->renderer->ShowFrameNumber(frame);
+                        frame = structureSet->frameMap.size(); // to exit out of next-up loop
+                        break;
+                    }
+                }
+            }
+
             wxMessageBox(
                 selectedEvidence->GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str(),
                 "Structure Evidence", wxOK | wxCENTRE, this);
