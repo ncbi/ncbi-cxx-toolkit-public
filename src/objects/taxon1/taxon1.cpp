@@ -367,7 +367,7 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
         inp_orgRef.SetOrgname().SetMgcode( src.GetOrgname().GetMgcode() );
         inp_orgRef.SetOrgname().SetDiv( src.GetOrgname().GetDiv() );
     }
-    return pData;
+    return CConstRef<CTaxon2_data>(pData);
 }
 
 int
@@ -483,7 +483,7 @@ CTaxon1::GetOrgRef(int tax_id,
             if( pData->GetBlast_name().size() > 0 ) {
                 blast_name.assign( pData->GetBlast_name().front() );
             }
-            return &pData->GetOrg();
+            return CConstRef<COrg_ref>(&pData->GetOrg());
         }
     }
     return null;
@@ -846,6 +846,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.9  2002/11/08 20:55:58  ucko
+ * CConstRef<> now requires an explicit constructor.
+ *
  * Revision 6.8  2002/11/08 14:39:52  domrach
  * Member function GetSuperkingdom() added
  *
