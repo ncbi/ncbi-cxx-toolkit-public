@@ -2053,37 +2053,31 @@ void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
     } 
     // } DEBUG
     
-    // !!! can't look for contating feature using GetBestOverlap.
-    // This implementation should be changed once the above is supported
-
     // look for overlapping genes
-    CConstRef<CSeq_feat> gene = 
-        GetOverlappingGene(feat.GetLocation(), *m_Scope);
-    if ( gene ) {
+    if (GetOverlappingGene(feat.GetLocation(), *m_Scope)) {
         return;
     }
 
-
     // look for intersecting genes
-    gene = GetBestOverlappingFeat(
-        feat.GetLocation(),
-        CSeqFeatData::e_Gene,
-        eOverlap_Simple,
-        *m_Scope);
-    if ( !gene ) {
+    if (!GetBestOverlappingFeat(feat.GetLocation(),
+                                  CSeqFeatData::e_Gene,
+                                  eOverlap_Simple,
+                                  *m_Scope)) {
         return;
     }
 
     // found an intersecting (but not overlapping) gene
-    EDiagSev sev = eDiag_Error;
-    if ( m_Imp.IsNC()  ||  m_Imp.IsNT() ) {
-        sev = eDiag_Warning;
-    }
+    // set severity level
+    EDiagSev sev = (m_Imp.IsNC()  ||  m_Imp.IsNT()) ? eDiag_Warning : eDiag_Error;
 
-    if ( feat.GetData().IsCdregion() ) {
+    // report error
+    if (feat.GetData().IsCdregion()) {
         PostErr(sev, eErr_SEQ_FEAT_CDSgeneRange, 
             "gene overlaps CDS but does not completely contain it", feat);
-    } else if ( feat.GetData().IsRna() ) {
+    } else if (feat.GetData().IsRna()) {
+        if (GetOverlappingOperon(feat.GetLocation(), *m_Scope)) {
+            return;
+        }
         PostErr(sev, eErr_SEQ_FEAT_mRNAgeneRange,
             "gene overlaps mRNA but does not completely contain it", feat);
     }
@@ -2819,6 +2813,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2004/07/29 17:24:58  shomrat
+* ValidateBadGeneOverlap checks for overlapping operon before reporting mRNAgeneRange error
+*
 * Revision 1.62  2004/07/29 17:10:47  shomrat
 * Moved IsTransgenic to shared implementation class
 *
