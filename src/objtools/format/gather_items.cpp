@@ -445,6 +445,7 @@ void CFlatGatherer::x_GatherComments(void) const
     if ( ctx.ShowGBBSource() ) {
         x_GBBSourceComment(ctx);
     }
+    x_BarcodeComment(ctx);
     x_DescComments(ctx);
     x_MaplocComments(ctx);
     x_RegionComments(ctx);
@@ -480,8 +481,8 @@ void CFlatGatherer::x_FlushComments(void) const
     if ( m_Comments.empty() ) {
         return;
     }
-    // add a period to the last comment (if not local id)
-    if ( dynamic_cast<CLocalIdComment*>(&*m_Comments.back()) == 0 ) {
+    // add a period to the last comment (if needed)
+    if (m_Comments.back()->NeedPeriod()) {
         m_Comments.back()->AddPeriod();
     }
     
@@ -769,6 +770,25 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
             objects::AddPeriod(tech_str);
             x_AddComment(new CCommentItem("Method: " + tech_str, ctx, &(*desc)));
         }
+    }
+}
+
+
+void CFlatGatherer::x_BarcodeComment(CBioseqContext& ctx) const
+{
+    CSeqdesc_CI desc_it(ctx.GetHandle(), CSeqdesc::e_Molinfo);
+    if (!desc_it) {
+        return;
+    }
+    const CSeqdesc& desc = *desc_it;
+    const CMolInfo& mi = desc.GetMolinfo();
+
+    CMolInfo::TTech tech = mi.GetTech();
+    if (tech == CMolInfo::eTech_barcode) {
+        CRef<CCommentItem> com(
+            new CCommentItem(CCommentItem::GetStringForBarcode(ctx), ctx, &desc));
+        com->SetNeedPeriod(false);
+        x_AddComment(com);
     }
 }
 
@@ -1561,6 +1581,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2005/02/02 19:35:35  shomrat
+* Added barcode comment
+*
 * Revision 1.37  2005/02/01 21:55:11  grichenk
 * Added direction flag for mapping between top level sequence
 * and segments.

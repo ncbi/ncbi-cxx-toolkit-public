@@ -33,18 +33,15 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
-//#include <objects/seq/Bioseq.hpp>
-//#include <objects/seq/Seq_inst.hpp>
-//#include <objects/seq/Seq_ext.hpp>
-//#include <objects/seq/Delta_ext.hpp>
-//#include <objects/seq/Delta_seq.hpp>
-//#include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
@@ -72,8 +69,8 @@ bool CCommentItem::sm_FirstComment = true;
 //
 //  CCommentItem
 
-CCommentItem::CCommentItem(CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_First(false)
+CCommentItem::CCommentItem(CBioseqContext& ctx, bool need_period) :
+    CFlatItem(&ctx), m_First(false), m_NeedPeriod(need_period)
 {
     swap(m_First, sm_FirstComment);
 }
@@ -83,7 +80,8 @@ CCommentItem::CCommentItem
 (const string& comment,
  CBioseqContext& ctx,
  const CSerialObject* obj) :
-    CFlatItem(&ctx), m_Comment(ExpandTildes(comment, eTilde_comment))
+    CFlatItem(&ctx), m_Comment(ExpandTildes(comment, eTilde_comment)),
+    m_First(false), m_NeedPeriod(true)
 {
     swap(m_First, sm_FirstComment);
     if ( obj != 0 ) {
@@ -93,7 +91,7 @@ CCommentItem::CCommentItem
 
     
 CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
-    CFlatItem(&ctx)
+    CFlatItem(&ctx), m_First(false), m_NeedPeriod(true)
 {
     swap(m_First, sm_FirstComment);
     x_SetObject(desc);
@@ -104,7 +102,8 @@ CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
 }
 
 
-CCommentItem::CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx)
+CCommentItem::CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx) :
+    CFlatItem(&ctx), m_First(false), m_NeedPeriod(true)
 {
     swap(m_First, sm_FirstComment);
     x_SetObject(feat);
@@ -593,6 +592,119 @@ string CCommentItem::GetStringForModelEvidance(const SModelEvidance& me)
 }
 
 
+string CCommentItem::GetStringForBarcode(CBioseqContext& ctx)
+{
+    CSeqdesc_CI desc_it(ctx.GetHandle(), CSeqdesc::e_Source);
+    if (!desc_it) {
+        return kEmptyStr;
+    }
+    const CBioSource& src = desc_it->GetSource();
+
+    map<CSubSource::TSubtype, const string*> subsources;
+    ITERATE (CBioSource::TSubtype, it, src.GetSubtype()) {
+        const CSubSource& sub = **it;
+        if (sub.IsSetSubtype()  &&  sub.IsSetName()  &&
+            !NStr::IsBlank(sub.GetName())) {
+            subsources[sub.GetSubtype()] = &sub.GetName();
+        }
+    }
+
+    const string* taxname = NULL;
+    map<COrgMod::TSubtype, const string*> orgmods;
+    if (src.IsSetOrg()) {
+        const COrg_ref& org = src.GetOrg();
+        if (org.IsSetTaxname()  &&  !NStr::IsBlank(org.GetTaxname())) {
+            taxname = &org.GetTaxname();
+        }
+        if (org.IsSetOrgname()) {
+            ITERATE (COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {
+                const COrgMod& omod = **it;
+                if (omod.IsSetSubtype()  &&  omod.IsSetSubname()) {
+                    orgmods[omod.GetSubtype()] = &omod.GetSubname();
+                }
+            }
+        }
+    }
+
+    CNcbiOstrstream comment;
+
+    comment << "Barcode Consortium: Standard Data Elements" << Endl() << Endl()
+            << "    Organism:";
+    if (taxname != NULL) {
+        comment << "          " << *taxname;
+    }
+    comment << Endl();
+
+    comment << "    Collected By:";
+    if (subsources.find(CSubSource::eSubtype_collected_by) != subsources.end()) {
+        comment << "      " << *subsources[CSubSource::eSubtype_collected_by];
+    }
+    comment << Endl();
+
+    comment << "    Collection Date:";
+    if (subsources.find(CSubSource::eSubtype_collection_date) != subsources.end()) {
+        comment << "   " << *subsources[CSubSource::eSubtype_collection_date];
+    }
+    comment << Endl();
+
+    comment << "    Country:";
+    if (subsources.find(CSubSource::eSubtype_country) != subsources.end()) {
+        comment << "           " << *subsources[CSubSource::eSubtype_country];
+    }
+    comment << Endl();
+
+    comment << "    Identified By:";
+    if (subsources.find(CSubSource::eSubtype_identified_by) != subsources.end()) {
+        comment << "     " << *subsources[CSubSource::eSubtype_identified_by];
+    }
+    comment << Endl();
+
+    comment << "    Isolate:";
+    if (orgmods.find(COrgMod::eSubtype_isolate) != orgmods.end()) {
+        comment << "           " << *orgmods[COrgMod::eSubtype_isolate];
+    }
+    comment << Endl();
+
+    comment << "    Lat-Lon:";
+    if (subsources.find(CSubSource::eSubtype_lat_lon) != subsources.end()) {
+        comment << "           " << *subsources[CSubSource::eSubtype_lat_lon];
+    }
+    comment << Endl();
+
+    comment << "    Specimen Voucher:";
+    if (orgmods.find(COrgMod::eSubtype_specimen_voucher) != orgmods.end()) {
+        comment << "  " << *orgmods[COrgMod::eSubtype_specimen_voucher];
+    }
+    comment << Endl();
+
+    comment << "    Forward Primer:";
+    if (subsources.find(CSubSource::eSubtype_fwd_primer_seq) != subsources.end()) {
+        comment << "    " << *subsources[CSubSource::eSubtype_fwd_primer_seq];
+    }
+    comment << Endl();
+
+    comment << "    Reverse Primer:";
+    if (subsources.find(CSubSource::eSubtype_rev_primer_seq) != subsources.end()) {
+        comment << "    " << *subsources[CSubSource::eSubtype_rev_primer_seq];
+    }
+    comment << Endl();
+
+    comment << "    Fwd Primer Name:";
+    if (subsources.find(CSubSource::eSubtype_fwd_primer_name) != subsources.end()) {
+        comment << "   " << *subsources[CSubSource::eSubtype_fwd_primer_name];
+    }
+    comment << Endl();
+
+    comment << "    Rev Primer Name:";
+    if (subsources.find(CSubSource::eSubtype_rev_primer_name) != subsources.end()) {
+        comment << "   " << *subsources[CSubSource::eSubtype_rev_primer_name];
+    }
+    comment << Endl() << Endl();
+
+    return CNcbiOstrstreamToString(comment);
+}
+
+
 /***************************************************************************/
 /*                                 PROTECTED                               */
 /***************************************************************************/
@@ -847,7 +959,7 @@ void CGsdbComment::x_GatherInfo(CBioseqContext&)
 // --- CLocalIdComment
 
 CLocalIdComment::CLocalIdComment(const CObject_id& oid, CBioseqContext& ctx) :
-    CCommentItem(ctx), m_Oid(&oid)
+    CCommentItem(ctx, false), m_Oid(&oid)
 {
     x_GatherInfo(ctx);
 }
@@ -883,6 +995,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/02/02 19:35:29  shomrat
+* Added barcode comment
+*
 * Revision 1.14  2005/01/12 16:44:04  shomrat
 * Removed NsAreGaps; fixed history date
 *

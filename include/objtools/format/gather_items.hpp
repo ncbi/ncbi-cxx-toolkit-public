@@ -120,6 +120,7 @@ protected:
     void x_HistoryComments(CBioseqContext& ctx) const;
     void x_WGSComment(CBioseqContext& ctx) const;
     void x_GBBSourceComment(CBioseqContext& ctx) const;
+    void x_BarcodeComment(CBioseqContext& ctx) const;
     void x_DescComments(CBioseqContext& ctx) const;
     void x_MaplocComments(CBioseqContext& ctx) const;
     void x_RegionComments(CBioseqContext& ctx) const;
@@ -153,6 +154,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/02/02 19:34:49  shomrat
+* Added barcode comment
+*
 * Revision 1.14  2005/01/12 15:49:21  shomrat
 * Use typedef TReferences
 *

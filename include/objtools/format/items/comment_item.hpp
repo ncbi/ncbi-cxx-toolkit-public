@@ -95,6 +95,9 @@ public:
     bool IsFirst(void) const;
     const string& GetComment(void) const;
 
+    bool NeedPeriod(void) const;
+    void SetNeedPeriod(bool val);
+
     void AddPeriod(void);
 
     static const string& GetNsAreGapsStr(void);
@@ -105,13 +108,14 @@ public:
     static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);
     static string GetStringForHTGS(CBioseqContext& ctx);
     static string GetStringForModelEvidance(const SModelEvidance& me);
+    static string GetStringForBarcode(CBioseqContext& ctx);
     static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,
         string* st = 0);
 
     static void ResetFirst(void) { sm_FirstComment = true; }
 
 protected:
-    CCommentItem(CBioseqContext& ctx);
+    CCommentItem(CBioseqContext& ctx, bool need_period = true);
 
     void x_GatherInfo(CBioseqContext& ctx);
     void x_GatherDescInfo(const CSeqdesc& desc);
@@ -128,6 +132,7 @@ private:
 
     string  m_Comment;
     bool    m_First;
+    bool    m_NeedPeriod;
 };
 
 
@@ -214,6 +219,20 @@ const string& CCommentItem::GetComment(void) const
 }
 
 
+inline
+bool CCommentItem::NeedPeriod(void) const
+{
+    return m_NeedPeriod;
+}
+
+
+inline
+void CCommentItem::SetNeedPeriod(bool val)
+{
+    m_NeedPeriod = val;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -222,6 +241,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/02/02 19:35:07  shomrat
+* Added barcode comment
+*
 * Revision 1.10  2005/01/12 16:41:00  shomrat
 * Removed NsAreGaps
 *
