@@ -93,6 +93,10 @@ USING_SCOPE (sequence);
 static const char k_IdentityChar = '.';
 static const int k_NumFrame = 6;
 static const string k_FrameConversion[k_NumFrame] = {"+1", "+2", "+3", "-1", "-2", "-3"};
+static const int k_GetSubseqThreshhold = 10000;
+static const int k_ColorMismatchIdentity = 98;  /*threshhold to color mismatch.  98 means 98% */
+static const string k_DumpGnlUrl = "/blast/dumpgnl.cgi";
+
 #define ENTREZ_URL "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>"
 #define TRACE_URL  "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">"
 
@@ -419,8 +423,8 @@ string CDisplaySeqalign::getUrl(const list<CRef<CSeq_id> >& ids, int row) const{
       }
     }
   } else { //need to use url in configuration file
-   
-      urlLink = getDumpgnlLink(ids, row);
+    string altUrl = NcbiEmptyString;
+      urlLink = getDumpgnlLink(ids, row, altUrl);
   }
   return urlLink;
 }
@@ -676,7 +680,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
     int identity = 0;
     fillIdentityInfo(sequence[0], sequence[1],  match,  positive, middleLine);
     identity = (match*100)/(aln_stop+1);
-    if(identity >= 98){
+    if(identity >= k_ColorMismatchIdentity){
       colorMismatch = true;
     }
     out<<" Identities = "<<match<<"/"<<(aln_stop+1)<<" ("<<identity<<"%"<<")";
@@ -931,7 +935,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 	    alnvecInfo->alnVec = avRef;
 	    avList.push_back(alnvecInfo);
 	    int gi = GetGiForSeqIdList(handle.GetBioseq().GetId());
-	    if(!(toolUrl == NcbiEmptyString || (gi > 0 && toolUrl.find("dumpgnl.cgi") != string::npos))){ //need to construct segs for dumpgnl
+	    if(!(toolUrl == NcbiEmptyString || (gi > 0 && toolUrl.find("dumpgnl.cgi") != string::npos)) || (m_AlignOption & eLinkout)){ /*need to construct segs for dumpgnl and get sub-sequence for long sequences*/
 	      string idString = avRef->GetSeqId(1).GetSeqIdString();
 	      if(m_Segs.count(idString) > 0){ 	//already has seg, concatenate
 		/*Note that currently it's not necessary to use map to store this information.  But I already implemented this way for previous version.  Will keep this way as it's more flexible if we change something*/
@@ -1156,6 +1160,10 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
 	  if(m_AlignOption&eLinkout){
 	    out <<" ";
 	    AddLinkout(bspHandle.GetBioseq(), (**iter), firstGi, gi, out);
+	    if((int)bspHandle.GetBioseq().GetInst().GetLength() > k_GetSubseqThreshhold){
+	      string dumpGnlUrl = getDumpgnlLink((*iter)->GetSeqid(), 1, k_DumpGnlUrl);
+	      out<<dumpGnlUrl<<"<img border=0 height=16 width=16 src=\"/blast/images/D.gif\" alt=\"Download subject sequence spanning the HSP\"></a>";
+	    }
 	  }
 	}
  
@@ -1566,7 +1574,7 @@ static string MakeURLSafe(char* src){
 }
 
 //make url for dumpgnl.cgi
-string CDisplaySeqalign::getDumpgnlLink(const list<CRef<CSeq_id> >& ids, int row)const {
+string CDisplaySeqalign::getDumpgnlLink(const list<CRef<CSeq_id> >& ids, int row, const string& alternativeUrl)const {
   string link = NcbiEmptyString;  
   string toolUrl= m_Reg->Get(m_BlastType, "TOOL_URL");
   string passwd = m_Reg->Get(m_BlastType, "PASSWD");
@@ -1579,8 +1587,10 @@ string CDisplaySeqalign::getDumpgnlLink(const list<CRef<CSeq_id> >& ids, int row
   if(!idGeneral.Empty() && idGeneral->AsFastaString().find("gnl|BL_ORD_ID")){ /* We do need to make security protected link to BLAST gnl */
     return NcbiEmptyString;
 }
-  
-  /* If we are using 'dumpgnl.cgi' (the default) do not strip off the path. */
+  if(alternativeUrl != NcbiEmptyString){ 
+    toolUrl = alternativeUrl;
+  }
+  /* dumpgnl.cgi need to use path  */
   if (toolUrl.find("dumpgnl.cgi") ==string::npos){
     nodb_path = true;
   }  
@@ -1797,6 +1807,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.17  2003/10/28 22:41:06  jianye
+*Added downloading sub seq capability for long seq
+*
 *Revision 1.16  2003/10/27 20:55:53  jianye
 *Added color mismatches capability
 *

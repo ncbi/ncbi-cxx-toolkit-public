@@ -228,7 +228,7 @@ private:
   const CRef<CBlast_def_line_set> GetBlastDefline (const CBioseq& cbsp) const;
   void AddLinkout(const CBioseq& cbsp, const CBlast_def_line& bdl, int firstGi,int gi, CNcbiOstream& out) const;
   string getUrl(const list<CRef<CSeq_id> >& ids, int row) const;
-  string getDumpgnlLink(const list<CRef<CSeq_id> >& ids, int row) const;
+  string getDumpgnlLink(const list<CRef<CSeq_id> >& ids, int row, const string& alternativeUrl) const;
   void getFeatureInfo(list<alnFeatureInfo*>& feature, CScope& scope, CSeqFeatData::E_Choice choice, int row) const;
 
   void fillInserts(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<string>& inserts, string& insertPosString, list<insertInformation*>& insertList) const;
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.12  2003/10/28 22:41:57  jianye
+*Added downloading sub seq capability for long seq
+*
 *Revision 1.11  2003/10/27 20:59:37  jianye
 *Added color mismatches capability
 *
