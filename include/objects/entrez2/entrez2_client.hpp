@@ -41,6 +41,9 @@
 // generated includes
 #include <objects/entrez2/entrez2_client_.hpp>
 
+#include <objects/entrez2/Entrez2_link_set.hpp>
+#include <objects/entrez2/Entrez2_link_count_list.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -55,6 +58,26 @@ public:
     CEntrez2Client(void);
     // destructor
     ~CEntrez2Client(void);
+
+    /// A simplified interface for getting neighbors (links)
+    
+    /// Get ids of neigbors of a specified type.
+    /// db is, e.g., "nucleotide" or "protein" (depending on the query).
+    /// link_type is, for example, "nucleotide_nucleotide".
+
+    /// This form just yields a vector of UIDs
+    void GetNeighbors(int query_uid, const string& db,
+                      const string& link_type,
+                      vector<int>& neighbor_uids);
+    /// This form returns the entire CEntrez2_link_set object,
+    /// which includes scores.
+    CRef<CEntrez2_link_set> GetNeighbors(int query_uid,
+                                         const string& db,
+                                         const string& link_type);
+
+    /// Retrieve counts of the various types of neighbors available
+    CRef<CEntrez2_link_count_list> GetNeighborCounts(int query_uid,
+                                                     const string& db);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -88,6 +111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/10/08 19:18:01  jcherry
+* Added a simplified interface for getting neighbors
+*
 * Revision 1.2  2003/07/31 16:43:58  dicuccio
 * Added missing export specifier
 *
