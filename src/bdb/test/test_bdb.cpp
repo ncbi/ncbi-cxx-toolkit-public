@@ -750,11 +750,19 @@ static void s_TEST_BDB_BLOB_File(void)
     char ch;
     unsigned bytes_read = 0;
 
+    size_t pending = bstream->PendingCount();
+    
+
     for(int i=0;;++i) {
         bstream->Read(&ch, 1, &bytes_read);
         if (bytes_read == 0)
             break;
         assert(ch == test_data[i]);
+
+        size_t pend = bstream->PendingCount();
+        assert(pend == pending - 1);
+
+        pending = pend;
     }
 
     delete bstream;
@@ -1243,6 +1251,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/10/24 13:41:51  kuznets
+ * Tested blob stream PendingCount
+ *
  * Revision 1.23  2003/10/20 20:15:54  kuznets
  * Cache test improved
  *
