@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2000/12/26 23:01:54  vakatov
+* Another tiny Mac specific fix
+*
 * Revision 1.55  2000/12/26 22:24:14  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -899,7 +902,7 @@ void CObjectOStreamAsnBinary::WriteObjectReference(TObjectIndex index)
     if ( sizeof(TObjectIndex) == sizeof(Int4) )
         WriteNumberValue(*this, Int4(index));
     else if ( sizeof(TObjectIndex) == sizeof(Int8) )
-        WriteNumberValue(*this, index);
+        WriteNumberValue(*this, Int8(index));
     else
         ThrowError(eIllegalCall, "invalid size of TObjectIndex");
 }
