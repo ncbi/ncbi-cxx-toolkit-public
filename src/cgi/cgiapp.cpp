@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/10/17 15:59:55  ucko
+* Don't crash if m_DiagHandler is null.
+*
 * Revision 1.27  2001/10/17 14:18:22  ucko
 * Add CCgiApplication::SetCgiDiagHandler for the benefit of derived
 * classes that overload ConfigureDiagDestination.
@@ -399,13 +402,17 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
 
 void CCgiApplication::FlushDiagnostics(void)
 {
-    m_DiagHandler->Flush();
+    if (m_DiagHandler.get() != NULL) {
+        m_DiagHandler->Flush();
+    }
 }
 
 
 void CCgiApplication::SetDiagNode(CNCBINode* node)
 {
-    m_DiagHandler->SetDiagNode(node);
+    if (m_DiagHandler.get() != NULL) {
+        m_DiagHandler->SetDiagNode(node);
+    }
 }
 
 
