@@ -233,13 +233,6 @@ extern void SetAbortHandler(FAbortHandler func = 0);
 // if specified (environment variable DIAG_SILENT_ABORT is "Y" or "y")
 extern void Abort(void);
 
-// Suppress popup messages on execution errors.
-// NOTE: Windows-specific (dummy on other platforms),
-// suppresses all error message boxes in runtime and debug libraries,
-// as well as all General Protection Fault messages.
-// Environment variable DIAG_SILENT_ABORT must be set to "Y" or "y".
-extern void SuppressDiagPopupMessages(void);
-
 // Disable/enable posting of "eDiag_Trace" messages.
 // By default, these messages are disabled unless:
 //   1)  environment variable $DIAG_TRACE is set (to any value), or
@@ -390,6 +383,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.41  2002/04/16 18:38:02  ivanov
+ * SuppressDiagPopupMessages() moved to "test/test_assert.h"
+ *
  * Revision 1.40  2002/04/11 20:39:16  ivanov
  * CVS log moved to end of the file
  *
