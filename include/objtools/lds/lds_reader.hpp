@@ -34,13 +34,16 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objtools/lds/lds.hpp>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
 // Load top level seq entry.
-CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& lds_db, int object_id);
+CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& lds_db, 
+                             const map<string, int>& type_map,
+                             int object_id);
 
 
 END_SCOPE(objects)
@@ -49,6 +52,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/09 18:05:12  kuznets
+ * Changed prototype of the CSeq_entry reading function (LDS_LoadTSE)
+ *
  * Revision 1.1  2003/06/06 20:01:45  kuznets
  * Initial revision.
  *
