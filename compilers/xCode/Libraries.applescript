@@ -54,6 +54,7 @@ exc: include all but listed files
 bundle: compile as a loadable mach-o bundle (like GBench plugin)
 dep: a list of dependancies
 asn1: true if source is generated from ASN1 files. Will add a shell script build phase and a datatool dependency
+asn1Name: an ASN file name, if different from directory name
 *)
 
 
@@ -176,7 +177,7 @@ property xobjwrite : {name:"xobjwrite", path:"objtools:writers"}
 property gui__core : {name:"gui__core", path:"gui:core", exc:{"GBProjectHandle.cpp", "GBProject.cpp", "GBWorkspace.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "FolderInfo.cpp", "ProjectFolder.cpp", "WorkspaceFolder.cpp", "ProjectDescr.cpp", "AbstractProjectItem.cpp"}}
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
 property gui_objutils : {name:"gui_objutils", path:"gui:objutils"}
-property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true}
+property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true, asn1Name:"gui_project"}
 property gui__config : {name:"gui__config", path:"gui:config", inc:{"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "feat_decorate.cpp", "config___.cpp", "config__.cpp"}, asn1:true}
 property gui_opengl : {name:"gui_opengl", path:"gui:opengl"}
 property gui__graph : {name:"gui__graph", path:"gui:graph"}
@@ -190,7 +191,7 @@ property gui_dlg_entry_form : {name:"gui_dlg_entry_form", path:"gui:dialogs:entr
 property gui_dlg_registry : {name:"gui_dlg_registry", path:"gui:dialogs:registry"}
 --property gui_dlg_progress : {name:"gui_dlg_progress", path:"gui:dialogs:progress"}
 property gui_dlg_config : {name:"gui_dlg_config", path:"gui:dialogs:config"}
-property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature"}
+property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", inc:{"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp"}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
 property gui_dlg_edit : {name:"gui_dlg_edit", path:"gui:dialogs:edit"}
 
 (* Widgets *)
@@ -212,6 +213,7 @@ property w_taxplot3d : {name:"w_taxplot3d", path:"gui:widgets:taxplot3d"}
 property w_workspace : {name:"w_workspace", path:"gui:widgets:workspace"}
 property w_phylo_tree : {name:"w_phylo_tree", path:"gui:widgets:phylo_tree"}
 property w_serial_browse : {name:"w_serial_browse", path:"gui:widgets:serial_browse"}
+property w_feat_compare : {name:"w_feat_compare", path:"gui:widgets:feat_compare"}
 
 (* GUI Plugins *)
 property gui_doc_basic : {name:"gui_doc_basic", path:"gui:plugins:doc:basic"}
@@ -291,7 +293,7 @@ property gui_widgets : {name:"gui_widgets", libs:{w_toplevel, w_workspace, w_flt
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_basic, gui_dlg_config, gui_dlg_featedit, gui_dlg_edit}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext"} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext"}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_utils gui_graph gui_widgets"}
-property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_serial_browse}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_widgets"}
+property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_serial_browse, w_feat_compare}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_widgets"}
 property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_aln_textaln, w_aln_data, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_widgets gui_widgets_seq"} --gui_core
 -- PLUG-INS
 property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_bdb ncbi_core" & gui2link, bundle:true}
@@ -309,7 +311,7 @@ property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core 
 property view_align : {name:"view_align", libs:{gui_view_align}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_aln gui_config" & gui2link, bundle:true}
 property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & gui2link, bundle:true}
 property view_phylotree : {name:"view_phylotree", libs:{gui_view_phylo_tree}, dep:"ncbi_core ncbi_algo ncbi_misc gui_core gui_utils gui_widgets gui_widgets_misc" & gui2link, bundle:true}
-property view_table : {name:"view_table", libs:{gui_view_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_aln" & gui2link, bundle:true}
+property view_table : {name:"view_table", libs:{gui_view_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_aln gui_widgets_seq" & gui2link, bundle:true}
 property view_taxplot : {name:"view_taxplot", libs:{gui_view_taxplot}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_misc gui_dialogs" & gui2link, bundle:true}
 property view_text : {name:"view_text", libs:{gui_view_text}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_seq gui_dialogs" & gui2link, bundle:true}
 property view_validator : {name:"view_validator", libs:{gui_view_validator}, dep:"ncbi_core ncbi_seq ncbi_validator gui_core gui_utils gui_widgets" & gui2link, bundle:true}
@@ -343,6 +345,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/09/24 12:25:30  lebedev
+ * gui/dialogs/edit/feature added.
+ *
  * Revision 1.22  2004/09/03 14:34:42  lebedev
  * dlg_basic added to dialogs
  *
