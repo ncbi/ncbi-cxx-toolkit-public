@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/12/29 18:24:40  lavr
+ * File size is now discovered without use of stat call.
+ *
  * Revision 6.3  2000/09/27 13:49:29  lavr
  * URL_Connect args adjusted
  *
@@ -44,9 +47,8 @@
 
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_connutil.h>
-
+#include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 
 
 int main(int argc, char** argv)
@@ -71,7 +73,7 @@ int main(int argc, char** argv)
     fprintf(stderr, "Running...\n"
             "  Executable:      '%s'\n"
             "  URL host:        '%s'\n"
-            "  URL port:        %hu\n"
+            "  URL port:         %hu\n"
             "  URL path:        '%s'\n"
             "  URL args:        '%s'\n"
             "  Input data file: '%s'\n"
@@ -80,7 +82,7 @@ int main(int argc, char** argv)
             argv[0],
             host, (unsigned short) port, path, args, inp_file, user_header);
 
-    if (argc < 4) {
+    if ( argc < 4 ) {
         fprintf(stderr,
                 "Usage:   %s host port path args inp_file [user_header]\n"
                 "Example: %s ............\n"
@@ -90,35 +92,42 @@ int main(int argc, char** argv)
     }
 
     {{
-        struct stat sbuf;
-        if (stat(inp_file, &sbuf) != 0) {
+        FILE *fp = fopen(inp_file, "rb");
+        long offset;
+
+        if ( !fp ) {
             fprintf(stderr, "Non-existent file '%s'\n", inp_file);
             return 2;
         }
-        content_length = (size_t) sbuf.st_size;
+        if ( fseek(fp, 0, SEEK_END) != 0  ||  (offset = ftell(fp)) < 0 ) {
+            fprintf(stderr, "Cannot obtain size of file '%s'\n", inp_file);
+            return 2;
+        }
+        fclose(fp);
+        content_length = (size_t) offset;
     }}
 
     timeout.sec  = 10;
     timeout.usec = 0;
-
+    
     /* Connect */
     sock = URL_Connect(host, port, path, args,
                        eReqMethodAny, content_length,
                        &timeout, &timeout, user_header, 1/*true*/);
     if ( !sock )
         return 3;
-
+    
     {{ /* Pump data from the input file to socket */
         FILE* fp = fopen(inp_file, "rb");
         if ( !fp ) {
-            fprintf(stderr, "Cannot open file '%s' for read\n", inp_file);
+            fprintf(stderr, "Cannot open file '%s' for reading\n", inp_file);
             return 4;
         }
 
         for (;;) {
             size_t n_written;
             size_t n_read = fread(buffer, 1, sizeof(buffer), fp);
-            if (n_read <= 0) {
+            if ( n_read <= 0 ) {
                 if ( content_length ) {
                     fprintf(stderr,
                             "Cannot read last %lu bytes from file '%s'\n",
@@ -131,7 +140,7 @@ int main(int argc, char** argv)
             assert(content_length >= n_read);
             content_length -= n_read;
             status = SOCK_Write(sock, buffer, n_read, &n_written);
-            if (status != eIO_Success) {
+            if ( status != eIO_Success ) {
                 fprintf(stderr, "Error writing to socket(%s)\n",
                         IO_StatusStr(status));
                 return 6;
@@ -153,7 +162,7 @@ int main(int argc, char** argv)
             fwrite(buffer, 1, n_read, stdout);
         }
 
-        if (status != eIO_Closed) {
+        if ( status != eIO_Closed ) {
             fprintf(stderr,
                     "Error occured after reading %ld bytes from socket(%s)\n",
                     (long) content_length, IO_StatusStr(status));
