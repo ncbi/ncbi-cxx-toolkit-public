@@ -1,5 +1,5 @@
-#ifndef HTML__EXCEPTION__HPP
-#define HTML__EXCEPTION__HPP
+#ifndef HTML___EXCEPTION__HPP
+#define HTML___EXCEPTION__HPP
 
 
 /*  $Id$
@@ -39,13 +39,17 @@
  *
  * @{
  */
+
+
 BEGIN_NCBI_SCOPE
+
 
 class CHTMLException : public CException
 {
 public:
     enum EErrCode {
         eNullPtr,
+        eWrite,
         eTextUnclosedTag,
         eTableCellUse,
         eTableCellType,
@@ -55,6 +59,7 @@ public:
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
         case eNullPtr:         return "eNullPtr";
+        case eWrite:           return "eWrite";
         case eTextUnclosedTag: return "eTextUnclosedTag";
         case eTableCellUse:    return "eTableCellUse";
         case eTableCellType:   return "eTableCellType";
@@ -66,17 +71,23 @@ public:
     NCBI_EXCEPTION_DEFAULT(CHTMLException,CException);
 };
 
+
 END_NCBI_SCOPE
+
+
 /* @} */
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/03 14:43:21  ivanov
+ * + eWrite
+ *
  * Revision 1.1  2003/07/08 17:12:40  gouriano
  * changed thrown exceptions to CException-derived ones
  *
  * ===========================================================================
  */
 
-#endif  /* HTML__EXCEPTION__HPP */
+#endif  /* HTML___EXCEPTION__HPP */
