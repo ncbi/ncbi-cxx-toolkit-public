@@ -143,13 +143,6 @@ public:
             return id;
         }
 
-    /// Assignment operator for thread ID.
-    const CThreadSystemID& operator=(const CThreadSystemID& id)
-        {
-            m_ID = id.m_ID;
-            return *this;
-        }
-
     /// Equality operator for thread ID.
     bool operator==(const CThreadSystemID& id) const
         {
@@ -1137,6 +1130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/09/17 18:09:05  vasilche
+ * Removed unnecessary assignment operator - it causes problems on MSVC.
+ *
  * Revision 1.28  2003/09/17 17:56:46  vasilche
  * Fixed volatile methods of CThreadSystemID.
  *
