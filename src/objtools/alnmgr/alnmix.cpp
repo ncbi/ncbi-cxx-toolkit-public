@@ -906,8 +906,8 @@ void CAlnMix::x_CreateSegmentsVector()
             NCBI_THROW(CAlnException, eMergeFailure,
                        "CAlnMix::x_CreateSegmentsVector(): "
                        "Internal error: no starts for this row. ");
-        }
 #endif
+        }
     }
 
     // init the start iterators for each extra row
@@ -1196,6 +1196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/01/22 21:00:21  dicuccio
+* Fixed compile error - transposed #endif and }
+*
 * Revision 1.24  2003/01/22 19:39:13  todorov
 * 1) Matches w/ the 1st non-gapped row added only; the rest used to calc seqs'
 * score only
