@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/01/06 22:23:40  sandomir
+* minor changes
+*
 * Revision 1.11  1999/01/05 21:03:01  sandomir
 * GetEntry() changes
 *
@@ -128,7 +131,7 @@ void CNcbiResource::HandleRequest( CNcbiMsgRequest& request )
   } catch( std::exception& e ) {
     _TRACE( e.what() );
     if( request.GetMsgList().empty() ) {
-      request.PutMsg( e.what() );
+      request.PutMsg( "Unknown error" );
     }
     auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
     cmd->Execute( request );
