@@ -31,6 +31,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/30 22:06:14  vakatov
+* TestCgi() -- use $CONTENT_TYPE
+*
 * Revision 1.4  1999/11/22 19:57:09  vakatov
 * TestCgiResponse() -- made "static"
 *
@@ -348,6 +351,8 @@ static void TestCgi(int argc, char* argv[])
 {
     TestCgi_Cookies();
     TestCgi_Request_Static();
+
+    _ASSERT( !::putenv("CONTENT_TYPE=application/x-www-form-urlencoded") );
 
     try { // POST only
         char inp_str[] = "post11=val11&post12void=&post13=val13";
