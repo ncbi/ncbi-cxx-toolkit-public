@@ -1,0 +1,13 @@
+# $Id$
+
+# Meta-makefile("ALGO" project)
+#################################
+
+LIB_PROJ = xalgowinmask
+
+SUB_PROJ = demo
+
+REQUIRES = objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,11 @@
+# $Id$
+
+# Meta-makefile("ALGO" project)
+#################################
+
+APP_PROJ = winmasker
+
+REQUIRES = objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
