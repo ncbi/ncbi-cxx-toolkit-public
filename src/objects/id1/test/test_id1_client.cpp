@@ -102,7 +102,9 @@ int CTestID1ClientApp::Run(void)
             break;
         }
         if ( !command.empty() ) {
-            RunCommand(command);
+            try {
+                RunCommand(command);
+            } STD_CATCH_ALL("test_id1_client")
         }
     }
     *m_Out << endl;
@@ -186,6 +188,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/07/01 15:47:09  ucko
+* Report exceptions thrown by RunCommand, rather than letting them kill
+* the program.
+*
 * Revision 1.6  2004/05/19 17:22:59  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *
