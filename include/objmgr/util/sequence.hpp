@@ -261,11 +261,21 @@ enum EOverlapType {
 };
 
 // Check if the two locations have ovarlap of a given type
+// Calls x_TestForOverlap() and if the result is greater than kMax_Int
+// truncates it to kMax_Int. To get the exact value use x_TestForOverlap().
 NCBI_XOBJUTIL_EXPORT
 int TestForOverlap(const CSeq_loc& loc1,
                    const CSeq_loc& loc2,
                    EOverlapType type,
-                   TSeqPos circular_len = kInvalidSeqPos);
+                   TSeqPos circular_len = kInvalidSeqPos,
+                   CScope* scope = 0);
+
+NCBI_XOBJUTIL_EXPORT
+Int8 x_TestForOverlap(const CSeq_loc& loc1,
+                      const CSeq_loc& loc2,
+                      EOverlapType type,
+                      TSeqPos circular_len = kInvalidSeqPos,
+                      CScope* scope = 0);
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
@@ -674,6 +684,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.45  2004/10/01 15:33:46  grichenk
+* TestForOverlap -- try to get bioseq's length for whole locations.
+* Perform all calculations with Int8, check for overflow when
+* returning int.
+*
 * Revision 1.44  2004/05/06 18:58:31  shomrat
 * removed export specifier from templated function
 *
