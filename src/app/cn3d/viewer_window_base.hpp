@@ -103,6 +103,9 @@ public:
     // override to set customized window title
     virtual void SetWindowTitle(void) = 0;
 
+    // are geometry violations on?
+    bool GeometryViolationsShown(void) const { return menuBar->IsChecked(MID_SHOW_GEOM_VLTNS); }
+
     // menu callbacks
     void OnTitleView(wxCommandEvent& event);
     void OnEditMenu(wxCommandEvent& event);
@@ -238,6 +241,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/06/23 20:34:53  thiessen
+* sho geometry violations in alignments added to import window
+*
 * Revision 1.26  2004/02/19 17:05:22  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

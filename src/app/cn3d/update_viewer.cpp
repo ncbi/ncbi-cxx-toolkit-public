@@ -163,6 +163,7 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
 
         // add alignment to stack list
         alignments.push_back(*a);
+        (*a)->ShowGeometryViolations(updateWindow ? updateWindow->GeometryViolationsShown() : false);
 
         // add alignment to the display, including block row since editor is always on
         if (display->NRows() != 0) display->AddRowFromString("");
@@ -1139,6 +1140,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2004/06/23 20:34:53  thiessen
+* sho geometry violations in alignments added to import window
+*
 * Revision 1.74  2004/06/02 14:56:22  thiessen
 * remove version number from import comment
 *

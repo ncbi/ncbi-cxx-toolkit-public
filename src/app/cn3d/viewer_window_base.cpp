@@ -333,13 +333,12 @@ void ViewerWindowBase::OnJustification(wxCommandEvent& event)
 void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
 {
     const ViewerBase::AlignmentList& alignments = viewer->GetCurrentAlignments();
-    bool showGeometryViolations = menuBar->IsChecked(MID_SHOW_GEOM_VLTNS);
 
     ViewerBase::AlignmentList::const_iterator a, ae = alignments.end();
     int nViolations = 0;
     for (a=alignments.begin(); a!=ae; ++a)
-        nViolations += (*a)->ShowGeometryViolations(showGeometryViolations);
-    if (showGeometryViolations)
+        nViolations += (*a)->ShowGeometryViolations(GeometryViolationsShown());
+    if (GeometryViolationsShown())
         INFOMSG("Found " << nViolations << " geometry violation"
             << ((nViolations == 1) ? "" : "s") << " in this window");
     GlobalMessenger()->PostRedrawSequenceViewer(viewer);
@@ -392,6 +391,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/06/23 20:34:53  thiessen
+* sho geometry violations in alignments added to import window
+*
 * Revision 1.50  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *
