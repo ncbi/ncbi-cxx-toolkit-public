@@ -162,8 +162,21 @@ static EIO_Status s_Connect(SHttpConnector* uuu, int/*bool*/ drop_unread)
 
     /* the re-try loop... */
     for (;;) {
+        char* http_user_header = 0;
         char* null = 0;
 
+        if (uuu->net_info->http_user_header)
+            http_user_header = strdup(uuu->net_info->http_user_header);
+        if (!uuu->net_info->http_user_header == !http_user_header) {
+            ConnNetInfo_ExtendUserHeader
+                (uuu->net_info, "User-Agent: NCBIHttpConnector"
+#ifdef NCBI_CXX_TOOLKIT
+                 " (C++ Toolkit)"
+#else
+                 " (C Toolkit)"
+#endif
+                 "\r\n");
+        }
         /* connect & send HTTP header */
         uuu->sock = URL_Connect
             (uuu->net_info->host, uuu->net_info->port,
@@ -175,6 +188,10 @@ static EIO_Status s_Connect(SHttpConnector* uuu, int/*bool*/ drop_unread)
              uuu->net_info->debug_printout == eDebugPrintout_Data ? eOn :
              uuu->net_info->debug_printout == eDebugPrintout_None ? eOff :
              eDefault);
+        if (!uuu->net_info->http_user_header == !http_user_header) {
+            ConnNetInfo_SetUserHeader(uuu->net_info, 0);
+            uuu->net_info->http_user_header = http_user_header;
+        }
 
         if (uuu->sock) {
             if (!(uuu->flags & fHCC_NoUpread))
@@ -875,6 +892,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2002/12/13 21:19:40  lavr
+ * Extend User-Agent: header tag
+ *
  * Revision 6.36  2002/11/19 19:20:37  lavr
  * Server error parsing slightly changed
  *
