@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2001/09/04 20:06:37  thiessen
+* tweaks for Mac
+*
 * Revision 1.75  2001/09/04 14:40:19  thiessen
 * add rainbow and charge coloring
 *
@@ -450,7 +453,11 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
         }
         // seems to be some upper limit on size, at least under MSW - so delete top of log if too big
         if (logFrame->logText->GetLastPosition() > 30000) logFrame->logText->Clear();
-        *(logFrame->logText) << wxString(errMsg.data(), errMsg.size());
+#ifdef __WXMAC__
+        // wxTextCtrl doesn't like regular '\n' newlines...
+        if (errMsg[errMsg.size() - 1] < ' ') errMsg[errMsg.size() - 1] = '\r';
+#endif
+        *(logFrame->logText) << errMsg.c_str();
     }
 }
 
@@ -844,16 +851,14 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     int *attribList = NULL;
 #elif defined(__WXGTK__)
     int *attribList = NULL;
-/*
-    int attribList[20] = {
-        WX_GL_DOUBLEBUFFER,
-        WX_GL_RGBA, WX_GL_MIN_RED, 1, WX_GL_MIN_GREEN, 1, WX_GL_MIN_BLUE, 1,
-        WX_GL_ALPHA_SIZE, 0, WX_GL_DEPTH_SIZE, 1,
-        None
-    };
-*/
 #elif defined(__WXMAC__)
-	int *attribList = NULL;
+//	int *attribList = NULL;
+    int attribList[20] = {
+        //WX_GL_DOUBLEBUFFER,
+        WX_GL_RGBA, WX_GL_MIN_RED, 1, WX_GL_MIN_GREEN, 1, WX_GL_MIN_BLUE, 1,
+        /*WX_GL_ALPHA_SIZE, 0,*/ WX_GL_DEPTH_SIZE, 0,
+        0
+    };
 #endif
     glCanvas = new Cn3DGLCanvas(this, attribList);
 
@@ -961,7 +966,8 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
             !RegistrySetInteger(section, REG_FONT_STYLE, font.GetStyle()) ||
             !RegistrySetInteger(section, REG_FONT_WEIGHT, font.GetWeight()) ||
             !RegistrySetBoolean(section, REG_FONT_UNDERLINED, font.GetUnderlined(), true) ||
-            !RegistrySetString(section, REG_FONT_FACENAME, font.GetFaceName().c_str()))
+            !RegistrySetString(section, REG_FONT_FACENAME, 
+                (font.GetFaceName().size() > 0) ? font.GetFaceName().c_str() : FONT_FACENAME_UNKNOWN.c_str()))
         {
             ERR_POST(Error << "Cn3DMainFrame::OnSetFont() - error setting registry data");
             return;
