@@ -100,10 +100,10 @@ public:
     void AddCPPCode(const CNcbiOstrstream& code);
 
     void GenerateCode(void);
-    void GenerateHPP(const string& path) const;
-    void GenerateCPP(const string& path) const;
-    bool GenerateUserHPP(const string& path) const;
-    bool GenerateUserCPP(const string& path) const;
+    void GenerateHPP(const string& path, string& fileName) const;
+    void GenerateCPP(const string& path, string& fileName) const;
+    bool GenerateUserHPP(const string& path, string& fileName) const;
+    bool GenerateUserCPP(const string& path, string& fileName) const;
 
     CNcbiOstream& WriteSourceFile(CNcbiOstream& out) const;
     CNcbiOstream& WriteCopyrightHeader(CNcbiOstream& out) const;
@@ -134,7 +134,7 @@ private:
 
     typedef void (CFileCode::* TGenerateMethod)(CNcbiOstream& out) const;
     bool WriteUserFile(const string& path, const string& name,
-                       TGenerateMethod method) const;
+                       string& fileName, TGenerateMethod method) const;
     void LoadLines(TGenerateMethod method, list<string>& lines) const;
     bool ModifiedByUser(const string& fileName,
                         const list<string>& newLines) const;
@@ -145,6 +145,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2002/10/01 14:21:10  gouriano
+* added more generation report data
+*
 * Revision 1.11  2002/06/10 18:41:25  ucko
 * Move CVS logs (both internal and generated) to the end.
 *

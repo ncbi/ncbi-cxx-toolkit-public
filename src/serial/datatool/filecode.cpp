@@ -296,9 +296,9 @@ CNcbiOstream& CFileCode::WriteLogKeyword(CNcbiOstream& out) const
     return out;
 }
 
-void CFileCode::GenerateHPP(const string& path) const
+void CFileCode::GenerateHPP(const string& path, string& fileName) const
 {
-    string fileName = Path(path, GetBaseHPPName());
+    fileName = Path(path, GetBaseHPPName());
     CDelayedOfstream header(fileName);
     if ( !header ) {
         ERR_POST(Fatal << "Cannot create file: " << fileName);
@@ -406,9 +406,9 @@ void CFileCode::GenerateHPP(const string& path) const
 }
 
 
-void CFileCode::GenerateCPP(const string& path) const
+void CFileCode::GenerateCPP(const string& path, string& fileName) const
 {
-    string fileName = Path(path, GetBaseCPPName());
+    fileName = Path(path, GetBaseCPPName());
     CDelayedOfstream code(fileName);
     if ( !code ) {
         ERR_POST(Fatal << "Cannot create file: " << fileName);
@@ -457,16 +457,16 @@ void CFileCode::GenerateCPP(const string& path) const
 }
 
 
-bool CFileCode::GenerateUserHPP(const string& path) const
+bool CFileCode::GenerateUserHPP(const string& path, string& fileName) const
 {
-    return WriteUserFile(path, GetUserHPPName(),
+    return WriteUserFile(path, GetUserHPPName(), fileName,
                          &CFileCode::GenerateUserHPPCode);
 }
 
 
-bool CFileCode::GenerateUserCPP(const string& path) const
+bool CFileCode::GenerateUserCPP(const string& path, string& fileName) const
 {
-    return WriteUserFile(path, GetUserCPPName(),
+    return WriteUserFile(path, GetUserCPPName(), fileName,
                          &CFileCode::GenerateUserCPPCode);
 }
 
@@ -600,13 +600,13 @@ void CFileCode::LoadLines(TGenerateMethod method, list<string>& lines) const
 
 
 bool CFileCode::WriteUserFile(const string& path, const string& name,
-                              TGenerateMethod method) const
+                              string& fileName, TGenerateMethod method) const
 {
     // parse new code lines
     list<string> newLines;
     LoadLines(method, newLines);
 
-    string fileName = Path(path, name);
+    fileName = Path(path, name);
     if ( ModifiedByUser(fileName, newLines) ) {
         // do nothing on user modified files
         return false;
@@ -716,6 +716,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.34  2002/10/01 14:20:30  gouriano
+* added more generation report data
+*
 * Revision 1.33  2002/09/30 19:15:08  gouriano
 * write only the base name of the ASN file (in comments section)
 *

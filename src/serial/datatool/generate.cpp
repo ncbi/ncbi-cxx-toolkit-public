@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/10/01 14:20:30  gouriano
+* added more generation report data
+*
 * Revision 1.40  2002/09/30 19:16:10  gouriano
 * changed location of "*.files" and "combining" files to CPP dir
 *
@@ -116,6 +119,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
 #include <algorithm>
 #include <typeinfo>
 #include <serial/datatool/moduleset.hpp>
@@ -331,17 +335,29 @@ void CCodeGenerator::GenerateCode(void)
     }
     
     // generate output files
+    list<string> listGenerated, listUntouched;
     iterate ( TOutputFiles, filei, m_Files ) {
         CFileCode* code = filei->second.get();
         code->GenerateCode();
-        code->GenerateHPP(m_HPPDir);
-        code->GenerateCPP(m_CPPDir);
-        code->GenerateUserHPP(m_HPPDir);
-        code->GenerateUserCPP(m_CPPDir);
+        string fileName;
+        code->GenerateHPP(m_HPPDir, fileName);
+        listGenerated.push_back( fileName);
+        code->GenerateCPP(m_CPPDir, fileName);
+        listGenerated.push_back( fileName);
+        if (code->GenerateUserHPP(m_HPPDir, fileName)) {
+            listGenerated.push_back( fileName);
+        } else {
+            listUntouched.push_back( fileName);
+        }
+        if (code->GenerateUserCPP(m_CPPDir, fileName)) {
+            listGenerated.push_back( fileName);
+        } else {
+            listUntouched.push_back( fileName);
+        }
     }
 
     if ( !m_FileListFileName.empty() ) {
-        string fileName(Path(m_CPPDir,m_FileListFileName));
+        string fileName(Path(m_CPPDir,Path(m_FileNamePrefix,m_FileListFileName)));
         CNcbiOfstream fileList(fileName.c_str());
         if ( !fileList ) {
             ERR_POST(Fatal <<
@@ -362,6 +378,31 @@ void CCodeGenerator::GenerateCode(void)
             }
         }
         fileList << "\n";
+        
+        // generation report
+        for (int  user=0;  user<2; ++user)  {
+        for (int local=0; local<2; ++local) {
+        for (int   cpp=0;   cpp<2; ++cpp)   {
+            fileList << (user ? "USER" : "GENERATED") << "_"
+                << (cpp ? "CPP" : "HPP") << (local ? "_LOCAL" : "") << " =";
+            list<string> *lst = (user ? &listUntouched : &listGenerated);
+            for (list<string>::iterator i=lst->begin(); i != lst->end(); ++i) {
+                CDirEntry entry(*i);
+                bool is_cpp = (NStr::CompareNocase(entry.GetExt(),".cpp") == 0);
+                if ((is_cpp && cpp) || (!is_cpp && !cpp)) {
+                    fileList << ' ';
+                    if (local) {
+                        fileList << entry.GetName();
+                    } else {
+                        fileList << CDirEntry::ConvertToOSPath(entry.GetPath());
+                    }
+                }
+
+            }
+            fileList << endl;
+        }
+        }
+        }
     }
 
     if ( !m_CombiningFileName.empty() ) {
@@ -369,7 +410,7 @@ void CCodeGenerator::GenerateCode(void)
         for ( int i = 0; i < 2; ++i ) {
             const char* suffix = i? "_.cpp": ".cpp";
             string fileName = m_CombiningFileName + "__" + suffix;
-            fileName = Path(m_CPPDir,fileName);
+            fileName = Path(m_CPPDir,Path(m_FileNamePrefix,fileName));
             CDelayedOfstream out(fileName);
             if ( !out )
                 ERR_POST(Fatal << "Cannot create file: "<<fileName);
