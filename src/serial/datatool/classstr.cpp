@@ -754,10 +754,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         "    void SetAssigned(size_t index);\n"
         "\n";
     methods
-        <<"void "<<methodPrefix<<"ThrowUnassigned(const char* name) const\n"
+// 04apr03: disabled for now
+//        <<"void "<<methodPrefix<<"ThrowUnassigned(const char* name) const\n"
+        <<"void "<<methodPrefix<<"ThrowUnassigned(const char*) const\n"
         <<"{\n"
-        << "    NCBI_THROW(ncbi::CUnassignedMember,eFail,"
-        << "std::string(\"Uninitialized member: \")+name);\n"
+//        << "    NCBI_THROW(ncbi::CUnassignedMember,eFail,"
+//        << "std::string(\"Uninitialized member: \")+name);\n"
         <<"}\n"
         "\n";
     methods
@@ -1204,6 +1206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2003/04/04 15:22:29  gouriano
+* disable throwing CUnassignedMember exception
+*
 * Revision 1.49  2003/04/03 21:48:45  gouriano
 * verify initialization of data members
 *
