@@ -354,7 +354,7 @@ on SetProjectData()
 		-- AddPlugin("gui_algo_print_test", {}, "plugins:algo:print_test", {})
 		
 		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign"})
-		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", {})
+		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", {"xalgoseq"})
 		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
 			{"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"})
 		-- AddPlugin("gui_algo_stdio", {}, "plugins:algo:stdio", {})
