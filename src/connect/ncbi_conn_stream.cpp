@@ -264,12 +264,24 @@ string& CConn_MemoryStream::ToString(string& str)
     size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
     str.resize(size);
     if (sb) {
-        if (CONN_Read(sb->GetCONN(), &str[0], size, &size, eIO_ReadPlain)
+        if (CONN_Read(sb->GetCONN(), &str[0], size, &size, eIO_ReadPersist)
             != eIO_Success) {
-            str.erase();
-        } else
             str.resize(size);
+        }
     }
+    return str;
+}
+
+
+char* CConn_MemoryStream::ToCStr(void)
+{
+    CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
+    size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
+    char* str = new char[size + 1];
+    if (sb) {
+        CONN_Read(sb->GetCONN(), str, size, &size, eIO_ReadPersist);
+    }
+    str[size] = '\0';
     return str;
 }
 
@@ -313,6 +325,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2004/10/27 15:49:45  lavr
+ * +CConn_MemoryStream::ToCStr()
+ *
  * Revision 6.35  2004/10/27 14:16:38  ucko
  * CConn_MemoryStream::ToString: use erase() rather than clear(), which
  * GCC 2.95 doesn't support.
