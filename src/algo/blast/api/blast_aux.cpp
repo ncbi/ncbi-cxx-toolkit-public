@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 
 /** @addtogroup AlgoBlast
@@ -250,7 +249,6 @@ CBlastDatabaseOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) 
 
 }
 
-
 BlastMaskLoc*
 CSeqLoc2BlastMaskLoc(const CSeq_loc &slp, int index)
 {
@@ -302,101 +300,6 @@ CSeqLoc2BlastMaskLoc(const CSeq_loc &slp, int index)
     return mask;
 }
 
-void BlastMaskLocDNAToProtein(BlastMaskLoc** mask_ptr, const CSeq_loc &seqloc, 
-                           CScope* scope)
-{
-   BlastMaskLoc* last_mask = NULL,* head_mask = NULL,* mask_loc; 
-   Int4 dna_length;
-   BlastSeqLoc* dna_loc,* prot_loc_head,* prot_loc_last;
-   SSeqRange* dip;
-   Int4 context;
-   Int2 frame;
-   Int4 from, to;
-
-   if (!mask_ptr)
-      return;
-
-   mask_loc = *mask_ptr;
-
-   if (!mask_loc) 
-      return;
-
-   dna_length = sequence::GetLength(seqloc, scope);
-   /* Reproduce this mask for all 6 frames, with translated 
-      coordinates */
-   for (context = 0; context < NUM_FRAMES; ++context) {
-       if (!last_mask) {
-           head_mask = last_mask = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
-       } else {
-           last_mask->next = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
-           last_mask = last_mask->next;
-       }
-         
-       last_mask->index = NUM_FRAMES * mask_loc->index + context;
-       prot_loc_last = prot_loc_head = NULL;
-       
-       frame = BLAST_ContextToFrame(blast_type_blastx, context);
-       
-       for (dna_loc = mask_loc->loc_list; dna_loc; 
-            dna_loc = dna_loc->next) {
-           dip = (SSeqRange*) dna_loc->ptr;
-           if (frame < 0) {
-               from = (dna_length + frame - dip->right)/CODON_LENGTH;
-               to = (dna_length + frame - dip->left)/CODON_LENGTH;
-           } else {
-               from = (dip->left - frame + 1)/CODON_LENGTH;
-               to = (dip->right - frame + 1)/CODON_LENGTH;
-           }
-           if (!prot_loc_last) {
-               prot_loc_head = prot_loc_last = BlastSeqLocNew(from, to);
-           } else { 
-               prot_loc_last->next = BlastSeqLocNew(from, to);
-               prot_loc_last = prot_loc_last->next; 
-           }
-       }
-       last_mask->loc_list = prot_loc_head;
-   }
-
-   /* Free the mask with nucleotide coordinates */
-   BlastMaskLocFree(mask_loc);
-   /* Return the new mask with protein coordinates */
-   *mask_ptr = head_mask;
-}
-
-void BlastMaskLocProteinToDNA(BlastMaskLoc** mask_ptr, TSeqLocVector &slp)
-{
-   BlastMaskLoc* mask_loc;
-   BlastSeqLoc* loc;
-   SSeqRange* dip;
-   Int4 dna_length;
-   Int2 frame;
-   Int4 from, to;
-
-   if (!mask_ptr) 
-      // Nothing to do - just return
-      return;
-
-   for (mask_loc = *mask_ptr; mask_loc; mask_loc = mask_loc->next) {
-      dna_length = 
-         sequence::GetLength(*slp[mask_loc->index/NUM_FRAMES].seqloc, 
-                             slp[mask_loc->index/NUM_FRAMES].scope);
-      frame = BLAST_ContextToFrame(blast_type_blastx, 
-                                   mask_loc->index % NUM_FRAMES);
-      
-      for (loc = mask_loc->loc_list; loc; loc = loc->next) {
-         dip = (SSeqRange*) loc->ptr;
-         if (frame < 0)	{
-            to = dna_length - CODON_LENGTH*dip->left + frame;
-            from = dna_length - CODON_LENGTH*dip->right + frame + 1;
-         } else {
-            from = CODON_LENGTH*dip->left + frame - 1;
-            to = CODON_LENGTH*dip->right + frame - 1;
-         }
-         dip->left = from;
-         dip->right = to;
-      }
-   }
-}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -407,6 +310,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2004/06/02 15:57:06  bealer
+ * - Isolate object manager dependent code.
+ *
  * Revision 1.40  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

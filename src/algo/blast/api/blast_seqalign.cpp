@@ -37,15 +37,8 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
-#include <objects/seqalign/Dense_seg.hpp>
-#include <objects/seqalign/Dense_diag.hpp>
-#include <objects/seqalign/Std_seg.hpp>
-#include <objects/seqalign/Score.hpp>
-
+#include <objects/seqalign/seqalign__.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <serial/iterator.hpp>
 
 /** @addtogroup AlgoBlast
@@ -1028,7 +1021,7 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
     return retval;
 }
 
-static CRef<CSeq_align>
+CRef<CSeq_align>
 BLASTUngappedHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
     const CSeq_id *subject_id, Int4 query_length, Int4 subject_length,
@@ -1069,7 +1062,7 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
 // This is called for each query and each subject in the BLAST search
 // We always return CSeq_aligns of type disc to allow multiple HSPs
 // corresponding to the same query-subject pair to be grouped in one CSeq_align
-static CRef<CSeq_align>
+CRef<CSeq_align>
 BLASTHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
     const CSeq_id *subject_id,
@@ -1106,47 +1099,10 @@ BLASTHspListToSeqAlign(EProgram program,
     return retval;
 }
 
-static void
-x_GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
-                         const BlastSeqSrc* seq_src, // [in]
-                         int oid,                    // [in] 
-                         CSeq_id** seqid,            // [out]
-                         TSeqPos* length)            // [out]
-{
-    ASSERT(ss || seq_src);
-    ASSERT(seqid);
-    ASSERT(length);
-
-    if ( !seq_src ) {
-        *seqid = const_cast<CSeq_id*>(&sequence::GetId(*ss->seqloc,
-                                                       ss->scope));
-        *length = sequence::GetLength(*ss->seqloc, ss->scope);
-    } else {
-        ListNode* seqid_wrap;
-        seqid_wrap = BLASTSeqSrcGetSeqId(seq_src, (void*) &oid);
-        ASSERT(seqid_wrap);
-        if (seqid_wrap->choice == BLAST_SEQSRC_CPP_SEQID) {
-            *seqid = (CSeq_id*)seqid_wrap->ptr;
-            ListNodeFree(seqid_wrap);
-        } else if (seqid_wrap->choice == BLAST_SEQSRC_CPP_SEQID_REF) {
-            *seqid = ((CRef<CSeq_id>*)seqid_wrap->ptr)->GetPointer();
-        } else {
-            /** FIXME!!! This is wrong, because the id created here will 
-                not be registered! However if sequence source returns a 
-                C object, we cannot handle it here. */
-            char* id = BLASTSeqSrcGetSeqIdStr(seq_src, (void*) &oid);
-            string id_str(id);
-            *seqid = new CSeq_id(id_str);
-            sfree(id);
-        }
-        *length = BLASTSeqSrcGetSeqLen(seq_src, (void*) &oid);
-    }
-    return;
-}
 
 /// Constructs an empty seq-align-set containing an empty discontinuous
 /// seq-align.
-static CSeq_align_set*
+CSeq_align_set*
 x_CreateEmptySeq_align_set(CSeq_align_set* sas)
 {
     CSeq_align_set* retval = NULL;
@@ -1165,241 +1121,6 @@ x_CreateEmptySeq_align_set(CSeq_align_set* sas)
     return retval;
 }
 
-/// Always remap the query, the subject is remapped if it's given (assumes
-/// alignment created by BLAST 2 Sequences API).
-/// Since the query strands were already taken into account when CSeq_align 
-/// was created, only start position shifts in the CSeq_loc's are relevant in 
-/// this function. However full remapping is necessary for the subject sequence
-/// if it is on a negative strand.
-
-static void
-x_RemapAlignmentCoordinates(CRef<CSeq_align> sar, 
-                            const SSeqLoc* query,
-                            const SSeqLoc* subject = NULL)
-{
-    _ASSERT(sar);
-    ASSERT(query);
-    const int query_dimension = 0;
-    const int subject_dimension = 1;
-
-    // If subject is on a minus strand, we'll need to flip subject strands 
-    // and remap subject coordinates on all segments.
-    // Otherwise we only need to shift query and/or subject coordinates, 
-    // if the respective location starts not from 0.
-    bool remap_subject = 
-        (subject && subject->seqloc->IsInt() &&
-         subject->seqloc->GetInt().GetStrand() == eNa_strand_minus);
-
-    TSeqPos q_shift = 0, s_shift = 0;
-
-    if (query->seqloc->IsInt()) {
-        q_shift = query->seqloc->GetInt().GetFrom();
-    }
-    if (subject && subject->seqloc->IsInt()) {
-        s_shift = subject->seqloc->GetInt().GetFrom();
-    }
-
-    if (remap_subject || q_shift > 0 || s_shift > 0) {
-        for (CTypeIterator<CDense_seg> itr(Begin(*sar)); itr; ++itr) {
-            const vector<ENa_strand> strands = itr->GetStrands();
-            // Create temporary CSeq_locs with strands either matching 
-            // (for query and for subject if it is not on a minus strand),
-            // or opposite to those in the segment, to force RemapToLoc to 
-            // behave in the correct way.
-            if (q_shift > 0) {
-                CSeq_loc q_seqloc;
-                ENa_strand q_strand = strands[0];
-                q_seqloc.SetInt().SetFrom(q_shift);
-                q_seqloc.SetInt().SetTo(query->seqloc->GetInt().GetTo());
-                q_seqloc.SetInt().SetStrand(q_strand);
-                q_seqloc.SetInt().SetId().Assign(sequence::GetId(*query->seqloc, query->scope));
-                itr->RemapToLoc(query_dimension, q_seqloc);
-            }
-            if (remap_subject || s_shift > 0) {
-                CSeq_loc s_seqloc;
-                ENa_strand s_strand;
-                if (remap_subject) {
-                    s_strand = ((strands[1] == eNa_strand_plus) ? 
-                                eNa_strand_minus : eNa_strand_plus);
-                } else {
-                    s_strand = strands[1];
-                }
-                s_seqloc.SetInt().SetFrom(s_shift);
-                s_seqloc.SetInt().SetTo(subject->seqloc->GetInt().GetTo());
-                s_seqloc.SetInt().SetStrand(s_strand);
-                s_seqloc.SetInt().SetId().Assign(sequence::GetId(*subject->seqloc, subject->scope));
-                itr->RemapToLoc(subject_dimension, s_seqloc);
-            }
-        }
-    }
-}
-
-CSeq_align_set*
-BLAST_HitList2CSeqAlign(const BlastHitList* hit_list, 
-    EProgram prog, SSeqLoc &query,
-    const BlastSeqSrc* seq_src,
-    const BlastScoringOptions* score_options, 
-    const BlastScoreBlk* sbp)
-{
-    CSeq_align_set* seq_aligns = new CSeq_align_set();
-    bool is_gapped = score_options->gapped_calculation ? true : false;
-
-    ASSERT(seq_src);
-
-    if (!hit_list) {
-        return x_CreateEmptySeq_align_set(seq_aligns);
-    }
-
-    TSeqPos query_length = 0;
-    CSeq_id* qid = NULL;
-    CConstRef<CSeq_id> query_id;
-    x_GetSequenceLengthAndId(&query, NULL, 0, &qid, &query_length);
-    query_id.Reset(qid);
-
-    TSeqPos subj_length = 0;
-    CSeq_id* sid = NULL;
-    CConstRef<CSeq_id> subject_id;
-
-    for (int index = 0; index < hit_list->hsplist_count; index++) {
-        BlastHSPList* hsp_list = hit_list->hsplist_array[index];
-        if (!hsp_list)
-            continue;
-
-        x_GetSequenceLengthAndId(NULL, seq_src, hsp_list->oid, 
-                                 &sid, &subj_length);
-        subject_id.Reset(sid);
-        
-        // Create a CSeq_align for each matching sequence
-        CRef<CSeq_align> hit_align;
-        if (is_gapped) {
-            hit_align = 
-                BLASTHspListToSeqAlign(prog, hsp_list, query_id, 
-                                       subject_id, score_options, sbp);
-        } else {
-            hit_align = 
-                BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id, 
-                    subject_id, query_length, subj_length, score_options, sbp);
-        }
-        ListNode* subject_loc_wrap = 
-            BLASTSeqSrcGetSeqLoc(seq_src, (void*)&hsp_list->oid);
-        SSeqLoc* subject_loc = NULL;
-        if (subject_loc_wrap && 
-            subject_loc_wrap->choice == BLAST_SEQSRC_CPP_SEQLOC)
-            subject_loc = (SSeqLoc*) subject_loc_wrap->ptr;
-        x_RemapAlignmentCoordinates(hit_align, &query, subject_loc);
-        seq_aligns->Set().push_back(hit_align);
-    }
-    return seq_aligns;
-}
-
-TSeqAlignVector
-BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
-        EProgram prog,
-        TSeqLocVector &query,
-        const BlastSeqSrc* seq_src,
-        const BlastScoringOptions* score_options, 
-        const BlastScoreBlk* sbp)
-{
-    ASSERT(results->num_queries == (int)query.size());
-    ASSERT(seq_src);
-
-    TSeqAlignVector retval;
-    CConstRef<CSeq_id> query_id;
-
-    // Process each query's hit list
-    for (int index = 0; index < results->num_queries; index++) {
-       BlastHitList* hit_list = results->hitlist_array[index];
-
-       CRef<CSeq_align_set> seq_aligns(BLAST_HitList2CSeqAlign(hit_list, prog,
-                                           query[index], seq_src,
-                                           score_options, sbp));
-
-       retval.push_back(seq_aligns);
-       _TRACE("Query " << index << ": " << seq_aligns->Get().size() 
-              << " seqaligns");
-
-    }
-    
-    return retval;
-}
-
-TSeqAlignVector
-BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results, 
-        EProgram prog,
-        TSeqLocVector &query,
-        const BlastSeqSrc* seq_src,
-        Int4 subject_index,
-        const BlastScoringOptions* score_options, 
-        const BlastScoreBlk* sbp)
-{
-    ASSERT(results->num_queries == (int)query.size());
-    ASSERT(seq_src);
-
-    TSeqAlignVector retval;
-    CConstRef<CSeq_id> subject_id;
-    CConstRef<CSeq_id> query_id;
-    CSeq_id* sid = NULL;
-    CSeq_id* qid = NULL;
-    bool is_gapped = score_options->gapped_calculation ? true : false;
-    TSeqPos subj_length = 0;
-    TSeqPos query_length = 0;
-
-    // Subject is the same for all queries, so retrieve its id right away
-    x_GetSequenceLengthAndId(NULL, seq_src, subject_index, 
-                             &sid, &subj_length);
-    subject_id.Reset(sid);
-        
-
-    // Process each query's hit list
-    for (int index = 0; index < results->num_queries; index++) {
-        x_GetSequenceLengthAndId(&query[index], NULL, 0, &qid, &query_length);
-        query_id.Reset(qid);
-        CRef<CSeq_align_set> seq_aligns;
-        BlastHitList* hit_list = results->hitlist_array[index];
-        BlastHSPList* hsp_list = NULL;
-        // Find the HSP list corresponding to this subject, if it exists
-        if (hit_list) {
-            int result_index;
-            for (result_index = 0; result_index < hit_list->hsplist_count;
-                 ++result_index) {
-                hsp_list = hit_list->hsplist_array[result_index];
-                if (hsp_list->oid == subject_index)
-                    break;
-            }
-        }
-
-        if (hsp_list) {
-            CRef<CSeq_align> hit_align;
-            if (is_gapped) {
-                hit_align = 
-                    BLASTHspListToSeqAlign(prog, hsp_list, query_id, 
-                                           subject_id, score_options, sbp);
-            } else {
-                hit_align = 
-                    BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id, 
-                        subject_id, query_length, subj_length, 
-                        score_options, sbp);
-            }
-            ListNode* subject_loc_wrap = 
-                BLASTSeqSrcGetSeqLoc(seq_src, (void*)&hsp_list->oid);
-            SSeqLoc* subject_loc = NULL;
-            if (subject_loc_wrap && 
-                subject_loc_wrap->choice == BLAST_SEQSRC_CPP_SEQLOC)
-                subject_loc = (SSeqLoc*) subject_loc_wrap->ptr;
-            x_RemapAlignmentCoordinates(hit_align, &query[index], 
-                                        subject_loc);
-            ListNodeFree(subject_loc_wrap);
-            seq_aligns.Reset(new CSeq_align_set());
-            seq_aligns->Set().push_back(hit_align);
-        } else {
-            seq_aligns.Reset(x_CreateEmptySeq_align_set(NULL));
-        }
-        retval.push_back(seq_aligns);
-    }
-    
-    return retval;
-}
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -1409,6 +1130,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2004/06/02 15:57:06  bealer
+* - Isolate object manager dependent code.
+*
 * Revision 1.42  2004/05/21 21:41:02  gorelenk
 * Added PCH ncbi_pch.hpp
 *

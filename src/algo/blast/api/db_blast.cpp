@@ -32,7 +32,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -331,6 +330,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2004/06/02 15:57:06  bealer
+ * - Isolate object manager dependent code.
+ *
  * Revision 1.28  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *
