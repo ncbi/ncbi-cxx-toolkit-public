@@ -147,8 +147,90 @@ void CTestApplication::Init(void)
     SetDiagPostLevel(eDiag_Info);
 }
 
+enum ContainerType {
+    eVector,
+    eList,
+    eSet,
+    eRef
+};
+
+void DumpSize(void)
+{
+    char buffer[1024];
+    NcbiCout << "Press enter..." << flush;
+    gets(buffer);
+}
+
+void TestAllocate(ContainerType cont, int size, int count)
+{
+    switch ( cont ) {
+    case eVector:
+    {{
+        NcbiCout << "Allocating " << size <<
+            " vectors<int> with " << count << " elements" << NcbiEndl;
+        DumpSize();
+        vector<int>* v = new vector<int>[size];
+        for ( int i = 0; i < size; ++i ) {
+            for ( int j = 0; j < count; ++j ) {
+                v[i].push_back(j);
+            }
+        }
+        NcbiCout << "Allocated." << NcbiEndl;
+        DumpSize();
+        delete[] v;
+        break;
+    }}
+    case eList:
+    {{
+        NcbiCout << "Allocating " << size <<
+            " list<int> with " << count << " elements" << NcbiEndl;
+        DumpSize();
+        list<int>* v = new list<int>[size];
+        for ( int i = 0; i < size; ++i ) {
+            for ( int j = 0; j < count; ++j ) {
+                v[i].push_back(j);
+            }
+        }
+        NcbiCout << "Allocated." << NcbiEndl;
+        DumpSize();
+        delete[] v;
+        break;
+    }}
+    case eRef:
+    {{
+        NcbiCout << "Allocating " << size <<
+            " CRef<CObject> with " << count << " elements" << NcbiEndl;
+        DumpSize();
+        CRef<CObject>* v = new CRef<CObject>[size];
+        for ( int i = 0; i < size; ++i ) {
+            for ( int j = 0; j < count; ++j ) {
+                v[i].Reset(new CObject);
+            }
+        }
+        NcbiCout << "Allocated." << NcbiEndl;
+        DumpSize();
+        delete[] v;
+        break;
+    }}
+    }
+}
+
+void Test(ContainerType cont)
+{
+    for ( int j = 0; j <= 2; ++j ) {
+        TestAllocate(cont, 100000, j);
+    }
+    for ( int j = 0; j <= 2; ++j ) {
+        TestAllocate(cont, 1000000, j);
+    }
+}
+
+
 int CTestApplication::Run(void)
 {
+    //Test(eRef);
+
+
     static const string s_Strings[] = {
         "",
         ".",
@@ -683,6 +765,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2003/07/22 21:45:05  vasilche
+ * Commented out memory usage test.
+ *
  * Revision 6.20  2003/07/17 20:01:38  vasilche
  * Added test for string reference counting.
  *
