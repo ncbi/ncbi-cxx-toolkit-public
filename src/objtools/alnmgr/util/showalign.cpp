@@ -110,7 +110,7 @@ static const char k_PSymbol[CDisplaySeqalign::kPMatrixSize+1] = "ARNDCQEGHILKMFP
 /* url for linkout*/
 static const string k_EntrezUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>";
 
-static const string k_EntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?list_uids=%d&db=%s&__from=%d&__to=%d\">";
+static const string k_EntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=%d&db=%s&from=%d&to=%d&view=gbwithparts\">";
 
 static const string k_TraceUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">";
 
@@ -1008,7 +1008,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
             const CTypeIterator<CDense_seg> ds = Begin(*finalAln);
             if((ds->IsSetStrands() && ds->GetStrands().front()==eNa_strand_minus) && !(ds->IsSetWidths() && ds->GetWidths()[0] == 3)){
                 //show plus strand if master is minus for non-translated case
-                memcpy(&*finalDenseg, &(*ds), sizeof(CDense_seg));
+                finalDenseg->Assign(*ds);
                 finalDenseg->Reverse();
                 avRef = new CAlnVec(*finalDenseg, m_Scope);   
             } else {
@@ -2229,6 +2229,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.56  2005/01/28 16:12:21  jianye
+*use Assign() to copy object
+*
 *Revision 1.55  2005/01/25 15:34:53  jianye
 *Show gap as - in masked region
 *
