@@ -60,7 +60,7 @@ struct SSeqLoc {
     CConstRef<objects::CSeq_loc>     mask;
 
     SSeqLoc()
-        : seqloc(), scope() {}
+        : seqloc(), scope(), mask() {}
     SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s)
         : seqloc(sl), scope(s), mask(0) {}
     SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s)
@@ -82,6 +82,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/12/09 17:07:58  camacho
+* Added missing initializer
+*
 * Revision 1.7  2003/11/26 18:22:16  camacho
 * +Blast Option Handle classes
 *
