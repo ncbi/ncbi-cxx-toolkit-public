@@ -114,10 +114,12 @@ struct SLDS_ObjectAttrDB : public CBDB_File
 // Structure puts together all tables used in LDS
 struct SLDS_TablesCollection
 {
-    SLDS_FileDB         file_db;
-    SLDS_ObjectTypeDB   object_type_db;
-    SLDS_ObjectDB       object_db;
-    SLDS_ObjectAttrDB   object_attr_db;
+    SLDS_FileDB          file_db;
+    SLDS_ObjectTypeDB    object_type_db;
+    SLDS_ObjectDB        object_db;
+    SLDS_ObjectAttrDB    object_attr_db;
+    SLDS_AnnotDB         annot_db;
+    SLDS_Annot2ObjectDB  annot2obj_db;
 };
 
 
@@ -196,6 +198,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2003/05/30 20:26:33  kuznets
+* Fixed field binding in "objects"
+*
 * Revision 1.5  2003/05/30 14:05:39  kuznets
 * Added primary_seqid field to the objects table.
 *
