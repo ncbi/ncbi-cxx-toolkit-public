@@ -38,14 +38,15 @@
 
 BEGIN_NCBI_SCOPE
 
-
-unsigned char* longlong_to_numeric(Int8 l_num, unsigned int prec,
-                                   unsigned char* cs_num);
+extern unsigned char* longlong_to_numeric(Int8 l_num, unsigned int prec,
+                                          unsigned char* cs_num);
 
 // long long numeric_to_longlong(CS_NUMERIC* cs_num);
-Int8 numeric_to_longlong(unsigned int precision, unsigned char* cs_num);
+extern Int8 numeric_to_longlong(unsigned int precision, unsigned char* cs_num);
 
-void swap_numeric_endian(unsigned int precision, unsigned char* num);
+
+
+extern void swap_numeric_endian(unsigned int precision, unsigned char* num);
 
 
 
@@ -58,6 +59,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/15 20:43:26  gorelenk
+ * Added "extern" qualifier for functions declarations.
+ *
  * Revision 1.6  2003/02/13 15:40:50  ivanov
  * Added export specifier NCBI_DBAPIDRIVER_EXPORT
  *
