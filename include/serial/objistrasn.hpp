@@ -62,6 +62,7 @@ public:
 
     virtual void ReadNull(void);
 
+    void ReadAnyContent(string& value);
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
     virtual void SkipAnyContentObject(void);
 
@@ -218,6 +219,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2004/03/05 20:28:37  gouriano
+* make it possible to skip unknown data fields
+*
 * Revision 1.59  2003/11/26 19:59:38  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid

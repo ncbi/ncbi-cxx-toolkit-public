@@ -121,6 +121,11 @@ public:
     // for streams created by the current process
     static  void SetVerifyDataGlobal(ESerialVerifyData verify);
 
+    // if true - ignore unknown members when parsing the input data
+    // otherwise - throw an exception
+    void SetSkipUnknownMembers(bool skip=true);
+    bool GetSkipUnknownMembers(void);
+
     // constructors
 protected:
     CObjectIStream(ESerialDataFormat format);
@@ -581,6 +586,7 @@ private:
     ESerialVerifyData   m_VerifyData;
     static ESerialVerifyData ms_VerifyDataDefault;
     static ESerialVerifyData x_GetVerifyDataDefault(void);
+    bool m_SkipUnknown;
 
     AutoPtr<CReadObjectList> m_Objects;
 
@@ -661,6 +667,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2004/03/05 20:28:37  gouriano
+* make it possible to skip unknown data fields
+*
 * Revision 1.100  2004/02/09 18:21:52  gouriano
 * enforced checking environment vars when setting initialization
 * verification parameters

@@ -469,6 +469,16 @@ ESerialVerifyData CObjectIStream::GetVerifyData(void) const
     return ms_VerifyDataDefault;
 }
 
+inline
+void CObjectIStream::SetSkipUnknownMembers(bool skip)
+{
+    m_SkipUnknown = skip;
+}
+inline
+bool CObjectIStream::GetSkipUnknownMembers(void)
+{
+    return m_SkipUnknown;
+}
 
 inline
 bool CObjectIStream::HaveMoreData(void)
@@ -516,6 +526,9 @@ void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/03/05 20:28:37  gouriano
+* make it possible to skip unknown data fields
+*
 * Revision 1.28  2004/02/09 18:21:52  gouriano
 * enforced checking environment vars when setting initialization
 * verification parameters

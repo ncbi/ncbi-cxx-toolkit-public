@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2004/03/05 20:29:38  gouriano
+* make it possible to skip unknown data fields
+*
 * Revision 1.56  2004/01/30 20:29:56  gouriano
 * Corrected reading white spaces
 *
@@ -1032,9 +1035,8 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
 
 void CObjectIStreamXml::SkipAnyContentObject(void)
 {
-    NCBI_THROW(CSerialException,eNotImplemented,
-        "CObjectIStreamXml::SkipAnyContentObject: "
-        "unable to skip AnyContent object in ASN");
+    CAnyContentObject obj;
+    ReadAnyContentObject(obj);
 }
 
 void CObjectIStreamXml::ReadString(string& str, EStringType type)
@@ -1731,8 +1733,15 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
 
     CLightString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id);
-    if ( index == kInvalidMember )
-        UnexpectedMember(id, classType->GetMembers());
+    if ( index == kInvalidMember ) {
+        if (GetSkipUnknownMembers()) {
+            string value;
+            ReadAnyContentTo(m_CurrNsPrefix,value, tagName);
+            return BeginClassMember(classType);
+        } else {
+            UnexpectedMember(id, classType->GetMembers());
+        }
+    }
     return index;
 }
 
@@ -1844,12 +1853,25 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             TopFrame().SetNotag();
             return first;
         }
+        if (GetSkipUnknownMembers() &&
+            pos <= classType->GetMembers().LastIndex()) {
+            string value;
+            ReadAnyContentTo(m_CurrNsPrefix,value, RejectedName());
+            return BeginClassMember(classType, pos);
+        }
         return kInvalidMember;
     }
     CLightString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id, pos);
-    if ( index == kInvalidMember )
-        UnexpectedMember(id, classType->GetMembers());
+    if ( index == kInvalidMember ) {
+        if (GetSkipUnknownMembers()) {
+            string value;
+            ReadAnyContentTo(m_CurrNsPrefix,value, tagName);
+            return BeginClassMember(classType, pos);
+        } else {
+           UnexpectedMember(id, classType->GetMembers());
+        }
+    }
     return index;
 }
 

@@ -237,6 +237,7 @@ CObjectIStream::CObjectIStream(ESerialDataFormat format)
     : m_DiscardCurrObject(false),
       m_DataFormat(format),
       m_VerifyData(x_GetVerifyDataDefault()),
+      m_SkipUnknown(false),
       m_Fail(fNotOpen),
       m_Flags(fFlagNone)
 {
@@ -1456,6 +1457,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.126  2004/03/05 20:29:38  gouriano
+* make it possible to skip unknown data fields
+*
 * Revision 1.125  2004/02/09 18:22:34  gouriano
 * enforced checking environment vars when setting initialization
 * verification parameters
