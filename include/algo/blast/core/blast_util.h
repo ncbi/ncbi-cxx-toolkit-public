@@ -103,10 +103,17 @@ BLAST_SequenceBlkDestruct(BLAST_SequenceBlkPtr seq_blk);
  * appropriate frame and with the appropriate GeneticCode.
  * The function return an allocated CharPtr, the caller must delete this.
  * The first and last spaces of this CharPtr contain NULLB's.
+ * @param query_seq Forward strand of the nucleotide sequence [in]
+ * @param query_seq_rev Reverse strand of the nucleotide sequence [in]
+ * @param nt_length Length of the nucleotide sequence [in]
+ * @param frame What frame to translate into? [in]
+ * @param length Length of the translated sequence [out]
+ * @param genetic code Genetic code to use for translation [in]
+ * @return The translated sequence
 */
 Uint1Ptr LIBCALL
-BLAST_GetTranslation(Uint1Ptr query_seq, Int4 nt_length, Int2 frame, 
-   Int4Ptr length, CharPtr genetic_code);
+BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
+   Int4 nt_length, Int2 frame, Int4Ptr length, CharPtr genetic_code);
 
 /** Make a temporary protein BioseqPtr to use with seg.
 */
@@ -170,6 +177,15 @@ Int4 MakeBlastSequenceBlkFromFasta(FILE *fasta_fp, BLAST_SequenceBlkPtr seq);
 Int4 LIBCALL
 BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length, 
    Uint1Ptr nt_seq, Int2 frame, Uint1Ptr prot_seq);
+
+/** Reverse a nucleotide sequence in the blastna encoding, adding sentinel 
+ * bytes on both ends.
+ * @param sequence Forward strand of the sequence [in]
+ * @param length Length of the sequence plus 1 for the sentinel byte [in]
+ * @param rev_sequence_ptr Reverse strand of the sequence [out]
+ */
+Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length, 
+                            Uint1Ptr PNTR rev_sequence_ptr);
 
 #ifdef __cplusplus
 }
