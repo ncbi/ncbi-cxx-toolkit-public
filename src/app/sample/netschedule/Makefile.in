@@ -1,4 +1,5 @@
-APP_PROJ = netschedule_client_sample netschedule_node_sample
+APP_PROJ = netschedule_client_sample netschedule_node_sample \
+	   grid_worker_sample grid_client_sample
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
