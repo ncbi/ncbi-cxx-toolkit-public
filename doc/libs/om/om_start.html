@@ -96,25 +96,15 @@ In order to do this:
 
 
 
-<h2>How to convert CGI application into FCGI one?</h2>
+<h2>How to convert CGI application into Fast-CGI one?</h2>
 <p>
-Edit the CGI project makefile - <i>Makefile.task_cgiapp</i>:
-</p>
-<ol>
-  <li>
-Replace <tt>xcgi</tt> library by <tt>xfcgi</tt> one in the <tt>LIB=...</tt> section.
+In the <tt>LIB=...</tt> section of <i>Makefile.task_cgiapp</i>, just
+replace <tt>xcgi</tt> library by <tt>xfcgi</tt>:
   <pre>
   LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
       xser xhtml <b>xfcgi</b> xutil xconnect xncbi
   </pre>
-  </li>
-  <li>
-Add the path to Fast-CGI header files to compilation flags: 
-<pre>
-CPPFLAGS =  <b>$(FASTCGI_INCLUDE)</b>
-</pre>
-  </li>
-</ol>
+</p>
 
 
 
