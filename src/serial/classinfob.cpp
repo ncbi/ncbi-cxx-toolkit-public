@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/08/30 16:21:32  vasilche
+* Added MT lock for cache maps
+*
 * Revision 1.13  2001/10/22 15:16:22  grichenk
 * Optimized CTypeInfo::IsCObject()
 *
@@ -98,11 +101,14 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbithr.hpp>
 #include <serial/classinfob.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objhook.hpp>
 
 BEGIN_NCBI_SCOPE
+
+static CMutex s_ClassInfoMutex;
 
 CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
                                        size_t size, const char* name,
@@ -169,8 +175,13 @@ inline
 CClassTypeInfoBase::TClasses& CClassTypeInfoBase::Classes(void)
 {
     TClasses* classes = sm_Classes;
-    if ( !classes )
-        classes = sm_Classes = new TClasses;
+    if ( !classes ) {
+        CMutexGuard GUARD(s_ClassInfoMutex);
+        classes = sm_Classes;
+        if ( !classes ) {
+            classes = sm_Classes = new TClasses;
+        }
+    }
     return *classes;
 }
 
@@ -179,19 +190,22 @@ CClassTypeInfoBase::TClassesById& CClassTypeInfoBase::ClassesById(void)
 {
     TClassesById* classes = sm_ClassesById;
     if ( !classes ) {
-        classes = sm_ClassesById = new TClassesById;
-        const TClasses& cc = Classes();
-        for ( TClasses::const_iterator i = cc.begin(); i != cc.end(); ++i ) {
-            const CClassTypeInfoBase* info = *i;
-            if ( info->GetId() != typeid(void) ) {
-                _TRACE("class by id: " << info->GetId().name()
-                       << " : " << info->GetName());
-                if ( !classes->insert(
-                         TClassesById::value_type(&info->GetId(),
-                                                  info)).second ) {
-                    THROW1_TRACE(runtime_error, "duplicated class ids");
+        CMutexGuard GUARD(s_ClassInfoMutex);
+        classes = sm_ClassesById;
+        if ( !classes ) {
+            const TClasses& cc = Classes();
+            auto_ptr<TClassesById> keep(classes = new TClassesById);
+            iterate ( TClasses, i , cc ) {
+                const CClassTypeInfoBase* info = *i;
+                if ( info->GetId() != typeid(void) ) {
+                    if ( !classes->insert(
+                        TClassesById::value_type(&info->GetId(),
+                                                 info)).second ) {
+                        THROW1_TRACE(runtime_error, "duplicated class ids");
+                    }
                 }
             }
+            sm_ClassesById = keep.release();
         }
     }
     return *classes;
@@ -202,19 +216,22 @@ CClassTypeInfoBase::TClassesByName& CClassTypeInfoBase::ClassesByName(void)
 {
     TClassesByName* classes = sm_ClassesByName;
     if ( !classes ) {
-        classes = sm_ClassesByName = new TClassesByName;
-        const TClasses& cc = Classes();
-        for ( TClasses::const_iterator i = cc.begin(); i != cc.end(); ++i ) {
-            const CClassTypeInfoBase* info = *i;
-            if ( !info->GetName().empty() ) {
-                _TRACE("class by name: " << " : " <<
-                       info->GetName() << info->GetId().name());
-                if ( !classes->insert(
-                         TClassesByName::value_type(info->GetName(),
-                                                    info)).second ) {
-                    THROW1_TRACE(runtime_error, "duplicated class names");
+        CMutexGuard GUARD(s_ClassInfoMutex);
+        classes = sm_ClassesByName;
+        if ( !classes ) {
+            auto_ptr<TClassesByName> keep(classes = new TClassesByName);
+            const TClasses& cc = Classes();
+            iterate ( TClasses, i, cc ) {
+                const CClassTypeInfoBase* info = *i;
+                if ( !info->GetName().empty() ) {
+                    if ( !classes->insert(
+                        TClassesByName::value_type(info->GetName(),
+                                                   info)).second ) {
+                        THROW1_TRACE(runtime_error, "duplicated class names");
+                    }
                 }
             }
+            sm_ClassesByName = keep.release();
         }
     }
     return *classes;
@@ -222,6 +239,7 @@ CClassTypeInfoBase::TClassesByName& CClassTypeInfoBase::ClassesByName(void)
 
 void CClassTypeInfoBase::Register(void)
 {
+    CMutexGuard GUARD(s_ClassInfoMutex);
     delete sm_ClassesById;
     sm_ClassesById = 0;
     delete sm_ClassesByName;
@@ -231,6 +249,7 @@ void CClassTypeInfoBase::Register(void)
 
 void CClassTypeInfoBase::Deregister(void)
 {
+    CMutexGuard GUARD(s_ClassInfoMutex);
     delete sm_ClassesById;
     sm_ClassesById = 0;
     delete sm_ClassesByName;

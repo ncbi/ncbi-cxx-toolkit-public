@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/08/30 16:21:32  vasilche
+* Added MT lock for cache maps
+*
 * Revision 1.20  2001/05/17 15:07:06  lavr
 * Typos corrected
 *
@@ -93,6 +96,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <corelib/ncbithr.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/enumerated.hpp>
 #include <serial/serialutil.hpp>
@@ -160,14 +164,21 @@ void CEnumeratedTypeValues::AddValue(const string& name, TEnumValueType value)
     m_NameToValue.reset(0);
 }
 
+static CMutex s_EnumValuesMutex;
+
 const CEnumeratedTypeValues::TValueToName&
 CEnumeratedTypeValues::ValueToName(void) const
 {
     TValueToName* m = m_ValueToName.get();
     if ( !m ) {
-        m_ValueToName.reset(m = new TValueToName);
-        iterate ( TValues, i, m_Values ) {
-            (*m)[i->second] = &i->first;
+        CMutexGuard GUARD(s_EnumValuesMutex);
+        m = m_ValueToName.get();
+        if ( !m ) {
+            auto_ptr<TValueToName> keep(m = new TValueToName);
+            iterate ( TValues, i, m_Values ) {
+                (*m)[i->second] = &i->first;
+            }
+            m_ValueToName = keep;
         }
     }
     return *m;
@@ -178,14 +189,19 @@ CEnumeratedTypeValues::NameToValue(void) const
 {
     TNameToValue* m = m_NameToValue.get();
     if ( !m ) {
-        m_NameToValue.reset(m = new TNameToValue);
-        iterate ( TValues, i, m_Values ) {
-            const string& s = i->first;
-            pair<TNameToValue::iterator, bool> p =
-                m->insert(TNameToValue::value_type(s, i->second));
-            if ( !p.second ) {
-                THROW1_TRACE(runtime_error, "duplicated enum value name");
+        CMutexGuard GUARD(s_EnumValuesMutex);
+        m = m_NameToValue.get();
+        if ( !m ) {
+            auto_ptr<TNameToValue> keep(m = new TNameToValue);
+            iterate ( TValues, i, m_Values ) {
+                const string& s = i->first;
+                pair<TNameToValue::iterator, bool> p =
+                    m->insert(TNameToValue::value_type(s, i->second));
+                if ( !p.second ) {
+                    THROW1_TRACE(runtime_error, "duplicated enum value name");
+                }
             }
+            m_NameToValue = keep;
         }
     }
     return *m;
@@ -340,6 +356,11 @@ void CEnumeratedTypeInfo::ReadEnum(CObjectIStream& in,
         enumType->m_ValueType->SetValueInt(objectPtr,
                                            in.ReadEnum(enumType->Values()));
     }
+    catch ( exception& e ) {
+        CNcbiDiag() << Error << "[ReadEnum] Exception: " << e.what();
+        in.ThrowError(in.eFormatError, "invalid enum value");
+        throw;
+    }
     catch ( ... ) {
         in.ThrowError(in.eFormatError, "invalid enum value");
         throw;
@@ -356,6 +377,11 @@ void CEnumeratedTypeInfo::WriteEnum(CObjectOStream& out,
         out.WriteEnum(enumType->Values(),
                       enumType->m_ValueType->GetValueInt(objectPtr));
     }
+    catch ( exception& e ) {
+        CNcbiDiag() << Error << "[WriteEnum] Exception: " << e.what();
+        out.ThrowError(out.eFormatError, "invalid enum value");
+        throw;
+    }
     catch ( ... ) {
         out.ThrowError(out.eInvalidData, "invalid enum value");
         throw;
@@ -370,6 +396,11 @@ void CEnumeratedTypeInfo::CopyEnum(CObjectStreamCopier& copier,
     try {
         copier.Out().CopyEnum(enumType->Values(), copier.In());
     }
+    catch ( exception& e ) {
+        CNcbiDiag() << Error << "[CopyEnum] Exception: " << e.what();
+        copier.ThrowError(CObjectIStream::eFormatError, "invalid enum value");
+        throw;
+    }
     catch ( ... ) {
         copier.ThrowError(CObjectIStream::eFormatError, "invalid enum value");
         throw;
@@ -383,6 +414,11 @@ void CEnumeratedTypeInfo::SkipEnum(CObjectIStream& in,
         CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
     try {
         in.ReadEnum(enumType->Values());
+    }
+    catch ( exception& e ) {
+        CNcbiDiag() << Error << "[SkipEnum] Exception: " << e.what();
+        in.ThrowError(in.eFormatError, "invalid enum value");
+        throw;
     }
     catch ( ... ) {
         in.ThrowError(in.eFormatError, "invalid enum value");
