@@ -53,9 +53,9 @@ static unsigned char acceptor[splice_type_count_32][2] = {
 // Transcript coding
 // (lower bits contain jump value for dels and introns)
 const Uint4 kTypeD = 0x00000000; // match or mismatch
-const Uint4 kTypeE = 0x10000000; // del in seq 1
-const Uint4 kTypeF = 0x20000000; // del in seq 2
-const Uint4 kTypeI = 0x30000000; // intron
+const Uint4 kTypeE = 0x40000000; // del in seq 1
+const Uint4 kTypeF = 0x80000000; // del in seq 2
+const Uint4 kTypeI = 0xC0000000; // intron
 
 
 // Donor-acceptor static object used
@@ -557,6 +557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/10 19:13:10  kapustin
+ * Change backtrace type constants to allow larger jump values
+ *
  * Revision 1.2  2003/09/04 16:07:38  kapustin
  * Use STL vectors for exception-safe dynamic arrays and matrices
  *
