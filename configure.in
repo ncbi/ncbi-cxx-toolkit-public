@@ -272,6 +272,11 @@ AC_SUBST(f_outlib)
 AC_SUBST(f_libpath)
 AC_SUBST(f_outexe)
 
+AC_SUBST(PM_SRC_PATH)
+AC_SUBST(PM_LIB_PATH)
+AC_SUBST(NCBI_C_INCLUDE)
+AC_SUBST(NCBI_C_LIB_PATH)
+
 
 #############################################################################
 ### Create output files and render the "$exec_prefix" sub-dirs

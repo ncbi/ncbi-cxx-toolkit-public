@@ -2193,6 +2193,11 @@ fi
 
 
 
+
+
+
+
+
 #############################################################################
 ### Create output files and render the "$exec_prefix" sub-dirs
 
@@ -2354,6 +2359,10 @@ s%@f_outobj@%$f_outobj%g
 s%@f_outlib@%$f_outlib%g
 s%@f_libpath@%$f_libpath%g
 s%@f_outexe@%$f_outexe%g
+s%@PM_SRC_PATH@%$PM_SRC_PATH%g
+s%@PM_LIB_PATH@%$PM_LIB_PATH%g
+s%@NCBI_C_INCLUDE@%$NCBI_C_INCLUDE%g
+s%@NCBI_C_LIB_PATH@%$NCBI_C_LIB_PATH%g
 
 CEOF
 EOF

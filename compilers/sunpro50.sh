@@ -18,4 +18,9 @@ AR="$CXX -xar -o"
 RANLIB=":"
 LDFLAGS="-xildoff"
 
+PM_SRC_PATH="/net/neptune/pubmed/Cvs"
+PM_LIB_PATH=""
+NCBI_C_INCLUDE="/netopt/ncbi_tools/ver0.0/ncbi/include"
+NCBI_C_LIB_PATH="/netopt/ncbi_tools/ver0.0/ncbi/altlib"
+
 sh configure
