@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/03/26 20:26:59  vakatov
+* Added "Printable" symbol conversions (by A.Grichenko)
+*
 * Revision 1.10  2000/12/24 00:03:20  vakatov
 * Include ncbistd.hpp instead of ncbiutil.hpp
 *
@@ -155,6 +158,74 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s)
 {
     for ( const char* c = s.m_String; *c; ++c ) {
         out.put(char(tolower(*c)));
+    }
+    return out;
+}
+
+
+static const char s_Hex[] = "0123456789ABCDEF";
+
+string Printable(char c)
+{
+    string s;
+    switch ( c ) {
+    case '\0': s = "\\0";
+    case '\\': s = "\\\\";
+    case '\n': s = "\\n";
+    case '\t': s = "\\t";
+    case '\r': s = "\\r";
+    case '\v': s = "\\v";
+    default:
+        {
+            if ( isprint(c) ) {
+                s = c;
+            } else {
+                s = "\\x";
+                s += s_Hex[c / 16];
+                s += s_Hex[c % 16];
+            }
+        }
+    }
+    return s;
+}
+
+
+inline
+void WritePrintable(CNcbiOstream& out, char c)
+{
+    switch ( c ) {
+    case '\0': out.write("\\0", 2); break;
+    case '\\': out.write("\\\\", 2); break;
+    case '\n': out.write("\\n", 2); break;
+    case '\t': out.write("\\t", 2); break;
+    case '\r': out.write("\\r", 2); break;
+    case '\v': out.write("\\v", 2); break;
+    default:
+        {
+            if ( isprint(c) ) {
+                out.put(c);
+            } else {
+                out.write("\\x", 2);
+                out.put(s_Hex[c / 16]);
+                out.put(s_Hex[c % 16]);
+            }
+        }
+    }
+}
+
+CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s)
+{
+    iterate ( string, c, s.m_String ) {
+        WritePrintable(out, *c);
+    }
+    return out;
+}
+
+
+CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s)
+{
+    for ( const char* c = s.m_String; *c; ++c ) {
+        WritePrintable(out, *c);
     }
     return out;
 }

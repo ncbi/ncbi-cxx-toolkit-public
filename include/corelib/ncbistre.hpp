@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/03/26 20:26:57  vakatov
+* Added "Printable" symbol conversions (by A.Grichenko)
+*
 * Revision 1.22  2001/03/26 18:35:38  lavr
 * CT_* macros aligned in a pretty way
 *
@@ -311,6 +314,20 @@ public:
     const char* m_String;
 };
 
+class CPrintableStringConverter
+{
+public:
+    CPrintableStringConverter(const string& s) : m_String(s) { }
+    const string& m_String;
+};
+
+class CPrintableCharPtrConverter
+{
+public:
+    CPrintableCharPtrConverter(const char* s) : m_String(s) { }
+    const char* m_String;
+};
+
 inline
 char Upcase(char c)
 {
@@ -347,10 +364,26 @@ CLocaseCharPtrConverter Locase(const char* s)
     return CLocaseCharPtrConverter(s);
 }
 
+extern string Printable(char c);
+
+inline
+CPrintableStringConverter Printable(const string& s)
+{
+    return CPrintableStringConverter(s);
+}
+
+inline
+CPrintableCharPtrConverter Printable(const char* s)
+{
+    return CPrintableCharPtrConverter(s);
+}
+
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s);
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseCharPtrConverter s);
 CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseStringConverter s);
 CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s);
+CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s);
+CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s);
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
