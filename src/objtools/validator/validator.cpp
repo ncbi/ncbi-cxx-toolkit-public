@@ -480,6 +480,7 @@ const string CValidErrItem::sm_Terse [] = {
     "MissingPubInfo",
     "UnnecessaryPubEquiv",
     "BadPageNumbering",
+    "MedlineEntryPub",
     END(GENERIC),
 
     BEGIN(SEQ_PKG),
@@ -894,6 +895,10 @@ authors.",
 prevent proper display of all publication information.",
 //  GENERIC_BadPageNumbering
 "The publication page numbering is suspect.",
+//  GENERIC_MedlineEntryPub
+"Publications should not be of type medline-entry.  This has abstract and MeSH \
+term information that does not appear in the GenBank flatfile.  Type cit-art \
+should be used instead.",
 
 END(GENERIC),
 
@@ -1310,6 +1315,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2004/08/03 13:39:58  shomrat
+* + GENERIC_MedlineEntryPub
+*
 * Revision 1.50  2004/07/29 17:08:20  shomrat
 * + SEQ_DESCR_TransgenicProblem
 *
