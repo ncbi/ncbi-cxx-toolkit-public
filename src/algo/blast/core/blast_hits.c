@@ -1621,7 +1621,10 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
    sfree(hspp2);
    sfree(index_array1);
    sfree(index_array2);
-   
+
+   /* Purge the nulled out HSPs from the new HSP list */
+   hsp_list->hspcnt = BlastHSPArrayPurge(hsp_list->hsp_array, hsp_list->hspcnt);
+
    /* If there is a restriction on the number of HSPs to keep, the new number of
       HSPs might have to be reduced */
    new_hspcnt = MIN(new_hspcnt, hsp_num_max);
