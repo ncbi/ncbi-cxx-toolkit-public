@@ -386,8 +386,8 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     if (BlastSeqBlkNew(seqblk) < 0) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence block");
     }
-    // FIXME: is buflen calculated correctly here?
-    BlastSeqBlkSetSequence(*seqblk, buf, buflen - 2);
+
+    BlastSeqBlkSetSequence(*seqblk, buf, buflen - 1);
 
     (*seqblk)->lcase_mask = head_mask;
 
@@ -834,6 +834,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2003/10/31 16:53:32  dondosha
+* Set length in query sequence block correctly
+*
 * Revision 1.44  2003/10/29 04:46:16  camacho
 * Use fixed AutoPtr for GetSequence return value
 *
