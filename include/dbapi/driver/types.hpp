@@ -595,11 +595,13 @@ public:
     CDB_SmallDateTime(const CTime& t) {
         m_NCBITime = t;
         m_Status   = 0x1;
+	m_Null     = false;
     }
     CDB_SmallDateTime(Uint2 days, Uint2 minutes) {
         m_DBTime.days = days;
         m_DBTime.time = minutes;
         m_Status      = 0x2;
+	m_Null        = false;
     }
 
     CDB_SmallDateTime& Assign(Uint2 days, Uint2 minutes) {
@@ -613,6 +615,7 @@ public:
     CDB_SmallDateTime& operator= (const CTime& t) {
         m_NCBITime = t;
         m_Status = 0x1;
+	m_Null= false;
         return *this;
     }
 
@@ -661,16 +664,19 @@ public:
     CDB_DateTime(const CTime& t) {
         m_NCBITime = t;
         m_Status = 0x1;
+	m_Null= false;
     }
     CDB_DateTime(Int4 d, Int4 s300) {
         m_DBTime.days = d;
         m_DBTime.time = s300;
         m_Status = 0x2;
+	m_Null= false;
     }
  
     CDB_DateTime& operator= (const CTime& t) {
         m_NCBITime = t;
         m_Status = 0x1;
+	m_Null= false;
         return *this;
     }
 
@@ -816,6 +822,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/12/14 17:58:26  soussov
+ * fixes bug in datetime related constructors
+ *
  * Revision 1.2  2001/11/06 17:58:03  lavr
  * Formatted uniformly as the rest of the library
  *
