@@ -69,7 +69,7 @@ const size_t kRegexpMaxSubPatterns = 100;
 ///
 /// Throw exception on error.
 
-class NCBI_XUTIL_EXPORT CRegexp
+class NCBI_REGEXP_EXPORT CRegexp
 {
 public:
     /// Type definitions used for code clarity.
@@ -247,7 +247,7 @@ private:
 ///
 /// Throw exception on error.
 
-class NCBI_XUTIL_EXPORT CRegexpUtil
+class NCBI_REGEXP_EXPORT CRegexpUtil
 {
 public:
     /// Constructor.
@@ -564,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/11 22:54:48  gorelenk
+ * Changed export prefix of all classes to NCBI_REGEXP_EXPORT.
+ *
  * Revision 1.6  2003/11/07 13:38:51  ivanov
  * Comments changes
  *
