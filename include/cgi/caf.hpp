@@ -1,5 +1,5 @@
-#ifndef NCBICAF__HPP__
-#define NCBICAF__HPP__
+#ifndef CGI___CAF__HPP
+#define CGI___CAF__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -39,6 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 ///////////////////////////////////////////////////////
 //
 // CCookieAffinity::
@@ -54,11 +55,12 @@ public:
 
     // Return result of encryption of "string" with "key"; 0 if failed
     // return string to be free()'d by the caller
-    virtual char* Encode(const char* str, const char* key)=0;
+    virtual char* Encode(const char* str, const char* key) = 0;
 
     // Return IP address of the current host, 0 if failed
-    virtual char* GetHostIP(char* buf, unsigned int bufsize)=0;
+    virtual char* GetHostIP(char* buf, size_t bufsize) = 0;
 };
+
 
 END_NCBI_SCOPE
 
@@ -67,20 +69,25 @@ END_NCBI_SCOPE
 
 
 /*
-* ===========================================================================
-* $Log$
-* Revision 1.4  2003/04/14 11:24:57  siyan
-* Fixed group name
-*
-* Revision 1.3  2003/04/10 19:01:34  siyan
-* Added doxygen support
-*
-* Revision 1.2  2003/02/25 14:10:56  kuznets
-* Added support of CCookieAffinity service interface, host IP address, cookie encoding
-*
-* Revision 1.1  2003/02/21 20:27:39  kuznets
-* + cookie affinity lib (caf)
-*
-*/
+ * ===========================================================================
+ * $Log$
+ * Revision 1.5  2003/05/19 22:14:39  vakatov
+ * CCookieAffinity_Plain::GetHostIP() -- use SIZE_T for the buf.size arg.
+ * Get the code into accordance with the C++ Toolkit coding style.
+ *
+ * Revision 1.4  2003/04/14 11:24:57  siyan
+ * Fixed group name
+ *
+ * Revision 1.3  2003/04/10 19:01:34  siyan
+ * Added doxygen support
+ *
+ * Revision 1.2  2003/02/25 14:10:56  kuznets
+ * Added support of CCookieAffinity service interface, host IP address,
+ * cookie encoding
+ *
+ * Revision 1.1  2003/02/21 20:27:39  kuznets
+ * + cookie affinity lib (caf)
+ * ===========================================================================
+ */
 
-#endif /* NCBICAF__HPP__ */
+#endif  /* CGI___CAF__HPP */
