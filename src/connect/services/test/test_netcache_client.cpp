@@ -261,6 +261,7 @@ int CTestNetCacheClient::Run(void)
     unsigned short port = args["port"].AsInteger();
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
+    const char test_data2[] = "New data.";
     string key;
 
     {{
@@ -302,6 +303,26 @@ int CTestNetCacheClient::Run(void)
         assert(res == 0);
         sock.Close();
     }}
+
+    // update existing BLOB
+    {{
+        {
+        CNetCacheClient nc_client(host, port);
+        nc_client.PutData(key, test_data2, sizeof(test_data2)+1);
+        }
+        {
+        CNetCacheClient nc_client(host, port);
+        char dataBuf[1024] = {0};
+        CNetCacheClient::EReadResult rres = 
+            nc_client.GetData(key, dataBuf, sizeof(dataBuf));
+        assert(rres == CNetCacheClient::eReadComplete);
+
+        int res = strcmp(dataBuf, test_data2);
+        assert(res == 0);
+
+        }
+    }}
+
 
     // timeout test
     {{
@@ -376,6 +397,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/01 14:50:05  kuznets
+ * test BLOB update
+ *
  * Revision 1.9  2004/10/28 16:16:53  kuznets
  * +test for Remove
  *
