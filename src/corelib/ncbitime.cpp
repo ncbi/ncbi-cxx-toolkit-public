@@ -756,7 +756,7 @@ string CTime::AsString(const string& fmt, long out_tz) const
                       long tz = (out_tz == eCurrentTimeZone) ? TimeZone() : 
                                                                out_tz;
                       str += (tz > 0) ? '-' : '+';
-                      tz = abs(tz);
+                      if (tz < 0) tz = -tz;
                       int tzh = tz / 3600;
                       s_AddZeroPadInt(str, tzh);
                       s_AddZeroPadInt(str, (int)(tz - tzh * 3600) / 60);
@@ -1542,6 +1542,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/03/24 18:47:47  ivanov
+ * Replaced abs() with if-clause
+ *
  * Revision 1.45  2004/03/24 15:52:08  ivanov
  * Added new format symbol support 'z' (local time in format GMT{+|-}HHMM).
  * Added second parameter to AsString() method that specify an output
