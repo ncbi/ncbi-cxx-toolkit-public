@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2002/10/09 21:00:53  hurwitz
+ * added function for getting seq-id string for a row of the alignment
+ *
  * Revision 1.8  2002/09/20 18:33:48  hurwitz
  * added functions to support membership display
  *
@@ -130,6 +133,9 @@ public:
       int  DenDiagRow = (RowIndex == 0) ? 0 : 1;
       return(GetSeqID(Pair, DenDiagRow, SeqID));
     }
+    bool   Get_GI_or_PDB_String_FromAlignment(        // get seq-id string for RowIndex of alignment
+      int  RowIndex, std::string& Str, bool Pad
+    );
     int    GetSeqIndex(CRef<CSeq_id>& SeqID);         // get index into sequence list
     bool   GetMmdbId(int SeqIndex, int& id);          // get mmdb-id from sequence list
     bool   EraseRows(std::deque<int>& KeepRows);      // erase rows from alignment
@@ -170,6 +176,7 @@ private:
       for (int i=0; i<vec.size(); i++)
         str->at(i) = stdaaMap[vec[i]];
     }
+    void  Make_GI_or_PDB_String(CRef<CSeq_id> SeqID, std::string& Str, bool Pad);
 
 private:
     // Prohibit copy constructor and assignment operator

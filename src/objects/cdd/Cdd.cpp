@@ -913,6 +913,51 @@ bool CCdd::GetSeqIDs(int SeqIndex, list< CRef< CSeq_id > >& SeqIDs) {
 }
 
 
+bool CCdd::Get_GI_or_PDB_String_FromAlignment(int RowIndex, std::string& Str, bool Pad) {
+//-------------------------------------------------------------------
+// get seq-id string for RowIndex of alignment
+//-------------------------------------------------------------------
+  int  Pair = (RowIndex <= 1) ? 0 : RowIndex-1;
+  int  DenDiagRow = (RowIndex == 0) ? 0 : 1;
+  CRef<CSeq_id> SeqID;
+
+  GetSeqID(Pair, DenDiagRow, SeqID);
+  Make_GI_or_PDB_String(SeqID, Str, Pad);
+  return(true);
+}
+
+
+void CCdd::Make_GI_or_PDB_String(CRef<CSeq_id> SeqID, std::string& Str, bool Pad) {
+//-------------------------------------------------------------------
+// make a string for a seq-id
+//-------------------------------------------------------------------
+  int   GI;
+  const CPDB_seq_id*  pPDB_ID;
+  char  IDStr[256];
+  char  Chain;
+
+  if (SeqID->IsGi()) {
+    GI = SeqID->GetGi();
+    sprintf(IDStr, "%d", GI);
+    Str += IDStr;
+  }
+  if (SeqID->IsPdb()) {
+    pPDB_ID = &(SeqID->GetPdb());
+    Str = pPDB_ID->GetMol().Get();
+    Chain = pPDB_ID->GetChain();
+    Str += " ";
+    Str += Chain;
+  }
+
+  // pad with spaces to length of 10
+  if (Pad) {
+    while (strlen(Str.c_str()) < 10) {
+      Str += " ";
+    }
+  }
+}
+
+
 bool CCdd::GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID) {
 //-------------------------------------------------------------------------
 // get a SeqID from a list of sequences.
@@ -1334,6 +1379,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/10/09 20:59:50  hurwitz
+ * added function for getting seq-id string for a row of the alignment
+ *
  * Revision 1.14  2002/09/26 14:22:57  hurwitz
  * handle new case for curation status
  *
