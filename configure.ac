@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.299 2004/05/04 18:06:53 ucko Exp $
+#  $Id: configure.ac,v 1.300 2004/05/13 18:18:28 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -897,6 +897,12 @@ changequote([, ])dnl
    esac
 fi
 
+case "$host_os:$host_cpu" in
+   linux*:alpha*)
+      ARCH_CFLAGS="-mieee $ARCH_CFLAGS"
+      ;;
+esac
+
 CFLAGS="$ARCH_CFLAGS $CFLAGS"
 CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
@@ -1067,7 +1073,7 @@ LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host_os:$compiler" in
     linux*:GCC | irix*:* | solaris*:WorkShop* | *:KCC | linux*:ICC \
-    | solaris*:GCC | osf*:* )
+    | solaris*:GCC | osf*:* | darwin*:GCC )
       ;;
     * )
       echo

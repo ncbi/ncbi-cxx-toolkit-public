@@ -4062,6 +4062,12 @@ else
    esac
 fi
 
+case "$host_os:$host_cpu" in
+   linux*:alpha*)
+      ARCH_CFLAGS="-mieee $ARCH_CFLAGS"
+      ;;
+esac
+
 CFLAGS="$ARCH_CFLAGS $CFLAGS"
 CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
@@ -4234,7 +4240,7 @@ LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host_os:$compiler" in
     linux*:GCC | irix*:* | solaris*:WorkShop* | *:KCC | linux*:ICC \
-    | solaris*:GCC | osf*:* )
+    | solaris*:GCC | osf*:* | darwin*:GCC )
       ;;
     * )
       echo
