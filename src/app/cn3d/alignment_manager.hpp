@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/04/04 00:27:21  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.29  2001/03/30 03:07:08  thiessen
 * add threader score calculation & sorting
 *
@@ -142,6 +145,7 @@ class SequenceViewer;
 class Messenger;
 class BlockMultipleAlignment;
 class Threader;
+class ThreaderOptions;
 class UpdateViewer;
 
 class AlignmentManager : public ShowHideCallbackObject
@@ -157,9 +161,6 @@ public:
     typedef std::list < const MasterSlaveAlignment * > AlignmentList;
     BlockMultipleAlignment *
 		CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
-
-    // get the working alignment
-    const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const;
 
     // change the underlying pairwise alignments to match the given multiple and row order
     void SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
@@ -187,12 +188,15 @@ public:
 
     // update/threader functions
     void ShowUpdateWindow(void) const;
-    void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < bool >& selectedSlaves);
-    void TestThreader(void);
+    void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign);
+    void ThreadUpdates(const ThreaderOptions& options);
+    void MergeUpdates(void);
 
     // calculates row scores using the threader
     void CalculateRowScoresWithThreader(double weightPSSM);
 
+    // get the working alignment
+    const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const;
 
 private:
     const SequenceSet *sequenceSet;

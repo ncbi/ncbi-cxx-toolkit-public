@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/04/04 00:27:15  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.10  2001/03/30 14:43:41  thiessen
 * show threader scores in status line; misc UI tweaks
 *
@@ -79,6 +82,7 @@
 #include "cn3d/show_hide_dialog.hpp"
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/wx_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -102,7 +106,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     sequenceViewer(parentSequenceViewer)
 {
     viewMenu->Append(MID_SHOW_HIDE_ROWS, "Show/Hide &Rows");
-    viewMenu->Append(MID_SCORE_THREADER, "Show &Threader Scores");
+    viewMenu->Append(MID_SCORE_THREADER, "Show PSSM+Contact &Scores");
 
     editMenu->AppendSeparator();
     wxMenu *subMenu = new wxMenu;
@@ -289,18 +293,20 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     }
 
     // ... else bring up selection dialog for realigning multiple rows
+    BlockMultipleAlignment *alignment = sequenceViewer->GetCurrentAlignments()->front();
 
-    // get titles of current display rows (*not* rows from the AlignmentSet!)
-    SequenceDisplay::SequenceList slaveSequences;
-    sequenceViewer->GetCurrentDisplay()->GetSlaveSequences(&slaveSequences);
-    wxString *titleStrs = new wxString[slaveSequences.size()];
-    for (int i=0; i<slaveSequences.size(); i++)
-        titleStrs[i] = slaveSequences[i]->GetTitle().c_str();
+    // get titles of current slave display rows (*not* rows from the AlignmentSet!)
+    SequenceDisplay::SequenceList sequences;
+    sequenceViewer->GetCurrentDisplay()->GetSequences(alignment, &sequences);
+    wxString *titleStrs = new wxString[sequences.size() - 1];
+    int i;
+    for (i=1; i<sequences.size(); i++)  // assuming master is first sequence
+        titleStrs[i - 1] = sequences[i]->GetTitle().c_str();
 
-    std::vector < bool > selectedSlaves(slaveSequences.size(), false);
+    std::vector < bool > selectedSlaves(sequences.size() - 1, false);
 
     wxString title = "Realign Slaves of ";
-    title.Append(sequenceViewer->GetCurrentAlignments()->front()->GetMaster()->GetTitle().c_str());
+    title.Append(alignment->GetMaster()->GetTitle().c_str());
     ShowHideDialog dialog(
         titleStrs,
         &selectedSlaves,
@@ -308,13 +314,16 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
         NULL, -1, title, wxPoint(400, 50), wxSize(200, 300));
     dialog.Activate();
 
-    // do nothing if none selected for realignment
-	int i;
-    for (i=0; i<selectedSlaves.size(); i++) if (selectedSlaves[i]) break;
-    if (i == selectedSlaves.size()) return;
+    // make list of slave rows to be realigned
+    std::vector < int > rowOrder, realignSlaves;
+    sequenceViewer->GetCurrentDisplay()->GetRowOrder(alignment, &rowOrder);
+    for (i=0; i<selectedSlaves.size(); i++)
+        if (selectedSlaves[i])
+            realignSlaves.push_back(rowOrder[i + 1]);
 
-    sequenceViewer->alignmentManager->
-        RealignSlaveSequences(sequenceViewer->GetCurrentAlignments()->front(), selectedSlaves);
+    // do the realignment
+    if (realignSlaves.size() >= 0)
+        sequenceViewer->alignmentManager->RealignSlaveSequences(alignment, realignSlaves);
 }
 
 void SequenceViewerWindow::OnSort(wxCommandEvent& event)
@@ -333,10 +342,16 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
 
 void SequenceViewerWindow::OnScoreThreader(wxCommandEvent& event)
 {
-    SetCursor(*wxHOURGLASS_CURSOR);
-    if (sequenceViewer->GetCurrentDisplay()->IsEditable())
-        sequenceViewer->GetCurrentDisplay()->CalculateRowScoresWithThreader(0.5);
-    SetCursor(wxNullCursor);
+    GetFloatingPointDialog fpDialog(NULL,
+        "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
+        0.0, 1.0, 0.05, 0.5);
+    if (fpDialog.Activate()) {
+        double weightPSSM = fpDialog.GetValue();
+        SetCursor(*wxHOURGLASS_CURSOR);
+        if (sequenceViewer->GetCurrentDisplay()->IsEditable())
+            sequenceViewer->GetCurrentDisplay()->CalculateRowScoresWithThreader(weightPSSM);
+        SetCursor(wxNullCursor);
+    }
 }
 
 END_SCOPE(Cn3D)

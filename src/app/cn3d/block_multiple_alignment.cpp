@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/04/04 00:27:14  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.11  2001/03/30 03:07:33  thiessen
 * add threader score calculation & sorting
 *
@@ -81,11 +84,12 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList *sequenceList) :
+BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList) :
     sequences(sequenceList), conservationColorer(NULL)
 {
     InitCache();
     rowDoubles.resize(sequenceList->size());
+    rowStrings.resize(sequenceList->size());
 
     // create conservation colorer
     conservationColorer = new ConservationColorer();
@@ -101,8 +105,8 @@ void BlockMultipleAlignment::InitCache(void)
 BlockMultipleAlignment::~BlockMultipleAlignment(void)
 {
     BlockList::iterator i, ie = blocks.end();
-    for (i=blocks.begin(); i!=ie; i++) if (*i) delete *i;
-    if (sequences) delete sequences;
+    for (i=blocks.begin(); i!=ie; i++) delete *i;
+    delete sequences;
     delete conservationColorer;
 }
 
@@ -114,6 +118,8 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     for (b=blocks.begin(); b!=be; b++)
         copy->blocks.push_back((*b)->Clone(copy));
     copy->UpdateBlockMapAndConservationColors();
+    copy->rowDoubles = rowDoubles;
+    copy->rowStrings = rowStrings;
 	return copy;
 }
 
@@ -225,7 +231,7 @@ bool BlockMultipleAlignment::AddUnalignedBlocks(void)
     return true;
 }
 
-bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(void)
+bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(bool clearRowInfo)
 {
     int i = 0, j;
     BlockList::iterator b, be = blocks.end();
@@ -248,6 +254,7 @@ bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(void)
         if (uaBlock) conservationColorer->AddBlock(uaBlock);
     }
 
+    if (clearRowInfo) ClearRowInfo(); // if alignment changes, any scores/status become invalid
     return true;
 }
 
@@ -1055,69 +1062,68 @@ static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool 
 }
 
 bool BlockMultipleAlignment::ExtractRows(
-    const std::vector < bool >& removeSlaves, AlignmentList *pairwiseAlignments)
+    const std::vector < int >& slavesToRemove, AlignmentList *pairwiseAlignments)
 {
-    if (removeSlaves.size() != NRows() - 1) {
-        ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - wrong size slave list");
-        return false;
-    }
+    if (slavesToRemove.size() == 0) return false;
 
-    int i, nToRemove = 0, nRemoved = 0;
-    BlockList::const_iterator b, br, be = blocks.end();
-    std::vector < bool > removeRows(removeSlaves.size() + 1);
-
-    TESTMSG("creating new pairwise alignments");
-
-    SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
-    removeRows[0] = false;
-    for (i=0; i<removeSlaves.size(); i++) {
-
-        // count how many rows will be removed
-        removeRows[i + 1] = removeSlaves[i];
-        if (removeSlaves[i]) {
-            nToRemove++;
-
-            // redraw molecule associated with removed row
-            const Molecule *molecule = GetSequenceOfRow(i + 1)->molecule;
-            if (molecule) GlobalMessenger()->PostRedrawMolecule(molecule);
-
-            // create new pairwise alignment from each removed row
-            SequenceList *newSeqs = new SequenceList(2);
-            (*newSeqs)[0] = (*sequences)[0];
-            (*newSeqs)[1] = (*sequences)[i + 1];   // removed slave
-            BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs);
-            for (b=blocks.begin(); b!=be; b++) {
-                UngappedAlignedBlock *ABlock = dynamic_cast<UngappedAlignedBlock*>(*b);
-                if (ABlock) {
-                    UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
-                    const Block::Range *range = ABlock->GetRangeOfRow(0);
-                    newABlock->SetRangeOfRow(0, range->from, range->to);
-                    range = ABlock->GetRangeOfRow(i + 1);
-                    newABlock->SetRangeOfRow(1, range->from, range->to);
-                    newABlock->width = range->to - range->from + 1;
-                    newAlignment->AddAlignedBlockAtEnd(newABlock);
-                }
-            }
-            if (!newAlignment->AddUnalignedBlocks() ||
-                !newAlignment->UpdateBlockMapAndConservationColors()) {
-                ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - error creating new alignment");
-                return false;
-            }
-            pairwiseAlignments->push_back(newAlignment);
+    // make a bool list of rows to remove, also checking to make sure slave list items are in range
+    int i;
+    std::vector < bool > removeRows(NRows(), false);
+    for (i=0; i<slavesToRemove.size(); i++) {
+        if (slavesToRemove[i] > 0 && slavesToRemove[i] < NRows()) {
+            removeRows[slavesToRemove[i]] = true;
+        } else {
+            ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - can't extract row "
+                << slavesToRemove[i]);
+            return false;
         }
     }
+
+    BlockList::const_iterator b, br, be = blocks.end();
+
+    TESTMSG("creating new pairwise alignments");
+    SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
+    for (i=0; i<slavesToRemove.size(); i++) {
+
+        // redraw molecule associated with removed row
+        const Molecule *molecule = GetSequenceOfRow(slavesToRemove[i])->molecule;
+        if (molecule) GlobalMessenger()->PostRedrawMolecule(molecule);
+
+        // create new pairwise alignment from each removed row
+        SequenceList *newSeqs = new SequenceList(2);
+        (*newSeqs)[0] = (*sequences)[0];
+        (*newSeqs)[1] = (*sequences)[slavesToRemove[i]];
+        BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs);
+        for (b=blocks.begin(); b!=be; b++) {
+            UngappedAlignedBlock *ABlock = dynamic_cast<UngappedAlignedBlock*>(*b);
+            if (ABlock) {
+                UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
+                const Block::Range *range = ABlock->GetRangeOfRow(0);
+                newABlock->SetRangeOfRow(0, range->from, range->to);
+                range = ABlock->GetRangeOfRow(slavesToRemove[i]);
+                newABlock->SetRangeOfRow(1, range->from, range->to);
+                newABlock->width = range->to - range->from + 1;
+                newAlignment->AddAlignedBlockAtEnd(newABlock);
+            }
+        }
+        if (!newAlignment->AddUnalignedBlocks() ||
+            !newAlignment->UpdateBlockMapAndConservationColors()) {
+            ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - error creating new alignment");
+            return false;
+        }
+        pairwiseAlignments->push_back(newAlignment);
+    }
     SetDiagPostLevel(eDiag_Info);
-    if (nToRemove == 0) return false;
 
     // remove sequences
     TESTMSG("deleting sequences");
-    VectorRemoveElements(*(const_cast<SequenceList*>(sequences)), removeRows, nToRemove);
+    VectorRemoveElements(*(const_cast<SequenceList*>(sequences)), removeRows, slavesToRemove.size());
 
     // delete row from all blocks, removing any zero-width blocks
     TESTMSG("deleting alignment rows from blocks");
     b = blocks.begin();
     while (b != be) {
-        (*b)->DeleteRows(removeRows, nToRemove);
+        (*b)->DeleteRows(removeRows, slavesToRemove.size());
         if ((*b)->width == 0) {
             br = b;
             b++;
@@ -1135,6 +1141,103 @@ bool BlockMultipleAlignment::ExtractRows(
 void BlockMultipleAlignment::FreeColors(void)
 {
     conservationColorer->FreeColors();
+}
+
+bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAlignment)
+{
+    // check to see if the alignment is compatible - must have same master sequence
+    // and blocks of new alignment must contain blocks of this alignment; at same time,
+    // build up map of aligned blocks in new alignment that correspond to aligned blocks
+    // of this object, for convenient lookup later
+    if (newAlignment->GetMaster() != GetMaster()) return false;
+
+    const Block::Range *newRange, *thisRange;
+    BlockList::const_iterator nb, nbe = newAlignment->blocks.end();
+    BlockList::iterator b, be = blocks.end();
+    typedef std::map < UngappedAlignedBlock *, const UngappedAlignedBlock * > AlignedBlockMap;
+    AlignedBlockMap correspondingNewBlocks;
+
+    for (b=blocks.begin(); b!=be; b++) {
+        if (!(*b)->IsAligned()) continue;
+        for (nb=newAlignment->blocks.begin(); nb!=nbe; nb++) {
+            if (!(*nb)->IsAligned()) continue;
+
+            newRange = (*nb)->GetRangeOfRow(0);
+            thisRange = (*b)->GetRangeOfRow(0);
+            if (newRange->from <= thisRange->from && newRange->to >= thisRange->to) {
+                correspondingNewBlocks[dynamic_cast<UngappedAlignedBlock*>(*b)] =
+                    dynamic_cast<const UngappedAlignedBlock*>(*nb);
+                break;
+            }
+        }
+        if (nb == nbe) return false;    // no corresponding block found
+    }
+
+    // add slave sequences from new alignment; also copy scores/status
+    SequenceList *modSequences = const_cast<SequenceList*>(sequences);
+    int i, nNewRows = newAlignment->sequences->size() - 1;
+    modSequences->resize(modSequences->size() + nNewRows);
+    rowDoubles.resize(rowDoubles.size() + nNewRows);
+    rowStrings.resize(rowStrings.size() + nNewRows);
+    for (i=0; i<nNewRows; i++) {
+        modSequences->at(modSequences->size() + i - nNewRows) = newAlignment->sequences->at(i + 1);
+        SetRowDouble(NRows() + i - nNewRows, newAlignment->GetRowDouble(i + 1));
+        SetRowStatusLine(NRows() + i - nNewRows, newAlignment->GetRowStatusLine(i + 1));
+    }
+
+    // now that we know blocks are compatible, add new rows at end of this alignment, containing
+    // all rows (except master) from new alignment; only that part of the aligned blocks from
+    // the new alignment that intersect with the aligned blocks from this object are added, so
+    // that this object's block structure is unchanged
+
+    // resize all blocks
+    for (b=blocks.begin(); b!=be; b++) (*b)->AddRows(nNewRows);
+
+    // set ranges of aligned blocks
+    AlignedBlockMap::const_iterator ab, abe = correspondingNewBlocks.end();
+    const Block::Range *thisMaster, *newMaster;
+    for (ab=correspondingNewBlocks.begin(); ab!=abe; ab++) {
+        thisMaster = ab->first->GetRangeOfRow(0);
+        newMaster = ab->second->GetRangeOfRow(0);
+        for (i=0; i<nNewRows; i++) {
+            newRange = ab->second->GetRangeOfRow(i + 1);
+            ab->first->SetRangeOfRow(NRows() + i - nNewRows,
+                newRange->from + thisMaster->from - newMaster->from,
+                newRange->to + thisMaster->to - newMaster->to);
+        }
+    }
+
+    // then set unaligned block ranges, widths
+    Block *prevBlock = NULL, *nextBlock = NULL;
+    UnalignedBlock *thisUBlock;
+    const Block::Range *prevRange, *nextRange;
+    int from, to, width;
+    for (b=blocks.begin(); b!=be; b++) {
+
+        thisUBlock = dynamic_cast<UnalignedBlock*>(*b);
+        if (thisUBlock) {
+            BlockList::iterator nx(b);
+            nx++;
+            nextBlock = (nx != be) ? *nx : NULL;
+
+            for (i=0; i<nNewRows; i++) {
+                prevRange = prevBlock ? prevBlock->GetRangeOfRow(NRows() + i - nNewRows) : NULL;
+                nextRange = nextBlock ? nextBlock->GetRangeOfRow(NRows() + i - nNewRows) : NULL;
+                from = prevRange ? prevRange->to + 1 : 0;
+                to = nextRange ? nextRange->from - 1 :
+                        GetSequenceOfRow(NRows() + i - nNewRows)->sequenceString.size() - 1;
+                thisUBlock->SetRangeOfRow(NRows() + i - nNewRows, from , to);
+                width = to - from + 1;
+                if (width > thisUBlock->width) thisUBlock->width = width;
+            }
+        }
+
+        prevBlock = *b;
+    }
+
+    // update this alignment, but leave row scores/status alone
+    UpdateBlockMapAndConservationColors(false);
+    return true;
 }
 
 

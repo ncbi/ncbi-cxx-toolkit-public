@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/04/04 00:27:15  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.5  2001/03/30 03:07:34  thiessen
 * add threader score calculation & sorting
 *
@@ -68,6 +71,11 @@ UpdateViewer::UpdateViewer(AlignmentManager *alnMgr) :
     ViewerBase(reinterpret_cast<ViewerWindowBase**>(&updateWindow)),
     alignmentManager(alnMgr), updateWindow(NULL)
 {
+    // when first created, start with blank display
+    AlignmentList emptyAlignmentLst;
+    SequenceDisplay *blankDisplay = new SequenceDisplay(true, viewerWindow);
+    InitStacks(&emptyAlignmentLst, blankDisplay);
+    PushAlignment();
 }
 
 UpdateViewer::~UpdateViewer(void)
@@ -101,22 +109,20 @@ void UpdateViewer::Refresh(void)
 
 void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
 {
-    if (newAlignments.size() == 0) return;
-
-    AlignmentList *alignments = (alignmentStack.size() > 0) ? &(alignmentStack.back()) : NULL;
-    SequenceDisplay *display = GetCurrentDisplay();
-    if (!display) display = new SequenceDisplay(true, viewerWindow);
+    AlignmentList& alignments = alignmentStack.back();
+    SequenceDisplay *display = displayStack.back();
 
     // populate succesive lines of the display with each alignment, with blank lines inbetween
     AlignmentList::const_iterator a, ae = newAlignments.end();
     for (a=newAlignments.begin(); a!=ae; a++) {
         if ((*a)->NRows() != 2) {
-            ERR_POST(Error << "UpdateViewer::AddAlignments() - got alignment with != 2 rows");
+            ERR_POST(Error << "UpdateViewer::AddAlignments() - got alignment with "
+                << (*a)->NRows() << " rows");
             continue;
         }
 
         // add alignment to stack list
-        if (alignments) alignments->push_back(*a);
+        alignments.push_back(*a);
 
         // add alignment to the display, including block row since editor is always on
         if (display->NRows() != 0) display->AddRowFromString("");
@@ -125,14 +131,25 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
             display->AddRowFromAlignment(row, *a);
     }
 
-    // start undo stacks if this is the first set of alignments added
-    if (!GetCurrentDisplay()) {
-        InitStacks(&newAlignments, display);
-        display->SetStartingColumn(GetCurrentAlignments()->front()->GetFirstAlignedBlockPosition() - 5);
+    if (alignments.size() > 0) {
+        display->SetStartingColumn(alignments.front()->GetFirstAlignedBlockPosition() - 5);
+        if (!updateWindow) CreateUpdateWindow();
     }
 
-    if (!updateWindow) CreateUpdateWindow();
     PushAlignment();    // make this an undoable operation
+}
+
+void UpdateViewer::ReplaceAlignments(const AlignmentList& alignmentList)
+{
+    // empty out the current alignment list and display (but not the undo stacks!)
+    AlignmentList::const_iterator a, ae = alignmentStack.back().end();
+    for (a=alignmentStack.back().begin(); a!=ae; a++) delete *a;
+    alignmentStack.back().clear();
+
+    delete displayStack.back();
+    displayStack.back() = new SequenceDisplay(true, viewerWindow);
+
+    AddAlignments(alignmentList);
 }
 
 void UpdateViewer::OverrideBackgroundColor(int column, int row, bool *drawBackground, Vector *bgColorVec)

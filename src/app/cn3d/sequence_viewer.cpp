@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/04/04 00:27:14  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.39  2001/03/30 03:07:34  thiessen
 * add threader score calculation & sorting
 *
@@ -253,16 +256,6 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
         sequenceWindow->UpdateDisplay(display);
     else
         CreateSequenceWindow();
-}
-
-void SequenceViewer::UpdateAfterEdit(const BlockMultipleAlignment *forAlignment)
-{
-    GetCurrentDisplay()->UpdateAfterEdit(forAlignment);
-}
-
-void SequenceViewer::RecreateFromEditedMultiple(BlockMultipleAlignment *multiple)
-{
-    GetCurrentDisplay()->RecreateFromEditedMultiple(multiple);
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/04/04 00:27:21  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.9  2001/03/30 03:07:08  thiessen
 * add threader score calculation & sorting
 *
@@ -86,7 +89,7 @@ class BlockMultipleAlignment
 {
 public:
     typedef std::vector < const Sequence * > SequenceList;
-    BlockMultipleAlignment(const SequenceList *sequenceList);   // list will be owned/freed by this object
+    BlockMultipleAlignment(SequenceList *sequenceList);   // list will be owned/freed by this object
 
     ~BlockMultipleAlignment(void);
 
@@ -101,7 +104,7 @@ public:
 
     // Fills out the BlockMap for mapping alignment column -> block+column,
     // and calculates conservation colors.
-    bool UpdateBlockMapAndConservationColors(void);
+    bool UpdateBlockMapAndConservationColors(bool clearRowInfo = true);
 
     // find out if a residue is aligned, by row
     bool IsAligned(int row, int seqIndex) const;
@@ -207,7 +210,13 @@ public:
     // that contains the alignment of just that slave with the master, as it was in the original multiple
     // (i.e., not according to the corresponding pre-IBM MasterSlaveAlignment)
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
-    bool ExtractRows(const std::vector < bool >& removeSlaves, AlignmentList *pairwiseAlignments);
+    bool ExtractRows(const std::vector < int >& slavesToRemove, AlignmentList *pairwiseAlignments);
+
+    // merge in the contents of the given alignment (assuming same master, compatible block structure),
+    // addings its rows to the end of this alignment; returns true if merge successful. Does not change
+    // block structure - just adds the part of new alignment's aligned blocks that intersect with this
+    // object's aligned blocks
+    bool MergeAlignment(const BlockMultipleAlignment *newAlignment);
 
 private:
     ConservationColorer *conservationColorer;
@@ -241,13 +250,11 @@ private:
     // given a row and seqIndex, find block that contains that residue
     const Block * GetBlock(int row, int seqIndex) const;
 
-    // intended for volatile storage of row-associated doubles (e.g. for alignment scores, etc.)
+    // intended for volatile storage of row-associated info (e.g. for alignment scores, etc.)
     mutable std::vector < double > rowDoubles;
+    mutable std::vector < std::string > rowStrings;
 
 public:
-
-    double GetRowDouble(int row) const { return rowDoubles[row]; }
-    void SetRowDouble(int row, double value) const { rowDoubles[row] = value; }
 
     // NULL if block before is aligned; if NULL passed, retrieves last block (if unaligned; else NULL)
     const UnalignedBlock * GetUnalignedBlockBefore(const UngappedAlignedBlock *aBlock) const;
@@ -255,6 +262,21 @@ public:
     int NBlocks(void) const { return blocks.size(); }
     int NRows(void) const { return sequences->size(); }
     int AlignmentWidth(void) const { return totalWidth; }
+
+    // for storing/querying info
+    double GetRowDouble(int row) const { return rowDoubles[row]; }
+    void SetRowDouble(int row, double value) const { rowDoubles[row] = value; }
+    const std::string& GetRowStatusLine(int row) const { return rowStrings[row]; }
+    void SetRowStatusLine(int row, std::string value) const { rowStrings[row] = value; }
+
+    // empties all rows' infos
+    void ClearRowInfo(void) const
+    {
+        for (int r=0; r<NRows(); r++) {
+            rowDoubles[r] = 0.0;
+            rowStrings[r].erase();
+        }
+    }
 };
 
 
@@ -302,6 +324,9 @@ public:
         ranges[row].from = from;
         ranges[row].to = to;
     }
+
+    // resize - add new (empty) rows at end
+    void AddRows(int nNewRows) { ranges.resize(ranges.size() + nNewRows); }
 
     int NSequences(void) const { return ranges.size(); }
 };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/04/04 00:27:14  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.8  2001/03/30 14:43:41  thiessen
 * show threader scores in status line; misc UI tweaks
 *
@@ -93,6 +96,17 @@ BEGIN_SCOPE(Cn3D)
 static const double SCALING_FACTOR = 100000;
 
 static const std::string ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
+
+// default threading options
+ThreaderOptions::ThreaderOptions(void) :
+    mergeAfterEachSequence(false),
+    weightPSSM(0.5),
+    loopLengthMultiplier(1.5),
+    nRandomStarts(1),
+    nResultAlignments(10)
+{
+}
+
 
 // gives threader residue number for a character (-1 if non-standard aa)
 static int LookupResidueNumber(char r)
@@ -830,19 +844,53 @@ Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
     return fldMtf;
 }
 
-bool Threader::Realign(const BlockMultipleAlignment *masterMultiple,
-    const AlignmentList *originalAlignments, AlignmentList *newAlignments)
+static BlockMultipleAlignment * CreateAlignmentFromThdTbl(const Thd_Tbl *thdTbl, int nResult,
+    const Cor_Def *corDef, BlockMultipleAlignment::SequenceList *sequences)
 {
-    // will eventually be variables...
-    static const double weightPSSM = 0.5;
-    static const double loopLengthMultiplier = 1.5;
-    static const int nRandomStarts = 1;
+    if (corDef->sll.n != thdTbl->nsc || nResult >= thdTbl->n) {
+        ERR_POST(Error << "CreateAlignmentFromThdTbl() - inconsistent Thd_Tbl");
+        return NULL;
+    }
+
+    BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(sequences);
+
+    // add blocks from threader result
+    for (int block=0; block<corDef->sll.n; block++) {
+        UngappedAlignedBlock *aBlock = new UngappedAlignedBlock(newAlignment);
+        aBlock->SetRangeOfRow(0,
+            corDef->sll.rfpt[block] - thdTbl->no[block][nResult],
+            corDef->sll.rfpt[block] + thdTbl->co[block][nResult]);
+        aBlock->SetRangeOfRow(1,
+            thdTbl->al[block][nResult] - thdTbl->no[block][nResult],
+            thdTbl->al[block][nResult] + thdTbl->co[block][nResult]);
+        aBlock->width = thdTbl->no[block][nResult] + 1 + thdTbl->co[block][nResult];
+        if (!newAlignment->AddAlignedBlockAtEnd(aBlock)) {
+            ERR_POST(Error << "CreateAlignmentFromThdTbl() - error adding block");
+            delete newAlignment;
+            return NULL;
+        }
+    }
+
+    // finish alignment
+    if (!newAlignment->AddUnalignedBlocks() || !newAlignment->UpdateBlockMapAndConservationColors()) {
+        ERR_POST(Error << "CreateAlignmentFromThdTbl() - error finishing alignment");
+        delete newAlignment;
+        return NULL;
+    }
+
+    return newAlignment;
+}
+
+bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *masterMultiple,
+    const AlignmentList *originalAlignments,
+    int *nRowsAddedToMultiple, AlignmentList *newAlignments)
+{
+    *nRowsAddedToMultiple = 0;
+    if (!masterMultiple || !originalAlignments || !newAlignments || originalAlignments->size() == 0)
+        return false;
 
     // either calculate no z-scores (0), or calculate z-score for best result (1)
-    static const int zscs = 1;
-
-    // number of alignments returned per threading call
-    static const int nResults = 10;
+    static const int zscs = 0;
 
     Seq_Mtf *seqMtf = NULL;
     Cor_Def *corDef = NULL;
@@ -858,13 +906,21 @@ bool Threader::Realign(const BlockMultipleAlignment *masterMultiple,
     FILE *pFile;
 #endif
 
+    // create contact lists
+    if (options.weightPSSM < 1.0 && (!masterMultiple->GetMaster()->molecule ||
+            masterMultiple->GetMaster()->molecule->parentSet->isAlphaOnly)) {
+        ERR_POST("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
+        goto cleanup;
+    }
+    if (!(fldMtf = CreateFldMtf(masterMultiple->GetMaster()))) goto cleanup;
+
     // create potential and Gibbs schedule
-    if (!(rcxPtl = CreateRcxPtl(1.0 - weightPSSM))) goto cleanup;
-    if (!(gibScd = CreateGibScd(true, nRandomStarts))) goto cleanup;
+    if (!(rcxPtl = CreateRcxPtl(1.0 - options.weightPSSM))) goto cleanup;
+    if (!(gibScd = CreateGibScd(true, options.nRandomStarts))) goto cleanup;
     trajectory = new float[gibScd->ntp];
 
-    // create PSSM
-    if (!(seqMtf = CreateSeqMtf(masterMultiple, weightPSSM))) goto cleanup;
+    // create initial PSSM
+    if (!(seqMtf = CreateSeqMtf(masterMultiple, options.weightPSSM))) goto cleanup;
 #ifdef DEBUG_THREADER
     pFile = fopen("Seq_Mtf.debug.txt", "w");
     PrintSeqMtf(seqMtf, pFile);
@@ -872,20 +928,12 @@ bool Threader::Realign(const BlockMultipleAlignment *masterMultiple,
 #endif
 
     // create core definition
-    if (!(corDef = CreateCorDef(masterMultiple, loopLengthMultiplier))) goto cleanup;
+    if (!(corDef = CreateCorDef(masterMultiple, options.loopLengthMultiplier))) goto cleanup;
 #ifdef DEBUG_THREADER
     pFile = fopen("Cor_Def.debug.txt", "w");
     PrintCorDef(corDef, pFile);
     fclose(pFile);
 #endif
-
-    // create contact lists
-    if (weightPSSM < 1.0 && (!masterMultiple->GetMaster()->molecule ||
-            masterMultiple->GetMaster()->molecule->parentSet->isAlphaOnly)) {
-        ERR_POST("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
-        goto cleanup;
-    }
-    if (!(fldMtf = CreateFldMtf(masterMultiple->GetMaster()))) goto cleanup;
 
 #ifdef DEBUG_THREADER
     pFile = fopen("Fld_Mtf.debug.txt", "w");
@@ -893,7 +941,7 @@ bool Threader::Realign(const BlockMultipleAlignment *masterMultiple,
     fclose(pFile);
 #endif
 
-    for (p=originalAlignments->begin(); p!=pe; p++) {
+    for (p=originalAlignments->begin(); p!=pe; ) {
 
         if ((*p)->NRows() != 2 || (*p)->GetMaster() != masterMultiple->GetMaster()) {
             ERR_POST(Error << "Threader::Realign() - bad pairwise alignment");
@@ -913,13 +961,14 @@ bool Threader::Realign(const BlockMultipleAlignment *masterMultiple,
 #endif
 
         // create results storage structure
-        thdTbl = NewThdTbl(nResults, corDef->sll.n);
+        thdTbl = NewThdTbl(options.nResultAlignments, corDef->sll.n);
 
         // actually run the threader (finally!)
         TESTMSG("threading " << (*p)->GetSequenceOfRow(1)->GetTitle());
         success = atd(fldMtf, corDef, qrySeq, rcxPtl, gibScd, thdTbl, seqMtf,
-            trajectory, zscs, SCALING_FACTOR, weightPSSM);
+            trajectory, zscs, SCALING_FACTOR, options.weightPSSM);
 
+        BlockMultipleAlignment *newAlignment;
         if (success) {
             TESTMSG("threading succeeded");
 #ifdef DEBUG_THREADER
@@ -927,13 +976,64 @@ bool Threader::Realign(const BlockMultipleAlignment *masterMultiple,
             PrintThdTbl(thdTbl, pFile);
             fclose(pFile);
 #endif
-        } else {
+            // create new alignment(s) from threading result; merge or add to list as appropriate
+            for (int i=0; i<options.nResultAlignments; i++) {
+                BlockMultipleAlignment::SequenceList *sequences = new BlockMultipleAlignment::SequenceList(2);
+                sequences->front() = (*p)->GetMaster();
+                sequences->back() = (*p)->GetSequenceOfRow(1);
+                newAlignment = CreateAlignmentFromThdTbl(thdTbl, i, corDef, sequences);
+                if (!newAlignment) continue;
+
+                // set scores to show in alignment
+                newAlignment->SetRowDouble(0, thdTbl->tg[i]);
+                newAlignment->SetRowDouble(1, thdTbl->tg[i]);
+                CNcbiOstrstream oss;
+                oss << "Threading successful; alignment score before merge: " << thdTbl->tg[i] << '\0';
+                newAlignment->SetRowStatusLine(0, oss.str());
+                newAlignment->SetRowStatusLine(1, oss.str());
+                delete oss.str();
+
+                if (options.mergeAfterEachSequence) {
+                    if (masterMultiple->MergeAlignment(newAlignment)) {
+                        delete newAlignment; // if merge is successful, we can delete this alignment;
+                        (*nRowsAddedToMultiple)++;
+                    } else {                 // otherwise indicate merge failure in status
+                        std::string newStatus = newAlignment->GetRowStatusLine(0);
+                        newStatus += "; merge failed!";
+                        newAlignment->SetRowStatusLine(0, newStatus);
+                        newAlignment->SetRowStatusLine(1, newStatus);
+                        newAlignments->push_back(newAlignment);
+                    }
+                }
+
+                // no merge - add new alignment to list, let calling function deal with it
+                else {
+                    newAlignments->push_back(newAlignment);
+                }
+            }
+        }
+
+        // threading failed - add old alignment to list so it doesn't get lost
+        else {
             TESTMSG("threading failed!");
+            newAlignment = (*p)->Clone();
+            newAlignment->SetRowDouble(0, -1.0);
+            newAlignment->SetRowDouble(1, -1.0);
+            newAlignment->SetRowStatusLine(0, "Threading failed!");
+            newAlignment->SetRowStatusLine(1, "Threading failed!");
+            newAlignments->push_back(newAlignment);
         }
 
 cleanup2:
         if (qrySeq) FreeQrySeq(qrySeq);
         if (thdTbl) FreeThdTbl(thdTbl);
+
+        p++;
+        if (success && p != pe && options.mergeAfterEachSequence) {
+            // re-create PSSM after each merge
+            FreeSeqMtf(seqMtf);
+            if (!(seqMtf = CreateSeqMtf(masterMultiple, options.weightPSSM))) goto cleanup;
+        }
     }
 
     retval = true;
@@ -1021,12 +1121,6 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
     bool retval = false;
     int row;
 
-    // create PSSM
-    if (weightPSSM > 0.0 && !(seqMtf = CreateSeqMtf(multiple, weightPSSM))) goto cleanup;
-
-    // create potential
-    if (weightPSSM < 1.0 && !(rcxPtl = CreateRcxPtl(1.0 - weightPSSM))) goto cleanup;
-
     // create contact lists
     if (weightPSSM < 1.0 && (!multiple->GetMaster()->molecule ||
             multiple->GetMaster()->molecule->parentSet->isAlphaOnly)) {
@@ -1034,6 +1128,12 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
         goto cleanup;
     }
     if (weightPSSM < 1.0 && !(fldMtf = CreateFldMtf(multiple->GetMaster()))) goto cleanup;
+
+    // create PSSM
+    if (weightPSSM > 0.0 && !(seqMtf = CreateSeqMtf(multiple, weightPSSM))) goto cleanup;
+
+    // create potential
+    if (weightPSSM < 1.0 && !(rcxPtl = CreateRcxPtl(1.0 - weightPSSM))) goto cleanup;
 
     // get aligned blocks
     aBlocks = multiple->GetUngappedAlignedBlocks();
@@ -1051,8 +1151,15 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
             scorePSSM = (weightPSSM > 0.0) ?
                 CalculatePSSMScore(aBlocks, row, residueNumbers, seqMtf) : 0.0,
             scoreContacts = (weightPSSM < 1.0) ?
-                CalculateContactScore(multiple, row, residueNumbers, fldMtf, rcxPtl) : 0.0;
-        multiple->SetRowDouble(row, (scorePSSM + scoreContacts) / SCALING_FACTOR);
+                CalculateContactScore(multiple, row, residueNumbers, fldMtf, rcxPtl) : 0.0,
+            score = (scorePSSM + scoreContacts) / SCALING_FACTOR;
+
+        // set score in alignment rows (for sorting and status line display)
+        multiple->SetRowDouble(row, score);
+        CNcbiOstrstream oss;
+        oss << "PSSM+Contact score (PSSM x" << weightPSSM << "): " << score << '\0';
+        multiple->SetRowStatusLine(row, oss.str());
+        delete oss.str();
     }
 
     retval = true;

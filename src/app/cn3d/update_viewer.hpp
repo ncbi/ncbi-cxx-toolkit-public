@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/04/04 00:27:22  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.3  2001/03/22 00:32:36  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -70,8 +73,12 @@ public:
     void Refresh(void);             // refreshes the window only if present
     void CreateUpdateWindow(void);  // (re)creates the window
 
+    // add new pairwise alignments to the update window
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
     void AddAlignments(const AlignmentList& alignmentList);
+
+    // replace contents of update window with given alignments
+    void ReplaceAlignments(const AlignmentList& alignmentList);
 
     void OverrideBackgroundColor(int column, int row, bool *drawBackground, Vector *bgColorVec);
 

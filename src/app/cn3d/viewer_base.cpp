@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/04/04 00:27:16  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.6  2001/03/30 14:43:41  thiessen
 * show threader scores in status line; misc UI tweaks
 *
@@ -93,10 +96,8 @@ void ViewerBase::DestroyGUI(void)
 void ViewerBase::InitStacks(const AlignmentList *alignments, SequenceDisplay *display)
 {
     ClearStacks();
-    if (alignments) {
-        alignmentStack.resize(alignmentStack.size() + 1);
-        alignmentStack.back() = *alignments;    // copy list
-    }
+    alignmentStack.resize(1);
+    if (alignments) alignmentStack.back() = *alignments;    // copy list
     displayStack.push_back(display);
 }
 
@@ -118,14 +119,13 @@ void ViewerBase::PushAlignment(void)
     for (; a!=ae; a++) {
         (*a)->FreeColors();   // don't store colors in undo stack - uses too much memory
         BlockMultipleAlignment *newAlignment = (*a)->Clone();
+//        (*a)->ClearRowInfo();
         alignmentStack.back().push_back(newAlignment);
         newAlignmentMap[*a] = newAlignment;
     }
 
     // clone and update display
-    SequenceDisplay *newDisplay = displayStack.back()->Clone(newAlignmentMap);
-    displayStack.back()->ClearStatusLines();
-    displayStack.push_back(newDisplay);
+    displayStack.push_back(displayStack.back()->Clone(newAlignmentMap));
     if (*viewerWindow) {
         (*viewerWindow)->UpdateDisplay(displayStack.back());
         if (displayStack.size() > 2) (*viewerWindow)->EnableUndo(true);

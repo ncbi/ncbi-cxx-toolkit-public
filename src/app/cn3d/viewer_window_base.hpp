@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/04/04 00:27:22  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.7  2001/03/30 03:07:09  thiessen
 * add threader score calculation & sorting
 *
@@ -51,7 +54,7 @@
 * Revision 1.1  2001/03/01 20:15:30  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
-\* ===========================================================================
+* ===========================================================================
 */
 
 #ifndef CN3D_VIEWER_WINDOW_BASE__HPP

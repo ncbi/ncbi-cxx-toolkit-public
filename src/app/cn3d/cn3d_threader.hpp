@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/04/04 00:27:21  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.5  2001/03/30 03:07:08  thiessen
 * add threader score calculation & sorting
 *
@@ -78,6 +81,19 @@ typedef struct _Fld_Mtf Fld_Mtf_fwddecl;
 
 BEGIN_SCOPE(Cn3D)
 
+// for convenience, optional threading parameters are all specified in this block
+class ThreaderOptions
+{
+public:
+    bool mergeAfterEachSequence;
+    double weightPSSM;
+    double loopLengthMultiplier;
+    int nRandomStarts;
+	int nResultAlignments;
+
+    ThreaderOptions(void);
+};
+
 class BlockMultipleAlignment;
 class Sequence;
 class Molecule;
@@ -88,10 +104,13 @@ public:
     Threader(void);
     ~Threader(void);
 
-    // create new BlockMultipleAlignments from the given multiple and master/slave pairs
+    // create new BlockMultipleAlignments from the given multiple and master/slave pairs; returns
+    // true if threading successful. If so, depending on options, nRowsAddedToMultiple will be
+    // merged into the multiple, and newAlignments will contain all un-merged master/slave pairs
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
-    bool Realign(const BlockMultipleAlignment *masterMultiple,
-        const AlignmentList *originalAlignments, AlignmentList *newAlignments);
+    bool Realign(const ThreaderOptions& options, BlockMultipleAlignment *masterMultiple,
+        const AlignmentList *originalAlignments,
+        int *nRowsAddedToMultiple, AlignmentList *newAlignments);
 
     // calculate scores for each row in the alignment (and store them in the alignment itself)
     bool CalculateScores(const BlockMultipleAlignment *multiple, double weightPSSM);

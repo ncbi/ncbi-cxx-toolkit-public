@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/04/04 00:27:22  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.19  2001/03/19 15:47:37  thiessen
 * add row sorting by identifier
 *
@@ -74,7 +77,6 @@ public:
     ~SequenceViewer(void);
 
     void Refresh(void);
-    void UpdateAfterEdit(const BlockMultipleAlignment *forAlignment);
 
     // to create displays from unaligned sequence(s), or multiple alignment
     typedef std::list < const Sequence * > SequenceList;
@@ -84,9 +86,6 @@ public:
     // functions to save edited data
     void SaveDialog(void);
     void SaveAlignment(void);
-
-    // re-creates the display based on the given multiple (and adds block row)
-    void RecreateFromEditedMultiple(BlockMultipleAlignment *multiple);
 
 private:
 

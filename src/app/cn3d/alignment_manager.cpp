@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/04/04 00:27:13  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.49  2001/03/30 03:07:33  thiessen
 * add threader score calculation & sorting
 *
@@ -180,6 +183,8 @@
 * ===========================================================================
 */
 
+#include <wx/string.h>  // namespace kludge
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
 
 #include "cn3d/alignment_manager.hpp"
@@ -193,6 +198,7 @@
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/update_viewer.hpp"
+#include "cn3d/sequence_display.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -561,23 +567,20 @@ void AlignmentManager::ShowUpdateWindow(void) const
 }
 
 void AlignmentManager::RealignSlaveSequences(
-    BlockMultipleAlignment *multiple, const std::vector < bool >& selectedSlaves)
+    BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign)
 {
     if (!multiple || multiple != sequenceViewer->GetCurrentAlignments()->front()) {
         ERR_POST(Error << "AlignmentManager::RealignSlaveSequences() - wrong multiple alignment");
         return;
     }
-    if (selectedSlaves.size() != multiple->NRows() - 1) {
-        ERR_POST(Error << "AlignmentManager::RealignSlaveSequences() - wrong size selection list");
-        return;
-    }
+    if (slavesToRealign.size() == 0) return;
 
     // create alignments for each master/slave pair, then update displays
     UpdateViewer::AlignmentList alignments;
     TESTMSG("extracting rows");
-    if (multiple->ExtractRows(selectedSlaves, &alignments)) {
+    if (multiple->ExtractRows(slavesToRealign, &alignments)) {
         TESTMSG("recreating display");
-        sequenceViewer->RecreateFromEditedMultiple(multiple);
+        sequenceViewer->GetCurrentDisplay()->RowsRemoved(slavesToRealign, multiple);
         TESTMSG("adding to update window");
         SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
         updateViewer->AddAlignments(alignments);
@@ -586,13 +589,50 @@ void AlignmentManager::RealignSlaveSequences(
     }
 }
 
-void AlignmentManager::TestThreader(void)
+void AlignmentManager::ThreadUpdates(const ThreaderOptions& options)
 {
+    const ViewerBase::AlignmentList *currentAlignments = sequenceViewer->GetCurrentAlignments();
+    if (!currentAlignments) return;
+
+    // run the threader on update pairwise alignments
     Threader::AlignmentList newAlignments;
+    int nRowsAddedToMultiple;
     if (threader->Realign(
-            GetCurrentMultipleAlignment(), updateViewer->GetCurrentAlignments(), &newAlignments)) {
-        updateViewer->AddAlignments(newAlignments);
+            options, currentAlignments->front(), updateViewer->GetCurrentAlignments(),
+            &nRowsAddedToMultiple, &newAlignments)) {
+
+        // replace update alignments with new ones (or leftovers where threader/merge failed)
+        updateViewer->ReplaceAlignments(newAlignments);
+
+        // tell the sequenceViewer that rows have been merged into the multiple
+        if (nRowsAddedToMultiple > 0)
+            sequenceViewer->GetCurrentDisplay()->
+                RowsAdded(nRowsAddedToMultiple, currentAlignments->front());
     }
+}
+
+void AlignmentManager::MergeUpdates(void)
+{
+    BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments() ?
+        sequenceViewer->GetCurrentAlignments()->front() : NULL;
+    if (!multiple) return;
+
+    const ViewerBase::AlignmentList *updates = updateViewer->GetCurrentAlignments();
+    if (updates->size() == 0) return;
+
+    int nSuccessfulMerges = 0;
+    ViewerBase::AlignmentList failedMerges;
+    ViewerBase::AlignmentList::const_iterator u, ue = updates->end();
+    for (u=updates->begin(); u!=ue; u++) {
+        if (multiple->MergeAlignment(*u))
+            nSuccessfulMerges += (*u)->NRows() - 1;
+        else
+            failedMerges.push_back((*u)->Clone());
+    }
+
+    updateViewer->ReplaceAlignments(failedMerges);
+    if (nSuccessfulMerges > 0)
+        sequenceViewer->GetCurrentDisplay()->RowsAdded(nSuccessfulMerges, multiple);
 }
 
 void AlignmentManager::CalculateRowScoresWithThreader(double weightPSSM)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/04/04 00:27:22  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.3  2001/03/22 00:32:36  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -46,6 +49,8 @@
 #define CN3D_UPDATE_VIEWER_WINDOW__HPP
 
 #include "cn3d/viewer_window_base.hpp"
+
+#include <wx/spinctrl.h>
 
 
 BEGIN_SCOPE(Cn3D)
@@ -68,13 +73,50 @@ private:
 
     // menu identifiers - additional items beyond base class items
     enum {
-        MID_TEST_THREADER = START_VIEWER_WINDOW_DERIVED_MID
+        MID_RUN_THREADER = START_VIEWER_WINDOW_DERIVED_MID,
+        MID_MERGE_ALL
     };
 
     void OnCloseWindow(wxCloseEvent& event);
-    void OnTestThreader(wxCommandEvent& event);
+    void OnRunThreader(wxCommandEvent& event);
+    void OnMerge(wxCommandEvent& event);
 
 public:
+};
+
+
+///// dialog used to get threader options from user /////
+
+class ThreaderOptions;
+class FloatingPointSpinCtrl;
+class IntegerSpinCtrl;
+
+class ThreaderOptionsDialog : public wxFrame
+{
+public:
+    ThreaderOptionsDialog(wxWindow* parent, const ThreaderOptions& initialOptions);
+
+    // show the dialog; returns true if user hits "OK" and all values are valid
+    bool Activate(void);
+
+    // set the ThreaderOptions from values in the panel; returns true if all values are valid
+    bool GetValues(ThreaderOptions *options);
+
+private:
+    wxStaticBox *box;
+    wxButton *bOK, *bCancel;
+    FloatingPointSpinCtrl *fpWeight, *fpLoops;
+    IntegerSpinCtrl *iStarts, *iResults;
+    wxCheckBox *bMerge;
+
+    bool dialogActive;
+    bool returnOK;
+
+    void EndEventLoop(void);
+    void OnCloseWindow(wxCommandEvent& event);
+    void OnButton(wxCommandEvent& event);
+
+    DECLARE_EVENT_TABLE()
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/04/04 00:27:14  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.10  2001/03/30 14:43:41  thiessen
 * show threader scores in status line; misc UI tweaks
 *
@@ -217,11 +220,8 @@ SequenceDisplay::~SequenceDisplay(void)
 SequenceDisplay * SequenceDisplay::Clone(const Old2NewAlignmentMap& newAlignments) const
 {
     SequenceDisplay *copy = new SequenceDisplay(isEditable, viewerWindow);
-    for (int row=0; row<rows.size(); row++) {
-        DisplayRow *newRow = rows[row]->Clone(newAlignments);
-        newRow->statusLine = rows[row]->statusLine;
-        copy->rows.push_back(newRow);
-    }
+    for (int row=0; row<rows.size(); row++)
+        copy->rows.push_back(rows[row]->Clone(newAlignments));
     copy->startingColumn = startingColumn;
     copy->maxRowWidth = maxRowWidth;
     return copy;
@@ -339,7 +339,8 @@ void SequenceDisplay::MouseOver(int column, int row) const
         wxString idLoc, status;
         if (column >= 0 && row >= 0) {
             const DisplayRow *displayRow = rows[row];
-            status = displayRow->statusLine.c_str();
+
+            // show id
             if (column < displayRow->Width()) {
                 const Sequence *sequence;
                 int index;
@@ -355,6 +356,10 @@ void SequenceDisplay::MouseOver(int column, int row) const
                     }
                 }
             }
+
+            // show any alignment row-wise string
+            const DisplayRowFromAlignment *alnRow = dynamic_cast<const DisplayRowFromAlignment *>(displayRow);
+            if (alnRow) status = alnRow->alignment->GetRowStatusLine(alnRow->row).c_str();
         }
         (*viewerWindow)->SetStatusText(idLoc, 0);
         (*viewerWindow)->SetStatusText(status, 1);
@@ -363,7 +368,6 @@ void SequenceDisplay::MouseOver(int column, int row) const
 
 void SequenceDisplay::UpdateAfterEdit(const BlockMultipleAlignment *forAlignment)
 {
-    ClearStatusLines();
     UpdateBlockBoundaryRow(forAlignment);
     UpdateMaxRowWidth(); // in case alignment width has changed
     (*viewerWindow)->viewer->PushAlignment();
@@ -409,8 +413,8 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             }
 
             if (sequenceWindow->DoRealignRow()) {
-                std::vector < bool > selectedSlaves(alignment->NRows() - 1, false);
-                selectedSlaves[selectedRow->row - 1] = true;
+                std::vector < int > selectedSlaves(1);
+                selectedSlaves[0] = selectedRow->row;
                 sequenceWindow->sequenceViewer->alignmentManager->
                     RealignSlaveSequences(alignment, selectedSlaves);
                 return false;
@@ -454,29 +458,6 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
     }
 
     return true;
-}
-
-void SequenceDisplay::RecreateFromEditedMultiple(BlockMultipleAlignment *multiple)
-{
-    if (!IsEditable()) {
-        ERR_POST(Error << "SequenceDisplay::RecreateFromEditedMultiple() - non-editable alignment");
-		return;
-	}
-
-    int i;
-    for (i=0; i<rows.size(); i++) delete rows[i];
-    rows.clear();
-
-    // block boundaries
-    DisplayRowFromString *blockBoundaryRow =
-        new DisplayRowFromString("", Vector(0,0,0), blockBoundaryStringTitle,
-            true, Vector(0.8,0.8,1), multiple);
-    AddRow(blockBoundaryRow);
-
-    // display alignment
-    for (i=0; i<multiple->NRows(); i++) AddRowFromAlignment(i, multiple);
-
-    UpdateAfterEdit(multiple);
 }
 
 void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
@@ -718,13 +699,24 @@ void SequenceDisplay::RemoveBlockBoundaryRows(void)
     if (*viewerWindow) (*viewerWindow)->UpdateDisplay(this);
 }
 
-void SequenceDisplay::GetSlaveSequences(SequenceList *seqs) const
+void SequenceDisplay::GetSequences(const BlockMultipleAlignment *forAlignment, SequenceList *seqs) const
 {
     seqs->clear();
     for (int row=0; row<rows.size(); row++) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
-        if (alnRow && alnRow->row > 0)
+        if (alnRow && alnRow->alignment == forAlignment)
             seqs->push_back(alnRow->alignment->GetSequenceOfRow(alnRow->row));
+    }
+}
+
+void SequenceDisplay::GetRowOrder(
+    const BlockMultipleAlignment *forAlignment, std::vector < int > *slaveRowOrder) const
+{
+    slaveRowOrder->clear();
+    for (int row=0; row<rows.size(); row++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+        if (alnRow && alnRow->alignment == forAlignment)
+            slaveRowOrder->push_back(alnRow->row);
     }
 }
 
@@ -790,19 +782,6 @@ bool SequenceDisplay::CalculateRowScoresWithThreader(double weightPSSM)
         if (seqViewer) {
             seqViewer->alignmentManager->CalculateRowScoresWithThreader(weightPSSM);
             TESTMSG("calculated row scores");
-
-            // set status lines to show resulting scores
-            for (int r=0; r<rows.size(); r++) {
-                DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[r]);
-                if (alnRow) {
-                    CNcbiOstrstream oss;
-                    oss << "Threading score (PSSM x" << weightPSSM << "): "
-                        << alnRow->alignment->GetRowDouble(alnRow->row) << '\0';
-                    alnRow->statusLine = oss.str();
-                    delete oss.str();
-                }
-            }
-
             return true;
         }
     }
@@ -853,6 +832,78 @@ void SequenceDisplay::SortRows(void)
         ERR_POST(Error << "SequenceDisplay::SortRows() - internal inconsistency");
 
     (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+}
+
+void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment *multiple)
+{
+    if (nRowsAddedToMultiple <= 0) return;
+
+    // find the last row that's from this multiple
+    int r, nRows = 0, lastAlnRowIndex;
+    DisplayRowFromAlignment *lastAlnRow = NULL;
+    for (r=0; r<rows.size(); r++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[r]);
+        if (alnRow && alnRow->alignment == multiple) {
+            lastAlnRow = alnRow;
+            lastAlnRowIndex = r;
+            nRows++;
+        }
+    }
+    if (!lastAlnRow || multiple->NRows() != nRows + nRowsAddedToMultiple) {
+        ERR_POST(Error << "SequenceDisplay::RowsAdded() - inconsistent parameters");
+        return;
+    }
+
+    // move higher rows up to leave space for new rows
+    nRows = rows.size() - 1 - lastAlnRowIndex;
+    rows.resize(rows.size() + nRowsAddedToMultiple);
+    for (r=0; r<nRows; r++)
+        rows[rows.size() - 1 - r] = rows[rows.size() - 1 - r - nRows];
+
+    // add new rows, assuming new rows in multiple are at the end of the multiple
+    for (r=0; r<nRowsAddedToMultiple; r++)
+        rows[lastAlnRowIndex + 1 + r] = new DisplayRowFromAlignment(
+            multiple->NRows() + r - nRowsAddedToMultiple, multiple);
+
+    UpdateAfterEdit(multiple);
+}
+
+void SequenceDisplay::RowsRemoved(const std::vector < int >& rowsRemoved,
+    const BlockMultipleAlignment *multiple)
+{
+    if (rowsRemoved.size() == 0) return;
+
+    // first, construct a map of old alignment row numbers -> new row numbers; also do sanity checks
+    int i;
+    vector < int > alnRowNumbers(multiple->NRows() + rowsRemoved.size());
+    vector < bool > removedAlnRows(alnRowNumbers.size(), false);
+    for (i=0; i<alnRowNumbers.size(); i++) alnRowNumbers[i] = i;
+    for (i=0; i<rowsRemoved.size(); i++) {
+        if (rowsRemoved[i] < 1 || rowsRemoved[i] >= alnRowNumbers.size()) {
+            ERR_POST(Error << "SequenceDisplay::RowsRemoved() - can't remove row " << removedAlnRows[i]);
+            return;
+        } else
+            removedAlnRows[rowsRemoved[i]] = true;
+    }
+    VectorRemoveElements(alnRowNumbers, removedAlnRows, rowsRemoved.size());
+    std::map < int, int > oldRowToNewRow;
+    for (i=0; i<alnRowNumbers.size(); i++) oldRowToNewRow[alnRowNumbers[i]] = i;
+
+    // then tag rows to remove from display, and update row numbers for rows not removed
+    vector < bool > removeDisplayRows(rows.size(), false);
+    for (i=0; i<rows.size(); i++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[i]);
+        if (alnRow && alnRow->alignment == multiple) {
+            if (removedAlnRows[alnRow->row]) {
+                delete rows[i];
+                removeDisplayRows[i] = true;
+            } else
+                alnRow->row = oldRowToNewRow[alnRow->row];
+        }
+    }
+    VectorRemoveElements(rows, removeDisplayRows, rowsRemoved.size());
+
+    UpdateAfterEdit(multiple);
 }
 
 END_SCOPE(Cn3D)

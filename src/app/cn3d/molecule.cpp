@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/04/04 00:27:14  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.25  2001/03/23 23:31:56  thiessen
 * keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
 *
@@ -180,13 +183,18 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
     const Bond *prevBond = NULL;
     CMolecule_graph::TInter_residue_bonds::const_iterator j, je;
     CMolecule_graph::TResidue_sequence::const_iterator i, ie=graph.GetResidue_sequence().end();
+    int nResidues = 0;
     for (i=graph.GetResidue_sequence().begin(); i!=ie; i++) {
 
         const Residue *residue = new Residue(this, (*i).GetObject(), id,
             standardDictionary, localDictionary);
-        if (residues.find(residue->id) != residues.end())
-            ERR_POST(Fatal << "confused by repeated Residue ID");
         residues[residue->id] = residue;
+        nResidues++;
+
+        // this assumption is frequently made elsewhere, relating seqLocs (numbering from zero)
+        // to residue ID's (numbering from one) - so enforce it here
+        if (residue->id != nResidues)
+            ERR_POST(Fatal << "Residue ID's must be ordered consecutively starting with one");
 
         // virtual bonds
         if (prevResidue && prevResidue->alphaID != Residue::NO_ALPHA_ID &&

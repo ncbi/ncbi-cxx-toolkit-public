@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/04/04 00:27:21  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.8  2001/03/30 14:43:11  thiessen
 * show threader scores in status line; misc UI tweaks
 *
@@ -91,9 +94,6 @@ public:
     virtual void SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const = 0;
 
     virtual DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const = 0;
-
-    // for storing row-wise status info - e.g. threading scores, etc.
-    mutable std::string statusLine;
 };
 
 class DisplayRowFromAlignment : public DisplayRow
@@ -220,20 +220,22 @@ public:
     void AddBlockBoundaryRows(void);
     void RemoveBlockBoundaryRows(void);
 
-    // returns a list of all sequences in the display (in order) - useful for single alignments only!
+    // returns a list of all sequences in the display (in order) for the given alignment
     typedef std::vector < const Sequence * > SequenceList;
-    void GetSlaveSequences(SequenceList *seqs) const;
+    void GetSequences(const BlockMultipleAlignment *forAlignment, SequenceList *seqs) const;
+
+    // fills the vector with the current row ordering for the given alignment
+    void GetRowOrder(const BlockMultipleAlignment *forAlignment, std::vector < int > *slaveRowOrder) const;
+
+    // to inform the display that new rows have been added to or removed from the multiple
+    void RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment *multiple);
+    void RowsRemoved(const std::vector < int >& rowsRemoved, const BlockMultipleAlignment *multiple);
 
     // row scoring and sorting functions - only for single-alignment displays!
-    // sorting always leave master at the top, regardless of scores
+    // sorting always leaves master at the top, regardless of scores
     bool CalculateRowScoresWithThreader(double weightPSSM);
     void SortRowsByIdentifier(void);
     void SortRowsByThreadingScore(double weightPSSM);
-
-    // recreate the display from the given alignment.
-    // NOTE: this assumes the display is from only a single alignment, and will put the block
-    // boundary row at the top, regardless of where it was initially
-    void RecreateFromEditedMultiple(BlockMultipleAlignment *multiple);
 
     // create a new copy of this object
     SequenceDisplay * Clone(const Old2NewAlignmentMap& newAlignments) const;
@@ -271,10 +273,6 @@ public:
     // column to scroll to when this display is first shown
     void SetStartingColumn(int column) { startingColumn = column; }
     int GetStartingColumn(void) const { return startingColumn; }
-
-    // empties all rows' status lines
-    void ClearStatusLines(void) const
-        { for (int r=0; r<rows.size(); r++) rows[r]->statusLine.erase(); }
 
     // methods required by ViewableAlignment base class
     void GetSize(int *setColumns, int *setRows) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/04/04 00:27:15  thiessen
+* major update - add merging, threader GUI controls
+*
 * Revision 1.17  2000/12/21 23:42:16  thiessen
 * load structures from cdd's
 *
@@ -168,9 +171,12 @@ private:
 
     void OnPaint(wxPaintEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
+    void OnResize(wxSizeEvent& event);
 
     SequenceViewerWidget_TitleArea *titleArea;
     ViewableAlignment *alignment;
+
+    wxBitmap *bitmap;    // for memoryDC/Blit
 
     wxFont *currentFont;            // character font
     wxColor currentBackgroundColor; // background for whole window
@@ -211,6 +217,7 @@ public:
 BEGIN_EVENT_TABLE(SequenceViewerWidget_SequenceArea, wxScrolledWindow)
     EVT_PAINT               (SequenceViewerWidget_SequenceArea::OnPaint)
     EVT_MOUSE_EVENTS        (SequenceViewerWidget_SequenceArea::OnMouseEvent)
+    EVT_SIZE                (SequenceViewerWidget_SequenceArea::OnResize)
 END_EVENT_TABLE()
 
 SequenceViewerWidget_SequenceArea::SequenceViewerWidget_SequenceArea(
@@ -222,7 +229,7 @@ SequenceViewerWidget_SequenceArea::SequenceViewerWidget_SequenceArea(
         const wxString& name
     ) :
     wxScrolledWindow(parent, -1, pos, size, style, name),
-    alignment(NULL), currentFont(NULL), titleArea(NULL)
+    alignment(NULL), currentFont(NULL), titleArea(NULL), bitmap(NULL)
 {
     // set default background color
     currentBackgroundColor = *wxWHITE;
@@ -237,6 +244,14 @@ SequenceViewerWidget_SequenceArea::SequenceViewerWidget_SequenceArea(
 SequenceViewerWidget_SequenceArea::~SequenceViewerWidget_SequenceArea(void)
 {
     if (currentFont) delete currentFont;
+    if (bitmap) delete bitmap;
+}
+
+void SequenceViewerWidget_SequenceArea::OnResize(wxSizeEvent& event)
+{
+    if (bitmap) delete bitmap;
+    bitmap = new wxBitmap(event.GetSize().GetWidth(), event.GetSize().GetHeight());
+    OnSize(event);
 }
 
 bool SequenceViewerWidget_SequenceArea::AttachAlignment(
@@ -248,6 +263,7 @@ bool SequenceViewerWidget_SequenceArea::AttachAlignment(
         // set size of virtual area
         alignment->GetSize(&areaWidth, &areaHeight);
         if (areaWidth <= 0 || areaHeight <= 0) return false;
+        ERR_POST(Info << "area height " << areaHeight);
 
         // "+1" to make sure last real column and row are always visible, even
         // if visible area isn't exact multiple of cell size
@@ -305,7 +321,10 @@ void SequenceViewerWidget_SequenceArea::SetRubberbandColor(const wxColor& rubber
 
 void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 {
-    wxPaintDC dc(this);
+    wxMemoryDC memDC;
+    bitmap->SetWidth(GetSize().GetWidth());
+    bitmap->SetHeight(GetSize().GetHeight());
+    memDC.SelectObject(*bitmap);
 
     int vsX, vsY,
         updLeft, updRight, updTop, updBottom,
@@ -314,14 +333,14 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
         x, y;
     static int prevVsY = -1;
 
-    dc.BeginDrawing();
+    memDC.BeginDrawing();
 
     // set font for characters
     if (alignment) {
-        dc.SetFont(*currentFont);
-        dc.SetMapMode(wxMM_TEXT);
+        memDC.SetFont(*currentFont);
+        memDC.SetMapMode(wxMM_TEXT);
         // characters to be drawn transparently over background
-        dc.SetBackgroundMode(wxTRANSPARENT);
+        memDC.SetBackgroundMode(wxTRANSPARENT);
 
         // get upper left corner of visible area
         GetViewStart(&vsX, &vsY);  // returns coordinates in scroll units (cells)
@@ -338,16 +357,12 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 
     for (; upd; upd++) {
 
-//        if (upd.GetW() == GetClientSize().GetWidth() &&
-//            upd.GetH() == GetClientSize().GetHeight())
-//            ERR_POST(Info << "repainting whole SequenceViewerWidget_SequenceArea");
-
         // draw background
-        dc.SetPen(*(wxThePenList->
+        memDC.SetPen(*(wxThePenList->
             FindOrCreatePen(currentBackgroundColor, 1, wxSOLID)));
-        dc.SetBrush(*(wxTheBrushList->
+        memDC.SetBrush(*(wxTheBrushList->
             FindOrCreateBrush(currentBackgroundColor, wxSOLID)));
-        dc.DrawRectangle(upd.GetX(), upd.GetY(), upd.GetW(), upd.GetH());
+        memDC.DrawRectangle(upd.GetX(), upd.GetY(), upd.GetW(), upd.GetH());
 
         if (!alignment) continue;
 
@@ -376,14 +391,20 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
         if (lastCellY >= areaHeight) lastCellY = areaHeight - 1;
 
         // draw cells
+//        ERR_POST(Info << "drawing cells " << firstCellX << ',' << firstCellY
+//            << " to " << lastCellX << ',' << lastCellY);
         for (y=firstCellY; y<=lastCellY; y++) {
             for (x=firstCellX; x<=lastCellX; x++) {
-                DrawCell(dc, x, y, vsX, vsY, false);
+                DrawCell(memDC, x, y, vsX, vsY, false);
             }
         }
     }
 
-    dc.EndDrawing();
+    memDC.EndDrawing();
+
+    // Blit from memory DC to paintDC to avoid flicker
+    wxPaintDC paintDC(this);
+    paintDC.Blit(0, 0, GetSize().GetWidth(), GetSize().GetHeight(), &memDC, 0,0, wxCOPY);
 }
 
 void SequenceViewerWidget_SequenceArea::DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground)
