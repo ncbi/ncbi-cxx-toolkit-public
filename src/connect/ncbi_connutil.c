@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2001/05/29 21:15:43  vakatov
+ * + eMIME_Plain
+ *
  * Revision 6.19  2001/04/24 21:29:43  lavr
  * Special text value "infinite" accepted as infinite timeout from environment
  *
@@ -890,6 +893,7 @@ static const char* s_MIME_SubType[eMIME_Unknown+1] = {
     "x-fasta",
     "x-www-form",
     "html",
+    "plain",
     "x-unknown"
 };
 

@@ -60,6 +60,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/05/29 21:15:42  vakatov
+ * + eMIME_Plain
+ *
  * Revision 6.13  2001/04/24 21:21:38  lavr
  * Special text value "infinite" accepted as infinite timeout from environment
  *
@@ -448,6 +451,7 @@ typedef enum {
     eMIME_WwwForm,       /* "x-www-form" */
     /* standard MIMEs */
     eMIME_Html,          /* "html" */
+    eMIME_Plain,         /* "plain" */
     /* eMIME_???,           "<subtype>"   here go other NCBI subtypes */
     eMIME_Unknown        /* "x-unknown"     (an arbitrary binary data) */
 } EMIME_SubType;
