@@ -63,7 +63,7 @@ USING_SCOPE(blast);
 /** Data structure containing all information necessary for production of the
  * tabular output.
  */
-class NCBI_XBLAST_EXPORT CBlastTabularFormatThread : public CThread 
+class CBlastTabularFormatThread : public CThread 
 {
 public:
     CBlastTabularFormatThread(const CDbBlast* blaster, 
@@ -100,6 +100,9 @@ private:
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/11 11:38:13  ivanov
+* Removed export specifier from private class declaration
+*
 * Revision 1.2  2004/07/06 15:54:20  dondosha
 * Use EBlastProgramType enumeration type for program
 *
