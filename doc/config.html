@@ -425,8 +425,10 @@ dynamic libraries (DLLs), you have to specify these DLLs' location
     otherwise engage the <i><b>--with-runpath</b></i> scenario.
   </li>
 </ul>
+<p>The preprocessor macro NCBI_RUNPATH will be set to the resulting
+runpath, if any, as a (possibly empty) string.
 
-<b>NOTE:</i>
+<p><b>NOTE:</b>
 You also can use environment variable <i>$LD_LIBRARY_PATH</i> to specify
 the <i>runpath</i>, like this:
 <pre>
@@ -752,7 +754,7 @@ to the "generic" ones
   <tr>
 	 <td><b>SYBASE_PATH</b></td>
 	 <td><i>/netopt/Sybase/clients/current</i></td>
-	 <td>Path to Sybase package</td>
+	 <td>Path to Sybase package (but see note below)</td>
   </tr>
 
   <tr>
@@ -798,6 +800,13 @@ to the "generic" ones
   </tr>
 </table>
 
+<p>
+<b>Note:</b> It is also possible to make <b><i>configure</i></b> look
+elsewhere for Sybase by means of <b><i>--with-sybase-local[=DIR]</i></b>.
+If you specify a directory, it will override <b>SYBASE_PATH</b>;
+otherwise, the default will change to
+<i>/export/home/sybase/clients/current</i>, but <b>SYBASE_PATH</b>
+will still take priority.
 
 <p>
 Based on the above, <b><i>configure</i></b> will derive the following variables
