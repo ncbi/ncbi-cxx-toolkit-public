@@ -30,7 +30,6 @@
 *
 */
 
-#include <corelib/ncbiobj.hpp>
 #include <objects/objmgr/reader.hpp>
 
 #include <objects/id1/ID1server_back.hpp>
@@ -40,9 +39,6 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <connect/ncbi_util.h>
-#include <connect/ncbi_socket.h>
-#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -125,6 +121,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2003/05/29 17:57:32  lavr
+* Remove unnecessary headers
+*
 * Revision 1.2  2003/04/15 15:30:14  vasilche
 * Added include <memory> when needed.
 * Removed buggy buffer in printing methods.
