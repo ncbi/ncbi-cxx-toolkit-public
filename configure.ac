@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.192 2003/05/30 17:16:00 ucko Exp $
+#  $Id: configure.ac,v 1.193 2003/06/02 14:25:23 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -629,7 +629,15 @@ case "$host_os:$compiler" in
 
  irix*:MIPSpro73 )
    COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
-   CFLAGS="$COMMON_FLAGS $CFLAGS"
+   # Warnings we disable (messages courtesy of "gettxt cc.cat.m:N")
+   # 1107: A signed bit field has a length of 1 bit.
+   # 1169: External/internal linkage conflicts with a previous declaration.
+   # 1209: The controlling expression is constant. [while (0) et al.]
+   # 1424: The %n1 is not used in declaring the argument types of %n2.
+   # 1429: The type "long long" is nonstandard.
+   # 1460: Function %n is redeclared "inline" after being called.
+   # 1521: A nonstandard preprocessing directive is used.
+   CFLAGS="$COMMON_FLAGS -woff 1209 $CFLAGS"
    CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424 $CXXFLAGS"
    CXXCPP=${CXXCPP:="$CXX -E -LANG:std"}
    LDFLAGS="-LANG:std $LDFLAGS"
