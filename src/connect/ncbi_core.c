@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/10/18 20:29:43  vakatov
+ * REG_Get::  pass in the default value (rather than '\0')
+ *
  * Revision 6.4  2000/06/23 19:34:43  vakatov
  * Added means to log binary data
  *
@@ -434,24 +437,24 @@ extern char* REG_Get
  size_t      value_size,
  const char* def_value)
 {
-    if (value_size < 1)
+    if (value_size < 1  ||  !value)
         return 0;
-    if ( !value )
-        return 0;
-    *value = '\0';
+
+    if ( def_value ) {
+        strncpy(value, def_value, value_size - 1);
+        value[value_size - 1] = '\0';
+    } else {
+        *value = '\0';
+    }
+
     if ( !rg )
         return value;
 
     REG_LOCK_READ;
     REG_VALID;
 
-    if ( rg->get ) {
+    if ( rg->get )
         rg->get(section, name, value, value_size);
-    }
-    if (*value == '\0'  &&  def_value) {
-        strncpy(value, def_value, value_size - 1);
-        value[value_size - 1] = '\0';
-    }
 
     REG_UNLOCK;
     return value;

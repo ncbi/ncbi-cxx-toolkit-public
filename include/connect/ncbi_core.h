@@ -66,6 +66,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/10/18 20:29:41  vakatov
+ * REG_Get::  pass in the default value (rather than '\0')
+ *
  * Revision 6.4  2000/06/23 19:34:41  vakatov
  * Added means to log binary data
  *
@@ -393,14 +396,15 @@ typedef enum {
 /* Copy the registry value stored in "section" under name "name"
  * to buffer "value". Look for the matching entry first in the transient
  * storage, and then in the persistent storage.
- * If the specified entry is not found in the registry then just copy '\0'.
+ * If the specified entry is not found in the registry then just do not
+ * modify "value" (leave it "as is", i.e. default).
  * Note:  always terminate value by '\0'.
- * Note:  dont put more than "value_size" bytes to "value".
+ * Note:  do not put more than "value_size" bytes to "value".
  */
 typedef void (*FREG_Get)
 (const char* section,
  const char* name,
- char*       value,      /* always passed in as non-NULL, empty string */
+ char*       value,      /* passed a default value, cut to "value_size" syms */
  size_t      value_size  /* always > 0 */
  );
 
@@ -465,11 +469,11 @@ extern REG REG_Delete(REG rg);
 /* Copy the registry value stored in "section" under name "name"
  * to buffer "value";  if the entry is found in both transient and persistent
  * storages, then copy the one from the transient storage.
- * If the specified entry is not found in the registry, and "def_value"
- * is not NULL, then copy "def_value" to "value".
+ * If the specified entry is not found in the registry (or if there is
+ * no registry defined), and "def_value" is not NULL, then copy "def_value"
+ * to "value".
  * Return "value" (however, if "value_size" is zero, then return NULL).
- * Note:  always terminate "value" by '\0'.
- * Note:  dont put more than "value_size" bytes to "value".
+ * If non-NULL, the returned "value" will be terminated by '\0'.
  */
 extern char* REG_Get
 (REG         rg,         /* created by REG_Create() */
