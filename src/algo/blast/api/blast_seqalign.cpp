@@ -755,7 +755,8 @@ x_OOFEditBlock2SeqAlign(EProgram program,
                         seq_int2_last->SetFrom(seq_int2_last->GetFrom() - 3);
                     }
                     
-                    if(seq_int1_last && seq_int1_last->GetTo() != 0)
+                    if (seq_int1_last.GetPointer() &&
+						seq_int1_last->GetTo() != 0)
                         seq_int1_last->SetTo(seq_int1_last->GetTo() + 1);
                 }
 
@@ -1268,6 +1269,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/11/04 18:37:36  dicuccio
+* Fix for brain-dead MSVC (operator && is ambiguous)
+*
 * Revision 1.23  2003/11/04 17:13:31  dondosha
 * Implemented conversion of results to seqalign for out-of-frame search
 *
