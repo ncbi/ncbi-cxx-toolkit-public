@@ -1438,7 +1438,7 @@ void CAlnMix::x_CreateSegmentsVector()
                 const int& width = row->m_Width;
                 TSeqPos prev_start_plus_len = prev_start + prev_len * width;
                 TSeqPos start_plus_len = start + len * width;
-                if (prev_start >= 0  &&  start >= 0) {
+                if (prev_start >= 0) {
                     if (plus  &&  prev_start_plus_len < start  ||
                         !plus  &&  start_plus_len < (TSeqPos) prev_start) {
                         // create a new seg
@@ -1463,10 +1463,8 @@ void CAlnMix::x_CreateSegmentsVector()
                         seg_i++;
                     }
                 }
-                if (start >= 0) {
-                    prev_start = start;
-                    prev_len = len;
-                }
+                prev_start = start;
+                prev_len = len;
             }
             seg_i++;
         }
@@ -1863,6 +1861,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2003/09/12 16:18:36  todorov
+* -unneeded checks (">=" for unsigned)
+*
 * Revision 1.74  2003/09/12 15:42:36  todorov
 * +CRef to delay obj deletion while iterating on it
 *
