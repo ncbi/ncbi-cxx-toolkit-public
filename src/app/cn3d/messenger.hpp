@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/10/01 16:03:58  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.17  2001/08/27 00:06:35  thiessen
 * add structure evidence to CDD annotation
 *
@@ -91,6 +94,7 @@
 #include <corelib/ncbistl.hpp>
 #include <objects/mmdb1/Biostruc_annot_set.hpp>
 
+#include <string>
 #include <list>
 #include <map>
 #include <vector>
@@ -223,6 +227,9 @@ public:
     // to unregister viewers
     void RemoveStructureWindow(const Cn3DMainFrame *structureWindow);
     void RemoveSequenceViewer(const ViewerBase *sequenceViewer);
+
+    // set filename in window titles
+    void SetSequenceViewerTitles(const std::string& title) const;
 };
 
 END_SCOPE(Cn3D)

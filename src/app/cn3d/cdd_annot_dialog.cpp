@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/10/01 16:04:23  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.9  2001/09/26 17:09:30  thiessen
 * fix rerange bug
 *
@@ -115,23 +118,21 @@
 #define ID_B_DEL_EVID 10007
 #define ID_B_EDIT_EVID 10008
 #define ID_B_SHOW 10009
-#define ID_B_DONE 10010
-#define ID_B_CANCEL 10011
 wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
-#define ID_R_COMMENT 10012
-#define ID_ST_COMMENT 10013
-#define ID_T_COMMENT 10014
-#define ID_LINE 10015
-#define ID_R_PMID 10016
-#define ID_ST_PMID 10017
-#define ID_T_PMID 10018
-#define ID_R_STRUCTURE 10019
-#define ID_ST_STRUCTURE 10020
-#define ID_T_STRUCTURE 10021
-#define ID_B_RERANGE 10022
-#define ID_B_EDIT_OK 10023
-#define ID_B_EDIT_CANCEL 10024
+#define ID_R_COMMENT 10010
+#define ID_ST_COMMENT 10011
+#define ID_T_COMMENT 10012
+#define ID_LINE 10013
+#define ID_R_PMID 10014
+#define ID_ST_PMID 10015
+#define ID_T_PMID 10016
+#define ID_R_STRUCTURE 10017
+#define ID_ST_STRUCTURE 10018
+#define ID_T_STRUCTURE 10019
+#define ID_B_RERANGE 10020
+#define ID_B_EDIT_OK 10021
+#define ID_B_EDIT_CANCEL 10022
 wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -174,45 +175,19 @@ static const std::string STRUCTURE_EVIDENCE_COMMENT = "Used as Structure Evidenc
     }
 
 BEGIN_EVENT_TABLE(CDDAnnotateDialog, wxDialog)
-    EVT_CLOSE       (       CDDAnnotateDialog::OnCloseWindow)
     EVT_BUTTON      (-1,    CDDAnnotateDialog::OnButton)
     EVT_LISTBOX     (-1,    CDDAnnotateDialog::OnSelection)
+    EVT_CLOSE       (       CDDAnnotateDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
-CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, StructureSet *set) :
+CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handle, StructureSet *set) :
     wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize,
         wxCAPTION | wxSYSTEM_MENU), // not resizable
-    structureSet(set), changed(false)
+    dialogHandle(handle), structureSet(set), annotSet(set->GetCDDAnnotSet())
 {
-    // copy the existing annot set, or make a new one
-    annotSet.Reset(set->GetCopyOfCDDAnnotSet());
-    if (annotSet.IsNull())
-        annotSet.Reset(new CAlign_annot_set());
-
-    // fill out alignment information
-    alignment = structureSet->alignmentManager->GetCurrentMultipleAlignment();
-    master = alignment->GetMaster();
-
-    // find intervals of aligned residues of the master sequence that are currently highlighted
-    int first = 0, last = 0;
-    while (first < master->Length()) {
-        // find first highlighted residue
-        while (first < master->Length() &&
-               !(GlobalMessenger()->IsHighlighted(master, first) &&
-                 alignment->IsAligned(0, first))) first++;
-        if (first >= master->Length()) break;
-        // find last in contiguous stretch of highlighted residues
-        last = first;
-        while (last + 1 < master->Length() &&
-               GlobalMessenger()->IsHighlighted(master, last + 1) &&
-               alignment->IsAligned(0, last + 1)) last++;
-        // create Seq-interval
-        CRef < CSeq_interval > interval(new CSeq_interval());
-        interval->SetFrom(first);
-        interval->SetTo(last);
-        master->FillOutSeqId(&(interval->SetId()));
-        intervals.push_back(interval);
-        first = last + 2;
+    if (annotSet.Empty()) {
+        Destroy();
+        return;
     }
 
     // construct the panel
@@ -228,29 +203,53 @@ CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, StructureSet *set) :
     SetupGUIControls(0, 0);
 }
 
-// same as hitting done button
+CDDAnnotateDialog::~CDDAnnotateDialog(void)
+{
+    // so owner knows that this dialog has been destroyed
+    if (*dialogHandle) *dialogHandle = NULL;
+    TESTMSG("destroyed CDDAnnotateDialog");
+}
+
 void CDDAnnotateDialog::OnCloseWindow(wxCloseEvent& event)
 {
-    // set data in structureSet if changed
-    if (changed)
-        structureSet->SetCDDAnnotSet((annotSet->Get().size() > 0) ? annotSet.GetPointer() : NULL);
+    Destroy();
+}
 
-    // close dialog
-    EndModal(wxOK);
+void CDDAnnotateDialog::GetCurrentHighlightedIntervals(IntervalList *intervals)
+{
+    const BlockMultipleAlignment *alignment = structureSet->alignmentManager->GetCurrentMultipleAlignment();
+    const Sequence *master = alignment->GetMaster();
+
+    // find intervals of aligned residues of the master sequence that are currently highlighted
+    intervals->clear();
+    int first = 0, last = 0;
+    while (first < master->Length()) {
+
+        // find first highlighted residue
+        while (first < master->Length() &&
+               !(GlobalMessenger()->IsHighlighted(master, first) &&
+                 alignment->IsAligned(0, first))) first++;
+        if (first >= master->Length()) break;
+
+        // find last in contiguous stretch of highlighted residues
+        last = first;
+        while (last + 1 < master->Length() &&
+               GlobalMessenger()->IsHighlighted(master, last + 1) &&
+               alignment->IsAligned(0, last + 1)) last++;
+
+        // create Seq-interval
+        CRef < CSeq_interval > interval(new CSeq_interval());
+        interval->SetFrom(first);
+        interval->SetTo(last);
+        master->FillOutSeqId(&(interval->SetId()));
+        intervals->push_back(interval);
+        first = last + 2;
+    }
 }
 
 void CDDAnnotateDialog::OnButton(wxCommandEvent& event)
 {
     switch (event.GetId()) {
-        case ID_B_DONE: {
-            wxCloseEvent fake;
-            OnCloseWindow(fake);   // handle on-exit stuff there
-            break;
-        }
-        case ID_B_CANCEL:
-            EndModal(wxCANCEL);
-            break;
-
         // annotation buttons
         case ID_B_NEW_ANNOT:
             NewAnnotation();
@@ -354,7 +353,6 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     }
 
     // set button states
-    bNewAnnot->Enable(intervals.size() > 0);
     bDelAnnot->Enable(selectedAnnot != NULL);
     bEditAnnot->Enable(selectedAnnot != NULL);
     bHighlight->Enable(selectedAnnot != NULL);
@@ -368,8 +366,10 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
 
 void CDDAnnotateDialog::NewAnnotation(void)
 {
+    IntervalList intervals;
+    GetCurrentHighlightedIntervals(&intervals);
     if (intervals.size() == 0) {
-        ERR_POST(Warning << "CDDAnnotateDialog::NewAnnotation() - no aligned+highlighted residues!");
+        ERR_POST(Error << "No aligned+highlighted master residues!");
         return;
     }
 
@@ -393,7 +393,7 @@ void CDDAnnotateDialog::NewAnnotation(void)
 
     // add to annotation list
     annotSet->Set().push_back(annot);
-    changed = true;
+    structureSet->UserAnnotationDataChanged();
 
     // update GUI
     SetupGUIControls(annotSet->Get().size() - 1, 0);
@@ -421,7 +421,7 @@ void CDDAnnotateDialog::DeleteAnnotation(void)
     for (a=annotSet->Set().begin(); a!=ae; a++) {
         if (*a == selectedAnnot) {
             annotSet->Set().erase(a);
-            changed = true;
+            structureSet->UserAnnotationDataChanged();
             break;
         }
     }
@@ -444,6 +444,8 @@ void CDDAnnotateDialog::EditAnnotation(void)
         return;
     }
 
+    IntervalList intervals;
+    GetCurrentHighlightedIntervals(&intervals);
     if (intervals.size() > 0) {
         // move the annotation?
         int move = wxMessageBox("Do you want to move the annotation to the currently\n"
@@ -459,7 +461,7 @@ void CDDAnnotateDialog::EditAnnotation(void)
                 packed->Set() = intervals;  // copy list
                 selectedAnnot->SetLocation().SetPacked_int(packed);
             }
-            changed = true;
+            structureSet->UserAnnotationDataChanged();
         }
     }
 
@@ -470,7 +472,7 @@ void CDDAnnotateDialog::EditAnnotation(void)
         "Enter a description for the new annotation:", "Description", initial);
     if (descr.size() > 0 && descr != selectedAnnot->GetDescription().c_str()) {
         selectedAnnot->SetDescription(descr.c_str());
-        changed = true;
+        structureSet->UserAnnotationDataChanged();
     }
 
     // update GUI
@@ -479,6 +481,9 @@ void CDDAnnotateDialog::EditAnnotation(void)
 
 bool CDDAnnotateDialog::HighlightInterval(const ncbi::objects::CSeq_interval& interval)
 {
+    const BlockMultipleAlignment *alignment = structureSet->alignmentManager->GetCurrentMultipleAlignment();
+    const Sequence *master = alignment->GetMaster();
+
     // make sure annotation sequence matches master sequence
     if (!IsAMatch(master, interval.GetId())) {
         ERR_POST(Error << "CDDAnnotateDialog::HighlightInterval() - interval Seq-id/master sequence mismatch");
@@ -507,26 +512,17 @@ void CDDAnnotateDialog::HighlightAnnotation(void)
         return;
     }
 
-    // highlight annotation's intervals, and reset class 'intervals' list to new highlights
-    GlobalMessenger()->RemoveAllHighlights(false);
-    intervals.clear();
+    // highlight annotation's intervals
+    GlobalMessenger()->RemoveAllHighlights(true);
     if (selectedAnnot->GetLocation().IsInt()) {
-        if (HighlightInterval(selectedAnnot->GetLocation().GetInt())) {
-            CRef < CSeq_interval > intRef(&(selectedAnnot->SetLocation().SetInt()));
-            intervals.push_back(intRef);
-        }
+        HighlightInterval(selectedAnnot->GetLocation().GetInt());
     } else if (selectedAnnot->GetLocation().IsPacked_int()) {
         CPacked_seqint::Tdata::iterator s,
             se = selectedAnnot->SetLocation().SetPacked_int().Set().end();
         for (s=selectedAnnot->SetLocation().SetPacked_int().Set().begin(); s!=se; s++) {
             if (!HighlightInterval(**s)) break;
-            CRef < CSeq_interval > intRef(&(**s));
-            intervals.push_back(intRef);
         }
     }
-
-    // enable 'new' button if necessary
-    bNewAnnot->Enable(intervals.size() > 0);
 }
 
 void CDDAnnotateDialog::NewEvidence(void)
@@ -555,7 +551,7 @@ void CDDAnnotateDialog::NewEvidence(void)
         if (dialog.GetData(newEvidence.GetPointer())) {
             selectedAnnot->SetEvidence().push_back(newEvidence);
             SetupGUIControls(annots->GetSelection(), selectedAnnot->GetEvidence().size() - 1);
-            changed = true;
+            structureSet->UserAnnotationDataChanged();
         } else
             ERR_POST(Error << "CDDAnnotateDialog::NewEvidence() - error getting dialog data");
     }
@@ -593,7 +589,7 @@ void CDDAnnotateDialog::DeleteEvidence(void)
     for (e=selectedAnnot->SetEvidence().begin(); e!=ee; e++) {
         if (*e == selectedEvidence) {
             selectedAnnot->SetEvidence().erase(e);
-            changed = true;
+            structureSet->UserAnnotationDataChanged();
             break;
         }
     }
@@ -626,7 +622,7 @@ void CDDAnnotateDialog::EditEvidence(void)
     if (result == wxOK && dialog.HasDataChanged()) {
         if (dialog.GetData(selectedEvidence)) {
             DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
-            changed = true;
+            structureSet->UserAnnotationDataChanged();
             SetupGUIControls(annots->GetSelection(), evids->GetSelection());
         } else
             ERR_POST(Error << "CDDAnnotateDialog::EditEvidence() - error getting dialog data");
@@ -901,7 +897,7 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     wxStaticBoxSizer *item2 = new wxStaticBoxSizer( item3, wxVERTICAL );
 
     wxString *strs4 = (wxString*) NULL;
-    wxListBox *item4 = new wxListBox( parent, ID_L_ANNOT, wxDefaultPosition, wxSize(-1,100), 0, strs4, wxLB_SINGLE );
+    wxListBox *item4 = new wxListBox( parent, ID_L_ANNOT, wxDefaultPosition, wxSize(200,100), 0, strs4, wxLB_SINGLE );
     item2->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxGridSizer *item5 = new wxGridSizer( 2, 0, 0 );
@@ -926,7 +922,7 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     wxStaticBoxSizer *item10 = new wxStaticBoxSizer( item11, wxVERTICAL );
 
     wxString *strs12 = (wxString*) NULL;
-    wxListBox *item12 = new wxListBox( parent, ID_L_EVID, wxDefaultPosition, wxSize(-1,100), 0, strs12, wxLB_SINGLE );
+    wxListBox *item12 = new wxListBox( parent, ID_L_EVID, wxDefaultPosition, wxSize(200,100), 0, strs12, wxLB_SINGLE );
     item10->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxGridSizer *item13 = new wxGridSizer( 2, 0, 0 );
@@ -948,19 +944,6 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     item1->Add( item10, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item0->Add( item1, 0, wxALIGN_CENTRE, 5 );
-
-    wxBoxSizer *item18 = new wxBoxSizer( wxHORIZONTAL );
-
-    wxButton *item19 = new wxButton( parent, ID_B_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
-    item19->SetDefault();
-    item18->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
-
-    item18->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
-
-    wxButton *item20 = new wxButton( parent, ID_B_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
-    item18->Add( item20, 0, wxALIGN_CENTRE|wxALL, 5 );
-
-    item0->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     if (set_sizer)
     {

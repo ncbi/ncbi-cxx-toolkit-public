@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2001/10/01 16:04:24  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.87  2001/09/27 15:37:58  thiessen
 * decouple sequence import and BLAST
 *
@@ -1176,6 +1179,10 @@ void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
 
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
+    if (cddAnnotateDialog) {
+        cddAnnotateDialog->Destroy();
+        cddAnnotateDialog = NULL;
+    }
     GlobalMessenger()->RemoveStructureWindow(this); // don't bother with any redraws since we're exiting
     GlobalMessenger()->SequenceWindowsSave();       // save any edited alignment and updates first
     SaveDialog(false);                              // give structure window a chance to save data
@@ -1238,8 +1245,10 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
             break;
         }
         case MID_ANNOT_CDD: {
-            CDDAnnotateDialog dialog(this, glCanvas->structureSet);
-            dialog.ShowModal();
+            if (!cddAnnotateDialog) {
+                cddAnnotateDialog = new CDDAnnotateDialog(this, &cddAnnotateDialog, glCanvas->structureSet);
+                cddAnnotateDialog->Show(true);
+            }
             break;
         }
     }
@@ -1379,6 +1388,10 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         glCanvas->structureSet = NULL;
         glCanvas->renderer->AttachStructureSet(NULL);
         glCanvas->Refresh(false);
+        if (cddAnnotateDialog) {
+            cddAnnotateDialog->Destroy();
+            cddAnnotateDialog = NULL;
+        }
     }
 
     if (wxIsAbsolutePath(filename))
@@ -1481,8 +1494,21 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
         ".prt", "All Files|*.*|Binary ASN (*.val)|*.val|ASCII CDD (*.acd)|*.acd|ASCII ASN (*.prt)|*.prt",
         wxSAVE | wxOVERWRITE_PROMPT);
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
-    if (!outputFilename.IsEmpty())
+
+    if (!outputFilename.IsEmpty()) {
         glCanvas->structureSet->SaveASNData(outputFilename.c_str(), (outputFilename.Right(4) == ".val"));
+
+        // set path/name/title
+        if (wxIsAbsolutePath(outputFilename))
+            userDir = std::string(wxPathOnly(outputFilename).c_str()) + wxFILE_SEP_PATH;
+        else if (wxPathOnly(outputFilename) == "")
+            userDir = workingDir;
+        else
+            userDir = workingDir + wxPathOnly(outputFilename).c_str() + wxFILE_SEP_PATH;
+        currentFile = wxFileNameFromPath(outputFilename);
+        SetTitle(wxString(currentFile.c_str()) + " - Cn3D++");
+        GlobalMessenger()->SetSequenceViewerTitles(currentFile);
+    }
 }
 
 void Cn3DMainFrame::OnLimit(wxCommandEvent& event)
@@ -1558,16 +1584,16 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(void)
 
 #elif defined(__WXGTK__)
     glXUseXFont(gdk_font_id(font.GetInternalFont()), 0, 256, renderer->FONT_BASE);
-    
+
 #elif defined(__WXMAC__)
     wxFontRefData *fontRefData = (wxFontRefData *) font.GetRefData();
     if (RealFont(fontRefData->m_macFontNum, fontRefData->m_macFontSize)) {
-        if (aglUseFont(aglGetCurrentContext(), 
-                (GLint) fontRefData->m_macFontNum, 
-                fontRefData->m_macFontStyle, fontRefData->m_macFontSize, 
+        if (aglUseFont(aglGetCurrentContext(),
+                (GLint) fontRefData->m_macFontNum,
+                fontRefData->m_macFontStyle, fontRefData->m_macFontSize,
                 0, 256, renderer->FONT_BASE) != GL_TRUE)
             ERR_POST(Error << "OpenGLRenderer::SetFont() - aglUseFont() failed");
-    } else 
+    } else
         ERR_POST(Error << "OpenGLRenderer::SetFont() - RealFont() returned false");
 #endif
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/10/01 16:03:58  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.21  2001/04/05 22:54:51  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -89,6 +92,9 @@ public:
     // functions to save edited data
     void SaveDialog(void);
     void SaveAlignment(void);
+
+    // set window title
+    void SetWindowTitle(const std::string& title) const;
 
 private:
 

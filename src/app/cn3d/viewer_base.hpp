@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/10/01 16:03:59  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.7  2001/08/14 17:17:48  thiessen
 * add user font selection, store in registry
 *
@@ -60,6 +63,7 @@
 #include <corelib/ncbistl.hpp>
 
 #include <list>
+#include <string>
 
 
 BEGIN_SCOPE(Cn3D)
@@ -98,6 +102,9 @@ public:
 
     // to be notified of font change
     void NewFont(void);
+
+    // override to set customized window title
+    virtual void SetWindowTitle(const std::string& title) const = 0;
 
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2001/10/01 16:03:58  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.55  2001/09/27 15:36:48  thiessen
 * decouple sequence import and BLAST
 *
@@ -372,8 +375,7 @@ public:
     typedef std::vector < std::string > TextLines;
     bool GetCDDNotes(TextLines *lines) const;
     bool SetCDDNotes(const TextLines& lines);
-    ncbi::objects::CAlign_annot_set * GetCopyOfCDDAnnotSet(void) const;
-    bool SetCDDAnnotSet(ncbi::objects::CAlign_annot_set *newAnnotSet);
+    ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void);
 };
 
 class ChemicalGraph;

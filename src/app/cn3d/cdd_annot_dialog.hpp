@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/10/01 16:03:58  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.5  2001/09/26 15:27:58  thiessen
 * tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
 *
@@ -79,21 +82,19 @@ class Sequence;
 class CDDAnnotateDialog : public wxDialog
 {
 public:
-    CDDAnnotateDialog(wxWindow *parent, StructureSet *set);
+    // this is intended to be used as a non-modal dialog
+    CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handle, StructureSet *set);
+    ~CDDAnnotateDialog(void);
 
 private:
 
+    CDDAnnotateDialog **dialogHandle;
     StructureSet *structureSet;
-
-    // alignment info
-    const BlockMultipleAlignment *alignment;
-    const Sequence *master;
-    typedef std::list < ncbi::CRef < ncbi::objects::CSeq_interval > > IntervalList;
-    IntervalList intervals;     // highlighted+aligned intervals on master
-
-    // edit a copy of the data; flag changes
     ncbi::CRef < ncbi::objects::CAlign_annot_set > annotSet;
-    bool changed;
+
+    // get highlighted+aligned intervals on master
+    typedef std::list < ncbi::CRef < ncbi::objects::CSeq_interval > > IntervalList;
+    void GetCurrentHighlightedIntervals(IntervalList *intervals);
 
     // action functions
     void NewAnnotation(void);
@@ -106,9 +107,9 @@ private:
     void ShowEvidence(void);
 
     // event callbacks
-    void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnSelection(wxCommandEvent& event);
+    void OnCloseWindow(wxCloseEvent& event);
 
     // other utility functions
     void SetupGUIControls(int selectAnnot, int selectEvidence);

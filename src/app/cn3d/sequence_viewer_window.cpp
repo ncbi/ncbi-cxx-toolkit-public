@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/10/01 16:04:24  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.21  2001/09/06 13:10:10  thiessen
 * tweak show hide dialog layout
 *
@@ -136,7 +139,7 @@ END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
     ViewerWindowBase(parentSequenceViewer,
-        wxString(GetWorkingFilename().c_str()) + " - Sequence Viewer",
+        wxString(GetWorkingFilename().c_str()) + " - Sequence/Alignment Viewer",
         wxPoint(0,500), wxSize(1000,200)),
     sequenceViewer(parentSequenceViewer)
 {

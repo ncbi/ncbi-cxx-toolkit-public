@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/10/01 16:04:25  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.16  2001/09/27 15:38:00  thiessen
 * decouple sequence import and BLAST
 *
@@ -466,6 +469,12 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment)
     displayStack.back() = new SequenceDisplay(true, viewerWindow);
     AddAlignments(copy);
     (*viewerWindow)->ScrollToColumn(displayStack.back()->GetStartingColumn());
+}
+
+void UpdateViewer::SetWindowTitle(const std::string& title) const
+{
+    if (*viewerWindow)
+        (*viewerWindow)->SetTitle(wxString(title.c_str()) + " - Update Viewer");
 }
 
 END_SCOPE(Cn3D)

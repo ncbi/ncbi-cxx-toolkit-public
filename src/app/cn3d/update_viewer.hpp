@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/10/01 16:03:58  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.9  2001/09/27 15:36:48  thiessen
 * decouple sequence import and BLAST
 *
@@ -112,6 +115,9 @@ public:
     // run BLAST on given pairwise alignment - if BLAST is successful, then alignment will be
     // replaced with the result, otherwise the alignment is left unchanged
     void BlastUpdate(BlockMultipleAlignment *alignment);
+
+    // set window title
+    void SetWindowTitle(const std::string& title) const;
 
 private:
     UpdateViewerWindow *updateWindow;

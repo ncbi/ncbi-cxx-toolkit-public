@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/10/01 16:04:24  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.21  2001/08/27 00:06:23  thiessen
 * add structure evidence to CDD annotation
 *
@@ -488,6 +491,13 @@ CBiostruc_annot_set * Messenger::CreateBiostrucAnnotSetForHighlightsOnSingleObje
     }
 
     return bas.Release();
+}
+
+void Messenger::SetSequenceViewerTitles(const std::string& title) const
+{
+    SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
+    for (q=sequenceViewers.begin(); q!=qe; q++)
+        (*q)->SetWindowTitle(title);
 }
 
 END_SCOPE(Cn3D)

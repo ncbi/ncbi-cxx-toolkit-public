@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2001/10/01 16:03:58  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.43  2001/09/27 15:36:48  thiessen
 * decouple sequence import and BLAST
 *
@@ -251,6 +254,7 @@ private:
 };
 
 
+class CDDAnnotateDialog;
 class Cn3DGLCanvas;
 
 class Cn3DMainFrame: public wxFrame
@@ -346,6 +350,9 @@ public:
     };
 
 private:
+
+    // CDDAnnotateDialog is owned by this object
+    CDDAnnotateDialog *cddAnnotateDialog;
 
     void OnExit(wxCommandEvent& event);
     void OnCloseWindow(wxCloseEvent& event);

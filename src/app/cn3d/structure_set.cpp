@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2001/10/01 16:04:25  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.80  2001/09/27 20:58:28  thiessen
 * add VisibleString filter option
 *
@@ -1205,29 +1208,17 @@ bool StructureSet::SetCDDNotes(const TextLines& lines)
     return true;
 }
 
-ncbi::objects::CAlign_annot_set * StructureSet::GetCopyOfCDDAnnotSet(void) const
+ncbi::objects::CAlign_annot_set * StructureSet::GetCDDAnnotSet(void)
 {
-    if (cddData && cddData->IsSetAlignannot()) {
-        std::string err;
-        CAlign_annot_set *copy = CopyASNObject(cddData->GetAlignannot(), &err);
-        if (copy)
-            return copy;
-        else
-            ERR_POST(Error << "StructureSet::GetCopyOfCDDAnnotSet() - error copying object:\n" << err);
-    }
-    return NULL;
-}
-
-bool StructureSet::SetCDDAnnotSet(ncbi::objects::CAlign_annot_set *newAnnotSet)
-{
-    if (!cddData) return false;
-    if (newAnnotSet) {
-        CRef < CAlign_annot_set > ref(newAnnotSet);
-        cddData->SetAlignannot(ref);
+    if (cddData) {
+        // make a new annot set if not present
+        if (!cddData->IsSetAlignannot()) {
+			CRef < CAlign_annot_set > ref(new CAlign_annot_set());
+            cddData->SetAlignannot(ref);
+        }
+        return &(cddData->SetAlignannot());
     } else
-        cddData->ResetAlignannot();
-    dataChanged |= eOtherData;
-    return true;
+        return NULL;
 }
 
 const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)

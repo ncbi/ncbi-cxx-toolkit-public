@@ -69,7 +69,7 @@ LIB = \
 	xctools \
 	xconnect
 
-WX_CONFIG = $(HOME)/Programs/wxWindows/install/bin/wxgtk-config
+WX_CONFIG = $(HOME)/Programs/wxWindows/install/bin/wx-config
 WX_CPPFLAGS = $(shell $(WX_CONFIG) --cppflags)
 WX_LIBS = $(shell $(WX_CONFIG) --libs)
 

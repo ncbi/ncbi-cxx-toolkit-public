@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2001/10/01 16:04:24  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
 * Revision 1.41  2001/04/05 22:55:36  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -259,6 +262,12 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
         sequenceWindow->UpdateDisplay(display);
     else
         CreateSequenceWindow();
+}
+
+void SequenceViewer::SetWindowTitle(const std::string& title) const
+{
+    if (*viewerWindow)
+        (*viewerWindow)->SetTitle(wxString(title.c_str()) + " - Sequence/Alignment Viewer");
 }
 
 END_SCOPE(Cn3D)
