@@ -870,40 +870,11 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     _TRACE("ProcessBioseq("<<id.AsFastaString()<<") seq_len="<<seq_len<<"):");
     // Iterate seq-map except the last element
     len = 0;
-    for ( CSeqMap::const_iterator seg = seq_map->begin(&scope);
-          seg != seq_map->end(&scope); ++seg ) {
-        switch (seg.GetType()) {
-        case CSeqMap::eSeqData:
-            _TRACE('@'<<len<<": seqData("<<seg.GetLength()<<")");
-            len += seg.GetLength();
-            break;
-        case CSeqMap::eSeqRef:
-            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
-            len += seg.GetLength();
-            break;
-        case CSeqMap::eSeqGap:
-            _TRACE('@'<<len<<": seqGap("<<seg.GetLength()<<")");
-            len += seg.GetLength();
-            break;
-        case CSeqMap::eSeqEnd:
-            _ASSERT(/*seg.GetLength() == 0 || */"Unexpected END segment" && 0);
-            break;
-        default:
-            break;
-        }
-    }
-    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") len="<<len<<")");
-    _ASSERT(len == seq_len);
-    CHECK_END("get sequence map");
-
-    CHECK_WRAP();
-    CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
-    TSeqPos len = 0;
-    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") seq_len="<<seq_len<<") resolved:");
-    // Iterate seq-map except the last element
-    len = 0;
-    for ( CSeqMap::const_iterator seg = seq_map->begin_resolved(&scope);
-          seg != seq_map->end_resolved(&scope); ++seg ) {
+    CSeqMap::const_iterator seg = seq_map->begin(&scope);
+    vector<CSeqMap::const_iterator> itrs;
+    for ( ; seg != seq_map->end(&scope); ++seg ) {
+        _ASSERT(seg);
+        itrs.push_back(seg);
         switch (seg.GetType()) {
         case CSeqMap::eSeqData:
             _TRACE('@'<<len<<": seqData("<<seg.GetLength()<<")");
@@ -921,9 +892,64 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             _ASSERT("Unexpected END segment" && 0);
             break;
         default:
+            _ASSERT("Unexpected segment type" && 0);
             break;
         }
     }
+    _ASSERT(!seg);
+    for ( int i = itrs.size()-1; i >= 0; --i ) {
+        --seg;
+        _ASSERT(seg);
+        _ASSERT(seg == itrs[i]);
+    }
+    --seg;
+    _ASSERT(!seg);
+
+    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") len="<<len<<")");
+    _ASSERT(len == seq_len);
+    CHECK_END("get sequence map");
+
+    CHECK_WRAP();
+    CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
+    TSeqPos len = 0;
+    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") seq_len="<<seq_len<<") resolved:");
+    // Iterate seq-map except the last element
+    len = 0;
+    CSeqMap::const_iterator seg = seq_map->begin_resolved(&scope);
+    vector<CSeqMap::const_iterator> itrs;
+    for ( ; seg != seq_map->end_resolved(&scope); ++seg ) {
+        _ASSERT(seg);
+        itrs.push_back(seg);
+        switch (seg.GetType()) {
+        case CSeqMap::eSeqData:
+            _TRACE('@'<<len<<": seqData("<<seg.GetLength()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqRef:
+            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqGap:
+            _TRACE('@'<<len<<": seqGap("<<seg.GetLength()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqEnd:
+            _ASSERT("Unexpected END segment" && 0);
+            break;
+        default:
+            _ASSERT("Unexpected segment type" && 0);
+            break;
+        }
+    }
+    _ASSERT(!seg);
+    for ( int i = itrs.size()-1; i >= 0; --i ) {
+        --seg;
+        _ASSERT(seg);
+        _ASSERT(seg == itrs[i]);
+    }
+    --seg;
+    _ASSERT(!seg);
+
     _TRACE("ProcessBioseq("<<id.AsFastaString()<<") len="<<len<<")");
     _ASSERT(len == seq_len);
     CHECK_END("get resolved sequence map");
@@ -1226,6 +1252,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/05/23 16:32:54  vasilche
+* Added tests for backward traversal of CSeqMap_CI.
+*
 * Revision 1.34  2003/05/12 19:17:42  vasilche
 * Added initialization of mandatory field.
 *
