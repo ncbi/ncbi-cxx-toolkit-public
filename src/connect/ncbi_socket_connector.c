@@ -134,7 +134,9 @@ static EIO_Status s_VT_Open
             /* connect/reconnect */
             status = xxx->sock ?
                 SOCK_Reconnect(xxx->sock, 0, 0, timeout) :
-                SOCK_Create(xxx->host, xxx->port, timeout, &xxx->sock);
+                SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->sock,
+                              (xxx->flags & eSCC_DebugPrintout)
+                              ? eOn : eDefault);
             i++;
         }
 
@@ -142,9 +144,6 @@ static EIO_Status s_VT_Open
             /* set data logging and write init data, if any */
             size_t n_written = 0;
 
-            SOCK_SetDataLogging(xxx->sock,
-                                (xxx->flags & eSCC_DebugPrintout)
-                                ? eOn : eDefault);
             SOCK_SetReadOnWrite(xxx->sock,
                                 (xxx->flags & eSCC_SetReadOnWrite)
                                 ? eOn : eDefault);
@@ -375,6 +374,9 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/12/04 16:55:45  lavr
+ * Take advantage of SOCK_CreateEx()
+ *
  * Revision 6.13  2002/10/28 15:46:21  lavr
  * Use "ncbi_ansi_ext.h" privately
  *
