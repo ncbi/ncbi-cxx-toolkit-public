@@ -77,15 +77,35 @@ public:
         {}
     };
 
+    // Specifies how the OnObjectFoundPre and OnObjectFoundPost events will
+    // be delivered
+    enum EEventCallBackMode
+    {
+        eCallAlways,
+        eDoNotCall
+    };
+
+    struct SCandidateInfo
+    {
+        CObjectTypeInfo     type_info;
+        EEventCallBackMode  event_mode;
+
+        SCandidateInfo(CObjectTypeInfo tinfo, EEventCallBackMode emode)
+        : type_info(tinfo),
+          event_mode(emode)
+        {}
+    };
+
     typedef vector<SObjectDescription>  TTopLevelMapVector;
-    typedef vector<CObjectTypeInfo>     TCandidates;
+    typedef vector<SCandidateInfo>      TCandidates;
 
 public:
     CObjectsSniffer() {}
     virtual ~CObjectsSniffer() {}
 
     // Add new possible type to the recognition list.
-    void AddCandidate(CObjectTypeInfo ti) { m_Candidates.push_back(ti); }
+    void AddCandidate(CObjectTypeInfo ti, 
+                      EEventCallBackMode emode=eCallAlways);
 
     // Return reference on the internal vector of object candidates.
     const TCandidates& GetCandidates() const { return m_Candidates; }
@@ -155,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/08/05 14:31:06  kuznets
+ * Implemented background "do not call" candidates for recognition.
+ *
  * Revision 1.9  2003/07/14 19:25:20  kuznets
  * Cosmetic fix.
  *

@@ -51,15 +51,18 @@ BEGIN_SCOPE(objects)
 class COffsetReadHook : public CReadObjectHook
 {
 public:
-    COffsetReadHook(CObjectsSniffer* sniffer)
-    : m_Sniffer(sniffer)
+    COffsetReadHook(CObjectsSniffer* sniffer, 
+                    CObjectsSniffer::EEventCallBackMode event_mode)
+    : m_Sniffer(sniffer),
+      m_EventMode(event_mode)
     {
         _ASSERT(sniffer);
     }
 
     virtual void  ReadObject (CObjectIStream &in, const CObjectInfo &object);
 private:
-    CObjectsSniffer*  m_Sniffer;
+    CObjectsSniffer*                     m_Sniffer;
+    CObjectsSniffer::EEventCallBackMode  m_EventMode;
 };
 
 void COffsetReadHook::ReadObject(CObjectIStream &in, 
@@ -68,12 +71,20 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
     const CTypeInfo *type_info = object.GetTypeInfo();
     const string& class_name = type_info->GetName();
 
-    m_Sniffer->OnObjectFoundPre(object, in.GetStreamOffset());
-     
-    DefaultRead(in, object);
+    if (m_EventMode == CObjectsSniffer::eCallAlways) {
 
-    m_Sniffer->OnObjectFoundPost(object);
+        m_Sniffer->OnObjectFoundPre(object, in.GetStreamOffset());
+     
+        DefaultRead(in, object);
+
+        m_Sniffer->OnObjectFoundPost(object);
+
+    } 
+    else {
+        DefaultRead(in, object);
+    }
 }
+
 
 
 void CObjectsSniffer::OnObjectFoundPre(const CObjectInfo& object, 
@@ -85,6 +96,11 @@ void CObjectsSniffer::OnObjectFoundPost(const CObjectInfo& object)
 {
 }
 
+void CObjectsSniffer::AddCandidate(CObjectTypeInfo ti, 
+                                   EEventCallBackMode emode) 
+{
+    m_Candidates.push_back(SCandidateInfo(ti, emode));
+}
 
 void CObjectsSniffer::Probe(CObjectIStream& input)
 {
@@ -98,9 +114,9 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
     TCandidates::const_iterator it;
 
     for (it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
-        CRef<COffsetReadHook> h(new COffsetReadHook(this));
+        CRef<COffsetReadHook> h(new COffsetReadHook(this, it->event_mode));
         
-        it->SetLocalReadHook(input, &(*h));
+        it->type_info.SetLocalReadHook(input, &(*h));
         hooks.push_back(h);
 
     } // for
@@ -120,7 +136,7 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
 
     _ASSERT(hooks.size() == m_Candidates.size());
     for (it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
-        it->ResetLocalReadHook(input);
+        it->type_info.ResetLocalReadHook(input);
     } // for
 }
 
@@ -135,18 +151,18 @@ void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
             string header = input.ReadFileHeader();
 
             for (it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
-                if (header != it->GetTypeInfo()->GetName()) {
+                if (header != it->type_info.GetTypeInfo()->GetName()) {
                     continue;
                 }
-                CObjectInfo object_info(it->GetTypeInfo());
+                CObjectInfo object_info(it->type_info.GetTypeInfo());
 
                 input.Read(object_info, CObjectIStream::eNoFileHeader);
                 m_TopLevelMap.push_back(
-                              SObjectDescription(*it, m_StreamOffset));
+                              SObjectDescription(it->type_info, m_StreamOffset));
 
                 LOG_POST(Info 
                          << "ASN.1 text top level object found:" 
-                         << it->GetTypeInfo()->GetName() );                
+                         << it->type_info.GetTypeInfo()->GetName() );                
             } // for
         }
         catch (CEofException& ) {
@@ -172,17 +188,18 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
     it = m_Candidates.begin();
     while (it < m_Candidates.end()) {
 
-        CObjectInfo object_info(it->GetTypeInfo());
+        CObjectInfo object_info(it->type_info.GetTypeInfo());
 
         try {
             m_StreamOffset = input.GetStreamOffset();
 
             input.Read(object_info);
-            m_TopLevelMap.push_back(SObjectDescription(*it, m_StreamOffset));
+            m_TopLevelMap.push_back(SObjectDescription(it->type_info, 
+                                                       m_StreamOffset));
 
             LOG_POST(Info 
                      << "ASN.1 binary top level object found:" 
-                     << it->GetTypeInfo()->GetName() );
+                     << it->type_info.GetTypeInfo()->GetName() );
         }
         catch (CEofException& ) {
             break;
@@ -201,6 +218,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2003/08/05 14:31:28  kuznets
+* Implemented background "do not call" candidates for recognition.
+*
 * Revision 1.8  2003/06/02 18:58:25  dicuccio
 * Fixed #include directives
 *
