@@ -37,6 +37,7 @@
 #include <util/range.hpp>
 
 #include <list>
+#include <objects/seqloc/Seq_id.hpp>
 
 #include <objtools/format/items/item_base.hpp>
 
@@ -92,6 +93,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/12 20:21:38  shomrat
+* added include directive
+*
 * Revision 1.1  2003/12/17 19:49:08  shomrat
 * Initial revision (adapted from flat lib)
 *
