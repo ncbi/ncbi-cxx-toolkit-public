@@ -45,6 +45,7 @@ x_out=$2
 x_build_dir=$3
 x_confs="${4:-Debug DebugDLL Release ReleaseDLL}"
 
+
 if test ! -z "$x_build_dir"; then
    if test ! -d "$x_build_dir"; then
       echo "Build directory \"$x_build_dir\" don't exist."
@@ -69,11 +70,32 @@ fi
 
 x_script_name=`echo "$x_out" | sed -e 's%^.*/%%'`
 
+
 # Check list
 if test ! -f "$x_list"; then
    echo "Check list file \"$x_list\" not found."
    exit 1 
 fi
+
+# Change script's command interpreter from /bin/sh to /bin/bash.
+# Cygwin's shell don't works correctly with process pids.
+echo "Changing scripts command interpreter..."
+script_dirs="src scripts"
+tmp="$x_tmp/check_make_win.$$"
+
+for d in $script_dirs; do
+    script_list=`find $x_root_dir/$d -name '*.sh'`
+    for s in $script_list; do
+        grep '^#! */bin/sh' $s > /dev/null 2>&1
+        if test $? -eq 0; then
+           cp -fp $s $tmp
+           sed -e 's|^#! */bin/sh.*$|#! /bin/bash|' $s > $tmp
+           touch -r $s $tmp
+           cp -fp $tmp $s
+           rm -f $tmp
+        fi
+    done
+done
 
 
 #//////////////////////////////////////////////////////////////////////////
