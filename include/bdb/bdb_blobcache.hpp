@@ -128,6 +128,15 @@ public:
         ePidLock     ///< Create PID lock on cache (exception if failed) 
     };
 
+    /// Underlying BDB database can be configured using transactional
+    /// or non-transactional API. Transactional provides better protection
+    /// from failures, non-transactional offers better performance.
+    enum ETRansact
+    {
+        eUseTrans, ///< Use transaction environment
+        eNoTrans   ///< Non-transactional environment
+    };
+
     /// Open local cache instance (read-write access)
     /// If cache does not exists it is created.
     ///
@@ -142,7 +151,8 @@ public:
     void Open(const char*  cache_path, 
               const char*  cache_name,
               ELockMode    lm = eNoLock,
-              unsigned int cache_ram_size = 0);
+              unsigned int cache_ram_size = 0,
+              ETRansact    use_trans = eUseTrans);
 
     /// Run verification of the cache database
     ///
@@ -181,6 +191,9 @@ public:
     /// all in one transaction.
     ///
     void SetReadUpdateLimit(unsigned limit) { m_MemAttr.SetLimit(limit); }
+
+    /// Remove all non-active LOG files
+    void CleanLog();
 
 
     // ICache interface 
@@ -443,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/09/27 14:03:58  kuznets
+ * +option not to use transactions, and method to clean log files
+ *
  * Revision 1.32  2004/09/03 13:34:59  kuznets
  * Added async write option
  *

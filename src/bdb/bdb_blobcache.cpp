@@ -486,7 +486,8 @@ void CBDB_Cache::x_PidLock(ELockMode lm)
 void CBDB_Cache::Open(const char* cache_path, 
                       const char* cache_name,
                       ELockMode lm, 
-                      unsigned int cache_ram_size)
+                      unsigned int cache_ram_size,
+                      ETRansact    use_trans)
 {
     {{
     
@@ -518,7 +519,19 @@ void CBDB_Cache::Open(const char* cache_path,
             m_Env->SetCacheSize(cache_ram_size);
         }
         x_PidLock(lm);
-        m_Env->OpenWithTrans(cache_path, CBDB_Env::eThreaded);
+
+        switch (use_trans)
+        {
+        case eUseTrans:
+            m_Env->OpenWithTrans(cache_path, CBDB_Env::eThreaded);
+            break;
+        case eNoTrans:
+            m_Env->OpenWithLocks(cache_path);
+            break;
+        default:
+            _ASSERT(0);
+        } // switch
+
     } else {
         if (cache_ram_size) {
             m_Env->SetCacheSize(cache_ram_size);
@@ -541,14 +554,36 @@ void CBDB_Cache::Open(const char* cache_path,
                          " Running the recovery procedure.");
             }
             x_PidLock(lm);
-            m_Env->OpenWithTrans(cache_path, 
+
+            switch (use_trans)
+            {
+            case eUseTrans:
+                m_Env->OpenWithTrans(cache_path, 
                                  CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
+                break;
+            case eNoTrans:
+                m_Env->OpenWithLocks(cache_path);
+                break;
+            default:
+                _ASSERT(0);
+            } // switch
+
         }
         catch (CBDB_Exception&)
         {
             x_PidLock(lm);
-            m_Env->OpenWithTrans(cache_path, 
+            switch (use_trans)
+            {
+            case eUseTrans:
+                m_Env->OpenWithTrans(cache_path, 
                                  CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
+                break;
+            case eNoTrans:
+                m_Env->OpenWithLocks(cache_path);
+                break;
+            default:
+                _ASSERT(0);
+            } // switch
         }
     }
 
@@ -656,14 +691,14 @@ void CBDB_Cache::Close()
 
     try {
         if (m_Env) {
-            m_Env->CleanLog();
+            CleanLog();
 
             if (m_Env->CheckRemove()) {
-                LOG_POST(Info << 
-                        "LC: '" << m_Name << "' Unmounted. BDB ENV deleted.");
+                LOG_POST(Info    << 
+                         "LC: '" << m_Name << "' Unmounted. BDB ENV deleted.");
             } else {
                 LOG_POST(Warning << "LC: '" << m_Name 
-                                << "' environment still in use.");
+                                 << "' environment still in use.");
 
             }
         }
@@ -675,6 +710,15 @@ void CBDB_Cache::Close()
     }
 
     delete m_Env;         m_Env = 0;
+}
+
+void CBDB_Cache::CleanLog()
+{
+    if (m_Env) {
+        if (m_Env->IsTransactional()) {
+            m_Env->CleanLog();
+        }
+    }
 }
 
 void CBDB_Cache::x_Close()
@@ -1233,10 +1277,10 @@ void CBDB_Cache::Purge(const string&    key,
         return;
     }
 
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
-    if (key.empty() || 
-        (keep_last_version == eDropAll && access_timeout == 0)) {
+    if (key.empty() && keep_last_version == eDropAll && access_timeout == 0) {
         x_TruncateDB();
         return;
     }
@@ -1255,6 +1299,9 @@ void CBDB_Cache::Purge(const string&    key,
     CTime time_stamp(CTime::eCurrent);
     time_t curr = (int)time_stamp.GetTimeT();
     int timeout = GetTimeout();
+    if (access_timeout && access_timeout < timeout) {
+        timeout = access_timeout;
+    }
 
     while (cur.Fetch() == eBDB_Ok) {
         time_t db_time_stamp = m_CacheAttrDB->time_stamp;
@@ -1263,17 +1310,26 @@ void CBDB_Cache::Purge(const string&    key,
         int overflow = m_CacheAttrDB->overflow;
         string x_subkey = (const char*) m_CacheAttrDB->subkey;
 
-        if (subkey.empty()) {
-            
+        if (subkey.empty()) {            
         }
 
-        if ( (curr - timeout > db_time_stamp) ||
-            (subkey.empty() || (subkey == x_subkey)) 
-           ) {
+        // check if timeout control has been requested and stored element 
+        // should not be removed
+        if (access_timeout && (!(curr - timeout > db_time_stamp))) {
+            continue;
+        }
+
+        if (subkey.empty() || (subkey == x_subkey)) {
             cache_entries.push_back(
                             SCacheDescr(x_key, version, x_subkey, overflow));
+            continue;
         }
-
+/*
+        if ((keep_last_version == eDropOlder) &&
+            (subkey == x_subkey) && version < ) {
+                goto remove_blob;
+        }
+*/
     } // while
 
     }}
@@ -1786,6 +1842,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2004/09/27 14:04:28  kuznets
+ * +option not to use transactions, and method to clean log files
+ *
  * Revision 1.77  2004/09/23 14:20:44  kuznets
  * Used GetParamDataSize to get RAM cache size
  *
