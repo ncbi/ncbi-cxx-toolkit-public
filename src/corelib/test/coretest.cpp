@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1998/12/01 00:27:21  vakatov
+* Made CCgiRequest::ParseEntries() to read ISINDEX data, too.
+* Got rid of now redundant CCgiRequest::ParseIndexesAsEntries()
+*
 * Revision 1.18  1998/11/30 21:23:20  vakatov
 * CCgiRequest:: - by default, interprete ISINDEX data as regular FORM entries
 * + CCgiRequest::ParseIndexesAsEntries()
@@ -369,6 +373,8 @@ static void TestCgi_Request_Static(void)
     _ASSERT( !TestEntries(entries, "=ggg&ppp=PPP") );
     _ASSERT(  TestEntries(entries, "a=d&eee") );
     _ASSERT(  TestEntries(entries, "xxx&eee") );
+    _ASSERT(  TestEntries(entries, "xxx+eee") );
+    _ASSERT(  TestEntries(entries, "UUU") );
     _ASSERT( !TestEntries(entries, "a=d&&eee") );
     _ASSERT(  TestEntries(entries, "a%21%2f%25aa=%2Fd%2c&eee=%3f") );
 
