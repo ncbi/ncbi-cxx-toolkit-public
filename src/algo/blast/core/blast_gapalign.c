@@ -156,9 +156,11 @@ query_end_compare_hsps(const void* v1, const void* v2)
 	return 0;
 }
 
-/** Callback for sorting HSPs by score */
+/** Callback for sorting HSPs in order to move NULL HSPs to the end of
+ * the array.
+ */
 static int
-score_compare_hsp(const void* v1, const void* v2)
+null_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSP* h1,* h2;
 	BlastHSP** hp1,** hp2;
@@ -169,15 +171,12 @@ score_compare_hsp(const void* v1, const void* v2)
 	h2 = *hp2;
         
         /* NULL HSPs are moved to the end */
-	if (h1 == NULL)
+	if (!h1 && !h2)
+	   return 0;
+	else if (!h1)
            return 1;
-        if (h2 == NULL)
+        else if (!h2)
            return -1;
-
-	if (h1->score < h2->score) 
-		return 1;
-	if (h1->score > h2->score)
-		return -1;
 
 	return 0;
 }
@@ -256,7 +255,7 @@ CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count)
       }
    }
 
-   qsort(hsp_array,hsp_count,sizeof(BlastHSP*), score_compare_hsp);
+   qsort(hsp_array,hsp_count,sizeof(BlastHSP*), null_compare_hsps);
    
    index1 = 0;
    for (index=0; index<hsp_count; index++)
@@ -3884,7 +3883,6 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
                     NULL, &new_hsp);
       Blast_HSPListSaveHSP(hsp_list, new_hsp);
    }
-
    return 0;
 }
 
