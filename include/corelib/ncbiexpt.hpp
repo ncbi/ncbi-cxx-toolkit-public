@@ -503,7 +503,7 @@ private: \
 // (this is fixed in newer versions of the compiler)
 
 #if defined(NCBI_COMPILER_GCC)
-#  if NCBI_COMPILER_VERSION <= 299
+#  if NCBI_COMPILER_VERSION < 300
 #    define EXCEPTION_BUG_WORKAROUND
 #  endif
 #endif
@@ -578,15 +578,17 @@ public:
     enum EErrCode {
         eCore,
         eNullPtr,
-        eDll
+        eDll,
+        eInvalidArg
     };
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eCore:    return "eCore";
-        case eNullPtr: return "eNullPtr";
-        case eDll:     return "eDll";
-        default:    return CException::GetErrCodeString();
+        case eCore:       return "eCore";
+        case eNullPtr:    return "eNullPtr";
+        case eDll:        return "eDll";
+        case eInvalidArg: return "eInvalidArg";
+        default:          return CException::GetErrCodeString();
         }
     }
     NCBI_EXCEPTION_DEFAULT(CCoreException,CException);
@@ -818,6 +820,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2003/04/25 20:53:53  lavr
+ * Add eInvalidArg type of CCoreException
+ *
  * Revision 1.43  2003/04/24 16:25:32  kuznets
  * Farther templatefication of CErrnoTemplException, added CErrnoTemplExceptionEx.
  * This will allow easy creation of Errno-like exception classes.
