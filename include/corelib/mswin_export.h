@@ -1342,16 +1342,6 @@
 #endif
 
 
-/*
- * Static library test_mt.lib
- */
-#ifdef NCBI_TEST_MT_EXPORTS
-#  define NCBI_TEST_MT_EXPORT             __declspec(dllexport)
-#else
-#  define NCBI_TEST_MT_EXPORT             __declspec(dllimport)
-#endif
-
-
 
 #else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
 
@@ -1436,7 +1426,6 @@
 #  define NCBI_SEQ_EXPORT
 #  define NCBI_SUBMIT_EXPORT
 #  define NCBI_TAXON1_EXPORT
-#  define NCBI_TEST_MT_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_XALGOALIGN_EXPORT
@@ -1474,11 +1463,25 @@
 #endif
 
 
+/* STATIC LIBRARIES SECTION */
+/* This section is for static-only libraries */
+
+#define NCBI_REGEXP_EXPORT
+#define NCBI_TEST_MT_EXPORT
+
+
+
+
 #endif  /*  CORELIB___MSWIN_EXPORT__H  */
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.63  2004/03/11 16:52:25  gorelenk
+ * Added STATIC LIBRARIES SECTION  - place for static-only libraries export
+ * prefix defines.
+ * Added defines for NCBI_REGEXP_EXPORT and NCBI_TEST_MT_EXPORT.
+ *
  * Revision 1.62  2004/03/11 12:49:41  dicuccio
  * Rearranged GUI export specifiers (regrouped at end).  Added export specifier
  * for GUIMATH library.  Corrected NCBI_TEST_MT_EXPORT.
