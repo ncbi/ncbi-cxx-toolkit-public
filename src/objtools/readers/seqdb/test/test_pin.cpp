@@ -9,6 +9,9 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 USING_NCBI_SCOPE;
 
 
@@ -38,6 +41,96 @@ int hang10()
     return 0;
 }
 
+class CAccelThread {
+public:
+    CAccelThread(CSeqDB & db)
+        : _db(db)
+    {
+    }
+    
+    void RunInline(void)
+    {
+//         _pid = fork();
+        
+//         if (! _pid) {
+            _Iterate();
+            exit(0);
+//         }
+    }
+    
+    void Run(void)
+    {
+        _pid = fork();
+        
+        if (! _pid) {
+            _Iterate();
+            exit(0);
+        }
+    }
+    
+    void Wait(void)
+    {
+        if (_pid) {
+            waitpid(_pid, 0, 0);
+            _pid = 0;
+        }
+    }
+    
+private:
+    void _Iterate(void)
+    {
+        Uint4 oidx = 0;
+        
+        try {
+            Uint4 oid = 0;
+            const char * buf = 0;
+        
+            Uint4 hashesque = 0;
+        
+            Uint4 part = _db.GetNumSeqs() / 40;
+            Uint4 parts = part;
+        
+            cout << "ITER:" << flush;
+        
+            while(_db.CheckOrFindOID(oid)) {
+                if (oid > parts) {
+                    parts += part;
+                    cout << "+" << flush;
+                }
+                
+                /*Uint4 oid_len =*/ _db.GetSequence(oid, & buf);
+                
+//                 for(Uint4 ii = 0; ii < oid_len; ii += 511) {
+//                     hashesque += buf[ii];
+//                 }
+            
+                _db.RetSequence(& buf);
+            
+                oid ++;
+                oidx = oid;
+                
+                if (oid > 2763324) {
+                    x_PossiblyStopMaybe();
+                }
+            }
+            _hash = hashesque;
+            cout << "!" << endl;
+        }
+        catch(...) {
+            cout << "***" << oidx << "-" << _db.GetNumSeqs() << endl;
+        }
+    }
+    
+    void x_PossiblyStopMaybe(void)
+    {
+        //cout << " It is not widely known that I once leveled Rome. " << endl;
+    }
+    
+    CSeqDB & _db;
+    Uint4    _hash;
+    Uint4    _pid;
+};
+
 int test1(int argc, char ** argv)
 {
     string dbpath = "/net/fridge/vol/export/blast/db/blast";
@@ -58,6 +151,8 @@ int test1(int argc, char ** argv)
     bool get_bioseq    = false;
     bool show_progress = true;
     bool approx        = true;
+    bool accel_thread  = false;
+    bool accel_inline  = false;
     
     string dbname("nr");
     char seqtype = kSeqTypeProt;
@@ -69,6 +164,85 @@ int test1(int argc, char ** argv)
         
         string s = args.front();
         args.pop_front();
+        
+        if (s == "-accel1") {
+            s = "-accel2";
+            accel_thread = true;
+        } else desc += " [-accel1]";
+        
+        if (s == "-accel3") {
+            s = "-accel2";
+            accel_thread = true;
+            accel_inline = true;
+        } else desc += " [-accel1]";
+        
+        if (s == "-accel2") {
+            CSeqDB nt("nr", 'p');
+            
+            CAccelThread accel(nt);
+            
+            vector<Uint4> V;
+            
+            Uint4 numseq = nt.GetNumSeqs();
+            
+            for(Uint4 i = 0; i < numseq; i+=2) {
+                // Pick a random location in the array; push the
+                // value at that location onto the end.
+                
+                // Put i into the old location for that value.
+                
+                V.push_back(0);
+                
+                Uint4 loc = (rand() + (rand() << 16)) % V.size();
+                
+                V[i/2] = V[loc];
+                V[loc] = i/2;
+            }
+            
+            double t_s(dbl_time());
+            
+            if (accel_thread) {
+                if (accel_inline) {
+                    accel.RunInline();
+                } else {
+                    accel.Run();
+                }
+            }
+            
+            Uint4 part = V.size() / 40;
+            Uint4 parts = part;
+            
+            cout << "iter:" << flush;
+            
+            for(Uint4 i = 0; i < V.size(); i++) {
+                if (i > parts) {
+                    parts += part;
+                    cout << "-" << flush;
+                }
+                
+                Uint4 oid = V[i];
+                
+                const char * buf = 0;
+                nt.GetSequence(oid, & buf);
+                nt.RetSequence(& buf);
+            }
+            
+            double t_e(dbl_time());
+            
+            cout << "#" << endl;
+            cout << "time elapsed: " << (t_e - t_s) << endl;
+            
+            
+            double w_s(dbl_time());
+            
+            accel.Wait();
+            
+            double w_e(dbl_time());
+            
+            cout << "time elapsed: " << (w_e - w_s) << endl;
+            
+            return 0;
+        } else desc += " [-accel2]";
         
         if (s == "-fromcpp") {
             const char * ge = getenv("BLASTDB");

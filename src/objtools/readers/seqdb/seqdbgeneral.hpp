@@ -52,39 +52,10 @@ enum seqdb_debug_bits {
 #define ifdebug_oid   if (seqdb_debug_class & debug_oid)   cerr
 
 
-// Portable byte swapping from marshalled version
-
-#ifdef WORDS_BIGENDIAN
+// Byte-order-nonspecific (long) versions
 
 template<typename T>
-inline T SeqDB_GetStdOrd(const T * stdord_obj)
-{
-    return *stdord_obj;
-}
-
-template<typename T>
-inline T SeqDB_GetBroken(const T * stdord_obj)
-{
-    unsigned char * stdord =
-	(unsigned char*)(stdord_obj);
-    
-    unsigned char * pend = stdord;
-    unsigned char * pcur = stdord + sizeof(T) - 1;
-    
-    T retval = *pcur;
-    
-    while(pcur > pend) {
-	retval <<= 8;
-	retval += *--pcur;
-    }
-    
-    return retval;
-}
-
-#else
-
-template<typename T>
-inline T SeqDB_GetStdOrd(const T * stdord_obj)
+inline T SeqDB_GetStdOrdUnaligned(const T * stdord_obj)
 {
     unsigned char * stdord =
 	(unsigned char*)(stdord_obj);
@@ -103,9 +74,68 @@ inline T SeqDB_GetStdOrd(const T * stdord_obj)
 }
 
 template<typename T>
+inline T SeqDB_GetBrokenUnaligned(const T * stdord_obj)
+{
+    unsigned char * stdord =
+	(unsigned char*)(stdord_obj);
+    
+    unsigned char * pend = stdord;
+    unsigned char * pcur = stdord + sizeof(T) - 1;
+    
+    T retval = *pcur;
+    
+    while(pcur > pend) {
+	retval <<= 8;
+	retval += *--pcur;
+    }
+    
+    return retval;
+}
+
+// Macro Predicates for binary qualities
+
+#define IS_POWER_OF_TWO(x)    ((x) & ((x)-1))
+#define ALIGNED_TO_POW2(x,y)  (! ((x) & (-y)))
+
+#define PTR_ALIGNED_TO_SELF_SIZE(x) \
+    (IS_POWER_OF_TWO(sizeof(*x)) && ALIGNED_TO_POW2(int(x), sizeof(*x)))
+
+// Portable byte swapping from marshalled version
+
+#ifdef WORDS_BIGENDIAN
+
+template<typename T>
+inline T SeqDB_GetStdOrd(const T * stdord_obj)
+{
+    if (PTR_ALIGNED_TO_SELF_SIZE(stdord_obj)) {
+        return *stdord_obj;
+    } else {
+        return SeqDB_GetStdOrdUnaligned(stdord_obj);
+    }
+}
+
+template<typename T>
 inline T SeqDB_GetBroken(const T * stdord_obj)
 {
-    return *stdord_obj;
+    return SeqDB_GetBrokenUnaligned(stdord_obj);
+}
+
+#else
+
+template<typename T>
+inline T SeqDB_GetStdOrd(const T * stdord_obj)
+{
+    return SeqDB_GetStdOrdUnaligned(stdord_obj);
+}
+
+template<typename T>
+inline T SeqDB_GetBroken(const T * stdord_obj)
+{ 
+    if (PTR_ALIGNED_TO_SELF_SIZE(stdord_obj)) {
+        return *stdord_obj;
+    } else {
+        return SeqDB_GetBrokenUnaligned(stdord_obj);
+    }
 }
 
 #endif
