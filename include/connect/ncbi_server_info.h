@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2001/09/19 15:57:27  lavr
+ * Server descriptor flag "L=" documented more precisely
+ *
  * Revision 6.25  2001/09/10 21:16:27  lavr
  * FIREWALL server type added, documented
  *
@@ -294,8 +297,9 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *    Local server:
  *       L=no           (default)
  *       L=yes
- *           Local servers are accessible only by direct clients of LBSMD,
- *           i.e. such servers cannot be accessed by means of DISPD.
+ *           Local servers are accessible only by local clients (from within
+ *           the Intranet) or direct clients of LBSMD, and are not accessible
+ *           by the outside users (i.e. via network dispatching).
  *
  *    Stateful server:
  *       S=no           (default)
