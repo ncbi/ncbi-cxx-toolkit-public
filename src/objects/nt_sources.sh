@@ -11,7 +11,7 @@ TOOL="$ROOT/compilers/msvc_prj/serial/datatool/DebugMT/datatool"
 
 OBJECTS="$ROOT/src/objects"
 
-MODULES='general biblio medline medlars pub pubmed seqloc seqalign seqblock seqfeat seqres seqset seq submit proj mmdb1 mmdb2 mmdb3 cdd ncbimime access featdef objprt seqcode'
+MODULES='general biblio medline medlars pub pubmed seqloc seqalign seqblock seqfeat seqres seqset seq submit proj mmdb1 mmdb2 mmdb3 cdd ncbimime access featdef objprt seqcode id1'
 
 for m in $MODULES; do \
     echo Updating $m
