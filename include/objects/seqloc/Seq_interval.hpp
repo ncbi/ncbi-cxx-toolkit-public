@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2004/10/25 18:00:42  shomrat
+ * + FlipStrand
+ *
  * Revision 1.13  2004/05/06 16:54:41  shomrat
  * Added methods to set partial left and right
  *
@@ -118,6 +121,9 @@ public:
     // set / remove e_Lim fuzz on left (5') or right (3') end
     void SetPartialLeft (bool val);
     void SetPartialRight(bool val);
+
+    // Flip the strand (e.g. plus to minus)
+    void FlipStrand(void);
         
 private:
     // Prohibit copy constructor & assignment operator

@@ -100,6 +100,9 @@ public:
     // Return true if all ranges have reverse strand
     bool IsReverseStrand(void) const;
 
+    // Flip the strand (e.g. plus to minus)
+    void FlipStrand(void);
+
     // Return start and stop positions of the seq-loc.
     // End may be less than Start for circular sequences.
     TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
@@ -472,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/10/25 18:00:42  shomrat
+ * + FlipStrand
+ *
  * Revision 1.39  2004/10/20 18:11:40  grichenk
  * Added CSeq_loc::ChangeToMix, ChangeToPackedInt and CSeq_loc_CI::IsSetStrand.
  *

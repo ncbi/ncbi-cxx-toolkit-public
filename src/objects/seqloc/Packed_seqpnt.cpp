@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2004/10/25 18:01:33  shomrat
+ * + FlipStrand
+ *
  * Revision 6.7  2004/10/22 15:12:28  kans
  * implemented functions for getting and setting partial flags for packed int and packed point
  *
@@ -176,6 +179,14 @@ TSeqPos CPacked_seqpnt::GetEnd(TSeqPos /*circular_length*/) const
         return GetPoints().front();
     }
     return GetPoints().back();
+}
+
+
+void CPacked_seqpnt::FlipStrand(void)
+{
+    if (IsSetStrand()) {
+        SetStrand(Reverse(GetStrand()));
+    }
 }
 
 

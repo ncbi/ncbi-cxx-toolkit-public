@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2004/10/25 18:00:42  shomrat
+ * + FlipStrand
+ *
  * Revision 1.7  2004/10/22 15:11:29  kans
  * added functions for getting and setting partial flags
  *
@@ -106,6 +109,9 @@ public:
     
     TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
     TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
+
+    // Flip the strand (e.g. plus to minus)
+    void FlipStrand(void);
 
 private:
     // Prohibit copy constructor and assignment operator

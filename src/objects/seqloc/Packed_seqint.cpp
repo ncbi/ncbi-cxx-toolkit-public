@@ -181,6 +181,13 @@ void CPacked_seqint::AddIntervals(const Tdata& ivals)
 }
 
 
+void CPacked_seqint::FlipStrand(void)
+{
+    NON_CONST_ITERATE (Tdata, it, Set()) {
+        (*it)->FlipStrand();
+    }
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -190,6 +197,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.10  2004/10/25 18:01:33  shomrat
+ * + FlipStrand
+ *
  * Revision 6.9  2004/10/22 16:01:20  kans
  * protect IsPartialXXX with Get empty test
  *

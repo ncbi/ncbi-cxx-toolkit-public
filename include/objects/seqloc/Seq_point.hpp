@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2004/10/25 18:00:42  shomrat
+ * + FlipStrand
+ *
  * Revision 1.8  2004/10/20 18:19:34  kans
  * added IsLeftOf, IsRightOf, SetLeftOf, and SetRightOf member functions for Int-fuzz.lim. tr and tl
  *
@@ -98,6 +101,9 @@ public:
     void SetPartialRight (bool val);
     void SetLeftOf       (bool val);
     void SetRightOf      (bool val);
+
+    // Flip the strand (e.g. plus to minus)
+    void FlipStrand(void);
         
 private:
     // Prohibit copy constructor and assignment operator

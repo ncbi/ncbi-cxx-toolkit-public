@@ -1633,6 +1633,31 @@ void CSeq_loc::Add(const CSeq_loc& other)
 }
 
 
+void CSeq_loc::FlipStrand(void)
+{
+    switch ( Which() ) {
+    case e_Int:
+        SetInt().FlipStrand();
+        break;
+    case e_Pnt:
+        SetPnt().FlipStrand();
+        break;
+    case e_Packed_int:
+        SetPacked_int().FlipStrand();
+        break;
+    case e_Packed_pnt:
+        SetPacked_pnt().FlipStrand();
+        break;
+    case e_Mix:
+        SetMix().FlipStrand();
+        break;
+
+    default:
+        break;
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -1640,6 +1665,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.47  2004/10/25 18:01:33  shomrat
+ * + FlipStrand
+ *
  * Revision 6.46  2004/10/22 15:12:28  kans
  * implemented functions for getting and setting partial flags for packed int and packed point
  *

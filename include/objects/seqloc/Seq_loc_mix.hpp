@@ -88,6 +88,9 @@ public:
     TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
     TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
 
+    // Flip the strand (e.g. plus to minus)
+    void FlipStrand(void);
+
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc_mix(const CSeq_loc_mix&);
@@ -110,6 +113,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2004/10/25 18:00:42  shomrat
+ * + FlipStrand
+ *
  * Revision 1.17  2004/09/01 15:33:44  grichenk
  * Check strand in GetStart and GetEnd. Circular length argument
  * made optional.

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2004/10/25 18:01:33  shomrat
+ * + FlipStrand
+ *
  * Revision 6.8  2004/05/19 17:26:25  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -177,6 +180,14 @@ void CSeq_interval::SetPartialRight(bool val)
         }
     }
     _ASSERT(val == IsPartialRight());
+}
+
+
+void CSeq_interval::FlipStrand(void)
+{
+    if (IsSetStrand()) {
+        SetStrand(Reverse(GetStrand()));
+    }
 }
 
 

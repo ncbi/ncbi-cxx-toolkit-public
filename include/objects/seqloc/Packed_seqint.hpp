@@ -89,6 +89,9 @@ public:
     TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
     TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
 
+    // Flip the strand (e.g. plus to minus)
+    void FlipStrand(void);
+
 private:
     // Prihibit copy constructor & assignment operator
     CPacked_seqint(const CPacked_seqint&);
@@ -116,6 +119,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/10/25 18:00:42  shomrat
+ * + FlipStrand
+ *
  * Revision 1.9  2004/10/22 15:11:29  kans
  * added functions for getting and setting partial flags
  *

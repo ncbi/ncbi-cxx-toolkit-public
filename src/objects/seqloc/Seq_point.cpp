@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2004/10/25 18:01:33  shomrat
+ * + FlipStrand
+ *
  * Revision 6.8  2004/10/20 18:20:12  kans
  * added IsLeftOf, IsRightOf, SetLeftOf, and SetRightOf member functions for Int-fuzz.lim. tr and tl
  *
@@ -229,6 +232,13 @@ void CSeq_point::SetRightOf(bool val)
     _ASSERT(val == IsRightOf());
 }
 
+
+void CSeq_point::FlipStrand(void)
+{
+    if (IsSetStrand()) {
+        SetStrand(Reverse(GetStrand()));
+    }
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
