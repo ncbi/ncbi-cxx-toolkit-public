@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2000/11/22 22:04:32  vakatov
+ * Added special flag "-h" and special exception CArgHelpException to
+ * force USAGE printout in a standard manner
+ *
  * Revision 6.12  2000/11/22 19:40:51  vakatov
  * s_Test3() -- fixed:  Exist() --> IsProvided()
  *
@@ -447,6 +451,11 @@ int main(int argc, const char* argv[])
         cout << endl << string(72, '=') << endl;
         string str;
         cout << args->Print(str) << endl;
+    }
+    catch (CArgHelpException&) {
+        // Print USAGE
+        string str;
+        cerr << arg_desc.PrintUsage(str) << endl;
     }
     catch (exception& e) {
         // Print USAGE

@@ -34,6 +34,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.23  2000/11/22 22:04:31  vakatov
+ * Added special flag "-h" and special exception CArgHelpException to
+ * force USAGE printout in a standard manner
+ *
  * Revision 1.22  2000/11/17 22:04:30  vakatov
  * CArgDescriptions::  Switch the order of optional args in methods
  * AddOptionalKey() and AddPlain(). Also, enforce the default value to
@@ -1017,13 +1021,17 @@ string& CArgs::Print(string& str) const
 //  CArgDescriptions::
 //
 
-CArgDescriptions::CArgDescriptions(void)
+CArgDescriptions::CArgDescriptions(bool auto_help)
     : m_Args(),
       m_PlainArgs(),
       m_Constraint(eEqual),
-      m_ConstrArgs(0)
+      m_ConstrArgs(0),
+      m_AutoHelp(auto_help)
 {
     SetUsageContext("PROGRAM", kEmptyStr);
+    if ( m_AutoHelp ) {
+        AddFlag("h", "Print this USAGE message");
+    }
 }
 
 
@@ -1321,6 +1329,17 @@ void CArgDescriptions::x_PreCheck(void) const
             }
         }
     }    
+}
+
+
+void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
+{
+    static const string s_H("-h");
+    _ASSERT(m_AutoHelp);
+
+    if (s_H.compare(arg) == 0) {
+        throw CArgHelpException();
+    }
 }
 
 
@@ -1727,6 +1746,12 @@ CArgs* CArgDescriptions::CreateArgs(int argc, const char* argv[])
 {
     // Pre-processing consistency checks
     x_PreCheck();
+    // Check for "-h" flag
+    if ( m_AutoHelp ) {
+        for (int i = 1;  i < argc;  i++) {
+            x_CheckAutoHelp(argv[i]);
+        }
+    }
     // Create new "CArgs" to fill up, and parse cmd.-line args into it
     auto_ptr<CArgs> args(new CArgs());
     unsigned n_plain = 0;
@@ -1747,6 +1772,12 @@ CArgs* CArgDescriptions::CreateArgs(SIZE_TYPE argc, const CNcbiArguments& argv)
 {
     // Pre-processing consistency checks
     x_PreCheck();
+    // Check for "-h" flag
+    if ( m_AutoHelp ) {
+        for (SIZE_TYPE i = 1;  i < argc;  i++) {
+            x_CheckAutoHelp(argv[i]);
+        }
+    }
     // Create new "CArgs" to fill up, and parse cmd.-line args into it
     auto_ptr<CArgs> args(new CArgs());
     unsigned n_plain = 0;

@@ -37,6 +37,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2000/11/22 22:04:29  vakatov
+ * Added special flag "-h" and special exception CArgHelpException to
+ * force USAGE printout in a standard manner
+ *
  * Revision 1.12  2000/11/17 22:04:28  vakatov
  * CArgDescriptions::  Switch the order of optional args in methods
  * AddOptionalKey() and AddPlain(). Also, enforce the default value to
@@ -134,6 +138,13 @@ class CArgException : public runtime_error
 public:
     CArgException(const string& what) THROWS_NONE;
     CArgException(const string& what, const string& arg_value) THROWS_NONE;
+};
+
+
+class CArgHelpException : public CArgException
+{
+public:
+    CArgHelpException(void) THROWS_NONE : CArgException(kEmptyStr) {}
 };
 
 
@@ -263,8 +274,10 @@ public:
 class CArgDescriptions
 {
 public:
-    // 'ctors
-    CArgDescriptions(void);
+    // If "auto_help" is passed TRUE, then a special flag "-h"
+    // will be added to the list of accepted arguments. Passing "-h" in
+    // the command line will printout USAGE and ignore all other passed args.
+    CArgDescriptions(bool auto_help = true);
     ~CArgDescriptions(void);
 
     // Available argument types
@@ -396,10 +409,12 @@ private:
     string    m_UsageName;         // program name
     string    m_UsageDescription;  // program description
     SIZE_TYPE m_UsageWidth;        // max. length of a usage line
+    bool      m_AutoHelp;          // special flag "-h" activated
 
     // internal methods
     void x_AddDesc(const string& name, CArgDesc& arg);
     void x_PreCheck(void) const;
+    void x_CheckAutoHelp(const string& arg) const;
     bool x_CreateArg(const string& arg1, bool have_arg2, const string& arg2,
                      unsigned* n_plain, CArgs& args) const;
     void x_PostCheck(CArgs& args, unsigned n_plain) const;
@@ -409,6 +424,7 @@ public:
     // Parse cmd.-line arguments, and to create "CArgs" out
     // of the passed cmd.-line arguments "argc" and "argv".
     // Throw an exception on error.
+    // Throw CArgHelpException if USAGE printout was requested ("-h" flag).
     // NOTE:  you can deallocate the resulting "CArgs" object using 'delete'.
     //
     // Examples:
@@ -429,6 +445,12 @@ public:
     {
         // Pre-processing consistency checks
         x_PreCheck();
+        // Check for "-h" flag
+        if ( m_AutoHelp ) {
+            for (TSize i = 1;  i < argc;  i++) {
+                x_CheckAutoHelp(argv[i]);
+            }
+        }
         // Create new "CArgs" to fill up, and parse cmd.-line args into it
         auto_ptr<CArgs> args(new CArgs());
         unsigned n_plain = 0;
