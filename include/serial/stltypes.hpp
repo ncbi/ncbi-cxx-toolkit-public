@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/07/10 19:32:05  vasilche
+* Avoid one more internal compiler error of WorkShop C++.
+*
 * Revision 1.45  2000/07/10 19:01:00  vasilche
 * Avoid internal WorkShop C++ compiler error.
 *
@@ -282,7 +285,8 @@ public:
         }
     TObjectPtr GetElementPtr(void) const
         {
-            return &*m_Iterator;
+            typename Container::value_type& element = *m_Iterator;
+            return &element;
         }
     void Erase(void)
         {
@@ -320,7 +324,8 @@ public:
         }
     TObjectPtr GetElementPtr(void) const
         {
-            return const_cast<TObjectPtr>(TConstObjectPtr(&*m_Iterator));
+            const typename Container::value_type& element = *m_Iterator;
+            return const_cast<TObjectPtr>(TConstObjectPtr(&element));
         }
     void Erase(void)
         {
@@ -514,7 +519,8 @@ public:
 
     virtual void WriteElement(CObjectOStream& out)
         {
-            m_DataTypeInfo->WriteData(out, &*m_Iterator);
+            const typename List::value_type& element = *m_Iterator;
+            m_DataTypeInfo->WriteData(out, &element);
             m_NoMoreElements = ++m_Iterator == m_End;
         }
 
@@ -625,7 +631,9 @@ public:
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
             for ( TConstIterator i1 = l1.begin(), i2 = l2.begin();
                   i1 != l1.end(); ++i1, ++i2 ) {
-                if ( !dataTypeInfo->Equals(&*i1, &*i2) )
+                const typename List::value_type& element1 = *i1;
+                const typename List::value_type& element2 = *i1;
+                if ( !dataTypeInfo->Equals(&element1, &element2) )
                     return false;
             }
             return true;
@@ -643,7 +651,8 @@ public:
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
             size_t index = 0;
             for ( TConstIterator i = from.begin(); i != from.end(); ++i ) {
-                dataTypeInfo->Assign(AddEmpty(dst, index++), &*i);
+                const typename List::value_type& element = *i;
+                dataTypeInfo->Assign(AddEmpty(dst, index++), &element);
             }
         }
 
@@ -1028,7 +1037,9 @@ public:
                 return false;
             for ( TConstIterator i1 = o1.begin(), i2 = o2.begin();
                   i1 != o1.end(); ++i1, ++i2 ) {
-                if ( !EqualElements(&*i1, &*i2) )
+                const typename Map::value_type& element1 = *i1;
+                const typename Map::value_type& element2 = *i2;
+                if ( !EqualElements(&element1, &element2) )
                     return false;
             }
             return true;
