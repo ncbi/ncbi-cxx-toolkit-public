@@ -166,7 +166,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    }
 
    /* Allocate subject sequence block once for the entire run */
-   subject = (BLAST_SequenceBlkPtr) Malloc(sizeof(BLAST_SequenceBlk));
+   subject = (BLAST_SequenceBlkPtr) MemNew(sizeof(BLAST_SequenceBlk));
 
    /* iterate over all subject sequences */
    for (oid = 0; oid < numseqs; oid++) {
@@ -353,3 +353,55 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    return total_hits;
 }
 
+Int2 BLAST_SearchEngine(CharPtr blast_program, BLAST_SequenceBlkPtr query, 
+        BlastQueryInfoPtr query_info,
+        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, 
+        BLAST_ScoreBlkPtr sbp, BlastScoringOptionsPtr score_options, 
+        LookupTableOptionsPtr lookup_options, ValNodePtr lookup_segments,
+        BlastInitialWordOptionsPtr word_options, 
+        BlastExtensionOptionsPtr ext_options, 
+        BlastEffectiveLengthsOptionsPtr eff_len_options,
+        BlastHitSavingOptionsPtr hit_options, 
+        BlastInitialWordParametersPtr PNTR word_params_ptr, 
+        BlastExtensionParametersPtr PNTR ext_params_ptr, 
+        BlastResultsPtr PNTR results, BlastReturnStatPtr return_stats)
+{
+   BlastExtensionParametersPtr ext_params = NULL;
+   BlastInitialWordParametersPtr word_params = NULL;
+   BlastHitSavingParametersPtr hit_params = NULL; 
+   Int4 total_hits;
+   LookupTableWrapPtr lookup = NULL;
+   BLAST_ExtendWordPtr ewp = NULL;
+   BlastGapAlignStructPtr gap_align = NULL;
+   Int2 status = 0;
+
+   BLAST_SetUpAuxStructures(blast_program, score_options, eff_len_options,
+      lookup_options, word_options, ext_options, hit_options, query,
+      lookup_segments, query_info, sbp, rdfp, subject, &lookup, &ewp,
+      &gap_align, &word_params, &ext_params, &hit_params);
+
+   /* The main part of the search, producing intermediate results, with 
+      or without traceback */
+   total_hits = 
+      BLAST_SearchEngineCore(query, lookup, query_info, rdfp, subject,
+         eff_len_options->dbseq_num, ewp, gap_align, 
+         score_options, word_params, ext_params, hit_params, results, 
+         return_stats);
+
+   BlastExtendWordFree(ewp);
+
+   status = BLAST_ComputeTraceback(*results, query, query_info, rdfp, 
+               subject, gap_align, score_options, ext_params, hit_params);
+
+   /* Do not destruct score block here */
+   gap_align->sbp = NULL;
+   BLAST_GapAlignStructFree(gap_align);
+
+   BlastLookupTableDestruct(lookup);
+   query = BlastSequenceBlkFree(query);
+   hit_params = MemFree(hit_params);
+   *ext_params_ptr = ext_params;
+   *word_params_ptr = word_params;
+   
+   return 0;
+}

@@ -77,6 +77,42 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
         BlastResultsPtr PNTR results_ptr,
 	BlastReturnStatPtr return_stats);
 
+
+/** The high level function performing the BLAST search after all the setup
+ * has been done.
+ * @param blast_program Type of BLAST program (blastn, blastp, etc.) [in]
+ * @param query The query sequence block [in]
+ * @param query_info Additional query information [in]
+ * @param rdfp Structure containing BLAST database [in]
+ * @param subject_blk Subject sequence in two sequences case [in]
+ * @param sbp Scoring statistical information [in]
+ * @param score_options Hit scoring options [in]
+ * @param lookup_options Lookup table options [in]
+ * @param lookup_segments Query segments for which lookup table should be 
+ *                        created [in]
+ * @param word_options Options for processing initial word hits [in]
+ * @param ext_options Options for the gapped extension [in]
+ * @param eff_len_options Options for calculation of the effective search 
+ *                        space [in]
+ * @param hit_options Options for saving the HSPs [in]
+ * @param word_params_ptr Parameters for processing initial word hits [out]
+ * @param ext_params_ptr Parameters for the gapped extension [out]
+ * @param results Structure holding all saved results [out]
+ * @param return_stats Return statistics numbers [out]
+ */
+Int2 BLAST_SearchEngine(CharPtr blast_program, BLAST_SequenceBlkPtr query, 
+        BlastQueryInfoPtr query_info,
+        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject_blk, 
+        BLAST_ScoreBlkPtr sbp, BlastScoringOptionsPtr score_options, 
+        LookupTableOptionsPtr lookup_options, ValNodePtr lookup_segments,
+        BlastInitialWordOptionsPtr word_options, 
+        BlastExtensionOptionsPtr ext_options, 
+        BlastEffectiveLengthsOptionsPtr eff_len_options,
+        BlastHitSavingOptionsPtr hit_options, 
+        BlastInitialWordParametersPtr PNTR word_params_ptr, 
+        BlastExtensionParametersPtr PNTR ext_params_ptr, 
+        BlastResultsPtr PNTR results, BlastReturnStatPtr return_stats);
+
 #ifdef __cplusplus
 }
 #endif

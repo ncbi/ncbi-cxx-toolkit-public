@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.11  2003/05/01 15:33:39  dondosha
+ * Reorganized the setup of BLAST search
+ *
  * Revision 1.10  2003/04/24 14:27:35  dondosha
  * Correction for latest changes
  *
@@ -186,35 +189,37 @@ BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options)
 *****************************************************************************/
 
 Int2
-BlastQuerySetUpOptionsNew(const Char *program, CharPtr filter_string,
-                          Uint1 strand_option, QuerySetUpOptionsPtr *options)
+BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options)
 {
-	*options = (QuerySetUpOptionsPtr) MemNew(sizeof(QuerySetUpOptions));
-
-	if (*options == NULL)
-		return 1;
-
-	if (StringCmp("blastn", program) ==0) {
-           if (strand_option)
-              (*options)->strand_option = strand_option;
-           else 
-              (*options)->strand_option = Seq_strand_both;
-        }
-	/* "L" indicates low-complexity (seg for proteins, 
-           dust for nucleotides). */
-        if (!filter_string || !StringICmp(filter_string, "T")) {
-           if (StringICmp(program, "blastn") == 0)
-              (*options)->filter_string = StringSave("D");
-           else
-              (*options)->filter_string = StringSave("S");
-        } else {
-           (*options)->filter_string = StringSave(filter_string); 
-        }
-
-	return 0;
-
+   *options = (QuerySetUpOptionsPtr) MemNew(sizeof(QuerySetUpOptions));
+   
+   if (*options == NULL)
+      return 1;
+   
+   return 0;
 }
 
+Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
+        CharPtr program, CharPtr filter_string, Uint1 strand_option)
+{
+   if (options == NULL)
+      return 1;
+   
+   if (strand_option && !StringCmp("blastn", program)) {
+      options->strand_option = strand_option;
+   }
+   /* "L" indicates low-complexity (seg for proteins, 
+      dust for nucleotides). */
+   if (!filter_string || !StringICmp(filter_string, "T")) {
+      if (StringICmp(program, "blastn") == 0)
+         options->filter_string = StringSave("D");
+      else
+         options->filter_string = StringSave("S");
+   } else {
+      options->filter_string = StringSave(filter_string); 
+   }
+   return 0;
+}
 
 /**************************************************************************
 
@@ -240,9 +245,7 @@ BlastInitialWordOptionsFree(BlastInitialWordOptionsPtr options)
 *****************************************************************************/
 
 Int2
-BlastInitialWordOptionsNew(const Char *program, Boolean greedy, 
-   Int4 window_size, Boolean variable_wordsize, Boolean ag_blast,
-   Boolean mb_lookup, FloatHi xdrop_ungapped, 
+BlastInitialWordOptionsNew(const Char *program, 
    BlastInitialWordOptionsPtr *options)
 {
    *options = 
@@ -254,28 +257,45 @@ BlastInitialWordOptionsNew(const Char *program, Boolean greedy,
       (*options)->window_size = BLAST_WINDOW_SIZE_PROT;
       (*options)->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
    } else {
-      if (!greedy) {
-         (*options)->extend_word_method |= EXTEND_WORD_UNGAPPED;
-         (*options)->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
-      }
       (*options)->window_size = BLAST_WINDOW_SIZE_NUCL;
-   }
-
-   if (window_size != 0)
-      (*options)->window_size = window_size;
-   if (xdrop_ungapped != 0)
-      (*options)->x_dropoff = xdrop_ungapped;
-   if (variable_wordsize) 
-      (*options)->extend_word_method |= EXTEND_WORD_VARIABLE_SIZE;
-
-   if (ag_blast) {
-      (*options)->extend_word_method |= EXTEND_WORD_AG;
-   } else if (mb_lookup) {
-      (*options)->extend_word_method |= EXTEND_WORD_MB_STACKS;
    }
 
    return 0;
 }
+
+Int2
+BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options, 
+   const Char *program, Boolean greedy, Int4 window_size, 
+   Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
+   FloatHi xdrop_ungapped)
+{
+   if (!options)
+      return 1;
+
+   if (!StringCmp(program, "blastn")) {	/* protein-protein options. */
+      if (!greedy) {
+         options->extend_word_method |= EXTEND_WORD_UNGAPPED;
+         options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
+      }
+   }
+
+   if (window_size != 0)
+      options->window_size = window_size;
+   if (xdrop_ungapped != 0)
+      options->x_dropoff = xdrop_ungapped;
+   if (variable_wordsize) 
+      options->extend_word_method |= EXTEND_WORD_VARIABLE_SIZE;
+
+   if (ag_blast) {
+      options->extend_word_method |= EXTEND_WORD_AG;
+   } else if (mb_lookup) {
+      options->extend_word_method |= EXTEND_WORD_MB_STACKS;
+   }
+
+   return 0;
+}
+
+
 
 /*************************************************************************
 
@@ -305,7 +325,8 @@ Int2
 BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options, 
    BlastHitSavingParametersPtr hit_params, 
    BlastExtensionParametersPtr ext_params, BLAST_ScoreBlkPtr sbp, 
-   BlastQueryInfoPtr query_info, FloatHi avglen, 
+   BlastQueryInfoPtr query_info, 
+   BlastEffectiveLengthsOptionsPtr eff_len_options, 
    BlastInitialWordParametersPtr *parameters)
 {
    Int4 context = query_info->first_context;
@@ -314,6 +335,7 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
    BLAST_KarlinBlkPtr kbp;
    FloatHi qlen;
    BlastHitSavingOptionsPtr hit_options;
+   FloatHi avglen;
 
    if (!word_options || !hit_params || !sbp || !sbp->kbp_std[context])
       return 8;
@@ -337,6 +359,9 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
    /* Calculate score cutoff corresponding to a fixed e-value (1e-5);
       If it is smaller, then use this one */
    qlen = query_info->context_offsets[query_info->last_context+1] - 1;
+
+   avglen = ((FloatHi) eff_len_options->db_length) / 
+      eff_len_options->dbseq_num;
 
    BlastCutoffs(&s2, &e2, kbp, MIN(avglen, qlen), avglen, TRUE);
 
@@ -383,8 +408,7 @@ BlastExtensionOptionsFree(BlastExtensionOptionsPtr options)
 *****************************************************************************/
 
 Int2
-BlastExtensionOptionsNew(const Char *program, Boolean greedy, 
-   FloatHi x_dropoff, FloatHi x_dropoff_final, 
+BlastExtensionOptionsNew(const Char *program, 
    BlastExtensionOptionsPtr *options)
 
 {
@@ -406,29 +430,37 @@ BlastExtensionOptionsNew(const Char *program, Boolean greedy,
 	}
 	else
 	{
-		if (greedy)
-		{
-			(*options)->gap_x_dropoff = 
-                           BLAST_GAP_X_DROPOFF_GREEDY;
-			(*options)->algorithm_type = EXTEND_GREEDY;
-		}
-		else
-		{
-			(*options)->gap_x_dropoff = 
-                           BLAST_GAP_X_DROPOFF_NUCL;
-			(*options)->gap_x_dropoff_final = 
-                           BLAST_GAP_X_DROPOFF_FINAL_NUCL;
-			(*options)->algorithm_type = EXTEND_DYN_PROG;
-		}
 		(*options)->gap_trigger = BLAST_GAP_TRIGGER_NUCL;
 	}
 
-        if (x_dropoff)
-           (*options)->gap_x_dropoff = x_dropoff;
-        if (x_dropoff_final)
-           (*options)->gap_x_dropoff_final = x_dropoff_final;
-
 	return 0;
+}
+
+Int2
+BLAST_FillExtensionOptions(BlastExtensionOptionsPtr options, 
+   const Char *program, Boolean greedy, FloatHi x_dropoff, 
+   FloatHi x_dropoff_final)
+{
+   if (!options)
+      return 1;
+
+   if (!StringCmp(program, "blastn")) {
+      if (greedy) {
+         options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
+         options->algorithm_type = EXTEND_GREEDY;
+      }	else {
+         options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_NUCL;
+         options->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
+         options->algorithm_type = EXTEND_DYN_PROG;
+      }
+   }
+
+   if (x_dropoff)
+      options->gap_x_dropoff = x_dropoff;
+   if (x_dropoff_final)
+      options->gap_x_dropoff_final = x_dropoff_final;
+
+   return 0;
 
 }
 
@@ -528,60 +560,63 @@ BlastScoringOptionsFree(BlastScoringOptionsPtr options)
 *******************************************************************************/
 
 Int2 
-BlastScoringOptionsNew(const Char *program, Boolean is_megablast, 
-   Int4 penalty, Int4 reward, CharPtr matrix, Int4 gap_open, Int4 gap_extend,
-   BlastScoringOptionsPtr *options)
-
+BlastScoringOptionsNew(const Char *program, BlastScoringOptionsPtr *options)
 {
-	*options = (BlastScoringOptionsPtr) MemNew(sizeof(BlastScoringOptions));
+   *options = (BlastScoringOptionsPtr) MemNew(sizeof(BlastScoringOptions));
 
-	if (*options == NULL)
-		return 1;
+   if (*options == NULL)
+      return 1;
+   
+   BlastProgram2Number(program, &((*options)->program_number));
+   
+   if (StringCmp(program, "blastn")) {	/* protein-protein options. */
+      (*options)->shift_pen = INT2_MAX;
+      (*options)->is_ooframe = FALSE;
+      (*options)->gap_open = BLAST_GAP_OPEN_PROT;
+      (*options)->gap_extend = BLAST_GAP_EXTN_PROT;
+   } else {	/* nucleotide-nucleotide options. */
+      (*options)->penalty = BLAST_PENALTY;
+      (*options)->reward = BLAST_REWARD;
+   }
+   (*options)->decline_align = INT2_MAX;
+   (*options)->gapped_calculation = TRUE;
+   
+   return 0;
+}
 
-	BlastProgram2Number(program, &((*options)->program_number));
+Int2 
+BLAST_FillScoringOptions(BlastScoringOptionsPtr options, const Char *program, 
+   Boolean greedy_extension, Int4 penalty, Int4 reward, CharPtr matrix, 
+   Int4 gap_open, Int4 gap_extend)
+{
+   if (!options)
+      return 1;
 
-	if (StringCmp(program, "blastn"))	/* protein-protein options. */
-	{
-           if (matrix)
-              (*options)->matrix = StringSave(matrix);
-           else
-              (*options)->matrix = StringSave("BLOSUM62");
+   if (StringCmp(program, "blastn")) {	/* protein-protein options. */
+      if (matrix)
+         options->matrix = StringSave(matrix);
+      else
+         options->matrix = StringSave("BLOSUM62");
+   } else {	/* nucleotide-nucleotide options. */
+      if (penalty)
+         options->penalty = penalty;
+      if (reward)
+         options->reward = reward;
 
-		(*options)->shift_pen = INT2_MAX;
-		(*options)->is_ooframe = FALSE;
-		(*options)->gap_open = BLAST_GAP_OPEN_PROT;
-		(*options)->gap_extend = BLAST_GAP_EXTN_PROT;
-	}
-	else	/* nucleotide-nucleotide options. */
-	{
-           if (penalty)
-              (*options)->penalty = penalty;
-           else
-              (*options)->penalty = BLAST_PENALTY;
-           if (reward)
-              (*options)->reward = reward;
-           else
-              (*options)->reward = BLAST_REWARD;
+      if (greedy_extension) {
+         options->gap_open = BLAST_GAP_OPEN_MEGABLAST;
+         options->gap_extend = BLAST_GAP_EXTN_MEGABLAST;
+      }	else {
+         options->gap_open = BLAST_GAP_OPEN_NUCL;
+         options->gap_extend = BLAST_GAP_EXTN_NUCL;
+      }
+   }
+   if (gap_open)
+      options->gap_open = gap_open;
+   if (gap_extend)
+      options->gap_extend = gap_extend;
 
-		if (is_megablast)
-		{
-			(*options)->gap_open = BLAST_GAP_OPEN_MEGABLAST;
-			(*options)->gap_extend = BLAST_GAP_EXTN_MEGABLAST;
-		}
-		else
-		{
-			(*options)->gap_open = BLAST_GAP_OPEN_NUCL;
-			(*options)->gap_extend = BLAST_GAP_EXTN_NUCL;
-		}
-	}
-        (*options)->decline_align = INT2_MAX;
-	(*options)->gapped_calculation = TRUE;
-        if (gap_open)
-           (*options)->gap_open = gap_open;
-        if (gap_extend)
-           (*options)->gap_extend = gap_extend;
-
-	return 0;
+   return 0;
 }
 
 /*
@@ -675,47 +710,54 @@ BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptionsPtr options)
 *******************************************************************************/
 
 Int2 
-BlastEffectiveLengthsOptionsNew(CharPtr database, Boolean is_protein, Int4 dbseq_num, Int8 db_length,
-	Int8 searchsp_eff, BlastEffectiveLengthsOptionsPtr *options)
+BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptionsPtr *options)
 
 {
-	*options = (BlastEffectiveLengthsOptionsPtr) MemNew(sizeof(BlastEffectiveLengthsOptions));
+   *options = (BlastEffectiveLengthsOptionsPtr)
+      MemNew(sizeof(BlastEffectiveLengthsOptions));
 
-	if (*options == NULL)
-		return 1;
+   if (*options == NULL)
+      return 1;
+   
+   return 0;
+}
 
-	if (searchsp_eff)
-	{	/* dbnum_seq and dblen are used to calculate effective search space, so 
-		if it is already set don't bother with those. */
-		(*options)->searchsp_eff = searchsp_eff;
-		return 0;
-	}
+Int2 
+BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options, 
+   CharPtr database, Boolean is_protein, Int4 dbseq_num, Int8 db_length,
+   Int8 searchsp_eff)
+{
+   if (!options)
+      return 1;
 
-	/* User provided values if set, otherwise use real ones. */
-	if (dbseq_num==0 || db_length==0)
-	{
-		if (database)
-		{
-			ReadDBFILEPtr rdfp = readdb_new_ex(database, is_protein, FALSE);
-			if (rdfp == NULL)
-				return 2;
-			readdb_get_totals_ex(rdfp, &((*options)->db_length),
-                           &((*options)->dbseq_num), TRUE);
-			rdfp = readdb_destruct(rdfp);
-		}
-		else
-		{
-			return 3;
-		}
-	}
+   if (searchsp_eff) {	
+      /* dbnum_seq and dblen are used to calculate effective search space, so 
+         if it is already set don't bother with those. */
+      options->searchsp_eff = searchsp_eff;
+      return 0;
+   }
 
-	if (dbseq_num)
-		(*options)->dbseq_num = dbseq_num;
+   /* User provided values if set, otherwise use real ones. */
+   if (dbseq_num==0 || db_length==0) {
+      if (database) {
+         ReadDBFILEPtr rdfp = readdb_new_ex(database, is_protein, FALSE);
+         if (rdfp == NULL)
+            return 2;
+         readdb_get_totals_ex(rdfp, &options->db_length,
+                              &options->dbseq_num, TRUE);
+         rdfp = readdb_destruct(rdfp);
+      }	else {
+         return 3;
+      }
+   }
 
-	if (db_length)
-		(*options)->db_length = db_length;
+   if (dbseq_num)
+      options->dbseq_num = dbseq_num;
 
-	return 0;
+   if (db_length)
+      options->db_length = db_length;
+
+   return 0;
 }
 
 /*******************************************************************************
@@ -744,76 +786,76 @@ LookupTableOptionsFree(LookupTableOptionsPtr options)
 *******************************************************************************/
 
 Int2 
-LookupTableOptionsNew(const Char *program, Boolean is_megablast, Int4 threshold,
-   Int2 word_size, Boolean ag_blast, Boolean variable_wordsize, 
-   LookupTableOptionsPtr *options)
-
+LookupTableOptionsNew(const Char *program, LookupTableOptionsPtr *options)
 {
-	*options = (LookupTableOptionsPtr) MemNew(sizeof(LookupTableOptions));
+   *options = (LookupTableOptionsPtr) MemNew(sizeof(LookupTableOptions));
+   
+   if (*options == NULL)
+      return 1;
+   
+   BlastProgram2Number(program, &((*options)->program_number));
+   
+   if (StringCmp("blastn", program)) {
+      (*options)->word_size = BLAST_WORDSIZE_PROT;
+      (*options)->alphabet_size = 25;
+      (*options)->matrixname = StringSave("BLOSUM62");
+      (*options)->lut_type = AA_LOOKUP_TABLE;
+      
+      if (StringCmp("blastp", program) == 0)
+         (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
+      else if (StringCmp("blastx", program) == 0)
+         (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTX;
+      else if (StringCmp("tblastn", program) == 0)
+         (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
+      else if (StringCmp("tblastx", program) == 0)
+         (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
+      
+   } else {
+      (*options)->alphabet_size = 16;
+   }
 
-	if (*options == NULL)
-		return 1;
+   return 0;
+}
 
-	BlastProgram2Number(program, &((*options)->program_number));
+Int2 
+BLAST_FillLookupTableOptions(LookupTableOptionsPtr options, 
+   const Char *program, Boolean is_megablast, Int4 threshold,
+   Int2 word_size, Boolean ag_blast, Boolean variable_wordsize)
+{
+   if (!options)
+      return 1;
 
-	if (StringCmp("blastn", program))
-	{
-		(*options)->word_size = BLAST_WORDSIZE_PROT;
-		(*options)->alphabet_size = 25;
-		(*options)->matrixname = StringSave("BLOSUM62");
-		(*options)->lut_type = AA_LOOKUP_TABLE;
-		
-		if (StringCmp("blastp", program) == 0)
-			(*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
-		else if (StringCmp("blastx", program) == 0)
-			(*options)->threshold = BLAST_WORD_THRESHOLD_BLASTX;
-		else if (StringCmp("tblastn", program) == 0)
-			(*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
-		else if (StringCmp("tblastx", program) == 0)
-			(*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
-		
-	}
-	else
-	{
-                (*options)->alphabet_size = 16;
+   if (!StringCmp("blastn", program)) {
+      if (is_megablast)	{
+         options->word_size = BLAST_WORDSIZE_MEGABLAST;
+         options->lut_type = MB_LOOKUP_TABLE;
+         options->max_positions = INT4_MAX;
+      }	else {
+         options->lut_type = NA_LOOKUP_TABLE;
+         options->word_size = BLAST_WORDSIZE_NUCL;
+      }
+   }
 
-		if (is_megablast)
-		{
-			(*options)->word_size = BLAST_WORDSIZE_MEGABLAST;
-			(*options)->lut_type = MB_LOOKUP_TABLE;
-                        (*options)->max_positions = INT4_MAX;
-		}
-		else
-		{
-                        (*options)->lut_type = NA_LOOKUP_TABLE;
-			(*options)->word_size = BLAST_WORDSIZE_NUCL;
-		}
-	}
-
-        if (threshold)
-           (*options)->threshold = threshold;
-        if (word_size)
-           (*options)->word_size = word_size;
-        if (!StringCmp("blastn", program)) {
-           if (!ag_blast) {
-              (*options)->scan_step = COMPRESSION_RATIO;
-           } else if (variable_wordsize) {
-              if (is_megablast)
-                 (*options)->scan_step = 
-                    (*options)->word_size - 12 + COMPRESSION_RATIO;
-              else
-                 (*options)->scan_step = 
-                    (*options)->word_size - 8 + COMPRESSION_RATIO;
-           } else {
-              if (is_megablast)
-                 (*options)->scan_step = 
-                    (*options)->word_size - 12 + 1;
-              else
-                 (*options)->scan_step = 
-                    (*options)->word_size - 8 + 1;
-           }
-        }
-	return 0;
+   if (threshold)
+      options->threshold = threshold;
+   if (word_size)
+      options->word_size = word_size;
+   if (!StringCmp("blastn", program)) {
+      if (!ag_blast) {
+         options->scan_step = COMPRESSION_RATIO;
+      } else if (variable_wordsize) {
+         if (is_megablast)
+            options->scan_step = options->word_size - 12 + COMPRESSION_RATIO;
+         else
+            options->scan_step = options->word_size - 8 + COMPRESSION_RATIO;
+      } else {
+         if (is_megablast)
+            options->scan_step = options->word_size - 12 + 1;
+         else
+            options->scan_step = options->word_size - 8 + 1;
+      }
+   }
+   return 0;
 }
 
 /**********************************************************
@@ -903,31 +945,39 @@ BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options)
 
 *****************************************************************************/
 
-Int2
-BlastHitSavingOptionsNew(const Char *program, Boolean is_gapped, FloatHi evalue,
-   Int4 hitlist_size, BlastHitSavingOptionsPtr *options)
-
+Int2 BlastHitSavingOptionsNew(const Char *program, 
+        BlastHitSavingOptionsPtr *options)
 {
-	*options = (BlastHitSavingOptionsPtr) MemNew(sizeof(BlastHitSavingOptions));
+   *options = (BlastHitSavingOptionsPtr) MemNew(sizeof(BlastHitSavingOptions));
+   
+   if (*options == NULL)
+      return 1;
 
-	if (*options == NULL)
-		return 1;
+   BlastProgram2Number(program, &((*options)->program_number));
 
-	BlastProgram2Number(program, &((*options)->program_number));
+   (*options)->hitlist_size = 500;
+   (*options)->expect_value = BLAST_EXPECT_VALUE;
 
-	(*options)->is_gapped = is_gapped;
-        if (hitlist_size)
-           (*options)->hitlist_size = hitlist_size;
-        else
-           (*options)->hitlist_size = 500;
-        if (evalue)
-           (*options)->expect_value = evalue;
-        else
-           (*options)->expect_value = BLAST_EXPECT_VALUE;
+   /* other stuff?? */
+   
+   return 0;
 
-	/* other stuff?? */
+}
 
-	return 0;
+Int2
+BLAST_FillHitSavingOptions(BlastHitSavingOptionsPtr options, 
+   const Char *program, Boolean is_gapped, FloatHi evalue, Int4 hitlist_size)
+{
+   if (!options)
+      return 1;
+
+   options->is_gapped = is_gapped;
+   if (hitlist_size)
+      options->hitlist_size = hitlist_size;
+   if (evalue)
+      options->expect_value = evalue;
+
+   return 0;
 
 }
 
@@ -991,6 +1041,7 @@ BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options,
 {
    BlastHitSavingParametersPtr params;
    BLAST_KarlinBlkPtr kbp;
+   FloatHi evalue = options->expect_value;
 
    if (!options || !parameters)
       return 1;
@@ -1013,9 +1064,8 @@ BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options,
    if (options->cutoff_score > 0) {
       params->cutoff_score = options->cutoff_score;
    } else {
-      BlastCutoffs_simple(&(params->cutoff_score), &(options->expect_value), 
-         kbp, query_info->eff_searchsp_array[query_info->first_context], 
-         FALSE);
+      BlastCutoffs_simple(&(params->cutoff_score), &evalue, kbp, 
+         query_info->eff_searchsp_array[query_info->first_context], FALSE);
    }
 
    return 0;
@@ -1061,51 +1111,41 @@ BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options)
 }
 
 
-Int2 BLAST_InitAllDefaultOptions(CharPtr blast_program, CharPtr database,
+Int2 BLAST_InitDefaultOptions(CharPtr blast_program,
    LookupTableOptionsPtr PNTR lookup_options,
    QuerySetUpOptionsPtr PNTR query_setup_options, 
    BlastInitialWordOptionsPtr PNTR word_options,
    BlastExtensionOptionsPtr PNTR ext_options,
    BlastHitSavingOptionsPtr PNTR hit_options,
    BlastScoringOptionsPtr PNTR score_options,
-   BlastEffectiveLengthsOptionsPtr PNTR effective_length_options,
+   BlastEffectiveLengthsOptionsPtr PNTR eff_len_options,
    ProteinBlastOptionsPtr PNTR protein_options,
    BlastDatabaseSetUpOptionsPtr PNTR db_options)
 {
    Int2 status;
-   Boolean is_protein;
 
-   if ((status = LookupTableOptionsNew(blast_program, FALSE, 0, 0, TRUE, 
-                                       FALSE, lookup_options)))
+   if ((status = LookupTableOptionsNew(blast_program, lookup_options)))
       return status;
 
-   if ((status=BlastQuerySetUpOptionsNew(blast_program, NULL, 0,
-                                         query_setup_options)))
+   if ((status=BlastQuerySetUpOptionsNew(query_setup_options)))
       return status;
 
-   if ((status=BlastInitialWordOptionsNew(blast_program, FALSE, 0, FALSE, 
-                                          TRUE, FALSE, 0, word_options)))
+   if ((status=BlastInitialWordOptionsNew(blast_program, word_options)))
       return status;
 
-   if ((status = BlastExtensionOptionsNew(blast_program, FALSE, 0, 0, 
-                                          ext_options)))
+   if ((status = BlastExtensionOptionsNew(blast_program, ext_options)))
       return status;
 
-   if ((status=BlastHitSavingOptionsNew(blast_program, TRUE, 0, 0, 
-                                        hit_options)))
+   if ((status=BlastHitSavingOptionsNew(blast_program, hit_options)))
       return status;
 
-   if ((status=BlastScoringOptionsNew(blast_program, FALSE, 0, 0, NULL, 0, 0, 
-                                      score_options)))
+   if ((status=BlastScoringOptionsNew(blast_program, score_options)))
       return status;
 
-   is_protein = (!StrCmp(blast_program, "blastp") || 
-                 !StrCmp(blast_program, "blastx"));
-
-   if ((status=BlastEffectiveLengthsOptionsNew(database, is_protein, 0, 0,
-                                               0, effective_length_options)))
+   if ((status=BlastEffectiveLengthsOptionsNew(eff_len_options)))
       return status;
    
    return 0;
 
 }
+

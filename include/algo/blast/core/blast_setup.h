@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.5  2003/05/01 15:31:54  dondosha
+* Reorganized the setup of BLAST search
+*
 * Revision 1.4  2003/04/18 22:28:15  dondosha
 * Separated ASN.1 generated structures from those used in the main BLAST engine and traceback
 *
@@ -127,6 +130,7 @@ $Revision$
 #include <aa_lookup.h>
 #include <na_lookup.h>
 #include <blast_extend.h>
+#include <blast_gapalign.h>
 
 /** BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
  *      Should be moved to blastkar.c (or it's successor) in the future.
@@ -157,14 +161,36 @@ BlastSetUp_GetSequence(SeqLocPtr slp, Boolean use_blastna, Boolean concatenate,
  * @param subject_slp The subject SeqLoc [in]
  * @param buffer Buffer containing sequence; compressed if nucleotide [out]
  * @param buffer_length Length of the sequence buffer [out]
- * @param compress_dna Should the DNA sequence be compressed (ignored for 
- *                     proteins)? [in]
+ * @param encoding What type of sequence encoding to use? [in]
  */
 Int2 BLAST_GetSubjectSequence(SeqLocPtr subject_slp, Uint1Ptr *buffer,
-                              Int4 *buffer_length, Boolean compress_dna);
+                              Int4 *buffer_length, Uint1 encoding);
 
-/** "Main" setup routine for BLAST.
- * @param query_slp query location (all queries should be represented here). [in]
+/** Read the query sequences from a file, return a SeqLoc list.
+ * @param infp The input file [in]
+ * @param query_is_na Are sequences nucleotide (or protein)? [in]
+ * @param lcase_mask The lower case masking locations (no lower case masking 
+ *                   if NULL [out]
+ * @param query_slp List of query SeqLocs [out]
+ * @param ctr_start Number from which to start counting local ids [in]
+ * @return Have all sequences been read?
+ */
+Boolean
+BLAST_GetQuerySeqLoc(FILE *infp, Boolean query_is_na, 
+   SeqLocPtr PNTR lcase_mask, SeqLocPtr PNTR query_slp, Int4 ctr_start);
+
+/** Set up the subject sequence block in case of two sequences BLAST.
+ * @param file_name File with the subject sequence FASTA [in]
+ * @param blast_program Type of BLAST program [in]
+ * @param subject_slp SeqLoc for the subject sequence [out]
+ * @param subject Subject sequence block [out]
+ */
+Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program, 
+        SeqLocPtr PNTR subject_slp, BLAST_SequenceBlkPtr PNTR subject);
+
+/** "Main" setup routine for BLAST. Calculates all information for BLAST search
+ * that is dependent on the ASN.1 structures.
+ * @param query_slp Linked list of all query SeqLocs. [in]
  * @param program blastn, blastp, blastx, etc. [in]
  * @param qsup_options options for query setup. [in]
  * @param scoring_options options for scoring. [in]
@@ -172,37 +198,63 @@ Int2 BLAST_GetSubjectSequence(SeqLocPtr subject_slp, Uint1Ptr *buffer,
  * @param lookup_options options for lookup table. [in]
  * @param word_options options for initial word finding. [in]
  * @param hit_options options for saving hits. [in]
- * @param concatenate concatenate all SeqLoc's if TRUE. [in]
  * @param frame frame info. (blastx/tblastx) [in]
- * @param seq_blocks BLAST_SequenceBlkPtr blocks. [out]
- * @param filter_slp_out filtering seqloc. [out]
- * @param ewp Auxiliary structure for extending initial words [out]
- * @param sbpp Contains scoring information. [out]
- * @param lookup_wrap Lookup table [out]
+ * @param query_blk_ptr BLAST_SequenceBlkPtr for the query. [out]
+ * @param lookup_segments Start/stop locations for non-masked query 
+ *                        segments [out]
  * @param query_info The query information block [out]
- * @param hit_parameters Parsed hit saving options [out]
+ * @param filter_slp_out filtering seqloc. [out]
+ * @param sbpp Contains scoring information. [out]
  * @param blast_message error or warning [out] 
  */
+Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
+        const QuerySetUpOptionsPtr qsup_options,
+        const BlastScoringOptionsPtr scoring_options,
+        const BlastEffectiveLengthsOptionsPtr eff_len_options,
+        const LookupTableOptionsPtr lookup_options,	
+        const BlastInitialWordOptionsPtr word_options,
+        const BlastHitSavingOptionsPtr hit_options,
+        const Int4Ptr frame, BLAST_SequenceBlkPtr *query_blk_ptr,
+        ValNodePtr PNTR lookup_segments,
+        BlastQueryInfoPtr *query_info, SeqLocPtr *filter_slp_out,
+        BLAST_ScoreBlkPtr *sbpp, Blast_MessagePtr *blast_message);
 
-Int2 LIBCALL
-BlastSetUp_Main
-(SeqLocPtr query_slp,                              
-const Char *program,                      
-const QuerySetUpOptionsPtr qsup_options,   
-const BlastScoringOptionsPtr scoring_options,
-const BlastEffectiveLengthsOptionsPtr eff_len_options, 
-const LookupTableOptionsPtr     lookup_options, 
-const BlastInitialWordOptionsPtr word_options, 
-const BlastHitSavingOptionsPtr hit_options,   
-Boolean concatenate,                        
-const Int4Ptr frame,                       
-ValNodePtr *seq_blocks,                   
-BlastQueryInfoPtr *query_info,
-SeqLocPtr *filter_slp_out,               
-BLAST_ExtendWordPtr *ewp,
-BLAST_ScoreBlkPtr *sbpp,                
-LookupTableWrapPtr *lookup_wrap,
-BlastHitSavingParametersPtr *hit_parameters,  
-Blast_MessagePtr *blast_message              
-);
-
+/** Setup of the auxiliary BLAST structures: lookup table, diagonal table for 
+ * word extension, structure with memory for gapped alignment; also calculates
+ * internally used parameters from options. 
+ * @param program blastn, blastp, blastx, etc. [in]
+ * @param scoring_options options for scoring. [in]
+ * @param eff_len_options  used to calc. eff len. [in]
+ * @param lookup_options options for lookup table. [in]
+ * @param word_options options for initial word finding. [in]
+ * @param ext_options options for gapped extension. [in]
+ * @param hit_options options for saving hits. [in]
+ * @param query The query sequence block [in]
+ * @param lookup_segments Start/stop locations for non-masked query 
+ *                        segments [in]
+ * @param query_info The query information block [in]
+ * @param sbp Contains scoring information. [in]
+ * @param rdfp Pointer to database structure [in]
+ * @param subject Subject sequence block (in 2 sequences case) [in]
+ * @param lookup_wrap Lookup table [out]
+ * @param ewp Word extension information and allocated memory [out]
+ * @param gap_align Gapped alignment information and allocated memory [out]
+ * @param word_params Parameters for initial word processing [out]
+ * @param ext_params Parameters for gapped extension [out]
+ * @param hit_params Parameters for saving hits [out]
+ */
+Int2 BLAST_SetUpAuxStructures(Char *program,
+        const BlastScoringOptionsPtr scoring_options,
+        const BlastEffectiveLengthsOptionsPtr eff_len_options,
+        const LookupTableOptionsPtr lookup_options,	
+        const BlastInitialWordOptionsPtr word_options,
+        const BlastExtensionOptionsPtr ext_options,
+        const BlastHitSavingOptionsPtr hit_options,
+        BLAST_SequenceBlkPtr query, ValNodePtr lookup_segments,
+        BlastQueryInfoPtr query_info, BLAST_ScoreBlkPtr sbp, 
+        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject,
+        LookupTableWrapPtr PNTR lookup_wrap, BLAST_ExtendWordPtr PNTR ewp,
+        BlastGapAlignStructPtr PNTR gap_align, 
+        BlastInitialWordParametersPtr PNTR word_params,
+        BlastExtensionParametersPtr PNTR ext_params,
+        BlastHitSavingParametersPtr PNTR hit_params);
