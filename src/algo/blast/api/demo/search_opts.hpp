@@ -339,7 +339,7 @@ public:                                        \
 
 #define OPT_HANDLER_SUPPORT(OPTIONTYPE) \
     template<class ValT>                \
-    void Set(CRef<OPTIONTYPE> opts,     \
+    void Set(CRef<OPTIONTYPE>& opts,    \
              ValT & V)                  \
     {                                   \
         SetValue(opts, V);              \
@@ -763,6 +763,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/11/30 22:08:30  ucko
+ * Tweak OPT_HANDLER_SUPPORT to unconfuse GCC 2.95.
+ *
  * Revision 1.7  2004/11/01 19:39:51  bealer
  * - More doxygen.
  *
