@@ -119,7 +119,7 @@ public:
         eAcc_est           = 1 << 8,
         eAcc_dirsub        = 2 << 8, // direct submission; trumps other values
         eAcc_genome        = 3 << 8,
-        eAcc_patent        = 4 << 8,
+        eAcc_div_patent    = 4 << 8,
         eAcc_htgs          = 5 << 8,
         eAcc_con           = 6 << 8, // constructed/artificial
         eAcc_wgs           = 7 << 8,
@@ -140,36 +140,43 @@ public:
         eAcc_gb_embl_ddbj    = (eAcc_maybe_gb | eAcc_maybe_embl
                                 | eAcc_maybe_ddbj),
 
-        eAcc_gb_prot        = e_Genbank | eAcc_other  | fAcc_prot,
-        eAcc_gb_other_nuc   = e_Genbank | eAcc_other  | fAcc_nuc,
-        eAcc_gb_est         = e_Genbank | eAcc_est    | fAcc_nuc,
-        eAcc_gb_dirsub      = e_Genbank | eAcc_dirsub | fAcc_nuc,
-        eAcc_gb_genome      = e_Genbank | eAcc_genome | fAcc_nuc,
-        eAcc_gb_patent      = e_Genbank | eAcc_patent /* | fAcc_nuc */,
-        eAcc_gb_patent_prot = e_Genbank | eAcc_patent | fAcc_prot,
-        eAcc_gb_htgs        = e_Genbank | eAcc_htgs   | fAcc_nuc,
-        eAcc_gb_wgs_nuc     = e_Genbank | eAcc_wgs    | fAcc_nuc,
-        eAcc_gb_wgs_prot    = e_Genbank | eAcc_wgs    | fAcc_prot,
+        eAcc_local  = e_Local  | eAcc_other,
+        eAcc_gibbsq = e_Gibbsq | eAcc_other,
+        eAcc_gibbmt = e_Gibbmt | eAcc_other,
+        eAcc_giim   = e_Giim   | eAcc_other,
+
+        eAcc_gb_prot        = e_Genbank | eAcc_other      | fAcc_prot,
+        eAcc_gb_other_nuc   = e_Genbank | eAcc_other      | fAcc_nuc,
+        eAcc_gb_est         = e_Genbank | eAcc_est        | fAcc_nuc,
+        eAcc_gb_dirsub      = e_Genbank | eAcc_dirsub     | fAcc_nuc,
+        eAcc_gb_genome      = e_Genbank | eAcc_genome     | fAcc_nuc,
+        eAcc_gb_patent      = e_Genbank | eAcc_div_patent /* | fAcc_nuc */,
+        eAcc_gb_patent_prot = e_Genbank | eAcc_div_patent | fAcc_prot,
+        eAcc_gb_htgs        = e_Genbank | eAcc_htgs       | fAcc_nuc,
+        eAcc_gb_wgs_nuc     = e_Genbank | eAcc_wgs        | fAcc_nuc,
+        eAcc_gb_wgs_prot    = e_Genbank | eAcc_wgs        | fAcc_prot,
         eAcc_gb_segset      = e_Genbank | eAcc_segset,
-        eAcc_gsdb_dirsub    = e_Genbank | 128 << 8    | fAcc_nuc,
-        eAcc_gb_gsdb        = e_Genbank | 129 << 8    | fAcc_nuc,
-        eAcc_gb_gss         = e_Genbank | 130 << 8    | fAcc_nuc,
-        eAcc_gb_sts         = e_Genbank | 131 << 8    | fAcc_nuc,
-        eAcc_gb_backbone    = e_Genbank | 132 << 8    | fAcc_nuc,
-        eAcc_gb_cdna        = e_Genbank | 133 << 8    | fAcc_nuc,
+        eAcc_gsdb_dirsub    = e_Genbank | 128 << 8        | fAcc_nuc,
+        eAcc_gb_gsdb        = e_Genbank | 129 << 8        | fAcc_nuc,
+        eAcc_gb_gss         = e_Genbank | 130 << 8        | fAcc_nuc,
+        eAcc_gb_sts         = e_Genbank | 131 << 8        | fAcc_nuc,
+        eAcc_gb_backbone    = e_Genbank | 132 << 8        | fAcc_nuc,
+        eAcc_gb_cdna        = e_Genbank | 133 << 8        | fAcc_nuc,
 
-        eAcc_embl_prot      = e_Embl | eAcc_other  | fAcc_prot,
-        eAcc_embl_other_nuc = e_Embl | eAcc_other  | fAcc_nuc,
-        eAcc_embl_est       = e_Embl | eAcc_est    | fAcc_nuc,
-        eAcc_embl_dirsub    = e_Embl | eAcc_dirsub | fAcc_nuc,
-        eAcc_embl_genome    = e_Embl | eAcc_genome | fAcc_nuc,
-        eAcc_embl_patent    = e_Embl | eAcc_patent | fAcc_nuc,
-        eAcc_embl_htgs      = e_Embl | eAcc_htgs   | fAcc_nuc,
-        eAcc_embl_con       = e_Embl | eAcc_con    | fAcc_nuc,
-        eAcc_embl_wgs_nuc   = e_Embl | eAcc_wgs    | fAcc_nuc,
-        eAcc_embl_wgs_prot  = e_Embl | eAcc_wgs    | fAcc_prot,
+        eAcc_embl_prot      = e_Embl | eAcc_other      | fAcc_prot,
+        eAcc_embl_other_nuc = e_Embl | eAcc_other      | fAcc_nuc,
+        eAcc_embl_est       = e_Embl | eAcc_est        | fAcc_nuc,
+        eAcc_embl_dirsub    = e_Embl | eAcc_dirsub     | fAcc_nuc,
+        eAcc_embl_genome    = e_Embl | eAcc_genome     | fAcc_nuc,
+        eAcc_embl_patent    = e_Embl | eAcc_div_patent | fAcc_nuc,
+        eAcc_embl_htgs      = e_Embl | eAcc_htgs       | fAcc_nuc,
+        eAcc_embl_con       = e_Embl | eAcc_con        | fAcc_nuc,
+        eAcc_embl_wgs_nuc   = e_Embl | eAcc_wgs        | fAcc_nuc,
+        eAcc_embl_wgs_prot  = e_Embl | eAcc_wgs        | fAcc_prot,
 
+        eAcc_pir       = e_Pir       | eAcc_other | fAcc_prot,
         eAcc_swissprot = e_Swissprot | eAcc_other | fAcc_prot,
+        eAcc_patent    = e_Patent    | eAcc_other,
 
         eAcc_refseq_prot            = e_Other | eAcc_other | fAcc_prot,
         eAcc_refseq_contig          = e_Other | eAcc_segset,
@@ -185,18 +192,22 @@ public:
         eAcc_refseq_mrna_predicted  = eAcc_refseq_mrna  | fAcc_predicted,
         eAcc_refseq_ncrna_predicted = eAcc_refseq_ncrna | fAcc_predicted,
 
-        eAcc_ddbj_prot      = e_Ddbj | eAcc_other  | fAcc_prot,
-        eAcc_ddbj_other_nuc = e_Ddbj | eAcc_other  | fAcc_nuc,
-        eAcc_ddbj_est       = e_Ddbj | eAcc_est    | fAcc_nuc,
-        eAcc_ddbj_dirsub    = e_Ddbj | eAcc_dirsub | fAcc_nuc,
-        eAcc_ddbj_genome    = e_Ddbj | eAcc_genome | fAcc_nuc,
-        eAcc_ddbj_patent    = e_Ddbj | eAcc_patent | fAcc_nuc,
-        eAcc_ddbj_htgs      = e_Ddbj | eAcc_htgs   | fAcc_nuc,
-        eAcc_ddbj_con       = e_Ddbj | eAcc_con    | fAcc_nuc,
-        eAcc_ddbj_wgs_nuc   = e_Ddbj | eAcc_wgs    | fAcc_nuc,
-        eAcc_ddbj_wgs_prot  = e_Ddbj | eAcc_wgs    | fAcc_prot,
+        eAcc_general = e_General | eAcc_other,
+        eAcc_gi      = e_Gi      | eAcc_other,
 
-        eAcc_pdb = e_Pdb | fAcc_prot,
+        eAcc_ddbj_prot      = e_Ddbj | eAcc_other      | fAcc_prot,
+        eAcc_ddbj_other_nuc = e_Ddbj | eAcc_other      | fAcc_nuc,
+        eAcc_ddbj_est       = e_Ddbj | eAcc_est        | fAcc_nuc,
+        eAcc_ddbj_dirsub    = e_Ddbj | eAcc_dirsub     | fAcc_nuc,
+        eAcc_ddbj_genome    = e_Ddbj | eAcc_genome     | fAcc_nuc,
+        eAcc_ddbj_patent    = e_Ddbj | eAcc_div_patent | fAcc_nuc,
+        eAcc_ddbj_htgs      = e_Ddbj | eAcc_htgs       | fAcc_nuc,
+        eAcc_ddbj_con       = e_Ddbj | eAcc_con        | fAcc_nuc,
+        eAcc_ddbj_wgs_nuc   = e_Ddbj | eAcc_wgs        | fAcc_nuc,
+        eAcc_ddbj_wgs_prot  = e_Ddbj | eAcc_wgs        | fAcc_prot,
+
+        eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
+        eAcc_pdb = e_Pdb | eAcc_other | fAcc_prot,
 
         eAcc_gb_tpa_nuc  = e_Tpg | eAcc_other | fAcc_nuc,
         eAcc_gb_tpa_prot = e_Tpg | eAcc_other | fAcc_prot,
@@ -214,6 +225,7 @@ public:
     // Deduces information from a bare accession a la WHICH_db_accession;
     // may report false negatives on properties.
     static EAccessionInfo IdentifyAccession(const string& accession);
+    EAccessionInfo IdentifyAccession(void) const;
 
     // Match() - TRUE if SeqIds are equivalent
     bool Match(const CSeq_id& sid2) const;
@@ -335,6 +347,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2002/10/23 18:22:57  ucko
+ * Add self-classification (using known type information) and expand
+ * EAccessionInfo accordingly.
+ *
  * Revision 1.26  2002/10/22 20:18:30  jianye
  * Added GetSeqIdString()
  *
