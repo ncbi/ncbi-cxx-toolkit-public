@@ -33,12 +33,26 @@
 #include "seq_loader.hpp"
 #include "splign_app_exception.hpp"
 
+#include <objtools/readers/fasta.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/IUPACna.hpp>
+#include <objects/seq/NCBI2na.hpp>
+#include <objects/seq/NCBI4na.hpp>
+
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
+
 #include <string>
 #include <algorithm>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
-
+USING_SCOPE(objects);
 
 void CSeqLoader::Open(const string& filename_index)
 {
@@ -145,6 +159,14 @@ void CSeqLoader::Open(const string& filename_index)
 void CSeqLoader::Load(const string& id, vector<char>* seq,
 		      size_t from, size_t to)
 {
+  if(seq == 0) {
+    NCBI_THROW(
+               CSplignAppException,
+               eInternal,
+               "Null pointer passed to CSeqLoader::Load()");
+    
+  }
+  
   auto_ptr<istream> input (0);
 
   map<string, SIdxTarget>::const_iterator im = m_idx.find(id);
@@ -243,11 +265,110 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
 }
 
 
+CSeqLoaderPairwise::CSeqLoaderPairwise(const string& query_filename,
+                                       const string& subj_filename)
+{
+    CRef<CObjectManager> objmgr (new CObjectManager);
+
+    // load query (the spliced sequence)
+    CRef<CScope> scope_query (new CScope(*objmgr));
+    scope_query->AddDefaults();    
+    {{
+    CNcbiIfstream istream (query_filename.c_str());
+    CRef<CSeq_entry> se = ReadFasta(istream, fReadFasta_OneSeq);
+    scope_query->AddTopLevelSeqEntry(*se);
+    const CSeq_entry::TSeq& bioseq = se->GetSeq();    
+    const CSeq_entry::TSeq::TId& seqid (bioseq.GetId());
+    m_QueryId = seqid.front()->GetSeqIdString(true);    
+    m_se_query = se;
+
+    CBioseq_Handle bh = scope_query->GetBioseqHandle(*seqid.front());
+    CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    size_t dim = sv.size();
+    m_Query.resize(dim);
+    for(size_t i = 0; i < dim; ++i) {
+        m_Query[i] = sv[i];
+    }
+    }}
+
+    // load subj (the genomic sequence)
+    CRef<CScope> scope_subj (new CScope(*objmgr));
+    scope_subj->AddDefaults();    
+    {{
+    CNcbiIfstream istream (subj_filename.c_str());
+    CRef<CSeq_entry> se = ReadFasta(istream, fReadFasta_OneSeq);
+    scope_subj->AddTopLevelSeqEntry(*se);
+    const CSeq_entry::TSeq& bioseq = se->GetSeq();    
+    const CSeq_entry::TSeq::TId& seqid (bioseq.GetId());
+    m_SubjId = seqid.front()->GetSeqIdString(true);    
+    m_se_subj = se;
+
+    CBioseq_Handle bh = scope_subj->GetBioseqHandle(*seqid.front());
+    CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    size_t dim = sv.size();
+    m_Subj.resize(dim);
+    for(size_t i = 0; i < dim; ++i) {
+        m_Subj[i] = sv[i];
+    }
+    }}
+}
+
+
+void CSeqLoaderPairwise::Load(const string& id, vector<char> *seq,
+                              size_t start, size_t finish)
+{
+    if(seq == 0) {
+        NCBI_THROW( CSplignAppException,
+                    eInternal,
+                    "Null pointer passed to CSeqLoader::Load()");
+    }
+
+    if(start > finish) {
+        NCBI_THROW( CSplignAppException,
+                    eBadParameter,
+                    "Inconsistent parameters passed to passed to "
+                    "CSeqLoaderPairwise::Load()");
+    }
+
+    seq->clear();
+
+    vector<char>::const_iterator i0, i1;
+
+    if(id == m_QueryId) {
+        const size_t dim = m_Query.size();
+        if(start >= dim) {
+            return;
+        }
+        i0 = m_Query.begin() + start;
+        i1 = m_Query.begin() + (finish < dim? finish + 1: dim);
+    }
+    else if(id == m_SubjId) {
+        const size_t dim = m_Subj.size();
+        if(start >= dim) {
+            return;
+        }
+        i0 = m_Subj.begin() + start;
+        i1 = m_Subj.begin() + (finish < dim? finish + 1: dim);
+    }
+    else {
+        NCBI_THROW( CSplignAppException,
+                    eGeneral,
+                    "Unknolwn sequence requested from "
+                    "CSeqLoaderPairwise::Load()");
+    }
+    seq->resize(i1 - i0);
+    copy(i0, i1, seq->begin());
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/05/10 16:39:56  kapustin
+ * Add a pairwise mode sequence loader
+ *
  * Revision 1.14  2004/04/23 14:33:32  kapustin
  * *** empty log message ***
  *

@@ -40,35 +40,84 @@
 
 BEGIN_NCBI_SCOPE
 
-// Multi-FastA sequence loader
+
+BEGIN_SCOPE(objects)
+    class CSeq_entry;
+END_SCOPE(objects)
+
+
+//////////
+// Batch mode sequence loader
+
 class CSeqLoader: public CSplignSeqAccessor
 {
 public:
 
-  void Open (const string& filename_index);  
-  virtual void Load( const string& id, vector<char> *seq,
-                     size_t start, size_t finish);
-  
+    void Open (const string& filename_index);  
+    virtual void Load( const string& id, vector<char> *seq,
+                       size_t start, size_t finish);
+    
 private:
-  
-  vector<string> m_filenames;
-
-  struct SIdxTarget {
-    SIdxTarget(): m_filename_idx(kMax_UInt), m_offset(kMax_UInt) {}
-    size_t m_filename_idx;
-    size_t m_offset;
-  };
-  map<string, SIdxTarget> m_idx;
-
-  size_t m_min_idx;
-  
+    
+    vector<string> m_filenames;
+    
+    struct SIdxTarget {
+        SIdxTarget(): m_filename_idx(kMax_UInt), m_offset(kMax_UInt) {}
+        size_t m_filename_idx;
+        size_t m_offset;
+    };
+    map<string, SIdxTarget> m_idx;
+    
+    size_t m_min_idx;
+    
 };
+
+
+//////////
+// Pairwise mode sequence loader
+
+class CSeqLoaderPairwise: public CSplignSeqAccessor
+{
+public:
+
+    CSeqLoaderPairwise(const string& query_filename,
+                       const string& subj_filename);
+    
+    virtual void Load( const string& id, vector<char> *seq,
+                       size_t start, size_t finish);
+    
+    string GetQueryStringId(void) const {
+        return m_QueryId;
+    }
+
+    string GetSubjStringId(void) const {
+        return m_SubjId;
+    }
+
+    CRef<objects::CSeq_entry> GetQuerySeqEntry(void) const {
+        return m_se_query;
+    }
+
+    CRef<objects::CSeq_entry> GetSubjSeqEntry(void) const {
+        return m_se_subj;
+    }
+
+private:
+    
+    string m_QueryId, m_SubjId;
+    vector<char> m_Query, m_Subj;
+    CRef<objects::CSeq_entry> m_se_query, m_se_subj;
+};
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/10 16:39:56  kapustin
+ * Add a pairwise mode sequence loader
+ *
  * Revision 1.7  2004/05/04 15:23:45  ucko
  * Split splign code out of xalgoalign into new xalgosplign.
  *
