@@ -477,6 +477,21 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
 }
 
 
+static string s_DescribeClones(const string& clone)
+{
+    SIZE_TYPE count = 1;
+    for (SIZE_TYPE pos = clone.find(';');  pos != NPOS;
+         pos = clone.find(';', pos + 1)) {
+        ++count;
+    }
+    if (count > 3) {
+        return ", " + NStr::IntToString(count) + " clones,";
+    } else {
+        return " clone " + clone;
+    }
+}
+
+
 static string s_TitleFromBioSource(const CBioSource& source,
                                    const string&     suffix)
 {
@@ -494,7 +509,7 @@ static string s_TitleFromBioSource(const CBioSource& source,
                 chromosome = " chromosome " + (*it)->GetName();
                 break;
             case CSubSource::eSubtype_clone:
-                clone = " clone " + (*it)->GetName();
+                clone = s_DescribeClones((*it)->GetName());
                 break;
             case CSubSource::eSubtype_map:
                 map_ = " map " + (*it)->GetName();
@@ -858,6 +873,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.27  2003/08/04 21:17:31  ucko
+* For complete chromosome title, if > 3 clones (by counting semicolons)
+* then just display count, not full text of clones
+*
 * Revision 1.26  2003/07/25 17:45:05  ucko
 * Add locus tags to hypothetical proteins' titles, per the C Toolkit.
 *
