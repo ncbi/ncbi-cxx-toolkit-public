@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.39 2003/10/15 14:24:33 kholodov Exp $
+-- $Id: docsum.asn,v 1.40 2004/05/24 14:07:44 kholodov Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.40  2004/05/24 14:07:44  kholodov
+-- Added: val-hapmap field
+--
 -- Revision 1.39  2003/10/15 14:24:33  kholodov
 -- Modified: sequences now optional for NSE-rs
 --
@@ -350,6 +353,7 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	validated-by-cluster   BOOLEAN OPTIONAL, -- cluster has 2+ submissions, with 1+ submissions assayed with a non-computational method
 	validated-by-2hit-2allele BOOLEAN OPTIONAL, --all alleles have been observed in 2+ chromosomes
 	val-2hit-2allele SET OF INTEGER OPTIONAL, -- dbSNP batch-id's for double-hit snp validation data. Use batch-id to get methods, etc.
+	val-hapmap BOOLEAN OPTIONAL,		-- validated by HapMap project
 	genotype BOOLEAN OPTIONAL,		-- at least one genotype reported for this refSNP
 	linkout BOOLEAN OPTIONAL,		-- YES if linkout to at least one submitter website
 	last-action NSE-Date OPTIONAL,		-- Date of update or create
