@@ -142,6 +142,8 @@ bool CTL_RPCCmd::Cancel()
     }
 
     if ( m_Res ) {
+        // to prevent ct_cancel(NULL, m_Cmd, CS_CANCEL_CURRENT) call:
+        ((CTL_RowResult*)m_Res)->m_EOR= true; 
         delete m_Res;
         m_Res = 0;
     }
@@ -440,6 +442,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/10/07 16:09:48  soussov
+ * adds code which prevents ct_cancel(NULL, m_Cmd, CS_CANCEL_CURRENT) call if command is canceled while retrieving results
+ *
  * Revision 1.7  2003/06/24 18:42:26  soussov
  * removes throwing exception from destructor
  *
