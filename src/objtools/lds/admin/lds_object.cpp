@@ -245,7 +245,10 @@ int CLDS_Object::SaveObject(int file_id,
     m_db.object_db.object_attr_id = m_MaxObjRecId;
     m_db.object_db.TSE_object_id = 0;
     m_db.object_db.parent_object_id = 0;
-    m_db.object_db.primary_seqid = seq_id;
+    
+    string ups = seq_id; 
+    NStr::ToUpper(ups);
+    m_db.object_db.primary_seqid = ups;
 
     LOG_POST(Info << "Saving Fasta object: " << seq_id);
 
@@ -326,7 +329,7 @@ int CLDS_Object::SaveObject(int file_id,
             }
         }
 
-        m_db.object_db.primary_seqid = id_str;
+        m_db.object_db.primary_seqid = NStr::ToUpper(id_str);
 
         ++m_MaxObjRecId;
 
@@ -334,7 +337,7 @@ int CLDS_Object::SaveObject(int file_id,
 
         m_db.object_attr_db.object_attr_id = m_MaxObjRecId;
         m_db.object_attr_db.object_title = molecule_title;
-        m_db.object_attr_db.seq_ids = all_seq_id;
+        m_db.object_attr_db.seq_ids = NStr::ToUpper(all_seq_id);
         EBDB_ErrCode err = m_db.object_attr_db.Insert();
         BDB_CHECK(err, "LDS::ObjectAttr");
 
@@ -471,6 +474,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/06/26 16:22:15  kuznets
+ * Uppercased all sequence ids before writing into the database.
+ *
  * Revision 1.7  2003/06/16 16:24:43  kuznets
  * Fixed #include paths (lds <-> lds_admin separation)
  *
