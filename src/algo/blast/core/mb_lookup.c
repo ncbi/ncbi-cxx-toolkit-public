@@ -49,6 +49,8 @@ BlastMBLookupTable* MBLookupTableDestruct(BlastMBLookupTable* mb_lt)
       sfree(mb_lt->hashtable);
    if (mb_lt->next_pos)
       sfree(mb_lt->next_pos);
+   if (mb_lt->hashtable2)
+      sfree(mb_lt->hashtable2);
    if (mb_lt->next_pos2)
       sfree(mb_lt->next_pos2);
    sfree(mb_lt->pv_array);
@@ -125,6 +127,15 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, ListNode* location,
    const Uint1 k_nuc_mask = 0xfc;
    const Boolean k_two_templates = 
       (lookup_options->mb_template_type == MB_TWO_TEMPLATES);
+   PV_ARRAY_TYPE *pv_array=NULL;
+   Int4 pv_array_bts;
+   /* The calculation of the longest chain can be cpu intensive for long queries or sets of queries. 
+      So we use a helper_array to keep track of this, but compress it by k_compression_factor so it stays 
+      in memory.  Hence we only end up with a conservative (high) estimate for longest_chain, but this does
+      not seem to affect the overall performance of the rest of the program. */
+   Int4 longest_chain=0;
+   Uint4* helper_array;     /* Helps to estimate longest chain. */
+   const Int4 k_compression_factor=2048; /* compress helper_array by factor of 2048. */
 
    ASSERT(mb_lt);
    ASSERT(lookup_options->mb_template_length > 0);
@@ -160,6 +171,13 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, ListNode* location,
    extra_length = mb_lt->template_length - word_length;
    mb_lt->mask = (Int4) (-1);
    mask = (1 << (8*(width+1) - 2)) - 1;
+
+   pv_array = mb_lt->pv_array;
+   pv_array_bts = mb_lt->pv_array_bts;
+
+   helper_array = (Uint4*) calloc(mb_lt->hashsize/k_compression_factor, sizeof(Uint4));
+   if (helper_array == NULL)
+	return -1;
 
    for (loc = location; loc; loc = loc->next) {
       Boolean amb_cond = TRUE;
@@ -293,14 +311,41 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, ListNode* location,
                         ecode2 = 0; break;
                      }
                      
-                     if (mb_lt->hashtable[ecode1] == 0 || 
+                     if (mb_lt->hashtable[ecode1] == 0 ||
                          mb_lt->hashtable2[ecode2] == 0)
+                     {
                         mb_lt->num_unique_pos_added++;
+                     }
+
+                     if (mb_lt->hashtable2[ecode2] == 0)
+                     {
+                        pv_array[ecode2>>pv_array_bts] |= 
+                                    (((PV_ARRAY_TYPE) 1)<<(ecode2&PV_ARRAY_MASK));
+                     }
+                     else
+                        longest_chain = MAX(longest_chain, helper_array[ecode2/k_compression_factor]++); 
+
+                     if (mb_lt->hashtable[ecode1] == 0)
+                     {
+                        pv_array[ecode1>>pv_array_bts] |= 
+                                    (((PV_ARRAY_TYPE) 1)<<(ecode1&PV_ARRAY_MASK));
+                     }
+                     else
+                        longest_chain = MAX(longest_chain, helper_array[ecode1/k_compression_factor]++); 
+
+                     /* This could overestimate the longest chain again by a factor of 2. */
+                     /* Are two helper_arrays needed, or is that overkill? */
                      mb_lt->next_pos2[index] = mb_lt->hashtable2[ecode2];
                      mb_lt->hashtable2[ecode2] = index;
                   } else {
                      if (mb_lt->hashtable[ecode1] == 0)
+                     {
                         mb_lt->num_unique_pos_added++;
+                        pv_array[ecode1>>pv_array_bts] |= 
+                                    (((PV_ARRAY_TYPE) 1)<<(ecode1&PV_ARRAY_MASK));
+                     }
+                     else
+                        longest_chain = MAX(longest_chain, helper_array[ecode1/k_compression_factor]++); 
                   }
                   mb_lt->next_pos[index] = mb_lt->hashtable[ecode1];
                   mb_lt->hashtable[ecode1] = index;
@@ -309,6 +354,8 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, ListNode* location,
          }
       }
    }
+   sfree(helper_array);
+   mb_lt->longest_chain = longest_chain+2;
 
    return 0;
 }
@@ -333,6 +380,16 @@ MB_FillContigTable(BLAST_SequenceBlk* query, ListNode* location,
    const Uint1 k_nuc_mask = 0xfc;
    Int2 word_length;
    Int4 mask;
+   PV_ARRAY_TYPE *pv_array=NULL;
+   Int4 pv_array_bts;
+   /* The calculation of the longest chain can be cpu intensive for long queries or sets of queries. 
+      So we use a helper_array to keep track of this, but compress it by k_compression_factor so it stays 
+      in memory.  Hence we only end up with a conservative (high) estimate for longest_chain, but this does
+      not seem to affect the overall performance of the rest of the program. */
+   Int4 longest_chain=0;
+   Uint4* helper_array;     /* Helps to estimate longest chain. */
+   const Int4 k_compression_factor=2048; /* compress helper_array by factor of 2048. */
+
 
    ASSERT(mb_lt);
 
@@ -342,6 +399,13 @@ MB_FillContigTable(BLAST_SequenceBlk* query, ListNode* location,
    mb_lt->template_length = COMPRESSION_RATIO*width;
    mb_lt->mask = mb_lt->hashsize - 1;
    mask = (1 << (8*width - 2)) - 1;
+
+   pv_array = mb_lt->pv_array;
+   pv_array_bts = mb_lt->pv_array_bts;
+
+   helper_array = (Uint4*) calloc(mb_lt->hashsize/k_compression_factor, sizeof(Uint4));
+   if (helper_array == NULL)
+	return -1;
 
    for (loc = location; loc; loc = loc->next) {
       /* We want index to be always pointing to the start of the word.
@@ -375,13 +439,23 @@ MB_FillContigTable(BLAST_SequenceBlk* query, ListNode* location,
             ecode = ((ecode & mask) << 2) + val;
             if (seq >= pos) {
                   if (mb_lt->hashtable[ecode] == 0)
+                  {
                         mb_lt->num_unique_pos_added++;
+                        pv_array[ecode>>pv_array_bts] |= 
+                                    (((PV_ARRAY_TYPE) 1)<<(ecode&PV_ARRAY_MASK));
+                  }
+                  else
+                  {
+                        longest_chain = MAX(longest_chain, helper_array[ecode/k_compression_factor]++); 
+                  }
                   mb_lt->next_pos[index] = mb_lt->hashtable[ecode];
                   mb_lt->hashtable[ecode] = index;
             }
          }
       }
    }
+   mb_lt->longest_chain = longest_chain+2;
+   sfree(helper_array);
 
    return 0;
 }
@@ -392,19 +466,11 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
         BlastMBLookupTable** mb_lt_ptr,
         const LookupTableOptions* lookup_options)
 {
-   Int4 index;  /* loop variable */
-   Int4 ecode;
-   BlastMBLookupTable* mb_lt;
-   Int4 masked_word_count = 0;
-   PV_ARRAY_TYPE *pv_array=NULL;
-   Int4 pv_shift, pv_array_bts, pv_size, pv_index;
+   Int4 pv_shift, pv_size;
    Int2 status=0;
    Int2 bytes_in_word;
    Uint1 width;
-   Int4 longest_chain = 0;
-   Int4 pcount, pcount1=0;
-   const Boolean k_two_templates = 
-      (lookup_options->mb_template_type == MB_TWO_TEMPLATES);
+   BlastMBLookupTable* mb_lt;
    const Int4 k_small_query_cutoff = 15000;
    const Int4 k_large_query_cutoff = 800000;
    
@@ -492,6 +558,16 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
       return -1;
    }
 
+   mb_lt->pv_array_bts = PV_ARRAY_BTS + pv_shift; 
+
+   pv_size = mb_lt->hashsize>>(mb_lt->pv_array_bts);
+   /* Size measured in PV_ARRAY_TYPE's */
+   if ((mb_lt->pv_array = calloc(PV_ARRAY_BYTES, pv_size)) == NULL)
+   {
+      MBLookupTableDestruct(mb_lt);
+      return -1;
+   }
+
    if (lookup_options->mb_template_length)
      status = MB_FillDiscTable(query, location, mb_lt, width, lookup_options);
    else
@@ -499,57 +575,6 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
 
    if (status > 0)
       return status;
-
-   mb_lt->pv_array_bts = pv_array_bts = PV_ARRAY_BTS + pv_shift; 
-
-   pv_size = mb_lt->hashsize>>pv_array_bts;
-   /* Size measured in PV_ARRAY_TYPE's */
-   if ((pv_array = calloc(PV_ARRAY_BYTES, pv_size)) == NULL)
-   {
-      MBLookupTableDestruct(mb_lt);
-      return -1;
-   }
-    
-
-   for (index=0; index<mb_lt->hashsize; index++) {
-       if (mb_lt->hashtable[index] != 0 ||
-           (k_two_templates && mb_lt->hashtable2[index] != 0))
-            pv_array[index>>pv_array_bts] |= 
-               (((PV_ARRAY_TYPE) 1)<<(index&PV_ARRAY_MASK));
-   }
-   mb_lt->pv_array = pv_array;
-
-   /* Now remove the hash entries that have too many positions */
-#if 0
-   if (lookup_options->max_positions>0) {
-#endif
-      for (pv_index = 0; pv_index < pv_size; ++pv_index) {
-         if (pv_array[pv_index]) {
-            for (ecode = pv_index<<pv_array_bts; 
-                 ecode < (pv_index+1)<<pv_array_bts; ++ecode) {
-               for (index=mb_lt->hashtable[ecode], pcount=0; 
-                    index>0; index=mb_lt->next_pos[index], pcount++);
-               if (k_two_templates) {
-                  for (index=mb_lt->hashtable2[ecode], pcount1=0; 
-                       index>0; index=mb_lt->next_pos2[index], pcount1++);
-               }
-               if ((pcount=MAX(pcount,pcount1))>lookup_options->max_positions) {
-                  mb_lt->hashtable[ecode] = 0;
-                  if (k_two_templates)
-                     mb_lt->hashtable2[ecode] = 0;
-                  masked_word_count++;
-               }
-               longest_chain = MAX(longest_chain, pcount);
-            }
-         }
-      }
-      if (masked_word_count) {
-      }
-#if 0
-   }
-#endif
-
-   mb_lt->longest_chain = longest_chain;
 
    *mb_lt_ptr = mb_lt;
 
