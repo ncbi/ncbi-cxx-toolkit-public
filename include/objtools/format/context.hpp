@@ -48,6 +48,7 @@
 #include <objmgr/scope.hpp>
 
 #include <objtools/format/flat_file_generator.hpp>
+#include <objtools/format/items/reference_item.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -87,6 +88,10 @@ private:
 class CBioseqContext : public CObject
 {
 public:
+    // types
+    typedef CRef<CReferenceItem> TRef;
+    typedef vector<TRef> TReferences;
+
     CBioseqContext(const CBioseq& seq, CFFContext& ctx);
     CBioseq_Handle& GetHandle(void);
     const CBioseq_Handle& GetHandle(void) const;
@@ -95,6 +100,8 @@ public:
 
     bool IsPart(void) const;
     SIZE_TYPE GetPartNumber(void) const;
+
+    bool DoContigStyle(void) const;
     
     bool IsProt(void) const;
     CSeq_inst::TRepr  GetRepr  (void) const;
@@ -116,12 +123,16 @@ public:
     const string& GetWGSMasterAccn(void) const;
     const string& GetWGSMasterName(void) const;
 
+    TReferences& SetReferences(void);
+    const TReferences& GetReferences(void) const;
+
     const CSeq_id& GetPreferredSynonym(const CSeq_id& id) const;
 
     const CSeq_loc* GetLocation(void) const;
     void SetLocation(const CSeq_loc* loc);
 
     bool ShowGBBSource(void) const;
+    bool IsGPS(void) const;  // Is embeded in a gene-prod set?
 
     // ID queries
     bool IsGED(void) const;  // Genbank, EMBL or DDBJ
@@ -158,6 +169,7 @@ private:
     bool x_IsPart(const CBioseq& seq) const;
     const CBioseq& x_GetMasterForPart(const CBioseq& part) const;
     SIZE_TYPE x_GetPartNumber(const CBioseq_Handle& seq) const;
+    bool x_IsGPS(void) const;
     
     
     void x_SetId(const CBioseq& seq);
@@ -175,6 +187,7 @@ private:
     CRef<CSeq_id>         m_PrimaryId;
     string                m_WGSMasterAccn;
     string                m_WGSMasterName;
+    TReferences           m_References;
 
     SIZE_TYPE   m_SegsCount;     // # of segments (set iff bioseq is segmented)
     bool        m_IsPart;
@@ -218,6 +231,8 @@ public:
     typedef CFlatFileGenerator::TStyle        TStyle;
     typedef CFlatFileGenerator::TFilter       TFilter;
     typedef CFlatFileGenerator::TFlags        TFlags;
+    typedef CBioseqContext::TRef              TRef;
+    typedef CBioseqContext::TReferences       TReferences;
 
     // constructor
     CFFContext(CScope& scope, TFormat format, TMode mode, TStyle style,
@@ -247,20 +262,33 @@ public:
     TMode GetMode(void) const;
     void SetMode(TMode mode);
     bool IsModeRelease(void) const {
-        return GetMode()  == CFlatFileGenerator::eMode_Release;
+        return GetMode() == CFlatFileGenerator::eMode_Release;
     }
     bool IsModeEntrez (void) const {
-        return GetMode()  == CFlatFileGenerator::eMode_Entrez;
+        return GetMode() == CFlatFileGenerator::eMode_Entrez;
     }
     bool IsModeGBench (void) const {
-        return GetMode()  == CFlatFileGenerator::eMode_GBench;
+        return GetMode() == CFlatFileGenerator::eMode_GBench;
     }
     bool IsModeDump   (void) const {
-        return GetMode()  == CFlatFileGenerator::eMode_Dump;
+        return GetMode() == CFlatFileGenerator::eMode_Dump;
     }
 
     TStyle GetStyle(void) const;
     void SetStyle(TStyle style);
+    bool IsStyleNormal (void) const {
+        return GetStyle() == CFlatFileGenerator::eStyle_Normal;
+    }
+    bool IsStyleSegment(void) const {
+        return GetStyle() == CFlatFileGenerator::eStyle_Segment;
+    }
+    bool IsStyleMaster (void) const {
+        return GetStyle() == CFlatFileGenerator::eStyle_Master;
+    }
+    bool IsStyleContig (void) const {
+        return GetStyle() == CFlatFileGenerator::eStyle_Contig;
+    }
+    bool DoContigStyle(void);
 
     TFilter GetFilterFlags(void) const;
     void SetFilterFlags(TFilter filter_flags);
@@ -298,6 +326,8 @@ public:
     CMolInfo::TTech   GetTech  (void) const;
     CMolInfo::TBiomol GetBiomol(void) const;
     CSeq_inst::TMol   GetMol   (void) const;
+    TReferences& SetReferences(void);
+    const TReferences& GetReferences(void) const;
 
     bool IsSegmented(void) const;
     bool HasParts(void) const;
@@ -375,13 +405,18 @@ public:
     bool HideRemImpFeat    (void) const { return x_Flags().HideRemImpFeat();     }
     bool HideGeneRIFs      (void) const { return x_Flags().HideGeneRIFs();       }
     bool OnlyGeneRIFs      (void) const { return x_Flags().OnlyGeneRIFs();       }
+    bool HideCDSProdFeats  (void) const { return x_Flags().HideCDSProdFeats();   }
+    bool HideCDDFeats      (void) const { return x_Flags().HideCDDFeats();       }
     bool LatestGeneRIFs    (void) const { return x_Flags().LatestGeneRIFs();     }
     bool ShowContigFeatures(void) const { return x_Flags().ShowContigFeatures(); }
+    bool ShowContigSources (void) const { return x_Flags().ShowContigSources();  }
     bool ShowContigAndSeq  (void) const { return x_Flags().ShowContigAndSeq();   }
+    bool CopyGeneToCDNA    (void) const { return x_Flags().CopyGeneToCDNA();     }
+    bool CopyCDSFromCDNA   (void) const { return x_Flags().CopyCDSFromCDNA();    }
     bool DoHtml            (void) const { return x_Flags().DoHtml();             }
 
     bool ShowGBBSource(void) const;
-    
+    bool IsGPS(void) const;
 
 private:
 
@@ -424,9 +459,14 @@ private:
         bool HideRemImpFeat    (void) const  { return m_HideRemImpFeat;     }
         bool HideGeneRIFs      (void) const  { return m_HideGeneRIFs;       }
         bool OnlyGeneRIFs      (void) const  { return m_OnlyGeneRIFs;       }
+        bool HideCDSProdFeats  (void) const  { return m_HideCDSProdFeats;   }
+        bool HideCDDFeats      (void) const  { return m_HideCDDFeats;       }
         bool LatestGeneRIFs    (void) const  { return m_LatestGeneRIFs;     }
         bool ShowContigFeatures(void) const  { return m_ShowContigFeatures; }
+        bool ShowContigSources (void) const  { return m_ShowContigSources;  }
         bool ShowContigAndSeq  (void) const  { return m_ShowContigAndSeq;   }
+        bool CopyGeneToCDNA    (void) const  { return m_CopyGeneToCDNA;     }
+        bool CopyCDSFromCDNA   (void) const  { return m_CopyCDSFromCDNA;    }
         bool DoHtml            (void) const  { return m_DoHtml;             }
         
     private:
@@ -470,9 +510,14 @@ private:
         bool m_HideRemImpFeat;
         bool m_HideGeneRIFs;
         bool m_OnlyGeneRIFs;
+        bool m_HideCDSProdFeats;
+        bool m_HideCDDFeats;
         bool m_LatestGeneRIFs;
         bool m_ShowContigFeatures;
+        bool m_ShowContigSources;
         bool m_ShowContigAndSeq;
+        bool m_CopyGeneToCDNA;
+        bool m_CopyCDSFromCDNA;
         bool m_DoHtml;
     };
 
@@ -482,14 +527,12 @@ private:
     TFormat          m_Format;
     TMode            m_Mode;
     TStyle           m_Style;
-    TFilter     m_FilterFlags;
+    TFilter          m_FilterFlags;
     CFlags           m_Flags;
 
     CConstRef<CSeq_entry>  m_TSE;
     CRef<CScope>           m_Scope;
     CConstRef<CSubmit_block> m_SeqSub;
-    //bool m_IsGPS;
-
     
     CRef<CMasterContext> m_Master;
     CRef<CBioseqContext> m_Bioseq;
@@ -544,6 +587,13 @@ inline
 void CFFContext::SetStyle(TStyle style)
 {
     m_Style = style;
+}
+
+
+inline
+bool CFFContext::DoContigStyle(void)
+{
+    return m_Bioseq->DoContigStyle();
 }
 
 
@@ -622,7 +672,6 @@ const CSeq_id* CFFContext::GetPrimaryId(void) const
 {
     return m_Bioseq->GetPrimaryId();
 }
-
 
 
 inline
@@ -713,6 +762,20 @@ inline
 const string& CFFContext::GetWGSMasterName(void) const
 {
     return m_Bioseq->GetWGSMasterName();
+}
+
+
+inline
+CFFContext::TReferences& CFFContext::SetReferences(void)
+{
+    return m_Bioseq->SetReferences();
+}
+
+
+inline
+const CFFContext::TReferences& CFFContext::GetReferences(void) const
+{
+    return m_Bioseq->GetReferences();
 }
 
 
@@ -953,6 +1016,13 @@ bool CFFContext::ShowGBBSource(void) const
 }
 
 
+inline
+bool CFFContext::IsGPS(void) const
+{
+    return m_Bioseq->IsGPS();
+}
+
+
 /****************************************************************************/
 /*                               CMasterContext                             */
 /****************************************************************************/
@@ -1015,6 +1085,20 @@ inline
 CSeq_id* CBioseqContext::GetPrimaryId(void)
 {
     return m_PrimaryId;
+}
+
+
+inline
+CBioseqContext::TReferences& CBioseqContext::SetReferences(void)
+{
+    return m_References;
+}
+
+
+inline
+const CBioseqContext::TReferences& CBioseqContext::GetReferences(void) const
+{
+    return m_References;
 }
 
 
@@ -1286,6 +1370,12 @@ bool CBioseqContext::ShowGBBSource(void) const
 }
 
 
+inline
+bool CBioseqContext::IsGPS(void) const
+{
+    return m_IsGPS;
+}
+
 
 inline
 const CSeq_loc* CBioseqContext::GetLocation(void) const
@@ -1308,6 +1398,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 16:39:49  shomrat
+* added more user customization flags
+*
 * Revision 1.2  2004/01/14 15:50:17  shomrat
 * multiple changes (work in progress)
 *
