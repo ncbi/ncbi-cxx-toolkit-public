@@ -55,7 +55,7 @@ static void s_REG_Get(void* user_data,
                       char* value, size_t value_size) THROWS_NONE
 {
     try {
-        string result = static_cast<CNcbiRegistry*> (user_data)->
+        string result = static_cast<IRegistry*> (user_data)->
             Get(section, name);
 
         if ( !result.empty() )
@@ -73,7 +73,7 @@ static void s_REG_Set(void* user_data,
                       const char* value, EREG_Storage storage) THROWS_NONE
 {
     try {
-        static_cast<CNcbiRegistry*> (user_data)->
+        static_cast<IRWRegistry*> (user_data)->
             Set(section, name, value,
                 (storage == eREG_Persistent ? CNcbiRegistry::ePersistent : 0) |
                 CNcbiRegistry::eOverride | CNcbiRegistry::eTruncate);
@@ -88,7 +88,7 @@ static void s_REG_Set(void* user_data,
 static void s_REG_Cleanup(void* user_data) THROWS_NONE
 {
     try {
-        delete static_cast<CNcbiRegistry*> (user_data);
+        static_cast<IRegistry*> (user_data)->RemoveReference();
     }
     catch (CException& e) {
         NCBI_REPORT_EXCEPTION("s_REG_Cleanup() failed", e);
@@ -97,8 +97,11 @@ static void s_REG_Cleanup(void* user_data) THROWS_NONE
 }
 
 
-extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership)
+extern REG REG_cxx2c(IRWRegistry* reg, bool pass_ownership)
 {
+    if (pass_ownership  &&  reg) {
+        reg->AddReference();
+    }
     return reg ? REG_Create
         (static_cast<void*> (reg),
          reinterpret_cast<FREG_Get> (s_REG_Get),
@@ -243,7 +246,7 @@ static enum EConnectInit {
 } s_ConnectInit = eConnectInit_Intact;
 
 
-static void s_Init(CNcbiRegistry*    reg = 0,
+static void s_Init(IRWRegistry*      reg = 0,
                    CRWLock*          lock = 0,
                    FConnectInitFlags flags = 0,
                    EConnectInit      how = eConnectInit_Weak)
@@ -256,7 +259,7 @@ static void s_Init(CNcbiRegistry*    reg = 0,
 
 
 /* PUBLIC */
-extern void CONNECT_Init(CNcbiRegistry*    reg,
+extern void CONNECT_Init(IRWRegistry*      reg,
                          CRWLock*          lock,
                          FConnectInitFlags flags)
 {
@@ -294,6 +297,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2004/12/20 16:45:07  ucko
+ * Accept any IRWRegistry rather than specifically requiring a CNcbiRegistry.
+ * Even with ownership passed, don't delete registries that still have
+ * other references.
+ *
  * Revision 6.25  2004/10/08 14:48:01  kuznets
  * MSVC warning exterminated
  *
