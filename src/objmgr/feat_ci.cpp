@@ -226,9 +226,10 @@ const CSeq_feat& CMappedFeat::x_MakeOriginalFeature(void) const
 const CSeq_loc& CMappedFeat::x_MakeMappedLocation(void) const
 {
     _ASSERT(!m_MappedSeq_loc);
-    if ( m_AnnotObject_Ref.MappedNeedsUpdate() ) {
-        // clear references to mapped location from mapped feature
+    if ( m_AnnotObject_Ref.MappedSeq_locNeedsUpdate() ) {
         _ASSERT(!m_MappedSeq_feat);
+        // need to covert Seq_id to Seq_loc
+        // clear references to mapped location from mapped feature
         if ( m_CreatedMappedSeq_feat ) {
             if ( !m_CreatedMappedSeq_feat->ReferencedOnlyOnce() ) {
                 m_CreatedMappedSeq_feat.Reset();
@@ -241,13 +242,14 @@ const CSeq_loc& CMappedFeat::x_MakeMappedLocation(void) const
             }
         }
 
-        m_AnnotObject_Ref.UpdateMappedLocation(m_CreatedMappedSeq_loc,
-                                               m_CreatedMappedSeq_point,
-                                               m_CreatedMappedSeq_interval);
+        m_AnnotObject_Ref.UpdateMappedSeq_loc(m_CreatedMappedSeq_loc,
+                                              m_CreatedMappedSeq_point,
+                                              m_CreatedMappedSeq_interval);
         m_MappedSeq_loc = m_CreatedMappedSeq_loc;
     }
-    else {
-        m_MappedSeq_loc.Reset(m_AnnotObject_Ref.GetMappedLocation());
+    else if ( m_AnnotObject_Ref.IsMapped() ) {
+        _ASSERT(!m_MappedSeq_feat);
+        m_MappedSeq_loc.Reset(&m_AnnotObject_Ref.GetMappedSeq_loc());
     }
     return *m_MappedSeq_loc;
 }
@@ -255,7 +257,7 @@ const CSeq_loc& CMappedFeat::x_MakeMappedLocation(void) const
 
 const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
 {
-    if ( m_AnnotObject_Ref.GetMappedLocation() ) {
+    if ( m_AnnotObject_Ref.IsMapped() ) {
         _ASSERT(!m_MappedSeq_feat);
         // some Seq-loc object is mapped
         if ( !m_CreatedMappedSeq_feat ||
@@ -289,26 +291,10 @@ const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
 
         GetMappedLocation();
 
-        {
-            CSeq_loc* loc;
-            if ( IsMappedLocation(0) ) {
-                loc = const_cast<CSeq_loc*>(m_MappedSeq_loc.GetPointer());
-            }
-            else {
-                loc = &src.SetLocation();
-            }
-            dst.SetLocation(*loc);
-        }
+        dst.SetLocation(const_cast<CSeq_loc&>(GetLocation()));
 
         if ( src.IsSetProduct() ) {
-            CSeq_loc* loc;
-            if ( IsMappedLocation(1) ) {
-                loc = const_cast<CSeq_loc*>(m_MappedSeq_loc.GetPointer());
-            }
-            else {
-                loc = &src.SetProduct();
-            }
-            dst.SetProduct(*loc);
+            dst.SetProduct(const_cast<CSeq_loc&>(GetProduct()));
         }
         else {
             dst.ResetProduct();
@@ -373,6 +359,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/01/28 20:54:36  vasilche
+* Fixed mapping of annotations.
+*
 * Revision 1.23  2003/08/27 19:44:06  vasilche
 * Avoid error on IRIX with null reference cast.
 *

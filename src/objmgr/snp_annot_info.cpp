@@ -529,6 +529,7 @@ CRef<CSeq_entry> CSeq_annot_SNP_Info::GetEntry(void)
 void CSeq_annot_SNP_Info::Reset(void)
 {
     m_Gi = -1;
+    m_Seq_id.Reset();
     m_Comments.Clear();
     m_Alleles.Clear();
     m_SNP_Set.clear();
@@ -541,6 +542,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.9  2004/01/28 20:54:36  vasilche
+ * Fixed mapping of annotations.
+ *
  * Revision 1.8  2004/01/13 16:55:34  vasilche
  * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
  * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.

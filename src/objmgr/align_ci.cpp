@@ -75,9 +75,9 @@ const CSeq_align& CAlign_CI::operator* (void) const
     const CAnnotObject_Ref& annot = Get();
     _ASSERT(annot.IsAlign());
     if (!m_MappedAlign) {
-        const CSeq_align_Mapper* mapper = annot.GetMappedSeq_align();
-        m_MappedAlign = mapper ? mapper->GetDstAlign().GetPointer()
-            : &annot.GetAlign();
+        if ( annot.IsMapped() ) {
+            m_MappedAlign = annot.GetMappedSeq_align_Mapper().GetDstAlign();
+        }
     }
     return *m_MappedAlign;
 }
@@ -88,9 +88,9 @@ const CSeq_align* CAlign_CI::operator-> (void) const
     const CAnnotObject_Ref& annot = Get();
     _ASSERT(annot.IsAlign());
     if (!m_MappedAlign) {
-        const CSeq_align_Mapper* mapper = annot.GetMappedSeq_align();
-        m_MappedAlign = mapper ? mapper->GetDstAlign().GetPointer()
-            : &annot.GetAlign();
+        if ( annot.IsMapped() ) {
+            m_MappedAlign = annot.GetMappedSeq_align_Mapper().GetDstAlign();
+        }
     }
     return m_MappedAlign.GetPointer();
 }
@@ -110,6 +110,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/01/28 20:54:35  vasilche
+* Fixed mapping of annotations.
+*
 * Revision 1.19  2004/01/23 16:14:47  grichenk
 * Implemented alignment mapping
 *

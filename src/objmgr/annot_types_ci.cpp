@@ -77,7 +77,8 @@ BEGIN_SCOPE(objects)
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
     : m_Object(&object.GetSeq_annot_Info()),
-      m_AnnotObject_Index(object.GetSeq_annot_Info().GetAnnotObjectIndex(object)),
+      m_AnnotObject_Index(object.GetSeq_annot_Info()
+                          .GetAnnotObjectIndex(object)),
       m_ObjectType(eType_Seq_annot_Info),
       m_MappedFlags(0),
       m_MappedObjectType(eMappedObjType_not_set),
@@ -122,14 +123,16 @@ const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
 const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
 {
     _ASSERT(m_ObjectType == eType_Seq_annot_Info);
-    return static_cast<const CSeq_annot_Info&>(*m_Object).GetAnnotObject_Info(m_AnnotObject_Index);
+    return static_cast<const CSeq_annot_Info&>
+        (*m_Object).GetAnnotObject_Info(m_AnnotObject_Index);
 }
 
 
 const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
 {
     _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
-    return static_cast<const CSeq_annot_SNP_Info&>(*m_Object).GetSNP_Info(m_AnnotObject_Index);
+    return static_cast<const CSeq_annot_SNP_Info&>
+        (*m_Object).GetSNP_Info(m_AnnotObject_Index);
 }
 
 
@@ -154,9 +157,10 @@ void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
         snp.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
     if ( !cvt ) {
         m_TotalRange.SetFrom(src_from).SetTo(src_to);
-        m_MappedFlags = 0;
-        m_MappedObject.Reset();
-        m_MappedObjectType = eMappedObjType_Seq_point;
+        m_MappedObject.Reset(const_cast<CSeq_id*>
+                             (&GetSeq_annot_SNP_Info().GetSeq_id()));
+        m_MappedObjectType = eMappedObjType_Seq_id;
+        m_MappedFlags = fMapped_Seq_point;
         m_MappedStrand = src_strand;
         return;
     }
@@ -174,18 +178,33 @@ void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
 }
 
 
-void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc) const
+const CSeq_align_Mapper&
+CAnnotObject_Ref::GetMappedSeq_align_Mapper(void) const
 {
-    _ASSERT(MappedNeedsUpdate());
+    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_align_Mapper);
+    return static_cast<const CSeq_align_Mapper&>(*m_MappedObject);
+}
 
-    CRef<CSeq_id> id(const_cast<CSeq_id*>(
-        static_cast<const CSeq_id*>(m_MappedObject.GetPointerOrNull())));
+
+void CAnnotObject_Ref::SetMappedSeq_align_Mapper(CSeq_align_Mapper* mapper)
+{
+    m_MappedObject.Reset(mapper);
+    m_MappedObjectType =
+        mapper? eMappedObjType_Seq_align_Mapper: eMappedObjType_not_set;
+}
+
+
+void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
+{
+    _ASSERT(MappedSeq_locNeedsUpdate());
+    
+    CSeq_id& id = const_cast<CSeq_id&>(GetMappedSeq_id());
     if ( !loc || !loc->ReferencedOnlyOnce() ) {
         loc.Reset(new CSeq_loc);
     }
-    if ( m_MappedObjectType == eMappedObjType_Seq_point ) {
+    if ( m_MappedFlags & fMapped_Seq_point ) {
         CSeq_point& point = loc->SetPnt();
-        point.SetId(*id);
+        point.SetId(id);
         point.SetPoint(m_TotalRange.GetFrom());
         if ( m_MappedStrand != eNa_strand_unknown )
             point.SetStrand(ENa_strand(m_MappedStrand));
@@ -194,7 +213,7 @@ void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc) const
     }
     else {
         CSeq_interval& interval = loc->SetInt();
-        interval.SetId(*id);
+        interval.SetId(id);
         interval.SetFrom(m_TotalRange.GetFrom());
         interval.SetTo(m_TotalRange.GetTo());
         if ( m_MappedStrand != eNa_strand_unknown )
@@ -205,27 +224,26 @@ void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc) const
 }
 
 
-void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc,
-                                            CRef<CSeq_point>& pnt_ref,
-                                            CRef<CSeq_interval>& int_ref) const
+void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
+                                           CRef<CSeq_point>& pnt_ref,
+                                           CRef<CSeq_interval>& int_ref) const
 {
-    _ASSERT(MappedNeedsUpdate());
+    _ASSERT(MappedSeq_locNeedsUpdate());
 
-    CRef<CSeq_id> id(const_cast<CSeq_id*>(
-        static_cast<const CSeq_id*>(m_MappedObject.GetPointerOrNull())));
+    CSeq_id& id = const_cast<CSeq_id&>(GetMappedSeq_id());
     if ( !loc || !loc->ReferencedOnlyOnce() ) {
         loc.Reset(new CSeq_loc);
     }
     else {
         loc->Reset();
     }
-    if ( m_MappedObjectType == eMappedObjType_Seq_point ) {
+    if ( m_MappedFlags & fMapped_Seq_point ) {
         if ( !pnt_ref || !pnt_ref->ReferencedOnlyOnce() ) {
             pnt_ref.Reset(new CSeq_point);
         }
         CSeq_point& point = *pnt_ref;
         loc->SetPnt(point);
-        point.SetId(*id);
+        point.SetId(id);
         point.SetPoint(m_TotalRange.GetFrom());
         if ( m_MappedStrand != eNa_strand_unknown )
             point.SetStrand(ENa_strand(m_MappedStrand));
@@ -238,7 +256,7 @@ void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc,
         }
         CSeq_interval& interval = *int_ref;
         loc->SetInt(interval);
-        interval.SetId(*id);
+        interval.SetId(id);
         interval.SetFrom(m_TotalRange.GetFrom());
         interval.SetTo(m_TotalRange.GetTo());
         if ( m_MappedStrand != eNa_strand_unknown )
@@ -323,47 +341,44 @@ struct CAnnotObject_Ref_Reverse_Less : public ObjectReverseLess
 
 struct CFeat_Less
 {
-    bool x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y) const;
+    static bool x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y);
+
+    static const CSeq_feat& x_GetFeat(const CAnnotObject_Ref& x);
+    static const CSeq_loc& x_GetLocation(const CAnnotObject_Ref& x);
 };
 
 
 struct CAnnotObject_Less
 {
-    bool x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y) const;
+    static bool x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y);
 };
 
 
-bool CFeat_Less::x_less(const CAnnotObject_Ref& x,
-                        const CAnnotObject_Ref& y) const
+const CSeq_feat& CFeat_Less::x_GetFeat(const CAnnotObject_Ref& x)
+{
+    const CAnnotObject_Info& x_info = x.GetAnnotObject_Info();
+    _ASSERT(x_info.GetFeatFast());
+    return *x_info.GetFeatFast();
+}
+
+
+const CSeq_loc& CFeat_Less::x_GetLocation(const CAnnotObject_Ref& x)
+{
+    if ( x.GetMappedObjectType() == x.eMappedObjType_Seq_loc ) {
+        return x.GetMappedSeq_loc();
+    }
+    const CSeq_feat& x_feat = x_GetFeat(x);
+    return x.IsProduct()? x_feat.GetProduct(): x_feat.GetLocation();
+}
+
+
+bool CFeat_Less::x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y)
 {
     if ( !x.IsSNPFeat() && !y.IsSNPFeat() ) {
-        const CAnnotObject_Info& x_info = x.GetAnnotObject_Info();
-        const CAnnotObject_Info& y_info = y.GetAnnotObject_Info();
-        const CSeq_feat* x_feat = x_info.GetFeatFast();
-        const CSeq_feat* y_feat = y_info.GetFeatFast();
-        _ASSERT(x_feat && y_feat);
-        const CSeq_loc* x_loc = x.GetMappedLocation();
-        const CSeq_loc* y_loc = y.GetMappedLocation();
-        if ( !x_loc ) {
-            if ( !x.IsProduct() ) {
-                x_loc = &x_feat->GetLocation();
-            }
-            else {
-                _ASSERT(x_feat->IsSetProduct());
-                x_loc = &x_feat->GetProduct();
-            }
-        }
-        if ( !y_loc ) {
-            if ( !y.IsProduct() ) {
-                y_loc = &y_feat->GetLocation();
-            }
-            else {
-                _ASSERT(y_feat->IsSetProduct());
-                y_loc = &y_feat->GetProduct();
-            }
-        }
         try {
-            int diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
+            int diff = x_GetFeat(x).CompareNonLocation(x_GetFeat(y),
+                                                       x_GetLocation(x),
+                                                       x_GetLocation(y));
             if ( diff != 0 ) {
                 return diff < 0;
             }
@@ -416,7 +431,7 @@ bool CFeat_Less::x_less(const CAnnotObject_Ref& x,
 
 
 bool CAnnotObject_Less::x_less(const CAnnotObject_Ref& x,
-                               const CAnnotObject_Ref& y) const
+                               const CAnnotObject_Ref& y)
 {
     const CSeq_annot& x_annot = x.GetSeq_annot();
     const CSeq_annot& y_annot = y.GetSeq_annot();
@@ -1343,22 +1358,15 @@ bool CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
 }
 
 
-const CSeq_align_Mapper* CAnnotObject_Ref::GetMappedSeq_align(void) const
-{
-    if (!m_MappedObject) {
-        return 0; // no mapped align, use the original one
-    }
-    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_align);
-    return static_cast<const CSeq_align_Mapper*>(m_MappedObject.GetPointer());
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2004/01/28 20:54:36  vasilche
+* Fixed mapping of annotations.
+*
 * Revision 1.106  2004/01/26 17:50:55  vasilche
 * Do assert check only when object is non-null.
 *

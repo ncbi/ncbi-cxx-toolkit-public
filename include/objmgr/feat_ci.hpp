@@ -83,10 +83,16 @@ public:
     bool IsSetProduct(void) const
         { return GetOriginalFeature().IsSetProduct(); }
     const CSeq_loc& GetProduct(void) const
-        { return IsMappedLocation(1)? GetMappedLocation(): GetOriginalFeature().GetProduct(); }
+        {
+            return m_AnnotObject_Ref.IsMappedProduct()?
+                GetMappedLocation(): GetOriginalFeature().GetProduct();
+        }
 
     const CSeq_loc& GetLocation(void) const
-        { return IsMappedLocation(0)? GetMappedLocation(): GetOriginalFeature().GetLocation(); }
+        {
+            return m_AnnotObject_Ref.IsMappedLocation()?
+                GetMappedLocation(): GetOriginalFeature().GetLocation();
+        }
 
     bool IsSetQual(void) const
         { return GetOriginalFeature().IsSetQual(); }
@@ -146,10 +152,6 @@ private:
     const CSeq_feat& x_MakeMappedFeature(void) const;
     const CSeq_loc& x_MakeMappedLocation(void) const;
 
-    bool IsMappedLocation(bool product) const
-        {
-            return m_AnnotObject_Ref.IsMappedLocation(product);
-        }
     const CSeq_loc& GetMappedLocation(void) const;
 
     CAnnotObject_Ref             m_AnnotObject_Ref;
@@ -359,6 +361,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/01/28 20:54:34  vasilche
+* Fixed mapping of annotations.
+*
 * Revision 1.35  2004/01/23 16:14:46  grichenk
 * Implemented alignment mapping
 *

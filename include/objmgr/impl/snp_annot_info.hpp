@@ -42,6 +42,8 @@
 #include <map>
 #include <algorithm>
 
+#include <objects/seqloc/Seq_id.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
@@ -213,6 +215,7 @@ public:
     const_iterator FirstIn(const TRange& range) const;
 
     int GetGi(void) const;
+    const CSeq_id& GetSeq_id(void) const;
 
     const CSeq_annot& GetSeq_annot(void) const;
 
@@ -238,6 +241,7 @@ private:
     friend struct SSNP_Info;
 
     int                         m_Gi;
+    CRef<CSeq_id>               m_Seq_id;
     TSNP_Set                    m_SNP_Set;
     CIndexedStrings             m_Comments;
     CIndexedStrings             m_Alleles;
@@ -342,6 +346,13 @@ int CSeq_annot_SNP_Info::GetGi(void) const
 
 
 inline
+const CSeq_id& CSeq_annot_SNP_Info::GetSeq_id(void) const
+{
+    return *m_Seq_id;
+}
+
+
+inline
 bool CSeq_annot_SNP_Info::x_SetGi(int gi)
 {
     if ( gi == m_Gi ) {
@@ -349,6 +360,8 @@ bool CSeq_annot_SNP_Info::x_SetGi(int gi)
     }
     if ( m_Gi < 0 ) {
         m_Gi = gi;
+        m_Seq_id.Reset(new CSeq_id);
+        m_Seq_id->SetGi(gi);
         return true;
     }
     return false;
@@ -409,6 +422,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/01/28 20:54:35  vasilche
+* Fixed mapping of annotations.
+*
 * Revision 1.9  2004/01/13 16:55:31  vasilche
 * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
 * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.

@@ -89,15 +89,15 @@ public:
 
     enum FMappedFlags {
         fMapped_Partial = 1,
-        fMapped_Product = 2
+        fMapped_Product = 2,
+        fMapped_Seq_point = 4
     };
 
     enum EMappedObjectType {
         eMappedObjType_not_set,
         eMappedObjType_Seq_loc,
-        eMappedObjType_Seq_point,
-        eMappedObjType_Seq_interval,
-        eMappedObjType_Seq_align
+        eMappedObjType_Seq_id,
+        eMappedObjType_Seq_align_Mapper
     };
 
     EObjectType GetObjectType(void) const;
@@ -108,12 +108,15 @@ public:
     const CAnnotObject_Info& GetAnnotObject_Info(void) const;
     const SSNP_Info& GetSNP_Info(void) const;
 
+    EMappedObjectType GetMappedObjectType(void) const;
+
     TSeqPos GetFrom(void) const;
     TSeqPos GetToOpen(void) const;
     const TRange& GetTotalRange(void) const;
 
     bool IsPartial(void) const;
     bool IsProduct(void) const;
+    void SetProduct(bool product);
     // int GetMappedIndex(void) const;
 
     const CSeq_annot& GetSeq_annot(void) const;
@@ -125,24 +128,35 @@ public:
     const CSeq_graph& GetGraph(void) const;
     const CSeq_align& GetAlign(void) const;
 
-    bool IsMappedLocation(bool product) const;
-    const CSeq_loc* GetMappedLocation(void) const;
-    const CSeq_align_Mapper* GetMappedSeq_align(void) const;
+    bool IsMapped(void) const;
+    bool IsMappedLocation(void) const;
+    bool IsMappedProduct(void) const;
+
+    bool MappedSeq_locNeedsUpdate(void) const;
+
+    const CSeq_loc& GetMappedSeq_loc(void) const;
+    const CSeq_id& GetMappedSeq_id(void) const;
+    const CSeq_align_Mapper& GetMappedSeq_align_Mapper(void) const;
 
     Uint4 GetAnnotObjectIndex(void) const;
-    bool MappedNeedsUpdate(void) const;
-    void UpdateMappedLocation(CRef<CSeq_loc>& loc) const;
-    void UpdateMappedLocation(CRef<CSeq_loc>& loc,
-                              CRef<CSeq_point>& pnt_ref,
-                              CRef<CSeq_interval>& int_ref) const;
+
+    void UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const;
+    void UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
+                             CRef<CSeq_point>& pnt_ref,
+                             CRef<CSeq_interval>& int_ref) const;
 
     void SetAnnotObjectRange(const TRange& range, bool product);
     void SetSNP_Point(const SSNP_Info& snp, CSeq_loc_Conversion* cvt);
 
     void SetPartial(bool value);
-    void SetProduct(bool value);
     void SetMappedIndex(int index);
-    void SetMappedLocation(CSeq_loc* loc);
+    void SetMappedSeq_loc(CSeq_loc& loc);
+    void SetMappedSeq_loc(CSeq_loc* loc);
+    void SetMappedSeq_id(CSeq_id& id);
+    void SetMappedPoint(bool point);
+    void SetMappedSeq_id(CSeq_id& id, bool point);
+    void SetMappedSeq_align_Mapper(CSeq_align_Mapper& mapper);
+    void SetMappedSeq_align_Mapper(CSeq_align_Mapper* mapper);
 
     void ResetLocation(void);
     bool operator<(const CAnnotObject_Ref& ref) const; // sort by object
@@ -367,34 +381,105 @@ bool CAnnotObject_Ref::IsProduct(void) const
 
 
 inline
-bool CAnnotObject_Ref::IsMappedLocation(bool product) const
+CAnnotObject_Ref::EMappedObjectType
+CAnnotObject_Ref::GetMappedObjectType(void) const
 {
-    return m_MappedObjectType == eMappedObjType_Seq_loc
-        && bool(m_MappedObject)
-        && (product == IsProduct());
+    return EMappedObjectType(m_MappedObjectType);
 }
 
 
 inline
-bool CAnnotObject_Ref::MappedNeedsUpdate(void) const
+bool CAnnotObject_Ref::IsMapped(void) const
 {
-    // ???
-    return m_MappedObjectType == eMappedObjType_Seq_point
-        ||  m_MappedObjectType == eMappedObjType_Seq_interval;
+    _ASSERT((m_MappedObjectType == eMappedObjType_not_set) == !m_MappedObject);
+    return m_MappedObjectType != eMappedObjType_not_set;
+
 }
 
 
 inline
-const CSeq_loc* CAnnotObject_Ref::GetMappedLocation(void) const
+bool CAnnotObject_Ref::MappedSeq_locNeedsUpdate(void) const
 {
-    return static_cast<const CSeq_loc*>(m_MappedObject.GetPointerOrNull());
+    return m_MappedObjectType == eMappedObjType_Seq_id;
+
 }
 
 
 inline
-void CAnnotObject_Ref::SetMappedLocation(CSeq_loc* loc)
+bool CAnnotObject_Ref::IsMappedLocation(void) const
 {
+    return IsMapped() && (m_MappedFlags & fMapped_Product) == 0;
+}
+
+
+inline
+bool CAnnotObject_Ref::IsMappedProduct(void) const
+{
+    return IsMapped() && (m_MappedFlags & fMapped_Product) != 0;
+}
+
+
+inline
+const CSeq_loc& CAnnotObject_Ref::GetMappedSeq_loc(void) const
+{
+    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_loc);
+    return static_cast<const CSeq_loc&>(*m_MappedObject);
+}
+
+
+inline
+const CSeq_id& CAnnotObject_Ref::GetMappedSeq_id(void) const
+{
+    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_id);
+    return static_cast<const CSeq_id&>(*m_MappedObject);
+}
+
+
+inline
+void CAnnotObject_Ref::SetMappedSeq_loc(CSeq_loc* loc)
+{
+    _ASSERT(!IsMapped());
     m_MappedObject.Reset(loc);
+    m_MappedObjectType = loc? eMappedObjType_Seq_loc: eMappedObjType_not_set;
+}
+
+
+inline
+void CAnnotObject_Ref::SetMappedSeq_loc(CSeq_loc& loc)
+{
+    _ASSERT(!IsMapped());
+    m_MappedObject.Reset(&loc);
+    m_MappedObjectType = eMappedObjType_Seq_loc;
+}
+
+
+inline
+void CAnnotObject_Ref::SetMappedSeq_id(CSeq_id& id)
+{
+    _ASSERT(!IsMapped());
+    m_MappedObject.Reset(&id);
+    m_MappedObjectType = eMappedObjType_Seq_id;
+}
+
+
+inline
+void CAnnotObject_Ref::SetMappedPoint(bool point)
+{
+    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_id);
+    if ( point ) {
+        m_MappedFlags |= fMapped_Seq_point;
+    }
+    else {
+        m_MappedFlags &= ~fMapped_Seq_point;
+    }
+}
+
+
+inline
+void CAnnotObject_Ref::SetMappedSeq_id(CSeq_id& id, bool point)
+{
+    SetMappedSeq_id(id);
+    SetMappedPoint(point);
 }
 
 
@@ -452,25 +537,25 @@ const CSeq_align& CAnnotObject_Ref::GetAlign(void) const
 
 
 inline
-void CAnnotObject_Ref::SetPartial(bool value)
+void CAnnotObject_Ref::SetPartial(bool partial)
 {
-    if (value) {
-        m_MappedFlags = m_MappedFlags | fMapped_Partial;
+    if ( partial ) {
+        m_MappedFlags |= fMapped_Partial;
     }
     else {
-        m_MappedFlags = m_MappedFlags & ~fMapped_Partial;
+        m_MappedFlags &= ~fMapped_Partial;
     }
 }
 
 
 inline
-void CAnnotObject_Ref::SetProduct(bool value)
+void CAnnotObject_Ref::SetProduct(bool product)
 {
-    if (value) {
-        m_MappedFlags = m_MappedFlags | fMapped_Product;
+    if ( product ) {
+        m_MappedFlags |= fMapped_Product;
     }
     else {
-        m_MappedFlags = m_MappedFlags & ~fMapped_Product;
+        m_MappedFlags &= ~fMapped_Product;
     }
 }
 
@@ -487,6 +572,7 @@ inline
 void CAnnotObject_Ref::ResetLocation(void)
 {
     m_TotalRange = TRange::GetEmpty();
+    m_MappedObject.Reset();
     m_MappedObjectType = eMappedObjType_not_set;
     m_MappedStrand = eNa_strand_unknown;
 }
@@ -559,6 +645,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2004/01/28 20:54:34  vasilche
+* Fixed mapping of annotations.
+*
 * Revision 1.60  2004/01/23 16:14:45  grichenk
 * Implemented alignment mapping
 *

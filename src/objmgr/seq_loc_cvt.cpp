@@ -69,7 +69,7 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
       m_Dst_id(&master_loc_empty.SetEmpty()),
       m_Dst_loc_Empty(&master_loc_empty),
       m_Partial(false),
-      m_LastType(CAnnotObject_Ref::eMappedObjType_not_set),
+      m_LastType(eMappedObjType_not_set),
       m_LastStrand(eNa_strand_unknown),
       m_Scope(scope)
 {
@@ -115,7 +115,7 @@ bool CSeq_loc_Conversion::ConvertPoint(TSeqPos src_pos,
         m_LastStrand = Reverse(src_strand);
         dst_pos = m_Shift - src_pos;
     }
-    m_LastType = CAnnotObject_Ref::eMappedObjType_Seq_point;
+    m_LastType = eMappedObjType_Seq_point;
     m_TotalRange += m_LastRange.SetFrom(dst_pos).SetTo(dst_pos);
     return true;
 }
@@ -147,7 +147,7 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
         dst_from = m_Shift - src_to;
         dst_to = m_Shift - src_from;
     }
-    m_LastType = CAnnotObject_Ref::eMappedObjType_Seq_interval;
+    m_LastType = eMappedObjType_Seq_interval;
     m_TotalRange += m_LastRange.SetFrom(dst_from).SetTo(dst_to);
     return true;
 }
@@ -156,22 +156,22 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
 inline
 void CSeq_loc_Conversion::CheckDstInterval(void)
 {
-    if ( m_LastType != CAnnotObject_Ref::eMappedObjType_Seq_interval ) {
+    if ( m_LastType != eMappedObjType_Seq_interval ) {
         NCBI_THROW(CAnnotException, eBadLocation,
                    "Wrong last location type");
     }
-    m_LastType = CAnnotObject_Ref::eMappedObjType_not_set;
+    m_LastType = eMappedObjType_not_set;
 }
 
 
 inline
 void CSeq_loc_Conversion::CheckDstPoint(void)
 {
-    if ( m_LastType != CAnnotObject_Ref::eMappedObjType_Seq_point ) {
+    if ( m_LastType != eMappedObjType_Seq_point ) {
         NCBI_THROW(CAnnotException, eBadLocation,
                    "Wrong last location type");
     }
-    m_LastType = CAnnotObject_Ref::eMappedObjType_not_set;
+    m_LastType = eMappedObjType_not_set;
 }
 
 
@@ -205,21 +205,19 @@ CRef<CSeq_point> CSeq_loc_Conversion::GetDstPoint(void)
 }
 
 
-void CSeq_loc_Conversion::SetDstLoc(CRef<CObject>* dst)
+void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>* dst)
 {
     CSeq_loc* loc = 0;
     if ( !(*dst) ) {
+        _ASSERT(IsSpecialLoc());
         switch ( m_LastType ) {
-        case CAnnotObject_Ref::eMappedObjType_Seq_interval:
+        case eMappedObjType_Seq_interval:
             dst->Reset(loc = new CSeq_loc);
             loc->SetInt(*GetDstInterval());
             break;
-        case CAnnotObject_Ref::eMappedObjType_Seq_point:
+        case eMappedObjType_Seq_point:
             dst->Reset(loc = new CSeq_loc);
             loc->SetPnt(*GetDstPoint());
-            break;
-        default:
-            *dst = m_Dst_loc_Empty;
             break;
         }
     }
@@ -229,13 +227,13 @@ void CSeq_loc_Conversion::SetDstLoc(CRef<CObject>* dst)
 }
 
 
-bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CObject>* dst,
+bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
                                   EConvertFlag flag)
 {
     dst->Reset();
     CSeq_loc* loc = 0;
     _ASSERT(!IsSpecialLoc());
-    m_LastType = CAnnotObject_Ref::eMappedObjType_Seq_loc;
+    m_LastType = eMappedObjType_Seq_loc;
     switch ( src.Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Feat:
@@ -323,14 +321,13 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CObject>* dst,
         const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
         CSeq_loc_mix::Tdata* dst_mix = 0;
         CRef<CSeq_loc> dst_loc;
-        CRef<CObject> dst_obj;
         ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
-            if ( Convert(**i, &dst_obj, eCnvAlways) ) {
+            if ( Convert(**i, &dst_loc, eCnvAlways) ) {
                 if ( !dst_mix ) {
                     dst->Reset(loc = new CSeq_loc);
-                    dst_obj.Reset(loc);
                     dst_mix = &loc->SetMix().Set();
                 }
+                _ASSERT(dst_loc);
                 dst_mix->push_back(dst_loc);
             }
         }
@@ -341,12 +338,10 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CObject>* dst,
         const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
         CSeq_loc_equiv::Tdata* dst_equiv = 0;
         CRef<CSeq_loc> dst_loc;
-        CRef<CObject> dst_obj;
         ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
-            if ( Convert(**i, &dst_obj, eCnvAlways) ) {
+            if ( Convert(**i, &dst_loc, eCnvAlways) ) {
                 if ( !dst_equiv ) {
                     dst->Reset(loc = new CSeq_loc);
-                    dst_obj.Reset(loc);
                     dst_equiv = &loc->SetEquiv().Set();
                 }
                 dst_equiv->push_back(dst_loc);
@@ -395,26 +390,34 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     switch ( obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
+    {
+        CRef<CSeq_loc> mapped_loc;
+        const CSeq_loc* src_loc;
         if ( loctype != eProduct ) {
-            Convert(obj.GetFeatFast()->GetLocation(),
-                &ref.m_MappedObject);
+            src_loc = &obj.GetFeatFast()->GetLocation();
         }
         else {
-            Convert(obj.GetFeatFast()->GetProduct(),
-                &ref.m_MappedObject);
+            src_loc = &obj.GetFeatFast()->GetProduct();
         }
+        Convert(*src_loc, &mapped_loc);
+        ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
+    }
     case CSeq_annot::C_Data::e_Graph:
-        Convert(obj.GetGraphFast()->GetLoc(),
-            &ref.m_MappedObject);
+    {
+        CRef<CSeq_loc> mapped_loc;
+        Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
+        ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
+    }
     case CSeq_annot::C_Data::e_Align:
+    {
         const CSeq_align& orig_align = ref.GetAlign();
         CRef<CSeq_align_Mapper> mapped_align;
         Convert(orig_align, &mapped_align);
-        ref.m_MappedObject.Reset(mapped_align.GetPointerOrNull());
-        ref.m_MappedObjectType = CAnnotObject_Ref::eMappedObjType_Seq_align;
+        ref.SetMappedSeq_align_Mapper(mapped_align.GetPointerOrNull());
         return;
+    }
     }
     SetMappedLocation(ref, loctype);
 }
@@ -741,7 +744,7 @@ void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
             }
         }
         sseg.m_Mappings.push_back(dseg);
-        cvt.m_LastType = CAnnotObject_Ref::eMappedObjType_not_set;
+        cvt.m_LastType = cvt.eMappedObjType_not_set;
     }
     else {
         // Empty mapping. Remove the row.
@@ -951,16 +954,11 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
     ref.SetProduct(loctype == eProduct);
     ref.SetPartial(m_Partial || ref.IsPartial());
     ref.m_TotalRange = m_TotalRange;
-    ref.m_MappedObjectType = m_LastType;
     if ( IsSpecialLoc() ) {
-        _ASSERT(!ref.m_MappedObject);
         // special interval or point
-        ref.m_MappedObject = m_Dst_loc_Empty;
+        ref.SetMappedSeq_id(*m_Dst_id, m_LastType == eMappedObjType_Seq_point);
+        m_LastType = eMappedObjType_not_set;
         ref.m_MappedStrand = m_LastStrand;
-        m_LastType = CAnnotObject_Ref::eMappedObjType_not_set;
-    }
-    else {
-        _ASSERT(ref.m_MappedObject);
     }
 }
 
@@ -1005,31 +1003,36 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
         return;
     }
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
-    CRef<CSeq_loc> mapped_loc;
     switch ( obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
+    {
+        CRef<CSeq_loc> mapped_loc;
+        const CSeq_loc* src_loc;
         if ( loctype != CSeq_loc_Conversion::eProduct ) {
-            Convert(obj.GetFeatFast()->GetLocation(), &mapped_loc);
-            ref.m_MappedObject.Reset(mapped_loc.GetPointerOrNull());
+            src_loc = &obj.GetFeatFast()->GetLocation();
         }
         else {
-            Convert(obj.GetFeatFast()->GetProduct(), &mapped_loc);
-            ref.m_MappedObject.Reset(mapped_loc.GetPointerOrNull());
+            src_loc = &obj.GetFeatFast()->GetProduct();
         }
-        ref.m_MappedObjectType = CAnnotObject_Ref::eMappedObjType_Seq_loc;
+        Convert(*src_loc, &mapped_loc);
+        ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
+    }
     case CSeq_annot::C_Data::e_Graph:
+    {
+        CRef<CSeq_loc> mapped_loc;
         Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
-        ref.m_MappedObject.Reset(mapped_loc.GetPointerOrNull());
-        ref.m_MappedObjectType = CAnnotObject_Ref::eMappedObjType_Seq_loc;
+        ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
+    }
     case CSeq_annot::C_Data::e_Align:
+    {
         const CSeq_align& orig_align = ref.GetAlign();
         CRef<CSeq_align_Mapper> mapped_align;
         Convert(orig_align, &mapped_align);
-        ref.m_MappedObject.Reset(mapped_align.GetPointerOrNull());
-        ref.m_MappedObjectType = CAnnotObject_Ref::eMappedObjType_Seq_align;
+        ref.SetMappedSeq_align_Mapper(mapped_align.GetPointerOrNull());
         break;
+    }
     }
     ref.SetProduct(loctype == CSeq_loc_Conversion::eProduct);
     ref.SetPartial(m_Partial);
@@ -1199,6 +1202,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
                 if ( dst_pos != kInvalidSeqPos ) {
                     CRef<CSeq_loc> pnt(new CSeq_loc);
                     pnt->SetPnt(*cvt.GetDstPoint());
+                    _ASSERT(pnt);
                     locs.push_back(pnt);
                     m_TotalRange += cvt.GetTotalRange();
                     mapped = true;
@@ -1218,6 +1222,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
         ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
             dst_loc.Reset(new CSeq_loc);
             if ( Convert(**i, &dst_loc) ) {
+                _ASSERT(dst_loc);
                 dst_mix.push_back(dst_loc);
                 res = true;
             }
@@ -1317,6 +1322,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/01/28 20:54:36  vasilche
+* Fixed mapping of annotations.
+*
 * Revision 1.12  2004/01/23 22:13:48  ucko
 * Fix variable shadowing that some compilers treated as an error.
 *

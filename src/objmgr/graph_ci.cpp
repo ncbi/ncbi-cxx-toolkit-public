@@ -37,16 +37,44 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CMappedGraph& CMappedGraph::Set(const CAnnotObject_Ref& annot)
+void CMappedGraph::Set(const CAnnotObject_Ref& annot)
 {
     _ASSERT(annot.IsGraph());
-    m_Graph = &annot.GetGraph();
+    m_AnnotObject_Ref = annot;
     m_MappedGraph.Reset();
-    m_Partial = annot.IsPartial();
+    m_MappedLoc.Reset();
+}
 
-    _ASSERT(!annot.IsProduct());
-    m_MappedLoc.Reset(annot.GetMappedLocation());
-    return *this;
+
+void CMappedGraph::MakeMappedLoc(void) const
+{
+    if ( m_AnnotObject_Ref.MappedSeq_locNeedsUpdate() ) {
+        m_MappedGraph.Reset();
+        m_MappedLoc.Reset();
+        m_AnnotObject_Ref.UpdateMappedSeq_loc(m_CreatedLoc);
+        m_MappedLoc = m_CreatedLoc;
+    }
+    else if ( m_AnnotObject_Ref.IsMapped() ) {
+        m_MappedLoc.Reset(&m_AnnotObject_Ref.GetMappedSeq_loc());
+    }
+    else {
+        m_MappedLoc.Reset(&GetOriginalGraph().GetLoc());
+    }
+}
+
+
+void CMappedGraph::MakeMappedGraph(void) const
+{
+    if ( m_AnnotObject_Ref.IsMapped() ) {
+        CSeq_loc& loc = const_cast<CSeq_loc&>(GetLoc());
+        CSeq_graph* tmp;
+        m_MappedGraph.Reset(tmp = new CSeq_graph);
+        tmp->Assign(GetOriginalGraph());
+        tmp->SetLoc(loc);
+    }
+    else {
+        m_MappedGraph.Reset(&GetOriginalGraph());
+    }
 }
 
 
@@ -56,10 +84,9 @@ CGraph_CI::CGraph_CI(CScope& scope,
                      EResolveMethod resolve,
                      const CSeq_entry* entry)
     : CAnnotTypes_CI(scope, loc,
-      SAnnotSelector(CSeq_annot::C_Data::e_Graph),
-      overlap_type, resolve, entry)
+                     SAnnotSelector(CSeq_annot::C_Data::e_Graph),
+                     overlap_type, resolve, entry)
 {
-    return;
 }
 
 
@@ -68,30 +95,16 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      EResolveMethod resolve,
                      const CSeq_entry* entry)
     : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_Graph),
-          overlap_type, resolve, entry)
+                     SAnnotSelector(CSeq_annot::C_Data::e_Graph),
+                     overlap_type, resolve, entry)
 {
-    return;
 }
 
 
 CGraph_CI::~CGraph_CI(void)
 {
-    return;
 }
 
-
-const CMappedGraph& CGraph_CI::operator* (void) const
-{
-    return m_Graph.Set(Get());
-}
-
-
-const CMappedGraph* CGraph_CI::operator-> (void) const
-{
-    m_Graph.Set(Get());
-    return &m_Graph;
-}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -99,6 +112,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/01/28 20:54:36  vasilche
+* Fixed mapping of annotations.
+*
 * Revision 1.21  2004/01/23 16:14:48  grichenk
 * Implemented alignment mapping
 *

@@ -99,7 +99,7 @@ public:
         eProduct
     };
 
-    bool Convert(const CSeq_loc& src, CRef<CObject>* dst,
+    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
                  EConvertFlag flag = eCnvDefault);
 
     void Convert(const CSeq_align& src, CRef<CSeq_align_Mapper>* dst);
@@ -135,7 +135,7 @@ private:
     CRef<CSeq_interval> GetDstInterval(void);
     CRef<CSeq_point> GetDstPoint(void);
 
-    void SetDstLoc(CRef<CObject>* loc);
+    void SetDstLoc(CRef<CSeq_loc>* loc);
 
     bool IsSpecialLoc(void) const;
 
@@ -169,7 +169,13 @@ private:
     bool           m_Partial;
     
     //   Last Point, Interval or other simple location's conversion result:
-    CAnnotObject_Ref::EMappedObjectType m_LastType;
+    enum EMappedObjectType {
+        eMappedObjType_not_set,
+        eMappedObjType_Seq_loc,
+        eMappedObjType_Seq_point,
+        eMappedObjType_Seq_interval
+    };
+    EMappedObjectType m_LastType;
     TRange         m_LastRange;
     ENa_strand     m_LastStrand;
 
@@ -295,8 +301,8 @@ private:
 inline
 bool CSeq_loc_Conversion::IsSpecialLoc(void) const
 {
-    return m_LastType == CAnnotObject_Ref::eMappedObjType_Seq_point
-        || m_LastType == CAnnotObject_Ref::eMappedObjType_Seq_interval;
+    return m_LastType == eMappedObjType_Seq_point ||
+        m_LastType == eMappedObjType_Seq_interval;
 }
 
 
@@ -416,6 +422,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/01/28 20:54:35  vasilche
+* Fixed mapping of annotations.
+*
 * Revision 1.8  2004/01/23 16:14:46  grichenk
 * Implemented alignment mapping
 *

@@ -45,139 +45,115 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJMGR_EXPORT CMappedGraph
 {
 public:
-    CMappedGraph(void)
-        : m_Graph(0),
-          m_MappedGraph(0),
-          m_Partial(false),
-          m_MappedLoc(0)
-        { return; }
-    CMappedGraph(const CMappedGraph& graph)
-        : m_Graph(graph.m_Graph),
-          m_MappedGraph(graph.m_MappedGraph),
-          m_Partial(graph.m_Partial),
-          m_MappedLoc(graph.m_MappedLoc)
-        { return; }
-    CMappedGraph& operator= (const CMappedGraph& graph)
-        {
-            if (this != &graph) {
-                m_Graph = graph.m_Graph;
-                m_MappedGraph = graph.m_MappedGraph;
-                m_Partial = graph.m_Partial;
-                m_MappedLoc = graph.m_MappedLoc;
-            }
-            return *this;
-        }
-
     // Original graph with unmapped location/product
     const CSeq_graph& GetOriginalGraph(void) const
         {
-            return *m_Graph;
+            return m_AnnotObject_Ref.GetGraph();
         }
     // Graph mapped to the master sequence.
     // WARNING! The function is rather slow and should be used with care.
     const CSeq_graph& GetMappedGraph(void) const
         {
             if ( !m_MappedGraph ) {
-                if ( m_MappedLoc ) {
-                    CSeq_graph* tmp = new CSeq_graph;
-                    m_MappedGraph = tmp;
-                    tmp->Assign(*m_Graph);
-                    tmp->SetLoc().Assign(*m_MappedLoc);
-                }
-                else {
-                    m_MappedGraph = m_Graph;
-                }
+                MakeMappedGraph();
             }
             return *m_MappedGraph;
         }
 
     bool IsSetTitle(void) const
         {
-            return m_Graph->IsSetTitle();
+            return GetOriginalGraph().IsSetTitle();
         }
     const string& GetTitle(void) const
         {
-            return m_Graph->GetTitle();
+            return GetOriginalGraph().GetTitle();
         }
 
     bool IsSetComment(void) const
         {
-            return m_Graph->IsSetComment();
+            return GetOriginalGraph().IsSetComment();
         }
     const string& GetComment(void) const
         {
-            return m_Graph->GetComment();
+            return GetOriginalGraph().GetComment();
         }
 
     const CSeq_loc& GetLoc(void) const
         {
-            return m_MappedLoc ? *m_MappedLoc : m_Graph->GetLoc();
+            if ( !m_MappedLoc ) {
+                MakeMappedLoc();
+            }
+            return *m_MappedLoc;
         }
 
     bool IsSetTitle_x(void) const
         {
-            return m_Graph->IsSetTitle_x();
+            return GetOriginalGraph().IsSetTitle_x();
         }
     const string& GetTitle_x(void) const
         {
-            return m_Graph->GetTitle_x();
+            return GetOriginalGraph().GetTitle_x();
         }
 
     bool IsSetTitle_y(void) const
         {
-            return m_Graph->IsSetTitle_y();
+            return GetOriginalGraph().IsSetTitle_y();
         }
     const string& GetTitle_y(void) const
         {
-            return m_Graph->GetTitle_y();
+            return GetOriginalGraph().GetTitle_y();
         }
 
     bool IsSetComp(void) const
         {
-            return m_Graph->IsSetComp();
+            return GetOriginalGraph().IsSetComp();
         }
     TSeqPos GetComp(void) const
         {
-            return m_Graph->GetComp();
+            return GetOriginalGraph().GetComp();
         }
 
     bool IsSetA(void) const
         {
-            return m_Graph->IsSetA();
+            return GetOriginalGraph().IsSetA();
         }
     double GetA(void) const
         {
-            return m_Graph->GetA();
+            return GetOriginalGraph().GetA();
         }
 
     bool IsSetB(void) const
         {
-            return m_Graph->IsSetB();
+            return GetOriginalGraph().IsSetB();
         }
     double GetB(void) const
         {
-            return m_Graph->GetB();
+            return GetOriginalGraph().GetB();
         }
 
     TSeqPos GetNumval(void) const
         {
-            return m_Graph->GetNumval();
+            return GetOriginalGraph().GetNumval();
         }
 
     const CSeq_graph::C_Graph& GetGraph(void) const
         {
-            return m_Graph->GetGraph();
+            return GetOriginalGraph().GetGraph();
         }
 
 private:
     friend class CGraph_CI;
     friend class CAnnot_CI;
-    CMappedGraph& Set(const CAnnotObject_Ref& annot);
 
-    CConstRef<CSeq_graph>         m_Graph;
-    mutable CConstRef<CSeq_graph> m_MappedGraph;
-    bool                          m_Partial;
-    CConstRef<CSeq_loc>           m_MappedLoc;
+    void Set(const CAnnotObject_Ref& annot);
+
+    void MakeMappedGraph(void) const;
+    void MakeMappedLoc(void) const;
+
+    CAnnotObject_Ref                m_AnnotObject_Ref;
+    mutable CConstRef<CSeq_graph>   m_MappedGraph;
+    mutable CConstRef<CSeq_loc>     m_MappedLoc;
+    mutable CRef<CSeq_loc>          m_CreatedLoc;
 };
 
 
@@ -208,9 +184,7 @@ public:
     CGraph_CI(CScope& scope, const CSeq_entry& entry,
               SAnnotSelector sel);
 
-    CGraph_CI(const CGraph_CI& iter);
     virtual ~CGraph_CI(void);
-    CGraph_CI& operator= (const CGraph_CI& iter);
 
     CGraph_CI& operator++ (void);
     CGraph_CI& operator-- (void);
@@ -221,21 +195,13 @@ private:
     CGraph_CI operator++ (int);
     CGraph_CI operator-- (int);
 
-    mutable CMappedGraph m_Graph; // current graph object returned by operator->()
+    CMappedGraph m_Graph; // current graph object returned by operator->()
 };
 
 
 inline
 CGraph_CI::CGraph_CI(void)
 {
-    return;
-}
-
-inline
-CGraph_CI::CGraph_CI(const CGraph_CI& iter)
-    : CAnnotTypes_CI(iter)
-{
-    return;
 }
 
 inline
@@ -292,16 +258,12 @@ CGraph_CI::CGraph_CI(CScope& scope, const CSeq_entry& entry,
 
 
 inline
-CGraph_CI& CGraph_CI::operator= (const CGraph_CI& iter)
-{
-    CAnnotTypes_CI::operator=(iter);
-    return *this;
-}
-
-inline
 CGraph_CI& CGraph_CI::operator++ (void)
 {
     Next();
+    if ( IsValid() ) {
+        m_Graph.Set(Get());
+    }
     return *this;
 }
 
@@ -309,6 +271,7 @@ inline
 CGraph_CI& CGraph_CI::operator-- (void)
 {
     Prev();
+    m_Graph.Set(Get());
     return *this;
 }
 
@@ -319,12 +282,28 @@ CGraph_CI::operator bool (void) const
 }
 
 
+inline
+const CMappedGraph& CGraph_CI::operator* (void) const
+{
+    return m_Graph;
+}
+
+
+inline
+const CMappedGraph* CGraph_CI::operator-> (void) const
+{
+    return &m_Graph;
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/01/28 20:54:34  vasilche
+* Fixed mapping of annotations.
+*
 * Revision 1.27  2003/08/15 15:22:41  grichenk
 * +CAnnot_CI
 *
