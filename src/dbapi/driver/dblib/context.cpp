@@ -460,7 +460,15 @@ I_DriverContext* DBLIB_CreateContext(map<string,string>* attr = 0)
 
     }
 
-    return new CDBLibContext(version);
+    CDBLibContext* cntx= new CDBLibContext(version);
+    if(cntx && attr) {
+      string page_size= (*attr)["packet"];
+      if(!page_size.empty()) {
+	int s= atoi(page_size.c_str());
+	cntx->DBLIB_SetPacketSize(s);
+      }
+    }
+    return cntx;
 }
 
 void DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
@@ -505,6 +513,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/04/01 21:50:26  soussov
+ * new attribute 'packet=XXX' (where XXX is a packet size) added to DBLIB_CreateContext
+ *
  * Revision 1.20  2002/12/20 17:56:33  soussov
  * renames the members of ECapability enum
  *
