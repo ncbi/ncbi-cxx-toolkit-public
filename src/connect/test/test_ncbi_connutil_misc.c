@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/04/12 15:22:07  vakatov
+ * Always #undef NDEBUG
+ *
  * Revision 6.2  2000/03/29 17:21:48  vakatov
  * + CORE_SetLOG(0) at the program end.
  *
@@ -39,9 +42,12 @@
  * ===========================================================================
  */
 
+#if defined(NDEBUG)
+#  undef NDEBUG
+#endif 
+
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_connutil.h>
-
 #include <string.h>
 
 
