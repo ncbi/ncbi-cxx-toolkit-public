@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/04/22 14:19:04  vasilche
+* Added _TRACE_THROW() macro which can be configured to make coredump at some poin
+* t fo throwing exception.
+*
 * Revision 1.10  1999/04/14 21:20:33  vakatov
 * Dont use "snprintf()" as it is not quite portable yet
 *
@@ -149,6 +153,12 @@ bool PNocase::operator() ( const string& x, const string& y ) const
   }
   
   return toupper(*p) < toupper(*q);
+}
+
+int TraceThrow(void)
+{
+    static int i = getenv("COREDUMP_ON_THROW")? 0: 1;
+    return 1 / i;
 }
 
 END_NCBI_SCOPE
