@@ -33,6 +33,7 @@
 #include <algo/blast/api/blast_aux.hpp>
 
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -255,33 +256,26 @@ CBlastDatabaseOptionsPtr::DebugDump(CDebugDumpContext ddc, unsigned int depth) c
 
 
 BlastMask*
-BLASTSeqLoc2BlastMask(const CSeq_loc& sl, int index)
+CSeqLoc2BlastMask(CConstRef<CSeq_loc> & sl, int index)
 {
-    _ASSERT(sl.IsInt() || sl.IsPacked_int());
+    if (slp->IsNull())
+        return NULL;
+
+    _ASSERT(slp->IsInt() || slp->IsPacked_int() || slp->IsMix());
 
     BlastSeqLoc* bsl = NULL,* curr = NULL,* tail = NULL;
     BlastMask* mask = NULL;
 
-    switch (sl.Which()) {
-
-    case CSeq_loc::e_Packed_int:
-        ITERATE(list< CRef<CSeq_interval> >, itr, sl.GetPacked_int().Get()) {
-            curr = BlastSeqLocNew((*itr)->GetFrom(), (*itr)->GetTo());
+    for (CSeq_loc_CI itr(*slp); itr; ++itr) {
+    
+            curr = BlastSeqLocNew(itr.GetSeq_loc().GetInt().GetFrom(), 
+                                  itr.GetSeq_loc().GetInt().GetTo());
             if (!bsl) {
                 bsl = tail = curr;
             } else {
                 tail->next = curr;
                 tail = tail->next;
             }
-        }
-        break;
-
-    case CSeq_loc::e_Int:
-        bsl = BlastSeqLocNew(sl.GetInt().GetFrom(), sl.GetInt().GetTo());
-        break;
-
-    default:
-        break;
     }
 
     mask = (BlastMask*) calloc(1, sizeof(BlastMask));
@@ -292,10 +286,10 @@ BLASTSeqLoc2BlastMask(const CSeq_loc& sl, int index)
 }
 
 //TODO
-CRef<CSeq_loc>
-BLASTBlastMask2SeqLoc(BlastMask* mask)
+CConstRef<CSeq_loc>
+BlastMask2CSeqLoc(BlastMask* mask)
 {
-    CRef<CSeq_loc> retval;
+    CConstRef<CSeq_loc> retval;
 
     if (!mask)
         return retval;
@@ -304,4 +298,101 @@ BLASTBlastMask2SeqLoc(BlastMask* mask)
 
     return retval;
 }
+
+#define NUM_FRAMES 6
+void BlastMaskDNAToProtein(BlastMask** mask_ptr, 
+         vector< CConstRef<CSeq_loc> > &slp, CRef<CScope>& scope)
+{
+   Int2 status = 0;
+   BlastMask* last_mask = NULL,* head_mask = NULL,* mask_loc; 
+   Int4 dna_length;
+   BlastSeqLoc* dna_loc,* prot_loc_head,* prot_loc_last;
+   DoubleInt* dip;
+   Int4 context;
+   Int2 frame;
+   Int4 from, to;
+
+   if (!mask_ptr)
+      return;
+
+   for (mask_loc = *mask_ptr; mask_loc; mask_loc = mask_loc->next) {
+      dna_length = sequence::GetLength(*slp[mask_loc->index], scope);
+      /* Reproduce this mask for all 6 frames, with translated 
+         coordinates */
+      for (context = 0; context < NUM_FRAMES; ++context) {
+         if (!last_mask) {
+            head_mask = last_mask = (BlastMask *) calloc(1, sizeof(BlastMask));
+         } else {
+            last_mask->next = (BlastMask *) calloc(1, sizeof(BlastMask));
+            last_mask = last_mask->next;
+         }
+         
+         last_mask->index = NUM_FRAMES * mask_loc->index + context;
+         prot_loc_last = prot_loc_head = NULL;
+         
+         frame = BLAST_ContextToFrame(blast_type_blastx, context);
+
+         for (dna_loc = mask_loc->loc_list; dna_loc; 
+              dna_loc = dna_loc->next) {
+            dip = (DoubleInt*) dna_loc->ptr;
+            if (frame < 0) {
+               from = (dna_length + frame - dip->i2)/CODON_LENGTH;
+               to = (dna_length + frame - dip->i1)/CODON_LENGTH;
+            } else {
+               from = (dip->i1 - frame + 1)/CODON_LENGTH;
+               to = (dip->i2 - frame + 1)/CODON_LENGTH;
+            }
+            if (!prot_loc_last) {
+               prot_loc_head = prot_loc_last = BlastSeqLocNew(from, to);
+            } else { 
+               prot_loc_last->next = BlastSeqLocNew(from, to);
+               prot_loc_last = prot_loc_last->next; 
+            }
+         }
+         last_mask->loc_list = prot_loc_head;
+      }
+   }
+
+   /* Free the mask with nucleotide coordinates */
+   BlastMaskFree(*mask_ptr);
+   /* Return the new mask with protein coordinates */
+   *mask_ptr = head_mask;
+}
+
+void BlastMaskProteinToDNA(BlastMask** mask_ptr, 
+         vector< CConstRef<CSeq_loc> > &slp, CRef<CScope>& scope)
+{
+   Int2 status = 0;
+   BlastMask* mask_loc;
+   BlastSeqLoc* loc;
+   DoubleInt* dip;
+   Int4 dna_length;
+   Int2 frame;
+   Int4 from, to;
+
+   if (!mask_ptr) 
+      // Nothing to do - just return
+      return;
+
+   for (mask_loc = *mask_ptr; mask_loc; mask_loc = mask_loc->next) {
+      dna_length = 
+         sequence::GetLength(*slp[mask_loc->index/NUM_FRAMES], scope);
+      frame = BLAST_ContextToFrame(blast_type_blastx, 
+                                   mask_loc->index % NUM_FRAMES);
+      
+      for (loc = mask_loc->loc_list; loc; loc = loc->next) {
+         dip = (DoubleInt*) loc->ptr;
+         if (frame < 0)	{
+            to = dna_length - CODON_LENGTH*dip->i1 + frame;
+            from = dna_length - CODON_LENGTH*dip->i2 + frame + 1;
+         } else {
+            from = CODON_LENGTH*dip->i1 + frame - 1;
+            to = CODON_LENGTH*dip->i2 + frame - 1;
+         }
+         dip->i1 = from;
+         dip->i2 = to;
+      }
+   }
+}
+
 END_NCBI_SCOPE
