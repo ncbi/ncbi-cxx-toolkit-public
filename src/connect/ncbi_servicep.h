@@ -122,9 +122,9 @@ char* SERV_GetConfig(void);
 
 
 /* Given the status gap and wanted preference, calculate
- * acceptable stretch for gap.
+ * acceptable stretch for the gap (the number of candidates is n).
  */
-double SERV_Preference(double pref, double gap, double mean);
+double SERV_Preference(double pref, double gap, int n);
 
 
 #ifdef __cplusplus
@@ -135,6 +135,9 @@ double SERV_Preference(double pref, double gap, double mean);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/02/13 21:37:28  lavr
+ * Comment SERV_Preference(), change last argument
+ *
  * Revision 6.18  2003/01/31 21:19:41  lavr
  * +SERV_Preference()
  *
