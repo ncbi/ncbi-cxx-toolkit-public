@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.34 2002/09/03 20:09:59 kholodov Exp $
+-- $Id: docsum.asn,v 1.35 2002/12/03 20:18:51 kholodov Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.35  2002/12/03 20:18:51  kholodov
+-- Modified: validation status is represented by 4 boolean values
+--
 -- Revision 1.34  2002/09/03 20:09:59  kholodov
 -- Added moltype for rs and ss, create-build, update-build for rs
 --
@@ -322,12 +325,10 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	het-SE REAL OPTIONAL,			-- standard error of heterozygosity 
 	valid-prob-min INTEGER OPTIONAL,	-- minimum reported success rate of all submissions in cluster
 	valid-prob-max INTEGER OPTIONAL,	-- maximum reported success rate of all submissions in cluster
-	validated ENUMERATED {
-		by-submitter (1),		-- at lease one subsnp in cluster has been experimentally validated by submitter
-		by-frequency (2),		-- at least one subsnp in cluster has frequency data submitted
-		by-cluster   (3), 		-- cluster has 2+ submissions, with 1+ submission assayed with a non-computational method. 
-		no-info      (4)		-- rs-cluster is not validated
-		 		} OPTIONAL,
+	validated-by-submitter BOOLEAN OPTIONAL, -- at lease one ss in cluster was validated by independent assay
+	validated-by-frequency BOOLEAN OPTIONAL, -- at least one subsnp in cluster has frequency data submitted
+	validated-by-cluster   BOOLEAN OPTIONAL, -- cluster has 2+ submissions
+	validated-by-2hit-2allele BOOLEAN OPTIONAL, --all alleles have been observed in 2+ chromosomes
 	genotype BOOLEAN OPTIONAL,		-- at least one genotype reported for this refSNP
 	linkout BOOLEAN OPTIONAL,		-- YES if linkout to at least one submitter website
 	last-action NSE-Date OPTIONAL,		-- Date of update or create
