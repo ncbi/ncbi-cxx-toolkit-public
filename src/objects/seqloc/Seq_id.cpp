@@ -558,7 +558,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'C':
             switch (pfx[1]) {
             case 'A': case 'B': case 'D': case 'F':
-            case 'K': case 'N': case 'O':           return eAcc_gb_est;
+            case 'K': case 'N': case 'O': case 'V': return eAcc_gb_est;
             case 'C': case 'E': case 'G': case 'L': return eAcc_gb_gss;
             case 'H': case 'M':                     return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
@@ -1515,6 +1515,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.88  2004/08/06 17:20:59  ucko
+ * IdentifyAccession: CV -> eAcc_gb_est
+ *
  * Revision 6.87  2004/08/04 17:36:00  ucko
  * Recognize extended Swissprot/Uniprot accessions.
  *
