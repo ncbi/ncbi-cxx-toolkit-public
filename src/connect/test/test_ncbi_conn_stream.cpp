@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/03/22 19:19:17  lavr
+ * Buffer size extended; random number generator seeded with current time
+ *
  * Revision 6.6  2001/03/02 20:03:17  lavr
  * "../ncbi_priv.h" explained
  *
@@ -62,6 +65,7 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -81,7 +85,7 @@ static CNcbiRegistry* s_CreateRegistry(void)
     return reg;
 }
 
-const size_t kBufferSize = 300*1024;
+const size_t kBufferSize = 1024*1024;
 
 END_NCBI_SCOPE
 
@@ -89,6 +93,8 @@ END_NCBI_SCOPE
 int main(void)
 {
     USING_NCBI_SCOPE;
+
+    srand(time(0));
 
     CORE_SetLOG(LOG_cxx2c());
     CORE_SetREG(REG_cxx2c(s_CreateRegistry(), true));
