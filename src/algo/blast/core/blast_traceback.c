@@ -623,13 +623,9 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
       query_info->context_offsets = offsets; 
    }
 
-   /* The HSPs in the HSP lists are sorted by e-value coming into the 
-    * traceback stage. However they should be sorted by score here. If sum 
-    * statistics was applied, the order of HSPs may be wrong. Check whether
-    * HSPs in the HSP array come in decreasing order of scores, and sort the
-    * HSP array if they do not.
-    */
-   Blast_HSPListSortByScore(hsp_list);
+   /* Make sure the HSPs in the HSP list are sorted by score, as they should 
+      be. */
+   ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
 
    for (index=0; index < hsp_list->hspcnt; index++) {
       hsp = hsp_array[index];
@@ -804,8 +800,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
       }
    }
 
-   /* It's time to sort HSPs by e-value/score. */
-   Blast_HSPListSortByEvalue(hsp_list);
+   /* Sort HSPs by score again, as the scores might have changed. */
+   Blast_HSPListSortByScore(hsp_list);
     
     /* Now try to detect simular alignments */
 
@@ -818,8 +814,10 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
                       sbp, hit_params->link_hsp_params, 
                       score_options->gapped_calculation);
        Blast_HSPListReapByEvalue(hsp_list, hit_options);
-       /* Sort HSPs again by e-value/score. */
-       Blast_HSPListSortByEvalue(hsp_list);
+    } else if (hsp_list->hspcnt > 0) {
+        /* Need to assign the best e-value here. When HSPs are not linked,
+           the highest scoring HSP always has the best e-value. */
+        hsp_list->best_evalue = hsp_list->hsp_array[0]->evalue;
     }
     
     /* Free the local query_info structure, if necessary (RPS tblastn only) */
@@ -849,15 +847,11 @@ Uint1 Blast_TracebackGetEncoding(EBlastProgramType program_number)
       break;
    case eBlastTypeBlastp:
    case eBlastTypeRpsBlast:
-      encoding = BLASTP_ENCODING;
-      break;
    case eBlastTypeBlastx:
+   case eBlastTypeRpsTblastn:
       encoding = BLASTP_ENCODING;
       break;
    case eBlastTypeTblastn:
-   case eBlastTypeRpsTblastn:
-      encoding = NCBI4NA_ENCODING;
-      break;
    case eBlastTypeTblastx:
       encoding = NCBI4NA_ENCODING;
       break;
@@ -1063,7 +1057,7 @@ Blast_HSPListRPSUpdate(EBlastProgramType program, BlastHSPList *hsplist)
 
 Int2 BLAST_RPSTraceback(EBlastProgramType program_number, 
         BlastHSPStream* hsp_stream, 
-        BLAST_SequenceBlk* concat_db, BlastQueryInfo* concat_db_info, 
+        const BlastSeqSrc* seq_src, BlastQueryInfo* concat_db_info, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         BlastGapAlignStruct* gap_align,
         const BlastScoringParameters* score_params,
@@ -1077,11 +1071,13 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
    BlastHSPList* hsp_list;
    BlastScoreBlk* sbp;
    Int4 **orig_pssm;
-   BLAST_SequenceBlk one_db_seq;
-   Int4 *db_seq_start;
+   Int4 db_seq_start;
    BlastHSPResults* results = NULL;
+   Uint1 encoding;
+   GetSeqArg seq_arg;
    
-   if (!hsp_stream || !concat_db_info || !concat_db || !results_out) {
+
+   if (!hsp_stream || !concat_db_info || !seq_src || !results_out) {
       return 0;
    }
    
@@ -1091,6 +1087,9 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
 
    sbp = gap_align->sbp;
    orig_pssm = gap_align->sbp->posMatrix;
+
+   encoding = Blast_TracebackGetEncoding(program_number);
+   memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
    Blast_HSPResultsInit(query_info->num_queries, &results);
 
@@ -1108,26 +1107,29 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
          continue;
       }
 
-      /* pick out one of the sequences from the concatenated
-         DB (given by the OID of this HSPList). The sequence
-         size does not include the trailing NULL */
-      
-      db_seq_start = &concat_db_info->context_offsets[hsp_list->oid];
-      memset(&one_db_seq, 0, sizeof(one_db_seq));
-      one_db_seq.sequence = NULL;
-      one_db_seq.length = db_seq_start[1] - db_seq_start[0] - 1;
+      /* Pick out one of the sequences from the concatenated DB (given by the 
+         OID of this HSPList). The sequence length does not include the 
+         trailing NULL. The sequence itself is only needed to calculate number
+         of identities, since scoring is done with a portion of the PSSM 
+         corresponding to this sequence. */
+      seq_arg.oid = hsp_list->oid;
+      seq_arg.encoding = encoding;
+      if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
+          continue;
+
+      db_seq_start = concat_db_info->context_offsets[hsp_list->oid];
       
       /* Update the statistics for this database sequence
          (if not a translated search) */
       
       if (program_number == eBlastTypeRpsTblastn) {
-         sbp->posMatrix = orig_pssm + db_seq_start[0];
+         sbp->posMatrix = orig_pssm + db_seq_start;
       } else {
          /* replace the PSSM and the Karlin values for this DB sequence. */
          sbp->posMatrix = 
             RPSCalculatePSSM(score_params->scale_factor,
-                             query->length, query->sequence, one_db_seq.length,
-                             orig_pssm + db_seq_start[0],
+                             query->length, query->sequence, seq_arg.seq->length,
+                             orig_pssm + db_seq_start,
                              sbp->name);
          /* The composition of the query could have caused this one
             subject sequence to produce a bad PSSM. This should
@@ -1138,6 +1140,7 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
              *        need a warning here
              */
             hsp_list = Blast_HSPListFree(hsp_list);
+            BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
             continue;
          }
          
@@ -1148,12 +1151,14 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
       /* compute the traceback information and calculate E values
          for all HSPs in the list */
       
-      Blast_TracebackFromHSPList(program_number, hsp_list, &one_db_seq, 
+      Blast_TracebackFromHSPList(program_number, hsp_list, seq_arg.seq, 
          query, query_info, gap_align, sbp, score_params, 
          ext_params->options, hit_params, db_options->gen_code_string);
 
+      BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
+
       if (program_number != eBlastTypeRpsTblastn)
-         _PSIDeallocateMatrix((void**)sbp->posMatrix, one_db_seq.length);
+         _PSIDeallocateMatrix((void**)sbp->posMatrix, seq_arg.seq->length);
 
       if (hsp_list->hspcnt == 0) {
          hsp_list = Blast_HSPListFree(hsp_list);
@@ -1174,6 +1179,9 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
       Blast_HSPResultsInsertHSPList(results, hsp_list, 
                                     hit_params->options->hitlist_size);
    }
+
+   /* Free the sequence block allocated inside the loop */
+   BlastSequenceBlkFree(seq_arg.seq);
 
    /* The traceback calculated the E values, so it's safe
       to sort the results now */
