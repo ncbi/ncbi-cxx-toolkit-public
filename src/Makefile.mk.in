@@ -22,15 +22,19 @@
 INTERNAL = @internal@
 
 
-### Configurable directories
+### Configurable paths
 
-exec_prefix = @exec_prefix@
 top_srcdir  = @top_srcdir@
-includedir  = @includedir@
+exec_prefix = @exec_prefix@
 builddir    = @builddir@
-incdir      = @incdir@
-libdir      = @libdir@
-bindir      = @bindir@
+
+
+### Paths
+
+includedir  = $(top_srcdir)/include
+incdir      = $(exec_prefix)/inc
+libdir      = $(exec_prefix)/lib
+bindir      = $(exec_prefix)/bin
 
 STD_INCLUDE = -I$(incdir) -I$(includedir) -I$(includedir)/internal
 

@@ -6,6 +6,7 @@
 # Standard application build template
 #################################
 
-include @builddir@/Makefile.mk
+builddir = @builddir@
+include $(builddir)/Makefile.mk
 include $(srcdir)/Makefile.$(TMPL).app
-include @builddir@/Makefile.app
+include $(builddir)/Makefile.app

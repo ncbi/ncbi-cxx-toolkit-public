@@ -1306,23 +1306,22 @@ case "${srcdir}" in
 esac
 
 
-#### Specify and create $includedir, $incdir, $libdir, $bindir and $builddir
-includedir="$srcdir/include"
-incdir="$exec_prefix/inc"
-libdir="$exec_prefix/lib"
-bindir="$exec_prefix/bin"
-ncbiconf="$incdir/ncbiconf.h"
+#### Source, include, and build directories
+ncbiconf="$exec_prefix/inc/ncbiconf.h"
 if test "$exec_prefix" = "$srcdir" ; then
    builddir="$srcdir/src"
 else
    builddir="$exec_prefix/build"
 fi
 
-mkdir -p "$libdir" "$bindir" "$builddir"
+
+#### Create build directories
+mkdir -p "$builddir" "$exec_prefix/lib" "$exec_prefix/bin"
 
 
 #### Check if the target directory already has a configured system in it
 if test -f "${ncbiconf}" ; then
+   echo
    echo "There is already a built \"${ncbiconf}\"!"
    echo "Do you want to re-configure in \"${builddir}\"? y/n"
    read answer
@@ -1330,11 +1329,12 @@ if test -f "${ncbiconf}" ; then
       y | Y | yes | YES ) ;;
       * )  echo "configure: warning: Re-configuration has been canceled by user." 1>&2 ; exit ;;
    esac
+   echo
 fi
 
 
 #### Use right command shell in scripts and makefiles
-script_sh="#! ${CONFIG_SHELL:=/bin/sh}"
+script_shell="#! ${CONFIG_SHELL:=/bin/sh}"
 make_shell="SHELL=${CONFIG_SHELL:=/bin/sh}"
 
 
@@ -1356,7 +1356,7 @@ if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_ou
 #### For some compilers(e.g. SunPro 5.0), there is no sense to compare the
 #### old object/lib/binary file with the new one -- they will always be
 #### different because of some timestamp or smth. else ("--without-bincopy")
-BINCOPY="${CONFIG_SHELL-/bin/sh} $srcdir/src/if_diff.sh \"cp -p\""
+BINCOPY="${CONFIG_SHELL-/bin/sh} $(top_srcdir)/src/if_diff.sh \"cp -p\""
 if test "$with_bincopy" = "no" ; then
    BINCOPY="cp -p"
 fi
@@ -2989,9 +2989,6 @@ fi
 
 
 
-
-
-
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -3153,7 +3150,6 @@ s%@STRIP@%$STRIP%g
 s%@CXXCPP@%$CXXCPP%g
 s%@top_srcdir@%$top_srcdir%g
 s%@srcdir@%$srcdir%g
-s%@incdir@%$incdir%g
 s%@builddir@%$builddir%g
 s%@CPP@%$CPP%g
 s%@internal@%$internal%g

@@ -6,6 +6,7 @@
 # Standard library build template
 #################################
 
-include @builddir@/Makefile.mk
+builddir = @builddir@
+include $(builddir)/Makefile.mk
 include $(srcdir)/Makefile.$(TMPL).lib
-include @builddir@/Makefile.lib
+include $(builddir)/Makefile.lib

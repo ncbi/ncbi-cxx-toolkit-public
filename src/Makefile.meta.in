@@ -15,6 +15,8 @@
 # include @builddir@/Makefile.meta
 #################################
 
+builddir = @builddir@
+
 
 ### Make sure we are using a right command shell
 
@@ -31,7 +33,7 @@ if test ! -z "$(USR_PROJ)" ; then \
         x_mfile="Makefile.$$i" ; \
       else x_mfile="$(srcdir)/Makefile.$$i" ; \
       fi ; \
-		$(MAKE) -f "$$x_mfile" builddir="@builddir@" srcdir="$(srcdir)" $(MFLAGS)
+		$(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
 USRP_KET = ||  exit 1 ; \
    done ; \
 fi
@@ -40,7 +42,7 @@ LIBP_BRA = \
 if test ! -z "$(LIB_PROJ)" ; then \
    x_project="$(LIB_PROJ)" ; \
    for i in $$x_project ; do \
-		$(MAKE) -f "@builddir@/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
+		$(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
 LIBP_KET = ||  exit 2 ; \
    done ; \
 fi
@@ -49,7 +51,7 @@ APPP_BRA = \
 if test ! -z "$(APP_PROJ)" ; then \
    x_project="$(APP_PROJ)" ; \
    for i in $$x_project ; do \
-		$(MAKE) -f "@builddir@/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
+		$(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
 APPP_KET = ||  exit 3 ; \
    done ; \
 fi
