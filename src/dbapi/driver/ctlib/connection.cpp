@@ -54,14 +54,17 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
 
     ct_con_props(m_Link, CS_GET, CS_SERVERNAME,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen);
+    if((outlen > 0) && (buf[outlen] == '\0')) --outlen;
     m_Server.append(buf, (size_t) outlen);
 
     ct_con_props(m_Link, CS_GET, CS_USERNAME,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen);
+    if((outlen > 0) && (buf[outlen] == '\0')) --outlen;
     m_User.append(buf, (size_t) outlen);
 
     ct_con_props(m_Link, CS_GET, CS_PASSWORD,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen);
+    if((outlen > 0) && (buf[outlen] == '\0')) --outlen;
     m_Passwd.append(buf, (size_t) outlen);
 
     CS_BOOL flag;
@@ -669,6 +672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/12/16 16:17:25  soussov
+ * ct_con_props returns an outlen == strlen(x)+1. Adaptin to this feature
+ *
  * Revision 1.10  2002/09/16 15:10:23  soussov
  * add try catch when canceling active commands in Refresh method
  *
