@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/10 19:21:51  lewisg
+* correct error handling in InsertInTable
+*
 * Revision 1.8  1998/12/10 00:17:27  lewisg
 * fix index in InsertInTable
 *
@@ -372,34 +375,41 @@ CHTML_table::CHTML_table(const string & bgcolor, const string & width, const str
 }
 
 
-CNCBINode * CHTML_table::InsertInTable(int x, int y, CNCBINode * Child)  // todo: exception
+CNCBINode * CHTML_table::InsertInTable(int row, int column, CNCBINode * Child)  // todo: exception
 {
-    int ix, iy;
+    int iRow, iColumn;
     list <CNCBINode *>::iterator iChildren;
-    list <CNCBINode *>::iterator iyChildren;
+    list <CNCBINode *>::iterator iRowChildren;
 
     if(!Child) return NULL;
-    iy = 0;
+    iRow = 0;
     iChildren = m_ChildNodes.begin();
 
-    while (iy < y && iChildren != m_ChildNodes.end()) {
-        if (((CHTMLNode *)(* iChildren))->GetName() == "tr") iy++;           
+    while (iRow <= row && iChildren != m_ChildNodes.end()) {
+        if (((CHTMLNode *)(* iChildren))->GetName() == "tr") iRow++;           
         iChildren++;
     }
 
-    ix = 0;
-    iyChildren = ((CHTMLNode *)(* iChildren))->ChildBegin();
+    if( iChildren == m_ChildNodes.end() && iRow <= row) return NULL;
+    iChildren--;
 
-    while (ix < x && iyChildren != ((CHTMLNode *)(*iChildren))->ChildEnd()) {
-        if (((CHTMLNode *)(* iyChildren))->GetName() == "td") ix++;           
-        iyChildren++;
+    iColumn = 0;
+    iRowChildren = ((CHTMLNode *)(* iChildren))->ChildBegin();
+
+    while (iColumn <= column && iRowChildren != ((CHTMLNode *)(*iChildren))->ChildEnd()) {
+        if (((CHTMLNode *)(* iRowChildren))->GetName() == "td") iColumn++;           
+        iRowChildren++;
     }
-
-    return ((CHTMLNode *)(* iyChildren))->AppendChild(Child);
+    if(iRowChildren == ((CHTMLNode *)(*iChildren))->ChildEnd() && 
+       iColumn <= column) return NULL;
+    else {
+	iRowChildren--;
+	return ((CHTMLNode *)(* iRowChildren))->AppendChild(Child);
+    }
 }
 
 
-CNCBINode * CHTML_table::InsertTextInTable(int x, int y, const string & appendstring) // throw(bad_alloc)
+CNCBINode * CHTML_table::InsertTextInTable(int row, int column, const string & appendstring) // throw(bad_alloc)
 {
     CHTMLText * text;
     try {
@@ -409,7 +419,7 @@ CNCBINode * CHTML_table::InsertTextInTable(int x, int y, const string & appendst
 	delete text;
 	throw;
     }
-    return InsertInTable(x, y, text);
+    return InsertInTable(row, column, text);
 }
 
 
