@@ -78,8 +78,8 @@
  */
 
 #include <connect/ncbi_buffer.h>
-#include <connect/ncbi_socket.h>
 #include <connect/ncbi_connection.h>
+#include <connect/ncbi_socket.h>
 
 
 /** @addtogroup UtilityFunc
@@ -640,6 +640,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2003/09/23 21:00:33  lavr
+ * Reorder included header files
+ *
  * Revision 6.32  2003/08/25 14:48:50  lavr
  * ConnNetInfo_SetUserHeader():  to return completion status
  *
