@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/03/15 19:16:55  vasilche
+* Removed unnecessary includes.
+*
 * Revision 1.10  2005/02/28 17:11:54  vasilche
 * Use correct AppMain() arguments.
 *
@@ -151,9 +154,6 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
-
-#include <objmgr/impl/data_source.hpp> // for GetBlobId()
-#include <objmgr/impl/tse_info.hpp> // for GetBlobId()
 
 #include <map>
 #include <vector>
