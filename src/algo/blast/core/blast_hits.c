@@ -2108,11 +2108,15 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
    if (!hsplist_in)
       return 0;
 
-   /* There is only one query allowed in RPS BLAST. Its hit list must have
-      already been allocated with size equal to the number of sequences in
-      RPS BLAST database. */
-   hit_list = results->hitlist_array[0];
-   ASSERT(hit_list);
+   /* Query index should be filled before saving the HSP list for RPS BLAST. 
+      The hitlist size for RPS BLAST should be available in the preliminary
+      hitlist size option. Because of the database concatenation, there is
+      no hitlist size restriction in the preliminary phase of the search. */
+   hit_list = results->hitlist_array[hsplist_in->query_index];
+   if (!hit_list) {
+       results->hitlist_array[hsplist_in->query_index] = 
+           hit_list = Blast_HitListNew(hit_options->prelim_hitlist_size);
+   }
 
    /* Initialize the HSPList array, if necessary. */
    if (hsplist_in->hspcnt > 0 && !hit_list->hsplist_array) {
