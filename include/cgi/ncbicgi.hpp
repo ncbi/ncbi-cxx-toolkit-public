@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  1999/09/03 21:26:44  vakatov
+* + #include <memory>
+*
 * Revision 1.37  1999/06/21 16:04:15  vakatov
 * CCgiRequest::CCgiRequest() -- the last(optional) arg is of type
 * "TFlags" rather than the former "bool"
@@ -127,7 +130,6 @@
 *
 * Revision 1.10  1998/11/17 02:02:08  vakatov
 * Compiles through with SunPro C++ 5.0
-*
 * ==========================================================================
 */
 
@@ -135,6 +137,7 @@
 #include <corelib/ncbienv.hpp>
 #include <list>
 #include <map>
+#include <memory>
 #include <time.h>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/09/03 21:27:28  vakatov
+* + #include <memory>
+*
 * Revision 1.8  1999/07/08 18:05:13  vakatov
 * Fixed compilation warnings
 *
@@ -59,11 +62,11 @@
 *
 * Revision 1.1  1998/12/21 22:24:58  vasilche
 * A lot of cleaning.
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
