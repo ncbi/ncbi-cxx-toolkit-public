@@ -140,6 +140,8 @@ protected:
     	bool operator()(const CQueueItem& i1, const CQueueItem& i2)
     	{ return i1 > i2; }
     };
+    // WorkShop otherwise won't let it see CQueueItem.
+    friend struct SQueueItemGreater;
     
     /// The type of the queue
     typedef set<CQueueItem, SQueueItemGreater > TQueue;
@@ -660,6 +662,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/03/29 21:19:23  ucko
+* Make CBlockingQueue::SQueueItemGreater a friend of its parent so
+* WorkShop will let it see CQueueItem.
+*
 * Revision 1.20  2005/03/29 15:15:53  rsmith
 * change comparator for CQueueItem to satisfy peculiar STL implementation.
 *
