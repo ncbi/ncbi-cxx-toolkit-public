@@ -61,6 +61,7 @@ def CreateSchema():
                         cust_name VARCHAR(255) NOT NULL
                 )
         """)
+        getCon().commit()
 
 def GetCustomers():
         # Allocate a cursor
@@ -123,6 +124,9 @@ if __name__ == "__main__":
 # ===========================================================================
 #
 # $Log$
+# Revision 1.2  2005/01/27 21:14:29  ssikorsk
+# Fixed: python samples (DDL + transaction)
+#
 # Revision 1.1  2005/01/21 22:15:28  ssikorsk
 # Added: python samples for the NCBI DBAPI extension module.
 #
