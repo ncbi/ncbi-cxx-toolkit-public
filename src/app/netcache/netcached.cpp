@@ -421,9 +421,9 @@ blob_not_found:
             if (!read_flag) {
                 read_flag = true;
                 string msg("BLOB found. SIZE=");
-                char buf[256];
-                itoa(blob_size, buf, 10);
-                msg += buf;
+                string sz;
+                NStr::UIntToString(sz, blob_size);
+                msg += sz;
                 WriteMsg(sock, "OK:", msg);
             }
 
@@ -866,6 +866,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/11/01 16:16:02  kuznets
+ * Use NStr instead of itoa
+ *
  * Revision 1.23  2004/11/01 16:03:39  kuznets
  * Added blob size to GET response
  *
