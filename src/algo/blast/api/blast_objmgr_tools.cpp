@@ -40,6 +40,7 @@
 #include "blast_setup.hpp"
 #include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
+#include <algo/blast/core/blast_setup.h>
 
 #include <serial/iterator.hpp>
 
@@ -327,6 +328,8 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
         bsl_tmp = CSeqLoc2BlastSeqLoc(itr->mask);
 
+        BlastSeqLoc_RestrictToInterval(&bsl_tmp, itr->seqloc->GetStart(), 
+                                       itr->seqloc->GetEnd());
 
         pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf;
 
@@ -976,6 +979,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2004/11/30 16:59:16  dondosha
+* Call BlastSeqLoc_RestrictToInterval to adjust lower case mask offsets when query restricted to interval
+*
 * Revision 1.24  2004/11/29 18:47:22  madden
 * Fix for SetupQueryInfo for zero-length translated nucl. sequence
 *
