@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2002/04/26 16:41:16  lavr
+ * Redesign of waiting mechanism, and implementation of SOCK_Poll()
+ *
  * Revision 6.43  2002/04/22 20:53:16  lavr
  * +SOCK_htons(); Set close timeout only when the socket was not yet shut down
  *
@@ -367,26 +370,26 @@ extern int gethostname(char* machname, long buflen);
 /* Listening socket
  */
 typedef struct LSOCK_tag {
-    TSOCK_Handle sock;  /* OS-specific socket handle */
+    TSOCK_Handle    sock;       /* OS-specific socket handle                */
 } LSOCK_struct;
 
 
 /* Socket
  */
 typedef struct SOCK_tag {
-    TSOCK_Handle    sock;       /* OS-specific socket handle */
-    struct timeval* r_timeout;  /* zero (if infinite), or points to "r_tv" */
-    struct timeval  r_tv;       /* finite read timeout value */
-    STimeout        r_to;       /* finite read timeout value (aux., temp.) */
-    struct timeval* w_timeout;  /* zero (if infinite), or points to "w_tv" */
-    struct timeval  w_tv;       /* finite write timeout value */
+    TSOCK_Handle    sock;       /* OS-specific socket handle                */
+    struct timeval* r_timeout;  /* zero (if infinite), or points to "r_tv"  */
+    struct timeval  r_tv;       /* finite read timeout value                */
+    STimeout        r_to;       /* finite read timeout value (aux., temp.)  */
+    struct timeval* w_timeout;  /* zero (if infinite), or points to "w_tv"  */
+    struct timeval  w_tv;       /* finite write timeout value               */
     STimeout        w_to;       /* finite write timeout value (aux., temp.) */
-    struct timeval* c_timeout;  /* zero (if infinite), or points to "c_tv" */
-    struct timeval  c_tv;       /* finite close timeout value */
+    struct timeval* c_timeout;  /* zero (if infinite), or points to "c_tv"  */
+    struct timeval  c_tv;       /* finite close timeout value               */
     STimeout        c_to;       /* finite close timeout value (aux., temp.) */
-    unsigned int    host;       /* peer host (in the network byte order) */
-    unsigned short  port;       /* peer port (in the network byte order) */
-    ESwitch         r_on_w;     /* enable/disable automatic read-on-write */
+    unsigned int    host;       /* peer host (in the network byte order)    */
+    unsigned short  port;       /* peer port (in the network byte order)    */
+    ESwitch         r_on_w;     /* enable/disable automatic read-on-write   */
     BUF             buf;        /* read buffer */
 
     /* current status and EOF indicator */
@@ -407,6 +410,12 @@ typedef struct SOCK_tag {
 /* Global SOCK counter
  */
 static unsigned int s_ID_Counter = 0;
+
+
+/* Read-while-writing switch.
+ * NOTE: no read-while-writing by default
+ */
+static ESwitch s_ReadOnWrite = eDefault;
 
 
 
@@ -579,55 +588,112 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 }
 
 
-/* Select on the socket i/o
+/* Select on the socket i/o (multiple sockets).
+ * If eIO_Write event inquired on a socket, and socket is marked for
+ * upread, then returned "revent" may include eIO_Read to indicate that
+ * input is available on that socket.
+ * Return eIO_Success when at least one socket found ready
+ * (including eIO_Read event on eIO_Write for upreadable sockets)
+ * or failing ("revent" contains eIO_Close).
+ * Return eIO_Timeout, if timeout expired before any socket became available.
+ * Return other error code to indicate failure.
  */
-static EIO_Status s_Select(TSOCK_Handle          sock,
-                           EIO_Event             event,
+static EIO_Status s_Select(size_t                n,
+                           SSOCK_Poll            socks[],
                            const struct timeval* timeout)
 {
+    size_t i;
     int n_fds;
-    fd_set fds, *r_fds, *w_fds;
+    int/*bool*/ read_only = 1;
+    int/*bool*/ write_only = 1;
+    fd_set r_fds, w_fds, e_fds;
 
-    /* just checking */
-    if (sock == SOCK_INVALID) {
-        CORE_LOG(eLOG_Error,
-                 "[SOCK::s_Select]  Attempted to wait on an invalid socket");
-        assert(0);
-        return eIO_Unknown;
+    for (;;) { /* auto-resume if interrupted by a signal */
+        struct timeval tmo;
+
+        n_fds = 0;
+        FD_ZERO(&r_fds);
+        FD_ZERO(&w_fds);
+        FD_ZERO(&e_fds);
+        for (i = 0; i < n; i++) {
+            if (socks[i].sock) {
+                if (socks[i].sock->sock != SOCK_INVALID  &&
+                    (socks[i].event & eIO_ReadWrite) != 0) {
+                    switch (socks[i].event) {
+                    case eIO_ReadWrite:
+                    case eIO_Write:
+                        read_only = 0;
+                        FD_SET(socks[i].sock->sock, &w_fds);
+                        if (socks[i].event == eIO_Write &&
+                            (socks[i].sock->r_status == eIO_Closed ||
+                             socks[i].sock->is_eof ||
+                             socks[i].sock->r_on_w == eOff ||
+                             (socks[i].sock->r_on_w == eDefault &&
+                              s_ReadOnWrite == eOff)))
+                            break;
+                        /*FALLTHRU*/
+                    case eIO_Read:
+                        write_only = 0;
+                        FD_SET(socks[i].sock->sock, &r_fds);
+                        break;
+                    default:
+                        /* should never get here */
+                        assert(0);
+                        break;
+                    }
+                    FD_SET(socks[i].sock->sock, &e_fds);
+                    if (n_fds < (int) socks[i].sock->sock)
+                        n_fds = (int) socks[i].sock->sock;
+                    socks[i].revent = eIO_Open;
+                } else
+                    socks[i].revent = eIO_Close;
+            }
+        }
+
+        if (n_fds == 0  &&  !FD_ISSET(0, &e_fds))
+            return eIO_Success/*none given or all bad*/;
+
+        if ( timeout )
+            tmo = *timeout;
+
+        n_fds = select(SOCK_NFDS((TSOCK_Handle) n_fds),
+                       write_only ? 0 : &r_fds, read_only ? 0 : &w_fds,
+                       &e_fds, timeout ? &tmo : 0);
+
+        /* timeout has expired */
+        if (n_fds == 0)
+            return eIO_Timeout;
+
+        if (n_fds > 0)
+            break;
+
+        if (n_fds < 0  &&  SOCK_ERRNO != SOCK_EINTR)
+            return eIO_Unknown;
     }
 
-    /* setup i/o descriptor to select */
-    r_fds = (event == eIO_Read  ||  event == eIO_ReadWrite) ? &fds : 0;
-    w_fds = (event == eIO_Write ||  event == eIO_ReadWrite) ? &fds : 0;
-
-    do { /* auto-resume if interrupted by a signal */
-        fd_set e_fds;
-        struct timeval tmout;
-        if ( timeout )
-            tmout = *timeout;
-        FD_ZERO(&fds);       FD_ZERO(&e_fds);
-        FD_SET(sock, &fds);  FD_SET(sock, &e_fds);
-        n_fds = select(SOCK_NFDS(sock), r_fds, w_fds, &e_fds,
-                       timeout ? &tmout : 0);
-        assert(-1 <= n_fds  &&  n_fds <= 2);
-        if ((n_fds < 0  &&  SOCK_ERRNO != SOCK_EINTR)  ||
-            FD_ISSET(sock, &e_fds)) {
-            return eIO_Unknown;
+    n_fds = 0;
+    for (i = 0; i < n; i++) {
+        if (socks[i].sock  &&  socks[i].revent == eIO_Open) {
+            if (!FD_ISSET(socks[i].sock->sock, &e_fds)) {
+                if (FD_ISSET(socks[i].sock->sock, &r_fds))
+                    socks[i].revent |= eIO_Read;
+                if (FD_ISSET(socks[i].sock->sock, &w_fds))
+                    socks[i].revent |= eIO_Write;
+            } else
+                socks[i].revent = eIO_Close;
+            if (socks[i].revent != eIO_Open)
+                n_fds++;
         }
-    } while (n_fds < 0);
-
-    /* timeout has expired */
-    if (n_fds == 0)
-        return eIO_Timeout;
+    }
 
 #if !defined(NCBI_OS_IRIX)
     /* funny thing -- on IRIX, it may set "n_fds" to e.g. 1, and
-     * forget to set the bit in "fds" and/or "e_fds"!
+     * forget to set the bit in either or all "r_fds"/"w_fds"/"e_fds"!
      */
-    assert(FD_ISSET(sock, &fds));
 #endif
+    assert(n_fds);
 
-    /* success;  can i/o now */
+    /* success; can do i/o now */
     return eIO_Success;
 }
 
@@ -725,11 +791,17 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     unsigned short x_port;
 
     {{ /* wait for the connection request to come (up to timeout) */
+        EIO_Status status;
         struct timeval tv;
-        EIO_Status status =
-            s_Select(lsock->sock, eIO_Read, s_to2tv(timeout, &tv));
-        if (status != eIO_Success)
+        SSOCK_Poll poll;
+        poll.sock   = (SOCK) lsock; /*HACK: we'd actually use 1st field only*/
+        poll.event  = eIO_Read;     /* ... due to READ-only operation       */
+        poll.revent = 0;
+        if ((status = s_Select(1,&poll, s_to2tv(timeout, &tv))) != eIO_Success)
             return status;
+        if (poll.revent == eIO_Close)
+            return eIO_Unknown;
+        assert(poll.event == eIO_Read  &&  poll.revent == eIO_Read);
     }}
 
     {{ /* accept next connection */
@@ -817,13 +889,6 @@ extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
  */
 
 
-/* Read-while-writing switch.
- * NOTE: no read-while-writing by default
- */
-static ESwitch s_ReadOnWrite = eDefault;
-
-
-
 /* Connect the (pre-allocated) socket to the specified "host:port" peer.
  * HINT: if "host" is NULL then assume(!) that the "sock" already exists,
  *       and connect to the same host;  the same is for zero "port".
@@ -901,15 +966,27 @@ static EIO_Status s_Connect(SOCK            sock,
          * (become writable).
          */
         {{
+            EIO_Status status;
             struct timeval tv;
-            EIO_Status status =
-                s_Select(x_sock, eIO_Write, s_to2tv(timeout, &tv));
-            if (status != eIO_Success  &&  CORE_GetLOG()) {
-                char str[256];
-                sprintf(str, "[SOCK::s_Connect]  Failed pending connect to "
-                        "%.64s:%d (%.32s)", host ? host : "???",
-                        (int) ntohs(x_port), IO_StatusStr(status));
-                CORE_LOG(eLOG_Error, str);
+            SSOCK_Poll poll;
+            SOCK_struct s;
+            memset(&s, 0, sizeof(s)); /* make it temporary and fill partially*/
+            s.sock      = x_sock;
+            s.r_on_w    = eOff;       /* to prevent upread inquiry           */
+            poll.sock   = &s;
+            poll.event  = eIO_Write;
+            poll.revent = 0;
+            status = s_Select(1, &poll, s_to2tv(timeout, &tv));
+            if (status != eIO_Success  ||  poll.revent != eIO_Write) {
+                if (poll.revent != eIO_Write)
+                    status = eIO_Unknown;
+                if (CORE_GetLOG()) {
+                    char str[256];
+                    sprintf(str, "[SOCK::s_Connect]  Failed pending connect"
+                            " to %.64s:%d (%.32s)", host ? host : "???",
+                            (int) ntohs(x_port), IO_StatusStr(status));
+                    CORE_LOG(eLOG_Error, str);
+                }
                 SOCK_CLOSE(x_sock);
                 return status;
             }
@@ -918,9 +995,9 @@ static EIO_Status s_Connect(SOCK            sock,
 
     /* Success */
     /* NOTE:  it does not change the timeouts and the data buffer content */
-    sock->sock   = x_sock;
-    sock->host   = x_host;
-    sock->port   = x_port;
+    sock->sock     = x_sock;
+    sock->host     = x_host;
+    sock->port     = x_port;
     sock->is_eof   = 0/*false*/;
     sock->r_status = eIO_Success;
     sock->w_status = eIO_Success;
@@ -958,7 +1035,7 @@ static EIO_Status s_Close(SOCK sock)
     /* Set the close()'s linger period be equal to the close timeout */
 #if defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MSWIN)
     /* setsockopt() is not implemented for MAC (in MIT socket emulation lib) */
-    if ( sock->c_timeout  &&  sock->w_status != eIO_Closed ) {
+    if (sock->c_timeout  &&  sock->w_status != eIO_Closed) {
         struct linger lgr;
         lgr.l_onoff  = 1;
         lgr.l_linger = sock->c_timeout->tv_sec ? sock->c_timeout->tv_sec : 1;
@@ -1130,78 +1207,109 @@ static EIO_Status s_Recv(SOCK        sock,
         }
 
         x_errno = SOCK_ERRNO;
-
         /* blocked -- wait for a data to come;  exit if timeout/error */
         if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN) {
-            EIO_Status status =
-                s_Select(sock->sock, eIO_Read, sock->r_timeout);
-            if (status != eIO_Success)
+            EIO_Status status;
+            SSOCK_Poll poll;
+            poll.sock   = sock;
+            poll.event  = eIO_Read;
+            poll.revent = 0;
+            if ((status = s_Select(1, &poll, sock->r_timeout)) != eIO_Success)
                 return status;
+            if (poll.revent == eIO_Close)
+                return eIO_Unknown;
+            assert(poll.event == eIO_Read  &&  poll.revent == eIO_Read);
             continue;
         }
 
+        if (x_errno != SOCK_EINTR)
+            break;
         /* retry if interrupted by a signal */
-        if (x_errno == SOCK_EINTR)
-            continue;
-
-        /* dont want to handle all possible errors... let them be "unknown" */
-        break;
     }
 
+    /* dont want to handle all possible errors... let them be "unknown" */
     return eIO_Unknown;
 }
 
 
-/* Stall protection: try pull incoming data from the socket.
- * Available only for eIO_Write & eIO_ReadWrite events.
- * For event == eIO_Read, or if read-on-write is disabled, or if
- * the READ stream is closed, then this function 
- * is equivalent to s_Select().
+/* Stall protection: try pull incoming data from sockets.
+ * If only eIO_Read events requested in "socks" array or
+ * read-on-write disabled for all sockets in question, or if
+ * EOF was reached in all read streams, this function is almost
+ * equivalent to s_Select().
  */
-static EIO_Status s_SelectStallsafe(SOCK                  sock,
-                                    EIO_Event             event,
-                                    const struct timeval* timeout)
+static EIO_Status s_SelectStallsafe(size_t                n,
+                                    SSOCK_Poll            socks[],
+                                    const struct timeval* timeout,
+                                    size_t*               ready)
 {
-    static struct timeval s_ZeroTimeout = {0, 0};
     EIO_Status status;
+    size_t i, j, k;
 
-    /* just checking */
-    if (sock->sock == SOCK_INVALID) {
-        CORE_LOG(eLOG_Error,
-                 "[SOCK::s_Select]  Stall protection attempted on an "
-                 "invalid socket");
-        assert(0);
-        return eIO_Unknown;
-    }
-
-    /* check if to use a "regular" s_Select() */
-    if (event == eIO_Read  ||
-        sock->r_status == eIO_Closed  ||  sock->is_eof  ||
-        sock->r_on_w == eOff  ||
-        (sock->r_on_w == eDefault  &&  s_ReadOnWrite != eOn)) {
-        /* wait until event (up to timeout) */
-        return s_Select(sock->sock, event, timeout);
-    }
-
-    /* check if immediately writable */
-    status = s_Select(sock->sock, event, &s_ZeroTimeout);
-    if (status != eIO_Timeout)
+    if ((status = s_Select(n, socks, timeout)) != eIO_Success) {
+        if ( ready )
+            *ready = 0;
         return status;
+    }
 
-    /* do wait (and try to read data if the stream is not yet writable) */
-    do {
-        /* try upread data into the internal buffer */
-        s_NCBI_Recv(sock, 0, 100000000/*read as much as possible*/, 1/*peek*/);
-
-        /* wait for r/w */
-        status = s_Select(sock->sock, eIO_ReadWrite, timeout);
-        if (status == eIO_Success  &&
-            s_Select(sock->sock, eIO_Write, &s_ZeroTimeout) == eIO_Success) {
-            break;  /* can write now */
+    k = j = 0;
+    for (i = 0; i < n; i++) {
+        if (socks[i].sock) {
+            if (socks[i].revent == eIO_Close)
+                break;
+            if (socks[i].revent & socks[i].event)
+                break;
+            if (socks[i].revent != eIO_Open) {
+                if (!k++)
+                    j = i;
+            }
         }
-    } while (status == eIO_Success);
+    }
+    if (i >= n  &&  k) {
+        /* all sockets are not ready for the requested events */
+        for (i = j; i < n; i++) {
+            /* try to find an immediately readable socket */
+            if (socks[i].sock  &&  socks[i].revent != eIO_Close
+                &&  socks[i].event  == eIO_Write
+                &&  socks[i].revent == eIO_Read) {
+                int save_r_on_w = socks[i].sock->r_on_w;
+                SSOCK_Poll poll;
+                /* try upread as mush as possible data into internal buffer */
+                s_NCBI_Recv(socks[i].sock, 0, 1000000000, 1/*peek*/);
 
-    return status;
+                socks[i].sock->r_on_w = eOff;
+                poll.sock   = socks[i].sock;
+                poll.event  = eIO_Write;
+                poll.revent = 0;
+                status = s_Select(1, &poll, timeout);
+                socks[i].sock->r_on_w = save_r_on_w;
+
+                if (status == eIO_Success  &&  poll.revent == eIO_Write) {
+                    socks[i].revent = poll.revent;
+                    break; /*can write now!*/
+                }
+            }
+        }
+    }
+
+    j = k = 0;
+    for (i = 0; i < n; i++) {
+        if (socks[i].sock) {
+            if (socks[i].revent == eIO_Close)
+                k++;
+            else if (socks[i].revent &= socks[i].event)
+                k++;
+            j++;
+        }
+    }
+
+    if ( ready )
+        *ready = k;
+
+    if (k != 0  ||  j == 0)
+        return eIO_Success;
+
+    return eIO_Timeout;
 }
 
 
@@ -1247,25 +1355,29 @@ static EIO_Status s_WriteWhole(SOCK        sock,
         /* blocked -- retry if unblocked before the timeout is expired */
         /* (use stall protection if specified) */
         if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN) {
+            EIO_Status status;
+            SSOCK_Poll poll;
+            poll.sock   = sock;
+            poll.event  = eIO_Write;
+            poll.revent = 0;
             /* stall protection:  try pull incoming data from the socket */
-            EIO_Status status = s_SelectStallsafe(sock, eIO_Write, 
-                                                  sock->w_timeout);
+            status = s_SelectStallsafe(1, &poll, sock->w_timeout, 0);
             if (status != eIO_Success)
                 return status;
+            assert(poll.event == eIO_Write  &&  poll.revent == eIO_Write);
             continue;
         }
 
+        if (x_errno != SOCK_EINTR) {
+            /* forcibly closed by peer, or shut down */
+            if (x_errno == SOCK_ECONNRESET  ||  x_errno == SOCK_EPIPE)
+                return eIO_Closed;
+            break;
+        }
         /* retry if interrupted by a signal */
-        if (x_errno == SOCK_EINTR)
-            continue;
-
-        /* forcibly closed by peer, or shut down */
-        if (x_errno == SOCK_ECONNRESET  ||  x_errno == SOCK_EPIPE)
-            return eIO_Closed;
-
-        /* dont want to handle all possible errors... let it be "unknown" */  
-        break;
     }
+
+    /* dont want to handle all possible errors... let it be "unknown" */  
     return eIO_Unknown;
 }
 
@@ -1468,9 +1580,34 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
 
     /* Do wait */
     {{
+        EIO_Status status;
         struct timeval tv;
-        return s_SelectStallsafe(sock, event, s_to2tv(timeout, &tv));
+        SSOCK_Poll poll;
+        poll.sock   = sock;
+        poll.event  = event;
+        poll.revent = 0;
+        status = s_SelectStallsafe(1, &poll, s_to2tv(timeout, &tv), 0);
+        if (status != eIO_Success)
+            return status;
+        if (poll.revent == eIO_Close)
+            return eIO_Unknown;
+        assert(poll.event == poll.revent);
+        return status/*success*/;
     }}
+}
+
+
+extern EIO_Status SOCK_Poll(size_t          n,
+                            SSOCK_Poll      socks[],
+                            const STimeout* timeout,
+                            size_t*         ready)
+{
+    struct timeval tv;
+
+    if ((n == 0) ^ (socks == NULL))
+        return eIO_InvalidArg;
+
+    return s_SelectStallsafe(n, socks, s_to2tv(timeout, &tv), ready);
 }
 
 
