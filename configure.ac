@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.79 2002/05/30 05:33:52 vakatov Exp $
+#  $Id: configure.ac,v 1.80 2002/05/30 20:07:03 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1617,10 +1617,12 @@ if test "$with_sybase" != "no" ; then
     fi
     if test "$with_sybase_new" != "yes" ; then
       SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
-      if test -d /export/home/sybase/clients/current ; then 
+      if test -d "/export/home/sybase/clients/current" ; then 
         SYBASE_LCL_PATH=${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
       fi
     fi
+   else
+      SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
    fi
 
    # compose a list of commonly used Sybase libraries
@@ -1654,7 +1656,7 @@ if test "$with_sybase" != "no" ; then
    # deduce conf.macro: SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
    SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
    SYBASE_INCLUDE="-I$SYBASE_PATH/include $SYBASE_INCLUDE"
-   if test "$with_sybase_local" != "no" ; then
+   if test -z "$SYBASE_LCL_PATH" ; then
       SYBASE_LPATH="-L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LIBPATH"
    else
       SYBASE_LCL_LIBPATH="$SYBASE_LCL_PATH/${sybase_lib}"
@@ -1687,7 +1689,7 @@ if test "$with_sybase" = "no" ; then
    AC_MSG_RESULT([no])
 else
    WithPackages="$WithPackages Sybase"
-   if test "$with_sybase_local" != "no" ; then
+   if test -z "$SYBASE_LCL_PATH" ; then
       AC_MSG_RESULT([$SYBASE_PATH])
    else
       AC_MSG_RESULT([$SYBASE_LCL_PATH:$SYBASE_PATH])

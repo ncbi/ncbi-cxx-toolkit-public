@@ -7329,10 +7329,12 @@ if test "$with_sybase" != "no" ; then
     fi
     if test "$with_sybase_new" != "yes" ; then
       SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
-      if test -d /export/home/sybase/clients/current ; then
+      if test -d "/export/home/sybase/clients/current" ; then
         SYBASE_LCL_PATH=${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
       fi
     fi
+   else
+      SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
    fi
 
    # compose a list of commonly used Sybase libraries
@@ -7364,7 +7366,7 @@ if test "$with_sybase" != "no" ; then
    # deduce conf.macro: SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
    SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
    SYBASE_INCLUDE="-I$SYBASE_PATH/include $SYBASE_INCLUDE"
-   if test "$with_sybase_local" != "no" ; then
+   if test -z "$SYBASE_LCL_PATH" ; then
       SYBASE_LPATH="-L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LIBPATH"
    else
       SYBASE_LCL_LIBPATH="$SYBASE_LCL_PATH/${sybase_lib}"
@@ -7433,7 +7435,7 @@ if test "$with_sybase" = "no" ; then
 echo "${ECHO_T}no" >&6
 else
    WithPackages="$WithPackages Sybase"
-   if test "$with_sybase_local" != "no" ; then
+   if test -z "$SYBASE_LCL_PATH" ; then
       echo "$as_me:$LINENO: result: $SYBASE_PATH" >&5
 echo "${ECHO_T}$SYBASE_PATH" >&6
    else
