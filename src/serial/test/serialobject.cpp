@@ -1,4 +1,5 @@
 #include "serialobject.hpp"
+#include <serial/typeinfo.hpp>
 
 string Ptr(const void* p)
 {
@@ -50,4 +51,17 @@ void CSerialObject::Dump(CNcbiOstream& out) const
         out << "null";
     out << endl;
     out << '}' << endl;
+}
+
+void CSerialObject2::Assign(const CSerialUserOp& source)
+{
+    const CSerialObject2& src = dynamic_cast<const CSerialObject2&>(source);
+    m_Name2 = src.m_Name2;
+}
+
+
+bool CSerialObject2::Equals(const CSerialUserOp& object) const
+{
+    const CSerialObject2& obj = dynamic_cast<const CSerialObject2&>(object);
+    return obj.m_Name2 == m_Name2;
 }

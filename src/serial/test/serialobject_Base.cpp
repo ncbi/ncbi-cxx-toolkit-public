@@ -5,6 +5,8 @@
 #if HAVE_NCBI_C
 # include <asn.h>
 # include "twebenv.h"
+#else
+# include "Web_Env.hpp"
 #endif
 
 CSerialObject::CSerialObject(void)
@@ -28,7 +30,9 @@ BEGIN_CLASS_INFO(CSerialObject)
     ADD_MEMBER(m_Names, STL_map, (STD, (long), STD, (string)));
     ADD_MEMBER(m_Next, POINTER, (CLASS, (CSerialObject)))->SetOptional();
 #if HAVE_NCBI_C
-    ADD_NAMED_OLD_ASN_MEMBER("webEnv", m_WebEnv, "Web-Env", WebEnv)->SetOptional();
+    ADD_NAMED_OLD_ASN_MEMBER("m_WebEnv", m_WebEnv, "Web-Env", WebEnv)->SetOptional();
+#else
+    ADD_MEMBER(m_WebEnv, POINTER, (CLASS, (CWeb_Env)))->SetOptional();
 #endif
 
     ADD_SUB_CLASS(CSerialObject2);

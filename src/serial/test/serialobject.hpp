@@ -9,7 +9,14 @@
 #include <vector>
 #include <map>
 
+
+#ifdef HAVE_NCBI_C
 struct struct_Web_Env;
+typedef struct_Web_Env TWebEnv;
+#else
+class CWeb_Env;
+typedef CWeb_Env TWebEnv;
+#endif
 
 USING_NCBI_SCOPE;
 
@@ -33,12 +40,10 @@ public:
     map<long, string> m_Names;
     
     CSerialObject* m_Next;
-#ifdef HAVE_NCBI_C
-    struct_Web_Env* m_WebEnv;
-#endif
+    TWebEnv* m_WebEnv;
 };
 
-class CSerialObject2 : public CSerialObject
+class CSerialObject2 : public CSerialObject, public CSerialUserOp
 {
 public:
     CSerialObject2(void);
@@ -46,6 +51,9 @@ public:
     static const CTypeInfo* GetTypeInfo(void);
 
     string m_Name2;
+protected:
+    virtual void Assign(const CSerialUserOp& source);
+    virtual bool Equals(const CSerialUserOp& object) const;
 };
 
 #endif

@@ -17,6 +17,8 @@
 #if HAVE_NCBI_C
 # include <asn.h>
 # include "twebenv.h"
+#else
+# include "Web_Env.hpp"
 #endif
 
 int main(int argc, char** argv)
@@ -46,14 +48,14 @@ int CTestSerial::Run(void)
                 out->Write(&env, GetSequenceTypeRef(&env).Get());
             }
             {
+                // C-style Object must be clean before loading: using new WebEnv instance
+                WebEnv* env2 = 0;
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("webenv.bin",
                                                                  eSerial_AsnBinary));
-                in->Read(&env, GetSequenceTypeRef(&env).Get());
-            }
-            {
+                in->Read(&env2, GetSequenceTypeRef(&env2).Get());
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open("webenv.ento",
                                                                   eSerial_AsnText));
-                out->Write(&env, GetSequenceTypeRef(&env).Get());
+                out->Write(&env2, GetSequenceTypeRef(&env2).Get());
             }
             {
                 CNcbiOfstream out("webenv.ento2");
@@ -61,6 +63,34 @@ int CTestSerial::Run(void)
                          CConstObjectInfo(&env,
                                           GetSequenceTypeRef(&env).Get()));
             }
+        }
+#else
+        CRef<CWeb_Env> env(new CWeb_Env);
+        {
+            {
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("webenv.ent",
+                                                                 eSerial_AsnText));
+                *in >> *env;
+            }
+            {
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open("webenv.bino",
+                                                                  eSerial_AsnBinary));
+                *out << *env;
+            }
+            {
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("webenv.bin",
+                                                                 eSerial_AsnBinary));
+                *in >> *env;
+            }
+            {
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open("webenv.ento",
+                                                                  eSerial_AsnText));
+                *out << *env;
+            }
+        }
+        {
+            CNcbiOfstream out("test.asno2");
+            PrintAsn(out, ConstObjectInfo(*env));
         }
 #endif
 
@@ -89,9 +119,7 @@ int CTestSerial::Run(void)
         write.m_Names[2] = "two";
         write.m_Names[3] = "three";
         write.m_Names[10] = "ten";
-#if HAVE_NCBI_C
         write.m_WebEnv = env;
-#endif
 
         write1.m_Name = "write1";
         write1.m_HaveName = true;
@@ -99,9 +127,7 @@ int CTestSerial::Run(void)
         write1.m_Size = 0x7fff;
         write1.m_Attributes.push_back("write1");
         //        write1.m_Next = &write1;
-#if HAVE_NCBI_C
         write1.m_WebEnv = 0;
-#endif
         write1.m_Name2 = "name2";
 
         const CSerialObject& cwrite = write;
@@ -221,25 +247,39 @@ int CTestSerial::Run(void)
                                                                   eSerial_AsnText));
                 *out << write;
             }
-#if 0
             {
                 CNcbiOfstream out("test.asno2");
                 PrintAsn(out, ConstObjectInfo(write));
             }
-#endif
             CSerialObject read;
             {
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asn",
                                                                  eSerial_AsnText));
                 *in >> read;
             }
+#if HAVE_NCBI_C
+            // Some functions does not work with C-style objects.
+            // Reset WebEnv for SerialEquals() to work.
+            TWebEnv* saved_env_read = read.m_WebEnv;
+            TWebEnv* saved_env_write = write.m_WebEnv;
+            read.m_WebEnv = 0;
+            write.m_WebEnv = 0;
+#endif
+            _ASSERT(SerialEquals<CSerialObject>(read, write));
+#if HAVE_NCBI_C
+            // Restore C-style objects
+            read.m_WebEnv = saved_env_read;
+            write.m_WebEnv = saved_env_write;
+#endif
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
+#if !defined(HAVE_NCBI_C)
             {
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asn",
                                                                  eSerial_AsnText));
                 in->Skip(ObjectType(read));
             }
+#endif
         }
 
         {
@@ -254,37 +294,31 @@ int CTestSerial::Run(void)
                                                                  eSerial_AsnBinary));
                 *in >> read;
             }
+#if HAVE_NCBI_C
+            // Some functions does not work with C-style objects.
+            // Reset WebEnv for SerialEquals() to work.
+            TWebEnv* saved_env_read = read.m_WebEnv;
+            TWebEnv* saved_env_write = write.m_WebEnv;
+            read.m_WebEnv = 0;
+            write.m_WebEnv = 0;
+#endif
+            _ASSERT(SerialEquals<CSerialObject>(read, write));
+#if HAVE_NCBI_C
+            // Restore C-style objects
+            read.m_WebEnv = saved_env_read;
+            write.m_WebEnv = saved_env_write;
+#endif
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
+#if !defined(HAVE_NCBI_C)
             {
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asb",
                                                                  eSerial_AsnBinary));
                 in->Skip(ObjectType(read));
             }
+#endif
         }
 
-/*
-        {
-            {
-                auto_ptr<CObjectOStream> out(CObjectOStream::Open("test.bino",
-                                    eSerial_AsnBinary));
-                *out << write;
-            }
-            CSerialObject read;
-            {
-                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.bin",
-                                    eSerial_AsnBinary));
-                *in >> read;
-            }
-            read.Dump(NcbiCerr);
-            read.m_Next->Dump(NcbiCerr);
-            {
-                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.bin",
-                                    eSerial_AsnBinary));
-                in->SkipValue();
-            }
-        }
-*/
         NcbiCerr << "OK" << endl;
     }
     catch (exception& e) {
