@@ -71,7 +71,6 @@ public:
 
 protected:
 
-    TScore                   m_score;
     list<ETranscriptSymbol>  m_TransList;
     bool                     m_mt; // multiple threads
     unsigned int             m_maxthreads;
@@ -134,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/01/28 12:34:53  kapustin
+ * Move m_score to the base class
+ *
  * Revision 1.3  2003/01/22 13:29:11  kapustin
  * CMMAligner: thread classes declared as friends
  *

@@ -46,7 +46,6 @@ CMMAligner::CMMAligner( const char* seq1, size_t len1,
                         EScoringMatrixType matrix_type )
     throw(CNWAlignerException):
     CNWAligner(seq1, len1, seq2, len2, matrix_type),
-    m_score(kMin_Int),
     m_mt(false), m_maxthreads(1)
 {
 }
@@ -790,6 +789,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/01/28 12:37:40  kapustin
+ * Move m_score to the base class
+ *
  * Revision 1.3  2003/01/22 13:40:09  kapustin
  * Implement multithread algorithm
  *
