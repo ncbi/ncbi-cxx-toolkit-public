@@ -40,6 +40,21 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/greedy_align.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
 
+enum {
+    EDIT_OP_MASK = 0x3,
+    EDIT_OP_ERR  = 0x0,
+    EDIT_OP_INS  = 0x1,
+    EDIT_OP_DEL  = 0x2,
+    EDIT_OP_REP  = 0x3
+};
+
+enum {         /* half of the (fixed) match score */
+    ERROR_FRACTION=2,  /* 1/this */
+    MAX_SPACE=1000000,
+    sC = 0, sI = 1, sD = 2, LARGE=100000000
+};
+
+
 /* -------- From original file edit.c ------------- */
 
 static Uint4 edit_val_get(edit_op_t op)
@@ -392,6 +407,7 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
 			  GreedyAlignMem* gamp, MBGapEditScript *S,
                           Uint1 rem)
 {
+#define ICEIL(x,y) ((((x)-1)/(y))+1)
     Int4 col,			/* column number */
         d,				/* current distance */
         k,				/* current diagonal */
