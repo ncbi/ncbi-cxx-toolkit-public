@@ -83,6 +83,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/09/10 16:10:41  vakatov
+ * SOCK_gethostbyname() -- special cases "0.0.0.0" and "255.255.255.255"
+ *
  * Revision 6.13  2001/05/21 15:11:46  ivanov
  * Added (with Denis Vakatov) automatic read on write data from the socket
  * (stall protection).
@@ -505,6 +508,7 @@ extern unsigned int SOCK_htonl
  * specified host (or local host, if hostname is passed as NULL),
  * which can be either domain name or an IP address in
  * dotted notation (e.g. "123.45.67.89\0"). Return 0 on error.
+ * NOTE: "0.0.0.0" and "255.255.255.255" are considered not valid.
  */
 extern unsigned int SOCK_gethostbyname
 (const char* hostname  /* [in]  return current host address if hostname is 0 */
