@@ -33,6 +33,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/bioseq_set_handle.hpp>
 
 #include <objmgr/impl/scope_impl.hpp>
 
@@ -546,37 +547,14 @@ CSeq_entry_Handle CBioseq_Handle::GetSeq_entry_Handle(void) const
 }
 
 
-
-static int s_Complexity[] = {
-    0, // not-set (0)
-    3, // nuc-prot (1)
-    2, // segset (2)
-    2, // conset (3)
-    1, // parts (4)
-    1, // gibb (5)
-    1, // gi (6)
-    5, // genbank (7)
-    3, // pir (8)
-    4, // pub-set (9)
-    4, // equiv (10)
-    3, // swissprot (11)
-    3, // pdb-entry (12)
-    4, // mut-set (13)
-    4, // pop-set (14)
-    4, // phy-set (15)
-    4, // eco-set (16)
-    4, // gen-prod-set (17)
-    4, // wgs-set (18)
-    0, // other (255 - processed separately)
-};
-
-
 CSeq_entry_Handle
 CBioseq_Handle::GetComplexityLevel(CBioseq_set::EClass cls) const
 {
+    const CBioseq_set_Handle::TComplexityTable& ctab =
+        CBioseq_set_Handle::sx_GetComplexityTable();
     if (cls == CBioseq_set::eClass_other) {
         // adjust 255 to the correct value
-        cls = CBioseq_set::EClass(sizeof(s_Complexity) - 1);
+        cls = CBioseq_set::EClass(sizeof(ctab) - 1);
     }
     CSeq_entry_Handle last = GetParentEntry();
     _ASSERT(last && last.IsSeq());
@@ -585,10 +563,10 @@ CBioseq_Handle::GetComplexityLevel(CBioseq_set::EClass cls) const
         _ASSERT(e.IsSet());
         // Found good level
         if ( last.IsSet()  &&
-             s_Complexity[last.GetSet().GetClass()] == s_Complexity[cls] )
+             ctab[last.GetSet().GetClass()] == ctab[cls] )
             break;
         // Gone too high
-        if ( s_Complexity[e.GetSet().GetClass()] > s_Complexity[cls] ) {
+        if ( ctab[e.GetSet().GetClass()] > ctab[cls] ) {
             break;
         }
         // Go up one level
@@ -603,7 +581,7 @@ CSeq_entry_Handle
 CBioseq_Handle::GetExactComplexityLevel(CBioseq_set::EClass cls) const
 {
     CSeq_entry_Handle ret = GetComplexityLevel(cls);
-    if ( ret  &&  
+    if ( ret  &&
          (!ret.IsSet()  ||  !ret.GetSet().IsSetClass()  ||
          ret.GetSet().GetClass() != cls) ) {
         ret.Reset();
@@ -794,6 +772,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2004/06/09 16:42:26  grichenk
+* Added GetComplexityLevel() and GetExactComplexityLevel() to CBioseq_set_Handle
+*
 * Revision 1.66  2004/05/27 14:59:49  shomrat
 * Added CBioseq_EditHandle constructor implementation
 *

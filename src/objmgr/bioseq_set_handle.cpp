@@ -218,6 +218,80 @@ const CBioseq_set::TDescr& CBioseq_set_Handle::GetDescr(void) const
 }
 
 
+CBioseq_set_Handle::TComplexityTable
+CBioseq_set_Handle::sm_ComplexityTable = {
+    0, // not-set (0)
+    3, // nuc-prot (1)
+    2, // segset (2)
+    2, // conset (3)
+    1, // parts (4)
+    1, // gibb (5)
+    1, // gi (6)
+    5, // genbank (7)
+    3, // pir (8)
+    4, // pub-set (9)
+    4, // equiv (10)
+    3, // swissprot (11)
+    3, // pdb-entry (12)
+    4, // mut-set (13)
+    4, // pop-set (14)
+    4, // phy-set (15)
+    4, // eco-set (16)
+    4, // gen-prod-set (17)
+    4, // wgs-set (18)
+    0, // other (255 - processed separately)
+};
+
+
+const CBioseq_set_Handle::TComplexityTable&
+CBioseq_set_Handle::sx_GetComplexityTable(void)
+{
+    return sm_ComplexityTable;
+}
+
+
+CSeq_entry_Handle
+CBioseq_set_Handle::GetComplexityLevel(CBioseq_set::EClass cls) const
+{
+    const TComplexityTable& ctab = sx_GetComplexityTable();
+    if (cls == CBioseq_set::eClass_other) {
+        // adjust 255 to the correct value
+        cls = CBioseq_set::EClass(sizeof(ctab) - 1);
+    }
+    CSeq_entry_Handle e = GetParentEntry();
+    CSeq_entry_Handle last = e;
+    _ASSERT(e && e.IsSet());
+    while ( e ) {
+        _ASSERT(e.IsSet());
+        // Found good level
+        if (ctab[e.GetSet().GetClass()] == ctab[cls])
+            last = e;
+            break;
+        // Gone too high
+        if ( ctab[e.GetSet().GetClass()] > ctab[cls] ) {
+            break;
+        }
+        // Go up one level
+        last = e;
+        e = e.GetParentEntry();
+    }
+    return last;
+}
+
+
+CSeq_entry_Handle
+CBioseq_set_Handle::GetExactComplexityLevel(CBioseq_set::EClass cls) const
+{
+    CSeq_entry_Handle ret = GetComplexityLevel(cls);
+    if ( ret  &&
+         (!ret.GetSet().IsSetClass()  ||
+         ret.GetSet().GetClass() != cls) ) {
+        ret.Reset();
+    }
+    return ret;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBioseq_set_EditHandle
 
@@ -400,6 +474,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/06/09 16:42:26  grichenk
+* Added GetComplexityLevel() and GetExactComplexityLevel() to CBioseq_set_Handle
+*
 * Revision 1.9  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

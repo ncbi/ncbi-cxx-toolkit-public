@@ -131,6 +131,12 @@ public:
     bool operator !=(const CBioseq_set_Handle& handle) const;
     bool operator <(const CBioseq_set_Handle& handle) const;
 
+    // Go up to a certain complexity level (or the nearest level of the same
+    // priority if the required class is not found).
+    CSeq_entry_Handle GetComplexityLevel(CBioseq_set::EClass cls) const;
+    // Return level with exact complexity, or empty handle if not found.
+    CSeq_entry_Handle GetExactComplexityLevel(CBioseq_set::EClass cls) const;
+
 protected:
     friend class CScope_Impl;
     friend class CBioseq_Handle;
@@ -142,6 +148,11 @@ protected:
     friend class CAnnotTypes_CI;
 
     CBioseq_set_Handle(CScope& scope, const CBioseq_set_Info& info);
+
+    typedef int TComplexityTable[20];
+    static const TComplexityTable& sx_GetComplexityTable(void);
+
+    static TComplexityTable sm_ComplexityTable;
 
     CHeapScope          m_Scope;
     CConstRef<CObject>  m_Info;
@@ -331,6 +342,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/06/09 16:42:25  grichenk
+* Added GetComplexityLevel() and GetExactComplexityLevel() to CBioseq_set_Handle
+*
 * Revision 1.7  2004/05/06 17:32:37  grichenk
 * Added CanGetXXXX() methods
 *
