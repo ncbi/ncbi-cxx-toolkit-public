@@ -55,6 +55,7 @@ class CSeqMap_CI;
 class CAnnotObject_Info;
 class CFeat_Less;
 class CAnnotObject_Less;
+class CSeq_loc_Conversion;
 
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 {
@@ -97,6 +98,8 @@ private:
     mutable TRange          m_TotalRange; // cached total range of mapped loc
     CRef<CSeq_loc>          m_MappedProd; // master sequence coordinates
     bool                    m_Partial;    // Partial flag (same as in features)
+
+    friend class CSeq_loc_Conversion;
 };
 
 
@@ -171,9 +174,9 @@ private:
     typedef vector<CAnnotObject_Ref> TAnnotSet;
 
     void x_Initialize(const CHandleRangeMap& master_loc);
-    void x_SearchMain(const CHandleRangeMap& loc);
-    void x_SearchLocation(const CSeqMap_CI& seg,
-                          CHandleRangeMap::const_iterator master_loc);
+    void x_Search(const CHandleRangeMap& loc, CSeq_loc_Conversion* cvt);
+    void x_SearchMapped(const CSeqMap_CI& seg,
+                        CHandleRangeMap::const_iterator master_loc);
     
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
@@ -345,6 +348,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/02/27 20:56:51  vasilche
+* Use one method for lookup on main sequence and segments.
+*
 * Revision 1.31  2003/02/27 14:35:32  vasilche
 * Splitted PopulateTSESet() by logically independent parts.
 *
