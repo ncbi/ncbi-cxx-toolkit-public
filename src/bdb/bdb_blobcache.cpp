@@ -77,7 +77,7 @@ public:
         return eIO_Success;
     }
 
-    virtual EIO_Result PendingCount(size_t* count)
+    virtual EIO_Result PendingCount(size_t* /*count*/)
     {
         return eIO_NotImplemented;
     }
@@ -377,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/29 15:45:17  kuznets
+ * Minor warning fixed
+ *
  * Revision 1.2  2003/09/24 15:59:45  kuznets
  * Reflected changes in IReader/IWriter <util/reader_writer.hpp>
  *
