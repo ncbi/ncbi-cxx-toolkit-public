@@ -14,5 +14,5 @@ LIB = $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = test_seqvector_ci
+CHECK_CMD = run_sybase_app.sh test_seqvector_ci
 CHECK_TIMEOUT = 500
