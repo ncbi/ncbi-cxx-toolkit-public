@@ -579,13 +579,8 @@ bool CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,
                 catch(const CDB_Exception &e) {
                     LOG_POST("ID connection failed: Reconnecting...." << e.what());
                 }
-                catch ( const exception &e ) {
-                    LOG_POST(CThread::GetSelf() << ":: Data request failed...." << e.what());
-                    g.Lock();
-                    g.Lock(tse);
-                    tse->locked--;
-                    x_UpdateDropList(tse); // move up as just checked
-                    throw;
+                catch(const exception &e) {
+                    LOG_POST("ID connection failed (exception): Reconnecting...." << e.what());
                 }
                 catch (...) {
                     LOG_POST(CThread::GetSelf() << ":: Data request failed....");
@@ -667,6 +662,11 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
         catch(const CDB_Exception &e) {
             LOG_POST(e.what());
             LOG_POST("ID connection failed: Reconnecting....");
+        }
+        catch(const exception &e) {
+            LOG_POST(e.what());
+            LOG_POST("ID connection failed (exception): Reconnecting....");
+            _ASSERT(0);
         }
     }
     if ( !got ) {
@@ -813,6 +813,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/05/06 16:52:28  vasilche
+* Try to reconnect to genbank on any exception.
+*
 * Revision 1.61  2003/04/29 19:51:13  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.
