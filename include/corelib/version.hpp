@@ -73,6 +73,7 @@ public:
 
     /// Constructor.
     CVersionInfo(const CVersionInfo& version);
+    CVersionInfo& operator=(const CVersionInfo& version);
 
     /// Destructor.
     virtual ~CVersionInfo() {}
@@ -223,6 +224,7 @@ typename TClass::const_iterator FindVersion(const TClass& cont,
 ///   MyProgram ver. 1.2.3
 ///   version 1.2.3
 ///
+NCBI_XNCBI_EXPORT
 void ParseVersionString(const string&  vstr, 
                         string*        program_name, 
                         CVersionInfo*  ver);
@@ -238,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/04/05 14:34:56  kuznets
+ * Added dll export spec
+ *
  * Revision 1.14  2005/04/04 16:16:51  kuznets
  * Added functions to parse various version strings
  *
