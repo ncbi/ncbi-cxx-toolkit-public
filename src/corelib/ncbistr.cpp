@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/05/27 15:21:40  vakatov
+* Fixed all StringToXXX() functions
+*
 * Revision 1.13  1999/05/17 20:10:36  vasilche
 * Fixed bug in NStr::StringToUInt which cause an exception.
 *
@@ -86,30 +89,32 @@ BEGIN_NCBI_SCOPE
 int NStr::StringToInt(const string& str, int base /* = 10 */ )
 {
     errno = 0;
-    char* error = 0;
-    long value = ::strtol(str.c_str(), &error, base);
-    if (errno  ||  (error && *error)  || value < kMin_Int || value > kMax_Int)
-        throw runtime_error("bad number");
+    char* endptr = 0;
+    long value = ::strtol(str.c_str(), &endptr, base);
+    if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
+        value < kMin_Int || value > kMax_Int)
+        throw runtime_error("NStr::StringToInt():  cannot convert");
     return value;
 }
 
 unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
 {
     errno = 0;
-    char* error = 0;
-    long value = ::strtol(str.c_str(), &error, base);
-    if (errno  ||  (error && *error)  ||  value < 0 || value > kMax_UInt)
-        throw runtime_error("bad number");
+    char* endptr = 0;
+    unsigned long value = ::strtoul(str.c_str(), &endptr, base);
+    if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
+        value < 0  ||  value > kMax_UInt)
+        throw runtime_error("NStr::StringToUInt():  cannot convert");
     return value;
 }
 
 double NStr::StringToDouble(const string& str)
 {
     errno = 0;
-    char* error = 0;
-    double value = ::strtod(str.c_str(), &error);
-    if (errno  ||  (error && *error))
-        throw runtime_error("bad number");
+    char* endptr = 0;
+    double value = ::strtod(str.c_str(), &endptr);
+    if (errno  ||  !endptr  ||  endptr == str.c_str())
+        throw runtime_error("NStr::StringToDouble():  cannot convert");
     return value;
 }
 
@@ -145,7 +150,7 @@ string NStr::DoubleToString(double value)
 
 // case-insensitive string comparison
 // operator() meaning is the same as operator<
-bool PNocase::operator() ( const string& x, const string& y ) const
+bool PNocase::operator() (const string& x, const string& y) const
 {
   string::const_iterator p = x.begin();
   string::const_iterator q = y.begin();
