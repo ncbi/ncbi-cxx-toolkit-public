@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.5  2000/08/25 15:59:23  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -192,14 +195,14 @@ void CNamespace::CloseAllAbove(size_t level, CNcbiOstream& out)
 
 CNcbiOstream& CNamespace::PrintFullName(CNcbiOstream& out) const
 {
-    iterate ( TNamespaces, i, GetNamespaces() )
+    ITERATE ( TNamespaces, i, GetNamespaces() )
         out << *i << "::";
     return out;
 }
 
 void CNamespace::ToStringTo(string& s) const
 {
-    iterate ( TNamespaces, i, GetNamespaces() ) {
+    ITERATE ( TNamespaces, i, GetNamespaces() ) {
         s += *i;
         s += "::";
     }

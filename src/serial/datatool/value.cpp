@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.17  2001/08/31 20:05:46  ucko
 * Fix ICC build.
 *
@@ -149,7 +152,7 @@ EMPTY_TEMPLATE
 void CDataValueTmpl<string>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << '"';
-    iterate ( string, i, GetValue() ) {
+    ITERATE ( string, i, GetValue() ) {
         char c = *i;
         if ( c == '"' )
             out << "\"\"";

@@ -214,10 +214,10 @@ const string& CCodeGenerator::ResolveFileName(const string& name) const
 
 void CCodeGenerator::IncludeAllMainTypes(void)
 {
-    iterate ( CFileSet::TModuleSets, msi, m_MainFiles.GetModuleSets() ) {
-        iterate ( CFileModules::TModules, mi, (*msi)->GetModules() ) {
+    ITERATE ( CFileSet::TModuleSets, msi, m_MainFiles.GetModuleSets() ) {
+        ITERATE ( CFileModules::TModules, mi, (*msi)->GetModules() ) {
             const CDataTypeModule* module = mi->get();
-            iterate ( CDataTypeModule::TDefinitions, ti,
+            ITERATE ( CDataTypeModule::TDefinitions, ti,
                       module->GetDefinitions() ) {
                 const string& name = ti->first;
                 const CDataType* type = ti->second.get();
@@ -251,7 +251,7 @@ void CCodeGenerator::ExcludeTypes(const string& typeList)
 {
     TTypeNames typeNames;
     GetTypes(typeNames, typeList);
-    iterate ( TTypeNames, i, typeNames ) {
+    ITERATE ( TTypeNames, i, typeNames ) {
         m_Config.Set(*i, "_class", "-");
         m_GenerateTypes.erase(*i);
     }
@@ -273,13 +273,13 @@ struct string_nocase_less
 void CCodeGenerator::GenerateCode(void)
 {
     // collect types
-    iterate ( TTypeNames, ti, m_GenerateTypes ) {
+    ITERATE ( TTypeNames, ti, m_GenerateTypes ) {
         CollectTypes(ResolveMain(*ti), eRoot);
     }
 
     {
         set<string,string_nocase_less> names;
-        iterate ( TOutputFiles, filei, m_Files ) {
+        ITERATE ( TOutputFiles, filei, m_Files ) {
             CFileCode* code = filei->second.get();
             string fname;
             for ( fname = code->GetFileBaseName();
@@ -292,7 +292,7 @@ void CCodeGenerator::GenerateCode(void)
 
     // generate output files
     list<string> listGenerated, listUntouched;
-    iterate ( TOutputFiles, filei, m_Files ) {
+    ITERATE ( TOutputFiles, filei, m_Files ) {
         CFileCode* code = filei->second.get();
         code->UseQuotedForm(m_UseQuotedForm);
         code->GenerateCode();
@@ -321,14 +321,14 @@ void CCodeGenerator::GenerateCode(void)
         
         fileList << "GENFILES =";
         {
-            iterate ( TOutputFiles, filei, m_Files ) {
+            ITERATE ( TOutputFiles, filei, m_Files ) {
                 fileList << ' ' << filei->second->GetFileBaseName();
             }
         }
         fileList << "\n";
         fileList << "GENFILES_LOCAL =";
         {
-            iterate ( TOutputFiles, filei, m_Files ) {
+            ITERATE ( TOutputFiles, filei, m_Files ) {
                 fileList << ' ' << BaseName(
                     filei->second->GetFileBaseName());
             }
@@ -386,7 +386,7 @@ void CCodeGenerator::GenerateCode(void)
             if ( !out )
                 ERR_POST(Fatal << "Cannot create file: "<<fileName);
             
-            iterate ( TOutputFiles, filei, m_Files ) {
+            ITERATE ( TOutputFiles, filei, m_Files ) {
                 out << "#include \""<<BaseName(
                     filei->second->GetFileBaseName())<<
                     suffix<<"\"\n";
@@ -407,7 +407,7 @@ void CCodeGenerator::GenerateCode(void)
         if ( !out )
             ERR_POST(Fatal << "Cannot create file: " << fileName);
 
-        iterate ( TOutputFiles, filei, m_Files ) {
+        ITERATE ( TOutputFiles, filei, m_Files ) {
             out << "#include " << (m_UseQuotedForm ? '\"' : '<') << GetStdPath(
                 Path(m_FileNamePrefix, BaseName(
                     filei->second->GetFileBaseName())) + suffix) <<
@@ -508,7 +508,7 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext /*context*/)
         dynamic_cast<const CDataMemberContainerType*>(type);
     if ( cont != 0 ) {
         // collect member's types
-        iterate ( CDataMemberContainerType::TMembers, mi,
+        ITERATE ( CDataMemberContainerType::TMembers, mi,
                   cont->GetMembers() ) {
             const CDataType* memberType = mi->get()->GetType();
             CollectTypes(memberType, eMember);
@@ -605,7 +605,7 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
             return;
 
         // collect member's types
-        iterate ( CDataMemberContainerType::TMembers, mi,
+        ITERATE ( CDataMemberContainerType::TMembers, mi,
                   choice->GetMembers() ) {
             const CDataType* memberType = mi->get()->GetType();
             CollectTypes(memberType, eMember); // eChoice
@@ -622,7 +622,7 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
             return;
 
         // collect member's types
-        iterate ( CDataMemberContainerType::TMembers, mi,
+        ITERATE ( CDataMemberContainerType::TMembers, mi,
                   cont->GetMembers() ) {
             const CDataType* memberType = mi->get()->GetType();
             CollectTypes(memberType, eMember);
@@ -640,6 +640,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.48  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *

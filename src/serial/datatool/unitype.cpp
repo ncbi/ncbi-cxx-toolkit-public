@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.23  2003/03/10 18:55:19  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -219,7 +222,7 @@ bool CUniSequenceDataType::CheckValue(const CDataValue& value) const
         return false;
     }
     bool ok = true;
-    iterate ( CBlockDataValue::TValues, i, block->GetValues() ) {
+    ITERATE ( CBlockDataValue::TValues, i, block->GetValues() ) {
         if ( !m_ElementType->CheckValue(**i) )
             ok = false;
     }

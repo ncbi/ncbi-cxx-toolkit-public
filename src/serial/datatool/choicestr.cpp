@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.41  2003/03/11 17:59:16  gouriano
 * reimplement CInvalidChoiceSelection exception
 *
@@ -305,7 +308,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         codeClassName += "_Base";
     // generate variants code
     {
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             switch ( i->memberType ) {
             case ePointerMember:
                 havePointers = true;
@@ -367,7 +370,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "        "STATE_NOT_SET" = "<<kEmptyChoice;
         TMemberIndex currIndex = kEmptyChoice;
         bool needIni = false;
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             ++currIndex;
             if (!i->attlist) {
                 code.ClassPublic() << ",\n"
@@ -492,7 +495,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate initialization code
     code.AddInitializer(STATE_MEMBER, STATE_NOT_SET);
     if (haveAttlist) {
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             if (i->attlist) {
                 string member("m_");
                 member += i->cName;
@@ -514,7 +517,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "void "<<methodPrefix<<"Reset(void)\n"
             "{\n";
         if (haveAttlist) {
-            iterate ( TVariants, i, m_Variants ) {
+            ITERATE ( TVariants, i, m_Variants ) {
                 if (i->attlist) {
                     methods <<
                         "    Reset" << i->cName << "();\n";
@@ -531,7 +534,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             methods <<
                 "    switch ( "STATE_MEMBER" ) {\n";
             // generate destruction code for pointers
-            iterate ( TVariants, i, m_Variants ) {
+            ITERATE ( TVariants, i, m_Variants ) {
                 if (i->attlist) {
                     continue;
                 }
@@ -548,7 +551,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if ( haveString ) {
                 // generate destruction code for string
-                iterate ( TVariants, i, m_Variants ) {
+                ITERATE ( TVariants, i, m_Variants ) {
                     if (i->attlist) {
                         continue;
                     }
@@ -571,7 +574,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if ( haveObjectPointer ) {
                 // generate destruction code for pointers to CObject
-                iterate ( TVariants, i, m_Variants ) {
+                ITERATE ( TVariants, i, m_Variants ) {
                     if (i->attlist) {
                         continue;
                     }
@@ -602,7 +605,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "{\n"
             "    "STATE_ENUM" index = src.Which();\n"
             "    switch ( index ) {\n";
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             switch ( i->memberType ) {
             case eSimpleMember:
                 methods <<
@@ -628,7 +631,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         }
         if ( haveString ) {
             // generate copy code for string
-            iterate ( TVariants, i, m_Variants ) {
+            ITERATE ( TVariants, i, m_Variants ) {
                 if ( i->memberType == eStringMember ) {
                     methods <<
                         "    case "STATE_PREFIX<<i->cName<<":\n";
@@ -648,7 +651,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         }
         if ( haveObjectPointer ) {
             // generate copy code for string
-            iterate ( TVariants, i, m_Variants ) {
+            ITERATE ( TVariants, i, m_Variants ) {
                 if ( i->memberType == eObjectPointerMember ) {
                     methods <<
                         "    case "STATE_PREFIX<<i->cName<<":\n";
@@ -676,7 +679,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         if ( haveUnion || haveObjectPointer ) {
             methods <<
                 "    switch ( index ) {\n";
-            iterate ( TVariants, i, m_Variants ) {
+            ITERATE ( TVariants, i, m_Variants ) {
                 if (i->attlist) {
                     continue;
                 }
@@ -708,7 +711,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
             }
             if ( haveString ) {
-                iterate ( TVariants, i, m_Variants ) {
+                ITERATE ( TVariants, i, m_Variants ) {
                     if ( i->memberType == eStringMember ) {
                         methods <<
                             "    case "STATE_PREFIX<<i->cName<<":\n";
@@ -736,7 +739,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         methods <<
             "const char* const "<<methodPrefix<<"sm_SelectionNames[] = {\n"
             "    \"not set\"";
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             methods << ",\n"
                 "    \""<<i->externalName<<"\"";
             if (i->attlist) {
@@ -762,7 +765,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     {
         code.ClassPublic() <<
             "    // types\n";
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
                 "    typedef "<<cType<<" T"<<i->cName<<";\n";
@@ -777,7 +780,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    // getters\n";
         setters <<
             "    // setters\n";
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
             if (i->attlist) {
                 code.ClassPublic() <<
@@ -955,7 +958,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         if (resolved && resolved != i->dataType) {
                             CClassTypeStrings* typeStr = resolved->GetTypeStr();
                             if (typeStr) {
-                                iterate ( TMembers, ir, typeStr->m_Members ) {
+                                ITERATE ( TMembers, ir, typeStr->m_Members ) {
                                     if (ir->simple) {
                                         string ircType(ir->type->GetCType(
                                             code.GetNamespace()));
@@ -989,7 +992,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         code.ClassPrivate() <<
             "    // data\n";
         if (haveAttlist) {
-            iterate ( TVariants, i, m_Variants ) {
+            ITERATE ( TVariants, i, m_Variants ) {
                 if (i->attlist) {
                     code.ClassPrivate() <<
                         "    "<<ncbiNamespace<<"CRef< T"<<i->cName<<" > m_"<<i->cName<<";\n";
@@ -998,7 +1001,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         }
         if ( haveUnion ) {
             code.ClassPrivate() << "    union {\n";
-            iterate ( TVariants, i, m_Variants ) {
+            ITERATE ( TVariants, i, m_Variants ) {
                 if ( i->memberType == eSimpleMember ) {
                     code.ClassPrivate() <<
                         "        T"<<i->cName<<" m_"<<i->cName<<";\n";
@@ -1060,7 +1063,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         // All tags must be different
         map<int, bool> tag_map;
 
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             // Save member info
             if ( i->memberTag >= 0 ) {
                 if ( hasUntagged ) {

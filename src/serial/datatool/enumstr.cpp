@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.15  2001/05/17 15:07:11  lavr
 * Typos corrected
 *
@@ -181,7 +184,7 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         CNcbiOstrstream hpp;
         hpp <<
             "enum "<<m_EnumName<<" {";
-        iterate ( TValues, i, m_Values ) {
+        ITERATE ( TValues, i, m_Values ) {
             if ( i != m_Values.begin() )
                 hpp << ',';
             string id = Identifier(i->GetName(), false);
@@ -218,7 +221,7 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
             cpp <<
                 "    SET_ENUM_MODULE(\""<<GetModuleName()<<"\");\n";
         }
-        iterate ( TValues, i, m_Values ) {
+        ITERATE ( TValues, i, m_Values ) {
             string id = Identifier(i->GetName(), false);
             cpp <<
                 "    ADD_ENUM_VALUE(\""<<i->GetName()<<"\", "<<m_ValuesPrefix<<id<<");\n";

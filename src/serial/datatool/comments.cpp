@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.2  2001/05/17 15:07:11  lavr
 * Typos corrected
 *
@@ -67,7 +70,7 @@ CNcbiOstream& CComments::Print(CNcbiOstream& out,
 {
     out << before;
 
-    iterate ( TComments, i, m_Comments ) {
+    ITERATE ( TComments, i, m_Comments ) {
         if ( i != m_Comments.begin() )
             out << between;
         out << *i;
@@ -97,7 +100,7 @@ CNcbiOstream& CComments::PrintDTD(CNcbiOstream& out, int flags) const
     else {
         // multiline comments
         out << '\n';
-        iterate ( TComments, i, m_Comments ) {
+        ITERATE ( TComments, i, m_Comments ) {
             out << *i << '\n';
         }
     }
@@ -120,7 +123,7 @@ CNcbiOstream& CComments::PrintASN(CNcbiOstream& out,
     bool newLine = (flags & eDoNotWriteBlankLine) == 0;
     // prepend comments by empty line to separate from previous comments
 
-    iterate ( TComments, i, m_Comments ) {
+    ITERATE ( TComments, i, m_Comments ) {
         if ( newLine )
             PrintASNNewLine(out, indent);
         out << "--" << *i;

@@ -292,7 +292,7 @@ bool CTypesIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
         return false;
     m_MatchType = 0;
     TTypeInfo type = object.GetTypeInfo();
-    iterate ( TTypeList, i, GetTypeList() ) {
+    ITERATE ( TTypeList, i, GetTypeList() ) {
         if ( type->IsType(*i) ) {
             m_MatchType = *i;
             return true;
@@ -307,7 +307,7 @@ bool CTypesIteratorBase<Parent>::CanEnter(const CConstObjectInfo& object)
     if ( !CParent::CanEnter(object) )
         return false;
     TTypeInfo type = object.GetTypeInfo();
-    iterate ( TTypeList, i, GetTypeList() ) {
+    ITERATE ( TTypeList, i, GetTypeList() ) {
         if ( type->MayContainType(*i) )
             return true;
     }
@@ -375,6 +375,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/03/11 20:08:07  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.20  2003/03/10 18:54:25  gouriano
 * use new structured exceptions (based on CException)
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/03/11 20:08:07  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.18  2003/03/10 18:54:24  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -229,7 +232,7 @@ CClassTypeInfoBase::TClassesById& CClassTypeInfoBase::ClassesById(void)
         if ( !classes ) {
             const TClasses& cc = Classes();
             auto_ptr<TClassesById> keep(classes = new TClassesById);
-            iterate ( TClasses, i , cc ) {
+            ITERATE ( TClasses, i , cc ) {
                 const CClassTypeInfoBase* info = *i;
                 if ( info->GetId() != typeid(void) ) {
                     if ( !classes->insert(
@@ -257,7 +260,7 @@ CClassTypeInfoBase::TClassesByName& CClassTypeInfoBase::ClassesByName(void)
         if ( !classes ) {
             auto_ptr<TClassesByName> keep(classes = new TClassesByName);
             const TClasses& cc = Classes();
-            iterate ( TClasses, i, cc ) {
+            ITERATE ( TClasses, i, cc ) {
                 const CClassTypeInfoBase* info = *i;
                 if ( !info->GetName().empty() ) {
                     if ( !classes->insert(

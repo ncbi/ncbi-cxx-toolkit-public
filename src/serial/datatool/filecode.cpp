@@ -107,7 +107,7 @@ string CFileCode::GetUserCPPName(void) const
 string CFileCode::GetDefineBase(void) const
 {
     string s;
-    iterate ( string, i, GetFileBaseName() ) {
+    ITERATE ( string, i, GetFileBaseName() ) {
         char c = *i;
         if ( c >= 'a' && c <= 'z' )
             c = c + ('A' - 'a');
@@ -212,7 +212,7 @@ void CFileCode::UseQuotedForm(bool use)
 void CFileCode::GenerateCode(void)
 {
     if ( !m_Classes.empty() ) {
-        non_const_iterate ( TClasses, i, m_Classes ) {
+        NON_CONST_ITERATE ( TClasses, i, m_Classes ) {
             m_CurrentClass = &*i;
             m_CurrentClass->code->GenerateCode(*this);
         }
@@ -256,7 +256,7 @@ CNcbiOstream& CFileCode::WriteCopyrightHeader(CNcbiOstream& out) const
 
 CNcbiOstream& CFileCode::WriteSourceFile(CNcbiOstream& out) const
 {
-    iterate ( set<string>, i, m_SourceFiles ) {
+    ITERATE ( set<string>, i, m_SourceFiles ) {
         if ( i != m_SourceFiles.begin() )
             out << ", ";
         {
@@ -339,7 +339,7 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
         header <<
             "\n"
             "// generated includes\n";
-        iterate ( TIncludes, i, m_HPPIncludes ) {
+        ITERATE ( TIncludes, i, m_HPPIncludes ) {
             header <<
                 "#include " << Include(*i, true) << "\n";
         }
@@ -350,7 +350,7 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
     CNamespace ns;
     if ( !m_ForwardDeclarations.empty() ) {
         bool begin = false;
-        iterate ( TForwards, i, m_ForwardDeclarations ) {
+        ITERATE ( TForwards, i, m_ForwardDeclarations ) {
             ns.Set(i->second, header);
             if ( !begin ) {
                 header <<
@@ -367,7 +367,7 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
     
     if ( !m_Classes.empty() ) {
         bool begin = false;
-        iterate ( TClasses, i, m_Classes ) {
+        ITERATE ( TClasses, i, m_Classes ) {
             if ( !i->hppCode.empty() ) {
                 ns.Set(i->ns, header);
                 if ( !begin ) {
@@ -386,7 +386,7 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
 
     if ( !m_Classes.empty() ) {
         bool begin = false;
-        iterate ( TClasses, i, m_Classes ) {
+        ITERATE ( TClasses, i, m_Classes ) {
             if ( !i->inlCode.empty() ) {
                 ns.Set(i->ns, header, false);
                 if ( !begin ) {
@@ -445,7 +445,7 @@ void CFileCode::GenerateCPP(const string& path, string& fileName) const
         "#include " << Include(GetUserHPPName()) << "\n";
 
     if ( !m_CPPIncludes.empty() ) {
-        iterate ( TIncludes, i, m_CPPIncludes ) {
+        ITERATE ( TIncludes, i, m_CPPIncludes ) {
             code <<
                 "#include " <<
                 Include(m_CodeGenerator->ResolveFileName(*i), true) <<
@@ -456,7 +456,7 @@ void CFileCode::GenerateCPP(const string& path, string& fileName) const
     CNamespace ns;
     if ( !m_Classes.empty() ) {
         bool begin = false;
-        iterate ( TClasses, i, m_Classes ) {
+        ITERATE ( TClasses, i, m_Classes ) {
             if ( !i->cppCode.empty() ) {
                 ns.Set(i->ns, code, false);
                 if ( !begin ) {
@@ -646,7 +646,7 @@ bool CFileCode::WriteUserFile(const string& path, const string& name,
     }
 
     CChecksum checksum;
-    iterate ( list<string>, i, newLines ) {
+    ITERATE ( list<string>, i, newLines ) {
         checksum.AddLine(*i);
         out << *i << '\n';
     }
@@ -681,7 +681,7 @@ void CFileCode::GenerateUserHPPCode(CNcbiOstream& header) const
             "\n"
             "// generated classes\n"
             "\n";
-        iterate ( TClasses, i, m_Classes ) {
+        ITERATE ( TClasses, i, m_Classes ) {
             ns.Set(i->ns, header, false);
             i->code->GenerateUserHPPCode(header);
         }
@@ -710,7 +710,7 @@ void CFileCode::GenerateUserCPPCode(CNcbiOstream& code) const
             "\n"
             "// generated classes\n"
             "\n";
-        iterate ( TClasses, i, m_Classes ) {
+        ITERATE ( TClasses, i, m_Classes ) {
             ns.Set(i->ns, code, false);
             i->code->GenerateUserCPPCode(code);
         }
@@ -742,6 +742,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.40  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.39  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *

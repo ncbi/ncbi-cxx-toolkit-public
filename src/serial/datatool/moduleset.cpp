@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.32  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -140,7 +143,7 @@ void CFileModules::AddModule(const AutoPtr<CDataTypeModule>& module)
 bool CFileModules::Check(void) const
 {
     bool ok = true;
-    iterate ( TModules, mi, m_Modules ) {
+    ITERATE ( TModules, mi, m_Modules ) {
         if ( !(*mi)->Check() )
             ok = false;
     }
@@ -150,7 +153,7 @@ bool CFileModules::Check(void) const
 bool CFileModules::CheckNames(void) const
 {
     bool ok = true;
-    iterate ( TModules, mi, m_Modules ) {
+    ITERATE ( TModules, mi, m_Modules ) {
         if ( !(*mi)->CheckNames() )
             ok = false;
     }
@@ -159,7 +162,7 @@ bool CFileModules::CheckNames(void) const
 
 void CFileModules::PrintASN(CNcbiOstream& out) const
 {
-    iterate ( TModules, mi, m_Modules ) {
+    ITERATE ( TModules, mi, m_Modules ) {
         (*mi)->PrintASN(out);
     }
     m_LastComments.PrintASN(out, 0, CComments::eMultiline);
@@ -167,7 +170,7 @@ void CFileModules::PrintASN(CNcbiOstream& out) const
 
 void CFileModules::PrintDTD(CNcbiOstream& out) const
 {
-    iterate ( TModules, mi, m_Modules ) {
+    ITERATE ( TModules, mi, m_Modules ) {
         (*mi)->PrintDTD(out);
     }
     m_LastComments.PrintDTD(out, CComments::eMultiline);
@@ -175,7 +178,7 @@ void CFileModules::PrintDTD(CNcbiOstream& out) const
 
 void CFileModules::PrintDTDModular(void) const
 {
-    iterate ( TModules, mi, m_Modules ) {
+    ITERATE ( TModules, mi, m_Modules ) {
         string fileNameBase = (*mi)->GetDTDFileNameBase();
         {
             string fileName = fileNameBase + ".mod";
@@ -240,7 +243,7 @@ CDataType* CFileModules::ResolveInAnyModule(const string& typeName,
                                             bool allowInternal) const
 {
     CResolvedTypeSet types(typeName);
-    iterate ( TModules, i, m_Modules ) {
+    ITERATE ( TModules, i, m_Modules ) {
         try {
             types.Add((*i)->ExternalResolve(typeName, allowInternal));
         }
@@ -261,7 +264,7 @@ void CFileSet::AddFile(const AutoPtr<CFileModules>& moduleSet)
 
 void CFileSet::PrintASN(CNcbiOstream& out) const
 {
-    iterate ( TModuleSets, i, m_ModuleSets ) {
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
         (*i)->PrintASN(out);
     }
 }
@@ -285,14 +288,14 @@ void CFileSet::PrintDTD(CNcbiOstream& out) const
         "<!-- ============================================ -->\n"
         "\n";
 #endif
-    iterate ( TModuleSets, i, m_ModuleSets ) {
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
         (*i)->PrintDTD(out);
     }
 }
 
 void CFileSet::PrintDTDModular(void) const
 {
-    iterate ( TModuleSets, i, m_ModuleSets ) {
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
         (*i)->PrintDTDModular();
     }
 }
@@ -301,7 +304,7 @@ CDataType* CFileSet::ExternalResolve(const string& module, const string& name,
                                      bool allowInternal) const
 {
     CResolvedTypeSet types(module, name);
-    iterate ( TModuleSets, i, m_ModuleSets ) {
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
         try {
             types.Add((*i)->ExternalResolve(module, name, allowInternal));
         }
@@ -318,7 +321,7 @@ CDataType* CFileSet::ResolveInAnyModule(const string& name,
                                         bool allowInternal) const
 {
     CResolvedTypeSet types(name);
-    iterate ( TModuleSets, i, m_ModuleSets ) {
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
         try {
             types.Add((*i)->ResolveInAnyModule(name, allowInternal));
         }
@@ -334,7 +337,7 @@ CDataType* CFileSet::ResolveInAnyModule(const string& name,
 bool CFileSet::Check(void) const
 {
     bool ok = true;
-    iterate ( TModuleSets, mi, m_ModuleSets ) {
+    ITERATE ( TModuleSets, mi, m_ModuleSets ) {
         if ( !(*mi)->Check() )
             ok = false;
     }
@@ -344,7 +347,7 @@ bool CFileSet::Check(void) const
 bool CFileSet::CheckNames(void) const
 {
     bool ok = true;
-    iterate ( TModuleSets, mi, m_ModuleSets ) {
+    ITERATE ( TModuleSets, mi, m_ModuleSets ) {
         if ( !(*mi)->CheckNames() )
             ok = false;
     }

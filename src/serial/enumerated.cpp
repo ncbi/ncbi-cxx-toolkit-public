@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/03/11 20:08:07  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.25  2003/03/10 18:54:25  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -194,7 +197,7 @@ CEnumeratedTypeValues::ValueToName(void) const
         m = m_ValueToName.get();
         if ( !m ) {
             auto_ptr<TValueToName> keep(m = new TValueToName);
-            iterate ( TValues, i, m_Values ) {
+            ITERATE ( TValues, i, m_Values ) {
                 (*m)[i->second] = &i->first;
             }
             m_ValueToName = keep;
@@ -212,7 +215,7 @@ CEnumeratedTypeValues::NameToValue(void) const
         m = m_NameToValue.get();
         if ( !m ) {
             auto_ptr<TNameToValue> keep(m = new TNameToValue);
-            iterate ( TValues, i, m_Values ) {
+            ITERATE ( TValues, i, m_Values ) {
                 const string& s = i->first;
                 pair<TNameToValue::iterator, bool> p =
                     m->insert(TNameToValue::value_type(s, i->second));

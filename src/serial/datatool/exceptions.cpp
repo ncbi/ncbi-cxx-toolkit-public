@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.6  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -94,7 +97,7 @@ void CResolvedTypeSet::Add(CDataType* type)
 
 void CResolvedTypeSet::Add(const CAmbiguiousTypes& types)
 {
-    iterate ( list<CDataType*>, i, types.GetTypes() ) {
+    ITERATE ( list<CDataType*>, i, types.GetTypes() ) {
         m_Types.push_back(*i);
     }
 }
@@ -124,7 +127,7 @@ CDataType* CResolvedTypeSet::GetType(void) const throw(CDatatoolException)
     }
     msg += m_Name;
     msg += " defined in:";
-    iterate ( list<CDataType*>, i, m_Types ) {
+    ITERATE ( list<CDataType*>, i, m_Types ) {
         msg += ' ';
         msg += (*i)->GetSourceFileName();
         msg += ':';

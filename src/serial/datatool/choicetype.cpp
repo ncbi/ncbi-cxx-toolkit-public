@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.27  2002/12/26 19:29:47  gouriano
 * corrected CreateTypeInfo method to handle XML attribute lists
 *
@@ -203,7 +206,7 @@ const char* CChoiceDataType::GetASNKeyword(void) const
 void CChoiceDataType::FixTypeTree(void) const
 {
     CParent::FixTypeTree();
-    iterate ( TMembers, m, GetMembers() ) {
+    ITERATE ( TMembers, m, GetMembers() ) {
         (*m)->GetType()->SetInChoice(this);
     }
 }
@@ -295,7 +298,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
         AutoPtr<CChoicePtrTypeStrings>
             code(new CChoicePtrTypeStrings(GlobalName(),
                                            ClassName()));
-        iterate ( TMembers, i, GetMembers() ) {
+        ITERATE ( TMembers, i, GetMembers() ) {
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
             code->AddVariant((*i)->GetName(), varType);
         }
@@ -309,7 +312,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
         bool haveUserClass = rootClass;
         code->SetHaveUserClass(haveUserClass);
         code->SetObject(true);
-        iterate ( TMembers, i, GetMembers() ) {
+        ITERATE ( TMembers, i, GetMembers() ) {
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
             bool delayed = !GetVar((*i)->GetName()+"._delay").empty();
             code->AddVariant((*i)->GetName(), varType, delayed,

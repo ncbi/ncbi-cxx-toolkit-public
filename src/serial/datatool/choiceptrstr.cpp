@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.5  2002/08/14 17:14:25  grichenk
 * Fixed function name conflict on Win32: renamed
 * GetClassName() -> GetClassNameDT()
@@ -94,7 +97,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
         codeClassName += "_Base";
     // generate variants code
     {
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             i->type->GeneratePointerTypeCode(code);
         }
     }
@@ -114,7 +117,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
             "    // choice state enum\n"
             "    enum "STATE_ENUM" {\n"
             "        "STATE_NOT_SET" = "<<kEmptyChoice;
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             code.ClassPublic() << ",\n"
                 "        "STATE_PREFIX<<i->cName;
         }
@@ -136,7 +139,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
         code.Methods() <<
             "const char* const "<<methodPrefix<<"sm_SelectionNames[] = {\n"
             "    \"not set\"";
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             code.Methods() << ",\n"
                 "    \""<<i->externalName<<"\"";
         }
@@ -154,7 +157,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
     {
         code.ClassPublic() <<
             "    // variants' types\n";
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             code.ClassPublic() <<
                 "    typedef "<<i->type->GetCType(code.GetNamespace())<<" T"<<i->cName<<";\n";
         }
@@ -173,7 +176,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
         "(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassNameDT()<<")\n"
         "{\n";
     {
-        iterate ( TVariants, i, m_Variants ) {
+        ITERATE ( TVariants, i, m_Variants ) {
             code.Methods() <<
                 "    ADD_NAMED_SUB_CLASS(\""<<i->externalName<<"\", "<<i->type->GetCType(code.GetNamespace())<<");\n";
         }

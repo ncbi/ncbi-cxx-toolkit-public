@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.31  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -180,7 +183,7 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 
     if ( !m_Exports.empty() ) {
         out << "EXPORTS ";
-        iterate ( TExports, i, m_Exports ) {
+        ITERATE ( TExports, i, m_Exports ) {
             if ( i != m_Exports.begin() )
                 out << ", ";
             out << *i;
@@ -192,14 +195,14 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 
     if ( !m_Imports.empty() ) {
         out << "IMPORTS ";
-        iterate ( TImports, m, m_Imports ) {
+        ITERATE ( TImports, m, m_Imports ) {
             if ( m != m_Imports.begin() )
                 out <<
                     "\n"
                     "        ";
 
             const Import& imp = **m;
-            iterate ( list<string>, i, imp.types ) {
+            ITERATE ( list<string>, i, imp.types ) {
                 if ( i != imp.types.begin() )
                     out << ", ";
                 out << *i;
@@ -211,7 +214,7 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
             "\n";
     }
 
-    iterate ( TDefinitions, i, m_Definitions ) {
+    ITERATE ( TDefinitions, i, m_Definitions ) {
         i->second->PrintASNTypeComments(out, 0);
         out << i->first << " ::= ";
         i->second->PrintASN(out, 0);
@@ -240,7 +243,7 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
         out <<
             "<!-- Elements used by other modules:\n";
 
-        iterate ( TExports, i, m_Exports ) {
+        ITERATE ( TExports, i, m_Exports ) {
             if ( i != m_Exports.begin() )
                 out << ",\n";
             out << "          " << *i;
@@ -253,11 +256,11 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
     if ( !m_Imports.empty() ) {
         out <<
             "<!-- Elements referenced from other modules:\n";
-        iterate ( TImports, i, m_Imports ) {
+        ITERATE ( TImports, i, m_Imports ) {
             if ( i != m_Imports.begin() )
                 out << ",\n";
             const Import* imp = i->get();
-            iterate ( list<string>, t, imp->types ) {
+            ITERATE ( list<string>, t, imp->types ) {
                 if ( t != imp->types.begin() )
                     out << ",\n";
                 out <<
@@ -273,7 +276,7 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
     out <<
         "<!-- ============================================ -->\n";
 
-    iterate ( TDefinitions, i, m_Definitions ) {
+    ITERATE ( TDefinitions, i, m_Definitions ) {
         out <<
             "<!-- Definition of "<<i->first<<" -->\n"
             "\n";
@@ -297,7 +300,7 @@ static
 string DTDFileNameBase(const string& name)
 {
     string res;
-    iterate ( string, i, name ) {
+    ITERATE ( string, i, name ) {
         char c = *i;
         if ( c == '-' )
             res += '_';
@@ -311,7 +314,7 @@ static
 string DTDPublicModuleName(const string& name)
 {
     string res;
-    iterate ( string, i, name ) {
+    ITERATE ( string, i, name ) {
         char c = *i;
         if ( !isalnum(c) )
             res += ' ';
@@ -352,7 +355,7 @@ void CDataTypeModule::PrintDTDModular(CNcbiOstream& out) const
         "-->\n";
     PrintModularDTDModuleReference(out, "NCBI-Entity");
     PrintModularDTDModuleReference(out, GetName());
-    iterate ( TImports, i, m_Imports ) {
+    ITERATE ( TImports, i, m_Imports ) {
         PrintModularDTDModuleReference(out, (*i)->moduleName);
     }
 }
@@ -360,7 +363,7 @@ void CDataTypeModule::PrintDTDModular(CNcbiOstream& out) const
 bool CDataTypeModule::Check()
 {
     bool ok = true;
-    iterate ( TDefinitions, d, m_Definitions ) {
+    ITERATE ( TDefinitions, d, m_Definitions ) {
         if ( !d->second->Check() )
             ok = false;
     }
@@ -370,7 +373,7 @@ bool CDataTypeModule::Check()
 bool CDataTypeModule::CheckNames()
 {
     bool ok = true;
-    iterate ( TExports, e, m_Exports ) {
+    ITERATE ( TExports, e, m_Exports ) {
         const string& name = *e;
         TTypesByName::iterator it = m_LocalTypes.find(name);
         if ( it == m_LocalTypes.end() ) {
@@ -381,10 +384,10 @@ bool CDataTypeModule::CheckNames()
             m_ExportedTypes[name] = it->second;
         }
     }
-    iterate ( TImports, i, m_Imports ) {
+    ITERATE ( TImports, i, m_Imports ) {
         const Import& imp = **i;
         const string& module = imp.moduleName;
-        iterate ( list<string>, t, imp.types ) {
+        ITERATE ( list<string>, t, imp.types ) {
             const string& name = *t;
             if ( m_LocalTypes.find(name) != m_LocalTypes.end() ) {
                 ERR_POST(Warning <<

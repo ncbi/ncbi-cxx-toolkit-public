@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.42  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -244,7 +247,7 @@ void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
 {
     out << GetASNKeyword() << " {";
     ++indent;
-    iterate ( TMembers, i, m_Members ) {
+    ITERATE ( TMembers, i, m_Members ) {
         PrintASNNewLine(out, indent);
         const CDataMember& member = **i;
         TMembers::const_iterator next = i;
@@ -262,7 +265,7 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out) const
     out <<
         "<!ELEMENT "<<XmlTagName()<<" (\n";
     const char* separator = XmlMemberSeparator();
-    iterate ( TMembers, i, m_Members ) {
+    ITERATE ( TMembers, i, m_Members ) {
         if ( i != m_Members.begin() )
             out <<separator<<'\n';
         const CDataMember& member = **i;
@@ -299,7 +302,7 @@ void CDataMemberContainerType::PrintDTDExtra(CNcbiOstream& out) const
         out <<
             "\n";
     }
-    iterate ( TMembers, i, m_Members ) {
+    ITERATE ( TMembers, i, m_Members ) {
         const CDataMember& member = **i;
         member.PrintDTD(out);
     }
@@ -309,7 +312,7 @@ void CDataMemberContainerType::PrintDTDExtra(CNcbiOstream& out) const
 void CDataMemberContainerType::FixTypeTree(void) const
 {
     CParent::FixTypeTree();
-    iterate ( TMembers, i, m_Members ) {
+    ITERATE ( TMembers, i, m_Members ) {
         (*i)->GetType()->SetParent(this, (*i)->GetName());
     }
 }
@@ -317,7 +320,7 @@ void CDataMemberContainerType::FixTypeTree(void) const
 bool CDataMemberContainerType::CheckType(void) const
 {
     bool ok = true;
-    iterate ( TMembers, i, m_Members ) {
+    ITERATE ( TMembers, i, m_Members ) {
         if ( !(*i)->Check() )
             ok = false;
     }
@@ -344,7 +347,7 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
 {
     size_t itemCount = 0;
     // add place for 'isSet' flags
-    iterate ( TMembers, i, GetMembers() ) {
+    ITERATE ( TMembers, i, GetMembers() ) {
         ++itemCount;
         CDataMember* mem = i->get();
         if ( mem->Optional() )
@@ -408,7 +411,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
 */
     code->SetHaveUserClass(haveUserClass);
     code->SetObject(true /*isObject*/ );
-    iterate ( TMembers, i, GetMembers() ) {
+    ITERATE ( TMembers, i, GetMembers() ) {
         string defaultCode;
         bool optional = (*i)->Optional();
         const CDataValue* defaultValue = (*i)->GetDefault();
@@ -460,7 +463,7 @@ bool CDataSetType::CheckValue(const CDataValue& value) const
         mms[m->get()->GetName()] = m->get();
     }
 
-    iterate ( CBlockDataValue::TValues, v, block->GetValues() ) {
+    ITERATE ( CBlockDataValue::TValues, v, block->GetValues() ) {
         const CNamedDataValue* currvalue =
             dynamic_cast<const CNamedDataValue*>(v->get());
         if ( !currvalue ) {

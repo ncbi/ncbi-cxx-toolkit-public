@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.38  2002/12/31 20:14:24  gouriano
 * corrected usage of export specifiers when generating C++ classes
 *
@@ -240,7 +243,7 @@ CNcbiOstream& CClassCode::WriteInitializers(CNcbiOstream& out) const
 
 CNcbiOstream& CClassCode::WriteDestructionCode(CNcbiOstream& out) const
 {
-    iterate ( list<string>, i, m_DestructionCode ) {
+    ITERATE ( list<string>, i, m_DestructionCode ) {
         WriteTabbed(out, *i);
     }
     return out;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.18  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -258,7 +261,7 @@ void AbstractLexer::FlushComments(void)
 
 void AbstractLexer::FlushCommentsTo(CComments& comments)
 {
-    iterate ( list<CComment>, i, m_Comments ) {
+    ITERATE ( list<CComment>, i, m_Comments ) {
         comments.Add(i->GetValue());
     }
     FlushComments();

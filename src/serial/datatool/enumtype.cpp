@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.21  2001/05/17 15:07:12  lavr
 * Typos corrected
 *
@@ -144,7 +147,7 @@ void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
     out << GetASNKeyword() << " {";
     ++indent;
-    iterate ( TValues, i, m_Values ) {
+    ITERATE ( TValues, i, m_Values ) {
         PrintASNNewLine(out, indent);
         TValues::const_iterator next = i;
         bool last = ++next == m_Values.end();
@@ -179,7 +182,7 @@ void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
     out <<
         "<!ATTLIST "<<XmlTagName()<<" value (\n";
     bool haveComments = false;
-    iterate ( TValues, i, m_Values ) {
+    ITERATE ( TValues, i, m_Values ) {
         if ( i != m_Values.begin() )
             out << " |\n";
         out << "               " << i->GetName();
@@ -194,7 +197,7 @@ void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
     out << " >\n";
     if ( haveComments ) {
         out << "<!--\n";
-        iterate ( TValues, i, m_Values ) {
+        ITERATE ( TValues, i, m_Values ) {
             if ( !i->GetComments().Empty() ) {
                 i->GetComments().Print(out, "    "+i->GetName()+" - ",
                                        "\n        ", "\n");
@@ -209,7 +212,7 @@ bool CEnumDataType::CheckValue(const CDataValue& value) const
 {
     const CIdDataValue* id = dynamic_cast<const CIdDataValue*>(&value);
     if ( id ) {
-        iterate ( TValues, i, m_Values ) {
+        ITERATE ( TValues, i, m_Values ) {
             if ( i->GetName() == id->GetValue() )
                 return true;
         }
@@ -225,7 +228,7 @@ bool CEnumDataType::CheckValue(const CDataValue& value) const
     }
 
     if ( !IsInteger() ) {
-        iterate ( TValues, i, m_Values ) {
+        ITERATE ( TValues, i, m_Values ) {
             if ( i->GetValue() == intValue->GetValue() )
                 return true;
         }
@@ -242,7 +245,7 @@ TObjectPtr CEnumDataType::CreateDefault(const CDataValue& value) const
     if ( id == 0 ) {
         return new TEnumValueType(dynamic_cast<const CIntDataValue&>(value).GetValue());
     }
-    iterate ( TValues, i, m_Values ) {
+    ITERATE ( TValues, i, m_Values ) {
         if ( i->GetName() == id->GetValue() )
             return new TEnumValueType(i->GetValue());
     }
@@ -267,7 +270,7 @@ CTypeInfo* CEnumDataType::CreateTypeInfo(void)
 {
     AutoPtr<CEnumeratedTypeValues>
         info(new CEnumeratedTypeValues(GlobalName(), IsInteger()));
-    iterate ( TValues, i, m_Values ) {
+    ITERATE ( TValues, i, m_Values ) {
         info->AddValue(i->GetName(), i->GetValue());
     }
     if ( HaveModuleName() )

@@ -249,7 +249,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         m_Members.front().cName.empty();
     // generate member methods
     {
-        iterate ( TMembers, i, m_Members ) {
+        ITERATE ( TMembers, i, m_Members ) {
             if ( i->ref ) {
                 i->type->GeneratePointerTypeCode(code);
             }
@@ -285,7 +285,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     {
         code.ClassPublic() <<
             "    // types\n";
-        iterate ( TMembers, i, m_Members ) {
+        ITERATE ( TMembers, i, m_Members ) {
             string cType = i->type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
                 "    typedef "<<cType<<" "<<i->tName<<";\n";
@@ -333,7 +333,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "    // getters\n";
         setters <<
             "    // setters\n";
-        iterate ( TMembers, i, m_Members ) {
+        ITERATE ( TMembers, i, m_Members ) {
             // generate IsSet... method
             if ( i->optional ) {
                 code.ClassPublic() <<
@@ -523,7 +523,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     if (resolved && resolved != i->dataType) {
                         CClassTypeStrings* typeStr = resolved->GetTypeStr();
                         if (typeStr) {
-                            iterate ( TMembers, ir, typeStr->m_Members ) {
+                            ITERATE ( TMembers, ir, typeStr->m_Members ) {
                                 if (ir->simple) {
                                     string ircType(ir->type->GetCType(
                                         code.GetNamespace()));
@@ -646,7 +646,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         code.ClassPrivate() <<
             "    // data\n";
 		{
-	        iterate ( TMembers, i, m_Members ) {
+	        ITERATE ( TMembers, i, m_Members ) {
 		        if ( i->haveFlag ) {
 			        code.ClassPrivate() <<
 				        "    bool "SET_PREFIX<<i->cName<<";\n";
@@ -654,7 +654,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 			}
         }
 		{
-	        iterate ( TMembers, i, m_Members ) {
+	        ITERATE ( TMembers, i, m_Members ) {
 		        if ( i->delayed ) {
 			        code.ClassPrivate() <<
 				        "    mutable NCBI_NS_NCBI::CDelayBuffer "DELAY_PREFIX<<i->cName<<";\n";
@@ -662,7 +662,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 			}
         }
 		{
-			iterate ( TMembers, i, m_Members ) {
+			ITERATE ( TMembers, i, m_Members ) {
                 if ( i->ref ) {
                     code.ClassPrivate() <<
                         "    "<<ncbiNamespace<<"CRef< "<<i->tName<<" > "<<i->mName<<";\n";
@@ -678,14 +678,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     // generate member initializers
     {
 		{
-	        iterate ( TMembers, i, m_Members ) {
+	        ITERATE ( TMembers, i, m_Members ) {
                 if ( i->haveFlag ) {
                     code.AddInitializer(SET_PREFIX+i->cName, "false");
                 }
 			}
         }
         {
-            iterate ( TMembers, i, m_Members ) {
+            ITERATE ( TMembers, i, m_Members ) {
                 if ( i->ref ) {
                     if ( !i->canBeNull ) {
                         string init = i->defaultValue;
@@ -720,7 +720,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         methods <<
             "void "<<methodPrefix<<"Reset(void)\n"
             "{\n";
-        iterate ( TMembers, i, m_Members ) {
+        ITERATE ( TMembers, i, m_Members ) {
             methods <<
                 "    Reset"<<i->cName<<"();\n";
         }
@@ -737,7 +737,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "void "<<methodPrefix<<"DoNotDeleteThisObject(void)\n"
             "{\n"
             "    "<<code.GetParentClassName()<<"::DoNotDeleteThisObject();\n";
-        iterate ( TMembers, i, m_Members ) {
+        ITERATE ( TMembers, i, m_Members ) {
             if ( !i->ref && i->type->GetKind() == eKindObject ) {
                 methods <<
                     "    "<<i->mName<<".DoNotDeleteThisObject();\n";
@@ -781,7 +781,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         // All tags must be different
         map<int, bool> tag_map;
 
-        iterate ( TMembers, i, m_Members ) {
+        ITERATE ( TMembers, i, m_Members ) {
             if ( i->memberTag >= 0 ) {
                 if ( hasUntagged ) {
                     NCBI_THROW(CDatatoolException,eInvalidData,
@@ -922,7 +922,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "    typedef "<<GetClassNameDT()<<"_Base Tparent;\n"
         "public:\n";
     DeclareConstructor(out, GetClassNameDT());
-    iterate ( TMembers, i, m_Members ) {
+    ITERATE ( TMembers, i, m_Members ) {
         if (i->simple) {
             out <<
                 "    " << GetClassNameDT() <<"(const "<<
@@ -944,7 +944,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "    "<<GetClassNameDT()<<"& operator=(const "<<cType<<"& value);\n"
             "\n";
     }
-    iterate ( TMembers, i, m_Members ) {
+    ITERATE ( TMembers, i, m_Members ) {
         if (i->simple) {
             out <<
             "    operator const " << i->type->GetCType(GetNamespace()) <<
@@ -976,7 +976,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "{\n"
         "}\n"
         "\n";
-    iterate ( TMembers, i, m_Members ) {
+    ITERATE ( TMembers, i, m_Members ) {
         if (i->simple) {
             out <<
             "inline\n" <<
@@ -1007,7 +1007,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "}\n"
             "\n";
     }
-    iterate ( TMembers, i, m_Members ) {
+    ITERATE ( TMembers, i, m_Members ) {
         if (i->simple) {
             out <<
             "inline\n"<<
@@ -1104,6 +1104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.47  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *

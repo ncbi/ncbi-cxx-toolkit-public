@@ -86,7 +86,7 @@ const CChoiceDataType* s_ChoiceType(const CDataType* dtype,
                        dtype->GlobalName() + " is not a container type");
         }
         bool found = false;
-        iterate (CDataContainerType::TMembers, it, dct->GetMembers()) {
+        ITERATE (CDataContainerType::TMembers, it, dct->GetMembers()) {
             if ((*it)->GetName() == element) {
                 found = true;
                 dtype2 = (*it)->GetType()->Resolve();
@@ -296,7 +296,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
     const TChoices& choices   = m_Source.m_RequestChoiceType->GetMembers();
     TChoiceMap      reply_map;
     bool            has_init  = false, has_fini = false, has_error = false;
-    iterate (TChoices, it, choices) {
+    ITERATE (TChoices, it, choices) {
         const string& name = (*it)->GetName();
         if (name == "init") {
             CNcbiOstrstream oss;
@@ -320,7 +320,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             }
         }
     }
-    iterate (TChoices, it, m_Source.m_ReplyChoiceType->GetMembers()) {
+    ITERATE (TChoices, it, m_Source.m_ReplyChoiceType->GetMembers()) {
         const string& name = (*it)->GetName();
         reply_map[name] = it->get();
         if (name == "error") {
@@ -374,7 +374,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         << "}\n\n";
 
     // Finally, generate all the actual Ask* methods....
-    iterate (TChoices, it, choices) {
+    ITERATE (TChoices, it, choices) {
         typedef AutoPtr<CTypeStrings> TTypeStr;
         string name  = (*it)->GetName();
         string reply = m_Source.m_Generator.GetConfig().Get("client",
@@ -451,6 +451,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.5  2003/03/10 18:55:19  gouriano
 * use new structured exceptions (based on CException)
 *

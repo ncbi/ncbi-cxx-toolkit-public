@@ -709,7 +709,7 @@ void PrintAsnPrimitiveValue(CNcbiOstream& out, const CConstObjectInfo& object)
         {
             vector<char> s;
             object.GetPrimitiveValueOctetString(s);
-            iterate ( vector<char>, i, s ) {
+            ITERATE ( vector<char>, i, s ) {
                 char c = *i;
                 out << Hex[(c >> 4) & 15] << Hex[c & 15];
             }
@@ -772,6 +772,9 @@ void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2003/03/11 20:07:11  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 1.58  2002/12/30 22:41:58  vakatov
  * Fixed for absent terminating '\0' when calling strstream::str().
  * Added standard NCBI header and log.

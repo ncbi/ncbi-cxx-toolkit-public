@@ -448,7 +448,7 @@ void CDataTool::LoadDefinitions(CFileSet& fileSet,
 {
     list<string> names;
     NStr::Split(nameList, " ", names);
-    iterate ( list<string>, fi, names ) {
+    ITERATE ( list<string>, fi, names ) {
         const string& name = *fi;
         if ( !name.empty() ) {
             SourceFile fName(name, modulesPath);
@@ -490,6 +490,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.61  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *

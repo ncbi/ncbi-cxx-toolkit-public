@@ -58,7 +58,7 @@ SourceFile::SourceFile(const string& name, const list<string>& dirs,
     if ( name == "stdin" || name == "-" ) {
         m_StreamPtr = &NcbiCin;
     } else if ( !x_Open(name, binary) ) {
-        iterate(list<string>, dir, dirs) {
+        ITERATE(list<string>, dir, dirs) {
             if ( x_Open(Path(*dir, name), binary) ) {
                 return;
             }
@@ -379,14 +379,14 @@ string MakeFileName(const string& fname, size_t addLength)
     typedef set<SSubString, SSubString::ByOrder> TByOrder;
     TByOrder byOrder;
     {
-        iterate ( TByLength, i, byLength ) {
+        ITERATE ( TByLength, i, byLength ) {
             byOrder.insert(*i);
         }
     }
     // 4th step: join elements in resulting string
     name.erase();
     {
-        iterate ( TByOrder, i, byOrder ) {
+        ITERATE ( TByOrder, i, byOrder ) {
             if ( !name.empty() )
                 name += '_';
             name += i->value;
@@ -545,6 +545,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.25  2002/10/15 13:54:58  gouriano
 * addded "GetType" method - module file type by extension
 *
