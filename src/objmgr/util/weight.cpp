@@ -112,7 +112,7 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
     CSeq_loc* whole = new CSeq_loc;
     whole->SetWhole().Assign(*handle.GetSeqId());
 
-    CConstRef<CSeq_feat> signal;
+    CConstRef<CSeq_loc> signal;
 
     // Look for explicit markers: ideally cleavage products (mature
     // peptides), but possibly just signal peptides
@@ -151,8 +151,9 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
 
         if (is_mature) {
             locations.insert(CConstRef<CSeq_loc>(&feat->GetLocation()));
-        } else if (is_signal  &&  signal.Empty()) {
-            signal = &feat->GetMappedFeature();
+        } else if (is_signal  &&  signal.Empty()
+                   &&  !feat->GetLocation().IsWhole() ) {
+            signal = &feat->GetLocation();
         }
     }
 
@@ -161,7 +162,7 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
         if ( signal.NotEmpty() ) {
             // Expects to see at beginning; is this assumption safe?
             CSeq_interval& interval = whole->SetInt();
-            interval.SetFrom(signal->GetLocation().GetTotalRange().GetTo() + 1);
+            interval.SetFrom(signal->GetTotalRange().GetTo() + 1);
             interval.SetTo(v.size() - 1);
             interval.SetId(*const_cast<CSeq_id*>(core->GetId().front().GetPointer()));                
         } else if (v[0] == 'M') { // Treat initial methionine as start codon
@@ -189,6 +190,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2003/02/11 20:49:39  ucko
+* Improve support for signal peptide features: ignore them if they have
+* WHOLE locations, and optimize logic to avoid GetMappedFeature (expensive).
+*
 * Revision 1.18  2003/02/10 15:54:01  grichenk
 * Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
 *
