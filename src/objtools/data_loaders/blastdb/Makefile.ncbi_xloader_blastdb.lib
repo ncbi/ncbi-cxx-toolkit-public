@@ -3,6 +3,8 @@
 LIB = ncbi_xloader_blastdb
 SRC = bdbloader
 
+ASN_DEP = seq seqset seqdb blastdb
+
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 
 NCBI_C_LIBS = -lncbitool -lncbiobj -lncbi
