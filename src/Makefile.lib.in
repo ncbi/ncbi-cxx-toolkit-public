@@ -59,7 +59,7 @@ $(XLIB): $(XLIBOBJ)
 
 ### Standard targets
 
-all: $(XLIB)
+all: $(XLIB) export-headers
 
 clean:
 	-$(RMDIR) SunWS_cache
@@ -71,6 +71,6 @@ clean:
 	-$(RM) $(SOURCES:=.d)
 	-$(RM) ir.out
 
-purge: clean
+purge: clean purge-headers
 	-$(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) \
 	    $(libdir)/$(XLIBLINK) $(status_dir)/$(XLIBDEPLINK)

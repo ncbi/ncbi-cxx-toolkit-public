@@ -70,7 +70,7 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 
 ### Standard targets
 
-all: $(XDLL)
+all: $(XDLL) export-headers
 
 clean:
 	-$(RMDIR) SunWS_cache
@@ -83,6 +83,6 @@ clean:
 	-$(RM) $(SOURCES:=.d)
 	-$(RM) ir.out
 
-purge: clean
+purge: clean purge-headers
 	-$(RM) $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
 	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE)

@@ -22,3 +22,29 @@ requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 %@obj_ext@: $(srcdir)/%.c
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
+
+### Header exporting, SSS-style.
+# NB: export-headers explicitly uses cp rather than $(bincopy) because
+# the whole point is to have build-specific copies of the headers
+# guaranteed to be in sync with the corresponding library.
+
+pkg_incdir = $(incdest)/$(PACKAGE_EXPORT)
+src_headers = $(HEADER_EXPORT:%=$(srcdir)/%)
+exp_headers = $(HEADER_EXPORT:%=$(pkg_incdir)/%)
+
+export-headers: $(exp_headers)
+
+$(exp_headers): $(src_headers)
+	@if [ -n "$(PACKAGE_EXPORT)" -a -n "$(HEADER_EXPORT)" ]; then \
+	    test -d $(pkg_incdir)  ||  rm -f $(pkg_incdir); \
+	    mkdir -p $(pkg_incdir); \
+	    echo cp -fp $(src_headers) $(pkg_incdir)/; \
+	    cp -fp $(src_headers) $(pkg_incdir)/; \
+	fi
+
+purge-headers:
+	@-if [ -n "$(PACKAGE_EXPORT)" -a -n "$(HEADER_EXPORT)" ]; then \
+	    echo rm -f $(exp_headers); \
+	    rm -f $(exp_headers); \
+	    cd $(incdest)  &&  rmdir -p $(PACKAGE_EXPORT); \
+	fi
