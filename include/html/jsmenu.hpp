@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/11/29 16:05:16  ivanov
+ * Changed using menu script name "menu.js" -> "ncbi_menu.js"
+ *
  * Revision 1.4  2001/10/15 23:16:19  vakatov
  * + AddItem(const char* title, ...) to avoid "string/CNCBINode" ambiguity
  *
@@ -61,7 +64,7 @@ BEGIN_NCBI_SCOPE
 // Class for support JavaScript popup menu (Smith's menu)
 //
 // NOTE: For successful work menu in HTML pages need:
-//       - file with popup menu JavaScript library "menu.js" (by default 
+//       - file with popup menu JavaScript library "ncbi_menu.js" (by default 
 //         using menu with URL, defined in constant "kJSMenuDefaultURL");
 //       - define menus and add its to HTML page (AppendChild()).
 //       - call EnablePopupMenu() (in CHTML_html or CHTMLPage).
