@@ -41,6 +41,7 @@
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
 #endif
+#include <math.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -148,6 +149,48 @@ public:
             copier.Out().WriteStd(data);
         }
 };
+
+#define EPSILON_(n) 1e-##n
+#define EPSILON(n) EPSILON_(n)
+
+#ifndef DBL_EPSILON
+#  define DBL_EPSILON EPSILON(DBL_DIG)
+#endif
+
+EMPTY_TEMPLATE
+bool CPrimitiveTypeFunctions<double>::Equals(TConstObjectPtr obj1,
+                                             TConstObjectPtr obj2)
+{
+    const double& x = Get(obj1);
+    const double& y = Get(obj2);
+    return (x == y  ||  fabs(x - y) < fabs(x + y) * DBL_EPSILON);
+}
+
+#ifndef FLT_EPSILON
+#  define FLT_EPSILON EPSILON(FLT_DIG)
+#endif
+
+EMPTY_TEMPLATE
+bool CPrimitiveTypeFunctions<float>::Equals(TConstObjectPtr obj1,
+                                            TConstObjectPtr obj2)
+{
+    const float& x = Get(obj1);
+    const float& y = Get(obj2);
+    return (x == y  ||  fabs(x - y) < fabs(x + y) * FLT_EPSILON);
+}
+
+#if SIZEOF_LONG_DOUBLE != 0
+
+EMPTY_TEMPLATE
+bool CPrimitiveTypeFunctions<long double>::Equals(TConstObjectPtr obj1,
+                                                  TConstObjectPtr obj2)
+{
+    const long double& x = Get(obj1);
+    const long double& y = Get(obj2);
+    // We use DBL_EPSILON because I/O is double-based anyway.
+    return (x == y  ||  fabs(x - y) < fabs(x + y) * DBL_EPSILON);
+}
+#endif
 
 void CVoidTypeFunctions::ThrowException(const char* operation,
                                         TTypeInfo objectType)
@@ -1487,6 +1530,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2004/02/04 19:03:00  ucko
+* Make floating-point comparison slightly looser, as I/O may introduce
+* insignificant discrepancies.
+*
 * Revision 1.40  2004/02/02 14:42:48  vasilche
 * Try to avoid filling vector<char> by zeroes.
 *
