@@ -73,13 +73,13 @@ void BlastMaskProteinToDNA(BlastMask** mask, TSeqLocVector &slp);
  */
 
 #define DECLARE_AUTO_CLASS_WRAPPER(struct_name, free_func) \
-class C##struct_name## : public CDebugDumpable \
+class C##struct_name : public CDebugDumpable \
 { \
 public: \
-    C##struct_name##() : m_Ptr(NULL) {} \
-    C##struct_name##(struct_name* p) : m_Ptr(p) {} \
+    C##struct_name() : m_Ptr(NULL) {} \
+    C##struct_name(struct_name* p) : m_Ptr(p) {} \
     void Reset(struct_name* p) { if (m_Ptr) { free_func(m_Ptr); } m_Ptr = p; } \
-    ~C##struct_name##() { if (m_Ptr) { free_func(m_Ptr); m_Ptr = NULL; } } \
+    ~C##struct_name() { if (m_Ptr) { free_func(m_Ptr); m_Ptr = NULL; } } \
     operator struct_name *() { return m_Ptr; } \
     operator struct_name *() const { return m_Ptr; } \
     struct_name* operator->() { return m_Ptr; } \
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/08/20 15:23:47  ucko
+* DECLARE_AUTO_CLASS_WRAPPER: Remove occurrences of ## adjacent to punctuation.
+*
 * Revision 1.19  2003/08/20 14:45:26  dondosha
 * All references to CDisplaySeqalign moved to blast_format.hpp
 *
