@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/04/10 18:01:57  vasilche
+* Added Erase() for STL types in type iterators.
+*
 * Revision 1.9  2000/03/29 15:55:27  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -311,76 +314,6 @@ bool CMembersInfo::MayContainType(TTypeInfo typeInfo) const
             return true;
     }
     return false;
-}
-
-bool CMembersInfo::HaveChildren(TConstObjectPtr /*object*/) const
-{
-    return !m_MembersInfo.empty();
-}
-
-void CMembersInfo::BeginTypes(CChildrenTypesIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-void CMembersInfo::Begin(CConstChildrenIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-void CMembersInfo::Begin(CChildrenIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-bool CMembersInfo::ValidTypes(const CChildrenTypesIterator& cc) const
-{
-    return cc.GetIndex().m_Index < m_MembersInfo.size();
-}
-
-bool CMembersInfo::Valid(const CConstChildrenIterator& cc) const
-{
-    return cc.GetIndex().m_Index < m_MembersInfo.size();
-}
-
-bool CMembersInfo::Valid(const CChildrenIterator& cc) const
-{
-    return cc.GetIndex().m_Index < m_MembersInfo.size();
-}
-
-TTypeInfo CMembersInfo::GetChildType(const CChildrenTypesIterator& cc) const
-{
-    return m_MembersInfo[cc.GetIndex().m_Index]->GetTypeInfo();
-}
-
-void CMembersInfo::GetChild(const CConstChildrenIterator& cc,
-                            CConstObjectInfo& child) const
-{
-    const CMemberInfo* member = m_MembersInfo[cc.GetIndex().m_Index];
-    child.Set(member->GetMember(cc.GetParent().GetObjectPtr()),
-              member->GetTypeInfo());
-}
-
-void CMembersInfo::GetChild(const CChildrenIterator& cc,
-                         CObjectInfo& child) const
-{
-    const CMemberInfo* member = m_MembersInfo[cc.GetIndex().m_Index];
-    child.Set(member->GetMember(cc.GetParentPtr()), member->GetTypeInfo());
-}
-
-void CMembersInfo::NextType(CChildrenTypesIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
-void CMembersInfo::Next(CConstChildrenIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
-void CMembersInfo::Next(CChildrenIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
 }
 
 END_NCBI_SCOPE

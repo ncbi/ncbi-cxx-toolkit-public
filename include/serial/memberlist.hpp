@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/04/10 18:01:51  vasilche
+* Added Erase() for STL types in type iterators.
+*
 * Revision 1.8  2000/03/29 15:55:20  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -76,6 +79,8 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/memberid.hpp>
+#include <serial/member.hpp>
+#include <serial/iterator.hpp>
 #include <vector>
 #include <map>
 #include <memory>
@@ -178,6 +183,11 @@ public:
 
     bool MayContainType(TTypeInfo type) const;
     bool HaveChildren(TConstObjectPtr object) const;
+
+    const CMemberInfo* GetMemberInfo(const CChildrenTypesIterator& cc) const;
+    const CMemberInfo* GetMemberInfo(const CConstChildrenIterator& cc) const;
+    const CMemberInfo* GetMemberInfo(const CChildrenIterator& cc) const;
+
     void BeginTypes(CChildrenTypesIterator& cc) const;
     void Begin(CConstChildrenIterator& cc) const;
     void Begin(CChildrenIterator& cc) const;
@@ -192,6 +202,7 @@ public:
     void NextType(CChildrenTypesIterator& cc) const;
     void Next(CConstChildrenIterator& cc) const;
     void Next(CChildrenIterator& cc) const;
+
     //void Erase(CChildrenIterator& cc) const;
 
 private:
@@ -199,7 +210,7 @@ private:
     mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
 };
 
-//#include <serial/memberlist.inl>
+#include <serial/memberlist.inl>
 
 END_NCBI_SCOPE
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/04/10 18:01:52  vasilche
+* Added Erase() for STL types in type iterators.
+*
 * Revision 1.33  2000/03/29 15:55:22  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -475,6 +478,7 @@ public:
         {
             cc.GetIndex().m_AnyIterator = CObjectFor<CIterator>::New();
             Iterator(cc) = Get(cc).begin();
+            cc.GetIndex().m_Index = 0; // valid
         }
     bool Valid(const CConstChildrenIterator& cc) const
         {
@@ -482,7 +486,7 @@ public:
         }
     bool Valid(const CChildrenIterator& cc) const
         {
-            return Iterator(cc) != Get(cc).end();
+            return cc.GetIndex().m_Index == 0 && Iterator(cc) != Get(cc).end();
         }
     void GetChild(const CConstChildrenIterator& cc,
                   CConstObjectInfo& child) const
@@ -500,7 +504,18 @@ public:
         }
     void Next(CChildrenIterator& cc) const
         {
-            ++Iterator(cc);
+            if ( cc.GetIndex().m_Index == 1 ) {
+                // already set after Erase
+                cc.GetIndex().m_Index = 0;
+            }
+            else {
+                ++Iterator(cc);
+            }
+        }
+    void Erase(CChildrenIterator& cc) const
+        {
+            Iterator(cc) = Get(cc).erase(Iterator(cc));
+            cc.GetIndex().m_Index = 1;
         }
 
 protected:
@@ -838,14 +853,14 @@ public:
     void Begin(CConstChildrenIterator& cc) const
         {
             cc.GetIndex().m_AnyIterator = CObjectFor<CConstIterator>::New();
-            Index(cc) = 0;
             Iterator(cc) = Get(cc).begin();
+            Index(cc) = 0;
         }
     void Begin(CChildrenIterator& cc) const
         {
             cc.GetIndex().m_AnyIterator = CObjectFor<CIterator>::New();
-            Index(cc) = 0;
             Iterator(cc) = Get(cc).begin();
+            Index(cc) = 0;
         }
     bool Valid(const CConstChildrenIterator& cc) const
         {
@@ -867,20 +882,38 @@ public:
                   CObjectInfo& child) const
         {
             if ( Index(cc) == 0 )
-                child.Set(const_cast<Key*>(&Iterator(cc)->first), GetKeyTypeInfo());
+                child.Set(const_cast<Key*>(&Iterator(cc)->first),
+                          GetKeyTypeInfo());
             else
                 child.Set(&Iterator(cc)->second, GetValueTypeInfo());
         }
     void Next(CConstChildrenIterator& cc) const
         {
-            if ( (Index(cc) ^= 1) == 0 ) {
+            if ( ++Index(cc) > 1 ) {
                 ++Iterator(cc);
+                Index(cc) = 0;
             }
         }
     void Next(CChildrenIterator& cc) const
         {
-            if ( (Index(cc) ^= 1) == 0 ) {
+            if ( ++Index(cc) > 1 ) {
                 ++Iterator(cc);
+                Index(cc) = 0;
+            }
+        }
+    void Erase(CChildrenIterator& cc) const
+        {
+            if ( Index(cc) == 0 ) {
+                // erase whole entry
+                Key key = Iterator(cc)->first;
+                Iterator(cc) = Get(cc).end();
+                Get(cc).erase(Iterator(cc));
+                Iterator(cc) = Get(cc).upper_bound(key);
+                Index(cc) = -1;
+            }
+            else {
+                // cannot erase value
+                CParent::Erase(cc);
             }
         }
 

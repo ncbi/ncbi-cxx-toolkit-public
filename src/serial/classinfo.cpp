@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/04/10 18:01:56  vasilche
+* Added Erase() for STL types in type iterators.
+*
 * Revision 1.38  2000/04/06 16:10:59  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -188,6 +191,7 @@
 #include <serial/member.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/iterator.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -276,10 +280,8 @@ void AssignMemberDefault(CObjectIStream& in, TObjectPtr object,
 }
 
 static
-void AssignMemberDefault(TObjectPtr object,
-                         const CMembersInfo& members, size_t index)
+void AssignMemberDefault(TObjectPtr object, const CMemberInfo* info)
 {
-    const CMemberInfo* info = members.GetMemberInfo(index);
     // check 'set' flag
     bool haveSetFlag = info->HaveSetFlag();
     if ( haveSetFlag && !info->GetSetFlag(object) )
@@ -299,6 +301,13 @@ void AssignMemberDefault(TObjectPtr object,
     // update 'set' flag
     if ( haveSetFlag )
         info->GetSetFlag(object) = false;
+}
+
+static inline
+void AssignMemberDefault(TObjectPtr object,
+                         const CMembersInfo& members, size_t index)
+{
+    AssignMemberDefault(object, members.GetMemberInfo(index));
 }
 
 static inline
@@ -860,9 +869,13 @@ void CClassInfoTmpl::Next(CChildrenIterator& cc) const
     GetMembers().Next(cc);
 }
 
-void CClassInfoTmpl::Erase(CChildrenIterator& /*cc*/) const
+void CClassInfoTmpl::Erase(CChildrenIterator& cc) const
 {
-    THROW1_TRACE(runtime_error, "not implemented");
+    const CMemberInfo* info = GetMembers().GetMemberInfo(cc);
+    if ( info->GetDefault() )
+        THROW1_TRACE(runtime_error, "cannot erase member with default value");
+
+    AssignMemberDefault(cc.GetParentPtr(), info);
 }
 
 TObjectPtr CStructInfoTmpl::Create(void) const
