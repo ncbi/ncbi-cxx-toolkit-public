@@ -133,6 +133,11 @@ bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
             return false;
         }
         FDriverRegister reg = entry_point();
+        if(!reg) {
+            throw CDB_ClientEx(eDB_Fatal, 300, "C_DriverMgr::LoadDriverDll",
+                               "driver reports an unrecoverable error "
+                               "(e.g. conflict in libraries)");
+        }
         reg(*this);
         return true;
     }
@@ -201,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/09/19 18:47:31  soussov
+ * LoadDriverDll now allows driver to report an unrecoverable error through NULL return from entry_point function
+ *
  * Revision 1.11  2002/04/23 16:46:17  soussov
  * GetDriverContext added
  *
