@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2001/06/19 19:12:01  lavr
+ * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
+ *
  * Revision 6.28  2001/06/05 14:11:29  lavr
  * SERV_MIME_UNDEFINED split into 2 (typed) constants:
  * SERV_MIME_TYPE_UNDEFINED and SERV_MIME_SUBTYPE_UNDEFINED
@@ -373,7 +376,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
             case 'T':
                 if (!time && sscanf(str, "=%lu%n", &t, &n) >= 1) {
                     str += n;
-                    info->time = (time_t)t;
+                    info->time = (TNCBI_Time) t;
                     time = 1;
                 }
                 break;
@@ -542,7 +545,7 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->rate         = 0.0;
         info->mime_t       = SERV_MIME_TYPE_UNDEFINED;
         info->mime_s       = SERV_MIME_SUBTYPE_UNDEFINED;
-        info->u.ncbid.args = sizeof(info->u.ncbid);
+        info->u.ncbid.args = (TNCBI_Size) sizeof(info->u.ncbid);
         if (strcmp(args, "''") == 0) /* special case */
             args = 0;
         strcpy(SERV_NCBID_ARGS(&info->u.ncbid), args ? args : "");
@@ -712,8 +715,9 @@ SSERV_Info* SERV_CreateHttpInfo
         info->rate        = 0.0;
         info->mime_t      = SERV_MIME_TYPE_UNDEFINED;
         info->mime_s      = SERV_MIME_SUBTYPE_UNDEFINED;
-        info->u.http.path = sizeof(info->u.http);
-        info->u.http.args = info->u.http.path + strlen(path ? path : "")+1;
+        info->u.http.path = (TNCBI_Size) sizeof(info->u.http);
+        info->u.http.args = (TNCBI_Size) (info->u.http.path +
+                                          strlen(path ? path : "")+1);
         strcpy(SERV_HTTP_PATH(&info->u.http), path ? path : "");
         strcpy(SERV_HTTP_ARGS(&info->u.http), args ? args : "");
     }

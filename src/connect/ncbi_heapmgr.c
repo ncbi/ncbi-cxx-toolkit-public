@@ -62,7 +62,7 @@
  * call to either 'HEAP_Create' or 'HEAP_Attach' with the information about
  * the base heap pointer. 'HEAP_Create' also requires the size of initial
  * heap area (if there is one), and size of chunk (usually, a page size)
- * to be used in heap expansions (defaults to 1 if provided as 0).
+ * to be used in heap expansions (defaults to alignment if provided as 0).
  * Additionally (but not compulsory) the application program can provide
  * heap manager with 'expand' routine, which is supposed to be called,
  * when no more room is available in the heap, or the heap was not
@@ -76,7 +76,7 @@
  *
  * Note that all heap base pointers must be aligned on a 'double' boundary.
  * Please also be warned not to store pointers to the heap area, as a
- * garbage collection can clobber them.  Within a blocks, however,
+ * garbage collection can clobber them. Within a block, however,
  * it is possible to use local pointers (offsets), which remain same
  * regardless of garbage collections.
  *
@@ -96,7 +96,7 @@
  * only used blocks can follow each other sequentially.
  *
  * To discontinue to use the heap, 'HEAP_Destroy' or 'HEAP_Detach' can be
- * called.  The former deallocated the heap (by means of call to 'expand'),
+ * called. The former deallocated the heap (by means of call to 'expand'),
  * the latter just removes the heap handle, retaining the heap data intact.
  * Later, such a heap could be used again if attached with 'HEAP_Attach'.
  *
@@ -105,11 +105,14 @@
  * 'HEAP_Destroy' will not destroy the heap data.
  *
  * Note also, that 'HEAP_Create' always does heap reset, that is the
- * memory area pointed by 'base' (if not 0) gets reformatted and lost
+ * memory area pointed by 'base' (if not 0) gets reformatted and loose
  * all previous contents.
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/06/19 19:12:01  lavr
+ * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
+ *
  * Revision 6.7  2001/03/02 20:08:26  lavr
  * Typos fixed
  *
@@ -141,74 +144,77 @@
 
 
 struct SHEAP_tag {
-    char         *base;
-    size_t        size;
-    size_t        chunk;
+    char*         base;
+    TNCBI_Size    size;
+    TNCBI_Size    chunk;
     FHEAP_Expand  expand;
 };
 
 
-#define HEAP_ALIGN(a, b)        (((unsigned long)(a) + (b) - 1) & ~((b) - 1))
-#define HEAP_LAST               0x80000000UL
-#define HEAP_USED               0x0DEAD2F0UL
-#define HEAP_FREE               0
-#define HEAP_ISFREE(b)          (((b)->flag & ~HEAP_LAST) == HEAP_FREE)
-#define HEAP_ISUSED(b)          (((b)->flag & ~HEAP_LAST) == HEAP_USED)
-#define HEAP_ISLAST(b)          ((b)->flag & HEAP_LAST)
+#define _HEAP_ALIGN(a, b)     (((unsigned long) (a) + (b) - 1) & ~((b) - 1))
+#define _HEAP_ALIGNMENT       sizeof(double)
+#define HEAP_ALIGN(a)         _HEAP_ALIGN(a, _HEAP_ALIGNMENT)
+#define HEAP_LAST             0x80000000UL
+#define HEAP_USED             0x0DEAD2F0UL
+#define HEAP_FREE             0
+#define HEAP_ISFREE(b)        (((b)->flag & ~HEAP_LAST) == HEAP_FREE)
+#define HEAP_ISUSED(b)        (((b)->flag & ~HEAP_LAST) == HEAP_USED)
+#define HEAP_ISLAST(b)        ((b)->flag & HEAP_LAST)
 
 
-HEAP HEAP_Create(char *base, size_t size, size_t chunk, FHEAP_Expand expand)
+HEAP HEAP_Create(char* base, TNCBI_Size size,
+                 TNCBI_Size chunk, FHEAP_Expand expand)
 {
-    SHEAP_Block *b;
+    SHEAP_Block* b;
     HEAP heap;
 
     if ((!base && size) || (base && !size) ||
-        !(heap = (HEAP)malloc(sizeof(*heap))))
+        !(heap = (HEAP) malloc(sizeof(*heap))))
         return 0;
-    if ((char *)HEAP_ALIGN(base, sizeof(double)) != base)
-        CORE_LOGF(eLOG_Warning,
-                  ("Heap Create: Unaligned base (0x%08lX)", (long)base));
-    chunk = (chunk <= 1 ? 1 : chunk);
+    chunk = (TNCBI_Size) HEAP_ALIGN(chunk);
     if (!base) {
-        size = HEAP_ALIGN(sizeof(*b) + 1, chunk);
-        if (!(base = (*expand)(base, size))) {
+        size = (TNCBI_Size) _HEAP_ALIGN(sizeof(*b) + 1, chunk);
+        if (!expand || !(base = (*expand)(base, size))) {
             CORE_LOGF(eLOG_Warning,
                       ("Heap Create: Cannot create (size = %u)",
-                       (unsigned)size));
+                       (unsigned) size));
             free(heap);
             return 0;
         }
     }
-    if (size <= sizeof(*b))
-        CORE_LOGF(eLOG_Warning, ("Heap Create: Heap too small (%u <= %u)",
-                                 (unsigned)size, (unsigned)sizeof(*b)));
+    if ((char*) HEAP_ALIGN(base) != base)
+        CORE_LOGF(eLOG_Warning,
+                  ("Heap Create: Unaligned base (0x%08lX)", (long) base));
+    if (size < (TNCBI_Size) HEAP_ALIGN(sizeof(*b) + 1))
+        CORE_LOGF(eLOG_Warning, ("Heap Create: Heap is too small (%u, %u)",
+                                 (unsigned) size, (unsigned) sizeof(*b)));
     heap->base = base;
     heap->size = size;
     heap->chunk = chunk;
     heap->expand = expand;
-    b = (SHEAP_Block *)heap->base;
+    b = (SHEAP_Block*) heap->base;
     b->flag = HEAP_FREE | HEAP_LAST;
     b->size = size;
     return heap;
 }
 
 
-HEAP HEAP_Attach(char *base)
+HEAP HEAP_Attach(char* base)
 {
-    SHEAP_Block *b;
+    SHEAP_Block* b;
     HEAP heap;
-
-    if (!base || !(heap = (HEAP)malloc(sizeof(*heap))))
+    
+    if (!base || !(heap = (HEAP) malloc(sizeof(*heap))))
         return 0;
-    if ((char *)HEAP_ALIGN(base, sizeof(double)) != base)
+    if ((char*) HEAP_ALIGN(base) != base)
         CORE_LOGF(eLOG_Warning,
-                  ("Heap Attach: Unaligned base (0x%08lX)", (long)base));
+                  ("Heap Attach: Unaligned base (0x%08lX)", (long) base));
     heap->size = 0;
-    for (b = (SHEAP_Block *)base; ; b = (SHEAP_Block *)((char *)b + b->size)) {
+    for (b = (SHEAP_Block*) base; ; b = (SHEAP_Block*) ((char*) b + b->size)) {
         if (!HEAP_ISUSED(b) && !HEAP_ISFREE(b)) {
             CORE_LOGF(eLOG_Warning,
                       ("Heap Attach: Heap corrupted (0x%08X, %u)",
-                       b->flag, (unsigned)b->size));
+                       b->flag, (unsigned) b->size));
             free(heap);
             return 0;
         }
@@ -223,10 +229,15 @@ HEAP HEAP_Attach(char *base)
 }
 
 
-static SHEAP_Block *s_HEAP_Join(SHEAP_Block *p, SHEAP_Block *b)
+/* Check if a given block 'b' is adjacent to a free block, which
+ * follows 'b', and/or to optionally passed previous block 'p'.
+ * Join block(s) to form a larger free block, and return a pointer
+ * to the next block.
+ */
+static SHEAP_Block* s_HEAP_Join(SHEAP_Block* p, SHEAP_Block* b)
 {
-    /* Block followed by 'b' */
-    SHEAP_Block *n = (SHEAP_Block *)((char *)b + b->size);
+    /* Block following 'b' */
+    SHEAP_Block* n = (SHEAP_Block*) ((char*) b + b->size);
 
     if (!HEAP_ISFREE(b))
         CORE_LOG(eLOG_Warning, "Heap Join: Block is not free");
@@ -234,7 +245,7 @@ static SHEAP_Block *s_HEAP_Join(SHEAP_Block *p, SHEAP_Block *b)
         if (!HEAP_ISLAST(b) && HEAP_ISFREE(n)) {
             b->size += n->size;
             b->flag = n->flag;
-            n = (SHEAP_Block *)((char *)n + n->size);
+            n = (SHEAP_Block*) ((char*) n + n->size);
         }
         if (p && HEAP_ISFREE(p)) {
             p->size += b->size;
@@ -245,39 +256,53 @@ static SHEAP_Block *s_HEAP_Join(SHEAP_Block *p, SHEAP_Block *b)
 }
 
 
-static SHEAP_Block *s_HEAP_Squeeze(HEAP heap)
+/* Collect garbage in the heap, moving all contents to the
+ * top of the heap, and merging all free blocks at the end
+ * in one large free block. Return pointer to that free block.
+ */
+static SHEAP_Block* s_HEAP_Collect(HEAP heap)
 {
-    SHEAP_Block *b = (SHEAP_Block *)heap->base, *f = 0;
+    SHEAP_Block* b = (SHEAP_Block*) heap->base, *f = 0;
 
-    while ((char *)b < heap->base + heap->size) {
+    while ((char*) b < heap->base + heap->size) {
         if (HEAP_ISFREE(b))
             f = b;
         else if (HEAP_ISUSED(b) && f) {
-            unsigned last = b->flag & HEAP_LAST;
-            size_t save = f->size;
+            unsigned int last = b->flag & HEAP_LAST;
+            TNCBI_Size save = f->size;
 
             memmove(f, b, b->size);
             f->flag &= ~HEAP_LAST;
-            f = (SHEAP_Block *)((char *)f + f->size);
+            f = (SHEAP_Block*) ((char*) f + f->size);
             f->flag = HEAP_FREE | last;
             f->size = save;
             b = s_HEAP_Join(0, f);
             continue;
         }
-        b = (SHEAP_Block *)((char *)b + b->size);
+        b = (SHEAP_Block*) ((char*) b + b->size);
     }
     return f;
 }
 
 
-SHEAP_Block *s_HEAP_Take(SHEAP_Block *b, size_t size)
+/* Take the block 'b' (maybe split in two, if it's roomy enough)
+ * for use of by at most 'size' bytes (including block header).
+ * Return the block to use if taken okay; 0 otherwise.
+ */
+SHEAP_Block* s_HEAP_Take(SHEAP_Block* b, TNCBI_Size size)
 {
-    unsigned last = b->flag & HEAP_LAST;
+    unsigned int last = b->flag & HEAP_LAST;
 
-    if (HEAP_ISUSED(b))
+    if (HEAP_ISUSED(b)) {
         CORE_LOG(eLOG_Warning, "Heap Take: Block is not free");
+        return 0;
+    }
+    if (b->size < size) {
+        CORE_LOG(eLOG_Warning, "Heap Take: Block is too small");
+        return 0;
+    }
     if (b->size > size + sizeof(*b)) {
-        SHEAP_Block *n = (SHEAP_Block *)((char *)b + size);
+        SHEAP_Block* n = (SHEAP_Block*) ((char*) b + size);
 
         n->flag = HEAP_FREE | last;
         n->size = b->size - size;
@@ -290,57 +315,58 @@ SHEAP_Block *s_HEAP_Take(SHEAP_Block *b, size_t size)
 }
 
 
-SHEAP_Block *HEAP_Alloc(HEAP heap, size_t size)
+SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
 {
-    SHEAP_Block *b, *p = 0;
-    size_t free = 0;
+    SHEAP_Block* b, *p = 0;
+    TNCBI_Size free = 0;
 
-    if (!heap || !size)
+    if (!heap || size < 1)
         return 0;
 
     if (!heap->chunk) {
         CORE_LOG(eLOG_Warning, "Heap Alloc: Heap is read-only");
         return 0;
     }
-    
-    size = (size_t)HEAP_ALIGN(size + sizeof(*b), sizeof(double));
 
-    b = (SHEAP_Block *)heap->base;
-    while ((char *)b < heap->base + heap->size) {
+    size = (TNCBI_Size) HEAP_ALIGN(sizeof(*b) + size);
+
+    b = (SHEAP_Block*) heap->base;
+    while ((char*) b < heap->base + heap->size) {
         if (HEAP_ISFREE(b)) {
             if (b->size >= size)
-                /* Ok, empty, large enough block found */
+                /* Empty, large enough block found, take it! */
                 return s_HEAP_Take(b, size);
             free += b->size;
         } else if (!HEAP_ISUSED(b)) {
             CORE_LOGF(eLOG_Warning,
                       ("Heap Alloc: Heap corrupted (0x%08X, %u)",
-                       b->flag, (unsigned)b->size));
+                       b->flag, (unsigned) b->size));
             return 0;
         }
         p = b;
-        b = (SHEAP_Block *)((char *)b + b->size);
+        b = (SHEAP_Block*) ((char*) b + b->size);
     }
 
     /* Heap exhausted, no free block found */
     if (free >= size)
-        b = s_HEAP_Squeeze(heap);
+        b = s_HEAP_Collect(heap);
     else if (!heap->expand)
         return 0;
     else {
-        size_t hsize = (size_t)HEAP_ALIGN(heap->size + size, heap->chunk);
-        ptrdiff_t dp = (char *)p - heap->base;
-        char *base;
+        TNCBI_Size hsize =
+            (TNCBI_Size) _HEAP_ALIGN(heap->size + size, heap->chunk);
+        ptrdiff_t dp = (char*) p - heap->base;
+        char* base;
 
         if (!(base = (*heap->expand)(heap->base, hsize)))
             return 0;
-        p = (SHEAP_Block *)(base + dp);
+        p = (SHEAP_Block*) (base + dp);
         if (!HEAP_ISLAST(p))
             CORE_LOG(eLOG_Warning, "Heap Alloc: Last block lost");
         if (HEAP_ISUSED(p)) {
             p->flag &= ~HEAP_LAST;
             /* New block is the very top on the heap */
-            b = (SHEAP_Block *)(base + heap->size);
+            b = (SHEAP_Block*) (base + heap->size);
             b->size = hsize - heap->size;
             b->flag = HEAP_FREE | HEAP_LAST;
         } else {
@@ -355,9 +381,9 @@ SHEAP_Block *HEAP_Alloc(HEAP heap, size_t size)
 }
 
 
-void HEAP_Free(HEAP heap, SHEAP_Block *ptr)
+void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 {
-    SHEAP_Block *b, *p = 0;
+    SHEAP_Block* b, *p = 0;
 
     if (!heap || !ptr)
         return;
@@ -367,8 +393,8 @@ void HEAP_Free(HEAP heap, SHEAP_Block *ptr)
         return;
     }
     
-    b = (SHEAP_Block *)heap->base;
-    while ((char *)b < heap->base + heap->size) {
+    b = (SHEAP_Block*) heap->base;
+    while ((char*) b < heap->base + heap->size) {
         if (HEAP_ISFREE(b)) {
             if (b == ptr) {
                 CORE_LOG(eLOG_Warning, "Heap Free: Freeing free block");
@@ -383,27 +409,31 @@ void HEAP_Free(HEAP heap, SHEAP_Block *ptr)
         } else {
             CORE_LOGF(eLOG_Warning,
                       ("Heap Free: Heap corrupted (0x%08X, %u)",
-                       b->flag, (unsigned)b->size));
+                       b->flag, (unsigned) b->size));
             return;
         }
         p = b;
-        b = (SHEAP_Block *)((char *)b + b->size);
+        b = (SHEAP_Block*) ((char*) p + p->size);
     }
     CORE_LOG(eLOG_Warning, "Heap Free: Block not found");
 }
 
 
-SHEAP_Block *HEAP_Walk(HEAP heap, const SHEAP_Block *p)
+SHEAP_Block* HEAP_Walk(HEAP heap, const SHEAP_Block* p)
 {
-    SHEAP_Block *b;
+    SHEAP_Block* b;
     
+    if (!heap) {
+        CORE_LOG(eLOG_Warning, "Heap Walk: NULL heap");
+        return 0;
+    }
     if (!p ||
-        ((char *)p >= heap->base && (char *)p < heap->base + heap->size)) {
-        b = (SHEAP_Block *)(p ? (char *)p + p->size : heap->base);
-        if ((char *)b < heap->base + heap->size) {
+        ((char*) p >= heap->base && (char*) p < heap->base + heap->size)) {
+        b = (SHEAP_Block*) (p ? (char*) p + p->size : heap->base);
+        if ((char*) b < heap->base + heap->size) {
             if (b->size > sizeof(*b) &&
-                b->size == HEAP_ALIGN(b->size, sizeof(double)) &&
-                (char *)b + b->size <= heap->base + heap->size &&
+                b->size == (TNCBI_Size) HEAP_ALIGN(b->size) &&
+                (char*) b + b->size <= heap->base + heap->size &&
                 (HEAP_ISFREE(b) || HEAP_ISUSED(b))) {
                 /* Block 'b' seems valid, but... */
                 if (!p)
@@ -417,8 +447,8 @@ SHEAP_Block *HEAP_Walk(HEAP heap, const SHEAP_Block *p)
             } else
                 CORE_LOGF(eLOG_Warning,
                           ("Heap Walk: Heap corrupted (0x%08X, %u)",
-                           b->flag, (unsigned)b->size));
-        } else if ((char *)b > heap->base + heap->size)
+                           b->flag, (unsigned) b->size));
+        } else if ((char*) b > heap->base + heap->size)
             CORE_LOG(eLOG_Warning, "Heap Walk: Heap corrupted");
         else if (!HEAP_ISLAST(p))
             CORE_LOG(eLOG_Warning, "Heap Walk: Last block lost");

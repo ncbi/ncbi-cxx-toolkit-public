@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/06/19 19:09:35  lavr
+ * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
+ *
  * Revision 6.6  2000/10/05 21:25:45  lavr
  * ncbiconf.h removed
  *
@@ -48,7 +51,7 @@
  * ==========================================================================
  */
 
-#include <stddef.h>
+#include <connect/ncbi_type.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,8 +67,8 @@ typedef struct SHEAP_tag* HEAP;
 /* Header of a heap block
  */
 typedef struct {
-    unsigned flag;  /* (short)flag == 0 if block is vacant */
-    size_t   size;  /* size of the block (including the block header) */
+    unsigned int flag;  /* (short)flag == 0 if block is vacant              */
+    TNCBI_Size   size;  /* size of the block (including the block header)   */
 } SHEAP_Block;
 
 
@@ -73,8 +76,8 @@ typedef struct {
  * NOTE: the returned address must be aligned on a 'double' boundary!
  */
 typedef char* (*FHEAP_Expand)
-(char*  old_base,  /* current base of the heap to be expanded */
- size_t new_size   /* requested new heap size (zero to deallocate all heap) */
+(char*      old_base,  /* current base of the heap to be expanded           */
+ TNCBI_Size new_size   /* requested new heap size (zero to deallocate heap) */
  );
 
 
@@ -83,32 +86,32 @@ typedef char* (*FHEAP_Expand)
  */
 HEAP HEAP_Create
 (char*        base,        /* initial heap base (use "expand" if NULL) */
- size_t       size,        /* initial heap size */
- size_t       chunk_size,  /* minimal increment size */
- FHEAP_Expand expand       /* NULL if not expandable */
+ TNCBI_Size   size,        /* initial heap size                        */
+ TNCBI_Size   chunk_size,  /* minimal increment size                   */
+ FHEAP_Expand expand       /* NULL if not expandable                   */
  );
 
 
 /* Attach to an already existing heap (in read-only mode).
  */
 HEAP HEAP_Attach
-(char* base  /* base of the heap to attach to */
+(char* base                /* base of the heap to attach to */
  );
 
 
 /* Allocate a new block of memory in the heap.
  */
 SHEAP_Block* HEAP_Alloc
-(HEAP   heap,  /* heap handle */
- size_t size   /* # of bytes to allocate for the new block */
+(HEAP       heap,          /* heap handle                       */
+ TNCBI_Size size           /* data size of the block to contain */
  );
 
 
 /* Deallocate block pointed by "block_ptr".
  */
 void HEAP_Free
-(HEAP         heap,      /* heap handle */
- SHEAP_Block* block_ptr  /* block to deallocate */
+(HEAP         heap,        /* heap handle         */
+ SHEAP_Block* block_ptr    /* block to deallocate */
  );
 
 
@@ -117,8 +120,8 @@ void HEAP_Free
  * Return NULL if "prev_block" is the last block of the heap.
  */
 SHEAP_Block* HEAP_Walk
-(HEAP               heap, /* heap handle */
- const SHEAP_Block* prev  /* (if NULL, then get the first block of the heap) */
+(HEAP               heap,  /* heap handle                                  */
+ const SHEAP_Block* prev   /* (if 0, then get the first block of the heap) */
  );
 
 

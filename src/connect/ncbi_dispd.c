@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2001/06/19 19:12:01  lavr
+ * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
+ *
  * Revision 6.21  2001/05/17 15:02:51  lavr
  * Typos corrected
  *
@@ -297,7 +300,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
     static const char server_info[] = "Server-Info-";
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
     char* buf = (char*) malloc(strlen(text) + 1);
-    time_t t = time(0);
+    TNCBI_Time t = (TNCBI_Time) time(0);
     char *b, *c;
 
     if (!buf)
@@ -305,7 +308,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
     strcpy(buf, text);
     for (b = buf; (c = strchr(b, '\n')) != 0; b = c + 1) {
         SSERV_Info* info;
-        unsigned d1;
+        unsigned int d1;
         char* p;
         int d2;
 
@@ -319,7 +322,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
                 continue;
             if (!(info = SERV_ReadInfo(b + d2)))
                 continue;
-            info->time += t;        /* Set 'expiration time' */
+            info->time += t;        /* Expiration time now */
             if (!s_AddServerInfo(data, info))
                 continue;
         } else if (strncasecmp(b, HTTP_DISP_FAILURES,
@@ -347,7 +350,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
 static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
 {
     double status = 0.0, total = 0.0;
-    time_t t = time(0);
+    TNCBI_Time t = (TNCBI_Time) time(0);
     size_t i = 0;
 
     while (i < data->n_node) {

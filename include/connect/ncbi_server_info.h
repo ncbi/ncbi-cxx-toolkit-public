@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2001/06/19 19:09:35  lavr
+ * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
+ *
  * Revision 6.23  2001/06/12 20:45:23  lavr
  * Less ambiguous comment for SSERV_Info::time
  *
@@ -78,7 +81,7 @@
  * order, whereas binary port addresses now use native (host) representation
  *
  * Revision 6.11  2000/10/20 17:05:48  lavr
- * TServType made 'unsigned'
+ * TSERV_Type made 'unsigned int'
  *
  * Revision 6.10  2000/10/05 21:25:45  lavr
  * ncbiconf.h removed
@@ -115,8 +118,6 @@
  */
 
 #include <connect/ncbi_connutil.h>
-#include <stddef.h>
-#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,7 +136,7 @@ typedef enum {
 
 #define fSERV_Any           0
 #define fSERV_StatelessOnly 0x80
-typedef unsigned TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
+typedef unsigned int TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
 
 
 /* Flags to specify the algorithm for selecting the most preferred
@@ -168,19 +169,19 @@ const char* SERV_ReadType(const char* str, ESERV_Type* type);
 /* Meta-addresses for various types of NCBI servers
  */
 typedef struct {
-    size_t         args;
-#define SERV_NCBID_ARGS(ui)     ((char *)(ui) + (ui)->args)
+    TNCBI_Size     args;
+#define SERV_NCBID_ARGS(ui)     ((char*) (ui) + (ui)->args)
 } SSERV_NcbidInfo;
 
 typedef struct {
-    int            dummy;       /* placeholder, not used */
+    char           dummy;       /* placeholder, not used */
 } SSERV_StandaloneInfo;
 
 typedef struct {
-    size_t         path;
-    size_t         args;
-#define SERV_HTTP_PATH(ui)      ((char *)(ui) + (ui)->path)
-#define SERV_HTTP_ARGS(ui)      ((char *)(ui) + (ui)->args)
+    TNCBI_Size     path;
+    TNCBI_Size     args;
+#define SERV_HTTP_PATH(ui)      ((char*) (ui) + (ui)->path)
+#define SERV_HTTP_ARGS(ui)      ((char*) (ui) + (ui)->args)
 } SSERV_HttpInfo;
 
 
@@ -199,7 +200,7 @@ typedef struct {
     unsigned char/*bool*/ sful; /* true for stateful-only server (default=no)*/
     unsigned char/*bool*/ locl; /* true for local (LBSMD-only) server(def=no)*/
     ESERV_Flags           flag; /* algorithm flag for the server             */
-    time_t                time; /* relaxation period / expiration time       */
+    TNCBI_Time            time; /* relaxation period / expiration time       */
     double                coef; /* bonus coefficient for server run locally  */
     double                rate; /* rate of the server                        */
     EMIME_Type          mime_t; /* type and                                  */
