@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/08/28 17:21:22  thiessen
+ * need ncbiconf.h for NCBI_CXX_TOOLKIT
+ *
  * Revision 6.14  2001/08/09 16:25:06  lavr
  * Remove last (unneeded) parameter from LOG_Reset()
  * Added: fLOG_OmitNoteLevel format flag handling
@@ -78,6 +81,7 @@
  * ===========================================================================
  */
 
+#include "ncbiconf.h"
 #include "ncbi_priv.h"
 #ifndef NCBI_CXX_TOOLKIT
 #  include <ncbistd.h>
