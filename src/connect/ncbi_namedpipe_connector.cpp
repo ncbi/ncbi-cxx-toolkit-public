@@ -46,10 +46,10 @@ USING_NCBI_SCOPE;
 
 // All internal data necessary to perform the (re)connect and i/o
 typedef struct {
-    CNamedPipeClient* pipe;       // pipe handle; NULL if not connected yet
-    string            pipename;   // pipe name
-    size_t            pipesize;   // pipe size
-    bool              is_open;    // true if pipe is open
+    CNamedPipeClient* pipe;         // pipe handle; NULL if not connected yet
+    string            pipename;     // pipe name
+    size_t            pipebufsize;  // pipe buffer size
+    bool              is_open;      // true if pipe is open
 } SPipeConnector;
 
 
@@ -101,7 +101,7 @@ static EIO_Status s_VT_Open
         return eIO_Unknown;
     }
     // Open new connection
-    EIO_Status status = xxx->pipe->Open(xxx->pipename, timeout, xxx->pipesize);
+    EIO_Status status = xxx->pipe->Open(xxx->pipename, timeout, xxx->pipebufsize);
     if (status == eIO_Success) {
         xxx->is_open = true;
     }
@@ -240,16 +240,16 @@ BEGIN_NCBI_SCOPE
 
 extern CONNECTOR NAMEDPIPE_CreateConnector
 (const string& pipename,
- size_t        pipesize) 
+ size_t        pipebufsize) 
 {
     CONNECTOR       ccc = (SConnector*) malloc(sizeof(SConnector));
     SPipeConnector* xxx = new SPipeConnector();
 
     // Initialize internal data structures
-    xxx->pipe     = new CNamedPipeClient();
-    xxx->pipename = pipename;
-    xxx->pipesize = pipesize;
-    xxx->is_open  = false;
+    xxx->pipe        = new CNamedPipeClient();
+    xxx->pipename    = pipename;
+    xxx->pipebufsize = pipebufsize;
+    xxx->is_open     = false;
 
     // Initialize connector data
     ccc->handle  = xxx;
@@ -268,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2004/03/22 16:59:08  ivanov
+ * Cosmetic changes
+ *
  * Revision 1.6  2003/09/23 21:07:51  lavr
  * bufsize -> pipesize; accept string in ctor instead of char*
  *

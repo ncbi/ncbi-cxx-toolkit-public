@@ -312,9 +312,9 @@ class NCBI_XCONNECT_EXPORT CConn_NamedPipeStream : public CConn_IOStream
 public:
     CConn_NamedPipeStream
     (const string&   pipename,
-     size_t          pipesize = CNamedPipe::kDefaultPipeSize,
-     const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize
+     size_t          pipebufsize = 0 /* default buffer size */,
+     const STimeout* timeout     = kDefaultTimeout,
+     streamsize      buf_size    = kConn_DefaultBufSize
      );
 
 private:
@@ -333,6 +333,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.26  2004/03/22 16:54:05  ivanov
+ * Cosmetic changes
+ *
  * Revision 6.25  2003/11/12 17:42:40  lavr
  * Formal (non-functional) changes
  *

@@ -274,10 +274,10 @@ CConn_PipeStream::~CConn_PipeStream()
 
 
 CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
-                                             size_t          pipesize,
+                                             size_t          pipebufsize,
                                              const STimeout* timeout,
                                              streamsize      buf_size)
-    : CConn_IOStream(NAMEDPIPE_CreateConnector(pipename, pipesize),
+    : CConn_IOStream(NAMEDPIPE_CreateConnector(pipename, pipebufsize),
                      timeout, buf_size)
 {
     return;
@@ -290,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2004/03/22 16:54:32  ivanov
+ * Cosmetic changes
+ *
  * Revision 6.29  2004/01/20 20:36:05  lavr
  * Cease using HAVE_BUGGY_IOS_CALLBACKS in this file
  *
