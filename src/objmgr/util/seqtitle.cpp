@@ -596,7 +596,7 @@ static string x_TitleFromChromosome(const CBioSource& source,
         break;
     case CBioSource::eGenome_plastid:      orgnl = "plastid";       break;
     case CBioSource::eGenome_macronuclear: orgnl = "macronuclear";  break;
-    case CBioSource::eGenome_extrachrom:   orgnl = "extrachrom";    break;
+    case CBioSource::eGenome_extrachrom:   orgnl = "extrachromosomal"; break;
     case CBioSource::eGenome_plasmid:
         orgnl = "plasmid";
         is_plasmid = true;
@@ -882,6 +882,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.34  2004/04/07 20:02:49  ucko
+* x_TitleFromChromosome: spell out "extrachromosomal" per the C Toolkit.
+*
 * Revision 1.33  2004/04/05 15:56:14  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more
