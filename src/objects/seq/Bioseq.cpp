@@ -166,6 +166,10 @@ CBioseq::CBioseq(const CSeq_loc& loc, string str_id)
 
 void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
 {
+    if (!label) {
+        return;
+    }
+    
     if (type != eType  &&  !GetId().empty()) {
         const CSeq_id* id;
         if (!worst) {
@@ -198,7 +202,10 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
         return;
     }
 
-    (*label) += ": ";
+    if (!label->empty()) {
+        (*label) += ": ";
+    }
+    
     const CEnumeratedTypeValues* tv;
     tv = CSeq_inst::GetTypeInfo_enum_ERepr();
     (*label) += tv->FindName(GetInst().GetRepr(), true) + ",";
@@ -229,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.15  2002/10/08 19:09:39  clausen
+ * Fixed formatting but in GetLabel()
+ *
  * Revision 6.14  2002/10/03 21:29:59  ivanov
  * Fixed error in GetLabel()
  *
