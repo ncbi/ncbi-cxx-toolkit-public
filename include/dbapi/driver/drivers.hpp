@@ -43,12 +43,12 @@ BEGIN_NCBI_SCOPE
 
 class I_DriverMgr;
 
-void DBAPI_RegisterDriver_CTLIB   (I_DriverMgr& mgr);
-void DBAPI_RegisterDriver_DBLIB   (I_DriverMgr& mgr);
-void DBAPI_RegisterDriver_FTDS    (I_DriverMgr& mgr);
-void DBAPI_RegisterDriver_ODBC    (I_DriverMgr& mgr);
-void DBAPI_RegisterDriver_MSDBLIB (I_DriverMgr& mgr);
-void DBAPI_RegisterDriver_MYSQL   (I_DriverMgr& mgr);
+extern void DBAPI_RegisterDriver_CTLIB   (I_DriverMgr& mgr);
+extern void DBAPI_RegisterDriver_DBLIB   (I_DriverMgr& mgr);
+extern void DBAPI_RegisterDriver_FTDS    (I_DriverMgr& mgr);
+extern void DBAPI_RegisterDriver_ODBC    (I_DriverMgr& mgr);
+extern void DBAPI_RegisterDriver_MSDBLIB (I_DriverMgr& mgr);
+extern void DBAPI_RegisterDriver_MYSQL   (I_DriverMgr& mgr);
 
 
 END_NCBI_SCOPE
@@ -60,6 +60,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/17 19:24:20  gorelenk
+ * Added "export" for DBAPI_RegisterDriver_* function declaration.
+ *
  * Revision 1.5  2003/04/11 17:46:03  siyan
  * Added doxygen support
  *
