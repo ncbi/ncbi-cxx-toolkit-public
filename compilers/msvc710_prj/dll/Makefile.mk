@@ -88,7 +88,7 @@ install_mssql:
 #
 # MSVC7.10 run-time DLLs'
 #
-MSVCRT_SRC = \\snowman\win-coremake\Lib\ThirdParty\msvc\7.1\bin
+MSVCRT_SRC = \\snowman\win-coremake\Lib\ThirdParty\msvc\msvc71\7.1\bin
 install_msvc:
 	$(TEST_NOT_STAMP)\msvc.installed       echo Copying MSVC DLLs...
 	$(TEST_IF__STAMP)\msvc.installed       echo MSVC DLLs are already installed
