@@ -61,12 +61,12 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                                                        (size_t) d_len);
                 break;
             default:
-                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem", 
+                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
                                    "wrong type of CDB_Object");
             }
             return item_buff;
         }
-        
+
         return d_ptr ? new CDB_VarBinary((const void*) d_ptr, (size_t) d_len)
             : new CDB_VarBinary();
     }
@@ -99,7 +99,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 
         return v ? new CDB_Bit((int) *v) : new CDB_Bit;
     }
-        
+
     case eDB_VarChar: {
         if (item_buff) {
             switch (b_type) {
@@ -209,7 +209,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                     break;
                 case eDB_Int:
                     *((CDB_Int*)      item_buff) = (Int4) *v;
-                        break;
+                    break;
                 default:
                     throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
                                        "wrong type of CDB_Object");
@@ -241,7 +241,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
     }
 
     case eDB_Double: {
-        if (item_buff && b_type != eDB_Double) {
+        if (item_buff  &&  b_type != eDB_Double) {
             throw CDB_ClientEx(eDB_Error, 130020, "s_GenericGetItem",
                                "wrong type of CDB_Object");
         }
@@ -258,7 +258,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
     }
 
     case eDB_Float: {
-        if (item_buff && b_type != eDB_Float) {
+        if (item_buff  &&  b_type != eDB_Float) {
             throw CDB_ClientEx(eDB_Error, 130020, "s_GenericGetItem",
                                "wrong type of CDB_Object");
         }
@@ -271,7 +271,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
             return item_buff;
         }
 
-        return v ? new CDB_Float((float)*v) : new CDB_Float;
+        return v ? new CDB_Float((float) *v) : new CDB_Float;
     }
 
     default:
@@ -302,7 +302,7 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
     default:           return eDB_UnsupportedType;
     }
     DBTYPEINFO* t = dbcoltypeinfo(cmd, n);
-    return t->scale == 0 && t->precision < 20 ? eDB_BigInt : eDB_Numeric;
+    return (t->scale == 0  &&  t->precision < 20) ? eDB_BigInt : eDB_Numeric;
 }
 
 
@@ -313,9 +313,9 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
 
 
 CTDS_RowResult::CTDS_RowResult(DBPROCESS* cmd,
-                               unsigned int* res_status, bool need_init) :
-    m_Cmd(cmd), m_CurrItem(0), m_EOR(false),
-    m_ResStatus(res_status), m_Offset(0)
+                               unsigned int* res_status, bool need_init)
+    : m_Cmd(cmd), m_CurrItem(0), m_EOR(false),
+      m_ResStatus(res_status), m_Offset(0)
 {
     if (!need_init)
         return;
@@ -324,7 +324,7 @@ CTDS_RowResult::CTDS_RowResult(DBPROCESS* cmd,
     m_CmdNum = DBCURCMD(cmd);
 
     m_ColFmt = new STDS_ColDescr[m_NofCols];
-    for (unsigned int n = 0; n < m_NofCols; n++) {
+    for (unsigned int n = 0;  n < m_NofCols;  n++) {
         m_ColFmt[n].max_length = dbcollen(m_Cmd, n + 1);
         m_ColFmt[n].data_type = s_GetDataType(m_Cmd, n + 1);
         char* s = dbcolname(m_Cmd, n + 1);
@@ -366,26 +366,27 @@ EDB_Type CTDS_RowResult::ItemDataType(unsigned int item_num) const
 
 bool CTDS_RowResult::Fetch()
 {
-    if (!m_EOR) {
-        switch (dbnextrow(m_Cmd)) {
-        case REG_ROW: 
-            m_CurrItem = 0;
-            m_Offset = 0;
-            return true;
-        case NO_MORE_ROWS:
-            m_EOR = true;
-            break;
-        case FAIL:
-            throw CDB_ClientEx(eDB_Error, 230003, "CTDS_RowResult::Fetch",
-                               "error in fetching row");
-        case BUF_FULL:
-            throw CDB_ClientEx(eDB_Error, 230006, "CTDS_RowResult::Fetch",
-                               "buffer is full");
-        default:
-            *m_ResStatus|= 0x10;
-            m_EOR = true;
-            break;
-        }
+    if ( m_EOR )
+        return false;
+
+    switch ( dbnextrow(m_Cmd) ) {
+    case REG_ROW:
+        m_CurrItem = 0;
+        m_Offset = 0;
+        return true;
+    case NO_MORE_ROWS:
+        m_EOR = true;
+        break;
+    case FAIL:
+        throw CDB_ClientEx(eDB_Error, 230003, "CTDS_RowResult::Fetch",
+                           "error in fetching row");
+    case BUF_FULL:
+        throw CDB_ClientEx(eDB_Error, 230006, "CTDS_RowResult::Fetch",
+                           "buffer is full");
+    default:
+        *m_ResStatus |= 0x10;
+        m_EOR = true;
+        break;
     }
     return false;
 }
@@ -440,19 +441,19 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
     case eDB_Numeric: {
         DBNUMERIC* v = (DBNUMERIC*) d_ptr;
         if (item_buff) {
-                if (v) {
-                    if (b_type == eDB_Numeric) {
-                        ((CDB_Numeric*) item_buff)->Assign
-                            ((unsigned int)   v->precision,
-                             (unsigned int)   v->scale,
-                             (unsigned char*) v->array);
-                    } else {
-                        throw CDB_ClientEx(eDB_Error, 230020, "s_GetItem",
-                                           "wrong type of CDB_Object");
-                    }
-                } else
-                    item_buff->AssignNULL();
-                return item_buff;
+            if (v) {
+                if (b_type == eDB_Numeric) {
+                    ((CDB_Numeric*) item_buff)->Assign
+                        ((unsigned int)   v->precision,
+                         (unsigned int)   v->scale,
+                         (unsigned char*) v->array);
+                } else {
+                    throw CDB_ClientEx(eDB_Error, 230020, "s_GetItem",
+                                       "wrong type of CDB_Object");
+                }
+            } else
+                item_buff->AssignNULL();
+            return item_buff;
         }
 
         return v ?
@@ -462,7 +463,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
     }
 
     case eDB_Text: {
-        if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
+        if (item_buff  &&  b_type != eDB_Text  &&  b_type != eDB_Image) {
             throw CDB_ClientEx(eDB_Error, 130020, "s_GetItem",
                                "wrong type of CDB_Object");
         }
@@ -472,7 +473,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
     }
 
     case eDB_Image: {
-        if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
+        if (item_buff  &&  b_type != eDB_Text  &&  b_type != eDB_Image) {
             throw CDB_ClientEx(eDB_Error, 130020, "s_GetItem",
                                "wrong type of CDB_Object");
         }
@@ -512,7 +513,7 @@ size_t CTDS_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
     BYTE* d_ptr = dbdata  (m_Cmd, m_CurrItem + 1);
     DBINT d_len = dbdatlen(m_Cmd, m_CurrItem + 1);
 
-    if (d_ptr == 0 || d_len < 1) { // NULL value
+    if (d_ptr == 0  ||  d_len < 1) { // NULL value
         ++m_CurrItem;
         m_Offset = 0;
         if (is_null)
@@ -526,7 +527,8 @@ size_t CTDS_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
         buffer_size = d_len - m_Offset;
     }
 
-    if(buffer) memcpy(buffer, d_ptr + m_Offset, buffer_size);
+    if (buffer)
+        memcpy(buffer, d_ptr + m_Offset, buffer_size);
     m_Offset += buffer_size;
     if (m_Offset >= d_len) {
         m_Offset = 0;
@@ -541,7 +543,7 @@ I_ITDescriptor* CTDS_RowResult::GetImageOrTextDescriptor()
 {
     if ((unsigned int) m_CurrItem >= m_NofCols)
         return 0;
-    return new CTDS_ITDescriptor(m_Cmd, m_CurrItem+1);
+    return new CTDS_ITDescriptor(m_Cmd, m_CurrItem + 1);
 }
 
 
@@ -573,8 +575,8 @@ CTDS_RowResult::~CTDS_RowResult()
 //  CTDS_BlobResult::
 
 
-CTDS_BlobResult::CTDS_BlobResult(DBPROCESS* cmd) :
-    m_Cmd(cmd), m_CurrItem(1), m_EOR(false)
+CTDS_BlobResult::CTDS_BlobResult(DBPROCESS* cmd)
+    : m_Cmd(cmd), m_CurrItem(1), m_EOR(false)
 {
     m_CmdNum = DBCURCMD(cmd);
 
@@ -634,15 +636,18 @@ bool CTDS_BlobResult::Fetch()
                                "error in fetching row");
         }
     }
-    else m_CurrItem = 0;
+    else {
+        m_CurrItem = 0;
+    }
     s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff));
-    if(s == NO_MORE_ROWS) return false;
-    if(s < 0) {
+    if (s == NO_MORE_ROWS)
+        return false;
+    if (s < 0) {
         throw CDB_ClientEx(eDB_Error, 280003, "CTDS_BlobResult::Fetch",
                            "error in fetching row");
     }
-    m_BytesInBuffer= s;
-    m_ReadedBytes= 0;
+    m_BytesInBuffer = s;
+    m_ReadedBytes = 0;
     return true;
 }
 
@@ -660,7 +665,7 @@ CDB_Object* CTDS_BlobResult::GetItem(CDB_Object* item_buff)
 
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
 
-    if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
+    if (item_buff  &&  b_type != eDB_Text  &&  b_type != eDB_Image) {
         throw CDB_ClientEx(eDB_Error, 230020, "CTDS_BlobResult::GetItem",
                            "wrong type of CDB_Object");
     }
@@ -673,19 +678,20 @@ CDB_Object* CTDS_BlobResult::GetItem(CDB_Object* item_buff)
     CDB_Text* val = (CDB_Text*) item_buff;
 
     // check if we do have something in buffer
-    if(m_ReadedBytes < m_BytesInBuffer) {
+    if (m_ReadedBytes < m_BytesInBuffer) {
         val->Append(m_Buff + m_ReadedBytes, m_BytesInBuffer - m_ReadedBytes);
-        m_ReadedBytes= m_BytesInBuffer;
+        m_ReadedBytes = m_BytesInBuffer;
     }
 
-    if(m_BytesInBuffer == 0) {
+    if (m_BytesInBuffer == 0) {
         return item_buff;
     }
-        
+
 
     STATUS s;
-    while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0)
+    while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0) {
         val->Append(m_Buff, sizeof(m_Buff));
+    }
 
     switch (s) {
     case NO_MORE_ROWS:
@@ -705,8 +711,8 @@ CDB_Object* CTDS_BlobResult::GetItem(CDB_Object* item_buff)
 size_t CTDS_BlobResult::ReadItem(void* buffer, size_t buffer_size,
                                  bool* is_null)
 {
-    if(m_BytesInBuffer == 0) 
-        m_CurrItem= 1;
+    if (m_BytesInBuffer == 0)
+        m_CurrItem = 1;
 
     if (m_CurrItem != 0) {
         if (is_null)
@@ -714,21 +720,22 @@ size_t CTDS_BlobResult::ReadItem(void* buffer, size_t buffer_size,
         return 0;
     }
 
-    size_t l= 0;
+    size_t l = 0;
     // check if we do have something in buffer
-    if(m_ReadedBytes < m_BytesInBuffer) {
-        l= m_BytesInBuffer - m_ReadedBytes;
-        if(l >= buffer_size) {
+    if (m_ReadedBytes < m_BytesInBuffer) {
+        l = m_BytesInBuffer - m_ReadedBytes;
+        if (l >= buffer_size) {
             memcpy(buffer, m_Buff + m_ReadedBytes, buffer_size);
-            m_ReadedBytes+= buffer_size;
+            m_ReadedBytes += buffer_size;
             if (is_null)
                 *is_null = false;
             return buffer_size;
         }
         memcpy(buffer, m_Buff + m_ReadedBytes, l);
     }
-        
-    STATUS s = dbreadtext(m_Cmd, (void*)((char*)buffer + l), (DBINT)(buffer_size-l));
+
+    STATUS s = dbreadtext(m_Cmd,
+                          (void*)((char*)buffer + l), (DBINT)(buffer_size-l));
     switch (s) {
     case NO_MORE_ROWS:
         m_EOR = true;
@@ -742,7 +749,9 @@ size_t CTDS_BlobResult::ReadItem(void* buffer, size_t buffer_size,
         break;
     }
 
-    if(is_null) *is_null= (m_BytesInBuffer == 0 && s <= 0);
+    if (is_null) {
+        *is_null = (m_BytesInBuffer == 0  &&  s <= 0);
+    }
     return (size_t) s + l;
 }
 
@@ -757,11 +766,13 @@ I_ITDescriptor* CTDS_BlobResult::GetImageOrTextDescriptor()
 
 bool CTDS_BlobResult::SkipItem()
 {
-    if (m_EOR || m_CurrItem)
+    if (m_EOR  ||  m_CurrItem)
         return false;
 
     STATUS s;
-    while ((s = dbreadtext(m_Cmd, m_Buff, sizeof(m_Buff))) > 0);
+    while ((s = dbreadtext(m_Cmd, m_Buff, sizeof(m_Buff))) > 0)
+        continue;
+
     switch (s) {
     case NO_MORE_ROWS:
         m_EOR = true;
@@ -825,15 +836,15 @@ static CDB_Object* s_RetGetItem(DBPROCESS* cmd, int item_no,
 //  CTDS_ParamResult::
 //
 
-CTDS_ParamResult::CTDS_ParamResult(DBPROCESS* cmd, int nof_params) :
-    CTDS_RowResult(cmd, 0, false)
+CTDS_ParamResult::CTDS_ParamResult(DBPROCESS* cmd, int nof_params)
+    : CTDS_RowResult(cmd, 0, false)
 {
 
     m_NofCols = nof_params;
     m_CmdNum = DBCURCMD(cmd);
 
     m_ColFmt = new STDS_ColDescr[m_NofCols];
-    for (unsigned int n = 0; n < m_NofCols; n++) {
+    for (unsigned int n = 0;  n < m_NofCols;  n++) {
         m_ColFmt[n].max_length = 255;
         m_ColFmt[n].data_type = s_RetGetDataType(m_Cmd, n + 1);
         const char* s = dbretname(m_Cmd, n + 1);
@@ -885,7 +896,7 @@ size_t CTDS_ParamResult::ReadItem(void* buffer, size_t buffer_size,
     BYTE* d_ptr = dbretdata(m_Cmd, m_CurrItem + 1);
     DBINT d_len = dbretlen (m_Cmd, m_CurrItem + 1);
 
-    if (d_ptr == 0 || d_len < 1) { // NULL value
+    if (d_ptr == 0  ||  d_len < 1) { // NULL value
         ++m_CurrItem;
         m_Offset = 0;
         if (is_null)
@@ -972,11 +983,12 @@ static CDB_Object* s_AltGetItem(DBPROCESS* cmd, int id, int item_no,
 //
 
 CTDS_ComputeResult::CTDS_ComputeResult(DBPROCESS* cmd,
-                                       unsigned int* res_stat) :
-    CTDS_RowResult(cmd, res_stat, false)
+                                       unsigned int* res_stat)
+    : CTDS_RowResult(cmd, res_stat, false)
 {
-    throw CDB_ClientEx(eDB_Error, 270000, "CDBL_ComputeResult::CDBL_ComputeResult", 
-		    "The compute results do not implemented in Free TDS");
+    throw CDB_ClientEx(eDB_Error, 270000,
+                       "CDBL_ComputeResult::CDBL_ComputeResult",
+                       "The compute results do not implemented in Free TDS");
 }
 
 
@@ -988,7 +1000,7 @@ EDB_ResType CTDS_ComputeResult::ResultType() const
 
 bool CTDS_ComputeResult::Fetch()
 {
-    return false; // do not implemented in free tds
+    return false; // do not implemented in Free TDS
 }
 
 
@@ -1000,14 +1012,14 @@ int CTDS_ComputeResult::CurrentItemNo() const
 
 CDB_Object* CTDS_ComputeResult::GetItem(CDB_Object* /*item_buff*/)
 {
-    return 0; // not implemented in free tds
+    return 0; // not implemented in Free TDS
 }
 
 
 size_t CTDS_ComputeResult::ReadItem(void* /*buffer*/, size_t /*buffer_size*/,
                                     bool* /*is_null*/)
 {
-    return 0; // not implemented in free tds
+    return 0; // not implemented in Free TDS
 }
 
 
@@ -1019,6 +1031,7 @@ I_ITDescriptor* CTDS_ComputeResult::GetImageOrTextDescriptor()
 
 CTDS_ComputeResult::~CTDS_ComputeResult()
 {
+    return;
 }
 
 
@@ -1134,6 +1147,7 @@ bool CTDS_StatusResult::SkipItem()
 
 CTDS_StatusResult::~CTDS_StatusResult()
 {
+    return;
 }
 
 
@@ -1143,19 +1157,19 @@ CTDS_StatusResult::~CTDS_StatusResult()
 //  CTL_CursorResult::
 //
 
-CTDS_CursorResult::CTDS_CursorResult(CDB_LangCmd* cmd) :
-    m_Cmd(cmd), m_Res(0)
+CTDS_CursorResult::CTDS_CursorResult(CDB_LangCmd* cmd)
+    : m_Cmd(cmd), m_Res(0)
 {
     try {
         m_Cmd->Send();
         while (m_Cmd->HasMoreResults()) {
             m_Res = m_Cmd->Result();
-            if (m_Res && m_Res->ResultType() == eDB_RowResult) {
+            if (m_Res  &&  m_Res->ResultType() == eDB_RowResult) {
                 return;
             }
             if (m_Res) {
                 while (m_Res->Fetch())
-                    ;
+                    continue;
                 delete m_Res;
                 m_Res = 0;
             }
@@ -1186,7 +1200,7 @@ const char* CTDS_CursorResult::ItemName(unsigned int item_num) const
 }
 
 
-unsigned int CTDS_CursorResult::ItemMaxSize(unsigned int item_num) const
+size_t CTDS_CursorResult::ItemMaxSize(unsigned int item_num) const
 {
     return m_Res ? m_Res->ItemMaxSize(item_num) : 0;
 }
@@ -1202,25 +1216,30 @@ bool CTDS_CursorResult::Fetch()
 {
     if (!m_Res)
         return false;
+
     try {
-	if(m_Res->Fetch()) return true;
+        if (m_Res->Fetch())
+            return true;
     }
     catch (CDB_ClientEx& ex) {
-	if(ex.ErrCode() == 200003) m_Res= 0;
-	else {
-	    throw CDB_ClientEx(eDB_Error, 222011, "CDBL_CursorResult::Fetch", "Failed to fetch the results");
-	}
+        if (ex.ErrCode() == 200003) {
+            m_Res = 0;
+        } else {
+            throw CDB_ClientEx(eDB_Error, 222011, "CDBL_CursorResult::Fetch",
+                               "Failed to fetch the results");
+        }
     }
 
     // try to get next cursor result
     try {
         // finish this command
-        if(m_Res) delete m_Res;
+        if (m_Res)
+            delete m_Res;
         while (m_Cmd->HasMoreResults()) {
             m_Res = m_Cmd->Result();
             if (m_Res) {
                 while (m_Res->Fetch())
-                    ;
+                    continue;
                 delete m_Res;
                 m_Res = 0;
             }
@@ -1229,12 +1248,12 @@ bool CTDS_CursorResult::Fetch()
         m_Cmd->Send();
         while (m_Cmd->HasMoreResults()) {
             m_Res = m_Cmd->Result();
-            if (m_Res && m_Res->ResultType() == eDB_RowResult) {
+            if (m_Res  &&  m_Res->ResultType() == eDB_RowResult) {
                 return m_Res->Fetch();
             }
             if (m_Res) {
                 while (m_Res->Fetch())
-                    ;
+                    continue;
                 delete m_Res;
                 m_Res = 0;
             }
@@ -1285,8 +1304,7 @@ bool CTDS_CursorResult::SkipItem()
 
 CTDS_CursorResult::~CTDS_CursorResult()
 {
-    if (m_Res)
-        delete m_Res;
+    delete m_Res;
 }
 
 
@@ -1299,7 +1317,7 @@ CTDS_CursorResult::~CTDS_CursorResult()
 CTDS_ITDescriptor::CTDS_ITDescriptor(DBPROCESS* dblink, int col_num)
 {
 
-    m_ObjName= dbcolsource(dblink, col_num);
+    m_ObjName = dbcolsource(dblink, col_num);
     DBBINARY* p = dbtxptr(dblink, col_num);
     if (p) {
         memcpy(m_TxtPtr, p, DBTXPLEN);
@@ -1315,12 +1333,14 @@ CTDS_ITDescriptor::CTDS_ITDescriptor(DBPROCESS* dblink, int col_num)
         m_TimeStamp_is_NULL = true;
 }
 
-CTDS_ITDescriptor::CTDS_ITDescriptor(DBPROCESS* dblink, const CDB_ITDescriptor& inp_d)
+
+CTDS_ITDescriptor::CTDS_ITDescriptor(DBPROCESS* dblink,
+                                     const CDB_ITDescriptor& inp_d)
 {
-    m_ObjName= inp_d.TableName();
-    m_ObjName+= ".";
-    m_ObjName+= inp_d.ColumnName();
-    
+    m_ObjName = inp_d.TableName();
+    m_ObjName += ".";
+    m_ObjName += inp_d.ColumnName();
+
 
     DBBINARY* p = dbtxptr(dblink, 1);
     if (p) {
@@ -1337,13 +1357,16 @@ CTDS_ITDescriptor::CTDS_ITDescriptor(DBPROCESS* dblink, const CDB_ITDescriptor& 
         m_TimeStamp_is_NULL = true;
 }
 
+
 int CTDS_ITDescriptor::DescriptorType() const
 {
     return CTDS_ITDESCRIPTOR_TYPE_MAGNUM;
 }
 
+
 CTDS_ITDescriptor::~CTDS_ITDescriptor()
 {
+    return;
 }
 
 
@@ -1354,6 +1377,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/06/08 06:18:43  vakatov
+ * Ran through 64-bit compilation (tests were successful on Solaris/Forte6u2).
+ * Fixed a return type in CTDS_CursorResult::ItemMaxSize, eliminated a couple
+ * of warnings. Formally formatted the code to fit the C++ Toolkit style.
+ *
  * Revision 1.5  2002/05/29 22:04:29  soussov
  * Makes BlobResult read ahead
  *
