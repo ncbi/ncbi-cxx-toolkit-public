@@ -225,10 +225,7 @@ SYBASE_LIBS    = @SYBASE_LIBS@
 SYBASE_DLLS    = @SYBASE_DLLS@
 SYBASE_DBLIBS  = @SYBASE_DBLIBS@
 
-# FreeTDS -- protocol v7, v8, default
-FTDS7_LIBS    = @FTDS7_LIBS@
-FTDS7_INCLUDE = @FTDS7_INCLUDE@
-
+# FreeTDS -- protocol v8, default (v7 was obsolete and has been removed)
 FTDS8_LIBS    = @FTDS8_LIBS@
 FTDS8_INCLUDE = @FTDS8_INCLUDE@
 

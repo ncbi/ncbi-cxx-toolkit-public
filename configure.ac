@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.185 2003/04/29 19:47:42 ucko Exp $
+#  $Id: configure.ac,v 1.186 2003/05/01 19:02:03 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2105,23 +2105,14 @@ if test "$with_ftds" != "no" ; then
    if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
       with_ftds=8
    fi
-   if test "$with_ftds" = 7 -o "$with_ftds" = 8 ; then
-      FTDS7_LOCAL_PATH="dbapi/driver/ftds/freetds"
-      if test -f ${srcdir}/src/$FTDS7_LOCAL_PATH/Makefile.in ; then
-         FTDS7_LIBS="-lsybdb_ftds7-static -ltds_ftds7-static"
-         FTDS7_PATH="<$FTDS7_LOCAL_PATH>"
-         FTDS7_INCLUDE="-I\$(includedir)/$FTDS7_LOCAL_PATH -I\$(includedir0)/$FTDS7_LOCAL_PATH"
-      fi
+   if test "$with_ftds" = 8 ; then
       FTDS8_LOCAL_PATH="dbapi/driver/ftds8/freetds"
       if test -f ${srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
          FTDS8_LIBS="-lsybdb_ftds-static -ltds_ftds-static"
          FTDS8_PATH="<$FTDS8_LOCAL_PATH>"
          FTDS8_INCLUDE="-I\$(includedir)/$FTDS8_LOCAL_PATH -I\$(includedir0)/$FTDS8_LOCAL_PATH"
       fi
-      case "$with_ftds" in
-      7) test -n "$FTDS7_PATH" && FTDS_PATH=$FTDS7_PATH && freetds="freetds" ;;
-      8) test -n "$FTDS8_PATH" && FTDS_PATH=$FTDS8_PATH && freetds="freetds" ;;
-      esac
+      test -n "$FTDS8_PATH" && FTDS_PATH=$FTDS8_PATH && freetds="freetds"
    else
       FTDS_PATH="$with_ftds"
    fi
@@ -2154,8 +2145,6 @@ if test "$with_ftds" != "no" ; then
       if test "$ncbi_cv_lib_freetds" = "no"; then
          with_ftds=no
       else
-         FTDS7_INCLUDE=$FTDS_INCLUDE
-         FTDS7_LIBS=$FTDS_LIBS
          FTDS8_INCLUDE=$FTDS_INCLUDE
          FTDS8_LIBS=$FTDS_LIBS
       fi
@@ -2165,8 +2154,6 @@ if test "$with_ftds" = "no" ; then
    FTDS_PATH=
    FTDS_INCLUDE=
    FTDS_LIBS=
-   FTDS7_INCLUDE=
-   FTDS7_LIBS=
    FTDS8_INCLUDE=
    FTDS8_LIBS=
    freetds=
@@ -2176,8 +2163,6 @@ else
              [Define to 1 if FreeTDS libraries are available.])
    WithPackages="$WithPackages FreeTDS"
 fi
-AC_SUBST(FTDS7_INCLUDE)
-AC_SUBST(FTDS7_LIBS)
 AC_SUBST(FTDS8_INCLUDE)
 AC_SUBST(FTDS8_LIBS)
 AC_SUBST(FTDS_INCLUDE)
