@@ -41,6 +41,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
+#include <corelib/ncbiutil.hpp>
 #include <util/format_guess.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -56,7 +57,10 @@
 #include <objects/seq/seqport_util.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_loc_mix.hpp>
+#include <objects/seqloc/Seq_point.hpp>
 
 // generated classes
 
@@ -193,9 +197,7 @@ SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
 
 static void s_FixSeqData(CBioseq* seq)
 {
-    if (seq == 0) {
-        return;
-    }
+    _ASSERT(seq);
     CSeq_inst& inst = seq->SetInst();
     switch (inst.GetRepr()) {
     case CSeq_inst::eRepr_delta:
@@ -342,12 +344,16 @@ static void s_GuessMol(CSeq_inst::EMol& mol, const string& data,
 }
 
 
-CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
+CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
+                           CSeq_loc* lowercase)
 {
     CRef<CSeq_entry>       entry(new CSeq_entry);
     CBioseq_set::TSeq_set& sset  = entry->SetSet().SetSeq_set();
     CRef<CBioseq>          seq(0); // current Bioseq
     string                 line;
+    TSeqPos                pos, lc_start;
+    bool                   was_lc;
+    CRef<CSeq_id>          best_id;
 
     while ( !in.eof() ) {
         if ((flags & fReadFasta_OneSeq)  &&  seq.NotEmpty()
@@ -360,7 +366,12 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
         }
         if (line[0] == '>') {
             // new sequence
-            s_FixSeqData(seq);
+            if (seq) {
+                s_FixSeqData(seq);
+                if (lowercase  &&  was_lc) {
+                    lowercase->SetMix().AddInterval(*best_id, lc_start, pos);
+                }
+            }
             seq = new CBioseq;
             if (flags & fReadFasta_NoSeqData) {
                 seq->SetInst().SetRepr(CSeq_inst::eRepr_not_set);
@@ -391,6 +402,14 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
                 desc->SetTitle(title);
                 seq->SetDescr().Set().push_back(desc);
             }
+
+            if (lowercase) {
+                pos     = 0;
+                was_lc  = false;
+                best_id = FindBestChoice(seq->GetId(), CSeq_id::Score);
+            }
+        } else if (line[0] == '#'  ||  line[0] == '!') {
+            continue; // comment
         } else if (!(flags & fReadFasta_NoSeqData)) {
             // actual data; may contain embedded junk
             CSeq_inst& inst = seq->SetInst();
@@ -398,6 +417,17 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
             for (SIZE_TYPE i = 0;  i < line.size();  ++i) {
                 char c = line[i];
                 if (isalpha(c)) {
+                    if (lowercase) {
+                        bool is_lc = islower(c);
+                        if (is_lc && !was_lc) {
+                            lc_start = pos;
+                        } else if (was_lc && !is_lc) {
+                            lowercase->SetMix().AddInterval
+                                (*best_id, lc_start, pos);
+                        }
+                        was_lc = is_lc;
+                        ++pos;
+                    }
                     residues += (char)toupper(c);
                 } else if (c == '-'  &&  (flags & fReadFasta_ParseGaps)) {
                     CDelta_ext::Tdata& d = inst.SetExt().SetDelta().Set();
@@ -426,6 +456,8 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
                         gap->SetLoc().SetNull();
                         d.push_back(gap);
                     }}
+                } else if (c == ';') {
+                    continue; // skip rest of line
                 }
             }
 
@@ -453,7 +485,12 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
         }
     }
 
-    s_FixSeqData(seq);
+    if (seq) {
+        s_FixSeqData(seq);
+        if (lowercase && was_lc) {
+            lowercase->SetMix().AddInterval(*best_id, lc_start, pos);
+        }
+    }
     // simplify if possible
     if (sset.size() == 1) {
         entry->SetSeq(*seq);
@@ -515,6 +552,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.24  2003/05/23 20:27:50  ucko
+ * Enhance ReadFasta: recognize various types of comment, and optionally
+ * report lowercase characters' location.
+ *
  * Revision 6.23  2003/05/15 18:50:41  kuznets
  * Implemented ReadFastaFileMap function. Function reads multientry FASTA
  * file filling SFastaFileMap structure(seq_id, sequence offset, description)
