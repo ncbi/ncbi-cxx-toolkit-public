@@ -2,72 +2,36 @@
 #define CORELIB___NCBISTR__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Eugene Vasilchenko, Denis Vakatov
-*
-* File Description:
-*   The NCBI C++ standard methods for dealing with std::string
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2001/08/30 17:03:59  thiessen
-* remove class name from NStr member function declaration
-*
-* Revision 1.7  2001/08/30 00:39:29  vakatov
-* + NStr::StringToNumeric()
-* Moved all of "ncbistr.inl" code to here.
-* NStr::BoolToString() to return "const string&" rather than "string".
-* Also, well-groomed the code.
-*
-* Revision 1.6  2001/05/21 21:46:17  vakatov
-* SIZE_TYPE, NPOS -- moved from <ncbistl.hpp> to <ncbistr.hpp> and
-* made non-macros (to avoid possible name clashes)
-*
-* Revision 1.5  2001/05/17 14:54:18  lavr
-* Typos corrected
-*
-* Revision 1.4  2001/04/12 21:44:34  vakatov
-* Added dummy and private NStr::ToUpper/Lower(const char*) to prohibit
-* passing of constant C strings to the "regular" NStr::ToUpper/Lower()
-* variants.
-*
-* Revision 1.3  2001/03/16 19:38:55  grichenk
-* Added NStr::Split()
-*
-* Revision 1.2  2000/12/28 16:57:41  golikov
-* add string version of case an nocase cmp
-*
-* Revision 1.1  2000/12/15 15:36:30  vasilche
-* Added header corelib/ncbistr.hpp for all string utility functions.
-* Optimized string utility functions.
-* Added assignment operator to CRef<> and CConstRef<>.
-* Add Upcase() and Locase() methods for automatic conversion.
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Eugene Vasilchenko, Denis Vakatov
+ * 
+ * File Description:
+ *   The NCBI C++ standard methods for dealing with std::string
+ *
+ */
 
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistl.hpp>
@@ -171,6 +135,12 @@ public:
                        ECase use_case = eCase);
     static int Compare(const string& s1, const string& s2,
                        ECase use_case = eCase);
+
+    // Standart C-style string comparison
+    static int strcmp(const char* s1, const char* s2);
+    static int strncmp(const char* s1, const char* s2, size_t n);
+    static int strcasecmp(const char* s1, const char* s2);
+    static int strncasecmp(const char* s1, const char* s2, size_t n);
 
     /// The following 4 methods change the passed string, then return it
     static string& ToLower(string& str);
@@ -307,6 +277,69 @@ const string& CNcbiEmptyString::Get(void)
 //  NStr::
 //
 
+//!!!!!!!!!!!!!!!!!
+    #define HAVE_STRCASECMP 1
+
+inline
+int NStr::strcmp(const char* s1, const char* s2)
+{
+    return ::strcmp(s1, s2);
+}
+
+inline
+int NStr::strncmp(const char* s1, const char* s2, size_t n)
+{
+    return ::strncmp(s1, s2, n);
+}
+
+inline
+int NStr::strcasecmp(const char* s1, const char* s2)
+{
+#if defined(NCBI_OS_MSWIN)
+    return ::stricmp(s1, s2);
+#else
+#  if defined(HAVE_STRCASECMP)
+    return ::strcasecmp(s1, s2);
+#  else
+    int diff = 0;
+    for ( ;; ++s1, ++s2) {
+        char c1 = *s1;
+        // calculate difference
+        diff = toupper(c1) - toupper(*s2);
+        // if end of string or different
+        if (!c1  ||  diff)
+            break; // return difference
+    }
+    return diff;
+#  endif
+#endif
+}
+
+inline
+int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
+{
+#if defined(NCBI_OS_MSWIN)
+    return ::strnicmp(s1, s2, n);
+#else
+#  if defined(HAVE_STRCASECMP)
+    return ::strncasecmp(s1, s2, n);
+#  else
+    int diff = 0;
+    for ( ; ; ++s1, ++s2, --n) {
+        char c1 = *s1;
+        // calculate difference
+        diff = toupper(c1) - toupper(*s2);
+        // if end of string or different
+        if (!c1  ||  diff)
+            break; // return difference
+        if (n == 0)
+           return 0;
+    }
+    return diff;
+#  endif
+#endif
+}
+
 inline
 int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                   const char* pattern, ECase use_case)
@@ -324,6 +357,18 @@ int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 inline
+int NStr::CompareCase(const char* s1, const char* s2)
+{
+    return NStr::strcmp(s1, s2);
+}
+
+inline
+int NStr::CompareNocase(const char* s1, const char* s2)
+{
+    return NStr::strcasecmp(s1, s2);
+}
+
+inline
 int NStr::Compare(const char* s1, const char* s2, ECase use_case)
 {
     return use_case == eCase? CompareCase(s1, s2): CompareNocase(s1, s2);
@@ -332,19 +377,19 @@ int NStr::Compare(const char* s1, const char* s2, ECase use_case)
 inline
 int NStr::Compare(const string& s1, const char* s2, ECase use_case)
 {
-    return Compare(s1, 0, NPOS, s2, use_case);
+    return Compare(s1.c_str(), s2, use_case);
 }
 
 inline
 int NStr::Compare(const char* s1, const string& s2, ECase use_case)
 {
-    return Compare(s2, 0, NPOS, s1, use_case);
+    return Compare(s1, s2.c_str(), use_case);
 }
 
 inline
 int NStr::Compare(const string& s1, const string& s2, ECase use_case)
 {
-    return Compare(s1, 0, NPOS, s2, use_case);
+    return Compare(s1.c_str(), s2.c_str(), use_case);
 }
 
 inline
@@ -435,5 +480,49 @@ bool PNocase::operator()(const string& s1, const string& s2) const
 
 
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.9  2002/02/22 17:50:22  ivanov
+ * Added compatible compare functions strcmp, strncmp, strcasecmp, strncasecmp.
+ * Was speed-up some Compare..() functions.
+ *
+ * Revision 1.8  2001/08/30 17:03:59  thiessen
+ * remove class name from NStr member function declaration
+ *
+ * Revision 1.7  2001/08/30 00:39:29  vakatov
+ * + NStr::StringToNumeric()
+ * Moved all of "ncbistr.inl" code to here.
+ * NStr::BoolToString() to return "const string&" rather than "string".
+ * Also, well-groomed the code.
+ *
+ * Revision 1.6  2001/05/21 21:46:17  vakatov
+ * SIZE_TYPE, NPOS -- moved from <ncbistl.hpp> to <ncbistr.hpp> and
+ * made non-macros (to avoid possible name clashes)
+ *
+ * Revision 1.5  2001/05/17 14:54:18  lavr
+ * Typos corrected
+ *
+ * Revision 1.4  2001/04/12 21:44:34  vakatov
+ * Added dummy and private NStr::ToUpper/Lower(const char*) to prohibit
+ * passing of constant C strings to the "regular" NStr::ToUpper/Lower()
+ * variants.
+ *
+ * Revision 1.3  2001/03/16 19:38:55  grichenk
+ * Added NStr::Split()
+ *
+ * Revision 1.2  2000/12/28 16:57:41  golikov
+ * add string version of case an nocase cmp
+ *
+ * Revision 1.1  2000/12/15 15:36:30  vasilche
+ * Added header corelib/ncbistr.hpp for all string utility functions.
+ * Optimized string utility functions.
+ * Added assignment operator to CRef<> and CConstRef<>.
+ * Add Upcase() and Locase() methods for automatic conversion.
+ *
+ * ===========================================================================
+ */
 
 #endif  /* CORELIB___NCBISTR__HPP */

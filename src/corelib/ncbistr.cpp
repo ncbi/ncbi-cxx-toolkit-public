@@ -1,191 +1,34 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Eugene Vasilchenko, Denis Vakatov
-*
-* File Description:
-*   Some helper functions
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.45  2001/08/30 00:36:45  vakatov
-* + NStr::StringToNumeric()
-* Also, well-groomed the code and get rid of some compilation warnings.
-*
-* Revision 1.44  2001/05/30 15:56:25  vakatov
-* NStr::CompareNocase, NStr::CompareCase -- get rid of the possible
-* compilation warning (ICC compiler:  "return statement missing").
-*
-* Revision 1.43  2001/05/17 15:04:59  lavr
-* Typos corrected
-*
-* Revision 1.42  2001/04/12 21:39:44  vakatov
-* NStr::Replace() -- check against source and dest. strings being the same
-*
-* Revision 1.41  2001/04/11 20:15:29  vakatov
-* NStr::PrintableString() -- cast "char" to "unsigned char".
-*
-* Revision 1.40  2001/03/16 19:38:35  grichenk
-* Added NStr::Split()
-*
-* Revision 1.39  2001/01/03 17:45:35  vakatov
-* + <ncbi_limits.h>
-*
-* Revision 1.38  2000/12/15 15:36:41  vasilche
-* Added header corelib/ncbistr.hpp for all string utility functions.
-* Optimized string utility functions.
-* Added assignment operator to CRef<> and CConstRef<>.
-* Add Upcase() and Locase() methods for automatic conversion.
-*
-* Revision 1.37  2000/12/12 14:20:36  vasilche
-* Added operator bool to CArgValue.
-* Various NStr::Compare() methods made faster.
-* Added class Upcase for printing strings to ostream with automatic conversion.
-*
-* Revision 1.36  2000/12/11 20:42:50  vakatov
-* + NStr::PrintableString()
-*
-* Revision 1.35  2000/11/16 23:52:41  vakatov
-* Porting to Mac...
-*
-* Revision 1.34  2000/11/07 04:06:08  vakatov
-* kEmptyCStr (equiv. to NcbiEmptyCStr)
-*
-* Revision 1.33  2000/10/11 21:03:49  vakatov
-* Cleanup to avoid 64-bit to 32-bit values truncation, etc.
-* (reported by Forte6 Patch 109490-01)
-*
-* Revision 1.32  2000/08/03 20:21:29  golikov
-* Added predicate PCase for AStrEquiv
-* PNocase, PCase goes through NStr::Compare now
-*
-* Revision 1.31  2000/07/19 19:03:55  vakatov
-* StringToBool() -- short and case-insensitive versions of "true"/"false"
-* ToUpper/ToLower(string&) -- fixed
-*
-* Revision 1.30  2000/06/01 19:05:40  vasilche
-* NStr::StringToInt now reports errors for tailing symbols in release version too
-*
-* Revision 1.29  2000/05/01 19:02:25  vasilche
-* Force argument in NStr::StringToInt() etc to be full number.
-* This check will be in DEBUG version for month.
-*
-* Revision 1.28  2000/04/19 18:36:04  vakatov
-* Fixed for non-zero "pos" in s_Compare()
-*
-* Revision 1.27  2000/04/17 04:15:08  vakatov
-* NStr::  extended Compare(), and allow case-insensitive string comparison
-* NStr::  added ToLower() and ToUpper()
-*
-* Revision 1.26  2000/04/04 22:28:09  vakatov
-* NStr::  added conversions for "long"
-*
-* Revision 1.25  2000/02/01 16:48:09  vakatov
-* CNcbiEmptyString::  more dancing around the Sun "feature" (see also R1.24)
-*
-* Revision 1.24  2000/01/20 16:24:42  vakatov
-* Kludging around the "NcbiEmptyString" to ensure its initialization when
-* it is used by the constructor of a statically allocated object
-* (I believe that it is actually just another Sun WorkShop compiler "feature")
-*
-* Revision 1.23  1999/12/28 18:55:43  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.22  1999/12/17 19:04:09  vasilche
-* NcbiEmptyString made extern.
-*
-* Revision 1.21  1999/11/26 19:29:09  golikov
-* fix
-*
-* Revision 1.20  1999/11/26 18:45:17  golikov
-* NStr::Replace added
-*
-* Revision 1.19  1999/11/17 22:05:04  vakatov
-* [!HAVE_STRDUP]  Emulate "strdup()" -- it's missing on some platforms
-*
-* Revision 1.18  1999/10/13 16:30:30  vasilche
-* Fixed bug in PNocase which appears under GCC implementation of STL.
-*
-* Revision 1.17  1999/07/08 16:10:14  vakatov
-* Fixed a warning in NStr::StringToUInt()
-*
-* Revision 1.16  1999/07/06 15:21:06  vakatov
-* + NStr::TruncateSpaces(const string& str, ETrunc where=eTrunc_Both)
-*
-* Revision 1.15  1999/06/15 20:50:05  vakatov
-* NStr::  +BoolToString, +StringToBool
-*
-* Revision 1.14  1999/05/27 15:21:40  vakatov
-* Fixed all StringToXXX() functions
-*
-* Revision 1.13  1999/05/17 20:10:36  vasilche
-* Fixed bug in NStr::StringToUInt which cause an exception.
-*
-* Revision 1.12  1999/05/04 00:03:13  vakatov
-* Removed the redundant severity arg from macro ERR_POST()
-*
-* Revision 1.11  1999/04/22 14:19:04  vasilche
-* Added _TRACE_THROW() macro, which can be configured to produce coredump
-* at a point of throwing an exception.
-*
-* Revision 1.10  1999/04/14 21:20:33  vakatov
-* Dont use "snprintf()" as it is not quite portable yet
-*
-* Revision 1.9  1999/04/14 19:57:36  vakatov
-* Use limits from <ncbitype.h> rather than from <limits>.
-* [MSVC++]  fix for "snprintf()" in <ncbistd.hpp>.
-*
-* Revision 1.8  1999/04/09 19:51:37  sandomir
-* minor changes in NStr::StringToXXX - base added
-*
-* Revision 1.7  1999/01/21 16:18:04  sandomir
-* minor changes due to NStr namespace to contain string utility functions
-*
-* Revision 1.6  1999/01/11 22:05:50  vasilche
-* Fixed CHTML_font size.
-* Added CHTML_image input element.
-*
-* Revision 1.5  1998/12/28 17:56:39  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.4  1998/12/21 17:19:37  sandomir
-* VC++ fixes in ncbistd; minor fixes in Resource
-*
-* Revision 1.3  1998/12/17 21:50:45  sandomir
-* CNCBINode fixed in Resource; case insensitive string comparison predicate added
-*
-* Revision 1.2  1998/12/15 17:36:33  vasilche
-* Fixed "double colon" bug in multithreaded version of headers.
-*
-* Revision 1.1  1998/12/15 15:43:22  vasilche
-* Added utilities to convert string <> int.
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *   Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Eugene Vasilchenko, Denis Vakatov
+ *
+ * File Description:
+ *   Some helper functions
+ *
+ */
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
@@ -199,7 +42,6 @@ BEGIN_NCBI_SCOPE
 
 
 const char *const kEmptyCStr = "";
-
 
 const string* CNcbiEmptyString::m_Str = 0;
 const string& CNcbiEmptyString::FirstGet(void) {
@@ -234,6 +76,7 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     
     return *s - *pattern;
 }
+
 
 int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                         const char* pattern)
@@ -295,6 +138,7 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     return *s - *p;
 }
 
+
 int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                         const string& pattern)
 {
@@ -329,37 +173,6 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 
-int NStr::CompareCase(const char* s1, const char* s2)
-{
-    int diff;
-    for ( ;; ++s1, ++s2) {
-        char c1 = *s1;
-        // calculate difference
-        diff = c1 - *s2;
-        // if end of string or different
-        if (!c1  ||  diff)
-            break; // return difference
-    }
-    return diff;
-}
-
-
-int NStr::CompareNocase(const char* s1, const char* s2)
-{
-    int diff;
-    for ( ;; ++s1, ++s2) {
-        // get next chars
-        char c1 = *s1;
-        // calculate difference
-        diff = toupper(c1) - toupper(*s2);
-        // end of string or different
-        if (!c1  ||  diff)
-            break;
-    }
-    return diff;
-}
-
-
 char* NStr::ToLower(char* str)
 {
     char* s;
@@ -368,6 +181,7 @@ char* NStr::ToLower(char* str)
     }
     return s;
 }
+
 
 string& NStr::ToLower(string& str)
 {
@@ -386,6 +200,7 @@ char* NStr::ToUpper(char* str)
     }
     return s;
 }
+
 
 string& NStr::ToUpper(string& str)
 {
@@ -430,6 +245,7 @@ int NStr::StringToInt(const string& str, int base /* = 10 */ )
     return (int) value;
 }
 
+
 unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
 {
     errno = 0;
@@ -453,6 +269,7 @@ long NStr::StringToLong(const string& str, int base /* = 10 */ )
     return value;
 }
 
+
 unsigned long NStr::StringToULong(const string& str, int base /* = 10 */ )
 {
     errno = 0;
@@ -463,6 +280,7 @@ unsigned long NStr::StringToULong(const string& str, int base /* = 10 */ )
     CHECK_ENDPTR();
     return value;
 }
+
 
 double NStr::StringToDouble(const string& str)
 {
@@ -477,12 +295,14 @@ double NStr::StringToDouble(const string& str)
     return value;
 }
 
+
 string NStr::IntToString(long value, bool sign /* = false */ )
 {
     char buffer[64];
     ::sprintf(buffer, sign ? "%+ld": "%ld", value);
     return buffer;
 }
+
 
 string NStr::UIntToString(unsigned long value)
 {
@@ -491,6 +311,7 @@ string NStr::UIntToString(unsigned long value)
     return buffer;
 }
 
+
 string NStr::DoubleToString(double value)
 {
     char buffer[64];
@@ -498,12 +319,14 @@ string NStr::DoubleToString(double value)
     return buffer;
 }
 
+
 string NStr::PtrToString(const void* value)
 {
     char buffer[64];
     ::sprintf(buffer, "%p", value);
     return buffer;
 }
+
 
 static const string s_kTrueString  = "true";
 static const string s_kFalseString = "false";
@@ -514,6 +337,7 @@ const string& NStr::BoolToString(bool value)
 {
     return value ? s_kTrueString : s_kFalseString;
 }
+
 
 bool NStr::StringToBool(const string& str)
 {
@@ -625,6 +449,7 @@ string NStr::PrintableString(const string& str)
     return s;
 }
 
+
 #if !defined(HAVE_STRDUP)
 extern char* strdup(const char* str)
 {
@@ -639,3 +464,169 @@ extern char* strdup(const char* str)
 
 
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.46  2002/02/22 17:50:52  ivanov
+ * Added compatible compare functions strcmp, strncmp, strcasecmp, strncasecmp.
+ * Was speed-up some Compare..() functions.
+ *
+ * Revision 1.45  2001/08/30 00:36:45  vakatov
+ * + NStr::StringToNumeric()
+ * Also, well-groomed the code and get rid of some compilation warnings.
+ *
+ * Revision 1.44  2001/05/30 15:56:25  vakatov
+ * NStr::CompareNocase, NStr::CompareCase -- get rid of the possible
+ * compilation warning (ICC compiler:  "return statement missing").
+ *
+ * Revision 1.43  2001/05/17 15:04:59  lavr
+ * Typos corrected
+ *
+ * Revision 1.42  2001/04/12 21:39:44  vakatov
+ * NStr::Replace() -- check against source and dest. strings being the same
+ *
+ * Revision 1.41  2001/04/11 20:15:29  vakatov
+ * NStr::PrintableString() -- cast "char" to "unsigned char".
+ *
+ * Revision 1.40  2001/03/16 19:38:35  grichenk
+ * Added NStr::Split()
+ *
+ * Revision 1.39  2001/01/03 17:45:35  vakatov
+ * + <ncbi_limits.h>
+ *
+ * Revision 1.38  2000/12/15 15:36:41  vasilche
+ * Added header corelib/ncbistr.hpp for all string utility functions.
+ * Optimized string utility functions.
+ * Added assignment operator to CRef<> and CConstRef<>.
+ * Add Upcase() and Locase() methods for automatic conversion.
+ *
+ * Revision 1.37  2000/12/12 14:20:36  vasilche
+ * Added operator bool to CArgValue.
+ * Various NStr::Compare() methods made faster.
+ * Added class Upcase for printing strings to ostream with automatic conversion
+ *
+ * Revision 1.36  2000/12/11 20:42:50  vakatov
+ * + NStr::PrintableString()
+ *
+ * Revision 1.35  2000/11/16 23:52:41  vakatov
+ * Porting to Mac...
+ *
+ * Revision 1.34  2000/11/07 04:06:08  vakatov
+ * kEmptyCStr (equiv. to NcbiEmptyCStr)
+ *
+ * Revision 1.33  2000/10/11 21:03:49  vakatov
+ * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
+ * (reported by Forte6 Patch 109490-01)
+ *
+ * Revision 1.32  2000/08/03 20:21:29  golikov
+ * Added predicate PCase for AStrEquiv
+ * PNocase, PCase goes through NStr::Compare now
+ *
+ * Revision 1.31  2000/07/19 19:03:55  vakatov
+ * StringToBool() -- short and case-insensitive versions of "true"/"false"
+ * ToUpper/ToLower(string&) -- fixed
+ *
+ * Revision 1.30  2000/06/01 19:05:40  vasilche
+ * NStr::StringToInt now reports errors for tailing symbols in release version 
+ * too
+ *
+ * Revision 1.29  2000/05/01 19:02:25  vasilche
+ * Force argument in NStr::StringToInt() etc to be full number.
+ * This check will be in DEBUG version for month.
+ *
+ * Revision 1.28  2000/04/19 18:36:04  vakatov
+ * Fixed for non-zero "pos" in s_Compare()
+ *
+ * Revision 1.27  2000/04/17 04:15:08  vakatov
+ * NStr::  extended Compare(), and allow case-insensitive string comparison
+ * NStr::  added ToLower() and ToUpper()
+ *
+ * Revision 1.26  2000/04/04 22:28:09  vakatov
+ * NStr::  added conversions for "long"
+ *
+ * Revision 1.25  2000/02/01 16:48:09  vakatov
+ * CNcbiEmptyString::  more dancing around the Sun "feature" (see also R1.24)
+ *
+ * Revision 1.24  2000/01/20 16:24:42  vakatov
+ * Kludging around the "NcbiEmptyString" to ensure its initialization when
+ * it is used by the constructor of a statically allocated object
+ * (I believe that it is actually just another Sun WorkShop compiler "feature")
+ *
+ * Revision 1.23  1999/12/28 18:55:43  vasilche
+ * Reduced size of compiled object files:
+ * 1. avoid inline or implicit virtual methods (especially destructors).
+ * 2. avoid std::string's methods usage in inline methods.
+ * 3. avoid string literals ("xxx") in inline methods.
+ *
+ * Revision 1.22  1999/12/17 19:04:09  vasilche
+ * NcbiEmptyString made extern.
+ *
+ * Revision 1.21  1999/11/26 19:29:09  golikov
+ * fix
+ *
+ * Revision 1.20  1999/11/26 18:45:17  golikov
+ * NStr::Replace added
+ *
+ * Revision 1.19  1999/11/17 22:05:04  vakatov
+ * [!HAVE_STRDUP]  Emulate "strdup()" -- it's missing on some platforms
+ *
+ * Revision 1.18  1999/10/13 16:30:30  vasilche
+ * Fixed bug in PNocase which appears under GCC implementation of STL.
+ *
+ * Revision 1.17  1999/07/08 16:10:14  vakatov
+ * Fixed a warning in NStr::StringToUInt()
+ *
+ * Revision 1.16  1999/07/06 15:21:06  vakatov
+ * + NStr::TruncateSpaces(const string& str, ETrunc where=eTrunc_Both)
+ *
+ * Revision 1.15  1999/06/15 20:50:05  vakatov
+ * NStr::  +BoolToString, +StringToBool
+ *
+ * Revision 1.14  1999/05/27 15:21:40  vakatov
+ * Fixed all StringToXXX() functions
+ *
+ * Revision 1.13  1999/05/17 20:10:36  vasilche
+ * Fixed bug in NStr::StringToUInt which cause an exception.
+ *
+ * Revision 1.12  1999/05/04 00:03:13  vakatov
+ * Removed the redundant severity arg from macro ERR_POST()
+ *
+ * Revision 1.11  1999/04/22 14:19:04  vasilche
+ * Added _TRACE_THROW() macro, which can be configured to produce coredump
+ * at a point of throwing an exception.
+ *
+ * Revision 1.10  1999/04/14 21:20:33  vakatov
+ * Dont use "snprintf()" as it is not quite portable yet
+ *
+ * Revision 1.9  1999/04/14 19:57:36  vakatov
+ * Use limits from <ncbitype.h> rather than from <limits>.
+ * [MSVC++]  fix for "snprintf()" in <ncbistd.hpp>.
+ *
+ * Revision 1.8  1999/04/09 19:51:37  sandomir
+ * minor changes in NStr::StringToXXX - base added
+ *
+ * Revision 1.7  1999/01/21 16:18:04  sandomir
+ * minor changes due to NStr namespace to contain string utility functions
+ *
+ * Revision 1.6  1999/01/11 22:05:50  vasilche
+ * Fixed CHTML_font size.
+ * Added CHTML_image input element.
+ *
+ * Revision 1.5  1998/12/28 17:56:39  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.4  1998/12/21 17:19:37  sandomir
+ * VC++ fixes in ncbistd; minor fixes in Resource
+ *
+ * Revision 1.3  1998/12/17 21:50:45  sandomir
+ * CNCBINode fixed in Resource; case insensitive string comparison predicate 
+ * added
+ *
+ * Revision 1.2  1998/12/15 17:36:33  vasilche
+ * Fixed "double colon" bug in multithreaded version of headers.
+ *
+ * Revision 1.1  1998/12/15 15:43:22  vasilche
+ * Added utilities to convert string <> int.
+ * ===========================================================================
+ */
