@@ -33,29 +33,6 @@
 * File Description:  DataSource implementation
 *
 *
-* $Log$
-* Revision 1.7  2003/02/10 17:20:15  kholodov
-* Modified: made desctructor non-public
-*
-* Revision 1.6  2002/11/27 17:14:51  kholodov
-* Modified: CToMulitExHandler definition moved to err_handler.hpp.
-*
-* Revision 1.5  2002/09/30 19:16:27  kholodov
-* Added: public GetHandler() method
-*
-* Revision 1.4  2002/09/23 18:35:24  kholodov
-* Added: GetErrorInfo() and GetErrorAsEx() methods.
-*
-* Revision 1.3  2002/09/18 18:49:27  kholodov
-* Modified: class declaration and Action method to reflect
-* direct inheritance of CActiveObject from IEventListener
-*
-* Revision 1.2  2002/04/15 19:11:42  kholodov
-* Changed GetContext() -> GetDriverContext
-*
-* Revision 1.1  2002/01/30 14:51:23  kholodov
-* User DBAPI implementation, first commit
-*
 *
 *
 */
@@ -101,7 +78,7 @@ public:
         return m_poolUsed;
     }
 
-    virtual IConnection* CreateConnection();
+    virtual IConnection* CreateConnection(EOwnership ownership);
 
     // Implement IEventListener interface
     virtual void Action(const CDbapiEvent& e);
@@ -117,5 +94,32 @@ private:
 
 //====================================================================
 END_NCBI_SCOPE
-
+/*
+* $Log$
+* Revision 1.8  2004/07/28 18:36:13  kholodov
+* Added: setting ownership for connection objects
+*
+* Revision 1.7  2003/02/10 17:20:15  kholodov
+* Modified: made desctructor non-public
+*
+* Revision 1.6  2002/11/27 17:14:51  kholodov
+* Modified: CToMulitExHandler definition moved to err_handler.hpp.
+*
+* Revision 1.5  2002/09/30 19:16:27  kholodov
+* Added: public GetHandler() method
+*
+* Revision 1.4  2002/09/23 18:35:24  kholodov
+* Added: GetErrorInfo() and GetErrorAsEx() methods.
+*
+* Revision 1.3  2002/09/18 18:49:27  kholodov
+* Modified: class declaration and Action method to reflect
+* direct inheritance of CActiveObject from IEventListener
+*
+* Revision 1.2  2002/04/15 19:11:42  kholodov
+* Changed GetContext() -> GetDriverContext
+*
+* Revision 1.1  2002/01/30 14:51:23  kholodov
+* User DBAPI implementation, first commit
+*
+*/
 #endif // _ARRAY_HPP_

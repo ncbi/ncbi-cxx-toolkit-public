@@ -30,98 +30,6 @@
 * File Description:   Connection implementation
 *
 *
-* $Log$
-* Revision 1.29  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.28  2004/04/26 14:16:56  kholodov
-* Modified: recreate the command objects each time the Get...() is called
-*
-* Revision 1.27  2004/04/12 14:25:33  kholodov
-* Modified: resultset caching scheme, fixed single connection handling
-*
-* Revision 1.26  2004/04/08 15:56:58  kholodov
-* Multiple bug fixes and optimizations
-*
-* Revision 1.25  2004/03/12 16:27:09  sponomar
-* correct nested querys
-*
-* Revision 1.23  2004/03/08 22:15:19  kholodov
-* Added: 3 new Get...() methods internally
-*
-* Revision 1.22  2004/02/27 14:37:33  kholodov
-* Modified: set collection replaced by list for listeners
-*
-* Revision 1.21  2003/11/18 17:00:01  kholodov
-* Added: CloneConnection() method
-*
-* Revision 1.20  2003/03/07 21:21:15  kholodov
-* Added: IsAlive() method
-*
-* Revision 1.19  2003/01/09 16:10:17  sapojnik
-* CConnection::Connect -- do not attempt SetDbName() if connection failed
-*
-* Revision 1.18  2002/11/27 17:19:49  kholodov
-* Added: Error output redirection to CToMultiExHandler object.
-*
-* Revision 1.17  2002/10/03 18:50:00  kholodov
-* Added: additional TRACE diagnostics about object deletion
-* Fixed: setting parameters in IStatement object is fully supported
-* Added: IStatement::ExecuteLast() to execute the last statement with
-* different parameters if any
-*
-* Revision 1.16  2002/09/30 20:45:34  kholodov
-* Added: ForceSingle() method to enforce single connection used
-*
-* Revision 1.15  2002/09/23 18:25:10  kholodov
-* Added: GetDataSource() method.
-*
-* Revision 1.14  2002/09/18 18:49:27  kholodov
-* Modified: class declaration and Action method to reflect
-* direct inheritance of CActiveObject from IEventListener
-*
-* Revision 1.13  2002/09/16 19:34:40  kholodov
-* Added: bulk insert support
-*
-* Revision 1.12  2002/09/09 20:48:56  kholodov
-* Added: Additional trace output about object life cycle
-* Added: CStatement::Failed() method to check command status
-*
-* Revision 1.11  2002/06/24 19:10:03  kholodov
-* Added more trace diagnostics
-*
-* Revision 1.10  2002/06/24 18:06:49  kholodov
-* Added more detailed diagnostics on connections
-*
-* Revision 1.9  2002/06/21 14:42:31  kholodov
-* Added: reporting connection deletions in debug mode
-*
-* Revision 1.8  2002/05/16 22:11:11  kholodov
-* Improved: using minimum connections possible
-*
-* Revision 1.7  2002/04/15 19:08:55  kholodov
-* Changed GetContext() -> GetDriverContext
-*
-* Revision 1.6  2002/02/08 22:43:10  kholodov
-* Set/GetDataBase() renamed to Set/GetDatabase() respectively
-*
-* Revision 1.5  2002/02/08 21:29:54  kholodov
-* SetDataBase() restored, connection cloning algorithm changed
-*
-* Revision 1.4  2002/02/08 17:47:34  kholodov
-* Removed SetDataBase() method
-*
-* Revision 1.3  2002/02/08 17:38:26  kholodov
-* Moved listener registration to parent objects
-*
-* Revision 1.2  2002/02/06 22:20:09  kholodov
-* Connections are cloned for CallableStatement and Cursor
-*
-* Revision 1.1  2002/01/30 14:51:21  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
 *
 */
 
@@ -141,10 +49,11 @@
 BEGIN_NCBI_SCOPE
 
 // Implementation
-CConnection::CConnection(CDataSource* ds)
+CConnection::CConnection(CDataSource* ds, EOwnership ownership)
     : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false),
       m_modeMask(0), m_forceSingle(false), m_multiExH(0),
-      m_stmt(0), m_cstmt(0), m_cursor(0), m_bulkInsert(0)
+      m_stmt(0), m_cstmt(0), m_cursor(0), m_bulkInsert(0), 
+      m_ownership(ownership)
 {
     _TRACE("Default connection " << (void *)this << " created...");
     SetIdent("CConnection");
@@ -296,9 +205,9 @@ CConnection* CConnection::Clone()
     return conn;
 }
 
-IConnection* CConnection::CloneConnection()
+IConnection* CConnection::CloneConnection(EOwnership ownership)
 {
-    CConnection *conn = new CConnection(m_ds);
+    CConnection *conn = new CConnection(m_ds, ownership);
 
     conn->m_modeMask = this->m_modeMask;
     conn->m_forceSingle = this->m_forceSingle;
@@ -477,7 +386,9 @@ void CConnection::Action(const CDbapiEvent& e)
     else if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(e.GetSource());
         if(dynamic_cast<CDataSource*>(e.GetSource()) != 0 ) {
-            delete this;
+            if( m_ownership == eNoOwnership ) {
+                delete this;
+            }
         }
     }
 }
@@ -552,3 +463,100 @@ void CConnection::DeleteConn(CConnection* conn)
 }
 */
 END_NCBI_SCOPE
+/*
+*
+* $Log$
+* Revision 1.30  2004/07/28 18:36:13  kholodov
+* Added: setting ownership for connection objects
+*
+* Revision 1.29  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.28  2004/04/26 14:16:56  kholodov
+* Modified: recreate the command objects each time the Get...() is called
+*
+* Revision 1.27  2004/04/12 14:25:33  kholodov
+* Modified: resultset caching scheme, fixed single connection handling
+*
+* Revision 1.26  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
+* Revision 1.25  2004/03/12 16:27:09  sponomar
+* correct nested querys
+*
+* Revision 1.23  2004/03/08 22:15:19  kholodov
+* Added: 3 new Get...() methods internally
+*
+* Revision 1.22  2004/02/27 14:37:33  kholodov
+* Modified: set collection replaced by list for listeners
+*
+* Revision 1.21  2003/11/18 17:00:01  kholodov
+* Added: CloneConnection() method
+*
+* Revision 1.20  2003/03/07 21:21:15  kholodov
+* Added: IsAlive() method
+*
+* Revision 1.19  2003/01/09 16:10:17  sapojnik
+* CConnection::Connect -- do not attempt SetDbName() if connection failed
+*
+* Revision 1.18  2002/11/27 17:19:49  kholodov
+* Added: Error output redirection to CToMultiExHandler object.
+*
+* Revision 1.17  2002/10/03 18:50:00  kholodov
+* Added: additional TRACE diagnostics about object deletion
+* Fixed: setting parameters in IStatement object is fully supported
+* Added: IStatement::ExecuteLast() to execute the last statement with
+* different parameters if any
+*
+* Revision 1.16  2002/09/30 20:45:34  kholodov
+* Added: ForceSingle() method to enforce single connection used
+*
+* Revision 1.15  2002/09/23 18:25:10  kholodov
+* Added: GetDataSource() method.
+*
+* Revision 1.14  2002/09/18 18:49:27  kholodov
+* Modified: class declaration and Action method to reflect
+* direct inheritance of CActiveObject from IEventListener
+*
+* Revision 1.13  2002/09/16 19:34:40  kholodov
+* Added: bulk insert support
+*
+* Revision 1.12  2002/09/09 20:48:56  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
+* Revision 1.11  2002/06/24 19:10:03  kholodov
+* Added more trace diagnostics
+*
+* Revision 1.10  2002/06/24 18:06:49  kholodov
+* Added more detailed diagnostics on connections
+*
+* Revision 1.9  2002/06/21 14:42:31  kholodov
+* Added: reporting connection deletions in debug mode
+*
+* Revision 1.8  2002/05/16 22:11:11  kholodov
+* Improved: using minimum connections possible
+*
+* Revision 1.7  2002/04/15 19:08:55  kholodov
+* Changed GetContext() -> GetDriverContext
+*
+* Revision 1.6  2002/02/08 22:43:10  kholodov
+* Set/GetDataBase() renamed to Set/GetDatabase() respectively
+*
+* Revision 1.5  2002/02/08 21:29:54  kholodov
+* SetDataBase() restored, connection cloning algorithm changed
+*
+* Revision 1.4  2002/02/08 17:47:34  kholodov
+* Removed SetDataBase() method
+*
+* Revision 1.3  2002/02/08 17:38:26  kholodov
+* Moved listener registration to parent objects
+*
+* Revision 1.2  2002/02/06 22:20:09  kholodov
+* Connections are cloned for CallableStatement and Cursor
+*
+* Revision 1.1  2002/01/30 14:51:21  kholodov
+* User DBAPI implementation, first commit
+*
+*
+*/

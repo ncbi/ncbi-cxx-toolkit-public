@@ -577,10 +577,11 @@ public:
 			 const string& server,
 			 const string& database = kEmptyStr) = 0;
 
-    /// Clone existing connection. 
-    ///
-    /// All settings are copied except message handlers.
-    virtual IConnection* CloneConnection() = 0;
+    // Clone existing connection. All settings are copied except
+    // message handlers
+    // Set ownership to eTakeOwnership to prevent deleting
+    // connection upon deleting parent object
+    virtual IConnection* CloneConnection(EOwnership ownership = eNoOwnership) = 0;
 
     /// Set current database.
     ///
@@ -680,8 +681,10 @@ protected:
     virtual ~IDataSource();
 
 public:
-    /// Get connection.
-    virtual IConnection* CreateConnection() = 0;
+    // Get connection
+    // Set ownership to eTakeOwnership to prevent deleting
+    // connection upon deleting parent object
+    virtual IConnection* CreateConnection(EOwnership ownership = eNoOwnership) = 0;
 
     /// Set login timeout.
     virtual void SetLoginTimeout(unsigned int i) = 0;
@@ -714,6 +717,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/07/28 18:40:56  kholodov
+ * Added: setting ownership for connection objects
+ *
  * Revision 1.32  2004/07/26 14:41:38  siyan
  * Added doxygen comments.
  *

@@ -119,9 +119,9 @@ I_DriverContext* CDataSource::GetDriverContext() {
     return m_context;
   }
 
-IConnection* CDataSource::CreateConnection()
+IConnection* CDataSource::CreateConnection(EOwnership ownership)
 {
-    CConnection *conn = new CConnection(this);
+    CConnection *conn = new CConnection(this, ownership);
     AddListener(conn);
     conn->AddListener(this);
     return conn;
@@ -145,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/07/28 18:36:13  kholodov
+ * Added: setting ownership for connection objects
+ *
  * Revision 1.13  2004/05/17 21:10:28  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

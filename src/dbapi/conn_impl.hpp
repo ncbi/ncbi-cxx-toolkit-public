@@ -33,55 +33,6 @@
 * File Description:  Connection implementation
 *
 *
-* $Log$
-* Revision 1.15  2004/04/08 15:56:58  kholodov
-* Multiple bug fixes and optimizations
-*
-* Revision 1.14  2004/03/08 22:15:19  kholodov
-* Added: 3 new Get...() methods internally
-*
-* Revision 1.13  2003/11/18 16:59:45  kholodov
-* Added: CloneConnection() method
-*
-* Revision 1.12  2003/05/16 20:17:28  kholodov
-* Modified: default 0 arguments in PrepareCall()
-*
-* Revision 1.11  2003/03/07 21:21:15  kholodov
-* Added: IsAlive() method
-*
-* Revision 1.10  2002/11/27 17:19:49  kholodov
-* Added: Error output redirection to CToMultiExHandler object.
-*
-* Revision 1.9  2002/09/30 20:45:34  kholodov
-* Added: ForceSingle() method to enforce single connection used
-*
-* Revision 1.8  2002/09/23 18:25:10  kholodov
-* Added: GetDataSource() method.
-*
-* Revision 1.7  2002/09/18 18:49:26  kholodov
-* Modified: class declaration and Action method to reflect
-* direct inheritance of CActiveObject from IEventListener
-*
-* Revision 1.6  2002/09/16 19:34:41  kholodov
-* Added: bulk insert support
-*
-* Revision 1.5  2002/05/16 22:11:11  kholodov
-* Improved: using minimum connections possible
-*
-* Revision 1.4  2002/02/08 22:43:11  kholodov
-* Set/GetDataBase() renamed to Set/GetDatabase() respectively
-*
-* Revision 1.3  2002/02/08 21:29:55  kholodov
-* SetDataBase() restored, connection cloning algorithm changed
-*
-* Revision 1.2  2002/02/08 17:47:34  kholodov
-* Removed SetDataBase() method
-*
-* Revision 1.1  2002/01/30 14:51:22  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
 */
 
 #include <dbapi/dbapi.hpp>
@@ -95,7 +46,7 @@ class CConnection : public CActiveObject,
                     public IConnection
 {
 public:
-    CConnection(CDataSource* ds);
+    CConnection(CDataSource* ds, EOwnership ownership);
 
 public:
     virtual ~CConnection();
@@ -113,7 +64,7 @@ public:
                          const string& server,
                          const string& database = kEmptyStr);
 
-    virtual IConnection* CloneConnection();
+    virtual IConnection* CloneConnection(EOwnership ownership);
 
     // New part begin
 
@@ -204,9 +155,64 @@ private:
     class CBulkInsert *m_bulkInsert;
     // New part end
 
+    EOwnership m_ownership;
+
 };
 
 //====================================================================
 END_NCBI_SCOPE
-
+/*
+*
+* $Log$
+* Revision 1.16  2004/07/28 18:36:13  kholodov
+* Added: setting ownership for connection objects
+*
+* Revision 1.15  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
+* Revision 1.14  2004/03/08 22:15:19  kholodov
+* Added: 3 new Get...() methods internally
+*
+* Revision 1.13  2003/11/18 16:59:45  kholodov
+* Added: CloneConnection() method
+*
+* Revision 1.12  2003/05/16 20:17:28  kholodov
+* Modified: default 0 arguments in PrepareCall()
+*
+* Revision 1.11  2003/03/07 21:21:15  kholodov
+* Added: IsAlive() method
+*
+* Revision 1.10  2002/11/27 17:19:49  kholodov
+* Added: Error output redirection to CToMultiExHandler object.
+*
+* Revision 1.9  2002/09/30 20:45:34  kholodov
+* Added: ForceSingle() method to enforce single connection used
+*
+* Revision 1.8  2002/09/23 18:25:10  kholodov
+* Added: GetDataSource() method.
+*
+* Revision 1.7  2002/09/18 18:49:26  kholodov
+* Modified: class declaration and Action method to reflect
+* direct inheritance of CActiveObject from IEventListener
+*
+* Revision 1.6  2002/09/16 19:34:41  kholodov
+* Added: bulk insert support
+*
+* Revision 1.5  2002/05/16 22:11:11  kholodov
+* Improved: using minimum connections possible
+*
+* Revision 1.4  2002/02/08 22:43:11  kholodov
+* Set/GetDataBase() renamed to Set/GetDatabase() respectively
+*
+* Revision 1.3  2002/02/08 21:29:55  kholodov
+* SetDataBase() restored, connection cloning algorithm changed
+*
+* Revision 1.2  2002/02/08 17:47:34  kholodov
+* Removed SetDataBase() method
+*
+* Revision 1.1  2002/01/30 14:51:22  kholodov
+* User DBAPI implementation, first commit
+*
+*
+*/
 #endif // _CONN_IMPL_HPP_
