@@ -116,231 +116,173 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
    Int2 status = 0;
 
    sbp->read_in_matrix = TRUE;
-   sbp->name = strdup(options->matrix);
    if ((status = Blast_ScoreBlkMatrixFill(sbp, options->matrix_path)) != 0)
       return status;
    kbp = sbp->kbp_gap_std[0] = Blast_KarlinBlkNew();
-   /* All four Karlin blocks will point to the same structure. */
-   sbp->kbp = sbp->kbp_std = sbp->kbp_gap = sbp->kbp_gap_std;
+   /* Point both non-allocated Karlin block arrays to kbp_gap_std. */
+   sbp->kbp_gap = sbp->kbp_gap_std;
+
+   /* For PHI BLAST, the H value is not used, but it is not allowed to be 0, 
+      so set it to 1. */
+   kbp->H = 1.0;
 
    if (0 == strcmp("BLOSUM62", options->matrix)) {
       kbp->paramC = 0.50;
       if ((11 == options->gap_open) && (1 == options->gap_extend)) {
          kbp->Lambda = 0.270;
          kbp->K = 0.047;
-         return status;
-      }
-      if ((9 == options->gap_open) && (2 == options->gap_extend)) {
+      } else if ((9 == options->gap_open) && (2 == options->gap_extend)) {
          kbp->Lambda = 0.285;
          kbp->K = 0.075;
-         return status;
-      }
-      if ((8 == options->gap_open) && (2 == options->gap_extend)) {
+      } else if ((8 == options->gap_open) && (2 == options->gap_extend)) {
          kbp->Lambda = 0.265;
          kbp->K = 0.046;
-         return status;
-      }
-      if ((7 == options->gap_open) && (2 == options->gap_extend)) {
+      } else if ((7 == options->gap_open) && (2 == options->gap_extend)) {
          kbp->Lambda = 0.243;
          kbp->K = 0.032;
-         return status;
-      }
-      if ((12 == options->gap_open) && (1 == options->gap_extend)) {
+      } else if ((12 == options->gap_open) && (1 == options->gap_extend)) {
          kbp->Lambda = 0.281;
          kbp->K = 0.057;
-         return status;
-      }
-      if ((10 == options->gap_open) && (1 == options->gap_extend)) {
+      } else if ((10 == options->gap_open) && (1 == options->gap_extend)) {
          kbp->Lambda = 0.250;
          kbp->K = 0.033;
-         return status;
+      } else {
+          status = -1;
       }
-      sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
-      Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
+   } else if (0 == strcmp("PAM30", options->matrix)) { 
+       kbp->paramC = 0.30;
+       if ((9 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.295;
+           kbp->K = 0.13;
+       } else if ((7 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.306;
+           kbp->K = 0.15;
+           return status;
+       } else if ((6 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.292;
+           kbp->K = 0.13;
+       } else if ((5 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.263;
+           kbp->K = 0.077;
+       } else if ((10 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.309;
+           kbp->K = 0.15;
+       } else if ((8 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.270;
+           kbp->K = 0.070;
+           return status;
+       } else {
+           status = -1;
+       }
+   } else if (0 == strcmp("PAM70", options->matrix)) { 
+       kbp->paramC = 0.35;
+       if ((10 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.291;
+           kbp->K = 0.089;
+       } else if ((8 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.303;
+           kbp->K = 0.13;
+       } else if ((7 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.287;
+           kbp->K = 0.095;
+       } else if ((6 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.269;
+           kbp->K = 0.079;
+       } else if ((11 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.307;
+           kbp->K = 0.13;
+       } else if ((9 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.269;
+           kbp->K = 0.058;
+       } else {
+           status = -1;
+       }
+   } else if (0 == strcmp("BLOSUM80", options->matrix)) { 
+       kbp->paramC = 0.40;
+       if ((10 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.300;
+           kbp->K = 0.072;
+       } else if ((8 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.308;
+           kbp->K = 0.089;
+       } else if ((7 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.295;
+           kbp->K = 0.077;
+       } else if ((6 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.271;
+           kbp->K = 0.051;
+       } else if ((11 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.314;
+           kbp->K = 0.096;
+           return status;
+       } else if ((9 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.277;
+           kbp->K = 0.046;
+       } else {
+           status = -1;
+       }
+   } else if (0 == strcmp("BLOSUM45", options->matrix)) { 
+       kbp->paramC = 0.60;
+       if ((14 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.199;
+           kbp->K = 0.040;
+       } else if ((13 == options->gap_open) && (3 == options->gap_extend)) {
+           kbp->Lambda = 0.209;
+           kbp->K = 0.057;
+       } else if ((12 == options->gap_open) && (3 == options->gap_extend)) {
+           kbp->Lambda = 0.203;
+            kbp->K = 0.049;
+       } else if ((11 == options->gap_open) && (3 == options->gap_extend)) {
+           kbp->Lambda = 0.193;
+           kbp->K = 0.037;
+       } else if ((10 == options->gap_open) && (3 == options->gap_extend)) {
+           kbp->Lambda = 0.182;
+           kbp->K = 0.029;
+       } else if ((15 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.206;
+           kbp->K = 0.049;
+       } else if ((13 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.190;
+           kbp->K = 0.032;
+       } else if ((12 == options->gap_open) && (2 == options->gap_extend)) {
+           kbp->Lambda = 0.177;
+           kbp->K = 0.023;
+       } else if ((19 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.209;
+           kbp->K = 0.049;
+       } else if ((18 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.202;
+           kbp->K = 0.041;
+       } else if ((17 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.195;
+           kbp->K = 0.034;
+       } else if ((16 == options->gap_open) && (1 == options->gap_extend)) {
+           kbp->Lambda = 0.183;
+           kbp->K = 0.024;
+       } else {
+           status = -1;
+       }
+   } else {
+       status = -2;
    }
+
+   if (status == -1) {
+       sprintf(buffer, "The combination %d for gap opening cost and %d for "
+               "gap extension is not supported in PHI-BLAST with matrix %s\n",
+               options->gap_open, options->gap_extend, options->matrix);
+   } else if (status == -2) {
+       sprintf(buffer, "Matrix %s not allowed in PHI-BLAST\n", options->matrix);
+   }
+   if (status) 
+       Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
    else {
-      if (0 == strcmp("PAM30", options->matrix)) { 
-         kbp->paramC = 0.30;
-         if ((9 == options->gap_open) && (1 == options->gap_extend)) {
-            kbp->Lambda = 0.295;
-            kbp->K = 0.13;
-            return status;
-         }
-         if ((7 == options->gap_open) && (2 == options->gap_extend)) {
-            kbp->Lambda = 0.306;
-            kbp->K = 0.15;
-            return status;
-         }
-         if ((6 == options->gap_open) && (2 == options->gap_extend)) {
-            kbp->Lambda = 0.292;
-            kbp->K = 0.13;
-            return status;
-         }
-         if ((5 == options->gap_open) && (2 == options->gap_extend)) {
-            kbp->Lambda = 0.263;
-            kbp->K = 0.077;
-            return status;
-         }
-         if ((10 == options->gap_open) && (1 == options->gap_extend)) {
-            kbp->Lambda = 0.309;
-            kbp->K = 0.15;
-            return status;
-         }
-         if ((8 == options->gap_open) && (1 == options->gap_extend)) {
-            kbp->Lambda = 0.270;
-            kbp->K = 0.070;
-            return status;
-         }
-         sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
-         Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
-      }
-      else {
-         if (0 == strcmp("PAM70", options->matrix)) { 
-            kbp->paramC = 0.35;
-            if ((10 == options->gap_open) && (1 == options->gap_extend)) {
-               kbp->Lambda = 0.291;
-               kbp->K = 0.089;
-               return status;
-            }
-            if ((8 == options->gap_open) && (2 == options->gap_extend)) {
-               kbp->Lambda = 0.303;
-               kbp->K = 0.13;
-               return status;
-            }
-            if ((7 == options->gap_open) && (2 == options->gap_extend)) {
-               kbp->Lambda = 0.287;
-               kbp->K = 0.095;
-               return status;
-            }
-            if ((6 == options->gap_open) && (2 == options->gap_extend)) {
-               kbp->Lambda = 0.269;
-               kbp->K = 0.079;
-               return status;
-            }
-            if ((11 == options->gap_open) && (1 == options->gap_extend)) {
-               kbp->Lambda = 0.307;
-               kbp->K = 0.13;
-               return status;
-            }
-            if ((9 == options->gap_open) && (1 == options->gap_extend)) {
-               kbp->Lambda = 0.269;
-               kbp->K = 0.058;
-               return status;
-            }
-            sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
-            Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
-         }
-         else {
-            if (0 == strcmp("BLOSUM80", options->matrix)) { 
-               kbp->paramC = 0.40;
-               if ((10 == options->gap_open) && (1 == options->gap_extend)) {
-                  kbp->Lambda = 0.300;
-                  kbp->K = 0.072;
-                  return status;
-               }
-               if ((8 == options->gap_open) && (2 == options->gap_extend)) {
-                  kbp->Lambda = 0.308;
-                  kbp->K = 0.089;
-                  return status;
-               }
-               if ((7 == options->gap_open) && (2 == options->gap_extend)) {
-                  kbp->Lambda = 0.295;
-                  kbp->K = 0.077;
-                  return status;
-               }
-               if ((6 == options->gap_open) && (2 == options->gap_extend)) {
-                  kbp->Lambda = 0.271;
-                  kbp->K = 0.051;
-                  return status;
-               }
-               if ((11 == options->gap_open) && (1 == options->gap_extend)) {
-                  kbp->Lambda = 0.314;
-                  kbp->K = 0.096;
-                  return status;
-               }
-               if ((9 == options->gap_open) && (1 == options->gap_extend)) {
-                  kbp->Lambda = 0.277;
-                  kbp->K = 0.046;
-                  return status;
-               }
-               sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
-               Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
-            }
-            else {
-               if (0 == strcmp("BLOSUM45", options->matrix)) { 
-                  kbp->paramC = 0.60;
-                  if ((14 == options->gap_open) && (2 == options->gap_extend)) {
-                     kbp->Lambda = 0.199;
-                     kbp->K = 0.040;
-                     return status;
-                  }
-                  if ((13 == options->gap_open) && (3 == options->gap_extend)) {
-                     kbp->Lambda = 0.209;
-                     kbp->K = 0.057;
-                     return status;
-                  }
-                  if ((12 == options->gap_open) && (3 == options->gap_extend)) {
-                     kbp->Lambda = 0.203;
-                     kbp->K = 0.049;
-                     return status;
-                  }
-                  if ((11 == options->gap_open) && (3 == options->gap_extend)) {
-                     kbp->Lambda = 0.193;
-                     kbp->K = 0.037;
-                     return status;
-                  }
-                  if ((10 == options->gap_open) && (3 == options->gap_extend)) {
-                     kbp->Lambda = 0.182;
-                     kbp->K = 0.029;
-                     return status;
-                  }
-                  if ((15 == options->gap_open) && (2 == options->gap_extend)) {
-                     kbp->Lambda = 0.206;
-                     kbp->K = 0.049;
-                     return status;
-                  }
-                  if ((13 == options->gap_open) && (2 == options->gap_extend)) {
-                     kbp->Lambda = 0.190;
-                     kbp->K = 0.032;
-                     return status;
-                  }
-                  if ((12 == options->gap_open) && (2 == options->gap_extend)) {
-                     kbp->Lambda = 0.177;
-                     kbp->K = 0.023;
-                     return status;
-                  }
-                  if ((19 == options->gap_open) && (1 == options->gap_extend)) {
-                     kbp->Lambda = 0.209;
-                     kbp->K = 0.049;
-                     return status;
-                  }
-                  if ((18 == options->gap_open) && (1 == options->gap_extend)) {
-                     kbp->Lambda = 0.202;
-                     kbp->K = 0.041;
-                     return status;
-                  }
-                  if ((17 == options->gap_open) && (1 == options->gap_extend)) {
-                     kbp->Lambda = 0.195;
-                     kbp->K = 0.034;
-                     return status;
-                  }
-                  if ((16 == options->gap_open) && (1 == options->gap_extend)) {
-                     kbp->Lambda = 0.183;
-                     kbp->K = 0.024;
-                     return status;
-                  }
-                  sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
-                  Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
-               }
-               else {
-                  sprintf(buffer, "Matrix %s not allowed in PHI-BLAST\n", options->matrix);
-                  Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
-               }
-            }
-         }
-      }
+       /* Put a copy the Karlin block into the kbp_std array */
+       sbp->kbp_std[0] = (Blast_KarlinBlk*) 
+           BlastMemDup(sbp->kbp_gap_std[0], sizeof(Blast_KarlinBlk));
+       sbp->kbp = sbp->kbp_std;
    }
-return status;
+
+   return status;
 }
 
 Int2
@@ -428,7 +370,7 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
 
     /* Fills in block for gapped blast. */
     if (phi_align) {
-       s_PHIScoreBlkFill(sbp, scoring_options, blast_message);
+       status = s_PHIScoreBlkFill(sbp, scoring_options, blast_message);
     } else {
        if ((status = Blast_ScoreBlkKbpUngappedCalc(program_number, sbp, 
                         query_blk->sequence, query_info)) != 0) {
@@ -445,12 +387,11 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
           if (status) {
              Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
                                 "Unable to initialize scoring block");
-             return status;
           }
        }
     }
 
-    return 0;
+    return status;
 }
 
 Int2 BLAST_MainSetUp(EBlastProgramType program_number,
