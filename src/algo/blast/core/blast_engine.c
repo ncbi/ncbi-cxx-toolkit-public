@@ -361,7 +361,6 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
          kbp = kbp_ptr[index];
          length_adjustment = 0;
          last_length_adjustment = 0;
-         
          min_query_length = (Int4) (1/(kbp->K));
 
          for (i=0; i<5; i++) {
@@ -381,7 +380,6 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
                break;
             last_length_adjustment = length_adjustment;
          }
-         
          effective_length = 
             MAX(query_length - length_adjustment, min_query_length);
          effective_db_length = MAX(1, db_length - db_num_seqs*length_adjustment);
@@ -475,9 +473,8 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    BlastInitialWordParametersNew(program_number, word_options, *hit_params, 
       *ext_params, sbp, query_info, eff_len_options, word_params);
 
-   if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 1, 
-                    max_subject_length, query->length, program_number, sbp,
-                    gap_align))) {
+   if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 
+                    max_subject_length, query->length, sbp, gap_align))) {
       return status;
    }
 
