@@ -627,11 +627,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
  );
 
 
-/* Return (for the specified "direction"):
+/* Return (for the specified "direction" [eIO_Open to check for closed sock]):
  *   eIO_Closed     -- if the connection was shutdown by SOCK_Shutdown(), or
  *                     (for "eIO_Read" only) if EOF was detected
+ *                     if "direction"==eIO_Open, this code means socket closed
  *   eIO_Unknown    -- if an error was detected during the last I/O
- *   eIO_InvalidArg -- if "direction" is not one of:  eIO_Read, eIO_Write
+ *   eIO_InvalidArg -- if "direction" is not one of:  Open, Read, Write
  *   eIO_Timeout    -- if the socket is not yet actually connected
  *   eIO_Success    -- otherwise (incl. eIO_Timeout on last I/O)
  *
@@ -639,11 +640,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
  *        as long as there is any unread (buffered) data left.
  *        Thus, when you are "peeking" data instead of actually reading it,
  *        then this is the only "non-destructive" way to check whether EOF
- *        or an error has occurred on read.
+ *        or an error has actually occurred on read.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
 (SOCK      sock,
- EIO_Event direction  /* [in] one of:  eIO_Read, eIO_Write */
+ EIO_Event direction  /* [in] one of:  eIO_Open, eIO_Read, eIO_Write */
  );
 
 
@@ -957,6 +958,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2003/11/25 15:07:12  lavr
+ * SOCK_Status() to accept eIO_Open
+ *
  * Revision 6.47  2003/11/24 19:22:24  lavr
  * SetSelectInternalRestartTimeout() to accept ptr to STimeout
  *
