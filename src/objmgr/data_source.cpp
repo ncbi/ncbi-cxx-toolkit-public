@@ -130,7 +130,7 @@ void CDataSource::DropAllTSEs(void)
 
     // then drop all TSEs
     {{
-        TMainLock::TWriteLockGuard guard(m_DSCacheLock);
+        TMainLock::TWriteLockGuard guard2(m_DSCacheLock);
         // check if any TSE is locked by user 
         ITERATE ( TBlob_Map, it, m_Blob_Map ) {
             int lock_counter = it->second->m_LockCounter.Get();
@@ -866,10 +866,10 @@ CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
     TTSE_Lock tse = x_FindBestTSE(idh, load_locks);
     if ( !tse ) {
         // Try to find the best matching id (not exactly equal)
-        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetInstance();
-        if ( mapper.HaveMatchingHandles(idh) ) {
+        CRef<CSeq_id_Mapper> mapper = CSeq_id_Mapper::GetInstance();
+        if ( mapper->HaveMatchingHandles(idh) ) {
             TSeq_id_HandleSet hset;
-            mapper.GetMatchingHandles(idh, hset);
+            mapper->GetMatchingHandles(idh, hset);
             ITERATE(TSeq_id_HandleSet, hit, hset) {
                 if ( *hit == idh ) // already checked
                     continue;
