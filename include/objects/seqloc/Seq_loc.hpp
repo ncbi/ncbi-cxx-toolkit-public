@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2002/06/07 11:54:34  clausen
+ * Added related functions comment
+ *
  * Revision 1.9  2002/06/06 20:40:51  clausen
  * Moved methods using object manager to objects/util
  *
@@ -96,7 +99,15 @@ public:
     CSeq_loc(void);
     // destructor
     virtual ~CSeq_loc(void);
-
+    
+    // See related functions in util/sequence.hpp:
+    //
+    //   TSeqPos GetLength(const CSeq_loc&, CScope*)
+    //   bool IsOneBioseq(const CSeq_loc&, CScope*)
+    //   const CSeq_id& GetId(const CSeq_loc&, CScope*)
+    //   TSeqPos GetStart(const CSeq_loc&, CScope*)
+    //   sequence::ECompare Compare(const CSeq_loc&, CSeq_loc&, CScope*)
+    //
 
     typedef CRange<TSeqPos> TRange;
     TRange GetTotalRange(void) const;
