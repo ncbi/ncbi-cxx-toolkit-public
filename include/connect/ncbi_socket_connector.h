@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/01/23 23:09:18  lavr
+ * Flags added to 'Ex' constructor
+ *
  * Revision 6.1  2000/04/07 20:05:37  vakatov
  * Initial revision
  *
@@ -58,6 +61,12 @@ extern CONNECTOR SOCK_CreateConnector
  );
 
 
+typedef enum {
+    eSCC_DebugPrintout = 1
+} ESCC_Flags;
+typedef unsigned int TSCC_Flags;  /* binary OR of "ESCC_Flags */
+
+
 /* Create new CONNECTOR structure to handle connection to a socket.
  * Make up to "conn_try" attempts to connect to the "host:port" before
  * giving up.
@@ -71,7 +80,8 @@ extern CONNECTOR SOCK_CreateConnectorEx
  unsigned short port,      /* server:  service port */
  unsigned int   max_try,   /* max.number of attempts to establish connection */
  const void*    init_data, /* data to send to server on connect */
- size_t         init_size  /* size of the "init_data" buffer */
+ size_t         init_size, /* size of the "init_data" buffer */
+ TSCC_Flags     flags
  );
 
 

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/01/23 23:09:19  lavr
+ * Flags added to 'Ex' constructor
+ *
  * Revision 6.6  2001/01/11 16:38:18  lavr
  * free(connector) removed from s_Destroy function
  * (now always called from outside, in METACONN_Remove)
@@ -399,14 +402,22 @@ static EIO_Status s_VT_Open
                 /* Replace HTTP connector with SOCKET connector */
                 conn = SOCK_CreateConnectorEx(net_info->host, net_info->port,
                                               net_info->max_try,
-                                              &uuu->tckt, sizeof(uuu->tckt));
+                                              &uuu->tckt, sizeof(uuu->tckt),
+                                              net_info->debug_printout ==
+                                              eDebugPrintout_Data
+                                              ? eSCC_DebugPrintout
+                                              : 0);
             } else
                 conn = 0;
         }
     } else {
         /* We create SOCKET connector here */
-        conn = SOCK_CreateConnector(net_info->host, net_info->port,
-                                    net_info->max_try);
+        conn = SOCK_CreateConnectorEx(net_info->host, net_info->port,
+                                      net_info->max_try, 0, 0,
+                                      net_info->debug_printout ==
+                                      eDebugPrintout_Data
+                                      ? eSCC_DebugPrintout
+                                      : 0);
     }
     
     ConnNetInfo_Destroy(net_info);

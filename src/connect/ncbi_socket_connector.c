@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/01/23 23:09:47  lavr
+ * Flags added to 'Ex' constructor
+ *
  * Revision 6.3  2001/01/11 16:38:18  lavr
  * free(connector) removed from s_Destroy function
  * (now always called from outside, in METACONN_Remove)
@@ -59,12 +62,13 @@
 /* All internal data necessary to perform the (re)connect and i/o
  */
 typedef struct {
-    SOCK           sock;      /* socket;  NULL if not connected yet */
-    char*          host;      /* server:  host */
-    unsigned short port;      /* server:  service port */
+    SOCK           sock;      /* socket;  NULL if not connected yet       */
+    char*          host;      /* server:  host                            */
+    unsigned short port;      /* server:  service port                    */
     unsigned int   max_try;   /* max.number of attempts to establish conn */
-    void*          init_data; /* data to send to the server on connect */
-    size_t         init_size; /* size of the "inst_str" buffer */
+    void*          init_data; /* data to send to the server on connect    */
+    size_t         init_size; /* size of the "inst_str" buffer            */
+    TSCC_Flags     flags;     /* see SOCK_CreateConnectorEx               */
 } SSockConnector;
 
 
@@ -93,6 +97,8 @@ extern "C" {
                                     size_t          size,
                                     size_t*         n_read,
                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Status (CONNECTOR       connector,
+                                    EIO_Event       dir);
     static EIO_Status  s_VT_Close  (CONNECTOR       connector,
                                     const STimeout* timeout);
     static void        s_Setup     (SMetaConnector* meta,
@@ -130,8 +136,13 @@ static EIO_Status s_VT_Open
             SOCK_Create(xxx->host, xxx->port, timeout, &xxx->sock);
 
         if (status == eIO_Success) {
-            /* write init data, if any */
+            /* set data logging and write init data, if any */
             size_t n_written = 0;
+            
+            SOCK_SetDataLogging(xxx->sock,
+                                (xxx->flags & eSCC_DebugPrintout)
+                                ? eOn
+                                : eDefault);
             if (!xxx->init_data)
                 return eIO_Success;
             status = SOCK_Write(xxx->sock, xxx->init_data, xxx->init_size,
@@ -149,6 +160,15 @@ static EIO_Status s_VT_Open
 
     /* error: return status */
     return status;
+}
+
+
+static EIO_Status s_VT_Status
+(CONNECTOR connector,
+ EIO_Event dir)
+{
+    SSockConnector* xxx = (SSockConnector*) connector->handle;
+    return xxx->sock ? SOCK_Status(xxx->sock, dir) : eIO_Success;
 }
 
 
@@ -240,6 +260,7 @@ static void s_Setup
     CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
     CONN_SET_METHOD(meta, flush,      s_VT_Flush,     connector);
     CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
+    CONN_SET_METHOD(meta, status,     s_VT_Status,    connector);
     CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
 #ifdef IMPLEMENTED__CONN_WaitAsync
     CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
@@ -268,7 +289,7 @@ extern CONNECTOR SOCK_CreateConnector
  unsigned short port,
  unsigned int   max_try)
 {
-    return SOCK_CreateConnectorEx(host, port, max_try, 0, 0);
+    return SOCK_CreateConnectorEx(host, port, max_try, 0, 0, 0);
 }
 
 
@@ -277,7 +298,8 @@ extern CONNECTOR SOCK_CreateConnectorEx
  unsigned short port,
  unsigned int   max_try,
  const void*    init_data,
- size_t         init_size)
+ size_t         init_size,
+ TSCC_Flags     flags)
 {
     CONNECTOR       ccc = (SConnector    *) malloc(sizeof(SConnector    ));
     SSockConnector* xxx = (SSockConnector*) malloc(sizeof(SSockConnector));
@@ -287,7 +309,7 @@ extern CONNECTOR SOCK_CreateConnectorEx
     xxx->host      = strcpy((char*) malloc(strlen(host) + 1), host);
     xxx->port      = port;
     xxx->max_try   = max_try ? max_try : 1;
-
+    xxx->flags     = flags;
     xxx->init_size = init_data ? init_size : 0;
     if (xxx->init_size) {
         xxx->init_data = malloc(init_size);
