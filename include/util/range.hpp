@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/12/20 20:53:28  grichenk
+* Removed range normalization
+*
 * Revision 1.8  2002/12/19 20:24:06  grichenk
 * Added normalization of intervals (from <= to).
 * Removed SetFrom() and SetTo(), added Set().
@@ -83,7 +86,7 @@ public:
     CRange(position_type from, position_type to)
         : m_From(from), m_To(to)
         {
-            x_Normalize();
+            // x_Normalize();
         }
     
     // parameters
@@ -140,19 +143,19 @@ public:
         {
             m_From = from;
             m_To = to;
-            x_Normalize();
+            // x_Normalize();
             return *this;
         }
     TThisType& SetLength(position_type length)
         {
             Set(GetFrom(), GetFrom() + length - 1);
-            x_Normalize();
+            // x_Normalize();
             return *this;
         }
     TThisType& SetLengthDown(position_type length)
         {
             Set(GetTo() - length + 1, GetTo());
-            x_Normalize();
+            // x_Normalize();
             return *this;
         }
 
@@ -276,14 +279,14 @@ public:
         {
             if ( from < GetFrom()  ||  IsEmptyFrom() )
                 m_From =from;
-            x_Normalize();
+            // x_Normalize();
             return *this;
         }
     TThisType& CombineTo(position_type to)
         {
             if ( to > GetTo()  ||  IsEmptyTo() )
                 m_To = to;
-            x_Normalize();
+            // x_Normalize();
             return *this;
         }
     TThisType& operator+=(TThisType range)
