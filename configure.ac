@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.48 2002/03/22 19:58:06 ucko Exp $
+#  $Id: configure.ac,v 1.49 2002/03/23 20:29:40 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -299,7 +299,7 @@ elif test "$KCC" = "yes" ; then
    compiler_ver="$kcc_ver"
    compiler="KCC"
    ncbi_compiler="KCC"
-   ncbi_compiler_ver="`echo $kcc_ver | sed 's%KAI C\+\+ \([0-9.]*\).*%\1%'`"
+   ncbi_compiler_ver="`echo $kcc_ver | sed 's%^KAI .*C[+][+] \([0-9.]*\).*%\1%'`"
 elif test "$ICC" = "yes" ; then
    compiler_ver="$icc_ver"
    compiler="ICC"
