@@ -1,4 +1,4 @@
---$Revision: 1.4 $
+--$Revision: 1.5 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -68,8 +68,25 @@ ID1server-back ::= CHOICE {
 		ids	SET OF Seq-id,
 		gihist	SET OF ID1Seq-hist,  -- because hand crafted Seq-hist does not follow 
 		                             -- same conventions 
-		girevhist SET OF ID1Seq-hist
- }
+		girevhist SET OF ID1Seq-hist,
+		gotseqentryfull SET OF ID1SeqEntry-info
+}
 
 ID1server-debug ::= SET OF ID1server-back
+
+ID1blob-info ::= SEQUENCE {
+		gi INTEGER ,
+		sat INTEGER,
+                sat-key INTEGER,
+                satname VisibleString,
+		suppress	INTEGER,
+		withdrawn	INTEGER,
+		confidential	INTEGER,
+		blob-state	INTEGER
+}
+
+ID1SeqEntry-info ::= SEQUENCE {
+		blob-info	ID1blob-info,
+		blob		Seq-entry OPTIONAL
+}
 END
