@@ -807,7 +807,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
     
     /* Relink and rereap the HSP list, if needed. */
     if (hit_params->link_hsp_params) {
-       BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk,
+       BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk->length,
                       sbp, hit_params->link_hsp_params, 
                       score_options->gapped_calculation);
        Blast_HSPListReapByEvalue(hsp_list, hit_options);

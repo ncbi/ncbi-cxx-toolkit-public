@@ -352,7 +352,7 @@ BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* quer
 
    if (hit_params->link_hsp_params) {
       status = BLAST_LinkHsps(program_number, hsp_list, query_info,
-                  subject, gap_align->sbp, hit_params->link_hsp_params, 
+                  subject->length, gap_align->sbp, hit_params->link_hsp_params, 
                   score_options->gapped_calculation);
    } else if (hit_options->phi_align) {
       /* These e-values will not be accurate yet, since we don't know
@@ -718,7 +718,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       }
 
       /* Calculate cutoff scores for linking HSPs. Do this only for ungapped
-         translated searches. */
+         protein searches. */
       if (hit_params->link_hsp_params && program_number != eBlastTypeBlastn &&
           !gapped_calculation) {
          CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
@@ -748,7 +748,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
             /* Relink HSPs if sum statistics is used. */
             if (hit_params->link_hsp_params) {
                status = BLAST_LinkHsps(program_number, hsp_list, query_info,
-                           seq_arg.seq, sbp, hit_params->link_hsp_params, 
+                           seq_arg.seq->length, sbp, hit_params->link_hsp_params, 
                            gapped_calculation);
 	    }
 
