@@ -64,8 +64,8 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
-/// Map a string into an element of the enumeration above (except
-/// eBlastProgramMax).
+/// Map a string into an element of the ncbi::blast::EProgram enumeration 
+/// (except eBlastProgramMax).
 /// @param program_name [in]
 /// @return an element of the ncbi::blast::EProgram enumeration, except
 /// eBlastProgramMax
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2004/12/03 22:24:08  camacho
+* Updated documentation
+*
 * Revision 1.46  2004/11/23 23:00:46  camacho
 * + RAII class for BlastSeqSrc
 *

@@ -47,8 +47,9 @@ BEGIN_SCOPE(blast)
 /// specifies sets of default parameters to easily conduct searches using
 /// BLAST.
 /// N.B.: When making changes to this enumeration, please update 
-/// blast::ProgramNameToEnum (blast_aux.[ch]pp) and blast::GetNumberOfFrames
-/// (blast_setup_cxx.cpp)
+/// blast::ProgramNameToEnum (blast_aux.[ch]pp), blast::GetNumberOfFrames
+/// (blast_setup_cxx.cpp) and BlastNumber2Program and BlastProgram2Number
+/// (blast_util.c)
 enum EProgram {
     eBlastn = 0,        ///< Nucl-Nucl (traditional blastn)
     eBlastp,            ///< Protein-Protein
@@ -103,6 +104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/12/03 22:24:08  camacho
+* Updated documentation
+*
 * Revision 1.16  2004/11/12 16:41:53  camacho
 * Enhance documentation for EProgram
 *
