@@ -61,9 +61,12 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
                    eBadParameter,
                    "Invalid address specified");
     }
-    
-    const vector<CNWAligner::ETranscriptSymbol>& transcript = 
-        *(m_aligner->GetTranscript());
+
+#ifdef USE_RAW_TRANCSRIPT
+    const vector<CNWAligner::ETranscriptSymbol>& transcript =  *(m_aligner->GetTranscript());
+#else
+    const string transcript = m_aligner->GetTranscriptString();
+#endif
 
     if(transcript.size() == 0) {
         NCBI_THROW(CAlgoAlignException,
@@ -104,10 +107,24 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
     // create segments and add them to this seq-align
     CRef< CSeq_align::C_Segs > segs (new CSeq_align::C_Segs);
     CDense_seg& ds = segs->SetDenseg();
-    ds.SetDim(2);
+
+    ds.FromTranscript(0, eNa_strand_plus, 0, eNa_strand_plus,
+                      transcript);
+    
     CDense_seg::TIds& ids = ds.SetIds();
     ids.push_back( id1 );
     ids.push_back( id2 );
+
+#ifdef USE_RAW_TRANCSRIPT
+
+    // this will treat introns as long inserts
+
+    ds.SetDim(2);
+
+    CDense_seg::TIds& ids = ds.SetIds();
+    ids.push_back( id1 );
+    ids.push_back( id2 );
+
     CDense_seg::TStarts&  starts  = ds.SetStarts();
     CDense_seg::TLens&    lens    = ds.SetLens();
     CDense_seg::TStrands& strands = ds.SetStrands();
@@ -165,8 +182,11 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
     }}
 
     ds.SetNumseg(seg_count);
-    ds.SetIds();
+
+#endif
+
     seqalign->SetSegs(*segs);
+
 }
 
 
@@ -481,6 +501,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/04 17:32:32  kapustin
+ * Use CDense_seg::FromTranscript() to init dense-segs
+ *
  * Revision 1.10  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *
