@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  1999/11/02 22:15:50  vakatov
+* const CCgiCookie* CCgiCookies::Find() -- forgot to cast to non-const "this"
+*
 * Revision 1.32  1999/11/02 20:35:42  vakatov
 * Redesigned of CCgiCookie and CCgiCookies to make them closer to the
 * cookie standard, smarter, and easier in use
@@ -446,15 +449,15 @@ CCgiCookie* CCgiCookies::Find(const string& name, TRange* range)
 const CCgiCookie* CCgiCookies::Find(const string& name, TCRange* range)
 const
 {
+    CCgiCookies& nonconst_This = const_cast<CCgiCookies&>(*this);
     if ( range ) {
         TRange x_range;
-        const CCgiCookie* ck =
-            const_cast<CCgiCookies*>(this)->Find(name, &x_range);
+        const CCgiCookie* ck = nonconst_This.Find(name, &x_range);
         range->first  = x_range.first;
         range->second = x_range.second;
         return ck;
     } else {
-        return Find(name, 0);
+        return nonconst_This.Find(name, 0);
     }
 }
 
