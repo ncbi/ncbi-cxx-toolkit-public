@@ -270,18 +270,24 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
    }
 
    for (loc = location; loc; loc = loc->next) {
+      /* We want index to be always pointing to the start of the word.
+         Since sequence pointer points to the end of the word, subtract
+         word length from the loop boundaries. 
+      */
       from = ((DoubleInt*) loc->ptr)->i1;
-      to = ((DoubleInt*) loc->ptr)->i2;
+      to = ((DoubleInt*) loc->ptr)->i2 - word_length;
 
       seq = query->sequence_start + from;
       pos = seq + word_length;
       
       ecode = 0;
-
+      /* Also add 1 to all indices, because lookup table indices count 
+         from 1. */
+      from -= word_length - 1;
       last_offset = to + 1 - extra_length;
       amb_cond = TRUE;
 
-      for (index = from + 1; index <= last_offset; index++) {
+      for (index = from; index <= last_offset; index++) {
          val = *++seq;
          if ((val & nuc_mask) != 0) { /* ambiguity or gap */
             ecode = 0;
@@ -554,8 +560,7 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
          
          if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
             q_off = mb_lt->hashtable[index];
-            s_off = 
-               ((s - abs_start) + compressed_wordsize)*COMPRESSION_RATIO;
+            s_off = (s - abs_start)*COMPRESSION_RATIO;
             if (q_off && (total_hits >= max_hits))
                break;
             while (q_off) {
@@ -586,7 +591,7 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
                break;
             while (q_off) {
                q_offsets[total_hits] = q_off;
-               s_offsets[total_hits++] = s_off + word_size; 
+               s_offsets[total_hits++] = s_off; 
                q_off = mb_lt->next_pos[q_off];
             }
          }
@@ -769,13 +774,15 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
    Uint4* q_ptr = q_offsets,* s_ptr = s_offsets;
    PV_ARRAY_TYPE *pv_array = mb_lt->pv_array;
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
+   Int4 compressed_wordsize = mb_lt->compressed_wordsize;
 
 #ifdef DEBUG_LOG
    FILE *logfp0 = fopen("new0.log", "a");
 #endif   
 
    /* Since the test for number of hits here is done after adding them, 
-      subtract the longest chain length from the allowed offset array size. */
+      subtract the longest chain length from the allowed offset array size.
+   */
    max_hits -= mb_lt->longest_chain;
 
    abs_start = subject->sequence;
@@ -784,10 +791,13 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
 
    s = BlastNaLookupInitIndex(mb_lt->compressed_wordsize, s, &index);
 
+   /* In the following code, s points to the byte right after the end of 
+      the word. */
    while (s <= s_end) {
       if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
          query_offset = mb_lt->hashtable[index];
-         subject_offset = (s - abs_start)*COMPRESSION_RATIO;
+         subject_offset = 
+            ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
          if (query_offset && (hitsfound >= max_hits))
             break;
          while (query_offset) {
@@ -808,7 +818,7 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
    }
 
    *end_offset = 
-     ((s - abs_start) - mb_lt->compressed_wordsize)*COMPRESSION_RATIO;
+     ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
 #ifdef DEBUG_LOG
    fclose(logfp0);
 #endif
@@ -834,6 +844,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    Uint1 second_template_type = mb_lt->second_template_type;
    PV_ARRAY_TYPE *pv_array = mb_lt->pv_array;
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
+   Int4 compressed_wordsize = mb_lt->compressed_wordsize;
 
 #ifdef DEBUG_LOG
    FILE *logfp0 = fopen("new0.log", "a");
@@ -860,7 +871,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
        }
        if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
           query_offset = mb_lt->hashtable[index];
-          subject_offset = (s - abs_start)*COMPRESSION_RATIO;
+          subject_offset = 
+             ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
           if (query_offset && (hitsfound >= max_hits))
              break;
           while (query_offset) {
@@ -876,7 +888,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
        }
        if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
           query_offset = mb_lt->hashtable2[index2];
-          subject_offset = (s - abs_start)*COMPRESSION_RATIO;
+          subject_offset = 
+             ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
           if (query_offset && (hitsfound >= max_hits))
              break;
           while (query_offset) {
@@ -907,7 +920,9 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
 
          if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
             query_offset = mb_lt->hashtable[index];
-            subject_offset = (s - abs_start)*COMPRESSION_RATIO + bit/2;
+            subject_offset = 
+               ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
+               + bit/2;
             if (query_offset && (hitsfound >= max_hits))
                break;
             while (query_offset) {
@@ -923,7 +938,9 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
          }
          if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
             query_offset = mb_lt->hashtable2[index2];
-            subject_offset = (s - abs_start)*COMPRESSION_RATIO + bit/2;
+            subject_offset = 
+               ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
+               + bit/2;
             if (query_offset && (hitsfound >= max_hits))
                break;
             while (query_offset) {
@@ -942,7 +959,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
       }
    }
    *end_offset = 
-     ((s - abs_start) - mb_lt->compressed_wordsize)*COMPRESSION_RATIO;
+     ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
 #ifdef DEBUG_LOG
    fclose(logfp0);
 #endif

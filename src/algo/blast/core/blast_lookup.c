@@ -791,8 +791,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
                lookup_pos = (Int4*)
                   (lookup->thick_backbone[index].payload.overflow);
             
-            s_off = 
-               ((s - abs_start) + compressed_wordsize)*COMPRESSION_RATIO;
+            s_off = (s - abs_start)*COMPRESSION_RATIO;
             while (num_hits) {
                q_off = *((Uint4 *) lookup_pos); /* get next query offset */
                lookup_pos++;
@@ -840,7 +839,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
                num_hits--;
                
                q_offsets[total_hits] = q_off;
-               s_offsets[total_hits++] = s_off + reduced_word_length;
+               s_offsets[total_hits++] = s_off;
             }
          }
       }
@@ -866,6 +865,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
    PV_ARRAY_TYPE *pv_array = lookup->pv;
    Int4 total_hits = 0;
    Boolean full_byte_scan = (lookup->scan_step % COMPRESSION_RATIO == 0);
+   Int4 reduced_word_length = lookup->reduced_wordsize*COMPRESSION_RATIO;
    Int4 i;
 
    abs_start = subject->sequence;
@@ -895,7 +895,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
                   (Int4*)(lookup->thick_backbone[index].payload.overflow);
             
             /* Save the hits offsets */
-            s_off = (s - abs_start)*COMPRESSION_RATIO;
+            s_off = (s - abs_start)*COMPRESSION_RATIO - reduced_word_length;
             while (num_hits) {
                q_off = *((Uint4 *) lookup_pos); /* get next query offset */
                lookup_pos++;
@@ -912,7 +912,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
       }
       /* Ending offset should point to the start of the word that ends 
          at s */
-      *end_offset = ((s - abs_start) - lookup->reduced_wordsize)*COMPRESSION_RATIO;
+      *end_offset = (s - abs_start)*COMPRESSION_RATIO - reduced_word_length;
    } else {
       Int4 scan_shift = 2*lookup->scan_step;
       Uint1 bit = 2*(start_offset % COMPRESSION_RATIO);
@@ -938,7 +938,8 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
                   (Int4*)(lookup->thick_backbone[index].payload.overflow);
             
             /* Save the hits offsets */
-            s_off = (s - abs_start)*COMPRESSION_RATIO + bit/2;
+            s_off = (s - abs_start)*COMPRESSION_RATIO + bit/2
+               - reduced_word_length;
             while (num_hits) {
                q_off = *((Uint4 *) lookup_pos); /* get next query offset */
                lookup_pos++;
@@ -959,8 +960,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
       /* Ending offset should point to the start of the word that ends 
          at s */
       *end_offset = 
-         ((s - abs_start) - lookup->reduced_wordsize)*COMPRESSION_RATIO
-         + bit/2;
+         (s - abs_start)*COMPRESSION_RATIO + bit/2 - reduced_word_length;
    }
 
    return total_hits;
@@ -1072,12 +1072,12 @@ Int4 BlastNaLookupIndexQuery(LookupTable* lookup, BLAST_SequenceBlk* query,
 
   for(loc=location; loc; loc=loc->next) {
      from = ((DoubleInt*) loc->ptr)->i1;
-     to = ((DoubleInt*) loc->ptr)->i2;
+     to = ((DoubleInt*) loc->ptr)->i2 + 1;
      
      sequence = query->sequence + from;
-     /* Make the offsets point to the ends of the words */
-     from += lookup->reduced_wordsize*COMPRESSION_RATIO;
-     for(offset = from; offset < to; offset++) {
+     /* Last offset is such that full word fits in the sequence */
+     to -= lookup->reduced_wordsize*COMPRESSION_RATIO;
+     for(offset = from; offset <= to; offset++) {
 	BlastNaLookupAddWordHit(lookup, sequence, offset);
 	++sequence;
      }

@@ -789,20 +789,17 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
    Uint1* q;
    Int4 start_offset, last_start, next_start, last_end;
    Uint1 max_bases;
-   Int4 bases_in_last_byte, bases_in_extra_bytes;
 
    word_size = COMPRESSION_RATIO*lookup->wordsize;
    last_start = subject->length - word_size;
    s_end = subject->sequence + subject->length/COMPRESSION_RATIO;
    start_offset = 0;
-   bases_in_last_byte = subject->length % COMPRESSION_RATIO;
 
    compressed_wordsize = lookup->reduced_wordsize;
    extra_bytes_needed = lookup->wordsize - compressed_wordsize;
-   bases_in_extra_bytes = COMPRESSION_RATIO*extra_bytes_needed;
    reduced_word_length = COMPRESSION_RATIO*compressed_wordsize;
    extra_bases = lookup->word_length - word_size;
-   last_end = subject->length - (word_size - reduced_word_length);
+   last_end = subject->length - word_size;
 
    while (start_offset <= last_start) {
       /* Pass the last word ending offset */
@@ -812,42 +809,41 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
       
       total_hits += hitsfound;
       for (i = 0; i < hitsfound; ++i) {
+         /* Here it is guaranteed that subject offset is divisible by 4,
+            because we only extend to the right, so scanning stride must be
+            equal to 4. */
+         s = abs_start + (s_offsets[i])/COMPRESSION_RATIO;
          q = q_start + q_offsets[i];
-         s = abs_start + s_offsets[i]/COMPRESSION_RATIO;
 	    
-	 /* Check for extra bytes if required for longer words. */
-	 if (extra_bytes_needed && 
-	     !BlastNaCompareExtraBytes(q, s, extra_bytes_needed))
-	    continue;
-         if (s_offsets[i] > reduced_word_length) {
-            /* mini extension to the left */
-            max_bases = 
-               MIN(4, q_offsets[i] - reduced_word_length);
-            left = BlastNaMiniExtendLeft(q-reduced_word_length, 
-                      s-compressed_wordsize-1, max_bases);
-         } else {
-            left = 0;
-         }
-         s += extra_bytes_needed;
-         if (s <= s_end) {
-            /* mini extension to the right */
-            q += COMPRESSION_RATIO*extra_bytes_needed;
-            max_bases = MIN(4, q_end - q);
-            if (s == s_end)
-               max_bases = MIN(max_bases, bases_in_last_byte);
+         /* Check for extra bytes if required for longer words. */
+         if (extra_bytes_needed && 
+             !BlastNaCompareExtraBytes(q+reduced_word_length, 
+                 s+compressed_wordsize, extra_bytes_needed))
+            continue;
+         /* mini extension to the left */
+         max_bases = 
+            MIN(COMPRESSION_RATIO, MIN(q_offsets[i], s_offsets[i]));
+         left = BlastNaMiniExtendLeft(q, s, max_bases);
+
+         /* mini extension to the right */
+         max_bases =
+            MIN(COMPRESSION_RATIO, 
+                MIN(subject->length - s_offsets[i] - lookup->wordsize,
+                    query->length - q_offsets[i] - word_size));
+
+         if (max_bases > 0) {
+            s += lookup->wordsize;
+            q += word_size;
             right = BlastNaMiniExtendRight(q, s, max_bases);
-         } else {
-            right = 0;
          }
 
-	 if (left + right >= extra_bases) {
-	    /* Check if this diagonal has already been explored. */
-	    BlastnExtendInitialHit(query, subject, lookup_wrap, 
+         if (left + right >= extra_bases) {
+            /* Check if this diagonal has already been explored. */
+            BlastnExtendInitialHit(query, subject, lookup_wrap, 
                word_params, matrix, ewp, q_offsets[i], 
-               s_offsets[i] + bases_in_extra_bytes + right, 
+               s_offsets[i] + word_size + right, 
                s_offsets[i], init_hitlist);
          }
-	 
       }
       start_offset = next_start;
    }
@@ -872,34 +868,16 @@ BlastNaExactMatchExtend(Uint1* q_start, Uint1* s_start,
    Uint4 max_bases_left, Uint4 max_bases_right, Uint4 max_length, 
    Boolean extend_partial_byte, Uint4* extended_right)
 {
-   Uint4 length = 0, extended_left = 0;
+   Uint4 length, extended_left = 0;
    Uint1* q,* s;
    
    *extended_right = 0;
 
-   /* Extend to the left; start with previous byte */
-   q = q_start - COMPRESSION_RATIO;
-   s = s_start - 1;
-   while (length < max_length && max_bases_left >= COMPRESSION_RATIO) {
-      if (*s != PACK_WORD(q))
-         break;
-      length += COMPRESSION_RATIO;
-      --s;
-      q -= COMPRESSION_RATIO;
-      max_bases_left -= COMPRESSION_RATIO;
-   }
-   extended_left = length;
-   if (length >= max_length)
-      return TRUE;
-   if (extend_partial_byte && max_bases_left > 0) {
-      length += BlastNaMiniExtendLeft(q+COMPRESSION_RATIO, s, 
-                   (Uint1) MIN(max_bases_left, COMPRESSION_RATIO));
-   }
-   if (length >= max_length)
-      return TRUE;
+   length = 0;
 
-   /* Extend to the right; start after the end of the word */
-   max_bases_right = MIN(max_bases_right, max_length - length);
+   /* Extend to the right; start from the firstt byte (it must be the 
+      first one that's guaranteed to match by the lookup table hit). */
+
    q = q_start;
    s = s_start;
    while (length < max_length && max_bases_right >= COMPRESSION_RATIO) {
@@ -911,14 +889,39 @@ BlastNaExactMatchExtend(Uint1* q_start, Uint1* s_start,
       max_bases_right -= COMPRESSION_RATIO;
    }
    if (extend_partial_byte) {
-      if (length >= max_length)
-         return TRUE;
       if (max_bases_right > 0) {
          length += BlastNaMiniExtendRight(q, s, 
                       (Uint1) MIN(max_bases_right, COMPRESSION_RATIO));
       }
    }
-   *extended_right = length - extended_left;
+
+   *extended_right = length;
+
+   if (length >= max_length)
+      return TRUE;
+
+   if (max_bases_left < max_length - length)
+      return FALSE;
+   else
+      max_bases_left = max_length - length;
+
+   /* Extend to the left; start with the byte just before the first. */
+   q = q_start - COMPRESSION_RATIO;
+   s = s_start - 1;
+   while (length < max_length && max_bases_left >= COMPRESSION_RATIO) {
+      if (*s != PACK_WORD(q))
+         break;
+      length += COMPRESSION_RATIO;
+      --s;
+      q -= COMPRESSION_RATIO;
+      max_bases_left -= COMPRESSION_RATIO;
+   }
+   if (length >= max_length)
+      return TRUE;
+   if (extend_partial_byte && max_bases_left > 0) {
+      length += BlastNaMiniExtendLeft(q+COMPRESSION_RATIO, s, 
+                   (Uint1) MIN(max_bases_left, COMPRESSION_RATIO));
+   }
 
    return (length >= max_length);
 }
@@ -940,31 +943,35 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
    MBLookupTable* mb_lt = (MBLookupTable*) lookup->lut;
    Uint1* s_start,* q_start,* q,* s;
    Int4 hitsfound=0;
-   Int4 hit_counter=0, i;
+   Int4 hit_counter=0, index;
    Int4 start_offset, next_start, last_start, last_end;
-   Uint4 word_length, reduced_word_length;
+   Uint4 word_length;
    Uint4 max_bases_left, max_bases_right;
    Int4 query_length = query->length;
+   Int4 subject_length = subject->length;
    Boolean ag_blast, variable_wordsize;
    Uint4 extended_right;
+   Uint4 q_off, s_off; 
+   Uint1 remainder;
 
    s_start = subject->sequence;
    q_start = query->sequence;
    word_length = mb_lt->word_length;
-   reduced_word_length = COMPRESSION_RATIO*mb_lt->compressed_wordsize;
    ag_blast = (Boolean) (word_options->extension_method == eRightAndLeft);
-   variable_wordsize = word_options->variable_wordsize;
+   variable_wordsize = (Boolean) word_options->variable_wordsize;
 
    start_offset = 0;
    if (mb_lt->discontiguous) {
-      last_start = subject->length - mb_lt->template_length;
+      last_start = subject_length - mb_lt->template_length;
       last_end = last_start + mb_lt->word_length;
    } else {
-      last_end = subject->length;
-      if (ag_blast)
-         last_start = last_end - reduced_word_length;
-      else
+      last_end = subject_length;
+      if (ag_blast) {
+         last_start = 
+            last_end - COMPRESSION_RATIO*mb_lt->compressed_wordsize;
+      } else {
          last_start = last_end - mb_lt->word_length;
+      }
    }
 
    /* start_offset points to the beginning of the word */
@@ -983,29 +990,36 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
 	    q_offsets, s_offsets, max_hits, &next_start);
       }
       if (ag_blast) {
-         for (i = 0; i < hitsfound; ++i) {
-            q = q_start + q_offsets[i] - s_offsets[i]%COMPRESSION_RATIO;
-            s = s_start + s_offsets[i]/COMPRESSION_RATIO;
+         for (index = 0; index < hitsfound; ++index) {
+            /* Adjust offsets to the start of the next full byte in the
+               subject sequence */
+            remainder = (-s_offsets[index])%COMPRESSION_RATIO;
+            q_off = q_offsets[index] + remainder;
+            s_off = s_offsets[index] + remainder;
+            s = s_start + s_off/COMPRESSION_RATIO;
+            q = q_start + q_off;
 	    
-            max_bases_left = MIN(word_length, MIN(q_offsets[i], s_offsets[i]));
-
+            max_bases_left = 
+               MIN(word_length, MIN(q_off, s_off));
             max_bases_right = MIN(word_length, 
-               MIN(query_length-q_offsets[i], last_end-s_offsets[i]));
+               MIN(query_length-q_off, subject_length-s_off));
                                                 
-            if (BlastNaExactMatchExtend(q, s, max_bases_left, max_bases_right,
-                   word_length, (Boolean) !variable_wordsize, &extended_right)) {
+            if (BlastNaExactMatchExtend(q, s, max_bases_left, 
+                   max_bases_right, word_length, !variable_wordsize, 
+                   &extended_right))
+            {
                /* Check if this diagonal has already been explored and save
                   the hit if needed. */
                BlastnExtendInitialHit(query, subject, lookup,
-                  word_params, matrix, ewp, q_offsets[i], 
-                  s_offsets[i] + extended_right, s_offsets[i], 
+                  word_params, matrix, ewp, q_offsets[index], 
+                  s_off + extended_right, s_offsets[index], 
                   init_hitlist);
             }
          }
       } else {
-         for (i = 0; i < hitsfound; ++i) {
+         for (index = 0; index < hitsfound; ++index) {
             MB_ExtendInitialHit(query, subject, lookup, word_params,
-               matrix, ewp, q_offsets[i], s_offsets[i], init_hitlist);
+               matrix, ewp, q_offsets[index], s_offsets[index], init_hitlist);
          }
       }
       /* next_start returned from the ScanSubject points to the beginning
@@ -1014,7 +1028,7 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
       hit_counter += hitsfound;
    }
 
-   MB_ExtendWordExit(ewp, subject->length);
+   MB_ExtendWordExit(ewp, subject_length);
 
    return hit_counter;
 }
@@ -1034,27 +1048,24 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
    BlastInitialWordOptions* word_options = word_params->options;
    LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
    Uint1* s_start = subject->sequence;
-   Int4 i;
-   Uint1* s;
    Uint1* q_start = query->sequence;
+   Int4 index;
+   Uint1* q;
+   Uint1* s;
    Int4 query_length = query->length;
    Int4 subject_length = subject->length;
    Int4 hitsfound, total_hits = 0;
-   Uint4 extra_length, reduced_word_length, min_extra_length;
-   Uint1* q;
+   Uint4 word_length;
    Int4 start_offset, end_offset, next_start;
    Uint1 max_bases_left, max_bases_right;
    Boolean variable_wordsize = word_options->variable_wordsize;
    Int4 extended_right;
-   Uint1* q_tmp,* s_tmp;
-   Uint4 length;
+   Uint4 q_off, s_off; /* Adjusted offsets */
+   Uint1 remainder; 
 
-
-   reduced_word_length = COMPRESSION_RATIO*lookup->reduced_wordsize;
-   min_extra_length = reduced_word_length - COMPRESSION_RATIO;
-   extra_length = lookup->word_length - min_extra_length;
+   word_length = lookup->word_length;
    start_offset = 0;
-   end_offset = subject_length - reduced_word_length;
+   end_offset = subject_length - COMPRESSION_RATIO*lookup->reduced_wordsize;
 
    /* start_offset points to the beginning of the word; end_offset is the
       beginning of the last word */
@@ -1063,58 +1074,25 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
                      q_offsets, s_offsets, max_hits, &next_start); 
       
       total_hits += hitsfound;
-      for (i = 0; i < hitsfound; ++i) {
-         q = q_start + q_offsets[i] - s_offsets[i]%COMPRESSION_RATIO;
-         s = s_start + s_offsets[i]/COMPRESSION_RATIO;
+      for (index = 0; index < hitsfound; ++index) {
+         remainder = (-s_offsets[index])%COMPRESSION_RATIO;
+         q_off = q_offsets[index] + remainder;
+         s_off = s_offsets[index] + remainder;
+         s = s_start + s_off/COMPRESSION_RATIO;
+         q = q_start + q_off;
 	    
          max_bases_left = 
-            MIN(extra_length, MIN(q_offsets[i], s_offsets[i]) 
-                - min_extra_length);
-
-         max_bases_right = MIN(extra_length, 
-            MIN(query_length-q_offsets[i], subject_length-s_offsets[i]));
-                                 
-
-         q_tmp = q - reduced_word_length;
-         s_tmp = s - lookup->reduced_wordsize;
-         length = 0;
-         while (max_bases_left >= COMPRESSION_RATIO) {
-            if (*s_tmp != PACK_WORD(q_tmp))
-               break;
-            length += COMPRESSION_RATIO;
-            --s_tmp;
-            q_tmp -= COMPRESSION_RATIO;
-            max_bases_left -= COMPRESSION_RATIO;
-         }
-         if (!variable_wordsize) {
-            length += BlastNaMiniExtendLeft(q_tmp+COMPRESSION_RATIO, s_tmp, 
-                                            max_bases_left);
-         }
-         extended_right = 0;
-        /* Extend to the right; start after the end of the word */
-         max_bases_right = MIN(max_bases_right, extra_length - length);
-         q_tmp = q;
-         s_tmp = s;
-         while (max_bases_right >= COMPRESSION_RATIO) {
-            if (*s_tmp != PACK_WORD(q_tmp))
-               break;
-            extended_right += COMPRESSION_RATIO;
-            ++s_tmp;
-            q_tmp += COMPRESSION_RATIO;
-            max_bases_right -= COMPRESSION_RATIO;
-         }
-         if (!variable_wordsize) {
-            extended_right += BlastNaMiniExtendRight(q_tmp, s_tmp, 
-                                             max_bases_right);
-         }
-               
-         length += extended_right;
-
-         if (length >= extra_length) {
-	    /* Check if this diagonal has already been explored. */
-	    BlastnExtendInitialHit(query, subject, lookup_wrap, 
-               word_params, matrix, ewp, q_offsets[i], 
-               s_offsets[i] + extended_right, s_offsets[i], init_hitlist);
+            MIN(word_length, MIN(q_off, s_off));
+         max_bases_right = MIN(word_length, 
+            MIN(query_length-q_off, subject_length-s_off));
+         
+         if (BlastNaExactMatchExtend(q, s, max_bases_left, max_bases_right,
+                word_length, !variable_wordsize, &extended_right)) 
+         {
+            /* Check if this diagonal has already been explored. */
+            BlastnExtendInitialHit(query, subject, lookup_wrap, 
+               word_params, matrix, ewp, q_offsets[index], 
+               s_off + extended_right, s_offsets[index], init_hitlist);
          }
       }
       start_offset = next_start;
