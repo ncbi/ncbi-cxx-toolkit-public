@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.288 2004/04/13 14:53:31 ucko Exp $
+#  $Id: configure.ac,v 1.289 2004/04/15 16:38:00 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2980,14 +2980,19 @@ fi
 
 if test "$with_sss" != "no" ; then
    local_sss=${srcdir}/src/internal/sss
-   if test "${with_included_sss-no}" = "yes" -a -z "$NCBI_SSS_PATH" \
-       -a -f "$local_sss/utils/sssdebug.hpp"; then
+   if test "${with_included_sss-no}" = "yes" \
+       -a -f "$local_sss/utils/sssdebug.hpp" \
+       -a -f "${local_sss}srv/srv/ssssrv.cpp"; then
       with_included_sss=yes
       NCBI_SSS_PATH=$local_sss
       NCBI_SSS_INCLUDE="\$(incdir)/sss"
       NCBI_SSS_LIBPATH="\$(libdir)"
+      sss=sss
+      ssssrv=ssssrv
    else
       with_included_sss=no
+      sss=
+      ssssrv=
    fi
    NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
@@ -3108,10 +3113,11 @@ else
    NCBI_GEO_INCLUDE="-I${NCBI_GEO_INCLUDE} -DGEO_API=Geo"
    LIBGEODB="-lgeodb"
 
-   # We have to be careful here, since GEO uses our libxncbi...
-   # We can't reasonably test *at all* on WorkShop, so just assume success.
+   # We have to be careful here, since GEO uses our libxncbi and SSS; as such,
+   # we must simply assume success in some cases.
    case "$compiler" in
       WorkShop*) ncbi_cv_lib_geodb=yes ;;
+      *)         test "$with_included_sss" = yes  &&  ncbi_cv_lib_geodb=yes ;;
    esac
    AC_CACHE_CHECK([for the NCBI GEO DB library], ncbi_cv_lib_geodb,
      [CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE -I$srcdir/include $orig_CPPFLAGS"
@@ -3897,6 +3903,8 @@ AC_SUBST(NCBI_SSS_INCLUDE)
 AC_SUBST(NCBI_SSS_LIBPATH)
 AC_SUBST(LIBSSSUTILS)
 AC_SUBST(LIBSSSDB)
+AC_SUBST(sss)
+AC_SUBST(ssssrv)
 AC_SUBST(NCBI_GEO_INCLUDE)
 AC_SUBST(NCBI_GEO_LIBPATH)
 AC_SUBST(LIBGEODB)
