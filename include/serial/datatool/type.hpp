@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/03/10 15:01:45  vasilche
+* Fixed OPTIONAL members reading.
+*
 * Revision 1.1  2000/02/01 21:46:24  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -100,7 +103,9 @@ struct AnyType {
         double realValue;
         void* pointerValue;
     };
+    bool isSet;
     AnyType(void)
+        : isSet(false)
         {
             pointerValue = 0;
         }

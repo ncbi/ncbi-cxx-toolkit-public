@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/03/10 15:01:42  vasilche
+* Fixed OPTIONAL members reading.
+*
 * Revision 1.31  2000/03/07 14:05:32  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -283,7 +286,7 @@ public:
     
     TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
         {
-            return &**static_cast<const TObjectType*>(object);
+            return static_cast<const TObjectType*>(object)->GetPointerOrNull();
         }
     void SetObjectPointer(TObjectPtr object, TObjectPtr data) const
         {

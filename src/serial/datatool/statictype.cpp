@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/03/10 15:00:46  vasilche
+* Fixed OPTIONAL members reading.
+*
 * Revision 1.8  2000/02/01 21:48:05  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -212,7 +215,7 @@ bool CStringDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CStringDataType::CreateDefault(const CDataValue& value) const
 {
-    return new string(dynamic_cast<const CStringDataValue&>(value).GetValue());
+    return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
 }
 
 string CStringDataType::GetDefaultString(const CDataValue& value) const
@@ -314,6 +317,12 @@ bool COctetStringDataType::CheckValue(const CDataValue& value) const
 TObjectPtr COctetStringDataType::CreateDefault(const CDataValue& ) const
 {
     THROW1_TRACE(runtime_error, "OCTET STRING default not implemented");
+}
+
+TTypeInfo COctetStringDataType::GetTypeInfo(void)
+{
+    return CAutoPointerTypeInfo::GetTypeInfo(
+        CStlClassInfoChar_vector<char>::GetTypeInfo());
 }
 
 AutoPtr<CTypeStrings> COctetStringDataType::GetFullCType(void) const

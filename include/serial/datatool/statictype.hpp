@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/03/10 15:01:45  vasilche
+* Fixed OPTIONAL members reading.
+*
 * Revision 1.1  2000/02/01 21:46:22  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -64,6 +67,7 @@
 */
 
 #include <serial/tool/type.hpp>
+#include <serial/stltypes.hpp>
 
 class CStaticDataType : public CDataType {
     typedef CDataType CParent;
@@ -148,6 +152,7 @@ class COctetStringDataType : public CStaticDataType {
 public:
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
+    const CTypeInfo* GetTypeInfo(void);
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
 };

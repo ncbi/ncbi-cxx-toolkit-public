@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/03/10 15:00:45  vasilche
+* Fixed OPTIONAL members reading.
+*
 * Revision 1.10  2000/03/07 14:06:30  vasilche
 * Added generation of reference counted objects.
 *
@@ -70,9 +73,7 @@
 #include <serial/tool/blocktype.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/tool/value.hpp>
-//#include <serial/tool/module.hpp>
 #include <serial/tool/classstr.hpp>
-//#include <serial/tool/fileutil.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
 
@@ -80,7 +81,7 @@ class CContainerTypeInfo : public CClassInfoTmpl
 {
 public:
     CContainerTypeInfo(const string& name, size_t size)
-        : CClassInfoTmpl(name, typeid(void), MemberOffset(size)),
+        : CClassInfoTmpl(name, typeid(void), size_t(NullMemberPtr(size))),
           m_Size(size)
         {
         }
@@ -90,9 +91,9 @@ public:
             return new AnyType[m_Size];
         }
 
-    static size_t MemberOffset(size_t index)
+    static const AnyType* NullMemberPtr(size_t index)
         {
-            return sizeof(AnyType) * index;
+            return &static_cast<const AnyType*>(0)[index];
         }
 
 private:
@@ -158,14 +159,16 @@ CClassInfoTmpl* CDataContainerType::CreateClassInfo(void)
         CDataMember* member = i->get();
         CMemberInfo* memberInfo =
             typeInfo->GetMembers().AddMember(member->GetName(),
-                new CRealMemberInfo(CContainerTypeInfo::MemberOffset(index),
+                new CRealMemberInfo(size_t(CContainerTypeInfo::NullMemberPtr(index)),
                                     new CAnyTypeSource(member->GetType())));
         if ( member->GetDefault() ) {
             memberInfo->SetDefault(member->GetType()->
                                    CreateDefault(*member->GetDefault()));
+            memberInfo->SetSetFlag(&CContainerTypeInfo::NullMemberPtr(index)->isSet);
         }
         else if ( member->Optional() ) {
             memberInfo->SetOptional();
+            memberInfo->SetSetFlag(&CContainerTypeInfo::NullMemberPtr(index)->isSet);
         }
     }
     return typeInfo.release();

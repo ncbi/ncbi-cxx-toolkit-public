@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/03/10 15:00:35  vasilche
+* Fixed OPTIONAL members reading.
+*
 * Revision 1.32  2000/03/07 14:06:21  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -234,7 +237,7 @@ void AssignMemberDefault(CObjectIStream& in, TObjectPtr object,
     if ( def == 0 )
         info->GetTypeInfo()->SetDefault(member);
     else
-        info->GetTypeInfo()->Assign(member, info->GetDefault());
+        info->GetTypeInfo()->Assign(member, def);
     // update 'set' flag
     if ( info->HaveSetFlag() )
         info->GetSetFlag(object) = false;
@@ -577,22 +580,23 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
     }
     else {
         // sequential order
+        size_t currentMember = 0;
         CObjectIStream::LastMember lastMember(m_Members);
         while ( block.Next() ) {
             // get next member
             CObjectIStream::Member m(in, lastMember);
             // find desired member
-            size_t index = m.GetIndex();
-            for ( size_t i = lastMember.GetIndex() + 1; i < index; ++i ) {
+            size_t fileMember = m.GetIndex();
+            while ( currentMember < fileMember ) {
                 // init missing member
-                AssignMemberDefault(in, object, m_Members, i);
+                AssignMemberDefault(in, object, m_Members, currentMember++);
             }
-            ReadMember(in, object, m_Members, index);
+            ReadMember(in, object, m_Members, currentMember++);
         }
         // init all absent members
-        for ( size_t i = lastMember.GetIndex() + 1, end = m_Members.GetSize();
-              i < end; ++i ) {
-            AssignMemberDefault(in, object, m_Members, i);
+        size_t memberCount = m_Members.GetSize();
+        while ( currentMember < memberCount ) {
+            AssignMemberDefault(in, object, m_Members, currentMember++);
         }
     }
 }
