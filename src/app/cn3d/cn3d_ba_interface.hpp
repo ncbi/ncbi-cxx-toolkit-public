@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/08/01 01:59:26  thiessen
+* fix type syntax error
+*
 * Revision 1.2  2002/08/01 01:55:16  thiessen
 * add block aligner options dialog
 *
@@ -81,7 +84,7 @@ public:
     } BlockAlignerOptions;
 
 private:
-    struct BlockAlignerOptions currentOptions;
+    BlockAlignerOptions currentOptions;
 };
 
 END_SCOPE(Cn3D)
