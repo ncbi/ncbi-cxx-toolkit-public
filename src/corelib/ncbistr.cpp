@@ -783,6 +783,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     const string* pfx = prefix1 ? prefix1 : prefix;
     SIZE_TYPE     pos = 0, len = str.size();
     string        hyphen; // "-" or empty
+    bool          is_html  = flags & fWrap_HTMLPre ? true : false;
 
     enum EScore { // worst to best
         eForced,
@@ -792,15 +793,15 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     };
 
     while (pos < len) {
-        SIZE_TYPE column     = s_VisibleWidth(*pfx,
-                                              (flags & fWrap_HTMLPre)!=0);
+        SIZE_TYPE column     = s_VisibleWidth(*pfx, is_html);
         // the next line will start at best_pos
         SIZE_TYPE best_pos   = NPOS;
         EScore    best_score = eForced;
         for (SIZE_TYPE pos2 = pos;  pos2 < len && column <= width;
              ++pos2, ++column) {
-            EScore score = eForced;
-            char   c     = str[pos2];
+            EScore    score     = eForced;
+            SIZE_TYPE score_pos = pos2;
+            char      c         = str[pos2];
 
             if (c == '\n') {
                 best_pos   = pos2;
@@ -811,19 +812,26 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                     continue; // take the first space of a group
                 }
                 score = eSpace;
-            } else if ((flags & fWrap_HTMLPre)  &&  c == '<') {
+            } else if (is_html  &&  c == '<') {
                 // treat tags as zero-width...
                 pos2 = s_EndOfTag(str, pos2);
                 --column;
-            } else if ((flags & fWrap_HTMLPre)  &&  c == '&') {
+            } else if (is_html  &&  c == '&') {
                 // ...and references as single characters
                 pos2 = s_EndOfReference(str, pos2);
             } else if (ispunct(c)) {
-                score = ePunct;
+                if (c == '('  ||  c == '['  ||  c == '{'  ||  c == '<'
+                    ||  c == '`') { // opening element
+                    score = ePunct;
+                } else if (score_pos < len - 1) {
+                    // Prefer breaking *after* most types of punctuation.
+                    score = ePunct;
+                    ++score_pos;
+                }
             }
 
             if (score >= best_score) {
-                best_pos   = pos2;
+                best_pos   = score_pos;
                 best_score = score;
             }
         }
@@ -922,6 +930,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2003/02/04 21:54:12  ucko
+ * NStr::Wrap: when breaking on punctuation, try to position the break
+ * *after* everything but opening delimiters.
+ *
  * Revision 1.70  2003/01/31 03:39:11  lavr
  * Heed int->bool performance warning
  *
