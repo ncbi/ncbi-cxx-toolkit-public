@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/10/15 13:39:06  gouriano
+* added "noprefix" flag
+*
 * Revision 1.6  2002/09/09 18:14:00  grichenk
 * Added CObjectHookGuard class.
 * Added methods to be used by hooks for data
@@ -123,6 +126,8 @@ public:
     const CChoiceTypeInfo* GetChoiceType(void) const;
 
     EVariantType GetVariantType(void) const;
+
+    CVariantInfo* SetNoPrefix(void);
 
     bool IsInline(void) const;
     bool IsNonObjectPointer(void) const;

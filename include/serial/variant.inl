@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/10/15 13:39:06  gouriano
+* added "noprefix" flag
+*
 * Revision 1.6  2002/09/09 18:14:00  grichenk
 * Added CObjectHookGuard class.
 * Added methods to be used by hooks for data
@@ -76,6 +79,13 @@ inline
 CVariantInfo::EVariantType CVariantInfo::GetVariantType(void) const
 {
     return m_VariantType;
+}
+
+inline
+CVariantInfo* CVariantInfo::SetNoPrefix(void)
+{
+    GetId().SetNoPrefix();
+    return this;
 }
 
 inline
