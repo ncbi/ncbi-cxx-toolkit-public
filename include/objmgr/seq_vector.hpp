@@ -65,10 +65,10 @@ class CNcbi2naRandomizer;
 ///  Sequence data
 
 struct NCBI_XOBJMGR_EXPORT SSeqData {
-    TSeqPos              length;      /// Length of the sequence data piece
-    TSeqPos              dest_start;  /// Starting pos in the dest. Bioseq
-    TSeqPos              src_start;   /// Starting pos in the source Bioseq
-    CConstRef<CSeq_data> src_data;    /// Source sequence data
+    TSeqPos              length;      ///< Length of the sequence data piece
+    TSeqPos              dest_start;  ///< Starting pos in the dest. Bioseq
+    TSeqPos              src_start;   ///< Starting pos in the source Bioseq
+    CConstRef<CSeq_data> src_data;    ///< Source sequence data
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -107,14 +107,14 @@ public:
 
     bool empty(void) const;
     TSeqPos size(void) const;
-    // 0-based array of residues
+    /// 0-based array of residues
     TResidue operator[] (TSeqPos pos) const;
 
-    // true if sequence at 0-based position 'pos' has gap
+    /// true if sequence at 0-based position 'pos' has gap
     bool IsInGap(TSeqPos pos) const;
 
-    // Fill the buffer string with the sequence data for the interval
-    // [start, stop).
+    /// Fill the buffer string with the sequence data for the interval
+    /// [start, stop).
     void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const;
     void GetSeqData(const const_iterator& start,
                     const const_iterator& stop,
@@ -130,18 +130,18 @@ public:
     const CSeqMap& GetSeqMap(void) const;
     ENa_strand GetStrand(void) const;
 
-    // Target sequence coding. CSeq_data::e_not_set -- do not
-    // convert sequence (use GetCoding() to check the real coding).
+    /// Target sequence coding. CSeq_data::e_not_set -- do not
+    /// convert sequence (use GetCoding() to check the real coding).
     TCoding GetCoding(void) const;
     void SetCoding(TCoding coding);
-    // Set coding to either Iupacaa or Iupacna depending on molecule type
+    /// Set coding to either Iupacaa or Iupacna depending on molecule type
     void SetIupacCoding(void);
-    // Set coding to either Ncbi8aa or Ncbi8na depending on molecule type
+    /// Set coding to either Ncbi8aa or Ncbi8na depending on molecule type
     void SetNcbiCoding(void);
-    // Set coding to either Iupac or Ncbi8xx
+    /// Set coding to either Iupac or Ncbi8xx
     void SetCoding(EVectorCoding coding);
 
-    // Return gap symbol corresponding to the selected coding
+    /// Return gap symbol corresponding to the selected coding
     TResidue GetGapChar(void) const;
 
     bool CanGetRange(TSeqPos from, TSeqPos to) const;
@@ -151,7 +151,7 @@ public:
     const_iterator begin(void) const;
     const_iterator end(void) const;
 
-    // Randomization of ambiguities and gaps in ncbi2na coding
+    /// Randomization of ambiguities and gaps in ncbi2na coding
     void SetRandomizeAmbiguities(void);
     void SetRandomizeAmbiguities(Uint4 seed);
     void SetRandomizeAmbiguities(CRandom& random_gen);
@@ -352,6 +352,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2004/11/22 16:04:06  grichenk
+* Fixed/added doxygen comments
+*
 * Revision 1.53  2004/10/27 14:17:33  vasilche
 * Implemented CSeqVector::IsInGap() and CSeqVector_CI::IsInGap().
 *

@@ -69,14 +69,14 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
 {
     /// Flag to indicate location overlapping method
     enum EOverlapType {
-        eOverlap_Intervals,  // default - overlapping of individual intervals
-        eOverlap_TotalRange  // overlapping of total ranges only
+        eOverlap_Intervals,  ///< default - overlapping of individual intervals
+        eOverlap_TotalRange  ///< overlapping of total ranges only
     };
     /// Flag to indicate references resolution method
     enum EResolveMethod {
-        eResolve_None,   /// Do not search annotations on segments
-        eResolve_TSE,    /// default - search only on segments in the same TSE
-        eResolve_All     /// Search annotations for all referenced sequences
+        eResolve_None,   ///< Do not search annotations on segments
+        eResolve_TSE,    ///< default - search only on segments in the same TSE
+        eResolve_All     ///< Search annotations for all referenced sequences
     };
     /// Flag to indicate adaptive segment selection
     enum ESegmentSelect {
@@ -86,14 +86,14 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     };
     /// Flag to indicate sorting method
     enum ESortOrder {
-        eSortOrder_None,    /// do not sort annotations for faster retrieval
-        eSortOrder_Normal,  /// default - increasing start, decreasing length
-        eSortOrder_Reverse  /// decresing end, decreasing length
+        eSortOrder_None,    ///< do not sort annotations for faster retrieval
+        eSortOrder_Normal,  ///< default - increasing start, decreasing length
+        eSortOrder_Reverse  ///< decresing end, decreasing length
     };
     enum EUnresolvedFlag {
-        eIgnoreUnresolved, /// Ignore unresolved ids (default)
-        eSearchUnresolved, /// Search annotations for unresolvable IDs
-        eFailUnresolved    /// Throw exception for unresolved ids
+        eIgnoreUnresolved, ///< Ignore unresolved ids (default)
+        eSearchUnresolved, ///< Search annotations for unresolvable IDs
+        eFailUnresolved    ///< Throw exception for unresolved ids
     };
 
     SAnnotSelector(TAnnotType annot = CSeq_annot::C_Data::e_not_set,
@@ -409,6 +409,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/11/22 16:04:06  grichenk
+* Fixed/added doxygen comments
+*
 * Revision 1.37  2004/11/15 22:21:48  grichenk
 * Doxygenized comments, fixed group names.
 *

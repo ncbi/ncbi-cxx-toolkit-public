@@ -194,24 +194,24 @@ public:
     virtual ~CDataLoader(void);
 
 public:
-    // main blob is blob with sequence
-    // all other blobs are external and contain external annotations
+    /// main blob is blob with sequence
+    /// all other blobs are external and contain external annotations
     enum EChoice {
-        eBlob,        //< whole main
-        eBioseq,      //< main blob with complete bioseq
-        eCore,        //< ?only seq-entry core?
-        eBioseqCore,  //< main blob with bioseq core (no seqdata and annots)
-        eSequence,    //< seq data 
-        eFeatures,    //< features from main blob
-        eGraph,       //< graph annotations from main blob
-        eAlign,       //< aligns from main blob
-        eAnnot,       //< all annotations from main blob
-        eExtFeatures, //< external features
-        eExtGraph,    //< external graph annotations
-        eExtAlign,    //< external aligns
-        eExtAnnot,    //< all external annotations
-        eOrphanAnnot, //< all external annotations if no Bioseq exists 
-        eAll          //< all blobs (main and external)
+        eBlob,        ///< whole main
+        eBioseq,      ///< main blob with complete bioseq
+        eCore,        ///< ?only seq-entry core?
+        eBioseqCore,  ///< main blob with bioseq core (no seqdata and annots)
+        eSequence,    ///< seq data 
+        eFeatures,    ///< features from main blob
+        eGraph,       ///< graph annotations from main blob
+        eAlign,       ///< aligns from main blob
+        eAnnot,       ///< all annotations from main blob
+        eExtFeatures, ///< external features
+        eExtGraph,    ///< external graph annotations
+        eExtAlign,    ///< external aligns
+        eExtAnnot,    ///< all external annotations
+        eOrphanAnnot, ///< all external annotations if no Bioseq exists 
+        eAll          ///< all blobs (main and external)
     };
     
     typedef set<TTSE_Lock>          TTSE_LockSet;
@@ -307,6 +307,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/11/22 16:04:06  grichenk
+* Fixed/added doxygen comments
+*
 * Revision 1.37  2004/10/26 15:47:43  vasilche
 * Added short description of various types of annotation blobs.
 *

@@ -96,9 +96,9 @@ public:
     CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc);
 
     enum EGetBioseqFlag {
-        eGetBioseq_Resolved, //< Search only in already resolved ids
-        eGetBioseq_Loaded,   //< Search in all loaded TSEs in the scope
-        eGetBioseq_All       //< Search bioseq, load if not loaded yet
+        eGetBioseq_Resolved, ///< Search only in already resolved ids
+        eGetBioseq_Loaded,   ///< Search in all loaded TSEs in the scope
+        eGetBioseq_All       ///< Search bioseq, load if not loaded yet
     };
 
     /// Get bioseq handle without loading new data
@@ -257,6 +257,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2004/11/22 16:04:06  grichenk
+* Fixed/added doxygen comments
+*
 * Revision 1.82  2004/09/28 14:30:02  vasilche
 * Implemented CScope::AddSeq_annot().
 *

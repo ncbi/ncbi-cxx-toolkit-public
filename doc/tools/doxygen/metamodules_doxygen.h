@@ -524,6 +524,10 @@
  *  @ingroup OBJECTMANAGER
  */
 
+/** @defgroup ObjUtilFeature Feature utilities
+ *  @ingroup OBJECTMANAGER
+ */
+
 
 /* ========================================================================= */
 

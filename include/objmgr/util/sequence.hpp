@@ -72,25 +72,16 @@ BEGIN_SCOPE(sequence)
  */
 
 
+/** @name SeqIdConv
+ * Conversions between seq-id types
+ * @{
+ */
+
 NCBI_XOBJUTIL_EXPORT
 int GetGiForAccession(const string& acc, CScope& scope);
 
 NCBI_XOBJUTIL_EXPORT
 string GetAccessionForGi(int gi, CScope& scope, bool with_version = true);
-
-/// Get sequence's title (used in various flat-file formats.)
-/// This function is here rather than in CBioseq because it may need
-/// to inspect other sequences.  The reconstruct flag indicates that it
-/// should ignore any existing title Seqdesc.
-enum EGetTitleFlags {
-    fGetTitle_Reconstruct = 0x1, ///< ignore existing title Seqdesc.
-    fGetTitle_Organism    = 0x2, ///< append [organism]
-    fGetTitle_AllProteins = 0x4  ///< normally just names the first
-};
-typedef int TGetTitleFlags;
-NCBI_XOBJUTIL_EXPORT
-string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
-
 
 /// Retrieve a particular seq-id from a given bioseq handle.  This uses
 /// CSynonymsSet internally to decide which seq-id should be used.
@@ -104,6 +95,7 @@ enum EGetIdType {
 
     eGetId_Default = eGetId_Best
 };
+
 NCBI_XOBJUTIL_EXPORT
 const CSeq_id& GetId(const CBioseq_Handle& handle,
                      EGetIdType type = eGetId_Default);
@@ -116,7 +108,34 @@ NCBI_XOBJUTIL_EXPORT
 const CSeq_id& GetId(const CSeq_id_Handle& id, CScope& scope,
                      EGetIdType type = eGetId_Default);
 
+/* @} */
 
+
+/** @name GetTitle
+ * Get sequence's title (used in various flat-file formats.)
+ * @{
+ */
+
+/// This function is here rather than in CBioseq because it may need
+/// to inspect other sequences.  The reconstruct flag indicates that it
+/// should ignore any existing title Seqdesc.
+enum EGetTitleFlags {
+    fGetTitle_Reconstruct = 0x1, ///< ignore existing title Seqdesc.
+    fGetTitle_Organism    = 0x2, ///< append [organism]
+    fGetTitle_AllProteins = 0x4  ///< normally just names the first
+};
+typedef int TGetTitleFlags;
+
+NCBI_XOBJUTIL_EXPORT
+string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
+
+/* @} */
+
+
+/** @name Source and Product
+ * Mapping locations through features
+ * @{
+ */
 
 enum ES2PFlags {
     fS2P_NoMerge  = 0x1, ///< don't merge adjacent intervals on the product
@@ -138,6 +157,13 @@ NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
                                TP2SFlags flags = 0, CScope* scope = 0);
 
+/* @} */
+
+
+/** @name Overlapping
+ * Searching for features
+ * @{
+ */
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
@@ -269,6 +295,13 @@ const CSeq_feat* GetmRNAForProduct(const CBioseq& product, CScope* scope);
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetmRNAForProduct(const CBioseq_Handle& product);
 
+/* @} */
+
+
+/** @name Sequences
+ * Searching for bioseqs etc.
+ * @{
+ */
 
 /// Get the encoding nucleotide sequnce of a protein.
 NCBI_XOBJUTIL_EXPORT
@@ -287,10 +320,14 @@ const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle);
 NCBI_XOBJUTIL_EXPORT
 int GetTaxId(const CBioseq_Handle& handle);
 
+/* @} */
+
 
 END_SCOPE(sequence)
 
+
 /// FASTA-format output; see also ReadFasta in <objtools/readers/fasta.hpp>
+
 class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
     enum EFlags {
@@ -328,6 +365,7 @@ private:
     TSeqPos       m_Width;
     TFlags        m_Flags;
 };
+
 
 /// Public interface for coding region translation function
 /// Uses CTrans_table in <objects/seqfeat/Genetic_code_table.hpp>
@@ -556,6 +594,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.53  2004/11/22 16:04:07  grichenk
+* Fixed/added doxygen comments
+*
 * Revision 1.52  2004/11/19 15:09:33  shomrat
 * Added GetBestOverlapForSNP
 *

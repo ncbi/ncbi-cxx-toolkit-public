@@ -243,13 +243,13 @@ public:
 
     /// CSeqVector constructor flags
     enum EVectorCoding {
-        eCoding_NotSet, //< Use original coding - DANGEROUS! - may change
-        eCoding_Ncbi,   //< Set coding to binary coding (Ncbi4na or Ncbistdaa)
-        eCoding_Iupac   //< Set coding to printable coding (Iupacna or Iupacaa)
+        eCoding_NotSet, ///< Use original coding - DANGEROUS! - may change
+        eCoding_Ncbi,   ///< Set coding to binary coding (Ncbi4na or Ncbistdaa)
+        eCoding_Iupac   ///< Set coding to printable coding (Iupacna or Iupacaa)
     };
     enum EVectorStrand {
-        eStrand_Plus,   //< Plus strand
-        eStrand_Minus   //< Minus strand
+        eStrand_Plus,   ///< Plus strand
+        eStrand_Minus   ///< Minus strand
     };
 
     /// Get sequence: Iupacna or Iupacaa if use_iupac_coding is true
@@ -270,9 +270,9 @@ public:
     /// when creating merged or excluded views. If "minus_strand" is true,
     /// the result is reverse-complement.
     enum ESequenceViewMode {
-        eViewConstructed,    //< Do not merge or reorder intervals
-        eViewMerged,         //< Merge overlapping intervals, sort by location
-        eViewExcluded        //< Show intervals not included in the seq-loc
+        eViewConstructed,    ///< Do not merge or reorder intervals
+        eViewMerged,         ///< Merge overlapping intervals, sort by location
+        eViewExcluded        ///< Show intervals not included in the seq-loc
     };
 
     /// Create a seq-vector for a part of the bioseq
@@ -604,6 +604,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2004/11/22 16:04:06  grichenk
+* Fixed/added doxygen comments
+*
 * Revision 1.63  2004/11/01 19:31:56  grichenk
 * Added GetRangeSeq_loc()
 *

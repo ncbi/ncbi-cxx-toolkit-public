@@ -72,11 +72,11 @@ public:
     bool operator>=(const CSeqVector_CI& iter) const;
     bool operator<=(const CSeqVector_CI& iter) const;
 
-    // Fill the buffer string with the sequence data for the interval
-    // [start, stop).
+    /// Fill the buffer string with the sequence data for the interval
+    /// [start, stop).
     void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer);
-    // Fill the buffer string with the count bytes of sequence data
-    // starting with current iterator position
+    /// Fill the buffer string with the count bytes of sequence data
+    /// starting with current iterator position
     void GetSeqData(string& buffer, TSeqPos count);
 
     CSeqVector_CI& operator++(void);
@@ -96,21 +96,21 @@ public:
     TResidue operator*(void) const;
     operator bool(void) const;
 
-    // true if current position of CSeqVector_CI is inside of sequence gap
+    /// true if current position of CSeqVector_CI is inside of sequence gap
     bool IsInGap(void) const;
-    // returns number of gap symbols ahead including current symbol
-    // returns 0 if current position is not in gap
+    /// returns number of gap symbols ahead including current symbol
+    /// returns 0 if current position is not in gap
     TSeqPos GetGapSizeForward(void) const;
-    // returns number of gap symbols before current symbol
-    // returns 0 if current position is not in gap
+    /// returns number of gap symbols before current symbol
+    /// returns 0 if current position is not in gap
     TSeqPos GetGapSizeBackward(void) const;
-    // skip current gap forward
-    // returns number of skipped gap symbols
-    // does nothing and returns 0 if current position is not in gap
+    /// skip current gap forward
+    /// returns number of skipped gap symbols
+    /// does nothing and returns 0 if current position is not in gap
     TSeqPos SkipGap(void);
-    // skip current gap backward
-    // returns number of skipped gap symbols
-    // does nothing and returns 0 if current position is not in gap
+    /// skip current gap backward
+    /// returns number of skipped gap symbols
+    /// does nothing and returns 0 if current position is not in gap
     TSeqPos SkipGapBackward(void);
 
     CSeqVector_CI& operator+=(TSeqPos value);
@@ -463,6 +463,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/11/22 16:04:06  grichenk
+* Fixed/added doxygen comments
+*
 * Revision 1.23  2004/10/27 16:36:29  vasilche
 * Added methods for working with gaps.
 *

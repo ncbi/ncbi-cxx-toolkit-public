@@ -44,21 +44,33 @@ class CScope;
 
 BEGIN_SCOPE(feature)
 
+
+/** @addtogroup ObjUtilFeature
+ *
+ * @{
+ */
+
+
+/** @name GetLabel
+ * Returns a label for a CSeq_feat. Label may be based on just the type of 
+ * feature, just the content of the feature, or both. If scope is 0, then the
+ * label will not include information from feature products.
+ * @{
+ */
+
 enum ELabelType {
     eType,
     eContent,
     eBoth
 };
 
-
-// Returns a label for a CSeq_feat. Label may be based on just the type of 
-// feature, just the content of the feature, or both. If scope is 0, then the
-// label will not include information from feature products.
 NCBI_XOBJUTIL_EXPORT
 void GetLabel (const CSeq_feat&    feat, 
                string*             label, 
                feature::ELabelType label_type,
                CScope*             scope = 0);
+
+/* @} */
 
 
 END_SCOPE(feature)
@@ -68,6 +80,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2004/11/22 16:04:07  grichenk
+* Fixed/added doxygen comments
+*
 * Revision 1.3  2002/12/26 19:45:50  dicuccio
 * Added export specifier for feature::GetLabel()
 *

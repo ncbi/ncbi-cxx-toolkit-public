@@ -126,8 +126,8 @@ public:
     };
     /// Method of treating locations already on the destination
     enum EDestinationLocs {
-        eDestinationPreserve,  /// preserve locations on the destination
-        eDestinationRemove     /// remove any location not on the source
+        eDestinationPreserve,  ///< preserve locations on the destination
+        eDestinationRemove     ///< remove any location not on the source
     };
 
     /// Mapping through a feature, both location and product must be set.
@@ -509,6 +509,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/11/22 16:04:06  grichenk
+* Fixed/added doxygen comments
+*
 * Revision 1.21  2004/11/15 22:21:48  grichenk
 * Doxygenized comments, fixed group names.
 *
