@@ -105,24 +105,12 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                          size_t                  errbuf_size,
                          CCgiRequest::TFlags     flags)
     : m_App(app),
-      m_Request(0),
+      m_Request(new CCgiRequest(args ? args : &app.GetArguments(),
+                                env  ? env  : &app.GetEnvironment(),
+                                inp, flags, ifd, errbuf_size)),
       m_Response(out, ofd)
 {
-    try {
-        m_Request.reset(new CCgiRequest(args ? args : &app.GetArguments(),
-                                        env  ? env  : &app.GetEnvironment(),
-                                        inp, flags, ifd, errbuf_size));
-    }
-    catch (exception& _DEBUG_ARG(e)) {
-        _TRACE("CCgiContext::CCgiContext: " << e.what());
-        PutMsg("Bad request");
-
-        char buf[1];
-        CNcbiIstrstream dummy(buf, 0);
-        m_Request.reset(new CCgiRequest
-                        (args, env, &dummy, CCgiRequest::fIgnoreQueryString,
-                         ifd, errbuf_size));
-    }
+    return;
 }
 
 
@@ -300,6 +288,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.39  2004/08/04 15:56:28  vakatov
+* CCgiContext::CCgiContext() -- if the construction of CCgiRequest has
+* failed do not try to construct and use a "semi-dummy" CCgiRequest.
+*
 * Revision 1.38  2004/06/21 16:20:08  vakatov
 * GetSelfURL() -- allow to skip port #;  do it for NCBI frontents by default
 *
