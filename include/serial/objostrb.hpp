@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/07/21 20:02:16  vasilche
+* Added embedding of ASN.1 binary output from ToolKit to our binary format.
+*
 * Revision 1.8  1999/07/21 14:20:00  vasilche
 * Added serialization of bool.
 *
@@ -96,6 +99,9 @@ public:
     void WriteSize(unsigned size);
     virtual void WriteString(const string& str);
     virtual void WriteCString(const char* str);
+
+    virtual unsigned GetAsnFlags(void);
+    virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
 
 protected:
 

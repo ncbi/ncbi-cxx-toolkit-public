@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/21 20:02:14  vasilche
+* Added embedding of ASN.1 binary output from ToolKit to our binary format.
+*
 * Revision 1.4  1999/07/21 14:19:57  vasilche
 * Added serialization of bool.
 *
@@ -115,6 +118,10 @@ protected:
     virtual void EndMember(const Member& member);
 	virtual void Begin(ByteBlock& block);
 	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);
+
+    virtual unsigned GetAsnFlags(void);
+    virtual void AsnOpen(AsnIo& asn);
+    virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
 
 private:
     CIObjectInfo ReadObjectPointer(void);
