@@ -95,6 +95,7 @@ public:
                                unsigned char ch);
     static int RevCompState   (int state);
 
+    // lookup of amino acid translated for given codon (state)
     char GetCodonResidue (int state) const;
     char GetStartResidue (int state) const;
 
@@ -130,7 +131,7 @@ private:
 
 
 
-// public interface for single instance of genetic code and translation tables
+// public interface for (single instance) genetic code and translation tables
 
 class CGen_code_table
 {
@@ -138,6 +139,9 @@ public:
     // return initialized translation table given genetic code
     static const CTrans_table & GetTransTable (int id);
     static const CTrans_table & GetTransTable (const CGenetic_code & gc);
+
+    // return table of loaded genetic codes for iteration
+    static const CGenetic_code_table & GetCodeTable (void);
 };
 
 
@@ -232,6 +236,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/09/10 15:18:08  kans
+* added GetCodeTable method
+*
 * Revision 1.1  2002/09/09 20:58:06  kans
 * added CTrans_table and CGen_code_table classes
 *
