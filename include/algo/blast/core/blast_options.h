@@ -321,7 +321,7 @@ typedef struct PSIBlastOptions {
  *  to a subset.
  *  THESE SHOULD PROBABLY BE MOVED TO A DIFFERENT HEADER FILE!!!
  */
-typedef struct BlastDatabaseSetUpOptions {
+typedef struct BlastDatabaseOptions {
    CharPtr database; /**< Name of the database */
    Int4 genetic_code;  /**< Genetic code to use for translation, 
                              tblast[nx] only */
