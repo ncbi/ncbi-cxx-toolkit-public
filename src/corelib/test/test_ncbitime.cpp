@@ -25,6 +25,9 @@
  * Authors:  Anton Butanayev, Denis Vakatov
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/07/06 15:08:36  ivanov
+ * Added tests for DataBase-time's
+ *
  * Revision 6.7  2001/05/29 16:14:02  ivanov
  * Return to nanosecond-revision. Corrected mistake of the work with local
  * time on Linux. Polish and improvement source code.
@@ -194,6 +197,27 @@ static void s_TestMisc(void)
     _ASSERT(t8.DiffSecond(t7) == 96676);
     printf("DiffNanoSecond = %.0f\n", t8.DiffNanoSecond(t7));
     //    _ASSERT(t8.DiffNanoSecond(t7) == 96676000000001);
+
+    CTime t9(2000, 1, 1, 1, 1, 1, 10000000);
+    CTime::SetFormat("M/D/Y h:m:s.S");
+
+    cout << endl << "DB time formats [" << t9.AsString() << "]" << endl;
+
+    TDBTimeU dbu = t9.GetTimeDBU();
+    TDBTimeI dbi = t9.GetTimeDBI();
+
+    cout << "DBU days             = " << dbu.days << endl;
+    cout << "DBU time (min)       = " << dbu.time << endl;
+    cout << "DBI days             = " << dbi.days << endl;
+    cout << "DBI time (1/300 sec) = " << dbi.time << endl;
+    cout << endl;
+    CTime t10;
+    t10.SetTimeDBU(dbu);
+    cout << "Time from DBU        = " << t10.AsString() << endl;
+    t10.SetTimeDBI(dbi);
+    cout << "Time from DBI        = " << t10.AsString() << endl;
+
+    cout << endl;
 }
 
 
