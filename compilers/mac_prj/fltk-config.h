@@ -212,8 +212,9 @@
  */
 
 /* #undef HAVE_PTHREAD */
+#define HAVE_PTHREAD  1
 /* #undef HAVE_PTHREAD_H */
-
+#define HAVE_PTHREAD_H 1
 
 /*
  * End of "$Id$".
