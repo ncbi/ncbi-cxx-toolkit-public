@@ -70,22 +70,29 @@ void CTestDateApp::Init(void)
 
 int CTestDateApp::Run(void)
 {
-    CArgs args = GetArgs();
-    CDate_std date;
-    date.SetYear(args["Y"].AsInteger());
+    CArgs      args = GetArgs();
+    CDate      date;
+    CDate_std& std  = date.SetStd();
+    std.SetYear(args["Y"].AsInteger());
     if (args["M"]) {
-        date.SetMonth(args["M"].AsInteger());
+        std.SetMonth(args["M"].AsInteger());
     }
     if (args["D"]) {
-        date.SetDay(args["D"].AsInteger());
+        std.SetDay(args["D"].AsInteger());
     }
     if (args["S"]) {
-        date.SetSeason(args["S"].AsString());
+        std.SetSeason(args["S"].AsString());
     }
     // ...
 
     string s;
+    date.GetDate(&s);
+    NcbiCout << '\"' << s << '\"' << NcbiEndl;
+    s.erase();
     date.GetDate(&s, args["f"].AsString());
+    NcbiCout << '\"' << s << '\"' << NcbiEndl;
+    s.erase();
+    date.GetDate(&s, "%Y-%M-%D");
     NcbiCout << '\"' << s << '\"' << NcbiEndl;
 
     return 0;
@@ -102,6 +109,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/10/08 20:25:23  ucko
+* Make sure that passing booleans and string literals to GetDate works properly.
+*
 * Revision 1.1  2002/10/04 14:45:10  ucko
 * Add a generic date formatter with flexible support for missing fields.
 *
