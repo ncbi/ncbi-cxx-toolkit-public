@@ -156,13 +156,6 @@ public:
     typedef map<CBioseq_Handle::TBioseqCore, CRef<CSeqMap> >  TSeqMaps;
     typedef map<const CObject*, CRef<CAnnotObject_Info> >     TAnnotObjects;
 
-    // Get TSEs containing annotations for the given location
-    void PopulateTSESet(CHandleRangeMap& loc,
-                        set<CTSE_Lock>& tse_set,
-                        CSeq_annot::C_Data::E_Choice sel,
-                        CScope& scope);
-
-
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
                           CSeq_annot::C_Data::E_Choice sel);
     void GetSynonyms(const CSeq_id_Handle& id,
@@ -276,11 +269,6 @@ private:
     // Change live/dead status of a TSE
     void x_UpdateTSEStatus(CSeq_entry& tse, bool dead);
 
-    // Replace initial handle range map with the new one, containing duplicate
-    // range sets for each synonym of each handle
-    void x_ResolveLocationHandles(CHandleRangeMap& loc,
-        const CScope::TRequestHistory& history) const;
-
     // Resolve the reference to rh, add the resolved interval(s) to dmap.
     // "start" is referenced region position on the "rh" sequence.
     // "dpos" is the starting point on the master sequence.
@@ -371,6 +359,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/03/03 20:31:09  vasilche
+* Removed obsolete method PopulateTSESet().
+*
 * Revision 1.41  2003/02/27 14:35:32  vasilche
 * Splitted PopulateTSESet() by logically independent parts.
 *
