@@ -613,7 +613,9 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             CTime t((int)v.year, (int)v.month, (int)v.day,
                     (int)v.hour, (int)v.minute, (int)v.second,
                     (long)v.fraction);
-            return new CDB_DateTime(t);
+            return (m_ColFmt[m_CurrItem].ColumnSize > 16 ||
+				m_ColFmt[m_CurrItem].DecimalDigits > 0)? (CDB_Object*)(new CDB_DateTime(t)) :
+				(CDB_Object*)(new CDB_SmallDateTime(t));
         }
     }
 
@@ -1045,6 +1047,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/01/31 21:48:27  soussov
+ * fixes bug in xMakeItem. It should return CDB_SmallDateTime if DecimalDigits == 0
+ *
  * Revision 1.12  2004/05/17 21:16:06  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
