@@ -268,6 +268,27 @@ string CMsvcSite::GetAppDefaultResource(void) const
 }
 
 
+void CMsvcSite::GetThirdPartyLibsToInstall(list<string>* libs) const
+{
+    libs->clear();
+
+    string libs_str = m_Registry.GetString("Configure", 
+                                           "ThirdPartyLibsToInstall", "");
+    NStr::Split(libs_str, LIST_SEPARATOR, *libs);
+}
+
+
+string CMsvcSite::GetThirdPartyLibsBinPathSuffix(void) const
+{
+    return m_Registry.GetString("Configure", 
+                                "ThirdPartyLibsBinPathSuffix", "");
+}
+
+string CMsvcSite::GetThirdPartyLibsBinSubDir(void) const
+{
+    return m_Registry.GetString("Configure", 
+                                "ThirdPartyLibsBinSubDir", "");
+}
 //-----------------------------------------------------------------------------
 bool IsLibOk(const SLibInfo& lib_info)
 {
@@ -302,6 +323,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/05/24 14:41:59  gorelenk
+ * Implemented member-functions supporting auto-install of third-party libs:
+ * CMsvcSite::GetThirdPartyLibsToInstall,
+ * CMsvcSite::GetThirdPartyLibsBinPathSuffix,
+ * CMsvcSite::GetThirdPartyLibsBinSubDir .
+ *
  * Revision 1.14  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
