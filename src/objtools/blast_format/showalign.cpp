@@ -108,7 +108,7 @@ static const string k_DumpGnlUrl = "/blast/dumpgnl.cgi";
 static const int k_FeatureIdLen = 16;
 static const int k_NumAsciiChar = 128;
 const string color[]={"#000000", "#808080", "#FF0000"};
-static const char k_PSymbol[CDisplaySeqalign::kPMatrixSize+1] =
+static const char k_PSymbol[CDisplaySeqalign::ePMatrixSize+1] =
 "ARNDCQEGHILKMFPSTWYVBZX";
 
 static const int k_IdStartMargin = 2;
@@ -128,7 +128,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
                                    CScope& scope,
                                    list <SeqlocInfo*>* mask_seqloc, 
                                    list <FeatureInfo*>* external_feature,
-                                   const int matrix[][kPMatrixSize])
+                                   const int matrix[][ePMatrixSize])
     : m_SeqalignSetRef(&seqalign),
       m_Seqloc(mask_seqloc),
       m_QueryFeature(external_feature),
@@ -165,8 +165,8 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
             temp[i][j] = -1000;
         }
     }
-    for(int i = 0; i < kPMatrixSize; ++i){
-        for(int j = 0; j < kPMatrixSize; ++j){
+    for(int i = 0; i < ePMatrixSize; ++i){
+        for(int j = 0; j < ePMatrixSize; ++j){
             if(matrix){
                 temp[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]] =
                     matrix[i][j];
@@ -177,7 +177,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
      
         }
     }
-    for(int i = 0; i < kPMatrixSize; ++i) {
+    for(int i = 0; i < ePMatrixSize; ++i) {
         temp[(size_t)k_PSymbol[i]]['*'] = temp['*'][(size_t)k_PSymbol[i]] = -4;
     }
     temp['*']['*'] = 1; 
@@ -2119,6 +2119,26 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
             CBlastFormatUtil::GetScoreString((*iterAv)->evalue, 
                                              (*iterAv)->bits, evalue_buf, 
                                              bit_score_buf);
+            //add id anchor for mapviewer link
+            if(m_AlignOption&eHtml && NStr::ToUpper(m_BlastType).find("GENOME") != string::npos){
+                string subj_id_str;
+                char buffer[126];
+                int master_start = m_AV->GetSeqStart(0) + 1;
+                int master_stop = m_AV->GetSeqStop(0) + 1;
+                int subject_start = m_AV->GetSeqStart(1) + 1;
+                int subject_stop = m_AV->GetSeqStop(1) + 1;
+                
+                m_AV->GetSeqId(1).GetLabel(&subj_id_str, CSeq_id::eContent);
+             
+                sprintf(buffer, "<a name = %s_%d_%d_%d_%d_%d>",
+                        subj_id_str.c_str(), (*iterAv)->score,
+                        min(master_start, master_stop),
+                        max(master_start, master_stop),
+                        min(subject_start, subject_stop),
+                        max(subject_start, subject_stop));
+                        
+                out << buffer << endl; 
+            }
             out<<" Score = "<<bit_score_buf<<" ";
             out<<"bits ("<<(*iterAv)->score<<"),"<<"  ";
             out<<"Expect = "<<evalue_buf<<endl;
@@ -2376,6 +2396,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.66  2005/03/14 15:49:06  jianye
+*Added hsp anchor for mapviewer
+*
 *Revision 1.65  2005/03/07 22:20:12  jianye
 *Not adding to multialnment if bioseq is withdrawn
 *
