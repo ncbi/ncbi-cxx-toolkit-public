@@ -45,10 +45,12 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJMGR_EXPORT CCachedId1Reader : public CId1Reader
 {
 public:
-    CCachedId1Reader(TConn noConn = 5, IBLOB_Cache* cache = 0);
+    CCachedId1Reader(TConn noConn = 5, 
+                     IBLOB_Cache* cache = 0,
+                     EOwnership take_ownership = eNoOwnership);
     ~CCachedId1Reader();
 
-    void SetCache(IBLOB_Cache* cache);
+    void SetCache(IBLOB_Cache* cache, EOwnership take_ownership = eNoOwnership);
 protected:
     
     /// Return IReader interface if BLOB described by the seqref 
@@ -89,6 +91,7 @@ private:
 
 private:
     IBLOB_Cache*   m_Cache; 
+    EOwnership     m_OwnCache;
 };
 
 
@@ -98,6 +101,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2003/10/03 17:41:33  kuznets
+* Added an option, that cache is owned by the ID1 reader.
+* Cache destroyed with the reader.
+*
 * Revision 1.3  2003/10/02 19:28:34  kuznets
 * First working revision
 *
