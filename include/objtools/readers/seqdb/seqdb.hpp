@@ -532,6 +532,34 @@ public:
     ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> SeqidToBioseq(const CSeq_id & seqid) const;
     
+    /// Find volume paths
+    ///
+    /// Find the base names of all volumes.  This method builds an
+    /// alias hierarchy (which should be much faster than constructing
+    /// an entire CSeqDB object), and returns the resolved volume file
+    /// base names from that hierarchy.
+    ///
+    /// @param dbname
+    ///   The input name of the database
+    /// @param prot_nucl
+    ///   Indicates whether the database is protein or nucleotide
+    /// @param paths
+    ///   The set of resolved database path names
+    static void
+    FindVolumePaths(const string   & dbname,
+                    char             prot_nucl,
+                    vector<string> & paths);
+    
+    /// Find volume paths
+    ///
+    /// Find the base names of all volumes.  This method version of
+    /// this method returns the existing internal versions of the
+    /// resolved volume file base names from that hierarchy.
+    ///
+    /// @param paths
+    ///   The returned set of resolved database path names
+    void FindVolumePaths(vector<string> & paths) const;
+    
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;

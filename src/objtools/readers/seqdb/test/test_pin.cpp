@@ -472,6 +472,67 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-gi2bs] [-gi2bs-target]";
         
+        if ((s == "-paths") ||
+            (s == "-paths-static") ||
+            (s == "-paths-three")) {
+            
+            bool full_version = false;
+            
+            if (s == "-paths") {
+                full_version = true;
+            }
+            
+            if (s == "-paths-three") {
+                cout << "Constructing prefetch version..." << endl;
+                CSeqDB nr(dbname, seqtype);
+                cout << "Done constructing prefetch version..." << endl;
+                
+                full_version = true;
+            }
+            
+            CStopWatch sw;
+            
+            double e[4];
+            
+            vector<string> paths;
+            vector<string> paths2;
+            
+            e[0] = sw.Elapsed();
+            
+            if (full_version) {
+                CSeqDB nr(dbname, seqtype);
+                
+                e[1] = sw.Elapsed();
+                
+                nr.FindVolumePaths(paths);
+            } else {
+                e[1] = sw.Elapsed();
+            }
+            
+            e[2] = sw.Elapsed();
+            
+            CSeqDB::FindVolumePaths(dbname, seqtype, paths2);
+
+            e[3] = sw.Elapsed();
+            
+            cout << "\n-- non-static method "
+                 << (e[1]-e[0]) << " to construct, "
+                 << (e[2]-e[1]) << " to get paths." << endl;
+            
+            ITERATE(vector<string>, iter, paths) {
+                cout << "    " << (*iter) << endl;
+            }
+            
+            cout << "\n-- static method "
+                 << (e[3]-e[2]) << " to get paths." << endl;
+            
+            ITERATE(vector<string>, iter, paths2) {
+                cout << "    " << (*iter) << endl;
+            }
+            
+            return 0;
+        } else desc += " [-paths | -paths-static | -paths-three]";
+        
         if (s == "-here") {
             CSeqDB nr("tenth", 'p');
             

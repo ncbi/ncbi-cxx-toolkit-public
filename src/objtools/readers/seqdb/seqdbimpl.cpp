@@ -678,5 +678,22 @@ Uint4 CSeqDBImpl::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
                "Could not find valid split point oid.");
 }
 
+void
+CSeqDBImpl::FindVolumePaths(const string   & dbname,
+                            char             prot_nucl,
+                            vector<string> & paths)
+{
+    CSeqDBImplFlush m_FlushCB;
+    CSeqDBAtlas atlas(true, & m_FlushCB);
+    CSeqDBAliasFile aliases(atlas, dbname, prot_nucl);
+    paths = aliases.GetVolumeNames();
+}
+
+void
+CSeqDBImpl::FindVolumePaths(vector<string> & paths) const
+{
+    paths = m_Aliases.GetVolumeNames();
+}
+
 END_NCBI_SCOPE
 

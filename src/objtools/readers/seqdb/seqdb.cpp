@@ -383,5 +383,19 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
     return bs;
 }
 
+void
+CSeqDB::FindVolumePaths(const string   & dbname,
+                        char             prot_nucl,
+                        vector<string> & paths)
+{
+    CSeqDBImpl::FindVolumePaths(dbname, prot_nucl, paths);
+}
+
+void
+CSeqDB::FindVolumePaths(vector<string> & paths) const
+{
+    m_Impl->FindVolumePaths(paths);
+}
+
 END_NCBI_SCOPE
 
