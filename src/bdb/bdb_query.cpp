@@ -331,21 +331,7 @@ public:
      : CScannerFunctor(env)
     {}
 
-    ~CScannerFunctorArgN()
-    {
-        CResourcePool<string>& str_pool = m_QueryEnv.GetStrPool();
-
-        unsigned int size = m_ArgValueVector.size();
-        for (unsigned int i = 0; i < size; ++i) {
-            string* str = m_ArgValueVector[i];
-            if (str) {
-                str_pool.Return(str);
-            }
-            CBoyerMooreMatcher* matcher = m_MatcherVector[i];
-            delete matcher;
-        }
-    }
-
+    ~CScannerFunctorArgN();
 
     /// Checks if value is equal to any field in the database
     bool IsAnyField(CBDB_File& dbf, 
@@ -457,6 +443,22 @@ protected:
     TArgValueVector       m_ArgValueVector;
     TStringMatcherVector  m_MatcherVector;
 };
+
+
+CScannerFunctorArgN::~CScannerFunctorArgN()
+{
+    CResourcePool<string>& str_pool = m_QueryEnv.GetStrPool();
+
+    unsigned int size = m_ArgValueVector.size();
+    for (unsigned int i = 0; i < size; ++i) {
+        string* str = m_ArgValueVector[i];
+        if (str) {
+            str_pool.Return(str);
+        }
+        CBoyerMooreMatcher* matcher = m_MatcherVector[i];
+        delete matcher;
+    }
+}
 
 
 /// EQ function 
@@ -636,86 +638,91 @@ public:
     }
   
     ETreeTraverseCode 
-    operator()(CTreeNode<CBDB_QueryNode>& tr, int delta)
-    {
-        CBDB_QueryNode& qnode = tr.GetValue();
+    operator()(CTreeNode<CBDB_QueryNode>& tr, int delta);
 
-// cout << delta << " " << tr.GetValue().GetValue() << endl;
-
-        if (delta == 0 || delta == 1) {
-            // If node has children, we skip it and process on the way back
-            if (!tr.IsLeaf())
-                return eTreeTraverse;
-        }
-
-        if (qnode.GetType() == CBDB_QueryNode::eValue) {
-            if (tr.GetParent() == 0) { // single top node
-                CBDB_File& dbf = m_QueryEnv.GetFile();
-                
-                if (!m_Matcher) {
-                    const string& search_value = qnode.GetValue();
-                    m_Matcher = s_MakeNewMatcher(search_value);
-                }
-                CBDB_File::TUnifiedFieldIndex fidx;
-                fidx = BDB_find_field(dbf, *m_Matcher);
-
-                qnode.SetAltValue(fidx ? "1" : "0");
-            }
-        }
-
-        if (!qnode.HasValue()) {
-            switch (qnode.GetType()) {
-            case CBDB_QueryNode::eValue:
-                break;
-            case CBDB_QueryNode::eOperator:
-                {
-                    CBDB_QueryNode::EOperatorType eop = qnode.GetOperatorType();
-                    switch (eop) {
-                    case CBDB_QueryNode::eEQ:
-                        {
-                        CScannerFunctorEQ func(m_QueryEnv);
-                        func.Eval(tr);
-                        }
-                        break;
-                    default:
-                        _ASSERT(0);
-                    } // switch eop
-                }
-                break;
-            case CBDB_QueryNode::eLogical:
-                {
-                    CBDB_QueryNode::ELogicalType elogic = qnode.GetLogicType();
-                    switch (elogic) {
-                    case CBDB_QueryNode::eAnd:
-                        {
-                        CScannerFunctorAND func(m_QueryEnv);
-                        func.Eval(tr);
-                        }
-                        break;
-                    case CBDB_QueryNode::eOr:
-                        {
-                        CScannerFunctorOR func(m_QueryEnv);
-                        func.Eval(tr);
-                        }
-                        break;
-                    default:
-                        _ASSERT(0);
-                    } // switch elogic
-                }
-                break;
-            default:
-                break;
-            } // switch node type
-
-        } // if
-
-        return eTreeTraverse;
-    }
 protected:
     CBoyerMooreMatcher*  m_Matcher;
     CQueryExecEnv&       m_QueryEnv;
 
 };
+
+
+ETreeTraverseCode 
+CScannerEvaluateFunc::operator()(CTreeNode<CBDB_QueryNode>& tr, int delta)
+{
+    CBDB_QueryNode& qnode = tr.GetValue();
+
+    // cout << delta << " " << tr.GetValue().GetValue() << endl;
+
+    if (delta == 0 || delta == 1) {
+        // If node has children, we skip it and process on the way back
+        if (!tr.IsLeaf())
+            return eTreeTraverse;
+    }
+
+    if (qnode.GetType() == CBDB_QueryNode::eValue) {
+        if (tr.GetParent() == 0) { // single top node
+            CBDB_File& dbf = m_QueryEnv.GetFile();
+                
+            if (!m_Matcher) {
+                const string& search_value = qnode.GetValue();
+                m_Matcher = s_MakeNewMatcher(search_value);
+            }
+            CBDB_File::TUnifiedFieldIndex fidx;
+            fidx = BDB_find_field(dbf, *m_Matcher);
+
+            qnode.SetAltValue(fidx ? "1" : "0");
+        }
+    }
+
+    if (!qnode.HasValue()) {
+        switch (qnode.GetType()) {
+        case CBDB_QueryNode::eValue:
+            break;
+        case CBDB_QueryNode::eOperator:
+        {
+            CBDB_QueryNode::EOperatorType eop = qnode.GetOperatorType();
+            switch (eop) {
+            case CBDB_QueryNode::eEQ:
+            {
+                CScannerFunctorEQ func(m_QueryEnv);
+                func.Eval(tr);
+            }
+            break;
+            default:
+                _ASSERT(0);
+            } // switch eop
+        }
+        break;
+        case CBDB_QueryNode::eLogical:
+        {
+            CBDB_QueryNode::ELogicalType elogic = qnode.GetLogicType();
+            switch (elogic) {
+            case CBDB_QueryNode::eAnd:
+            {
+                CScannerFunctorAND func(m_QueryEnv);
+                func.Eval(tr);
+            }
+            break;
+            case CBDB_QueryNode::eOr:
+            {
+                CScannerFunctorOR func(m_QueryEnv);
+                func.Eval(tr);
+            }
+            break;
+            default:
+                _ASSERT(0);
+            } // switch elogic
+        }
+        break;
+        default:
+            break;
+        } // switch node type
+
+    } // if
+
+    return eTreeTraverse;
+}
 
 
 bool CBDB_FileScanner::Evaluate(CBDB_Query& query)
@@ -870,6 +877,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/03/11 22:27:49  ucko
+ * Pull the bodies of CScannerFunctorArgN::~CScannerFunctorArgN and
+ * CScannerEvaluateFunc::operator() out of line so that they can call
+ * s_MakeNewMatcher.  (WorkShop prohibits inline or template functions
+ * from calling [file-]static functions.)
+ *
  * Revision 1.7  2004/03/11 18:42:01  kuznets
  * code cleaned up, minor bug fix
  *
