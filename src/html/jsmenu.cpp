@@ -270,7 +270,6 @@ string CHTMLPopupMenu::HideMenu(void) const
     default:
         ;
     }
-    _TROUBLE;
     return kEmptyStr;
 }
 
@@ -418,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/01/08 18:36:52  ivanov
+ * Removed _TROUBLE from HideMenu()
+ *
  * Revision 1.25  2003/12/18 20:14:40  golikov
  * Added HideMenu
  *
