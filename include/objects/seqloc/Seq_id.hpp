@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2002/06/06 20:32:01  clausen
+ * Moved methods using object manager to objects/util
+ *
  * Revision 1.15  2002/05/22 14:03:34  grichenk
  * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
  *
@@ -101,15 +104,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-
-class CBioseq;
-class CAbstractObjectManager;
-class CScope;
-
-
 class CSeq_id : public CSeq_id_Base,
-                public CSerializable,
-                public CSerialUserOp
+                public CSerializable
 {
     typedef CSeq_id_Base Tparent;
 
@@ -171,26 +167,9 @@ public:
     // Return compatible CTextseq_id
     const CTextseq_id* GetTextseq_Id(void) const;
 
-    // Setup object manager
-    void SetObjectManager   (CAbstractObjectManager* objMgr);
-    void ResetObjectManager (CAbstractObjectManager* objMgr);
-
-    // Use object manager to resolve sequence
-    const CBioseq* Resolve(void) const;
-
     // Implement serializable interface
     virtual void WriteAsFasta(ostream& out) const;
     const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
-    
-    // Get sequence length if a scope is available to resolve sequence. If
-    // scope is null, returns maximum value allowed by type
-    TSeqPos GetLength(CScope* scope) const;
-    
-
-protected:
-    // From CSerialUserOp
-    virtual void UserOp_Assign(const CSerialUserOp& source);
-    virtual bool UserOp_Equals(const CSerialUserOp& object) const;
 
 private:
     void x_Init 
@@ -206,7 +185,7 @@ private:
     CSeq_id(const CSeq_id&);
     CSeq_id& operator= (const CSeq_id&);
 
-    CRef<CAbstractObjectManager> m_ObjectManager;
+    //CRef<CAbstractObjectManager> m_ObjectManager;
 };
 
 

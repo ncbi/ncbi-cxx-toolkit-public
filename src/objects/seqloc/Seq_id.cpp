@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2002/06/06 20:31:33  clausen
+ * Moved methods using object manager to objects/util
+ *
  * Revision 6.22  2002/05/22 14:03:40  grichenk
  * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
  *
@@ -113,26 +116,13 @@
 // standard includes
 
 // generated includes
-#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/Bioseq.hpp>
 
-#include <objects/seq/Seq_inst.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
-#include <objects/seqloc/Giimport_id.hpp>
-#include <objects/seqloc/PDB_seq_id.hpp>
-#include <objects/seqloc/PDB_mol_id.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-#include <objects/seqloc/Patent_seq_id.hpp>
-#include <objects/biblio/Id_pat.hpp>
-
-// object manager includes
-#include <objects/seq/Bioseq.hpp>
-#include <objects/objmgr_old/objmgr_base.hpp>
-#include <objects/objmgr_old/scopes.hpp>
-#include <objects/objmgr_old/om_iter.hpp>
-
-#include <string>
 
 // generated classes
 
@@ -713,64 +703,6 @@ CSeq_id::x_Init
     default:
         THROW1_TRACE(invalid_argument, "Specified Seq-id type not supported");
     }
-}
-
-
-void CSeq_id::SetObjectManager(CAbstractObjectManager* objMgr)
-{
-    if ( m_ObjectManager )
-        THROW1_TRACE(runtime_error, "CSeq_id::SetObjectManager: already set");
-
-    if ( !objMgr )
-        THROW1_TRACE(runtime_error, "CSeq_id::SetObjectManager: null pointer");
-
-    m_ObjectManager = objMgr;
-}
-
-
-void CSeq_id::ResetObjectManager(CAbstractObjectManager* objMgr)
-{
-    if (m_ObjectManager != objMgr) {
-        ERR_POST("CSeq_id::ResetObjectManager: not owner");
-    }
-    m_ObjectManager.Reset();
-}
-
-
-const CBioseq* CSeq_id::Resolve(void) const
-{
-    if ( !m_ObjectManager ) {
-        THROW1_TRACE(runtime_error, "CSeq_id::Resolve: null pointer");
-    }
-    return m_ObjectManager->GetBioseq(*this);
-}
-
-
-void CSeq_id::UserOp_Assign(const CSerialUserOp& source)
-{
-    const CSeq_id& src = dynamic_cast<const CSeq_id&>(source);
-    m_ObjectManager = src.m_ObjectManager;
-}
-
-
-bool CSeq_id::UserOp_Equals(const CSerialUserOp& object) const
-{
-    const CSeq_id& obj = dynamic_cast<const CSeq_id&>(object);
-    return m_ObjectManager == obj.m_ObjectManager;
-}
-
-// Get sequence length if a scope is available to resolve sequence, else
-// return maximum value allowed by type
-TSeqPos CSeq_id::GetLength(CScope* scope) const
-{
-    if( !scope ) {
-        return numeric_limits<TSeqPos>::max();
-    }
-    
-    CBioseqHandle hnd = scope->GetBioseqHandle(*this);
-    CScope::TBioseqCore core = scope->GetBioseqCore(hnd);
-    return core->GetInst().IsSetLength() ? core->GetInst().GetLength() : 
-        numeric_limits<TSeqPos>::max();
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
