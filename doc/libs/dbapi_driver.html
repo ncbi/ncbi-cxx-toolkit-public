@@ -21,6 +21,14 @@ NCBI DBAPI Driver Reference</h1>
 		<li> <a href="#ref_TextImage">Text and Image Data Handling</a> </li>
 		<li> <a href="#ref_Results">Results loop</a> </li>
     </ul>
+	 <li><a href="#ref_Drivers">Supported DBAPI drivers</a>
+		<ul>
+		  <li> <a href="#ref_DriversCTLIB">Sybase CTLIB</a> </li>
+		  <li> <a href="#ref_DriversDBLIB">Sybase DBLIB</a> </li>
+		  <li> <a href="#ref_DriversMSDBLIB">Microsoft DBLIB</a> </li>
+		  <li> <a href="#ref_DriversFTDS">FreeTDS</a> </li>
+		</ul>
+	 </li>
 </ul>
 
 
@@ -45,6 +53,9 @@ If RDBMS provides a client library for a given computer system (i.e. Sun/Solaris
 then driver utilizes this library. If there is no client library, then
 driver connects to RDBMS through a special <i>gateway server</i> which
 is running on a computer system where such library does exist.
+
+<p>
+<hr>
 
 
 <a name="ref_DriverArch"></a>
@@ -109,6 +120,13 @@ and <a href="../docxx/CDB_SmallDateTime.html">smalldatetime</a>;
 <a href="../docxx/CDB_Text.html">text</a>
 and <a href="../docxx/CDB_Image.html">image</a>.
 All datatypes are derived from a single base class <a href="../docxx/CDB_Object.html">CDB_Object</a>.
+
+
+
+<p>
+<hr>
+
+
 
 <a name="ref_SampleProgram"></a>
 <h2>
@@ -185,6 +203,12 @@ int main()
     }
 }
 </pre>
+
+
+
+<p>
+<hr>
+
 
 
 <a name="ref_Topics"></a>
@@ -752,13 +776,359 @@ while (cmd-&gt;HasMoreResults()) {
 If you don't want to process some particular type of result, just skip the <b>while</b>(res-&gt;Fetch()){...}
 in the corresponding <b>case</b>.
 
+<!-- --------------------------------- -->
+
+<p>
+<hr>
+<a name="ref_Drivers"></a>
+<h2>
+Supported DBAPI drivers</h2>
+
+<ul>
+    <li> <a href="#ref_DriversCTLIB">Sybase CTLIB</a> </li>
+    <li> <a href="#ref_DriversDBLIB">Sybase DBLIB</a> </li>
+    <li> <a href="#ref_DriversMSDBLIB">Microsoft DBLIB</a> </li>
+    <li> <a href="#ref_DriversFTDS">FreeTDS</a> </li>
+</ul>
+
+<p>
+
+<!-- --------------------------------- -->
+
+<a name="ref_DriversCTLIB"></a>
+<h4>
+Sybase CTLIB</h4>
+<p>
+
+<ul>
+
+<li>
+Registration function (for the manual, static registration)
+<dt><dd><tt>
+<a href="../lxr/ident?i=DBAPI_RegisterDriver_CTLIB&d=f">
+DBAPI_RegisterDriver_CTLIB()</a>
+</tt></dd>
+</dt></li>
+
+<li>
+Driver default name (for the run-time loading from a DLL)
+<dt><dd><tt>
+"ctlib"
+</tt></dd>
+</dt></li>
+
+<li>
+Driver library
+<dt><dd><tt>
+dbapi_driver_ctlib
+</tt></dd>
+</dt></li>
+
+<li>
+<i>Sybase CTLIB</i> libraries and headers used by the driver
+<dt><dd><tt>
+<a href="../config.html#ref_Localization">
+$(SYBASE_LIBS)</a>
+</tt></dd>
+<dd><tt>
+<a href="../config.html#ref_Localization">
+$(SYBASE_INCLUDE)</a>
+</tt></dd>
+</dt></li>
+
+<li>
+<i>CTLIB</i>-specific header (contains <b>non-portable</b> extensions)
+<dt><dd><tt>
+<a href="../lxr/source/include/dbapi/driver/ctlib/interfaces.hpp">
+dbapi/driver/ctlib/interfaces.hpp</a>
+</tt></dd>
+</dt></li>
+
+<li>
+<i>CTLIB</i>-specific driver context attributes
+<dt>
+<dd><tt>
+"reuse_context", <i>default =</i> <b>"true"</b>
+</tt></dd>
+<dd><tt>
+"version", <i>default =</i> <b>"110"</b> (also allowed: <b>"100"</b>)
+</tt></dd>
+</dt>
+</li>
+
+<li>
+Caveats
+<ol>
+<li><tt>
+Cannot communicate with MS SQL server using any TDS version.
+</tt></dd>
+</ol></li>
+  
+</ul>
+
+
+
+
+<!-- --------------------------------- -->
+
+<a name="ref_DriversDBLIB"></a>
+<h4>
+Sybase DBLIB</h4>
+<p>
+
+<ul>
+
+<li>
+Registration function (for the manual, static registration)
+<dt><dd><tt>
+<a href="../lxr/ident?i=DBAPI_RegisterDriver_DBLIB&d=f">
+DBAPI_RegisterDriver_DBLIB()</a>
+</tt></dd>
+</dt></li>
+
+<li>
+Driver default name (for the run-time loading from a DLL)
+<dt><dd><tt>
+"dblib"
+</tt></dd>
+</dt></li>
+
+<li>
+Driver library
+<dt><dd><tt>
+dbapi_driver_dblib
+</tt></dd>
+</dt></li>
+
+<li>
+<i>Sybase DBLIB</i> libraries and headers used by the driver
+<dt><dd><tt>
+<a href="../config.html#ref_Localization">
+$(SYBASE_DBLIBS)</a>
+</tt></dd>
+<dd><tt>
+<a href="../config.html#ref_Localization">
+$(SYBASE_INCLUDE)</a>
+</tt></dd>
+</dt></li>
+
+<li>
+<i>DBLIB</i>-specific header (contains <b>non-portable</b> extensions)
+<dt><dd><tt>
+<a href="../lxr/source/include/dbapi/driver/dblib/interfaces.hpp">
+dbapi/driver/dblib/interfaces.hpp</a>
+</tt></dd>
+</dt></li>
+
+<li>
+<i>DBLIB</i>-specific driver context attributes
+<dt><dd><tt>
+"version", <i>default =</i> <b>&lt;DBVERSION_UNKNOWN&gt;</b>
+(also allowed: <b>"46"</b>, <b>"100"</b>)
+</tt></dd>
+</dt></li>
+
+<li>
+Caveats
+<ol>
+<li><tt>
+Text/image operations fail when working with MS SQL server,
+because MS SQL server sends text/image length in the reverse byte order,
+and this cannot be fixed (as it was fixed for
+<a href="#ref_DriversFTDS">FreeTDS</a>
+) as we do not have access to the DBLIB source code.
+</tt></dd>
+<li><tt>
+DB Library version level "100" is recommended for communication with Sybase
+server 12.5, because the default version level (&lt;DBVERSION_UNKNOWN&gt;)
+is not working correctly with this server.
+</tt></dd>
+</ol></li>
+  
+</ul>
+
+
+
+
+<!-- --------------------------------- -->
+
+<a name="ref_DriversMSDBLIB"></a>
+<h4>
+Microsoft DBLIB</h4>
+<p>
+
+<ul>
+
+<li>
+Registration function (for the manual, static registration)
+<dt><dd><tt>
+<a href="../lxr/ident?i=DBAPI_RegisterDriver_DBLIB&d=f">
+DBAPI_RegisterDriver_DBLIB()</a>
+</tt></dd>
+</dt></li>
+
+<li>
+Driver default name (for the run-time loading from a DLL)
+<dt><dd><tt>
+"dblib"
+</tt></dd>
+</dt></li>
+
+<li>
+Driver library
+<dt><dd><tt>
+DBLIB.LIB
+</tt></dd>
+</dt></li>
+
+<li>
+<i>Microsoft DBLIB</i> libraries and headers used by the driver
+<dt><dd><tt>
+NTWDBLIB.LIB
+</tt></dd>
+</dt></li>
+
+<li>
+<i>Microsoft DBLIB</i>-specific header (contains <b>non-portable</b> extensions)
+<dt><dd><tt>
+<a href="../lxr/source/include/dbapi/driver/dblib/interfaces.hpp">
+dbapi/driver/dblib/interfaces.hpp</a>
+</tt></dd>
+</dt></li>
+
+<li>
+<i>Microsoft DBLIB</i>-specific driver context attributes
+<dt><dd><tt>
+NONE
+</tt></dd>
+</dt></li>
+
+<li>
+Caveats
+<ol>
+<li><tt>
+On the lower level, the reading of a blob (image or text) cannot be
+performed in a pure stream-wise fashion, and therefore the whole blob
+has to be read in advance. Actually all contents of all columns get
+read up completely as soon as the row is fetched(!).
+Although this is hidden from the user code,
+however it theoretically can cause memory exhaustion and at least some
+performance overhead if the blob is too big.
+</tt></dd>
+</ol></li>
+  
+</ul>
+
+
+
+
+<!-- --------------------------------- -->
+
+<a name="ref_DriversFTDS"></a>
+<h4>
+FreeTDS</h4>
+<p>
+
+<ul>
+
+<li>
+Registration function (for the manual, static registration)
+<dt><dd><tt>
+<a href="../lxr/ident?i=DBAPI_RegisterDriver_FTDS&d=f">
+DBAPI_RegisterDriver_FTDS()</a>
+</tt></dd>
+</dt></li>
+
+<li>
+Driver default name (for the run-time loading from a DLL)
+<dt><dd><tt>
+"ftds"
+</tt></dd>
+</dt></li>
+
+<li>
+Driver library
+<dt><dd><tt>
+dbapi_driver_ftds
+</tt></dd>
+</dt></li>
+
+<li>
+<i>FreeTDS</i> libraries and headers used by the driver
+<dt><dd><tt>
+<a href="../config.html#ref_Localization">
+$(FTDS_LIBS)</a>
+</tt></dd>
+<dd><tt>
+<a href="../config.html#ref_Localization">
+$(FTDS_INCLUDE)</a>
+</tt></dd>
+</dt></li>
+
+<li>
+<i>FreeTDS</i>-specific header (contains <b>non-portable</b> extensions)
+<dt><dd><tt>
+<a href="../lxr/source/include/dbapi/driver/ftds/interfaces.hpp">
+dbapi/driver/ftds/interfaces.hpp</a>
+</tt></dd>
+</dt></li>
+
+<li>
+<i>FreeTDS</i>-specific driver context attributes
+<dt><dd><tt>
+"version", <i>default =</i> <b>&lt;DBVERSION_UNKNOWN&gt;</b>
+(also allowed: <b>"42"</b>, <b>"46"</b>, <b>"70"</b>, <b>"100"</b>)
+</tt></dd>
+</dt></li>
+
+<li>
+Caveats
+<ol>
+<li><tt>
+Nobody has ever tried working with any TDS version but the default
+(&lt;DBVERSION_UNKNOWN&gt;) one.
+</tt></dd>
+<li><tt>
+BCP operations do not work at all. -- However, there is a version
+of FreeTDS libraries already in testing which will be installed to
+public shortly, and which has this feature implemented.
+</tt></dd>
+<li><tt>
+The "compute results" functionality (like from SELECT ... AVERAGE ...)
+does not work as the current FreeTDS implementation cannot decipher
+the "compute results" specific result set returned by server.
+</tt></dd>
+<li><tt>
+RPC is implemened via a language call, so it will work only if
+the OpenServer it is communicating with has language handler installed
+(and it is not installed on some NCBI OpenServers!).
+</tt></dd>
+<li><tt>
+The FreeTDS client library (the one using TDS protocol version 7.0)
+presently installed in NCBI at "/netopt/Sybase/clients-mssql/current"
+was tweaked to work with the MS SQL server and significantly optimized.
+However it will not work with Sybase server.
+</tt></dd>
+<li><tt>
+Another, earlier non-tweaked version of FreeTDS client library
+theoretically should be able to work with both MS SQL and SYBASE servers
+(using TDS protocol version 4.2), however it was not thoroughly tested
+and can be pretty slow.
+</tt></dd>
+</ol></li>
+  
+</ul>
+
+
+<!-- --------------------------------- -->
+
 
 <p>
 <hr>
 <table border=0 width="100%" cellspacing=0>
 <tr>
 <td align=left>
-  <address><a href="mailto:cpp@ncbi.nlm.nih.gov">Vladimir Soussov</a></address>
+  <address><a href="mailto:cpp@ncbi.nlm.nih.gov">Vladimir Soussov, Denis Vakatov</a></address>
 </td>
 <!-- <td align=center><i>$Revision$</i></td> -->
 <td align=right><i>$Date$</i></td>
