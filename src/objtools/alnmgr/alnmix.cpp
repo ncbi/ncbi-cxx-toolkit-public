@@ -73,7 +73,9 @@ CAlnMix::~CAlnMix(void)
 void 
 CAlnMix::x_Init()
 {
-    m_AlnMixSequences = new CAlnMixSequences();
+    m_AlnMixSequences = m_Scope.IsNull() ? 
+        new CAlnMixSequences() :
+        new CAlnMixSequences(*m_Scope);
     m_AlnMixMatches   = new CAlnMixMatches(m_AlnMixSequences, x_CalculateScore);
     m_AlnMixMerger    = new CAlnMixMerger(m_AlnMixMatches, x_CalculateScore);
 }
@@ -278,6 +280,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.121  2005/03/08 00:02:50  todorov
+* Provide CScope when calling the CAlnMixSequences constructor, in case CScope
+* was provided in CAlnMix.
+*
 * Revision 1.120  2005/03/01 17:28:49  todorov
 * Rearranged CAlnMix classes
 *
