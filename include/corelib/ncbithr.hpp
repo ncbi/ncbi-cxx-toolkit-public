@@ -65,6 +65,10 @@
 #include <set>
 #include <list>
 
+#ifdef NCBI_OS_DARWIN
+// Needed for SwapPointers, even if not for CAtomicCounter
+#  include <CarbonCore/DriverSynchronization.h>
+#endif
 
 /** @addtogroup Threads
  *
@@ -390,18 +394,25 @@ void* SwapPointers(void * volatile * location, void* new_value)
                                    reinterpret_cast<int*>(&old_value),
                                    reinterpret_cast<int>(new_value));
     }
+    return old_value;
 #  elif defined(NCBI_OS_DARWIN)
     Boolean swapped = FALSE;
+    void*   old_value;
     while (swapped == FALSE) {
-        swapped = CompareAndSwap(reinterpret_cast<UInt32>(*nv_loc),
+        old_value = *nv_loc;
+        swapped = CompareAndSwap(reinterpret_cast<UInt32>(old_value),
                                  reinterpret_cast<UInt32>(new_value),
                                  reinterpret_cast<UInt32*>(nv_loc));
     }
+    return old_value;
 #  elif defined(NCBI_OS_MAC)
     Boolean swapped = FALSE;
+    void*   old_value;
     while (swapped == FALSE) {
+        old_value = *nv_loc;
         swapped = OTCompareAndSwapPtr(*nv_loc, new_value, nv_loc);
     }
+    return old_value;
 #  elif defined(NCBI_OS_MSWIN)
     // InterlockedExchangePointer would be better, but older SDK versions
     // don't declare it. :-/
@@ -460,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/07/31 19:29:03  ucko
+ * SwapPointers: fix for Mac OS (classic and X) and AIX.
+ *
  * Revision 1.19  2003/06/27 17:27:44  ucko
  * +SwapPointers
  *
