@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2003/02/06 22:25:25  vasilche
+ * Added some Compare() methods.
+ *
  * Revision 6.6  2001/08/31 16:05:54  clausen
  * Removed upper casing.
  *
@@ -90,7 +93,25 @@ bool CObject_id::Match(const CObject_id& oid2) const
     case e_Str:
         return PNocase().Equals(GetStr(), oid2.GetStr());
     default:
-        return false;
+        return this == &oid2? 0: this < &oid2? -1: 1;
+    }
+}
+
+
+// match for identity
+int CObject_id::Compare(const CObject_id& oid2) const
+{
+    E_Choice type = Which();
+    E_Choice type2 = Which();
+    if ( type != type2 )
+        return type - type2;
+    switch ( type ) {
+    case e_Id:
+        return GetId() - oid2.GetId();
+    case e_Str:
+        return PNocase().Compare(GetStr(), oid2.GetStr());
+    default:
+        return 0;
     }
 }
 

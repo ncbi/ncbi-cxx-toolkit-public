@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2003/02/06 22:25:24  vasilche
+ * Added some Compare() methods.
+ *
  * Revision 1.5  2002/12/26 12:40:33  dicuccio
  * Added Win32 export specifiers
  *
@@ -78,6 +81,8 @@ public:
 
     // identical ids?
     bool Match(const CObject_id& oid2) const;
+    int Compare(const CObject_id& oid2) const;
+    bool operator<(const CObject_id& id2) const;
 
     // format contents into a stream
     ostream& AsString(ostream &s) const;
@@ -95,6 +100,14 @@ private:
 inline
 CObject_id::CObject_id(void)
 {
+}
+
+
+
+inline
+bool CObject_id::operator<(const CObject_id& id2) const
+{
+    return Compare(id2) < 0;
 }
 
 
