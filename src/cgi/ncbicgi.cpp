@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  1999/11/22 19:07:47  vakatov
+* CCgiRequest::CCgiRequest() -- check for the NULL "query_string"
+*
 * Revision 1.33  1999/11/02 22:15:50  vakatov
 * const CCgiCookie* CCgiCookies::Find() -- forgot to cast to non-const "this"
 *
@@ -822,7 +825,7 @@ CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
         // parse query from the POST content
         s_ParsePostQuery(GetProperty(eCgi_ContentType), str, m_Entries);
     }
-    else {
+    else if ( query_string ) {
         // parse "$QUERY_STRING"(or cmd.-line arg)
         s_ParseQuery(*query_string, m_Entries, m_Indexes,
                      (flags & fIndexesAsEntries) != 0);
