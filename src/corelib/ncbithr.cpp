@@ -27,11 +27,26 @@
  *
  * File Description:
  *   Multithreading:
- *      CMutex,   CMutexGuard
- *      CRWLock,  CRWLockGuard, CReadLockGuard, CWriteLockGuard, 
+ *   Multi-threading -- classes and features.
+ *
+ *   MUTEX:
+ *      CInternalMutex   -- platform-dependent mutex structure
+ *      CMutex           -- mutex-related data and methods
+ *      CAutoMutex       -- guarantee mutex release
+ *      CMutexGuard      -- acquire mutex, then guarantee for its release
+ *
+ *   RW-LOCK:
+ *      CInternalRWLock  -- platform-dependent RW-lock structure
+ *      CRWLock          -- Read/Write lock related  data and methods
+ *      CAutoRW          -- guarantee RW-lock release
+ *      CReadLockGuard   -- acquire R-lock, then guarantee for its release
+ *      CWriteLockGuard  -- acquire W-lock, then guarantee for its release
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2000/12/11 06:48:49  vakatov
+ * Revamped Mutex and RW-lock APIs
+ *
  * Revision 1.2  2000/12/09 18:41:59  vakatov
  * Fixed for the extremely smart IRIX MIPSpro73 compiler
  *
@@ -109,22 +124,6 @@ void CMutex::Unlock(void)
     }
     m_Mutex.m_Counter++;
 }
-
-
-CMutex::CMutex(const CMutex&) : m_Mutex(*new CInternalMutex)  {}
-CMutex& CMutex::operator= (const CMutex&)
-{ return *this; }
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  CMutexGuard::
-//
-
-CMutexGuard::CMutexGuard(const CMutexGuard&)  {}
-CMutexGuard& CMutexGuard::operator= (const CMutexGuard&)
-{ return *this; }
 
 
 
@@ -214,47 +213,6 @@ void CRWLock::Unlock(void)
         m_RW.m_Counter++;
 
 }
-
-
-CRWLock::CRWLock(const CRWLock&) : m_RW(*new CInternalRWLock)  {}
-CRWLock& CRWLock::operator= (const CRWLock&)
-{ return *this; }
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  CRWLockGuard::
-//
-
-CRWLockGuard::CRWLockGuard(const CRWLockGuard&)  {}
-CRWLockGuard& CRWLockGuard::operator= (const CRWLockGuard&)
-{ return *this; }
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  CReadLockGuard::
-//
-
-static CRWLock* s_NULL_CRWLock = 0;
-
-CReadLockGuard::CReadLockGuard(const CReadLockGuard&)
-    : CRWLockGuard(*s_NULL_CRWLock)  {}
-CReadLockGuard& CReadLockGuard::operator= (const CReadLockGuard&)
-{ return *this; }
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  CWriteLockGuard::
-//
-
-CWriteLockGuard::CWriteLockGuard(const CWriteLockGuard&)
-    : CRWLockGuard(*s_NULL_CRWLock)  {}
-CWriteLockGuard& CWriteLockGuard::operator= (const CWriteLockGuard&)
-{ return *this; }
 
 
 END_NCBI_SCOPE
