@@ -618,8 +618,11 @@ inline int close(int fd)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/02/25 14:54:43  lavr
+ * Fix last check-in's change log entry
+ *
  * Revision 1.32  2005/02/25 13:04:31  lavr
- * Indeed don't #include <unistd.h> within ncbi:: (or any other scope)
+ * Also, don't #include <io.h> within ncbi:: (or any other scope)
  *
  * Revision 1.31  2005/02/24 17:17:19  ucko
  * Whoops, don't #include <unistd.h> within ncbi:: (or any other scope).
