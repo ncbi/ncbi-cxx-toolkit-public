@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/11/02 20:35:43  vakatov
+* Redesigned of CCgiCookie and CCgiCookies to make them closer to the
+* cookie standard, smarter, and easier in use
+*
 * Revision 1.9  1999/05/11 03:11:52  vakatov
 * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
 *
@@ -175,7 +179,7 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& out) const
     }
 
     // write cookies
-    if ( HaveCookies() ) {
+    if ( !Cookies().Empty() ) {
         out << m_Cookies;
     }
 

@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  1999/11/02 20:35:38  vakatov
+* Redesigned of CCgiCookie and CCgiCookies to make them closer to the
+* cookie standard, smarter, and easier in use
+*
 * Revision 1.38  1999/09/03 21:26:44  vakatov
 * + #include <memory>
 *
@@ -137,6 +141,7 @@
 #include <corelib/ncbienv.hpp>
 #include <list>
 #include <map>
+#include <set>
 #include <memory>
 #include <time.h>
 
@@ -156,7 +161,9 @@ public:
     // Throw the "invalid_argument" if "name" or "value" have invalid format
     //  - the "name" must not be empty; it must not contain '='
     //  - both "name" and "value" must not contain: ";, "
-    CCgiCookie(const string& name, const string& value);
+    CCgiCookie(const string& name, const string& value,
+               const string& domain = NcbiEmptyString,
+               const string& path   = NcbiEmptyString);
 
     // The cookie name cannot be changed during its whole timelife
     const string& GetName(void) const;
@@ -173,32 +180,41 @@ public:
     // Set all attribute values(but name!) to those from "cookie"
     void CopyAttributes(const CCgiCookie& cookie);
 
-    // All SetXXX() methods beneath:
+    // All SetXXX(const string&) methods beneath:
     //  - set the property to "str" if "str" has valid format
     //  - throw the "invalid_argument" if "str" has invalid format
-    void SetValue     (const string& str);
-    void SetDomain    (const string& str);  // not spec'd by default
-    void SetValidPath (const string& str);  // not spec'd by default
-    void SetExpDate   (const tm& exp_date); // infinite by default
-    void SetSecure    (bool secure);        // "false" by default
+    void SetValue  (const string& str);
+    void SetDomain (const string& str);  // not spec'd by default
+    void SetPath   (const string& str);  // not spec'd by default
+    void SetExpDate(const tm& exp_date); // infinite by default
+    void SetSecure (bool secure);        // "false" by default
 
-    // All "bool GetXXX(...)" methods beneath:
-    //  - return "true"  and copy the property to the "str" if the prop. is set
-    //  - return "false" and empty the "str" if the property is not set
-    //  - throw the "invalid_argument" exception if argument is a zero pointer
-    string GetValue   (void)         const;  // if not set, return empty string
-    bool GetValue     (string*  str) const;
-    bool GetDomain    (string*  str) const;
-    bool GetValidPath (string*  str) const;
-    bool GetExpDate   (string*  str) const;  // "Wed Aug 9 07:49:37 1994"
-    bool GetExpDate   (tm* exp_date) const;
-    bool GetSecure    (void)         const;
+    // All "const string& GetXXX(...)" methods beneath return reference
+    // to "NcbiEmptyString" if the requested attributre is not set
+    const string& GetValue  (void) const;
+    const string& GetDomain (void) const;
+    const string& GetPath   (void) const;
+    string        GetExpDate(void) const;
+    // If exp.date is not set then return "false" and dont assign "*exp_date"
+    bool GetExpDate(tm* exp_date) const;
+    bool GetSecure(void)          const;
+
+    // compare two cookies
+    bool operator<(const CCgiCookie& cookie) const;
+
+    // predicate
+    typedef const CCgiCookie* TCPtr;
+    struct PLessCPtr {
+        bool operator() (const TCPtr& c1, const TCPtr& c2) const {
+            return (*c1 < *c2);
+        }
+    };
 
 private:
     string m_Name;
     string m_Value;
     string m_Domain;
-    string m_ValidPath;
+    string m_Path;
     tm     m_Expires;
     bool   m_Secure;
 
@@ -218,9 +234,19 @@ inline CNcbiOstream& operator<<(CNcbiOstream& os, const CCgiCookie& cookie) {
 ///////////////////////////////////////////////////////
 // Set of CGI send-cookies
 //
+//  The cookie is uniquely identified by {name, domain, path}.
+//  "name" is mandatory and non-empty;  "domain" and "path" are optional.
+//  "name" and "domain" are not case-sensitive;  "path" is case-sensitive.
+//
 
 class CCgiCookies {
 public:
+    typedef set<CCgiCookie*, CCgiCookie::PLessCPtr>  TSet;
+    typedef TSet::iterator         TIter;
+    typedef TSet::const_iterator   TCIter;
+    typedef pair<TIter,  TIter>    TRange;
+    typedef pair<TCIter, TCIter>   TCRange;
+
     // Empty set of cookies
     CCgiCookies(void);
     // Format of the string:  "name1=value1; name2=value2; ..."
@@ -228,26 +254,56 @@ public:
     // Destructor
     ~CCgiCookies(void);
 
-    // All Add() functions override the value and attributes of cookie
-    // already existing in this set if the added cookie has the same name
-    CCgiCookie* Add(const string& name, const string& value);
+    // Return "true" if this set contains no cookies
+    bool Empty(void) const;
+
+    // All Add() functions:
+    // if the added cookie has the same {name, domain, path} as an already
+    // existing one then the new cookie will override the old one
+    CCgiCookie* Add(const string& name, const string& value,
+                    const string& domain = NcbiEmptyString,
+                    const string& path   = NcbiEmptyString);
     CCgiCookie* Add(const CCgiCookie& cookie);  // add a copy of "cookie"
     void Add(const CCgiCookies& cookies);  // update by a set of cookies
     void Add(const string& str); // "name1=value1; name2=value2; ..."
 
-    CCgiCookie* Find(const string& name) const;  // return zero if can not find
-    bool Empty(void) const;  // "true" if contains no cookies
-    bool Remove(const string& name);  // return "false" if can not find
-    void Clear(void);  // remove all stored cookies
+    // Return NULL if cannot find this exact cookie
+    CCgiCookie*       Find(const string& name,
+                           const string& domain, const string& path);
+    const CCgiCookie* Find(const string& name,
+                           const string& domain, const string& path) const;
 
-    // Printout all cookies into the stream "os"(see also CCgiCookie::Write())
+    // Return the first matched cookie with name "name", or NULL if
+    // there is no such cookie(s).
+    // Also, if "range" is non-NULL then assign its "first" and
+    // "second" fields to the beginning and the end of the range
+    // of cookies matching the name "name".
+    // NOTE:  if there is a cookie with empty domain and path then
+    //        this cookie is guaranteed to be returned.
+    CCgiCookie*       Find(const string& name, TRange*  range=0);
+    const CCgiCookie* Find(const string& name, TCRange* range=0) const;
+
+    // Remove "cookie" from this set;  deallocate it if "destroy" is true
+    // Return "false" if can not find "cookie" in this set
+    bool Remove(CCgiCookie* cookie, bool destroy=true);
+
+    // Remove (and destroy if "destroy" is true) all cookies belonging
+    // to range "range".  Return # of found and removed cookies.
+    size_t Remove(TRange& range, bool destroy=true);
+
+    // Remove (and destroy if "destroy" is true) all cookies with the
+    // given "name".  Return # of found and removed cookies.
+    size_t Remove(const string& name, bool destroy=true);
+
+    // Remove all stored cookies
+    void Clear(void);
+
+    // Printout all cookies into the stream "os" (see also CCgiCookie::Write())
     CNcbiOstream& Write(CNcbiOstream& os) const;
 
 private:
-    typedef list<CCgiCookie*> TCookies;
-    TCookies m_Cookies;  // (guaranteed to have no same-name cookies)
-    void x_Add(CCgiCookie* cookie);
-    TCookies::iterator x_Find(const string& name) const;
+    TSet m_Cookies;
+
     // prohibit default initialization and assignment
     CCgiCookies(const CCgiCookies&) { _TROUBLE; }
     CCgiCookies& operator=(const CCgiCookies&) { _TROUBLE;  return *this; }

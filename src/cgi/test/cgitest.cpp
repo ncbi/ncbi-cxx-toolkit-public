@@ -31,6 +31,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/11/02 20:35:44  vakatov
+* Redesigned of CCgiCookie and CCgiCookies to make them closer to the
+* cookie standard, smarter, and easier in use
+*
 * Revision 1.1  1999/05/11 03:11:57  vakatov
 * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
 *
@@ -66,41 +70,106 @@ static void TestCgi_Cookies(void)
     CCgiCookies cookies("coo1=kie1BAD1;coo2=kie2_ValidPath; ");
     cookies.Add("  coo1=kie1BAD2;CooT=KieT_ExpTime  ");
 
-    string str = "  Coo11=Kie11_OK; Coo2=Kie2BAD;  coo1=Kie1_OK; Coo5=kie5";
+    string str = "  Coo11=Kie11_OK; Coo2=Kie2BAD;  coo1=Kie1_OK; Coo6=kie6";
     cookies.Add(str);
     cookies.Add("RemoveThisCookie", "BAD");
     cookies.Add(str);
 
+    _ASSERT( !cookies.Find("Coo2", "qq.rr.oo", NcbiEmptyString) );
+    _ASSERT(cookies.Find("Coo2") == cookies.Find("Coo2", "", ""));
     cookies.Find("Coo2")->SetValue("Kie2_OK");
 
-    CCgiCookie c1("Coo5", "Kie5BAD");
+    CCgiCookie c0("Coo5", "Kie5BAD");
+    CCgiCookie c1("Coo5", "Kie", "aaa.bbb.ccc", "/");
     CCgiCookie c2(c1);
     c2.SetValue("Kie5_Dom_Sec");
-    c2.SetDomain("aaa.bbb.ccc");
+    c2.SetPath("");
     c2.SetSecure(true);
 
     cookies.Add(c1);
     cookies.Add(c2);
 
-    CCgiCookie* c3 = cookies.Find("coo2");
-    c3->SetValidPath("coo2_ValidPath");
+    CCgiCookie* c3 = cookies.Find("coo2", NcbiEmptyString, "");
+    c3->SetPath("coo2_ValidPath");
 
-    _ASSERT( !cookies.Remove("NoSuchCookie") );
-    _ASSERT( cookies.Remove("RemoveThisCookie") );
-    _ASSERT( !cookies.Remove("RemoveThisCookie") );
+    _ASSERT( !cookies.Remove(cookies.Find("NoSuchCookie")) );
+    _ASSERT( cookies.Remove(cookies.Find("RemoveThisCookie")) );
+    _ASSERT( !cookies.Remove(cookies.Find("RemoveThisCookie")) );
     _ASSERT( !cookies.Find("RemoveThisCookie") );
 
-    string dom5;
-    _ASSERT( cookies.Find("Coo5")->GetDomain(&dom5) );
-    _ASSERT( dom5 == "aaa.bbb.ccc" );
-    _ASSERT( !cookies.Find("coo2")->GetDomain(&dom5) );
-    _ASSERT( dom5 == "aaa.bbb.ccc" );
+    _ASSERT( cookies.Find("CoO5") );
+    _ASSERT( cookies.Find("cOo5") == cookies.Find("Coo5", "aaa.bBb.ccC", "") );
+    _ASSERT( cookies.Find("Coo5")->GetDomain() == "aaa.bbb.ccc" );
+    _ASSERT( cookies.Find("coo2")->GetDomain().empty() );
+    _ASSERT( cookies.Find("cOO5")->GetSecure() );
+    _ASSERT( !cookies.Find("cOo2")->GetSecure() );
 
     time_t timer = time(0);
     tm *date = gmtime(&timer);
     CCgiCookie *ct = cookies.Find("CooT");
     ct->SetExpDate(*date);
-    
+
+    cookies.Add("AAA", "11", "qq.yy.dd");
+    cookies.Add("AAA", "12", "QQ.yy.Dd");
+    _ASSERT( cookies.Find("AAA", "qq.yy.dd", NcbiEmptyString)->GetValue()
+             == "12" );
+
+    cookies.Add("aaa", "1", "QQ.yy.Dd");
+    _ASSERT( cookies.Find("AAA", "qq.yy.dd", NcbiEmptyString)->GetValue()
+             == "1" );
+
+    cookies.Add("aaa", "19");
+
+    cookies.Add("aaa", "21", "QQ.yy.Dd", "path");
+    _ASSERT( cookies.Find("AAA", "qq.yy.dd", "path")->GetValue() == "21");
+
+    cookies.Add("aaa", "22", "QQ.yy.Dd", "Path");
+    _ASSERT( cookies.Find("AAA", "qq.yy.dd", "path")->GetValue() == "21" );
+    _ASSERT( cookies.Find("AAA")->GetValue() == "19" );
+
+    cookies.Add("AAA", "2", "QQ.yy.Dd", "path");
+    _ASSERT( cookies.Find("AAA", "qq.yy.dd", "path")->GetValue() == "2" );
+
+    cookies.Add("AAA", "3");
+
+    cookies.Add("BBA", "BBA1");
+    cookies.Add("BBA", "BBA2", "", "path");
+
+    cookies.Add("BBB", "B1", "oo.pp.yy");
+    cookies.Add("BBB", "B2");
+    cookies.Add("BBB", "B3", "bb.pp.yy", "path3");
+    cookies.Add("BBB", "B3", "cc.pp.yy", "path3");
+
+    CCgiCookies::TRange range;
+    _ASSERT( cookies.Find("BBA", &range)->GetValue() == "BBA1" );
+    _ASSERT( cookies.Remove(range) );
+
+    cookies.Add("BBB", "B3", "dd.pp.yy", "path3");
+    cookies.Add("BBB", "B3", "aa.pp.yy", "path3");
+    cookies.Add("BBB", "B3", "",         "path3");
+
+    cookies.Add("BBC", "BBC1", "", "path");
+    cookies.Add("BBC", "BBC2", "44.88.99", "path");
+
+    cookies.Add("BBD", "BBD1",  "", "path");
+    cookies.Add("BBD", "BBD20", "44.88.99", "path");
+    cookies.Add("BBD", "BBD2",  "44.88.99", "path");
+    cookies.Add("BBD", "BBD3",  "77.99.00", "path");
+
+    _ASSERT( cookies.Remove( cookies.Find("BBB", "dd.pp.yy", "path3") ) );
+
+    cookies.Add("DDD", "DDD1", "aa.bb.cc", "p1/p2");
+    cookies.Add("DDD", "DDD2", "aa.bb.cc");
+    cookies.Add("DDD", "DDD3", "aa.bb.cc", "p3/p4");
+    cookies.Add("DDD", "DDD4", "aa.bb.cc", "p1");
+    cookies.Add("DDD", "DDD5", "aa.bb.cc", "p1/p2/p3");
+    cookies.Add("DDD", "DDD6", "aa.bb.cc", "p1/p4");
+    _ASSERT( cookies.Find("DDD", &range)->GetValue() == "DDD2" );
+
+    _ASSERT( cookies.Find("BBD", "44.88.99", "path")->GetValue() == "BBD2" );
+    _ASSERT( cookies.Remove(cookies.Find("BBD", "77.99.00", "path")) );
+    _ASSERT( cookies.Remove("BBD") == 2 ); 
+
     NcbiCerr << "\n\nCookies:\n\n" << cookies << NcbiEndl;
 }
 
@@ -384,9 +453,9 @@ void TestCgiResponse(int argc, char** argv)
     response.SetOutput(&NcbiCout);
 
     if (argc > 2)
-        response.AddCookies(CCgiCookies(argv[2]));
+        response.Cookies().Add(CCgiCookies(argv[2]));
 
-    response.RemoveCookie("to-Remove");
+    response.Cookies().Remove(response.Cookies().Find("to-Remove"));
 
     NcbiCout << "Cookies: " << response.Cookies();
 

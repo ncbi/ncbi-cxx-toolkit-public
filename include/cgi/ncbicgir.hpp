@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/11/02 20:35:39  vakatov
+* Redesigned of CCgiCookie and CCgiCookies to make them closer to the
+* cookie standard, smarter, and easier in use
+*
 * Revision 1.8  1999/05/11 03:11:46  vakatov
 * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
 *
@@ -105,20 +109,6 @@ public:
     const CCgiCookies& Cookies(void) const;
     CCgiCookies& Cookies(void);
 
-    // Add cookies
-    void AddCookie(const string& name, const string& value);
-    void AddCookie(const CCgiCookie& cookie);
-    void AddCookies(const CCgiCookies& cookies);
-
-    // Remove cookies
-    void RemoveCookie(const string& name);
-    void RemoveAllCookies(void);
-
-    // Query cookies
-    bool HaveCookies(void) const;
-    bool HaveCookie(const string& name) const;
-    CCgiCookie* FindCookie(const string& name) const;
-    
     // Set default output stream
     // returns previous output stream
     CNcbiOstream* SetOutput(CNcbiOstream* out);
@@ -134,7 +124,7 @@ public:
     void Flush() const;
 
     // Write HTTP response header
-    CNcbiOstream& WriteHeader() const;
+    CNcbiOstream& WriteHeader(void) const;
     CNcbiOstream& WriteHeader(CNcbiOstream& out) const;
 
 protected:

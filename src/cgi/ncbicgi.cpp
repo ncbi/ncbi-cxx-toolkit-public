@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  1999/11/02 20:35:42  vakatov
+* Redesigned of CCgiCookie and CCgiCookies to make them closer to the
+* cookie standard, smarter, and easier in use
+*
 * Revision 1.31  1999/06/21 16:04:17  vakatov
 * CCgiRequest::CCgiRequest() -- the last(optional) arg is of type
 * "TFlags" rather than the former "bool"
@@ -172,18 +176,21 @@ CCgiCookie::CCgiCookie(const CCgiCookie& cookie)
     : m_Name(cookie.m_Name),
       m_Value(cookie.m_Value),
       m_Domain(cookie.m_Domain),
-      m_ValidPath(cookie.m_ValidPath)
+      m_Path(cookie.m_Path)
 {
     m_Expires = cookie.m_Expires;
     m_Secure  = cookie.m_Secure;
 }
 
-CCgiCookie::CCgiCookie(const string& name, const string& value)
+CCgiCookie::CCgiCookie(const string& name,   const string& value,
+                       const string& domain, const string& path)
 {
     if ( name.empty() )
         throw invalid_argument("Empty cookie name");
     x_CheckField(name, " ;,=");
-    m_Name = name;
+    m_Name   = name;
+    m_Domain = domain;
+    m_Path   = path;
 
     SetValue(value);
     m_Expires = kZeroTime;
@@ -194,7 +201,7 @@ void CCgiCookie::Reset(void)
 {
     m_Value.erase();
     m_Domain.erase();
-    m_ValidPath.erase();
+    m_Path.erase();
     m_Expires = kZeroTime;
     m_Secure = false;
 }
@@ -204,25 +211,22 @@ void CCgiCookie::CopyAttributes(const CCgiCookie& cookie)
     if (&cookie == this)
         return;
 
-    m_Value     = cookie.m_Value;
-    m_Domain    = cookie.m_Domain;
-    m_ValidPath = cookie.m_ValidPath;
-    m_Expires   = cookie.m_Expires;
-    m_Secure    = cookie.m_Secure;
+    m_Value   = cookie.m_Value;
+    m_Domain  = cookie.m_Domain;
+    m_Path    = cookie.m_Path;
+    m_Expires = cookie.m_Expires;
+    m_Secure  = cookie.m_Secure;
 }
 
-bool CCgiCookie::GetExpDate(string* str) const
+string CCgiCookie::GetExpDate(void) const
 {
-    if ( !str )
-        throw invalid_argument("Null arg. in CCgiCookie::GetExpDate()");
     if ( s_ZeroTime(m_Expires) )
-        return false;
+        return NcbiEmptyString;
 
-    char cs[25];
-    if ( !::strftime(cs, sizeof(cs), "%a %b %d %H:%M:%S %Y", &m_Expires) )
+    char str[25];
+    if ( !::strftime(str, sizeof(str), "%a %b %d %H:%M:%S %Y", &m_Expires) )
         throw runtime_error("CCgiCookie::GetExpDate() -- strftime() failed");
-    *str = cs;
-    return true;
+    return string(str);
 }
 
 bool CCgiCookie::GetExpDate(tm* exp_date) const
@@ -237,22 +241,20 @@ bool CCgiCookie::GetExpDate(tm* exp_date) const
 
 CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const
 {
-    string str;
-    str.reserve(1024);
-
     os << "Set-Cookie: ";
 
-    os << GetName().c_str() << '=';
-    if ( GetValue(&str) )
-        os << str.c_str();
+    os << m_Name.c_str() << '=';
+    if ( !m_Value.empty() )
+        os << m_Value.c_str();
 
-    if ( GetDomain(&str) )
-        os << "; domain=" << str.c_str();
-    if ( GetValidPath(&str) )
-        os << "; path=" << str.c_str();
-    if ( GetExpDate(&str) )
-        os << "; expires=" << str.c_str();
-    if ( GetSecure() )
+    if ( !m_Domain.empty() )
+        os << "; domain="  << m_Domain.c_str();
+    if ( !m_Path.empty() )
+        os << "; path="    << m_Path.c_str();
+    string x_ExpDate = GetExpDate();
+    if ( !x_ExpDate.empty() )
+        os << "; expires=" << x_ExpDate.c_str();
+    if ( m_Secure )
         os << "; secure";
 
     os << NcbiEndl;
@@ -272,20 +274,53 @@ void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
 }
 
 
+static bool s_CookieLess
+(const string& name1, const string& domain1, const string& path1,
+ const string& name2, const string& domain2, const string& path2)
+{
+    PNocase nocase_less;
+    bool x_less;
+
+    x_less = nocase_less(name1, name2);
+    if (x_less  ||  nocase_less(name2, name1))
+        return x_less;
+
+    x_less = nocase_less(domain1, domain2);
+    if (x_less  ||  nocase_less(domain2, domain1))
+        return x_less;
+
+    if ( path1.empty() )
+        return !path2.empty();
+    if ( path2.empty() )
+        return false;
+    return (path1.compare(path2) > 0);
+}
+
+
+bool CCgiCookie::operator<(const CCgiCookie& cookie)
+const
+{
+    return s_CookieLess(m_Name, m_Domain, m_Path,
+                        cookie.m_Name, cookie.m_Domain, cookie.m_Path);
+}
+
+
 
 ///////////////////////////////////////////////////////
 // Set of CGI send-cookies
 //
 
-CCgiCookie* CCgiCookies::Add(const string& name, const string& value)
+CCgiCookie* CCgiCookies::Add(const string& name,    const string& value,
+                             const string& domain , const string& path)
 {
-    CCgiCookie* ck = Find(name);
+    CCgiCookie* ck = Find(name, domain, path);
     if ( ck ) {  // override existing CCgiCookie
-        ck->Reset();
         ck->SetValue(value);
     } else {  // create new CCgiCookie and add it
         ck = new CCgiCookie(name, value);
-        x_Add(ck);
+        ck->SetDomain(domain);
+        ck->SetPath(path);
+        _VERIFY( m_Cookies.insert(ck).second );
     }
     return ck;
 }
@@ -293,12 +328,13 @@ CCgiCookie* CCgiCookies::Add(const string& name, const string& value)
 
 CCgiCookie* CCgiCookies::Add(const CCgiCookie& cookie)
 {
-    CCgiCookie* ck = Find(cookie.GetName());
+    CCgiCookie* ck = Find
+        (cookie.GetName(), cookie.GetDomain(), cookie.GetPath());
     if ( ck ) {  // override existing CCgiCookie
         ck->CopyAttributes(cookie);
     } else {  // create new CCgiCookie and add it
         ck = new CCgiCookie(cookie);
-        x_Add(ck);
+        _VERIFY( m_Cookies.insert(ck).second );
     }
     return ck;
 }
@@ -306,7 +342,7 @@ CCgiCookie* CCgiCookies::Add(const CCgiCookie& cookie)
 
 void CCgiCookies::Add(const CCgiCookies& cookies)
 {
-    for (TCookies::const_iterator iter = cookies.m_Cookies.begin();
+    for (TCIter iter = cookies.m_Cookies.begin();
          iter != cookies.m_Cookies.end();  iter++) {
         Add(*(*iter));
     }
@@ -341,30 +377,102 @@ void CCgiCookies::Add(const string& str)
     throw CParseException("Invalid cookie string: `" + str + "'", pos);
 }
 
-CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os) const
+CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os)
+const
 {
-    for (TCookies::const_iterator iter = m_Cookies.begin();
-         iter != m_Cookies.end();  iter++) {
+    for (TCIter iter = m_Cookies.begin();  iter != m_Cookies.end();  iter++) {
         os << *(*iter);
     }
     return os;
 }
 
-CCgiCookies::TCookies::iterator CCgiCookies::x_Find(const string& name)
-const
+
+CCgiCookie* CCgiCookies::Find
+(const string& name, const string& domain, const string& path)
 {
-    TCookies& xx_Cookies = const_cast<TCookies&>(m_Cookies); //BW_01
-    for (TCookies::iterator iter = xx_Cookies.begin();
-         iter != xx_Cookies.end();  iter++) {
-        if (name.compare((*iter)->GetName()) == 0)
-            return iter;
+    TCIter iter = m_Cookies.begin();
+    while (iter != m_Cookies.end()  &&
+           s_CookieLess((*iter)->GetName(), (*iter)->GetDomain(),
+                        (*iter)->GetPath(), name, domain, path))
+        iter++;
+
+    /* found exact match? */
+    if (iter != m_Cookies.end()  &&
+        !s_CookieLess(name, domain, path, (*iter)->GetName(),
+                      (*iter)->GetDomain(), (*iter)->GetPath())) {
+        _ASSERT( AStrEquiv(name, (*iter)->GetName(), PNocase()) );
+        _ASSERT( AStrEquiv(domain, (*iter)->GetDomain(), PNocase()) );
+        _ASSERT( path.compare((*iter)->GetPath()) == 0 );
+        return *iter;
     }
-    return xx_Cookies.end();
+
+    /* not found */
+    return 0;
 }
 
+const CCgiCookie* CCgiCookies::Find
+(const string& name, const string& domain, const string& path)
+const
+{
+    return const_cast<CCgiCookies*>(this)->Find(name, domain, path);
+}
+
+
+CCgiCookie* CCgiCookies::Find(const string& name, TRange* range)
+{
+    PNocase nocase_less;
+
+    // find the first match
+    TIter beg = m_Cookies.begin();
+    while (beg != m_Cookies.end()  &&  nocase_less((*beg)->GetName(), name))
+        beg++;
+
+    // get this first match only
+    if ( !range ) {
+        return (beg != m_Cookies.end()  &&
+                !nocase_less(name, (*beg)->GetName())) ? *beg : 0;
+    }
+
+    // get the range of equal names
+    TIter end = beg;
+    while (end != m_Cookies.end()  &&
+           !nocase_less(name, (*end)->GetName()))
+        end++;
+    range->first  = beg;
+    range->second = end;
+    return (beg == end) ? 0 : *beg;
+}
+
+const CCgiCookie* CCgiCookies::Find(const string& name, TCRange* range)
+const
+{
+    if ( range ) {
+        TRange x_range;
+        const CCgiCookie* ck =
+            const_cast<CCgiCookies*>(this)->Find(name, &x_range);
+        range->first  = x_range.first;
+        range->second = x_range.second;
+        return ck;
+    } else {
+        return Find(name, 0);
+    }
+}
+
+
+size_t CCgiCookies::Remove(TRange& range, bool destroy)
+{
+    size_t count = 0;
+    for (TIter iter = range.first;  iter != range.second;  iter++, count++) {
+        if ( destroy )
+            delete *iter;
+    }
+    m_Cookies.erase(range.first, range.second);
+    return count;
+}
+
+
 void CCgiCookies::Clear(void) {
-    for (TCookies::const_iterator iter = m_Cookies.begin();
-         iter != m_Cookies.end();  iter++) {
+    for (TCIter iter = m_Cookies.begin();  iter != m_Cookies.end();  iter++) {
         delete *iter;
     }
     m_Cookies.clear();

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/11/02 20:35:39  vakatov
+* Redesigned of CCgiCookie and CCgiCookies to make them closer to the
+* cookie standard, smarter, and easier in use
+*
 * Revision 1.4  1998/12/11 22:00:33  vasilche
 * Added raw CGI response
 *
@@ -78,6 +82,8 @@ inline CCgiCookies& CCgiResponse::Cookies(void)
     return m_Cookies;
 }
 
+#if 0
+
 inline void CCgiResponse::AddCookie(const string& name, const string& value)
 {
     m_Cookies.Add(name, value);
@@ -115,8 +121,10 @@ inline bool CCgiResponse::HaveCookie(const string& name) const
 
 inline CCgiCookie* CCgiResponse::FindCookie(const string& name) const
 {
-    return m_Cookies.Find(name);
+    return m_Cookies.Find(name, );
 }
+
+#endif /* 0 */
 
 inline CNcbiOstream* CCgiResponse::SetOutput(CNcbiOstream* out)
 {
