@@ -2412,7 +2412,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
     /* get peer's address */
-    if (getpeername(xx_sock, (struct sockaddr*) &peer, &peerlen))
+    if (getpeername(xx_sock, &peer.sa, &peerlen) < 0)
         return eIO_Closed;
 #ifdef NCBI_OS_UNIX
     if (peer.sa.sa_family != AF_INET  &&  peer.sa.sa_family != AF_UNIX)
@@ -2421,6 +2421,26 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     if (peer.sa.sa_family != AF_INET)
         return eIO_InvalidArg;
 #endif /*NCBI_OS_UNIX*/
+
+#ifdef NCBI_OS_UNIX
+    if (peer.sa.sa_family == AF_UNIX) {
+        if (!peer.un.sun_path[0]) {
+            peerlen = sizeof(peer);
+            if (getsockname(xx_sock, &peer.sa, &peerlen) < 0)
+                return eIO_Closed;
+            assert(peer.sa.sa_family == AF_UNIX);
+            if (!peer.un.sun_path[0]) {
+                CORE_LOGF(eLOG_Error, ("SOCK#%u[%u]: [SOCK::CreateOnTopEx]  "
+                                       "Cannot deal with unbound UNIX sockets",
+                                       x_id, (unsigned int) xx_sock));
+                assert(0);
+                return eIO_InvalidArg;
+            }
+        }
+        socklen = strlen(peer.un.sun_path);
+    } else
+#endif /*NCBI_OS_UNIX*/
+        socklen = 0;
 
     /* store initial data */
     if (datalen  &&  (!BUF_SetChunkSize(&w_buf, datalen)  ||
@@ -2434,20 +2454,6 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     }
 
     /* create and fill socket handle */
-#ifdef NCBI_OS_UNIX
-    if (peer.sa.sa_family == AF_UNIX) {
-        if (!peer.un.sun_path[0]) {
-            CORE_LOGF(eLOG_Error, ("SOCK#%u[%u]: [SOCK::CreateOnTopEx] "
-                                   " Cannot deal with anonymous UNIX sockets",
-                                   x_id, (unsigned int) xx_sock));
-            assert(0);
-            BUF_Destroy(w_buf);
-            return eIO_InvalidArg;
-        }
-        socklen = strlen(peer.un.sun_path);
-    } else
-#endif /*NCBI_OS_UNIX*/
-        socklen = 0;
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + socklen))) {
         BUF_Destroy(w_buf);
         return eIO_Unknown;
@@ -3817,6 +3823,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.122  2003/07/24 15:34:29  lavr
+ * Fix socket name discovery procedure for UNIX On-Top SOCKs
+ *
  * Revision 6.121  2003/07/23 20:31:01  lavr
  * SOCK_CreateOnTopEx(): Do not check for returned peer's address size
  *
