@@ -572,7 +572,8 @@ static void s_DoLogData
         }
         sprintf(head, "SOCK#%u[%u] -- %s at offset %lu%s%s",
                 sock->id, (unsigned int) sock->sock,
-                event == eIO_Read ? "read" : "written",
+                event == eIO_Read ? (sock->type != eSOCK_Datagram && size == 0?
+                                     "EOF hit" : "read") : "written",
                 (unsigned long) (event == eIO_Read ?
                                  sock->n_read : sock->n_written),
                 sin ? (event == eIO_Read ? " from " : " to ") : "", tail);
@@ -1434,16 +1435,23 @@ static int s_Recv(SOCK        sock,
         /* recv */
         x_read = recv(sock->sock, x_buffer, n_todo, 0);
 
-        /* catch EOF */
-        if (x_read == 0  ||
+        /* success */
+        if (x_read >= 0  ||
             (x_read < 0  &&  SOCK_ERRNO == SOCK_ENOTCONN)) {
-            sock->r_status = x_read == 0 ? eIO_Success : eIO_Closed;
-            sock->is_eof   = 1/*true*/;
-            break;
-        }
-
-        /* some error */
-        if (x_read < 0) {
+            /* statistics & logging */
+            if (sock->log_data == eOn  ||
+                (sock->log_data == eDefault  &&  s_LogData == eOn)) {
+                s_DoLogData(sock, eIO_Read, x_buffer,
+                            (size_t)(x_read < 0 ? 0 : x_read), 0);
+            }
+            if (x_read <= 0) {
+                /* catch EOF */
+                sock->r_status = x_read == 0 ? eIO_Success : eIO_Closed;
+                sock->is_eof   = 1/*true*/;
+                break;
+            }
+        } else {
+            /* some error */
             int x_errno = SOCK_ERRNO;
             if (x_errno != SOCK_EWOULDBLOCK  &&
                 x_errno != SOCK_EAGAIN       &&
@@ -1465,11 +1473,6 @@ static int s_Recv(SOCK        sock,
             verify(BUF_Write(&sock->r_buf, x_buffer, (size_t) x_read));
         }
 
-        /* statistics & logging */
-        if (sock->log_data == eOn  ||
-            (sock->log_data == eDefault  &&  s_LogData == eOn)) {
-            s_DoLogData(sock, eIO_Read, x_buffer, (size_t) x_read, 0);
-        }
         sock->n_read += x_read;
         n_read       += x_read;
     } while (!size  ||  (!buffer  &&  n_read < size));
@@ -3041,6 +3044,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.98  2003/05/05 20:24:13  lavr
+ * Added EOF-on-read as a trace event to log when verbose mode is on
+ *
  * Revision 6.97  2003/05/05 11:41:09  rsmith
  * added defines and declarations to allow cross compilation Mac->Win32 using Metrowerks Codewarrior.
  *
