@@ -195,6 +195,8 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap,
         }
         ss << "GetRecords(" << x <<")";
     }
+#else
+    s[0] = 0;
 #endif
     CGBLGuard g(m_Locks,s);
     do {
@@ -746,7 +748,7 @@ bool CGBDataLoader::x_GetData(STSEinfo *tse,
     if(!x_NeedMoreData(tse_up,srp,from,to,blob_mask))
         return false;
     bool new_tse = false;
-    GBLOG_POST( "GetBlob(" << srp->printTSE() << "," <<
+    GBLOG_POST( "GetBlob(" << srp.print() << "," <<
                 tse_up << ") " << from << ":"<< to << ":=" << tse_up->m_mode);
   
     _VERIFY(tse_up->m_mode != CTSEUpload::eDone);
@@ -757,13 +759,13 @@ bool CGBDataLoader::x_GetData(STSEinfo *tse,
                                                      m_Locks.m_Pool.Select(tse)));
               bs->HaveMoreBlobs(); ++count) {
             CRef<CBlob> blob(bs->RetrieveBlob());
-            GBLOG_POST( "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
+            GBLOG_POST( "GetBlob(" << srp.print() << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
             m_InvokeGC=true;
             if (blob->Class()==0) {
                 tse_up->m_tse    = blob->Seq_entry();
                 if(tse_up->m_tse) {
                     tse_up->m_mode   = CTSEUpload::eDone;
-                    GBLOG_POST( "GetBlob(" << s << ") " << "- whole blob retrieved");
+                    GBLOG_POST( "GetBlob(" << srp.print() << ") " << "- whole blob retrieved");
                     new_tse=true;
                     tse->tseinfop=GetDataSource()->AddTSE(*(tse_up->m_tse));
                 }
@@ -773,7 +775,7 @@ bool CGBDataLoader::x_GetData(STSEinfo *tse,
                 }
             }
             else {
-                GBLOG_POST("GetBlob(" << s << ") " << "- partial load");
+                GBLOG_POST("GetBlob(" << srp.print() << ") " << "- partial load");
                 _ASSERT(tse_up->m_mode != CTSEUpload::eDone);
                 if(tse_up->m_mode != CTSEUpload::ePartial)
                     tse_up->m_mode = CTSEUpload::ePartial;
@@ -812,6 +814,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/05/13 18:32:29  vasilche
+* Fixed use of GBLOG_POST() macro.
+*
 * Revision 1.64  2003/05/12 19:18:29  vasilche
 * Fixed locking of object manager classes in multi-threaded application.
 *
