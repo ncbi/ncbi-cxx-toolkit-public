@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/09/26 16:57:31  vasilche
+* Added flag for compatibility with asntool
+*
 * Revision 1.6  2001/06/11 14:34:58  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -82,6 +85,15 @@ public:
             return m_StringValue;
         }
 
+    bool AllowIDsEndingWithMinus(void) const
+        {
+            return m_AllowIDsEndingWithMinus;
+        }
+    void AllowIDsEndingWithMinus(bool allow)
+        {
+            m_AllowIDsEndingWithMinus = allow;
+        }
+
 protected:
     TToken LookupToken(void);
     void LookupComments(void);
@@ -98,6 +110,7 @@ protected:
     TToken LookupKeyword(void);
 
     string m_StringValue;
+    bool m_AllowIDsEndingWithMinus;
 };
 
 END_NCBI_SCOPE

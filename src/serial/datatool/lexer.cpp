@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/09/26 16:57:31  vasilche
+* Added flag for compatibility with asntool
+*
 * Revision 1.13  2001/06/11 14:35:02  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -297,8 +300,11 @@ void ASNLexer::LookupIdentifier(void)
         else if ( c == '-' ) {
             if ( IsAlNum(Char(1)) )
                 AddChars(2);
-            else
+            else {
+                if ( AllowIDsEndingWithMinus() )
+                    AddChar();
                 return;
+            }
         }
         else
             return;

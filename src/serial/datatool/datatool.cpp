@@ -165,6 +165,9 @@ void CDataTool::Init(void)
                       "set \"-o*\" arguments for NCBI directory tree",
                       CArgDescriptions::eString);
 
+    d->AddFlag("lax_syntax",
+               "allow non-standard ASN.1 syntax accepted by asntool");
+
     SetupArgDescriptions(d.release());
 }
 
@@ -287,7 +290,7 @@ bool CDataTool::ProcessData(void)
         outFormat = eSerial_None;
     }
 
-    if ( const CArgValue& F = args["F"] ) {
+    if ( args["F"] ) {
         // read fully in memory
         AnyType value;
         in->Read(&value, typeInfo, CObjectIStream::eNoFileHeader);
@@ -401,6 +404,7 @@ void CDataTool::LoadDefinitions(CFileSet& fileSet,
         if ( !name.empty() ) {
             SourceFile fName(name, modulesPath);
             ASNLexer lexer(fName);
+            lexer.AllowIDsEndingWithMinus(GetArgs()["lax_syntax"]);
             ASNParser parser(lexer);
             fileSet.AddFile(parser.Modules(name));
         }
@@ -419,6 +423,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2002/09/26 16:57:31  vasilche
+* Added flag for compatibility with asntool
+*
 * Revision 1.53  2002/08/06 17:03:48  ucko
 * Let -opm take a comma-delimited list; move relevant CVS logs to end.
 *
