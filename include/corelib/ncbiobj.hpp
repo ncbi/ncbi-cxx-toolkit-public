@@ -118,7 +118,8 @@ public:
     void* operator new[](size_t size);
     void operator delete(void* ptr);
     void operator delete[](void* ptr);
-    void* operator new(size_t, void* place);
+    void* operator new(size_t size, void* place);
+    void operator delete(void* ptr, void* place);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
@@ -771,6 +772,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2003/07/17 23:00:50  vasilche
+ * Added matching operator delete.
+ *
  * Revision 1.46  2003/07/17 20:01:06  vasilche
  * Added inplace operator new().
  *

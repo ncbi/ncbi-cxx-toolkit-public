@@ -139,12 +139,17 @@ void* CObject::operator new(size_t size)
 }
 
 
-// CObject local new operator to mark allocation in heap
+// CObject local new operator to mark allocation in othe memory chunk
 void* CObject::operator new(size_t size, void* place)
 {
     _ASSERT(size >= sizeof(CObject));
     memset(place, 0, size);
     return place;
+}
+
+// CObject local new operator to mark allocation in heap
+void CObject::operator delete(void* /*ptr*/, void* /*place*/)
+{
 }
 
 
@@ -393,6 +398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2003/07/17 23:01:32  vasilche
+ * Added matching operator delete.
+ *
  * Revision 1.36  2003/07/17 20:01:07  vasilche
  * Added inplace operator new().
  *
