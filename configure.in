@@ -606,6 +606,7 @@ if test "$compiler" = "GCC" ; then
    CXXFLAGS="-Wall $CXXFLAGS"
    case "$host_os" in
       solaris* )  CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS" ;;
+      irix*    )  CXXFLAGS="$CXXFLAGS -D_LANGUAGE_C_PLUS_PLUS" ;;
    esac
 fi
 
