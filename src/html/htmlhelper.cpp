@@ -106,19 +106,20 @@ string CIDs::Encode(void) const
 
 string CHTMLHelper::sm_newline( "\n" );
 
+
 string CHTMLHelper::HTMLEncode(const string& input)
 {
-    string output;
-    string::size_type last = 0;
+    string    output;
+    SIZE_TYPE last = 0;
 
     // Reserve memory.
     output.reserve(input.size());
 
     // Find first symbol to encode.
-    string::size_type ptr = input.find_first_of("\"&<>", last);
-    while ( ptr != string::npos ) {
+    SIZE_TYPE ptr = input.find_first_of("\"&<>", last);
+    while ( ptr != NPOS ) {
         // We don't know how big output str  will need to be, so we grow it
-        // exponentially to avoid O(N^2) behavior from copying.
+        // exponentially.
         if ( output.size() == output.capacity()) {
             output.reserve(output.size() + output.size() / 2);
         }
@@ -161,20 +162,75 @@ string CHTMLHelper::HTMLEncode(const string& input)
 }
 
 
-string CHTMLHelper::StripTags (const string& input)
+string CHTMLHelper::StripHTML(const string& str)
 {
-    size_t pos;
-    string s(input);
+    return CHTMLHelper::StripSpecialChars(CHTMLHelper::StripTags(str));
+}
+
+
+string CHTMLHelper::StripTags (const string& str)
+{
+    SIZE_TYPE pos = 0;
+    string s(str);
 
     // First, strip comments
-    while ( (pos = s.find("<!--")) != NPOS ) {
-        int pos_end = s.find("-->", pos);
+    while ( (pos = s.find("<!--", pos)) != NPOS ) {
+        int pos_end = s.find("-->", pos + 1);
+        if ( pos_end == NPOS ) {
+            break;
+        }
         s.erase(pos, pos_end - pos + 3);
+        pos++;
     }
     // Now, strip balanced "<..>"
-    while ( (pos = s.find_first_of("<")) != NPOS ) {
-        int pos_end = s.find_first_of(">", pos);
-        s.erase(pos, pos_end - pos + 1);
+    pos =0;
+    while ( (pos = s.find("<", pos)) != NPOS ) {
+        int pos_end = s.find(">", pos + 1);
+        if ( pos_end == NPOS ) {
+            break;
+        }
+        if (pos < s.size()  &&
+            isalpha((int)s[pos + 1])  &&  isalpha((int)s[pos_end - 1])) {
+            s.erase(pos, pos_end - pos + 1);
+        }
+        pos++;
+    }
+    return s;
+}
+
+
+string CHTMLHelper::StripSpecialChars(const string& str)
+{
+    SIZE_TYPE pos = 0;
+    string s(str);
+
+    // Strip named and numeric character entities "&[#]...;"
+    while ( (pos = s.find("&", pos)) != NPOS ) {
+        int pos_end = s.find(";", pos + 1);
+        if ( pos_end == NPOS ) {
+            break;
+        }
+        if ( (pos_end - pos) > 2  &&  (pos_end - pos) < 8 ) {
+            int (*check)(int c);
+            SIZE_TYPE start = pos + 1;
+            if ( s[start] == '#') {
+                check = &isdigit;
+                start++;
+            } else {
+                check = &isalpha;
+            }
+            bool need_delete = true;
+            for (SIZE_TYPE i = start; i < pos_end; i++ ) {
+                if ( !check((int)s[i]) ) {
+                    need_delete = false;
+                    break;
+                }
+            }
+            if ( need_delete ) {
+                s.erase(pos, pos_end - pos + 1);
+            }
+        }
+        pos++;
     }
     return s;
 }
@@ -186,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/02 14:17:45  ivanov
+ * Added CHTMLHelper::StripHTML(), StripSpecialChars(). Fixed StripTags().
+ *
  * Revision 1.12  2004/01/14 13:47:45  ivanov
  * HTMLEncode() performance improvement
  *
@@ -200,7 +259,7 @@ END_NCBI_SCOPE
  *
  * Revision 1.8  2002/09/25 01:24:56  dicuccio
  * Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
- * string.  Implemented CHTMLText::PrintBegin() for mode = ePlainText
+ * string. Implemented CHTMLText::PrintBegin() for mode = ePlainText
  *
  * Revision 1.7  1999/05/20 16:52:33  pubmed
  * SaveAsText action for query; minor changes in filters,labels, tabletemplate
