@@ -6,10 +6,14 @@
 ###########################################################################
 #
 #  Auxilary script -- to be called by "./Makefile.check"
-#
-#  "file:[full:]/abs_fname       file:[full:]rel_fname
-#   mail:[full:]addr1,addr2,...  post:[full:]url  watch:addr1,addr2,...
-#   debug"
+#`
+#  Reporting mode and addresses' args:
+#     file:[full:]/abs_fname
+#     file:[full:]rel_fname
+#     mail:[full:]addr1,addr2,...
+#     post:[full:]url
+#     watch:addr1,addr2,...
+#     debug
 #
 ###########################################################################
 
@@ -144,8 +148,8 @@ for dest in "$@" ; do
    esac
 done
 
-# Compose the "full" results archive, if necessary
-echo "$*" | grep ':full:' >/dev/null  &&   $run_scrip ./check.sh concat
+# Compose "full" results archive, if necessary
+echo "$*" | grep ':full:' >/dev/null  &&   $run_script ./check.sh concat_err
 
 # Post results to the specified locations
 if test -n "$file_list_full" ; then
