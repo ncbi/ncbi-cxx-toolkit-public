@@ -41,12 +41,13 @@ XLIBDEP = $(LIB:=.dep)
 
 $(XAPP): $(XOBJ) $(XLIBDEP)
 	$(LINK) $(LDFLAGS) $(XOBJ) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
+	$(STRIP) $(XAPP)
 
 
 ### Standard targets(non-recursive)
 
 all: $(XAPP)
-	@$(COPY_IF) $(bindir) $(XAPP)
+	@$(BINCOPY) $(XAPP) $(bindir)/$(XAPP)
 
 clean:
 	-$(RMDIR) SunWS_cache

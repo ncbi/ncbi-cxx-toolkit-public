@@ -36,10 +36,10 @@ STD_INCLUDE = -I$(incdir) -I$(includedir) -I$(includedir)/$(INTERNAL)
 
 ### Auxiliary commands
 
-RM    = rm
-RMDIR = rm -r
-COPY  = cp -p
-COPY_IF = @builddir@/if_diff.sh "cp -p"
+RM      = rm -f
+RMDIR   = rm -rf
+COPY    = cp -p
+BINCOPY = @BINCOPY@
 
 
 ### Configurable compiler/librarian/linker binaries and options
@@ -52,6 +52,7 @@ CONF_CXXCPP = @CXXCPP@
 CONF_AR     = @AR@
 CONF_RANLIB = @RANLIB@
 CONF_LINK   = @CXX@
+CONF_STRIP  = @STRIP@
 
 CONF_CFLAGS   = @CFLAGS@
 CONF_CXXFLAGS = @CXXFLAGS@
@@ -71,6 +72,7 @@ ORIG_CXXCPP = $(CONF_CXXCPP)
 ORIG_AR     = $(CONF_AR)
 ORIG_RANLIB = $(CONF_RANLIB)
 ORIG_LINK   = $(CONF_CXX)
+ORIG_STRIP  = $(CONF_STRIP)
 
 ORIG_CFLAGS   = $(CONF_CFLAGS)
 ORIG_CXXFLAGS = $(CONF_CXXFLAGS)
@@ -90,6 +92,7 @@ CXXCPP = $(CONF_CXXCPP)
 AR     = $(CONF_AR)
 RANLIB = $(CONF_RANLIB)
 LINK   = $(CONF_CXX)
+STRIP  = $(CONF_STRIP)
 
 CFLAGS   = $(CONF_CFLAGS)
 CXXFLAGS = $(CONF_CXXFLAGS)
