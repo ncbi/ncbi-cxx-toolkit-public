@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/03/01 00:33:12  lavr
+ * FIXES: Empty update does not generate parse error
+ *        Dispathing error is only logged in debug mode; milder severity
+ *
  * Revision 6.11  2001/02/09 17:36:48  lavr
  * Modified: fSERV_StatelessOnly overrides info->stateless
  *
@@ -169,9 +173,9 @@ static int/*bool*/ s_ParseHeader(const char* header, void *data,
 {
     SERV_ITER iter = (SERV_ITER) data;
 
-    if (header && !s_Update(iter, header))
-        return 0;
-    return 1;
+    if (header)
+        s_Update(iter, header);
+    return 1/*header parsed okay*/;
 }
 
 
@@ -288,16 +292,17 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char *text)
             b += sizeof(HTTP_REQUEST_FAILED) - 1;
             while (*b && isspace((unsigned char)(*b)))
                 b++;
+#if defined(_DEBUG) && !defined(NDEBUG)
             if (!(p = strchr(b, '\r')))
                 p = c;
             else
                 *p = '\0';
-            if (b >= p) {
-                CORE_LOG(eLOG_Error, "[UNKNOWN DISPATCHER ERROR]\n");
-            } else {
-                CORE_LOGF(eLOG_Error, ("[DISPATCHER ERROR] = %.*s\n",
-                                       (int)(p - b), b));
-            }
+            if (b >= p)
+                CORE_LOG(eLOG_Warning, "[UNKNOWN DISPATCHER ERROR]");
+            else
+                CORE_LOGF(eLOG_Warning, ("[DISPATCHER ERROR] = %.*s",
+                                         (int)(p - b), b));
+#endif
             break;
         }
     }
