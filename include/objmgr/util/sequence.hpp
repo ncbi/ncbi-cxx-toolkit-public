@@ -129,12 +129,55 @@ typedef int TGetTitleFlags;
 string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
 
 END_SCOPE(sequence)
+
+
+// FASTA-format output
+class CFastaOstream {
+public:
+    enum EFlags {
+        eAssembleParts   = 0x1,
+        eInstantiateGaps = 0x2
+    };
+    typedef int TFlags; // binary OR of EFlags
+
+    CFastaOstream(CNcbiOstream& out) : m_Out(out), m_Width(70), m_Flags(0) { }
+
+    // Unspecified locations designate complete sequences
+    void Write        (CBioseq_Handle& handle, const CSeq_loc* location = 0);
+    void WriteTitle   (CBioseq_Handle& handle);
+    void WriteSequence(CBioseq_Handle& handle, const CSeq_loc* location = 0);
+
+    // These versions set up a temporary object manager
+    void Write(CSeq_entry& entry, const CSeq_loc* location = 0);
+    void Write(CBioseq&    seq,   const CSeq_loc* location = 0);
+
+    // Used only by Write(CSeq_entry, ...); permissive by default
+    virtual bool SkipBioseq(const CBioseq& /* seq */) { return false; }
+
+    // To adjust various parameters...
+    TSeqPos GetWidth   (void) const    { return m_Width;   }
+    void    SetWidth   (TSeqPos width) { m_Width = width;  }
+    TFlags  GetAllFlags(void) const    { return m_Flags;   }
+    void    SetAllFlags(TFlags flags)  { m_Flags = flags;  }
+    void    SetFlag    (EFlags flag)   { m_Flags |=  flag; }
+    void    ResetFlag  (EFlags flag)   { m_Flags &= ~flag; }
+
+private:
+    CNcbiOstream& m_Out;
+    TSeqPos       m_Width;
+    TFlags        m_Flags;
+};
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2002/08/27 21:41:09  ucko
+* Add CFastaOstream.
+*
 * Revision 1.3  2002/06/10 16:30:22  ucko
 * Add forward declaration of CBioseq_Handle.
 *

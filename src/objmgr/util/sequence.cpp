@@ -31,17 +31,25 @@
 
 #include <serial/iterator.hpp>
 
+#include <objects/objmgr/object_manager.hpp>
 #include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/seq_vector.hpp>
 
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seg_ext.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/seqloc/Packed_seqpnt.hpp>
+#include <objects/seqloc/Seq_bond.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-#include <objects/seqloc/Packed_seqpnt.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqloc/Seq_bond.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seqloc/Seq_loc_equiv.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 #include <objects/util/sequence.hpp>
 
@@ -1265,12 +1273,336 @@ ECompare Compare
 
 
 END_SCOPE(sequence)
+
+
+void CFastaOstream::Write(CBioseq_Handle& handle, const CSeq_loc* location)
+{
+    WriteTitle(handle);
+    WriteSequence(handle, location);
+}
+
+
+static int s_ScoreNAForFasta(const CSeq_id* id)
+{
+    switch (id->Which()) {
+    case CSeq_id::e_not_set:
+    case CSeq_id::e_Giim:
+    case CSeq_id::e_Pir:
+    case CSeq_id::e_Swissprot:
+    case CSeq_id::e_Prf:       return kMax_Int;
+    case CSeq_id::e_Local:     return 230;
+    case CSeq_id::e_Gi:        return 120;
+    case CSeq_id::e_General:   return 50;
+    case CSeq_id::e_Patent:    return 40;
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:
+    case CSeq_id::e_Pdb:       return 30;
+    case CSeq_id::e_Other:     return 15;
+    default:                   return 20; // [third party] GenBank/EMBL/DDBJ
+    }
+}
+
+
+static int s_ScoreAAForFasta(const CSeq_id* id)
+{
+    switch (id->Which()) {
+    case CSeq_id::e_not_set:
+    case CSeq_id::e_Giim:      return kMax_Int;
+    case CSeq_id::e_Local:     return 230;
+    case CSeq_id::e_Gi:        return 120;
+    case CSeq_id::e_General:   return 90;
+    case CSeq_id::e_Patent:    return 80;
+    case CSeq_id::e_Prf:       return 70;
+    case CSeq_id::e_Pdb:       return 50;
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:    return 40;
+    case CSeq_id::e_Pir:       return 30;
+    case CSeq_id::e_Swissprot: return 20;
+    case CSeq_id::e_Other:     return 15;
+    default:                   return 60; // [third party] GenBank/EMBL/DDBJ
+    }
+}
+
+
+void CFastaOstream::WriteTitle(CBioseq_Handle& handle)
+{
+    CBioseq_Handle::TBioseqCore core = handle.GetBioseqCore();
+
+    bool is_na    = core->GetInst().GetMol() != CSeq_inst::eMol_aa;
+    bool found_gi = false;
+
+    m_Out << '>';
+
+    iterate (CBioseq::TId, id, core->GetId()) {
+        if ((*id)->IsGi()) {
+            (*id)->WriteAsFasta(m_Out);
+            found_gi = true;
+            break;
+        }
+    }
+
+    CRef<CSeq_id> id = FindBestChoice(core->GetId(),
+                                      is_na ? s_ScoreNAForFasta
+                                      : s_ScoreAAForFasta);
+    if (id.NotEmpty()  &&  id->Which() != CSeq_id::e_Gi) {
+        if (found_gi) {
+            m_Out << '|';
+        }
+        id->WriteAsFasta(m_Out);
+    }
+
+#if 0
+// This was in id1_fetch for some reason, but then it never got updated
+// to use the sophisticated version of GetTitle....
+    for (CSeqdesc_CI it(handle, CSeqdesc::e_Name);  it;  ++it) {
+        m_Out << ' ' << it->GetName();
+        BREAK(it);
+    }
+#endif
+
+    m_Out << ' ' << sequence::GetTitle(handle) << NcbiEndl;
+}
+
+
+struct SGap {
+    SGap(TSeqPos start, TSeqPos length) : m_Start(start), m_Length(length) { }
+    TSeqPos GetEnd(void) const { return m_Start + m_Length - 1; }
+
+    TSeqPos m_Start, m_Length;
+};
+typedef list<SGap> TGaps;
+
+
+static bool s_IsGap(const CSeq_loc& loc, CScope& scope)
+{
+    if (loc.IsNull()) {
+        return true;
+    }
+
+    CTypeConstIterator<CSeq_id> id(loc);
+    CBioseq_Handle handle = scope.GetBioseqHandle(*id);
+    if (handle  &&  handle.GetBioseqCore()->GetInst().GetRepr()
+        == CSeq_inst::eRepr_virtual) {
+        return true;
+    }
+
+    return false; // default
+}
+
+
+static TGaps s_FindGaps(const CSeq_ext& ext, CScope& scope)
+{
+    TSeqPos pos = 0;
+    TGaps   gaps;
+
+    switch (ext.Which()) {
+    case CSeq_ext::e_Seg:
+        iterate (CSeg_ext::Tdata, it, ext.GetSeg().Get()) {
+            TSeqPos length = sequence::GetLength(**it, &scope);
+            if (s_IsGap(**it, scope)) {
+                gaps.push_back(SGap(pos, length));
+            }
+            pos += length;
+        }
+        break;
+
+    case CSeq_ext::e_Delta:
+        iterate (CDelta_ext::Tdata, it, ext.GetDelta().Get()) {
+            switch ((*it)->Which()) {
+            case CDelta_seq::e_Loc:
+            {
+                const CSeq_loc& loc = (*it)->GetLoc();
+                TSeqPos length = sequence::GetLength(loc, &scope);
+                if (s_IsGap(loc, scope)) {
+                    gaps.push_back(SGap(pos, length));
+                }
+                pos += length;
+                break;
+            }
+
+            case CDelta_seq::e_Literal:
+            {
+                const CSeq_literal& lit    = (*it)->GetLiteral();
+                TSeqPos             length = lit.GetLength();
+                if ( !lit.IsSetSeq_data() ) {
+                    gaps.push_back(SGap(pos, length));
+                }
+                pos += length;
+                break;
+            }
+
+            default:
+                ERR_POST(Warning << "CFastaOstream::WriteSequence: "
+                         "unsupported Delta-seq selection "
+                         << CDelta_seq::SelectionName((*it)->Which()));
+                break;
+            }
+        }
+
+    default:
+        break;
+    }
+
+    return gaps;
+}
+
+
+static TGaps s_AdjustGaps(const TGaps& gaps, const CSeq_loc& location)
+{
+    // assume location matches handle
+    const TSeqPos         kMaxPos = numeric_limits<TSeqPos>::max();
+    TSeqPos               pos     = 0;
+    TGaps::const_iterator gap_it  = gaps.begin();
+    TGaps                 adjusted_gaps;
+    SGap                  new_gap(kMaxPos, 0);
+
+    for (CSeq_loc_CI loc_it(location);  loc_it  &&  gap_it != gaps.end();
+         pos += loc_it.GetRange().GetLength(), loc_it++) {
+        CSeq_loc_CI::TRange range = loc_it.GetRange();
+
+        if (new_gap.m_Start != kMaxPos) {
+            // in progress
+            if (gap_it->GetEnd() < range.GetFrom()) {
+                adjusted_gaps.push_back(new_gap);
+                new_gap.m_Start = kMaxPos;
+                ++gap_it;
+            } else if (gap_it->GetEnd() <= range.GetTo()) {
+                new_gap.m_Length += gap_it->GetEnd() - range.GetFrom() + 1;
+                adjusted_gaps.push_back(new_gap);
+                new_gap.m_Start = kMaxPos;
+                ++gap_it;
+            } else {
+                new_gap.m_Length += range.GetLength();
+                continue;
+            }
+        }
+
+        while (gap_it->GetEnd() < range.GetFrom()) {
+            ++gap_it; // skip
+        }
+
+        if (gap_it->m_Start <= range.GetFrom()) {
+            if (gap_it->GetEnd() <= range.GetTo()) {
+                adjusted_gaps.push_back
+                    (SGap(pos, gap_it->GetEnd() - range.GetFrom() + 1));
+                ++gap_it;
+            } else {
+                new_gap.m_Start  = pos;
+                new_gap.m_Length = range.GetLength();
+                continue;
+            }
+        }
+
+        while (gap_it->m_Start <= range.GetTo()) {
+            TSeqPos pos2 = pos + gap_it->m_Start - range.GetFrom();
+            if (gap_it->GetEnd() <= range.GetTo()) {
+                adjusted_gaps.push_back(SGap(pos2, gap_it->m_Length));
+                ++gap_it;
+            } else {
+                new_gap.m_Start  = pos2;
+                new_gap.m_Length = range.GetTo() - gap_it->m_Start + 1;
+            }
+        }
+    }
+
+    if (new_gap.m_Start != kMaxPos) {
+        adjusted_gaps.push_back(new_gap);
+    }
+
+    return adjusted_gaps;
+}
+
+
+void CFastaOstream::WriteSequence(CBioseq_Handle& handle,
+                                  const CSeq_loc* location)
+{
+    const CBioseq&   seq  = handle.GetBioseq();
+    const CSeq_inst& inst = seq.GetInst();
+    if ( !(m_Flags & eAssembleParts)  &&  !inst.IsSetSeq_data() ) {
+        return;
+    }
+
+    CSeqVector v = (location
+                    ? handle.GetSequenceView(*location,
+                                             CBioseq_Handle::eViewMerged,
+                                             true)
+                    : handle.GetSeqVector(true));
+    bool is_na = inst.GetMol() != CSeq_inst::eMol_aa;
+    // autodetection is sometimes broken (!)
+    v.SetCoding(is_na ? CSeq_data::e_Iupacna : CSeq_data::e_Iupacaa);
+
+    TSeqPos              size = v.size();
+    TSeqPos              pos  = 0;
+    CSeqVector::TResidue gap  = v.GetGapChar();
+    string               buffer;
+    TGaps                gaps;
+    CScope&              scope   = handle.GetScope();
+    const TSeqPos        kMaxPos = numeric_limits<TSeqPos>::max();
+
+    if ( !inst.IsSetSeq_data()  &&  inst.IsSetExt() ) {
+        gaps = s_FindGaps(inst.GetExt(), scope);
+        if (location) {
+            gaps = s_AdjustGaps(gaps, *location);
+        }
+    }
+    gaps.push_back(SGap(kMaxPos, 0));
+
+    while (pos < size) {
+        unsigned int limit = min(m_Width,
+                                 min(size, gaps.front().m_Start) - pos);
+        v.GetSeqData(pos, pos + limit, buffer);
+        pos += limit;
+        if (limit > 0) {
+            m_Out << buffer << '\n';
+        }
+        if (pos == gaps.front().m_Start) {
+            if (m_Flags & eInstantiateGaps) {
+                for (TSeqPos l = gaps.front().m_Length; l > 0; l -= m_Width) {
+                    m_Out << string(min(l, m_Width), gap) << '\n';
+                }
+            } else {
+                m_Out << "-\n";
+            }
+            pos += gaps.front().m_Length;
+            gaps.pop_front();
+        }
+    }
+    m_Out << NcbiFlush;
+}
+
+
+void CFastaOstream::Write(CSeq_entry& entry, const CSeq_loc* location)
+{
+    CObjectManager om;
+    CScope         scope(om);
+
+    scope.AddTopLevelSeqEntry(entry);
+    for (CTypeConstIterator<CBioseq> it(entry);  it;  ++it) {
+        if ( !SkipBioseq(*it) ) {
+            CBioseq_Handle h = scope.GetBioseqHandle(*it->GetId().front());
+            Write(h, location);
+        }
+    }
+}
+
+
+void CFastaOstream::Write(CBioseq& seq, const CSeq_loc* location)
+{
+    CSeq_entry entry;
+    entry.SetSeq(seq);
+    Write(entry, location);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2002/08/27 21:41:15  ucko
+* Add CFastaOstream.
+*
 * Revision 1.2  2002/06/07 16:11:09  ucko
 * Move everything into the "sequence" namespace.
 * Drop the anonymous-namespace business; "sequence" should provide
