@@ -3,7 +3,7 @@
 APP = lang_query
 SRC = lang_query
 
-LIB  = dbapi_driver dbapi_sample_base xutil xncbi
+LIB  = dbapi_sample_base dbapi_driver xutil xncbi
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD  = test_lang_query.sh
