@@ -1,4 +1,4 @@
---$Revision: 1.12 $ 
+--$Revision: 1.13 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -110,7 +110,7 @@ Gene-commentary ::= SEQUENCE {
     comment SEQUENCE OF Gene-commentary OPTIONAL } 
  
 Other-source ::= SEQUENCE { 
-    src Dbtag ,                         -- key to non-ncbi source 
+    src Dbtag OPTIONAL ,                -- key to non-ncbi source 
     pre-text VisibleString OPTIONAL ,   -- text before anchor 
     anchor VisibleString OPTIONAL ,     -- text to show as highlight 
     url VisibleString OPTIONAL ,        -- if present, use this URL not Dbtag and datbase 
