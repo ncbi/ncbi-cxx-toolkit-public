@@ -869,6 +869,10 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
                              NStr::TWrapFlags flags, const string* prefix,
                              const string* prefix1)
 {
+    if (l.empty()) {
+        return arr;
+    }
+
     const string* pfx      = prefix1 ? prefix1 : prefix;
     string        s        = *pfx;
     bool          is_html  = flags & fWrap_HTMLPre ? true : false;
@@ -930,6 +934,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2003/02/11 22:11:03  ucko
+ * Make NStr::WrapList a no-op if the input list is empty.
+ *
  * Revision 1.72  2003/02/06 21:31:35  ucko
  * Fixed an off-by-one error in NStr::Wrap.
  *
