@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/05/10 17:01:11  vasilche
+* Fixed warning on Sun by renaming CHTML_font::SetSize() -> SetFontSize().
+*
 * Revision 1.15  1999/04/22 14:20:11  vasilche
 * Now CHTML_select::AppendOption and CHTML_option constructor accept option
 * name always as first argument.
@@ -447,10 +450,10 @@ inline CHTML_font::CHTML_font(int size, const string& text)
     SetRelativeSize(size);
 }
 
-inline CHTML_font* CHTML_font::SetSize(int size, bool absolute)
+inline CHTML_font* CHTML_font::SetFontSize(int size, bool absolute)
 {
     if ( absolute )
-        CParent::SetSize(size);
+        SetSize(size);
     else
         SetRelativeSize(size);
     return this;
@@ -459,13 +462,13 @@ inline CHTML_font* CHTML_font::SetSize(int size, bool absolute)
 inline CHTML_font::CHTML_font(int size, bool absolute, CNCBINode* node)
     : CParent(node)
 {
-    SetSize(size, absolute);
+    SetFontSize(size, absolute);
 }
 
 inline CHTML_font::CHTML_font(int size, bool absolute, const string& text)
     : CParent(text)
 {
-    SetSize(size, absolute);
+    SetFontSize(size, absolute);
 }
 
 inline CHTML_font::CHTML_font(const string& typeface, CNCBINode* node)
@@ -498,14 +501,14 @@ inline CHTML_font::CHTML_font(const string& typeface, int size, bool absolute, C
     : CParent(node)
 {
     SetAttribute(KHTMLAttributeName_face, typeface);
-    SetSize(size, absolute);
+    SetFontSize(size, absolute);
 }
 
 inline CHTML_font::CHTML_font(const string& typeface, int size, bool absolute, const string& text)
     : CParent(text)
 {
     SetAttribute(KHTMLAttributeName_face, typeface);
-    SetSize(size, absolute);
+    SetFontSize(size, absolute);
 }
 
 inline CHTML_color::CHTML_color(const string& color, const string& text)

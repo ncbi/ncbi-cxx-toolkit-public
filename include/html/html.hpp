@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  1999/05/10 17:01:11  vasilche
+* Fixed warning on Sun by renaming CHTML_font::SetSize() -> SetFontSize().
+*
 * Revision 1.33  1999/05/10 14:26:09  vakatov
 * Fixes to compile and link with the "egcs" C++ compiler under Linux
 *
@@ -905,7 +908,7 @@ public:
     CHTML_font(const string& typeface, int size, bool absolute, CNCBINode* node = 0);
     CHTML_font(const string& typeface, int size, bool absolute, const string& text);
 
-    CHTML_font* SetSize(int size, bool absolute);
+    CHTML_font* SetFontSize(int size, bool absolute);
     CHTML_font* SetRelativeSize(int size);
 };
 
