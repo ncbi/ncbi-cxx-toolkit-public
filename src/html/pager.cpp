@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/02/17 22:03:17  vasilche
+* Assed AsnMemoryRead & AsnMemoryWrite.
+* Pager now may return NULL for some components if it contains only one
+* page.
+*
 * Revision 1.4  1999/01/21 21:13:00  vasilche
 * Added/used descriptions for HTML submit/select/text.
 * Fixed some bugs in paging.
@@ -224,7 +229,9 @@ void CPager::CreateSubNodes(void)
 
 CNCBINode* CPager::GetPageInfo(void) const
 {
-    int lastPage = max(0, (m_ItemCount + m_PageSize - 1) / m_PageSize - 1);
+    if ( m_ItemCount <= m_PageSize )
+        return 0;
+    int lastPage = (m_ItemCount - 1) / m_PageSize;
     return new CHTMLText(
         NStr::IntToString(m_DisplayPage + 1) +
         " page of " + NStr::IntToString(lastPage + 1));
@@ -232,14 +239,19 @@ CNCBINode* CPager::GetPageInfo(void) const
 
 CNCBINode* CPager::GetItemInfo(void) const
 {
+    if ( m_ItemCount <= m_PageSize )
+        return 0;
+    int firstItem = m_DisplayPage * m_PageSize + 1;
+    int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
     return new CHTMLText(
-        NStr::IntToString(m_DisplayPage*m_PageSize + 1) + "-" +
-        NStr::IntToString(min((m_DisplayPage + 1)*m_PageSize, m_ItemCount)) +
+        NStr::IntToString(firstItem) + "-" + NStr::IntToString(endItem) +
         " items of " + NStr::IntToString(m_ItemCount));
 }
 
 CNCBINode* CPager::GetPagerView(void) const
 {
+    if ( m_ItemCount <= m_PageSize )
+        return 0;
     return new CPagerView(*this);
 }
 

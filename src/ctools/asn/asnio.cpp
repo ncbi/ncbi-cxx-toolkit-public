@@ -30,53 +30,103 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/02/17 22:03:16  vasilche
+* Revision 1.1  1999/02/17 22:03:12  vasilche
 * Assed AsnMemoryRead & AsnMemoryWrite.
 * Pager now may return NULL for some components if it contains only one
 * page.
 *
-* Revision 1.1  1999/01/28 15:11:09  vasilche
-* Added new class CAsnWriteNode for displaying ASN.1 structure in HTML page.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <html/asnwrite.hpp>
+#include <corelib/asnio.hpp>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
-CAsnWriteNode::CAsnWriteNode(void)
-    : m_Out(0)
+AsnMemoryRead::AsnMemoryRead(const string& str)
+    : m_Source(str), m_Data(str.c_str()), m_Size(str.size())
 {
+    Init();
 }
 
-CAsnWriteNode::~CAsnWriteNode(void)
+AsnMemoryRead::AsnMemoryRead(const char* data, size_t size)
+    : m_Data(data), m_Size(size)
 {
-    AsnIoClose(m_Out);
+    Init();
 }
 
-AsnIoPtr CAsnWriteNode::GetOut(void)
+AsnMemoryRead::~AsnMemoryRead(void)
 {
-    AsnIoPtr out = m_Out;
-    if ( !out ) {
-        out = m_Out = AsnIoNew(ASNIO_TEXT | ASNIO_OUT, 0, this, 0, WriteAsn);
-    }
-    return out;
+    AsnIoClose(m_In);
 }
 
-Int2 CAsnWriteNode::WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
+void AsnMemoryRead::Init(void)
+{
+    m_Ptr = 0;
+    m_In = AsnIoNew(ASNIO_TEXT | ASNIO_IN, 0, this, ReadAsn, 0);
+}
+
+size_t AsnMemoryRead::Read(char* buffer, size_t size)
+{
+    int count = min(size, m_Size - m_Ptr);
+    memcpy(buffer, m_Data + m_Ptr, count);
+    m_Ptr += count;
+    return count;
+}
+
+Int2 AsnMemoryRead::ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
 {
     if ( !data || !buffer )
         return -1;
 
-    static_cast<CAsnWriteNode*>(data)->AppendPlainText(string(buffer, size));
+    return static_cast<AsnMemoryRead*>(data)->Read(buffer, size);
+}
+
+AsnMemoryWrite::AsnMemoryWrite(void)
+    : m_Data(new char[512]), m_Size(512), m_Ptr(0)
+{
+    m_Out = AsnIoNew(ASNIO_TEXT | ASNIO_OUT, 0, this, 0, WriteAsn);
+}
+
+AsnMemoryWrite::~AsnMemoryWrite(void)
+{
+    AsnIoClose(m_Out);
+    delete[] m_Data;
+}
+
+size_t AsnMemoryWrite::Write(const char* buffer, size_t size)
+{
+    if ( m_Size - m_Ptr < size ) { // not enough space
+        // new buffer
+        char* data = new char[m_Size *= 2];
+        if ( m_Ptr ) // copy old data
+            memcpy(data, m_Data, m_Ptr);
+        // delete old buffer
+        delete[] m_Data;
+        // set new buffer
+        m_Data = data;
+    }
+    // append data
+    memcpy(m_Data + m_Ptr, buffer, size);
+    // increase size
+    m_Ptr += size;
     return size;
 }
 
-void CAsnWriteNode::CreateSubNodes(void)
+Int2 AsnMemoryWrite::WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
+{
+    if ( !data || !buffer )
+        return -1;
+
+    return static_cast<AsnMemoryWrite*>(data)->Write(buffer, size);
+}
+
+void AsnMemoryWrite::flush(void) const
 {
     AsnIoFlush(m_Out);
 }
 
 END_NCBI_SCOPE
+

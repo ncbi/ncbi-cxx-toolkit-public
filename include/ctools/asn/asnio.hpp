@@ -1,3 +1,6 @@
+#ifndef ASNIO__HPP
+#define ASNIO__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -26,57 +29,88 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   ASN.1 <-> memory buffer converter
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/02/17 22:03:16  vasilche
+* Revision 1.1  1999/02/17 22:03:08  vasilche
 * Assed AsnMemoryRead & AsnMemoryWrite.
 * Pager now may return NULL for some components if it contains only one
 * page.
 *
-* Revision 1.1  1999/01/28 15:11:09  vasilche
-* Added new class CAsnWriteNode for displaying ASN.1 structure in HTML page.
-*
+* 
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <html/asnwrite.hpp>
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
-CAsnWriteNode::CAsnWriteNode(void)
-    : m_Out(0)
+class AsnMemoryRead
 {
-}
+public:
+    AsnMemoryRead(const string& str);
+    AsnMemoryRead(const char* buffer, size_t size);
+    virtual ~AsnMemoryRead(void);
 
-CAsnWriteNode::~CAsnWriteNode(void)
+    AsnIoPtr GetIn(void) const
+        { return m_In; }
+    operator AsnIoPtr(void) const
+        { return m_In; }
+
+private:
+
+    void Init(void);
+
+    // ASN.1 communication interface
+    size_t Read(char* buffer, size_t size);
+    static Int2 ReadAsn(Pointer data, CharPtr buffer, Uint2 size);
+
+    string m_Source;
+    const char* m_Data;
+    size_t m_Size;
+    size_t m_Ptr;
+
+    // cached ASN.1 communication interface pointer
+    AsnIoPtr m_In;
+};
+
+class AsnMemoryWrite
 {
-    AsnIoClose(m_Out);
-}
+public:
+    AsnMemoryWrite(void);
+    virtual ~AsnMemoryWrite(void);
 
-AsnIoPtr CAsnWriteNode::GetOut(void)
-{
-    AsnIoPtr out = m_Out;
-    if ( !out ) {
-        out = m_Out = AsnIoNew(ASNIO_TEXT | ASNIO_OUT, 0, this, 0, WriteAsn);
-    }
-    return out;
-}
+    AsnIoPtr GetOut(void) const
+        { return m_Out; }
+    operator AsnIoPtr(void) const
+        { return m_Out; }
+    
+    void flush(void) const;
 
-Int2 CAsnWriteNode::WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
-{
-    if ( !data || !buffer )
-        return -1;
+    const char* Data(void) const
+        { flush(); return m_Data; }
+    const size_t Size(void) const
+        { flush(); return m_Ptr; }
 
-    static_cast<CAsnWriteNode*>(data)->AppendPlainText(string(buffer, size));
-    return size;
-}
+    operator string(void) const
+        { flush(); return string(m_Data, m_Ptr); }
 
-void CAsnWriteNode::CreateSubNodes(void)
-{
-    AsnIoFlush(m_Out);
-}
+private:
+
+    // ASN.1 communication interface
+    size_t Write(const char* buffer, size_t size);
+    static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
+
+    char* m_Data;
+    size_t m_Size;
+    size_t m_Ptr;
+
+    // cached ASN.1 communication interface pointer
+    AsnIoPtr m_Out;
+};
 
 END_NCBI_SCOPE
+
+#endif /* ASNIO_HPP */
