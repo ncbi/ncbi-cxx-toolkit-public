@@ -351,6 +351,28 @@ private:
 };
 
 
+// Search the container of CRef<CSeq_id> for the id of given type.
+// Return the id of requested type, or null CRef.
+template<class container>
+CRef<CSeq_id> GetSeq_idByType(const container& ids,
+                              CSeq_id::E_Choice choice)
+{
+    ITERATE (typename container, iter, ids) {
+        if ((*iter)->Which() == choice){
+            return *iter;
+        }
+    }
+    return CRef<CSeq_id>(0);
+}
+
+//return gi from id list if exists, return 0 otherwise
+template<class container>
+int FindGi(const container& ids)
+{
+    CRef<CSeq_id> id = GetSeq_idByType(ids, CSeq_id::e_Gi);
+    return id ? id->GetGi() : 0;
+}
+
 
 /////////////////// CSeq_id inline methods
 
@@ -469,6 +491,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.45  2004/04/19 18:20:16  grichenk
+ * Added GetSeq_idByType() and FindGi()
+ *
  * Revision 1.44  2004/04/01 16:36:34  ucko
  * Make the scoring functions wrappers around const methods (with slightly
  * different names to avoid ambiguity when passing CSeq_id::Score et al. to
