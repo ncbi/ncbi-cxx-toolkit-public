@@ -4211,7 +4211,9 @@ if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_ou
 
 
 BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"cp -p\""
-if test "$with_bincopy" != "yes"; then
+if test "$OSTYPE" = "darwin" -a -x /Developer/Tools/CpMac; then
+   BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"/Developer/Tools/CpMac -p\""
+elif test "$with_bincopy" != "yes"; then
    echo "$as_me:$LINENO: checking whether cross-directory hard links work" >&5
 echo $ECHO_N "checking whether cross-directory hard links work... $ECHO_C" >&6
 if test "${ncbi_cv_sys_xdir_ln+set}" = set; then

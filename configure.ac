@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.146 2002/10/30 17:04:14 ucko Exp $
+#  $Id: configure.ac,v 1.147 2002/11/14 19:18:57 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1207,7 +1207,9 @@ if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_ou
 
 
 BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"cp -p\""
-if test "$with_bincopy" != "yes"; then
+if test "$OSTYPE" = "darwin" -a -x /Developer/Tools/CpMac; then
+   BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"/Developer/Tools/CpMac -p\""
+elif test "$with_bincopy" != "yes"; then
    AC_CACHE_CHECK([whether cross-directory hard links work],
       ncbi_cv_sys_xdir_ln,
       [mkdir conftestdir
