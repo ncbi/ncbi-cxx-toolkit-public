@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/07/18 17:44:18  lavr
+ * Added parameter to switch to local test
+ *
  * Revision 6.6  2001/03/20 22:14:08  lavr
  * Second test added to list service by server type (yet #if 0'ed out)
  *
@@ -62,14 +65,17 @@
 int main(int argc, const char* argv[])
 {
     const char* service = argc > 1 ? argv[1] : "io_bounce";
+    int/*bool*/ local = argc > 2;
     const SSERV_Info* info;
     int n_found = 0;
     SERV_ITER iter;
 
     CORE_SetLOGFILE(stderr, 0/*false*/);
-    CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
-
-    if ((iter = SERV_OpenSimple(service)) != 0) {
+    CORE_LOGF(eLOG_Note, ("Looking for service `%s' (%s)", service,
+                          local ? "locally" : "randomly"));
+    if ((local &&
+         (iter = SERV_Open(service, fSERV_Any, SERV_LOCALHOST, 0)) != 0) ||
+        (!local && (iter = SERV_OpenSimple(service)) != 0)) {
         while ((info = SERV_GetNextInfo(iter)) != 0) {
             char* info_str = SERV_WriteInfo(info);
             CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
