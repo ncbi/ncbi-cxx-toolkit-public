@@ -77,26 +77,19 @@ void CBaseCountItem::x_GatherInfo(CBioseqContext& ctx)
     CSeqVector v(ctx.GetLocation(), ctx.GetHandle().GetScope(),
                  CBioseq_Handle::eCoding_Iupac);
 
-    ITERATE (CSeqVector, it, v) {
-        CSeqVector_CI::TResidue res = toupper(*it);
-        switch ( res ) {
-        case 'A':
-            ++m_A;
-            break;
-        case 'C':
-            ++m_C;
-            break;
-        case 'G':
-            ++m_G;
-            break;
-        case 'T':
-            ++m_T;
-            break;
-        default:
-            ++m_Other;
-            break;
-        }
+    size_t counters[256];
+    for (size_t i = 0; i < 256; ++i) {
+        counters[i] = 0;
     }
+
+    ITERATE (CSeqVector, it, v) {
+        ++counters[static_cast<CSeqVector_CI::TResidue>(toupper(*it))];
+    }
+    m_A = counters[Uchar('A')];
+    m_C = counters[Uchar('C')];
+    m_G = counters[Uchar('G')];
+    m_T = counters[Uchar('T')];
+    m_Other = v.size() - m_A - m_C - m_G - m_T;
 }
 
 
@@ -108,6 +101,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/03/28 17:17:17  shomrat
+* Optimizing base count
+*
 * Revision 1.6  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *
