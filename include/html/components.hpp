@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/04/15 22:03:44  vakatov
+* CQueryBox:: use "enum { kNo..., };" rather than "static const int kNo...;"
+*
 * Revision 1.19  1999/01/28 21:58:04  vasilche
 * QueryBox now inherits from CHTML_table (not CHTML_form as before).
 * Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
@@ -179,10 +182,14 @@ public:
 
     CQueryBox(void);
 
-    ////////  members
+    //////// flags
 
-    static const int kNoCOMMENTS = 0x2;
-    static const int kNoLIST = 0x1;
+    enum flags {
+        kNoLIST     = 0x1,
+        kNoCOMMENTS = 0x2
+    };
+
+    ////////  members
 
     int m_Width; // in pixels
     string m_BgColor;
