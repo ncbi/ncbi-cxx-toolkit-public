@@ -589,7 +589,7 @@ bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
     GLuint minZ=0;
     *name = NO_NAME;
     for (i=0; i<hits; ++i) {
-        n = selectBuf[++p];                 // # names
+        n = selectBuf[p++];                 // # names
         if (i==0 || minZ > selectBuf[p]) {  // find item with min depth
             minZ = selectBuf[p];
             top = 1;
@@ -1614,6 +1614,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2004/03/15 17:59:20  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.76  2004/03/15 17:51:29  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *
