@@ -5694,7 +5694,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " { symbol \"R\", name \"Arginine\"},\n",
     " { symbol \"S\", name \"Serine\"},\n",
     " { symbol \"T\", name \"Threonine\"},\n",
-    " { symbol \"\", name \"\"},\n",
+    " { symbol \"U\", name \"Selenocysteine\"}, -- was empty\n"
     " { symbol \"V\", name \"Valine\"},\n",
     " { symbol \"W\", name \"Tryptophan\" },\n",
     " { symbol \"X\", name \"Undetermined or atypical\"},\n",
@@ -6039,7 +6039,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 82,\n",
     " 83,\n",
     " 84,\n",
-    " 255,  -- U\n",
+    " 85,  -- U - was 255\n",
     " 86,\n",
     " 87,\n",
     " 88,\n",
@@ -6095,7 +6095,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 82,\n",
     " 83,\n",
     " 84,\n",
-    " 67,  -- U -> C\n",
+    " 85,  -- U was -> C\n",
     " 86,\n",
     " 87,\n",
     " 88,\n",
@@ -6128,7 +6128,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 16,\n",
     " 17,\n",
     " 18,\n",
-    " 255,  -- U\n",
+    " 24,  -- U - was 255\n",
     " 19,\n",
     " 20,\n",
     " 21,\n",
@@ -6252,7 +6252,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 88,\n",
     " 89,\n",
     " 90,\n",
-    " 255,  -- U\n",
+    " 85,  -- U - was 88\n",
     " 255}  -- *\n",
     " } \n",
     " \n",
@@ -6271,6 +6271,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/01/30 22:50:30  kans
+ * U (selenocysteine) is now valid in IUPAC alphabet
+ *
  * Revision 6.14  2002/09/19 20:05:44  vasilche
  * Safe initialization of static mutexes
  *
