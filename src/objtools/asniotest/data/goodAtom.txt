@@ -1,0 +1,4 @@
+Atom ::= {
+    id 37,
+    element pt
+}

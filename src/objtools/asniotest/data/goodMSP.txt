@@ -1,0 +1,6 @@
+Model-space-points ::= {
+    scale-factor 1,
+    x { 167831, 2, 3 },    
+    y { 4 },
+    z { }
+}

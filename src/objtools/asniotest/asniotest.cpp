@@ -47,6 +47,10 @@
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
 #include <objects/cdd/Cdd.hpp>
+#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
+#include <objects/mmdb1/Atom.hpp>
+#include <objects/mmdb1/Atom_id.hpp>
+#include <objects/mmdb2/Model_space_points.hpp>
 
 #include "asniotest.hpp"
 
@@ -157,13 +161,13 @@ bool WriteASNToFile(const ASNClass& ASNobject, bool isBinary,
 }
 
 // test function macros
-#define BEGIN_TEST_FUNC(func) \
+#define BEGIN_TEST_FUNCTION(func) \
     int func (void) { \
         int nErrors = 0; \
         string err; \
         INFOMSG("Running " #func " test");
 
-#define END_TEST_FUNC \
+#define END_TEST_FUNCTION \
         return nErrors; \
     }
 
@@ -180,7 +184,9 @@ bool WriteASNToFile(const ASNClass& ASNobject, bool isBinary,
         return nErrors; \
     } while (0)
 
-BEGIN_TEST_FUNC(BasicFileIO)
+
+// tests reading and writing of asn data files
+BEGIN_TEST_FUNCTION(BasicFileIO)
 
     // read in a trivial object
     CSeq_id seqId;
@@ -200,10 +206,19 @@ BEGIN_TEST_FUNC(BasicFileIO)
         !WriteASNToFile(cdd, true, &err))
         ADD_ERR("failed to write CCdd: " << err);
 
-END_TEST_FUNC
+    // structure
+    CNcbi_mime_asn1 mime;
+    if (!ReadASNFromFile("1doi.bin", &mime, true, &err))
+        ADD_ERR_RETURN("failed to load 1doi.bin: " << err);
+    if (!WriteASNToFile(mime, false, &err) ||
+        !WriteASNToFile(mime, true, &err))
+        ADD_ERR("failed to write CNcbi_mime_asn1: " << err);
+
+END_TEST_FUNCTION
 
 
-BEGIN_TEST_FUNC(AssignAndOutput)
+// tests output of Assign()-copied objects
+BEGIN_TEST_FUNCTION(AssignAndOutput)
 
     // try to output a copied simple object
     CSeq_id s1;
@@ -225,7 +240,89 @@ BEGIN_TEST_FUNC(AssignAndOutput)
         !WriteASNToFile(c2, true, &err))
         ADD_ERR("failed to write Assign()'ed Cdd: " << err);
 
-END_TEST_FUNC
+    // structure
+    CNcbi_mime_asn1 m1;
+    if (!ReadASNFromFile("1doi.bin", &m1, true, &err))
+        ADD_ERR_RETURN("failed to load 1doi.bin: " << err);
+    CNcbi_mime_asn1 m2;
+    m2.Assign(m1);
+    if (!WriteASNToFile(m2, false, &err) ||
+        !WriteASNToFile(m2, true, &err))
+        ADD_ERR("failed to write Assign()'ed Ncbi_mime_asn1: " << err);
+
+END_TEST_FUNCTION
+
+
+// tests operations and validations of a mandatory asn field (id and element from Atom)
+BEGIN_TEST_FUNCTION(MandatoryField)
+
+    // read in a good asn blob
+    CAtom a1;
+    if (!ReadASNFromFile("goodAtom.txt", &a1, false, &err))
+        ADD_ERR_RETURN("failed to load goodAtom.txt: " << err);
+
+    // try to read in a bad asn blob, missing a field - should fail
+    INFOMSG("reading badAtom.txt - should fail");
+    CAtom a2;
+    if (ReadASNFromFile("badAtom.txt", &a2, false, &err))
+        ADD_ERR_RETURN("badAtom.txt should not have loaded successfully");
+
+    // Get/CanGet/Set/IsSet tests on loaded and created objects
+    if (!a1.CanGetId() || !a1.IsSetId() || a1.GetId() != 37)
+        ADD_ERR_RETURN("id access failed");
+    CAtom a3;
+    if (a3.CanGetElement() || a3.IsSetElement())
+        ADD_ERR_RETURN("new Atom should not have element");
+    a3.SetElement(CAtom::eElement_lr);
+    if (!a3.CanGetElement() || !a3.IsSetElement() || a3.GetElement() != CAtom::eElement_lr)
+        ADD_ERR_RETURN("bad element state after SetElement()");
+
+    // shouldn't be able to write without id
+    INFOMSG("trying to write incomplete Atom - should fail");
+    if (WriteASNToFile(a3, false, &err))
+        ADD_ERR_RETURN("should not be able to write Atom with no id");
+    a3.SetId().Set(92);
+    if (!WriteASNToFile(a3, true, &err))
+        ADD_ERR_RETURN("failed to write complete Atom");
+
+END_TEST_FUNCTION
+
+
+// test list (SEQUENCE) field 
+BEGIN_TEST_FUNCTION(ListField)
+
+    // read in a valid object, with a mandatory but empty list
+    CModel_space_points m1;
+    if (!ReadASNFromFile("goodMSP.txt", &m1, false, &err))
+        ADD_ERR_RETURN("failed to read goodMSP.txt");
+    if (!m1.IsSetX() || !m1.CanGetX() || m1.GetX().size() != 3 || m1.GetX().front() != 167831) 
+        ADD_ERR_RETURN("x access failed");
+    if (!m1.IsSetZ() || !m1.CanGetZ() || m1.GetZ().size() != 0)
+        ADD_ERR_RETURN("z access failed");
+
+    // test created object
+    CModel_space_points m2;
+    if (m2.IsSetX() || !m2.CanGetX() || m2.GetX().size() != 0)
+        ADD_ERR_RETURN("bad x state in new object");
+    m2.SetScale_factor() = 15;
+    m2.SetX().push_back(21);
+    m2.SetX().push_back(931);
+    m2.SetY().push_back(0);
+    INFOMSG("trying to write incomplete Model-space-points - should fail");
+    if (WriteASNToFile(m2, false, &err))
+        ADD_ERR_RETURN("shouldn't be able to write incomplete Model-space-points");
+    m2.SetZ();  // set but empty!
+    if (!WriteASNToFile(m2, true, &err))
+        ADD_ERR_RETURN("failed to write complete Model-space-points");
+
+    // missing a list entirely
+    CModel_space_points m3;
+    INFOMSG("trying to read incomplete Model-space-points - should fail");
+    if (ReadASNFromFile("badMSP.txt", &m3, false, &err))
+        ADD_ERR_RETURN("shouldn't be able to read incomplete Model-space-points");
+
+END_TEST_FUNCTION
+
 
 // to call test functions, counting errors
 #define RUN_TEST(func) \
@@ -249,6 +346,8 @@ int ASNIOTestApp::Run(void)
         // individual tests
         RUN_TEST(BasicFileIO);
         RUN_TEST(AssignAndOutput);
+        RUN_TEST(MandatoryField);
+        RUN_TEST(ListField);
 
     } catch (exception& e) {
         ERRORMSG("uncaught exception: " << e.what());
@@ -268,6 +367,11 @@ int ASNIOTestApp::Run(void)
         INFOMSG("No errors encountered, all tests succeeded!");
     else
         ERRORMSG(nErrors << " error" << ((nErrors == 1) ? "" : "s") << " encountered");
+#ifdef _DEBUG
+    INFOMSG("(Debug mode build)");
+#else
+    INFOMSG("(Release mode build)");
+#endif
     return nErrors;
 }
 
@@ -293,6 +397,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/11 15:21:02  thiessen
+* add mandatory and list tests
+*
 * Revision 1.4  2003/11/25 20:53:02  ucko
 * Make template-accessed variables non-static to fix compilation on WorkShop.
 *
