@@ -111,8 +111,10 @@ public:
     static CVariant Float        (float *p);
     static CVariant Double       (double *p);
     static CVariant Bit          (bool *p);
+    static CVariant LongChar     (const char *p, size_t len = 0);
     static CVariant VarChar      (const char *p, size_t len = 0);
     static CVariant Char         (size_t size, const char *p);
+    static CVariant LongBinary   (const void *p, size_t len);
     static CVariant VarBinary    (const void *p, size_t len);
     static CVariant Binary       (size_t size, const void *p, size_t len);
     static CVariant SmallDateTime(CTime *p);
@@ -196,8 +198,6 @@ private:
 };
 
 
-/* @} */
-
 
 //================================================================
 
@@ -233,6 +233,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.11  2003/05/05 18:33:15  kholodov
+ * Added: LONGCHAR and LONGBINARY support
+ *
  * Revision 1.10  2003/04/11 17:45:58  siyan
  * Added doxygen support
  *

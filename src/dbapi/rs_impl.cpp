@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.23  2003/05/05 18:32:50  kholodov
+* Added: LONGCHAR and LONGBINARY support
+*
 * Revision 1.22  2003/02/12 15:52:32  kholodov
 * Added: WasNull() method
 *
@@ -157,7 +160,10 @@ void CResultSet::Init()
     EDB_Type type;
     for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
         type = m_rs->ItemDataType(i);
-        m_data.push_back(CVariant(type));
+        if( type == eDB_LongChar )
+            m_data.push_back(CVariant::LongChar(0, m_rs->ItemMaxSize(i)));
+        else
+            m_data.push_back(CVariant(type));
     }
 
     _TRACE("CResultSet::Init(): Space reserved for " << m_data.size() 

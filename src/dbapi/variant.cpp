@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.18  2003/05/05 18:32:50  kholodov
+* Added: LONGCHAR and LONGBINARY support
+*
 * Revision 1.17  2003/01/10 14:23:33  kholodov
 * Modified: GetString() uses NStr::<...> type conversion
 *
@@ -154,6 +157,11 @@ CVariant CVariant::Bit(bool *p)
     return CVariant(p ? new CDB_Bit(*p) : new CDB_Bit());
 }
 
+CVariant CVariant::LongChar(const char *p, size_t len)
+{
+    return CVariant(p ? new CDB_LongChar(len, p) : new CDB_LongChar());
+}
+
 CVariant CVariant::VarChar(const char *p, size_t len)
 {
     return CVariant(p ? (len ? new CDB_VarChar(p, len) : new CDB_VarChar(p))
@@ -163,6 +171,11 @@ CVariant CVariant::VarChar(const char *p, size_t len)
 CVariant CVariant::Char(size_t size, const char *p)
 {
     return CVariant(p ? new CDB_Char(size, p) : new CDB_Char());
+}
+
+CVariant CVariant::LongBinary(const void *p, size_t len)
+{
+    return CVariant(p ? new CDB_LongBinary(len, p, len) : new CDB_LongBinary());
 }
 
 CVariant CVariant::VarBinary(const void *p, size_t len)
@@ -210,11 +223,17 @@ CVariant::CVariant(EDB_Type type)
     case eDB_BigInt:
         m_data = new CDB_BigInt();
         return;  
+    case eDB_LongChar:
+        m_data = new CDB_LongChar();
+        return;  
     case eDB_VarChar:
         m_data = new CDB_VarChar();
         return;  
     case eDB_Char:
         m_data = new CDB_Char();
+        return;  
+    case eDB_LongBinary:
+        m_data = new CDB_LongBinary();
         return;  
     case eDB_VarBinary:
         m_data = new CDB_VarBinary();
@@ -357,10 +376,17 @@ string CVariant::GetString(void) const
         return ((CDB_Char*)GetData())->Value();
     case eDB_VarChar:
         return ((CDB_VarChar*)GetData())->Value();
+    case eDB_LongChar:
+        return ((CDB_LongChar*)GetData())->Value();
     case eDB_Binary:
         {
             CDB_Binary *b = (CDB_Binary*)GetData();
             return string((char*)b->Value(), b->Size());
+        }
+    case eDB_LongBinary:
+        {
+            CDB_LongBinary *vb = (CDB_LongBinary*)GetData();
+            return string((char*)vb->Value(), vb->Size());
         }
     case eDB_VarBinary:
         {
@@ -605,8 +631,13 @@ CVariant& CVariant::operator=(const double& v)
 
 CVariant& CVariant::operator=(const string& v)
 {
-    VerifyType(GetType() == eDB_VarChar);
-    *((CDB_VarChar*)GetData()) = v;
+    if( GetType() == eDB_VarChar )
+        *((CDB_VarChar*)GetData()) = v;
+    else if( GetType() == eDB_LongChar )
+        *((CDB_LongChar*)GetData()) = v;
+    else
+        VerifyType(false);
+
     return *this;
 }
 
@@ -657,6 +688,7 @@ bool CVariant::operator< (const CVariant& v) const
         switch( GetType() ) {
         case eDB_Char:
         case eDB_VarChar:
+        case eDB_LongChar:
             less = GetString() < v.GetString();
             break;
         case eDB_TinyInt:
