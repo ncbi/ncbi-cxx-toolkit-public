@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  1999/08/20 16:14:54  golikov
+* 'non-<TR> tag' bug fixed
+*
 * Revision 1.48  1999/08/09 16:20:07  golikov
 * Table output in plaintext fixed
 *
@@ -601,8 +604,15 @@ CHTML_tr* CHTML_table::Row(TIndex needRow)  // todo: exception
     for ( TChildList::const_iterator iRow = ChildBegin();
           iRow != ChildEnd(); ++iRow, ++row ) {
         CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(*iRow);
-        if ( !trNode || !sx_IsRow(trNode) ) {
-            throw runtime_error("Table contains non <TR> tag");
+        if ( !trNode ) {
+            throw runtime_error("Table contains non-HTML node");
+        }
+        if( !sx_IsRow(trNode) ) {
+            if( !sx_CanContain(trNode) ) {
+                throw runtime_error("Table contains wrong tag '"
+                                    + trNode->GetName() + "'");
+            }
+            continue;
         }
 
         if ( row == needRow ) {
@@ -628,7 +638,7 @@ CHTML_tc* CHTML_table::sx_CheckType(CHTMLNode* cell, ECellType type)
         break;
     case eDataCell:
         if ( cell->GetName() != CHTML_td::s_GetTagName() )
-            throw runtime_error("CHTML_table::CheckType: wrong cell type: TH expected");
+            throw runtime_error("CHTML_table::CheckType: wrong cell type: TD expected");
         break;
     case eAnyCell:
         // no check
@@ -649,8 +659,15 @@ CHTML_tc* CHTML_table::Cell(TIndex needRow, TIndex needCol, ECellType type)
     for ( TChildList::const_iterator iRow = ChildBegin();
           iRow != ChildEnd(); ++iRow ) {
         CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(*iRow);
-        if ( !trNode || !sx_IsRow(trNode) ) {
-            throw runtime_error("Table contains non <TR> tag");
+        if( !trNode ) {
+            throw runtime_error("Table contains non-HTML node");
+        }
+        if( !sx_IsRow(trNode) ) {
+            if( !sx_CanContain(trNode) ) {
+                throw runtime_error("Table contains wrong tag '"
+                                    + trNode->GetName() + "'");
+            }
+            continue;
         }
 
         // beginning with column 0
@@ -661,7 +678,7 @@ CHTML_tc* CHTML_table::Cell(TIndex needRow, TIndex needCol, ECellType type)
             CHTMLNode* cell = dynamic_cast<CHTMLNode*>(*iCol);
 
             if ( !cell || !sx_IsCell(cell) ) {
-                throw runtime_error("Table row contains non <TH> or <TD> tag");
+                throw runtime_error("Table row contains non- <TH> or <TD> tag");
             }
 
             // skip all used cells
@@ -769,6 +786,17 @@ bool CHTML_table::sx_IsCell(const CNCBINode* node)
         node->GetName() == CHTML_th::s_GetTagName();
 }
 
+bool CHTML_table::sx_CanContain(const CNCBINode* node)
+{
+    return ( node->GetName() == CHTML_caption::s_GetTagName() ||
+             node->GetName() == CHTML_col::s_GetTagName() ||
+             node->GetName() == CHTML_colgroup::s_GetTagName() ||
+             node->GetName() == CHTML_tbody::s_GetTagName() ||
+             node->GetName() == CHTML_tfoot::s_GetTagName() ||
+             node->GetName() == CHTML_thead::s_GetTagName() ||
+             node->GetName() == CHTML_tr::s_GetTagName() );
+}
+
 void CHTML_table::x_CheckTable(CTableInfo *info) const
 {
     vector<TIndex> rowSpans; // hanging down cells (with rowspan > 1)
@@ -779,14 +807,17 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
     for ( TChildList::const_iterator iRow = ChildBegin(); iRow != ChildEnd();
           ++iRow ) {
         CNCBINode* trNode = *iRow;
-
-        if ( !sx_IsRow(trNode) ) {
-            if ( info ) {
-                // we just gathering info -> skip wrong tag
-                info->m_BadNode = info->m_BadRowNode = true;
-                continue;
+        if( !sx_IsRow(trNode) ) {
+            if( !sx_CanContain(trNode) ) {
+                if ( info ) {
+                    // we just gathering info -> skip wrong tag
+                    info->m_BadNode = info->m_BadRowNode = true;
+                    continue;
+                }
+                throw runtime_error("Table contains wrong tag '"
+                                    + trNode->GetName() + "'");
             }
-            throw runtime_error("Table contains non <TR> tag");
+            continue;
         }
 
         // beginning with column 0
@@ -802,7 +833,7 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
                     info->m_BadNode = info->m_BadCellNode = true;
                     continue;
                 }
-                throw runtime_error("Table row contains non <TH> or <TD> tag");
+                throw runtime_error("Table row contains non- <TH> or <TD> tag");
             }
 
             // skip all used cells

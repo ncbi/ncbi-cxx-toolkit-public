@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  1999/08/20 16:14:36  golikov
+* 'non-<TR> tag' bug fixed
+*
 * Revision 1.36  1999/05/28 18:04:05  vakatov
 * CHTMLNode::  added attribute "CLASS"
 *
@@ -681,6 +684,7 @@ protected:
                              CTableInfo* info);
     static bool sx_IsRow(const CNCBINode* node);
     static bool sx_IsCell(const CNCBINode* node);
+    static bool sx_CanContain(const CNCBINode* node);
     static CHTML_tc* sx_CheckType(CHTMLNode* node, ECellType type);
 };
 
