@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --****************************************************************
 --
 --  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
@@ -26,11 +26,11 @@ Biostruc-align ::= SEQUENCE {
 	master	Biostruc,
 	slaves	SET OF Biostruc,
 	alignments	Biostruc-annot-set,	-- structure alignments
-	sequences	Seq-entry,	-- sequences
+	sequences SET OF Seq-entry,	-- sequences
 	seqalign SET OF Seq-annot }
 
 Biostruc-align-seq ::= SEQUENCE {	-- display seq structure align only
-	sequences	Seq-entry,	-- sequences
+	sequences SET OF Seq-entry,	-- sequences
 	seqalign SET OF Seq-annot }	
 
 Entrez-style ::= ENUMERATED {
