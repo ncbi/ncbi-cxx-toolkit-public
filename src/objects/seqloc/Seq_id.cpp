@@ -575,6 +575,11 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'D':
             switch (pfx[1]) {
             case 'A': case 'B': case 'C':           return eAcc_ddbj_est;
+            case 'D':                               return eAcc_ddbj_patent;
+                // no specific assignments for DE-DM yet
+            case 'E': case 'F': case 'G': case 'H':
+            case 'I': case 'J': case 'K': case 'L':
+            case 'M':                               return eAcc_ddbj_other_nuc;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1523,6 +1528,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.91  2004/11/10 15:09:12  ucko
+ * IdentifyAccession: DD -> DDBJ patent, DE-DM also to be used by DDBJ.
+ *
  * Revision 6.90  2004/10/13 17:39:08  ucko
  * CSeq_id::IdentifyAccession: CX-CZ are reserved for GenBank
  * nucleotides, and DA-DZ are DDBJ ESTs.
