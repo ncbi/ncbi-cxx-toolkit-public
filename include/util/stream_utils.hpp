@@ -1,5 +1,5 @@
-#ifndef UTIL___STREAM_PUSHBACK__HPP
-#define UTIL___STREAM_PUSHBACK__HPP
+#ifndef UTIL___STREAM_UTILS__HPP
+#define UTIL___STREAM_UTILS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -39,6 +39,8 @@
 BEGIN_NCBI_SCOPE
 
 
+struct CStreamUtils {
+
 // Push the block of data [buf, buf+buf_size) back to the input stream "is".
 // If "del_ptr" is not NULL, then `delete[] (CT_CHAR_TYPE*) del_ptr' is called
 // some time between the moment you call this function and when either the
@@ -53,18 +55,28 @@ BEGIN_NCBI_SCOPE
 //          relative to current position (ios::cur); only direct-access
 //          (ios::beg, ios::end) seeks are okay (if permitted by "is").
 // NOTE 5:  stream re-positioning made after pushback clears all pushback data.
-extern void UTIL_StreamPushback(istream&      is,
-                                CT_CHAR_TYPE* buf,
-                                streamsize    buf_size,
-                                void*         del_ptr);
-
+    static void       Pushback(istream&            is,
+                               CT_CHAR_TYPE*       buf,
+                               streamsize          buf_size,
+                               void*               del_ptr);
 
 // Acts just like its counterpart with 4 args (above), but this variant always
 // copies the "pushback data" into internal buffer, so you can do whatever you
 // want to with the [buf, buf+buf_size) area after calling this function.
-extern void UTIL_StreamPushback(istream&            is,
-                                const CT_CHAR_TYPE* buf,
-                                streamsize          buf_size);
+    static void       Pushback(istream&            is,
+                               const CT_CHAR_TYPE* buf,
+                               streamsize          buf_size);
+
+
+// Read at most "buf_size" bytes from the stream "is" into buffer pointed
+// to by "buf". This call tries its best to be non-blocking.
+// Return the number of bytes actually read (or 0 if nothing was read, in
+// case of either an error or no data currently available).
+    static streamsize Readsome(istream&            is,
+                               CT_CHAR_TYPE*       buf,
+                               streamsize          buf_size);
+
+};
 
 
 END_NCBI_SCOPE
@@ -73,6 +85,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/11/27 21:07:19  lavr
+ * Rename "stream_pushback" -> "stream_utils" and enclose utils in a class
+ *
  * Revision 1.5  2002/11/06 03:50:39  lavr
  * Correct duplicated NOTE 4; move log to end; change guard macro
  *
@@ -91,4 +106,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* UTIL___STREAM_PUSHBACK__HPP */
+#endif  /* UTIL___STREAM_UTILS__HPP */
