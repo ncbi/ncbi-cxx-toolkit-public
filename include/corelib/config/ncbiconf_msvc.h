@@ -1,4 +1,4 @@
-/* config.h.  Generated automatically by configure.  */
+/* //e/ncbi_cpp/msvc/inc/ncbiconf.h.  Generated automatically by configure.  */
 /* config.h.in.  Generated automatically from configure.in by autoheader.  */
 
 /* Define if type char is unsigned and you are not using gcc.  */
@@ -33,6 +33,12 @@
 
 /* Can use exception specifications("throw(...)" after func. proto) */
 #define NCBI_USE_THROW_SPEC 1
+
+/* Pre-standard basic_string::compare() -- most probably, <bastring> */
+/* #undef NCBI_OBSOLETE_STR_COMPARE */
+
+/* "auto_ptr" template class is not implemented in <memory> */
+/* #undef HAVE_NO_AUTO_PTR */
 
 /* The number of bytes in a __int64.  */
 #define SIZEOF___INT64 8
@@ -72,6 +78,9 @@
 
 /* Define if you have the <iostream.h> header file.  */
 #define HAVE_IOSTREAM_H 1
+
+/* Define if you have the <limits> header file.  */
+#define HAVE_LIMITS 1
 
 /* Define if you have the <string> header file.  */
 #define HAVE_STRING 1
