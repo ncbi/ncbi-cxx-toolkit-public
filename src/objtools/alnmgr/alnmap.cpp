@@ -69,21 +69,6 @@ void CAlnMap::UnsetAnchor(void)
 
 void CAlnMap::SetAnchor(TNumrow anchor)
 {
-    x_SetAnchor(m_DS->GetStarts(), m_DS->GetLens(),
-                m_DS->GetDim(), m_DS->GetNumseg(), anchor);
-}
-
-
-//
-// internal version of SetAnchor that abstracts how the algorithm steps
-// through a matrix of data to set an anchor
-// the matrix is this case is cols x rows, not rows x cols (this is how the
-// data is stored in CDense_seg)
-//
-void CAlnMap::x_SetAnchor(const vector<TSignedSeqPos>& starts,
-                          const vector<TSeqPos>& lens,
-                          TNumrow numrow, TNumseg numseg, TNumrow anchor)
-{
     m_AlnSegIdx.clear();
     m_AlnStarts.clear();
     m_NumSegWithOffsets.clear();
@@ -95,15 +80,16 @@ void CAlnMap::x_SetAnchor(const vector<TSignedSeqPos>& starts,
     int start = 0, len = 0, aln_seg = -1, offset = 0;
     
     m_Anchor = anchor;
-    for (int i = 0, pos = m_Anchor;  i < numseg;  ++i, pos += numrow) {
-        if (starts[pos] != -1) {
+    for (int i = 0, pos = m_Anchor;  i < m_DS->GetNumseg();
+         ++i, pos += m_DS->GetDim()) {
+        if (m_DS->GetStarts()[pos] != -1) {
             ++aln_seg;
             offset = 0;
             m_AlnSegIdx.push_back(i);
             m_NumSegWithOffsets.push_back(CNumSegWithOffset(aln_seg));
             start += len;
             m_AlnStarts.push_back(start);
-            len = lens[i];
+            len = m_DS->GetLens()[i];
         } else {
             ++offset;
             m_NumSegWithOffsets.push_back(CNumSegWithOffset(aln_seg, offset));
@@ -542,6 +528,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2002/09/25 18:16:29  dicuccio
+* Reworked computation of consensus sequence - this is now stored directly
+* in the underlying CDense_seg
+* Added exception class; currently used only on access of non-existent
+* consensus.
+*
 * Revision 1.7  2002/09/19 22:16:48  todorov
 * fix the range on the extreme end only if not a gap
 *

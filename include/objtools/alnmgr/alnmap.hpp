@@ -34,6 +34,7 @@
 */
 
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/alnmgr/alnexception.hpp>
 #include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -222,13 +223,6 @@ protected:
     // Prohibit copy constructor and assignment operator
     CAlnMap(const CAlnMap& value);
     CAlnMap& operator=(const CAlnMap& value);
-
-    // internal version of SetAnchor(), abstracted to deal with data
-    // outside of a CDense_seg
-    void x_SetAnchor(const vector<TSignedSeqPos>& starts,
-                     const vector<TSeqPos>& lens,
-                     TNumrow numrow, TNumseg numseg,
-                     TNumrow anchor);
 
     friend CConstRef<CAlnChunk> CAlnChunkVec::operator[](TNumchunk i) const;
 
@@ -473,6 +467,11 @@ CAlnMap::GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
 
+* Revision 1.5  2002/09/26 17:40:42  todorov
+* Changed flag fAlignedToSeqOnAnchor to fNotAlignedToSeqOnAnchor. This proved more convenient.
+*
+* Revision 1.4  2002/09/25 18:16:26  dicuccio
+* Reworked computation of consensus sequence - this is now stored directly
 * in the underlying CDense_seg
 * Added exception class; currently used only on access of non-existent
 * consensus.

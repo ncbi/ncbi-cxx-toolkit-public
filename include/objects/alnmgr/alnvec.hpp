@@ -2,36 +2,36 @@
 #define OBJECTS_ALNMGR___ALNVEC__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Kamen Todorov, NCBI
-*
-* File Description:
-*   Access to the actual aligned residues
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Kamen Todorov, NCBI
+ *
+ * File Description:
+ *   Access to the actual aligned residues
+ *
+ */
 
 
 #include <objects/alnmgr/alnmap.hpp>
@@ -48,7 +48,7 @@ class CScope;
 
 class CAlnVec : public CAlnMap
 {
-    typedef CAlnMap Tparent;
+    typedef CAlnMap                         Tparent;
     typedef map<TNumrow, CBioseq_Handle>    TBioseqHandleCache;
     typedef map<TNumrow, CRef<CSeqVector> > TSeqVectorCache;
 
@@ -64,36 +64,26 @@ public:
 
     CScope& GetScope(void) const;
 
-    string GetSeqString(TNumrow row, TSeqPos from, TSeqPos to)           const;
-    string GetSeqString(TNumrow row, const CAlnMap::TRange& range)       const;
+    string GetSeqString   (TNumrow row, TSeqPos from, TSeqPos to)        const;
+    string GetSeqString   (TNumrow row, const CAlnMap::TRange& range)    const;
     string GetSegSeqString(TNumrow row, TNumseg seg, TNumseg offset = 0) const;
 
     const CBioseq_Handle& GetBioseqHandle(TNumrow row)                  const;
     CSeqVector::TResidue  GetResidue     (TNumrow row, TSeqPos aln_pos) const;
 
     // functions for manipulating the consensus sequence
-    const CBioseq_Handle&   GetConsensusHandle  (void)        const;
-    TSignedSeqPos           GetConsensusStart   (TNumseg seg) const;
-    TSignedSeqPos           GetConsensusStop    (TNumseg seg) const;
-    TSignedSeqPos           GetConsensusSeqStart(void)        const;
-    TSignedSeqPos           GetConsensusSeqStop (void)        const;
-
-    string      GetConsensusString(TSeqPos from, TSeqPos to) const;
-    string      GetConsensusString(TNumseg seg)              const;
-    void        SetAnchorConsensus(void);
+    void    CreateConsensus     (void);
+    bool    IsSetConsensus      (void) const;
+    TNumrow GetConsensusRow     (void) const;
 
     // temporaries for conversion (see note below)
     static unsigned char FromIupac(unsigned char c);
     static unsigned char ToIupac  (unsigned char c);
 
-private:
-    // Prohibit copy constructor and assignment operator
-    CAlnVec(const CAlnVec&);
-    CAlnVec& operator= (const CAlnVec&);
+protected:
 
     CSeqVector& x_GetSeqVector         (TNumrow row) const;
     CSeqVector& x_GetConsensusSeqVector(void)        const;
-    void        x_CreateConsensus      (void)        const;
 
     mutable CRef<CObjectManager>    m_ObjMgr;
     mutable CRef<CScope>            m_Scope;
@@ -101,21 +91,39 @@ private:
     mutable TSeqVectorCache         m_SeqVectorCache;
 
     // our consensus sequence: a bioseq object and a vector of starts
-    mutable CBioseq_Handle          m_ConsensusBioseq;
-    mutable CRef<CSeqVector>        m_ConsensusSeqvector;
-    mutable vector<TSignedSeqPos>   m_ConsensusStarts;
-    
+    TNumrow                         m_ConsensusSeq;
+
+private:
+    // Prohibit copy constructor and assignment operator
+    CAlnVec(const CAlnVec&);
+    CAlnVec& operator=(const CAlnVec&);
+
 };
 
 
 
-/////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
 //  IMPLEMENTATION of INLINE functions
 /////////////////////////////////////////////////////////////////////////////
 
+inline
+bool CAlnVec::IsSetConsensus(void) const
+{
+    return (m_ConsensusSeq != -1);
+}
 
+inline
+CAlnVec::TNumrow CAlnVec::GetConsensusRow(void) const
+{
+    if ( !IsSetConsensus() ) {
+        NCBI_THROW(CAlnException, eConsensusNotPresent,
+                   "CAlnVec::GetConsensusRow(): "
+                   "consensus sequence not present");
+    }
+
+    return m_ConsensusSeq;
+}
 
 inline
 CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
@@ -132,95 +140,10 @@ CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
     }
 }
 
-inline
-CSeqVector& CAlnVec::x_GetConsensusSeqVector(void) const
-{
-    if ( !m_ConsensusBioseq ) {
-        x_CreateConsensus();
-    }
-
-    if ( !m_ConsensusSeqvector ) {
-        CSeqVector vec = m_ConsensusBioseq.GetSeqVector
-            (CBioseq_Handle::eCoding_Iupac,
-             CBioseq_Handle::eStrand_Plus);
-        m_ConsensusSeqvector = new CSeqVector(vec);
-    }
-
-    return *m_ConsensusSeqvector;
-}
-
-
 inline 
 CSeqVector::TResidue CAlnVec::GetResidue(TNumrow row, TSeqPos aln_pos) const
 {
     return x_GetSeqVector(row)[GetSeqPosFromAlnPos(aln_pos, row)];
-}
-
-inline
-const CBioseq_Handle& CAlnVec::GetConsensusHandle(void) const
-{
-    if ( !m_ConsensusBioseq ) {
-        x_CreateConsensus();
-    }
-
-    return m_ConsensusBioseq;
-}
-
-inline
-TSignedSeqPos CAlnVec::GetConsensusStart(TNumseg seg) const
-{
-    if ( !m_ConsensusBioseq ) {
-        x_CreateConsensus();
-    }
-
-    return m_ConsensusStarts[x_GetRawSegFromSeg(seg)];
-}
-
-inline
-TSignedSeqPos CAlnVec::GetConsensusStop(TNumseg seg) const
-{
-    if ( !m_ConsensusBioseq ) {
-        x_CreateConsensus();
-    }
-
-    TSignedSeqPos pos = m_ConsensusStarts[x_GetRawSegFromSeg(seg)];
-
-    if (pos != -1) {
-        return pos + m_DS->GetLens()[x_GetRawSegFromSeg(seg)] - 1;
-    } else {
-        return -1;
-    }
-}
-
-inline
-TSignedSeqPos CAlnVec::GetConsensusSeqStart(void) const
-{
-    if ( !m_ConsensusBioseq ) {
-        x_CreateConsensus();
-    }
-
-    iterate (vector<TSignedSeqPos>, seg, m_ConsensusStarts) {
-        if (*seg != -1)
-            return *seg;
-    }
-
-    return -1;
-}
-
-inline
-TSignedSeqPos CAlnVec::GetConsensusSeqStop(void) const
-{
-    if ( !m_ConsensusBioseq ) {
-        x_CreateConsensus();
-    }
-
-    for (TNumseg seg = m_ConsensusStarts.size() - 1;  seg >= 0;  --seg) {
-        if (m_ConsensusStarts[seg] != -1) {
-            return m_ConsensusStarts[seg] + m_DS->GetLens()[seg] - 1;
-        }
-    }
-
-    return -1;
 }
 
 
@@ -232,7 +155,8 @@ TSignedSeqPos CAlnVec::GetConsensusSeqStop(void) const
 // (much more work than calling CSeqVector::GetSeqdata(), which, if I use the
 // internal sequence vector, is guaranteed to be in IUPAC notation)
 //
-inline unsigned char CAlnVec::FromIupac(unsigned char c)
+inline
+unsigned char CAlnVec::FromIupac(unsigned char c)
 {
     switch (c)
     {
@@ -263,38 +187,48 @@ inline unsigned char CAlnVec::ToIupac(unsigned char c)
 }
 
 
-END_objects_SCOPE
+///////////////////////////////////////////////////////////
+////////////////// end of inline methods //////////////////
+///////////////////////////////////////////////////////////
+
+END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2002/09/23 18:22:45  vakatov
-* Workaround an older MSVC++ compiler bug.
-* Get rid of "signed/unsigned" comp.warning, and some code prettification.
-*
-* Revision 1.5  2002/09/19 18:22:28  todorov
-* New function name for GetSegSeqString to avoid confusion
-*
-* Revision 1.4  2002/09/19 18:19:18  todorov
-* fixed unsigned to signed return type for GetConsensusSeq{Start,Stop}
-*
-* Revision 1.3  2002/09/05 19:31:18  dicuccio
-* - added ability to reference a consensus sequence for a given alignment
-* - added caching of CSeqVector (big performance win)
-* - many small bugs fixed
-*
-* Revision 1.2  2002/08/29 18:40:53  dicuccio
-* added caching mechanism for CSeqVector - this greatly improves speed in
-* accessing sequence data.
-*
-* Revision 1.1  2002/08/23 14:43:50  ucko
-* Add the new C++ alignment manager to the public tree (thanks, Kamen!)
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.7  2002/09/25 18:16:26  dicuccio
+ * Reworked computation of consensus sequence - this is now stored directly
+ * in the underlying CDense_seg
+ * Added exception class; currently used only on access of non-existent
+ * consensus.
+ *
+ * Revision 1.6  2002/09/23 18:22:45  vakatov
+ * Workaround an older MSVC++ compiler bug.
+ * Get rid of "signed/unsigned" comp.warning, and some code prettification.
+ *
+ * Revision 1.5  2002/09/19 18:22:28  todorov
+ * New function name for GetSegSeqString to avoid confusion
+ *
+ * Revision 1.4  2002/09/19 18:19:18  todorov
+ * fixed unsigned to signed return type for GetConsensusSeq{Start,Stop}
+ *
+ * Revision 1.3  2002/09/05 19:31:18  dicuccio
+ * - added ability to reference a consensus sequence for a given alignment
+ * - added caching of CSeqVector (big performance win)
+ * - many small bugs fixed
+ *
+ * Revision 1.2  2002/08/29 18:40:53  dicuccio
+ * added caching mechanism for CSeqVector - this greatly improves speed in
+ * accessing sequence data.
+ *
+ * Revision 1.1  2002/08/23 14:43:50  ucko
+ * Add the new C++ alignment manager to the public tree (thanks, Kamen!)
+ *
+ *
+ * ===========================================================================
+ */
 
 #endif  /* OBJECTS_ALNMGR___ALNVEC__HPP */

@@ -55,25 +55,31 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 CAlnVec::CAlnVec(const CDense_seg& ds) 
-    : CAlnMap(ds)
+    : CAlnMap(ds),
+      m_ConsensusSeq(-1)
 {
 }
 
 
 CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor)
-    : CAlnMap(ds, anchor)
+    : CAlnMap(ds, anchor),
+      m_ConsensusSeq(-1)
 {
 }
 
 
 CAlnVec::CAlnVec(const CDense_seg& ds, CScope& scope) 
-    : CAlnMap(ds), m_Scope(&scope)
+    : CAlnMap(ds),
+      m_Scope(&scope),
+      m_ConsensusSeq(-1)
 {
 }
 
 
 CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor, CScope& scope)
-    : CAlnMap(ds, anchor), m_Scope(&scope)
+    : CAlnMap(ds, anchor),
+      m_Scope(&scope),
+      m_ConsensusSeq(-1)
 {
 }
 
@@ -109,24 +115,6 @@ string CAlnVec::GetSeqString(TNumrow row, const CRange<TSeqPos>& range) const
 }
 
 
-string CAlnVec::GetConsensusString(TSeqPos start, TSeqPos stop) const
-{
-    string s;
-    x_GetConsensusSeqVector().GetSeqData(start, stop + 1, s);
-    return s;
-}
-
-string CAlnVec::GetConsensusString(TNumseg seg) const
-{
-    string s;
-    TSeqPos start = GetConsensusStart(seg);
-    TSeqPos stop  = GetConsensusStop (seg);
-
-    x_GetConsensusSeqVector().GetSeqData(start, stop + 1, s);
-    return s;
-}
-
-
 const CBioseq_Handle& CAlnVec::GetBioseqHandle(TNumrow row) const
 {
     TBioseqHandleCache::iterator i = m_BioseqHandlesCache.find(row);
@@ -154,27 +142,9 @@ CScope& CAlnVec::GetScope(void) const
     return *m_Scope;
 }
 
-//
-// SetAnchorConsensus()
-// this functon resets the anchor to reflect the generated consensus sequence
-//
-void CAlnVec::SetAnchorConsensus(void)
-{
-    if ( !m_ConsensusBioseq ) {
-        x_CreateConsensus();
-    }
-
-    x_SetAnchor(m_ConsensusStarts, m_DS->GetLens(),
-                1, m_DS->GetNumseg(), 0);
-
-    // we set the anchor to an invalid position beyond the end of the array
-    // this is okay, as the anchor is not used to index into this array
-    m_Anchor = m_DS->GetDim();
-}
-
 
 //
-// x_CreateConsensus()
+// CreateConsensus()
 //
 // compute a consensus sequence given a particular alignment
 // the rules for a consensus are:
@@ -185,9 +155,9 @@ void CAlnVec::SetAnchorConsensus(void)
 //     a tie, the consensus is considered muddied, and the consensus is
 //     so marked
 //
-void CAlnVec::x_CreateConsensus(void) const
+void CAlnVec::CreateConsensus(void)
 {
-    if ( !m_DS ) {
+    if ( !m_DS  ||  IsSetConsensus() ) {
         return;
     }
 
@@ -223,8 +193,7 @@ void CAlnVec::x_CreateConsensus(void) const
                     TSeqPos start = m_DS->GetStarts()[j*m_DS->GetDim()+i];
                     TSeqPos stop  = start + m_DS->GetLens()[j];
 
-                    CSeqVector& vec = x_GetSeqVector(i);
-                    vec.GetSeqData(start, stop, segs[i]);
+                    x_GetSeqVector(i).GetSeqData(start, stop, segs[i]);
 
                     for (int c = 0;  c < segs[i].length();  ++c) {
                         segs[i][c] = FromIupac(segs[i][c]);
@@ -240,7 +209,9 @@ void CAlnVec::x_CreateConsensus(void) const
             for (i = 0;  i < m_DS->GetLens()[j];  ++i) {
                 // first, we record which bases occur and how often
                 // this is computed in NCBI4na notation
-                vector<int> base_count(4, 0);
+                int base_count[4];
+                base_count[0] = base_count[1] =
+                    base_count[2] = base_count[3] = 0;
                 for (int row = 0;  row < m_DS->GetDim();  ++row) {
                     if (segs[row] != "") {
                         for (int pos = 0;  pos < 4;  ++pos) {
@@ -258,15 +229,11 @@ void CAlnVec::x_CreateConsensus(void) const
                 // any base can have is 0.6
                 TRevMap rev_map;
 
-                vector<int>::iterator iter;
-                for (iter = base_count.begin();
-                     iter != base_count.end();
-                     ++iter) {
+                for (int k = 0;  k < 4;  ++k) {
                     // this gets around a potentially tricky idiosyncrasy
                     // in some implementations of multimap.  depending on
                     // the library, the key may be const (or not)
-                    TRevMap::value_type p (*iter,
-                                           (1<<(iter-base_count.begin())));
+                    TRevMap::value_type p(base_count[k], (1<<k));
                     rev_map.insert(p);
                 }
 
@@ -311,20 +278,42 @@ void CAlnVec::x_CreateConsensus(void) const
     }
 
     //
-    // now, convert to a CBioseq
+    // now, create a new CDense_seg
+    // we create a new CBioseq for our data, add it to our scope, and
+    // copy the contents of the CDense_seg
     //
     string data;
     TSignedSeqPos total_bases = 0;
-    m_ConsensusStarts.clear();
-    m_ConsensusStarts.resize(consens.size(), -1);
+
+    CRef<CDense_seg> new_ds = new CDense_seg();
+    new_ds->SetDim(m_DS->GetDim() + 1);
+    new_ds->SetNumseg(m_DS->GetNumseg());
+    new_ds->SetLens() = m_DS->GetLens();
+    new_ds->SetStarts().reserve(m_DS->GetStarts().size() + m_DS->GetNumseg());
 
     for (i = 0;  i < consens.size();  ++i) {
+        // copy the old entries
+        for (j = 0;  j < m_DS->GetDim();  ++j)
+            new_ds->SetStarts().push_back(m_DS->GetStarts()[ i*m_DS->GetDim() + j ]);
+
+        // add our new entry
+        // this places the consensus as the last sequence
+        // it should preferably be the first, but this would mean adjusting
+        // the bioseq handle and seqvector caches, and all row numbers would
+        // shift
         if (consens[i].length() != 0) {
-            m_ConsensusStarts[i] = total_bases;
+            new_ds->SetStarts().push_back(total_bases);
+        } else {
+            new_ds->SetStarts().push_back(-1);
         }
 
         total_bases += consens[i].length();
         data += consens[i];
+    }
+
+    // copy our IDs
+    for (i = 0;  i < m_DS->GetIds().size();  ++i) {
+        new_ds->SetIds().push_back(m_DS->GetIds()[i]);
     }
 
     {{
@@ -334,6 +323,8 @@ void CAlnVec::x_CreateConsensus(void) const
          CRef<CSeq_id> id(new CSeq_id());
          bioseq->SetId().push_back(id);
          id->SetLocal().SetStr("consensus");
+
+         new_ds->SetIds().push_back(id);
 
          // add a description for this sequence
          CSeq_descr& desc = bioseq->SetDescr();
@@ -358,37 +349,33 @@ void CAlnVec::x_CreateConsensus(void) const
 
          GetScope().AddTopLevelSeqEntry(*entry);
 
-         CSeq_id seq_id;
-         seq_id.SetLocal().SetStr() = "consensus";
-         m_ConsensusBioseq = GetScope().GetBioseqHandle(seq_id);
-     }}
+         m_ConsensusSeq = new_ds->GetDim()-1;
+    }}
 
+    // drop the old, bring in the new
+    m_DS.Reset(new_ds.Release());
+    
 #if 0
 
     cerr << "final consensus: " << data.length() << " bases" << endl;
     cerr << data << endl;
 
-    cerr << "consensus starts: ";
-    for (i = 0;  i < m_ConsensusStarts.size();  ++i) {
-        cerr << m_ConsensusStarts[i];
-        if (i < m_ConsensusStarts.size()-1) {
-            cerr << ", ";
+    cerr << "dense-seg:" << endl;
+    for (i = 0;  i < m_DS->GetDim();  ++i) {
+        if (i != m_DS->GetDim()-1) {
+            cerr << m_DS->GetIds()[i]->GetGi() << ": ";
         }
-    }
-    cerr << endl;
-
-    cerr << "consensus lens: ";
-    for (i = 0;  i < m_DS->GetLens().size();  ++i) {
-        cerr << m_DS->GetLens()[i];
-        if (i < m_DS->GetLens().size()-1) {
-            cerr << ", ";
+        else {
+            cerr << "consensus : ";
         }
+        for (j = 0;  j < m_DS->GetNumseg();  ++j) {
+            cerr << m_DS->GetStarts()[ j*m_DS->GetDim() + i ] << ", ";
+        }
+        cerr << endl;
     }
-    cerr << endl;
 
 #endif
 }
-
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
@@ -397,6 +384,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2002/09/25 18:16:29  dicuccio
+* Reworked computation of consensus sequence - this is now stored directly
+* in the underlying CDense_seg
+* Added exception class; currently used only on access of non-existent
+* consensus.
+*
 * Revision 1.5  2002/09/19 18:24:15  todorov
 * New function name for GetSegSeqString to avoid confusion
 *
