@@ -341,28 +341,47 @@ the following platforms:
   <li> <a href="http://egcs.cygnus.com/">
        <b>GCC 2.95.[1,2]</b></a>
     <ul>
-      <li> Linux RedHat 5.2 --- <i>PC-Intel</i>
-      <li> IRIX64 6.5 --- <i>SGI-Mips</i>
+      <li> Linux RedHat 5.2 --- <i>PC-Intel</i> </li>
+      <li> IRIX64 6.5 --- <i>SGI-Mips</i> </li>
       <li> Solaris 2.6, 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
-           (requires <i><b>libstd++.so</b></i>!)
+           (requires <i><b>libstd++.so</b></i>!) </li>
     </ul>
+		</li>
 
   <li> <a href="http://www.sun.com/workshop/visual/">
        <b>Sun WorkShop 5.0</b></a>
     <ul>
-      <li> 32-bit: Solaris 2.6, 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
-      <li> 64-bit: Solaris 2.7 --- <i>SUN-Sparc</i>
+      <li> 32-bit: Solaris 2.6, 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i> </li>
+      <li> 64-bit: Solaris 2.7 --- <i>SUN-Sparc</i> </li>
     </ul>
+  </li>
+
+  <li> <a href="http://www.sun.com/workshop/visual/">
+       <b>Sun WorkShop 5.1 (Forte)</b></a>
+    <ul>
+      <li> 32/64-bit: Solaris 2.7 --- <i>SUN-Sparc</i> </li>
+    </ul>
+  </li>
 
   <li> <u><b>MIPSpro-7.30 (-n32)</b></u>
     <ul>
-      <li> IRIX64 6.5 --- <i>SGI-Mips</i>
+      <li> IRIX64 6.5 --- <i>SGI-Mips</i> </li>
     </ul>
 </ul>
 
 On any other platform, the <i><b>--without-dll</b></i> scenario will be
 enforced unconditionally (even if you explicitely specified
 <i><b>--with-dll</b></i>).
+
+<p>
+Note, that in order to run executables linked against dynamic libraries,
+you will have to "register" the location of these libraries.
+You can use environment variable <i>$LD_LIBRARY_PATH</i> for this purpose,
+like this:
+<pre>
+  setenv LD_LIBRARY_PATH "/home/USERNAME/c++/WorkShop6-ReleaseDLL/lib"
+  /home/USERNAME/c++/WorkShop6-ReleaseDLL/bin/coretest
+</pre>
 
 
 <p>
@@ -423,7 +442,7 @@ name can be alternated by passing the following flags to the
 <i><b>configure</b></i> script:
 <ul>
   <li> <i><b>--without-suffix</b></i> --
-       do not add <i>Release/Debug</i> and/or <i>MT</i> suffixes
+       do not add <i>Release/Debug</i>, <i>MT</i>, and/or <i>DLL</i> suffix(es)
        to the <i>build tree</i> name
        <br><i>Example:</i>
        <i><b>GCC/</b></i> instead of <i><b>GCC-ReleaseMT/</b></i>
@@ -981,11 +1000,12 @@ libraries and tools:
   <li> <a href="http://gcc.gnu.org/">
        <b>GCC 2.95.[1,2]</b></a>
     <ul>
-      <li> Solaris 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
-      <li> Linux RedHat 5.2 --- <i>PC-Intel</i>
-      <li> OSF1 4.0 --- <i>DEC-Alpha</i>
-      <li> IRIX64 6.5 --- <i>SGI-Mips</i>
+      <li> Solaris 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i></li>
+      <li> Linux RedHat 5.2 --- <i>PC-Intel</i></li>
+      <li> OSF1 4.0 --- <i>DEC-Alpha</i></li>
+      <li> IRIX64 6.5 --- <i>SGI-Mips</i></li>
     </ul>
+  </li>
 
   <li> <a href="ftp://ftp.xraylith.wisc.edu/pub/khan/gnu-win32/cygwin/gcc-2.95/">
        <b>GCC 2.95</b></a>
@@ -993,6 +1013,7 @@ libraries and tools:
       Windows NT 4.0
       (with <a href="http://sourceware.cygnus.com/cygwin/">CYGWIN</a> Beta 20.1) --- <i>PC-Intel</i>
     </ul>
+  </li>
 
   <li> <a href="http://www.sun.com/workshop/visual/">
        <b>Sun WorkShop 5.0</b></a>
@@ -1000,22 +1021,34 @@ libraries and tools:
       <li> 32-bit: Solaris 2.6, 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
       <li> 64-bit: Solaris 2.7 --- <i>SUN-Sparc</i>
     </ul>
+  </li>
+
+  <li> <a href="http://www.sun.com/workshop/visual/">
+       <b>Sun WorkShop 5.1 (Forte)</b></a>
+    <ul>
+      <li> 32/64-bit: Solaris 2.7 --- <i>SUN-Sparc</i> <br>
+				<i>(Note:  <b>ld</b> crashes on huge ~30M static executables in 64-bit Debug mode)</i> </li>
+    </ul>
+  </li>
 
   <li> <u><b>MSVC++ 6.0 (SP3)</b></u>
     <ul>
-      <li> Windows NT 4.0  --- <i>PC-Intel</i>
+      <li> Windows NT 4.0  --- <i>PC-Intel</i> </li>
     </ul>
+  </li>
 
   <li> <u><b>MIPSpro-7.30</b></u>
     <ul>
-      <li> 32-bit (-n32): IRIX64 6.5 --- <i>SGI-Mips</i>
-      <li> 64-bit (-64):  IRIX64 6.5 --- <i>SGI-Mips</i>
+      <li> 32-bit (-n32): IRIX64 6.5 --- <i>SGI-Mips</i> </li>
+      <li> 64-bit (-64):  IRIX64 6.5 --- <i>SGI-Mips</i> </li>
     </ul>
+  </li>
 
   <li> <u><b>Metrowerks CodeWarrior</b></u>
     <ul>
-      <li> MacOS -- <i>PowerPC</i>  (relatively poor support)
+      <li> MacOS -- <i>PowerPC</i>  (relatively poor support) </li>
     </ul>
+  </li>
 </ul>
 NOTE: Some projects are very platform-specific, and they cannot
 be built for all of the supported platforms.
