@@ -44,6 +44,24 @@ BEGIN_NCBI_SCOPE
 
 using namespace ncbi::objects;
 
+class CSeqDBImplFlush : public CSeqDBFlushCB {
+public:
+    CSeqDBImplFlush(void)
+        : m_Impl(0)
+    {
+    }
+    
+    virtual void SetImpl(class CSeqDBImpl * impl)
+    {
+        m_Impl = impl;
+    }
+    
+    virtual void operator()(void);
+    
+private:
+    CSeqDBImpl * m_Impl;
+};
+
 class CSeqDBImpl {
 public:
     typedef Uint4 TOID;
@@ -99,6 +117,13 @@ public:
     
     const string & GetDBNameList() const;
     
+    void SetMemoryBound(Uint8 membound, Uint8 slicesize)
+    {
+        m_Atlas.SetMemoryBound(membound, slicesize);
+    }
+    
+    void FlushSeqMemory(void);
+    
 private:
     string x_FixString(const string &) const;
     
@@ -106,6 +131,7 @@ private:
     
     Uint8 x_GetTotalLength() const;
     
+    CSeqDBImplFlush       m_FlushCB;
     mutable CSeqDBAtlas   m_Atlas;
     string                m_DBNames;
     CSeqDBAliasFile       m_Aliases;

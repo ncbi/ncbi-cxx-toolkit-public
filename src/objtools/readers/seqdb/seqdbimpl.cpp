@@ -38,7 +38,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
                        Uint4          oid_begin,
                        Uint4          oid_end,
                        bool           use_mmap)
-    : m_Atlas        (use_mmap),
+    : m_Atlas        (use_mmap, & m_FlushCB),
       m_DBNames      (db_name_list),
       m_Aliases      (m_Atlas, db_name_list, prot_nucl),
       m_VolSet       (m_Atlas, m_Aliases.GetVolumeNames(), prot_nucl),
@@ -68,12 +68,21 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     
     m_NumSeqs     = x_GetNumSeqs();
     m_TotalLength = x_GetTotalLength();
+    
+    // Don't setup the flush callback until the implementation data
+    // structures are fully populated.
+    
+    m_FlushCB.SetImpl(this);
 }
 
 CSeqDBImpl::~CSeqDBImpl(void)
 {
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
+    
+    // Prevent GC from flushing volumes after they are torn down.
+    
+    m_FlushCB.SetImpl(0);
     
     m_VolSet.UnLease();
     
@@ -381,6 +390,25 @@ string CSeqDBImpl::x_FixString(const string & s) const
         }
     }
     return s;
+}
+
+void CSeqDBImplFlush::operator()(void)
+{
+    if (m_Impl) {
+        m_Impl->FlushSeqMemory();
+    }
+}
+
+// Assumes atlas is locked
+
+void CSeqDBImpl::FlushSeqMemory()
+{
+    // This is used by the atlas gc callback - when garbage
+    // collecting, it should discount references held by the volset.
+    // Thus, the not-longer-in-action volumes can be flushed out
+    // (currently, idx files are still kept).
+    
+    m_VolSet.UnLease();
 }
 
 END_NCBI_SCOPE
