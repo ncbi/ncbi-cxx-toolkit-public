@@ -70,11 +70,11 @@ LIB = \
 	xctools \
 	xconnect
 
-WX_CONFIG = $(HOME)/Programs/wxWindows/install/bin/wxgtk-2.3-config
+WX_CONFIG = $(HOME)/Programs/wxWindows/install/bin/wxgtk$(D_SFX)-2.3-config
 WX_CPPFLAGS = $(shell $(WX_CONFIG) --cppflags)
 WX_LIBS = $(shell $(WX_CONFIG) --libs) $(shell $(WX_CONFIG) --gl-libs)
 
-GTK_CONFIG = $(HOME)/Programs/GTK-1.2/install/bin/gtk-config
+GTK_CONFIG = $(HOME)/Programs/GTK-1.2-$(DEBUG_SFX)/install/bin/gtk-config
 GTK_CFLAGS = $(shell $(GTK_CONFIG) --cflags)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
