@@ -169,7 +169,7 @@ public:
     
     /// Check whether the search has completed.
     ///
-    /// This checks the status of the search.  Please delay several seconds
+    /// This checks the status of the search.  Please delay at least 10 seconds
     /// between subsequent calls.
     ///
     /// @return true If search is not still running.
@@ -426,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/12/08 20:27:56  camacho
+ * Update comment on CRemoteBlast::CheckDone
+ *
  * Revision 1.14  2004/10/12 14:18:31  camacho
  * Update for scoremat.asn reorganization
  *
