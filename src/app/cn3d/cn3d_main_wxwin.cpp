@@ -361,6 +361,24 @@ bool Cn3DApp::OnInit(void)
     INFOMSG("Welcome to Cn3D " << CN3D_VERSION_STRING << "!");
     INFOMSG("built " << __DATE__ << " with " << wxVERSION_STRING);
 
+    // set up command line parser
+    static const wxCmdLineEntryDesc cmdLineDesc[] = {
+        { wxCMD_LINE_SWITCH, "h", "help", "show this help message",
+            wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
+        { wxCMD_LINE_OPTION, "m", "message", "message file",
+            wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
+        { wxCMD_LINE_PARAM, NULL, NULL, "input file",
+            wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL},
+        { wxCMD_LINE_NONE }
+    };
+    commandLine.SetSwitchChars("-");
+    commandLine.SetDesc(cmdLineDesc);
+    commandLine.SetCmdLine(argc, argv);
+    switch (commandLine.Parse()) {
+        case 0: TRACEMSG("command line parsed successfully"); break;
+        default: return false;  // exit upon either help or syntax error
+    }
+
     // help system loads from zip file
 #if wxUSE_STREAMS && wxUSE_ZIPSTREAM && wxUSE_ZLIB
     wxFileSystem::AddHandler(new wxZipFSHandler);
@@ -440,11 +458,10 @@ bool Cn3DApp::OnInit(void)
     if (showLog) RaiseLogWindow();
 
     // get file name from command line, if present
-    if (argc == 2) {
-        INFOMSG("command line file: " << argv[1]);
-        structureWindow->LoadFile(argv[1]);
+    if (commandLine.GetParamCount() == 1) {
+        INFOMSG("command line file: " << commandLine.GetParam(0).c_str());
+        structureWindow->LoadFile(commandLine.GetParam(0).c_str());
     } else {
-        if (argc > 2) ERRORMSG("\nUsage: cn3d [filename]");
         structureWindow->glCanvas->renderer->AttachStructureSet(NULL);
     }
 
@@ -2041,6 +2058,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.182  2003/03/07 14:32:32  thiessen
+* use wxWindows command line parser
+*
 * Revision 1.181  2003/03/06 19:23:18  thiessen
 * minor tweaks
 *

@@ -44,6 +44,7 @@
 #include <wx/glcanvas.h>
 #include <wx/html/helpctrl.h>
 #include <wx/fileconf.h>
+#include <wx/cmdline.h>
 
 #include "cn3d/multitext_dialog.hpp"
 
@@ -75,6 +76,9 @@ private:
 #ifdef __WXMAC__
     void MacOpenFile(const wxString& fileName);
 #endif
+
+    // use wx command line parser
+    wxCmdLineParser commandLine;
 
     // used for processing display updates when system is idle
     void OnIdle(wxIdleEvent& event);
@@ -297,6 +301,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2003/03/07 14:32:32  thiessen
+* use wxWindows command line parser
+*
 * Revision 1.76  2003/02/06 16:39:53  thiessen
 * add block row fit coloring
 *
