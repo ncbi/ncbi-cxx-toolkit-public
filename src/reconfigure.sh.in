@@ -1,0 +1,8 @@
+@script_shell@
+
+# $Id$
+# Author:  Denis Vakatov, NCBI 
+# 
+#  Launcher for "scripts/reconfigure.sh"
+
+exec @top_srcdir@/scripts/reconfigure.sh "$@"
