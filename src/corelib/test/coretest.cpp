@@ -456,10 +456,10 @@ static void TestDiag(void)
     PopDiagPostPrefix();
     PopDiagPostPrefix();
     PopDiagPostPrefix();
-    {
+    {{
         CDiagAutoPrefix a("AutoPrefix");
         ERR_POST("Message with auto prefix");
-    }
+    }}
     ERR_POST("Message without prefixes");
     ERR_POST_EX(8, 0, "Message without prefix");
     SetDiagPostPrefix(0);
@@ -475,6 +475,15 @@ static void TestDiag(void)
     UnsetDiagPostFlag(eDPF_DateTime);
     diag << Warning << "Message without datetime stamp" << Endm;
     SetDiagPostFlag(eDPF_DateTime);
+
+    EDiagSev prev_sev;
+    IgnoreDiagDieLevel(true, &prev_sev);
+    {{
+        CNcbiDiag x_diag;
+        x_diag << Fatal << "Fatal message w/o exit()/abort()!" << Endm;
+    }}
+    IgnoreDiagDieLevel(false);
+    SetDiagDieLevel(prev_sev);
 }
 
 
@@ -881,6 +890,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2003/04/25 20:54:40  lavr
+ * Add test for IgnoreDiagDieLevel() operations
+ *
  * Revision 1.87  2003/02/24 19:56:51  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *
