@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/10/05 21:26:07  lavr
+ * ncbiconf.h removed
+ *
  * Revision 6.4  2000/05/22 16:53:36  lavr
  * Minor change
  *
@@ -48,7 +51,6 @@
  * ==========================================================================
  */
 
-#include <ncbiconf.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -56,20 +58,17 @@ extern "C" {
 #endif
 
 
-#ifndef HAVE_STRDUP
-#  define strdup      NCBI_strdup
+#define strdup      NCBI_strdup
 
 /* Create a copy of string "str".
  * Return an identical malloc'ed string, which must be explicitly freed 
  * by free() when no longer needed.
  */
 char *strdup(const char* str);
-#endif /* HAVE_STRDUP */
 
 
-#ifndef HAVE_STRCASECMP
-#  define strcasecmp  NCBI_strcasecmp
-#  define strncasecmp NCBI_strncasecmp
+#define strcasecmp  NCBI_strcasecmp
+#define strncasecmp NCBI_strncasecmp
 
 /* Compare "s1" and "s2", ignoring case.
  * Return less than, equal to or greater than zero if
@@ -82,7 +81,6 @@ int strcasecmp(const char* s1, const char* s2);
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
 int strncasecmp(const char* s1, const char* s2, size_t n);
-#endif /* HAVE_STRCASECMP */
 
 
 #ifdef __cplusplus
