@@ -817,7 +817,7 @@ typedef struct SWpairs {
 static double BLbasicSmithWatermanScoreOnly(Uint1 * matchSeq, 
    Int4 matchSeqLength, Uint1 *query, Int4 queryLength, Int4 **matrix, 
    Int4 gapOpen, Int4 gapExtend,  Int4 *matchSeqEnd, Int4 *queryEnd, Int4 *score,
-   Blast_KarlinBlk* kbp, double effSearchSpace, Boolean positionSpecific)
+   Blast_KarlinBlk* kbp, Int8 effSearchSpace, Boolean positionSpecific)
 {
 
    Int4 bestScore; /*best score seen so far*/
@@ -1026,7 +1026,7 @@ static Int4 BLSmithWatermanFindStart(Uint1 * matchSeq,
 static double BLspecialSmithWatermanScoreOnly(Uint1 * matchSeq, 
    Int4 matchSeqLength, Uint1 *query, Int4 queryLength, Int4 **matrix, 
    Int4 gapOpen, Int4 gapExtend,  Int4 *matchSeqEnd, Int4 *queryEnd, Int4 *score,
-   Blast_KarlinBlk* kbp,  double effSearchSpace,
+   Blast_KarlinBlk* kbp,  Int8 effSearchSpace,
    Int4 *numForbidden, Int4 ** forbiddenRanges, Boolean positionSpecific)
 {
 
@@ -2674,11 +2674,11 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
                                                  * query to the
                                                  * current database
                                                  * sequence */
-            double bestScore;      /* the score of the highest
+            Int4 bestScore;      /* the score of the highest
                                          * scoring alignment */
             numNewAlignments = thisMatch->hspcnt;  
             bestScore =
-              BLAST_Nint(((double) thisMatch->hsp_array[0]->score) /
+              (Int4) BLAST_Nint(((double) thisMatch->hsp_array[0]->score) /
                        localScalingFactor);
 
             Kappa_MatchRecordInitialize(&matchRecord, bestEvalue, bestScore,
