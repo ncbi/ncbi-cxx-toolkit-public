@@ -92,7 +92,7 @@ CSeq_entry_EditHandle CSeq_annot_EditHandle::GetParentEntry(void) const
 }
 
 
-void CSeq_annot_EditHandle::RemoveAnnot(void)
+void CSeq_annot_EditHandle::Remove(void)
 {
     m_Scope->RemoveAnnot(*this);
 }
@@ -104,6 +104,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/16 21:01:32  vasilche
+* Added methods to move Bioseq withing Seq-entry
+*
 * Revision 1.5  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

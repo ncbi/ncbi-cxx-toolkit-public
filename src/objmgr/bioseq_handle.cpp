@@ -421,12 +421,29 @@ CRef<CSeq_loc> CBioseq_Handle::MapLocation(const CSeq_loc& loc) const
 }
 
 
+void CBioseq_EditHandle::MoveTo(CSeq_entry_EditHandle& entry)
+{
+    NCBI_THROW(CObjMgrException, eOtherError,
+               "CBioseq_EditHandle::MoveTo: not implemented");
+}
+
+
+void CBioseq_EditHandle::MoveTo(CBioseq_set_EditHandle& seqset)
+{
+    NCBI_THROW(CObjMgrException, eOtherError,
+               "CBioseq_EditHandle::MoveTo: not implemented");
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2004/03/16 21:01:32  vasilche
+* Added methods to move Bioseq withing Seq-entry
+*
 * Revision 1.54  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

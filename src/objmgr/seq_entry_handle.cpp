@@ -273,7 +273,7 @@ CSeq_entry_EditHandle::AttachAnnot(const CSeq_annot& annot)
 }
 
 
-void CSeq_entry_EditHandle::RemoveEntry(void)
+void CSeq_entry_EditHandle::Remove(void)
 {
     m_Scope->RemoveEntry(*this);
 }
@@ -285,7 +285,7 @@ void CSeq_entry_EditHandle::RemoveEntry(CSeq_entry_EditHandle& entry)
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CSeq_entry_EditHandle::RemoveEntry: entry is not owned");
     }
-    entry.RemoveEntry();
+    entry.Remove();
 }
 
 
@@ -311,12 +311,35 @@ CSeq_entry_EditHandle::ReplaceAnnot(CSeq_annot_EditHandle& old_annot,
 }
 
 
+CBioseq_set_EditHandle
+CSeq_entry_EditHandle::MakeSet(void)
+{
+    if ( !IsSet() ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CSeq_entry_EditHandle::MakeSet: not implemented");
+    }
+    return SetSet();
+}
+
+
+void CSeq_entry_EditHandle::MakeSeq(CBioseq_EditHandle& seq)
+{
+    if ( !IsSeq() ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CSeq_entry_EditHandle::MakeSet: not implemented");
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/16 21:01:32  vasilche
+* Added methods to move Bioseq withing Seq-entry
+*
 * Revision 1.4  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

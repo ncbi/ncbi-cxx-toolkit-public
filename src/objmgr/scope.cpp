@@ -269,7 +269,7 @@ void CScope::RemoveEntry(CSeq_entry& entry)
                   "CScope::RemoveEntry() is deprecated: "
                   "use class CSeq_entry_EditHandle.");
     CSeq_entry_EditHandle eh = GetEditHandle(GetSeq_entryHandle(entry));
-    eh.RemoveEntry();
+    eh.Remove();
 }
 
 
@@ -312,6 +312,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2004/03/16 21:01:32  vasilche
+* Added methods to move Bioseq withing Seq-entry
+*
 * Revision 1.102  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

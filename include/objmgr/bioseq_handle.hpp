@@ -63,6 +63,7 @@ class CBioseq_Handle;
 class CSeq_annot_Handle;
 class CSeq_entry_Handle;
 class CBioseq_EditHandle;
+class CBioseq_set_EditHandle;
 class CSeq_annot_EditHandle;
 class CSeq_entry_EditHandle;
 
@@ -215,6 +216,11 @@ public:
     CSeq_annot_EditHandle ReplaceAnnot(CSeq_annot_EditHandle& old_annot,
                                        CSeq_annot& new_annot);
 
+    // Tree modification, target handle must be in the same TSE
+    // entry.Which() must be e_not_set or e_Set.
+    void MoveTo(CSeq_entry_EditHandle& entry);
+    void MoveTo(CBioseq_set_EditHandle& seqset);
+
 protected:
     friend class CScope_Impl;
 
@@ -313,6 +319,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2004/03/16 21:01:32  vasilche
+* Added methods to move Bioseq withing Seq-entry
+*
 * Revision 1.49  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

@@ -196,7 +196,7 @@ void CBioseq_set_EditHandle::RemoveEntry(CSeq_entry_EditHandle& entry)
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CBioseq_set_EditHandle::RemoveEntry: entry is not owned");
     }
-    entry.RemoveEntry();
+    entry.Remove();
 }
 
 
@@ -206,7 +206,7 @@ void CBioseq_set_EditHandle::RemoveAnnot(CSeq_annot_EditHandle& annot)
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CBioseq_set_EditHandle::RemoveAnnot: annot is not owned");
     }
-    annot.RemoveAnnot();
+    annot.Remove();
 }
 
 
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/16 21:01:32  vasilche
+* Added methods to move Bioseq withing Seq-entry
+*
 * Revision 1.1  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

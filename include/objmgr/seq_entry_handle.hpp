@@ -146,7 +146,12 @@ public:
     CSeq_entry_EditHandle AttachEntry(const CSeq_entry& entry);
     void RemoveEntry(CSeq_entry_EditHandle& sub_entry);
 
-    void RemoveEntry(void);
+    void Remove(void);
+
+    // Convert entry to bioseq set. Return resulting bioseq_set handle.
+    CBioseq_set_EditHandle MakeSet(void);
+    // Convert entry to bioseq.
+    void MakeSeq(CBioseq_EditHandle& seq);
 
 protected:
     friend class CScope_Impl;
@@ -257,6 +262,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/16 21:01:32  vasilche
+* Added methods to move Bioseq withing Seq-entry
+*
 * Revision 1.4  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
