@@ -517,7 +517,7 @@ int CExceptApplication::Run(void)
         cerr << e.what();
 
         cerr << endl << "****** e.ReportThis() ******" << endl;
-        cerr << e.ReportThis();
+        cerr << e.ReportThis() << endl;
 
         CExceptionReporterStream reporter(cerr);
         CExceptionReporter::SetDefault(&reporter);
@@ -525,7 +525,7 @@ int CExceptApplication::Run(void)
 
         cerr << endl;
         e.Report(__FILE__, __LINE__,
-            "****** stream reporter ******", &reporter);
+            "****** stream reporter ******", &reporter, eDPF_All);
         cerr << endl;
         NCBI_REPORT_EXCEPTION(
             "****** default reporter (stream, disabled) ******",e);
@@ -586,6 +586,8 @@ int CExceptApplication::Run(void)
     }
     catch (CException& e) {
         NCBI_REPORT_EXCEPTION("Parsesystem",e);
+        cerr << endl << "****** e.what() ******" << endl;
+        cerr << e.what();
 
         _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
         _ASSERT(UppermostCast<CParsesystemException>(e));
@@ -687,13 +689,16 @@ USING_NCBI_SCOPE;
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    SetDiagPostFlag(eDPF_Trace);
+//    SetDiagPostFlag(eDPF_Trace);
     return CExceptApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2002/08/20 19:09:07  gouriano
+ * more tests
+ *
  * Revision 6.7  2002/07/31 18:34:14  gouriano
  * added test for virtual base class
  *
