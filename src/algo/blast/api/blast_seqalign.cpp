@@ -468,7 +468,7 @@ x_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 
 /// C++ version of GetScoreSetFromBlastHsp (tools/blastutl.c)
 static void
-x_BuildScoreList(const BlastHSP* hsp, const BLAST_ScoreBlk* sbp, const
+x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
         BlastScoringOptions* score_options, CSeq_align::TScore& scores,
         CBlastOption::EProgram program)
 {
@@ -523,7 +523,7 @@ x_BuildScoreList(const BlastHSP* hsp, const BLAST_ScoreBlk* sbp, const
 
 static void
 x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp, 
-        const BLAST_ScoreBlk* sbp, CBlastOption::EProgram program,
+        const BlastScoreBlk* sbp, CBlastOption::EProgram program,
         const BlastScoringOptions* score_options)
 {
     // Add the scores for this HSP
@@ -553,7 +553,7 @@ static CRef<CSeq_align_set>
 x_ProcessBlastHitList(BlastHitList* hit_list, 
         CConstRef<CSeq_id>& query_seqid,
         const BlastSeqSrc* bssp, CConstRef<CSeq_id>& subject_id, 
-        const BlastScoringOptions* score_options, const BLAST_ScoreBlk* sbp,
+        const BlastScoringOptions* score_options, const BlastScoreBlk* sbp,
         CBlastOption::EProgram program)
 {
     CRef<CSeq_align_set> retval(new CSeq_align_set()); 
@@ -601,7 +601,7 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
         const BlastSeqSrc* bssp,
         CConstRef<CSeq_id>& subject_seqid,
         const BlastScoringOptions* score_options, 
-        const BLAST_ScoreBlk* sbp)
+        const BlastScoreBlk* sbp)
 {
     _ASSERT(results->num_queries == (int)query_seqids.size());
     CRef<CSeq_align_set> retval(new CSeq_align_set());
@@ -635,6 +635,9 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/08/01 17:40:56  dondosha
+* Use renamed functions and structures from local blastkar.h
+*
 * Revision 1.6  2003/07/31 19:45:33  camacho
 * Eliminate Ptr notation
 *

@@ -110,7 +110,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingParameters,
 DECLARE_AUTO_CLASS_WRAPPER(PSIBlastOptions, sfree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastDatabaseOptions, sfree);
 
-DECLARE_AUTO_CLASS_WRAPPER(BLAST_ScoreBlk, BLAST_ScoreBlkDestruct);
+DECLARE_AUTO_CLASS_WRAPPER(BlastScoreBlk, BlastScoreBlkFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastScoringOptions, BlastScoringOptionsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptions,
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/08/01 17:40:56  dondosha
+* Use renamed functions and structures from local blastkar.h
+*
 * Revision 1.4  2003/07/31 19:45:33  camacho
 * Eliminate Ptr notation
 *

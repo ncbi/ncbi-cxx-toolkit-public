@@ -71,12 +71,15 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
         const BlastSeqSrc* bssp, 
         CConstRef<CSeq_id>& subject_seqid,
         const BlastScoringOptions* score_options, 
-        const BLAST_ScoreBlk* sbp);
+        const BlastScoreBlk* sbp);
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/08/01 17:40:56  dondosha
+* Use renamed functions and structures from local blastkar.h
+*
 * Revision 1.4  2003/07/31 19:45:33  camacho
 * Eliminate Ptr notation
 *

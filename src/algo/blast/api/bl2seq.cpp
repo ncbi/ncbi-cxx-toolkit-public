@@ -105,7 +105,7 @@ void
 CBl2Seq::x_ResetQueryDs()
 {
     // Clean up structures if needed
-    mi_Sbp = BLAST_ScoreBlkDestruct(mi_Sbp);
+    mi_Sbp = BlastScoreBlkFree(mi_Sbp);
     mi_Query.CBLAST_SequenceBlkPtr::~CBLAST_SequenceBlkPtr();
     mi_QueryInfo.CBlastQueryInfoPtr::~CBlastQueryInfoPtr();
     if (mi_LookupTable)
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/08/01 17:40:56  dondosha
+* Use renamed functions and structures from local blastkar.h
+*
 * Revision 1.9  2003/07/31 19:45:33  camacho
 * Eliminate Ptr notation
 *

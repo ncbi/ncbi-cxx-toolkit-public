@@ -83,7 +83,7 @@ public:
 
 #if 0
     // Temporary: Accessors for internal structures
-    const BLAST_ScoreBlkPtr GetScoreBlkPtr() const { return mi_Sbp; }
+    const BlastScoreBlkPtr GetScoreBlkPtr() const { return mi_Sbp; }
     const BlastQueryInfoPtr GetQueryInfoPtr() const { return &*mi_QueryInfo; }
     BlastReturnStat GetReturnStats() const 
     { 
@@ -121,7 +121,7 @@ private:
     vector<BLAST_SequenceBlk*>          mi_vSubjects; // should use structures
     unsigned int                        mi_MaxSubjLength;
 
-    BLAST_ScoreBlk*                     mi_Sbp;
+    BlastScoreBlk*                     mi_Sbp;
     LookupTableWrap*                    mi_LookupTable;
     ListNode*                           mi_LookupSegments;
 
@@ -219,6 +219,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/08/01 17:40:56  dondosha
+* Use renamed functions and structures from local blastkar.h
+*
 * Revision 1.5  2003/07/31 19:45:33  camacho
 * Eliminate Ptr notation
 *

@@ -137,7 +137,7 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
             *buf_var++ = sentinel;
         for (i = 0; i < sv.size(); i++) {
             if (encoding == BLASTNA_ENCODING)
-                *buf_var++ = ncbi4na_to_blastna[sv[i]];
+                *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
             else
                 *buf_var++ = sv[i];
         }
@@ -151,7 +151,7 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
             sv.SetCoding(CSeq_data::e_Ncbi4na);
             for (i = 0; i < sv.size(); i++) {
                 if (encoding == BLASTNA_ENCODING)
-                    *buf_var++ = ncbi4na_to_blastna[sv[i]];
+                    *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
                 else
                     *buf_var++ = sv[i];
             }
@@ -246,6 +246,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/08/01 17:40:56  dondosha
+* Use renamed functions and structures from local blastkar.h
+*
 * Revision 1.6  2003/07/31 19:45:33  camacho
 * Eliminate Ptr notation
 *
