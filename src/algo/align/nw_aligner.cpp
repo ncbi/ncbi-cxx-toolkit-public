@@ -391,7 +391,7 @@ CNWAligner::TScore CNWAligner::x_Run()
                     
                     SAlignInOut& data = **ii;
 
-                    if(NW_RequestNewThread(m_maxthreads)) {
+                    if(data.GetSpace() >= 10000000 && NW_RequestNewThread(m_maxthreads)) {
                         
                         CNWAlignerThread_Align* thread = 
                             new CNWAlignerThread_Align(this, &data);
@@ -1106,6 +1106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2004/07/07 21:38:30  kapustin
+ * Check space before starting new thread
+ *
  * Revision 1.51  2004/06/29 21:08:17  kapustin
  * +#include <algorithm>
  *
