@@ -9,7 +9,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbienv.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 class CSimpleMakeFileContents
 {
@@ -62,5 +62,5 @@ private:
     void AddReadyKV(const pair<string, string>& kv);
 };
 
-
+END_NCBI_SCOPE
 #endif //FILE_CONTENTS_HEADER

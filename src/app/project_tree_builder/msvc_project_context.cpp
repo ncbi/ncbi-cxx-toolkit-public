@@ -6,7 +6,10 @@
 
 #include <set>
 
+
+BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
+
 CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 {
     //
@@ -21,7 +24,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         CDirEntry::SplitPath(*p, &dir);
         sources_dirs.insert(dir);
     }
-    copy(sources_dirs.begin(), sources_dirs.end(), back_inserter(m_SourcesDirsAbs));
+    copy(sources_dirs.begin(), 
+         sources_dirs.end(), 
+         back_inserter(m_SourcesDirsAbs));
 
     // /src/
     const string src_tag(string(1,CDirEntry::GetPathSeparator()) + 
@@ -44,7 +49,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
     // Creating project dir:
     m_ProjectDir = project.m_SourcesBaseDir;
-    m_ProjectDir.replace(m_ProjectDir.find(src_tag), src_tag.length(), project_tag);
+    m_ProjectDir.replace(m_ProjectDir.find(src_tag), 
+                         src_tag.length(), 
+                         project_tag);
 
     //TODO 
     m_AdditionalLinkerOptions = "";
@@ -75,12 +82,15 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     ITERATE(list<string>, p, m_SourcesDirsAbs) {
     
         string include_dir(*p);
-        include_dir.replace(include_dir.find(src_tag), src_tag.length(), include_tag);
+        include_dir.replace(include_dir.find(src_tag), 
+                            src_tag.length(), 
+                            include_tag);
         m_IncludeDirsAbs.push_back(include_dir);
     }
     
   
-    m_AdditionalIncludeDirectories = CDirEntry::CreateRelativePath(m_ProjectDir, m_IncludeDirsRoot);
+    m_AdditionalIncludeDirectories = CDirEntry::CreateRelativePath(
+                                               m_ProjectDir, m_IncludeDirsRoot);
 //    list<string> include_dirs;
 //    ITERATE(list<string>, p, m_IncludeDirsAbs) {
 //
@@ -96,7 +106,7 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext(const string& config,
                                       const CMsvcPrjProjectContext& prj_context)
 {
     //m_Type
-    switch(prj_context.ProjectType()) {
+    switch ( prj_context.ProjectType() ) {
     case CProjItem::eLib:
         m_Type = eLib;
         break;
@@ -110,32 +120,32 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext(const string& config,
     }
     
     //m_RunTime and m_BuildType
-    if(config == "Debug") {
+    if (config == "Debug") {
 
         m_RunTime   = eStatic;
         m_BuildType = eDebug;
     }
-    else if(config == "DebugDLL") {
+    else if (config == "DebugDLL") {
 
         m_RunTime   = eDynamicMT;
         m_BuildType = eDebug;
     }
-    else if(config == "DebugMT") {
+    else if (config == "DebugMT") {
 
         m_RunTime   = eStaticMT;
         m_BuildType = eDebug;
     }
-    else if(config == "Release") {
+    else if (config == "Release") {
 
         m_RunTime   = eStatic;
         m_BuildType = eRelease;
     }
-    else if(config == "ReleaseDLL") {
+    else if (config == "ReleaseDLL") {
 
         m_RunTime   = eDynamicMT;
         m_BuildType = eRelease;
     }
-    else if(config == "ReleaseMT") {
+    else if (config == "ReleaseMT") {
 
         m_RunTime   = eStaticMT;
         m_BuildType = eRelease;
@@ -155,17 +165,20 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext(const string& config,
     
     string project_dir = prj_context.ProjectDir();
     string output_dir_prefix = string (project_dir, 0,
-                                       project_dir.find(project_tag) + project_tag.length());
-    if(m_Type == eLib)
+                                       project_dir.find(
+                                           project_tag) + project_tag.length());
+    if (m_Type == eLib)
         output_dir_prefix = CDirEntry::ConcatPath(output_dir_prefix, "lib");
     else if (m_Type == eExe)
         output_dir_prefix = CDirEntry::ConcatPath(output_dir_prefix, "bin");
     else {
         //TODO - handle Dll(s)
-   	    NCBI_THROW(CProjBulderAppException, eProjectType, NStr::IntToString(m_Type));
+   	    NCBI_THROW(CProjBulderAppException, 
+                   eProjectType, NStr::IntToString(m_Type));
     }
     string output_dir_abs = CDirEntry::ConcatPath(output_dir_prefix, config);
-    m_OutputDirectory = CDirEntry::CreateRelativePath(project_dir, output_dir_abs);
+    m_OutputDirectory = CDirEntry::CreateRelativePath(project_dir, 
+                                                      output_dir_abs);
 
     m_ConfigurationName = config;
 }
@@ -199,22 +212,25 @@ CMsvcTools::CMsvcTools(	const CMsvcPrjGeneralContext& general_context,
 {
     //configuration
     m_Configuration = auto_ptr<IConfiguration>(s_CreateConfiguration(
-                                                general_context, project_context));
+                                             general_context, project_context));
     //compiler
     m_Compiler	= auto_ptr<ICompilerTool>(s_CreateCompilerTool(
-                                                general_context, project_context));
+                                             general_context, project_context));
     //Linker:
     m_Linker = auto_ptr<ILinkerTool>(s_CreateLinkerTool(
-                                                general_context, project_context));
+                                             general_context, project_context));
     //Librarian
     m_Librarian = auto_ptr<ILibrarianTool>(s_CreateLibrarianTool(
-                                                general_context, project_context));
+                                             general_context, project_context));
     //Dummies
     m_CustomBuid = auto_ptr<ICustomBuildTool>(new CCustomBuildToolDummyImpl());
     m_MIDL = auto_ptr<IMIDLTool>(new CMIDLToolDummyImpl());
-    m_PostBuildEvent = auto_ptr<IPostBuildEventTool>(new CPostBuildEventToolDummyImpl());
-    m_PreBuildEvent = auto_ptr<IPreBuildEventTool>(new CPreBuildEventToolDummyImpl());
-    m_PreLinkEvent = auto_ptr<IPreLinkEventTool>(new CPreLinkEventToolDummyImpl());
+    m_PostBuildEvent = auto_ptr<IPostBuildEventTool>(
+                                            new CPostBuildEventToolDummyImpl());
+    m_PreBuildEvent = auto_ptr<IPreBuildEventTool>(
+                                            new CPreBuildEventToolDummyImpl());
+    m_PreLinkEvent = auto_ptr<IPreLinkEventTool>(
+                                            new CPreLinkEventToolDummyImpl());
 
     //Resource Compiler
     m_ResourceCompiler 
@@ -222,262 +238,373 @@ CMsvcTools::CMsvcTools(	const CMsvcPrjGeneralContext& general_context,
                                             general_context, project_context));
 
     //Dummies
-    m_WebServiceProxyGenerator = auto_ptr<IWebServiceProxyGeneratorTool>(new CWebServiceProxyGeneratorToolDummyImpl());
-    m_XMLDataGenerator = auto_ptr<IXMLDataGeneratorTool>(new CXMLDataGeneratorToolDummyImpl());
-    m_ManagedWrapperGenerator = auto_ptr<IManagedWrapperGeneratorTool>(new CManagedWrapperGeneratorToolDummyImpl());
-    m_AuxiliaryManagedWrapperGenerator=auto_ptr<IAuxiliaryManagedWrapperGeneratorTool> (new CAuxiliaryManagedWrapperGeneratorToolDummyImpl());
+    m_WebServiceProxyGenerator = auto_ptr<IWebServiceProxyGeneratorTool>(
+                                new CWebServiceProxyGeneratorToolDummyImpl());
+    m_XMLDataGenerator = auto_ptr<IXMLDataGeneratorTool>(
+                                new CXMLDataGeneratorToolDummyImpl());
+    m_ManagedWrapperGenerator = auto_ptr<IManagedWrapperGeneratorTool>(
+                                new CManagedWrapperGeneratorToolDummyImpl());
+    m_AuxiliaryManagedWrapperGenerator=
+                            auto_ptr<IAuxiliaryManagedWrapperGeneratorTool> (
+                          new CAuxiliaryManagedWrapperGeneratorToolDummyImpl());
 }
+
 
 IConfiguration * CMsvcTools::Configuration(void) const
 {
     return m_Configuration.get();
 }
+
+
 ICompilerTool * CMsvcTools::Compiler(void) const
 {
     return m_Compiler.get();
 }
+
+
 ILinkerTool * CMsvcTools::Linker(void) const
 {
     return m_Linker.get();
 }
+
+
 ILibrarianTool * CMsvcTools::Librarian(void) const
 {
     return m_Librarian.get();
 }
+
+
 ICustomBuildTool * CMsvcTools::CustomBuid(void) const
 {
     return m_CustomBuid.get();
 }
+
+
 IMIDLTool * CMsvcTools::MIDL(void) const
 {
     return m_MIDL.get();
 }
+
+
 IPostBuildEventTool * CMsvcTools::PostBuildEvent(void) const
 {
     return m_PostBuildEvent.get();
 }
+
+
 IPreBuildEventTool * CMsvcTools::PreBuildEvent(void) const
 {
     return m_PreBuildEvent.get();
 }
+
+
 IPreLinkEventTool * CMsvcTools::PreLinkEvent(void) const
 {
     return m_PreLinkEvent.get();
 }
+
+
 IResourceCompilerTool * CMsvcTools::ResourceCompiler(void) const
 {
     return m_ResourceCompiler.get();
 }
+
+
 IWebServiceProxyGeneratorTool * CMsvcTools::WebServiceProxyGenerator(void) const
 {
     return m_WebServiceProxyGenerator.get();
 }
+
+
 IXMLDataGeneratorTool * CMsvcTools::XMLDataGenerator(void) const
 {
     return m_XMLDataGenerator.get();
 }
+
+
 IManagedWrapperGeneratorTool * CMsvcTools::ManagedWrapperGenerator(void) const
 {
     return m_ManagedWrapperGenerator.get();
 }
-IAuxiliaryManagedWrapperGeneratorTool * CMsvcTools::AuxiliaryManagedWrapperGenerator(void) const
+
+
+IAuxiliaryManagedWrapperGeneratorTool * 
+                        CMsvcTools::AuxiliaryManagedWrapperGenerator(void) const
 {
     return m_AuxiliaryManagedWrapperGenerator.get();
 }
+
 
 CMsvcTools::~CMsvcTools()
 {
 }
 
+
 //------------------------------------------------------------------------------
 static IConfiguration * s_CreateConfiguration(
-                                    const CMsvcPrjGeneralContext& general_context,
-                                    const CMsvcPrjProjectContext& project_context)
+                                  const CMsvcPrjGeneralContext& general_context,
+                                  const CMsvcPrjProjectContext& project_context)
 {
-    if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eExe) {
+    if (general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eExe) {
 
 	    return new CConfigurationImpl<SApp>( general_context.OutputDirectory(), 
-                                             general_context.ConfigurationName());
+                                           general_context.ConfigurationName());
     }
-    else if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eLib) {
+    else if (general_context.m_Type == 
+                                    CMsvcPrjGeneralContext::TTargetType::eLib) {
 
 	    return new CConfigurationImpl<SLib>( general_context.OutputDirectory(), 
-                                             general_context.ConfigurationName());
+                                           general_context.ConfigurationName());
     }
-    else if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eDll) {
+    else if (general_context.m_Type == 
+                                    CMsvcPrjGeneralContext::TTargetType::eDll) {
 
 	    return new CConfigurationImpl<SDll>( general_context.OutputDirectory(), 
-                                             general_context.ConfigurationName());
+                                           general_context.ConfigurationName());
     }
 
     return NULL;
 }
+
+
 //------------------------------------------------------------------------------------------
 static ICompilerTool * s_CreateCompilerTool(
 								 const CMsvcPrjGeneralContext& general_context,
 								 const CMsvcPrjProjectContext& project_context)
 {
-    if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eExe) {
+    if (general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eExe) {
 
-	    if(general_context.m_RunTime == CMsvcPrjGeneralContext::TRunTimeLibType::eStatic) {
+	    if (general_context.m_RunTime == 
+                             CMsvcPrjGeneralContext::TRunTimeLibType::eStatic) {
 
-		    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+		    if (general_context.m_BuildType == 
+                                   CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
 			    return new CCompilerToolImpl<SCrtSingleThreadedDebug, 
-				    SDebug, SApp>(project_context.AdditionalIncludeDirectories());
+				                             SDebug, 
+                                             SApp>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
-		    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+		    else if (general_context.m_BuildType == 
+                                 CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
 			    return new CCompilerToolImpl<SCrtSingleThreaded, 
-				    SRelease, SApp>(project_context.AdditionalIncludeDirectories());
+				                             SRelease, 
+                                             SApp>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
 	    }
-	    else if (general_context.m_RunTime == CMsvcPrjGeneralContext::TRunTimeLibType::eStaticMT) {
+	    else if (general_context.m_RunTime == 
+                           CMsvcPrjGeneralContext::TRunTimeLibType::eStaticMT) {
 
-		    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+		    if (general_context.m_BuildType == 
+                           CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreadedDebug, 
-				    SDebug, SApp>(project_context.AdditionalIncludeDirectories());
+				                             SDebug, 
+                                             SApp>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
-		    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+		    else if (general_context.m_BuildType == 
+                           CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreaded, 
-				    SRelease, SApp>(project_context.AdditionalIncludeDirectories());
+				                             SRelease, 
+                                             SApp>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
 	    }
-	    else if (general_context.m_RunTime == CMsvcPrjGeneralContext::TRunTimeLibType::eDynamicMT) {
+	    else if (general_context.m_RunTime == 
+                          CMsvcPrjGeneralContext::TRunTimeLibType::eDynamicMT) {
 
-		    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+		    if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreadedDebugDLL, 
-				    SDebug, SApp>(project_context.AdditionalIncludeDirectories());
+				                             SDebug, 
+                                             SApp>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
-		    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+		    else if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreadedDLL, 
-				    SRelease, SApp>(project_context.AdditionalIncludeDirectories());
+				                             SRelease, 
+                                             SApp>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
 	    }
     }
-    else if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eLib) {
+    else if (general_context.m_Type == 
+                          CMsvcPrjGeneralContext::TTargetType::eLib) {
 
-	    if(general_context.m_RunTime == CMsvcPrjGeneralContext::TRunTimeLibType::eStatic) {
+	    if (general_context.m_RunTime == 
+                          CMsvcPrjGeneralContext::TRunTimeLibType::eStatic) {
 
-		    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+		    if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
 			    return new CCompilerToolImpl<SCrtSingleThreadedDebug, 
-				    SDebug, SLib>(project_context.AdditionalIncludeDirectories());
+				                             SDebug, 
+                                             SLib>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
-		    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+		    else if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
 			    return new CCompilerToolImpl<SCrtSingleThreaded, 
-				    SRelease, SLib>(project_context.AdditionalIncludeDirectories());
+				                             SRelease, 
+                                             SLib>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
 	    }
-	    else if (general_context.m_RunTime == CMsvcPrjGeneralContext::TRunTimeLibType::eStaticMT) {
+	    else if (general_context.m_RunTime == 
+                          CMsvcPrjGeneralContext::TRunTimeLibType::eStaticMT) {
 
-		    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+		    if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreadedDebug, 
-				    SDebug, SLib>(project_context.AdditionalIncludeDirectories());
+				                             SDebug, 
+                                             SLib>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
-		    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+		    else if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreaded, 
-				    SRelease, SLib>(project_context.AdditionalIncludeDirectories());
+				                             SRelease, 
+                                             SLib>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
 	    }
-	    else if (general_context.m_RunTime == CMsvcPrjGeneralContext::TRunTimeLibType::eDynamicMT) {
+	    else if (general_context.m_RunTime == 
+                          CMsvcPrjGeneralContext::TRunTimeLibType::eDynamicMT) {
 
-		    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+		    if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreadedDebugDLL, 
-				    SDebug, SLib>(project_context.AdditionalIncludeDirectories());
+				                             SDebug, 
+                                             SLib>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
-		    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+		    else if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreadedDLL, 
-				    SRelease, SLib>(project_context.AdditionalIncludeDirectories());
+				                             SRelease, 
+                                             SLib>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
 	    }
     }
-    else if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eDll) {
+    else if (general_context.m_Type == 
+                          CMsvcPrjGeneralContext::TTargetType::eDll) {
 
-	    if(general_context.m_RunTime == CMsvcPrjGeneralContext::TRunTimeLibType::eStatic) {
+	    if (general_context.m_RunTime == 
+                          CMsvcPrjGeneralContext::TRunTimeLibType::eStatic) {
 
-		    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+		    if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
 			    return new CCompilerToolImpl<SCrtSingleThreadedDebug, 
-				    SDebug, SDll>(project_context.AdditionalIncludeDirectories());
+				                             SDebug, 
+                                             SDll>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
-		    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+		    else if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
 			    return new CCompilerToolImpl<SCrtSingleThreaded, 
-				    SRelease, SDll>(project_context.AdditionalIncludeDirectories());
+				                             SRelease, 
+                                             SDll>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
 	    }
-	    else if (general_context.m_RunTime == CMsvcPrjGeneralContext::TRunTimeLibType::eStaticMT) {
+	    else if (general_context.m_RunTime == 
+                           CMsvcPrjGeneralContext::TRunTimeLibType::eStaticMT) {
 
-		    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+		    if (general_context.m_BuildType == 
+                           CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreadedDebug, 
-				    SDebug, SDll>(project_context.AdditionalIncludeDirectories());
+				                             SDebug, 
+                                             SDll>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
-		    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+		    else if (general_context.m_BuildType == 
+                              CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreaded, 
-				    SRelease, SDll>(project_context.AdditionalIncludeDirectories());
+				                             SRelease, 
+                                             SDll>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
 	    }
-	    else if (general_context.m_RunTime == CMsvcPrjGeneralContext::TRunTimeLibType::eDynamicMT) {
+	    else if (general_context.m_RunTime == 
+                          CMsvcPrjGeneralContext::TRunTimeLibType::eDynamicMT) {
 
-		    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+		    if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreadedDebugDLL, 
-				    SDebug, SDll>(project_context.AdditionalIncludeDirectories());
+				                             SDebug, 
+                                             SDll>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
-		    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+		    else if (general_context.m_BuildType == 
+                          CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
 			    return new CCompilerToolImpl<SCrtMultiThreadedDLL, 
-				    SRelease, SDll>(project_context.AdditionalIncludeDirectories());
+				                             SRelease, 
+                                             SDll>(
+                                project_context.AdditionalIncludeDirectories());
 		    }
 	    }
     }
     return NULL;
 }
 
-static ILinkerTool * s_CreateLinkerTool(
-                                    const CMsvcPrjGeneralContext& general_context,
-                                    const CMsvcPrjProjectContext& project_context)
-{
-    if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eExe) {
 
-	    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+static ILinkerTool * s_CreateLinkerTool(
+                                  const CMsvcPrjGeneralContext& general_context,
+                                  const CMsvcPrjProjectContext& project_context)
+{
+    if (general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eExe) {
+
+	    if (general_context.m_BuildType == 
+                                   CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
             return new CLinkerToolImpl<SDebug, SApp>(
-                                                project_context.AdditionalLinkerOptions(),
-                                                project_context.ProjectName() );
+                                      project_context.AdditionalLinkerOptions(),
+                                      project_context.ProjectName() );
 	    }
-	    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+	    else if (general_context.m_BuildType == 
+                                CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
             return new CLinkerToolImpl<SRelease, SApp>(
-                                                project_context.AdditionalLinkerOptions(),
-                                                project_context.ProjectName() );
+                                      project_context.AdditionalLinkerOptions(),
+                                      project_context.ProjectName() );
 	    }
     }
-    else if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eLib) {
+    else if (general_context.m_Type == 
+                                    CMsvcPrjGeneralContext::TTargetType::eLib) {
 
         return new CLinkerToolDummyImpl();
     }
-    else if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eDll) {
+    else if (general_context.m_Type == 
+                                    CMsvcPrjGeneralContext::TTargetType::eDll) {
 
-        if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+        if (general_context.m_BuildType == 
+                                   CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
             return new CLinkerToolImpl<SDebug, SDll>(
                                     project_context.AdditionalLinkerOptions(),
                                     project_context.ProjectName() );
 	    }
-	    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eRelease) {
+	    else if (general_context.m_BuildType == 
+                                 CMsvcPrjGeneralContext::TBuildType::eRelease) {
 
             return new CLinkerToolImpl<SRelease, SDll>(
                                     project_context.AdditionalLinkerOptions(),
@@ -488,14 +615,16 @@ static ILinkerTool * s_CreateLinkerTool(
     return NULL;
 }
 
+
 static ILibrarianTool * s_CreateLibrarianTool(
-                                        const CMsvcPrjGeneralContext& general_context,
-                                        const CMsvcPrjProjectContext& project_context)
+                                  const CMsvcPrjGeneralContext& general_context,
+                                  const CMsvcPrjProjectContext& project_context)
 {
-    if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eLib) {
+    if (general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eLib) {
 	    
-	    return new CLibrarianToolImpl(project_context.AdditionalLibrarianOptions(),
-								      project_context.ProjectName() );
+	    return new CLibrarianToolImpl(
+                                   project_context.AdditionalLibrarianOptions(),
+								   project_context.ProjectName() );
     }
     else {
 
@@ -503,17 +632,20 @@ static ILibrarianTool * s_CreateLibrarianTool(
     }
 }
 
+
 static IResourceCompilerTool * s_CreateResourceCompilerTool(
-                                        const CMsvcPrjGeneralContext& general_context,
-                                        const CMsvcPrjProjectContext& project_context)
+                                  const CMsvcPrjGeneralContext& general_context,
+                                  const CMsvcPrjProjectContext& project_context)
 {
-    if(general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eDll) {
+    if (general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eDll) {
 	    
-	    if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+	    if (general_context.m_BuildType == 
+                                   CMsvcPrjGeneralContext::TBuildType::eDebug) {
 
 		    return new CResourceCompilerToolImpl<SDebug>();
 	    }
-	    else if(general_context.m_BuildType == CMsvcPrjGeneralContext::TBuildType::eDebug) {
+	    else if (general_context.m_BuildType == 
+                                   CMsvcPrjGeneralContext::TBuildType::eDebug) {
 	    
 		    return new CResourceCompilerToolImpl<SRelease>();
 	    }
@@ -526,5 +658,8 @@ static IResourceCompilerTool * s_CreateResourceCompilerTool(
     return NULL;
 }
 
+
+//------------------------------------------------------------------------------
+END_NCBI_SCOPE
 
 

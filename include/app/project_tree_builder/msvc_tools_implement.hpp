@@ -7,7 +7,9 @@
 #include <app/project_tree_builder/msvc_traits.hpp>
 
 #include <corelib/ncbienv.hpp>
-USING_NCBI_SCOPE;
+
+BEGIN_NCBI_SCOPE
+//------------------------------------------------------------------------------
 
 
 template <class ConfTrait> 
@@ -448,5 +450,7 @@ DEFINE_NAME_ONLY_DUMMY_TOOL(CAuxiliaryManagedWrapperGeneratorToolDummyImpl,
                             "VCAuxiliaryManagedWrapperGeneratorTool");
 
 
+//------------------------------------------------------------------------------
+END_NCBI_SCOPE
 
-#endif TOOLS_IMPLEMENT_HEADER
+#endif // TOOLS_IMPLEMENT_HEADER

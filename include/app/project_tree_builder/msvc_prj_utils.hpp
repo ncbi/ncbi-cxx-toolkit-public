@@ -4,8 +4,8 @@
 #include "VisualStudioProject.hpp"
 
 #include <corelib/ncbienv.hpp>
-USING_NCBI_SCOPE;
 
+BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
 
 /// Creates CVisualStudioProject class instanse from file.
@@ -41,5 +41,6 @@ string GenerateSlnGUID(void);
 string SourceFileExt(const string& file_path);
 
 //------------------------------------------------------------------------------        
+END_NCBI_SCOPE
 
 #endif // MSVC_PRJ_UTILS_HEADER

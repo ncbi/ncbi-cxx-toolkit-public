@@ -2,11 +2,12 @@
 #define PROJ_ITEM_HEADER
 
 #include <app/project_tree_builder/file_contents.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
+#include <app/project_tree_builder/proj_utils.hpp>
+#include <app/project_tree_builder/resolver.hpp>
 
 #include <corelib/ncbienv.hpp>
-USING_NCBI_SCOPE;
 
+BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
 
 class CProjItem
@@ -69,10 +70,19 @@ public:
     typedef map<string, CProjItem> TProjects;
     TProjects m_Projects;
 
-    typedef CProjBulderApp::TFiles TFiles;
+    /// full file path / file contents
+    typedef map<string, CSimpleMakeFileContents> TFiles;
+
     static void CreateFrom(	const TFiles& makein, 
                             const TFiles& makelib, 
                             const TFiles& makeapp , CProjectItemsTree * pTree);
+
+    /// Collect all depends for all project items.
+    void GetInternalDepends(list<string> * pDepends) const;
+
+    /// Get depends that are not inside this project tree.
+    void GetExternalDepends(list<string> * pExternalDepends) const;
+
 private:
     void Clear(void);
     void SetFrom(const CProjectItemsTree& projects);
@@ -91,5 +101,47 @@ private:
                                  list<string> * pFullPathes);
 
 };
+
+
+//------------------------------------------------------------------------------
+class CProjectTreeBuilder
+{
+public:
+    typedef map<string, CSimpleMakeFileContents> TFiles;
+
+    //              IN      LIB     APP
+    typedef STriple<TFiles, TFiles, TFiles> TMakeFiles;
+
+    static void BuildOneProjectTree( const string& start_node_path,
+                                     const string& root_src_path,
+                                     CProjectItemsTree *  pTree  );
+
+    static void BuildProjectTree( const string& start_node_path,
+                                  const string& root_src_path,
+                                  CProjectItemsTree *  pTree  );
+private:
+    
+    static void ProcessDir (const string& dir_name, 
+                            bool is_root, 
+                            TMakeFiles * pMakeFiles);
+
+    static void ProcessMakeInFile (const string& file_name, 
+                                   TMakeFiles * pMakeFiles);
+
+    static void ProcessMakeLibFile(const string& file_name, 
+                                   TMakeFiles * pMakeFiles);
+
+    static void ProcessMakeAppFile(const string& file_name, 
+                                   TMakeFiles * pMakeFiles);
+
+    static void ResolveDefs(CSymResolver& resolver, TMakeFiles& makefiles);
+
+};
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+END_NCBI_SCOPE
+
 
 #endif // PROJ_ITEM_HEADER

@@ -5,7 +5,10 @@
 #include <corelib/ncbistr.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 
+
+BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
+
 
 CMsvcSolutionGenerator::CMsvcSolutionGenerator(const list<string>& configs)
     :m_Configs(configs),
@@ -34,7 +37,7 @@ void CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     CDir(m_SolutionDir).CreatePath();
 
     CNcbiOfstream  ofs(file_path.c_str(), ios::out | ios::trunc);
-    if(!ofs)
+    if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
     //Start sln file
@@ -103,7 +106,7 @@ CMsvcSolutionGenerator::CPrjContext::CPrjContext(const CProjItem& project)
 CMsvcSolutionGenerator::CPrjContext& 
     CMsvcSolutionGenerator::CPrjContext::operator = (const CPrjContext& context)
 {
-    if(this != &context)
+    if (this != &context)
     {
         Clear();
         SetFrom(context);
@@ -153,6 +156,8 @@ void CMsvcSolutionGenerator::CPrjContext::SetFrom(
 //	EndProjectSection
 //EndProject
 
+
+
 void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream& ofs, 
                              const CMsvcSolutionGenerator::CPrjContext& project)
 {
@@ -180,7 +185,8 @@ void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream& ofs,
 
             const CPrjContext& prj_i = n->second;
 
-            ofs << '\t' << '\t' << prj_i.m_GUID << " = " << prj_i.m_GUID << endl;
+            ofs << '\t' 
+                << '\t' << prj_i.m_GUID << " = " << prj_i.m_GUID << endl;
         }
         else {
 
@@ -236,4 +242,7 @@ void CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream& ofs,
             << endl;
     }
 }
+
+
 //------------------------------------------------------------------------------
+END_NCBI_SCOPE

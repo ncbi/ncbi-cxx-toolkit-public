@@ -7,9 +7,10 @@
 #include <corelib/ncbifile.hpp>
 #include <app/project_tree_builder/file_contents.hpp>
 #include <app/project_tree_builder/resolver.hpp>
+#include <app/project_tree_builder/proj_utils.hpp>
 
-USING_NCBI_SCOPE;
 
+BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
 
 class CProjBulderApp : public CNcbiApplication
@@ -23,8 +24,6 @@ public:
     /// Singleton
     friend CProjBulderApp& GetApp();
 
-    /// full file path / file contents
-    typedef map<string, CSimpleMakeFileContents> TFiles;
 
 private:
     CProjBulderApp(void);
@@ -36,10 +35,7 @@ private:
     /// Parse program arguments.
     void ParseArguments(void);
 
-    void ProcessDir (const string& dir_name, bool is_root);
-    void ProcessMakeInFile (const string& file_name);
-    void ProcessMakeLibFile(const string& file_name);
-    void ProcessMakeAppFile(const string& file_name);
+
 
     /// Root dir of building tree.
     string m_Root;
@@ -54,15 +50,15 @@ private:
     string m_Solution;
 
 
-    TFiles m_FilesMakeIn;
-    TFiles m_FilesMakeLib;
-    TFiles m_FilesMakeApp;
+    //TFiles m_FilesMakeIn;
+    //TFiles m_FilesMakeLib;
+    //TFiles m_FilesMakeApp;
 
+    typedef map<string, CSimpleMakeFileContents> TFiles;
     void DumpFiles(const TFiles& files, const string& filename) const;
 
+public:
     void GetMetaDataFiles(list<string> * pFiles) const;
-    /// Several resolvers may be used 
-    void ResolveDefs( CSymResolver& resolver );
 
     void GetBuildConfigs(list<string> * pConfigs);
 };
@@ -104,5 +100,6 @@ public:
 };
 
 //------------------------------------------------------------------------------
+END_NCBI_SCOPE
 
 #endif

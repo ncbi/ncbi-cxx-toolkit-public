@@ -3,7 +3,9 @@
 
 #include <string>
 #include <corelib/ncbienv.hpp>
-USING_NCBI_SCOPE;
+
+BEGIN_NCBI_SCOPE
+//------------------------------------------------------------------------------
 
 //traits for MSVC projects:
 
@@ -274,8 +276,7 @@ struct SDll
     }
 };
 
-
-
-
+//------------------------------------------------------------------------------
+END_NCBI_SCOPE
 
 #endif // MSVC_TRAITS_HEADER

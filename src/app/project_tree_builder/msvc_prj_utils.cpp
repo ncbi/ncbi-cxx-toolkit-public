@@ -5,6 +5,9 @@
 #include <serial/serial.hpp>
 
 
+BEGIN_NCBI_SCOPE
+//------------------------------------------------------------------------------
+
 CVisualStudioProject * LoadFromXmlFile(const string& file_path)
 {
     auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_Xml, 
@@ -120,12 +123,16 @@ string SourceFileExt(const string& file_path)
     string source_file_prefix = CDirEntry::ConcatPath(dir, base);
 
     string file_path_cpp = source_file_prefix + ".cpp";
-    if(CFile(file_path_cpp).Exists()) 
+    if ( CFile(file_path_cpp).Exists() ) 
         return ".cpp";
 
     string file_path_c = source_file_prefix + ".c";
-    if(CFile(file_path_c).Exists()) 
+    if ( CFile(file_path_c).Exists() ) 
         return ".c";
 
     return "";
 }
+
+
+//------------------------------------------------------------------------------
+END_NCBI_SCOPE

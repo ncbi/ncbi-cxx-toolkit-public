@@ -10,7 +10,10 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbienv.hpp>
 
-USING_NCBI_SCOPE;
+
+BEGIN_NCBI_SCOPE
+//------------------------------------------------------------------------------
+
 
 class CSymResolver
 {
@@ -36,5 +39,8 @@ private:
 
     CSimpleMakeFileContents::TContents m_Cache;
 };
+
+//------------------------------------------------------------------------------
+END_NCBI_SCOPE
 
 #endif //RESOLVER_01072004_HEADER

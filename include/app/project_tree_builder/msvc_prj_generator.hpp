@@ -6,8 +6,8 @@
 #include <app/project_tree_builder/msvc_project_context.hpp>
 
 #include <corelib/ncbienv.hpp>
-USING_NCBI_SCOPE;
 
+BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
 
 class CMsvcProjectGenerator
@@ -35,5 +35,6 @@ private:
 };
 
 //------------------------------------------------------------------------------
+END_NCBI_SCOPE
 
 #endif // MSVC_PRJ_GENERATOR_HEADER

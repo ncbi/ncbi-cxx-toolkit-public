@@ -2,7 +2,7 @@
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <corelib/ncbistr.hpp>
 
-
+BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
 
 CSimpleMakeFileContents::CSimpleMakeFileContents(void)
@@ -58,7 +58,7 @@ void CSimpleMakeFileContents::LoadFrom(const string& path,
     pFC->Clear();
 
     CNcbiIfstream ifs(path.c_str());
-    if(!ifs)
+    if ( !ifs )
         NCBI_THROW(CProjBulderAppException, eFileOpen, path);
 
     parser.StartParse();
@@ -112,7 +112,7 @@ static void s_StripContinueStr(string * pStr)
 static bool s_SplitKV(const string& line, string * pKey, string * pValue)
 {
     bool ok = NStr::SplitInTwo(line, "=", *pKey, *pValue);
-    if(!ok) 
+    if ( !ok ) 
 	    return false;
 
     *pKey = NStr::TruncateSpaces(*pKey); // only for key - preserve sp for vals
@@ -182,7 +182,7 @@ void CSimpleMakeFileContents::SParser::EndParse(void)
 
 void CSimpleMakeFileContents::AddReadyKV(const pair<string, string>& kv)
 {
-    if(kv.first.empty()) 
+    if ( kv.first.empty() ) 
 	    return;
 
     list<string> values;
@@ -192,3 +192,4 @@ void CSimpleMakeFileContents::AddReadyKV(const pair<string, string>& kv)
 }
 
 //------------------------------------------------------------------------------
+END_NCBI_SCOPE

@@ -8,9 +8,8 @@
 #include <app/project_tree_builder/proj_item.hpp>
 
 #include <corelib/ncbienv.hpp>
-USING_NCBI_SCOPE;
 
-
+BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
 
 class CMsvcPrjProjectContext
@@ -342,5 +341,7 @@ private:
 
 
 
+//------------------------------------------------------------------------------
+END_NCBI_SCOPE
 
 #endif // PROJECT_CONTEXT_HEADER

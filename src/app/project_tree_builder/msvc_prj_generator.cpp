@@ -13,7 +13,10 @@
 
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 
+
+BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
+
 static void s_CreateMsvcRelScrPathes(const string&       path_from,
                                      const list<string>& abs_pathes,
                                      list<string> *      pRelPathes);
@@ -404,7 +407,8 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         //Resource Files - header files - empty
         CRef<CFilter> filter(new CFilter());
         filter->SetAttlist().SetName("Resource Files");
-        filter->SetAttlist().SetFilter("rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx");
+        filter->SetAttlist().SetFilter(
+                    "rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx");
         filter->SetFile();
 
         xmlprj.SetFiles().SetFilter().push_back(filter);
@@ -438,7 +442,7 @@ static void s_CreateMsvcRelScrPathes(const string&       path_from,
     ITERATE(list<string>, p, abs_pathes) {
 
         string ext = SourceFileExt(*p);
-        if( !ext.empty() ) {
+        if ( !ext.empty() ) {
 
             string source_file_abs_path = *p + ext;
             pRelPathes->push_back(CDirEntry::CreateRelativePath(path_from, 
@@ -465,13 +469,13 @@ static void s_CollectRelPathes(const string&        path_from,
         ITERATE(list<string>, n, abs_dirs) {
 
             CDir dir(*n);
-            if( !dir.Exists() )
+            if ( !dir.Exists() )
                 continue;
 
             CDir::TEntries contents = dir.GetEntries("*" + *p);
             ITERATE(CDir::TEntries, i, contents) {
 
-                if( (*i)->IsFile() ) {
+                if ( (*i)->IsFile() ) {
                     string path  = (*i)->GetPath();
                     pathes.push_back(path);
                 }
@@ -484,3 +488,7 @@ static void s_CollectRelPathes(const string&        path_from,
         pRelPathes->push_back(CDirEntry::CreateRelativePath(path_from, *p));
     }
 }
+
+
+//------------------------------------------------------------------------------
+END_NCBI_SCOPE

@@ -4,8 +4,8 @@
 #include <app/project_tree_builder/msvc_project_context.hpp>
 
 #include <corelib/ncbienv.hpp>
-USING_NCBI_SCOPE;
 
+BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
 
 class CMsvcSolutionGenerator
@@ -64,5 +64,6 @@ private:
 };
 
 //------------------------------------------------------------------------------
+END_NCBI_SCOPE
 
 #endif // MSVC_SLN_GENERATOR_HEADER

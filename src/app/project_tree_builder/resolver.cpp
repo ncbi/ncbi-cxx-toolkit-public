@@ -1,6 +1,11 @@
 #include <app/project_tree_builder/resolver.hpp>
 #include <corelib/ncbistr.hpp>
 
+
+BEGIN_NCBI_SCOPE
+//------------------------------------------------------------------------------
+
+
 CSymResolver::CSymResolver(void)
 {
     Clear();
@@ -21,7 +26,7 @@ CSymResolver::CSymResolver(const string& file_path)
 
 CSymResolver& CSymResolver::operator = (const CSymResolver& resolver)
 {
-    if(this != &resolver)
+    if (this != &resolver)
     {
 	    Clear();
 	    SetFrom(resolver);
@@ -51,7 +56,8 @@ void CSymResolver::Resolve(const string& define, list<string> * pResolvedDef)
 
     string str_define = s_StripDefine(define);
 
-    CSimpleMakeFileContents::TContents::const_iterator m = m_Cache.find(str_define);
+    CSimpleMakeFileContents::TContents::const_iterator m = m_Cache.find(
+                                                                    str_define);
     if (m != m_Cache.end()) {
 	    *pResolvedDef = m->second;
 	    return;
@@ -101,4 +107,6 @@ void CSymResolver::SetFrom(const CSymResolver& resolver)
     m_Cache = resolver.m_Cache;
 }
 
+//------------------------------------------------------------------------------
+END_NCBI_SCOPE
 
