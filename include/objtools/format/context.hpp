@@ -168,6 +168,7 @@ public:
     const CSeq_entry_Handle& GetEntry(void) const;
     const CFlatFileConfig& Config(void) const;
     const SAnnotSelector* GetAnnotSelector(void) const;
+    SAnnotSelector& SetAnnotSelector(void);
     const CSeq_loc* GetMasterLocation(void) const;
     bool IsGenbankFormat(void) const;
 
@@ -434,6 +435,12 @@ const SAnnotSelector* CBioseqContext::GetAnnotSelector(void) const
 }
 
 inline
+SAnnotSelector& CBioseqContext::SetAnnotSelector(void)
+{
+    return m_FFCtx.SetAnnotSelector();
+}
+
+inline
 const CSeq_loc* CBioseqContext::GetMasterLocation(void) const
 {
     return m_FFCtx.GetLocation();
@@ -507,6 +514,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/09/02 15:39:46  shomrat
+* + SetAnnotSelector()
+*
 * Revision 1.18  2004/05/19 14:45:50  shomrat
 * + CFlatFileContext::Reset
 *
