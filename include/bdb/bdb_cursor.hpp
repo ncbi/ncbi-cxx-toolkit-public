@@ -115,6 +115,10 @@ public:
     ~CBDB_FileCursor();
 
     void SetCondition(ECondition cond_from, ECondition cond_to = eNotSet);
+    void SetFetchDirection(EFetchDirection fdir);
+    EFetchDirection GetFetchDirection() const { return m_FetchDirection; }
+    EFetchDirection GetReverseFetchDirection() const;
+    void ReverseFetchDirection();
 
     EBDB_ErrCode FetchFirst();    
     EBDB_ErrCode Fetch(EFetchDirection fdir = eDefault);
@@ -183,7 +187,26 @@ IBDB_FieldConvert& CBDB_FileCursor::GetFieldConvert(CBDB_BufferManager& buf,
     return static_cast<IBDB_FieldConvert&> (buf.GetField(n));
 }
 
+inline
+void CBDB_FileCursor::SetFetchDirection(EFetchDirection fdir)
+{
+    m_FetchDirection = fdir;
+}
 
+inline
+CBDB_FileCursor::EFetchDirection 
+CBDB_FileCursor::GetReverseFetchDirection() const
+{
+    if (m_FetchDirection == eForward) return eBackward;
+    return eForward;
+}
+
+inline
+void CBDB_FileCursor::ReverseFetchDirection()
+{
+    if (m_FetchDirection == eForward) m_FetchDirection = eBackward;
+    if (m_FetchDirection == eBackward) m_FetchDirection = eForward;
+}
 
 END_NCBI_SCOPE
 
@@ -192,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/18 20:09:38  kuznets
+ * Added several FetchDirection manipulation functions.
+ *
  * Revision 1.5  2003/06/27 18:57:16  dicuccio
  * Uninlined strerror() adaptor.  Changed to use #include<> instead of #include ""
  *
