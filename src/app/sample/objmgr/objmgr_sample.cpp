@@ -150,22 +150,6 @@ int CSampleObjmgrApplication::Run(void)
     }
 
     /////////////////////////////////////////////////////////////////////////
-    // Get the bioseq core, which is CBioseq with only most important
-    // members (Id and parts of Inst) guaranteed to be set.
-    CBioseq_Handle::TBioseqCore bioseq_core = bioseq_handle.GetBioseqCore();
-    // Printout each Seq-id from the Bioseq.
-    NcbiCout << "ID: ";
-    // "iterate" is the same as:
-    // for (CBioseq::TId::const_iterator id_it = bioseq_core->GetId().begin();
-    //      id_it != bioseq->GetId().end(); ++id_it)
-    ITERATE (CBioseq::TId, id_it, bioseq_core->GetId()) {
-        if (id_it != bioseq_core->GetId().begin())
-            NcbiCout << " + "; // print id separator
-        NcbiCout << (*id_it)->DumpAsFasta();
-    }
-    NcbiCout << NcbiEndl;
-
-    /////////////////////////////////////////////////////////////////////////
     // Get the sequence using CSeqVector.
     // Use Iupac encoding: CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
     CSeqVector seq_vect = bioseq_handle.GetSeqVector
@@ -288,6 +272,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2004/11/24 16:22:24  grichenk
+ * Do not use GetBioseqCore() to get IDs
+ *
  * Revision 1.21  2004/11/01 19:33:08  grichenk
  * Removed deprecated methods
  *
