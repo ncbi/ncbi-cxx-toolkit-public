@@ -99,7 +99,7 @@ public:
             }}
             cnt += sleep_ms;
             if (cnt > timeout * 1000) {
-                NCBI_THROW(CNetCacheException, 
+                NCBI_THROW(CNetServiceException, 
                            eTimeout, "Failed to lock object");
             }
             SleepMilliSec(sleep_ms);
@@ -134,11 +134,12 @@ private:
 ///
 struct NetCache_RequestStat
 {
-    time_t    conn_time;    ///< request incoming time in seconds
-    unsigned  req_code;     ///< 'P' put, 'G' get
-    size_t    blob_size;    ///< BLOB size
-    double    elapsed;      ///< total time in seconds to process request
-    double    comm_elapsed; ///< time spent reading/sending data
+    time_t       conn_time;    ///< request incoming time in seconds
+    unsigned     req_code;     ///< 'P' put, 'G' get
+    size_t       blob_size;    ///< BLOB size
+    double       elapsed;      ///< total time in seconds to process request
+    double       comm_elapsed; ///< time spent reading/sending data
+    string       peer_address; ///< Client's IP address
 };
 
 /// @internal
@@ -158,6 +159,8 @@ public:
         string msg, tmp;
         CTime tm(stat.conn_time);
         msg += auth;
+        msg += ';';
+        msg += stat.peer_address;
         msg += ';';
         msg += tm.AsString();
         msg += ';';
@@ -351,9 +354,9 @@ bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
     case eIO_Closed: // following read will return EOF
         return true;  
     case eIO_Timeout:
-        NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
+        NCBI_THROW(CNetServiceException, eTimeout, kEmptyStr);
     default:
-        NCBI_THROW(CNetCacheException, 
+        NCBI_THROW(CNetServiceException, 
                    eCommunicationError, "Socket Wait error.");
         return false;
     }
@@ -392,16 +395,17 @@ void CNetCacheServer::Process(SOCK sock)
         CStopWatch              sw(false); // OFF by default
         bool is_log = IsLog();
 
+        CSocket socket;
+        socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
+
         if (is_log) {
             stat.conn_time = CTime(CTime::eCurrent).GetTimeT();
             stat.blob_size = 0;
             stat.comm_elapsed = 0;
+            stat.peer_address = socket.GetPeerAddress();
             sw.Start();
         }
 
-
-        CSocket socket;
-        socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
 
         // Set socket parameters
 
@@ -493,6 +497,10 @@ void CNetCacheServer::Process(SOCK sock)
     {
         ERR_POST("Server error: " << ex.what());
     }
+    catch (CNetServiceException& ex)
+    {
+        ERR_POST("Server error: " << ex.what());
+    }
     catch (exception& ex)
     {
         ERR_POST("Execution error in command " << request << " " << ex.what());
@@ -515,7 +523,7 @@ void CNetCacheServer::ProcessShutdown()
 
 void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
 {
-    WriteMsg(sock, "OK:", "NCBI NetCache server version=1.2");
+    WriteMsg(sock, "OK:", "NCBI NetCache server version=1.2.1");
 }
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
@@ -548,11 +556,11 @@ void CNetCacheServer::x_WriteBuf(CSocket& sock,
         case eIO_Success:
             break;
         case eIO_Timeout:
-            NCBI_THROW(CNetCacheException, 
+            NCBI_THROW(CNetServiceException, 
                        eTimeout, "Communication timeout error");
             break;
         default:
-            NCBI_THROW(CNetCacheException, 
+            NCBI_THROW(CNetServiceException, 
               eCommunicationError, "Communication error (cannot send data)");
             break;
         } // switch
@@ -849,14 +857,14 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock,
             break;
         case eIO_Timeout:
             if (*read_length == 0) {
-                NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
+                NCBI_THROW(CNetServiceException, eTimeout, kEmptyStr);
             }
             break;
         case eIO_Closed:
             ret_flag = false;
             break;
         default: // invalid socket or request
-            NCBI_THROW(CNetCacheException, eCommunicationError, kEmptyStr);
+            NCBI_THROW(CNetServiceException, eCommunicationError, kEmptyStr);
         };
         buf_size -= nn_read;
 
@@ -892,7 +900,7 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
             flag = false;
             break;
         case eIO_Timeout:
-            NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
+            NCBI_THROW(CNetServiceException, eTimeout, kEmptyStr);
             break;
         default: // invalid socket or request, bailing out
             return false;
@@ -1176,7 +1184,8 @@ int CNetCacheDApp::Run(void)
 
 
 /// @internal
-extern "C" void Threaded_Server_SignalHandler( int )
+extern "C" 
+void Threaded_Server_SignalHandler( int )
 {
     if (s_netcache_server && 
         (!s_netcache_server->ShutdownRequested()) ) {
@@ -1202,6 +1211,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/02/07 13:06:37  kuznets
+ * Logging improvements
+ *
  * Revision 1.36  2005/01/24 17:21:40  vasilche
  * Removed redundant comparison "bool != false".
  *
