@@ -89,7 +89,11 @@ CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
       m_Flags(flags)
 {
     x_Push(seqMap, 0, seqMap->GetLength(scope), false, pos);
-    while ( x_Push(pos - m_Position, m_MaxResolveCount > 0) ) {
+    while ( !x_Found() ) {
+        if ( !x_Push(pos - m_Position, m_MaxResolveCount > 0) ) {
+            x_SettleNext();
+            break;
+        }
     }
 }
 
@@ -401,6 +405,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/02/27 16:29:19  vasilche
+* Fixed lost features from first segment.
+*
 * Revision 1.9  2003/02/25 14:48:29  vasilche
 * Removed performance warning on Windows.
 *

@@ -549,9 +549,8 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
                                                 m_Scope,
                                                 size_t(-1),
                                                 CSeqMap::fFindRef));
-            if ( smit && smit.GetType() != CSeqMap::eSeqRef )
-                ++smit;
             while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
+                _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
                 if ( limit_tse ) {
                     CBioseq_Handle bh2 =
                         m_Scope->GetBioseqHandle(smit.GetRefSeqid());
@@ -745,6 +744,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/02/27 16:29:27  vasilche
+* Fixed lost features from first segment.
+*
 * Revision 1.46  2003/02/27 14:35:32  vasilche
 * Splitted PopulateTSESet() by logically independent parts.
 *
