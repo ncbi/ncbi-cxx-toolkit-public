@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/03/02 20:09:51  lavr
+ * Support added for SERV_LOCALHOST as preferred_host.
+ *
  * Revision 6.13  2001/03/01 00:31:23  lavr
  * SERV_OpenSimple now builds SConnNetInfo to use both LBSMD and DISPD.CGI
  *
@@ -37,7 +40,7 @@
  * Modified: fSERV_StatelessOnly overrides info->stateless
  *
  * Revision 6.11  2001/01/25 17:05:32  lavr
- * Bugfix in SERV_OpenEx: op was not initted to 0
+ * Bugfix in SERV_OpenEx: op was not inited to 0
  *
  * Revision 6.10  2001/01/08 23:47:29  lavr
  * (unsigned char) conversion in isspace
@@ -139,7 +142,9 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
     iter->service = (char *)iter + sizeof(*iter);
     strcpy((char *)iter->service, service);
     iter->type = type;
-    iter->preferred_host = preferred_host;
+    iter->preferred_host =
+        preferred_host == SERV_LOCALHOST ?
+        SOCK_gethostaddr(0) : preferred_host;
     iter->n_skip = iter->n_max_skip = 0;
     iter->skip = 0;
     iter->op = 0;
