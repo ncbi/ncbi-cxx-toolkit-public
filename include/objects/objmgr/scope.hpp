@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/05 21:47:21  gouriano
+* added FindSeqid function, minor tuneup in CSeq_id_mapper
+*
 * Revision 1.5  2002/01/28 19:45:33  gouriano
 * changed the interface of BioseqHandle: two functions moved from Scope
 *
@@ -109,6 +112,11 @@ public:
     // Get bioseq handle by seq-id
     // Declared "virtual" to avoid circular dependencies with seqloc
     virtual CBioseq_Handle  GetBioseqHandle(const CSeq_id& id);
+
+    // Find set of CSeq_id by a string identifier
+    // The latter could be name, accession, something else
+    // which could be found in CSeq_id
+    void FindSeqid( set< CRef<const CSeq_id> >& setId, const string& searchBy) const;
 
     // Find mode flags: how to treat duplicate IDs within the same scope
     enum EFindMode {

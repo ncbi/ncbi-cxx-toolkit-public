@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/02/05 21:46:28  gouriano
+* added FindSeqid function, minor tuneup in CSeq_id_mapper
+*
 * Revision 1.7  2002/01/29 17:45:34  grichenk
 * Removed debug output
 *
@@ -172,6 +175,17 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
         }
     }
     return found;
+}
+
+
+void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
+                       const string& searchBy) const
+{
+    CMutexGuard guard(sm_Scope_Mutex);
+    setId.clear();
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        (*it)->FindSeqid( setId, searchBy);
+    }
 }
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/02/05 21:46:28  gouriano
+* added FindSeqid function, minor tuneup in CSeq_id_mapper
+*
 * Revision 1.2  2002/02/01 21:49:51  gouriano
 * minor changes to make it compilable and run on Solaris Workshop
 *
@@ -59,6 +62,16 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/////////////////////////////////////////////////////////////////////////////
+// to make map<string, something> case-insensitive
+
+struct seqid_string_less
+{
+    bool operator()(const string& s1, const string& s2) const
+    {
+        return (NStr::CompareNocase(s1, s2) < 0);
+    }
+};
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -351,7 +364,7 @@ protected:
 
 private:
     typedef list<CSeq_id_Handle>   TVersions;
-    typedef map<string, TVersions> TStringMap;
+    typedef map<string, TVersions, seqid_string_less> TStringMap;
     TSeq_id_Info x_FindVersionEqual(const TVersions& ver_list,
                                     const CTextseq_id& tid) const;
     void x_FindVersionMatch(const TVersions& ver_list,
@@ -777,7 +790,7 @@ protected:
     virtual void x_DropHandle(const CSeq_id_Handle& handle);
 
 private:
-    typedef map<string, CSeq_id_Handle> TByStr;
+    typedef map<string, CSeq_id_Handle, seqid_string_less> TByStr;
     typedef map<int, CSeq_id_Handle>    TById;
 
     TByStr m_ByStr;
@@ -901,13 +914,13 @@ protected:
 private:
     struct STagMap {
     public:
-        typedef map<string, CSeq_id_Handle> TByStr;
+        typedef map<string, CSeq_id_Handle, seqid_string_less> TByStr;
         typedef map<int, CSeq_id_Handle>    TById;
 
         TByStr m_ByStr;
         TById  m_ById;
     };
-    typedef map<string, STagMap> TDbMap;
+    typedef map<string, STagMap, seqid_string_less> TDbMap;
 
     TDbMap m_DbMap;
 };
@@ -1156,12 +1169,12 @@ private:
     // Ignoring patent doc-type in indexing.
     struct SPat_idMap {
         typedef map<int, CSeq_id_Handle> TBySeqid;
-        typedef map<string, TBySeqid>    TByNumber; // or by App_number
+        typedef map<string, TBySeqid, seqid_string_less>    TByNumber; // or by App_number
 
         TByNumber m_ByNumber;
         TByNumber m_ByApp_number;
     };
-    typedef map<string, SPat_idMap> TByCountry;
+    typedef map<string, SPat_idMap, seqid_string_less> TByCountry;
 
     TByCountry m_CountryMap;
 };
@@ -1320,7 +1333,7 @@ protected:
 private:
     // No index by chain or date - too complicated
     typedef list<CSeq_id_Handle>  TSubMolList;
-    typedef map<string, TSubMolList> TMolMap;
+    typedef map<string, TSubMolList, seqid_string_less> TMolMap;
 
     TMolMap m_MolMap;
 };
@@ -1428,41 +1441,43 @@ CSeq_id_Mapper::CSeq_id_Mapper(void)
 {
     for (int i = 0; i < kKeyUsageTableSize; i++)
         m_KeyUsageTable[i] = 0;
-    m_IdMap[CSeq_id::e_Gi] = CRef<CSeq_id_Which_Tree>
-        (new CSeq_id_Gi_Tree);
+// same order as in seq-id definition, see seqloc.asn
+    m_IdMap[CSeq_id::e_Local] = CRef<CSeq_id_Which_Tree>
+        (new CSeq_id_Local_Tree);
     m_IdMap[CSeq_id::e_Gibbsq] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Gibbsq_Tree);
     m_IdMap[CSeq_id::e_Gibbmt] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Gibbmt_Tree);
+    m_IdMap[CSeq_id::e_Giim] = CRef<CSeq_id_Which_Tree>
+        (new CSeq_id_Giim_Tree);
+    // These three types share the same accessions space
+    CRef<CSeq_id_Which_Tree> gb = new CSeq_id_GB_Tree;
+    m_IdMap[CSeq_id::e_Genbank] = gb;
+    m_IdMap[CSeq_id::e_Embl] = gb;
+    m_IdMap[CSeq_id::e_Ddbj] = gb;
     m_IdMap[CSeq_id::e_Pir] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Pir_Tree);
     m_IdMap[CSeq_id::e_Swissprot] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Swissprot_Tree);
+    m_IdMap[CSeq_id::e_Patent] = CRef<CSeq_id_Which_Tree>
+        (new CSeq_id_Patent_Tree);
+    m_IdMap[CSeq_id::e_Other] = CRef<CSeq_id_Which_Tree>
+        (new CSeq_id_Other_Tree);
+    m_IdMap[CSeq_id::e_General] = CRef<CSeq_id_Which_Tree>
+        (new CSeq_id_General_Tree);
+    m_IdMap[CSeq_id::e_Gi] = CRef<CSeq_id_Which_Tree>
+        (new CSeq_id_Gi_Tree);
+//// see above    m_IdMap[CSeq_id::e_Ddbj] = gb;
     m_IdMap[CSeq_id::e_Prf] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Prf_Tree);
+    m_IdMap[CSeq_id::e_Pdb] = CRef<CSeq_id_Which_Tree>
+        (new CSeq_id_PDB_Tree);
     m_IdMap[CSeq_id::e_Tpg] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Tpg_Tree);
     m_IdMap[CSeq_id::e_Tpe] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Tpe_Tree);
     m_IdMap[CSeq_id::e_Tpd] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Tpd_Tree);
-    m_IdMap[CSeq_id::e_Other] = CRef<CSeq_id_Which_Tree>
-        (new CSeq_id_Other_Tree);
-    m_IdMap[CSeq_id::e_Local] = CRef<CSeq_id_Which_Tree>
-        (new CSeq_id_Local_Tree);
-    m_IdMap[CSeq_id::e_General] = CRef<CSeq_id_Which_Tree>
-        (new CSeq_id_General_Tree);
-    m_IdMap[CSeq_id::e_Giim] = CRef<CSeq_id_Which_Tree>
-        (new CSeq_id_Giim_Tree);
-    m_IdMap[CSeq_id::e_Patent] = CRef<CSeq_id_Which_Tree>
-        (new CSeq_id_Patent_Tree);
-    m_IdMap[CSeq_id::e_Pdb] = CRef<CSeq_id_Which_Tree>
-        (new CSeq_id_PDB_Tree);
-    // These three types share the same accessions space
-    CRef<CSeq_id_Which_Tree> gb = new CSeq_id_GB_Tree;
-    m_IdMap[CSeq_id::e_Genbank] = gb;
-    m_IdMap[CSeq_id::e_Embl] = gb;
-    m_IdMap[CSeq_id::e_Ddbj] = gb;
 }
 
 
@@ -1500,7 +1515,6 @@ void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id& id,
 void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
                                         TSeq_id_HandleSet& h_set)
 {
-    sid = NStr::ToUpper(sid);
     CSeq_id_Which_Tree::TSeq_id_MatchList m_list;
     iterate(TIdMap, map_it, m_IdMap) {
         map_it->second->FindMatchStr(sid, m_list);

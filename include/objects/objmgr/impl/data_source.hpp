@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/05 21:46:28  gouriano
+* added FindSeqid function, minor tuneup in CSeq_id_mapper
+*
 * Revision 1.5  2002/01/29 17:45:00  grichenk
 * Added seq-id handles locking
 *
@@ -111,13 +114,18 @@ public:
     /// Return "NULL" handle if the Bioseq cannot be resolved.
     CBioseq_Handle GetBioseqHandle(CScope& scope, const CSeq_id& id);
 
+    // Find set of CSeq_id by a string identifier
+    // The latter could be name, accession, something else
+    // which could be found in CSeq_id
+    void FindSeqid( set< CRef<const CSeq_id> >& setId, const string& searchBy) const;
+
     // Remove TSE from the datasource, update indexes
     bool DropTSE(const CSeq_entry& tse);
 
     // Contains (or can load) any entries?
     bool IsEmpty(void) const;
 
-    CSeq_id_Mapper& GetIdMapper(void);
+    CSeq_id_Mapper& GetIdMapper(void) const;
 
     /// Get the complete Bioseq (as loaded by now)
     const CBioseq& GetBioseq(const CBioseq_Handle& handle);
@@ -241,7 +249,7 @@ bool CDataSource::IsEmpty(void) const
 }
 
 inline
-CSeq_id_Mapper& CDataSource::GetIdMapper(void)
+CSeq_id_Mapper& CDataSource::GetIdMapper(void) const
 {
     return *m_ObjMgr->m_IdMapper;
 }

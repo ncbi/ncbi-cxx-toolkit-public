@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/02/05 21:46:28  gouriano
+* added FindSeqid function, minor tuneup in CSeq_id_mapper
+*
 * Revision 1.9  2002/02/04 21:16:27  gouriano
 * minor changes to make it run correctly on Solaris
 *
@@ -776,6 +779,12 @@ int CTestApp::Run(void)
             "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
             "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
             0, 0, 0, 0, 0);
+
+        // Find seq_id
+        {
+            set< CRef<const CSeq_id> > setId;
+            Scope.FindSeqid(setId, "seq11");
+        }
     }
     
     CScope* pScope;

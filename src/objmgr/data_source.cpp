@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/02/05 21:46:28  gouriano
+* added FindSeqid function, minor tuneup in CSeq_id_mapper
+*
 * Revision 1.7  2002/01/30 22:09:28  gouriano
 * changed CSeqMap interface
 *
@@ -198,6 +201,22 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
         return CBioseq_Handle();
     h.x_ResolveTo(scope, *this, *found->second->m_Entry);
     return h;
+}
+
+
+void CDataSource::FindSeqid(set< CRef<const CSeq_id> >& setSeqId,
+                            const string& searchBy) const
+{
+    TSeq_id_HandleSet setHandles;
+    GetIdMapper().GetMatchingHandlesStr( searchBy, setHandles);
+    // for each handle
+    iterate( TSeq_id_HandleSet, itHandle, setHandles) {
+        // if it is in my map
+        if (m_BioseqMap.find(*itHandle) != m_BioseqMap.end()) {
+            // insert seq_id in the set
+            setSeqId.insert( &(GetIdMapper().GetSeq_id(*itHandle)));
+        }
+    }
 }
 
 
