@@ -440,7 +440,7 @@ CAnnotTypes_CI::EConverted CAnnotTypes_CI::x_ConvertLocToMaster(const CSeq_loc& 
                     dest.SetInt().SetTo
                         ((*conv_it)->m_RefMax + (*conv_it)->m_RefShift);
                     TSeqPos seqLen =
-                        m_Scope->GetBioseqHandle(src.GetInt().GetId())
+                        m_Scope->GetBioseqHandle(src.GetWhole())
                         .GetSeqMap().GetLength(m_Scope);
                     if (dest.GetInt().GetLength() < seqLen)
                         conv_res = ePartial;
@@ -625,6 +625,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/02/12 19:17:31  vasilche
+* Fixed GetInt() when CSeq_loc is Whole.
+*
 * Revision 1.39  2003/02/10 15:53:24  grichenk
 * Sort features by mapped location
 *
