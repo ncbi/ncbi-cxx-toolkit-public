@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.64  2004/04/30 12:58:49  camacho
+ * Replace RPSKarlinLambdaNR by Blast_KarlinLambdaNR
+ *
  * Revision 1.63  2004/04/29 20:32:38  papadopo
  * remove RPS_SCORE_MIN, since it turned out to be a workaround for a bug that has since been fixed
  *
@@ -2144,8 +2147,8 @@ NlmKarlinLambdaNR( double* probs, Int4 d, Int4 low, Int4 high, double lambda0, d
 }
 
 
-static double
-BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
+double
+Blast_KarlinLambdaNR(BLAST_ScoreFreq* sfp, double initialLambdaGuess)
 {
 	Int4	low;			/* Lowest score (must be negative)  */
 	Int4	high;			/* Highest score (must be positive) */
@@ -2170,9 +2173,9 @@ BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 	}
 	returnValue =
 		NlmKarlinLambdaNR( sprob, d, low, high,
-											 BLAST_KARLIN_LAMBDA0_DEFAULT,
-											 BLAST_KARLIN_LAMBDA_ACCURACY_DEFAULT,
-											 20, 20 + BLAST_KARLIN_LAMBDA_ITER_DEFAULT, &itn );
+                           initialLambdaGuess,
+                           BLAST_KARLIN_LAMBDA_ACCURACY_DEFAULT,
+						   20, 20 + BLAST_KARLIN_LAMBDA_ITER_DEFAULT, &itn );
 
 
 	return returnValue;
@@ -2285,7 +2288,7 @@ BlastKarlinBlkCalc(Blast_KarlinBlk* kbp, BLAST_ScoreFreq* sfp)
 
 	/* Calculate the parameter Lambda */
 
-	kbp->Lambda = BlastKarlinLambdaNR(sfp);
+	kbp->Lambda = Blast_KarlinLambdaNR(sfp, BLAST_KARLIN_LAMBDA0_DEFAULT);
 	if (kbp->Lambda < 0.)
 		goto ErrExit;
 
@@ -3543,33 +3546,6 @@ RPSFillResidueProbability(Uint1 * sequence, Int4 length, double * resProb)
     }
 }
 
-double
-RPSKarlinLambdaNR(BLAST_ScoreFreq * sfp, double initialLambda)
-{
-    Int4 itn;
-    double *sprob = sfp->sprob;
-    Boolean foundPositive = FALSE;
-    Int4 j;
-
-    if (sfp->score_avg >= 0.)     /* Expected score must be negative */
-        return -1.0;
-
-    for(j = 1; j <= sfp->obs_max; j++) {
-        if (sprob[j] > 0.0) {
-            foundPositive = TRUE;
-            break;
-        }
-    }
-    if (!foundPositive) 
-        return(-1);
-
-    return NlmKarlinLambdaNR( sprob, 1, sfp->obs_min, sfp->obs_max,
-                             initialLambda, 
-                             BLAST_KARLIN_LAMBDA_ACCURACY_DEFAULT,
-                             20, 20 + BLAST_KARLIN_LAMBDA_ITER_DEFAULT, 
-                             &itn );
-}
-
 /* Calculate a new PSSM, using composition-based statistics, for use
    with RPS BLAST. This function produces a PSSM for a single RPS DB
    sequence (of size db_seq_length) and incorporates information from 
@@ -3605,7 +3581,7 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
 
     initialUngappedLambda = RPSfindUngappedLambda("BLOSUM62");
     scaledInitialUngappedLambda = initialUngappedLambda / scalingFactor;
-    correctUngappedLambda = RPSKarlinLambdaNR(return_sfp, 
+    correctUngappedLambda = Blast_KarlinLambdaNR(return_sfp, 
                                               scaledInitialUngappedLambda);
     sfree(resProb);
     sfree(scoreArray);
