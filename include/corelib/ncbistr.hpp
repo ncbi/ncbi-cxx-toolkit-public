@@ -41,6 +41,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <stdarg.h>
 #include <string>
 #include <list>
 #include <vector>
@@ -310,6 +311,15 @@ public:
     /// @return
     ///   TRUE or FALSE.
     static bool StringToBool(const string& str);
+
+
+    /// Handle an arbitrary printf-style format string.
+    ///
+    /// This method exists only to support third-party code that insists on
+    /// representing messages in this format; please stick to type-checked
+    /// means of formatting such as the above ToString methods and I/O
+    /// streams whenever possible.
+    static string FormatVarargs(const char* format, va_list args);
 
 
     /// Which type of string comparison.
@@ -1819,6 +1829,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.48  2003/12/12 17:26:45  ucko
+ * +FormatVarargs
+ *
  * Revision 1.47  2003/12/01 20:45:25  ucko
  * Extend Join to handle vectors as well as lists.
  * Add ParseEscapes (inverse of PrintableString).

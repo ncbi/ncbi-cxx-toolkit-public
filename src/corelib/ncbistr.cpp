@@ -577,6 +577,52 @@ bool NStr::StringToBool(const string& str)
 }
 
 
+string NStr::FormatVarargs(const char* format, va_list args)
+{
+#ifdef HAVE_VASPRINTF
+    char* s;
+    int n = vasprintf(&s, format, args);
+    if (n >= 0) {
+        string str(s, n);
+        free(s);
+        return str;
+    } else {
+        return kEmptyStr;
+    }
+#elif defined(NCBI_COMPILER_GCC) && defined(NO_PUBSYNC)
+    CNcbiOstrstream oss;
+    oss.vform(format, args);
+    return CNcbiOstrstreamToString(oss);
+#elif defined(HAVE_VSNPRINTF)
+    // deal with implementation quirks
+    size_t size = 1024;
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[size]);
+    buf.get()[size-1] = buf.get()[size-2] = 0;
+    size_t n = vsnprintf(buf.get(), size, format, args);
+    while (n >= size  ||  buf.get()[size-2]) {
+        if (buf.get()[size-1]) {
+            ERR_POST(Warning << "Buffer overrun by buggy vsnprintf");
+        }
+        size = max(size << 1, n);
+        buf.reset(new char[size]);
+        buf.get()[size-1] = buf.get()[size-2] = 0;
+        n = vsnprintf(buf.get(), size, format, args);
+    }
+    return (n > 0) ? string(buf.get(), n) : kEmptyStr;
+#elif defined(HAVE_VPRINTF)
+    char buf[1024];
+    buf[sizeof(buf) - 1] = 0;
+    vsprintf(buf, format, args);
+    if (buf[sizeof(buf) - 1]) {
+        ERR_POST(Warning << "Buffer overrun by vsprintf");
+    }
+    return buf;
+#else
+#  error Please port this code to your system.
+#endif
+}
+
+
 SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
                            SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
 {
@@ -1344,6 +1390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.100  2003/12/12 17:26:54  ucko
+ * +FormatVarargs
+ *
  * Revision 1.99  2003/12/01 20:45:47  ucko
  * Extend Join to handle vectors as well as lists (common code templatized).
  * Add ParseEscapes (inverse of PrintableString).
