@@ -12,11 +12,12 @@
  <li><a href="#setStream"> Defining the output stream</a>
  <li><a href="#buffering"> The message buffer </a> 
  <li><a href="#callback">  FDiagHandler functions</a>
- <li><a href="#errpost">  The ERR_POST macro </a>
- <li><a href="#trace">  The _TRACE macro </a>
- <li><a href="#example">  Example of using the <i>CNcbiDiag</i> class</a>
+ <li><a href="#errpost">   The ERR_POST macro </a>
+ <li><a href="#trace">     The _TRACE macro </a>
+ <li><a href="#example">   Example of using the <i>CNcbiDiag</i> class </a>
 </a>
 </ul>
+
 The
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiDiag.html">
 <i> CNcbiDiag </i></a> class implements the functionality of an output stream enhanced with
@@ -92,20 +93,36 @@ standard format of a message is:
 </pre></center>
 
 where the <i> file, line, severity</i> and <i>prefix</i> fields are displayed (or not)
-depending on the post flags associated with the <i>CNcbiDiag</i>.  Specifically,
-<i>EDiagPostFlag</i> is defined as an enumerated type in <i>ncbidiag.hpp</i>, with each of the
-enumerated values specifying that one or more of these fields should be displayed.  A global
-set of post flags, <i>eDPF_Default</i>, defines a default message format displaying only the
-severity level and the message body. This can be overridden inside the constructor for a
+depending on the post flags
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EDiagPostFlag"> EDiagPostFlag </a>
+associated with the <i>CNcbiDiag</i>:
+<pre>
+enum EDiagPostFlag {
+    eDPF_File         = 0x1,  // set by default #if _DEBUG;  else -- not set
+    eDPF_LongFilename = 0x2,  // set by default #if _DEBUG;  else -- not set
+    eDPF_Line         = 0x4,  // set by default #if _DEBUG;  else -- not set
+    eDPF_Prefix       = 0x8,  // set by default (always)
+    eDPF_Severity     = 0x10, // set by default (always)
+
+    // set all flags
+    eDPF_All          = 0x7FFF,
+    // set all flags for using with __FILE__ and __LINE__
+    eDPF_Trace        = 0x1f,
+    // ignore all other flags, use global flags
+    eDPF_Default      = 0x8000
+};
+</pre>
+The default message format displays only the severity level and the
+message body. This can be overridden inside the constructor for a
 specific instance of <i>CNcbiDiag</i>, or globally, using 
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagPostFlag">
-SetDiagPostFlag</a>(EDiagSev postSev))</i> on a selected flag.
+SetDiagPostFlag</a>(EDiagSev postSev)</i> on a selected flag.
 
 <a name="setStream"><h3> Defining the output stream</h3>
 
-All <i>CNcbiDiag</i> objects are associated with a single globally defined output stream. The
-default is to post messages to <i>cerr</i>, but the stream destination can be reset at any time
-using:<p><center><i>
+All <i>CNcbiDiag</i> objects are associated with a single globally defined
+callback, which often writes the messages to an output stream. The
+default is to post messages to <i>cerr</i>, but the stream destination can be reset at any time using:<p><center><i>
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagStream">
 SetDiagStream</a>
 
@@ -120,7 +137,18 @@ This function can be called numerous times, thus allowing
 different sections of the executable to write to different files. At any given time however,
 all <i>CNcbiDiag</i> objects will be associated with the same global output stream.  Because
 the messages are completely buffered, each message will appear on whatever stream is active at
-the time the message actually completes.  <p>
+the time the message actually completes.
+
+<p>
+And, of course, you can
+<a href="#callback">provide</a>
+(using
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagHandler">SetDiagHandler</a>)
+your own message posting callback
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=FDiagHandler">FDiagHandler</a>,
+which does not necessarily write the messages to a standard C++ output stream.
+
+
 
 <a name="buffering"> <h3> The message buffer </h3> 
 
@@ -170,7 +198,7 @@ for a more technical discussion.
 An <i>ERR_POST(message)</i> macro is also available for routine error posting.  This macro
 implicitly creates a temporary <i>CNcbiDiag</i> object and puts the passed "message" into it
 with a default severity of <i>eDiag_Error</i>. A <a href="#sevman"> severity level manipulator</a>
-can then be applied if desired, to modify the message's severity level. For example:
+can be applied if desired, to modify the message's severity level. For example:
 
 	 <pre>
 long lll = 345;
@@ -188,22 +216,24 @@ ERR_POST(Warning << "...print double: " << ddd); </pre>
 	 <pre>
 "somefile.cpp", line 222: Warning:  ...print double: 123.345 </pre>
 
-<a name="trace"><h3>The _TRACE macro</h3> The <i>_TRACE</i> macro is a debugging tool
-that allows the user to insert trace statements that will only be posted if tracing has been
-turned on.  If <i>DIAG_TRACE</i> is defined as an environemnt variable, or as an entry in the [DEBUG]
+<a name="trace"><h3>The _TRACE macro</h3> The <i>_TRACE(message)</i> macro is a debugging tool
+that allows the user to insert trace statements that will only be posted if the
+code was
+<a href="../libs/err_msg.html#ref_Assert"> compiled in <i>debug mode</i> </a>,
+and provided that the tracing has been turned on.  If <i>DIAG_TRACE</i> is defined as an enviroment variable, or as an entry in the [DEBUG]
 section of your configuration file (<i>*.ini</i>), the initial state of tracing is
 <b><I>on</i></b>. By default, if no such variable or registry entry is defined, tracing is
 <b><I>off</i></b>.
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagTrace">
 SetDiagTrace</a> (EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on/off.<p>
 
-The <i> _TRACE</i> macro takes a single argument - a message - that will be posted only if
-tracing has been enabled. For example:
+Just like <i>ERR_POST</i>, the <i> _TRACE</i> macro takes a message, and
+the message will be posted only if tracing has been enabled. For example:
 
 <pre>
-    SetDiagTrace(eDT_Disable, eDT_Default);
+    SetDiagTrace(eDT_Disable);
     _TRACE("Testing the _TRACE macro");
-    SetDiagTrace(eDT_Enable, eDT_Default);
+    SetDiagTrace(eDT_Enable);
     _TRACE("Testing the _TRACE macro AGAIN");
 </pre>
 Here, only the second trace message will be posted, as tracing is disabled when
@@ -211,6 +241,17 @@ the first <i>_TRACE()</i> macro call is executed.
 
 <a name="example"> <h4> Example usage of the <i>CNcbiDiag</i> class</h4></a>
 
+<i><b>NOTE:</b>
+Normally, one should use ERR_POST() and _TRACE() macro to post messages,
+and regulate the severity level by using
+<a href="#sevman"> severity level manipulators</a>, like:
+<pre>
+   ERR_POST(Info << "A notice" << "Fooo");
+   ERR_POST(Critical << "Some critical error");
+</pre>
+</i>
+
+<p>
 Examples in <a href="diag_cpp.html"> <i>diag.cpp</i></a> demonstrate the features
 described above. <i>CTestApp::Run()</i> begins by testing the <i>ERR_POST</i> and <i>_TRACE</i>
 macros. Initially, tracing is enabled (from the registry file), so the first <i>_TRACE</i> message
@@ -224,10 +265,8 @@ disabled by the explicit call to <i>SetDiagTrace()</i>.  Five instances of the
 severity level, and enumerated value for the post flags. A single message, <i>Msg</i> will be
 posted on all of the diagnostic streams. <p>
 
-Two of the messages are terminated with an explicit <i>Endm</i> manipulator.
-<i>myHandler()</i> is then installed to replace the default message handler.  This new handler
-is not installed until <i>after</i> a message has been written to <i>diagWarning</i>'s buffer,
-and all of the first three messages are posted by the default handler. The last two messages,
+<i>myHandler()</i> is then installed to replace the default message handler.
+The last two messages,
 which are created after the new handler has been installed, are handled by 
 <i>myHandler()</i>. The first of these is a trace message however, and because tracing is
 now disabled, this message will not be made visible. All of the messages which do not explicitly use 
@@ -262,4 +301,6 @@ Installed Handler "diag.cpp", line 45: Critical: This is a test message
 		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
+		<tr>
+		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td></tr>
 	 </table>
