@@ -44,13 +44,17 @@
 
 #include <algo/blast/core/blast_options.h>
 
-// Forward declaration of a unit test class
+// Forward declarations of classes that need to be declared friend 
+// (mostly unit test classes)
 class CBlastGapAlignTest;
 class CBlastDbTest;
 class CBlastTraceBackTest; 
 class CScoreBlkTest; 
 class CRPSTest; 
 class CBlastRedoAlignmentTest; 
+
+class CBlastTabularFormatThread;
+
 
 /** @addtogroup AlgoBlast
  *
@@ -1637,13 +1641,18 @@ public:
     
     friend class CBl2Seq;
     friend class CDbBlast;
+    friend class CDbBlastTraceback;
 
-    friend class ::CBlastDbTest;        // unit test class
-    friend class ::CBlastGapAlignTest;  // unit test class
-    friend class ::CBlastTraceBackTest;  // unit test class
-    friend class ::CScoreBlkTest;        // unit test class
-    friend class ::CRPSTest;        // unit test class
-    friend class ::CBlastRedoAlignmentTest;        // unit test class
+    // Tabular formatting thread needs to calculate parameters structures
+    // and hence needs access to individual options structures.
+    friend class ::CBlastTabularFormatThread; 
+
+    friend class ::CBlastDbTest;           // unit test class
+    friend class ::CBlastGapAlignTest;     // unit test class
+    friend class ::CBlastTraceBackTest;    // unit test class
+    friend class ::CScoreBlkTest;          // unit test class
+    friend class ::CRPSTest;               // unit test class
+    friend class ::CBlastRedoAlignmentTest;// unit test class
 
 protected:
     QuerySetUpOptions * GetQueryOpts() const
@@ -2413,6 +2422,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2004/06/15 18:45:46  dondosha
+* Added friend classes CDbBlastTraceback and CBlastTabularFormatThread
+*
 * Revision 1.66  2004/06/08 21:16:52  bealer
 * - Remote EAPILocality from CBlastOptionsLocal
 *
