@@ -30,6 +30,7 @@
  */
 
 #include <bdb/bdb_file.hpp>
+#include <bdb/bdb_env.hpp>
 
 #include <db.h>
 
@@ -69,6 +70,7 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys)
 : m_DB(0),
   m_DBT_Key(0),
   m_DBT_Data(0),
+  m_Env(0),
   m_DB_Attached(false),
   m_PageSize(0),
   m_CacheSize(256 * 1024),
@@ -109,6 +111,11 @@ void CBDB_RawFile::Attach(CBDB_RawFile& bdb_file)
    Close();
    m_DB = bdb_file.m_DB;
    m_DB_Attached = true; 
+}
+
+void CBDB_RawFile::SetEnv(CBDB_Env& env)
+{
+    m_Env = &env;
 }
 
 void CBDB_RawFile::x_Close(ECloseMode close_mode)
@@ -182,12 +189,12 @@ void CBDB_RawFile::Remove(const char* filename, const char* database)
     // DB argument redardless of the result.
     DB* db = 0;
 	CDB_guard guard(&db);
-    int ret = db_create(&db, 0, 0);
+    int ret = db_create(&db, m_Env ? m_Env->GetEnv() : 0, 0);
     BDB_CHECK(ret, 0);
 
     ret = db->remove(db, filename, database, 0);
     guard.release();
-    if (ret == ENOENT)
+    if (ret == ENOENT || ret == EINVAL)
         return;  // Non existent table cannot be removed
 
     BDB_CHECK(ret, filename);
@@ -224,7 +231,7 @@ void CBDB_RawFile::x_CreateDB()
 
 	CDB_guard guard(&m_DB);
 
-    int ret = db_create(&m_DB, 0, 0);
+    int ret = db_create(&m_DB, m_Env ? m_Env->GetEnv() : 0, 0);
     BDB_CHECK(ret, 0);
 
     SetCmp(m_DB);
@@ -234,8 +241,10 @@ void CBDB_RawFile::x_CreateDB()
         BDB_CHECK(ret, 0);
     }
 
-    ret = m_DB->set_cachesize(m_DB, 0, m_CacheSize, 1);
-    BDB_CHECK(ret, 0);
+    if (!m_Env) {
+        ret = m_DB->set_cachesize(m_DB, 0, m_CacheSize, 1);
+        BDB_CHECK(ret, 0);
+    }
 
     if (DuplicatesAllowed()) {
         ret = m_DB->set_flags(m_DB, DB_DUP);
@@ -633,6 +642,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/08/27 20:02:57  kuznets
+ * Added DB_ENV support
+ *
  * Revision 1.19  2003/07/23 20:21:43  kuznets
  * Implemented new improved scheme for setting BerkeleyDB comparison function.
  * When table has non-segmented key the simplest(and fastest) possible function

@@ -38,26 +38,6 @@
 
 BEGIN_NCBI_SCOPE
 
-/*
-extern "C" 
-{
-
-// Simple and fast comparison function for tables with 
-// non-segmented "unsigned int" keys
-int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2);
-
-
-// Simple and fast comparison function for tables with 
-// non-segmented "int" keys
-int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
-
-
-// General purpose DBD comparison function
-int BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
-
-} // extern "C"
-
-*/
 
 
 //////////////////////////////////////////////////////////////////
@@ -73,6 +53,7 @@ enum EBDB_ErrCode {
 };
 
 
+class CBDB_Env;
 
 
 //////////////////////////////////////////////////////////////////
@@ -105,6 +86,10 @@ public:
 public:
     CBDB_RawFile(EDuplicateKeys dup_keys=eDuplicatesDisable);
     virtual ~CBDB_RawFile();
+
+    // Associate file with environment. Should be called before 
+    // file opening.
+    void SetEnv(CBDB_Env& env);
 
     // Open file with specified access mode
     void Open(const char* filename, EOpenMode open_mode);
@@ -185,6 +170,7 @@ protected:
     DB*               m_DB;
     DBT*              m_DBT_Key;
     DBT*              m_DBT_Data;
+    CBDB_Env*         m_Env;
 
 private:
     bool             m_DB_Attached;  // "TRUE" if m_DB doesn't belog here
@@ -394,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/08/27 20:02:10  kuznets
+ * Added DB_ENV support
+ *
  * Revision 1.15  2003/07/23 20:21:27  kuznets
  * Implemented new improved scheme for setting BerkeleyDB comparison function.
  * When table has non-segmented key the simplest(and fastest) possible function
