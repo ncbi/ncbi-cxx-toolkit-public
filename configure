@@ -12342,6 +12342,10 @@ echo "$x_configurables" | while read x_file ; do
    test -d "$x_dir"  ||  mkdir -p "$x_dir"
 done
 
+## Create ncbicfg.c.last if necessary
+ncbicfg="$builddir/corelib/ncbicfg.c"
+test -f "$ncbicfg" -a ! -f "$ncbicfg.last" && cp -p "$ncbicfg" "$ncbicfg.last"
+
 ## Configure the compiler/flag-dependent header
 ac_config_headers="$ac_config_headers ${ncbiconf}:config.h.in"
 
@@ -13599,6 +13603,15 @@ rm -f "$status_dir"/*.enabled
 for p in $WithPackages $WithProjects $WithFeatures ; do
    touch "$status_dir"/$p.enabled
 done
+
+ncbicfg="$builddir/corelib/ncbicfg.c"
+if test -f "$ncbicfg.last" && cmp -s "$ncbicfg.last" "$ncbicfg"; then
+   echo "$ncbicfg" is unchanged.
+   touch -r "$ncbicfg.last" "$ncbicfg"
+else
+   rm -f "$ncbicfg.last"
+   cp -p "$ncbicfg" "$ncbicfg.last"
+fi
 
 if test -n "$with_extra_action" ; then
    with_extra_action=`echo "$with_extra_action" | sed "s%{}%$build_root%g"`

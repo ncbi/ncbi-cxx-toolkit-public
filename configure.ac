@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.69 2002/05/06 20:39:55 ucko Exp $
+#  $Id: configure.ac,v 1.70 2002/05/07 14:48:33 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2583,6 +2583,10 @@ echo "$x_configurables" | while read x_file ; do
    test -d "$x_dir"  ||  mkdir -p "$x_dir"
 done
 
+## Create ncbicfg.c.last if necessary
+ncbicfg="$builddir/corelib/ncbicfg.c"
+test -f "$ncbicfg" -a ! -f "$ncbicfg.last" && cp -p "$ncbicfg" "$ncbicfg.last"
+
 ## Configure the compiler/flag-dependent header
 AC_CONFIG_HEADER(${ncbiconf}:config.h.in)
 
@@ -2627,6 +2631,16 @@ rm -f "$status_dir"/*.enabled
 for p in $WithPackages $WithProjects $WithFeatures ; do
    touch "$status_dir"/$p.enabled
 done
+
+dnl Avoid gratuitous relinking
+ncbicfg="$builddir/corelib/ncbicfg.c"
+if test -f "$ncbicfg.last" && cmp -s "$ncbicfg.last" "$ncbicfg"; then
+   echo "$ncbicfg" is unchanged.
+   touch -r "$ncbicfg.last" "$ncbicfg"
+else
+   rm -f "$ncbicfg.last"
+   cp -p "$ncbicfg" "$ncbicfg.last"
+fi
 
 dnl execute extra-action
 if test -n "$with_extra_action" ; then
