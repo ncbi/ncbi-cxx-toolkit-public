@@ -189,15 +189,15 @@ int CTestApplication::Run(void)
     SetupDiag(eDS_ToStdout);
     /*
       
-      CExceptionReporter::EnableDefault(true);
-      cerr << endl;
-      NCBI_REPORT_EXCEPTION(
-      "****** default reporter (stream) ******",e);
+    CExceptionReporter::EnableDefault(true);
+    cerr << endl;
+    NCBI_REPORT_EXCEPTION(
+    "****** default reporter (stream) ******",e);
 
-      CExceptionReporter::SetDefault(0);
-      cerr << endl;
-      NCBI_REPORT_EXCEPTION(
-            "****** default reporter (diag) ******",e);
+    CExceptionReporter::SetDefault(0);
+    cerr << endl;
+    NCBI_REPORT_EXCEPTION(
+    "****** default reporter (diag) ******",e);
     */
     
     for (size_t i = 0;  i < count;  ++i) {
@@ -318,11 +318,11 @@ int CTestApplication::Run(void)
         int base = s_RadixTests[i].base;
         Uint8 expected = s_RadixTests[i].expected;
         NcbiCout << "Checking numeric string: '" << str 
-            << "': with base " << base << NcbiEndl;
+                 << "': with base " << base << NcbiEndl;
         try {
             Uint8 value = NStr::StringToUInt8(str, base);
             NcbiCout << "Uint8 value: " << ((unsigned)value)
-			    << ", Expected: " << (unsigned)expected << NcbiEndl;
+                     << ", Expected: " << (unsigned)expected << NcbiEndl;
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
@@ -370,9 +370,9 @@ int CTestApplication::Run(void)
     // NStr::PrintableString()
     assert(NStr::PrintableString(kEmptyStr).empty());
     assert(NStr::PrintableString("AB\\CD\nAB\rCD\vAB\tCD\'AB\"").
-            compare("AB\\\\CD\\nAB\\rCD\\vAB\\tCD'AB\\\"") == 0);
+           compare("AB\\\\CD\\nAB\\rCD\\vAB\\tCD'AB\\\"") == 0);
     assert(NStr::PrintableString("A\020B" + string(1, '\0') + "CD").
-            compare("A\\x10B\\x00CD") == 0);
+           compare("A\\x10B\\x00CD") == 0);
 
 
     // NStr::Compare()
@@ -541,15 +541,15 @@ int CTestApplication::Run(void)
 
     for (j = 0;  j < sizeof(s_Tri) / sizeof(s_Tri[0]);  j++) {
         assert(NStr::Compare(s_Tri[j].orig, s_Tri[j].x_lower, NStr::eNocase)
-                == 0);
+               == 0);
         assert(NStr::Compare(s_Tri[j].orig, s_Tri[j].x_upper, NStr::eNocase)
-                == 0);
+               == 0);
 
         string orig = s_Tri[j].orig;
         assert(NStr::Compare(orig, s_Tri[j].x_lower, NStr::eNocase)
-                == 0);
+               == 0);
         assert(NStr::Compare(orig, s_Tri[j].x_upper, NStr::eNocase)
-                == 0);
+               == 0);
 
         string x_lower = s_Tri[j].x_lower;
 
@@ -592,17 +592,69 @@ int CTestApplication::Run(void)
     NcbiCout << " completed successfully!" << NcbiEndl;
 
     {{
-        string s1("1234567890");
+        NcbiCout << NcbiEndl <<
+            "Testing string reference counting properties:" << NcbiEndl;
+        string s1(10, '1');
         string s2(s1);
         if ( s1.data() != s2.data() ) {
-            NcbiCout << NcbiEndl <<
-                "BAD: string reference counter is OFF" << NcbiEndl;
+            NcbiCout << 
+                "BAD: string reference counting is OFF" << NcbiEndl;
         }
         else {
-            NcbiCout << NcbiEndl <<
-                "GOOD: string reference counter is ON" << NcbiEndl;
-            s1[0];
-            assert(s1.data() != s2.data());
+            NcbiCout << 
+                "GOOD: string reference counting is ON" << NcbiEndl;
+            for ( int i = 0; i < 4; ++i ) {
+
+                NcbiCout << "Restoring reference counting"<<NcbiEndl;
+                s2 = s1;
+                if ( s1.data() != s2.data() ) {
+                    NcbiCout << 
+                        "BAD: cannot restore string reference counting" << NcbiEndl;
+                    continue;
+                }
+                NcbiCout << "GOOD: reference counting is ON"<<NcbiEndl;
+
+                const char* type = i&1? "str.begin()": "str.c_str()";
+                NcbiCout << "Calling "<<type<<NcbiEndl;
+                if ( i&1 ) {
+                    s2.begin();
+                }
+                else {
+                    s1.c_str();
+                }
+                if ( s1.data() == s2.data() ) {
+                    NcbiCout << 
+                        "GOOD: "<<type<<" doesn't affect reference counting" << NcbiEndl;
+                    continue;
+                }
+                NcbiCout << 
+                    "OK: "<<type<<" turns reference counting OFF" << NcbiEndl;
+
+                NcbiCout << "Restoring reference counting"<<NcbiEndl;
+                s2 = s1;
+                if ( s1.data() != s2.data() ) {
+                    NcbiCout << 
+                        "BAD: "<<type<<" turns reference counting OFF completely" << NcbiEndl;
+                    continue;
+                }
+                NcbiCout << "GOOD: reference counting is ON"<<NcbiEndl;
+
+                if ( i&1 ) continue;
+
+                NcbiCout << "Calling "<<type<<" on source"<<NcbiEndl;
+                s1.c_str();
+                if ( s1.data() != s2.data() ) {
+                    NcbiCout << 
+                        "BAD: "<<type<<" on source turns reference counting OFF" << NcbiEndl;
+                }
+
+                NcbiCout << "Calling "<<type<<" on destination"<<NcbiEndl;
+                s2.c_str();
+                if ( s1.data() != s2.data() ) {
+                    NcbiCout << 
+                        "BAD: "<<type<<" on destination turns reference counting OFF" << NcbiEndl;
+                }
+            }
         }
     }}
 
@@ -631,8 +683,11 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/07/17 20:01:38  vasilche
+ * Added test for string reference counting.
+ *
  * Revision 6.19  2003/07/09 20:52:20  vasilche
- * Added test for string's reference counter.
+ * Added test for string's reference counting.
  *
  * Revision 6.18  2003/03/25 22:16:11  lavr
  * Conform to new NUL char representation from NStr::PrintableString()
