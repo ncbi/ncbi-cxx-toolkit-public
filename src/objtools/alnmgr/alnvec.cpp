@@ -110,8 +110,7 @@ CAlnVec::GetSeqString(TNumrow row, const CRange<TSeqPos>& range) const
 
 const CBioseq_Handle& CAlnVec::GetBioseqHandle(TNumrow row) const
 {
-    map<TNumrow, CBioseq_Handle>::iterator i = 
-        m_BioseqHandlesCache.find(row);
+    TBioseqHandleCache::iterator i = m_BioseqHandlesCache.find(row);
     
     if (i != m_BioseqHandlesCache.end()) {
         return i->second;
@@ -144,6 +143,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/08/29 18:40:51  dicuccio
+* added caching mechanism for CSeqVector - this greatly improves speed in
+* accessing sequence data.
+*
 * Revision 1.1  2002/08/23 14:43:52  ucko
 * Add the new C++ alignment manager to the public tree (thanks, Kamen!)
 *

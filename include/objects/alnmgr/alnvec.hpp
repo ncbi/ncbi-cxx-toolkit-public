@@ -49,6 +49,9 @@ class CScope;
 class CAlnVec : public CAlnMap
 {
     typedef CAlnMap Tparent;
+    typedef map<TNumrow, CBioseq_Handle> TBioseqHandleCache;
+    typedef map<TNumrow, CRef<CSeqVector> > TSeqVectorCache;
+
 public:
 
     // constructor
@@ -74,11 +77,12 @@ private:
     CAlnVec(const CAlnVec& value);
     CAlnVec& operator=(const CAlnVec& value);
 
-    CSeqVector x_GetSeqVector(TNumrow row) const;
+    CSeqVector& x_GetSeqVector(TNumrow row) const;
 
-    mutable CRef<CObjectManager>         m_ObjMgr;
-    mutable CRef<CScope>                 m_Scope;
-    mutable map<TNumrow, CBioseq_Handle> m_BioseqHandlesCache;
+    mutable CRef<CObjectManager>    m_ObjMgr;
+    mutable CRef<CScope>            m_Scope;
+    mutable TBioseqHandleCache      m_BioseqHandlesCache;
+    mutable TSeqVectorCache         m_SeqVectorCache;
     
 };
 
@@ -87,19 +91,15 @@ private:
 ///////////////////////////////////////////////////////////
 
 inline
-CSeqVector CAlnVec::x_GetSeqVector(TNumrow row) const
+CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
 {
-#if 0
-    CSeq_loc loc;
-    loc.SetInt().SetId(const_cast<CSeq_id&>(GetSeqId(row)));
-    loc.SetInt().SetFrom(GetStart(row));
-    loc.SetInt().SetTo(GetStop(row));
-    
-    return GetBioseqHandle(row).GetSequenceView
-        (loc, CBioseq_Handle::eViewConstructed, true, true);
-#else
-    return GetBioseqHandle(row).GetSeqVector(true, true);
-#endif
+    TSeqVectorCache::iterator iter = m_SeqVectorCache.find (row);
+    if (iter != m_SeqVectorCache.end()) {
+        return *(iter->second);
+    } else {
+        return *(m_SeqVectorCache[row] =
+                 new CSeqVector (GetBioseqHandle (row).GetSeqVector()));
+    }
 }
 
 
@@ -121,6 +121,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/08/29 18:40:53  dicuccio
+* added caching mechanism for CSeqVector - this greatly improves speed in
+* accessing sequence data.
+*
 * Revision 1.1  2002/08/23 14:43:50  ucko
 * Add the new C++ alignment manager to the public tree (thanks, Kamen!)
 *
