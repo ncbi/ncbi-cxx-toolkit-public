@@ -525,13 +525,12 @@ static NCBI_INLINE Boolean BlastNaCompareExtraBytes(Uint1* q, Uint1* s,
  * @return Number of matched bases
 */
 static NCBI_INLINE Uint1 
-BlastNaMiniExtendLeft(Uint1* q, Uint1* s, Uint1 max_left)
+BlastNaMiniExtendLeft(Uint1* q, const Uint1* s, Uint1 max_left)
 {
    Uint1 left = 0;
-   Uint1 s_val = *s;
 
    for (left = 0; left < max_left; ++left) {
-      if (READDB_UNPACK_BASE_N(s_val, left) != *--q) {
+      if (READDB_UNPACK_BASE_N(*s, left) != *--q) {
 	 break;
       }
    }
@@ -546,14 +545,13 @@ BlastNaMiniExtendLeft(Uint1* q, Uint1* s, Uint1 max_left)
  * @return Number of matched bases
 */
 static NCBI_INLINE Uint1 
-BlastNaMiniExtendRight(Uint1* q, Uint1* s, Uint1 max_right)
+BlastNaMiniExtendRight(Uint1* q, const Uint1* s, Uint1 max_right)
 {
    Uint1 right;
-   Uint1 s_val = *s;
    Uint1 index = 3;
    
    for (right = 0; right < max_right; ++right, --index) {
-      if (READDB_UNPACK_BASE_N(s_val, index) != *q++) {
+      if (READDB_UNPACK_BASE_N(*s, index) != *q++) {
 	 break;
       }
    }
