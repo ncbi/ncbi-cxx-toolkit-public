@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.19  2003/05/20 15:47:16  dondosha
+* Fix in BLAST_SetUpSubject for two sequences case
+*
 * Revision 1.18  2003/05/18 21:57:37  camacho
 * Use Uint1 for program name whenever possible
 *
@@ -1802,6 +1805,7 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program_number,
          seqid = seqid->next;
          ValNodeAddPointer(&dna_seqloc, SEQLOC_WHOLE, seqid);
          dna_length = SeqLocLen(dna_seqloc);
+         MemFree(dna_seqloc);
       }
       
       /* Extract the mask location corresponding to this 
@@ -2037,16 +2041,15 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
                                         &buffer_length, encoding)))
       return status;
    
-   /* The last argument in the following call is FALSE, to force 'sequence' to 
-      be initialized instead of 'sequence_start' */
-   if ((status=BlastSetUp_SeqBlkNew(subject_buffer, buffer_length,
-                                    0, NULL, subject, FALSE)))
-      return status;
-   (*subject)->sequence_allocated = TRUE;
 
-   /* Save uncompressed sequence for reevaluation with 
-      ambiguities */
    if (is_na) {
+      /* The last argument in the following call is FALSE, to force 
+         'sequence' to be initialized instead of 'sequence_start' */
+      if ((status=BlastSetUp_SeqBlkNew(subject_buffer, buffer_length,
+                                       0, NULL, subject, FALSE)))
+         return status;
+      /* Save uncompressed sequence for reevaluation with ambiguities 
+         and traceback */
       encoding = ((program_number == blast_type_blastn) ?
                   BLASTNA_ENCODING : NCBI4NA_ENCODING);
       if ((status = 
@@ -2054,6 +2057,11 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
               &((*subject)->sequence_start), &((*subject)->length), encoding)))
          return status;
       (*subject)->sequence_start_allocated = TRUE;
+   } else {
+      /* Save allocated buffer in sequence_start */
+      if ((status=BlastSetUp_SeqBlkNew(subject_buffer, buffer_length,
+                                       0, NULL, subject, TRUE)))
+         return status;
    }
 
    return 0;
