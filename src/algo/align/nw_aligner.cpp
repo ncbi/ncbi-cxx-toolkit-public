@@ -643,20 +643,21 @@ void CNWAligner::SetProgressCallback ( FProgressCallback prg_callback,
 void CNWAligner::SetScoreMatrix(const SNCBIPackedScoreMatrix* psm)
 {
     if(psm) {
+
         m_abc = psm->symbols;
 	NCBISM_Unpack(psm, &m_ScoreMatrix);
     }
     else { // assume IUPACna
+
         m_abc = g_nwaligner_nucleotides;
         const size_t dim = strlen(m_abc);
-        TNCBIScore iupacna[dim][dim];
-        memset(iupacna, m_Wms, sizeof(TNCBIScore)*dim*dim);
-        iupacna[0][0] = iupacna[1][1] = iupacna[2][2] = iupacna[3][3] = m_Wm;
+        vector<TNCBIScore> iupacna (dim*dim, m_Wms);
+        iupacna[0] = iupacna[dim+1] = iupacna[2*(dim+1)] = iupacna[3*(dim+1)] = m_Wm;
         SNCBIPackedScoreMatrix iupacna_psm;
         iupacna_psm.symbols = g_nwaligner_nucleotides;
-        iupacna_psm.scores = (TNCBIScore*)iupacna;
+        iupacna_psm.scores = &iupacna.front();
         iupacna_psm.defscore = m_Wms;
-	NCBISM_Unpack(&iupacna_psm, &m_ScoreMatrix);        
+        NCBISM_Unpack(&iupacna_psm, &m_ScoreMatrix);        
     }
 }
 
@@ -1107,6 +1108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2004/08/30 18:27:31  kapustin
+ * Avoid dynamic double-dimension for iupacna to make msvc happy
+ *
  * Revision 1.55  2004/08/30 16:29:30  kapustin
  * Use the NCBI packed score matrix to initialize the unpacked matrix for nucleotides
  *
