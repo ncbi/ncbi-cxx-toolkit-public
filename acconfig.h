@@ -16,8 +16,11 @@
 /* Can use exception specifications("throw(...)" after func. proto) */
 #undef NCBI_USE_THROW_SPEC
 
-/* Pre-standard basic_string::compare() -- most probably, <bastring> */
+/* Non-standard basic_string::compare() -- most probably, from <bastring> */
 #undef NCBI_OBSOLETE_STR_COMPARE
 
 /* "auto_ptr" template class is not implemented in <memory> */
 #undef HAVE_NO_AUTO_PTR
+
+/* Fast-CGI library is available */
+#undef HAVE_LIBFASTCGI
