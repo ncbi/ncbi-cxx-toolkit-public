@@ -428,6 +428,9 @@ inline
 void CSeqVector_CI::x_ResizeCache(size_t size)
 {
     _ASSERT(size <= kCacheSize);
+    if ( !m_CacheData ) {
+        x_InitializeCache();
+    }
     m_CacheEnd = m_CacheData + size;
     m_Cache = m_CacheData;
 }
@@ -796,6 +799,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/05/10 18:27:37  grichenk
+* Check cache in x_ResizeCache()
+*
 * Revision 1.32  2004/04/27 14:45:01  grichenk
 * Fixed warnings.
 *
