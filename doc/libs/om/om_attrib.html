@@ -383,7 +383,8 @@ data objects the sequence refers to.
 <h4>Object methods:</h4>
 <pre>
     // Constructors
-    // Search all TSEs in all datasources
+    // Search all TSEs in all datasources, by default do not get
+    // annotations defined for segmented bioseq parts.
     CFeat_CI(CScope&amp; scope, const CSeq_loc&amp; loc,
              SAnnotSelector::TFeatChoice feat_choice,
              EResolveMethod resolve = eResolve_None);
@@ -421,7 +422,8 @@ data objects the sequence refers to.
 <h4>Object methods:</h4>
 <pre>
     // Constructors
-    // Search all TSEs in all datasources
+    // Search all TSEs in all datasources, by default do not get
+    // annotations defined for segmented bioseq parts.
     CGraph_CI(CScope&amp; scope, const CSeq_loc&amp; loc,
               EResolveMethod resolve = eResolve_None);
     // Search only in TSE, which contains the bioseq
@@ -456,7 +458,8 @@ data objects the sequence refers to.
 <h4>Object methods:</h4>
 <pre>
     // Constructors
-    // Search all TSEs in all datasources
+    // Search all TSEs in all datasources, by default do not get
+    // annotations defined for segmented bioseq parts.
     CAlign_CI(CScope&amp; scope, const CSeq_loc&amp; loc,
               EResolveMethod resolve = eResolve_None);
     // Search only in TSE, which contains the bioseq
