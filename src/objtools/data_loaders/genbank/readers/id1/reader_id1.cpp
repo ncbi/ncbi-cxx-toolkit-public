@@ -144,9 +144,9 @@ struct CId1StreamBuf : public streambuf
   CT_INT_TYPE underflow();
   void Close() { m_Server = 0; }
 
-  CId1Seqref &m_Id1Seqref;
-  char buffer[1024];
-  CConn_ServiceStream *m_Server;
+  CId1Seqref&                   m_Id1Seqref;
+  char                          buffer[1024];
+  CConn_ServiceStream          *m_Server;
   auto_ptr<CConn_ServiceStream> m_ID1_Server;
 };
 
@@ -180,7 +180,7 @@ CT_INT_TYPE CId1StreamBuf::underflow()
 
   int n = CIStream::Read(*m_Server, buffer, sizeof(buffer));
   setg(buffer, buffer, buffer + n);
-  return n == 0 ? CT_EOF : buffer[0];
+  return n == 0 ? CT_EOF : static_cast<unsigned char>(buffer[0]);
 }
 
 streambuf *CId1Seqref::BlobStreamBuf(int, int, const CBlobClass &)
@@ -200,18 +200,15 @@ CSeq_entry *CId1Blob::Seq_entry()
     }
   catch ( exception e)
     {
-      LOG_POST( "TROUBLE: reader_id1: can not read Seqentry from reply: " << e.what() );
+      LOG_POST( "TROUBLE: reader_id1: can not read Seq-entry from reply: " << e.what() );
       clenup=true;
     }
   if(id1_reply.IsGotseqentry())
     m_Seq_entry = &id1_reply.GetGotseqentry();
   else if(id1_reply.IsGotdeadseqentry())
     m_Seq_entry = &id1_reply.GetGotdeadseqentry();
-  if(clenup && m_Seq_entry.GetPointer())
-    {
-      delete m_Seq_entry;
-      m_Seq_entry=0;
-    }
+  if(clenup)
+    m_Seq_entry=0;
   
   return m_Seq_entry;
 }
@@ -274,6 +271,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.10  2002/03/26 15:39:25  kimelman
+* GC fixes
+*
 * Revision 1.9  2002/03/25 18:12:48  grichenk
 * Fixed bool convertion
 *

@@ -168,6 +168,7 @@ private:
   bool            m_InvokeGC;
   void            x_UpdateDropList(STSEinfo *p);
   void            x_GC(void);
+  void            x_DropTSEinfo(STSEinfo *tse);
   
   //
   // private code
@@ -193,6 +194,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.6  2002/03/26 15:39:24  kimelman
+ * GC fixes
+ *
  * Revision 1.5  2002/03/21 01:34:49  kimelman
  * gbloader related bugfixes
  *

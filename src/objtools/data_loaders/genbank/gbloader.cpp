@@ -157,32 +157,16 @@ CGBDataLoader::DropTSE(const CSeq_entry *sep)
     }
   STSEinfo *tse = it->second;
   if(m_SlowTraverseMode>0) m_Pool.GetMutex(tse).Lock();
-  LOG_POST( "DropTse(" << tse <<")" );
   
   m_Tse2TseInfo.erase(it);
   _VERIFY(tse);
-  m_Sr2TseInfo.erase(CCmpTSE(tse->key.get()));
-  iterate(STSEinfo::TSeqids,sih_it,tse->m_SeqIds)
-    {
-      TSeqId2Seqrefs::iterator bsit = m_Bs2Sr.find(*sih_it);
-      if(bsit == m_Bs2Sr.end()) continue;
-      // delete sih
-      if(bsit->second->m_Sr)
-        delete bsit->second->m_Sr;
-      bsit->second->m_Sr=0;
-      m_Bs2Sr.erase(bsit);
-    }
-  if(m_UseListHead==tse) m_UseListHead=tse->next;
-  if(m_UseListTail==tse) m_UseListHead=tse->prev;
-  if(tse->next) tse->next->prev=tse->prev;
-  if(tse->prev) tse->prev->next=tse->next;
-  delete tse;
+  x_DropTSEinfo(tse);
   if(m_SlowTraverseMode>0) m_Pool.GetMutex(tse).Unlock();
   m_TseCount --;
   m_LookupMutex.Unlock();
   return true;
 }
-
+  
 CTSE_Info*
 CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_set)
 {
@@ -288,6 +272,30 @@ CGBDataLoader::x_UpdateDropList(STSEinfo *tse)
 }
 
 void
+CGBDataLoader::x_DropTSEinfo(STSEinfo *tse)
+{
+  LOG_POST( "DropTse(" << tse <<")" );
+  if(!tse) return;
+  
+  m_Sr2TseInfo.erase(CCmpTSE(tse->key.get()));
+  iterate(STSEinfo::TSeqids,sih_it,tse->m_SeqIds)
+    {
+      TSeqId2Seqrefs::iterator bsit = m_Bs2Sr.find(*sih_it);
+      if(bsit == m_Bs2Sr.end()) continue;
+      // delete sih
+      if(bsit->second->m_Sr)
+        delete bsit->second->m_Sr;
+      bsit->second->m_Sr=0;
+      m_Bs2Sr.erase(bsit);
+    }
+  if(m_UseListHead==tse) m_UseListHead=tse->next;
+  if(m_UseListTail==tse) m_UseListHead=tse->prev;
+  if(tse->next) tse->next->prev=tse->prev;
+  if(tse->prev) tse->prev->next=tse->next;
+  delete tse;
+}
+
+void
 CGBDataLoader::x_GC(void)
 {
   // LOG_POST( "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC);
@@ -309,7 +317,11 @@ CGBDataLoader::x_GC(void)
       _VERIFY(tse_to_drop);
       const CSeq_entry *sep=tse_to_drop->m_upload.m_tse;
       if(!sep)
-        skip++;
+        {
+          if(m_SlowTraverseMode>0) m_Pool.GetMutex(tse_to_drop).Lock();
+          x_DropTSEinfo(tse_to_drop);
+          if(m_SlowTraverseMode>0) m_Pool.GetMutex(tse_to_drop).Unlock();
+        }
       else
         {
           char b[100];
@@ -565,7 +577,7 @@ CGBDataLoader::x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TI
   if (tse_up->m_mode==CTSEUpload::ePartial)
     {
       // split code : check tree for presence of data and
-      // and return from routine if all data already loaded
+      // return from routine if all data already loaded
       // present;
     }
   //LOG_POST( "x_NeedMoreData(" << srp << "," << tse_up << ") need_data " << need_data <<);
@@ -594,13 +606,18 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
           //LOG_POST( "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
           if (blob->Class()==0)
             {
-              LOG_POST( "GetBlob(" << s << ") " << "- whole blob retrieved");
               tse_up->m_tse    = blob->Seq_entry();
               if(tse_up->m_tse)
                 {
-                  tse_up->m_mode = CTSEUpload::eDone;
+                  tse_up->m_mode   = CTSEUpload::eDone;
+                  LOG_POST( "GetBlob(" << s << ") " << "- whole blob retrieved");
                   new_tse=true;
                   GetDataSource()->AddTSE(*(tse_up->m_tse));
+                }
+              else
+                {
+                  tse_up->m_mode   = CTSEUpload::eDone;
+                  LOG_POST( "GetBlob(" << s << ") " << "- retrieval of the whole blob failed - no data available");
                 }
             }
           else
@@ -636,6 +653,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/03/26 15:39:24  kimelman
+* GC fixes
+*
 * Revision 1.13  2002/03/25 17:49:12  kimelman
 * ID1 failure handling
 *
