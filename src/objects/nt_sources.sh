@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash
 # $Id$
 #
 # Script to update ASN.1 objects' sources on Windows-NT
@@ -17,7 +17,7 @@ for m in $MODULES; do \
     echo Updating $m
     (
 	cd $m
-	M="$(grep ^MODULE_IMPORT $m.module | sed 's/^.*=//' | sed 's/$/ /' | sed 's/\(objects[/a-z]*\) /-M \1.asn /g')"
+	M="$(grep ^MODULE_IMPORT $m.module | sed 's/^.*=//' | sed 's/$/ /' | sed 's/\(objects[/a-z0-9]*\) /-M \1.asn /g')"
 	if ! "$TOOL" -m "$m.asn" $M -oA -of "$m.files" -or "objects/$m" -oR "$ROOT" -od "$m.def"; then
 	    echo ERROR!
 	    exit 2
