@@ -76,10 +76,12 @@ There are 3 simple types of connections: <i>socket</i>, <i>file</i> and
 A connection is created with a call to <a href="../lxr/ident?i=CONN_Create"><i><b>CONN_Create()</b></i></a>,
 declared in <a href="../lxr/source/include/connect/ncbi_connection.h"><i><b>connect/ncbi_connection.h</b></i></a>,
 and returned by a pointer to <i><b>CONN</b></i> passed as a second argument:
+<font size="-1">
 <pre>
 CONN conn;          /* connection handle */
 EIO_Status status = CONN_Create(connector, &conn);
 </pre>
+</font>
 The first argument of this function is a handle of a so-called <i>connector</i>,
 a special object implementing functionality of the connection being built.
 Above, for each type of connection there is a special connector in the
@@ -227,9 +229,11 @@ or explicitly with a call to <i><b>CONN_ReInit()</b></i> provided that replacing
 <a name="ref_SocketConnector"></a><h3>Socket Connector</h3>
 
 Constructors are defined in:
+<font size="-1">
 <pre>
 #include &lt;<a href="../lxr/source/include/connect/ncbi_socket_connector.h">connect/ncbi_socket_connector.h</a>&gt;
 </pre>
+</font>
 
 <p>
 Socket connection based on the socket connector brings almost direct
@@ -292,11 +296,13 @@ is not discussed either. Please refer to
 <a name="ref_FileConnector"></a><h3>File Connector</h3>
 
 Constructors defined in:
+<font size="-1">
 <pre>
 #include &lt;<a href="../lxr/source/include/connect/ncbi_file_connector.h">connect/ncbi_file_connector.h</a>&gt;
 
 CONNECTOR file_connector = <a href="../lxr/ident?i=FILE_CreateConnector">FILE_CreateConnector</a>("InFile", "OutFile");
 </pre>
+</font>
 
 This connector could be used for both reading and writing files, when
 input goes from one file, and output goes to another file.
@@ -321,11 +327,14 @@ beginning of the input file, and entirely overwrites the output file (if any) im
 <a name="ref_HTTPConnector"></a><h3>HTTP Connector</h3>
 
 Constructors defined in:
+<font size="-1">
 <pre>
 #include &lt;<a href="../lxr/source/include/connect/ncbi_http_connector.h">connect/ncbi_http_connector.h</a>&gt;
 </pre>
+</font>
 
 The simplest form of this connector's constructor takes 3 parameters:
+<font size="-1">
 <pre>
 extern CONNECTOR <a href="../lxr/ident?i=HTTP_CreateConnector">HTTP_CreateConnector</a>
 (const <a href="../lxr/ident?i=SConnNetInfo">SConnNetInfo</a>* info,
@@ -333,6 +342,7 @@ extern CONNECTOR <a href="../lxr/ident?i=HTTP_CreateConnector">HTTP_CreateConnec
  <a href="../lxr/ident?i=THCC_Flags">THCC_Flags</a>          flags
  );
 </pre>
+</font>
 a pointer to network information structure (can be <tt>NULL</tt>), a pointer to
 a custom HTTP tag-value(s) so called user-header, and bitmask of various flags.
 The user-header has to be in the form <tt>"HTTP-Tag: Tag-value\r\n"</tt>, or even multiple tag-values delimited and
@@ -346,47 +356,33 @@ defines parameters of the connection point,
 where the HTTP server is running.<br>
 <u>Note</u>: Not all parameters of the structure depicted below apply to this connector.
 
+<font size="-1">
 <pre>
 /* Network connection related configurable info struct
  */
 typedef struct {
-  char           client_host[64];
-                 /* effective client hostname            */
-  char           host[64];
-                 /* host to connect to                   */
-  unsigned short port;
-                 /* port to connect to, host byte order  */
-  char           path[1024];
-                 /* service: path(e.g. to  a CGI script) */
-  char           args[1024];
-                 /* service: args(e.g. for a CGI script) */
-  <a href="../lxr/ident?i=EReqMethod">EReqMethod</a>     req_method;
-                 /* method to use in the request         */
-  <a href="../lxr/ident?i=STimeout">STimeout</a>       timeout;
-                 /* i/o timeout                          */
-  unsigned int   max_try;
-                 /* max. # of attempts to establish conn */
-  char           http_proxy_host[64];
-                 /* hostname of HTTP proxy server        */
-  unsigned short http_proxy_port;
-                 /* port #   of HTTP proxy server        */
-  char           <a name="ref_ProxyHost"></a>proxy_host[64];
-                 /* host of CERN-like firewall proxy srv */
-  <a href="../lxr/ident?i=EDebugPrintout">EDebugPrintout</a> debug_printout;
-                 /* printout some debug info             */
-  int/*bool*/    stateless;
-                 /* to connect in HTTP-like fashion only */
-  int/*bool*/    firewall;
-                 /* to use firewall/relay in connects    */
-  int/*bool*/    <a name="ref_LbDisable"></a>lb_disable;
-                 /* to disable local load-balancing      */
-  const char*    <a name="ref_HttpUserHeader"></a>http_user_header;
-                 /* user header to add to HTTP request   */
+  char           client_host[64];      /* effective client hostname            */
+  char           host[64];             /* host to connect to                   */
+  unsigned short port;                 /* port to connect to, host byte order  */
+  char           path[1024];           /* service: path(e.g. to  a CGI script) */
+  char           args[1024];           /* service: args(e.g. for a CGI script) */
+  <a href="../lxr/ident?i=EReqMethod">EReqMethod</a>     req_method;           /* method to use in the request         */
+  <a href="../lxr/ident?i=STimeout">STimeout</a>       timeout;              /* I/O timeout                          */
+  unsigned int   max_try;              /* max. # of attempts to establish conn */
+  char           http_proxy_host[64];  /* hostname of HTTP proxy server        */
+  unsigned short http_proxy_port;      /* port #   of HTTP proxy server        */
+  char           <a name="ref_ProxyHost"></a>proxy_host[64];       /* host of CERN-like firewall proxy srv */
+  <a href="../lxr/ident?i=EDebugPrintout">EDebugPrintout</a> debug_printout;       /* printout some debug info             */
+  int/*bool*/    stateless;            /* to connect in HTTP-like fashion only */
+  int/*bool*/    firewall;             /* to use firewall/relay in connects    */
+  int/*bool*/    <a name="ref_LbDisable"></a>lb_disable;           /* to disable local load-balancing      */
+  const char*    <a name="ref_HttpUserHeader"></a>http_user_header;     /* user header to add to HTTP request   */
 
   /* the following field(s) are for the internal use only! */
   int/*bool*/    http_proxy_adjusted;
 } <a href="../lxr/ident?i=SConnNetInfo">SConnNetInfo</a>;
 </pre>
+</font>
 
 <u>Caution</u>: Unlike other "static fields" of this structure,
 <a href="#ref_HttpUserHeader"><tt>http_user_header</tt></a> (if non-<tt>NULL</tt>)
@@ -494,9 +490,11 @@ Argument <tt>flags</tt> in the HTTP connector's constructor is a bitwise <tt>OR<
 </ul>
 
 The HTTP connection will be established using the following URL:
+<font size="-1">
 <pre>
 <font color="#009900">http://host:port/path?args</font>
 </pre>
+</font>
 <u>Note</u> that <tt>path</tt> has to have a leading slash "/" as the very first character, that is, only "http://" and "?" are added by the connector,
 all other characters appear exactly as specified (but maybe encoded with <i><b>fHCC_UrlEncodeArgs</b></i>).
 The question mark does not appear if the URL has no arguments.
@@ -574,9 +572,11 @@ is foreseen by the application, and default behavior occurs.
 <a name="ref_ServiceConnector"></a><h3>Service Connector</h3>
 
 Constructors defined in:
+<font size="-1">
 <pre>
 #include &lt;<a href="../lxr/source/include/connect/ncbi_service_connector.h">connect/ncbi_service_connector.h</a>&gt;
 </pre>
+</font>
 
 This is the most complex connector in the library. It can initiate data exchange between an application and a named NCBI service,
 and data link can be either wrapped in HTTP or be just a byte-stream (like in a socket). In fact, this connector
@@ -584,20 +584,18 @@ sits on top of either <a href="#ref_HTTPConnector">HTTP</a> or <a href="#ref_Soc
 
 <p>
 The library provides two forms of connector's constructor:
+<font size="-1">
 <pre>
 <a href="../lxr/ident?i=SERVICE_CreateConnector">SERVICE_CreateConnector</a>(const char* service_name);
 
 <a href="../lxr/ident?i=SERVICE_CreateConnectorEx">SERVICE_CreateConnectorEx</a>
-(const char*           service_name,
-                       /* The registered name of an NCBI service */
- <a href="../lxr/ident?i=TSERV_Type">TSERV_Type</a>            types,
-                       /* Accepted server types, bitmask         */
- const <a href="../lxr/ident?i=SConnNetInfo">SConnNetInfo</a>*   net_info,
-                       /* Connection parameters                  */
- const <a href="../lxr/ident?i=SSERVICE_Extra">SSERVICE_Extra</a>* params
-                       /* Addtl set of parameters, may be NULL   */
+(const char*           service_name,  /* The registered name of an NCBI service */
+ <a href="../lxr/ident?i=TSERV_Type">TSERV_Type</a>            types,         /* Accepted server types, bitmask         */
+ const <a href="../lxr/ident?i=SConnNetInfo">SConnNetInfo</a>*   net_info,      /* Connection parameters                  */
+ const <a href="../lxr/ident?i=SSERVICE_Extra">SSERVICE_Extra</a>* params         /* Addtl set of parameters, may be NULL   */
  );
 </pre>
+</font>
 The first form is equivalent to <i><b>SERVICE_CreateConnectorEx(</b></i><tt>service_name, fSERV_Any, 0, 0</tt><i><b>)</b></i>.
 
 <form name="io_bounce" method="POST" action="http://www.ncbi.nlm.nih.gov/Service/dispd.cgi?service=io_bounce">
@@ -652,10 +650,14 @@ The named service facility uses the following distinction of <a name="ref_Server
   <li><font color="#CC33CC"><tt>FIREWALL</tt></font> servers are the special pseudo-servers, not existing in reality, but are created
       and used internally by the dispatcher software to indicate that only a firewall connection mode can
       be used to access the requested service.
+  <li><font color="#CC33CC"><tt>DNS</tt></font> server are beyond the scope of this document cause they are
+      to declare domain names, which used internally at NCBI site to help
+      load-balancing based DNS lookup (see <a href="../lxr/source/src/connect/daemons/mghbn.c">here</a>).
 </ul>
 
 Formal description of these types is given in
 <a href="../lxr/source/include/connect/ncbi_server_info.h"><i><b>connect/ncbi_server_info.h</b></i></a>:
+<font size="-1">
 <pre>
 /* Server types
  */
@@ -665,13 +667,15 @@ typedef enum {
   fSERV_HttpGet    = 0x4,
   fSERV_HttpPost   = 0x8,
   fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost,
-  fSERV_Firewall   = 0x10
+  fSERV_Firewall   = 0x10,
+  fSERV_Dns        = 0x20
 } <a href="../lxr/ident?i=ESERV_Type">ESERV_Type</a>;
 
 #define fSERV_Any           0
 #define fSERV_StatelessOnly 0x80
 typedef unsigned TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
 </pre>
+</font>
 
 The bitwise <tt>OR</tt> of the <i><b>ESERV_Type</b></i> flags can be used to
 restrict the search for the servers, matching the requested service name.
@@ -853,6 +857,7 @@ parameters, as they appear in the corresponding connector's constructors in C.
 <p>
 The code below is a C++-style example from the previous section devoted to the
 <a href="#ref_ServiceConnector">service connector</a>:
+<font size="-1">
 <pre>
 #include &lt;connect/ncbi_conn_stream.hpp&gt;
 
@@ -863,6 +868,7 @@ The code below is a C++-style example from the previous section devoted to the
 
   ...
 </pre>
+</font>
 <u>Note</u>:
 Stream constructor may throw an exception if, for instance,
 the requested service is not found, or other kind of problem arose.
@@ -882,6 +888,7 @@ For the client, the mapping is seen as a reading from an iterator created by a c
 <b><i>SERV_Open()</i></b> like in the following
 fragment (for more examples please refer to the test program
 <a href="../lxr/source/src/connect/test/test_ncbi_disp.c"><tt>test_ncbi_disp.c</tt></a>):
+<font size="-1">
 <pre>
 #include &lt;connect/ncbi_service.h&gt;
 
@@ -903,6 +910,7 @@ fragment (for more examples please refer to the test program
     if (!iter || !n)
         printf("Service not found\n");
 </pre>
+</font>
 <u>Note</u>: Non-<tt>NULL</tt> iterator returned from <b><i>SERV_Open()</i></b> <i>does not</i> yet
 guarantee that the service is available, whereas <tt>NULL</tt> iterator definitely
 means that the service does not exist.
