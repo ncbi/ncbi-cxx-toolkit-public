@@ -151,9 +151,10 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp)
 Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp, 
            Uint1* query_start, Uint1* subject_start, 
            const BlastHitSavingOptions* hit_options, 
-           const BlastScoringOptions* score_options, 
+           const BlastScoringParameters* score_params, 
            BlastQueryInfo* query_info, BlastScoreBlk* sbp)
 {
+   BlastScoringOptions *score_options = score_params->options;
    Int4 sum, score, gap_open, gap_extend;
    Int4** matrix;
    Uint1* query,* subject;
@@ -174,15 +175,15 @@ Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp,
    kbp = sbp->kbp_std[hsp->context];
    searchsp_eff = (double)query_info->eff_searchsp_array[hsp->context];
 
-   if (score_options->gap_open == 0 && score_options->gap_extend == 0) {
-      if (score_options->reward % 2 == 1) 
+   if (score_params->gap_open == 0 && score_params->gap_extend == 0) {
+      if (score_params->reward % 2 == 1) 
          factor = 2;
       gap_open = 0;
       gap_extend = 
-         (score_options->reward - 2*score_options->penalty) * factor / 2;
+         (score_params->reward - 2*score_params->penalty) * factor / 2;
    } else {
-      gap_open = score_options->gap_open;
-      gap_extend = score_options->gap_extend;
+      gap_open = score_params->gap_open;
+      gap_extend = score_params->gap_extend;
    }
 
    matrix = sbp->matrix;
@@ -1228,7 +1229,7 @@ Int2
 Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
-   BlastScoreBlk* sbp, const BlastScoringOptions* score_options, 
+   BlastScoreBlk* sbp, const BlastScoringParameters* score_params, 
    const BlastSeqSrc* seq_src)
 {
    BlastHSP** hsp_array,* hsp;
@@ -1237,7 +1238,7 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    Boolean purge, delete_hsp;
    Int2 status = 0;
    GetSeqArg seq_arg;
-   Boolean gapped_calculation = score_options->gapped_calculation;
+   Boolean gapped_calculation = score_params->options->gapped_calculation;
 
    if (!hsp_list)
       return status;
@@ -1285,7 +1286,7 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
 
       delete_hsp = 
          Blast_HSPReevaluateWithAmbiguities(hsp, query_start, subject_start,
-            hit_options, score_options, query_info, sbp);
+            hit_options, score_params, query_info, sbp);
       
       if (delete_hsp) { /* This HSP is now below the cutoff */
          hsp_array[index] = Blast_HSPFree(hsp_array[index]);
