@@ -47,49 +47,13 @@
 #include <string>
 
 #include "style_manager.hpp"
+#include "cn3d_tools.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
 
 class StructureSet;
 class FloatingPointSpinCtrl;
-
-template < class T >
-class TypeStringAssociator
-{
-private:
-    typename std::map < T , std::string > type2string;
-    typename std::map < std::string , T > string2type;
-public:
-    void Associate(const T& type, const std::string& name)
-    {
-        type2string[type] = name;
-        string2type[name] = type;
-    }
-    const T * Find(const std::string& name) const
-    {
-        std::map < std::string , T >::const_iterator i = string2type.find(name);
-        return ((i != string2type.end()) ? &(i->second) : NULL);
-    }
-    bool Get(const std::string& name, T *type) const
-    {
-        const T *found = Find(name);
-        if (found) *type = *found;
-        return (found != NULL);
-    }
-    const std::string * Find(const T& type) const
-    {
-        std::map < T , std::string >::const_iterator i = type2string.find(type);
-        return ((i != type2string.end()) ? &(i->second) : NULL);
-    }
-    bool Get(const T& type, std::string *name) const
-    {
-        const std::string *found = Find(type);
-        if (found) *name = *found;
-        return (found != NULL);
-    }
-    int Size(void) const { return type2string.size(); }
-};
 
 class StyleDialog : public wxDialog
 {
@@ -149,6 +113,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/05/28 21:01:45  thiessen
+* namespace/typename fixes for GCC 3.4
+*
 * Revision 1.12  2004/02/19 17:05:18  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

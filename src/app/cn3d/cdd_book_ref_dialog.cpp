@@ -99,43 +99,6 @@ BEGIN_SCOPE(Cn3D)
         return; \
     }
 
-template < class T >
-class TypeStringAssociator
-{
-private:
-    typename std::map < T , std::string > type2string;
-    typename std::map < std::string , T > string2type;
-public:
-    void Associate(const T& type, const std::string& name)
-    {
-        type2string[type] = name;
-        string2type[name] = type;
-    }
-    const T * Find(const std::string& name) const
-    {
-        std::map < std::string , T >::const_iterator i = string2type.find(name);
-        return ((i != string2type.end()) ? &(i->second) : NULL);
-    }
-    bool Get(const std::string& name, T *type) const
-    {
-        const T *found = Find(name);
-        if (found) *type = *found;
-        return (found != NULL);
-    }
-    const std::string * Find(const T& type) const
-    {
-        std::map < T , std::string >::const_iterator i = type2string.find(type);
-        return ((i != type2string.end()) ? &(i->second) : NULL);
-    }
-    bool Get(const T& type, std::string *name) const
-    {
-        const std::string *found = Find(type);
-        if (found) *name = *found;
-        return (found != NULL);
-    }
-    int Size(void) const { return type2string.size(); }
-};
-
 BEGIN_EVENT_TABLE(CDDBookRefDialog, wxDialog)
     EVT_CLOSE       (       CDDBookRefDialog::OnCloseWindow)
     EVT_BUTTON      (-1,    CDDBookRefDialog::OnClick)
@@ -548,6 +511,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/28 21:01:45  thiessen
+* namespace/typename fixes for GCC 3.4
+*
 * Revision 1.6  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *

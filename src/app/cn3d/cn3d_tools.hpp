@@ -42,6 +42,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 class wxFrame;
 
@@ -79,11 +80,11 @@ BEGIN_SCOPE(Cn3D)
 #define CN3D_VERSION_STRING "4.2"
 
 // diagnostic streams
-#define TRACEMSG(stream) ERR_POST(Trace << stream)
-#define INFOMSG(stream) ERR_POST(Info << stream)
-#define WARNINGMSG(stream) ERR_POST(Warning << stream)
-#define ERRORMSG(stream) ERR_POST(Error << stream)
-#define FATALMSG(stream) ERR_POST(Fatal << stream)
+#define TRACEMSG(stream) ERR_POST(ncbi::Trace << stream)
+#define INFOMSG(stream) ERR_POST(ncbi::Info << stream)
+#define WARNINGMSG(stream) ERR_POST(ncbi::Warning << stream)
+#define ERRORMSG(stream) ERR_POST(ncbi::Error << stream)
+#define FATALMSG(stream) ERR_POST(ncbi::Fatal << stream)
 
 // turn on/off dialog box for errors (on by default)
 void SetDialogSevereErrors(bool status);
@@ -175,12 +176,12 @@ static const std::string
 
 // utility function to remove some elements from a vector
 template < class T >
-static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, int nToRemove)
+void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, int nToRemove)
 {
     if (v.size() != remove.size()) {
 #ifndef _DEBUG
         // MSVC gets internal compiler error here on debug builds... ugh!
-        ERR_POST(Error << "VectorRemoveElements() - size mismatch");
+        ERR_POST(ncbi::Error << "VectorRemoveElements() - size mismatch");
 #endif
         return;
     }
@@ -195,7 +196,7 @@ static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool 
     }
     if (nRemoved != nToRemove) {
 #ifndef _DEBUG
-        ERR_POST(Error << "VectorRemoveElements() - bad nToRemove");
+        ERR_POST(ncbi::Error << "VectorRemoveElements() - bad nToRemove");
 #endif
         return;
     }
@@ -212,6 +213,46 @@ do { \
     (container).clear(); \
 } while (0)
 
+template < class T >
+class TypeStringAssociator
+{
+private:
+    typedef typename std::map < T , std::string > T2String;
+    T2String type2string;
+    typedef typename std::map < std::string , T > String2T;
+    String2T string2type;
+
+public:
+    void Associate(const T& type, const std::string& name)
+    {
+        type2string[type] = name;
+        string2type[name] = type;
+    }
+    const T * Find(const std::string& name) const
+    {
+        typename TypeStringAssociator::String2T::const_iterator i = string2type.find(name);
+        return ((i != string2type.end()) ? &(i->second) : NULL);
+    }
+    bool Get(const std::string& name, T *type) const
+    {
+        const T *found = Find(name);
+        if (found) *type = *found;
+        return (found != NULL);
+    }
+    const std::string * Find(const T& type) const
+    {
+        typename TypeStringAssociator::T2String::const_iterator i = type2string.find(type);
+        return ((i != type2string.end()) ? &(i->second) : NULL);
+    }
+    bool Get(const T& type, std::string *name) const
+    {
+        const std::string *found = Find(type);
+        if (found) *name = *found;
+        return (found != NULL);
+    }
+    int Size(void) const { return type2string.size(); }
+};
+
 END_SCOPE(Cn3D)
 
 #endif // CN3D_TOOLS__HPP
@@ -219,6 +260,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/05/28 21:01:45  thiessen
+* namespace/typename fixes for GCC 3.4
+*
 * Revision 1.34  2004/03/15 17:17:56  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

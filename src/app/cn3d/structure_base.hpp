@@ -97,7 +97,7 @@ public:
             }
         }
         if (warnIfNotFound)
-            ERR_POST(Warning << "can't get parent of requested type");
+            ERR_POST(ncbi::Warning << "can't get parent of requested type");
         return false;
     }
 };
@@ -123,6 +123,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/05/28 21:01:45  thiessen
+* namespace/typename fixes for GCC 3.4
+*
 * Revision 1.23  2003/02/03 19:20:07  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
