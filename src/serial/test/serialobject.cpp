@@ -1,7 +1,7 @@
 #include "serialobject.hpp"
 #include <serial/typeinfo.hpp>
 
-string Ptr(const void* p)
+string Pntr(const void* p)
 {
     CNcbiOstrstream b;
     b << "0x" << hex << long(p);
@@ -11,10 +11,10 @@ string Ptr(const void* p)
 void CTestSerialObject::Dump(CNcbiOstream& out) const
 {
     out << '{' << endl;
-    out << "m_Name: \"" << m_Name << "\" (*" << Ptr(&m_Name) << ")" << endl;
+    out << "m_Name: \"" << m_Name << "\" (*" << Pntr(&m_Name) << ")" << endl;
     out << "m_NamePtr: ";
     if ( m_NamePtr )
-        out << '"' << *m_NamePtr << "\" (*" << Ptr(m_NamePtr) << ")";
+        out << '"' << *m_NamePtr << "\" (*" << Pntr(m_NamePtr) << ")";
     else
         out << "null";
     out << endl;
@@ -46,7 +46,7 @@ void CTestSerialObject::Dump(CNcbiOstream& out) const
 
     out << "m_Next: ";
     if ( m_Next )
-        out << Ptr(m_Next);
+        out << Pntr(m_Next);
     else
         out << "null";
     out << endl;
