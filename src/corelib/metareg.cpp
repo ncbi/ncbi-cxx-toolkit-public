@@ -67,14 +67,17 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
         GUARD.Release();
     }
     else { // see if we already have it
+        TIndex::const_iterator iit
+            = m_Index.find(SKey(name, style, flags, reg_flags));
+        if (iit != m_Index.end()) {
+            _TRACE("found in cache");
+            _ASSERT(*iit < m_Contents.size());
+            return m_Contents[iit->second];
+        }
+
         ITERATE (vector<SEntry>, it, m_Contents) {
             if (it->flags != flags  ||  it->reg_flags != reg_flags)
                 continue;
-
-            if (it->requested_name == name  &&  it->style == style) {
-                _TRACE("found in cache");
-                return *it;
-            }
 
             if (style == eName_AsIs  &&  it->actual_name == name) {
                 _TRACE("found in cache");
@@ -105,10 +108,8 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
 
             _TRACE("CMetaRegistry::Load() -- reading registry file: " << name);
             SEntry result;
-            result.requested_name = name0;
-            result.style          = style0;
-            result.flags          = flags;
-            result.reg_flags      = reg_flags;
+            result.flags     = flags;
+            result.reg_flags = reg_flags;
             if ( reg ) {
                 if ( !reg->Empty() ) { // shouldn't share
                     result.flags |= fPrivate;
@@ -127,6 +128,8 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
             }
             if ( !(flags & fPrivate) ) {
                 m_Contents.push_back(result);
+                m_Index[SKey(name0, style0, flags, reg_flags)]
+                    = m_Contents.size() - 1;
             }
             return result;
         }
@@ -159,11 +162,9 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
 
     // not found
     SEntry result;
-    result.requested_name = name0;
-    result.style          = style0;
-    result.flags          = flags;
-    result.reg_flags      = reg_flags;
-    result.registry       = 0;
+    result.flags     = flags;
+    result.reg_flags = reg_flags;
+    result.registry  = 0;
     if (reg  &&  !(flags & fDontOwn) ) {
         delete reg;
     }
@@ -190,12 +191,46 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
     {{
         CNcbiApplication* the_app = CNcbiApplication::Instance();
         if ( the_app ) {
-            string dir = the_app->GetArguments().GetProgramDirname();
+            string dir  = the_app->GetArguments().GetProgramDirname();
+            string dir2 = the_app->GetArguments().GetProgramDirname(true);
             if (dir.size()) {
                 path.push_back(dir);
             }
+            if (dir2.size() && dir2 != dir) {
+                path.push_back(dir2);
+            }
         }
     }}
+}
+
+
+bool CMetaRegistry::SKey::operator <(const SKey& k) const
+{
+    if (requested_name < k.requested_name) {
+        return true;
+    } else if (requested_name > k.requested_name) {
+        return false;
+    }
+
+    if (style < k.style) {
+        return true;
+    } else if (style > k.style) {
+        return false;
+    }
+
+    if (flags < k.flags) {
+        return true;
+    } else if (flags > k.flags) {
+        return false;
+    }
+
+    if (reg_flags < k.reg_flags) {
+        return true;
+    } else if (reg_flags > k.reg_flags) {
+        return false;
+    }
+
+    return false;
 }
 
 
@@ -207,6 +242,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2003/09/30 21:06:24  ucko
+ * Refactored cache to allow flushing of path searches when the search
+ * path changes.
+ * If the application ran through a symlink to another directory, search
+ * the real directory as a fallback.
+ *
  * Revision 1.7  2003/09/29 20:15:20  vakatov
  * CMetaRegistry::x_Load() -- thinko fix:  "result.flags |= fPrivate;" (added '|')
  *
