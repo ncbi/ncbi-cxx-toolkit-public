@@ -584,6 +584,7 @@ const string CValidErrItem::sm_Terse [] = {
     "MultipleBioseqs",
     "CDSmRNAmismatch",
     "UnnecessaryException",
+    "LocusTagProductMismatch",
     END(SEQ_FEAT),
 
     BEGIN(SEQ_ALIGN),
@@ -1224,6 +1225,9 @@ under a given gene.",
 //  SEQ_FEAT_UnnecessaryException
 "The feature is marked with an exception qualifier, but the validator does \
 not detect an error that needs to be suppressed.",
+//  SEQ_FEAT_LocusTagProductMismatch 
+"In certain records a policy is that the locus_tag of the gene is expected to \
+match the prefix of the general ID of the CDS or mRNA product Bioseq.",
 
 END(SEQ_FEAT),
 
@@ -1337,6 +1341,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2004/09/21 18:35:46  shomrat
+* Added LocusTagProductMismatch
+*
 * Revision 1.54  2004/09/21 15:54:07  shomrat
 * + SEQ_FEAT_CDSmRNAmismatch, SEQ_FEAT_UnnecessaryException
 *
