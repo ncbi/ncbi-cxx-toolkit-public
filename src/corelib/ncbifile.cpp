@@ -1810,6 +1810,7 @@ struct SMemoryFileHandle {
 #else /* UNIX */
     int     hMap;   // File handle
 #endif
+    string  sFileName;
 };
 
 // Platform-dependent memory file attributes
@@ -1991,26 +1992,41 @@ CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
     }
 
     // Map file view to memory
+    string errmsg;
 #if defined(NCBI_OS_MSWIN)
     DWORD offset_hi  = DWORD(Int8(m_OffsetReal) >> 32);
     DWORD offset_low = DWORD(Int8(m_OffsetReal) & 0xFFFFFFFF);
     m_DataPtrReal = MapViewOfFile(handle.hMap, attrs.map_access,
                                   offset_hi, offset_low, m_LengthReal);
+    if ( !m_DataPtrReal ) {
+        char* ptr = NULL;
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                    FORMAT_MESSAGE_FROM_SYSTEM | 
+                    FORMAT_MESSAGE_IGNORE_INSERTS,
+                    NULL, GetLastError(), 
+                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                    (LPTSTR) &ptr, 0, NULL);
+        errmsg = ptr ? ptr : "unknown reason";
+        LocalFree(ptr);
+    }
+
 #elif defined(NCBI_OS_UNIX)
+    errno = 0;
     m_DataPtrReal = mmap(0, m_LengthReal, attrs.map_protect,
                          attrs.map_access, handle.hMap, m_OffsetReal);
     if ( m_DataPtrReal == MAP_FAILED ) {
         m_DataPtrReal = 0;
+        errmsg = strerror(errno);
     }
 #endif
     // Calculate user's pointer to data
     m_DataPtr = (char*)m_DataPtrReal + (m_Offset - m_OffsetReal);
     if ( !m_DataPtr ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileSegment: Unable to map a view of a file into memory " \
-            "(offset=" +
+            "CMemoryFileSegment: Unable to map a view of a file '" + 
+            handle.sFileName + "' into memory (offset=" +
             NStr::Int8ToString(m_Offset) + ", length=" +
-            NStr::Int8ToString(m_Length) + ")");
+            NStr::Int8ToString(m_Length) + "): " + errmsg);
     }
 }
 
@@ -2093,6 +2109,7 @@ CMemoryFileMap::CMemoryFileMap(const string&  file_name,
         // Special case -- file is empty
         m_Handle = new SMemoryFileHandle();
         m_Handle->hMap = 0;
+        m_Handle->sFileName = m_FileName;
         return;
     }
     x_Open();
@@ -2174,6 +2191,7 @@ void CMemoryFileMap::x_Open(void)
 {
     m_Handle = new SMemoryFileHandle();
     m_Handle->hMap = 0;
+    m_Handle->sFileName = m_FileName;
 
     for (;;) { // quasi-TRY block
 
@@ -2312,6 +2330,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2005/02/23 19:18:53  ivanov
+ * CMemoryFileSegment: added mapped file name and error explanation
+ * to exception diagnostic message
+ *
  * Revision 1.86  2005/01/31 11:49:14  ivanov
  * Added CMask versions of:
  *     CDirEntries::MatchesMask(), CDirEntries::GetEntries().
