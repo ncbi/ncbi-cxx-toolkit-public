@@ -166,10 +166,8 @@ static Int4 BlastSeqLocLen(BlastSeqLoc* var)
 }
 
 /*****************************************************************************
-*
-*   ListNodeSort(list, compar)
-*       Copied from SortListNode in jzcoll, renamed, for more general access
-*       Makes array from ListNode list, calls HeapSort, reconnects ListNode list
+*  
+*    comments in blast_filter.h
 *
 *****************************************************************************/
 BlastSeqLoc* BlastSeqLocSort (BlastSeqLoc* list,
