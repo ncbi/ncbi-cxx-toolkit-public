@@ -1,0 +1,4 @@
+ASN_DEP = id2
+
+LIB = id2cli
+SRC = id2_client id2_client_
