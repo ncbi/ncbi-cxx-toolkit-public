@@ -40,6 +40,7 @@
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/impl/tse_lock.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <corelib/plugin_manager.hpp>
 #include <set>
 #include <map>
 
@@ -345,6 +346,21 @@ END_SCOPE(objects)
 
 NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 1, 0, 0);
 
+template<>
+class CDllResolver_Getter<objects::CDataLoader>
+{
+public:
+    CPluginManager_DllResolver* operator()(void)
+    {
+        CPluginManager_DllResolver* resolver =
+            new CPluginManager_DllResolver(
+            CInterfaceVersion<objects::CDataLoader>::GetName());
+        resolver->SetDllNamePrefix("ncbi");
+        return resolver;
+    }
+};
+
+
 END_NCBI_SCOPE
 
 
@@ -352,6 +368,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/12/22 19:26:31  grichenk
+* +CDllResolver_Getter<objects::CDataLoader>
+*
 * Revision 1.40  2004/12/22 15:56:06  vasilche
 * Added possibility to reload TSEs by their BlobId.
 * Added convertion of BlobId to string.
