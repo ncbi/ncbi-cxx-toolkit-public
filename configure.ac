@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.165 2003/02/10 22:17:36 ucko Exp $
+#  $Id: configure.ac,v 1.166 2003/02/19 16:21:22 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -143,6 +143,10 @@ AC_ARG_WITH(ftds,
    [ --without-ftds          do not use FreeTDS libraries])
 AC_ARG_WITH(ftds2,
    [ --with-ftds=DIR         use FreeTDS installation in DIR])
+AC_ARG_WITH(mysql,
+   [ --without-mysql         do not use MySQL])      
+AC_ARG_WITH(mysql2,
+   [ --with-mysql=DIR        use MySQL installation in DIR])
 AC_ARG_WITH(fltk,
    [ --without-fltk          do not use FLTK])
 AC_ARG_WITH(fltk2,
@@ -193,7 +197,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds orbacus fltk opengl \
+sybase-new ftds mysql orbacus fltk opengl \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -228,7 +232,7 @@ for x_arg in "$@" ; do
       | --cache-file=* | --build=* | --host=* \
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
-      | --with-ftds=* | --with-fltk=* \
+      | --with-ftds=* | --with-mysql=* | --with-fltk=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -901,7 +905,7 @@ if test "$with_profiling" = "yes" ; then
          case "$with_dll" in
             yes) AC_MSG_ERROR([This platform does not support DLL profiling.])
                  ;;
-	    no) ;;
+            no) ;;
             *) with_dll=no ;;
          esac
       ;;
@@ -2086,6 +2090,41 @@ AC_SUBST(FTDS_LIBS)
 AC_SUBST(freetds)
 
 
+## MySQL
+if test "$with_mysql" != "no" ; then
+   : ${MYSQL_BINPATH=${MYSQL_PATH-/netopt/mysql/current}/bin}
+   AC_PATH_PROG(mysql_config, mysql_config, [], [$MYSQL_BINPATH:$PATH])
+   if test -n "$mysql_config" ; then
+      : ${MYSQL_BINPATH=`dirname $mysql_config`}
+      # Kill off single quotes, due to later requoting
+      : ${MYSQL_INCLUDE=`$mysql_config --cflags | tr -d \'`}
+      : ${MYSQL_LIBS=`$mysql_config --libs |\
+             sed -e "s/'//g; s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`}
+      AC_CACHE_CHECK([whether MySQL works], ncbi_cv_lib_mysql,
+         [CPPFLAGS="$MYSQL_INCLUDE $orig_CPPFLAGS"
+          LIBS="$MYSQL_LIBS $orig_LIBS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <mysql.h>]],
+          [[MYSQL *p;  p = mysql_init(p);]])],
+          [ncbi_cv_lib_mysql=yes], [ncbi_cv_lib_mysql=no])])
+      if test "$ncbi_cv_lib_mysql" = no; then
+         with_mysql=no
+      fi
+   else
+      with_mysql=no
+   fi
+fi
+if test "$with_mysql" = "no" ; then
+   MYSQL_PATH="No_MYSQL"
+   MYSQL_INCLUDE=
+   MYSQL_LIBS=
+   WithoutPackages="$WithoutPackages MySQL"
+else
+   WithPackages="$WithPackages MySQL"
+   AC_DEFINE(HAVE_MYSQL, 1, [Define to 1 if MySQL is available.])
+fi
+
+
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
    NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
@@ -3135,6 +3174,8 @@ AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
 AC_SUBST(SYBASE_DLLS)
 AC_SUBST(SYBASE_DBLIBS)
+AC_SUBST(MYSQL_INCLUDE)
+AC_SUBST(MYSQL_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(OPENGL_INCLUDE)

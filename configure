@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS7_INCLUDE FTDS7_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_POST_LINK WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS7_INCLUDE FTDS7_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_POST_LINK WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -891,6 +891,8 @@ Optional Packages:
  --with-sybase-new       use newer SYBASE install (12.5 rather than 12.0)
  --without-ftds          do not use FreeTDS libraries
  --with-ftds=DIR         use FreeTDS installation in DIR
+ --without-mysql         do not use MySQL
+ --with-mysql=DIR        use MySQL installation in DIR
  --without-fltk          do not use FLTK
  --with-fltk=DIR         use FLTK installation in DIR
  --without-opengl        do not use OpenGL
@@ -1595,6 +1597,18 @@ if test "${with_ftds2+set}" = set; then
 
 fi;
 
+# Check whether --with-mysql or --without-mysql was given.
+if test "${with_mysql+set}" = set; then
+  withval="$with_mysql"
+
+fi;
+
+# Check whether --with-mysql2 or --without-mysql2 was given.
+if test "${with_mysql2+set}" = set; then
+  withval="$with_mysql2"
+
+fi;
+
 # Check whether --with-fltk or --without-fltk was given.
 if test "${with_fltk+set}" = set; then
   withval="$with_fltk"
@@ -1720,7 +1734,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds orbacus fltk opengl \
+sybase-new ftds mysql orbacus fltk opengl \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -1755,7 +1769,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       | --cache-file=* | --build=* | --host=* \
       | [A-Z]*=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
-      | --with-ftds=* | --with-fltk=* \
+      | --with-ftds=* | --with-mysql=* | --with-fltk=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -3762,7 +3776,7 @@ if test "$with_profiling" = "yes" ; then
 echo "$as_me: error: This platform does not support DLL profiling." >&2;}
    { (exit 1); exit 1; }; }
                  ;;
-	    no) ;;
+            no) ;;
             *) with_dll=no ;;
          esac
       ;;
@@ -9506,6 +9520,122 @@ fi
 
 
 
+
+
+## MySQL
+if test "$with_mysql" != "no" ; then
+   : ${MYSQL_BINPATH=${MYSQL_PATH-/netopt/mysql/current}/bin}
+   # Extract the first word of "mysql_config", so it can be a program name with args.
+set dummy mysql_config; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_mysql_config+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $mysql_config in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_mysql_config="$mysql_config" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$MYSQL_BINPATH:$PATH"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_mysql_config="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+mysql_config=$ac_cv_path_mysql_config
+
+if test -n "$mysql_config"; then
+  echo "$as_me:$LINENO: result: $mysql_config" >&5
+echo "${ECHO_T}$mysql_config" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+   if test -n "$mysql_config" ; then
+      : ${MYSQL_BINPATH=`dirname $mysql_config`}
+      : ${MYSQL_INCLUDE=`$mysql_config --cflags | tr -d \'`}
+      : ${MYSQL_LIBS=`$mysql_config --libs |\
+             sed -e "s/'//g; s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`}
+      echo "$as_me:$LINENO: checking whether MySQL works" >&5
+echo $ECHO_N "checking whether MySQL works... $ECHO_C" >&6
+if test "${ncbi_cv_lib_mysql+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$MYSQL_INCLUDE $orig_CPPFLAGS"
+          LIBS="$MYSQL_LIBS $orig_LIBS"
+          cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <mysql.h>
+int
+main ()
+{
+MYSQL *p;  p = mysql_init(p);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_mysql=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_mysql=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_mysql" >&5
+echo "${ECHO_T}$ncbi_cv_lib_mysql" >&6
+      if test "$ncbi_cv_lib_mysql" = no; then
+         with_mysql=no
+      fi
+   else
+      with_mysql=no
+   fi
+fi
+if test "$with_mysql" = "no" ; then
+   MYSQL_PATH="No_MYSQL"
+   MYSQL_INCLUDE=
+   MYSQL_LIBS=
+   WithoutPackages="$WithoutPackages MySQL"
+else
+   WithPackages="$WithPackages MySQL"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_MYSQL 1
+_ACEOF
+
+fi
 
 
 ## NCBI C Toolkit
@@ -16672,6 +16802,8 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -17374,6 +17506,7 @@ s,@FTDS8_LIBS@,$FTDS8_LIBS,;t t
 s,@FTDS_INCLUDE@,$FTDS_INCLUDE,;t t
 s,@FTDS_LIBS@,$FTDS_LIBS,;t t
 s,@freetds@,$freetds,;t t
+s,@mysql_config@,$mysql_config,;t t
 s,@X_CFLAGS@,$X_CFLAGS,;t t
 s,@X_PRE_LIBS@,$X_PRE_LIBS,;t t
 s,@X_LIBS@,$X_LIBS,;t t
@@ -17449,6 +17582,8 @@ s,@SYBASE_INCLUDE@,$SYBASE_INCLUDE,;t t
 s,@SYBASE_LIBS@,$SYBASE_LIBS,;t t
 s,@SYBASE_DLLS@,$SYBASE_DLLS,;t t
 s,@SYBASE_DBLIBS@,$SYBASE_DBLIBS,;t t
+s,@MYSQL_INCLUDE@,$MYSQL_INCLUDE,;t t
+s,@MYSQL_LIBS@,$MYSQL_LIBS,;t t
 s,@NCBI_C_INCLUDE@,$NCBI_C_INCLUDE,;t t
 s,@NCBI_C_LIBPATH@,$NCBI_C_LIBPATH,;t t
 s,@OPENGL_INCLUDE@,$OPENGL_INCLUDE,;t t

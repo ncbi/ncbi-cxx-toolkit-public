@@ -3,10 +3,6 @@
 SRC = connection context lang_cmd result
 LIB = dbapi_driver_mysql
 
-MYSQL_PATH = /usr/local/mysql
-MYSQL_INCLUDE = -I$(MYSQL_PATH)/include/mysql
-MYSQL_LIBS = -L$(MYSQL_PATH)/lib/mysql -lmysqlclient
-
 CPPFLAGS = $(ORIG_CPPFLAGS) $(MYSQL_INCLUDE)
 
 # Build shared version when possible

@@ -3,5 +3,7 @@
 LIB_PROJ = dbapi_driver_mysql
 SUB_PROJ = samples
 
+REQUIRES = MySQL
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

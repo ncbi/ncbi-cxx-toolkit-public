@@ -123,6 +123,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define to 1 if MySQL is available. */
+#undef HAVE_MYSQL
+
 /* Define to 1 if the NCBI C toolkit is available. */
 #undef HAVE_NCBI_C
 
