@@ -8,5 +8,6 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(CPPUNIT_INCLUDE)
 LIB  = dbapi dbapi_driver xncbi
 LIBS = $(CPPUNIT_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = dbapi_unit_test
 CHECK_REQUIRES = DLL
+CHECK_COPY = dbapi_unit_test.sh
+CHECK_CMD = dbapi_unit_test.sh
