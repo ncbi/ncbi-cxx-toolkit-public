@@ -446,6 +446,11 @@ public: \
 #  endif
 #endif
 
+#if defined(EXCEPTION_BUG_WORKAROUND)
+#  define EXCEPTION_VIRTUAL_BASE
+#else
+#  define EXCEPTION_VIRTUAL_BASE virtual
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -504,11 +509,7 @@ private:
 // CCoreException - corelib exceptions
 
 
-#if defined(EXCEPTION_BUG_WORKAROUND)
-class CCoreException : public CException
-#else
-class CCoreException : virtual public CException
-#endif
+class CCoreException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -535,11 +536,7 @@ public:
 //
 
 
-#if defined(EXCEPTION_BUG_WORKAROUND)
-class CErrnoException : public CException
-#else
-class CErrnoException : virtual public CException
-#endif
+class CErrnoException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
 
@@ -579,11 +576,7 @@ private:
 
 
 
-#if defined(EXCEPTION_BUG_WORKAROUND)
-class CParseException : public CException
-#else
-class CParseException : virtual public CException
-#endif
+class CParseException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
 
@@ -659,6 +652,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2002/08/06 14:08:30  gouriano
+ * introduced EXCEPTION_VIRTUAL_BASE macro to make doc++ happy
+ *
  * Revision 1.36  2002/07/31 18:32:04  gouriano
  * fix for virtual base classes
  *
