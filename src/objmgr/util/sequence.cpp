@@ -201,15 +201,16 @@ int ScoreSeqIdHandle(const CSeq_id_Handle& idh)
     return CSeq_id::Score(id_non_const);
 }
 
-CSeq_id_Handle GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
+
+CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
 {
+    if ( ids.empty() ) {
+        return CSeq_id_Handle();
+    }
+
     switch (type) {
     case eGetId_ForceGi:
-        if (id.IsGi()) {
-            return CSeq_id_Handle::GetHandle(id);
-        }
         {{
-            CScope::TIds ids = scope.GetIds(id);
             ITERATE (CScope::TIds, iter, ids) {
                 if (iter->IsGi()) {
                     return *iter;
@@ -220,7 +221,7 @@ CSeq_id_Handle GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
 
     case eGetId_ForceAcc:
         {{
-            CSeq_id_Handle best = GetId(id, scope, eGetId_Best);
+            CSeq_id_Handle best = x_GetId(ids, eGetId_Best);
             if (best  &&
                 best.GetSeqId()->GetTextseq_Id() != NULL  &&
                 best.GetSeqId()->GetTextseq_Id()->IsSetAccession()) {
@@ -231,17 +232,11 @@ CSeq_id_Handle GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
 
     case eGetId_Best:
         {{
-            CScope::TIds ids = scope.GetIds(id);
-            if (ids.size() != 0) {
-                CSeq_id_Handle idh = FindBestChoice(ids, ScoreSeqIdHandle);
-                return idh;
-            } else {
-                return CSeq_id_Handle::GetHandle(id);
-            }
+            return FindBestChoice(ids, ScoreSeqIdHandle);
         }}
 
     default:
-        return CSeq_id_Handle::GetHandle(id);
+        return CSeq_id_Handle();
     }
 
     NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
@@ -249,10 +244,21 @@ CSeq_id_Handle GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
 }
 
 
+CSeq_id_Handle GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
+{
+    return GetId(CSeq_id_Handle::GetHandle(id), scope, type);
+}
+
+
 CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
                      EGetIdType type)
 {
-    return GetId(*idh.GetSeqId(), scope, type);
+    if ( type == eGetId_ForceGi  &&  idh.IsGi() ) {
+        return idh;
+    }
+    CScope::TIds ids = scope.GetIds(idh);
+    CSeq_id_Handle ret = x_GetId(ids, type);
+    return ret ? ret : idh;
 }
 
 
@@ -261,13 +267,15 @@ CSeq_id_Handle GetId(const CBioseq_Handle& handle,
 {
     _ASSERT(handle);
 
-    CConstRef<CSeq_id> id = handle.GetSeqId();
-    if (!id) {
+    const CScope::TIds& ids = handle.GetId();
+    CSeq_id_Handle idh = x_GetId(ids, type);
+
+    if ( !idh ) {
         NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
                    "Unable to get Seq-id from handle");
     }
 
-    return GetId(*id, handle.GetScope(), type);
+    return idh;
 }
 
 
@@ -2615,6 +2623,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.119  2005/02/17 20:09:39  grichenk
+* GetId(CBioseq_Handle) uses existing vector of ids from the handle.
+*
 * Revision 1.118  2005/02/17 15:58:42  grichenk
 * Changes sequence::GetId() to return CSeq_id_Handle
 *
