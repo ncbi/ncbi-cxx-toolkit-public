@@ -12,7 +12,9 @@
 # localization
 $NAME_DOCXX  = "docxx";
 $BASE_DOCXX  = ".";
+$BASE_ROOT   = "..";
 $BASE_LXR    = "../lxr";
+$BASE_SSI    = "../ssi";
 $HREF_MANUAL = "../index.html";
 $ENV{'PATH'} = "/usr/bin:/netopt/ncbi_tools/doc++/bin";
 
@@ -40,6 +42,10 @@ while(<DOCXX>)
 {
   print;
 }
+# fix HTML headers in main files
+FixHtmlHeader("index.html","Table of Contents");
+FixHtmlHeader("HIER.html","Hierarchy of Classes");
+
 print "Documentation generated.\n";
 
 # cleanup
@@ -49,34 +55,27 @@ system qq{ rm -r src include sources.lst footer header };
 exit;
 
 
-
-#################################
 #################################
 
 sub Compose_HeaderAndFooter
 {
   open(HEADER, ">header");
-  print HEADER "<html><body bgcolor=\"#ffffff\"><center>";
-  print HEADER "<a href=\"$HREF_MANUAL\">Manuals</a> | ";
-  print HEADER "<a href=\"$BASE_DOCXX/HIER.html\">Hierarchy</a> | ";
-  print HEADER "<a href=\"$BASE_DOCXX/index.html\">Index</a> | ";
-  print HEADER "<a href=\"$BASE_LXR/ident/\">Identifier search</a> | ";
-  print HEADER "<a href=\"$BASE_LXR/search/\">Text search</a> | ";
-  print HEADER "<a href=\"$BASE_LXR/find/\">File search</a> | ";
-  print HEADER "<a href=\"$BASE_LXR/source/\">Source code</a>";
-  print HEADER "</center>";
+  print HEADER "<!--#set var=\"DOCROOT\" value=\"$BASE_ROOT\" -->\n";
+  print HEADER "<!--#include virtual=\"$BASE_SSI/header.shtml\" -->\n";
+  print HEADER "<center>";
+  print HEADER "<a href=\"$HREF_MANUAL\">[Manuals]</a>&nbsp;&nbsp;";
+  print HEADER "<a href=\"$BASE_DOCXX/HIER.html\">[Hierarchy]</a>&nbsp;&nbsp;";
+  print HEADER "<a href=\"$BASE_DOCXX/index.html\">[Index]</a>";
+  print HEADER "</center><br>";
   close(HEADER);
 
   open(FOOTER, ">footer");
   print FOOTER "<center>";
-  print FOOTER "<a href=\"$HREF_MANUAL\">Manuals</a> | ";
-  print FOOTER "<a href=\"$BASE_DOCXX/HIER.html\">Hierarchy</a> | ";
-  print FOOTER "<a href=\"$BASE_DOCXX/index.html\">Index</a> | ";
-  print FOOTER "<a href=\"$BASE_LXR/ident/\">Identifier search</a> | ";
-  print FOOTER "<a href=\"$BASE_LXR/search/\">Text search</a> | ";
-  print FOOTER "<a href=\"$BASE_LXR/find/\">File search</a> | ";
-  print FOOTER "<a href=\"$BASE_LXR/source/\">Source code</a>";
-  print FOOTER "</center></body></html>";
+  print FOOTER "<a href=\"$HREF_MANUAL\">[Manuals]</a>&nbsp;&nbsp;";
+  print FOOTER "<a href=\"$BASE_DOCXX/HIER.html\">[Hierarchy]</a>&nbsp;&nbsp;";
+  print FOOTER "<a href=\"$BASE_DOCXX/index.html\">[Index]</a>";
+  print FOOTER "</center>";
+  print FOOTER "<!--#include virtual=\"$BASE_SSI/footer.shtml\" -->\n";
   close(FOOTER);
 }
 
@@ -85,9 +84,9 @@ sub Compose_HeaderAndFooter
 
 sub PrepareFiles
 {
-  $href1 = "<font size=-1><b><a href=\"$BASE_LXR/ident?i=";
-  $href2 = "\">Locate <i>";
-  $href3 = "</i></a></b> in the source code</font>";
+  $href1 = "<font size=-1><i>Locate <b><a href=\"$BASE_LXR/ident?i=";
+  $href2 = "&d=*\">";
+  $href3 = "</a></b> in the source code</i></font>";
 
   open(FINDDIR, "find ../.. -type d ! -name CVS | sed 's%^\.\./\.\./%%'|egrep 'include|src'|");
   while(<FINDDIR>) {
@@ -160,4 +159,33 @@ sub PrepareFiles
 
   close(FIND);
   close(LIST);
+}
+
+
+#################################
+
+sub FixHtmlHeader
+{
+  local $fname = shift;
+  local $title = shift;
+
+  open(IN, "$fname");
+  open(OUT, ">$fname.tmp");
+  
+  print OUT "<!--#set var=\"TITLE\" value=\"$title\" -->\n";
+  open(HEADER, "header");
+  while(<HEADER>) {
+    print OUT "$_";
+  }
+  local $i = 0;
+  while(<IN>) {
+	if ($i>5) {
+       print OUT "$_";
+	 }
+    $i++;
+  }
+
+  close(IN);
+  close(OUT);
+  rename("$fname.tmp", $fname);
 }
