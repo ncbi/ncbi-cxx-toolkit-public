@@ -64,6 +64,17 @@ const string& CNcbiEmptyString::FirstGet(void) {
 #endif // NCBI_OS_MSWIN
 
 
+bool NStr::IsBlank(const string& str)
+{
+    ITERATE (string, it, str) {
+        if (!isspace(*it)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                       const char* pattern)
 {
@@ -857,12 +868,12 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
         if (beg == str.length())
             return kEmptyStr;
     }
-    SIZE_TYPE end = str.length() - 1;
+    int end = str.length() - 1;
     if (where == eTrunc_End  ||  where == eTrunc_Both) {
-        while ( isspace(str[end]) )
+        while ( end >= 0  &&  isspace(str[end]) )
             end--;
     }
-    _ASSERT( beg <= end );
+    _ASSERT( beg <= (SIZE_TYPE)end );
     return str.substr(beg, end - beg + 1);
 }
 
@@ -1269,9 +1280,9 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 best_score = eNewline;
                 break;
             } else if (isspace(c)) {
-                if (pos2 > 0  &&  isspace(str[pos2 - 1])) {
-                    continue; // take the first space of a group
-                }
+                //if (pos2 > 0  &&  isspace(str[pos2 - 1])) {
+                //    continue; // take the first space of a group
+                //}
                 score = eSpace;
             } else if (is_html  &&  c == '<') {
                 // treat tags as zero-width...
@@ -1285,9 +1296,11 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                     ||  c == '`') { // opening element
                     score = ePunct;
                 } else if (score_pos < len - 1) {
-                    // Prefer breaking *after* most types of punctuation.
-                    score = ((c == ',') ? eComma : ePunct);
-                    ++score_pos;
+                    if (column < width) {
+                        // Prefer breaking *after* most types of punctuation.
+                        score = ((c == ',') ? eComma : ePunct);
+                        ++score_pos;
+                    }
                 }
             }
 
@@ -1330,12 +1343,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         pfx    = prefix;
         hyphen = kEmptyStr;
 
-        if (best_score == eSpace) {
-            // If breaking at a group of spaces, skip over the whole group
-            while (pos < len  &&  isspace(str[pos])  &&  str[pos] != '\n') {
-                ++pos;
-            }
-        } else if (best_score == eNewline) {
+        if (best_score == eSpace  ||  best_score == eNewline) {
             ++pos;
         }
         while (pos < len  &&  str[pos] == '\b') {
@@ -1601,6 +1609,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.118  2004/10/01 15:18:25  shomrat
+ * + IsBlank; changes to string wrap
+ *
  * Revision 1.117  2004/09/22 16:01:30  ivanov
  * CHECK_ENDPTR macro -- throw exception only if specified, otherwise return 0
  *
