@@ -38,7 +38,7 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 
-static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits, 
+static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
                               SQLUINTEGER prec)
 {
     switch (t) {
@@ -60,7 +60,7 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
     case SQL_BIT:          return eDB_Bit;
     case SQL_TINYINT:      return eDB_TinyInt;
     case SQL_VARBINARY:    return (prec < 256)? eDB_VarBinary : eDB_LongBinary;
-    case SQL_TYPE_TIMESTAMP: 
+    case SQL_TYPE_TIMESTAMP:
         return (prec > 16 || dec_digits > 0)? eDB_DateTime : eDB_SmallDateTime;
     default:               return eDB_UnsupportedType;
     }
@@ -73,7 +73,7 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
 //
 
 
-CODBC_RowResult::CODBC_RowResult(SQLSMALLINT nof_cols, SQLHSTMT cmd, 
+CODBC_RowResult::CODBC_RowResult(SQLSMALLINT nof_cols, SQLHSTMT cmd,
                                  CODBC_Reporter& r) :
     m_Cmd(cmd), m_Reporter(r), m_CurrItem(-1), m_EOR(false)
 {
@@ -83,7 +83,7 @@ CODBC_RowResult::CODBC_RowResult(SQLSMALLINT nof_cols, SQLHSTMT cmd,
 
     m_ColFmt = new SODBC_ColDescr[m_NofCols];
     for (unsigned int n = 0; n < m_NofCols; n++) {
-        switch(SQLDescribeCol(m_Cmd, n+1, m_ColFmt[n].ColumnName, 
+        switch(SQLDescribeCol(m_Cmd, n+1, m_ColFmt[n].ColumnName,
                               ODBC_COLUMN_NAME_SIZE, &actual_name_size,
                               &m_ColFmt[n].DataType, &m_ColFmt[n].ColumnSize,
                               &m_ColFmt[n].DecimalDigits, &nullable)) {
@@ -166,7 +166,7 @@ int CODBC_RowResult::CurrentItemNo() const
     return m_CurrItem;
 }
 
-int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer, 
+int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
                               SQLINTEGER buffer_size)
 {
     SQLINTEGER f;
@@ -174,12 +174,12 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
     switch(SQLGetData(m_Cmd, m_CurrItem+1, target_type, buffer, buffer_size, &f)) {
     case SQL_SUCCESS_WITH_INFO:
         switch(f) {
-        case SQL_NO_TOTAL: 
+        case SQL_NO_TOTAL:
             return buffer_size;
-        case SQL_NULL_DATA: 
+        case SQL_NULL_DATA:
             return 0;
         default:
-			if(f < 0)  
+			if(f < 0)
 				m_Reporter.ReportErrors();
             return (int)f;
         }
@@ -209,8 +209,8 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
 
     switch(m_ColFmt[m_CurrItem].DataType) {
     case SQL_WCHAR:
-    case SQL_CHAR: 
-    case SQL_VARCHAR: 
+    case SQL_CHAR:
+    case SQL_VARCHAR:
     case SQL_WVARCHAR: {
         switch (item_buf->GetType()) {
         case eDB_VarBinary:
@@ -249,7 +249,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         }
         break;
     }
-                
+
     case SQL_BINARY:
     case SQL_VARBINARY: {
         switch ( item_buf->GetType() ) {
@@ -287,7 +287,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
                                "Wrong type of CDB_Object");
         }
-        
+
         break;
     }
 
@@ -331,7 +331,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                 CTime t((int)v.year, (int)v.month, (int)v.day,
                         (int)v.hour, (int)v.minute, (int)v.second,
                         (long)v.fraction);
-                
+
                 *((CDB_SmallDateTime*) item_buf)= t;
             }
             break;
@@ -343,7 +343,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                 CTime t((int)v.year, (int)v.month, (int)v.day,
                         (int)v.hour, (int)v.minute, (int)v.second,
                         (long)v.fraction);
-                
+
                 *((CDB_DateTime*) item_buf)= t;
             }
             break;
@@ -533,7 +533,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
     default:
         throw CDB_ClientEx(eDB_Error, 430025, "CODBC_*Result::GetItem",
                                "Unsupported column type");
-        
+
     }
     return item_buf;
 }
@@ -545,22 +545,22 @@ CDB_Object* CODBC_RowResult::xMakeItem()
 
     switch(m_ColFmt[m_CurrItem].DataType) {
     case SQL_WCHAR:
-    case SQL_CHAR: 
-    case SQL_VARCHAR: 
+    case SQL_CHAR:
+    case SQL_VARCHAR:
     case SQL_WVARCHAR: {
         outlen= xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
 		if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
-			CDB_VarChar* val = (outlen < 0)	
+			CDB_VarChar* val = (outlen < 0)
 				? new CDB_VarChar() : new CDB_VarChar(buffer, (size_t) outlen);
-        
+
 			return val;
 		}
 		else {
-			CDB_LongChar* val = (outlen < 0)	
-				? new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize) : 
-				new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize, 
+			CDB_LongChar* val = (outlen < 0)
+				? new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize) :
+				new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize,
 						buffer);
-        
+
 			return val;
 		}
 
@@ -572,15 +572,15 @@ CDB_Object* CODBC_RowResult::xMakeItem()
 		if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
 	        CDB_VarBinary* val = (outlen <= 0)
 		        ? new CDB_VarBinary() : new CDB_VarBinary(buffer, (size_t)outlen);
-        
+
 			return val;
 		}
 		else {
-			CDB_LongBinary* val = (outlen < 0)	
-				? new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize) : 
-				new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize, 
+			CDB_LongBinary* val = (outlen < 0)
+				? new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize) :
+				new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize,
 						buffer, (size_t) outlen);
-        
+
 			return val;
 		}
     }
@@ -653,7 +653,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             return (outlen <= 0) ? new CDB_BigInt() : new CDB_BigInt((Int8) v);
         }
     }
-        
+
     case SQL_WLONGVARCHAR:
     case SQL_LONGVARCHAR: {
         CDB_Text* val = new CDB_Text;
@@ -708,7 +708,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
     default:
         throw CDB_ClientEx(eDB_Error, 430025, "CODBC_*Result::GetItem",
                                "Unsupported column type");
-        
+
     }
 }
 
@@ -723,8 +723,8 @@ CDB_Object* CODBC_RowResult::GetItem(CDB_Object* item_buf)
 
     ++m_CurrItem;
     return item;
-}    
-    
+}
+
 
 size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
 {
@@ -735,14 +735,14 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
 
     SQLINTEGER f= 0;
 
-    if(is_null) is_null= false;
+    if(is_null) *is_null= false;
 
     switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_BINARY, buffer, buffer_size, &f)) {
     case SQL_SUCCESS_WITH_INFO:
         switch(f) {
-        case SQL_NO_TOTAL: 
+        case SQL_NO_TOTAL:
             return buffer_size;
-        case SQL_NULL_DATA: 
+        case SQL_NULL_DATA:
             ++m_CurrItem;
             if(is_null) *is_null= true;
             return 0;
@@ -778,7 +778,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
 {
     char* buffer[128];
     SQLSMALLINT slp;
-    
+
     switch(SQLColAttribute(m_Cmd, item_no+1,
                            SQL_DESC_BASE_TABLE_NAME,
                            (SQLPOINTER)buffer, sizeof(buffer),
@@ -791,7 +791,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         m_Reporter.ReportErrors();
         return 0;
     default:
-        throw CDB_ClientEx(eDB_Error, 430027, 
+        throw CDB_ClientEx(eDB_Error, 430027,
                            "CODBC_*Result::GetImageOrTextDescriptor",
                            "SQLColAttribute failed");
     }
@@ -809,7 +809,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         m_Reporter.ReportErrors();
         return 0;
     default:
-        throw CDB_ClientEx(eDB_Error, 430027, 
+        throw CDB_ClientEx(eDB_Error, 430027,
                            "CODBC_*Result::GetImageOrTextDescriptor",
                            "SQLColAttribute failed");
     }
@@ -820,7 +820,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
 
 I_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor()
 {
-    return (I_ITDescriptor*) GetImageOrTextDescriptor(m_CurrItem, 
+    return (I_ITDescriptor*) GetImageOrTextDescriptor(m_CurrItem,
                                                       "don't use me");
 }
 
@@ -1031,6 +1031,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/09 15:42:15  sapojnik
+ * CODBC_RowResult::ReadItem(): * was missing in *is_null=false; corrected
+ *
  * Revision 1.8  2003/11/25 20:09:06  soussov
  * fixes bug in ReadItem: it did return the text/image size instead of number of bytes in buffer in some cases
  *
