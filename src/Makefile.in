@@ -34,4 +34,5 @@ include ./Makefile.meta
 #
 
 strip_for_install:
-	rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) Makefile
+	test "$(COMPILER)-$(DEBUG_SFX)" = "workshop-Debug" || \
+	    rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) Makefile
