@@ -345,7 +345,8 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
                                 seqdb_args->GetFinalOid(),
                                 seqdb_args->GetUseMmap()));
     } catch (const ncbi::CException& e) {
-        SetInitErrorStr(retval, strdup(e.ReportAll().c_str()));
+        SetInitErrorStr(retval, 
+                        strdup(e.ReportThis(eDPF_ErrCodeExplanation).c_str()));
     } catch (const std::exception& e) {
         SetInitErrorStr(retval, strdup(e.what()));
     } catch (...) {
@@ -422,6 +423,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2004/11/24 00:31:40  camacho
+ * Construct error initialization string with error code explanation only
+ *
  * Revision 1.21  2004/11/17 20:26:01  camacho
  * 1. Implemented error handling at initialization time.
  * 2. Removed user-defined unimplemented error function as it is no longer needed.
