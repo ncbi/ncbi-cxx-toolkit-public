@@ -110,7 +110,8 @@ bool CODBC_RPCCmd::Send()
         break;
 
     case SQL_NO_DATA:
-        m_hasResults= false;
+        m_hasResults= true; /* this is a bug in SQLExecDirect it returns SQL_NO_DATA if
+                               status result is the only result of RPC */
         m_RowCount= 0;
         break;
 
@@ -559,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/01/27 18:00:07  soussov
+ * patches the SQLExecDirect bug
+ *
  * Revision 1.7  2003/11/07 17:14:20  soussov
  * work around the odbc bug. It can not handle properly the fractions of msecs
  *
