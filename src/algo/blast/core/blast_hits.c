@@ -48,60 +48,30 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_util.h>
 
 void 
-BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPList* hsp_list, 
-   BlastQueryInfo* query_info, Boolean is_ooframe)
+HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list, 
+                 Boolean is_ooframe)
 {
    BlastHSP* hsp;
-   Int2 context;
    Int4 index;
-   Int4 offset_shift, extra_length = 0;
 
    if (!hsp_list)
       return;
 
    for (index=0; index<hsp_list->hspcnt; index++) {
       hsp = hsp_list->hsp_array[index];
-      context = hsp->context = 
-         BSearchInt4(hsp->query.gapped_start, 
-            query_info->context_offsets, 
-            (Int4) (query_info->last_context+1));   
       if (is_ooframe && program_number == blast_type_blastx) {
-         offset_shift = query_info->context_offsets[context-context%3];
          /* Query offset is in mixed-frame coordinates */
-         hsp->query.frame = hsp->query.offset % 3 + 1;
-         if ((context % 6) >= 3)
+         hsp->query.frame = hsp->query.offset % CODON_LENGTH + 1;
+         if ((hsp->context % NUM_FRAMES) >= CODON_LENGTH)
             hsp->query.frame = -hsp->query.frame;
       } else {
-         hsp->query.frame = BLAST_ContextToFrame(program_number, context);
-         offset_shift = query_info->context_offsets[context];
+         hsp->query.frame = BLAST_ContextToFrame(program_number, hsp->context);
       }
-      hsp->query.offset -= offset_shift;
-      hsp->query.gapped_start -= offset_shift;
       
-      /* Check if this HSP is crossing the boundary on the left */
-      if (hsp->query.offset < 0) {
-         hsp->subject.offset -= hsp->query.offset;
-         hsp->query.offset = 0;
-      }
-
-      /* Check if this HSP is crossing the boundary on the right */
-      if (!is_ooframe) {
-         extra_length = 
-            hsp->query.end - query_info->context_offsets[context+1] + 1;
-      }
-      hsp->query.end -= offset_shift;
-
-      if (extra_length > 0) {
-         hsp->subject.end -= extra_length;
-         hsp->query.end -= extra_length;
-      }
       /* Correct offsets in the edit block too */
       if (hsp->gap_info) {
          hsp->gap_info->frame1 = hsp->query.frame;
          hsp->gap_info->frame2 = hsp->subject.frame;
-         hsp->gap_info->start1 -= offset_shift;
-         hsp->gap_info->length1 = 
-            query_info->context_offsets[context+1] - offset_shift - 1;
       }
    }
 }
@@ -1096,7 +1066,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
          if (hsp_list_array[index]) {
             if (!results->hitlist_array[index]) {
                results->hitlist_array[index] = 
-                  BLAST_HitListNew(hit_options->hitlist_size);
+                  BLAST_HitListNew(hit_options->prelim_hitlist_size);
             }
             BLAST_UpdateHitList(results->hitlist_array[index], 
                                 hsp_list_array[index], thr_info);
@@ -1112,7 +1082,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
          structure */
       if (!results->hitlist_array[0]) {
          results->hitlist_array[0] = 
-            BLAST_HitListNew(hit_options->hitlist_size);
+            BLAST_HitListNew(hit_options->prelim_hitlist_size);
       }
       BLAST_UpdateHitList(results->hitlist_array[0], 
                           hsp_list, thr_info);

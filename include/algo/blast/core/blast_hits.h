@@ -162,18 +162,14 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
 Int4
 BlastHSPArrayPurge (BlastHSP** hsp_array, Int4 hspcnt);
 
-/** Adjust the query offsets in a list of HSPs. The original offsets are in
- * the concatenated query coordinates. The adjusted offsets are in 
- * individual query coordinates; the context is saved for each HSP to 
- * indicate what query it comes from.
+/** Assign frames in all HSPs in the HSP list.
  * @param program_number Type of BLAST program [in]
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
- * @param query_info Auxiliary query information [in]
  * @param is_ooframe Is out-of-frame gapping used? [in]
 */
 void 
-BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPList* hsp_list, 
-   BlastQueryInfo* query_info, Boolean is_ooframe);
+HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list, 
+                 Boolean is_ooframe);
 
 /** Adjust subject offsets in an HSP list if only part of the subject sequence
  * was searched.
