@@ -277,7 +277,7 @@ void CAlnMix::Add(const CDense_seg &ds)
                                      CBioseq_Handle::eStrand_Minus);
                                 TSignedSeqPos size = seq_vec.size();
                                 seq_vec.GetSeqData(size - (start1 + len),
-                                                   start1, 
+                                                   size - start1, 
                                                    s1);
                             } else {
                                 aln_seq1->m_BioseqHandle->GetSeqVector
@@ -292,7 +292,7 @@ void CAlnMix::Add(const CDense_seg &ds)
                                      CBioseq_Handle::eStrand_Minus);
                                 TSignedSeqPos size = seq_vec.size();
                                 seq_vec.GetSeqData(size - (start2 + len),
-                                                   start2, 
+                                                   size - start2, 
                                                    s2);
                             } else {
                                 aln_seq2->m_BioseqHandle->GetSeqVector
@@ -1131,6 +1131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/02/04 00:05:16  todorov
+* GetSeqData neg strand range bug
+*
 * Revision 1.27  2003/01/27 22:30:30  todorov
 * Attune to seq_vector interface change
 *
