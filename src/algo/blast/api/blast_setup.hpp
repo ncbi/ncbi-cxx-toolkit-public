@@ -163,12 +163,6 @@ NCBI_XBLAST_EXPORT
 unsigned int 
 GetNumberOfFrames(EProgram p);
 
-/// Convert program type enumeration used in the engine
-/// to the program enumeration.
-NCBI_XBLAST_EXPORT
-EProgram GetProgramFromBlastProgramType(EBlastProgramType prog_type);
-
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -176,6 +170,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2004/08/16 19:48:30  dondosha
+* Removed duplicate declaration of GetProgramFromBlastProgramType
+*
 * Revision 1.25  2004/08/11 14:24:50  camacho
 * Move FindGeneticCode
 *
