@@ -251,6 +251,13 @@ public:
             }
         }
 
+    static size_t GetElementCount(const CContainerTypeInfo*,
+                                  TConstObjectPtr containerPtr)
+        {
+            const TObjectType& container = Get(containerPtr);
+            return container.size();
+        }
+
     static void SetMemFunctions(CStlOneArgTemplate* info)
         {
             info->SetMemFunctions(&CreateContainer, &IsDefault, &SetDefault);
@@ -258,6 +265,31 @@ public:
     static void SetAddElementFunctions(CStlOneArgTemplate* info)
         {
             info->SetAddElementFunctions(&AddElement, &AddElementIn);
+        }
+    static void SetCountFunctions(CStlOneArgTemplate* info)
+        {
+            info->SetCountFunctions(&GetElementCount);
+        }
+};
+
+template<class Container>
+class CStlClassInfoFunctions_vec : public CStlClassInfoFunctions<Container>
+{
+    typedef CStlClassInfoFunctions<Container> CParent;
+public:
+    typedef typename CParent::TObjectType TObjectType;
+    typedef typename TObjectType::value_type TElementType;
+
+    static void ReserveElements(const CContainerTypeInfo*,
+                                TObjectPtr containerPtr, size_t count)
+        {
+            TObjectType& container = Get(containerPtr);
+            container.reserve(count);
+        }
+
+    static void SetCountFunctions(CStlOneArgTemplate* info)
+        {
+            info->SetCountFunctions(&GetElementCount, &ReserveElements);
         }
 };
 
@@ -547,6 +579,7 @@ public:
         {
             CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
             CStlClassInfoFunctions<TObjectType>::SetAddElementFunctions(info);
+            CStlClassInfoFunctions<TObjectType>::SetCountFunctions(info);
             CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
             CStlClassInfoFunctionsI<TObjectType>::SetIteratorFunctions(info);
         }
@@ -591,6 +624,7 @@ public:
         {
             CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
             CStlClassInfoFunctions<TObjectType>::SetAddElementFunctions(info);
+            CStlClassInfoFunctions_vec<TObjectType>::SetCountFunctions(info);
             CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
             CStlClassInfoFunctionsI<TObjectType>::SetIteratorFunctions(info);
         }
@@ -614,6 +648,7 @@ public:
 
             CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
             CStlClassInfoFunctions_set<TObjectType>::SetAddElementFunctions(info);
+            CStlClassInfoFunctions<TObjectType>::SetCountFunctions(info);
             CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
             CStlClassInfoFunctionsI_set<TObjectType>::SetIteratorFunctions(info);
 
@@ -640,6 +675,7 @@ public:
 
             CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
             CStlClassInfoFunctions_multiset<TObjectType>::SetAddElementFunctions(info);
+            CStlClassInfoFunctions<TObjectType>::SetCountFunctions(info);
             CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
             CStlClassInfoFunctionsI_set<TObjectType>::SetIteratorFunctions(info);
 
@@ -674,6 +710,7 @@ public:
             
             CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
             CStlClassInfoFunctions_set<TObjectType>::SetAddElementFunctions(info);
+            CStlClassInfoFunctions<TObjectType>::SetCountFunctions(info);
             CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
             CStlClassInfoFunctionsI_set<TObjectType>::SetIteratorFunctions(info);
             
@@ -708,6 +745,7 @@ public:
             
             CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
             CStlClassInfoFunctions_multiset<TObjectType>::SetAddElementFunctions(info);
+            CStlClassInfoFunctions<TObjectType>::SetCountFunctions(info);
             CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
             CStlClassInfoFunctionsI_set<TObjectType>::SetIteratorFunctions(info);
             
@@ -725,6 +763,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2004/07/27 15:02:59  ucko
+* Add GetElementCount and ReserveElements operations.
+*
 * Revision 1.69  2004/04/26 16:40:59  ucko
 * Tweak for GCC 3.4 compatibility.
 *

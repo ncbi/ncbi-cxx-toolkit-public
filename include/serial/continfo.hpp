@@ -131,6 +131,9 @@ public:
                     ESerialRecursionMode how = eRecursive) const;
     void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const;
 
+    // corresponding to size() and reserve() respectively
+    size_t GetElementCount(TConstObjectPtr containerPtr) const;
+    void   ReserveElements(TObjectPtr containerPtr, size_t new_count) const;
     typedef bool (*TInitIteratorConst)(CConstIterator&);
     typedef void (*TReleaseIteratorConst)(CConstIterator&);
     typedef void (*TCopyIteratorConst)(CConstIterator&, const CConstIterator&);
@@ -151,6 +154,11 @@ public:
     typedef void (*TAddElementIn)(const CContainerTypeInfo* cType,
                                   TObjectPtr cPtr, CObjectIStream& in);
 
+    typedef size_t (*TGetElementCount)(const CContainerTypeInfo* cType,
+                                       TConstObjectPtr containerPtr);
+    typedef void   (*TReserveElements)(const CContainerTypeInfo* cType,
+                                       TObjectPtr cPtr, size_t new_count);
+
     void SetConstIteratorFunctions(TInitIteratorConst, TReleaseIteratorConst,
                                    TCopyIteratorConst, TNextElementConst,
                                    TGetElementPtrConst);
@@ -159,6 +167,7 @@ public:
                               TGetElementPtr,
                               TEraseElement, TEraseAllElements);
     void SetAddElementFunctions(TAddElement, TAddElementIn);
+    void SetCountFunctions(TGetElementCount, TReserveElements = 0);
 
 protected:
     static void ReadContainer(CObjectIStream& in,
@@ -196,6 +205,9 @@ private:
 
     TAddElement m_AddElement;
     TAddElementIn m_AddElementIn;
+
+    TGetElementCount m_GetElementCount;
+    TReserveElements m_ReserveElements;
 };
 
 class NCBI_XSERIAL_EXPORT CConstContainerElementIterator
@@ -269,6 +281,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/07/27 15:02:59  ucko
+* Add GetElementCount and ReserveElements operations.
+*
 * Revision 1.10  2004/03/25 15:56:27  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

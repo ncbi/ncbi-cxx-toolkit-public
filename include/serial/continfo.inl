@@ -238,6 +238,20 @@ void CContainerTypeInfo::AddElement(TObjectPtr containerPtr,
 }
 
 inline
+size_t CContainerTypeInfo::GetElementCount(TConstObjectPtr containerPtr) const
+{
+    return m_GetElementCount(this, containerPtr);
+}
+
+inline
+void CContainerTypeInfo::ReserveElements(TObjectPtr cPtr, size_t count) const
+{
+    if (m_ReserveElements) {
+        m_ReserveElements(this, cPtr, count);
+    }
+}
+
+inline
 CContainerElementIterator::CContainerElementIterator(void)
     : m_ElementType(0), m_Valid(false)
 {
@@ -412,6 +426,9 @@ pair<TConstObjectPtr, TTypeInfo> CConstContainerElementIterator::Get(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/07/27 15:02:59  ucko
+* Add GetElementCount and ReserveElements operations.
+*
 * Revision 1.5  2004/03/25 15:56:27  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *
