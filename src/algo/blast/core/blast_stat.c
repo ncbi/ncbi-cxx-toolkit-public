@@ -51,6 +51,20 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.61  2004/04/28 14:40:23  madden
+ * Changes from Mike Gertz:
+ * - I created the new routine BLAST_GapDecayDivisor that computes a
+ *   divisor used to weight the evalue of a collection of distinct
+ *   alignments.
+ * - I removed  BLAST_GapDecay and BLAST_GapDecayInverse which had become
+ *   redundant.
+ * - I modified the BLAST_Cutoffs routine so that it uses the value
+ *   returned by BLAST_GapDecayDivisor to weight evalues.
+ * - I modified BLAST_SmallGapSumE, BLAST_LargeGapSumE and
+ *   BLAST_UnevenGapSumE no longer refer to the gap_prob parameter.
+ *   Replaced the gap_decay_rate parameter of each of these routines with
+ *   a weight_divisor parameter.  Added documentation.
+ *
  * Revision 1.60  2004/04/23 19:06:33  camacho
  * Do NOT use lowercase names for #defines
  *
@@ -86,7 +100,7 @@ Detailed Contents:
  * Revision 1.54  2004/04/07 03:06:16  camacho
  * Added blast_encoding.[hc], refactoring blast_stat.[hc]
  *
- * Revision 1.53  2004/04/05 18:53:35  madden
+v * Revision 1.53  2004/04/05 18:53:35  madden
  * Set dimensions if matrix from memory
  *
  * Revision 1.52  2004/04/01 14:14:02  lavr
@@ -2909,23 +2923,6 @@ BLAST_PrintAllowedValues(const char *matrix_name, Int4 gap_open, Int4 gap_extend
 	return buffer;
 }
 	
-static double
-BlastGapDecayInverse(double pvalue, unsigned nsegs, double decayrate)
-{
-	if (decayrate <= 0. || decayrate >= 1. || nsegs == 0)
-		return pvalue;
-
-	return pvalue * (1. - decayrate) * BLAST_Powi(decayrate, nsegs - 1);
-}
-
-static double
-BlastGapDecay(double pvalue, unsigned nsegs, double decayrate)
-{
-	if (decayrate <= 0. || decayrate >= 1. || nsegs == 0)
-		return pvalue;
-
-	return pvalue / ((1. - decayrate) * BLAST_Powi(decayrate, nsegs - 1));
-}
 
 /* Smallest float that might not cause a floating point exception in
 	S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda ));
@@ -2955,6 +2952,26 @@ BlastKarlinEtoS_simple(double	E,	/* Expect value */
 	return S;
 }
 
+/* Compute a divisor used to weight the evalue of a collection of
+ * "nsegs" distinct alignments.  These divisors are used to compensate
+ * for the effect of choosing the best among multiple collections of
+ * alignments.  See
+ *
+ * Stephen F. Altschul. Evaluating the statitical significance of
+ * multiple distinct local alignments. In Suhai, editior, Theoretical
+ * and Computational Methods in Genome Research, pages 1-14. Plenum
+ * Press, New York, 1997.
+ *
+ * The "decayrate" parameter of this routine is a value in the
+ * interval (0,1). Typical values of decayrate are .1 and .5. */
+
+double
+BLAST_GapDecayDivisor(double decayrate, unsigned nsegs )
+{
+    return (1. - decayrate) * BLAST_Powi(decayrate, nsegs - 1);
+}
+
+
 /*
 	BlastCutoffs
 	Calculate the cutoff score, S, and the highest expected score.
@@ -2983,9 +3000,15 @@ BLAST_Cutoffs(Int4 *S, /* cutoff score */
 	esave = e;
 	if (e > 0.) 
 	{
-		if (dodecay)
-			e = BlastGapDecayInverse(e, 1, gap_decay_rate);
-		es = BlastKarlinEtoS_simple(e, kbp, searchsp);
+        if (dodecay) {
+            /* Invert the adjustment to the e-value that will be applied
+             * to compensate for the effect of choosing the best among
+             * multiple alignments */
+            if( gap_decay_rate > 0 && gap_decay_rate < 1 ) {
+                e *= BLAST_GapDecayDivisor(gap_decay_rate, 1);
+            }
+        }
+        es = BlastKarlinEtoS_simple(e, kbp, searchsp);
 	}
 	/*
 	Pick the larger cutoff score between the user's choice
@@ -3002,8 +3025,14 @@ BLAST_Cutoffs(Int4 *S, /* cutoff score */
 	if (esave <= 0. || !s_changed) 
 	{
 		e = BLAST_KarlinStoE_simple(s, kbp, searchsp);
-		if (dodecay)
-			e = BlastGapDecay(e, 1, gap_decay_rate);
+		if (dodecay) {
+            /* Weight the e-value to compensate for the effect of
+             * choosing the best of more than one collection of
+             * distinct alignments */
+            if( gap_decay_rate > 0 && gap_decay_rate < 1 ) {
+                e /= BLAST_GapDecayDivisor(gap_decay_rate, 1);
+            }
+        }
 		*E = e;
 	}
 
@@ -3252,115 +3281,141 @@ f(double	x, void*	vp)
 }
 
 /*
-	Calculates the p-value for alignments with "small" gaps (typically
-	under fifty residues/basepairs) following ideas of Stephen Altschul's.
-	"gap" gives the size of this gap, "gap_prob" is the probability
-	of this model of gapping being correct (it's thought that gap_prob
-	will generally be 0.5).  "num" is the number of HSP's involved, "sum" 
-	is the "raw" sum-score of these HSP's. "subject_len" is the (effective)
-	length of the database sequence, "query_length" is the (effective) 
-	length of the query sequence.  min_length_one specifies whether one
-	or 1/K will be used as the minimum expected length.
-
+    Calculates the e-value for alignments with "small" gaps (typically
+    under fifty residues/basepairs) following ideas of Stephen Altschul's.
 */
 
 double
-BLAST_SmallGapSumE(Blast_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
-
+BLAST_SmallGapSumE(
+    Blast_KarlinBlk * kbp,     /* statistical parameters */
+    Int4 gap,                   /* maximum size of gaps between alignments */
+    Int2 num,                   /* the number of distinct alignments in this
+                                 * collection */
+    double score_prime,         /* the sum of the scores of these alignments
+                                 * each weighted by an appropriate value of
+                                 * Lambda */
+    Int4 query_length,          /* the effective len of the query seq */
+    Int4 subject_length,        /* the effective len of the database seq */
+    double weight_divisor)      /* a divisor used to weight the e-value
+                                 * when multiple collections of alignments
+                                 * are being considered by the calling
+                                 * routine */
 {
+    double search_space;        /* The effective size of the search space */
+    double sum_p;               /* The p-value of this set of alignments */
+    double sum_e;               /* The e-value of this set of alignments */
 
-	double sum_p, sum_e;
-		
-	score_prime -= kbp->logK + log((double)subject_length*(double)query_length) + (num-1)*(kbp->logK + 2*log((double)gap));
-	score_prime -= BLAST_LnFactorial((double) num); 
+    search_space = (double)subject_length*(double)query_length;
 
-	sum_p = BlastSumP(num, score_prime);
+    score_prime -= kbp->logK +
+        log(search_space) + (num-1)*(kbp->logK + 2*log((double)gap));
+    score_prime -= BLAST_LnFactorial((double) num);
 
-	sum_e = BlastKarlinPtoE(sum_p);
+    sum_p = BlastSumP(num, score_prime);
 
-	sum_e = sum_e/((1.0-gap_decay_rate)*BLAST_Powi(gap_decay_rate, (num-1)));
+    sum_e = BlastKarlinPtoE(sum_p);
 
-	if (num > 1)
-	{
-		if (gap_prob == 0.0)
-			sum_e = INT4_MAX;
-		else
-			sum_e = sum_e/gap_prob;
-	}
+    if( weight_divisor == 0 || (sum_e /= weight_divisor) > INT4_MAX ) {
+        sum_e = INT4_MAX;
+    }
 
-	return sum_e;
+    return sum_e;
 }
 
 /*
-	Calculates the p-value for alignments with asymmetric gaps, typically 
-        a small (like in BlastSmallGapSumE) gap for one (protein) sequence and
-        a possibly large (up to 4000 bp) gap in the other (translated DNA) 
-        sequence. Used for linking HSPs representing exons in the DNA sequence
-        that are separated by introns.
+    Calculates the e-value of a collection multiple distinct
+    alignments with asymmetric gaps between the alignments. The gaps
+    in one (protein) sequence are typically small (like in
+    BLAST_SmallGapSumE) gap an the gaps in the other (translated DNA)
+    sequence are possibly large (up to 4000 bp.)  This routine is used
+    for linking HSPs representing exons in the DNA sequence that are
+    separated by introns.
 */
 
 double
-BLAST_UnevenGapSumE(Blast_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
-
+BLAST_UnevenGapSumE(
+    Blast_KarlinBlk * kbp,      /* statistical parameters */
+    Int4 p_gap,                 /* maximum size of gaps between alignments,
+                                 * in one sequence */
+    Int4 n_gap,                 /* maximum size of gaps between alignments,
+                                 * in the other sequence */
+    Int2 num,                   /* the number of distinct alignments in this
+                                 * collection */
+    double score_prime,         /* the sum of the scores of these alignments
+                                 * each weighted by an appropriate value of
+                                 * Lambda */
+    Int4 query_length,          /* the effective len of the query seq */
+    Int4 subject_length,        /* the effective len of the database seq */
+    double weight_divisor)      /* a divisor used to weight the e-value
+                                 * when multiple collections of alignments
+                                 * are being considered by the calling
+                                 * routine */
 {
+    double search_space;   /* The effective size of the search space */
+    double sum_p;          /* The p-value of this set of alignments */
+    double sum_e;          /* The e-value of this set of alignments */
 
-	double sum_p, sum_e;
-		
-	score_prime -= kbp->logK + log((double)subject_length*(double)query_length) + (num-1)*(kbp->logK + log((double)p_gap) + log((double)n_gap));
-	score_prime -= BLAST_LnFactorial((double) num); 
+    search_space = (double)subject_length*(double)query_length;
 
-	sum_p = BlastSumP(num, score_prime);
+    score_prime -=
+        kbp->logK + log(search_space) +
+        (num-1)*(kbp->logK + log((double)p_gap) + log((double)n_gap));
+    score_prime -= BLAST_LnFactorial((double) num);
 
-	sum_e = BlastKarlinPtoE(sum_p);
+    sum_p = BlastSumP(num, score_prime);
 
-	sum_e = sum_e/((1.0-gap_decay_rate)*BLAST_Powi(gap_decay_rate, (num-1)));
+    sum_e = BlastKarlinPtoE(sum_p);
 
-	if (num > 1)
-	{
-		if (gap_prob == 0.0)
-			sum_e = INT4_MAX;
-		else
-			sum_e = sum_e/gap_prob;
-	}
+    if( weight_divisor == 0 || (sum_e /= weight_divisor) > INT4_MAX ) {
+        sum_e = INT4_MAX;
+    }
 
-	return sum_e;
+    return sum_e;
 }
 
+
 /*
-	Calculates the p-values for alignments with "large" gaps (i.e., 
-	infinite) followings an idea of Stephen Altschul's.
+    Calculates the e-value if a collection of distinct alignments with
+    arbitrarily large gaps between the alignments
 */
 
 double
-BLAST_LargeGapSumE(Blast_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
-
+BLAST_LargeGapSumE(
+    Blast_KarlinBlk * kbp,      /* statistical parameters */
+    Int2 num,                   /* the number of distinct alignments in this
+                                 * collection */
+    double      score_prime,    /* the sum of the scores of these alignments
+                                 * each weighted by an appropriate value of
+                                 * Lambda */
+    Int4 query_length,          /* the effective len of the query seq */
+    Int4 subject_length,        /* the effective len of the database seq */
+    double weight_divisor)      /* a divisor used to weight the e-value
+                                 * when multiple collections of alignments
+                                 * are being considered by the calling
+                                 * routine */
 {
+    double sum_p;               /* The p-value of this set of alignments */
+    double sum_e;               /* The e-value of this set of alignments */
 
-	double sum_p, sum_e;
 /* The next two variables are for compatability with Warren's code. */
-	double lcl_subject_length, lcl_query_length;
+    double lcl_subject_length;     /* query_length as a float */
+    double lcl_query_length;       /* subject_length as a float */
 
-        lcl_query_length = (double) query_length;
-        lcl_subject_length = (double) subject_length;
+    lcl_query_length = (double) query_length;
+    lcl_subject_length = (double) subject_length;
 
-	score_prime -= num*(kbp->logK + log(lcl_subject_length*lcl_query_length)) 
-	    - BLAST_LnFactorial((double) num); 
+    score_prime -= num*(kbp->logK + log(lcl_subject_length*lcl_query_length))
+        - BLAST_LnFactorial((double) num);
 
-	sum_p = BlastSumP(num, score_prime);
+    sum_p = BlastSumP(num, score_prime);
 
-	sum_e = BlastKarlinPtoE(sum_p);
+    sum_e = BlastKarlinPtoE(sum_p);
 
-	sum_e = sum_e/((1.0-gap_decay_rate)*BLAST_Powi(gap_decay_rate, (num-1)));
+    if( weight_divisor == 0 || (sum_e /= weight_divisor) > INT4_MAX ) {
+        sum_e = INT4_MAX;
+    }
 
-	if (num > 1)
-	{
-		if (gap_prob == 1.0)
-			sum_e = INT4_MAX;
-		else
-			sum_e = sum_e/(1.0 - gap_prob);
-	}
-
-	return sum_e;
+    return sum_e;
 }
 
 /*------------------- RPS BLAST functions --------------------*/
