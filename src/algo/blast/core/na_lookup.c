@@ -41,6 +41,8 @@ Contents: Functions for accessing the lookup tables for nucleotide BLAST
 #include <na_lookup.h>
 #include <mb_lookup.h>
 
+static char const rcsid[] = "$Id$";
+
 #define FULL_BYTE_SHIFT 8
 
 /** Given a starting position of a word in a compressed nucleotide sequence, 

@@ -26,6 +26,8 @@
 
 */
 
+static char const rcsid[] = "$Id$";
+
 #include <aa_ungapped.h>
 
 static inline Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);

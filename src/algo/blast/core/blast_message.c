@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.2  2003/05/15 22:01:22  coulouri
+ * add rcsid string to sources
+ *
  * Revision 1.1  2003/03/31 18:22:30  camacho
  * Moved from parent directory
  *
@@ -37,6 +40,8 @@
  *
  *
 */
+
+static char const rcsid[] = "$Id$";
 
 #include <blast_message.h>
 

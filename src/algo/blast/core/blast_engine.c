@@ -34,6 +34,9 @@ Contents: High level BLAST functions
 ******************************************************************************
  * $Revision$
  * */
+
+static char const rcsid[] = "$Id$";
+
 #include <blast_engine.h>
 #include <readdb.h>
 #include <util.h>

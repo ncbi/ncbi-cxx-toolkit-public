@@ -35,6 +35,8 @@ Contents: Functions to initialize structures used for BLAST extension
  * $Revision$
  * */
 
+static char const rcsid[] = "$Id$";
+
 #include <blast_extend.h>
 #include <blast_options.h>
 #include <aa_lookup.h>

@@ -40,6 +40,8 @@ Detailed Contents:
  * $Revision$
  * */
 
+static char const rcsid[] = "$Id$";
+
 #include <blast_options.h>
 #include <blast_extend.h>
 #include <blast_hits.h>

@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.17  2003/05/15 22:01:22  coulouri
+* add rcsid string to sources
+*
 * Revision 1.16  2003/05/08 18:20:47  dondosha
 * Corrected order of query frames
 *
@@ -247,6 +250,8 @@ $Revision$
 * First version of setup functions
 *
 */
+
+static char const rcsid[] = "$Id$";
 
 #include <blast_setup.h>
 #include <seg.h>

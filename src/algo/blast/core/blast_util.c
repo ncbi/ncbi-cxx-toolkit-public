@@ -38,6 +38,8 @@ Contents: Various BLAST utilities
 #include <blast_def.h>
 #include <blast_util.h>
 
+static char const rcsid[] = "$Id$";
+
 extern OIDListPtr LIBCALL 
 BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
 

@@ -41,6 +41,8 @@ Detailed Contents:
 #include <mb_lookup.h>
 #include <blast_extend.h>
 
+static char const rcsid[] = "$Id$";
+
 MBLookupTablePtr MBLookupTableDestruct(MBLookupTablePtr mb_lt)
 {
    if (!mb_lt)

@@ -42,6 +42,8 @@ Detailed Contents:
 #include <blast_traceback.h>
 #include <blast_util.h>
 
+static char const rcsid[] = "$Id$";
+
 extern Int4 LIBCALL HspArrayPurge PROTO((BlastHSPPtr PNTR hsp_array, 
                        Int4 hspcnt, Boolean clear_num));
 

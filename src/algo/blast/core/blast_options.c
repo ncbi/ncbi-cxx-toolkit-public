@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.18  2003/05/15 22:01:22  coulouri
+ * add rcsid string to sources
+ *
  * Revision 1.17  2003/05/13 20:41:48  dondosha
  * Correction in assigning of number of db sequences for 2 sequence case
  *
@@ -171,6 +174,8 @@
  *
  *
 */
+
+static char const rcsid[] = "$Id$";
 
 #include <blast_options.h>
 #include <blast_def.h>

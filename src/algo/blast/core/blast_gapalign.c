@@ -35,6 +35,8 @@ Contents: Functions to perform gapped alignment
  * $Revision$
  * */
 
+static char const rcsid[] = "$Id$";
+
 #include <blast_options.h>
 #include <blast_def.h>
 #include <blast_extend.h>
