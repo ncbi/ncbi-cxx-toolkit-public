@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2000/09/22 21:25:59  butanaev
+ * Fixed bug in handling default arg values.
+ *
  * Revision 1.5  2000/09/19 21:19:58  butanaev
  * Added possibility to change file open mode on the fly
  *
@@ -1071,7 +1074,7 @@ bool CArgDescriptions::x_CreateArg
 }
 
 
-void CArgDescriptions::x_PostCheck(const CArgs& args, unsigned n_plain) const
+void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
 {
     // Check if all mandatory position arguments are passed in
     unsigned n_policy_args = m_ConstrArgs ? m_ConstrArgs : m_PlainArgs.size();
@@ -1097,16 +1100,28 @@ void CArgDescriptions::x_PostCheck(const CArgs& args, unsigned n_plain) const
     }
 
     // Check if all mandatory "<key> <value>" arguments are passed in
-    for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
-        CArgDesc_Key* arg = dynamic_cast<CArgDesc_Key*> (it->second.get());
-        if ( !arg )
-            continue;
-
-        if ( !args.Exist(it->first) ) {
-            ARG_THROW("Must specify mandatory argument, with key", it->first);
+    for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it)
+    {
+      CArgDesc_Key* arg = dynamic_cast<CArgDesc_Key*> (it->second.get());
+      if(arg)
+      {
+        if ( !args.Exist(it->first) )
+        {
+          ARG_THROW("Must specify mandatory argument, with key", it->first);
         }
-    }
+      }
 
+      // Add optional arguments if they are not provided in a command line
+      CArgDesc_OptionalKey* optArg =
+        dynamic_cast<CArgDesc_OptionalKey*>(it->second.get());
+      if(optArg)
+      {
+        if(! args.Exist(it->first) )
+        {
+          args.Add(it->first, optArg->ProcessArgument(optArg->GetDefault()));
+        }
+      }
+    }
 }
 
 
