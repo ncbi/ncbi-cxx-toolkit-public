@@ -24,6 +24,8 @@
 			<i>Debug</i> vs. <i>Release</i> configuration</a>
 		   <li> <a href="#ref_DLL">
 			Building shared libraries (DLLs)</a>
+		   <li> <a href="#ref_RunPath">
+			Hard-coding run-time DLL path into the executables and DLLs</a>
 		   <li> <a href="#ref_MT">
 			Multi-Thread safe compilation, and linking with MT libraries</a>
 		   <li> <a href="#ref_64">
@@ -375,24 +377,62 @@ On any other platform, the <i><b>--without-dll</b></i> scenario will be
 enforced unconditionally (even if you explicitely specified
 <i><b>--with-dll</b></i>).
 
-<p>
-Note, that in order to be able to <i>run</i> executables linked against
-dynamic libraries (DLLs), you have to specify the DLLs' location(<i>runpath</i>).
-By default, we automagically hard-code (using linker flags like <b>-R.....</b>)
-the <i>runpath</i> in the executables to point to the NCBI C++ Toolkit
-<i><b>lib/</b></i> directory.
 
-If however you do not want to hard-code <i>runpath</i> into the executables,
-then you should use the configuration option:
+<p>
+<br>
+<a name="ref_RunPath"></a>
+<h4>Hard-coding run-time DLL path into the executables and DLLs</h4>
+
+
+In order to be able to <i>run</i> executables linked against
+dynamic libraries (DLLs), you have to specify these DLLs' location
+(<i>runpath</i>). It can be done by hard-coding (using linker flags like
+<b>-R.....</b>) the <i>runpath</i> into the executables.
 <ul>
-  <li> <i><b>--without-runpath</b></i>
+  <li><i><b>--with-runpath</b></i> --
+    hard-code the path to the <i><b>lib/</b></i> dir
+    of the Toolkit <i>build tree</i> 
+  </li>
+  <li><i><b>--with-runpath=</b>/foo/bar</i> --
+    hard-code the path to the user-defined <i><b>/foo/bar</b></i> dir
+  </li>
+  <li><i><b>--without-runpath</b></i> --
+    do not hard-code any <i>runpath</i>
+  </li>
+  <li>default:
+    if <i><b>--with-dll</b></i> flag is specified, then
+    engage the <i><b>--with-runpath</b></i> scenario, else
+    go as if the <i><b>--without-runpath</b></i> were specified.
+  </li>
 </ul>
-Then, you can use environment variable <i>$LD_LIBRARY_PATH</i> to specify
-<i>runpath</i> for the executables, like this:
+
+<b>NOTE:</i>
+You also can use environment variable <i>$LD_LIBRARY_PATH</i> to specify
+the <i>runpath</i>, like this:
 <pre>
   setenv LD_LIBRARY_PATH "/home/USERNAME/c++/WorkShop6-ReleaseDLL/lib"
   /home/USERNAME/c++/WorkShop6-ReleaseDLL/bin/coretest
 </pre>
+
+
+<b>HINT:</b>
+The <i><b>--with-runpath=</b>....</i> option can be useful for the
+building of production DLLs and executables, which are meant to use
+production DLLs. The latter are usually installed <b>not</b> in the
+<b><i>lib/</i></b> dir of your development tree (<i>build tree</i>),
+but at some well-known dir of your production site.<br>
+
+Thus, you can do the development in a "regular" manner (i.e.
+in a <i>build tree</i> configured using just <i><b>--with-runpath</b></i>),
+and then when you want to build a production version (which is to use lets say
+DLLs installed in "/some_path/foo/") you must re-configure your
+C++ build tree with just the same options as before, plus
+"<i><b>--with-runpath=</b>/some_path/foo</i>", then re-build the DLLs and
+executables and install them into production. <br>
+
+Then you can re-re-configure your build tree back with its original flags
+(without the "<i><b>--with-runpath=</b>/some_path/foo</i>"), and continue with
+your development cycle, again using local in-tree DLLs.
 
 
 <p>
@@ -787,6 +827,12 @@ to use in the generated makefiles:
   </tr>
 
   <tr>
+	 <td><i><b>SYBASE_DLLS</b></i></td>
+	 <td><i><b>-l</b>tli[_r][64]</i></td>
+	 <td>Sybase DLL-only libs</td>
+  </tr>
+
+  <tr>
 	 <td><i><b>FASTCGI_INCLUDE</b></i></td>
 	 <td><i><b>-I</b></i>$FASTCGI_PATH<i>/include[64]</i></td>
 	 <td><i>#include</i> Fast-CGI headers</td>
@@ -832,7 +878,7 @@ to use in the generated makefiles:
   <tr>
 	 <td><i><b>NCBI_C_ncbi</b></i></td>
 	 <td><i><b>-l</b>ncbi</i></td>
-	 <td>link with NCBI C CoreLib</td>
+	 <td>NCBI C Toolkit CoreLib</td>
   </tr>
 
   <tr>
