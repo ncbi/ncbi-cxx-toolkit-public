@@ -50,6 +50,11 @@ void CSoapWriteHook::WriteObject(CObjectOStream& out,
 {
     vector< CConstRef<CSerialObject> >::const_iterator i;
     for ( i = m_Content.begin(); i != m_Content.end(); ++i) {
+        TTypeInfo type = (*i)->GetThisTypeInfo();
+        if (!type->HasNamespaceName()) {
+            out.ThrowError(CObjectOStream::fInvalidData,
+                "SOAP content object must have a namespace name");
+        }
         out.WriteObject(*i, (*i)->GetThisTypeInfo());
     }
 }
@@ -61,6 +66,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/01/22 20:43:48  gouriano
+* Added check for non-empty namespace
+*
 * Revision 1.1  2003/09/22 21:00:04  gouriano
 * Initial revision
 *
