@@ -31,6 +31,10 @@
 #include <objmgr/impl/seqref_pubseq.hpp>
 #include <objmgr/impl/reader_zlib.hpp>
 
+#include <dbapi/driver/exception.hpp>
+#include <dbapi/driver/driver_mgr.hpp>
+#include <dbapi/driver/drivers.hpp>
+
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -169,6 +173,8 @@ CDB_Connection *CPubseqReader::NewConn()
 {
     if ( m_Context.get() == NULL ) {
         C_DriverMgr drvMgr;
+        //DBAPI_RegisterDriver_CTLIB(drvMgr);
+        //DBAPI_RegisterDriver_DBLIB(drvMgr);
         string errmsg;
         FDBAPI_CreateContext createContextFunc =
             drvMgr.GetDriver("ctlib",&errmsg);
@@ -555,6 +561,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.33  2003/07/24 20:35:16  vasilche
+* Fix includes.
+*
 * Revision 1.32  2003/07/24 19:28:09  vasilche
 * Implemented SNP split for ID1 loader.
 *
