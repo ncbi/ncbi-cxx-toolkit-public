@@ -45,6 +45,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbi_system.hpp>
 #include <assert.h>
 #ifdef NCBI_POSIX_THREADS
 #  include <sys/time.h> // for gettimeofday()
@@ -352,12 +353,16 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     try {
         thread_obj->m_ExitData = thread_obj->Main();
     }
-    catch (CExitThreadException& E) {
-        E.EnterWrapper();
+    catch (CExitThreadException& e) {
+        e.EnterWrapper();
     }
+    STD_CATCH_ALL("CThread::Wrapper: CThread::Main() failed");
 
     // Call user-provided OnExit()
-    thread_obj->OnExit();
+    try {
+        thread_obj->OnExit();
+    }
+    STD_CATCH_ALL("CThread::Wrapper: CThread::OnExit() failed");
 
     // Cleanup local storages used by this thread
     {{
@@ -391,11 +396,10 @@ CThread::CThread(void)
       m_ExitData(0)
 {
     DoDeleteThisObject();
-    m_SelfRef.Reset(this);
 #if defined(HAVE_PTHREAD_SETCONCURRENCY)  &&  defined(NCBI_POSIX_THREADS)
     // Adjust concurrency for Solaris etc.
-    if (pthread_getconcurrency() < 2) {
-        xncbi_Validate(pthread_setconcurrency(2) == 0,
+    if (pthread_getconcurrency() == 0) {
+        xncbi_Validate(pthread_setconcurrency(GetCpuCount()) == 0,
                        "CThread::CThread() -- pthread_setconcurrency(2) "
                        "failed");
     }
@@ -405,7 +409,13 @@ CThread::CThread(void)
 
 CThread::~CThread(void)
 {
-    return;
+#if defined(NCBI_WIN32_THREADS)
+    // close handle if it's not yet closed
+    CFastMutexGuard state_guard(s_ThreadMutex);
+    if ( m_IsRun && m_Handle != NULL ) {
+        CloseHandle(m_Handle);
+    }
+#endif
 }
 
 
@@ -417,7 +427,7 @@ extern "C" {
 #endif
 
 
-bool CThread::Run(void)
+bool CThread::Run(TRunMode flags)
 {
     // Do not allow the new thread to run until m_Handle is set
     CFastMutexGuard state_guard(s_ThreadMutex);
@@ -426,32 +436,55 @@ bool CThread::Run(void)
     xncbi_Validate(!m_IsRun,
                    "CThread::Run() -- called for already started thread");
 
+    m_IsDetached = (flags & fRunDetached) != 0;
+
 #if defined(NCBI_WIN32_THREADS)
     // We need this parameter in WinNT - can not use NULL instead!
     DWORD  thread_id;
-    HANDLE thread_handle;
-    typedef TWrapperRes (WINAPI *FSystemWrapper)(TWrapperArg);
-    thread_handle = CreateThread
-        (NULL, 0,
-         reinterpret_cast<FSystemWrapper>(Wrapper),
-         this, 0, &thread_id);
-    xncbi_Validate(thread_handle != NULL,
+    m_Handle = CreateThread(NULL, 0,
+                            reinterpret_cast<FSystemWrapper>(Wrapper),
+                            this, 0, &thread_id);
+    xncbi_Validate(m_Handle != NULL,
                    "CThread::Run() -- error creating thread");
-    xncbi_Validate(DuplicateHandle(GetCurrentProcess(), thread_handle,
-                                   GetCurrentProcess(), &m_Handle,
-                                   0, FALSE, DUPLICATE_SAME_ACCESS),
-                   "CThread::Run() -- error getting thread handle");
-    xncbi_Validate(CloseHandle(thread_handle),
-                   "CThread::Run() -- error closing thread handle");
+    if ( m_IsDetached ) {
+        CloseHandle(m_Handle);
+        m_Handle = NULL;
+    }
+    else {
+        xncbi_Validate(DuplicateHandle(GetCurrentProcess(), thread_handle,
+                                       GetCurrentProcess(), &m_Handle,
+                                       0, FALSE, DUPLICATE_SAME_ACCESS),
+                       "CThread::Run() -- error getting thread handle");
+        xncbi_Validate(CloseHandle(thread_handle),
+                       "CThread::Run() -- error closing thread handle");
+    }
 #elif defined(NCBI_POSIX_THREADS)
-    xncbi_Validate(pthread_create
-                   (&m_Handle, 0,
-                    reinterpret_cast<FSystemWrapper>(Wrapper), this) == 0,
+    pthread_attr_t attr;
+    xncbi_Validate(pthread_attr_init (&attr) == 0,
+                   "CThread::Run() - error initializing thread attributes");
+    if ( ! (flags & fRunUnbound) ) {
+        xncbi_Validate(pthread_attr_setscope(&attr,
+                                             PTHREAD_SCOPE_SYSTEM) == 0,
+                       "CThread::Run() - error setting thread scope");
+    }
+    if ( m_IsDetached ) {
+        xncbi_Validate(pthread_attr_setdetachstate(&attr,
+                                                   PTHREAD_CREATE_DETACHED) == 0,
+                       "CThread::Run() - error setting thread detach state");
+    }
+    xncbi_Validate(pthread_create(&m_Handle, &attr,
+                                  reinterpret_cast<FSystemWrapper>(Wrapper),
+                                  this) == 0,
                    "CThread::Run() -- error creating thread");
+
+
 #else
     xncbi_Validate(0,
                    "CThread::Run() -- system does not support threads");
 #endif
+
+    // prevent deletion of CThread until thread is finished
+    m_SelfRef.Reset(this);
 
     // Indicate that the thread is run
     m_IsRun = true;
@@ -558,6 +591,7 @@ bool CThread::Discard(void)
 
     // Schedule for destruction (or, destroy it right now if there is no
     // other CRef<>-based references to this object left).
+    m_SelfRef.Reset(this);
     m_SelfRef.Reset();
     return true;
 }
@@ -604,6 +638,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2002/09/30 16:32:29  vasilche
+ * Fixed bug with self referenced CThread.
+ * Added bound running flag to CThread.
+ * Fixed concurrency level on POSIX threads.
+ *
  * Revision 1.20  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *

@@ -167,9 +167,19 @@ public:
     // Must be allocated in the heap (only!).
     CThread(void);
 
+    // bitwise OR'd flags for thread creation passed to Run()
+    enum ERunMode {
+        fRunDefault  = 0x00,    // default
+        fRunDetached = 0x01,    // run the thread detached (non-joinable)
+// these two may not be supported (and will be ignored) on some platforms
+        fRunBound    = 0x10,    // run thread in a 1:1 thread:LPW mode
+        fRunUnbound  = 0x20,    // run thread in a N:1 thread:LPW mode
+    };
+    typedef int TRunMode;  // binary OR of "ERunMode"
+
     // Run the thread:
     // create new thread, initialize it, and call user-provided Main() method.
-    bool Run(void);
+    bool Run(TRunMode flags = fRunDefault);
 
     // Inform the thread that user does not need to wait for its termination.
     // The thread object will be destroyed by Exit().
@@ -186,6 +196,10 @@ public:
 
     // Cancel current thread. If the thread is detached, then schedule
     // the thread object for destruction.
+    // Cancellation is performed by throwing an exception of type
+    // CExitThreadException to allow destruction of all objects in
+    // thread's stack, so Exit() method shell not be called from any
+    // destructor.
     static void Exit(void* exit_data);
 
     // If the thread has not been Run() yet, then schedule the thread object
@@ -325,6 +339,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/09/30 16:32:28  vasilche
+ * Fixed bug with self referenced CThread.
+ * Added bound running flag to CThread.
+ * Fixed concurrency level on POSIX threads.
+ *
  * Revision 1.12  2002/09/19 20:05:41  vasilche
  * Safe initialization of static mutexes
  *
