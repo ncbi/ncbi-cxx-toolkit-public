@@ -1117,7 +1117,7 @@ const string& AlignmentDisplay::GetColumnColor(int alnLoc, double conservationTh
     double information = 0.0;
     pe = profile.end();
     for (p=profile.begin(); p!=pe; p++) {
-        static const double ln2 = log(2), threshhold = 0.0001;
+        static const double ln2 = log(2.0), threshhold = 0.0001;
         double expFreq = StandardProbabilities[p->first];
         if (expFreq > threshhold) {
             float freqRatio = p->second / expFreq;
@@ -1225,6 +1225,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/19 13:25:09  thiessen
+* fix log ambiguity
+*
 * Revision 1.1  2003/03/19 05:33:43  thiessen
 * move to src/app/cddalignview
 *
