@@ -45,7 +45,8 @@ BEGIN_SCOPE(objects)
 void CSplitParser::Attach(CTSE_Info& tse, const CID2S_Split_Info& split)
 {
     ITERATE ( CID2S_Split_Info::TChunks, it, split.GetChunks() ) {
-        Parse(**it)->x_TSEAttach(tse);
+        CRef<CTSE_Chunk_Info> chunk = Parse(**it);
+        chunk->x_TSEAttach(tse);
     }
 }
 
@@ -196,8 +197,8 @@ void CSplitParser::x_ParseLocation(TLocationSet& vec,
 void CSplitParser::Load(CTSE_Chunk_Info& chunk,
                       const CID2S_Chunk& id2_chunk)
 {
-    ITERATE ( CID2S_Chunk::TData, it, id2_chunk.GetData() ) {
-        const CID2S_Chunk_Data& data = **it;
+    ITERATE ( CID2S_Chunk::TData, dit, id2_chunk.GetData() ) {
+        const CID2S_Chunk_Data& data = **dit;
 
         CTSE_Chunk_Info::TPlace place;
         if ( data.GetId().IsGi() ) {
@@ -243,6 +244,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.4  2004/02/17 21:19:35  vasilche
+ * Fixed 'non-const reference to temporary' warnings.
+ *
  * Revision 1.3  2004/01/28 20:53:42  vasilche
  * Added CSplitParser::Attach().
  *
