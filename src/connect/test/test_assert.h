@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/04/15 23:51:10  lavr
+ * +#include <stdio.h> to define stderr
+ *
  * Revision 6.7  2002/04/15 20:06:09  lavr
  * Fixed function pointer type: now explicit instead of Microsoft's PFV
  *
@@ -64,6 +67,7 @@
 
 #ifdef NCBI_OS_MSWIN
 #  include <crtdbg.h>
+#  include <stdio.h>
 #  include <windows.h>
 
 /* Suppress popup messages on execution errors.
