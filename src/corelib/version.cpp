@@ -95,12 +95,62 @@ CVersionInfo::Match(const CVersionInfo& version_info) const
 }
 
 
+bool IsBetterVersion(const CVersionInfo& info, 
+                     const CVersionInfo& cinfo,
+                     int&  best_major, 
+                     int&  best_minor,
+                     int&  best_patch_level)
+{
+    int major = cinfo.GetMajor();
+    int minor = cinfo.GetMinor();
+    int patch_level = cinfo.GetPatchLevel();
+
+    if (info.GetMajor() == -1) {  // best major search
+        if (major > best_major) { 
+            best_major = major;
+            best_minor = minor;
+            best_patch_level = patch_level;
+            return true;
+        }
+    } else { // searching for the specific major version
+        if (info.GetMajor() != major) {
+            return false;
+        }
+    }
+
+    if (info.GetMinor() == -1) {  // best minor search
+        if (minor > best_minor) {
+            best_major = major;
+            best_minor = minor;
+            best_patch_level = patch_level;
+            return true;
+        }
+    } else { 
+        if (info.GetMinor() != minor) {
+            return false;
+        }
+    }
+
+    // always looking for the best patch
+    if (patch_level > best_patch_level) {
+            best_major = major;
+            best_minor = minor;
+            best_patch_level = patch_level;
+            return true;
+    }
+    return false;    
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/11/17 19:51:17  kuznets
+ * + IsBetterVersion service function
+ *
  * Revision 1.4  2003/10/30 19:25:35  kuznets
  * Reflecting changes in hpp file.
  *

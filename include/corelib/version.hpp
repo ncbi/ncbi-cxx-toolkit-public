@@ -127,6 +127,28 @@ protected:
 };
 
 
+/// Return true if one version info is matches another better than
+/// the best variant.
+/// When condition satisfies, return true and the former best values 
+/// are getting updated
+/// @param info
+///    Version info to search
+/// @param cinfo
+///    Comparison candidate
+/// @param best_major
+///    Best major version found (reference)
+/// @param best_minor
+///    Best minor version found (reference)
+/// @param best_patch_level
+///    Best patch levelfound (reference)
+
+bool IsBetterVersion(const CVersionInfo& info, 
+                     const CVersionInfo& cinfo,
+                     int&  best_major, 
+                     int&  best_minor,
+                     int&  best_patch_level);
+
+
 /// Algorithm function to find version in the container
 ///
 /// Scans the provided iterator for version with the same major and
@@ -149,50 +171,13 @@ It FindVersion(It first, It last, const CVersionInfo& info)
 
     for ( ;first != last; ++first) {
         const CVersionInfo& vinfo = *first;
-        
-        int major = vinfo.GetMajor();
-        int minor = vinfo.GetMinor();
-        int patch_level = vinfo.GetPatchLevel();
 
-        if (info.GetMajor() == -1) {  // best major search
-            if (major > best_major) { 
-                best_version = it;
-                best_major = major;
-                best_minor = minor;
-                best_patch_level = patch_level;
-                continue;
-            }
-        } else { // searching for the specific major version
-            if (info.GetMajor() != major) {
-                continue;
-            }
+        if (IsBetterVersion(info, cinfo, 
+                            best_major, best_minor, best_patch_level))
+        {
+            best_version = first;
         }
-
-        if (info.GetMinor() == -1) {  // best minor search
-            if (minor > best_minor) {
-                best_version = it;
-                best_major = major;
-                best_minor = minor;
-                best_patch_level = patch_level;
-                continue;
-            }
-        } else { 
-            if (info.GetMinor() != minor) {
-                continue;
-            }
-        }
-
-        // always looking for the best patch
-        if (patch_level > best_patch_level) {
-                best_version = it;
-                best_major = major;
-                best_minor = minor;
-                best_patch_level = patch_level;
-                continue;
-        }
-
-    
-    } // for
+    }        
     
     return best_version;
 }
@@ -227,6 +212,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/11/17 19:51:31  kuznets
+ * + IsBetterVersion service function
+ *
  * Revision 1.8  2003/11/17 16:46:50  kuznets
  * + container based FindVersion template
  *
