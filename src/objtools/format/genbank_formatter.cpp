@@ -514,7 +514,7 @@ void CGenbankFormatter::FormatFeature
                    GetFeatIndent() + qual);
     }
     NON_CONST_ITERATE (list<string>, it, l) {
-        *it = NStr::TruncateSpaces(*it, NStr::eTrunc_End);
+        NStr::TruncateSpaces(*it, NStr::eTrunc_End);
     }
     text_os.AddParagraph(l);
 }
@@ -708,6 +708,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/10/05 15:57:20  shomrat
+* Use non-const NStr::TruncateSpaces
+*
 * Revision 1.17  2004/08/30 13:41:08  shomrat
 * Truncate spaces from feature quals
 *
