@@ -97,8 +97,8 @@ static void s_TestMisc(void)
         t5 = "3/16/2001 02:13:34";
         cout << "[" << t5.AsString() << "]" << endl;
         assert(t5.AsString() == "03/16/2001 02:13:34");
-    } catch (CNcbiException& e) {
-        REPORT_NCBI_EXCEPTION("",e);
+    } catch (CException& e) {
+        NCBI_REPORT_EXCEPTION("",e);
     }
     cout << endl;
 
@@ -586,7 +586,7 @@ int main()
         s_TestFormats();
         s_TestGMT();
         s_TestGMTSpeed();
-    } catch (CNcbiException& e) {
+    } catch (CException& e) {
         ERR_POST(Fatal << e);
     }
     // Success
@@ -597,6 +597,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2002/07/15 18:17:26  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 6.12  2002/07/11 14:18:29  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

@@ -54,8 +54,8 @@ BEGIN_NCBI_SCOPE
         EValidateAction action = xncbi_GetValidateAction(); \
         if (action == eValidate_Throw) { \
             if ( !(expression) ) { \
-                throw CExceptCorelib(__FILE__,__LINE__,0,\
-                    CExceptCorelib::eCore,message ); \
+                throw CCoreException(__FILE__,__LINE__,0,\
+                    CCoreException::eCore,message ); \
             } \
         } \
         else { \
@@ -72,8 +72,8 @@ BEGIN_NCBI_SCOPE
 #  define xncbi_Validate(expression, message) \
     do { \
         if ( !(expression) ) { \
-            throw CExceptCorelib(__FILE__,__LINE__,0, \
-                CExceptCorelib::eCore,message ); \
+            throw CCoreException(__FILE__,__LINE__,0, \
+                CCoreException::eCore,message ); \
         } \
     } while (0)
 
@@ -86,6 +86,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/07/15 18:17:23  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.8  2002/07/11 14:18:26  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

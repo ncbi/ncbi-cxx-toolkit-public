@@ -576,15 +576,15 @@ const CNcbiDiag& CNcbiDiag::SetFile(const char* file) const
     return *this;
 }
 
-const CNcbiDiag& CNcbiDiag::operator<< (const CNcbiException& ex) const
+const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
 {
     {
         ostrstream os;
         os << endl << "NCBI C++ Exception:" << endl << '\0';
         *this << os.str();
     }
-    const CNcbiException* pex;
-    stack<const CNcbiException*> pile;
+    const CException* pex;
+    stack<const CException*> pile;
     // invert the order
     for (pex = &ex; pex; pex = pex->GetPredecessor()) {
         pile.push(pex);
@@ -782,6 +782,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.60  2002/07/15 18:17:24  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.59  2002/07/10 16:19:00  ivanov
  * Added CNcbiDiag::StrToSeverityLevel().
  * Rewrite and rename SetDiagFixedStrPostLevel() -> SetDiagFixedPostLevel()

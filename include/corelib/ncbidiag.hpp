@@ -115,7 +115,7 @@ class ErrCode;
 //////////////////////////////////////////////////////////////////
 // The diagnostics class
 
-class CNcbiException;
+class CException;
 
 class CNcbiDiag
 {
@@ -135,7 +135,7 @@ public:
 
     // manipulator to set error code(s), like:  CNcbiDiag() << ErrCode(5,3);
     const CNcbiDiag& operator<< (const ErrCode& err_code) const;
-    const CNcbiDiag& operator<< (const CNcbiException& ex) const;
+    const CNcbiDiag& operator<< (const CException& ex) const;
 
     // other (function-based) manipulators
     const CNcbiDiag& operator<< (const CNcbiDiag& (*f)(const CNcbiDiag&))
@@ -408,6 +408,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.47  2002/07/15 18:17:50  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.46  2002/07/10 16:18:42  ivanov
  * Added CNcbiDiag::StrToSeverityLevel().
  * Rewrite and rename SetDiagFixedStrPostLevel() -> SetDiagFixedPostLevel()

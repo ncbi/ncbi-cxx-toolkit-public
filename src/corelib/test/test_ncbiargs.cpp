@@ -132,7 +132,7 @@ static void s_RunTest0(const CArgs& args, ostream& os)
             (void) args["ko"].AsString();
         } catch (CArgException& e) {
             is_thrown = true;
-            REPORT_NCBI_EXCEPTION("CArgException is thrown:",e);
+            NCBI_REPORT_EXCEPTION("CArgException is thrown:",e);
         }
         assert(is_thrown);
     }
@@ -508,6 +508,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.20  2002/07/15 18:17:25  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 6.19  2002/07/11 14:18:29  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

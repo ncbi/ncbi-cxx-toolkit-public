@@ -235,16 +235,16 @@ CObject::~CObject(void)
     else if ( ObjectStateValid(count) ) {
         _ASSERT(ObjectStateReferenced(count));
         // referenced object
-        NCBI_THROW(CExceptObject,eRefDelete,
+        NCBI_THROW(CObjectException,eRefDelete,
             "Referenced CObject may not be deleted");
     }
     else if ( count == eCounterDeleted ) {
         // deleted object
-        NCBI_THROW(CExceptObject,eDeleted,"CObject is already deleted");
+        NCBI_THROW(CObjectException,eDeleted,"CObject is already deleted");
     }
     else {
         // bad object
-        NCBI_THROW(CExceptObject,eCorrupted,"CObject is corrupted");
+        NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
     }
     // mark object as deleted
     m_Counter.Set(eCounterDeleted);
@@ -255,16 +255,16 @@ void CObject::AddReferenceOverflow(TCount count) const
 {
     if ( ObjectStateValid(count) ) {
         // counter overflow
-        NCBI_THROW(CExceptObject,eRefOverflow,
+        NCBI_THROW(CObjectException,eRefOverflow,
             "CObject's reference counter overflow");
     }
     else if ( count == eCounterDeleted ) {
         // deleted object
-        NCBI_THROW(CExceptObject,eDeleted,"CObject is already deleted");
+        NCBI_THROW(CObjectException,eDeleted,"CObject is already deleted");
     }
     else {
         // bad object
-        NCBI_THROW(CExceptObject,eCorrupted,"CObject is corrupted");
+        NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
     }
 }
 
@@ -282,7 +282,7 @@ void CObject::RemoveLastReference(void) const
     else {
         _ASSERT(!ObjectStateValid(count + eCounterStep));
         // bad object
-        NCBI_THROW(CExceptObject, eNoRef,
+        NCBI_THROW(CObjectException, eNoRef,
             "Unreferenced CObject may not be released");
     }
 }
@@ -298,9 +298,9 @@ void CObject::ReleaseReference(void) const
 
     // error
     if ( !ObjectStateValid(count) ) {
-        NCBI_THROW(CExceptObject,eCorrupted,"CObject is corrupted");
+        NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
     } else {
-        NCBI_THROW(CExceptObject, eNoRef,
+        NCBI_THROW(CObjectException, eNoRef,
             "Unreferenced CObject may not be released");
     }
 }
@@ -321,10 +321,10 @@ void CObject::DoNotDeleteThisObject(void)
     
 
     if ( is_valid ) {
-        NCBI_THROW(CExceptObject,eRefUnref,
+        NCBI_THROW(CObjectException,eRefUnref,
             "Referenced CObject cannot be made unreferenced one");
     } else {
-        NCBI_THROW(CExceptObject,eCorrupted,"CObject is corrupted");
+        NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
     }
 }
 
@@ -341,7 +341,7 @@ void CObject::DoDeleteThisObject(void)
             return;
         }
     }}
-    NCBI_THROW(CExceptObject,eCorrupted,"CObject is corrupted");
+    NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
 }
                         
 void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2002/07/15 18:17:24  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.29  2002/07/11 14:18:27  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

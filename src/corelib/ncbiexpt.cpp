@@ -27,7 +27,7 @@
  *           Eugene Vasilchenko, Anton Lavrentiev
  *
  * File Description:
- *   CNcbiException
+ *   CException
  *   CExceptionReporter
  *   CExceptionReporterStream
  *   CErrnoException
@@ -97,13 +97,13 @@ extern void DoDbgPrint(const char* file, int line,
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CNcbiException implementation
+// CException implementation
 
-bool CNcbiException::sm_BkgrEnabled=true;
+bool CException::sm_BkgrEnabled=true;
 
 
-CNcbiException::CNcbiException(const char* file, int line,
-    const CNcbiException* prev_exception,
+CException::CException(const char* file, int line,
+    const CException* prev_exception,
     EErrCode err_code, const string& message) throw()
     :   m_File(file),
         m_Line(line),
@@ -115,13 +115,13 @@ CNcbiException::CNcbiException(const char* file, int line,
 }
 
 
-CNcbiException::CNcbiException(const CNcbiException& other) throw()
+CException::CException(const CException& other) throw()
 {
     x_Assign(other);
 }
 
 
-CNcbiException::~CNcbiException(void) throw()
+CException::~CException(void) throw()
 {
     if (m_Predecessor) {
         delete m_Predecessor;
@@ -129,10 +129,10 @@ CNcbiException::~CNcbiException(void) throw()
     }
 }
 
-void CNcbiException::AddBacklog(const char* file,int line,
-                                const string& message)
+void CException::AddBacklog(const char* file,int line,
+                            const string& message)
 {
-    const CNcbiException* prev = m_Predecessor;
+    const CException* prev = m_Predecessor;
     m_Predecessor = x_Clone();
     if (prev) {
         delete prev;
@@ -145,16 +145,16 @@ void CNcbiException::AddBacklog(const char* file,int line,
 
 // ---- report --------------
 
-const char* CNcbiException::what(void) const throw()
+const char* CException::what(void) const throw()
 {
     m_What = ReportAll();
     return m_What.c_str();    
 }
 
 
-void CNcbiException::Report(const char* file, int line,
-                            const string& title,
-                            CExceptionReporter* reporter) const
+void CException::Report(const char* file, int line,
+                        const string& title,
+                        CExceptionReporter* reporter) const
 {
     if (reporter ) {
         reporter->Report(file, line, title, *this);
@@ -164,11 +164,11 @@ void CNcbiException::Report(const char* file, int line,
 }
 
 
-string CNcbiException::ReportAll(void) const
+string CException::ReportAll(void) const
 {
     // invert the order
-    stack<const CNcbiException*> pile;
-    const CNcbiException* pex;
+    stack<const CException*> pile;
+    const CException* pex;
     for (pex = this; pex; pex = pex->GetPredecessor()) {
         pile.push(pex);
     }
@@ -193,7 +193,7 @@ string CNcbiException::ReportAll(void) const
 }
 
 
-string CNcbiException::ReportThis(void) const
+string CException::ReportThis(void) const
 {
     ostrstream os;
     ReportStd(os);
@@ -203,7 +203,7 @@ string CNcbiException::ReportThis(void) const
 }
 
 
-void CNcbiException::ReportStd(ostream& out) const
+void CException::ReportStd(ostream& out) const
 {
     out <<
         GetFile() << "(" << GetLine() << ") : " <<
@@ -211,13 +211,13 @@ void CNcbiException::ReportStd(ostream& out) const
         GetMsg() << "\" ";
 }
 
-void CNcbiException::ReportExtra(ostream& /*out*/) const
+void CException::ReportExtra(ostream& /*out*/) const
 {
     return;
 }
 
 
-const char* CNcbiException::GetErrCodeString(void) const
+const char* CException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
     case eUnknown: return "eUnknown";
@@ -226,15 +226,15 @@ const char* CNcbiException::GetErrCodeString(void) const
 }
 
 
-CNcbiException::EErrCode CNcbiException::GetErrCode (void) const
+CException::EErrCode CException::GetErrCode (void) const
 {
-    return typeid(*this) == typeid(CNcbiException) ?
-        (CNcbiException::EErrCode) x_GetErrCode() :
-        CNcbiException::eInvalid;
+    return typeid(*this) == typeid(CException) ?
+        (CException::EErrCode) x_GetErrCode() :
+        CException::eInvalid;
 }
 
 
-void CNcbiException::x_ReportToDebugger(void) const
+void CException::x_ReportToDebugger(void) const
 {
 #ifdef NCBI_OS_MSWIN
     bool prev = EnableBackgroundReporting(false);
@@ -244,7 +244,7 @@ void CNcbiException::x_ReportToDebugger(void) const
 }
 
 
-bool CNcbiException::EnableBackgroundReporting(bool enable)
+bool CException::EnableBackgroundReporting(bool enable)
 {
     bool prev = sm_BkgrEnabled;
     sm_BkgrEnabled = enable;
@@ -252,13 +252,13 @@ bool CNcbiException::EnableBackgroundReporting(bool enable)
 }
 
 
-const CNcbiException* CNcbiException::x_Clone(void) const
+const CException* CException::x_Clone(void) const
 {
-    return new CNcbiException(*this);
+    return new CException(*this);
 }
 
 
-void CNcbiException::x_Assign(const CNcbiException& src)
+void CException::x_Assign(const CException& src)
 {
     m_File    = src.m_File;
     m_Line    = src.m_Line;
@@ -269,14 +269,14 @@ void CNcbiException::x_Assign(const CNcbiException& src)
 }
 
 
-void CNcbiException::x_AssignErrCode(const CNcbiException& src)
+void CException::x_AssignErrCode(const CException& src)
 {
     m_ErrCode = typeid(*this) == typeid(src) ?
-        src.m_ErrCode : CNcbiException::eInvalid;
+        src.m_ErrCode : CException::eInvalid;
 }
 
 
-void CNcbiException::x_InitErrCode(EErrCode err_code)
+void CException::x_InitErrCode(EErrCode err_code)
 {
     m_ErrCode = err_code;
     if (m_ErrCode != eInvalid && !m_Predecessor) {
@@ -327,7 +327,7 @@ bool CExceptionReporter::EnableDefault(bool enable)
 
 void CExceptionReporter::ReportDefault(const char* file, int line,
                                        const string& title,
-                                       const CNcbiException& ex)
+                                       const CException& ex)
 {
     if ( !sm_DefEnabled )
         return;
@@ -359,9 +359,9 @@ CExceptionReporterStream::~CExceptionReporterStream(void)
 
 void CExceptionReporterStream::Report(const char* file, int line,
                                       const string& title,
-                                      const CNcbiException& ex) const
+                                      const CException& ex) const
 {
-    const CNcbiException* pex;
+    const CException* pex;
     if (!title.empty()) {
         m_Out << title << endl;
     }
@@ -371,7 +371,7 @@ void CExceptionReporterStream::Report(const char* file, int line,
     }
     m_Out << ":" << endl;
     // invert the order
-    stack<const CNcbiException*> pile;
+    stack<const CException*> pile;
     for (pex = &ex; pex; pex = pex->GetPredecessor()) {
         pile.push(pex);
     }
@@ -392,18 +392,18 @@ void CExceptionReporterStream::Report(const char* file, int line,
 //  CErrnoException
 
 CErrnoException::CErrnoException(const char* file,int line,
-    const CNcbiException* prev_exception,
+    const CException* prev_exception,
     EErrCode err_code, const string& message) throw()
-    : CNcbiException(file, line, prev_exception,
-        (CNcbiException::EErrCode) CNcbiException::eInvalid,
+    : CException(file, line, prev_exception,
+        (CException::EErrCode) CException::eInvalid,
         message + ": " + ::strerror(errno)),
     m_Errno(errno)
 {
-    x_InitErrCode((CNcbiException::EErrCode) err_code);
+    x_InitErrCode((CException::EErrCode) err_code);
 }
 
 CErrnoException::CErrnoException(const CErrnoException& other) throw()
-    : CNcbiException(other)
+    : CException(other)
 {
     x_AssignErrCode(other);
     m_Errno = other.m_Errno;
@@ -415,7 +415,7 @@ CErrnoException::~CErrnoException(void) throw()
 
 void CErrnoException::ReportExtra(ostream& out) const
 {
-    CNcbiException::ReportExtra(out);
+    CException::ReportExtra(out);
     out << "m_Errno = " << m_Errno;
 }
 
@@ -428,18 +428,18 @@ CErrnoException::EErrCode CErrnoException::GetErrCode(void) const
 {
     return typeid(*this) == typeid(CErrnoException) ?
         (CErrnoException::EErrCode) x_GetErrCode() :
-        (CErrnoException::EErrCode) CNcbiException::eInvalid;
+        (CErrnoException::EErrCode) CException::eInvalid;
 }
 
 const char* CErrnoException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
     case eErrno: return "eErrno";
-    default:     return CNcbiException::GetErrCodeString();
+    default:     return CException::GetErrCodeString();
     }
 }
 
-const CNcbiException* CErrnoException::x_Clone(void) const
+const CException* CErrnoException::x_Clone(void) const
 {
     return new CErrnoException(*this);
 }
@@ -459,19 +459,19 @@ static string s_ComposeParse(const string& what, string::size_type pos)
 
 
 CParseException::CParseException(const char* file,int line,
-    const CNcbiException* prev_exception,
+    const CException* prev_exception,
     EErrCode err_code,const string& message,
     string::size_type pos) throw()
-    : CNcbiException(file, line,prev_exception,
-        (CNcbiException::EErrCode) CNcbiException::eInvalid,
+    : CException(file, line,prev_exception,
+        (CException::EErrCode) CException::eInvalid,
         s_ComposeParse(message,pos)),
     m_Pos(pos)
 {
-    x_InitErrCode((CNcbiException::EErrCode) err_code);
+    x_InitErrCode((CException::EErrCode) err_code);
 }
 
 CParseException::CParseException(const CParseException& other) throw()
-    : CNcbiException(other)
+    : CException(other)
 {
     x_AssignErrCode(other);
     m_Pos = other.m_Pos;
@@ -483,7 +483,7 @@ CParseException::~CParseException(void) throw()
 
 void CParseException::ReportExtra(ostream& out) const
 {
-    CNcbiException::ReportExtra(out);
+    CException::ReportExtra(out);
     out << "m_Pos = " << m_Pos;
 }
 
@@ -496,7 +496,7 @@ CParseException::EErrCode CParseException::GetErrCode(void) const
 {
     return typeid(*this) == typeid(CParseException) ?
         (CParseException::EErrCode) x_GetErrCode() :
-        (CParseException::EErrCode) CNcbiException::eInvalid;
+        (CParseException::EErrCode) CException::eInvalid;
 }
 
 const char* CParseException::GetErrCodeString(void) const
@@ -506,11 +506,11 @@ const char* CParseException::GetErrCodeString(void) const
     case eEntry:   return "eEntry";
     case eValue:   return "eValue";
     case eErr:     return "eErr";
-    default:     return CNcbiException::GetErrCodeString();
+    default:     return CException::GetErrCodeString();
     }
 }
 
-const CNcbiException* CParseException::x_Clone(void) const
+const CException* CParseException::x_Clone(void) const
 {
     return new CParseException(*this);
 }
@@ -522,6 +522,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2002/07/15 18:17:24  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.23  2002/07/11 14:18:26  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

@@ -72,7 +72,7 @@ CNcbiApplication::CNcbiApplication(void)
 {
     // Register the app. instance
     if ( m_Instance ) {
-        NCBI_THROW(CExceptApp,eSecond,
+        NCBI_THROW(CAppException,eSecond,
             "Second instance of CNcbiApplication is prohibited");
     }
     m_Instance = this;
@@ -278,11 +278,11 @@ int CNcbiApplication::AppMain
             ERR_POST(
                 "Application diagnostic stream's setup failed");
         }
-    } catch (CNcbiException& e) {
-        NCBI_RETHROW(e,CExceptApp, eSetupDiag,
+    } catch (CException& e) {
+        NCBI_RETHROW(e,CAppException, eSetupDiag,
             "Application diagnostic stream's setup failed");
     } catch (exception& e) {
-        NCBI_THROW(CExceptApp, eSetupDiag,
+        NCBI_THROW(CAppException, eSetupDiag,
             string("Application diagnostic stream's setup failed") +
             string(": ") + e.what());
     }
@@ -293,11 +293,11 @@ int CNcbiApplication::AppMain
             string x_conf(conf);
             LoadConfig(*m_Config, &x_conf);
         }
-    } catch (CNcbiException& e) {
-        NCBI_RETHROW(e,CExceptApp, eLoadConfig,
+    } catch (CException& e) {
+        NCBI_RETHROW(e,CAppException, eLoadConfig,
             "Registry data cannot be loaded");
     } catch (exception& e) {
-        NCBI_THROW(CExceptApp, eLoadConfig,
+        NCBI_THROW(CAppException, eLoadConfig,
             string("Registry data cannot be loaded") +
             string(": ") + e.what());
     }
@@ -335,8 +335,8 @@ int CNcbiApplication::AppMain
         catch (CArgException& e) {
             NCBI_RETHROW_SAME(e,"Application's initialization failed");
         }
-        catch (CNcbiException& e) {
-            REPORT_NCBI_EXCEPTION(
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION(
                 "Application's initialization failed",e);
         }
         catch (exception& e) {
@@ -353,8 +353,8 @@ int CNcbiApplication::AppMain
             catch (CArgException& e) {
                 NCBI_RETHROW_SAME(e,"Application's execution failed");
             }
-            catch (CNcbiException& e) {
-                REPORT_NCBI_EXCEPTION(
+            catch (CException& e) {
+                NCBI_REPORT_EXCEPTION(
                     "Application's execution failed",e);
             }
             catch (exception& e) {
@@ -371,8 +371,8 @@ int CNcbiApplication::AppMain
         catch (CArgException& e) {
             NCBI_RETHROW_SAME(e,"Application's cleanup failed");
         }
-        catch (CNcbiException& e) {
-            REPORT_NCBI_EXCEPTION(
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION(
                 "Application's cleanup failed",e);
         }
         catch (exception& e) {
@@ -387,7 +387,7 @@ int CNcbiApplication::AppMain
         if ( m_ArgDesc.get() ) {
             LOG_POST(m_ArgDesc->PrintUsage(str) << string(72, '='));
         }
-        REPORT_NCBI_EXCEPTION("",e);
+        NCBI_REPORT_EXCEPTION("",e);
         exit_code = -1;
     }
 
@@ -551,7 +551,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
         // do load
         x_conf = NStr::TruncateSpaces(x_conf);
         if ( !s_LoadConfig(reg, x_conf) ) {
-            NCBI_THROW(CExceptApp,eNoRegistry,
+            NCBI_THROW(CAppException,eNoRegistry,
                 "Registry file cannot be opened");
         }
         return true;
@@ -596,6 +596,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2002/07/15 18:17:23  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.42  2002/07/11 14:18:25  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

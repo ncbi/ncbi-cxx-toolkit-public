@@ -201,7 +201,7 @@ void CTime::x_VerifyFormat(const string& fmt)
     }
     for (string::const_iterator j = fmt.begin();  j != fmt.end();  ++j) {
         if (strchr("YyMDhmsSZ", *j) != 0  &&  ++count[(unsigned int) *j] > 1) {
-            NCBI_THROW(CExceptTime,eFormat,"CTime's format is incorrect");
+            NCBI_THROW(CTimeException,eFormat,"CTime's format is incorrect");
         }
     }
 }
@@ -283,10 +283,10 @@ void CTime::x_Init(const string& str, const string& fmt)
     }
     // Check on errors
     if ( *fff != '\0'  ||  *sss != '\0' ) {
-        NCBI_THROW(CExceptTime,eFormat,"CTime's format is incorrect");
+        NCBI_THROW(CTimeException,eFormat,"CTime's format is incorrect");
     }
     if ( !IsValid() ) {
-        NCBI_THROW(CExceptTime, eInvalid, "CTime is invalid");
+        NCBI_THROW(CTimeException, eInvalid, "CTime is invalid");
     }
 }
 
@@ -307,7 +307,7 @@ CTime::CTime(int year, int month, int day, int hour,
     m_AdjustTimeDiff = 0;
 
     if ( !IsValid() ) {
-        NCBI_THROW(CExceptTime, eInvalid, "CTime is invalid");
+        NCBI_THROW(CTimeException, eInvalid, "CTime is invalid");
     }
 }
 
@@ -404,7 +404,7 @@ string CTime::AsString(const string& fmt) const
     x_VerifyFormat(fmt);
 
     if ( !IsValid() ) {
-        NCBI_THROW(CExceptTime, eInvalid, "CTime is invalid");
+        NCBI_THROW(CTimeException, eInvalid, "CTime is invalid");
     }
 
     if ( IsEmpty() ) {
@@ -635,7 +635,7 @@ CTime& CTime::AddYear(int years, EDaylight adl)
     if ( (adl == eAdjustDaylight)  &&  x_NeedAdjustTime() ) {
         pt = new CTime(*this);
         if ( !pt ) {
-            NCBI_THROW(CExceptCorelib,eNullPtr,kEmptyStr);
+            NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
         }
         aflag = true;
     }
@@ -657,7 +657,7 @@ CTime& CTime::AddMonth(int months, EDaylight adl)
     if ( (adl == eAdjustDaylight)  &&  x_NeedAdjustTime() ) {
         pt = new CTime(*this);
         if ( !pt ) {
-            NCBI_THROW(CExceptCorelib,eNullPtr,kEmptyStr);
+            NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
         }
         aflag = true;
     }
@@ -682,7 +682,7 @@ CTime& CTime::AddDay(int days, EDaylight adl)
     if ( (adl == eAdjustDaylight)  &&  x_NeedAdjustTime() ) {
         pt = new CTime(*this);
         if ( !pt ) {
-            NCBI_THROW(CExceptCorelib,eNullPtr,kEmptyStr);
+            NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
         }
         aflag = true;
     }
@@ -708,7 +708,7 @@ CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
     if ( (adl == eAdjustDaylight)  &&  x_NeedAdjustTime() ) {
         pt = new CTime(*this);
         if ( !pt ) {
-            NCBI_THROW(CExceptCorelib,eNullPtr,kEmptyStr);
+            NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
         }
         aflag = true;
     }
@@ -732,7 +732,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
     if ( (adl == eAdjustDaylight) && x_NeedAdjustTime() ) {
         pt = new CTime(*this);
         if ( !pt ) {
-            NCBI_THROW(CExceptCorelib,eNullPtr,kEmptyStr);
+            NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
         }
         aflag = true;
     }
@@ -1143,6 +1143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2002/07/15 18:17:25  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.22  2002/07/11 14:18:28  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

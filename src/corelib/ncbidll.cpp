@@ -78,8 +78,8 @@ CDll::~CDll()
     if ( m_AutoUnload ) {
         try {
             Unload();
-        } catch(CNcbiException& e) {
-            REPORT_NCBI_EXCEPTION("CDll destructor",e);
+        } catch(CException& e) {
+            NCBI_REPORT_EXCEPTION("CDll destructor",e);
         }
     }
     delete m_Handle;
@@ -175,7 +175,7 @@ void* CDll::x_GetEntryPoint(const string& name, size_t pointer_size)
 {
     // Check pointer size
     if (pointer_size != sizeof(void*)) {
-        NCBI_THROW(CExceptCorelib,eDll,
+        NCBI_THROW(CCoreException,eDll,
             "Dll entry point's address size does not match"
             " the size of provided memory buffer");
     }
@@ -225,7 +225,7 @@ void CDll::x_ThrowException(const string& what)
 #  endif
 #endif
 
-    NCBI_THROW(CExceptCorelib,eDll,what + ": " + errmsg);
+    NCBI_THROW(CCoreException,eDll,what + ": " + errmsg);
 }
 
 
@@ -235,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/07/15 18:17:24  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.8  2002/07/11 14:18:26  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

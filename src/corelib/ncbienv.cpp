@@ -146,13 +146,13 @@ void CNcbiArguments::Reset(int argc, const char* const* argv,
 {
     // check args
     if (argc < 0) {
-        NCBI_THROW(CExceptArguments,eNegativeArgc,
+        NCBI_THROW(CArgumentsException,eNegativeArgc,
             "Negative number of command-line arguments");
     }
 
     if ((argc == 0) != (argv == 0)) {
         if (argv == 0) {
-            NCBI_THROW(CExceptArguments,eNoArgs,
+            NCBI_THROW(CArgumentsException,eNoArgs,
                 "Command-line arguments are absent");
         }
         ERR_POST(Info <<
@@ -225,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/07/15 18:17:24  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.5  2002/07/11 14:18:26  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

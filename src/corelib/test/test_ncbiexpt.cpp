@@ -40,9 +40,9 @@
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
-// CExceptSubsystem
+// CExceptionSubsystem
 
-class CExceptSubsystem : public CNcbiException
+class CSubsystemException : public CException
 {
 public:
     enum EErrCode {
@@ -54,16 +54,16 @@ public:
         switch (GetErrCode()) {
         case eType1: return "eType1";
         case eType2: return "eType2";
-        default:     return CNcbiException::GetErrCodeString();
+        default:     return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CExceptSubsystem,CNcbiException);
+    NCBI_EXCEPTION_DEFAULT(CSubsystemException,CException);
 };
 
 /////////////////////////////////////////////////////////////////////////////
-// CExceptSupersystem
+// CSupersystemException
 
-class CExceptSupersystem : public CExceptSubsystem
+class CSupersystemException : public CSubsystemException
 {
 public:
     enum EErrCode {
@@ -75,10 +75,10 @@ public:
         switch (GetErrCode()) {
         case eSuper1: return "eSuper1";
         case eSuper2: return "eSuper2";
-        default:      return CNcbiException::GetErrCodeString();
+        default:      return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CExceptSupersystem, CExceptSubsystem);
+    NCBI_EXCEPTION_DEFAULT(CSupersystemException, CSubsystemException);
 };
 
 
@@ -102,16 +102,16 @@ void CExceptApplication::f1(void)
     try {
         f2();
     }
-    catch (CNcbiException& e) {  // catch by reference
+    catch (CException& e) {  // catch by reference
         // verify error code
-        _ASSERT(e.GetErrCode() == CNcbiException::eInvalid);
+        _ASSERT(e.GetErrCode() == CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CNcbiException>(e));
-        _ASSERT(UppermostCast<CExceptSubsystem>(e));
-        _ASSERT(!UppermostCast<CExceptSupersystem>(e));
+        _ASSERT(!UppermostCast<CException>(e));
+        _ASSERT(UppermostCast<CSubsystemException>(e));
+        _ASSERT(!UppermostCast<CSupersystemException>(e));
         // verify error code
-        const CExceptSubsystem *pe = UppermostCast<CExceptSubsystem>(e);
-        _ASSERT(pe->GetErrCode() == CExceptSubsystem::eType2);
+        const CSubsystemException *pe = UppermostCast<CSubsystemException>(e);
+        _ASSERT(pe->GetErrCode() == CSubsystemException::eType2);
 
         NCBI_RETHROW_SAME(e,"calling f2 from f1");
     }
@@ -122,18 +122,18 @@ void CExceptApplication::f2(void)
     try {
         f3();
     }
-    catch (CExceptSubsystem e) {  // catch by value
+    catch (CSubsystemException e) {  // catch by value
 /*
     catching exception by value results in copying
-    CExceptSupersystem into CExceptSubsystem and
+    CSupersystemException into CSubsystemException and
     loosing all meaning of the "original" exception
     i.e. only location and message info is preserved
     while err.code becomes invalid
 */
         // verify error code
-        _ASSERT((int)e.GetErrCode() == (int)CNcbiException::eInvalid);
+        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
 
-        NCBI_RETHROW(e,CExceptSubsystem,eType2,"calling f3 from f2");
+        NCBI_RETHROW(e,CSubsystemException,eType2,"calling f3 from f2");
     }
 }
 
@@ -142,16 +142,16 @@ void CExceptApplication::f3(void)
     try {
         f4();
     }
-    catch (CExceptSubsystem& e) {  // catch by reference
+    catch (CSubsystemException& e) {  // catch by reference
         // verify error code
-        _ASSERT((int)(e.GetErrCode()) == (int)CNcbiException::eInvalid);
+        _ASSERT((int)(e.GetErrCode()) == (int)CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CNcbiException>(e));
-        _ASSERT(!UppermostCast<CExceptSubsystem>(e));
-        _ASSERT(UppermostCast<CExceptSupersystem>(e));
+        _ASSERT(!UppermostCast<CException>(e));
+        _ASSERT(!UppermostCast<CSubsystemException>(e));
+        _ASSERT(UppermostCast<CSupersystemException>(e));
         // verify error code
-        const CExceptSupersystem *pe = UppermostCast<CExceptSupersystem>(e);
-        _ASSERT(pe->GetErrCode() == CExceptSupersystem::eSuper2);
+        const CSupersystemException *pe = UppermostCast<CSupersystemException>(e);
+        _ASSERT(pe->GetErrCode() == CSupersystemException::eSuper2);
 
         // error code string is always correct
         _ASSERT( strcmp(e.GetErrCodeString(),
@@ -163,7 +163,7 @@ void CExceptApplication::f3(void)
 
 void CExceptApplication::f4(void)
 {
-    NCBI_THROW(CExceptSupersystem,eSuper2,"from f4");
+    NCBI_THROW(CSupersystemException,eSuper2,"from f4");
 }
 
 
@@ -172,58 +172,58 @@ int CExceptApplication::Run(void)
     try {
         f1();
     }
-    catch (CNcbiException& e) {
+    catch (CException& e) {
 
 // Attributes
         // verify error code
-        _ASSERT(e.GetErrCode() == CNcbiException::eInvalid);
+        _ASSERT(e.GetErrCode() == CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CNcbiException>(e));
-        _ASSERT(UppermostCast<CExceptSubsystem>(e));
-        _ASSERT(!UppermostCast<CExceptSupersystem>(e));
+        _ASSERT(!UppermostCast<CException>(e));
+        _ASSERT(UppermostCast<CSubsystemException>(e));
+        _ASSERT(!UppermostCast<CSupersystemException>(e));
         // verify error code
-        _ASSERT(UppermostCast<CExceptSubsystem>(e)->GetErrCode() ==
-                CExceptSubsystem::eType2);
+        _ASSERT(UppermostCast<CSubsystemException>(e)->GetErrCode() ==
+                CSubsystemException::eType2);
 
 
         // verify predecessors
-        const CNcbiException* pred;
+        const CException* pred;
 
 
         pred = e.GetPredecessor();
         _ASSERT(pred);
-        _ASSERT(pred->GetErrCode() == CNcbiException::eInvalid);
+        _ASSERT(pred->GetErrCode() == CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CNcbiException>(*pred));
-        _ASSERT(UppermostCast<CExceptSubsystem>(*pred));
-        _ASSERT(!UppermostCast<CExceptSupersystem>(*pred));
+        _ASSERT(!UppermostCast<CException>(*pred));
+        _ASSERT(UppermostCast<CSubsystemException>(*pred));
+        _ASSERT(!UppermostCast<CSupersystemException>(*pred));
         // verify error code
-        _ASSERT(UppermostCast<CExceptSubsystem>(*pred)->GetErrCode() ==
-                CExceptSubsystem::eType2);
+        _ASSERT(UppermostCast<CSubsystemException>(*pred)->GetErrCode() ==
+                CSubsystemException::eType2);
 
 
         pred = pred->GetPredecessor();
         _ASSERT(pred);
-        _ASSERT(pred->GetErrCode() == CNcbiException::eInvalid);
+        _ASSERT(pred->GetErrCode() == CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CNcbiException>(*pred));
-        _ASSERT(UppermostCast<CExceptSubsystem>(*pred));
-        _ASSERT(!UppermostCast<CExceptSupersystem>(*pred));
+        _ASSERT(!UppermostCast<CException>(*pred));
+        _ASSERT(UppermostCast<CSubsystemException>(*pred));
+        _ASSERT(!UppermostCast<CSupersystemException>(*pred));
         // verify error code
-        _ASSERT((int)UppermostCast<CExceptSubsystem>(*pred)->GetErrCode() ==
-                (int)CNcbiException::eInvalid);
+        _ASSERT((int)UppermostCast<CSubsystemException>(*pred)->GetErrCode() ==
+                (int)CException::eInvalid);
 
 
         pred = pred->GetPredecessor();
         _ASSERT(pred);
-        _ASSERT(pred->GetErrCode() == CNcbiException::eInvalid);
+        _ASSERT(pred->GetErrCode() == CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CNcbiException>(*pred));
-        _ASSERT(!UppermostCast<CExceptSubsystem>(*pred));
-        _ASSERT(UppermostCast<CExceptSupersystem>(*pred));
+        _ASSERT(!UppermostCast<CException>(*pred));
+        _ASSERT(!UppermostCast<CSubsystemException>(*pred));
+        _ASSERT(UppermostCast<CSupersystemException>(*pred));
         // verify error code
-        _ASSERT(UppermostCast<CExceptSupersystem>(*pred)->GetErrCode() ==
-                CExceptSupersystem::eSuper2);
+        _ASSERT(UppermostCast<CSupersystemException>(*pred)->GetErrCode() ==
+                CSupersystemException::eSuper2);
 
 
 
@@ -242,17 +242,17 @@ int CExceptApplication::Run(void)
         e.Report(__FILE__, __LINE__,
             "****** stream reporter ******", &reporter);
         cerr << endl;
-        REPORT_NCBI_EXCEPTION(
+        NCBI_REPORT_EXCEPTION(
             "****** default reporter (stream, disabled) ******",e);
 
         CExceptionReporter::EnableDefault(true);
         cerr << endl;
-        REPORT_NCBI_EXCEPTION(
+        NCBI_REPORT_EXCEPTION(
             "****** default reporter (stream) ******",e);
 
         CExceptionReporter::SetDefault(0);
         cerr << endl;
-        REPORT_NCBI_EXCEPTION(
+        NCBI_REPORT_EXCEPTION(
             "****** default reporter (diag) ******",e);
     }
     catch (exception& /*e*/) {
@@ -279,6 +279,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2002/07/15 18:17:26  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 6.4  2002/07/11 14:18:29  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

@@ -1232,7 +1232,7 @@ CMemoryFile::CMemoryFile(const string& file_name)
     x_Map(file_name);
 
     if (GetSize() < 0) {
-        NCBI_THROW(CExceptFile,eMemoryMap,
+        NCBI_THROW(CFileException,eMemoryMap,
             "File memory mapping cannot be created");
     }
 }
@@ -1383,6 +1383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2002/07/15 18:17:24  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.27  2002/07/11 19:28:30  ivanov
  * Removed test stuff from MemMapAdvise[Addr]
  *

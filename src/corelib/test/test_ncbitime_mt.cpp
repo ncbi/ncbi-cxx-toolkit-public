@@ -375,7 +375,7 @@ bool CTestRegApp::Thread_Run(int idx)
         OUTS( idx, __LINE__, "\n", 0);
         OUTS( idx, __LINE__,  "============ End thread =============" , 0);
         OUTS( idx, __LINE__, "\n", 0);
-    } catch (CNcbiException& e) {
+    } catch (CException& e) {
         ERR_POST(Fatal << e);
     }
 
@@ -420,6 +420,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2002/07/15 18:17:26  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 6.3  2002/07/11 14:18:29  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

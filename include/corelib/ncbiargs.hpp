@@ -99,7 +99,7 @@ class CArgAllow;
 // Exception the CArg* code can throw
 //
 
-class CArgException : public CExceptCorelib
+class CArgException : public CCoreException
 {
 public:
     enum EErrCode {
@@ -125,10 +125,10 @@ public:
         case eArgType:    return "eArgType";
         case eNoArg:      return "eNoArg";
         case eSynopsis:   return "eSynopsis";
-        default:    return CNcbiException::GetErrCodeString();
+        default:    return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CArgException,CExceptCorelib);
+    NCBI_EXCEPTION_DEFAULT(CArgException,CCoreException);
 };
 
 class CArgHelpException : public CArgException
@@ -141,7 +141,7 @@ public:
     {
         switch (GetErrCode()) {
         case eHelp: return "eHelp";
-        default:    return CNcbiException::GetErrCodeString();
+        default:    return CException::GetErrCodeString();
         }
     }
     NCBI_EXCEPTION_DEFAULT(CArgHelpException,CArgException);
@@ -629,6 +629,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2002/07/15 18:17:50  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.23  2002/07/11 14:17:53  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

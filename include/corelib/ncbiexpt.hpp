@@ -247,7 +247,7 @@ STD_CATCH(message) \
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CNcbiException: useful macros
+// CException: useful macros
 
 #define NCBI_THROW(exception_class, err_code, message) \
     throw exception_class(__FILE__, __LINE__, \
@@ -261,17 +261,17 @@ STD_CATCH(message) \
     do { prev_exception.AddBacklog(__FILE__, __LINE__, message); \
     throw; }  while (0)
 
-#define REPORT_NCBI_EXCEPTION(title,ex) \
+#define NCBI_REPORT_EXCEPTION(title,ex) \
     CExceptionReporter::ReportDefault(__FILE__, __LINE__, title, ex)
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CNcbiException
+// CException
 
 class CExceptionReporter;
 
-class CNcbiException : public std::exception
+class CException : public std::exception
 {
 public:
     // Each derived class has its own err.codes and their interpretations
@@ -282,12 +282,12 @@ public:
     };
 
     // When throwing an exception initially, "prev_exception" must be 0
-    CNcbiException(const char* file, int line,
-                   const CNcbiException* prev_exception,
-                   EErrCode err_code,const string& message) throw();
+    CException(const char* file, int line,
+               const CException* prev_exception,
+               EErrCode err_code,const string& message) throw();
 
     // Copy constructor
-    CNcbiException(const CNcbiException& other) throw();
+    CException(const CException& other) throw();
 
     // Add a message to backlog (to re-throw the same exception then)
     void AddBacklog(const char* file, int line,const string& message);
@@ -325,7 +325,7 @@ public:
     // ---- Attributes ---------
 
     // Class name as a string
-    virtual const char* GetType(void) const { return "CNcbiException"; }
+    virtual const char* GetType(void) const { return "CException"; }
 
     // Interpretation of error code (as text)
     virtual const char* GetErrCodeString(void) const;
@@ -338,24 +338,24 @@ public:
 
 
     // Get "previous" exception from the backlog
-    const CNcbiException* GetPredecessor(void) const { return m_Predecessor; }
+    const CException* GetPredecessor(void) const { return m_Predecessor; }
 
     // Destructor
-    virtual ~CNcbiException(void) throw();
+    virtual ~CException(void) throw();
 
 protected:
     // Report to the system debugger
     void x_ReportToDebugger(void) const;
 
     // Clone the exception
-    virtual const CNcbiException* x_Clone(void) const;
+    virtual const CException* x_Clone(void) const;
 
     // Copy exception data
-    void x_Assign(const CNcbiException& src);
+    void x_Assign(const CException& src);
 
     
-    void x_AssignErrCode(const CNcbiException& src);
-    void x_InitErrCode(CNcbiException::EErrCode err_code);
+    void x_AssignErrCode(const CException& src);
+    void x_InitErrCode(CException::EErrCode err_code);
     int  x_GetErrCode(void) const { return m_ErrCode; }
 
 private:
@@ -365,14 +365,14 @@ private:
     string  m_Msg;
 
     mutable string m_What;
-    const CNcbiException* m_Predecessor;
+    const CException* m_Predecessor;
 
     mutable bool m_InReporter;
     static bool sm_BkgrEnabled;
 
     // Prohibit default constructor and assignment
-    CNcbiException(void);
-    CNcbiException& operator= (const CNcbiException&) throw();
+    CException(void);
+    CException& operator= (const CException&) throw();
 };
 
 
@@ -392,13 +392,13 @@ const TTo* UppermostCast(const TFrom& from)
 #define NCBI_EXCEPTION_DEFAULT(exception_class, base_class) \
 public: \
     exception_class(const char* file,int line, \
-        const CNcbiException* prev_exception, \
+        const CException* prev_exception, \
         EErrCode err_code,const string& message) throw() \
         : base_class(file, line, prev_exception, \
-            (base_class::EErrCode) CNcbiException::eInvalid, \
+            (base_class::EErrCode) CException::eInvalid, \
             (message)) \
     { \
-        x_InitErrCode((CNcbiException::EErrCode) err_code); \
+        x_InitErrCode((CException::EErrCode) err_code); \
     } \
     exception_class(const exception_class& other) throw() \
        : base_class(other) \
@@ -411,10 +411,10 @@ public: \
     { \
         return typeid(*this) == typeid(exception_class) ? \
             (exception_class::EErrCode) x_GetErrCode() : \
-            (exception_class::EErrCode) CNcbiException::eInvalid; \
+            (exception_class::EErrCode) CException::eInvalid; \
     } \
 protected: \
-    virtual const CNcbiException* x_Clone(void) const \
+    virtual const CException* x_Clone(void) const \
     { \
         return new exception_class(*this); \
     } \
@@ -446,12 +446,12 @@ public:
     // Report exception using default reporter
     static void ReportDefault(const char* file, int line,
                               const string& title,
-                              const CNcbiException& ex);
+                              const CException& ex);
 
     // Report exception with _this_ reporter
     virtual void Report(const char* file, int line,
                         const string& title,
-                        const CNcbiException& ex) const = 0;
+                        const CException& ex) const = 0;
 
 private:
     static const CExceptionReporter* sm_DefHandler;
@@ -471,7 +471,7 @@ public:
 
     virtual void Report(const char* file, int line,
                         const string& title,
-                        const CNcbiException& ex) const;
+                        const CException& ex) const;
 private:
     ostream& m_Out;
 };
@@ -479,10 +479,10 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CExceptCorelib - corelib exceptions
+// CCoreException - corelib exceptions
 
 
-class CExceptCorelib : public CNcbiException
+class CCoreException : public CException
 {
 public:
     enum EErrCode {
@@ -496,10 +496,10 @@ public:
         case eCore:    return "eCore";
         case eNullPtr: return "eNullPtr";
         case eDll:     return "eDll";
-        default:    return CNcbiException::GetErrCodeString();
+        default:    return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CExceptCorelib,CNcbiException);
+    NCBI_EXCEPTION_DEFAULT(CCoreException,CException);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -509,7 +509,7 @@ public:
 //
 
 
-class CErrnoException : public CNcbiException
+class CErrnoException : public CException
 {
 public:
 
@@ -519,7 +519,7 @@ public:
 
     // Report description of "errno" along with "what"
     CErrnoException(const char* file,int line,
-        const CNcbiException* prev_exception,
+        const CException* prev_exception,
         EErrCode err_code, const string& message) throw();
     CErrnoException(const CErrnoException& other) throw();
     virtual ~CErrnoException(void) throw();
@@ -536,7 +536,7 @@ public:
     int GetErrno(void) const throw() { return m_Errno; }
 
 protected:
-    virtual const CNcbiException* x_Clone(void) const;
+    virtual const CException* x_Clone(void) const;
 
 private:
     int m_Errno;
@@ -544,7 +544,7 @@ private:
 
 
 
-class CParseException : public CNcbiException
+class CParseException : public CException
 {
 public:
 
@@ -557,7 +557,7 @@ public:
 
     // Report "pos" along with "what"
     CParseException(const char* file,int line,
-        const CNcbiException* prev_exception,
+        const CException* prev_exception,
         EErrCode err_code,const string& message,
         string::size_type pos) throw();
     CParseException(const CParseException& other) throw();
@@ -575,7 +575,7 @@ public:
     string::size_type GetPos(void) const throw() { return m_Pos; }
 
 protected:
-    virtual const CNcbiException* x_Clone(void) const;
+    virtual const CException* x_Clone(void) const;
 
 private:
     string::size_type m_Pos;
@@ -600,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2002/07/15 18:17:51  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.32  2002/07/11 19:33:11  gouriano
  * minor fix in NCBI_EXCEPTION_DEFAULT definition
  *

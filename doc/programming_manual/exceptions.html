@@ -11,7 +11,7 @@
     <li><a href="#Architecture">Architecture.</a></li>
     <li><a href="#Implementation">Implementation.</a>
       <ul>
-        <li><a href="#CNcbiException">CNcbiException.</a></li>
+        <li><a href="#CException">CException.</a></li>
         <li><a href="#DerivedExceptions">Derived exceptions.</a></li>
         <li><a href="#CExceptionReporter">CExceptionReporter.</a></li>
         <li><a href="#ErrorCodes">Choosing and analyzing error codes.</a></li>
@@ -144,11 +144,11 @@ groups of reporting mechanisms:
 <a name="Implementation"></a>
 <h4>Implementation.</h4>
 
-<a name="CNcbiException"></a>
-<h5>CNcbiException.</h5>
+<a name="CException"></a>
+<h5>CException.</h5>
 <p>
 There is a single system-wide exception base class --
-<var><a href="../lxr/ident?i=CNcbiException&d=C">CNcbiException</a></var>.
+<var><a href="../lxr/ident?i=CException&d=C">CException</a></var>.
 Each subsystem <em>must</em> implement its own type of exceptions, which must be
 be derived from this class. The class defines basic requirements of an exception
 construction, backlog and reporting mechanisms.
@@ -159,9 +159,9 @@ Each exception class defines its own error codes. So, the error code "by itself"
 is meaningless -- one should also know the the exception class, which produced it.
 <pre>
     // When throwing an exception initially, "prev_exception" must be 0
-    CNcbiException(const char* file, int line,
-                   const CNcbiException* prev_exception, 
-                   EErrCode err_code,const string& message) throw();
+    CException(const char* file, int line,
+               const CException* prev_exception, 
+               EErrCode err_code,const string& message) throw();
 </pre>
 </p>
 
@@ -206,7 +206,7 @@ The class has also numerous reporting methods:
 </pre>
 Also, the following macro is defined:
 <pre>
-    REPORT_NCBI_EXCEPTION(title,e)
+    NCBI_REPORT_EXCEPTION(title,e)
 </pre>
 Finally, the following data access functions help to analyze exception
 from a program:
@@ -220,7 +220,7 @@ from a program:
     EErrCode      GetErrCode(void) const;
     const string&amp; GetMsg(void)     const;
     // Get "previous" exception from the backlog
-    const CNcbiException* GetPredecessor(void) const;
+    const CException* GetPredecessor(void) const;
 </pre>
 </p>
 
@@ -235,7 +235,7 @@ Please note, this macro can only be used when the derived class has
 no additional data members.
 Here is an example of an exception declaration:
 <pre>
-class CExceptSubsystem : public CNcbiException
+class CSubsystemException : public CException
 {
 public:
     enum EErrCode {
@@ -247,10 +247,10 @@ public:
         switch (GetErrCode()) {
         case eType1: return "eType1";
         case eType2: return "eType2";
-        default:     return CNcbiException::GetErrCodeString();
+        default:     return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CExceptSubsystem,CNcbiException);
+    NCBI_EXCEPTION_DEFAULT(CSubsystemException,CException);
 };
 </pre>
 In case the derived exception has data members not found in the base class,
@@ -277,12 +277,12 @@ the standard NCBI diagnostic mechanism is used).<br />
     // Report exception using default reporter
     static  void Default(const char* file, int line,
                          const string&amp; title,
-                         const CNcbiException&amp; ex);
+                         const CException&amp; ex);
 
     // Report exception with _this_ reporter
     virtual void Report(const char* file, int line,
                         const string&amp; title, 
-                        const CNcbiException&amp; ex) const = 0;
+                        const CException&amp; ex) const = 0;
 </pre>
 </p>
 
@@ -297,11 +297,11 @@ as numbers. So, same number can be interpreted incorrectly,
 as soon as we somehow misinterpret the exception class.
 <br />
 Say for instance, there is an exception class, which is derived from
-<var><a href="#DerivedExceptions">CExceptSubsystem</a></var> -- let us call
-it <var>CExceptSupersystem</var> -- which also defines two error codes:
+<var><a href="#DerivedExceptions">CSubsystemException</a></var> -- let us call
+it <var>CSupersystemException</var> -- which also defines two error codes:
 <var>eSuper1</var> and <var>eSuper2</var>:
 <pre>
-class CExceptSupersystem : public CExceptSubsystem
+class CSupersystemException : public CSubsystemException
 {
 public:
     enum EErrCode {
@@ -313,18 +313,18 @@ public:
         switch (GetErrCode()) {
         case eSuper1: return "eSuper1";
         case eSuper2: return "eSuper2";
-        default:      return CNcbiException::GetErrCodeString();
+        default:      return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CExceptSupersystem, CExceptSubsystem);
+    NCBI_EXCEPTION_DEFAULT(CSupersystemException, CSubsystemException);
 };
 </pre>
 Now, suppose
-an exception <var>CExceptSupersystem</var> has been thrown
-somewhere. On a higher level it has been caught as <var>CExceptSubsystem</var>.
+an exception <var>CSupersystemException</var> has been thrown
+somewhere. On a higher level it has been caught as <var>CSubsystemException</var>.
 It is easy to see that the error code returned by this object would be
-completely meaningless: the error code of <var>CExceptSupersystem</var>
-cannot be interpreted in terms of <var>CExceptSubsystem</var>.
+completely meaningless: the error code of <var>CSupersystemException</var>
+cannot be interpreted in terms of <var>CSubsystemException</var>.
 <br />
 One reasonable solution seems to be isolating error codes of different
 exception classes  -- by assigning different numeric values to them
@@ -341,19 +341,19 @@ information and dynamic cast conversion:
 <pre>
     try {
         ...
-        NCBI_THROW(CExceptSupersystem,eSuper1,"your message here");
+        NCBI_THROW(CSupersystemException,eSuper1,"your message here");
         ...
     }
-    catch (CExceptSubsystem&amp; e) {
-        // call to UppermostCast&lt;CExceptSubsystem&gt;(e) would return 0 here!
+    catch (CSubsystemException&amp; e) {
+        // call to UppermostCast&lt;CSubsystemException&gt;(e) would return 0 here!
         // which means that "e" was actually the object of a different class
-        const CExceptSupersystem *p = UppermostCast&lt;CExceptSupersystem&gt;(e);
+        const CSupersystemException *p = UppermostCast&lt;CSupersystemException&gt;(e);
         if (p) {
             switch (p->GetErrCode()) {
-            case CExceptSupersystem::eSuper1:
+            case CSupersystemException::eSuper1:
                 ...
                 break;
-            case CExceptSupersystem::eSuper2:
+            case CSupersystemException::eSuper2:
                 ...
                 break;
             default:
@@ -385,24 +385,24 @@ It is worth to remind: the system only provides a mechanism to create a backlog
 of unfinished tasks, it does not create it automatically. It is up to
 developer to catch exceptions and re-throw them with the backlog information added.
 Here is an example of throwing
-<var><a href="#DerivedExceptions">CExceptSubsystem</a></var> exception:
+<var><a href="#DerivedExceptions">CSubsystemException</a></var> exception:
 <pre>
     ... // your code
-    NCBI_THROW(CExceptSubsystem,eType1,"your message here");
+    NCBI_THROW(CSubsystemException,eType1,"your message here");
     ...
 </pre>
 The code that catches, and possibly re-throws the exception might look like this:
 <pre>
     try {
         ... // your code
-    } catch (CExceptSubsystem&amp; e) {
-        if (e.GetErrCode() == CExceptSubsystem::eType2) {
+    } catch (CSubsystemException&amp; e) {
+        if (e.GetErrCode() == CSubsystemException::eType2) {
             ...
         } else {
-            NCBI_RETHROW(e,CExceptSubsystem,eType1,"your message here")
+            NCBI_RETHROW(e,CSubsystemException,eType1,"your message here")
         }
-    } catch (CNcbiException&amp; e) {
-        NCBI_RETHROW(e,CNcbiException,eUnknown,"your message here")
+    } catch (CException&amp; e) {
+        NCBI_RETHROW(e,CException,eUnknown,"your message here")
     }
 </pre>
 </p>
@@ -410,19 +410,19 @@ The code that catches, and possibly re-throws the exception might look like this
 <a name="ReportingException"></a>
 <h5>Reporting an exception.</h5>
 <p>
-There is a number of ways to report <var>CNcbiException</var>, for example:
+There is a number of ways to report <var>CException</var>, for example:
 <pre>
     try {
         ... // your code
-    } catch (CExceptSubsystem&amp; e) {
-        REPORT_NCBI_EXCEPTION("your message here",e);
+    } catch (CSubsystemException&amp; e) {
+        NCBI_REPORT_EXCEPTION("your message here",e);
         ERR_POST(e);
         cerr << e.ReportAll();
         cerr << e.what();
         e.Report(__FILE__,__LINE__,"your message here");
     }
 </pre>
-We suggest using <var>REPORT_NCBI_EXCEPTION(title,e)</var> macro
+We suggest using <var>NCBI_REPORT_EXCEPTION(title,e)</var> macro
 (which is equivalent to calling <var>e.Report(__FILE__,__LINE__,title)</var>) -
 it redirects the output into standard diagnostic channels
 and is highly configurable.
@@ -433,7 +433,7 @@ and is highly configurable.
 <a name="errno"></a>
 <a href="../docxx/CErrnoException.html"><h3>The CErrnoException Class</h3></a>
 <p>
-The <var>CErrnoException</var> class is derived from <var>CNcbiException</var>, and in addition to the
+The <var>CErrnoException</var> class is derived from <var>CException</var>, and in addition to the
 description string, has an <i>int</i> data member called <var>m_Errno</var>.
 The constructor itself automatically adds information about the most recent error state as
 obtained via the global system variable <i>errno</i>. The <var>CErrnoException</var>
@@ -453,7 +453,7 @@ To throw a CErrnoException, the standard <var>NCBI_THROW</var> macro can be used
 <a name="parse"></a>
 <a href="../docxx/CParseException.html"><h3>The CParseException Class</h3></a>
 <p>
-The <var>CParseException</var> class is derived from <var>CNcbiException</var>,
+The <var>CParseException</var> class is derived from <var>CException</var>,
 and includes an additional <i>int</i> data member, in this case called <var>m_Pos</var>.
 This class was specifically defined to support complex parsing tasks,
 and its constructor requires that positional information be supplied along with the
@@ -553,7 +553,7 @@ assume that <i>what()</i> has been defined for this object, and a default messag
 <h3> Exception Tracing </h3>
 
 Knowing exactly where an exception first occurs can be very useful for debugging purposes.
-<a href="#CNcbiException"><var>CNcbiException</var></a>
+<a href="#CException"><var>CException</var></a>
 class has this functionality built in, so it is highly recommended to use exceptions derived
 from it. In addition to this a set of
 <i>THROW*_TRACE()</i> macros defined in the NCBI C++ Toolkit combine exception handling with <a

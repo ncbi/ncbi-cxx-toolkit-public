@@ -569,13 +569,13 @@ static void TestException_Aux(void)
         NCBI_THROW(CErrnoException,eErrno,"Failed strtod(\"1e-999999\", 0)");
     }
     catch (CErrnoException& e) {
-        REPORT_NCBI_EXCEPTION("TEST CErrnoException ---> ",e);
+        NCBI_REPORT_EXCEPTION("TEST CErrnoException ---> ",e);
     }
     try {
         NCBI_THROW2(CParseException,eErr,"Failed parsing (at pos. 123)",123);
     }
     catch (CNcbiException& e) {
-        REPORT_NCBI_EXCEPTION("TEST CParseException ---> ",e);
+        NCBI_REPORT_EXCEPTION("TEST CParseException ---> ",e);
     }
     catch (...) {
         // should never be here
@@ -591,7 +591,7 @@ static void TestException_AuxTrace(void)
         NCBI_THROW(CErrnoException,eErrno,"Failed strtod('1e-999999', 0)");
     }
     catch (CErrnoException& e) {
-        REPORT_NCBI_EXCEPTION("throw CErrnoException ---> ",e);
+        NCBI_REPORT_EXCEPTION("throw CErrnoException ---> ",e);
     }
 
     try {
@@ -622,7 +622,7 @@ static void TestException_AuxTrace(void)
         NCBI_THROW2(CParseException,eErr,"Failed parsing (at pos. 123)", 123);
     }
     catch (CNcbiException& e) {
-        REPORT_NCBI_EXCEPTION("throw CParseException ---> ",e);
+        NCBI_REPORT_EXCEPTION("throw CParseException ---> ",e);
     }
 }
 
@@ -736,6 +736,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2002/07/15 18:17:25  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.81  2002/07/11 14:18:28  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

@@ -173,21 +173,21 @@ void CPipe::Open(const char *cmdname, const vector<string> args,
         m_StdIn  = s_BindHandle(fileno(stdin), true,
                                 mode_stdin == eBinary, &fd_stdin_save);
         if ( m_StdIn == -1 )
-            NCBI_THROW(CExceptPipe,eBind,
+            NCBI_THROW(CPipeException,eBind,
                 "Pipe binding to standard I/O file handle failed");
     }
     if ( mode_stdout != eDoNotUse ) {
         m_StdOut = s_BindHandle(fileno(stdout), false,
                                 mode_stdout == eBinary, &fd_stdout_save);
         if ( m_StdOut == -1 )
-            NCBI_THROW(CExceptPipe,eBind,
+            NCBI_THROW(CPipeException,eBind,
                 "Pipe binding to standard I/O file handle failed");
     }
     if ( mode_stderr != eDoNotUse ) {
         m_StdErr = s_BindHandle(fileno(stderr), false,
                                 mode_stderr == eBinary, &fd_stderr_save);
         if ( m_StdErr == -1 )
-            NCBI_THROW(CExceptPipe,eBind,
+            NCBI_THROW(CPipeException,eBind,
                 "Pipe binding to standard I/O file handle failed");
     }
 
@@ -205,7 +205,7 @@ void CPipe::Open(const char *cmdname, const vector<string> args,
     x_args[cnt+1] = 0;
     try {
         m_Pid = CExec::SpawnVP(CExec::eNoWait, cmdname, x_args);
-    } catch (CNcbiException& e) {
+    } catch (CException& e) {
         m_Pid = -1;
         NCBI_RETHROW_SAME(e,"Pipe has failed to spawn the child process");
     }
@@ -213,15 +213,15 @@ void CPipe::Open(const char *cmdname, const vector<string> args,
     // Restore the standard IO file handlers to their original state
     if ( mode_stdin != eDoNotUse ) {
         if ( !s_RestoreHandle(fileno(stdin ), fd_stdin_save) )
-            NCBI_THROW(CExceptPipe,eUnbind,"Pipe unbinding failed");
+            NCBI_THROW(CPipeException,eUnbind,"Pipe unbinding failed");
     }
     if ( mode_stdout != eDoNotUse ) {
         if ( !s_RestoreHandle(fileno(stdout), fd_stdout_save) )
-            NCBI_THROW(CExceptPipe,eUnbind,"Pipe unbinding failed");
+            NCBI_THROW(CPipeException,eUnbind,"Pipe unbinding failed");
     }
     if ( mode_stderr != eDoNotUse ) {
         if ( !s_RestoreHandle(fileno(stderr), fd_stderr_save) )
-            NCBI_THROW(CExceptPipe,eUnbind,"Pipe unbinding failed");
+            NCBI_THROW(CPipeException,eUnbind,"Pipe unbinding failed");
     }
 }
 
@@ -250,7 +250,7 @@ size_t CPipe::Read(void *buffer, const size_t count, const EChildIOHandle from_h
 {
     int fd = (from_handle == eStdOut) ? m_StdOut : m_StdErr;
     if ( m_Pid == -1  ||  fd == -1 ) {
-        NCBI_THROW(CExceptPipe,eNoInit, "Pipe is not initialized properly");
+        NCBI_THROW(CPipeException,eNoInit, "Pipe is not initialized properly");
     } 
     return read(fd, buffer, count);
 }
@@ -259,7 +259,7 @@ size_t CPipe::Read(void *buffer, const size_t count, const EChildIOHandle from_h
 size_t CPipe::Write(const void *buffer, const size_t count) const
 {
     if ( m_Pid == -1  ||  m_StdIn == -1 ) {
-        NCBI_THROW(CExceptPipe,eNoInit, "Pipe is not initialized properly");
+        NCBI_THROW(CPipeException,eNoInit, "Pipe is not initialized properly");
     }
     return write(m_StdIn, buffer, count);
 }
@@ -422,6 +422,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/07/15 18:17:24  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.7  2002/07/11 14:18:27  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

@@ -175,7 +175,7 @@ int CArgTestApplication::Run(void)
         try {
             (void) args["ko"].AsString();
         } catch (CArgException& e) {
-            REPORT_NCBI_EXCEPTION("CArgException is thrown:",e);
+            NCBI_REPORT_EXCEPTION("CArgException is thrown:",e);
             is_thrown = true;
         }
         assert(is_thrown);
@@ -236,6 +236,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2002/07/15 18:17:26  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 6.5  2002/07/11 14:18:29  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

@@ -74,7 +74,7 @@ struct SDllHandle;
 class CDll
 {
     // All methods of this class (but destructor)
-    // throw exception CExceptCorelib::eDll on error
+    // throw exception CCoreException::eDll on error
 
 public:
     // When to load DLL
@@ -165,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/07/15 18:17:51  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.5  2002/07/11 14:17:54  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

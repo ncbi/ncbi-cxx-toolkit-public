@@ -170,8 +170,8 @@ int CTestApplication::Run(void)
             NcbiCout << "int value: " << value << ", toString: '"
                      << NStr::IntToString(value) << "'" << NcbiEndl;
         }
-        catch (CNcbiException& e) {
-            REPORT_NCBI_EXCEPTION("TestStrings",e);
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
         }
 //        STD_CATCH("TestStrings");
 
@@ -180,8 +180,8 @@ int CTestApplication::Run(void)
             NcbiCout << "unsigned int value: " << value << ", toString: '"
                      << NStr::UIntToString(value) << "'" << NcbiEndl;
         }
-        catch (CNcbiException& e) {
-            REPORT_NCBI_EXCEPTION("TestStrings",e);
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
         }
 
         try {
@@ -189,8 +189,8 @@ int CTestApplication::Run(void)
             NcbiCout << "long value: " << value << ", toString: '"
                      << NStr::IntToString(value) << "'" << NcbiEndl;
         }
-        catch (CNcbiException& e) {
-            REPORT_NCBI_EXCEPTION("TestStrings",e);
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
         }
 
         try {
@@ -198,8 +198,8 @@ int CTestApplication::Run(void)
             NcbiCout << "unsigned long value: " << value << ", toString: '"
                      << NStr::UIntToString(value) << "'" << NcbiEndl;
         }
-        catch (CNcbiException& e) {
-            REPORT_NCBI_EXCEPTION("TestStrings",e);
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
         }
 
         try {
@@ -207,8 +207,8 @@ int CTestApplication::Run(void)
             NcbiCout << "double value: " << value << ", toString: '"
                      << NStr::DoubleToString(value) << "'" << NcbiEndl;
         }
-        catch (CNcbiException& e) {
-            REPORT_NCBI_EXCEPTION("TestStrings",e);
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
         }
     }
 
@@ -457,6 +457,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/07/15 18:17:26  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 6.5  2002/07/11 14:18:29  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

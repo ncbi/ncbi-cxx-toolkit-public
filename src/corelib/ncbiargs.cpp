@@ -207,7 +207,7 @@ inline CArg_Integer::CArg_Integer(const string& name, const string& value)
 {
     try {
         m_Integer = NStr::StringToInt(value);
-    } catch (CNcbiException& e) {
+    } catch (CException& e) {
         NCBI_RETHROW(e,CArgException,eConvert, s_ArgExptMsg(GetName(),
             "Argument cannot be converted",value));
     }
@@ -230,7 +230,7 @@ inline CArg_Double::CArg_Double(const string& name, const string& value)
 {
     try {
         m_Double = NStr::StringToDouble(value);
-    } catch (CNcbiException& e) {
+    } catch (CException& e) {
         NCBI_RETHROW(e,CArgException,eConvert,
             s_ArgExptMsg(GetName(),"Argument cannot be converted",value));
     }
@@ -259,7 +259,7 @@ inline CArg_Boolean::CArg_Boolean(const string& name, const string& value)
 {
     try {
         m_Boolean = NStr::StringToBool(value);
-    } catch (CNcbiException& e) {
+    } catch (CException& e) {
         NCBI_RETHROW(e,CArgException,eConvert, s_ArgExptMsg(GetName(),
             "Argument cannot be converted",value));
     }
@@ -1420,7 +1420,7 @@ void CArgDescriptions::x_PreCheck(void) const
         try {
             arg.VerifyDefault();
             continue;
-        } catch (CNcbiException& e) {
+        } catch (CException& e) {
             NCBI_RETHROW(e,CArgException,eConstraint,
                 "Invalid default argument value");
         } catch (exception& e) {
@@ -2205,6 +2205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2002/07/15 18:17:23  gouriano
+ * renamed CNcbiException and its descendents
+ *
  * Revision 1.37  2002/07/11 14:18:25  gouriano
  * exceptions replaced by CNcbiException-type ones
  *
