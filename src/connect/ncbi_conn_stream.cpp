@@ -246,12 +246,44 @@ CConn_MemoryStream::CConn_MemoryStream(CRWLock*   lk,
 }
 
 
+CConn_PipeStream::CConn_PipeStream(const string&         cmd,
+                                   const vector<string>& args,
+                                   CPipe::TCreateFlags   create_flags,
+                                   const STimeout*       timeout,
+                                   streamsize            buf_size)
+    : CConn_IOStream(PIPE_CreateConnector(cmd, args, create_flags, &m_Pipe),
+                     timeout, buf_size), m_Pipe()
+{
+    return;
+}
+
+
+EIO_Status CConn_PipeStream::SetReadHandle(CPipe::EChildIOHandle from_handle)
+{
+    return m_Pipe.SetReadHandle(from_handle);
+}
+
+
+CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
+                                             size_t          pipesize,
+                                             const STimeout* timeout,
+                                             streamsize      buf_size)
+    : CConn_IOStream(NAMEDPIPE_CreateConnector(pipename, pipesize),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2003/09/23 21:05:23  lavr
+ * +CConn_PipeStream, +CConn_NamedPipeStream
+ *
  * Revision 6.24  2003/08/25 14:40:43  lavr
  * Employ new k..Timeout constants
  *
