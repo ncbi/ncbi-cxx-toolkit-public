@@ -2,7 +2,8 @@
 # $Id$
 
 driver_list="ctlib dblib ftds7 ftds"
-server_list="MSSQL3 STRAUSS MOZART"
+server_list="MSSQL2 STRAUSS MOZART"
+server_mssql="MSSQL2"
 
 res_file="/tmp/$0.$$"
 trap 'rm -f $res_file' 1 2 15
@@ -45,22 +46,37 @@ for driver in $driver_list ; do
 
 
 
-******************* DRIVER:  $driver  ************************
+******************* DRIVER:  $driver ************************
 
 EOF
-  for server in $server_list ; do
+  if check_dbapi_driver $driver ; then
+    for server in $server_list ; do
+      if test $driver = "ctlib"  -a  $server = $server_mssql ; then
+         continue
+      fi
+      if test \( $driver = "ftds"  -o  $driver = "ftds7" \)  -a \
+                 $server != $server_mssql ; then
+         continue
+      fi
+
+      cat <<EOF
+
+
+~~~~~~ SERVER:  $server ~~~~~~~~~~~~~~~~~~~~~~~~
+EOF
+      cmd="lang_query -d $driver -S $server -Q"
+      RunTest 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
+      RunTest 'select qq = 57 + 33' '<ROW><qq>90<'
+      RunTest 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
+      RunTest 'select name, type from sysobjects' '<ROW><name>'
+    done
+
+  else
     cat <<EOF
 
-
-~~~~~~ SERVER:  $server  ~~~~~~~~~~~~~~~~~~~~~~~~
+Driver not found.
 EOF
-
-    cmd="./lang_query -d $driver -S $server -Q"
-    RunTest 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
-    RunTest 'select qq = 57 + 33' '<ROW><qq>90<'
-    RunTest 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
-    RunTest 'select name, type from sysobjects' '<ROW><name>'
-  done
+  fi
 done
 
 rm -f $res_file
