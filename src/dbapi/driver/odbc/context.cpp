@@ -172,8 +172,8 @@ CDB_Connection* CODBCContext::Connect(const string&   srv_name,
                                       bool            reusable,
                                       const string&   pool_name)
 {
-    static CFastMutex xMutex;
-    CFastMutexGuard mg(xMutex);
+    // static CFastMutex xMutex;
+    CFastMutexGuard mg(m_Mtx);
 
     if (reusable  &&  m_NotInUse.NofItems() > 0) {
         // try to get a connection from the pot
@@ -236,32 +236,6 @@ CDB_Connection* CODBCContext::Connect(const string&   srv_name,
 }
 
 
-unsigned int CODBCContext::NofConnections(const string& srv_name) const
-{
-    if ( srv_name.empty() ) {
-        return m_InUse.NofItems() + m_NotInUse.NofItems();
-    }
-
-    int n = 0;
-
-    for (int i = m_NotInUse.NofItems(); i--;) {
-        CODBC_Connection* t_con
-            = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
-        if (srv_name.compare(t_con->ServerName()) == 0)
-            ++n;
-    }
-
-    for (int i = m_InUse.NofItems(); i--;) {
-        CODBC_Connection* t_con
-            = static_cast<CODBC_Connection*> (m_InUse.Get(i));
-        if (srv_name.compare(t_con->ServerName()) == 0)
-            ++n;
-    }
-
-    return n;
-}
-
-
 CODBCContext::~CODBCContext()
 {
     if ( !m_Context ) {
@@ -287,6 +261,12 @@ void CODBCContext::ODBC_SetPacketSize(SQLUINTEGER packet_size)
 {
     m_PacketSize = packet_size;
 }
+
+void CODBCContext::SetPacketSize(unsigned int packet_size)
+{
+    ODBC_SetPacketSize((SQLUINTEGER) packet_size);
+}
+
 
 
 SQLHENV CODBCContext::ODBC_GetContext() const
@@ -427,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/07/17 20:47:10  soussov
+ * connections pool improvements
+ *
  * Revision 1.6  2003/05/08 20:48:33  soussov
  * adding datadirect-odbc type of connecting string. Rememner that you need ODBCINI environment variable to make it works
  *

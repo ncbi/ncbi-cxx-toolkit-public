@@ -82,12 +82,6 @@ CDB_Connection* CMySQLContext::Connect(const string&   srv_name,
 }
 
 
-unsigned int CMySQLContext::NofConnections(const string& /*srv_name*/) const
-{
-    return 0;
-}
-
-
 
 ///////////////////////////////////////////////////////////////////////
 // DriverManager related functions
@@ -118,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/17 20:51:37  soussov
+ * connections pool improvements
+ *
  * Revision 1.3  2003/02/19 03:38:13  vakatov
  * Added DriverMgr related entry point and registration function
  *

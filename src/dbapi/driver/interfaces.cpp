@@ -129,26 +129,32 @@ I_DriverContext::I_DriverContext()
 
 void I_DriverContext::PushCntxMsgHandler(CDB_UserHandler* h)
 {
+    CFastMutexGuard mg(m_Mtx);
     m_CntxHandlers.Push(h);
 }
 
 void I_DriverContext::PopCntxMsgHandler(CDB_UserHandler* h)
 {
+    CFastMutexGuard mg(m_Mtx);
     m_CntxHandlers.Pop(h);
 }
 
 void I_DriverContext::PushDefConnMsgHandler(CDB_UserHandler* h)
 {
+    CFastMutexGuard mg(m_Mtx);
     m_ConnHandlers.Push(h);
 }
 
 void I_DriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
 {
+    CFastMutexGuard mg(m_Mtx);
     m_ConnHandlers.Pop(h);
 }
 
 void I_DriverContext::x_Recycle(I_Connection* conn, bool conn_reusable)
 {
+    CFastMutexGuard mg(m_Mtx);
+
     m_InUse.Remove((TPotItem) conn);
 
     if ( conn_reusable ) {
@@ -156,6 +162,53 @@ void I_DriverContext::x_Recycle(I_Connection* conn, bool conn_reusable)
     } else {
         delete conn;
     }
+}
+
+void I_DriverContext::CloseUnusedConnections(const string&   srv_name,
+                                             const string&   pool_name)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    I_Connection* con;
+    
+    // close all connections first
+    for (int i = m_NotInUse.NofItems();  i--; ) {
+        con = (I_Connection*)(m_NotInUse.Get(i));
+        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
+        if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
+
+        m_NotInUse.Remove(i);
+        delete con;
+    }
+}
+
+unsigned int I_DriverContext::NofConnections(const string& srv_name,
+                                          const string& pool_name) const
+{
+
+    if ( srv_name.empty() && pool_name.empty()) {
+        return m_InUse.NofItems() + m_NotInUse.NofItems();
+    }
+
+    CFastMutexGuard mg(m_Mtx);
+    int n = 0;
+    I_Connection* con;
+
+    for (int i = m_NotInUse.NofItems(); i--;) {
+        con= (I_Connection*) (m_NotInUse.Get(i));
+        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
+        if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
+        ++n;
+    }
+
+    for (int i = m_InUse.NofItems(); i--;) {
+        con= (I_Connection*) (m_InUse.Get(i));
+        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
+        if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
+        ++n;
+    }
+
+    return n;
 }
 
 CDB_Connection* I_DriverContext::Create_Connection(I_Connection& connection)
@@ -222,6 +275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/07/17 20:44:57  soussov
+ * connections pool improvements
+ *
  * Revision 1.7  2002/01/20 07:21:02  vakatov
  * I_DriverMgr:: -- added virtual destructor
  *

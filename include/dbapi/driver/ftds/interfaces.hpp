@@ -159,9 +159,6 @@ public:
                                     bool            reusable  = false,
                                     const string&   pool_name = kEmptyStr);
 
-    virtual unsigned int NofConnections(const string& srv_name = kEmptyStr)
-        const;
-
     virtual bool IsAbleTo(ECapability cpb) const;
 
     virtual ~CTDSContext();
@@ -738,6 +735,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/07/17 20:43:33  soussov
+ * connections pool improvements
+ *
  * Revision 1.13  2003/06/05 15:55:47  soussov
  * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface
  *

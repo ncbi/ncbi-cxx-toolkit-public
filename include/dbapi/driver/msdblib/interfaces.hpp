@@ -99,9 +99,6 @@ public:
                                     bool            reusable  = false,
                                     const string&   pool_name = kEmptyStr);
 
-    virtual unsigned int NofConnections(const string& srv_name = kEmptyStr)
-        const;
-
     virtual bool IsAbleTo(ECapability cpb) const;
 
     virtual ~CMSDBLibContext();
@@ -663,6 +660,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/17 20:42:47  soussov
+ * connections pool improvements
+ *
  * Revision 1.4  2003/06/06 18:43:16  soussov
  * Removes SetPacketSize()
  *

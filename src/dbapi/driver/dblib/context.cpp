@@ -167,8 +167,8 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
 {
     CDBL_Connection* t_con;
 
-    DEFINE_STATIC_FAST_MUTEX(xMutex);
-    CFastMutexGuard mg(xMutex);
+    // DEFINE_STATIC_FAST_MUTEX(xMutex);
+    CFastMutexGuard mg(m_Mtx);
 
     if (reusable  &&  m_NotInUse.NofItems() > 0) { // try to reuse connection
         if (!pool_name.empty()) { // try to use pool name
@@ -227,28 +227,6 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
     return Create_Connection(*t_con);
 }
 
-
-unsigned int CDBLibContext::NofConnections(const string& srv_name) const
-{
-    if (srv_name.empty()) {
-        return m_InUse.NofItems() + m_NotInUse.NofItems();
-    }
-
-    int n = 0;
-    CDBL_Connection* t_con;
-
-    for (int i = m_NotInUse.NofItems(); i--; ) {
-        t_con = static_cast<CDBL_Connection*> (m_NotInUse.Get(i));
-        if (srv_name == t_con->ServerName())
-            ++n;
-    }
-    for (int i = m_InUse.NofItems(); i--; ) {
-        t_con = static_cast<CDBL_Connection*> (m_InUse.Get(i));
-        if (srv_name == t_con->ServerName())
-            ++n;
-    }
-    return n;
-}
 
 bool CDBLibContext::IsAbleTo(ECapability cpb) const
 {
@@ -513,6 +491,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/07/17 20:46:02  soussov
+ * connections pool improvements
+ *
  * Revision 1.22  2003/04/18 20:26:39  soussov
  * fixes typo in Connect for reusable connection with specified connection pool
  *

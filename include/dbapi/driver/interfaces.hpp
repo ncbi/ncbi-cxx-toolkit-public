@@ -32,6 +32,7 @@
  *
  */
 
+#include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
@@ -429,8 +430,9 @@ public:
 
     // Return number of currently open connections in this context.
     // If "srv_name" is not NULL, then return # of conn. open to that server.
-    virtual unsigned int NofConnections(const string& srv_name = kEmptyStr)
-        const = 0;
+    virtual unsigned int NofConnections(const string& srv_name  = kEmptyStr,
+                                        const string& pool_name = kEmptyStr)
+        const;
 
     // Add message handler "h" to process 'context-wide' (not bound 
     // to any particular connection) error messages.
@@ -454,6 +456,10 @@ public:
     };
     virtual bool IsAbleTo(ECapability cpb) const = 0;
 
+    // close reusable deleted connections for specified server and/or pool
+    void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
+                                const string& pool_name = kEmptyStr);
+
     virtual ~I_DriverContext();
 
 protected:
@@ -469,6 +475,8 @@ protected:
     // Stacks of `per-context' and `per-connection' err.message handlers
     CDBHandlerStack m_CntxHandlers;
     CDBHandlerStack m_ConnHandlers;
+
+    mutable CFastMutex m_Mtx;
 
 private:
     // Return unused connection "conn" to the driver context for future
@@ -587,6 +595,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/07/17 20:41:37  soussov
+ * connections pool improvements
+ *
  * Revision 1.22  2003/06/05 20:26:39  soussov
  * makes I_Result interface public
  *

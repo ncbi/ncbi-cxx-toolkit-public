@@ -29,7 +29,6 @@
  *
  */
 
-#include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
@@ -202,8 +201,9 @@ CDB_Connection* CTLibContext::Connect(const string&   srv_name,
                                       bool            reusable,
                                       const string&   pool_name)
 {
-    DEFINE_STATIC_FAST_MUTEX(xMutex);
-    CFastMutexGuard mg(xMutex);
+    //DEFINE_STATIC_FAST_MUTEX(xMutex);
+    // CFastMutexGuard mg(xMutex);
+    CFastMutexGuard mg(m_Mtx);
 
     if (reusable  &&  m_NotInUse.NofItems() > 0) {
         // try to get a connection from the pot
@@ -261,30 +261,6 @@ CDB_Connection* CTLibContext::Connect(const string&   srv_name,
 }
 
 
-unsigned int CTLibContext::NofConnections(const string& srv_name) const
-{
-    if ( srv_name.empty() ) {
-        return m_InUse.NofItems() + m_NotInUse.NofItems();
-    }
-
-    int n = 0;
-
-    for (int i = m_NotInUse.NofItems(); i--;) {
-        CTL_Connection* t_con
-            = static_cast<CTL_Connection*> (m_NotInUse.Get(i));
-        if (srv_name.compare(t_con->ServerName()) == 0)
-            ++n;
-    }
-
-    for (int i = m_InUse.NofItems(); i--;) {
-        CTL_Connection* t_con
-            = static_cast<CTL_Connection*> (m_InUse.Get(i));
-        if (srv_name.compare(t_con->ServerName()) == 0)
-            ++n;
-    }
-
-    return n;
-}
 
 bool CTLibContext::IsAbleTo(ECapability cpb) const
 {
@@ -301,6 +277,8 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
 
 CTLibContext::~CTLibContext()
 {
+    CFastMutexGuard mg(m_Mtx);
+
     if ( !m_Context ) {
         return;
     }
@@ -896,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/07/17 20:45:44  soussov
+ * connections pool improvements
+ *
  * Revision 1.24  2003/05/27 21:12:03  soussov
  * bit type param added
  *

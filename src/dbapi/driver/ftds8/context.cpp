@@ -138,8 +138,8 @@ CDB_Connection* CTDSContext::Connect(const string&   srv_name,
 {
     CTDS_Connection* t_con;
 
-    static CFastMutex xMutex;
-    CFastMutexGuard mg(xMutex);
+    // static CFastMutex xMutex;
+    CFastMutexGuard mg(m_Mtx);
 
     if (reusable  &&  m_NotInUse.NofItems() > 0) { // try to reuse connection
         if (!pool_name.empty()) { // try to use pool name
@@ -191,29 +191,6 @@ CDB_Connection* CTDSContext::Connect(const string&   srv_name,
     t_con->m_SecureLogin = (mode & fPasswordEncrypted) != 0;
     m_InUse.Add((TPotItem) t_con);
     return Create_Connection(*t_con);
-}
-
-
-unsigned int CTDSContext::NofConnections(const string& srv_name) const
-{
-    if (srv_name.empty()) {
-        return m_InUse.NofItems() + m_NotInUse.NofItems();
-    }
-
-    int n = 0;
-    CTDS_Connection* t_con;
-
-    for (int i = m_NotInUse.NofItems(); i--; ) {
-        t_con = static_cast<CTDS_Connection*> (m_NotInUse.Get(i));
-        if (srv_name == t_con->ServerName())
-            ++n;
-    }
-    for (int i = m_InUse.NofItems(); i--; ) {
-        t_con = static_cast<CTDS_Connection*> (m_InUse.Get(i));
-        if (srv_name == t_con->ServerName())
-            ++n;
-    }
-    return n;
 }
 
 bool CTDSContext::IsAbleTo(ECapability cpb) const
@@ -480,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/07/17 20:46:30  soussov
+ * connections pool improvements
+ *
  * Revision 1.17  2003/04/18 20:27:00  soussov
  * fixes typo in Connect for reusable connection with specified connection pool
  *
