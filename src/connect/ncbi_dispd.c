@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/03/21 21:24:11  lavr
+ * Type match (int) for %n in scanf
+ *
  * Revision 6.14  2001/03/06 23:57:27  lavr
  * SERV_DISPD_LOCAL_SVC_BONUS used for services running locally
  *
@@ -273,8 +276,8 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char *text)
     strcpy(buf, text);
     for (b = buf; (c = strchr(b, '\n')) != 0; b = c + 1) {
         unsigned d1;
-        size_t d2;
         char *p;
+        int d2;
 
         *c = '\0';
         if (strncasecmp(b, server_info,
