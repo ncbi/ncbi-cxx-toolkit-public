@@ -255,7 +255,7 @@ bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
     case eIO_Closed: // following read will return EOF
         return true;  
     case eIO_Timeout:
-        NCBI_THROW(CNetServiceException, eTimeout, kEmptyStr);
+        NCBI_THROW(CNetServiceException, eTimeout, "Socket Timeout expired");
     default:
         NCBI_THROW(CNetServiceException, 
                    eCommunicationError, "Socket Wait error.");
@@ -1272,6 +1272,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/03/17 16:05:21  kuznets
+ * Sensible error message if timeout expired
+ *
  * Revision 1.14  2005/03/17 14:07:19  kuznets
  * Fixed bug in request parsing
  *
