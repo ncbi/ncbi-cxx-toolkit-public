@@ -324,22 +324,14 @@ CBlastOption::SetProgram(CBlastOption::EProgram p)
     }
 }
 
-inline const char*
-CBlastOption::GetMatrixName() const
-{
-    return m_LutOpts->matrixname;
-}
-
 inline void
 CBlastOption::SetMatrixName(const char* matrix)
 {
     if (!matrix)
         return;
 
-    sfree(m_LutOpts->matrixname);
     sfree(m_ScoringOpts->matrix);
 
-    m_LutOpts->matrixname = strdup(matrix);
     m_ScoringOpts->matrix = strdup(matrix);
 }
 
@@ -983,6 +975,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/07/30 19:56:19  coulouri
+* remove matrixname
+*
 * Revision 1.6  2003/07/30 15:00:01  camacho
 * Do not use Malloc/MemNew/MemFree
 *
