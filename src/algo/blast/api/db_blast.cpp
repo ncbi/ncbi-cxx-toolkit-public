@@ -183,7 +183,7 @@ CDbBlast::x_Results2SeqAlign()
 
     retval = BLAST_Results2CSeqAlign(mi_pResults, m_eProgram,
                  m_tQueries, m_pSeqSrc, 0, m_pOptions->GetScoringOpts(), 
-                 mi_pScoreBlock, m_pOptions->GetGappedMode());
+                 mi_pScoreBlock);
 
     return retval;
 }
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2003/10/30 21:41:12  dondosha
+ * Removed unneeded extra argument from call to BLAST_Results2CSeqAlign
+ *
  * Revision 1.1  2003/10/29 22:37:36  dondosha
  * Database BLAST search class methods
  *
