@@ -260,7 +260,7 @@ private:
         int score;
         double bits;
         double eValue;
-        int use_this_gi;
+        list<int> use_this_gi;
     };
 
     struct alnFeatureInfo {
@@ -311,7 +311,7 @@ private:
     MiddleLineStyle m_MidLineStyle;
       // helper functions
     void DisplayAlnvec(CNcbiOstream & out);
-    const void PrintDefLine(const CBioseq_Handle & bspHandle, int use_this_gi,
+    const void PrintDefLine(const CBioseq_Handle & bspHandle, list<int>& use_this_gi,
                             CNcbiOstream & out) const;
     // display sequence, start is seqalign coodinate
     const void OutputSeq(string & sequence, const CSeq_id & id, int start, 
@@ -366,6 +366,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.23  2004/09/27 14:33:28  jianye
+*modify use_this_gi logic
+*
 *Revision 1.22  2004/09/20 18:12:01  jianye
 *Handles Disc alignment and some code clean up
 *

@@ -217,8 +217,8 @@ static const string GetSeqIdStringByFastaOrder(const CSeq_id& id, CScope& sp, bo
 static int GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids);
 
 static string MakeURLSafe(char* src);
-static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue, int& use_this_gi);
-template<class container> static bool s_GetBlastScore(const container& scoreList,  int& score, double& bits, double& evalue, int& use_this_gi);
+static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue, list<int>& use_this_gi);
+template<class container> static bool s_GetBlastScore(const container& scoreList,  int& score, double& bits, double& evalue, list<int>& use_this_gi);
 static bool s_canDoMultiAlign(const CSeq_align_set& aln, CScope& scope);
 static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_Choice choice);
 static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& sp);
@@ -341,7 +341,7 @@ static void s_ColorDifferentBases(string& seq, char identityChar, CNcbiOstream& 
 }
 
 
-template<class container> static bool s_GetBlastScore(const container&  scoreList,  int& score, double& bits, double& evalue, int& use_this_gi){
+template<class container> static bool s_GetBlastScore(const container&  scoreList,  int& score, double& bits, double& evalue, list<int>& use_this_gi){
   bool hasScore = false;
   ITERATE (typename container, iter, scoreList) {
     const CObject_id& id=(*iter)->GetId();
@@ -356,7 +356,7 @@ template<class container> static bool s_GetBlastScore(const container&  scoreLis
       } else if (id.GetStr()=="e_value" || id.GetStr()=="sum_e") {
 	evalue = (*iter)->GetValue().GetReal();
       } else if (id.GetStr()=="use_this_gi"){
-          use_this_gi = (*iter)->GetValue().GetInt();
+          use_this_gi.push_back((*iter)->GetValue().GetInt());
       }
     }
   }
@@ -466,12 +466,12 @@ static bool s_canDoMultiAlign(const CSeq_align_set& aln, CScope& scope){
 }
 
 
-static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue, int& use_this_gi){
+static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue, list<int>& use_this_gi){
   bool hasScore = false;
   score = -1;
   bits = -1;
   evalue = -1;
-  use_this_gi = 0;
+
   //look for scores at seqalign level first
   hasScore = s_GetBlastScore(aln.GetScore(),  score, bits, evalue, use_this_gi);
 
@@ -1173,7 +1173,7 @@ const void CDisplaySeqalign::fillIdentityInfo(const string& sequenceStandard, co
 }
 
 
-const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, int use_this_gi, CNcbiOstream& out) const
+const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, list<int>& use_this_gi, CNcbiOstream& out) const
 {
   if(bspHandle){
     const CRef<CSeq_id> wid = FindBestChoice(bspHandle.GetBioseqCore()->GetId(), CSeq_id::WorstRank);
@@ -1194,7 +1194,14 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, int u
       for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin(); iter != bdl.end(); iter++){
 	string urlLink;
         int gi =  GetGiForSeqIdList((*iter)->GetSeqid());
-        if(use_this_gi == 0 || (use_this_gi != 0 && gi == use_this_gi)) {
+        int gi_in_use_this_gi = 0;
+        ITERATE(list<int>, iter_gi, use_this_gi){
+            if(gi == *iter_gi){
+                gi_in_use_this_gi = *iter_gi;
+                break;
+            }
+        }
+        if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
          
             if(isFirst){
                 out << ">";
@@ -1215,7 +1222,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, int u
             
             if(m_AlignOption&eHtml){
                 
-                urlLink = getUrl((*iter)->GetSeqid(), use_this_gi, 1);    
+                urlLink = getUrl((*iter)->GetSeqid(), gi_in_use_this_gi, 1);    
                 out<<urlLink;
             }
     
@@ -2194,6 +2201,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.46  2004/09/27 14:32:33  jianye
+*modify use_this_gi logic
+*
 *Revision 1.45  2004/09/21 19:09:06  jianye
 *modify significant digits for evalue and bit score
 *
