@@ -33,6 +33,9 @@
 #ifndef BLAST_SETUP__HPP
 #define BLAST_SETUP__HPP
 
+#include <objmgr/scope.hpp>
+#include <objects/seqloc/seqloc__.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -67,9 +70,12 @@ BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev,
         const int nucl_length, const short frame, Uint1* translation);
 #endif
 
-// Should be moved to blast_util.c?
-char*
-BLASTFindGeneticCode(int genetic_code);
+/** Retrieves the requested genetic code in Ncbistdaa format. Caller is
+ * responsible for deallocating return value with delete []. No Malloc/MemNew
+ * are used within this function!
+ * @param genetic_code numeric identifier for genetic code requested [in]
+ */
+unsigned char* BLASTFindGeneticCode(int genetic_code);
 
 END_NCBI_SCOPE
 
@@ -77,6 +83,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/23 21:29:06  camacho
+* Update BLASTFindGeneticCode to get genetic code string with C++ toolkit
+*
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision
 *

@@ -37,7 +37,8 @@
 #include <objmgr/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
-
+#include <objects/seq/seq__.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 
 #include <BlastSetup.hpp>
@@ -218,21 +219,26 @@ BLASTGetTranslation(const Uint1* seq, const Uint1* seq_rev,
 }
 #endif
 
-char*
+unsigned char*
 BLASTFindGeneticCode(int genetic_code)
 {
-    char* retval = NULL;
+    unsigned char* retval = NULL;
+    CSeq_data gc_ncbieaa(CGen_code_table::GetNcbieaa(genetic_code),
+            CSeq_data::e_Ncbieaa);
+    CSeq_data gc_ncbistdaa;
 
-    GeneticCodePtr gcp = GeneticCodeFind(genetic_code, NULL);
-    _ASSERT(gcp != NULL);
+    TSeqPos nconv = CSeqportUtil::Convert(gc_ncbieaa, &gc_ncbistdaa,
+            CSeq_data::e_Ncbistdaa);
 
-    for (ValNodePtr vnp = (ValNodePtr) gcp->data.ptrvalue; vnp; 
-            vnp = vnp->next) {
-        if (vnp->choice == 3) { // ncbi_eaa
-            retval = (char*) vnp->data.ptrvalue;
-            break;
-        }
-    }
+    _ASSERT(gc_ncbistdaa.IsNcbistdaa());
+    _ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());
+
+    if ( !(retval = new(nothrow) unsigned char[nconv]));
+        return NULL;
+
+    for (unsigned int i = 0; i < nconv; i++)
+        retval[i] = gc_ncbistdaa.GetNcbistdaa().Get()[i];
+
     return retval;
 }
 
@@ -242,6 +248,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/23 21:29:06  camacho
+* Update BLASTFindGeneticCode to get genetic code string with C++ toolkit
+*
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision
 *
