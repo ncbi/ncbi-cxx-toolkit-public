@@ -822,7 +822,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
          /* mini extension to the left */
          max_bases = 
             MIN(COMPRESSION_RATIO, MIN(q_offsets[i], s_offsets[i]));
-         left = BlastNaMiniExtendLeft(q, s, max_bases);
+         left = BlastNaMiniExtendLeft(q, s-1, max_bases);
 
          /* mini extension to the right */
          max_bases =
