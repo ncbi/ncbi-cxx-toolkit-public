@@ -41,9 +41,7 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
-
-USING_NCBI_SCOPE;
+using namespace ncbi;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -60,7 +58,10 @@ public:
 
 void CSampleCgi::Init()
 {
+    // Allows CGI client to put the diagnostics to:
+    //   HTML body (as comments) -- using CGI arg "&diag-destination=comments"
     RegisterDiagFactory("comments", new CCommentDiagFactory);
+    //   E-mail -- using CGI arg "&diag-destination=email:user@host"
     RegisterDiagFactory("email",    new CEmailDiagFactory);
 }
 
@@ -137,6 +138,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/04/16 19:24:42  vakatov
+ * Do not use <test/test_assert.h>;  other minor modifications.
+ *
  * Revision 1.4  2002/04/16 18:47:08  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
