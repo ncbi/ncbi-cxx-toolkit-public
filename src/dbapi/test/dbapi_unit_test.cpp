@@ -557,11 +557,11 @@ CDBAPIUnitTest::Test_Variant(void)
     // Call operator= for different types
     //!!! It *fails* !!!
     if (false) {
-        CVariant value_variant(NULL);
+        CVariant value_variant(0);
         value_variant.SetNull();
 
-        value_variant = CVariant(NULL);
-        CPPUNIT_ASSERT( CVariant(NULL) == value_variant );
+        value_variant = CVariant(0);
+        CPPUNIT_ASSERT( CVariant(0) == value_variant );
 
         value_variant = value_Int8;
         CPPUNIT_ASSERT( CVariant( value_Int8 ) == value_variant );
@@ -659,39 +659,39 @@ CDBAPIUnitTest::Test_Variant(void)
         // Assign to CVariant(NULL)
         if (false) {
             {
-                CVariant value_variant(NULL);
-                value_variant = CVariant(NULL);
+                CVariant value_variant(0);
+                value_variant = CVariant(0);
             }
             {
-                CVariant value_variant(NULL);
+                CVariant value_variant(0);
                 value_variant = CVariant( value_Int8 );
             }
             {
-                CVariant value_variant(NULL);
+                CVariant value_variant(0);
                 value_variant = CVariant( value_Int4 );
             }
             {
-                CVariant value_variant(NULL);
+                CVariant value_variant(0);
                 value_variant = CVariant( value_Int2 );
             }
             {
-                CVariant value_variant(NULL);
+                CVariant value_variant(0);
                 value_variant = CVariant( value_Uint1 );
             }
             {
-                CVariant value_variant(NULL);
+                CVariant value_variant(0);
                 value_variant = CVariant( value_float );
             }
             {
-                CVariant value_variant(NULL);
+                CVariant value_variant(0);
                 value_variant = CVariant( value_double );
             }
             {
-                CVariant value_variant(NULL);
+                CVariant value_variant(0);
                 value_variant = CVariant( value_bool );
             }
             {
-                CVariant value_variant(NULL);
+                CVariant value_variant(0);
                 value_variant = CVariant( value_CTime );
             }
         }
@@ -700,7 +700,7 @@ CDBAPIUnitTest::Test_Variant(void)
         if (false) {
             {
                 CVariant value_variant(value_Uint1);
-                value_variant = CVariant(NULL);
+                value_variant = CVariant(0);
             }
             {
                 CVariant value_variant(value_Uint1);
@@ -740,7 +740,7 @@ CDBAPIUnitTest::Test_Variant(void)
         if (false) {
             {
                 CVariant value_variant( value_Int2 );
-                value_variant = CVariant(NULL);
+                value_variant = CVariant(0);
             }
             {
                 CVariant value_variant( value_Int2 );
@@ -780,7 +780,7 @@ CDBAPIUnitTest::Test_Variant(void)
         if (false) {
             {
                 CVariant value_variant( value_Int4 );
-                value_variant = CVariant(NULL);
+                value_variant = CVariant(0);
             }
             {
                 CVariant value_variant( value_Int4 );
@@ -820,7 +820,7 @@ CDBAPIUnitTest::Test_Variant(void)
         if (false) {
             {
                 CVariant value_variant( value_Int8 );
-                value_variant = CVariant(NULL);
+                value_variant = CVariant(0);
             }
             {
                 CVariant value_variant( value_Int8 );
@@ -860,7 +860,7 @@ CDBAPIUnitTest::Test_Variant(void)
         if (false) {
             {
                 CVariant value_variant( value_float );
-                value_variant = CVariant(NULL);
+                value_variant = CVariant(0);
             }
             {
                 CVariant value_variant( value_float );
@@ -900,7 +900,7 @@ CDBAPIUnitTest::Test_Variant(void)
         if (false) {
             {
                 CVariant value_variant( value_double );
-                value_variant = CVariant(NULL);
+                value_variant = CVariant(0);
             }
             {
                 CVariant value_variant( value_double );
@@ -940,7 +940,7 @@ CDBAPIUnitTest::Test_Variant(void)
         if (false) {
             {
                 CVariant value_variant( value_bool );
-                value_variant = CVariant(NULL);
+                value_variant = CVariant(0);
             }
             {
                 CVariant value_variant( value_bool );
@@ -980,7 +980,7 @@ CDBAPIUnitTest::Test_Variant(void)
         if (false) {
             {
                 CVariant value_variant( value_CTime );
-                value_variant = CVariant(NULL);
+                value_variant = CVariant(0);
             }
             {
                 CVariant value_variant( value_CTime );
@@ -1019,7 +1019,7 @@ CDBAPIUnitTest::Test_Variant(void)
 
     // Test Null cases ...
     {
-        CVariant value_variant(NULL);
+        CVariant value_variant(0);
 
         CPPUNIT_ASSERT( !value_variant.IsNull() );
 
@@ -1298,6 +1298,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/03/08 17:59:48  ssikorsk
+ * Fixed GCC warnings
+ *
  * Revision 1.6  2005/02/16 21:46:40  ssikorsk
  * Improved CVariant test
  *
