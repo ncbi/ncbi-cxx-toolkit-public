@@ -33,6 +33,7 @@ ERROR:  cannot find GCC version $1; you may need to adjust PATH explicitly.
 EOF
        exit 1
      fi
+     shift
   ;;
 esac
 
