@@ -45,8 +45,7 @@ BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
 
 Int2
 BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
-	const Int4Ptr frame, BLAST_SequenceBlkPtr *seq_blk, 
-        Boolean buffer_allocated)
+   BLAST_SequenceBlkPtr *seq_blk, Boolean buffer_allocated)
 {
    /* Check if BLAST_SequenceBlk itself needs to be allocated here or not */
    if (*seq_blk == NULL) {
@@ -65,8 +64,6 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
    
    (*seq_blk)->length = length;
    (*seq_blk)->context = context;
-   if (frame)
-      (*seq_blk)->frame = frame[context];
    
    return 0;
 }
@@ -87,7 +84,7 @@ MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_blk,
      length=readdb_get_sequence(db, oid, &buffer);
   }
 
-  BlastSetUp_SeqBlkNew(buffer, length, 0, NULL, seq_blk, 
+  BlastSetUp_SeqBlkNew(buffer, length, 0, seq_blk, 
                        (encoding != BLASTP_ENCODING));
   (*seq_blk)->oid = oid;
 }
@@ -724,4 +721,101 @@ BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info)
    MemFree(query_info->length_adjustments);
    MemFree(query_info->eff_searchsp_array);
    return (BlastQueryInfoPtr) MemFree(query_info);
+}
+
+#define PACK_MASK 0x03
+
+/** Convert a sequence in ncbi4na or blastna encoding into a packed sequence
+ * in ncbi2na encoding. Needed for 2 sequences BLASTn comparison.
+ */
+Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding, 
+                          Uint1Ptr PNTR packed_seq)
+{
+   Int4 new_length = (length+COMPRESSION_RATIO-1)/COMPRESSION_RATIO;
+   Uint1Ptr new_buffer = (Uint1Ptr) Malloc(new_length);
+   Int4 index, new_index;
+   Uint1 remainder;
+   Uint1 shift;     /* bit shift to pack bases */
+
+   for (index=0, new_index=0; new_index < new_length-1; 
+        ++new_index, index += COMPRESSION_RATIO) {
+      if (encoding == BLASTNA_ENCODING)
+         new_buffer[new_index] = 
+            ((buffer[index]&PACK_MASK)<<6) | ((buffer[index+1]&PACK_MASK)<<4) |
+            ((buffer[index+2]&PACK_MASK)<<2) | (buffer[index+3]&PACK_MASK);
+      else
+         new_buffer[new_index] = 
+            ((ncbi4na_to_blastna[buffer[index]]&PACK_MASK)<<6) | 
+            ((ncbi4na_to_blastna[buffer[index+1]]&PACK_MASK)<<4) |
+            ((ncbi4na_to_blastna[buffer[index+2]]&PACK_MASK)<<2) | 
+            (ncbi4na_to_blastna[buffer[index+3]]&PACK_MASK);
+   }
+
+   /* Handle the last byte of the compressed sequence */
+   if ( (remainder = length%COMPRESSION_RATIO) == 0) {
+       if (encoding == BLASTNA_ENCODING)
+          new_buffer[new_index] =
+            ((buffer[index]&PACK_MASK)<<6) | ((buffer[index+1]&PACK_MASK)<<4) |
+            ((buffer[index+2]&PACK_MASK)<<2) | (buffer[index+3]&PACK_MASK);
+       else
+          new_buffer[new_index] =
+            ((ncbi4na_to_blastna[buffer[index]]&PACK_MASK)<<6) |
+            ((ncbi4na_to_blastna[buffer[index]]&PACK_MASK)<<4) |
+            ((ncbi4na_to_blastna[buffer[index]]&PACK_MASK)<<2) |
+            (ncbi4na_to_blastna[buffer[index]]&PACK_MASK);
+   } else {
+       new_buffer[new_index] = 0;
+       for (; index < length; index++) {
+           switch (index%COMPRESSION_RATIO) {
+           case 0: shift = 6; break;
+           case 1: shift = 4; break;
+           case 2: shift = 2; break;
+           default: abort();     /* should never happen */
+           }
+           if (encoding == BLASTNA_ENCODING)
+              new_buffer[new_index] |= ((buffer[index]&PACK_MASK)<<shift);
+           else
+              new_buffer[new_index] |=
+                  ((ncbi4na_to_blastna[buffer[index]]&PACK_MASK)<<shift);
+       }
+       new_buffer[new_index] |= remainder;
+   }
+
+   *packed_seq = new_buffer;
+
+   return 0;
+}
+
+Int2 BLAST_InitDNAPSeq(BLAST_SequenceBlkPtr query_blk, 
+                       BlastQueryInfoPtr query_info)
+{
+   Uint1Ptr buffer, seq, tmp_seq;
+   Int4 total_length, index, offset, i, context;
+   Int4 length[CODON_LENGTH];
+
+   total_length = query_info->context_offsets[query_info->last_context+1] + 1;
+
+   buffer = (Uint1Ptr) Malloc(total_length);
+
+   for (index = 0; index < query_info->last_context; index += CODON_LENGTH) {
+      seq = &buffer[query_info->context_offsets[index]];
+
+      for (i=0; i<CODON_LENGTH; ++i) {
+         *seq++ = NULLB;
+         length[i] = BLAST_GetQueryLength(query_info, index + i);
+      }
+
+      for (i = 0; ; ++i) {
+         context = i % 3;
+         offset = i / 3;
+         if (offset >= length[context]) {
+            /* Once one frame is past its end, we are done */
+            break;
+         }
+         tmp_seq = &query_blk->sequence[query_info->context_offsets[context]];
+         *seq++ = tmp_seq[offset];
+      }
+   }
+
+   return 0;
 }
