@@ -477,6 +477,12 @@ extern void PopDiagPostPrefix(void)
 
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
 {
+    if (post_sev < eDiagSevMin  ||  post_sev > eDiagSevMax) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "SetDiagPostLevel() -- Severity must be in the range "
+                   "[eDiagSevMin..eDiagSevMax]");
+    }
+
     CMutexGuard LOCK(s_DiagMutex);
     EDiagSev sev = CDiagBuffer::sm_PostSeverity;
     if ( CDiagBuffer::sm_PostSeverityChange != eDiagSC_Disable) {
@@ -505,10 +511,35 @@ extern bool DisableDiagPostLevelChange(bool disable_change)
 
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev)
 {
+    if (die_sev < eDiagSevMin  ||  die_sev > eDiag_Fatal) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "SetDiagDieLevel() -- Severity must be in the range "
+                   "[eDiagSevMin..eDiag_Fatal]");
+    }
+
     CMutexGuard LOCK(s_DiagMutex);
     EDiagSev sev = CDiagBuffer::sm_DieSeverity;
     CDiagBuffer::sm_DieSeverity = die_sev;
     return sev;
+}
+
+
+extern void IgnoreDiagDieLevel(bool ignore, EDiagSev* prev_sev)
+{
+    if (!!ignore != !!prev_sev) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "IgnoreDiagDieLevel() -- Illegal 'ignore'/'prev_sev' "
+                   "combination");
+    }
+
+    CMutexGuard LOCK(s_DiagMutex);
+    if ( ignore ) {
+        *prev_sev = CDiagBuffer::sm_DieSeverity;
+        CDiagBuffer::sm_DieSeverity = eDiag_Trace;
+    } else {
+        CDiagBuffer::sm_DieSeverity = eDiag_Fatal;
+        CNcbiDiag diag(eDiag_Info);
+    }
 }
 
 
@@ -1069,6 +1100,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.72  2003/04/25 20:54:15  lavr
+ * Introduce draft version of IgnoreDiagDieLevel()
+ *
  * Revision 1.71  2003/03/10 18:57:08  kuznets
  * iterate->ITERATE
  *

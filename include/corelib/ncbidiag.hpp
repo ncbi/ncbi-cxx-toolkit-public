@@ -315,17 +315,20 @@ NCBI_XNCBI_EXPORT
 extern bool DisableDiagPostLevelChange(bool disable_change = true);
 
 // Abrupt the application if severity is >= "max_sev".
+// Throw an exception if die_sev is not in the range [eDiagSevMin..eDiag_Fatal]
 // Return previous die-level.
-//
-// SPECIAL CASE -- not recommended to use unless you are real desperate:
-// You can make your application not to exit/abort on "eDiag_Fatal"
-// (by setting the die level to "eDiag_Trace" or "eDiagSevMax", but
-// this is usually a VERY BAD thing to do! -- as any library code
-// counts on it to exit unconditionally and thus what happens after
-// "eDiag_Fatal" is posted is in general totally unpredictable!
-// So, use it on your own risk.
 NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
+
+// WARNING!!! -- not recommended to use unless you are real desperate:
+// By passing TRUE to this function you can make your application
+// to never exit/abort regardless of the level set by SetDiagDieLevel().
+// But be warned this is usually a VERY BAD thing to do!
+// -- because any library code counts on at least "eDiag_Fatal" to exit
+// unconditionally, and thus what happens after "eDiag_Fatal" is posted is
+// in general totally unpredictable! Therefore, use it on your own risk.
+NCBI_XNCBI_EXPORT
+extern void IgnoreDiagDieLevel(bool ignore, EDiagSev* prev_sev = 0);
 
 // Set/unset abort handler.
 // If "func"==0 that will be used default handler
@@ -602,6 +605,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.58  2003/04/25 20:52:34  lavr
+ * Introduce draft version of IgnoreDiagDieLevel()
+ *
  * Revision 1.57  2003/04/25 16:00:03  vakatov
  * Document an ugly, absolutely not recommended for use, very special case
  * for SetDiagDieLevel() which prevents the application from exiting when
