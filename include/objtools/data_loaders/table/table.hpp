@@ -70,10 +70,7 @@ public:
 
     // operator bool for validity checking
     // this is implemented here as operators can't be virtual
-    operator bool(void) const
-    {
-        return IsValid();
-    }
+    DECLARE_OPERATOR_BOOL(IsValid());
 };
 
 
@@ -122,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/01/24 17:16:48  vasilche
+ * Safe boolean operators.
+ *
  * Revision 1.1  2003/10/02 17:50:00  dicuccio
  * Moved table reader into the data loader project, as it depends on SQLite
  *

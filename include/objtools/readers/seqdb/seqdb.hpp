@@ -99,10 +99,7 @@ public:
     }
     
     /// Returns true if the iterator points to a valid sequence.
-    operator bool()
-    {
-        return m_Length != (Uint4)-1;
-    }
+    DECLARE_OPERATOR_BOOL(m_Length != (Uint4)-1);
     
     /// Construct one iterator from another.
     CSeqDBIter(const CSeqDBIter &);

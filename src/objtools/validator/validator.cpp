@@ -194,7 +194,7 @@ CValidError_CI& CValidError_CI::operator++(void)
 }
 
 
-CValidError_CI::operator bool (void) const
+bool CValidError_CI::IsValid(void) const
 {
     return m_Current != m_Validator->m_ErrItems.end();
 }
@@ -1348,6 +1348,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2005/01/24 17:16:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.57  2004/09/22 13:51:10  shomrat
 * + SEQ_INST_BadHTGSeq
 *

@@ -48,7 +48,7 @@ public:
     CAlnPos_CI&   operator++(void);
     CAlnPos_CI&   operator--(void);
 
-    operator      bool      (void) const { return m_Valid; };
+    DECLARE_OPERATOR_BOOL(m_Valid);
 
     TSeqPos       GetAlnPos (void) const;
     TSignedSeqPos GetSeqPos (CAlnMap::TNumrow row) const;
@@ -177,6 +177,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/24 17:16:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.1  2004/09/20 15:00:06  todorov
 * Initial revision
 *

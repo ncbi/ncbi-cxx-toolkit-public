@@ -2404,7 +2404,7 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
         
         CBioseq_Handle prod = m_Scope->GetBioseqHandleFromTSE
             (GetId(feat.GetProduct(), m_Scope), m_Imp.GetTSE());
-        if (prod == NULL) {
+        if (!prod) {
             continue;
         }
         ITERATE (CBioseq_Handle::TId, it, prod.GetId()) {
@@ -3899,6 +3899,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.93  2005/01/24 17:16:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.92  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *

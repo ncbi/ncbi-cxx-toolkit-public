@@ -162,7 +162,8 @@ public:
     CValidError_CI& operator=(const CValidError_CI& iter);
     CValidError_CI& operator++(void);
 
-    operator bool(void) const;
+    bool IsValid(void) const;
+    DECLARE_OPERATOR_BOOL(IsValid());
 
     const CValidErrItem& operator* (void) const;
     const CValidErrItem* operator->(void) const;
@@ -345,6 +346,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/01/24 17:16:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.17  2004/09/21 20:34:52  ucko
 * initialization for m_LocusTagGeneralMatch
 *

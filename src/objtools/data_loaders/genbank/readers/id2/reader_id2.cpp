@@ -543,6 +543,7 @@ void CId2Reader::LoadChunk(CReaderRequestResult& result,
     if ( blob->GetBlobVersion() > 0 ) {
         req2.SetBlob_id().SetVersion(blob->GetBlobVersion());
     }
+    //req2.SetSplit_version(blob->GetSplitInfo().GetSplitVersion());
     req2.SetChunks().push_back(CID2S_Chunk_Id(chunk_id));
     x_ProcessRequest(result, req);
 }
@@ -1040,6 +1041,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
     x_ReadData(reply.GetData(), Begin(*split_info));
     CSplitParser::Attach(*blob, *split_info);
+    blob->GetSplitInfo().SetSplitVersion(reply.GetSplit_version());
     blob.SetLoaded();
     result.AddTSE_Lock(blob);
 }
@@ -1231,19 +1233,19 @@ void CId2Reader::x_ReadData(const CID2_Reply_Data& data,
     auto_ptr<CObjectIStream> in(x_OpenDataStream(data));
     switch ( data.GetData_type() ) {
     case CID2_Reply_Data::eData_type_seq_entry:
-        if ( object != CType<CSeq_entry>() ) {
+        if ( object.GetTypeInfo() != CSeq_entry::GetTypeInfo() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "CId2Reader::x_ReadData(): unexpected Seq-entry");
         }
         break;
     case CID2_Reply_Data::eData_type_id2s_split_info:
-        if ( object != CType<CID2S_Split_Info>() ) {
+        if ( object.GetTypeInfo() != CID2S_Split_Info::GetTypeInfo() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "CId2Reader::x_ReadData(): unexpected ID2S-Split-Info");
         }
         break;
     case CID2_Reply_Data::eData_type_id2s_chunk:
-        if ( object != CType<CID2S_Chunk>() ) {
+        if ( object.GetTypeInfo() != CID2S_Chunk::GetTypeInfo() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "CId2Reader::x_ReadData(): unexpected ID2S-Chunk");
         }
