@@ -27,6 +27,8 @@ x_test=$2
 x_exeext=$3
 
 x_delim=" ____ "
+# Default timeout for check (in seconds)
+x_timeout_default=200
 
 # Check to necessity make test for this application
 if test ! -f "$x_srcdir/Makefile.$x_test.app";  then
@@ -58,13 +60,18 @@ x_run=`echo "$x_run" | sed -e 's/ /%gj_s4%/g'`
 
 # Specified files to copy to the build directory
 x_files=`grep '^ *CHECK_COPY' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
+# Get application's check timeout
+x_timeout=`grep '^ *CHECK_TIMEOUT' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
+x_timeout="${x_timeout:-$x_timeout_default}"
+
 # Convert source dir to relative path
 x_srcdir=`echo "$x_srcdir" | sed -e 's%^.*/src/%%'`
 
-# Write data about current test into a list file
+
+# Write data about current test into the list file
 for x_cmd in $x_run; do
     x_cmd=`echo "$x_cmd" | sed -e 's/%gj_s4%/ /g' | sed -e 's/^ *//' | sed -e 's/\"/\\\\"/g'`
-    echo "$x_srcdir$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_files" >> $x_out
+    echo "$x_srcdir$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_files$x_delim$x_timeout" >> $x_out
 done
 
 exit 0

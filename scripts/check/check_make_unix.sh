@@ -212,6 +212,7 @@ RunTest() {
    x_app="\$3"
    x_run="\$4"
    x_test_out="\$x_work_dir/\$x_test.\$5"
+   x_timeout="\$6"
 
    # Check existence of the test's application directory
    if test -d "\$x_work_dir"; then
@@ -234,9 +235,9 @@ RunTest() {
 
       # And run test if it exist
       if test -f "\$x_app"; then
-         # NOTE: Run SH need to correct run tests with parameters in single quotes
-         x_run="PATH='.:\$PATH'; \$x_run" 
-         (sh -c "\$x_run") >> \$x_test_out 2>&1
+         # Run check
+         check_exec=\${NCBI:-/netopt/ncbi_tools}/c++/scripts/check/check_exec.sh
+         \$check_exec "\$x_timeout" "PATH=.:\$PATH; \$x_run" >> \$x_test_out 2>&1
          result=\$?
 
          # Write result of the test into the his output file
@@ -289,7 +290,8 @@ for x_row in $x_tests; do
    x_test=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_app=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_cmd=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_files=`echo "$x_row" | sed -e 's/.*~//'`
+   x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_timeout=`echo "$x_row" | sed -e 's/.*~//'`
 
    # Application base build directory
    x_work_dir="$x_build_dir/`echo \"$x_row\" | sed -e 's/~.*$//'`"
@@ -326,7 +328,8 @@ RunTest "$x_work_dir" \\
         "$x_test" \\
         "$x_app" \\
         "$x_cmd" \\
-        "$x_test_out"
+        "$x_test_out" \\
+        "$x_timeout"
 EOF
 
 #//////////////////////////////////////////////////////////////////////////

@@ -26,9 +26,9 @@
 #
 # Note:
 #    - Work with NCBI MS VisualC++ build tree only.
-#    - If first two parameters are skipped that this script consider what files 
-#      <in_test_list> and <out_check_script> must be standing in the root 
-#      of MSVC build tree.
+#    - If first two parameters are skipped that this script consider what 
+#      files <in_test_list> and <out_check_script> must be standing in the 
+#      root of the MSVC build tree.
 #
 ###########################################################################
 
@@ -203,7 +203,8 @@ RunTest() {
    x_app="\$3"
    x_run="\$4"
    x_ext="\$5"
-   x_conf="\$6"
+   x_timeout="\$6"
+   x_conf="\$7"
 
    # Determine test directory
    result=1
@@ -251,8 +252,10 @@ RunTest() {
    # Goto the test's directory 
    cd "\$x_path"
 
-   # NOTE: Run SH need to correct run tests with parameters in single quotes
-   (sh -c "PATH=.:\$PATH; \$x_run") >> \$x_test_out 2>&1
+   # Run check
+   check_exec=\${NCBI:-/netopt/ncbi_tools}/c++/scripts/check/check_exec.sh
+   test -x \$check_exec  ||  check_exec="$x_build_dir/check_exec.sh"
+   \$check_exec "\$x_timeout" "PATH=.:\$PATH; \$x_run" >> \$x_test_out 2>&1
    result=\$?
 
    # Write result of the test into the his output file
@@ -334,7 +337,8 @@ for x_row in $x_tests; do
    x_test=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_app=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_cmd=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_files=`echo "$x_row" | sed -e 's/.*~//'`
+   x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_timeout=`echo "$x_row" | sed -e 's/.*~//'`
 
    # Application base build directory
    x_work_dir="$x_build_dir/`echo \"$x_row\" | sed -e 's/~.*$//'`"
@@ -389,6 +393,7 @@ RunTest "$x_work_dir" \\
         "$x_app" \\
         "$x_cmd" \\
         "$x_test_out" \\
+        "$x_timeout" \\
         "\$x_conf"
 EOF
 

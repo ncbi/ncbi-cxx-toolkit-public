@@ -31,12 +31,12 @@ cmd=$*
 ($cmd) &
 pid=$!
 trap 'kill $pid' 1 2 15
-sleep 1
+#sleep 1
 
 # Execution time-guard
 check_exec_guard=${NCBI:-/netopt/ncbi_tools}/c++/scripts/check_exec_guard.sh
 if ! test -x $check_exec_guard ; then
-  check_exec_guard="check_exec_guard.sh"
+  check_exec_guard="`dirname $0`/check_exec_guard.sh"
 fi
 $check_exec_guard $timeout $pid &
 trap 'kill $! $pid' 1 2 15
