@@ -20,8 +20,8 @@ tblastn_options \
 rpstblastn_options \
 blast_psi_cxx \
 remote_blast \
-multiseq_src \
-seqdb_src \
+seqsrc_multiseq \
+seqsrc_seqdb \
 bl2seq \
 db_blast \
 db_traceback \

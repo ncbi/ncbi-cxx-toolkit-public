@@ -44,7 +44,7 @@ static char const rcsid[] = "$Id$";
 #include <objmgr/util/sequence.hpp>
 #include <algo/blast/api/blast_types.hpp>
 
-#include <algo/blast/api/seqdb_src.hpp>
+#include <algo/blast/api/seqsrc_seqdb.hpp>
 
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
@@ -222,6 +222,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.5  2004/07/19 14:58:47  dondosha
+ *  Renamed multiseq_src to seqsrc_multiseq, seqdb_src to seqsrc_seqdb
+ *
  *  Revision 1.4  2004/06/23 14:07:19  dondosha
  *  Changed CSeq_loc argument in CSeqLoc2BlastMaskLoc to pointer
  *

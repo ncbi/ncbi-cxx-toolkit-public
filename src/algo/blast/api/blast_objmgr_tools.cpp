@@ -37,7 +37,7 @@
 #include <objects/seqalign/seqalign__.hpp>
 
 #include <algo/blast/api/blast_options.hpp>
-#include <algo/blast/api/multiseq_src.hpp>
+#include <algo/blast/api/seqsrc_multiseq.hpp>
 #include "blast_setup.hpp"
 #include <algo/blast/core/blast_encoding.h>
 
@@ -947,6 +947,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/07/19 14:58:47  dondosha
+* Renamed multiseq_src to seqsrc_multiseq, seqdb_src to seqsrc_seqdb
+*
 * Revision 1.11  2004/07/19 13:56:02  dondosha
 * Pass subject SSeqLoc directly to BLAST_OneSubjectResults2CSeqAlign instead of BlastSeqSrc
 *

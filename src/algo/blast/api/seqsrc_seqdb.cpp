@@ -27,12 +27,12 @@
 *
 */
 
-/// @file seqdb_src.cpp
+/// @file seqsrc_seqdb.cpp
 /// Implementation of the BlastSeqSrc interface for a C++ BLAST databases API
 
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <algo/blast/api/seqdb_src.hpp>
+#include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <algo/blast/core/blast_util.h>
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include "blast_setup.hpp"
@@ -496,6 +496,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2004/07/19 14:58:47  dondosha
+ * Renamed multiseq_src to seqsrc_multiseq, seqdb_src to seqsrc_seqdb
+ *
  * Revision 1.17  2004/07/19 13:55:04  dondosha
  * Removed GetSeqLoc method
  *

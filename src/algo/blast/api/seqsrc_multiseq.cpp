@@ -27,13 +27,13 @@
 *
 */
 
-/// @file multiseq_src.cpp
+/// @file seqsrc_multiseq.cpp
 /// Implementation of the BlastSeqSrc interface for a vector of sequence 
 /// locations.
 
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <algo/blast/api/multiseq_src.hpp>
+#include <algo/blast/api/seqsrc_multiseq.hpp>
 #include <algo/blast/core/blast_def.h>
 #include "blast_setup.hpp"
 #include <algo/blast/api/blast_exception.hpp>
@@ -425,6 +425,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2004/07/19 14:58:47  dondosha
+ * Renamed multiseq_src to seqsrc_multiseq, seqdb_src to seqsrc_seqdb
+ *
  * Revision 1.19  2004/07/19 13:54:31  dondosha
  * Removed GetSeqLoc method
  *
