@@ -308,7 +308,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
  *                      not NULL. [out]
  */
 NCBI_XBLAST_EXPORT
-int GetPartialTranslation(const Uint1* nucl_seq,
+int Blast_GetPartialTranslation(const Uint1* nucl_seq,
         Int4 nucl_length, Int2 frame, const Uint1* genetic_code,
         Uint1** translation_buffer_ptr, Int4* protein_length, 
         Uint1** mixed_seq_ptr);
@@ -335,7 +335,32 @@ Int4 BSearchInt4(Int4 n, Int4* A, Int4 size);
  */
 NCBI_XBLAST_EXPORT
 double* 
-BLAST_GetStandardAaProbabilities();
+BLAST_GetStandardAaProbabilities(void);
+
+/** Maximal unpacked subject sequence length for which full translation is 
+ * performed up front. 
+ */
+#define MAX_FULL_TRANSLATION 2100
+
+/** Translate the subject sequence into 6 frames, and create a mixed-frame 
+ * sequence, if out-of-frame gapping will be used.
+ * @param subject_blk Subject sequence structure [in]
+ * @param gen_code_string Genetic code to use for translation [in]
+ * @param translation_buffer Pointer to buffer to hold the translated 
+ *                           sequence(s) [out]
+ * @param frame_offsets Pointer to an array to hold offsets into the
+ *                      translation buffer for each frame. Mixed-frame 
+ *                      sequence is to be returned, if NULL. [in] [out]
+ * @param partial_translation Should partial translations be performed later
+ *                            for each HSP instead of a full translation? [out]
+ */
+NCBI_XBLAST_EXPORT
+Int2
+Blast_SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk, 
+                              const Uint1* gen_code_string,
+                              Uint1** translation_buffer, 
+                              Int4** frame_offsets,
+                              Boolean* partial_translation);
 
 #ifdef __cplusplus
 }

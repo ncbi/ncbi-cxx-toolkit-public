@@ -112,29 +112,6 @@ Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
     return 0;
 }
 
-#if 0
-/** Create the subject sequence block given an ordinal id in a database */
-void
-MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlk** seq_blk,
-                     Int4 oid, Uint1 encoding)
-{
-  Int4 length, buf_len = 0;
-  Uint1* buffer = NULL;
-
-  if (encoding == BLASTNA_ENCODING) {
-     length = readdb_get_sequence_ex(db, oid, &buffer, &buf_len, TRUE);
-  } else if (encoding == NCBI4NA_ENCODING) {
-     length = readdb_get_sequence_ex(db, oid, &buffer, &buf_len, FALSE);
-  } else {
-     length=readdb_get_sequence(db, oid, &buffer);
-  }
-
-  BlastSetUp_SeqBlkNew(buffer, length, 0, seq_blk, 
-                       (encoding != BLASTP_ENCODING));
-  (*seq_blk)->oid = oid;
-}
-#endif
-
 Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk)
 {
    if (!seq_blk)
@@ -975,7 +952,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
    return 0;
 }
 
-int GetPartialTranslation(const Uint1* nucl_seq,
+int Blast_GetPartialTranslation(const Uint1* nucl_seq,
         Int4 nucl_length, Int2 frame, const Uint1* genetic_code,
         Uint1** translation_buffer_ptr, Int4* protein_length, 
         Uint1** mixed_seq_ptr)
@@ -1125,6 +1102,44 @@ Blast_GetOneQueryStructs(BlastQueryInfo** one_query_info_ptr,
     one_query->oid = query_index;
 
     return 0;
+}
+
+Int2
+Blast_SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk, 
+                              const Uint1* gen_code_string,
+                              Uint1** translation_buffer_ptr, 
+                              Int4** frame_offsets_ptr,
+                              Boolean* partial_translation_ptr)
+{
+   Boolean partial_translation;
+   Boolean is_ooframe = (frame_offsets_ptr == NULL);
+
+   if (!gen_code_string)
+      return -1;
+
+   if (is_ooframe && subject_blk->oof_sequence) {
+      /* If mixed-frame sequence is already available (two-sequences case),
+         then no need to translate again */
+      *partial_translation_ptr = FALSE;
+      return 0;
+   } 
+
+   *partial_translation_ptr = partial_translation = 
+      (subject_blk->length > MAX_FULL_TRANSLATION);
+      
+   if (!partial_translation) {
+      if (is_ooframe) {
+         BLAST_GetAllTranslations(subject_blk->sequence_start, 
+            NCBI4NA_ENCODING, subject_blk->length, gen_code_string, 
+            NULL, NULL, &subject_blk->oof_sequence);
+      } else {
+         BLAST_GetAllTranslations(subject_blk->sequence_start, 
+            NCBI4NA_ENCODING, subject_blk->length, gen_code_string, 
+            translation_buffer_ptr, frame_offsets_ptr, NULL);
+      }
+   }
+
+   return 0;
 }
 
 double* 
