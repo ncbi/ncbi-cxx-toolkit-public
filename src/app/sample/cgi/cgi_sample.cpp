@@ -93,7 +93,6 @@ void CSampleCgiApplication::Init()
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
-
 }
 
 
@@ -101,27 +100,27 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
 {
      // you can catch CArgException& here to process argument errors
      // or handle it in OnException
-     CArgs args = GetArgs();
+     const CArgs& args = GetArgs();
 
      // args now contains both command line arguments and arguments 
      // passed throught the CGI call
 
      if (args["message"]) {
-        const string& m = args["message"].AsString(); // first message
+         // get the first "message" argument only...
+         const string& m = args["message"].AsString();
+         (void) m.c_str(); // just to get rid of compiler warning "unused 'm'"
 
-        // get the whole list of "message" arguments
+         // ...or get the whole list of "message" arguments
+         const CArgValue::TStringArray& values = 
+             args["message"].GetStringList();
 
-        const CArgValue::TStringArray& values = 
-            args["message"].GetStringList();
-
-        ITERATE(CArgValue::TStringArray, it, values) {
-            // do something with the message
-        } 
-
+         ITERATE(CArgValue::TStringArray, it, values) {
+             // do something with the message
+             // (void) it->c_str(); // eg get rid of compiler warning "unused 'm'"
+         } 
      } else {
-         // no message
+         // no "message" argument is present
      }
-
 
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
@@ -195,6 +194,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/12/27 20:36:05  vakatov
+ * Eliminate "unused var" warnings.
+ * Accept GetArgs()' result by ref -- rather than by value
+ *
  * Revision 1.11  2004/12/08 12:50:36  kuznets
  * Case sensitivity turned off
  *
