@@ -193,6 +193,8 @@ const unsigned char kMaskD   = 0x0008;
 
 int CNWAligner::Run()
 {
+    x_LoadScoringMatrix();
+
     const size_t N1 = m_SeqLen1 + 1;
     const size_t N2 = m_SeqLen2 + 1;
 
@@ -319,7 +321,7 @@ int CNWAligner::Run()
         }
        
     }
-    
+
     if(!bNowExit) {
         x_DoBackTrace(backtrace_matrix);
     }
@@ -672,6 +674,8 @@ string CNWAligner::GetTranscript() const
 // Tries to give a running time estimate (in seconds)
 unsigned CNWAligner::EstimateRunningTime(unsigned test_duration_sec)
 {
+    x_LoadScoringMatrix();
+
     const int N1 = m_SeqLen1 + 1;
     const int N2 = m_SeqLen2 + 1;
     TScore* rowV    = new TScore [N2];
@@ -875,12 +879,130 @@ bool CNWAligner::x_CheckMemoryLimit()
 }
 
 
+
+CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
+    throw (CNWAlignerException)
+{
+    const size_t dim = m_Transcript.size();
+    vector<ETranscriptSymbol> transcript (dim);
+    for(size_t i = 0; i < dim; ++i) {
+        transcript[i] = m_Transcript[dim - i - 1];
+    }
+
+    TScore score = 0;
+
+    const char* p1 = m_Seq1;
+    const char* p2 = m_Seq2;
+
+    int state1;   // 0 = normal, 1 = gap, 2 = intron
+    int state2;   // 0 = normal, 1 = gap
+
+    switch(transcript[0]) {
+    case eMatch:    state1 = state2 = 0; break;
+    case eInsert:   state1 = 1; state2 = 0; score += m_Wg; break;
+    case eDelete:   state1 = 0; state2 = 1; score += m_Wg; break;
+    default: {
+        NCBI_THROW(
+                   CNWAlignerException,
+                   eInternal,
+                   "Invalid transcript symbol");
+        }
+    }
+
+    TScore L1 = 0, R1 = 0, L2 = 0, R2 = 0;
+    bool   bL1 = false, bR1 = false, bL2 = false, bR2 = false;
+    
+    for(size_t i = 0; i < dim; ++i) {
+
+        char c1 = *p1;
+        char c2 = *p2;
+        switch(transcript[i]) {
+
+        case eMatch: {
+            state1 = state2 = 0;
+            score += m_Matrix[c1][c2];
+            ++p1; ++p2;
+        }
+        break;
+
+        case eInsert: {
+            if(state1 != 1) score += m_Wg;
+            state1 = 1; state2 = 0;
+            score += m_Ws;
+            ++p2;
+        }
+        break;
+
+        case eDelete: {
+            if(state2 != 1) score += m_Wg;
+            state1 = 0; state2 = 1;
+            score += m_Ws;
+            ++p1;
+        }
+        break;
+        
+        default: {
+        NCBI_THROW(
+                   CNWAlignerException,
+                   eInternal,
+                   "Invalid transcript symbol");
+        }
+        }
+    }
+
+    if(m_esf_L1) {
+        size_t g = 0;
+        for(size_t i = 0; i < dim; ++i) {
+            if(transcript[i] == eInsert) ++g; else break;
+        }
+        if(g > 0) {
+            score -= (m_Wg + g*m_Ws);
+        }
+    }
+
+    if(m_esf_L2) {
+        size_t g = 0;
+        for(size_t i = 0; i < dim; ++i) {
+            if(transcript[i] == eDelete) ++g; else break;
+        }
+        if(g > 0) {
+            score -= (m_Wg + g*m_Ws);
+        }
+    }
+
+    if(m_esf_R1) {
+        size_t g = 0;
+        for(int i = dim - 1; i >= 0; --i) {
+            if(transcript[i] == eInsert) ++g; else break;
+        }
+        if(g > 0) {
+            score -= (m_Wg + g*m_Ws);
+        }
+    }
+
+    if(m_esf_R2) {
+        size_t g = 0;
+        for(int i = dim - 1; i >= 0; --i) {
+            if(transcript[i] == eDelete) ++g; else break;
+        }
+        if(g > 0) {
+            score -= (m_Wg + g*m_Ws);
+        }
+    }
+
+    return score;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/03/31 15:32:05  kapustin
+ * Calculate score independently from transcript
+ *
  * Revision 1.19  2003/03/19 16:36:39  kapustin
  * Reverse memory limit condition
  *

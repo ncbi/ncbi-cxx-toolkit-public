@@ -73,6 +73,10 @@ protected:
     size_t   m_IntronMinSize; // intron min size
 
     virtual void   x_DoBackTrace(const unsigned char* backtrace_matrix);
+
+    virtual TScore x_ScoreByTranscript() const
+        throw(CNWAlignerException);
+
 };
 
 
@@ -82,6 +86,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/03/31 15:31:47  kapustin
+ * Calculate score independently from transcript
+ *
  * Revision 1.4  2003/03/25 22:06:25  kapustin
  * Support non-canonical splice signals
  *

@@ -168,6 +168,9 @@ protected:
     size_t x_ApplyTranscript(vector<char>* seq1_transformed,
                              vector<char>* seq2_transformed) const;
     enum { kInfMinus = kMin_Int / 2 };
+
+    virtual TScore x_ScoreByTranscript() const
+        throw(CNWAlignerException);
 };
 
 
@@ -177,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/03/31 15:31:47  kapustin
+ * Calculate score independently from transcript
+ *
  * Revision 1.14  2003/03/18 15:12:29  kapustin
  * Declare virtual mem limit checking function. Allow separate specification of free end gaps
  *

@@ -37,7 +37,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
 static unsigned char donor[splice_type_count][2] = {
     {'G','T'}, {'G','C'}, {'A','T'}
 };
@@ -46,6 +45,17 @@ static unsigned char acceptor[splice_type_count][2] = {
     {'A','G'}, {'A','G'}, {'A','C'}
 };
 
+/*
+
+static unsigned char donor[splice_type_count][2] = {
+    {'G','T'}
+};
+
+static unsigned char acceptor[splice_type_count][2] = {
+    {'A','G'}
+};
+
+*/
 
 CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
                                        const char* seq2, size_t len2)
@@ -62,10 +72,11 @@ CNWAligner::TScore CNWAlignerMrna2Dna::GetDefaultWi(unsigned char splice_type)
     throw(CNWAlignerException)
 {
     switch(splice_type) {
-    default: return -10;
+    case 0: case 1: case 2: default:
+        return -10;
     }
-    NCBI_THROW(
-               CNWAlignerException,
+
+    NCBI_THROW(CNWAlignerException,
                eInvalidSpliceTypeIndex,
                "Invalid splice type index");
 }
@@ -78,19 +89,22 @@ CNWAligner::TScore CNWAlignerMrna2Dna::GetDefaultWi(unsigned char splice_type)
 // E:    1 if space in 1st sequence; 0 if space in 2nd sequence
 // Ec:   1 if gap in 1st sequence was extended; 0 if it is was opened
 // Fc:   1 if gap in 2nd sequence was extended; 0 if it is was opened
-// Acc:  1 if acceptor; 0 - otherwise
-// Dnr:  1 if the best donor (so far from left to right); 0 otherwise
-// The two remaining higher bits indicate splice type, if any
+// The four remaining higher bits indicate splice type, if any:
+// Dnr  Acc
+// 00   00     no dnr/acc
+// 01   01     GT/AG
+// 10   10     GC/AG
+// 11   11     AT/AC 
 
 const unsigned char kMaskFc    = 0x01;
 const unsigned char kMaskEc    = 0x02;
 const unsigned char kMaskE     = 0x04;
 const unsigned char kMaskD     = 0x08;
-const unsigned char kMaskAcc   = 0x10;
-const unsigned char kMaskDnr   = 0x20;
 
-int CNWAlignerMrna2Dna::Run()
+CNWAligner::TScore CNWAlignerMrna2Dna::Run()
 {
+    x_LoadScoringMatrix();
+
     const size_t N1 = m_SeqLen1 + 1;
     const size_t N2 = m_SeqLen2 + 1;
 
@@ -140,6 +154,7 @@ int CNWAlignerMrna2Dna::Run()
     }
     size_t  jTail[splice_type_count], jHead[splice_type_count];
     TScore  vBestDonor [splice_type_count];
+    size_t  jBestDonor [splice_type_count];
 
     size_t i, j, k0;
     char ci;
@@ -216,8 +231,7 @@ int CNWAlignerMrna2Dna::Run()
                     if(j - jAllDonors[st][jHead[st]] >= m_IntronMinSize) {
                         if(vAllDonors[st][jHead[st]] > vBestDonor[st]) {
                             vBestDonor[st] = vAllDonors[st][jHead[st]];
-                            backtrace_matrix[k0 + jAllDonors[st][jHead[st]]]
-                                |= kMaskDnr | st << 6;
+                            jBestDonor[st] = jAllDonors[st][jHead[st]];
                         }
                         ++(jHead[st]);
                     }
@@ -225,6 +239,9 @@ int CNWAlignerMrna2Dna::Run()
             }
                 
             // check splice signal
+            size_t dnr_pos = 0;
+            unsigned char value = 0xFF;
+            unsigned char tracer_splice = 0;
             for(unsigned char st = 0; st < splice_type_count; ++st) {
 
                 if(seq2[j-1] == acceptor[st][0] && seq2[j] == acceptor[st][1]
@@ -232,12 +249,17 @@ int CNWAlignerMrna2Dna::Run()
                     TScore vAcc = vBestDonor[st] + m_Wi[st];
                     if(vAcc > V) {
                         V = vAcc;
-                        tracer = kMaskAcc | st << 6;
+                        tracer_splice = (st+1) << 4;
+                        dnr_pos = k0 + jBestDonor[st];
+                        value = (st+1) << 6;
                     }
                 }
             }
+            if(value != 0xFF) {
+                backtrace_matrix[dnr_pos] |= value;
+            }
             
-            backtrace_matrix[k] = tracer;
+            backtrace_matrix[k] = tracer | tracer_splice;
             
             // detect donor candidate
             for(unsigned char st = 0; st < splice_type_count; ++st) {
@@ -251,6 +273,7 @@ int CNWAlignerMrna2Dna::Run()
         }
 
         pV[j] = V;
+
     }
 
     for(unsigned char st = 0; st < splice_type_count; ++st) {
@@ -259,7 +282,7 @@ int CNWAlignerMrna2Dna::Run()
     }
     delete[] rowV;
     delete[] rowF;
-   
+
     x_DoBackTrace(backtrace_matrix);
 
     delete[] backtrace_matrix;
@@ -283,14 +306,19 @@ void CNWAlignerMrna2Dna::x_DoBackTrace(const unsigned char* backtrace)
     while (k != 0) {
         unsigned char Key = backtrace[k];
 
-        if(Key & kMaskAcc) {  // insert intron
-            unsigned char acc_type = Key & 0xC0, dnr_type = ~acc_type;
-            for( ; acc_type != dnr_type; dnr_type = Key & 0xC0 ) {
+        while(Key & 0x30) {  // detect acceptor
+            unsigned char acc_type = (Key & 0x30) >> 4, dnr_type = ~acc_type;
+            for( ; acc_type != dnr_type; dnr_type = (Key & 0xC0) >> 6 ) {
                 Key = 0; // make sure we enter the loop
-                while(!(Key & kMaskDnr)) {
+                while(!(Key & 0xC0)) {
                     m_Transcript.push_back(eIntron);
                     Key = backtrace[--k];
                 }
+            }
+            if(Key & 0x30) {
+                NCBI_THROW(CNWAlignerException,
+                           eInternal,
+                           "Adjacent splices encountered during backtrace");
             }
         }
         
@@ -318,6 +346,133 @@ void CNWAlignerMrna2Dna::x_DoBackTrace(const unsigned char* backtrace)
 }
 
 
+CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
+    throw (CNWAlignerException)
+{
+    const size_t dim = m_Transcript.size();
+    vector<ETranscriptSymbol> transcript (dim);
+    for(size_t i = 0; i < dim; ++i) {
+        transcript[i] = m_Transcript[dim - i - 1];
+    }
+
+    TScore score = 0;
+
+    const char* p1 = m_Seq1;
+    const char* p2 = m_Seq2;
+
+    char state1;   // 0 = normal, 1 = gap, 2 = intron
+    char state2;   // 0 = normal, 1 = gap
+
+    switch(transcript[0]) {
+    case eMatch:    state1 = state2 = 0; break;
+    case eInsert:   state1 = 1; state2 = 0; score += m_Wg; break;
+    case eDelete:   state1 = 0; state2 = 1; score += m_Wg; break;
+    default: {
+        NCBI_THROW(
+                   CNWAlignerException,
+                   eInternal,
+                   "Invalid transcript symbol");
+        }
+    }
+
+    TScore L1 = 0, R1 = 0, L2 = 0, R2 = 0;
+    bool   bL1 = false, bR1 = false, bL2 = false, bR2 = false;
+    
+    for(size_t i = 0; i < dim; ++i) {
+
+        char c1 = *p1;
+        char c2 = *p2;
+        switch(transcript[i]) {
+
+        case eMatch: {
+            state1 = state2 = 0;
+            score += m_Matrix[c1][c2];
+            ++p1; ++p2;
+        }
+        break;
+
+        case eInsert: {
+            if(state1 != 1) score += m_Wg;
+            state1 = 1; state2 = 0;
+            score += m_Ws;
+            ++p2;
+        }
+        break;
+
+        case eDelete: {
+            if(state2 != 1) score += m_Wg;
+            state1 = 0; state2 = 1;
+            score += m_Ws;
+            ++p1;
+        }
+        break;
+
+        case eIntron: {
+            if(state1 != 2) {
+                for(unsigned char i = 0; i < splice_type_count; ++i) {
+                    if(*p2 == donor[i][0] && *(p2 + 1) == donor[i][1]) {
+                        score += m_Wi[i];
+                        break;
+                    }
+                }
+            }
+            state1 = 2; state2 = 0;
+            ++p2;
+        }
+        break;
+
+        default: {
+        NCBI_THROW(
+                   CNWAlignerException,
+                   eInternal,
+                   "Invalid transcript symbol");
+        }
+        }
+    }
+
+    if(m_esf_L1) {
+        size_t g = 0;
+        for(size_t i = 0; i < dim; ++i) {
+            if(transcript[i] == eInsert) ++g; else break;
+        }
+        if(g > 0) {
+            score -= (m_Wg + g*m_Ws);
+        }
+    }
+
+    if(m_esf_L2) {
+        size_t g = 0;
+        for(size_t i = 0; i < dim; ++i) {
+            if(transcript[i] == eDelete) ++g; else break;
+        }
+        if(g > 0) {
+            score -= (m_Wg + g*m_Ws);
+        }
+    }
+
+    if(m_esf_R1) {
+        size_t g = 0;
+        for(int i = dim - 1; i >= 0; --i) {
+            if(transcript[i] == eInsert) ++g; else break;
+        }
+        if(g > 0) {
+            score -= (m_Wg + g*m_Ws);
+        }
+    }
+
+    if(m_esf_R2) {
+        size_t g = 0;
+        for(int i = dim - 1; i >= 0; --i) {
+            if(transcript[i] == eDelete) ++g; else break;
+        }
+        if(g > 0) {
+            score -= (m_Wg + g*m_Ws);
+        }
+    }
+
+    return score;
+}
+
 
 END_NCBI_SCOPE
 
@@ -326,11 +481,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/03/31 15:32:05  kapustin
+ * Calculate score independently from transcript
+ *
  * Revision 1.10  2003/03/25 22:06:01  kapustin
  * Support non-canonical splice signals
  *
  * Revision 1.9  2003/03/18 15:15:51  kapustin
- * Implement virtual memory checking function. Allow separate free end gap specification
+ * Implement virtual memory checking function. Allow separate free end
+ * gap specification
  *
  * Revision 1.8  2003/03/17 13:42:24  kapustin
  * Make donor/acceptor characters uppercase
