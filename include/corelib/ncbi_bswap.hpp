@@ -25,12 +25,13 @@
  *
  * ===========================================================================
  *
- * Author:  Anatoliy Kuznetsov
+ * Author:  Anatoliy Kuznetsov, Kyrill Rotmistrovsky
  *   
  * File Description: Byte swapping functions.
  *
  */
 
+#include <corelib/ncbistl.hpp>
 #include <corelib/ncbitype.h>
 
 BEGIN_NCBI_SCOPE
@@ -174,13 +175,13 @@ inline
 float CByteSwap::GetFloat(const unsigned char* ptr)
 {
     Int4 ret = CByteSwap::GetInt4(ptr);
-    return reinterpret_cast<float>(ret);
+    return *(float*)(&ret);
 }
 
 inline
 void CByteSwap::PutFloat(unsigned char* ptr, float value)
 {
-    CByteSwap::PutInt4(ptr, reinterpret_cast<Int4>(value));
+    CByteSwap::PutInt4(ptr, *(Int4*)(&value));
 }
 
 
@@ -188,13 +189,13 @@ inline
 double CByteSwap::GetDouble(const unsigned char* ptr)
 {
     Int8 ret = CByteSwap::GetInt8(ptr);
-    return reinterpret_cast<double>(ret);
+    return *(double*)(&ret);
 }
 
 inline
 void ByteSwap_PutDouble(unsigned char* ptr, double value)
 {
-    ByteSwap_PutInt8(ptr, reinterpret_cast<Int8>(value));
+    CByteSwap::PutInt8(ptr, *(Int8*)(&value));
 }
 
 
@@ -204,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/10 15:13:30  kuznets
+ * Fixed minor compilation issues.
+ *
  * Revision 1.3  2003/09/09 19:52:25  kuznets
  * Added support for big-little endian byte orders.
  *
