@@ -51,7 +51,9 @@ struct SLibInfo
 
     bool IsEmpty(void) const
     {
-        return m_Libs.empty();
+        return m_IncludeDir.empty() && 
+               m_LibPath.empty()    && 
+               m_Libs.empty();
     }
     void Clear(void)
     {
@@ -113,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/24 17:16:30  gorelenk
+ * Redesigned member-function IsEmpty of struct SLibInfo.
+ *
  * Revision 1.7  2004/02/06 23:15:40  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.
