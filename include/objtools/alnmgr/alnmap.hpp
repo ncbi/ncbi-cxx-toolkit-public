@@ -478,7 +478,7 @@ inline
 int CAlnMap::GetWidth(TNumrow row) const
 {
     return
-        m_Widths.size() == m_NumRows ? m_Widths[row] : 1;
+        m_Widths.size() == (size_t) (m_NumRows ? m_Widths[row] : 1);
 }
 
 inline
@@ -631,6 +631,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/09/08 19:49:19  todorov
+* signed vs unsigned warnings fixed
+*
 * Revision 1.27  2003/08/29 18:17:17  dicuccio
 * Minor change in specification of default parameters - rely only on prameters,
 * not on member variables

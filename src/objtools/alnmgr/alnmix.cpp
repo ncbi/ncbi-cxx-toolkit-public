@@ -199,7 +199,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 
     // check the widths
     if (ds.IsSetWidths()) {
-        if (ds.GetWidths().size() != ds.GetDim()) {
+        if (ds.GetWidths().size() != (size_t) ds.GetDim()) {
             string errstr = string("CAlnMix::Add(): ")
                 + "Dense-seg "
                 + NStr::IntToString(ds_index)
@@ -317,7 +317,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     bool             single_chunk;
     CAlnMap::TNumrow first_non_gapped_row_found;
     bool             strands_exist = 
-        ds.GetStrands().size() == ds.GetNumseg() * ds.GetDim();
+        ds.GetStrands().size() == (size_t)ds.GetNumseg() * ds.GetDim();
 
     for (CAlnMap::TNumseg seg =0;  seg < ds.GetNumseg();  seg++) {
         len = ds.GetLens()[seg];
@@ -1436,7 +1436,7 @@ void CAlnMix::x_CreateSegmentsVector()
                 TSeqPos start_plus_len = start + len * width;
                 if (prev_start >= 0  &&  start >= 0) {
                     if (plus  &&  prev_start_plus_len < start  ||
-                        !plus  &&  start_plus_len < prev_start) {
+                        !plus  &&  start_plus_len < (TSeqPos) prev_start) {
                         // create a new seg
                         CRef<CAlnMixSegment> seg (new CAlnMixSegment);
                         TSeqPos new_start;
@@ -1779,9 +1779,9 @@ void CAlnMix::x_ValidateDenseg(const CDense_seg& ds)
     const CDense_seg::TLens&    lens    = ds.GetLens();
     const CDense_seg::TWidths&  widths  = ds.GetWidths();
 
-    const int numrows = ds.GetDim();
-    const int numsegs = ds.GetNumseg();
-    const int num     = numrows * numsegs;
+    const size_t& numrows = ds.GetDim();
+    const size_t& numsegs = ds.GetNumseg();
+    const size_t  num     = numrows * numsegs;
 
     if (ids.size() != numrows) {
         string errstr = string("CAlnMix::x_ValidateDenseg():")
@@ -1809,7 +1809,7 @@ void CAlnMix::x_ValidateDenseg(const CDense_seg& ds)
         NCBI_THROW(CAlnException, eMergeFailure, errstr);
     }
 
-    int numseg = 0, numrow = 0, offset = 0;
+    size_t numseg = 0, numrow = 0, offset = 0;
     bool strands_exist = strands.size() == num;
     for (numrow = 0;  numrow < numrows;  numrow++) {
         TSignedSeqPos max_start = -1, start;
@@ -1839,8 +1839,8 @@ void CAlnMix::x_ValidateDenseg(const CDense_seg& ds)
                 }
                 max_start = start + 
                     lens[plus ? numseg : numsegs - 1 - numseg] *
-                    (widths.size() == numrows ?
-                     widths[numrow] : 1);
+                    (widths.size() == (size_t) (numrows ?
+                                                widths[numrow] : 1));
             }
             if (plus) {
                 offset += numrows;
@@ -1859,6 +1859,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2003/09/08 19:48:55  todorov
+* signed vs unsigned warnings fixed
+*
 * Revision 1.71  2003/09/08 19:24:04  todorov
 * fix strand
 *
