@@ -33,6 +33,10 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/07/05 22:09:07  vakatov
+* s_ExitHandler() -- do not printout the final statistics if the process
+* has terminated "normally"
+*
 * Revision 1.5  2001/07/05 05:27:49  vakatov
 * Get rid of the redundant <ncbireg.hpp>.
 * Added workarounds for the capricious IRIX MIPSpro 7.3 compiler.
@@ -117,7 +121,6 @@ static char*      s_ReserveMemory    = 0;
 
 /* Routine to be called at the exit from application
  */
-
 static void s_ExitHandler(void)
 {
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
@@ -128,7 +131,7 @@ static void s_ExitHandler(void)
         s_ReserveMemory = 0;
     }
 
-    switch(s_ExitCode) {
+    switch ( s_ExitCode ) {
 
     case eEC_Memory:
         {
@@ -141,7 +144,7 @@ static void s_ExitHandler(void)
         {
             ERR_POST("CPU time limit exceeded (" << s_CpuTimeLimit << " sec)");
             tms buffer;
-            if ( times(&buffer) == (clock_t)(-1) ) {
+            if (times(&buffer) == (clock_t)(-1)) {
                 ERR_POST("Error in getting CPU time consumed with program");
                 break;
             }
@@ -155,7 +158,7 @@ static void s_ExitHandler(void)
         }
 
     default:
-        break;
+        return;
     }
     
     // Write program's time
