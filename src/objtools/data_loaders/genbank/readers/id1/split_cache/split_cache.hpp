@@ -42,6 +42,8 @@
 
 #include <serial/serialdef.hpp>
 
+#include <objmgr/seq_id_handle.hpp>
+
 #include "blob_splitter_params.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -179,13 +181,15 @@ public:
 protected:
     CConstRef<CSeqref> GetSeqref(CBioseq_Handle bh);
 
-    typedef set< pair<int, int> > TProcessed;
+    typedef set< pair<int, int> > TProcessedBlobs;
+    typedef set<CSeq_id_Handle> TProcessedIds;
 
 private:
     // parameters
     bool m_DumpAsnText;
     bool m_DumpAsnBinary;
     bool m_Resplit;
+    bool m_Recurse;
     SSplitterParams m_SplitterParams;
     
     // splitter loaders/managers
@@ -197,7 +201,8 @@ private:
 
     // splitter process state
     size_t      m_RecursionLevel;
-    TProcessed  m_Processed;
+    TProcessedBlobs  m_ProcessedBlobs;
+    TProcessedIds  m_ProcessedIds;
 };
 
 
@@ -207,6 +212,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/12/02 23:24:33  vasilche
+* Added "-recurse" option to split all sequences referenced by SeqMap.
+*
 * Revision 1.6  2003/12/02 19:59:31  vasilche
 * Added GetFileName() declaration.
 *

@@ -164,7 +164,7 @@ private:
 
 CSplitCacheApp::CSplitCacheApp(void)
     : m_DumpAsnText(false), m_DumpAsnBinary(false),
-      m_Resplit(false),
+      m_Resplit(false), m_Recurse(false),
       m_RecursionLevel(0)
 {
 }
@@ -198,7 +198,7 @@ void CSplitCacheApp::Init(void)
                              CArgDescriptions::eInputFile);
     arg_desc->AddFlag("all",
                       "process all entries in cache");
-    arg_desc->AddFlag("resolve_all",
+    arg_desc->AddFlag("recurse",
                       "process all entries referenced by specified ones");
 
     // cache parameters
@@ -336,73 +336,6 @@ CNcbiOstream& CSplitCacheApp::Info(void) const
 }
 
 
-void CSplitCacheApp::Process(void)
-{
-    const CArgs& args = GetArgs();
-
-    m_DumpAsnText = args["dump"];
-    m_DumpAsnBinary = args["bdump"];
-    if ( args["compress"] ) {
-        m_SplitterParams.m_Compression = m_SplitterParams.eCompression_nlm_zip;
-    }
-    m_Resplit = args["resplit"];
-    m_SplitterParams.SetChunkSize(args["chunk_size"].AsInteger()*1024);
-
-    if ( args["gi"] ) {
-        ProcessGi(args["gi"].AsInteger());
-    }
-    if ( args["gi_list"] ) {
-        CNcbiIstream& in = args["gi_list"].AsInputFile();
-        int gi;
-        while ( in >> gi ) {
-            ProcessGi(gi);
-        }
-    }
-    if ( args["id"] ) {
-        CSeq_id id(args["id"].AsString());
-        ProcessSeqId(id);
-    }
-    if ( args["id_list"] ) {
-        CNcbiIstream& in = args["id_list"].AsInputFile();
-        string id_name;
-        while ( NcbiGetline(in, id_name, '\n') ) {
-            CSeq_id id(id_name);
-            ProcessSeqId(id);
-        }
-    }
-}
-
-
-void CSplitCacheApp::ProcessGi(int gi)
-{
-    CSeq_id id;
-    id.SetGi(gi);
-    ProcessSeqId(id);
-}
-
-
-void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
-{
-    if ( m_RecursionLevel == 0 ) {
-        m_Scope->ResetHistory();
-    }
-
-    LINE("Processing: " << id.AsFastaString());
-    CLevelGuard level(m_RecursionLevel);
-    
-    //m_Loader->GetRecords(CSeq_id_Handle::GetHandle(id), CDataLoader::eAll);
-    CReader::TSeqrefs srs;
-    m_Reader->ResolveSeq_id(srs, id, 0);
-    if ( srs.empty() ) {
-        LINE("Skipping: no blobs");
-        return;
-    }
-    ITERATE ( CReader::TSeqrefs, it, srs ) {
-        ProcessBlob(**it);
-    }
-}
-
-
 class CSplitDataMaker
 {
 public:
@@ -472,8 +405,102 @@ string CSplitCacheApp::GetFileName(const string& key,
 }
 
 
+void CSplitCacheApp::Process(void)
+{
+    const CArgs& args = GetArgs();
+
+    m_DumpAsnText = args["dump"];
+    m_DumpAsnBinary = args["bdump"];
+    if ( args["compress"] ) {
+        m_SplitterParams.m_Compression = m_SplitterParams.eCompression_nlm_zip;
+    }
+    m_Resplit = args["resplit"];
+    m_Recurse = args["recurse"];
+    m_SplitterParams.SetChunkSize(args["chunk_size"].AsInteger()*1024);
+
+    if ( args["gi"] ) {
+        ProcessGi(args["gi"].AsInteger());
+    }
+    if ( args["gi_list"] ) {
+        CNcbiIstream& in = args["gi_list"].AsInputFile();
+        int gi;
+        while ( in >> gi ) {
+            ProcessGi(gi);
+        }
+    }
+    if ( args["id"] ) {
+        CSeq_id id(args["id"].AsString());
+        ProcessSeqId(id);
+    }
+    if ( args["id_list"] ) {
+        CNcbiIstream& in = args["id_list"].AsInputFile();
+        string id_name;
+        while ( NcbiGetline(in, id_name, '\n') ) {
+            CSeq_id id(id_name);
+            ProcessSeqId(id);
+        }
+    }
+}
+
+
+void CSplitCacheApp::ProcessGi(int gi)
+{
+    CSeq_id id;
+    id.SetGi(gi);
+    ProcessSeqId(id);
+}
+
+
+void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
+{
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+    if ( !m_ProcessedIds.insert(idh).second ) {
+        // already processed
+        return;
+    }
+
+    if ( m_RecursionLevel == 0 ) {
+        m_Scope->ResetHistory();
+    }
+
+    LINE("Processing: " << id.AsFastaString());
+    {{
+        CLevelGuard level(m_RecursionLevel);
+        
+        CReader::TSeqrefs srs;
+        m_Reader->ResolveSeq_id(srs, id, 0);
+        if ( srs.empty() ) {
+            LINE("Skipping: no blobs");
+            return;
+        }
+        ITERATE ( CReader::TSeqrefs, it, srs ) {
+            ProcessBlob(**it);
+        }
+
+        if ( m_Recurse ) {
+            LINE("Processing referenced sequences:");
+            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idh);
+            if ( bh ) {
+                CSeqMap_CI it = bh.GetSeqMap()
+                    .begin_resolved(&*m_Scope, 0, CSeqMap::fFindRef);
+                while ( it ) {
+                    ProcessSeqId(*it.GetRefSeqid().GetSeqId());
+                    ++it;
+                }
+            }
+        }
+    }}
+    LINE("End of processing: " << id.AsFastaString());
+}
+
+
 void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
 {
+    if ( !m_ProcessedBlobs.insert(seqref.GetKeyByTSE()).second ) {
+        // already processed
+        return;
+    }
+
     LINE("Processing blob "<< seqref.printTSE());
     CLevelGuard level(m_RecursionLevel);
 
@@ -635,6 +662,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/12/02 23:24:33  vasilche
+* Added "-recurse" option to split all sequences referenced by SeqMap.
+*
 * Revision 1.6  2003/12/02 19:59:15  vasilche
 * Added GetFileName() declaration.
 *
