@@ -445,7 +445,7 @@ void s_TestClientLB(const string& service_name)
 
         IWriter* wrt = nc_client.PutData(&key);
         size_t bytes_written;
-        ERW_Result wres = 
+        //ERW_Result wres = 
             wrt->Write(test_data2, sizeof(test_data2), &bytes_written);
         delete wrt;
 
@@ -582,7 +582,6 @@ int CTestNetCacheClient::Run(void)
     s_ReadUpdateCharTest(host, port);
 
 //    s_TestClientLB("NetCache_shared");
-
     
     NcbiCout << "Testing IsAlive()... ";
 //    s_TestAlive(host, port);
@@ -666,6 +665,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/01/28 15:02:03  kuznets
+ * Fexed GCC warning
+ *
  * Revision 1.26  2005/01/28 14:47:45  kuznets
  * LB test improved
  *
