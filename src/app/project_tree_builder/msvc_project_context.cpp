@@ -144,7 +144,16 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     m_ProjectIncludeDirs = project.m_IncludeDirs;
 
     // LIBS from Makefiles
-    m_ProjectLibs = project.m_Libs3Party;
+    // m_ProjectLibs = project.m_Libs3Party;
+    ITERATE(list<string>, p, project.m_Libs3Party) {
+        const string& lib_id = *p;
+        if ( GetApp().GetSite().IsLibWithChoice(lib_id) ) {
+            if ( GetApp().GetSite().GetChoiceForLib(lib_id) == CMsvcSite::eLib )
+                m_ProjectLibs.push_back(lib_id);
+        } else {
+            m_ProjectLibs.push_back(lib_id);
+        }
+    }
 
     // Proprocessor definitions from makefiles:
     m_Defines = project.m_Defines;
@@ -816,6 +825,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/04/19 15:44:50  gorelenk
+ * Changed implementation of class CMsvcPrjProjectContext constructor:
+ * added lib choice test while creating list of dependencies (m_ProjectLibs).
+ *
  * Revision 1.25  2004/04/13 17:08:55  gorelenk
  * Changed implementation of class CMsvcPrjProjectContext constructor.
  *
