@@ -1,4 +1,4 @@
-$Id$
+#$Id$
 
 APP = test_ncbi_system
 SRC = test_ncbi_system
