@@ -141,7 +141,7 @@ int CSampleObjmgrApplication::Run(void)
     // "iterate" is the same as:
     // for (CBioseq::TId::const_iterator id_it = bioseq->GetId().begin();
     //      id_it != bioseq->GetId().end(); ++id_it)
-    iterate (CBioseq::TId, id_it, bioseq->GetId()) {
+    ITERATE (CBioseq::TId, id_it, bioseq->GetId()) {
         if (id_it != bioseq->GetId().begin())
             cout << " + "; // print id separator
         cout << (*id_it)->DumpAsFasta();
@@ -260,6 +260,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2003/03/10 18:48:48  kuznets
+ * iterate->ITERATE
+ *
  * Revision 1.8  2002/11/08 19:43:34  grichenk
  * CConstRef<> constructor made explicit
  *

@@ -123,7 +123,7 @@ int CSampleObjectsApplication::Run(void)
     // Display the IDs of the sequence(s) it contains
     for (CTypeConstIterator<CBioseq> seq = ConstBegin(m_Entry);  seq;  ++seq) {
         bool first = true;
-        iterate (CBioseq::TId, id, seq->GetId()) {
+        ITERATE (CBioseq::TId, id, seq->GetId()) {
             if (first) {
                 first = false;
             } else {
@@ -162,6 +162,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/10 18:48:48  kuznets
+* iterate->ITERATE
+*
 * Revision 1.1  2002/04/18 16:05:13  ucko
 * Add centralized tree for sample apps.
 *
