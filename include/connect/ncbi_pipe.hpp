@@ -152,17 +152,17 @@ public:
 
     /// Destructor.
     ///
-    /// If pipe was created destructor waits for new child process
+    /// If pipe was created, destructor waits for new child process
     /// and closes stream on associated pipe by calling the Close() method.
     ~CPipe(void);
 
     /// Open a pipe.
     ///
-    /// Function create a pipe and executes a command with the vector of 
-    /// arguments "args". The other end of the pipe is associated with the
-    /// spawned commands standard input or standard output according to the 
-    /// open mode setting. If some pipe was already open when this method is
-    /// called, it will be closed.
+    /// Create a pipe and execute a command with the vector of arguments
+    /// "args". The other end of the pipe is associated with the spawned
+    /// command's standard input or standard output according to the open mode
+    /// setting. If some pipe was already open when this method is called,
+    /// it will be closed.
     ///
     /// Throws CPipeException defined errors on failure to open a pipe.
     ///
@@ -183,7 +183,7 @@ public:
 
     /// Close pipe.
     ///
-    /// Waits for new spawned child process terminate and then closes
+    /// Waits for new spawned child process to terminate and then closes
     /// the associated pipe.
     /// @return
     ///   - Exit code of child process if it has terminate succesfully, 
@@ -274,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/08/26 14:06:51  siyan
+ * Minor doc fixes.
+ *
  * Revision 1.11  2003/08/24 22:53:03  siyan
  * Added documentation.
  *
