@@ -55,9 +55,7 @@ public:
 // Glx as Glu; throws CBadResidueException on anything else.
 NCBI_XOBJUTIL_EXPORT
 double GetProteinWeight(const CBioseq_Handle& handle,
-                        const CSeq_loc* location = 0)
-    THROWS((CBadResidueException));
-
+                        const CSeq_loc* location = 0);
 
 typedef map<CConstRef<CSeq_loc>, double> TWeights;
 
@@ -74,6 +72,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2004/05/25 15:38:12  ucko
+* Remove inappropriate THROWS declaration from GetProteinWeight.
+*
 * Revision 1.8  2002/12/30 20:48:01  ostell
 * added NCBI_XOBJUTIL_EXPORT and #includes needed
 *

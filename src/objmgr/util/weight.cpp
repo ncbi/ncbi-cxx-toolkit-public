@@ -72,7 +72,6 @@ static const size_t kMaxRes = sizeof(kNumC) / sizeof(*kNumC) - 1;
 
 
 double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
-    THROWS((CBadResidueException))
 {
     CSeqVector v = (location
                     ? handle.GetSequenceView(*location,
@@ -195,6 +194,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.29  2004/05/25 15:38:23  ucko
+* Remove inappropriate THROWS declaration from GetProteinWeight.
+*
 * Revision 1.28  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *
