@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2001/11/19 15:20:17  ucko
+ * Switch CGI stuff to new diagnostics interface.
+ *
  * Revision 1.13  2001/10/29 15:16:12  ucko
  * Preserve default CGI diagnostic settings, even if customized by app.
  *
@@ -214,7 +217,6 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
             *result = ProcessRequest(*m_Context);
             _TRACE("CCgiApplication::Run: flushing");
             m_Context->GetResponse().Flush();
-            FlushDiagnostics();
             _TRACE("CCgiApplication::Run: done, status: " << *result);
             FCGX_SetExitStatus(*result, pfout);
         }

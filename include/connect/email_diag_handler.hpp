@@ -1,3 +1,6 @@
+#ifndef EMAIL_DIAG_HANDLER__HPP
+#define EMAIL_DIAG_HANDLER__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -23,41 +26,50 @@
 *
 * ===========================================================================
 *
-* Author:  Aaron Ucko
+* Author:  Aaron M. Ucko <ucko@ncbi.nlm.nih.gov>
 *
 * File Description:
-*   Diagnostic handler for embedding diagnostics in comments.
+*   Diagnostic handler for e-mailing logs.
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  2001/11/19 15:20:23  ucko
+* Revision 6.1  2001/11/19 15:20:19  ucko
 * Switch CGI stuff to new diagnostics interface.
 *
-* Revision 1.2  2001/10/05 14:56:38  ucko
-* Minor interface tweaks for CCgiStreamDiagHandler and descendants.
-*
-* Revision 1.1  2001/10/04 18:17:57  ucko
-* Accept additional query parameters for more flexible diagnostics.
-* Support checking the readiness of CGI input and output streams.
-*
-* =========================================================================== */
+* ===========================================================================
+*/
 
-#include <html/commentdiag.hpp>
-
+#include <corelib/ncbistd.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 
-void CCommentDiagHandler::Post(const SDiagMessage& mess)
+class CEmailDiagHandler : public CStreamDiagHandler
 {
-    if (m_Node != NULL) {
-        string s;
-        mess.Write(s);
-        m_Node->AppendChild(new CHTMLComment(s));
-    }
-}
+public:
+    CEmailDiagHandler(const string& to,
+                      const string& subject = "NCBI diagnostics")
+        : CStreamDiagHandler(new CNcbiOstrstream, false),
+          m_To(to), m_Sub(subject)
+        {}
+    virtual ~CEmailDiagHandler();
+
+private:
+    string m_To;
+    string m_Sub;
+};
+
+
+class CEmailDiagFactory : public CDiagFactory
+{
+public:
+    virtual CDiagHandler* New(const string& s)
+        { return new CEmailDiagHandler(s); }
+};
 
 
 // (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
+
+#endif  /* EMAIL_DIAG_HANDLER__HPP */

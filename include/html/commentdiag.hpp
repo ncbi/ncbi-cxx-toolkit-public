@@ -1,3 +1,6 @@
+#ifndef COMMENTDIAG__HPP
+#define COMMENTDIAG__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -30,34 +33,56 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  2001/11/19 15:20:23  ucko
+* Revision 1.1  2001/11/19 15:20:22  ucko
 * Switch CGI stuff to new diagnostics interface.
 *
-* Revision 1.2  2001/10/05 14:56:38  ucko
-* Minor interface tweaks for CCgiStreamDiagHandler and descendants.
-*
-* Revision 1.1  2001/10/04 18:17:57  ucko
-* Accept additional query parameters for more flexible diagnostics.
-* Support checking the readiness of CGI input and output streams.
-*
-* =========================================================================== */
+* ===========================================================================
+*/
 
-#include <html/commentdiag.hpp>
-
+#include <corelib/ncbistd.hpp>
+#include <html/html.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 
-void CCommentDiagHandler::Post(const SDiagMessage& mess)
+class CCommentDiagHandler : public CDiagHandler
 {
-    if (m_Node != NULL) {
-        string s;
-        mess.Write(s);
-        m_Node->AppendChild(new CHTMLComment(s));
+public:
+    CCommentDiagHandler() : m_Node(NULL) {}
+    void SetDiagNode(CNCBINode* node) { m_Node = node; }
+    virtual void Post(const SDiagMessage& mess);
+
+private:
+    CNCBINode* m_Node;
+};
+
+
+class CCommentDiagFactory : public CDiagFactory
+{
+public:
+    virtual CDiagHandler* New(const string&)
+        { return new CCommentDiagHandler; }
+};
+
+
+inline
+CCommentDiagHandler* SetDiagNode(CNCBINode* node, CDiagHandler* handler = NULL)
+{
+    if (handler == NULL) {
+        handler = GetDiagHandler();
     }
+
+    CCommentDiagHandler* comment_handler
+        = dynamic_cast<CCommentDiagHandler*>(handler);
+    if (comment_handler != NULL) {
+        comment_handler->SetDiagNode(node);
+    }
+    return comment_handler;
 }
 
 
 // (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
+
+#endif  /* COMMENTDIAG__HPP */

@@ -26,11 +26,16 @@
 * Author:  Aaron Ucko
 *
 * File Description:
-*   CGI diagnostic handler for e-mailing logs.  This code really belongs
-*   in libcgi, but is here to avoid extra dependencies.
+*   Diagnostic handler for e-mailing logs.
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.1  2001/11/19 15:20:21  ucko
+* Switch CGI stuff to new diagnostics interface.
+*
+*
+* Old log (as cgi_email_diag_handler.cpp):
+*
 * Revision 6.2  2001/10/05 14:56:33  ucko
 * Minor interface tweaks for CCgiStreamDiagHandler and descendants.
 *
@@ -41,31 +46,14 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <cgi/cgiapp.hpp>
+#include <connect/email_diag_handler.hpp>
 #include <connect/ncbi_sendmail.h>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 
-class CCgiEmailDiagHandler : public CCgiStreamDiagHandler
-{
-public:
-    CCgiEmailDiagHandler(const string& to,
-                         const string& subject = "NCBI CGI log")
-        : CCgiStreamDiagHandler(new CNcbiOstrstream), m_To(to), m_Sub(subject)
-        {}
-    virtual ~CCgiEmailDiagHandler() { delete m_Stream; }
-    virtual void Flush(void);
-
-private:
-    string m_To;
-    string m_Sub;
-};
-
-
-void CCgiEmailDiagHandler::Flush(void)
+CEmailDiagHandler::~CEmailDiagHandler(void)
 {
     CNcbiOstrstream* oss = dynamic_cast<CNcbiOstrstream*>(m_Stream);
     string body = CNcbiOstrstreamToString(*oss);
@@ -74,12 +62,7 @@ void CCgiEmailDiagHandler::Flush(void)
         // Need to report by other means, obviously...
         NcbiCerr << msg << endl;
     }
-}
-
-
-CCgiDiagHandler* EmailDiagHandlerFactory(const string& s, CCgiContext&)
-{
-    return new CCgiEmailDiagHandler(s);
+    delete m_Stream;
 }
 
 

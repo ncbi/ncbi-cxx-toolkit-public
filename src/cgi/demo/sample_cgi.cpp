@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/11/19 15:20:18  ucko
+ * Switch CGI stuff to new diagnostics interface.
+ *
  * Revision 1.2  2001/10/29 15:16:13  ucko
  * Preserve default CGI diagnostic settings, even if customized by app.
  *
@@ -46,6 +49,8 @@
 
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
+#include <connect/email_diag_handler.hpp>
+#include <html/commentdiag.hpp>
 #include <html/html.hpp>
 #include <html/page.hpp>
 
@@ -67,8 +72,8 @@ public:
 
 void CSampleCgi::Init()
 {
-    RegisterCgiDiagHandler("comments", CommentDiagHandlerFactory);
-    RegisterCgiDiagHandler("email",    EmailDiagHandlerFactory);
+    RegisterDiagFactory("comments", new CCommentDiagFactory);
+    RegisterDiagFactory("email",    new CEmailDiagFactory);
 }
 
 

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/11/19 15:20:16  ucko
+* Switch CGI stuff to new diagnostics interface.
+*
 * Revision 1.26  2001/10/31 15:30:19  golikov
 * warning removed
 *
@@ -132,42 +135,6 @@ class CNCBINode;
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CCgiDiagHandler::
-//
-
-class CCgiDiagHandler
-{
-public:
-    virtual ~CCgiDiagHandler() {}
-    virtual void SetDiagNode(CNCBINode* /* node */) {}
-    virtual void operator <<(const SDiagMessage& mess) = 0;
-    virtual void Flush(void) {}
-};
-
-
-class CCgiStreamDiagHandler : public CCgiDiagHandler
-{
-public:
-    CCgiStreamDiagHandler(CNcbiOstream* os) : m_Stream(os) {}
-
-    virtual void operator <<(const SDiagMessage& mess) { *m_Stream << mess; }
-protected:
-    CNcbiOstream* m_Stream;
-};
-
-
-// Should return a newly allocated handler, which the caller then owns
-typedef CCgiDiagHandler* (*FCgiDiagHandlerFactory)(const string& s,
-                                                   CCgiContext& context);
-
-// Actually in libconnect to avoid extra dependencies
-CCgiDiagHandler* EmailDiagHandlerFactory(const string& s, CCgiContext&);
-
-// Actually in libhtml to avoid extra dependencies
-CCgiDiagHandler* CommentDiagHandlerFactory(const string& s, CCgiContext&);
-
-
-/////////////////////////////////////////////////////////////////////////////
 //  CCgiApplication::
 //
 
@@ -177,6 +144,7 @@ class CCgiApplication : public CNcbiApplication
 
 public:
     CCgiApplication(void);
+    ~CCgiApplication(void);
 
     static CCgiApplication* Instance(void); // Singleton method    
 
@@ -206,18 +174,14 @@ protected:
                                          int               ifd  = -1,
                                          int               ofd  = -1);
 
-    void                   RegisterCgiDiagHandler(const string& key,
-                                                FCgiDiagHandlerFactory fact);
-    FCgiDiagHandlerFactory FindCgiDiagHandler(const string& key);
-    void                   SetCgiDiagHandler(CCgiDiagHandler* handler);
+    void                   RegisterDiagFactory(const string& key,
+                                               CDiagFactory* fact);
+    CDiagFactory*          FindDiagFactory(const string& key);
 
     virtual void           ConfigureDiagnostics(CCgiContext& context);
     virtual void           ConfigureDiagDestination(CCgiContext& context);
     virtual void           ConfigureDiagThreshold(CCgiContext& context);
     virtual void           ConfigureDiagFormat(CCgiContext& context);
-
-    virtual void           FlushDiagnostics(void);
-    virtual void           SetDiagNode(CNCBINode* node);
 
 private:
     // If FastCGI-capable, and run as a Fast-CGI then iterate through
@@ -233,9 +197,8 @@ private:
     auto_ptr<CNcbiResource>   m_Resource;
     auto_ptr<CCgiContext>     m_Context;
 
-    auto_ptr<CCgiDiagHandler> m_DiagHandler;
-    typedef map<string, FCgiDiagHandlerFactory> TDiagHandlerMap;
-    TDiagHandlerMap           m_DiagHandlers;
+    typedef map<string, CDiagFactory*> TDiagFactoryMap;
+    TDiagFactoryMap           m_DiagFactories;
 };
 
 

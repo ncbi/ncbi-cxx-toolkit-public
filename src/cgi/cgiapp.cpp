@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/11/19 15:20:17  ucko
+* Switch CGI stuff to new diagnostics interface.
+*
 * Revision 1.29  2001/10/29 15:16:12  ucko
 * Preserve default CGI diagnostic settings, even if customized by app.
 *
@@ -166,7 +169,6 @@ int CCgiApplication::Run(void)
     result = ProcessRequest(*m_Context);
     _TRACE("CCgiApplication::Run: flushing");
     m_Context->GetResponse().Flush();
-    FlushDiagnostics();
     _TRACE("CCgiApplication::Run: return " << result);
     return result;
 }
@@ -233,63 +235,64 @@ CCgiContext* CCgiApplication::CreateContext
 // Flexible diagnostics support added by Aaron Ucko in September 2001
 //
 
-static CCgiDiagHandler* s_ActiveCgiDiagHandler;
 
-
-static void s_CgiDiagHandler(const SDiagMessage& mess)
+class CStderrDiagFactory : public CDiagFactory
 {
-    *s_ActiveCgiDiagHandler << mess;
-}
+public:
+    virtual CDiagHandler* New(const string&) {
+        return new CStreamDiagHandler(&NcbiCerr);
+    }
+};
 
 
-static CCgiDiagHandler* s_StderrDiagHandlerFactory(const string&, CCgiContext&)
+class CAsBodyDiagFactory : public CDiagFactory
 {
-    return new CCgiStreamDiagHandler(&NcbiCerr);
-}
+public:
+    CAsBodyDiagFactory(CCgiApplication* app) : m_App(app) {}
+    virtual CDiagHandler* New(const string& s) {
+        CCgiResponse& response = m_App->GetContext().GetResponse();
+        CDiagHandler* result   = new CStreamDiagHandler(&response.out());
+        response.SetContentType("text/plain");
+        response.WriteHeader();
+        response.SetOutput(NULL); // suppress normal output
+        return result;
+    }
 
-
-static CCgiDiagHandler* s_AsBodyDiagHandlerFactory(const string&,
-                                                   CCgiContext& context)
-{
-    CCgiResponse&    response = context.GetResponse();
-    CCgiDiagHandler* result   = new CCgiStreamDiagHandler(&response.out());
-    response.SetContentType("text/plain");
-    response.WriteHeader();
-    response.SetOutput(NULL); // suppress normal output
-    return result;
-}
+private:
+    CCgiApplication* m_App;
+};
 
 
 CCgiApplication::CCgiApplication(void)
 {
-    RegisterCgiDiagHandler("stderr", s_StderrDiagHandlerFactory);
-    RegisterCgiDiagHandler("asbody", s_AsBodyDiagHandlerFactory);    
+    RegisterDiagFactory("stderr", new CStderrDiagFactory);
+    RegisterDiagFactory("asbody", new CAsBodyDiagFactory(this));
 }
 
 
-void CCgiApplication::RegisterCgiDiagHandler(const string& key,
-                                             FCgiDiagHandlerFactory fact)
+CCgiApplication::~CCgiApplication(void)
 {
-    m_DiagHandlers[key] = fact;
-}
-
-
-FCgiDiagHandlerFactory CCgiApplication::FindCgiDiagHandler(const string& key)
-{
-    TDiagHandlerMap::const_iterator it = m_DiagHandlers.find(key);
-    if (it != m_DiagHandlers.end()) {
-        return it->second;
-    } else {
-        return NULL;
+    iterate (TDiagFactoryMap, it, m_DiagFactories) {
+        delete it->second;
     }
 }
 
 
-void CCgiApplication::SetCgiDiagHandler(CCgiDiagHandler* handler)
+void CCgiApplication::RegisterDiagFactory(const string& key,
+                                          CDiagFactory* fact)
 {
-    m_DiagHandler.reset(handler);
-    s_ActiveCgiDiagHandler = handler;
-    SetDiagHandler(s_CgiDiagHandler, NULL, NULL);
+    m_DiagFactories[key] = fact;
+}
+
+
+CDiagFactory* CCgiApplication::FindDiagFactory(const string& key)
+{
+    TDiagFactoryMap::const_iterator it = m_DiagFactories.find(key);
+    if (it != m_DiagFactories.end()) {
+        return it->second;
+    } else {
+        return NULL;
+    }
 }
 
 
@@ -313,9 +316,9 @@ void CCgiApplication::ConfigureDiagDestination(CCgiContext& context)
     }
 
     SIZE_TYPE colon = dest.find(':');
-    FCgiDiagHandlerFactory factory = FindCgiDiagHandler(dest.substr(0, colon));
+    CDiagFactory* factory = FindDiagFactory(dest.substr(0, colon));
     if (factory != NULL) {
-        SetCgiDiagHandler(factory(dest.substr(colon + 1), context));
+        SetDiagHandler(factory->New(dest.substr(colon + 1)));
     }
 }
 
@@ -392,22 +395,6 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
         }
     }
     SetDiagPostAllFlags(new_flags);
-}
-
-
-void CCgiApplication::FlushDiagnostics(void)
-{
-    if (m_DiagHandler.get() != NULL) {
-        m_DiagHandler->Flush();
-    }
-}
-
-
-void CCgiApplication::SetDiagNode(CNCBINode* node)
-{
-    if (m_DiagHandler.get() != NULL) {
-        m_DiagHandler->SetDiagNode(node);
-    }
 }
 
 
