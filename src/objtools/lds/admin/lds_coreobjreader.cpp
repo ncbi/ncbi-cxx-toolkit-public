@@ -58,8 +58,6 @@ CLDS_CoreObjectsReader::CLDS_CoreObjectsReader(void)
 void CLDS_CoreObjectsReader::OnTopObjectFoundPre(const CObjectInfo& object,
                                                  size_t stream_offset)
 {
-    m_Objects.clear();
-
     // GetStreamOffset() returns offset of the most recent top level object
     // In case of the Text ASN.1 it can differ from the stream_offset variable
     // because reader first reads the file header and only then calls the main
@@ -156,6 +154,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/10/09 16:46:57  kuznets
+ * Fixed bug with cleaning objects vector on every OnTopObjectFound call.
+ * Caused incorrect ASN.1 binary scan.
+ *
  * Revision 1.4  2003/10/07 20:45:23  kuznets
  * Implemented Reset()
  *
