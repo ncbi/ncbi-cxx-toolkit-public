@@ -240,9 +240,9 @@ typedef struct BlastExtensionOptions {
    double gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
                                   extension (in bits) */
    double gap_trigger; /**< Score in bits for starting gapped extension */
-   enum EBlastPrelimGapExt ePrelimGapExt; /**< type of preliminary gapped extension (normally) for calculating
+   EBlastPrelimGapExt ePrelimGapExt; /**< type of preliminary gapped extension (normally) for calculating
                               score. */
-   enum EBlastTbackExt eTbackExt; /**< type of traceback extension. */
+   EBlastTbackExt eTbackExt; /**< type of traceback extension. */
    Boolean compositionBasedStats; /**< if TRUE use composition-based stats. */
    Boolean skip_traceback; /**< Is traceback information needed in results? */
 } BlastExtensionOptions;
