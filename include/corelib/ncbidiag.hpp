@@ -332,7 +332,7 @@ private:
     mutable size_t         m_Line;       ///< Line number
     mutable int            m_ErrCode;    ///< Error code
     mutable int            m_ErrSubCode; ///< Error subcode
-    mutable CDiagBuffer&   m_Buffer;     ///< This thread's error msg. buffer
+            CDiagBuffer&   m_Buffer;     ///< This thread's error msg. buffer
     mutable TDiagPostFlags m_PostFlags;  ///< Bitwise OR of "EDiagPostFlag"
 
     /// Private copy constructor to prohibit copy.
@@ -448,6 +448,10 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 /// Consecutive using SetDiagPostLevel() will not have effect.
 NCBI_XNCBI_EXPORT
 extern bool DisableDiagPostLevelChange(bool disable_change = true);
+
+/// Sets and locks the level, combining the previous two calls.
+NCBI_XNCBI_EXPORT
+extern void SetDiagFixedPostLevel(EDiagSev post_sev);
 
 /// Set the "die" (abort) level for the program.
 ///
@@ -856,6 +860,10 @@ NCBI_XNCBI_EXPORT
 extern void SetDiagErrCodeInfo(CDiagErrCodeInfo* info,
                                bool              can_delete = true);
 
+/// Indicates whether an error-code processing handler has been set.
+NCBI_XNCBI_EXPORT
+extern bool IsSetDiagErrCodeInfo();
+
 /// Get handler for processing error codes.
 NCBI_XNCBI_EXPORT
 extern CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership = false);
@@ -880,6 +888,12 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.64  2004/01/27 17:04:10  ucko
+ * Don't attempt to declare references as mutable -- the referents are fixed,
+ * and one can always change their contents through any non-const reference.
+ * (IBM's VisualAge compiler forbids such declarations.)
+ * Add missing declarations for SetDiagFixedPostLevel and IsSetDiagErrCodeInfo.
+ *
  * Revision 1.63  2003/11/12 20:30:25  ucko
  * Make extra flags for severity-trace messages tunable.
  *
