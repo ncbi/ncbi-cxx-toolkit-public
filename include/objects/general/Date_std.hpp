@@ -53,10 +53,19 @@ class CDate_std : public CDate_std_Base
 {
     typedef CDate_std_Base Tparent;
 public:
-    // constructor
+    // constructors
     CDate_std(void);
+    CDate_std(const CTime& time,
+              CDate::EPrecision prec = CDate::ePrecision_second);
+    CDate_std(time_t time, CDate::EPrecision prec = CDate::ePrecision_second);
+    
     // destructor
     ~CDate_std(void);
+
+    // conversion to/from CTime
+    void  Assign (const CTime& time,
+                  CDate::EPrecision prec = CDate::ePrecision_second);
+    CTime AsCTime(CTime::ETimeZone tz = CTime::eLocal) const;
 
     CDate::ECompare Compare(const CDate_std& date) const;
 
@@ -80,6 +89,18 @@ CDate_std::CDate_std(void)
 {
 }
 
+inline
+CDate_std::CDate_std(const CTime& time, CDate::EPrecision prec)
+{
+    Assign(time, prec);
+}
+
+inline
+CDate_std::CDate_std(time_t time, CDate::EPrecision prec)
+{
+    Assign(time, prec);
+}
+
 
 /////////////////// end of CDate_std inline methods
 
@@ -92,6 +113,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2002/12/06 20:03:15  ucko
+ * Support conversion to/from CTime and from time_t
+ *
  * Revision 1.2  2002/10/04 14:45:08  ucko
  * Add a generic date formatter with flexible support for missing fields.
  *

@@ -41,6 +41,8 @@
 // generated includes
 #include <objects/general/Date_.hpp>
 
+#include <corelib/ncbitime.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -51,10 +53,21 @@ class CDate : public CDate_Base
 {
     typedef CDate_Base Tparent;
 public:
-    // constructor
+    // for conversion from CTime
+    enum EPrecision {
+        ePrecision_day,
+        ePrecision_second
+    };
+
+    // constructors; the latter two make Date-stds
     CDate(void);
+    CDate(const CTime& time, EPrecision prec = ePrecision_second);
+    CDate(time_t       time, EPrecision prec = ePrecision_second);
     // destructor
     ~CDate(void);
+
+    void  Assign (const CTime& time, EPrecision prec = ePrecision_second);
+    CTime AsCTime(CTime::ETimeZone tz = CTime::eLocal) const;
 
     enum ECompare {
         eCompare_before = -1,
@@ -107,10 +120,20 @@ private:
 
 /////////////////// CDate inline methods
 
-// constructor
+// constructors
 inline
 CDate::CDate(void)
 {
+}
+
+inline CDate::CDate(const CTime& time, CDate::EPrecision prec)
+{
+    Assign(time, prec);
+}
+
+inline CDate::CDate(time_t time, CDate::EPrecision prec)
+{
+    Assign(time, prec);
 }
 
 
@@ -141,6 +164,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2002/12/06 20:03:15  ucko
+ * Support conversion to/from CTime and from time_t
+ *
  * Revision 1.5  2002/10/08 20:24:34  ucko
  * Add explicit wrapper around new version of GetDate to avoid trouble from
  * compilers that would rather convert const char* to bool than to string.

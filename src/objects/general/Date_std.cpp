@@ -54,6 +54,32 @@ CDate_std::~CDate_std(void)
 }
 
 
+void CDate_std::Assign(const CTime& time, CDate::EPrecision prec)
+{
+    switch (prec) {
+    case CDate::ePrecision_second:
+        SetSecond(time.Second());
+        SetMinute(time.Minute());
+        SetHour  (time.Hour());
+        // fall through
+    case CDate::ePrecision_day:
+        SetDay   (time.Day());
+        SetMonth (time.Month());
+        SetYear  (time.Year());
+        break;
+    default:
+        break;
+    }
+}
+
+
+CTime CDate_std::AsCTime(CTime::ETimeZone tz) const
+{
+    return CTime(GetYear(), GetMonth(), GetDay(),
+                 GetHour(), GetMinute(), GetSecond(), 0, tz);
+}
+
+
 CDate::ECompare CDate_std::Compare(const CDate_std& date) const
 {
     if (GetYear() < date.GetYear()) {
@@ -297,6 +323,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.3  2002/12/06 20:03:16  ucko
+ * Support conversion to/from CTime and from time_t
+ *
  * Revision 6.2  2002/10/04 14:45:09  ucko
  * Add a generic date formatter with flexible support for missing fields.
  *

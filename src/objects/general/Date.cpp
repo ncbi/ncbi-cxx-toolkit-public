@@ -53,6 +53,32 @@ CDate::~CDate(void)
 }
 
 
+void CDate::Assign(const CTime& time, CDate::EPrecision prec)
+{
+    switch (Which()) {
+    case e_not_set:
+    case e_Std:
+        SetStd().Assign(time, prec);
+        break;
+    case e_Str:
+        SetStr(time.AsString());
+        break;
+    }
+}
+
+CTime CDate::AsCTime(CTime::ETimeZone tz) const
+{
+    switch (Which()) {
+    case e_Std:
+        return GetStd().AsCTime();
+    case e_Str:
+        return CTime(GetStr()); // attempt to parse
+    default:
+        return CTime(CTime::eEmpty);
+    }
+}
+
+
 CDate::ECompare CDate::Compare(const CDate& date) const
 {
     if (IsStd()  &&  date.IsStd() ) {
@@ -93,6 +119,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.4  2002/12/06 20:03:16  ucko
+ * Support conversion to/from CTime and from time_t
+ *
  * Revision 6.3  2002/10/04 14:45:08  ucko
  * Add a generic date formatter with flexible support for missing fields.
  *
