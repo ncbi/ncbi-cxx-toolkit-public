@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2002/01/09 15:59:30  grichenk
+ * Fixed includes
+ *
  * Revision 6.16  2001/10/15 23:00:00  vakatov
  * CSeq_id::x_Init() -- get rid of unreachable "break;"
  *
@@ -99,8 +102,10 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqloc/Giimport_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqloc/PDB_mol_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/Patent_seq_id.hpp>
+#include <objects/biblio/Id_pat.hpp>
 
 // object manager includes
 #include <objects/seq/Bioseq.hpp>

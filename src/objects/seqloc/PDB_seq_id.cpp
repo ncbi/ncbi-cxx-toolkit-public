@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/01/09 15:59:30  grichenk
+ * Fixed includes
+ *
  * Revision 6.9  2001/08/31 16:05:08  clausen
  * Removed upper casing, changed output for vertical bars and lower case in chain.
  *
@@ -66,6 +69,7 @@
  */
 
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqloc/PDB_mol_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::

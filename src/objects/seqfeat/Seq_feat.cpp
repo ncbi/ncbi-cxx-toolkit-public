@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/01/09 15:59:28  grichenk
+ * Fixed includes
+ *
  * Revision 6.1  2001/10/30 20:25:58  ucko
  * Implement feature labels/keys, subtypes, and sorting
  *
@@ -50,6 +53,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 
 // generated classes
 
