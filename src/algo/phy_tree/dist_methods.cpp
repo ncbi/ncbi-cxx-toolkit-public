@@ -335,15 +335,16 @@ void CDistMethods::Divergence(const CAlnVec& avec_in, TMatrix& result)
 
     int nseqs = avec.GetNumRows();
     result.Resize(nseqs, nseqs);
+    vector<string> seq(nseqs);
 
-    string seqi, seqj;
+    for (int i = 0;  i < nseqs;  ++i) {
+        avec.GetWholeAlnSeqString(i, seq[i]);
+    }
 
     for (int i = 0;  i < nseqs;  ++i) {
         result(i, i) = 0;  // 0 difference from itself
-        avec.GetWholeAlnSeqString(i, seqi);
         for (int j = i + 1;  j < nseqs;  ++j) {
-            avec.GetWholeAlnSeqString(j, seqj);
-            result(i, j) = result(j, i) = CDistMethods::Divergence(seqi, seqj);
+            result(i, j) = result(j, i) = CDistMethods::Divergence(seq[i], seq[j]);
         }
     }
 }
@@ -448,6 +449,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/03/15 15:20:49  vasilche
+ * Precalculate sequences for speed.
+ *
  * Revision 1.13  2005/03/01 17:28:37  jcherry
  * Fixed neighbor-joining problem with certain datasets
  *
