@@ -349,7 +349,14 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config) const
         copy(components.begin(), 
              components.end(), back_inserter(libs_3party));
     }
-    
+
+    // Add requires to test : If there is such library and configuration for 
+    // this library is disabled then we'll disable this config
+    copy(m_Requires.begin(), m_Requires.end(), back_inserter(libs_3party));
+    libs_3party.sort();
+    libs_3party.unique();
+
+    // Test third-party libs and requires:
     ITERATE(list<string>, p, libs_3party) {
         const string& requires = *p;
         SLibInfo lib_info;
@@ -830,6 +837,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/05/11 15:55:03  gorelenk
+ * Changed CMsvcPrjProjectContext::IsConfigEnabled - added test REQUIRES.
+ *
  * Revision 1.27  2004/05/10 19:52:04  gorelenk
  * Changed CMsvcPrjProjectContext class constructor .
  *
