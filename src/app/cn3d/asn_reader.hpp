@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/09/24 13:16:53  thiessen
+* fix wxPanel issues
+*
 * Revision 1.6  2001/09/24 11:34:35  thiessen
 * add missing ncbi::
 *
@@ -149,7 +152,7 @@ static bool GetAsnDataViaHTTP(
     bool okay = false;
 
     // set up registry field to set GET connection method for HTTP
-    ncbi::CNcbiRegistry* reg = new CNcbiRegistry;
+    ncbi::CNcbiRegistry* reg = new ncbi::CNcbiRegistry;
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
     CORE_SetREG(REG_cxx2c(reg, true));
