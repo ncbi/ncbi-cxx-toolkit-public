@@ -2022,13 +2022,13 @@ static void mergesegs(Sequence* seq, Seg* segs, Boolean overlaps)
 
 static Int2 SegsToBlastSeqLoc(Seg* segs, Int4 offset, BlastSeqLoc** seg_locs)
 {
-   DoubleInt* dip;
+   SSeqRange* dip;
    BlastSeqLoc* last_slp = NULL,* head_slp = NULL;
 
    for ( ; segs; segs = segs->next) {
-      dip = (DoubleInt*) calloc(1, sizeof(DoubleInt));
-      dip->i1 = segs->begin + offset;
-      dip->i2 = segs->end + offset;
+      dip = (SSeqRange*) calloc(1, sizeof(SSeqRange));
+      dip->left = segs->begin + offset;
+      dip->right = segs->end + offset;
 
       if (!last_slp) {
          last_slp = ListNodeAddPointer(&head_slp, 0, dip);

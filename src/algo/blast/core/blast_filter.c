@@ -45,27 +45,27 @@ Contents: All code related to query sequence masking/filtering for BLAST
 #include <algo/blast/core/urkpcc.h>
 #endif
 
-/* The following function will replace BlastSetUp_CreateDoubleInt */
+/* The following function will replace BlastSetUp_CreateSSeqRange */
 
 BlastSeqLoc* BlastSeqLocNew(Int4 from, Int4 to)
 {
    BlastSeqLoc* loc = (BlastSeqLoc*) calloc(1, sizeof(BlastSeqLoc));
-   DoubleInt* di = (DoubleInt*) malloc(sizeof(DoubleInt));
+   SSeqRange* di = (SSeqRange*) malloc(sizeof(SSeqRange));
 
-   di->i1 = from;
-   di->i2 = to;
+   di->left = from;
+   di->right = to;
    loc->ptr = di;
    return loc;
 }
 
 BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
 {
-   DoubleInt* dintp;
+   SSeqRange* dintp;
    BlastSeqLoc* next_loc;
 
    while (loc) {
       next_loc = loc->next;
-      dintp = (DoubleInt*) loc->ptr;
+      dintp = (SSeqRange*) loc->ptr;
       sfree(dintp);
       sfree(loc);
       loc = next_loc;
@@ -94,16 +94,16 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
 }
 
 /** Used for qsort, compares two SeqLoc's by starting position. */
-static int DoubleIntSortByStartPosition(const void *vp1, const void *vp2)
+static int SSeqRangeSortByStartPosition(const void *vp1, const void *vp2)
 {
    ListNode* v1 = *((ListNode**) vp1);
    ListNode* v2 = *((ListNode**) vp2);
-   DoubleInt* loc1 = (DoubleInt*) v1->ptr;
-   DoubleInt* loc2 = (DoubleInt*) v2->ptr;
+   SSeqRange* loc1 = (SSeqRange*) v1->ptr;
+   SSeqRange* loc2 = (SSeqRange*) v2->ptr;
    
-   if (loc1->i1 < loc2->i1)
+   if (loc1->left < loc2->left)
       return -1;
-   else if (loc1->i1 > loc2->i1)
+   else if (loc1->left > loc2->left)
       return 1;
    else
       return 0;
@@ -116,7 +116,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
 {
    Int2 status=0;		/* return value. */
    Int4 start, stop;	/* USed to merge overlapping SeqLoc's. */
-   DoubleInt* di = NULL,* di_next = NULL,* di_tmp=NULL;
+   SSeqRange* di = NULL,* di_next = NULL,* di_tmp=NULL;
    BlastSeqLoc* loc_head=NULL,* last_loc=NULL,* loc_var=NULL;
    BlastSeqLoc* new_loc = NULL,* new_loc_last = NULL;
    
@@ -139,30 +139,30 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
    /* Sort them by starting position. */
    loc_head = (BlastSeqLoc*) 
       ListNodeSort ((ListNode*) loc_head, 
-                   DoubleIntSortByStartPosition);
+                   SSeqRangeSortByStartPosition);
    
-   di = (DoubleInt*) loc_head->ptr;
-   start = di->i1;
-   stop = di->i2;
+   di = (SSeqRange*) loc_head->ptr;
+   start = di->left;
+   stop = di->right;
    loc_var = loc_head;
    
    while (loc_var) {
       di = loc_var->ptr;
       if (loc_var->next)
          di_next = loc_var->next->ptr;
-      if (di_next && ((stop + link_value) > di_next->i1)) {
-         stop = MAX(stop, di_next->i2);
+      if (di_next && ((stop + link_value) > di_next->left)) {
+         stop = MAX(stop, di_next->right);
       } else {
-         di_tmp = (DoubleInt*) malloc(sizeof(DoubleInt));
-         di_tmp->i1 = start;
-         di_tmp->i2 = stop;
+         di_tmp = (SSeqRange*) malloc(sizeof(SSeqRange));
+         di_tmp->left = start;
+         di_tmp->right = stop;
          if (!new_loc)
             new_loc_last = ListNodeAddPointer(&new_loc, 0, di_tmp);
          else
             new_loc_last = ListNodeAddPointer(&new_loc_last, 0, di_tmp);
          if (loc_var->next) {
-             start = di_next->i1;
-             stop = di_next->i2;
+             start = di_next->left;
+             stop = di_next->right;
          }
       }
       loc_var = loc_var->next;
@@ -188,7 +188,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
    Int4 start_offset, end_offset, filter_start, filter_end;
    Int4 context, index;
    BlastSeqLoc* loc,* last_loc = NULL,* start_loc = NULL;
-   DoubleInt* double_int = NULL,* di;
+   SSeqRange* double_int = NULL,* di;
    Boolean first;	/* Specifies beginning of query. */
    Boolean last_interval_open=TRUE; /* if TRUE last interval needs to be closed. */
    Boolean reverse = FALSE;
@@ -218,9 +218,9 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       if (!mask_loc || (mask_loc->index > index) ||
           !mask_loc->loc_list) {
          /* No masks for this context */
-         double_int = (DoubleInt*) calloc(1, sizeof(DoubleInt));
-         double_int->i1 = start_offset;
-         double_int->i2 = end_offset;
+         double_int = (SSeqRange*) calloc(1, sizeof(SSeqRange));
+         double_int->left = start_offset;
+         double_int->right = end_offset;
          if (!last_loc)
             last_loc = ListNodeAddPointer(complement_mask, 0, double_int);
          else 
@@ -246,14 +246,14 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       for ( ; loc; loc = loc->next) {
          di = loc->ptr;
          if (reverse) {
-            filter_start = end_offset - di->i2;
-            filter_end = end_offset - di->i1;
+            filter_start = end_offset - di->right;
+            filter_end = end_offset - di->left;
          } else {
-            filter_start = start_offset + di->i1;
-            filter_end = start_offset + di->i2;
+            filter_start = start_offset + di->left;
+            filter_end = start_offset + di->right;
          }
          /* The canonical "state" at the top of this 
-            while loop is that a DoubleInt has been 
+            while loop is that a SSeqRange has been 
             created and one field was filled in on the 
             last iteration. The first time this loop is 
             entered in a call to the funciton this is not
@@ -262,19 +262,19 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
          if (first) {
             last_interval_open = TRUE;
             first = FALSE;
-            double_int = (DoubleInt*) calloc(1, sizeof(DoubleInt));
+            double_int = (SSeqRange*) calloc(1, sizeof(SSeqRange));
             
             if (filter_start > start_offset) {
                /* beginning of sequence not filtered */
-               double_int->i1 = start_offset;
+               double_int->left = start_offset;
             } else {
                /* beginning of sequence filtered */
-               double_int->i1 = filter_end + 1;
+               double_int->left = filter_end + 1;
                continue;
             }
          }
 
-         double_int->i2 = filter_start - 1;
+         double_int->right = filter_start - 1;
 
          if (!last_loc)
             last_loc = ListNodeAddPointer(complement_mask, 0, double_int);
@@ -285,8 +285,8 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
             last_interval_open = FALSE;
             break;
          } else {
-            double_int = (DoubleInt*) calloc(1, sizeof(DoubleInt));
-               double_int->i1 = filter_end + 1;
+            double_int = (SSeqRange*) calloc(1, sizeof(SSeqRange));
+               double_int->left = filter_end + 1;
          }
       }
 
@@ -295,8 +295,8 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       }
       
       if (last_interval_open) {
-         /* Need to finish DoubleInt* for last interval. */
-         double_int->i2 = end_offset;
+         /* Need to finish SSeqRange* for last interval. */
+         double_int->right = end_offset;
          if (!last_loc)
             last_loc = ListNodeAddPointer(complement_mask, 0, double_int);
          else 
@@ -974,7 +974,7 @@ static Int2
 MaskTheResidues(Uint1 * buffer, Int4 max_length, Boolean is_na,
                            ListNode * mask_loc, Boolean reverse, Int4 offset)
 {
-    DoubleInt *loc = NULL;
+    SSeqRange *loc = NULL;
     Int2 status = 0;
     Int4 index, start, stop;
     Uint1 mask_letter;
@@ -985,13 +985,13 @@ MaskTheResidues(Uint1 * buffer, Int4 max_length, Boolean is_na,
         mask_letter = 21;
 
     for (; mask_loc; mask_loc = mask_loc->next) {
-        loc = (DoubleInt *) mask_loc->ptr;
+        loc = (SSeqRange *) mask_loc->ptr;
         if (reverse) {
-            start = max_length - 1 - loc->i2;
-            stop = max_length - 1 - loc->i1;
+            start = max_length - 1 - loc->right;
+            stop = max_length - 1 - loc->left;
         } else {
-            start = loc->i1;
-            stop = loc->i2;
+            start = loc->left;
+            stop = loc->right;
         }
 
         start -= offset;

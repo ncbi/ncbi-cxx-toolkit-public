@@ -134,13 +134,13 @@ typedef struct BlastQueryInfo {
 /** A structure containing two integers, used e.g. for locations for the 
  * lookup table.
  */
-typedef struct DoubleInt {
-   Int4 i1;
-   Int4 i2;
-} DoubleInt;
+typedef struct SSeqRange {
+   Int4 left;
+   Int4 right;
+} SSeqRange;
 
 /** BlastSeqLoc is a ListNode with choice equal to the sequence local id,
- * and data->ptrvalue pointing to a DoubleInt structure defining the 
+ * and data->ptrvalue pointing to a SSeqRange structure defining the 
  * location interval in the sequence.
  */
 #define BlastSeqLoc ListNode

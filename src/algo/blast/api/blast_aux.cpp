@@ -306,7 +306,7 @@ void BlastMaskLocDNAToProtein(BlastMaskLoc** mask_ptr, const CSeq_loc &seqloc,
    BlastMaskLoc* last_mask = NULL,* head_mask = NULL,* mask_loc; 
    Int4 dna_length;
    BlastSeqLoc* dna_loc,* prot_loc_head,* prot_loc_last;
-   DoubleInt* dip;
+   SSeqRange* dip;
    Int4 context;
    Int2 frame;
    Int4 from, to;
@@ -337,13 +337,13 @@ void BlastMaskLocDNAToProtein(BlastMaskLoc** mask_ptr, const CSeq_loc &seqloc,
        
        for (dna_loc = mask_loc->loc_list; dna_loc; 
             dna_loc = dna_loc->next) {
-           dip = (DoubleInt*) dna_loc->ptr;
+           dip = (SSeqRange*) dna_loc->ptr;
            if (frame < 0) {
-               from = (dna_length + frame - dip->i2)/CODON_LENGTH;
-               to = (dna_length + frame - dip->i1)/CODON_LENGTH;
+               from = (dna_length + frame - dip->right)/CODON_LENGTH;
+               to = (dna_length + frame - dip->left)/CODON_LENGTH;
            } else {
-               from = (dip->i1 - frame + 1)/CODON_LENGTH;
-               to = (dip->i2 - frame + 1)/CODON_LENGTH;
+               from = (dip->left - frame + 1)/CODON_LENGTH;
+               to = (dip->right - frame + 1)/CODON_LENGTH;
            }
            if (!prot_loc_last) {
                prot_loc_head = prot_loc_last = BlastSeqLocNew(from, to);
@@ -365,7 +365,7 @@ void BlastMaskLocProteinToDNA(BlastMaskLoc** mask_ptr, TSeqLocVector &slp)
 {
    BlastMaskLoc* mask_loc;
    BlastSeqLoc* loc;
-   DoubleInt* dip;
+   SSeqRange* dip;
    Int4 dna_length;
    Int2 frame;
    Int4 from, to;
@@ -382,16 +382,16 @@ void BlastMaskLocProteinToDNA(BlastMaskLoc** mask_ptr, TSeqLocVector &slp)
                                    mask_loc->index % NUM_FRAMES);
       
       for (loc = mask_loc->loc_list; loc; loc = loc->next) {
-         dip = (DoubleInt*) loc->ptr;
+         dip = (SSeqRange*) loc->ptr;
          if (frame < 0)	{
-            to = dna_length - CODON_LENGTH*dip->i1 + frame;
-            from = dna_length - CODON_LENGTH*dip->i2 + frame + 1;
+            to = dna_length - CODON_LENGTH*dip->left + frame;
+            from = dna_length - CODON_LENGTH*dip->right + frame + 1;
          } else {
-            from = CODON_LENGTH*dip->i1 + frame - 1;
-            to = CODON_LENGTH*dip->i2 + frame - 1;
+            from = CODON_LENGTH*dip->left + frame - 1;
+            to = CODON_LENGTH*dip->right + frame - 1;
          }
-         dip->i1 = from;
-         dip->i2 = to;
+         dip->left = from;
+         dip->right = to;
       }
    }
 }
@@ -405,6 +405,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2004/04/05 16:09:27  camacho
+ * Rename DoubleInt -> SSeqRange
+ *
  * Revision 1.36  2004/03/19 19:22:55  camacho
  * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
  *

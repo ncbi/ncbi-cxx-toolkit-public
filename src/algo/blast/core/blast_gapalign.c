@@ -3045,7 +3045,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
         BlastHSPList** hsp_list_ptr)
 
 {
-   DoubleInt* helper = NULL;
+   SSeqRange* helper = NULL;
    Boolean hsp_start_is_contained, hsp_end_is_contained;
    Int4 index, index1, next_offset;
    BlastInitHSP* init_hsp = NULL;
@@ -3149,7 +3149,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    }
 
    /* helper contains most frequently used information to speed up access. */
-   helper = (DoubleInt*) malloc((init_hitlist->total)*sizeof(DoubleInt));
+   helper = (SSeqRange*) malloc((init_hitlist->total)*sizeof(SSeqRange));
 
    for (index=0; index<init_hitlist->total; index++)
    {
@@ -3191,8 +3191,8 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
          /* Check with the helper array whether further
             tests are warranted.  Having only two ints
             in the helper array speeds up access. */
-         if (helper[index1].i1 <= next_offset &&
-             helper[index1].i2 >= next_offset)
+         if (helper[index1].left <= next_offset &&
+             helper[index1].right >= next_offset)
          {
             if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, q_start,
                 hsp1->subject.offset, hsp1->subject.end, s_start) &&
@@ -3252,8 +3252,8 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
                        subject->frame);
 
          /* Fill in the helper structure. */
-         helper[hsp_list->hspcnt - 1].i1 = gap_align->query_start;
-         helper[hsp_list->hspcnt - 1].i2 = gap_align->query_stop;
+         helper[hsp_list->hspcnt - 1].left = gap_align->query_start;
+         helper[hsp_list->hspcnt - 1].right = gap_align->query_stop;
       }
       /* Free ungapped data here - it's no longer needed */
       sfree(init_hsp->ungapped_data);

@@ -590,8 +590,8 @@ Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
 
   for(loc=location; loc; loc=loc->next)
     {
-      from = ((DoubleInt*) loc->ptr)->i1;
-      to = ((DoubleInt*) loc->ptr)->i2 - lookup->wordsize + 1;
+      from = ((SSeqRange*) loc->ptr)->left;
+      to = ((SSeqRange*) loc->ptr)->right - lookup->wordsize + 1;
 
       for(w=from;w<=to;w++)
 	{
@@ -1177,8 +1177,8 @@ Int4 BlastNaLookupIndexQuery(LookupTable* lookup, BLAST_SequenceBlk* query,
   Uint1* sequence;
 
   for(loc=location; loc; loc=loc->next) {
-     from = ((DoubleInt*) loc->ptr)->i1;
-     to = ((DoubleInt*) loc->ptr)->i2 + 1;
+     from = ((SSeqRange*) loc->ptr)->left;
+     to = ((SSeqRange*) loc->ptr)->right + 1;
      
      sequence = query->sequence + from;
      /* Last offset is such that full word fits in the sequence */

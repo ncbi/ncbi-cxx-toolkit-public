@@ -208,7 +208,7 @@ CBl2Seq::SetupSearch()
         BlastMaskLocFree(filter_mask); // FIXME, return seqlocs for formatter
 
         // TODO: Check that lookup_segments are not filtering the whole 
-        // sequence (DoubleInt set to -1 -1)
+        // sequence (SSeqRange set to -1 -1)
         if (st != 0) {
             string msg = blmsg ? blmsg->message : "BLAST_MainSetUp failed";
             Blast_MessageFree(blmsg);
@@ -316,6 +316,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.48  2004/04/05 16:09:27  camacho
+ * Rename DoubleInt -> SSeqRange
+ *
  * Revision 1.47  2004/03/24 19:14:48  dondosha
  * Fixed memory leaks
  *

@@ -80,16 +80,16 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
 
 /** This function takes the list of mask locations (i.e., regions that 
  * should not be searched or not added to lookup table) and makes up a set 
- * of DoubleInt*'s that should be searched (that is, takes the 
- * complement). If the entire sequence is filtered, then a DoubleInt is 
- * created and both of its elements (i1 and i2) are set to -1 to indicate 
+ * of SSeqRange*'s that should be searched (that is, takes the 
+ * complement). If the entire sequence is filtered, then a SSeqRange is 
+ * created and both of its elements (left and right) are set to -1 to indicate 
  * this. 
- * If any of the mask_loc's is NULL, a DoubleInt for full span of the 
+ * If any of the mask_loc's is NULL, a SSeqRange for full span of the 
  * respective query sequence is created.
  * @param program_number Type of BLAST program [in]
  * @param query_info The query information structure [in]
  * @param mask_loc All mask locations [in]
- * @param complement_mask Linked list of DoubleInt*s with offsets. [out]
+ * @param complement_mask Linked list of SSeqRange*s with offsets. [out]
 */
 Int2 
 BLAST_ComplementMaskLocations(Uint1 program_number, 

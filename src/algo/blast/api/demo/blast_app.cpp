@@ -497,8 +497,8 @@ BlastMaskLoc2CSeqLoc(const BlastMaskLoc* mask, const TSeqLocVector& slp,
             for (loc = mask->loc_list; loc; loc = loc->next) {
                 seqloc_info->frame = Context2TranslatedFrame(frame);
                 CRef<CSeq_loc> seqloc(new CSeq_loc());
-                seqloc->SetInt().SetFrom(((DoubleInt*) loc->ptr)->i1);
-                seqloc->SetInt().SetTo(((DoubleInt*) loc->ptr)->i2);
+                seqloc->SetInt().SetFrom(((SSeqRange*) loc->ptr)->left);
+                seqloc->SetInt().SetTo(((SSeqRange*) loc->ptr)->right);
                 seqloc->SetInt().SetId(*(const_cast<CSeq_id*>(&sequence::GetId(*
 slp[index].seqloc, slp[index].scope))));
 

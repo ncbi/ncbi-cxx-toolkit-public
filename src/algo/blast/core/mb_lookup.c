@@ -183,8 +183,8 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
       /* determine the approximate number of hashtable entries */
       table_entries = 0;
       for (loc = location; loc; loc = loc->next) {
-         from = ((DoubleInt*) loc->ptr)->i1;
-         to = ((DoubleInt*) loc->ptr)->i2;
+         from = ((SSeqRange*) loc->ptr)->left;
+         to = ((SSeqRange*) loc->ptr)->right;
          table_entries += (to - from);
       }
 
@@ -274,8 +274,8 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
          Since sequence pointer points to the end of the word, subtract
          word length from the loop boundaries. 
       */
-      from = ((DoubleInt*) loc->ptr)->i1;
-      to = ((DoubleInt*) loc->ptr)->i2 - word_length;
+      from = ((SSeqRange*) loc->ptr)->left;
+      to = ((SSeqRange*) loc->ptr)->right - word_length;
 
       seq = query->sequence_start + from;
       pos = seq + word_length;

@@ -687,8 +687,8 @@ Int4 PHIBlastIndexQuery(PHILookupTable* lookup,
    hitArray = (Int4 *) calloc(2*query->length, sizeof(Int4));
 
    for(loc=location; loc; loc=loc->next) {
-      from = ((DoubleInt*) loc->ptr)->i1;
-      to = ((DoubleInt*) loc->ptr)->i2;
+      from = ((SSeqRange*) loc->ptr)->left;
+      to = ((SSeqRange*) loc->ptr)->right;
       loc_length = to - from + 1;
       sequence = query->sequence + from;
       

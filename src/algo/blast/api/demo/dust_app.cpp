@@ -255,8 +255,8 @@ int CDustApplication::Run(void)
                 {
                     for (temp_loc = dust_loc; temp_loc; temp_loc = temp_loc->next)
                     {
-                        start = (TSeqPos) ((DoubleInt *) temp_loc->ptr)->i1;
-                        end = (TSeqPos) ((DoubleInt *) temp_loc->ptr)->i2;
+                        start = (TSeqPos) ((SSeqRange *) temp_loc->ptr)->left;
+                        end = (TSeqPos) ((SSeqRange *) temp_loc->ptr)->right;
                         output_stream << seq_id_description << "\t";
                         output_stream << start+1 << "\t" << end+1 << endl;
                     }
@@ -269,8 +269,8 @@ int CDustApplication::Run(void)
                     string copy_data = data;
                     for (temp_loc = dust_loc; temp_loc; temp_loc = temp_loc->next)
                     {
-                        start = (TSeqPos) ((DoubleInt *) temp_loc->ptr)->i1;
-                        end = (TSeqPos) ((DoubleInt *) temp_loc->ptr)->i2;
+                        start = (TSeqPos) ((SSeqRange *) temp_loc->ptr)->left;
+                        end = (TSeqPos) ((SSeqRange *) temp_loc->ptr)->right;
                         for (; start <= end; start++)
                             copy_data[start] = tolower(copy_data[start]);
                     }

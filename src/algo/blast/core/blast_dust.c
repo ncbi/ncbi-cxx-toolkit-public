@@ -271,7 +271,7 @@ GetDustLocations (ListNode** loc, DREGION* reg, Int4 nreg)
 {
    Int4 i;
    ListNode* last_loc = NULL;
-   DoubleInt* dintp;
+   SSeqRange* dintp;
         
    if (!loc)
       return -1;
@@ -281,12 +281,12 @@ GetDustLocations (ListNode** loc, DREGION* reg, Int4 nreg)
    /* point to dusted locations */
    if (nreg > 0) {
       for (i = 0; reg && i < nreg; i++) {
-         dintp = (DoubleInt*) calloc(1, sizeof(DoubleInt));
+         dintp = (SSeqRange*) calloc(1, sizeof(SSeqRange));
          if (!dintp) {
             return -1;
          }
-         dintp->i1 = reg->from;
-         dintp->i2 = reg->to;
+         dintp->left = reg->from;
+         dintp->right = reg->to;
          if (!last_loc)
             last_loc = ListNodeAddPointer (loc, 0, dintp);
          else 
