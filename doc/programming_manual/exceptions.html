@@ -42,9 +42,7 @@ a piece of code says it was unable to complete the task and it is
 up to others to decide what to do next.
 </p>
 <p>
-The problem with this approach, as we see it, is that there is only one
-place where a particular exception can be thrown and only one place
-where it can be caught. What the standard mechanism lacks is backlog,
+What the standard mechanism lacks is backlog,
 history of unfinished tasks and its consequences. Say for instance,
 a program tries to load some data from a database. An exception occurs,
 which says a connection to some port could not be created -- so what?
@@ -172,12 +170,13 @@ To make it easier to throw/re-throw an exception, the following macros are defin
     NCBI_RETHROW(prev_exception,exception_class,err_code,message)
     NCBI_RETHROW_SAME(prev_exception,message)
 </pre>
-The last one (<var>NCBI_RETHROW_SAME</var>) should be used to re-throw
+The last one (<var>NCBI_RETHROW_SAME</var>) re-throws
 the same exception with backlog information added. 
 </p>
 
 <p>
-The class has also numerous reporting methods:
+The class has numerous reporting methods (the contents of reports is defined by
+<a href="diag.html#PostFlags">diagnostics post flags</a>):
 <pre>
     // Standard report (includes full backlog)
     virtual const char* what(void) const throw();
@@ -186,19 +185,23 @@ The class has also numerous reporting methods:
     // if "reporter" is not specified (passed 0), then use the default reporter
     // (as set with CExceptionReporter::SetDefault)
     void Report(const char* file, int line,
-                const string&amp; title, CExceptionReporter* reporter = 0) const;
+                const string&amp; title, CExceptionReporter* reporter = 0,
+                TDiagPostFlags flags = eDPF_Trace) const;
 
     // Report as a string
-    string ReportThis(void) const;  // this exception only, no backlog attached
-    string ReportAll (void) const;  // including full backlog
+    // this exception only, no backlog attached
+    string ReportThis(TDiagPostFlags flags = eDPF_Trace) const;
+    // including full backlog
+    string ReportAll (TDiagPostFlags flags = eDPF_Trace) const;
 
     // Report "standard" attributes (file, line, type, err.code, user message)
     // into the "out" stream (this exception only, no backlog)
-    void ReportStd(ostream&amp; out) const;
+    void ReportStd(ostream&amp; out, TDiagPostFlags flags = eDPF_Trace) const;
 
     // Report "non-standard" attributes (those of derived class)
     // into the "out" stream
     virtual void ReportExtra(ostream&amp; out) const;
+
     // If _enabled_, then calling what() or ReportAll() would
     // also report exception to the default exception reporter.
     // Return the previous state of the flag.
@@ -271,18 +274,20 @@ the standard NCBI diagnostic mechanism is used).<br />
     // Default reporter
     static  void SetDefault(CExceptionReporter* handler);
     static  const CExceptionReporter* GetDefault(void);
+
     // Enable/disable using default reporter
     // Return previous state of this flag
     static  bool EnableDefault( bool enable);
+
     // Report exception using default reporter
-    static  void Default(const char* file, int line,
-                         const string&amp; title,
-                         const CException&amp; ex);
+    static void ReportDefault(const char* file, int line,
+                              const string&amp; title, const CException&amp; ex,
+                              TDiagPostFlags flags = eDPF_Trace);
 
     // Report exception with _this_ reporter
     virtual void Report(const char* file, int line,
-                        const string&amp; title, 
-                        const CException&amp; ex) const = 0;
+                        const string&amp; title, const CException&amp; ex,
+                        TDiagPostFlags flags = eDPF_Trace) const = 0;
 </pre>
 </p>
 
@@ -423,7 +428,8 @@ There is a number of ways to report <var>CException</var>, for example:
     }
 </pre>
 We suggest using <var>NCBI_REPORT_EXCEPTION(title,e)</var> macro
-(which is equivalent to calling <var>e.Report(__FILE__,__LINE__,title)</var>) -
+(which is equivalent to calling
+<var>e.Report(__FILE__,__LINE__,title)</var>) -
 it redirects the output into standard diagnostic channels
 and is highly configurable.
 </p>
