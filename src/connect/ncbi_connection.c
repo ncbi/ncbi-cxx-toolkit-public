@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/06/28 22:00:48  lavr
+ * Added function: CONN_SetCallback
+ * Added callback: eCONN_OnClose
+ *
  * Revision 6.13  2001/06/07 17:54:36  lavr
  * Modified exit branch in s_CONN_Read()
  *
@@ -94,11 +98,7 @@
 #include <connect/ncbi_buffer.h>
 
 #include <stdlib.h>
-#include <memory.h>
-
-#if defined(__POWERPC__) || defined(powerc) || defined(__powerc) || defined(__POWERPC)
 #include <string.h>
-#endif
 
 
 /* Standard logging message
@@ -121,7 +121,6 @@ typedef enum eCONN_StateTag {
     eCONN_Open = 1
 } eCONN_State;
 
-
 /* Connection internal data
  */
 typedef struct SConnectionTag {
@@ -141,6 +140,9 @@ typedef struct SConnectionTag {
     STimeout        rr_timeout;        /* storage for "r_timeout"           */
     STimeout        ww_timeout;        /* storage for "w_timeout"           */
     STimeout        ll_timeout;        /* storage for "l_timeout"           */
+
+    SCONN_Callback   callback[CONN_N_CALLBACKS];
+
 } SConnection;
 
 
@@ -156,11 +158,14 @@ extern EIO_Status CONN_Create
     EIO_Status status = eIO_Unknown;
     
     if (conn) {
+        int i;
         conn->state = eCONN_Unusable;
         conn->c_timeout = CONN_DEFAULT_TIMEOUT;
         conn->r_timeout = CONN_DEFAULT_TIMEOUT;
         conn->w_timeout = CONN_DEFAULT_TIMEOUT;
         conn->l_timeout = CONN_DEFAULT_TIMEOUT;
+        for (i = 0; i < CONN_N_CALLBACKS; i++)
+            memset(&conn->callback[i], 0, sizeof(conn->callback[i]));
         status = CONN_ReInit(conn, connector);
         if (status != eIO_Success) {
             free(conn);
@@ -554,6 +559,12 @@ extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
 
 extern EIO_Status CONN_Close(CONN conn)
 {
+    /* callback established? call it first, if yes! */
+    if (conn->callback[eCONN_OnClose].func)
+        (*conn->callback[eCONN_OnClose].func)
+            (conn, eCONN_OnClose, conn->callback[eCONN_OnClose].data);
+
+    /* now close the connection */
     if (conn->meta.list)
         CONN_ReInit(conn, 0);
     BUF_Destroy(conn->buf);
@@ -566,6 +577,23 @@ extern const char* CONN_GetType(CONN conn)
 {
     return conn->meta.get_type ?
         (*conn->meta.get_type)(conn->meta.c_get_type) : 0;
+}
+
+
+extern EIO_Status CONN_SetCallback(CONN conn, ECONN_Callback type,
+                                   const SCONN_Callback* new_cb,
+                                   SCONN_Callback*       old_cb)
+{
+    int i = (int) type;
+    
+    if (i >= CONN_N_CALLBACKS)
+        return eIO_InvalidArg;
+
+    if (old_cb)
+        *old_cb = conn->callback[i];
+    if (new_cb)
+        conn->callback[i] = *new_cb;
+    return eIO_Success;
 }
 
 
