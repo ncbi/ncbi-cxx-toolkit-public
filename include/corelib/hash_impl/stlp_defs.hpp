@@ -63,7 +63,7 @@ NO_STD_IDENTITY
     generate some functions if they are not defined in std library
 
 USE_NO_ALLOC_TRAITS
-    MIPS already has _Alloc_traits, do not redefine
+    some compilers already have _Alloc_traits -- do not redefine
 */
 
 #ifndef STLP_DEFS__HPP
@@ -167,6 +167,10 @@ NCBI_USING_NAMESPACE_STD;
 
 #ifdef NCBI_COMPILER_GCC
 #  define _STLP_USE_NESTED_TCLASS_THROUGHT_TPARAM 1
+#  if NCBI_COMPILER_VERSION < 340
+#    include <memory>
+#    define USE_NO_ALLOC_TRAITS
+#  endif
 #endif
 
 #ifdef NCBI_COMPILER_ICC
