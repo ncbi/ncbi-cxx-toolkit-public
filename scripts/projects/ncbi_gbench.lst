@@ -1,6 +1,7 @@
 gui
 app/project_tree_builder
 dbapi/driver
+internal/gbench/plugins
 -dbapi/driver/samples
 -gui/dialogs/registry
 -gui/graph/demo
