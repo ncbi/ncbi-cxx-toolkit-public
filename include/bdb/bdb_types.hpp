@@ -47,6 +47,36 @@ extern "C" {
     struct __db_dbt; typedef struct __db_dbt DBT;
     struct __db;     typedef struct __db     DB;
     struct __dbc;    typedef struct __dbc    DBC;
+
+    typedef int (*BDB_CompareFunction)(DB*, const DBT*, const DBT*);
+
+
+
+// Simple and fast comparison function for tables with 
+// non-segmented "unsigned int" keys
+int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2);
+
+
+// Simple and fast comparison function for tables with 
+// non-segmented "int" keys
+int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
+
+// Simple and fast comparison function for tables with 
+// non-segmented "float" keys
+int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2);
+
+// Simple and fast comparison function for tables with 
+// non-segmented "C string" keys
+int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2);
+
+// Simple and fast comparison function for tables with 
+// non-segmented "case insensitive C string" keys
+int BDB_StringCaseCompare(DB*, const DBT* val1, const DBT* val2);
+
+// General purpose DBD comparison function
+int BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
+
+
 }
 
 BEGIN_NCBI_SCOPE
@@ -147,6 +177,10 @@ public:
     // Default (zero) value of 'buf-len' uses GetBufferSize().
     // For fixed length fields this buf_size parameter has no effect
     virtual CBDB_Field* Construct(size_t buf_size = 0) const = 0;
+
+    // Return address to the type specific comparison function
+    // By default it's universal BDB_Compare
+    virtual BDB_CompareFunction GetCompareFunction() const; 
 
     // Return TRUE if field can be NULL
     bool IsNullable() const;
@@ -395,6 +429,12 @@ public:
     { 
         return Get(); 
     }
+
+    virtual BDB_CompareFunction GetCompareFunction() const
+    {
+        return BDB_IntCompare;
+    } 
+
 };
 
 
@@ -428,6 +468,12 @@ public:
     { 
         return Get(); 
     }
+
+    virtual BDB_CompareFunction GetCompareFunction() const
+    {
+        return BDB_UintCompare;
+    } 
+
 };
 
 
@@ -461,6 +507,11 @@ public:
     { 
         return Get(); 
     }
+
+    virtual BDB_CompareFunction GetCompareFunction() const
+    {
+        return BDB_FloatCompare;
+    } 
 };
 
 
@@ -509,6 +560,11 @@ public:
     virtual void        SetMaxVal();
 
     virtual void SetString(const char*);
+
+    virtual BDB_CompareFunction GetCompareFunction() const
+    {
+        return BDB_StringCompare;
+    } 
 };
 
 
@@ -554,6 +610,12 @@ public:
         _ASSERT(p1 && p2);
         return NStr::strcasecmp((const char*) p1, (const char*) p2);
     }
+
+    virtual BDB_CompareFunction GetCompareFunction() const
+    {
+        return BDB_StringCaseCompare;
+    } 
+
 };
 
 
@@ -643,6 +705,9 @@ protected:
     bool   TestNullBit(unsigned int idx) const;
     void   SetNullBit (unsigned int idx, bool value);
     void   SetAllNull();
+
+    // Return buffer compare function
+    BDB_CompareFunction GetCompareFunction() const;
 
 private:
     CBDB_BufferManager(const CBDB_BufferManager&);
@@ -1168,6 +1233,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/07/23 20:21:27  kuznets
+ * Implemented new improved scheme for setting BerkeleyDB comparison function.
+ * When table has non-segmented key the simplest(and fastest) possible function
+ * is assigned (automatically without reloading CBDB_File::SetCmp function).
+ *
  * Revision 1.12  2003/07/22 16:05:20  kuznets
  * Resolved operators ambiguity (GCC-MSVC conflict of interests)
  *

@@ -39,55 +39,6 @@ BEGIN_NCBI_SCOPE
 const char CBDB_RawFile::kDefaultDatabase[] = "_table";
 const int  CBDB_RawFile::kOpenFileMask      = 0664;
 
-extern "C"
-{
-
-
-int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2)
-{
-    unsigned int v1, v2;
-    ::memcpy(&v1, val1->data, sizeof(unsigned));
-    ::memcpy(&v2, val2->data, sizeof(unsigned));
-    return (v1 < v2) ? -1
-                     : ((v2 < v1) ? 1 : 0);
-}
-
-
-int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2)
-{
-    int v1, v2;
-    ::memcpy(&v1, val1->data, sizeof(int));
-    ::memcpy(&v2, val2->data, sizeof(int));
-    return (v1 < v2) ? -1
-                     : ((v2 < v1) ? 1 : 0);
-}
-
-
-int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
-{
-    const CBDB_BufferManager* fbuf1 =
-          static_cast<CBDB_BufferManager*> (db->app_private);
-
-    _ASSERT(fbuf1);
-
-    const char* p1 = static_cast<char*> (val1->data);
-    const char* p2 = static_cast<char*> (val2->data);
-
-    for (unsigned int i = 0;  i < fbuf1->FieldCount();  ++i) {
-        const CBDB_Field& fld1 = fbuf1->GetField(i);
-        int ret = fld1.Compare(p1, p2);
-        if ( ret )
-            return ret;
-
-        p1 += fld1.GetDataLength(p1);
-        p2 += fld1.GetDataLength(p2);
-    }
-
-    return 0;
-}
-
-
-} // extern "C"
 
 
 // Auto-pointer style guard class for DB structure
@@ -545,7 +496,9 @@ void CBDB_File::Discard()
 
 void CBDB_File::SetCmp(DB* db)
 {
-    int ret = db->set_bt_compare(db, BDB_Compare);
+    BDB_CompareFunction func = m_KeyBuf->GetCompareFunction();
+    _ASSERT(func);
+    int ret = db->set_bt_compare(db, func);
     BDB_CHECK(ret, 0);
 }
 
@@ -680,6 +633,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/07/23 20:21:43  kuznets
+ * Implemented new improved scheme for setting BerkeleyDB comparison function.
+ * When table has non-segmented key the simplest(and fastest) possible function
+ * is assigned (automatically without reloading CBDB_File::SetCmp function).
+ *
  * Revision 1.18  2003/07/23 18:08:48  kuznets
  * SetCacheSize function implemented
  *

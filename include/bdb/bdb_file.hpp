@@ -38,7 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 
-
+/*
 extern "C" 
 {
 
@@ -57,7 +57,7 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
 
 } // extern "C"
 
-
+*/
 
 
 //////////////////////////////////////////////////////////////////
@@ -394,6 +394,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/07/23 20:21:27  kuznets
+ * Implemented new improved scheme for setting BerkeleyDB comparison function.
+ * When table has non-segmented key the simplest(and fastest) possible function
+ * is assigned (automatically without reloading CBDB_File::SetCmp function).
+ *
  * Revision 1.14  2003/07/23 18:07:56  kuznets
  * Implemented couple new functions to work with attached files
  *

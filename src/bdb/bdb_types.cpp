@@ -34,6 +34,78 @@
 
 BEGIN_NCBI_SCOPE
 
+
+extern "C"
+{
+
+/////////////////////////////////////////////////////////////////////////////
+//  BDB comparison functions
+//
+
+int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    unsigned int v1, v2;
+    ::memcpy(&v1, val1->data, sizeof(unsigned));
+    ::memcpy(&v2, val2->data, sizeof(unsigned));
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    int v1, v2;
+    ::memcpy(&v1, val1->data, sizeof(int));
+    ::memcpy(&v2, val2->data, sizeof(int));
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    float v1, v2;
+    ::memcpy(&v1, val1->data, sizeof(float));
+    ::memcpy(&v2, val2->data, sizeof(float));
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    return ::strcmp((const char*)val1->data, (const char*)val2->data);
+}
+
+int BDB_StringCaseCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    return NStr::strcasecmp((const char*)val1->data, (const char*)val2->data);
+}
+
+int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
+{
+    const CBDB_BufferManager* fbuf1 =
+          static_cast<CBDB_BufferManager*> (db->app_private);
+
+    _ASSERT(fbuf1);
+
+    const char* p1 = static_cast<char*> (val1->data);
+    const char* p2 = static_cast<char*> (val2->data);
+
+    for (unsigned int i = 0;  i < fbuf1->FieldCount();  ++i) {
+        const CBDB_Field& fld1 = fbuf1->GetField(i);
+        int ret = fld1.Compare(p1, p2);
+        if ( ret )
+            return ret;
+
+        p1 += fld1.GetDataLength(p1);
+        p2 += fld1.GetDataLength(p2);
+    }
+
+    return 0;
+}
+
+
+} // extern "C"
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_Field::
 //
@@ -47,6 +119,11 @@ CBDB_Field::CBDB_Field(ELengthType length_type)
     m_Flags.VariableLength = (length_type == eFixedLength) ? 0 : 1;
     m_Flags.Attached = 0;
     m_Flags.Nullable = 0;
+}
+
+BDB_CompareFunction CBDB_Field::GetCompareFunction() const 
+{ 
+    return BDB_Compare; 
 }
 
 
@@ -63,7 +140,6 @@ CBDB_BufferManager::CBDB_BufferManager()
     m_NullSetSize(0)
 {
 }
-
 
 void CBDB_BufferManager::Bind(CBDB_Field* field, ENullable is_nullable)
 {
@@ -145,6 +221,14 @@ void CBDB_BufferManager::Construct()
     }
 
     m_PackedSize = 0;  // not packed
+}
+
+
+BDB_CompareFunction CBDB_BufferManager::GetCompareFunction() const
+{
+    if (m_Fields.size() > 1)
+        return BDB_Compare;
+    return m_Fields[0]->GetCompareFunction();
 }
 
 
@@ -297,6 +381,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/07/23 20:21:43  kuznets
+ * Implemented new improved scheme for setting BerkeleyDB comparison function.
+ * When table has non-segmented key the simplest(and fastest) possible function
+ * is assigned (automatically without reloading CBDB_File::SetCmp function).
+ *
  * Revision 1.8  2003/07/02 17:55:35  kuznets
  * Implementation modifications to eliminated direct dependency from <db.h>
  *
