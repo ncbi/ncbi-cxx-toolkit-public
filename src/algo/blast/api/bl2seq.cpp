@@ -192,10 +192,11 @@ CBl2Seq::SetupSearch()
                      &mi_clsQueries);
 
         // FIXME
-        BlastMaskLoc* filter_mask = NULL;
+        BlastMaskInformation maskInfo;
         Blast_Message* blmsg = NULL;
         double scale_factor = 1.0;
         short st;
+       
 
         st = BLAST_MainSetUp(m_OptsHandle->GetOptions().GetProgram(), 
                              m_OptsHandle->GetOptions().GetQueryOpts(),
@@ -205,12 +206,12 @@ CBl2Seq::SetupSearch()
                              mi_clsQueryInfo, 
                              scale_factor,
                              &mi_pLookupSegments, 
-                             &filter_mask, &mi_pScoreBlock, &blmsg);
+                             &maskInfo, &mi_pScoreBlock, &blmsg);
 
         // Convert the BlastMaskLoc* into a CSeq_loc
         // TODO: Implement this! 
-        //mi_vFilteredRegions = BLASTBlastMaskLoc2SeqLoc(filter_mask);
-        BlastMaskLocFree(filter_mask); // FIXME, return seqlocs for formatter
+        //mi_vFilteredRegions = BLASTBlastMaskLoc2SeqLoc(maskInfo.filter_slp);
+        BlastMaskLocFree(maskInfo.filter_slp); // FIXME, return seqlocs for formatter
 
         // TODO: Check that lookup_segments are not filtering the whole 
         // sequence (SSeqRange set to -1 -1)
@@ -329,6 +330,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.57  2004/06/28 13:40:51  madden
+ * Use BlastMaskInformation rather than BlastMaskLoc in BLAST_MainSetUp
+ *
  * Revision 1.56  2004/06/08 15:20:44  dondosha
  * Use BlastHSPStream interface
  *

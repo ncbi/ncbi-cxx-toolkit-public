@@ -151,6 +151,7 @@ int CDbBlast::SetupSearch()
             scale_factor = 1.0;
 
         Blast_Message* blast_message = NULL;
+        BlastMaskInformation maskInfo;
 
         status = BLAST_MainSetUp(x_eProgram, 
                                  m_OptsHandle->GetOptions().GetQueryOpts(),
@@ -158,8 +159,12 @@ int CDbBlast::SetupSearch()
                                  m_OptsHandle->GetOptions().GetHitSaveOpts(),
                                  m_iclsQueries, m_iclsQueryInfo,
                                  scale_factor,
-                                 &m_ipLookupSegments, &m_ipFilteredRegions,
+                                 &m_ipLookupSegments, &maskInfo,
                                  &m_ipScoreBlock, &blast_message);
+
+        m_ipFilteredRegions = maskInfo.filter_slp;
+        maskInfo.filter_slp = NULL;
+        
         if (status != 0) {
             string msg = blast_message ? blast_message->message : 
                 "BLAST_MainSetUp failed";
@@ -373,6 +378,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2004/06/28 13:40:51  madden
+ * Use BlastMaskInformation rather than BlastMaskLoc in BLAST_MainSetUp
+ *
  * Revision 1.35  2004/06/24 15:54:59  dondosha
  * Added doxygen file description
  *
