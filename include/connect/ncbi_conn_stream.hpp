@@ -50,6 +50,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2001/01/11 23:04:04  lavr
+* Bugfixes; tie is now done at streambuf level, not in iostream
+*
 * Revision 6.2  2001/01/10 21:41:08  lavr
 * Added classes: CConn_SocketStream, CConn_HttpStream, CConn_ServiceStream.
 * Everything is now wordly documented.
@@ -105,9 +108,9 @@ public:
 class CConn_SocketStream : public CConn_IOStream
 {
 public:
-    CConn_SocketStream(const string&  host,        /* host to connect to      */
-                       unsigned short port,        /* port number on the host */
-                       unsigned int   max_try  = 3,/* number of attempts      */
+    CConn_SocketStream(const string&  host,         /* host to connect to  */
+                       unsigned short port,         /* ... and port number */
+                       unsigned int   max_try  = 3, /* number of attempts  */
                        streamsize     buf_size = kConn_DefBufSize);
 };
 

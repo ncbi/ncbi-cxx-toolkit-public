@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.2  2001/01/11 23:04:07  lavr
+* Bugfixes; tie is now done at streambuf level, not in iostream
+*
 * Revision 6.1  2001/01/09 23:34:51  vakatov
 * Initial revision (draft, not tested in run-time)
 *
@@ -50,7 +53,7 @@ BEGIN_NCBI_SCOPE
 class CConn_Streambuf : public streambuf
 {
 public:
-    CConn_Streambuf(CONNECTOR connector, streamsize buf_size = 4096);
+    CConn_Streambuf(CONNECTOR connector, streamsize buf_size, bool tie);
     virtual ~CConn_Streambuf(void);
 
 protected:
@@ -67,6 +70,8 @@ private:
     CT_CHAR_TYPE*          m_WriteBuf;  // m_Buf
     CT_CHAR_TYPE*          m_ReadBuf;   // m_Buf + m_BufSize
     streamsize             m_BufSize;   // of m_WriteBuf, m_ReadBuf
+
+    bool                   m_Tie;       // always flush before reading
 
     void x_CheckThrow(EIO_Status status, const string& msg);
 };

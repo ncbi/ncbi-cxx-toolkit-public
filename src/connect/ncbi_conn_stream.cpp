@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.4  2001/01/11 23:04:06  lavr
+* Bugfixes; tie is now done at streambuf level, not in iostream
+*
 * Revision 6.3  2001/01/11 17:22:41  thiessen
 * fix args copy in s_HttpConnectorBuilder()
 *
@@ -55,11 +58,9 @@ BEGIN_NCBI_SCOPE
 
 CConn_IOStream::CConn_IOStream(CONNECTOR connector,
                                streamsize buf_size, bool do_tie)
-    : iostream(new CConn_Streambuf(connector, buf_size))
+    : iostream(new CConn_Streambuf(connector, buf_size, do_tie))
 {
-    if ( do_tie ) {
-        tie(this);
-    }
+    return;
 }
 
 
