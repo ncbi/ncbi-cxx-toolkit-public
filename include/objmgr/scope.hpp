@@ -273,6 +273,8 @@ private:
     TSeq_idMapValue* x_FindSeq_id_Info(const CSeq_id_Handle& id);
 
     CRef<CBioseq_ScopeInfo> x_InitBioseq_Info(TSeq_idMapValue& info);
+    bool x_InitBioseq_Info(TSeq_idMapValue& info,
+                           const CRef<CBioseq_ScopeInfo>& bioseq_info);
     CRef<CBioseq_ScopeInfo> x_GetBioseq_Info(const CSeq_id_Handle& id);
     CRef<CBioseq_ScopeInfo> x_FindBioseq_Info(const CSeq_id_Handle& id);
 
@@ -616,6 +618,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/01/29 20:33:27  vasilche
+* Do not resolve any Seq-ids in CScope::GetSynonyms() -
+* assume all not resolved Seq-id as synonym.
+* Seq-id conflict messages made clearer.
+*
 * Revision 1.68  2004/01/27 17:11:13  ucko
 * Remove redundant forward declaration of CTSE_Info
 *

@@ -560,6 +560,19 @@ CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info)
 }
 
 
+bool CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info,
+                                    const CRef<CBioseq_ScopeInfo>& bioseq_info)
+{
+    {{
+        CInitGuard init(info.second.m_Bioseq_Info, m_MutexPool);
+        if ( init ) {
+            info.second.m_Bioseq_Info = bioseq_info;
+        }
+    }}
+    return info.second.m_Bioseq_Info == bioseq_info;
+}
+
+
 CRef<CBioseq_ScopeInfo>
 CScope_Impl::x_GetBioseq_Info(const CSeq_id_Handle& id)
 {
@@ -778,7 +791,8 @@ CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
                 (*tse_it)->m_Bioseqs.find(idh);
             if (seq == (*tse_it)->m_Bioseqs.end()) {
                 TSeq_id_HandleSet hset;
-                CSeq_id_Mapper::GetSeq_id_Mapper().GetMatchingHandles(idh, hset);
+                CSeq_id_Mapper::GetSeq_id_Mapper().GetMatchingHandles(idh,
+                                                                      hset);
                 ITERATE(TSeq_id_HandleSet, hit, hset) {
                     seq = (*tse_it)->m_Bioseqs.find(*hit);
                     if (seq != (*tse_it)->m_Bioseqs.end()) {
@@ -871,7 +885,8 @@ void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info)
         {{
             TWriteLockGuard guard(m_BioseqMapLock);
             pair<TBioseqMap::iterator, bool> ins =
-                m_BioseqMap.insert(TBioseqMap::value_type(key, CRef<CBioseq_ScopeInfo>()));
+                m_BioseqMap.insert(TBioseqMap::
+                                   value_type(key, CRef<CBioseq_ScopeInfo>()));
             if ( ins.second ) { // new
                 _ASSERT(m_HeapScope);
                 ins.first->second.Reset(new CBioseq_ScopeInfo(&id_info, info));
@@ -1095,13 +1110,13 @@ CScope_Impl::x_GetSynonyms(CRef<CBioseq_ScopeInfo> info)
                         try {
                             TSeq_idMapValue& seq_id_info =
                                 x_GetSeq_id_Info(*mit);
-                            CRef<CBioseq_ScopeInfo> info2 =
-                                x_InitBioseq_Info(seq_id_info);
-                            if ( info2 == info ) {
+                            if ( x_InitBioseq_Info(seq_id_info, info) ) {
                                 // the same bioseq - add synonym
                                 syn_set->AddSynonym(&seq_id_info);
                             }
                             else {
+                                CRef<CBioseq_ScopeInfo> info2 =
+                                    seq_id_info.second.m_Bioseq_Info;
                                 LOG_POST(Warning << "CScope::GetSynonyms: "
                                          "Bioseq["<<info->GetBioseq_Info().IdsString()<<"]: id "<<mit->AsString()<<" is resolved to another Bioseq ["<<info2->GetBioseq_Info().IdsString()<<"]");
                             }
@@ -1140,6 +1155,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2004/01/29 20:33:28  vasilche
+* Do not resolve any Seq-ids in CScope::GetSynonyms() -
+* assume all not resolved Seq-id as synonym.
+* Seq-id conflict messages made clearer.
+*
 * Revision 1.96  2004/01/28 20:50:49  vasilche
 * Fixed NULL pointer exception in GetSynonyms() when matching Seq-id w/o version.
 *
