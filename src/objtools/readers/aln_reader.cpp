@@ -198,7 +198,8 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
     ids.resize(m_Dim);
 
     // get the length of the aln row, asuming all rows are the same
-    TSeqPos aln_stop = m_Seqs[0].size(); 
+    TSeqPos aln_read_stop = m_Seqs[0].size();
+    TSeqPos aln_stop = aln_read_stop;
 
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
         CRef<CSeq_id> seq_id(new CSeq_id(m_Ids[row_i]));
@@ -221,9 +222,12 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
     bool new_seg = false;
     TNumseg numseg = 0;
     
-    for (TSeqPos aln_pos = 0; aln_pos < aln_stop; aln_pos++) {
+    for (TSeqPos aln_read_pos = 0, aln_pos = 0;
+         aln_read_pos < aln_read_stop;
+         aln_read_pos++, aln_pos++) {
+
         for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-            const char& residue = m_Seqs[row_i][aln_pos];
+            const char& residue = m_Seqs[row_i][aln_read_pos];
             if (residue != m_MiddleGap[0]  &&
                 residue != m_EndGap[0]  &&
                 residue != m_Missing[0]) {
@@ -246,7 +250,12 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
             }
         }
         if (new_seg) {
-            numseg++;
+            if ( !numseg ) {
+                // reset aln_pos in the exceptional case when all
+                // sequences are gapped in the first segment
+                aln_pos = 0;
+                aln_stop = aln_read_stop - aln_read_pos;
+            }
 
             if (aln_pos) { // if not the first seg
                 lens.push_back(prev_len = aln_pos - prev_aln_pos);
@@ -269,6 +278,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
 
             prev_aln_pos = aln_pos;
 
+            numseg++;
             new_seg = false;
         }
     }
@@ -371,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/07 18:46:28  todorov
+ * Handle the special case when all sequences are gapped in the first segment.
+ *
  * Revision 1.10  2004/05/21 21:42:55  gorelenk
  * Added PCH ncbi_pch.hpp
  *
