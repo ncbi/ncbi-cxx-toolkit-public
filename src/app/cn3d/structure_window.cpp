@@ -1140,23 +1140,36 @@ void StructureWindow::OnShowHide(wxCommandEvent& event)
         {
             if (!glCanvas->structureSet || glCanvas->structureSet->objects.size() > 1)
                 return;
-            wxString numStr = wxGetTextFromUser("Enter a molecule ID to select:", "Select molecule");
+            wxString idStr = wxGetTextFromUser("Enter an MMDB molecule ID or PDB code:", "Select molecule");
+            if (idStr.size() == 0)
+                return;
             unsigned long num;
-            if (!numStr.ToULong(&num))
-                return;
-            ChemicalGraph::MoleculeMap::const_iterator m =
-                glCanvas->structureSet->objects.front()->graph->molecules.find((int) num);
-            if (m == glCanvas->structureSet->objects.front()->graph->molecules.end()) {
-                ERRORMSG("Can't find molecule #" << num);
-                return;
-            }
+            bool isNum = idStr.ToULong(&num);
+            if (!isNum)
+                idStr.MakeUpper();  // PDB names are all caps
             GlobalMessenger()->RemoveAllHighlights(true);
-            if (m->second->sequence) {
-                GlobalMessenger()->AddHighlights(m->second->sequence, 0, m->second->sequence->Length() - 1);
-            } else {
-                Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
-                for (r=m->second->residues.begin(); r!=re; ++r)
-                    GlobalMessenger()->ToggleHighlight(m->second, r->second->id);
+            ChemicalGraph::MoleculeMap::const_iterator m, me =
+                glCanvas->structureSet->objects.front()->graph->molecules.end();
+            for (m=glCanvas->structureSet->objects.front()->graph->molecules.begin(); m!=me; ++m) {
+                if ((isNum && m->second->id == (int) num) ||
+                    (!isNum && (
+                        ((m->second->type == Molecule::eDNA || m->second->type == Molecule::eRNA ||
+                          m->second->type == Molecule::eProtein || m->second->type == Molecule::eBiopolymer)
+                            && idStr.Cmp(m->second->name.c_str()) == 0) ||
+                        ((m->second->type == Molecule::eSolvent || m->second->type == Molecule::eNonpolymer ||
+                          m->second->type == Molecule::eOther)
+                            && m->second->residues.size() == 1
+                            && (((wxString) m->second->residues.begin()->second->
+                                nameGraph.c_str()).Strip(wxString::both) == idStr)))))
+                {
+                    if (m->second->sequence) {
+                        GlobalMessenger()->AddHighlights(m->second->sequence, 0, m->second->sequence->Length() - 1);
+                    } else {
+                        Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
+                        for (r=m->second->residues.begin(); r!=re; ++r)
+                            GlobalMessenger()->ToggleHighlight(m->second, r->second->id);
+                    }
+                }
             }
             break;
         }
@@ -1580,6 +1593,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/05/31 13:15:09  thiessen
+* make select molecule take PDB chain/het name
+*
 * Revision 1.32  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *
