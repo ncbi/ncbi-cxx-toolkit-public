@@ -87,7 +87,7 @@ CDbapiSampleApp::~CDbapiSampleApp()
 
 // Default implementation ...
 void
-CDbapiSampleApp::InitSample(CArgDescriptions& arg_desc)
+CDbapiSampleApp::InitSample(CArgDescriptions&)
 {
 }
 
@@ -275,6 +275,9 @@ void
 CDbapiSampleApp::DeleteLostTables(void)
 {
     string sql = "select name from sysobjects WHERE type = 'U'";
+    typedef list<string> table_name_list_t;
+    table_name_list_t table_name_list;
+    table_name_list_t::const_iterator citer;
 
     auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(sql));
     lcmd->Send();
@@ -304,7 +307,7 @@ CDbapiSampleApp::DeleteLostTables(void)
                     CTime creation_date(table_creation_date, "MDy");
 
                     if ( CTimeSpan(3, 0, 0, 0) < (CTime(CTime::eCurrent) - creation_date) ) {
-                        DeleteTable(table_name);
+		      table_name_list.push_back(table_name);
                     }
                 }
                 catch(CException&)
@@ -313,6 +316,11 @@ CDbapiSampleApp::DeleteLostTables(void)
                 }
             }
         }
+    }
+
+    for(citer = table_name_list.begin(); citer != table_name_list.end(); ++citer)      
+    {
+      DeleteTable(*citer);
     }
 }
 
@@ -457,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/12/28 22:50:58  ssikorsk
+ * Fixed DBAPI usage bug in dbapi/driver/samples
+ *
  * Revision 1.2  2004/12/21 22:38:00  ssikorsk
  * Ignore protocol v5.0 (DBVERSION_100) with FreeTDS
  *
