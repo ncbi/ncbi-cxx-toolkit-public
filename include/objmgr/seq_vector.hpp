@@ -62,6 +62,7 @@ public:
     typedef CSeq_data::E_Choice   TCoding;
     typedef CBioseq_Handle::EVectorCoding EVectorCoding;
 
+    CSeqVector(void);
     CSeqVector(const CSeqMap& seqMap, CScope& scope,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
                ENa_strand strand = eNa_strand_unknown);
@@ -157,6 +158,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/06/12 18:38:47  vasilche
+* Added default constructor of CSeqVector.
+*
 * Revision 1.35  2003/06/11 19:32:53  grichenk
 * Added molecule type caching to CSeqMap, simplified
 * coding and sequence type calculations in CSeqVector.
