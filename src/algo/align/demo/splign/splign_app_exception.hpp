@@ -47,6 +47,7 @@ public:
         eBadParameter,
         eCannotOpenFile,
 	eCannotReadFile,
+	eErrorReadingIndexFile,
 	eGeneral
     };
     virtual const char* GetErrCodeString(void) const {
@@ -59,6 +60,8 @@ public:
             return "Unable to open file";
         case eCannotReadFile:
             return "Unable to read file";
+        case eErrorReadingIndexFile:
+            return "Error encountered while reading index file";
         case eGeneral:
             return "General exception";
         default:
@@ -161,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/05 20:25:17  kapustin
+ * Update exception code list for splign app exception
+ *
  * Revision 1.1  2003/10/30 19:37:20  kapustin
  * Initial toolkit revision
  *
