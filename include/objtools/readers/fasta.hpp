@@ -61,7 +61,7 @@ typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
 // see also CFastaOstream in <objects/util/sequence.hpp> (-lxobjutil)
 NCBI_XOBJREAD_EXPORT
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
-                           CSeq_loc* lowercase = 0);
+                           vector<CRef<CSeq_loc> >* lcv = 0);
 
 
 
@@ -98,6 +98,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/06 19:08:28  ucko
+* Slight interface tweak to ReadFasta: report lowercase locations in a
+* vector with one entry per Bioseq rather than a consolidated Seq_loc_mix.
+*
 * Revision 1.1  2003/06/04 17:26:08  ucko
 * Split out from Seq_entry.hpp.
 *

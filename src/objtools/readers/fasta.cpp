@@ -282,15 +282,16 @@ static void s_GuessMol(CSeq_inst::EMol& mol, const string& data,
 
 
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
-                           CSeq_loc* lowercase)
+                           vector<CRef<CSeq_loc> >* lcv)
 {
     CRef<CSeq_entry>       entry(new CSeq_entry);
     CBioseq_set::TSeq_set& sset  = entry->SetSet().SetSeq_set();
     CRef<CBioseq>          seq(0); // current Bioseq
     string                 line;
     TSeqPos                pos, lc_start;
-    bool                   was_lc;
+    bool                   was_lc = false;
     CRef<CSeq_id>          best_id;
+    CRef<CSeq_loc>         lowercase(0);
 
     while ( !in.eof() ) {
         if ((flags & fReadFasta_OneSeq)  &&  seq.NotEmpty()
@@ -305,7 +306,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
             // new sequence
             if (seq) {
                 s_FixSeqData(seq);
-                if (lowercase  &&  was_lc) {
+                if (was_lc) {
                     lowercase->SetMix().AddInterval(*best_id, lc_start, pos);
                 }
             }
@@ -340,10 +341,13 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                 seq->SetDescr().Set().push_back(desc);
             }
 
-            if (lowercase) {
-                pos     = 0;
-                was_lc  = false;
-                best_id = FindBestChoice(seq->GetId(), CSeq_id::Score);
+            if (lcv /*  &&  ( !lowercase  ||  !lowercase->IsNull() ) */) {
+                pos       = 0;
+                was_lc    = false;
+                best_id   = FindBestChoice(seq->GetId(), CSeq_id::Score);
+                lowercase = new CSeq_loc;
+                lowercase->SetNull();
+                lcv->push_back(lowercase);
             }
         } else if (line[0] == '#'  ||  line[0] == '!') {
             continue; // comment
@@ -424,7 +428,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
 
     if (seq) {
         s_FixSeqData(seq);
-        if (lowercase && was_lc) {
+        if (was_lc) {
             lowercase->SetMix().AddInterval(*best_id, lc_start, pos);
         }
     }
@@ -487,6 +491,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/08/06 19:08:33  ucko
+* Slight interface tweak to ReadFasta: report lowercase locations in a
+* vector with one entry per Bioseq rather than a consolidated Seq_loc_mix.
+*
 * Revision 1.3  2003/06/23 20:49:11  kuznets
 * Changed to use Seq_id::AsFastaString() when reading fasta file map.
 *
