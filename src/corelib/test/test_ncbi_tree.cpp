@@ -266,9 +266,48 @@ static void s_TEST_IdTreeOperations()
     CTreeNonRedundantSet<TTree, bm::bvector<>, TNodeList> nr_func;
     nr_func(node_list, res_node_list);
 
+
     ITERATE(TNodeList, it, res_node_list) {
         cout << (*it)->GetValue().GetId() << "; ";
     }
+    cout << endl;
+    assert(res_node_list.size() == 2);
+
+    
+    TNodeList node_list_a;
+    TNodeList node_list_b;
+    TNodeList node_list_c;
+
+    node_list_a.push_back(tr10);
+    node_list_a.push_back(tr11);
+    node_list_a.push_back(tr110);
+    node_list_a.push_back(tr1100);
+    
+    node_list_b.push_back(tr10);
+    node_list_b.push_back(tr11);
+    node_list_b.push_back(tr110);
+
+    CTreeNodesAnd<TTree, bm::bvector<>, TNodeList> and_func;
+    and_func(node_list_a, node_list_b, node_list_c);
+
+    ITERATE(TNodeList, it, node_list_c) {
+        cout << (*it)->GetValue().GetId() << "; ";
+    }
+    cout << endl;
+    assert(node_list_c.size() == 3);
+
+
+    node_list_c.clear();
+
+    CTreeNodesOr<TTree, bm::bvector<>, TNodeList> or_func;
+    or_func(node_list_a, node_list_b, node_list_c);
+
+    ITERATE(TNodeList, it, node_list_c) {
+        cout << (*it)->GetValue().GetId() << "; ";
+    }
+    cout << endl;
+    assert(node_list_c.size() == 4);
+
 
     delete tr;
 
@@ -395,6 +434,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.14  2004/04/21 16:43:08  kuznets
+ * + test cases for AND, OR (tree node lists)
+ *
  * Revision 1.13  2004/04/21 12:58:32  kuznets
  * + s_TEST_IdTreeOperations
  *
