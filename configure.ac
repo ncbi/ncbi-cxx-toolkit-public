@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.221 2003/10/02 16:59:22 ucko Exp $
+#  $Id: configure.ac,v 1.222 2003/10/07 14:32:04 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1043,46 +1043,6 @@ else
 fi
 AC_SUBST(STATIC)
 
-# Linker command-line to build DLL
-has_dll_loadable="@# "
-case "$compiler" in
- GCC | MIPSpro73 | ICC | Compaq )
-   case "$host_os" in
-      solaris* )
-        # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
-        LINK_DLL="$LINK $ARCH_CFLAGS -shared -mimpure-text -o"
-        ;;
-      darwin* )
-        # There is a distinction between shared libraries (dylibs)
-        # and loadable objects (bundles).
-        # See <http://fink.sourceforge.net/doc/porting/shared.php>.
-        has_dll_loadable=""
-        if $CXX -v 2>&1 | grep -q Apple; then
-           LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
-           LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
-        else
-           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-flat_namespace -Wl,-undefined,suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
-           LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-flat_namespace -Wl,-undefined,suppress -Wl,-read_only_relocs,warning -lbundle1.o -o"
-        fi
-        ;;
-      * )
-        LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
-        ;;
-   esac
-   ;;
- WorkShop* )
-   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -G -h \$@ -o"
-   ;;
- KCC )
-   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG --soname \$@ -o"
-   ;;
- * )
-   if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
-      AC_MSG_ERROR(["Do not know how to build DLLs with compiler $CXX $compiler_ver"])
-   fi
-   ;;
-esac
-
 
 #### GNU compiler::  common flags and definitions
 if test "$compiler" = "GCC" ; then
@@ -1296,6 +1256,47 @@ if test -z "$CONF_f_runpath" ; then
    # so well), but keep pure_runpath for other uses.
    runpath=
 fi
+
+
+#### Linker command-line to build DLL (may depend on runpath)
+has_dll_loadable="@# "
+case "$compiler" in
+ GCC | MIPSpro73 | ICC | Compaq )
+   case "$host_os" in
+      solaris* )
+        # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
+        LINK_DLL="$LINK $ARCH_CFLAGS -shared -mimpure-text -o"
+        ;;
+      darwin* )
+        # There is a distinction between shared libraries (dylibs)
+        # and loadable objects (bundles).
+        # See <http://fink.sourceforge.net/doc/porting/shared.php>.
+        has_dll_loadable=""
+        if $CXX -v 2>&1 | grep -q Apple; then
+           LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
+        else
+           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-flat_namespace -Wl,-undefined,suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-flat_namespace -Wl,-undefined,suppress -Wl,-read_only_relocs,warning -lbundle1.o -o"
+        fi
+        ;;
+      * )
+        LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
+        ;;
+   esac
+   ;;
+ WorkShop* )
+   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -G -h \$@ -o"
+   ;;
+ KCC )
+   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG --soname \$@ -o"
+   ;;
+ * )
+   if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
+      AC_MSG_ERROR(["Do not know how to build DLLs with compiler $CXX $compiler_ver"])
+   fi
+   ;;
+esac
 
 
 #### Make "srcdir" absolute
