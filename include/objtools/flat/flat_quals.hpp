@@ -40,6 +40,7 @@
 #include <objects/pub/Pub_set.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
@@ -276,6 +277,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/01/27 17:12:06  ucko
+* Add missing #include directive for Code_break.hpp.
+*
 * Revision 1.3  2003/06/02 16:01:39  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr
