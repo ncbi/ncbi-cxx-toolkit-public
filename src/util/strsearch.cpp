@@ -170,8 +170,8 @@ void CBoyerMooreMatcher::x_InitPattern(void)
     
     // compute right-most occurance
     for ( int j = 0;  j < (int)m_PatLen - 1;  ++j ) {
-        m_LastOccurance[(int)m_Pattern[j]] = m_PatLen - j - 1;
-    }
+        int lo = m_LastOccurance[(int)m_Pattern[j]] = m_PatLen - j - 1;
+   }
 }
 
 
@@ -208,7 +208,7 @@ size_t CBoyerMooreMatcher::Search(const char*  text,
             if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
                 return  shift;
             } else {
-                shift += (unsigned int)m_LastOccurance[text[shift + j]];
+                shift += (unsigned int)m_LastOccurance[toupper(text[shift + j])];
             }
         }
     }
@@ -258,6 +258,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/03/11 16:54:48  kuznets
+* CBoyerMooreMatcher::Search fixed incorrect bad-character shift in case
+* insensitive search...
+*
 * Revision 1.11  2004/03/05 15:46:02  kuznets
 * fixed crash on 64-bit (sun)
 *
