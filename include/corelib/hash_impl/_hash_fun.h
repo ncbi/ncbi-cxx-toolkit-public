@@ -42,10 +42,16 @@ template <class _Key> struct hash { };
 inline size_t __stl_hash_string(const char* __s)
 {
   _STLP_FIX_LITERAL_BUG(__s)
+// MODIFIED - fixed hash function
+#ifdef NCBI_USE_STRING_HASH_FUNC__NCBI
+  unsigned long __h = 5381;
+  for ( ; *__s; ++__s)
+    __h = __h*17 + *__s;
+#else
   unsigned long __h = 0; 
   for ( ; *__s; ++__s)
     __h = 5*__h + *__s;
-  
+#endif
   return size_t(__h);
 }
 

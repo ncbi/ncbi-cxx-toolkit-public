@@ -225,6 +225,12 @@ struct __Select1st_hint : public unary_function<_Pair, _Whatever> {
 #endif
 
 
+// Use better string hash function (by Eugene Vasilchenko)
+#ifndef NCBI_USE_STRING_HASH_FUNC__STLP
+#  define NCBI_USE_STRING_HASH_FUNC__NCBI
+#endif
+
+
 //////////////////////////////////////////////////////////////////////
 //
 // Functions and classes required by STLport
@@ -396,5 +402,42 @@ public:
 #include <corelib/hash_impl/_hashtable.c>
 
 #undef __lower_bound
+
+
+BEGIN_NCBI_SCOPE
+
+// String hash functions, see also NCBI_USE_STRING_HASH_FUNC__NCBI
+
+inline size_t __stl_hash_string(const char* __s, size_t __l)
+{
+#ifdef NCBI_USE_STRING_HASH_FUNC__NCBI
+    unsigned long __h = __l;
+    for ( ; __l; ++__s, --__l)
+        __h = __h*17 + *__s;
+#else
+    unsigned long __h = 0; 
+    for ( ; __l; ++__s, --__l)
+        __h = 5*__h + *__s;
+#endif
+    return size_t(__h);
+}
+
+template<> struct hash<const string>
+{
+    size_t operator()(const string& s) const
+    {
+        return __stl_hash_string(s.data(), s.size());
+    }
+};
+
+template<> struct hash<string>
+{
+    size_t operator()(const string& s) const
+    {
+        return __stl_hash_string(s.data(), s.size());
+    }
+};
+
+END_NCBI_SCOPE
 
 #endif /* STLP_DEFS__HPP */
