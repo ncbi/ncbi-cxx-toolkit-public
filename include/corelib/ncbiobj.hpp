@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/10/10 04:03:22  vakatov
+* Added operator> for C(Const)Ref -- for ICC and MIPSpro
+*
 * Revision 1.25  2001/06/21 15:17:42  kholodov
 * Added: null special value, support for null in CRef classes, equality
 * operators.
@@ -617,6 +620,12 @@ bool operator< (const CRef<T>& r1, const CRef<T>& r2)
 }
 
 template<class T>
+bool operator> (const CRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointer() > r2.GetPointer();
+}
+
+template<class T>
 bool operator== (const CRef<T>& r1, ENull /*null*/)
 {
     return r1.IsNull();
@@ -644,6 +653,12 @@ template<class T>
 bool operator< (const CConstRef<T>& r1, const CConstRef<T>& r2)
 {
     return r1.GetPointer() < r2.GetPointer();
+}
+
+template<class T>
+bool operator> (const CConstRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointer() > r2.GetPointer();
 }
 
 template<class T>
