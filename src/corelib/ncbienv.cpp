@@ -1,47 +1,50 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Eugene Vasilchenko, Denis Vakatov
-*
-* File Description:
-*   Unified interface to application:
-*      environment     -- CNcbiEnvironment
-*      cmd.-line args  -- CNcbiArguments
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2000/01/20 16:36:04  vakatov
-* Added class CNcbiArguments::   application command-line arguments & name
-* Added CNcbiEnvironment::Reset(), and comments to CNcbiEnvironment::
-* Dont #include <ncbienv.inl>
-*
-* Revision 1.1  1999/05/04 16:14:46  vasilche
-* Fixed problems with program environment.
-* Added class CNcbiEnvironment for cached access to C environment.
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Denis Vakatov, Eugene Vasilchenko
+ *
+ * File Description:
+ *   Unified interface to application:
+ *      environment     -- CNcbiEnvironment
+ *      cmd.-line args  -- CNcbiArguments
+ *
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.3  2000/08/31 23:50:21  vakatov
+ * CNcbiArguments:: Inlined Size() and operator[];   use <deque>
+ *
+ * Revision 1.2  2000/01/20 16:36:04  vakatov
+ * Added class CNcbiArguments::   application command-line arguments & name
+ * Added CNcbiEnvironment::Reset(), and comments to CNcbiEnvironment::
+ * Dont #include <ncbienv.inl>
+ *
+ * Revision 1.1  1999/05/04 16:14:46  vasilche
+ * Fixed problems with program environment.
+ * Added class CNcbiEnvironment for cached access to C environment.
+ * ===========================================================================
+ */
 
 #include <corelib/ncbienv.hpp>
 #include <algorithm>
@@ -54,7 +57,8 @@ BEGIN_NCBI_SCOPE
 //  CNcbiEnvironment::
 
 
-CNcbiEnvironment::CNcbiEnvironment(void) {
+CNcbiEnvironment::CNcbiEnvironment(void)
+{
     return;
 }
 
@@ -65,7 +69,8 @@ CNcbiEnvironment::CNcbiEnvironment(const char* const* envp)
 }
 
 
-CNcbiEnvironment::~CNcbiEnvironment(void) {
+CNcbiEnvironment::~CNcbiEnvironment(void)
+{
     return;
 }
 
@@ -112,6 +117,7 @@ string CNcbiEnvironment::Load(const string& name) const
 
 
 
+
 ///////////////////////////////////////////////////////
 //  CNcbiArguments::
 
@@ -123,14 +129,16 @@ CNcbiArguments::CNcbiArguments(int argc, const char* const* argv,
 }
 
 
-CNcbiArguments::~CNcbiArguments(void) {
+CNcbiArguments::~CNcbiArguments(void)
+{
     return;
 }
 
 
 CNcbiArguments::CNcbiArguments(const CNcbiArguments& args)
     : m_ProgramName(args.m_ProgramName),
-      m_Args(args.m_Args) {
+      m_Args(args.m_Args)
+{
     return;
 }
 
@@ -181,18 +189,6 @@ void CNcbiArguments::Reset(int argc, const char* const* argv,
 }
 
 
-SIZE_TYPE CNcbiArguments::Size(void) const
-{
-    return m_Args.size();
-}
-
-
-const string& CNcbiArguments::operator[] (SIZE_TYPE pos) const
-{
-    return m_Args[pos];
-}
-
-
 const string& CNcbiArguments::GetProgramName(void) const
 {
     if ( !m_ProgramName.empty() )
@@ -210,7 +206,7 @@ string CNcbiArguments::GetProgramBasename(void) const
     const string& name = GetProgramName();
     SIZE_TYPE base_pos = name.find_last_of("/\\:");
     if (base_pos == NPOS)
-      return name;
+        return name;
     return name.substr(base_pos + 1);
 }
 
@@ -220,7 +216,7 @@ string CNcbiArguments::GetProgramDirname(void) const
     const string& name = GetProgramName();
     SIZE_TYPE base_pos = name.find_last_of("/\\:");
     if (base_pos == NPOS)
-      return NcbiEmptyString;
+        return NcbiEmptyString;
     return name.substr(0, base_pos + 1);
 }
 

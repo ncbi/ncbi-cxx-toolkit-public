@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Authors:  Eugene Vasilchenko, Denis Vakatov
+* Authors:  Denis Vakatov, Eugene Vasilchenko
 *
 * File Description:
 *   Unified interface to application:
@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/31 23:50:04  vakatov
+* CNcbiArguments:: Inlined Size() and operator[];   use <deque>
+*
 * Revision 1.2  2000/01/20 16:36:02  vakatov
 * Added class CNcbiArguments::   application command-line arguments & name
 * Added CNcbiEnvironment::Reset(), and comments to CNcbiEnvironment::
@@ -48,7 +51,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <map>
-#include <vector>
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 
@@ -84,7 +87,7 @@ private:
 
 
 ///////////////////////////////////////////////////////
-//  CNcbiArguments::   application command-line arguments & name
+//  CNcbiArguments::   application command-line arguments & application name
 
 class CNcbiArguments
 {
@@ -103,8 +106,8 @@ public:
                const string& program_name = NcbiEmptyString);
 
     // Accessing and adding args
-    SIZE_TYPE     Size       (void) const;           // # of arguments
-    const string& operator[] (SIZE_TYPE pos) const;  // read-only access
+    SIZE_TYPE     Size       (void)          const { return m_Args.size(); }
+    const string& operator[] (SIZE_TYPE pos) const { return m_Args[pos]; }
     void          Add        (const string& arg);    // add new arg
 
     // Program name
@@ -114,9 +117,10 @@ public:
     void SetProgramName(const string& program_name);
 
 private:
-    string         m_ProgramName;  // if different from the default m_Args[0]
-    vector<string> m_Args;
+    string        m_ProgramName;  // if different from the default m_Args[0]
+    deque<string> m_Args;
 };
+
 
 END_NCBI_SCOPE
 
