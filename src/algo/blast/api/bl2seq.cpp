@@ -151,7 +151,7 @@ CBl2Seq::x_SetupQueryInfo()
     mi_QueryInfo->first_context = 0;
     mi_QueryInfo->last_context = nframes - 1;
 
-    if ( !(context_offsets = (int*) Malloc(sizeof(int)*(nframes+1))))
+    if ( !(context_offsets = (int*) malloc(sizeof(int)*(nframes+1))))
         NCBI_THROW(CBlastException, eOutOfMemory, "Context offsets array");
 
     // Only one element is needed as query concatenation is not allowed for
@@ -255,7 +255,7 @@ CBl2Seq::x_SetupQuery()
             mi_QueryInfo->context_offsets[mi_QueryInfo->last_context] + 1;
         Uint1Ptr gc = BLASTFindGeneticCode(m_Options->GetQueryGeneticCode());
 
-        if ( !(translation = (Uint1*) Malloc(sizeof(Uint1)*trans_len)))
+        if ( !(translation = (Uint1*) malloc(sizeof(Uint1)*trans_len)))
             NCBI_THROW(CBlastException, eOutOfMemory, "Translation buffer");
 
         // Get both strands of the original nucleotide sequence
@@ -275,7 +275,7 @@ CBl2Seq::x_SetupQuery()
                     frame, &translation[offset], gc);
         }
 
-        MemFree(buf);
+        sfree(buf);
         if (gc) delete [] gc;
 
         // don't count the sentinel bytes
@@ -436,7 +436,7 @@ CBl2Seq::x_Results2SeqAlign()
 
         CConstRef<CSeq_id> subj_id(&sequence::GetId(*m_Subjects[i]));
         CRef<CSeq_align_set> seqalign = BLAST_Results2CppSeqAlign(
-                mi_vResults[i], m_Program, query_vector,
+                mi_vResults[i], m_Program, query_vector, NULL,
                 subj_id, m_Options->GetScoringOpts(), mi_Sbp);
         if (seqalign)
             retval->Set().merge(seqalign->Set());
@@ -458,6 +458,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/07/29 14:15:12  camacho
+* Do not use MemFree/Malloc
+*
 * Revision 1.5  2003/07/28 22:20:17  camacho
 * Removed unused argument
 *
