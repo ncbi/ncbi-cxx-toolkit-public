@@ -1177,28 +1177,6 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
         }
     }
 
-    // now go through all features and demote single interval seqlocmix to seqlocint
-
-    /*
-    for (CTypeConstIterator<CSeq_feat> fi(*sap); fi; ++fi) {
-        CSeq_feat& feat = *fi;
-        CSeq_loc& location = feat.SetLocation ();
-        if (location.IsMix ()) {
-            const CSeq_loc_mix& mx = location.GetMix ();
-            switch (mx.Get().size()) {
-                case 0:
-                    location.SetNull();
-                    break;
-                case 1:
-                    location.Reset(mx.Set().front());
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-    */
-
     return sap;
 }
 
@@ -1206,7 +1184,29 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIfstream& ifs, const string& seqid, const string& annotname)
 {
-    return x_GetImplementation().ReadSequinFeatureTable (ifs, seqid, annotname);
+    CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname);
+
+    // now go through all features and demote single interval seqlocmix to seqlocint
+
+    for (CTypeIterator<CSeq_feat> fi(*sap); fi; ++fi) {
+        CSeq_feat& feat = *fi;
+        CSeq_loc& location = feat.SetLocation ();
+        if (location.IsMix ()) {
+            CSeq_loc_mix& mx = location.SetMix ();
+            switch (mx.Get ().size ()) {
+                case 0:
+                    location.SetNull ();
+                    break;
+                case 1:
+                    feat.SetLocation (*mx.Set ().front ());
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    return sap;
 }
 
 END_objects_SCOPE
