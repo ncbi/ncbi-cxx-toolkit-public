@@ -78,14 +78,14 @@ int CTestSerial::Run(void)
                 *out << *env;
             }
             {
+                CRef<CWeb_Env> env2(new CWeb_Env);
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("webenv.bin",
                                                                  eSerial_AsnBinary));
-                *in >> *env;
-            }
-            {
+                *in >> *env2;
+
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open("webenv.ento",
                                                                   eSerial_AsnText));
-                *out << *env;
+                *out << *env2;
             }
         }
         {
