@@ -1,0 +1,13 @@
+*.ncb
+*.suo
+*.log
+Debug*
+Release*
+d*
+g*
+m*
+o*
+p*
+utils
+w*
+
