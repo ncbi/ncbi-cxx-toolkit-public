@@ -1680,8 +1680,84 @@ void CSeq_loc::FlipStrand(void)
 
 
 // Types used in operations with seq-locs
-typedef CSeq_loc::TRange                    TRange;
-typedef vector<TRange>                      TRanges;
+
+class CRangeWithFuzz : public CSeq_loc::TRange
+{
+public:
+    typedef CSeq_loc::TRange TParent;
+    typedef CConstRef<CInt_fuzz>  TFuzz;
+
+    CRangeWithFuzz(const TParent& rg)
+        : TParent(rg)
+    {
+    }
+    CRangeWithFuzz(const CSeq_loc_CI& it)
+        : TParent(it.GetRange()),
+          m_Fuzz_from(it.GetFuzzFrom()),
+          m_Fuzz_to(it.GetFuzzTo())
+    {
+    }
+    void ResetFuzzFrom(void) { m_Fuzz_from.Reset(); }
+    void ResetFuzzTo(void) { m_Fuzz_to.Reset(); }
+    TFuzz IsSetFuzzFrom(void) const { return m_Fuzz_from; }
+    TFuzz IsSetFuzzTo(void) const { return m_Fuzz_to; }
+    const CInt_fuzz& GetFuzzFrom(void) const { return *m_Fuzz_from; }
+    const CInt_fuzz& GetFuzzTo(void) const { return *m_Fuzz_to; }
+
+    void CopyFrom(const CRangeWithFuzz& rg)
+    {
+        SetFrom(rg.GetFrom());
+        m_Fuzz_from = rg.m_Fuzz_from;
+    }
+
+    void CopyTo(const CRangeWithFuzz& rg)
+    {
+        SetTo(rg.GetTo());
+        m_Fuzz_to = rg.m_Fuzz_to;
+    }
+
+    CRangeWithFuzz& operator +=(const CRangeWithFuzz& rg)
+    {
+        TParent::position_type old_from = GetFrom();
+        TParent::position_type old_to = GetTo();
+        TParent::operator+=(rg);
+        if (old_from != GetFrom()) {
+            m_Fuzz_from.Reset(rg.m_Fuzz_from);
+        }
+        else if (old_from == rg.GetFrom()) {
+            ResetFuzzFrom();
+        }
+        if (old_to != GetTo()) {
+            m_Fuzz_to.Reset(rg.m_Fuzz_to);
+        }
+        else if (old_to == rg.GetTo()) {
+            ResetFuzzTo();
+        }
+        return *this;
+    }
+
+    CRangeWithFuzz& operator +=(const TParent& rg)
+    {
+        TParent::position_type old_from = GetFrom();
+        TParent::position_type old_to = GetTo();
+        TParent::operator+=(rg);
+        if (old_from != GetFrom()  ||  old_from == rg.GetFrom()) {
+            ResetFuzzFrom();
+        }
+        if (old_to != GetTo()  ||  old_to == rg.GetTo()) {
+            ResetFuzzTo();
+        }
+        return *this;
+    }
+
+private:
+    TFuzz m_Fuzz_from;
+    TFuzz m_Fuzz_to;
+};
+
+
+typedef CRangeWithFuzz                      TRangeWithFuzz;
+typedef vector<TRangeWithFuzz>              TRanges;
 typedef map<CSeq_id_Handle, TRanges>        TIdToRangeMap;
 typedef CRangeCollection<TSeqPos>           TRangeColl;
 typedef map<CSeq_id_Handle, TRangeColl>     TIdToRangeColl;
@@ -1692,7 +1768,7 @@ class CRange_Less
 public:
     CRange_Less(void) {}
 
-    bool operator() (const TRange& rg1, const TRange& rg2) const
+    bool operator() (const TRangeWithFuzz& rg1, const TRangeWithFuzz& rg2) const
     {
         if ( rg1.IsWhole() ) {
             return !rg2.IsWhole();
@@ -1710,7 +1786,7 @@ class CRange_ReverseLess
 public:
     CRange_ReverseLess(void) {}
 
-    bool operator() (const TRange& rg1, const TRange& rg2) const
+    bool operator() (const TRangeWithFuzz& rg1, const TRangeWithFuzz& rg2) const
     {
         if ( rg1.IsWhole() ) {
             return !rg2.IsWhole();
@@ -1737,8 +1813,8 @@ bool x_MatchStrand(ENa_strand str1, ENa_strand str2, CSeq_loc::TOpFlags flags)
 }
 
 
-bool x_MergeRanges(TRange& rg1, ENa_strand str1,
-                   const TRange& rg2, ENa_strand str2,
+bool x_MergeRanges(TRangeWithFuzz& rg1, ENa_strand str1,
+                   const TRangeWithFuzz& rg2, ENa_strand str2,
                    CSeq_loc::TOpFlags flags)
 {
     if ( !x_MatchStrand(str1, str2, flags) ) {
@@ -1748,11 +1824,25 @@ bool x_MergeRanges(TRange& rg1, ENa_strand str1,
     if ( (flags & CSeq_loc::fMerge_Contained) != 0 ) {
         if (rg1.GetFrom() <= rg2.GetFrom()  &&  rg1.GetTo() >= rg2.GetTo()) {
             // rg2 already contained in rg1
+            if (rg1.GetFrom() == rg2.GetFrom()) {
+                rg1.ResetFuzzFrom();
+            }
+            if (rg1.GetTo() == rg2.GetTo()) {
+                rg1.ResetFuzzTo();
+            }
             return true;
         }
         if (rg1.GetFrom() >= rg2.GetFrom()  &&  rg1.GetTo() <= rg2.GetTo()) {
             // rg1 contained in rg2
+            bool reset_from = rg1.GetFrom() == rg2.GetFrom();
+            bool reset_to = rg1.GetTo() == rg2.GetTo();
             rg1 = rg2;
+            if (reset_from) {
+                rg1.ResetFuzzFrom();
+            }
+            if (reset_to) {
+                rg1.ResetFuzzTo();
+            }
             return true;
         }
     }
@@ -1766,13 +1856,13 @@ bool x_MergeRanges(TRange& rg1, ENa_strand str1,
     if ((flags & CSeq_loc::fMerge_AbuttingOnly) != 0) {
         if ( !IsReverse(str1) ) {
             if ( rg1.GetToOpen() == rg2.GetFrom() ) {
-                rg1.SetTo(rg2.GetTo());
+                rg1.CopyTo(rg2);
                 return true;
             }
         }
         else {
             if (rg1.GetFrom() == rg2.GetToOpen()) {
-                rg1.SetFrom(rg2.GetFrom());
+                rg1.CopyFrom(rg2);
                 return true;
             }
         }
@@ -1783,7 +1873,7 @@ bool x_MergeRanges(TRange& rg1, ENa_strand str1,
 
 void x_PushRange(CSeq_loc& dst,
                  CSeq_id_Handle idh,
-                 TRange rg,
+                 TRangeWithFuzz rg,
                  ENa_strand strand)
 {
     if (dst.Which() != CSeq_loc::e_not_set) {
@@ -1830,12 +1920,26 @@ void x_PushRange(CSeq_loc& dst,
                                     rg.GetFrom(),
                                     rg.GetTo(),
                                     strand);
+            if ( rg.IsSetFuzzFrom() ) {
+                dst.SetMix().Set().back()->SetInt().SetFuzz_from()
+                    .Assign(rg.GetFuzzFrom());
+            }
+            if ( rg.IsSetFuzzTo() ) {
+                dst.SetMix().Set().back()->SetInt().SetFuzz_to()
+                    .Assign(rg.GetFuzzTo());
+            }
         }
         else {
             CRef<CSeq_interval> interval(new CSeq_interval(*id,
                                                            rg.GetFrom(),
                                                            rg.GetTo(),
                                                            strand));
+            if ( rg.IsSetFuzzFrom() ) {
+                interval->SetFuzz_from().Assign(rg.GetFuzzFrom());
+            }
+            if ( rg.IsSetFuzzTo() ) {
+                interval->SetFuzz_to().Assign(rg.GetFuzzTo());
+            }
             dst.SetInt(*interval);
         }
     }
@@ -1847,7 +1951,7 @@ void x_SingleRange(CSeq_loc& dst,
                    ISynonymMapper& syn_mapper)
 {
     // Create a single range
-    TRange total_rg = TRange::GetEmpty();
+    TRangeWithFuzz total_rg(TRangeWithFuzz::GetEmpty());
     CSeq_id_Handle first_id;
     ENa_strand first_strand = eNa_strand_unknown;
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
@@ -1867,7 +1971,7 @@ void x_SingleRange(CSeq_loc& dst,
             first_id = next_id;
             first_strand = it.GetStrand();
         }
-        total_rg += it.GetRange();
+        total_rg += TRangeWithFuzz(it);
     }
     if ( first_id ) {
         CRef<CSeq_id> id(new CSeq_id);
@@ -1876,6 +1980,12 @@ void x_SingleRange(CSeq_loc& dst,
                                                        total_rg.GetFrom(),
                                                        total_rg.GetTo(),
                                                        first_strand));
+        if ( total_rg.IsSetFuzzFrom() ) {
+            interval->SetFuzz_from().Assign(total_rg.GetFuzzFrom());
+        }
+        if ( total_rg.IsSetFuzzTo() ) {
+            interval->SetFuzz_to().Assign(total_rg.GetFuzzTo());
+        }
         dst.SetInt(*interval);
     }
     else {
@@ -1896,7 +2006,7 @@ void x_RangesToSeq_loc(CSeq_loc& dst,
             // All NULLs merged
             x_PushRange(dst,
                         id_it->first,
-                        TRange::GetEmpty(),
+                        TRangeWithFuzz(TRangeWithFuzz::GetEmpty()),
                         eNa_strand_unknown);
             continue;
         }
@@ -1912,7 +2022,7 @@ void x_RangesToSeq_loc(CSeq_loc& dst,
             }
         }
         // Merge ranges according to the flags, add to destination
-        TRange last_rg = TRange::GetEmpty();
+        TRangeWithFuzz last_rg(TRangeWithFuzz::GetEmpty());
         bool have_range = false;
         ITERATE(TRanges, rg, ranges) {
             if (x_MergeRanges(last_rg, default_strand,
@@ -1942,13 +2052,13 @@ void x_MergeNoSort(CSeq_loc& dst,
 {
     _ASSERT((flags & CSeq_loc::fSort) == 0);
     CSeq_id_Handle last_id;
-    TRange last_rg = TRange::GetEmpty();
+    TRangeWithFuzz last_rg(TRangeWithFuzz::GetEmpty());
     ENa_strand last_strand = eNa_strand_unknown;
     bool have_range = false;
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
         // ID and strand must match
-        TRange it_rg = it.GetRange();
+        TRangeWithFuzz it_rg(it);
         if ( have_range  &&  last_id == idh ) {
             if (x_MergeRanges(last_rg,
                               last_strand,
@@ -1997,10 +2107,10 @@ void x_MergeAndSort(CSeq_loc& dst,
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
         if ( IsReverse(it.GetStrand()) ) {
-            id_map_minus[idh].push_back(it.GetRange());
+            id_map_minus[idh].push_back(TRangeWithFuzz(it));
         }
         else {
-            id_map_plus[idh].push_back(it.GetRange());
+            id_map_plus[idh].push_back(TRangeWithFuzz(it));
         }
     }
 
@@ -2018,7 +2128,7 @@ void x_SingleRange(CSeq_loc& dst,
                    ISynonymMapper& syn_mapper,
                    ILengthGetter& len_getter)
 {
-    TRange total_rg = TRange::GetEmpty();
+    TRangeWithFuzz total_rg(TRangeWithFuzz::GetEmpty());
     CSeq_id_Handle first_id;
     ENa_strand first_strand = eNa_strand_unknown;
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
@@ -2038,7 +2148,7 @@ void x_SingleRange(CSeq_loc& dst,
             first_id = next_id;
             first_strand = it.GetStrand();
         }
-        TRange it_range = it.GetRange();
+        TRangeWithFuzz it_range = TRangeWithFuzz(it);
         if (it_range.GetFrom() >= total_rg.GetFrom()  &&
             it_range.GetTo() <= total_rg.GetTo()) {
             // Nothing new can be added from this interval
@@ -2046,6 +2156,8 @@ void x_SingleRange(CSeq_loc& dst,
         }
         if ( it_range.IsWhole() ) {
             it_range.SetOpen(0, len_getter.GetLength(it.GetSeq_id()));
+            it_range.ResetFuzzFrom();
+            it_range.ResetFuzzTo();
         }
         TRangeColl it_rg_coll(it_range);
         TIdToRangeColl& rg_coll = IsReverse(it.GetStrand()) ?
@@ -2083,12 +2195,12 @@ void x_SubNoSort(CSeq_loc& dst,
 {
     _ASSERT((flags & CSeq_loc::fSort) == 0);
     CSeq_id_Handle last_id;
-    TRange last_rg = TRange::GetEmpty();
+    TRangeWithFuzz last_rg(TRangeWithFuzz::GetEmpty());
     ENa_strand last_strand = eNa_strand_unknown;
     bool have_range = false;
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
-        TRange it_range = it.GetRange();
+        TRangeWithFuzz it_range = TRangeWithFuzz(it);
         if ( it_range.IsWhole() ) {
             it_range.SetOpen(0, len_getter.GetLength(it.GetSeq_id()));
         }
@@ -2151,9 +2263,11 @@ void x_SubAndSort(CSeq_loc& dst,
 
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
-        TRange it_range = it.GetRange();
+        TRangeWithFuzz it_range = it.GetRange();
         if ( it_range.IsWhole() ) {
             it_range.SetOpen(0, len_getter.GetLength(it.GetSeq_id()));
+            it_range.ResetFuzzFrom();
+            it_range.ResetFuzzTo();
         }
         TRangeColl it_rg_coll(it_range);
         TRanges& rg_map = IsReverse(it.GetStrand()) ?
@@ -2269,7 +2383,7 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
         CSeq_id_Handle idh = syn_mapper->GetBestSynonym(it.GetSeq_id());
         TRangeColl& rmap = IsReverse(it.GetStrand()) ?
             rg_coll_minus[idh] : rg_coll_plus[idh];
-        rmap += it.GetRange();
+        rmap += TRangeWithFuzz(it);
     }
 
     if ( (flags & CSeq_loc::fMerge_SingleRange) != 0 ) {
@@ -2335,6 +2449,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.52  2005/01/27 17:56:57  grichenk
+ * Preserve fuzz when merging/adding seq-locs.
+ *
  * Revision 6.51  2004/11/19 15:42:10  shomrat
  * + SetStrand
  *
