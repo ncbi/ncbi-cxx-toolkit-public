@@ -27,6 +27,6 @@
 *
 * File Description:
 *   This originally empty file will be replaced by project_tree_builder.exe
-*   when configuring the toolkit 
+*   when configuring the toolkit
 *
 */
