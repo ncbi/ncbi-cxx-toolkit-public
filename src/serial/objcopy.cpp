@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/17 18:45:33  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.3  2000/09/29 16:18:22  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -54,13 +58,14 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/object.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/continfo.hpp>
 #include <serial/choice.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistrimpl.hpp>
-#include <serial/object.hpp>
+#include <serial/objlist.hpp>
 
 BEGIN_NCBI_SCOPE
 

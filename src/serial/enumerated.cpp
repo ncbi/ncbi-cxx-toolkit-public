@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/10/17 18:45:33  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.14  2000/09/26 18:09:48  vasilche
 * Fixed some warnings.
 *
@@ -69,6 +73,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/enumerated.hpp>
+#include <serial/serialutil.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>

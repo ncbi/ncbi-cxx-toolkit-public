@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/10/17 18:45:25  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.24  2000/10/13 16:28:31  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -168,9 +172,6 @@ public:
                         TConstObjectPtr object2) const;
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-
-    CConstObjectInfo GetPointedObject(const CConstObjectInfo& object) const;
-    CObjectInfo GetPointedObject(const CObjectInfo& object) const;
 
     typedef TObjectPtr (*TGetDataFunction)(const CPointerTypeInfo* objectType,
                                            TObjectPtr objectPtr);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2000/10/17 18:45:33  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.56  2000/10/13 20:22:53  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -690,24 +694,6 @@ bool CClassTypeInfo::CalcMayContainType(TTypeInfo typeInfo) const
     const CClassTypeInfoBase* parentClass = m_ParentClassInfo;
     return parentClass && parentClass->MayContainType(typeInfo) ||
         CParent::CalcMayContainType(typeInfo);
-}
-
-class CCObjectClassInfo : public CVoidTypeInfo
-{
-    typedef CTypeInfo CParent;
-public:
-    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
-};
-
-TTypeInfo CObjectGetTypeInfo::GetTypeInfo(void)
-{
-    static TTypeInfo typeInfo = new CCObjectClassInfo;
-    return typeInfo;
-}
-
-bool CCObjectClassInfo::IsParentClassOf(const CClassTypeInfo* classInfo) const
-{
-    return classInfo->IsCObject();
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2000/10/17 18:45:34  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.64  2000/10/04 19:18:58  vasilche
 * Fixed processing floating point data.
 *
@@ -294,6 +298,7 @@
 #include <serial/delaybuf.hpp>
 #include <serial/objistrimpl.hpp>
 #include <serial/object.hpp>
+#include <serial/objlist.hpp>
 
 #include <limits.h>
 #if HAVE_WINDOWS_H
@@ -404,7 +409,6 @@ CObjectIStream::CObjectIStream(void)
 
 CObjectIStream::~CObjectIStream(void)
 {
-    _TRACE("~CObjectIStream: "<<m_Objects.size()<<" objects read");
 }
 
 void CObjectIStream::Open(const CRef<CByteSourceReader>& reader)
@@ -428,7 +432,8 @@ void CObjectIStream::Open(CNcbiIstream& inStream, bool deleteInStream)
 void CObjectIStream::Close(void)
 {
     m_Input.Close();
-    m_Objects.clear();
+    if ( m_Objects )
+        m_Objects->Clear();
     ClearStack();
     m_Fail = eNotOpen;
 }
@@ -535,51 +540,24 @@ TTypeInfo MapType(const string& name)
 
 void CObjectIStream::RegisterObject(TTypeInfo typeInfo)
 {
-#if NCBISER_ALLOW_CYCLES
-    m_Objects.push_back(CObjectInfo(0, typeInfo));
-#endif
-}
-void CObjectIStream::RegisterAndRead(TObjectPtr object, TTypeInfo typeInfo)
-{
-#if NCBISER_ALLOW_CYCLES
-    m_Objects.push_back(make_pair(object, typeInfo));
-    ReadObject(m_Objects.back());
-#else
-    ReadObject(object, typeInfo);
-#endif
-}
-void CObjectIStream::RegisterAndRead(const CObjectInfo& object)
-{
-#if NCBISER_ALLOW_CYCLES
-    m_Objects.push_back(object);
-#endif
-    ReadObject(object);
-}
-void CObjectIStream::RegisterAndSkip(TTypeInfo typeInfo)
-{
-#if NCBISER_ALLOW_CYCLES
-    m_Objects.push_back(make_pair(TObjectPtr(0), typeInfo));
-#endif
-    SkipObject(typeInfo);
+    if ( m_Objects )
+        m_Objects->RegisterObject(typeInfo);
 }
 
-const CObjectIStream::TReadObjectInfo&
-CObjectIStream::GetRegisteredObject(TObjectIndex index) const
+void CObjectIStream::RegisterObject(TObjectPtr objectPtr, TTypeInfo typeInfo)
 {
-#if NCBISER_ALLOW_CYCLES
-    if ( index < 0 || index >= TObjectIndex(m_Objects.size()) ) {
-        const_cast<CObjectIStream*>(this)->SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "invalid object index");
-    }
-    const TReadObjectInfo& info = m_Objects[index];
-    if ( !info ) {
-        const_cast<CObjectIStream*>(this)->SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "invalid reference to skipped object");
-    }
-    return info;
-#else
-    THROW1_TRACE(runtime_error, "invalid object index: NO_COLLECT defined");
-#endif
+    if ( m_Objects )
+        m_Objects->RegisterObject(objectPtr, typeInfo);
+}
+
+const CReadObjectInfo&
+CObjectIStream::GetRegisteredObject(CReadObjectInfo::TObjectIndex index) const
+{
+    if ( m_Objects )
+        return m_Objects->GetRegisteredObject(index);
+    else
+        THROW1_TRACE(runtime_error,
+                     "invalid object index: NO_COLLECT defined");
 }
 
 // root reader
@@ -598,7 +576,8 @@ void CObjectIStream::SkipFileHeader(TTypeInfo typeInfo)
 
 void CObjectIStream::EndOfRead(void)
 {
-    m_Objects.clear();
+    if ( m_Objects )
+        m_Objects->Clear();
 }
 
 void CObjectIStream::Read(const CObjectInfo& object, ENoFileHeader)
@@ -683,32 +662,38 @@ void CObjectIStream::DuplicatedMember(const CMemberInfo* memberInfo)
 
 void CObjectIStream::ReadSeparateObject(const CObjectInfo& object)
 {
-    size_t firstObject = m_Objects.size();
-    ReadObject(object);
-    size_t endOfObjects = m_Objects.size();
-    for ( size_t i = firstObject; i < endOfObjects; ++i ) {
-        m_Objects[i].ResetObjectPtr();
+    if ( m_Objects ) {
+        size_t firstObject = m_Objects->GetObjectCount();
+        ReadObject(object);
+        size_t lastObject = m_Objects->GetObjectCount();
+        m_Objects->ForgetObjects(firstObject, lastObject);
+    }
+    else {
+        ReadObject(object);
     }
 }
 
-void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
+void CObjectIStream::ReadExternalObject(TObjectPtr objectPtr,
+                                        TTypeInfo typeInfo)
 {
-    _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
-           << typeInfo->GetName() << ")");
-    RegisterAndRead(object, typeInfo);
+    _TRACE("CObjectIStream::Read("<<NStr::PtrToString(objectPtr)<<", "<<
+           typeInfo->GetName()<<")");
+    RegisterObject(objectPtr, typeInfo);
+    ReadObject(objectPtr, typeInfo);
 }
 
 CObjectInfo CObjectIStream::ReadObject(void)
 {
     TTypeInfo typeInfo = MapType(ReadFileHeader());
-    CObjectInfo object;
+    TObjectPtr objectPtr;
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
 
-    object = make_pair(typeInfo->Create(), typeInfo);
-    RegisterAndRead(object);
+    objectPtr = typeInfo->Create();
+    RegisterObject(objectPtr, typeInfo);
+    ReadObject(objectPtr, typeInfo);
 
     END_OBJECT_FRAME();
-    return object;
+    return make_pair(objectPtr, typeInfo);
 }
 
 void CObjectIStream::ReadObject(const CObjectInfo& object)
@@ -726,57 +711,51 @@ string CObjectIStream::ReadFileHeader(void)
     return NcbiEmptyString;
 }
 
-CObjectInfo CObjectIStream::ReadPointer(TTypeInfo declaredType)
+pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStream::ReadPointer("<<declaredType->GetName()<<")");
-    TReadObjectInfo info;
+    TTypeInfo objectType;
+    TObjectPtr objectPtr;
     switch ( ReadPointerType() ) {
     case eNullPointer:
         _TRACE("CObjectIStream::ReadPointer: null");
-        return CObjectInfo();
+        return pair<TObjectPtr, TTypeInfo>(0, declaredType);
     case eObjectPointer:
         {
             _TRACE("CObjectIStream::ReadPointer: @...");
             TObjectIndex index = ReadObjectPointer();
             _TRACE("CObjectIStream::ReadPointer: @" << index);
-            info = GetRegisteredObject(index);
-            break;
-        }
-#if 0
-    case eMemberPointer:
-        {
-            _TRACE("CObjectIStream::ReadPointer: member...");
-            info = ReadObjectInfo();
-            SelectMember(info);
-            if ( info.GetTypeInfo() != declaredType ) {
+            const CReadObjectInfo& info = GetRegisteredObject(index);
+            objectType = info.GetTypeInfo();
+            objectPtr = info.GetObjectPtr();
+            if ( !objectPtr ) {
                 SetFailFlags(eFormatError);
                 THROW1_TRACE(runtime_error,
-                             "incompatible member type: " +
-                             info.GetTypeInfo()->GetName() +
-                             " need: " + declaredType->GetName());
+                             "invalid reference to skipped object");
             }
-            return info;
+            break;
         }
-#endif
     case eThisPointer:
         {
             _TRACE("CObjectIStream::ReadPointer: new");
-            info = make_pair(declaredType->Create(), declaredType);
-            RegisterAndRead(info);
+            objectPtr = declaredType->Create();
+            RegisterObject(objectPtr, declaredType);
+            ReadObject(objectPtr, declaredType);
             ReadThisPointerEnd();
-            return info;
+            return make_pair(objectPtr, declaredType);
         }
     case eOtherPointer:
         {
             _TRACE("CObjectIStream::ReadPointer: new...");
             string className = ReadOtherPointer();
             _TRACE("CObjectIStream::ReadPointer: new " << className);
-            TTypeInfo typeInfo = MapType(className);
+            objectType = MapType(className);
 
-            BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+            BEGIN_OBJECT_FRAME2(eFrameNamed, objectType);
                 
-            info = make_pair(typeInfo->Create(), typeInfo);
-            RegisterAndRead(info);
+            objectPtr = objectType->Create();
+            RegisterObject(objectPtr, objectType);
+            ReadObject(objectPtr, objectType);
                 
             END_OBJECT_FRAME();
 
@@ -787,66 +766,23 @@ CObjectInfo CObjectIStream::ReadPointer(TTypeInfo declaredType)
         SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "illegal pointer type");
     }
-    while ( info.GetTypeInfo() != declaredType ) {
+    while ( objectType != declaredType ) {
         // try to check parent class pointer
-        if ( info.GetTypeFamily() != eTypeFamilyClass ) {
+        if ( objectType->GetTypeFamily() != eTypeFamilyClass ) {
             SetFailFlags(eFormatError);
             THROW1_TRACE(runtime_error, "incompatible member type");
         }
         const CClassTypeInfo* parentClass =
-            info.GetClassTypeInfo()->GetParentClassInfo();
+            CTypeConverter<CClassTypeInfo>::SafeCast(objectType)->GetParentClassInfo();
         if ( parentClass ) {
-            info = CObjectInfo(info.GetObjectPtr(), parentClass);
+            objectType = parentClass;
         }
         else {
             SetFailFlags(eFormatError);
             THROW1_TRACE(runtime_error, "incompatible member type");
         }
     }
-    return info;
-}
-
-CObjectIStream::TReadObjectInfo CObjectIStream::ReadObjectInfo(void)
-{
-    _TRACE("CObjectIStream::ReadObjectInfo()");
-    switch ( ReadPointerType() ) {
-    case eObjectPointer:
-        {
-            TObjectIndex index = ReadObjectPointer();
-            _TRACE("CObjectIStream::ReadPointer: @" << index);
-            return GetRegisteredObject(index);
-        }
-#if 0
-    case eMemberPointer:
-        {
-            _TRACE("CObjectIStream::ReadPointer: member...");
-            TReadObjectInfo info = ReadObjectInfo();
-            SelectMember(info);
-            return info;
-        }
-#endif
-    case eOtherPointer:
-        {
-            string className = ReadOtherPointer();
-            _TRACE("CObjectIStream::ReadPointer: new " << className);
-            TTypeInfo typeInfo = MapType(className);
-            CObjectInfo object;
-            BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
-            
-            object = make_pair(typeInfo->Create(), typeInfo);
-            RegisterAndRead(object);
-
-            END_OBJECT_FRAME();
-
-            ReadOtherPointerEnd();
-            return object;
-        }
-    default:
-        break;  // error
-    }
-
-    SetFailFlags(eFormatError);
-    THROW1_TRACE(runtime_error, "illegal pointer type");
+    return make_pair(objectPtr, objectType);
 }
 
 void CObjectIStream::ReadOtherPointerEnd(void)
@@ -860,7 +796,8 @@ void CObjectIStream::ReadThisPointerEnd(void)
 void CObjectIStream::SkipExternalObject(TTypeInfo typeInfo)
 {
     _TRACE("CObjectIStream::SkipExternalObject("<<typeInfo->GetName()<<")");
-    RegisterAndSkip(typeInfo);
+    RegisterObject(typeInfo);
+    SkipObject(typeInfo);
 }
 
 void CObjectIStream::SkipPointer(TTypeInfo declaredType)
@@ -881,7 +818,8 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
     case eThisPointer:
         {
             _TRACE("CObjectIStream::ReadPointer: new");
-            RegisterAndSkip(declaredType);
+            RegisterObject(declaredType);
+            SkipObject(declaredType);
             ReadThisPointerEnd();
             break;
         }
@@ -893,7 +831,8 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
             TTypeInfo typeInfo = MapType(className);
             BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
                 
-            RegisterAndSkip(typeInfo);
+            RegisterObject(typeInfo);
+            SkipObject(typeInfo);
 
             END_OBJECT_FRAME();
             ReadOtherPointerEnd();
@@ -903,44 +842,6 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
         SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "illegal pointer type");
     }
-}
-
-void CObjectIStream::SkipObjectInfo(void)
-{
-    _TRACE("CObjectIStream::ReadObjectInfo()");
-    switch ( ReadPointerType() ) {
-    case eObjectPointer:
-        {
-            TObjectIndex index = ReadObjectPointer();
-            _TRACE("CObjectIStream::ReadPointer: @" << index);
-            GetRegisteredObject(index);
-            return;
-        }
-    case eOtherPointer:
-        {
-            string className = ReadOtherPointer();
-            _TRACE("CObjectIStream::ReadPointer: new " << className);
-            TTypeInfo typeInfo = MapType(className);
-            BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
-
-            RegisterAndSkip(typeInfo);
-
-            END_OBJECT_FRAME();
-            ReadOtherPointerEnd();
-            return;
-        }
-    default:
-        break;  // error
-    }
-
-    SetFailFlags(eFormatError);
-    THROW1_TRACE(runtime_error, "illegal pointer type");
-}
-
-void CObjectIStream::SkipValue(void)
-{
-    SetFailFlags(eIllegalCall);
-    THROW1_TRACE(runtime_error, "cannot skip value");
 }
 
 void CObjectIStream::BeginNamedType(TTypeInfo /*namedTypeInfo*/)
@@ -1351,8 +1252,9 @@ extern "C" {
     {
         if ( !object || !data )
             return -1;
-    
-        return static_cast<CObjectIStream::AsnIo*>(object)->Read(data, length);
+        CObjectIStream::AsnIo* asnio =
+            static_cast<CObjectIStream::AsnIo*>(object);
+        return Uint2(asnio->Read(data, length));
     }
 }
 

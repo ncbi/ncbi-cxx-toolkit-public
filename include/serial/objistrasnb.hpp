@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/10/17 18:45:25  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.30  2000/09/18 20:00:05  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -184,7 +188,6 @@ public:
     virtual long ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void ReadNull(void);
-    virtual void SkipValue(void);
 
 protected:
     virtual bool ReadBool(void);

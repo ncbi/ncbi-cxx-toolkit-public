@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/10/17 18:45:24  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.42  2000/10/04 19:18:54  vasilche
 * Fixed processing floating point data.
 *
@@ -243,8 +247,6 @@ public:
     virtual long ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void ReadNull(void);
-
-    virtual void SkipValue(void);
 
     TByte ReadByte(void);
     void ReadBytes(TByte* bytes, unsigned size);

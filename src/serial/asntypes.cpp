@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2000/10/17 18:45:32  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.49  2000/10/13 20:22:52  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -232,6 +236,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/autoptrinfo.hpp>
+#include <serial/classinfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
@@ -643,7 +648,7 @@ bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
     if ( bs1 == 0 || bs2 == 0 )
 		return bs1 == bs2;
 
-	size_t len = BSLen(bs1);
+	Int4 len = BSLen(bs1);
     if ( len != BSLen(bs2) )
         return false;
     
@@ -651,7 +656,7 @@ bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
 	BSSeek(bs2, 0, SEEK_SET);
 	char buff1[1024], buff2[1024];
 	while ( len > 0 ) {
-		size_t chunk = sizeof(buff1);
+		Int4 chunk = Int4(sizeof(buff1));
 		if ( chunk > len )
 			chunk = len;
 		BSRead(bs1, buff1, chunk);
@@ -684,10 +689,10 @@ void COctetStringTypeInfo::ReadOctetString(CObjectIStream& in,
 	CObjectIStream::ByteBlock block(in);
 	BSFree(Get(objectPtr));
     char buffer[1024];
-    size_t count = block.Read(buffer, sizeof(buffer));
+    Int4 count = Int4(block.Read(buffer, sizeof(buffer)));
     bytestore* bs = Get(objectPtr) = BSNew(count);
     BSWrite(bs, buffer, count);
-    while ( (count = block.Read(buffer, sizeof(buffer))) != 0 ) {
+    while ( (count = Int4(block.Read(buffer, sizeof(buffer)))) != 0 ) {
         BSWrite(bs, buffer, count);
     }
     block.End();
@@ -700,12 +705,12 @@ void COctetStringTypeInfo::WriteOctetString(CObjectOStream& out,
 	bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
 	if ( bs == 0 )
 		THROW1_TRACE(runtime_error, "null bytestore pointer");
-	size_t len = BSLen(bs);
+	Int4 len = BSLen(bs);
 	CObjectOStream::ByteBlock block(out, len);
 	BSSeek(bs, 0, SEEK_SET);
 	char buff[1024];
 	while ( len > 0 ) {
-		size_t chunk = sizeof(buff);
+		Int4 chunk = Int4(sizeof(buff));
 		if ( chunk > len )
 			chunk = len;
 		BSRead(bs, buff, chunk);
@@ -741,7 +746,7 @@ void COctetStringTypeInfo::GetValueOctetString(TConstObjectPtr objectPtr,
 void COctetStringTypeInfo::SetValueOctetString(TObjectPtr objectPtr,
                                                const vector<char>& value) const
 {
-    size_t count = value.size();
+    Int4 count = Int4(value.size());
     bytestore* bs = Get(objectPtr) = BSNew(count);
     BSWrite(bs, const_cast<char*>(&value.front()), count);
 }

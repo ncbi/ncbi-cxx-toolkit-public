@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/10/17 18:45:34  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.44  2000/09/29 16:18:23  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -1120,13 +1124,6 @@ bool CObjectIStreamAsnBinary::SkipRealValue(void)
         SkipTagData();
     }
     return true;
-}
-
-void CObjectIStreamAsnBinary::SkipValue()
-{
-    if ( !SkipRealValue() ) {
-        ThrowError(eFormatError, "unexpected end of contents");
-    }
 }
 
 #if HAVE_NCBI_C

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/10/17 18:45:36  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.22  2000/10/13 20:22:56  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -215,9 +219,11 @@ public:
 void CVoidTypeFunctions::ThrowException(const char* operation,
                                         TTypeInfo objectType)
 {
-    THROW1_TRACE(runtime_error,
-                 "cannot "+string(operation)+
-                 " object of type: "+objectType->GetName());
+    string message("cannot ");
+    message += operation;
+    message += " object of type: ";
+    message += objectType->GetName();
+    THROW1_TRACE(runtime_error, message);
 }
 
 bool CVoidTypeFunctions::IsDefault(TConstObjectPtr )
@@ -705,8 +711,11 @@ const CPrimitiveTypeInfo* CPrimitiveTypeInfo::GetIntegerTypeInfo(size_t size)
         info = CStdTypeInfo<signed char>::GetTypeInfo();
     else if ( size == sizeof(long) )
         info = CStdTypeInfo<long>::GetTypeInfo();
-    else
-        THROW1_TRACE(runtime_error, "Illegal enum size: "+NStr::UIntToString(size));
+    else {
+        string message("Illegal enum size: ");
+        message += NStr::UIntToString(size);
+        THROW1_TRACE(runtime_error, message);
+    }
     _ASSERT(info->GetSize() == size);
     _ASSERT(info->GetTypeFamily() == eTypeFamilyPrimitive);
     _ASSERT(CTypeConverter<CPrimitiveTypeInfo>::SafeCast(info)->GetPrimitiveValueType() == ePrimitiveValueInteger);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/10/17 18:45:36  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.29  2000/10/13 16:28:40  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -161,6 +165,7 @@
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>
+#include <serial/serialutil.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -296,8 +301,7 @@ void CPointerTypeInfo::ReadPointer(CObjectIStream& in,
     const CPointerTypeInfo* pointerType =
         CTypeConverter<CPointerTypeInfo>::SafeCast(objectType);
 
-    CObjectInfo data(in.ReadPointer(pointerType->GetPointedType()));
-    pointerType->SetObjectPointer(objectPtr, data.GetObjectPtr());
+    pointerType->SetObjectPointer(objectPtr, in.ReadPointer(pointerType->GetPointedType()).first);
 }
 
 void CPointerTypeInfo::WritePointer(CObjectOStream& out,
@@ -327,16 +331,6 @@ void CPointerTypeInfo::SkipPointer(CObjectIStream& in,
         CTypeConverter<CPointerTypeInfo>::SafeCast(objectType);
 
     in.SkipPointer(pointerType->GetPointedType());
-}
-
-CConstObjectInfo CPointerTypeInfo::GetPointedObject(const CConstObjectInfo& object) const
-{
-    return pair<TConstObjectPtr, TTypeInfo>(GetObjectPointer(object.GetObjectPtr()), GetPointedType());
-}
-
-CObjectInfo CPointerTypeInfo::GetPointedObject(const CObjectInfo& object) const
-{
-    return pair<TObjectPtr, TTypeInfo>(GetObjectPointer(object.GetObjectPtr()), GetPointedType());
 }
 
 END_NCBI_SCOPE

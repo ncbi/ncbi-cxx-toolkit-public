@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2000/10/17 18:45:35  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.53  2000/10/13 20:22:55  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -498,7 +502,12 @@ void CObjectOStreamAsn::WriteNullPointer(void)
 void CObjectOStreamAsn::WriteObjectReference(TObjectIndex index)
 {
     m_Output.PutChar('@');
-    m_Output.PutInt(index);
+    if ( sizeof(TObjectIndex) == sizeof(int) )
+        m_Output.PutInt(int(index));
+    else if ( sizeof(TObjectIndex) == sizeof(long) )
+        m_Output.PutLong(long(index));
+    else
+        THROW1_TRACE(runtime_error, "invalid size of TObjectIndex");
 }
 
 void CObjectOStreamAsn::WriteOtherBegin(TTypeInfo typeInfo)
@@ -514,7 +523,7 @@ void CObjectOStreamAsn::WriteOther(TConstObjectPtr object,
     m_Output.PutString(": ");
     WriteId(typeInfo->GetName());
     m_Output.PutChar(' ');
-    RegisterAndWrite(object, typeInfo);
+    WriteObject(object, typeInfo);
 }
 
 void CObjectOStreamAsn::StartBlock(void)

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2000/10/17 18:45:34  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.57  2000/10/04 19:18:59  vasilche
 * Fixed processing floating point data.
 *
@@ -1228,58 +1232,18 @@ CObjectIStream::EPointerType CObjectIStreamAsn::ReadPointerType(void)
 
 CObjectIStream::TObjectIndex CObjectIStreamAsn::ReadObjectPointer(void)
 {
-    return ReadInt();
+    if ( sizeof(TObjectIndex) == sizeof(int) )
+        return TObjectIndex(ReadInt());
+    else if ( sizeof(TObjectIndex) == sizeof(long) )
+        return TObjectIndex(ReadLong());
+    else
+        ThrowError(eIllegalCall, "invalid size of TObjectIndex");
+    return 0;
 }
 
 string CObjectIStreamAsn::ReadOtherPointer(void)
 {
     return ReadTypeId(SkipWhiteSpace());
-}
-
-void CObjectIStreamAsn::SkipValue()
-{
-    int blockLevel = 0;
-    for ( ;; ) {
-        char c = SkipWhiteSpace();
-        switch ( c ) {
-        case ':':
-            m_Input.SkipChar();
-            ReadTypeId(SkipWhiteSpace());
-            break;
-        case '\'':
-            SkipByteBlock();
-            break;
-        case '\"':
-            SkipString();
-            break;
-        case '{':
-            m_Input.SkipChar();
-            ++blockLevel;
-            break;
-        case '}':
-            switch ( blockLevel ) {
-            case 0:
-                return;
-            case 1:
-                m_Input.SkipChar();
-                return;
-            default:
-                m_Input.SkipChar();
-                --blockLevel;
-                break;
-            }
-            break;
-        case ',':
-            if ( blockLevel == 0 ) {
-                return;
-            }
-            m_Input.SkipChar();
-            break;
-        default:
-            m_Input.SkipChar();
-            break;
-        }
-    }
 }
 
 #if HAVE_NCBI_C

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/10/17 18:45:35  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.17  2000/10/13 20:22:56  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -122,6 +126,7 @@
 #include <serial/choice.hpp>
 #include <serial/continfo.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/ptrinfo.hpp>
 
 #include <stdio.h>
 #include <math.h>
@@ -380,7 +385,12 @@ void CObjectOStreamXml::WriteNullPointer(void)
 void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
 {
     m_Output.PutString("<object index=");
-    m_Output.PutInt(index);
+    if ( sizeof(TObjectIndex) == sizeof(int) )
+        m_Output.PutInt(int(index));
+    else if ( sizeof(TObjectIndex) == sizeof(long) )
+        m_Output.PutLong(long(index));
+    else
+        THROW1_TRACE(runtime_error, "invalid size of TObjectIndex");
     m_Output.PutString("/>");
 }
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/17 18:45:26  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.13  2000/10/13 20:22:46  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -114,8 +118,6 @@ typedef const CTypeInfo* TTypeInfo;
 typedef TTypeInfo (*TTypeInfoGetter)(void);
 typedef TTypeInfo (*TTypeInfoGetter1)(TTypeInfo);
 typedef TTypeInfo (*TTypeInfoGetter2)(TTypeInfo, TTypeInfo);
-
-#define NCBISER_ALLOW_CYCLES 1
 
 enum ESerialDataFormat {
     eSerial_None         = 0,

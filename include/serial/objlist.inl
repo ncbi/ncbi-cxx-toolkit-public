@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/17 18:45:25  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.4  2000/08/15 19:44:41  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -55,9 +59,121 @@
 */
 
 inline
-size_t COObjectList::GetWrittenObjectCount(void) const
+CReadObjectInfo::CReadObjectInfo(void)
+    : m_TypeInfo(0), m_ObjectPtr(0)
+{
+}
+
+inline
+CReadObjectInfo::CReadObjectInfo(TTypeInfo typeInfo)
+    : m_TypeInfo(typeInfo), m_ObjectPtr(0)
+{
+}
+
+inline
+CReadObjectInfo::CReadObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo)
+    : m_TypeInfo(typeInfo),
+      m_ObjectPtr(objectPtr), m_ObjectRef(typeInfo->GetCObjectPtr(objectPtr))
+{
+}
+
+inline
+TTypeInfo CReadObjectInfo::GetTypeInfo(void) const
+{
+    return m_TypeInfo;
+}
+
+inline
+TObjectPtr CReadObjectInfo::GetObjectPtr(void) const
+{
+    return m_ObjectPtr;
+}
+
+inline
+void CReadObjectInfo::ResetObjectPtr(void)
+{
+    m_ObjectPtr = 0;
+    m_ObjectRef.Reset();
+}
+
+inline
+void CReadObjectInfo::Assign(TObjectPtr objectPtr, TTypeInfo typeInfo)
+{
+    m_TypeInfo = typeInfo;
+    m_ObjectPtr = objectPtr;
+    m_ObjectRef.Reset(typeInfo->GetCObjectPtr(objectPtr));
+}
+
+inline
+CReadObjectList::TObjectIndex CReadObjectList::GetObjectCount(void) const
 {
     return m_Objects.size();
+}
+
+inline
+CWriteObjectInfo::CWriteObjectInfo(void)
+    : m_TypeInfo(0), m_ObjectPtr(0), m_Index(TObjectIndex(-1))
+{
+}
+
+inline
+CWriteObjectInfo::CWriteObjectInfo(TTypeInfo typeInfo, TObjectIndex index)
+    : m_TypeInfo(typeInfo), m_ObjectPtr(0),
+      m_Index(index)
+{
+}
+
+inline
+CWriteObjectInfo::CWriteObjectInfo(TConstObjectPtr objectPtr,
+                                   TTypeInfo typeInfo, TObjectIndex index)
+    : m_TypeInfo(typeInfo), m_ObjectPtr(objectPtr),
+      m_ObjectRef(typeInfo->GetCObjectPtr(objectPtr)),
+      m_Index(index)
+{
+}
+
+inline
+CWriteObjectInfo::TObjectIndex CWriteObjectInfo::GetIndex(void) const
+{
+    _ASSERT(m_Index != TObjectIndex(-1));
+    return m_Index;
+}
+
+inline
+TTypeInfo CWriteObjectInfo::GetTypeInfo(void) const
+{
+    return m_TypeInfo;
+}
+
+inline
+TConstObjectPtr CWriteObjectInfo::GetObjectPtr(void) const
+{
+    return m_ObjectPtr;
+}
+
+inline
+const CConstRef<CObject>& CWriteObjectInfo::GetObjectRef(void) const
+{
+    return m_ObjectRef;
+}
+
+inline
+void CWriteObjectInfo::ResetObjectPtr(void)
+{
+    m_ObjectPtr = 0;
+    m_ObjectRef.Reset();
+}
+
+inline
+CWriteObjectList::TObjectIndex CWriteObjectList::GetObjectCount(void) const
+{
+    return m_Objects.size();
+}
+
+inline
+CWriteObjectList::TObjectIndex CWriteObjectList::NextObjectIndex(void) const
+{
+    return GetObjectCount();
 }
 
 #endif /* def OBJLIST__HPP  &&  ndef OBJLIST__INL */

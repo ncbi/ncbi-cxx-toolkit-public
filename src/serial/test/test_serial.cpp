@@ -237,7 +237,7 @@ int CTestSerial::Run(void)
             {
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asn",
                                                                  eSerial_AsnText));
-                in->SkipValue();
+                in->Skip(ObjectType(read));
             }
         }
 
@@ -258,7 +258,7 @@ int CTestSerial::Run(void)
             {
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asb",
                                                                  eSerial_AsnBinary));
-                in->SkipValue();
+                in->Skip(ObjectType(read));
             }
         }
 

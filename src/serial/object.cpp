@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/17 18:45:34  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.12  2000/10/13 16:28:39  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -168,12 +172,14 @@ CObjectTypeInfo CObjectTypeInfo::GetElementType(void) const
 // pointer interface
 CConstObjectInfo CConstObjectInfo::GetPointedObject(void) const
 {
-    return GetPointerTypeInfo()->GetPointedObject(*this);
+    const CPointerTypeInfo* pointerType = GetPointerTypeInfo();
+    return pair<TConstObjectPtr, TTypeInfo>(pointerType->GetObjectPointer(GetObjectPtr()), pointerType->GetPointedType());
 }
 
 CObjectInfo CObjectInfo::GetPointedObject(void) const
 {
-    return GetPointerTypeInfo()->GetPointedObject(*this);
+    const CPointerTypeInfo* pointerType = GetPointerTypeInfo();
+    return pair<TObjectPtr, TTypeInfo>(pointerType->GetObjectPointer(GetObjectPtr()), pointerType->GetPointedType());
 }
 
 // primitive interface
@@ -670,6 +676,24 @@ void CObjectInfo::ReadContainer(CObjectIStream& in,
 
     in.EndContainer();
     END_OBJECT_FRAME_OF(in);
+}
+
+class CCObjectClassInfo : public CVoidTypeInfo
+{
+    typedef CTypeInfo CParent;
+public:
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
+};
+
+TTypeInfo CObjectGetTypeInfo::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CCObjectClassInfo;
+    return typeInfo;
+}
+
+bool CCObjectClassInfo::IsParentClassOf(const CClassTypeInfo* classInfo) const
+{
+    return classInfo->IsCObject();
 }
 
 END_NCBI_SCOPE

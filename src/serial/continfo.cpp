@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/10/17 18:45:33  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.5  2000/10/13 16:28:39  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -56,11 +60,13 @@
 * ===========================================================================
 */
 
-#include <serial/continfo.hpp>
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/continfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
+#include <serial/serialutil.hpp>
 
 BEGIN_NCBI_SCOPE
 

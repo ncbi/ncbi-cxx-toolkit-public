@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/10/17 18:45:24  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.5  2000/10/03 17:22:32  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -58,7 +62,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-//#include <serial/object.hpp>
 
 BEGIN_NCBI_SCOPE
 

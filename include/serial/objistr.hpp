@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/10/17 18:45:24  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.54  2000/10/13 20:59:12  vasilche
 * Avoid using of ssize_t absent on some compilers.
 *
@@ -243,13 +247,13 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/strbuffer.hpp>
 #include <serial/objstack.hpp>
 #include <serial/objhook.hpp>
 #include <serial/hookdatakey.hpp>
-#include <vector>
 
 struct asnio;
 
@@ -273,11 +277,14 @@ class CReadObjectHook;
 class CReadClassMemberHook;
 class CReadChoiceVariantHook;
 
+class CReadObjectInfo;
+class CReadObjectList;
+
 class CObjectIStream : public CObjectStack
 {
 public:
     // typedefs
-    typedef int TObjectIndex;
+    typedef size_t TObjectIndex;
 
     // open methods
     virtual void Open(const CRef<CByteSourceReader>& reader);
@@ -296,6 +303,9 @@ public:
         {
             return Open(format, fileName);
         }
+
+    bool DetectLoops(void) const;
+    void DetectLoops(bool detectLoops);
 
     // constructors
 protected:
@@ -473,12 +483,9 @@ public:
     virtual void SkipByteBlock(void) = 0;
 
     // reads type info
-    virtual CObjectInfo ReadPointer(TTypeInfo declaredType);
+    virtual pair<TObjectPtr, TTypeInfo> ReadPointer(TTypeInfo declaredType);
     enum EPointerType {
         eNullPointer,
-#if 0
-        eMemberPointer,
-#endif
         eObjectPointer,
         eThisPointer,
         eOtherPointer
@@ -488,8 +495,6 @@ public:
     void SkipObjectInfo(void);
 
     virtual void ReadNull(void) = 0;
-
-    virtual void SkipValue(void);
 
     // low level readers:
     enum EFailFlags {
@@ -685,8 +690,7 @@ protected:
     friend class CObjectStreamCopier;
 
     // low level readers
-    typedef CObjectInfo TReadObjectInfo;
-    TReadObjectInfo ReadObjectInfo(void);
+    pair<TObjectPtr, TTypeInfo> ReadObjectInfo(void);
     virtual EPointerType ReadPointerType(void) = 0;
     virtual TObjectIndex ReadObjectPointer(void) = 0;
     virtual void ReadThisPointerEnd(void);
@@ -725,11 +729,9 @@ protected:
     virtual void SkipDouble(void);
     virtual void SkipCString(void);
 
-    const TReadObjectInfo& GetRegisteredObject(TObjectIndex index) const;
-    void RegisterAndRead(TObjectPtr object, TTypeInfo typeInfo);
-    void RegisterAndRead(const CObjectInfo& object);
-    void RegisterAndSkip(TTypeInfo typeInfo);
     void RegisterObject(TTypeInfo typeInfo);
+    void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
+    const CReadObjectInfo& GetRegisteredObject(TObjectIndex index) const;
 
 public:
     // open helpers
@@ -747,7 +749,7 @@ protected:
     CIStreamBuffer m_Input;
     
 private:
-    vector<TReadObjectInfo> m_Objects;
+    AutoPtr<CReadObjectList> m_Objects;
 
     unsigned m_Fail;
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/10/17 18:45:35  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.21  2000/10/03 17:22:44  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -130,53 +134,47 @@
 #include <serial/objlist.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/member.hpp>
+#include <serial/object.hpp>
 #include <serial/typeinfoimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
-COObjectList::COObjectList(void)
+CWriteObjectList::CWriteObjectList(void)
 {
 }
 
-COObjectList::~COObjectList(void)
+CWriteObjectList::~CWriteObjectList(void)
 {
 }
 
-void COObjectList::Clear(void)
+void CWriteObjectList::Clear(void)
 {
     m_Objects.clear();
     m_ObjectsByPtr.clear();
 }
 
-CWriteObjectInfo& COObjectList::RegisterObject(TTypeInfo typeInfo)
+void CWriteObjectList::RegisterObject(TTypeInfo typeInfo)
 {
-    TObjectIndex newIndex = m_Objects.size();
-    _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
-    m_Objects.push_back(CConstObjectInfo(0, typeInfo));
-    CWriteObjectInfo& info = m_Objects.back();
-    MarkObjectWritten(info);
-    info.m_Index = newIndex;
-    return info;
+    m_Objects.push_back(CWriteObjectInfo(typeInfo, NextObjectIndex()));
 }
 
-CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
-                                               TTypeInfo typeInfo)
+const CWriteObjectInfo*
+CWriteObjectList::RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    _TRACE("COObjectList::RegisterObject("<<NStr::PtrToString(object)<<", "<<
-           typeInfo->GetName() << ") size: " << typeInfo->GetSize() <<
-           ", end: " << NStr::PtrToString(Add(object, typeInfo->GetSize())));
-    typeInfo = typeInfo->GetRealTypeInfo(object);
-
-    const CObject* cObject = typeInfo->GetCObjectPtr(object);
-
-    if ( cObject ) {
+    _TRACE("CWriteObjectList::RegisterObject("<<NStr::PtrToString(object)<<
+           ", "<<typeInfo->GetName()<<") size: "<<typeInfo->GetSize()<<
+           ", end: "<<NStr::PtrToString(Add(object, typeInfo->GetSize())));
+    TObjectIndex index = NextObjectIndex();
+    CWriteObjectInfo info(object, typeInfo, index);
+    
+    if ( info.GetObjectRef() ) {
         // special case with cObjects
-        if ( cObject->ReferencedOnlyOnce() ) {
+        if ( info.GetObjectRef()->ReferencedOnlyOnce() ) {
             // unique reference -> do not remember pointer
             // in debug mode check for absence of other references
 #if _DEBUG
             pair<TObjectsByPtr::iterator, bool> ins =
-                m_ObjectsByPtr.insert(TObjectsByPtr::value_type(object, CWriteObjectInfo::eObjectIndexNotWritten));
+                m_ObjectsByPtr.insert(TObjectsByPtr::value_type(object, index));
             if ( !ins.second ) {
                 // not inserted -> already have the same object pointer
                 // as reference counter is one -> error
@@ -185,11 +183,10 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
             }
 #endif
             // new object
-            _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
-            m_Objects.push_back(CConstObjectInfo(object, typeInfo));
-            return m_Objects.back();
+            m_Objects.push_back(info);
+            return 0;
         }
-        else if ( cObject->Referenced() ) {
+        else if ( info.GetObjectRef()->Referenced() ) {
             // multiple reference -> normal processing
         }
         else {
@@ -199,23 +196,19 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
         }
     }
 
-    TObjectIndex newIndex = m_Objects.size();
     pair<TObjectsByPtr::iterator, bool> ins =
-        m_ObjectsByPtr.insert(TObjectsByPtr::value_type(object, newIndex));
+        m_ObjectsByPtr.insert(TObjectsByPtr::value_type(object, index));
 
     if ( !ins.second ) {
         // not inserted -> already have the same object pointer
-        TObjectIndex index = ins.first->second;
-        _ASSERT(index != CWriteObjectInfo::eObjectIndexNotWritten);
-        CWriteObjectInfo& objectInfo = m_Objects[index];
+        TObjectIndex oldIndex = ins.first->second;
+        CWriteObjectInfo& objectInfo = m_Objects[oldIndex];
         _ASSERT(objectInfo.GetTypeInfo() == typeInfo);
-        _ASSERT(objectInfo.IsWritten());
-        return objectInfo;
+        return &objectInfo;
     }
 
     // new object
-    _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
-    m_Objects.push_back(CWriteObjectInfo(object, typeInfo));
+    m_Objects.push_back(info);
 
 #if _DEBUG
     // check for overlapping with previous object
@@ -235,38 +228,62 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
     }
 #endif
 
-    _ASSERT(&m_Objects[ins.first->second] == &m_Objects.back());
-    return m_Objects.back();
+    return 0;
 }
 
-void COObjectList::MarkObjectWritten(CWriteObjectInfo& info)
-{
-    _ASSERT(!info.IsWritten());
-    _ASSERT(&info == &m_Objects.back());
-    info.m_Index = m_Objects.size() - 1;
-}
-
-void COObjectList::CheckAllWritten(void) const
-{
-    if ( !m_Objects.empty() && !m_Objects.back().IsWritten() )
-        THROW1_TRACE(runtime_error, "not all objects written");
-}
-
-void COObjectList::ForgetObjects(size_t from, size_t to)
+void CWriteObjectList::ForgetObjects(TObjectIndex from, TObjectIndex to)
 {
     _ASSERT(0 <= from);
     _ASSERT(from <= to);
-    _ASSERT(to <= GetWrittenObjectCount());
-    _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
-    for ( size_t i = from; i < to; ++i ) {
+    _ASSERT(to <= GetObjectCount());
+    for ( TObjectIndex i = from; i < to; ++i ) {
         CWriteObjectInfo& info = m_Objects[i];
-        _ASSERT(info.IsWritten());
-        CConstObjectInfo& object = info.m_Object;
-        TConstObjectPtr objectPtr = object.GetObjectPtr();
+        TConstObjectPtr objectPtr = info.GetObjectPtr();
         if ( objectPtr ) {
             m_ObjectsByPtr.erase(objectPtr);
-            object.ResetObjectPtr();
+            info.ResetObjectPtr();
         }
+    }
+}
+
+CReadObjectList::CReadObjectList(void)
+{
+}
+
+CReadObjectList::~CReadObjectList(void)
+{
+}
+
+void CReadObjectList::Clear(void)
+{
+    m_Objects.clear();
+}
+
+void CReadObjectList::RegisterObject(TTypeInfo typeInfo)
+{
+    m_Objects.push_back(CReadObjectInfo(typeInfo));
+}
+
+void CReadObjectList::RegisterObject(TObjectPtr objectPtr, TTypeInfo typeInfo)
+{
+    m_Objects.push_back(CReadObjectInfo(objectPtr, typeInfo));
+}
+
+const CReadObjectInfo&
+CReadObjectList::GetRegisteredObject(TObjectIndex index) const
+{
+    if ( index < 0 || index >= GetObjectCount() )
+        THROW1_TRACE(runtime_error, "invalid object index");
+    return m_Objects[index];
+}
+
+void CReadObjectList::ForgetObjects(TObjectIndex from, TObjectIndex to)
+{
+    _ASSERT(0 <= from);
+    _ASSERT(from <= to);
+    _ASSERT(to <= GetObjectCount());
+    for ( TObjectIndex i = from; i < to; ++i ) {
+        m_Objects[i].ResetObjectPtr();
     }
 }
 

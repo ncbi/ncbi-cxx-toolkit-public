@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2000/10/17 18:45:35  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.51  2000/10/13 16:28:39  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -253,6 +257,8 @@
 #include <serial/member.hpp>
 #include <serial/variant.hpp>
 #include <serial/object.hpp>
+#include <serial/objlist.hpp>
+
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -324,28 +330,26 @@ CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
 
 CObjectOStream::~CObjectOStream(void)
 {
-    _TRACE("~CObjectOStream:"<<m_Objects.GetWrittenObjectCount()<<" objects written");
 }
 
 void CObjectOStream::Close(void)
 {
     m_Output.Close();
-    m_Objects.Clear();
+    if ( m_Objects )
+        m_Objects->Clear();
     ClearStack();
 }
 
 void CObjectOStream::EndOfWrite(void)
 {
-#if NCBISER_ALLOW_CYCLES
-    m_Objects.CheckAllWritten();
-#endif
     FlushBuffer();
-    m_Objects.Clear();
+    if ( m_Objects )
+        m_Objects->Clear();
 }    
 
 void CObjectOStream::WriteObject(const CConstObjectInfo& object)
 {
-    object.GetTypeInfo()->WriteData(*this, object.GetObjectPtr());
+    WriteObject(object.GetObjectPtr(), object.GetTypeInfo());
 }
 
 void CObjectOStream::Write(const CConstObjectInfo& object)
@@ -381,102 +385,40 @@ void CObjectOStream::Write(TConstObjectPtr object, const CTypeRef& type)
     Write(object, type.Get());
 }
 
-#if 0
-CWriteChoiceVariantHook*
-CObjectOStream::GetHook(const TWriteChoiceVariantHooks& hooks,
-                        const CChoiceTypeInfo* choiceType,
-                        TMemberIndex variantIndex)
-{
-    _ASSERT(choiceType);
-    const CMemberInfo* memberInfo = choiceType->GetMemberInfo(variantIndex);
-    _ASSERT(memberInfo);
-    TWriteChoiceVariantHooks::const_iterator hook = hooks.find(memberInfo);
-    if ( hook != hooks.end() )
-        return hook->second.GetPointer();
-    return 0;
-}
-
-void
-CObjectOStream::SetWriteChoiceVariantHook(const CChoiceTypeInfo* choiceType,
-                                          TMemberIndex variantIndex,
-                                          CWriteChoiceVariantHook* hook)
-{
-    if ( !hook )
-        THROW1_TRACE(runtime_error, "invalid argument");
-    _ASSERT(choiceType);
-    const CMemberInfo* memberInfo = choiceType->GetMemberInfo(variantIndex);
-    _ASSERT(memberInfo);
-    TWriteChoiceVariantHooks* hooks = m_WriteChoiceVariantHooks.get();
-    if ( !hooks )
-        m_WriteChoiceVariantHooks.reset(hooks = new TWriteChoiceVariantHooks);
-    (*hooks)[memberInfo].Reset(hook);
-}
-
-void
-CObjectOStream::ResetWriteChoiceVariantHook(const CChoiceTypeInfo* choiceType,
-                                            TMemberIndex variantIndex)
-{
-    _ASSERT(choiceType);
-    const CMemberInfo* memberInfo = choiceType->GetMemberInfo(variantIndex);
-    _ASSERT(memberInfo);
-    TWriteChoiceVariantHooks* hooks = m_WriteChoiceVariantHooks.get();
-    if ( hooks ) {
-        hooks->erase(memberInfo);
-        if ( hooks->empty() )
-            m_WriteChoiceVariantHooks.reset(0);
-    }
-}
-#endif
-
-#if NCBISER_ALLOW_CYCLES
-void CObjectOStream::WriteObject(CWriteObjectInfo& info)
-{
-    m_Objects.MarkObjectWritten(info);
-    WriteObject(info.GetObject());
-}
-#endif
-
 void CObjectOStream::RegisterObject(TTypeInfo typeInfo)
 {
-#if NCBISER_ALLOW_CYCLES
-    m_Objects.RegisterObject(typeInfo);
-#endif
+    if ( m_Objects )
+        m_Objects->RegisterObject(typeInfo);
 }
 
-void CObjectOStream::RegisterAndWrite(TConstObjectPtr object,
-                                      TTypeInfo typeInfo)
+void CObjectOStream::RegisterObject(TConstObjectPtr object,
+                                    TTypeInfo typeInfo)
 {
-#if NCBISER_ALLOW_CYCLES
-    WriteObject(m_Objects.RegisterObject(object, typeInfo));
-#else
-    WriteObject(object, typeInfo);
-#endif
-}
-
-void CObjectOStream::RegisterAndWrite(const CConstObjectInfo& object)
-{
-#if NCBISER_ALLOW_CYCLES
-    WriteObject(m_Objects.RegisterObject(object));
-#else
-    WriteObject(object);
-#endif
+    if ( m_Objects )
+        m_Objects->RegisterObject(object, typeInfo);
 }
 
 void CObjectOStream::WriteSeparateObject(const CConstObjectInfo& object)
 {
-    size_t firstObject = m_Objects.GetWrittenObjectCount();
-    WriteObject(object);
-    size_t lastObject = m_Objects.GetWrittenObjectCount();
-    m_Objects.ForgetObjects(firstObject, lastObject);
+    if ( m_Objects ) {
+        size_t firstObject = m_Objects->GetObjectCount();
+        WriteObject(object);
+        size_t lastObject = m_Objects->GetObjectCount();
+        m_Objects->ForgetObjects(firstObject, lastObject);
+    }
+    else {
+        WriteObject(object);
+    }
 }
 
-void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
+void CObjectOStream::WriteExternalObject(TConstObjectPtr objectPtr,
                                          TTypeInfo typeInfo)
 {
-    _TRACE("CObjectOStream::RegisterAndWrite(" <<
-           NStr::PtrToString(object) << ", "
+    _TRACE("CObjectOStream::WriteExternalObject(" <<
+           NStr::PtrToString(objectPtr) << ", "
            << typeInfo->GetName() << ')');
-    RegisterAndWrite(object, typeInfo);
+    RegisterObject(objectPtr, typeInfo);
+    WriteObject(objectPtr, typeInfo);
 }
 
 bool CObjectOStream::Write(const CRef<CByteSource>& source)
@@ -490,57 +432,34 @@ void CObjectOStream::WriteFileHeader(TTypeInfo /*type*/)
     // do nothing by default
 }
 
-void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
+void CObjectOStream::WritePointer(TConstObjectPtr objectPtr,
+                                  TTypeInfo declaredTypeInfo)
 {
-    _TRACE("WritePointer(" << NStr::PtrToString(object) << ", "
-           << typeInfo->GetName() << ")");
-    if ( object == 0 ) {
-        _TRACE("WritePointer: " << NStr::PtrToString(object) << ": null");
+    _TRACE("WritePointer("<<NStr::PtrToString(objectPtr)<<", "
+           <<declaredTypeInfo->GetName()<<")");
+    if ( objectPtr == 0 ) {
+        _TRACE("WritePointer: "<<NStr::PtrToString(objectPtr)<<": null");
         WriteNullPointer();
         return;
     }
-#if NCBISER_ALLOW_CYCLES
-    WritePointer(m_Objects.RegisterObject(object, typeInfo), typeInfo);
-#else
-    TTypeInfo realTypeInfo = typeInfo->GetRealTypeInfo(object);
-    if ( typeInfo == realTypeInfo ) {
-        _TRACE("WritePointer: " <<
-               NStr::PtrToString(object) << ": new");
-        WriteThis(object, realTypeInfo);
+    TTypeInfo realTypeInfo = declaredTypeInfo->GetRealTypeInfo(objectPtr);
+    if ( m_Objects ) {
+        const CWriteObjectInfo* info =
+            m_Objects->RegisterObject(objectPtr, realTypeInfo);
+        if ( info ) {
+            // old object
+            WriteObjectReference(info->GetIndex());
+            return;
+        }
+    }
+    if ( declaredTypeInfo == realTypeInfo ) {
+        _TRACE("WritePointer: "<<NStr::PtrToString(objectPtr)<<": new");
+        WriteThis(objectPtr, realTypeInfo);
     }
     else {
-        _TRACE("WritePointer: " <<
-               NStr::PtrToString(object)
-               << ": new " << realTypeInfo->GetName());
-        WriteOther(object, realTypeInfo);
-    }
-#endif
-}
-
-void CObjectOStream::WritePointer(CWriteObjectInfo& info,
-                                  TTypeInfo declaredTypeInfo)
-{
-    if ( info.IsWritten() ) {
-        // put reference on it
-        _TRACE("WritePointer: " << NStr::PtrToString(info.GetObject().GetObjectPtr()) <<
-               ": @" << info.GetIndex());
-        WriteObjectReference(info.GetIndex());
-    }
-    else {
-        // new object
-        m_Objects.MarkObjectWritten(info);
-        TTypeInfo realTypeInfo = info.GetTypeInfo();
-        if ( declaredTypeInfo == realTypeInfo ) {
-            _TRACE("WritePointer: " <<
-                   NStr::PtrToString(info.GetObject().GetObjectPtr()) << ": new");
-            WriteThis(info.GetObject().GetObjectPtr(), info.GetTypeInfo());
-        }
-        else {
-            _TRACE("WritePointer: " <<
-                   NStr::PtrToString(info.GetObject().GetObjectPtr())
-                   << ": new " << realTypeInfo->GetName());
-            WriteOther(info.GetObject().GetObjectPtr(), info.GetTypeInfo());
-        }
+        _TRACE("WritePointer: "<<NStr::PtrToString(objectPtr)<<
+               ": new "<<realTypeInfo->GetName());
+        WriteOther(objectPtr, realTypeInfo);
     }
 }
 

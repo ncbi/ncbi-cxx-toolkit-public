@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2000/10/17 18:45:25  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.49  2000/10/13 16:28:31  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -229,11 +233,11 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/objlist.hpp>
 #include <serial/strbuffer.hpp>
-#include <serial/memberlist.hpp>
 #include <serial/objstack.hpp>
 #include <serial/hookdatakey.hpp>
 #include <serial/objhook.hpp>
@@ -254,10 +258,13 @@ class CClassTypeInfo;
 class CChoiceTypeInfo;
 class CObjectStreamCopier;
 
+class CWriteObjectInfo;
+class CWriteObjectList;
+
 class CObjectOStream : public CObjectStack
 {
 public:
-    typedef CWriteObjectInfo::TObjectIndex TObjectIndex;
+    typedef size_t TObjectIndex;
 
     // open methods
     static CObjectOStream* Open(ESerialDataFormat format,
@@ -273,6 +280,9 @@ public:
                                 bool deleteOutStream = false);
 
     void Close(void);
+
+    bool DetectLoops(void) const;
+    void DetectLoops(bool detectLoops);
 
     // constructors
 protected:
@@ -381,9 +391,6 @@ public:
         {
             WriteString(data);
         }
-
-    // type info writers
-    virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
 
     // NULL
     virtual void WriteNull(void) = 0;
@@ -525,12 +532,11 @@ public:
                             const char* bytes, size_t length) = 0;
 	virtual void EndBytes(const ByteBlock& block);
 
+    void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
 protected:
     friend class CObjectStreamCopier;
 
     // low level writers
-    virtual void WritePointer(CWriteObjectInfo& info,
-                              TTypeInfo declaredTypeInfo);
     virtual void WriteNullPointer(void) = 0;
     virtual void WriteObjectReference(TObjectIndex index) = 0;
     virtual void WriteThis(TConstObjectPtr object,
@@ -549,17 +555,12 @@ protected:
     virtual void WriteDouble(double data) = 0;
 
     void RegisterObject(TTypeInfo typeInfo);
-    void RegisterAndWrite(TConstObjectPtr object, TTypeInfo typeInfo);
-    void RegisterAndWrite(const CConstObjectInfo& object);
-
-#if NCBISER_ALLOW_CYCLES
-    void WriteObject(CWriteObjectInfo& info);
-#endif
+    void RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo);
 
 protected:
     COStreamBuffer m_Output;
 
-    COObjectList m_Objects;
+    AutoPtr<CWriteObjectList> m_Objects;
 
 public:
     // hook support

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/10/17 18:45:25  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
 * Revision 1.14  2000/10/13 20:59:12  vasilche
 * Avoid using of ssize_t absent on some compilers.
 *
@@ -96,8 +100,9 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <serial/serialdef.hpp>
-#include <serial/object.hpp>
+#include <serial/typeinfo.hpp>
 #include <map>
 #include <vector>
 
@@ -105,81 +110,107 @@ BEGIN_NCBI_SCOPE
 
 class CMemberId;
 class CMemberInfo;
-class COObjectList;
+class CWriteObjectList;
+class CReadObjectList;
+
+class CReadObjectInfo
+{
+public:
+    typedef size_t TObjectIndex;
+
+    CReadObjectInfo(void);
+    CReadObjectInfo(TTypeInfo typeinfo);
+    CReadObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo);
+    
+    TTypeInfo GetTypeInfo(void) const;
+    TObjectPtr GetObjectPtr(void) const;
+
+    void ResetObjectPtr(void);
+    void Assign(TObjectPtr objectPtr, TTypeInfo typeInfo);
+
+private:
+    TTypeInfo m_TypeInfo;
+    TObjectPtr m_ObjectPtr;
+    CConstRef<CObject> m_ObjectRef;
+};
+
+class CReadObjectList
+{
+public:
+    typedef CReadObjectInfo::TObjectIndex TObjectIndex;
+
+    CReadObjectList(void);
+    ~CReadObjectList(void);
+
+    TObjectIndex GetObjectCount(void) const;
+
+protected:
+    friend class CObjectIStream;
+
+    void Clear(void);
+    void ForgetObjects(TObjectIndex from, TObjectIndex to);
+
+    const CReadObjectInfo& GetRegisteredObject(TObjectIndex index) const;
+
+    void RegisterObject(TTypeInfo typeInfo);
+    void RegisterObject(TObjectPtr objectPtr, TTypeInfo typeInfo);
+
+private:
+    vector<CReadObjectInfo> m_Objects;
+};
 
 class CWriteObjectInfo {
 public:
-    typedef int TObjectIndex;
-    enum {
-        eObjectIndexNotWritten = -1
-    };
+    typedef size_t TObjectIndex;
 
-    CWriteObjectInfo(const CConstObjectInfo& object)
-        : m_Object(object), m_Index(eObjectIndexNotWritten)
-        {
-        }
-    CWriteObjectInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo)
-        : m_Object(objectPtr, typeInfo), m_Index(eObjectIndexNotWritten)
-        {
-        }
+    CWriteObjectInfo(void);
+    CWriteObjectInfo(TTypeInfo typeInfo, TObjectIndex index);
+    CWriteObjectInfo(TConstObjectPtr objectPtr,
+                     TTypeInfo typeInfo, TObjectIndex index);
 
-    bool IsWritten(void) const
-        {
-            return m_Index != eObjectIndexNotWritten;
-        }
-    TObjectIndex GetIndex(void) const
-        {
-            return m_Index;
-        }
+    TObjectIndex GetIndex(void) const;
 
-    const CConstObjectInfo& GetObject(void) const
-        {
-            return m_Object;
-        }
+    TTypeInfo GetTypeInfo(void) const;
+    TConstObjectPtr GetObjectPtr(void) const;
+    const CConstRef<CObject>& GetObjectRef(void) const;
 
-    TTypeInfo GetTypeInfo(void) const
-        {
-            return GetObject().GetTypeInfo();
-        }
+    void ResetObjectPtr(void);
 
 private:
-    friend class COObjectList;
+    TTypeInfo m_TypeInfo;
+    TConstObjectPtr m_ObjectPtr;
+    CConstRef<CObject> m_ObjectRef;
 
-    CConstObjectInfo m_Object;
     TObjectIndex m_Index;
 };
 
-class COObjectList
+class CWriteObjectList
 {
 public:
-    typedef int TObjectIndex;
+    typedef CWriteObjectInfo::TObjectIndex TObjectIndex;
 
-    COObjectList(void);
-    ~COObjectList(void);
+    CWriteObjectList(void);
+    ~CWriteObjectList(void);
 
-    // check that all objects marked as written
-    void CheckAllWritten(void) const;
-    void Clear(void);
-
-    size_t GetWrittenObjectCount(void) const;
+    TObjectIndex GetObjectCount(void) const;
+    TObjectIndex NextObjectIndex(void) const;
 
 protected:
     friend class CObjectOStream;
 
+    // check that all objects marked as written
+    void Clear(void);
+
     // add object to object list
     // may throw an exception if there is error in objects placements
-    CWriteObjectInfo& RegisterObject(TTypeInfo typeInfo);
-    CWriteObjectInfo& RegisterObject(TConstObjectPtr object,
-                                     TTypeInfo typeInfo);
-    CWriteObjectInfo& RegisterObject(const CConstObjectInfo& object)
-        {
-            return RegisterObject(object.GetObjectPtr(), object.GetTypeInfo());
-        }
+    void RegisterObject(TTypeInfo typeInfo);
+    const CWriteObjectInfo* RegisterObject(TConstObjectPtr object,
+                                           TTypeInfo typeInfo);
 
     void MarkObjectWritten(CWriteObjectInfo& info);
 
     // forget pointers of written object (e.g. because we want to delete them)
-    void ForgetObjects(size_t from, size_t to);
+    void ForgetObjects(TObjectIndex from, TObjectIndex to);
 
 private:
     // we need reverse order map due to faster algorithm of lookup
