@@ -1,0 +1,146 @@
+--$Revision: 1.2 $
+--06/20/00:	Added 'duplicatesub' and 'NotSpecified' as WITHDRAWN reason for snp-type
+--05/22/00:	Added splice to fxn-class, 
+--		added map coordinates in contig component coordinates (RefSNPSeqHit),
+--		changed RefSNPMaphit to RefSNPContigHit
+--04/18/00:	Added subsnp set membership, flanking sequence
+--03/22/00:	Added changes to fxn-class and validated
+--03/01/00:	Added het-SE for standard error of mean heterozygosity
+--02/09/00:     Added unigene/UID/loc_cnt
+--02/08/00:	Added mapping, fixed taxid, mapstring definitions
+--02/03/00: 	Added RefSNP Docsum definitions
+--		Short version of ASN1 for development of genome annotation code
+NCBI-SNP DEFINITIONS ::=
+BEGIN
+
+EXPORTS NCBI-SNP-Docsum-Set, NCBI-SNP-BaseURL-Set;
+
+IMPORTS Date FROM NCBI-General;
+
+NCBI-SNP-Docsum-Set ::= SEQUENCE {
+	generated Date OPTIONAL ,			-- Date set-list generated
+	query VisibleString OPTIONAL ,			-- Query terms or search constraints
+	set-type INTEGER {
+       		full-dump (1),				-- Complete set of records in dbSNP
+        	from-query (2),				-- Set that satisfies query
+        	single     (3) } ,			-- A single record
+	refSNPdocsumset SET OF NCBI-RefSNPdocsum } 	-- Set of Reference SNP docsums
+
+NCBI-SNP-BaseURL-Set ::= SEQUENCE {
+	generated Date OPTIONAL ,			-- Date set-list generated
+	query VisibleString OPTIONAL ,			-- Query terms or search constraints
+	set-type INTEGER {
+       		full-dump (1),				-- Complete set of records in dbSNP
+        	from-query (2),				-- Set that satisfies query
+        	single     (3) } ,			-- A single record
+	url-set SET OF NCBI-SNP-BaseURL }   		-- Set of URLs for resource integration
+
+
+NCBI-SNP-BaseURL ::= SEQUENCE {			-- list of base URLs for queries to other integrated resources
+	resource-id INTEGER,			-- integer pointer to base URL 					BaseURLList.url_id
+	resource VisibleString OPTIONAL,	-- name of the resource 					BaseURLList.resource
+	field-id VisibleString OPTIONAL,	-- name of the data object used to link 			BaseURLList.resource_id
+	base-url VisibleString OPTIONAL }	-- Base URL to which identifier is appended to form full URL 	BaseURLList.base_url
+
+
+NCBI-RefSNPMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a contig
+	asn-from INTEGER OPTIONAL,		-- beginning of variation as feature on contig			SNPContigLoc.asn_from
+	asn-to INTEGER OPTIONAL,		-- end of variation as feature on contig			SNPContigLoc.asn_to
+	loc-type ENUMERATED {			-- defines the seq-loc symbol if asn_from != asn_to		SNPContigLoc.loc_type
+		range (1),			-- asn-from < asn-to  write as "asn-from..asn-to"		
+		exact (2),			-- asn-from = asn-to write as "asn-from"
+		between (3) },			-- asn-to = asn-from+1 write as "asn-from^asn-to"		
+	physmap-str  VisibleString OPTIONAL,	-- chromosome position of var as seq-loc in # of bases 		SNPContigLoc.phys_pos
+	physmap-int INTEGER OPTIONAL,		-- chromosome position as integer for sorting			SNPContigLoc.phys_pos_from
+	other-map VisibleString OPTIONAL,	-- position of variation on chromosome in cytogen. units	SNPContigLoc.cyto_band
+	local-sts-UID INTEGER OPTIONAL,		-- UID of nearest STS to this seq-loc				SNPContigLoc.loc_sts_uid
+	unigene-id VisibleString OPTIONAL}	-- ID of UniGene cluster					SNPContigLoc.unigene_id
+
+NCBI-RefSNPContigHit ::= SEQUENCE {		-- Properties of an individual mapping result 
+						-- source data from /net/fridge1/vol/vol0/genome/pre_gannot_hs/ctg_coords 'ctg_properties' and 'base2bands'
+	contig-id VisibleString,		-- Id of contig when naming files for refSNPs x contig		ContigInfo.contig_name
+	locations SET OF NCBI-RefSNPMaploc,	-- set of all valid locations & related gene info for variation on contig
+	accession VisibleString OPTIONAL,	-- Accession number of the contig				SNPContigLoc.contig_acc
+	version INTEGER OPTIONAL,		-- version number of the contig					ContigInfo.contig_ver
+	chromosome VisibleString OPTIONAL}	-- Chromosome number						SNPContigLoc.contig_chr
+	
+NCBI-RefSNPSeqLoc ::= SEQUENCE {		-- Position of a single hit of a variation on a sequence
+	asn-from INTEGER,			-- beginning of variation as feature on sequence		MapLink.offset
+	asn-to	INTEGER OPTIONAL,		-- end of variation as feature on sequence			MapLink.asn_to
+	loc-type ENUMERATED  {			-- defines the interpretation of offset/asn-to			MapLink.loc_type
+		range (1),			-- offset < asn-to: write as "offset..asn-to
+		exact (2),			-- offset = asn-to: write as "offset"
+		between (3) } OPTIONAL}		-- offset = asn-to-1: write as "offset^asn-to"
+
+NCBI-RefSNPLocusID ::= SEQUENCE {		-- set of data for a specific locus ID within 2kb of variation on a contig
+	locus-id INTEGER,			-- 								MapLinkLocusList.locus_id || MapLinkPid.locus_id
+	url-id INTEGER DEFAULT 3,
+	fxn-class ENUMERATED {			-- functional class 						MapLinkPid.function || MapLinkLocusList.function
+		locus-region (1),		-- Maps to MapSum (L)						default to (1) until code is finished
+		coding (2),			-- Maps to MapSum (LTC)
+		coding-syn   (3),		-- Maps to MapSum (LTC)
+		coding-nonsyn (4),		-- Maps to MapSum (LTCN) N not implemented in MapViewer yet
+		transcribed-untranslated (5),	-- Maps to MapSum (LT)
+		intron	     (6), 		-- Maps to MapSum (L)
+		splice       (7) } OPTIONAL,	-- Maps to MapSum (L)
+	symbol VisibleString OPTIONAL }		-- symbol for locusID   					"dgb_ex..locRef.current_symbol" with locusID as parameter
+
+NCBI-RefSNPSeqHit ::= SEQUENCE {		-- Properties of individual mapping result from finished & draft sequences
+						-- source data from MapLink table where accession_db_cd == 10 (genome) or 11 (draft)
+	accession VisibleString ,		-- Accession of the sequence					MapLink.accession
+	version	INTEGER ,			-- version number of the sequence (reports most recent ver.)	MapLink.accession_ver
+	locations SET OF NCBI-RefSNPSeqLoc }	-- set of all valid locations on accession			MapLink	
+
+
+NCBI-RefSNPlink ::= SEQUENCE {			-- link data for anther resource
+	resource-id INTEGER,			-- 								BaseURLList.url_id
+	link-value VisibleString }		-- value to append to NCBI-SNP-ResourceURL.base-url for complete link
+
+NCBI-SubSNPid ::= SEQUENCE {
+	subsnp-id INTEGER,			-- dbSNP ss# (dbSNP assay ID) for submission			SubSNP.subsnp_id
+	handle	VisibleString,			-- submitter handle						Batch.handle
+	loc-snp-id VisibleString}		-- submitter local ID for subsnp				SubSNP.loc_snp_id
+	
+NCBI-RefSNPdocsum ::= SEQUENCE {		-- defines the docsum structure that summarizes a refSNP
+	refsnp-id INTEGER,			-- reference SNP ID 						SNP.snp_id
+	taxid INTEGER,				-- tax ID for SNP						from viewRsTaxID (stored proc)
+	organism VisibleString OPTIONAL,	-- species code 						OrganismTax.abbr for taxid (stored proc)
+	snp-class ENUMERATED {			-- SNP classification by type of variation			SNP.snp_class
+		snp         (1),		-- alleles of length=1 and from set of {A,T,C,G}
+		in-del      (2),		-- alleles of different length or include '-' character
+		het         (3),		-- allele contains string '(heterozygous)'
+		microsat    (4),		-- allele string contains numbers and '(motif)' pattern
+		named       (5),		-- allele string contains '(', ')' but not het. or microsat	
+		no-variation (6) },		-- RefSNP is a NoVariation feature
+	observed VisibleString,			-- '/' delimited string of all alleles 				GenomeSNPAllele.allele
+	seq-5 SEQUENCE OF VisibleString,	-- 5' flank sequence for refSNP					SNPSeq5.line
+	seq-3 SEQUENCE OF VisibleString,	-- 3' flank sequence for refSNP					SNPSeq3.line
+						-- all sequences are in forward orientation, complete sequence
+						-- should be assembled as seq-5 + observed + seq-3
+	subsnpid-list SET OF NCBI-SubSNPid,	-- set of all subsnp id's in the refSNP cluster	
+	num-chr-hits INTEGER OPTIONAL,		-- total number of distinct chromosomes in genome-mapset	SNPMapPosition.chr_cnt
+	num-ctg-hits INTEGER OPTIONAL,		-- total number of distinct contig-ids in genome-mapset		SNPMapPosition.contig_cnt
+	num-seq-loc INTEGER OPTIONAL,		-- total number of distinct seq-loc's in genome-mapset		SNPMapPosition.loc_cnt
+	mapweight INTEGER OPTIONAL,		-- location quality score for map display			SNPMapPosition.weight
+	gene-info SET OF NCBI-RefSNPLocusID OPTIONAL,	-- set of gene information for locus if present
+	contig-mapset SET OF NCBI-RefSNPContigHit OPTIONAL, -- list of hits to genome in NT_ contig coordinates
+	sequence-mapset SET OF NCBI-RefSNPSeqHit OPTIONAL, -- list of hits to genome in sequence component coordinates
+	het REAL OPTIONAL,			-- average heterozygosity 					SNP.avg_heterozygosity
+	het-SE REAL OPTIONAL,			-- standard error of heterozygosity 				square-root of SNP.het_variance
+	valid-prob-min INTEGER OPTIONAL,	-- success rate for the RefSNP 					Batch.successrate_int
+	valid-prob-max INTEGER OPTIONAL,	-- the max rate if several batches in cluster
+	snp-type ENUMERATED {			-- evidence type for withdrawn if exists			SNP.snp_type
+		notwithdrawn (1),		-- variation is OK, default case
+		artifact     (2),		-- variation determined to be experimental artifact
+		gene-dup      (3),		-- variation artifact of duplicated gene region
+		duplicatesub  (4),		-- variation was duplicate submission
+		notspecified  (5) },		-- no reason specified for withdrawal	
+		
+	link-data SET OF NCBI-RefSNPlink OPTIONAL, 	-- link data for external resources
+	validated BOOLEAN OPTIONAL,		-- at least one subsnp has been reported as validated		SNP.validated
+	genotype BOOLEAN OPTIONAL,		-- at least one genotype reported for this refSNP		subsnp_id in SubInd for ss# in snp_id
+	linkout BOOLEAN OPTIONAL,		-- YES if linkout to submitter website 				Batch.linkout_url for subsnp_id in snp_id
+	last-action Date OPTIONAL }		-- Date of update or create
+
+
+END
