@@ -59,8 +59,6 @@ public:
     /// Creates object with default options set
     CDiscNucleotideOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CDiscNucleotideOptionsHandle() {}
-    CDiscNucleotideOptionsHandle(const CDiscNucleotideOptionsHandle& rhs);
-    CDiscNucleotideOptionsHandle& operator=(const CDiscNucleotideOptionsHandle& rhs);
 
     /******************* Lookup table options ***********************/
     unsigned char GetTemplateLength() const { 
@@ -95,6 +93,10 @@ protected:
     void SetMBInitialWordOptionsDefaults();
     void SetMBGappedExtensionDefaults();
     void SetMBScoringOptionsDefaults();
+
+private:
+    CDiscNucleotideOptionsHandle(const CDiscNucleotideOptionsHandle& rhs);
+    CDiscNucleotideOptionsHandle& operator=(const CDiscNucleotideOptionsHandle& rhs);
 };
 
 END_SCOPE(blast)
@@ -107,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/04 13:09:20  camacho
+ * Made copy-ctor & assignment operator private
+ *
  * Revision 1.7  2004/03/22 20:15:58  dondosha
  * Added custom setting of MB scoring options for discontiguous case
  *

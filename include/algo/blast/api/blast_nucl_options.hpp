@@ -63,8 +63,6 @@ public:
     /// Creates object with default options set
     CBlastNucleotideOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CBlastNucleotideOptionsHandle() {}
-    CBlastNucleotideOptionsHandle(const CBlastNucleotideOptionsHandle& rhs);
-    CBlastNucleotideOptionsHandle& operator=(const CBlastNucleotideOptionsHandle& rhs);
 
     virtual void SetDefaults();
 
@@ -191,6 +189,10 @@ protected:
     virtual void SetHitSavingOptionsDefaults();
     virtual void SetEffectiveLengthsOptionsDefaults();
     virtual void SetSubjectSequenceOptionsDefaults();
+
+private:
+    CBlastNucleotideOptionsHandle(const CBlastNucleotideOptionsHandle& rhs);
+    CBlastNucleotideOptionsHandle& operator=(const CBlastNucleotideOptionsHandle& rhs);
 };
 
 END_SCOPE(blast)
@@ -203,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/04 13:09:20  camacho
+ * Made copy-ctor & assignment operator private
+ *
  * Revision 1.8  2004/03/19 14:53:24  camacho
  * Move to doxygen group AlgoBlast
  *

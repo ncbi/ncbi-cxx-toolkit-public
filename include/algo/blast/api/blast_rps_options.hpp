@@ -57,8 +57,6 @@ public:
     /// Creates object with default options set
     CBlastRPSOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CBlastRPSOptionsHandle() {}
-    CBlastRPSOptionsHandle(const CBlastRPSOptionsHandle& rhs);
-    CBlastRPSOptionsHandle& operator=(const CBlastRPSOptionsHandle& rhs);
 
     /******************* Lookup table options ***********************/
     int GetWordThreshold() const { return m_Opts->GetWordThreshold(); }
@@ -100,6 +98,10 @@ protected:
     virtual void SetHitSavingOptionsDefaults();
     virtual void SetEffectiveLengthsOptionsDefaults();
     virtual void SetSubjectSequenceOptionsDefaults(); 
+
+private:
+    CBlastRPSOptionsHandle(const CBlastRPSOptionsHandle& rhs);
+    CBlastRPSOptionsHandle& operator=(const CBlastRPSOptionsHandle& rhs);
 };
 
 END_SCOPE(blast)
@@ -112,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/04 13:09:20  camacho
+ * Made copy-ctor & assignment operator private
+ *
  * Revision 1.4  2004/04/23 13:55:29  papadopo
  * derived BlastRPSOptionsHandle from BlastOptions (again)
  *

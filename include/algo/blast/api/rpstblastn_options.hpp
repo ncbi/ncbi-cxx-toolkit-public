@@ -57,8 +57,6 @@ public:
     /// Creates object with default options set
     CRPSTBlastnOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CRPSTBlastnOptionsHandle() {}
-    CRPSTBlastnOptionsHandle(const CRPSTBlastnOptionsHandle& rhs);
-    CRPSTBlastnOptionsHandle& operator=(const CRPSTBlastnOptionsHandle& rhs);
 
     /******************* Subject sequence options *******************/
     int GetDbGeneticCode() const {
@@ -70,6 +68,10 @@ public:
 
 protected:
     void SetSubjectSequenceOptionsDefaults();
+
+private:
+    CRPSTBlastnOptionsHandle(const CRPSTBlastnOptionsHandle& rhs);
+    CRPSTBlastnOptionsHandle& operator=(const CRPSTBlastnOptionsHandle& rhs);
 };
 
 END_SCOPE(blast)
@@ -81,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * =======================================================================
  * $Log$
+ * Revision 1.3  2004/05/04 13:09:20  camacho
+ * Made copy-ctor & assignment operator private
+ *
  * Revision 1.2  2004/04/23 13:55:47  papadopo
  * derived from BlastRPSOptionsHandle
  *

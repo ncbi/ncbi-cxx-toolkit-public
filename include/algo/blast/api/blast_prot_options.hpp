@@ -58,8 +58,6 @@ public:
     /// Creates object with default options set
     CBlastProteinOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CBlastProteinOptionsHandle() {}
-    CBlastProteinOptionsHandle(const CBlastProteinOptionsHandle& rhs);
-    CBlastProteinOptionsHandle& operator=(const CBlastProteinOptionsHandle& rhs);
 
     /******************* Lookup table options ***********************/
     int GetWordThreshold() const { return m_Opts->GetWordThreshold(); }
@@ -113,6 +111,10 @@ protected:
     virtual void SetHitSavingOptionsDefaults();
     virtual void SetEffectiveLengthsOptionsDefaults();
     virtual void SetSubjectSequenceOptionsDefaults(); 
+
+private:
+    CBlastProteinOptionsHandle(const CBlastProteinOptionsHandle& rhs);
+    CBlastProteinOptionsHandle& operator=(const CBlastProteinOptionsHandle& rhs);
 };
 
 END_SCOPE(blast)
@@ -125,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/04 13:09:20  camacho
+ * Made copy-ctor & assignment operator private
+ *
  * Revision 1.6  2004/03/19 14:53:24  camacho
  * Move to doxygen group AlgoBlast
  *

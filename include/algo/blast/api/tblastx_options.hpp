@@ -60,8 +60,6 @@ public:
     /// Creates object with default options set
     CTBlastxOptionsHandle(EAPILocality locality);
     ~CTBlastxOptionsHandle() {}
-    CTBlastxOptionsHandle(const CTBlastxOptionsHandle& rhs);
-    CTBlastxOptionsHandle& operator=(const CTBlastxOptionsHandle& rhs);
 
     /******************* Query setup options ************************/
     objects::ENa_strand GetStrandOption() const { 
@@ -93,6 +91,10 @@ protected:
     void SetScoringOptionsDefaults();
     void SetHitSavingOptionsDefaults();
     void SetSubjectSequenceOptionsDefaults();
+
+private:
+    CTBlastxOptionsHandle(const CTBlastxOptionsHandle& rhs);
+    CTBlastxOptionsHandle& operator=(const CTBlastxOptionsHandle& rhs);
 };
 
 END_SCOPE(blast)
@@ -105,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/04 13:09:20  camacho
+ * Made copy-ctor & assignment operator private
+ *
  * Revision 1.6  2004/03/19 14:53:24  camacho
  * Move to doxygen group AlgoBlast
  *

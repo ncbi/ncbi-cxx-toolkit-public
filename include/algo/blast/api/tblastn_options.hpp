@@ -57,8 +57,6 @@ public:
     /// Creates object with default options set
     CTBlastnOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CTBlastnOptionsHandle() {}
-    CTBlastnOptionsHandle(const CTBlastnOptionsHandle& rhs);
-    CTBlastnOptionsHandle& operator=(const CTBlastnOptionsHandle& rhs);
 
     /************************ Scoring options ************************/
     // is this needed or can we use a sentinel for the frame shift penalty?
@@ -84,6 +82,10 @@ protected:
     void SetScoringOptionsDefaults();
     void SetHitSavingOptionsDefaults();
     void SetSubjectSequenceOptionsDefaults();
+
+private:
+    CTBlastnOptionsHandle(const CTBlastnOptionsHandle& rhs);
+    CTBlastnOptionsHandle& operator=(const CTBlastnOptionsHandle& rhs);
 };
 
 END_SCOPE(blast)
@@ -96,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/04 13:09:20  camacho
+ * Made copy-ctor & assignment operator private
+ *
  * Revision 1.7  2004/03/19 14:53:24  camacho
  * Move to doxygen group AlgoBlast
  *
