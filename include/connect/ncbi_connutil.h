@@ -505,6 +505,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ URL_DecodeEx
  * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
  * Resulting lines will not exceed "*line_len" (or the standard default
  * if "line_len" is NULL) bytes;  *line_len == 0 disables line breaks.
+ * To estimate required destination buffer size, you can take into account
+ * that BASE64 coding converts every 3 bytes of source into 4 bytes on
+ * destination, not including the line breaks ('\n').
  */
 extern NCBI_XCONNECT_EXPORT void BASE64_Encode
 (const void* src_buf,    /* [in]     non-NULL */
@@ -523,6 +526,9 @@ extern NCBI_XCONNECT_EXPORT void BASE64_Encode
  * Assign "*src_read" to the # of bytes successfully decoded from "src_buf".
  * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
  * Return FALSE (0) only if cannot decode anything.
+ * Destination buffer size, as a worst case, equal to the source size
+ * will accomodate the entire input.  As a rule, each 4 bytes of source
+ * (line breaks skipped) are converted into 3 bytes on output.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ BASE64_Decode
 (const void* src_buf,    /* [in]     non-NULL */
@@ -691,6 +697,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2005/03/21 17:04:10  lavr
+ * BASE64_{En|De}code buffer size estimation hints added
+ *
  * Revision 6.40  2005/03/19 02:13:55  lavr
  * +BASE64_{En|De}code
  *
