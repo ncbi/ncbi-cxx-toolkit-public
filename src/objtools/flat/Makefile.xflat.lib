@@ -6,4 +6,5 @@
 LIB = xflat
 SRC = flat_context flat_feature flat_head flat_items flat_loc flat_quals \
       flat_reference flat_formatter flat_text_formatter \
-      flat_embl_formatter flat_gbseq_formatter flat_table_formatter
+      flat_embl_formatter flat_gbseq_formatter flat_table_formatter \
+      flat_gff_formatter
