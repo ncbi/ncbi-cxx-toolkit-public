@@ -57,6 +57,7 @@
 #include <objtools/format/items/wgs_item.hpp>
 #include <objtools/format/items/genome_item.hpp>
 #include <objtools/format/items/contig_item.hpp>
+#include <objtools/format/items/origin_item.hpp>
 #include <objtools/format/gather_items.hpp>
 #include <objtools/format/genbank_gather.hpp>
 #include <objtools/format/context.hpp>
@@ -119,12 +120,12 @@ void CGenbankGatherer::x_DoSingleSection
     x_GatherComments();
     ItemOS() << new CPrimaryItem(ctx);
     ItemOS() << new CFeatHeaderItem(ctx);
-    x_GatherSourceFeatures();
+    if ( !ctx.HideSourceFeats() ) {
+        x_GatherSourceFeatures();
+    }
     if ( ctx.IsWGSMaster()  &&  ctx.GetTech() == CMolInfo::eTech_wgs ) {
         x_GatherWGS(ctx);
-    } else if ( ctx.IsRSGenome() ) {
-        ItemOS() << new CGenomeItem(ctx);
-    } else if ( ctx.IsStyleContig() ) {
+    } else if ( ctx.DoContigStyle() ) {
         if ( ctx.ShowContigFeatures() ) {
             x_GatherFeatures();
         }
@@ -133,8 +134,9 @@ void CGenbankGatherer::x_DoSingleSection
             if ( ctx.IsNa()  &&  s_ShowBaseCount(ctx) ) {
                 ItemOS() << new CBaseCountItem(ctx);
             }
+            ItemOS() << new COriginItem(ctx);
+            x_GatherSequence();
         }
-        x_GatherSequence();
     } else {
         x_GatherFeatures();
         if ( ctx.ShowContigAndSeq()  &&  s_ShowContig(ctx) ) {
@@ -143,6 +145,7 @@ void CGenbankGatherer::x_DoSingleSection
         if ( ctx.IsNa()  &&  s_ShowBaseCount(ctx) ) {
             ItemOS() << new CBaseCountItem(ctx);
         }
+        ItemOS() << new COriginItem(ctx);
         x_GatherSequence();
     }
         
@@ -204,6 +207,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/02/19 18:14:41  shomrat
+* Added Origin item; supress source-features if flag is set
+*
 * Revision 1.5  2004/02/11 22:53:05  shomrat
 * using types in flag file
 *
