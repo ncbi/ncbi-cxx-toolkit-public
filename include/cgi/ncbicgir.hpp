@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/05/11 03:11:46  vakatov
+* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+*
 * Revision 1.7  1999/04/28 16:54:19  vasilche
 * Implemented stream input processing for FastCGI applications.
 *
@@ -57,7 +60,7 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbicgi.hpp>
+#include <cgi/ncbicgi.hpp>
 #include <list>
 #include <map>
 
@@ -161,7 +164,7 @@ protected:
 ///////////////////////////////////////////////////////
 // All inline function implementations and internal data
 // types, etc. are in this file
-#include <corelib/ncbicgir.inl>
+#include <cgi/ncbicgir.inl>
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

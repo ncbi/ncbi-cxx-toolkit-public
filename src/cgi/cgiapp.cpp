@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/05/11 03:11:50  vakatov
+* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+*
 * Revision 1.8  1999/05/06 23:16:45  vakatov
 * <fcgibuf.hpp> became a local header file.
 * Use #HAVE_LIBFASTCGI(from <ncbiconf.h>) rather than cmd.-line #FAST_CGI.
@@ -64,8 +67,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/cgiapp.hpp>
-#include <corelib/cgictx.hpp>
+#include <cgi/cgiapp.hpp>
+#include <cgi/cgictx.hpp>
 
 #if defined(HAVE_LIBFASTCGI)
 // 3rd-party headers

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/05/11 03:11:55  vakatov
+* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+*
 * Revision 1.2  1999/01/13 19:21:47  lewisg
 * check for end of multimap
 *
@@ -40,8 +43,8 @@
 */
 
 // toolkit public headers
-#include <corelib/ncbicgi.hpp>
-#include <corelib/ncbicgir.hpp>
+#include <cgi/ncbicgi.hpp>
+#include <cgi/ncbicgir.hpp>
 // project private headers
 
 USING_NCBI_SCOPE;  // this turns on the ncbi namespace

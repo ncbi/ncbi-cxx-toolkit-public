@@ -3,11 +3,10 @@
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
 
-# Build test application "cgidemo"
+# Meta-makefile -- CgiTest test app
 #################################
 
-APP = cgidemo
-OBJ = cgidemo
-LIB = xcgi xncbi
+APP_PROJ = cgitest
 
-LIBS = $(FASTCGI_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

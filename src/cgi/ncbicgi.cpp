@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/05/11 03:11:51  vakatov
+* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+*
 * Revision 1.29  1999/05/04 16:14:45  vasilche
 * Fixed problems with program environment.
 * Added class CNcbiEnvironment for cached access to C environment.
@@ -139,8 +142,8 @@
 * ==========================================================================
 */
 
-#include <corelib/ncbicgi.hpp>
 #include <corelib/ncbienv.hpp>
+#include <cgi/ncbicgi.hpp>
 #include <stdio.h>
 #include <time.h>
 

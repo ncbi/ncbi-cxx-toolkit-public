@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/05/11 03:11:51  vakatov
+* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+*
 * Revision 1.1  1999/05/06 20:33:43  pubmed
 * CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
 *
@@ -102,8 +105,8 @@
 * ===========================================================================
 */
 
-#include <corelib/dbres.hpp>
-#include <corelib/cgictx.hpp>
+#include <cgi/dbres.hpp>
+#include <cgi/cgictx.hpp>
 
 #include <algorithm>
 

@@ -1,0 +1,10 @@
+# $Id$
+
+# Build library "XCGI"
+#################################
+
+LIBOBJ = ncbicgi $(FASTCGI_OBJS) cgiapp cgictx ncbicgir ncbires dbres
+LIB    = xcgi
+
+CPPFLAGS = $(ORIG_CPPFLAGS) \
+  -I$(NCBI_C_INCLUDE)

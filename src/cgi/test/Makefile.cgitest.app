@@ -3,11 +3,9 @@
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
 
-# Build test application "cgidemo"
+# Build a test CGI application
 #################################
 
-APP = cgidemo
-OBJ = cgidemo
+APP = cgitest
+OBJ = cgitest
 LIB = xcgi xncbi
-
-LIBS = $(FASTCGI_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/05/11 03:11:52  vakatov
+* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+*
 * Revision 1.8  1999/04/28 16:54:43  vasilche
 * Implemented stream input processing for FastCGI applications.
 * Fixed POST request parsing
@@ -59,7 +62,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbicgir.hpp>
+#include <cgi/ncbicgir.hpp>
 #include <list>
 #include <map>
 #include <time.h>

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/05/11 03:11:45  vakatov
+* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+*
 * Revision 1.1  1999/05/06 20:32:49  pubmed
 * CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
 *
@@ -119,7 +122,7 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbires.hpp>
+#include <cgi/ncbires.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -435,7 +438,7 @@ protected:
   
 };
 
-#include <corelib/dbres.inl>
+#include <cgi/dbres.inl>
 
 END_NCBI_SCOPE
 

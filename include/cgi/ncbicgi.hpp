@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  1999/05/11 03:11:46  vakatov
+* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+*
 * Revision 1.35  1999/05/04 16:14:04  vasilche
 * Fixed problems with program environment.
 * Added class CNcbiEnvironment for cached access to C environment.
@@ -396,7 +399,7 @@ extern string URL_EncodeString(const string& str);
 
 ///////////////////////////////////////////////////////
 // All inline function implementations are in this file
-#include <corelib/ncbicgi.inl>
+#include <cgi/ncbicgi.inl>
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
