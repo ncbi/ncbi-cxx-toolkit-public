@@ -51,30 +51,17 @@
 
 #include <objects/seqalign/Seq_align_set.hpp>
 
-#ifdef WRITE_SEQALIGNS
-#include <ctools/asn_converter.hpp>
-#include <objalign.h>
-#endif
-
-#ifdef CPP_FORMATTING
-#include "blast_format.hpp"
-#endif
-
-#if 0
-// C includes for C formatter
-#include <sqnutils.h>
-#include <txalign.h>
-#include <accid1.h>
-#endif
-
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CBlast2seqApplication::
-
+/// CBlast2seqApplication: command line blast2sequences application
+/// @todo Implement formatting
+/// @todo refactor command line options, so that only those relevant to a
+/// particular program are shown (e.g: cvs -H <command>). This should be
+/// reusable by all BLAST command line clients
 
 class CBlast2seqApplication : public CNcbiApplication
 {
@@ -85,10 +72,11 @@ private:
 
     void InitObjMgr(void);
     EProgram GetBlastProgramNum(const string& prog);
-    void ProcessCommandLineArgs(CBlastOptions& opt);
+    CBlastOptionsHandle* ProcessCommandLineArgs() THROWS((CBlastException));
 
-    // needed for debugging only
-    FILE* GetOutputFilePtr(void);
+#ifndef NDEBUG
+    FILE* GetOutputFilePtr(void); // needed for debugging only
+#endif
 
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
@@ -246,10 +234,17 @@ CBlast2seqApplication::GetBlastProgramNum(const string& prog)
     return eBlastProgramMax;
 }
 
-void
-CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
+CBlastOptionsHandle*
+CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
 {
     CArgs args = GetArgs();
+
+    EProgram prog = GetBlastProgramNum(args["program"].AsString());
+    CBlastOptionsHandle* retval = CBlastOptionsFactory::Create(prog);
+    if ( !retval ) {
+        NCBI_THROW(CBlastException, eOutOfMemory, "");
+    }
+    CBlastOptions& opt = retval->SetOptions();
 
     if (args["strand"].AsInteger()) {
         switch (args["strand"].AsInteger()) {
@@ -379,9 +374,10 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
         opt.SetFrameShiftPenalty(args["frameshift"].AsInteger());
     }
 
-    return;
+    return retval;
 }
 
+#ifndef NDEBUG
 FILE*
 CBlast2seqApplication::GetOutputFilePtr(void)
 {
@@ -395,122 +391,59 @@ CBlast2seqApplication::GetOutputFilePtr(void)
     ASSERT(retval);
     return retval;
 }
+#endif
 
 /*****************************************************************************/
 
 int CBlast2seqApplication::Run(void)
 {
-    InitObjMgr();
-    CArgs args = GetArgs();
-    if (args["trace"])
-        SetDiagTrace(eDT_Enable);
+    try {
+        InitObjMgr();
+        const CArgs args = GetArgs();
+        if (args["trace"])
+            SetDiagTrace(eDT_Enable);
 
-    int counter = 0;
+        int counter = 0;
 
-    // Retrieve input sequences
-    TSeqLocVector query_loc = 
-        BLASTGetSeqLocFromStream(args["query"].AsInputFile(), *m_ObjMgr,
-          eNa_strand_unknown, 0, 0, &counter, args["lcase"].AsBoolean());
+        // Retrieve input sequences
+        TSeqLocVector query_loc = 
+            BLASTGetSeqLocFromStream(args["query"].AsInputFile(), *m_ObjMgr,
+              eNa_strand_unknown, 0, 0, &counter, args["lcase"].AsBoolean());
 
-    TSeqLocVector subject_loc = 
-        BLASTGetSeqLocFromStream(args["subject"].AsInputFile(), *m_ObjMgr,
-          eNa_strand_unknown, 0, 0, &counter);
+        TSeqLocVector subject_loc = 
+            BLASTGetSeqLocFromStream(args["subject"].AsInputFile(), *m_ObjMgr,
+              eNa_strand_unknown, 0, 0, &counter);
 
-    // Get program name
-    EProgram prog = GetBlastProgramNum(args["program"].AsString());
+        CBlastOptionsHandle& opt_handle = *ProcessCommandLineArgs();
 
-    CStopWatch sw;
-    sw.Start();
-    CBl2Seq blaster(query_loc, subject_loc, prog);
-    ProcessCommandLineArgs(blaster.SetOptions());
-    TSeqAlignVector seqalignv = blaster.Run();
+#ifndef NDEBUG
+        CStopWatch sw;
+        sw.Start();
+#endif
 
-    double t = sw.Elapsed();
-    cerr << "CBl2seq run took " << t << " seconds" << endl;
-    if (seqalignv.size() == 0) {
-        cerr << "Returned NULL SeqAlign!" << endl;
-        exit(1);
-    }
+        CBl2Seq blaster(query_loc, subject_loc, opt_handle);
+        TSeqAlignVector seqalignv = blaster.Run();
 
-    if (args["asnout"]) {
-        auto_ptr<CObjectOStream> asnout(
-            CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
-        for (unsigned int index = 0; index < seqalignv.size(); ++index)
-            *asnout << *seqalignv[index];
-    }
-#ifdef WRITE_SEQALIGNS
-        // Convert CSeq_align_set to linked list of SeqAlign structs
-        DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
-        SeqAlignPtr salp = NULL, tmp = NULL, tail = NULL;
-
-        int query_index;
-
-        for (query_index = 0; query_index < seqalign->size(); ++query_index)
-        {
-            ITERATE(list< CRef<CSeq_align> >, itr, 
-                    (*seqalign)[query_index]->Get()) {
-                tmp = converter.ToC(**itr);
-
-                if (!salp)
-                    salp = tail = tmp;
-                else {
-                    tail->next = tmp;
-                    while (tail->next)
-                        tail = tail->next;
-                }
-            }
+#ifndef NDEBUG
+        double t = sw.Elapsed();
+        cerr << "CBl2seq run took " << t << " seconds" << endl;
+        if (seqalignv.size() == 0) {
+            cerr << "Returned NULL SeqAlign!" << endl;
+            exit(1);
         }
+#endif
 
+        // Our poor man's formatting ...  
         if (args["asnout"]) {
-            AsnIoPtr aip = AsnIoOpen(
-                    (char*)args["asnout"].AsString().c_str(), (char*)"w");
-            GenericSeqAlignSetAsnWrite(salp, aip);
-            AsnIoReset(aip);
-            AsnIoClose(aip);
-        }
-#endif
-
-#ifdef CPP_FORMATTING
-        // Display with C++ formatter
-        TSeqLocInfoVector maskv;
-        int index;
-        for (index=0; index < query_loc.size(); ++index)
-            maskv.push_back(0);
-
-        CBlastFormatOptions* format_options = 
-            new CBlastFormatOptions(prog, args["out"].AsOutputFile());
-
-        Int2 status = Bl2seq_FormatResults(seqalignv, 
-                 prog, query_loc, subject_loc, maskv, 
-                 format_options, 
-                 args["frameshift"].AsBoolean());
-#endif
-        
-#if 0
-        // Display w/ C formatter
-        UseLocalAsnloadDataAndErrMsg();
-        if (!SeqEntryLoad()) return 1;
-        if (!ID1BioseqFetchEnable(const_cast<char*>("bl2seq"), true)) {
-            cerr << "could not initialize entrez sequence retrieval" << endl;
-            return 1;
+            auto_ptr<CObjectOStream> asnout(
+                CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
+            for (unsigned int index = 0; index < seqalignv.size(); ++index)
+                *asnout << *seqalignv[index];
         }
 
-        SeqAnnotPtr seqannot = SeqAnnotNew();
-        seqannot->type = 2;
-        AddAlignInfoToSeqAnnot(seqannot, (Uint1)prog);
-        seqannot->data = salp;
-
-        Uint4 align_opts = TXALIGN_MATRIX_VAL | TXALIGN_SHOW_QS
-            | TXALIGN_COMPRESS | TXALIGN_END_NUM;
-        if (prog == eBlastx) align_opts |= TXALIGN_BLASTX_SPECIAL;
-
-        FILE *fp = GetOutputFilePtr();
-        Uint1 feats[255] = { 0 };   // dummy argument
-        ShowTextAlignFromAnnot(seqannot, 60, fp, feats, feats, align_opts, 
-                NULL, NULL, FormatScoreFunc);
-        seqannot = SeqAnnotFree(seqannot);
-
-#endif
+    } catch (const CException& e) {
+        e.ReportExtra(cerr);
+    }
 
     return 0;
 }
@@ -530,6 +463,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/02/13 03:31:51  camacho
+ * 1. Use CBlastOptionsHandle class (still needs some work)
+ * 2. Remove dead code, clean up, add @todo doxygen tags
+ *
  * Revision 1.35  2004/01/05 18:50:27  vasilche
  * Fixed path to include files.
  *
