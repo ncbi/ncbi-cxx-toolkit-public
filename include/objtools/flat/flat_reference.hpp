@@ -93,7 +93,7 @@ public:
         const;
 
     const CPubdesc&     GetPubdesc   (void) const { return *m_Pubdesc;   }
-    const CSeq_loc&     GetLoc       (void) const { return *m_Loc;       }
+    const CSeq_loc*     GetLoc       (void) const { return m_Loc;        }
     const set<int>&     GetPMIDs     (void) const { return m_PMIDs;      }
     const set<int>&     GetMUIDs     (void) const { return m_MUIDs;      }
     int                 GetSerial    (void) const { return m_Serial;     }
@@ -156,6 +156,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/04/10 20:06:46  ucko
+* GetLoc: return a pointer rather than a reference, as it's usually NULL.
+*
 * Revision 1.2  2003/03/21 18:47:47  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.
