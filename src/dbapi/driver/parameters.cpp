@@ -116,14 +116,11 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
     if (param_no < m_NofParams) {
         // we do have a param number
         if ((m_Params[param_no].status & fSet) != 0) { 
-        // DELETE ME!!!!
-#if 0
             if (m_Params[param_no].param->GetType() == param->GetType()) {
                 // types are the same
-                *m_Params[param_no].param = *param;
+                m_Params[param_no].param->AssignValue(*param);
             }
             else 
-#endif
                 { // we need to delete the old one
                     delete m_Params[param_no].param;
                     m_Params[param_no].param = param->Clone();
@@ -197,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/05/16 21:33:00  soussov
+ * Replaces the temp fix in SetParam with the permanent one
+ *
  * Revision 1.7  2002/05/15 22:29:40  soussov
  * temporary fix for SetParam
  *
