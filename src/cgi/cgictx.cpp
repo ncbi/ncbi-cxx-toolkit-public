@@ -27,6 +27,7 @@
 *
 * File Description:
 *   Definition CGI application class and its context class.
+*
 */
 
 #include <corelib/ncbistd.hpp>
@@ -117,8 +118,8 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
         char buf[1];
         CNcbiIstrstream dummy(buf, 0);
         m_Request.reset(new CCgiRequest
-                        (args, env, &dummy, CCgiRequest::fIgnoreQueryString, 
-                         errbuf_size));
+                        (args, env, &dummy, CCgiRequest::fIgnoreQueryString,
+                         ifd, errbuf_size));
     }
 }
 
@@ -154,7 +155,7 @@ CNcbiResource& CCgiContext::GetResource(void)
 
 
 CCgiServerContext& CCgiContext::x_GetServerContext(void) const
-{ 
+{
     CCgiServerContext* context = m_ServerContext.get();
     if ( !context ) {
         context = m_App.LoadServerContext(const_cast<CCgiContext&>(*this));
@@ -230,7 +231,7 @@ const string& CCgiContext::GetSelfURL(void) const
     m_SelfURL += GetRequest().GetProperty(eCgi_ServerName);
     m_SelfURL += ':';
     m_SelfURL += GetRequest().GetProperty(eCgi_ServerPort);
-        
+
     // (workaround a bug in the "www.ncbi" proxy -- replace adjacent '//')
     m_SelfURL += NStr::Replace
         (GetRequest().GetProperty(eCgi_ScriptName), "//", "/");
@@ -284,6 +285,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.35  2003/05/19 21:25:31  vakatov
+* In CCgiContext::ctor -- fixed invalid arg passage to CCgiRequest::ctor
+*
 * Revision 1.34  2003/04/16 21:48:19  vakatov
 * Slightly improved logging format, and some minor coding style fixes.
 *
