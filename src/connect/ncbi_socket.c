@@ -1267,7 +1267,7 @@ static EIO_Status s_CreateListening(const char*    path,
     *lsock = 0;
     /* initialize internals */
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
-    assert(!path || !port);
+    assert(!!path ^ !!port);
 
     if (path) {
 #ifdef NCBI_OS_UNIX
@@ -4378,6 +4378,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.165  2005/01/05 17:38:25  lavr
+ * Fix assert() in s_CreateListening()
+ *
  * Revision 6.164  2004/12/27 15:30:35  lavr
  * Implement OOB write
  *
