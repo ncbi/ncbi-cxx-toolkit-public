@@ -110,8 +110,7 @@ string  CFlatItemFormatter::x_FormatAccession
 
     CBioseqContext& ctx = *acc.GetContext();
 
-    const string& primary = ctx.IsHup() ? ";" : 
-        ctx.GetPrimaryId()->GetSeqIdString(false);
+    const string& primary = ctx.IsHup() ? ";" : acc.GetAccession();
     
     acc_line << primary;
 
@@ -192,16 +191,8 @@ void CFlatItemFormatter::x_FormatRefLocation
     const string* delim_p = &kEmptyStr;
     CScope& scope = ctx.GetScope();
 
-    CConstRef<CSeq_loc> mapped_loc(&loc);
-    if ( ctx.GetMapper() != 0 ) {
-        mapped_loc.Reset(ctx.GetMapper()->Map(loc));
-    }
-    if ( !mapped_loc  || mapped_loc->IsNull() ) {
-        return;
-    }
-
     os << (ctx.IsProt() ? "(residues " : "(bases ");
-    for ( CSeq_loc_CI it(*mapped_loc);  it;  ++it ) {
+    for ( CSeq_loc_CI it(loc);  it;  ++it ) {
         CSeq_loc_CI::TRange range = it.GetRange();
         if ( range.IsWhole() ) {
             range.SetTo(sequence::GetLength(it.GetSeq_id(), &scope) - 1);
@@ -372,6 +363,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/05/06 17:57:22  shomrat
+* Fixed Accession and RefLocation formatting
+*
 * Revision 1.9  2004/04/27 15:12:50  shomrat
 * fixed Journal formatting
 *
