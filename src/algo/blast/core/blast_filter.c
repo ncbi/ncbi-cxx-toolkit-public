@@ -918,7 +918,7 @@ Int2 BlastMaskDNAToProtein(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp)
 
    mask_loc = *mask_loc_ptr;
 
-   for (index = 0; slp; ++index, slp = slp->next) {
+   for (index = 0; slp && mask_loc; ++index, slp = slp->next) {
       if (index < mask_loc->index)
          /* Advance to the next nucleotide sequence */
          continue;
