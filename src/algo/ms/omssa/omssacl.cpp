@@ -83,7 +83,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(0, 9, 5));
+    SetVersion(CVersionInfo(0, 9, 6));
 }
 
 
@@ -152,6 +152,8 @@ void COMSSA::Init()
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("fb", "dtainfile", "multiple dta files separated by blank lines to search",
 			   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("fp", "pklinfile", "pkl formatted file",
+                CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("o", "textasnoutfile", "filename for text asn.1 formatted search results",
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("ob", "binaryasnoutfile", "filename for binary asn.1 formatted search results",
@@ -321,7 +323,7 @@ int COMSSA::Run()
 			 args["fx"].AsString());
 		return 1;
 	    }
-	    FileRetVal = Spectrumset->LoadMultDTA(PeakFile);
+	    FileRetVal = Spectrumset->LoadFile(eDTAXML, PeakFile);
 	}
 	else if(args["f"].AsString().size() != 0) {
 	    ifstream PeakFile(args["f"].AsString().c_str());
@@ -330,7 +332,7 @@ int COMSSA::Run()
 			 args["f"].AsString());
 		return 1;
 	    }
-	    FileRetVal = Spectrumset->LoadDTA(PeakFile);
+	    FileRetVal = Spectrumset->LoadFile(eDTA, PeakFile);
 	}
 	else if(args["fb"].AsString().size() != 0) {
 	    ifstream PeakFile(args["fb"].AsString().c_str());
@@ -339,7 +341,16 @@ int COMSSA::Run()
 			 args["fb"].AsString());
 		return 1;
 	    }
-	    FileRetVal = Spectrumset->LoadMultBlankLineDTA(PeakFile);
+	    FileRetVal = Spectrumset->LoadFile(eDTABlank, PeakFile);
+	}
+	else if(args["fp"].AsString().size() != 0) {
+	    ifstream PeakFile(args["fp"].AsString().c_str());
+	    if(!PeakFile) {
+		ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
+			 args["fp"].AsString());
+		return 1;
+	    }
+	    FileRetVal = Spectrumset->LoadFile(ePKL, PeakFile);
 	}
 	else {
 	    ERR_POST(Fatal << "omssatest: input file not given.");
@@ -494,6 +505,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.23  2004/12/03 21:14:16  lewisg
+  file loading code
+
   Revision 1.22  2004/11/30 23:39:57  lewisg
   fix interval query
 

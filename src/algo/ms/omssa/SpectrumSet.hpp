@@ -48,6 +48,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+enum EFileType { eDTA, eDTABlank, eDTAXML, eASC, ePKL, ePKS, eSCIEX, eMGF, eUnknown };
+
 class NCBI_XOMSSA_EXPORT CSpectrumSet : public CMSSpectrumset {
     //    typedef CMSSpectrumset_Base Tparent;
     typedef CMSSpectrumset Tparent;
@@ -58,6 +60,11 @@ public:
     CSpectrumSet(void);
     // destructor
     ~CSpectrumSet(void);
+
+    ///
+    /// wrapper for various file loaders
+    ///
+    int LoadFile(EFileType FileType, std::istream& DTA, int Max = 0);
 
     ///
     /// load in a single dta file
@@ -81,7 +88,8 @@ public:
     /// returns -1 if more than Max spectra read
     int LoadMultBlankLineDTA(
 			     std::istream& DTA,  // stream containing blank delimited dtas
-                 int Max = 0   // maximum number of dtas to read in, 0= no limit
+                 int Max = 0,   // maximum number of dtas to read in, 0= no limit
+                 bool isPKL = false     // pkl formatted?
 			     );
 
 protected:
@@ -91,7 +99,8 @@ protected:
     ///
     bool GetDTAHeader(
 		      std::istream& DTA,  // input stream
-		      CRef <CMSSpectrum>& MySpectrum   // asn.1 container for spectra
+		      CRef <CMSSpectrum>& MySpectrum,   // asn.1 container for spectra
+              bool isPKL = false     // pkl formatted?
 		      );
 
     ///
@@ -136,6 +145,9 @@ CSpectrumSet::~CSpectrumSet(void)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/12/03 21:14:16  lewisg
+ * file loading code
+ *
  * Revision 1.5  2004/11/01 22:04:01  lewisg
  * c-term mods
  *

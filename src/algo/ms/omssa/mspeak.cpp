@@ -564,9 +564,9 @@ void CMSPeak::xWrite(std::ostream& FileOut, CMZI *Temp, int Num)
     }
 }
 
-void CMSPeak::Write(std::ostream& FileOut, CMSPeak::EFileType FileType, int Which)
+void CMSPeak::Write(std::ostream& FileOut, EFileType FileType, int Which)
 {
-    if(!FileOut || FileType != CMSPeak::eDTA) return;
+    if(!FileOut || FileType != eDTA) return;
     xWrite(FileOut, MZI[Which], Num[Which]);
 }
 

@@ -520,7 +520,7 @@ public:
     // Read a spectrum set into a CMSPeak
     int Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale);
     // Write out a CMSPeak in dta format (useful for debugging)
-    enum EFileType { eDTA, eASC, ePKL, ePKS, eSCIEX, eUnknown };
+//    enum EFileType { eDTA, eASC, ePKL, ePKS, eSCIEX, eUnknown };
     void Write(std::ostream& FileOut, EFileType FileType = eDTA, int Which = MSORIGINAL);
 
     // functions used in SmartCull
@@ -942,6 +942,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.21  2004/12/03 21:14:16  lewisg
+  file loading code
+
   Revision 1.20  2004/11/30 23:39:57  lewisg
   fix interval query
 

@@ -62,6 +62,35 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //
 
 
+///
+/// wrapper for various file loaders
+///
+
+int CSpectrumSet::LoadFile(EFileType FileType, std::istream& DTA, int Max)
+{
+    switch (FileType) {
+    case eDTA:
+        return LoadDTA(DTA);
+        break;
+    case eDTABlank:
+        return LoadMultBlankLineDTA(DTA, Max);
+        break;
+    case eDTAXML:
+        return LoadMultDTA(DTA, Max);
+        break;
+    case ePKL:
+        return LoadMultBlankLineDTA(DTA, Max, true);
+        break;
+    case eMGF:
+    case eASC:
+    case ePKS:
+    case eSCIEX:
+    case eUnknown:
+    default:
+        break;
+    }
+    return 1;  // not supported
+}
 
 ///
 /// load multiple dta's in xml-like format
@@ -149,7 +178,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
 ///
 /// load multiple dta's separated by a blank line
 ///
-int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max)
+int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
 {   
     CRef <CMSSpectrum> MySpectrum;
     int iIndex(0); // the spectrum index
@@ -167,7 +196,7 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max)
             MySpectrum->SetNumber(iIndex);
             iIndex++;
 
-            if (!GetDTAHeader(DTA, MySpectrum)) return 1;
+            if (!GetDTAHeader(DTA, MySpectrum, isPKL)) return 1;
             getline(DTA, Line);
             getline(DTA, Line);
 
@@ -203,7 +232,8 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max)
 ///
 ///  Read in the header of a DTA file
 ///
-bool CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
+bool CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum,
+                                bool isPKL)
 {
     double dummy(0.0L);
 
@@ -212,6 +242,12 @@ bool CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectru
         return false;
     }
     MySpectrum->SetPrecursormz(static_cast <int> ((dummy-1.00794)*MSSCALE));
+    if(isPKL) {
+        DTA >> dummy;
+        if (dummy <= 0) {
+            return false;
+        }
+    }
     DTA >> dummy;
     if (dummy <= 0) {
         return false;
@@ -284,6 +320,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/12/03 21:14:16  lewisg
+ * file loading code
+ *
  * Revision 1.12  2004/11/09 17:57:05  lewisg
  * dta parsing fix
  *

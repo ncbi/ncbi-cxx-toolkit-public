@@ -47,6 +47,7 @@
 #include <map>
 #include <objects/omssa/MSSearchSettings.hpp>
 #include "Mod.hpp"
+#include "SpectrumSet.hpp"
 
 // #include <corelib/ncbistd.hpp>
 
@@ -507,6 +508,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.15  2004/12/03 21:14:16  lewisg
+  file loading code
+
   Revision 1.14  2004/11/22 23:10:36  lewisg
   add evalue cutoff, fix fixed mods
 
