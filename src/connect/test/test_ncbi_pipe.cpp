@@ -135,7 +135,7 @@ int CTest::Run(void)
 
     // Pipe for writing
     args.clear();
-    args.push_back("one argument");
+    args.push_back("one_argument");
     pipe.Open(app.c_str(), args, CPipe::eText, CPipe::eDoNotUse);
     s_WritePipe(&pipe, "Child, are You ready?");
     Delay();
@@ -191,6 +191,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2002/06/10 18:49:08  ivanov
+ * Fixed argument passed to child process
+ *
  * Revision 6.2  2002/06/10 18:35:29  ivanov
  * Changed argument's type of a running child program from char*[]
  * to vector<string>
