@@ -36,6 +36,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2001/01/30 23:17:30  vakatov
+* + CCgiRequest::GetEntry()
+*
 * Revision 1.45  2000/11/01 20:34:04  vasilche
 * Added HTTP_EOL string macro.
 *
@@ -469,6 +472,12 @@ public:
     // Also includes "indexes" if "indexes_as_entries" in the
     // constructor was "true"(default).
     const TCgiEntries& GetEntries(void) const;
+
+    // Get entry value by name
+    // NOTE:  There can be more than one entry with the same name;
+    //        only one of these entry will be returned.
+    // To get all matches, use GetEntries() and "multimap::" member functions.
+    const string& GetEntry(const string& name, bool* is_found = 0);
 
     // Get a set of indexes(decoded) received from the client.
     // It will always be empty if "indexes_as_entries" in the constructor

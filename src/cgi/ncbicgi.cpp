@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2001/01/30 23:17:31  vakatov
+* + CCgiRequest::GetEntry()
+*
 * Revision 1.44  2000/11/01 20:36:31  vasilche
 * Added HTTP_EOL string macro.
 *
@@ -1014,6 +1017,17 @@ const
     } else {
         return x_GetPropertyByName(key);
     }
+}
+
+
+const string& CCgiRequest::GetEntry(const string& name, bool* is_found)
+{
+    TCgiEntriesCI it = GetEntries().find(name);
+    bool x_found = (it != GetEntries().end());
+    if ( is_found ) {
+        *is_found = x_found;
+    }
+    return x_found ? it->second : kEmptyStr;
 }
 
 

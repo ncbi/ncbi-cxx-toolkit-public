@@ -31,6 +31,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/01/30 23:17:33  vakatov
+* + CCgiRequest::GetEntry()
+*
 * Revision 1.8  2000/06/26 16:35:25  vakatov
 * Test for CCgiCookies::Add(const string&), which is now maimed to
 * workaround MS IE bug
@@ -331,10 +334,28 @@ static void TestCgi_Request_Full(CNcbiIstream* istr,
 
     TCgiEntries entries = CCR.GetEntries();
     NcbiCout << "\nCCgiRequest::  All entries:\n";
-    if ( entries.empty() )
+    if ( entries.empty() ) {
         NcbiCout << "No entries specified" << NcbiEndl;
-    else
+    } else {
         PrintEntries(entries);
+
+        if ( !CCR.GetEntry("get_query1").empty() ) {
+            NcbiCout << "GetEntry() check." << NcbiEndl;
+
+            _ASSERT(CCR.GetEntry("get_query1").compare("gq1") == 0);
+            bool is_found = false;
+            _ASSERT(CCR.GetEntry("get_query1", &is_found).compare("gq1") == 0);
+            _ASSERT(is_found);
+
+            _ASSERT(CCR.GetEntry("get_query2", 0).empty());
+            is_found = false;
+            _ASSERT(CCR.GetEntry("get_query2", &is_found).empty());
+            _ASSERT(is_found);
+
+            _ASSERT(CCR.GetEntry("qwe1rtyuioop", &is_found).empty());
+            _ASSERT(!is_found);
+        }
+    }
 
     TCgiIndexes indexes = CCR.GetIndexes();
     NcbiCout << "\nCCgiRequest::  ISINDEX values:\n";
