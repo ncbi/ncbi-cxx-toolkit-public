@@ -67,9 +67,6 @@ public:
     void Format(IFlatFormatter& f) const { f.FormatKeywords(*this); }
 
     list<string> m_Keywords;
-
-private:
-    template <class TBlock> void x_AddKeys(const TBlock& block);
 };
 
 
@@ -238,6 +235,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/10 22:05:13  ucko
+* -SFlatKeywords::x_AddKeys (MSVC didn't like it :-/)
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *
