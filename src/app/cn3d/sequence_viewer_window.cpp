@@ -73,6 +73,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_EXPORT_FASTA, MID_EXPORT_HTML,   SequenceViewerWindow::OnExport)
     EVT_MENU      (MID_SELF_HIT,                        SequenceViewerWindow::OnSelfHit)
     EVT_MENU_RANGE(MID_TAXONOMY_FULL, MID_TAXONOMY_ABBR,    SequenceViewerWindow::OnTaxonomy)
+    EVT_MENU      (MID_HIGHLIGHT_BLOCKS,                SequenceViewerWindow::OnHighlightBlocks)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -94,6 +95,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_TAXONOMY_FULL, "&Full");
     subMenu->Append(MID_TAXONOMY_ABBR, "&Abbreviated");
     viewMenu->Append(MID_TAXONOMY, "Show Ta&xonomy...", subMenu);
+    viewMenu->Append(MID_HIGHLIGHT_BLOCKS, "&Highlight blocks");
 
     editMenu->AppendSeparator();
     subMenu = new wxMenu;
@@ -168,6 +170,7 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_SELF_HIT, editable);
         menuBar->Enable(MID_TAXONOMY, editable);
         menuBar->Enable(MID_SCORE_THREADER, editable);
+        menuBar->Enable(MID_HIGHLIGHT_BLOCKS, editable);
         if (!enabled) CancelDerivedSpecialModesExcept(-1);
     }
 }
@@ -460,12 +463,37 @@ void SequenceViewerWindow::OnTaxonomy(wxCommandEvent& event)
             (event.GetId() == MID_TAXONOMY_ABBR));
 }
 
+void SequenceViewerWindow::OnHighlightBlocks(wxCommandEvent& event)
+{
+    if (sequenceViewer->GetCurrentAlignments().size() == 0) return;
+    GlobalMessenger()->RemoveAllHighlights(true);
+
+    const BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments().front();
+    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+    multiple->GetUngappedAlignedBlocks(&blocks);
+    if (blocks.size() == 0) return;
+
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
+    const Sequence *seq;
+    const Block::Range *range;
+    for (int row=0; row<multiple->NRows(); row++) {
+        seq = multiple->GetSequenceOfRow(row);
+        for (b = blocks.begin(); b!=be; b++) {
+            range = (*b)->GetRangeOfRow(row);
+            GlobalMessenger()->AddHighlights(seq, range->from, range->to);
+        }
+    }
+}
+
 END_SCOPE(Cn3D)
 
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/08/23 22:42:17  thiessen
+* add highlight blocks command
+*
 * Revision 1.49  2003/03/06 19:23:56  thiessen
 * fix for compilation problem (seqfeat macros)
 *

@@ -74,6 +74,7 @@ private:
             MID_EXPORT_A2M,
             MID_EXPORT_TEXT,
             MID_EXPORT_HTML,
+        MID_HIGHLIGHT_BLOCKS,
         // edit menu
         MID_DELETE_ROW,
         MID_SORT_ROWS,   // sort rows submenu
@@ -104,6 +105,7 @@ private:
     void OnExport(wxCommandEvent& event);
     void OnSelfHit(wxCommandEvent& event);
     void OnTaxonomy(wxCommandEvent& event);
+    void OnHighlightBlocks(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation
@@ -168,6 +170,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/08/23 22:42:17  thiessen
+* add highlight blocks command
+*
 * Revision 1.26  2003/02/03 19:20:06  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
