@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/08/04 14:44:48  vasilche
+* Added EXPORT to CAliasInfo to workaround bug in MSVC 7.
+*
 * Revision 1.8  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -64,6 +67,7 @@
 #include <serial/serialutil.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -230,5 +234,8 @@ void CAliasTypeInfoFunctions::SkipAliasDefault(CObjectIStream& in,
     in.SkipAlias(aliasType);
 }
 
+template class NCBI_XSERIAL_EXPORT CAliasBase<int>;
+template class NCBI_XSERIAL_EXPORT CAliasBase<string>;
+template class NCBI_XSERIAL_EXPORT CAliasBase< vector<char> >;
 
 END_NCBI_SCOPE

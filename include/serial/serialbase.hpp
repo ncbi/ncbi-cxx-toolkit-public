@@ -201,7 +201,7 @@ protected:
 //
 
 template <class TPrim>
-class CAliasBase
+class NCBI_XSERIAL_EXPORT CAliasBase
 {
 public:
     typedef CAliasBase<TPrim> TThis;
@@ -253,9 +253,9 @@ public:
             return m_Data != value;
         }
 
-    static TPointerOffsetType GetDataPtr(const TThis* alias)
+    static TConstObjectPtr GetDataPtr(const TThis* alias)
         {
-            return TPointerOffsetType(&alias->m_Data);
+			return &alias->m_Data;
         }
 
 protected:
@@ -270,9 +270,7 @@ class CStdAliasBase : public CAliasBase<TStd>
     typedef CStdAliasBase<TStd> TThis;
 public:
     CStdAliasBase(void)
-        {
-            this->m_Data = 0;
-        }
+		: TParent(0) {}
     explicit CStdAliasBase(const TStd& value)
         : TParent(value) {}
 };
@@ -285,8 +283,7 @@ class CStringAliasBase : public CAliasBase<TString>
     typedef CStringAliasBase<TString> TThis;
 public:
     CStringAliasBase(void)
-        {
-        }
+		: TParent() {}
     explicit CStringAliasBase(const TString& value)
         : TParent(value) {}
 };
@@ -439,6 +436,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/08/04 14:44:48  vasilche
+* Added EXPORT to CAliasInfo to workaround bug in MSVC 7.
+*
 * Revision 1.33  2004/07/29 19:57:08  vasilche
 * Added operators to read/write CObjectInfo.
 *

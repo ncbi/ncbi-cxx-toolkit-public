@@ -526,7 +526,7 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
     NCBI_NAME2(ClassName,_Base), \
     SERIAL_ALIAS(RefType), RefCode)
 #define SET_STD_ALIAS_DATA_PTR \
-    info->SetDataOffset(GetDataPtr(BASE_OBJECT()))
+    info->SetDataOffset(NCBI_NS_NCBI::TPointerOffsetType(GetDataPtr(BASE_OBJECT())))
 #define SET_CLASS_ALIAS_DATA_PTR \
     info->SetDataOffset(NCBI_NS_NCBI::TPointerOffsetType(BASE_OBJECT())); \
     info->SetCreateFunction(NCBI_NS_NCBI::CClassInfoHelper<CClass>::Create)
