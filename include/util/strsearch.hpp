@@ -100,8 +100,10 @@ template <typename MatchType>
 class CTextFsm
 {
 public:
-    // Constants:     
-    static const int sm_FailState;
+    // Constants (done as an enum to avoid link errors on Darwin)
+    enum ESpecialStates {
+        eFailState = -1
+    };
     
     // Constructors and Destructors:
     CTextFsm(bool case_sensitive = false);
@@ -146,7 +148,7 @@ private:
         // Retreive the transition state, give the transition character.
         int GetNextState(char letter) const {
 	    TMapCharInt::const_iterator it = m_Transitions.find(letter);
-	    return it != m_Transitions.end() ?  it->second : sm_FailState;
+	    return it != m_Transitions.end() ?  it->second : eFailState;
         }
         
         
@@ -215,10 +217,6 @@ public:
 // =======
 
 template <typename MatchType>
-const int CTextFsm<MatchType>::sm_FailState = -1;
-
-
-template <typename MatchType>
 CTextFsm<MatchType>::CTextFsm(bool case_sensitive) :
 m_Primed(false), m_CaseSensitive(case_sensitive)
 {
@@ -242,7 +240,7 @@ void CTextFsm<MatchType>::AddWord(const string& word, const MatchType& match)
     // try to overlay beginning of word onto existing table 
     for ( i = 0;  i < word_len;  ++i ) {
         next = m_States[state].GetNextState(word[i]);
-        if ( next == sm_FailState ) break;
+        if ( next == eFailState ) break;
         state = next;
     }
     
@@ -292,12 +290,12 @@ template <typename MatchType>
 int CTextFsm<MatchType>::GetNextState(int state, char letter) const
 {
     if ( state < 0 || state >= m_States.size() ) {
-        return sm_FailState;
+        return eFailState;
     }
     
     int next;
     int initial = GetInitialState();
-    while ( (next = GetNextState(m_States[state], letter)) == sm_FailState ) {
+    while ( (next = GetNextState(m_States[state], letter)) == eFailState ) {
         if ( state == initial ) {
             next = initial;
             break;
@@ -379,7 +377,7 @@ void CTextFsm<MatchType>::FindFail(int state, int new_state, char ch)
     
     // traverse existing failure path 
     
-    while ( (next = GetNextState(state, ch)) == sm_FailState) {
+    while ( (next = GetNextState(state, ch)) == eFailState) {
         if ( state == 0 ) {
             next = 0; break;
         }
@@ -423,6 +421,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2002/11/12 15:38:56  ucko
+* Since sm_FailState was constant anyway, made it into a (singleton)
+* enum element so it won't end up as an undefined symbol on Darwin.
+*
 * Revision 1.4  2002/11/06 15:08:03  ucko
 * Remove extraneous CState:: that caused trouble with MIPSpro.
 *
