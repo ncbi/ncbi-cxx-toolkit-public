@@ -398,21 +398,21 @@ static int/*bool*/ s_Initialized = 0/*false*/;
 static unsigned int s_ID_Counter = 0;
 
 /* Read-while-writing switch */
-static ESwitch s_ReadOnWrite = eOff;       /* no read-on-write by default */
+static ESwitch s_ReadOnWrite = eOff;        /* no read-on-write by default   */
 
 /* Reuse address flag for newly created stream sockets */
-static int/*bool*/ s_ReuseAddress = 0;     /* off by default              */
+static int/*bool*/ s_ReuseAddress = 0;      /* off by default                */
 
 /* I/O restart on signals */
-static ESwitch s_InterruptOnSignal = eOff; /* restart I/O by default      */
+static ESwitch s_InterruptOnSignal = eOff;  /* restart I/O by default        */
 
 /* Data/event logging */
-static ESwitch s_Log = eOff;               /* no logging by default       */
+static ESwitch s_Log = eOff;                /* no logging by default         */
 
 /* Select restart timeout */
-static unsigned s_SelectTimeout = 0;       /* =0 (disabled) by default    */
+static const struct timeval* s_SelectTimeout = 0; /* =0 (disabled) by default*/
 
-/* Flag to indicate whether API should mask SIGPIPE (during initialization) */
+/* Flag to indicate whether API should mask SIGPIPE (during initialization)  */
 #ifdef NCBI_OS_UNIX
 static int/*bool*/ s_AllowSigPipe = 0/*false - mask SIGPIPE out*/;
 #endif /*NCBI_OS_UNIX*/
@@ -745,14 +745,6 @@ extern ESwitch SOCK_SetDataLogging(SOCK sock, ESwitch log)
  */
 
 
-extern unsigned int SOCK_SetSelectInternalRestartTimeout(unsigned int tmo)
-{
-    unsigned int old_tmo = s_SelectTimeout;
-    s_SelectTimeout = tmo;
-    return old_tmo;
-}
-
-
 extern void SOCK_AllowSigPipeAPI(void)
 {
 #ifdef NCBI_OS_UNIX
@@ -981,6 +973,21 @@ static EIO_Status s_Status(SOCK sock, EIO_Event direction)
 }
 
 
+/* compare 2 normialized timeval timeouts: "whether v1 is less than v2" */
+static int/*bool*/ s_Less(const struct timeval* v1, const struct timeval* v2)
+{
+    if (!v1)
+        return 0;
+    if (!v2)
+        return !!v1;
+    if (v1->tv_sec > v2->tv_sec)
+        return 0;
+    if (v1->tv_sec < v2->tv_sec)
+        return 1;
+    return v1->tv_usec < v2->tv_usec;
+}
+
+
 /* Select on the socket I/O (multiple sockets).
  * "Event" field is not considered for entries, whose "sock" field is 0,
  * "revent" for those entries is always "eIO_Open". For all other entries
@@ -1110,11 +1117,10 @@ static EIO_Status s_Select(size_t                n,
         if ( ready )
             return eIO_Success;
 
-        if (!tv  ||  (s_SelectTimeout &&
-                      (x_tv.tv_sec > s_SelectTimeout  ||
-                       (x_tv.tv_sec == s_SelectTimeout  &&  x_tv.tv_usec)))) {
-            xx_tv.tv_sec  = s_SelectTimeout;
-            xx_tv.tv_usec = 0;
+        if (!tv  ||  s_Less(s_SelectTimeout, &x_tv)) {
+            if ( s_SelectTimeout ) {
+                xx_tv = *s_SelectTimeout;
+            }
         } else
             xx_tv = x_tv;
 
@@ -1126,8 +1132,9 @@ static EIO_Status s_Select(size_t                n,
         if (n_fds == 0) {
             if ( !tv )
                 continue;
-            if (s_SelectTimeout  &&  x_tv.tv_sec >= s_SelectTimeout) {
-                x_tv.tv_sec -= s_SelectTimeout;
+            if ( s_Less(s_SelectTimeout, &x_tv) ) {
+                x_tv.tv_sec  -= s_SelectTimeout->tv_sec;
+                x_tv.tv_usec -= s_SelectTimeout->tv_usec;
                 continue;
             }
             return eIO_Timeout;
@@ -1176,6 +1183,21 @@ static EIO_Status s_Select(size_t                n,
 
     /* success; can do I/O now */
     return eIO_Success;
+}
+
+
+
+/******************************************************************************
+ *  UTILITY
+ */
+
+extern const STimeout* SOCK_SetSelectInternalRestartTimeout(const STimeout* t)
+{
+    static struct timeval  s_NewTmo;
+    static STimeout        s_OldTmo;
+    const  STimeout* retval = s_tv2to(s_SelectTimeout, &s_OldTmo);
+    s_SelectTimeout         = s_to2tv(t,               &s_NewTmo);
+    return retval;
 }
 
 
@@ -4030,6 +4052,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.142  2003/11/24 19:21:42  lavr
+ * SOCK_SetSelectInternalRestartTimeout() to accept ptr to STimeout
+ *
  * Revision 6.141  2003/11/18 20:19:48  lavr
  * +SOCK_SetSelectInternalRestartTimeout() and restart impl. in s_Select()
  *
