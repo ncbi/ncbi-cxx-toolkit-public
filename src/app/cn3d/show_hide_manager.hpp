@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/10/08 14:18:56  thiessen
+* fix show/hide dialog under wxGTK
+*
 * Revision 1.8  2001/08/10 15:02:03  thiessen
 * fill out shortcuts; add update show/hide menu
 *
@@ -100,7 +103,7 @@ public:
     // used for show/hide dialog to get list of names and visibility status
     void GetShowHideInfo(std::vector < std::string > *names, std::vector < bool > *visibilities) const;
     void ShowHideCallbackFunction(const std::vector < bool >& itemsEnabled);
-    void SelectionChangedCallback(const std::vector < bool >& original, std::vector < bool >& itemsEnabled);
+    bool SelectionChangedCallback(const std::vector < bool >& original, std::vector < bool >& itemsEnabled);
     void ConstructShowHideArray(const StructureSet *structureSet);
 
     // functions to show/hide more complex groups of stuff

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/10/08 14:18:33  thiessen
+* fix show/hide dialog under wxGTK
+*
 * Revision 1.8  2001/09/06 13:10:10  thiessen
 * tweak show hide dialog layout
 *
@@ -80,13 +83,14 @@ ShowHideDialog::ShowHideDialog(
     const wxString items[],
     std::vector < bool > *itemsOn,
     ShowHideCallbackObject *callback,
+    bool useExtendedListStyle,
     wxWindow* parent,
     wxWindowID id,
     const wxString& title,
     const wxPoint& pos
 ) :
     wxDialog(parent, id, title, pos, wxSize(MIN_SIZE), wxCAPTION | wxRESIZE_BORDER | wxFRAME_FLOAT_ON_PARENT),
-    itemsEnabled(itemsOn), callbackObject(callback), applyB(NULL)
+    itemsEnabled(itemsOn), callbackObject(callback), applyB(NULL), haveApplied(false)
 {
     SetAutoLayout(true);
     SetSizeHints(MIN_SIZE);
@@ -141,7 +145,8 @@ ShowHideDialog::ShowHideDialog(
     }
 
     listBox = new wxListBox(this, LISTBOX, wxDefaultPosition, wxDefaultSize,
-        itemsEnabled->size(), items, wxLB_EXTENDED | wxLB_HSCROLL | wxLB_NEEDED_SB);
+        itemsEnabled->size(), items,
+        (useExtendedListStyle ? wxLB_EXTENDED : wxLB_MULTIPLE) | wxLB_HSCROLL | wxLB_NEEDED_SB);
     wxLayoutConstraints *c4 = new wxLayoutConstraints();
     c4->top.SameAs          (this,      wxTop,      MARGIN);
     c4->left.SameAs         (this,      wxLeft,     MARGIN);
@@ -151,31 +156,33 @@ ShowHideDialog::ShowHideDialog(
 
     Layout();
 
-    // set initial item selection (reverse order, so scroll bar is initially at the top)
-    beforeChange.resize(itemsEnabled->size());
+    // set initial item selection (kludge: reverse order, so scroll bar is initially at the top)
+    originalItemsEnabled.resize(itemsEnabled->size());
     for (int i=itemsEnabled->size()-1; i>=0; i--) {
+        listBox->SetSelection(i, true);
         listBox->SetSelection(i, (*itemsEnabled)[i]);
-        beforeChange[i] = (*itemsEnabled)[i];
+        originalItemsEnabled[i] = (*itemsEnabled)[i];
     }
+    tempItemsEnabled.resize(itemsEnabled->size());
 }
 
 void ShowHideDialog::OnSelection(wxCommandEvent& event)
 {
-    // update selection list
     int i;
-    for (i=0; i<listBox->GetCount(); i++)
-        (*itemsEnabled)[i] = listBox->Selected(i);
 
-    if (callbackObject) {
-        // do the selection changed callback, and adjust selections accordingly
-        callbackObject->SelectionChangedCallback(beforeChange, *itemsEnabled);
+    // get states as they are before this selection
+    for (i=0; i<listBox->GetCount(); i++) tempItemsEnabled[i] = (*itemsEnabled)[i];
+
+    // update from current listbox selections
+    for (i=0; i<listBox->GetCount(); i++) (*itemsEnabled)[i] = listBox->Selected(i);
+
+    // do the selection changed callback, and adjust selections according to what's changed
+    if (callbackObject && callbackObject->SelectionChangedCallback(tempItemsEnabled, *itemsEnabled)) {
 
         // apply changes
         int pV = listBox->GetScrollPos(wxVERTICAL);
-        for (i=0; i<listBox->GetCount(); i++) {
-            listBox->SetSelection(i, (*itemsEnabled)[i]);
-            beforeChange[i] = (*itemsEnabled)[i];
-        }
+        for (i=0; i<listBox->GetCount(); i++) listBox->SetSelection(i, (*itemsEnabled)[i]);
+
         // horrible kludge to keep vertical scroll at same position...
         if (pV >= 0 && pV < listBox->GetCount()) {
             listBox->SetSelection(listBox->GetCount() - 1, true);
@@ -183,34 +190,36 @@ void ShowHideDialog::OnSelection(wxCommandEvent& event)
             listBox->SetSelection(pV, true);
             listBox->SetSelection(pV, (*itemsEnabled)[pV]);
         }
-        applyB->Enable(true);
     }
 
     cancelB->Enable(true);
+    if (applyB) applyB->Enable(true);
 }
 
 void ShowHideDialog::OnButton(wxCommandEvent& event)
 {
+    bool doCallback = (applyB && applyB->IsEnabled());
+
     if (event.GetId() == B_CANCEL) {
         // restore item list to original state
-        for (int i=0; i<beforeChange.size(); i++)
-            (*itemsEnabled)[i] = beforeChange[i];
+        for (int i=0; i<originalItemsEnabled.size(); i++) (*itemsEnabled)[i] = originalItemsEnabled[i];
+        doCallback = haveApplied;
+    }
+
+    // only do this if selection has changed since last time
+    if (callbackObject && doCallback) {
+        ERR_POST(Info << "calling ShowHideCallbackFunction()");
+        // do the callback with the current selection state
+        callbackObject->ShowHideCallbackFunction(*itemsEnabled);
+        if (applyB) applyB->Enable(false);
+    }
+
+    if (event.GetId() == B_CANCEL)
         EndModal(wxCANCEL);
-    }
-
-    else if (event.GetId() == B_DONE || event.GetId() == B_APPLY) {
-
-        // only do this if selection has changed since last time
-        if (callbackObject && applyB && applyB->IsEnabled()) {
-            // do the callback with the current selection state
-            callbackObject->ShowHideCallbackFunction(*itemsEnabled);
-            applyB->Enable(false);
-            cancelB->Enable(false);
-        }
-
-        if (event.GetId() == B_DONE)
-            EndModal(wxOK);
-    }
+    else if (event.GetId() == B_DONE)
+        EndModal(wxOK);
+    else if (event.GetId() == B_APPLY)
+        haveApplied = true;
 }
 
 void ShowHideDialog::OnCloseWindow(wxCloseEvent& event)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/10/08 14:18:33  thiessen
+* fix show/hide dialog under wxGTK
+*
 * Revision 1.22  2001/10/01 16:04:24  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -291,11 +294,10 @@ void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
     wxString title = "Show/Hide Slaves of ";
     title.Append(sequenceViewer->alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->identifier->ToString().c_str());
     ShowHideDialog dialog(
-        titleStrs, &visibilities,
-        sequenceViewer->alignmentManager,
+        titleStrs, &visibilities, sequenceViewer->alignmentManager, true,
         this, -1, title);
     dialog.ShowModal();
-//    delete titleStrs;    // apparently deleted by wxWindows
+    //delete titleStrs;    // apparently deleted by wxWindows
 }
 
 bool SequenceViewerWindow::QueryShowAllRows(void)
@@ -359,7 +361,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     ShowHideDialog dialog(
         titleStrs, &selectedSlaves,
         NULL,   // no "apply" button or callback
-        this, -1, title);
+        true, this, -1, title);
     dialog.ShowModal();
 
     // make list of slave rows to be realigned

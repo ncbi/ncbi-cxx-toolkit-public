@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/10/08 14:18:56  thiessen
+* fix show/hide dialog under wxGTK
+*
 * Revision 1.3  2001/03/09 15:48:43  thiessen
 * major changes to add initial update viewer
 *
@@ -45,7 +48,7 @@
 #ifndef CN3D_SHOW_HIDE_CALLBACK__HPP
 #define CN3D_SHOW_HIDE_CALLBACK__HPP
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistl.hpp>
 
 #include <vector>
 
@@ -59,9 +62,10 @@ public:
     virtual void ShowHideCallbackFunction(const std::vector < bool > & itemsEnabled) = 0;
 
     // called when the selection changes - the callback can then change the status
-    // of itemsEnabled, which will in turn be reflected in the listbox selection
-    virtual void SelectionChangedCallback(
-        const std::vector < bool >& original, std::vector < bool > & itemsEnabled) { }
+    // of itemsEnabled, which will in turn be reflected in the listbox selection if
+    // the return value is true
+    virtual bool SelectionChangedCallback(
+        const std::vector < bool >& original, std::vector < bool > & itemsEnabled) { return false; }
 };
 
 END_SCOPE(Cn3D)

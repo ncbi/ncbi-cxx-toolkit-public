@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/10/08 14:18:56  thiessen
+* fix show/hide dialog under wxGTK
+*
 * Revision 1.7  2001/09/06 13:09:38  thiessen
 * tweak show hide dialog layout
 *
@@ -91,8 +94,9 @@ public:
 
     ShowHideDialog(
         const wxString items[],                 // must have items->size() wxStrings
-        std::vector < bool > *itemsOn,          // modified (upon Activate()) to reflect user selection
-        ShowHideCallbackObject *callback,
+        std::vector < bool > *itemsOn,          // modified to reflect user (de)selection(s)
+        ShowHideCallbackObject *callback,       // to reflect changes as user performs acts
+        bool useExtendedListStyle,              // whether to use wxLB_EXTENDED or wxLB_MULTIPLE
         wxWindow* parent,
         wxWindowID id,
         const wxString& title,
@@ -105,11 +109,13 @@ private:
     void OnCloseWindow(wxCloseEvent& event);
 
     std::vector < bool > *itemsEnabled;
+    std::vector < bool > originalItemsEnabled;  // save in case of 'Cancel'
+    std::vector < bool > tempItemsEnabled;      // temporary storage
+    bool haveApplied;
 
     ShowHideCallbackObject *callbackObject;
     wxListBox *listBox;
     wxButton *applyB, *cancelB;
-    std::vector < bool > beforeChange;
 
     DECLARE_EVENT_TABLE()
 };

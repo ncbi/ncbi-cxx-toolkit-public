@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2001/10/08 14:18:33  thiessen
+* fix show/hide dialog under wxGTK
+*
 * Revision 1.90  2001/10/08 00:00:08  thiessen
 * estimate threader N random starts; edit CDD name
 *
@@ -671,6 +674,8 @@ void Cn3DApp::InitRegistry(void)
         TESTMSG("loading program registry " << registryFile);
         registry.Read(*iniIn);
     }
+    
+    registryChanged = false;
 }
 
 bool Cn3DApp::OnInit(void)
@@ -1301,11 +1306,10 @@ void Cn3DMainFrame::OnShowHide(wxCommandEvent& event)
             for (int i=0; i<structureNames.size(); i++) titles[i] = structureNames[i].c_str();
 
             ShowHideDialog dialog(
-                titles, &structureVisibilities,
-                glCanvas->structureSet->showHideManager,
+                titles, &structureVisibilities, glCanvas->structureSet->showHideManager, false,
                 this, -1, "Show/Hide Structures");
             dialog.ShowModal();
-    //        delete titles;    // apparently deleted by wxWindows
+            //delete titles;    // apparently deleted by wxWindows
             break;
         }
 

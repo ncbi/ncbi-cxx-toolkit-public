@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/10/08 14:18:33  thiessen
+* fix show/hide dialog under wxGTK
+*
 * Revision 1.15  2001/08/10 15:01:57  thiessen
 * fill out shortcuts; add update show/hide menu
 *
@@ -330,7 +333,7 @@ void ShowHideManager::ShowHideCallbackFunction(const std::vector < bool >& items
     TESTMSG("entities hidden: " << entitiesHidden.size());
 }
 
-void ShowHideManager::SelectionChangedCallback(
+bool ShowHideManager::SelectionChangedCallback(
     const std::vector < bool >& original, std::vector < bool >& itemsEnabled)
 {
     // count number of changes
@@ -347,12 +350,17 @@ void ShowHideManager::SelectionChangedCallback(
     }
 
     // if change was a single de/selection, then turn off/on the children of that item
+    bool anyChange = false;
     if (nChanges == 1 || nEnabled == 1) {
         int item = (nChanges == 1) ? itemChanged : itemEnabled;
         for (i=item+1; i<structureInfo.size(); i++) {
             for (int j=0; j<structureInfo[i]->parentIndexes.size(); j++) {
-                if (structureInfo[i]->parentIndexes[j] == item)
-                    itemsEnabled[i] = itemsEnabled[item];
+                if (structureInfo[i]->parentIndexes[j] == item) {
+                    if (itemsEnabled[i] != itemsEnabled[item]) {
+                        itemsEnabled[i] = itemsEnabled[item];
+                        anyChange = true;
+                    }
+                }
             }
         }
     }
@@ -361,10 +369,15 @@ void ShowHideManager::SelectionChangedCallback(
     for (i=0; i<itemsEnabled.size(); i++) {
         if (itemsEnabled[i]) {
             for (int j=0; j<structureInfo[i]->parentIndexes.size(); j++) {
-                itemsEnabled[structureInfo[i]->parentIndexes[j]] = true;
+                if (!itemsEnabled[structureInfo[i]->parentIndexes[j]]) {
+                    itemsEnabled[structureInfo[i]->parentIndexes[j]] = true;
+                    anyChange = true;
+                }
             }
         }
     }
+
+    return anyChange;
 }
 
 void ShowHideManager::ShowObject(const StructureObject *object, bool isShown)
