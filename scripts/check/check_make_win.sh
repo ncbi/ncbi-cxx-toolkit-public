@@ -194,7 +194,8 @@ case "\$method" in
             x_tests=\`grep "\[\$dir/\$cfg/" \$res_log\`
             if [ -n "\$x_tests" ]; then  
            ( 
-           grep "\[\$dir/\$cfg/" \$res_log
+           grep "\[\$dir/\$cfg/" \$res_log > \$res_script.\${dir}_\${cfg}.log
+           cat \$res_script.\${dir}_\${cfg}.log
            x_files=\`grep "/\$dir/check/\$cfg/" \$res_journal | sed -e 's/ /%gj_s4%/g'\`
            for x_file in \$x_files; do
               x_file=\`echo "\$x_file" | sed -e 's/%gj_s4%/ /g'\`
