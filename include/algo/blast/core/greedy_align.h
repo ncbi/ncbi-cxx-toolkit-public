@@ -54,10 +54,6 @@ typedef struct MBEditOp {
     Uint4 num_ops : 30;    /**< number of operations of this type to perform */
 } MBEditOp;
 
-/** Macro for a formula estimating maximal gap length in the greedy algorithm
-    (ICEIL = 'Integer Ceiling'?) */
-#define ICEIL(x,y) ((((x)-1)/(y))+1)
-
 /** sequence_length / (this number) is a measure of how hard the 
     alignment code will work to find the optimal alignment; in fact
     this gives a worst case bound on the number of loop iterations */
