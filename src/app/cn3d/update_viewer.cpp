@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/12/12 14:58:10  thiessen
+* change URL to viewer.fcgi
+*
 * Revision 1.20  2001/12/06 23:13:47  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -378,7 +381,7 @@ void UpdateViewer::ImportSequence(void)
             "Input Identifier", "", *viewerWindow);
         if (id.size() > 0) {
             CSeq_entry seqEntry;
-            static const std::string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.cgi");
+            static const std::string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.fcgi");
             std::string args = std::string("view=0&maxplex=1&save=idf&val=") + id.c_str();
             TESTMSG("Trying to load sequence from " << host << path << '?' << args);
             if (GetAsnDataViaHTTP(host, path, args, &seqEntry, &err)) {
