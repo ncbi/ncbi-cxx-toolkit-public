@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/04/06 16:07:54  vasilche
+* Added NCBI_EAT_SEMICOLON macro to allow tailing semicolon without warning.
+*
 * Revision 1.14  1999/12/28 18:55:25  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -126,6 +129,9 @@ namespace NCBI_NS_NCBI { /* the fake one */ }
 #endif
 #if !defined(NCBI_NAME3)
 #  define NCBI_NAME3(Name1, Name2, Name3) Name1##Name2##Name3
+#endif
+#if !defined(NCBI_EAT_SEMICOLON)
+#  define NCBI_EAT_SEMICOLON(UniqueName) typedef int UniqueName
 #endif
 
 #endif /* NCBISTL__HPP */
