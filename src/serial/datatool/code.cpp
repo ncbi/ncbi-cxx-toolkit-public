@@ -41,7 +41,8 @@ string CFileCode::GetBaseDefine(void) const
         char c = *i;
         if ( c >= 'a' && c <= 'z' )
             c = c + ('A' - 'a');
-        else if ( c < 'A' || c > 'Z' )
+        else if ( (c < 'A' || c > 'Z') &&
+                  (c < '0' || c > '9') )
             c = '_';
         s += c;
     }
@@ -404,11 +405,13 @@ const ASNType* CClassCode::GetParentType(void) const
             parent = *(t->choices.begin());
             break;
         default:
+/*
             for ( set<const ASNChoiceType*>::const_iterator i = t->choices.begin();
                   i != t->choices.end(); ++i ) {
                 ERR_POST("more then one parent of type: " + t->IdName() +
                          ": " + (*i)->IdName());
             }
+*/
             return 0;
         }
     }

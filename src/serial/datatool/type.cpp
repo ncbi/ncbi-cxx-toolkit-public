@@ -1048,10 +1048,9 @@ bool ASNChoiceType::Check(void)
         }
         else {
             ASNType* variant = (*m)->type.get();
-            if ( GetParentType() != 0 )
-                variant->choices.insert(this);
-            else
+            if ( GetParentType() == 0 )
                 variant->Resolve()->choices.insert(this);
+            variant->choices.insert(this);
         }
     }
     return ok;
