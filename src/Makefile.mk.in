@@ -45,7 +45,8 @@ RM       = rm -f
 RMDIR    = rm -rf
 COPY     = cp -p
 BINCOPY  = @BINCOPY@
-BINTOUCH = touch
+TOUCH    = touch
+BINTOUCH = $(TOUCH)
 
 CC_FILTER  = @CC_FILTER@
 CXX_FILTER = @CXX_FILTER@
