@@ -1254,21 +1254,39 @@ void CAlnMix::x_CreateSegmentsVector()
     }       
 #endif
 
-    TSeqs::iterator refseq_it = m_Rows.begin(); 
+    TSeqs::iterator refseq_it = m_Rows.begin();
+    bool orig_refseq = true;
     while (true) {
         CAlnMixSeq * refseq = 0;
         while (refseq_it != m_Rows.end()) {
-            refseq = *refseq_it;
+            refseq = *(refseq_it++);
             if (refseq->m_StartIt != refseq->m_Starts.end()) {
-                refseq_it++;
                 break;
             } else {
                 refseq = 0;
             }
-            refseq_it++;
         }
         if ( !refseq ) {
-            break; // done
+            // Done
+
+            // add the gapped segments if any
+            if (gapped_segs.size()) {
+                if (m_MergeFlags & fGapJoin) {
+                    // request to try to align
+                    // gapped segments w/ equal len
+                    x_ConsolidateGaps(gapped_segs);
+                } else if (m_MergeFlags & fMinGap) {
+                    // request to try to align 
+                    // all gapped segments
+                    x_MinimizeGaps(gapped_segs);
+                }
+                NON_CONST_ITERATE (TSegmentsContainer,
+                                   seg_i, gapped_segs) {
+                    m_Segments.push_back(&**seg_i);
+                }
+                gapped_segs.clear();
+            }
+            break; // from the main loop
         }
         // for each refseq segment
         while (refseq->m_StartIt != refseq->m_Starts.end()) {
@@ -1371,20 +1389,27 @@ void CAlnMix::x_CreateSegmentsVector()
                                 // all gapped segments
                                 x_MinimizeGaps(gapped_segs);
                             }
-                            NON_CONST_ITERATE (TSegmentsContainer,
-                                               seg_i, gapped_segs) {
-                                m_Segments.push_back(&**seg_i);
+                            if (orig_refseq) {
+                                NON_CONST_ITERATE (TSegmentsContainer,
+                                                   seg_i, gapped_segs) {
+                                    m_Segments.push_back(&**seg_i);
+                                }
+                                gapped_segs.clear();
                             }
-                            gapped_segs.clear();
                         }
                         // add the refseq segment
-                        m_Segments.push_back(seg_stack.top());
+                        if (orig_refseq) {
+                            m_Segments.push_back(seg_stack.top());
+                        } else {
+                            gapped_segs.push_back(seg_stack.top());
+                        }
                         seg_stack.pop();
-                    }
-                }
-            }
-        }
-    }
+                    } // if (seg_stack.size() > 1)
+                } // if (popseg)
+            } // while ( !seg_stack.empty() )
+        } // while (refseq->m_StartIt != refseq->m_Starts.end())
+        orig_refseq = false;
+    } // while (true)
 
     if (m_MergeFlags & fFillUnalignedRegions) {
         vector<TSignedSeqPos> starts;
@@ -1785,9 +1810,12 @@ void CAlnMix::x_ValidateDenseg(const CDense_seg& ds)
     }
 
     int numseg = 0, numrow = 0, offset = 0;
+    bool strands_exist = strands.size() == num;
     for (numrow = 0;  numrow < numrows;  numrow++) {
         TSignedSeqPos max_start = -1, start;
-        bool plus = strands[numrow] == eNa_strand_plus;
+        bool plus = strands_exist ? 
+            strands[numrow] == eNa_strand_plus :
+            true;
 
         if (plus) {
             offset = 0;
@@ -1814,7 +1842,7 @@ void CAlnMix::x_ValidateDenseg(const CDense_seg& ds)
                     (widths.size() == numrows ?
                      widths[numrow] : 1);
             }
-            if (strands[numrow] == eNa_strand_plus) {
+            if (strands_exist ? strands[numrow] == eNa_strand_plus : true) {
                 offset += numrows;
             } else {
                 offset -= numrows;
@@ -1831,6 +1859,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2003/08/28 19:54:58  todorov
+* trailing gap on master fix
+*
 * Revision 1.67  2003/08/20 19:35:32  todorov
 * Added x_ValidateDenseg
 *
