@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/01/29 17:45:34  grichenk
+* Removed debug output
+*
 * Revision 1.6  2002/01/28 19:44:49  gouriano
 * changed the interface of BioseqHandle: two functions moved from Scope
 *
@@ -87,16 +90,12 @@ CMutex CScope::sm_Scope_Mutex;
 CScope::CScope(CObjectManager& objmgr)
     : m_pObjMgr(&objmgr), m_FindMode(eFirst)
 {
-    NcbiCout << "Scope " << NStr::PtrToString(this)
-        << " created" << NcbiEndl;
     m_pObjMgr->RegisterScope(*this);
 }
 
 
 CScope::~CScope(void)
 {
-    NcbiCout << "Scope " << NStr::PtrToString(this)
-        << " deleted" << NcbiEndl;
     m_pObjMgr->RevokeScope(*this);
     m_pObjMgr->ReleaseDataSources(m_setDataSrc);
 }

@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/01/29 17:45:21  grichenk
+* Removed debug output
+*
 * Revision 1.4  2002/01/23 21:59:31  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -66,15 +69,11 @@ static CMutex s_OM_Mutex;
 CObjectManager::CObjectManager(void)
     : m_IdMapper(new CSeq_id_Mapper)
 {
-    NcbiCout << "ObjectManager " << NStr::PtrToString(this)
-        << " created" << NcbiEndl;
 }
 
 
 CObjectManager::~CObjectManager(void)
 {
-    NcbiCout << "ObjectManager " << NStr::PtrToString(this)
-        << " deleted" << NcbiEndl;
     // delete scopes
     while (!m_setScope.empty()) {
         // this will cause calling RegisterScope and changing m_setScope
