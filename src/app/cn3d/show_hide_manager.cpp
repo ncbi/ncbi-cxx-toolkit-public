@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/12/19 16:39:09  thiessen
+* tweaks to show/hide
+*
 * Revision 1.4  2000/12/15 15:51:47  thiessen
 * show/hide system installed
 *
@@ -298,33 +301,62 @@ void ShowHideManager::SelectionChangedCallback(
     const std::vector < bool >& original, std::vector < bool >& itemsEnabled)
 {
     // count number of changes
-    int i, nChanges = 0, itemChanged;
+    int i, nChanges = 0, itemChanged, nEnabled = 0, itemEnabled;
     for (i=0; i<itemsEnabled.size(); i++) {
         if (itemsEnabled[i] != original[i]) {
             nChanges++;
             itemChanged = i;
         }
+        if (itemsEnabled[i]) {
+            nEnabled++;
+            itemEnabled = i;
+        }
     }
 
-    // if change was a (single) deselection, then turn off the children of that item
-    if (nChanges == 1 && itemsEnabled[itemChanged] == false) {
-        for (i=itemChanged+1; i<structureInfo.size(); i++) {
+    // if change was a single de/selection, then turn off/on the children of that item
+    if (nChanges == 1 || nEnabled == 1) {
+        int item = (nChanges == 1) ? itemChanged : itemEnabled;
+        for (i=item+1; i<structureInfo.size(); i++) {
             for (int j=0; j<structureInfo[i]->parentIndexes.size(); j++) {
-                if (structureInfo[i]->parentIndexes[j] == itemChanged)
-                    itemsEnabled[i] = false;
+                if (structureInfo[i]->parentIndexes[j] == item)
+                    itemsEnabled[i] = itemsEnabled[item];
             }
         }
     }
 
-    // otherwise, check all items to make sure that when an object is on, its parents are also on
-    else {
-        for (i=0; i<itemsEnabled.size(); i++) {
-            if (itemsEnabled[i]) {
-                for (int j=0; j<structureInfo[i]->parentIndexes.size(); j++) {
-                    itemsEnabled[structureInfo[i]->parentIndexes[j]] = true;
-                }
+    // check all items to make sure that when an object is on, its parents are also on
+    for (i=0; i<itemsEnabled.size(); i++) {
+        if (itemsEnabled[i]) {
+            for (int j=0; j<structureInfo[i]->parentIndexes.size(); j++) {
+                itemsEnabled[structureInfo[i]->parentIndexes[j]] = true;
             }
         }
+    }
+}
+
+void ShowHideManager::ShowObject(const StructureObject *object, bool isShown)
+{
+    // hide via normal mechanism
+    if (!isShown) {
+        Show(object, false);
+    }
+
+    // but if to be shown and isn't already visible, then unhide any children of this object
+    else if (IsHidden(object)) {
+        EntitiesHidden::iterator e, ee = entitiesHidden.end();
+        for (e=entitiesHidden.begin(); e!=ee; ) {
+            const StructureObject *eObj = dynamic_cast<const StructureObject *>(e->first);
+            if (!eObj) e->first->GetParentOfType(&eObj);
+            if (eObj == object) {
+                EntitiesHidden::iterator d(e);
+                e++;
+                entitiesHidden.erase(d);
+            } else {
+                e++;
+            }
+        }
+        PostRedrawEntity(object, NULL, NULL);
+        object->parentSet->renderer->ShowAllFrames();
     }
 }
 

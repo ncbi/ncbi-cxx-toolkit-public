@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/12/19 16:39:08  thiessen
+* tweaks to show/hide
+*
 * Revision 1.29  2000/12/15 15:51:46  thiessen
 * show/hide system installed
 *
@@ -394,14 +397,14 @@ void AlignmentManager::SelectionCallback(const std::vector < bool >& itemsEnable
     if ((*a)->master->molecule) {
         // Show() redraws whole StructurObject only if necessary
         if ((*a)->master->molecule->GetParentOfType(&object))
-            object->parentSet->showHideManager->Show(object, true);
+            object->parentSet->showHideManager->ShowObject(object, true);
         // always redraw aligned molecule, in case alignment colors change
         GlobalMessenger()->PostRedrawMolecule((*a)->master->molecule);
     }
     for (int i=0; a!=ae; a++, i++) {
         if ((*a)->slave->molecule) {
             if ((*a)->slave->molecule->GetParentOfType(&object))
-                object->parentSet->showHideManager->Show(object, slavesVisible[i]);
+                object->parentSet->showHideManager->ShowObject(object, slavesVisible[i]);
             GlobalMessenger()->PostRedrawMolecule((*a)->slave->molecule);
         }
     }

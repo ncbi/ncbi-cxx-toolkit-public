@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/12/19 16:39:08  thiessen
+* tweaks to show/hide
+*
 * Revision 1.17  2000/12/01 19:35:56  thiessen
 * better domain assignment; basic show/hide mechanism
 *
@@ -275,16 +278,24 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
         }
     }
 
-    // assign a domain ID to single-domain protein or NA molecules, i.e. when that molecule is not
-    // present in the domain feature list
+    // assign a domain ID to all protein or NA residues, i.e. when that molecule is not
+    // present in the domain feature list, or domain features don't cover the whole chain
     MoleculeMap::iterator m, me = molecules.end();
     for (m=molecules.begin(); m!=me; m++) {
-        if ((m->second->IsProtein() || m->second->IsNucleotide()) && m->second->nDomains == 0) {
-            int domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
-            for (int r=0; r<m->second->residues.size(); r++)
-                (const_cast<Molecule*>(m->second))->residueDomains[r] = domainID;
-            (const_cast<StructureObject*>(object))->domainMap[domainID] = m->second;
-            (const_cast<Molecule*>(m->second))->nDomains = 1;
+        if (m->second->IsProtein() || m->second->IsNucleotide()) {
+            bool firstUnassigned = true;
+            int domainID = Molecule::NOT_SET;
+            for (int r=0; r<m->second->residues.size(); r++) {
+                if (m->second->residueDomains[r] == Molecule::NOT_SET) {
+                    if (firstUnassigned) {
+                        domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
+                        (const_cast<Molecule*>(m->second))->nDomains++;
+                        (const_cast<StructureObject*>(object))->domainMap[domainID] = m->second;
+                        firstUnassigned = false;
+                    }
+                    (const_cast<Molecule*>(m->second))->residueDomains[r] = domainID;
+                }
+            }
         }
     }
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/12/19 16:39:09  thiessen
+* tweaks to show/hide
+*
 * Revision 1.30  2000/12/15 15:51:47  thiessen
 * show/hide system installed
 *
@@ -491,17 +494,21 @@ void OpenGLRenderer::ShowLastFrame(void)
 void OpenGLRenderer::ShowNextFrame(void)
 {
     if (!structureSet) return;
-    int originalFrame = (currentFrame == ALL_FRAMES) ? 0 : currentFrame;
+    if (currentFrame == ALL_FRAMES) currentFrame = structureSet->frameMap.size() - 1;
+    int originalFrame = currentFrame;
     do {
-        currentFrame++;
-        if (currentFrame == structureSet->frameMap.size()) currentFrame = 0;
+        if (currentFrame == structureSet->frameMap.size() - 1)
+            currentFrame = 0;
+        else
+            currentFrame++;
     } while (IsFrameEmpty(currentFrame) && currentFrame != originalFrame);
 }
 
 void OpenGLRenderer::ShowPreviousFrame(void)
 {
     if (!structureSet) return;
-    int originalFrame = (currentFrame == ALL_FRAMES) ? structureSet->frameMap.size() - 1 : currentFrame;
+    if (currentFrame == ALL_FRAMES) currentFrame = 0;
+    int originalFrame = currentFrame;
     do {
         if (currentFrame == 0)
             currentFrame = structureSet->frameMap.size() - 1;

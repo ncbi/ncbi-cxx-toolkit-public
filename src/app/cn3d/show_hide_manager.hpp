@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/12/19 16:38:30  thiessen
+* tweaks to show/hide
+*
 * Revision 1.5  2000/12/15 15:52:08  thiessen
 * show/hide system installed
 *
@@ -65,6 +68,7 @@ BEGIN_SCOPE(Cn3D)
 class Residue;
 class StructureSet;
 class ShowHideInfo;
+class StructureObject;
 
 class ShowHideManager : public ShowHideCallback
 {
@@ -76,6 +80,10 @@ public:
 
     // set show/hide status of an entity - must be StructureObject, Molecule, or Residue.
     void Show(const StructureBase *entity, bool isShown);
+
+    // special case for StructureObject - if this object* is on the hide list, and isShown
+    // is true, then un-hide this object and all its children
+    void ShowObject(const StructureObject *object, bool isShown);
 
     void MakeAllVisible(void);
 
