@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/12/24 00:04:13  vakatov
+* Fixed the list of included headers
+*
 * Revision 1.8  2000/11/29 17:42:29  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
 * Added srcutil.hpp file to reduce file dependancy.
@@ -76,10 +79,9 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiutil.hpp>
-#include <corelib/ncbistre.hpp>
-#include <vector>
 #include <serial/datatool/atoken.hpp>
+#include <list>
+
 
 BEGIN_NCBI_SCOPE
 
