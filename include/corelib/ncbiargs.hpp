@@ -709,9 +709,7 @@ public:
                             if (n != param_name) {
                                 break;
                             }
-                            const string& v = vit->second;
-
-                            varr.push_back(v);
+                            varr.push_back(vit->second);
                         } // for
                     }
                 }
@@ -1178,6 +1176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/12/07 12:19:12  kuznets
+ * Fixed warning
+ *
  * Revision 1.39  2004/12/03 14:29:51  kuznets
  * Introduced new argument flag fAllowMultiple
  *
