@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/23 23:22:05  lavr
+ * Patched logging (in a few places)
+ *
  * Revision 6.5  2001/01/12 23:59:53  lavr
  * Message logging modified for use LOG facility only
  *
@@ -52,6 +55,13 @@
 #include <connect/ncbi_heapmgr.h>
 #include <stdlib.h>
 #include <time.h>
+
+
+#if 0
+#define eLOG_Warning    eLOG_Fatal
+#define eLOG_Error      eLOG_Fatal
+#include "../ncbi_heapmgr.c"
+#endif
 
 
 #ifdef __cplusplus
@@ -81,10 +91,12 @@ int main(void)
     HEAP heap;
     char *c;
 
+    CORE_SetLOGFILE(stderr, 0/*false*/);
     for (j = 1; j <= 3; j++) {
         srand((int)time(0));
         CORE_LOGF(eLOG_Note, ("Creating heap %d", j));
-        heap = HEAP_Create(0, 0, 4096, s_Expand);
+        if (!(heap = HEAP_Create(0, 0, 4096, s_Expand)))
+            CORE_LOG(eLOG_Error, "Cannot create heap");
         while (rand() != 12345) {
             r = rand() & 7;
             if (r == 2 || r == 4) {
@@ -92,7 +104,7 @@ int main(void)
                 if (i) {
                     CORE_LOGF(eLOG_Note, ("Allocating %d bytes", i));
                     if (!(blk = HEAP_Alloc(heap, i)))
-                        CORE_LOG(eLOG_Warning, "Allocation failed");
+                        CORE_LOG(eLOG_Error, "Allocation failed");
                     else
                         CORE_LOG(eLOG_Note, "Done");
                     c = (char *)blk + sizeof(*blk);
@@ -128,10 +140,12 @@ int main(void)
                                    (unsigned)(blk->size - sizeof(*blk))));
                 } while (blk);
                 CORE_LOGF(eLOG_Note,
-                          ("Total of %d block%s\n", i, i == 1 ? "" : "s"));
+                          ("Total of %d block%s", i, i == 1 ? "" : "s"));
             } else if (r == 6) {
                 HEAP newheap = HEAP_Attach(/* HACK! */*(char **)heap);
-                
+
+                if (!newheap)
+                    CORE_LOG(eLOG_Error, "Attach failed");
                 blk = 0;
                 i = 0;
                 CORE_LOG(eLOG_Note, "Walking the newheap");
@@ -144,12 +158,12 @@ int main(void)
                                    (unsigned)(blk->size - sizeof(*blk))));
                 } while (blk);
                 CORE_LOGF(eLOG_Note,
-                          ("Total of %d block%s\n", i, i == 1 ? "" : "s"));
+                          ("Total of %d block%s", i, i == 1 ? "" : "s"));
                 HEAP_Detach(newheap);
             }
         }
         HEAP_Destroy(heap);
-        CORE_LOGF(eLOG_Note, ("Heap %d done\n", j));
+        CORE_LOGF(eLOG_Note, ("Heap %d done", j));
     }
     CORE_LOG(eLOG_Note, "Test completed");
     return 0;
