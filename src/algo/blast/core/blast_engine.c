@@ -423,7 +423,7 @@ FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs,
    return_cutoffs->x_drop_gap = ext_params->gap_x_dropoff / scale_factor;
    return_cutoffs->x_drop_gap_final = ext_params->gap_x_dropoff_final / 
                                                         scale_factor;
-   return_cutoffs->gap_trigger = ext_params->gap_trigger / scale_factor;
+   return_cutoffs->ungapped_cutoff = word_params->cutoff_score / scale_factor;
    return_cutoffs->cutoff_score = hit_params->cutoff_score;
 
    return 0;
@@ -555,11 +555,9 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
       return status;
 
    BlastInitialWordParametersNew(program_number, word_options, 
-      hit_params, ext_params, sbp, query_info, 
-      BLASTSeqSrcGetAvgSeqLen(seq_src), &word_params);
+      hit_params, sbp, query_info, BLASTSeqSrcGetAvgSeqLen(seq_src), &word_params);
    /* Update the parameters for linking HSPs, if necessary. */
-   BlastLinkHSPParametersUpdate(word_params, ext_params, 
-      hit_params, score_options->gapped_calculation);
+   BlastLinkHSPParametersUpdate(word_params, hit_params, score_options->gapped_calculation);
       
    /* modify scoring and gap alignment structures for
       use with RPS blast. */
@@ -694,11 +692,9 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    BlastSeqSrcIterator* itr;
 
    BlastInitialWordParametersNew(program_number, word_options, 
-      hit_params, ext_params, sbp, query_info, 
-      BLASTSeqSrcGetAvgSeqLen(seq_src), &word_params);
+      hit_params, sbp, query_info, BLASTSeqSrcGetAvgSeqLen(seq_src), &word_params);
    /* Update the parameters for linking HSPs, if necessary. */
-   BlastLinkHSPParametersUpdate(word_params, ext_params, 
-      hit_params, gapped_calculation);
+   BlastLinkHSPParametersUpdate(word_params, hit_params, gapped_calculation);
    
    if ((status = 
        BLAST_SetUpAuxStructures(seq_src, lookup_wrap, word_options, 
@@ -731,7 +727,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
             sequence. */
          if ((status = BLAST_OneSubjectUpdateParameters(program_number, 
                           seq_arg.seq->length, score_options, query_info, 
-                          sbp, ext_params, hit_params, word_params, 
+                          sbp, hit_params, word_params, 
                           eff_len_params)) != 0)
             return status;
       }
@@ -741,7 +737,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       if (hit_params->link_hsp_params && program_number != eBlastTypeBlastn &&
           !gapped_calculation) {
          CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
-            hit_params->link_hsp_params, ext_params, db_length, 
+            hit_params->link_hsp_params, word_params, db_length, 
             seq_arg.seq->length); 
       }
 
