@@ -147,7 +147,10 @@ public:
             NCBI_THROW(CBlastException, eBadParameter,
                        "NULL specified for entrez query.");
         }
-        x_SetOneParam("EntrezQuery", &x);
+        
+        if (*x) { // Ignore empty strings.
+            x_SetOneParam("EntrezQuery", &x);
+        }
     }
     
     /// Set the query as a Bioseq_set.
@@ -444,6 +447,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/07/29 15:05:17  bealer
+ * - Ignore empty entrez query.
+ *
  * Revision 1.9  2004/06/21 16:34:53  bealer
  * - Make scope usage more consistent for doxygen's sake.
  *
