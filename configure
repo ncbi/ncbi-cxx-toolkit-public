@@ -4418,7 +4418,7 @@ fi
 if test -z "${build_root}" ; then
    build_root="${srcdir}/${compiler}"
    case "$compiler:$with_version" in
-      *$compiler_version:*) ;;
+      *[0-9]:*) ;;
       *:yes) build_root=${build_root}${compiler_version} ;;
    esac
 else

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.224 2003/10/12 17:04:40 ucko Exp $
+#  $Id: configure.ac,v 1.225 2003/10/14 21:03:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1153,7 +1153,7 @@ fi
 if test -z "${build_root}" ; then
    build_root="${srcdir}/${compiler}"
    case "$compiler:$with_version" in
-      *$compiler_version:*) ;;
+      *[[0-9]]:*) ;;
       *:yes) build_root=${build_root}${compiler_version} ;;
    esac
 else
