@@ -62,6 +62,129 @@ struct charbox {
     char xyz[10234];
 };
 
+static void
+s_TokenizeKeepDelims(const string   & input,
+                     const string   & delim,
+                     vector<string> & results,
+                     vector<char>   & taken)
+{
+    results.clear();
+    taken.clear();
+    
+    NStr::Tokenize(input, delim, results);
+    
+    Uint4 numres = results.size();
+    
+    if ((! results.empty()) && results[numres-1].empty()) {
+        results.resize(--numres);
+    }
+    
+    {
+        Uint4 orig_loc = 0;
+        
+        for(Uint4 i = 0; i < numres; i++) {
+            orig_loc += results[i].length();
+            
+            if (orig_loc < input.size()) {
+                taken.push_back(input[orig_loc++]);
+            }
+        }
+    }
+    
+    {
+        string reconstr;
+        
+        for(Uint4 i = 0; i < numres; i++) {
+            reconstr += results[i];
+            reconstr += taken[i];
+        }
+    }
+}
+
+static void
+s_RebuildTokens(vector<string> & results,
+                vector<char>   & taken,
+                string         & reconstr)
+{
+    for(Uint4 i = 0; i < results.size(); i++) {
+        reconstr += results[i];
+        
+        if (i < taken.size()) {
+            reconstr += taken[i];
+        }
+    }
+}
+
+static void
+s_TokenizeAndGroupQuotes(const string   & inp,
+                         vector<string> & results,
+                         vector<char>   & taken)
+{
+    string delim("'\"");
+    
+    s_TokenizeKeepDelims(inp, delim, results, taken);
+    
+    // Allow embedding of ' within " and vice versa; does not (yet)
+    // handle escaped quotes.
+    
+    for(unsigned i = 1; i < (results.size()-1); i++) {
+        char d1 = delim[0];
+        char d2 = delim[1];
+        
+        char delim = taken[i-1];
+        char delim2 = (delim == d1) ? d2 : d1;
+        
+        while((i < taken.size()) &&
+              (taken[i] == delim2) &&
+              ((i+1) < results.size())) {
+            
+            results[i] += taken[i];
+            results[i] += results[i+1];
+            
+            taken.erase(taken.begin() + i);
+            results.erase(results.begin() + (i+1));
+        }
+        
+        i++;
+    }
+}
+
+static string
+s_Asn1Transform(const string & inp)
+{
+    const int Nth = 80;
+    
+    vector<string> results;
+    vector<char>   taken;
+    
+    s_TokenizeAndGroupQuotes(inp, results, taken);
+    
+    for(unsigned i = 0; i<results.size(); i++) {
+        if (i & 1) {
+            // Quoted area; remove newlines, then put back in after
+            // every Nth character.
+            
+            results[i] = NStr::Replace(results[i], "\n", "");
+            for(unsigned p = Nth; p < results[i].length(); p+= (Nth+1)) {
+                results[i].insert(p, "\n");
+            }
+        } else {
+            // Non-quoted area; remove spaces, tabs, and newlines.
+            // Insert newlines back in after commas.
+            
+            results[i] = NStr::Replace(results[i], " ", "");
+            results[i] = NStr::Replace(results[i], "\t", "");
+            results[i] = NStr::Replace(results[i], "\n", "");
+            results[i] = NStr::Replace(results[i], ",", ",\n");
+        }
+    }
+    
+    string recon;
+    s_RebuildTokens(results, taken, recon);
+    
+    return recon;
+}
+
 int test1(int argc, char ** argv)
 {
     string dbpath = "/net/fridge/vol/export/blast/db/blast";
@@ -209,7 +332,8 @@ int test1(int argc, char ** argv)
         } else desc += " [-here]";
         
 #if defined(NCBI_OS_UNIX)
-        if (s == "-bs9") {
+        if ((s == "-bs9") ||
+            (s == "-bs10")) {
             // These require: -lncbitool -lz -lncbiobj -lncbi
             
             const char * dbname = "nt";
@@ -217,11 +341,17 @@ int test1(int argc, char ** argv)
             bool is_prot = false;
             Uint4 gi = 12831944;
             
+            if (s == "-bs10") {
+                is_prot = true;
+                dbname = "nr";
+                gi = 129291;
+            }
+            
             ostringstream oss_fn;
             oss_fn << "." << dbname << "." << gi;
             
-            vector<char> seqdb_data;
-            vector<char> readdb_data;
+            vector<char> seqdb_data, readdb_data;
+            string seqdb_bs, readdb_bs;
             
             {
                 CSeqDB db(dbname, is_prot ? 'p' : 'n');
@@ -234,26 +364,39 @@ int test1(int argc, char ** argv)
                     string fn = string("seqdb") + oss_fn.str() + ".txt";
                     ofstream outf(fn.c_str());
                     
-                    auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText, outf));
-                    *os << *bs;
+                    auto_ptr<CObjectOStream> os1(CObjectOStream::Open(eSerial_AsnText, outf));
+                    *os1 << *bs;
                     
                     cout << "seqdb: got bioseq." << endl;
                     
                     cout << "\n bs->inst->seq-data[0] = ";
                     
-                    vector<char> byte_data = bs->GetInst().GetSeq_data().GetNcbi4na().Get();
+                    vector<char> byte_data;
+                    
+                    if (is_prot) {
+                        byte_data = bs->GetInst().GetSeq_data().GetNcbistdaa().Get();
+                    } else {
+                        byte_data = bs->GetInst().GetSeq_data().GetNcbi4na().Get();
+                    }
                     
                     cout << "Total bytes available: " << byte_data.size() << endl;
                     
                     cout << int(byte_data[0]) << endl;
                     
                     seqdb_data = byte_data;
+                    
+                    CMemoryFile mfile(fn);
+                    seqdb_bs.assign((char*)mfile.GetPtr(), mfile.GetSize());
                 } else {
                     cout << "seqdb: could not get bioseq." << endl;
                 }
             }
             {
-                ReadDBFILEPtr rdfp = readdb_new((char*) dbname, is_prot ? 1 : 0);
+                ReadDBFILEPtr rdfp = readdb_new_ex2((char*) dbname,
+                                                    is_prot ? 1 : 0,
+                                                    READDB_NEW_DO_TAXDB,
+                                                    NULL,
+                                                    NULL);
                 
                 Uint4 oid = readdb_gi2seq(rdfp, gi, 0);
                 
@@ -290,6 +433,9 @@ int test1(int argc, char ** argv)
                     cout << int(byte_data[0]) << endl;
                     
                     readdb_data = byte_data;
+                    
+                    CMemoryFile mfile(fn);
+                    readdb_bs.assign((char*)mfile.GetPtr(), mfile.GetSize());
                 } else {
                     cout << "readdb: could not get bioseq." << endl;
                 }
@@ -317,8 +463,24 @@ int test1(int argc, char ** argv)
             }
             cout << "Num diffs: " << dec << num_diffs << endl;
             
+            cout << "----ReadDB pre-transformed:----" << endl;
+            cout << readdb_bs << endl;
+            cout << "----SeqDB pre-transformed:----" << endl;
+            cout << seqdb_bs << endl;
+            
+            string tran_r, tran_s;
+            
+            cout << "----ReadDB transformed:----" << endl;
+            cout << (tran_r = s_Asn1Transform(readdb_bs)) << endl;
+            cout << "----SeqDB transformed:----" << endl;
+            cout << (tran_s = s_Asn1Transform(seqdb_bs)) << endl;
+            cout << "------end-------" << endl;
+            
+            cout << "raw: " << ((seqdb_bs == readdb_bs) ? "eq" : "not eq") << endl;
+            cout << "raw: " << ((tran_s == tran_r) ? "eq" : "not eq") << endl;
+            
             return 0;
-        } else desc += " [-bs9]";
+        } else desc += " [-bs9] [-bs9]";
 #endif
         
         if (s == "-dyn") {
@@ -1145,7 +1307,6 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-chunk]";
         
-        
         if (s == "-lib") {
             CSeqDB phil("nt nt month est", 'n');
             phil.GetSeqLength(123);
@@ -1938,10 +2099,6 @@ int test2(void)
 
 int main(int argc, char ** argv)
 {
-    CSeq_id superosity("there be none as yet");
-    CSeq_id superosity2("gi|129295");
-    //CSeq_id superosity3("third|time|is|being|the|charm");  Okay, THIS one fails.
-    
     int rc = 0;
     
     try {
