@@ -552,7 +552,7 @@ can change anything in the info structure, and the modified structure
 will be kept for all further connection attempts, until changed by this callback again.
 The number (starting from 1) of successive failed attempts is given in the last callback's
 argument. The callback return value <tt>true</tt> (non-zero) means successful adjustment. Return value
-<tt>false</tt> (zero) stops gives up connection tryings and returns an error to the application.
+<tt>false</tt> (zero) stops connection attempts and returns an error to the application.
 
 <p>
 When connector is being destroyed, the custom object <tt>adjust_data</tt> can be
@@ -599,7 +599,7 @@ The first form is equivalent to <i><b>SERVICE_CreateConnectorEx(</b></i><tt>serv
 <form name="io_bounce" method="POST" action="http://www.ncbi.nlm.nih.gov/Service/dispd.cgi?service=io_bounce">
 <input type="hidden" name="name" value="value">
 </form>
-A named NCBI service is a CGI program or standalone server (which can be of one of two supported types), which runs at the NCBI site,
+A named NCBI service is a CGI program or standalone server (can be one of two supported types), which runs at the NCBI site,
 and accessible by the outside world. Special dispatcher (which runs on the <a href="http://www.ncbi.nlm.nih.gov">NCBI Web-servers</a>)
 allows automatic switching to the appropriate server without
 having the client to know <i>a priori</i> the connection point. That is,
