@@ -738,7 +738,7 @@ SSERV_Info* SERV_CreateDnsInfo(unsigned int host)
         info->host   = host;
         info->port   = 0;
         info->sful   = 0;
-        info->locl   = 0x01;
+        info->locl   = s_LocalServerDefault & 0x0F;
         info->time   = 0;
         info->coef   = 0.0;
         info->rate   = 0.0;
@@ -839,6 +839,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2003/06/26 15:21:43  lavr
+ * Use server's default locality for fSERV_Dns infos
+ *
  * Revision 6.51  2003/06/16 15:58:50  lavr
  * Minor code format changes
  *
