@@ -46,7 +46,7 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/genbank_formatter.hpp>
 #include <objtools/format/embl_formatter.hpp>
-#include <objtools/format/gff_formatter.hpp>
+#include <objtools/format/gff3_formatter.hpp>
 #include <objtools/format/ftable_formatter.hpp>
 #include <objtools/format/gbseq_formatter.hpp>
 #include <objtools/format/context.hpp>
@@ -75,6 +75,9 @@ CFlatItemFormatter* CFlatItemFormatter::New(CFlatFileConfig::TFormat format)
 
     case CFlatFileConfig::eFormat_GFF:
         return new CGFFFormatter;
+
+    case CFlatFileConfig::eFormat_GFF3:
+        return new CGFF3_Formatter;
 
     case CFlatFileConfig::eFormat_FTable:
         return new CFtableFormatter;
@@ -364,6 +367,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/06/21 18:54:03  ucko
+* Add a GFF3 format.
+*
 * Revision 1.11  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -142,8 +142,9 @@ void CAsn2FlatApp::Init(void)
         // format (default: genbank)
         arg_desc->AddDefaultKey("format", "Format", "Output format",
             CArgDescriptions::eString, "genbank");
-        arg_desc->SetConstraint("format", &(*new CArgAllow_Strings,
-            "genbank", "embl", "ddbj", "gbseq", "ftable", "gff"));
+        arg_desc->SetConstraint("format",
+            &(*new CArgAllow_Strings,
+              "genbank", "embl", "ddbj", "gbseq", "ftable", "gff", "gff3"));
 
         // mode (default: dump)
         arg_desc->AddDefaultKey("mode", "Mode", "Restriction level",
@@ -322,6 +323,8 @@ CAsn2FlatApp::TFormat CAsn2FlatApp::x_GetFormat(const CArgs& args)
         return CFlatFileConfig::eFormat_FTable;
     } else if ( format == "gff" ) {
         return CFlatFileConfig::eFormat_GFF;
+    } else if ( format == "gff3" ) {
+        return CFlatFileConfig::eFormat_GFF3;
     }
 
     // default
@@ -500,6 +503,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/06/21 18:55:57  ucko
+* Add a GFF3 format.
+*
 * Revision 1.9  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *
