@@ -1211,6 +1211,7 @@ string CCdd::GetCurationStatus() {
           case 5:   return("update_running");
           case 6:   return("auto_updated");
           case 7:   return("claimed");
+          case 8:   return("curated_complete");
           default:  return("other");
         }
       }
@@ -1333,6 +1334,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/09/26 14:22:57  hurwitz
+ * handle new case for curation status
+ *
  * Revision 1.13  2002/09/20 18:35:01  hurwitz
  * added functions to support membership display
  *
