@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/01/03 17:45:35  vakatov
+* + <ncbi_limits.h>
+*
 * Revision 1.38  2000/12/15 15:36:41  vasilche
 * Added header corelib/ncbistr.hpp for all string utility functions.
 * Optimized string utility functions.
@@ -165,6 +168,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.h>
 #include <algorithm>
 #include <ctype.h>
 #include <errno.h>
@@ -174,7 +178,7 @@
 BEGIN_NCBI_SCOPE
 
 
-const char *const kEmptyCStr = "";
+const char* const kEmptyCStr = "";
 
 
 const string* CNcbiEmptyString::m_Str = 0;

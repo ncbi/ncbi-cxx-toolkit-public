@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.30  2001/01/03 17:45:35  vakatov
+ * + <ncbi_limits.h>
+ *
  * Revision 1.29  2000/12/24 00:13:00  vakatov
  * Radically revamped NCBIARGS.
  * Introduced optional key and posit. args without default value.
@@ -134,6 +137,7 @@
 
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbi_limits.h>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
