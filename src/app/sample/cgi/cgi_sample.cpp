@@ -46,6 +46,8 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
+// #include <connect/ext/ncbi_localnet.h>
+
 using namespace ncbi;
 
 
@@ -108,7 +110,7 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
      if (args["message"]) {
          // get the first "message" argument only...
          const string& m = args["message"].AsString();
-         (void) m.c_str(); // just to get rid of compiler warning "unused 'm'"
+         (void) m.c_str(); // just get rid of compiler warning "unused 'm'"
 
          // ...or get the whole list of "message" arguments
          const CArgValue::TStringArray& values = 
@@ -126,6 +128,13 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
     // "HTTP response" sub-objects
     const CCgiRequest& request  = ctx.GetRequest();
     CCgiResponse&      response = ctx.GetResponse();
+
+    /* Get CGI client API (in-house only)
+    const char* const* client_tracking_env = request.GetClientTrackingEnv();
+    unsigned int client_ip = NcbiGetCgiClientIP(eCgiClientIP_TryAll,
+                                                client_tracking_env);
+    int is_local_client = NcbiIsLocalCgiClient(client_tracking_env);
+    */
 
     // Try to retrieve the message ('message=...') from the URL args
     // (case sensitivity was turned off)
@@ -199,6 +208,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/02/25 17:30:34  didenko
+ * Add (inhouse-only, thus commented out) example of code to determine
+ * if the client is local (i.e. Web request came from inside NCBI)
+ *
  * Revision 1.13  2005/02/15 19:38:07  vakatov
  * Use CCgiContext::GetSelfURL() for automagic back-referencing
  *
