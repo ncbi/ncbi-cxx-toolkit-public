@@ -37,7 +37,7 @@ NOTK_BRA = test "$$expendable" = true || case "$(MFLAGS)" in *k*) ;; *)
 NOTK_KET = ;; esac
 
 USRP_BRA = \
-if test ! -z "$(USR_PROJ)"  ||  test ! -z "@UNIX_USR_PROJ@" \
++if test ! -z "$(USR_PROJ)"  ||  test ! -z "@UNIX_USR_PROJ@" \
 	|| test ! -z "$(EXPENDABLE_USR_PROJ)" ; then \
    x_project="$(USR_PROJ) @UNIX_USR_PROJ@ - $(EXPENDABLE_USR_PROJ)" ; \
    expendable=false ; \
@@ -55,7 +55,7 @@ fi
 
 MAKE_ASN = $(builddir)/new_module.sh "$$i"
 ASNP_BRA = \
-if test ! -z "$(ASN_PROJ)" ; then \
++if test ! -z "$(ASN_PROJ)" ; then \
    x_project="$(ASN_PROJ)" ; \
    for i in $$x_project ; do \
       (cd $(srcdir)  &&  $(RWL) $(MAKE_ASN)
@@ -65,7 +65,7 @@ fi
 
 MAKE_LIB = $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
 LIBP_BRA = \
-if test ! -z "$(LIB_PROJ)"  -o  ! -z "$(EXPENDABLE_LIB_PROJ)"  -o  ! -z "$(ASN_PROJ)"; then \
++if test ! -z "$(LIB_PROJ)"  -o  ! -z "$(EXPENDABLE_LIB_PROJ)"  -o  ! -z "$(ASN_PROJ)"; then \
    x_project="$(ASN_PROJ) $(LIB_PROJ) - $(EXPENDABLE_LIB_PROJ)" ; \
    expendable=false ; \
    for i in $$x_project ; do \
@@ -81,7 +81,7 @@ fi
 
 MAKE_APP = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
 APPP_BRA = \
-if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
++if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
    x_project="$(APP_PROJ) - $(EXPENDABLE_APP_PROJ)" ; \
    expendable=false ; \
    for i in $$x_project ; do \
@@ -96,7 +96,7 @@ APPP_KET = || $(NOTK_BRA) exit 3 $(NOTK_KET) ; \
 fi
 
 CHECK_BRA = \
-if test -f "$(check_run)"; then \
++if test -f "$(check_run)"; then \
   $(check_run) $(MAKE) $(MFLAGS)
 CHECK_KET = ||  exit 7 ; \
 fi
@@ -141,7 +141,7 @@ check_add:
 ### Recursive build -- in the [SUB_PROJ] directories
 
 SUB_BRA = \
-if test ! -z "$(SUB_PROJ)"  -o  ! -z "$(EXPENDABLE_SUB_PROJ)" ; then \
++if test ! -z "$(SUB_PROJ)"  -o  ! -z "$(EXPENDABLE_SUB_PROJ)" ; then \
     x_subproj="$(SUB_PROJ) - $(EXPENDABLE_SUB_PROJ)" ; \
     expendable=false ; \
     for i in $$x_subproj ; do \
@@ -195,7 +195,7 @@ RELEVANT_DIR = pwd | $(RELEVANT)
 RELEVANT_SUBS = find "`pwd`"/* -type d | $(RELEVANT)
 
 SUB_BRA_P = \
-if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
++if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
         -n "$(EXPENDABLE_SUB_PROJ)"  -o  -n "$(CHECK_SUB_PROJ)" ;  then \
     x_subproj="$(SUB_PROJ) $(POTENTIAL_SUB_PROJ) - $(EXPENDABLE_SUB_PROJ) $(CHECK_SUB_PROJ)"; \
     expendable=false ; \
