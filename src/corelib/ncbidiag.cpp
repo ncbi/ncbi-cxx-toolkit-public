@@ -55,13 +55,25 @@ BEGIN_NCBI_SCOPE
 
 static CMutex s_DiagMutex;
 
+#ifdef NCBI_POSIX_THREADS
+static void s_NcbiDiagPreFork(void)  { s_DiagMutex.Lock();   }
+static void s_NcbiDiagPostFork(void) { s_DiagMutex.Unlock(); }
+#endif
+
 
 ///////////////////////////////////////////////////////
 //  CDiagRecycler::
 
 class CDiagRecycler {
 public:
-    CDiagRecycler(void) {};
+    CDiagRecycler(void)
+    {
+#ifdef NCBI_POSIX_THREADS
+        pthread_atfork(s_NcbiDiagPreFork,   // before
+                       s_NcbiDiagPostFork,  // after in parent
+                       s_NcbiDiagPostFork); // after in child
+#endif
+    }
     ~CDiagRecycler(void)
     {
         SetDiagHandler(0, false);
@@ -650,6 +662,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.50  2002/04/25 21:29:39  ucko
+ * At Yan Raytselis's suggestion, use pthread_atfork to avoid
+ * inadvertently holding s_DiagMutex across fork.
+ *
  * Revision 1.49  2002/04/23 19:57:29  vakatov
  * Made the whole CNcbiDiag class "mutable" -- it helps eliminate
  * numerous warnings issued by SUN Forte6U2 compiler.
