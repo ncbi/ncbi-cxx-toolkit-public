@@ -66,10 +66,11 @@ WX_CPPFLAGS = $(shell $(WX_CONFIG) --cppflags)
 WX_LIBS = $(shell $(WX_CONFIG) --libs) $(shell $(WX_CONFIG) --gl-libs)
 GTK_CONFIG = $(HOME)/Programs/GTK-1.2-$(DEBUG_SFX)/install/bin/gtk-config
 GTK_CFLAGS = $(shell $(GTK_CONFIG) --cflags)
+GTK_LIBS = $(shell $(GTK_CONFIG) --libs)
 
 # ...the following two assignments switch to the development configuration:
 WXWIN_INCLUDE = $(WX_CPPFLAGS) $(GTK_CFLAGS)
-WXWIN_LIBS    = $(WX_LIBS)
+WXWIN_LIBS    = $(WX_LIBS) $(GTK_LIBS)
 
 
 CPPFLAGS = \
