@@ -34,6 +34,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/annot_selector.hpp>
 
@@ -44,8 +45,6 @@
 #include <memory>
 
 BEGIN_NCBI_SCOPE
-
-class CReadLockGuard;
 
 BEGIN_SCOPE(objects)
 
@@ -583,6 +582,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/06/16 11:38:22  dicuccio
+* Replaced forward declaration for CReadGuard with #include for
+* <corelib/ncbimtx.hpp>
+*
 * Revision 1.8  2004/06/07 17:01:17  grichenk
 * Implemented referencing through locs annotations
 *
