@@ -60,6 +60,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/04/24 21:21:38  lavr
+ * Special text value "infinite" accepted as infinite timeout from environment
+ *
  * Revision 6.12  2001/03/07 23:00:15  lavr
  * Default value for SConnNetInfo::stateless set to empty (FALSE)
  *
@@ -143,7 +146,7 @@ typedef struct {
     char           path[1024];       /* service: path(e.g. to  a CGI script) */
     char           args[1024];       /* service: args(e.g. for a CGI script) */
     EReqMethod     req_method;       /* method to use in the request         */
-    STimeout       timeout;          /* i/o timeout                          */
+    STimeout*      timeout;          /* ptr to i/o tmo (infinite if NULL)    */
     unsigned int   max_try;          /* max. # of attempts to establish conn */
     char           http_proxy_host[64];  /* hostname of HTTP proxy server    */
     unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
@@ -156,6 +159,7 @@ typedef struct {
 
     /* the following field(s) are for the internal use only! */
     int/*bool*/    http_proxy_adjusted;
+    STimeout       tmo;              /* Default storage for finite timeout   */
 } SConnNetInfo;
 
 
@@ -216,9 +220,9 @@ typedef struct {
  *   path               PATH
  *   args               ARGS
  *   req_method         REQUEST_METHOD
- *   timeout            TIMEOUT             "<sec>.<usec>": "30.0", "0.005"
+ *   timeout            TIMEOUT     "<sec>.<usec>": "30.0", "0.005", "infinite"
  *   max_try            MAX_TRY  
- *   http_proxy_host    HTTP_PROXY_HOST     no HTTP proxy if empty/NULL
+ *   http_proxy_host    HTTP_PROXY_HOST no HTTP proxy if empty/NULL
  *   http_proxy_port    HTTP_PROXY_PORT
  *   proxy_host         PROXY_HOST
  *   debug_printout     DEBUG_PRINTOUT
