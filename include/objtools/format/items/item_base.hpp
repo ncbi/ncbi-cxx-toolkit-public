@@ -42,6 +42,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
 class CFFContext;
 
 
@@ -77,7 +78,7 @@ private:
     // The underlying CSerialObject from the information is obtained.
     CConstRef<CSerialObject>    m_Object;
     // a context associated with this item
-    mutable CRef<CFFContext>    m_Context;
+    CFFContext*		        m_Context;
     // should this item be skipped?
     bool                        m_Skip;
 };
@@ -154,7 +155,7 @@ void CFlatItem::x_SetSkip(void)
 {
     m_Skip = true;
     m_Object.Reset();
-    m_Context.Reset();
+    m_Context = 0;
 }
 
 ///////////////////////////////////////////////////////////
@@ -170,6 +171,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/12 20:21:00  shomrat
+* using pointer instead of CRef
+*
 * Revision 1.3  2004/02/11 16:34:43  shomrat
 * inlined implementation
 *
