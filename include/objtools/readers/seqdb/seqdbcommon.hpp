@@ -112,7 +112,8 @@ const bool kSeqDBNoMMap = false;
 /// calls (delete[] vs. free()) can be used to delete the data.
 
 enum ESeqDBAllocType {
-    eMalloc = 1,
+    eAtlas = 0,
+    eMalloc,
     eNew
 };
 
