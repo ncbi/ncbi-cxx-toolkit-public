@@ -46,7 +46,7 @@ extern "C" {
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/aa_lookup.h>
+#include <algo/blast/core/blast_lookup.h>
 
 /* The fraction of sites that must have at least one hit to not use 
     PV_ARRAY. */
@@ -249,8 +249,57 @@ typedef enum {
    TEMPL_12_21_OPT = 12
 } DiscTemplateType;
 
-DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length, 
-                                   DiscWordType type);
+/** Scan the compressed subject sequence, returning all word hits, using the
+ * old MegaBLAST approach - looking up words at every byte (4 bases) of the 
+ * sequence. Lookup table is presumed to have a traditional MegaBLAST 
+ * structure.
+ * @param lookup Pointer to the (wrapper to) lookup table [in]
+ * @param subject The (compressed) sequence to be scanned for words [in]
+ * @param start_offset The offset into the sequence in actual coordinates [in]
+ * @param q_offsets Array of query positions where words are found [out]
+ * @param s_offsets Array of subject positions where words are found [out]
+ * @param max_hits The allocated size of the above arrays - how many offsets 
+ *        can be returned [in]
+ * @param end_offset Where the scanning should stop [in], has stopped [out]
+*/
+Int4 MB_ScanSubject(const LookupTableWrap* lookup,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,
+       Int4* end_offset);
+
+/** Scan the compressed subject sequence, returning all word hits, looking up 
+ * discontiguous words. Lookup table is presumed to have a traditional 
+ * MegaBLAST structure containing discontiguous word positions.
+ * @param lookup Pointer to the (wrapper to) lookup table [in]
+ * @param subject The (compressed) sequence to be scanned for words [in]
+ * @param start_offset The offset into the sequence in actual coordinates [in]
+ * @param q_offsets Array of query positions where words are found [out]
+ * @param s_offsets Array of subject positions where words are found [out]
+ * @param max_hits The allocated size of the above arrays - how many offsets 
+ *        can be returned [in]
+ * @param end_offset Where the scanning should stop [in], has stopped [out]
+*/
+Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
+       const BLAST_SequenceBlk* subject, Int4 start_offset, 
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,     
+       Int4* end_offset);
+
+/** Scan the compressed subject sequence, returning all word hits, using the 
+ * arbitrary stride. Lookup table is presumed to have a traditional MegaBLAST 
+ * structure.
+ * @param lookup Pointer to the (wrapper to) lookup table [in]
+ * @param subject The (compressed) sequence to be scanned for words [in]
+ * @param start_offset The offset into the sequence in actual coordinates [in]
+ * @param q_offsets Array of query positions where words are found [out]
+ * @param s_offsets Array of subject positions where words are found [out]
+ * @param max_hits The allocated size of the above arrays - how many offsets 
+ *        can be returned [in]
+ * @param end_offset Where the scanning should stop [in], has stopped [out]
+*/
+Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,
+       Int4* end_offset); 
 
 #ifdef __cplusplus
 }
