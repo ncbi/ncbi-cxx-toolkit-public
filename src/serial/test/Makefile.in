@@ -1,9 +1,9 @@
 # $Id$
 
-# Meta-makefile("SERIALTEST" project)
+# Meta-makefile("TEST_SERIAL" project)
 #################################
 
-APP_PROJ = serialtest
+APP_PROJ = test_serial
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
