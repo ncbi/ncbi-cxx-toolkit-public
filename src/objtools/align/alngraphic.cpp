@@ -236,9 +236,9 @@ void CAlnGraphic::x_MergeSameSeq(TAlnInfoList& alninfo_list){
 
 template<class container> 
 static bool s_GetBlastScore(const container& scoreList,  
-                                                      int& score, 
-                                                      double& bits, 
-                                                      double& evalue){
+                            int& score, 
+                            double& bits, 
+                            double& evalue){
     bool hasScore = false;
     ITERATE (typename container, iter, scoreList) {
         const CObject_id& id=(*iter)->GetId();
@@ -604,11 +604,8 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
             //rounding to int this way as round() is not portable
             front_margin = temp_value + (temp_value < 0.0 ? -0.5 : 0.5);
             //Need to add white space
-            if(temp_value > 0) {
-                //Need to show at least one gap
-                if(front_margin < 1){
-                    front_margin = 1;
-                }
+            if(front_margin > 0) {
+              
                 //connecting the alignments with the same id
                 if(m_View & eCompactView && !previous_id.Empty() 
                    && previous_id->Match(*current_id)){
@@ -628,30 +625,31 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
             previous_id = current_id;
             temp_value = (*iter2)->range->GetLength()*pixel_factor;
             bar_length = temp_value + (temp_value < 0.0 ? -0.5 : 0.5);
-            image = new CHTML_img(m_ImagePath + s_GetGif((*iter2)->bits), 
-                                  bar_length, m_BarHeight);
-            image->SetAttribute("border", 0);
-            if(m_View & eMouseOverInfo){
-                image->SetAttribute("ONMouseOver", m_MouseOverFormName 
-                                    + ".defline.value=" + "'" + (*iter2)->info
-                                    + "'");
-                image->SetAttribute("ONMOUSEOUT", m_MouseOverFormName + 
-                                    ".defline.value='Mouse-over to show defline and scores, click to show alignments'");
+            if(bar_length > 0){
+                image = new CHTML_img(m_ImagePath + s_GetGif((*iter2)->bits), 
+                                      bar_length, m_BarHeight);
+                image->SetAttribute("border", 0);
+                if(m_View & eMouseOverInfo){
+                    image->SetAttribute("ONMouseOver", m_MouseOverFormName 
+                                        + ".defline.value=" + "'" + (*iter2)->info
+                                        + "'");
+                    image->SetAttribute("ONMOUSEOUT", m_MouseOverFormName + 
+                                        ".defline.value='Mouse-over to show defline and scores, click to show alignments'");
+                }
+                if(m_View & eAnchorLink){
+                    string acc;
+                    (*iter2)->id->GetLabel(&acc, CSeq_id::eContent, 0);
+                    string seqid = (*iter2)->gi == 
+                        0 ? acc : NStr::IntToString((*iter2)->gi);
+                    ad = new CHTML_a("#" + seqid, image);
+                    tc = tbl->InsertAt(0, column, ad);
+                } else {
+                    tc = tbl->InsertAt(0, column, image);
+                }
+                column ++;
+                tc->SetAttribute("valign", "CENTER");
+                tc->SetAttribute("align", "LEFT");
             }
-            if(m_View & eAnchorLink){
-                string acc;
-                (*iter2)->id->GetLabel(&acc, CSeq_id::eContent, 0);
-                string seqid = (*iter2)->gi == 
-                    0 ? acc : NStr::IntToString((*iter2)->gi);
-                ad = new CHTML_a("#" + seqid, image);
-                tc = tbl->InsertAt(0, column, ad);
-            } else {
-                tc = tbl->InsertAt(0, column, image);
-            }
-            column ++;
-            tc->SetAttribute("valign", "CENTER");
-            tc->SetAttribute("align", "LEFT");
-    
         }
         if(!tbl.Empty()){   
             tbl_box_tc->AppendChild(&(*tbl));
@@ -672,6 +670,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.3  2004/07/12 15:18:52  jianye
+*no show if the gap or seq is less than 1 pixel
+*
 *Revision 1.2  2004/05/21 21:42:51  gorelenk
 *Added PCH ncbi_pch.hpp
 *
