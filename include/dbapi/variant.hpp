@@ -163,6 +163,9 @@ protected:
     void SetData(CDB_Object* o);
 
 private:
+
+    void VerifyType(bool e) const;
+
     class CDB_Object* m_data;
 };
 
@@ -183,10 +186,26 @@ bool operator!=(const CVariant& v1,
     return v1 < v2 || v2 < v1;
 }
 
+inline
+void CVariant::VerifyType(bool e) const
+{
+    if( !e ) {
+#ifdef _DEBUG
+        _ASSERT(0); 
+#else
+        throw CVariantException("CVariant::VerifyType(): Wrong type");
+#endif
+    }
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.6  2002/04/15 19:12:57  kholodov
+ * Added VerifyType() method
+ *
  * Revision 1.5  2002/03/13 16:52:21  kholodov
  * Added: Full destructor definition in CVariantException with throw()
  * to conform with the parent's virtual destructor.
