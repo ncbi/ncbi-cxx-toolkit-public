@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.44  2003/01/23 20:03:05  thiessen
 * add BLAST Neighbor algorithm
 *
@@ -208,7 +211,7 @@ BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList, Align
     rowStrings.resize(sequenceList->size());
 
     // create conservation colorer
-    conservationColorer = new ConservationColorer();
+    conservationColorer = new ConservationColorer(this);
 }
 
 void BlockMultipleAlignment::InitCache(void)
@@ -545,30 +548,33 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
             sequence->molecule->GetResidueColor(seqIndex) :
             GlobalColors()->Get(Colors::eNoCoordinates);;
     }
-    // or color by hydrophobicity
-    else if (sequence->isProtein &&
-             sequence->parentSet->styleManager->GetGlobalStyle().
-                proteinBackbone.colorScheme == StyleSettings::eHydrophobicity) {
-        double hydrophobicity = GetHydrophobicity(toupper(*character));
-        *color = (hydrophobicity != UNKNOWN_HYDROPHOBICITY) ?
-            GlobalColors()->Get(Colors::eHydrophobicityMap, hydrophobicity) :
-            GlobalColors()->Get(Colors::eNoHydrophobicity);
-    }
-    // or color by charge
-    else if (sequence->isProtein &&
-             sequence->parentSet->styleManager->GetGlobalStyle().
-                proteinBackbone.colorScheme == StyleSettings::eCharge) {
-        int charge = GetCharge(toupper(*character));
-        *color = GlobalColors()->Get(
-            (charge > 0) ? Colors::ePositive : ((charge < 0) ? Colors::eNegative : Colors::eNeutral));;
-    }
-    // else, color by alignment color
+
+    // otherwise (for unstructured sequence):
     else {
-        const Vector *aColor;
-        if (isAligned && (aColor = GetAlignmentColor(row, seqIndex)) != NULL) {
-            *color = *aColor;
-        } else {
-            *color = GlobalColors()->Get(Colors::eUnaligned);
+        StyleSettings::eColorScheme colorScheme =
+            sequence->parentSet->styleManager->GetGlobalStyle().proteinBackbone.colorScheme;
+
+        // color by hydrophobicity
+        if (sequence->isProtein && colorScheme == StyleSettings::eHydrophobicity) {
+            double hydrophobicity = GetHydrophobicity(toupper(*character));
+            *color = (hydrophobicity != UNKNOWN_HYDROPHOBICITY) ?
+                GlobalColors()->Get(Colors::eHydrophobicityMap, hydrophobicity) :
+                GlobalColors()->Get(Colors::eNoHydrophobicity);
+        }
+        // or color by charge
+        else if (sequence->isProtein && colorScheme == StyleSettings::eCharge) {
+            int charge = GetCharge(toupper(*character));
+            *color = GlobalColors()->Get(
+                (charge > 0) ? Colors::ePositive : ((charge < 0) ? Colors::eNegative : Colors::eNeutral));;
+        }
+        // else, color by alignment color
+        else {
+            const Vector *aColor;
+            if (isAligned && (aColor = GetAlignmentColor(row, seqIndex, colorScheme)) != NULL) {
+                *color = *aColor;
+            } else {
+                *color = GlobalColors()->Get(Colors::eUnaligned);
+            }
         }
     }
 
@@ -696,24 +702,13 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
     return cachePrevRow;
 }
 
-const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) const
+const Vector * BlockMultipleAlignment::GetAlignmentColor(
+    int row, int seqIndex, StyleSettings::eColorScheme colorScheme) const
 {
-    const UngappedAlignedBlock *block = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(row, seqIndex));
-    if (!block || !block->IsAligned()) {
+     const UngappedAlignedBlock *block = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(row, seqIndex));
+     if (!block || !block->IsAligned()) {
         ERR_POST(Warning << "BlockMultipleAlignment::GetAlignmentColor() called on unaligned residue");
         return NULL;
-    }
-
-    const Sequence *sequence = (*sequences)[row];
-    StyleSettings::eColorScheme colorScheme;
-    if (sequence->molecule) {
-        const StructureObject *object;
-        if (!sequence->molecule->GetParentOfType(&object)) return NULL;
-        // assume residueID is seqIndex + 1
-        colorScheme = sequence->parentSet->styleManager->
-            GetStyleForResidue(object, sequence->molecule->id, seqIndex + 1).proteinBackbone.colorScheme;
-    } else {
-        colorScheme = sequence->parentSet->styleManager->GetGlobalStyle().proteinBackbone.colorScheme;
     }
 
     const Vector *alignedColor;
@@ -742,6 +737,9 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) 
             alignedColor = conservationColorer->
                 GetFitColor(block, seqIndex - block->GetRangeOfRow(row)->from, row);
             break;
+        case StyleSettings::eBlockFit:
+            alignedColor = conservationColorer->GetBlockFitColor(block, row);
+            break;
         default:
             alignedColor = NULL;
     }
@@ -749,11 +747,12 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) 
     return alignedColor;
 }
 
-const Vector * BlockMultipleAlignment::GetAlignmentColor(const Sequence *sequence, int seqIndex) const
+const Vector * BlockMultipleAlignment::GetAlignmentColor(
+    const Sequence *sequence, int seqIndex, StyleSettings::eColorScheme colorScheme) const
 {
     int row = GetRowForSequence(sequence);
     if (row < 0) return NULL;
-    return GetAlignmentColor(row, seqIndex);
+    return GetAlignmentColor(row, seqIndex, colorScheme);
 }
 
 bool BlockMultipleAlignment::IsAligned(int row, int seqIndex) const
@@ -1061,9 +1060,13 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
 bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex,
     eUnalignedJustification justification)
 {
+    if (fromAlignmentIndex == toAlignmentIndex) return false;
+
     Block
         *blockFrom = blockMap[fromAlignmentIndex].block,
         *blockTo = blockMap[toAlignmentIndex].block;
+
+    // at least one end of the drag must be in an aligned block
     UngappedAlignedBlock *ABlock =
         dynamic_cast<UngappedAlignedBlock*>(blockFrom);
     if (ABlock) {
@@ -1073,6 +1076,7 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
         if (!ABlock) return false;
     }
 
+    // and the other must be in the same aligned block or an adjacent unaligned block
     UnalignedBlock
         *prevUABlock = dynamic_cast<UnalignedBlock*>(GetBlockBefore(ABlock)),
         *nextUABlock = dynamic_cast<UnalignedBlock*>(GetBlockAfter(ABlock));
@@ -1081,12 +1085,21 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
          (ABlock == blockTo && prevUABlock != blockFrom && nextUABlock != blockFrom)))
         return false;
 
-    int fromSeqIndex, toSeqIndex;
-    GetSequenceAndIndexAt(fromAlignmentIndex, row, justification, NULL, &fromSeqIndex, NULL);
-    GetSequenceAndIndexAt(toAlignmentIndex, row, justification, NULL, &toSeqIndex, NULL);
-    if (fromSeqIndex < 0 || toSeqIndex < 0) return false;
+    int requestedShift, actualShift = 0, width = 0;
 
-    int requestedShift = toSeqIndex - fromSeqIndex, actualShift = 0, width = 0;
+    // slightly different behaviour when dragging from unaligned to aligned...
+    if (!blockFrom->IsAligned()) {
+        int fromSeqIndex, toSeqIndex;
+        GetSequenceAndIndexAt(fromAlignmentIndex, row, justification, NULL, &fromSeqIndex, NULL);
+        GetSequenceAndIndexAt(toAlignmentIndex, row, justification, NULL, &toSeqIndex, NULL);
+        if (fromSeqIndex < 0 || toSeqIndex < 0) return false;
+        requestedShift = toSeqIndex - fromSeqIndex;
+    }
+
+    // vs. dragging from aligned
+    else {
+        requestedShift = toAlignmentIndex - fromAlignmentIndex;
+    }
 
     const Block::Range *prevRange = NULL, *nextRange = NULL,
         *range = ABlock->GetRangeOfRow(row);

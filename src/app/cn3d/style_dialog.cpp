@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.22  2002/11/21 16:59:39  thiessen
 * error on invalid style parameter
 *
@@ -295,6 +298,7 @@ void StyleDialog::SetupStyleStrings(void)
         ColorSchemeStrings.Associate(StyleSettings::eWeightedVariety, "Weighted Variety");
         ColorSchemeStrings.Associate(StyleSettings::eInformationContent, "Information Content");
         ColorSchemeStrings.Associate(StyleSettings::eFit, "Fit");
+        ColorSchemeStrings.Associate(StyleSettings::eBlockFit, "Block Fit");
         ColorSchemeStrings.Associate(StyleSettings::eTemperature, "Temperature");
         ColorSchemeStrings.Associate(StyleSettings::eHydrophobicity, "Hydrophobicity");
         ColorSchemeStrings.Associate(StyleSettings::eRainbow, "Rainbow");
@@ -828,9 +832,10 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
         "Variety",
         "Weighted Variety",
         "Information Content",
-        "Fit"
+        "Fit",
+        "Block Fit"
     };
-    wxChoice *item12 = new wxChoice( parent, ID_PBB_COLOR, wxDefaultPosition, wxDefaultSize, 16, strs12, 0 );
+    wxChoice *item12 = new wxChoice( parent, ID_PBB_COLOR, wxDefaultPosition, wxDefaultSize, 17, strs12, 0 );
     item3->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item13 = new wxButton( parent, ID_PBB_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
@@ -868,9 +873,10 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
         "Variety",
         "Weighted Variety",
         "Information Content",
-        "Fit"
+        "Fit",
+        "Block Fit"
     };
-    wxChoice *item17 = new wxChoice( parent, ID_PSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 15, strs17, 0 );
+    wxChoice *item17 = new wxChoice( parent, ID_PSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 16, strs17, 0 );
     item3->Add( item17, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item18 = new wxButton( parent, ID_PSIDE_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );

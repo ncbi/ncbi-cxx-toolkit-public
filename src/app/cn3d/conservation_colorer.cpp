@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.23  2002/07/23 16:40:39  thiessen
 * remove static decl
 *
@@ -110,6 +113,7 @@
 #include "cn3d/conservation_colorer.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/cn3d_blast.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -180,9 +184,19 @@ int GetBLOSUM62Score(char a, char b)
     return Blosum62Map[ScreenResidueCharacter(a)][ScreenResidueCharacter(b)];
 }
 
+static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
+{
+    if (!pssm || masterIndex < 0 || masterIndex >= pssm->rows) {
+        ERR_POST(Error << "GetPSSMScore() - invalid parameters");
+        return 0;
+    }
+    return pssm->matrix[masterIndex][LookupBLASTResidueNumberFromCharacter(ch)];
+}
+
 static std::map < char, float > StandardProbabilities;
 
-ConservationColorer::ConservationColorer(void) : nColumns(0), colorsCurrent(false)
+ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
+    nColumns(0), colorsCurrent(false), alignment(parent)
 {
     if (StandardProbabilities.size() == 0) {  // initialize static stuff
 
@@ -234,11 +248,19 @@ cleanup:
 
 void ConservationColorer::AddBlock(const UngappedAlignedBlock *block)
 {
+    // sanity check
+    if (!block->IsFrom(alignment)) {
+        ERR_POST(Error << "ConservationColorer::AddBlock : block is not from the associated alignment");
+        return;
+    }
+
     blocks[block].resize(block->width);
 
     // map block column position to profile position
     for (int i=0; i<block->width; i++) blocks[block][i] = nColumns + i;
     nColumns += block->width;
+
+    colorsCurrent = false;
 }
 
 typedef std::map < char, int > ColumnProfile;
@@ -264,13 +286,19 @@ void ConservationColorer::CalculateConservationColors(void)
     FloatVector informationContents(nColumns, 0.0f);
     float totalInformationContent = 0.0f;
 
-    int nRows = blocks.begin()->first->NSequences();
-    typedef std::map < char, float > CharMap;
-    std::vector < CharMap > fitScores(nColumns);
+    int nRows = alignment->NRows();
+    typedef std::map < char, float > CharFloatMap;
+    std::vector < CharFloatMap > fitScores(nColumns);
     float minFit, maxFit;
+
+    typedef std::map < const UngappedAlignedBlock * , FloatVector > BlockRowScores;
+    BlockRowScores blockFitScores;
+    float minBlockFit, maxBlockFit;
 
     BlockMap::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) {
+        blockFitScores[b->first].resize(nRows, 0.0f);
+
         for (int blockColumn=0; blockColumn<b->first->width; blockColumn++) {
             profileColumn = b->second[blockColumn];
 
@@ -345,6 +373,25 @@ void ConservationColorer::CalculateConservationColors(void)
             }
             totalInformationContent += columnInfo;
 //            TESTMSG("info prof col " << profileColumn << " = " << information);
+
+            // add up block fit scores
+            for (row=0; row<nRows; row++) {
+                char ch = ScreenResidueCharacter(b->first->GetCharacterAt(blockColumn, row));
+                blockFitScores[b->first][row] += GetPSSMScore(alignment->GetPSSM(),
+                    ch, b->first->GetRangeOfRow(0)->from + blockColumn);
+            }
+        }
+
+        // average block fit scores per residue
+        for (row=0; row<nRows; row++) {
+            float& score = blockFitScores[b->first][row];
+            score /= b->first->width;
+            if (row == 0 && b == blocks.begin()) {
+                minBlockFit = maxBlockFit = score;
+            } else {
+                if (score < minBlockFit) minBlockFit = score;
+                else if (score > maxBlockFit) maxBlockFit = score;
+            }
         }
     }
 
@@ -384,13 +431,26 @@ void ConservationColorer::CalculateConservationColors(void)
         informationContentColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
 
         // fit
-        CharMap::const_iterator c, ce = fitScores[profileColumn].end();
+        CharFloatMap::const_iterator c, ce = fitScores[profileColumn].end();
         for (c=fitScores[profileColumn].begin(); c!=ce; c++) {
             if (maxFit == minFit)
                 scale = 1.0;
             else
                 scale = 1.0 * (c->second - minFit) / (maxFit - minFit);
             fitColors[profileColumn][c->first] = GlobalColors()->Get(Colors::eConservationMap, scale);
+        }
+    }
+
+    // block fit
+    blockFitColors.clear();
+    for (b=blocks.begin(); b!=be; b++) {
+        blockFitColors[b->first].resize(nRows);
+        for (row=0; row<nRows; row++) {
+            if (maxBlockFit == minBlockFit)
+                scale = 1.0;
+            else
+                scale = 1.0 * (blockFitScores[b->first][row] - minBlockFit) / (maxBlockFit - minBlockFit);
+            blockFitColors[b->first][row] = GlobalColors()->Get(Colors::eConservationMap, scale);
         }
     }
 
@@ -411,6 +471,7 @@ void ConservationColorer::Clear(void)
     nColumns = 0;
     blocks.clear();
     FreeColors();
+    colorsCurrent = false;
 }
 
 void ConservationColorer::FreeColors(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.80  2002/11/10 20:32:04  thiessen
 * show/hide optimizations, esp. show domains with highlights
 *
@@ -732,11 +735,12 @@ bool AlignmentManager::IsInAlignment(const Sequence *sequence) const
     return false;
 }
 
-const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int seqIndex) const
+const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int seqIndex,
+    StyleSettings::eColorScheme colorScheme) const
 {
     const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
     if (currentAlignment)
-        return currentAlignment->GetAlignmentColor(sequence, seqIndex);
+        return currentAlignment->GetAlignmentColor(sequence, seqIndex, colorScheme);
     else
         return NULL;
 }
@@ -885,7 +889,7 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
     }
 
     BlockMultipleAlignment *multiple =
-        (sequenceViewer->GetCurrentAlignments().size() > 0) ? 
+        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
 			sequenceViewer->GetCurrentAlignments().front() : NULL;
     if (!multiple) {
         ERR_POST(Error << "Must have an alignment in the sequence viewer to merge with");
@@ -967,7 +971,7 @@ void AlignmentManager::ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpd
 void AlignmentManager::PurgeSequence(const MoleculeIdentifier *identifier)
 {
     BlockMultipleAlignment *multiple =
-        (sequenceViewer->GetCurrentAlignments().size() > 0) ? 
+        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
 			sequenceViewer->GetCurrentAlignments().front() : NULL;
     if (!multiple) return;
 
@@ -1051,7 +1055,7 @@ void AlignmentManager::BlockAlignAllUpdates(void)
 void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
 {
     BlockMultipleAlignment *currentMultiple =
-        (sequenceViewer->GetCurrentAlignments().size() > 0) ? 
+        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
 			sequenceViewer->GetCurrentAlignments().front() : NULL;
     if (!currentMultiple) return;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.15  2002/11/18 20:49:11  thiessen
 * move unaligned/no-coord colors into Colors class
 *
@@ -163,8 +166,8 @@ Colors::Colors(void)
 
     // colors for conservation map
     mapColors[eConservationMap].resize(nConservationMap);
-    mapColors[eConservationMap][0].Set(100.0/255, 100.0/255, 1.0);
-    mapColors[eConservationMap][1].Set(1.0, 25.0/255, 25.0/255);
+    mapColors[eConservationMap][0].Set(0.0, 75.0/255, 1.0);
+    mapColors[eConservationMap][1].Set(1.0, 0.0, 0.0);
 
     // colors for rainbow map
     mapColors[eRainbowMap].resize(nRainbowMap);

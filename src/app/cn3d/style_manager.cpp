@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.69  2002/11/18 20:49:11  thiessen
 * move unaligned/no-coord colors into Colors class
 *
@@ -570,7 +573,8 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
             break;
 
         case eAlignedShortcut: case eIdentityShortcut: case eVarietyShortcut:
-        case eWeightedVarietyShortcut: case eInformationContentShortcut: case eFitShortcut:
+        case eWeightedVarietyShortcut: case eInformationContentShortcut:
+        case eFitShortcut: case eBlockFitShortcut:
             switch (scheme) {
                 case eAlignedShortcut: proteinBackbone.colorScheme = eAligned; break;
                 case eIdentityShortcut: proteinBackbone.colorScheme = eIdentity; break;
@@ -578,6 +582,7 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
                 case eWeightedVarietyShortcut: proteinBackbone.colorScheme = eWeightedVariety; break;
                 case eInformationContentShortcut: proteinBackbone.colorScheme = eInformationContent; break;
                 case eFitShortcut: proteinBackbone.colorScheme = eFit; break;
+                case eBlockFitShortcut: proteinBackbone.colorScheme = eBlockFit; break;
             }
             nucleotideBackbone.colorScheme = eMolecule;
             proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
@@ -914,15 +919,16 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         case StyleSettings::eWeightedVariety:
         case StyleSettings::eInformationContent:
         case StyleSettings::eFit:
+        case StyleSettings::eBlockFit:
             if (molecule->sequence &&
                 molecule->parentSet->alignmentManager->
                     IsAligned(molecule->sequence, residue->id - 1)) { // assume seqIndex is rID - 1
                 const Vector * color = molecule->parentSet->alignmentManager->
-                    GetAlignmentColor(molecule->sequence, residue->id - 1);
+                    GetAlignmentColor(molecule->sequence, residue->id - 1, colorStyle);
                 if (color)
                     atomStyle->color = *color;
                 else
-                    atomStyle->color.Set(0.2,0.2,0.2);
+                    atomStyle->color = GlobalColors()->Get(Colors::eUnaligned);
                 break;
             }
             if (colorStyle != StyleSettings::eAligned) {

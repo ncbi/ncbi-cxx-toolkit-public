@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.9  2001/08/24 00:40:57  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -68,8 +71,6 @@
 #include <map>
 #include <vector>
 
-#include <corelib/ncbistl.hpp>
-
 #include "cn3d/vector_math.hpp"
 #include "cn3d/cn3d_colors.hpp"
 
@@ -82,11 +83,12 @@ extern std::map < char, std::map < char, int > > Blosum62Map;
 
 
 class UngappedAlignedBlock;
+class BlockMultipleAlignment;
 
 class ConservationColorer
 {
 public:
-    ConservationColorer(void);
+    ConservationColorer(const BlockMultipleAlignment *parent);
 
     // add an aligned block to the profile
     void AddBlock(const UngappedAlignedBlock *block);
@@ -101,6 +103,8 @@ public:
     void Clear(void);
 
 private:
+    const BlockMultipleAlignment *alignment;
+
     typedef std::map < const UngappedAlignedBlock *, std::vector < int > > BlockMap;
     BlockMap blocks;
 
@@ -120,6 +124,9 @@ private:
     typedef std::map < char, Vector > ResidueColors;
     typedef std::vector < ResidueColors > FitColors;
     FitColors fitColors;
+
+    typedef std::map < const UngappedAlignedBlock * , std::vector < Vector > >  BlockFitColors;
+    BlockFitColors blockFitColors;
 
 public:
 
@@ -156,6 +163,12 @@ public:
         CalculateConservationColors();
         GetProfileIndexAndResidue(block, blockColumn, row, &profileIndex, &residue);
         return &(fitColors[profileIndex].find(residue)->second);
+    }
+
+    const Vector *GetBlockFitColor(const UngappedAlignedBlock *block, int row)
+    {
+        CalculateConservationColors();
+        return &(blockFitColors.find(block)->second[row]);
     }
 };
 

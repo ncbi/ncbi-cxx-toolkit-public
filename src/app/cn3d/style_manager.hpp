@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.36  2001/10/17 17:46:27  thiessen
 * save camera setup and rotation center in files
 *
@@ -220,7 +223,8 @@ public:
         eVariety = 9,
         eWeightedVariety = 10,
         eInformationContent = 11,
-        eFit = 12
+        eFit = 12,
+        eBlockFit = 17
     };
 
     typedef struct {
@@ -295,6 +299,7 @@ public:
         eWeightedVarietyShortcut,
         eInformationContentShortcut,
         eFitShortcut,
+        eBlockFitShortcut,
         eObjectShortcut,
         eDomainShortcut,
         eMoleculeShortcut,

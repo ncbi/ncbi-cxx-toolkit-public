@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.33  2003/01/23 20:03:05  thiessen
 * add BLAST Neighbor algorithm
 *
@@ -151,6 +154,7 @@
 #include <map>
 
 #include "cn3d/vector_math.hpp"
+#include "cn3d/style_manager.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -223,8 +227,10 @@ public:
 
     // get a color for an aligned residue that's dependent on the entire alignment
     // (e.g., for coloring by sequence conservation)
-    const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex) const;
-    const Vector * GetAlignmentColor(int row, int seqIndex) const;
+    const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex,
+        StyleSettings::eColorScheme colorScheme) const;
+    const Vector * GetAlignmentColor(int row, int seqIndex,
+        StyleSettings::eColorScheme colorScheme) const;
 
     // will be used to control padding of unaligned blocks
     enum eUnalignedJustification {
@@ -446,6 +452,8 @@ protected:
 
 public:
     virtual ~Block(void) { }    // virtual destructor for base class
+
+    bool IsFrom(const BlockMultipleAlignment *alignment) const { return (alignment == parentAlignment); }
 
     // given a row number (from 0 ... nSequences-1), give the sequence range covered by this block
     const Range* GetRangeOfRow(int row) const { return &(ranges[row]); }

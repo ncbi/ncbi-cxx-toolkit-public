@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.63  2003/01/27 16:42:24  thiessen
 * remove debugging messages
 *
@@ -847,6 +850,14 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
 void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
     int columnTo, int rowTo)
 {
+    // special shift-by-one if shift/ctrl click w/ no drag
+    if (columnFrom == columnTo && rowFrom == rowTo) {
+        if (shiftDown && columnTo > 0)
+            columnTo--;
+        else if (controlDown && columnTo < maxRowWidth-1)
+            columnTo++;
+    }
+
     TESTMSG("got DraggedCell " << columnFrom << ',' << rowFrom << " to "
         << columnTo << ',' << rowTo);
     if (rowFrom == rowTo && columnFrom == columnTo) return;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.43  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -175,6 +178,7 @@
 
 #include "cn3d/vector_math.hpp"
 #include "cn3d/show_hide_callback.hpp"
+#include "cn3d/style_manager.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -237,7 +241,8 @@ public:
 
     // get a color for an aligned residue that's dependent on the entire alignment
     // (e.g., for coloring by sequence conservation)
-    const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex) const;
+    const Vector * GetAlignmentColor(const Sequence *sequence,
+        int seqIndex, StyleSettings::eColorScheme colorScheme) const;
 
     void ShowUpdateWindow(void) const;
 

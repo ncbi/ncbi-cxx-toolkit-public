@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
 * Revision 1.71  2003/01/27 15:52:22  thiessen
 * merge after highlighted row; show rejects; trim rejects from new reject list
 *
@@ -412,6 +415,7 @@ public:
                     MID_WGHT_VAR,
                     MID_INFO,
                     MID_FIT,
+                    MID_BLOCK_FIT,
                 MID_OBJECT,
                 MID_DOMAIN,
                 MID_MOLECULE,
