@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/03/29 21:54:48  vasilche
+* Fixed internal compiler error on MSVC.
+*
 * Revision 1.35  2000/03/29 15:55:26  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -485,7 +488,7 @@ void CClassInfoTmpl::AddSubClassNull(const char* id)
     AddSubClassNull(CMemberId(id));
 }
 
-static inline
+inline
 const CMemberInfo* GetImplicitMember(const CMembersInfo& members)
 {
     _ASSERT(members.GetSize() == 1);
