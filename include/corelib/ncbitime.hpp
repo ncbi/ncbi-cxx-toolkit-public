@@ -485,6 +485,7 @@ public:
     string AsString(const string& fmt = kEmptyStr,
                     long out_tz       = eCurrentTimeZone) const;
 
+
     /// Return time as string using the format returned by GetFormat().
     operator string(void) const;
 
@@ -1043,12 +1044,75 @@ public:
     /// @param fmt
     ///   Format specifier used to convert time span to string.
     ///   If "fmt" is not defined, then GetFormat() will be used.
+    /// @return
+    ///   A string representation of time span in specified format.
     /// @sa
     ///   GetFormat, SetFormat
     string AsString(const string& fmt = kEmptyStr) const;
 
     /// Return span time as string using the format returned by GetFormat().
     operator string(void) const;
+
+
+    /// Precision for span "smart" string. Used in AsSmartString() method.
+    enum ESmartStringPrecision {
+        // Named precision levels
+        eSSP_Year,               ///< Round to years
+        eSSP_Month,              ///< Round to months
+        eSSP_Day,                ///< Round to days
+        eSSP_Hour,               ///< Round to hours
+        eSSP_Minute,             ///< Round to minutes
+        eSSP_Second,             ///< Round to seconds
+        eSSP_Millisecond,        ///< Round to milliseconds
+        eSSP_Microsecond,        ///< Round to microseconds
+        eSSP_Nanosecond,         ///< Do not round at all (accurate time span)
+
+        // Float precision levels (1-7)
+        eSSP_Precision1,
+        eSSP_Precision2,
+        eSSP_Precision3,
+        eSSP_Precision4,
+        eSSP_Precision5,
+        eSSP_Precision6,
+        eSSP_Precision7,
+
+        eSSP_Default = eSSP_Day  ///< Default precision level
+    };
+
+    /// Which format use to zero time span output.
+    enum ESmartStringZeroMode {
+        eSSZ_SkipZero,           ///< Skip zero valued
+        eSSZ_NoSkipZero,         ///< Print zero valued
+        eSSZ_Default = eSSZ_SkipZero
+    };
+
+    /// Transform time span to "smart" string.
+    ///
+    /// @param precision
+    ///   Enum value describing how many parts of time span should be
+    ///   returned. Values from eSSP_Year to eSSP_Nanosecond apparently
+    ///   describe part of time span which will be last in output string.
+    ///   Floating precision levels eSSP_PrecisionN say that maximum 'N'
+    ///   parts of time span will be put to output string.
+    ///   The parts counting begin from first non-zero value.
+    /// @param rounding
+    ///   Rounding mode. By default time span will be truncated at last value
+    //    specified by precision. If mode is eRound, that last significant
+    //    part of time span will be arifmetically rounded on base .
+    //    For example, if precison is eSSP_Day and number of hours in time
+    //    span is 20, that number of days will be increased on 1.
+    /// @param zero_mode
+    ///   Mode to print or skip zero parts of time span which should be
+    ///   printed but have 0 value. Trailing and leading zeros will be
+    ///   never printed.
+    /// @return
+    ///   A string representation of time span.
+    /// @sa
+    ///   AsString, ESmartStringPrecision, ERound, ESmartStringZeroMode
+    string AsSmartString(ESmartStringPrecision precision = eSSP_Default,
+                         ERound                rounding  = eTrunc,
+                         ESmartStringZeroMode  zero_mode = eSSZ_Default)
+			 const;
 
     //
     // Get various components of time span.
@@ -1870,6 +1934,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/09/27 13:53:36  ivanov
+ * + CTimeSpan::AsSmartString()
+ *
  * Revision 1.40  2004/09/20 16:27:08  ivanov
  * CTime:: Added milliseconds, microseconds and AM/PM to string time format.
  *

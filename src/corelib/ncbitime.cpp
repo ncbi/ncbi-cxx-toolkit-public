@@ -348,8 +348,8 @@ void CTime::x_Init(const string& str, const string& fmt)
             char value_str[3];
             char* s = value_str;
             for (size_t len = 2;
-	         len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
-                *s++ = *sss++; 
+                 len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
+                 *s++ = *sss++; 
             }
             *s = '\0';
             try {
@@ -361,11 +361,13 @@ void CTime::x_Init(const string& str, const string& fmt)
             try {
                 if ( *sss != '\0' ) {
                     s = value_str;
-                    for (size_t len = 2; len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
+                    for (size_t len = 2;
+                        len != 0  &&  *sss != '\0'  &&  isdigit(*sss);
+                        len--) {
                         *s++ = *sss++; 
                     }
                     *s = '\0';
-                    x_min = NStr::StringToLong(value_str, 10, NStr::eCheck_Skip);
+                    x_min = NStr::StringToLong(value_str,10,NStr::eCheck_Skip);
                 }
             }
             catch (CStringException) {
@@ -827,9 +829,8 @@ string CTime::AsString(const string& fmt, long out_tz) const
         case 'P': str += ( t->Hour() <= 12) ? "AM" : "PM" ; break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
-		              ERR_POST("Format symbol 'z' is unsupported on this platform");
-#else
-                      str += "GMT";
+                      ERR_POST("Format symbol 'z' is unsupported on this platform");
+#else                 str += "GMT";
                       if (IsGmtTime()) {
                           break;
                       }
@@ -1581,7 +1582,8 @@ void CTimeSpan::x_Init(const string& str, const string& fmt)
             m_NanoSec = value;
             break;
         default:
-            NCBI_THROW(CTimeException, eFormat, "CTimeSpan:  format is incorrect");
+            NCBI_THROW(CTimeException, eFormat,
+	               "CTimeSpan:  format is incorrect");
         }
     }
     // Normalize time span
@@ -1623,7 +1625,8 @@ void CTimeSpan::x_VerifyFormat(const string& fmt)
     ITERATE(string, it, fmt) {
         if (strchr(kFormatSymbolsSpan, *it) != 0  &&
             ++count[(unsigned int) *it] > 1) {
-            NCBI_THROW(CTimeException, eFormat, "CTimeSpan's format is incorrect");
+            NCBI_THROW(CTimeException, eFormat,
+	               "CTimeSpan's format is incorrect");
         }
     }
 }
@@ -1685,6 +1688,178 @@ string CTimeSpan::AsString(const string& fmt) const
     }
     return str;
 }
+
+
+string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
+                                ERound                rounding,
+                                ESmartStringZeroMode  zero_mode) const
+{
+    // Make positive copy
+    CTimeSpan diff(*this);
+    if ( diff.GetSign() == eNegative ) {
+        diff.Invert();
+    }
+
+    // Get nanoseconds before rounding
+    long nanoseconds = diff.GetNanoSecondsAfterSecond();
+
+    // Named or float precision level
+    bool is_named_precision = (precision <= eSSP_Nanosecond);
+
+
+    // Round time span
+    if ( rounding == eRound  ) {
+
+        int adjust_level;
+
+        // Named precision level
+        if ( is_named_precision ) {
+            adjust_level = precision;
+        } else {
+            adjust_level = eSSP_Nanosecond;
+            // Float precision level
+            long  days         = diff.GetCompleteDays();
+            int   hours        = diff.x_Hour();
+            int   minutes      = diff.x_Minute();
+            int   seconds      = diff.x_Second();
+            int   adjust_shift = precision - eSSP_Nanosecond - 1;
+
+            if ( days >=365 ) {
+                adjust_level = eSSP_Year + adjust_shift;
+            } else if (days >= 30) {
+                adjust_level = eSSP_Month + adjust_shift;
+            } else if (days > 0) {
+                adjust_level = eSSP_Day + adjust_shift;
+            } else if (hours > 0) {
+                adjust_level = eSSP_Hour + adjust_shift;
+            } else if (minutes > 0) {
+                adjust_level = eSSP_Minute + adjust_shift;
+            } else if (seconds > 0) {
+                adjust_level = eSSP_Second + adjust_shift;
+            }
+            if (adjust_level > eSSP_Second) {
+                if ( nanoseconds % 1000 == 0 ) {
+                    adjust_level = eSSP_Millisecond;
+                } else if ( nanoseconds % 1000000 == 0 ) {
+                    adjust_level = eSSP_Microsecond;
+                }
+            }
+       }
+        // Add adjustment time span 
+        switch (ESmartStringPrecision(adjust_level)) {
+            case eSSP_Year:
+                diff += CTimeSpan(365/2, 0, 0, 0);
+                break;
+            case eSSP_Month:
+                diff += CTimeSpan(15, 0, 0, 0);
+                break;
+            case eSSP_Day:
+                diff += CTimeSpan(0, 12, 0, 0);
+                break;
+            case eSSP_Hour:
+                diff += CTimeSpan(0, 0, 30, 0);
+                break;
+            case eSSP_Minute:
+                diff += CTimeSpan(0, 0, 0, 30);
+                break;
+            case eSSP_Second:
+                diff += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2);
+                break;
+            case eSSP_Millisecond:
+                diff += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000);
+                break;
+            case eSSP_Microsecond:
+                diff += CTimeSpan(0, 0, 0, 0, kMicroSecondsPerSecond/2000000);
+                break;
+            default:
+                // nanoseconds -- nothing to do
+		;
+        }
+    }
+
+
+    // Prepare data
+    struct SItem {
+        SItem(void) : value(0), str(kEmptyStr), str0(kEmptyStr) {};
+        SItem(long v, const string& s, const string& s0)
+            : value(v), str(s), str0(s0) {};
+        long    value;
+        string  str;
+        string  str0;
+    };
+
+    const int max_count = 7;
+    SItem span[max_count];
+    long days = diff.GetCompleteDays();
+
+    span[0] = SItem(days/365       , "year",   "this year");    days %= 365;
+    span[1] = SItem(days/30        , "month",  "this month");   days %= 30;
+    span[2] = SItem(days           , "day",    "today");
+    span[3] = SItem(diff.x_Hour()  , "hour",   "0 hours");
+    span[4] = SItem(diff.x_Minute(), "minute", "0 minutes");
+    span[5] = SItem(diff.x_Second(), "second", "0 seconds");
+    if ( nanoseconds % 1000000 == 0 ) {
+        span[6] = SItem(nanoseconds / 1000000, "millisecond","0 milliseconds");
+    } else if ( nanoseconds % 1000 == 0 ) {
+        span[6] = SItem(nanoseconds / 1000, "microsecond", "0 microseconds");
+    } else {
+        span[6] = SItem(nanoseconds, "nanosecond", "0 nanoseconds");
+    }
+
+    // Result string
+    string result;
+    int current_precision = is_named_precision ? eSSP_Year  : eSSP_Precision1;
+
+    // Compose result string 
+
+    for (int i = 0; i < max_count  &&  current_precision <= precision; i++) {
+        long val = span[i].value;
+        if ( !val ) {
+            if ( result.empty() ) {
+                if (current_precision == precision) {
+                    break;
+                }
+                if ( is_named_precision ) {
+                    current_precision++;
+                }
+                continue;
+            }
+            if (zero_mode == eSSZ_SkipZero) {
+                current_precision++;
+                continue;
+            } else {
+                long sum = 0;
+                int  cp = current_precision + 1;
+                for (int j = i+1;
+		     j < max_count &&  (cp <= precision); j++, cp++ ) {
+                    sum += span[j].value;
+                }
+                if ( !sum ) {
+                    // all trailing parts are zeros -- skip all
+                    current_precision = precision;
+                    break;
+                }
+            }
+        }
+        current_precision++;
+        if ( !result.empty() ) {
+            result += " "; 
+        }
+        result += NStr::IntToString(val) + " " + span[i].str;
+        if (val > 1  ||  val == 0) {
+            result += "s";
+        }
+    }
+    if ( result.empty() ) {
+        if ( precision > eSSP_Second ) {
+            return span[eSSP_Second].str0;
+        } else {
+            return span[precision].str0;
+        }
+    }
+    return result;
+}
+
 
 
 //=============================================================================
@@ -1781,6 +1956,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2004/09/27 13:53:34  ivanov
+ * + CTimeSpan::AsSmartString()
+ *
  * Revision 1.53  2004/09/20 16:27:26  ivanov
  * CTime:: Added milliseconds, microseconds and AM/PM to string time format.
  *
