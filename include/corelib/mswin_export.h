@@ -931,10 +931,22 @@
 #  define NCBI_LDS_EXPORT     __declspec(dllimport)
 #endif
 
+/*
+ * Export specifier for library xloader_lds
+ */
 #ifdef NCBI_XLOADER_LDS_EXPORTS
 #  define NCBI_XLOADER_LDS_EXPORT     __declspec(dllexport)
 #else
-#  define NCBI_XLOADER_LDS_EXPORT    __declspec(dllimport)
+#  define NCBI_XLOADER_LDS_EXPORT     __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library xloader_cdd
+ */
+#ifdef NCBI_XLOADER_CDD_EXPORTS
+#  define NCBI_XLOADER_CDD_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_CDD_EXPORT     __declspec(dllimport)
 #endif
 
 /*
@@ -1060,6 +1072,7 @@
 #  define NCBI_XGBPLUGIN_EXPORT
 #  define NCBI_XIMAGE_EXPORT
 #  define NCBI_XLOADER_BLASTDB_EXPORT
+#  define NCBI_XLOADER_CDD_EXPORT
 #  define NCBI_XLOADER_LDS_EXPORT
 #  define NCBI_XLOADER_TABLE_EXPORT
 #  define NCBI_XNCBI_EXPORT
@@ -1079,6 +1092,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.41  2003/10/20 18:38:02  dicuccio
+ * Added export specifier for xloader_cdd
+ *
  * Revision 1.40  2003/10/10 19:34:06  dicuccio
  * Added export specifier for gui_config
  *
