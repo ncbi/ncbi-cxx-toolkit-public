@@ -290,7 +290,7 @@ template<class Parent>
 bool CLeafTypeIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
 {
     return CParent::CanSelect(object) &&
-        SIteratorFunctions::s_ContainsType(object, GetIteratorType());
+        SIteratorFunctions::s_ContainsType(object, this->GetIteratorType());
 }
 
 #if 0
@@ -391,6 +391,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/04/26 16:40:59  ucko
+* Tweak for GCC 3.4 compatibility.
+*
 * Revision 1.23  2003/09/30 17:11:57  gouriano
 * Modified TypeIterators to skip unset optional members
 *

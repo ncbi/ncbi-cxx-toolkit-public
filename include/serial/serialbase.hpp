@@ -270,7 +270,7 @@ class CStdAliasBase : public CAliasBase<TStd>
 public:
     CStdAliasBase(void)
         {
-            m_Data = 0;
+            this->m_Data = 0;
         }
     explicit CStdAliasBase(const TStd& value)
         : TParent(value) {}
@@ -324,7 +324,7 @@ bool SerialEquals(const C& object1, const C& object2,
 template <typename C>
 C* SerialClone(const C& src)
 {
-    TTypeInfo type = C::GetTypeInfo();
+    typename C::TTypeInfo type = C::GetTypeInfo();
     TObjectPtr obj = type->Create();
     type->Assign(obj, &src);
     return static_cast<C*>(obj);
@@ -389,9 +389,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 }
 
 #define DECLARE_INTERNAL_TYPE_INFO() \
-    virtual const NCBI_NS_NCBI::CTypeInfo* GetThisTypeInfo(void) const \
-    { return GetTypeInfo(); } \
-    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void)
+    typedef const NCBI_NS_NCBI::CTypeInfo* TTypeInfo; \
+    virtual TTypeInfo GetThisTypeInfo(void) const { return GetTypeInfo(); } \
+    static  TTypeInfo GetTypeInfo(void)
 
 #define ENUM_METHOD_NAME(EnumName) \
     NCBI_NAME2(GetTypeInfo_enum_,EnumName)
@@ -435,6 +435,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/04/26 16:40:59  ucko
+* Tweak for GCC 3.4 compatibility.
+*
 * Revision 1.30  2004/03/25 15:56:28  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

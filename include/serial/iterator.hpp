@@ -515,11 +515,11 @@ public:
 
     typename CParent::TObjectInfo::TObjectPtrType GetFoundPtr(void) const
         {
-            return Get().GetObjectPtr();
+            return this->Get().GetObjectPtr();
         }
     TTypeInfo GetFoundType(void) const
         {
-            return Get().GetTypeInfo();
+            return this->Get().GetTypeInfo();
         }
     TTypeInfo GetMatchType(void) const
         {
@@ -868,6 +868,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/04/26 16:40:59  ucko
+* Tweak for GCC 3.4 compatibility.
+*
 * Revision 1.29  2003/09/30 17:12:30  gouriano
 * Modified TypeIterators to skip unset optional members
 *

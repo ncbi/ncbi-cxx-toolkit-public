@@ -605,6 +605,7 @@ CTypeInfo* CStdTypeInfo<char>::CreateTypeInfo(void)
 template<typename T>
 class CPrimitiveTypeInfoIntFunctions : public CPrimitiveTypeFunctions<T>
 {
+    typedef CPrimitiveTypeFunctions<T> CParent;
 public:
     typedef T TObjectType;
     
@@ -613,10 +614,11 @@ public:
             CPrimitiveTypeInfoInt* info =
                 new CPrimitiveTypeInfoInt(sizeof(TObjectType), IsSigned());
 
-            info->SetMemFunctions(&Create,
+            info->SetMemFunctions(&CParent::Create,
                                   &IsDefault, &SetDefault, &Equals, &Assign);
 
-            info->SetIOFunctions(&Read, &Write, &Copy, &Skip);
+            info->SetIOFunctions(&CParent::Read, &CParent::Write,
+                                 &CParent::Copy, &CParent::Skip);
 
             SetInt4Functions(info);
             SetInt8Functions(info);
@@ -637,21 +639,21 @@ public:
 
     static bool IsDefault(TConstObjectPtr objectPtr)
         {
-            return Get(objectPtr) == 0;
+            return CParent::Get(objectPtr) == 0;
         }
     static void SetDefault(TObjectPtr objectPtr)
         {
-            Get(objectPtr) = 0;
+            CParent::Get(objectPtr) = 0;
         }
     static bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2,
                        ESerialRecursionMode)
         {
-            return Get(obj1) == Get(obj2);
+            return CParent::Get(obj1) == CParent::Get(obj2);
         }
     static void Assign(TObjectPtr dst, TConstObjectPtr src,
                        ESerialRecursionMode)
         {
-            Get(dst) = Get(src);
+            CParent::Get(dst) = CParent::Get(src);
         }
 
     static bool IsSigned(void)
@@ -665,13 +667,13 @@ public:
 
     static Int4 GetValueInt4(TConstObjectPtr objectPtr)
         {
-            TObjectType value = Get(objectPtr);
+            TObjectType value = CParent::Get(objectPtr);
             Int4 result = Int4(value);
             if ( IsUnsigned() ) {
                 // unsigned -> signed
                 if ( sizeof(value) == sizeof(result) ) {
                     // same size - check for sign change only
-                    if ( IsNegative(result) )
+                    if ( CParent::IsNegative(result) )
                         ThrowIntegerOverflow();
                 }
             }
@@ -683,7 +685,7 @@ public:
         }
     static Uint4 GetValueUint4(TConstObjectPtr objectPtr)
         {
-            TObjectType value = Get(objectPtr);
+            TObjectType value = CParent::Get(objectPtr);
             Uint4 result = Uint4(value);
             if ( IsSigned() ) {
                 // signed -> unsigned
@@ -703,14 +705,14 @@ public:
             if ( IsUnsigned() ) {
                 // signed -> unsigned
                 // check for negative value
-                if ( IsNegative(value) )
+                if ( CParent::IsNegative(value) )
                     ThrowIntegerOverflow();
             }
             if ( sizeof(value) > sizeof(result) ) {
                 if ( value != Int4(result) )
                     ThrowIntegerOverflow();
             }
-            Get(objectPtr) = result;
+            CParent::Get(objectPtr) = result;
         }
     static void SetValueUint4(TObjectPtr objectPtr, Uint4 value)
         {
@@ -727,17 +729,17 @@ public:
                 if ( value != Uint4(result) )
                     ThrowIntegerOverflow();
             }
-            Get(objectPtr) = result;
+            CParent::Get(objectPtr) = result;
         }
     static Int8 GetValueInt8(TConstObjectPtr objectPtr)
         {
-            TObjectType value = Get(objectPtr);
+            TObjectType value = CParent::Get(objectPtr);
             Int8 result = Int8(value);
             if ( IsUnsigned() ) {
                 // unsigned -> signed
                 if ( sizeof(value) == sizeof(result) ) {
                     // same size - check for sign change only
-                    if ( IsNegative(result) )
+                    if ( CParent::IsNegative(result) )
                         ThrowIntegerOverflow();
                 }
             }
@@ -749,7 +751,7 @@ public:
         }
     static Uint8 GetValueUint8(TConstObjectPtr objectPtr)
         {
-            TObjectType value = Get(objectPtr);
+            TObjectType value = CParent::Get(objectPtr);
             Uint8 result = Uint8(value);
             if ( IsSigned() ) {
                 // signed -> unsigned
@@ -769,14 +771,14 @@ public:
             if ( IsUnsigned() ) {
                 // signed -> unsigned
                 // check for negative value
-                if ( IsNegative(value) )
+                if ( CParent::IsNegative(value) )
                     ThrowIntegerOverflow();
             }
             if ( sizeof(value) > sizeof(result) ) {
                 if ( value != Int8(result) )
                     ThrowIntegerOverflow();
             }
-            Get(objectPtr) = result;
+            CParent::Get(objectPtr) = result;
         }
     static void SetValueUint8(TObjectPtr objectPtr, Uint8 value)
         {
@@ -793,7 +795,7 @@ public:
                 if ( value != Uint8(result) )
                     ThrowIntegerOverflow();
             }
-            Get(objectPtr) = result;
+            CParent::Get(objectPtr) = result;
         }
 };
 
@@ -1038,6 +1040,7 @@ CTypeInfo* CStdTypeInfo<long double>::CreateTypeInfo(void)
 template<typename T>
 class CStringFunctions : public CPrimitiveTypeFunctions<T>
 {
+    typedef CPrimitiveTypeFunctions<T> CParent;
 public:
     static TObjectPtr Create(TTypeInfo )
         {
@@ -1045,11 +1048,11 @@ public:
         }
     static bool IsDefault(TConstObjectPtr objectPtr)
         {
-            return Get(objectPtr).empty();
+            return CParent::Get(objectPtr).empty();
         }
     static void SetDefault(TObjectPtr objectPtr)
         {
-            Get(objectPtr).erase();
+            CParent::Get(objectPtr).erase();
         }
     static void Copy(CObjectStreamCopier& copier, TTypeInfo )
         {
@@ -1174,31 +1177,33 @@ CTypeInfo* CStdTypeInfo<string>::CreateTypeInfoStringStore(void)
 template<typename T>
 class CCharPtrFunctions : public CPrimitiveTypeFunctions<T>
 {
+    typedef CPrimitiveTypeFunctions<T> CParent;
 public:
     static bool IsDefault(TConstObjectPtr objectPtr)
         {
-            return Get(objectPtr) == 0;
+            return CParent::Get(objectPtr) == 0;
         }
     static void SetDefault(TObjectPtr dst)
         {
-            free(const_cast<char*>(Get(dst)));
-            Get(dst) = 0;
+            free(const_cast<char*>(CParent::Get(dst)));
+            CParent::Get(dst) = 0;
         }
     static bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
                        ESerialRecursionMode)
         {
-            return strcmp(Get(object1), Get(object2)) == 0;
+            return strcmp(CParent::Get(object1), CParent::Get(object2)) == 0;
         }
     static void Assign(TObjectPtr dst, TConstObjectPtr src,
                        ESerialRecursionMode)
         {
-            typename CPrimitiveTypeFunctions<T>::TObjectType value = Get(src);
-            _ASSERT(Get(dst) != value);
-            free(const_cast<char*>(Get(dst)));
+            typename CPrimitiveTypeFunctions<T>::TObjectType value
+                = CParent::Get(src);
+            _ASSERT(CParent::Get(dst) != value);
+            free(const_cast<char*>(CParent::Get(dst)));
             if ( value )
-                Get(dst) = NotNull(strdup(value));
+                CParent::Get(dst) = NotNull(strdup(value));
             else
-                Get(dst) = 0;
+                CParent::Get(dst) = 0;
         }
 };
 
@@ -1545,6 +1550,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2004/04/26 16:40:59  ucko
+* Tweak for GCC 3.4 compatibility.
+*
 * Revision 1.42  2004/03/25 15:57:08  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

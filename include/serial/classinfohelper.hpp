@@ -138,7 +138,7 @@ public:
     enum EGeneratedChoiceValues {
         eGeneratedChoiceEmpty = 0,
         eGeneratedChoiceToMemberIndex = kEmptyChoice - eGeneratedChoiceEmpty,
-        eMemberIndexToGeneratedChoice = - eGeneratedChoiceToMemberIndex
+        eMemberIndexToGeneratedChoice = eGeneratedChoiceEmpty - kEmptyChoice
     };
 
     static TMemberIndex WhichChoice(const CChoiceTypeInfo* /*choiceType*/,
@@ -264,6 +264,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/04/26 16:40:59  ucko
+* Tweak for GCC 3.4 compatibility.
+*
 * Revision 1.9  2004/01/27 17:07:35  ucko
 * CClassInfoHelper::GetTypeId: disambiguate for IBM VisualAge C++.
 *

@@ -272,7 +272,7 @@ public:
     static void InsertElement(TObjectPtr containerPtr,
                               const TElementType& element)
         {
-            TObjectType& container = Get(containerPtr);
+            TObjectType& container = CParent::Get(containerPtr);
 #if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
             container.allocation_size(container.size());
 #endif
@@ -312,7 +312,7 @@ public:
     static void InsertElement(TObjectPtr containerPtr,
                               const TElementType& element)
         {
-            TObjectType& container = Get(containerPtr);
+            TObjectType& container = CParent::Get(containerPtr);
 #if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
             container.allocation_size(container.size());
 #endif
@@ -416,12 +416,15 @@ template<class Container>
 class CStlClassInfoFunctionsCI :
     public CStlClassInfoFunctionsIBase<Container, typename Container::const_iterator, const Container*, const typename Container::value_type&, CContainerTypeInfo::CConstIterator>
 {
+    typedef CStlClassInfoFunctionsIBase<Container, typename Container::const_iterator, const Container*, const typename Container::value_type&, CContainerTypeInfo::CConstIterator> CParent;
 public:
     static void SetIteratorFunctions(CStlOneArgTemplate* info)
         {
-            info->SetConstIteratorFunctions(&InitIterator, &ReleaseIterator,
-                                            &CopyIterator, &NextElement,
-                                            &GetElementPtr);
+            info->SetConstIteratorFunctions(&CParent::InitIterator,
+                                            &CParent::ReleaseIterator,
+                                            &CParent::CopyIterator,
+                                            &CParent::NextElement,
+                                            &CParent::GetElementPtr);
         }
 };
 
@@ -450,9 +453,11 @@ public:
 
     static void SetIteratorFunctions(CStlOneArgTemplate* info)
         {
-            info->SetIteratorFunctions(&InitIterator, &ReleaseIterator,
-                                       &CopyIterator, &NextElement,
-                                       &GetElementPtr,
+            info->SetIteratorFunctions(&CParent::InitIterator,
+                                       &CParent::ReleaseIterator,
+                                       &CParent::CopyIterator,
+                                       &CParent::NextElement,
+                                       &CParent::GetElementPtr,
                                        &EraseElement, &EraseAllElements);
         }
 };
@@ -488,8 +493,10 @@ public:
 
     static void SetIteratorFunctions(CStlOneArgTemplate* info)
         {
-            info->SetIteratorFunctions(&InitIterator, &ReleaseIterator,
-                                       &CopyIterator, &NextElement,
+            info->SetIteratorFunctions(&CParent::InitIterator,
+                                       &CParent::ReleaseIterator,
+                                       &CParent::CopyIterator,
+                                       &CParent::NextElement,
                                        &GetElementPtr,
                                        &EraseElement, &EraseAllElements);
         }
@@ -718,6 +725,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/04/26 16:40:59  ucko
+* Tweak for GCC 3.4 compatibility.
+*
 * Revision 1.68  2004/04/02 16:57:35  gouriano
 * made it possible to create named CTypeInfo for containers
 *
