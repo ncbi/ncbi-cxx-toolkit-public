@@ -70,6 +70,8 @@ CNcbiApplication* CNcbiApplication::Instance(void)
 
 CNcbiApplication::CNcbiApplication(void)
 {
+    m_DisableArgDesc = false;
+
     // Register the app. instance
     if ( m_Instance ) {
         NCBI_THROW(CAppException,eSecond,
@@ -85,6 +87,7 @@ CNcbiApplication::CNcbiApplication(void)
 
     // Create an empty registry
     m_Config.reset(new CNcbiRegistry);
+
 }
 
 
@@ -202,7 +205,7 @@ int CNcbiApplication::AppMain
 
     // Check command line for presence special arguments "-logfile","-conffile"
     bool is_diag_setup = false;
-    if (argc > 1  &&  argv) {
+    if (!m_DisableArgDesc && argc > 1  &&  argv) {
         const char** v = new const char*[argc];
         v[0] = argv[0];
         int real_arg_index = 1;
@@ -218,8 +221,8 @@ int CNcbiApplication::AppMain
                 const char* log = argv[i];
                 auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(log));
                 if ( !os->good() ) {
-                    _TRACE("CNcbiApplication() -- cannot open log file: " <<
-                           log);
+                    _TRACE("CNcbiApplication() -- cannot open log file: "
+                           << log);
                     continue;
                 }
                 _TRACE("CNcbiApplication() -- opened log file: " << log);
@@ -341,7 +344,7 @@ int CNcbiApplication::AppMain
         try {
             Init();
             // If the app still has no arg description - provide default one
-            if (!m_ArgDesc.get()) {
+            if (!m_DisableArgDesc && !m_ArgDesc.get()) {
                 auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
                 arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                     "This program has no mandatory arguments");
@@ -619,12 +622,21 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
 }
 
 
+void CNcbiApplication::DisableArgDescriptions(void)
+{
+    m_DisableArgDesc = true;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2002/08/02 20:13:06  gouriano
+ * added possibility to disable arg descriptions
+ *
  * Revision 1.46  2002/08/01 19:02:17  ivanov
  * Added autoload of the verbose message file specified in the
  * applications configuration file.

@@ -138,6 +138,9 @@ public:
     // SetArgDescriptions(). Throw exception if no descriptions have been set.
     const CArgs& GetArgs(void) const;
 
+    // By default ArgDescriptions are enabled (i.e. required)
+    void DisableArgDescriptions(void);
+
     // Get the application's cached environment
     const CNcbiEnvironment& GetEnvironment(void) const;
 
@@ -206,6 +209,7 @@ private:
     auto_ptr<CNcbiArguments>   m_Arguments;  // command-line arguments
     auto_ptr<CArgDescriptions> m_ArgDesc;    // cmd.-line arg descriptions
     auto_ptr<CArgs>            m_Args;       // parsed cmd.-line args
+    bool                       m_DisableArgDesc;
 };
 
 
@@ -243,6 +247,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2002/08/02 20:11:51  gouriano
+ * added possibility to disable arg descriptions
+ *
  * Revision 1.23  2002/07/15 18:17:50  gouriano
  * renamed CNcbiException and its descendents
  *
