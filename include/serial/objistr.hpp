@@ -488,6 +488,7 @@ public:
     void ExpectedMember(const CMemberInfo* memberInfo);
 
     void StartDelayBuffer(void);
+    CRef<CByteSource> EndDelayBuffer(void);
     void EndDelayBuffer(CDelayBuffer& buffer,
                         const CItemInfo* itemInfo, TObjectPtr objectPtr);
 
@@ -557,6 +558,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2003/01/28 15:26:23  vasilche
+* Added low level CObjectIStream::EndDelayBuffer(void);
+*
 * Revision 1.78  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2003/01/28 15:26:14  vasilche
+* Added low level CObjectIStream::EndDelayBuffer(void);
+*
 * Revision 1.99  2003/01/22 18:53:28  gouriano
 * corrected stream destruction
 *
@@ -753,12 +756,16 @@ void CObjectIStream::StartDelayBuffer(void)
     m_Input.StartSubSource();
 }
 
+CRef<CByteSource> CObjectIStream::EndDelayBuffer(void)
+{
+    return m_Input.EndSubSource();
+}
+
 void CObjectIStream::EndDelayBuffer(CDelayBuffer& buffer,
                                     const CItemInfo* itemInfo,
                                     TObjectPtr objectPtr)
 {
-    buffer.SetData(itemInfo, objectPtr,
-                   GetDataFormat(), *m_Input.EndSubSource());
+    buffer.SetData(itemInfo, objectPtr, GetDataFormat(), *EndDelayBuffer());
 }
 
 void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
