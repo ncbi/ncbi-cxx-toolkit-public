@@ -67,10 +67,12 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject
           Int4 query_context, Int2 subject_frame, Int4 score, 
           GapEditBlock* *gap_edit, BlastHSP* *ret_hsp)
 {
+   BlastHSP* new_hsp = NULL;
+
    if (!ret_hsp)
       return -1;
 
-   BlastHSP* new_hsp = Blast_HSPNew();
+   new_hsp = Blast_HSPNew();
 
    *ret_hsp = NULL;
 
