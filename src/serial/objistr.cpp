@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2003/05/20 14:25:22  vasilche
+* Removed warnings on WorkShop.
+*
 * Revision 1.106  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -446,6 +449,9 @@
 # include <float.h>
 #endif
 
+#undef _TRACE
+#define _TRACE(arg) ((void)0)
+
 BEGIN_NCBI_SCOPE
 
 CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
@@ -522,14 +528,16 @@ CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      CNcbiIstream& inStream,
                                      bool deleteInStream)
 {
-    return Create(format, *GetSource(inStream, deleteInStream));
+    CRef<CByteSource> src = GetSource(inStream, deleteInStream);
+    return Create(format, *src);
 }
 
 CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      const string& fileName,
                                      TSerialOpenFlags openFlags)
 {
-    return Create(format, *GetSource(format, fileName, openFlags));
+    CRef<CByteSource> src = GetSource(format, fileName, openFlags);
+    return Create(format, *src);
 }
 
 CObjectIStream::CObjectIStream(void)
@@ -552,12 +560,14 @@ void CObjectIStream::Open(CByteSourceReader& reader)
 
 void CObjectIStream::Open(CByteSource& source)
 {
-    Open(*source.Open());
+    CRef<CByteSourceReader> reader = source.Open();
+    Open(*reader);
 }
 
 void CObjectIStream::Open(CNcbiIstream& inStream, bool deleteInStream)
 {
-    Open(*GetSource(inStream, deleteInStream));
+    CRef<CByteSource> src = GetSource(inStream, deleteInStream);
+    Open(*src);
 }
 
 void CObjectIStream::Close(void)
@@ -787,7 +797,8 @@ void CObjectIStream::EndDelayBuffer(CDelayBuffer& buffer,
                                     const CItemInfo* itemInfo,
                                     TObjectPtr objectPtr)
 {
-    buffer.SetData(itemInfo, objectPtr, GetDataFormat(), *EndDelayBuffer());
+    CRef<CByteSource> src = EndDelayBuffer();
+    buffer.SetData(itemInfo, objectPtr, GetDataFormat(), *src);
 }
 
 void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
