@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/09/23 21:15:48  vasilche
+* Added namespace modifiers.
+*
 * Revision 1.15  1999/05/04 00:03:05  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -88,12 +91,14 @@ BEGIN_NCBI_SCOPE
 #if defined(_DEBUG)
 
 #  define _TRACE(message)  do { \
-    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Trace, eDPF_All); \
+    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Trace, \
+                                   NCBI_NS_NCBI::eDPF_All); \
     _diag_.SetFile(__FILE__).SetLine(__LINE__) << message; \
 } while(0)
 
 #  define _TROUBLE  do { \
-    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal, eDPF_All); \
+    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal, \
+                                   NCBI_NS_NCBI::eDPF_All); \
     _diag_.SetFile(__FILE__).SetLine(__LINE__) << "Trouble!"; \
 } while(0)
 

@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/09/23 21:15:48  vasilche
+* Added namespace modifiers.
+*
 * Revision 1.13  1999/06/11 16:33:10  vasilche
 * Fixed THROWx_TRACE
 *
@@ -126,16 +129,16 @@ extern void DoThrowTraceAbort(void);
 // Example:  RETHROW_TRACE;
 #  define RETHROW_TRACE do { \
     _TRACE("EXCEPTION: re-throw"); \
-    DoThrowTraceAbort(); \
+    NCBI_NS_NCBI::DoThrowTraceAbort(); \
     throw; \
 } while(0)
 
 #define THROW_TRACE_TRY_CATCH \
     try { \
         throw exception_; \
-    } catch (exception& e) { \
+    } catch (NCBI_NS_STD::exception& e) { \
         _TRACE("EXCEPTION: " << e.what()); \
-    } catch (const string& s) { \
+    } catch (const NCBI_NS_STD::string& s) { \
         _TRACE("EXCEPTION: " << s); \
     } catch (const char* s) { \
         _TRACE("EXCEPTION: " << s); \
@@ -146,9 +149,9 @@ extern void DoThrowTraceAbort(void);
 #  define THROW0_TRACE(exception_value) do { \
     try { \
         throw exception_value; \
-    } catch (exception& e) { \
+    } catch (NCBI_NS_STD::exception& e) { \
         _TRACE("EXCEPTION: " << e.what()); \
-    } catch (const string& s) { \
+    } catch (const NCBI_NS_STD::string& s) { \
         _TRACE("EXCEPTION: " << s); \
     } catch (const char* s) { \
         _TRACE("EXCEPTION: " << s); \
@@ -156,7 +159,7 @@ extern void DoThrowTraceAbort(void);
     catch (...) { \
         _TRACE("EXCEPTION: " << #exception_value); \
     } \
-    DoThrowTraceAbort(); \
+    NCBI_NS_NCBI::DoThrowTraceAbort(); \
     throw exception_value; \
 } while(0)
 
@@ -168,7 +171,7 @@ extern void DoThrowTraceAbort(void);
         _TRACE("EXCEPTION: " \
                << #exception_class << "(" << #exception_arg << ")"); \
     } \
-    DoThrowTraceAbort(); \
+    NCBI_NS_NCBI::DoThrowTraceAbort(); \
     throw exception_; \
 } while(0)
 
@@ -182,7 +185,7 @@ extern void DoThrowTraceAbort(void);
         _TRACE("EXCEPTION: " \
                << #exception_class << #exception_args); \
     } \
-    DoThrowTraceAbort(); \
+    NCBI_NS_NCBI::DoThrowTraceAbort(); \
     throw exception_; \
 } while(0)
 
