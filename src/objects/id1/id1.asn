@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -43,7 +43,7 @@ ID1server-maxcomplex ::= SEQUENCE {
 		maxplex Entry-complexities ,
 		gi INTEGER ,
 		ent INTEGER OPTIONAL, -- needed when you want to retrieve a given ent
-		sat INTEGER OPTIONAL  -- satellite 0-id,1-dbEST
+		sat VisibleString OPTIONAL  -- satellite 0-id,1-dbEST
 }
 
 Entry-complexities ::= INTEGER {
