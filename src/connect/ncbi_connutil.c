@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/10/05 22:35:24  lavr
+ * SConnNetInfo modified to contain 'client_mode' instead of just
+ * 'firewall' boolean
+ *
  * Revision 6.5  2000/09/27 19:37:40  lavr
  * ncbi_ansi_ext.h included
  *
@@ -180,12 +184,14 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
                              strcmp(str, "true") == 0  ||
                              strcmp(str, "yes" ) == 0));
 
-    /* turn on firewall mode? */
-    REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
-    info->firewall = (*str  &&
-                      (strcmp(str, "1"   ) == 0  ||
-                       strcmp(str, "true") == 0  ||
-                       strcmp(str, "yes" ) == 0));
+    /* what is a client mode? */
+    REG_VALUE(REG_CONN_CLIENT_MODE, str, DEF_CONN_CLIENT_MODE);
+    if (*str && strcasecmp(str, "firewall") == 0)
+        info->client_mode = eClientModeFirewall;
+    else if (*str && strcasecmp(str, "stateful_capable") == 0)
+        info->client_mode = eClientModeStatefulCapable;
+    else
+        info->client_mode = eClientModeUnspecified;
 
     /* prohibit the use of local load balancer? */
     REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
@@ -286,7 +292,11 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
         s_PrintULong (fp, "http_proxy_port", info->http_proxy_port);
         s_PrintString(fp, "proxy_host",      info->proxy_host);
         s_PrintBool  (fp, "debug_printout",  info->debug_printout);
-        s_PrintBool  (fp, "firewall",        info->firewall);
+        s_PrintString(fp, "client_mode",   
+                      info->client_mode == eClientModeUnspecified ? "Unspec" : 
+                      (info->client_mode == eClientModeFirewall ? "Firewall" :
+                       (info->client_mode == eClientModeStatefulCapable ?
+                        "Stateful_Capable" : "Unknown")));
         s_PrintBool  (fp, "lb_disable",      info->lb_disable);
         s_PrintULong (fp, "ncbid_port",      info->ncbid_port);
         s_PrintString(fp, "ncbid_path",      info->ncbid_path);
