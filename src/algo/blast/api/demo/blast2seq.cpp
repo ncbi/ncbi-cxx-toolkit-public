@@ -353,7 +353,8 @@ int CBlast2seqApplication::Run(void)
         if (prog == CBlastOption::eBlastx) align_opts |= TXALIGN_BLASTX_SPECIAL;
 
         FILE *fp = GetOutputFilePtr();
-        ShowTextAlignFromAnnot(seqannot, 60, fp, NULL, NULL, align_opts, 
+        Uint1 feats[255] = { 0 };   // dummy argument
+        ShowTextAlignFromAnnot(seqannot, 60, fp, feats, feats, align_opts, 
                 NULL, NULL, FormatScoreFunc);
         seqannot = SeqAnnotFree(seqannot);
 
@@ -377,6 +378,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/16 20:25:34  camacho
+ * Added dummy features argument to C formatter
+ *
  * Revision 1.3  2003/07/14 21:53:32  camacho
  * Minor
  *
