@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/05/06 23:18:10  vakatov
+* <fcgibuf.hpp> became a local header file.
+*
 * Revision 1.3  1999/05/03 20:32:28  vakatov
 * Use the (newly introduced) macro from <corelib/ncbidbg.h>:
 *   RETHROW_TRACE,
@@ -49,12 +52,17 @@
 * ===========================================================================
 */
 
+// NCBI C++ headers
 #include <corelib/ncbistd.hpp>
-#include <corelib/fcgibuf.hpp>
+// 3rd-party headers
 #include <fcgiapp.h>
+// local headers
+#include <fcgibuf.hpp>
+// C++ headers
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
+
 
 CCgiObuffer::CCgiObuffer(FCGX_Stream* out)
     : m_out(out)
@@ -78,11 +86,9 @@ CCgiObuffer::int_type CCgiObuffer::overflow(int_type c)
                 return traits_type::eof();
             }
             out->emptyBuffProc(out, false);
-            if ( out->stop == out->wrNext ) {
-                if ( !out->isClosed ) {
-                    THROW1_TRACE(runtime_error, "\
-CCgiObuffer::overflow: error in emptyBuffProc");
-                }
+            if (out->stop == out->wrNext  &&  !out->isClosed) {
+                THROW1_TRACE(runtime_error,
+                             "CCgiObuffer::overflow: error in emptyBuffProc");
             }
         }
         else {
