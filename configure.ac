@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.329 2004/10/16 20:40:57 vakatov Exp $
+#  $Id: configure.ac,v 1.330 2004/11/08 18:56:37 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1167,6 +1167,7 @@ if test "$with_dll" = "no"; then # no DLLs whatsoever!
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
 else
    FORCE_STATIC_LIB=
+   WithFeatures="$WithFeatures DLL"
    # Some shared libraries end up containing static libraries, so make
    # sure to use DLL flags for both on platforms where such inclusion
    # would otherwise be illegal....
