@@ -9,9 +9,39 @@
     <h1> Class Type Information </h1>
 
   	      <ul>
-	        <li> <a href="#macros"> Preprocessor Macros</a>
-	        <li> <a href=""> <i></i></a>
+	        <li>The <a href="#ctypeinfo"> <i>CTypeInfo</i></a> class
+	        <li>The <a href="#cobjinfo"> <i>CObjectInfo</i></a> class
+	        <li>The <a href="#objstrs"> <i>CObject[IO]Stream</i></a> classes
+	        <li>The <a href="#iterators"> C++ Type-specific Iterators</a>
+	        <li><a href="#macros"> Preprocessor macros for specifying type information </a>
 	      </ul>
+
+Type information about an object is necessary in two contexts: (1) when processing serialized
+data, where information about the encoded objects' internal structure is needed, and
+(2) when using a generalized iterator to traverse the data members of a structured object.
+These usages of type information are described in <a href="asn.html"> Processing serial data</a>, 
+<a href="traverse.html"> Traversing a serialized data structure</a>, and 
+<a href="iterators.html"> The NCBI C++ Toolkit Iterators</a> sections.
+
+<a name="ctypeinfo"> <h3> The
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypeInfo.html"> <i>CTypeInfo</i></a> class </h3>
+This is the base class for all type information storage and mechanisms. The class contains a single data member,
+<i>m_Name</i>, which stores the class name for the object. A large number of member functions - many of which
+are pure virtual functions at this level - provide data membership, class type, and size information. 
+For example, <i>CTypeInfo::EndOf()</i> adds the address of the object to the value returned by 
+<i>CTypeInfo::GetSize()</i>, to define the address where the object terminates. This is used by the
+object type iterators to define their termination conditions. <p>
+
+The <i>CTypeInfo</i> class is intended for internal usage only however, and it is the 
+<a href="#cobjinfo"> <i>CObjectInfo</i></a> class, which provides the user interface to 
+object type information.
+
+<a name="cobjinfo"> <h3> The 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectInfo.html"> <i>CObjectInfo</i></a> class </h3>
+
+<a name="objstrs"> <h3> The 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStream"> <i>CObjectIStream</i></a> and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStream"> <i>CObjectOStream</i></a> classes</h3>
 
 <a name="macros"><h3> Preprocessor Macros for implementing the <i>GetTypeInfo()</i> member function</h3>
 
