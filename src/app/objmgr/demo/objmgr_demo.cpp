@@ -346,6 +346,8 @@ int CDemoApp::Run(void)
                         ICache::fExpireLeastFrequentlyUsed |
                         ICache::fPurgeOnStartup;
                     blob_cache->SetTimeStampPolicy(flags, cache_age*24*60*60);
+			        blob_cache->SetReadUpdateLimit(1000);
+					blob_cache->SetVersionRetention(ICache::eKeepAll);
                     
                     blob_cache->Open(cache_path.c_str(), "blobs");
                 }}
@@ -360,8 +362,10 @@ int CDemoApp::Run(void)
                     
                     ICache::TTimeStampFlags flags =
                         ICache::fTimeStampOnCreate|
+						ICache::fTrackSubKey|
                         ICache::fCheckExpirationAlways;
-                    id_cache->SetTimeStampPolicy(flags, id_days*24*60*60);
+                    id_cache->SetTimeStampPolicy(flags, id_days*24*60*60+1);
+					id_cache->SetVersionRetention(ICache::eKeepAll);
                     
                     id_cache->Open((cache_path+"/id").c_str(), "ids");
                 }}
@@ -824,6 +828,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2004/08/09 15:55:57  vasilche
+* Fine tuning of blob cache.
+*
 * Revision 1.76  2004/07/26 14:13:31  grichenk
 * RegisterInObjectManager() return structure instead of pointer.
 * Added CObjectManager methods to manipuilate loaders.
@@ -1111,4 +1118,3 @@ int main(int argc, const char* argv[])
 *
 * ===========================================================================
 */
-
