@@ -325,6 +325,8 @@ void CSplitCacheApp::SetupCache(void)
         CTime time_stamp(CTime::eCurrent);
         time_t age = time_stamp.GetTimeT();
         age -= 60 * 60 * 24 * blob_age;
+
+        WAIT_LINE << "Purging cache...";
         cache->Purge(age);
     }}
 
@@ -812,6 +814,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/12/27 15:44:28  vasilche
+* Added message about purging cache.
+*
 * Revision 1.30  2004/12/14 17:41:03  grichenk
 * Reduced number of CSeqMap::FindResolved() methods, simplified
 * BeginResolved and EndResolved. Marked old methods as deprecated.
