@@ -39,8 +39,8 @@ Contents: Structures used for BLAST extension
 #define __BLAST_EXTEND__
 
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/mb_lookup.h>
-#include <algo/blast/core/na_lookup.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/lookup_wrap.h>
 
 #ifdef __cplusplus
 extern "C" {

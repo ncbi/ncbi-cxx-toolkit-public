@@ -30,7 +30,7 @@
 #define AA_UNGAPPED__H
 
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/aa_lookup.h>
+#include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/blast_extend.h>
 
 #ifdef _cplusplus

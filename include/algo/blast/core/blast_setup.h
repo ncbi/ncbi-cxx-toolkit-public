@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.25  2003/09/10 19:43:05  dondosha
+* Changed #includes in accordance with lookup table code reorganization
+*
 * Revision 1.24  2003/09/09 14:21:14  coulouri
 * change blastkar.h to blast_stat.h
 *
@@ -188,9 +191,6 @@ extern "C" {
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_stat.h>
-#include <algo/blast/core/mb_lookup.h>
-#include <algo/blast/core/aa_lookup.h>
-#include <algo/blast/core/na_lookup.h>
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
 

@@ -41,6 +41,7 @@ Detailed Contents:
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/pattern.h>
+#include <algo/blast/core/lookup_wrap.h>
 
 #ifndef PHI_LOOKUP__H
 #define PHI_LOOKUP__H
