@@ -572,6 +572,9 @@ if test -z "$CONF_f_runpath" ; then
     solaris*:WorkShop* | solaris*:KCC )
       CONF_f_runpath="-R"
       ;;
+    solaris*:GCC )
+      CONF_f_runpath="-Xlinker -R -Xlinker "
+      ;;
     linux*:GCC )
       CONF_f_runpath="-Xlinker -rpath -Xlinker "
       ;;
@@ -603,7 +606,8 @@ fi
 LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host_os:$compiler" in
-    linux*:GCC | irix*:* | solaris*:WorkShop* | *:KCC | linux*:ICC)
+    linux*:GCC | irix*:* | solaris*:WorkShop* | *:KCC | linux*:ICC \
+    | solaris*:GCC )
       ;;
     * )
       echo
@@ -631,7 +635,15 @@ fi
 # Linker command-line to build DLL
 case "$compiler" in
  GCC | MIPSpro73 | ICC )
-   LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
+   case "$host_os" in
+      solaris* )
+        # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
+        LINK_DLL="$CXX $ARCH_CFLAGS -shared -mimpure-text -o"
+	;;
+      * )
+        LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
+	;;
+   esac
    ;;
  WorkShop* )
    LINK_DLL="$CXX $ARCH_CFLAGS $MT_FLAG -G -h \$@ -o"
