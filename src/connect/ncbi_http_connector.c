@@ -150,7 +150,7 @@ static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
     size_t http_size = BUF_Size(uuu->http);
     assert(uuu->sock);
     if (http_size  &&  BUF_Read(uuu->http, 0, http_size) != http_size) {
-        CORE_LOG(eLOG_Error, "[HTTP]  Cannot drop HTTP header buffer");
+        CORE_LOG(eLOG_Error, "[HTTP]  Cannot discard HTTP header buffer");
         assert(0);
     }
     SOCK_SetTimeout(uuu->sock, eIO_Close, timeout);
@@ -278,9 +278,9 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
             break;
         }
 
-        CORE_LOGF(eLOG_Warning,
+        CORE_LOGF(eLOG_Error,
                   ("[HTTP]  Error writing body at offset %lu (%s)",
-                   (unsigned long) BUF_Size(uuu->w_buf) - uuu->w_len,
+                   (unsigned long) (BUF_Size(uuu->w_buf) - uuu->w_len),
                    IO_StatusStr(status)));
 
         /* write failed; close and try to use another server */
@@ -313,18 +313,9 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         return eIO_Success;
     }
 
-    /* line by line input */
+    /* line by line HTTP header input */
     for (;;) {
-        status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, 0);
-        if (status != eIO_Success) {
-            const STimeout* tmo = SOCK_GetTimeout(uuu->sock, eIO_Read);
-            if (tmo && (tmo->sec || tmo->usec)) {
-                CORE_LOGF(eLOG_Error, ("[HTTP]  Error reading header (%s)",
-                                       IO_StatusStr(status)));
-            }
-            return status;
-        }
-
+        /* do we have full header yet? */
         size = BUF_Size(uuu->http);
         if (!(header = (char*) malloc(size + 1))) {
             CORE_LOGF(eLOG_Error, ("[HTTP]  Cannot allocate header, %lu bytes",
@@ -334,12 +325,24 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         verify(BUF_Peek(uuu->http, header, size) == size);
         header[size] = '\0';
         if (strcmp(&header[size - 4], "\r\n\r\n") == 0)
-            break;
+            break/*full header captured*/;
         free(header);
+
+        status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, 0);
+        if (status != eIO_Success) {
+            const STimeout* tmo = SOCK_GetTimeout(uuu->sock, eIO_Read);
+            if (tmo && (tmo->sec || tmo->usec)) {
+                CORE_LOGF(eLOG_Error, ("[HTTP]  Error reading header (%s)",
+                                       IO_StatusStr(status)));
+            }
+            return status;
+        }
     }
     uuu->read_header = 0/*false*/; /* the entire header has been read */
-    if (BUF_Read(uuu->http, 0, size) != size)
-        CORE_LOG(eLOG_Warning, "[HTTP]  Cannot drop HTTP header buffer");
+    if (BUF_Read(uuu->http, 0, size) != size) {
+        CORE_LOG(eLOG_Error, "[HTTP]  Cannot discard HTTP header buffer");
+        assert(0);
+    }
 
     /* HTTP status must come on the first line of the reply */
     if (sscanf(header, " HTTP/%*d.%*d %d ", &http_status) != 1  ||
@@ -374,6 +377,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
     }
 
     if (moved) {
+        /* parsing "Location" pointer */
         const char k_LocationTag[] = "\nLocation: ";
         char*      location = strstr(header, k_LocationTag);
 
@@ -410,16 +414,18 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 
         SOCK_SetTimeout(uuu->sock, eIO_Read, 0);
         status = SOCK_StripToPattern(uuu->sock, 0, 0, &buf, 0);
-        assert(status != eIO_Success); /* cause reading until EOF */
+        assert(status != eIO_Success); /* because reading until EOF */
         if (!(size = BUF_Size(buf))) {
-            CORE_LOG(eLOG_Trace, "[HTTP]  No body received along with "
-                     "this error");
+            CORE_LOG(eLOG_Trace, "[HTTP]  No body received with this error");
         } else if ((body = (char*) malloc(size)) != 0) {
-            if (BUF_Read(buf, body, size) != size) {
-                CORE_LOG(eLOG_Error, "[HTTP]  Cannot read HTTP body buffer");
-                assert(0);
+            size_t n = BUF_Read(buf, body, size);
+            if (n != size) {
+                CORE_LOGF(eLOG_Error, ("[HTTP]  Cannot read server error "
+                                       "body from buffer (%lu out of %lu)",
+                                       (unsigned long) n,
+                                       (unsigned long) size));
             }
-            CORE_DATA(body, size, "HTTP server error body");
+            CORE_DATA(body, n, "HTTP server error body");
             free(body);
         } else {
             CORE_LOGF(eLOG_Error, ("[HTTP]  Cannot allocate server error "
@@ -470,8 +476,10 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
             size_t w_size = BUF_Size(uuu->w_buf);
             assert(!uuu->read_header);
             /* pending output data no longer needed */
-            if (BUF_Read(uuu->w_buf, 0, w_size) != w_size)
-                CORE_LOG(eLOG_Warning, "[HTTP]  Cannot drop output buffer");
+            if (BUF_Read(uuu->w_buf, 0, w_size) != w_size) {
+                CORE_LOG(eLOG_Error, "[HTTP]  Cannot discard output buffer");
+                assert(0);
+            }
             break;
         }
         /* if polling then bail out with eIO_Timeout */
@@ -601,7 +609,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
 
     /* clear pending output data, if any */
     if (w_size  &&  BUF_Read(uuu->w_buf, 0, w_size) != w_size) {
-        CORE_LOG(eLOG_Error, "[HTTP]  Cannot discard output buffer");
+        CORE_LOG(eLOG_Error, "[HTTP]  Cannot drop output buffer");
         assert(0);
     }
 }
@@ -964,6 +972,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.59  2003/10/29 14:09:08  lavr
+ * Log levels and messages changed in some error reports
+ *
  * Revision 6.58  2003/10/23 12:27:38  lavr
  * Do not double HTTP header when full data logging is explicitly on
  *
