@@ -2414,8 +2414,10 @@ void CValidError_bioseq::ValidateMolInfoContext
             break;
 
         case CMolInfo::eBiomol_other_genetic:
-            PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+            if ( !x_IsArtificial(seq) ) {
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
                     "Molinfo-biomol = other genetic", seq, desc);
+            }
             break;
             
         case CMolInfo::eBiomol_unknown:
@@ -2528,6 +2530,22 @@ bool CValidError_bioseq::IsSynthetic(const CBioseq& seq) const
                         return true;
                     }
                 }
+            }
+        }
+    }
+    return false;
+}
+
+
+bool CValidError_bioseq::x_IsArtificial(const CBioseq& seq) const
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( bsh ) {
+        CSeqdesc_CI sd(bsh, CSeqdesc::e_Source);
+        if ( sd ) {
+            const CSeqdesc::TSource& source = sd->GetSource();
+            if ( source.CanGetOrigin() ) {
+                return  source.GetOrigin() == CBioSource::eOrigin_artificial;
             }
         }
     }
@@ -3266,6 +3284,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2003/10/20 18:31:19  shomrat
+* suppress validator warning for synthetic sequences with molinfo other genetic when origin is artificial
+*
 * Revision 1.48  2003/10/01 20:21:45  shomrat
 * fixed IsSynthetic to look at div if origin was not set
 *
