@@ -464,7 +464,6 @@ Int2 BlastScoringOptionsSetMatrix(BlastScoringOptions* opts,
 
     if (matrix_name) {
         sfree(opts->matrix);
-        sfree(opts->matrix_path);
         opts->matrix = strdup(matrix_name);
         /* Make it all upper case */
         for (i=0; i<strlen(opts->matrix); ++i)
@@ -970,6 +969,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.155  2005/02/17 17:49:22  camacho
+ * fix to BlastScoringOptionsSetMatrix
+ *
  * Revision 1.154  2005/02/08 18:32:49  dondosha
  * Added check in lookup table options validation that program and PHI pattern are compatible
  *
