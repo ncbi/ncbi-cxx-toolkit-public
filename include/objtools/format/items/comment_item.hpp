@@ -101,7 +101,6 @@ public:
     static string GetStringForTPA(const CUser_object& uo, CBioseqContext& ctx);
     static string GetStringForBankIt(const CUser_object& uo);
     static string GetStringForRefTrack(const CUser_object& uo);
-    static bool NsAreGaps(const CBioseq_Handle& seq, CBioseqContext& ctx);
     static string GetStringForWGS(CBioseqContext& ctx);
     static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);
     static string GetStringForHTGS(CBioseqContext& ctx);
@@ -223,6 +222,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/01/12 16:41:00  shomrat
+* Removed NsAreGaps
+*
 * Revision 1.9  2004/10/05 15:26:13  shomrat
 * Changed x_SetComment
 *
