@@ -233,6 +233,9 @@ public:
     class NCBI_XALNMGR_EXPORT CAlnChunkVec : public CObject
     {
     public:
+        typedef CAlnMap::TNumrow   TNumrow;
+        typedef CAlnMap::TNumchunk TNumchunk;
+
         CAlnChunkVec(const CAlnMap& aln_map, TNumrow row)
             : m_AlnMap(aln_map), m_Row(row) { }
 
@@ -274,6 +277,9 @@ public:
     class NCBI_XALNMGR_EXPORT CAlnChunk : public CObject
     {
     public:    
+        typedef CAlnMap::TSegTypeFlags TSegTypeFlags;
+        typedef CAlnMap::TSignedRange  TSignedRange;
+
         TSegTypeFlags GetType(void) const { return m_TypeFlags; }
         CAlnChunk&    SetType(TSegTypeFlags type_flags)
             { m_TypeFlags = type_flags; return *this; }
@@ -671,6 +677,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2004/06/29 19:54:36  todorov
+* + typedefs for the nested classes to ease the SWIG support
+*
 * Revision 1.35  2004/03/03 20:33:27  todorov
 * +comments
 *
