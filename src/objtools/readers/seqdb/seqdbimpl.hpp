@@ -55,24 +55,24 @@ public:
     
     ~CSeqDBImpl(void);
     
-    Int4 GetSeqLength(Uint4 oid) const;
+    Uint4 GetSeqLength(Uint4 oid) const;
     
-    Int4 GetSeqLengthApprox(Uint4 oid) const;
+    Uint4 GetSeqLengthApprox(Uint4 oid) const;
     
     CRef<CBlast_def_line_set> GetHdr(Uint4 oid) const;
     
     char GetSeqType(void) const;
     
-    CRef<CBioseq> GetBioseq(Int4 oid,
-                            bool use_objmgr,
-                            bool insert_ctrlA) const;
+    CRef<CBioseq> GetBioseq(Uint4 oid,
+                            bool  use_objmgr,
+                            bool  insert_ctrlA) const;
     
-    Int4 GetSequence(Int4 oid, const char ** buffer) const;
+    Uint4 GetSequence(Uint4 oid, const char ** buffer) const;
     
-    Int4 GetAmbigSeq(Int4            oid,
-                     char         ** buffer,
-                     Uint4           nucl_code,
-                     ESeqDBAllocType strategy) const;
+    Uint4 GetAmbigSeq(Uint4            oid,
+                      char         ** buffer,
+                      Uint4           nucl_code,
+                      ESeqDBAllocType strategy) const;
     
     void RetSequence(const char ** buffer) const;
     

@@ -114,7 +114,7 @@ private:
     
     bool x_ReadFileRegion(char * region, Uint4 start, Uint4 end) const;
     
-    void x_SetLength(void);
+    void x_SetLength(bool);
     
     
     // Data

@@ -84,7 +84,7 @@ bool CSeqDBRawFile::Open(const string & name)
     if (m_UseMMap) {
         try {
             m_Mapped = new CMemoryFile(name);
-            x_SetLength();
+            x_SetLength(false);
         }
         catch(...) {
         }
@@ -100,7 +100,7 @@ bool CSeqDBRawFile::Open(const string & name)
             
             if (m_Stream) {
                 m_Opened = true;
-                x_SetLength();
+                x_SetLength(true);
             }
         }
         catch(...) {
@@ -161,12 +161,16 @@ const char * CSeqDBRawFile::GetRegion(Uint4 start, Uint4 end) const
     return retval;
 }
 
-void CSeqDBRawFile::x_SetLength(void)
+void CSeqDBRawFile::x_SetLength(bool have_lock)
 {
     if (m_Mapped) {
         m_Length = m_Mapped->GetSize();
     } else if (m_Opened) {
-        CFastMutexGuard guard(m_FileLock);
+        CFastMutexGuard guard;
+        
+        if (! have_lock) {
+            guard.Guard(m_FileLock);
+        }
         
         CT_POS_TYPE p = m_Stream.tellg();
         

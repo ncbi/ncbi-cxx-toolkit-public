@@ -84,7 +84,7 @@ bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid) const
     return success;
 }
 
-Int4 CSeqDBImpl::GetSeqLength(Uint4 oid) const
+Uint4 CSeqDBImpl::GetSeqLength(Uint4 oid) const
 {
     Uint4 vol_oid = 0;
     
@@ -92,10 +92,12 @@ Int4 CSeqDBImpl::GetSeqLength(Uint4 oid) const
         return vol->GetSeqLength(vol_oid, false);
     }
     
-    return -1;
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "OID not in valid range.");
 }
 
-Int4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid) const
+Uint4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid) const
 {
     Uint4 vol_oid = 0;
     
@@ -103,13 +105,15 @@ Int4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid) const
         return vol->GetSeqLength(vol_oid, true);
     }
     
-    return -1;
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "OID not in valid range.");
 }
 
 CRef<CBioseq>
-CSeqDBImpl::GetBioseq(Int4 oid,
-                      bool use_objmgr,
-                      bool insert_ctrlA) const
+CSeqDBImpl::GetBioseq(Uint4 oid,
+                      bool  use_objmgr,
+                      bool  insert_ctrlA) const
 {
     Uint4 vol_oid = 0;
     
@@ -117,7 +121,9 @@ CSeqDBImpl::GetBioseq(Int4 oid,
         return vol->GetBioseq(vol_oid, use_objmgr, insert_ctrlA);
     }
     
-    return CRef<CBioseq>();
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "OID not in valid range.");
 }
 
 void CSeqDBImpl::RetSequence(const char ** buffer) const
@@ -125,7 +131,7 @@ void CSeqDBImpl::RetSequence(const char ** buffer) const
     m_MemPool.Free((void*) *buffer);
 }
 
-Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer) const
+Uint4 CSeqDBImpl::GetSequence(Uint4 oid, const char ** buffer) const
 {
     Uint4 vol_oid = 0;
     
@@ -133,20 +139,24 @@ Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer) const
         return vol->GetSequence(vol_oid, buffer);
     }
     
-    return -1;
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "OID not in valid range.");
 }
 
-Int4 CSeqDBImpl::GetAmbigSeq(Int4            oid,
-                             char         ** buffer,
-                             Uint4           nucl_code,
-                             ESeqDBAllocType alloc_type) const
+Uint4 CSeqDBImpl::GetAmbigSeq(Uint4           oid,
+                              char         ** buffer,
+                              Uint4           nucl_code,
+                              ESeqDBAllocType alloc_type) const
 {
     Uint4 vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetAmbigSeq(vol_oid, buffer, nucl_code, alloc_type);
     }
     
-    return -1;
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "OID not in valid range.");
 }
 
 list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(Uint4 oid) const
@@ -157,7 +167,9 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(Uint4 oid) const
         return vol->GetSeqIDs(vol_oid);
     }
     
-    return list< CRef<CSeq_id> >();
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "OID not in valid range.");
 }
 
 Uint4 CSeqDBImpl::GetNumSeqs(void) const
@@ -199,7 +211,9 @@ CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(Uint4 oid) const
         return vol->GetHdr(vol_oid);
     }
     
-    return CRef<CBlast_def_line_set>();
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "OID not in valid range.");
 }
 
 Uint4 CSeqDBImpl::GetMaxLength(void) const
