@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/10/19 13:43:07  vasilche
+* Fixed error on IRIX
+*
 * Revision 1.2  1999/10/18 20:21:40  vasilche
 * Enum values now have long type.
 * Fixed template generation for enums.
@@ -113,7 +116,7 @@ pair<long, bool> CEnumeratedTypeValues::ReadEnum(CObjectIStream& in) const
         return make_pair(value, true);
     }
     // plain integer
-    return make_pair(0, false);
+    return make_pair(0l, false);
 }
 
 bool CEnumeratedTypeValues::WriteEnum(CObjectOStream& out, long value) const
