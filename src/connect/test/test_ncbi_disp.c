@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/03/09 04:58:26  lavr
+ * Typo (made of pretty styling by vakatov) corrected in comparison
+ *
  * Revision 6.4  2001/03/08 17:56:25  lavr
  * Redesigned to show that SERV_Open can return SERV_ITER, that
  * in turn returns 0 even if used for the very first time.
@@ -72,7 +75,7 @@ int main(int argc, const char* argv[])
         SERV_Close(iter);
     }
     
-    if (n_found == 0)
+    if (n_found != 0)
         CORE_LOGF(eLOG_Note, ("Test complete: %d server(s) found", n_found));
     else
         CORE_LOG(eLOG_Fatal, "Requested service not found");
