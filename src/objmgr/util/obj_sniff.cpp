@@ -71,24 +71,36 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
     const CTypeInfo *type_info = object.GetTypeInfo();
     const string& class_name = type_info->GetName();
 
-    if (m_EventMode == CObjectsSniffer::eCallAlways) {
+    m_Sniffer->m_CallStack.push_back(&object);
 
-        m_Sniffer->OnObjectFoundPre(object, in.GetStreamOffset());
-     
-        DefaultRead(in, object);
-
-        m_Sniffer->OnObjectFoundPost(object);
-
-    } 
-    else 
+    try
     {
-        if (m_EventMode == CObjectsSniffer::eSkipObject) {
-            DefaultSkip(in, object);
-        }
-        else {
+        if (m_EventMode == CObjectsSniffer::eCallAlways) {
+
+            m_Sniffer->OnObjectFoundPre(object, in.GetStreamOffset());
+     
             DefaultRead(in, object);
+
+            m_Sniffer->OnObjectFoundPost(object);
+
+        }
+        else 
+        {
+            if (m_EventMode == CObjectsSniffer::eSkipObject) {
+                DefaultSkip(in, object);
+            }
+            else {
+                DefaultRead(in, object);
+            }
         }
     }
+    catch(...)
+    {
+        m_Sniffer->m_CallStack.pop_back();
+        throw;    
+    }
+
+    m_Sniffer->m_CallStack.pop_back();
 }
 
 
@@ -98,9 +110,10 @@ void CObjectsSniffer::OnObjectFoundPre(const CObjectInfo& /*object*/,
 {
 }
 
-void CObjectsSniffer::OnObjectFoundPost(const CObjectInfo& /*object*/)
+void CObjectsSniffer::OnObjectFoundPost(const CObjectInfo& object)
 {
 }
+
 
 void CObjectsSniffer::AddCandidate(CObjectTypeInfo ti, 
                                    EEventCallBackMode emode) 
@@ -224,6 +237,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2003/08/25 14:27:38  kuznets
+* Added stack reflecting current serialization hooks call hierachy.
+*
 * Revision 1.11  2003/08/05 21:12:14  kuznets
 * +eSkipObject deserialization callback mode
 *

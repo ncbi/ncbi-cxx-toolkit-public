@@ -100,6 +100,11 @@ public:
     typedef vector<SObjectDescription>  TTopLevelMapVector;
     typedef vector<SCandidateInfo>      TCandidates;
 
+    // List of objects, reflects objects serialization hierarchy
+    typedef list<const CObjectInfo*> TObjectStack;
+
+
+
 public:
     CObjectsSniffer() {}
     virtual ~CObjectsSniffer() {}
@@ -141,7 +146,10 @@ protected:
     void ProbeASN1_Text(CObjectIStream& input);
     void ProbeASN1_Bin(CObjectIStream& input);
 
-
+protected:
+    TObjectStack         m_CallStack;
+    
+    friend class COffsetReadHook;
 private:
     TCandidates         m_Candidates;  // Possible candidates for type probing
     TTopLevelMapVector  m_TopLevelMap; // Vector of level object descriptions
@@ -176,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/08/25 14:27:24  kuznets
+ * Added stack reflecting current serialization hooks call hierachy.
+ *
  * Revision 1.11  2003/08/05 21:11:48  kuznets
  * +eSkipObject deserialization callback mode
  *
