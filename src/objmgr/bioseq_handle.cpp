@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/04/22 20:06:59  grichenk
+* +GetSequenceView(), +x_IsSynonym()
+*
 * Revision 1.9  2002/04/11 12:07:30  grichenk
 * Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
 *
@@ -65,7 +68,14 @@
 #include <objects/objmgr1/bioseq_handle.hpp>
 #include "data_source.hpp"
 #include "tse_info.hpp"
+#include "handle_range.hpp"
 #include <objects/objmgr1/seq_vector.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_point.hpp>
+#include <objects/general/Object_id.hpp>
+#include <serial/typeinfo.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -140,6 +150,106 @@ const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 CSeqVector CBioseq_Handle::GetSeqVector(bool plus_strand) const
 {
     return CSeqVector(*this, plus_strand, *m_Scope);
+}
+
+
+bool CBioseq_Handle::x_IsSynonym(const CSeq_id& id) const
+{
+    if ( !(*this) )
+        return false;
+    CSeq_id_Handle h = x_GetDataSource().GetIdMapper().GetHandle(id);
+    return m_TSE->m_BioseqMap[m_Value]->m_Synonyms.find(h) !=
+        m_TSE->m_BioseqMap[m_Value]->m_Synonyms.end();
+}
+
+
+CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
+                                           ESequenceViewMode mode,
+                                           bool plus_strand) const
+{
+    // Parse the location
+    CHandleRange rlist(m_Value);      // all intervals pointing to the sequence
+    CSeq_loc_CI loc_it(location);
+    for ( ; loc_it; loc_it++) {
+        if ( !x_IsSynonym(loc_it.GetSeq_id()) )
+            continue;
+        rlist.AddRange(loc_it.GetRange(), loc_it.GetStrand());
+    }
+
+    // Make mode-dependent parsing of the range list
+    CHandleRange mode_rlist(m_Value); // processed intervals (merged, excluded)
+    switch (mode) {
+    case e_ViewConstructed:
+        {
+            mode_rlist = rlist;
+            break;
+        }
+    case e_ViewMerged:
+        {
+            // Merge intervals from "rlist"
+            iterate (CHandleRange::TRanges, rit, rlist.GetRanges()) {
+                mode_rlist.MergeRange(rit->first, rit->second);
+            }
+            break;
+        }
+    case e_ViewExcluded:
+        {
+            // Exclude intervals from "rlist"
+            int last_from = 0;
+            iterate (CHandleRange::TRanges, rit, rlist.GetRanges()) {
+                if (last_from < rit->first.GetFrom()) {
+                    mode_rlist.MergeRange(
+                        CHandleRange::TRange(last_from, rit->first.GetFrom()-1),
+                        eNa_strand_unknown);
+                }
+                if ( !rit->first.IsWholeTo() ) {
+                    last_from = rit->first.GetTo()+1;
+                }
+                else {
+                    last_from = CHandleRange::TRange::GetWholeTo();
+                }
+            }
+            int total_length = GetSeqVector().size();
+            if (last_from < total_length) {
+                mode_rlist.MergeRange(
+                    CHandleRange::TRange(last_from, total_length-1),
+                    eNa_strand_unknown);
+            }
+            break;
+        }
+    }
+
+    // Convert ranges to seq-loc
+    CRef<CSeq_loc> view_loc(new CSeq_loc);
+    iterate (CHandleRange::TRanges, rit, mode_rlist.GetRanges()) {
+        LOG_POST("%%%rg = " << rit->first.GetFrom() << "-" << rit->first.GetTo());
+        CRef<CSeq_loc> seg_loc(new CSeq_loc);
+        CRef<CSeq_id> id(new CSeq_id);
+        SerialAssign<CSeq_id>(*id,
+            x_GetDataSource().GetIdMapper().GetSeq_id(m_Value));
+        seg_loc->SetInt().SetId(*id);
+        seg_loc->SetInt().SetFrom(rit->first.GetFrom());
+        seg_loc->SetInt().SetTo(rit->first.GetTo());
+        view_loc->SetMix().Set().push_back(seg_loc);
+    }
+    // Index for virtual bioseq id
+    static int s_ViewIndex = 0;
+    static CFastMutex s_ViewIdxMtx;
+    int view_index;
+    {{
+        CFastMutexGuard guard(s_ViewIdxMtx);
+        view_index = s_ViewIndex++;
+    }}
+    // Construct the bioseq
+    string bs_id = "bs_view_" + NStr::IntToString(view_index);
+    CRef<CBioseq> bioseq(new CBioseq(*view_loc, bs_id));
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSeq(*bioseq);
+    m_Scope->AddTopLevelSeqEntry(*entry);
+    CSeq_id id;
+    id.SetLocal().SetStr(bs_id);
+    CBioseq_Handle view_handle = m_Scope->GetBioseqHandle(id);
+    return CSeqVector(view_handle, plus_strand, *m_Scope);
 }
 
 

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/04/22 20:06:58  grichenk
+* +GetSequenceView(), +x_IsSynonym()
+*
 * Revision 1.13  2002/04/18 20:35:10  gouriano
 * correction in comment
 *
@@ -144,6 +147,21 @@ public:
     // Get sequence: Iupacna or Iupacaa
     virtual CSeqVector GetSeqVector(bool plus_strand = true) const;
 
+    // Sequence filtering: get a seq-vector for a part of the sequence.
+    // The part shown depends oon the mode selected. If the location
+    // contains references to other sequences they are ignored (unlike
+    // CBioseq constructor, which constructs a bioseq using all references
+    // from a location). Strand information from "location" is ingored
+    // when creating merged or excluded views. If "minus_strand" is true,
+    // the result is reverse-complement.
+    enum ESequenceViewMode {
+        e_ViewConstructed,    // Do not merge or reorder intervals
+        e_ViewMerged,         // Merge overlapping intervals, sort by location
+        e_ViewExcluded        // Show intervals not included in the seq-loc
+    };
+    virtual CSeqVector GetSequenceView(const CSeq_loc& location,
+                                       ESequenceViewMode mode,
+                                       bool plus_strand = true) const;
 
     // Get sequence's title (used in various flat-file formats.)
     // This function is here rather than in CBioseq because it may need
@@ -167,6 +185,8 @@ private:
     // Set the handle seq-entry and datasource
     void x_ResolveTo(CScope& scope, CDataSource& datasource,
                      CSeq_entry& entry, CTSE_Info& tse);
+
+    bool x_IsSynonym(const CSeq_id& id) const;
 
     CSeq_id_Handle       m_Value;       // Seq-id equivalent
     CScope*              m_Scope;
