@@ -2023,8 +2023,6 @@ WindowsFromHSPs(
  *                              as computed by the x-drop algorithm
  * @param matchAlignmentExtent  length of the alignment in the subject
  *                              sequence, as computed by the x-drop algorithm
- * @param reverseAlignScript    alignment information (script) returned by a
- *                              x-drop alignment algorithm
  * @param newScore              alignment score computed by the x-drop
  *                              algorithm
  */
@@ -2042,36 +2040,30 @@ Kappa_SWFindFinalEndsUsingXdrop(
   double localScalingFactor,
   Int4 * queryAlignmentExtent,
   Int4 * matchAlignmentExtent,
-  Int4 ** reverseAlignScript,
   Int4 * newScore)
 {
   Int4 XdropAlignScore;         /* alignment score obtained using X-dropoff
                                  * method rather than Smith-Waterman */
   Int4 doublingCount = 0;       /* number of times X-dropoff had to be
                                  * doubled */
+
+  GapPrelimEditBlockReset(gap_align->rev_prelim_tback);
+  GapPrelimEditBlockReset(gap_align->fwd_prelim_tback);
   do {
-    Int4 *alignScript;          /* the alignment script that will be
-                                   generated below by the ALIGN
-                                   routine. */
-
-    *reverseAlignScript = alignScript =
-      (Int4 *) calloc((subject->length + query->length + 3), sizeof(Int4));
-
     XdropAlignScore =
       ALIGN_EX(&(query->data[queryStart]) - 1,
                &(subject->data[matchStart]) - 1,
                queryEnd - queryStart + 1, matchEnd - matchStart + 1,
-               *reverseAlignScript, queryAlignmentExtent,
-               matchAlignmentExtent, &alignScript,
+               queryAlignmentExtent,
+               matchAlignmentExtent, gap_align->fwd_prelim_tback,
                gap_align, scoringParams, queryStart - 1, FALSE, FALSE);
 
     gap_align->gap_x_dropoff *= 2;
     doublingCount++;
     if((XdropAlignScore < score) && (doublingCount < 3)) {
-      sfree(*reverseAlignScript);
+      GapPrelimEditBlockReset(gap_align->fwd_prelim_tback);
     }
   } while((XdropAlignScore < score) && (doublingCount < 3));
-
 
   *newScore = XdropAlignScore;
 }
@@ -2332,14 +2324,12 @@ NewAlignmentUsingXdrop(
                                   gap_align, scoringParams,
                                   score, localScalingFactor,
                                   &queryExtent, &matchExtent,
-                                  &reverseAlignScript, &newScore);
+                                  &newScore);
   obj = malloc(sizeof(Kappa_DistinctAlignment));
-  BLAST_TracebackToGapEditBlock(reverseAlignScript,
-                                queryExtent, matchExtent,
+  BLAST_TracebackToGapEditBlock(gap_align->rev_prelim_tback,
+                                gap_align->fwd_prelim_tback,
                                 queryStart, matchStart + window->begin,
                                 &obj->editBlock);
-
-  sfree(reverseAlignScript);
 
   obj->score      = newScore;
   obj->queryStart = queryStart;
