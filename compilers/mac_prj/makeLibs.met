@@ -380,7 +380,7 @@ on SetProjectData()
 		set SomeObjects to {"biblio", "general", "medline", "pub"}
 		set MostObjects to SeqObjects & SomeObjects & Â
 			{"dbapi_driver", "id1", "xobjmgr", "xobjutil"}
-		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "regexp"}
+		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "xalnmgr", "regexp"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		set UsualStatics to MostObjects & ObjTools
@@ -405,7 +405,7 @@ on SetProjectData()
 		AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "xalnmgr"})
+			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info"})
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
 			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_info", "w_seq_graphic"})
 		AddPlugin("gui_view_sequence", {}, "plugins:view:sequence", Â
@@ -413,8 +413,8 @@ on SetProjectData()
 		AddPlugin("gui_view_table", {}, "plugins:view:table", Â
 			{"w_flek", "w_table"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
-			{"gbseq", "xalnmgr", "xflat"})
-		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xalnmgr", "xvalidate"})
+			{"gbseq", "xflat"})
+		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
 		
 		-- AddPlugin("gui_algo_stdio", {}, "plugins:algo:stdio", {}) -- empty
 		-- AddPlugin("gui_algo_print_test", {}, "plugins:algo:print_test", {}) -- broke
