@@ -49,6 +49,7 @@
 #include <objects/cn3d/Cn3d_view_settings.hpp>
 
 #include "vector_math.hpp"
+#include "style_manager.hpp"
 
 class wxFont;
 
@@ -173,6 +174,11 @@ private:
     };
     void SetColor(EColorAction action, int type = 0, double red = 0.0, double green = 0.0, double blue = 0.0, double alpha = 1.0);
 
+	void DrawHalfBond(const Vector& site1, const Vector& midpoint,
+		StyleManager::eDisplayStyle style, double radius, bool cap1, bool cap2);
+	void DrawHalfWorm(const Vector *p0, const Vector& p1,
+		const Vector& p2, const Vector *p3, double radius, bool cap1, bool cap2, double tension);
+	
     void ConstructLogo(void);
 
     // camera data
@@ -238,6 +244,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/08/12 17:28:55  thiessen
+* begin mac gl optimization process
+*
 * Revision 1.44  2004/08/09 19:17:48  thiessen
 * rewrite SetColor to use glColorMaterial+glColor, and prepare for caching
 *

@@ -79,6 +79,11 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
+// enables "uniform data" gl calls - e.g. glMaterial for every vertex, not just when color changes
+#ifdef __WXMAC__
+#define MAC_GL_OPTIMIZE 1
+#endif
+
 static const double PI = acos(-1.0);
 static inline double DegreesToRad(double deg) { return deg*PI/180.0; }
 static inline double RadToDegrees(double rad) { return rad*180.0/PI; }
@@ -162,7 +167,11 @@ void OpenGLRenderer::Init(void) const
     // set these material colors
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, Color_Off);
     glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, Shininess);
+#if MAC_GL_OPTIMIZE
+    glDisable(GL_COLOR_MATERIAL);
+#else
     glEnable(GL_COLOR_MATERIAL);
+#endif
 
     // turn on culling to speed rendering
     glEnable(GL_CULL_FACE);
@@ -690,7 +699,7 @@ void OpenGLRenderer::SetColor(OpenGLRenderer::EColorAction action, int type, dou
             return;
         }
     } else {   // eSetCacheValues, or eSetColorIfDifferent and is different
-        cachedType = type;
+        cachedType = (GLenum) type;
         cr = red;
         cg = green;
         cb = blue;
@@ -701,20 +710,27 @@ void OpenGLRenderer::SetColor(OpenGLRenderer::EColorAction action, int type, dou
 
     if (cachedType != lastType) {
         if (cachedType == GL_DIFFUSE) {
+#ifndef MAC_GL_OPTIMIZE
             glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);     // needs to go before glMaterial calls for some reason, at least on PC
+#endif
             glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, Color_MostlyOff);
             glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, highlightsOn ? Color_Specular : Color_Off);
         } else if (cachedType == GL_AMBIENT) {
+#ifndef MAC_GL_OPTIMIZE
             glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT);
+#endif
             glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, Color_Off);
             glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Off);
         } else {
             ERRORMSG("don't know how to handle material type " << cachedType);
         }
-        lastType = (GLenum) cachedType;
+        lastType = cachedType;
     }
 
     GLfloat rgba[4] = { cr, cg, cb, ca };
+#if MAC_GL_OPTIMIZE
+	glMaterialfv(GL_FRONT_AND_BACK, cachedType, rgba);
+#endif
     glColor4fv(rgba);
 }
 
@@ -930,7 +946,7 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
 }
 
 /* add a thick splined curve from point 1 *halfway* to point 2 */
-static void DrawHalfWorm(const Vector *p0, const Vector& p1,
+void OpenGLRenderer::DrawHalfWorm(const Vector *p0, const Vector& p1,
     const Vector& p2, const Vector *p3,
     double radius, bool cap1, bool cap2,
     double tension)
@@ -1005,7 +1021,13 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
         if (radius == 0.0) {
             if (i > 0) {
                 glBegin(GL_LINES);
+#if MAC_GL_OPTIMIZE
+				SetColor(eUseCachedValues);
+#endif
                 glVertex3d(p.x, p.y, p.z);
+#if MAC_GL_OPTIMIZE
+				SetColor(eUseCachedValues);
+#endif
                 glVertex3d(Qt.x, Qt.y, Qt.z);
                 glEnd();
             }
@@ -1095,13 +1117,25 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
                 for (j = 0; j < wormSides; ++j) {
                     k = j + offset;
                     if (k >= wormSides) k -= wormSides;
+#if MAC_GL_OPTIMIZE
+					SetColor(eUseCachedValues);
+#endif
                     glNormal3d(Nx[k], Ny[k], Nz[k]);
                     glVertex3d(Cx[k], Cy[k], Cz[k]);
+#if MAC_GL_OPTIMIZE
+					SetColor(eUseCachedValues);
+#endif
                     glNormal3d(pNx[j], pNy[j], pNz[j]);
                     glVertex3d(pCx[j], pCy[j], pCz[j]);
                 }
+#if MAC_GL_OPTIMIZE
+				SetColor(eUseCachedValues);
+#endif
                 glNormal3d(Nx[offset], Ny[offset], Nz[offset]);
                 glVertex3d(Cx[offset], Cy[offset], Cz[offset]);
+#if MAC_GL_OPTIMIZE
+				SetColor(eUseCachedValues);
+#endif
                 glNormal3d(pNx[0], pNy[0], pNz[0]);
                 glVertex3d(pCx[0], pCy[0], pCz[0]);
                 glEnd();
@@ -1109,21 +1143,33 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
 
             /* put caps on the end */
             if (cap1 && i == 0) {
-                glBegin(GL_POLYGON);
                 dQt.normalize();
+                glBegin(GL_POLYGON);
+#ifndef MAC_GL_OPTIMIZE
                 glNormal3d(-dQt.x, -dQt.y, -dQt.z);
+#endif
                 for (j = wormSides - 1; j >= 0; --j) {
+#if MAC_GL_OPTIMIZE
+					SetColor(eUseCachedValues);
+					glNormal3d(-dQt.x, -dQt.y, -dQt.z);
+#endif
                     glVertex3d(Cx[j], Cy[j], Cz[j]);
                 }
                 glEnd();
             }
             else if (cap2 && i == wormSegments) {
-                glBegin(GL_POLYGON);
                 dQt.normalize();
+                glBegin(GL_POLYGON);
+#ifndef MAC_GL_OPTIMIZE
                 glNormal3d(dQt.x, dQt.y, dQt.z);
+#endif
                 for (j = 0; j < wormSides; ++j) {
                     k = j + offset;
                     if (k >= wormSides) k -= wormSides;
+#if MAC_GL_OPTIMIZE
+					SetColor(eUseCachedValues);
+					glNormal3d(dQt.x, dQt.y, dQt.z);
+#endif
                     glVertex3d(Cx[k], Cy[k], Cz[k]);
                 }
                 glEnd();
@@ -1159,10 +1205,14 @@ static void DoCylinderPlacementTransform(const Vector& a, const Vector& b, doubl
     }
 }
 
-static void DrawHalfBond(const Vector& site1, const Vector& midpoint,
+void OpenGLRenderer::DrawHalfBond(const Vector& site1, const Vector& midpoint,
     StyleManager::eDisplayStyle style, double radius,
     bool cap1, bool cap2)
 {
+#if MAC_GL_OPTIMIZE
+        SetColor(eUseCachedValues);
+#endif
+
     // straight line bond
     if (style == StyleManager::eLineBond || (style == StyleManager::eCylinderBond && radius <= 0.0)) {
         glBegin(GL_LINES);
@@ -1206,7 +1256,11 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
             style.end1.style == StyleManager::eLineWormBond ||
             style.end1.radius <= 0.0)
                 ? GL_AMBIENT : GL_DIFFUSE;
+#if MAC_GL_OPTIMIZE
+        SetColor(eSetCacheValues, colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
+#else
         SetColor(eSetColorIfDifferent, colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
+#endif
         glLoadName(static_cast<GLuint>(style.end1.name));
         if (style.end1.style == StyleManager::eLineWormBond ||
             style.end1.style == StyleManager::eThickWormBond)
@@ -1227,7 +1281,11 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
             style.end2.style == StyleManager::eLineWormBond ||
             style.end2.radius <= 0.0)
                 ? GL_AMBIENT : GL_DIFFUSE;
+#if MAC_GL_OPTIMIZE
+        SetColor(eSetCacheValues, colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
+#else
         SetColor(eSetColorIfDifferent, colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
+#endif
         glLoadName(static_cast<GLuint>(style.end2.name));
         if (style.end2.style == StyleManager::eLineWormBond ||
             style.end2.style == StyleManager::eThickWormBond)
@@ -1624,6 +1682,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2004/08/12 17:28:55  thiessen
+* begin mac gl optimization process
+*
 * Revision 1.80  2004/08/09 19:17:48  thiessen
 * rewrite SetColor to use glColorMaterial+glColor, and prepare for caching
 *
