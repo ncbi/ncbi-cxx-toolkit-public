@@ -239,18 +239,27 @@ script ProjBuilder
 			set subLibs to the libs of target_info
 			set needDatatoolDep to false
 			set ASNPaths to {}
+			set ASNNames to {}
+			
 			repeat with theSubLib in subLibs
 				try
 					set asn1 to asn1 of theSubLib
 					set needDatatoolDep to true
-					copy path of theSubLib to the end of ASNPaths -- store all paths to asn files
+					set oneAsnPath to path of theSubLib
+					set oneAsnName to last word of oneAsnPath
+					try
+						set oneAsnName to asn1Name of theSubLib -- have a special ASN name?
+					end try
+					
+					copy oneAsnPath to the end of ASNPaths -- store all paths to asn files
+					copy oneAsnName to the end of ASNNames -- store all names of asn files; Use either folder name or ASN1Name if provided
 				end try
 			end repeat
 			
 			if needDatatoolDep then -- add dependency to a data tool (when asn1 is true for at least sublibrary)
 				copy "DEPENDENCE__datatool" to the end of dependencies of aTarget
 				
-				set shellScript to x_GenerateDatatoolScript(ASNPaths)
+				set shellScript to x_GenerateDatatoolScript(ASNPaths, ASNNames)
 				--log shellScript
 				
 				-- Now add a new script build phase to regenerate dataobjects
@@ -485,21 +494,19 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 	
 	
 	(* Creates a shell script to regenerate ASN files *)
-	on x_GenerateDatatoolScript(thePaths)
+	on x_GenerateDatatoolScript(thePaths, theNames)
 		set theScript to "echo Updating $PRODUCT_NAME" & ret
 		set theScript to theScript & "" & ret
-		
+		set idx to 1
 		repeat with aPath in thePaths
-			set asnName to the last word of aPath
+			set asnName to item idx of theNames
 			set posixPath to x_Replace(aPath, ":", "/")
 			
 			set fullPath to TheNCBIPath & "/src/" & posixPath
-			set asnPath to fullPath & asnName
 			
 			set theScript to theScript & "echo Working in: " & fullPath & ret
 			set theScript to theScript & "cd " & fullPath & ret
 			
-			if asnName is "core" then set asnName to "gui_project" -- tmp fix to incorrect folder name
 			set theScript to theScript & "if ! test -e " & asnName & ".files || find . -newer " & asnName & ".files | grep '.asn'; then" & ret
 			set theScript to theScript & "  m=\"" & asnName & "\"" & ret
 			
@@ -511,14 +518,18 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 			end if
 			
 			set theScript to theScript & "  " & TheOUTPath & "/bin/datatool -oR " & TheNCBIPath
-			if asnName is "gui_project" then
+			(*if asnName is "gui_project" then
 				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/core\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
-			else
-				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"" & posixPath & "\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
-			end if
+			else if asnName is "gui_dlg_seq_feat_edit" then
+				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/dialogs/edit/feature\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
+			else *)
+			set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"" & posixPath & "\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
+			--end if
 			set theScript to theScript & "else" & ret
 			set theScript to theScript & "  echo ASN files are up to date" & ret
 			set theScript to theScript & "fi" & ret & ret
+			
+			set idx to idx + 1
 		end repeat
 		
 		return theScript
@@ -571,6 +582,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/09/24 12:26:30  lebedev
+ * ASN generation build phase improvements and cleanup.
+ *
  * Revision 1.13  2004/09/13 11:46:15  lebedev
  * Allways specify frameworks in the lnk path (A Framework Build Phase sometimes does not work)
  *
