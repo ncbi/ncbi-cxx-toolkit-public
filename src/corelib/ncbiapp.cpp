@@ -715,23 +715,51 @@ string CNcbiApplication::FindProgramExecutablePath
     }    
     ret_val = filePath;
     
-#elif defined(NCBI_OS_UNIX)
-    // TO BE IMPLEMENTED!!
-    ret_val = argv[0];
+#elif defined (NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
-#elif defined (NCBI_OS_MSWIN)
-    // TO BE IMPLEMENTED ! ??
-    ret_val = argv[0];
+    string app_path = argv[0];
 
-    // determine if we are working with a relative path
-    if (ret_val.find_first_of("\\/") == string::npos  ||
-        ret_val.find_first_of(".") == 0) {
-        ret_val = CDir::GetCwd() + CDirEntry::GetPathSeparator() + ret_val;
+    if ( !CDirEntry::IsAbsolutePath(app_path) ) {
+#  if defined(NCBI_OS_MSWIN)
+        // Add default ".exe" extention to the name of executable file
+        // if it running without extension
+        string dir, title, ext;
+        CDirEntry::SplitPath(app_path, &dir, &title, &ext);
+        if ( ext.empty() ) {
+            app_path = CDirEntry::MakePath(dir, title, "exe");
+        }
+#  endif
+        if ( CFile(app_path).Exists() ) {
+            // Relative path from the the current directory
+            app_path = CDir::GetCwd() + CDirEntry::GetPathSeparator()+app_path;
+            if ( !CFile(app_path).Exists() ) {
+                app_path = kEmptyStr;
+            }
+        } else {
+            // Running from some path from PATH environment variable.
+            // Try to determine that path.
+            string env_path = GetEnvironment().Get("PATH");
+            list<string> split_path;
+#  if defined(NCBI_OS_MSWIN)
+            NStr::Split(env_path, ";", split_path);
+#  else
+            NStr::Split(env_path, ":", split_path);
+#  endif
+            string base_name = CDirEntry(app_path).GetBase();
+            ITERATE(list<string>, it, split_path) {
+                app_path = CDirEntry::MakePath(*it, base_name);
+                if ( CFile(app_path).Exists() ) {
+                    break;
+                }
+                app_path = kEmptyStr;
+            }
+        }
     }
+    ret_val = CDirEntry::NormalizePath(app_path.empty() ? argv[0] : app_path);
+
 #else
 #  error "Platform unrecognized"
 #endif
-
     return ret_val;
 }
 
@@ -781,8 +809,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2003/09/16 16:35:38  ivanov
+ * FindProgramExecutablePath(): added implementation for UNIX and MS-Windows
+ *
  * Revision 1.66  2003/08/06 20:27:17  ucko
- * LoadConfig: take advantage of the latest changes to CMetaRegistry to reuse reg.
+ * LoadConfig: take advantage of the latest changes to CMetaRegistry to
+ * reuse reg.
  *
  * Revision 1.65  2003/08/06 14:31:55  ucko
  * LoadConfig: Only replace m_Config if it was empty, and remember to
@@ -793,7 +825,8 @@ END_NCBI_SCOPE
  * only sometimes owning m_Config.
  *
  * Revision 1.63  2003/06/26 18:55:40  rsmith
- * call LoadConfig even if conf is null, child classes might do something anyway. (gbench).
+ * call LoadConfig even if conf is null, child classes might do something
+ * anyway. (gbench).
  *
  * Revision 1.62  2003/06/25 15:59:00  rsmith
  * factor out config file DEBUG settings into HonorDebugSettings
