@@ -34,6 +34,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/03 16:38:32  vakatov
+* Added aux. function "Getline()" to read from "istream" to a "string"
+* Adopted standard I/O "string" <--> "istream" for old-fashioned streams
+*
 * Revision 1.8  1998/11/26 00:27:05  vakatov
 * Added <iomanip[.h]> and relevant #define's NcbiXXX
 *
@@ -48,6 +52,7 @@
 */
 
 #include <ncbistl.hpp>
+
 
 // Determine which iostream library to use, include appropriate
 // headers, and #define specific preprocessor variables
@@ -65,10 +70,14 @@
 #  else
 #    define IO_PREFIX  std
 #  endif
-#  define IOS_BASE   IO_PREFIX::ios_base
+#  define IOS_BASE    IO_PREFIX::ios_base
+#  define IOS_PREFIX  IO_PREFIX::ios
 #  define SEEKOFF    pubseekoff
 
 #elif defined(HAVE_IOSTREAM_H)
+#  if defined(NCBI_USE_NEW_IOSTREAM)
+#    undef NCBI_USE_NEW_IOSTREAM
+#  endif
 #  include <iostream.h>
 #  include <fstream.h>
 #  if defined(HAVE_STRSTREA_H)
@@ -79,11 +88,15 @@
 #  include <iomanip.h>
 #  define IO_PREFIX
 #  define IOS_BASE   ::ios
+#  define IOS_PREFIX ::ios
 #  define SEEKOFF    seekoff
 
 #else
 #  error "Cannot find neither <iostream> nor <iostream.h>!"
 #endif
+
+#include <string>
+
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
@@ -132,8 +145,29 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 #define NcbiSetprecision  IO_PREFIX::setprecision
 #define NcbiSetw          IO_PREFIX::setw
 
+// I/O state
+#define NcbiGoodbit  IOS_PREFIX::goodbit
+#define NcbiEofbit   IOS_PREFIX::eofbit
+#define NcbiFailbit  IOS_PREFIX::failbit
+#define NcbiBadbit   IOS_PREFIX::badbit
+#define NcbiHardfail IOS_PREFIX::hardfail
+
+// Read from "is" to "str" up to the delimeter symbol "delim"(or EOF)
+extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim);
+
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
+
+// Provide formatted I/O of standard C++ "string" by "old-fashioned" IOSTREAMs
+// NOTE:  these must have been inside the _NCBI_SCOPE and without the
+//        "ncbi::" and "std::" prefixes, but there is some bug in SunPro 5.0...
+#if !defined(NCBI_USE_NEW_IOSTREAM)
+extern ncbi::CNcbiOstream& operator<<(ncbi::CNcbiOstream& os,
+                                      const std::string& str);
+extern ncbi::CNcbiIstream& operator>>(ncbi::CNcbiIstream& is,
+                                      std::string& str);
+#endif
+
 
 #endif /* NCBISTRE__HPP */
