@@ -125,7 +125,8 @@ public:
     virtual ~CInvalidChoiceSelection(void) throw();
 
     virtual const char* GetType(void) const;
-    EErrCode GetErrCode(void) const;
+    typedef int TErrCode;
+    TErrCode GetErrCode(void) const;
 
 protected:
     CInvalidChoiceSelection(void) throw();
@@ -142,6 +143,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/05/11 15:56:10  gouriano
+* Change GetErrCode method prototype to return TErrCode - to be able to
+* safely cast EErrCode to an eInvalid
+*
 * Revision 1.15  2004/01/22 20:46:59  gouriano
 * Added new exception error code (eMissingValue)
 *

@@ -243,11 +243,11 @@ const char* CException::GetErrCodeString(void) const
 }
 
 
-CException::EErrCode CException::GetErrCode (void) const
+CException::TErrCode CException::GetErrCode (void) const
 {
     return typeid(*this) == typeid(CException) ?
-        (CException::EErrCode) x_GetErrCode() :
-        CException::eInvalid;
+        (TErrCode) x_GetErrCode() :
+        (TErrCode) CException::eInvalid;
 }
 
 
@@ -433,6 +433,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/05/11 15:55:31  gouriano
+ * Change GetErrCode method prototype to return TErrCode - to be able to
+ * safely cast EErrCode to an eInvalid
+ *
  * Revision 1.36  2004/04/26 14:41:23  ucko
  * Drop the obsolete INLINE_CSTRERRADAPT hack.
  *

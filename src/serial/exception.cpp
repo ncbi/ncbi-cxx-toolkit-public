@@ -107,11 +107,11 @@ const char* CInvalidChoiceSelection::GetType(void) const
     return "CInvalidChoiceSelection";
 }
 
-CInvalidChoiceSelection::EErrCode CInvalidChoiceSelection::GetErrCode(void) const
+CInvalidChoiceSelection::TErrCode CInvalidChoiceSelection::GetErrCode(void) const
 {
     return typeid(*this) == typeid(CInvalidChoiceSelection) ?
-        (CInvalidChoiceSelection::EErrCode) x_GetErrCode() :
-        (CInvalidChoiceSelection::EErrCode) CException::eInvalid;
+        (CInvalidChoiceSelection::TErrCode) x_GetErrCode() :
+        (CInvalidChoiceSelection::TErrCode) CException::eInvalid;
 }
 
 CInvalidChoiceSelection::CInvalidChoiceSelection(void) throw()
@@ -128,6 +128,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/05/11 15:56:36  gouriano
+* Change GetErrCode method prototype to return TErrCode - to be able to
+* safely cast EErrCode to an eInvalid
+*
 * Revision 1.11  2003/10/27 19:18:03  grichenk
 * Reformatted object stream error messages
 *

@@ -462,6 +462,7 @@ public:
                        ///< please, NEVER throw an exception with this code.
         eUnknown = 0   ///< Unknown exception.
     };
+    typedef int TErrCode;
 
     /// Constructor.
     ///
@@ -537,7 +538,7 @@ public:
     int GetLine(void) const { return m_Line; }
 
     /// Get error code.
-    EErrCode GetErrCode(void) const;
+    TErrCode GetErrCode(void) const;
 
     /// Get message string.
     const string& GetMsg (void) const { return m_Msg;  }
@@ -619,11 +620,11 @@ const TTo* UppermostCast(const TFrom& from)
     } \
     virtual ~exception_class(void) throw() {} \
     virtual const char* GetType(void) const {return #exception_class;} \
-    EErrCode GetErrCode(void) const \
+    typedef int TErrCode; \
+    TErrCode GetErrCode(void) const \
     { \
         return typeid(*this) == typeid(exception_class) ? \
-            (exception_class::EErrCode) x_GetErrCode() : \
-            (exception_class::EErrCode) CException::eInvalid; \
+            (TErrCode)x_GetErrCode() : (TErrCode)CException::eInvalid; \
     } \
 protected: \
     exception_class(void) throw() {} \
@@ -666,12 +667,12 @@ public: \
     } \
     virtual ~exception_class(void) throw() {} \
     virtual const char* GetType(void) const {return #exception_class;} \
-    typedef typename base_class::EErrCode BaseClassEErrCode; \
-    BaseClassEErrCode GetErrCode(void) const \
+    typedef int TErrCode; \
+    TErrCode GetErrCode(void) const \
     { \
         return typeid(*this) == typeid(exception_class) ? \
-            (typename exception_class::EErrCode) this->x_GetErrCode() : \
-            (typename exception_class::EErrCode) CException::eInvalid; \
+            (TErrCode) this->x_GetErrCode() : \
+            (TErrCode) CException::eInvalid; \
     } \
 protected: \
     exception_class(void) throw() {} \
@@ -908,15 +909,14 @@ public:
     /// Get type of class.
     virtual const char* GetType(void) const { return "CErrnoTemplException"; }
 
+    typedef int TErrCode;
     /// Get error code.
-    EErrCode GetErrCode(void) const
+    TErrCode GetErrCode(void) const
     {
         return typeid(*this) == 
             typeid(CErrnoTemplExceptionEx<TBase, PErrstr>) ?
-               (typename CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode) 
-                  this->x_GetErrCode() :
-               (typename CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode)
-                  CException::eInvalid;
+               (TErrCode) this->x_GetErrCode() :
+               (TErrCode) CException::eInvalid;
     }
 
     /// Get error number.
@@ -1003,6 +1003,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2004/05/11 15:55:47  gouriano
+ * Change GetErrCode method prototype to return TErrCode - to be able to
+ * safely cast EErrCode to an eInvalid
+ *
  * Revision 1.53  2004/04/30 11:26:06  kuznets
  * THROW spec macro disabled for MSVC (fixed some compiler warnings)
  *
