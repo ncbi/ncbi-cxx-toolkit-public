@@ -1,4 +1,4 @@
---$Revision: 1.11 $
+--$Revision: 1.12 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -51,7 +51,9 @@ Seq-descr ::= SET OF CHOICE {
     user User-object ,           -- user defined object
 	sp SP-block ,                -- SWISSPROT specific info
     neighbors Link-set ,         -- neighboring information
-    embl EMBL-block }           -- EMBL specific information
+    embl EMBL-block ,            -- EMBL specific information
+	create-date Date ,           -- date entry first created/released
+	update-date Date }           -- date of last update
 
 GIBB-mol ::= ENUMERATED {       -- type of molecule represented
     unknown (0) ,
