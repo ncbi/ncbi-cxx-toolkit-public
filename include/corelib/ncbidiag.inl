@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/11/03 22:28:33  vakatov
+* Renamed Die/Post...Severity() to ...Level()
+*
 * Revision 1.4  1998/11/03 20:51:24  vakatov
 * Adaptation for the SunPro compiler glitchs(see conf. #NO_INCLASS_TMPL)
 *
@@ -68,8 +71,8 @@ class CDiagBuffer {
     friend CNcbiDiag& Reset(CNcbiDiag& diag);
     friend CNcbiDiag& Endm(CNcbiDiag& diag);
     friend CDiagBuffer& GetDiagBuffer(void);
-    friend EDiagSev SetDiagPostSeverity(EDiagSev post_sev);
-    friend EDiagSev SetDiagDieSeverity(EDiagSev die_sev);
+    friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
+    friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     friend void SetDiagHandler(FDiagHandler func, void* data,
                                FDiagCleanup cleanup);
 private:

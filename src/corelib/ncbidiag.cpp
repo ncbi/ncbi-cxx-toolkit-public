@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/11/03 22:28:35  vakatov
+* Renamed Die/Post...Severity() to ...Level()
+*
 * Revision 1.3  1998/11/03 20:51:26  vakatov
 * Adaptation for the SunPro compiler glitchs(see conf. #NO_INCLASS_TMPL)
 *
@@ -74,7 +77,7 @@ void CDiagBuffer::DiagHandler(EDiagSev    sev,
 }
 
 
-extern EDiagSev SetDiagPostSeverity(EDiagSev post_sev)
+extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
 {
     //## MUTEX_LOCK(s_Mutex);
     EDiagSev sev = CDiagBuffer::sm_PostSeverity;
@@ -84,7 +87,7 @@ extern EDiagSev SetDiagPostSeverity(EDiagSev post_sev)
 }
 
 
-extern EDiagSev SetDiagDieSeverity(EDiagSev die_sev)
+extern EDiagSev SetDiagDieLevel(EDiagSev die_sev)
 {
     //## MUTEX_LOCK(s_Mutex);
     EDiagSev sev = CDiagBuffer::sm_DieSeverity;
