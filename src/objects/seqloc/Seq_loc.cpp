@@ -54,6 +54,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // constructors
 CSeq_loc::CSeq_loc(E_Choice index)
 {
+    x_InvalidateCache();
     switch ( index ) {
     case e_Null:
         {
@@ -1079,6 +1080,7 @@ void CSeq_loc::GetLabel(string* label) const
 // assign the 'id' field of each sub-interval to the supplied id
 void CSeq_loc::SetId(CSeq_id& id)
 {
+    x_InvalidateCache();
     switch (Which()) {
     case e_Int:
         SetInt().SetId(id);
@@ -1359,6 +1361,7 @@ bool s_CanAdd(const CSeq_loc& loc1, const CSeq_loc& loc2)
 
 void CSeq_loc::Add(const CSeq_loc& other)
 {
+    x_InvalidateCache();
     switch ( Which() ) {
     case CSeq_loc::e_not_set:
         {
@@ -1459,6 +1462,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.38  2004/01/29 19:58:52  shomrat
+ * Adding missing cache invalidation
+ *
  * Revision 6.37  2004/01/28 17:18:11  shomrat
  * Added methods to ease the construction of objects
  *
