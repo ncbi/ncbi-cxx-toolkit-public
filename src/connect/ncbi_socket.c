@@ -773,7 +773,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
         CORE_UNLOCK;
         return eIO_Success;
     }
-    
+
 #if 0/*defined(_DEBUG) && !defined(NDEBUG)*/
     s_ShowDataLayout();
 #endif
@@ -2016,12 +2016,15 @@ static EIO_Status s_Read(SOCK        sock,
         x_errno = SOCK_ERRNO;
         /* blocked -- wait for data to come;  exit if timeout/error */
         if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN) {
+            const struct timeval* tv = sock->r_timeout;
             SSOCK_Poll poll;
 
+            if (tv  &&  !tv->tv_sec  &&  !tv->tv_usec)
+                return eIO_Timeout;
             poll.sock   = sock;
             poll.event  = eIO_Read;
             poll.revent = eIO_Open;
-            if ((status = s_Select(1, &poll, sock->r_timeout)) != eIO_Success)
+            if ((status = s_Select(1, &poll, tv)) != eIO_Success)
                 return status;
             if (poll.revent == eIO_Close)
                 break;
@@ -3710,6 +3713,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.114  2003/06/04 20:59:14  lavr
+ * s_Read() not to call s_Select() if read timeout is {0, 0}
+ *
  * Revision 6.113  2003/05/31 05:17:32  lavr
  * Swap bitfields and enums in chain assignments
  *
