@@ -72,7 +72,7 @@ MakeDirs()
     COMMON_ExecRB mkdir -p $1/etc
     COMMON_ExecRB mkdir -p $1/plugins
     COMMON_ExecRB mkdir -p $1/executables
-    COMMON_ExecRB mkdir -p $1/patterns
+    COMMON_ExecRB mkdir -p $1/etc/patterns
 }
 
 
@@ -319,8 +319,8 @@ done
 # copy pattern files for searching
 for f in ${source_dir}/patterns/*; do
     if [ ! -d $f ]; then
-        rm -f ${target_dir}/patterns/`basename $f`
-        DoCopy $f ${target_dir}/patterns
+        rm -f ${target_dir}/etc/patterns/`basename $f`
+        DoCopy $f ${target_dir}/etc/patterns
     fi
 done
 
