@@ -64,7 +64,9 @@ CSeq_entry_Info::CSeq_entry_Info(CSeq_entry& entry, CSeq_entry_Info& parent)
       m_DirtyAnnotIndex(false)
 {
     _ASSERT(!parent.m_Bioseq);
-    parent.m_Entries.push_back(Ref(this));
+    {{
+        parent.m_Entries.push_back(Ref(this));
+    }}
     try {
         x_SetSeq_entry(entry);
     }
@@ -460,6 +462,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/01/29 19:33:07  vasilche
+ * Fixed coredump on WorkShop when invalid Seq-entry is added to CScope.
+ *
  * Revision 1.7  2004/01/22 20:10:40  vasilche
  * 1. Splitted ID2 specs to two parts.
  * ID2 now specifies only protocol.
