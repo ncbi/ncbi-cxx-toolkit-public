@@ -182,16 +182,30 @@ Blast_RunPreliminarySearch(EBlastProgramType program,
 
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 
-     (EBlastProgramType, BLAST_SequenceBlk*, BlastQueryInfo* query_info,
-      BLAST_SequenceBlk*, BlastGapAlignStruct*, const BlastScoringParameters*,
-      const BlastExtensionParameters*, const BlastHitSavingParameters*,
-      BlastInitHitList*, BlastHSPList**, BlastGappedStats*);
+     (EBlastProgramType, /**< @todo comment function pointer types */
+      BLAST_SequenceBlk*, 
+      BlastQueryInfo* query_info,
+      BLAST_SequenceBlk*, 
+      BlastGapAlignStruct*, 
+      const BlastScoringParameters*,
+      const BlastExtensionParameters*, 
+      const BlastHitSavingParameters*,
+      BlastInitHitList*, 
+      BlastHSPList**, 
+      BlastGappedStats*);
      
 /** Word finder function pointer type */
 typedef Int2 (*BlastWordFinderType) 
-     (BLAST_SequenceBlk*, BLAST_SequenceBlk*,
-      LookupTableWrap*, Int4**, const BlastInitialWordParameters*,
-      Blast_ExtendWord*, Uint4*, Uint4*, Int4, BlastInitHitList*,
+     (BLAST_SequenceBlk*, /**< @todo comment function pointer types */
+      BLAST_SequenceBlk*,
+      LookupTableWrap*, 
+      Int4**, 
+      const BlastInitialWordParameters*,
+      Blast_ExtendWord*, 
+      Uint4*, 
+      Uint4*, 
+      Int4, 
+      BlastInitHitList*,
       BlastUngappedStats*);
 
 #ifdef __cplusplus
