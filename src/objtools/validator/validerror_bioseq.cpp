@@ -133,7 +133,7 @@ void CValidError_bioseq::ValidateSeqIds
     // gi, NT, or NC. Check that the same CSeq_id not included more
     // than once.
     bool has_gi = false;
-    iterate( CBioseq::TId, i, seq.GetId() ) {
+    ITERATE( CBioseq::TId, i, seq.GetId() ) {
 
         // Check that no two CSeq_ids for same CBioseq are same type
         list< CRef < CSeq_id > >::const_iterator j;
@@ -171,7 +171,7 @@ void CValidError_bioseq::ValidateSeqIds
     // Loop thru CSeq_ids to check formatting
     unsigned int gi_count = 0;
     unsigned int accn_count = 0;
-    iterate (CBioseq::TId, k, seq.GetId()) {
+    ITERATE (CBioseq::TId, k, seq.GetId()) {
         const CTextseq_id* tsid = (*k)->GetTextseq_Id();
         switch ((**k).Which()) {
         case CSeq_id::e_Tpg:
@@ -194,7 +194,7 @@ void CValidError_bioseq::ValidateSeqIds
                 bool letter_after_digit = false;
                 bool bad_id_chars = false;       
                     
-                iterate (string, s, acc) {
+                ITERATE(string, s, acc) {
                     if (isupper(*s)) {
                         num_letters++;
                         if (num_digits > 0) {
@@ -240,7 +240,7 @@ void CValidError_bioseq::ValidateSeqIds
             if ( tsid ) {
                 if ( tsid->IsSetName() ) {
                     const string& name = tsid->GetName();
-                    iterate (string, s, name) {
+                    ITERATE (string, s, name) {
                         if (isspace(*s)) {
                             PostErr(eDiag_Critical,
                                 eErr_SEQ_INST_SeqIdNameHasSpace,
@@ -389,7 +389,7 @@ void CValidError_bioseq::ValidateSecondaryAccConflict
         }
 
         if ( extra_acc ) {
-            iterate( list<string>, acc, *extra_acc ) {
+            ITERATE( list<string>, acc, *extra_acc ) {
                 if ( NStr::CompareNocase(primary_acc, *acc) == 0 ) {
                     // If the same post error
                     PostErr(eDiag_Error,
@@ -563,7 +563,7 @@ void CValidError_bioseq::ValidateHistory(const CBioseq& seq)
     }
     
     int gi = 0;
-    iterate( CBioseq::TId, id, seq.GetId() ) {
+    ITERATE( CBioseq::TId, id, seq.GetId() ) {
         if ( (*id)->IsGi() ) {
             gi = (*id)->GetGi();
             break;
@@ -576,7 +576,7 @@ void CValidError_bioseq::ValidateHistory(const CBioseq& seq)
     const CSeq_hist& hist = seq.GetInst().GetHist();
     if ( hist.IsSetReplaced_by() ) {
         const CSeq_hist_rec& rec = hist.GetReplaced_by();
-        iterate( CSeq_hist_rec::TIds, id, rec.GetIds() ) {
+        ITERATE( CSeq_hist_rec::TIds, id, rec.GetIds() ) {
             if ( (*id)->IsGi() ) {
                 if ( gi == (*id)->GetGi() ) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_HistoryGiCollision,
@@ -591,7 +591,7 @@ void CValidError_bioseq::ValidateHistory(const CBioseq& seq)
 
     if ( hist.IsSetReplaces() ) {
         const CSeq_hist_rec& rec = hist.GetReplaces();
-        iterate( CSeq_hist_rec::TIds, id, rec.GetIds() ) {
+        ITERATE( CSeq_hist_rec::TIds, id, rec.GetIds() ) {
             if ( (*id)->IsGi() ) {
                 if ( gi == (*id)->GetGi() ) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_HistoryGiCollision,
@@ -650,7 +650,7 @@ bool CValidError_bioseq::IsDifferentDbxrefs(const list< CRef< CDbtag > >& list1,
 // Is the id contained in the bioseq?
 bool CValidError_bioseq::IsIdIn(const CSeq_id& id, const CBioseq& seq)
 {
-    iterate (CBioseq::TId, it, seq.GetId()) {
+    ITERATE (CBioseq::TId, it, seq.GetId()) {
         if (id.Match(**it)) {
             return true;
         }
@@ -747,7 +747,7 @@ bool CValidError_bioseq::GetLocFromSeq(const CBioseq& seq, CSeq_loc* loc)
     }
 
     CSeq_loc_mix& mix = loc->SetMix();
-    iterate (list< CRef<CSeq_loc> >, it,
+    ITERATE (list< CRef<CSeq_loc> >, it,
         seq.GetInst().GetExt().GetSeg().Get()) {
         mix.Set().push_back(*it);
     }
@@ -823,7 +823,7 @@ bool CValidError_bioseq::LocOnSeg(const CBioseq& seq, const CSeq_loc& loc)
 {
     for ( CSeq_loc_CI sli( loc ); sli;  ++sli ) {
         const CSeq_id& loc_id = sli.GetSeq_id();
-        iterate(  CBioseq::TId, seq_id, seq.GetId() ) {
+        ITERATE(  CBioseq::TId, seq_id, seq.GetId() ) {
             if ( loc_id.Match(**seq_id) ) {
                 return true;
             }
@@ -1024,7 +1024,7 @@ void CValidError_bioseq::ValidateSeqParts(const CBioseq& seq)
     // Loop through seq_set looking for parent. When found, the next
     // CSeq_entry should have the parts
     const CSeq_entry* se = 0;
-    iterate (list< CRef<CSeq_entry> >, it, seq_set) {
+    ITERATE (list< CRef<CSeq_entry> >, it, seq_set) {
         if (parent == &(**it)) {
             ++it;
             se = &(**it);
@@ -1047,7 +1047,7 @@ void CValidError_bioseq::ValidateSeqParts(const CBioseq& seq)
     // Now, simultaneously loop through the parts of se and CSeq_locs of seq's
     // CSseq-ext. If don't compare, post error
     const list< CRef<CSeq_loc> > locs = seq.GetInst().GetExt().GetSeg().Get();
-    iterate (list< CRef<CSeq_loc> >, lit, locs) {
+    ITERATE (list< CRef<CSeq_loc> >, lit, locs) {
         if ((**lit).Which() == CSeq_loc::e_Null) {
             continue;
         }
@@ -1376,7 +1376,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
     // Check for multiple references to the same Bioseq
     if (inst.IsSetExt()  &&  inst.GetExt().IsSeg()) {
         const list< CRef<CSeq_loc> >& locs = inst.GetExt().GetSeg().Get();
-        iterate(list< CRef<CSeq_loc> >, i1, locs) {
+        ITERATE(list< CRef<CSeq_loc> >, i1, locs) {
            if (!IsOneBioseq(**i1, m_Scope)) {
                 continue;
             }
@@ -1417,7 +1417,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
             if (!(*sd).IsModif()) {
                 continue;
             }
-            iterate(list< EGIBB_mod >, md, (*sd).GetModif()) {
+            ITERATE(list< EGIBB_mod >, md, (*sd).GetModif()) {
                 switch (*md) {
                 case eGIBB_mod_partial:
                     got_partial = true;
@@ -1463,7 +1463,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     }
 
     TSeqPos len = 0;
-    iterate(list< CRef<CDelta_seq> >, sg, inst.GetExt().GetDelta().Get()) {
+    ITERATE(list< CRef<CDelta_seq> >, sg, inst.GetExt().GetDelta().Get()) {
         switch ((**sg).Which()) {
         case CDelta_seq::e_Loc:
             try {
@@ -1500,7 +1500,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             case CSeq_data::e_Ncbistdaa:
             {
                 const vector<char>& c = data.GetNcbistdaa().Get();
-                iterate (vector<TSeqPos>, ci, badIdx) {
+                ITERATE (vector<TSeqPos>, ci, badIdx) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_InvalidResidue,
                         "Invalid residue [" +
                         NStr::IntToString((int)c[*ci]) + "] in position " +
@@ -1512,7 +1512,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 break;
             }
             if (ss) {
-                iterate (vector<TSeqPos>, it, badIdx) {
+                ITERATE (vector<TSeqPos>, it, badIdx) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_InvalidResidue,
                         "Invalid residue [" +
                         ss->substr(*it, 1) + "] in position " +
@@ -2356,7 +2356,7 @@ void CValidError_bioseq::ValidateCollidingGeneNames(const CBioseq& seq)
     // Iterate through multimap and compare labels
     bool first = true;
     const string* plabel = 0;
-    iterate (TStrFeatMap, it, label_map) {
+    ITERATE (TStrFeatMap, it, label_map) {
         if (first) {
             first = false;
             plabel = &(it->first);
@@ -2398,6 +2398,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/03/11 16:04:09  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.20  2003/02/26 19:45:31  shomrat
 * Check for whole range
 *

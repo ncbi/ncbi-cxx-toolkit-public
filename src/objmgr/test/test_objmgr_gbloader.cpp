@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.24  2002/12/06 15:36:03  grichenk
 * Added overlap type for annot-iterators
 *
@@ -168,7 +171,7 @@ int CTestApplication::Run()
             LOG_POST("Gi (" << gi << "):: not found in ID");
         } else {
 //          scope.ResetHistory();
-          iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
+          ITERATE (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
             //CObjectOStreamAsn oos(NcbiCout);
             //oos << **it;
             //NcbiCout << NcbiEndl;

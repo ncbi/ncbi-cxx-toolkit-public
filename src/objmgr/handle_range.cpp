@@ -77,7 +77,7 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand)
 
 void CHandleRange::AddRanges(const CHandleRange& hr)
 {
-    iterate ( CHandleRange, it, hr ) {
+    ITERATE ( CHandleRange, it, hr ) {
         AddRange(it->first, it->second);
     }
 }
@@ -176,6 +176,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.14  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

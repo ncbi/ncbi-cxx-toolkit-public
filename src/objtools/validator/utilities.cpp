@@ -1065,7 +1065,7 @@ bool IsBlankString(const string& str)
 
 bool IsBlankStringList(const list< string >& str_list)
 {
-    iterate( list< string >, str, str_list ) {
+    ITERATE( list< string >, str, str_list ) {
         if ( !IsBlankString(*str) ) {
             return false;
         }
@@ -1083,6 +1083,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/03/11 16:04:09  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.5  2003/02/07 21:04:10  shomrat
 * Added transposon as a legal qual for repeat_region
 *

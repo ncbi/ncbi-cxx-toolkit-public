@@ -1706,21 +1706,21 @@ void CSeqportUtil_implementation::InitIndexCodeName()
     for (unsigned int ii = 0; ii < kNumCodes; ii++) {
         found[ii] = false;
     }
-    iterate (Ttables, it, m_SeqCodeSet->GetCodes()) {
+    ITERATE (Ttables, it, m_SeqCodeSet->GetCodes()) {
         const ESeq_code_type& code = (*it)->GetCode();
         if (!found[code-1]) {
             found[code-1] = true;
             m_StartAt[code-1] = (*it)->IsSetStart_at() ?
                 (*it)->GetStart_at() : 0;
             TIndex i = m_StartAt[code-1];
-            iterate(Tcodes, is, (*it)->GetTable()) {                
+            ITERATE(Tcodes, is, (*it)->GetTable()) {                
                 m_IndexString[kSymbol][code-1].push_back((*is)->GetSymbol());
                 m_IndexString[kName][code-1].push_back((*is)->GetName());
                 m_StringIndex[code-1].insert
                     (make_pair((*is)->GetSymbol(), i++));
             }
             if ( (*it)->IsSetComps() ) {
-                iterate (list<int>, ic, (*it)->GetComps()) {
+                ITERATE (list<int>, ic, (*it)->GetComps()) {
                     m_IndexComplement[code-1].push_back(*ic);
                 }
             }
@@ -5391,7 +5391,7 @@ bool CSeqportUtil_implementation::IsCodeAvailable (ESeq_code_type code_type)
     typedef list<CRef<CSeq_code_table> >      Ttables;
     
     // Iterate through Seq-code-set looking for code type
-    iterate (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
+    ITERATE (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
         if((*i_ct)->GetCode() == code_type) {
             return true;  
         }
@@ -5416,7 +5416,7 @@ CSeqportUtil::TPair CSeqportUtil_implementation::GetCodeIndexFromTo
     
     // Iterate through Seq-code-set looking for code type
     TPair p;
-    iterate (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
+    ITERATE (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
         if((*i_ct)->GetCode() == code_type) {
             if ( (*i_ct)->IsSetStart_at() ) {
                 p.first = static_cast<TIndex>((*i_ct)->GetStart_at());
@@ -6271,6 +6271,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/03/11 15:53:25  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 6.15  2003/01/30 22:50:30  kans
  * U (selenocysteine) is now valid in IUPAC alphabet
  *

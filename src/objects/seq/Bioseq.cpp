@@ -86,7 +86,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
     case CSeq_loc::e_Packed_int:
         {
             // extract each range, create and add simple location
-            iterate ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
+            ITERATE ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
                 CSeq_loc* int_loc = new CSeq_loc;
                 SerialAssign<CSeq_id>
                     (int_loc->SetInt().SetId(), (*ii)->GetId());
@@ -103,7 +103,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
     case CSeq_loc::e_Packed_pnt:
         {
             // extract each point
-            iterate ( CPacked_seqpnt::TPoints, pi,
+            ITERATE ( CPacked_seqpnt::TPoints, pi,
                       loc.GetPacked_pnt().GetPoints() ) {
                 CSeq_loc* pnt_loc = new CSeq_loc;
                 SerialAssign<CSeq_id>
@@ -121,7 +121,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
     case CSeq_loc::e_Mix:
         {
             // extract sub-locations
-            iterate ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
+            ITERATE ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
                 x_SeqLoc_To_DeltaExt(**li, ext);
             }
             return;
@@ -246,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.18  2003/03/11 15:53:25  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 6.17  2002/12/19 20:11:22  kans
  * added IsNa and IsAa methods
  *

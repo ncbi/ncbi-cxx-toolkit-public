@@ -60,7 +60,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
         {
             const CSeq_align::C_Segs::TDendiag& dendiag =
                 align.GetSegs().GetDendiag();
-            iterate ( CSeq_align::C_Segs::TDendiag, it, dendiag ) {
+            ITERATE ( CSeq_align::C_Segs::TDendiag, it, dendiag ) {
                 CDense_diag::TIds::const_iterator it_id =
                     (*it)->GetIds().begin();
                 CDense_diag::TStarts::const_iterator it_start =
@@ -134,9 +134,9 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
         {
             const CSeq_align::C_Segs::TStd& std =
                 align.GetSegs().GetStd();
-            iterate ( CSeq_align::C_Segs::TStd, it, std ) {
+            ITERATE ( CSeq_align::C_Segs::TStd, it, std ) {
                 //### Ignore Seq-id, assuming it is also set in Seq-loc?
-                iterate ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
+                ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
                     // Create CHandleRange from an align element
                     m_RangeMap->AddLocation(**it_loc);
                 }
@@ -197,7 +197,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
         {
             const CSeq_align::C_Segs::TDisc& disc =
                 align.GetSegs().GetDisc();
-            iterate ( CSeq_align_set::Tdata, it, disc.Get() ) {
+            ITERATE ( CSeq_align_set::Tdata, it, disc.Get() ) {
                 x_ProcessAlign(**it);
             }
             break;
@@ -242,7 +242,7 @@ void CAnnotObject_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) con
                 DebugDumpValue(ddc4, "m_Ranges.type",
                     "list<pair<CRange<TSeqPos>, ENa_strand>>");
                 int n = 0;
-                iterate (CHandleRange, itrg, it->second) {
+                ITERATE (CHandleRange, itrg, it->second) {
                     member_name = "m_Ranges[ " + NStr::IntToString(n++) + " ]";
                     string value;
                     if (itrg->first.Empty()) {
@@ -281,6 +281,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.18  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

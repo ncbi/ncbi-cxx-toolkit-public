@@ -114,7 +114,7 @@ int CRelLocTester::Run(void)
             _ASSERT(sequence::Compare(*parent, child) == sequence::eNoOverlap);
         } else {
             string sep;
-            iterate (SRelLoc::TRanges, r, rl.m_Ranges) {
+            ITERATE (SRelLoc::TRanges, r, rl.m_Ranges) {
                 cout << sep << (*r)->GetFrom() << "-" << (*r)->GetTo();
                 sep = ", ";
             }
@@ -138,6 +138,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/11 16:00:58  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.1  2003/01/22 21:05:40  ucko
 * Add simple test/demo for SRelLoc
 *

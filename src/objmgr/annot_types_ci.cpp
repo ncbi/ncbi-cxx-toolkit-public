@@ -489,7 +489,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
     {
         const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
         CPacked_seqint::Tdata* dst_ints = 0;
-        iterate ( CPacked_seqint::Tdata, i, src_ints ) {
+        ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
             if ( ConvertInterval(**i) ) {
                 if ( !dst_ints ) {
                     dst.Reset(new CSeq_loc);
@@ -507,7 +507,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
             const CPacked_seqpnt::TPoints& src_pnts =
                 src_pack_pnts.GetPoints();
             CPacked_seqpnt::TPoints* dst_pnts = 0;
-            iterate ( CPacked_seqpnt::TPoints, i, src_pnts ) {
+            ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
                 TSeqPos dst_pos = ConvertPos(*i);
                 if ( dst_pos != kInvalidSeqPos ) {
                     if ( !dst_pnts ) {
@@ -526,7 +526,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
     {
         const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
         CSeq_loc_mix::Tdata* dst_mix = 0;
-        iterate ( CSeq_loc_mix::Tdata, i, src_mix ) {
+        ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
             if ( Convert(**i, dst_loc) ) {
                 if ( !dst_mix ) {
                     dst.Reset(new CSeq_loc);
@@ -541,7 +541,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
     {
         const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
         CSeq_loc_equiv::Tdata* dst_equiv = 0;
-        iterate ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
+        ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
             if ( Convert(**i, dst_loc) ) {
                 if ( !dst_equiv ) {
                     dst.Reset(new CSeq_loc);
@@ -610,7 +610,7 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
 
     x_Search(master_loc, 0);
     if ( m_ResolveMethod != eResolve_None ) {
-        iterate ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
+        ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
             if ( !bh ) {
                 // resolve by Seq-id only
@@ -679,7 +679,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
         m_Scope->GetTSESetWithAnnots(id, entries);
         break;
     }
-    iterate ( TTSESet, tse_it, entries ) {
+    ITERATE ( TTSESet, tse_it, entries ) {
         const CTSE_Info& tse_info = **tse_it;
         CTSE_Guard guard(tse_info);
 
@@ -727,7 +727,7 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
 {
     m_Scope->UpdateAnnotIndex(loc, m_AnnotChoice);
 
-    iterate ( CHandleRangeMap, idit, loc ) {
+    ITERATE ( CHandleRangeMap, idit, loc ) {
         if ( idit->second.Empty() ) {
             continue;
         }
@@ -736,7 +736,7 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
         if ( syns.find(idit->first) == syns.end() ) {
             x_Search(idit->first, idit->second, cvt);
         }
-        iterate ( CSynonymsSet, synit, syns ) {
+        ITERATE ( CSynonymsSet, synit, syns ) {
             x_Search(*synit, idit->second, cvt);
         }
     }
@@ -762,7 +762,7 @@ void CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
     CHandleRangeMap ref_loc;
     {{ // translate master_loc to ref_loc
         CHandleRange& hr = ref_loc.AddRanges(ref_id);
-        iterate ( CHandleRange, mlit, master_loc->second ) {
+        ITERATE ( CHandleRange, mlit, master_loc->second ) {
             CHandleRange::TOpenRange range =
                 master_seg_range.IntersectionWith(mlit->first);
             if ( !range.Empty() ) {
@@ -797,6 +797,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.52  2003/03/10 16:55:17  vasilche
 * Cleaned SAnnotSelector structure.
 * Added shortcut when features are limited to one TSE.

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2003/03/11 15:51:42  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 6.1  2002/01/10 19:36:30  clausen
  * Added GetLabel
  *
@@ -71,7 +74,7 @@ void CPub_equiv::GetLabel(string* label) const
     
     // Get five pubs in the set of pubs, giving preference to e_Muid, 
     // e_Pmid, and e_Gen.
-    iterate (list<CRef<CPub> >, it, Get()) {
+    ITERATE (list<CRef<CPub> >, it, Get()) {
         switch ((**it).Which()) {
         case CPub::e_Muid:
             if (!pubs[3] || pubs[3]->Which() != CPub::e_Pmid) {

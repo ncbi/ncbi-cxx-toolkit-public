@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.18  2002/07/23 15:32:49  kimelman
 * tuning test
 *
@@ -203,7 +206,7 @@ void* CTestThread::Main(void)
       LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " :: not found in ID");
     } else {
       //CObjectOStreamAsn oos(NcbiCout);
-      iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
+      ITERATE (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
         //oos << **it;
         //NcbiCout << NcbiEndl;
                ;

@@ -180,7 +180,7 @@ static void s_FixSeqData(CBioseq* seq)
     CSeq_inst& inst = seq->SetInst();
     if (inst.IsSetExt()  &&  inst.GetExt().IsDelta()) {
         TSeqPos length = 0;
-        non_const_iterate (CDelta_ext::Tdata, it,
+        NON_CONST_ITERATE (CDelta_ext::Tdata, it,
                            inst.SetExt().SetDelta().Set()) {
             if ((*it)->IsLiteral()) {
                 CSeq_literal& lit  = (*it)->SetLiteral();
@@ -372,6 +372,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.17  2003/03/11 15:56:34  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 6.16  2003/03/10 21:18:27  grichenk
  * Fixed Parentize()
  *

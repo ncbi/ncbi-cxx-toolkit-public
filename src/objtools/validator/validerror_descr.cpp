@@ -62,7 +62,7 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr)
     CConstRef<CSeqdesc> last_source,
                         last_title;
 
-    iterate ( CSeq_descr::Tdata, dt, descr.Get() ) {
+    ITERATE ( CSeq_descr::Tdata, dt, descr.Get() ) {
         const CSeqdesc& desc = **dt;
 
         switch ( desc.Which() ) {
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/03/11 16:04:09  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.3  2003/02/12 17:58:05  shomrat
 * Addition of descriptor types in switch statement for future use
 *

@@ -134,7 +134,7 @@ void x_Assign(CPacked_seqint& dst, const CPacked_seqint& src)
 {
     CPacked_seqint::Tdata& data = dst.Set();
     data.clear();
-    iterate ( CPacked_seqint::Tdata, i, src.Get() ) {
+    ITERATE ( CPacked_seqint::Tdata, i, src.Get() ) {
         data.push_back(CRef<CSeq_interval>(new CSeq_interval));
         x_Assign(*data.back(), **i);
     }
@@ -179,7 +179,7 @@ void x_Assign(CSeq_loc_mix& dst, const CSeq_loc_mix& src)
 {
     CSeq_loc_mix::Tdata& data = dst.Set();
     data.clear();
-    iterate ( CSeq_loc_mix::Tdata, i, src.Get() ) {
+    ITERATE ( CSeq_loc_mix::Tdata, i, src.Get() ) {
         data.push_back(CRef<CSeq_loc>(new CSeq_loc));
         data.back()->Assign(**i);
     }
@@ -191,7 +191,7 @@ void x_Assign(CSeq_loc_equiv& dst, const CSeq_loc_equiv& src)
 {
     CSeq_loc_equiv::Tdata& data = dst.Set();
     data.clear();
-    iterate ( CSeq_loc_equiv::Tdata, i, src.Get() ) {
+    ITERATE ( CSeq_loc_equiv::Tdata, i, src.Get() ) {
         data.push_back(CRef<CSeq_loc>(new CSeq_loc));
         data.back()->Assign(**i);
     }
@@ -291,7 +291,7 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRange(void) const
     case CSeq_loc::e_Packed_int:
         {
             total_range = TRange::GetEmpty();
-            iterate ( CPacked_seqint::Tdata, ii, GetPacked_int().Get() ) {
+            ITERATE ( CPacked_seqint::Tdata, ii, GetPacked_int().Get() ) {
                 const CSeq_interval& loc = **ii;
                 total_range += TRange(loc.GetFrom(), loc.GetTo());
             }
@@ -300,7 +300,7 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRange(void) const
     case CSeq_loc::e_Packed_pnt:
         {
             total_range = TRange::GetEmpty();
-            iterate( CPacked_seqpnt::TPoints, pi, GetPacked_pnt().GetPoints() ) {
+            ITERATE( CPacked_seqpnt::TPoints, pi, GetPacked_pnt().GetPoints() ) {
                 TSeqPos pos = *pi;
                 total_range += TRange(pos, pos);
             }
@@ -309,7 +309,7 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRange(void) const
     case CSeq_loc::e_Mix:
         {
             total_range = TRange::GetEmpty();
-            iterate(CSeq_loc_mix::Tdata, li, GetMix().Get()) {
+            ITERATE(CSeq_loc_mix::Tdata, li, GetMix().Get()) {
                 total_range += (*li)->GetTotalRange();
             }
             break;
@@ -317,7 +317,7 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRange(void) const
     case CSeq_loc::e_Equiv:
         {
             total_range = TRange::GetEmpty();
-            iterate(CSeq_loc_equiv::Tdata, li, GetEquiv().Get()) {
+            ITERATE(CSeq_loc_equiv::Tdata, li, GetEquiv().Get()) {
                 total_range += (*li)->GetTotalRange();
             }
             break;
@@ -378,7 +378,7 @@ CSeq_loc_CI& CSeq_loc_CI::operator= (const CSeq_loc_CI& iter)
         return *this;
     m_LocList.clear();
     m_Location = iter.m_Location;
-    iterate(TLocList, li, iter.m_LocList) {
+    ITERATE(TLocList, li, iter.m_LocList) {
         TLocList::iterator tmp = m_LocList.insert(m_LocList.end(), *li);
         if (iter.m_CurLoc == li)
             m_CurLoc = tmp;
@@ -439,7 +439,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         }
     case CSeq_loc::e_Packed_int:
         {
-            iterate ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
+            ITERATE ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
                 SLoc_Info info;
                 info.m_Id = &(*ii)->GetId();
                 info.m_Range.Set((*ii)->GetFrom(), (*ii)->GetTo());
@@ -452,7 +452,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         }
     case CSeq_loc::e_Packed_pnt:
         {
-            iterate ( CPacked_seqpnt::TPoints, pi, loc.GetPacked_pnt().GetPoints() ) {
+            ITERATE ( CPacked_seqpnt::TPoints, pi, loc.GetPacked_pnt().GetPoints() ) {
                 SLoc_Info info;
                 info.m_Id = &loc.GetPacked_pnt().GetId();
                 info.m_Range.Set(*pi, *pi);
@@ -465,14 +465,14 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         }
     case CSeq_loc::e_Mix:
         {
-            iterate(CSeq_loc_mix::Tdata, li, loc.GetMix().Get()) {
+            ITERATE(CSeq_loc_mix::Tdata, li, loc.GetMix().Get()) {
                 x_ProcessLocation(**li);
             }
             return;
         }
     case CSeq_loc::e_Equiv:
         {
-            iterate(CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get()) {
+            ITERATE(CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get()) {
                 x_ProcessLocation(**li);
             }
             return;
@@ -613,7 +613,7 @@ const CSeq_id* s_GetLabel
  string*                       label)
 {
     bool first = true;
-    iterate (list<CRef<CSeq_loc> >, it, loc_list) {
+    ITERATE (list<CRef<CSeq_loc> >, it, loc_list) {
 
         // Append to label for each CSeq_loc in list
         last_id = s_GetLabel(**it, last_id, label, first);
@@ -664,7 +664,7 @@ const CSeq_id* s_GetLabel
     {
         *label += "(";
         bool first = true;
-        iterate(list<CRef<CSeq_interval> >, it, loc.GetPacked_int().Get()) {
+        ITERATE(list<CRef<CSeq_interval> >, it, loc.GetPacked_int().Get()) {
             if (!first) {
                 *label += ", ";
             }
@@ -787,6 +787,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.27  2003/03/11 15:55:44  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 6.26  2003/02/24 18:52:13  vasilche
  * Added clearing of old data in assign.
  *

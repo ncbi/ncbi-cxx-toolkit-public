@@ -442,7 +442,7 @@ void CValidError_imp::Validate(const CSeq_submit& ss)
     const CCit_sub* cs = &ss.GetSub().GetCit();
 
     // Just loop thru CSeq_entrys
-    iterate( list< CRef< CSeq_entry > >, se, ss.GetData().GetEntrys() ) {
+    ITERATE( list< CRef< CSeq_entry > >, se, ss.GetData().GetEntrys() ) {
         Validate(**se, cs);
     }
 }
@@ -454,7 +454,7 @@ void CValidError_imp::ValidatePubdesc
 {
     int uid = 0;
 
-    iterate( CPub_equiv::Tdata, pub, pubdesc.GetPub().Get() ) {
+    ITERATE( CPub_equiv::Tdata, pub, pubdesc.GetPub().Get() ) {
         switch( (*pub)->Which() ) {
         case CPub::e_Gen:
             ValidatePubGen((*pub)->GetGen(), obj);
@@ -616,7 +616,7 @@ void CValidError_imp::ValidatePubArticle
 
 bool CValidError_imp::HasTitle(const CTitle& title)
 {
-    iterate (CTitle::Tdata, item, title.Get() ) {
+    ITERATE (CTitle::Tdata, item, title.Get() ) {
         const string *str = 0;
         switch ( (*item)->Which() ) {
         case CTitle::C_E::e_Name:
@@ -672,7 +672,7 @@ bool CValidError_imp::HasTitle(const CTitle& title)
 
 bool CValidError_imp::HasIsoJTA(const CTitle& title)
 {
-    iterate (CTitle::Tdata, item, title.Get() ) {
+    ITERATE (CTitle::Tdata, item, title.Get() ) {
         if ( (*item)->IsIso_jta() ) {
             return true;
         }
@@ -683,7 +683,7 @@ bool CValidError_imp::HasIsoJTA(const CTitle& title)
 
 bool CValidError_imp::HasName(const list< CRef< CAuthor > >& authors)
 {
-    iterate ( list< CRef< CAuthor > >, auth, authors ) {
+    ITERATE ( list< CRef< CAuthor > >, auth, authors ) {
         const CPerson_id& pid = (*auth)->GetName();
         if ( pid.IsName() ) {
             if ( !IsBlankString(pid.GetName().GetLast()) ) {
@@ -699,7 +699,7 @@ void CValidError_imp::ValidateEtAl
 (const CPubdesc& pubdesc,
  const CSerialObject& obj)
 {
-    iterate( CPub_equiv::Tdata, pub, pubdesc.GetPub().Get() ) {
+    ITERATE( CPub_equiv::Tdata, pub, pubdesc.GetPub().Get() ) {
         const CAuth_list* authors = 0;
         switch ( (*pub)->Which() ) {
         case CPub::e_Gen:
@@ -737,7 +737,7 @@ void CValidError_imp::ValidateEtAl
             continue;
         }
 
-        iterate ( CAuth_list::C_Names::TStd, name, names.GetStd() ) {
+        ITERATE ( CAuth_list::C_Names::TStd, name, names.GetStd() ) {
             if ( (*name)->GetName().IsName() ) {
                 const CName_std& nstd = (*name)->GetName().GetName();
                 if ( (NStr::CompareNocase(nstd.GetLast(), "et al.") == 0)  ||
@@ -850,7 +850,7 @@ void CValidError_imp::ValidateDbxref (
     const CSerialObject& obj
 )
 {
-    iterate( list< CRef< CDbtag > >, xref, xref_list) {
+    ITERATE( list< CRef< CDbtag > >, xref, xref_list) {
         ValidateDbxref(**xref, obj);
     }
 }
@@ -879,7 +879,7 @@ void CValidError_imp::ValidateBioSource
 	bool chrom_conflict = false;
     const CSubSource *chromosome = 0;
 	string countryname;
-	iterate( CBioSource::TSubtype, ssit, bsrc.GetSubtype() ) {
+	ITERATE( CBioSource::TSubtype, ssit, bsrc.GetSubtype() ) {
 		switch ( (**ssit).GetSubtype() ) {
 
 		case CSubSource::eSubtype_country:
@@ -951,7 +951,7 @@ void CValidError_imp::ValidateBioSource
     }
     const COrgName& orgname = orgref.GetOrgname();
 
-	iterate ( COrgName::TMod, omit, orgname.GetMod() ) {
+	ITERATE ( COrgName::TMod, omit, orgname.GetMod() ) {
 		int subtype = (**omit).GetSubtype();
 
 		if ( (subtype == 0) || (subtype == 1) ) {
@@ -976,7 +976,7 @@ void CValidError_imp::ValidateBioSource
     if ( IsRequireTaxonID() ) {
         bool found = false;
         if ( orgref.IsSetDb() ) {
-            iterate( COrg_ref::TDb, dbt, orgref.GetDb() ) {
+            ITERATE( COrg_ref::TDb, dbt, orgref.GetDb() ) {
                 if ( NStr::CompareNocase((*dbt)->GetDb(), "taxon") == 0 ) {
                     found = true;
                     break;
@@ -1459,7 +1459,7 @@ void CValidError_imp::Setup(const CSeq_entry& se)
 
     // Examine all Seq-ids on Bioseqs
     for (CTypeConstIterator <CBioseq> bi (se); bi; ++bi) {
-        iterate (CBioseq::TId, id, bi->GetId()) {
+        ITERATE (CBioseq::TId, id, bi->GetId()) {
             CSeq_id::E_Choice typ = (**id).Which();
             switch (typ) {
                 case CSeq_id::e_not_set:
@@ -1555,7 +1555,7 @@ void CValidError_imp::Setup(const CSeq_entry& se)
     // Map features to their enclosing Seq_annot
     for ( CTypeConstIterator<CSeq_annot> ai(se); ai; ++ai ) {
         if ( ai->GetData().IsFtable() ) {
-            iterate( CSeq_annot::C_Data::TFtable, fi, ai->GetData().GetFtable() ) {
+            ITERATE( CSeq_annot::C_Data::TFtable, fi, ai->GetData().GetFtable() ) {
                 m_FeatAnnotMap[&(**fi)] = &(*ai);
             }
         }
@@ -1791,6 +1791,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/03/11 16:04:09  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.20  2003/03/07 19:15:01  shomrat
 * Using binary search in IsFarLocation
 *

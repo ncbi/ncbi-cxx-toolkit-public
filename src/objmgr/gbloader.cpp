@@ -84,7 +84,7 @@ struct CGBDataLoader::SSeqrefs
   class TSeqrefs : public TV {
   public:
     TSeqrefs() : TV(0) {}
-    ~TSeqrefs() { iterate(TV,it,*this) delete *it; }
+    ~TSeqrefs() { ITERATE(TV,it,*this) delete *it; }
   };
   
   TSeqrefs       *m_Sr;
@@ -144,14 +144,14 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
 CGBDataLoader::~CGBDataLoader(void)
 {
   GBLOG_POST( "~CGBDataLoader");
-  iterate(TSeqId2Seqrefs,sih_it,m_Bs2Sr)
+  ITERATE(TSeqId2Seqrefs,sih_it,m_Bs2Sr)
     {
       if(sih_it->second)
         {
           delete sih_it->second;
         }
     }
-  iterate(TSr2TSEinfo,tse_it,m_Sr2TseInfo)
+  ITERATE(TSr2TSEinfo,tse_it,m_Sr2TseInfo)
     delete tse_it->second;
   delete m_Driver;
 }
@@ -190,7 +190,7 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
   do
     {
       unreleased_mutex_run=true;
-      iterate (TLocMap, hrange, hrmap.GetMap() )
+      ITERATE (TLocMap, hrange, hrmap.GetMap() )
         {
           //GBLOG_POST( "GetRecords-0" );
           TSeq_id_Key  sih       = x_GetSeq_id_Key(hrange->first);
@@ -266,7 +266,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_
     if(cnt==0)
       return 0;
   }
-  iterate(TTSESet, sit, tse_set)
+  ITERATE(TTSESet, sit, tse_set)
     {
       CTSE_Info *ti = const_cast<CTSE_Info*>(sit->GetPointer());
       const CSeq_entry *sep = ti->m_TSE;
@@ -307,11 +307,11 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_
   best=0;conflict=false;
   if (sr->m_Sr)
     {
-      iterate (SSeqrefs::TSeqrefs, srp, *sr->m_Sr)
+      ITERATE (SSeqrefs::TSeqrefs, srp, *sr->m_Sr)
         {
           TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
           if (tsep == m_Sr2TseInfo.end()) continue;
-          iterate(TTSESet, sit, tse_set)
+          ITERATE(TTSESet, sit, tse_set)
             {
               CTSE_Info *ti = const_cast<CTSE_Info*>(sit->GetPointer());;
               TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(ti->m_TSE.GetPointer());
@@ -376,7 +376,7 @@ CGBDataLoader::x_DropTSEinfo(STSEinfo *tse)
   if(!tse) return;
   
   m_Sr2TseInfo.erase(CCmpTSE(tse->key.get()));
-  iterate(STSEinfo::TSeqids,sih_it,tse->m_SeqIds)
+  ITERATE(STSEinfo::TSeqids,sih_it,tse->m_SeqIds)
     {
       TSeqId2Seqrefs::iterator bsit = m_Bs2Sr.find(*sih_it);
       if(bsit == m_Bs2Sr.end()) continue;
@@ -505,7 +505,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
         return global_mutex_was_released;
   
     //GBLOG_POST( "x_GetRecords-Seqref_iterate" );
-    iterate (SSeqrefs::TSeqrefs, srp, *sr->m_Sr) {
+    ITERATE (SSeqrefs::TSeqrefs, srp, *sr->m_Sr) {
         // skip TSE which doesn't contain requested type of info
         //GBLOG_POST( "x_GetRecords-Seqref_iterate_0" );
         if( ((~(*srp)->Flag()) & sr_mask) == 0 ) continue;
@@ -542,7 +542,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
         }}
         bool new_tse=false;
       
-        iterate (CHandleRange, lrange , hrange) {
+        ITERATE (CHandleRange, lrange , hrange) {
             //GBLOG_POST( "x_GetRecords-range_0" );
             // check Data
             //GBLOG_POST( "x_GetRecords-range_0" );
@@ -692,7 +692,7 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   GBLOG_POST( "ResolveHandle(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) );
   if(sr->m_Sr)
     {
-      iterate(SSeqrefs::TSeqrefs, srp, *(sr->m_Sr))
+      ITERATE(SSeqrefs::TSeqrefs, srp, *(sr->m_Sr))
         {
           char b[100];
           b[0] = 0;
@@ -710,11 +710,11 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
           
           // catch dissolving TSE and mark them dead
           //GBLOG_POST( "old seqrefs");
-          iterate(SSeqrefs::TSeqrefs,srp,*osr)
+          ITERATE(SSeqrefs::TSeqrefs,srp,*osr)
             {
               //(*srp)->print(); cout);
               bool found=false;
-              iterate(SSeqrefs::TSeqrefs,nsrp,*nsr)
+              ITERATE(SSeqrefs::TSeqrefs,nsrp,*nsr)
                 if(CCmpTSE(*srp)==CCmpTSE(*nsrp)) {found=true; break;}
               if(found) continue;
               TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
@@ -839,6 +839,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.53  2003/03/05 20:54:41  vasilche
 * Commented out wrong assert().
 *

@@ -174,7 +174,7 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 /*
                     // CRangeMultimap
                     CDebugDumpContext ddc3(ddc2, member_name);
-                    iterate ( TRangeMap, itrm, it->second ) {
+                    ITERATE( TRangeMap, itrm, it->second ) {
                         // CRange as string
                         string rg;
                         if (itrm->first.Empty()) {
@@ -208,6 +208,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.19  2003/03/10 16:55:17  vasilche
 * Cleaned SAnnotSelector structure.
 * Added shortcut when features are limited to one TSE.

@@ -174,7 +174,7 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
         locations.insert(CConstRef<CSeq_loc>(whole));
     }
 
-    iterate(set<CConstRef<CSeq_loc> >, it, locations) {
+    ITERATE(set<CConstRef<CSeq_loc> >, it, locations) {
         try {
             weights[*it] = GetProteinWeight(handle, *it);
         } catch (CBadResidueException) {
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2003/03/11 16:00:58  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.19  2003/02/11 20:49:39  ucko
 * Improve support for signal peptide features: ignore them if they have
 * WHOLE locations, and optimize logic to avoid GetMappedFeature (expensive).

@@ -102,7 +102,7 @@ static void s_GetContentLabel(const CSeqdesc& desc, string* const label)
         (*label) += tv->FindName(desc.GetMol_type(), true);
         return;
     case CSeqdesc::e_Modif:
-        iterate(list<EGIBB_mod>, it, desc.GetModif()) {
+        ITERATE(list<EGIBB_mod>, it, desc.GetModif()) {
             tv = GetTypeInfo_enum_EGIBB_mod();
             if (!label->empty()) {
                 (*label) += string(",") + tv->FindName(*it, true);
@@ -161,6 +161,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.3  2003/03/11 15:53:25  kuznets
+* iterate -> ITERATE
+*
 * Revision 6.2  2002/10/03 19:09:42  clausen
 * Removed extra whitespace
 *

@@ -186,7 +186,7 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
         case eViewMerged:
         {
             // Merge intervals from "rlist"
-            iterate (CHandleRange, rit, rlist) {
+            ITERATE (CHandleRange, rit, rlist) {
                 mode_rlist.MergeRange(rit->first, rit->second);
             }
             break;
@@ -195,7 +195,7 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
         {
             // Exclude intervals from "rlist"
             TSeqPos last_from = 0;
-            iterate (CHandleRange, rit, rlist) {
+            ITERATE (CHandleRange, rit, rlist) {
                 if (last_from < rit->first.GetFrom()) {
                     mode_rlist.MergeRange(
                         CHandleRange::TRange(last_from, rit->first.GetFrom()-1),
@@ -220,7 +220,7 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 
         // Convert ranges to seq-loc
         CRef<CSeq_loc> view_loc(new CSeq_loc);
-        iterate (CHandleRange, rit, mode_rlist) {
+        ITERATE (CHandleRange, rit, mode_rlist) {
             CRef<CSeq_loc> seg_loc(new CSeq_loc);
             CRef<CSeq_id> id(new CSeq_id);
             id->Assign(CSeq_id_Mapper::GetSeq_id_Mapper().GetSeq_id(m_Value));
@@ -284,6 +284,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.31  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

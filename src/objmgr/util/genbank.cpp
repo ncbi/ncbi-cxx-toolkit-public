@@ -240,7 +240,7 @@ bool CGenbankWriter::Write(const CSeq_entry& entry) const
 
     if (entry.IsSet()) {
         const CBioseq_set& s = entry.GetSet();
-        iterate(CBioseq_set::TSeq_set, it, s.GetSeq_set()) {
+        ITERATE(CBioseq_set::TSeq_set, it, s.GetSeq_set()) {
             if (!Write(**it)) {
                 return false;
             }
@@ -535,19 +535,19 @@ bool CGenbankWriter::WriteAccession(const CBioseq_Handle& handle) const
         if (CType<CEMBL_block>::Match(it)) {
             const CEMBL_block::TExtra_acc& accs
                 = CType<CEMBL_block>::Get(it)->GetExtra_acc();
-            iterate (CEMBL_block::TExtra_acc, acc, accs) {
+            ITERATE (CEMBL_block::TExtra_acc, acc, accs) {
                 accessions += ' ' + *acc;
             }
         } else if (CType<CSP_block>::Match(it)) {
             const CSP_block::TExtra_acc& accs
                 = CType<CSP_block>::Get(it)->GetExtra_acc();
-            iterate (CSP_block::TExtra_acc, acc, accs) {
+            ITERATE (CSP_block::TExtra_acc, acc, accs) {
                 accessions += ' ' + *acc;
             }
         } else if (CType<CGB_block>::Match(it)) {
             const CGB_block::TExtra_accessions& accs
                 = CType<CGB_block>::Get(it)->GetExtra_accessions();
-            iterate (CGB_block::TExtra_accessions, acc, accs) {
+            ITERATE (CGB_block::TExtra_accessions, acc, accs) {
                 accessions += ' ' + *acc;
             }
         }
@@ -563,7 +563,7 @@ bool CGenbankWriter::WriteID(const CBioseq_Handle& handle) const
         return true;
     }
 
-    iterate (CBioseq::TId, it, handle.GetBioseq().GetId()) {
+    ITERATE (CBioseq::TId, it, handle.GetBioseq().GetId()) {
         if ((*it)->IsGi()) {
             m_Stream << s_Pad("PID", sm_KeywordWidth) << 'g' << (*it)->GetGi()
                      << NcbiEndl;
@@ -624,7 +624,7 @@ bool CGenbankWriter::WriteKeywords(const CBioseq_Handle& handle) const
         case CSeqdesc::e_Genbank:
         {
             const CGB_block::TKeywords& kw = it->GetGenbank().GetKeywords();
-            iterate (CGB_block::TKeywords, k, kw) {
+            ITERATE (CGB_block::TKeywords, k, kw) {
                 keywords.push_back(*k);
             }
             break;
@@ -633,7 +633,7 @@ bool CGenbankWriter::WriteKeywords(const CBioseq_Handle& handle) const
         case CSeqdesc::e_Embl:
         {
             const CEMBL_block::TKeywords& kw = it->GetEmbl().GetKeywords();
-            iterate (CEMBL_block::TKeywords, k, kw) {
+            ITERATE (CEMBL_block::TKeywords, k, kw) {
                 keywords.push_back(*k);
             }
             break;
@@ -642,7 +642,7 @@ bool CGenbankWriter::WriteKeywords(const CBioseq_Handle& handle) const
         case CSeqdesc::e_Pir:
         {
             const CPIR_block::TKeywords& kw = it->GetPir().GetKeywords();
-            iterate (CPIR_block::TKeywords, k, kw) {
+            ITERATE (CPIR_block::TKeywords, k, kw) {
                 keywords.push_back(*k);
             }
             break;
@@ -651,7 +651,7 @@ bool CGenbankWriter::WriteKeywords(const CBioseq_Handle& handle) const
         case CSeqdesc::e_Sp:
         {
             const CSP_block::TKeywords& kw = it->GetSp().GetKeywords();
-            iterate (CSP_block::TKeywords, k, kw) {
+            ITERATE (CSP_block::TKeywords, k, kw) {
                 keywords.push_back(*k);
             }
             break;
@@ -660,7 +660,7 @@ bool CGenbankWriter::WriteKeywords(const CBioseq_Handle& handle) const
         case CSeqdesc::e_Prf:
         {
             const CPRF_block::TKeywords& kw = it->GetPrf().GetKeywords();
-            iterate (CPRF_block::TKeywords, k, kw) {
+            ITERATE (CPRF_block::TKeywords, k, kw) {
                 keywords.push_back(*k);
             }
             break;
@@ -714,7 +714,7 @@ bool CGenbankWriter::WriteSegment(const CBioseq_Handle& handle) const
     }
 
     unsigned int n = 1;
-    iterate (CBioseq_set::TSeq_set, it, parent.GetSeq_set()) {
+    ITERATE (CBioseq_set::TSeq_set, it, parent.GetSeq_set()) {
         if ((*it)->IsSeq()  &&  &(*it)->GetSeq() == &seq) {
             m_Stream << s_Pad("SEGMENT", sm_KeywordWidth) << n
                      << " of " << parent.GetSeq_set().size() << NcbiEndl;
@@ -786,7 +786,7 @@ bool CGenbankWriter::WriteSource(const CBioseq_Handle& handle) const
 
 static string s_FormatTitle(const CTitle& title) {
     string result;
-    iterate (CTitle::Tdata, it, title.Get()) {
+    ITERATE (CTitle::Tdata, it, title.Get()) {
         switch ((*it)->Which()) {
         case CTitle::C_E::e_Name:    result = (*it)->GetName();     break;
         case CTitle::C_E::e_Trans:   result = (*it)->GetTrans();    break;
@@ -960,7 +960,7 @@ CReference::CReference(const CPubdesc& pub, const CSeq_loc& loc)
       m_Category(eCategory_unknown)
 {
     // Extract IDs
-    iterate (CPub_equiv::Tdata, it, pub.GetPub().Get()) {
+    ITERATE (CPub_equiv::Tdata, it, pub.GetPub().Get()) {
         switch ((*it)->Which()) {
         case CPub::e_Gen:
         {
@@ -1053,7 +1053,7 @@ CReference::CReference(const CPubdesc& pub, const CSeq_loc& loc)
         }
             
         SIZE_TYPE count = author_list.size();
-        iterate (list<string>, it, author_list) {
+        ITERATE (list<string>, it, author_list) {
             m_Authors += *it;
             switch (--count) {
             case 0:
@@ -1081,7 +1081,7 @@ string CReference::GetLocString(const string& length_unit) const
         case CSeq_loc::e_Mix:
         {
             string result = length_unit + ' ';
-            iterate (CSeq_loc_mix::Tdata, it, m_Loc->GetMix().Get()) {
+            ITERATE (CSeq_loc_mix::Tdata, it, m_Loc->GetMix().Get()) {
                 if (it != m_Loc->GetMix().Get().begin()) {
                     result += "; ";
                 }
@@ -1216,7 +1216,7 @@ bool CGenbankWriter::WriteReference(const CBioseq_Handle& handle) const
         
         {{
             bool seen_main = false;
-            iterate (CPub_equiv::Tdata, it, v[n]->GetPub().GetPub().Get()) {
+            ITERATE (CPub_equiv::Tdata, it, v[n]->GetPub().GetPub().Get()) {
                 switch ((*it)->Which()) {
                 case CPub::e_Gen:
                 {
@@ -1546,7 +1546,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
         CSeqdesc_CI it(handle, CSeqdesc::e_Source);
         for (; it;  ++it) {
             TGBSQuals quals = s_SourceQualifiers(it->GetSource());
-            iterate (TGBSQuals, qual, quals) {
+            ITERATE (TGBSQuals, qual, quals) {
                 WriteFeatureQualifier(qual->ToString());
             }
             found_source = true;
@@ -1581,7 +1581,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
     }
     sort(v.begin(), v.end(), s_CompareFeats);
 
-    iterate (TFeatVect, feat, v) {
+    ITERATE (TFeatVect, feat, v) {
         CFeature gbfeat(**feat);
 
         string name
@@ -1620,12 +1620,12 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
                 gbfeat.AddQual(CGBQual::eType_pseudo);
             }
             if (gene.IsSetDb()) {
-                iterate (CGene_ref::TDb, it, gene.GetDb()) {
+                ITERATE (CGene_ref::TDb, it, gene.GetDb()) {
                     gbfeat.AddQual(CGBQual::eType_db_xref, s_FormatDbtag(**it));
                 }
             }
             if (gene.IsSetSyn()) {
-                iterate (CGene_ref::TSyn, it, gene.GetSyn()) {
+                ITERATE (CGene_ref::TSyn, it, gene.GetSyn()) {
                     gbfeat.AddQual(CGBQual::eType_standard_name, *it);
                 }
             }
@@ -1647,7 +1647,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
                                NStr::IntToString(region.GetFrame()));
             }
             if (region.IsSetCode()) {
-                iterate (CGenetic_code::Tdata, it, region.GetCode().Get()) {
+                ITERATE (CGenetic_code::Tdata, it, region.GetCode().Get()) {
                     switch ((*it)->Which()) {
                     case CGenetic_code::C_E::e_Id:
                         if ((*it)->GetId() != 1) {
@@ -1698,7 +1698,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
                 }
             }
             if (region.IsSetCode_break()) {
-                iterate (CCdregion::TCode_break, it, region.GetCode_break()) {
+                ITERATE (CCdregion::TCode_break, it, region.GetCode_break()) {
                     const char* abbrev;
                     switch ((*it)->GetAa().Which()) {
                     case CCode_break::C_Aa::e_Ncbieaa:
@@ -1949,7 +1949,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
             if (prot_handle) {
                 const CBioseq& prot_seq = prot_handle.GetBioseq();
                 const CTextseq_id* tsid;
-                iterate(CBioseq::TId, it, prot_seq.GetId()) {
+                ITERATE(CBioseq::TId, it, prot_seq.GetId()) {
                     if ((tsid = (*it)->GetTextseq_Id()) != NULL) {
                         gbfeat.AddQual(CGBQual::eType_protein_id,
                                        tsid->GetAccession() + '.' +
@@ -1974,7 +1974,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
         }
 
         if ((*feat)->IsSetQual()) {
-            iterate (CSeq_feat::TQual, it, (*feat)->GetQual()) {
+            ITERATE (CSeq_feat::TQual, it, (*feat)->GetQual()) {
                 gbfeat.AddQual(static_cast<CGBQual::EType>
                                (CGBQual::GetTypeInfo_enum_EType()
                                 ->FindValue((*it)->GetQual())),
@@ -2013,7 +2013,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
         }
 
         if ((*feat)->IsSetDbxref()) {
-            iterate (CSeq_feat::TDbxref, it, (*feat)->GetDbxref()) {
+            ITERATE (CSeq_feat::TDbxref, it, (*feat)->GetDbxref()) {
                 gbfeat.AddQual(CGBQual::eType_db_xref, s_FormatDbtag(**it));
             }
         }
@@ -2026,7 +2026,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
             gbfeat.AddQual(CGBQual::eType_exception, (*feat)->GetExcept_text());
         }
 
-        iterate (CFeature::TQuals, qual, gbfeat.GetQuals()) {
+        ITERATE (CFeature::TQuals, qual, gbfeat.GetQuals()) {
             WriteFeatureQualifier(qual->ToString());
         }
     }
@@ -2057,7 +2057,7 @@ static void s_AddGeneQualifier(CFeature& gbfeat, const CSeq_feat& feat, CScope& 
 static void s_AddProteinQualifiers(CFeature& gbfeat, const CProt_ref& prot)
 {
     if (prot.IsSetName()) {
-        iterate (CProt_ref::TName, it, prot.GetName()) {
+        ITERATE (CProt_ref::TName, it, prot.GetName()) {
             gbfeat.AddQual(CGBQual::eType_product, *it);
         }
     }
@@ -2067,19 +2067,19 @@ static void s_AddProteinQualifiers(CFeature& gbfeat, const CProt_ref& prot)
     }
     
     if (prot.IsSetEc()) {
-        iterate (CProt_ref::TEc, it, prot.GetEc()) {
+        ITERATE (CProt_ref::TEc, it, prot.GetEc()) {
             gbfeat.AddQual(CGBQual::eType_EC_number, *it);
         }
     }
 
     if (prot.IsSetActivity()) {
-        iterate (CProt_ref::TActivity, it, prot.GetActivity()) {
+        ITERATE (CProt_ref::TActivity, it, prot.GetActivity()) {
             gbfeat.AddQual(CGBQual::eType_prot_activity, *it);
         }
     }
 
     if (prot.IsSetDb()) {
-        iterate (CProt_ref::TDb, it, prot.GetDb()) {
+        ITERATE (CProt_ref::TDb, it, prot.GetDb()) {
             gbfeat.AddQual(CGBQual::eType_db_xref, s_FormatDbtag(**it));
         }
     }
@@ -2098,20 +2098,20 @@ static TGBSQuals s_SourceQualifiers(const COrg_ref& org)
     
 
     if (org.IsSetMod()) {
-        iterate (COrg_ref::TMod, it, org.GetMod()) {
+        ITERATE (COrg_ref::TMod, it, org.GetMod()) {
             quals.insert(CGBSQual(CGBSQual::eType_note, *it));
         }
     }
 
     if (org.IsSetDb()) {
-        iterate (COrg_ref::TDb, it, org.GetDb()) {
+        ITERATE (COrg_ref::TDb, it, org.GetDb()) {
             quals.insert(CGBSQual(CGBSQual::eType_db_xref,
                                   s_FormatDbtag(**it)));
         }
     }
 
     if (org.IsSetOrgname() && org.GetOrgname().IsSetMod()) {
-        iterate (COrgName::TMod, it, org.GetOrgname().GetMod()) {
+        ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
             CGBSQual::EType qual_type;
             string tag;
             switch ((*it)->GetSubtype()) {
@@ -2223,7 +2223,7 @@ static TGBSQuals s_SourceQualifiers(const CBioSource& source)
     }
     
     if (source.IsSetSubtype()) {
-        iterate (CBioSource::TSubtype, it, source.GetSubtype()) {
+        ITERATE (CBioSource::TSubtype, it, source.GetSubtype()) {
             CGBSQual::EType qual_type;
             string tag;
             switch ((*it)->GetSubtype()) {
@@ -2460,7 +2460,7 @@ void CGenbankWriter::FormatIDPrefix(const CSeq_id& id,
                                     const CBioseq& default_seq,
                                     CNcbiOstream& dest) const
 {
-    iterate (CBioseq::TId, it, default_seq.GetId()) {
+    ITERATE (CBioseq::TId, it, default_seq.GetId()) {
         if ((*it)->Match(id)) {
             return;
         }
@@ -2615,7 +2615,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
         const CPacked_seqint& pi = location.GetPacked_int();
         dest << "join("; // should this be order?
         bool first = true;
-        iterate (CPacked_seqint::Tdata, it, pi.Get()) {
+        ITERATE (CPacked_seqint::Tdata, it, pi.Get()) {
             if (!first) {
                 dest << ',';
             }
@@ -2645,7 +2645,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
         const CPacked_seqpnt& pp = location.GetPacked_pnt();
         dest << StrandPrefix(pp) << "join("; // should this be order?
         bool first = true;
-        iterate (CPacked_seqpnt::TPoints, it, pp.GetPoints()) {
+        ITERATE (CPacked_seqpnt::TPoints, it, pp.GetPoints()) {
             if (!first) {
                 dest << ',';
             }
@@ -2665,7 +2665,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
         const CSeq_loc_mix& mix = location.GetMix();
         bool first = true;
         dest << "join(";
-        iterate (CSeq_loc_mix::Tdata, it, mix.Get()) {
+        ITERATE (CSeq_loc_mix::Tdata, it, mix.Get()) {
             if (!first) {
                 dest << ',';
             }
@@ -2850,6 +2850,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.35  2003/03/11 16:00:58  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.34  2003/03/06 20:06:21  vasilche
 * Added missing break.
 *

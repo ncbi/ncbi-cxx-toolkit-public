@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2003/03/11 15:53:25  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 6.5  2002/05/03 21:28:13  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -594,7 +597,7 @@ const string& CGencode_implementation::GetNcbieaa(int id) const
     const list <CRef<CGenetic_code> >& gcl = m_GcTable->Get();
 
     // Loop through list and find required genetic code
-    iterate (list<CRef<CGenetic_code> >, gitor, gcl) {
+    ITERATE (list<CRef<CGenetic_code> >, gitor, gcl) {
         const list<CRef<CGenetic_code::C_E> >& cel = (**gitor).Get();
         list<CRef<CGenetic_code::C_E> >::const_iterator citor;
 
@@ -631,7 +634,7 @@ const string& CGencode_implementation::GetNcbieaa(const string& name) const
     const list<CRef<CGenetic_code> >& gcl = m_GcTable->Get();
 
     // Loop through list and find required genetic code
-    iterate (list<CRef<CGenetic_code> >, gitor, gcl) {
+    ITERATE (list<CRef<CGenetic_code> >, gitor, gcl) {
         const list<CRef<CGenetic_code::C_E> >& cel = (**gitor).Get();
         list<CRef<CGenetic_code::C_E> >::const_iterator citor;
 
@@ -667,7 +670,7 @@ const string& CGencode_implementation::GetSncbieaa(int id) const
     const list<CRef<CGenetic_code> >& gcl = m_GcTable->Get();
 
     // Loop through list and find required genetic code
-    iterate (list<CRef<CGenetic_code> >, gitor, gcl) {
+    ITERATE (list<CRef<CGenetic_code> >, gitor, gcl) {
         const list<CRef<CGenetic_code::C_E> >& cel = (**gitor).Get();
         list<CRef<CGenetic_code::C_E> >::const_iterator citor;
 
@@ -705,7 +708,7 @@ const string& CGencode_implementation::GetSncbieaa(const string& name) const
     const list<CRef<CGenetic_code> >& gcl = m_GcTable->Get();
 
     // Loop through list and find required genetic code
-    iterate (list<CRef<CGenetic_code> >, gitor, gcl) {
+    ITERATE (list<CRef<CGenetic_code> >, gitor, gcl) {
         const list<CRef<CGenetic_code::C_E> >& cel = (**gitor).Get();
         list<CRef<CGenetic_code::C_E> >::const_iterator citor;
 
@@ -750,7 +753,7 @@ void CGencode_implementation::GetGeneticCode
 
     // Loop through the list and figure out what genetic code
     // is being requested
-    iterate (list<CRef<CGenetic_code::C_E> >, i_lst, lst) {
+    ITERATE (list<CRef<CGenetic_code::C_E> >, i_lst, lst) {
         try {
             switch((*i_lst)->Which()){
 

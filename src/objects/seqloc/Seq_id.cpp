@@ -866,7 +866,7 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
             bool found_gi = false;
 
             CNcbiOstrstream out_str;
-            iterate (CBioseq::TId, id, bioseq.GetId()) {
+            ITERATE (CBioseq::TId, id, bioseq.GetId()) {
                 if ((*id)->IsGi()) {
                     (*id)->WriteAsFasta(out_str);
                     found_gi = true;
@@ -891,7 +891,7 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
         // eForceGI produces a string containing only the GI in FastA format
         // so we have:
         //    gi|####
-        iterate (CBioseq::TId, iter, bioseq.GetId()) {
+        ITERATE (CBioseq::TId, iter, bioseq.GetId()) {
             if ( (*iter)->IsGi() ) {
                 CNcbiOstrstream out_str;
                 (*iter)->WriteAsFasta(out_str);
@@ -1339,6 +1339,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.52  2003/03/11 15:55:44  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 6.51  2003/02/06 22:23:29  vasilche
  * Added CSeq_id::Assign(), CSeq_loc::Assign().
  * Added int CSeq_id::Compare() (not safe).

@@ -102,7 +102,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     bool                      htg_tech    = false;
     bool                      use_biosrc  = false;
 
-    iterate (CBioseq::TId, id, core->GetId()) {
+    ITERATE (CBioseq::TId, id, core->GetId()) {
         if ( !tsid ) {
             tsid = (*id)->GetTextseq_Id();
         }
@@ -317,7 +317,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         bool cancelled = false;
         CSeqdesc_CI gb(hnd, CSeqdesc::e_Genbank);
         for (;  gb;  ++gb) {
-            iterate (CGB_block::TKeywords, it,
+            ITERATE (CGB_block::TKeywords, it,
                      gb->GetGenbank().GetKeywords()) {
                 if (NStr::Compare(*it, "HTGS_DRAFT", NStr::eNocase) == 0) {
                     is_draft = true;
@@ -345,7 +345,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             // We need the full bioseq here...
             const CBioseq& seq = hnd.GetBioseq();
             unsigned int pieces = 1;
-            iterate (CDelta_ext::Tdata, it,
+            ITERATE (CDelta_ext::Tdata, it,
                      seq.GetInst().GetExt().GetDelta().Get()) {
                 switch ((*it)->Which()) {
                 case CDelta_seq::e_Loc:
@@ -445,7 +445,7 @@ static string s_TitleFromBioSource(const CBioSource& source,
     }
 
     if (source.IsSetSubtype()) {
-        iterate (CBioSource::TSubtype, it, source.GetSubtype()) {
+        ITERATE (CBioSource::TSubtype, it, source.GetSubtype()) {
             switch ((*it)->GetSubtype()) {
             case CSubSource::eSubtype_chromosome:
                 chromosome = " chromosome " + (*it)->GetName();
@@ -461,7 +461,7 @@ static string s_TitleFromBioSource(const CBioSource& source,
     }
 
     if (org.IsSetOrgname()  &&  org.GetOrgname().IsSetMod()) {
-        iterate (COrgName::TMod, it, org.GetOrgname().GetMod()) {
+        ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
             if ((*it)->GetSubtype() == COrgMod::eSubtype_strain
                 &&  !NStr::EndsWith(name, 
                 (*it)->GetSubname(), NStr::eNocase)) {
@@ -499,7 +499,7 @@ static string x_TitleFromChromosome(const CBioSource& source,
     }
 
     if (source.IsSetSubtype()) {
-        iterate (CBioSource::TSubtype, it, source.GetSubtype()) {
+        ITERATE (CBioSource::TSubtype, it, source.GetSubtype()) {
             switch ((*it)->GetSubtype()) {
             case CSubSource::eSubtype_chromosome:
                 chromosome = (*it)->GetName();
@@ -680,7 +680,7 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
 
     if (prot.NotEmpty()  &&  prot->IsSetName()  &&  !prot->GetName().empty()) {
         bool first = true;
-        iterate (CProt_ref::TName, it, prot->GetName()) {
+        ITERATE (CProt_ref::TName, it, prot->GetName()) {
             if (!first) {
                 result += "; ";
             }
@@ -815,6 +815,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2003/03/11 16:00:58  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.16  2003/02/10 18:33:48  ucko
 * Don't append organism names that are already present.
 *

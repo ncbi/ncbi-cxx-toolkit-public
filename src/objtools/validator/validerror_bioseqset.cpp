@@ -164,7 +164,7 @@ void CValidError_bioseqset::ValidateNucProtSet
                  "No proteins in nuc-prot set", seqset);
     }
 
-    iterate( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
+    ITERATE( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
         if ( (**se_list_it).IsSeq() ) {
             const CBioseq& seq = (**se_list_it).GetSeq();
             if ( seq.IsNa()  &&  !IsMrnaProductInGPS(seq) ) {
@@ -205,7 +205,7 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
     CSeq_inst::EMol     mol = CSeq_inst::eMol_not_set;
     CSeq_inst::EMol     seq_inst_mol;
     
-    iterate ( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
+    ITERATE ( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
         if ( (**se_list_it).IsSeq() ) {
             const CSeq_inst& seq_inst = (**se_list_it).GetSeq().GetInst();
             
@@ -257,7 +257,7 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
     CSeq_inst::EMol     mol = CSeq_inst::eMol_not_set;
     CSeq_inst::EMol     seq_inst_mol;
 
-    iterate ( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
+    ITERATE ( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
         if ( (**se_list_it).IsSeq() ) {
             const CSeq_inst& seq_inst = (**se_list_it).GetSeq().GetInst();
 
@@ -418,6 +418,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/03/11 16:04:09  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.7  2003/02/14 15:11:57  shomrat
 * population study check for inconsistent organisms drops severity if first mismatch is same up to sp.
 *

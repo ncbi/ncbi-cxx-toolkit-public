@@ -344,7 +344,7 @@ int CValidError_feat::CheckForRaggedEnd
         len = GetLength(loc, m_Scope);
 
         CSeq_loc::TRange range = CSeq_loc::TRange::GetEmpty();
-        iterate( CCdregion::TCode_break, cbr, cdregion.GetCode_break() ) {
+        ITERATE( CCdregion::TCode_break, cbr, cdregion.GetCode_break() ) {
             SRelLoc rl(loc, (*cbr)->GetLoc(), m_Scope);
             CRef<CSeq_loc> rel_loc = rl.Resolve(m_Scope);
             range += rel_loc->GetTotalRange();
@@ -529,7 +529,7 @@ void CValidError_feat::ValidateCdregion (
 ) 
 {
     
-    iterate( list< CRef< CGb_qual > >, qual, feat.GetQual () ) {
+    ITERATE( list< CRef< CGb_qual > >, qual, feat.GetQual () ) {
         if ( (**qual).GetQual() == "codon" ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
                 "Use the proper genetic code, if available, "
@@ -544,7 +544,7 @@ void CValidError_feat::ValidateCdregion (
         ValidateSplice(feat, false);
     }
     
-    iterate( CCdregion::TCode_break, codebreak, cdregion.GetCode_break() ) {
+    ITERATE( CCdregion::TCode_break, codebreak, cdregion.GetCode_break() ) {
         ECompare comp = sequence::Compare((**codebreak).GetLoc (),
             feat.GetLocation (), m_Scope );
         if ( (comp != eContained) && (comp != eSame))
@@ -788,7 +788,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     }
 
     if ( rna_type == CRNA_ref::eType_tRNA ) {
-        iterate ( list< CRef< CGb_qual > >, gbqual, feat.GetQual () ) {
+        ITERATE ( list< CRef< CGb_qual > >, gbqual, feat.GetQual () ) {
             if ( NStr::CompareNocase((**gbqual).GetVal (), "anticodon") == 0 ) {
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                     "Unparsed anticodon qualifier in tRNA", feat);
@@ -888,7 +888,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
         return;  // !!!  need to issue a warning/error?
     }
     
-    iterate( CTrna_ext::TCodon, iter, trna.GetCodon() ) {
+    ITERATE( CTrna_ext::TCodon, iter, trna.GetCodon() ) {
         if ( *iter < 64 ) {  // 0-63 = codon,  255=no data in cell
             unsigned char taa = ncbieaa[*iter];
             unsigned char  aa = trna.GetAa().GetNcbieaa();
@@ -970,7 +970,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
                     "ImpFeat CDS should be pseudo", feat);
             }
 
-            iterate( CSeq_feat::TQual, gbqual, feat.GetQual() ) {
+            ITERATE( CSeq_feat::TQual, gbqual, feat.GetQual() ) {
                 if ( NStr::CompareNocase( (*gbqual)->GetQual(), "translation") == 0 ) {
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_ImpCDShasTranslation,
                         "ImpFeat CDS with /translation found", feat);
@@ -1006,11 +1006,11 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
         ValidateImpGbquals(imp, feat);
 
         // Make sure a feature has its mandatory qualifiers
-        iterate( CFeatQualAssoc::TGBQualTypeVec,
+        ITERATE( CFeatQualAssoc::TGBQualTypeVec,
                  required,
                  CFeatQualAssoc::GetMandatoryGbquals(subtype) ) {
             bool found = false;
-            iterate( CSeq_feat::TQual, qual, feat.GetQual() ) {
+            ITERATE( CSeq_feat::TQual, qual, feat.GetQual() ) {
                 if ( CGbqualType::GetType(**qual) == *required ) {
                     found = true;
                     break;
@@ -1033,7 +1033,7 @@ void CValidError_feat::ValidateImpGbquals
     CSeqFeatData::ESubtype ftype = feat.GetData().GetSubtype();
     const string& key = imp.GetKey();
 
-    iterate( CSeq_feat::TQual, qual, feat.GetQual() ) {
+    ITERATE( CSeq_feat::TQual, qual, feat.GetQual() ) {
         const string& qual_str = (*qual)->GetQual();
 
         if ( qual_str == "gsdb_id" ) {
@@ -1711,7 +1711,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     bool got_stop = (transl_prot[transl_prot.length() - 1] == '*');
     
     // count internal stops
-    iterate( string, it, transl_prot ) {
+    ITERATE( string, it, transl_prot ) {
         if ( *it == '*' ) {
             ++stop_count;
         }
@@ -1894,7 +1894,7 @@ void CValidError_feat::ValidateCodeBreakNotOnCodon
 {
     TSeqPos len = GetLength(loc, m_Scope);
 
-    iterate( CCdregion::TCode_break, cbr, cdregion.GetCode_break() ) {
+    ITERATE( CCdregion::TCode_break, cbr, cdregion.GetCode_break() ) {
         size_t codon_length = GetLength((*cbr)->GetLoc(), m_Scope);
         TSeqPos from = LocationOffset(loc, (*cbr)->GetLoc(), 
             eOffset_FromStart, m_Scope);
@@ -2041,7 +2041,7 @@ void CValidError_feat::ValidateFeatCit
     }
 
     if ( cit.IsPub() ) {
-        iterate ( CPub_set::TPub, pi, cit.GetPub() ) {
+        ITERATE( CPub_set::TPub, pi, cit.GetPub() ) {
             if ( (*pi)->IsEquiv() ) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryCitPubEquiv,
                     "Citation on feature has unexpected internal Pub-equiv",
@@ -2108,7 +2108,7 @@ void CValidError_feat::ValidateFeatBioSource
 bool CValidError_feat::IsTransgenic(const CBioSource& bsrc)
 {
     if ( bsrc.IsSetSubtype() ) {
-        iterate( CBioSource::TSubtype, sub, bsrc.GetSubtype() ) {
+        ITERATE( CBioSource::TSubtype, sub, bsrc.GetSubtype() ) {
             if ( (*sub)->GetSubtype() == CSubSource::eSubtype_transgenic ) {
                 return true;
             }
@@ -2156,6 +2156,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/03/11 16:04:09  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.17  2003/02/14 21:54:21  shomrat
 * Change use of GetBestOverlappingFeat due to addition of contains option
 *

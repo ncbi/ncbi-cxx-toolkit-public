@@ -89,7 +89,7 @@ void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry,
 bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (TDataSourceSet, it, m_setDataSrc) {
+    ITERATE (TDataSourceSet, it, m_setDataSrc) {
         if ( it->m_DataSource->AttachAnnot(entry, annot) ) {
             return true;
         }
@@ -101,7 +101,7 @@ bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 bool CScope::RemoveAnnot(const CSeq_entry& entry, const CSeq_annot& annot)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (TDataSourceSet, it, m_setDataSrc) {
+    ITERATE (TDataSourceSet, it, m_setDataSrc) {
         if ( it->m_DataSource->GetDataLoader() )
             continue; // can not modify loaded data
         if ( it->m_DataSource->RemoveAnnot(entry, annot) ) {
@@ -117,7 +117,7 @@ bool CScope::ReplaceAnnot(const CSeq_entry& entry,
                           CSeq_annot& new_annot)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (TDataSourceSet, it, m_setDataSrc) {
+    ITERATE (TDataSourceSet, it, m_setDataSrc) {
         if ( it->m_DataSource->ReplaceAnnot(entry, old_annot, new_annot) ) {
             return true;
         }
@@ -129,7 +129,7 @@ bool CScope::ReplaceAnnot(const CSeq_entry& entry,
 bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (TDataSourceSet, it, m_setDataSrc) {
+    ITERATE (TDataSourceSet, it, m_setDataSrc) {
         if ( it->m_DataSource->AttachEntry(parent, entry) ) {
             return true;
         }
@@ -141,7 +141,7 @@ bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 bool CScope::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (TDataSourceSet, it, m_setDataSrc) {
+    ITERATE (TDataSourceSet, it, m_setDataSrc) {
         if ( it->m_DataSource->AttachMap(bioseq, seqmap) ) {
             return true;
         }
@@ -158,7 +158,7 @@ bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
     CRef<CDelta_seq> dseq(new CDelta_seq);
     dseq->SetLiteral().SetSeq_data(seq);
     dseq->SetLiteral().SetLength(length);
-    iterate (TDataSourceSet, it, m_setDataSrc) {
+    ITERATE (TDataSourceSet, it, m_setDataSrc) {
         if ( it->m_DataSource->AttachSeqData(bioseq, *dseq, index, start, length) ) {
             return true;
         }
@@ -209,7 +209,7 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
     CBioseq_Handle ret;
     TSeq_id_HandleSet hset;
     x_GetIdMapper().GetMatchingHandles(id.GetSeqId(), hset);
-    iterate ( TSeq_id_HandleSet, hit, hset ) {
+    ITERATE ( TSeq_id_HandleSet, hit, hset ) {
         CSeqMatch_Info match(id, *static_cast<CTSE_Info*>(bh.m_TSE),
                              bh.x_GetDataSource());
         ret = match.GetDataSource()->GetBioseqHandle(*this, match);
@@ -232,7 +232,7 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
 
 CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq)
 {
-    iterate (CBioseq::TId, id, seq.GetId()) {
+    ITERATE (CBioseq::TId, id, seq.GetId()) {
         return GetBioseqHandle (**id);
     }
 
@@ -250,11 +250,11 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
     // find all
     x_GetIdMapper().GetMatchingHandlesStr(searchBy, setSource);
     // filter those which "belong" to my data sources
-    iterate(TDataSourceSet, itSrc, m_setDataSrc) {
+    ITERATE(TDataSourceSet, itSrc, m_setDataSrc) {
         itSrc->m_DataSource->FilterSeqid(setResult, setSource);
     }
     // create result
-    iterate(TSeq_id_HandleSet, itSet, setResult) {
+    ITERATE(TSeq_id_HandleSet, itSet, setResult) {
         setId.insert(CRef<const CSeq_id>
                      (&(x_GetIdMapper().GetSeq_id(*itSet))));
     }
@@ -267,7 +267,7 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
     // Protected by m_Scope_Mtx in upper-level functions
     set<CSeqMatch_Info> bm_set;
     SDataSourceRec::TPriority pr = SDataSourceRec::TPriority(-1);
-    iterate (TDataSourceSet, it, m_setDataSrc) {
+    ITERATE (TDataSourceSet, it, m_setDataSrc) {
         // Do not search in lower-priority sources
         if (pr < it->m_Priority)
             continue;
@@ -281,7 +281,7 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
     bool best_is_in_history = false;
     bool best_is_live = false;
     CSeqMatch_Info extra_live;
-    iterate (set<CSeqMatch_Info>, bm_it, bm_set) {
+    ITERATE (set<CSeqMatch_Info>, bm_it, bm_set) {
         TRequestHistory::const_iterator hist =
             m_History.find(CTSE_Lock(const_cast<CTSE_Info&>(**bm_it)));
         if (hist != m_History.end()) {
@@ -331,7 +331,7 @@ void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
                               CSeq_annot::C_Data::E_Choice sel)
 {
     //CMutexGuard guard(m_Scope_Mtx);
-    iterate (TDataSourceSet, it, m_setDataSrc) {
+    ITERATE (TDataSourceSet, it, m_setDataSrc) {
         it->m_DataSource->UpdateAnnotIndex(loc, sel);
     }
 }
@@ -341,11 +341,11 @@ void CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                                  CAnnotTypes_CI::TTSESet& tse_set)
 {
     //CMutexGuard guard(m_Scope_Mtx);
-    iterate (TDataSourceSet, it, m_setDataSrc) {
+    ITERATE (TDataSourceSet, it, m_setDataSrc) {
         it->m_DataSource->GetTSESetWithAnnots(idh, tse_set, *this);
     }
     //### Filter the set depending on the requests history?
-    iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
+    ITERATE (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
         x_AddToHistory(**tse_it);
     }
 }
@@ -355,7 +355,7 @@ CTSE_Lock CScope::GetTSEInfo(const CSeq_entry* tse)
 {
     CTSE_Lock ret;
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (TDataSourceSet, it, m_setDataSrc) {
+    ITERATE (TDataSourceSet, it, m_setDataSrc) {
         ret = it->m_DataSource->GetTSEInfo(tse);
         if ( ret )
             break;
@@ -434,7 +434,7 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
                                         set<CBioseq_Handle>& handles,
                                         CSeq_inst::EMol filter)
 {
-    iterate(TDataSourceSet, itSrc, m_setDataSrc) {
+    ITERATE(TDataSourceSet, itSrc, m_setDataSrc) {
         if (itSrc->m_DataSource->GetTSEHandles(*this, tse, handles, filter))
             break;
     }
@@ -459,7 +459,7 @@ const CSynonymsSet* CScope::x_GetSynonyms(const CSeq_id_Handle& id)
     // It's OK to use CRef, at least one copy should be kept
     // alive by the id cache (for the ID requested).
     CRef<CSynonymsSet> synset(new CSynonymsSet);
-    iterate(CBioseq::TId, it, core->GetId()) {
+    ITERATE(CBioseq::TId, it, core->GetId()) {
         // Check current ID for conflicts, add to the set.
         CSeq_id_Handle idh = x_GetIdMapper().GetHandle(**it);
         TCache::const_iterator seq = m_Cache.find(idh);
@@ -521,6 +521,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.49  2003/03/11 14:15:52  grichenk
 * +Data-source priority
 *

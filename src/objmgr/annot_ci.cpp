@@ -58,9 +58,9 @@ inline
 CNcbiOstream& operator<<(CNcbiOstream& out, const CHandleRangeMap& hrm)
 {
     out << "{";
-    iterate ( CHandleRangeMap::TLocMap, i, hrm.GetMap() ) {
+    ITERATE ( CHandleRangeMap::TLocMap, i, hrm.GetMap() ) {
         out << ' ' << i->first.AsString()<<':';
-        iterate ( CHandleRange, j, i->second ) {
+        ITERATE ( CHandleRange, j, i->second ) {
             out << ' ' << j->first.GetFrom()<<".."<<j->first.GetTo()<<(j->second == eNa_strand_minus?"-":"");
         }
     }
@@ -78,7 +78,7 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
       m_HandleRangeMap(&loc)
 {
     CTSE_Guard guard(tse);
-    iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
+    ITERATE ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
         if ( !it->second.Empty() ) {
             m_RangeMap = m_TSEInfo->x_GetRangeMap(it->first, selector);
             if ( !m_RangeMap ) {
@@ -105,7 +105,7 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
       m_HandleRangeMap(&loc)
 {
     CTSE_Guard guard(tse);
-    iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
+    ITERATE ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
         if ( !it->second.Empty() ) {
             m_RangeMap = m_TSEInfo->x_GetRangeMap(it->first, selector);
             if ( !m_RangeMap ) {
@@ -207,6 +207,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.22  2003/03/10 16:55:17  vasilche
 * Cleaned SAnnotSelector structure.
 * Added shortcut when features are limited to one TSE.

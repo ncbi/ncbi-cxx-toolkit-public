@@ -125,7 +125,7 @@ static void s_GetCdregionLabel
     
     // Look for CProt_ref object to create a label from
     if (feat.IsSetXref()) {
-        iterate (list<CRef<CSeqFeatXref> >, it, feat.GetXref()) {
+        ITERATE (list<CRef<CSeqFeatXref> >, it, feat.GetXref()) {
             switch ((**it).GetData().Which()) {
             case CSeqFeatData::e_Prot:
                 pref = &(**it).GetData().GetProt();
@@ -345,7 +345,7 @@ static bool s_GetImpLabel
                    !NStr::CompareNocase(key, "repeat_region")) {
             if (feat.IsSetQual()) {
                 // Loop thru the feature qualifiers
-                iterate(list<CRef<CGb_qual> >, it, feat.GetQual()) {
+                ITERATE(list<CRef<CGb_qual> >, it, feat.GetQual()) {
                     // If qualifier qual is rpt_family append qualifier val
                     if (!NStr::CompareNocase((*it)->GetQual(),"rpt_family")) { 
                         *tlabel += (*it)->GetVal();
@@ -362,7 +362,7 @@ static bool s_GetImpLabel
         // else if the key is STS
         } else if (!NStr::CompareNocase(key, "STS")) {
             if (feat.IsSetQual()) {
-                iterate(list<CRef<CGb_qual> >, it, feat.GetQual()) {
+                ITERATE(list<CRef<CGb_qual> >, it, feat.GetQual()) {
                     if (!NStr::CompareNocase((*it)->GetQual(),"standard_name"))
                     { 
                            *tlabel = (*it)->GetVal();
@@ -391,26 +391,26 @@ static bool s_GetImpLabel
                 // Look for a single qualifier qual in order of preference 
                 // "standard_name", "function", "number", any and
                 // append to tlabel and return if found
-                iterate(list<CRef<CGb_qual> >, it, feat.GetQual()) {
+                ITERATE(list<CRef<CGb_qual> >, it, feat.GetQual()) {
                     if (!NStr::CompareNocase((*it)->GetQual(),"standard_name"))
                     {
                          *tlabel += (*it)->GetVal();
                          return false;
                     }
                 }
-                iterate(list<CRef<CGb_qual> >, it, feat.GetQual()) {
+                ITERATE(list<CRef<CGb_qual> >, it, feat.GetQual()) {
                     if (!NStr::CompareNocase((*it)->GetQual(), "function")) {
                          *tlabel += (*it)->GetVal();
                          return false;
                     }
                 }
-                iterate(list<CRef<CGb_qual> >, it, feat.GetQual()) {
+                ITERATE(list<CRef<CGb_qual> >, it, feat.GetQual()) {
                     if (!NStr::CompareNocase((*it)->GetQual(), "number")) {
                         *tlabel += (*it)->GetVal();
                         return false;
                     }
                 }
-                iterate(list<CRef<CGb_qual> >, it, feat.GetQual()) {
+                ITERATE(list<CRef<CGb_qual> >, it, feat.GetQual()) {
                     *tlabel += (*it)->GetVal();
                     return false;
                 }
@@ -536,7 +536,7 @@ void s_GetContentLabel
     // Put Seq-feat qual into label
     if (feat.IsSetQual()) {
         string prefix("/");
-        iterate(list<CRef<CGb_qual> >, it, feat.GetQual()) {
+        ITERATE(list<CRef<CGb_qual> >, it, feat.GetQual()) {
             tlabel += prefix + (**it).GetQual();
             prefix = " ";
             if (!(**it).GetVal().empty()) {
@@ -600,6 +600,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2003/03/11 16:00:58  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.7  2002/12/31 15:09:58  dicuccio
 * Removed unneeded headers for Featdef classes
 *

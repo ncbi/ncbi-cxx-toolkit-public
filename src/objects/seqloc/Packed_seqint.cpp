@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2003/03/11 15:55:44  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 6.2  2002/05/03 21:28:17  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -67,7 +70,7 @@ CPacked_seqint::~CPacked_seqint(void)
 TSeqPos CPacked_seqint::GetLength(void) const
 {
 	TSeqPos length = 0;
-        iterate ( Tdata, i, Get() ) {
+        ITERATE ( Tdata, i, Get() ) {
                 length += (**i).GetLength();
         }
 	return length;

@@ -106,7 +106,7 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Packed_int:
         {
             // extract each range
-            iterate ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
+            ITERATE( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
                 AddRange((*ii)->GetId(),
                          (*ii)->GetFrom(),
                          (*ii)->GetTo(),
@@ -120,7 +120,7 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
             CHandleRange& hr =
                 m_LocMap[m_IdMapper->GetHandle(loc.GetPacked_pnt().GetId())];
             ENa_strand strand = loc.GetPacked_pnt().GetStrand();
-            iterate ( CPacked_seqpnt::TPoints, pi,
+            ITERATE ( CPacked_seqpnt::TPoints, pi,
                       loc.GetPacked_pnt().GetPoints() ) {
                 hr.AddRange(CHandleRange::TRange(*pi, *pi), strand);
             }
@@ -129,7 +129,7 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Mix:
         {
             // extract sub-locations
-            iterate ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
+            ITERATE ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
                 AddLocation(**li);
             }
             return;
@@ -137,7 +137,7 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Equiv:
         {
             // extract sub-locations
-            iterate ( CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get() ) {
+            ITERATE ( CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get() ) {
                 AddLocation(**li);
             }
             return;
@@ -207,7 +207,7 @@ bool CHandleRangeMap::IntersectingWithMap(const CHandleRangeMap& rmap) const
     if ( rmap.m_LocMap.size() > m_LocMap.size() ) {
         return rmap.IntersectingWithMap(*this);
     }
-    iterate ( CHandleRangeMap, it1, rmap ) {
+    ITERATE ( CHandleRangeMap, it1, rmap ) {
         const_iterator it2 = m_LocMap.find(it1->first);
         if ( it2 != end() && it1->second.IntersectingWith(it2->second) ) {
             return true;
@@ -222,7 +222,7 @@ bool CHandleRangeMap::TotalRangeIntersectingWith(const CHandleRangeMap& rmap) co
     if ( rmap.m_LocMap.size() > m_LocMap.size() ) {
         return rmap.TotalRangeIntersectingWith(*this);
     }
-    iterate ( CHandleRangeMap, it1, rmap ) {
+    ITERATE ( CHandleRangeMap, it1, rmap ) {
         TLocMap::const_iterator it2 = m_LocMap.find(it1->first);
         if ( it2 != end() && it1->second.GetOverlappingRange()
              .IntersectingWith(it2->second.GetOverlappingRange()) ) {
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.12  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

@@ -77,7 +77,7 @@ CBioseq_Info::~CBioseq_Info(void)
 CBioseq_Info& CBioseq_Info::operator= (const CBioseq_Info& info)
 {
     m_Entry.Reset(const_cast<CBioseq_Info&>(info).m_Entry);
-    iterate ( TSynonyms, it, info.m_Synonyms ) {
+    ITERATE ( TSynonyms, it, info.m_Synonyms ) {
         m_Synonyms.insert(*it);
     }
     return *this;
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.7  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

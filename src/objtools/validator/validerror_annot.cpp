@@ -60,7 +60,7 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
     if ( !annot.GetData().IsAlign() ) return;
     if ( !annot.IsSetDesc() ) return;
     
-    iterate( list< CRef< CAnnotdesc > >, iter, annot.GetDesc().Get() ) {
+    ITERATE( list< CRef< CAnnotdesc > >, iter, annot.GetDesc().Get() ) {
         
         if ( (*iter)->IsUser() ) {
             const CObject_id& oid = (*iter)->GetUser().GetType();
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/11 16:04:09  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.2  2002/12/24 16:52:53  shomrat
 * Changes to include directives
 *

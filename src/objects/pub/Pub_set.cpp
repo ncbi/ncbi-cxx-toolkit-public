@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2003/03/11 15:51:42  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 6.1  2002/01/10 19:40:10  clausen
  * Added GetLabel
  *
@@ -65,7 +68,7 @@ template <class T>
 static void s_GetLabel(string* label, const list<CRef<T> >& the_list)
 {
     bool first = true;
-    iterate(list<CRef<T> >, it, the_list) {
+    ITERATE(list<CRef<T> >, it, the_list) {
         if (!first) {
             *label += ",";
         } else {

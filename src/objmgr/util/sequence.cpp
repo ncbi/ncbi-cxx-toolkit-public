@@ -119,7 +119,7 @@ TSeqPos GetLength(const CSeq_loc_mix& mix, CScope* scope)
 {
     TSeqPos length = 0;
 
-    iterate( CSeq_loc_mix::Tdata, i, mix.Get() ) {
+    ITERATE( CSeq_loc_mix::Tdata, i, mix.Get() ) {
         TSeqPos ret = GetLength((**i), scope);
         length += ret;
     }
@@ -144,7 +144,7 @@ bool IsValid(const CPacked_seqpnt& pts, CScope* scope)
     typedef CPacked_seqpnt::TPoints TPoints;
 
     TSeqPos length = GetLength(pts.GetId(), scope);
-    iterate (TPoints, it, pts.GetPoints()) {
+    ITERATE (TPoints, it, pts.GetPoints()) {
         if (*it >= length) {
             return false;
         }
@@ -628,7 +628,7 @@ ECompare s_Compare
         TSeqPos pnt = point.GetPoint();
 
         // This loop will only be executed if points.GetPoints().size() > 0
-        iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
+        ITERATE(CSeq_loc::TPoints, it, points.GetPoints()) {
             if (pnt == *it) {
                 return eContained;
             }
@@ -701,7 +701,7 @@ ECompare s_Compare
         TSeqPos to   = interval.GetTo();
 
         // This loop will only be executed if points.GetPoints().size() > 0
-        iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
+        ITERATE(CSeq_loc::TPoints, it, points.GetPoints()) {
             if (from <= *it  &&  to >= *it) {
                 got_one = true;
             } else {
@@ -763,8 +763,8 @@ ECompare s_Compare
     // Check for containment
     size_t hits = 0;
     // This loop will only be executed if pointsA.size() > 0
-    iterate(CSeq_loc::TPoints, iA, pointsA) {
-        iterate(CSeq_loc::TPoints, iB, pointsB) {
+    ITERATE(CSeq_loc::TPoints, iA, pointsA) {
+        ITERATE(CSeq_loc::TPoints, iB, pointsB) {
             hits += (*iA == *iB) ? 1 : 0;
         }
     }
@@ -797,7 +797,7 @@ ECompare s_Compare
         TSeqPos pntA = bondA.GetPoint();
 
         // This loop will only be executed if points.GetPoints().size() > 0
-        iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
+        ITERATE(CSeq_loc::TPoints, it, points.GetPoints()) {
             if (pntA == *it) {
                 cmp = eContains;
                 break;
@@ -817,7 +817,7 @@ ECompare s_Compare
 
     TSeqPos pntB = bondB.GetPoint();
     // This loop will only be executed if points.GetPoints().size() > 0
-    iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
+    ITERATE(CSeq_loc::TPoints, it, points.GetPoints()) {
         if (pntB == *it) {
             if (cmp == eContains) {
                 return eContains;
@@ -1516,7 +1516,7 @@ CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
         } catch (CNoLength) {
             prot_length = numeric_limits<TSeqPos>::max();
         }
-        non_const_iterate (SRelLoc::TRanges, it, rl.m_Ranges) {
+        NON_CONST_ITERATE (SRelLoc::TRanges, it, rl.m_Ranges) {
             (*it)->SetFrom(((*it)->GetFrom() - base_frame) / 3);
             (*it)->SetTo  (((*it)->GetTo()   - base_frame) / 3);
             if ((flags & fS2P_AllowTer)  &&  (*it)->GetTo() == prot_length) {
@@ -1558,7 +1558,7 @@ CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
         } catch (CNoLength) {
             prot_length = numeric_limits<TSeqPos>::max();
         }
-        non_const_iterate (SRelLoc::TRanges, it, rl.m_Ranges) {
+        NON_CONST_ITERATE(SRelLoc::TRanges, it, rl.m_Ranges) {
             TSeqPos from, to;
             if ((flags & fP2S_Extend)  &&  (*it)->GetFrom() == 0) {
                 from = 0;
@@ -2073,7 +2073,7 @@ static TGaps s_FindGaps(const CSeq_ext& ext, CScope& scope)
 
     switch (ext.Which()) {
     case CSeq_ext::e_Seg:
-        iterate (CSeg_ext::Tdata, it, ext.GetSeg().Get()) {
+        ITERATE (CSeg_ext::Tdata, it, ext.GetSeg().Get()) {
             TSeqPos length = sequence::GetLength(**it, &scope);
             if (s_IsGap(**it, scope)) {
                 gaps.push_back(SGap(pos, length));
@@ -2083,7 +2083,7 @@ static TGaps s_FindGaps(const CSeq_ext& ext, CScope& scope)
         break;
 
     case CSeq_ext::e_Delta:
-        iterate (CDelta_ext::Tdata, it, ext.GetDelta().Get()) {
+        ITERATE (CDelta_ext::Tdata, it, ext.GetDelta().Get()) {
             switch ((*it)->Which()) {
             case CDelta_seq::e_Loc:
             {
@@ -2374,7 +2374,7 @@ void CCdregion_translate::TranslateCdregion (string& prot,
     // code break substitution
     if (cdr.IsSetCode_break ()) {
         SIZE_TYPE protlen = prot.size ();
-        iterate (CCdregion::TCode_break, code_break, cdr.GetCode_break ()) {
+        ITERATE (CCdregion::TCode_break, code_break, cdr.GetCode_break ()) {
             const CRef <CCode_break> brk = *code_break;
             const CSeq_loc& cbk_loc = brk->GetLoc ();
             TSeqPos seq_pos = sequence::LocationOffset (loc, cbk_loc, sequence::eOffset_FromStart, &bsh.GetScope ());
@@ -2485,7 +2485,7 @@ CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
     typedef CSeq_loc::TRange TRange0;
     CRef<CSeq_loc> result(new CSeq_loc);
     CSeq_loc_mix&  mix = result->SetMix();
-    iterate (TRanges, it, m_Ranges) {
+    ITERATE (TRanges, it, m_Ranges) {
         _ASSERT((*it)->GetFrom() <= (*it)->GetTo());
         TSeqPos pos = 0, start = (*it)->GetFrom();
         bool    keep_going = true;
@@ -2641,7 +2641,7 @@ int CSeqSearch::Search
     
     // report any matches at current state to the client object
     if ( m_Fsa.IsMatchFound(next_state) ) {
-        iterate( vector<CMatchInfo>, it, m_Fsa.GetMatches(next_state) ) {
+        ITERATE( vector<CMatchInfo>, it, m_Fsa.GetMatches(next_state) ) {
 	  //const CMatchInfo& match = *it;
             int start = position - it->GetPattern().length() + 1;    
 
@@ -2846,6 +2846,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.40  2003/03/11 16:00:58  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.39  2003/02/19 16:25:14  grichenk
 * Check strands in GetBestOverlappingFeat()
 *

@@ -67,7 +67,7 @@ CSeqMap_Delta_seqs::~CSeqMap_Delta_seqs(void)
 
 void CSeqMap_Delta_seqs::x_Index(TList& seq)
 {
-    non_const_iterate ( TList, iter, seq ) {
+    NON_CONST_ITERATE ( TList, iter, seq ) {
         x_SetSegmentList_I(x_Add(**iter), iter);
     }
 }
@@ -213,7 +213,7 @@ void CSeqMap_Seq_locs::x_IndexAll(void)
 {
     x_AddEnd();
     TList& seq = *m_List;
-    non_const_iterate ( TList, iter, seq ) {
+    NON_CONST_ITERATE ( TList, iter, seq ) {
         x_SetSegmentList_I(x_Add(**iter), iter);
     }
     x_AddEnd();
@@ -258,7 +258,7 @@ void CSeqMap_Seq_intervals::x_IndexAll(void)
 {
     x_AddEnd();
     TList& seq = *m_List;
-    non_const_iterate ( TList, iter, seq ) {
+    NON_CONST_ITERATE ( TList, iter, seq ) {
         x_SetSegmentList_I(x_Add(**iter), iter);
     }
     x_AddEnd();
@@ -302,7 +302,7 @@ void CSeqMap_SeqPoss::x_IndexAll(void)
 {
     x_AddEnd();
     TList& seq = *m_List;
-    non_const_iterate ( TList, iter, seq ) {
+    NON_CONST_ITERATE ( TList, iter, seq ) {
         x_SetSegmentList_I(x_AddPos(*iter), iter);
     }
     x_AddEnd();
@@ -322,6 +322,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.3  2003/02/05 20:59:12  vasilche
 * Added eSeqEnd segment at the beginning of seq map.
 * Added flags to CSeqMap_CI to stop on data, gap, or references.

@@ -715,21 +715,21 @@ void CSeqportTestApp::SeqDataTest()
         switch(nInSeqType){
         case 0:
             for(unsigned int i=0; i<nTimes; i++) {
-                iterate (vector<char>, j, v) {
+                ITERATE (vector<char>, j, v) {
                     in_seq->SetNcbi2na().Set().push_back(*j);
                 }
             }
             break;
         case 1:
             for(unsigned int i=0; i<nTimes; i++) {
-                iterate (vector<char>, j, v) {
+                ITERATE (vector<char>, j, v) {
                     in_seq->SetNcbi4na().Set().push_back(*j);
                 }
             }
             break;
         case 4:
             for(unsigned int i=0; i<nTimes; i++) {
-                iterate (vector<char>, j, v) {
+                ITERATE (vector<char>, j, v) {
                     in_seq->SetNcbistdaa().Set().push_back(*j);
                 }
             }
@@ -865,13 +865,13 @@ void CSeqportTestApp::GetAmbigsTest(const CSeq_data&     in_seq,
   
         if(out_seq->Which() == CSeq_data::e_Ncbi4na) {
             if (out_indices.size() <= 24) {
-                iterate (vector<TSeqPos>, i_idx, out_indices) {
+                ITERATE (vector<TSeqPos>, i_idx, out_indices) {
                     cout << (*i_idx) << " ";
                 }
                 cout << endl;
                 const vector<char>& out_seq_data
                     = out_seq->GetNcbi4na().Get();
-                iterate (vector<char>, i_out, out_seq_data) {
+                ITERATE (vector<char>, i_out, out_seq_data) {
                     cout << std::hex
                          << (unsigned short)(unsigned char) *i_out << " ";
                 }
@@ -880,7 +880,7 @@ void CSeqportTestApp::GetAmbigsTest(const CSeq_data&     in_seq,
         }
         else if(out_seq->Which() == CSeq_data::e_Iupacna) {
             if(out_indices.size() <= 24) {
-                iterate (vector<TSeqPos>, i_idx, out_indices) {
+                ITERATE (vector<TSeqPos>, i_idx, out_indices) {
                     cout << (*i_idx) << " ";
                 }
                 cout << endl;
@@ -1465,7 +1465,7 @@ void CSeqportTestApp::DisplaySeq(const CSeq_data& seq, TSeqPos uSize)
         {
             const vector<char>& v = seq.GetNcbi2na().Get();
             if (v.size() <= 12) {
-                iterate (vector<char>, i, v) {
+                ITERATE (vector<char>, i, v) {
                     cout << std::hex << (unsigned short)(unsigned char) *i
                          << " " << endl;
                 }
@@ -1477,7 +1477,7 @@ void CSeqportTestApp::DisplaySeq(const CSeq_data& seq, TSeqPos uSize)
         {
             const vector<char>& v = seq.GetNcbi4na().Get();
             if (v.size() <= 24) {
-                iterate (vector<char>, i, v) {
+                ITERATE (vector<char>, i, v) {
                     cout << std::hex << (unsigned short)(unsigned char) *i
                          << " " << endl;
                 }
@@ -1499,7 +1499,7 @@ void CSeqportTestApp::DisplaySeq(const CSeq_data& seq, TSeqPos uSize)
         {
             const vector<char>& v = seq.GetNcbistdaa().Get();
             if (v.size() <= uSize) {
-                iterate (vector<char>, i, v) {
+                ITERATE (vector<char>, i, v) {
                     cout << std::hex << (unsigned short)(unsigned char) *i
                          << " " << endl;
                 }
@@ -1528,6 +1528,9 @@ int main(int argc, const char* argv[])
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2003/03/11 15:53:25  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 1.8  2002/07/01 16:15:08  clausen
  * Fixed defined but not used warnings
  *
