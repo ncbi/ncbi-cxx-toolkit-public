@@ -287,30 +287,30 @@ int CLDS_Object::SaveObject(int file_id,
         // Find the direct parent
         {{
 
-        CLDS_CoreObjectsReader::SObjectDetails* parent_obj_info 
-                    = sniffer->FindObjectInfo(obj_info->parent_offset);
-        _ASSERT(parent_obj_info);
-        if (parent_obj_info->ext_id == 0) { // not yet in the database
-            // Recursively save the parent
-            parent_id = SaveObject(file_id, sniffer, parent_obj_info);
-        } else {
-            parent_id = parent_obj_info->ext_id;
-        }
+            CLDS_CoreObjectsReader::SObjectDetails* parent_obj_info 
+                        = sniffer->FindObjectInfo(obj_info->parent_offset);
+            _ASSERT(parent_obj_info);
+            if (parent_obj_info->ext_id == 0) { // not yet in the database
+                // Recursively save the parent
+                parent_id = SaveObject(file_id, sniffer, parent_obj_info);
+            } else {
+                parent_id = parent_obj_info->ext_id;
+            }
 
         }}
 
         // Find the top level grand parent
         {{
 
-        CLDS_CoreObjectsReader::SObjectDetails* top_obj_info 
-                    = sniffer->FindObjectInfo(obj_info->top_level_offset);
-        _ASSERT(top_obj_info);
-        if (top_obj_info->ext_id == 0) { // not yet in the database
-            // Recursively save the parent
-            top_level_id = SaveObject(file_id, sniffer, top_obj_info);
-        } else {
-            top_level_id = top_obj_info->ext_id;
-        }
+            CLDS_CoreObjectsReader::SObjectDetails* top_obj_info 
+                        = sniffer->FindObjectInfo(obj_info->top_level_offset);
+            _ASSERT(top_obj_info);
+            if (top_obj_info->ext_id == 0) { // not yet in the database
+                // Recursively save the parent
+                top_level_id = SaveObject(file_id, sniffer, top_obj_info);
+            } else {
+                top_level_id = top_obj_info->ext_id;
+            }
 
         }}
 
@@ -557,6 +557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/08/21 12:10:04  dicuccio
+ * Minor code reformatting
+ *
  * Revision 1.14  2003/07/29 19:51:49  kuznets
  * Reflecting changes in the header file
  *
