@@ -187,7 +187,7 @@ CDB_Result* CTDS_RPCCmd::Result()
     // we've done with the row results at this point
     // let's look at return parameters and ret status
     if (m_Status == 2) {
-        m_Status = 3;
+        m_Status = 4;
         int n = dbnumrets(m_Cmd);
         if (n > 0) {
             m_Res = new CTDS_ParamResult(m_Cmd, n);
@@ -195,8 +195,8 @@ CDB_Result* CTDS_RPCCmd::Result()
         }
     }
 
-    if (m_Status == 3) {
-        m_Status = 4;
+    if (m_Status == 4) {
+        m_Status = 6;
         if (dbhasretstat(m_Cmd)) {
             m_Res = new CTDS_StatusResult(m_Cmd);
             return Create_Result(*m_Res);
@@ -475,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/02/22 22:12:45  soussov
+ * fixes bug with return params result
+ *
  * Revision 1.5  2002/01/14 20:38:49  soussov
  * timeout support for tds added
  *

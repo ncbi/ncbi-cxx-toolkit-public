@@ -139,7 +139,7 @@ CDB_Result* CDBL_RPCCmd::Result()
     }
 
     if (m_Status == 0) {
-        m_Status = 1;
+        m_Status = 0x1;
         if (dbsqlok(m_Cmd) != SUCCEED) {
             m_WasSent = false;
             m_HasFailed = true;
@@ -157,7 +157,17 @@ CDB_Result* CDBL_RPCCmd::Result()
         switch (dbresults(m_Cmd)) {
         case SUCCEED:
             if (DBCMDROW(m_Cmd) == SUCCEED) { // we may get rows in this result
-                m_Res = new CDBL_RowResult(m_Cmd, &m_Status);
+// This optimization is currently unavailable for MS dblib...
+#ifndef NCBI_OS_MSWIN /*Text,Image*/
+                if (dbnumcols(m_Cmd) == 1) {
+                    int ct = dbcoltype(m_Cmd, 1);
+                    if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
+                        m_Res = new CDBL_BlobResult(m_Cmd);
+                    }
+                }
+#endif
+                if (!m_Res)
+                    m_Res = new CDBL_RowResult(m_Cmd, &m_Status);
                 return Create_Result(*m_Res);
             } else {
                 m_RowCount = DBCOUNT(m_Cmd);
@@ -177,7 +187,7 @@ CDB_Result* CDBL_RPCCmd::Result()
     // we've done with the row results at this point
     // let's look at return parameters and ret status
     if (m_Status == 2) {
-        m_Status = 3;
+        m_Status = 4;
         int n = dbnumrets(m_Cmd);
         if (n > 0) {
             m_Res = new CDBL_ParamResult(m_Cmd, n);
@@ -185,8 +195,8 @@ CDB_Result* CDBL_RPCCmd::Result()
         }
     }
 
-    if (m_Status == 3) {
-        m_Status = 4;
+    if (m_Status == 4) {
+        m_Status = 6;
         if (dbhasretstat(m_Cmd)) {
             m_Res = new CDBL_StatusResult(m_Cmd);
             return Create_Result(*m_Res);
@@ -373,6 +383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/02/22 22:12:33  soussov
+ * fixes bug with return params result
+ *
  * Revision 1.6  2002/01/08 18:10:18  sapojnik
  * Syabse to MSSQL name translations moved to interface_p.hpp
  *
