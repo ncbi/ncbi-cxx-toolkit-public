@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(blast)
 
-/// Enumeration analogous to blast_type_* defines from blast_def.h
+/// This enumeration is to evolve into a task/program specific list that 
+/// specifies sets of default parameters to easily conduct searches using BLAST
 enum EProgram {
     eBlastn = 0,        ///< Nucl-Nucl (traditional blastn)
     eBlastp,            ///< Protein-Protein
@@ -59,8 +60,16 @@ enum EProgram {
 };
 
 struct SSeqLoc {
+    /// Seq-loc describing the sequence to use as query/subject to BLAST
+    /// The types of Seq-loc currently supported are: whole, seq-interval...
+    /// @todo FIXME Complete the list of supported seq-locs
     CConstRef<objects::CSeq_loc>     seqloc;
+
+    /// Scope where the sequence referenced can be found by the toolkit's
+    /// object manager
     mutable CRef<objects::CScope>    scope;
+
+    /// Seq-loc describing regions to mask in the seqloc field
     CConstRef<objects::CSeq_loc>     mask;
 
     SSeqLoc()
@@ -86,6 +95,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/06/23 15:09:51  camacho
+* Added doxygen comments for SSeqLoc
+*
 * Revision 1.13  2004/06/14 15:41:44  dondosha
 * "Doxygenized" some comments.
 *
