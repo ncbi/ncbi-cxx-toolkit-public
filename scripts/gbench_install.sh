@@ -221,7 +221,7 @@ fi
 
 copy_all="no"
 setup_src="no"
-BINCOPY="ln -s"
+BINCOPY="ln -sf"
 MAC_BINCOPY=
 while :; do
     case "$1" in
