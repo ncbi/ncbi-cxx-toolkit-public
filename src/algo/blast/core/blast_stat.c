@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.56  2004/04/12 18:57:31  madden
+ * Rename BLAST_ResFreq to Blast_ResFreq, make Blast_ResFreqNew, Blast_ResFreqDestruct, and Blast_ResFreqStdComp non-static
+ *
  * Revision 1.55  2004/04/08 13:53:10  papadopo
  * fix doxygen warning
  *
@@ -1283,8 +1286,8 @@ BLAST_ScoreBlkMatFill(BlastScoreBlk* sbp, char* matrix_path)
     return status;
 }
 
-static BLAST_ResFreq*
-BlastResFreqDestruct(BLAST_ResFreq* rfp)
+Blast_ResFreq*
+Blast_ResFreqDestruct(Blast_ResFreq* rfp)
 {
 	if (rfp == NULL)
 		return NULL;
@@ -1298,21 +1301,21 @@ BlastResFreqDestruct(BLAST_ResFreq* rfp)
 }
 
 /*
-	Allocates the BLAST_ResFreq* and then fills in the frequencies
+	Allocates the Blast_ResFreq* and then fills in the frequencies
 	in the probabilities.
 */ 
 
-static BLAST_ResFreq*
-BlastResFreqNew(BlastScoreBlk* sbp)
+Blast_ResFreq*
+Blast_ResFreqNew(const BlastScoreBlk* sbp)
 {
-	BLAST_ResFreq*	rfp;
+	Blast_ResFreq*	rfp;
 
 	if (sbp == NULL)
 	{
 		return NULL;
 	}
 
-	rfp = (BLAST_ResFreq*) calloc(1, sizeof(BLAST_ResFreq));
+	rfp = (Blast_ResFreq*) calloc(1, sizeof(Blast_ResFreq));
 	if (rfp == NULL)
 		return NULL;
 
@@ -1321,7 +1324,7 @@ BlastResFreqNew(BlastScoreBlk* sbp)
 	rfp->prob0 = (double*) calloc(sbp->alphabet_size, sizeof(double));
 	if (rfp->prob0 == NULL) 
 	{
-		rfp = BlastResFreqDestruct(rfp);
+		rfp = Blast_ResFreqDestruct(rfp);
 		return rfp;
 	}
 	rfp->prob = rfp->prob0 - sbp->alphabet_start;
@@ -1424,7 +1427,7 @@ static BLAST_LetterProb	nt_prob[] = {
 	Normalize the frequencies to "norm".
 */
 static Int2
-BlastResFreqNormalize(BlastScoreBlk* sbp, BLAST_ResFreq* rfp, double norm)
+Blast_ResFreqNormalize(const BlastScoreBlk* sbp, Blast_ResFreq* rfp, double norm)
 {
 	Int2	alphabet_stop, index;
 	double	sum = 0., p;
@@ -1484,11 +1487,11 @@ BlastGetStdAlphabet (Uint1 alphabet_code, Uint1* residues, Uint4 residues_size)
 	return index;
 }
 
-static Int2
-BlastResFreqStdComp(BlastScoreBlk* sbp, BLAST_ResFreq* rfp)
+Int2
+Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 {
 	Int2 retval;
-   Uint4 index;
+        Uint4 index;
 	Uint1* residues;
 
 	if (sbp->protein_alphabet == TRUE)
@@ -1513,7 +1516,7 @@ BlastResFreqStdComp(BlastScoreBlk* sbp, BLAST_ResFreq* rfp)
 		}
 	}
 
-	BlastResFreqNormalize(sbp, rfp, 1.0);
+	Blast_ResFreqNormalize(sbp, rfp, 1.0);
 
 	return 0;
 }
@@ -1599,7 +1602,7 @@ BlastResCompStr(BlastScoreBlk* sbp, BLAST_ResComp* rcp, char* str, Int4 length)
 }
 
 static Int2
-BlastResFreqClr(BlastScoreBlk* sbp, BLAST_ResFreq* rfp)
+Blast_ResFreqClr(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 {
 	Int2	alphabet_max, index;
  
@@ -1614,7 +1617,7 @@ BlastResFreqClr(BlastScoreBlk* sbp, BLAST_ResFreq* rfp)
 	Calculate the residue frequencies associated with the provided ResComp
 */
 static Int2
-BlastResFreqResComp(BlastScoreBlk* sbp, BLAST_ResFreq* rfp, BLAST_ResComp* rcp)
+Blast_ResFreqResComp(BlastScoreBlk* sbp, Blast_ResFreq* rfp, BLAST_ResComp* rcp)
 {
 	Int2	alphabet_max, index;
 	double	sum = 0.;
@@ -1630,7 +1633,7 @@ BlastResFreqResComp(BlastScoreBlk* sbp, BLAST_ResFreq* rfp, BLAST_ResComp* rcp)
 		sum += rcp->comp[index];
 
 	if (sum == 0.) {
-		BlastResFreqClr(sbp, rfp);
+		Blast_ResFreqClr(sbp, rfp);
 		return 0;
 	}
 
@@ -1641,7 +1644,7 @@ BlastResFreqResComp(BlastScoreBlk* sbp, BLAST_ResFreq* rfp, BLAST_ResComp* rcp)
 }
 
 static Int2
-BlastResFreqString(BlastScoreBlk* sbp, BLAST_ResFreq* rfp, char* string, Int4 length)
+Blast_ResFreqString(BlastScoreBlk* sbp, Blast_ResFreq* rfp, char* string, Int4 length)
 {
 	BLAST_ResComp* rcp;
 	
@@ -1649,7 +1652,7 @@ BlastResFreqString(BlastScoreBlk* sbp, BLAST_ResFreq* rfp, char* string, Int4 le
 
 	BlastResCompStr(sbp, rcp, string, length);
 
-	BlastResFreqResComp(sbp, rfp, rcp);
+	Blast_ResFreqResComp(sbp, rfp, rcp);
 
 	rcp = BlastResCompDestruct(rcp);
 
@@ -1700,7 +1703,7 @@ BlastScoreFreqNew(Int4 score_min, Int4 score_max)
 }
 
 static Int2
-BlastScoreFreqCalc(BlastScoreBlk* sbp, BLAST_ScoreFreq* sfp, BLAST_ResFreq* rfp1, BLAST_ResFreq* rfp2)
+BlastScoreFreqCalc(BlastScoreBlk* sbp, BLAST_ScoreFreq* sfp, Blast_ResFreq* rfp1, Blast_ResFreq* rfp2)
 {
 	Int4 **	matrix;
 	Int4	score, obs_min, obs_max;
@@ -2206,27 +2209,27 @@ ErrExit:
 Int2
 BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 context_number)
 {
-	BLAST_ResFreq* rfp,* stdrfp;
+	Blast_ResFreq* rfp,* stdrfp;
 	Int2 retval=0;
 
-	rfp = BlastResFreqNew(sbp);
-	stdrfp = BlastResFreqNew(sbp);
-	BlastResFreqStdComp(sbp, stdrfp);
-	BlastResFreqString(sbp, rfp, query, query_length);
+	rfp = Blast_ResFreqNew(sbp);
+	stdrfp = Blast_ResFreqNew(sbp);
+	Blast_ResFreqStdComp(sbp, stdrfp);
+	Blast_ResFreqString(sbp, rfp, query, query_length);
 	sbp->sfp[context_number] = BlastScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sbp->sfp[context_number], rfp, stdrfp);
 	sbp->kbp_std[context_number] = BLAST_KarlinBlkCreate();
 	retval = BlastKarlinBlkCalc(sbp->kbp_std[context_number], sbp->sfp[context_number]);
 	if (retval)
 	{
-		rfp = BlastResFreqDestruct(rfp);
-		stdrfp = BlastResFreqDestruct(stdrfp);
+		rfp = Blast_ResFreqDestruct(rfp);
+		stdrfp = Blast_ResFreqDestruct(stdrfp);
 		return retval;
 	}
 	sbp->kbp_psi[context_number] = BLAST_KarlinBlkCreate();
 	retval = BlastKarlinBlkCalc(sbp->kbp_psi[context_number], sbp->sfp[context_number]);
-	rfp = BlastResFreqDestruct(rfp);
-	stdrfp = BlastResFreqDestruct(stdrfp);
+	rfp = Blast_ResFreqDestruct(rfp);
+	stdrfp = Blast_ResFreqDestruct(stdrfp);
 
 	return retval;
 }
@@ -2242,16 +2245,16 @@ BlastKarlinBlkStandardCalcEx(BlastScoreBlk* sbp)
 
 {
 	BLAST_KarlinBlk* kbp_ideal;
-	BLAST_ResFreq* stdrfp;
+	Blast_ResFreq* stdrfp;
 	BLAST_ScoreFreq* sfp;
 
-	stdrfp = BlastResFreqNew(sbp);
-	BlastResFreqStdComp(sbp, stdrfp);
+	stdrfp = Blast_ResFreqNew(sbp);
+	Blast_ResFreqStdComp(sbp, stdrfp);
 	sfp = BlastScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sfp, stdrfp, stdrfp);
 	kbp_ideal = BLAST_KarlinBlkCreate();
 	BlastKarlinBlkCalc(kbp_ideal, sfp);
-	stdrfp = BlastResFreqDestruct(stdrfp);
+	stdrfp = Blast_ResFreqDestruct(stdrfp);
 
 	sfp = BlastScoreFreqDestruct(sfp);
 
