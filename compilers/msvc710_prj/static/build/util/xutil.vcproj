@@ -4,7 +4,7 @@
     <Platform Name="Win32"></Platform>
   </Platforms>
   <Configurations>
-    <Configuration Name="Debug|Win32" OutputDirectory="..\..\..\..\..\..\..\lib\Debug" IntermediateDirectory="Debug" ConfigurationType="4" CharacterSet="2">
+    <Configuration Name="Debug|Win32" OutputDirectory="..\lib\Debug" IntermediateDirectory="Debug" ConfigurationType="4" CharacterSet="2">
       <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="5" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="1" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="1" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xutil.lib" AdditionalLibraryDirectories=", " AdditionalOptions=" wsock32.lib" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
@@ -19,7 +19,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
     </Configuration>
-    <Configuration Name="DebugDLL|Win32" OutputDirectory="..\..\..\..\..\..\..\lib\DebugDLL" IntermediateDirectory="DebugDLL" ConfigurationType="4" CharacterSet="2">
+    <Configuration Name="DebugDLL|Win32" OutputDirectory="..\lib\DebugDLL" IntermediateDirectory="DebugDLL" ConfigurationType="4" CharacterSet="2">
       <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="3" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="1" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="1" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xutil.lib" AdditionalLibraryDirectories=", " AdditionalOptions=" wsock32.lib" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
@@ -34,7 +34,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
     </Configuration>
-    <Configuration Name="DebugMT|Win32" OutputDirectory="..\..\..\..\..\..\..\lib\DebugMT" IntermediateDirectory="DebugMT" ConfigurationType="4" CharacterSet="2">
+    <Configuration Name="DebugMT|Win32" OutputDirectory="..\lib\DebugMT" IntermediateDirectory="DebugMT" ConfigurationType="4" CharacterSet="2">
       <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="1" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="1" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="1" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xutil.lib" AdditionalLibraryDirectories=", " AdditionalOptions=" wsock32.lib" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
@@ -49,7 +49,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
     </Configuration>
-    <Configuration Name="Release|Win32" OutputDirectory="..\..\..\..\..\..\..\lib\Release" IntermediateDirectory="Release" ConfigurationType="4" CharacterSet="2">
+    <Configuration Name="Release|Win32" OutputDirectory="..\lib\Release" IntermediateDirectory="Release" ConfigurationType="4" CharacterSet="2">
       <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="4" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xutil.lib" AdditionalLibraryDirectories=", " AdditionalOptions=" wsock32.lib" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
@@ -64,7 +64,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
     </Configuration>
-    <Configuration Name="ReleaseDLL|Win32" OutputDirectory="..\..\..\..\..\..\..\lib\ReleaseDLL" IntermediateDirectory="ReleaseDLL" ConfigurationType="4" CharacterSet="2">
+    <Configuration Name="ReleaseDLL|Win32" OutputDirectory="..\lib\ReleaseDLL" IntermediateDirectory="ReleaseDLL" ConfigurationType="4" CharacterSet="2">
       <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="2" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xutil.lib" AdditionalLibraryDirectories=", " AdditionalOptions=" wsock32.lib" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
@@ -79,7 +79,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
     </Configuration>
-    <Configuration Name="ReleaseMT|Win32" OutputDirectory="..\..\..\..\..\..\..\lib\ReleaseMT" IntermediateDirectory="ReleaseMT" ConfigurationType="4" CharacterSet="2">
+    <Configuration Name="ReleaseMT|Win32" OutputDirectory="..\lib\ReleaseMT" IntermediateDirectory="ReleaseMT" ConfigurationType="4" CharacterSet="2">
       <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="0" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xutil.lib" AdditionalLibraryDirectories=", " AdditionalOptions=" wsock32.lib" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
@@ -98,62 +98,62 @@
   <References></References>
   <Files>
     <Filter Name="Source Files" Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx">
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\random_gen.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\utf8.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\checksum.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\bytesrc.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\strbuffer.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\itree.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\smalldns.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\stream_utils.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\thread_pool.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\ddump_viewer.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\strsearch.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\logrotate.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\format_guess.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\ascii85.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\md5.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\rwstreambuf.cpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\src\util\file_obsolete.cpp"></File>
+      <File RelativePath="..\..\..\src\util\random_gen.cpp"></File>
+      <File RelativePath="..\..\..\src\util\utf8.cpp"></File>
+      <File RelativePath="..\..\..\src\util\checksum.cpp"></File>
+      <File RelativePath="..\..\..\src\util\bytesrc.cpp"></File>
+      <File RelativePath="..\..\..\src\util\strbuffer.cpp"></File>
+      <File RelativePath="..\..\..\src\util\itree.cpp"></File>
+      <File RelativePath="..\..\..\src\util\smalldns.cpp"></File>
+      <File RelativePath="..\..\..\src\util\stream_utils.cpp"></File>
+      <File RelativePath="..\..\..\src\util\thread_pool.cpp"></File>
+      <File RelativePath="..\..\..\src\util\ddump_viewer.cpp"></File>
+      <File RelativePath="..\..\..\src\util\strsearch.cpp"></File>
+      <File RelativePath="..\..\..\src\util\logrotate.cpp"></File>
+      <File RelativePath="..\..\..\src\util\format_guess.cpp"></File>
+      <File RelativePath="..\..\..\src\util\ascii85.cpp"></File>
+      <File RelativePath="..\..\..\src\util\md5.cpp"></File>
+      <File RelativePath="..\..\..\src\util\rwstreambuf.cpp"></File>
+      <File RelativePath="..\..\..\src\util\file_obsolete.cpp"></File>
     </Filter>
     <Filter Name="Header Files" Filter="h;hpp;hxx;hm;inc;xsd">
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\ascii85.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\bytesrc.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\checksum.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\ddump_viewer.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\file_obsolete.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\format_guess.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\itree.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\lightstr.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\linkedset.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\logrotate.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\md5.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\random_gen.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\range.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\rangemap.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\range_coll.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\reader_writer.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\regexp.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\resize_iter.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\rwstream.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\rwstreambuf.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\smalldns.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\static_map.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\static_set.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\strbuffer.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\stream_utils.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\strsearch.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\thread_pool.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\utf8.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\util_exception.hpp"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\weakmap.hpp"></File>
+      <File RelativePath="..\..\..\include\util\ascii85.hpp"></File>
+      <File RelativePath="..\..\..\include\util\bytesrc.hpp"></File>
+      <File RelativePath="..\..\..\include\util\checksum.hpp"></File>
+      <File RelativePath="..\..\..\include\util\ddump_viewer.hpp"></File>
+      <File RelativePath="..\..\..\include\util\file_obsolete.hpp"></File>
+      <File RelativePath="..\..\..\include\util\format_guess.hpp"></File>
+      <File RelativePath="..\..\..\include\util\itree.hpp"></File>
+      <File RelativePath="..\..\..\include\util\lightstr.hpp"></File>
+      <File RelativePath="..\..\..\include\util\linkedset.hpp"></File>
+      <File RelativePath="..\..\..\include\util\logrotate.hpp"></File>
+      <File RelativePath="..\..\..\include\util\md5.hpp"></File>
+      <File RelativePath="..\..\..\include\util\random_gen.hpp"></File>
+      <File RelativePath="..\..\..\include\util\range.hpp"></File>
+      <File RelativePath="..\..\..\include\util\rangemap.hpp"></File>
+      <File RelativePath="..\..\..\include\util\range_coll.hpp"></File>
+      <File RelativePath="..\..\..\include\util\reader_writer.hpp"></File>
+      <File RelativePath="..\..\..\include\util\regexp.hpp"></File>
+      <File RelativePath="..\..\..\include\util\resize_iter.hpp"></File>
+      <File RelativePath="..\..\..\include\util\rwstream.hpp"></File>
+      <File RelativePath="..\..\..\include\util\rwstreambuf.hpp"></File>
+      <File RelativePath="..\..\..\include\util\smalldns.hpp"></File>
+      <File RelativePath="..\..\..\include\util\static_map.hpp"></File>
+      <File RelativePath="..\..\..\include\util\static_set.hpp"></File>
+      <File RelativePath="..\..\..\include\util\strbuffer.hpp"></File>
+      <File RelativePath="..\..\..\include\util\stream_utils.hpp"></File>
+      <File RelativePath="..\..\..\include\util\strsearch.hpp"></File>
+      <File RelativePath="..\..\..\include\util\thread_pool.hpp"></File>
+      <File RelativePath="..\..\..\include\util\utf8.hpp"></File>
+      <File RelativePath="..\..\..\include\util\util_exception.hpp"></File>
+      <File RelativePath="..\..\..\include\util\weakmap.hpp"></File>
     </Filter>
     <Filter Name="Inline Files" Filter="inl">
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\checksum.inl"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\itree.inl"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\rangemap.inl"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\strbuffer.inl"></File>
-      <File RelativePath="..\..\..\..\..\..\..\..\..\include\util\weakmap.inl"></File>
+      <File RelativePath="..\..\..\include\util\checksum.inl"></File>
+      <File RelativePath="..\..\..\include\util\itree.inl"></File>
+      <File RelativePath="..\..\..\include\util\rangemap.inl"></File>
+      <File RelativePath="..\..\..\include\util\strbuffer.inl"></File>
+      <File RelativePath="..\..\..\include\util\weakmap.inl"></File>
     </Filter>
     <Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"></Filter>
   </Files>
