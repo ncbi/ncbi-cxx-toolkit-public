@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbitime.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
@@ -52,6 +53,7 @@ CNetCacheClient::CNetCacheClient(const string&  host,
       m_ClientName(client_name)
 {
     m_Sock = new CSocket(m_Host, m_Port);
+    m_Sock->DisableOSSendDelay();
 }
 
 
@@ -64,10 +66,12 @@ CNetCacheClient::CNetCacheClient(CSocket*      sock,
       m_ClientName(client_name)
 {
     if (m_Sock) {
+        m_Sock->DisableOSSendDelay();
+
         unsigned int host;
         m_Sock->GetPeerAddress(&host, 0, eNH_NetworkByteOrder);
         m_Host = CSocketAPI::ntoa(host);
-	m_Sock->GetPeerAddress(0, &m_Port, eNH_HostByteOrder);
+	    m_Sock->GetPeerAddress(0, &m_Port, eNH_HostByteOrder);
     }
 }
 
@@ -106,9 +110,12 @@ string CNetCacheClient::PutData(const void*  buf,
         request += NStr::IntToString(time_to_live);
     }
    
+//CStopWatch sw(true);
     WriteStr(request.c_str(), request.length() + 1);
-    
+//cerr << "PUT: " << sw.AsString("S.n") << endl;
+//sw.Restart();    
     s_WaitForServer(*m_Sock);
+//cerr << "Server: " << sw.AsString("S.n") << endl;
 
     // Read BLOB_ID answer from the server
     ReadStr(*m_Sock, &blob_id);
@@ -237,7 +244,44 @@ bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
     _ASSERT(str);
 
     str->erase();
+    str->erase();
+    char ch;
+    EIO_Status io_st;
+    unsigned loop_cnt = 0;
 
+    char szBuf[1024] = {0,};
+    unsigned str_len = 0;
+    size_t n_read = 0;
+
+    for (bool flag = true; flag; ) {
+        io_st = sock.Read(szBuf, 256, &n_read, eIO_ReadPeek);
+        switch (io_st) 
+        {
+        case eIO_Success:
+            flag = false;
+            break;
+        case eIO_Timeout:
+            // TODO: add repetition counter or another protector here
+            break;
+        default: // invalid socket or request, bailing out
+            return false;
+        };
+    }
+
+    for (str_len = 0; str_len < n_read; ++str_len) {
+        ch = szBuf[str_len];
+        if (ch == 0 || ch == '\n' || ch == 13) {
+            break;
+        }
+        *str += ch;
+    }
+
+    if (str_len == 0) {
+        return false;
+    }
+    io_st = sock.Read(szBuf, str_len + 2);
+    return true;
+/*
     int loop_cnt = 0;
     do {
         EIO_Status io_st;
@@ -267,6 +311,7 @@ out_of_loop:
     } while (str->empty());
 
     return true;
+*/
 }
 
 
@@ -283,6 +328,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/10/20 13:46:22  kuznets
+ * Optimized networking
+ *
  * Revision 1.7  2004/10/13 14:46:38  kuznets
  * Optimization in the networking
  *
