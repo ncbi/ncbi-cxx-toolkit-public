@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/09/10 17:02:26  thiessen
+* show count for repeated sequences
+*
 * Revision 1.1  2002/09/09 22:51:19  thiessen
 * add basic taxonomy tree viewer
 *
@@ -94,7 +97,7 @@ public:
     // use maps to ensure uniqueness
     typedef std::map < int , bool > ChildTaxIDMap;
     ChildTaxIDMap childTaxids;
-    typedef std::map < const MoleculeIdentifier * , bool > IdentifierList;
+    typedef std::map < const MoleculeIdentifier * , int > IdentifierList;
     IdentifierList identifiers;
 
     TaxonomyTreeNode(void) { taxid = parentTaxid = nDescendentLeaves = 0; }
@@ -120,8 +123,12 @@ static void AppendChildrenToTree(wxTreeCtrl *tree,
 
     else if (node.childTaxids.size() == 0 && node.identifiers.size() > 0) {
         TaxonomyTreeNode::IdentifierList::const_iterator i, ie = node.identifiers.end();
-        for (i=node.identifiers.begin(); i!=ie; i++)
-            tree->AppendItem(id, i->first->ToString().c_str());
+        for (i=node.identifiers.begin(); i!=ie; i++) {
+            wxString name(i->first->ToString().c_str());
+            if (i->second > 1)
+                name.Printf("%s (x%i)", name.c_str(), i->second);
+            tree->AppendItem(id, name);
+        }
     }
 
     else
@@ -138,7 +145,7 @@ static void AddNode(TaxonomyTreeMap *taxTree, const Sequence *seq,
     node.name = (taxData->IsSetOrg() && taxData->GetOrg().IsSetTaxname()) ?
         taxData->GetOrg().GetTaxname() : std::string("(error getting node name!)");
     if (seq) {
-        node.identifiers[seq->identifier] = true;
+        node.identifiers[seq->identifier]++;
         node.nDescendentLeaves++;
     }
 
