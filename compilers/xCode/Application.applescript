@@ -53,11 +53,11 @@ on launched theObject
 			set tmp to contents of default entry (p as string) of user defaults
 			set contents of text field (p as string) of box "pathBox" of window "Main" to tmp
 		on error
-			set homePath to ":" & (path to home folder as string)
+			set homePath to the POSIX path of (path to home folder) as string
 			
-			if (p as string) is equal to "pathNCBI" then set contents of text field (p as string) of box "pathBox" of window "Main" to x_Replace(homePath, ":", "/") & "c++"
+			if (p as string) is equal to "pathNCBI" then set contents of text field (p as string) of box "pathBox" of window "Main" to homePath & "c++"
 			
-			if (p as string) is equal to "pathOUT" then set contents of text field (p as string) of box "pathBox" of window "Main" to x_Replace(homePath, ":", "/") & "out"
+			if (p as string) is equal to "pathOUT" then set contents of text field (p as string) of box "pathBox" of window "Main" to homePath & "out"
 		end try
 		
 	end repeat
@@ -260,13 +260,13 @@ end CreateProject
 
 (* Retriece a list of source files based on library info *)
 on GetSourceFiles(lib)
-	set fullSourcePath to x_Replace(TheNCBIPath, "/", ":") & ":src:"
+	set fullSourcePath to TheNCBIPath & "/src/"
 	set incfileList to {}
 	set excfileList to {}
 	set src_files to {}
 	
 	try -- Try to get main path
-		set fullSourcePath to fullSourcePath & path of lib & ":"
+		set fullSourcePath to fullSourcePath & x_Replace((path of lib), ":", "/") & "/"
 	end try
 	
 	try -- Try to get the included file list
@@ -292,9 +292,7 @@ end GetSourceFiles
 
 (* Returns a content of a foder, with *.c and *.cpp files, excluding "excfileList"  and full path *)
 on x_GetFolderContent(folderName, excfileList)
-	set folderName to the characters 2 thru (length of folderName) of folderName as string -- remove the leading ":" from the folder path
-	
-	set fileList to list folder folderName without invisibles
+	set fileList to list folder (folderName as POSIX file) without invisibles
 	set fileList to my ExcludeFiles(fileList, excfileList)
 	set fileList to EndsWith(fileList, ".c") & EndsWith(fileList, ".cpp")
 	
@@ -422,6 +420,9 @@ end x_ShowAlert
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/06 15:30:25  lebedev
+ * Use POSIX paths instead of old Mac standard
+ *
  * Revision 1.3  2004/06/25 15:15:38  lebedev
  * Some unnessesary debug traces removed
  *
