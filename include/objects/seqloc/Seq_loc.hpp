@@ -57,6 +57,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_id_Handle;
+
 class NCBI_SEQLOC_EXPORT CSeq_loc : public CSeq_loc_Base
 {
 public:
@@ -141,7 +143,12 @@ public:
     // or throw exception.
     int Compare(const CSeq_loc& loc) const;
 
+    // Simple adding of seq-locs.
     void Add(const CSeq_loc& other);
+
+    void ChangeToMix(void);
+    // Works only if current state is "Int".
+    void ChangeToPackedInt(void);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -153,6 +160,7 @@ private:
     void x_CheckId(const CSeq_id*& id) const;
     void x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id) const;
     void x_ChangeToMix(const CSeq_loc& other);
+    void x_ChangeToPackedInt(const CSeq_interval& other);
     void x_ChangeToPackedInt(const CSeq_loc& other);
     void x_ChangeToPackedPnt(const CSeq_loc& other);
     void x_InvalidateCache(void);
@@ -197,6 +205,7 @@ public:
     // Get the range
     TRange         GetRange(void) const;
     // Get strand
+    bool IsSetStrand(void) const;
     ENa_strand GetStrand(void) const;
     // Get seq-loc for the current interval
     const CSeq_loc& GetSeq_loc(void) const;
@@ -225,9 +234,11 @@ private:
     // Simple location structure: id/from/to
     struct SLoc_Info {
         SLoc_Info(void);
+        void SetStrand(ENa_strand strand);
 
         CConstRef<CSeq_id>  m_Id;
         TRange              m_Range;
+        bool                m_IsSetStrand;
         ENa_strand          m_Strand;
         // The original seq-loc for the interval
         CConstRef<CSeq_loc> m_Loc;
@@ -338,10 +349,18 @@ int CSeq_loc::Compare(const CSeq_loc& loc) const
 inline
 CSeq_loc_CI::SLoc_Info::SLoc_Info(void)
     : m_Id(0),
+      m_IsSetStrand(false),
       m_Strand(eNa_strand_unknown),
       m_Loc(0)
 {
     return;
+}
+
+inline
+void CSeq_loc_CI::SLoc_Info::SetStrand(ENa_strand strand)
+{
+    m_IsSetStrand = true;
+    m_Strand = strand;
 }
 
 inline
@@ -382,6 +401,13 @@ CSeq_loc_CI::TRange CSeq_loc_CI::GetRange(void) const
 {
     x_CheckNotValid("GetRange()");
     return m_CurLoc->m_Range;
+}
+
+inline
+bool CSeq_loc_CI::IsSetStrand(void) const
+{
+    x_CheckNotValid("IsSetStrand()");
+    return m_CurLoc->m_IsSetStrand;
 }
 
 inline
@@ -446,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/10/20 18:11:40  grichenk
+ * Added CSeq_loc::ChangeToMix, ChangeToPackedInt and CSeq_loc_CI::IsSetStrand.
+ *
  * Revision 1.38  2004/09/01 15:33:44  grichenk
  * Check strand in GetStart and GetEnd. Circular length argument
  * made optional.

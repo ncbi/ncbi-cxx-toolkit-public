@@ -313,40 +313,40 @@ void CSeq_loc::Assign(const CSerialObject& obj, ESerialRecursionMode how)
     if ( GetTypeInfo() == obj.GetThisTypeInfo() ) {
         const CSeq_loc& loc = static_cast<const CSeq_loc&>(obj);
         switch ( loc.Which() ) {
-        case CSeq_loc::e_not_set:
+        case e_not_set:
             Reset();
             return;
-        case CSeq_loc::e_Null:
+        case e_Null:
             SetNull();
             return;
-        case CSeq_loc::e_Empty:
+        case e_Empty:
             SetEmpty().Assign(loc.GetEmpty());
             return;
-        case CSeq_loc::e_Whole:
+        case e_Whole:
             SetWhole().Assign(loc.GetWhole());
             return;
-        case CSeq_loc::e_Int:
+        case e_Int:
             x_Assign(SetInt(), loc.GetInt());
             return;
-        case CSeq_loc::e_Pnt:
+        case e_Pnt:
             x_Assign(SetPnt(), loc.GetPnt());
             return;
-        case CSeq_loc::e_Packed_int:
+        case e_Packed_int:
             x_Assign(SetPacked_int(), loc.GetPacked_int());
             return;
-        case CSeq_loc::e_Packed_pnt:
+        case e_Packed_pnt:
             x_Assign(SetPacked_pnt(), loc.GetPacked_pnt());
             return;
-        case CSeq_loc::e_Mix:
+        case e_Mix:
             x_Assign(SetMix(), loc.GetMix());
             return;
-        case CSeq_loc::e_Equiv:
+        case e_Equiv:
             x_Assign(SetEquiv(), loc.GetEquiv());
             return;
-        case CSeq_loc::e_Bond:
+        case e_Bond:
             x_Assign(SetBond(), loc.GetBond());
             return;
-        case CSeq_loc::e_Feat:
+        case e_Feat:
             SetFeat().Assign(loc.GetFeat());
             return;
         }
@@ -389,33 +389,33 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
 {
     TRange total_range;
     switch ( Which() ) {
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Null:
+    case e_not_set:
+    case e_Null:
         {
             // Ignore locations without id
             total_range = TRange::GetEmpty();
             break;
         }
-    case CSeq_loc::e_Empty:
+    case e_Empty:
         {
             x_UpdateId(id, &GetEmpty());
             total_range = TRange::GetEmpty();
             break;
         }
-    case CSeq_loc::e_Whole:
+    case e_Whole:
         {
             x_UpdateId(id, &GetWhole());
             total_range = TRange::GetWhole();
             break;
         }
-    case CSeq_loc::e_Int:
+    case e_Int:
         {
             const CSeq_interval& loc = GetInt();
             x_UpdateId(id, &loc.GetId());
             total_range.Set(loc.GetFrom(), loc.GetTo());
             break;
         }
-    case CSeq_loc::e_Pnt:
+    case e_Pnt:
         {
             const CSeq_point& pnt = GetPnt();
             x_UpdateId(id, &pnt.GetId());
@@ -423,7 +423,7 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
             total_range.Set(pos, pos);
             break;
         }
-    case CSeq_loc::e_Packed_int:
+    case e_Packed_int:
         {
             // Check ID of each interval
             const CPacked_seqint& ints = GetPacked_int();
@@ -435,7 +435,7 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
             }
             break;
         }
-    case CSeq_loc::e_Packed_pnt:
+    case e_Packed_pnt:
         {
             const CPacked_seqpnt& pnts = GetPacked_pnt();
             x_UpdateId(id, &pnts.GetId());
@@ -446,7 +446,7 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
             }
             break;
         }
-    case CSeq_loc::e_Mix:
+    case e_Mix:
         {
             // Check ID of each sub-location.
             const CSeq_loc_mix& mix = GetMix();
@@ -457,7 +457,7 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
             }
             break;
         }
-    case CSeq_loc::e_Equiv:
+    case e_Equiv:
 /*
         {
             // Does it make any sense to GetTotalRange() from an equiv?
@@ -468,7 +468,7 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
             break;
         }
 */
-    case CSeq_loc::e_Bond:
+    case e_Bond:
 /*
         {
             // Does it make any sense to GetTotalRange() from a bond?
@@ -482,7 +482,7 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
             break;
         }
 */
-    case CSeq_loc::e_Feat:
+    case e_Feat:
     default:
         {
             NCBI_THROW(CException, eUnknown,
@@ -498,37 +498,37 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
 bool CSeq_loc::IsReverseStrand(void) const
 {
     switch ( Which() ) {
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Null:
-    case CSeq_loc::e_Empty:
-    case CSeq_loc::e_Whole:
+    case e_not_set:
+    case e_Null:
+    case e_Empty:
+    case e_Whole:
         {
             return false;
         }
-    case CSeq_loc::e_Int:
+    case e_Int:
         {
             return GetInt().IsSetStrand() && IsReverse(GetInt().GetStrand());
         }
-    case CSeq_loc::e_Pnt:
+    case e_Pnt:
         {
             return GetPnt().IsSetStrand() && IsReverse(GetPnt().GetStrand());
         }
-    case CSeq_loc::e_Packed_int:
+    case e_Packed_int:
         {
             return GetPacked_int().IsReverseStrand();
         }
-    case CSeq_loc::e_Packed_pnt:
+    case e_Packed_pnt:
         {
             return GetPacked_pnt().IsSetStrand()
                 && IsReverse(GetPacked_pnt().GetStrand());
         }
-    case CSeq_loc::e_Mix:
+    case e_Mix:
         {
             return GetMix().IsReverseStrand();
         }
-    case CSeq_loc::e_Equiv:
-    case CSeq_loc::e_Bond:
-    case CSeq_loc::e_Feat:
+    case e_Equiv:
+    case e_Bond:
+    case e_Feat:
     default:
         {
             NCBI_THROW(CException, eUnknown,
@@ -542,39 +542,39 @@ bool CSeq_loc::IsReverseStrand(void) const
 TSeqPos CSeq_loc::GetStart(TSeqPos /*circular_length*/) const
 {
     switch ( Which() ) {
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Null:
-    case CSeq_loc::e_Empty:
+    case e_not_set:
+    case e_Null:
+    case e_Empty:
         {
             return kInvalidSeqPos;
         }
-    case CSeq_loc::e_Whole:
+    case e_Whole:
         {
             return TRange::GetWhole().GetFrom();
         }
-    case CSeq_loc::e_Int:
+    case e_Int:
         {
             return GetInt().GetFrom();
         }
-    case CSeq_loc::e_Pnt:
+    case e_Pnt:
         {
             return GetPnt().GetPoint();
         }
-    case CSeq_loc::e_Packed_int:
+    case e_Packed_int:
         {
             return GetPacked_int().GetStart();
         }
-    case CSeq_loc::e_Packed_pnt:
+    case e_Packed_pnt:
         {
             return GetPacked_pnt().GetStart();
         }
-    case CSeq_loc::e_Mix:
+    case e_Mix:
         {
             return GetMix().GetStart();
         }
-    case CSeq_loc::e_Equiv:
-    case CSeq_loc::e_Bond:
-    case CSeq_loc::e_Feat:
+    case e_Equiv:
+    case e_Bond:
+    case e_Feat:
     default:
         {
             NCBI_THROW(CException, eUnknown,
@@ -588,39 +588,39 @@ TSeqPos CSeq_loc::GetStart(TSeqPos /*circular_length*/) const
 TSeqPos CSeq_loc::GetEnd(TSeqPos /*circular_length*/) const
 {
     switch ( Which() ) {
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Null:
-    case CSeq_loc::e_Empty:
+    case e_not_set:
+    case e_Null:
+    case e_Empty:
         {
             return kInvalidSeqPos;
         }
-    case CSeq_loc::e_Whole:
+    case e_Whole:
         {
             return TRange::GetWhole().GetTo();
         }
-    case CSeq_loc::e_Int:
+    case e_Int:
         {
             return GetInt().GetTo();
         }
-    case CSeq_loc::e_Pnt:
+    case e_Pnt:
         {
             return GetPnt().GetPoint();
         }
-    case CSeq_loc::e_Packed_int:
+    case e_Packed_int:
         {
             return GetPacked_int().GetEnd();
         }
-    case CSeq_loc::e_Packed_pnt:
+    case e_Packed_pnt:
         {
             return GetPacked_pnt().GetEnd();
         }
-    case CSeq_loc::e_Mix:
+    case e_Mix:
         {
             return GetMix().GetEnd();
         }
-    case CSeq_loc::e_Equiv:
-    case CSeq_loc::e_Bond:
-    case CSeq_loc::e_Feat:
+    case e_Equiv:
+    case e_Bond:
+    case e_Feat:
     default:
         {
             NCBI_THROW(CException, eUnknown,
@@ -727,8 +727,9 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             SLoc_Info info;
             info.m_Id = &loc.GetInt().GetId();
             info.m_Range.Set(loc.GetInt().GetFrom(), loc.GetInt().GetTo());
-            if ( loc.GetInt().IsSetStrand() )
-                info.m_Strand = loc.GetInt().GetStrand();
+            if ( loc.GetInt().IsSetStrand() ) {
+                info.SetStrand(loc.GetInt().GetStrand());
+            }
             info.m_Loc = &loc;
             if (loc.GetInt().IsSetFuzz_from()) {
                 info.m_Fuzz[0] = &loc.GetInt().GetFuzz_from();
@@ -744,8 +745,9 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             SLoc_Info info;
             info.m_Id = &loc.GetPnt().GetId();
             info.m_Range.Set(loc.GetPnt().GetPoint(), loc.GetPnt().GetPoint());
-            if ( loc.GetPnt().IsSetStrand() )
-                info.m_Strand = loc.GetPnt().GetStrand();
+            if ( loc.GetPnt().IsSetStrand() ) {
+                info.SetStrand(loc.GetPnt().GetStrand());
+            }
             info.m_Loc = &loc;
             if (loc.GetPnt().IsSetFuzz()) {
                 info.m_Fuzz[0] = info.m_Fuzz[1] = &loc.GetPnt().GetFuzz();
@@ -759,8 +761,9 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 SLoc_Info info;
                 info.m_Id = &(*ii)->GetId();
                 info.m_Range.Set((*ii)->GetFrom(), (*ii)->GetTo());
-                if ( (*ii)->IsSetStrand() )
-                    info.m_Strand = (*ii)->GetStrand();
+                if ( (*ii)->IsSetStrand() ) {
+                    info.SetStrand((*ii)->GetStrand());
+                }
                 info.m_Loc = &loc;
                 if ((*ii)->IsSetFuzz_from()) {
                     info.m_Fuzz[0] = &(*ii)->GetFuzz_from();
@@ -778,8 +781,9 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 SLoc_Info info;
                 info.m_Id = &loc.GetPacked_pnt().GetId();
                 info.m_Range.Set(*pi, *pi);
-                if ( loc.GetPacked_pnt().IsSetStrand() )
-                    info.m_Strand = loc.GetPacked_pnt().GetStrand();
+                if ( loc.GetPacked_pnt().IsSetStrand() ) {
+                    info.SetStrand(loc.GetPacked_pnt().GetStrand());
+                }
                 info.m_Loc = &loc;
                 if (loc.GetPacked_pnt().IsSetFuzz()) {
                     info.m_Fuzz[0] = info.m_Fuzz[1]
@@ -809,8 +813,9 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             infoA.m_Id = &loc.GetBond().GetA().GetId();
             infoA.m_Range.Set(loc.GetBond().GetA().GetPoint(),
                               loc.GetBond().GetA().GetPoint());
-            if ( loc.GetBond().GetA().IsSetStrand() )
-                infoA.m_Strand = loc.GetBond().GetA().GetStrand();
+            if ( loc.GetBond().GetA().IsSetStrand() ) {
+                infoA.SetStrand(loc.GetBond().GetA().GetStrand());
+            }
             infoA.m_Loc = &loc;
             if (loc.GetBond().GetA().IsSetFuzz()) {
                 infoA.m_Fuzz[0] = infoA.m_Fuzz[1]
@@ -822,8 +827,9 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 infoB.m_Id = &loc.GetBond().GetB().GetId();
                 infoB.m_Range.Set(loc.GetBond().GetB().GetPoint(),
                                   loc.GetBond().GetB().GetPoint());
-                if ( loc.GetBond().GetB().IsSetStrand() )
-                    infoB.m_Strand = loc.GetBond().GetB().GetStrand();
+                if ( loc.GetBond().GetB().IsSetStrand() ) {
+                    infoB.SetStrand(loc.GetBond().GetB().GetStrand());
+                }
                 infoB.m_Loc = &loc;
                 if (loc.GetBond().GetB().IsSetFuzz()) {
                     infoB.m_Fuzz[0] = infoB.m_Fuzz[1]
@@ -1063,17 +1069,16 @@ bool CSeq_loc::IsPartialLeft (void) const
 
 {
     switch (Which ()) {
-
-        case CSeq_loc::e_Null :
+        case e_Null :
             return true;
 
-        case CSeq_loc::e_Int :
+        case e_Int :
             return GetInt ().IsPartialLeft ();
 
-        case CSeq_loc::e_Pnt :
+        case e_Pnt :
             return GetPnt ().IsPartialLeft ();
 
-        case CSeq_loc::e_Mix :
+        case e_Mix :
             return GetMix ().IsPartialLeft ();
 
         default :
@@ -1088,16 +1093,16 @@ bool CSeq_loc::IsPartialRight (void) const
 {
     switch (Which ()) {
 
-        case CSeq_loc::e_Null :
+        case e_Null :
             return true;
 
-        case CSeq_loc::e_Int :
+        case e_Int :
             return GetInt ().IsPartialRight ();
 
-        case CSeq_loc::e_Pnt :
+        case e_Pnt :
             return GetPnt ().IsPartialRight ();
 
-        case CSeq_loc::e_Mix :
+        case e_Mix :
             return GetMix ().IsPartialRight ();
 
         default :
@@ -1115,15 +1120,15 @@ void CSeq_loc::SetPartialLeft (bool val)
     }
 
     switch ( Which() ) {
-        case CSeq_loc::e_Int:
+        case e_Int:
             SetInt().SetPartialLeft(val);
             break;
 
-        case CSeq_loc::e_Pnt:
+        case e_Pnt:
             SetPnt().SetPartialLeft(val);
             break;
 
-        case CSeq_loc::e_Mix :
+        case e_Mix :
             SetMix().SetPartialLeft(val);
             break;
 
@@ -1140,15 +1145,15 @@ void CSeq_loc::SetPartialRight(bool val)
     }
 
     switch ( Which() ) {
-        case CSeq_loc::e_Int:
+        case e_Int:
             SetInt().SetPartialRight(val);
             break;
 
-        case CSeq_loc::e_Pnt:
+        case e_Pnt:
             SetPnt().SetPartialRight(val);
             break;
 
-        case CSeq_loc::e_Mix:
+        case e_Mix:
             SetMix().SetPartialRight(val);
             break;
 
@@ -1245,35 +1250,35 @@ bool CSeq_loc::Equals(const CSerialObject& object, ESerialRecursionMode how) con
 void CSeq_loc::x_CheckId(const CSeq_id*& id) const
 {
     switch ( Which() ) {
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Null:
+    case e_not_set:
+    case e_Null:
         {
             x_UpdateId(id, 0);
             break;
         }
-    case CSeq_loc::e_Empty:
+    case e_Empty:
         {
             x_UpdateId(id, &GetEmpty());
             break;
         }
-    case CSeq_loc::e_Whole:
+    case e_Whole:
         {
             x_UpdateId(id, &GetWhole());
             break;
         }
-    case CSeq_loc::e_Int:
+    case e_Int:
         {
             const CSeq_interval& loc = GetInt();
             x_UpdateId(id, &loc.GetId());
             break;
         }
-    case CSeq_loc::e_Pnt:
+    case e_Pnt:
         {
             const CSeq_point& pnt = GetPnt();
             x_UpdateId(id, &pnt.GetId());
             break;
         }
-    case CSeq_loc::e_Packed_int:
+    case e_Packed_int:
         {
             // Check ID of each interval
             const CPacked_seqint& ints = GetPacked_int();
@@ -1283,13 +1288,13 @@ void CSeq_loc::x_CheckId(const CSeq_id*& id) const
             }
             break;
         }
-    case CSeq_loc::e_Packed_pnt:
+    case e_Packed_pnt:
         {
             const CPacked_seqpnt& pnts = GetPacked_pnt();
             x_UpdateId(id, &pnts.GetId());
             break;
         }
-    case CSeq_loc::e_Mix:
+    case e_Mix:
         {
             // Check ID of each sub-location.
             const CSeq_loc_mix& mix = GetMix();
@@ -1298,7 +1303,7 @@ void CSeq_loc::x_CheckId(const CSeq_id*& id) const
             }
             break;
         }
-    case CSeq_loc::e_Bond:
+    case e_Bond:
         {
             const CSeq_bond& bond = GetBond();
             if ( bond.CanGetA() ) {
@@ -1309,7 +1314,7 @@ void CSeq_loc::x_CheckId(const CSeq_id*& id) const
             }
             break;
         }        
-    case CSeq_loc::e_Equiv:
+    case e_Equiv:
         {
             // Doesn't make much sense to test equiv, but ...
             ITERATE(CSeq_loc_equiv::Tdata, li, GetEquiv().Get()) {
@@ -1317,7 +1322,7 @@ void CSeq_loc::x_CheckId(const CSeq_id*& id) const
             }
             break;
         }
-    case CSeq_loc::e_Feat:
+    case e_Feat:
     default:
         {
             NCBI_THROW(CException, eUnknown,
@@ -1328,13 +1333,69 @@ void CSeq_loc::x_CheckId(const CSeq_id*& id) const
 }
 
 
+void CSeq_loc::ChangeToMix(void)
+{
+    switch ( Which() ) {
+    case e_not_set:
+        {
+            SetMix();
+            return;
+        }
+    case e_Mix:
+        {
+            return;
+        }
+    default:
+        {
+            CRef<CSeq_loc> self(new CSeq_loc);
+            self->Assign(*this, eShallow);
+            CSeq_loc_mix& mix = SetMix();
+            mix.AddSeqLoc(*self);
+        }
+    }
+}
+
+
+void CSeq_loc::ChangeToPackedInt(void)
+{
+    switch ( Which() ) {
+    case e_not_set:
+        {
+            SetPacked_int();
+            return;
+        }
+    case e_Packed_int:
+        {
+            return;
+        }
+    case e_Int:
+        {
+            CConstRef<CSeq_interval> self(&GetInt());
+            SetPacked_int().AddInterval(*self);
+            return;
+        }
+    default:
+        {
+            NCBI_THROW(CException, eUnknown,
+                "Can not convert location to packed-int");
+        }
+    }
+}
+
+
 void CSeq_loc::x_ChangeToMix(const CSeq_loc& other)
 {
-    CRef<CSeq_loc> self(new CSeq_loc);
-    self->Assign(*this);
-    CSeq_loc_mix& mix = SetMix();
-    mix.AddSeqLoc(*self);
-    mix.AddSeqLoc(other);
+    ChangeToMix();
+    SetMix().AddSeqLoc(other);
+}
+
+
+void CSeq_loc::x_ChangeToPackedInt(const CSeq_interval& other)
+{
+    _ASSERT(IsInt());
+
+    ChangeToPackedInt();
+    SetPacked_int().AddInterval(other);
 }
 
 
@@ -1343,8 +1404,7 @@ void CSeq_loc::x_ChangeToPackedInt(const CSeq_loc& other)
     _ASSERT(IsInt());
     _ASSERT(other.IsInt()  ||  other.IsPacked_int());
     
-    CConstRef<CSeq_interval> self(&GetInt());
-    SetPacked_int().AddInterval(*self);
+    ChangeToPackedInt();
 
     if ( other.IsInt() ) {
         SetPacked_int().AddInterval(other.GetInt());
@@ -1453,18 +1513,18 @@ void CSeq_loc::Add(const CSeq_loc& other)
 {
     x_InvalidateCache();
     switch ( Which() ) {
-    case CSeq_loc::e_not_set:
+    case e_not_set:
         {
             Assign(other);
             break;
         }
-    case CSeq_loc::e_Null:
+    case e_Null:
         {
             // ??? skip if other is null?
             x_ChangeToMix(other);
             break;
         }
-    case CSeq_loc::e_Empty:
+    case e_Empty:
         {
             // ??? skip if other is empty and ids match?
             x_ChangeToMix(other);
@@ -1472,12 +1532,12 @@ void CSeq_loc::Add(const CSeq_loc& other)
         }
         break;
 
-    case CSeq_loc::e_Whole:
+    case e_Whole:
         {
             x_ChangeToMix(other);
             break;
         }
-    case CSeq_loc::e_Int:
+    case e_Int:
         {
             if ( other.IsInt()  ||  other.IsPacked_int() ) {
                 x_ChangeToPackedInt(other);
@@ -1486,7 +1546,7 @@ void CSeq_loc::Add(const CSeq_loc& other)
             }
         }
         break;
-    case CSeq_loc::e_Pnt:
+    case e_Pnt:
         {
             if ( s_CanAdd(*this, other) ) {
                 x_ChangeToPackedPnt(other);
@@ -1495,7 +1555,7 @@ void CSeq_loc::Add(const CSeq_loc& other)
             }
             break;
         }
-    case CSeq_loc::e_Packed_int:
+    case e_Packed_int:
         {
             if ( other.IsInt() ) {
                 SetPacked_int().AddInterval(other.GetInt());
@@ -1506,7 +1566,7 @@ void CSeq_loc::Add(const CSeq_loc& other)
             }
             break;
         }
-    case CSeq_loc::e_Packed_pnt:
+    case e_Packed_pnt:
         {
             if ( s_CanAdd(*this, other) ) {
                 if ( other.IsPnt() ) {
@@ -1519,22 +1579,22 @@ void CSeq_loc::Add(const CSeq_loc& other)
             }
             break;
         }
-    case CSeq_loc::e_Mix:
+    case e_Mix:
         {
             SetMix().AddSeqLoc(other);
             break;
         }
-    case CSeq_loc::e_Equiv:
+    case e_Equiv:
         {
             SetEquiv().Add(other);
             break;
         }
-    case CSeq_loc::e_Bond:
+    case e_Bond:
         {
             x_ChangeToMix(other);
             break;
         }
-    case CSeq_loc::e_Feat:
+    case e_Feat:
     default:
         {
             NCBI_THROW(CException, eUnknown,
@@ -1552,6 +1612,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.45  2004/10/20 18:11:40  grichenk
+ * Added CSeq_loc::ChangeToMix, ChangeToPackedInt and CSeq_loc_CI::IsSetStrand.
+ *
  * Revision 6.44  2004/09/12 19:31:10  dicuccio
  * Added missink 'break' statements inside of switch in SetPartialRight() /
  * SetPartialLeft() - avoid erroneous fall-through
