@@ -274,23 +274,25 @@ public:
 
     // return the label for a given string
     enum ELabelType {
-        // types of output
         eType,
         eContent,
         eBoth,
         eFasta,
 
-        // flags controlling output
+        // default is to show type + content
+        eDefault = eBoth
+    };
+
+    enum ELabelFlags {
         fLabel_Version = 0x10,
 
-        eDefault = eBoth | fLabel_Version,
-
-        // bit masks
-        fLabel_TypeMask = 0x0f,
-        fLabel_FlagMask = ~fLabel_TypeMask
+        // default options - always show the version
+        fLabel_Default = fLabel_Version
     };
     typedef int TLabelFlags;
-    void GetLabel(string* label, TLabelFlags flags = eDefault) const;
+    void GetLabel(string*     label,
+                  ELabelType  type  = eDefault,
+                  TLabelFlags flags = fLabel_Default) const;
 
     //Return seqid string with optional version for text seqid type
     string GetSeqIdString(bool with_version = false) const;
@@ -405,6 +407,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2004/01/22 21:03:58  dicuccio
+ * Separated functionality of enums in GetLabel() into discrete mode and flags
+ *
  * Revision 1.39  2004/01/22 18:45:45  dicuccio
  * Added new API: CSeq_id::GetLabel().  Rewired GetSeqIdString() to feed into
  * GetLabel().  Rewired GetStringDescr() to feed into GetLabel() directly instead

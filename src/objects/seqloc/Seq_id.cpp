@@ -771,13 +771,11 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
 }
 
 
-void CSeq_id::GetLabel(string* label, TLabelFlags flags) const
+void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
 {
     if ( !label ) {
         return;
     }
-
-    int type = flags & fLabel_TypeMask;
 
     switch (type) {
     case eFasta:
@@ -807,11 +805,11 @@ void CSeq_id::GetLabel(string* label, TLabelFlags flags) const
 string CSeq_id::GetSeqIdString(bool with_version) const
 {
     string label;
-    TLabelFlags flags = eContent;
+    TLabelFlags flags = 0;
     if (with_version) {
         flags |= fLabel_Version;
     }
-    GetLabel(&label, flags);
+    GetLabel(&label, eContent, flags);
     return label;
 }
 
@@ -1005,7 +1003,7 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
         // its version indicator
         if (best_id.NotEmpty()) {
             string label;
-            best_id->GetLabel(&label, eBoth | fLabel_Version);
+            best_id->GetLabel(&label, eDefault, fLabel_Version);
             return label;
         }
         break;
@@ -1015,7 +1013,7 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
         // without its version indicator
         if (best_id.NotEmpty()) {
             string label;
-            best_id->GetLabel(&label, eBoth);
+            best_id->GetLabel(&label, eDefault, 0);
             return label;
         }
         break;
@@ -1499,6 +1497,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.73  2004/01/22 21:03:58  dicuccio
+ * Separated functionality of enums in GetLabel() into discrete mode and flags
+ *
  * Revision 6.72  2004/01/22 18:45:46  dicuccio
  * Added new API: CSeq_id::GetLabel().  Rewired GetSeqIdString() to feed into
  * GetLabel().  Rewired GetStringDescr() to feed into GetLabel() directly instead
