@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/05/06 16:56:23  ivanov
+* Fixed typo ssize_t -> size_t
+*
 * Revision 1.17  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *
@@ -157,7 +160,7 @@ CSeqMap::CSegmentInfo CSeqMap::x_Resolve(TSeqPos pos, CScope& scope)
     CSegmentInfo seg = *(m_Data[seg_idx]);
     if ( seg_idx >=  m_FirstUnresolvedPos) {
         // Resolve map segments
-        ssize_t iStillUnresolved = -1;
+        size_t iStillUnresolved = -1;
         TSeqPos shift = 0;
         for (size_t i = m_FirstUnresolvedPos; i < m_Data.size(); i++) {
             if (m_Data[i]->m_Position+shift > pos  ||
