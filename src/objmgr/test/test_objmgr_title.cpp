@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/06/07 14:34:33  ucko
+* More changes for GetTitle(): pull in <objects/util/sequence.hpp>, drop
+* CBioseq_Handle:: from flag-related identifiers.
+*
 * Revision 1.8  2002/06/06 19:47:38  clausen
 * Removed usage of fGetTitle_Accession
 *
@@ -81,6 +85,8 @@
 #include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/objmgr/gbloader.hpp>
 
+#include <objects/util/sequence.hpp>
+
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -121,12 +127,12 @@ int CTitleTester::Run(void)
     scope.AddDefaults();
 
     CBioseq_Handle handle = scope.GetBioseqHandle(id);
-    CBioseq_Handle::TGetTitleFlags flags  = 0;
+    TGetTitleFlags flags  = 0;
     if (args["reconstruct"]) {
-        flags |= CBioseq_Handle::fGetTitle_Reconstruct;
+        flags |= fGetTitle_Reconstruct;
     }
     if (args["organism"]) {
-        flags |= CBioseq_Handle::fGetTitle_Organism;
+        flags |= fGetTitle_Organism;
     }
     NcbiCout << GetTitle(handle, flags) << NcbiEndl;
     NcbiCout << GetTitle(handle, flags) << NcbiEndl;
