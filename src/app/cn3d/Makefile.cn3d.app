@@ -71,11 +71,11 @@ CPPFLAGS = $(ORIG_CPPFLAGS) \
 	-I$(HOME)/Programs/wxGTK-2.2.6/install/include
 
 LIBS = $(ORIG_LIBS) \
-	$(NCBI_C_LIBPATH) \
 	-L$(HOME)/Programs/wxGTK-2.2.6/install/lib \
 	-lwx_gtk -lwx_gtk_gl -lGL -lGLU \
 	-L$(HOME)/Programs/GTK-1.2/install/lib \
 	-L/usr/openwin/lib -R/usr/openwin/lib \
 	-lgtk -lgdk -lgmodule -lglib -ldl -lXext \
 	-lX11 -lsocket -lnsl -lm -lposix4 \
+	$(NCBI_C_LIBPATH) \
 	-lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi
