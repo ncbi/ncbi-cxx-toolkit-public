@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/11/06 14:34:11  ivanov
+ * Fixed compile errors in CDir::Contents() under MS Windows
+ *
  * Revision 1.4  2001/11/01 21:02:25  ucko
  * Fix to work on non-MacOS platforms again.
  *
@@ -661,9 +664,7 @@ CDir::~CDir(void)
 }
 
 #if defined NCBI_OS_MAC
-static
-const CDirEntry&
-MacGetIndexedItem(const CDir& container, SInt16 index)
+static const CDirEntry& MacGetIndexedItem(const CDir& container, SInt16 index)
 {
 	FSSpec dir = container.FSS();
 	FSSpec fss;  // FSSpec of item gotten.
@@ -680,8 +681,7 @@ MacGetIndexedItem(const CDir& container, SInt16 index)
 
 
 #if defined NCBI_OS_MAC
-vector<CDirEntry>
-CDir::Contents() const
+vector<CDirEntry> CDir::Contents() const
 {
 	vector<CDirEntry> contents;
 	try {
@@ -700,8 +700,7 @@ CDir::Contents() const
 #endif
 
 #if defined NCBI_OS_UNIX
-vector<CDirEntry>
-CDir::Contents() const
+vector<CDirEntry> CDir::Contents() const
 {
 	vector<CDirEntry> contents;
 	
@@ -717,8 +716,7 @@ CDir::Contents() const
 #endif
 
 #if defined NCBI_OS_MSWIN
-vector<CDirEntry>
-CDir::Contents() const
+vector<CDirEntry> CDir::Contents() const
 {
 	vector<CDirEntry> contents;
 	
@@ -730,11 +728,10 @@ CDir::Contents() const
     mask += "*";
     // Open directory stream and try read info about first entry
     struct _finddata_t entry;
-    long desc = _findfirst(mask.c_str(), &entry)
+    // Get first entry's name
+    long desc = _findfirst(mask.c_str(), &entry);
     if (desc != -1) {
-	    // Get first entry's name
-	    item = CDirEntry(entry.name);
-	    
+        contents.push_back(CDirEntry(entry.name));
 	    while ( _findnext(desc, &entry) != -1 ) {
 	        contents.push_back(CDirEntry(entry.name));
 	    }
