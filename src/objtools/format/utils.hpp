@@ -110,18 +110,6 @@ bool GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me);
 
 const char* GetAAName(unsigned char aa, bool is_ascii);
 
-template <typename F>
-CRef<CSeq_id> FindBestId(const CBioseq_Handle::TId& ids, F score_func)
-{
-    CBioseq::TId tmp;
-
-    ITERATE (CBioseq_Handle::TId, it, ids) {
-        CRef<CSeq_id> id(const_cast<CSeq_id*>(it->GetSeqId().GetPointerOrNull()));
-        tmp.push_back(id);
-    }
-    return FindBestChoice(tmp, score_func);
-}
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -131,6 +119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/10/18 18:52:26  shomrat
+* Removed FindBestId
+*
 * Revision 1.12  2004/10/05 15:48:52  shomrat
 * + FindBestId
 *
