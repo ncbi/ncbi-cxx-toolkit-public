@@ -1,5 +1,5 @@
 #############################################################################
-#  $RCSfile$  $Revision$  $Date$
+#  $Id$
 # ==========================================================================
 #
 #                            PUBLIC DOMAIN NOTICE
@@ -936,6 +936,19 @@ else
    objects=
 fi
 
+## Miscellanea
+if test "$with_execopy" = "no" ; then
+   APP_NOCOPY="BINCOPY=@:"
+else
+   APP_NOCOPY=
+fi
+
+if test "$with_exe" = "no" ; then
+   APP_NOBUILD="APP_PROJ="
+else
+   APP_NOBUILD=
+fi
+
 
 ### Check for C standard types an sizes
 ### ---------------------------------
@@ -1036,6 +1049,8 @@ AC_SUBST(NCBI_PM_PATH)
 AC_SUBST(NCBI_C_ncbi)
 
 AC_SUBST(BINCOPY)
+AC_SUBST(APP_NOCOPY)
+AC_SUBST(APP_NOBUILD)
 AC_SUBST(CC_FILTER)
 AC_SUBST(CXX_FILTER)
 

@@ -47,11 +47,12 @@ LIBP_KET = ||  exit 2 ; \
    done ; \
 fi
 
+@APP_NOBUILD@
 APPP_BRA = \
 if test ! -z "$(APP_PROJ)" ; then \
    x_project="$(APP_PROJ)" ; \
    for i in $$x_project ; do \
-		$(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
+		$(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
 APPP_KET = ||  exit 3 ; \
    done ; \
 fi
