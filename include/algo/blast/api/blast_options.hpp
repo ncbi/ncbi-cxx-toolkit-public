@@ -79,6 +79,7 @@ enum EBlastOptIdx {
     eBlastOpt_GapTrigger,
     eBlastOpt_GapExtnAlgorithm,
     eBlastOpt_HitlistSize,
+    eBlastOpt_PrelimHitlistSize,
     eBlastOpt_MaxNumHspPerSequence,
     eBlastOpt_TotalHspLimit,
     eBlastOpt_CullingMode,
@@ -206,6 +207,9 @@ public:
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);
+
+    int GetPrelimHitlistSize() const;
+    void SetPrelimHitlistSize(int s);
 
     int GetMaxNumHspPerSequence() const;
     void SetMaxNumHspPerSequence(int m);
@@ -1053,6 +1057,23 @@ public:
         }
         if (m_Remote) {
             m_Remote->SetValue(eBlastOpt_HitlistSize, s);
+        }
+    }
+
+    int GetPrelimHitlistSize() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetPrelimHitlistSize() not available.");
+        }
+        return m_Local->GetPrelimHitlistSize();
+    }
+    void SetPrelimHitlistSize(int s)
+    {
+        if (m_Local) {
+            m_Local->SetPrelimHitlistSize(s);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_PrelimHitlistSize, s);
         }
     }
 
@@ -2051,6 +2072,18 @@ CBlastOptionsLocal::SetHitlistSize(int s)
 }
 
 inline int
+CBlastOptionsLocal::GetPrelimHitlistSize() const
+{
+    return m_HitSaveOpts->prelim_hitlist_size;
+}
+
+inline void
+CBlastOptionsLocal::SetPrelimHitlistSize(int s)
+{
+    m_HitSaveOpts->prelim_hitlist_size = s;
+}
+
+inline int
 CBlastOptionsLocal::GetMaxNumHspPerSequence() const
 {
     return m_HitSaveOpts->hsp_num_max;
@@ -2401,6 +2434,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2004/02/17 23:52:08  dondosha
+* Added methods to get/set preliminary hitlist size
+*
 * Revision 1.46  2004/02/10 19:46:19  dondosha
 * Added friend class CBlastDbTest
 *

@@ -128,6 +128,8 @@ public:
     /******************* Hit saving options *************************/
     int GetHitlistSize() const { return m_Opts->GetHitlistSize(); }
     void SetHitlistSize(int s) { m_Opts->SetHitlistSize(s); }
+    int GetPrelimHitlistSize() const { return m_Opts->GetPrelimHitlistSize(); }
+    void SetPrelimHitlistSize(int s) { m_Opts->SetPrelimHitlistSize(s); }
 
     int GetMaxNumHspPerSequence() const { 
         return m_Opts->GetMaxNumHspPerSequence();
@@ -195,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/17 23:52:08  dondosha
+ * Added methods to get/set preliminary hitlist size
+ *
  * Revision 1.6  2004/02/03 21:30:20  camacho
  * Follow consistent use of doxygen tags
  *
