@@ -39,6 +39,10 @@
 #include <connect/ncbi_namedpipe.hpp>
 #include <test/test_assert.h>  // This header must go last
 
+#ifdef pipe
+#undef pipe
+#endif
+
 
 USING_NCBI_SCOPE;
 
@@ -338,6 +342,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/09/08 15:13:18  ucko
+ * Kill any definition of pipe as a macro (which may occur on OSF/1)
+ *
  * Revision 1.7  2004/05/19 15:29:57  ivanov
  * Added additional cmd line parameter to create unique pipe name
  *
