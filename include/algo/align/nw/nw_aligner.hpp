@@ -86,7 +86,7 @@ public:
         eFormatAsn,
         eFormatFastA
     };
-    string FormatAsText(size_t line_width, EFormat type, int param = 0) const;
+    string FormatAsText(EFormat type, size_t line_width = 100) const;
     void   FormatAsSeqAlign(CSeq_align*) const;
 
     // Retrieve transcript string
@@ -173,6 +173,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/03/05 20:12:22  kapustin
+ * Simplify FormatAsText interface
+ *
  * Revision 1.11  2003/02/26 21:30:32  gouriano
  * modify C++ exceptions thrown by this library
  *
