@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/01/03 16:39:05  vasilche
+ * Added CAbstractObjectManager - stub for object manager.
+ * CRange extracted to separate file.
+ *
  * Revision 6.9  2000/12/26 17:28:55  vasilche
  * Simplified and formatted code.
  *
@@ -78,8 +82,8 @@
 #include <objects/seqloc/Patent_seq_id.hpp>
 
 // object manager includes
-#include <objects/objmgr/objmgr.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/objmgrstub.hpp>
 
 // generated classes
 
@@ -245,7 +249,7 @@ ostream& CSeq_id::AsFastaString(ostream& s) const
 	return s;
 }
 
-void CSeq_id::SetObjectManager(const CRef<CObjectManager>& objMgr)
+void CSeq_id::SetObjectManager(const CRef<CAbstractObjectManager>& objMgr)
 {
     if ( m_ObjectManager )
         THROW1_TRACE(runtime_error, "CSeq_id::SetObjectManager: already set");
@@ -255,14 +259,14 @@ void CSeq_id::SetObjectManager(const CRef<CObjectManager>& objMgr)
     m_ObjectManager = objMgr;
 }
 
-void CSeq_id::ResetObjectManager(const CRef<CObjectManager>& objMgr)
+void CSeq_id::ResetObjectManager(const CRef<CAbstractObjectManager>& objMgr)
 {
     if ( m_ObjectManager.GetPointer() != objMgr.GetPointer() )
         ERR_POST("CSeq_id::ResetObjectManager: not owner");
     m_ObjectManager.Reset();
 }
 
-CRef<CBioseq> CSeq_id::Resolve(void) const
+CConstRef<CBioseq> CSeq_id::Resolve(void) const
 {
     if ( !m_ObjectManager )
         THROW1_TRACE(runtime_error, "CSeq_id::Resolve: null pointer");

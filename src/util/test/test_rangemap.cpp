@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/01/03 16:39:29  vasilche
+* Added CAbstractObjectManager - stub for object manager.
+* CRange extracted to separate file.
+*
 * Revision 1.2  2000/12/26 17:27:47  vasilche
 * Implemented CRangeMap<> template for sorting Seq-loc objects.
 *
@@ -89,8 +93,7 @@ int CTestRangeMap::Run(void)
         } while ( !rm.insert(TRangeMap::value_type(range, s)).second );
         NcbiCout << range << " = \"" << s << "\"" << NcbiEndl;
     }
-    NcbiCout << "Map: count=" << rm.size() <<
-        ", range=" << rm.GetTotalRange() << NcbiEndl;
+    NcbiCout << "Map: count=" << rm.size() << NcbiEndl;
     iterate ( TRangeMap, i, rm ) {
         NcbiCout << i->first << " = \"" << i->second << "\"" << NcbiEndl;
     }

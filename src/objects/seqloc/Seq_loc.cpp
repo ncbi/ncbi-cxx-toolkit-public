@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/01/03 16:39:05  vasilche
+ * Added CAbstractObjectManager - stub for object manager.
+ * CRange extracted to separate file.
+ *
  * Revision 6.2  2000/12/26 17:28:55  vasilche
  * Simplified and formatted code.
  *
@@ -52,6 +56,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -72,32 +77,70 @@ CSeq_loc::~CSeq_loc(void)
 // return = -2 = couldn't calculate because of data type
 int CSeq_loc::GetLength(void) const
 {
-	switch (Which())
-	{
-	    case e_not_set:      /* this should never be */
-		return eError;
-	    case e_Bond:         /* can't calculate length */
-	    case e_Feat:
-		return eUndefined;
-	    case e_Pnt:
-		return 1;
-	    case e_Int:
-		return GetInt().GetLength();
-	    case e_Empty:
-	    case e_Whole:
-		return GetWhole().Resolve()->GetInst().GetLength();
-	    case e_Packed_int:
-		return GetPacked_int().GetLength();
-	    case e_Mix:
-		return GetMix().GetLength();
-	    case e_Packed_pnt:
-		return eUndefined;  /* this is a bunch of points */
-	    case e_Equiv:
-		return eUndefined;  /* unless they are all equal */
-	    default:
-		break;
-	}
+	switch (Which()) {
+    case e_not_set:      /* this should never be */
+        return eError;
+    case e_Bond:         /* can't calculate length */
+    case e_Feat:
+        return eUndefined;
+    case e_Pnt:
+        return 1;
+    case e_Int:
+        return GetInt().GetLength();
+    case e_Empty:
+    case e_Whole:
+        return GetWhole().Resolve()->GetInst().GetLength();
+    case e_Packed_int:
+        return GetPacked_int().GetLength();
+    case e_Mix:
+        return GetMix().GetLength();
+    case e_Packed_pnt:
+        return eUndefined;  /* this is a bunch of points */
+    case e_Equiv:
+        return eUndefined;  /* unless they are all equal */
+    default:
+        break;
+    }
 	return eError;   /* new unsupported type */
+}
+
+// returns enclosing location range
+CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
+{
+	switch (Which()) {
+    case e_not_set:      /* this should never be */
+        THROW1_TRACE(runtime_error,
+                     "CSeq_loc::GetTotalRange(): unset CSeq_loc");
+    case e_Bond:         /* can't calculate length */
+    case e_Feat:
+        break; // undefined
+    case e_Pnt:
+        {
+            int point = GetPnt().GetPoint();
+            return TRange(point, point);
+        }
+    case e_Int:
+        {
+            const CSeq_interval& interval = GetInt();
+            return TRange(interval.GetFrom(), interval.GetTo());
+        }
+    case e_Empty:
+        return TRange::GetEmpty();
+    case e_Whole:
+        return TRange::GetWhole();
+    case e_Packed_int:
+        break; // undefined
+    case e_Mix:
+        return GetMix().GetTotalRange();
+    case e_Packed_pnt:
+        break; // undefined
+    case e_Equiv:
+        break; // undefined
+    default:
+        break;
+    }
+    THROW1_TRACE(runtime_error,
+                 "CSeq_loc::GetTotalRange(): undefined range");
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

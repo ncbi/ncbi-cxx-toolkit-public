@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/01/03 16:39:05  vasilche
+ * Added CAbstractObjectManager - stub for object manager.
+ * CRange extracted to separate file.
+ *
  * Revision 6.1  2000/11/17 21:35:10  vasilche
  * Added GetLength() method to CSeq_loc class.
  *
@@ -55,6 +59,11 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// constructor
+CSeq_loc_mix::CSeq_loc_mix(void)
+{
+}
+
 // destructor
 CSeq_loc_mix::~CSeq_loc_mix(void)
 {
@@ -63,18 +72,41 @@ CSeq_loc_mix::~CSeq_loc_mix(void)
 // length calculator
 int CSeq_loc_mix::GetLength(void) const
 {
-        int length = 0;
+    int length = 0;
 
-	iterate( Tdata, i, Get())
-        {
-                int ret = (**i).GetLength();
-                if (ret < 0)   /* error return */
-                        return ret;
-                length += ret;
-        }
-        return length;
+	iterate( Tdata, i, Get() ) {
+        int ret = (**i).GetLength();
+        if (ret < 0)   /* error return */
+            return ret;
+        length += ret;
+    }
+    return length;
 }
 
+void CSeq_loc_mix::ResetRangeMap(void) const
+{
+    m_RangeMap.reset(0);
+}
+
+const CSeq_loc_mix::TRangeMap& CSeq_loc_mix::GetRangeMap(void) const
+{
+    TRangeMap* rangeMap = m_RangeMap.get();
+    if ( !rangeMap ) {
+        TRange totalRange = TRange::GetEmpty();
+        auto_ptr<TRangeMap> rm(rangeMap = new TRangeMap);
+        iterate ( Tdata, i, Get() ) {
+            const CRef<CSeq_loc>& loc = *i;
+            TRange range = loc->GetTotalRange();
+            if ( !range.Empty() ) {
+                rm->insert(TRangeMap::value_type(range, loc));
+                totalRange += range;
+            }
+        }
+        m_TotalRange = totalRange;
+        m_RangeMap = rm;
+    }
+    return *rangeMap;
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

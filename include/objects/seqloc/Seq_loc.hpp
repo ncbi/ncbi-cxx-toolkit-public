@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/01/03 16:38:58  vasilche
+ * Added CAbstractObjectManager - stub for object manager.
+ * CRange extracted to separate file.
+ *
  * Revision 1.1  2000/11/17 21:35:02  vasilche
  * Added GetLength() method to CSeq_loc class.
  *
@@ -48,6 +52,8 @@
 
 // generated includes
 #include <objects/seqloc/Seq_loc_.hpp>
+
+#include <objects/objmgr/range.hpp>
 
 // generated classes
 
@@ -68,10 +74,14 @@ public:
     // return = -1 = couldn't calculate due to error
     // return = -2 = couldn't calculate because of data type
     enum {
-	eError     = -1,
+        eError     = -1,
         eUndefined = -2
     };
+
     int GetLength(void) const;
+
+    typedef CRange<int> TRange;
+    TRange GetTotalRange(void) const;
 };
 
 

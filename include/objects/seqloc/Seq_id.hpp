@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/01/03 16:38:53  vasilche
+ * Added CAbstractObjectManager - stub for object manager.
+ * CRange extracted to separate file.
+ *
  * Revision 1.5  2000/12/26 17:28:34  vasilche
  * Simplified and formatted code.
  *
@@ -60,7 +64,6 @@
 
 // generated includes
 #include <objects/seqloc/Seq_id_.hpp>
-#include <set>
 
 // generated classes
 
@@ -69,7 +72,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CBioseq;
-class CObjectManager;
+class CAbstractObjectManager;
 
 class CSeq_id : public CSeq_id_Base
 {
@@ -99,14 +102,14 @@ public:
     ostream& AsFastaString(ostream& s) const;
 
     // setup object manager
-    void SetObjectManager(const CRef<CObjectManager>& objMgr);
-    void ResetObjectManager(const CRef<CObjectManager>& objMgr);
+    void SetObjectManager(const CRef<CAbstractObjectManager>& objMgr);
+    void ResetObjectManager(const CRef<CAbstractObjectManager>& objMgr);
 
     // use object manager to resolve sequence
-    CRef<CBioseq> Resolve(void) const;
+    CConstRef<CBioseq> Resolve(void) const;
 
 private:
-    CRef<CObjectManager> m_ObjectManager;
+    CRef<CAbstractObjectManager> m_ObjectManager;
 };
 
 

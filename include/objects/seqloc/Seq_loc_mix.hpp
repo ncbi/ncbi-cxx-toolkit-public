@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/01/03 16:38:59  vasilche
+ * Added CAbstractObjectManager - stub for object manager.
+ * CRange extracted to separate file.
+ *
  * Revision 1.1  2000/11/17 21:35:03  vasilche
  * Added GetLength() method to CSeq_loc class.
  *
@@ -48,6 +52,8 @@
 
 // generated includes
 #include <objects/seqloc/Seq_loc_mix_.hpp>
+
+#include <objects/objmgr/rangemap.hpp>
 
 // generated classes
 
@@ -67,17 +73,25 @@ public:
     // Length Calculator
     int GetLength(void) const;
 
+    typedef CRangeMap<CConstRef<CSeq_loc>, int> TRangeMap;
+    typedef TRangeMap::range_type TRange;
+
+    const TRangeMap& GetRangeMap(void) const;
+    void ResetRangeMap(void) const;
+    TRange GetTotalRange(void) const
+        {
+            GetRangeMap();
+            return m_TotalRange;
+        }
+    
+private:
+    mutable auto_ptr<TRangeMap> m_RangeMap;
+    mutable TRange m_TotalRange;
 };
 
 
 
 /////////////////// CSeq_loc_mix inline methods
-
-// constructor
-inline
-CSeq_loc_mix::CSeq_loc_mix(void)
-{
-}
 
 
 /////////////////// end of CSeq_loc_mix inline methods
