@@ -53,7 +53,6 @@ static Int4 SeqDbGetMaxLength(void* seqdb_handle, void* ignoreme);
 static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void* ignoreme);
 static Int8 SeqDbGetTotLen(void* seqdb_handle, void* ignoreme);
 static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme);
-static Blast_Message* SeqDbGetError(void* seqdb_handle, void* args);
 
 /** Retrieves the length of the longest sequence in the BlastSeqSrc.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
@@ -227,16 +226,6 @@ static Int4 SeqDbGetSeqLen(void* seqdb_handle, void* args)
     return (*seqdb)->GetSeqLength(*oid);
 }
 
-/* There are no error messages saved in the CSeqDB class, so the 
- * following getter function is implemented as always returning NULL.
- * @todo FIXME: should error handling be provided for this 
- *              implementation?
- */
-static Blast_Message* SeqDbGetError(void*, void*)
-{
-   return NULL;
-}
-
 static Int2 SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
@@ -315,30 +304,60 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+/// Encapsulates the arguments needed to initialize CSeqDB.
+class CSeqDbSrcNewArgs {
+public:
+    CSeqDbSrcNewArgs(const string& db, bool is_prot,
+                     Uint4 first_oid = 0, Uint4 final_oid = 0)
+        : m_DbName(db), m_IsProtein(is_prot), 
+          m_FirstDbSeq(first_oid), m_FinalDbSeq(final_oid)
+    {}
+
+    const string GetDbName() const { return m_DbName; }
+    char GetDbType() const { return m_IsProtein ? 'p' : 'n'; }
+    Uint4 GetFirstOid() const { return m_FirstDbSeq; }
+    Uint4 GetFinalOid() const { return m_FinalDbSeq; }
+    bool GetUseMmap() const { return true; }
+
+private:
+    string m_DbName;        /**< Database name */
+    bool m_IsProtein;       /**< Is this database protein? */
+    Uint4 m_FirstDbSeq;     /**< Ordinal id of the first sequence to search */
+    Uint4 m_FinalDbSeq;     /**< Ordinal id of the last sequence to search */
+};
+
 extern "C" {
 
 BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 {
-    SSeqDbSrcNewArgs* rargs = (SSeqDbSrcNewArgs*) args;
+    if ( !retval ) {
+        return (BlastSeqSrc*) NULL;
+    }
 
-    if (!retval)
-        return NULL;
+    CSeqDbSrcNewArgs* seqdb_args = (CSeqDbSrcNewArgs*) args;
+    ASSERT(seqdb_args);
 
-    ASSERT(rargs);
-
-    string db_name(rargs->dbname);
-    char db_type = static_cast<char>((rargs->is_protein ? 'p' : 'n'));
-
-    CSeqDB* seqdb = new CSeqDB(db_name, db_type, (Uint4)rargs->first_db_seq, 
-                               (Uint4)rargs->final_db_seq, true);
-
-    CRef<CSeqDB>* seqdb_ref = new CRef<CSeqDB>(seqdb);
+    CRef<CSeqDB>* seqdb = new CRef<CSeqDB>(NULL);
+    try {
+        seqdb->Reset(new CSeqDB(seqdb_args->GetDbName(), 
+                                seqdb_args->GetDbType(), 
+                                seqdb_args->GetFirstOid(),
+                                seqdb_args->GetFinalOid(),
+                                seqdb_args->GetUseMmap()));
+    } catch (const ncbi::CException& e) {
+        SetInitErrorStr(retval, strdup(e.ReportAll().c_str()));
+    } catch (const std::exception& e) {
+        SetInitErrorStr(retval, strdup(e.what()));
+    } catch (...) {
+        SetInitErrorStr(retval, strdup("Caught unknown exception from CSeqDB"
+                                       " constructor"));
+    }
 
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
     SetDeleteFnPtr(retval, &SeqDbSrcFree);
     SetCopyFnPtr(retval, &SeqDbSrcCopy);
-    SetDataStructure(retval, (void*) seqdb_ref);
+    SetDataStructure(retval, (void*) seqdb);
     SetGetNumSeqs(retval, &SeqDbGetNumSeqs);
     SetGetMaxSeqLen(retval, &SeqDbGetMaxLength);
     SetGetAvgSeqLen(retval, &SeqDbGetAvgLength);
@@ -349,7 +368,6 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
     SetGetSeqLen(retval, &SeqDbGetSeqLen);
     SetGetNextChunk(retval, &SeqDbGetNextChunk);
     SetIterNext(retval, &SeqDbIteratorNext);
-    SetGetError(retval, &SeqDbGetError);
     SetRetSequence(retval, &SeqDbRetSequence);
 
     return retval;
@@ -380,23 +398,16 @@ BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* seq_src)
 }
 
 BlastSeqSrc* 
-SeqDbSrcInit(const char* dbname, Boolean is_prot, Int4 first_seq, 
-                      Int4 last_seq, void*)
+SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
+                     Uint4 first_seq, Uint4 last_seq, void*)
 {
     BlastSeqSrcNewInfo bssn_info;
     BlastSeqSrc* seq_src = NULL;
-    SSeqDbSrcNewArgs* seqdb_args = 
-        (SSeqDbSrcNewArgs*) calloc(1, sizeof(SSeqDbSrcNewArgs));;
-    seqdb_args->dbname = strdup(dbname);
-    seqdb_args->is_protein = is_prot ? true : false;
-    seqdb_args->first_db_seq = first_seq;
-    seqdb_args->final_db_seq = last_seq; 
-    bssn_info.constructor = &SeqDbSrcNew;
-    bssn_info.ctor_argument = (void*) seqdb_args;
+    CSeqDbSrcNewArgs seqdb_args(dbname, is_prot, first_seq, last_seq);
 
+    bssn_info.constructor = &SeqDbSrcNew;
+    bssn_info.ctor_argument = (void*) &seqdb_args;
     seq_src = BlastSeqSrcNew(&bssn_info);
-    sfree(seqdb_args->dbname);
-    sfree(seqdb_args);
     return seq_src;
 }
 
@@ -411,6 +422,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2004/11/17 20:26:01  camacho
+ * 1. Implemented error handling at initialization time.
+ * 2. Removed user-defined unimplemented error function as it is no longer needed.
+ * 3. Made initialization function name consistent with other BlastSeqSrc
+ *    implementations
+ *
  * Revision 1.20  2004/10/06 14:56:13  dondosha
  * Remove methods that are no longer supported by interface
  *
