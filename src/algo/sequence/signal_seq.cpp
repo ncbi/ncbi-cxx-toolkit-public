@@ -37,6 +37,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 // Scoring matrix for eukaryotic signal sequences
+// we have to declare these extern to be accessible from template on ForteCC.
+extern const double const_EukMat[26][15];
+extern const double const_BacMat[26][15];
+
 const double const_EukMat[26][15] = {
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {0.0984401, -0.109199, -0.0350913, 0.0339016, 0.321584,
@@ -240,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/16 19:40:09  vasilche
+ * Made static const arrays accessible from template on ForteCC
+ *
  * Revision 1.5  2004/03/15 12:30:19  dicuccio
  * Changed name of const arrays
  *
