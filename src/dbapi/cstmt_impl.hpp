@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/04/05 19:33:08  kholodov
+* Added: ExecuteUpdate() to skip all resultsets returned (if any)
+*
 * Revision 1.3  2002/02/08 21:29:55  kholodov
 * SetDataBase() restored, connection cloning algorithm changed
 *
@@ -53,36 +56,37 @@
 BEGIN_NCBI_SCOPE
 
 class CCallableStatement : public CStatement,
-			   public ICallableStatement
+                           public ICallableStatement
 {
 public:
-  CCallableStatement(const string& proc,
-		     int nofArgs,
-		     CConnection* conn);
+    CCallableStatement(const string& proc,
+                       int nofArgs,
+                       CConnection* conn);
 
-  virtual ~CCallableStatement();
+    virtual ~CCallableStatement();
 
-  virtual bool HasMoreResults();
+    virtual bool HasMoreResults();
 
-  virtual int GetReturnStatus();
-  virtual void SetParam(const CVariant& v, 
-		       const string& name);
+    virtual int GetReturnStatus();
+    virtual void SetParam(const CVariant& v, 
+                          const string& name);
 
-  virtual void SetOutputParam(const CVariant& v, const string& name);
+    virtual void SetOutputParam(const CVariant& v, const string& name);
 
-  virtual void Execute();
+    virtual void Execute();
+    virtual void ExecuteUpdate();
 
 protected:
 
-  CDB_RPCCmd* GetRpcCmd();
-  virtual void Execute(const string& /*sql*/) {}
-  virtual void ExecuteUpdate(const string& /*sql*/) {}
+    CDB_RPCCmd* GetRpcCmd();
+    virtual void Execute(const string& /*sql*/) {}
+    virtual void ExecuteUpdate(const string& /*sql*/) {}
 
 private:
-  int m_status;
-  int m_nofParams;
-  //typedef map<string, CVariant> ParamList;
-  //ParamList m_paramList;
+    int m_status;
+    int m_nofParams;
+    //typedef map<string, CVariant> ParamList;
+    //ParamList m_paramList;
   
 };
 

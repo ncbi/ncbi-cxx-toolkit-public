@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/04/05 19:33:08  kholodov
+* Added: ExecuteUpdate() to skip all resultsets returned (if any)
+*
 * Revision 1.3  2002/02/08 21:29:54  kholodov
 * SetDataBase() restored, connection cloning algorithm changed
 *
@@ -114,6 +117,12 @@ void CCallableStatement::Execute()
 {
   CheckValid();
   GetRpcCmd()->Send();
+}
+
+void CCallableStatement::ExecuteUpdate()
+{
+  Execute();
+  while( HasMoreResults() );
 }
 
 int CCallableStatement::GetReturnStatus()
