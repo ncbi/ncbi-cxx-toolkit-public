@@ -35,6 +35,16 @@
         Standard build targets(<b>all, clean, purge</b>) in makefiles</a>
     </ul>
   </ul>
+  <li> <a href="#ref_Outside">
+    Developing a project(lib, application) outside of the NCBI C++ tree</a>
+    <ul>
+      <li> <a href="#ref_OutsideImport">
+           <b><i>import_project.sh</i></b> -- project from the NCBI C++ tree
+           </a>
+      <li> <a href="#ref_OutsideCreate">
+           <b><i>new_project.sh</i></b> -- project only using the NCBI C++ tree
+           </a>
+    </ul>
   <li> <a href="mkfiles.html">
     A real-life example of the NCBI C++ makefile hierarchy
    (project <i><b>corelib/</b></i>)</a>
@@ -221,7 +231,7 @@ them get put to the very top of a <i>build tree</i>.
 
 <p>
 <b><i>Makefile.mk</i></b> defines the following makefile macros obtained
-from the configuration process:
+during the configuration process:
 
 <br></br>
 <a name="ref_TableFlags">
@@ -650,12 +660,11 @@ File $(top_srcdir)/src/internal/humchrom/Makefile.hc_gen_obj:
 
 include $(builddir)/Makefile.mk
 
-
 BUILD__HC_GEN_OBJ = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="hc_gen_obj" $(MFLAGS)
 
 
 all_r: all
-all: humchrom_dat.dep
+all: build_hc_gen_obj humchrom_dat.dep
 
 purge_r: purge
 purge:   x_clean
@@ -668,9 +677,10 @@ x_clean:
 	-rm -f humchrom_dat.h
 	-rm -f humchrom_dat.c
 
-
-humchrom_dat.dep: $(srcdir)/data/humchrom.dat
+build_hc_gen_obj:
 	$(BUILD__HC_GEN_OBJ) all
+
+humchrom_dat.dep: $(srcdir)/data/humchrom.dat $(bindir)/hc_gen_obj
 	-cp -p humchrom_dat.c humchrom_dat.save.c
 	$(bindir)/hc_gen_obj -d $(srcdir)/data/humchrom.dat -f humchrom_dat
 	$(top_srcdir)/src/if_diff.sh "mv" humchrom_dat.h $(incdir)/humchrom_dat.h
@@ -701,6 +711,95 @@ Naturally, the <i>customized makefiles</i> will not make a difference between
 recursive(<b>all_r, clean_r, purge_r</b>) and non-recursive(<b>all, clean, purge</b>)
 targets -- because the recursion and multiple build is
 entirely up to the <a href="#ref_MakeMeta"><i>meta-makefiles</i></a>.
+
+
+<p>
+<br>
+<a name="ref_Outside"></a>
+<h2>Developing a project(lib, application) outside of the NCBI C++ tree</h2>
+
+<a name="ref_OutsideImport"></a>
+<h3><b><i>src/import_project.sh &lt;cvs_tree_path&gt; [builddir]</i></b></h3>
+
+<p>
+In many cases, you work on your own project which <b>is a part</b> of the
+NCBI C++ tree, and you do not want to checkout, update and rebuild
+the whole NCBI C++ tree. -- Instead, you just want to use headers and
+libraries of the pre-built NCBI C++ toolkit to build your project.
+
+<p>
+Shell script <b><i>src/import_project.sh</i></b> will checkout
+your project's source and include directories from CVS, and it will create
+a (temporary) makefile based on the project's <i>customized makefile</i>.
+This makefile will also contain a reference to the pre-built NCBI C++ toolkit.
+
+<p>
+For
+<a href="new_project.import.session">
+EXAMPLE</a>:
+<br>&nbsp;&nbsp;&nbsp;
+<b>
+   import_project.sh internal/hello
+</b>
+<br>
+will checkout the whole <b>hello</b> demo project from the NCBI C++ tree
+(<b><i>$CVSROOT/internal/c++/src/internal/hello/</i></b>), and create
+makefile <b><i>Makefile.hello_app</i></b> from the project's
+<i>customized makefile</i> <b><i>Makefile.hello.app</i></b>.
+Now you can just go to the created working directory
+<b><i>internal/c++/src/internal/hello/</i></b> and build demo application
+<b>hello.cgi</b> using:
+<br>&nbsp;&nbsp;&nbsp;
+<b>
+   make -f Makefile.hello_app
+</b>
+
+<p>
+<br>
+<a name="ref_OutsideCreate"></a>
+<h3><b><i>src/new_project.sh &lt;name&gt; lib|app [builddir]</i></b> </h3>
+
+<p>
+This script will help you to write a makefile for a new, out-of-scratch
+project which uses NCBI C++ (and probably NCBI C) toolkit.
+You will just have to slightly edit the resultant makefile to:
+<ul>
+  <li> specify the name of your library (or application)
+  <li> specify the list of source files going to it
+  <li> modify some preprocessor, compiler, etc.  flags, if needed
+  <li> modify the set of additional libraries to link to it
+       (if it's an application), if needed
+</ul>
+
+
+<p>
+For
+<a href="new_project.create.session">
+EXAMPLE</a>:
+
+<br> &nbsp;&nbsp;&nbsp;
+<b>
+   new_project.sh foo lib
+</b>
+<br>
+will create a model makefile <b><i>Makefile.foo_lib</i></b> to build
+a library using tools and flags hard-coded in
+<b><i>$(NCBI)/ver0.0/c++/Debug/build/Makefile.mk</i></b>,
+and headers from <b><i>$(NCBI)/ver0.0/c++/include/</i></b>.
+Now, after specifying the library name, list of source files, etc.,
+you can just go to the created working directory
+<b><i>foo/</i></b> and build your library using:
+<br> &nbsp;&nbsp;&nbsp;
+<b>
+   make -f Makefile.foo_lib
+</b>
+
+<br>
+You can easily change the active version of NCBI C++ toolkit
+by manually setting variable <b>$(builddir)</b> in
+<b><i>Makefile.foo_lib</i></b>to the desired toolkit path, e.g.:
+<br> &nbsp;&nbsp;&nbsp;
+<b><i>builddir = $(NCBI)/ver0.0/c++/GCC-Release/build</i></b>
 
 
 <br></br>
