@@ -72,6 +72,10 @@ public:
     void SetPseudoCount(short p) { m_Opts->SetPseudoCount(p); }
     
 protected:
+    
+    /// Overrides LookupTableDefaults for PSI-BLAST
+    void SetLookupTableDefaults();
+
     /// Sets PSIBlastDefaults
     void SetPSIBlastDefaults();
     
@@ -92,6 +96,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/12/20 20:10:55  camacho
+ * + option to set composition based statistics
+ * + option to use pssm in lookup table
+ *
  * Revision 1.3  2004/06/08 23:11:58  camacho
  * fix to previous commit
  *

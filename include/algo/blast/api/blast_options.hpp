@@ -52,6 +52,7 @@ class CBlastTraceBackTest;
 class CScoreBlkTest; 
 class CRPSTest; 
 class CBlastRedoAlignmentTest; 
+class CPsimodulestestApplication;
 
 class CBlastTabularFormatThread;
 
@@ -81,6 +82,7 @@ enum EBlastOptIdx {
     eBlastOpt_MBTemplateLength,
     eBlastOpt_MBTemplateType,
     eBlastOpt_MBMaxPositions,
+    eBlastOpt_UsePssm,
     eBlastOpt_FilterString,
     eBlastOpt_StrandOption,
     eBlastOpt_QueryGeneticCode,
@@ -124,7 +126,8 @@ enum EBlastOptIdx {
     eBlastOpt_PHIPattern,
     eBlastOpt_InclusionThreshold,
     eBlastOpt_PseudoCount,
-    eBlastOpt_GapTracebackAlgorithm
+    eBlastOpt_GapTracebackAlgorithm,
+    eBlastOpt_CompositionBasedStatsMode
 };
 
 
@@ -170,6 +173,9 @@ public:
     int GetMBMaxPositions() const;
     void SetMBMaxPositions(int m);
 
+    bool GetUsePssm() const;
+    void SetUsePssm(bool m = true);
+
     /******************* Query setup options ************************/
     const char* GetFilterString() const;
     void SetFilterString(const char* f);
@@ -212,6 +218,9 @@ public:
     EBlastTbackExt GetGapTracebackAlgorithm() const;
     void SetGapTracebackAlgorithm(EBlastTbackExt a);
 
+    bool GetCompositionBasedStatsMode() const;
+    void SetCompositionBasedStatsMode(bool m = true);
+
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);
@@ -241,9 +250,6 @@ public:
     // statistics is used
     double GetEvalueThreshold() const;
     void SetEvalueThreshold(double eval);
-
-    double GetOriginalEvalue() const;
-    //void SetOriginalEvalue(double e);
 
     // Raw score cutoff threshold
     int GetCutoffScore() const;
@@ -808,6 +814,23 @@ public:
         }
     }
 
+    bool GetUsePssm() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetUsePssm() not available.");
+        }
+        return m_Local->GetUsePssm();
+    }
+    void SetUsePssm(bool m)
+    {
+        if (m_Local) {
+            m_Local->SetUsePssm(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_UsePssm, m);
+        }
+    }
+
     /******************* Query setup options ************************/
     const char* GetFilterString() const
     {
@@ -1050,6 +1073,23 @@ public:
         }
     }
 
+    bool GetCompositionBasedStatsMode() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetCompositionBasedStatsMode() not available.");
+        }
+        return m_Local->GetCompositionBasedStatsMode();
+    }
+
+    void SetCompositionBasedStatsMode(bool m = true)
+    {
+        if (m_Local) {
+            m_Local->SetCompositionBasedStatsMode(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_CompositionBasedStatsMode, m);
+        }
+    }
     /******************* Hit saving options *************************/
     int GetHitlistSize() const
     {
@@ -1191,15 +1231,6 @@ public:
             m_Remote->SetValue(eBlastOpt_EvalueThreshold, eval);
         }
     }
-
-    double GetOriginalEvalue() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetOriginalEvalue() not available.");
-        }
-        return m_Local->GetOriginalEvalue();
-    }
-    //void SetOriginalEvalue(double e);
 
     // Raw score cutoff threshold
     int GetCutoffScore() const
@@ -1665,6 +1696,7 @@ public:
     friend class ::CScoreBlkTest;          // unit test class
     friend class ::CRPSTest;               // unit test class
     friend class ::CBlastRedoAlignmentTest;// unit test class
+    friend class ::CPsimodulestestApplication;  // bulk test application class
 
 protected:
     QuerySetUpOptions * GetQueryOpts() const
@@ -1874,6 +1906,18 @@ CBlastOptionsLocal::SetMBMaxPositions(int m)
     m_LutOpts->max_positions = m;
 }
 
+inline bool
+CBlastOptionsLocal::GetUsePssm() const
+{
+    return m_LutOpts->use_pssm ? true : false;
+}
+
+inline void
+CBlastOptionsLocal::SetUsePssm(bool use_pssm)
+{
+    m_LutOpts->use_pssm = use_pssm;
+}
+
 /******************* Query setup options ************************/
 inline const char*
 CBlastOptionsLocal::GetFilterString() const
@@ -2061,6 +2105,18 @@ CBlastOptionsLocal::SetGapTracebackAlgorithm(EBlastTbackExt a)
     m_ExtnOpts->eTbackExt = a;
 }
 
+inline bool
+CBlastOptionsLocal::GetCompositionBasedStatsMode() const
+{
+    return m_ExtnOpts->compositionBasedStats ? true : false;
+}
+
+inline void
+CBlastOptionsLocal::SetCompositionBasedStatsMode(bool m)
+{
+    m_ExtnOpts->compositionBasedStats = m;
+}
+
 /******************* Hit saving options *************************/
 inline int
 CBlastOptionsLocal::GetHitlistSize() const
@@ -2157,20 +2213,6 @@ CBlastOptionsLocal::SetEvalueThreshold(double eval)
 {
     m_HitSaveOpts->expect_value = eval;
 }
-
-inline double
-CBlastOptionsLocal::GetOriginalEvalue() const
-{
-    return m_HitSaveOpts->original_expect_value;
-}
-
-#if 0
-void
-CBlastOptionsLocal::SetOriginalEvalue(double e)
-{
-    m_HitSaveOpts->original_expect_value = e;
-}
-#endif
 
 inline int
 CBlastOptionsLocal::GetCutoffScore() const
@@ -2434,6 +2476,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2004/12/20 20:10:55  camacho
+* + option to set composition based statistics
+* + option to use pssm in lookup table
+*
 * Revision 1.76  2004/11/02 18:25:49  madden
 * Move gap_trigger to m_InitWordOpts
 *
