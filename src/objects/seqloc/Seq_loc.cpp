@@ -123,6 +123,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             SLoc_Info info;
             info.m_Id = &loc.GetWhole();
             info.m_Range.Set(TRange::GetWholeFrom(), TRange::GetWholeTo());
+            info.m_Loc = &loc;
             m_LocList.push_back(info);
             return;
         }
@@ -133,6 +134,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             info.m_Range.Set(loc.GetInt().GetFrom(), loc.GetInt().GetTo());
             if ( loc.GetInt().IsSetStrand() )
                 info.m_Strand = loc.GetInt().GetStrand();
+            info.m_Loc = &loc;
             m_LocList.push_back(info);
             return;
         }
@@ -143,6 +145,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             info.m_Range.Set(loc.GetPnt().GetPoint(), loc.GetPnt().GetPoint());
             if ( loc.GetPnt().IsSetStrand() )
                 info.m_Strand = loc.GetPnt().GetStrand();
+            info.m_Loc = &loc;
             m_LocList.push_back(info);
             return;
         }
@@ -154,6 +157,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 info.m_Range.Set((*ii)->GetFrom(), (*ii)->GetTo());
                 if ( (*ii)->IsSetStrand() )
                     info.m_Strand = (*ii)->GetStrand();
+                info.m_Loc = &loc;
                 m_LocList.push_back(info);
             }
             return;
@@ -166,6 +170,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 info.m_Range.Set(*pi, *pi);
                 if ( loc.GetPacked_pnt().IsSetStrand() )
                     info.m_Strand = loc.GetPacked_pnt().GetStrand();
+                info.m_Loc = &loc;
                 m_LocList.push_back(info);
             }
             return;
@@ -192,6 +197,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                               loc.GetBond().GetA().GetPoint());
             if ( loc.GetBond().GetA().IsSetStrand() )
                 infoA.m_Strand = loc.GetBond().GetA().GetStrand();
+            infoA.m_Loc = &loc;
             m_LocList.push_back(infoA);
             if ( loc.GetBond().IsSetB() ) {
                 SLoc_Info infoB;
@@ -200,6 +206,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                                   loc.GetBond().GetB().GetPoint());
                 if ( loc.GetBond().GetB().IsSetStrand() )
                     infoB.m_Strand = loc.GetBond().GetB().GetStrand();
+                infoB.m_Loc = &loc;
                 m_LocList.push_back(infoB);
             }
             return;
@@ -480,6 +487,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.20  2002/12/23 17:19:27  grichenk
+ * Added GetSeq_loc() to CSeq_loc_CI
+ *
  * Revision 6.19  2002/12/19 20:24:54  grichenk
  * Updated usage of CRange<>
  *

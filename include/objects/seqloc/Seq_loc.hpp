@@ -118,10 +118,11 @@ public:
     // Get seq_id of the current location
     const CSeq_id& GetSeq_id(void) const;
     // Get the range
-    // Get starting point
     TRange         GetRange(void) const;
     // Get strand
     ENa_strand GetStrand(void) const;
+    // Get seq-loc for the current interval
+    const CSeq_loc& GetSeq_loc(void) const;
 
     // True if the current location is a whole sequence
     bool           IsWhole(void) const;
@@ -145,9 +146,11 @@ private:
         SLoc_Info(const SLoc_Info& loc_info);
         SLoc_Info& operator= (const SLoc_Info& loc_info);
 
-        CConstRef<CSeq_id> m_Id;
-        TRange             m_Range;
-        ENa_strand         m_Strand;
+        CConstRef<CSeq_id>  m_Id;
+        TRange              m_Range;
+        ENa_strand          m_Strand;
+        // The original seq-loc for the interval
+        CConstRef<CSeq_loc> m_Loc;
     };
 
     typedef list<SLoc_Info> TLocList;
@@ -177,7 +180,7 @@ CSeq_loc::CSeq_loc(void)
 
 inline
 CSeq_loc_CI::SLoc_Info::SLoc_Info(void)
-    : m_Id(0), m_Strand(eNa_strand_unknown)
+    : m_Id(0), m_Strand(eNa_strand_unknown), m_Loc(0)
 {
     return;
 }
@@ -186,7 +189,8 @@ inline
 CSeq_loc_CI::SLoc_Info::SLoc_Info(const SLoc_Info& loc_info)
     : m_Id(loc_info.m_Id),
       m_Range(loc_info.m_Range),
-      m_Strand(loc_info.m_Strand)
+      m_Strand(loc_info.m_Strand),
+      m_Loc(loc_info.m_Loc)
 {
     return;
 }
@@ -200,6 +204,7 @@ CSeq_loc_CI::SLoc_Info::operator= (const SLoc_Info& loc_info)
     m_Id = loc_info.m_Id;
     m_Range = loc_info.m_Range;
     m_Strand = loc_info.m_Strand;
+    m_Loc = loc_info.m_Loc;
     return *this;
 }
 
@@ -235,6 +240,17 @@ ENa_strand CSeq_loc_CI::GetStrand(void) const
 {
     x_ThrowNotValid("GetStrand()");
     return m_CurLoc->m_Strand;
+}
+
+inline
+const CSeq_loc& CSeq_loc_CI::GetSeq_loc(void) const
+{
+    x_ThrowNotValid("GetSeq_loc()");
+    if ( !m_CurLoc->m_Loc ) {
+        throw runtime_error(
+            "CSeq_loc_CI::GetSeq_loc() -- NULL seq-loc");
+    }
+    return *m_CurLoc->m_Loc;
 }
 
 inline
@@ -283,6 +299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/12/23 17:19:26  grichenk
+ * Added GetSeq_loc() to CSeq_loc_CI
+ *
  * Revision 1.15  2002/12/19 20:21:10  dicuccio
  * Remove post-increment operator
  *
