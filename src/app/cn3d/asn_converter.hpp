@@ -91,7 +91,7 @@ bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass *to, st
 
         ncbi::CNcbiIstrstream asnIstrstream(asnDataBlock, dataSize);
         ncbi::CObjectIStreamAsnBinary objIstream(asnIstrstream);
-        SetDiagTrace(eDT_Disable);
+        ncbi::SetDiagTrace(ncbi::eDT_Disable);
         objIstream >> *to;
         retval = true;
 
@@ -100,7 +100,7 @@ bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass *to, st
     } catch (std::exception& e) {
         *err = std::string("uncaught exception: ") + e.what();
     }
-    SetDiagTrace(eDT_Default);
+    ncbi::SetDiagTrace(ncbi::eDT_Default);
 
     if (asnDataBlock) delete[] asnDataBlock;
     if (aibp) AsnIoBSClose(aibp);
@@ -119,7 +119,7 @@ Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, std::st
     try {
         ncbi::CNcbiOstrstream asnOstrstream;
         ncbi::CObjectOStreamAsnBinary objOstream(asnOstrstream);
-        SetDiagTrace(eDT_Disable);
+        ncbi::SetDiagTrace(ncbi::eDT_Disable);
         objOstream << from;
 
         NS_AUTO_PTR<char> strData(asnOstrstream.str()); // to make sure data gets freed
@@ -132,7 +132,7 @@ Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, std::st
     } catch (std::exception& e) {
         *err = std::string("uncaught exception: ") + e.what();
     }
-    SetDiagTrace(eDT_Default);
+    ncbi::SetDiagTrace(ncbi::eDT_Default);
 
     if (aimp) AsnIoMemClose(aimp);
     return cObject;
@@ -164,6 +164,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/05/27 19:43:24  thiessen
+* prefix diag trace stuff with ncbi::
+*
 * Revision 1.11  2003/08/22 14:33:38  thiessen
 * remove static decl from templates
 *
