@@ -151,7 +151,7 @@ void CLDS_Object::UpdateCascadeFiles(const CLDS_Set& file_ids)
         m_db.file_db.file_id = fid;
 
         if (m_db.file_db.Fetch() == eBDB_Ok) {
-            string fname = m_db.file_db.file_name;
+            string fname(m_db.file_db.file_name);
             CFormatGuess::EFormat format = 
                 (CFormatGuess::EFormat)(int)m_db.file_db.format;
     
@@ -511,6 +511,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/07/02 12:07:42  dicuccio
+ * Fix for implicit conversion/assignment in gcc
+ *
  * Revision 1.9  2003/07/01 19:27:06  kuznets
  * Added code fragment reading sequence ids from an alignment.
  *

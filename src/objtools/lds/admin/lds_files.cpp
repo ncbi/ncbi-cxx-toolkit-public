@@ -131,7 +131,7 @@ void CLDS_File::SyncWithDir(const string& path,
     CBDB_FileCursor cur(m_FileDB);
     cur.SetCondition(CBDB_FileCursor::eFirst);
     while (cur.Fetch() == eBDB_Ok) {
-        string fname = m_FileDB.file_name;
+        string fname(m_FileDB.file_name);
         set<string>::const_iterator fit = files.find(fname);
         if (fit == files.end()) { // not found
             deleted->insert(m_FileDB.file_id);
@@ -202,6 +202,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/02 12:07:42  dicuccio
+ * Fix for implicit conversion/assignment in gcc
+ *
  * Revision 1.3  2003/06/16 16:24:43  kuznets
  * Fixed #include paths (lds <-> lds_admin separation)
  *
