@@ -620,8 +620,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToGene (CSeqFeatData& sfdata,
             return true;
         case eQual_gene_syn:
             {
-                CGene_ref::TSyn& synlist = grp.SetSyn ();
-                synlist.push_back (val);
+                CGene_ref::TSyn& syn = grp.SetSyn ();
+                syn.push_back (val);
                 return true;
             }
         case eQual_map:
@@ -644,6 +644,65 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, C
                                                           EQual qtype, const string& val)
 
 {
+    CCdregion& crp = sfdata.SetCdregion ();
+    switch (qtype) {
+        case eQual_codon_start:
+            {
+                int frame = NStr::StringToInt (val);
+                switch (frame) {
+                    case 0:
+                        crp.SetFrame (CCdregion::eFrame_not_set);
+                        break;
+                    case 1:
+                        crp.SetFrame (CCdregion::eFrame_one);
+                        break;
+                    case 2:
+                        crp.SetFrame (CCdregion::eFrame_two);
+                        break;
+                    case 3:
+                        crp.SetFrame (CCdregion::eFrame_three);
+                        break;
+                    default:
+                        break;
+                }
+                return true;
+            }
+        case eQual_EC_number:
+            {
+                CProt_ref& prp = sfp->SetProtXref ();
+                CProt_ref::TEc& ec = prp.SetEc ();
+                ec.push_back (val);
+                return true;
+            }
+        case eQual_function:
+            {
+                CProt_ref& prp = sfp->SetProtXref ();
+                CProt_ref::TActivity& fun = prp.SetActivity ();
+                fun.push_back (val);
+                return true;
+            }
+            return true;
+        case eQual_product:
+            {
+                CProt_ref& prp = sfp->SetProtXref ();
+                CProt_ref::TName& prod = prp.SetName ();
+                prod.push_back (val);
+                return true;
+            }
+            return true;
+        case eQual_prot_desc:
+            {
+                CProt_ref& prp = sfp->SetProtXref ();
+                prp.SetDesc (val);
+                return true;
+            }
+        case eQual_prot_note:
+            return true;
+        case eQual_transl_except:
+            return true;
+        default:
+            break;
+    }
     return false;
 }
 
