@@ -558,7 +558,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'C':
             switch (pfx[1]) {
             case 'A': case 'B': case 'D': case 'F':
-            case 'K': case 'N': case 'O': case 'V': return eAcc_gb_est;
+            case 'K': case 'N': case 'O': case 'V':
+            case 'X':                               return eAcc_gb_est;
             case 'C': case 'E': case 'G': case 'L':
             case 'W':                               return eAcc_gb_gss;
             case 'H': case 'M':                     return eAcc_gb_con;
@@ -568,7 +569,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'R':                               return eAcc_embl_genome;
                 // no specific assignments for CS-CU yet
             case 'S': case 'T': case 'U':           return eAcc_embl_other_nuc;
-            case 'X': case 'Y': case 'Z':           return eAcc_gb_other_nuc;
+            case 'Y': case 'Z':                     return eAcc_gb_other_nuc;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1528,6 +1529,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.92  2004/11/22 20:10:24  ucko
+ * IdentifyAccession: CX is now specifically assigned to GenBank ESTs.
+ *
  * Revision 6.91  2004/11/10 15:09:12  ucko
  * IdentifyAccession: DD -> DDBJ patent, DE-DM also to be used by DDBJ.
  *
