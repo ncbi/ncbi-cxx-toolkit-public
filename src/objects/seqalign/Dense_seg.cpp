@@ -615,6 +615,164 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
 }
 
 
+CRef<CDense_seg> CDense_seg::FillUnaligned()
+{
+    // this dense-seg
+    const CDense_seg::TStarts&  starts  = GetStarts();
+    const CDense_seg::TStrands& strands = GetStrands();
+    const CDense_seg::TLens&    lens    = GetLens();
+    const CDense_seg::TIds&     ids     = GetIds();
+
+    const size_t& numrows = CheckNumRows();
+    const size_t& numsegs = CheckNumSegs();
+
+    bool strands_exist = !strands.empty();
+
+    size_t seg = 0, row = 0;
+    
+
+    // extra segments
+    CDense_seg::TStarts extra_starts;
+    CDense_seg::TLens   extra_lens;
+    size_t extra_numsegs = 0;
+    size_t extra_seg = 0;
+    vector<size_t> extra_segs;
+
+
+    // new dense-seg
+    CRef<CDense_seg> new_ds(new CDense_seg);
+    CDense_seg::TStarts&  new_starts  = new_ds->SetStarts();
+    CDense_seg::TStrands& new_strands = new_ds->SetStrands();
+    CDense_seg::TLens&    new_lens    = new_ds->SetLens();
+    CDense_seg::TIds&     new_ids     = new_ds->SetIds();
+
+    // dimentions
+    new_ds->SetDim(numrows);
+    TNumseg& new_numsegs = new_ds->SetNumseg();
+    new_numsegs = numsegs; // initialize
+
+    // ids
+    new_ids.resize(numrows);
+    for (row = 0; row < numrows; row++) {
+        CRef<CSeq_id> id(new CSeq_id);
+        SerialAssign(*id, *ids[row]);
+        new_ids[row] = id;
+    }
+
+    size_t new_seg = 0;
+    
+    // temporary data
+    vector<TSignedSeqPos> expected_positions;
+    expected_positions.resize(numrows, -1);
+
+    vector<bool> plus;
+    plus.resize(numrows, true);
+    if (strands_exist) {
+        for (row = 0; row < numrows; row++) {
+            if (strands[row] == eNa_strand_minus) {
+                plus[row] = false;
+            }
+        }
+    }
+    
+    TSignedSeqPos extra_len = 0;
+    size_t idx = 0, new_idx = 0, extra_idx = 0;
+
+    // main loop through segments
+    for (seg = 0; seg < numsegs; seg++) {
+        const TSeqPos& len = lens[seg];
+        for (row = 0; row < numrows; row++) {
+            
+            const TSignedSeqPos& start = starts[idx++];
+ 
+            TSignedSeqPos& expected_pos = expected_positions[row];
+
+            if (start >= 0) {
+
+                if (expected_pos >= 0) {
+                    // check if there's an unaligned insert
+
+                    if (plus[row]) {
+                        extra_len = start - expected_pos;
+                    } else {
+                        extra_len = expected_pos - start - len;
+                    }
+
+                    if (extra_len < 0) {
+                        string errstr("CDense_seg::AddUnalignedSegments():"
+                                      " Illegal overlap at Row ");
+                        errstr += NStr::IntToString(row);
+                        errstr += " Segment ";
+                        errstr += NStr::IntToString(seg);
+                        errstr += ".";
+                        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                                   errstr);
+                    } else if (extra_len > 0) {
+                        // insert new segment
+                        extra_segs.push_back(seg);
+                        extra_lens.push_back(extra_len);
+                        extra_starts.resize(extra_idx + numrows, -1);
+                        extra_starts[extra_idx + row] = 
+                            plus[row] ? expected_pos : start + len;
+
+                        extra_idx += numrows;
+                        ++extra_numsegs;
+                    }
+                }
+
+                // set the new expected_pos
+                if (plus[row]) {
+                    expected_pos = start + len;
+                } else {
+                    expected_pos = start;
+                }
+            }
+        }
+    }
+
+    // lens & starts
+    new_numsegs = numsegs + extra_numsegs;
+    new_lens.resize(numsegs + extra_numsegs);
+    new_starts.resize(numrows * new_numsegs);
+    for (seg = 0, new_seg = 0, extra_seg = 0,
+             idx = 0, new_idx = 0, extra_idx = 0;
+         seg < numsegs;
+         seg++, new_seg++) {
+
+        // insert extra segments
+        if (extra_numsegs) {
+            while (extra_segs[extra_seg] == seg) {
+                new_lens[new_seg++] = extra_lens[extra_seg++];
+                for (row = 0; row < numrows; row++) {
+                    new_starts[new_idx++] = extra_starts[extra_idx++];
+                }
+            }   
+        }
+
+        // add the existing segment
+        new_lens[new_seg] = lens[seg];
+        for (row = 0; row < numrows; row++) {
+            new_starts[new_idx++] = starts[idx++];
+        }
+    }
+            
+ 
+    // strands
+    new_strands.resize(numrows * new_numsegs, eNa_strand_plus);
+    if (strands_exist) {
+        new_idx = 0;
+        for (new_seg = 0; new_seg < new_numsegs; new_seg++) {
+            for (row = 0; row < numrows; row++, new_idx++) {
+                if ( !plus[row] ) {
+                    new_strands[new_idx] = eNa_strand_minus;
+                }
+            }
+        }
+    }
+
+    return new_ds;
+}
+	
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -624,6 +782,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/07/01 20:35:59  todorov
+* + FillUnaligned()
+*
 * Revision 1.15  2004/06/29 18:42:59  johnson
 * +ExtractSlice
 *

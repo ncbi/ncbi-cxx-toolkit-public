@@ -91,6 +91,10 @@ public:
     /// Swap two rows (changing *order*, not content)
     void SwapRows(TDim row1, TDim row2);
 
+    /// Create a new dense-seg with added all unaligned pieces
+    /// (implicit inserts), if any, between segments.
+    CRef<CDense_seg> FillUnaligned();
+
     /// Extract a slice of the alignment that includes the specified range
     CRef<CDense_seg> ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const;
 
@@ -98,6 +102,7 @@ public:
     /// Optionally, ignore the strand of the loc
     void RemapToLoc(TDim row, const CSeq_loc& loc,
                     bool ignore_strand = false);
+
 
 protected:
     TNumseg x_FindSegment(TDim row, TSignedSeqPos pos) const;
@@ -195,6 +200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/07/01 20:35:49  todorov
+* + FillUnaligned()
+*
 * Revision 1.10  2004/06/29 18:42:59  johnson
 * +ExtractSlice
 *
