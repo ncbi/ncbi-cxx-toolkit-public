@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2002/11/26 22:12:02  gouriano
+* corrected ReadClassSequential
+*
 * Revision 1.96  2002/11/14 20:58:19  gouriano
 * added BeginChoice/EndChoice methods
 *
@@ -1083,16 +1086,14 @@ void CObjectIStream::ReadClassSequential(const CClassTypeInfo* classType,
     TMemberIndex index;
     while ( (index = BeginClassMember(classType, *pos)) != kInvalidMember ) {
 
-        const CMemberInfo *mem_info = classType->GetMemberInfo(index);
-        if (mem_info->GetId().HaveNoPrefix()) {
-            if (mem_info->GetTypeInfo()->GetTypeFamily() == eTypeFamilyPrimitive) {
-                if ((prevIndex != kInvalidMember) && (prevIndex > index)) {
-                    UndoClassMember();
-                    break;
-                }
+        if ((prevIndex != kInvalidMember) && (prevIndex > index)) {
+            const CMemberInfo *mem_info = classType->GetMemberInfo(index);
+            if (mem_info->GetId().HaveNoPrefix()) {
+                UndoClassMember();
+                break;
             }
-            prevIndex = index;
         }
+        prevIndex = index;
 
         ReadClassSequentialContentsMember();
 
