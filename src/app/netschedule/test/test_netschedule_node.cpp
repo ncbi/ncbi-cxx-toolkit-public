@@ -67,7 +67,7 @@ void CTestNetScheduleNode::Init(void)
     SetDiagPostFlag(eDPF_Trace);
     SetDiagPostLevel(eDiag_Info);
 
-       // Setup command line arguments and parameters
+    // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -79,11 +79,16 @@ void CTestNetScheduleNode::Init(void)
     arg_desc->AddPositional("hostname", 
                             "NetCache host name.", CArgDescriptions::eString);
 
-    arg_desc->AddPositional("port", "Port number.", 
+    arg_desc->AddPositional("port", "Server port number.", 
                             CArgDescriptions::eInteger);
     arg_desc->AddPositional("queue", 
                             "NetSchedule queue name (like: noname).",
                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("udp_port", 
+                             "udp_port",
+                             "Incoming UDP port",
+                             CArgDescriptions::eInteger);
     
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -96,6 +101,13 @@ int CTestNetScheduleNode::Run(void)
     const string&  host       = args["hostname"].AsString();
     unsigned short port       = args["port"].AsInteger();
     const string&  queue_name = args["queue"].AsString();  
+
+    unsigned short udp_port = 9111;
+    if (args["udp_port"]) {
+        udp_port = args["udp_port"].AsInteger();
+    }
+    NcbiCout << "Incoming UDP port:" << udp_port << NcbiEndl;
+
 
     CNetScheduleClient cl(host, port, "node_test", queue_name);
 
@@ -120,12 +132,16 @@ int CTestNetScheduleNode::Run(void)
     // netcache as result storage
     //
     // Well behaved node should not constantly poll the queue for
-    // jobs if queue reports there are no more jobs: worker node
-    // should take a brake and do not poll for a while
-    //
+    // jobs (GetJob()).
+    // When NetSchedule Server reports there are no more jobs: worker node
+    // should take a brake and do not poll for a while... 
+    // Or use WaitJob(), it receives notification messages from the 
+    // server using stateless UDP protocol.
+    // It is strongly suggested that there is just one program using
+    // specified UDP port on the machine.
 
     while (1) {
-        job_exists = cl.GetJob(&job_key, &input);
+        job_exists = cl.WaitJob(&job_key, &input, 60, udp_port);
         if (job_exists) {
             if (first_try) {
                 NcbiCout << "\nProcessing." << NcbiEndl;
@@ -170,18 +186,7 @@ int CTestNetScheduleNode::Run(void)
                 node_status = 1;
             }
 
-            // when there are no more jobs just wait a bit
-            // sleep increases progressively if queue reports
-            // that it got no more jobs for the node
-            
-            unsigned delay = 100 + no_jobs_counter * 10;
-            if (delay > 2000) {
-                delay = 2000;
-            }
-            
-            SleepMilliSec(delay);
-
-            if (++no_jobs_counter > 100) { // no new jobs coming
+            if (++no_jobs_counter > 7) { // no new jobs coming
                 NcbiCout << "\nNo new jobs arriving. Processing closed." << NcbiEndl;
                 break;
             }
@@ -204,6 +209,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/04 12:09:08  kuznets
+ * Use WaitJob instead of GetJob
+ *
  * Revision 1.5  2005/02/28 12:22:40  kuznets
  * Cosmetics
  *
