@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/04/19 14:24:05  thiessen
+* fix row selection bug when alignments are of different size
+*
 * Revision 1.14  2001/04/19 12:58:32  thiessen
 * allow merge and delete of individual updates
 *
@@ -501,6 +504,9 @@ void BlockMultipleAlignment::SelectedRange(int row, int from, int to,
     const Sequence *sequence;
     int fromIndex, toIndex;
     bool ignored;
+
+    // trim selection area to size of this alignment
+    if (to >= totalWidth) to = totalWidth - 1;
 
     // find first residue within range
     while (from <= to) {
