@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2003/11/21 14:44:58  grichenk
+ * Replaced runtime_error with CException
+ *
  * Revision 1.2  2002/12/26 12:38:37  dicuccio
  * Added Win32 export specifiers
  *
@@ -68,7 +71,7 @@ public:
     ~CTitle(void);
     
     // Returns a string title of the type found first in internal list. 
-    // Throws runtime_error if title is not set
+    // Throws exception if title is not set
     const string& GetTitle() const;
 
 private:

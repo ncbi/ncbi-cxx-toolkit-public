@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/11/21 14:45:03  grichenk
+ * Replaced runtime_error with CException
+ *
  * Revision 6.8  2003/06/24 14:16:33  vasilche
  * Moved auto_ptr<> variable after class definition.
  *
@@ -242,9 +245,9 @@ void CGencode_implementation::Translate
 {
     // Check that in_seq is Iupacna
     if(in_seq.Which() != CSeq_data::e_Iupacna) {
-        THROW1_TRACE(runtime_error,
-                     "CGencode::Translate: Input sequence must be "
-                     "coded as Iupacna.");
+        NCBI_THROW(CException, eUnknown,
+                   "CGencode::Translate: Input sequence must be "
+                   "coded as Iupacna.");
     }
 
     // Genetic code and start codon strings
@@ -257,8 +260,8 @@ void CGencode_implementation::Translate
     // Check that strand is either plus or minus. If it isn't
     // throw an exception with a useful message.
     if((eStrand != eNa_strand_plus)  &&  (eStrand != eNa_strand_minus)) {
-        THROW1_TRACE(runtime_error,
-                     "e_strand must be eNa_strand_plus or eNa_strand_minus.");
+        NCBI_THROW(CException, eUnknown,
+                   "e_strand must be eNa_strand_plus or eNa_strand_minus.");
     }
 
     // Get the input sequence data
@@ -586,7 +589,8 @@ unsigned int CGencode_implementation::Codon2Idx(const string& codon) const
     if( m_Codon2Idx.find(codon) != m_Codon2Idx.end() ) {
         return m_Codon2Idx.find(codon)->second;
     } else {
-        THROW1_TRACE(runtime_error, "Cannot find index for " + codon);
+        NCBI_THROW(CException, eUnknown,
+            "Cannot find index for " + codon);
     }
 }
 
@@ -596,8 +600,8 @@ const string& CGencode_implementation::Idx2Codon(unsigned int idx) const
     if( idx < m_Idx2Codon.size() ) {
         return m_Idx2Codon[idx];
     } else {
-        THROW1_TRACE(runtime_error, "Cannot find codon for " +
-                                    NStr::IntToString(idx));
+        NCBI_THROW(CException, eUnknown,
+            "Cannot find codon for " + NStr::IntToString(idx));
     }
 }           
 
@@ -632,9 +636,9 @@ const string& CGencode_implementation::GetNcbieaa(int id) const
         }
     }
 
-    THROW1_TRACE(runtime_error,
-                 "Requested genetic code, Id = " + NStr::IntToString(id) +
-                 ", not found.");
+    NCBI_THROW(CException, eUnknown,
+               "Requested genetic code, Id = " + NStr::IntToString(id) +
+               ", not found.");
 }
 
 
@@ -669,8 +673,8 @@ const string& CGencode_implementation::GetNcbieaa(const string& name) const
         }
     }
 
-    THROW1_TRACE(runtime_error,
-                 "Genetic code, name = " + name + ", not found.");
+    NCBI_THROW(CException, eUnknown,
+               "Genetic code, name = " + name + ", not found.");
 }
 
 
@@ -706,9 +710,9 @@ const string& CGencode_implementation::GetSncbieaa(int id) const
         }
     }
 
-    THROW1_TRACE(runtime_error,
-                 "Requested start codon string, Id = " + NStr::IntToString(id)
-                 + ", not found.");
+    NCBI_THROW(CException, eUnknown,
+               "Requested start codon string, Id = " + NStr::IntToString(id)
+               + ", not found.");
 }
 
 
@@ -744,8 +748,8 @@ const string& CGencode_implementation::GetSncbieaa(const string& name) const
         }
     }
 
-    THROW1_TRACE(runtime_error,
-                 "Start codon string, name = " + name + ", not found.");
+    NCBI_THROW(CException, eUnknown,
+               "Start codon string, name = " + name + ", not found.");
 }
 
 
@@ -834,12 +838,14 @@ void CGencode_implementation::GetGeneticCode
 
     // If genetic code not found
     if ( !bGc_found ) {
-        THROW1_TRACE(runtime_error, "No genetic code found.");
+        NCBI_THROW(CException, eUnknown,
+            "No genetic code found.");
     }
 
     // If start codon string not found
     if (!bSc_found  &&  bCheck_first) {
-        THROW1_TRACE(runtime_error, "No start codon string found.");
+        NCBI_THROW(CException, eUnknown,
+            "No start codon string found.");
     }
 }
 

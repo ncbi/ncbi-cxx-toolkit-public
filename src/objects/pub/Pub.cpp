@@ -373,13 +373,13 @@ void CPub::GetLabel
     if (title && !titleunique) {
         try {
             titleunique = &title->GetTitle();
-        } catch(runtime_error&) {}
+        } catch(exception&) {}
     }
     
     if (title && !title2) {
         try {
             title2 = &title->GetTitle();
-        } catch(runtime_error&) {}
+        } catch(exception&) {}
     }
     
     if (title2) {
@@ -438,6 +438,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2003/11/21 14:45:02  grichenk
+ * Replaced runtime_error with CException
+ *
  * Revision 6.4  2002/07/11 18:20:27  ucko
  * Move include of Pub.hpp to top and CVS log to bottom.
  *

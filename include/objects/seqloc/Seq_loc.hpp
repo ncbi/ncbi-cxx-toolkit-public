@@ -50,6 +50,7 @@
 #include <objects/general/Int_fuzz.hpp>
 
 //
+#include <corelib/ncbiexpt.hpp>
 #include <util/range.hpp>
 #include <vector>
 
@@ -177,7 +178,7 @@ public:
 private:
     // Check the iterator position
     bool x_IsValid(void) const;
-    // Check the position, throw runtime_error if not valid
+    // Check the position, throw exception if not valid
     void x_CheckNotValid(const char* where) const;
     void x_ThrowNotValid(const char* where) const;
 
@@ -324,7 +325,7 @@ const CSeq_loc& CSeq_loc_CI::GetSeq_loc(void) const
 {
     x_CheckNotValid("GetSeq_loc()");
     if ( !m_CurLoc->m_Loc ) {
-        throw runtime_error(
+        NCBI_THROW(CException, eUnknown,
             "CSeq_loc_CI::GetSeq_loc() -- NULL seq-loc");
     }
     return *m_CurLoc->m_Loc;
@@ -374,6 +375,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/11/21 14:45:00  grichenk
+ * Replaced runtime_error with CException
+ *
  * Revision 1.29  2003/10/15 15:50:21  ucko
  * CSeq_loc::SetId: add a version that takes a const ID and stores a new copy.
  * CSeq_loc_CI: expose fuzz (if present).

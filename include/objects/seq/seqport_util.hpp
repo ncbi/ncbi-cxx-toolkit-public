@@ -56,20 +56,25 @@ public:
     // TypeDefs
     typedef unsigned int TIndex;
     typedef pair<TIndex, TIndex> TPair;
-    
+
     // Classes thrown as errors
     struct NCBI_SEQ_EXPORT CBadIndex : public runtime_error
     {
-        CBadIndex() : runtime_error("CSeqportUtil: bad index specified") {}
+        CBadIndex(TIndex idx, string method)
+            : runtime_error("CSeqportUtil::" + method +
+            " -- bad index specified: " + NStr::UIntToString(idx)) {}
     };
     struct NCBI_SEQ_EXPORT CBadSymbol : public runtime_error 
     {
-        CBadSymbol() : runtime_error("CSeqportUtil: bad symbol specified") {}
+        CBadSymbol(string code, string method)
+            : runtime_error("CSeqportUtil::" + method +
+            " -- bad symbol specified: " + code) {}
     };
     struct NCBI_SEQ_EXPORT CBadType : public runtime_error 
     {
-        CBadType() : runtime_error("CSeqportUtil: specified code or code "
-                                   "combination not supported") {}
+        CBadType(string method)
+            : runtime_error("CSeqportUtil::" + method +
+            " -- specified code or code combination not supported") {}
     };
     
     // Alphabet conversion function. Function returns the
@@ -333,6 +338,9 @@ END_NCBI_SCOPE
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2003/11/21 14:44:59  grichenk
+ * Replaced runtime_error with CException
+ *
  * Revision 1.9  2003/11/06 16:10:56  shomrat
  * changed signature of Pack method
  *

@@ -80,7 +80,8 @@ void x_Assign(CInt_fuzz& dst, const CInt_fuzz& src)
         dst.SetAlt() = src.GetAlt();
         break;
     default:
-        THROW1_TRACE(runtime_error, "Invalid Int-fuzz variant");
+        NCBI_THROW(CException, eUnknown,
+            "Invalid Int-fuzz variant");
     }
 }
 
@@ -266,9 +267,9 @@ void CSeq_loc::x_UpdateId(const CSeq_id*& total_id, const CSeq_id& id)
         total_id = &id;
     }
     else if ( !total_id->Equals(id) ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeq_loc::CalculateTotalRange -- "
-                     "can not combine multiple seq-ids");
+        NCBI_THROW(CException, eUnknown,
+                   "CSeq_loc::CalculateTotalRange -- "
+                   "can not combine multiple seq-ids");
     }
 }
 
@@ -371,9 +372,9 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRangeCheckId(const CSeq_id*& id) const
     case CSeq_loc::e_Feat:
     default:
         {
-            THROW1_TRACE(runtime_error,
-                         "CSeq_loc::CalculateTotalRange -- "
-                         "unsupported location type");
+            NCBI_THROW(CException, eUnknown,
+                       "CSeq_loc::CalculateTotalRange -- "
+                       "unsupported location type");
         }
     }
 
@@ -422,9 +423,9 @@ TSeqPos CSeq_loc::GetStart(TSeqPos seq_len) const
     case CSeq_loc::e_Feat:
     default:
         {
-            THROW1_TRACE(runtime_error,
-                         "CSeq_loc::GetStart -- "
-                         "unsupported location type");
+            NCBI_THROW(CException, eUnknown,
+                       "CSeq_loc::GetStart -- "
+                       "unsupported location type");
         }
     }
 }
@@ -471,9 +472,9 @@ TSeqPos CSeq_loc::GetEnd(TSeqPos seq_len) const
     case CSeq_loc::e_Feat:
     default:
         {
-            THROW1_TRACE(runtime_error,
-                         "CSeq_loc::GetEnd -- "
-                         "unsupported location type");
+            NCBI_THROW(CException, eUnknown,
+                       "CSeq_loc::GetEnd -- "
+                       "unsupported location type");
         }
     }
 }
@@ -541,7 +542,8 @@ void CSeq_loc_CI::x_ThrowNotValid(const char* where) const
     msg += "CSeq_loc_CI::";
     msg += where;
     msg += " -- iterator is not valid";
-    THROW1_TRACE(runtime_error, msg);
+    NCBI_THROW(CException, eUnknown,
+        msg);
 }
 
 void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
@@ -683,8 +685,8 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Feat:
     default:
         {
-            THROW1_TRACE(runtime_error,
-                         "CSeq_loc_CI -- unsupported location type");
+            NCBI_THROW(CException, eUnknown,
+                       "CSeq_loc_CI -- unsupported location type");
         }
     }
 }
@@ -1044,6 +1046,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.36  2003/11/21 14:45:05  grichenk
+ * Replaced runtime_error with CException
+ *
  * Revision 6.35  2003/10/15 15:50:36  ucko
  * CSeq_loc_CI: expose fuzz (if present).
  *

@@ -89,7 +89,7 @@ static inline ESeq_code_type EChoiceToESeq (CSeq_data::E_Choice from_type)
     case CSeq_data::e_Ncbipaa:
         return eSeq_code_type_ncbipaa;
     default:
-        throw CSeqportUtil::CBadType();
+        throw CSeqportUtil::CBadType("EChoiceToESeq");
     }
 }    
 
@@ -5535,7 +5535,7 @@ CSeqportUtil::TPair CSeqportUtil_implementation::GetCodeIndexFromTo
             return p;  
         }
     }
-    throw CSeqportUtil::CBadType();
+    throw CSeqportUtil::CBadType("GetCodeIndexFromTo");
 }
 
 // Converts CSeq_data::E_Choice type to ESeq_code_type
@@ -5558,11 +5558,11 @@ const string& CSeqportUtil_implementation::GetCodeOrName
     typedef list<CRef<CSeq_code_table::C_E> > Tcodes;
 
     if ( !m_IndexString[get_code][code_type-1].size() ) {
-        throw CSeqportUtil::CBadType();
+        throw CSeqportUtil::CBadType("GetCodeOrName");
     }
     idx -= m_StartAt[code_type-1];
     if (idx >= m_IndexString[get_code][code_type-1].size()) {
-        throw CSeqportUtil::CBadIndex();
+        throw CSeqportUtil::CBadIndex(idx, "GetCodeOrName");
     }
     return m_IndexString[get_code][code_type-1][idx];
        
@@ -5589,13 +5589,13 @@ CSeqportUtil::TIndex CSeqportUtil_implementation::GetIndex
     map<string, TIndex>::const_iterator pos;
     
     if ( !m_StringIndex[code_type-1].size() ) {
-        throw CSeqportUtil::CBadType();
+        throw CSeqportUtil::CBadType("GetIndex");
     }
     pos = m_StringIndex[code_type-1].find(code);
     if (pos != m_StringIndex[code_type-1].end()) {
         return pos->second;
     } else {
-        throw CSeqportUtil::CBadSymbol();
+        throw CSeqportUtil::CBadSymbol(code, "GetIndex");
     }
     
 }
@@ -5619,13 +5619,13 @@ CSeqportUtil::TIndex CSeqportUtil_implementation::GetIndexComplement
   
     // Check that code is available
     if (!m_IndexComplement[code_type-1].size()) {
-        throw CSeqportUtil::CBadType();
+        throw CSeqportUtil::CBadType("GetIndexComplement");
     }
     
     // Check that idx is in range of code indices
     idx -= m_StartAt[code_type-1];
     if ( idx >= m_IndexComplement[code_type-1].size() ) {        
-        throw CSeqportUtil::CBadIndex();
+        throw CSeqportUtil::CBadIndex(idx, "GetIndexComplement");
     }
     
     // Return the index of the complement   
@@ -5689,12 +5689,13 @@ CSeqportUtil::TIndex CSeqportUtil_implementation::GetMapToIndex
     
     // Check that requested map is available
     if (!Map) {
-        throw CSeqportUtil::CBadType();
+        throw CSeqportUtil::CBadType("GetMapToIndex");
     }
     
     // Check that from_idx is within range of from_type
     if (from_idx - (*Map).m_StartAt >= (TIndex)(*Map).m_Size) {
-        throw CSeqportUtil::CBadIndex();
+        throw CSeqportUtil::CBadIndex(from_idx - (*Map).m_StartAt,
+            "GetMapToIndex");
     }
     
     // Return map value
@@ -6470,6 +6471,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/11/21 14:45:03  grichenk
+ * Replaced runtime_error with CException
+ *
  * Revision 6.19  2003/11/06 22:15:58  shomrat
  * fixed behavior for default length value
  *

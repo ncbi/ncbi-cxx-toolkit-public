@@ -38,6 +38,7 @@
 
 // generated includes
 #include <objects/general/User_object.hpp>
+#include <corelib/ncbiexpt.hpp>
 
 // generated classes
 
@@ -83,7 +84,8 @@ const CUser_field& CUser_object::GetField(const string& str,
             case CUser_field::TData::e_Fields:
                 break;
             default:
-                throw runtime_error("illegal recursion");
+                NCBI_THROW(CException, eUnknown,
+                    "illegal recursion");
             }
         }
     }
@@ -91,7 +93,8 @@ const CUser_field& CUser_object::GetField(const string& str,
     if ( field_ref ) {
         return *field_ref;
     }
-    throw runtime_error("field not found");
+    NCBI_THROW(CException, eUnknown,
+        "field not found");
 }
 
 
@@ -561,6 +564,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.5  2003/11/21 14:45:01  grichenk
+* Replaced runtime_error with CException
+*
 * Revision 6.4  2003/11/14 16:12:45  shomrat
 * fixed GetLabel so it will append to string and not replace it
 *

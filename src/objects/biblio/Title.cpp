@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2003/11/21 14:45:01  grichenk
+ * Replaced runtime_error with CException
+ *
  * Revision 6.1  2002/01/10 20:05:00  clausen
  * Added GetTitle
  *
@@ -46,6 +49,8 @@
 
 // generated includes
 #include <objects/biblio/Title.hpp>
+
+#include <corelib/ncbiexpt.hpp>
 
 // generated classes
 
@@ -61,7 +66,8 @@ CTitle::~CTitle(void)
 const string& CTitle::GetTitle() const
 {
     if (Get().size() == 0) {
-        throw runtime_error("Title not set");
+        NCBI_THROW(CException, eUnknown,
+            "Title not set");
     }
     
     switch (Get().front()->Which()) {
@@ -86,7 +92,8 @@ const string& CTitle::GetTitle() const
     case C_E::e_Isbn:
         return Get().front()->GetIsbn();
     default:
-        throw runtime_error("Title not set");
+        NCBI_THROW(CException, eUnknown,
+            "Title not set");
     }
 }
 
