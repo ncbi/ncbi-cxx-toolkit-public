@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/12/08 20:45:15  ostell
+ * added MakeFastaString()
+ *
  * Revision 6.2  2000/11/30 21:56:25  ostell
  * added Match()
  *
@@ -70,6 +73,15 @@ bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
                          return true;
 	}
 	return false;
+}
+
+    // format a FASTA style string
+void CPDB_seq_id::MakeFastaString(string& s) const
+{
+	s += GetMol().Get();
+	s += '|';
+	s += (char)(GetChain());
+	return;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

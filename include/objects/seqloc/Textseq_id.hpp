@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2000/12/08 20:45:56  ostell
+ * added MakeFastaString()
+ *
  * Revision 1.2  2000/11/30 21:53:39  ostell
  * typo fixed
  *
@@ -70,6 +73,8 @@ public:
     // comaprison function
     bool Match(const CTextseq_id& tsip2) const;
 
+    // format the contents FASTA string style
+    void MakeFastaString(string& s) const;
 };
 
 

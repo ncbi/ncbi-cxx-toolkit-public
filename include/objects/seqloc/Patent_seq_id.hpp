@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2000/12/08 20:45:56  ostell
+ * added MakeFastaString()
+ *
  * Revision 1.2  2000/11/30 21:54:05  ostell
  * added Match()
  *
@@ -69,6 +72,9 @@ public:
 
     // comparison function
     bool Match(const CPatent_seq_id& psip2) const;
+
+    // format a FASTA style string
+    void MakeFastaString(string& s) const;
 
 };
 

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/12/08 20:45:14  ostell
+ * added MakeFastaString()
+ *
  * Revision 6.1  2000/11/30 18:39:27  ostell
  * added Textseq_id.Match
  *
@@ -102,6 +105,29 @@ bool CTextseq_id::Match(const CTextseq_id& tsip2) const
 
 	//nothing to compare
 	return false;
+}
+
+    // format the contents FASTA string style
+void CTextseq_id::MakeFastaString(string& s) const
+{
+
+	if (IsSetAccession())
+	{
+		s += GetAccession();
+		if (IsSetVersion())
+		{
+			int version = GetVersion();
+			if (version)
+			{
+				s += '.';
+				s += NStr::IntToString(version);
+			}
+		}
+	}
+	s += '|';
+	if (IsSetName())
+		s += GetName();
+	return;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

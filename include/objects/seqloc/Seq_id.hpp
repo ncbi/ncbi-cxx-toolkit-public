@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2000/12/08 20:45:56  ostell
+ * added MakeFastaString()
+ *
  * Revision 1.2  2000/11/27 20:36:39  vasilche
  * Enum should be defined in public area.
  *
@@ -77,6 +80,10 @@ public:
       e_NO,            // SeqIds compared, but are different
       e_YES };         // SeqIds compared, are equivalent
     E_SIC Compare(const CSeq_id& sid2) const;
+
+    // SeqId string functions
+       // format one SeqId with vertical bar delimiters
+    void MakeFastaString(string& s) const;
     
 };
 

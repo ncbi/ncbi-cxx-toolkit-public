@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/12/08 20:45:15  ostell
+ * added MakeFastaString()
+ *
  * Revision 6.2  2000/11/30 21:56:25  ostell
  * added Match()
  *
@@ -49,6 +52,7 @@
 
 // generated includes
 #include <objects/seqloc/Patent_seq_id.hpp>
+#include <objects/biblio/Id_pat.hpp>
 
 // generated classes
 
@@ -68,6 +72,22 @@ bool CPatent_seq_id::Match(const CPatent_seq_id& psip2) const
 		return false;
 	
         return (GetCit().Match(psip2.GetCit()));
+}
+
+    // format a FASTA style string
+void CPatent_seq_id::MakeFastaString(string& s) const
+{
+	const CId_pat& idp = GetCit();
+	
+	s += idp.GetCountry();
+	s += '|';
+	if (idp.GetId().IsNumber())
+		s += idp.GetId().GetNumber();
+	else
+		s += idp.GetId().GetApp_number();
+	s += '|';
+	s += NStr::IntToString(GetSeqid());
+	return;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

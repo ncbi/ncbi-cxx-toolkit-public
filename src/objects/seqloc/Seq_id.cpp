@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/12/08 20:45:14  ostell
+ * added MakeFastaString()
+ *
  * Revision 6.5  2000/12/04 15:09:41  vasilche
  * Added missing include.
  *
@@ -233,7 +236,94 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 	}
 	return e_error;  // should never get here 
 }
+        static char * txtid [16] = {              /* FASTA_LONG formats */
+                "???" ,         /* not-set = ??? */
+                "lcl",          /* local = lcl|integer or string */
+                "bbs",     /* gibbsq = bbs|integer */
+                "bbm",          /* gibbmt = bbm|integer */
+                "gim",          /* giim = gim|integer */
+                "gb",           /* genbank = gb|accession|locus */
+                "emb",          /* embl = emb|accession|locus */
+                "pir",          /* pir = pir|accession|name */
+                "sp",           /* swissprot = sp|accession|name */
+                "pat",          /* patent = pat|country|patent number (string)|seq number (integer) */
+                "ref",          /* other = ref|accession|name|release - changed from oth to ref */
+                "gnl",          /* general = gnl|database(string)|id (string or number) */
+                "gi",           /* gi = gi|integer */
+                "dbj",          /* ddbj = dbj|accession|locus */
+                "prf",          /* prf = prf|accession|name */
+                "pdb" };        /* pdb = pdb|entry name (string)|chain id (char) */
 
+void CSeq_id::MakeFastaString(string& s) const
+{
+	E_Choice the_type = Which();
+	if (the_type > e_Pdb)  // new SeqId type
+		the_type = e_not_set;
+
+	s += txtid[the_type];
+	s += '|';
+
+	switch (the_type)
+	{
+           case e_not_set:
+		break;
+           case e_Local:
+		GetLocal().MakeString(s);
+		break;
+           case e_Gibbsq:
+		s += NStr::IntToString(GetGibbsq());
+		break;
+           case e_Gibbmt:
+		s += NStr::IntToString(GetGibbsq());
+		break;
+           case e_Giim:
+		s += NStr::IntToString(GetGiim().GetId());
+		break;
+           case e_Genbank:
+		GetGenbank().MakeFastaString(s);
+		break;
+           case e_Embl:
+		GetEmbl().MakeFastaString(s);
+		break;
+           case e_Pir:
+		GetPir().MakeFastaString(s);
+		break;
+           case e_Swissprot:
+		GetSwissprot().MakeFastaString(s);
+		break;
+           case e_Patent:
+		GetPatent().MakeFastaString(s);
+		break;
+           case e_Other:
+		GetOther().MakeFastaString(s);
+		break;
+           case e_General:
+		{
+		const CDbtag& dbt = GetGeneral();
+		s += dbt.GetDb();
+		s += '|';
+		dbt.GetTag().MakeString(s);
+		}
+		break;
+           case e_Gi:
+		s += NStr::IntToString(GetGibbsq());
+		break;
+           case e_Ddbj:
+		GetDdbj().MakeFastaString(s);
+		break;
+           case e_Prf:
+		GetPrf().MakeFastaString(s);
+		break;
+           case e_Pdb:
+		GetPdb().MakeFastaString(s);
+		break;
+	   default:
+		s += "[UnknownSeqIdType]";
+		break;
+
+	}
+	return;
+}
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
