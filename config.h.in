@@ -30,6 +30,9 @@
 /* Does not give enough support to the in-class template functions */
 #undef NO_INCLASS_TMPL
 
+/* Can use exception specifications("throw(...)" after func. proto) */
+#undef NCBI_USE_THROW_SPEC
+
 /* The number of bytes in a __int64.  */
 #undef SIZEOF___INT64
 
@@ -80,3 +83,9 @@
 
 /* Define if you have the <strstream.h> header file.  */
 #undef HAVE_STRSTREAM_H
+
+/* Define if you have the <unistd.h> header file.  */
+#undef HAVE_UNISTD_H
+
+/* Define if you have the <windows.h> header file.  */
+#undef HAVE_WINDOWS_H
