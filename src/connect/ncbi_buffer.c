@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/04/23 18:07:21  vakatov
+ * + BUF_PeekAt()
+ *
  * Revision 6.5  2000/02/23 22:34:34  vakatov
  * Can work both "standalone" and as a part of NCBI C++ or C toolkits
  *
@@ -204,20 +207,40 @@ extern int/*bool*/ BUF_PushBack(BUF* pBuf, const void* data, size_t size)
 
 extern size_t BUF_Peek(BUF buf, void* data, size_t size)
 {
+  return BUF_PeekAt(buf, 0, data, size);
+}
+
+
+extern size_t BUF_PeekAt(BUF buf, size_t pos, void* data, size_t size)
+{
   size_t     n_todo = size;
+  size_t     n_extra_skip = 0;
   SBufChunk* pChunk;
 
   if (!data  ||  !size  ||  !buf  ||  !buf->list)
     return 0;
 
-  for (pChunk = buf->list;  n_todo  &&  pChunk;  pChunk = pChunk->next) {
-    size_t n_copy = pChunk->size - pChunk->n_skip;
+  /* skip "pos" bytes */
+  for (pChunk = buf->list;  pChunk;  pChunk = pChunk->next) {
+    size_t chunk_size = pChunk->size - pChunk->n_skip;
     assert(pChunk->size > pChunk->n_skip);
+    if (chunk_size > pos) {
+      n_extra_skip = pos;
+      break;
+    }
+    pos -= chunk_size;
+  }
+
+  /* copy the peeked data to "buf" */
+  for ( ;  n_todo  &&  pChunk;  pChunk = pChunk->next, n_extra_skip = 0) {
+    size_t n_skip = pChunk->n_skip + n_extra_skip;
+    size_t n_copy = pChunk->size - n_skip;
+    assert(pChunk->size > n_skip);
     if (n_copy > n_todo)
       n_copy = n_todo;
 
-    memcpy(data, (char*)pChunk->data + pChunk->n_skip, n_copy);
-    data = (char*)data + n_copy;
+    memcpy(data, (char*) pChunk->data + n_skip, n_copy);
+    data = (char*) data + n_copy;
     n_todo -= n_copy;
   }
 
@@ -234,7 +257,7 @@ extern size_t BUF_Read(BUF buf, void* data, size_t size)
 
   /* peek to the callers data buffer, if non-NULL */
   if ( data )
-    size = BUF_Peek(buf, data, size);
+    size = BUF_PeekAt(buf, 0, data, size);
 
   /* remove the read data from the buffer */ 
   n_todo = size;

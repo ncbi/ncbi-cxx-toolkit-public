@@ -39,11 +39,15 @@
  *   BUF_Write
  *   BUF_PushBack
  *   BUF_Peek
+ *   BUF_PeekAt
  *   BUF_Read
  *   BUF_Destroy
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/04/23 18:07:19  vakatov
+ * + BUF_PeekAt()
+ *
  * Revision 6.3  2000/02/23 22:33:37  vakatov
  * Can work both "standalone" and as a part of NCBI C++ or C toolkits
  *
@@ -105,12 +109,18 @@ extern /*bool*/int BUF_Write(BUF* pBuf, const void* data, size_t size);
 extern /*bool*/int BUF_PushBack(BUF* pBuf, const void* data, size_t size);
 
 
-/* Copy up to "size" bytes stored in "buf" to "data".
- * Return the # of copied bytes(can be less than "size").
- * NOTE:  "buf" and "data" can be NULL; in both cases, do nothing
- *        and return 0.
+/* Equivalent to "BUF_PeekAt(buf, 0, data, size)", see description below.
  */
 extern size_t BUF_Peek(BUF buf, void* data, size_t size);
+
+
+/* Copy up to "size" bytes stored in "buf" (starting at position "pos")
+ * to "data".
+ * Return the # of copied bytes (can be less than "size").
+ * Return zero and do nothing if:  "buf" is NULL, or "data" is NULL,
+ * or "pos" >= BUF_Size(buf).
+ */
+extern size_t BUF_PeekAt(BUF buf, size_t pos, void* data, size_t size);
 
 
 /* Copy up to "size" bytes stored in "buf" to "data" and remove

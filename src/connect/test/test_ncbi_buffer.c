@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/04/23 18:07:22  vakatov
+ * + BUF_PeekAt()
+ *
  * Revision 6.5  2000/03/24 23:12:12  vakatov
  * Starting the development quasi-branch to implement CONN API.
  * All development is performed in the NCBI C++ tree only, while
@@ -77,20 +80,21 @@ extern int main(void)
 #  define X_TIMES     (unsigned) (s_Rand() % X_MAX_N_IO)
 #  define X_BYTES     (size_t)   (s_Rand() % X_MAX_READ)
 
-  BUF buf = 0;
+  BUF buf  = 0;
+  BUF buf1 = 0;
   int/*bool*/ do_loop = 1 /* true */;
 
   /* a simple test */
   {{
     char charbuf[128];
-    assert(BUF_PushBack(&buf, (const char*)"0", 1));
-    assert(BUF_Write(&buf, (const char*)"1", 1));
+    assert(BUF_PushBack(&buf, (const char*) "0", 1));
+    assert(BUF_Write(&buf, (const char*) "1", 1));
     assert(BUF_Peek(buf, charbuf, sizeof(charbuf)) == 2);
-    assert(BUF_PushBack(&buf, (const char*)"BB", 2));
-    assert(BUF_PushBack(&buf, (const char*)"aa", 2));
-    assert(BUF_Write(&buf, (const char*)"23", 3));
+    assert(BUF_PushBack(&buf, (const char*) "BB", 2));
+    assert(BUF_PushBack(&buf, (const char*) "aa", 2));
+    assert(BUF_Write(&buf, (const char*) "23", 3));
     assert(BUF_Read(buf, charbuf, sizeof(charbuf)) == 9);
-    assert(strcmp(charbuf, (const char*)"aaBB0123") == 0);
+    assert(strcmp(charbuf, (const char*) "aaBB0123") == 0);
     buf = BUF_Destroy(buf);
   }}
 
@@ -110,14 +114,15 @@ extern int main(void)
         continue;
       n_bytes = fread(charbuf, 1, n_bytes, stdin);
       fprintf(stderr, "\
-STDIN     %5lu\n", (unsigned long)n_bytes);
+STDIN     %5lu\n", (unsigned long) n_bytes);
       if ( !n_bytes ) {
         do_loop = 0 /* false */; /* end of the input stream */
         break;
       }
-      assert(BUF_Write(&buf, charbuf, n_bytes));
+      assert(BUF_Write(&buf,  charbuf, n_bytes));
+      assert(BUF_Write(&buf1, charbuf, n_bytes));
       fprintf(stderr, "\
-BUF_Write %5lu\n", (unsigned long)n_bytes);
+BUF_Write %5lu\n", (unsigned long) n_bytes);
     }
 
     /* peek & read from the NCBI IO-buf, write to the output stream */
@@ -135,7 +140,7 @@ BUF_Write %5lu\n", (unsigned long)n_bytes);
         for (j = 0;  j < n_peek_times;  j++) {
           n_peek = BUF_Peek(buf, charbuf, n_bytes);
           fprintf(stderr, "\
-\tBUF_Peek %5lu\n", (unsigned long)n_peek);
+\tBUF_Peek %5lu\n", (unsigned long) n_peek);
         }
       }
 
@@ -146,7 +151,7 @@ BUF_Write %5lu\n", (unsigned long)n_bytes);
         n_bytes = BUF_Read(buf, charbuf, n_bytes);
 
       fprintf(stderr, "\
-\t\tBUF_Read %5lu\n", (unsigned long)n_bytes);
+\t\tBUF_Read %5lu\n", (unsigned long) n_bytes);
       assert(!do_peek  ||  n_bytes == n_peek);
 
       /* push back & re-read */
@@ -161,7 +166,7 @@ BUF_Write %5lu\n", (unsigned long)n_bytes);
       /* write the read data to the output stream */
       assert(n_bytes == fwrite(charbuf, 1, n_bytes, stdout));
       fprintf(stderr, "\
-\t\tSTDOUT   %5lu\n", (unsigned long)n_bytes);
+\t\tSTDOUT   %5lu\n", (unsigned long) n_bytes);
     }
   }
 
@@ -181,14 +186,63 @@ BUF_Write %5lu\n", (unsigned long)n_bytes);
       memcpy(charbuf + n_bytes - n_pushback, tmp, n_pushback);
     }}
     fprintf(stderr, "\
-\t\tBUF_Read/flush %5lu\n", (unsigned long)n_bytes);
+\t\tBUF_Read/flush %5lu\n", (unsigned long) n_bytes);
     assert(n_bytes);
     assert(n_bytes == fwrite(charbuf, 1, n_bytes, stdout));
     fprintf(stderr, "\
-\t\tSTDOUT  /flush %5lu\n", (unsigned long)n_bytes);
+\t\tSTDOUT  /flush %5lu\n", (unsigned long) n_bytes);
   }
+  fflush(stdout);
+
+  /* Test for "BUF_PeekAt()" */
+  {{
+    size_t buf1_size = BUF_Size(buf1);
+    int n;
+    assert(buf1_size > 0);
+
+    for (n = 0;  n < 20;  n++) {
+        size_t pos;
+        size_t size;
+
+        /* Erratically copy "buf1" to "buf" */
+        for (pos = 0;  pos < buf1_size;  pos += size) {
+            char temp_buf[BUF_DEF_CHUNK_SIZE * 2];
+            size_t n_peeked;
+
+            size = s_Rand() % (BUF_DEF_CHUNK_SIZE * 2);
+            n_peeked = BUF_PeekAt(buf1, pos, temp_buf, size);
+            if (pos + size <= buf1_size) {
+                assert(n_peeked == size);
+            } else {
+                assert(n_peeked == buf1_size - pos);
+            }
+            assert(BUF_PeekAt(buf1, pos, temp_buf, size) == n_peeked);
+            assert(BUF_Write(&buf, temp_buf, n_peeked));
+        }
+
+        /* Compare contents of "buf" and "buf1";  empty up "buf" in process */
+        assert(BUF_Size(buf1) == BUF_Size(buf));
+        for (pos = 0;  pos < buf1_size;  pos += size) {
+            char bb[1024];
+            char b1[1024];
+            assert(sizeof(bb) == sizeof(b1));
+
+            size = BUF_Read(buf, bb, sizeof(bb));
+            assert(BUF_PeekAt(buf1, pos, b1, size) == size);
+
+            assert(size <= sizeof(b1));
+            assert(memcmp(bb, b1, size) == 0);
+        }
+
+        assert(pos == buf1_size);
+        assert(BUF_Size(buf1) == buf1_size);
+        assert(BUF_Size(buf)  == 0);
+    }
+  }}
+
 
   /* cleanup & exit */
+  BUF_Destroy(buf1);
   BUF_Destroy(buf);
   return 0;
 }
