@@ -35,25 +35,19 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.3  2002/01/10 19:48:26  clausen
+ * Revision 6.1  2002/01/10 19:45:09  clausen
  * Added GetLabel
- *
- * Revision 1.2  2001/06/25 18:51:58  grichenk
- * Prohibited copy constructor and assignment operator
- *
- * Revision 1.1  2000/11/21 18:58:04  vasilche
- * Added Match() methods for CSeq_id, CObject_id and CDbtag.
  *
  *
  * ===========================================================================
  */
 
-#ifndef OBJECTS_GENERAL_DBTAG_HPP
-#define OBJECTS_GENERAL_DBTAG_HPP
-
+// standard includes
+#include <algorithm>
 
 // generated includes
-#include <objects/general/Dbtag_.hpp>
+#include <objects/general/Person_id.hpp>
+#include <objects/general/Name_std.hpp>
 
 // generated classes
 
@@ -61,44 +55,52 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CDbtag : public CDbtag_Base
-{
-    typedef CDbtag_Base Tparent;
-public:
-    // constructor
-    CDbtag(void);
-    // destructor
-    ~CDbtag(void);
-
-    // check for identity
-    bool Match(const CDbtag& dbt2) const;
-    
-    // Appends a label to "label" based on content of CDbtag
-    void GetLabel(string* label) const;
-    
-private:
-    // Prohibit copy constructor & assignment operator
-    CDbtag(const CDbtag&);
-    CDbtag& operator= (const CDbtag&);
-};
-
-
-
-/////////////////// CDbtag inline methods
-
-// constructor
-inline
-CDbtag::CDbtag(void)
+// destructor
+CPerson_id::~CPerson_id(void)
 {
 }
 
 
-/////////////////// end of CDbtag inline methods
+void CPerson_id::GetLabel(string* label, ETypeLabel type) const
+{
+    if (!label) {
+        return;
+    }
 
+    char sep = (type == eGenbank) ? ',' : ' ';    
+    switch (Which()) {
+    case e_Name:
+        if (!GetName().GetLast().empty()) {
+            *label += GetName().GetLast();
+            if (GetName().IsSetInitials()) {
+                *label += sep + GetName().GetInitials();
+            }
+            if (GetName().IsSetSuffix()) {
+                *label += " " + GetName().GetSuffix();
+            }
+        } else if (GetName().IsSetFull()) {
+            *label += GetName().GetFull();
+        }
+        return;
+    case e_Ml:
+        *label += GetMl();
+        break;
+    case e_Str:
+        *label += GetStr();
+        break;
+    default:
+        *label += "Unsupported PersonID";
+        return;
+    }
+    
+    if (type == eEmbl) {
+        // Replace comma with a space
+        replace(label->begin(), label->end(), ',', ' ');
+    }         
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-#endif // OBJECTS_GENERAL_DBTAG_HPP
+/* Original file checksum: lines: 61, chars: 1888, CRC32: 542a93ef */

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/01/10 19:45:57  clausen
+ * Added GetLabel
+ *
  * Revision 6.3  2001/12/07 18:52:04  grichenk
  * Updated "#include"-s and forward declarations to work with the
  * new datatool version.
@@ -73,6 +76,24 @@ bool CDbtag::Match(const CDbtag& dbt2) const
 		return false;
 	return ((GetTag()).Match((dbt2.GetTag())));
 }
+
+// Appends a label to "label" based on content of CDbtag 
+void CDbtag::GetLabel(string* label) const
+{
+    const CObject_id& id = GetTag();
+    switch (id.Which()) {
+    case CObject_id::e_Str:
+        *label += GetDb() + ": " + id.GetStr();
+        break;
+    case CObject_id::e_Id:
+        *label += GetDb() + ": " + NStr::IntToString(id.GetId());
+        break;
+    default:
+        *label += GetDb();
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

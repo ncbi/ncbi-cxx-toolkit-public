@@ -35,25 +35,19 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.3  2002/01/10 19:48:26  clausen
+ * Revision 1.1  2002/01/10 19:47:41  clausen
  * Added GetLabel
- *
- * Revision 1.2  2001/06/25 18:51:58  grichenk
- * Prohibited copy constructor and assignment operator
- *
- * Revision 1.1  2000/11/21 18:58:04  vasilche
- * Added Match() methods for CSeq_id, CObject_id and CDbtag.
  *
  *
  * ===========================================================================
  */
 
-#ifndef OBJECTS_GENERAL_DBTAG_HPP
-#define OBJECTS_GENERAL_DBTAG_HPP
+#ifndef OBJECTS_GENERAL_PERSON_ID_HPP
+#define OBJECTS_GENERAL_PERSON_ID_HPP
 
 
 // generated includes
-#include <objects/general/Dbtag_.hpp>
+#include <objects/general/Person_id_.hpp>
 
 // generated classes
 
@@ -61,39 +55,44 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CDbtag : public CDbtag_Base
+class CPerson_id : public CPerson_id_Base
 {
-    typedef CDbtag_Base Tparent;
+    typedef CPerson_id_Base Tparent;
 public:
     // constructor
-    CDbtag(void);
+    CPerson_id(void);
     // destructor
-    ~CDbtag(void);
+    ~CPerson_id(void);
+    
+    enum ETypeLabel {
+        eGenbank,
+        eEmbl};
+     
+    // Appends a label onto label. If type == eGenbank a comma is used
+    // between last name and initials for a structure name and other
+    // commas are not removed. If type == eEmbl, all commas are replace 
+    // by spaces.   
+    void GetLabel(string* label, ETypeLabel type = eGenbank) const;
 
-    // check for identity
-    bool Match(const CDbtag& dbt2) const;
-    
-    // Appends a label to "label" based on content of CDbtag
-    void GetLabel(string* label) const;
-    
 private:
-    // Prohibit copy constructor & assignment operator
-    CDbtag(const CDbtag&);
-    CDbtag& operator= (const CDbtag&);
+    // Prohibit copy constructor and assignment operator
+    CPerson_id(const CPerson_id& value);
+    CPerson_id& operator=(const CPerson_id& value);
+
 };
 
 
 
-/////////////////// CDbtag inline methods
+/////////////////// CPerson_id inline methods
 
 // constructor
 inline
-CDbtag::CDbtag(void)
+CPerson_id::CPerson_id(void)
 {
 }
 
 
-/////////////////// end of CDbtag inline methods
+/////////////////// end of CPerson_id inline methods
 
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -101,4 +100,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 
-#endif // OBJECTS_GENERAL_DBTAG_HPP
+#endif // OBJECTS_GENERAL_PERSON_ID_HPP
+/* Original file checksum: lines: 90, chars: 2405, CRC32: a107380d */
