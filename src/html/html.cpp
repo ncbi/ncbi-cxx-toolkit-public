@@ -241,7 +241,7 @@ void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu,
         return;
     case CHTMLPopupMenu::eKurdin: 
         SetEventHandler(event, menu->ShowMenu() + kStopEvent);
-        SetEventHandler(eHTML_EH_MouseOut, "PopUpMenu2_Hide();"  + kStopEvent);
+        SetEventHandler(eHTML_EH_MouseOut, menu->HideMenu());
         return;
     case CHTMLPopupMenu::eKurdinSide:
         AppendHTMLText(menu->ShowMenu());
@@ -560,9 +560,7 @@ CNcbiOstream& CHTMLComment::Print(CNcbiOstream& out, TMode mode)
 
 CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if (mode == ePlainText) {
-        out;
-    } else {
+    if (mode == eHTML) {
         out << "<!--";
         CHECK_STREAM_WRITE(out);
     }
@@ -2271,6 +2269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2003/12/18 20:15:42  golikov
+ * use HideMenu() call, CHTMLComment::PrintBegin fix
+ *
  * Revision 1.92  2003/12/16 19:08:49  ivanov
  * CHTML_font::SetTypeFace: replaced attribute name "typeface" to "face".
  *
