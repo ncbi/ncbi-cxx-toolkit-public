@@ -18,20 +18,20 @@ new CClassInfo(typeid(CClass).name(), typeid(PClass).name(), Class::s_Create)
 #define ADD_CLASS_MEMBER(Member) \
 AddMember(CMemberInfo(#Member, \
                       size_t(&KObject->Member), \
-                      GetTypeRef(KObject->Member)))
+                      GetTypeRef(&KObject->Member)))
 
-void CSerialObject::CreateTypeInfo(void)
+const CTypeInfo* CSerialObject::GetTypeInfo(void)
 {
+    static CClassInfoTmpl* info = 0;
     typedef CSerialObject CClass;
-    _TRACE("CSerialObject");
-
-    CClassInfoTmpl* info = new CClassInfo<CClass>();
-    const CClass* const KObject = 0;
-    info->ADD_CLASS_MEMBER(m_Name);
-    info->ADD_CLASS_MEMBER(m_Size);
-    info->ADD_CLASS_MEMBER(m_Attributes);
-
-    _TRACE("-CSerialObject");
+    if ( info == 0 ) {
+        info = new CClassInfo<CClass>();
+        const CClass* const KObject = 0;
+        info->ADD_CLASS_MEMBER(m_Name);
+        info->ADD_CLASS_MEMBER(m_Size);
+        info->ADD_CLASS_MEMBER(m_Attributes);
+    }
+    return info;
 }
 
 CSerialObject::CSerialObject(void)

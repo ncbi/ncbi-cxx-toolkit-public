@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/09 18:39:01  vasilche
+* Modified templates to work on Sun.
+*
 * Revision 1.1  1999/06/04 20:51:41  vasilche
 * First compilable version of serialization.
 *
@@ -52,32 +55,30 @@ public:
     typedef CTypeInfo::TTypeInfo TTypeInfo;
 
     CTypeRef(void)
-        : m_Id(0), m_Creator(0), m_TypeInfo(0)
+        : m_Id(0), m_Getter(0), m_TypeInfo(0)
         {
         }
-    CTypeRef(const type_info& id, void (*creator)(void))
-        : m_Id(&id), m_Creator(creator), m_TypeInfo(0)
+    CTypeRef(const type_info& id, TTypeInfo (*getter)(void))
+        : m_Id(&id), m_Getter(getter), m_TypeInfo(0)
         {
         }
     CTypeRef(TTypeInfo typeInfo)
-        : m_Id(0), m_Creator(0), m_TypeInfo(typeInfo)
+        : m_Id(0), m_Getter(0), m_TypeInfo(typeInfo)
         {
         }
 
     TTypeInfo Get(void) const
         {
             TTypeInfo typeInfo = m_TypeInfo;
-            if ( !typeInfo ) {
-                typeInfo = m_TypeInfo =
-                    CTypeInfo::GetTypeInfoBy(*m_Id, m_Creator);
-            }
+            if ( !typeInfo )
+                typeInfo = m_TypeInfo = (*m_Getter)();
             return typeInfo;
         }
 
 private:
 
     const type_info* m_Id;
-    void (*m_Creator)(void);
+    TTypeInfo (*m_Getter)(void);
 
     mutable TTypeInfo m_TypeInfo;
 };

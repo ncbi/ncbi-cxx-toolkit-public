@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/09 18:39:00  vasilche
+* Modified templates to work on Sun.
+*
 * Revision 1.2  1999/06/04 20:51:39  vasilche
 * First compilable version of serialization.
 *
@@ -95,9 +98,10 @@ public:
             return new TObjectType;
         }
 
-    static void CreateTypeInfo(void)
+    static TTypeInfo GetTypeInfo(void)
         {
-            new CStlClassInfoList;
+            static TTypeInfo typeInfo = new CStlClassInfoList;
+            return typeInfo;
         }
 
 protected:

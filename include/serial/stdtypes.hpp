@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/09 18:39:00  vasilche
+* Modified templates to work on Sun.
+*
 * Revision 1.2  1999/06/04 20:51:38  vasilche
 * First compilable version of serialization.
 *
@@ -97,9 +100,10 @@ public:
             return new TObjectType(0);
         }
 
-    static void CreateTypeInfo(void)
+    static TTypeInfo GetTypeInfo(void)
         {
-            new CStdTypeInfo;
+            static TTypeInfo typeInfo = new CStdTypeInfo;
+            return typeInfo;
         }
 
     virtual bool IsDefault(TConstObjectPtr object) const
@@ -118,9 +122,10 @@ public:
     virtual TObjectPtr Create(void) const
         { throw runtime_error("void cannot be created"); }
     
-    static void CreateTypeInfo(void)
+    static TTypeInfo GetTypeInfo(void)
         {
-            new CStdTypeInfo;
+            static TTypeInfo typeInfo = new CStdTypeInfo;
+            return typeInfo;
         }
 
 protected:
@@ -146,9 +151,10 @@ public:
             return new TObjectType();
         }
 
-    static void CreateTypeInfo(void)
+    static TTypeInfo GetTypeInfo(void)
         {
-            new CStdTypeInfo;
+            static TTypeInfo typeInfo = new CStdTypeInfo;
+            return typeInfo;
         }
 
     virtual bool IsDefault(TConstObjectPtr object) const

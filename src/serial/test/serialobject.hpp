@@ -20,7 +20,7 @@ public:
 
     void Dump(ostream& out) const;
 
-    static void CreateTypeInfo(void);
+    static const CTypeInfo* GetTypeInfo(void);
 
 private:
 

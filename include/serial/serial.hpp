@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/09 18:38:58  vasilche
+* Modified templates to work on Sun.
+*
 * Revision 1.5  1999/06/07 20:42:58  vasilche
 * Fixed compilation under MS VS
 *
@@ -63,55 +66,81 @@ class CObjectIStream;
 class CObjectOStream;
 
 // define type info getter for standard classes
+template<typename T>
+inline CTypeRef GetStdTypeRef(const T* object);
+inline CTypeRef GetTypeRef(const void* object);
+inline CTypeRef GetTypeRef(const char* object);
+inline CTypeRef GetTypeRef(const unsigned char* object);
+inline CTypeRef GetTypeRef(const signed char* object);
+inline CTypeRef GetTypeRef(const short* object);
+inline CTypeRef GetTypeRef(const unsigned short* object);
+inline CTypeRef GetTypeRef(const int* object);
+inline CTypeRef GetTypeRef(const unsigned int* object);
+inline CTypeRef GetTypeRef(const long* object);
+inline CTypeRef GetTypeRef(const unsigned long* object);
+inline CTypeRef GetTypeRef(const float* object);
+inline CTypeRef GetTypeRef(const double* object);
+inline CTypeRef GetTypeRef(const string* object);
+template<typename CLASS>
+inline CTypeRef GetTypeRef(const CLASS* object);
+template<typename Data>
+inline CTypeRef GetTypeRef(const list<Data>* object);
+template<typename T>
+inline CTypeRef GetTypeRef(const T* const* object);
+
+
+
+
+// define type info getter for standard classes
 inline
-CTypeRef GetTypeRef(void)
+CTypeRef GetTypeRef(const void*)
 {
     NcbiCerr << "GetTypeRef(void)" << endl;
-    return CTypeRef(typeid(void), CStdTypeInfo<void>::CreateTypeInfo);
+    return CTypeRef(typeid(void), CStdTypeInfo<void>::GetTypeInfo);
 }
 
 template<typename T>
 inline
-CTypeRef GetStdTypeRef(const T& )
+CTypeRef GetStdTypeRef(const T* )
 {
     NcbiCerr << "GetStdTypeRef(const T&) T: " << typeid(T).name() << endl;
-    return CTypeRef(typeid(T), CStdTypeInfo<T>::CreateTypeInfo);
+    return CTypeRef(typeid(T), CStdTypeInfo<T>::GetTypeInfo);
 }
 
 inline
-CTypeRef GetTypeRef(const char& object)
+CTypeRef GetTypeRef(const char* object)
 {
     return GetStdTypeRef(object);
 }
 
 inline
-CTypeRef GetTypeRef(const unsigned char& object)
+CTypeRef GetTypeRef(const unsigned char* object)
 {
     return GetStdTypeRef(object);
 }
 
 inline
-CTypeRef GetTypeRef(const signed char& object)
+CTypeRef GetTypeRef(const signed char* object)
 {
     return GetStdTypeRef(object);
 }
 
 inline
-CTypeRef GetTypeRef(const int& object)
+CTypeRef GetTypeRef(const int* object)
 {
     NcbiCerr << "GetTypeRef(const int&)" << endl;
     return GetStdTypeRef(object);
 }
 
 inline
-CTypeRef GetTypeRef(const unsigned int& object)
+CTypeRef GetTypeRef(const unsigned int* object)
 {
     NcbiCerr << "GetTypeRef(const unsigned int&)" << endl;
     return GetStdTypeRef(object);
 }
 
 inline
-CTypeRef GetTypeRef(const string& object)
+CTypeRef GetTypeRef(const string* object)
 {
     NcbiCerr << "GetTypeRef(const string&)" << endl;
     return GetStdTypeRef(object);
@@ -120,49 +149,49 @@ CTypeRef GetTypeRef(const string& object)
 // define type info getter for user classes
 template<typename CLASS>
 inline
-CTypeRef GetTypeRef(const CLASS& )
+CTypeRef GetTypeRef(const CLASS* )
 {
     NcbiCerr << "GetTypeRef(const CLASS&) CLASS: " << typeid(CLASS).name() << endl;
-    return CTypeRef(typeid(CLASS), CLASS::CreateTypeInfo);
-}
-
-template<typename CLASS>
-inline
-CTypeRef GetTypeRef(const list<CLASS>& )
-{
-    NcbiCerr << "GetTypeRef(const list<CLASS>&) CLASS: " << typeid(CLASS).name() << endl;
-    return CTypeRef(typeid(list<CLASS>),
-                    CStlClassInfoList<CLASS>::CreateTypeInfo);
+    return CTypeRef(typeid(CLASS), CLASS::GetTypeInfo);
 }
 
 template<typename Data>
 inline
-CStlClassInfoList<Data>::CStlClassInfoList(void)
-    : CParent(typeid(TObjectType), GetTypeRef(*static_cast<const Data*>(0)))
+CTypeRef GetTypeRef(const list<Data>* )
 {
+    NcbiCerr << "GetTypeRef(const list<Data>&) Data: " << typeid(Data).name() << endl;
+    return CTypeRef(typeid(list<Data>),
+                    CStlClassInfoList<Data>::GetTypeInfo);
 }
 
 // define type info getter for pointers
 template<typename CLASS>
 inline
-CTypeRef GetTypeRef(const CLASS* object)
+CTypeRef GetTypeRef(const CLASS* const* object)
 {
     NcbiCerr << "GetTypeRef(const CLASS*) CLASS: " << typeid(CLASS).name() << endl;
     return CTypeRef(CTypeInfo::GetPointerTypeInfo(typeid(CLASS*),
-                                                  GetTypeRef(*object)));
+                                                  GetTypeRef(object)));
+}
+
+template<typename Data>
+inline
+CStlClassInfoList<Data>::CStlClassInfoList(void)
+    : CParent(typeid(TObjectType), GetTypeRef(static_cast<const Data*>(0)))
+{
 }
 
 inline
 CTypeInfo::TTypeInfo GetTypeInfo(void)
 {
-    return GetTypeRef().Get();
+    return GetTypeRef(static_cast<const void*>(0)).Get();
 }
 
 template<typename CLASS>
 inline
 CTypeInfo::TTypeInfo GetTypeInfo(const CLASS& object)
 {
-    return GetTypeRef(object).Get();
+    return GetTypeRef(&object).Get();
 }
 
 
