@@ -53,8 +53,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CSeqDBAtlas;
-
 
 /// CSeqDBFlushCB
 /// 
@@ -67,7 +65,21 @@ class CSeqDBAtlas;
 
 class CSeqDBFlushCB {
 public:
-    virtual void operator()(void) = 0;
+    /// Flush held memory references.
+    /// 
+    /// This class should be subclassed, and this method overloaded to
+    /// flush held memory that is not in use.  Normally, this amounts
+    /// to calling the Clear() method on any CSeqDBMemLease objects
+    /// which hold references to regions of memory.  Each open file
+    /// can have a memory lease which holds onto a slice of memory, if
+    /// that file has been accessed.  Without this callback, these
+    /// slices can combine to exhaust the address space.  This action
+    /// carries a performance penalty, because subsequent access to
+    /// the released slices will require searching for the correct
+    /// memory block.  If that block was deleted, it will be remapped,
+    /// which may trigger another garbage collection.
+    
+    virtual void operator()() = 0;
 };
 
 
@@ -241,7 +253,7 @@ public:
     ///   Pointer to the atlas.
     /// @return
     ///   Returns true if the mapping succeeded.
-    bool MapMmap(CSeqDBAtlas *);
+    bool MapMmap(CSeqDBAtlas * atlas);
     
     /// Read a region of a file into memory
     /// 
@@ -259,7 +271,7 @@ public:
     ///   Pointer to the atlas.
     /// @return
     ///   Returns true if the read succeeded.
-    bool MapFile(CSeqDBAtlas *);
+    bool MapFile(CSeqDBAtlas * atlas);
     
     /// Increment this region's reference count.
     /// 
@@ -461,12 +473,12 @@ public:
     /// This method returns a pointer to this region's data, and the
     /// beginning and ending offsets of the region.
     /// 
-    /// @param p
-    ///   Returns the address of the region's data.
+    /// @param region_start
+    ///   Returns the address of the region data.
     /// @param begin_offset
-    ///   The beginning offset of the region's data.
+    ///   The beginning offset of the region data.
     /// @param end_offset
-    ///   The end offset of the region's data.
+    ///   The end offset of the region data.
     void GetBoundaries(const char ** region_start,
                        TIndx      &  begin_offset,
                        TIndx      &  end_offset)
@@ -802,8 +814,10 @@ public:
     /// 
     /// @param fname
     ///   The filename of the file to get.
-    /// @param length
-    ///   The length of the file is returned here.
+    /// @param begin
+    ///   The start offset of the area to map.
+    /// @param end
+    ///   The end offset of the area to map.
     /// @param locked
     ///   The lock hold object for this thread.
     /// @return
@@ -1063,7 +1077,7 @@ private:
     ///   The beginning offset of the selected area.
     /// @param end
     ///   The ending offset of the selected area.
-    /// @param start
+    /// @param startp
     ///   Returned pointer to the beginning of the mapped region.
     /// @param rmap
     ///   Returned pointer to the CRegionMap object.
@@ -1245,6 +1259,18 @@ private:
     struct RegionMapLess
         : public binary_function<const CRegionMap*, const CRegionMap*, bool>
     {
+        /// Compare regions using less-than.
+        /// 
+        /// This compares two CRegionMap objects using that class's
+        /// overloaded less-than operator.  It provides a partial
+        /// ordering for the TNameOffsetTable.
+        /// 
+        /// @param L
+        ///   The first object.
+        /// @param R
+        ///   The second object.
+        /// @return
+        ///   Returns true if the first object comes before the second one.
         inline bool operator()(const CRegionMap* L, const CRegionMap* R) const
         {
             return *L < *R;
