@@ -58,6 +58,7 @@ typedef struct {
  */
 struct SSERV_IterTag {
     const char*  service;        /* requested service name                 */
+    const char*  current;        /* current service name                   */
     TSERV_Type   types;          /* requested server type(s)               */
     unsigned int preferred_host; /* preferred host to select, network b.o. */
     double       preference;     /* range [0..100] %%                      */
@@ -114,6 +115,11 @@ SERV_ITER SERV_OpenP
  );
 
 
+/* Return service name the iterator is working on.
+ */
+const char* SERV_GetCurrentName(SERV_ITER iter);
+
+
 /* Private interface: update mapper information from the given text
  * (<CR><LF> separated lines, usually taken from HTTP header).
  */
@@ -166,6 +172,9 @@ double SERV_Preference(double pref, double gap, unsigned int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2005/03/05 21:05:07  lavr
+ * +SERV_ITER::current;  +SERV_GetCurrentName()
+ *
  * Revision 6.26  2005/01/31 17:09:34  lavr
  * Argument affinity moved into service iterator
  *

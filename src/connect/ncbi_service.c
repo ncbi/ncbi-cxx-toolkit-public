@@ -144,6 +144,7 @@ static SERV_ITER s_Open(const char* service, TSERV_Type types,
         return 0;
 
     iter->service        = s;
+    iter->current        = 0;
     iter->types          = types;
     iter->preferred_host = preferred_host == SERV_LOCALHOST
         ? SOCK_gethostbyname(0) : preferred_host;
@@ -318,6 +319,12 @@ const char* SERV_MapperName(SERV_ITER iter)
 }
 
 
+const char* SERV_GetCurrentName(SERV_ITER iter)
+{
+    return iter->current ? iter->current : iter->service;
+}
+
+
 int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 {
     if (!iter || !iter->op || !iter->op->Penalize || !iter->last)
@@ -337,6 +344,10 @@ void SERV_Reset(SERV_ITER iter)
     size_t i;
     if (!iter)
         return;
+    if (iter->current) {
+        free((void*) iter->current);
+        iter->current = 0;
+    }
     for (i = 0; i < iter->n_skip; i++)
         free(iter->skip[i]);
     iter->n_skip = 0;
@@ -555,6 +566,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.59  2005/03/05 21:05:26  lavr
+ * +SERV_ITER::current;  +SERV_GetCurrentName()
+ *
  * Revision 6.58  2005/01/31 17:09:55  lavr
  * Argument affinity moved into service iterator
  *
