@@ -1,4 +1,4 @@
---$Revision: 1.11 $ 
+--$Revision: 1.12 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -41,6 +41,7 @@ Entrezgene ::= SEQUENCE {
         protein-coding (6) ,
         pseudo  (7) ,
         transposon  (8) ,
+        miscRNA  (9) ,
         other (255) } ,
     source BioSource , 
     gene Gene-ref ,                     -- for locus-tag see note 3
@@ -93,6 +94,8 @@ Gene-commentary ::= SEQUENCE {
         cRNA (11) ,
         mature-peptide (12) ,
         pre-protein (13) ,
+        miscRNA  (14) ,
+        snoRNA  (15) ,
         comment (254) ,
         other (255) } ,
     heading VisibleString OPTIONAL ,      -- appears above text 
@@ -109,7 +112,7 @@ Gene-commentary ::= SEQUENCE {
 Other-source ::= SEQUENCE { 
     src Dbtag ,                         -- key to non-ncbi source 
     pre-text VisibleString OPTIONAL ,   -- text before anchor 
-    anchor VisibleString ,              -- text to show as highlight 
+    anchor VisibleString OPTIONAL ,     -- text to show as highlight 
     url VisibleString OPTIONAL ,        -- if present, use this URL not Dbtag and datbase 
     post-text VisibleString OPTIONAL }  -- text after anchor 
 
