@@ -385,7 +385,11 @@ void CCodeGenerator::GenerateCode(void)
         fileList << "GENFILES =";
         {
             ITERATE ( TOutputFiles, filei, m_Files ) {
-                fileList << ' ' << filei->second->GetFileBaseName();
+                string tmp(filei->second->GetFileBaseName());
+#if defined(NCBI_OS_MSWIN)
+                tmp = NStr::Replace(tmp,"\\","/");
+#endif                
+                fileList << ' ' << tmp;
             }
         }
         fileList << "\n";
@@ -428,7 +432,11 @@ void CCodeGenerator::GenerateCode(void)
                             }
                         }
                         CDirEntry ent(CDirEntry::ConvertToOSPath(pp));
-                        fileList << ent.GetDir() << ent.GetBase();
+                        string tmp(ent.GetDir());
+#if defined(NCBI_OS_MSWIN)
+                        tmp = NStr::Replace(tmp,"\\","/");
+#endif                
+                        fileList << tmp << ent.GetBase();
                     }
                 }
 
@@ -809,6 +817,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2004/08/04 19:49:06  gouriano
+* Use UNIX-style path separator in  *.files
+*
 * Revision 1.59  2004/05/19 15:46:19  gouriano
 * Add precompiled header into combining files as well
 *
