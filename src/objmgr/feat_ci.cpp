@@ -210,12 +210,6 @@ const CSeq_feat& CMappedFeat::x_MakeOriginalFeature(void) const
             m_AnnotObject_Ref.GetSeq_annot_SNP_Info();
         const SSNP_Info& snp_info =
             snp_annot.GetSNP_Info(m_AnnotObject_Ref.GetAnnotObjectIndex());
-        /*
-        if ( !m_CreatedOriginalSeq_feat ||
-             !m_CreatedOriginalSeq_feat->ReferencedOnlyOnce() ) {
-            NcbiCout << "New original feature, was: " << m_CreatedOriginalSeq_feat.GetPointerOrNull() << NcbiEndl;
-        }
-        */
         snp_info.UpdateSeq_feat(m_CreatedOriginalSeq_feat,
                                 m_CreatedOriginalSeq_point,
                                 m_CreatedOriginalSeq_interval,
@@ -240,8 +234,9 @@ const CSeq_loc& CMappedFeat::x_MakeMappedLocation(void) const
                 m_CreatedMappedSeq_feat.Reset();
             }
             else {
-                // hack with null pointer as ResetLocation will not reset CRef<>    
-                m_CreatedMappedSeq_feat->SetLocation(*static_cast<CSeq_loc*>(0));
+                // hack with null pointer as ResetLocation doesn't reset CRef<>
+                CSeq_loc* loc = 0;
+                m_CreatedMappedSeq_feat->SetLocation(*loc);
                 m_CreatedMappedSeq_feat->ResetProduct();
             }
         }
@@ -265,7 +260,6 @@ const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
         // some Seq-loc object is mapped
         if ( !m_CreatedMappedSeq_feat ||
              !m_CreatedMappedSeq_feat->ReferencedOnlyOnce() ) {
-            //NcbiCout << "New mapped feature, was: " << m_CreatedMappedSeq_feat.GetPointerOrNull() << NcbiEndl;
             m_CreatedMappedSeq_feat.Reset(new CSeq_feat);
         }
         CSeq_feat& dst = *m_CreatedMappedSeq_feat;
@@ -379,6 +373,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/08/27 19:44:06  vasilche
+* Avoid error on IRIX with null reference cast.
+*
 * Revision 1.22  2003/08/27 14:48:56  vasilche
 * Fixed constness of mapped location.
 *
