@@ -327,6 +327,7 @@ int CTestSerial::Run(void)
 
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open("webenv.ento",
                                                                   eSerial_AsnText));
+                out->SetAutoSeparator(false);
                 *out << *env2;
             }
         }
@@ -772,6 +773,9 @@ void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2003/06/16 16:53:46  gouriano
+ * corrections to make test run OK
+ *
  * Revision 1.61  2003/06/13 20:44:33  ivanov
  * Changed names of the test files from "test.*" to "test_serial.*"
  *
