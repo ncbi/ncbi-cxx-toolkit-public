@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/05/16 22:09:19  kholodov
+* Fixed: incorrect start of BLOB column
+*
 * Revision 1.5  2002/05/14 19:51:47  kholodov
 * Fixed: incorrect column no handling for detecting end of column
 *
@@ -114,7 +117,15 @@ CT_INT_TYPE CByteStreamBuf::underflow()
     static size_t total = 0;
 
     if( m_column < 0 || m_column != m_rs->CurrentItemNo() ) {
-        _TRACE("Total read from ReadItem: " << total);
+        if( m_column < 0 ) {
+            _TRACE("Column for ReadItem not set, current column: "
+                   << m_rs->CurrentItemNo());
+#ifdef _DEBUG
+            _ASSERT(0);
+#endif
+        }
+        else
+            _TRACE("Total read from ReadItem: " << total);
         total = 0;
         m_column = m_rs->CurrentItemNo();
         return CT_EOF;

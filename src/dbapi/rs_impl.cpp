@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/05/16 22:09:19  kholodov
+* Fixed: incorrect start of BLOB column
+*
 * Revision 1.5  2002/05/14 19:53:17  kholodov
 * Modified: Read() returns 0 to signal end of column
 *
@@ -122,6 +125,7 @@ bool CResultSet::Next()
             type = m_rs->ItemDataType(i);
 
             if( type == eDB_Text || type == eDB_Image ) {
+                m_column = m_rs->CurrentItemNo();
                 break;
             }
 
@@ -129,7 +133,6 @@ bool CResultSet::Next()
         }
 
         more = true;
-        m_column = m_rs->CurrentItemNo();
     }
   
     return more;
@@ -139,7 +142,16 @@ size_t CResultSet::Read(void* buf, size_t size)
 {
 
     if( m_column < 0 || m_column != m_rs->CurrentItemNo() ) {
-        _TRACE("End column: " << m_column);
+        if( m_column < 0 ) {
+            _TRACE("Column for raw Read not set, current column: "
+                   << m_rs->CurrentItemNo());
+#ifdef _DEBUG
+            _ASSERT(0);
+#endif
+        }
+        else
+            _TRACE("End column: " << m_column);
+
         m_column = m_rs->CurrentItemNo();
         return 0;
     }
@@ -172,7 +184,7 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
     // Call ReadItem(0, 0) before getting text/image descriptor
     m_rs->ReadItem(0, 0);
 
-    m_ostr = new CBlobOStream(m_conn->GetConnAux(),
+    m_ostr = new CBlobOStream(m_conn->CloneCDB_Conn(),
                               m_rs->GetImageOrTextDescriptor(),
                               blob_size,
                               buf_size);
