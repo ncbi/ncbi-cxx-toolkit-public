@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/11/18 19:48:46  grichenk
+* Removed "const" from datatool-generated setters
+*
 * Revision 1.35  2002/11/14 21:03:40  gouriano
 * added support of XML attribute lists
 *
@@ -755,8 +758,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             setters <<
                 "    "<<cType<<"& Set"<<i->cName<<"(void);\n";
             if ( i->memberType == eSimpleMember ||
-                 i->memberType == eStringMember ||
-                 i->memberType == eObjectPointerMember ) {
+                i->memberType == eStringMember ) {
                 if (i->attlist) {
                     setters <<
                         "    void Set"<<i->cName<<"("<<cType<<"& value);\n";
@@ -764,6 +766,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     setters <<
                         "    void Set"<<i->cName<<"(const "<<cType<<"& value);\n";
                 }
+            }
+            if ( i->memberType == eObjectPointerMember ) {
+                setters <<
+                    "    void Set"<<i->cName<<"("<<cType<<"& value);\n";
             }
             string memberRef;
             string constMemberRef;
@@ -869,9 +875,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 if ( i->memberType == eObjectPointerMember ) {
                     methods <<
-                        "void "<<methodPrefix<<"Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"(T"<<i->cName<<"& value)\n"
                         "{\n"
-                        "    T"<<i->cName<<"* ptr = const_cast<T"<<i->cName<<"*>(&value);\n";
+                        "    T"<<i->cName<<"* ptr = &value;\n";
                     if ( i->delayed ) {
                         methods <<
                             "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "DELAY_MEMBER" || "OBJECT_MEMBER" != ptr ) {\n";

@@ -103,9 +103,9 @@ void CAlnMix::x_Merge()
     CSeq_align aln;
 
     list< CRef< CSeq_align > >& sa_lst = aln.SetSegs().SetDisc().Set();
-    iterate (TConstDSs, ds_it, m_InputDSs) {
+    non_const_iterate (TConstDSs, ds_it, m_InputDSs) {
         CRef<CSeq_align> sa(new CSeq_align());
-        sa->SetSegs().SetDenseg(**ds_it);
+        sa->SetSegs().SetDenseg(const_cast<CDense_seg&>(**ds_it));
         sa_lst.push_back(sa);
     }
 
@@ -153,6 +153,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2002/11/18 19:48:41  grichenk
+* Removed "const" from datatool-generated setters
+*
 * Revision 1.7  2002/11/04 21:29:08  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

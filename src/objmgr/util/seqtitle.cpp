@@ -227,7 +227,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         unsigned int         genes = 0, cdregions = 0, prots = 0;
         CConstRef<CSeq_feat> gene(0),   cdregion(0);
         CSeq_loc everywhere;
-        everywhere.SetWhole(*hnd.GetSeqId());
+        everywhere.SetWhole().Assign(*hnd.GetSeqId());
         for (CFeat_CI it(hnd.GetScope(), everywhere, CSeqFeatData::e_not_set);
              it;  ++it) {
             switch (it->GetData().Which()) {
@@ -649,7 +649,7 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
     string               result;
 
     CSeq_loc everywhere;
-    everywhere.SetWhole(*core->GetId().front());
+    everywhere.SetWhole().Assign(*core->GetId().front());
 
     {{
         CConstRef<CSeq_feat> prot_feat
@@ -813,6 +813,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2002/11/18 19:48:44  grichenk
+* Removed "const" from datatool-generated setters
+*
 * Revision 1.9  2002/11/15 17:39:59  ucko
 * Make better titles for NM sequences
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.120  2002/11/18 19:48:40  grichenk
+* Removed "const" from datatool-generated setters
+*
 * Revision 1.119  2002/11/18 15:02:40  thiessen
 * set flags on style shortcut menus
 *
@@ -1332,7 +1335,7 @@ const Sequence * StructureSet::CreateNewSequence(const ncbi::objects::CBioseq& b
     // add asn sequence to asn data
     if (dataManager->GetSequences()) {
         CSeq_entry *se = new CSeq_entry();
-        se->SetSeq(bioseq);
+        se->SetSeq(const_cast<CBioseq&>(bioseq));
         dataManager->GetSequences()->push_back(CRef<CSeq_entry>(se));
     } else
         ERR_POST(Error << "StructureSet::CreateNewSequence() - no sequence list in asn data");

@@ -422,7 +422,8 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "{\n"
             << "    TRequestChoice request;\n"
             << "    TReply         reply0;\n"
-            << "    request.Set" << Identifier(name) << "(req);\n"
+            << "    request.Set" << Identifier(name) << "(const_cast<"
+            << req_class << "&>(req));\n"
             << "    if ( !reply ) {\n"
             << "        reply = &reply0;\n"
             << "    }\n"
@@ -449,6 +450,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/11/18 19:48:46  grichenk
+* Removed "const" from datatool-generated setters
+*
 * Revision 1.3  2002/11/14 16:36:54  ucko
 * Rework generated code, rolling x_CheckReply into (an overloaded
 * version of) Ask for increased flexibility.

@@ -1533,7 +1533,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
 {
     const CBioseq& seq = handle.GetBioseq();
     CSeq_loc everywhere;
-    everywhere.SetWhole(*seq.GetId().front());
+    everywhere.SetWhole().Assign(*seq.GetId().front());
 
     m_Stream << s_Pad("FEATURES", sm_FeatureNameIndent + sm_FeatureNameWidth)
              << "Location/Qualifiers" << NcbiEndl;
@@ -2764,6 +2764,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.25  2002/11/18 19:48:44  grichenk
+* Removed "const" from datatool-generated setters
+*
 * Revision 1.24  2002/11/08 19:43:38  grichenk
 * CConstRef<> constructor made explicit
 *

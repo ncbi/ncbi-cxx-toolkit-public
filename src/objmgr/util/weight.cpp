@@ -110,7 +110,7 @@ void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
 
     set<CConstRef<CSeq_loc> > locations;
     CSeq_loc* whole = new CSeq_loc;
-    whole->SetWhole(*handle.GetSeqId());
+    whole->SetWhole().Assign(*handle.GetSeqId());
 
     CConstRef<CSeq_feat> signal;
 
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2002/11/18 19:48:45  grichenk
+* Removed "const" from datatool-generated setters
+*
 * Revision 1.14  2002/11/08 19:43:38  grichenk
 * CConstRef<> constructor made explicit
 *

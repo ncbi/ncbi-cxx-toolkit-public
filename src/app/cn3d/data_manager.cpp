@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/11/18 19:48:40  grichenk
+* Removed "const" from datatool-generated setters
+*
 * Revision 1.13  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -541,7 +544,8 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
     if (usedSeqs.find((seq)->identifier) == usedSeqs.end()) { \
         seqEntryList->resize(seqEntryList->size() + 1); \
         seqEntryList->back().Reset(new CSeq_entry); \
-        seqEntryList->back().GetObject().SetSeq((seq)->bioseqASN.GetObject()); \
+        seqEntryList->back().GetObject().SetSeq \
+        (const_cast<CBioseq&>((seq)->bioseqASN.GetObject())); \
         usedSeqs[(seq)->identifier] = true; \
     } } while (0)
 

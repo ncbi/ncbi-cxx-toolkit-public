@@ -977,7 +977,7 @@ static const CSeq_feat* s_GetCDSForProduct
      }
  
      CSeq_loc loc;
-     loc.SetWhole(*id);
+     loc.SetWhole().Assign(*id);
      CFeat_CI fi(*scope, loc, CSeqFeatData::e_Cdregion);
      return &(*fi);
 }
@@ -5850,6 +5850,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.26  2002/11/18 19:48:44  grichenk
+* Removed "const" from datatool-generated setters
+*
 * Revision 1.25  2002/11/18 15:39:50  shomrat
 * ValidateSourceQualTags checks pattern on a left word boundry
 *

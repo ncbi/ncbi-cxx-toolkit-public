@@ -51,7 +51,7 @@ streambuf *CId1Reader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
   CConn_ServiceStream *server = m_Pool[conn % m_Pool.size()];
   {
     CID1server_request id1_request;
-    id1_request.SetGetgi(seqId);
+    id1_request.SetGetgi().Assign(seqId);
     CObjectOStreamAsnBinary server_output(*server);
     server_output << id1_request;
     server_output.Flush();
@@ -347,6 +347,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.23  2002/11/18 19:48:43  grichenk
+* Removed "const" from datatool-generated setters
+*
 * Revision 1.22  2002/07/25 15:01:51  grichenk
 * Replaced non-const GetXXX() with SetXXX()
 *
