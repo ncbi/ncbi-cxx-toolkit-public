@@ -26,74 +26,78 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of structure data
+*      Classes to hold sets of atom data
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  2000/06/29 14:35:20  thiessen
+* Revision 1.1  2000/06/29 14:35:20  thiessen
 * new atom_set files
-*
-* Revision 1.2  2000/06/28 13:08:13  thiessen
-* store alt conf ensembles
-*
-* Revision 1.1  2000/06/27 20:08:14  thiessen
-* initial checkin
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_STRUCTURESET__HPP
-#define CN3D_STRUCTURESET__HPP
+#ifndef CN3D_ATOMSET__HPP
+#define CN3D_ATOMSET__HPP
 
 #include <serial/serial.hpp>            
-#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
-#include <objects/mmdb1/Biostruc.hpp>
+#include <objects/mmdb2/Atomic_coordinates.hpp>
 USING_NCBI_SCOPE;
 using namespace objects;
 
 #include "cn3d/structure_base.hpp"
+#include "cn3d/vector_math.hpp"
 
 BEGIN_SCOPE(Cn3D)
 
-class StructureObject;
+class Atom;
 
-class StructureSet : public StructureBase
+class AtomSet : public StructureBase
 {
 public:
-    StructureSet(const CNcbi_mime_asn1& mime);
-    ~StructureSet(void);
+    AtomSet(const CAtomic_coordinates& coords);
+    ~AtomSet(void);
 
     // public data
-    typedef LIST_TYPE < const StructureObject * > ObjectList;
-    ObjectList objects;
+    typedef LIST_TYPE < const string * > EnsembleList;
+    EnsembleList ensembles;
 
     // public methods
     void Draw(void) const;
+    const Atom* GetAtomPntr(int moleculeID, int residueID, int atomID) const;
 
 private:
-    StructureSet(void);
+    AtomSet(void);
+
+    int nAtoms;
+    int *moleculeID;
+    int *residueID;
+    int *atomID;
+    Atom *atomList;
 };
 
-class AtomSet;
+#define ATOM_NO_TEMPERATURE (-1.0)
+#define ATOM_NO_OCCUPANCY (-1.0)
+#define ATOM_NO_ALTCONFID ('-')
 
-class StructureObject : public StructureBase
+class Atom : public StructureBase
 {
 public:
-    StructureObject(const CBiostruc& biostruc, bool master);
-    ~StructureObject(void);
+    Atom(void);
+    //~Atom(void);
 
     // public data
-    const bool isMaster;
-    int mmdbId;
-    string pdbId;
-    typedef LIST_TYPE < const AtomSet * > AtomSetList;
-    AtomSetList atomSets;
+    Vector site;
+    double averageTemperature; // average of 6 factors if anisotropic
+    double occupancy;
+    char altConfID;
 
     // public methods
-    void Draw(void) const;
+    bool HasTemp(void) const { return (averageTemperature!=ATOM_NO_TEMPERATURE); }
+    bool HasOccup(void) const { return (occupancy!=ATOM_NO_OCCUPANCY); }
+    bool HasAlt(void) const { return (altConfID!=ATOM_NO_ALTCONFID); }
+    //void Draw(void) const;
 
 private:
-    StructureObject(void);
 };
 
 END_SCOPE(Cn3D)
