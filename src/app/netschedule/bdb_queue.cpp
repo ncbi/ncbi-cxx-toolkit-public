@@ -159,7 +159,10 @@ void CQueueCollection::AddQueue(const string& name, SLockedQueue* queue)
 
 CQueueDataBase::CQueueDataBase()
 : m_Env(0),
-  m_MaxId(0)
+  m_MaxId(0),
+  m_StopPurge(false),
+  m_PurgeLastId(0),
+  m_PurgeSkipCnt(0)
 {}
 
 CQueueDataBase::~CQueueDataBase()
@@ -242,7 +245,7 @@ void CQueueDataBase::Open(const string& path, unsigned cache_ram_size)
     }
 }
 
-void CQueueDataBase::MountQueue(const string& queue_name)
+void CQueueDataBase::MountQueue(const string& queue_name, int timeout)
 {
     _ASSERT(m_Env);
 
@@ -257,6 +260,7 @@ void CQueueDataBase::MountQueue(const string& queue_name)
     string fname = string("jsq_") + queue_name + string(".db");
     q->db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
 
+    q->timeout = timeout;
     m_QueueCollection.AddQueue(queue_name, q.release());
 
     // scan the queue, restore the state machine
@@ -283,6 +287,8 @@ void CQueueDataBase::MountQueue(const string& queue_name)
 
 void CQueueDataBase::Close()
 {
+    StopPurgeThread();
+
     m_QueueCollection.Close();
     try {
         if (m_Env) {
@@ -327,6 +333,96 @@ unsigned int CQueueDataBase::GetNextId()
     return id;
 }
 
+void CQueueDataBase::Purge()
+{
+    unsigned curr_id;
+    {{
+        CFastMutexGuard guard(m_IdLock);
+        curr_id = m_MaxId;
+    }}
+
+    if (m_PurgeLastId + 3000 > curr_id) {
+        ++m_PurgeSkipCnt;
+        
+        // probably nothing to do yet, skip purge execution
+
+        if (m_PurgeSkipCnt < 10) { // only 10 skips in a row
+            return;
+        }
+
+        m_PurgeSkipCnt = 0;        
+    }
+
+
+    // Delete obsolete job records, based on time stamps 
+    // and expiration timeouts
+
+    const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
+    ITERATE(CQueueCollection::TQueueMap, it, qm) {
+        const string qname = it->first;
+        CQueue jq(*this, qname);
+        unsigned del_rec, total_del_rec = 0;
+        const unsigned batch_size = 100;
+        do {
+            del_rec = jq.CheckDeleteBatch(batch_size);
+            total_del_rec += del_rec;
+            m_PurgeLastId += del_rec;
+
+            // do not delete more than certain number of 
+            // records from the queue in one Purge
+            if (total_del_rec >= 1000) {
+                SleepMilliSec(1000);
+                break;
+            }
+
+            {{
+                CFastMutexGuard guard(m_PurgeLock);
+                if (m_StopPurge) {
+                    m_StopPurge = false;
+                    return;
+                }
+            }}
+        } while (del_rec == batch_size);
+    }
+}
+
+void CQueueDataBase::StopPurge()
+{
+    CFastMutexGuard guard(m_PurgeLock);
+    m_StopPurge = true;
+}
+
+void CQueueDataBase::RunPurgeThread()
+{
+# ifdef NCBI_THREADS
+       LOG_POST(Info << "Starting guard and cleaning thread.");
+       m_PurgeThread.Reset(
+           new CJobQueueCleanerThread(*this, 30, 5));
+       m_PurgeThread->Run();
+# else
+        LOG_POST(Warning << 
+                 "Cannot run background thread in non-MT configuration.");
+# endif
+
+}
+
+
+void CQueueDataBase::StopPurgeThread()
+{
+# ifdef NCBI_THREADS
+    if (!m_PurgeThread.Empty()) {
+        LOG_POST(Info << "Stopping guard and cleaning thread...");
+        StopPurge();
+        m_PurgeThread->RequestStop();
+        m_PurgeThread->Join();
+        LOG_POST(Info << "Stopped.");
+    }
+# endif
+}
+
+
+
+
 
 CQueueDataBase::CQueue::CQueue(CQueueDataBase& db, const string& queue_name)
 : m_Db(db),
@@ -344,11 +440,12 @@ unsigned int CQueueDataBase::CQueue::Submit(const string& input)
                                    job_id,
                                    CNetScheduleClient::ePending);
     SQueueDB& db = m_LQueue.db;
-    CBDB_Transaction trans(*db.GetEnv(), CBDB_Transaction::eTransASync);
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
 
     {{
     CFastMutexGuard guard(m_LQueue.lock);
-
 	db.SetTransaction(&trans);
 
     db.id = job_id;
@@ -359,6 +456,7 @@ unsigned int CQueueDataBase::CQueue::Submit(const string& input)
     db.time_submit = time(0);
     db.time_run = 0;
     db.time_done = 0;
+    db.timeout = 0;
 
     db.worker_node1 = 0;
     db.worker_node2 = 0;
@@ -395,9 +493,12 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
 
     {{
     SQueueDB& db = m_LQueue.db;
-    CBDB_Transaction trans(*db.GetEnv(), CBDB_Transaction::eTransASync);
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
 
     CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(0);
 
     db.id = job_id;
     if (db.Fetch() == eBDB_Ok) {
@@ -429,7 +530,10 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
                                    CNetScheduleClient::eDone);
 
     SQueueDB& db = m_LQueue.db;
-    CBDB_Transaction trans(*db.GetEnv(), CBDB_Transaction::eTransASync);
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+
     {{
     CFastMutexGuard guard(m_LQueue.lock);
     db.SetTransaction(&trans);
@@ -440,7 +544,7 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << job_id;
 
-    if (cur.Fetch() != eBDB_Ok) {
+    if (cur.FetchFirst() != eBDB_Ok) {
         // TODO: Integrity error or job just expired?
     }
     db.status = (int) CNetScheduleClient::eDone;
@@ -468,10 +572,13 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
     SQueueDB& db = m_LQueue.db;
 
     CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(0);
 
     db.id = job_id;
     if (db.Fetch() == eBDB_Ok) {            
-        CBDB_Transaction trans(*db.GetEnv(), CBDB_Transaction::eTransASync);
+        CBDB_Transaction trans(*db.GetEnv(), 
+                               CBDB_Transaction::eTransASync,
+                               CBDB_Transaction::eNoAssociation);
         db.SetTransaction(&trans);
 
         db.status = (int) CNetScheduleClient::ePending;
@@ -504,13 +611,14 @@ get_job_id:
     try {
         SQueueDB& db = m_LQueue.db;
         CBDB_Transaction trans(*db.GetEnv(), 
-                                CBDB_Transaction::eTransASync);
+                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eNoAssociation);
 
 
         {{
         CFastMutexGuard guard(m_LQueue.lock);
-
         db.SetTransaction(&trans);
+
         CBDB_FileCursor& cur = *GetCursor(trans);
         CCursorGuard cg(cur);    
 
@@ -598,6 +706,7 @@ bool CQueueDataBase::CQueue::GetOutput(unsigned int job_id,
 
     SQueueDB& db = m_LQueue.db;
     CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(0);
 
     db.id = job_id;
     if (db.Fetch() == eBDB_Ok) {
@@ -633,12 +742,77 @@ CBDB_FileCursor* CQueueDataBase::CQueue::GetCursor(CBDB_Transaction& trans)
     
 }
 
+bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
+{
+    SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+
+    time_t curr = time(0);
+
+    {{
+    CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(&trans);
+
+    CBDB_FileCursor& cur = *GetCursor(trans);
+    CCursorGuard cg(cur);    
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << job_id;
+
+    if (cur.FetchFirst() != eBDB_Ok) {
+        return true; // already deleted
+    }
+    int status = db.status;
+    if (status != (int) CNetScheduleClient::eDone) {
+        return true;
+    }
+
+    unsigned queue_ttl = m_LQueue.timeout;
+    int job_ttl = db.timeout;
+    if (job_ttl == 0) {
+        job_ttl = queue_ttl;
+    }
+
+    unsigned time_done = db.time_done;
+    if (time_done + job_ttl > (unsigned)curr) {
+        return false;
+    }
+    cur.Delete(CBDB_File::eIgnoreError);
+cerr << "Job deleted: " << job_id << endl;
+
+    }}
+    trans.Commit();
+
+    m_LQueue.status_tracker.SetStatus(job_id, 
+                                      CNetScheduleClient::eJobNotFound);
+    return true;
+}
+
+unsigned CQueueDataBase::CQueue::CheckDeleteBatch(unsigned batch_size)
+{
+    unsigned dcnt;
+    for (dcnt = 0; dcnt < batch_size; ++dcnt) {
+        unsigned job_id = m_LQueue.status_tracker.GetFirstDone();
+        if (job_id == 0) {
+            break;
+        }
+        bool deleted = CheckDelete(job_id);
+        if (!deleted) {
+            break;
+        }
+    } // for
+    return dcnt;
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/02/23 19:16:38  kuznets
+ * Implemented garbage collection thread
+ *
  * Revision 1.5  2005/02/22 16:13:00  kuznets
  * Performance optimization
  *

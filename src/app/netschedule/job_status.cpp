@@ -181,6 +181,15 @@ unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
     return job_id;
 }
 
+unsigned int CNetScheduler_JobStatusTracker::GetFirstDone() const
+{
+    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::eDone];
+
+    CReadLockGuard guard(m_Lock);
+    unsigned int job_id = bv.get_first();
+    return job_id;
+}
+
 void 
 CNetScheduler_JobStatusTracker::x_SetClearStatusNoLock(
                                             unsigned int job_id,
@@ -218,6 +227,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/23 19:16:38  kuznets
+ * Implemented garbage collection thread
+ *
  * Revision 1.4  2005/02/22 16:13:00  kuznets
  * Performance optimization
  *

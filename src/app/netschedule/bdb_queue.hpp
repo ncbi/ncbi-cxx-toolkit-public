@@ -47,6 +47,7 @@
 #include <map>
 
 #include "job_status.hpp"
+#include "queue_clean_thread.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -63,7 +64,8 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldInt4         failed;          ///< Number of job failures
     CBDB_FieldUint4        time_submit;     ///< Job submit time
     CBDB_FieldUint4        time_run;        ///<     run time
-    CBDB_FieldUint4        time_done;       ///<     complete time
+    CBDB_FieldUint4        time_done;       ///<     result submission time
+    CBDB_FieldUint4        timeout;         ///<     individual timeout
 
     CBDB_FieldUint4        worker_node1;    ///< IP address of worker node 1
     CBDB_FieldUint4        worker_node2;    ///< reserved
@@ -91,6 +93,7 @@ struct SQueueDB : public CBDB_File
         BindData("time_submit", &time_submit);
         BindData("time_run",    &time_run);
         BindData("time_done",   &time_done);
+        BindData("timeout",     &timeout);
 
         BindData("worker_node1", &worker_node1);
         BindData("worker_node2", &worker_node2);
@@ -119,6 +122,11 @@ struct SLockedQueue
     auto_ptr<CBDB_FileCursor>       cur;
     CFastMutex                      lock;
     CNetScheduler_JobStatusTracker  status_tracker;
+
+    // queue parameters
+    int                             timeout;
+
+    SLockedQueue() : timeout(3600) {}
 };
 
 /// Queue database manager
@@ -142,6 +150,8 @@ public:
     /// Collection takes ownership of queue
     void AddQueue(const string& name, SLockedQueue* queue);
 
+    const TQueueMap& GetMap() const { return m_QMap; }
+
 private:
     CQueueCollection(const CQueueCollection&);
     CQueueCollection& operator=(const CQueueCollection&);
@@ -162,11 +172,18 @@ public:
     ~CQueueDataBase();
 
     void Open(const string& path, unsigned cache_ram_size);
-    void MountQueue(const string& queue_name);
+    void MountQueue(const string& queue_name,
+                    int           timeout);
     void Close();
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }
 
+    /// Remove old jobs
+    void Purge();
+    void StopPurge();
+
+    void RunPurgeThread();
+    void StopPurgeThread();
 
     /// Main queue entry point
     ///
@@ -194,14 +211,27 @@ public:
 
         CNetScheduleClient::EJobStatus 
         GetStatus(unsigned int job_id) const;
+
+        /// Delete if job is done and timeout expired
+        ///
+        /// @return TRUE if job has been deleted
+        ///
+        bool CheckDelete(unsigned int job_id);
+
+        /// Delete batch_size jobs
+        /// @return
+        ///    Number of deleted jobs
+        unsigned CheckDeleteBatch(unsigned batch_size);
     private:
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
+
     private:
         CQueue(const CQueue&);
         CQueue& operator=(const CQueue&);
+
     private:
-        CQueueDataBase& m_Db;
-        SLockedQueue&   m_LQueue;
+        CQueueDataBase& m_Db;      ///< Parent structure reference
+        SLockedQueue&   m_LQueue;  
     };
 
 protected:
@@ -220,6 +250,13 @@ private:
     CFastMutex                      m_IdLock;
 
     bm::bvector<>                   m_UsedIds; /// id access locker
+    CRef<CJobQueueCleanerThread>    m_PurgeThread;
+
+    bool                            m_StopPurge;   ///< Purge stop flag
+    CFastMutex                      m_PurgeLock;
+    unsigned int                    m_PurgeLastId; ///< m_MaxId at last Purge
+    unsigned int                    m_PurgeSkipCnt;///< Number of purge skipped
+
 };
 
 
@@ -229,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/02/23 19:16:38  kuznets
+ * Implemented garbage collection thread
+ *
  * Revision 1.5  2005/02/22 16:13:00  kuznets
  * Performance optimization
  *

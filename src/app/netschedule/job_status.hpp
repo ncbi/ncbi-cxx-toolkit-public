@@ -74,6 +74,9 @@ public:
     /// 0 - no pending jobs
     unsigned int GetPendingJob();
 
+    /// Get first job id from DONE status
+    unsigned int GetFirstDone() const;
+
     /// Set job status without logic control.
     /// @param status
     ///     Status to set (all other statuses are cleared)
@@ -167,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/23 19:16:38  kuznets
+ * Implemented garbage collection thread
+ *
  * Revision 1.1  2005/02/08 16:42:55  kuznets
  * Initial revision
  *

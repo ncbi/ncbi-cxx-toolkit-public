@@ -51,8 +51,10 @@
 #include <connect/netschedule_client.hpp>
 
 #include <bdb/bdb_expt.hpp>
+#include <bdb/bdb_cursor.hpp>
 
 #include "bdb_queue.hpp"
+#include <db.h>
 
 #if defined(NCBI_OS_UNIX)
 # include <signal.h>
@@ -355,7 +357,7 @@ void CNetScheduleServer::Process(SOCK sock)
                 SetShutdownFlag();
                 break;
             case eVersion:
-                WriteMsg(socket, "OK:", "NCBI NetSchedule server version=0.1");
+                WriteMsg(socket, "OK:", "NCBI NetSchedule server version=0.2");
                 break;
             case eLogging:
             case eStatistics:
@@ -381,6 +383,19 @@ void CNetScheduleServer::Process(SOCK sock)
     catch (CNetServiceException &ex)
     {
         ERR_POST("Server error: " << ex.what());
+    }
+    catch (CBDB_ErrnoException& ex)
+    {
+        int err_no = ex.BDB_GetErrno();
+        if (err_no == DB_RUNRECOVERY) {
+            ERR_POST(
+              "Fatal Berkeley DB error: DB_RUNRECOVERY. "
+              "Emergency shutdown initiated!");
+            SetShutdownFlag();
+        } else {
+            ERR_POST(Error << "BDB Error : " 
+                           << ex.what());
+        }
     }
     catch (CBDB_Exception &ex)
     {
@@ -860,7 +875,7 @@ int CNetScheduleDApp::Run(void)
 
         string qname = "noname";
         LOG_POST(Info << "Mounting queue: " << qname);
-        qdb->MountQueue(qname); // default queue
+        qdb->MountQueue(qname, 3600); // default queue
 
 
         // Scan and mount queues
@@ -873,10 +888,15 @@ int CNetScheduleDApp::Run(void)
             const string& sname = *it;
             NStr::SplitInTwo(sname, "_", tmp, qname);
             if (NStr::CompareNocase(tmp, "queue") == 0) {
-                LOG_POST(Info << "Mounting queue: " << qname);
-                qdb->MountQueue(qname);
+                int timeout = 
+                   reg.GetInt(sname, "timeout", 3600, 0, IRegistry::eReturn);
+                LOG_POST(Info << "Mounting queue: " << qname
+                              << " Timeout: " << timeout);
+                qdb->MountQueue(qname, timeout);
             }
         }
+
+        qdb->RunPurgeThread();
 
         // Init threaded server
         int port = 
@@ -955,6 +975,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/23 19:16:38  kuznets
+ * Implemented garbage collection thread
+ *
  * Revision 1.6  2005/02/22 16:13:00  kuznets
  * Performance optimization
  *
