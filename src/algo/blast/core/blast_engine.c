@@ -316,14 +316,21 @@ BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* quer
          Blast_HSPListsMerge(hsp_list, &combined_hsp_list, hsp_num_max, offset,
             (Boolean)(prelim_traceback || !score_options->gapped_calculation));
       } /* End loop on chunks of subject sequence */
-      
-      Blast_HSPListAppend(combined_hsp_list, hsp_list_out, hsp_num_max);
+
+      if (Blast_HSPListAppend(combined_hsp_list, hsp_list_out, hsp_num_max)) {
+         status = 1;
+         break;
+      }
+ 
       combined_hsp_list = Blast_HSPListFree(combined_hsp_list);
    } /* End loop on frames */
 
    /* Restore the original contents of the subject block */
    subject->length = orig_length;
    subject->sequence = orig_sequence;
+
+   if (status) 
+      return status;
 
    hsp_list = *hsp_list_out;
 
@@ -346,7 +353,7 @@ BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* quer
                      score_options->gapped_calculation, gap_align->sbp);
    }
    
-   /* Discard HSPs that don't pass the e-value test */
+   /* Discard HSPs that don't pass the e-value test. */
    status = Blast_HSPListReapByEvalue(hsp_list, hit_options);
 
    /* If there are no HSPs left, destroy the HSP list too. */
@@ -692,6 +699,8 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    /* iterate over all subject sequences */
    while ( (seq_arg.oid = BlastSeqSrcIteratorNext(seq_src, itr)) 
            != BLAST_SEQSRC_EOF) {
+      if (seq_arg.oid == BLAST_SEQSRC_ERROR)
+         break;
       if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
           continue;
 
@@ -716,11 +725,15 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
             seq_arg.seq->length); 
       }
 
-      BLAST_SearchEngineCore(program_number, query, query_info,
-         seq_arg.seq, lookup_wrap, gap_align, score_params, word_params, 
-         ext_params, hit_params, db_options, diagnostics, aux_struct, 
-         &hsp_list);
+      status = 
+         BLAST_SearchEngineCore(program_number, query, query_info,
+            seq_arg.seq, lookup_wrap, gap_align, score_params, word_params, 
+            ext_params, hit_params, db_options, diagnostics, aux_struct, 
+            &hsp_list);
  
+      if (status)
+         break;
+
       if (hsp_list && hsp_list->hspcnt > 0) {
          if (program_number == eBlastTypeBlastn) {
             if (prelim_traceback || !gapped_calculation) {
