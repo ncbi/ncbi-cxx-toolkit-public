@@ -236,7 +236,7 @@ class CNcbiApplication
 public:
    int AppMain (int argc, const char **argv, const char **envp,
    EAppDiagStream diag, const char* config, const string&amp; name);
-  
+
    virtual void Init();
    virtual int  Run () = 0;
    virtual void Exit();
@@ -309,8 +309,14 @@ where that class is defined, <i>corelib/ncbiapp.hpp</i>, in the
 <b><i>include/</i></b>
 directory. This header file in turn includes <i>corelib/ncbistd.hpp</i>,
 which should <i>always</i> be <i>#include</i>'d.
+
 <p><i><a href="../index.html">up&nbsp;</a></i> <i><a href="argdescr.html">next&nbsp;</a></i>
-<hr>
+
+<br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <tr>
 <td>

@@ -1,14 +1,14 @@
 <!--#set var="TITLE" value="NCBI C++ Object Manager library" -->
 <!--#set var="DOCROOT" value="../.." -->
 <!--#include virtual="../../ssi/header.shtml" -->
-     
 
-<div align="Center">   
+
+<div align="Center">
 <h1>Object Manager.</h1>
 </div>
 
 
-     
+
 <h2>Classes - definition.</h2>
 <p>
 Here we define Object Manager's key classes and their behavior:
@@ -41,16 +41,16 @@ Scopes to communicate.  This is a barely visible entity.
 </p>
 
 
-     
+
 <h3><a name="Scope"></a>Scope.</h3>
 <p>
 Scope is a top-level object available to a client. Its purpose is
-to  define  a scope of visibility and reference resolution and provide access 
+to  define  a scope of visibility and reference resolution and provide access
 to the  bio sequence data.
 </p>
 
 
-     
+
 <h3><a name="Data_loader"></a>Data loader.</h3>
 <p>
 Data loader is a link between in-process data storage and remote,
@@ -58,7 +58,7 @@ out-of process data source. Its purpose is to communicate with a remote
 data source, receive data from there, understand what is already received
 and what is  missing, and pass data to the local storage (Data source).
 Data loader maintains   its own index of what data is loaded already and
-references that data in  the Data source.       
+references that data in  the Data source.
 </p>
 
 
@@ -69,11 +69,11 @@ this  object to obtain any sequence data. Data source creates and maintains
 internal  indices to facilitate information search. Data source may contain
 data of several  top-level
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQSET.HTML">Seq_entries</a>.
-In case client pushes an externally constructed Seq_entry object 
+In case client pushes an externally constructed Seq_entry object
 in  the  Scope, such object is stored in a separate Data source. In this case
 Data  source has only one top-level Seq_entry. From the other side, when
 Data source  is linked to a Data loader, it will contain all top-level Seq_entries
-retrieved  by that loader.       
+retrieved  by that loader.
 </p>
 
 
@@ -88,22 +88,22 @@ from the Scope.
 </p>
 
 
-     
+
 <h3><a name="Bioseq_core"></a>Bioseq core.</h3>
 Bioseq core is partially populated Bioseq, or, better say, Bioseq
-as  it  is loaded at the moment.       
+as  it  is loaded at the moment.
 
 
 <h3><a name="Seq_map"></a>Seq map.</h3>
 <p>
-Seq map contains a general information about the sequence &#8211; location 
+Seq map contains a general information about the sequence &#8211; location
 and   type of data only.
 </p>
 
 
 <h3><a name="Seq_vector"></a>Seq vector.</h3>
 <p>
-Seq vector contains sequence data only.       
+Seq vector contains sequence data only.
 </p>
 
 
@@ -111,9 +111,9 @@ Seq vector contains sequence data only.
 <p>
 Description iterator traverses bio sequence descriptions
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/BIOSEQ.HTML">Seq_descr</a>)
-in the Seq_entry. It starts with the description(s) of requested 
-sequence    (Bioseq) and then retrieves all sequence descriptions iterating 
-through  the  tree nodes up to the top-level Seq_entry. Starting Bioseq is 
+in the Seq_entry. It starts with the description(s) of requested
+sequence    (Bioseq) and then retrieves all sequence descriptions iterating
+through  the  tree nodes up to the top-level Seq_entry. Starting Bioseq is
 defined  by sequence  id
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQLOC.HTML">Seq_id</a>).
 Descriptions do not contain information about what Bioseq they
@@ -122,23 +122,23 @@ on the tree.
 </p>
 
 
-     
+
 <h3><a name="Annotation_iterator"></a>Annotation iterator.</h3>
 <p>
-Annotation iterators are utility classes for traversing sequence annotation 
-data. Each annotation contains a reference to one or more regions on one 
-or more sequences (Bioseq). From one point of view this is good, because 
-we can always say which sequences are related to the given annotation. From 
-the other point of view, this creates a lot of problems, since an annotation 
-referencing the sequence may be stored in another sequence/Seq_entry/tree. 
-The annotation iterators attempt to find all objects related to the given 
-location in all Data sources from the current Scope. Data sources create 
+Annotation iterators are utility classes for traversing sequence annotation
+data. Each annotation contains a reference to one or more regions on one
+or more sequences (Bioseq). From one point of view this is good, because
+we can always say which sequences are related to the given annotation. From
+the other point of view, this creates a lot of problems, since an annotation
+referencing the sequence may be stored in another sequence/Seq_entry/tree.
+The annotation iterators attempt to find all objects related to the given
+location in all Data sources from the current Scope. Data sources create
 indexes for all annotations by their locations.
 </p>
 <p>
 There are three specialized annotation iterator classes:
 </p>
-     
+
 <ul>
   <li>Feature  iterator &#8211; traverses sequence features
     (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQFEAT.HTML">Seq_feat</a>);</li>
@@ -149,6 +149,11 @@ There are three specialized annotation iterator classes:
 </ul>
 
 
+<br>
 
-     
+<!--#include virtual="../../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
+
 <!--#include virtual="../../ssi/footer.shtml" -->

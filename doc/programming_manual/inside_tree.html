@@ -273,11 +273,11 @@ For each <b><i>proj_name</i></b> listed in <i><a href="#musr">USR_PROJ</a></i>,
 <i>Makefile.meta</i> first tests to see if <i>Makefile.proj_name</i> is
 available in the current <i>build</i> directory, and if so, executes:</li>
 
-<pre><font size=-1>   make -f Makefile.proj_name builddir="$(builddir)" 
+<pre><font size=-1>   make -f Makefile.proj_name builddir="$(builddir)"
       srcdir="$(srcdir)" $(MFLAGS)</font></pre>
 Otherwise, <i>Makefile.meta</i> assumes the required makefile is in the
 project's source directory, and executes:
-<pre><font size=-1>   make -f $(srcdir)/Makefile.proj_name builddir="$(builddir)" 
+<pre><font size=-1>   make -f $(srcdir)/Makefile.proj_name builddir="$(builddir)"
       srcdir="$(srcdir)" $(MFLAGS)</font></pre>
 In either case, the important thing to note here is that the commands contained
 in the project's makefiles are executed directly and are <i>not</i> combined
@@ -466,10 +466,16 @@ of <i>Makefile.in</i> files, all require re-running the <i>configure</i>
 script, as these actions require the creation/deletion of subdirectories
 in the <i>build</i> tree and/or the creation/deletion of the associated
 <i>Makefile</i> in those directories.
-<p><i><a href="sub_tree.html">previous&nbsp;</a></i>&nbsp;&nbsp; 
+
+<p><i><a href="sub_tree.html">previous&nbsp;</a></i>&nbsp;&nbsp;
 <i><a href="../index.html">up&nbsp;</a></i>&nbsp;&nbsp;&nbsp;
 <i><a href="objects.html">next</a></i>
-<hr>
+
+<br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <tr>
 <td>

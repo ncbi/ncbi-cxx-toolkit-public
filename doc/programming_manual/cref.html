@@ -5,7 +5,7 @@
 <h1> Smart Pointers: the <i>CObject</i> and <i>CRef</i> Classes</h1>
 
 <ul>
-  <li> <a href="#autoptr"> <i>STL auto_ptrs</i> </a> 
+  <li> <a href="#autoptr"> <i>STL auto_ptrs</i> </a>
   <li> <a href="#cref"> The <i>CRef</i> Class </a>
   <li> <a href="#cobject"> The <i>CObject</i> Class </a>
   <li> <a href="#exmpl"> The <i>CObjectFor</i> class: Using smart pointers for standard types</a>
@@ -15,8 +15,8 @@
 <a name="autoptr"></a>
 <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-utilities.html#lib.auto.ptr">
  <h3> <i>STL auto_ptrs</i> </h3> </a>
-C programmers are well-acquainted with the advantages and pitfalls of using pointers. As is often 
-the case, the good news is also the bad news: 
+C programmers are well-acquainted with the advantages and pitfalls of using pointers. As is often
+the case, the good news is also the bad news:
 <ul>
 <li> memory can be dynamically allocated as needed, but may not be deallocated as needed, due
 	  to unanticipated execution paths;
@@ -25,14 +25,14 @@ the case, the good news is also the bad news:
 </ul>
 C++ adds some additional considerations to pointer management: STL containers cannot hold <i>
 reference</i> objects, so you are left with the choice of using either pointers or <i>copies</i>
-of objects. Neither choice is attractive, as pointers can cause memory leaks and the copy 
+of objects. Neither choice is attractive, as pointers can cause memory leaks and the copy
 constructor may be expensive. </p>
 
 The idea behind a C++ <i>smart pointer</i> is to create a wrapper class capable of holding a
 pointer.  The wrapper class's constructors and destructors can then handle memory management as
 the object goes in and out of scope. The problem with this solution is that it does not handle
 multiple pointers to the same resource properly, and it raises the issue of ownership. This is
-essentially what the 
+essentially what the
 <a href="../lxr/ident?i=auto_ptr">
 <i>auto_ptr</i></a> offers, but this strategy is only safe to use when the
 resource maps to a single pointer variable.<p>
@@ -54,8 +54,8 @@ the <i>delete[]</i> operation is executed twice for the same pointer. <p>
 
 Even if this first problem did not occur - for example if only one <i>auto_ptr</i> had been
 defined - the second problem occurs when we try to dereference <i>ip</i>. The
-<i>delete</i> operation occurring as the block exits has now reset <i>*ip</i> to <i>0</i>, 
-so an attempt to divide by zero occurs. 
+<i>delete</i> operation occurring as the block exits has now reset <i>*ip</i> to <i>0</i>,
+so an attempt to divide by zero occurs.
 
 <a name="cref"></a>
 <a href="../docxx/CRef.html"><h3>The <i>CRef</i> Class </h3></a>
@@ -64,7 +64,7 @@ These issues are addressed in the NCBI C++ Toolkit by using <i>reference-counted
 pointers: a resource cannot be deallocated until <i>all</i> references to it have ceased to
 exist. The implementation of a smart pointer in the NCBI C++ Toolkit is actually divided
 between two classes:
-<a href="../docxx/CRef.html"> <i>CRef</i></a> and 
+<a href="../docxx/CRef.html"> <i>CRef</i></a> and
 <a href="../docxx/CObject.html">
 <i>CObject</i></a>. <p>
 
@@ -91,10 +91,10 @@ destructors, its interface to the <i>CObject</i> pointer includes access/mutate 
  <dt><i>CRefBase& operator=(const CRefBase& ref)</i>
 </dl>
 Both the <i>Release()</i> and <i>Reset()</i> functions set the <i>CRef</i> object's <i>m_ptr</i> to
-0, thus effectively removing the reference to its <i>CObject</i>. There are important distinctions 
-between these two functions however. The <i>Release()</i> method removes the reference without 
-destroying the object, while the <i>Reset()</i> method may lead to the destruction of the 
-object if there are no other references to it. 
+0, thus effectively removing the reference to its <i>CObject</i>. There are important distinctions
+between these two functions however. The <i>Release()</i> method removes the reference without
+destroying the object, while the <i>Reset()</i> method may lead to the destruction of the
+object if there are no other references to it.
 <p>
 If the <i>CObject</i>'s internal reference count is 1 at the time <i>Release()</i> is invoked,
 that reference count will be decremented to 0, and a pointer to the <i>CObject</i> is
@@ -123,8 +123,8 @@ href="traverse.html#accessMember"> <i>Traversing an ASN.1 Data Structure</i></a>
 
 As described there, this <i>typedef</i> defines <i>TId</i> to be a list of pointers to
 <a href="../docxx/CBiostruc_id.html">
-<i>CBiostruc_id</i></a> objects. And as you might expect, <i>CBiostruc_id</i> is a 
-specialized subclass of  <i>CObject</i>. 
+<i>CBiostruc_id</i></a> objects. And as you might expect, <i>CBiostruc_id</i> is a
+specialized subclass of  <i>CObject</i>.
 <p>
 
 <a name="cobject"></a>
@@ -133,11 +133,11 @@ specialized subclass of  <i>CObject</i>.
 The <i>CObject</i> class serves as a base class for all objects requiring a reference
 count. There is little overhead entailed by deriving a new class from this base
 class, and most objects in the NCBI C++ Toolkit are derived from the <i>CObject</i> class.
-For example, 
+For example,
 <a href="../docxx/CNCBINode.html">
 <i>CNCBINode</i></a> is a direct descendant of <i>CObject</i>, and all of the other
-<i>HTML</i> classes descend either directly or indirectly from <i>CNCBINode</i>. Similarly, all 
-of the ASN.1 classes defined in the 
+<i>HTML</i> classes descend either directly or indirectly from <i>CNCBINode</i>. Similarly, all
+of the ASN.1 classes defined in the
 <a href="../lxr/source/include/objects">
 <i>include/objects</i></a> directory, as well as many of the classes defined in the
 <a href="../lxr/source/include/serial">
@@ -148,7 +148,7 @@ The <i>CObject</i> class contains a single private data member, the reference co
 set of member functions which provide an interface to the reference counter. As such, it is
 truly a base class which has no stand-alone utility, as it does not even provide allocation
 for data values. It is the <i>descendant</i> classes, which inherit all the functionality of
-the <i>CObject</i> class, that provide the necessary richness in representation and 
+the <i>CObject</i> class, that provide the necessary richness in representation and
 allocation required for the widely diverse set of objects implemented in the NCBI
 C++ Toolkit. Nevertheless, it is often necessary to use smart pointers on simple data types,
 such as <i>int</i>, <i>string</i> etc. The <i>CObjectFor</i> class, described below, was
@@ -161,10 +161,10 @@ designed for this purpose.
 
 The <i>CObjectFor</i> class is derived directly from <i>CObject</i>, and is implemented as a
 template class whose argument specifies the standard type that will be pointed to. In addition to
-the reference counter inherited from its parent class, <i>CObjectFor</i> has a private 
+the reference counter inherited from its parent class, <i>CObjectFor</i> has a private
 data member of the parameterized type, and a member function <i>GetData()</i> to access it.<p>
 
-An example program, <a href="smart_cpp.html"> <i>smart.cpp</i></a>, uses the 
+An example program, <a href="smart_cpp.html"> <i>smart.cpp</i></a>, uses the
 <a href="../docxx/CRef.html">
 <i>CRef</i></a> and <a href="../docxx/CObjectFor.html">
 <i>CObjectFor</i></a> classes, and demonstrates the differences in memory management that arise
@@ -177,8 +177,8 @@ using <i>CRef</i> objects instead. <p>
 
 In the first case, the original <i>auto_ptr,
 orig_ap,</i> becomes NULL at the moment when ownership is transferred to
-<i>copy_ap</i> by the copy constructor.  Using <i>CRef</i> objects however, the reference 
-contained in the original <i>CRef</i> remains accessible (via <i>orig</i>) in all blocks where <i>orig</i> 
+<i>copy_ap</i> by the copy constructor.  Using <i>CRef</i> objects however, the reference
+contained in the original <i>CRef</i> remains accessible (via <i>orig</i>) in all blocks where <i>orig</i>
 is defined. Moreover, the reference itself, i.e. the object pointed to, continues to exist
 until <i>all</i> references to it have been removed.
 
@@ -194,7 +194,7 @@ example:
 {
     int *num = new int(5);
     ComplexFunction (num);
-    delete num;   
+    delete num;
     ...
 }
 </pre>
@@ -217,7 +217,11 @@ it is sufficient to use a <i>CRef</i> on the containing object only.
 &nbsp;&nbsp;&nbsp;
 <!--a href="typeinfo.html"> <i> next</i> </a -->
 
-	 <hr>
+	 <br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>

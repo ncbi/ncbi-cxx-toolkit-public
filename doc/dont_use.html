@@ -27,7 +27,7 @@
 	 <br>
 	 <a name="ref_STL_Stream"></a> <h3>Old vs. new stream classes</h3>
 
-	 <p> 
+	 <p>
 	 <p> <i>#include &lt;corelib/ncbistre.hpp&gt;</i>
        &nbsp;&nbsp;[also included in <i>&lt;corelib/ncbistd.hpp&gt;</i>]
 
@@ -97,7 +97,7 @@
 	 Don't use <i>hash</i> or the <i>rope</i> classes from
 	 some versions of the STL.
 	 These are non-standard additions. If you have questions about what
-	 is/isn't in the standard library, consult the 
+	 is/isn't in the standard library, consult the
 	 <a href="http://www.cygnus.com/misc/wp/">C++ standards</a>.</p>
 
 
@@ -143,7 +143,7 @@ class CFoo {
 <pre>
 class CFoo {
     .............................
-private: 
+private:
     // Prohibit default initialization and assignment
     CFooClass(const CFooClass&) { _TROUBLE; }
     CFooClass& operator=(const CFooClass&) { _TROUBLE;  return *this; }
@@ -175,8 +175,12 @@ private:
 	 The C routine may use "realloc()" or "free()" on the items, which can cause
 	 memory corruption if you allocated using "new."
 
-	 <br>
-	 <hr>
+     <br>
+
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:lewisg@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
@@ -184,5 +188,5 @@ private:
 		<tr>
 		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td></tr>
 	 </table>
-  
+
 <!--#include virtual="./ssi/footer.shtml" -->

@@ -658,7 +658,7 @@ and printed out in <i>eHTML</i> mode. For example:
 will generate the output:
 <pre>&lt;p>text&lt;/p></pre>
 whereas:
-<pre>(new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout, 
+<pre>(new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout,
    CNCBINode::ePlainText);</pre>
 will generate:
 <pre>\n TEXT \n</pre>
@@ -1626,9 +1626,14 @@ See also <i><a href="#CPagerBox">CPagerBox</a></i> and <i><a href="#CPager">CPag
 <p>&nbsp;</dl>
 &nbsp;&nbsp;&nbsp; <a href="cgi.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp;
 
-<i><a href="../index.html">up&nbsp;</a></i>&nbsp;&nbsp; 
+<i><a href="../index.html">up&nbsp;</a></i>&nbsp;&nbsp;
 <i><a href="htmlcgi.html">next</a></i>
-<hr>
+
+<br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <tr>
 <td>

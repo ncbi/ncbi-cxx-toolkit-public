@@ -34,11 +34,11 @@ to the discussion of
 <i>NCBI C++ CGI Classes</i></a> in the Reference Manual.
 
 <a name="overview"></a><h3> Overview of the CGI classes </h3>
-Figure 1 illustrates the layered design of the CGI classes. 
+Figure 1 illustrates the layered design of the CGI classes.
 <br><br>
 <center><img SRC="cgi.gif"><br><br>Figure 1</center><br>
 
-This design is best described by starting with a consideration of the capabilities 
+This design is best described by starting with a consideration of the capabilities
 one might need to implement a CGI program, including:
 
 <ul>
@@ -77,9 +77,9 @@ as in Fast-CGI.
 
 The application's <i>ProcessRequest</i> member function is an abstract function that
 must be implemented for each application project. In most cases, this
-function will access the query and the environment variables via the <i>CCgiContext</i>, 
+function will access the query and the environment variables via the <i>CCgiContext</i>,
 using <i>ctx.GetRequest()</i> and <i>ctx.GetConfig()</i>. The application may then
-service the request using its resource's <i>HandleRequest()</i> method. The context's 
+service the request using its resource's <i>HandleRequest()</i> method. The context's
 response object can then be used to send an appropriate response. <p>
 
 These classes are described in more detail below, along with abbreviated synopses of the
@@ -90,21 +90,21 @@ declarations are generally not included here. Certain virtual functions and data
 that have no meaning outside of a web application are also omitted. For complete
 definitions, refer to the header files via the source browsers.
 
-<a name="ccgiapp"></a> 
+<a name="ccgiapp"></a>
 <a href="../docxx/CCgiApplication.html">
 <h3> The CCgiApplication class </h3></a>
-As mentioned, the <i>CCgiApplication </i> class implements its own version of 
+As mentioned, the <i>CCgiApplication </i> class implements its own version of
 <a href="../lxr/ident?i=Init">
-<i>Init()</i></a>, where it instantiates a <a href="#cncbires"><i>CNcbiResource</i></a> object using 
-<i>LoadResource()</i>. 
+<i>Init()</i></a>, where it instantiates a <a href="#cncbires"><i>CNcbiResource</i></a> object using
+<i>LoadResource()</i>.
 <a href="../lxr/ident?i=Run">
 <i>Run</i></a> is no longer a pure virtual
 function in this subclass, and its implementation now calls <i>CreateContext(),
-ProcessRequest()</i>, and <i>CCgiContext::GetResponse()</i>. The <i>CCgiApplication</i> 
+ProcessRequest()</i>, and <i>CCgiContext::GetResponse()</i>. The <i>CCgiApplication</i>
 class does <i>not</i> have
 a <i>CCgiContext</i> data member, since the application object can participate in multiple
-<i>CCgiContext</i>s. Instead, a local variable in each <i>Run()</i> invocation stores a pointer to the 
-context created there. The <i>LoadServerContext()</i> member function is used in web applications such 
+<i>CCgiContext</i>s. Instead, a local variable in each <i>Run()</i> invocation stores a pointer to the
+context created there. The <i>LoadServerContext()</i> member function is used in web applications such
 as the <a href="../tools.html#ref_TableTools"> <i>query</i></a> program, where it is necessary
 to store more complex run-time data with the context object. The <i>CCgiServerContext</i>
 object returned by this function is stored as a data member of a <i>CCgiContext</i>, and is
@@ -116,9 +116,9 @@ class CCgiApplication : public CNcbiApplication
     friend class CCgiContext;
 
 public:
-    
-    void Init(void); 
-    void Exit(void); 
+
+    void Init(void);
+    void Exit(void);
     int Run(void);
 
     CNcbiResource& GetResource(void);
@@ -139,7 +139,7 @@ private:
 </pre>
 
 If the program was <i>not</i> compiled as a Fast-CGI application (or the environment does
-not support Fast-CGI), then 
+not support Fast-CGI), then
 <a href="../lxr/ident?i=RunFastCGI">
 <i> RunFastCGI()</i></a> will return <i>false</i>. Otherwise, a "Fast-CGI loop" will be
 iterated over <i>def_iter</i> times, with the initialization methods and
@@ -150,7 +150,7 @@ program.
 
 <a name="cncbires"></a>
 <a href="../docxx/CNcbiResource.html">
-<h3> The CNcbiResource</a> and 
+<h3> The CNcbiResource</a> and
 <a href="../docxx/CNcbiCommand.html">
 CNcbiCommand</a> classes </h3>
 
@@ -178,16 +178,16 @@ public:
     void AddCommand(CNcbiCommand* command);
     virtual void HandleRequest(CCgiContext& ctx);
 
-protected:   
+protected:
 
-    CNcbiRegistry& m_config;  
+    CNcbiRegistry& m_config;
     TCmdList m_cmd;
 };CNcbiDbPresentatio
 </pre>
 
 The <i>AddCommand()</i> method is used when a resource is being initialized, to add
 commands to the command list.  Given a <i>CCgiRequest</i> object defined in a particular
-context <i>ctx</i>, 
+context <i>ctx</i>,
 <a href="../lxr/ident?i=HandleRequest">
 <i>HandleRequest(ctx)</i></a> compares entries in the context's request to
 commands in <i>m_cmd</i>. The first command in <i>m_cmd</i> which <i>matches</i>
@@ -207,7 +207,7 @@ public:
 
     CNcbiCommand(CNcbiResource& resource);
 
-    virtual CNcbiCommand* Clone(void) const = 0; 
+    virtual CNcbiCommand* Clone(void) const = 0;
     virtual string GetName() const = 0;
     virtual void Execute(CCgiContext& ctx) = 0;
     virtual bool IsRequested(const CCgiContext& ctx) const;
@@ -255,30 +255,30 @@ information as "gettable" properties. Cached properties include:
 
 <ul>
   <li> server properties such as the server name, gateway interface, and server port
-  <li> client properties (the remote host and remote address) 
+  <li> client properties (the remote host and remote address)
   <li> client data properties (content type and content length of the request)
   <li> request properties including the request method, query string, and path information
   <li> authentication information such as the remote user and remote identity
-  <li> standard HTTP properties (from the HTTP header) 
+  <li> standard HTTP properties (from the HTTP header)
 </ul>
-These properties are keyed to an enumeration named 
+These properties are keyed to an enumeration named
 <a href="../docxx/ECgiProp.html">
 <i>ECgiProp</i></a>, and can be retrieved using the request object's <i>GetProperty()</i>
 member function.  For example, <i>GetProperty(eCgi_HttpCookie)</i> is used to access
 cookies from the HTTP Header, and <i> GetProperty(eCgi_RequestMethod)</i> is used to
 determine where the query string should be read from. <p>
 
-<font color="red">NOTE:</font> 
+<font color="red">NOTE:</font>
 
 Setting <i>$QUERY_STRING without</i> also setting <i>$REQUEST_METHOD</i> will result in a
 failure by <i>x_init()</i> to read the input query.
 
 <i>x_init()</i> first looks for the definition of <i>$REQUEST_METHOD</i>, and
 depending on if it is <i>GET</i> or <i>POST</i>, reads the query from the environment or the
-input stream respectively. 
+input stream respectively.
 
 If the environment does not define <i>$REQUEST_METHOD</i>, then <i>x_Init()</i> will
-try to read the query string from the command line only. 
+try to read the query string from the command line only.
 
 <pre>
 class CCgiRequest {
@@ -287,8 +287,8 @@ public:
     CCgiRequest(const CNcbiArguments*, const CNcbiEnvironment*,
 		CNcbiIstream*, TFlags);
 
-    static const string& GetPropertyName(ECgiProp prop);    
-    const string& GetProperty(ECgiProp prop) const;         
+    static const string& GetPropertyName(ECgiProp prop);
+    const string& GetProperty(ECgiProp prop) const;
     size_t GetContentLength(void) const;
     const CCgiCookies& GetCookies(void) const;
     const TCgiEntries& GetEntries(void) const;
@@ -303,14 +303,14 @@ private:
     auto_ptr&lt;CNcbiEnvironment> m_OwnEnv;
     TCgiEntries m_Entries;
     CCgiCookies m_Cookies;
-};  
+};
 </pre>
 This abbreviated definition of the <i>CCgiRequest</i> class highlights its primary
 functionalities:
 <ol>
 <li> to parse and store the &lt;<i>key=value</i>> pairs contained in the query
 string (stored in <i>m_Entries</i>)
-<li> to parse and store the cookies contained in the HTTP header (stored in 
+<li> to parse and store the cookies contained in the HTTP header (stored in
 <i>m_Cookies</i>)
 </ol>
 As implied by the "T" prefix,
@@ -327,7 +327,7 @@ href="#ccgicoo"><i>CCgiCookie</i></a>, and implements an interface to this set.<
 The <i>CCgiResponse</i> class provides an interface to the program's output
 stream (usually <i>cout</i>) - which is the sole argument to the constructor for <i>CCgiResponse</i>.
 The output stream can be accessed by the program using <i>CCgiResponse::GetOutput()</i>, which
-returns a pointer to the output stream, or, using <i>CCgiResponse::out()</i>, which returns 
+returns a pointer to the output stream, or, using <i>CCgiResponse::out()</i>, which returns
 a reference to that stream. <p>
 
 In addition to implementing controlled access to the output stream, the primary function
@@ -336,7 +336,7 @@ of the response. For example, a typical sequence in the implementation of a part
 command's execute function might be:
 
 <pre>
-MyCommand::Execute(CCgiContext& ctx) 
+MyCommand::Execute(CCgiContext& ctx)
 {
     // ... generate the output and store it in MyOutput
 
@@ -347,24 +347,24 @@ MyCommand::Execute(CCgiContext& ctx)
 }
 </pre>
 Any cookies that are to be sent with the response are included in the headers
-generated by the response object.<p> 
+generated by the response object.<p>
 
 Two member functions are provided for outputting HTML headers: <i>WriteHeader()</i>
 and <i>WriteHeader(CNcbiOstream&)</i>. The second of these is for writing
 to a specified stream other than the default stream stored with the response object.
 Thus, <i>WriteHeader(out())</i> is equivalent to <i>WriteHeader()</i>. <p>
 
-The <i>WriteHeader()</i> function begins by invoking <i>IsRawCgi()</i> to 
-see if the application is a 
+The <i>WriteHeader()</i> function begins by invoking <i>IsRawCgi()</i> to
+see if the application is a
 <a href="http://absolut.banki.hu/~asoka/www.mcp.com/818640000/0-7897/0-7897-0740-3/ch4.htm#NonParsedHeaders">
 <i>non-parsed header</i></a> program. If so, then the
 first header put on the output stream is an HTTP status line, taken from the
 private static data member, <i>sm_HTTPStatusDefault</i>. Next, unless the content
-type has been set by the user (using <i>SetContentType()</i>), a default content 
-line is written, using <i>sm_ContentTypeDefault</i>. Any cookies stored in 
+type has been set by the user (using <i>SetContentType()</i>), a default content
+line is written, using <i>sm_ContentTypeDefault</i>. Any cookies stored in
 <i>m_Cookies</i> are then written, followed by any additional headers stored
 with the request in <i>m_HeaderValues</i>. Finally, a new line is written
-to separate the body from the headers. 
+to separate the body from the headers.
 
 
 <pre>
@@ -386,9 +386,9 @@ public:
     CCgiCookies& Cookies(void);		        // Get cookies set
     CNcbiOstream* SetOutput(CNcbiOstream* out); // Set default output stream
     CNcbiOstream* GetOutput(void) const;        // Query output stream
-    CNcbiOstream& out(void) const;              // Conversion to ostream 
+    CNcbiOstream& out(void) const;              // Conversion to ostream
                                                 // to enable <<
-    void Flush() const;			        
+    void Flush() const;
 
     CNcbiOstream& WriteHeader(void) const;      // Write HTTP response header
     CNcbiOstream& WriteHeader(CNcbiOstream& out) const;
@@ -412,9 +412,9 @@ protected:
 
 The traditional means of maintaining state information when servicing a multi-step request
 has been to include <i>hidden</i> input elements in the query strings passed to subsequent
-URLs. The newer preferred method uses 
+URLs. The newer preferred method uses
 <a href="http://home.netscape.com/newsref/std/cookie_spec.html">
-HTTP cookies</a>, which 
+HTTP cookies</a>, which
 provide the server access to client-side state information stored with the client.
 The cookie is a text string consisting of four key=value pairs:
 
@@ -429,15 +429,15 @@ The <i>CCgiCookie</i> class provides means of creating, modifying,
 and sending cookies. The constructor requires at least two arguments, specifying the
 <i>name</i> and <i>value</i> of the cookie, along with the optional <i>domain</i> and
 <i>path</i> arguments. Format errors in the arguments to the constructor (see <a
-href="#appendix"> Appendix</a>) will cause the invalid argument to be thrown. 
+href="#appendix"> Appendix</a>) will cause the invalid argument to be thrown.
 The <i>CCgiCookie::Write(CNcbiOstream&)</i> member function creates a <i>Set-Cookie</i>
 directive using its private data members, and places the resulting string on the specified
 output stream:<p>
 
-Set-Cookie: <i>m_Name=m_Value</i>; expires=<i>m_Expires</i>; path=<i>m_Path</i>; 
+Set-Cookie: <i>m_Name=m_Value</i>; expires=<i>m_Expires</i>; path=<i>m_Path</i>;
 domain=<i>m_Domain</i>; <i>m_Secure</i>
 
-<p>As with the constructor, and in compliance with the proposed standard 
+<p>As with the constructor, and in compliance with the proposed standard
 (<a href="ftp://ftp.isi.edu/in-notes/rfc2109.txt">RFC 2109</a>), only the
 name and value are mandatory in the directive.
 
@@ -453,13 +453,13 @@ public:
 
     CNcbiOstream& Write(CNcbiOstream& os) const;
 
-    void Reset(void);		
+    void Reset(void);
     void CopyAttributes(const CCgiCookie& cookie);
     void SetValue  (const string& str);
     void SetDomain (const string& str);
     void SetPath   (const string& str);
     void SetExpDate(const tm& exp_date);
-    void SetSecure (bool secure);     
+    void SetSecure (bool secure);
 
     const string& GetValue  (void) const;
     const string& GetDomain (void) const;
@@ -510,13 +510,13 @@ Many of the operations on a <i>CCgiCookies</i> object involve iterating over the
 and the class's type definitions support these activities by
 providing built-in iterators and a typedef for the set, <i>TSet</i>. <p>
 
-The <i>Add()</i> methods provide a variety of options for creating and adding new cookies to the set. 
-As with the constructor, a single string of name-value pairs may be used to create and add <i>N</i> 
-cookies to the set at once. Previously created cookies can also be added to the set individually or 
+The <i>Add()</i> methods provide a variety of options for creating and adding new cookies to the set.
+As with the constructor, a single string of name-value pairs may be used to create and add <i>N</i>
+cookies to the set at once. Previously created cookies can also be added to the set individually or
 as sets. Similarly, the <i>Remove()</i> methods allow individual cookies or sets of cookies (in the
 specified range) to be removed. All of the remove functions destroy the removed cookies when
-<i>destroy==true</i>. <i>CCgiCookies::Write(CNcbiOstream&)</i> iteratively invokes the <i>CCgiCookie::Write()</i> 
-on each element. 
+<i>destroy==true</i>. <i>CCgiCookies::Write(CNcbiOstream&)</i> iteratively invokes the <i>CCgiCookie::Write()</i>
+on each element.
 
 <pre>
 class CCgiCookies {
@@ -528,7 +528,7 @@ public:
     typedef pair&lt;TCIter, TCIter>   TCRange;
 
     CCgiCookies(void);		     // create empty set of cookies
-    CCgiCookies(const string& str);  
+    CCgiCookies(const string& str);
     // str = "name1=value1; name2=value2; ..."
 
     bool Empty(void) const;
@@ -537,8 +537,8 @@ public:
                     const string& domain = NcbiEmptyString,
                     const string& path   = NcbiEmptyString);
 
-    CCgiCookie* Add(const CCgiCookie& cookie);  
-    void Add(const CCgiCookies& cookies); 
+    CCgiCookie* Add(const CCgiCookie& cookie);
+    void Add(const CCgiCookies& cookies);
     void Add(const string& str);
     // "name1=value1; name2=value2; ..."
 
@@ -554,7 +554,7 @@ public:
 
 private:
     TSet m_Cookies;
-};  
+};
 </pre>
 
 <a name="ccgictx"></a>
@@ -567,7 +567,7 @@ object, corresponding to its data members <i>m_app, m_request</i>, and
 last three data members are only used in complex web applications such as the <a
 href="../tools.html#ref_TableTools"> <i>query</i></a> program, where it is necessary to store
 more complex run-time data with the context object.  The message buffer is essentially an STL
-list of string objects whose class definition 
+list of string objects whose class definition
 (<a href="../lxr/ident?i=CCtxMsgString"><i>CCtxMsgString</i></a>)
 includes a <i>Write()</i> output function. <i>GetServCtx()</i> returns <i>m_srvCtx</i> if it
 has been defined and otherwise, calls the application's
@@ -597,7 +597,7 @@ public:
     bool EmptyMsg(void);			// true iff m_lmsg is empty
     void ClearMsg(void);			// delete all messages in m_lmsg
 
-    string GetRequestValue(const string& name) const;    
+    string GetRequestValue(const string& name) const;
     void AddRequestValue(const string& name, const string& value);
     void RemoveRequestValues(const string& name);
     void ReplaceRequestValue(const string& name, const string& value);
@@ -605,8 +605,8 @@ public:
 private:
 
     CCgiApplication&	  m_app;
-    auto_ptr&lt;CCgiRequest> m_request;  
-    CCgiResponse	  m_response; 
+    auto_ptr&lt;CCgiRequest> m_request;
+    CCgiResponse	  m_response;
     mutable string	  m_selfURL;
     list&lt;CCtxMsg*>        m_lmsg;		// message buffer
 
@@ -614,12 +614,12 @@ private:
     // defined by CCgiApplication::LoadServerContext()
 
     friend class CCgiApplication;
-}; 
+};
 </pre>
 
 <a name=xmpl></a><h3>Example code using the CGI classes</h3>
-The <a href="../tools.html#ref_TableTools"> <i>hello</i></a> program demonstrates a 
-simple application that combines the NCBI C++ Toolkit's CGI and HTML classes. 
+The <a href="../tools.html#ref_TableTools"> <i>hello</i></a> program demonstrates a
+simple application that combines the NCBI C++ Toolkit's CGI and HTML classes.
 <a href="cgi_cpp.html"><i>justcgi.cpp</i></a> is an adaptation of
 that program, stripped of all HTML references with additional request-processing added.
 <p>
@@ -635,12 +635,12 @@ The application defines two classes of commands:<p>
 Executing <pre>./cgi 'cmd1=init&cmd2=reply'</pre> results in execution of only <i>cmd1</i>,
 as does executing <pre>./cgi 'cmd2=reply&cmd1=init'</pre> The commands are matched in the
 order that they are registered with the resource - not according to the order in which
-they occur in the request. The assumption is that only the first entry (if any) in the query 
-actually specifies a command, and that the remaining entries provide optional arguments 
-to that command. 
+they occur in the request. The assumption is that only the first entry (if any) in the query
+actually specifies a command, and that the remaining entries provide optional arguments
+to that command.
 The <a href="make_cgi.html"> Makefile</a> for this example links
-to both the <i>xncbi</i> and <i>xcgi</i> libraries. 
-Additional examples using the CGI classes can be found in 
+to both the <i>xncbi</i> and <i>xcgi</i> libraries.
+Additional examples using the CGI classes can be found in
 <a href="../lxr/source/src/cgi/test/">
 <i>src/cgi/test</i></a>.
 
@@ -663,7 +663,11 @@ Additional examples using the CGI classes can be found in
 &nbsp;&nbsp;&nbsp;
 <a href="webpgs.html"> <i> next</i> </a>
 
-	 <hr>
+	 <br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>

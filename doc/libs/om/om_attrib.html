@@ -31,18 +31,18 @@
 
 <h3><a name="Object_manager"></a>Object manager.</h3>
 <p>
-Before being able to use any Scopes, a client must 
+Before being able to use any Scopes, a client must
 create and initialize Object Manager
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CObjectManager">CObjectManager</a>).
 Initialization functions include registration of Data loaders,
-some  of which may be declared as default ones. All   default Data  
+some  of which may be declared as default ones. All   default Data
 loaders are added  to a Scope when the latter asks for them.   All Data
 loaders are  named, so Scopes may refer to them by name. Another   kind
 of data object is
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeq_entry">CSeq_entry</a>
-&#8211; it does not require any data loader, but also 
-may   be  registered  with the Object Manager. Seq.entry may not be 
-a default  data object.                       
+&#8211; it does not require any data loader, but also
+may   be  registered  with the Object Manager. Seq.entry may not be
+a default  data object.
 </p>
 
 <h4>Object methods:</h4>
@@ -69,13 +69,13 @@ a default  data object.
 <p>
 Scope
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CScope">CScope</a>)
-is designed to be a lightweight object, which could be  easily  
+is designed to be a lightweight object, which could be  easily
 created     and destroyed. Scope may even be created on the stack  &#8211; as
-an  automatic    object.  Scope is populated with data by adding data loaders 
+an  automatic    object.  Scope is populated with data by adding data loaders
 or  already   created  Seq_entries  to it. Data loader can only be added by
-name,  that   is it must  be registered  with the Object Manager beforehand. 
-It is  impossible  to add  a data loader  directly to the scope or remove 
-it. Once  an externally  created  Seq_entry is added to a Scope, it should 
+name,  that   is it must  be registered  with the Object Manager beforehand.
+It is  impossible  to add  a data loader  directly to the scope or remove
+it. Once  an externally  created  Seq_entry is added to a Scope, it should
 not be modified  any more.  Safe solution  would  be creating a copy of the
 Seq_entry and storing  it  instead of the original  - this was refused because
 bio sequences may contain  huge amount of data and copying it without a
@@ -92,7 +92,7 @@ good  reason is impractical in most cases.
     bool AddDefaults(void);
     // Add data loader by name (the loader must be known to Object Manager)
     bool AddDataLoader(string LoaderName);
-    // Add seq_entry    
+    // Add seq_entry
     bool AddTopLevelSeqEntry(CSeq_entry&amp; TopEntry);
 
     // Add annotations to a seq-entry (seq or set)
@@ -118,8 +118,8 @@ When a client wants to access a bio sequence data, it asks
 the Scope for a Bioseq handle
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CBioseq_Handle">CBioseq_Handle</a>).
 Bioseq handle object is responsible for resolving    any internal
-references  in the sequence. It has comparison operators,  which   make 
-sense   only for objects created by the same Scope. It is impossible    
+references  in the sequence. It has comparison operators,  which   make
+sense   only for objects created by the same Scope. It is impossible
 to compare Bioseq   handles created by different Scopes.
 </p>
 
@@ -230,8 +230,8 @@ the same   Scope. It may not access other Scopes.
 <p>
 Seqmap
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeqMap">CSeqMap</a>)
-object gives a general description of the bio sequence data: location 
-and type only without data itself. The object may only be constructed 
+object gives a general description of the bio sequence data: location
+and type only without data itself. The object may only be constructed
 by   a Bioseq handle.
 </p>
 
@@ -254,7 +254,7 @@ by   a Bioseq handle.
     CSegmentInfo&amp; operator= (const CSegmentInfo&amp; seg);
     bool operator== (const CSegmentInfo&amp; seg) const;
     bool operator&lt;  (const CSegmentInfo&amp; seg) const;
-    // Sequence interval description 
+    // Sequence interval description
     ESegmentType GetType(void) const;
     TSeqPosition GetPosition(void) const;
     TSeqLength   GetLength(void) const;
@@ -288,21 +288,21 @@ data objects the sequence refers to.
 
 <h4>Object methods:</h4>
 <pre>
-    // Constructors 
+    // Constructors
     CDesc_CI(const CBioseq_Handle&amp; handle);
     CDesc_CI(const CDesc_CI&amp; iter);
     CDesc_CI&amp; operator= (const CDesc_CI&amp; iter);
-    // Search for data 
+    // Search for data
     CDesc_CI&amp; operator++ (void);
     CDesc_CI&amp; operator++ (int);
-    // Validity check 
+    // Validity check
     operator bool (void) const;
-    // Data access operators 
+    // Data access operators
     const CSeq_descr&amp; operator*  (void) const;
     const CSeq_descr* operator-&gt; (void) const;
 </pre>
 <p>
-There is also another type of description iterator - 
+There is also another type of description iterator -
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeqdesc_CI">CSeqdesc_CI</a>.
 It is provided for convenience. Since
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeq_descr">CSeq_descr</a>
@@ -313,17 +313,17 @@ objects, it would be more convenient to enumerate the latters directly.
 
 <h4>Object methods:</h4>
 <pre>
-    // Constructors 
+    // Constructors
     CSeqdesc_CI(const CDesc_CI&amp; desc_it,
                 CSeqdesc::E_Choice choice = CSeqdesc::e_not_set);
     CSeqdesc_CI(const CSeqdesc_CI&amp; iter);
     CSeqdesc_CI&amp; operator= (const CSeqdesc_CI&amp; iter);
-    // Search for data 
+    // Search for data
     CSeqdesc_CI&amp; operator++ (void);
     CSeqdesc_CI  operator++ (int);
-    // Validity check 
+    // Validity check
     operator bool (void) const;
-    // Data access operators 
+    // Data access operators
     const CSeqdesc&amp; operator*  (void) const;
     const CSeqdesc* operator-> (void) const;
 </pre>
@@ -352,19 +352,19 @@ After that the    special  filtering  rules are to be applied:
     ignore dead entries. If all TSEs selected are dead, report an error - we
     cannot decide which one is acceptable. (The latest information about the
     ID sequence will always include good annotations for this sequence).</li>
-  <li>If multiple TSEs contain bioseqs, possibly identified by ID, and one 
-    of these TSEs has been recorded in the Scope's history, select this 
-    TSE    and  ignore other entries. If more than one TSE can be found in the 
-    Scope's    history,  report an error. (This means, the user has explicitly 
+  <li>If multiple TSEs contain bioseqs, possibly identified by ID, and one
+    of these TSEs has been recorded in the Scope's history, select this
+    TSE    and  ignore other entries. If more than one TSE can be found in the
+    Scope's    history,  report an error. (This means, the user has explicitly
     selected   a dead sequence  for his query).</li>
-  <li>If a TSE, containing only references to ID (but no bioseqs identified 
-    by ID) is live, include it into the resulting set. (Live TSE always 
-    contains      information, which may be used to describe the sequence, even 
+  <li>If a TSE, containing only references to ID (but no bioseqs identified
+    by ID) is live, include it into the resulting set. (Live TSE always
+    contains      information, which may be used to describe the sequence, even
     if the sequence     itself is already dead).</li>
-  <li>From dead TSEs not containing the ID bioseq itself select only those 
-    found in the scope's history. (Dead TSE means it is not good anymore 
-    and    should not be used to describe the ID sequence, no matter live or 
-    dead.  History  record means the user has explicitly selected the dead TSE 
+  <li>From dead TSEs not containing the ID bioseq itself select only those
+    found in the scope's history. (Dead TSE means it is not good anymore
+    and    should not be used to describe the ID sequence, no matter live or
+    dead.  History  record means the user has explicitly selected the dead TSE
     for his  query).</li>
 </ol>
 
@@ -374,17 +374,17 @@ The algorithm for selecting TSEs is as follows:
 
 <ol>
   <li>Select all TSEs, containing annotations with references to the ID;</li>
-  <li>Find all TSEs from the set selected in (1), containing bioseqs identified 
+  <li>Find all TSEs from the set selected in (1), containing bioseqs identified
     by ID;</li>
-  <li>Check the scope's history for TSEs found in (2). If there is more than 
-    one match - report an error. If there is one match, select it and ignore 
+  <li>Check the scope's history for TSEs found in (2). If there is more than
+    one match - report an error. If there is one match, select it and ignore
     others, proceed to (5). If there are no matches, proceed to (4).</li>
-  <li>Check whether any of the TSEs from the (2) set is live. If there is 
-    no live TSE and the set contains multiple dead TSEs, report an error. 
+  <li>Check whether any of the TSEs from the (2) set is live. If there is
+    no live TSE and the set contains multiple dead TSEs, report an error.
     Otherwise    select the live or the only dead TSE.</li>
   <li>From the set of TSEs found in (1) exclude all TSEs selected in (2).</li>
   <li>From (5) select live TSEs, include all in the resulting set.</li>
-  <li>From (5) select dead TSEs. From the resulting set select TSEs contained 
+  <li>From (5) select dead TSEs. From the resulting set select TSEs contained
     in the scope's history.</li>
 </ol>
 
@@ -505,6 +505,11 @@ data objects the sequence refers to.
 </pre>
 
 
+
+<br>
+<!--#include virtual="../../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
 
 
 <!--#include virtual="../../ssi/footer.shtml" -->

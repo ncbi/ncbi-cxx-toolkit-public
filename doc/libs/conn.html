@@ -17,7 +17,7 @@ inside NCBI users at:
     <li> <a href="#ref_Overview">Overview</a>
     <li> <a href="#ref_Connections">Connections</a>: notion of connection; different types of connections that library provides;
 	programming API.
-    <ul> 
+    <ul>
 	<li> <a href="#ref_SocketConnector">Socket Connector</a>
 	<li> <a href="#ref_FileConnector">File Connector</a>
 	<li> <a href="#ref_HTTPConnector">HTTP Connector</a>
@@ -254,7 +254,7 @@ if (!socket_connector)
     fprintf(stderr, "Cannot create SOCKET connector");
 else {
     CONN conn;
-  
+
     if (CONN_Create(socket_connector, &conn) != eIO_Success)
         fprintf(stderr, "CONN_Create failed");
     else {
@@ -310,7 +310,7 @@ describing file connector attributes, like initial read position to start from i
 to start writing at a specified file position), and the position in the output file, which is used in <i>seek</i> open mode.
 Attribute pointer passed as <tt>NULL</tt> is equivalent to a call to
 <i><b>FILE_CreateConnector()</b></i>, which reads from the very
-beginning of the input file, and entirely overwrites the output file (if any) implicitly using <i><b>eFCM_Truncate</b></i>. 
+beginning of the input file, and entirely overwrites the output file (if any) implicitly using <i><b>eFCM_Truncate</b></i>.
 
 <p>
 <hr>
@@ -348,19 +348,19 @@ where the HTTP server is running.<br>
 /* Network connection related configurable info struct
  */
 typedef struct {
-  char           client_host[64];  
+  char           client_host[64];
                  /* effective client hostname            */
-  char           host[64];         
+  char           host[64];
                  /* host to connect to                   */
-  unsigned short port;             
+  unsigned short port;
                  /* port to connect to, host byte order  */
-  char           path[1024];       
+  char           path[1024];
                  /* service: path(e.g. to  a CGI script) */
-  char           args[1024];       
+  char           args[1024];
                  /* service: args(e.g. for a CGI script) */
   <a href="../lxr/ident?i=EReqMethod">EReqMethod</a>     req_method;
                  /* method to use in the request         */
-  <a href="../lxr/ident?i=STimeout">STimeout</a>       timeout;          
+  <a href="../lxr/ident?i=STimeout">STimeout</a>       timeout;
                  /* i/o timeout                          */
   unsigned int   max_try;
                  /* max. # of attempts to establish conn */
@@ -380,7 +380,7 @@ typedef struct {
                  /* to disable local load-balancing      */
   const char*    <a name="ref_HttpUserHeader"></a>http_user_header;
                  /* user header to add to HTTP request   */
-  
+
   /* the following field(s) are for the internal use only! */
   int/*bool*/    http_proxy_adjusted;
 } <a href="../lxr/ident?i=SConnNetInfo">SConnNetInfo</a>;
@@ -411,7 +411,7 @@ to deal with this structure:
   <li> Registry section named <tt>[CONN]</tt> using <tt>name</tt> as a key;
   <li> And finally, default value is applied, if none of the above resulted in a successful match.
   </ul>
-  
+
   Search for the keys in both environment and registry is not case-sensitive; but the values of the keys are case-sensitive
   (except for enumerated types and boolean values, which can be of any -&nbsp;even mixed&nbsp;- case).
   Boolean fields accept <tt>1</tt>, <tt>"YES"</tt> and <tt>"TRUE"</tt> as <tt>true</tt> values, all other values are
@@ -437,7 +437,7 @@ to deal with this structure:
 
 <a name="ref_Registry"></a><b><u>Note about the registry</u></b>. The registry used by <tt>connect</tt> library is
 separate from <a href="../programming_manual/registry.html"><b><i>CNcbiRegistry</i></b></a> class.
-To learn more about the difference, and how to use both objects together in 
+To learn more about the difference, and how to use both objects together in
 a single program, please follow <a href="c_cxx.html">this link</a>.
 
 <p>
@@ -506,16 +506,16 @@ typedef int/*bool*/ (*FHttpParseHTTPHeader)
 (const char* http_header,
  void*       adjust_data,
  int/*bool*/ server_error);
- 
+
 typedef int/*bool*/ (*FHttpAdjustInfo)
 (SConnNetInfo* info,
  void*         adjust_data,
  unsigned int  n_failed);
- 
+
 typedef void (*FHttpAdjustCleanup)
 (void* adjust_data
  );
- 
+
 extern CONNECTOR <a href="../lxr/ident?i=HTTP_CreateConnectorEx">HTTP_CreateConnectorEx</a>
 (const SConnNetInfo*  net_info,
  THCC_Flags           flags,
@@ -584,7 +584,7 @@ The library provides two forms of connector's constructor:
 <a href="../lxr/ident?i=SERVICE_CreateConnector">SERVICE_CreateConnector</a>(const char* service_name);
 
 <a href="../lxr/ident?i=SERVICE_CreateConnectorEx">SERVICE_CreateConnectorEx</a>
-(const char*           service_name, 
+(const char*           service_name,
                        /* The registered name of an NCBI service */
  <a href="../lxr/ident?i=TSERV_Type">TSERV_Type</a>            types,
                        /* Accepted server types, bitmask         */
@@ -604,7 +604,7 @@ and accessible by the outside world. Special dispatcher (which runs on the <a hr
 allows automatic switching to the appropriate server without
 having the client to know <i>a priori</i> the connection point. That is,
 the client just uses the main entry gate of the NCBI Web (usually, <a href="http://www.ncbi.nlm.nih.gov"><tt>www.ncbi.nlm.nih.gov</tt></a>)
-with a request to have a service "<i>service_name</i>", and depending on the service availability, the request will be either 
+with a request to have a service "<i>service_name</i>", and depending on the service availability, the request will be either
 <a href="http://www.ncbi.nlm.nih.gov/Service/dispd.cgi?service=io_bounce" onclick="javascript:io_bounce.submit(); return false">honored</a> (by switching and routing the client to the machine
 actually running the server: clicking on the previous link should bring you
 to a page containing "name=value" message, obtained from the special bouncing
@@ -693,7 +693,7 @@ else if (CONN_Create(c, &conn) != eIO_Success)
 else {
     static const char buffer[] = "Data to pass to the server";
     size_t n_written;
-    
+
     CONN_Write(conn, buffer, sizeof(buffer) - 1, &n_written);
     ...
 }
@@ -848,12 +848,12 @@ The code below is a C++-style example from the previous section devoted to the
 <a href="#ref_ServiceConnector">service connector</a>:
 <pre>
 #include &lt;connect/ncbi_conn_stream.hpp&gt;
-  
+
   try {
     <a href="../lxr/ident?i=CConn_HttpStream">CConn_HttpStream</a> ios("io_bounce", fSERV_StatelessOnly, 0);
     ios << "Data to be passed to the server";
   } <a href="../lxr/ident?i=STD_CATCH_ALL">STD_CATCH_ALL</a>("Connection problem");
-  
+
   ...
 </pre>
 <u>Note</u>:
@@ -1000,7 +1000,7 @@ static void s_Reset(void* data)
 
 /* 'Iter' is an internal service iterator used by service connector; it must
  *  remain open.
- * 'Data' is what we supplied among extra-parameters in connector's 
+ * 'Data' is what we supplied among extra-parameters in connector's
     constructor.
  */
 static const SSERV_Info* s_GetNextInfo(<a href="../lxr/ident?i=SERV_ITER">SERV_ITER</a> iter, void* data)
@@ -1015,7 +1015,7 @@ static const SSERV_Info* s_GetNextInfo(<a href="../lxr/ident?i=SERV_ITER">SERV_I
         while ((info = <a href="../lxr/ident?i=SERV_GetNextInfoEx">SERV_GetNextInfoEx</a>(iter, &amp;env)) != 0) {
             const char* c;
             for (c = env; c; c = strchr(c, '\n')) {
-                if (strncmp(c == env ? c : ++c, ENV_DB_KEY, 
+                if (strncmp(c == env ? c : ++c, ENV_DB_KEY,
                             sizeof(ENV_DB_KEY)-1) == 0) {
                     /* Our keyword has been detected in environment */
                     /* for this host */
@@ -1066,12 +1066,12 @@ int main(int argc, char* argv[])
 
     /* Now we can use <a href="../lxr/ident?i=CONN_Read">CONN_Read()</a>, <a href="../lxr/ident?i=CONN_Write">CONN_Write()</a> etc to operate with
      * connection, and we are assured that the connection is made only
-     * to the server on such a host which has "db_name" specified in 
+     * to the server on such a host which has "db_name" specified in
      * configuration file of <a href="../tools/dispatcher/LBSMD.html">LBSMD</a>.
      */
 
     ...
-    <a href="../lxr/ident?i=CONN_Close">CONN_Close</a>(conn); 
+    <a href="../lxr/ident?i=CONN_Close">CONN_Close</a>(conn);
     /* this also calls cleanup of user data provided in params */
 
     return 0;
@@ -1095,7 +1095,11 @@ each thread has an individual TCP connection created when a client
 connects to the server's listening port.
 
 <p>
-<hr>
+
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 <table border=0 width="100%" cellspacing=0>
 <tr>
 <td align=left>

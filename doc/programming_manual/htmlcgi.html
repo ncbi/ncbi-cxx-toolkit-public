@@ -12,7 +12,7 @@
 
 <a name="intro"></a> <h3>Introduction </h3>
 The previous two chapters described the NCBI C++ Toolkit's <a href="cgi.html"> CGI</a> and
-<a href="webpgs.html"> HTML</a> classes, with an emphasis on their independence from one 
+<a href="webpgs.html"> HTML</a> classes, with an emphasis on their independence from one
 another. In practice however, a real application must employ both types of objects, with
 a good deal of inter-dependency. <p>
 
@@ -85,7 +85,7 @@ feature. The <i>submit</i> button generates a fresh page with the new query stri
 <a name="design"></a><h3> Program design: Distributing the work</h3>
 <p>
 The program uses three classes: <i>CCar, CCarAttr</i>, and <i>CCarCgi</i>. The <i>CCar</i> class
-knows nothing about HTML nodes or CGI objects - its only functions are to store the currently 
+knows nothing about HTML nodes or CGI objects - its only functions are to store the currently
 selected color and features, and compute the resulting price:
 <font color="#808080"><pre>
 class CCar
@@ -102,7 +102,7 @@ public:
     string GetColor(void) const;
     string GetPrice(void) const;
     const set&lt;string>& GetFeatures() const;
-  
+
 private:
     set&lt;string> m_Features;
     string      m_Color;
@@ -125,9 +125,9 @@ private:
 };
 </pre></font>
 
-Both of these classes are defined in a header file which is <i>#include</i>'d in the <i>*.cpp</i> 
+Both of these classes are defined in a header file which is <i>#include</i>'d in the <i>*.cpp</i>
 files. Finally, the application class does most of the actual work, and this class must know
-about <i>CCar, CCarAttr, HTML,</i> and <i>CGI</i> objects. The <i>CCarCgi</i> class has the following 
+about <i>CCar, CCarAttr, HTML,</i> and <i>CGI</i> objects. The <i>CCarCgi</i> class has the following
 interface:
 
 <font color="#808080"><pre>
@@ -156,10 +156,10 @@ The source code is distributed over three files:
  <li> <a href="CARdemo/car.cpp"><i>car.cpp</i></a>
  <li> <a href="CARdemo/car_cgi.cpp"><i>car_cgi.cpp</i></a>
 </ol>
-The <i>CCar</i> and <i>CCarAttr</i> classes are defined in <i>car.hpp</i>, and 
+The <i>CCar</i> and <i>CCarAttr</i> classes are defined in <i>car.hpp</i>, and
 implemented in <i>car.cpp</i>. Both the class definition and implementation for the
 CGI application class are in <i>car_cgi.cpp</i>. With this design, only the application
-class will be affected by changes made to either the HTML or CGI class objects. 
+class will be affected by changes made to either the HTML or CGI class objects.
 
 The additional files needed to compile and run the program are:
 <ol>
@@ -175,7 +175,11 @@ The additional files needed to compile and run the program are:
 &nbsp;&nbsp;&nbsp;
 <a href="cgi_diag.html"> <i> next</i> </a>
 
-	 <hr>
+	 <br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>

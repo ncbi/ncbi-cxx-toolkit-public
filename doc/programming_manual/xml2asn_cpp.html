@@ -8,8 +8,8 @@
 <font color = "green">
 #include &lt;corelib/ncbistd.hpp&gt;
 #include &lt;corelib/ncbiapp.hpp&gt;
-#include &lt;serial/serial.hpp&gt;		
-#include &lt;serial/objistr.hpp&gt;	
+#include &lt;serial/serial.hpp&gt;
+#include &lt;serial/objistr.hpp&gt;
 #include &lt;serial/objostr.hpp&gt;
 #include &lt;objects/mmdb1/Biostruc.hpp&gt;
 
@@ -40,7 +40,7 @@ int CTestAsn::Run() {
     return 0;
 }
 
-int main(int argc, const char* argv[]) 
+int main(int argc, const char* argv[])
 {
     CNcbiOfstream diag("asntrans.log");
     SetDiagStream(&diag);
@@ -49,5 +49,10 @@ int main(int argc, const char* argv[])
     return theTestApp.AppMain(argc, argv);
 }
 </pre>
+
+<br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
 
 <!--#include virtual="../ssi/footer.shtml" -->

@@ -27,17 +27,17 @@ public:
     CCgiResource(CNcbiRegistry& config)
       : CNcbiResource(config) {}
 
-    virtual ~CCgiResource() {};   
-   
+    virtual ~CCgiResource() {};
+
     // defines the command to be executed when no other command matches
     virtual CNcbiCommand* GetDefaultCommand( void ) const;
-    
+
 };
 
 <font color="blue">class</font> CCgiCommand : public CNcbiCommand
 {
 public:
-  
+
     CCgiCommand( CNcbiResource& resource ) : CNcbiCommand(resource) {};
     virtual ~CCgiCommand( void ) {};
 
@@ -47,8 +47,8 @@ public:
 protected:
 
     CCgiResource& GetCgiResource() const
-        { 
-	  return dynamic_cast&lt;CCgiResource&>( GetResource() ); 
+        {
+	  return dynamic_cast&lt;CCgiResource&>( GetResource() );
 	}
 
     virtual string GetEntry() const { return string("cmd"); }
@@ -86,5 +86,10 @@ protected:
 <font color="green">
 #endif /* CGI_HPP */
 </pre>
+
+<br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
 
 <!--#include virtual="../ssi/footer.shtml" -->

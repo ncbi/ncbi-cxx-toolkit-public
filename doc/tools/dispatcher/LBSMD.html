@@ -292,7 +292,7 @@ TestService STANDALONE :9999 S=yes R=2000
 # NCBID server (Note empty quotes to prevent treating of Regular as
 # an argument. Also note bar (|) followed by path and parameters of
 # the executable.)
-TestService NCBID '' Regular | 
+TestService NCBID '' Regular |
    /home/webuser/TestService/a.out "parameter 1"
 
 # Local HTTP service w/o checks (note [0])
@@ -405,12 +405,16 @@ As soon as the server is down, <tt>LBSMD</tt> detects it in the matter of severa
 In some circumstances the following command may come handy:
 <pre>
 <font color="navy">&gt; ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 0 host'</font>
-</pre> 
+</pre>
 it resets the penalty to&nbsp;0 (no penalty) and is useful when, e.g. as for the previous example, the server is restarted
 and ready in less than 120 seconds but the penalty is still held high by <tt>LBSMD</tt>.
 
-<p>
-<hr>
+
+<br>
+<!--#include virtual="../../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 <table border=0 width="100%" cellspacing=0>
 <tr>
 <td align=left>

@@ -42,12 +42,12 @@ static void FullerBrushMan (const CPerson& p) {
 int main(int argc, char** argv)
 {
 <font color = "red">    // Instantiate a few CPerson objects </font>
-    CPerson neighborhood("Moe", "1 Main St", 
+    CPerson neighborhood("Moe", "1 Main St",
                          new CPerson("Larry", "2 Main St",
                                      new CPerson("Curly", "3 Main St", 0)));
 
-    CPerson another ("Harpo", "2 River Rd", 
-                     new CPerson("Chico", "4 River Rd", 
+    CPerson another ("Harpo", "2 River Rd",
+                     new CPerson("Chico", "4 River Rd",
                                  new CPerson("Groucho", "6 River Rd", 0)));
 
  <font color = "red">   // Create a CDistrict and install some CPerson objects </font>
@@ -76,5 +76,10 @@ int main(int argc, char** argv)
 }
 
 </pre>
+
+<br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
 
 <!--#include virtual="../ssi/footer.shtml" -->

@@ -34,9 +34,9 @@
 	 Whether a base class should be abstract or not depends on the
 	 potential for reuse.</p>
 	 <p>
-	 Don't expose complex member variables, rather expose member functions that 
+	 Don't expose complex member variables, rather expose member functions that
 	 manipulate the member variables.
-	 This increases reusability and flexibility. 
+	 This increases reusability and flexibility.
 	 For example, this frees you from having the string in-process -- it
 	 could be in another process or even on another machine. </p>
 	 <p>
@@ -56,7 +56,7 @@
 	 <h2>C++ Tips and Tricks</h2>
 
 	 <p>
-	 Writing something like <i>map&lt;int, int, less&lt;int&gt;&gt;</i> will give you 
+	 Writing something like <i>map&lt;int, int, less&lt;int&gt;&gt;</i> will give you
 	 weird errors; instead write <i>map&lt;int, int, less&lt;int&gt; &gt;</i>.
 	 This is because <i>&gt;&gt;</i> is reserved word. </p>
 	 <p>
@@ -66,10 +66,10 @@
 	 Use <i>const</i> (or <i>enum</i>) instead of <i>#define</i> when you can.
 	 This is much easier to debug. </p>
 
-	 
-<p> Header files should contain what they contain in C along with classes, const's, 
-  and in-line functions (in-line functions are functions defined within the braces 
-  of the class or declared <i>inline</i>. In-line functions must be in header 
+
+<p> Header files should contain what they contain in C along with classes, const's,
+  and in-line functions (in-line functions are functions defined within the braces
+  of the class or declared <i>inline</i>. In-line functions must be in header
   files as compilers need to see the source in order to inline properly.</p>
 
 <p><a href="http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html">g++
@@ -97,7 +97,7 @@ might not build shared libraries properly on Solaris without
 	 rather it returns a iterator just beyond the last element of the container.
 	 This is so you can do constructs like
 <pre>
-for (iterator = container.begin();  
+for (iterator = container.begin();
      iterator != container.end();  iterator++)
 </pre>
 	 If you want to access the end element, use "--<i>container.end()</i>".
@@ -107,26 +107,26 @@ for (iterator = container.begin();
 	 <p>
 	 Iterators are guaranteed to remain valid after insertion and deletion
 	 from list containers, but not vector containers.
-	 Check to see if the container you are using preserves iterators. 
+	 Check to see if the container you are using preserves iterators.
 	 <p>
 	 If you create a container of pointers to objects, the objects are not
 	 destroyed when the container is destroyed, only the pointers are.
 	 Other that maintaining the objects yourself, there are several strategies
 	 detailed in the <a href="books.html">literature</a>.
-	 
-<p> If you pass a container to a function, don't add a local object to the container. 
-  The local variable will be destroyed when you leave the function. 
-<p>When using Solaris make, the macro .KEEP_STATE can be used to track hidden 
-  dependencies, but this doesn't work well with Sunpro C++ 5.0 and STL. The reason 
-  is because the STL headers include files with names of the form *.cc. When make 
-  sees these files, it tries to compile them using the implicit makefile rules.One 
+
+<p> If you pass a container to a function, don't add a local object to the container.
+  The local variable will be destroyed when you leave the function.
+<p>When using Solaris make, the macro .KEEP_STATE can be used to track hidden
+  dependencies, but this doesn't work well with Sunpro C++ 5.0 and STL. The reason
+  is because the STL headers include files with names of the form *.cc. When make
+  sees these files, it tries to compile them using the implicit makefile rules.One
   workaround is to redefine the implicit rules to ignore *.cc: <br>
 <pre>
 .SUFFIXES:
 .SUFFIXES:  .o .c .h .hpp .cpp
 .cpp.o:
 $(CCC) $(CFLAGS) -c $&lt;
-and run make with "make -r" 
+and run make with "make -r"
 </pre>
 
 <p>
@@ -134,9 +134,9 @@ and run make with "make -r"
     to compose a library that defines template-based functions and
     classes for external use.
 
-<p> When declaring a map, use the form <i>map&lt;string, string, less&lt;string&gt; 
-  &gt;</i>. The third argument isn't necessary on most compilers, but SunPro 4.2 
-  is a bit old and needs it because it doesn't do default values for templates. 
+<p> When declaring a map, use the form <i>map&lt;string, string, less&lt;string&gt;
+  &gt;</i>. The third argument isn't necessary on most compilers, but SunPro 4.2
+  is a bit old and needs it because it doesn't do default values for templates.
 <p>
 	 SunPro 4.2 doesn't understand <i>&quot;using namespace std;&quot;</i>, and it
 	 was decided to prohibit the explicit use <i>&quot;using namespace XXX;&quot;</i>
@@ -150,11 +150,15 @@ and run make with "make -r"
 
 
 	 <br>
-	 <hr>
+
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:lewisg@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
 		  <td align=right>($Date$)</td></tr>
 	 </table>
-  
+
 <!--#include virtual="./ssi/footer.shtml" -->

@@ -17,7 +17,7 @@ public:
 
 <font color = "red">/////////////////////////////////////////////////////////////////
 //
-// 1. Install an auto_ptr to an int and make a copy - then try to 
+// 1. Install an auto_ptr to an int and make a copy - then try to
 //    reference the value from the original auto_ptr.
 //
 // 2. Do the same thing using CRefs instead of auto_ptrs.
@@ -30,7 +30,7 @@ int CTestApp::Run()
     orig_ap.reset(new int(5));
     {
         auto_ptr&lt;int&gt; copy_ap = orig_ap;
-        
+
         if ( !orig_ap.get() ) {
             cout << "orig_ap no longer exists - copy_ap = " << *copy_ap << endl;
         } else {
@@ -41,16 +41,16 @@ int CTestApp::Run()
     if ( orig_ap.get() ) {
         cout << "orig_ap = " << *orig_ap << endl;
     }
-      
+
     CRef&lt; CObjectFor&lt;int&gt; &gt; orig(new  CObjectFor&lt;int&gt;);
     *orig = 5;
     {
         CRef&lt; CObjectFor&lt;int&gt; &gt; copy = orig;
-    
+
         if ( !orig ) {
             cout << "orig no longer exists - copy = " << (int&) *copy << endl;
         } else {
-            cout << "orig = " << (int&) *orig << ", copy = " 
+            cout << "orig = " << (int&) *orig << ", copy = "
                  << (int&) *copy << endl;
         }
     }
@@ -61,11 +61,16 @@ int CTestApp::Run()
 }
 
 
-int main(int argc, const char* argv[]) 
+int main(int argc, const char* argv[])
 {
     CTestApp theTestApp;
     return theTestApp.AppMain(argc, argv);
 }
 </pre>
+
+<br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
 
 <!--#include virtual="../ssi/footer.shtml" -->

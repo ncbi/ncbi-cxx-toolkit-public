@@ -4,7 +4,7 @@
 
 
 
-     
+
 <div align="Center">
 <h1>Object Manager.</h1>
 </div>
@@ -59,13 +59,13 @@
 
 <h2>Testing.</h2>
 <p>
-The whole point of testing is to assure software quality. "Quality" 
-is   highly subjective term - it depends on who the customer is and their 
+The whole point of testing is to assure software quality. "Quality"
+is   highly subjective term - it depends on who the customer is and their
 overall   influence in the scheme of things.Testing involves operation of
-a software   system under controlled conditions and evaluating the results. 
-The controlled   conditions should include both normal and abnormal conditions. 
-Testing should   intentionally attempt to make things go wrong to determine 
-if things happen   when they shouldn't or things don't happen when they 
+a software   system under controlled conditions and evaluating the results.
+The controlled   conditions should include both normal and abnormal conditions.
+Testing should   intentionally attempt to make things go wrong to determine
+if things happen   when they shouldn't or things don't happen when they
 should.
 </p>
 
@@ -105,7 +105,7 @@ include.
 <h3>1.1. <a name="Basic_tests"></a>Basic tests.</h3>
 <p>
 No real bio sequence data.<br>
-Assumptions:          
+Assumptions:
 </p>
 
 <ul>
@@ -138,8 +138,8 @@ is  added.<br>
 Delete scope 3 - data loader 2 is alive.<br>
 Both scopes go out of scope - both scopes are deleted, both data
 loaders  are alive.<br>
-Object manager goes out of scope - both data loaders are deleted. 
-</p>           
+Object manager goes out of scope - both data loaders are deleted.
+</p>
 
 
 
@@ -153,7 +153,7 @@ be  created.<br>
 Delete scope on the heap - data source and seq_entry objects are
  alive.<br>
 Remaining scopes go out of scope - data source and seq_entry objects
-are   deleted.          
+are   deleted.
 </p>
 
 
@@ -162,7 +162,7 @@ are   deleted.
 <p>
 Create data loader 1.<br>
 Create scope and add default data loaders to it - nothing is added.<br>
-Add data loader 1 to scope (by name) - object manager generates 
+Add data loader 1 to scope (by name) - object manager generates
 an  exception    saying that such data loader is unknown.<br>
 Register data loader 1 with object manager as a non-default one.<br>
 Add default data loaders to scope - nothing is added.<br>
@@ -186,7 +186,7 @@ Artificially created bio sequences.<br>
 This includes existing testobjmgr1.cpp and testobjmgr1_mt.cpp programs.
 </p>
 
- 
+
 <h4>1.2.1. Bio sequences for testing.</h4>
 <p>
 1.2.1.1. Create one top-level Seq_entry with 2 sub-entries. Top-level entry
@@ -311,7 +311,7 @@ format.Compare it with the production FASTA generator.
 <p>
 Modify existing
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/tools/id1_fetch/id1_fetch.html">id1_fetch</a>
-application to use new object manager and data loader. Make sure both 
+application to use new object manager and data loader. Make sure both
 versions  give identical results:<br>
 2.1.2.1 Using bio sequences from the
 <a href="http://www.ncbi.nlm.nih.gov/dbEST/">Expressed Sequence Tags</a>
@@ -338,8 +338,8 @@ be  able to download data pointed to by an external link.
 <h4>2.1.4 Scope isolation (single thread)</h4>
 <p>
 The tests start with two scopes "looking" at the same data.<br>
-2.1.4.1. Add data to one of scopes. Make sure the data in scopes are now 
-different.   
+2.1.4.1. Add data to one of scopes. Make sure the data in scopes are now
+different.
 </p>
 
 
@@ -348,9 +348,9 @@ different.
 <h4>2.1.5 Scope isolation (multiple threads)</h4>
 <p>
 These tests start with scopes "looking" at the same data.<br>
-2.1.5.1 Add the same data to different scopes working in parallel threads. 
+2.1.5.1 Add the same data to different scopes working in parallel threads.
 Make sure the data is added correctly.<br>
-2.1.5.2 Add different data to different scopes working in parallel thread. 
+2.1.5.2 Add different data to different scopes working in parallel thread.
 Make sure the data is added correctly.
 </p>
 
@@ -382,7 +382,7 @@ of  the second thread is to overflow the memory cache.
 How fast does it work? The test should be done on highly splitted data.<br>
 2.3.1.Run GenBank formatter
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/tools/id1_fetch/id1_fetch.html">id1_fetch</a>)
-on the same GI several (3-7?) times, then run the same job in our test 
+on the same GI several (3-7?) times, then run the same job in our test
 program
 (<a href="#Functional_tests">2.1.2</a>)
 in a single and multiple threads on a single and multi-processor computer.
@@ -414,13 +414,15 @@ and complex ones
 2.5.1. There should be at least two scopes looking at the same bio sequence.
 During the work, the data in the database change. This should be adequately
 reflected in object manager's data.<br>
-2.5.2. Incorrect data? Probably it could be simulated by reading data 
+2.5.2. Incorrect data? Probably it could be simulated by reading data
 from  file.
 </p>
 
 
 
+<br>
+<!--#include virtual="../../ssi/navlinks.shtml" -->
 
+<!-- Begin footer content -->
 
-     
 <!--#include virtual="../../ssi/footer.shtml" -->

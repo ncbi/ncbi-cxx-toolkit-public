@@ -73,15 +73,15 @@ class. If you are working on a library which could be used with various
 RDBMS it is a good idea do not create the driver context inside the library,
 but take a pointer to
 <a href="../lxr/ident?i=I_DriverContext&d=C">I_DriverContext</a>
-instead. 
+instead.
 <p>
 There is no "real" factory for the driver contexts. The reason
 for that is it's not always possible to statically link in the same binary the
 RDBMS libraries from different vendors. Most of them are written in
-C and the name collisions do exist. The 
+C and the name collisions do exist. The
 <a href="../lxr/ident?i=C_DriverMgr&d=C">Driver Manager</a> helps to overcome
 this problem. It allowes to create a mixture of statically linked and dynamically loaded
-drivers and use them together in one executable. 
+drivers and use them together in one executable.
 <p>The driver context creates the connection which is RDBMS specific, but
 before returning it to the caller it puts it into an "envelope" of RDBMS independent
 object <a href="../docxx/CDB_Connection.html">CDB_Connection</a>.
@@ -505,8 +505,8 @@ It's not always known upfront which <i>NCBI DBAPI driver</i> will be used in
 some particular program. Sometimes you want a driver to be a parameter in your
 program. Sometimes you need to use two different drivers in one binary but can not
 link them statically because of name collisions. Sometimes you just need the driver
-contexts factory. The 
-<a href="../lxr/ident?i=C_DriverMgr&d=C">Driver Manager</a> is intended 
+contexts factory. The
+<a href="../lxr/ident?i=C_DriverMgr&d=C">Driver Manager</a> is intended
 to solve these problems.
 <p>Let's rewrite our <a href="#ref_SampleProgram">Sample program</a> using the
 <b>Driver Manager</b>. The original text was.
@@ -863,7 +863,7 @@ Caveats
 Cannot communicate with MS SQL server using any TDS version.
 </tt></dd>
 </ol></li>
-  
+
 </ul>
 
 
@@ -944,7 +944,7 @@ server 12.5, because the default version level (&lt;DBVERSION_UNKNOWN&gt;)
 is not working correctly with this server.
 </tt></dd>
 </ol></li>
-  
+
 </ul>
 
 
@@ -1016,7 +1016,7 @@ however it theoretically can cause memory exhaustion and at least some
 performance overhead if the blob is too big.
 </tt></dd>
 </ol></li>
-  
+
 </ul>
 
 
@@ -1116,7 +1116,7 @@ theoretically should be able to work with both MS SQL and SYBASE servers
 and can be pretty slow.
 </tt></dd>
 </ol></li>
-  
+
 </ul>
 
 
@@ -1124,7 +1124,11 @@ and can be pretty slow.
 
 
 <p>
-<hr>
+
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 <table border=0 width="100%" cellspacing=0>
 <tr>
 <td align=left>

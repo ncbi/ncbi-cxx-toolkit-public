@@ -5,13 +5,13 @@
 <h1> Writing a Simple Application Project </h1>
 
 This page describes what you will need to know to write the simplest possible
-NCBI application using the C++ Toolkit and libraries. The program simply 
+NCBI application using the C++ Toolkit and libraries. The program simply
 prints a message to the screen.  Following this exercise however, will introduce
 you to the foundation classes of the library and explicitly describe how
 to set up your work environment and makefiles.
 
 <ul>
-  <li> <a href="#overview"> Overview </a> 
+  <li> <a href="#overview"> Overview </a>
   <li> <a href="#makefiles"> The Project's Makefile </a>
   <li> <a href="#using"> Using the NCBI Application Class </a>
   <li> <a href="#creating"> Creating the Application Class </a>
@@ -45,7 +45,7 @@ Created a model makefile "/home/zimmerma/NewProj/Makefile.NewProj_app". </font>
 
 The syntax of the script command is:
 <center> <xmp>
-new_project.sh  project_name  <app | lib>  [builddir] 
+new_project.sh  project_name  <app | lib>  [builddir]
 </xmp></center>
 where:
 <dl>
@@ -57,7 +57,7 @@ where:
 Pre-built C++ Toolkit libraries are available for various platforms and compilers, in both
 <i> debug</i> and <i> release </i> mode. To see a list of the available libraries for
 the platform you are working on, consult <i>$NCBI/c++</i>. On the shell script command line, you should
-follow the library name with the subdirectory <i>/build</i>. For example, on <i>Solaris</i>, 
+follow the library name with the subdirectory <i>/build</i>. For example, on <i>Solaris</i>,
 the following libraries are currently available:
 
 <ul>
@@ -79,9 +79,9 @@ This is the file you just created with the above script - take a look
 at it. In addition to other things, you should see definitions for:
 
 <dl>
-  <dt> - <i> builddir </i> - the last argument to the above script 
+  <dt> - <i> builddir </i> - the last argument to the above script
   <dt> - <i> srcdir </i> - your current working directory (".")
-  <dt> - <i> the application name </i> (APP) 
+  <dt> - <i> the application name </i> (APP)
   <dt> - <i> the object name(s) </i> (OBJ)
   <dt> - <i> specific libraries to link to in the NCBI C++ Toolkit</i> (LIB)
   <dt> - <i> all other libraries to link to (outside the C++ Toolkit)</i> (LIBS)
@@ -103,7 +103,7 @@ single source file named <i>NewProj.cpp</i>. Additional source names can be adde
 For a very simple application, this makefile is ready to be run. Try it out now, by creating
 the file <i>NewProj.cpp</i>:
 
-<font color = "#008080"> 
+<font color = "#008080">
 <pre>
 // File name: NewProj.cpp
 
@@ -115,7 +115,7 @@ int main() {
     cout << "Hello again, world" << endl;
 }
 </pre>
-<font color = black> 
+<font color = black>
 
 and running: <i> make -f Makefile.NewProj_app</i>. <p>
 
@@ -151,7 +151,7 @@ C-style <i>main()</i> function, minimally, it must provide the same functionalit
  <li> A data structure for holding environmental variables
 </ul>
 
-In addition, the application class provides the same features previously implemented in 
+In addition, the application class provides the same features previously implemented in
 the C Toolkit, namely:
 <ul>
  <li> Mechanisms for specifying where, when, and how errors should be reported
@@ -161,11 +161,11 @@ the C Toolkit, namely:
 
 The mechansim to execute the application is provided by <i>CNcbiApplication</i>'s member
 function <i>Run()</i> - which you must write your own implementation of. The <i>Run()</i> function
-will be automatically invoked by <i>CNcbiApplication::AppMain()</i>, 
+will be automatically invoked by <i>CNcbiApplication::AppMain()</i>,
 after it has initialized its
 <i> CNcbiArguments, CNcbiEnvironment, CNcbiRegistry</i>, and <i> CNcbiDiag</i> data members.<p>
 
-<a name="CNcbiArguments"></a> The 
+<a name="CNcbiArguments"></a> The
 <a href="../docxx/CNcbiArguments.html">
 <i> CNcbiArguments </i></a> class provides a data structure for holding the application's
 command-line arguments, along with methods for accessing and modifying these.  The data
@@ -174,7 +174,7 @@ functions using the built-in [] operator for arrays and vectors. Four additional
 functions support retrieval and modification of the program name (initially
 <i>argv</i>[0]). <p>
 
-<a name="CNcbiEnvironment"></a> Similarly, the 
+<a name="CNcbiEnvironment"></a> Similarly, the
 <a href="../docxx/CNcbiEnvironment.html">
 <i> CNcbiEnvironment </i></a> class provides a data structure for
 storing, accessing, and modifying the environment variables accessed by the C library
@@ -221,7 +221,7 @@ application class, and include an implementation of <i> Run() </i> in the subcla
 Define the subclass in a header file, and in the subclass declaration, declare
 <i>Run()</i> to be a virtual function:
 
-<font color = "#008080"> 
+<font color = "#008080">
 <pre>
 // File name: justApp.hpp
 
@@ -229,7 +229,7 @@ Define the subclass in a header file, and in the subclass declaration, declare
 #define NCBI_APP__HPP
 #include &lt;corelib/ncbiapp.hpp&gt;
 
-BEGIN_NCBI_SCOPE		
+BEGIN_NCBI_SCOPE
 
 class CTestApp : public CNcbiApplication {
 public:
@@ -240,7 +240,7 @@ END_NCBI_SCOPE
 
 #endif // NCBI_APP__HPP
 </pre>
-<font color = black> 
+<font color = black>
 
 <b>Step 2.</b> Define <i> main()</i> in the <i>*.cpp </i> file where you instantiate your
 application subclass. <p>
@@ -248,11 +248,11 @@ application subclass. <p>
 Inside <i>main()</i>, instantiate your application subclass, and call its inherited function,
 <i>AppMain()</i>. This file is also a good place to put the implementation of the
 <i>Run()</i> function. Enclose the <i> Run() </i> implementation with <i> BEGIN_NCBI_SCOPE
-</i> and <i> END_NCBI_SCOPE </i> statements, and precede <i>main() </i>(as well as any other 
+</i> and <i> END_NCBI_SCOPE </i> statements, and precede <i>main() </i>(as well as any other
 code using the NCBI C++ Toolkit) with a <i>
-USING_NCBI_SCOPE </i> statement: 
+USING_NCBI_SCOPE </i> statement:
 
-<font color = "#008080"> 
+<font color = "#008080">
 <pre>
 // file justApp.cpp
 
@@ -269,23 +269,23 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
-int main(int argc, const char* argv[]) 
+int main(int argc, const char* argv[])
 {
     CTestApp theTestApp;
     return theTestApp.AppMain(argc, argv);
 }
 
 </pre>
-<font color = black> 
-<b>Step 3.</b> Assuming you have done all of this work in a project directory called 
+<font color = black>
+<b>Step 3.</b> Assuming you have done all of this work in a project directory called
 "justApp", and have already run the <i>new_project.sh</i> script to create the makefile, you are
 now ready to build your first application using:
 <p>
 <center><pre>make -f Makefile.justApp_app </pre></center>
 <p>
-The <i> SCOPE</i> statements are actually macros defined in 
+The <i> SCOPE</i> statements are actually macros defined in
 <a href="../lxr/source/include/corelib/ncbistl.hpp">
-<i>include/corelib/ncbistl.hpp</i></a>: 
+<i>include/corelib/ncbistl.hpp</i></a>:
 <font color = "#000080"><pre>
 #define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
 #define END_NCBI_SCOPE }
@@ -310,7 +310,7 @@ To review what we've done so far:
 </ol>
 
 Here is a somewhat simplified view of the application class's definition:
-<font color = "#008080"> 
+<font color = "#008080">
 <xmp>
 class CNcbiApplication {
 public:
@@ -318,9 +318,9 @@ public:
     int AppMain (int argc, char **argv, char **envp,
 	         EAppDiagStream diag, char* config, string& name);
 
-    virtual void Init();     
-    virtual int  Run ();  
-    virtual void Exit();     
+    virtual void Init();
+    virtual int  Run ();
+    virtual void Exit();
     CNcbiArguments&   GetArguments();
     CNcbiEnvironment& GetEnvironment();
     CNcbiRegistry&    GetConfig();
@@ -332,14 +332,14 @@ protected:
 
 private:
 
-    static CNcbiApplication*   m_Instance;  
-    auto_ptr<CNcbiArguments>   m_Args;      
-    auto_ptr<CNcbiEnvironment> m_Environ;   
-    auto_ptr<CNcbiRegistry>    m_Config;    
+    static CNcbiApplication*   m_Instance;
+    auto_ptr<CNcbiArguments>   m_Args;
+    auto_ptr<CNcbiEnvironment> m_Environ;
+    auto_ptr<CNcbiRegistry>    m_Config;
     auto_ptr<CNcbiOstream>     m_DiagStream;
 };
 </xmp>
-<font color = black> 
+<font color = black>
 As you can see, the constituents of the class are themselves embedded classes, and are
 defined as private data members. The <i> GetXxx() </i> functions in the application class
 provide access to these private members, while the members themselves implement methods to
@@ -360,7 +360,7 @@ The <i> AppMain() </i> function is also inherited from the parent class. Althoug
 function accepts up to six arguments, this example passes only the first two, with missing
 values supplied by defaults.  <i> AppMain() </i> begins by resetting the internal data
 members with the actual values provided by the arguments of <i>main()</i>. Once these internal data
-structures have been loaded,  <i> AppMain() </i> calls the virtual functions 
+structures have been loaded,  <i> AppMain() </i> calls the virtual functions
 <i> Init(), Run (), </i> and <i> Exit() </i> in succession to execute the application. <p>
 
 The <i> Init() </i> and <i> Exit() </i> virtual functions are provided as places for developers to
@@ -373,7 +373,11 @@ method prints out the message defined in <i>justApp.cpp</i> and exits.
 &nbsp;&nbsp;&nbsp;
 <a href="sub_tree.html"> <i> next </i> </a>
 
-	 <hr>
+	 <br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>

@@ -14,10 +14,10 @@ somewhat complicated by the distributed organization of the C++ CVS tree: header
 (recursively) contained in a <i> src </i> subtree.  Thus, multiple checkouts may be
 required to set things up properly, and the customized makefiles (<i>Makefile.*.app</i>) will
 need to be modified. The shell script <a href="../new_proj.html#ref_OutsideImport">
-<i> import_project.sh </i></a> will do all of this 
+<i> import_project.sh </i></a> will do all of this
 for you. The syntax is:
 <xmp>
-   import_project.sh  subtree_name  [builddir] 
+   import_project.sh  subtree_name  [builddir]
 </xmp>
 where:
 <dl>
@@ -44,15 +44,15 @@ directories in the larger NCBI C++ tree; the newly created makefiles can be used
 your new working directories.<p>
 
 The NCBI C++ Toolkit project directories, along with the libraries they implement and the
-logical modules they entail, are summarized in the Reference Manual page 
+logical modules they entail, are summarized in the Reference Manual page
 <a href="../libs.html"> <i>NCBI C++ libraries</i></a>.
-Currently, there are eight project directories in the <a href="../src_tree.gif">NCBI C++ 
+Currently, there are eight project directories in the <a href="../src_tree.gif">NCBI C++
 source tree</a>, including:
 
 <ul>
  <li> <i> corelib </i> - libraries for the Toolkit foundations
  <li> <i> connect </i> - libraries providing client/server connections
- <li> <i> cgi </i> - libraries for developing CGI applications 
+ <li> <i> cgi </i> - libraries for developing CGI applications
  <li> <i> html </i> - libraries for developing HTML pages
  <li> <i> serial </i> - libraries for handling ASN, XML and files of other specified formats
  <li> <i> hello </i> - a simple example project that incorporates all but the serial libraries
@@ -77,7 +77,11 @@ development, and is the recommended work area for <i> new </i> projects.<p>
 &nbsp;&nbsp;&nbsp;
 <a href="inside_tree.html"> <i> next </i> </a>
 
-	 <hr>
+	 <br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>

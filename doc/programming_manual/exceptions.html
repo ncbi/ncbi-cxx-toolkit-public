@@ -67,7 +67,7 @@ throws an exception of the form:
 
 <center> <tt> throw std::runtime_error(</tt><i>throw-msg</i>)</center> <br>
 
-then 
+then
 <pre>
 		try {F();}
 		STD_CATCH(catch-msg);
@@ -93,9 +93,9 @@ assume that <i>what()</i> has been defined for this object, and a default messag
 <a name="errno"></a>
 <a href="../docxx/CErrnoException.html"><h3> The CErrnoException Class </h3></a>
 The <i>CErrnoException</i> class is derived from <i>std::runtime_error</i>, and in addition to the
-<i>desc</i> string, has an <i>int</i> data member called <i>m_Errno</i>.  Like its parent class, 
+<i>desc</i> string, has an <i>int</i> data member called <i>m_Errno</i>.  Like its parent class,
 its constructor takes a single string argument which will be stored in <i>desc</i>. The constructor
-itself however, automagically adds information about the most recent error state as obtained via the 
+itself however, automagically adds information about the most recent error state as obtained via the
 global system variable <i>errno</i>:
 
 <pre>
@@ -107,11 +107,11 @@ CErrnoException::CErrnoException(const string& what) THROWS_NONE
 
 <a name="parse"></a>
 <a href="../docxx/CParseException.html"><h3> The CParseException Class </h3></a>
-Similar to <i>CErrnoException</i>, the <i>CParseException</i> class is derived from 
+Similar to <i>CErrnoException</i>, the <i>CParseException</i> class is derived from
 <i>std::runtime_error</i>, and includes an additional <i>int</i> data member, in this
 case called <i>m_Pos</i>. This class was specifically defined to support complex parsing tasks,
 and its constructor requires that positional information be supplied along with the message
-to be caught. Thus the call to instantiate a <i>CParseException</i> object is:  
+to be caught. Thus the call to instantiate a <i>CParseException</i> object is:
 <i>CParseException(msg, position)</i>.
 
 <a name="tracex"></a>
@@ -134,7 +134,7 @@ macro is:
 
 From the <i>throw()</i> statement here, we see that the object actually being thrown by this macro
 is the value returned by <a href="../lxr/ident?i=DbgPrint">DbgPrint</a>().
-<i>DbgPrint()</i> in turn calls 
+<i>DbgPrint()</i> in turn calls
 <a href="../lxr/ident?i=DbgPrint"><i>DoDbgPrint</i></a>().
 The latter is an overloaded function that simply creates a diagnostic stream and writes the file name,
 line number, and the exception's <i>what()</i> message to that stream. The exception object
@@ -184,14 +184,14 @@ character types, to aggregate and container types. <p>
 
 The last three macros parallel the previous two sets of macros in their specializations, and
 may be applied where the exception object's constructor takes multiple arguments. (See also the
-discussion of <a href="../libs/err_msg.html#ref_Exception"><i>Exception handling</i></a> in the Reference Manual). 
+discussion of <a href="../libs/err_msg.html#ref_Exception"><i>Exception handling</i></a> in the Reference Manual).
 <p>
 
 It is also possible to specify that execution should abort immediately when an exception occurs. By
-default, this feature is not activated, but the 
+default, this feature is not activated, but the
 <a href="../lxr/ident?i=SetThrowTraceAbort">
 <i>SetThrowTraceAbort()</i> </a> function can be used to activate it. Alternatively, you can turn it
-on for the entire application by setting either the $ABORT_ON_THROW environment variable, or 
+on for the entire application by setting either the $ABORT_ON_THROW environment variable, or
 the application's registry ABORT_ON_THROW  entry (in the [DEBUG] section) to an arbitrary non-empty value.
 
 
@@ -202,7 +202,11 @@ the application's registry ABORT_ON_THROW  entry (in the [DEBUG] section) to an 
 &nbsp;&nbsp;&nbsp;
 <a href="cref.html"> <i> next</i> </a>
 
-	 <hr>
+	 <br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>

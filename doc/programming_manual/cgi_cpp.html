@@ -19,8 +19,8 @@ USING_NCBI_SCOPE;
 </font>
 <font color = "black">
 CNcbiResource* CCgiApp::LoadResource(void)
-{ 
-    auto_ptr&lt;CCgiResource> resource(new CCgiResource(GetConfig()));  
+{
+    auto_ptr&lt;CCgiResource> resource(new CCgiResource(GetConfig()));
     resource->AddCommand(new CCgiBasicCommand(*resource));
     resource->AddCommand(new CCgiReplyCommand(*resource));
     return resource.release();
@@ -74,7 +74,7 @@ CNcbiCommand* CCgiReplyCommand::Clone(void) const
 void ShowCommands (const TCmdList& cmds, CCgiContext& ctx)
 {
     cerr << "Commands defined for this application are: \n";
-    for (TCmdList::const_iterator it = cmds.begin(); 
+    for (TCmdList::const_iterator it = cmds.begin();
          it != cmds.end(); it++) {
          cerr << (*it)->GetName();
          if ((*it)->IsRequested(ctx)) {
@@ -89,7 +89,7 @@ void ShowCommands (const TCmdList& cmds, CCgiContext& ctx)
 void ShowEntries (const TCgiEntries& entries)
 {
     cerr << "The entries in the request string were: \n";
-    for (TCgiEntries::const_iterator it = entries.begin(); 
+    for (TCgiEntries::const_iterator it = entries.begin();
          it != entries.end(); it++) {
          if (! (it->first.empty() && it->second.empty()))
             cerr << it->first << "=" << it->second << endl;
@@ -105,5 +105,10 @@ int main(int argc, const char* argv[])
 }
 </font>
 </pre>
+
+<br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
 
 <!--#include virtual="../ssi/footer.shtml" -->

@@ -18,7 +18,7 @@ DIAG_TRACE=yes
 <font color = "blue">
 USING_NCBI_SCOPE;
 <font color = "black">
-static void myHandler(const SDiagMessage& mess) { 
+static void myHandler(const SDiagMessage& mess) {
     cout << "Installed Handler " << mess << endl;
 }
 
@@ -34,7 +34,7 @@ int CTestApp::Run()
     ERR_POST("My ERR_POST message, print long: " << lll);
 
     double ddd = 123.345;
-    ERR_POST(Warning << "...print double: " << ddd); 
+    ERR_POST(Warning << "...print double: " << ddd);
 
 <font color = "red">   //  See if _TRACE is enabled (from *ini file) </font>
     _TRACE("Testing the _TRACE macro");
@@ -63,7 +63,7 @@ int CTestApp::Run()
 
 <font color = "red">   // Install a new handler for all subsequent messages <font color = "black">
     SetDiagHandler (myHandler, 0, 0);
-  
+
     diagTrace << Msg;	<font color=red>	// not posted since trace is disabled </font>
     diagCritical << Msg;
 
@@ -71,12 +71,17 @@ int CTestApp::Run()
     return 0;
 }
 
-int main(int argc, const char* argv[]) 
+int main(int argc, const char* argv[])
 {
     CTestApp theTestApp;
     return theTestApp.AppMain(argc, argv);
 }
 
 </pre>
+
+<br>
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
 
 <!--#include virtual="../ssi/footer.shtml" -->

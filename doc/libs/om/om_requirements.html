@@ -21,7 +21,7 @@ to reading data from file or constructing bio sequence &quot;manually&quot;.
 </p>
 
 <p>
-The purpose of biologist could be to investigate different combinations 
+The purpose of biologist could be to investigate different combinations
 of data pieces. The system should provide for transparent merge of different
 pieces of data, as well as various combinations of it. Important thing
 to note is that such combinations may be incorrect or ambiguous. It is
@@ -41,7 +41,7 @@ should be retrieved  &quot;automatically&quot;.
 </p>
 
 <p>
-Different biological sequences can refer to each other. One example 
+Different biological sequences can refer to each other. One example
 of such reference may be in the form "the sequence of amino acids here is
 the same as sequence of amino acids there" (what is the meaning of here
 and there is a separate question). The data retrieval system should be able
@@ -54,11 +54,11 @@ to investigate such references.
 <p>
 Biological sequences are identified by
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQLOC.HTML">Seq_id</a>,
-which may have different forms. Information about specific sequence 
-stored  in the database  can be modified at any time. Sometimes, if changes 
-are minor,  this only results  in creating a new submission of existing bio 
-sequence and assigning a new  revision number to it. In case of more substantial 
-changes  new version number  can be assigned. The data change, still, from 
+which may have different forms. Information about specific sequence
+stored  in the database  can be modified at any time. Sometimes, if changes
+are minor,  this only results  in creating a new submission of existing bio
+sequence and assigning a new  revision number to it. In case of more substantial
+changes  new version number  can be assigned. The data change, still, from
 client point of view the system  should provide consistency. Possible scenarios
 include:
 </p>
@@ -71,17 +71,21 @@ When client then asks for an additional data, the system should retrieve
 original bio sequence submission data, not the most recent one.
 </li>
 
-<li>Database changes between client&#8217;s sessions. Client retrieves   some 
-data and ends work session. Next time the most recent submission data   is 
+<li>Database changes between client&#8217;s sessions. Client retrieves   some
+data and ends work session. Next time the most recent submission data   is
 retrieved, unless the client asks for a specific version number.
 </li>
 </ul>
 
 <p>
-The system must support multithreading. It should be possible to work 
+The system must support multithreading. It should be possible to work
 with  bio sequence data from multiple threads.
 </p>
 
 
+<br>
+<!--#include virtual="../../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
 
 <!--#include virtual="../../ssi/footer.shtml" -->

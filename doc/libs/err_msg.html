@@ -39,7 +39,7 @@
 			 <li> <a href="#ref_ERR_POST">
 				  <i><b>ERR_POST(message)</i></b> macro</a>
 			 <li> <a href="#ref_Tracing">
-				  <i>Turn on the tracing (as per <b>_TRACE, eDiag_Trace</b></i>)</a>		
+				  <i>Turn on the tracing (as per <b>_TRACE, eDiag_Trace</b></i>)</a>
 		  </ul>
 	 </ul>
 
@@ -79,7 +79,7 @@
 		Evaluate expression <b><i>expr</i></b>; if <i>"_DEBUG"</i> is defined
 		and <b><i>expr</i></b> resulted in zero(or <i>"false"</i>) then halt the
 		application.
-		
+
 		<li> <b><i>_TRACE(message)</i></b> --
 		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
 		otherwise, it outputs the <b><i>message</i></b> using
@@ -132,7 +132,7 @@ _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 		  -- to report an erroneous position (passed in
 		  the additional constructor parameter) along with the user message
 	 </ul>
-	 
+
 	 <p>
 	 Then, it is <b>strictly recommended</b> that when the basic functionality
 	 provided by standard C++ exceptions is unsufficient for some reason,
@@ -161,7 +161,7 @@ _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 	 <p>
 	 The "message" argument can be of any form acceptable by the
 	 <a href="#ref_Message">diagnostic class <i>CNcbiDiag</i></a>.
-	 
+
 
 	 <p>
 	 This way, the easy way of dealing with exception in the NCBI C++
@@ -241,7 +241,7 @@ Failed strtod('1e-999999', 0): Result too large
 		  function <a href="../docxx/General.html#SetThrowTraceAbort">SetThrowTraceAbort()</a>.
 	 </ul>
 
-	 NOTE: if the source was not compiled in the debug mode, then the 
+	 NOTE: if the source was not compiled in the debug mode, then the
 	 <i><b>THROW*_TRACE(...)</b></i> would just <i>throw</i> the specified
 	 exception, without doing any of the "fancy stuff" we just described.
 
@@ -260,7 +260,7 @@ Failed strtod('1e-999999', 0): Result too large
 	 compilers handle <i>unexpected</i> exception events we decided to use
 	 <i>THROWS_NONE</i> and <i>THROWS()</i> preprocessor macros for the case
 	 of "poor" compilers.
-	 
+
 	 <p>
 	 Thus, you must use:
 	 <pre>
@@ -365,7 +365,7 @@ struct SDiagMessage {
 	   circumstances in which <b><i>CDiagRestorer</i></b> is
 	   unsuitable, but places much more responsibility on your code.</li>
      </ul>
-	 
+
 	 <p>
      For compatibility with older code, the diagnostic system also
      supports specifying simple callbacks:
@@ -413,14 +413,14 @@ extern void SetDiagHandler(FDiagHandler func,
 int iii = 1234;
 CNcbiDiag diag1;
 
-diag1 << "Message1_Start " << iii;  
+diag1 << "Message1_Start " << iii;
          // message 1 is started but not ready yet
-{ CNcbiDiag diag2;  diag2 << Info << "Message2"; } 
+{ CNcbiDiag diag2;  diag2 << Info << "Message2"; }
          // message 2 flushed in destructor
-diag1 << "Message1_End" << Endm;  
+diag1 << "Message1_End" << Endm;
          // message 1 finished and flushed by "Endm"
 diag1 << "Message1_1";  // will be flushed by the following "Warning"
-diag1 << Warning << "Discard this warning" << ++iii << Reset; 
+diag1 << Warning << "Discard this warning" << ++iii << Reset;
          // message discarded
 diag1 << "This is a warning " << iii;
 diag1 << Endm; </pre>
@@ -476,7 +476,12 @@ ERR_POST(Warning << "...print double: " << ddd); </pre>
     <b><i>[DEBUG]</i></b> section of your registry to any non-empty value).
 
 
-	 <hr>
+
+
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
