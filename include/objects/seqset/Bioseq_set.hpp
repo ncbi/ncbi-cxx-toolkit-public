@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2000/03/29 15:56:58  vasilche
+ * Generated base files now have _ suffix instead of original _Base
+ *
  * Revision 1.8  2000/03/17 16:46:52  vasilche
  * Added copyright message to generated files.
  *
@@ -46,7 +49,7 @@
 
 
 // generated includes
-#include <objects/seqset/Bioseq_set_Base.hpp>
+#include <objects/seqset/Bioseq_set_.hpp>
 
 // generated classes
 class CBioseq_set : public CBioseq_set_Base

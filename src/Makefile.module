@@ -16,10 +16,13 @@ clean_sources:
 	-rm $(FILES)
 
 purge_sources:
-	-rm $(FILES) *_Base.cpp $(INCLUDEDIR)/*_Base.hpp
+	-rm $(FILES) *_.cpp $(INCLUDEDIR)/*_.hpp
 
 purge_all_sources:
 	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp
+
+purge_all_files:
+	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp Makefile.$(MODULE).lib
 
 .NO_PARALLEL:
 $(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%) $(DATATOOL)
@@ -40,7 +43,7 @@ Makefile.$(MODULE).lib: $(MODULEFILE)
 	@( \
 		echo 'LIB = $(MODULE)'; \
 		echo 'include $$(srcdir)/$(MODULE).files'; \
-		echo 'LIBOBJ = $$(GENFILES_LOCAL) $$(GENFILES_LOCAL:=_Base)'; \
+		echo 'LIBOBJ = $$(GENFILES_LOCAL) $$(GENFILES_LOCAL:=_)'; \
 		echo 'AR = -strip -x *.o SunWS_cache/*/*.o; $$(CONF_AR)'; \
 	) > $@
 
