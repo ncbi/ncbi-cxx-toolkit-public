@@ -66,6 +66,7 @@ class CDiagBuffer
     friend const CNcbiDiag& Reset(const CNcbiDiag& diag);
     friend const CNcbiDiag& Endm(const CNcbiDiag& diag);
     friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
+    friend bool DisableDiagPostLevelChange(bool disable_change);
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
     friend void SetDiagHandler(CDiagHandler* handler, bool can_delete);
@@ -120,11 +121,14 @@ private:
     // not critical, while not having a mutex around them saves us a little
     // performance
     static EDiagSev   sm_PostSeverity;
+    static bool       sm_PostSeverityLock; // severity level changing is ON/OFF
     static EDiagSev   sm_DieSeverity;
-    static EDiagTrace sm_TraceDefault;  // default state of tracing
-    static bool       sm_TraceEnabled;  // current state of tracing(enab/disab)
+    static EDiagTrace sm_TraceDefault;     // default state of tracing
+    static bool       sm_TraceEnabled;     // current state of tracing
+                                           // (enable/disable)
 
-    static bool GetTraceEnabled(void);  // dont access sm_TraceEnabled directly
+    static bool GetTraceEnabled(void);     // dont access sm_TraceEnabled 
+                                           // directly
     static bool GetTraceEnabledFirstTime(void);
 
     // call the current diagnostics handler directly
@@ -332,6 +336,9 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2002/07/02 18:26:08  ivanov
+ * Added CDiagBuffer::DisableDiagPostLevelChange()
+ *
  * Revision 1.30  2002/06/26 18:36:37  gouriano
  * added CNcbiException class
  *

@@ -214,8 +214,18 @@ extern void PushDiagPostPrefix(const char* prefix);
 extern void PopDiagPostPrefix(void);
 
 // Do not post messages which severity is less than "min_sev"
-// Return previous post-level
+// Return previous post-level.
+// This function have effect only if:
+//   1)  environment variable $DIAG_POST_LEVEL is not set, and
+//   2)  registry value of DIAG_POST_LEVEL, section DEBUG is not set 
+// The value of DIAG_POST_LEVEL can be a digital value (0-9) or 
+// string value from CDiagBuffer::sm_SeverityName[] in any case.
+#define DIAG_POST_LEVEL "DIAG_POST_LEVEL"
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
+
+// Disable change the diagnostic post level.
+// Consecutive using SetDiagPostLevel() will not have effect.
+extern bool DisableDiagPostLevelChange(bool disable_change = true);
 
 // Abrupt the application if severity is >= "max_sev"
 // Return previous die-level
@@ -364,6 +374,7 @@ private:
     list<string>   m_PrefixList;
     TDiagPostFlags m_PostFlags;
     EDiagSev       m_PostSeverity;
+    bool           m_PostSeverityLock;
     EDiagSev       m_DieSeverity;
     EDiagTrace     m_TraceDefault;
     bool           m_TraceEnabled;
@@ -386,6 +397,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.44  2002/07/02 18:26:08  ivanov
+ * Added CDiagBuffer::DisableDiagPostLevelChange()
+ *
  * Revision 1.43  2002/06/26 18:36:37  gouriano
  * added CNcbiException class
  *

@@ -92,17 +92,18 @@ static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 //  CDiagBuffer::
 
 #if defined(NDEBUG)
-EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Error;
+EDiagSev     CDiagBuffer::sm_PostSeverity     = eDiag_Error;
 #else
-EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Warning;
+EDiagSev     CDiagBuffer::sm_PostSeverity     = eDiag_Warning;
 #endif /* else!NDEBUG */
+bool         CDiagBuffer::sm_PostSeverityLock = false;
 
 TDiagPostFlags CDiagBuffer::sm_PostFlags      =
 eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode;
 
-EDiagSev     CDiagBuffer::sm_DieSeverity    = eDiag_Fatal;
+EDiagSev     CDiagBuffer::sm_DieSeverity      = eDiag_Fatal;
 
-EDiagTrace   CDiagBuffer::sm_TraceDefault   = eDT_Default;
+EDiagTrace   CDiagBuffer::sm_TraceDefault     = eDT_Default;
 bool         CDiagBuffer::sm_TraceEnabled;  // to be set on first request
 
 
@@ -391,8 +392,17 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
 {
     CMutexGuard LOCK(s_DiagMutex);
     EDiagSev sev = CDiagBuffer::sm_PostSeverity;
-    CDiagBuffer::sm_PostSeverity = post_sev;
+    if ( !CDiagBuffer::sm_PostSeverityLock ) {
+        CDiagBuffer::sm_PostSeverity = post_sev;
+    }
     return sev;
+}
+
+extern bool DisableDiagPostLevelChange(bool disable_change)
+{
+    bool lock = CDiagBuffer::sm_PostSeverityLock;
+    CDiagBuffer::sm_PostSeverityLock = disable_change;
+    return lock;
 }
 
 
@@ -505,7 +515,7 @@ extern bool IsDiagStream(const CNcbiOstream* os)
 //  CNcbiDiag::
 
 CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
-    : m_Severity(sev), m_Line(0),  m_ErrCode(0), m_ErrSubCode(0),
+    : m_Severity(sev), m_Line(0), m_ErrCode(0), m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags)
 {
     *m_File = '\0';
@@ -584,6 +594,7 @@ CDiagRestorer::CDiagRestorer(void)
     m_PrefixList       = buf.m_PrefixList;
     m_PostFlags        = buf.sm_PostFlags;
     m_PostSeverity     = buf.sm_PostSeverity;
+    m_PostSeverityLock = buf.sm_PostSeverityLock;
     m_DieSeverity      = buf.sm_DieSeverity;
     m_TraceDefault     = buf.sm_TraceDefault;
     m_TraceEnabled     = buf.sm_TraceEnabled;
@@ -597,13 +608,14 @@ CDiagRestorer::~CDiagRestorer(void)
     {{
         CMutexGuard LOCK(s_DiagMutex);
         CDiagBuffer& buf = GetDiagBuffer();
-        buf.m_PostPrefix      = m_PostPrefix;
-        buf.m_PrefixList      = m_PrefixList;
-        buf.sm_PostFlags      = m_PostFlags;
-        buf.sm_PostSeverity   = m_PostSeverity;
-        buf.sm_DieSeverity    = m_DieSeverity;
-        buf.sm_TraceDefault   = m_TraceDefault;
-        buf.sm_TraceEnabled   = m_TraceEnabled;
+        buf.m_PostPrefix        = m_PostPrefix;
+        buf.m_PrefixList        = m_PrefixList;
+        buf.sm_PostFlags        = m_PostFlags;
+        buf.sm_PostSeverity     = m_PostSeverity;
+        buf.sm_PostSeverityLock = m_PostSeverityLock;
+        buf.sm_DieSeverity      = m_DieSeverity;
+        buf.sm_TraceDefault     = m_TraceDefault;
+        buf.sm_TraceEnabled     = m_TraceEnabled;
     }}
     SetDiagHandler(m_Handler, m_CanDeleteHandler);
 }
@@ -712,6 +724,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.57  2002/07/02 18:26:22  ivanov
+ * Added CDiagBuffer::DisableDiagPostLevelChange()
+ *
  * Revision 1.56  2002/06/27 18:56:16  gouriano
  * added "title" parameter to report functions
  *
