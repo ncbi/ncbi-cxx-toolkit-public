@@ -399,7 +399,7 @@ static void s_TEST_BDB_IdTable_Fill(void)
 }
 
 
-static void s_TEST_BDB_IdTable_Fill(void)
+static void s_TEST_BDB_IdTable_Fill2(void)
 {
     cout << "======== Id table filling test 2." << endl;
 
@@ -1484,6 +1484,8 @@ int CBDB_Test::Run(void)
 
         s_TEST_BDB_IdTable_Fill();
 
+        // s_TEST_BDB_IdTable_Fill2();
+
         s_TEST_BDB_IdTable_Cursor();
 
         s_TEST_BDB_IdTable_DeleteInsert();
@@ -1539,6 +1541,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/12/23 22:32:24  ucko
+ * Rename the second s_TEST_BDB_IdTable_Fill, but don't run it yet
+ * because it crashes. :-/
+ *
  * Revision 1.32  2003/12/22 18:58:02  kuznets
  * Added l-string test
  *
