@@ -2749,7 +2749,7 @@ esac
 
 #### Set makefile variables for platform-specific includes
 COMPILER=`echo $ncbi_compiler | tr '[A-Z]' '[a-z]'`
-OSTYPE=`echo $host_os | sed -e 's/[0-9.]*$//; y/A-Z/a-z/'`
+OSTYPE=`echo $host_os | sed -e 's/[0-9.]*$//; s/-gnu$//; y/A-Z/a-z/'`
 
 #### Check if the compiler matches one of supported compilers on this platform
 if test -z "$compiler" ; then

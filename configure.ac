@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.26 2002/01/16 17:04:53 ucko Exp $
+#  $Id: configure.ac,v 1.27 2002/01/17 17:14:23 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -509,7 +509,7 @@ esac
 #### Set makefile variables for platform-specific includes
 changequote(, )dnl
 COMPILER=`echo $ncbi_compiler | tr '[A-Z]' '[a-z]'`
-OSTYPE=`echo $host_os | sed -e 's/[0-9.]*$//; y/A-Z/a-z/'`
+OSTYPE=`echo $host_os | sed -e 's/[0-9.]*$//; s/-gnu$//; y/A-Z/a-z/'`
 changequote([, ])dnl
 
 
