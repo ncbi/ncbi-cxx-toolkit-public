@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1998/11/26 00:29:55  vakatov
+* Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
+*
 * Revision 1.13  1998/11/24 23:07:31  vakatov
 * Draft(almost untested) version of CCgiRequest API
 *
@@ -69,6 +72,10 @@
 *
 * ==========================================================================
 */
+
+#ifndef _DEBUG
+#define _DEBUG
+#endif
 
 #include <ncbistd.hpp>
 #include <ncbicgi.hpp>
@@ -197,10 +204,11 @@ static void TestException_Aux(void)
 
 static void TestException_Hard(void)
 {
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)  &&  defined(TEST_OS_EXCEPTIONS)
     try { // Memory Access Violation
         int* i_ptr = 0;
         int i_val = *i_ptr;
+        i_val++;
     } catch (CMemException& e) {
         NcbiCerr << e.what() << NcbiEndl;
     }
@@ -286,33 +294,42 @@ static void TestCgi_Cookies(void)
 }
 
 
-static bool TestEntries(TCgiEntries& entries, const string& str)
+static void PrintEntries(TCgiEntries& entries)
 {
-    NcbiCout << "\n Entries: `" << str.c_str() << "'\n";
-    SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
-
     for (TCgiEntries::iterator iter = entries.begin();
          iter != entries.end();  ++iter) {
         NcbiCout << "  (\"" << iter->first.c_str() << "\", \""
                   << iter->second.c_str() << "\")" << NcbiEndl;
     }
+}
+
+static bool TestEntries(TCgiEntries& entries, const string& str)
+{
+    NcbiCout << "\n Entries: `" << str.c_str() << "'\n";
+    SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
+    PrintEntries(entries);
 
     if ( err_pos ) {
         NcbiCout << "-- Error at position #" << err_pos << NcbiEndl;
         return false;
     }
     return true;
+}
+
+static void PrintIndexes(TCgiIndexes& indexes)
+{
+    for (TCgiIndexes::iterator iter = indexes.begin();
+         iter != indexes.end();  ++iter) {
+        NcbiCout << "  \"" << iter->c_str() << "\"    ";
+    }
+    NcbiCout << NcbiEndl;
 }
 
 static bool TestIndexes(TCgiIndexes& indexes, const string& str)
 {
     NcbiCout << "\n Indexes: `" << str.c_str() << "'\n";
     SIZE_TYPE err_pos = CCgiRequest::ParseIndexes(str, indexes);
-
-    for (TCgiIndexes::iterator iter = indexes.begin();
-         iter != indexes.end();  ++iter) {
-        NcbiCout << "  \"" << iter->c_str() << "\"    ";
-    }
+    PrintIndexes(indexes);
 
     if ( err_pos ) {
         NcbiCout << "-- Error at position #" << err_pos << NcbiEndl;
@@ -321,7 +338,7 @@ static bool TestIndexes(TCgiIndexes& indexes, const string& str)
     return true;
 }
 
-static void TestCgi_Request(void)
+static void TestCgi_Request_Static(void)
 {
     // Test CCgiRequest::ParseEntries()
     TCgiEntries entries;
@@ -355,16 +372,136 @@ static void TestCgi_Request(void)
     _ASSERT( !TestIndexes(indexes, "+") );
     _ASSERT( !TestIndexes(indexes, "+ ") );
     _ASSERT( !TestIndexes(indexes, "++") );
+}
 
+static void TestCgi_Request_Full(CNcbiIstream& istr)
+{
+    CCgiRequest CCR(istr);
 
-    // Test CCgiRequest::
-    CCgiRequest CCR(NcbiCin);
+    NcbiCout << "\n\nCCgiRequest::\n";
+
+    try {
+        NcbiCout << "GetServerPort(): " << CCR.GetServerPort() << NcbiEndl;
+    } STD_CATCH ("TestCgi_Request_Full");
+    // try {
+    //     NcbiCout << "GetRemoteAddr(): " << CCR.GetRemoteAddr() << NcbiEndl;
+    // } STD_CATCH ("TestCgi_Request_Full");
+    try {
+        NcbiCout << "GetContentLength(): "
+                 << CCR.GetContentLength() << NcbiEndl;
+    } STD_CATCH ("TestCgi_Request_Full");
+    NcbiCout << "GetRandomProperty(\"USER_AGENT\"): "
+             << CCR.GetRandomProperty("USER_AGENT").c_str() << NcbiEndl;
+    NcbiCout << "GetRandomProperty(\"MY_RANDOM_PROP\"): "
+             << CCR.GetRandomProperty("MY_RANDOM_PROP").c_str() << NcbiEndl;
+
+    NcbiCout << "\nCCgiRequest::  All properties:\n";
+    for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
+        NcbiCout << NcbiSetw(24)
+            << CCgiRequest::GetPropertyName((ECgiProp)prop).c_str() << " = \""
+            << CCR.GetProperty((ECgiProp)prop).c_str() << "\"\n";
+    }
+
+    CCgiCookies cookies;
+    {{  // Just an example of copying the cookies from a request data
+        // Of course, we could use the original request's cookie set
+        // ("x_cookies") if we performed only "const" operations on it
+        const CCgiCookies& x_cookies = CCR.GetCookies();
+        cookies.Add(x_cookies);
+    }}
+    NcbiCout << "\nCCgiRequest::  All cookies:\n";
+    if ( cookies.Empty() )
+        NcbiCout << "No cookies specified" << NcbiEndl;
+    else
+        NcbiCout << cookies << NcbiEndl;
+
+    TCgiEntries entries = CCR.GetEntries();
+    NcbiCout << "\nCCgiRequest::  All entries:\n";
+    if ( entries.empty() )
+        NcbiCout << "No entries specified" << NcbiEndl;
+    else
+        PrintEntries(entries);
+
+    TCgiIndexes indexes = CCR.GetIndexes();
+    NcbiCout << "\nCCgiRequest::  ISINDEX values:\n";
+    if ( indexes.empty() )
+        NcbiCout << "No ISINDEX values specified" << NcbiEndl;
+    else
+        PrintIndexes(indexes);
 }
 
 static void TestCgi(void)
 {
     TestCgi_Cookies();
-    TestCgi_Request();
+    TestCgi_Request_Static();
+
+    try { // POST only
+        char inp_str[] = "post11=val11&post12void=&post13=val13";
+        CNcbiIstrstream istr(inp_str);
+        char len[32];
+        _ASSERT( sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)) );
+        _ASSERT( !putenv(len) );
+
+        _ASSERT( !putenv("SERVER_PORT=") );
+        _ASSERT( !putenv("REMOTE_ADDRESS=") );
+        _ASSERT( !putenv("REQUEST_METHOD=POST") );
+        _ASSERT( !putenv("QUERY_STRING=") );
+        _ASSERT( !putenv("HTTP_COOKIE=") );
+        TestCgi_Request_Full(istr);
+    } STD_CATCH("TestCgi(POST only)");
+
+    try { // POST + aux. functions
+        char inp_str[] = "post22void=&post23void=";
+        CNcbiIstrstream istr(inp_str);
+        char len[32];
+        _ASSERT( sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)) );
+        _ASSERT( !putenv(len) );
+
+        _ASSERT( !putenv("SERVER_PORT=9999") );
+        _ASSERT( !putenv("HTTP_USER_AGENT=MyUserAgent") );
+        _ASSERT( !putenv("HTTP_MY_RANDOM_PROP=MyRandomPropValue") );
+        _ASSERT( !putenv("REMOTE_ADDRESS=130.14.25.129") );
+        TestCgi_Request_Full(istr);
+    } STD_CATCH("TestCgi(POST + aux. functions)");
+
+    // this is for all following tests...
+    char inp_str[] = "postXXX=valXXX";
+    char len[32];
+    _ASSERT( sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)) );
+    _ASSERT( !putenv(len) );
+
+    try { // POST + ISINDEX(action)
+        CNcbiIstrstream istr(inp_str);
+        _ASSERT( !putenv("QUERY_STRING=isidx1+isidx2+isidx3") );
+        TestCgi_Request_Full(istr);
+    } STD_CATCH("TestCgi(POST + ISINDEX(action))");
+
+    try { // POST + QUERY(action)
+        CNcbiIstrstream istr(inp_str);
+        _ASSERT( !putenv("QUERY_STRING=query1=vv1&query2=") );
+        TestCgi_Request_Full(istr);
+    } STD_CATCH("TestCgi(POST + QUERY(action))");
+
+    try { // GET ISINDEX + COOKIES
+        CNcbiIstrstream istr(inp_str);
+        _ASSERT( !putenv("QUERY_STRING=get_isidx1+get_isidx2+get_isidx3") );
+        _ASSERT( !putenv("HTTP_COOKIE=cook1=val1; cook2=val2;") );
+        TestCgi_Request_Full(istr);
+    } STD_CATCH("TestCgi(GET ISINDEX + COOKIES)");
+
+    try { // GET REGULAR + COOKIES
+        CNcbiIstrstream istr(inp_str);
+        _ASSERT( !putenv("QUERY_STRING=get_query1=gq1&get_query2=") );
+        _ASSERT( !putenv("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
+        TestCgi_Request_Full(istr);
+    } STD_CATCH("TestCgi(GET REGULAR + COOKIES)");
+
+    try { // ERRONEOUS STDIN
+        CNcbiIstrstream istr("123");
+        _ASSERT( !putenv("QUERY_STRING=get_query1=gq1&get_query2=") );
+        _ASSERT( !putenv("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
+        TestCgi_Request_Full(istr);
+    } STD_CATCH("TestCgi(ERRONEOUS STDIN)");
 }
 
 

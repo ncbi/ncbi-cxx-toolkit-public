@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1998/11/26 00:29:50  vakatov
+* Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
+*
 * Revision 1.19  1998/11/24 23:07:28  vakatov
 * Draft(almost untested) version of CCgiRequest API
 *
@@ -137,6 +140,8 @@ private:
 
     static void x_CheckField(const string& str, const char* banned_symbols);
     static bool x_GetString(string* str, const string& val);
+    // prohibit default assignment
+    CCgiCookie& operator=(const CCgiCookie&) { _TROUBLE;  return *this; }
 };  // CCgiCookie
 
 
@@ -163,10 +168,13 @@ public:
     // already existing in this set if the added cookie has the same name
     CCgiCookie* Add(const string& name, const string& value);
     CCgiCookie* Add(const CCgiCookie& cookie);  // add a copy of "cookie"
+    void Add(const CCgiCookies& cookies);  // update by a set of cookies
     void Add(const string& str); // "name1=value1; name2=value2; ..."
 
     CCgiCookie* Find(const string& name) const;  // return zero if can not find
+    bool Empty(void) const;  // "true" if contains no cookies
     bool Remove(const string& name);  // return "false" if can not find
+    void Erase(void);  // remove all stored cookies
 
     // Printout all cookies into the stream "os"(see also CCgiCookie::Write())
     CNcbiOstream& Write(CNcbiOstream& os) const;
@@ -176,6 +184,9 @@ private:
     TCookies m_Cookies;  // (guaranteed to have no same-name cookies)
     void x_Add(CCgiCookie* cookie);
     TCookies::iterator x_Find(const string& name) const;
+    // prohibit default initialization and assignment
+    CCgiCookies(const CCgiCookies&) { _TROUBLE; }
+    CCgiCookies& operator=(const CCgiCookies&) { _TROUBLE;  return *this; }
 };  // CCgiCookies
 
 
@@ -247,9 +258,11 @@ public:
     // Destructor
     ~CCgiRequest(void);
 
-    // Get "standard" properties(empty string if not found)
+    // Get name(not value!) of a "standard" property
+    static const string& GetPropertyName(ECgiProp prop);
+    // Get value of a "standard" property(empty string if not specified)
     const string& GetProperty(ECgiProp prop) const;
-    // Get random client properties("HTTP_<key>")
+    // Get value of a random client propertiy("HTTP_<key>")
     const string& GetRandomProperty(const string& key);
     // Auxiliaries(to convert from the "string" representation)
     Uint2  GetServerPort(void) const;
@@ -291,6 +304,10 @@ private:
 
     // retrieve(and cache) a property of given name
     const string& x_GetPropertyByName(const string& name);
+
+    // prohibit default initialization and assignment
+    CCgiRequest(const CCgiRequest&) { _TROUBLE; }
+    CCgiRequest& operator=(const CCgiRequest&) { _TROUBLE;  return *this; }
 };  // CCgiRequest
 
 

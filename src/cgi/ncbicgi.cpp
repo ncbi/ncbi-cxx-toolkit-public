@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1998/11/26 00:29:53  vakatov
+* Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
+*
 * Revision 1.9  1998/11/24 23:07:30  vakatov
 * Draft(almost untested) version of CCgiRequest API
 *
@@ -220,9 +223,19 @@ CCgiCookie* CCgiCookies::Add(const CCgiCookie& cookie)
 }
 
 
+void CCgiCookies::Add(const CCgiCookies& cookies)
+{
+    for (TCookies::const_iterator iter = cookies.m_Cookies.begin();
+         iter != cookies.m_Cookies.end();  iter++) {
+        Add(*(*iter));
+    }
+}
+
+
 void CCgiCookies::Add(const string& str)
 {
-    for (SIZE_TYPE pos = str.find_first_not_of(" \t\n"); ; ){
+    SIZE_TYPE pos;
+    for (pos = str.find_first_not_of(" \t\n"); ; ){
         SIZE_TYPE pos_beg = str.find_first_not_of(' ', pos);
         if (pos_beg == NPOS)
             return; // done
@@ -244,7 +257,7 @@ void CCgiCookies::Add(const string& str)
             str.substr(pos_mid+1, pos_end-pos_mid));
     }
 
-    throw runtime_error("Invalid cookie string: `" + str + "'");
+    throw CParseException("Invalid cookie string: `" + str + "'", pos);
 }
 
 CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os) const
@@ -267,12 +280,12 @@ CCgiCookies::TCookies::iterator CCgiCookies::x_Find(const string& name) const
     return cookies->end();
 }
 
-CCgiCookies::~CCgiCookies(void)
-{
-    for (TCookies::iterator iter = m_Cookies.begin();
+void CCgiCookies::Erase(void) {
+    for (TCookies::const_iterator iter = m_Cookies.begin();
          iter != m_Cookies.end();  iter++) {
         delete *iter;
     }
+    m_Cookies.clear();
 }
 
 
@@ -315,11 +328,21 @@ static const string s_PropName[eCgi_NProperties + 1] = {
 };
 
 
+const string& CCgiRequest::GetPropertyName(ECgiProp prop)
+{
+    if ((long)prop < 0  ||  (long)eCgi_NProperties <= (long)prop) {
+        _TROUBLE;
+        throw logic_error("CCgiRequest::GetPropertyName(BadPropIdx)");
+    }
+    return s_PropName[prop];
+}
+
+
 CCgiRequest::CCgiRequest(CNcbiIstream& istr)
 {
     // cache "standard" properties
     for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
-        x_GetPropertyByName(s_PropName[prop]);
+        x_GetPropertyByName(GetPropertyName((ECgiProp)prop));
     }
 
     // compose cookies
@@ -343,11 +366,10 @@ CCgiRequest::CCgiRequest(CNcbiIstream& istr)
     if (GetProperty(eCgi_RequestMethod).compare("POST") == 0) {
         size_t len = GetContentLength();
         string str;
-        str.reserve(len + 1);  // rely on "bad_alloc" here...
+        str.resize(len);
         if (!istr.read(&str[0], len)  ||  istr.gcount() != len)
             throw CParseException("Init CCgiRequest::CCgiRequest -- error "
                                   "in reading POST content", istr.gcount());
-        str.resize(len);
 
         SIZE_TYPE err_pos = ParseEntries(str, m_Entries);
         if (err_pos != 0)
@@ -361,28 +383,26 @@ const string& CCgiRequest::x_GetPropertyByName(const string& name)
 {
     TCgiProperties::const_iterator find_iter = m_Properties.find(name);
 
-    if (find_iter == m_Properties.end()) {
-        const char* env_str = ::getenv(name.c_str());
-        m_Properties.insert(m_Properties.begin(), TCgiProperties::value_type
-                            (name, env_str ? env_str : ""));
-        find_iter = m_Properties.begin();
-    }
+    if (find_iter != m_Properties.end())
+        return (*find_iter).second;  // already retrieved(cached)
 
-    return (*find_iter).second;
+    // retrieve and cache for the later use
+    const char* env_str = ::getenv(name.c_str());
+    pair<TCgiProperties::iterator, bool> ins_pair =
+        m_Properties.insert(TCgiProperties::value_type
+                            (name, env_str ? env_str : ""));
+    _ASSERT( ins_pair.second );
+    return (*ins_pair.first).second;
 }
 
 
 const string& CCgiRequest::GetProperty(ECgiProp property) const
 {
-    if (property == eCgi_NProperties) {
-        _TROUBLE;  static const string str;  return str;
-    }
-
     // This does not work on SunPro 5.0 by some reason:
-    //    return m_Properties.find(s_PropName[property]))->second;
+    //    return m_Properties.find(GetPropName(property)))->second;
     // and this is the workaround:
     return (*const_cast<TCgiProperties*>(&m_Properties)->
-            find(s_PropName[property])).second;
+            find(GetPropertyName(property))).second;
 }
 
 
@@ -391,7 +411,7 @@ Uint2 CCgiRequest::GetServerPort(void) const
     long l = -1;
     const string& str = GetProperty(eCgi_ServerPort);
     if (sscanf(str.c_str(), "%ld", &l) != 1  ||  l < 0  ||  kMax_UI2 < l) {
-        throw runtime_error("CCgiRequest:: Invalid server port: " + str);
+        throw runtime_error("CCgiRequest:: Bad server port: \"" + str + "\"");
     }
     return (Uint2)l;
 }
