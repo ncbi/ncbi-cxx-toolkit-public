@@ -40,7 +40,7 @@
 
 BEGIN_SCOPE(struct_util)
 
-#define ERROR_MESSAGE(s) ERR_POST(Error << "struct_util: " << s << '!')
+#define ERROR_MESSAGE(s) ERR_POST(/* Error << */ "struct_util: " << s << '!')
 #define WARNING_MESSAGE(s) ERR_POST(Warning << "struct_util: " << s)
 #define INFO_MESSAGE(s) ERR_POST(Info << "struct_util: " << s)
 #define TRACE_MESSAGE(s) ERR_POST(Trace << "struct_util: " << s)
@@ -70,7 +70,7 @@ void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remo
     }
     if (nRemoved != nToRemove) {
 #ifndef _DEBUG
-        ERR_POST(Error << "VectorRemoveElements() - bad nToRemove");
+        ERR_POST(/* Error << */ "VectorRemoveElements() - bad nToRemove");
 #endif
         return;
     }
@@ -85,6 +85,10 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/25 17:25:16  ucko
+* Avoid the "Error" diagnostic manipulator, as that severity is already
+* the default and some compilers claim the manipulator is undeclared(!).
+*
 * Revision 1.4  2004/05/25 16:24:51  thiessen
 * remove WorkShop warnings
 *
