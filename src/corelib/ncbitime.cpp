@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/03/25 17:08:17  ucko
+* Centralize treatment of Cygwin as Unix rather than Windows in configure.
+*
 * Revision 1.14  2002/03/22 19:59:29  ucko
 * Use timegm() when available [fixes FreeBSD build].
 * Tweak to work on Cygwin.
@@ -87,9 +90,9 @@
 #include <corelib/ncbitime.hpp>
 #include <stdlib.h>
 
-#if defined NCBI_OS_MSWIN && !defined(__CYGWIN__)
+#if defined NCBI_OS_MSWIN
 #   include <sys/timeb.h>
-#elif defined NCBI_OS_UNIX || defined(__CYGWIN__)
+#elif defined NCBI_OS_UNIX
 #   include <sys/time.h>
 #endif
 
@@ -566,7 +569,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     time_t timer;
 
     // Get time with nanoseconds
-#if defined NCBI_OS_MSWIN && !defined(__CYGWIN__)
+#if defined NCBI_OS_MSWIN
 
     if (value) {
         timer = *value;
@@ -577,7 +580,7 @@ CTime& CTime::x_SetTime(const time_t* value)
         ns = (long) timebuffer.millitm * 
             (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
     }
-#elif defined NCBI_OS_UNIX || defined(__CYGWIN__)
+#elif defined NCBI_OS_UNIX
 
     timer = value ? *value : time(0);
     //    struct timespec tp;

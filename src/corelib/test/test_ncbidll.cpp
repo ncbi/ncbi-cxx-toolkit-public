@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/03/25 17:08:18  ucko
+ * Centralize treatment of Cygwin as Unix rather than Windows in configure.
+ *
  * Revision 6.4  2002/03/22 20:00:44  ucko
  * Tweak to build on Cygwin.  (Still doesn't run successfully. :-/)
  *
@@ -53,7 +56,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbidll.hpp>
 
-#if defined(NCBI_OS_MSWIN) && !defined(__CYGWIN__)
+#if defined(NCBI_OS_MSWIN)
 #  include <windows.h>
 #endif
 
@@ -128,7 +131,7 @@ static void s_TEST_SimpleDll(void)
 
 static void s_TEST_WinSystemDll(void)
 {
-#if defined NCBI_OS_MSWIN && !defined(__CYGWIN__)
+#if defined NCBI_OS_MSWIN
 
     CDll dll_user32("USER32", CDll::eLoadLater);
     CDll dll_userenv("userenv.dll", CDll::eLoadNow, CDll::eAutoUnload);

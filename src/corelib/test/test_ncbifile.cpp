@@ -42,12 +42,6 @@
 #include <corelib/ncbifile.hpp>
 #include <stdio.h>
 
-#ifdef __CYGWIN__
-// Unix is a more accurate description here.
-#undef NCBI_OS_MSWIN
-#define NCBI_OS_UNIX 1
-#endif
-
 USING_NCBI_SCOPE;
 
 
@@ -475,6 +469,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/03/25 17:08:19  ucko
+ * Centralize treatment of Cygwin as Unix rather than Windows in configure.
+ *
  * Revision 1.11  2002/03/22 20:00:24  ucko
  * Tweak to work on Cygwin.  (Use Unix rather than MSWIN code).
  *

@@ -32,12 +32,6 @@
 
 #include <corelib/ncbifile.hpp>
 
-#ifdef __CYGWIN__
-// Unix is a more accurate description here.
-#undef NCBI_OS_MSWIN
-#define NCBI_OS_UNIX 1
-#endif
-
 #if !defined(NCBI_OS_MAC)
 #  include <sys/types.h>
 #  include <sys/stat.h>
@@ -1182,6 +1176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2002/03/25 17:08:17  ucko
+ * Centralize treatment of Cygwin as Unix rather than Windows in configure.
+ *
  * Revision 1.18  2002/03/22 20:00:01  ucko
  * Tweak to work on Cygwin.  (Use Unix rather than MSWIN code).
  *
