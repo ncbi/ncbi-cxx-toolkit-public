@@ -41,8 +41,8 @@ global gProjectData
 
 on ProjectData(projName, features, aFileData)
 	
-	if (count characters of projName) > 18 then
-		set projName to characters 1 through 18 of projName as string
+	if (count characters of projName) > 25 then
+		set projName to characters 1 through 25 of projName as string
 	end if
 	
 	tell application "CodeWarrior IDE"
@@ -52,7 +52,7 @@ on ProjectData(projName, features, aFileData)
 		end if
 		set myFeatures to features
 		
-		return {name:projName, features:myFeatures, rsrcs:{}, settings:Â
+		return {name:projName, features:myFeatures, rsrcs:{"Info.plc"}, settings:Â
 			{Prefix File:"", ppcProject:{}}, projLibs:{}, dynaLibs:{}, sysPaths:{}, fileData:Â
 			aFileData}
 		
