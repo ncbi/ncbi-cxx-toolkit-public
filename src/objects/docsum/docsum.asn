@@ -1,4 +1,4 @@
--- $Id: docsum.asn,v 1.45 2004/09/30 19:16:39 kholodov Exp $
+-- $Id: docsum.asn,v 1.46 2004/10/08 19:48:03 kholodov Exp $
 
 NSE DEFINITIONS ::=
 BEGIN
@@ -254,6 +254,7 @@ NSE-ss ::= SEQUENCE {				-- data for an individual submission to dbSNP. All subm
 		microsat    (4),		--   microsatellite / simple sequence repeat
 		named       (5),		--   allele sequences defined by name tag instead of raw sequence, e.g. (Alu)/- 
 		no-variation (6), 		--   submission reports invariant region in surveyed sequence
+		mixed       (7),        -- mixed class
 		mnp         (8)},		--   multiple nucleotide polymorphism (all alleles same length where length>1)
 	orient ENUMERATED {			-- orientation of refsnp cluster members to refsnp cluster sequence
 		forward	    (1),		-- ss flanking sequence is in same orientation as seq-ss-exemplar (above) 
@@ -483,6 +484,9 @@ NSE-Date-std ::= SEQUENCE {        		-- NOTE: this is NOT a unix tm struct
 END
 
 -- $Log: docsum.asn,v $
+-- Revision 1.46  2004/10/08 19:48:03  kholodov
+-- Added: mixed(7) subsnp_class
+--
 -- Revision 1.45  2004/09/30 19:16:39  kholodov
 -- Added: genomic build id
 --
