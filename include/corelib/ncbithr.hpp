@@ -177,16 +177,6 @@ public:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CThread::
-//
-//    Thread wrapper class
-//
-//  Base class for user-defined threads. Creates the new thread, then
-//  calls user-provided Main() function. The thread then can be detached
-//  or joined. In any case, explicit destruction of the thread is prohibited.
-//
-/////////////////////////////////////////////////////////////////////////////
 ///
 /// CThread --
 ///
@@ -230,71 +220,73 @@ public:
     /// method.
     bool Run(TRunMode flags = fRunDefault);
 
-    // Inform the thread that user does not need to wait for its termination.
-    // The thread object will be destroyed by Exit().
-    // If the thread has already been terminated by Exit, Detach() will
-    // also schedule the thread object for destruction.
-    // NOTE:  it is no more safe to use this thread object after Detach(),
-    //        unless there are still CRef<> based references to it!
+    /// Inform the thread that user does not need to wait for its termination.
+    /// The thread object will be destroyed by Exit().
+    /// If the thread has already been terminated by Exit, Detach() will
+    /// also schedule the thread object for destruction.
+    /// NOTE:  it is no more safe to use this thread object after Detach(),
+    ///        unless there are still CRef<> based references to it!
     void Detach(void);
 
-    // Wait for the thread termination.
-    // The thread object will be scheduled for destruction right here,
-    // inside Join(). Only one call to Join() is allowed.
+    /// Wait for the thread termination.
+    /// The thread object will be scheduled for destruction right here,
+    /// inside Join(). Only one call to Join() is allowed.
     void Join(void** exit_data = 0);
 
-    // Cancel current thread. If the thread is detached, then schedule
-    // the thread object for destruction.
-    // Cancellation is performed by throwing an exception of type
-    // CExitThreadException to allow destruction of all objects in
-    // thread's stack, so Exit() method shell not be called from any
-    // destructor.
+    /// Cancel current thread. If the thread is detached, then schedule
+    /// the thread object for destruction.
+    /// Cancellation is performed by throwing an exception of type
+    /// CExitThreadException to allow destruction of all objects in
+    /// thread's stack, so Exit() method shell not be called from any
+    /// destructor.
     static void Exit(void* exit_data);
 
-    // If the thread has not been Run() yet, then schedule the thread object
-    // for destruction, and return TRUE.
-    // Otherwise, do nothing, and return FALSE.
+    /// If the thread has not been Run() yet, then schedule the thread object
+    /// for destruction, and return TRUE.
+    /// Otherwise, do nothing, and return FALSE.
     bool Discard(void);
 
-    // Get ID of current thread (for main thread it is always zero).
+    /// Get ID of current thread (for main thread it is always zero).
     typedef unsigned int TID;
     static TID GetSelf(void);
 
-    // Get system ID of the current thread - for internal use only.
-    // The ID is unique only while the thread is running and may be
-    // re-used by another thread later.
+    /// Get system ID of the current thread - for internal use only.
+    /// The ID is unique only while the thread is running and may be
+    /// re-used by another thread later.
     static void GetSystemID(TThreadSystemID* id);
 
 protected:
-    // Derived (user-created) class must provide a real thread function.
+    /// Derived (user-created) class must provide a real thread function.
     virtual void* Main(void) = 0;
 
-    // Override this to execute finalization code.
-    // Unlike destructor, this code will be executed before
-    // thread termination and as a part of the thread.
+    /// Override this to execute finalization code.
+    /// Unlike destructor, this code will be executed before
+    /// thread termination and as a part of the thread.
     virtual void OnExit(void);
 
-    // To be called only internally!
-    // NOTE:  destructor of the derived (user-provided) class should be
-    //        declared "protected", too!
+    /// To be called only internally!
+    /// NOTE:  destructor of the derived (user-provided) class should be
+    ///        declared "protected", too!
     virtual ~CThread(void);
 
-private:
-    TID           m_ID;            // thread ID
-    TThreadHandle m_Handle;        // platform-dependent thread handle
-    bool          m_IsRun;         // if Run() was called for the thread
-    bool          m_IsDetached;    // if the thread is detached
-    bool          m_IsJoined;      // if Join() was called for the thread
-    bool          m_IsTerminated;  // if Exit() was called for the thread
-    CRef<CThread> m_SelfRef;       // "this" -- to avoid premature destruction
-    void*         m_ExitData;      // as returned by Main() or passed to Exit()
+    TThreadHandle GetThreadHandle();
 
-    // Function to use (internally) as the thread's startup function
+private:
+    TID           m_ID;            /// thread ID
+    TThreadHandle m_Handle;        /// platform-dependent thread handle
+    bool          m_IsRun;         /// if Run() was called for the thread
+    bool          m_IsDetached;    /// if the thread is detached
+    bool          m_IsJoined;      /// if Join() was called for the thread
+    bool          m_IsTerminated;  /// if Exit() was called for the thread
+    CRef<CThread> m_SelfRef;       /// "this" -- to avoid premature destruction
+    void*         m_ExitData;      /// as returned by Main() or passed to Exit()
+
+    /// Function to use (internally) as the thread's startup function
     static TWrapperRes Wrapper(TWrapperArg arg);
 
-    // To store "CThread" object related to the current (running) thread
+    /// To store "CThread" object related to the current (running) thread
     static CTls<CThread>* sm_ThreadsTls;
-    // Safe access to "sm_ThreadsTls"
+    /// Safe access to "sm_ThreadsTls"
     static CTls<CThread>& GetThreadsTls(void)
     {
         if ( !sm_ThreadsTls ) {
@@ -303,11 +295,11 @@ private:
         return *sm_ThreadsTls;
     }
 
-    // sm_ThreadsTls initialization and cleanup functions
+    /// sm_ThreadsTls initialization and cleanup functions
     static void CreateThreadsTls(void);
     friend void s_CleanupThreadsTls(void* /* ptr */);
 
-    // Keep all TLS references to clean them up in Exit()
+    /// Keep all TLS references to clean them up in Exit()
     typedef set< CRef<CTlsBase> > TTlsSet;
     TTlsSet m_UsedTls;
     static void AddUsedTls(CTlsBase* tls);
@@ -355,10 +347,10 @@ inline
 void* CTlsBase::x_GetValue(void)
 const
 {
-    // Get TLS-stored structure
+    /// Get TLS-stored structure
     STlsData* tls_data = x_GetTlsData();
 
-    // If assigned, extract and return user data
+    /// If assigned, extract and return user data
     return tls_data ? tls_data->m_Value : 0;
 }
 
@@ -371,11 +363,18 @@ const
 inline
 CThread::TID CThread::GetSelf(void)
 {
-    // Get pointer to the current thread object
+    /// Get pointer to the current thread object
     CThread* thread_ptr = GetThreadsTls().GetValue();
 
-    // If zero, it is main thread which has no CThread object
+    /// If zero, it is main thread which has no CThread object
     return thread_ptr ? thread_ptr->m_ID : 0/*main thread*/;
+}
+
+
+inline
+TThreadHandle CThread::GetThreadHandle()
+{
+    return m_Handle;
 }
 
 
@@ -390,6 +389,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/11/30 15:05:22  dicuccio
+ * Added protetected CThread::GetThreadHandle().  Doxygenated comments (// -> ///)
+ *
  * Revision 1.23  2003/11/18 11:57:58  siyan
  * Changed so @addtogroup does not cross namespace boundary
  *
