@@ -42,6 +42,9 @@
 * 12-22-93 Schuler     Converted ERRPOST((...)) to ErrPostEx(...)
 *
 * $Log$
+* Revision 1.3  2003/08/25 22:32:51  dondosha
+* Added #ifndef for definition of DBL_EPSILON
+*
 * Revision 1.2  2003/08/11 15:02:00  dondosha
 * Added algo/blast/core to all #included headers
 *
@@ -130,7 +133,10 @@ extern double Nlm_Expm1(double	x)
                           )));
 }
 
+#ifndef DBL_EPSILON
 #define DBL_EPSILON 2.2204460492503131e-16
+#endif
+
 /*
     Nlm_Log1p(x)
     Return accurate values for the quantity log(x+1) for all x > -1.
