@@ -240,8 +240,15 @@ CBl2Seq::SetupSearch()
 
     x_ResetSubjectDs();
 
-    mi_pSeqSrc = MultiSeqSrcInit(m_tSubjects, 
-                                 m_OptsHandle->GetOptions().GetProgram());
+    mi_pSeqSrc = 
+        MultiSeqBlastSeqSrcInit(m_tSubjects, 
+                                m_OptsHandle->GetOptions().GetProgram());
+    char* error_str = BlastSeqSrcGetInitError(mi_pSeqSrc);
+    if (error_str) {
+        string msg(error_str);
+        sfree(error_str);
+        NCBI_THROW(CBlastException, eSeqSrc, msg);
+    }
 
     // Set the hitlist size to the total number of subject sequences, to 
     // make sure that no hits are discarded.
@@ -347,6 +354,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.64  2004/11/17 20:26:33  camacho
+ * Use new BlastSeqSrc initialization function names and check for initialization errors
+ *
  * Revision 1.63  2004/10/06 14:53:36  dondosha
  * Remap subject coordinates in Seq-aligns separately after all Seq-aligns are filled; Use IBlastSeqInfoSrc interface in x_Results2CSeqAlign
  *

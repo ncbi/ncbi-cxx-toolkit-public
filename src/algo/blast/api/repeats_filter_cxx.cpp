@@ -194,7 +194,13 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 
     ParseRepeatOptions(repeats_filter_string, &dbname);
 
-    BlastSeqSrc* seq_src = SeqDbSrcInit(dbname, is_prot, 0, 0, NULL);
+    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(dbname, is_prot);
+    char* error_str = BlastSeqSrcGetInitError(seq_src);
+    if (error_str) {
+        string msg(error_str);
+        sfree(error_str);
+        NCBI_THROW(CBlastException, eSeqSrc, msg);
+    }
     CBlastNucleotideOptionsHandle opts;
     opts.SetTraditionalBlastnDefaults();
     opts.SetMismatchPenalty(-1);
@@ -218,6 +224,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.9  2004/11/17 20:26:33  camacho
+ *  Use new BlastSeqSrc initialization function names and check for initialization errors
+ *
  *  Revision 1.8  2004/11/02 17:58:27  camacho
  *  Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
  *
