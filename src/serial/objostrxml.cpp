@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/08/13 18:23:54  gouriano
+* corrected XML schema namespace name
+*
 * Revision 1.59  2003/08/13 15:47:45  gouriano
 * implemented serialization of AnyContent objects
 *
@@ -402,7 +405,7 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
         m_Output.PutString("    xmlns=\"");
         m_Output.PutString(GetDefaultSchemaNamespace() + "\"");
         m_Output.PutEol();
-        m_Output.PutString("    xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"");
+        m_Output.PutString("    xmlns:xs=\"http://www.w3.org/2001/XMLSchema-instance\"");
         m_Output.PutEol();
         m_Output.PutString("    xs:schemaLocation=\"");
         m_Output.PutString(GetDefaultSchemaNamespace() + " ");
