@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/07 13:39:12  thiessen
+* damn string namespace weirdness again
+*
 * Revision 1.3  2001/03/06 20:20:51  thiessen
 * progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
 *
@@ -42,6 +45,7 @@
 * ===========================================================================
 */
 
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
 #include "cn3d/viewer_window_base.hpp"
