@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/01/16 18:56:34  grichenk
+* Removed CRef<> argument from choice variant setter, updated sources to
+* use references instead of CRef<>s
+*
 * Revision 1.29  2001/06/21 19:47:39  grichenk
 * Copy constructor and operator=() moved to "private" section
 *
@@ -687,13 +691,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 "    "<<cType<<"& Get"<<i->cName<<"(void);\n"
                 "    "<<cType<<"& Set"<<i->cName<<"(void);\n";
             if ( i->memberType == eSimpleMember ||
-                 i->memberType == eStringMember ) {
+                 i->memberType == eStringMember ||
+                 i->memberType == eObjectPointerMember ) {
                 setters <<
                     "    void Set"<<i->cName<<"(const "<<cType<<"& value);\n";
-            }
-            if ( i->memberType == eObjectPointerMember ) {
-                setters <<
-                    "    void Set"<<i->cName<<"(const "<<ncbiNamespace<<"CRef<"<<cType<<">& ref);\n";
             }
             string memberRef;
             string constMemberRef;
@@ -782,9 +783,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if ( i->memberType == eObjectPointerMember ) {
                 methods <<
-                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef<T"<<i->cName<<">& ref)\n"
+                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
                     "{\n"
-                    "    T"<<i->cName<<"* ptr = const_cast<T"<<i->cName<<"*>(&*ref);\n";
+                    "    T"<<i->cName<<"* ptr = const_cast<T"<<i->cName<<"*>(&value);\n";
                 if ( i->delayed ) {
                     methods <<
                         "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "DELAY_MEMBER" || "OBJECT_MEMBER" != ptr ) {\n";

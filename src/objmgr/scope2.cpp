@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/16 18:56:28  grichenk
+* Removed CRef<> argument from choice variant setter, updated sources to
+* use references instead of CRef<>s
+*
 * Revision 1.2  2002/01/16 16:25:56  gouriano
 * restructured objmgr
 *
@@ -543,7 +547,7 @@ static string s_TitleFromProtein(const CBioseqHandle& handle, CScope& scope,
     string               result;
 
     CSeq_loc everywhere;
-    everywhere.SetWhole(core->GetId().front());
+    everywhere.SetWhole(*core->GetId().front());
 
     {{
         CConstRef<CSeq_feat> prot_feat

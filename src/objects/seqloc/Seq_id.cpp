@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2002/01/16 18:56:32  grichenk
+ * Removed CRef<> argument from choice variant setter, updated sources to
+ * use references instead of CRef<>s
+ *
  * Revision 6.18  2002/01/10 19:00:04  clausen
  * Added GetLength
  *
@@ -568,51 +572,51 @@ CSeq_id::x_Init
         }
     case CSeq_id::e_Genbank:
         {
-            CRef<CTextseq_id> text
+            CTextseq_id* text
                 = new CTextseq_id(acc, name, version, release);
-            SetGenbank(text );
+            SetGenbank(*text );
             break;
         }
     case CSeq_id::e_Embl:
         {
-            CRef<CTextseq_id> text
+            CTextseq_id* text
                = new CTextseq_id(acc, name, version, release);
-            SetEmbl(text);
+            SetEmbl(*text);
             break;
         }
     case CSeq_id::e_Pir:
         {
-            CRef<CTextseq_id> text
+            CTextseq_id* text
                 = new CTextseq_id(acc, name, version, release, false);
-            SetPir(text);
+            SetPir(*text);
             break;
         }
     case CSeq_id::e_Swissprot:
         {
-            CRef<CTextseq_id> text
+            CTextseq_id* text
                 = new CTextseq_id(acc, name, version, release, false);
-            SetSwissprot(text);
+            SetSwissprot(*text);
             break;
         }
     case CSeq_id::e_Tpg:
         {
-            CRef<CTextseq_id> text
+            CTextseq_id* text
                 = new CTextseq_id(acc, name, version, release);
-            SetTpg(text);
+            SetTpg(*text);
             break;
         }
     case CSeq_id::e_Tpe:
         {
-            CRef<CTextseq_id> text
+            CTextseq_id* text
                 = new CTextseq_id(acc, name, version, release);
-            SetTpe(text);
+            SetTpe(*text);
             break;
         }
     case CSeq_id::e_Tpd:
         {
-            CRef<CTextseq_id> text
+            CTextseq_id* text
                 = new CTextseq_id(acc, name, version, release);
-            SetTpd(text);
+            SetTpd(*text);
             break;
         }
     case CSeq_id::e_Patent:
@@ -634,9 +638,9 @@ CSeq_id::x_Init
         }
     case CSeq_id::e_Other: // RefSeq, allow dot version
         {
-            CRef<CTextseq_id> text
+            CTextseq_id* text
                 = new CTextseq_id(acc,name,version,release);
-            SetOther(text);
+            SetOther(*text);
             break;
         }
     case CSeq_id::e_General:
@@ -664,16 +668,16 @@ CSeq_id::x_Init
         break;
     case CSeq_id::e_Ddbj:
         {
-            CRef<CTextseq_id> text
+            CTextseq_id* text
                 = new CTextseq_id(acc,name,version,release);
-            SetDdbj(text);
+            SetDdbj(*text);
             break;
         }
     case CSeq_id::e_Prf:
         {
-            CRef<CTextseq_id> text
+            CTextseq_id* text
                 = new CTextseq_id(acc,name,version,release,false);
-            SetPrf(text);
+            SetPrf(*text);
             break;
         }
     case CSeq_id::e_Pdb:

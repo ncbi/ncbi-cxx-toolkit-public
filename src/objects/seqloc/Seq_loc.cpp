@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/01/16 18:56:32  grichenk
+ * Removed CRef<> argument from choice variant setter, updated sources to
+ * use references instead of CRef<>s
+ *
  * Revision 6.6  2002/01/10 18:21:26  clausen
  * Added IsOneBioseq, GetStart, and GetId
  *
@@ -852,9 +856,8 @@ inline CSeq_loc::ECompare s_Compare
  const CSeq_interval& si,
  CScope*              scope)
 {
-    CRef<CSeq_interval> cr(const_cast<CSeq_interval*>(&si));
     CSeq_loc nsl;
-    nsl.SetInt(cr);
+    nsl.SetInt(const_cast<CSeq_interval&>(si));
     return s_Compare(sl, nsl, scope);
 }
 
@@ -870,9 +873,8 @@ inline CSeq_loc::ECompare s_Compare
  const CSeq_loc&      sl,
  CScope*              scope)
 {
-    CRef<CSeq_interval> cr(const_cast<CSeq_interval*>(&si));
     CSeq_loc nsl;
-    nsl.SetInt(cr);
+    nsl.SetInt(const_cast<CSeq_interval&>(si));
     return s_Compare(nsl, sl, scope);
 }
 

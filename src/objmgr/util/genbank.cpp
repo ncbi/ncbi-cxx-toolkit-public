@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/01/16 18:56:33  grichenk
+* Removed CRef<> argument from choice variant setter, updated sources to
+* use references instead of CRef<>s
+*
 * Revision 1.14  2001/11/13 15:40:34  ucko
 * Use Idx2Codon to report genetic code variations.
 *
@@ -1477,7 +1481,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
 {
     const CBioseq& seq = m_Scope.GetBioseq(handle);
     CSeq_loc everywhere;
-    everywhere.SetWhole(seq.GetId().front());
+    everywhere.SetWhole(*seq.GetId().front());
 
     m_Stream << s_Pad("FEATURES", sm_FeatureNameIndent + sm_FeatureNameWidth)
              << "Location/Qualifiers" << NcbiEndl;

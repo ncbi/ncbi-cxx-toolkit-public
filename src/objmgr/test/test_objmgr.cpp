@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/16 18:56:30  grichenk
+* Removed CRef<> argument from choice variant setter, updated sources to
+* use references instead of CRef<>s
+*
 * Revision 1.2  2002/01/16 16:28:46  gouriano
 * restructured objmgr
 *
@@ -93,6 +97,9 @@
 #include <objects/objmgr1/object_manager.hpp>
 
 #include <objects/seq/seqport_util.hpp>
+
+#include "../id_handles.hpp"
+#include <objects/id1/id1__.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -665,7 +672,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
 
     // Test CSeq_feat iterator
     CSeq_loc loc;
-    loc.SetWhole(&id);
+    loc.SetWhole(id);
     count = 0;
     for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
         feat_it;  ++feat_it) {
@@ -688,7 +695,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     _ASSERT(count == seq_featrg_cnt);
 
     // Test CSeq_align iterator
-    loc.SetWhole(&id);
+    loc.SetWhole(id);
     count = 0;
     for (CAlign_CI align_it( scope, loc);
         align_it;  ++align_it) {
@@ -714,6 +721,45 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
 
 int CTestApp::Run(void)
 {
+    // Temp. test for seq-id handles and mapper
+    CID1server_back back;
+    CObjectIStream& is = *CObjectIStream::Open("id1.asn", eSerial_AsnText);
+    CSeq_id_Mapper mapper;
+    CSeq_id_Handle last_h;
+    int cnt = 0;
+    typedef map< CSeq_id_Handle, CRef<CSeq_id> > TIdMap;
+    TIdMap id_map;
+    try {
+        while (true) {
+            is >> back;
+            if (!back.IsIds())
+                continue;
+            iterate(CID1server_back::TIds, it, back.GetIds()) {
+                NcbiCout << ++cnt << NcbiEndl;
+                CSeq_id_Handle h = mapper.GetHandle(**it);
+                id_map[h] = *it;
+                mapper.AddHandleReference(h);
+            }
+        }
+    }
+    catch (...) {
+        NcbiCout << "End" << NcbiEndl;
+    }
+    iterate(TIdMap, it, id_map) {
+        NcbiCout << "Processing id: " << it->second->DumpAsFasta() << NcbiEndl;
+        CSeq_id_Handle found = mapper.GetHandle(*it->second);
+        _ASSERT(it->first == found);
+    }
+    string req;
+    NcbiCout << "Search string: ";
+    NcbiCin >> req;
+    TSeq_id_HandleSet h_set;
+    mapper.GetMatchingHandlesStr(req, h_set);
+    iterate (TSeq_id_HandleSet, hit, h_set) {
+        NcbiCout << mapper.GetSeq_id(*hit).DumpAsFasta() << NcbiEndl;
+    }
+    return 0;
+
     NcbiCout << "Testing ObjectManager..." << NcbiEndl;
     CSeq_id id;
 
@@ -858,7 +904,7 @@ int CTestApp::Run(void)
 
             CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed"));
             CRef<CSeq_entry> constr_entry(new CSeq_entry);
-            constr_entry->SetSeq(constr_seq);
+            constr_entry->SetSeq(*constr_seq);
             pScope->AddTopLevelSeqEntry(*constr_entry);
             id.SetLocal().SetStr("constructed");
             ProcessBioseq(*pScope, id,
@@ -884,7 +930,7 @@ int CTestApp::Run(void)
 
             CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed"));
             CRef<CSeq_entry> constr_entry(new CSeq_entry);
-            constr_entry->SetSeq(constr_seq);
+            constr_entry->SetSeq(*constr_seq);
             pScope->AddTopLevelSeqEntry(*constr_entry);
             id.SetLocal().SetStr("constructed");
             ProcessBioseq(*pScope, id,

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/16 18:56:30  grichenk
+* Removed CRef<> argument from choice variant setter, updated sources to
+* use references instead of CRef<>s
+*
 * Revision 1.2  2002/01/16 16:28:47  gouriano
 * restructured objmgr
 *
@@ -300,7 +304,7 @@ void* CTestThread::Main(void)
 
         CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed"));
         CRef<CSeq_entry> constr_entry(new CSeq_entry);
-        constr_entry->SetSeq(constr_seq);
+        constr_entry->SetSeq(*constr_seq);
         scope.AddTopLevelSeqEntry(*constr_entry);
         id.SetLocal().SetStr("constructed");
         ProcessBioseq(scope, id,
@@ -326,7 +330,7 @@ void* CTestThread::Main(void)
 
         CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed"));
         CRef<CSeq_entry> constr_entry(new CSeq_entry);
-        constr_entry->SetSeq(constr_seq);
+        constr_entry->SetSeq(*constr_seq);
         scope.AddTopLevelSeqEntry(*constr_entry);
         id.SetLocal().SetStr("constructed");
         ProcessBioseq(scope, id,
@@ -899,7 +903,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
 
     // Test CSeq_feat iterator
     CSeq_loc loc;
-    loc.SetWhole(&id);
+    loc.SetWhole(id);
     count = 0;
     for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
         feat_it;  ++feat_it) {
@@ -922,7 +926,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     _ASSERT(count == seq_featrg_cnt);
 
     // Test CSeq_align iterator
-    loc.SetWhole(&id);
+    loc.SetWhole(id);
     count = 0;
     for (CAlign_CI align_it(scope,loc);
         align_it;  ++align_it) {

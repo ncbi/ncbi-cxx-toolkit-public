@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/01/16 18:56:22  grichenk
+ * Removed CRef<> argument from choice variant setter, updated sources to
+ * use references instead of CRef<>s
+ *
  * Revision 1.1  2002/01/10 20:09:03  clausen
  * Added GetLabel
  *
@@ -90,8 +94,7 @@ void CCit_jour::GetLabel(string* label) const
 {
     // Wrap CCit_jour in CPub and call CPub::GetLabel()
     CPub pub;
-    CRef<CCit_jour> jour(const_cast<CCit_jour*>(this));
-    pub.SetJournal(jour);
+    pub.SetJournal(const_cast<CCit_jour&>(*this));
     pub.GetLabel(label);
 }
 

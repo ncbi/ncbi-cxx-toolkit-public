@@ -39,7 +39,7 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
   m_ID1_Server.reset(new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout));
 
   CID1server_request id1_request;
-  id1_request.SetGetgi(CRef<CSeq_id>((CSeq_id*)&seqId));
+  id1_request.SetGetgi(seqId);
   CConn_ServiceStream *server = m_ID1_Server.get();
   {
     CObjectOStreamAsnBinary server_output(*server);
@@ -137,7 +137,7 @@ CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref) : m_Id1Seqref(id1Seqref)
   params->SetSat(m_Id1Seqref.Sat());
 
   CID1server_request id1_request;
-  id1_request.SetGetsefromgi(params);
+  id1_request.SetGetsefromgi(*params);
 
   STimeout tmout;
   tmout.sec = 9;
@@ -219,6 +219,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2002/01/16 18:56:28  grichenk
+* Removed CRef<> argument from choice variant setter, updated sources to
+* use references instead of CRef<>s
+*
 * Revision 1.1  2002/01/11 19:06:22  gouriano
 * restructured objmgr
 *

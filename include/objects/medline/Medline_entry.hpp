@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/01/16 18:56:24  grichenk
+ * Removed CRef<> argument from choice variant setter, updated sources to
+ * use references instead of CRef<>s
+ *
  * Revision 1.1  2002/01/10 20:01:43  clausen
  * Added GetLabel
  *
@@ -90,8 +94,7 @@ void CMedline_entry::GetLabel(string* label) const
 {
     // Wrap CMedline_entry in CPub and call CPub::GetLabel()
     CPub pub;
-    CRef<CMedline_entry> med(const_cast<CMedline_entry*>(this));
-    pub.SetMedline(med);
+    pub.SetMedline(const_cast<CMedline_entry&>(*this));
     pub.GetLabel(label);
 }
 

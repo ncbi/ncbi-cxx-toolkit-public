@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/01/16 18:56:31  grichenk
+ * Removed CRef<> argument from choice variant setter, updated sources to
+ * use references instead of CRef<>s
+ *
  * Revision 6.6  2001/12/20 20:00:31  grichenk
  * CObjectManager::ConstructBioseq(CSeq_loc) -> CBioseq::CBioseq(CSeq_loc ...)
  *
@@ -108,7 +112,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(CSeq_loc& loc,
                 if ( (*ii)->IsSetStrand() )
                     int_loc->SetInt().SetStrand((*ii)->GetStrand());
                 CDelta_seq* dseq = new CDelta_seq;
-                dseq->SetLoc(int_loc);
+                dseq->SetLoc(*int_loc);
                 ext.Set().push_back(dseq);
             }
             break;
@@ -127,7 +131,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(CSeq_loc& loc,
                         loc.GetPacked_pnt().GetStrand());
                 }
                 CDelta_seq* dseq = new CDelta_seq;
-                dseq->SetLoc(pnt_loc);
+                dseq->SetLoc(*pnt_loc);
                 ext.Set().push_back(dseq);
             }
         }
@@ -143,7 +147,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(CSeq_loc& loc,
         {
             // Just add the location
             CDelta_seq* dseq = new CDelta_seq;
-            dseq->SetLoc(CRef<CSeq_loc>(&loc));
+            dseq->SetLoc(loc);
             ext.Set().push_back(dseq);
         }
     }
