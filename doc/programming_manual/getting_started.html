@@ -1,0 +1,323 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+  <title>A Simple Application Project</title>
+</head>
+<body BGCOLOR=white>
+<h1> Writing a Simple Application Project </h1>
+
+This page describes what you will need to know to write the simplest possible
+NCBI application using the C++ toolkit and libraries. The program simply 
+prints a message to the screen.  Following this exercise however, will introduce
+you to the foundation classes of the library and explicitly describe how
+to set up your work environment and makefiles.
+
+<ul>
+  <li> <a href="#overview"> Overview </a> 
+  <li> <a href="#makefiles"> The Project's Makefile </a>
+  <li> <a href="#using"> Using the NCBI Application Class </a>
+  <li> <a href="#creating"> Creating the Application Class </a>
+  <li> <a href="#inside"> Inside the Application Class </a>
+</ul>
+
+<a name="overview">
+<h3> Overview </h3>
+
+There are three topics relevant to writing your first C++ project:
+
+<ol>
+  <li> Where to place the source and header files for the project;
+  <li> How to create a makefile which can link to the correct C++ libraries;
+  <li> How to use the fundamental C++ classes required in an NCBI application project.
+</ol>
+
+What you put in your makefile will depend on where you define your
+working directory. In this first example, we assume you will be
+working <i><b> outside </i></b> the NCBI C++ tree, say in a directory called
+"NewProj". This is where you will write both your source and header
+files.  The first step then, is to create the new working directory
+and use the <i> new_project.sh </i> script to install a makefile there:<p>
+
+<pre>
+<font size="-1">
+birch% mkdir NewProj
+
+birch% $NCBI/c++/scripts/new_project.sh NewProj app /netopt/ncbi_tools/c++/GCC-Debug/build
+Created a model makefile "/home/zimmerma/NewProj/Makefile.NewProj_app". </font>
+
+</pre>
+
+The syntax of the script command is:
+<center> <xmp>
+new_project.sh  project_name  <app | lib>  [builddir] 
+</xmp></center>
+where:
+<dl>
+  <dt> - <i> project_name </i> is the name of directory you will be working in;
+  <dt> - <i> app (lib) </i> is used to indicate you will be building an application (library);
+  <dt> - <i> builddir </i>  optionally specifies which libraries should be linked to;
+</dl>
+
+Running the <i>new_project.sh</i> script will generate a ready-to-use makefile in
+the directory you just created.
+
+<a name="makefiles">
+<h3> The Project's Makefile </h3>
+
+This is the file you just created with the above script - take a look
+at it. In addition to other things, you should see definitions for:
+
+<dl>
+  <dt> - <i> builddir </i> - the last argument to the above script 
+  <dt> - <i> srcdir </i> - your current working directory (".")
+  <dt> - <i> the application name </i> (APP) 
+  <dt> - <i> the object name(s) </i> (OBJ)
+  <dt> - <i> specific libraries to link to </i> (LIB)
+</dl>
+
+The <i> builddir </i> specifies make's library path (-L) - which in this case points to
+the debug versions containing symbol tables for the <i> gdb </i> debugger. LIB lists the
+individual libraries in this path that you will be linking to. Minimally, this should include
+xncbi - the library which implements the foundational classes for the C++ tools. Additional
+library names (e.g. <i>xhtml, xcgi, </i> etc.) can be added here. <br><br>
+
+Since the shell script assumes you will be building a single executable with the same name
+as your working directory, the application is defined simply as "NewProj". Additional
+targets to build can be added in the area indicated towards the end of the file. The list
+of objects (OBJ) should include the names (without extensions) of all source files for the
+application "APP". Again the script makes the simplest assumption, i.e. that there is a
+single source file named NewProj.cpp. Additional source names can be added here.
+
+For a very simple application, this makefile is ready to be run. Try it out now, by creating
+the file NewProj.cpp:
+
+<font color = "#008080"> 
+<pre>
+// File name: NewProj.cpp
+
+#include < iostream > 
+
+int main () {
+  cout << "Hello again, world" << endl;
+}
+</pre>
+<font color = black> 
+
+and running: <i> make -f Makefile.NewProj_app</i>. <p>
+
+Of course, it wasn't necessary to set up the directories and makefiles to accomplish this
+much, as this example does not use any of the C++ classes or resources defined at
+NCBI. The next example however, demonstrates a minimal application class that does require
+this type of set up.
+
+
+<a name="using">
+<h3> Using the NCBI Application Class </h3>
+
+Four fundmental classes form the foundation of the C++
+toolkit and more generally, the C++ libraries at NCBI:
+
+<ul>
+ <li> class CNcbiApplication
+ <li> class CNcbiArguments
+ <li> class CNcbiEnvironment
+ <li> class CNcbiRegistry
+</ul>
+
+<i><b>CNcbiApplication </i></b> is an abstract class used to define the basic functionality and behavior
+of an NCBI application. Because this application class effectively supercedes the
+c-style "main" routine, minimally, it must provide the same functionality, i.e.
+
+<ul>
+ <li> A mechanism to execute the actual application
+ <li> A data structure for holding program arguments ("argv")
+ <li> A means for specifiying where errors should be reported
+ <li> A data structure for holding environmental variables
+</ul>
+
+The remaining three classes are used to implement a layered design for the application
+class. That is, each of these classes is in turn included as a data member in the
+application class's specification. <p>
+
+The <i><b> CNcbiArguments </i></b> class provides a data structure for holding the
+character strings in <i> argv,</i>  along with methods for accessing and modifying these.  The data
+structure is a simple C++ vector of strings. Thus access to it is implemented by member
+functions using the built-in [] operator for arrays and vectors. Four additional class
+member functions support retrieval and modification of the program name 
+(intitially <i>argv</i>[0]). <p>
+
+Similarly, the <i><b> CNcbiEnvironments </i></b> class provides a data structure for
+storing, accessing, and modifying the environment variables accessed by the c library
+routine <i>getenv()</i>. In this case the data structure is an associative array - a
+C++ map container, that allows <i>[]</i> access with string rather than integer indexes. <p>
+
+The <i><b> CNcbiRegistry </i></b> class is used to store runtime information read from a
+configuration file. Previously, these files were by convention named ".*rc" files on <i>
+unix </i> systems. The convention for all platforms now is to name such files <i>*.ini</i>
+(where * is by default the application name). <p>
+
+Like the environments class, the registry class uses map structures to associate keys with
+values. A configuration file entails more structure than environment variables however, as
+the key-value pairs must be associated with specific sections. Accordingly, the registry
+class's main data structure uses a map of maps, where the "containing" map is indexed by
+sections while the "contained" map is indexed by keywords. <p>
+
+<a name="creating">
+<h3> Creating a Simple Application Class </h3>
+
+<b>Step 1.</b> Define a subclass of the <i> CNcbiApplication </i> class.<p>
+
+Because <i> CNcbiApplication::Run() </i> is defined as a pure virtual function, the class
+cannot be used directly. Instead, you must first define a subclass which inherits from the
+application class, and include an implementation of <i> Run() </i> in the subclass. <p>
+
+Define the subclass in a header file, and in the subclass declaration, declare
+<i>Run()</i> to be a virtual function:
+
+<font color = "#008080"> 
+<pre>
+// File name: justApp.hpp
+
+#ifndef NCBI_APP__HPP
+#define NCBI_APP__HPP
+
+BEGIN_NCBI_SCOPE		
+
+class CTestApp : public CNcbiApplication {
+public:
+  virtual int Run ();
+};
+
+END_NCBI_SCOPE
+
+#endif
+</pre>
+<font color = black> 
+
+<b>Step 2.</b> Include a call to <i> main()</i> in one of your <i> cpp </i> files. <p>
+
+In that call, create an instance of your subclass, and call the inherited function,
+"AppMain" on that class. This is also a good place to put the implementation of the
+<i>Run()</i> function. Enclose the <i> Run() </i> implementation with <i> BEGIN_NCBI_SCOPE
+</i> and <i> END_NCBI_SCOPE </i> statements, and precede <i>main()</i> with a <i>
+USING_NCBI_SCOPE </i> statement: 
+
+<font color = "#008080"> 
+<pre>
+// file justApp.cpp
+
+#include < corelib/ncbiapp.hpp >
+#include "justApp.hpp"
+
+BEGIN_NCBI_SCOPE
+
+int CTestApp::Run() {
+  cout << endl << "Wow. Can you believe this thing is actually running?!" << endl;
+  return 0;
+}
+
+END_NCBI_SCOPE
+
+USING_NCBI_SCOPE;
+
+int main(int argc, const char* argv[]) 
+{
+  CTestApp theTestApp;
+  return theTestApp.AppMain(argc, argv);
+}
+
+</pre>
+<font color = black> 
+<b>Step 3.</b> Assuming you have done all of this work in a project directory called 
+"justApp", and have already run the new_project script to create the makefile, you are
+now ready to build your first application using:
+<p>
+<center>
+make -f Makefile.justApp_app 
+</center>
+
+<a name="inside">
+<h3> Inside the NCBI Application Class </h3>
+
+To review what we've done so far:
+
+<ol>
+ <li> We defined a subclass of  <i>CNcbiApplication </i> with an implementation of <i>Run()</i>.
+ <li> We declared an instance of this class in <i>main()</i>.
+ <li> We invoked the class member function <i> AppMain() </i> on main's input arguments.
+</ol>
+
+Here is a somewhat simplified view of the application class's definition:
+<font color = "#008080"> 
+<xmp>
+class CNcbiApplication {
+public:
+
+  int AppMain (int argc, char **argv, char **envp,
+	       EAppDiagStream diag, char* config, string& name);
+
+  void Init();     
+  int  Run ();  
+  void Exit();     
+  CNcbiArguments&   GetArguments();
+  CNcbiEnvironment& GetEnvironment();
+  CNcbiRegistry&    GetConfig();
+
+protected:
+
+  bool SetupDiag  (EAppDiagStream diag);
+  bool LoadConfig (CNcbiRegistry& reg, const string* conf);
+
+private:
+
+  static CNcbiApplication*   m_Instance;  
+  auto_ptr<CNcbiArguments>   m_Args;      
+  auto_ptr<CNcbiEnvironment> m_Environ;   
+  auto_ptr<CNcbiRegistry>    m_Config;    
+  auto_ptr<CNcbiOstream>     m_DiagStream;
+};
+</xmp>
+<font color = black> 
+As you can see, the constituents of the class are themselves embedded classes, and are
+defined as private data members. The <i> GetXxx() </i> functions in the application class
+provide access to these private members, while the members themselves implement methods to
+modify their contents.<p>
+
+The protected function <i> SetupDiag() </i> corresponds to the C toolkit functions used to
+set up error posting. This function defines the file stream for error messages, along with
+default severity levels.  <i> LoadConfig() </i> reads the program's <i>.ini </i> configuration
+file to load the application's parameters into the registry's map structures.<p>
+
+With the declaration of the <i>CTestApp</i> class in <i> main</i>, the constructor for
+the class is automatically invoked. Because <i>CTestApp</i> is a subclass of <i>
+CNcbiApplication</i>, that constructor is inherited from the parent class. The
+constructor simply resets (clears) the values of the private data members, and sets
+<i>m_Instance</i> to point to the newly created class.<p>
+
+The <i> AppMain() </i> function is also inherited from the parent class. Although this
+function accepts up to six arguments, this example passes only the first two, with missing
+values supplied by defaults.  <i> AppMain() </i> begins by resetting the internal data
+members with the actual values provided by the arguments to main(). Once these internal data
+structures have been loaded,  <i> AppMain() </i> calls <i> Init(), Run (), </i> and <i> Exit() </i>
+in succession to execute the application. <p>
+
+The <i> Init() </i> and <i> Exit() </i> functions are provided as places for developers to
+add their own methods for specific applications. As this example does not require any
+additional initialization/termination, these two functions simply return. The <i> Run() </i>
+method prints out the message defined in <i>justApp.cpp</i> and exits.
+<p>
+
+</body>
+<a href="../index.html"> <i> up </i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="sub_tree.html"> <i> next </i> </a>
+</html>
+
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+	 </table>

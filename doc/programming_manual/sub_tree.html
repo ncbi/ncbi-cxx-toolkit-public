@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+  <title> Working Independently On A Subtree </title>
+</head>
+<body BGCOLOR=white>
+
+<h1> Working Independently In a C++ Subtree </h1>
+
+An alternative to developing a new project from scratch is to work within a subtree of the
+C++ libraries so as to utilize the header, source, and make files defined for that
+subtree. One way to do this would be to check out the entire source tree and then do all
+your work within the selected subtree(s) only. A better solution is to create a new
+working directory and check out only the relevant subtrees into that directory. This is
+somewhat complicated by the distributed organization of the c++ cvs tree: header files are
+(recursively) contained in an <i> include </i> subtree, while source files are
+(recursively) contained in a <i> src </i> subtree.  Thus multiple checkouts may be
+required to set things up properly, and the customized makefiles (Makefile.*app) will
+need to be modified. The shell script <i> import_project.sh </i> will do all of this 
+for you. The syntax is:
+<center> <xmp>
+import_project.sh  subtree_name  [builddir] 
+</xmp></center>
+where:
+<dl>
+  <dt> - <i> subtree </i> is the path to a selected directory inside internal/c++/src/
+  <dt> - <i> builddir </i>  optionally specifies which libraries should be linked to;
+</dl>
+
+As a result of executing this shell script, you will have a new directory created with the
+pathname ./internal/c++/ whose structure contains "slices" of the original cvs
+tree. Specifically, you will find:
+
+<dl> 
+<dt> ./internal/c++/CVS
+<dt> ./internal/c++/include/CVS
+<dt> ./internal/c++/include/subtree_name
+<dt> ./internal/c++/src/CVS
+<dt> ./internal/c++/src/subtree_name
+</dl> 
+
+The src and include directories will contain all of the requested subtree's source and
+header files along with any hierarchically defined subdirectories. In addition, the script
+will create new makefiles with the suffix "_app". These makefiles are generated from the
+orginal customized make files ("Makefile.*.app") located in the original src subtrees.
+The customized makefiles were designed to work only in conjunction with the build
+directories in the larger C++ tree; the newly created makefile can be used directly in
+your new working directories.<p>
+
+Currently, there are eight project directories in the c++ tree, including:
+
+<ul>
+ <li> <i> cgi </i> - libraries for developing CGI applications 
+ <li> <i> connect </i> - libraries for using socket connections
+ <li> <i> corelib </i> - libraries for Toolkit foundations
+ <li> <i> hello </i> - a simple example project that incorporates all but the serial libraries
+ <li> <i> html </i> - libraries for developing HTML pages
+ <li> <i> serial </i> - libraries for handling ASN, XML and files of other specified formats
+</ul>
+
+Two other project directories, <i> internal </i> and <i> objects </i>, are not intended
+for general use, and the mechanisms in the import_project script for generating makefiles
+are not guaranteed to work for these.  The <i> objects </i> subdirectories are used as the
+original repositories for ASN.1 specifications, and subsequently, for writing the object
+definitions and implementations created by the <i> datatool </i> program. These
+definitions are available for use in your application as described in the section <a
+href="asn.html"> Processing ASN.1 Data. </a> The <i> internal </i> subdirectory is used
+for in-house development, and is the recommended work area for <i> new </i> projects.
+
+<p>
+<p>
+</body>
+<a href="getting_started.html"> <i> previous</i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="asn.html"> <i> next </i> </a>
+</html>
+
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+	 </table>
