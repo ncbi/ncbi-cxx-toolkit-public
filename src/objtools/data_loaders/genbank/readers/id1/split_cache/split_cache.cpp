@@ -315,7 +315,9 @@ void CSplitCacheApp::SetupCache(void)
             ICache::fExpireLeastFrequentlyUsed |
             ICache::fPurgeOnStartup;
         cache->SetTimeStampPolicy(flags, blob_age*24*60*60);
-        
+        cache->SetReadUpdateLimit(1000);
+        cache->SetVersionRetention(ICache::eKeepAll);
+
         cache->Open(cache_dir.c_str(), "blobs");
 
         // purge old blobs
@@ -338,10 +340,13 @@ void CSplitCacheApp::SetupCache(void)
 
         ICache::TTimeStampFlags flags =
             ICache::fTimeStampOnCreate|
+            ICache::fTrackSubKey|
             ICache::fCheckExpirationAlways;
         cache->SetTimeStampPolicy(flags, id_age*24*60*60);
+        cache->SetVersionRetention(ICache::eKeepAll);
         
-        cache->Open(cache_dir.c_str(), "ids");
+		string id_dir = cache_dir + CDirEntry::GetPathSeparator() + "id";
+        cache->Open(id_dir.c_str(), "ids");
     }}
 
     {{ // create object manager
@@ -742,7 +747,8 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
             Dump(this, *it->second, eSerial_AsnBinary, key, suffix);
         }
     }
-    {{ // storing split data
+	if ( m_DumpAsnText || m_DumpAsnBinary ) {
+		// storing split data
         DumpData(this, blob.GetMainBlob(),
                  CID2_Reply_Data::eData_type_seq_entry, key, "-main");
         DumpData(this, blob.GetSplitInfo(),
@@ -752,7 +758,7 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
             DumpData(this, *it->second,
                      CID2_Reply_Data::eData_type_id2s_chunk, key, suffix);
         }
-    }}
+    }
     {{ // storing split data into cache
         {{
             WAIT_LINE << "Removing old split data...";
@@ -795,6 +801,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/08/09 15:57:03  vasilche
+* Fine tuning of blob cache. Ids are moved to subdirectory.
+*
 * Revision 1.25  2004/08/04 14:55:18  vasilche
 * Changed TSE locking scheme.
 * TSE cache is maintained by CDataSource.
