@@ -3092,14 +3092,14 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
             if (positionBased) {
                 /* We don't use the scaled Lambda because we loose precision */
                 gapAlign->gap_x_dropoff =
-                    (Int4) extendParams->options->gap_x_dropoff_final * 
+                    (Int4) (extendParams->options->gap_x_dropoff_final * 
                     NCBIMATH_LN2 / 
-                    searchParams->kbp_gap_orig->Lambda*localScalingFactor;
+                    searchParams->kbp_gap_orig->Lambda*localScalingFactor);
             } else {
                 /* Lambda is already scaled */
                 gapAlign->gap_x_dropoff =
-                    (Int4) extendParams->options->gap_x_dropoff_final * 
-                    NCBIMATH_LN2 / kbp->Lambda;
+                    (Int4) (extendParams->options->gap_x_dropoff_final * 
+                    NCBIMATH_LN2 / kbp->Lambda);
             }
             BLAST_GappedAlignmentWithTraceback(program_number,
                                                query.data, subject.data,
