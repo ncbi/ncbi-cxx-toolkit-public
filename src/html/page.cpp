@@ -209,6 +209,7 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
             str.append(buf, is.gcount());
             SIZE_TYPE pos = str.rfind('\n');
             if (pos != NPOS) {
+                ++pos;
                 CHTMLText* child = new CHTMLText(str.substr(0, pos));
                 child->Print(*out, mode);
                 node->AppendChild(child);
@@ -407,6 +408,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.36  2003/05/15 13:00:24  ucko
+ * When breaking large templates into chunks, be sure to include the
+ * relevant newline in each chunk to avoid accidentally repeating it if a
+ * really long line follows.
+ *
  * Revision 1.35  2003/05/15 00:07:05  ucko
  * x_CreateTemplate: don't assume out implies !m_UsePopupMenus
  *
