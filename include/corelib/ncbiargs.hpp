@@ -37,6 +37,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2001/03/16 16:39:13  vakatov
+ * + <corelib/ncbi_limits.h>
+ *
  * Revision 1.18  2001/01/22 23:07:12  vakatov
  * CArgValue::AsInteger() to return "int" (rather than "long")
  *
@@ -106,6 +109,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_limits.h>
 #include <memory>
 #include <set>
 #include <list>
