@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/18 23:07:09  thiessen
+* minor efficiency tweaks
+*
 * Revision 1.7  2000/08/11 12:58:31  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -81,7 +84,7 @@ StructureBase::~StructureBase(void)
 {
     _ChildList::iterator i, e=_children.end();
     for (i=_children.begin(); i!=e; i++) 
-        delete i->first;
+        delete *i;
 }
 
 // draws the object and all its children - halt upon false return from Draw or DrawAll
@@ -91,30 +94,25 @@ bool StructureBase::DrawAll(const AtomSet *atomSet) const
     if (!Draw(atomSet)) return true;
     _ChildList::const_iterator i, e=_children.end();
     for (i=_children.begin(); i!=e; i++) 
-        if (!((i->first)->DrawAll(atomSet))) return true;
+        if (!((*i)->DrawAll(atomSet))) return true;
 	return true;
 }
 
-// every StructureBase object stored will get a unique ID (although it's
-// not really useful or accessible at the moment... just need something to map to)
-static unsigned int id = 1;
-
 void StructureBase::_AddChild(StructureBase *child)
 {
-    _ChildList::const_iterator i = _children.find(child);
-    if (i == _children.end())
-        _children[child] = id++;
-    else
-        ERR_POST(Warning << "attempted to add child more than once");
+    _children.push_back(child);
 }
 
 void StructureBase::_RemoveChild(StructureBase *child)
 {
-    _ChildList::iterator i = _children.find(child);
-    if (i != _children.end())
-        _children.erase(i);
-    else
-        ERR_POST(Warning << "attempted to remove non-existent child");
+    _ChildList::iterator i, ie=_children.end();
+    for (i=_children.begin(); i!=ie; i++) {
+        if (*i == child) {
+            _children.erase(i);
+            return;
+        }
+    }
+    ERR_POST(Warning << "attempted to remove non-existent child");
 }
 
 END_SCOPE(Cn3D)

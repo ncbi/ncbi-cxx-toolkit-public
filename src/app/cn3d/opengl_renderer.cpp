@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/08/18 23:07:08  thiessen
+* minor efficiency tweaks
+*
 * Revision 1.18  2000/08/18 18:57:39  thiessen
 * added transparent spheres
 *
@@ -522,8 +525,8 @@ void OpenGLRenderer::Construct(void)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    ClearTransparentSpheres();
     if (structureSet) {
-        ClearTransparentSpheres();
         structureSet->DrawAll();
     } else {
         ConstructLogo();
@@ -684,7 +687,7 @@ void OpenGLRenderer::AddTransparentSphere(const Vector& color, unsigned int name
         return;
     }
 
-    SphereListAndTransform& sphereLT = sphereMap[currentDisplayList];
+    SphereListAndTransform& sphereLT = transparentSphereMap[currentDisplayList];
     sphereLT.first.resize(sphereLT.first.size() + 1);
     SphereInfo& info = sphereLT.first.back();
     info.site = site;
@@ -698,39 +701,42 @@ void OpenGLRenderer::AddTransparentSphere(const Vector& color, unsigned int name
 
 void OpenGLRenderer::AddTransparentSpheresFromList(unsigned int list)
 {
+    const SphereList& sphereList = transparentSphereMap[list].first;
+    if (sphereList.size() == 0) return;
+
     Matrix view;
     GL2Matrix(viewMatrix, &view);
 
     // add spheres attached to this display list; calculate distance from camera to each one
-    SphereList::iterator i, ie=sphereMap[list].first.end();
-    for (i=sphereMap[list].first.begin(); i!=ie; i++) {
+    transparentSpheresToRender.resize(transparentSpheresToRender.size() + sphereList.size());
+    SpherePtrList::iterator sph = transparentSpheresToRender.end();
 
-        renderSphereList.resize(renderSphereList.size() + 1);
-        SpherePtr& sph = renderSphereList.back();
-
-        sph.siteGL = i->site;
-        ApplyTransformation(&sph.siteGL, sphereMap[list].second); // slave->master transform
-        ApplyTransformation(&sph.siteGL, view);                   // current view transform
-        sph.distanceFromCamera = (Vector(0,0,cameraDistance) - sph.siteGL).length() - i->radius;
-        sph.ptr = &(*i);
+    SphereList::const_iterator i, ie=sphereList.end();
+    for (i=sphereList.begin(); i!=ie; i++, sph--) {
+        sph->siteGL = i->site;
+        ApplyTransformation(&(sph->siteGL), transparentSphereMap[list].second); // slave->master transform
+        ApplyTransformation(&(sph->siteGL), view);                              // current view transform
+        sph->distanceFromCamera = (Vector(0,0,cameraDistance) - sph->siteGL).length() - i->radius;
+        sph->ptr = &(*i);
     }
 }
 
 void OpenGLRenderer::RenderTransparentSpheres(void)
 {
+    if (transparentSpheresToRender.size() == 0) return;
+
     SetColor(GL_NONE); // reset color caches in SetColor
 
-    // sort spheres by distance from camera
-    renderSphereList.sort();
+    // sort spheres by distance from camera, via operator < defined for SpherePtr
+    transparentSpheresToRender.sort();
 
     // turn on blending
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // render spheres in order (farthest first)
-    SpherePtrList::reverse_iterator i, ie=renderSphereList.rend();
-    for (i=renderSphereList.rbegin(); i!=ie; i++) {
-        //TESTMSG("distance " << i->distanceFromCamera << " coord " << i->siteGL << " alpha " << i->ptr->alpha);
+    SpherePtrList::reverse_iterator i, ie=transparentSpheresToRender.rend();
+    for (i=transparentSpheresToRender.rbegin(); i!=ie; i++) {
         SetColor(GL_DIFFUSE, i->ptr->color[0], i->ptr->color[1], i->ptr->color[2], i->ptr->alpha);
         glLoadName(static_cast<GLuint>(i->ptr->name));
         glPushMatrix();
@@ -742,7 +748,8 @@ void OpenGLRenderer::RenderTransparentSpheres(void)
     // turn off blending
     glDisable(GL_BLEND);
 
-    renderSphereList.clear();
+    // clear list; recreate it upon each Display()
+    transparentSpheresToRender.clear();
 }
 
 void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle, double alpha)

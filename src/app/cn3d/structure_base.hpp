@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/08/18 23:07:03  thiessen
+* minor efficiency tweaks
+*
 * Revision 1.13  2000/08/18 18:57:44  thiessen
 * added transparent spheres
 *
@@ -76,10 +79,9 @@
 #define CN3D_STRUCTUREBASE__HPP
 
 // container type used for various lists
-#include <deque>
-#define LIST_TYPE std::deque    // most insertions will be at beginning or end
+#include <list>
+#define LIST_TYPE std::list    // can't use deque (at least on PC) as it's a memory hog
 
-#include <map>
 #include <corelib/ncbidiag.hpp>
 
 #define TESTMSG(stream) ERR_POST(Info << stream)
@@ -119,13 +121,14 @@ public:
 private:
     // no default construction
     StructureBase(void);
-
-    StructureBase* _parent;
     // keep track of StructureBase-derived children, so that top-down operations
     // like drawing or deconstructing can trickle down automatically
-    typedef std::map < StructureBase * , int > _ChildList;
+    typedef LIST_TYPE < StructureBase * > _ChildList;
     _ChildList _children;
     void _AddChild(StructureBase *child);
+
+    // also keep parent so we can move up the tree (see GetParentOfType())
+    StructureBase* _parent;
 
 protected:
     void _RemoveChild(StructureBase *child);

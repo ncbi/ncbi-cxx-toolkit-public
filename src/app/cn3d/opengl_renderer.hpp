@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/08/18 23:07:03  thiessen
+* minor efficiency tweaks
+*
 * Revision 1.14  2000/08/18 18:57:43  thiessen
 * added transparent spheres
 *
@@ -81,6 +84,7 @@
 // do not include GL headers here, so that other modules can more easily
 // access this without potential name conflicts
 
+//#include <deque>
 #include <list>
 #include <map>
 
@@ -204,10 +208,10 @@ private:
     typedef std::list < SphereInfo > SphereList;
     typedef std::pair < SphereList, Matrix > SphereListAndTransform;
     typedef std::map < unsigned int, SphereListAndTransform > SphereMap;
-    SphereMap sphereMap;
+    SphereMap transparentSphereMap;
     void AddTransparentSphere(const Vector& color, unsigned int name,
         const Vector& site, double radius, double alpha);
-    void ClearTransparentSpheres(void) { sphereMap.clear(); }
+    void ClearTransparentSpheres(void) { transparentSphereMap.clear(); }
 
     // stuff for rendering transparent spheres (done during Display())
     class SpherePtr
@@ -215,12 +219,12 @@ private:
     public:
         Vector siteGL; // atom site in GL coordinates
         double distanceFromCamera;
-        SphereInfo *ptr;
+        const SphereInfo *ptr;
         friend bool operator < (const SpherePtr& a, const SpherePtr& b)
             { return (a.distanceFromCamera < b.distanceFromCamera); }
     };
     typedef std::list < SpherePtr > SpherePtrList;
-    SpherePtrList renderSphereList;
+    SpherePtrList transparentSpheresToRender;
     void AddTransparentSpheresFromList(unsigned int list);
     void RenderTransparentSpheres(void);
 };
