@@ -43,6 +43,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbireg.hpp>
 #include <corelib/version.hpp>
 #include <memory>
 
@@ -112,10 +113,6 @@ public:
 //
 
 
-// Some forward declarations
-class CNcbiRegistry;
-
-
 /// Where to write the application's diagnostics to.
 enum EAppDiagStream {
     eDS_ToStdout,    ///< To standard output stream
@@ -182,7 +179,7 @@ public:
     ///   Exit code from Run(). Can also return non-zero value if application
     ///   threw an exception.
     /// @sa
-    ///   Init(), Run(), Exit()
+    ///   LoadConfig(), Init(), Run(), Exit()
     int AppMain
     (int                argc,     ///< argc in a regular main(argc, argv, envp)
      const char* const* argv,     ///< argv in a regular main(argc, argv, envp)
@@ -336,12 +333,12 @@ protected:
     ///   TRUE if successful, FALSE otherwise.
     virtual bool SetupDiag_AppSpecific(void);
 
-    /// Load configuration settings from the configuration file to
-    /// the registry.
+    /// Load settings from the configuration file to the registry.
     ///
-    /// Load (add) registry settings from the configuration file specified as
-    /// the "conf" arg passed to AppMain(). The "conf" argument has the
-    /// following special meanings:
+    /// This method is called from inside AppMain() to load (add) registry
+    /// settings from the configuration file specified as the "conf" arg
+    /// passed to AppMain(). The "conf" argument has the following special
+    /// meanings:
     ///  - NULL      -- dont even try to load registry from any file at all;
     ///  - non-empty -- if "conf" contains a path, then try to load from the
     ///                 conf.file of name "conf" (only!). Else - see NOTE.
@@ -368,9 +365,19 @@ protected:
     ///   The loaded registry is returned via the reg parameter.
     /// @param conf
     ///   The configuration file to loaded the registry entries from.
+    /// @param reg_flags
+    ///   Flags for loading the registry
     /// @return
     ///   TRUE only if the file was non-NULL, found and successfully read.
+    virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf,
+                            CNcbiRegistry::TFlags reg_flags);
+
+    /// Load settings from the configuration file to the registry.
+    ///
+    /// CNcbiApplication::LoadConfig(reg, conf) just calls
+    /// LoadConfig(reg, conf, 0).
     virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
+
 
     /// Get the home directory for the current user.
     string GetHomeDir(void);
@@ -476,6 +483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2003/09/29 20:27:59  vakatov
+ * + LoadConfig(...., reg_flags)
+ *
  * Revision 1.38  2003/08/05 19:59:10  ucko
  * With the new meta-registry setup, we don't necessarily own m_Config.
  *

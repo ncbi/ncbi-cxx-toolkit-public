@@ -608,7 +608,9 @@ bool CNcbiApplication::SetupDiag_AppSpecific(void)
 }
 
 
-bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
+bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
+                                  const string*         conf,
+                                  CNcbiRegistry::TFlags reg_flags)
 {
     string basename(m_Arguments->GetProgramBasename());
     CMetaRegistry::SEntry entry;
@@ -617,10 +619,10 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
         return false;
     } else if (conf->empty()) {
         entry = CMetaRegistry::Load(basename, CMetaRegistry::eName_Ini,
-                                    CMetaRegistry::fDontOwn, 0, &reg);
+                                    CMetaRegistry::fDontOwn, reg_flags, &reg);
     } else {
         entry = CMetaRegistry::Load(*conf, CMetaRegistry::eName_AsIs,
-                                    CMetaRegistry::fDontOwn, 0, &reg);
+                                    CMetaRegistry::fDontOwn, reg_flags, &reg);
     }
     if ( !entry.registry ) {
         // failed; complain as appropriate
@@ -652,6 +654,13 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
         }
     }
     return true;
+}
+
+
+bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg,
+                                  const string*  conf)
+{
+    return LoadConfig(reg, conf, 0);
 }
 
 
@@ -876,6 +885,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2003/09/29 20:28:00  vakatov
+ * + LoadConfig(...., reg_flags)
+ *
  * Revision 1.72  2003/09/25 19:34:51  ucko
  * FindProgramExecutablePath: disable Linux-specific logic, since it
  * loses the ability to detect having been run through a symlink.
