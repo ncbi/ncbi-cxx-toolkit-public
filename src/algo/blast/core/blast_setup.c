@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.10  2003/04/21 16:18:22  dondosha
+* Minor correction in BlastSetUp_GetSequence
+*
 * Revision 1.9  2003/04/18 22:26:45  dondosha
 * Removed structures generated from ASN.1 from the main engine of BLAST
 *
@@ -1335,7 +1338,7 @@ ValNodePtr *selcys_pos	/* [out] positions where selenocysteine was replaced by
 
 	is_na = ISA_na(mol);
 
-	if (double_length)
+	if (is_na && double_length)
 	{	/* twice as long for two strands. */
 		*buffer_length = 2*(length + slp_count) + 1;
 	}
