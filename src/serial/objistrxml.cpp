@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2004/01/12 16:52:58  gouriano
+* Corrected reading EMPTY tag value. Added skipping undescribed class member attributes.
+*
 * Revision 1.52  2004/01/08 18:16:53  gouriano
 * correction when skipping end of line
 *
@@ -878,7 +881,7 @@ double CObjectIStreamXml::ReadDouble(void)
 
 void CObjectIStreamXml::ReadNull(void)
 {
-    if ( !EndOpeningTagSelfClosed() )
+    if ( !EndOpeningTagSelfClosed() && !NextTagIsClosing() )
         ThrowError(fFormatError, "empty tag expected");
 }
 
@@ -1651,7 +1654,20 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
     if (m_RejectedTag.empty()) {
         if (m_Attlist && InsideTag()) {
             if (HasAttlist()) {
-                tagName = ReadName(SkipWS());
+                for (;;) {
+                    char ch = SkipWS();
+                    if (ch == '>' || ch == '/') {
+                        return kInvalidMember;
+                    }
+                    tagName = ReadName(ch);
+                    if (tagName.GetLength()) {
+                        if (classType->GetMembers().Find(tagName) != kInvalidMember) {
+                            break;
+                        }
+                        string value;
+                        ReadAttributeValue(value, true);
+                    }
+                }
             } else {
                 return kInvalidMember;
             }
