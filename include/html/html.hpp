@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/07/12 16:37:37  vasilche
+* Added new HTML4 tags: LABEL, BUTTON, FIELDSET, LEGEND.
+* Added methods for setting common attributes: STYLE, ID, TITLE, ACCESSKEY.
+*
 * Revision 1.41  1999/12/28 21:01:03  vasilche
 * Fixed conflict on MS VC between bool and const string& arguments by
 * adding const char* argument.
@@ -225,6 +229,8 @@ public:
 
     // convenient way to set some common attributes
     CHTMLNode* SetClass(const string& class_name);
+    CHTMLNode* SetStyle(const string& style);
+    CHTMLNode* SetId(const string& id);
     CHTMLNode* SetWidth(int width);
     CHTMLNode* SetWidth(const string& width);
     CHTMLNode* SetHeight(int height);
@@ -236,6 +242,8 @@ public:
     CHTMLNode* SetColor(const string& color);
     CHTMLNode* SetNameAttribute(const string& name);
     const string& GetNameAttribute(void) const;
+    CHTMLNode* SetTitle(const string& title);
+    CHTMLNode* SetAccessKey(char key);
 
     // convenient way to add CHTMLPlainText or CHTMLText
     void AppendPlainText(const char* text, bool noEncode = false);
@@ -571,6 +579,37 @@ public:
     void AddHidden(const string& name, int value);
 };
 
+// the legend tag
+class CHTML_legend : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+public:
+    CHTML_legend(const string& legend);
+    CHTML_legend(CHTMLNode* legend);
+    ~CHTML_legend(void);
+};
+
+// the fieldset tag
+class CHTML_fieldset : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+public:
+    CHTML_fieldset(void);
+    CHTML_fieldset(const string& legend);
+    CHTML_fieldset(CHTML_legend* legend);
+    ~CHTML_fieldset(void);
+};
+
+// the label tag
+class CHTML_label : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+public:
+    CHTML_label(const string& text);
+    CHTML_label(const string& text, const string& idRef);
+    ~CHTML_label(void);
+};
+
 // the textarea tag
 class CHTML_textarea : public CHTMLElement
 {
@@ -659,6 +698,29 @@ public:
     CHTML_submit(const string& name);
     CHTML_submit(const string& name, const string& label);
     ~CHTML_submit(void);
+};
+
+// the button tag
+class CHTML_button : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+public:
+    enum EButtonType {
+        eSubmit,
+        eReset,
+        eButton
+    };
+    CHTML_button(const string& text, EButtonType type);
+    CHTML_button(CNCBINode* contents, EButtonType type);
+    CHTML_button(const string& text, const string& name,
+                 const string& value = NcbiEmptyString);
+    CHTML_button(CNCBINode* contents, const string& name,
+                 const string& value = NcbiEmptyString);
+    ~CHTML_button(void);
+
+    CHTML_button* SetType(EButtonType type);
+    CHTML_button* SetSubmit(const string& name,
+                            const string& value = NcbiEmptyString);
 };
 
 // input type=text tag

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2000/07/12 16:37:42  vasilche
+* Added new HTML4 tags: LABEL, BUTTON, FIELDSET, LEGEND.
+* Added methods for setting common attributes: STYLE, ID, TITLE, ACCESSKEY.
+*
 * Revision 1.53  2000/03/07 15:26:12  vasilche
 * Removed second definition of CRef.
 *
@@ -231,6 +235,12 @@ CHTMLNode* CHTMLNode::SetClass(const string& class_name)
     return this;
 }
 
+CHTMLNode* CHTMLNode::SetId(const string& class_name)
+{
+    SetOptionalAttribute("id", class_name);
+    return this;
+}
+
 CHTMLNode* CHTMLNode::SetWidth(int width)
 {
     SetAttribute("width", width);
@@ -294,6 +304,24 @@ CHTMLNode* CHTMLNode::SetNameAttribute(const string& name)
 const string& CHTMLNode::GetNameAttribute(void) const
 {
     return GetAttribute("name");
+}
+
+CHTMLNode* CHTMLNode::SetAccessKey(char key)
+{
+    SetAttribute("accesskey", string(1, key));
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetTitle(const string& title)
+{
+    SetAttribute("title", title);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetStyle(const string& style)
+{
+    SetAttribute("style", style);
+    return this;
 }
 
 void CHTMLNode::AppendPlainText(const string& appendstring, bool noEncode)
@@ -1060,6 +1088,57 @@ void CHTML_form::AddHidden(const string& name, int value)
     AppendChild(new CHTML_hidden(name, value));
 }
 
+// legend element
+CHTML_legend::CHTML_legend(const string& legend)
+    : CParent("legend", legend)
+{
+}
+
+CHTML_legend::CHTML_legend(CHTMLNode* legend)
+    : CParent("legend", legend)
+{
+}
+
+CHTML_legend::~CHTML_legend(void)
+{
+}
+
+// fieldset element
+CHTML_fieldset::CHTML_fieldset(void)
+    : CParent("fieldset")
+{
+}
+
+CHTML_fieldset::CHTML_fieldset(const string& legend)
+    : CParent("fieldset", new CHTML_legend(legend))
+{
+}
+
+CHTML_fieldset::CHTML_fieldset(CHTML_legend* legend)
+    : CParent("fieldset", legend)
+{
+}
+
+CHTML_fieldset::~CHTML_fieldset(void)
+{
+}
+
+// label element
+CHTML_label::CHTML_label(const string& text)
+    : CParent("label", text)
+{
+}
+
+CHTML_label::CHTML_label(const string& text, const string& idRef)
+    : CParent("label", text)
+{
+    SetAttribute("for", idRef);
+}
+
+CHTML_label::~CHTML_label(void)
+{
+}
+
 // textarea element
 
 CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows)
@@ -1221,6 +1300,61 @@ CHTML_reset::CHTML_reset(const string& label)
 }
 
 CHTML_reset::~CHTML_reset(void)
+{
+}
+
+// button tag
+CHTML_button::CHTML_button(const string& text, EButtonType type)
+    : CParent("button", text)
+{
+    SetType(type);
+}
+
+CHTML_button::CHTML_button(CNCBINode* contents, EButtonType type)
+    : CParent("button", contents)
+{
+    SetType(type);
+}
+
+CHTML_button::CHTML_button(const string& text, const string& name,
+                           const string& value)
+    : CParent("button", text)
+{
+    SetSubmit(name, value);
+}
+
+CHTML_button::CHTML_button(CNCBINode* contents, const string& name,
+                           const string& value)
+    : CParent("button", contents)
+{
+    SetSubmit(name, value);
+}
+
+CHTML_button* CHTML_button::SetType(EButtonType type)
+{
+    switch ( type ) {
+    case eSubmit:
+        SetAttribute("type", "submit");
+        break;
+    case eReset:
+        SetAttribute("type", "reset");
+        break;
+    case eButton:
+        SetAttribute("type", "button");
+        break;
+    }
+    return this;
+}
+
+CHTML_button* CHTML_button::SetSubmit(const string& name,
+                                      const string& value)
+{
+    SetNameAttribute(name);
+    SetOptionalAttribute("value", value);
+    return this;
+}
+
+CHTML_button::~CHTML_button(void)
 {
 }
 
