@@ -177,7 +177,7 @@ size_t CResultZBtSrcX::x_Read(char* buffer, size_t buffer_length)
     return ret;
 }
 
-int s_ResultZBtSrcX_compr_size = 0;
+//int s_ResultZBtSrcX_compr_size = 0;
 
 void CResultZBtSrcX::ReadLength(void)
 {
@@ -204,7 +204,7 @@ void CResultZBtSrcX::ReadLength(void)
                    "Uncompressed size is too large");
     }
     m_Compressed.reserve(compr_size);
-    s_ResultZBtSrcX_compr_size += compr_size;
+    //s_ResultZBtSrcX_compr_size += compr_size;
     if ( x_Read(&m_Compressed[0], compr_size) != compr_size ) {
         NCBI_THROW(CLoaderException, eCompressionError,
                    "Compressed data is not complete");
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2003/10/14 18:59:55  vasilche
+* Temporarily remove collection of compression statistics.
+*
 * Revision 1.4  2003/10/14 18:31:55  vasilche
 * Added caching support for SNP blobs.
 * Added statistics collection of ID1 connection.

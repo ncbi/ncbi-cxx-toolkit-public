@@ -400,10 +400,10 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                                TConn conn)
 {
     CStopWatch sw;
-    extern int s_ResultZBtSrcX_compr_size;
+    //extern int s_ResultZBtSrcX_compr_size;
 
     if ( ConnectionStatistics() ) {
-        s_ResultZBtSrcX_compr_size = 0;
+        //s_ResultZBtSrcX_compr_size = 0;
         
         sw.Start();
     }
@@ -427,6 +427,7 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
 
     if ( ConnectionStatistics() ) {
         double time = sw.Elapsed();
+        int s_ResultZBtSrcX_compr_size = 0;
         LOG_POST("CId1Reader: read SNP blob "<<seqref.printTSE()<<" "<<
                  (s_ResultZBtSrcX_compr_size/1024)<<" kB in "<<
                  (time*1000)<<" ms");
@@ -519,6 +520,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.49  2003/10/14 18:59:55  vasilche
+ * Temporarily remove collection of compression statistics.
+ *
  * Revision 1.48  2003/10/14 18:31:54  vasilche
  * Added caching support for SNP blobs.
  * Added statistics collection of ID1 connection.
