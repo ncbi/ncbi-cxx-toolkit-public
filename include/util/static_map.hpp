@@ -38,7 +38,6 @@
 
 
 #include <util/static_set.hpp>
-#include <utility>
 
 
 BEGIN_NCBI_SCOPE
@@ -189,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/08/19 13:09:48  dicuccio
+ * Removed redundant inlcude of <utility>
+ *
  * Revision 1.4  2004/04/26 14:52:14  ucko
  * Add "this->" as needed to accommodate GCC 3.4's stricter treatment of
  * templates.
