@@ -126,7 +126,8 @@ int CTestLogrotateApplication::Run(void)
         EDiagSev    severity = (EDiagSev)(s_Rand(eDiag_Fatal));
         ErrCode     errcode(rand(), rand());
         const char* message  = messages[s_Rand(4)];
-        CNcbiDiag(DIAG_COMPILE_INFO, severity) << errcode << message << Endm;
+        CNcbiDiag diag(DIAG_COMPILE_INFO, severity);
+        diag << errcode << message << Endm;
         SleepMilliSec(s_Rand(256));
 #ifdef NCBI_OS_UNIX
         if (s_Signal) {
@@ -166,6 +167,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/09/22 20:12:10  ucko
+ * Tweak to avoid confusing older GCC versions.
+ *
  * Revision 1.4  2004/09/22 13:32:18  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
