@@ -33,11 +33,19 @@ License:  Unrestricted when distributed with the Toolkit;
 Location: {src,include}/dbapi/driver/ftds*/freetds
 Authors:  See src/dbapi/driver/ftds*/freetds/AUTHORS
 License:  GNU Library/Lesser General Public License
-          [src/dbapi/driver/ftds*/freetds/COPYING.LIB]
+          [src/dbapi/driver/ftds8/freetds/COPYING.LIB]
 
-Location: {src,include}/gui/widgets/Flek
-Authors:  Flek Group, http://www.carambadesigns.com/flek/
+Location: {src,include}/gui/widgets/FLU
+Authors:  Jason Bryan
 License:  GNU LGPL
+
+Location: {src,include}/gui/widgets/Fl_Table
+Authors:  Greg Ercolano
+License:  GNU LGPL
+
+Location: include/util/bitset
+Author:   Anatoliy Kuznetsov
+License:  MIT [include/util/bitset/license.txt]
 
 Location: {src,include}/util/compress/bzip2
 Author:   Julian R Seward
