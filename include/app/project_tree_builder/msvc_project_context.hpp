@@ -62,11 +62,11 @@ public:
     //Compiler::General
     string AdditionalIncludeDirectories(const SConfigInfo& cfg_info) const;
 
-    string ProjectName(void) const
+    const string& ProjectName(void) const
     {
         return m_ProjectName;
     }
-    const CProjKey& ProjectId  (void) const
+    const string& ProjectId(void) const
     {
         return m_ProjectId;
     }
@@ -81,7 +81,7 @@ public:
     string AdditionalLibraryDirectories(const SConfigInfo& cfg_info) const;
 
  
-    string ProjectDir(void) const
+    const string& ProjectDir(void) const
     {
         return m_ProjectDir;
     }
@@ -107,6 +107,7 @@ public:
     
     static bool IsRequiresOk(const CProjItem& prj);
 
+    
     bool IsConfigEnabled(const SConfigInfo& config) const;
 
 
@@ -126,10 +127,6 @@ public:
         return m_PreBuilds;
     }
 
-    const list<CProjKey>& Depends(void) const
-    {
-        return m_Depends;
-    }
 
 private:
     // Prohibited to:
@@ -139,7 +136,7 @@ private:
 
 
     string   m_ProjectName;
-    CProjKey m_ProjectId;
+    string   m_ProjectId;
 
     string m_AdditionalLibrarianOptions;
 
@@ -167,8 +164,6 @@ private:
     list<string> m_PreBuilds;
 
     list<string> m_NcbiCLibs;
-
-    list<CProjKey> m_Depends;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -517,6 +512,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/03/10 16:43:41  gorelenk
+ * Changed declaration of class CMsvcPrjProjectContext.
+ *
  * Revision 1.13  2004/03/08 23:29:02  gorelenk
  * Added member-function ProjectId to class CMsvcPrjProjectContext.
  *
