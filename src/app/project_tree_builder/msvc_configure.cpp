@@ -44,6 +44,19 @@ CMsvcConfigure::~CMsvcConfigure(void)
 }
 
 
+void s_ResetLibInstallKey(const string& dir, 
+                          const string& lib)
+{
+    string key_file_name(lib);
+    NStr::ToLower(key_file_name);
+    key_file_name += ".installed";
+    string key_file_path = CDirEntry::ConcatPath(dir, key_file_name);
+    if ( CDirEntry(key_file_path).Exists() ) {
+        CDirEntry(key_file_path).Remove();
+    }
+}
+
+
 void CMsvcConfigure::operator() (const CMsvcSite&         site, 
                                  const list<SConfigInfo>& configs,
                                  const string&            root_dir)
@@ -122,6 +135,8 @@ void CMsvcConfigure::operator() (const CMsvcSite&         site,
                     key += site.GetThirdPartyLibsBinPathSuffix();
 
                     ofs << key << " = " << bin_dir << "\n";
+
+                    s_ResetLibInstallKey(dir, lib);
                 }
             }
         }
@@ -239,6 +254,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/06/03 14:04:38  gorelenk
+ * Changed CMsvcConfigure::operator() :
+ * added third party libraries install key support.
+ *
  * Revision 1.10  2004/05/27 13:43:52  gorelenk
  * Changed name of generated makefile for auto third-parties install to
  * 'Makefile.third_party.mk'.
