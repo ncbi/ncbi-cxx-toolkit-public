@@ -73,8 +73,6 @@ int CTest::Run(void)
     char* app_c = strdup(app.c_str());
     assert( app_c != 0 );
 
-    int pid = 0;
-
     const char* app_p  = "ls";
     const char* app_pp = "-l";
 
@@ -105,24 +103,43 @@ int CTest::Run(void)
     
     // Spawn with eWait
 
-    assert( CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait", 0) 
-            == TEST_RESULT_C );
-    assert( CExec::SpawnLP (CExec::eWait, app_p, app_pp, 0) 
-            == TEST_RESULT_P );
-    assert( CExec::SpawnLE (CExec::eWait, app_c, "SpawnLE_eWait", 0, my_env) 
-            == TEST_RESULT_C );
-    assert( CExec::SpawnLPE(CExec::eWait, app_c, "SpawnLPE_eWait", 0, my_env)
-            == TEST_RESULT_C );
-    assert( CExec::SpawnV  (CExec::eWait, app_c, args_c)
-            == TEST_RESULT_C );
-    assert( CExec::SpawnVP (CExec::eWait, app_p, args_p)
-            == TEST_RESULT_P );
-    assert( CExec::SpawnVE (CExec::eWait, app_c, args_c, my_env)
-            == TEST_RESULT_C );
-    assert( CExec::SpawnVPE(CExec::eWait, app_c, args_c, my_env)
-            == TEST_RESULT_C );
+    int code;
+
+    code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait", 0); 
+    cout << "Exit code: " << code << endl;
+    assert( code == TEST_RESULT_C );
+
+    code = CExec::SpawnLP (CExec::eWait, app_p, app_pp, 0);
+    cout << "Exit code: " << code << endl;
+    assert( code == TEST_RESULT_P );
+
+    code = CExec::SpawnLE (CExec::eWait, app_c, "SpawnLE_eWait", 0, my_env); 
+    cout << "Exit code: " << code << endl;
+    assert( code == TEST_RESULT_C );
+
+    code = CExec::SpawnLPE(CExec::eWait, app_c, "SpawnLPE_eWait", 0, my_env);
+    cout << "Exit code: " << code << endl;
+    assert( code == TEST_RESULT_C );
+
+    code = CExec::SpawnV  (CExec::eWait, app_c, args_c);
+    cout << "Exit code: " << code << endl;
+    assert( code == TEST_RESULT_C );
+
+    code = CExec::SpawnVP (CExec::eWait, app_p, args_p);
+    cout << "Exit code: " << code << endl;
+    assert( code == TEST_RESULT_P );
+
+    code = CExec::SpawnVE (CExec::eWait, app_c, args_c, my_env);
+    cout << "Exit code: " << code << endl;
+    assert( code == TEST_RESULT_C );
+
+    code = CExec::SpawnVPE(CExec::eWait, app_c, args_c, my_env);
+    cout << "Exit code: " << code << endl;
+    assert( code == TEST_RESULT_C );
 
     // Spawn with eNoWait, waiting self
+
+    int pid;
 
     pid = CExec::SpawnL(CExec::eNoWait, app_c, "SpawnL_eNoWait", 0);
     assert( pid != -1 );
@@ -182,9 +199,12 @@ int main(int argc, const char* argv[], const char* envp[])
         // Check environment
         if ( strstr(argv[1],"E_e")) {
             char* ptr = getenv("TEST_NCBI_EXEC");
-            if (!ptr) {
+            if (!ptr || !*ptr) {
                 cout << "Environment variable TEST_NCBI_EXEC not found " << endl;
+                cout.flush();
                 exit(1);
+            } else {
+                cout << "TEST_NCBI_EXEC=" << ptr << endl;
             }
         }
         exit(TEST_RESULT_C);
@@ -197,6 +217,9 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2002/07/23 20:34:22  ivanov
+ * Added more info to debug output
+ *
  * Revision 6.6  2002/07/23 13:30:30  ivanov
  * Added output of environment for each test
  *
