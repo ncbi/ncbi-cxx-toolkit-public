@@ -74,6 +74,13 @@ CONN CConn_IOStream::GetCONN(void) const
 }
 
 
+void CConn_IOStream::Close(void)
+{
+    if (m_CSb)
+        m_CSb->Close();
+}
+
+
 void CConn_IOStream::Cleanup(void)
 {
     streambuf* sb = rdbuf();
@@ -372,6 +379,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2005/03/15 21:28:22  lavr
+ * +CConn_IOStream::Close()
+ *
  * Revision 6.44  2005/02/25 17:20:54  lavr
  * CConn_MemoryStream::"string conversions" to do flush first
  *

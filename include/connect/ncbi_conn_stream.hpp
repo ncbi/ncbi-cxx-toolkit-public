@@ -61,6 +61,10 @@
  *   CConn_NamedPipeStream
  *      I/O stream based on NAMEDPIPE connector, which is able to exchange
  *      data to/from another process.
+ *
+ *   CConn_FTPDownloadStream
+ *      I/O stream based on FTP connector, which is able to retrieve files
+ *      and file lists from remote FTP servers.
  */
 
 #include <corelib/ncbistd.hpp>
@@ -123,6 +127,8 @@ public:
     virtual ~CConn_IOStream();
 
     CONN GetCONN(void) const;
+
+    void Close(void);
 
 protected:
     CConn_IOStream(CConn_Streambuf* sb);
@@ -393,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.34  2005/03/15 21:28:22  lavr
+ * +CConn_IOStream::Close()
+ *
  * Revision 6.33  2004/12/08 21:01:20  lavr
  * +CConn_FTPDownloadStream
  *
