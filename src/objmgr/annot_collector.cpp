@@ -219,6 +219,9 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
     if ( !loc || !loc->ReferencedOnlyOnce() ) {
         loc.Reset(new CSeq_loc);
     }
+    else {
+        loc->InvalidateTotalRangeCache();
+    }
     if ( IsMappedPoint() ) {
         CSeq_point& point = loc->SetPnt();
         point.SetId(id);
@@ -253,6 +256,7 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
     }
     else {
         loc->Reset();
+        loc->InvalidateTotalRangeCache();
     }
     if ( IsMappedPoint() ) {
         if ( !pnt_ref || !pnt_ref->ReferencedOnlyOnce() ) {
@@ -1350,6 +1354,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/03 17:01:03  grichenk
+* Invalidate total range before reusing seq-loc.
+*
 * Revision 1.3  2004/04/13 21:14:27  vasilche
 * Fixed wrong order of object deletion causing "tse is locked" error.
 *
