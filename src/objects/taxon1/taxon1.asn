@@ -1,0 +1,50 @@
+--$Revision: 1.1 $
+--**********************************************************************
+--
+--  NCBI Taxonomy Server
+--  by James Ostell, 1995
+--  Version 1.0 - July 1995
+--
+--**********************************************************************
+
+
+
+NCBI-Taxon1 DEFINITIONS ::=
+BEGIN
+
+IMPORTS Org-ref FROM NCBI-Organism;
+
+                          -- Requests to the Taxon server
+Taxon1-req ::= CHOICE {
+	init	NULL,     -- initialize the server
+	getbyid INTEGER,  -- get Org-ref by TaxonID
+	lookup  Org-ref,  -- lookup by data
+	fini    NULL }    -- close the server
+
+Taxon1-resp ::= CHOICE {
+	error   Taxon1-error,  -- sent on any error
+	init    NULL,     -- sent by successful initiation
+	getbyid Taxon1-data,
+	lookup  Taxon1-data,
+	fini    NULL }
+
+Taxon1-error ::= SEQUENCE {
+	level ENUMERATED {
+		none (0) ,    -- not an error, just a message
+		info (1) ,    -- informational error
+		warn (2) ,
+		error (3) ,
+		fatal (4) } ,
+	msg VisibleString OPTIONAL }
+
+Taxon1-data ::= SEQUENCE {
+	org Org-ref ,    -- Org-ref with Org-name and db filled in
+	div VisibleString ,  -- GenBank division
+	embl-code VisibleString ,     -- 2 letter EMBL code
+	is-species-level BOOLEAN }   -- species level or below
+
+END
+
+
+
+
