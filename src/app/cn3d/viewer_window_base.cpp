@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/07/23 20:09:23  thiessen
+* add regex pattern search
+*
 * Revision 1.16  2001/05/31 14:32:33  thiessen
 * tweak font handling
 *
@@ -124,6 +127,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
     viewMenu->Append(MID_SHOW_TITLES, "Show Tit&les");
     //menu->Append(MID_HIDE_TITLES, "&Hide Titles");
     viewMenu->Append(MID_SHOW_GEOM_VLTNS, "Show &Geometry Violations");
+    viewMenu->Append(MID_FIND_PATTERN, "Find &Pattern");
     menuBar->Append(viewMenu, "&View");
 
     editMenu = new wxMenu;
@@ -354,6 +358,37 @@ void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
         (*a)->ShowGeometryViolations(violations);
     }
     GlobalMessenger()->PostRedrawSequenceViewer(viewer);
+}
+
+void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
+{
+    // get pattern from user
+    static const wxString messageWithHelp =
+        "Enter a pattern string, which may include these characters:\n\n"
+        "    A-Z : 1-letter residue names\n"
+        "    *   : any number of residues (including zero)\n"
+        "    ?  : any single residue\n"
+        "    ^  : N-terminus\n"
+        "    $  : C-terminus\n"
+        "    []  : matching lists\n"
+        "    [^] : non-matching lists";
+    wxString pattern = wxGetTextFromUser(messageWithHelp, "Input pattern", "", this);
+    if (pattern.size() == 0) return;
+
+    GlobalMessenger()->RemoveAllHighlights(false);
+
+    // highlight pattern from each (unique) sequence in the display
+    std::map < const Sequence * , bool > usedSequences;
+    const SequenceDisplay *display = viewer->GetCurrentDisplay();
+
+    for (int i=0; i<display->NRows(); i++) {
+
+        const Sequence *sequence = display->GetSequenceForRow(i);
+        if (!sequence || usedSequences.find(sequence) != usedSequences.end()) continue;
+        usedSequences[sequence] = true;
+
+        if (!sequence->HighlightPattern(pattern.c_str())) break;
+    }
 }
 
 END_SCOPE(Cn3D)

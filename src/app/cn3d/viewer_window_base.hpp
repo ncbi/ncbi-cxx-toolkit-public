@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/07/23 20:08:38  thiessen
+* add regex pattern search
+*
 * Revision 1.13  2001/06/04 14:33:55  thiessen
 * add proximity sort; highlight sequence on browser launch
 *
@@ -100,7 +103,8 @@ class SequenceDisplay;
     EVT_MENU_RANGE(MID_ENABLE_EDIT, MID_SYNC_STRUCS_ON, ViewerWindowBase::OnEditMenu) \
     EVT_MENU_RANGE(MID_SELECT_RECT, MID_DRAG_HORIZ,     ViewerWindowBase::OnMouseMode) \
     EVT_MENU_RANGE(MID_LEFT,        MID_SPLIT,          ViewerWindowBase::OnJustification) \
-    EVT_MENU      (MID_SHOW_GEOM_VLTNS,                 ViewerWindowBase::OnShowGeomVltns)
+    EVT_MENU      (MID_SHOW_GEOM_VLTNS,                 ViewerWindowBase::OnShowGeomVltns) \
+    EVT_MENU      (MID_FIND_PATTERN,                    ViewerWindowBase::OnFindPattern)
 
 class ViewerWindowBase : public wxFrame
 {
@@ -132,6 +136,7 @@ public:
     void OnMouseMode(wxCommandEvent& event);
     void OnJustification(wxCommandEvent& event);
     void OnShowGeomVltns(wxCommandEvent& event);
+    void OnFindPattern(wxCommandEvent& event);
 
     // menu identifiers
     enum {
@@ -139,6 +144,7 @@ public:
         MID_SHOW_TITLES,
         MID_HIDE_TITLES,
         MID_SHOW_GEOM_VLTNS,
+        MID_FIND_PATTERN,
 
         // edit menu
         MID_ENABLE_EDIT,

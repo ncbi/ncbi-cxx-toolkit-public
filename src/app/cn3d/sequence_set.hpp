@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/07/23 20:08:38  thiessen
+* add regex pattern search
+*
 * Revision 1.22  2001/07/19 19:12:46  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -162,6 +165,10 @@ public:
 
     // launch web browser with entrez page for this sequence
     void LaunchWebBrowserWithInfo(void) const;
+
+    // highlight residues matching the given pattern; returns true if the pattern is valid,
+    // regardless of whether a match is found, or returns false on error
+    bool HighlightPattern(const std::string& pattern) const;
 };
 
 END_SCOPE(Cn3D)

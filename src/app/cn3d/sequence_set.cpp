@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/07/23 20:09:23  thiessen
+* add regex pattern search
+*
 * Revision 1.34  2001/07/19 19:14:38  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -145,6 +148,10 @@
 
 #endif
 
+#include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
+#include <corelib/ncbistre.hpp>
+#include <corelib/ncbistl.hpp>
+
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
@@ -166,8 +173,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqblock/PDB_block.hpp>
 
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbistl.hpp>
+#include <regex.h>  // regex from C-toolkit
 
 #include <memory>
 
@@ -176,6 +182,7 @@
 #include "cn3d/structure_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/messenger.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -402,10 +409,17 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
                 << ": confused by sequence string format");
             return;
         }
+
+        // check length
         if (bioseq.GetInst().IsSetLength() && bioseq.GetInst().GetLength() != sequenceString.length()) {
             ERR_POST(Critical << "Sequence::Sequence() - sequence string length mismatch");
             return;
         }
+
+        // force uppercase
+        for (int i=0; i<sequenceString.length(); i++)
+            sequenceString[i] = toupper(sequenceString[i]);
+
     } else {
         ERR_POST(Critical << "Sequence::Sequence() - sequence " << gi
                 << ": confused by sequence representation");
@@ -506,6 +520,147 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
     oss << '\0';
     LaunchWebPage(oss.str());
     delete oss.str();
+}
+
+bool Sequence::HighlightPattern(const std::string& rawPattern) const
+{
+    // setup regex syntax
+    reg_syntax_t newSyntax = RE_CONTEXT_INDEP_ANCHORS | RE_CONTEXT_INVALID_OPS | RE_LIMITED_OPS |
+        RE_NO_BK_PARENS | RE_NO_EMPTY_RANGES;
+    reg_syntax_t oldSyntax = re_set_syntax(newSyntax);
+
+    bool retval = true;
+    try {
+        // allocate structures
+        static re_pattern_buffer *patternBuffer = NULL;
+        static re_registers *registers = NULL;
+        if (!patternBuffer) {
+            // new pattern initialized to zero
+            patternBuffer = (re_pattern_buffer *) calloc(1, sizeof(re_pattern_buffer));
+            if (!patternBuffer) throw "can't allocate pattern buffer";
+            patternBuffer->fastmap = (char *) calloc(256, sizeof(char));
+            if (!patternBuffer->fastmap) throw "can't allocate fastmap";
+            registers = (re_registers *) calloc(1, sizeof(re_registers));
+            if (!registers) throw "can't allocate registers";
+            patternBuffer->regs_allocated = REGS_UNALLOCATED;
+        }
+
+        // update pattern buffer if not the same pattern as before
+        static std::string previousRawPattern;
+        int i;
+        if (rawPattern != previousRawPattern) {
+
+            // check syntax
+            static const std::string allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZ*?^$[]-,";
+            for (i=0; i<rawPattern.size(); i++)
+                if (allowed.find(toupper(rawPattern[i])) == std::string::npos) break;
+            if (i != rawPattern.size()) throw "invalid pattern character";
+
+            // translate into real regex syntax;
+            static std::string regexPattern;
+            static int nGroups;
+            regexPattern.erase();
+            nGroups = 0;
+            bool openParen = false, openBracket = false;
+            for (i=0; i<rawPattern.size(); i++) {
+
+                // close parentheses when non-alpha character found
+                if (!isalpha(rawPattern[i]) && openParen && !openBracket) {
+                    regexPattern += ')';
+                    openParen = false;
+                }
+
+                // translate characters
+                if (rawPattern[i] == '?') {
+                    regexPattern += '.';
+                } else if (rawPattern[i] == '*') {
+                    regexPattern += "[A-Z]*";
+                } else if (rawPattern[i] == '^' || rawPattern[i] == '$' || rawPattern[i] == '-' ||
+                           rawPattern[i] == ',') {
+                    regexPattern += rawPattern[i];
+                } else if (rawPattern[i] == '[') {
+                    regexPattern += "([";
+                    openBracket = openParen = true;
+                    nGroups++;
+                } else if (rawPattern[i] == ']') {
+                    regexPattern += "])";
+                    openBracket = openParen = false;
+                }
+
+                // open parentheses for consecutive alpha characters; grouping
+                // makes parsing of result ranges easier
+                else if (isalpha(rawPattern[i])) {
+                    if (!openParen && !openBracket) {
+                        regexPattern += '(';
+                        openParen = true;
+                        nGroups++;
+                    }
+                    regexPattern += toupper(rawPattern[i]);
+                }
+            }
+            if (openParen) regexPattern += ')';
+
+            // create pattern buffer
+            TESTMSG("compiling pattern '" << regexPattern << "'");
+            const char *error = re_compile_pattern(regexPattern.c_str(), regexPattern.size(), patternBuffer);
+            if (error) throw error;
+
+            // optimize pattern buffer
+            int err = re_compile_fastmap(patternBuffer);
+            if (err) throw "re_compile_fastmap internal error";
+
+            previousRawPattern = rawPattern;
+        }
+
+        // do the search, finding all non-overlapping matches
+        int start = 0;
+        while (start < sequenceString.size()) {
+
+            int result = re_search(patternBuffer, sequenceString.c_str(),
+                sequenceString.size(), start, sequenceString.size(), registers);
+            if (result == -1)
+                break;
+            else if (result == -2)
+                throw "re_search internal error";
+
+            // re_search gives the longest hit, but we want the shortest; so try to find the
+            // shortest hit within the hit already found by limiting the length of the string
+            // allowed to be included in the search. (This isn't very efficient! but
+            // the regex API doesn't have an option for finding the shortest hit...)
+            int stringSize = start + 1;
+            while (stringSize <= sequenceString.size()) {
+                result = re_search(patternBuffer, sequenceString.c_str(),
+                    stringSize, start, stringSize, registers);
+                if (result >= 0) break;
+                stringSize++;
+            }
+
+            // parse the match registers, highlight ranges
+            TESTMSG("found match starting at " << identifier->ToString() << " loc " << result+1);
+            int lastMatched = result;
+            for (i=1; i<registers->num_regs; i++) {
+                int from = registers->start[i], to = registers->end[i] - 1;
+                if (from >= 0 && to >= 0) {
+                    if (to > lastMatched) lastMatched = to;
+
+                    // highlight this ranage
+                    TESTMSG("register " << i << ": from " << from+1 << " to " << to+1);
+                    GlobalMessenger()->AddHighlights(this, from, to);
+                }
+            }
+
+            start = lastMatched + 1;
+        }
+
+    } catch (const char *err) {
+        ERR_POST(Warning << "Sequence::HighlightPattern() - " << err);
+        retval = false;
+    }
+
+    // cleanup
+    re_set_syntax(oldSyntax);
+
+    return retval;
 }
 
 END_SCOPE(Cn3D)

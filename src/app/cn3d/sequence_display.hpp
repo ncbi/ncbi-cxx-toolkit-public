@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/07/23 20:08:38  thiessen
+* add regex pattern search
+*
 * Revision 1.17  2001/07/10 16:39:34  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -299,6 +302,13 @@ public:
 
     int NRows(void) const { return rows.size(); }
     bool IsEditable(void) const { return isEditable; }
+    const Sequence * GetSequenceForRow(int row) const
+    {
+        if (row >= 0 && row < NRows())
+            return rows[row]->GetSequence();
+        else
+            return NULL;
+    }
 
     // redraw all molecules associated with the SequenceDisplay
     void RedrawAlignedMolecules(void) const;

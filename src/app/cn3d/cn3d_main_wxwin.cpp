@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2001/07/23 20:09:23  thiessen
+* add regex pattern search
+*
 * Revision 1.58  2001/07/12 17:35:15  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -521,8 +524,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 
     // Structure Alignment menu
     menu = new wxMenu;
-    menu->Append(MID_REFIT_ALL, "Recompute &All");
-    menuBar->Append(menu, "Structure &Alignments");
+    menu->Append(MID_REFIT_ALL, "Recompute &Alignments");
+    menuBar->Append(menu, "S&tructures");
 
     // Style menu
     menu = new wxMenu;
