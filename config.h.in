@@ -24,6 +24,9 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
+#undef HAVE_DOPRNT
+
 /* Define to 1 if you have the `FCGX_Accept_r' function. */
 #undef HAVE_FCGX_ACCEPT_R
 
@@ -281,6 +284,12 @@
 
 /* Define to 1 if you have the `vasprintf' function. */
 #undef HAVE_VASPRINTF
+
+/* Define to 1 if you have the `vprintf' function. */
+#undef HAVE_VPRINTF
+
+/* Define to 1 if you have the `vsnprintf' function. */
+#undef HAVE_VSNPRINTF
 
 /* Define to 1 if you have the <windows.h> header file. */
 #undef HAVE_WINDOWS_H
