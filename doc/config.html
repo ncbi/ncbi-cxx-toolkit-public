@@ -46,7 +46,17 @@
        Ad-hoc installations</a>
 	 <ul>
 		<li> <a href="#ref_MsvcProj">
-		  MS Visual C++ workspace</a>
+		  MS Visual C++</a>
+	   <ul>
+		  <li> <a href="#ref_MsvcProjTree">
+		    Building the whole NCBI C++ tree locally</a>
+		  <li> <a href="#ref_MsvcProjCXX">
+		    Using pre-built NCBI C++ toolkit in your projects</a>
+		  <li> <a href="#ref_MsvcProjC">
+		    Using NCBI C toolkit</a>
+		  <li> <a href="#ref_MsvcProjSettings">
+		    Mandatory project settings (RTTI, MT-safety)</a>
+	   </ul>
 	 </ul>
 </ul>
 
@@ -737,7 +747,7 @@ As for now, at least the following compilers give enough support
 libraries and tools:
 <ul>
   <li> <a href="http://egcs.cygnus.com/">
-       <b>GCC 2.95.1</b></a>
+       <b>GCC 2.95.[1,2]</b></a>
     <ul>
       <li> Solaris 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
       <li> Linux RedHat 5.2 --- <i>PC-Intel</i>
@@ -770,7 +780,7 @@ libraries and tools:
 
   <li> <b>Metrowerks CodeWarrior</b>
     <ul>
-      <li> MacOS -- <i>PowerPC</i>
+      <li> MacOS -- <i>PowerPC</i>  (very poor support)
     </ul>
 </ul>
 NOTE: Some projects are very platform-specific, and they cannot
@@ -785,7 +795,11 @@ directories.
 </a>
 
 <p>
-<a name="ref_MsvcProj"><h4>MS Visual C++ workspace</h4>
+<a name="ref_MsvcProj"><h3>MS Visual C++</h3>
+</a>
+
+<p>
+<a name="ref_MsvcProjTree"><h4>Building the whole NCBI C++ tree locally</h4>
 </a>
 
 <p>
@@ -825,21 +839,6 @@ Now when the installation is complete you can load workspace
 </ul>
 
 <p>
-All projects are built in <b><i>MT-safe</i></b> mode
-(i.e. with <b>/MT</b> flag), so you have to make sure that your
-projects are using this flag as well.
-In <i>"Project"/"Settings..."</i> form, folder <i>"C/C++"</i>, you must:
-<ul>
-  <li> Category <i>"C++ Language"</i>: Enable RTTI
-  <li> Category <i>"Code generation"</i>:  Use run-time library:
-    <ul>
-      <li> <i>"Multithreaded"</i> for the <b>Release</b> configuration
-      <li> <i>"Debug Multithreaded"</i> for the <b>Debug</b> configuration
-    </ul>
-</ul>
-
-
-<p>
 As for now, you can build <i>any</i> project in <b>Debug</b> mode,
 while <b>Release</b> versions are guranteed to build for <b>core_all</b>
 projects only.
@@ -848,7 +847,54 @@ To switch from <b>Debug</b> to <b>Release</b> configuration use
 
 
 <p>
-There are also projects(such as <b>tool</b>, <b>xasn</b> and <b>xhist</b>)
+<a name="ref_MsvcProjCXX"><h4>Using pre-built NCBI C++ toolkit in your projects</h4>
+</a>
+
+<p>
+For those who does not want to build the whole NCBI C++ tree, but just
+need to use the NCBI C++ toolkit functionality in his own, separate project,
+there are pre-built libraries and executables, along with the header and
+source files located at:
+<ul>
+  <li> <i>\\dizzy\users\coremake\public\cxx\<b>include</b></i>
+  <li> <i>\\dizzy\users\coremake\public\cxx\<b>dbglib</b></i>
+  <li> <i>\\dizzy\users\coremake\public\cxx\<b>lib</b></i>
+  <li> <i>\\dizzy\users\coremake\public\cxx\<b>altsrc</b></i>
+  <li> <i>\\dizzy\users\coremake\public\cxx\<b>bin</b></i>
+</ul>
+
+You must specify path to them in <i>"Tools"/"Options"</i> form,
+folder <i>"Directories"</i>.
+
+<p>
+If you just want to use the libs and the headers, and dont need to be
+able to trace through their code during the debugging then
+you only need to add paths <i>\\dizzy\users\coremake\public\cxx\<b>include</b></i>
+and <i>\\dizzy\users\coremake\public\cxx\<b>lib</b></i> to
+<i>"Include files"</i> and <i>"Library files"</i> directory lists, respectively.
+
+<p>
+But if you want to be able to debug in the NCBI C++ libraries,
+then you will have to add <i>\\dizzy\users\coremake\public\cxx\<b>include</b></i>,
+<i>\\dizzy\users\coremake\public\cxx\<b>dbglib</b></i>, and
+<i>\\dizzy\users\coremake\public\cxx\<b>altsrc</b></i> to the
+<i>"Include files"</i>, <i>"Library files"</i>, and <i>"Source files"</i> directory lists,
+respectively.
+
+<p>
+In either case, dont forget to provide the right
+<a href="#ref_MsvcProjSettings">settings</a> for your project
+to make sure that it is built compatible with the chosen NCBI C++
+libraries.
+
+
+
+<p>
+<a name="ref_MsvcProjC"><h4>Using NCBI C toolkit</h4>
+</a>
+
+<p>
+There are projects(such as <b>tool</b>, <b>xasn</b> and <b>xhist</b>)
 that engage the
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/ncbi_toolbox/README.htm">
 NCBI C toolkit</a>.
@@ -864,8 +910,32 @@ are as follows:
 <ul>
   <li> <i>\\dizzy\users\coremake\public\<b>include</b></i>
   <li> <i>\\dizzy\users\coremake\public\<b>dbglib</b></i>
+  <li> <i>\\dizzy\users\coremake\public\<b>lib</b></i>
   <li> <i>\\dizzy\users\coremake\public\<b>altsrc</b></i>
 </ul>
+
+
+<p>
+<a name="ref_MsvcProjSettings"><h4>Mandatory project settings (RTTI, MT-safety)</h4>
+</a>
+
+<p>
+All projects are built in <b><i>MT-safe</i></b> mode
+(i.e. with <b>/MT</b> flag), so you have to make sure that your
+projects are using this flag as well.
+In addition, many C++ projects use <i>Run-Time Type Info</i>.
+<br>
+To meet these requirements, you must do the following in
+<i>"Project"/"Settings..."</i> form, folder <i>"C/C++"</i>:
+<ul>
+  <li> Category <i>"C++ Language"</i>: Enable RTTI
+  <li> Category <i>"Code generation"</i>:  Use run-time library:
+    <ul>
+      <li> <i>"Multithreaded"</i> for the <b>Release</b> configuration
+      <li> <i>"Debug Multithreaded"</i> for the <b>Debug</b> configuration
+    </ul>
+</ul>
+
 
 <br></br>
 <hr>
