@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.123  2002/11/21 17:48:12  thiessen
+* fix yet another user style bug
+*
 * Revision 1.122  2002/11/21 15:26:33  thiessen
 * fix style dictionary loading bug
 *
@@ -916,6 +919,9 @@ void StructureSet::Load(int structureLimit)
 
     // setup show/hide items
     showHideManager->ConstructShowHideArray(this);
+    // alignments always start with aligned domains only
+    if (alignmentSet)
+        showHideManager->ShowAlignedDomains(this);
 
     // load style dictionary and user annotations
     const CCn3d_style_dictionary *styles = dataManager->GetStyleDictionary();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.169  2002/11/21 17:48:12  thiessen
+* fix yet another user style bug
+*
 * Revision 1.168  2002/11/21 15:26:33  thiessen
 * fix style dictionary loading bug
 *
@@ -2207,8 +2210,6 @@ void Cn3DMainFrame::LoadFile(const char *filename)
                 glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eIdentityShortcut);
                 SetColoringMenuFlag(MID_IDENTITY);
             }
-            // alignments always start with aligned domains only
-            glCanvas->structureSet->showHideManager->ShowAlignedDomains(glCanvas->structureSet);
         } else {
             glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
             SetRenderingMenuFlag(MID_WORM);
