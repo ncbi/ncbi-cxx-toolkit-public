@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.7  2003/05/01 17:09:07  dondosha
+* BLAST_SetUpAuxStructures made static in blast_engine.c
+*
 * Revision 1.6  2003/05/01 16:57:02  dondosha
 * Fixes for strict compiler warnings
 *
@@ -124,6 +127,12 @@ $Revision$
 
 */
 
+#ifndef __BLAST_SETUP__
+#define __BLAST_SETUP__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <ncbi.h>
 #include <blast_options.h>
@@ -218,42 +227,7 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
         BlastQueryInfoPtr *query_info, SeqLocPtr *filter_slp_out,
         BLAST_ScoreBlkPtr *sbpp, Blast_MessagePtr *blast_message);
 
-/** Setup of the auxiliary BLAST structures: lookup table, diagonal table for 
- * word extension, structure with memory for gapped alignment; also calculates
- * internally used parameters from options. 
- * @param program blastn, blastp, blastx, etc. [in]
- * @param scoring_options options for scoring. [in]
- * @param eff_len_options  used to calc. eff len. [in]
- * @param lookup_options options for lookup table. [in]
- * @param word_options options for initial word finding. [in]
- * @param ext_options options for gapped extension. [in]
- * @param hit_options options for saving hits. [in]
- * @param query The query sequence block [in]
- * @param lookup_segments Start/stop locations for non-masked query 
- *                        segments [in]
- * @param query_info The query information block [in]
- * @param sbp Contains scoring information. [in]
- * @param rdfp Pointer to database structure [in]
- * @param subject Subject sequence block (in 2 sequences case) [in]
- * @param lookup_wrap Lookup table [out]
- * @param ewp Word extension information and allocated memory [out]
- * @param gap_align Gapped alignment information and allocated memory [out]
- * @param word_params Parameters for initial word processing [out]
- * @param ext_params Parameters for gapped extension [out]
- * @param hit_params Parameters for saving hits [out]
- */
-Int2 BLAST_SetUpAuxStructures(Char *program,
-        const BlastScoringOptionsPtr scoring_options,
-        const BlastEffectiveLengthsOptionsPtr eff_len_options,
-        const LookupTableOptionsPtr lookup_options,	
-        const BlastInitialWordOptionsPtr word_options,
-        const BlastExtensionOptionsPtr ext_options,
-        const BlastHitSavingOptionsPtr hit_options,
-        BLAST_SequenceBlkPtr query, ValNodePtr lookup_segments,
-        BlastQueryInfoPtr query_info, BLAST_ScoreBlkPtr sbp, 
-        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject,
-        LookupTableWrapPtr PNTR lookup_wrap, BLAST_ExtendWordPtr PNTR ewp,
-        BlastGapAlignStructPtr PNTR gap_align, 
-        BlastInitialWordParametersPtr PNTR word_params,
-        BlastExtensionParametersPtr PNTR ext_params,
-        BlastHitSavingParametersPtr PNTR hit_params);
+#ifdef __cplusplus
+}
+#endif
+#endif /* !__BLAST_SETUP__ */
