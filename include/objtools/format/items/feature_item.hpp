@@ -36,6 +36,7 @@
 */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objects/seqfeat/Gene_ref.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objtools/format/items/flat_qual_slots.hpp>
 #include <objtools/format/items/qualifiers.hpp>
@@ -146,6 +147,8 @@ public:
     bool IsMappedFromProt   (void) const { return m_Mapped == eMapped_from_prot;    }
 
 private:
+    typedef CGene_ref::TSyn TGeneSyn;
+
     void x_GatherInfo(CBioseqContext& ctx);
     //void x_FixLocation(CBioseqContext& ctx);
 
@@ -153,7 +156,7 @@ private:
     void x_AddQuals(CBioseqContext& ctx);
     void x_AddQuals(const CCdregion& cds)  const;
     void x_AddQuals(const CProt_ref& prot) const;
-    void x_AddGeneQuals(const CSeq_feat& gene, bool& pseudo, CScope& scope) const;
+    const TGeneSyn* x_AddGeneQuals(const CSeq_feat& gene, bool& pseudo) const;
     void x_AddCdregionQuals(const CSeq_feat& cds, CBioseqContext& ctx,
         bool& pseudo, bool& had_prot_desc) const;
     const CProt_ref* x_AddProteinQuals(CBioseq_Handle& prot) const;
@@ -165,7 +168,7 @@ private:
     void x_AddRegionQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddSiteQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddBondQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
-    void x_AddQuals(const CGene_ref& gene, bool& pseudo,
+    const TGeneSyn* x_AddQuals(const CGene_ref& gene, bool& pseudo,
         CSeqFeatData::ESubtype subtype, bool from_overlap) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
@@ -173,7 +176,7 @@ private:
     void x_ImportQuals(CBioseqContext& ctx) const;
     void x_AddRptUnitQual(const string& rpt_unit) const;
     void x_AddRptTypeQual(const string& rpt_type, bool check_qual_syntax) const;
-    void x_CleanQuals(bool& had_prot_desc) const;
+    void x_CleanQuals(bool& had_prot_desc, const TGeneSyn* gene_syn) const;
     const CFlatStringQVal* x_GetStringQual(EFeatureQualifier slot) const;
     CFlatStringListQVal* x_GetStringListQual(EFeatureQualifier slot) const;
     // feature table quals
@@ -296,6 +299,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/01/12 16:41:42  shomrat
+* Obtain gene synonyms
+*
 * Revision 1.22  2004/11/19 15:13:03  shomrat
 * Indicate if Gene_ref is from an overlapping feature
 *
