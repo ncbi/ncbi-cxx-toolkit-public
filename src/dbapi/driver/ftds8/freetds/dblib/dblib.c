@@ -1463,6 +1463,8 @@ TDSSOCKET * tds;
 				return SYBINT2; 
 			else if (colinfo->column_size==1)
 				return SYBINT1; 
+			else if (colinfo->column_size==8)
+			    return SYBINT8;
 		default:
 			return colinfo->column_type;
 	}

@@ -294,6 +294,7 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
     case SYBINT1:      return eDB_TinyInt;
     case SYBINT2:      return eDB_SmallInt;
     case SYBINT4:      return eDB_Int;
+    case SYBINT8:      return eDB_BigInt;
     case SYBDECIMAL:
     case SYBNUMERIC:   break;
     case SYBFLT8:      return eDB_Double;
@@ -415,6 +416,26 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
 
     switch (fmt->data_type) {
     case eDB_BigInt: {
+	    if(dbcoltype(cmd, item_no) == SYBINT8) {
+		  Int8* v= (Int8*) d_ptr;
+		  if(item_buff) {
+			if(v) {
+		      if(b_type == eDB_BigInt) {
+				*((CDB_BigInt*) item_buff)= *v;
+			  } 
+			  else {
+				throw CDB_ClientEx(eDB_Error, 230020, "s_GetItem",
+                                       "wrong type of CDB_Object");
+			  }
+			}
+			else 
+                item_buff->AssignNULL();
+            return item_buff;
+		  }
+			
+		  return v ?
+            new CDB_BigInt(*v) : new CDB_BigInt;
+	    }
         DBNUMERIC* v = (DBNUMERIC*) d_ptr;
         if (item_buff) {
             if (v) {
@@ -1380,6 +1401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/02/06 16:26:52  soussov
+ * adding support for bigint datatype
+ *
  * Revision 1.10  2003/01/06 16:59:31  soussov
  * sets m_CurrItem = -1 for all result types if no fetch was called
  *
