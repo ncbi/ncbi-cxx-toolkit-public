@@ -346,8 +346,10 @@ void CBDB_FileDumperApp::Dump(const CArgs&                args,
         //
         // Create description based file structure 
 
+        bool struct_created = false;
 
         NON_CONST_ITERATE(CBDB_ConfigStructureParser::TFileStructure, it, fs) {
+            struct_created = true;
             CBDB_FieldFactory::EType ft = ffact.GetType(it->type);
             if (ft == CBDB_FieldFactory::eString ||
                 ft == CBDB_FieldFactory::eLString) {
@@ -373,6 +375,11 @@ void CBDB_FileDumperApp::Dump(const CArgs&                args,
                       it->is_null ? eNullable : eNotNullable);
                  }
             }
+        }
+
+        if (!struct_created) {
+            NcbiCerr << "Incorrect structure file (no fields)" << NcbiEndl;
+            exit(1);
         }
     
     }
@@ -506,6 +513,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/09/29 13:08:10  kuznets
+ * Improved error diagnostics
+ *
  * Revision 1.8  2004/06/29 12:28:30  kuznets
  * Added option to copy all db records to another file
  *
