@@ -372,7 +372,7 @@ streamsize CStreamUtils::Readsome(istream&      is,
 #if defined(NCBI_COMPILER_GCC)
 #  if NCBI_COMPILER_VERSION < 300
 #    define NCBI_NO_READSOME 1
-#  endif
+#  endif /*NCBI_COMPILER_VERSION*/
 #elif defined(NCBI_COMPILER_MSVC)
     // MSVC's readsome() is buggy [causes 1 byte reads] and is thus avoided
 #  define NCBI_NO_READSOME 1
@@ -381,23 +381,23 @@ streamsize CStreamUtils::Readsome(istream&      is,
      * doing one extra read from the stream [which might be a killing idea
      * for network connections]. We introduced an ugly workaround here... */
 #  define NCBI_NO_READSOME 1
-#endif
+#endif /*NCBI_COMPILER*/
 
 #ifdef NCBI_NO_READSOME
-#undef NCBI_NO_READSOME
+#  undef NCBI_NO_READSOME
     // Special case: GCC had no readsome() prior to ver 3.0;
     // read() will set "eof" (and "fail") flag if gcount() < buf_size
-#ifdef NCBI_COMPILER_MIPSPRO
+#  ifdef NCBI_COMPILER_MIPSPRO
     CMIPSPRO_ReadsomeTolerantStreambuf* sb =
         dynamic_cast<CMIPSPRO_ReadsomeTolerantStreambuf*> (is.rdbuf());
     if (sb)
         sb->MIPSPRO_ReadsomeBegin();
-#endif
+#  endif /*NCBI_COMPILER_MIPSPRO*/
     is.read(buf, buf_size);
-#ifdef NCBI_COMPILER_MIPSPRO
+#  ifdef NCBI_COMPILER_MIPSPRO
     if (sb)
         sb->MIPSPRO_ReadsomeEnd();
-#endif
+#  endif /*NCBI_COMPILER_MIPSPRO*/
     streamsize count = is.gcount();
     // Reset "eof" flag if some data have been read
     if (count  &&  is.eof()  &&  !is.bad())
@@ -416,7 +416,7 @@ streamsize CStreamUtils::Readsome(istream&      is,
         return 1; // do not need more data
     // Read more data (up to "buf_size" bytes)
     return is.readsome(buf+1, buf_size-1) + 1;
-#endif
+#endif /*NCBI_NO_READSOME*/
 }
 
 
@@ -426,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.26  2003/10/16 19:37:36  lavr
+ * Add comments and indentation of conditionals in Readsome()
+ *
  * Revision 1.25  2003/05/21 19:34:34  lavr
  * Note that insufficient ios::read() also sets failbit (as per the standard)
  *
