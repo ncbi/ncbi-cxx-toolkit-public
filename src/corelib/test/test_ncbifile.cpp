@@ -358,21 +358,20 @@ static void s_TEST_File(void)
 
     // Get/set file modification time
     CTime::SetFormat("M/D/Y h:m:s Z");
-    CTime ftime, ctime, atime;
-    assert( f.GetTime(&ftime, &ctime , &atime) );
+    CTime mtime, ctime, atime;
+    assert( f.GetTime(&mtime, &ctime , &atime) );
     cout << "File creation time     : " << ctime.AsString() << endl;
-    cout << "File modification time : " << ftime.AsString() << endl;
+    cout << "File modification time : " << mtime.AsString() << endl;
     cout << "File last access time  : " << atime.AsString() << endl;
-    assert( f.GetTime(&ftime, 0 , &atime) );
-    CTime ftime_new(ftime), atime_new(atime);
-    ftime_new.AddDay(-2);
+    assert( f.GetTime(&mtime, 0 , &atime) );
+    CTime mtime_new(mtime), atime_new(atime);
+    mtime_new.AddDay(-2);
     atime_new.AddDay(-1);
-    assert( f.SetTime(&ftime_new, &atime_new) );
-    assert( f.GetTime(&ftime, &atime) );
-    cout << "File modification time : " << ftime.AsString() << endl;
+    assert( f.SetTime(&mtime_new, &atime_new) );
+    assert( f.GetTime(&mtime, &atime) );
+    cout << "File modification time : " << mtime.AsString() << endl;
     cout << "File last access time  : " << atime.AsString() << endl;
-    assert( ftime == ftime_new );
-    assert( atime >= ctime );
+    assert( mtime == mtime_new );
 
     // Remove the file
     assert( f.Remove() );
@@ -690,6 +689,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/12/15 15:42:48  ivanov
+ * Removed incorrect last access time check
+ *
  * Revision 1.31  2003/12/01 12:17:35  ivanov
  * Fixed comparison operator for assert( atime >= ctime )
  *
