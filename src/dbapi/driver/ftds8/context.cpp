@@ -421,7 +421,15 @@ I_DriverContext* FTDS_CreateContext(map<string,string>* attr = 0)
             version= DBVERSION_100;
 
     }
-    return new CTDSContext(version);
+    CTDSContext* cntx=  new CTDSContext(version);
+    if(cntx && attr) {
+      string page_size= (*attr)["packet"];
+      if(!page_size.empty()) {
+	int s= atoi(page_size.c_str());
+	cntx->TDS_SetPacketSize(s);
+      }
+    }
+    return cntx;
 }
 
 
@@ -472,6 +480,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/04/01 21:50:56  soussov
+ * new attribute 'packet=XXX' (where XXX is a packet size) added to FTDS_CreateContext
+ *
  * Revision 1.15  2003/03/17 15:29:38  soussov
  * sets the default host name using gethostname()
  *
