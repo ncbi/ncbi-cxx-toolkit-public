@@ -31,7 +31,8 @@
 	 <a name="ref_STL_Stream"></a> <h3>Old vs. new stream classes</h3>
 
 	 <p> 
-	 <p><i>#include &lt;ncbistre.hpp&gt;</i> 
+	 <p> <i>#include &lt;corelib/ncbistre.hpp&gt;</i>
+       &nbsp;&nbsp;[also included in <i>&lt;corelib/ncbistd.hpp&gt;</i>]
 
 	 <p>
 	 Do not use the new iostream library included with Sunpro C++ 5.0 early
@@ -55,8 +56,8 @@
 	 new streams or not. Thus, for the reason of the "old/new streams"
 	 portability, one <b>must</b> use:
 	 <ul>
-		<li> <i>#include &lt;ncbistre.hpp&gt;</i> (for now, it also
-		gets <i>#include</i>'d in <i> &lt;ncbistd.hpp&gt;</i>)
+		<li> <i>#include &lt;corelib/ncbistre.hpp&gt;</i>
+		  &nbsp;&nbsp;[also included in <i>&lt;corelib/ncbistd.hpp&gt;</i>]
 	 </ul>
 	 and <b>must never</b> do directly:
 	 <ul>
