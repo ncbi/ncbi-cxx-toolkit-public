@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/29 15:18:38  vasilche
+* Cleaned CRangeMap and CIntervalTree classes.
+*
 * Revision 1.1  2001/01/11 15:00:37  vasilche
 * Added CIntervalTree for seraching on set of intervals.
 *
@@ -44,124 +47,235 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <util/range.hpp>
-#include <map>
+#include <util/linkedset.hpp>
 
 BEGIN_NCBI_SCOPE
 
 // forward declarations
 class CIntervalTreeTraits;
+template<class Traits> class CIntervalTreeConstIteratorTraits;
+template<class Traits> class CIntervalTreeIteratorTraits;
+
 class CIntervalTree;
-struct SIntervalTreeNode;
-struct SIntervalTreeNodeIntervals;
+
+template<class Traits> struct SIntervalTreeNode;
+template<class Traits> struct SIntervalTreeNodeIntervals;
+template<class Traits> class CIntervalTreeIterator;
 
 // parameter class for CIntervalTree
 class CIntervalTreeTraits
 {
 public:
+    typedef CIntervalTreeTraits TTraits;
+    typedef CIntervalTreeIteratorTraits<TTraits> TIteratorTraits;
+    typedef CIntervalTreeConstIteratorTraits<TTraits> TConstIteratorTraits;
+
+    typedef CIntervalTree TMap;
+    typedef CIntervalTreeIterator<TIteratorTraits> TNCIterator;
+
     typedef int coordinate_type;
     typedef CRange<coordinate_type> interval_type;
-    typedef CObject* mapped_type;
+    typedef CConstRef<CObject> mapped_type;
 
-    typedef map<interval_type, mapped_type> TIntervalMap;
-    typedef TIntervalMap::iterator TIntervalMapI;
-    typedef TIntervalMap::const_iterator TIntervalMapCI;
+    typedef SLinkedSetValue<coordinate_type> TMapValue;
+    struct STreeMapValue : public TMapValue
+    {
+        STreeMapValue(coordinate_type key, coordinate_type y,
+                      const mapped_type& value)
+            : TMapValue(key), m_Y(y), m_Value(value)
+            {
+            }
 
-    static interval_type X2Y(interval_type interval);
-    static interval_type Y2X(interval_type interval);
+        coordinate_type m_Y;
+        mapped_type m_Value;
+
+        interval_type GetInterval(void) const
+            {
+                return interval_type(GetKey(), m_Y);
+            }
+    };
+    typedef STreeMapValue TTreeMapValue;
+    typedef CLinkedMultiset<TTreeMapValue> TTreeMap;
+    typedef TTreeMap::iterator TTreeMapI;
+    typedef TTreeMap::const_iterator TTreeMapCI;
+
+    struct SNodeMapValue : public TMapValue
+    {
+        SNodeMapValue(coordinate_type key, TTreeMapI value)
+            : TMapValue(key), m_Value(value)
+            {
+            }
+
+        TTreeMapI m_Value;
+    };
+    typedef SNodeMapValue TNodeMapValue;
+    typedef CLinkedMultiset<TNodeMapValue> TNodeMap;
+    typedef TNodeMap::iterator TNodeMapI;
+    typedef TNodeMap::const_iterator TNodeMapCI;
+
+    typedef SIntervalTreeNode<TTraits> TTreeNode;
+    typedef SIntervalTreeNodeIntervals<TTraits> TTreeNodeInts;
 
     static coordinate_type GetMax(void);
     static coordinate_type GetMaxCoordinate(void);
     static bool IsNormal(interval_type interval);
-    static interval_type GetLimit(void);
-    static bool IsLimit(interval_type interval);
-    static bool IsLimit(const TIntervalMap& intervalMap);
-    static void AddLimit(TIntervalMap& intervalMap);
+};
+
+// parameter class for CIntervalTree
+template<class Traits>
+class CIntervalTreeIteratorTraits : public Traits
+{
+    typedef Traits TParent;
+public:
+    typedef TParent TTreeTraits;
+
+    typedef typename TParent::mapped_type& reference;
+
+    typedef typename TParent::TTreeNode* TTreeNodeP;
+    typedef typename TParent::TTreeNodeInts* TTreeNodeIntsP;
+    typedef typename TParent::TMapValue* TMapValueP;
+    typedef typename TParent::TTreeMapValue* TTreeMapValueP;
+    typedef typename TParent::TNodeMapValue* TNodeMapValueP;
+};
+
+template<class Traits>
+class CIntervalTreeConstIteratorTraits : public Traits
+{
+    typedef Traits TParent;
+public:
+    typedef TParent TTreeTraits;
+
+    typedef const typename TParent::mapped_type& reference;
+
+    typedef const typename TParent::TTreeNode* TTreeNodeP;
+    typedef const typename TParent::TTreeNodeInts* TTreeNodeIntsP;
+    typedef const typename TParent::TMapValue* TMapValueP;
+    typedef const typename TParent::TTreeMapValue* TTreeMapValueP;
+    typedef const typename TParent::TNodeMapValue* TNodeMapValueP;
 };
 
 // interval search tree structures
+template<typename Traits>
 struct SIntervalTreeNode
 {
-    CIntervalTreeTraits::coordinate_type m_Key;
+    typedef Traits TTraits;
+    typedef typename TTraits::coordinate_type coordinate_type;
+    typedef typename TTraits::interval_type interval_type;
+    typedef typename TTraits::mapped_type mapped_type;
 
-    SIntervalTreeNode* m_Left;
-    SIntervalTreeNode* m_Right;
+    typedef typename TTraits::TTreeNode TTreeNode;
+    typedef typename TTraits::TTreeNodeInts TTreeNodeInts;
 
-    SIntervalTreeNodeIntervals* m_NodeIntervals;
+    coordinate_type m_Key;
+
+    TTreeNode* m_Left;
+    TTreeNode* m_Right;
+
+    TTreeNodeInts* m_NodeIntervals;
 };
 
+template<typename Traits>
 struct SIntervalTreeNodeIntervals
 {
-    typedef CIntervalTreeTraits traits;
-    typedef traits::interval_type interval_type;
-    typedef traits::mapped_type mapped_type;
-    typedef traits::TIntervalMap TIntervalMap;
+    typedef Traits TTraits;
+    typedef typename TTraits::coordinate_type coordinate_type;
+    typedef typename TTraits::interval_type interval_type;
+    typedef typename TTraits::mapped_type mapped_type;
 
-    SIntervalTreeNodeIntervals(const TIntervalMap& ref);
-    
+    typedef typename TTraits::TTreeNode TTreeNode;
+    typedef typename TTraits::TTreeNodeInts TTreeNodeInts;
+
+    typedef typename TTraits::TNodeMap TNodeMap;
+    typedef typename TTraits::TNodeMapValue TNodeMapValue;
+    typedef typename TTraits::TNodeMapI TNodeMapI;
+    typedef typename TTraits::TTreeMapI TTreeMapI;
+
     bool Empty(void) const;
     
-    void Insert(interval_type interval, const mapped_type& value);
-    void Replace(interval_type interval, const mapped_type& value);
-    bool Delete(interval_type interval);
+    void Insert(interval_type interval, TTreeMapI value);
+    bool Delete(interval_type interval, TTreeMapI value);
+
+    static void Delete(TNodeMap& m, const TNodeMapValue& v);
     
-    TIntervalMap m_ByX;
-    TIntervalMap m_ByY;
+    TNodeMap m_ByX;
+    TNodeMap m_ByY;
 };
 
+template<class Traits>
 class CIntervalTreeIterator
 {
 public:
-    typedef CIntervalTreeTraits traits;
-    typedef traits::coordinate_type coordinate_type;
-    typedef traits::interval_type interval_type;
-    typedef traits::mapped_type mapped_type;
-    typedef traits::TIntervalMap TIntervalMap;
-    typedef traits::TIntervalMapCI TIntervalMapCI;
+    typedef Traits TTraits;
+    typedef CIntervalTreeIterator<TTraits> TThis;
+
+    typedef typename TTraits::coordinate_type coordinate_type;
+    typedef typename TTraits::interval_type interval_type;
+    typedef typename TTraits::reference reference;
+
+    typedef typename TTraits::TMapValueP TMapValueP;
+    typedef typename TTraits::TTreeMapValueP TTreeMapValueP;
+    typedef typename TTraits::TNodeMapValueP TNodeMapValueP;
+
+    typedef typename TTraits::TTreeNodeP TTreeNodeP;
+    typedef typename TTraits::TTreeNodeIntsP TTreeNodeIntsP;
+
+    typedef typename TTraits::TMap TMap;
+    typedef typename TTraits::TNCIterator TNCIterator;
+
+    CIntervalTreeIterator(void);
+    CIntervalTreeIterator(const TNCIterator& iter);
 
     bool Valid(void) const;
     operator bool(void) const;
     bool operator!(void) const;
 
     void Next(void);
-    CIntervalTreeIterator& operator++(void);
+    TThis& operator++(void);
 
     // get current state
     interval_type GetInterval(void) const;
 
-protected:
-    const mapped_type& GetValue(void) const;
+    reference GetValue(void) const;
 
-private:
+protected:
+    bool InAuxMap(void) const;
+
     friend class CIntervalTree;
 
-    CIntervalTreeIterator(coordinate_type searchX,
-                          const SIntervalTreeNode* nextNode);
-    void SetIter(coordinate_type iterLimit, TIntervalMapCI iter);
+    TTreeMapValueP GetTreeMapValue(void) const;
 
-    void Validate(void);
-    bool ValidIter(void) const;
     void NextLevel(void);
 
+private:
     // iterator can be in four states:
     // 1. scanning auxList
-    //      m_SearchX == X of search interval >= 0
-    //      m_IterLimit == Y of search interval >= X
-    //      m_NextNode == root node pointer
+    //      m_SearchX == X of search interval (>= 0)
+    //      m_SearchLimit == Y of search interval (> X)
+    //      m_CurrentMapValue = current node in AuxMap (!= 0)
+    //      m_NextNode == root node pointer (!= 0)
     // 2. scanning node by X
-    //      m_SearchX == X of search interval >= 0
-    //      m_IterLimit == X of search interval >= 0
-    //      m_NextNode == next node pointer
+    //      m_SearchX == X of search interval (>= 0)
+    //      m_SearchLimit == X of search interval (>= 0)
+    //      m_CurrentMapValue = current node in NodeMap (!= 0)
+    //      m_NextNode == next node pointer (may be 0)
     // 3. scanning node by Y
-    //      m_SearchX == X of search interval >= 0
-    //      m_IterLimit == -X of search interval <= 0
-    //      m_NextNode == next node pointer
+    //      m_SearchX == X of search interval (>= 0)
+    //      m_SearchLimit = -X of search interval (<= 0)
+    //      m_CurrentMapValue = current node in NodeMap (!= 0)
+    //      m_NextNode == next node pointer (may be 0)
     // 4. end of scan
-    //      m_SearchX < 0
-    //      m_NextNode == 0
+    //      m_CurrentMapValue == 0
+
+    // So state determination will be:
+    // if ( m_CurrentMapValue == 0 ) state = END
+    // else if ( m_SearchLimit > m_SearchX ) state = AUX
+    // else if ( m_SearchLimit >= 0 ) state = NODE_BY_X
+    // else state = NODE_BY_Y
+
     coordinate_type m_SearchX;
-    coordinate_type m_IterLimit;
-    TIntervalMapCI m_Iter;
-    const SIntervalTreeNode* m_NextNode;
+    coordinate_type m_SearchLimit;
+    TMapValueP m_CurrentMapValue;
+    TTreeNodeP m_NextNode;
 };
 
 // deal with intervals with coordinates in range [0, max], where max is
@@ -169,16 +283,25 @@ private:
 class CIntervalTree
 {
 public:
-    typedef size_t size_type;
-    typedef CIntervalTreeTraits traits;
-    typedef traits::coordinate_type coordinate_type;
-    typedef traits::interval_type interval_type;
-    typedef traits::mapped_type mapped_type;
-    typedef traits::TIntervalMap TIntervalMap;
-    typedef traits::TIntervalMapI TIntervalMapI;
-    typedef traits::TIntervalMapCI TIntervalMapCI;
+    typedef CIntervalTreeTraits TTraits;
+    typedef TTraits::TIteratorTraits TIteratorTraits;
+    typedef TTraits::TConstIteratorTraits TConstIteratorTraits;
 
-    typedef CIntervalTreeIterator const_iterator;
+    typedef size_t size_type;
+    typedef TTraits::coordinate_type coordinate_type;
+    typedef TTraits::interval_type interval_type;
+    typedef TTraits::mapped_type mapped_type;
+
+    typedef TTraits::TTreeMap TTreeMap;
+    typedef TTraits::TTreeMapI TTreeMapI;
+    typedef TTraits::TTreeMapCI TTreeMapCI;
+    typedef TTraits::TTreeMapValue TTreeMapValue;
+
+    typedef TTraits::TTreeNode TTreeNode;
+    typedef TTraits::TTreeNodeInts TTreeNodeInts;
+
+    typedef CIntervalTreeIterator<TIteratorTraits> iterator;
+    typedef CIntervalTreeIterator<TConstIteratorTraits> const_iterator;
 
     CIntervalTree(void);
     ~CIntervalTree(void);
@@ -186,9 +309,13 @@ public:
     // check state of tree
     bool Empty(void) const;
     size_type Size(void) const;
+    pair<double, size_type> Stat(void) const;
 
     // remove all elements
     void Clear(void);
+
+    // insert
+    iterator Insert(interval_type interval, const mapped_type& value);
 
     // set value in tree independently of old value in slot
     // return true if element was added to tree
@@ -215,54 +342,72 @@ public:
     bool Delete(interval_type interval,
                 const nothrow_t&);
 
+    // end
+    const_iterator End(void) const;
+    iterator End(void);
+
+    // find
+    const_iterator Find(void) const;
+    iterator Find(void);
+
     // list intervals containing specified point
     const_iterator AllIntervals(void) const;
+    iterator AllIntervals(void);
     // list intervals containing specified point
     const_iterator IntervalsContaining(coordinate_type point) const;
+    iterator IntervalsContaining(coordinate_type point);
     // list intervals overlapping with specified interval
     const_iterator IntervalsOverlapping(interval_type interval) const;
+    iterator IntervalsOverlapping(interval_type interval);
+
+    static void Assign(const_iterator& dst, const iterator& src);
+    static void Assign(iterator& dst, const iterator& src);
 
 private:
     void Init(void);
     void Destroy(void);
 
-    void DoInsert(interval_type interval, const mapped_type& value);
-    void DoReplace(SIntervalTreeNode* node,
-                   interval_type interval, const mapped_type& value);
-    bool DoDelete(SIntervalTreeNode* node, interval_type interval);
+    struct SStat {
+        size_type count;
+        size_type total;
+        size_type max;
+    };
+    void Stat(const TTreeNode* node, SStat& stat) const;
+
+    void DoInsert(interval_type interval, TTreeMapI value);
+    bool DoDelete(TTreeNode* node, interval_type interval, TTreeMapI value);
 
     // root managing
     coordinate_type GetMaxRootCoordinate(void) const;
     coordinate_type GetNextRootKey(void) const;
 
     // node allocation
-    SIntervalTreeNode* AllocNode(void);
-    void DeallocNode(SIntervalTreeNode* node);
+    TTreeNode* AllocNode(void);
+    void DeallocNode(TTreeNode* node);
 
     // node creation/deletion
-    SIntervalTreeNode* InitNode(SIntervalTreeNode* node,
-                                coordinate_type key) const;
-    void ClearNode(SIntervalTreeNode* node);
-    void DeleteNode(SIntervalTreeNode* node);
+    TTreeNode* InitNode(TTreeNode* node, coordinate_type key) const;
+    void ClearNode(TTreeNode* node);
+    void DeleteNode(TTreeNode* node);
 
     // node intervals allocation
-    SIntervalTreeNodeIntervals* AllocNodeIntervals(void);
-    void DeallocNodeIntervals(SIntervalTreeNodeIntervals* nodeIntervals);
+    TTreeNodeInts* AllocNodeIntervals(void);
+    void DeallocNodeIntervals(TTreeNodeInts* nodeIntervals);
 
     // node intervals creation/deletion
-    SIntervalTreeNodeIntervals* CreateNodeIntervals(void);
-    void DeleteNodeIntervals(SIntervalTreeNodeIntervals* nodeIntervals);
+    TTreeNodeInts* CreateNodeIntervals(void);
+    void DeleteNodeIntervals(TTreeNodeInts* nodeIntervals);
 
-    SIntervalTreeNode m_Root;
-    TIntervalMap m_ByX;
+    TTreeNode m_Root;
+    TTreeMap m_ByX;
 
 #if defined(_RWSTD_VER) && !defined(_RWSTD_ALLOCATOR)
     // BW_1: non statdard Sun's allocators
-    typedef allocator_interface<allocator<SIntervalTreeNode>,SIntervalTreeNode> TNodeAllocator;
-    typedef allocator_interface<allocator<SIntervalTreeNodeIntervals>,SIntervalTreeNodeIntervals> TNodeIntervalsAllocator;
+    typedef allocator_interface<allocator<TTreeNode>,TTreeNode> TNodeAllocator;
+    typedef allocator_interface<allocator<TTreeNodeInts>,TTreeNodeInts> TNodeIntervalsAllocator;
 #else
-    typedef allocator<SIntervalTreeNode> TNodeAllocator;
-    typedef allocator<SIntervalTreeNodeIntervals> TNodeIntervalsAllocator;
+    typedef allocator<TTreeNode> TNodeAllocator;
+    typedef allocator<TTreeNodeInts> TNodeIntervalsAllocator;
 #endif
 
     TNodeAllocator m_NodeAllocator;

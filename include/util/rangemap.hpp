@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/01/29 15:18:39  vasilche
+* Cleaned CRangeMap and CIntervalTree classes.
+*
 * Revision 1.11  2001/01/16 21:37:22  vasilche
 * Fixed warning.
 *
@@ -78,193 +81,12 @@
 BEGIN_NCBI_SCOPE
 
 // range map forward declaration
+template<class Traits> class CRangeMapBase;
+template<class Traits> class CRangeMapIterator;
 template<typename Mapped, typename Position> class CRangeMap;
 template<typename Mapped, typename Position> class CRangeMultimap;
 
-// range map iterator base
-template<typename Traits>
-class CRangeMapIterator
-{
-public:
-    // typedefs
-    typedef Traits traits;
-    typedef typename traits::position_type position_type;
-    typedef typename traits::range_type range_type;
-    typedef typename traits::mapped_type mapped_type;
-    typedef typename traits::value_type value_type;
-
-    typedef typename traits::reference reference;
-    typedef typename traits::pointer pointer;
-
-    typedef typename traits::TRangeMap TRangeMap;
-    typedef typename traits::TSelectMapRef TSelectMapRef;
-    typedef typename traits::TSelectIter TSelectIter;
-    typedef typename traits::TLevelIter TLevelIter;
-
-    // internal typedefs
-    typedef CRangeMapIterator<traits> TThisType;
-
-    // friends
-    friend class CRangeMap<mapped_type, position_type>;
-    friend class CRangeMultimap<mapped_type, position_type>;
-
-    // constructors
-    // singular
-    CRangeMapIterator(void)
-        {
-        }
-    // copy from non const iterator
-    CRangeMapIterator(const typename traits::non_const_iterator& iter)
-        : m_Range(iter.GetRange()),
-          m_SelectIter(iter.GetSelectIter()),
-          m_SelectIterEnd(iter.GetSelectIterEnd()),
-          m_LevelIter(iter.GetLevelIter())
-        {
-        }
-
-    // move
-    TThisType& operator++(void)
-        {
-            ++m_LevelIter;
-            Settle();
-            return *this;
-        }
-
-    // get parameters
-    const range_type& GetRange(void) const
-        {
-            return m_Range;
-        }
-    // get state (for copying)
-    TSelectIter GetSelectIter(void) const
-        {
-            return m_SelectIter;
-        }
-    TSelectIter GetSelectIterEnd(void) const
-        {
-            return m_SelectIterEnd;
-        }
-    TLevelIter GetLevelIter(void) const
-        {
-            return m_LevelIter;
-        }
-
-    // check state
-    bool Finished(void) const
-        {
-            return m_SelectIter == m_SelectIterEnd;
-        }
-    bool operator==(const TThisType& iter) const
-        {
-            _ASSERT(GetSelectIterEnd() == iter.GetSelectIterEnd());
-            return GetSelectIter() == iter.GetSelectIter() &&
-                (Finished() || GetLevelIter() == iter.GetLevelIter());
-        }
-    bool operator!=(const TThisType& iter) const
-        {
-            return !(*this == iter);
-        }
-
-    // dereference
-    reference operator*(void) const
-        {
-            return *GetLevelIter();
-        }
-    pointer operator->(void) const
-        {
-            return &*GetLevelIter();
-        }
-
-private:
-    void InitLevelIter(void)
-        {
-            position_type from = m_Range.GetFrom();
-            if ( from == range_type::GetWholeFrom() ) {
-                // special case: whole region
-                m_LevelIter = m_SelectIter->second.begin();
-            }
-            else {
-                // get maximum length of ranges in the level
-                position_type maxLength = m_SelectIter->first;
-                // starting level point
-                m_LevelIter = m_SelectIter->second.
-                    lower_bound(range_type(from - maxLength + 1, from));
-            }
-        }
-    // stop at suitable point
-    void Settle(void)
-        {
-            for ( ;; ) {
-                // scan level
-                while ( m_LevelIter != m_SelectIter->second.end() &&
-                        m_LevelIter->first.GetFrom() <= m_Range.GetTo() ) {
-                    // we need to check only right bound of current range
-                    if ( m_LevelIter->first.GetTo() >= m_Range.GetFrom() )
-                        return; // found intersecting range
-                    ++m_LevelIter;
-                }
-                // next level
-                ++m_SelectIter;
-                if ( Finished() )
-                    return; // no more levels
-                InitLevelIter();
-            }
-        }
-
-    void SetEnd(TSelectMapRef selectMap)
-        {
-            m_Range = range_type::GetEmpty();
-            m_SelectIter = m_SelectIterEnd = selectMap.end();
-        }
-    void SetBegin(TSelectMapRef selectMap)
-        {
-            m_Range = range_type::GetWhole();
-            m_SelectIter = selectMap.begin();
-            m_SelectIterEnd = selectMap.end();
-            if ( !Finished() )
-                m_LevelIter = m_SelectIter->second.begin();
-        }
-    void SetBegin(range_type range, TSelectMapRef selectMap)
-        {
-            m_Range = range;
-            m_SelectIter = selectMap.begin();
-            m_SelectIterEnd = selectMap.end();
-            if ( !Finished() ) {
-                InitLevelIter();
-                Settle();
-            }
-        }
-    void Find(range_type key, TSelectMapRef selectMap)
-        {
-            if ( !key.Empty() ) {
-                TSelectIter selectIter =
-                    selectMap.lower_bound(traits::get_key_length(key));
-                // now selectIter->first >= key.length
-                TSelectIter selectIterEnd = selectMap.end();
-                if ( selectIter != selectIterEnd ) {
-                    TLevelIter levelIter = selectIter->second.find(key);
-                    if ( levelIter != selectIter->second.end() ) {
-                        m_Range = range_type::GetWhole();
-                        m_SelectIter = selectIter;
-                        m_SelectIterEnd = selectIterEnd;
-                        m_LevelIter = levelIter;
-                        return;
-                    }
-                }
-            }
-            // not found
-            SetEnd();
-        }
-
-private:
-    // iterator data
-    range_type m_Range;          // range to search
-    TSelectIter m_SelectIter;    // first level iter
-    TSelectIter m_SelectIterEnd; // first level iter limit
-    TLevelIter m_LevelIter;      // second level iter
-};
-
-// range map iterators traits
+// range map traits
 template<typename Position, typename Mapped>
 class CRangeMapTraitsBase
 {
@@ -290,7 +112,7 @@ public:
     // 2^n...(2^(n+1)-1)   (2^(n+1)-1)
     static position_type get_max_length(range_type key)
         {
-            position_type len = get_key_length(key);
+            position_type len = get_key_length(key) | 64;
             len |= (len >> 16);
             len |= (len >> 8);
             len |= (len >> 4);
@@ -311,42 +133,6 @@ public:
 };
 
 template<typename Position, typename Mapped>
-class CRangeMapIteratorTraits : public CRangeMapTraits<Position, Mapped>
-{
-    typedef CRangeMapTraits<Position, Mapped> TParent;
-public:
-	typedef typename TParent::TRangeMap& TRangeMapRef;
-	typedef typename TParent::TSelectMap& TSelectMapRef;
-	typedef typename TParent::TLevelMap& TLevelMapRef;
-	typedef typename TParent::TSelectMap::iterator TSelectIter;
-	typedef typename TParent::TLevelMap::iterator TLevelIter;
-	typedef typename TParent::value_type& reference;
-	typedef typename TParent::value_type* pointer;
-    typedef CRangeMapIteratorTraits<Position, Mapped> TIteratorTraits;
-    typedef CRangeMapIteratorTraits<Position, Mapped> TNCIteratorTraits;
-	typedef CRangeMapIterator<TIteratorTraits> iterator;
-	typedef CRangeMapIterator<TNCIteratorTraits> non_const_iterator;
-};
-
-template<typename Position, typename Mapped>
-class CRangeMapConstIteratorTraits : public CRangeMapTraits<Position, Mapped>
-{
-    typedef CRangeMapTraits<Position, Mapped> TParent;
-public:
-	typedef const typename TParent::TRangeMap& TRangeMapRef;
-	typedef const typename TParent::TSelectMap& TSelectMapRef;
-	typedef const typename TParent::TLevelMap& TLevelMapRef;
-	typedef typename TParent::TSelectMap::const_iterator TSelectIter;
-	typedef typename TParent::TLevelMap::const_iterator TLevelIter;
-	typedef const typename TParent::value_type& reference;
-	typedef const typename TParent::value_type* pointer;
-    typedef CRangeMapConstIteratorTraits<Position, Mapped> TIteratorTraits;
-    typedef CRangeMapIteratorTraits<Position, Mapped> TNCIteratorTraits;
-	typedef CRangeMapIterator<TIteratorTraits> iterator;
-	typedef CRangeMapIterator<TNCIteratorTraits> non_const_iterator;
-};
-
-template<typename Position, typename Mapped>
 class CRangeMultimapTraits : public CRangeMapTraitsBase<Position, Mapped>
 {
     typedef CRangeMapTraitsBase<Position, Mapped> TParent;
@@ -356,76 +142,288 @@ public:
 	typedef map<Position, TLevelMap> TSelectMap;
 };
 
-template<typename Position, typename Mapped>
-class CRangeMultimapIteratorTraits : public CRangeMultimapTraits<Position, Mapped>
+// range map iterators traits
+template<typename MapTraits>
+class CRangeMapIteratorTraits : public MapTraits
 {
-    typedef CRangeMultimapTraits<Position, Mapped> TParent;
 public:
-	typedef typename TParent::TRangeMap& TRangeMapRef;
-	typedef typename TParent::TSelectMap& TSelectMapRef;
-	typedef typename TParent::TLevelMap& TLevelMapRef;
-	typedef typename TParent::TSelectMap::iterator TSelectIter;
-	typedef typename TParent::TLevelMap::iterator TLevelIter;
-	typedef typename TParent::value_type& reference;
-	typedef typename TParent::value_type* pointer;
-    typedef CRangeMultimapIteratorTraits<Position, Mapped> TIteratorTraits;
-    typedef CRangeMultimapIteratorTraits<Position, Mapped> TNCIteratorTraits;
+    typedef MapTraits TMapTraits;
+    typedef CRangeMapIteratorTraits<TMapTraits> TIteratorTraits;
+    typedef CRangeMapIteratorTraits<TMapTraits> TNCIteratorTraits;
+
+	typedef typename TMapTraits::TRangeMap& TRangeMapRef;
+	typedef typename TMapTraits::TSelectMap& TSelectMapRef;
+	typedef typename TMapTraits::TLevelMap& TLevelMapRef;
+	typedef typename TMapTraits::TSelectMap::iterator TSelectIter;
+	typedef typename TMapTraits::TLevelMap::iterator TLevelIter;
+	typedef typename TMapTraits::value_type& reference;
+	typedef typename TMapTraits::value_type* pointer;
+
 	typedef CRangeMapIterator<TIteratorTraits> iterator;
 	typedef CRangeMapIterator<TNCIteratorTraits> non_const_iterator;
 };
 
-template<typename Position, typename Mapped>
-class CRangeMultimapConstIteratorTraits : public CRangeMultimapTraits<Position, Mapped>
+template<typename MapTraits>
+class CRangeMapConstIteratorTraits : public MapTraits
 {
-    typedef CRangeMultimapTraits<Position, Mapped> TParent;
 public:
-	typedef const typename TParent::TRangeMap& TRangeMapRef;
-	typedef const typename TParent::TSelectMap& TSelectMapRef;
-	typedef const typename TParent::TLevelMap& TLevelMapRef;
-	typedef typename TParent::TSelectMap::const_iterator TSelectIter;
-	typedef typename TParent::TLevelMap::const_iterator TLevelIter;
-	typedef const typename TParent::value_type& reference;
-	typedef const typename TParent::value_type* pointer;
-    typedef CRangeMultimapConstIteratorTraits<Position, Mapped> TIteratorTraits;
-    typedef CRangeMultimapIteratorTraits<Position, Mapped> TNCIteratorTraits;
+    typedef MapTraits TMapTraits;
+    typedef CRangeMapConstIteratorTraits<TMapTraits> TIteratorTraits;
+    typedef CRangeMapIteratorTraits<TMapTraits> TNCIteratorTraits;
+
+	typedef const typename TMapTraits::TRangeMap& TRangeMapRef;
+	typedef const typename TMapTraits::TSelectMap& TSelectMapRef;
+	typedef const typename TMapTraits::TLevelMap& TLevelMapRef;
+	typedef typename TMapTraits::TSelectMap::const_iterator TSelectIter;
+	typedef typename TMapTraits::TLevelMap::const_iterator TLevelIter;
+	typedef const typename TMapTraits::value_type& reference;
+	typedef const typename TMapTraits::value_type* pointer;
+
 	typedef CRangeMapIterator<TIteratorTraits> iterator;
 	typedef CRangeMapIterator<TNCIteratorTraits> non_const_iterator;
 };
+
+// range map iterator base
+template<class Traits>
+class CRangeMapIterator
+{
+public:
+    // typedefs
+    typedef Traits TTraits;
+    typedef typename TTraits::position_type position_type;
+    typedef typename TTraits::range_type range_type;
+    typedef typename TTraits::mapped_type mapped_type;
+    typedef typename TTraits::value_type value_type;
+
+    typedef typename TTraits::reference reference;
+    typedef typename TTraits::pointer pointer;
+
+    typedef typename TTraits::TRangeMap TRangeMap;
+    typedef typename TTraits::TSelectMapRef TSelectMapRef;
+    typedef typename TTraits::TSelectIter TSelectIter;
+    typedef typename TTraits::TLevelIter TLevelIter;
+
+    // internal typedefs
+    typedef typename TTraits::iterator TThisType;
+
+    // friends
+    friend class CRangeMapBase<typename TTraits::TMapTraits>;
+    friend class CRangeMap<mapped_type, position_type>;
+    friend class CRangeMultimap<mapped_type, position_type>;
+
+    // constructors
+    // singular
+    CRangeMapIterator(void)
+        {
+        }
+    // copy from non const iterator
+    CRangeMapIterator(const typename TTraits::non_const_iterator& iter)
+        : m_Range(iter.GetRange()),
+          m_SelectIter(iter.GetSelectIter()),
+          m_SelectIterEnd(iter.GetSelectIterEnd()),
+          m_LevelIter(iter.GetLevelIter())
+        {
+        }
+
+    // get parameters
+    const range_type& GetRange(void) const
+        {
+            return m_Range;
+        }
+    // get state (for copying)
+    TSelectIter GetSelectIter(void) const
+        {
+            return m_SelectIter;
+        }
+    TSelectIter GetSelectIterEnd(void) const
+        {
+            return m_SelectIterEnd;
+        }
+    TLevelIter GetLevelIter(void) const
+        {
+            return m_LevelIter;
+        }
+    TLevelIter GetLevelIterEnd(void) const
+        {
+            return GetSelectIter()->second.end();
+        }
+
+    // check state
+    bool Valid(void) const
+        {
+            return m_SelectIter != m_SelectIterEnd;
+        }
+    operator bool(void) const
+        {
+            return Valid();
+        }
+    bool operator!(void) const
+        {
+            return !Valid();
+        }
+
+    bool operator==(const TThisType& iter) const
+        {
+            _ASSERT(GetSelectIterEnd() == iter.GetSelectIterEnd());
+            return GetSelectIter() == iter.GetSelectIter() &&
+                (!*this || GetLevelIter() == iter.GetLevelIter());
+        }
+    bool operator!=(const TThisType& iter) const
+        {
+            return !(*this == iter);
+        }
+
+    // dereference
+    range_type GetInterval(void) const
+        {
+            return GetLevelIter()->first;
+        }
+    reference operator*(void) const
+        {
+            return *GetLevelIter();
+        }
+    pointer operator->(void) const
+        {
+            return &*GetLevelIter();
+        }
+
+private:
+    bool SetLevelIter(TLevelIter levelIter)
+        {
+            TLevelIter levelIterEnd = GetLevelIterEnd();
+            while ( levelIter != levelIterEnd ) {
+                if ( levelIter->first.GetTo() >= m_Range.GetFrom() ) {
+                    if ( levelIter->first.GetFrom() <= m_Range.GetTo() ) {
+                        m_LevelIter = levelIter;
+                        return true;
+                    }
+                    return false;
+                }
+                ++levelIter;
+            }
+            return false;
+        }
+    TLevelIter FirstLevelIter(void)
+        {
+            position_type from = m_Range.GetFrom();
+            if ( from == range_type::GetWholeFrom() ) {
+                // special case: whole region
+                return m_SelectIter->second.begin();
+            }
+            else {
+                // get maximum length of ranges in the level
+                position_type maxLength = m_SelectIter->first;
+                return m_SelectIter->second.lower_bound(range_type(from - maxLength + 1, from));
+            }
+        }
+
+    void SetEnd(TSelectMapRef selectMap)
+        {
+            m_Range = range_type::GetEmpty();
+            m_SelectIter = m_SelectIterEnd = selectMap.end();
+        }
+    void SetBegin(TSelectMapRef selectMap)
+        {
+            m_Range = range_type::GetWhole();
+            TSelectIter selectIter = m_SelectIter = selectMap.begin();
+            TSelectIter selectIterEnd = m_SelectIterEnd = selectMap.end();
+            if ( selectIter != selectIterEnd ) {
+                m_LevelIter = selectIter->second.begin();
+            }
+        }
+    void SetBegin(range_type range, TSelectMapRef selectMap)
+        {
+            m_Range = range;
+            TSelectIter selectIter = m_SelectIter = selectMap.begin();
+            TSelectIter selectIterEnd = m_SelectIterEnd = selectMap.end();
+            while ( selectIter != selectIterEnd &&
+                    !SetLevelIter(FirstLevelIter()) ) {
+                m_SelectIter = ++selectIter;
+            }
+        }
+    void Find(range_type key, TSelectMapRef selectMap);
+
+public:
+    // move
+    TThisType& operator++(void)
+        {
+            TLevelIter levelIter = m_LevelIter;
+            TSelectIter selectIterEnd = m_SelectIterEnd;
+            ++levelIter;
+            while ( !SetLevelIter(levelIter) &&
+                    ++m_SelectIter != selectIterEnd ) {
+                levelIter = FirstLevelIter();
+            }
+            return *this;
+        }
+
+private:
+    // iterator data
+    range_type m_Range;          // range to search
+    TSelectIter m_SelectIter;    // first level iter
+    TSelectIter m_SelectIterEnd; // first level iter limit
+    TLevelIter m_LevelIter;      // second level iter
+};
+
+template<class Traits>
+void CRangeMapIterator<Traits>::Find(range_type key, TSelectMapRef selectMap)
+{
+    TSelectIter selectIterEnd = selectMap.end();
+    if ( !key.Empty() ) {
+        TSelectIter selectIter =
+            selectMap.lower_bound(TTraits::get_key_length(key));
+        // now selectIter->first >= key.length
+        if ( selectIter != selectIterEnd ) {
+            TLevelIter levelIter = selectIter->second.find(key);
+            if ( levelIter != selectIter->second.end() ) {
+                m_Range = range_type::GetWhole();
+                m_SelectIter = selectIter;
+                m_SelectIterEnd = selectIterEnd;
+                m_LevelIter = levelIter;
+                return;
+            }
+        }
+    }
+    // not found
+    m_Range = range_type::GetEmpty();
+    m_SelectIter = m_SelectIterEnd = selectIterEnd;
+}
 
 // range map
-template<typename Mapped, typename Position = int>
-class CRangeMap
+template<class Traits>
+class CRangeMapBase
 {
 public:
     // standard typedefs
-    typedef CRangeMapTraits<Position, Mapped> TRangeMapTraits;
-    typedef CRangeMapIteratorTraits<Position, Mapped> TIteratorTraits;
-    typedef CRangeMapConstIteratorTraits<Position, Mapped> TConstIteratorTraits;
+    typedef Traits TRangeMapTraits;
+    typedef CRangeMapIteratorTraits<TRangeMapTraits> TIteratorTraits;
+    typedef CRangeMapConstIteratorTraits<TRangeMapTraits> TConstIteratorTraits;
+
     typedef size_t size_type;
-	typedef typename TIteratorTraits::iterator iterator;
-	typedef typename TConstIteratorTraits::iterator const_iterator;
     typedef typename TRangeMapTraits::position_type position_type;
     typedef typename TRangeMapTraits::range_type range_type;
 	typedef typename TRangeMapTraits::mapped_type mapped_type;
 	typedef typename TRangeMapTraits::value_type value_type;
 	typedef range_type key_type;
 
-private:
+    typedef typename TRangeMapTraits::TRangeMap TThisType;
+	typedef typename TIteratorTraits::iterator iterator;
+	typedef typename TConstIteratorTraits::iterator const_iterator;
+
+protected:
 	// internal typedefs
-    typedef CRangeMap<Mapped, Position> TThisType;
 	typedef typename TRangeMapTraits::TSelectMap TSelectMap;
 	typedef typename TRangeMapTraits::TLevelMap TLevelMap;
-    typedef typename TSelectMap::iterator TSelectMapI;
-    typedef typename TLevelMap::iterator TLevelMapI;
-    typedef typename TSelectMap::const_iterator TSelectMapCI;
-    typedef typename TLevelMap::const_iterator TLevelMapCI;
 
-public:
     // constructor
-    explicit CRangeMap(void)
+    CRangeMapBase(void)
         {
+#if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
+            m_SelectMap.allocation_size(8);
+#endif
         }
 
+public:
     // capacity
     bool empty(void) const
         {
@@ -433,6 +431,8 @@ public:
         }
     size_type size(void) const
         {
+            typedef typename TSelectMap::const_iterator TSelectMapCI;
+
             size_type size = 0;
             for ( TSelectMapCI i = m_SelectMap.begin(),
                       end = m_SelectMap.end(); i != end; ++i ) {
@@ -440,175 +440,9 @@ public:
             }
             return size;
         }
-    
-    // iterators
-    const_iterator end(void) const
+    pair<double, size_type> stat(void) const
         {
-            const_iterator iter;
-            iter.SetEnd(m_SelectMap);
-            return iter;
-        }
-    const_iterator begin(void) const
-        {
-            const_iterator iter;
-            iter.SetBegin(m_SelectMap);
-            return iter;
-        }
-    const_iterator begin(range_type range) const
-        {
-            const_iterator iter;
-            iter.SetBegin(range, m_SelectMap);
-            return iter;
-        }
-
-    iterator end(void)
-        {
-            iterator iter;
-            iter.SetEnd(m_SelectMap);
-            return iter;
-        }
-    iterator begin(void)
-        {
-            iterator iter;
-            iter.SetBegin(m_SelectMap);
-            return iter;
-        }
-    iterator begin(range_type range)
-        {
-            iterator iter;
-            iter.SetBegin(range, m_SelectMap);
-            return iter;
-        }
-
-    // element search
-    const_iterator find(key_type key) const
-        {
-            const_iterator iter;
-            iter.Find(key, m_SelectMap);
-            return iter;
-        }
-    iterator find(key_type key)
-        {
-            iterator iter;
-            iter.Find(key, m_SelectMap);
-            return iter;
-        }
-
-    // modification
-    void erase(iterator iter)
-        {
-            _ASSERT(iter != end());
-
-            // get element's level
-            TLevelMap& level = iter.GetSelectIter()->second;
-
-            // erase element on level
-            level.erase(iter.GetLevelIter());
-
-            if ( level.empty() ) // end of level
-                m_SelectMap.erase(iter.GetSelectIter()); // remove level
-        }
-    size_type erase(key_type key)
-        {
-            iterator iter = find(key);
-            if ( iter.Finished() )
-                return 0;
-            erase(iter);
-            return 1;
-        }
-    void clear(void)
-        {
-            m_SelectMap.clear();
-        }
-    void swap(TThisType& rangeMap)
-        {
-            m_SelectMap.swap(rangeMap.m_SelectMap);
-        }
-
-    pair<iterator, bool> insert(const value_type& value)
-        {
-            if ( value.first.Empty() )
-                THROW1_TRACE(runtime_error, "empty key range");
-
-            // key in select map
-            position_type selectKey =
-                TRangeMapTraits::get_max_length(value.first);
-
-            // get level
-            typedef typename TSelectMap::value_type select_value;
-            TSelectMapI selectIter =
-                m_SelectMap.insert(select_value(selectKey, TLevelMap())).first;
-            // insert element
-            pair<TLevelMapI, bool> levelInsert =
-                selectIter->second.insert(value);
-            
-            pair<iterator, bool> ret;
-            ret.second = levelInsert.second;
-            ret.first.m_Range = range_type::GetWhole();
-            ret.first.m_SelectIter = selectIter;
-            ret.first.m_SelectIterEnd = m_SelectMap.end();
-            ret.first.m_LevelIter = levelInsert.first;
-            return ret;
-        }
-
-    // element access
-    mapped_type& operator[](key_type key)
-        {
-            return insert(value_type(key, mapped_type())).first->second;
-        }
-
-private:
-    // data
-    TSelectMap m_SelectMap;
-};
-
-// range map
-template<typename Mapped, typename Position = int>
-class CRangeMultimap
-{
-public:
-    // standard typedefs
-    typedef CRangeMultimapTraits<Position, Mapped> TRangeMapTraits;
-    typedef CRangeMultimapIteratorTraits<Position, Mapped> TIteratorTraits;
-    typedef CRangeMultimapConstIteratorTraits<Position, Mapped> TConstIteratorTraits;
-    typedef size_t size_type;
-	typedef typename TIteratorTraits::iterator iterator;
-	typedef typename TConstIteratorTraits::iterator const_iterator;
-    typedef typename TRangeMapTraits::position_type position_type;
-    typedef typename TRangeMapTraits::range_type range_type;
-	typedef typename TRangeMapTraits::mapped_type mapped_type;
-	typedef typename TRangeMapTraits::value_type value_type;
-	typedef range_type key_type;
-
-private:
-	// internal typedefs
-    typedef CRangeMultimap<Mapped, Position> TThisType;
-	typedef typename TRangeMapTraits::TSelectMap TSelectMap;
-	typedef typename TRangeMapTraits::TLevelMap TLevelMap;
-    typedef typename TSelectMap::iterator TSelectMapI;
-    typedef typename TLevelMap::iterator TLevelMapI;
-    typedef typename TSelectMap::const_iterator TSelectMapCI;
-    typedef typename TLevelMap::const_iterator TLevelMapCI;
-
-public:
-    // constructor
-    explicit CRangeMultimap(void)
-        {
-        }
-
-    // capacity
-    bool empty(void) const
-        {
-            return m_SelectMap.empty();
-        }
-    size_type size(void) const
-        {
-            size_type size = 0;
-            for ( TSelectMapCI i = m_SelectMap.begin(),
-                      end = m_SelectMap.end(); i != end; ++i ) {
-                size += i->second.size();
-            }
-            return size;
+            return make_pair(0.0, size_type(0));
         }
     
     // iterators
@@ -682,7 +516,7 @@ public:
         {
             size_type count = 0;
             iterator iter = find(key);
-            while ( !iter.Finished() && iter->first == key ) {
+            while ( iter && iter.GetInterval() == key ) {
                 iterator toErase = iter;
                 ++iter;
                 ++count;
@@ -690,6 +524,7 @@ public:
             }
             return count;
         }
+
     void clear(void)
         {
             m_SelectMap.clear();
@@ -699,21 +534,117 @@ public:
             m_SelectMap.swap(rangeMap.m_SelectMap);
         }
 
-    void insert(const value_type& value)
+protected:
+    // data
+    TSelectMap m_SelectMap;
+};
+
+// range map
+template<typename Mapped, typename Position = int>
+class CRangeMap : public CRangeMapBase< CRangeMapTraits<Position, Mapped> >
+{
+    typedef CRangeMapBase< CRangeMapTraits<Position, Mapped> > TParent;
+public:
+    // standard typedefs
+    typedef typename TParent::size_type size_type;
+    typedef typename TParent::position_type position_type;
+    typedef typename TParent::range_type range_type;
+	typedef typename TParent::mapped_type mapped_type;
+	typedef typename TParent::value_type value_type;
+	typedef typename TParent::key_type key_type;
+
+	typedef typename TParent::iterator iterator;
+	typedef typename TParent::iterator const_iterator;
+
+    // constructor
+    explicit CRangeMap(void)
+        {
+        }
+
+    pair<iterator, bool> insert(const value_type& value)
         {
             if ( value.first.Empty() )
                 THROW1_TRACE(runtime_error, "empty key range");
 
+            typedef typename TParent::TRangeMapTraits TRangeMapTraits;
+            // key in select map
+            position_type selectKey =
+                TRangeMapTraits::get_max_length(value.first);
+
+            // get level
+            typedef typename TParent::TSelectMap::value_type select_value;
+            typedef typename TParent::TSelectMap::iterator TSelectMapI;
+            typedef typename TParent::TLevelMap::iterator TLevelMapI;
+
+            // insert element
+            pair<TSelectMapI, bool> selectInsert =
+                m_SelectMap.insert(select_value(selectKey, TLevelMap()));
+            pair<TLevelMapI, bool> levelInsert =
+                selectInsert.first->second.insert(value);
+            
+            pair<iterator, bool> ret;
+            ret.second = levelInsert.second;
+            ret.first.m_Range = range_type::GetWhole();
+            ret.first.m_SelectIter = selectInsert.first;
+            ret.first.m_SelectIterEnd = m_SelectMap.end();
+            ret.first.m_LevelIter = levelInsert.first;
+            return ret;
+        }
+
+    // element access
+    mapped_type& operator[](key_type key)
+        {
+            return insert(value_type(key, mapped_type())).first->second;
+        }
+};
+
+// range map
+template<typename Mapped, typename Position = int>
+class CRangeMultimap : public CRangeMapBase< CRangeMultimapTraits<Position, Mapped> >
+{
+    typedef CRangeMapBase< CRangeMultimapTraits<Position, Mapped> > TParent;
+public:
+    // standard typedefs
+    typedef typename TParent::size_type size_type;
+    typedef typename TParent::position_type position_type;
+    typedef typename TParent::range_type range_type;
+	typedef typename TParent::mapped_type mapped_type;
+	typedef typename TParent::value_type value_type;
+	typedef typename TParent::key_type key_type;
+
+	typedef typename TParent::iterator iterator;
+	typedef typename TParent::iterator const_iterator;
+
+    // constructor
+    explicit CRangeMultimap(void)
+        {
+        }
+
+    iterator insert(const value_type& value)
+        {
+            if ( value.first.Empty() )
+                THROW1_TRACE(runtime_error, "empty key range");
+
+            typedef typename TParent::TRangeMapTraits TRangeMapTraits;
             // select key
             position_type selectKey =
                 TRangeMapTraits::get_max_length(value.first);
 
+            typedef typename TParent::TSelectMap::value_type select_value;
+            typedef typename TParent::TSelectMap::iterator TSelectMapI;
+            typedef typename TParent::TLevelMap::iterator TLevelMapI;
+
             // insert element
-            m_SelectMap[selectKey].insert(value);
+            pair<TSelectMapI, bool> selectInsert =
+                m_SelectMap.insert(select_value(selectKey, TLevelMap()));
+
+            iterator ret;
+            ret.m_Range = range_type::GetWhole();
+            ret.m_SelectIter = selectInsert.first;
+            ret.m_SelectIterEnd = m_SelectMap.end();
+            ret.m_LevelIter = selectInsert.first->second.insert(value);
+            return ret;
         }
-private:
-    // data
-    TSelectMap m_SelectMap;
 };
 
 //#include <util/rangemap.inl>

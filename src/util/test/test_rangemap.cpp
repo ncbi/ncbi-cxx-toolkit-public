@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/01/29 15:18:49  vasilche
+* Cleaned CRangeMap and CIntervalTree classes.
+*
 * Revision 1.8  2001/01/16 20:52:31  vasilche
 * Simplified some CRangeMap code.
 *
@@ -85,6 +88,7 @@ public:
 
     void Filling(const char* type) const;
     void Filled(size_t size) const;
+    void Stat(pair<double, size_t> stat) const;
     void Added(TRange range) const;
     void Old(TRange range) const;
     void FromAll(TRange range) const;
@@ -106,6 +110,7 @@ public:
     int m_ScanLength;
     
     bool m_Silent;
+    bool m_PrintSize;
     bool m_PrintTotalScannedNumber;
 };
 
@@ -135,8 +140,13 @@ void CTestRangeMap::Filling(const char* type) const
 inline
 void CTestRangeMap::Filled(size_t size) const
 {
-    if ( !m_Silent )
-        NcbiCout << "Filled: size=" << size << NcbiEndl;
+    NcbiCout << "Filled: size=" << size << NcbiEndl;
+}
+
+inline
+void CTestRangeMap::Stat(pair<double, size_t> stat) const
+{
+    NcbiCout << "Stat: mean=" << stat.first << " max=" << stat.second << NcbiEndl;
 }
 
 inline
@@ -208,16 +218,15 @@ void CTestRangeMap::TestIntervalTree(void) const
     // fill
     for ( int count = 0; count < m_RangeNumber; ) {
         TRange range = RandomRange();
-        if ( m.Set(range, 0) ) {
-            ++count;
-            Added(range);
-        }
-        else {
-            Old(range);
-        }
+        m.Insert(range, 0);
+        ++count;
+        Added(range);
     }
     
-    Filled(m.Size());
+    if ( m_PrintSize ) {
+        Filled(m.Size());
+        Stat(m.Stat());
+    }
 
     for ( TMapCI i = m.AllIntervals(); i; ++i ) {
         FromAll(i.GetInterval());
@@ -227,8 +236,7 @@ void CTestRangeMap::TestIntervalTree(void) const
     for ( int count = 0; count < m_ScanCount; ++count ) {
         for ( int pos = 0; pos <= m_Length + 2*m_RangeLength;
               pos += m_ScanStep ) {
-            TRange range;
-            range.SetFrom(pos).SetLength(m_ScanLength);
+            TRange range(pos, pos + m_ScanLength - 1);
             
             StartFrom(range);
             
@@ -247,7 +255,7 @@ void CTestRangeMap::TestRangeMap(void) const
 {
     Filling("CRangeMap");
 
-    typedef CRangeMap<bool> TMap;
+    typedef CRangeMultimap<CConstRef<CObject> > TMap;
     typedef TMap::const_iterator TMapCI;
 
     TMap m;
@@ -255,19 +263,18 @@ void CTestRangeMap::TestRangeMap(void) const
     // fill
     for ( int count = 0; count < m_RangeNumber; ) {
         TRange range = RandomRange();
-        if ( m.insert(TMap::value_type(range, false)).second ) {
-            ++count;
-            Added(range);
-        }
-        else {
-            Old(range);
-        }
+        m.insert(TMap::value_type(range, 0));
+        ++count;
+        Added(range);
     }
     
-    Filled(m.size());
+    if ( m_PrintSize ) {
+        Filled(m.size());
+        Stat(m.stat());
+    }
 
-    iterate ( TMap, i, m ) {
-        FromAll(i->first);
+    for ( TMapCI i = m.begin(); i; ++i ) {
+        FromAll(i.GetInterval());
     }
 
     size_t scannedCount = 0;
@@ -279,8 +286,8 @@ void CTestRangeMap::TestRangeMap(void) const
             
             StartFrom(range);
             
-            for ( TMapCI i = m.begin(range), end = m.end(); i != end; ++i ) {
-                From(range, i->first);
+            for ( TMapCI i = m.begin(range); i; ++i ) {
+                From(range, i.GetInterval());
                 ++scannedCount;
             }
         }
@@ -303,8 +310,8 @@ void CTestRangeMap::Init(void)
                      "type of container to use",
                      CArgDescriptions::eString, "CIntervalTree");
     d->SetConstraint("t", (new CArgAllow_Strings)->
-                     Allow("CIntervalTree")->
-                     Allow("CRangeMap"));
+                     Allow("CIntervalTree")->Allow("i")->
+                     Allow("CRangeMap")->Allow("r"));
 
     d->AddDefaultKey("c", "count",
                      "how may times to run whole test",
@@ -312,6 +319,8 @@ void CTestRangeMap::Init(void)
 
     d->AddFlag("s",
                "silent operation - do not print log");
+    d->AddFlag("ps",
+               "print total number of intervals");
     d->AddFlag("psn",
                "print total number of scanned intervals");
 
@@ -344,6 +353,7 @@ int CTestRangeMap::Run(void)
 
     m_Count = args["c"].AsInteger();
     m_Silent = args["s"];
+    m_PrintSize = args["ps"];
     m_PrintTotalScannedNumber = args["psn"];
     m_RangeNumber = args["n"].AsInteger();
     m_Length = args["l"].AsInteger();
@@ -352,12 +362,14 @@ int CTestRangeMap::Run(void)
     m_ScanStep = args["ss"].AsInteger();
     m_ScanLength = args["sl"].AsInteger();
     
-    if ( args["t"].AsString() == "CIntervalTree" ) {
-        for ( int count = 0; count < m_Count; ++count )
+    bool intervalTree =
+        args["t"].AsString() == "CIntervalTree" ||
+        args["t"].AsString() == "i";
+
+    for ( int count = 0; count < m_Count; ++count ) {
+        if ( intervalTree )
             TestIntervalTree();
-    }
-    else {
-        for ( int count = 0; count < m_Count; ++count )
+        else
             TestRangeMap();
     }
 

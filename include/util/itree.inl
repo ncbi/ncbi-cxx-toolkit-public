@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/29 15:18:39  vasilche
+* Cleaned CRangeMap and CIntervalTree classes.
+*
 * Revision 1.1  2001/01/11 15:00:38  vasilche
 * Added CIntervalTree for seraching on set of intervals.
 *
@@ -61,114 +64,185 @@ bool CIntervalTreeTraits::IsNormal(interval_type interval)
         interval.GetTo() <= GetMaxCoordinate();
 }
 
+template<typename Traits>
 inline
-CIntervalTreeTraits::interval_type
-CIntervalTreeTraits::GetLimit(void)
-{
-    coordinate_type max = GetMax();
-    return interval_type(max, max);
-}
-
-inline
-bool CIntervalTreeTraits::IsLimit(interval_type interval)
-{
-    coordinate_type max = GetMax();
-    return interval.GetFrom() == max && interval.GetTo() == max;
-}
-
-inline
-CIntervalTreeTraits::interval_type
-CIntervalTreeTraits::X2Y(interval_type interval)
-{
-    return interval_type(-interval.GetTo(), interval.GetFrom());
-}
-
-inline
-CIntervalTreeTraits::interval_type
-CIntervalTreeTraits::Y2X(interval_type interval)
-{
-    return interval_type(interval.GetTo(), -interval.GetFrom());
-}
-
-inline
-CIntervalTreeIterator::CIntervalTreeIterator(coordinate_type searchX,
-                                             const SIntervalTreeNode* nextNode)
-    : m_SearchX(searchX), m_NextNode(nextNode)
+CIntervalTreeIterator<Traits>::CIntervalTreeIterator(void)
 {
 }
 
+template<typename Traits>
 inline
-bool CIntervalTreeIterator::Valid(void) const
+CIntervalTreeIterator<Traits>::CIntervalTreeIterator(const TNCIterator& iter)
 {
-    return m_SearchX >= 0;
+    TMap::Assign(*this, iter);
 }
 
+template<typename Traits>
 inline
-CIntervalTreeIterator::operator bool(void) const
+bool CIntervalTreeIterator<Traits>::Valid(void) const
+{
+    return m_CurrentMapValue != 0;
+}
+
+template<typename Traits>
+inline
+bool CIntervalTreeIterator<Traits>::InAuxMap(void) const
+{
+    return m_SearchLimit > m_SearchX;
+}
+
+template<typename Traits>
+inline
+CIntervalTreeIterator<Traits>::operator bool(void) const
 {
     return Valid();
 }
 
+template<typename Traits>
 inline
-bool CIntervalTreeIterator::operator!(void) const
+bool CIntervalTreeIterator<Traits>::operator!(void) const
 {
     return !Valid();
 }
 
+template<typename Traits>
 inline
-bool CIntervalTreeIterator::ValidIter(void) const
+CIntervalTreeIterator<Traits>::TTreeMapValueP
+CIntervalTreeIterator<Traits>::GetTreeMapValue(void) const
 {
-    return m_Iter->first.GetFrom() <= m_IterLimit;
+    if ( InAuxMap() )
+        return static_cast<TTreeMapValueP>(m_CurrentMapValue);
+    else
+        return &*static_cast<TNodeMapValueP>(m_CurrentMapValue)->m_Value;
 }
 
+template<typename Traits>
 inline
-void CIntervalTreeIterator::Validate(void)
+void CIntervalTreeIterator<Traits>::Next(void)
 {
-    if ( !ValidIter() )
+    TMapValueP newMapValue = m_CurrentMapValue->GetNext();
+    if ( newMapValue && newMapValue->GetKey() <= m_SearchLimit )
+        m_CurrentMapValue = newMapValue;
+    else
         NextLevel();
 }
 
+template<typename Traits>
 inline
-void CIntervalTreeIterator::SetIter(coordinate_type iterLimit,
-                                    TIntervalMapCI iter)
+CIntervalTreeIterator<Traits>::interval_type
+CIntervalTreeIterator<Traits>::GetInterval(void) const
 {
-    m_IterLimit = iterLimit;
-    m_Iter = iter;
-    Validate();
+    return GetTreeMapValue()->GetInterval();
 }
 
+template<typename Traits>
 inline
-void CIntervalTreeIterator::Next(void)
-{
-    ++m_Iter;
-    Validate();
-}
-
-inline
-CIntervalTreeIterator& CIntervalTreeIterator::operator++(void)
+CIntervalTreeIterator<Traits>& CIntervalTreeIterator<Traits>::operator++(void)
 {
     Next();
     return *this;
 }
 
+template<typename Traits>
 inline
-CIntervalTreeIterator::interval_type
-CIntervalTreeIterator::GetInterval(void) const
+CIntervalTreeIterator<Traits>::reference
+CIntervalTreeIterator<Traits>::GetValue(void) const
 {
-    interval_type interval = m_Iter->first;
-    if ( interval.GetFrom() < 0 ) // scan by Y using reversed interval
-        return traits::Y2X(interval); // reverse it back
-    else
-        return interval;
+    return *GetTreeMapValue()->m_Value;
 }
 
-inline
-const CIntervalTreeIterator::mapped_type&
-CIntervalTreeIterator::GetValue(void) const
+template<typename Traits>
+void CIntervalTreeIterator<Traits>::NextLevel(void)
 {
-    return m_Iter->second;
+    // get iterator values
+    coordinate_type x = m_SearchX;
+    TTreeNodeP nextNode = m_NextNode;
+
+    // 
+    while ( nextNode ) {
+        // get node values
+        coordinate_type key = nextNode->m_Key;
+        TTreeNodeIntsP nodeIntervals = nextNode->m_NodeIntervals;
+
+        // new iterator values
+        TMapValueP firstMapValue;
+        coordinate_type searchLimit;
+
+        if ( x < key ) {
+            // by X
+            if ( x == key )
+                nextNode = 0;
+            else
+                nextNode = nextNode->m_Left;
+            if ( !nodeIntervals )
+                continue; // skip this node
+            firstMapValue = nodeIntervals->m_ByX.GetStart();
+            searchLimit = x;
+        }
+        else {
+            // by Y
+            nextNode = nextNode->m_Right;
+            if ( !nodeIntervals )
+                continue; // skip this node
+            firstMapValue = nodeIntervals->m_ByY.GetStart();
+            searchLimit = -x;
+        }
+
+        _ASSERT(firstMapValue);
+        if ( firstMapValue->GetKey() <= searchLimit ) {
+            m_CurrentMapValue = firstMapValue;
+            m_SearchLimit = searchLimit;
+            m_NextNode = nextNode;
+            return; // found
+        }
+    }
+
+    m_CurrentMapValue = 0;
 }
 
+template<class Traits>
+inline
+bool SIntervalTreeNodeIntervals<Traits>::Empty(void) const
+{
+    return m_ByX.empty();
+}
+
+template<class Traits>
+void SIntervalTreeNodeIntervals<Traits>::Delete(TNodeMap& m,
+                                                const TNodeMapValue& value)
+{
+    TNodeMapI it = m.lower_bound(value);
+    _ASSERT(it != m.end());
+    while ( it->m_Value != value.m_Value ) {
+        ++it;
+        _ASSERT(it != m.end());
+        _ASSERT(it->GetKey() == value.GetKey());
+    }
+    m.erase(it);
+}
+
+template<class Traits>
+inline
+void SIntervalTreeNodeIntervals<Traits>::Insert(interval_type interval,
+                                                TTreeMapI value)
+{
+    // insert interval
+    m_ByX.insert(TNodeMapValue(interval.GetFrom(), value));
+    m_ByY.insert(TNodeMapValue(-interval.GetTo(), value));
+}
+
+template<class Traits>
+inline
+bool SIntervalTreeNodeIntervals<Traits>::Delete(interval_type interval,
+                                                TTreeMapI value)
+{
+    // erase interval
+    Delete(m_ByX, TNodeMapValue(interval.GetFrom(), value));
+    Delete(m_ByY, TNodeMapValue(-interval.GetTo(), value));
+    return Empty();
+}
+
+/*
 inline
 void CIntervalTree::Add(interval_type interval, const mapped_type& value)
 {
@@ -290,13 +364,34 @@ bool CIntervalTree::Reset(interval_type interval)
 {
     return Delete(interval, nothrow);
 }
+*/
+
+inline
+bool CIntervalTree::Empty(void) const
+{
+    return m_ByX.empty();
+}
+
+inline
+CIntervalTree::const_iterator
+CIntervalTree::End(void) const
+{
+    const_iterator it;
+    it.m_CurrentMapValue = 0;
+    return it;
+}
 
 inline
 CIntervalTree::const_iterator
 CIntervalTree::AllIntervals(void) const
 {
-    const_iterator it(0, 0);
-    it.SetIter(traits::GetMax() - 1, m_ByX.begin());
+    if ( Empty() )
+        return End();
+
+    const_iterator it;
+    it.m_SearchLimit = TTraits::GetMaxCoordinate();
+    it.m_CurrentMapValue = m_ByX.GetStart();
+    it.m_NextNode = 0;
     return it;
 }
 
@@ -304,52 +399,60 @@ inline
 CIntervalTree::const_iterator
 CIntervalTree::IntervalsContaining(coordinate_type x) const
 {
-    const_iterator it(x, &m_Root);
+    const_iterator it;
+    it.m_SearchX = x;
+    it.m_NextNode = &m_Root;
     it.NextLevel();
     return it;
 }
 
 inline
-CIntervalTree::const_iterator
-CIntervalTree::IntervalsOverlapping(interval_type interval) const
+CIntervalTree::iterator
+CIntervalTree::End(void)
 {
-    coordinate_type x = interval.GetFrom();
-    coordinate_type y = interval.GetTo();
-
-    const_iterator it(x, &m_Root);
-    it.SetIter(y, m_ByX.lower_bound(interval_type(x + 1, 0)));
+    iterator it;
+    it.m_CurrentMapValue = 0;
     return it;
 }
 
 inline
-bool CIntervalTree::Empty(void) const
+CIntervalTree::iterator
+CIntervalTree::AllIntervals(void)
 {
-    return traits::IsLimit(m_ByX);
+    if ( Empty() )
+        return End();
+
+    iterator it;
+    it.m_SearchLimit = TTraits::GetMaxCoordinate();
+    it.m_CurrentMapValue = m_ByX.GetStart();
+    it.m_NextNode = 0;
+    return it;
+}
+
+inline
+CIntervalTree::iterator
+CIntervalTree::IntervalsContaining(coordinate_type x)
+{
+    iterator it;
+    it.m_SearchX = x;
+    it.m_NextNode = &m_Root;
+    it.NextLevel();
+    return it;
 }
 
 inline
 void CIntervalTree::Init(void)
 {
-    _ASSERT(m_ByX.empty());
-    traits::AddLimit(m_ByX);
-    _ASSERT(Empty());
-}
-
-inline
-void CIntervalTree::Destroy(void)
-{
-    ClearNode(&m_Root);
-    m_ByX.clear();
 }
 
 inline
 CIntervalTree::size_type CIntervalTree::Size(void) const
 {
-    return m_ByX.size() - 1;
+    return m_ByX.size();
 }
 
 inline
-void CIntervalTree::DeleteNode(SIntervalTreeNode* node)
+void CIntervalTree::DeleteNode(TTreeNode* node)
 {
     if ( node ) {
         ClearNode(node);
@@ -365,8 +468,8 @@ void CIntervalTree::Clear(void)
 }
 
 inline
-SIntervalTreeNode* CIntervalTree::InitNode(SIntervalTreeNode* node,
-                                           coordinate_type key) const
+CIntervalTree::TTreeNode* CIntervalTree::InitNode(TTreeNode* node,
+                                                  coordinate_type key) const
 {
     node->m_Key = key;
     node->m_Left = node->m_Right = 0;
@@ -385,6 +488,24 @@ inline
 CIntervalTree::~CIntervalTree(void)
 {
     Destroy();
+}
+
+inline
+void CIntervalTree::Assign(const_iterator& dst, const iterator& src)
+{
+    dst.m_SearchX = src.m_SearchX;
+    dst.m_SearchLimit = src.m_SearchLimit;
+    dst.m_CurrentMapValue = src.m_CurrentMapValue;
+    dst.m_NextNode = src.m_NextNode;
+}
+
+inline
+void CIntervalTree::Assign(iterator& dst, const iterator& src)
+{
+    dst.m_SearchX = src.m_SearchX;
+    dst.m_SearchLimit = src.m_SearchLimit;
+    dst.m_CurrentMapValue = src.m_CurrentMapValue;
+    dst.m_NextNode = src.m_NextNode;
 }
 
 #endif /* def ITREE__HPP  &&  ndef ITREE__INL */

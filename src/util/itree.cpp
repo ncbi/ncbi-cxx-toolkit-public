@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/01/29 15:18:46  vasilche
+* Cleaned CRangeMap and CIntervalTree classes.
+*
 * Revision 1.3  2001/01/11 15:16:28  vasilche
 * On MSVC second argument of allocator::allocate() is not optional.
 *
@@ -47,128 +50,26 @@
 
 BEGIN_NCBI_SCOPE
 
-typedef CIntervalTreeTraits::coordinate_type coordinate_type;
-typedef CIntervalTreeTraits::interval_type interval_type;
-
-bool CIntervalTreeTraits::IsLimit(const TIntervalMap& intervalMap)
-{
-    _ASSERT(!intervalMap.empty());
-    return IsLimit(intervalMap.begin()->first);
-}
-
-void CIntervalTreeTraits::AddLimit(TIntervalMap& intervalMap)
-{
-    _ASSERT(intervalMap.empty());
-    intervalMap.insert(TIntervalMap::value_type(GetLimit(), 0));
-    _ASSERT(IsLimit(intervalMap));
-}
-
-void CIntervalTreeIterator::NextLevel(void)
-{
-    _ASSERT(!ValidIter());
-    coordinate_type x = m_SearchX;
-    while ( m_NextNode ) {
-        coordinate_type key = m_NextNode->m_Key;
-        const SIntervalTreeNodeIntervals* nodeIntervals =
-            m_NextNode->m_NodeIntervals;
-        if ( x < key ) {
-            // by X
-            if ( x == key )
-                m_NextNode = 0;
-            else
-                m_NextNode = m_NextNode->m_Left;
-            if ( !nodeIntervals )
-                continue; // skip this node
-            m_Iter = nodeIntervals->m_ByX.begin();
-            m_IterLimit = x;
-        }
-        else {
-            // by Y
-            m_NextNode = m_NextNode->m_Right;
-            if ( !nodeIntervals )
-                continue; // skip this node
-            m_Iter = nodeIntervals->m_ByY.begin();
-            m_IterLimit = -x;
-        }
-        if ( ValidIter() )
-            return; // found
-    }
-    m_SearchX = -1; // mark finished iterator by negative X
-}
-
-SIntervalTreeNodeIntervals::SIntervalTreeNodeIntervals(const TIntervalMap& ref)
-    : m_ByX(ref.key_comp(), ref.get_allocator()),
-      m_ByY(ref.key_comp(), ref.get_allocator())
-{
-    traits::AddLimit(m_ByX);
-    traits::AddLimit(m_ByY);
-}
-
-bool SIntervalTreeNodeIntervals::Empty(void) const
-{
-    return traits::IsLimit(m_ByX);
-}
-
 inline
-void SIntervalTreeNodeIntervals::Insert(interval_type interval,
-                                        const mapped_type& value)
-{
-    // check if this interval is new
-    _ASSERT(m_ByX.count(interval) == 0);
-    _ASSERT(m_ByY.count(traits::X2Y(interval)) == 0);
-
-    // insert interval
-    m_ByX[interval] = value;
-    m_ByY[traits::X2Y(interval)] = value;
-}
-
-inline
-bool SIntervalTreeNodeIntervals::Delete(interval_type interval)
-{
-    // check if this interval exists
-    _ASSERT(m_ByX.count(interval) == 1);
-    _ASSERT(m_ByY.count(traits::X2Y(interval)) == 1);
-
-    // erase interval
-    m_ByX.erase(interval);
-    m_ByY.erase(traits::X2Y(interval));
-
-    return Empty();
-}
-
-inline
-void SIntervalTreeNodeIntervals::Replace(interval_type interval,
-                                         const mapped_type& value)
-{
-    // check if this interval exists
-    _ASSERT(m_ByX.count(interval) == 1);
-    _ASSERT(m_ByY.count(traits::X2Y(interval)) == 1);
-
-    // replace value
-    m_ByX[interval] = value;
-    m_ByY[traits::X2Y(interval)] = value;
-}
-
-inline
-coordinate_type CIntervalTree::GetMaxRootCoordinate(void) const
+CIntervalTree::coordinate_type CIntervalTree::GetMaxRootCoordinate(void) const
 {
     coordinate_type max = m_Root.m_Key * 2;
     if ( max <= 0 )
-        max = traits::GetMaxCoordinate();
+        max = TTraits::GetMaxCoordinate();
     return max;
 }
 
 inline
-coordinate_type CIntervalTree::GetNextRootKey(void) const
+CIntervalTree::coordinate_type CIntervalTree::GetNextRootKey(void) const
 {
     coordinate_type nextKey = m_Root.m_Key * 2;
     _ASSERT(nextKey > 0);
     return nextKey;
 }
 
-void CIntervalTree::DoInsert(interval_type interval, const mapped_type& value)
+void CIntervalTree::DoInsert(interval_type interval, TTreeMapI value)
 {
-    _ASSERT(traits::IsNormal(interval));
+    _ASSERT(TTraits::IsNormal(interval));
 
     // ensure our tree covers specified interval
     if ( interval.GetTo() > GetMaxRootCoordinate() ) {
@@ -176,7 +77,7 @@ void CIntervalTree::DoInsert(interval_type interval, const mapped_type& value)
         if ( m_Root.m_Left || m_Root.m_Right || m_Root.m_NodeIntervals ) {
             // non empty tree, insert new root node
             do {
-                SIntervalTreeNode* newLeft = AllocNode();
+                TTreeNode* newLeft = AllocNode();
                 // copy root node contents
                 *newLeft = m_Root;
                 // fill new root
@@ -194,13 +95,13 @@ void CIntervalTree::DoInsert(interval_type interval, const mapped_type& value)
         }
     }
 
-    SIntervalTreeNode* node = &m_Root;
+    TTreeNode* node = &m_Root;
     coordinate_type nodeSize = m_Root.m_Key;
     for ( ;; ) {
         coordinate_type key = node->m_Key;
         nodeSize = (nodeSize + 1) / 2;
 
-        SIntervalTreeNode** nextPtr;
+        TTreeNode** nextPtr;
         coordinate_type nextKeyOffset;
 
         if ( interval.GetFrom() > key  ) {
@@ -213,14 +114,14 @@ void CIntervalTree::DoInsert(interval_type interval, const mapped_type& value)
         }
         else {
             // found our tile
-            SIntervalTreeNodeIntervals* nodeIntervals = node->m_NodeIntervals;
+            TTreeNodeInts* nodeIntervals = node->m_NodeIntervals;
             if ( !nodeIntervals )
                 node->m_NodeIntervals = nodeIntervals = CreateNodeIntervals();
             nodeIntervals->Insert(interval, value);
             return;
         }
 
-        SIntervalTreeNode* next = *nextPtr;
+        TTreeNode* next = *nextPtr;
         if ( !next ) // create new node
             (*nextPtr) = next = InitNode(AllocNode(), key + nextKeyOffset);
 
@@ -229,47 +130,27 @@ void CIntervalTree::DoInsert(interval_type interval, const mapped_type& value)
     }
 }
 
-void CIntervalTree::DoReplace(SIntervalTreeNode* node,
-                              interval_type interval, const mapped_type& value)
-{
-    for ( ;; ) {
-        _ASSERT(node);
-        coordinate_type key = node->m_Key;
-        if ( interval.GetFrom() > key ) {
-            node = node->m_Right;
-        }
-        else if ( interval.GetTo() < key ) {
-            node = node->m_Left;
-        }
-        else {
-            // found our tile
-            _ASSERT(node->m_NodeIntervals);
-            node->m_NodeIntervals->Replace(interval, value);
-            return;
-        }
-    }
-}
-
-bool CIntervalTree::DoDelete(SIntervalTreeNode* node, interval_type interval)
+bool CIntervalTree::DoDelete(TTreeNode* node, interval_type interval,
+                             TTreeMapI value)
 {
     _ASSERT(node);
     coordinate_type key = node->m_Key;
     if ( interval.GetFrom() > key ) {
         // left
-        return DoDelete(node->m_Right, interval) &&
+        return DoDelete(node->m_Right, interval, value) &&
             !node->m_NodeIntervals && !node->m_Left;
     }
     else if ( interval.GetTo() < key ) {
         // right
-        return DoDelete(node->m_Left, interval) &&
+        return DoDelete(node->m_Left, interval, value) &&
             !node->m_NodeIntervals && !node->m_Right;
     }
     else {
         // inside
-        SIntervalTreeNodeIntervals* nodeIntervals = node->m_NodeIntervals;
+        TTreeNodeInts* nodeIntervals = node->m_NodeIntervals;
         _ASSERT(nodeIntervals);
 
-        if ( !nodeIntervals->Delete(interval) )
+        if ( !nodeIntervals->Delete(interval, value) )
             return false; // node intervals non empty
 
         // remove node intervals
@@ -281,46 +162,140 @@ bool CIntervalTree::DoDelete(SIntervalTreeNode* node, interval_type interval)
     }
 }
 
-SIntervalTreeNode* CIntervalTree::AllocNode(void)
+void CIntervalTree::Destroy(void)
+{
+    ClearNode(&m_Root);
+    m_ByX.clear();
+}
+
+CIntervalTree::iterator CIntervalTree::Insert(interval_type interval,
+                                              const mapped_type& value)
+{
+    TTreeMapI iter = m_ByX.insert(TTreeMapValue(interval.GetFrom(),
+                                                interval.GetTo(),
+                                                value));
+    DoInsert(interval, iter);
+
+    iterator it;
+    it.m_SearchLimit = TTraits::GetMaxCoordinate();
+    it.m_CurrentMapValue = &TTreeMap::get(iter);
+    it.m_NextNode = 0;
+    return it;
+}
+
+CIntervalTree::const_iterator
+CIntervalTree::IntervalsOverlapping(interval_type interval) const
+{
+    coordinate_type x = interval.GetFrom();
+    coordinate_type y = interval.GetTo();
+
+    const_iterator it;
+    it.m_SearchX = x;
+    it.m_NextNode = &m_Root;
+
+    TTreeMapCI iter =
+        m_ByX.lower_bound(TTreeMapValue(x + 1, 0, mapped_type()));
+    if ( iter != m_ByX.end() && iter->GetKey() <= y ) {
+        it.m_SearchLimit = y;
+        it.m_CurrentMapValue = &*iter;
+    }
+    else {
+        it.NextLevel();
+    }
+    return it;
+}
+
+CIntervalTree::iterator
+CIntervalTree::IntervalsOverlapping(interval_type interval)
+{
+    coordinate_type x = interval.GetFrom();
+    coordinate_type y = interval.GetTo();
+
+    iterator it;
+    it.m_SearchX = x;
+    it.m_NextNode = &m_Root;
+
+    TTreeMapI iter =
+        m_ByX.lower_bound(TTreeMapValue(x + 1, 0, mapped_type()));
+    if ( iter != m_ByX.end() && iter->GetKey() <= y ) {
+        it.m_SearchLimit = y;
+        it.m_CurrentMapValue = &TTreeMap::get(iter);
+    }
+    else {
+        it.NextLevel();
+    }
+    return it;
+}
+
+CIntervalTree::TTreeNode* CIntervalTree::AllocNode(void)
 {
     return m_NodeAllocator.allocate(1, 0);
 }
 
-void CIntervalTree::DeallocNode(SIntervalTreeNode* node)
+void CIntervalTree::DeallocNode(TTreeNode* node)
 {
     m_NodeAllocator.deallocate(node, 1);
 }
 
-SIntervalTreeNodeIntervals* CIntervalTree::AllocNodeIntervals(void)
+CIntervalTree::TTreeNodeInts* CIntervalTree::AllocNodeIntervals(void)
 {
     return m_NodeIntervalsAllocator.allocate(1, 0);
 }
 
-void CIntervalTree::DeallocNodeIntervals(SIntervalTreeNodeIntervals* ptr)
+void CIntervalTree::DeallocNodeIntervals(TTreeNodeInts* ptr)
 {
     m_NodeIntervalsAllocator.deallocate(ptr, 1);
 }
 
-SIntervalTreeNodeIntervals* CIntervalTree::CreateNodeIntervals(void)
+CIntervalTree::TTreeNodeInts* CIntervalTree::CreateNodeIntervals(void)
 {
-    return new (AllocNodeIntervals())SIntervalTreeNodeIntervals(m_ByX);
+    TTreeNodeInts* ints = new (AllocNodeIntervals())TTreeNodeInts();
+#if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
+    ints->m_ByX.allocation_size(16);
+    ints->m_ByY.allocation_size(16);
+#endif
+    return ints;
 }
 
-void CIntervalTree::DeleteNodeIntervals(SIntervalTreeNodeIntervals* ptr)
+void CIntervalTree::DeleteNodeIntervals(TTreeNodeInts* ptr)
 {
     if ( ptr ) {
-        ptr->~SIntervalTreeNodeIntervals();
+        ptr->~TTreeNodeInts();
         DeallocNodeIntervals(ptr);
     }
 }
 
-void CIntervalTree::ClearNode(SIntervalTreeNode* node)
+void CIntervalTree::ClearNode(TTreeNode* node)
 {
     DeleteNodeIntervals(node->m_NodeIntervals);
 
     DeleteNode(node->m_Left);
     DeleteNode(node->m_Right);
     node->m_Left = node->m_Right = 0;
+}
+
+pair<double, CIntervalTree::size_type> CIntervalTree::Stat(void) const
+{
+    SStat stat;
+    stat.total = stat.count = stat.max = 0;
+    Stat(&m_Root, stat);
+    return make_pair(double(stat.total) / stat.count, stat.max);
+}
+
+void CIntervalTree::Stat(const TTreeNode* node, SStat& stat) const
+{
+    if ( !node )
+        return;
+
+    if ( node->m_NodeIntervals ) {
+        size_type len = node->m_NodeIntervals->m_ByX.size();
+        ++stat.count;
+        stat.total += len;
+        stat.max = max(stat.max, len);
+    }
+
+    Stat(node->m_Right, stat);
+    Stat(node->m_Left, stat);
 }
 
 END_NCBI_SCOPE
