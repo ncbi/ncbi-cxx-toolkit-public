@@ -227,7 +227,7 @@ void CSeqDBAliasNode::x_ReadLine(const char * bp,
     // Find name
     const char * spacep = p;
     
-    while((spacep < ep) && (*spacep != ' '))
+    while((spacep < ep) && ((*spacep != ' ') && (*spacep != '\t')))
         spacep ++;
     
     string name(p, spacep);
@@ -237,6 +237,12 @@ void CSeqDBAliasNode::x_ReadLine(const char * bp,
         spacep ++;
     
     string value(spacep, ep);
+    
+    for(Uint4 i = 0; i<value.size(); i++) {
+        if (value[i] == '\t') {
+            value[i] = ' ';
+        }
+    }
     
     // Store in this nodes' dictionary.
     m_Values[name] = value;
