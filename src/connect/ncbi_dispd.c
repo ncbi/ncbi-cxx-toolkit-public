@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2001/06/25 15:36:38  lavr
+ * s_GetNextInfo now takes one additional argument for host environment
+ *
  * Revision 6.23  2001/06/20 17:27:49  kans
  * include <time.h> for Mac compiler
  *
@@ -131,7 +134,7 @@
 extern "C" {
 #endif
 
-    static SSERV_Info* s_GetNextInfo(SERV_ITER iter);
+    static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env);
     static int/*bool*/ s_Update(SERV_ITER iter, const char* text);
     static void s_Close(SERV_ITER iter);
 
@@ -375,7 +378,7 @@ static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
 }
 
 
-static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
+static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env)
 {
     double total = 0.0, point = -1.0, access = 0.0, p = 0.0, status;
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
@@ -399,7 +402,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
                 if (info->coef < 0.0 && access < status) {
                     access = status;
                     point  = total; /* Latch this local server */
-                    p = -info->coef;
+                    p      = -info->coef;
                 }
             } else
                 status *= info->coef;
@@ -425,7 +428,9 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
         memmove(data->s_node + i, data->s_node + i + 1,
                 (data->n_node - i)*sizeof(*data->s_node));
     }
-    
+    if (env)
+        *env = 0;
+
     return info;
 }
 
