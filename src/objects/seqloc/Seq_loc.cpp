@@ -1076,7 +1076,7 @@ bool CSeq_loc::IsPartialLeft (void) const
             return GetInt ().IsPartialLeft ();
 
         case e_Packed_int :
-            return GetMix ().IsPartialLeft ();
+            return GetPacked_int ().IsPartialLeft ();
 
         case e_Pnt :
             return GetPnt ().IsPartialLeft ();
@@ -1665,6 +1665,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.48  2004/10/25 18:03:15  shomrat
+ * Bug fix
+ *
  * Revision 6.47  2004/10/25 18:01:33  shomrat
  * + FlipStrand
  *
