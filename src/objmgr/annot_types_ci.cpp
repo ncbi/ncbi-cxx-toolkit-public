@@ -53,8 +53,11 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/general/Dbtag.hpp>
+
 #include <serial/objostr.hpp>
+#include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
+
 #include <algorithm>
 #include <typeinfo>
 
@@ -66,8 +69,30 @@ class NCBI_XOBJMGR_EXPORT CFeat_Less
 {
 public:
     // Compare CRef-s: both must be features
-    bool operator ()(const CAnnotObject_Ref& x,
-                     const CAnnotObject_Ref& y) const;
+    bool operator()(const CAnnotObject_Ref& x,
+                    const CAnnotObject_Ref& y) const
+        {
+            {
+                // smallest left extreme first
+                TSeqPos x_from = x.GetTotalRange().GetFrom();
+                TSeqPos y_from = y.GetTotalRange().GetFrom();
+                if ( x_from != y_from ) {
+                    return x_from < y_from;
+                }
+            }
+            {
+                // longest feature first
+                TSeqPos x_to = x.GetTotalRange().GetToOpen();
+                TSeqPos y_to = y.GetTotalRange().GetToOpen();
+                if ( x_to != y_to ) {
+                    return x_to > y_to;
+                }
+            }
+            return x_less(x, y);
+        }
+
+private:
+    bool x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y) const;
 };
 
 
@@ -75,35 +100,58 @@ class NCBI_XOBJMGR_EXPORT CFeat_Reverse_Less
 {
 public:
     // Compare CRef-s: both must be features
-    bool operator ()(const CAnnotObject_Ref& x,
-                     const CAnnotObject_Ref& y) const;
+    bool operator()(const CAnnotObject_Ref& x,
+                    const CAnnotObject_Ref& y) const
+        {
+            {
+                // largest right extreme first
+                TSeqPos x_to = x.GetTotalRange().GetToOpen();
+                TSeqPos y_to = y.GetTotalRange().GetToOpen();
+                if ( x_to != y_to ) {
+                    return x_to > y_to;
+                }
+            }
+            {
+                // longest feature first
+                TSeqPos x_from = x.GetTotalRange().GetFrom();
+                TSeqPos y_from = y.GetTotalRange().GetFrom();
+                if ( x_from != y_from ) {
+                    return x_from < y_from;
+                }
+            }
+            return x_less(x, y);
+        }
+private:
+    bool x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y) const;
 };
-
-/*
-class NCBI_XOBJMGR_EXPORT CGraph_Less
-{
-public:
-    // Compare CRef-s: both must be features
-    bool operator ()(const CAnnotObject_Ref& x,
-                     const CAnnotObject_Ref& y) const;
-};
-
-
-class NCBI_XOBJMGR_EXPORT CGraph_Reverse_Less
-{
-public:
-    // Compare CRef-s: both must be features
-    bool operator ()(const CAnnotObject_Ref& x,
-                     const CAnnotObject_Ref& y) const;
-};
-*/
 
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Less
 {
 public:
     // Compare CRef-s: if at least one is NULL, compare as pointers
-    bool operator ()(const CAnnotObject_Ref& x,
-                     const CAnnotObject_Ref& y) const;
+    bool operator()(const CAnnotObject_Ref& x,
+                    const CAnnotObject_Ref& y) const
+        {
+            {
+                // smallest left extreme first
+                TSeqPos x_from = x.GetTotalRange().GetFrom();
+                TSeqPos y_from = y.GetTotalRange().GetFrom();
+                if ( x_from != y_from ) {
+                    return x_from < y_from;
+                }
+            }
+            {
+                // longest feature first
+                TSeqPos x_to = x.GetTotalRange().GetToOpen();
+                TSeqPos y_to = y.GetTotalRange().GetToOpen();
+                if ( x_to != y_to ) {
+                    return x_to > y_to;
+                }
+            }
+            return x_less(x, y);
+        }
+private:
+    bool x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y) const;
 };
 
 
@@ -111,73 +159,55 @@ class NCBI_XOBJMGR_EXPORT CAnnotObject_Reverse_Less
 {
 public:
     // Compare CRef-s: if at least one is NULL, compare as pointers
-    bool operator ()(const CAnnotObject_Ref& x,
-                     const CAnnotObject_Ref& y) const;
+    bool operator()(const CAnnotObject_Ref& x,
+                    const CAnnotObject_Ref& y) const
+        {
+            {
+                // largest right extreme first
+                TSeqPos x_to = x.GetTotalRange().GetToOpen();
+                TSeqPos y_to = y.GetTotalRange().GetToOpen();
+                if ( x_to != y_to ) {
+                    return x_to > y_to;
+                }
+            }
+            {
+                // longest feature first
+                TSeqPos x_from = x.GetTotalRange().GetFrom();
+                TSeqPos y_from = y.GetTotalRange().GetFrom();
+                if ( x_from != y_from ) {
+                    return x_from < y_from;
+                }
+            }
+            return x_less(x, y);
+        }
+private:
+    bool x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y) const;
 };
 
 
-const CSeq_loc& CAnnotObject_Ref::GetFeatLoc(void) const
+bool CFeat_Less::x_less(const CAnnotObject_Ref& x,
+                        const CAnnotObject_Ref& y) const
 {
-    const CSeq_loc* loc = m_MappedLoc.GetPointerOrNull();
-    return loc? *loc: GetFeatFast().GetLocation();
+    const CAnnotObject_Info* x_info = x.m_Object.GetPointerOrNull();
+    const CAnnotObject_Info* y_info = y.m_Object.GetPointerOrNull();
+    _ASSERT(x_info && y_info);
+    const CSeq_feat* x_feat = x_info->GetFeatFast();
+    const CSeq_feat* y_feat = y_info->GetFeatFast();
+    _ASSERT(x_feat && y_feat);
+    const CSeq_loc* x_loc = x.m_MappedLoc.GetPointerOrNull();
+    const CSeq_loc* y_loc = y.m_MappedLoc.GetPointerOrNull();
+    if ( !x_loc )
+        x_loc = &x_feat->GetLocation();
+    if ( !y_loc )
+        y_loc = &y_feat->GetLocation();
+    int diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
+    return diff? diff < 0: x_info < y_info;
 }
 
 
-CAnnotObject_Ref::TRange CAnnotObject_Ref::x_UpdateTotalRange(void) const
+bool CFeat_Reverse_Less::x_less(const CAnnotObject_Ref& x,
+                                const CAnnotObject_Ref& y) const
 {
-    TRange range = m_TotalRange;
-    if ( range.GetFrom() == TSeqPos(kDirtyCache) &&
-         range.GetToOpen() == TSeqPos(kDirtyCache) ) {
-        const CSeq_loc* loc = m_MappedLoc.GetPointerOrNull();
-        if ( !loc ) {
-            const CAnnotObject_Info* info = m_Object.GetPointerOrNull();
-            _ASSERT(info);
-            switch ( info->Which() ) {
-            case CSeq_annot::C_Data::e_Ftable:
-            {
-                const CSeq_feat* feat = info->GetFeatFast();
-                _ASSERT(feat);
-                loc = &feat->GetLocation();
-                break;
-            }
-            case CSeq_annot::C_Data::e_Graph:
-            {
-                const CSeq_graph* graph = info->GetGraphFast();
-                _ASSERT(graph);
-                loc = &graph->GetLoc();
-                break;
-            }
-            default:
-                range = m_TotalRange = TRange::GetEmpty();
-                return range;
-            }
-        }
-        try {
-            range = m_TotalRange = loc->GetTotalRange();
-        }
-        catch (runtime_error) {
-            m_TotalRange.Set(TRange::GetWholeFrom(), TRange::GetWholeTo());
-            range = m_TotalRange;
-        }
-    }
-    return range;
-}
-
-
-bool CFeat_Less::operator ()(const CAnnotObject_Ref& x,
-                             const CAnnotObject_Ref& y) const
-{
-    CAnnotObject_Ref::TRange x_range = x.GetTotalRange();
-    CAnnotObject_Ref::TRange y_range = y.GetTotalRange();
-    // smallest left extreme first
-    if ( x_range.GetFrom() != y_range.GetFrom() ) {
-        return x_range.GetFrom() < y_range.GetFrom();
-    }
-
-    // longest feature first
-    if ( x_range.GetToOpen() != y_range.GetToOpen() ) {
-        return x_range.GetToOpen() > y_range.GetToOpen();
-    }
 
     const CAnnotObject_Info* x_info = x.m_Object.GetPointerOrNull();
     const CAnnotObject_Info* y_info = y.m_Object.GetPointerOrNull();
@@ -196,53 +226,9 @@ bool CFeat_Less::operator ()(const CAnnotObject_Ref& x,
 }
 
 
-bool CFeat_Reverse_Less::operator ()(const CAnnotObject_Ref& x,
-                                     const CAnnotObject_Ref& y) const
+bool CAnnotObject_Less::x_less(const CAnnotObject_Ref& x,
+                               const CAnnotObject_Ref& y) const
 {
-    CAnnotObject_Ref::TRange x_range = x.GetTotalRange();
-    CAnnotObject_Ref::TRange y_range = y.GetTotalRange();
-    // largest right extreme first
-    if ( x_range.GetToOpen() != y_range.GetToOpen() ) {
-        return x_range.GetToOpen() > y_range.GetToOpen();
-    }
-
-    // longest feature first
-    if ( x_range.GetFrom() != y_range.GetFrom() ) {
-        return x_range.GetFrom() < y_range.GetFrom();
-    }
-
-    const CAnnotObject_Info* x_info = x.m_Object.GetPointerOrNull();
-    const CAnnotObject_Info* y_info = y.m_Object.GetPointerOrNull();
-    _ASSERT(x_info && y_info);
-    const CSeq_feat* x_feat = x_info->GetFeatFast();
-    const CSeq_feat* y_feat = y_info->GetFeatFast();
-    _ASSERT(x_feat && y_feat);
-    const CSeq_loc* x_loc = x.m_MappedLoc.GetPointerOrNull();
-    const CSeq_loc* y_loc = y.m_MappedLoc.GetPointerOrNull();
-    if ( !x_loc )
-        x_loc = &x_feat->GetLocation();
-    if ( !y_loc )
-        y_loc = &y_feat->GetLocation();
-    int diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
-    return diff? diff < 0: x_info < y_info;
-}
-
-/*
-bool CGraph_Less::operator ()(const CAnnotObject_Ref& x,
-                              const CAnnotObject_Ref& y) const
-{
-    CAnnotObject_Ref::TRange x_range = x.GetTotalRange();
-    CAnnotObject_Ref::TRange y_range = y.GetTotalRange();
-    // smallest left extreme first
-    if ( x_range.GetFrom() != y_range.GetFrom() ) {
-        return x_range.GetFrom() < y_range.GetFrom();
-    }
-
-    // longest feature first
-    if ( x_range.GetToOpen() != y_range.GetToOpen() ) {
-        return x_range.GetToOpen() > y_range.GetToOpen();
-    }
-
     const CAnnotObject_Info* x_info = x.m_Object.GetPointerOrNull();
     const CAnnotObject_Info* y_info = y.m_Object.GetPointerOrNull();
     _ASSERT(x_info && y_info);
@@ -250,65 +236,9 @@ bool CGraph_Less::operator ()(const CAnnotObject_Ref& x,
 }
 
 
-bool CGraph_Reverse_Less::operator ()(const CAnnotObject_Ref& x,
-                                      const CAnnotObject_Ref& y) const
+bool CAnnotObject_Reverse_Less::x_less(const CAnnotObject_Ref& x,
+                                       const CAnnotObject_Ref& y) const
 {
-    CAnnotObject_Ref::TRange x_range = x.GetTotalRange();
-    CAnnotObject_Ref::TRange y_range = y.GetTotalRange();
-    // largest right extreme first
-    if ( x_range.GetToOpen() != y_range.GetToOpen() ) {
-        return x_range.GetToOpen() > y_range.GetToOpen();
-    }
-
-    // longest feature first
-    if ( x_range.GetFrom() != y_range.GetFrom() ) {
-        return x_range.GetFrom() < y_range.GetFrom();
-    }
-
-    const CAnnotObject_Info* x_info = x.m_Object.GetPointerOrNull();
-    const CAnnotObject_Info* y_info = y.m_Object.GetPointerOrNull();
-    _ASSERT(x_info && y_info);
-    return x_info < y_info;
-}
-*/
-
-bool CAnnotObject_Less::operator()(const CAnnotObject_Ref& x,
-                                   const CAnnotObject_Ref& y) const
-{
-    CAnnotObject_Ref::TRange x_range = x.GetTotalRange();
-    CAnnotObject_Ref::TRange y_range = y.GetTotalRange();
-    // smallest left extreme first
-    if ( x_range.GetFrom() != y_range.GetFrom() ) {
-        return x_range.GetFrom() < y_range.GetFrom();
-    }
-
-    // longest feature first
-    if ( x_range.GetToOpen() != y_range.GetToOpen() ) {
-        return x_range.GetToOpen() > y_range.GetToOpen();
-    }
-
-    const CAnnotObject_Info* x_info = x.m_Object.GetPointerOrNull();
-    const CAnnotObject_Info* y_info = y.m_Object.GetPointerOrNull();
-    _ASSERT(x_info && y_info);
-    return x_info < y_info;
-}
-
-
-bool CAnnotObject_Reverse_Less::operator()(const CAnnotObject_Ref& x,
-                                           const CAnnotObject_Ref& y) const
-{
-    CAnnotObject_Ref::TRange x_range = x.GetTotalRange();
-    CAnnotObject_Ref::TRange y_range = y.GetTotalRange();
-    // largest right extreme first
-    if ( x_range.GetToOpen() != y_range.GetToOpen() ) {
-        return x_range.GetToOpen() > y_range.GetToOpen();
-    }
-
-    // longest feature first
-    if ( x_range.GetFrom() != y_range.GetFrom() ) {
-        return x_range.GetFrom() < y_range.GetFrom();
-    }
-
     const CAnnotObject_Info* x_info = x.m_Object.GetPointerOrNull();
     const CAnnotObject_Info* y_info = y.m_Object.GetPointerOrNull();
     _ASSERT(x_info && y_info);
@@ -451,19 +381,30 @@ public:
             return m_Partial;
         }
 
+    const CSeq_id& GetDstId(void) const
+        {
+            return m_Dst_id;
+        }
     void SetSrcId(const CSeq_id_Handle& src)
         {
             m_Src_id = src;
         }
     void SetConversion(const CSeqMap_CI& seg);
 
+    typedef CRange<TSeqPos> TRange;
+    const TRange& GetTotalRange(void) const
+        {
+            return m_TotalRange;
+        }
+    
 private:
     CSeq_id_Handle m_Src_id;
     TSeqPos        m_Src_from;
     TSeqPos        m_Src_to;
     TSignedSeqPos  m_Shift;
-    bool           m_Reverse;
     const CSeq_id& m_Dst_id;
+    TRange         m_TotalRange;
+    bool           m_Reverse;
     bool           m_Partial;
     CScope*        m_Scope;
     // temporaries for conversion results
@@ -475,6 +416,7 @@ private:
 inline
 void CSeq_loc_Conversion::Reset(void)
 {
+    m_TotalRange = TRange::GetEmpty();
     m_Partial = false;
 }
 
@@ -550,6 +492,7 @@ bool CSeq_loc_Conversion::ConvertPoint(TSeqPos src_pos)
     dst_pnt.Reset(dst = new CSeq_point);
     dst->SetId().Assign(m_Dst_id);
     dst->SetPoint(dst_pos);
+    m_TotalRange += TRange(dst_pos, dst_pos);
     return true;
 }
 
@@ -588,6 +531,7 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to)
     dst->SetId().Assign(m_Dst_id);
     dst->SetFrom(dst_from);
     dst->SetTo(dst_to);
+    m_TotalRange += TRange(dst_from, dst_to);
     return true;
 }
 
@@ -684,6 +628,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
                         dst_pnts = &pnts.SetPoints();
                     }
                     dst_pnts->push_back(dst_pos);
+                    m_TotalRange += TRange(dst_pos, dst_pos);
                 }
             }
         }
@@ -758,8 +703,10 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, int index)
 {
     Reset();
     const CAnnotObject_Info& obj = ref.Get();
-    if ( obj.IsFeat() ) {
-        const CSeq_feat& feat = obj.GetFeat();
+    switch ( obj.Which() ) {
+    case CSeq_annot::C_Data::e_Ftable:
+    {
+        const CSeq_feat& feat = *obj.GetFeatFast();
         if ( index == 0 ) {
             Convert(feat.GetLocation(), ref.m_MappedLoc, true);
             ref.SetPartial(IsPartial());
@@ -768,7 +715,22 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, int index)
             Convert(feat.GetProduct(), ref.m_MappedProd, true);
             ref.SetPartial(IsPartial());
         }
+        break;
     }
+    case CSeq_annot::C_Data::e_Graph:
+    {
+        const CSeq_graph& graph = *obj.GetGraphFast();
+        Convert(graph.GetLoc(), ref.m_MappedLoc, true);
+        ref.SetPartial(IsPartial());
+        break;
+    }
+    case CSeq_annot::C_Data::e_Align:
+    {
+        // TODO: map align
+        break;
+    }
+    }
+    ref.m_TotalRange = m_TotalRange;
 }
 
 
@@ -807,37 +769,96 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
                         continue;
                     }
                 }
-/*
-                if ( m_SegmentSelect == eSegmentSelect_First &&
-                     x_HaveAnnot(smit, idit) ) {
-                    smit.Next(false);
-                    continue;
-                }
-*/
-                x_SearchMapped(smit, idit);
+                x_SearchMapped(smit, idit->first, idit->second);
                 ++smit;
             }
         }
     }
-    if (m_SortOrder != eSortOrder_None) {
+    switch ( m_SortOrder ) {
+    case eSortOrder_Normal:
         if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
-            if ( m_SortOrder == eSortOrder_Normal ) {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(), CFeat_Less());
-            }
-            else {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(), CFeat_Reverse_Less());
-            }
+            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                 CFeat_Less());
         }
         else {
-            if ( m_SortOrder == eSortOrder_Normal ) {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_Less());
+            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                 CAnnotObject_Less());
+        }
+        break;
+    case eSortOrder_Reverse:
+        if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                 CFeat_Reverse_Less());
+        }
+        else {
+            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                 CAnnotObject_Reverse_Less());
+        }
+        break;
+    }
+    Rewind();
+}
+
+
+inline
+bool
+CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& annot_info) const
+{
+    if ( m_LimitObjectType == eLimit_Entry ) {
+        return &annot_info.GetSeq_entry() == m_LimitObject.GetPointerOrNull();
+    }
+    else if ( m_LimitObjectType == eLimit_Annot ) {
+        return &annot_info.GetSeq_annot() == m_LimitObject.GetPointerOrNull();
+    }
+    return true;
+}
+
+
+inline
+bool CAnnotTypes_CI::x_MatchType(const CAnnotObject_Info& annot_info) const
+{
+    if ( m_AnnotChoice != CSeq_annot::C_Data::e_not_set ) {
+        if ( m_AnnotChoice != annot_info.GetAnnotType() ) {
+            return false;
+        }
+        if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+            if ( m_FeatSubtype != CSeqFeatData::eSubtype_any ) {
+                if ( m_FeatSubtype != annot_info.GetFeatSubtype() ) {
+                    return false;
+                }
             }
-            else {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_Reverse_Less());
+            else if ( m_FeatChoice != CSeqFeatData::e_not_set ) {
+                if ( m_FeatChoice != annot_info.GetFeatType() ) {
+                    return false;
+                }
             }
         }
     }
-    Rewind();
+    return true;
+}
+
+
+inline
+bool CAnnotTypes_CI::x_MatchRange(const CHandleRange& hr,
+                                  const CRange<TSeqPos>& range,
+                                  const SAnnotObject_Index& index) const
+{
+    if ( m_OverlapType == eOverlap_Intervals ) {
+        if ( index.m_HandleRange ) {
+            if ( !hr.IntersectingWith(*index.m_HandleRange) ) {
+                return false;
+            }
+        }
+        else {
+            if ( !hr.IntersectingWith(range) ) {
+                return false;
+            }
+        }
+    }
+    if ( m_FeatProduct != index.m_AnnotLocationIndex ) {
+        return false;
+    }
+    return true;
 }
 
 
@@ -880,48 +901,123 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 
         CTSE_Info::TAnnotObjsLock::TReadLockGuard
             guard(tse_info.m_AnnotObjsLock);
-        const CTSE_Info::TRangeMap* rmap = tse_info.x_GetRangeMap(id, *this);
-        if ( !rmap ) {
-            continue;
-        }
-
-        m_TSE_LockSet.insert(*tse_it);
-        for ( CTSE_Info::TRangeMap::const_iterator aoit = rmap->begin(range);
-              aoit; ++aoit ) {
-            const SAnnotObject_Index& annot_index = aoit->second;
-            const CAnnotObject_Info& annot_info =
-                *annot_index.m_AnnotObject;
-            if ( m_LimitObjectType == eLimit_Entry ) {
-                if ( &annot_info.GetSeq_entry() !=
-                     m_LimitObject.GetPointerOrNull() ) {
-                    continue;
-                }
-            }
-            else if ( m_LimitObjectType == eLimit_Annot ) {
-                if ( &annot_info.GetSeq_annot() !=
-                     m_LimitObject.GetPointerOrNull() ) {
-                    continue;
-                }
-            }
-
-            if (m_AnnotChoice == CSeq_annot::C_Data::e_Ftable
-                &&  m_FeatSubtype != CSeqFeatData::eSubtype_any
-                &&  m_FeatSubtype != annot_info.GetFeatFast()->GetData().GetSubtype()) {
-                continue;
-            }
-
-            if ( m_OverlapType == eOverlap_Intervals &&
-                 !hr.IntersectingWith(annot_index.m_HandleRange->second) ) {
+        
+        pair<size_t, size_t> idxs =
+            CTSE_Info::x_GetIndexRange(GetAnnotChoice(), GetFeatChoice());
+        for ( size_t index = idxs.first; index <= idxs.second; ++index ) {
+            const CTSE_Info::TRangeMap* rmap =
+                tse_info.x_GetRangeMap(id, index);
+            if ( !rmap ) {
                 continue;
             }
             
-            m_AnnotSet.push_back(CAnnotObject_Ref(annot_info));
-            if ( cvt ) {
-                cvt->Convert(m_AnnotSet.back(), m_FeatProduct);
+            m_TSE_LockSet.insert(*tse_it);
+            for ( CTSE_Info::TRangeMap::const_iterator aoit =
+                      rmap->begin(range); aoit; ++aoit ) {
+                const CAnnotObject_Info& annot_info =
+                    *aoit->second.m_AnnotObject_Info;
+                if ( !x_MatchLimitObject(annot_info) ) {
+                    continue;
+                }
+
+                if ( !x_MatchType(annot_info) ) {
+                    continue;
+                }
+
+                if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
+                    continue;
+                }
+            
+                CAnnotObject_Ref annot_ref(annot_info);
+                if ( cvt ) {
+                    cvt->Convert(annot_ref, m_FeatProduct);
+                    annot_ref.m_TotalRange = cvt->GetTotalRange();
+                }
+                else {
+                    annot_ref.m_TotalRange = aoit->first;
+                }
+                m_AnnotSet.push_back(annot_ref);
+
+#if defined _DEBUG
+                {{ // some debug checks
+                    const CAnnotObject_Ref& obj = m_AnnotSet.back();
+                    const CSeq_loc* loc;
+                    if ( !m_FeatProduct ) {
+                        if ( obj.IsMappedLoc() ) {
+                            loc = &obj.GetMappedLoc();
+                        }
+                        else {
+                            switch(obj.Get().Which()) {
+                            case CSeq_annot::C_Data::e_Ftable:
+                                loc = &obj.GetFeatFast().GetLocation();
+                                break;
+                            case CSeq_annot::C_Data::e_Graph:
+                                loc = &obj.Get().GetGraphFast()->GetLoc();
+                                break;
+                            case CSeq_annot::C_Data::e_Align:
+                                // TODO: map align
+                                loc = 0;
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        if ( obj.IsMappedProd() ) {
+                            loc = &obj.GetMappedProd();
+                        }
+                        else {
+                            _ASSERT(obj.Get().IsFeat());
+                            const CSeq_feat& feat = obj.GetFeatFast();
+                            _ASSERT(feat.IsSetProduct());
+                            loc = &feat.GetProduct();
+                        }
+                    }
+                    if ( loc ) {
+                        CHandleRange::TRange lrange;
+                        CHandleRangeMap hrm;
+                        CSeq_id_Handle dst_id;
+                        if ( cvt )
+                            dst_id = CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(cvt->GetDstId());
+                        else
+                            dst_id = id;
+                        hrm.AddLocation(*loc);
+                        ITERATE ( CHandleRangeMap, hrmit, hrm ) {
+                            if ( hrmit->first == dst_id ) {
+                                lrange = hrmit->second.GetOverlappingRange();
+                                break;
+                            }
+                        }
+                        if ( obj.GetTotalRange() != lrange ) {
+                            LOG_POST("Mapping feature:");
+                            {{
+                                CObjectOStreamAsn out(NcbiCout);
+                                switch(obj.Get().Which()) {
+                                case CSeq_annot::C_Data::e_Ftable:
+                                    out << obj.Get().GetFeat();
+                                    break;
+                                case CSeq_annot::C_Data::e_Graph:
+                                    out << obj.Get().GetGraph();
+                                    break;
+                                case CSeq_annot::C_Data::e_Align:
+                                    out << obj.Get().GetAlign();
+                                    break;
+                                }
+                            }}
+                            LOG_POST("Mapped loc:");
+                            {{
+                                CObjectOStreamAsn out(NcbiCout);
+                                out << *loc;
+                            }}
+                            LOG_POST("mappedLoc: "<<lrange.GetFrom()<<"-"<<lrange.GetTo());
+                            LOG_POST("  sortLoc: "<<obj.GetTotalRange().GetFrom()<<"-"<<obj.GetTotalRange().GetTo());
+                        }
+                    }
+                }}
+#endif // _DEBUG
+                // Limit number of annotations to m_MaxSize
+                if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
+                    return;
             }
-            // Limit number of annotations to m_MaxSize
-            if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
-                return;
         }
     }
 }
@@ -982,7 +1078,8 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
 
 
 void CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
-                                    CHandleRangeMap::const_iterator master_loc)
+                                    const CSeq_id_Handle& master_id,
+                                    const CHandleRange& master_hr)
 {
     CHandleRange::TOpenRange master_seg_range(seg.GetPosition(),
                                               seg.GetEndPosition());
@@ -1000,7 +1097,7 @@ void CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
     CHandleRangeMap ref_loc;
     {{ // translate master_loc to ref_loc
         CHandleRange& hr = ref_loc.AddRanges(ref_id);
-        ITERATE ( CHandleRange, mlit, master_loc->second ) {
+        ITERATE ( CHandleRange, mlit, master_hr ) {
             CHandleRange::TOpenRange range =
                 master_seg_range.IntersectionWith(mlit->first);
             if ( !range.Empty() ) {
@@ -1023,7 +1120,7 @@ void CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
             return;
     }}
 
-    CSeq_loc_Conversion cvt(master_loc->first.GetSeqId(),
+    CSeq_loc_Conversion cvt(master_id.GetSeqId(),
                             seg, ref_id, m_Scope);
     x_Search(ref_loc, &cvt);
 }
@@ -1035,6 +1132,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.75  2003/07/08 15:09:22  vasilche
 * Annotations iterator erroneously was resolving one level of segments
 * deeper than requested.

@@ -35,9 +35,11 @@
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <set>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -46,6 +48,7 @@ class CScope;
 class CTSE_Info;
 class CSeq_loc;
 class CSeqMap_CI;
+class CSeq_id_Handle;
 class CAnnotObject_Info;
 class CFeat_Less;
 class CFeat_Reverse_Less;
@@ -53,6 +56,10 @@ class CAnnotObject_Less;
 class CAnnotObject_Reverse_Less;
 class CSeq_loc_Conversion;
 class CBioseq_Handle;
+class CAnnotTypes_CI;
+class CHandleRangeMap;
+class CHandleRange;
+struct SAnnotObject_Index;
 
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 {
@@ -74,7 +81,6 @@ public:
     bool IsMappedLoc(void) const;
     const CSeq_loc& GetMappedLoc(void) const;
     void SetMappedLoc(CSeq_loc& loc);
-    const CSeq_loc& GetFeatLoc(void) const;
 
     bool IsMappedProd(void) const;
     const CSeq_loc& GetMappedProd(void) const;
@@ -85,16 +91,11 @@ private:
     friend class CFeat_Reverse_Less;
     friend class CAnnotObject_Less;
     friend class CAnnotObject_Reverse_Less;
-
-    TRange x_UpdateTotalRange(void) const;
-
-    enum {
-        kDirtyCache = -2
-    };
+    friend class CAnnotTypes_CI;
 
     CConstRef<CAnnotObject_Info> m_Object;
+    TRange                  m_TotalRange; // cached total range of mapped loc
     CRef<CSeq_loc>          m_MappedLoc;  // master sequence coordinates
-    mutable TRange          m_TotalRange; // cached total range of mapped loc
     CRef<CSeq_loc>          m_MappedProd; // master sequence coordinates
     bool                    m_Partial;    // Partial flag (same as in features)
 
@@ -167,7 +168,8 @@ private:
                       TSeqPos start, TSeqPos stop);
     void x_Initialize(const CHandleRangeMap& master_loc);
     void x_SearchMapped(const CSeqMap_CI& seg,
-                        CHandleRangeMap::const_iterator master_loc);
+                        const CSeq_id_Handle& master_id,
+                        const CHandleRange& master_hr);
     void x_Search(const CHandleRangeMap& loc,
                   CSeq_loc_Conversion* cvt);
     void x_Search(const CSeq_id_Handle& id,
@@ -176,6 +178,12 @@ private:
     
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
+
+    bool x_MatchLimitObject(const CAnnotObject_Info& annot_info) const;
+    bool x_MatchType(const CAnnotObject_Info& annot_info) const;
+    bool x_MatchRange(const CHandleRange& hr,
+                      const CRange<TSeqPos>& range,
+                      const SAnnotObject_Index& index) const;
 
     // Set of all the annotations found
     TAnnotSet                    m_AnnotSet;
@@ -189,7 +197,7 @@ private:
 
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(void)
-    : m_TotalRange(TSeqPos(kDirtyCache), TSeqPos(kDirtyCache-1)),
+    : m_TotalRange(TRange::GetEmpty()),
       m_Partial(false)
 {
 }
@@ -198,7 +206,7 @@ CAnnotObject_Ref::CAnnotObject_Ref(void)
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
     : m_Object(&object),
-      m_TotalRange(TSeqPos(kDirtyCache), TSeqPos(kDirtyCache-1)),
+      m_TotalRange(TRange::GetEmpty()),
       m_Partial(false)
 {
 }
@@ -213,10 +221,7 @@ CAnnotObject_Ref::~CAnnotObject_Ref(void)
 inline
 CAnnotObject_Ref::TRange CAnnotObject_Ref::GetTotalRange(void) const
 {
-    TRange range = m_TotalRange;
-    if ( range.GetFrom() == TSeqPos(kDirtyCache) )
-        range = x_UpdateTotalRange();
-    return range;
+    return m_TotalRange;
 }
 
 
@@ -339,6 +344,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.41  2003/06/25 20:56:29  grichenk
 * Added max number of annotations to annot-selector, updated demo.
 *

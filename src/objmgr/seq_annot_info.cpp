@@ -33,6 +33,11 @@
 
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/impl/data_source.hpp>
+
 #include <objects/seq/Seq_annot.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -83,12 +88,197 @@ const CSeq_entry& CSeq_annot_Info::GetSeq_entry(void) const
 }
 
 
+void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
+{
+    _ASSERT(m_ObjectKeys.empty());
+    //_ASSERT(m_ObjectInfos.empty());
+
+    size_t objCount = objs.size();
+
+    m_ObjectKeys.reserve(size_t(1.1*objCount));
+    m_ObjectInfos.reserve(objCount);
+
+    CDataSource& data_source = GetDataSource();
+    CTSE_Info& tse_info = GetTSE_Info();
+    CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
+
+    size_t objIndex = 0;
+    SAnnotObject_Key key;
+    SAnnotObject_Index annotRef;
+    vector<CHandleRangeMap> hrmaps;
+    NON_CONST_ITERATE ( CSeq_annot::C_Data::TFtable, fit, objs ) {
+        CSeq_feat& feat = **fit;
+        m_ObjectInfos.push_back(CAnnotObject_Info(feat, *this));
+        CAnnotObject_Info& info = m_ObjectInfos.back();
+        info.AddReference();
+
+        key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = &info;
+
+        //data_source.x_RegisterAnnotObject(&feat, &info);
+
+        info.GetMaps(hrmaps);
+        annotRef.m_AnnotLocationIndex = 0;
+        ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
+            ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+                key.m_Handle = hrit->first;
+                const CHandleRange& hr = hrit->second;
+                key.m_Range = hr.GetOverlappingRange();
+                if ( hr.HasGaps() ) {
+                    annotRef.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
+                    annotRef.m_HandleRange->GetData() = hr;
+                }
+                else {
+                    annotRef.m_HandleRange.Reset();
+                }
+                m_ObjectKeys.push_back(key);
+                tse_info.x_MapAnnotObject(key, annotRef);
+            }
+            ++annotRef.m_AnnotLocationIndex;
+        }
+    }
+}
+
+
+void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
+{
+    _ASSERT(m_ObjectKeys.empty());
+    //_ASSERT(m_ObjectInfos.empty());
+
+    size_t objCount = objs.size();
+
+    m_ObjectKeys.reserve(objCount);
+    m_ObjectInfos.reserve(objCount);
+
+    CDataSource& data_source = GetDataSource();
+    CTSE_Info& tse_info = GetTSE_Info();
+    CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
+
+    size_t objIndex = 0;
+    SAnnotObject_Key key;
+    SAnnotObject_Index annotRef;
+    vector<CHandleRangeMap> hrmaps;
+    NON_CONST_ITERATE ( CSeq_annot::C_Data::TGraph, git, objs ) {
+        CSeq_graph& graph = **git;
+        m_ObjectInfos.push_back(CAnnotObject_Info(graph, *this));
+        CAnnotObject_Info& info = m_ObjectInfos.back();
+        info.AddReference();
+
+        key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = &info;
+
+        //data_source.x_RegisterAnnotObject(&graph, &info);
+
+        info.GetMaps(hrmaps);
+        annotRef.m_AnnotLocationIndex = 0;
+        ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
+            ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+                key.m_Handle = hrit->first;
+                const CHandleRange& hr = hrit->second;
+                key.m_Range = hr.GetOverlappingRange();
+                if ( hr.HasGaps() ) {
+                    annotRef.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
+                    annotRef.m_HandleRange->GetData() = hr;
+                }
+                else {
+                    annotRef.m_HandleRange.Reset();
+                }
+                m_ObjectKeys.push_back(key);
+                tse_info.x_MapAnnotObject(key, annotRef);
+            }
+            ++annotRef.m_AnnotLocationIndex;
+        }
+    }
+}
+
+
+void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
+{
+    _ASSERT(m_ObjectKeys.empty());
+    //_ASSERT(m_ObjectInfos.empty());
+
+    size_t objCount = objs.size();
+
+    m_ObjectKeys.reserve(objCount);
+    m_ObjectInfos.reserve(objCount);
+
+    CDataSource& data_source = GetDataSource();
+    CTSE_Info& tse_info = GetTSE_Info();
+    CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
+
+    size_t objIndex = 0;
+    SAnnotObject_Key key;
+    SAnnotObject_Index annotRef;
+    vector<CHandleRangeMap> hrmaps;
+    NON_CONST_ITERATE ( CSeq_annot::C_Data::TAlign, ait, objs ) {
+        CSeq_align& align = **ait;
+        m_ObjectInfos.push_back(CAnnotObject_Info(align, *this));
+        CAnnotObject_Info& info = m_ObjectInfos.back();
+        info.AddReference();
+
+        key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = &info;
+
+        //data_source.x_RegisterAnnotObject(&align, &info);
+
+        info.GetMaps(hrmaps);
+        annotRef.m_AnnotLocationIndex = 0;
+        ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
+            ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+                key.m_Handle = hrit->first;
+                const CHandleRange& hr = hrit->second;
+                key.m_Range = hr.GetOverlappingRange();
+                if ( hr.HasGaps() ) {
+                    annotRef.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
+                    annotRef.m_HandleRange->GetData() = hr;
+                }
+                else {
+                    annotRef.m_HandleRange.Reset();
+                }
+                m_ObjectKeys.push_back(key);
+                tse_info.x_MapAnnotObject(key, annotRef);
+            }
+            ++annotRef.m_AnnotLocationIndex;
+        }
+    }
+}
+
+
+void CSeq_annot_Info::x_UnmapAnnotObjects(void)
+{
+    CTSE_Info& tse_info = GetTSE_Info();
+    CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
+
+    ITERATE( TObjectKeys, it, m_ObjectKeys ) {
+        tse_info.x_DropAnnotObject(*it);
+    }
+    m_ObjectKeys.clear();
+
+    x_DropAnnotObjects();
+}
+
+
+void CSeq_annot_Info::x_DropAnnotObjects(void)
+{
+    CDataSource& data_source = GetDataSource();
+
+    ITERATE( TObjectInfos, it, m_ObjectInfos ) {
+        //data_source.x_UnregisterAnnotObject(it->GetObjectPointer());
+        it->RemoveReference();
+    }
+
+    m_ObjectInfos.clear();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/17 20:07:56  vasilche
+ * Reduced memory usage by feature indexes.
+ * SNP data is loaded separately through PUBSEQ_OS.
+ * String compression for SNP data.
+ *
  * Revision 1.3  2003/07/09 17:54:29  dicuccio
  * Fixed uninitialized variables in CDataSource and CSeq_annot_Info
  *

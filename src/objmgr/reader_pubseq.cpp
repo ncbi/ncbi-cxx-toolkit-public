@@ -29,11 +29,30 @@
 
 #include <objmgr/reader_pubseq.hpp>
 #include <objmgr/impl/seqref_pubseq.hpp>
+#include <objmgr/impl/pack_string.hpp>
+
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_annot.hpp>
+
+#include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
+
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
+#include <serial/objectinfo.hpp>
+#include <serial/objectiter.hpp>
+#include <serial/iterator.hpp>
+
+#include <util/compress/zlib.hpp>
+
+#include <vector>
 #include <memory>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -70,24 +89,37 @@ const string CPubseqSeqref::printTSE(void) const
 int CPubseqSeqref::Compare(const CSeqref& seqRef, EMatchLevel ml) const
 {
     const CPubseqSeqref *p = dynamic_cast<const CPubseqSeqref*>(& seqRef);
-    if(p==0) {
-        throw runtime_error("Attempt to compare seqrefs from different sources");
+    if( !p ) {
+        THROW1_TRACE(runtime_error,
+                     "Attempt to compare seqrefs from different sources");
     }
-    if(ml==eContext) return 0;
+    if ( ml == eContext )
+        return 0;
 
     //cout << "Compare" ; print(); cout << " vs "; p->print(); cout << endl;
     
-    if(Sat() < p->Sat())  return -1;
-    if(Sat() > p->Sat())  return 1;
+    if ( Sat() < p->Sat() )
+        return -1;
+    if ( Sat() > p->Sat() )
+        return 1;
     // Sat() == p->Sat()
-    if(SatKey() < p->SatKey())  return -1;
-    if(SatKey() > p->SatKey())  return 1;
+
+    if ( SatKey() < p->SatKey() )
+        return -1;
+    if ( SatKey() > p->SatKey() )
+        return 1;
     // blob == p->blob
+
     //cout << "Same TSE" << endl;
-    if(ml==eTSE) return 0;
-    if(Gi() < p->Gi())  return -1;
-    if(Gi() > p->Gi())  return 1;
+
+    if ( ml==eTSE )
+        return 0;
+    if ( Gi() < p->Gi() )
+        return -1;
+    if ( Gi() > p->Gi() )
+        return 1;
     //cout << "Same GI" << endl;
+
     return 0;
 }
 
@@ -154,7 +186,8 @@ CDB_Connection *CPubseqReader::NewConn()
     if ( m_Context.get() == NULL ) {
         C_DriverMgr drvMgr;
         string errmsg;
-        FDBAPI_CreateContext createContextFunc = drvMgr.GetDriver("ctlib",&errmsg);
+        FDBAPI_CreateContext createContextFunc =
+            drvMgr.GetDriver("ctlib",&errmsg);
         if ( !createContextFunc ) {
             LOG_POST(errmsg);
 #if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
@@ -172,7 +205,15 @@ CDB_Connection *CPubseqReader::NewConn()
         m_Context.reset((*createContextFunc)(&args));
         //m_Context.reset((*createContextFunc)(0));
     }
-    return m_Context->Connect(m_Server, m_User, m_Password, 0);
+    auto_ptr<CDB_Connection> conn(
+        m_Context->Connect(m_Server, m_User, m_Password, 0));
+    if ( conn.get() ) {
+        auto_ptr<CDB_LangCmd> cmd(conn->LangCmd("set blob_stream on"));
+        if ( cmd.get() ) {
+            cmd->Send();
+        }
+    }
+    return conn.release();
 }
 
 
@@ -199,32 +240,34 @@ bool CPubseqReader::RetrieveSeqrefs(TSeqrefs& sr,
 }
 
 
-bool CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& sr,
+bool CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
                                       const CSeq_id& seqId,
                                       TConn con)
 {
     int gi = 0;
 
-    if(seqId.IsGi()) {
+    if ( seqId.IsGi() ) {
         gi = seqId.GetGi();
-    } else {
-        CNcbiOstrstream oss;
-        {
-            CObjectOStreamAsn ooss(oss);
-            ooss << seqId;
-        }
+    }
+    else {
 
         // note: this was
         //CDB_VarChar asnIn(static_cast<string>(CNcbiOstrstreamToString(oss)));
         // but MSVC doesn't like this.  This is the only version that
         // will compile:
         CDB_VarChar asnIn;
-        asnIn = CNcbiOstrstreamToString(oss);
-        
+        {{
+            CNcbiOstrstream oss;
+            {{
+                CObjectOStreamAsn ooss(oss);
+                ooss << seqId;
+            }}
+            asnIn = CNcbiOstrstreamToString(oss);
+        }}
+            
         auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_by_seqid_asn", 1));
         cmd->SetParam("@asnin", &asnIn);
         cmd->Send();
-        CDB_Int giFound;
         
         while(cmd->HasMoreResults()) {
             auto_ptr<CDB_Result> result(cmd->Result());
@@ -233,49 +276,73 @@ bool CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& sr,
             
             while(result->Fetch()) {
                 for(unsigned pos = 0; pos < result->NofItems(); ++pos) {
-                    string name = result->ItemName(pos);
-                    if (name == "gi")
+                    const string& name = result->ItemName(pos);
+                    if (name == "gi") {
+                        CDB_Int giFound;
                         result->GetItem(&giFound);
-                    else
+                        gi = giFound.Value();
+                    }
+                    else {
                         result->SkipItem();
+                    }
                 }
             }
             
-            gi = giFound.Value();
-            //LOG_POST(setw(3) << CThread::GetSelf() << ":: " << "id_gi_by_seqid_asn => gi("<<gi << ")");
+            //LOG_POST(setw(3) << CThread::GetSelf() << ":: " <<
+            // "id_gi_by_seqid_asn => gi("<<gi << ")");
         }
     }
     
     if (gi == 0)
         return true; // no data?
 
-    {
-        auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_class", 1));
+    auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_class", 1));
+    {{
         CDB_Int giIn(gi);
         cmd->SetParam("@gi", &giIn);
         cmd->Send();
-        CDB_Int giOut(gi);
-        CDB_Int satOut;
-        CDB_Int satKeyOut;
-        
-        while(cmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> result(cmd->Result());
-            if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
-                continue;
-            
-            if(result->Fetch()) {
-                result->GetItem(&satOut);
-                result->SkipItem();
-                result->GetItem(&satKeyOut);
+    }}
 
-                sr.push_back(CRef<CSeqref>(new CPubseqSeqref
-                                           (*this,
-                                            giOut.Value(),
-                                            satOut.Value(),
-                                            satKeyOut.Value())));
+    while(cmd->HasMoreResults()) {
+        auto_ptr<CDB_Result> result(cmd->Result());
+        if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
+            continue;
+            
+        while(result->Fetch()) {
+            CDB_Int sat;
+            CDB_Int satKey;
+            CDB_Int extFeat;
+            
+            _TRACE("next fetch: " << result->NofItems() << " items");
+            for ( unsigned pos = 0; pos < result->NofItems(); ++pos ) {
+                const string& name = result->ItemName(pos);
+                _TRACE("next item: " << name);
+                if (name == "sat" ) {
+                    result->GetItem(&sat);
+                }
+                else if(name == "sat_key") {
+                    result->GetItem(&satKey);
+                }
+                else if(name == "ext_feat") {
+                    result->GetItem(&extFeat);
+                }
+                else {
+                    result->SkipItem();
+                }
             }
-            while(result->Fetch()) {
-                // do nothing
+
+            CRef<CSeqref> sr;
+            sr.Reset(new CPubseqSeqref(*this,
+                                       gi,
+                                       sat.Value(),
+                                       satKey.Value()));
+            srs.push_back(sr);
+            if ( extFeat.IsNULL() || extFeat.Value() != 0 ) {
+                sr.Reset(new CPubseqSeqref(*this, gi, 15, gi));
+                sr->SetFlags(extFeat.IsNULL()?
+                             CSeqref::fHasExternal | CSeqref::fPossible:
+                             CSeqref::fHasExternal);
+                srs.push_back(sr);
             }
         }
     }
@@ -288,7 +355,6 @@ CPubseqSeqref::CPubseqSeqref(CPubseqReader& reader,
                              int gi, int sat, int satkey)
     : m_Reader(reader), m_Gi(gi), m_Sat(sat), m_SatKey(satkey)
 {
-    Flag() = 0;
 }
 
 
@@ -307,20 +373,15 @@ CBlobSource* CPubseqSeqref::GetBlobSource(TPos , TPos ,
 
 CPubseqBlobSource::CPubseqBlobSource(const CPubseqSeqref& seqId, TConn conn)
     : m_Seqref(seqId), m_Conn(conn),
-      m_Cmd(seqId.x_GetConn(conn)->RPC("id_get_asn", 5))
+      m_Cmd(seqId.x_GetConn(conn)->RPC("id_get_asn", 3))
 {
     CDB_Int giIn(seqId.Gi());
     CDB_SmallInt satIn(seqId.Sat());
     CDB_Int satKeyIn(seqId.SatKey());
-    CDB_Int z(0);
-    CDB_Int o(1);
 
     m_Cmd->SetParam("@gi", &giIn);
     m_Cmd->SetParam("@sat_key", &satKeyIn);
     m_Cmd->SetParam("@sat", &satIn);
-    m_Cmd->SetParam("@maxplex", &z);
-    m_Cmd->SetParam("@outfmt", &z);
-    m_Cmd->SetParam("@ext_feat", &o);
     m_Cmd->Send();
 }
 
@@ -373,12 +434,13 @@ void CPubseqBlobSource::x_GetNextBlob(void)
         while(m_Result->Fetch()) {
             _TRACE("next fetch: " << m_Result->NofItems() << " items");
             for ( unsigned pos = 0; pos < m_Result->NofItems(); ++pos ) {
-                const string name = m_Result->ItemName(pos);
+                const string& name = m_Result->ItemName(pos);
                 _TRACE("next item: " << name);
                 if(name == "asn1") {
                     m_Blob.Reset(new CPubseqBlob(*this,
                                                  classOut.Value(),
-                                                 descrOut.Value()));
+                                                 descrOut.Value(),
+                                                 m_Seqref.Sat() == 15));
                     return;
                 }
                 else if(name == "confidential") {
@@ -401,8 +463,9 @@ void CPubseqBlobSource::x_GetNextBlob(void)
 
 
 CPubseqBlob::CPubseqBlob(CPubseqBlobSource& source,
-                         int cls, const string& descr)
-    : m_Source(source)
+                         int cls, const string& descr,
+                         bool snp)
+    : m_Source(source), m_SNP(snp)
 {
     Class() = cls;
     Descr() = descr;
@@ -416,51 +479,314 @@ CPubseqBlob::~CPubseqBlob(void)
 
 CSeq_entry *CPubseqBlob::Seq_entry()
 {
-    CResultByteSource src(m_Source.m_Result.get());
+    if ( m_SNP ) {
+        CResultZBtSrc src(m_Source.m_Result.get());
+        
+        auto_ptr<CObjectIStream> in;
+        in.reset(CObjectIStream::Create(eSerial_AsnBinary, src));
 
-    auto_ptr<CObjectIStream> in
-        (CObjectIStream::Create(eSerial_AsnBinary, src));
+        if ( true ) {
+            CObjectTypeInfo type = CType<CGb_qual>();
+            type.FindMember("qual").SetLocalReadHook(*in, new CPackStringClassHook);
+            type.FindMember("val").SetLocalReadHook(*in, new CPackStringClassHook(1));
+            type = CObjectTypeInfo(CType<CImp_feat>());
+            type.FindMember("key").SetLocalReadHook(*in, new CPackStringClassHook(32, 128));
 
-    m_Seq_entry = new CSeq_entry;
+            type = CObjectTypeInfo(CType<CObject_id>());
+            type.FindVariant("str").SetLocalReadHook(*in, new CPackStringChoiceHook);
 
-    *in >> *m_Seq_entry;
+            type = CObjectTypeInfo(CType<CDbtag>());
+            type.FindMember("db").SetLocalReadHook(*in, new CPackStringClassHook);
+
+            type = CObjectTypeInfo(CType<CSeq_feat>());
+            type.FindMember("comment").SetLocalReadHook(*in, new CPackStringClassHook);
+        }
+        
+        CRef<CSeq_annot> annot(new CSeq_annot);
+
+        *in >> *annot;
+
+        in.reset();
+
+        if ( false ) {
+            if ( !annot->ReferencedOnlyOnce() )
+                ERR_POST("other reference to annot");
+            //annot.Release();
+            THROW1_TRACE(runtime_error, "abort");
+        }
+
+        if ( false ) {
+            set<string> qual, val;
+            size_t count = 0;
+            for( CTypeConstIterator<CGb_qual> i(ConstBegin(*annot)); i; ++i ) {
+                ++count;
+                {{
+                    const string& s = i->GetQual();
+                    set<string>& ss = qual;
+                    if ( s.data() != ss.insert(s).first->data() ) {
+                        THROW1_TRACE(runtime_error,
+                                     "bad ref counting");
+                    }
+                }}
+                {{
+                    const string& s = i->GetVal();
+                    set<string>& ss = val;
+                    if ( val.size() <= 1 &&
+                         s.data() != ss.insert(s).first->data() ) {
+                        THROW1_TRACE(runtime_error,
+                                     "bad ref counting");
+                    }
+                }}
+            }
+            NcbiCout << "annot stat: Gb-qual count: " << count <<
+                " qual count: " << qual.size() <<
+                " val count: " << val.size() << NcbiEndl;
+        }
+
+        m_Seq_entry.Reset(new CSeq_entry);
+        m_Seq_entry->SetSet().SetSeq_set(); // it's not optional
+        m_Seq_entry->SetSet().SetAnnot().push_back(annot);
+    }
+    else {
+        CResultBtSrc src(m_Source.m_Result.get());
+
+        auto_ptr<CObjectIStream> in;
+        in.reset(CObjectIStream::Create(eSerial_AsnBinary, src));
+        
+        m_Seq_entry.Reset(new CSeq_entry);
+        
+        *in >> *m_Seq_entry;
+    }
 
     return m_Seq_entry;
 }
 
 
-CResultByteSource::CResultByteSource(CDB_Result* result)
+CResultBtSrc::CResultBtSrc(CDB_Result* result)
     : m_Result(result)
 {
 }
 
 
-CResultByteSource::~CResultByteSource()
+CResultBtSrc::~CResultBtSrc()
 {
 }
 
 
 
-CRef<CByteSourceReader> CResultByteSource::Open(void)
+CRef<CByteSourceReader> CResultBtSrc::Open(void)
 {
-    return CRef<CByteSourceReader>(new CResultByteSourceReader(m_Result));
+    return CRef<CByteSourceReader>(new CResultBtSrcRdr(m_Result));
 }
 
 
-CResultByteSourceReader::CResultByteSourceReader(CDB_Result* result)
+CResultBtSrcRdr::CResultBtSrcRdr(CDB_Result* result)
     : m_Result(result)
 {
 }
 
 
-CResultByteSourceReader::~CResultByteSourceReader()
+CResultBtSrcRdr::~CResultBtSrcRdr()
 {
 }
 
 
-size_t CResultByteSourceReader::Read(char* buffer, size_t bufferLength)
+size_t CResultBtSrcRdr::Read(char* buffer, size_t bufferLength)
 {
-    return m_Result->ReadItem(buffer, bufferLength);
+    size_t ret;
+    while ( (ret = m_Result->ReadItem(buffer, bufferLength)) == 0 ) {
+        if ( !m_Result->Fetch() )
+            break;
+    }
+    return ret;
+}
+
+
+CResultZBtSrc::CResultZBtSrc(CDB_Result* result)
+    : m_Result(result)
+{
+}
+
+
+CResultZBtSrc::~CResultZBtSrc()
+{
+}
+
+
+
+CRef<CByteSourceReader> CResultZBtSrc::Open(void)
+{
+    return CRef<CByteSourceReader>(new CResultZBtSrcRdr(m_Result));
+}
+
+
+class NCBI_XOBJMGR_EXPORT CResultZBtSrcX
+{
+public:
+    CResultZBtSrcX(CResultZBtSrcRdr& reader);
+    ~CResultZBtSrcX(void);
+
+    size_t Read(char* buffer, size_t bufferLength);
+    void ReadLength(void);
+
+    enum {
+        kMax_UncomprSize = 128*1024,
+        kMax_ComprSize = 128*1024
+    };
+
+private:
+    CResultZBtSrcRdr& m_Reader;
+    vector<char>      m_Buffer;
+    size_t            m_BufferPos;
+    size_t            m_BufferEnd;
+    CZipCompression   m_Decompressor;
+    vector<char>      m_Compressed;
+};
+
+
+CResultZBtSrcRdr::CResultZBtSrcRdr(CDB_Result* result)
+    : m_Result(result), m_Type(eType_unknown)
+{
+}
+
+
+CResultZBtSrcRdr::~CResultZBtSrcRdr()
+{
+}
+
+
+size_t CResultZBtSrcRdr::Read(char* buffer, size_t bufferLength)
+{
+    EType type = m_Type;
+    if ( type == eType_plain ) {
+        return x_Read(buffer, bufferLength);
+    }
+
+    if ( type == eType_unknown ) {
+        if ( bufferLength < 4 ) {
+            THROW1_TRACE(runtime_error,
+                         "CResultZBtSrcRdr: "
+                         "too small buffer to determine compression type");
+        }
+        size_t cnt = x_Read(buffer, 4);
+        if ( cnt != 4 ) {
+            // too few bytes - assume non "ZIP"
+            _TRACE("CResultZBtSrcRdr: non-ZIP: " << cnt);
+            m_Type = eType_plain;
+            return cnt;
+        }
+        if ( memcmp(buffer, "ZIP", cnt) != 0 ) {
+            // non "ZIP"
+            cnt += x_Read(buffer+4, bufferLength-4);
+            _TRACE("CResultZBtSrcRdr: non-ZIP: " << cnt);
+            m_Type = eType_plain;
+            return cnt;
+        }
+        m_Type = eType_zlib;
+
+        m_Decompressor.reset(new CResultZBtSrcX(*this));
+        //m_Decompressor->ReadLength();
+    }
+
+    return m_Decompressor->Read(buffer, bufferLength);
+}
+
+
+size_t CResultZBtSrcRdr::x_Read(char* buffer, size_t bufferLength)
+{
+    size_t ret = 0;
+    while ( bufferLength > 0 ) {
+        size_t cnt = m_Result->ReadItem(buffer, bufferLength);
+        if ( cnt == 0 ) {
+            if ( !m_Result->Fetch() )
+                break;
+        }
+        else {
+#if 0 // && _DEBUG
+            NcbiCout << "Data:";
+            for ( size_t i = 0; i < cnt; ++i ) {
+                NcbiCout << ' ' <<
+                    "0123456789abcdef"[(buffer[i]>>4)&15] << 
+                    "0123456789abcdef"[(buffer[i])&15];
+            }
+            NcbiCout << NcbiEndl;
+#endif
+            bufferLength -= cnt;
+            buffer += cnt;
+            ret += cnt;
+        }
+    }
+    return ret;
+}
+
+
+CResultZBtSrcX::CResultZBtSrcX(CResultZBtSrcRdr& reader)
+    : m_Reader(reader), m_BufferPos(0), m_BufferEnd(0)
+{
+}
+
+
+CResultZBtSrcX::~CResultZBtSrcX(void)
+{
+}
+
+
+void CResultZBtSrcX::ReadLength(void)
+{
+    char header[8];
+    if ( m_Reader.x_Read(header, 8) != 8 ) {
+        THROW1_TRACE(runtime_error,
+                     "CResultZBtSrcX: "
+                     "too few header bytes");
+    }
+    size_t compr_size = 0;
+    for ( size_t i = 0; i < 4; ++i ) {
+        compr_size = (compr_size<<8) | (unsigned char)header[i];
+    }
+    size_t uncompr_size = 0;
+    for ( size_t i = 4; i < 8; ++i ) {
+        uncompr_size = (uncompr_size<<8) | (unsigned char)header[i];
+    }
+
+    if ( compr_size > kMax_ComprSize ) {
+        THROW1_TRACE(runtime_error,
+                     "CResultZBtSrcX: "
+                     "compressed size is too large");
+    }
+    if ( uncompr_size > kMax_UncomprSize ) {
+        THROW1_TRACE(runtime_error,
+                     "CResultZBtSrcX: "
+                     "uncompressed size is too large");
+    }
+    m_Compressed.reserve(compr_size);
+    if ( m_Reader.x_Read(&m_Compressed[0], compr_size) != compr_size ) {
+        THROW1_TRACE(runtime_error,
+                     "CResultZBtSrcX: "
+                     "compressed data is not complete");
+    }
+    m_BufferPos = kMax_UInt;
+    m_Buffer.reserve(uncompr_size);
+    if ( !m_Decompressor.DecompressBuffer(&m_Compressed[0], compr_size,
+                                          &m_Buffer[0], uncompr_size,
+                                          &uncompr_size) ) {
+        THROW1_TRACE(runtime_error,
+                     "CResultZBtSrcX: "
+                     "decompression failed");
+    }
+    m_BufferEnd = uncompr_size;
+    m_BufferPos = 0;
+}
+
+
+size_t CResultZBtSrcX::Read(char* buffer, size_t bufferLength)
+{
+    while ( m_BufferPos == m_BufferEnd ) {
+        ReadLength();
+    }
+    size_t cnt = min(bufferLength, m_BufferEnd-m_BufferPos);
+    memcpy(buffer, &m_Buffer[m_BufferPos], cnt);
+    m_BufferPos += cnt;
+    return cnt;
 }
 
 
@@ -470,6 +796,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.29  2003/07/17 20:07:56  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.28  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

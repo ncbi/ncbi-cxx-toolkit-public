@@ -54,7 +54,7 @@ CBlobSource::~CBlobSource(void)
 
 
 CSeqref::CSeqref(void)
-    : m_Flag(0)
+    : m_Flags(fHasAllLocal)
 {
 }
 
@@ -86,6 +86,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.17  2003/07/17 20:07:56  vasilche
+ * Reduced memory usage by feature indexes.
+ * SNP data is loaded separately through PUBSEQ_OS.
+ * String compression for SNP data.
+ *
  * Revision 1.16  2003/06/02 16:06:38  dicuccio
  * Rearranged src/objects/ subtree.  This includes the following shifts:
  *     - src/objects/asn2asn --> arc/app/asn2asn

@@ -34,13 +34,16 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/annot_object.hpp>
-#include <objmgr/annot_selector.hpp>
+#include <objmgr/impl/data_source.hpp>
+#include <objmgr/impl/handle_range.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
 SAnnotObject_Index::SAnnotObject_Index(void)
+    : m_AnnotObject_Info(0),
+      m_AnnotLocationIndex(0)
 {
 }
 
@@ -51,20 +54,45 @@ SAnnotObject_Index::~SAnnotObject_Index(void)
 
 
 SAnnotObject_Index::SAnnotObject_Index(const SAnnotObject_Index& ind)
-    : m_AnnotObject(ind.m_AnnotObject), m_IndexBy(ind.m_IndexBy), m_HandleRange(ind.m_HandleRange)
+    : m_AnnotObject_Info(ind.m_AnnotObject_Info),
+      m_AnnotLocationIndex(ind.m_AnnotLocationIndex),
+      m_HandleRange(ind.m_HandleRange)
 {
 }
 
 
-SAnnotObject_Index& SAnnotObject_Index::operator=(const SAnnotObject_Index& ind)
+SAnnotObject_Index&
+SAnnotObject_Index::operator=(const SAnnotObject_Index& ind)
 {
-    m_AnnotObject = ind.m_AnnotObject;
-    m_IndexBy = ind.m_IndexBy;
+    m_AnnotObject_Info = ind.m_AnnotObject_Info;
+    m_AnnotLocationIndex = ind.m_AnnotLocationIndex;
     m_HandleRange = ind.m_HandleRange;
     return *this;
 }
 
 
+CTSE_Info::SIdAnnotObjs::SIdAnnotObjs(void)
+{
+}
+
+
+CTSE_Info::SIdAnnotObjs::~SIdAnnotObjs(void)
+{
+}
+
+
+CTSE_Info::SIdAnnotObjs::SIdAnnotObjs(const SIdAnnotObjs& objs)
+    : m_RangeMap(objs.m_RangeMap)
+{
+}
+
+
+const CTSE_Info::SIdAnnotObjs&
+CTSE_Info::SIdAnnotObjs::operator=(const SIdAnnotObjs& objs)
+{
+    m_RangeMap = objs.m_RangeMap;
+    return *this;
+}
 
 
 ////////////////////////////////////////////////////////////////////
@@ -91,51 +119,159 @@ CTSE_Info::~CTSE_Info(void)
 }
 
 
+// map annot/feat type into unique integer:
+// align -> 0
+// graph -> 1
+// feat -> 2...
+inline
+size_t CTSE_Info::x_GetTypeIndex(int annot_type, int feat_type)
+{
+    // check enum values
+    const int kFtable = CSeq_annot::C_Data::e_Ftable;
+    const int kMinNonFtable = CSeq_annot::C_Data::e_Align;
+    const int kMaxNonFtable = CSeq_annot::C_Data::e_Graph;
+    const int kNonFtableCount = kMaxNonFtable - kMinNonFtable + 1;
+    const int kShiftNonFtableDown = kMinNonFtable;
+    const int kShiftFtableUp = kNonFtableCount;
+    
+    _ASSERT(CSeq_annot::C_Data::e_Ftable == kFtable);
+    _ASSERT(CSeq_annot::C_Data::e_Align >= kMinNonFtable &&
+            CSeq_annot::C_Data::e_Align <= kMaxNonFtable);
+    _ASSERT(CSeq_annot::C_Data::e_Graph >= kMinNonFtable &&
+            CSeq_annot::C_Data::e_Graph <= kMaxNonFtable);
+    _ASSERT(annot_type == kFtable ||
+            annot_type >= kMinNonFtable && annot_type <= kMaxNonFtable);
+    _ASSERT(feat_type >= 0);
+    return annot_type == kFtable?
+        feat_type + kShiftFtableUp:
+        annot_type - kShiftNonFtableDown;
+}
+
+
+inline
+size_t CTSE_Info::x_GetTypeIndex(const SAnnotObject_Key& key)
+{
+    return x_GetTypeIndex(key.m_AnnotObject_Info->GetAnnotType(),
+                          key.m_AnnotObject_Info->GetFeatType());
+}
+
+
+pair<size_t, size_t> CTSE_Info::x_GetIndexRange(int annot_type,
+                                                int feat_type)
+{
+    if ( annot_type == CSeq_annot::C_Data::e_not_set ) {
+        size_t last = x_GetTypeIndex(CSeq_annot::C_Data::e_Ftable,
+                                     CSeqFeatData::e_Biosrc);
+        return pair<size_t, size_t>(0, last);
+    }
+    if ( annot_type == CSeq_annot::C_Data::e_Ftable &&
+         feat_type == CSeqFeatData::e_not_set ) {
+        size_t first = x_GetTypeIndex(CSeq_annot::C_Data::e_Ftable,
+                                      CSeqFeatData::e_not_set); // first
+        size_t last = x_GetTypeIndex(CSeq_annot::C_Data::e_Ftable,
+                                     CSeqFeatData::e_Biosrc);
+        return pair<size_t, size_t>(first, last);
+    }
+    size_t index = x_GetTypeIndex(annot_type, feat_type);
+    return pair<size_t, size_t>(index, index);
+}
+
+
 const CTSE_Info::TRangeMap*
-CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id,
-                         const SAnnotTypeSelector& sel) const
+CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id, size_t index) const
 {
     TAnnotObjs::const_iterator amit = m_AnnotObjs.find(id);
     if (amit == m_AnnotObjs.end()) {
         return 0;
     }
     
-    
-    TAnnotSelectorMap::const_iterator sit =
-        amit->second.find(sel);
-    if ( sit == amit->second.end() ) {
-        return 0;
+    return index >= amit->second.m_RangeMap.size()?
+        0: &amit->second.m_RangeMap[index];
+}
+
+
+inline
+void CTSE_Info::x_MapAnnotObject(TRangeMap& rangeMap,
+                                 const SAnnotObject_Key& key,
+                                 const SAnnotObject_Index& annotRef)
+{
+    _ASSERT(annotRef.m_AnnotObject_Info == key.m_AnnotObject_Info);
+    rangeMap.insert(TRangeMap::value_type(key.m_Range, annotRef));
+}
+
+
+inline
+bool CTSE_Info::x_DropAnnotObject(TRangeMap& rangeMap,
+                                 const SAnnotObject_Key& key)
+{
+    for ( TRangeMap::iterator it = rangeMap.find(key.m_Range);
+          it && it->first == key.m_Range; ++it ) {
+        if ( it->second.m_AnnotObject_Info == key.m_AnnotObject_Info ) {
+            rangeMap.erase(it);
+            return rangeMap.empty();
+        }
     }
-
-    return &sit->second;
+    _ASSERT(0);
+    return rangeMap.empty();
 }
 
 
-CTSE_Info::TRangeMap& CTSE_Info::x_SetRangeMap(TAnnotSelectorMap& selMap,
-                                               const SAnnotTypeSelector& sel)
+inline
+void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
+                                 const SAnnotObject_Key& key,
+                                 const SAnnotObject_Index& annotRef)
 {
-    return selMap[sel];
+    size_t index = x_GetTypeIndex(key);
+    if ( index >= objs.m_RangeMap.size() ) {
+        objs.m_RangeMap.resize(index+1);
+    }
+    x_MapAnnotObject(objs.m_RangeMap[index], key, annotRef);
 }
 
 
-CTSE_Info::TRangeMap& CTSE_Info::x_SetRangeMap(const CSeq_id_Handle& id,
-                                               const SAnnotTypeSelector& sel)
+inline
+bool CTSE_Info::x_DropAnnotObject(SIdAnnotObjs& objs,
+                                  const SAnnotObject_Key& key)
 {
-    return x_SetRangeMap(m_AnnotObjs[id], sel);
+    size_t index = x_GetTypeIndex(key);
+    _ASSERT(index < objs.m_RangeMap.size());
+    if ( x_DropAnnotObject(objs.m_RangeMap[index], key) ) {
+        while ( objs.m_RangeMap.back().empty() ) {
+            objs.m_RangeMap.pop_back();
+            if ( objs.m_RangeMap.empty() ) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 
-void CTSE_Info::x_DropRangeMap(TAnnotSelectorMap& selMap,
-                               const SAnnotTypeSelector& sel)
+void CTSE_Info::x_MapAnnotObject(const SAnnotObject_Key& key,
+                                 const SAnnotObject_Index& annotRef)
 {
-    selMap.erase(sel);
+    // repeat for more generic types of selector
+    TAnnotObjs::iterator it = m_AnnotObjs.lower_bound(key.m_Handle);
+    if ( it == m_AnnotObjs.end() || it->first != key.m_Handle ) {
+        // new id
+        it = m_AnnotObjs.insert(it, TAnnotObjs::value_type(key.m_Handle,
+                                                           SIdAnnotObjs()));
+        GetDataSource().x_AddTSE_ref(key.m_Handle, this);
+    }
+    _ASSERT(it != m_AnnotObjs.end() && it->first == key.m_Handle);
+    x_MapAnnotObject(it->second, key, annotRef);
 }
 
 
-void CTSE_Info::x_DropRangeMap(const CSeq_id_Handle& id,
-                               const SAnnotTypeSelector& sel)
+void CTSE_Info::x_DropAnnotObject(const SAnnotObject_Key& key)
 {
-    x_DropRangeMap(m_AnnotObjs[id], sel);
+    // repeat for more generic types of selector
+    TAnnotObjs::iterator it = m_AnnotObjs.find(key.m_Handle);
+    _ASSERT(it != m_AnnotObjs.end() && it->first == key.m_Handle);
+    if ( x_DropAnnotObject(it->second, key) ) {
+        GetDataSource().x_DropTSE_ref(key.m_Handle, this);
+        m_AnnotObjs.erase(it);
+    }
 }
 
 
@@ -173,8 +309,10 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
                 string member_name = "m_AnnotObjs[ " +
                     (it->first).AsString() +" ]";
                 if (depth2 == 0) {
+/*
                     member_name += "size()";
                     DebugDumpValue(ddc2, member_name, (it->second).size());
+*/
                 } else {
 /*
                     // CRangeMultimap
@@ -213,6 +351,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/07/17 20:07:56  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.27  2003/06/24 14:25:18  vasilche
 * Removed obsolete CTSE_Guard class.
 * Used separate mutexes for bioseq and annot maps.

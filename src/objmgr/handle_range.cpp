@@ -35,6 +35,7 @@
 #include <objmgr/impl/handle_range.hpp>
 
 #include <algorithm>
+//#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -165,10 +166,45 @@ void CHandleRange::MergeRange(TRange range, ENa_strand /*strand*/)
 
 CHandleRange::TRange CHandleRange::GetOverlappingRange(void) const
 {
-    return Empty() ?
-        TOpenRange::GetEmpty() :
-        TOpenRange(m_Ranges.front().first.GetFrom(),
-                   m_Ranges.back().first.GetToOpen());
+    TOpenRange ret = TOpenRange::GetEmpty();
+    ITERATE ( TRanges, it, m_Ranges ) {
+        ret += it->first;
+    }
+    return ret;
+}
+
+
+CHandleRange::TRange
+CHandleRange::GetOverlappingRange(const TRange& range) const
+{
+    TOpenRange ret = TOpenRange::GetEmpty();
+    if ( !range.Empty() ) {
+        ITERATE ( TRanges, it, m_Ranges ) {
+            ret += it->first.IntersectionWith(range);
+        }
+    }
+    return ret;
+}
+
+
+bool CHandleRange::IntersectingWith(const TRange& range,
+                                    ENa_strand strand) const
+{
+    if ( !range.Empty() ) {
+        ITERATE ( TRanges, it, m_Ranges ) {
+            if ( range.IntersectingWith(it->first) &&
+                 x_IntersectingStrands(strand, it->second) ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool CHandleRange::HasGaps(void) const
+{
+    return m_Ranges.size() > 1;
 }
 
 
@@ -178,6 +214,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/07/17 20:07:56  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.18  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

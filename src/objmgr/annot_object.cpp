@@ -30,20 +30,25 @@
 */
 
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
+
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_annot.hpp>
+
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
-#include <objmgr/impl/handle_range_map.hpp>
-#include <objmgr/impl/seq_entry_info.hpp>
-#include <objmgr/impl/seq_annot_info.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+
 #include <objects/seqfeat/Seq_feat.hpp>
+
 #include <objects/seqres/Seq_graph.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -86,52 +91,135 @@ SAnnotSelector& SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* annot)
 }
 
 
+SAnnotSelector::SSources::SSources(void)
+{
+}
+
+
+SAnnotSelector::SSources::~SSources(void)
+{
+}
+
+
+SAnnotSelector& SAnnotSelector::SetDataSource(const string& source)
+{
+    if ( !m_Sources ) {
+        m_Sources.Reset(new SSources);
+    }
+    m_Sources->m_Sources.insert(source);
+    return *this;
+}
+
+
 ////////////////////////////////////////////////////////////////////
 //
 //  CAnnotObject_Info::
 //
 
 
+CAnnotObject_Info::CAnnotObject_Info(void)
+    : m_AnnotType(CSeq_annot::C_Data::e_not_set),
+      m_FeatType(CSeqFeatData::e_not_set),
+      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
+      m_Object(0),
+      m_Seq_annot_Info(0)
+{
+}
+
+
+CAnnotObject_Info::CAnnotObject_Info(const CAnnotObject_Info& info)
+    : m_AnnotType(info.m_AnnotType),
+      m_FeatType(info.m_FeatType),
+      m_FeatSubtype(info.m_FeatSubtype),
+      m_Object(info.m_Object),
+      m_Seq_annot_Info(info.m_Seq_annot_Info)
+{
+}
+
+
+const CAnnotObject_Info&
+CAnnotObject_Info::operator=(const CAnnotObject_Info& info)
+{
+    m_AnnotType = info.m_AnnotType;
+    m_FeatType = info.m_FeatType;
+    m_FeatSubtype = info.m_FeatSubtype;
+    m_Object = info.m_Object;
+    m_Seq_annot_Info = info.m_Seq_annot_Info;
+    return *this;
+}
+
+
 CAnnotObject_Info::CAnnotObject_Info(CSeq_feat& feat,
                                      CSeq_annot_Info& annot)
-    : m_Choice(CSeq_annot::C_Data::e_Ftable),
+    : m_AnnotType(CSeq_annot::C_Data::e_Ftable),
+      m_FeatType(feat.GetData().Which()),
+      m_FeatSubtype(feat.GetData().GetSubtype()),
       m_Object(&feat),
       m_Seq_annot_Info(&annot)
 {
-    m_RangeMap.AddLocation(feat.GetLocation());
-    if ( feat.IsSetProduct() ) {
-        m_ProductMap.reset(new CHandleRangeMap());
-        m_ProductMap->AddLocation(feat.GetProduct());
-    }
-    return;
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CSeq_align& align,
                                      CSeq_annot_Info& annot)
-    : m_Choice(CSeq_annot::C_Data::e_Align),
+    : m_AnnotType(CSeq_annot::C_Data::e_Align),
+      m_FeatType(CSeqFeatData::e_not_set),
+      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
       m_Object(&align),
       m_Seq_annot_Info(&annot)
 {
-    x_ProcessAlign(align);
-    return;
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CSeq_graph& graph,
                                      CSeq_annot_Info& annot)
-    : m_Choice(CSeq_annot::C_Data::e_Graph),
+    : m_AnnotType(CSeq_annot::C_Data::e_Graph),
+      m_FeatType(CSeqFeatData::e_not_set),
+      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
       m_Object(&graph),
       m_Seq_annot_Info(&annot)
 {
-    m_RangeMap.AddLocation(graph.GetLoc());
-    return;
 }
 
 
 CAnnotObject_Info::~CAnnotObject_Info(void)
 {
-    return;
+}
+
+
+void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
+{
+    switch ( Which() ) {
+    case CSeq_annot::C_Data::e_Ftable:
+    {
+        const CSeq_feat& feat = *GetFeatFast();
+        hrmaps.resize(feat.IsSetProduct()? 2: 1);
+        hrmaps[0].clear();
+        hrmaps[0].AddLocation(feat.GetLocation());
+        if ( feat.IsSetProduct() ) {
+            hrmaps[1].clear();
+            hrmaps[1].AddLocation(feat.GetProduct());
+        }
+        break;
+    }
+    case CSeq_annot::C_Data::e_Graph:
+    {
+        const CSeq_graph& graph = *GetGraphFast();
+        hrmaps.resize(1);
+        hrmaps[0].clear();
+        hrmaps[0].AddLocation(graph.GetLoc());
+        break;
+    }
+    case CSeq_annot::C_Data::e_Align:
+    {
+        const CSeq_align& align = GetAlign();
+        // TODO: separate alignment locations
+        hrmaps.resize(1);
+        hrmaps[0].clear();
+        x_ProcessAlign(hrmaps[0], align);
+        break;
+    }
+    }
 }
 
 
@@ -177,18 +265,6 @@ CDataSource& CAnnotObject_Info::GetDataSource(void) const
 }
 
 
-const CSeq_feat* CAnnotObject_Info::GetFeatFast(void) const
-{
-    return static_cast<const CSeq_feat*>(m_Object.GetPointerOrNull());
-}
-
-
-const CSeq_graph* CAnnotObject_Info::GetGraphFast(void) const
-{
-    return static_cast<const CSeq_graph*>(m_Object.GetPointerOrNull());
-}
-
-
 const CSeq_feat& CAnnotObject_Info::GetFeat(void) const
 {
 #if defined(NCBI_COMPILER_ICC)
@@ -219,7 +295,8 @@ const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
 }
 
 
-void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
+void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
+                                       const CSeq_align& align) const
 {
     //### Check the implementation.
     switch ( align.GetSegs().Which() ) {
@@ -251,7 +328,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
                         loc.SetInt().SetStrand(*it_strand);
                         ++it_strand;
                     }
-                    m_RangeMap.AddLocation(loc);
+                    hrmap.AddLocation(loc);
                     ++it_id;
                     ++it_start;
                 }
@@ -296,7 +373,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
                         loc.SetInt().SetStrand(*it_strand);
                         ++it_strand;
                     }
-                    m_RangeMap.AddLocation(loc);
+                    hrmap.AddLocation(loc);
                 }
             }
             break;
@@ -309,7 +386,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
                 //### Ignore Seq-id, assuming it is also set in Seq-loc?
                 ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
                     // Create CHandleRange from an align element
-                    m_RangeMap.AddLocation(**it_loc);
+                    hrmap.AddLocation(**it_loc);
                 }
             }
             break;
@@ -358,7 +435,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
                         }
                         ++it_id;
                         ++it_start;
-                        m_RangeMap.AddLocation(loc);
+                        hrmap.AddLocation(loc);
                     }
                 }
             }
@@ -369,7 +446,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
             const CSeq_align::C_Segs::TDisc& disc =
                 align.GetSegs().GetDisc();
             ITERATE ( CSeq_align_set::Tdata, it, disc.Get() ) {
-                x_ProcessAlign(**it);
+                x_ProcessAlign(hrmap, **it);
             }
             break;
         }
@@ -383,7 +460,7 @@ void CAnnotObject_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) con
     CObject::DebugDump( ddc, depth);
 
     string choice;
-    switch (m_Choice) {
+    switch (m_AnnotType) {
     default:                            choice="unknown";   break;
     case CSeq_annot::C_Data::e_not_set: choice="notset";    break;
     case CSeq_annot::C_Data::e_Ftable:  choice="feature";   break;
@@ -392,58 +469,11 @@ void CAnnotObject_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) con
     case CSeq_annot::C_Data::e_Ids:     choice="ids";       break;
     case CSeq_annot::C_Data::e_Locs:    choice="locs";      break;
     }
-    ddc.Log("m_Choice", choice);
+    ddc.Log("m_AnnotType", choice);
 //    ddc.Log("m_DataSource", m_DataSource,0);
+    ddc.Log("m_FeatType", long(m_FeatType));
     ddc.Log("m_Object", m_Object.GetPointer(),0);
 //    ddc.Log("m_Annot", m_Annot.GetPointer(),0);
-    // m_RangeMap is not dumpable
-    if ( true ) {
-        CDebugDumpContext ddc2(ddc,"m_RangeMap");
-        const CHandleRangeMap::TLocMap& rm = m_RangeMap.GetMap();
-        if (depth == 0) {
-            DebugDumpValue(ddc2, "m_LocMap.size()", rm.size());
-        } else {
-            DebugDumpValue(ddc2, "m_LocMap.type",
-                "map<CSeq_id_Handle, CHandleRange>");
-            CDebugDumpContext ddc3(ddc2,"m_LocMap");
-            CHandleRangeMap::TLocMap::const_iterator it;
-            for (it=rm.begin(); it!=rm.end(); ++it) {
-                string member_name = "m_LocMap[ " +
-                    (it->first).AsString() + " ]";
-                CDebugDumpContext ddc4(ddc3,member_name);
-                DebugDumpValue(ddc4, "m_Ranges.type",
-                    "list<pair<CRange<TSeqPos>, ENa_strand>>");
-                int n = 0;
-                ITERATE (CHandleRange, itrg, it->second) {
-                    member_name = "m_Ranges[ " + NStr::IntToString(n++) + " ]";
-                    string value;
-                    if (itrg->first.Empty()) {
-                        value += "empty";
-                    } else if (itrg->first.IsWhole()) {
-                        value += "whole";
-                    } else if (itrg->first.IsWholeTo()) {
-                        value += "unknown";
-                    } else {
-                        value +=
-                            NStr::UIntToString(itrg->first.GetFrom()) +
-                            "..." +
-                            NStr::UIntToString(itrg->first.GetTo());
-                    }
-                    value += ", ";
-                    switch (itrg->second) {
-                    default:                  value +="notset";   break;
-                    case eNa_strand_unknown:  value +="unknown";  break;
-                    case eNa_strand_plus:     value +="plus";     break;
-                    case eNa_strand_minus:    value +="minus";    break;
-                    case eNa_strand_both:     value +="both";     break;
-                    case eNa_strand_both_rev: value +="both_rev"; break;
-                    case eNa_strand_other:    value +="other";    break;
-                    }
-                    ddc4.Log(member_name, value);
-                }
-            }
-        }
-    }
 }
 
 
@@ -453,6 +483,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.21  2003/06/02 16:06:37  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

@@ -66,10 +66,21 @@ public:
 
     void AddRanges(const CHandleRange& hr);
 
+    // return true if there is a gap between some intervals
+    bool HasGaps(void) const;
     // Get the range including all ranges in the list (with any strand)
     TRange GetOverlappingRange(void) const;
+    
+    // Get the range including all ranges in the list which (with any strand)
+    // filter the list through 'range' argument
+    TRange GetOverlappingRange(const TRange& range) const;
+
     // Check if the two sets of ranges do intersect
     bool IntersectingWith(const CHandleRange& hr) const;
+
+    // Check if the two sets of ranges do intersect
+    bool IntersectingWith(const TRange& range,
+                          ENa_strand strand = eNa_strand_unknown) const;
 
 private:
     static bool x_IntersectingStrands(ENa_strand str1, ENa_strand str2);
@@ -108,6 +119,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2003/07/17 20:07:55  vasilche
+ * Reduced memory usage by feature indexes.
+ * SNP data is loaded separately through PUBSEQ_OS.
+ * String compression for SNP data.
+ *
  * Revision 1.17  2003/04/24 16:12:37  vasilche
  * Object manager internal structures are splitted more straightforward.
  * Removed excessive header dependencies.

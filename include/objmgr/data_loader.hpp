@@ -73,6 +73,8 @@ public:
         eSequence,    // seq data 
         eFeatures,    // SeqFeatures
         eGraph,       // SeqGraph 
+        eAlign,       // SeqAlign 
+        eExternal,    // external features
         eAll          // whatever fits location
     };
     
@@ -121,7 +123,6 @@ private:
     string       m_Name;
     CDataSource* m_DataSource;
     
-    CRef<CSeq_id_Mapper> m_Mapper;
     friend class CObjectManager;
 };
 
@@ -141,6 +142,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.21  2003/06/19 18:23:44  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.

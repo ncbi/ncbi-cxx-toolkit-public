@@ -35,6 +35,13 @@
 
 #include <corelib/ncbiobj.hpp>
 
+#include <util/range.hpp>
+
+#include <objmgr/seq_id_handle.hpp>
+#include <objmgr/annot_selector.hpp>
+
+#include <vector>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -43,6 +50,8 @@ class CSeq_annot;
 class CSeq_entry;
 class CTSE_Info;
 class CSeq_entry_Info;
+class CAnnotObject_Info;
+struct SAnnotObject_Key;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CObject
 {
@@ -63,14 +72,27 @@ public:
     const CSeq_annot& GetSeq_annot(void) const;
     CSeq_annot& GetSeq_annot(void);
 
+    // CRef on CAnnotObject_Info is held by CDataSource::m_AnnotObject_InfoMap
+    typedef vector<SAnnotObject_Key>  TObjectKeys;
+    typedef vector<CAnnotObject_Info> TObjectInfos;
+
 private:
     friend class CDataSource;
+
+    void x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs);
+    void x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs);
+    void x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs);
+    void x_UnmapAnnotObjects(void);
+    void x_DropAnnotObjects(void);
 
     CSeq_annot_Info(const CSeq_annot_Info&);
     CSeq_annot_Info& operator=(const CSeq_annot_Info&);
 
     CRef<CSeq_annot>       m_Seq_annot;
     CSeq_entry_Info*       m_Seq_entry_Info;
+
+    TObjectKeys            m_ObjectKeys;
+    TObjectInfos           m_ObjectInfos;
 
     bool m_Indexed;
 };
@@ -117,6 +139,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.1  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

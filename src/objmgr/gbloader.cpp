@@ -217,6 +217,7 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap,
 #else
     s[0] = 0;
 #endif
+
     CGBLGuard g(m_Locks,s);
     do {
         unreleased_mutex_run=true;
@@ -230,6 +231,7 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap,
                          "CGBDataLoader::GetRecords: exceded attempt count");
         }
     } while (unreleased_mutex_run!=true);
+
     //GBLOG_POST( "GetRecords-end" );
     return true;
 }
@@ -554,18 +556,37 @@ void CGBDataLoader::GC(void)
 }
 
 
-CGBDataLoader::TMask
-CGBDataLoader::x_Request2SeqrefMask(const EChoice /*choice*/)
+CGBDataLoader::TMask CGBDataLoader::x_Request2SeqrefMask(const EChoice choice)
 {
-    /** ignore choice for now
-    switch(choice)
-    {
-      // split code
+    switch(choice) {
+    case eBlob:
+    case eBioseq:
+    case eAll:
+        // whole bioseq
+        return CSeqref::fHasAllLocal;
+    case eCore:
+    case eBioseqCore:
+        // everything except bioseqs & annotations
+        return CSeqref::fHasCore;
+    case eSequence:
+        // seq data
+        return CSeqref::fHasSeqMap|CSeqref::fHasSeqData;
+    case eFeatures:
+        // SeqFeatures
+        return CSeqref::fHasFeatures;
+    case eGraph:
+        // SeqGraph
+        return CSeqref::fHasGraph;
+    case eAlign:
+        // SeqGraph
+        return CSeqref::fHasAlign;
+    case eExternal:
+        // external features
+        return CSeqref::fHasExternal;
+        return CSeqref::fHasAll;
     default:
-        return ~0;
+        return 0;
     }
-    **/
-    return ~0;
 }
 
 CGBDataLoader::TMask
@@ -603,7 +624,9 @@ bool CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
     ITERATE (SSeqrefs::TSeqrefs, srp, sr->m_Sr) {
         // skip TSE which doesn't contain requested type of info
         //GBLOG_POST( "x_GetRecords-Seqref_iterate_0" );
-        if( ((~(*srp)->Flag()) & sr_mask) == 0 ) continue;
+        if( ((*srp)->GetFlags() & sr_mask) == 0 )
+            continue;
+
         //GBLOG_POST( "list uploaded TSE");
         //for(TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.begin(); tsep != m_Sr2TseInfo.end(); ++tsep)
         //  {
@@ -904,8 +927,10 @@ bool CGBDataLoader::x_GetData(CRef<STSEinfo> tse,
         }
         if(count==0) {
             tse_up->m_mode = CTSEUpload::eDone;
-            // TODO log message
-            LOG_POST("ERROR: can not retrive sequence  : " << srp.print());
+            if ( (srp.GetFlags() & CSeqref::fPossible) == 0 ) {
+                // TODO log message
+                LOG_POST("ERROR: can not retrive sequence  : " << srp.print());
+            }
         }
       
         //GBLOG_POST( "GetData-after:: " << from << to <<  endl;
@@ -933,6 +958,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2003/07/17 20:07:56  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.77  2003/06/24 14:25:18  vasilche
 * Removed obsolete CTSE_Guard class.
 * Used separate mutexes for bioseq and annot maps.

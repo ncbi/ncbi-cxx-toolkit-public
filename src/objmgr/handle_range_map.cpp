@@ -50,7 +50,6 @@ BEGIN_SCOPE(objects)
 
 
 CHandleRangeMap::CHandleRangeMap(void)
-    : m_IdMapper(&CSeq_id_Mapper::GetSeq_id_Mapper())
 {
 }
 
@@ -72,6 +71,12 @@ CHandleRangeMap& CHandleRangeMap::operator= (const CHandleRangeMap& rmap)
         m_LocMap = rmap.m_LocMap;
     }
     return *this;
+}
+
+
+void CHandleRangeMap::clear(void)
+{
+    m_LocMap.clear();
 }
 
 
@@ -124,7 +129,9 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
     {
         // extract each point
         const CPacked_seqpnt& pp = loc.GetPacked_pnt();
-        CHandleRange& hr = m_LocMap[m_IdMapper->GetHandle(pp.GetId())];
+        CSeq_id_Handle idh =
+            CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(pp.GetId());
+        CHandleRange& hr = m_LocMap[idh];
         ENa_strand strand = pp.IsSetStrand()? pp.GetStrand(): eNa_strand_unknown;
         ITERATE ( CPacked_seqpnt::TPoints, pi, pp.GetPoints() ) {
             hr.AddRange(CHandleRange::TRange(*pi, *pi), strand);
@@ -185,7 +192,7 @@ void CHandleRangeMap::AddRange(const CSeq_id& id,
                                CHandleRange::TRange range,
                                ENa_strand strand)
 {
-    AddRange(m_IdMapper->GetHandle(id), range, strand);
+    AddRange(CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id), range, strand);
 }
 
 
@@ -247,6 +254,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/07/17 20:07:56  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.17  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

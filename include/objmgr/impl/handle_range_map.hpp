@@ -69,6 +69,8 @@ public:
     const TLocMap& GetMap(void) const { return m_LocMap; }
     bool empty(void) const { return m_LocMap.empty(); }
 
+    void clear(void);
+
     // iterate
     const_iterator begin(void) const { return m_LocMap.begin(); }
     const_iterator end(void) const { return m_LocMap.end(); }
@@ -86,7 +88,6 @@ private:
     // Split the location and add range lists to the locmap
     void x_ProcessLocation(const CSeq_loc& loc);
 
-    CSeq_id_Mapper* m_IdMapper;
     TLocMap m_LocMap;
 };
 
@@ -106,6 +107,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2003/07/17 20:07:55  vasilche
+ * Reduced memory usage by feature indexes.
+ * SNP data is loaded separately through PUBSEQ_OS.
+ * String compression for SNP data.
+ *
  * Revision 1.14  2003/06/02 16:01:37  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr

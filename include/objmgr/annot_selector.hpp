@@ -38,6 +38,8 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
+#include <set>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -294,6 +296,33 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    struct NCBI_XOBJMGR_EXPORT SSources : public CObject
+    {
+    public:
+        SSources(void);
+        ~SSources(void);
+        
+        typedef set<string> TSources;
+
+        TSources m_Sources;
+
+    private:
+        SSources(const SSources&);
+        const SSources& operator=(const SSources&);
+    };
+
+    SAnnotSelector& SetDataSource(const string& source);
+    bool IsSetDataSources(void) const
+        {
+            return m_Sources;
+        }
+    bool HasDataSource(const string& source) const
+        {
+            return m_Sources &&
+                m_Sources->m_Sources.find(source) !=
+                m_Sources->m_Sources.end();
+        }
+
 protected:
     int                   m_ResolveDepth;
     TFeatSubtype          m_FeatSubtype;  // Seq-feat subtype
@@ -306,6 +335,7 @@ protected:
     EIdResolving          m_IdResolving;
     CConstRef<CObject>    m_LimitObject;
     int                   m_MaxSize;
+    CRef<SSources>        m_Sources;
 };
 
 
@@ -315,6 +345,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.12  2003/06/25 20:56:29  grichenk
 * Added max number of annotations to annot-selector, updated demo.
 *

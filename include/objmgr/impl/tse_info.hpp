@@ -35,19 +35,21 @@
 
 
 #include <objmgr/impl/seq_entry_info.hpp>
-#include <objmgr/impl/handle_range_map.hpp>
-#include <objmgr/annot_selector.hpp>
+#include <objmgr/seq_id_handle.hpp>
+
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
+
 #include <map>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CBioseq_Info;
 class CSeq_entry_Info;
-
+class CHandleRange;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -62,17 +64,26 @@ class CSeq_entry;
 class CBioseq;
 class CDataSource;
 class CAnnotObject_Info;
+class CSeq_annot_Info;
 class CAnnotTypes_CI;
 
-struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index {
+struct NCBI_XOBJMGR_EXPORT SAnnotObject_Key
+{
+    CAnnotObject_Info*      m_AnnotObject_Info;
+    CSeq_id_Handle          m_Handle;
+    CRange<TSeqPos>         m_Range;
+};
+
+struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index
+{
     SAnnotObject_Index(void);
     ~SAnnotObject_Index(void);
     SAnnotObject_Index(const SAnnotObject_Index&);
     SAnnotObject_Index& operator=(const SAnnotObject_Index&);
 
-    CRef<CAnnotObject_Info>                   m_AnnotObject;
-    int                                       m_IndexBy;
-    CHandleRangeMap::TLocMap::const_iterator  m_HandleRange;
+    CAnnotObject_Info*                  m_AnnotObject_Info;
+    int                                 m_AnnotLocationIndex;
+    CRef< CObjectFor<CHandleRange> >    m_HandleRange;
 };
 
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
@@ -105,28 +116,57 @@ public:
     typedef CRangeMultimap<SAnnotObject_Index,
                            TRange::position_type>            TRangeMap;
 
-    typedef SAnnotTypeSelector TAnnotSelectorKey;
-    typedef map<TAnnotSelectorKey, TRangeMap>                TAnnotSelectorMap;
-    typedef map<CSeq_id_Handle, TAnnotSelectorMap>           TAnnotObjs;
+    struct NCBI_XOBJMGR_EXPORT SIdAnnotObjs
+    {
+        SIdAnnotObjs(void);
+        ~SIdAnnotObjs(void);
+        SIdAnnotObjs(const SIdAnnotObjs& objs);
+        const SIdAnnotObjs& operator=(const SIdAnnotObjs& objs);
 
+        vector<TRangeMap> m_RangeMap;
+    };
 
-    // index access methods
-    const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
-                                   const SAnnotTypeSelector& selector) const;
-    TRangeMap& x_SetRangeMap(const CSeq_id_Handle& id,
-                             const SAnnotTypeSelector& selector);
-    void x_DropRangeMap(const CSeq_id_Handle& id,
-                        const SAnnotTypeSelector& sel);
-    static TRangeMap& x_SetRangeMap(TAnnotSelectorMap& selMap,
-                                    const SAnnotTypeSelector& selector);
-    static void x_DropRangeMap(TAnnotSelectorMap& selMap,
-                               const SAnnotTypeSelector& selector);
+    typedef map<CSeq_id_Handle, SIdAnnotObjs>                TAnnotObjs;
 
     bool ContainsSeqid(CSeq_id_Handle id) const;
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 private:
+    friend class CTSE_Guard;
+    friend class CDataSource;
+    friend class CScope;
+    friend class CDataLoader;
+    friend class CAnnotTypes_CI;
+    friend class CSeq_annot_Info;
+
+    static pair<size_t, size_t> CTSE_Info::x_GetIndexRange(int annot_type,
+                                                           int feat_type);
+    static size_t x_GetTypeIndex(int annot_type, int feat_type);
+    static size_t x_GetTypeIndex(const SAnnotObject_Key& key);
+
+    // index access methods
+    const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
+                                   size_t index) const;
+    const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
+                                   int annot_type,
+                                   int feat_type) const;
+
+    void x_MapAnnotObject(TRangeMap& rangeMap,
+                          const SAnnotObject_Key& key,
+                          const SAnnotObject_Index& annotRef);
+    bool x_DropAnnotObject(TRangeMap& rangeMap,
+                           const SAnnotObject_Key& key);
+    void x_MapAnnotObject(SIdAnnotObjs& objs,
+                          const SAnnotObject_Key& key,
+                          const SAnnotObject_Index& annotRef);
+    bool x_DropAnnotObject(SIdAnnotObjs& objs,
+                           const SAnnotObject_Key& key);
+    void x_MapAnnotObject(const SAnnotObject_Key& key,
+                          const SAnnotObject_Index& annotRef);
+    void x_DropAnnotObject(const SAnnotObject_Key& key);
+
+
     // Parent data-source
     CDataSource* m_DataSource;
 
@@ -147,12 +187,6 @@ private:
     // May be used by data loaders to store blob-id
     typedef CConstRef<CObject> TBlob_ID;
     TBlob_ID   m_Blob_ID;
-
-    friend class CTSE_Guard;
-    friend class CDataSource;
-    friend class CScope;
-    friend class CDataLoader;
-    friend class CAnnotTypes_CI;
 
     // Hide copy methods
     CTSE_Info(const CTSE_Info&);
@@ -233,12 +267,26 @@ bool CTSE_Info::ContainsSeqid(CSeq_id_Handle id) const
 }
 
 
+inline
+const CTSE_Info::TRangeMap*
+CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id,
+                         int annot_type, int feat_type) const
+{
+    return x_GetRangeMap(id, x_GetTypeIndex(annot_type, feat_type));
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.34  2003/07/14 21:13:24  grichenk
 * Added possibility to resolve seq-map iterator withing a single TSE
 * and to skip intermediate references during this resolving.

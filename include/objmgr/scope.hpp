@@ -83,6 +83,7 @@ class CBioseq_Handle;
 class CHandleRangeMap;
 struct CDataSource_ScopeInfo;
 struct SAnnotTypeSelector;
+struct SAnnotSelector;
 
 class NCBI_XOBJMGR_EXPORT CScope : public CObject
 {
@@ -167,12 +168,12 @@ private:
     typedef map<CSeqMatch_Info, CDataSource_ScopeInfo*>   TSeqMatchSet;
 
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotTypeSelector& sel);
+                          const SAnnotSelector& sel);
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotTypeSelector& sel,
+                          const SAnnotSelector& sel,
                           const CSeq_entry& limit_entry);
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotTypeSelector& sel,
+                          const SAnnotSelector& sel,
                           const CSeq_annot& limit_annot);
     CConstRef<TAnnotRefSet> GetTSESetWithAnnots(const CSeq_id_Handle& idh);
 
@@ -277,6 +278,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.53  2003/06/30 18:42:09  vasilche
 * CPriority_I made to use less memory allocations/deallocations.
 *

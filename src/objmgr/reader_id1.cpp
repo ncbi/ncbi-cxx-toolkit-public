@@ -119,7 +119,6 @@ bool CId1Reader::x_RetrieveSeqrefs(TSeqrefs& sr,
 CId1Seqref::CId1Seqref(CId1Reader& reader, int gi, int sat, int satkey)
     : m_Reader(reader), m_Gi(gi), m_Sat(sat), m_SatKey(satkey)
 {
-    Flag() = 0;
 }
 
 
@@ -248,10 +247,11 @@ const string CId1Seqref::printTSE(void) const
 int CId1Seqref::Compare(const CSeqref& seqRef, EMatchLevel ml) const
 {
     const CId1Seqref* p = dynamic_cast<const CId1Seqref*> (&seqRef);
-    if (!p) {
-        throw runtime_error("Attempt to compare seqrefs from different sources");
+    if ( !p ) {
+        THROW1_TRACE(runtime_error,
+                     "Attempt to compare seqrefs from different sources");
     }
-    if (ml == eContext)
+    if ( ml == eContext )
         return 0;
     //cout << "Compare" ; print(); cout << " vs "; p->print(); cout << endl;
 
@@ -346,6 +346,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.39  2003/07/17 20:07:56  vasilche
+ * Reduced memory usage by feature indexes.
+ * SNP data is loaded separately through PUBSEQ_OS.
+ * String compression for SNP data.
+ *
  * Revision 1.38  2003/06/02 16:06:38  dicuccio
  * Rearranged src/objects/ subtree.  This includes the following shifts:
  *     - src/objects/asn2asn --> arc/app/asn2asn

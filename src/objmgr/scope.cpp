@@ -551,7 +551,7 @@ CRef<CBioseq_ScopeInfo> CScope::x_ResolveSeq_id(const CSeq_id_Handle& idh)
 
 
 void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                              const SAnnotTypeSelector& sel)
+                              const SAnnotSelector& sel)
 {
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
@@ -561,7 +561,7 @@ void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
 
 
 void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                              const SAnnotTypeSelector& sel,
+                              const SAnnotSelector& sel,
                               const CSeq_entry& entry)
 {
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
@@ -577,7 +577,7 @@ void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
 
 
 void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                              const SAnnotTypeSelector& sel,
+                              const SAnnotSelector& sel,
                               const CSeq_annot& annot)
 {
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
@@ -786,6 +786,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2003/07/17 20:07:56  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.75  2003/07/14 21:13:59  grichenk
 * Added seq-loc dump in GetBioseqHandle(CSeqLoc)
 *

@@ -58,9 +58,6 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 
-//#include <serial/iterator.hpp>
-
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -448,6 +445,7 @@ void CDataSource::x_DetachTSE(CTSE_Info& tse_info)
     }
 
     x_DetachSeq_entry_Contents(tse_info);
+    x_DetachSeq_annots(tse_info);
 
     x_DeleteTSE_Info(tse_info);
 }
@@ -601,6 +599,20 @@ void CDataSource::x_DeleteBioseq_Info(CBioseq_Info& info)
 }
 
 
+void CDataSource::x_RegisterAnnotObject(const CObject* object,
+                                        CAnnotObject_Info* info)
+{
+    //_VERIFY(m_AnnotObject_InfoMap.
+    //        insert(TAnnotObject_InfoMap::value_type(object, info)).second);
+}
+
+
+void CDataSource::x_UnregisterAnnotObject(const CObject* object)
+{
+    //_VERIFY(m_AnnotObject_InfoMap.erase(object));
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -662,7 +674,7 @@ void CDataSource::x_DetachSeq_entry_Contents(CSeq_entry_Info& entry)
 
     NON_CONST_ITERATE( CSeq_entry_Info::TAnnots, it, entry.m_Annots ) {
         if ( *it ) {
-            x_UnindexSeq_annot(**it);
+            x_DetachSeq_annot(**it);
             x_DeleteSeq_annot_Info(**it);
             it->Reset();
         }
@@ -670,7 +682,7 @@ void CDataSource::x_DetachSeq_entry_Contents(CSeq_entry_Info& entry)
     entry.m_Annots.clear();
 
     if ( entry.m_Bioseq ) {
-        x_UnindexBioseq(*entry.m_Bioseq);
+        x_DetachBioseq(*entry.m_Bioseq);
         x_DeleteBioseq_Info(*entry.m_Bioseq);
         entry.m_Bioseq.Reset();
     }
@@ -753,7 +765,7 @@ void CDataSource::x_IndexBioseq(CBioseq_Info& seq_info)
 }
 
 
-void CDataSource::x_UnindexBioseq(CBioseq_Info& seq_info)
+void CDataSource::x_DetachBioseq(CBioseq_Info& seq_info)
 {
     CRef<CTSE_Info> tse_info(&seq_info.GetTSE_Info());
     ITERATE ( CBioseq_Info::TSynonyms, syn, seq_info.m_Synonyms ) {
@@ -825,71 +837,12 @@ bool CDataSource::AttachAnnot(CSeq_entry& entry,
 }
 
 
-void CDataSource::x_IndexSeq_annot(CSeq_annot_Info& annot_info)
+void CDataSource::x_DetachSeq_annots(CTSE_Info& tse_info)
 {
-    if ( annot_info.m_Indexed ) {
-        return;
+    ITERATE ( CTSE_Info::TAnnotObjs, it, tse_info.m_AnnotObjs ) {
+        x_DropTSE_ref(it->first, &tse_info);
     }
-    _ASSERT(m_DirtyAnnotIndexCount > 0);
-    CSeq_annot::C_Data& data = annot_info.GetSeq_annot().SetData();
-    CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard
-        (annot_info.GetTSE_Info().m_AnnotObjsLock);
-    switch ( data.Which() ) {
-    case CSeq_annot::C_Data::e_Ftable:
-        NON_CONST_ITERATE ( CSeq_annot::C_Data::TFtable, i,
-                            data.SetFtable() ) {
-            x_MapAnnotObject(**i, annot_info);
-        }
-        break;
-    case CSeq_annot::C_Data::e_Align:
-        NON_CONST_ITERATE ( CSeq_annot::C_Data::TAlign, i,
-                            data.SetAlign() ) {
-            x_MapAnnotObject(**i, annot_info);
-        }
-        break;
-    case CSeq_annot::C_Data::e_Graph:
-        NON_CONST_ITERATE ( CSeq_annot::C_Data::TGraph, i,
-                            data.SetGraph() ) {
-            x_MapAnnotObject(**i, annot_info);
-        }
-        break;
-    }
-    annot_info.m_Indexed = true;
-    --m_DirtyAnnotIndexCount;
-    _ASSERT(m_DirtyAnnotIndexCount >= 0);
-}
-
-
-void CDataSource::x_UnindexSeq_annot(CSeq_annot_Info& annot_info)
-{
-    if ( !annot_info.m_Indexed ) {
-        return;
-    }
-    CSeq_annot::C_Data& data = annot_info.GetSeq_annot().SetData();
-    CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard
-        (annot_info.GetTSE_Info().m_AnnotObjsLock);
-    switch ( data.Which() ) {
-    case CSeq_annot::C_Data::e_Ftable:
-        NON_CONST_ITERATE( CSeq_annot::C_Data::TFtable, i,
-                           data.SetFtable() ) {
-            x_DropAnnotObject(&**i, annot_info);
-        }
-        break;
-    case CSeq_annot::C_Data::e_Align:
-        NON_CONST_ITERATE( CSeq_annot::C_Data::TAlign, i,
-                           data.SetAlign() ) {
-            x_DropAnnotObject(&**i, annot_info);
-        }
-        break;
-    case CSeq_annot::C_Data::e_Graph:
-        NON_CONST_ITERATE( CSeq_annot::C_Data::TGraph, i,
-                           data.SetGraph() ) {
-            x_DropAnnotObject(&**i, annot_info);
-        }
-        break;
-    }
-    annot_info.m_Indexed = false;
-    ++m_DirtyAnnotIndexCount;
+    tse_info.m_AnnotObjs.clear();
 }
 
 
@@ -998,17 +951,28 @@ void CDataSource::x_CreateSeqMap(CBioseq_Info& seq_info)
 
 
 void CDataSource::x_GetAnnotData(const CHandleRangeMap& loc,
-                                 const SAnnotTypeSelector& sel)
+                                 const SAnnotSelector& sel)
 {
     if ( m_Loader ) {
         // Send request to the loader
         switch ( sel.GetAnnotChoice() ) {
         case CSeq_annot::C_Data::e_Ftable:
-            m_Loader->GetRecords(loc, CDataLoader::eFeatures);
+            if ( !sel.IsSetDataSources() ) {
+                m_Loader->GetRecords(loc, CDataLoader::eFeatures);
+                m_Loader->GetRecords(loc, CDataLoader::eExternal);
+            }
+            else {
+                if ( sel.HasDataSource("") ) {
+                    m_Loader->GetRecords(loc, CDataLoader::eFeatures);
+                }
+                if ( sel.HasDataSource("SNP") ) {
+                    m_Loader->GetRecords(loc, CDataLoader::eExternal);
+                }
+            }
             break;
         case CSeq_annot::C_Data::e_Align:
             //### Need special flag for alignments
-            m_Loader->GetRecords(loc, CDataLoader::eAll);
+            m_Loader->GetRecords(loc, CDataLoader::eAlign);
             break;
         case CSeq_annot::C_Data::e_Graph:
             m_Loader->GetRecords(loc, CDataLoader::eGraph);
@@ -1019,7 +983,7 @@ void CDataSource::x_GetAnnotData(const CHandleRangeMap& loc,
 
 
 void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                                   const SAnnotTypeSelector& sel)
+                                   const SAnnotSelector& sel)
 {
     x_GetAnnotData(loc, sel);
     if ( m_DirtyAnnotIndexCount ) {
@@ -1037,7 +1001,7 @@ void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
 
 
 void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                                   const SAnnotTypeSelector& sel,
+                                   const SAnnotSelector& sel,
                                    const CSeq_entry_Info& entry_info)
 {
     x_GetAnnotData(loc, sel);
@@ -1047,7 +1011,7 @@ void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
 
 
 void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& /*loc*/,
-                                   const SAnnotTypeSelector& /*sel*/,
+                                   const SAnnotSelector& /*sel*/,
                                    const CSeq_annot_Info& annot_info)
 {
     TWriteLockGuard ds_guard(m_DataSource_Mtx);
@@ -1106,176 +1070,92 @@ void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
     TTSEMap::const_iterator rtse_it = m_TSE_ref.find(idh);
     if (rtse_it != m_TSE_ref.end()  &&  !rtse_it->second.empty()) {
         ITERATE(CTSE_LockingSet::TTSESet, tse, rtse_it->second) {
-            _ASSERT((*tse)->m_Bioseqs.find(idh) == (*tse)->m_Bioseqs.end());
-            with_ref.insert(TTSE_Lock(*tse)); // with reference only
-        }
-    }
-}
-
-
-bool CDataSource::x_MakeGenericSelector(SAnnotTypeSelector& sel) const
-{
-    // make more generic selector
-    if ( sel.GetFeatChoice() != CSeqFeatData::e_not_set ) {
-        sel.m_FeatChoice = CSeqFeatData::e_not_set;
-    }
-    else {
-        // we already did most generic selector
-        return false;
-    }
-    return true;
-}
-
-
-void CDataSource::x_MapAnnotObject(CTSE_Info::TRangeMap& mapByRange,
-                                   const CTSE_Info::TRange& range,
-                                   const SAnnotObject_Index& annotRef)
-{
-    mapByRange.insert(CTSE_Info::TRangeMap::value_type(range, annotRef));
-}
-
-
-bool CDataSource::x_DropAnnotObject(CTSE_Info::TRangeMap& mapByRange,
-                                    const CTSE_Info::TRange& range,
-                                    CRef<CAnnotObject_Info>& annot_info)
-{
-    for ( CTSE_Info::TRangeMap::iterator it = mapByRange.find(range);
-          it && it->first == range; ++it ) {
-        if ( it->second.m_AnnotObject == annot_info ) {
-            mapByRange.erase(it);
-            return mapByRange.empty();
-        }
-    }
-    _ASSERT(0);
-    return mapByRange.empty();
-}
-
-
-void CDataSource::x_MapAnnotObject(CRef<CAnnotObject_Info>& annot_info,
-                                   const CHandleRangeMap& hrm,
-                                   const SAnnotTypeSelector& annotSelector)
-{
-    SAnnotObject_Index annotRef;
-    annotRef.m_AnnotObject = annot_info;
-    annotRef.m_IndexBy = annotSelector.GetFeatProduct();
-    // Iterate handles
-    CRef<CTSE_Info> tse_info(&annot_info->GetTSE_Info());
-    ITERATE ( CHandleRangeMap::TLocMap, mapit, hrm.GetMap() ) {
-        annotRef.m_HandleRange = mapit;
-        if ( tse_info->m_Bioseqs.find(mapit->first) ==
-             tse_info->m_Bioseqs.end() ) {
-            // skip TSEs with both sequence and its annots
-            if ( m_TSE_ref[mapit->first].insert(&*tse_info) ) {
-                _TRACE("TSE_ref["<<mapit->first.AsString()<<"].insert("<<&tse_info->GetTSE()<<")");
-            }
-        }
-
-        CTSE_Info::TAnnotSelectorMap& selMap =
-            tse_info->m_AnnotObjs[mapit->first];
-
-        // repeat for more generic types of selector
-        SAnnotTypeSelector sel(annotSelector);
-        do {
-            x_MapAnnotObject(tse_info->x_SetRangeMap(selMap, sel),
-                             mapit->second.GetOverlappingRange(),
-                             annotRef);
-        } while ( x_MakeGenericSelector(sel) );
-    }
-}
-
-
-void CDataSource::x_DropAnnotObject(CRef<CAnnotObject_Info>& annot_info,
-                                    const CHandleRangeMap& hrm,
-                                    const SAnnotTypeSelector& annotSelector)
-{
-    // Iterate id handles
-    CRef<CTSE_Info> tse_info(&annot_info->GetTSE_Info());
-    ITERATE ( CHandleRangeMap::TLocMap, mapit, hrm.GetMap() ) {
-        CTSE_Info::TAnnotSelectorMap& selMap =
-            tse_info->m_AnnotObjs[mapit->first];
-
-        // repeat for more generic types of selector
-        SAnnotTypeSelector sel(annotSelector);
-        do {
-            if ( x_DropAnnotObject(tse_info->x_SetRangeMap(selMap, sel),
-                                   mapit->second.GetOverlappingRange(),
-                                   annot_info) ) {
-                tse_info->x_DropRangeMap(selMap, sel);
-            }
-        } while ( x_MakeGenericSelector(sel) );
-
-        if ( selMap.empty() ) {
-            tse_info->m_AnnotObjs.erase(mapit->first);
-            _TRACE("TSE_ref["<<mapit->first.AsString()<<"].erase("<<&tse_info->GetTSE()<<")");
-            m_TSE_ref[mapit->first].erase(&*tse_info);
-            if (m_TSE_ref[mapit->first].empty()) {
-                m_TSE_ref.erase(mapit->first);
+            if ( (*tse)->m_Bioseqs.find(idh) == (*tse)->m_Bioseqs.end() ) {
+                _ASSERT((*tse)->m_Bioseqs.find(idh)==(*tse)->m_Bioseqs.end());
+                with_ref.insert(TTSE_Lock(*tse)); // with reference only
             }
         }
     }
 }
 
 
-void CDataSource::x_MapAnnotObject(CAnnotObject_Info* annot_info_ptr)
+void CDataSource::x_IndexSeq_annot(CSeq_annot_Info& annot_info)
 {
-    CRef<CAnnotObject_Info> annot_info(annot_info_ptr);
-    _VERIFY(m_AnnotObject_InfoMap.insert
-            (TAnnotObject_InfoMap::value_type(annot_info->GetObjectPointer(),
-                                              annot_info)).second);
-    SAnnotTypeSelector annot_sel(annot_info->Which());
-    if ( annot_info->IsFeat() ) {
-        annot_sel.m_FeatChoice = annot_info->GetFeat().GetData().Which();
-    }
-    x_MapAnnotObject(annot_info, annot_info->GetRangeMap(), annot_sel);
-    if ( annot_info->IsFeat() && annot_info->GetProductMap() ) {
-        annot_sel.m_FeatProduct = true;
-        x_MapAnnotObject(annot_info, *annot_info->GetProductMap(), annot_sel);
-    }
-}
-
-
-void CDataSource::x_DropAnnotObject(const CObject* annotPtr,
-                                    CSeq_annot_Info& _DEBUG_ARG(annot))
-{
-    TAnnotObject_InfoMap::iterator aoit = m_AnnotObject_InfoMap.find(annotPtr);
-    if ( aoit == m_AnnotObject_InfoMap.end() ) {
-        // not indexed
+    if ( annot_info.m_Indexed ) {
         return;
     }
-    CRef<CAnnotObject_Info> annotObj(aoit->second);
-    _ASSERT(&annotObj->GetSeq_annot_Info() == &annot);
-    m_AnnotObject_InfoMap.erase(aoit);
 
-    SAnnotTypeSelector annotSel(annotObj->Which());
-    if ( annotObj->IsFeat() ) {
-        annotSel.m_FeatChoice = annotObj->GetFeat().GetData().Which();
+    _ASSERT(m_DirtyAnnotIndexCount > 0);
+
+    CSeq_annot::C_Data& data = annot_info.GetSeq_annot().SetData();
+    switch ( data.Which() ) {
+    case CSeq_annot::C_Data::e_Ftable:
+        annot_info.x_MapAnnotObjects(data.SetFtable());
+        break;
+    case CSeq_annot::C_Data::e_Align:
+        annot_info.x_MapAnnotObjects(data.SetAlign());
+        break;
+    case CSeq_annot::C_Data::e_Graph:
+        annot_info.x_MapAnnotObjects(data.SetGraph());
+        break;
     }
-    x_DropAnnotObject(annotObj, annotObj->GetRangeMap(), annotSel);
-    if ( annotObj->IsFeat() && annotObj->GetProductMap() ) {
-        annotSel.m_FeatProduct = true;
-        x_DropAnnotObject(annotObj, *annotObj->GetProductMap(), annotSel);
-    }
-}    
 
-
-void CDataSource::x_MapAnnotObject(CSeq_feat& feat,
-                                   CSeq_annot_Info& annot_info)
-{
-    x_MapAnnotObject(new CAnnotObject_Info(feat, annot_info));
+    annot_info.m_Indexed = true;
+    --m_DirtyAnnotIndexCount;
+    _ASSERT(m_DirtyAnnotIndexCount >= 0);
 }
 
 
-void CDataSource::x_MapAnnotObject(CSeq_align& align,
-                                   CSeq_annot_Info& annot_info)
+void CDataSource::x_UnindexSeq_annot(CSeq_annot_Info& annot_info)
 {
-    x_MapAnnotObject(new CAnnotObject_Info(align, annot_info));
+    TWriteLockGuard ds_guard(m_DataSource_Mtx);
+    if ( !annot_info.m_Indexed ) {
+        return;
+    }
+
+    annot_info.x_UnmapAnnotObjects();
+
+    annot_info.m_Indexed = false;
+    ++m_DirtyAnnotIndexCount;
 }
 
 
-void CDataSource::x_MapAnnotObject(CSeq_graph& graph,
-                                   CSeq_annot_Info& annot_info)
+void CDataSource::x_DetachSeq_annot(CSeq_annot_Info& annot_info)
 {
-    x_MapAnnotObject(new CAnnotObject_Info(graph, annot_info));
+    TWriteLockGuard ds_guard(m_DataSource_Mtx);
+    if ( !annot_info.m_Indexed ) {
+        return;
+    }
+
+    annot_info.x_DropAnnotObjects();
+
+    annot_info.m_Indexed = false;
+    ++m_DirtyAnnotIndexCount;
+}
+
+
+void CDataSource::x_AddTSE_ref(const CSeq_id_Handle& idh, CTSE_Info* tse_info)
+{
+    _TRACE("x_AddTSE_ref("<<idh.AsString()<<","<<&tse_info->GetTSE()<<")");
+    TTSEMap::iterator it = m_TSE_ref.lower_bound(idh);
+    if ( it == m_TSE_ref.end() || it->first != idh ) {
+        it = m_TSE_ref.insert(it, TTSEMap::value_type(idh,
+                                                      CTSE_LockingSet()));
+    }
+    _ASSERT(it != m_TSE_ref.end() && it->first == idh);
+    _VERIFY(it->second.insert(tse_info));
+}
+
+
+void CDataSource::x_DropTSE_ref(const CSeq_id_Handle& idh, CTSE_Info* tse_info)
+{
+    _TRACE("x_DropTSE_ref("<<idh.AsString()<<","<<&tse_info->GetTSE()<<")");
+    TTSEMap::iterator it = m_TSE_ref.find(idh);
+    _ASSERT(it != m_TSE_ref.end() && it->first == idh);
+    it->second.erase(tse_info);
+    if ( it->second.empty() ) {
+        m_TSE_ref.erase(it);
+    }
 }
 
 
@@ -1509,6 +1389,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.114  2003/07/17 20:07:56  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.113  2003/07/09 17:54:29  dicuccio
 * Fixed uninitialized variables in CDataSource and CSeq_annot_Info
 *

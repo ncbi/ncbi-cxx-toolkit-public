@@ -34,9 +34,15 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/annot_selector.hpp>
-#include <objmgr/impl/handle_range_map.hpp>
+
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+
 #include <memory>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -50,11 +56,13 @@ class CSeq_entry;
 class CSeq_entry_Info;
 class CSeq_annot;
 class CSeq_annot_Info;
+class CTSE_Info;
 
 // General Seq-annot object
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Info : public CObject
 {
 public:
+    CAnnotObject_Info(void);
     CAnnotObject_Info(CSeq_feat& feat,
                       CSeq_annot_Info& annot);
     CAnnotObject_Info(CSeq_align& align,
@@ -62,6 +70,12 @@ public:
     CAnnotObject_Info(CSeq_graph& graph,
                       CSeq_annot_Info& annot);
     virtual ~CAnnotObject_Info(void);
+    CAnnotObject_Info(const CAnnotObject_Info&);
+    const CAnnotObject_Info& operator=(const CAnnotObject_Info&);
+
+    typedef CSeq_annot::C_Data::E_Choice TAnnotType;
+    typedef CSeqFeatData::E_Choice       TFeatType;
+    typedef CSeqFeatData::ESubtype       TFeatSubtype;
 
     // Get Seq-annot, containing the element
     const CSeq_annot& GetSeq_annot(void) const;
@@ -80,7 +94,10 @@ public:
     // Get CDataSource object
     CDataSource& GetDataSource(void) const;
 
-    SAnnotTypeSelector::TAnnotChoice Which(void) const;
+    TAnnotType Which(void) const;
+    TAnnotType GetAnnotType(void) const;
+    TFeatType GetFeatType(void) const;
+    TFeatSubtype GetFeatSubtype(void) const;
 
     const CRef<CObject>& GetObject(void) const;
     const CObject* GetObjectPointer(void) const;
@@ -91,21 +108,18 @@ public:
 
     bool IsAlign(void) const;
     const CSeq_align& GetAlign(void) const;
+    const CSeq_align* GetAlignFast(void) const;
 
     bool IsGraph(void) const;
     const CSeq_graph& GetGraph(void) const;
     const CSeq_graph* GetGraphFast(void) const; // unchecked & unsafe
 
-    const CHandleRangeMap& GetRangeMap(void) const;
-    const CHandleRangeMap* GetProductMap(void) const; // may be null
+    void GetMaps(vector<CHandleRangeMap>& hrmaps) const;
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 private:
     friend class CDataSource;
-
-    CAnnotObject_Info(const CAnnotObject_Info&);
-    CAnnotObject_Info& operator=(const CAnnotObject_Info&);
 
     // Constructors used by CAnnotTypes_CI only to create fake annotations
     // for sequence segments. The annot object points to the seq-annot
@@ -113,13 +127,13 @@ private:
     friend class CAnnotTypes_CI;
     friend class CAnnotObject_Less;
 
-    void x_ProcessAlign(const CSeq_align& align);
+    void x_ProcessAlign(CHandleRangeMap& hrmap, const CSeq_align& align) const;
 
-    SAnnotTypeSelector::TAnnotChoice m_Choice;
-    CRef<CObject>                m_Object;
-    CSeq_annot_Info*             m_Seq_annot_Info;
-    CHandleRangeMap              m_RangeMap;   // 
-    auto_ptr<CHandleRangeMap>    m_ProductMap; // non-null for features with product
+    TAnnotType                   m_AnnotType;      // annot object type
+    TFeatType                    m_FeatType;       // feature type or e_not_set
+    TFeatSubtype                 m_FeatSubtype;    // feature subtype
+    CRef<CObject>                m_Object;         // annot object itself
+    CSeq_annot_Info*             m_Seq_annot_Info; // parent annot
 };
 
 
@@ -131,9 +145,30 @@ private:
 
 
 inline
-SAnnotSelector::TAnnotChoice CAnnotObject_Info::Which(void) const
+CAnnotObject_Info::TAnnotType CAnnotObject_Info::Which(void) const
 {
-    return m_Choice;
+    return m_AnnotType;
+}
+
+
+inline
+CAnnotObject_Info::TAnnotType CAnnotObject_Info::GetAnnotType(void) const
+{
+    return m_AnnotType;
+}
+
+
+inline
+CAnnotObject_Info::TFeatType CAnnotObject_Info::GetFeatType(void) const
+{
+    return m_FeatType;
+}
+
+
+inline
+CAnnotObject_Info::TFeatSubtype CAnnotObject_Info::GetFeatSubtype(void) const
+{
+    return m_FeatSubtype;
 }
 
 
@@ -154,35 +189,45 @@ const CObject* CAnnotObject_Info::GetObjectPointer(void) const
 inline
 bool CAnnotObject_Info::IsFeat(void) const
 {
-    return m_Choice == CSeq_annot::C_Data::e_Ftable;
+    return m_AnnotType == CSeq_annot::C_Data::e_Ftable;
 }
 
 
 inline
 bool CAnnotObject_Info::IsAlign(void) const
 {
-    return m_Choice == CSeq_annot::C_Data::e_Align;
+    return m_AnnotType == CSeq_annot::C_Data::e_Align;
 }
 
 
 inline
 bool CAnnotObject_Info::IsGraph(void) const
 {
-    return m_Choice == CSeq_annot::C_Data::e_Graph;
+    return m_AnnotType == CSeq_annot::C_Data::e_Graph;
 }
 
 
 inline
-const CHandleRangeMap& CAnnotObject_Info::GetRangeMap(void) const
+const CSeq_feat* CAnnotObject_Info::GetFeatFast(void) const
 {
-    return m_RangeMap;
+    _ASSERT(IsFeat());
+    return static_cast<const CSeq_feat*>(m_Object.GetPointerOrNull());
 }
 
 
 inline
-const CHandleRangeMap* CAnnotObject_Info::GetProductMap(void) const
+const CSeq_graph* CAnnotObject_Info::GetGraphFast(void) const
 {
-    return m_ProductMap.get();
+    _ASSERT(IsGraph());
+    return static_cast<const CSeq_graph*>(m_Object.GetPointerOrNull());
+}
+
+
+inline
+const CSeq_align* CAnnotObject_Info::GetAlignFast(void) const
+{
+    _ASSERT(IsAlign());
+    return static_cast<const CSeq_align*>(m_Object.GetPointerOrNull());
 }
 
 
@@ -206,6 +251,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.8  2003/06/02 16:01:37  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

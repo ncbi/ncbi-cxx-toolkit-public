@@ -31,18 +31,20 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+
 #include <serial/serial.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
+
 #include <util/bytesrc.hpp>
+
 #include <objmgr/reader.hpp>
 
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 
-#include <vector>
 #include <memory>
 
 
@@ -107,22 +109,25 @@ private:
 class NCBI_XOBJMGR_EXPORT CPubseqBlob : public CBlob
 {
 public:
-    CPubseqBlob(CPubseqBlobSource& source, int cls, const string& descr);
+    CPubseqBlob(CPubseqBlobSource& source,
+                int cls, const string& descr,
+                bool snp);
     ~CPubseqBlob(void);
 
     CSeq_entry *Seq_entry();
 
 private:
     CPubseqBlobSource& m_Source;
-    CRef<CSeq_entry> m_Seq_entry;
+    CRef<CSeq_entry>   m_Seq_entry;
+    bool               m_SNP;
 };
 
 
-class NCBI_XOBJMGR_EXPORT CResultByteSource : public CByteSource
+class NCBI_XOBJMGR_EXPORT CResultBtSrc : public CByteSource
 {
 public:
-    CResultByteSource(CDB_Result* result);
-    ~CResultByteSource();
+    CResultBtSrc(CDB_Result* result);
+    ~CResultBtSrc();
 
     virtual CRef<CByteSourceReader> Open(void);
 
@@ -131,16 +136,56 @@ private:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CResultByteSourceReader : public CByteSourceReader
+class NCBI_XOBJMGR_EXPORT CResultBtSrcRdr : public CByteSourceReader
 {
 public:
-    CResultByteSourceReader(CDB_Result* result);
-    ~CResultByteSourceReader();
+    CResultBtSrcRdr(CDB_Result* result);
+    ~CResultBtSrcRdr();
 
     virtual size_t Read(char* buffer, size_t bufferLength);
 
 private:
     CDB_Result* m_Result;
+};
+
+
+class NCBI_XOBJMGR_EXPORT CResultZBtSrc : public CByteSource
+{
+public:
+    CResultZBtSrc(CDB_Result* result);
+    ~CResultZBtSrc();
+
+    virtual CRef<CByteSourceReader> Open(void);
+
+private:
+    CDB_Result* m_Result;
+};
+
+
+class CResultZBtSrcX;
+class CResultZBtSrcRdr;
+
+
+class NCBI_XOBJMGR_EXPORT CResultZBtSrcRdr : public CByteSourceReader
+{
+public:
+    CResultZBtSrcRdr(CDB_Result* result);
+    ~CResultZBtSrcRdr();
+
+    enum EType {
+        eType_unknown,
+        eType_plain,
+        eType_zlib
+    };
+
+    virtual size_t Read(char* buffer, size_t bufferLength);
+
+    size_t x_Read(char* buffer, size_t bufferLength);
+
+private:
+    CDB_Result* m_Result;
+    EType       m_Type;
+    auto_ptr<CResultZBtSrcX> m_Decompressor;
 };
 
 
@@ -150,6 +195,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.4  2003/06/02 16:01:37  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr
@@ -160,7 +210,7 @@ END_NCBI_SCOPE
 *     - include/objects/validator --> include/objtools/validator
 *
 * Revision 1.3  2003/04/15 16:31:37  dicuccio
-* Placed CResultByteSourceReader in XOBJMGR Win32 export namespace (was
+* Placed CResultBtSrcRdr in XOBJMGR Win32 export namespace (was
 * erroneously in XUTIL)
 *
 * Revision 1.2  2003/04/15 15:30:14  vasilche

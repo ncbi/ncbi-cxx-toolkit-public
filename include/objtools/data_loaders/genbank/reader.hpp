@@ -97,14 +97,31 @@ public:
         eSeq
     };
 
+    enum FFlags {
+        fHasCore     = 1 << 0,
+        fHasDescr    = 1 << 1,
+        fHasSeqMap   = 1 << 2,
+        fHasSeqData  = 1 << 3,
+        fHasFeatures = 1 << 4,
+        fHasExternal = 1 << 5,
+        fHasAlign    = 1 << 6,
+        fHasGraph    = 1 << 7,
+
+        fHasAll      = (1 << 16)-1,
+        fHasAllLocal = fHasAll & ~fHasExternal,
+
+        fPossible    = 1 << 16
+    };
+    typedef int TFlags;
+
     virtual int Compare(const CSeqref& seqRef,
                         EMatchLevel ml = eSeq) const = 0;
 
-    int  Flag() const { return m_Flag; }
-    int& Flag()       { return m_Flag; }
+    TFlags  GetFlags() const { return m_Flags; }
+    void SetFlags(TFlags flags)       { m_Flags = flags; }
 
 private:
-    int  m_Flag;
+    TFlags  m_Flags;
 };
 
 class NCBI_XOBJMGR_EXPORT CReader : public CObject
@@ -141,6 +158,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.23  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.22  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

@@ -278,15 +278,15 @@ public:
     typedef map<const CSeq_entry*, CSeq_entry_Info*> TSeq_entry_InfoMap;
     typedef map<const CSeq_annot*, CSeq_annot_Info*> TSeq_annot_InfoMap;
     typedef map<const CBioseq*, CBioseq_Info*>       TBioseq_InfoMap;
-    typedef map<const CObject*, CAnnotObject_Info*>  TAnnotObject_InfoMap;
+    typedef map<const CObject*, CAnnotObject_Info* > TAnnotObject_InfoMap;
 
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotTypeSelector& sel);
+                          const SAnnotSelector& sel);
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotTypeSelector& sel,
+                          const SAnnotSelector& sel,
                           const CSeq_entry_Info& entry_info);
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotTypeSelector& sel,
+                          const SAnnotSelector& sel,
                           const CSeq_annot_Info& annot_info);
     void GetSynonyms(const CSeq_id_Handle& id,
                      set<CSeq_id_Handle>& syns);
@@ -320,6 +320,12 @@ public:
     CConstRef<CSeq_annot_Info> GetSeq_annot_Info(const CSeq_annot& annot);
 
 private:
+    friend class CAnnotTypes_CI; // using mutex etc.
+    friend class CBioseq_Handle; // using mutex
+    friend class CGBDataLoader;  //
+    friend class CSeq_annot_Info;
+    friend class CTSE_Info;
+
     // attach, detach, index & unindex methods
     // TSE
     CRef<CTSE_Info> x_AttachTSE(CSeq_entry& tse,
@@ -336,12 +342,14 @@ private:
     void x_AttachBioseq(CBioseq& seq,
                         CSeq_entry_Info& entry_info);
     void x_IndexBioseq(CBioseq_Info& seq_info);
-    void x_UnindexBioseq(CBioseq_Info& seq_info);
+    void x_DetachBioseq(CBioseq_Info& seq_info);
     // SET OF Seq-annot
     typedef list< CRef< CSeq_annot > > TAnnots;
     void x_AttachSeq_annots(TAnnots& annots, CSeq_entry_Info& entry_info);
     // Seq-annot
     void x_IndexSeq_annot(CSeq_annot_Info& annot_info);
+    void x_DetachSeq_annots(CTSE_Info& tse_info);
+    void x_DetachSeq_annot(CSeq_annot_Info& annot_info);
     void x_UnindexSeq_annot(CSeq_annot_Info& annot_info);
 
     // create, delete & lookup Xxx_Info objects
@@ -367,6 +375,7 @@ private:
     CRef<CSeq_annot_Info> x_FindSeq_annot_Info(const CSeq_annot& annot);
     void x_DeleteSeq_annot_Info(CSeq_annot_Info& annot_info);
 
+#if 0
     // index and unindex of annot objects
     bool x_MakeGenericSelector(SAnnotTypeSelector& annotSelector) const;
 
@@ -383,6 +392,7 @@ private:
     void x_DropAnnotObject(CRef<CAnnotObject_Info>& annotObj,
                            const CHandleRangeMap& hrm,
                            const SAnnotTypeSelector& annotSelector);
+    void x_DropAnnotObject(CRef<CAnnotObject_Info>& annotObj);
     void x_DropAnnotObject(const CObject* annotPtr);
     void x_MapAnnotObject(CSeq_feat& feat, CSeq_annot_Info& annot);
     void x_MapAnnotObject(CSeq_align& align, CSeq_annot_Info& annot);
@@ -390,7 +400,7 @@ private:
     //
     void x_MapAnnotObject(CAnnotObject_Info* annot_info_ptr);
     void x_DropAnnotObject(const CObject* annotObj, CSeq_annot_Info& annot);
-
+#endif
 
     // Find the seq-entry with best bioseq for the seq-id handle.
     // The best bioseq is the bioseq from the live TSE or from the
@@ -404,10 +414,15 @@ private:
     const CSeqMap& x_GetSeqMap(const CBioseq_Info& info);
 
     void x_GetAnnotData(const CHandleRangeMap& loc,
-                        const SAnnotTypeSelector& sel);
+                        const SAnnotSelector& sel);
     void x_IndexAllAnnots(CSeq_entry_Info& entry_info);
 
     bool x_RemoveSeq_annot(TAnnots& annot_set, CSeq_annot& annot);
+
+    void x_AddTSE_ref(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
+    void x_DropTSE_ref(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
+    void x_RegisterAnnotObject(const CObject* object, CAnnotObject_Info* info);
+    void x_UnregisterAnnotObject(const CObject* object);
 
     // Global cleanup -- search for unlocked TSEs and drop them.
     void x_CleanupUnusedEntries(void);
@@ -443,10 +458,6 @@ private:
 
     // > 0 if annotations need to be indexed.
     int                   m_DirtyAnnotIndexCount;
-
-    friend class CAnnotTypes_CI; // using mutex etc.
-    friend class CBioseq_Handle; // using mutex
-    friend class CGBDataLoader;  //
 };
 
 inline
@@ -486,6 +497,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.59  2003/06/24 14:25:18  vasilche
 * Removed obsolete CTSE_Guard class.
 * Used separate mutexes for bioseq and annot maps.

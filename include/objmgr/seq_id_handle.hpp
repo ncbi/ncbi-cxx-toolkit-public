@@ -91,6 +91,7 @@ public:
 
     const CSeq_id_Handle& operator= (const CSeq_id_Handle& handle);
     bool operator== (const CSeq_id_Handle& handle) const;
+    bool operator!= (const CSeq_id_Handle& handle) const;
     bool operator<  (const CSeq_id_Handle& handle) const;
 
     // Check if the handle is a valid or an empty one
@@ -258,14 +259,21 @@ void CSeq_id_Handle::Reset(void)
 
 
 inline
-bool CSeq_id_Handle::operator== (const CSeq_id_Handle& handle) const
+bool CSeq_id_Handle::operator==(const CSeq_id_Handle& handle) const
 {
     return m_Info == handle.m_Info;
 }
 
 
 inline
-bool CSeq_id_Handle::operator< (const CSeq_id_Handle& handle) const
+bool CSeq_id_Handle::operator!=(const CSeq_id_Handle& handle) const
+{
+    return m_Info != handle.m_Info;
+}
+
+
+inline
+bool CSeq_id_Handle::operator<(const CSeq_id_Handle& handle) const
 {
     return m_Info < handle.m_Info;
 }
@@ -300,6 +308,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/07/17 20:07:55  vasilche
+* Reduced memory usage by feature indexes.
+* SNP data is loaded separately through PUBSEQ_OS.
+* String compression for SNP data.
+*
 * Revision 1.15  2003/06/19 18:23:44  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
