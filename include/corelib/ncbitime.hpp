@@ -321,9 +321,6 @@ public:
     /// The function return the number of seconds elapsed since midnight
     /// (00:00:00), January 1, 1970. Do not use this function if year is
     /// less 1970.
-    /// @param t
-    ///   Time to set in time object. This is always in GMT time format, and
-    ///   nanoseconds will be truncated. 
     /// @return
     ///   Time in time_t format.
     time_t GetTimeT(void) const;
@@ -1200,6 +1197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/01/26 18:07:22  siyan
+ * Fixed errors in documentation on GetTimeT()
+ *
  * Revision 1.29  2003/11/25 20:03:32  ivanov
  * Fixed misspelled eTZPrecisionDefault
  *
