@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/12/29 21:20:18  vakatov
+* More intelligent lookup for the default config.file. -- try to strip off
+* file extensions if cannot find an exact match;  more comments and tracing
+*
 * Revision 1.19  1999/11/15 15:54:59  sandomir
 * Registry support moved from CCgiApplication to CNcbiApplication
 *
@@ -65,20 +69,8 @@
 * Revision 1.10  1998/12/09 22:59:35  lewisg
 * use new cgiapp class
 *
-* Revision 1.9  1998/12/09 19:24:36  vakatov
-* typo fixed
-*
-* Revision 1.8  1998/12/09 17:45:37  sandomir
-* *** empty log message ***
-*
 * Revision 1.7  1998/12/09 16:49:56  sandomir
 * CCgiApplication added
-*
-* Revision 1.6  1998/12/07 23:47:05  vakatov
-* minor fixes
-*
-* Revision 1.5  1998/12/07 22:31:14  vakatov
-* minor fixes
 *
 * Revision 1.4  1998/12/03 21:24:23  sandomir
 * NcbiApplication and CgiApplication updated
@@ -91,7 +83,6 @@
 *
 * Revision 1.1  1998/11/02 22:10:13  sandomir
 * CNcbiApplication added; netest sample updated
-*
 * ===========================================================================
 */
 
@@ -108,7 +99,7 @@ BEGIN_NCBI_SCOPE
 CNcbiApplication* CNcbiApplication::m_Instance;
 
 
-CNcbiApplication* CNcbiApplication::Instance( void )
+CNcbiApplication* CNcbiApplication::Instance(void)
 { 
     return m_Instance; 
 }
@@ -116,11 +107,11 @@ CNcbiApplication* CNcbiApplication::Instance( void )
 CNcbiApplication::CNcbiApplication(void) 
 {
     if( m_Instance ) {
-        throw logic_error("CNcbiApplication::CNcbiApplication: "
+        throw logic_error("CNcbiApplication::CNcbiApplication() -- "
                           "cannot create second instance");
     }
     m_Instance = this;
-    m_config.reset( new CNcbiRegistry );
+    m_Config.reset(new CNcbiRegistry);
 }
 
 CNcbiApplication::~CNcbiApplication(void)
@@ -129,26 +120,26 @@ CNcbiApplication::~CNcbiApplication(void)
 }
 
 void CNcbiApplication::Init(void)
-{   
-    m_config.reset(LoadConfig());
-    return;
+{
+    CNcbiRegistry* reg = LoadConfig();
+    if ( reg )
+        m_Config.reset(reg);
 }
 
 void CNcbiApplication::Exit(void)
 {
-    m_config.reset(0);
-    return;
+    m_Config.reset(0);
 }
 
 int CNcbiApplication::AppMain(int argc, char** argv)
 {
     m_Argc = argc;
     m_Argv = argv;
+
     // init application
     try {
         Init();
-    }
-    catch (exception& e) {
+    } catch (exception& e) {
         ERR_POST("CCgiApplication::Init() failed: " << e.what());
         return -1;
     }
@@ -157,8 +148,7 @@ int CNcbiApplication::AppMain(int argc, char** argv)
     int res;
     try {
         res = Run();
-    }
-    catch (exception& e) {
+    } catch (exception& e) {
         ERR_POST("CCgiApplication::Run() failed: " << e.what());
         res = -1;
     }
@@ -166,8 +156,7 @@ int CNcbiApplication::AppMain(int argc, char** argv)
     // close application
     try {
         Exit();
-    }
-    catch (exception& e) {
+    } catch (exception& e) {
         ERR_POST("CCgiApplication::Exit() failed: " << e.what());
     }
 
@@ -176,41 +165,44 @@ int CNcbiApplication::AppMain(int argc, char** argv)
 
 CNcbiRegistry* CNcbiApplication::LoadConfig(void)
 {
-    auto_ptr<CNcbiRegistry> config(new CNcbiRegistry);
-    string fileName = m_Argv[0];
-    if (fileName.length() > 4  &&
-        fileName.substr(fileName.length() - 4, 4).compare(".exe") == 0)
+    string    fileName = m_Argv[0];
+    SIZE_TYPE base_pos = fileName.find_last_of("/\\:");
+    if (base_pos == NPOS)
+      base_pos = 0;
+    base_pos++;
+
+    for (;;) {
+        // try the next variant -- with added ".ini" file extension
+        fileName += ".ini";
+        CNcbiIfstream is(fileName.c_str());
+        if ( is.good() ) {
+            _TRACE("CNcbiApplication::LoadConfig() -- reading registry file: "
+                   << fileName);
+            auto_ptr<CNcbiRegistry> config(new CNcbiRegistry);
+            config->Read(is);
+            return config.release();
+        }
+
+        // cannot open conf. file
+        _TRACE("CNcbiApplication::LoadConfig() -- cannot open registry file: "
+              << fileName);
+
+        // strip ".ini" file extension (the one added above) 
+        _ASSERT( fileName.length() > 4 );
         fileName.resize(fileName.length() - 4);
-    fileName += ".ini";
 
-    CNcbiIfstream is(fileName.c_str());
-    if( !is ) {
-        ERR_POST(Warning <<
-                 "CNcbiApplication::LoadConfig: cannot open registry file: "
-                 << fileName);
+        // strip next file extension, if any left
+        SIZE_TYPE dot_pos = fileName.find_last_of(".");
+        if (dot_pos == NPOS  ||  dot_pos <= base_pos) {
+          ERR_POST(Warning <<
+                   "CNcbiApplication::LoadConfig() -- cannot find registry "
+                   "file for application: " << fileName);
+          break;
+        }
+
+        fileName.resize(dot_pos);
     }
-    else {
-        config->Read(is);
-    }
-    return config.release();
+    return 0;
 }
-
-//
-// Simple Cgi App
-//
-/*
-
-CSimpleCgiApp::CSimpleCgiApp(int argc, char ** argv, CNcbiIstream * istr,
-		       bool indexes_as_entries):
-    CCgiApplication(argc, argv, istr, indexes_as_entries)
-{}
-
-void CSimpleCgiApp::Init(void)
-{
-  CCgiApplication::Init();
-  m_CgiRequest = GetRequest();
-  m_CgiEntries = m_CgiRequest->GetEntries();
-}
-*/
 
 END_NCBI_SCOPE

@@ -31,10 +31,13 @@
 *
 * File Description:
 *   CNcbiApplication -- a generic NCBI application class
-*   CCgiApplication  -- a NCBI CGI-application class
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/12/29 21:20:16  vakatov
+* More intelligent lookup for the default config.file. -- try to strip off
+* file extensions if cannot find an exact match;  more comments and tracing
+*
 * Revision 1.12  1999/11/15 18:57:01  vakatov
 * Added <memory> (for "auto_ptr<>" template)
 *
@@ -57,9 +60,6 @@
 * Revision 1.6  1998/12/07 23:46:52  vakatov
 * Merged with "cgiapp.hpp";  minor fixes
 *
-* Revision 1.5  1998/12/07 22:31:12  vakatov
-* minor fixes
-*
 * Revision 1.4  1998/12/03 21:24:21  sandomir
 * NcbiApplication and CgiApplication updated
 *
@@ -71,7 +71,6 @@
 *
 * Revision 1.1  1998/11/02 22:10:12  sandomir
 * CNcbiApplication added; netest sample updated
-*
 * ===========================================================================
 */
 
@@ -94,50 +93,42 @@ public:
     CNcbiApplication(void);
     virtual ~CNcbiApplication(void);
 
-    virtual void Init(void); // initialization
-    virtual void Exit(void); // cleanup
-
+    // Default AppMain() -- call methods Init,Run,Exit one after another
     virtual int AppMain(int argc, char** argv);
 
-    virtual int Run(void) = 0; // main loop
+    virtual void Init(void);     // initialization
+    virtual int  Run(void) = 0;  // main loop
+    virtual void Exit(void);     // cleanup
 
     const CNcbiRegistry& GetConfig(void) const;
     CNcbiRegistry& GetConfig(void);
 
 protected:
-
+    // This default method tries to load from config.file with
+    // the name obtained from the application name "m_Argv[0]", plus ".ini".
+    // It also tries to strip extensions, e.g., for "my_app.cgi.exe" it will
+    // try subsequently:  "my_app.cgi.exe.ini", "my_app.cgi.ini", "my_app.ini".
     virtual CNcbiRegistry* LoadConfig(void);
 
-private:
-
-    CNcbiRegistry& x_GetConfig(void) const;    
-    
 protected: 
-
-    // data members
-    
     static CNcbiApplication* m_Instance;
     int    m_Argc;
     char** m_Argv;
-
 private:
-
-    auto_ptr<CNcbiRegistry> m_config;    
+    auto_ptr<CNcbiRegistry> m_Config;    
 };
 
-inline CNcbiRegistry& CNcbiApplication::x_GetConfig(void) const
-{
-    return *m_config;
+
+//
+// INLINE
+//
+
+inline const CNcbiRegistry& CNcbiApplication::GetConfig(void) const {
+    return *m_Config;
 }
 
-inline const CNcbiRegistry& CNcbiApplication::GetConfig(void) const
-{
-    return x_GetConfig();
-}
-
-inline CNcbiRegistry& CNcbiApplication::GetConfig(void)
-{
-    return x_GetConfig();
+inline CNcbiRegistry& CNcbiApplication::GetConfig(void) {
+    return *m_Config;
 }
 
 END_NCBI_SCOPE
