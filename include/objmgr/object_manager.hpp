@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/07/29 14:04:05  grichenk
+* FindDataLoader() made public again.
+*
 * Revision 1.26  2004/07/28 14:02:56  grichenk
 * Improved MT-safety of RegisterInObjectManager(), simplified the code.
 *
@@ -223,6 +226,9 @@ public:
     CDataLoader* RegisterDataLoader(TPluginManagerParamTree* params = 0,
                                     const string& driver_name = kEmptyStr);
 
+    // Try to find data loader by name
+    CDataLoader* FindDataLoader(const string& loader_name) const;
+
     // Get names of all registered loaders.
     typedef vector<string> TRegisteredNames;
     void GetRegisteredNames(TRegisteredNames& names);
@@ -247,9 +253,6 @@ public:
     typedef SRegisterLoaderInfo<CDataLoader> TRegisterLoaderInfo;
 
 protected:
-    // Try to find data loader by name
-    CDataLoader* FindDataLoader(const string& loader_name) const;
-
 // functions for data loaders
     // Register an existing data loader.
     // NOTE:  data loader must be created in the heap (ie using operator new).
