@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/11/11 21:15:54  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.16  2000/09/15 19:24:22  thiessen
 * allow repeated structures w/o different local id
 *
@@ -105,7 +108,7 @@ Molecule::Molecule(StructureBase *parent,
     const ResidueGraphList& standardDictionary,
     const ResidueGraphList& localDictionary) :
     StructureBase(parent), type(eOther), sequence(NULL),
-    gi(NOT_SET), pdbChain(NOT_SET)
+    gi(NOT_SET), pdbChain(' ')
 {
     // get ID, name, and type
     id = graph.GetId().Get();

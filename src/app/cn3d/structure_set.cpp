@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/11/11 21:15:55  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.32  2000/11/02 16:56:03  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -170,7 +173,7 @@ static bool VerifyMatch(const Sequence *sequence, const StructureObject *object,
     if (molecule->residues.size() == sequence->Length()) {
         if (molecule->sequence) {
             ERR_POST(Error << "VerifyMatch() - confused by multiple sequences matching object "
-                << object->pdbID << " moleculeID " << molecule->id);\
+                << object->pdbID << " moleculeID " << molecule->id);
             return false;
         }
         TESTMSG("matched sequence gi " << sequence->gi << " with object "
@@ -260,7 +263,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
     lastDisplayList(OpenGLRenderer::NO_LIST),
     isMultipleStructure(mime.IsAlignstruc()),
     sequenceSet(NULL), alignmentSet(NULL), alignmentManager(NULL),
-    messenger(mesg), highlightColor(1,1,0), dataChanged(false)
+    messenger(mesg), highlightColor(1,1,0), newAlignments(false)
 {
     StructureObject *object;
     parentSet = this;
@@ -329,11 +332,12 @@ StructureSet::~StructureSet(void)
     if (alignmentManager) delete alignmentManager;
 }
 
-void StructureSet::ReplaceAlignmentSet(AlignmentSet *newAlignmentSet)
+void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
 {
     _RemoveChild(alignmentSet);
     delete alignmentSet;
     alignmentSet = newAlignmentSet;
+    newAlignments = true;
 }
 
 // because the frame map (for each frame, a list of diplay lists) is complicated

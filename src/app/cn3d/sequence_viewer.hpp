@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/11/11 21:12:07  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.12  2000/11/03 01:12:17  thiessen
 * fix memory problem with alignment cloning
 *
@@ -118,6 +121,7 @@ public:
 
     // revert back to original (w/o save)
     void RevertAlignment(void);
+    void KeepOnlyStackTop(void);
 
     // to update/remove the GUI window
     void Refresh(void);

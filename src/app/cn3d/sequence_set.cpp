@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/11/11 21:15:54  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.7  2000/09/15 19:24:22  thiessen
 * allow repeated structures w/o different local id
 *
@@ -176,7 +179,7 @@ static void StringFrom2na(const std::vector< char >& vec, std::string *str, bool
 }
 
 Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) :
-    StructureBase(parent), gi(NOT_SET), pdbChain(NOT_SET), /*alignment(NULL),*/ molecule(NULL)
+    StructureBase(parent), gi(NOT_SET), pdbChain(' '), molecule(NULL)
 {
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
@@ -187,8 +190,7 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
             pdbID = s->GetObject().GetPdb().GetMol().Get();
             if (s->GetObject().GetPdb().IsSetChain())
                 pdbChain = s->GetObject().GetPdb().GetChain();
-        } else if (s->GetObject().IsLocal() &&
-            s->GetObject().GetLocal().IsStr()) {
+        } else if (s->GetObject().IsLocal() && s->GetObject().GetLocal().IsStr()) {
             pdbID = s->GetObject().GetLocal().GetStr();
         }
     }
@@ -196,7 +198,7 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
         ERR_POST(Error << "Sequence::Sequence() - can't parse SeqId");
         return;
     }
-    //TESTMSG("sequence gi " << gi << ", PDB " << pdbID << " chain " << pdbChain);
+    //TESTMSG("sequence gi " << gi << ", PDB " << pdbID << " chain '" << (char) pdbChain << "'");
 
     // get sequence string
     if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_raw && bioseq.GetInst().IsSetSeq_data()) {
@@ -238,7 +240,18 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
                 << ": confused by sequence representation");
         return;
     }
-    //TESTMSG(sequenceString);
+}
+
+CSeq_id * Sequence::CreateSeqId(void) const
+{
+    CSeq_id *sid = new CSeq_id();
+    if (pdbID.size() > 0) {
+        sid->SetPdb().SetMol().Set(pdbID);
+        if (pdbChain != ' ') sid->SetPdb().SetChain(pdbChain);
+    } else { // use gi
+        sid->SetGi(gi);
+    }
+    return sid;
 }
 
 END_SCOPE(Cn3D)

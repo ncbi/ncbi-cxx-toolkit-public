@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/11 21:15:55  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.8  2000/08/18 23:07:09  thiessen
 * minor efficiency tweaks
 *
@@ -103,7 +106,7 @@ void StructureBase::_AddChild(StructureBase *child)
     _children.push_back(child);
 }
 
-void StructureBase::_RemoveChild(StructureBase *child)
+void StructureBase::_RemoveChild(const StructureBase *child)
 {
     _ChildList::iterator i, ie=_children.end();
     for (i=_children.begin(); i!=ie; i++) {

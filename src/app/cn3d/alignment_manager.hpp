@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/11/11 21:12:06  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.19  2000/11/03 01:12:17  thiessen
 * fix memory problem with alignment cloning
 *
@@ -256,6 +259,9 @@ public:
     // called when user selects some part of a row
     void SelectedRange(int row, int from, int to, eUnalignedJustification justification) const;
 
+    // get a list of UngappedAlignedBlock's; should be destroyed by called when done
+    typedef std::list < const UngappedAlignedBlock * > UngappedAlignedBlockList;
+    UngappedAlignedBlockList *GetUngappedAlignedBlocks(void) const;
 };
 
 // base class for Block - BlockMultipleAlignment is made up of a list of these
@@ -342,10 +348,10 @@ public:
 class AlignmentManager
 {
 public:
-    AlignmentManager(const SequenceSet *sSet, AlignmentSet *aSet, Messenger *messenger);
+    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, Messenger *messenger);
     ~AlignmentManager(void);
 
-    void NewAlignments(const SequenceSet *sSet, AlignmentSet *aSet);
+    void NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet);
 
     // creates the current multiple alignment from the given pairwise alignments (which are
     // assumed to be members of the AlignmentSet).
@@ -358,7 +364,7 @@ public:
 
 private:
     const SequenceSet *sequenceSet;
-    AlignmentSet *alignmentSet;
+    const AlignmentSet *alignmentSet;
 
     // viewer for the current alignment - will own the current alignment (if any)
     SequenceViewer *sequenceViewer;

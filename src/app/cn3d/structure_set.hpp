@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/11/11 21:12:08  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.27  2000/11/02 16:48:24  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -161,11 +164,8 @@ public:
 
     // sequence and alignment information
     const SequenceSet *sequenceSet;
-    AlignmentSet *alignmentSet;
+    const AlignmentSet *alignmentSet;
     AlignmentManager *alignmentManager;
-
-    // flag to tell whether data has been changed (e.g. by editing alignment)
-    bool dataChanged;
 
     // messenger - is owned by wxApp
     Messenger *messenger;
@@ -182,7 +182,7 @@ public:
 
     // public methods
 
-    void ReplaceAlignmentSet(AlignmentSet *newAlignmentSet);
+    void ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet);
 
     // set screen and rotation center of model (coordinate relative to Master);
     // if NULL, will calculate average geometric center
@@ -218,6 +218,9 @@ private:
     typedef std::map < unsigned int, NamePair > NameMap;
     NameMap nameMap;
     unsigned int lastAtomName;
+
+    // flags to tell whether various parts of the data have been changed
+    bool newAlignments;
 };
 
 class ChemicalGraph;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/11/11 21:15:54  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.7  2000/11/02 16:56:01  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -63,6 +66,7 @@
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/structure_set.hpp"
+#include "cn3d/alignment_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -101,7 +105,7 @@ static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
 }
 
 AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots) :
-    StructureBase(parent), master(NULL)
+    StructureBase(parent), master(NULL), newAsnAlignmentData(NULL)
 {
     if (!parentSet->sequenceSet) {
         ERR_POST(Error << "AlignmentSet::AlignmentSet() - need sequenceSet before parsing alignments");
@@ -168,7 +172,7 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
             master = (const_cast<SequenceSet*>(parentSet->sequenceSet))->master = seq2;
         if (master)
             TESTMSG("determined that master sequence is gi " << master->gi << ", PDB '"
-                << master->pdbID << "' chain " << master->pdbChain);
+                << master->pdbID << "' chain '" << (char) master->pdbChain << "'");
     }
 
     if (!master) {
@@ -188,9 +192,76 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
     TESTMSG("number of alignments: " << alignments.size());
 }
 
-AlignmentSet::AlignmentSet(StructureBase *parent, const BlockMultipleAlignment *multiple) :
-    StructureBase(parent)
+AlignmentSet::~AlignmentSet(void)
 {
+    if (newAsnAlignmentData) delete newAsnAlignmentData;
+}
+
+AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent, const BlockMultipleAlignment *multiple)
+{
+    // create a single Seq-annot, with 'align' data that holds one Seq-align per slave
+    SeqAnnotList *newAsnAlignmentData = new SeqAnnotList(1);
+    CSeq_annot *seqAnnot = new CSeq_annot();
+    newAsnAlignmentData->back().Reset(seqAnnot);
+
+    CSeq_annot::C_Data::TAlign& seqAligns = seqAnnot->SetData().SetAlign();
+    seqAligns.resize(multiple->NRows() - 1);
+    CSeq_annot::C_Data::TAlign::iterator sa = seqAligns.begin();
+
+    BlockMultipleAlignment::UngappedAlignedBlockList *blocks = multiple->GetUngappedAlignedBlocks();
+    if (blocks->size() == 0) {
+        delete blocks;
+        return NULL;
+    }
+
+    // create Seq-aligns, using dendiag storage for BlockMultipleAlignment that uses UngappedAlignedBlock
+    for (int row=1; row<multiple->NRows(); row++, sa++) {
+        CSeq_align *seqAlign = new CSeq_align();
+        sa->Reset(seqAlign);
+
+        seqAlign->SetType(CSeq_align::eType_partial);
+        seqAlign->SetDim(2);
+
+        // create a Dense-diag from each UngappedAlignedBlock
+        CSeq_align::C_Segs::TDendiag& denDiags = seqAlign->SetSegs().SetDendiag();
+        denDiags.resize(blocks->size());
+        CSeq_align::C_Segs::TDendiag::iterator d, de = denDiags.end();
+        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b = blocks->begin();
+        for (d=denDiags.begin(); d!=de; d++, b++) {
+            CDense_diag *denDiag = new CDense_diag();
+            d->Reset(denDiag);
+
+            denDiag->SetDim(2);
+            denDiag->SetIds().resize(2);
+
+            // master row
+            denDiag->SetIds().front().Reset(multiple->sequences->at(0)->CreateSeqId());
+            const Block::Range *range = (*b)->GetRangeOfRow(0);
+            denDiag->SetStarts().push_back(range->from);
+
+            // slave row
+            denDiag->SetIds().back().Reset(multiple->sequences->at(row)->CreateSeqId());
+            range = (*b)->GetRangeOfRow(row);                   
+            denDiag->SetStarts().push_back(range->from);
+
+            denDiag->SetLen((*b)->width);
+        }
+    }
+    
+    delete blocks;
+
+    AlignmentSet *newAlignmentSet;
+    try {
+        newAlignmentSet = new AlignmentSet(parent, *newAsnAlignmentData);
+    } catch (exception& e) {
+        ERR_POST(Error 
+            << "AlignmentSet::CreateFromMultiple() - failed to create AlignmentSet from new asn object; "
+            << "exception: " << e.what());
+        return NULL;
+    }
+
+    newAlignmentSet->newAsnAlignmentData = newAsnAlignmentData;
+    return newAlignmentSet;
 }
 
 

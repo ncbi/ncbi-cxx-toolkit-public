@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/11/11 21:15:54  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.24  2000/11/03 01:12:44  thiessen
 * fix memory problem with alignment cloning
 *
@@ -201,11 +204,11 @@ SequenceViewerWindow::~SequenceViewerWindow(void)
 
 void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
 {
+    viewer->viewerWindow = NULL; // make sure SequenceViewer knows the GUI is gone
     if (!SaveDialog(event.CanVeto())) {
         event.Veto();       // cancelled
         return;
     }
-    viewer->viewerWindow = NULL; // make sure SequenceViewer knows the GUI is gone
     viewer->RemoveBlockBoundaryRow();
     Destroy();
 }
@@ -368,7 +371,7 @@ bool SequenceViewerWindow::SaveDialog(bool canCancel)
 {
     // quick & dirty check for whether save is necessary, by whether Undo is enabled
     if (!menuBar->IsEnabled(MID_UNDO)) {
-        viewer->RevertAlignment();  // remove any unnecessary copy from stack
+        viewer->KeepOnlyStackTop();  // remove any unnecessary copy from stack
         return true;
     }
 
@@ -593,11 +596,9 @@ bool SequenceDisplay::GetRowTitle(int row, wxString *title, wxColour *color) con
     // set title
     if (sequence->molecule) {
         wxString pdbID(sequence->molecule->pdbID.data(), sequence->molecule->pdbID.size());
-        if (sequence->molecule->name.size() > 0 && 
-            sequence->molecule->pdbChain != Molecule::NOT_SET &&
-            sequence->molecule->name[0] != ' ') {
+        if (sequence->molecule->pdbChain != ' ') {
             wxString chain;
-            chain.Printf("_%c", sequence->molecule->name[0]);
+            chain.Printf("_%c", sequence->molecule->pdbChain);
             pdbID += chain;
         }
         *title = pdbID;
@@ -896,8 +897,10 @@ void SequenceViewer::RevertAlignment(void)
         displayStack.pop_back();
     }
 
-    viewerWindow->UpdateAlignment(displayStack.back());
-    if (viewerWindow->AlwaysSyncStructures()) viewerWindow->SyncStructures();
+    if (viewerWindow) {
+        viewerWindow->UpdateAlignment(displayStack.back());
+      if (viewerWindow->AlwaysSyncStructures()) viewerWindow->SyncStructures();
+    }
 }
 
 void SequenceViewer::SaveDialog(void)
@@ -905,7 +908,7 @@ void SequenceViewer::SaveDialog(void)
     if (viewerWindow) viewerWindow->SaveDialog(false);
 }
 
-void SequenceViewer::SaveAlignment(void)
+void SequenceViewer::KeepOnlyStackTop(void)
 {
     // keep only the top of the stack
     while (alignmentStack.size() > 1) {
@@ -914,6 +917,11 @@ void SequenceViewer::SaveAlignment(void)
         delete displayStack.front();
         displayStack.pop_front();
     }
+}
+
+void SequenceViewer::SaveAlignment(void)
+{
+    KeepOnlyStackTop();
 
     // go back into the original pairwise alignment data and save according to the
     // current edited BlockMultipleAlignment

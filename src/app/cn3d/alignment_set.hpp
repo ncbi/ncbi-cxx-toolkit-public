@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/11 21:12:07  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.6  2000/11/02 16:48:22  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -78,9 +81,10 @@ class AlignmentSet : public StructureBase
 {
 public:
     AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots);
+    ~AlignmentSet(void);
 
     // constructs a new AlignmentSet from a multiple alignment
-    AlignmentSet(StructureBase *parent, const BlockMultipleAlignment *multiple);
+    static AlignmentSet * CreateFromMultiple(StructureBase *parent, const BlockMultipleAlignment *multiple);
 
     typedef std::list < const MasterSlaveAlignment * > AlignmentList;
     AlignmentList alignments;
@@ -89,6 +93,9 @@ public:
     const Sequence *master;
 
     bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
+
+private:
+    SeqAnnotList *newAsnAlignmentData;
 };
 
 class MasterSlaveAlignment : public StructureBase

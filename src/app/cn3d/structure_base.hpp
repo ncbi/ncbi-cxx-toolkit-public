@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/11 21:12:08  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.15  2000/10/04 17:40:47  thiessen
 * rearrange STL #includes
 *
@@ -136,7 +139,7 @@ private:
     StructureBase* _parent;
 
 protected:
-    void _RemoveChild(StructureBase *child);
+    void _RemoveChild(const StructureBase *child);
 
 public:
     // go up the hierarchy to find a parent of the desired type

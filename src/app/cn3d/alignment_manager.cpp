@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/11/11 21:15:53  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.23  2000/11/09 18:14:40  vasilche
 * Fixed nonstandard behaviour of 'for' statement on MS VC.
 *
@@ -121,7 +124,7 @@ BEGIN_SCOPE(Cn3D)
 
 ///// AlignmentManager methods /////
 
-AlignmentManager::AlignmentManager(const SequenceSet *sSet, AlignmentSet *aSet, Messenger *mesg) :
+AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, Messenger *mesg) :
     sequenceSet(sSet), alignmentSet(aSet), messenger(mesg), sequenceViewer(NULL)
 {
     NewAlignments(sSet, aSet);
@@ -133,7 +136,7 @@ AlignmentManager::~AlignmentManager(void)
     delete sequenceViewer;
 }
 
-void AlignmentManager::NewAlignments(const SequenceSet *sSet, AlignmentSet *aSet)
+void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet)
 {
     // create a sequence viewer for this alignment
     if (!sequenceViewer) {
@@ -157,9 +160,14 @@ void AlignmentManager::NewAlignments(const SequenceSet *sSet, AlignmentSet *aSet
 void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple)
 {
     // create new AlignmentSet based on this multiple alignment, feed back into StructureSet
-    AlignmentSet *newAlignmentSet = new AlignmentSet(alignmentSet->parentSet, multiple);
-    alignmentSet->parentSet->ReplaceAlignmentSet(newAlignmentSet);
-    alignmentSet = newAlignmentSet;
+    AlignmentSet *newAlignmentSet = AlignmentSet::CreateFromMultiple(alignmentSet->parentSet, multiple);
+    if (newAlignmentSet) {
+        alignmentSet->parentSet->ReplaceAlignmentSet(newAlignmentSet);
+        alignmentSet = newAlignmentSet;
+    } else {
+        ERR_POST(Warning << "Couldn't create pairwise alignments from the current multiple! "
+            << "Alignment data in output file will be left unchanged.");
+    }
 }
 
 const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(void) const
@@ -495,7 +503,7 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
     }
 
     if (prevRow < 0 || sequence != sequences->at(prevRow)) {
-		int row;
+        int row;
         for (row=0; row<NRows(); row++) if (sequences->at(row) == sequence) break;
         if (row == NRows()) {
             ERR_POST(Error << "BlockMultipleAlignment::GetRowForSequence() - can't find given Sequence");
@@ -1139,6 +1147,18 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     UpdateBlockMapAndConservationColors();
     messenger->PostRedrawSequenceViewers();
     return true;
+}
+
+BlockMultipleAlignment::UngappedAlignedBlockList *
+BlockMultipleAlignment::GetUngappedAlignedBlocks(void) const
+{
+    UngappedAlignedBlockList *uabs = new UngappedAlignedBlockList();
+    BlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++) {
+        UngappedAlignedBlock *uab = dynamic_cast<UngappedAlignedBlock*>(*b);
+        if (uab) uabs->push_back(uab);
+    }
+    return uabs;
 }
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/11/11 21:12:07  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
 * Revision 1.7  2000/10/04 17:40:46  thiessen
 * rearrange STL #includes
 *
@@ -64,6 +67,7 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 #include "cn3d/structure_base.hpp"
 
@@ -103,10 +107,9 @@ public:
     // corresponding protein chain
     const Molecule *molecule;
 
-    // corresponding alignment with master (if slave)
-    //const MasterSlaveAlignment *alignment;
-
     int Length(void) const { return sequenceString.size(); }
+
+	ncbi::objects::CSeq_id * CreateSeqId(void) const;
 };
 
 END_SCOPE(Cn3D)
