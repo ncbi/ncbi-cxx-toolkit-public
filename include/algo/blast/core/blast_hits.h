@@ -160,6 +160,16 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
         BlastHSPListPtr PNTR combined_hsp_list_ptr, Int4 start,
         Boolean merge_hsps, Boolean append);
 
+/** Deallocate memory for an HSP structure */
+BlastHSPPtr BlastHSPFree(BlastHSPPtr hsp);
+
+/** Deallocate memory for an HSP list structure */
+BlastHSPListPtr BlastHSPListFree(BlastHSPListPtr hsp_list);
+
+/** Deallocate memory for BLAST results */
+BlastResultsPtr BLAST_ResultsFree(BlastResultsPtr results);
+
+
 #ifdef __cplusplus
 }
 #endif
