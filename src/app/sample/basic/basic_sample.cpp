@@ -135,7 +135,7 @@ void CSampleBasicApplication::Init(void)
 int CSampleBasicApplication::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // Do run
     cout << string(72, '=') << endl;
@@ -216,6 +216,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/12/16 21:13:11  ucko
+ * Run: Populate "args" by const reference, not value!
+ *
  * Revision 1.2  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
