@@ -63,7 +63,7 @@ static char const rcsid[] =
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-BEGIN_SCOPE(blast);
+BEGIN_SCOPE(blast)
 
 //////////////////////////////////////////////////////////////////////////////
 // Static function prototypes
@@ -156,7 +156,7 @@ CScoreMatrixBuilder::x_SelectByEvalue()
 }
 
 void
-CScoreMatrixBuilder::x_SelectBySeqId(const vector< CRef<CSeq_id> >& ids)
+CScoreMatrixBuilder::x_SelectBySeqId(const vector< CRef<CSeq_id> >& /*ids*/)
 {
     NCBI_THROW(CBlastException, eNotSupported, "select by id not implemented");
 }
@@ -483,13 +483,16 @@ operator<<(ostream& out, const CScoreMatrixBuilder& smb)
 // End debugging code
 //////////////////////////////////////////////////////////////////////////////
 
-END_SCOPE(blast);
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/28 17:15:43  camacho
+* Fix NCBI {BEGIN,END}_SCOPE macro usage, remove warning
+*
 * Revision 1.1  2004/05/28 16:41:39  camacho
 * Initial revision
 *
