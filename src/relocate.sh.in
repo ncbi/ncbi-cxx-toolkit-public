@@ -55,6 +55,7 @@ for f in $files ; do
       s%^\(builddir *= *\).*%\1'$script_dir'%;
       s%^\(build_root *= *\).*%\1'$bld_tree'%;
       s%^\(top_srcdir *= *\).*%\1'$src_tree'%;
+      s%^\(abs_top_srcdir *= *\).*%\1'$src_tree'%;
       s%^\(old_srcdir='\''\).*\('\''\) *$%\1'$src_tree'\2%
       s%^\(status_dir *= *\).*%\1'$status_dir'%;
       s%^\(runpath *=[^/]*\)/[^:]*/lib%\1'$bld_tree'/lib%
