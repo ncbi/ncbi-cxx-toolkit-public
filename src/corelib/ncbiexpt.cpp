@@ -410,15 +410,6 @@ void CExceptionReporterStream::Report(const char* file, int line,
 }
 
 
-#ifndef INLINE_CSTRERRADAPT
-// We have to make this an external function with GCC 2.95 on OSF/1.
-const char* CStrErrAdapt::strerror(int errnum)
-{
-    return ::strerror(errnum);
-}
-#endif
-
-
 /////////////////////////////////////////////////////////////////////////////
 // Core exceptions
 /////////////////////////////////////////////////////////////////////////////
@@ -442,6 +433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/04/26 14:41:23  ucko
+ * Drop the obsolete INLINE_CSTRERRADAPT hack.
+ *
  * Revision 1.35  2003/10/31 19:39:46  lavr
  * Elaborate R1.34 change log to include ends removal
  *
