@@ -1,4 +1,4 @@
---$Revision: 1.5 $ 
+--$Revision: 1.6 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -56,6 +56,12 @@ Entrezgene ::= SEQUENCE {
  
 Gene-track ::= SEQUENCE { 
     geneid INTEGER ,     -- required unique document id 
+    status INTEGER {
+        live (0) ,
+        secondary (1) ,  -- synonym with merged
+        discontinued (2) -- 'deleted', still index and display to public
+    } DEFAULT live ,
+    current-id SEQUENCE OF INTEGER OPTIONAL , -- see note 1 below
     create-date Date ,   -- date created in Entrez 
     update-date Date }   -- last date updated in Entrez 
  
@@ -115,3 +121,14 @@ Maps::= SEQUENCE {
                     min (4)}}}
                         
 END 
+
+--********************************************************************** 
+-- 
+--  Comments, notes, etc.
+--   
+--  1)  Ignored unless status = secondary.  This is where gene_ids are
+--      placed toward which the interface will direct users.
+--
+-- 
+--********************************************************************** 
+
