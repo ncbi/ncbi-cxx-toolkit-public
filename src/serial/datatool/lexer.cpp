@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.12  2001/05/17 15:07:12  lavr
 * Typos corrected
 *
@@ -114,6 +117,11 @@ TToken ASNLexer::LookupToken(void)
         StartToken();
         AddChar();
         return LookupBinHexString();
+    case '[':
+        StartToken();
+        AddChar();
+        LookupTag();
+        return T_TAG;
     default:
         if ( c >= '0' && c <= '9' ) {
             StartToken();
@@ -301,6 +309,39 @@ void ASNLexer::LookupNumber(void)
 {
     while ( IsDigit(Char()) ) {
         AddChar();
+    }
+}
+
+void ASNLexer::LookupTag(void)
+{
+    while ( true ) {
+        char c = Char();
+        switch ( c ) {
+        case '\r':
+        case '\n':
+            LexerWarning("unclosed tag");
+            return;
+        case 0:
+            if ( Eof() ) {
+                LexerWarning("unclosed tag");
+                return;
+            }
+            AddChar();
+            LexerWarning("illegal character in tag");
+            break;
+        case ']':
+            AddChar();
+            return;
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+        // case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+            AddChar();
+            break;
+        default:
+            AddChar();
+            LexerWarning("illegal character in tag");
+            break;
+        }
     }
 }
 

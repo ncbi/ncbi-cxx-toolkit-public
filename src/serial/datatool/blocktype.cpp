@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.34  2001/05/17 15:07:11  lavr
 * Typos corrected
 *
@@ -366,7 +369,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
         AutoPtr<CTypeStrings> memberType = (*i)->GetType()->GetFullCType();
         code->AddMember((*i)->GetName(), memberType,
                         (*i)->GetType()->GetVar("_pointer"),
-                        optional, defaultCode, delayed);
+                        optional, defaultCode, delayed, (*i)->GetType()->GetTag());
     }
     SetParentClassTo(*code);
     return AutoPtr<CTypeStrings>(code.release());

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/11 14:34:58  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.12  2000/08/25 15:58:46  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -130,11 +133,12 @@ public:
         bool haveFlag;  // need additional boolean flag 'isSet'
         bool canBeNull; // pointer type can be NULL pointer
         bool delayed;
+        int memberTag;
         string defaultValue; // DEFAULT value code
         SMemberInfo(const string& name, const AutoPtr<CTypeStrings>& type,
                     const string& pointerType,
                     bool optional, const string& defaultValue,
-                    bool delayed);
+                    bool delayed, int tag);
     };
     typedef list<SMemberInfo> TMembers;
 
@@ -158,11 +162,11 @@ public:
     void AddMember(const string& name, const AutoPtr<CTypeStrings>& type,
                    const string& pointerType,
                    bool optional, const string& defaultValue,
-                   bool delayed);
-    void AddMember(const AutoPtr<CTypeStrings>& type)
+                   bool delayed, int tag);
+    void AddMember(const AutoPtr<CTypeStrings>& type, int tag)
         {
             AddMember(NcbiEmptyString, type, NcbiEmptyString,
-                      false, NcbiEmptyString, false);
+                      false, NcbiEmptyString, false, tag);
         }
 
     string GetCType(const CNamespace& ns) const;

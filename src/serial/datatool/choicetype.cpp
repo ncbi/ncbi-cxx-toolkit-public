@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.21  2000/11/20 17:26:32  vasilche
 * Fixed warnings on 64 bit platforms.
 * Updated names of config variables.
@@ -271,7 +274,8 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
         iterate ( TMembers, i, GetMembers() ) {
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
             bool delayed = !GetVar((*i)->GetName()+"._delay").empty();
-            code->AddVariant((*i)->GetName(), varType, delayed);
+            code->AddVariant((*i)->GetName(), varType, delayed,
+                             (*i)->GetType()->GetTag());
         }
         SetParentClassTo(*code);
         return AutoPtr<CTypeStrings>(code.release());

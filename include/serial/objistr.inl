@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/06/11 14:34:55  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.15  2001/06/07 17:12:46  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -483,7 +486,7 @@ char& CheckVisibleChar(char& c,
     // Printable char - no checks or convertions
         return c;
     }
-    ReplaceVisibleChar(c, fix_method, at_line);
+    return ReplaceVisibleChar(c, fix_method, at_line);
 }
 
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/06/11 14:34:55  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.37  2001/06/07 17:12:46  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -292,6 +295,7 @@ protected:
 
 private:
     void WriteString(const char* str, size_t length);
+    void WriteMemberId(const CMemberId& id);
 
     void StartBlock(void);
     void NextElement(void);

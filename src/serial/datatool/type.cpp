@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.59  2001/05/17 15:07:12  lavr
 * Typos corrected
 *
@@ -191,7 +194,8 @@ TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 
 CDataType::CDataType(void)
     : m_ParentType(0), m_Module(0), m_SourceLine(0),
-      m_DataMember(0),  m_Set(0), m_Choice(0), m_Checked(false)
+      m_DataMember(0),  m_Set(0), m_Choice(0), m_Checked(false),
+      m_Tag(eNoExplicitTag)
 {
 }
 
@@ -530,7 +534,7 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
                                                           ClassName()));
     AutoPtr<CTypeStrings> dType = GetFullCType();
-    code->AddMember(dType);
+    code->AddMember(dType, GetTag());
     SetParentClassTo(*code);
     return AutoPtr<CTypeStrings>(code.release());
 }

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2001/06/11 14:34:55  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.67  2001/06/07 17:12:46  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -755,7 +758,6 @@ public:
     CHookDataKey<CReadClassMemberHook> m_ClassMemberHookKey;
     CHookDataKey<CReadChoiceVariantHook> m_ChoiceVariantHookKey;
 };
-
 
 inline
 char& CheckVisibleChar(char& c,

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/06/11 14:34:55  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.49  2001/06/07 17:12:46  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -394,6 +397,13 @@ private:
     void StartBlock(void);
     bool NextElement(void);
     void EndBlock(void);
+    TMemberIndex GetMemberIndex(const CClassTypeInfo* classType,
+                                const CLightString& id);
+    TMemberIndex GetMemberIndex(const CClassTypeInfo* classType,
+                                const CLightString& id,
+                                const TMemberIndex pos);
+    TMemberIndex GetChoiceIndex(const CChoiceTypeInfo* choiceType,
+                                const CLightString& id);
 
     bool m_BlockStart;
     EFixNonPrint m_FixMethod; // method of fixing non-printable chars

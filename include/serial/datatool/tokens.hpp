@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/06/11 14:34:58  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.3  2000/12/15 15:38:35  vasilche
 * Added support of Int8 and long double.
 * Added support of BigInt ASN.1 extension - mapped to Int8.
@@ -66,6 +69,7 @@ static const TToken T_NUMBER = 4;
 static const TToken T_BINARY_STRING = 5;
 static const TToken T_HEXADECIMAL_STRING = 6;
 static const TToken T_DEFINE = 7;
+static const TToken T_TAG = 8;
 
 static const TToken K_DEFINITIONS = 101;
 static const TToken K_BEGIN = 102;

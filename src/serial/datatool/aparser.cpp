@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.12  2001/05/17 15:07:11  lavr
 * Typos corrected
 *
@@ -88,8 +91,10 @@ void AbstractParser::ParseError(const char* error, const char* expected,
                                 const AbstractToken& token)
 {
     THROW1_TRACE(runtime_error,
-                 NStr::IntToString(token.GetLine())+
-                 ": Parse error: "+error+": "+expected+" expected");
+                 "LINE " + NStr::IntToString(token.GetLine())+
+                 ", TOKEN " + token.GetText() +
+                 " -- parse error: " + error +
+                 (error == "" ? ": " : "") + expected + " expected");
 }
 
 string AbstractParser::Location(void) const

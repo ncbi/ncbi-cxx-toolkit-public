@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.30  2001/05/17 15:07:11  lavr
 * Typos corrected
 *
@@ -213,12 +216,13 @@ void CClassTypeStrings::AddMember(const string& name,
                                   const string& pointerType,
                                   bool optional,
                                   const string& defaultValue,
-                                  bool delayed)
+                                  bool delayed,
+                                  int tag)
 {
     m_Members.push_back(SMemberInfo(name, type,
                                     pointerType,
                                     optional, defaultValue,
-                                    delayed));
+                                    delayed, tag));
 }
 
 CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
@@ -226,11 +230,13 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
                                             const string& pType,
                                             bool opt,
                                             const string& defValue,
-                                            bool del)
+                                            bool del,
+                                            int tag)
     : externalName(name), cName(Identifier(name)),
       mName("m_"+cName), tName('T'+cName),
       type(t), ptrType(pType),
-      optional(opt), delayed(del), defaultValue(defValue)
+      optional(opt), delayed(del), memberTag(tag),
+      defaultValue(defValue)
 {
     if ( cName.empty() ) {
         mName = "m_data";
@@ -857,8 +863,40 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "    SET_PARENT_CLASS("<<m_ParentClassNamespace.GetNamespaceRef(code.GetNamespace())<<m_ParentClassName<<");\n";
     }
     {
+        // All or none of the members must be tagged
+        bool useTags = false;
+        bool hasUntagged = false;
+        // All tags must be different
+        map<int, bool> tag_map;
+
         iterate ( TMembers, i, m_Members ) {
-            methods << "    ADD_NAMED_";
+            methods << "    {{\n" <<
+                "        NCBI_NS_NCBI::CMemberInfo* member = ";
+
+            if ( i->memberTag >= 0 ) {
+                if ( hasUntagged ) {
+                    THROW1_TRACE(runtime_error,
+                        "No explicit tag for some members in " +
+                        GetModuleName());
+                }
+                if ( tag_map[i->memberTag] )
+                    THROW1_TRACE(runtime_error,
+                        "Duplicate tag: " + i->cName +
+                        " [" + NStr::IntToString(i->memberTag) + "] in " +
+                        GetModuleName());
+                tag_map[i->memberTag] = true;
+                useTags = true;
+            }
+            else {
+                hasUntagged = true;
+                if ( useTags ) {
+                    THROW1_TRACE(runtime_error,
+                        "No explicit tag for " + i->cName + " in " +
+                        GetModuleName());
+                }
+            }
+
+            methods << "ADD_NAMED_";
             
             bool addNamespace = false;
             bool addCType = false;
@@ -907,10 +945,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << ", "<<i->type->GetEnumName();
             if ( addRef )
                 methods << ", "<<i->type->GetRef(code.GetNamespace());
-            methods << ')';
+            methods << ");\n";
 
             if ( !i->defaultValue.empty() ) {
-                methods << "->SetDefault(";
+                methods << "        member->SetDefault(";
                 if ( ref )
                     methods << "new NCBI_NS_NCBI::CRef< "+i->tName+" >(";
                 methods << "new "<<i->tName<<"("<<i->defaultValue<<')';
@@ -920,18 +958,27 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( i->haveFlag )
                     methods <<
                         "->SetSetFlag(MEMBER_PTR("SET_PREFIX<<i->cName<<"))";
+                methods << ";\n";
             }
             else if ( i->optional ) {
-                methods << "->SetOptional(";
+                methods << "        member->SetOptional(";
                 if ( i->haveFlag )
                     methods << "MEMBER_PTR("SET_PREFIX<<i->cName<<')';
-                methods << ')';
+                methods << ");\n";
             }
             if ( i->delayed ) {
                 methods <<
-                    "->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<i->cName<<"))";
+                    "        member->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<
+                    i->cName<<"));\n";
             }
-            methods << ";\n";
+            if ( i->memberTag >= 0 ) {
+                methods << "        member->GetId().SetTag(" << i->memberTag << ");\n";
+            }
+            methods << "    }}\n";
+        }
+        if ( useTags ) {
+            // Tagged class is not sequential
+            methods << "    info->SetRandomOrder(true);\n";
         }
     }
     methods <<

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/06/11 14:34:58  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.13  2001/05/17 15:00:42  lavr
 * Typos corrected
 *
@@ -274,14 +277,29 @@ public:
             return m_Comments;
         }
 
-  void SetDataMember(CDataMember* dm) {
-    m_DataMember = dm;
-  }
+    void SetDataMember(CDataMember* dm) {
+        m_DataMember = dm;
+    }
 
-  const CDataMember* GetDataMember(void) const {
-    _ASSERT(m_DataMember);
-    return m_DataMember;
-  }
+    const CDataMember* GetDataMember(void) const {
+        _ASSERT(m_DataMember);
+        return m_DataMember;
+    }
+
+    enum {
+        eNoExplicitTag = -1
+    };
+    void SetTag(int tag) {
+        m_Tag = tag;
+    }
+
+    int GetTag(void) const {
+        return m_Tag;
+    }
+
+    bool HasTag(void) const {
+        return m_Tag != eNoExplicitTag;
+    }
 
 private:
     const CDataType* m_ParentType;       // parent type
@@ -303,6 +321,7 @@ private:
     AutoPtr<CTypeInfo> m_RealTypeInfo;
     mutable string m_CachedFileName;
     mutable auto_ptr<CNamespace> m_CachedNamespace;
+    int m_Tag;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);

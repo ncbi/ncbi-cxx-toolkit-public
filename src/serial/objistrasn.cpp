@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2001/06/11 14:35:00  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.68  2001/06/07 17:12:50  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -592,7 +595,71 @@ CLightString CObjectIStreamAsn::ReadLCaseId(char c)
 inline
 CLightString CObjectIStreamAsn::ReadMemberId(char c)
 {
-    return ScanEndOfId(islower(c));
+    if ( c == '[' ) {
+        for ( size_t i = 1; ; ++i ) {
+            switch ( m_Input.PeekChar(i) ) {
+            case '\r':
+            case '\n':
+                ThrowError(eFormatError, "end of line: expected ']'");
+                break;
+            case ']':
+                {
+                    const char* ptr = m_Input.GetCurrentPos();
+                    m_Input.SkipChars(++i);
+                    return CLightString(ptr + 1, i - 2);
+                }
+            }
+        }
+    }
+	else {
+        return ScanEndOfId(islower(c));
+    }
+}
+
+TMemberIndex CObjectIStreamAsn::GetMemberIndex
+    (const CClassTypeInfo* classType,
+     const CLightString& id)
+{
+    TMemberIndex idx;
+    if (id.GetLength() > 0  &&  isdigit(id.GetString()[0])) {
+        idx = classType->GetMembers().Find
+            (CMemberId::TTag(NStr::StringToInt(id)));
+    }
+    else {
+        idx = classType->GetMembers().Find(id);
+    }
+    return idx;
+}
+
+TMemberIndex CObjectIStreamAsn::GetMemberIndex
+    (const CClassTypeInfo* classType,
+     const CLightString& id,
+     const TMemberIndex pos)
+{
+    TMemberIndex idx;
+    if (id.GetLength() > 0  &&  isdigit(id.GetString()[0])) {
+        idx = classType->GetMembers().Find
+            (CMemberId::TTag(NStr::StringToInt(id)), pos);
+    }
+    else {
+        idx = classType->GetMembers().Find(id, pos);
+    }
+    return idx;
+}
+
+TMemberIndex CObjectIStreamAsn::GetChoiceIndex
+    (const CChoiceTypeInfo* choiceType,
+     const CLightString& id)
+{
+    TMemberIndex idx;
+    if (id.GetLength() > 0  &&  isdigit(id.GetString()[0])) {
+        idx = choiceType->GetVariants().Find
+            (CMemberId::TTag(NStr::StringToInt(id)));
+    }
+    else {
+        idx = choiceType->GetVariants().Find(id);
+    }
+    return idx;
 }
 
 void CObjectIStreamAsn::ReadNull(void)
@@ -781,18 +848,6 @@ void CObjectIStreamAsn::ReadString(string& s)
                 }
                 break;
             default:
-                /*
-                if ( (c & 0xff) > '~' ) {
-                    // non ascii
-                    if ( (GetFlags() & eFlagAllowNonAsciiChars) == 0 )
-                        BadStringChar(startLine, c);
-                }
-                else if ( c < ' ' ) {
-                    // control
-                    BadStringChar(startLine, c);
-                }
-                */
-
                 // ok: append char
                 if ( ++i == 128 ) {
                     // too long string -> flush it
@@ -939,18 +994,6 @@ void CObjectIStreamAsn::SkipString(void)
                 break;
             default:
                 CheckVisibleChar(c, m_FixMethod, startLine);
-                /*
-                if ( (c & 0xff) > '~' ) {
-                    // non ascii
-                    if ( (GetFlags() & eFlagAllowNonAsciiChars) == 0 )
-                        BadStringChar(startLine, c);
-                }
-                else if ( c < ' ' ) {
-                    // control
-                    BadStringChar(startLine, c);
-                }
-                */
-
                 // ok: skip char
                 if ( ++i == 128 ) {
                     // too long string -> flush it
@@ -1116,7 +1159,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType)
         return kInvalidMember;
 
     CLightString id = ReadMemberId(SkipWhiteSpace());
-    TMemberIndex index = classType->GetMembers().Find(id);
+    TMemberIndex index = GetMemberIndex(classType, id);
     if ( index == kInvalidMember )
         UnexpectedMember(id, classType->GetMembers());
     return index;
@@ -1130,7 +1173,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType,
         return kInvalidMember;
 
     CLightString id = ReadMemberId(SkipWhiteSpace());
-    TMemberIndex index = classType->GetMembers().Find(id, pos);
+    TMemberIndex index = GetMemberIndex(classType, id, pos);
     if ( index == kInvalidMember )
         UnexpectedMember(id, classType->GetMembers());
     return index;
@@ -1146,7 +1189,7 @@ void CObjectIStreamAsn::ReadClassRandom(const CClassTypeInfo* classType,
 
     while ( NextElement() ) {
         CLightString id = ReadMemberId(SkipWhiteSpace());
-        TMemberIndex index = classType->GetMembers().Find(id);
+        TMemberIndex index = GetMemberIndex(classType, id);
         if ( index == kInvalidMember )
             UnexpectedMember(id, classType->GetMembers());
 
@@ -1167,7 +1210,7 @@ void CObjectIStreamAsn::ReadClassSequential(const CClassTypeInfo* classType,
 
     while ( NextElement() ) {
         CLightString id = ReadMemberId(SkipWhiteSpace());
-        TMemberIndex index = classType->GetMembers().Find(id, *pos);
+        TMemberIndex index = GetMemberIndex(classType, id, *pos);
         if ( index == kInvalidMember )
             UnexpectedMember(id, classType->GetMembers());
 
@@ -1187,7 +1230,7 @@ void CObjectIStreamAsn::SkipClassRandom(const CClassTypeInfo* classType)
 
     while ( NextElement() ) {
         CLightString id = ReadMemberId(SkipWhiteSpace());
-        TMemberIndex index = classType->GetMembers().Find(id);
+        TMemberIndex index = GetMemberIndex(classType, id);
         if ( index == kInvalidMember )
             UnexpectedMember(id, classType->GetMembers());
 
@@ -1207,7 +1250,7 @@ void CObjectIStreamAsn::SkipClassSequential(const CClassTypeInfo* classType)
 
     while ( NextElement() ) {
         CLightString id = ReadMemberId(SkipWhiteSpace());
-        TMemberIndex index = classType->GetMembers().Find(id, *pos);
+        TMemberIndex index = GetMemberIndex(classType, id, *pos);
         if ( index == kInvalidMember )
             UnexpectedMember(id, classType->GetMembers());
 
@@ -1222,7 +1265,7 @@ void CObjectIStreamAsn::SkipClassSequential(const CClassTypeInfo* classType)
 
 TMemberIndex CObjectIStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
 {
-    return choiceType->GetVariants().Find(ReadMemberId(SkipWhiteSpace()));
+    return GetChoiceIndex(choiceType, ReadMemberId(SkipWhiteSpace()));
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
@@ -1233,7 +1276,7 @@ void CObjectIStreamAsn::ReadChoice(const CChoiceTypeInfo* choiceType,
     if ( id.Empty() )
         ThrowError(eFormatError, "choice variant id expected");
 
-    TMemberIndex index = choiceType->GetVariants().Find(id);
+    TMemberIndex index = GetChoiceIndex(choiceType, id);
     if ( index == kInvalidMember )
         UnexpectedMember(id, choiceType->GetVariants());
 
@@ -1251,7 +1294,7 @@ void CObjectIStreamAsn::SkipChoice(const CChoiceTypeInfo* choiceType)
     if ( id.Empty() )
         ThrowError(eFormatError, "choice variant id expected");
 
-    TMemberIndex index = choiceType->GetVariants().Find(id);
+    TMemberIndex index = GetChoiceIndex(choiceType, id);
     if ( index == kInvalidMember )
         UnexpectedMember(id, choiceType->GetVariants());
 

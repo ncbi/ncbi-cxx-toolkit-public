@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/06/11 14:34:58  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.5  2000/11/15 20:34:43  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -90,6 +93,7 @@ protected:
     void LookupNumber(void);
     void LookupIdentifier(void);
     void LookupString(void);
+    void LookupTag(void);
     TToken LookupBinHexString(void);
     TToken LookupKeyword(void);
 

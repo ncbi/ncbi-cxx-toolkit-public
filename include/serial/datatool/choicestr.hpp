@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/06/11 14:34:58  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.10  2000/08/25 15:58:45  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -117,9 +120,10 @@ public:
         EMemberType memberType;
         AutoPtr<CTypeStrings> type;
         bool delayed;
+        int memberTag;
 
         SVariantInfo(const string& name, const AutoPtr<CTypeStrings>& type,
-                     bool delayed);
+            bool delayed, int tag);
     };
     typedef list<SVariantInfo> TVariants;
 
@@ -132,7 +136,7 @@ public:
         }
 
     void AddVariant(const string& name, const AutoPtr<CTypeStrings>& type,
-                    bool delayed);
+                    bool delayed, int tag);
 
 protected:
     void GenerateClassCode(CClassCode& code,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.15  2001/05/17 15:07:11  lavr
 * Typos corrected
 *
@@ -98,12 +101,16 @@ AbstractLexer::~AbstractLexer(void)
 void AbstractLexer::LexerError(const char* error)
 {
     THROW1_TRACE(runtime_error,
-                 NStr::IntToString(CurrentLine())+": lexer error: "+error);
+                 "LINE " + NStr::IntToString(CurrentLine()) +
+                 ", TOKEN " + m_TokenText +
+                 " -- lexer error: " + error);
 }
 
 void AbstractLexer::LexerWarning(const char* error)
 {
-    ERR_POST(CurrentLine() << ": lexer error: " << error);
+    ERR_POST("LINE " << CurrentLine() <<
+        ", TOKEN " << m_TokenText <<
+        " -- lexer error: " << error);
 }
 
 bool AbstractLexer::CheckSymbol(char symbol)

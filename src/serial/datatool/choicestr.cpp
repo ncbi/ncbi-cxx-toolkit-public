@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.26  2001/05/17 15:07:11  lavr
 * Typos corrected
 *
@@ -197,16 +200,16 @@ CChoiceTypeStrings::~CChoiceTypeStrings(void)
 
 void CChoiceTypeStrings::AddVariant(const string& name,
                                     const AutoPtr<CTypeStrings>& type,
-                                    bool delayed)
+                                    bool delayed, int tag)
 {
-    m_Variants.push_back(SVariantInfo(name, type, delayed));
+    m_Variants.push_back(SVariantInfo(name, type, delayed, tag));
 }
 
 CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
                                                const AutoPtr<CTypeStrings>& t,
-                                               bool del)
+                                               bool del, int tag)
     : externalName(name), cName(Identifier(name)),
-      type(t), delayed(del)
+      type(t), delayed(del), memberTag(tag)
 {
     switch ( type->GetKind() ) {
     case eKindString:
@@ -855,14 +858,48 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    SET_CHOICE_DELAYED();\n";
     }
     {
+        // All or none of the choices must be tagged
+        bool useTags = false;
+        bool hasUntagged = false;
+        // All tags must be different
+        map<int, bool> tag_map;
+
         iterate ( TVariants, i, m_Variants ) {
-            methods << "    ADD_NAMED_";
+            // Save member info
+            methods << "    {{\n" <<
+                "        NCBI_NS_NCBI::CVariantInfo* variant = ";
+
+            if ( i->memberTag >= 0 ) {
+                if ( hasUntagged ) {
+                    THROW1_TRACE(runtime_error,
+                        "No explicit tag for some members in " +
+                        GetModuleName());
+                }
+                if ( tag_map[i->memberTag] ) {
+                    THROW1_TRACE(runtime_error,
+                        "Duplicate tag: " + i->cName +
+                        " [" + NStr::IntToString(i->memberTag) + "] in " +
+                        GetModuleName());
+                }
+                tag_map[i->memberTag] = true;
+                useTags = true;
+            }
+            else {
+                hasUntagged = true;
+                if ( useTags ) {
+                    THROW1_TRACE(runtime_error,
+                        "No explicit tag for " + i->cName + " in " +
+                        GetModuleName());
+                }
+            }
+
+            methods << "ADD_NAMED_";
             
             bool addNamespace = false;
             bool addCType = false;
             bool addEnum = false;
             bool addRef = false;
-            
+
             switch ( i->memberType ) {
             case ePointerMember:
                 methods << "PTR_";
@@ -924,12 +961,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << ", "<<i->type->GetEnumName();
             if ( addRef )
                 methods << ", "<<i->type->GetRef(code.GetNamespace());
-            methods <<')';
+            methods <<");\n";
             
             if ( i->delayed ) {
-                methods << "->SetDelayBuffer(MEMBER_PTR(m_delayBuffer))";
+                methods << "        variant->SetDelayBuffer(MEMBER_PTR(m_delayBuffer));\n";
             }
-            methods << ";\n";
+            if ( i->memberTag >= 0 ) {
+                methods << "        variant->GetId().SetTag(" << i->memberTag << ");\n";
+            }
+            methods << "    }}\n";
         }
     }
     methods <<

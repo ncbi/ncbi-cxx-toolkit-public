@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2001/06/11 14:35:00  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.64  2001/06/07 17:12:51  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -685,6 +688,18 @@ void CObjectOStreamAsn::CopyContainer(const CContainerTypeInfo* cType,
 }
 #endif
 
+
+void CObjectOStreamAsn::WriteMemberId(const CMemberId& id)
+{
+    if ( !id.GetName().empty() ) {
+        m_Output.PutString(id.GetName());
+        m_Output.PutChar(' ');
+    }
+    else if ( id.HaveExplicitTag() ) {
+        m_Output.PutString("[" + NStr::IntToString(id.GetTag()) + "] ");
+    }
+}
+
 void CObjectOStreamAsn::BeginClass(const CClassTypeInfo* /*classInfo*/)
 {
     StartBlock();
@@ -699,10 +714,7 @@ void CObjectOStreamAsn::BeginClassMember(const CMemberId& id)
 {
     NextElement();
 
-    if ( !id.GetName().empty() ) {
-        m_Output.PutString(id.GetName());
-        m_Output.PutChar(' ');
-    }
+    WriteMemberId(id);
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
@@ -726,10 +738,7 @@ void CObjectOStreamAsn::WriteClassMember(const CMemberId& memberId,
 
     BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
     
-    if ( !memberId.GetName().empty() ) {
-        m_Output.PutString(memberId.GetName());
-        m_Output.PutChar(' ');
-    }
+    WriteMemberId(memberId);
     
     WriteObject(memberPtr, memberType);
 
@@ -746,10 +755,7 @@ bool CObjectOStreamAsn::WriteClassMember(const CMemberId& memberId,
 
     BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
     
-    if ( !memberId.GetName().empty() ) {
-        m_Output.PutString(memberId.GetName());
-        m_Output.PutChar(' ');
-    }
+    WriteMemberId(memberId);
     
     Write(buffer.GetSource());
 
@@ -784,10 +790,7 @@ void CObjectOStreamAsn::CopyClassRandom(const CClassTypeInfo* classType,
             read[index] = true;
 
             NextElement();
-            if ( !memberInfo->GetId().GetName().empty() ) {
-                m_Output.PutString(memberInfo->GetId().GetName());
-                m_Output.PutChar(' ');
-            }
+            WriteMemberId(memberInfo->GetId());
 
             memberInfo->CopyMember(copier);
         }
@@ -834,10 +837,7 @@ void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
         }
 
         NextElement();
-        if ( !memberInfo->GetId().GetName().empty() ) {
-            m_Output.PutString(memberInfo->GetId().GetName());
-            m_Output.PutChar(' ');
-        }
+        WriteMemberId(memberInfo->GetId());
         
         memberInfo->CopyMember(copier);
         
@@ -863,8 +863,7 @@ void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
 void CObjectOStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* ,
                                            const CMemberId& id)
 {
-    m_Output.PutString(id.GetName());
-    m_Output.PutChar(' ');
+    WriteMemberId(id);
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
@@ -875,8 +874,7 @@ void CObjectOStreamAsn::WriteChoice(const CChoiceTypeInfo* choiceType,
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
 
-    m_Output.PutString(variantInfo->GetId().GetName());
-    m_Output.PutChar(' ');
+    WriteMemberId(variantInfo->GetId());
     
     variantInfo->WriteVariant(*this, choicePtr);
 
@@ -897,8 +895,7 @@ void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameChoiceVariant,
                              variantInfo->GetId());
-    m_Output.PutString(variantInfo->GetId().GetName());
-    m_Output.PutChar(' ');
+    WriteMemberId(variantInfo->GetId());
 
     variantInfo->CopyVariant(copier);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
 * Revision 1.26  2000/12/15 15:38:51  vasilche
 * Added support of Int8 and long double.
 * Added support of BigInt ASN.1 extension - mapped to Int8.
@@ -178,14 +181,16 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
                 ModuleType(module, name);
                 break;
             case T_DEFINE:
-                ERR_POST(Location() << "type name omitted");
+                ERR_POST("LINE " << Location() <<
+                    " type name omitted");
                 Consume();
                 ModuleType(module, "unnamed type");
                 break;
             case K_END:
                 return;
             default:
-                ERR_POST(Location() << "type definition expected");
+                ERR_POST("LINE " << Location() <<
+                    " type definition expected");
                 return;
             }
         }
@@ -270,6 +275,11 @@ CDataType* ASNParser::x_Type(void)
     case T_IDENTIFIER:
     case T_TYPE_REFERENCE:
         return new CReferenceDataType(TypeReference());
+    case T_TAG:
+        string val = ConsumeAndValue();
+        CDataType* tagged = x_Type();
+        tagged->SetTag(NStr::StringToInt(val.substr(1, val.length()-2)));
+        return tagged;
     }
     ParseError("type");
 	return 0;
@@ -450,7 +460,8 @@ const string& ASNParser::Identifier(void)
 {
     switch ( Next() ) {
     case T_TYPE_REFERENCE:
-        ERR_POST(Location() << "identifier must begin with lowercase letter");
+        ERR_POST("LINE " << Location() <<
+            " identifier must begin with lowercase letter");
         return ConsumeAndValue();
     case T_IDENTIFIER:
         return ConsumeAndValue();
@@ -465,7 +476,8 @@ const string& ASNParser::TypeReference(void)
     case T_TYPE_REFERENCE:
         return ConsumeAndValue();
     case T_IDENTIFIER:
-        ERR_POST(Location() << "type name must begin with uppercase letter");
+        ERR_POST("LINE " << Location() <<
+            " type name must begin with uppercase letter");
         return ConsumeAndValue();
     }
     ParseError("type name");
@@ -478,7 +490,8 @@ const string& ASNParser::ModuleReference(void)
     case T_TYPE_REFERENCE:
         return ConsumeAndValue();
     case T_IDENTIFIER:
-        ERR_POST(Location() << "module name must begin with uppercase letter");
+        ERR_POST("LINE " << Location() <<
+            " module name must begin with uppercase letter");
         return ConsumeAndValue();
     }
     ParseError("module name");
