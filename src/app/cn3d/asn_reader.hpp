@@ -26,10 +26,13 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      template for reading/writing ASN data of any type from/to a file
+*      templates for reading/writing ASN data from/to a file, or copying
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/09/18 03:09:38  thiessen
+* add preliminary sequence import pipeline
+*
 * Revision 1.3  2001/07/12 17:34:22  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -61,13 +64,15 @@ BEGIN_SCOPE(Cn3D)
 
 // a utility function for reading different types of ASN data from a file
 template < class ASNClass >
-static bool ReadASNFromFile(const char *filename, ASNClass& ASNobject, bool isBinary, std::string& err)
+static bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, std::string *err)
 {
+    err->erase();
+
     // initialize the binary input stream
     auto_ptr<ncbi::CNcbiIstream> inStream;
     inStream.reset(new ncbi::CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
     if (!(*inStream)) {
-        err = "Cannot open file for reading";
+        *err = "Cannot open file for reading";
         return false;
     }
 
@@ -80,12 +85,11 @@ static bool ReadASNFromFile(const char *filename, ASNClass& ASNobject, bool isBi
         inObject.reset(new ncbi::CObjectIStreamAsn(*inStream));
     }
 
-    // Read the data
+    // Read the asn data
     try {
-        err.erase();
-        *inObject >> ASNobject;
+        *inObject >> *ASNobject;
     } catch (exception& e) {
-        err = e.what();
+        *err = e.what();
         return false;
     }
 
@@ -94,13 +98,15 @@ static bool ReadASNFromFile(const char *filename, ASNClass& ASNobject, bool isBi
 
 // for writing ASN data
 template < class ASNClass >
-static bool WriteASNToFile(const char *filename, ASNClass& mime, bool isBinary, std::string& err)
+static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBinary, std::string *err)
 {
+    err->erase();
+
     // initialize a binary output stream
     auto_ptr<ncbi::CNcbiOstream> outStream;
     outStream.reset(new ncbi::CNcbiOfstream(filename, IOS_BASE::out | IOS_BASE::binary));
     if (!(*outStream)) {
-        err = "Cannot open file for writing";
+        *err = "Cannot open file for writing";
         return false;
     }
 
@@ -113,11 +119,11 @@ static bool WriteASNToFile(const char *filename, ASNClass& mime, bool isBinary, 
         outObject.reset(new ncbi::CObjectOStreamAsn(*outStream));
     }
 
-    // Read the CNcbi_mime_asn1 data
+    // write the asn data
     try {
-        *outObject << mime;
+        *outObject << ASNobject;
     } catch (exception& e) {
-        err = e.what();
+        *err = e.what();
         return false;
     }
 
@@ -126,9 +132,9 @@ static bool WriteASNToFile(const char *filename, ASNClass& mime, bool isBinary, 
 
 // for copying ASN data
 template < class ASNClass >
-static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string& err)
+static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err)
 {
-    err.erase();
+    err->erase();
     auto_ptr<ASNClass> newObject;
 
     try {
@@ -149,7 +155,7 @@ static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string& err
         inObject >> *newObject;
 
     } catch (exception& e) {
-        err = e.what();
+        *err = e.what();
         return NULL;
     }
 

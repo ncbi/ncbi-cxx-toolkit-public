@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/09/18 03:10:46  thiessen
+* add preliminary sequence import pipeline
+*
 * Revision 1.20  2001/08/24 18:53:43  thiessen
 * add filename to sequence viewer window titles
 *
@@ -123,6 +126,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_THREAD_ONE, MID_THREAD_ALL,      UpdateViewerWindow::OnRunThreader)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
     EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,      UpdateViewerWindow::OnDelete)
+    EVT_MENU      (MID_IMPORT,                          UpdateViewerWindow::OnImport)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -144,6 +148,8 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->AppendSeparator();
     menu->Append(MID_DELETE_ONE, "&Delete Single", "", true);
     menu->Append(MID_DELETE_ALL, "Delete A&ll");
+    menu->AppendSeparator();
+    menu->Append(MID_IMPORT, "&Import...");
     menuBar->Append(menu, "&Alignments");
 
     // editor always on
@@ -275,6 +281,12 @@ bool UpdateViewerWindow::SaveDialog(bool canCancel)
 
     return true;
 }
+
+void UpdateViewerWindow::OnImport(wxCommandEvent& event)
+{
+    if (event.GetId() == MID_IMPORT) updateViewer->ImportAndAlign();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////
 // ThreaderOptionsDialog implementation

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/09/18 03:09:39  thiessen
+* add preliminary sequence import pipeline
+*
 * Revision 1.14  2001/08/06 20:22:49  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -115,13 +118,15 @@ private:
         MID_MERGE_ONE,
         MID_MERGE_ALL,
         MID_DELETE_ONE,
-        MID_DELETE_ALL
+        MID_DELETE_ALL,
+        MID_IMPORT
     };
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnRunThreader(wxCommandEvent& event);
     void OnMerge(wxCommandEvent& event);
     void OnDelete(wxCommandEvent& event);
+    void OnImport(wxCommandEvent& event);
 
     void ThreadSingleOff(void)
     {

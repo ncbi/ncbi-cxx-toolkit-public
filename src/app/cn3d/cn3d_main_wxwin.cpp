@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2001/09/18 03:10:45  thiessen
+* add preliminary sequence import pipeline
+*
 * Revision 1.82  2001/09/14 14:56:24  thiessen
 * increase default animation delay
 *
@@ -538,7 +541,7 @@ static bool LoadFavorites(void)
         if (wxFile::Exists(favoritesFile.c_str())) {
             TESTMSG("loading favorites from " << favoritesFile);
             std::string err;
-            if (ReadASNFromFile(favoritesFile.c_str(), favoriteStyles, false, err)) {
+            if (ReadASNFromFile(favoritesFile.c_str(), &favoriteStyles, false, &err)) {
                 favoriteStylesChanged = false;
                 return true;
             }
@@ -560,7 +563,7 @@ static void SaveFavorites(void)
             wxString favoritesFile = GetFavoritesFile(false);
             if (favoritesFile.size() > 0) {
                 std::string err;
-                if (!WriteASNToFile(favoritesFile.c_str(), favoriteStyles, false, err))
+                if (!WriteASNToFile(favoritesFile.c_str(), favoriteStyles, false, &err))
                     ERR_POST(Error << "Error saving Favorites to " << favoritesFile << '\n' << err);
                 favoriteStylesChanged = false;
             }
@@ -1398,7 +1401,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
             ((isBinary) ? "binary" : "ascii") << " mime");
         CNcbi_mime_asn1 *mime = new CNcbi_mime_asn1();
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
-        readOK = ReadASNFromFile(filename, *mime, isBinary, err);
+        readOK = ReadASNFromFile(filename, mime, isBinary, &err);
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
             glCanvas->structureSet = new StructureSet(mime);
@@ -1412,7 +1415,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
             ((isBinary) ? "binary" : "ascii") << " cdd");
         CCdd *cdd = new CCdd();
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
-        readOK = ReadASNFromFile(filename, *cdd, isBinary, err);
+        readOK = ReadASNFromFile(filename, cdd, isBinary, &err);
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
             glCanvas->structureSet = new StructureSet(cdd, userDir.c_str(), structureLimit);

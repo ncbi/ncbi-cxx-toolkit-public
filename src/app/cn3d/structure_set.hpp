@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/09/18 03:09:38  thiessen
+* add preliminary sequence import pipeline
+*
 * Revision 1.53  2001/08/15 20:53:58  juran
 * Heed warnings.
 *
@@ -207,6 +210,7 @@
 #include <objects/mmdb1/Biostruc_annot_set.hpp>
 #include <objects/mmdb3/Biostruc_feature.hpp>
 #include <objects/cdd/Align_annot_set.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/vector_math.hpp"
@@ -230,6 +234,7 @@ class Messenger;
 class Colors;
 class Molecule;
 class BlockMultipleAlignment;
+class Sequence;
 
 class StructureSet : public StructureBase
 {
@@ -301,6 +306,15 @@ public:
     // writes data to a file; returns true on success
     bool SaveASNData(const char *filename, bool doBinary);
 
+    // adds a new Sequence to the SequenceSet
+    const Sequence * CreateNewSequence(ncbi::objects::CBioseq& bioseq);
+
+    // for manipulating structure alignment features
+    void InitStructureAlignments(int masterMMDBID);
+    void AddStructureAlignment(ncbi::objects::CBiostruc_feature *feature,
+        int masterDomainID, int slaveDomainID);
+    void RemoveStructureAlignments(void);
+
 private:
     // pointers to the asn data
     ncbi::objects::CNcbi_mime_asn1 *mimeData;
@@ -335,12 +349,6 @@ public:
     bool HasDataChanged(void) const { return (dataChanged > 0); }
     void StyleDataChanged(void) const { dataChanged |= eStyleData; }
     void UserAnnotationDataChanged(void) const { dataChanged |= eUserAnnotationData; }
-
-    // for manipulating structure alignment features
-    void InitStructureAlignments(int masterMMDBID);
-    void AddStructureAlignment(ncbi::objects::CBiostruc_feature *feature,
-        int masterDomainID, int slaveDomainID);
-    void RemoveStructureAlignments(void);
 
     // CDD-specific stuff
     bool IsCDD(void) const { return (cddData != NULL); }

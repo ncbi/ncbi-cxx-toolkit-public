@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2001/09/18 03:10:45  thiessen
+* add preliminary sequence import pipeline
+*
 * Revision 1.76  2001/08/27 00:06:23  thiessen
 * add structure evidence to CDD annotation
 *
@@ -632,7 +635,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
             CNcbiOstrstream biostrucFile;
             biostrucFile << dataDir << mmdbIDs[m] << ".val" << '\0';
             TESTMSG("trying to read model from Biostruc in '" << biostrucFile.str() << "'");
-            gotBiostruc = ReadASNFromFile(biostrucFile.str(), biostruc, true, err);
+            gotBiostruc = ReadASNFromFile(biostrucFile.str(), &biostruc, true, &err);
             if (!gotBiostruc) {
                 ERR_POST(Warning << "Failed to read Biostruc from " << biostrucFile.str()
                     << "\nreason: " << err);
@@ -919,9 +922,9 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     std::string err;
     bool writeOK = false;
     if (mimeData)
-        writeOK = WriteASNToFile(filename, *mimeData, doBinary, err);
+        writeOK = WriteASNToFile(filename, *mimeData, doBinary, &err);
     else if (cddData)
-        writeOK = WriteASNToFile(filename, *cddData, doBinary, err);
+        writeOK = WriteASNToFile(filename, *cddData, doBinary, &err);
     if (writeOK) {
         dataChanged = 0;
     } else {
@@ -1185,7 +1188,7 @@ ncbi::objects::CAlign_annot_set * StructureSet::GetCopyOfCDDAnnotSet(void) const
 {
     if (cddData && cddData->IsSetAlignannot()) {
         std::string err;
-        CAlign_annot_set *copy = CopyASNObject(cddData->GetAlignannot(), err);
+        CAlign_annot_set *copy = CopyASNObject(cddData->GetAlignannot(), &err);
         if (copy)
             return copy;
         else
@@ -1204,6 +1207,15 @@ bool StructureSet::SetCDDAnnotSet(ncbi::objects::CAlign_annot_set *newAnnotSet)
         cddData->ResetAlignannot();
     dataChanged |= eOtherData;
     return true;
+}
+
+const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
+{
+    SequenceSet *modifiableSet = const_cast<SequenceSet*>(sequenceSet);
+    const Sequence *newSeq = new Sequence(modifiableSet, bioseq);
+    modifiableSet->sequences.push_back(newSeq);
+    dataChanged |= eSequenceData;
+    return newSeq;
 }
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/09/18 03:10:46  thiessen
+* add preliminary sequence import pipeline
+*
 * Revision 1.53  2001/09/04 14:40:19  thiessen
 * add rainbow and charge coloring
 *
@@ -475,7 +478,7 @@ void StyleSettings::SetRenderingStyle(ePredefinedRenderingStyle style)
             heterogens.style = eBallAndStick;
             solvents.isOn = false;
             solvents.style = eBallAndStick;
-            connections.style = eBallAndStick;
+            connections.style = eTubes;
             helixObjects.isOn = strandObjects.isOn = false;
             helixObjects.style = strandObjects.style = eWithArrows;
             break;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/09/18 03:09:38  thiessen
+* add preliminary sequence import pipeline
+*
 * Revision 1.7  2001/05/02 13:46:15  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -92,6 +95,9 @@ public:
 
     // delete a single alignment
     void DeleteAlignment(BlockMultipleAlignment *toDelete);
+
+    // import
+    void ImportAndAlign(void);
 
     // turns the current alignments+display into the "initial state" (the bottom) of the undo stack
     void SetInitialState(void);

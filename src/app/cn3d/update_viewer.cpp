@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/09/18 03:10:46  thiessen
+* add preliminary sequence import pipeline
+*
 * Revision 1.12  2001/06/02 17:22:46  thiessen
 * fixes for GCC
 *
@@ -77,8 +80,13 @@
 #include <objects/cdd/Update_align.hpp>
 #include <objects/cdd/Update_comment.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 #include <memory>
+
+// C stuff
+#include <stdio.h>
+#include <tofasta.h>
 
 #include "cn3d/update_viewer.hpp"
 #include "cn3d/update_viewer_window.hpp"
@@ -89,6 +97,9 @@
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/molecule.hpp"
+#include "cn3d/cn3d_tools.hpp"
+#include "cn3d/asn_converter.hpp"
+#include "cn3d/cn3d_blast.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -150,6 +161,7 @@ void UpdateViewer::Refresh(void)
 
 void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
 {
+    if (newAlignments.size() == 0) return;
     AlignmentList& alignments = alignmentStack.back();
     SequenceDisplay *display = displayStack.back();
 
@@ -286,6 +298,83 @@ void UpdateViewer::SaveAlignments(void)
     // save these changes to the ASN data
     alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->parentSet->
         ReplaceUpdates(updates);
+}
+
+void UpdateViewer::ImportAndAlign(void)
+{
+    // determine the master sequence for new alignments
+    const Sequence *master = NULL;
+    // if there's a multiple alignment in the sequence viewer, use same master as that
+    const BlockMultipleAlignment *multiple = alignmentManager->GetCurrentMultipleAlignment();
+    if (multiple) {
+        master = multiple->GetMaster();
+    } else {
+        // otherwise, this must be a single structure, so we need to pick one of its
+        // chains as the new master
+    }
+    if (!master) {
+        ERR_POST(Error << "No master sequence defined");
+        return;
+    }
+
+    // import the new sequence(s), creating new SequenceSet
+    SequenceSet::SequenceList newSequences;
+
+    // choose import type
+    static const wxString choiceStrings[] = { "From GI/Accession", "From FASTA File" };
+    static enum choiceValues { FROM_GI=0, FROM_FASTA, N_CHOICES };
+    int importFrom = wxGetSingleChoiceIndex(
+        "From what source would you like to import a sequence?", "Select Import Source",
+        N_CHOICES, choiceStrings, *viewerWindow);
+
+    // network import
+    if (importFrom == FROM_GI) {
+        wxString id = wxGetTextFromUser("Enter a GI or Protein Accession:",
+            "Input Identifier", "", *viewerWindow);
+        if (id.size() > 0) {
+        }
+    }
+
+    // FASTA import
+    else if (importFrom == FROM_FASTA) {
+        wxString fastaFile = wxFileSelector("Choose a FASTA file from which to import",
+            "", "", "", "*.*", wxOPEN | wxFILE_MUST_EXIST, *viewerWindow);
+        if (fastaFile.size() > 0) {
+            FILE *fp = FileOpen(fastaFile.c_str(), "r");
+            SeqEntry *sep = FastaToSeqEntry(fp, FALSE); // only reads first sequence... alternative?
+            FileClose(fp);
+            if (!sep) {
+                ERR_POST(Error << "Error parsing FASTA file " << fastaFile.c_str());
+                return;
+            }
+            // convert C to C++ SeqEntry
+            CSeq_entry se;
+            std::string err;
+            if (!ConvertAsnFromCToCPP(sep, (AsnWriteFunc) SeqEntryAsnWrite, &se, &err)) {
+                ERR_POST(Error << "Error converting to C++ object: " << err);
+                return;
+            }
+            SeqEntryFree(sep);
+            // create Sequence - just one for now
+            if (se.IsSeq())
+                newSequences.push_back(master->parentSet->CreateNewSequence(se.GetSeq()));
+        }
+    }
+
+    if (newSequences.size() == 0) {
+        ERR_POST(Error << "No sequences were imported");
+        return;
+    }
+
+    // use BLAST to create new alignments
+    AlignmentList newAlignments;
+    CreateNewPairwiseAlignments(master, newSequences, &newAlignments);
+
+    // add new alignments to update list
+    if (newAlignments.size() > 0)
+        AddAlignments(newAlignments);
+    else
+        ERR_POST(Warning << "No new alignments were created");
 }
 
 END_SCOPE(Cn3D)
