@@ -1,5 +1,5 @@
-#ifndef NCBI_ASN_CONNECTION__H
-#define NCBI_ASN_CONNECTION__H
+#ifndef CTOOLS___ASN_CONNECTION__H
+#define CTOOLS___ASN_CONNECTION__H
 
 /*  $Id$
  * ===========================================================================
@@ -123,6 +123,9 @@ CONN CreateAsnConn_Service
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/11/13 15:58:47  lavr
+ * Guard macro changed
+ *
  * Revision 1.7  2003/04/11 17:46:29  siyan
  * Added doxygen support
  *
@@ -147,4 +150,4 @@ CONN CreateAsnConn_Service
  * ==========================================================================
  */
 
-#endif /* NCBI_ASN_CONNECTION__H */
+#endif /* CTOOLS___ASN_CONNECTION__H */
