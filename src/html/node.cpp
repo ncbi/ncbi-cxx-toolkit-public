@@ -42,21 +42,29 @@ static CSafeStaticRef< CTls<CNCBINode::TExceptionFlags> > s_TlsExceptionFlags;
 
 
 CNCBINode::CNCBINode(void)
-    : m_CreateSubNodesCalled(false)
+    : m_CreateSubNodesCalled(false),
+      m_RepeatCount(1),
+      m_RepeatTag(false)
 {
     return;
 }
 
 
 CNCBINode::CNCBINode(const string& name)
-    : m_CreateSubNodesCalled(false), m_Name(name)
+    : m_CreateSubNodesCalled(false),
+      m_Name(name),
+      m_RepeatCount(1),
+      m_RepeatTag(false)
 {
     return;
 }
 
 
 CNCBINode::CNCBINode(const char* name)
-    : m_CreateSubNodesCalled(false), m_Name(name)
+    : m_CreateSubNodesCalled(false),
+      m_Name(name),
+      m_RepeatCount(1),
+      m_RepeatTag(false)
 {
     return;
 }
@@ -213,49 +221,55 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
     Initialize();
     TMode mode(&prev, this);
 
-    try {
-        PrintBegin(out, mode);
-        PrintChildren(out, mode);
-    }
-    catch (CHTMLException& e) {
-        PrintEnd(out, mode);
-        e.AddTraceInfo(GetName());
-        throw;
-    }
-    catch (CException& e) {
-        PrintEnd(out, mode);
-        TExceptionFlags flags = GetExceptionFlags();
-        if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
+    int n_count = GetRepeatCount();
+    for (int i = 0; i < n_count; i++ )
+    {
+        try {
+            PrintBegin(out, mode);
+            PrintChildren(out, mode);
+        }
+        catch (CHTMLException& e) {
+            PrintEnd(out, mode);
+            e.AddTraceInfo(GetName());
             throw;
         }
-        CHTMLException new_e(__FILE__, __LINE__, 0, CHTMLException::eUnknown,
-                             e.GetMsg());
-        new_e.AddTraceInfo(GetName());
-        throw new_e;
-    }
-    catch (exception& e) {
-        PrintEnd(out, mode);
-        TExceptionFlags flags = GetExceptionFlags();
-        if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
-            throw;
+        catch (CException& e) {
+            PrintEnd(out, mode);
+            TExceptionFlags flags = GetExceptionFlags();
+            if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
+                throw;
+            }
+            CHTMLException new_e(__FILE__, __LINE__, 0,
+                                 CHTMLException::eUnknown, e.GetMsg());
+            new_e.AddTraceInfo(GetName());
+            throw new_e;
         }
-        CHTMLException new_e(__FILE__, __LINE__, 0, CHTMLException::eUnknown,
-                             string("CNCBINode::Print: ") + e.what());
-        new_e.AddTraceInfo(GetName());
-        throw new_e;
-    }
-    catch (...) {
-        PrintEnd(out, mode);
-        TExceptionFlags flags = GetExceptionFlags();
-        if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
-            throw;
+        catch (exception& e) {
+            PrintEnd(out, mode);
+            TExceptionFlags flags = GetExceptionFlags();
+            if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
+                throw;
+            }
+            CHTMLException new_e(__FILE__, __LINE__, 0,
+                                 CHTMLException::eUnknown,
+                                 string("CNCBINode::Print: ") + e.what());
+            new_e.AddTraceInfo(GetName());
+            throw new_e;
         }
-        CHTMLException new_e(__FILE__, __LINE__, 0, CHTMLException::eUnknown,
-                             "CNCBINode::Print: unknown exception");
-        new_e.AddTraceInfo(GetName());
-        throw new_e;
+        catch (...) {
+            PrintEnd(out, mode);
+            TExceptionFlags flags = GetExceptionFlags();
+            if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
+                throw;
+            }
+            CHTMLException new_e(__FILE__, __LINE__, 0,
+                                 CHTMLException::eUnknown,
+                                 "CNCBINode::Print: unknown exception");
+            new_e.AddTraceInfo(GetName());
+            throw new_e;
+        }
+        PrintEnd(out, mode);
     }
-    PrintEnd(out, mode);
     return out;
 }
 
@@ -317,6 +331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/02/02 14:26:23  ivanov
+ * CNCBINode: added ability to repeat stored context
+ *
  * Revision 1.29  2003/12/23 17:58:11  ivanov
  * Added exception tracing
  *

@@ -180,6 +180,9 @@ public:
     virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
     virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode);
 
+    void    SetRepeatCount(size_t count = 0);
+    size_t  GetRepeatCount(void);
+
     // This method will be called once before Print().
     virtual void CreateSubNodes(void);
     // Call CreateSubNodes() if it's not called yet.
@@ -188,6 +191,10 @@ public:
     // Find and replace text with a node.
     virtual CNCBINode* MapTag(const string& tagname);
     CNodeRef MapTagAll(const string& tagname, const TMode& mode);
+
+    // Repeat tag node (works only inside tag node mappers)
+    void RepeatTag(bool enable = true);
+    bool NeedRepeatTag(void);
 
     const string& GetName(void) const;
 
@@ -239,8 +246,15 @@ protected:
                                 const string& value, bool optional);
 
     bool            m_CreateSubNodesCalled;
-    TChildrenMember m_Children;              // Child nodes
-    string          m_Name;                  // Node name
+    TChildrenMember m_Children;         ///< Child nodes
+    string          m_Name;             ///< Node name
+    size_t          m_RepeatCount;      ///< How many times repeat node
+
+    // Repeat tag flag (used only inside tag node mappers hooks). See RepeatTag().
+    bool            m_RepeatTag; 
+                                      
+                                         
+                                            
 
     // Attributes, e.g. href="link.html"
     auto_ptr<TAttributes> m_Attributes;     
@@ -271,6 +285,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/02/02 14:26:04  ivanov
+ * CNCBINode: added ability to repeat stored context
+ *
  * Revision 1.23  2003/12/23 17:58:51  ivanov
  * Added exception tracing
  *

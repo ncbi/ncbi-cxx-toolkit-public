@@ -127,7 +127,6 @@ const CNCBINode* CNCBINode::Node(TChildren::const_iterator i)
 }
 
 
-// append a child
 inline
 CNCBINode* CNCBINode::AppendChild(CNCBINode* child)
 {
@@ -225,9 +224,40 @@ void CNCBINode::SetOptionalAttribute(const char* name, bool value)
 }
 
 
+inline
+size_t CNCBINode::GetRepeatCount(void)
+{
+    return m_RepeatCount;
+}
+
+
+inline
+void CNCBINode::SetRepeatCount(size_t count)
+{
+    m_RepeatCount = count;
+}
+
+
+inline
+void CNCBINode::RepeatTag(bool repeat)
+{
+    m_RepeatTag = repeat;
+}
+
+
+inline
+bool CNCBINode::NeedRepeatTag(void)
+{
+    return m_RepeatTag;
+}
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/02 14:26:05  ivanov
+ * CNCBINode: added ability to repeat stored context
+ *
  * Revision 1.12  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *
