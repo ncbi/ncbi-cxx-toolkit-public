@@ -1161,12 +1161,18 @@ void CValidError_feat::ValidateImpGbquals
                 
             case CGbqualType::e_Label:
                 {
+                    bool only_digits = true,
+                         has_spaces = false;
+
                     for ( size_t i = 0; i < val.length(); ++i ) {
-                        if ( isspace(val[i])  ||  isdigit(val[i]) ) {
-                            error = true;
-                            break;
+                        if ( isspace(val[i]) ) {
+                            has_spaces = true;
+                        }
+                        if ( !isdigit(val[i]) ) {
+                            only_digits = false;
                         }
                     }
+                    error = only_digits || has_spaces;
                 }                
                 break;
                 
@@ -1500,9 +1506,6 @@ void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
         CSeqFeatData::eSubtype_mRNA,
         eOverlap_Subset,
         *m_Scope);
-    if ( !mrna ) {
-        return;
-    }
 
     EDiagSev sev = eDiag_Error;
     if ( m_Imp.IsNC()  ||  m_Imp.IsNT()  ||  
@@ -2231,6 +2234,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/05/15 20:00:44  shomrat
+* Bug fix in ValidateImpGbquals
+*
 * Revision 1.28  2003/05/14 21:20:50  shomrat
 * Changes to ValidateGeneXRef
 *
