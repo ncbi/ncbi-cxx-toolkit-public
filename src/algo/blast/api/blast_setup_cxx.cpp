@@ -37,6 +37,7 @@
 
 #include "blast_setup.hpp"
 
+#include <sstream>
 
 /** @addtogroup AlgoBlast
  *
@@ -370,11 +371,14 @@ GetNumberOfFrames(EProgram p)
 
     switch (p) {
     case eBlastn:
+    case eMegablast:
+    case eDiscMegablast:
         retval = NUM_STRANDS;
         break;
     case eBlastp:
     case eRPSBlast:
     case eTblastn: 
+    case ePSIBlast:
         retval = 1;
         break;
     case eBlastx:
@@ -383,8 +387,13 @@ GetNumberOfFrames(EProgram p)
         retval = NUM_FRAMES;
         break;
     default:
-        NCBI_THROW(CBlastException, eBadParameter, 
-                   "Cannot get number of frames for invalid program type");
+        {
+            int debug_value = static_cast<int>(p);
+            ostringstream os;
+            os << "Cannot get number of frames for invalid program type: ";
+            os << debug_value;
+            NCBI_THROW(CBlastException, eBadParameter, os.str());
+        }
     }
 
     return retval;
@@ -399,6 +408,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.76  2004/11/12 16:43:34  camacho
+ * Add handling of missing EProgram values to GetNumberOfFrames
+ *
  * Revision 1.75  2004/09/21 13:50:38  dondosha
  * GetNumberOfFrames now returns 6 for RPS tblastn
  *
