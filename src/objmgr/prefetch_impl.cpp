@@ -234,12 +234,16 @@ void* CPrefetchThread::Main(void)
                 i = max(i, token->m_CurrentId);
                 id = token->m_Ids[i];
             }}
-            CSeqMatch_Info info = m_DataSource.BestResolve(id);
-            if ( info ) {
-                TTSE_Lock tse(&info.GetTSE_Info());
-                if (tse) {
-                    token->AddResolvedId(i, tse);
+            try {
+                CSeqMatch_Info info = m_DataSource.BestResolve(id);
+                if ( info ) {
+                    TTSE_Lock tse(&info.GetTSE_Info());
+                    if (tse) {
+                        token->AddResolvedId(i, tse);
+                    }
                 }
+            } catch (...) {
+                // BestResolve() failed, go to the next id.
             }
         }
         if (release_token) {
@@ -256,6 +260,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/04/26 14:15:33  grichenk
+* Catch exceptions in the prefetching thread
+*
 * Revision 1.2  2004/04/19 14:52:29  grichenk
 * Added prefetch depth limit, redesigned prefetch queue.
 *
