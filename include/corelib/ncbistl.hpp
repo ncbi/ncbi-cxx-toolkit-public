@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/07/03 18:41:16  vasilche
+* Added prefix to NCBI_EAT_SEMICOLON generated typedef to avoid possible name conflict.
+*
 * Revision 1.17  2000/06/01 15:08:33  vakatov
 * + USING_SCOPE(ns)
 *
@@ -141,7 +144,8 @@ namespace NCBI_NS_NCBI { /* the fake one */ }
 #  define NCBI_NAME3(Name1, Name2, Name3) Name1##Name2##Name3
 #endif
 #if !defined(NCBI_EAT_SEMICOLON)
-#  define NCBI_EAT_SEMICOLON(UniqueName) typedef int UniqueName
+#  define NCBI_EAT_SEMICOLON(UniqueName) \
+typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 #endif
 
 #endif /* NCBISTL__HPP */
