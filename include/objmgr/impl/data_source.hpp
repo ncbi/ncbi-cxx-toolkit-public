@@ -199,7 +199,6 @@ public:
     /// existing TSE tree of this data-source.
     void AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
     void AttachEntry(CSeq_entry_Info& parent, CSeq_entry& entry);
-    void RemoveEntry(CSeq_entry& entry);
     void RemoveEntry(CSeq_entry_Info& entry);
 
     /// Add sequence map for the given Bioseq.
@@ -505,6 +504,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2003/12/18 16:38:05  grichenk
+* Added CScope::RemoveEntry()
+*
 * Revision 1.67  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

@@ -150,6 +150,8 @@ public:
 
     // Add new sub-entry to the existing tree if it is in this scope
     void AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
+    void RemoveEntry(CSeq_entry& entry);
+
     // Add sequence map for a bioseq if it is in this scope
     void AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap);
 
@@ -209,6 +211,7 @@ private:
     // clean some cache entries when new data source is added
     void x_ClearCacheOnNewData(void);
     void x_ClearAnnotCache(void);
+    void x_ClearCacheOnRemoveData(CSeq_entry_Info& info);
 
     // Find the best possible resolution for the Seq-id
     void x_ResolveSeq_id(TSeq_idMapValue& id);
@@ -366,6 +369,8 @@ public:
                       CSeq_annot& old_annot, CSeq_annot& new_annot);
     // Add new sub-entry to the existing tree if it is in this scope
     void AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
+    void RemoveEntry(CSeq_entry& entry);
+
     // Add sequence map for a bioseq if it is in this scope
     void AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap);
 
@@ -579,6 +584,13 @@ void CScope::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
 
 
 inline
+void CScope::RemoveEntry(CSeq_entry& entry)
+{
+    m_Impl->RemoveEntry(entry);
+}
+
+
+inline
 void CScope::AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap)
 {
     m_Impl->AttachMap(bioseq, seqmap);
@@ -605,6 +617,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2003/12/18 16:38:05  grichenk
+* Added CScope::RemoveEntry()
+*
 * Revision 1.65  2003/11/28 15:13:24  grichenk
 * Added CSeq_entry_Handle
 *

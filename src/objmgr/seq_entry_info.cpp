@@ -436,6 +436,7 @@ void CSeq_entry_Info::x_RemoveEntry(CSeq_entry_Info& child_info)
                    "invalid entry type");
     }
     parent_entry.SetSet().SetSeq_set().remove(Ref(&child_entry));
+    child_entry.ResetParentEntry();
 
     child_info.x_TSEDetach();
     if ( HaveDataSource() ) {
@@ -457,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/12/18 16:38:07  grichenk
+ * Added CScope::RemoveEntry()
+ *
  * Revision 1.5  2003/12/11 17:02:50  grichenk
  * Fixed CRef resetting in constructors.
  *

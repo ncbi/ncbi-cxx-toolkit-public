@@ -249,6 +249,34 @@ void CScope_Impl::x_ClearAnnotCache(void)
 }
 
 
+void CScope_Impl::x_ClearCacheOnRemoveData(CSeq_entry_Info& info)
+{
+    x_ClearAnnotCache();
+    if (info.m_Bioseq) {
+        // Clear bioseq from the scope cache
+        ITERATE(CBioseq_Info::TSynonyms, si, info.GetBioseq_Info().GetSynonyms()) {
+            TSeq_idMap::iterator bs_id = m_Seq_idMap.find(*si);
+            if (bs_id != m_Seq_idMap.end()) {
+                if ( bs_id->second.m_Bioseq_Info ) {
+                    bs_id->second.m_Bioseq_Info->m_ScopeInfo = 0; // detaching from scope
+                    bs_id->second.m_Bioseq_Info->m_SynCache.Reset(); // breaking the link
+                }
+            m_Seq_idMap.erase(bs_id);
+            }
+            TBioseqMap::iterator bs = m_BioseqMap.find(&info.GetBioseq_Info().GetBioseq());
+            if (bs != m_BioseqMap.end()) {
+                m_BioseqMap.erase(bs);
+            }
+        }
+    }
+    else {
+        NON_CONST_ITERATE(CSeq_entry_Info::TEntries, ei, info.m_Entries) {
+            x_ClearCacheOnRemoveData(**ei);
+        }
+    }
+}
+
+
 CRef<CTSE_Info> CScope_Impl::x_GetTSE_Info(CSeq_entry& tse)
 {
     for (CPriority_I it(m_setDataSrc); it; ++it) {
@@ -443,6 +471,30 @@ void CScope_Impl::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
     CRef<CSeq_entry_Info> info = x_GetSeq_entry_Info(parent);
     info->GetDataSource().AttachEntry(*info, entry);
     x_ClearCacheOnNewData();
+}
+
+
+void CScope_Impl::RemoveEntry(CSeq_entry& entry)
+{
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+    CSeq_entry_Info& info = *x_GetSeq_entry_Info(entry);
+    x_ClearCacheOnRemoveData(info);
+    if ( info.GetParentSeq_entry_Info() ) {
+        info.GetDataSource().RemoveEntry(info);
+    }
+    else {
+        CDataSource_ScopeInfo* ds_info = 0;
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            if (&it->GetDataSource() == &info.GetDataSource())
+            {
+                ds_info = &*it;
+                break;
+            }
+        }
+        if ( ds_info ) {
+            m_setDataSrc.Erase(*ds_info);
+        }
+    }
 }
 
 
@@ -1068,6 +1120,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2003/12/18 16:38:07  grichenk
+* Added CScope::RemoveEntry()
+*
 * Revision 1.93  2003/12/12 16:59:51  grichenk
 * Fixed conflicts resolving (ask data source).
 *

@@ -117,6 +117,7 @@ protected:
     friend class CSeq_annot_Info;
     friend class CBioseq_Info;
     friend class CSeq_entry_CI;
+    friend class CScope_Impl;
 
     CSeq_entry_Info(void);
 
@@ -246,6 +247,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/12/18 16:38:06  grichenk
+* Added CScope::RemoveEntry()
+*
 * Revision 1.6  2003/11/28 15:13:25  grichenk
 * Added CSeq_entry_Handle
 *

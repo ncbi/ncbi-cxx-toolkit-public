@@ -604,6 +604,26 @@ void CDataSource::AttachEntry(CSeq_entry_Info& parent_info, CSeq_entry& entry)
 }
 
 
+void CDataSource::RemoveEntry(CSeq_entry_Info& entry)
+{
+    if ( m_Loader ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "Can not remove a loaded entry");
+    }
+
+    TMainWriteLockGuard guard(m_DSMainLock);
+    CSeq_entry_Info* parent_info =
+        const_cast<CSeq_entry_Info*>(entry.GetParentSeq_entry_Info());
+    if ( !parent_info ) {
+        // Top level entry
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "Can not remove top level seq-entry from a data source");
+    }
+    // Internal entry
+    parent_info->x_RemoveEntry(entry);
+}
+
+
 void CDataSource::x_AddEntry(CSeq_entry_Info& parent_info, CSeq_entry& entry)
 {
     if ( parent_info.GetTSE().IsSeq() ) {
@@ -1154,6 +1174,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.124  2003/12/18 16:38:06  grichenk
+* Added CScope::RemoveEntry()
+*
 * Revision 1.123  2003/11/26 17:55:57  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

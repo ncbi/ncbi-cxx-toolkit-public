@@ -863,7 +863,6 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         LOG_POST("No seq-id found");
         return;
     }
-
     handle.GetTopLevelSeqEntry();
 #if 0 // build order issues
     CHECK_WRAP();
@@ -1333,6 +1332,24 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     _ASSERT(count == seq_alignrg_cnt);
     _ASSERT(annot_set.size() == alignrg_annots_cnt);
     CHECK_END("get align set");
+
+    {{
+        CRef<CSeq_entry> entry(
+            const_cast<CSeq_entry*>(handle.GetBioseq().GetParentEntry()));
+        CSeq_entry* parent = entry->GetParentEntry();
+        handle = CBioseq_Handle();
+        scope.RemoveEntry(*entry);
+        CBioseq_Handle h2 = scope.GetBioseqHandle(id);
+        _ASSERT(!h2  ||  h2.GetBioseq().GetParentEntry() != entry);
+        if (parent) {
+            scope.AttachEntry(*parent, *entry);
+        }
+        else {
+            scope.AddTopLevelSeqEntry(*entry);
+        }
+        h2 = scope.GetBioseqHandle(id);
+        _ASSERT(h2);
+    }}
 }
 
 
@@ -1383,6 +1400,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2003/12/18 16:38:07  grichenk
+* Added CScope::RemoveEntry()
+*
 * Revision 1.46  2003/11/10 18:12:09  grichenk
 * Removed extra EFlags declaration from seq_map_ci.hpp
 *
