@@ -9,6 +9,10 @@ return_status=0
 
 run_prg() {
   $prg -in $test_dir/$1.asn $2 > $tmp_out
+  if test "$?" != 0; then
+      echo "FAILURE:"
+      return_status=1
+  fi
 }
 
 check_diff() {
@@ -35,16 +39,19 @@ test2() {
 
 #### TEST CASES #####
 
-test1 unaln "-fillunaln t -noobjmgr t" "test that fillunaln does not affect this alignment"
+test1 unaln "-fillunaln t -noobjmgr t" \
+"test that fillunaln does not affect this alignment"
 
 # gi 6467445
-test2 independent_dss "" "test independent dss"
+test2 independent_dss "-b Seq-entry" \
+"test independent dss"
 
 # gi 19880863
-test2 gapjoin "-gapjoin t" "test gap join"
+test2 gapjoin "-gapjoin t -b Seq-entry" \
+"test gap join"
 
 # gi 19172277
-test2 19172277 "" "test gi 19172277"
+test2 19172277 "-b Seq-entry" "test gi 19172277"
 
 test1 multiple_row_inserts "" "multiple row inserts"
 
