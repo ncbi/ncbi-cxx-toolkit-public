@@ -56,7 +56,7 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CObjectManager& objmgr,
     TSeqLocVector retval;
     CRef<CSeq_entry> seq_entry;
     vector<CConstRef<CSeq_loc> > lcase_mask;
-    CScope* scope = new CScope(objmgr);
+    CRef<CScope> scope(new CScope(objmgr));
     scope->AddDefaults();
 
     if (get_lcase_mask) {
