@@ -34,6 +34,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#ifndef NDEBUG
+/* NOTE: this conditional inclusion is only needed by assert.h on Darwin */
+/* We do not want to include "ncbi_config.h" to branch on the platform name
+ * in addition because in C toolkit it it turn pulls ncbilcl.h, which includes
+ * <stdio.h>, thus making this conditional unnecessary. */
+#  include <stdio.h>
+#endif
 
 
 /* Buffer chunk
@@ -282,6 +289,9 @@ extern BUF BUF_Destroy(BUF buf)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/12/18 19:30:11  lavr
+ * Conditional <stdio.h> on OS_UNIX_DARWIN for Mach-O executables (RGS)
+ *
  * Revision 6.8  2002/12/13 21:18:24  lavr
  * Log moved to end
  *
