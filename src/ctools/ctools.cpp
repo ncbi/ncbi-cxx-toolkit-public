@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/02/11 02:15:39  lavr
+ * extern "C" replaced with reinterpret_cast to accepted by MSVC
+ *
  * Revision 1.2  2001/02/10 04:13:35  lavr
  * Extra semicolon removed
  *
@@ -95,21 +98,15 @@ static int s_ErrorHandler(const ErrDesc* err)
     return ANS_OK;
 }
 
-
-extern "C" {
-    static int LIBCALLBACK s_c2cxxErrorHandler(const ErrDesc* err);
-}
-
 static int LIBCALLBACK s_c2cxxErrorHandler(const ErrDesc* err)
 {
     return s_ErrorHandler(err);
 }
 
-
 void SetupCToolkitErrPost(void)
 {
     Nlm_CallErrHandlerOnly(TRUE);
-    Nlm_ErrSetHandler(s_c2cxxErrorHandler);
+    Nlm_ErrSetHandler(reinterpret_cast<ErrHookProc>(s_c2cxxErrorHandler));
 }
 
 
