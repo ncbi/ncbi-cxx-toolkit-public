@@ -838,7 +838,8 @@ void CId1ReaderBase::GetSNPChunk(CTSE_Chunk_Info& chunk,
     CRef<CSeq_annot_SNP_Info> snp_annot = GetSNPAnnot(blob_id, conn);
     if ( snp_annot ) {
         CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(*snp_annot));
-        CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kSNP_EntryId);
+        CSeq_id_Handle sih;
+        CTSE_Chunk_Info::TPlace place(sih, kSNP_EntryId);
         chunk.x_LoadAnnot(place, annot_info);
     }
 }
