@@ -55,6 +55,10 @@
 #include <objects/mmdb3/Residue_interval_pntr.hpp>
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
+#include <objects/cn3d/Cn3d_backbone_type.hpp>
+#include <objects/cn3d/Cn3d_backbone_style.hpp>
+#include <objects/cn3d/Cn3d_general_style.hpp>
+#include <objects/cn3d/Cn3d_style_settings.hpp>
 
 #include "cdd_annot_dialog.hpp"
 #include "structure_set.hpp"
@@ -707,6 +711,8 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
             throw "no chain of annotation's MMDB ID in the alignment";
 
         GlobalMessenger()->RemoveAllHighlights(true);
+        CCn3d_style_settings globalStyleSettings;
+        set->styleManager->GetGlobalStyle().SaveSettingsToASN(&globalStyleSettings);
 
         // iterate over molecule/residue intervals
         if (annot.GetFeatures().size() > 0 &&
@@ -737,7 +743,26 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
                     if (m == o->first->graph->molecules.end())
                         throw "molecule with annotation's specified molecule ID not found in object";
 
-                    for (int r=(*i)->GetFrom().Get(); r<=(*i)->GetTo().Get(); ++r) {
+                        // make sure this stuff is visible in global style
+                        if (m->second->IsProtein()) {
+                            if (globalStyleSettings.GetProtein_backbone().GetType() == eCn3d_backbone_type_off &&
+                                !globalStyleSettings.GetProtein_sidechains().GetIs_on())
+                            {
+                                globalStyleSettings.SetProtein_backbone().SetType(eCn3d_backbone_type_trace);
+                            }
+                        } else if (m->second->IsNucleotide()) {
+                            if (globalStyleSettings.GetNucleotide_backbone().GetType() == eCn3d_backbone_type_off &&
+                                !globalStyleSettings.GetNucleotide_sidechains().GetIs_on())
+                            {
+                                globalStyleSettings.SetNucleotide_backbone().SetType(eCn3d_backbone_type_trace);
+                            }
+                        } else if (m->second->IsSolvent()) {
+                            globalStyleSettings.SetSolvents().SetIs_on(true);
+                        } else if (m->second->IsHeterogen()) {
+                            globalStyleSettings.SetHeterogens().SetIs_on(true);
+                        }
+
+                        for (int r=(*i)->GetFrom().Get(); r<=(*i)->GetTo().Get(); ++r) {
                         // highlight residues in interval
                         if (o == annotObjects.begin()) {
                             if (r >= 1 && r <= m->second->NResidues())
@@ -753,6 +778,8 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
                     }
                 }
             }
+
+            set->styleManager->SetGlobalStyle(globalStyleSettings);
 
             // return object with most hits of annotation to aligned chain region
             const StructureObject *bestObject = NULL;
@@ -1226,6 +1253,9 @@ wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/04/02 22:45:03  thiessen
+* make stuff visible in global style on show evidence
+*
 * Revision 1.37  2004/03/15 18:16:33  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *
