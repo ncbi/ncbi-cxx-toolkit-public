@@ -34,21 +34,22 @@ timeout="${CHECK_TIMEOUT:-200}"
 script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
+tmp=./$2.stdin.$$
+
 # Reinforce timeout
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
 # Run command
 if [ "X$1" = "X-stdin" ]; then
-  cat - > $0.stdin.$$
+  trap 'rm -f $tmp' 1 2 15
+  cat - > $tmp
   shift
-  $@ < $0.stdin.$$ &
-  sleep 1 # Reduce the chance of removing the file before it's read....
-  rm $0.stdin.$$ > /dev/null 2>&1
+  $@ < $tmp &
 else
   "$@" &
 fi
 pid=$!
-trap 'kill $pid; rm $0.stdin.$$ > /dev/null 2>&1' 1 2 15
+trap 'kill $pid; rm -f $tmp' 1 2 15
 
 # Execute time-guard
 $script_dir/check_exec_guard.sh $timeout $pid &
@@ -56,6 +57,7 @@ $script_dir/check_exec_guard.sh $timeout $pid &
 # Wait ending of execution
 wait $pid > /dev/null 2>&1
 status=$?
+rm -f $tmp > /dev/null 2>&1
 
 # Return test exit code
 exit $status
