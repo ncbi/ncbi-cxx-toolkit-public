@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/07/01 15:30:20  thiessen
+* fix for container type switch in Dense-seg
+*
 * Revision 1.23  2001/11/27 16:26:06  thiessen
 * major update to data management system
 *
@@ -123,7 +126,6 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 typedef std::list < const CSeq_align * > SeqAlignList;
-typedef std::list < CRef < CSeq_id > > SeqIdList;
 
 AlignmentSet::AlignmentSet(StructureBase *parent, const Sequence *masterSequence,
     const SeqAnnotList& seqAnnots) :
@@ -203,22 +205,23 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
     masterToSlave.resize(master->Length(), -1);
     blockStructure.resize(master->Length(), -1);
 
-    SequenceSet::SequenceList::const_iterator
-        s = master->parentSet->sequenceSet->sequences.begin(),
-        se = master->parentSet->sequenceSet->sequences.end();
-
     // find slave sequence for this alignment, and order (master or slave first)
-    const SeqIdList& sids = seqAlign.GetSegs().IsDendiag() ?
-        seqAlign.GetSegs().GetDendiag().front()->GetIds() :
-        seqAlign.GetSegs().GetDenseg().GetIds();
+    const CSeq_id& frontSeqId = seqAlign.GetSegs().IsDendiag() ?
+        seqAlign.GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
+        seqAlign.GetSegs().GetDenseg().GetIds().front().GetObject();
+    const CSeq_id& backSeqId = seqAlign.GetSegs().IsDendiag() ?
+        seqAlign.GetSegs().GetDendiag().front()->GetIds().back().GetObject() :
+        seqAlign.GetSegs().GetDenseg().GetIds().back().GetObject();
 
     bool masterFirst = true;
-    for (; s!=se; s++) {
-        if (master->identifier->MatchesSeqId(sids.front().GetObject()) &&
-            (*s)->identifier->MatchesSeqId(sids.back().GetObject())) {
+    SequenceSet::SequenceList::const_iterator
+        s, se = master->parentSet->sequenceSet->sequences.end();
+    for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
+        if (master->identifier->MatchesSeqId(frontSeqId) &&
+            (*s)->identifier->MatchesSeqId(backSeqId)) {
             break;
-        } else if ((*s)->identifier->MatchesSeqId(sids.front().GetObject()) &&
-                   master->identifier->MatchesSeqId(sids.back().GetObject())) {
+        } else if ((*s)->identifier->MatchesSeqId(frontSeqId) &&
+                   master->identifier->MatchesSeqId(backSeqId)) {
             masterFirst = false;
             break;
         }

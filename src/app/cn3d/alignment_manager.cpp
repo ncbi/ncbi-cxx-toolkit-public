@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2002/07/01 15:30:20  thiessen
+* fix for container type switch in Dense-seg
+*
 * Revision 1.71  2002/03/07 19:16:04  thiessen
 * don't auto-show sequence windows
 *
@@ -321,14 +324,14 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet,
                 } else if (updateAlignments.size() > 0) {
                     master = updateAlignments.front()->GetMaster();
                 } else {
-                    typedef std::list < CRef < CSeq_id > > SeqIdList;
-                    const SeqIdList& firstSids = (*s)->GetSegs().IsDendiag() ?
-                        (*s)->GetSegs().GetDendiag().front()->GetIds() :
-                        (*s)->GetSegs().GetDenseg().GetIds();
-                    SequenceSet::SequenceList::const_iterator s, se = sSet->sequences.end();
-                    for (s=sSet->sequences.begin(); s!=se; s++) {
-                        if ((*s)->identifier->MatchesSeqId(firstSids.front().GetObject())) {
-                            master = *s;
+                    SequenceSet::SequenceList::const_iterator q, qe = sSet->sequences.end();
+                    for (q=sSet->sequences.begin(); q!=qe; q++) {
+                        if ((*q)->identifier->MatchesSeqId(
+                                (*s)->GetSegs().IsDendiag() ?
+                                    (*s)->GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
+                                    (*s)->GetSegs().GetDenseg().GetIds().front().GetObject()
+                            )) {
+                            master = *q;
                             break;
                         }
                     }

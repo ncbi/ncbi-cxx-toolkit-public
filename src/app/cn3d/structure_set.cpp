@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2002/07/01 15:30:21  thiessen
+* fix for container type switch in Dense-seg
+*
 * Revision 1.103  2002/06/07 12:41:04  thiessen
 * change ambiguous master error to warning
 *
@@ -564,14 +567,16 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
     bool seq1PresentInAll = true, seq2PresentInAll = true;
 
     // first, find sequences for first pairwise alignment
-    typedef std::list < CRef < CSeq_id > > SeqIdList;
-    const SeqIdList& firstSids = seqAligns.front()->GetSegs().IsDendiag() ?
-        seqAligns.front()->GetSegs().GetDendiag().front()->GetIds() :
-        seqAligns.front()->GetSegs().GetDenseg().GetIds();
+    const CSeq_id& frontSid = seqAligns.front()->GetSegs().IsDendiag() ?
+        seqAligns.front()->GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
+        seqAligns.front()->GetSegs().GetDenseg().GetIds().front().GetObject();
+    const CSeq_id& backSid = seqAligns.front()->GetSegs().IsDendiag() ?
+        seqAligns.front()->GetSegs().GetDendiag().front()->GetIds().back().GetObject() :
+        seqAligns.front()->GetSegs().GetDenseg().GetIds().back().GetObject();
     SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
     for (s=sequenceSet->sequences.begin(); s!=se; s++) {
-        if ((*s)->identifier->MatchesSeqId(firstSids.front().GetObject())) seq1 = *s;
-        if ((*s)->identifier->MatchesSeqId(firstSids.back().GetObject())) seq2 = *s;
+        if ((*s)->identifier->MatchesSeqId(frontSid)) seq1 = *s;
+        if ((*s)->identifier->MatchesSeqId(backSid)) seq2 = *s;
         if (seq1 && seq2) break;
     }
     if (!(seq1 && seq2)) {
@@ -582,15 +587,19 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
     // now, make sure one of these sequences is present in all the other pairwise alignments
     SeqAlignList::const_iterator a = seqAligns.begin(), ae = seqAligns.end();
     for (a++; a!=ae; a++) {
-        const SeqIdList& sids = (*a)->GetSegs().IsDendiag() ?
-            (*a)->GetSegs().GetDendiag().front()->GetIds() : (*a)->GetSegs().GetDenseg().GetIds();
-        if (!seq1->identifier->MatchesSeqId(*(sids.front())) && !seq1->identifier->MatchesSeqId(*(sids.back())))
+        const CSeq_id& frontSid2 = (*a)->GetSegs().IsDendiag() ?
+            (*a)->GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
+            (*a)->GetSegs().GetDenseg().GetIds().front().GetObject();
+        const CSeq_id& backSid2 = (*a)->GetSegs().IsDendiag() ?
+            (*a)->GetSegs().GetDendiag().front()->GetIds().back().GetObject() :
+            (*a)->GetSegs().GetDenseg().GetIds().back().GetObject();
+        if (!seq1->identifier->MatchesSeqId(frontSid2) && !seq1->identifier->MatchesSeqId(backSid2))
             seq1PresentInAll = false;
-        if (!seq2->identifier->MatchesSeqId(*(sids.front())) && !seq2->identifier->MatchesSeqId(*(sids.back())))
+        if (!seq2->identifier->MatchesSeqId(frontSid2) && !seq2->identifier->MatchesSeqId(backSid2))
             seq2PresentInAll = false;
     }
     if (!seq1PresentInAll && !seq2PresentInAll) {
-        ERR_POST(Error << "All pairwise sequence alignments must have common master sequence");
+        ERR_POST(Error << "All pairwise sequence alignments must have a common master sequence");
         return;
     } else if (seq1PresentInAll && !seq2PresentInAll)
         master = seq1;
