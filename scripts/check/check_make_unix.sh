@@ -45,10 +45,7 @@ if test ! -z "$x_build_dir"; then
       exit 1 
    fi
    # Expand path and remove trailing slash
-   x_cur_dir=`pwd`
-   cd $x_build_dir 
-   x_build_dir=`pwd | sed -e 's/\/$//g'`
-   cd $x_cur_dir 
+   x_build_dir=`(cd "$x_build_dir"; pwd | sed -e 's/\/$//g')`
 else
    # Get build dir name from current path
    x_build_dir=`pwd | sed -e 's%/build.*$%%'`/build
@@ -240,7 +237,7 @@ RunTest() {
       if test -f "\$x_app"; then
          # Run check
 		 check_exec="$x_root_dir/scripts/check/check_exec.sh"
-         \$check_exec \$x_timeout \$x_run >> \$x_test_out 2>&1
+         \$check_exec \$x_timeout `eval echo \$x_run` >> \$x_test_out 2>&1
          result=\$?
 
          # Write result of the test into the his output file
@@ -294,7 +291,13 @@ for x_row in $x_tests; do
    x_app=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_cmd=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_timeout=`echo "$x_row" | sed -e 's/.*~//'`
+   x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_requires=" `echo \"$x_row\" | sed -e 's/.*~//'` "
+
+   # Check application requirements
+   for x_req in $x_requires; do
+     test -f "$x_conf_dir/$x_req.enabled"  ||  continue 2
+   done
 
    # Application base build directory
    x_work_dir="$x_build_dir/`echo \"$x_row\" | sed -e 's/~.*$//'`"

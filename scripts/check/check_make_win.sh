@@ -54,10 +54,7 @@ if test ! -z "$x_build_dir"; then
       exit 1 
    fi
    # Expand path and remove trailing slash
-   x_cur_dir=`pwd`
-   cd $x_build_dir
-   x_build_dir=`pwd | sed -e 's/\/$//g'`
-   cd $x_cur_dir 
+   x_build_dir=`(cd "$x_build_dir"; pwd | sed -e 's/\/$//g')`
 else
    # Get build dir name from current work directory
    x_build_dir=`pwd | sed -e 's%/msvc_prj.*$%%'`/msvc_prj
@@ -204,7 +201,20 @@ RunTest() {
    x_run="\$4"
    x_ext="\$5"
    x_timeout="\$6"
-   x_conf="\$7"
+   x_requires="\$7"
+   x_conf="\$8"
+
+   # Check application requirements
+   for x_req in \$x_requires; do
+      case "\$x_req" in
+         MT )
+            test \`echo \$x_conf | grep MT\`  ||  return 0  
+            ;;
+         unix )
+            return 0;
+            ;;
+      esac
+   done
 
    # Determine test directory
    result=1
@@ -255,7 +265,7 @@ RunTest() {
    # Run check
    check_exec="$x_root_dir/scripts/check/check_exec.sh"
    test -x \$check_exec  ||  check_exec="$x_build_dir/check_exec.sh"
-   \$check_exec \$x_timeout \$x_run >> \$x_test_out 2>&1
+   \$check_exec \$x_timeout `eval echo \$x_run` >> \$x_test_out 2>&1
    result=\$?
 
    # Write result of the test into the his output file
@@ -339,7 +349,8 @@ for x_row in $x_tests; do
    x_app=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_cmd=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_timeout=`echo "$x_row" | sed -e 's/.*~//'`
+   x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_requires=`echo "$x_row" | sed -e 's/.*~//'`
 
    # Application base build directory
    x_work_dir="$x_build_dir/`echo \"$x_row\" | sed -e 's/~.*$//'`"
@@ -395,6 +406,7 @@ RunTest "$x_work_dir" \\
         "$x_cmd" \\
         "$x_test_out" \\
         "$x_timeout" \\
+        "$x_requires" \\
         "\$x_conf"
 EOF
 

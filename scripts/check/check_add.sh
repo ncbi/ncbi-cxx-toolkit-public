@@ -49,8 +49,7 @@ x_app=`grep '^ *APP' "$x_srcdir/Makefile.$x_test.app"`
 x_app=`echo "$x_app" | sed -e 's/^.*=//' -e 's/^ *//'`$x_exeext
 
 # Get cmd-lines to run test
-x_run=`grep '^ *CHECK_CMD' "$x_srcdir/Makefile.$x_test.app"`
-x_run=`echo "$x_run" | sed -e 's/^[^=]*=//'`
+x_run=`grep '^ *CHECK_CMD' "$x_srcdir/Makefile.$x_test.app" | sed 's/^[^=]*=//'`
 
 if test -z "$x_run"; then
    # If command line not defined, then just run the test without parameters
@@ -63,6 +62,11 @@ x_files=`grep '^ *CHECK_COPY' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=/
 # Get application's check timeout
 x_timeout=`grep '^ *CHECK_TIMEOUT' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
 x_timeout="${x_timeout:-$x_timeout_default}"
+# Get application's requirement
+x_requires=`grep '^ *CHECK_REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
+if test -z "$x_requires"; then
+   x_requires=`grep '^ *REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
+fi
 
 # Convert source dir to relative path
 x_srcdir=`echo "$x_srcdir" | sed -e 's%^.*/src/%%'`
@@ -71,7 +75,7 @@ x_srcdir=`echo "$x_srcdir" | sed -e 's%^.*/src/%%'`
 # Write data about current test into the list file
 for x_cmd in $x_run; do
     x_cmd=`echo "$x_cmd" | sed -e 's/%gj_s4%/ /g' | sed -e 's/^ *//' | sed -e 's/\"/\\\\"/g'`
-    echo "$x_srcdir$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_files$x_delim$x_timeout" >> $x_out
+    echo "$x_srcdir$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires" >> $x_out
 done
 
 exit 0
