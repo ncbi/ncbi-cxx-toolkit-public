@@ -33,6 +33,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/11/10 01:13:40  vakatov
+* Moved "NCBI_USING_NAMESPACE_STD:" to the first(fake) definition of
+* namespace "ncbi" -- no need to "using ..." it in every new "ncbi"
+* scope definition...
+*
 * Revision 1.5  1998/11/06 22:42:39  vakatov
 * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
 * API to namespace "ncbi::" and to use it by default, respectively
@@ -69,8 +74,8 @@
 #endif
 
 // get rid of long identifier warning in visual c++ 5 and 6
-#if _MSC_VER <= 1200
-#pragma warning(disable: 4786)  
+#if (_MSC_VER <= 1200)
+#  pragma warning(disable: 4786)  
 #endif
 
 // Check if this compiler supports namespaces at all... (see in <ncbiconf.h>)
@@ -92,8 +97,8 @@
 // and "std::" and/or "ncbi::" prefixes in the source files
 #if defined(HAVE_NAMESPACE)
 namespace std { /* the fake one */ }
-namespace ncbi { /* the fake one */ }
-#  define BEGIN_NCBI_SCOPE namespace ncbi { NCBI_USING_NAMESPACE_STD;
+namespace ncbi { /* the fake one, plus "std" */ NCBI_USING_NAMESPACE_STD; }
+#  define BEGIN_NCBI_SCOPE namespace ncbi {
 #  define END_NCBI_SCOPE }
 #  define USING_NCBI_SCOPE using namespace ncbi
 #else
