@@ -34,7 +34,6 @@
 
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/seqref.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -429,17 +428,18 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(void)
 }
 
 
-typedef pair<CSeqref::ESat, CSeqref::ESubSat> TSK;
+typedef CId1ReaderBase TRDR;
+typedef pair<TRDR::ESat, TRDR::ESubSat> TSK;
 typedef pair<const char*, TSK> TSI;
 static const TSI sc_SatIndex[] = {
-    TSI("ANNOT:CDD",  TSK(CSeqref::eSat_ANNOT,      CSeqref::eSubSat_CDD)),
-    TSI("ANNOT:MGS",  TSK(CSeqref::eSat_ANNOT,      CSeqref::eSubSat_MGS)),
-    TSI("ANNOT:SNP",  TSK(CSeqref::eSat_ANNOT,      CSeqref::eSubSat_SNP)),
-    TSI("SNP",        TSK(CSeqref::eSat_SNP,        CSeqref::eSubSat_main)),
-    TSI("ti",         TSK(CSeqref::eSat_TRACE,      CSeqref::eSubSat_main)),
-    TSI("TR_ASSM_CH", TSK(CSeqref::eSat_TR_ASSM_CH, CSeqref::eSubSat_main)),
-    TSI("TRACE_ASSM", TSK(CSeqref::eSat_TRACE_ASSM, CSeqref::eSubSat_main)),
-    TSI("TRACE_CHGR", TSK(CSeqref::eSat_TRACE_CHGR, CSeqref::eSubSat_main))
+    TSI("ANNOT:CDD",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_CDD)),
+    TSI("ANNOT:MGC",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_MGC)),
+    TSI("ANNOT:SNP",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_SNP)),
+    TSI("SNP",        TSK(TRDR::eSat_SNP,        TRDR::eSubSat_main)),
+    TSI("ti",         TSK(TRDR::eSat_TRACE,      TRDR::eSubSat_main)),
+    TSI("TR_ASSM_CH", TSK(TRDR::eSat_TR_ASSM_CH, TRDR::eSubSat_main)),
+    TSI("TRACE_ASSM", TSK(TRDR::eSat_TRACE_ASSM, TRDR::eSubSat_main)),
+    TSI("TRACE_CHGR", TSK(TRDR::eSat_TRACE_CHGR, TRDR::eSubSat_main))
 };
 typedef CStaticArrayMap<const char*, TSK, PNocase> TSatMap;
 static const TSatMap sc_SatMap(sc_SatIndex, sizeof(sc_SatIndex));
@@ -541,13 +541,13 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
                 int bit = ext_feat & ~(ext_feat-1);
                 ext_feat -= bit;
 #ifdef GENBANK_USE_SNP_SATELLITE_15
-                if ( bit == CSeqref::eSubSat_SNP ) {
+                if ( bit == eSubSat_SNP ) {
                     AddSNPBlob_id(ids, gi);
                     continue;
                 }
 #endif
                 CBlob_id blob_id;
-                blob_id.SetSat(CSeqref::eSat_ANNOT);
+                blob_id.SetSat(eSat_ANNOT);
                 blob_id.SetSatKey(gi);
                 blob_id.SetSubSat(bit);
                 ids.AddBlob_id(blob_id, fBlobHasExternal);
@@ -656,7 +656,7 @@ void CId1Reader::GetSeq_entry(CID1server_back& id1_reply,
 #ifdef GENBANK_USE_SNP_SATELLITE_15
             x_ReadBlobReply(id1_reply, obj_stream, blob_id);
 #else
-            if ( blob_id.GetSubSat() == CSeqref::eSubSat_SNP ) {
+            if ( blob_id.GetSubSat() == eSubSat_SNP ) {
                 x_ReadBlobReply(id1_reply, snps, obj_stream, blob_id);
             }
             else {
@@ -859,7 +859,7 @@ void CId1Reader::x_SetParams(CID1server_maxcomplex& params,
     params.SetMaxplex(eEntry_complexities_entry | bits);
     params.SetGi(0);
     params.SetEnt(blob_id.GetSatKey());
-    if ( blob_id.GetSat() == CSeqref::eSat_ANNOT ) {
+    if ( blob_id.GetSat() == eSat_ANNOT ) {
         params.SetMaxplex(eEntry_complexities_entry); // TODO: TEMP: remove
         params.SetSat("ANNOT:"+NStr::IntToString(blob_id.GetSubSat()));
     }
