@@ -162,8 +162,8 @@ const T& DbgPrintP(const CDiagCompileInfo& info, const T& e, const char* e_str)
 ///   DbgPrintP()
 template<typename T>
 inline
-const T& DbgPrintNP(const CDiagCompileInfo& info, 
-                    const T& e, 
+const T& DbgPrintNP(const CDiagCompileInfo& info,
+                    const T& e,
                     const char* e_str)
 {
     DoDbgPrint(info, e_str);
@@ -178,7 +178,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// if (expression)
 ///     RETHROW_TRACE;
 /// else do_something_else;
-/// 
+///
 /// Example:
 /// -  RETHROW_TRACE;
 #  define RETHROW_TRACE do { \
@@ -193,7 +193,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// diagnostic message is printed, and then exception is thrown.
 ///
 /// Argument can be a simple string, or an exception object.
-/// 
+///
 /// Example:
 /// -  THROW0_TRACE("Throw just a string");
 /// -  THROW0_TRACE(runtime_error("message"));
@@ -226,7 +226,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// diagnostic message is printed, and then exception is thrown.
 ///
 /// Argument can be any printable object; that is, any object with a defined
-/// output operator. 
+/// output operator.
 ///
 /// Similar to THROW0p_TRACE except that program is not "aborted" when
 /// exception is thrown, and argument type can be an aggregate type such as
@@ -247,7 +247,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// Arguments can be any exception class with the specified initialization
 /// argument. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and 
+/// a new class object is constructed using the specified class name and
 /// initialization argument.
 ///
 /// Example:
@@ -263,7 +263,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// Arguments can be any exception class with a the specified initialization
 /// argument. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and 
+/// a new class object is constructed using the specified class name and
 /// initialization argument.
 ///
 /// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
@@ -283,7 +283,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// Arguments can be any exception class with a the specified initialization
 /// argument. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and 
+/// a new class object is constructed using the specified class name and
 /// initialization argument.
 ///
 /// Similar to THROW1p_TRACE except that program is not "aborted" when
@@ -303,7 +303,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// Arguments can be any exception class with a the specified initialization
 /// arguments. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and 
+/// a new class object is constructed using the specified class name and
 /// initialization arguments.
 ///
 /// Similar to THROW1_TRACE except that the exception class can have multiple
@@ -326,7 +326,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// Arguments can be any exception class with a the specified initialization
 /// arguments. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and 
+/// a new class object is constructed using the specified class name and
 /// initialization arguments.
 ///
 /// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
@@ -334,7 +334,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Similar to THROW1p_TRACE except that the exception class can have multiple
 /// initialization arguments instead of just one.
 ///
-/// Example: 
+/// Example:
 /// - THROWp_TRACE(complex, (2, 3));
 /// @sa
 ///   THROW1p_TRACE
@@ -349,7 +349,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// Arguments can be any exception class with a the specified initialization
 /// argument. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and 
+/// a new class object is constructed using the specified class name and
 /// initialization argument.
 ///
 /// Argument type can be an aggregate type such as Vector<T> where T is a
@@ -425,7 +425,7 @@ STD_CATCH(message) \
 #define NCBI_EXCEPTION(exception_class, err_code, message)           \
     (exception_class(DIAG_COMPILE_INFO, 0, exception_class::err_code,\
                      (message) ))
-     
+
 
 /// Generic macro to make an exception, given the exception class,
 /// previous exception , error code and message string.
@@ -606,7 +606,7 @@ protected:
 
     /// Helper method for copying exception data.
     virtual void x_Assign(const CException& src);
-    
+
     /// Helper method for assigning error code.
     virtual void x_AssignErrCode(const CException& src);
 
@@ -636,7 +636,7 @@ private:
 };
 
 
-/// Return valid pointer to uppermost derived class only if "from" is _really_ 
+/// Return valid pointer to uppermost derived class only if "from" is _really_
 /// the object of the desired type.
 ///
 /// Do not cast to intermediate types (return NULL if such cast is attempted).
@@ -659,6 +659,7 @@ const TTo* UppermostCast(const TFrom& from)
     { \
         x_Assign(other); \
     } \
+public: \
     virtual ~exception_class(void) throw() {} \
     virtual const char* GetType(void) const {return #exception_class;} \
     typedef int TErrCode; \
@@ -828,7 +829,7 @@ class NCBI_XNCBI_EXPORT CCoreException : EXCEPTION_VIRTUAL_BASE public CExceptio
 public:
     /// Error types that  corelib can generate.
     ///
-    /// These generic error conditions can occur for corelib applications. 
+    /// These generic error conditions can occur for corelib applications.
     enum EErrCode {
         eCore,          ///< Generic corelib error
         eNullPtr,       ///< Null pointer error
@@ -915,7 +916,7 @@ public:
     /// Constructor.
     CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
                            const CException* prev_exception,
-                           EErrCode err_code, const string& message, 
+                           EErrCode err_code, const string& message,
                            int errnum)
           : TBase(info, prev_exception,
             (typename TBase::EErrCode)(CException::eInvalid),
@@ -953,7 +954,7 @@ public:
     /// Get error code.
     TErrCode GetErrCode(void) const
     {
-        return typeid(*this) == 
+        return typeid(*this) ==
             typeid(CErrnoTemplExceptionEx<TBase, PErrstr>) ?
                (TErrCode) this->x_GetErrCode() :
                (TErrCode) CException::eInvalid;
@@ -1043,13 +1044,16 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2005/03/30 14:40:32  ssikorsk
+ * Made destructor and getters explicitly public for default exception implementation
+ *
  * Revision 1.57  2004/09/22 13:32:16  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
  * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
  * Module, class and function attribute added to CNcbiDiag and CException
  * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
+ *  CDiagCompileInfo + fixes on derived classes and their usage
  * Macro NCBI_MODULE can be used to set default module name in cpp files
  *
  * Revision 1.56  2004/08/17 14:34:38  dicuccio
