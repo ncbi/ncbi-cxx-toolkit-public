@@ -70,7 +70,7 @@
 #include <string.h>
 #endif
 
-#include <util/compress/bzip2/bzlib.h>
+#include "bzlib.h"
 
 
 
