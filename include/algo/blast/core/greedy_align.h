@@ -37,7 +37,7 @@ Contents: Copy of mbalign.h from ncbitools library
 #ifndef _GREEDY_H_
 #define _GREEDY_H_
 
-#include <ncbi.h>
+#include <blast_def.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,21 +97,21 @@ typedef struct GreedyAlignMem {
 } GreedyAlignMem, PNTR GreedyAlignMemPtr;
 
 Int4 
-BLAST_GreedyAlign PROTO((const UcharPtr s1, Int4 len1,
-			     const UcharPtr s2, Int4 len2,
+BLAST_GreedyAlign (const Uint1Ptr s1, Int4 len1,
+			     const Uint1Ptr s2, Int4 len2,
 			     Boolean reverse, Int4 xdrop_threshold, 
 			     Int4 match_cost, Int4 mismatch_cost,
 			     Int4Ptr e1, Int4Ptr e2, GreedyAlignMemPtr abmp, 
-			     MBGapEditScript *S, Uint1 rem));
+			     MBGapEditScript *S, Uint1 rem);
 Int4 
-BLAST_AffineGreedyAlign PROTO((const UcharPtr s1, Int4 len1,
-				  const UcharPtr s2, Int4 len2,
+BLAST_AffineGreedyAlign (const Uint1Ptr s1, Int4 len1,
+				  const Uint1Ptr s2, Int4 len2,
 				  Boolean reverse, Int4 xdrop_threshold, 
 				  Int4 match_cost, Int4 mismatch_cost,
 				  Int4 gap_open, Int4 gap_extend,
 				  Int4Ptr e1, Int4Ptr e2, 
 				  GreedyAlignMemPtr abmp, 
-				  MBGapEditScript *S, Uint1 rem));
+				  MBGapEditScript *S, Uint1 rem);
 
 #ifdef __cplusplus
 }

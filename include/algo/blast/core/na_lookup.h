@@ -60,7 +60,7 @@ extern "C" {
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-Int4 LIBCALLBACK BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
+Int4 BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits, 
        Int4Ptr end_offset);
@@ -77,7 +77,7 @@ Int4 LIBCALLBACK BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-Int4 LIBCALLBACK BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
+Int4 BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits, 
        Int4Ptr end_offset);
@@ -95,7 +95,7 @@ Int4 LIBCALLBACK BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-Int4 LIBCALLBACK MB_ScanSubject(const LookupTableWrapPtr lookup,
+Int4 MB_ScanSubject(const LookupTableWrapPtr lookup,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,
        Int4Ptr end_offset);
@@ -112,7 +112,7 @@ Int4 LIBCALLBACK MB_ScanSubject(const LookupTableWrapPtr lookup,
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-Int4 LIBCALLBACK MB_DiscWordScanSubject(const LookupTableWrapPtr lookup,
+Int4 MB_DiscWordScanSubject(const LookupTableWrapPtr lookup,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset, 
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,     
        Int4Ptr end_offset);
@@ -129,7 +129,7 @@ Int4 LIBCALLBACK MB_DiscWordScanSubject(const LookupTableWrapPtr lookup,
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-Int4 LIBCALLBACK MB_AG_ScanSubject(const LookupTableWrapPtr lookup,
+Int4 MB_AG_ScanSubject(const LookupTableWrapPtr lookup,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,
        Int4Ptr end_offset); 

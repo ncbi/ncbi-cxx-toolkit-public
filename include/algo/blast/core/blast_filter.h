@@ -98,7 +98,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
 */
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length, 
-   Int4 offset, CharPtr instructions, BoolPtr mask_at_hash, 
+   Int4 offset, CharPtr instructions, Boolean *mask_at_hash, 
    BlastSeqLocPtr *seqloc_retval);
 
 #ifdef __cplusplus

@@ -34,6 +34,9 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 
 /* $Revision$ 
 * $Log$
+* Revision 1.3  2003/07/24 19:38:14  dondosha
+* Removed LIBCALL, LIBCALLBACK, PROTO macros from declarations
+*
 * Revision 1.2  2003/07/24 17:37:52  dondosha
 * Removed MakeBlastScore function that is dependent on objalign.h
 *
@@ -248,7 +251,7 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 #ifndef __BLASTKAR__
 #define __BLASTKAR__
 
-#include <ncbi.h>
+#include <blast_def.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -438,35 +441,35 @@ typedef struct _blast_resfreq {
 		Nlm_FloatHi PNTR prob0; /* probs, zero offset. */
         } BLAST_ResFreq, PNTR BLAST_ResFreqPtr;
 
-BLAST_ScoreBlkPtr LIBCALL BLAST_ScoreBlkNew PROTO((Uint1 alphabet, Int2 number_of_contexts));
+BLAST_ScoreBlkPtr BLAST_ScoreBlkNew (Uint1 alphabet, Int2 number_of_contexts);
 
-BLAST_ScoreBlkPtr LIBCALL BLAST_ScoreBlkDestruct PROTO((BLAST_ScoreBlkPtr sbp));
+BLAST_ScoreBlkPtr BLAST_ScoreBlkDestruct (BLAST_ScoreBlkPtr sbp);
 
-Int2 LIBCALL BlastScoreSetAmbigRes PROTO((BLAST_ScoreBlkPtr sbp, Char ambiguous_res));
+Int2 BlastScoreSetAmbigRes (BLAST_ScoreBlkPtr sbp, Char ambiguous_res);
 
 
-Int2 LIBCALL BlastScoreBlkFill PROTO((BLAST_ScoreBlkPtr sbp, CharPtr string, Int4 length, Int2 context_number));
+Int2 BlastScoreBlkFill (BLAST_ScoreBlkPtr sbp, CharPtr string, Int4 length, Int2 context_number);
  
-Int2 LIBCALL BlastScoreBlkMatFill PROTO((BLAST_ScoreBlkPtr sbp, CharPtr matrix));
-BLAST_ScorePtr PNTR LIBCALL BlastScoreBlkMatCreateEx(BLAST_ScorePtr PNTR matrix,BLAST_Score penalty, BLAST_Score reward);
+Int2 BlastScoreBlkMatFill (BLAST_ScoreBlkPtr sbp, CharPtr matrix);
+BLAST_ScorePtr PNTR BlastScoreBlkMatCreateEx(BLAST_ScorePtr PNTR matrix,BLAST_Score penalty, BLAST_Score reward);
  
-Int2 LIBCALL BlastScoreBlkMatRead PROTO((BLAST_ScoreBlkPtr sbp, FILE *fp));
+Int2 BlastScoreBlkMatRead (BLAST_ScoreBlkPtr sbp, FILE *fp);
  
-Int2 LIBCALL BlastScoreBlkMaxScoreSet PROTO((BLAST_ScoreBlkPtr sbp));
+Int2 BlastScoreBlkMaxScoreSet (BLAST_ScoreBlkPtr sbp);
 BLAST_ScorePtr BlastPSIMaxScoreGet(BLAST_ScorePtr PNTR posMatrix, 
                                    Int4 start, Int4 length);
 
-BLAST_ResCompPtr LIBCALL BlastResCompNew PROTO((BLAST_ScoreBlkPtr sbp));
+BLAST_ResCompPtr BlastResCompNew (BLAST_ScoreBlkPtr sbp);
 
-BLAST_ResCompPtr LIBCALL BlastResCompDestruct PROTO((BLAST_ResCompPtr rcp));
+BLAST_ResCompPtr BlastResCompDestruct (BLAST_ResCompPtr rcp);
 
-Int2 LIBCALL BlastResCompStr PROTO((BLAST_ScoreBlkPtr sbp, BLAST_ResCompPtr rcp, CharPtr str, Int4 length));
+Int2 BlastResCompStr (BLAST_ScoreBlkPtr sbp, BLAST_ResCompPtr rcp, CharPtr str, Int4 length);
 
 /* 
 Produces a Karlin Block, and parameters, with standard protein frequencies.
 */
-Int2 LIBCALL BlastKarlinBlkStandardCalc PROTO((BLAST_ScoreBlkPtr sbp, Int2 context_start, Int2 context_end));
-BLAST_KarlinBlkPtr LIBCALL BlastKarlinBlkStandardCalcEx PROTO((BLAST_ScoreBlkPtr sbp));
+Int2 BlastKarlinBlkStandardCalc (BLAST_ScoreBlkPtr sbp, Int2 context_start, Int2 context_end);
+BLAST_KarlinBlkPtr BlastKarlinBlkStandardCalcEx (BLAST_ScoreBlkPtr sbp);
 
 
 
@@ -474,15 +477,15 @@ BLAST_KarlinBlkPtr LIBCALL BlastKarlinBlkStandardCalcEx PROTO((BLAST_ScoreBlkPtr
 	Functions taken from the OLD karlin.c
 */
 
-BLAST_KarlinBlkPtr LIBCALL BlastKarlinBlkCreate PROTO((void));
+BLAST_KarlinBlkPtr BlastKarlinBlkCreate (void);
 
-BLAST_KarlinBlkPtr LIBCALL BlastKarlinBlkDestruct PROTO((BLAST_KarlinBlkPtr));
+BLAST_KarlinBlkPtr BlastKarlinBlkDestruct (BLAST_KarlinBlkPtr);
 
-Int2 LIBCALL BlastKarlinBlkCalc PROTO((BLAST_KarlinBlkPtr kbp, BLAST_ScoreFreqPtr sfp));
+Int2 BlastKarlinBlkCalc (BLAST_KarlinBlkPtr kbp, BLAST_ScoreFreqPtr sfp);
 
-Int2 LIBCALL BlastKarlinBlkGappedCalc PROTO((BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, CharPtr matrix_name, ValNodePtr PNTR error_return));
+Int2 BlastKarlinBlkGappedCalc (BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, CharPtr matrix_name, ValNodePtr PNTR error_return);
 
-Int2 LIBCALL BlastKarlinBlkGappedCalcEx PROTO((BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, CharPtr matrix_name, ValNodePtr PNTR error_return));
+Int2 BlastKarlinBlkGappedCalcEx (BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, CharPtr matrix_name, ValNodePtr PNTR error_return);
 
 
 /*
@@ -493,7 +496,7 @@ Int2 LIBCALL BlastKarlinBlkGappedCalcEx PROTO((BLAST_KarlinBlkPtr kbp, Int4 gap_
                         1 if matrix not found
                         2 if matrix found, but open, extend etc. values not supported.
 */
-Int2 LIBCALL BlastKarlinkGapBlkFill(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, CharPtr matrix_name);
+Int2 BlastKarlinkGapBlkFill(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, CharPtr matrix_name);
 
 /* Prints a messages about the allowed matrices, BlastKarlinkGapBlkFill should return 1 before this is called. */
 CharPtr PrintMatrixMessage(const Char *matrix);
@@ -502,86 +505,86 @@ CharPtr PrintMatrixMessage(const Char *matrix);
 BlastKarlinkGapBlkFill should return 2 before this is called. */
 CharPtr PrintAllowedValuesMessage(const Char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
 
-Int2 LIBCALL BlastKarlinReportAllowedValues(const Char *matrix_name, ValNodePtr PNTR error_return);
+Int2 BlastKarlinReportAllowedValues(const Char *matrix_name, ValNodePtr PNTR error_return);
 
 
-Nlm_FloatHi BlastKarlinLHtoK PROTO((BLAST_ScoreFreqPtr sfp, Nlm_FloatHi lambda, Nlm_FloatHi H));
+Nlm_FloatHi BlastKarlinLHtoK (BLAST_ScoreFreqPtr sfp, Nlm_FloatHi lambda, Nlm_FloatHi H);
 
-Nlm_FloatHi BlastKarlinLambdaBis PROTO((BLAST_ScoreFreqPtr sfp));
+Nlm_FloatHi BlastKarlinLambdaBis (BLAST_ScoreFreqPtr sfp);
 
-Nlm_FloatHi BlastKarlinLambdaNR PROTO((BLAST_ScoreFreqPtr sfp));
+Nlm_FloatHi BlastKarlinLambdaNR (BLAST_ScoreFreqPtr sfp);
 
-Nlm_FloatHi LIBCALL BlastKarlinLtoH PROTO((BLAST_ScoreFreqPtr sfp, Nlm_FloatHi  lambda));
+Nlm_FloatHi BlastKarlinLtoH (BLAST_ScoreFreqPtr sfp, Nlm_FloatHi  lambda);
 
-BLAST_Score LIBCALL BlastKarlinEtoS PROTO((Nlm_FloatHi  E, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi  qlen, Nlm_FloatHi  dblen));
+BLAST_Score BlastKarlinEtoS (Nlm_FloatHi  E, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi  qlen, Nlm_FloatHi  dblen);
 
-BLAST_Score LIBCALL BlastKarlinEtoS_simple PROTO((Nlm_FloatHi  E, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi searchsp)); 
+BLAST_Score BlastKarlinEtoS_simple (Nlm_FloatHi  E, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi searchsp); 
 
-Nlm_FloatHi LIBCALL BlastKarlinPtoE PROTO((Nlm_FloatHi p));
+Nlm_FloatHi BlastKarlinPtoE (Nlm_FloatHi p);
 
-Nlm_FloatHi LIBCALL BlastKarlinEtoP PROTO((Nlm_FloatHi x));
+Nlm_FloatHi BlastKarlinEtoP (Nlm_FloatHi x);
 
-Nlm_FloatHi LIBCALL BlastKarlinStoP PROTO((BLAST_Score S, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi  qlen, Nlm_FloatHi  dblen));
+Nlm_FloatHi BlastKarlinStoP (BLAST_Score S, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi  qlen, Nlm_FloatHi  dblen);
 
-Nlm_FloatHi LIBCALL BlastKarlinStoP_simple PROTO((BLAST_Score S, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi  searchsp));
+Nlm_FloatHi BlastKarlinStoP_simple (BLAST_Score S, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi  searchsp);
 
-Nlm_FloatHi LIBCALL BlastKarlinStoE PROTO((BLAST_Score S, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi  qlen, Nlm_FloatHi  dblen));
+Nlm_FloatHi BlastKarlinStoE (BLAST_Score S, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi  qlen, Nlm_FloatHi  dblen);
 
-Nlm_FloatHi LIBCALL BlastKarlinStoE_simple PROTO((BLAST_Score S, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi  searchsp));
+Nlm_FloatHi BlastKarlinStoE_simple (BLAST_Score S, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi  searchsp);
 
-Int2 LIBCALL BlastCutoffs PROTO((BLAST_ScorePtr S, Nlm_FloatHi PNTR E, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi qlen, Nlm_FloatHi dblen, Nlm_Boolean dodecay));
+Int2 BlastCutoffs (BLAST_ScorePtr S, Nlm_FloatHi PNTR E, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi qlen, Nlm_FloatHi dblen, Nlm_Boolean dodecay);
 
 
-Int2 LIBCALL BlastCutoffs_simple PROTO((BLAST_ScorePtr S, Nlm_FloatHi PNTR E, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi search_sp, Nlm_Boolean dodecay));
-Nlm_FloatHi LIBCALL BlastKarlinStoLen PROTO((BLAST_KarlinBlkPtr kbp, BLAST_Score S));
+Int2 BlastCutoffs_simple (BLAST_ScorePtr S, Nlm_FloatHi PNTR E, BLAST_KarlinBlkPtr kbp, Nlm_FloatHi search_sp, Nlm_Boolean dodecay);
+Nlm_FloatHi BlastKarlinStoLen (BLAST_KarlinBlkPtr kbp, BLAST_Score S);
 
 /* SumP function. Called by BlastSmallGapSumE and BlastLargeGapSumE. */
-Nlm_FloatHi LIBCALL BlastSumP PROTO((Int4 r, Nlm_FloatHi s));
+Nlm_FloatHi BlastSumP (Int4 r, Nlm_FloatHi s);
 
 /* Functions to calculate SumE (for large and small gaps). */
-Nlm_FloatHi LIBCALL BlastSmallGapSumE PROTO((BLAST_KarlinBlkPtr kbp, Int4 gap, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num, Int4 sum,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length, Boolean min_length_one));
+Nlm_FloatHi BlastSmallGapSumE (BLAST_KarlinBlkPtr kbp, Int4 gap, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num, Int4 sum,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length, Boolean min_length_one);
 
-Nlm_FloatHi LIBCALL BlastUnevenGapSumE PROTO((BLAST_KarlinBlkPtr kbp, Int4 p_gap, Int4 n_gap, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num, Int4 sum,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length, Boolean min_length_one));
+Nlm_FloatHi BlastUnevenGapSumE (BLAST_KarlinBlkPtr kbp, Int4 p_gap, Int4 n_gap, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num, Int4 sum,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length, Boolean min_length_one);
 
-Nlm_FloatHi LIBCALL BlastLargeGapSumE PROTO((BLAST_KarlinBlkPtr kbp, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num, Int4 sum,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length, Boolean old_stats));
+Nlm_FloatHi BlastLargeGapSumE (BLAST_KarlinBlkPtr kbp, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num, Int4 sum,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length, Boolean old_stats);
 
 /* Used to produce random sequences. */
-CharPtr  LIBCALL BlastRepresentativeResidues PROTO((Int2 length));
+CharPtr  BlastRepresentativeResidues (Int2 length);
 
-Int2 LIBCALL BlastResFreqNormalize PROTO((BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp, Nlm_FloatHi norm));
+Int2 BlastResFreqNormalize (BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp, Nlm_FloatHi norm);
 
-BLAST_ResFreqPtr LIBCALL BlastResFreqNew PROTO((BLAST_ScoreBlkPtr sbp));
-void LIBCALL BlastResFreqFree PROTO((BLAST_ResFreqPtr rfp));
+BLAST_ResFreqPtr BlastResFreqNew (BLAST_ScoreBlkPtr sbp);
+void BlastResFreqFree (BLAST_ResFreqPtr rfp);
 
-BLAST_ResFreqPtr LIBCALL BlastResFreqDestruct PROTO((BLAST_ResFreqPtr rfp));
+BLAST_ResFreqPtr BlastResFreqDestruct (BLAST_ResFreqPtr rfp);
 
-Int2 LIBCALL BlastResFreqString PROTO((BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp, CharPtr string, Int4 length));
+Int2 BlastResFreqString (BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp, CharPtr string, Int4 length);
 
-Int2 LIBCALL BlastResFreqStdComp PROTO((BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp));
+Int2 BlastResFreqStdComp (BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp);
 
-Int2 LIBCALL BlastResFreqResComp PROTO((BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp, BLAST_ResCompPtr rcp));
+Int2 BlastResFreqResComp (BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp, BLAST_ResCompPtr rcp);
 
-Int2 LIBCALL BlastResFreqClr PROTO((BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp));
+Int2 BlastResFreqClr (BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp);
 
-BLAST_ScoreFreqPtr BlastScoreFreqNew PROTO((BLAST_Score score_min, BLAST_Score score_max));
+BLAST_ScoreFreqPtr BlastScoreFreqNew (BLAST_Score score_min, BLAST_Score score_max);
 
-BLAST_ScoreFreqPtr BlastScoreFreqDestruct PROTO((BLAST_ScoreFreqPtr sfp));
+BLAST_ScoreFreqPtr BlastScoreFreqDestruct (BLAST_ScoreFreqPtr sfp);
 
-BLAST_MatrixPtr LIBCALL BLAST_MatrixDestruct PROTO((BLAST_MatrixPtr blast_matrix));
+BLAST_MatrixPtr BLAST_MatrixDestruct (BLAST_MatrixPtr blast_matrix);
 
-BLAST_MatrixPtr LIBCALL BLAST_MatrixFill PROTO((BLAST_ScoreBlkPtr sbp, Boolean positionBased));
+BLAST_MatrixPtr BLAST_MatrixFill (BLAST_ScoreBlkPtr sbp, Boolean positionBased);
 
-BLAST_MatrixPtr LIBCALL BLAST_MatrixFetch PROTO((CharPtr matrix_name));
+BLAST_MatrixPtr BLAST_MatrixFetch (CharPtr matrix_name);
 
 
-Int2 LIBCALL BlastGetStdAlphabet PROTO((Uint1 alphabet_code, Uint1Ptr residues, Int4 residues_size));
+Int2 BlastGetStdAlphabet (Uint1 alphabet_code, Uint1Ptr residues, Int4 residues_size);
 /*
 Functions used to convert between Stephen's pseudo scores
 and E or p-values.
 */
-Int2 ConvertPtoPseudoS PROTO((Nlm_FloatHi p, Nlm_FloatHi n));
-Int2 ConvertEtoPseudoS PROTO((Nlm_FloatHi E, Nlm_FloatHi searchsp));
-Nlm_FloatHi ConvertPseudoStoE PROTO((Int2 s, Nlm_FloatHi n));
+Int2 ConvertPtoPseudoS (Nlm_FloatHi p, Nlm_FloatHi n);
+Int2 ConvertEtoPseudoS (Nlm_FloatHi E, Nlm_FloatHi searchsp);
+Nlm_FloatHi ConvertPseudoStoE (Int2 s, Nlm_FloatHi n);
 
 /*
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
@@ -594,19 +597,19 @@ are not required should be set to NULL.  The Int2 return value is the length of 
 arrays.
 */
 
-Int2 LIBCALL BlastKarlinGetMatrixValues PROTO((CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR extension, FloatHiPtr PNTR lambda, FloatHiPtr PNTR K, FloatHiPtr PNTR H, Int4Ptr PNTR pref_flags));
+Int2 BlastKarlinGetMatrixValues (CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR extension, FloatHiPtr PNTR lambda, FloatHiPtr PNTR K, FloatHiPtr PNTR H, Int4Ptr PNTR pref_flags);
 
-Int2 LIBCALL BlastKarlinGetMatrixValuesEx PROTO((CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR extension, Int4Ptr PNTR decline_align, FloatHiPtr PNTR lambda, FloatHiPtr PNTR K, FloatHiPtr PNTR H, Int4Ptr PNTR pref_flags));
+Int2 BlastKarlinGetMatrixValuesEx (CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR extension, Int4Ptr PNTR decline_align, FloatHiPtr PNTR lambda, FloatHiPtr PNTR K, FloatHiPtr PNTR H, Int4Ptr PNTR pref_flags);
 
-Int2 LIBCALL BlastKarlinGetMatrixValuesEx2 PROTO((CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR extension, Int4Ptr PNTR decline_align, FloatHiPtr PNTR lambda, FloatHiPtr PNTR K, FloatHiPtr PNTR H, FloatHiPtr PNTR alpha, FloatHiPtr PNTR beta, Int4Ptr PNTR pref_flags));
+Int2 BlastKarlinGetMatrixValuesEx2 (CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR extension, Int4Ptr PNTR decline_align, FloatHiPtr PNTR lambda, FloatHiPtr PNTR K, FloatHiPtr PNTR H, FloatHiPtr PNTR alpha, FloatHiPtr PNTR beta, Int4Ptr PNTR pref_flags);
 
-void LIBCALL getAlphaBeta PROTO((CharPtr matrixName, Nlm_FloatHi *alpha,
-Nlm_FloatHi *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend));
+void getAlphaBeta (CharPtr matrixName, Nlm_FloatHi *alpha,
+Nlm_FloatHi *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend);
 
-Int2 LIBCALL BlastKarlinGetDefaultMatrixValues PROTO((CharPtr matrix, Int4Ptr open, Int4Ptr extension, FloatHiPtr lambda, FloatHiPtr K, FloatHiPtr H));
+Int2 BlastKarlinGetDefaultMatrixValues (CharPtr matrix, Int4Ptr open, Int4Ptr extension, FloatHiPtr lambda, FloatHiPtr K, FloatHiPtr H);
 
-Int4Ptr PNTR LIBCALL BlastMatrixToTxMatrix PROTO((BLAST_MatrixPtr matrix));
-Int4Ptr PNTR LIBCALL TxMatrixDestruct PROTO((Int4Ptr PNTR txmatrix)); 
+Int4Ptr PNTR BlastMatrixToTxMatrix (BLAST_MatrixPtr matrix);
+Int4Ptr PNTR TxMatrixDestruct (Int4Ptr PNTR txmatrix); 
 
 #ifdef __cplusplus
 }

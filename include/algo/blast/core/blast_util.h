@@ -122,8 +122,7 @@ Int2 BLAST_QueryInfoInit(Uint1 program_number,
  *                     in ncbistdaa encoding [in]
  * @return Length of the traslated protein sequence.
 */
-Int4 LIBCALL
-BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
+Int4 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
    Int4 nt_length, Int2 frame, Uint1Ptr buffer, const Uint1Ptr genetic_code);
 
 /** Translate a nucleotide sequence without ambiguity codes.
@@ -153,9 +152,8 @@ BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev,
  * @param prot_seq Preallocated buffer for the (translated) protein sequence, 
  *                 with NULLB sentinels on either end. [out]
 */
-Int4 LIBCALL
-BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length, 
-   Uint1Ptr nt_seq, Int2 frame, Uint1Ptr prot_seq);
+Int4 BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length, 
+        Uint1Ptr nt_seq, Int2 frame, Uint1Ptr prot_seq);
 
 /** Reverse a nucleotide sequence in the blastna encoding, adding sentinel 
  * bytes on both ends.

@@ -41,7 +41,7 @@ Contents: Structures definitions from gapxdrop.h in ncbitools
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <ncbi.h>
+#include <blast_def.h>
 
 #define GAPALIGN_SUB ((Uint1)0)  /*op types within the edit script*/
 #define GAPALIGN_INS ((Uint1)1)
@@ -78,12 +78,12 @@ typedef struct GapStateArrayStruct {
 } GapStateArrayStruct, PNTR GapStateArrayStructPtr;
 
 GapEditScriptPtr 
-GapEditScriptNew PROTO((GapEditScriptPtr old));
+GapEditScriptNew (GapEditScriptPtr old);
 
-GapEditScriptPtr LIBCALL GapEditScriptDelete PROTO((GapEditScriptPtr esp));
+GapEditScriptPtr GapEditScriptDelete (GapEditScriptPtr esp);
 
-GapEditBlockPtr LIBCALL GapEditBlockNew PROTO((Int4 start1, Int4 start2));
-GapEditBlockPtr LIBCALL GapEditBlockDelete PROTO((GapEditBlockPtr edit_block));
+GapEditBlockPtr GapEditBlockNew (Int4 start1, Int4 start2);
+GapEditBlockPtr GapEditBlockDelete (GapEditBlockPtr edit_block);
 GapStateArrayStructPtr 
 GapStateFree(GapStateArrayStructPtr state_struct);
 

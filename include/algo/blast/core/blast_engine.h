@@ -144,14 +144,14 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    const BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info);
 
 /** Gapped extension function pointer type */
-typedef Int2 (LIBCALLBACK *BlastGetGappedScoreType) 
+typedef Int2 (*BlastGetGappedScoreType) 
      (Uint1, BLAST_SequenceBlkPtr, BLAST_SequenceBlkPtr, 
       BlastGapAlignStructPtr, BlastScoringOptionsPtr,
       BlastExtensionParametersPtr, BlastHitSavingParametersPtr,
       BlastInitHitListPtr, BlastHSPListPtr PNTR);
      
 /** Word finder function pointer type */
-typedef Int4 (LIBCALLBACK *BlastWordFinderType) 
+typedef Int4 (*BlastWordFinderType) 
      (BLAST_SequenceBlkPtr, BLAST_SequenceBlkPtr,
       LookupTableWrapPtr, Int4Ptr PNTR, BlastInitialWordParametersPtr,
       BLAST_ExtendWordPtr, Uint4Ptr, Uint4Ptr, Int4, BlastInitHitListPtr);
