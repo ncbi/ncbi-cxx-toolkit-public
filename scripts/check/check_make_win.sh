@@ -212,7 +212,7 @@ case "\$method" in
       rm -f \$res_script.*.out
       for dir in \$build_trees; do
          for cfg in \$cfgs; do
-            x_tests=\`grep "\[\$dir/\$cfg/" \$res_log | grep 'ERR \['\`
+            x_tests=\`grep "\[\$dir/\$cfg/" \$res_log\`
             if [ -n "\$x_tests" ]; then  
             ( 
             grep "\[\$dir/\$cfg/" \$res_log > \$res_script.\${dir}_\${cfg}.log
