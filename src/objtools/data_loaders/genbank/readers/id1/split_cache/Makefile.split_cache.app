@@ -10,6 +10,6 @@ REQUIRES = bdb
 
 APP = split_cache
 SRC = split_cache
-LIB = id2_split bdb $(OBJMGR_LIBS)
+LIB = id2_split bdb $(OBJMGR_LIBS) $(GENBANK_READER_ID1C_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)

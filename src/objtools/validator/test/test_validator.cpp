@@ -63,7 +63,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/graph_ci.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 
 using namespace ncbi;
@@ -490,6 +490,10 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2004/01/07 17:37:39  vasilche
+ * Fixed include path to genbank loader.
+ * Moved split_cache application.
+ *
  * Revision 1.24  2003/08/06 15:07:22  shomrat
  * Added fix for batch processing
  *

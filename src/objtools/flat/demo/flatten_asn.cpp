@@ -38,7 +38,7 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
@@ -137,6 +137,10 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/01/07 17:37:38  vasilche
+* Fixed include path to genbank loader.
+* Moved split_cache application.
+*
 * Revision 1.4  2003/10/17 20:59:33  ucko
 * Enable the GenBank loader to deal with external references.
 *

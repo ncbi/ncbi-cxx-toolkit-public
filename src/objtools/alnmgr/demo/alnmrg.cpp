@@ -50,7 +50,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/submit/Seq_submit.hpp>
 
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -411,6 +411,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/01/07 17:37:35  vasilche
+* Fixed include path to genbank loader.
+* Moved split_cache application.
+*
 * Revision 1.18  2003/12/22 20:28:11  ucko
 * Added missing call to GetScope.
 *

@@ -38,7 +38,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <objmgr/util/sequence.hpp>
 
@@ -109,6 +109,10 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/07 17:37:38  vasilche
+* Fixed include path to genbank loader.
+* Moved split_cache application.
+*
 * Revision 1.2  2003/06/02 16:06:40  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
