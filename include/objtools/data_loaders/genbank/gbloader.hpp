@@ -44,16 +44,6 @@
 # include <corelib/ncbithr.hpp>
 #endif
 
-#include <map>
-#include <bitset>
-#include <time.h>
-
-#if defined(NCBI_OS_MAC)
-#   include <types.h>
-#else
-#   include <sys/types.h>
-#endif
-
 #include <objmgr/data_loader.hpp>
 
 #include <objmgr/impl/mutex_pool.hpp>
@@ -227,20 +217,14 @@ private:
     // Get reader name from the GB loader params.
     string x_GetReaderName(const TParamTree* params) const;
 
-    typedef map<string, CRef<CLoadInfoSeq_ids> >            TLoadMapSeq_ids;
-    typedef map<CSeq_id_Handle, CRef<CLoadInfoSeq_ids> >    TLoadMapSeq_ids2;
-    typedef map<CSeq_id_Handle, CRef<CLoadInfoBlob_ids> >   TLoadMapBlob_ids;
+    typedef CLoadInfoMap<string, CLoadInfoSeq_ids>            TLoadMapSeq_ids;
+    typedef CLoadInfoMap<CSeq_id_Handle, CLoadInfoSeq_ids>    TLoadMapSeq_ids2;
+    typedef CLoadInfoMap<CSeq_id_Handle, CLoadInfoBlob_ids>   TLoadMapBlob_ids;
 
-    typedef CRWLock                     TRWLock;
-    typedef TRWLock::TReadLockGuard     TReadLockGuard;
-    typedef TRWLock::TWriteLockGuard    TWriteLockGuard;
-
-    
     CInitMutexPool          m_MutexPool;
 
     CRef<CReadDispatcher>   m_Dispatcher;
 
-    TRWLock                 m_LoadMap_Lock;
     TLoadMapSeq_ids         m_LoadMapSeq_ids;
     TLoadMapSeq_ids2        m_LoadMapSeq_ids2;
     TLoadMapBlob_ids        m_LoadMapBlob_ids;
