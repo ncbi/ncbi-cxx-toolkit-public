@@ -106,6 +106,8 @@ CChecksum& CChecksum::operator= (const CChecksum& cks)
 
 void CChecksum::Reset()
 {
+    m_LineCount = 0;
+    m_CharCount = 0;
     switch ( GetMethod() ) {
     case eCRC32:
         m_Checksum.m_CRC32 = 0;
@@ -272,6 +274,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/11 16:54:20  kuznets
+* Improved Reset() implementation
+*
 * Revision 1.7  2003/08/11 16:47:02  kuznets
 * + Reset() implementation, fixed memory leak in assignment operator (MD5) mode.
 *
