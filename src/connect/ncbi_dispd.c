@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/10/05 22:34:23  lavr
+ * Temporary (dummy) revision for compilation to go
+ *
  * Revision 6.2  2000/05/22 16:53:12  lavr
  * Rename service_info -> server_info everywhere (including
  * file names) as the latter name is more relevant
@@ -43,9 +46,95 @@
 
 #include "ncbi_servicep_dispd.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-const SSERV_VTable *SERV_DISPD_Open(SERV_ITER iter)
+    static SSERV_Info* s_GetNextInfo(SERV_ITER iter);
+    static void s_Close(SERV_ITER iter);
+
+    static const SSERV_VTable s_op = { s_GetNextInfo, s_Close };
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+
+const SSERV_VTable *SERV_DISPD_Open(SERV_ITER iter, SConnNetInfo *net_info)
 {
-    /* This is not yet implemented */
     return 0;
 }
+
+#if 0
+struct SDISPD_DataTag {
+    struct SConnNetInfo* net_info;
+    struct SSERV_Info*   s_info;
+    unsigned             n_info;
+    CONN                 conn;
+};
+
+    CONNECTOR c;
+    CONN conn;
+
+    if (!net_info && !(net_info = ConnNetInfo_Create(iter->service)))
+        return 0;
+
+    if (!(c = SOCK_CreateConnector(info->host, info->port, info->max_try)) ||
+        CONN_Create(c, &conn) != eIO_Success) {
+        ConnNetInfo_Destroy(&net_info);
+        return 0;
+    }
+
+    if (!(iter->data = calloc(sizeof(struct SDISPD_DataTag)))) {
+        ConnNetInfo_Destroy(&net_info);
+        CONN_Close(conn);
+        return 0;
+    }
+
+    data = (struct SDISPD_DataTag)(iter->data);
+    data->net_info = net_info;
+    data->conn = conn;
+
+    CONN_SetTimeout(conn, eIO_Open, &net_info->timeout);
+    CONN_SetTimeout(conn, eIO_ReadWrite, &net_info->timeout);
+
+    return s_op;
+}
+
+static void s_Close(SERV_ITER iter)
+{
+    if (iter->data) {
+        struct SDISPD_DataTag *data = (struct SDISPD_DataTag *)iter->data;
+
+        if (data->net_info)
+            ConnNetInfo_Destroy(&data->net_info);
+        if (data->info)
+            free(data->info);
+        if (data->conn)
+            CONN_Close(conn);
+        free(iter->data);
+        iter->data = 0;
+    }
+}
+
+static int/*bool*/ s_Connect(struct SDISPD_DataTag *data)
+{
+    
+}
+
+static SSERV_Info* s_GetNext(SERV_ITER iter)
+{
+    struct SDISPD_DataTag data = (struct SDISPD_DataTag *)iter->data;
+    unsigned n;
+
+    if (!data)
+        return 0;
+
+    if (!data->n_info && !s_Connect(data))
+        return 0;
+
+    
+    memmove(&data->info[0], &data->info[1], sizeof(SSERV_Info));
+
+}
+#endif
