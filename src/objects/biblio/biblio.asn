@@ -1,4 +1,4 @@
---$Revision: 4.0 $
+--$Revision: 4.1 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -8,6 +8,7 @@
 --      Bibliographic References
 --      ANSI Z39.29-1977
 --  Version 3.0 - June 1994
+--  PubMedId added in 1996
 --
 --****************************************************************
 
@@ -15,9 +16,11 @@ NCBI-Biblio DEFINITIONS ::=
 BEGIN
 
 EXPORTS Cit-art, Cit-jour, Cit-book, Cit-pat, Cit-let, Id-pat, Cit-gen,
-        Cit-proc, Cit-sub, Title, Author;
+        Cit-proc, Cit-sub, Title, Author, PubMedId;
 
 IMPORTS Person-id, Date FROM NCBI-General;
+
+PubMedId ::= INTEGER                    -- Id from the PubMed database at NCBI
 
     -- Citation Types
 
@@ -102,7 +105,8 @@ Cit-gen ::= SEQUENCE {      -- NOT from ANSI, this is a catchall
     pages VisibleString OPTIONAL ,
     date Date OPTIONAL ,
     serial-number INTEGER OPTIONAL ,   -- for GenBank style references
-    title VisibleString OPTIONAL }     -- eg. cit="unpublished",title="title"
+    title VisibleString OPTIONAL ,     -- eg. cit="unpublished",title="title"
+	pmid PubMedId OPTIONAL }           -- PubMed Id
     
     
     -- Authorship Group

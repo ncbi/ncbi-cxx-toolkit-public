@@ -1,8 +1,11 @@
---$Revision: 4.1 $
+--$Revision: 4.2 $
 --**********************************************************************
 --
 --  MEDLINE data definitions
 --  James Ostell, 1990
+--
+--  enhanced in 1996 to support PubMed records as well by simply adding
+--    the PubMedId and making MedlineId optional
 --
 --**********************************************************************
 
@@ -11,12 +14,12 @@ BEGIN
 
 EXPORTS Medline-entry, Medline-si;
 
-IMPORTS Cit-art FROM NCBI-Biblio
+IMPORTS Cit-art, PubMedId FROM NCBI-Biblio
         Date FROM NCBI-General;
 
-                                -- a MEDLINE entry
+                                -- a MEDLINE or PubMed entry
 Medline-entry ::= SEQUENCE {
-    uid INTEGER ,               -- MEDLINE UID
+    uid INTEGER OPTIONAL ,      -- MEDLINE UID, sometimes not yet available if from PubMed
     em Date ,                   -- Entry Month
     cit Cit-art ,               -- article citation
     abstract VisibleString OPTIONAL ,
@@ -24,7 +27,8 @@ Medline-entry ::= SEQUENCE {
     substance SET OF Medline-rn OPTIONAL ,
     xref SET OF Medline-si OPTIONAL ,
     idnum SET OF VisibleString OPTIONAL ,  -- ID Number (grants, contracts)
-    gene SET OF VisibleString OPTIONAL }
+    gene SET OF VisibleString OPTIONAL ,
+	pmid PubMedId OPTIONAL }               -- MEDLINE records may include the PubMedId
 
 Medline-mesh ::= SEQUENCE {
     mp BOOLEAN DEFAULT FALSE ,       -- TRUE if main point (*)
