@@ -524,9 +524,9 @@ during the configuration process:
 <h3><i>Customized makefile to build a library</i></h3>
 
 Here is an example of a <i>customized makefile</i> to build
-library <i><b>libxmylib.a</b></i> from two source files,
-<i><b>xmy_src1.cpp</b></i> and <i><b>xmy_src2.c</b></i>;
-it also compiles a "standalone" source file <i><b>some_src1.cpp</b></i>.
+library <i><b>libxmylib.a</b></i> from two source files
+<i><b>xmy_src1.cpp</b></i> and <i><b>xmy_src2.c</b></i>, and one
+pre-compiled object file <i><b>some_obj1.o</b></i>.
 To make the example even more realistic, we assume that the said
 source files include headers from the NCBI C Toolkit.<pre>
 File Makefile.xmylib.lib:
@@ -552,14 +552,18 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
        plus pre-compiled <i><b>some_obj1.o</b></i>.
   <li> Copy <i><b>libxmylib.a</b></i> to the
        top-level <b><i>lib/</i></b> directory of
-       <i>build tree</i> (for later use by other projects)
+       <i>build tree</i> (for the later use by other projects)
 </ul>
 
 This <i>customized makefile</i> should be referenced as <i><b>xmylib</b></i> in the
 <b>LIB_PROJ</b> macro of relevant
-<a href="#ref_MakeMeta"><i>meta-makefile</i></a>. Note also, that the
+<a href="#ref_MakeMeta"><i>meta-makefile</i></a>. As usual,
 <a href="#ref_MakeProjMk"><i>Makefile.mk</i></a> will be
 implicitely included.
+
+<p>
+NOTE: this file is used to build both <i>static</i>
+and <a href="config.html#ref_DLL"><i>dynamic</i></a> library.
 
 
 <p>
