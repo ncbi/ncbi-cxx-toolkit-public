@@ -33,39 +33,6 @@
 
 BEGIN_NCBI_SCOPE
 
-/// Index file.
-///
-/// Index files (extension nin or pin) contain information on where to
-/// find information in other files.  The OID is the (implied) key.
-
-
-// Public Constructor
-//
-// This is the user-visible constructor, which builds the top level
-// node in the dbalias node tree.  This design effectively treats the
-// user-input database list as if it were an alias file containing
-// only the DBLIST specification.
-
-
-
-
-
-
-
-
-
-
-
-
-// Note: this is a bad design.  Instead of a class that is derived
-// from a file, use an internal file.  It only has to be opened in the
-// cases where the input is a file.  In other cases, the data can be
-// kept in a non-file and the rest of the class works.
-//
-// All that the iterating parts of the code need to know is where the
-// bytes are kept.  The rest of the stuff can be
-
-
 CSeqDBOIDList::CSeqDBOIDList(const string & filename, bool use_mmap)
     : m_RawFile(use_mmap),
       m_NumOIDs(0),
@@ -79,6 +46,24 @@ CSeqDBOIDList::CSeqDBOIDList(const string & filename, bool use_mmap)
     
     m_Bits   = m_RawFile.GetRegion(sizeof(Int4), file_length);
     m_BitEnd = m_Bits + file_length - sizeof(Int4);
+    
+    {
+        Uint4 bits = 0;
+        const Uint4 * filep = (const Uint4 *) m_Bits;
+        const Uint4 * filee = (const Uint4 *) m_BitEnd;
+        
+        while (filep < filee) {
+            Uint4 x = *filep;
+            while(x) {
+                if (x & 1)
+                    bits++; 
+                x >>= 1;
+            }
+            filep++;
+        }
+        
+        cout << "Lots of bytes, total bits = " << bits << endl;
+    }
 }
 
 CSeqDBOIDList::~CSeqDBOIDList()
@@ -102,28 +87,50 @@ bool CSeqDBOIDList::x_IsSet(TOID oid)
 
 bool CSeqDBOIDList::x_FindNext(TOID & oid)
 {
-    // We have a bit somewhere in this byte, so..
+    // If the specified OID is valid, use it.
+    
+    if (x_IsSet(oid)) {
+        return true;
+    }
+    
+    // OPTIONAL portion
+    
+    Uint4 whole_word_oids = m_NumOIDs & -32;
+    
+    while(oid < whole_word_oids) {
+        if (x_IsSet(oid)) {
+            return true;
+        }
+        
+        oid ++;
+        
+        if ((oid & 31) == 0) {
+            const Uint4 * bp = ((const Uint4*) m_Bits + (oid             >> 5));
+            const Uint4 * ep = ((const Uint4*) m_Bits + (whole_word_oids >> 5));
+            
+            while((bp < ep) && (0 == *bp)) {
+                ++ bp;
+                oid += 32;
+            }
+        } else if ((oid & 7) == 0) {
+            const char * bp = ((const char*) m_Bits + (oid             >> 3));
+            const char * ep = ((const char*) m_Bits + (whole_word_oids >> 3));
+            
+            while((bp < ep) && (0 == *bp)) {
+                ++ bp;
+                oid += 8;
+            }
+        }
+    }
+    
+    // END of OPTIONAL portion
+    
     while(oid < m_NumOIDs) {
         if (x_IsSet(oid)) {
             return true;
         }
         
         oid++;
-        
-        // If we have come into a new byte, check if it is null and
-        // skip any null bytes.  It would be more efficient to skip
-        // words, but this is probably good enough to reduce the
-        // runtime of this part of the code to a microscopic amount,
-        // which is good enough for me.
-        
-        if ((oid & 0x7) == 0) {
-            const char * bp = m_Bits + (oid >> 3);
-            const char * ep = m_BitEnd;
-            
-            while((bp < ep) && (0 == *bp)) {
-                ++ bp;
-            }
-        }
     }
     
     return false;
