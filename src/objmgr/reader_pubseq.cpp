@@ -118,7 +118,7 @@ CDB_Connection *CPubseqReader::NewConn()
   if(! createContextFunc)
     throw runtime_error("No ctlib available");
 
-  if(m_Context.get() != NULL)
+  if(m_Context.get() == NULL)
     m_Context.reset((*createContextFunc)(0));
 
   return m_Context->Connect("PUBSEQ_OS", "anyone", "allowed", 0);
@@ -371,6 +371,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2002/04/11 17:59:36  butanaev
+* Typo fixed.
+*
 * Revision 1.4  2002/04/11 17:47:17  butanaev
 * Switched to using dbapi driver manager.
 *
