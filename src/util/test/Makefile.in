@@ -3,8 +3,7 @@
 # Meta-makefile("UTIL tests" project)
 #################################
 
-APP_PROJ = test_utf8 testrange test_resize_iter test_pushback
-SUB_PROJ = 
+APP_PROJ = test_utf8 testrange test_resize_iter
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
