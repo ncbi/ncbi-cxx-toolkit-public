@@ -413,13 +413,13 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_inf
         context_offset = query_info->context_offsets[context];
         buffer = &query_blk->sequence[context_offset];
 
-            if (!phi_align &&
-                (status = BLAST_ScoreBlkFill(sbp, (char *) buffer,
-                                             query_length, context))) {
-               Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
-                  "Query completely filtered; nothing left to search");
-               return status;
-            }
+        if (!phi_align &&
+           (status = BLAST_ScoreBlkFill(sbp, (char *) buffer,
+                                        query_length, context))) {
+            Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+                   "Query completely filtered; nothing left to search");
+            return status;
+        }
     }
 
 
@@ -438,11 +438,16 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_inf
    
     /* Get "ideal" values if the calculated Karlin-Altschul params bad. */
     if (program_number == blast_type_blastx ||
-        program_number == blast_type_tblastx) {
+        program_number == blast_type_tblastx ||
+        program_number == blast_type_rpstblastn) {
         /* Adjust the ungapped Karlin parameters */
         sbp->kbp = sbp->kbp_std;
         Blast_KarlinBlkStandardCalc(sbp, query_info->first_context,
                                     query_info->last_context);
+    }
+
+    if (program_number == blast_type_blastx ||
+        program_number == blast_type_tblastx) {
         /* Adjust the gapped Karlin parameters, if it is a gapped search */
         if (scoring_options->gapped_calculation) {
            sbp->kbp = sbp->kbp_gap_std;
