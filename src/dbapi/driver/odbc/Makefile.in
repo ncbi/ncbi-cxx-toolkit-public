@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = ncbi_xdbapi_odbc
+LIB_PROJ = dbapi_driver_odbc ncbi_xdbapi_odbc
 SUB_PROJ = samples
 
 REQUIRES = ODBC

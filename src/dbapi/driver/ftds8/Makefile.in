@@ -1,7 +1,7 @@
 # $Id$
 
 USR_PROJ = @freetds@
-LIB_PROJ = ncbi_xdbapi_ftds
+LIB_PROJ = dbapi_driver_ftds ncbi_xdbapi_ftds
 SUB_PROJ = samples
 POTENTIAL_SUB_PROJ = freetds
 
