@@ -54,7 +54,7 @@ extern "C" {
 Int4 BlastAaWordFinder(BLAST_SequenceBlkPtr subject,
 		       BLAST_SequenceBlkPtr query,
 		       LookupTableWrapPtr lookup,
-		       Int4Ptr PNTR matrix,
+		       Int4Ptr* matrix,
 		       BlastInitialWordParametersPtr word_params,
 		       BLAST_ExtendWordPtr ewp,
 		       Uint4Ptr query_offsets,

@@ -112,7 +112,7 @@ ListNodePtr ListNodeNew (ListNodePtr vnp)
 *      returns pointer to the NEW node added
 *
 *****************************************************************************/
-ListNodePtr ListNodeAdd (ListNodePtr PNTR head)
+ListNodePtr ListNodeAdd (ListNodePtr* head)
 {
 	ListNodePtr newnode;
 
@@ -134,7 +134,7 @@ ListNodePtr ListNodeAdd (ListNodePtr PNTR head)
 *      sets newnode->ptr = value
 *
 *****************************************************************************/
-ListNodePtr ListNodeAddPointer (ListNodePtr PNTR head, Int2 choice, 
+ListNodePtr ListNodeAddPointer (ListNodePtr* head, Int2 choice, 
                                 void *value)
 {
 	ListNodePtr newnode;
@@ -159,7 +159,7 @@ ListNodePtr ListNodeAddPointer (ListNodePtr PNTR head, Int2 choice,
 *      if str == NULL, does not add a ListNode
 *
 *****************************************************************************/
-ListNodePtr ListNodeCopyStr (ListNodePtr PNTR head, Int2 choice, CharPtr str)
+ListNodePtr ListNodeCopyStr (ListNodePtr* head, Int2 choice, CharPtr str)
 {
 	ListNodePtr newnode;
 
@@ -246,7 +246,7 @@ Int4 ListNodeLen (ListNodePtr vnp)
 ListNodePtr ListNodeSort (ListNodePtr list, 
                int (*compar )(const void *, const void *))
 {
-	ListNodePtr tmp, PNTR head;
+	ListNodePtr tmp,* head;
 	Int4 count, i;
 
 	if (list == NULL) return NULL;

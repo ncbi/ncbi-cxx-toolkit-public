@@ -51,8 +51,8 @@ extern "C" {
 typedef struct GapEditScript {
         Uint1 op_type;  /* GAPALIGN_SUB, GAPALIGN_INS, or GAPALIGN_DEL */
         Int4 num;       /* Number of operations */
-        struct GapEditScript PNTR next;
-} GapEditScript, PNTR GapEditScriptPtr;
+        struct GapEditScript* next;
+} GapEditScript,* GapEditScriptPtr;
 
 typedef struct GapEditBlock {
     Int4 start1,  start2,       /* starts of alignments. */
@@ -65,7 +65,7 @@ typedef struct GapEditBlock {
     Boolean is_ooframe; /* Is this out_of_frame edit block? */
     Boolean discontinuous; /* Is this OK to produce discontinuous SeqAlign? */
     GapEditScriptPtr esp;
-} GapEditBlock, PNTR GapEditBlockPtr;
+} GapEditBlock,* GapEditBlockPtr;
 
 /*
 	Structure to keep memory for state structure.
@@ -74,8 +74,8 @@ typedef struct GapStateArrayStruct {
 	Int4 	length,		/* length of the state_array. */
 		used;		/* how much of length is used. */
 	Uint1Ptr state_array;	/* array to be used. */
-	struct GapStateArrayStruct PNTR next;
-} GapStateArrayStruct, PNTR GapStateArrayStructPtr;
+	struct GapStateArrayStruct* next;
+} GapStateArrayStruct,* GapStateArrayStructPtr;
 
 GapEditScriptPtr 
 GapEditScriptNew (GapEditScriptPtr old);

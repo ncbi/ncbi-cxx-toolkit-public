@@ -761,7 +761,7 @@ static void mergesegs(SequencePtr seq, SegPtr segs, Boolean overlaps)
    return;
 }
 
-static Int2 SegsToBlastSeqLoc(SegPtr segs, Int4 offset, BlastSeqLocPtr PNTR seg_locs)
+static Int2 SegsToBlastSeqLoc(SegPtr segs, Int4 offset, BlastSeqLocPtr* seg_locs)
 {
    DoubleIntPtr dip;
    BlastSeqLocPtr last_slp = NULL, head_slp = NULL;
@@ -915,7 +915,7 @@ static AlphaPtr AlphaCopy (AlphaPtr palpha)
 }
 
 Int2 SeqBufferSeg (Uint1Ptr sequence, Int4 length, Int4 offset,
-                     SegParametersPtr sparamsp, BlastSeqLocPtr PNTR seg_locs)
+                     SegParametersPtr sparamsp, BlastSeqLocPtr* seg_locs)
 {
    SequencePtr seqwin;
    SegPtr segs;

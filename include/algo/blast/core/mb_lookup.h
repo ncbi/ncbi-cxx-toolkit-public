@@ -203,7 +203,7 @@ typedef struct MBLookupTable {
                           the backbone */
    Int4 longest_chain; /**< Largest number of query positions for a given 
                           word */
-} MBLookupTable, PNTR MBLookupTablePtr;
+} MBLookupTable,* MBLookupTablePtr;
 
 /**
  * Create the lookup table for Mega BLAST 
@@ -215,7 +215,7 @@ typedef struct MBLookupTable {
  * @param lookup_options Options for lookup table creation [in]
  */
 Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
-                       MBLookupTablePtr PNTR mb_lt_ptr,
+                       MBLookupTablePtr* mb_lt_ptr,
                        LookupTableOptionsPtr lookup_options);
 
 /** 

@@ -67,7 +67,7 @@ extern "C" {
  * @param encoding In what encoding should the sequence be retrieved? [in]
  */ 
 void
-MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_ptr,
+MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr* seq_ptr,
                      Int4 oid, Uint1 encoding);
 #endif
 
@@ -162,7 +162,7 @@ Int4 BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length,
  * @param rev_sequence_ptr Reverse strand of the sequence [out]
  */
 Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length, 
-                            Uint1Ptr PNTR rev_sequence_ptr);
+                            Uint1Ptr* rev_sequence_ptr);
 
 #if 0
 /** CC: Moved to blast_engine.c as static functions? */
@@ -212,7 +212,7 @@ Int4 BLAST_GetQueryLength(BlastQueryInfoPtr query_info, Int4 context);
 BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info);
 
 Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding, 
-                   Uint1Ptr PNTR packed_seq);
+                   Uint1Ptr* packed_seq);
 
 /** Initialize the mixed-frame sequence for out-of-frame gapped extension.
  * @param query_blk Sequence block containing the concatenated frames of the 
@@ -240,8 +240,8 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk,
  */
 Int2 BLAST_GetAllTranslations(const Uint1Ptr nucl_seq, Uint1 encoding,
         Int4 nucl_length, Uint1Ptr genetic_code, 
-        Uint1Ptr PNTR translation_buffer_ptr, Int4Ptr PNTR frame_offsets_ptr,
-        Uint1Ptr PNTR mixed_seq_ptr);
+        Uint1Ptr* translation_buffer_ptr, Int4Ptr* frame_offsets_ptr,
+        Uint1Ptr* mixed_seq_ptr);
 
 /** Convert translation frame into a context for the concatenated translation
  * buffer.

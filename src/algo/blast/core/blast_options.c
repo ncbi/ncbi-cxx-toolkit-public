@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.46  2003/07/30 19:39:14  camacho
+ * Remove PNTRs
+ *
  * Revision 1.45  2003/07/30 18:58:10  dondosha
  * Removed unused member matrixname from lookup table options
  *
@@ -1047,7 +1050,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
    return 0;
 }
 
-Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr PNTR psi_options)
+Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr* psi_options)
 {
    PSIBlastOptionsPtr options = 
       (PSIBlastOptionsPtr) calloc(1, sizeof(PSIBlastOptions));
@@ -1069,7 +1072,7 @@ PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options)
    return NULL;
 }
 
-Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options)
+Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr* db_options)
 {
    BlastDatabaseOptionsPtr options = (BlastDatabaseOptionsPtr)
       calloc(1, sizeof(BlastDatabaseOptions));
@@ -1089,15 +1092,15 @@ BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options)
 }
 
 Int2 BLAST_InitDefaultOptions(Uint1 program_number,
-   LookupTableOptionsPtr PNTR lookup_options,
-   QuerySetUpOptionsPtr PNTR query_setup_options, 
-   BlastInitialWordOptionsPtr PNTR word_options,
-   BlastExtensionOptionsPtr PNTR ext_options,
-   BlastHitSavingOptionsPtr PNTR hit_options,
-   BlastScoringOptionsPtr PNTR score_options,
-   BlastEffectiveLengthsOptionsPtr PNTR eff_len_options,
-   PSIBlastOptionsPtr PNTR psi_options,
-   BlastDatabaseOptionsPtr PNTR db_options)
+   LookupTableOptionsPtr* lookup_options,
+   QuerySetUpOptionsPtr* query_setup_options, 
+   BlastInitialWordOptionsPtr* word_options,
+   BlastExtensionOptionsPtr* ext_options,
+   BlastHitSavingOptionsPtr* hit_options,
+   BlastScoringOptionsPtr* score_options,
+   BlastEffectiveLengthsOptionsPtr* eff_len_options,
+   PSIBlastOptionsPtr* psi_options,
+   BlastDatabaseOptionsPtr* db_options)
 {
    Int2 status;
 

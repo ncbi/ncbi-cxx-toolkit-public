@@ -95,10 +95,10 @@ static int
 fwd_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
-	BlastHSPPtr PNTR hp1, PNTR hp2;
+	BlastHSPPtr* hp1,* hp2;
 
-	hp1 = (BlastHSPPtr PNTR) v1;
-	hp2 = (BlastHSPPtr PNTR) v2;
+	hp1 = (BlastHSPPtr*) v1;
+	hp2 = (BlastHSPPtr*) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
@@ -127,10 +127,10 @@ static int
 end_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
-	BlastHSPPtr PNTR hp1, PNTR hp2;
+	BlastHSPPtr* hp1,* hp2;
 
-	hp1 = (BlastHSPPtr PNTR) v1;
-	hp2 = (BlastHSPPtr PNTR) v2;
+	hp1 = (BlastHSPPtr*) v1;
+	hp2 = (BlastHSPPtr*) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
@@ -158,11 +158,11 @@ static int
 sumscore_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
-	BlastHSPPtr PNTR hp1, PNTR hp2;
+	BlastHSPPtr* hp1,* hp2;
    Int4 score1, score2;
 
-	hp1 = (BlastHSPPtr PNTR) v1;
-	hp2 = (BlastHSPPtr PNTR) v2;
+	hp1 = (BlastHSPPtr*) v1;
+	hp2 = (BlastHSPPtr*) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
@@ -232,7 +232,7 @@ FindSpliceJunction(Uint1Ptr subject_seq, BlastHSPPtr hsp1,
 
 /* Find an HSP with offset closest, but not smaller/larger than a given one.
  */
-static Int4 hsp_binary_search(BlastHSPPtr PNTR hsp_array, Int4 size, 
+static Int4 hsp_binary_search(BlastHSPPtr* hsp_array, Int4 size, 
                               Int4 offset, Boolean right)
 {
    Int4 index, begin, end, coord;
@@ -259,10 +259,10 @@ rev_compare_hsps(const void *v1, const void *v2)
 
 {
 	BlastHSPPtr h1, h2;
-	BlastHSPPtr PNTR hp1, PNTR hp2;
+	BlastHSPPtr* hp1,* hp2;
 
-	hp1 = (BlastHSPPtr PNTR) v1;
-	hp2 = (BlastHSPPtr PNTR) v2;
+	hp1 = (BlastHSPPtr*) v1;
+	hp2 = (BlastHSPPtr*) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 	
@@ -287,10 +287,10 @@ rev_compare_hsps_cfj(const void *v1, const void *v2)
 
 {
 	BlastHSPPtr h1, h2;
-	BlastHSPPtr PNTR hp1, PNTR hp2;
+	BlastHSPPtr* hp1,* hp2;
 
-	hp1 = (BlastHSPPtr PNTR) v1;
-	hp2 = (BlastHSPPtr PNTR) v2;
+	hp1 = (BlastHSPPtr*) v1;
+	hp2 = (BlastHSPPtr*) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
@@ -325,8 +325,8 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
 {
 	BlastHSPPtr H, H2, best[2], first_hsp, last_hsp, hp_frame_start[3*2];
 	BlastHSP hp_start;
-   BlastHSPPtr PNTR hsp_array;
-	BLAST_KarlinBlkPtr PNTR kbp;
+   BlastHSPPtr* hsp_array;
+	BLAST_KarlinBlkPtr* kbp;
 	BLAST_Score maxscore, cutoff[2];
 	Boolean frame_change, linked_set, ignore_small_gaps;
 	Nlm_FloatHi gap_decay_rate, gap_prob, prob[2];
@@ -929,8 +929,8 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
    BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject,
    BLAST_ScoreBlkPtr sbp, BlastHitSavingParametersPtr hit_params)
 {
-   BlastHSPPtr PNTR hsp_array;
-   BlastHSPPtr PNTR score_hsp_array, PNTR offset_hsp_array, PNTR end_hsp_array;
+   BlastHSPPtr* hsp_array;
+   BlastHSPPtr* score_hsp_array,* offset_hsp_array,* end_hsp_array;
    BlastHSPPtr hsp, head_hsp, best_hsp, var_hsp;
    Int4 hspcnt, index, index1, i;
    FloatHi best_evalue, evalue;
@@ -948,9 +948,9 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
       hsp_array[index]->ordering_method = 3;
    }
 
-   score_hsp_array = (BlastHSPPtr PNTR) malloc(hspcnt*sizeof(BlastHSPPtr));
-   offset_hsp_array = (BlastHSPPtr PNTR) malloc(hspcnt*sizeof(BlastHSPPtr));
-   end_hsp_array = (BlastHSPPtr PNTR) malloc(hspcnt*sizeof(BlastHSPPtr));
+   score_hsp_array = (BlastHSPPtr*) malloc(hspcnt*sizeof(BlastHSPPtr));
+   offset_hsp_array = (BlastHSPPtr*) malloc(hspcnt*sizeof(BlastHSPPtr));
+   end_hsp_array = (BlastHSPPtr*) malloc(hspcnt*sizeof(BlastHSPPtr));
 
    memcpy(score_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
    memcpy(offset_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));

@@ -207,7 +207,7 @@ typedef struct BlastExtensionParameters {
    Int4 gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
                                extension (raw) */
    FloatHi gap_trigger; /**< Minimal raw score for starting gapped extension */
-} BlastExtensionParameters, PNTR BlastExtensionParametersPtr;
+} BlastExtensionParameters,* BlastExtensionParametersPtr;
 
 /** Options used when evaluating and saving hits
  *  These include: 
@@ -649,7 +649,7 @@ Int2 BlastHitSavingParametersNew(Uint1 program_number,
         BlastHitSavingParametersPtr *parameters);
 
 /** Initialize default options for PSI BLAST */
-Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr PNTR psi_options);
+Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr* psi_options);
 
 /** Deallocate PSI BLAST options */
 PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options);
@@ -657,7 +657,7 @@ PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options);
 /** Allocates the BlastDatabase options structure and sets the default
  * database genetic code value (BLAST_GENETIC_CODE). Genetic code string in
  * ncbistdaa must be populated by client code */
-Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options);
+Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr* db_options);
 
 /** Deallocate database options */
 BlastDatabaseOptionsPtr 
@@ -678,15 +678,15 @@ BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options);
  * @param db_options BLAST database options [out]
  */
 Int2 BLAST_InitDefaultOptions(Uint1 blast_program,
-   LookupTableOptionsPtr PNTR lookup_options,
-   QuerySetUpOptionsPtr PNTR query_setup_options, 
-   BlastInitialWordOptionsPtr PNTR word_options,
-   BlastExtensionOptionsPtr PNTR ext_options,
-   BlastHitSavingOptionsPtr PNTR hit_options,
-   BlastScoringOptionsPtr PNTR score_options,
-   BlastEffectiveLengthsOptionsPtr PNTR eff_len_options,
-   PSIBlastOptionsPtr PNTR protein_options,
-   BlastDatabaseOptionsPtr PNTR db_options);
+   LookupTableOptionsPtr* lookup_options,
+   QuerySetUpOptionsPtr* query_setup_options, 
+   BlastInitialWordOptionsPtr* word_options,
+   BlastExtensionOptionsPtr* ext_options,
+   BlastHitSavingOptionsPtr* hit_options,
+   BlastScoringOptionsPtr* score_options,
+   BlastEffectiveLengthsOptionsPtr* eff_len_options,
+   PSIBlastOptionsPtr* protein_options,
+   BlastDatabaseOptionsPtr* db_options);
 
 
 #ifdef __cplusplus

@@ -106,7 +106,7 @@ BLAST_DiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
 /* Description in blast_extend.h */
 Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
    BlastInitialWordOptionsPtr word_options,
-   Int8 dblen, Int4 dbseq_num, BLAST_ExtendWordPtr PNTR ewp_ptr)
+   Int8 dblen, Int4 dbseq_num, BLAST_ExtendWordPtr* ewp_ptr)
 {
    BLAST_ExtendWordPtr ewp;
    Int4 index, i;
@@ -132,7 +132,7 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
       stack_table->stack_index = (Int4Ptr) calloc(num_stacks, sizeof(Int4));
       stack_table->stack_size = (Int4Ptr) malloc(num_stacks*sizeof(Int4));
       stack_table->estack = 
-         (MbStackPtr PNTR) malloc(num_stacks*sizeof(MbStackPtr));
+         (MbStackPtr*) malloc(num_stacks*sizeof(MbStackPtr));
       for (index=0; index<num_stacks; index++) {
          stack_table->estack[index] = 
             (MbStackPtr) malloc(stack_size*sizeof(MbStack));
@@ -217,7 +217,7 @@ static Int2
 MB_ExtendInitialHit(BLAST_SequenceBlkPtr query, 
    BLAST_SequenceBlkPtr subject, LookupTableWrapPtr lookup,
    BlastInitialWordParametersPtr word_params, 
-   Int4Ptr PNTR matrix, BLAST_ExtendWordPtr ewp, Int4 q_off, Int4 s_off,
+   Int4Ptr* matrix, BLAST_ExtendWordPtr ewp, Int4 q_off, Int4 s_off,
    BlastInitHitListPtr init_hitlist) 
 {
    Int4 index, index1, step;
@@ -563,9 +563,9 @@ BlastNaMiniExtendRight(Uint1Ptr q, Uint1Ptr s, Uint1 max_right)
 /* Description in blast_extend.h */
 Boolean
 BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query, 
-   BLAST_SequenceBlkPtr subject, Int4Ptr PNTR matrix, 
+   BLAST_SequenceBlkPtr subject, Int4Ptr* matrix, 
    Int4 q_off, Int4 s_off, Int4 cutoff, Int4 X, 
-   BlastUngappedDataPtr PNTR ungapped_data)
+   BlastUngappedDataPtr* ungapped_data)
 {
 	Uint1Ptr q;
 	Int4 sum, score;
@@ -677,7 +677,7 @@ static Int2
 BlastnExtendInitialHit(BLAST_SequenceBlkPtr query, 
    BLAST_SequenceBlkPtr subject, LookupTableWrapPtr lookup,
    BlastInitialWordParametersPtr word_params, 
-   Int4Ptr PNTR matrix, BLAST_ExtendWordPtr ewp, Int4 q_off, Int4 s_end,
+   Int4Ptr* matrix, BLAST_ExtendWordPtr ewp, Int4 q_off, Int4 s_end,
    Int4 s_off, BlastInitHitListPtr init_hitlist)
 {
    Int4 diag, real_diag;
@@ -770,7 +770,7 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
 Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject, 
 		       BLAST_SequenceBlkPtr query,
 		       LookupTableWrapPtr lookup_wrap,
-		       Int4Ptr PNTR matrix,
+		       Int4Ptr* matrix,
 		       BlastInitialWordParametersPtr word_params,
 		       BLAST_ExtendWordPtr ewp,
 		       Uint4Ptr q_offsets,
@@ -930,7 +930,7 @@ BlastNaExactMatchExtend(Uint1Ptr q_start, Uint1Ptr s_start,
 Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
 		   BLAST_SequenceBlkPtr query,
 		   LookupTableWrapPtr lookup,
-		   Int4Ptr PNTR matrix, 
+		   Int4Ptr* matrix, 
 		   BlastInitialWordParametersPtr word_params,
 		   BLAST_ExtendWordPtr ewp,
 		   Uint4Ptr q_offsets,
@@ -1027,7 +1027,7 @@ Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
 Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject, 
 			  BLAST_SequenceBlkPtr query,
 			  LookupTableWrapPtr lookup_wrap, 
-			  Int4Ptr PNTR matrix,
+			  Int4Ptr* matrix,
 			  BlastInitialWordParametersPtr word_params,
 			  BLAST_ExtendWordPtr ewp,
 			  Uint4Ptr q_offsets,

@@ -73,7 +73,7 @@ enum {         /* half of the (fixed) match score */
 /* ----- pool allocator ----- */
 typedef struct _three_val_ {
     Int4 I, C, D;
-} ThreeVal, PNTR ThreeValPtr;
+} ThreeVal,* ThreeValPtr;
 
 typedef struct MBSpace {
     ThreeValPtr space_array;
@@ -89,12 +89,12 @@ MBSpacePtr MBSpaceNew(void);
 void MBSpaceFree(MBSpacePtr sp);
 
 typedef struct GreedyAlignMem {
-   Int4Ptr PNTR flast_d;
+   Int4Ptr* flast_d;
    Int4Ptr max_row_free;
-   ThreeValPtr PNTR flast_d_affine;
+   ThreeValPtr* flast_d_affine;
    Int4Ptr uplow_free;
    MBSpacePtr space;
-} GreedyAlignMem, PNTR GreedyAlignMemPtr;
+} GreedyAlignMem,* GreedyAlignMemPtr;
 
 Int4 
 BLAST_GreedyAlign (const Uint1Ptr s1, Int4 len1,

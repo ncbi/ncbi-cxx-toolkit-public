@@ -129,7 +129,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
    const BlastDatabaseOptionsPtr db_options,
    BlastReturnStatPtr return_stats,
    BlastCoreAuxStructPtr aux_struct,
-   BlastHSPListPtr PNTR hsp_list_out)
+   BlastHSPListPtr* hsp_list_out)
 {
    BlastInitHitListPtr init_hitlist = aux_struct->init_hitlist;
    BlastHSPListPtr hsp_list = aux_struct->hsp_list;
@@ -430,11 +430,11 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    const BlastHitSavingOptionsPtr hit_options,
    BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
    BLAST_ScoreBlkPtr sbp, Uint4 subject_length, 
-   BlastGapAlignStructPtr PNTR gap_align, 
-   BlastInitialWordParametersPtr PNTR word_params,
-   BlastExtensionParametersPtr PNTR ext_params,
-   BlastHitSavingParametersPtr PNTR hit_params,
-   BlastCoreAuxStructPtr PNTR aux_struct_ptr)
+   BlastGapAlignStructPtr* gap_align, 
+   BlastInitialWordParametersPtr* word_params,
+   BlastExtensionParametersPtr* ext_params,
+   BlastHitSavingParametersPtr* hit_params,
+   BlastCoreAuxStructPtr* aux_struct_ptr)
 {
    Int2 status = 0;
    Boolean blastp = (lookup_wrap->lut_type == AA_LOOKUP_TABLE);
@@ -822,7 +822,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
 Int2 LookupTableWrapInit(BLAST_SequenceBlkPtr query, 
         const LookupTableOptionsPtr lookup_options,	
         ListNodePtr lookup_segments, BLAST_ScoreBlkPtr sbp, 
-        LookupTableWrapPtr PNTR lookup_wrap_ptr)
+        LookupTableWrapPtr* lookup_wrap_ptr)
 {
    LookupTableWrapPtr lookup_wrap;
 

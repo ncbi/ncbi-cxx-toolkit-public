@@ -105,13 +105,13 @@ typedef struct BlastQueryInfo {
    Int8Ptr eff_searchsp_array; /**< Array of effective search spaces for
                                   multiple queries. Dimension = number of 
                                   query sequences. */
-} BlastQueryInfo, PNTR BlastQueryInfoPtr;
+} BlastQueryInfo,* BlastQueryInfoPtr;
 
 /** Wrapper structure for different types of BLAST lookup tables */
 typedef struct LookupTableWrap {
    Uint1 lut_type; /**< What kind of a lookup table it is? */
    VoidPtr lut; /**< Pointer to the actual lookup table structure */
-} LookupTableWrap, PNTR LookupTableWrapPtr;
+} LookupTableWrap,* LookupTableWrapPtr;
 
 /** A structure containing two integers, used e.g. for locations for the 
  * lookup table.
@@ -119,7 +119,7 @@ typedef struct LookupTableWrap {
 typedef struct DoubleInt {
    Int4 i1;
    Int4 i2;
-} DoubleInt, PNTR DoubleIntPtr;
+} DoubleInt,* DoubleIntPtr;
 
 /** BlastSeqLoc is a ListNode with choice equal to the sequence local id,
  * and data->ptrvalue pointing to a DoubleInt structure defining the 
@@ -147,7 +147,7 @@ typedef struct BlastThrInfo {
     Int4 last_db_seq; /**< Last database sequence processed so far */
     Int4 number_of_pos_hits;/**< How many positive hits were found */
     Boolean realdb_done; /**< Is processing of real database(s) done? */
-} BlastThrInfo, PNTR BlastThrInfoPtr;
+} BlastThrInfo,* BlastThrInfoPtr;
 
 /** Return statistics from the BLAST search */
 typedef struct BlastReturnStat {
@@ -167,14 +167,14 @@ typedef struct BlastReturnStat {
    Int4 x_drop_gap_final; /**< Raw value of the x-dropoff for gapped 
                              extensions with traceback */
    FloatHi gap_trigger; /**< Minimal raw score for starting gapped extension */
-} BlastReturnStat, PNTR BlastReturnStatPtr;
+} BlastReturnStat,* BlastReturnStatPtr;
 
 /** Structure for keeping the query masking information */
 typedef struct BlastMask {
    Int4 index; /**< Index of the query sequence this mask is applied to */
    ListNodePtr loc_list; /**< List of mask locations */
-   struct BlastMask PNTR next; /**< Pointer to the next query mask */
-} BlastMask, PNTR BlastMaskPtr;
+   struct BlastMask* next; /**< Pointer to the next query mask */
+} BlastMask,* BlastMaskPtr;
 
 #define COMPRESSION_RATIO 4
 

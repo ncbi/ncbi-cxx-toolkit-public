@@ -91,7 +91,7 @@ Int4 LookupTableNew(const LookupTableOptionsPtr opt,
   lookup->neighbor_matches=0;
   lookup->threshold = opt->threshold;
   lookup->thin_backbone = 
-     (Int4Ptr PNTR) calloc(lookup->backbone_size , sizeof(Int4Ptr));
+     (Int4Ptr*) calloc(lookup->backbone_size , sizeof(Int4Ptr));
 
   return 0;
 }

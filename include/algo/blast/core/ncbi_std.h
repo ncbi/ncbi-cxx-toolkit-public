@@ -195,14 +195,14 @@ typedef struct ListNode {
 } ListNode, *ListNodePtr;
 
 ListNodePtr ListNodeNew (ListNodePtr vnp);
-ListNodePtr ListNodeAdd (ListNodePtr PNTR head);
-ListNodePtr ListNodeAddPointer (ListNodePtr PNTR head, Int2 choice, 
+ListNodePtr ListNodeAdd (ListNodePtr* head);
+ListNodePtr ListNodeAddPointer (ListNodePtr* head, Int2 choice, 
                                 void *value);
 ListNodePtr ListNodeFree (ListNodePtr vnp);
 ListNodePtr ListNodeFreeData (ListNodePtr vnp);
 ListNodePtr ListNodeSort (ListNodePtr list, 
                int (*compar) (const void *, const void *));
-ListNodePtr ListNodeCopyStr (ListNodePtr PNTR head, Int2 choice, CharPtr str);
+ListNodePtr ListNodeCopyStr (ListNodePtr* head, Int2 choice, CharPtr str);
 Int4 ListNodeLen (ListNodePtr vnp);
 
 void * MemDup (const void *orig, size_t size);

@@ -72,7 +72,7 @@ typedef struct BlastSeg {
    Int4 offset_trim; /**< Start of trimmed hsp */
    Int4 end_trim;    /**< End of trimmed HSP */
    Int4 gapped_start;/**< Where the gapped extension started. */
-} BlastSeg, PNTR BlastSegPtr;
+} BlastSeg,* BlastSegPtr;
 
 /** BLAST_NUMBER_OF_ORDERING_METHODS tells how many methods are used
  * to "order" the HSP's.
@@ -96,12 +96,12 @@ typedef struct BlastHSPLink {
    Nlm_FloatHi xsum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP,
                                      multiplied by the appropriate Lambda. */
    Int4 changed;
-} BlastHSPLink, PNTR BlastHSPLinkPtr;
+} BlastHSPLink,* BlastHSPLinkPtr;
 
 /** Structure holding all information about an HSP */
 typedef struct BlastHSP {
-   struct BlastHSP PNTR next; /**< The next HSP */
-   struct BlastHSP PNTR prev; /**< The previous HSP. */
+   struct BlastHSP* next; /**< The next HSP */
+   struct BlastHSP* prev; /**< The previous HSP. */
    BlastHSPLink  hsp_link;
    Boolean linked_set;        /**< Is this HSp part of a linked set? */
    Int2 ordering_method;/**< Which method (max or no max for gaps) was used? */
@@ -118,12 +118,12 @@ typedef struct BlastHSP {
    GapEditBlockPtr gap_info; /**< ALL gapped alignment is here */
    Int4 num_ref;              /**< Number of references in the linked set */
    Int4 linked_to;            /**< Where this HSP is linked to? */
-} BlastHSP, PNTR BlastHSPPtr;
+} BlastHSP,* BlastHSPPtr;
 
 /** Auxiliary structure for dynamic programming gapped extension */
 typedef struct BlastGapDP {
   Int4 CC, DD, FF;      /**< Values for gap opening and extensions. */
-} BlastGapDP, PNTR BlastGapDPPtr;
+} BlastGapDP,* BlastGapDPPtr;
 
 /** Structure supporting the gapped alignment */
 typedef struct BlastGapAlignStruct {
@@ -142,7 +142,7 @@ typedef struct BlastGapAlignStruct {
    Int4 score;   /**< Return value: alignment score */
    FloatHi percent_identity;/**< Return value: percent identity - filled only 
                                by the greedy non-affine alignment algorithm */
-} BlastGapAlignStruct, PNTR BlastGapAlignStructPtr;
+} BlastGapAlignStruct,* BlastGapAlignStructPtr;
 
 /** Initializes the BlastGapAlignStruct structure 
  * @param score_options Options related to scoring alignments [in]
@@ -160,7 +160,7 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
    BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
    Uint4 max_subject_length, Int4 query_length, 
    Uint1 program, BLAST_ScoreBlkPtr sbp, 
-   BlastGapAlignStructPtr PNTR gap_align_ptr);
+   BlastGapAlignStructPtr* gap_align_ptr);
 
 /** Deallocates memory in the BlastGapAlignStruct structure */
 BlastGapAlignStructPtr 
@@ -171,7 +171,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStructPtr gap_align);
  */
 typedef struct BlastHSPList {
    Int4 oid;/**< The ordinal id of the subject sequence this HSP list is for */
-   BlastHSPPtr PNTR hsp_array; /**< Array of pointers to individual HSPs */
+   BlastHSPPtr* hsp_array; /**< Array of pointers to individual HSPs */
    Int4 hspcnt; /**< Number of HSPs saved */
    Int4 allocated; /**< The allocated size of the hsp_array */
    Int4 hsp_max; /**< The maximal number of HSPs allowed to be saved */
@@ -213,7 +213,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
 			    BlastExtensionParametersPtr ext_params,
 			    BlastHitSavingParametersPtr hit_params,
 			    BlastInitHitListPtr init_hitlist,
-			    BlastHSPListPtr PNTR hsp_list_ptr);
+			    BlastHSPListPtr* hsp_list_ptr);
 
 /** Performs gapped extension for all non-Mega BLAST programs, given
  * that ungapped extension has been done earlier.
@@ -239,7 +239,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number, BLAST_SequenceBlkPtr query,
 		      BlastExtensionParametersPtr ext_params,
 		      BlastHitSavingParametersPtr hit_params,
 		      BlastInitHitListPtr init_hitlist,
-		      BlastHSPListPtr PNTR hsp_list_ptr);
+		      BlastHSPListPtr* hsp_list_ptr);
 
 /** Perform a gapped alignment with traceback
  * @param program Type of BLAST program [in]
@@ -268,7 +268,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program,
 Int2 BLAST_GetUngappedHSPList(BlastInitHitListPtr init_hitlist, 
         BLAST_SequenceBlkPtr subject, 
         BlastHitSavingOptionsPtr hit_options, 
-        BlastHSPListPtr PNTR hsp_list_ptr);
+        BlastHSPListPtr* hsp_list_ptr);
 
 #ifdef __cplusplus
 }

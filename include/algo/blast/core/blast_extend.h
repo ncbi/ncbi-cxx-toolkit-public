@@ -83,14 +83,14 @@ typedef struct BlastInitHitList {
 typedef struct DiagStruct {
    Int4 last_hit; /**< Offset of the last hit */
    Int4 diag_level; /**< To what length has this hit been extended so far? */
-} DiagStruct, PNTR DiagStructPtr;
+} DiagStruct,* DiagStructPtr;
 
 /** Structure for keeping last hit information for a diagonal on a stack */
 typedef struct MbStack {
    Int4 diag; /**< This hit's actual diagonal */
    Int4 level; /**< This hit's offset in the subject sequence */
    Int4 length; /**< To what length has this hit been extended so far? */
-} MbStack, PNTR MbStackPtr;
+} MbStack,* MbStackPtr;
 
 /** Structure containing parameters needed for initial word extension.
  * Only one copy of this structure is needed, regardless of how many
@@ -112,21 +112,21 @@ typedef struct BLAST_DiagTable {
                             neccessary, but possible. */
    Int4 actual_window; /**< The actual window used if the multiple
                           hits method was used and a hit was found. */
-} BLAST_DiagTable, PNTR BLAST_DiagTablePtr;
+} BLAST_DiagTable,* BLAST_DiagTablePtr;
 
 typedef struct MB_StackTable {
    Int4 num_stacks; /**< Number of stacks to be used for storing hit offsets
                        by MegaBLAST */
    Int4Ptr stack_index; /**< Current number of elements in each stack */
    Int4Ptr stack_size;  /**< Available memory for each stack */
-   MbStackPtr PNTR estack; /**< Array of stacks for most recent hits */
-} MB_StackTable, PNTR MB_StackTablePtr;
+   MbStackPtr* estack; /**< Array of stacks for most recent hits */
+} MB_StackTable,* MB_StackTablePtr;
    
 /** Structure for keeping initial word extension information */
 typedef struct BLAST_ExtendWord {
    BLAST_DiagTablePtr diag_table; /**< Diagonal array and related parameters */
    MB_StackTablePtr stack_table; /**< Stacks and related parameters */ 
-} BLAST_ExtendWord, PNTR BLAST_ExtendWordPtr;
+} BLAST_ExtendWord,* BLAST_ExtendWordPtr;
 
 /** Initializes the word extension structure
  * @param query The query sequence [in]
@@ -137,7 +137,7 @@ typedef struct BLAST_ExtendWord {
  */
 Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
    BlastInitialWordOptionsPtr word_options,
-   Int8 dblen, Int4 dbseq_num, BLAST_ExtendWordPtr PNTR ewp_ptr);
+   Int8 dblen, Int4 dbseq_num, BLAST_ExtendWordPtr* ewp_ptr);
 
 /** Allocate memory for the BlastInitHitList structure */
 BlastInitHitListPtr BLAST_InitHitListNew(void);
@@ -165,7 +165,7 @@ BlastInitHitListPtr BLAST_InitHitListDestruct(BlastInitHitListPtr init_hitlist);
 Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
 		   BLAST_SequenceBlkPtr query, 
 		   LookupTableWrapPtr lookup,
-		   Int4Ptr PNTR matrix, 
+		   Int4Ptr* matrix, 
 		   BlastInitialWordParametersPtr word_params,
 		   BLAST_ExtendWordPtr ewp,
 		   Uint4Ptr q_offsets,
@@ -187,9 +187,9 @@ Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
  */
 Boolean
 BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query, 
-   BLAST_SequenceBlkPtr subject, Int4Ptr PNTR matrix, 
+   BLAST_SequenceBlkPtr subject, Int4Ptr* matrix, 
    Int4 q_off, Int4 s_off, Int4 cutoff, Int4 X, 
-   BlastUngappedDataPtr PNTR ungapped_data);
+   BlastUngappedDataPtr* ungapped_data);
 
 /** Finds all initial hits for a given subject sequence, that satisfy the 
  *  wordsize condition, and pass the ungapped extension test.
@@ -210,7 +210,7 @@ BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query,
 Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject, 
 		       BLAST_SequenceBlkPtr query,
 		       LookupTableWrapPtr lookup_wrap,
-		       Int4Ptr PNTR matrix,
+		       Int4Ptr* matrix,
 		       BlastInitialWordParametersPtr word_params, 
 		       BLAST_ExtendWordPtr ewp,
 		       Uint4Ptr q_offsets,
@@ -238,7 +238,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
 Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject, 
 			  BLAST_SequenceBlkPtr query,
 			  LookupTableWrapPtr lookup_wrap,
-			  Int4Ptr PNTR matrix,
+			  Int4Ptr* matrix,
 			  BlastInitialWordParametersPtr word_params, 
 			  BLAST_ExtendWordPtr ewp,
 			  Uint4Ptr q_offsets,

@@ -51,16 +51,16 @@ typedef struct BlastHitList {
    FloatHi worst_evalue; /**< Highest of the best e-values among the HSP 
                             lists */
    Boolean heapified; /**< Is this hit list already heapified? */
-   BlastHSPListPtr PNTR hsplist_array; /**< Array of HSP lists for individual
+   BlastHSPListPtr* hsplist_array; /**< Array of HSP lists for individual
                                           database hits */
-} BlastHitList, PNTR BlastHitListPtr;
+} BlastHitList,* BlastHitListPtr;
 
 /** The structure to contain all BLAST results, for multiple queries */
 typedef struct BlastResults {
    Int4 num_queries; /**< Number of query sequences */
-   BlastHitListPtr PNTR hitlist_array; /**< Array of results for individual
+   BlastHitListPtr* hitlist_array; /**< Array of results for individual
                                           query sequences */
-} BlastResults, PNTR BlastResultsPtr;
+} BlastResults,* BlastResultsPtr;
 
 /** BLAST_SaveHitlist
  *  Save the current hit list to appropriate places in the results structure
@@ -92,7 +92,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
  *                    for [in]
  * @param results_ptr The allocated structure [out]
  */
-Int2 BLAST_ResultsInit(Int4 num_queries, BlastResultsPtr PNTR results_ptr);
+Int2 BLAST_ResultsInit(Int4 num_queries, BlastResultsPtr* results_ptr);
 
 /** Sort each hit list in the BLAST results by best e-value */
 Int2 BLAST_SortResults(BlastResultsPtr results);
@@ -125,7 +125,7 @@ Int2 BLAST_ReapHitlistByEvalue(BlastHSPListPtr hsp_list,
  * @return Number of remaining HSPs.
 */
 Int4
-BlastHSPArrayPurge (BlastHSPPtr PNTR hsp_array, Int4 hspcnt);
+BlastHSPArrayPurge (BlastHSPPtr* hsp_array, Int4 hspcnt);
 
 /** Adjust the query offsets in a list of HSPs. The original offsets are in
  * the concatenated query coordinates. The adjusted offsets are in 
@@ -151,8 +151,8 @@ void AdjustOffsetsInHSPList(BlastHSPListPtr hsp_list, Int4 offset);
 typedef struct BLASTHSPSegment {
    Int4 q_start, q_end;
    Int4 s_start, s_end;
-   struct BLASTHSPSegment PNTR next;
-} BLASTHSPSegment, PNTR BLASTHSPSegmentPtr;
+   struct BLASTHSPSegment* next;
+} BLASTHSPSegment,* BLASTHSPSegmentPtr;
 
 /* By how much should the chunks of a subject sequence overlap if it is 
    too long and has to be split */
@@ -169,7 +169,7 @@ typedef struct BLASTHSPSegment {
  * @return 1 if HSP lists have been merged, 0 otherwise.
  */
 Int2 MergeHSPLists(BlastHSPListPtr hsp_list, 
-        BlastHSPListPtr PNTR combined_hsp_list_ptr, Int4 start,
+        BlastHSPListPtr* combined_hsp_list_ptr, Int4 start,
         Boolean merge_hsps, Boolean append);
 
 /** Deallocate memory for an HSP structure */

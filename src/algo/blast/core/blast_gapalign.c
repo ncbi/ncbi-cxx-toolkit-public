@@ -69,7 +69,7 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
 
 typedef struct GapData {
   BlastGapDPPtr CD;
-  Int4Ptr PNTR v;
+  Int4Ptr* v;
   Int4Ptr sapp;                 /* Current script append ptr */
   Int4  last;
   Int4 h,  g;
@@ -111,10 +111,10 @@ static int
 query_offset_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
-	BlastHSPPtr PNTR hp1, PNTR hp2;
+	BlastHSPPtr* hp1,* hp2;
 
-	hp1 = (BlastHSPPtr PNTR) v1;
-	hp2 = (BlastHSPPtr PNTR) v2;
+	hp1 = (BlastHSPPtr*) v1;
+	hp2 = (BlastHSPPtr*) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
@@ -134,10 +134,10 @@ static int
 query_end_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
-	BlastHSPPtr PNTR hp1, PNTR hp2;
+	BlastHSPPtr* hp1,* hp2;
 
-	hp1 = (BlastHSPPtr PNTR) v1;
-	hp2 = (BlastHSPPtr PNTR) v2;
+	hp1 = (BlastHSPPtr*) v1;
+	hp2 = (BlastHSPPtr*) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
@@ -157,10 +157,10 @@ static int
 score_compare_hsp(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
-	BlastHSPPtr PNTR hp1, PNTR hp2;
+	BlastHSPPtr* hp1,* hp2;
 
-	hp1 = (BlastHSPPtr PNTR) v1;
-	hp2 = (BlastHSPPtr PNTR) v2;
+	hp1 = (BlastHSPPtr*) v1;
+	hp2 = (BlastHSPPtr*) v2;
 	h1 = *hp1;
 	h2 = *hp2;
         
@@ -281,7 +281,7 @@ CheckGappedAlignmentsForOverlap(BlastHSPPtr *hsp_array, Int4 hsp_count, Int2 fra
  */
 #define	CHUNKSIZE	2097152
 static GapStateArrayStructPtr
-GapGetState(GapStateArrayStructPtr PNTR head, Int4 length)
+GapGetState(GapStateArrayStructPtr* head, Int4 length)
 
 {
    GapStateArrayStructPtr	retval, var, last;
@@ -451,7 +451,7 @@ BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
    if (score_options->gap_open==0 && score_options->gap_extend==0) {
       d_diff = ICEIL(Xdrop+reward/2, penalty+reward);
    
-      gamp->flast_d = (Int4Ptr PNTR) malloc((max_d + 2) * sizeof(Int4Ptr));
+      gamp->flast_d = (Int4Ptr*) malloc((max_d + 2) * sizeof(Int4Ptr));
       if (gamp->flast_d == NULL) {
          sfree(gamp);
          return NULL;
@@ -481,7 +481,7 @@ BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
       gd = gdb3(&Mis_cost, &gap_open, &GE_cost);
       d_diff = ICEIL(Xdrop+reward/2, gd);
       gamp->uplow_free = (Int4Ptr) calloc(2*(max_d+1+max_cost), sizeof(Int4));
-      gamp->flast_d_affine = (ThreeValPtr PNTR) 
+      gamp->flast_d_affine = (ThreeValPtr*) 
 	 malloc((MAX(max_d, max_cost) + 2) * sizeof(ThreeValPtr));
       if (!gamp->uplow_free || !gamp->flast_d_affine) {
          BLAST_GreedyAlignsfree(gamp);
@@ -526,7 +526,7 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
    BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
    Uint4 max_subject_length, Int4 query_length, 
    Uint1 program, BLAST_ScoreBlkPtr sbp, 
-   BlastGapAlignStructPtr PNTR gap_align_ptr)
+   BlastGapAlignStructPtr* gap_align_ptr)
 {
    Int2 status = 0;
    Boolean is_na = (program == blast_type_blastn ||
@@ -582,7 +582,7 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
 */
 static Int4
 ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei, 
-	Int4Ptr pej, Int4Ptr PNTR sapp, BlastGapAlignStructPtr gap_align, 
+	Int4Ptr pej, Int4Ptr* sapp, BlastGapAlignStructPtr gap_align, 
 	BlastScoringOptionsPtr score_options, Int4 query_offset, 
         Boolean reversed, Boolean reverse_sequence)
 	
@@ -595,7 +595,7 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
   Int4 best_score = 0;
   Int4Ptr wa;
   BlastGapDPPtr dp, dyn_prog;
-  Uint1Ptr PNTR state, stp, tmp;
+  Uint1Ptr* state, stp, tmp;
   Uint1Ptr state_array;
   Int4Ptr *matrix;
   Int4 X;
@@ -632,7 +632,7 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
   else
      dyn_prog = (BlastGapDPPtr)malloc(j);
 
-  state = (Uint1Ptr PNTR) malloc(sizeof(Uint1Ptr)*(M+1));
+  state = (Uint1Ptr*) malloc(sizeof(Uint1Ptr)*(M+1));
   dyn_prog[0].CC = 0;
   dyn_prog[0].FF = -m - decline_penalty;
   c = dyn_prog[0].DD = -m;
@@ -819,7 +819,7 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
  * @return The best alignment score found.
  */
 static Int4 SEMI_G_ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
-   Int4Ptr S, Int4Ptr pei, Int4Ptr pej, Boolean score_only, Int4Ptr PNTR sapp,
+   Int4Ptr S, Int4Ptr pei, Int4Ptr pej, Boolean score_only, Int4Ptr* sapp,
    BlastGapAlignStructPtr gap_align, BlastScoringOptionsPtr score_options, 
    Int4 query_offset, Boolean reversed, Boolean reverse_sequence)
 {
@@ -988,7 +988,7 @@ static Int4 SEMI_G_ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
  * @return The best alignment score found.
  */
 static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
-   Int4Ptr S, Int4Ptr pei, Int4Ptr pej, Int4Ptr PNTR sapp, 
+   Int4Ptr S, Int4Ptr pei, Int4Ptr pej, Int4Ptr* sapp, 
    BlastGapAlignStructPtr gap_align, BlastScoringOptionsPtr score_options,
    Int4 query_offset, Boolean reversed)
 {
@@ -999,7 +999,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   Int4Ptr wa;
   Int4 count = 0;
   BlastGapDPPtr dp;
-  Uint1Ptr PNTR state, stp, tmp;
+  Uint1Ptr* state, stp, tmp;
   Uint1Ptr state_array;
   Int4Ptr *matrix;
   Int4 X;
@@ -1030,7 +1030,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   j = (N + 2) * sizeof(BlastGapDP);
   data.CD = (BlastGapDPPtr)calloc(1, j);
 
-  state = (Uint1Ptr PNTR) calloc((M+1), sizeof(Uint1Ptr));
+  state = (Uint1Ptr*) calloc((M+1), sizeof(Uint1Ptr));
   data.CD[0].CC = 0;
   c = data.CD[0].DD = -m;
   state_struct = GapGetState(&gap_align->state_struct, N+3);
@@ -1267,7 +1267,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
  * @return The best alignment score found.
  */
 static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
-   Int4Ptr S, Int4Ptr pei, Int4Ptr pej, Boolean score_only, Int4Ptr PNTR sapp, 
+   Int4Ptr S, Int4Ptr pei, Int4Ptr pej, Boolean score_only, Int4Ptr* sapp, 
    BlastGapAlignStructPtr gap_align, BlastScoringOptionsPtr score_options,
    Int4 query_offset, Boolean reversed)
 {
@@ -1464,8 +1464,8 @@ diag_compare_match(const void* v1, const void* v2)
 {
    BlastInitHSPPtr h1, h2;
 
-   h1 = *((BlastInitHSPPtr PNTR) v1);
-   h2 = *((BlastInitHSPPtr PNTR) v2);
+   h1 = *((BlastInitHSPPtr*) v1);
+   h2 = *((BlastInitHSPPtr*) v2);
    
    if (!h1 || !h2)
       return 0;
@@ -1481,13 +1481,13 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
 			    BlastExtensionParametersPtr ext_params,
 			    BlastHitSavingParametersPtr hit_params,
 			    BlastInitHitListPtr init_hitlist,
-			    BlastHSPListPtr PNTR hsp_list_ptr)
+			    BlastHSPListPtr* hsp_list_ptr)
 {
    BlastExtensionOptionsPtr ext_options = ext_params->options;
    Int4 index, i;
    Boolean delete_hsp;
    BlastInitHSPPtr init_hsp;
-   BlastInitHSPPtr PNTR init_hsp_array;
+   BlastInitHSPPtr* init_hsp_array;
    BlastHSPListPtr hsp_list;
    BlastHitSavingOptionsPtr hit_options = hit_params->options;
 
@@ -1496,7 +1496,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
    else 
       hsp_list = *hsp_list_ptr;
 
-   init_hsp_array = (BlastInitHSPPtr PNTR) 
+   init_hsp_array = (BlastInitHSPPtr*) 
      malloc(init_hitlist->total*sizeof(BlastInitHSPPtr));
    for (index=0; index<init_hitlist->total; ++index)
      init_hsp_array[index] = &init_hitlist->init_hsp_array[index];
@@ -1561,7 +1561,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
  *  another. 
  */
 static GapEditScriptPtr
-MBToGapEditScript (MBGapEditScript PNTR ed_script)
+MBToGapEditScript (MBGapEditScript* ed_script)
 {
    GapEditScriptPtr esp_start = NULL, esp, esp_prev = NULL;
    Uint4 i;
@@ -1966,7 +1966,7 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
    BlastInitHSPPtr init_hsp, BlastHSPListPtr hsp_list, 
    BlastHitSavingOptionsPtr hit_options, Int2 frame)
 {
-   BlastHSPPtr PNTR hsp_array, new_hsp;
+   BlastHSPPtr* hsp_array, new_hsp;
    Int4 highscore, lowscore, score;
    Int4 hspcnt, hspmax, index, new_index, high_index, old_index, low_index;
    Int4 new_hspmax;
@@ -1981,7 +1981,7 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
       if (hit_options->hsp_num_max)
          new_hspmax = MIN(new_hspmax, hit_options->hsp_num_max);
       if (new_hspmax > hsp_list->allocated) {
-         hsp_array = (BlastHSPPtr PNTR)
+         hsp_array = (BlastHSPPtr*)
             realloc(hsp_list->hsp_array, hsp_list->allocated*2*sizeof(BlastHSPPtr));
          if (hsp_array == NULL)
          {
@@ -2106,8 +2106,8 @@ score_compare_match(const void* v1, const void* v2)
 {
 	BlastInitHSPPtr h1, h2;
 
-	h1 = *(BlastInitHSPPtr PNTR) v1;
-	h2 = *(BlastInitHSPPtr PNTR) v2;
+	h1 = *(BlastInitHSPPtr*) v1;
+	h2 = *(BlastInitHSPPtr*) v2;
 
 	if (h1 == NULL || h2 == NULL || 
             !h1->ungapped_data || !h2->ungapped_data)
@@ -2188,7 +2188,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
         BlastExtensionParametersPtr ext_params,
         BlastHitSavingParametersPtr hit_params,
         BlastInitHitListPtr init_hitlist,
-        BlastHSPListPtr PNTR hsp_list_ptr)
+        BlastHSPListPtr* hsp_list_ptr)
 
 {
    DoubleIntPtr helper = NULL;
@@ -2201,7 +2201,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    Int4 max_offset;
    Int2 status = 0;
    Int2 frame = 0; /* CHANGE!!!!!!!!!!!!!!!!! */
-   BlastInitHSPPtr PNTR init_hsp_array = NULL;
+   BlastInitHSPPtr* init_hsp_array = NULL;
    BlastHSPListPtr hsp_list = NULL;
    FloatHi gap_trigger;
    FloatHi cutoff_score;
@@ -2225,7 +2225,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    else 
       hsp_list = *hsp_list_ptr;
 
-   init_hsp_array = (BlastInitHSPPtr PNTR) 
+   init_hsp_array = (BlastInitHSPPtr*) 
       malloc(init_hitlist->total*sizeof(BlastInitHSPPtr));
 
    for (index = 0; index < init_hitlist->total; ++index)
@@ -2425,7 +2425,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
 static Int4 
 OOF_SEMI_G_ALIGN_EX(Uint1Ptr query, Uint1Ptr subject, Int4 q_off, 
    Int4 s_off, Int4Ptr S, Int4Ptr private_q_start, Int4Ptr private_s_start, 
-   Boolean score_only, Int4Ptr PNTR sapp, BlastGapAlignStructPtr gap_align, 
+   Boolean score_only, Int4Ptr* sapp, BlastGapAlignStructPtr gap_align, 
    BlastScoringOptionsPtr score_options, Int4 psi_offset, 
    Boolean reversed, Boolean switch_seq)
 {
@@ -2561,7 +2561,7 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
  */
 static Int2 
 BLAST_TracebackToGapEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1, 
-                               Int4 start2, GapEditBlockPtr PNTR edit_block)
+                               Int4 start2, GapEditBlockPtr* edit_block)
 {
 
   Int4 i, j, op, number_of_subs, number_of_decline;
@@ -2647,7 +2647,7 @@ BLAST_TracebackToGapEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1,
 static Int2
 BLAST_OOFTracebackToGapEditBlock(Int4Ptr S, Int4 q_length, 
    Int4 s_length, Int4 q_start, Int4 s_start, Uint1 program, 
-   GapEditBlockPtr PNTR edit_block_ptr)
+   GapEditBlockPtr* edit_block_ptr)
 {
     register Int4 current_val, last_val, number, index1, index2;
     Int4 M, N;
@@ -2841,7 +2841,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1Ptr query,
 Int2 BLAST_GetUngappedHSPList(BlastInitHitListPtr init_hitlist, 
         BLAST_SequenceBlkPtr subject, 
         BlastHitSavingOptionsPtr hit_options, 
-        BlastHSPListPtr PNTR hsp_list_ptr)
+        BlastHSPListPtr* hsp_list_ptr)
 {
    BlastHSPListPtr hsp_list = NULL;
    Int4 index;

@@ -58,7 +58,7 @@ typedef struct segm
    int begin;
    int end;
    struct segm *next;
-  } Seg, PNTR SegPtr;
+  } Seg,* SegPtr;
 
 typedef struct alpha
   {
@@ -68,7 +68,7 @@ typedef struct alpha
    Int4Ptr alphaindex;
    unsigned char* alphaflag;
    CharPtr alphachar;
-  } Alpha, PNTR AlphaPtr;
+  } Alpha,* AlphaPtr;
 
 typedef struct segparams
   {
@@ -81,27 +81,27 @@ typedef struct segparams
    Int4 maxtrim;
    Int4 maxbogus;
    AlphaPtr palpha;
-  } SegParameters, PNTR SegParametersPtr;
+  } SegParameters,* SegParametersPtr;
 
 typedef struct sequence
   {
-   struct sequence PNTR parent;
+   struct sequence* parent;
    CharPtr seq;
    AlphaPtr palpha;
    Int4 start;
    Int4 length;
    Int4 bogus;
    Boolean punctuation;
-   Int4 PNTR composition;
-   Int4 PNTR state;
+   Int4* composition;
+   Int4* state;
    FloatHi entropy;
-  } Sequence, PNTR SequencePtr;
+  } Sequence,* SequencePtr;
 
 SegParametersPtr SegParametersNewAa (void);
 void SegParametersFree(SegParametersPtr sparamsp);
 
 Int2 SeqBufferSeg (Uint1Ptr sequence, Int4 length, Int4 offset,
-                   SegParametersPtr sparamsp, BlastSeqLocPtr PNTR seg_locs);
+                   SegParametersPtr sparamsp, BlastSeqLocPtr* seg_locs);
 
 #ifdef __cplusplus
 }

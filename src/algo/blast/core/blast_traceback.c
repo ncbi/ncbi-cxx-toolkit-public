@@ -50,10 +50,10 @@ static int
 score_compare_hsps(const void* v1, const void* v2)
 {
    BlastHSPPtr h1, h2;
-   BlastHSPPtr PNTR hp1, PNTR hp2;
+   BlastHSPPtr* hp1,* hp2;
    
-   hp1 = (BlastHSPPtr PNTR) v1;
-   hp2 = (BlastHSPPtr PNTR) v2;
+   hp1 = (BlastHSPPtr*) v1;
+   hp2 = (BlastHSPPtr*) v2;
    h1 = *hp1;
    h2 = *hp2;
    
@@ -395,7 +395,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
    Uint1Ptr query, subject, subject_start = NULL;
    Int4 query_length, subject_length, subject_length_orig=0;
    Int4 max_start = MAX_DBSEQ_LEN / 2, start_shift;
-   BlastHSPPtr PNTR hsp_array;
+   BlastHSPPtr* hsp_array;
    Int4 q_start, s_start, max_offset;
    Boolean keep;
    BlastHitSavingOptionsPtr hit_options = hit_params->options;
@@ -413,7 +413,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
    Uint1Ptr translation_buffer;
    Int4Ptr frame_offsets;
    Uint1Ptr nucl_sequence = NULL;
-   BLAST_KarlinBlkPtr PNTR kbp;
+   BLAST_KarlinBlkPtr* kbp;
 
    if (hsp_list->hspcnt == 0) {
       return 0;

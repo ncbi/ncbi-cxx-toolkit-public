@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.19  2003/07/30 19:39:14  camacho
+ * Remove PNTRs
+ *
  * Revision 1.18  2003/07/30 17:58:25  dondosha
  * Changed ValNode to ListNode
  *
@@ -224,7 +227,7 @@ typedef struct _matrix_info {
 	array_of_8 	*values;		/* The values (below). */
 	Int4		*prefs;			/* Preferences for display. */
 	Int4		max_number_values;	/* number of values (e.g., BLOSUM90_VALUES_MAX). */
-} MatrixInfo, PNTR MatrixInfoPtr;
+} MatrixInfo,* MatrixInfoPtr;
 
 
 /**************************************************************************************
@@ -884,7 +887,7 @@ BLAST_MatrixFill(BLAST_ScoreBlkPtr sbp)
     BLAST_MatrixPtr blast_matrix;
     FloatHi karlinK = 0.0;
     Int4 index1, index2, dim1, dim2;
-    Int4Ptr PNTR matrix, PNTR original_matrix;
+    Int4Ptr* matrix,* original_matrix;
     FloatHi **posFreqs = NULL;
 
     if (sbp == NULL)
@@ -957,7 +960,7 @@ BLAST_MatrixFill(BLAST_ScoreBlkPtr sbp)
         if matrix==NULL, it is allocated and returned.
 */
 
-BLAST_ScorePtr PNTR BlastScoreBlkMatCreateEx(BLAST_ScorePtr PNTR matrix,BLAST_Score penalty, BLAST_Score reward)
+BLAST_ScorePtr* BlastScoreBlkMatCreateEx(BLAST_ScorePtr* matrix,BLAST_Score penalty, BLAST_Score reward)
 {
 
 	Int2	index1, index2, degen;
@@ -1321,7 +1324,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     Char	temp[512];
     CharPtr	cp, lp;
     Char		ch;
-    BLAST_ScorePtr PNTR	matrix;
+    BLAST_ScorePtr*	matrix;
     BLAST_ScorePtr	m;
     BLAST_Score	score;
     Uint4	a1cnt = 0, a2cnt = 0;
@@ -1493,7 +1496,7 @@ Int2
 BlastScoreBlkMaxScoreSet(BLAST_ScoreBlkPtr sbp)
 {
 	BLAST_Score score, maxscore;
-	BLAST_ScorePtr PNTR  matrix; 
+	BLAST_ScorePtr*  matrix; 
 	Int2 index1, index2;
 
 	sbp->loscore = BLAST_SCORE_1MAX;
@@ -1532,7 +1535,7 @@ gaps), then use other scores. */
 /* maxscore for PSI Blast depends not on the residue, but on the position
    in the posMatrix, so maxscore array has size of the length of posMatrix */
 /* SSH */
-BLAST_ScorePtr BlastPSIMaxScoreGet(BLAST_ScorePtr PNTR posMatrix, 
+BLAST_ScorePtr BlastPSIMaxScoreGet(BLAST_ScorePtr* posMatrix, 
                                    Int4 start, Int4 length)
 {
     BLAST_Score score, maxscore;
@@ -1705,7 +1708,7 @@ BlastScoreFreqNew(BLAST_Score score_min, BLAST_Score score_max)
 		return NULL;
 
 	range = score_max - score_min + 1;
-	sfp->sprob = (FloatHi PNTR) calloc(range, sizeof(FloatHi));
+	sfp->sprob = (FloatHi*) calloc(range, sizeof(FloatHi));
 	if (sfp->sprob == NULL) 
 	{
 		BlastScoreFreqDestruct(sfp);
@@ -1736,7 +1739,7 @@ BlastScoreFreqDestruct(BLAST_ScoreFreqPtr sfp)
 static Int2
 BlastScoreFreqCalc(BLAST_ScoreBlkPtr sbp, BLAST_ScoreFreqPtr sfp, BLAST_ResFreqPtr rfp1, BLAST_ResFreqPtr rfp2)
 {
-	BLAST_ScorePtr PNTR	matrix;
+	BLAST_ScorePtr*	matrix;
 	BLAST_Score	score, obs_min, obs_max;
 	FloatHi		score_sum, score_avg;
 	Int2 		alphabet_start, alphabet_end, index1, index2;
@@ -1902,7 +1905,7 @@ BlastResFreqNew(BLAST_ScoreBlkPtr sbp)
 
 	rfp->alphabet_code = sbp->alphabet_code;
 
-	rfp->prob0 = (FloatHi PNTR) calloc(sbp->alphabet_size, sizeof(FloatHi));
+	rfp->prob0 = (FloatHi*) calloc(sbp->alphabet_size, sizeof(FloatHi));
 	if (rfp->prob0 == NULL) 
 	{
 		rfp = BlastResFreqDestruct(rfp);
@@ -2230,7 +2233,7 @@ arrays.
 */
 
 Int2
-BlastKarlinGetMatrixValues(CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR extension, FloatHiPtr PNTR lambda, FloatHiPtr PNTR K, FloatHiPtr PNTR H, Int4Ptr PNTR pref_flags)
+BlastKarlinGetMatrixValues(CharPtr matrix, Int4Ptr* open, Int4Ptr* extension, FloatHiPtr* lambda, FloatHiPtr* K, FloatHiPtr* H, Int4Ptr* pref_flags)
 
 {
 	return BlastKarlinGetMatrixValuesEx2(matrix, open, extension, NULL, lambda, K, H, NULL, NULL, pref_flags);
@@ -2248,7 +2251,7 @@ arrays.
 */
 
 Int2
-BlastKarlinGetMatrixValuesEx(CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR extension, Int4Ptr PNTR decline_align, FloatHiPtr PNTR lambda, FloatHiPtr PNTR K, FloatHiPtr PNTR H, Int4Ptr PNTR pref_flags)
+BlastKarlinGetMatrixValuesEx(CharPtr matrix, Int4Ptr* open, Int4Ptr* extension, Int4Ptr* decline_align, FloatHiPtr* lambda, FloatHiPtr* K, FloatHiPtr* H, Int4Ptr* pref_flags)
 
 {
 	return BlastKarlinGetMatrixValuesEx2(matrix, open, extension, decline_align, lambda, K, H, NULL, NULL, pref_flags);
@@ -2266,7 +2269,7 @@ arrays.
 */
 
 Int2
-BlastKarlinGetMatrixValuesEx2(CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR extension, Int4Ptr PNTR decline_align, FloatHiPtr PNTR lambda, FloatHiPtr PNTR K, FloatHiPtr PNTR H, FloatHiPtr PNTR alpha, FloatHiPtr PNTR beta, Int4Ptr PNTR pref_flags)
+BlastKarlinGetMatrixValuesEx2(CharPtr matrix, Int4Ptr* open, Int4Ptr* extension, Int4Ptr* decline_align, FloatHiPtr* lambda, FloatHiPtr* K, FloatHiPtr* H, FloatHiPtr* alpha, FloatHiPtr* beta, Int4Ptr* pref_flags)
 
 {
 	array_of_8 *values;
@@ -2445,7 +2448,7 @@ BlastKarlinGetDefaultMatrixValues(CharPtr matrix, Int4Ptr open, Int4Ptr extensio
 */
 
 Int2
-BlastKarlinBlkGappedCalc(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, CharPtr matrix_name, Blast_MessagePtr PNTR error_return)
+BlastKarlinBlkGappedCalc(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, CharPtr matrix_name, Blast_MessagePtr* error_return)
 
 {
 
@@ -2461,7 +2464,7 @@ BlastKarlinBlkGappedCalc(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend,
 */
 
 Int2
-BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, CharPtr matrix_name, Blast_MessagePtr PNTR error_return)
+BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, CharPtr matrix_name, Blast_MessagePtr* error_return)
 
 {
 	Char buffer[256];
@@ -2662,7 +2665,7 @@ PrintAllowedValuesMessage(const Char *matrix_name, Int4 gap_open, Int4 gap_exten
 
 Int2
 BlastKarlinReportAllowedValues(const Char *matrix_name, 
-   Blast_MessagePtr PNTR error_return)
+   Blast_MessagePtr* error_return)
 {
 	array_of_8 *values;
 	Boolean found_matrix=FALSE;
@@ -2820,7 +2823,7 @@ FloatHi
 BlastKarlinLHtoK(BLAST_ScoreFreqPtr sfp, FloatHi	lambda, FloatHi H)
 {
 #ifndef BLAST_KARLIN_STACKP
-	FloatHi	PNTR P0 = NULL;
+	FloatHi* P0 = NULL;
 #else
 	FloatHi	P0 [DIMOFP0_MAX];
 #endif
@@ -2834,7 +2837,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreqPtr sfp, FloatHi	lambda, FloatHi H)
 	FloatHi	Sum, av, oldsum, oldsum2, score_avg;
 	int		iter;
 	FloatHi	sumlimit;
-	FloatHi	PNTR p, PNTR ptrP, PNTR ptr1, PNTR ptr2, PNTR ptr1e;
+	FloatHi* p,* ptrP,* ptr1,* ptr2,* ptr1e;
 	FloatHi	etolami, etolam;
         Boolean         bi_modal_score = FALSE;
 
@@ -2884,7 +2887,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreqPtr sfp, FloatHi	lambda, FloatHi H)
 		return -1.;
 	}
 #ifndef BLAST_KARLIN_STACKP
-	P0 = (FloatHi PNTR)calloc(DIMOFP0 , sizeof(*P0));
+	P0 = (FloatHi*)calloc(DIMOFP0 , sizeof(*P0));
 	if (P0 == NULL)
 		return -1.;
 #else
@@ -2965,7 +2968,7 @@ CleanUp:
 FloatHi
 BlastKarlinLambdaBis(BLAST_ScoreFreqPtr sfp)
 {
-	register FloatHi	PNTR sprob;
+	register FloatHi* sprob;
 	FloatHi	lambda, up, newval;
 	BLAST_Score	i, low, high, d;
 	int		j;
@@ -3043,7 +3046,7 @@ BlastKarlinLambdaNR(BLAST_ScoreFreqPtr sfp)
 	BLAST_Score	high;			/* Highest score (must be positive) */
 	int		j;
 	BLAST_Score	i, d;
-	FloatHi PNTR	sprob;
+	FloatHi*	sprob;
 	FloatHi	lambda0, sum, slope, temp, x0, x1, amt;
 
 	low = sfp->obs_min;
@@ -3157,7 +3160,7 @@ BlastGapDecay(FloatHi pvalue, unsigned nsegs, FloatHi decayrate)
 */
 Int2
 BlastCutoffs(BLAST_ScorePtr S, /* cutoff score */
-	FloatHi PNTR E, /* expected no. of HSPs scoring at or above S */
+	FloatHi* E, /* expected no. of HSPs scoring at or above S */
 	BLAST_KarlinBlkPtr kbp,
 	FloatHi qlen, /* length of query sequence */
 	FloatHi dblen, /* length of database or database sequence */
@@ -3168,7 +3171,7 @@ BlastCutoffs(BLAST_ScorePtr S, /* cutoff score */
 
 Int2
 BlastCutoffs_simple(BLAST_ScorePtr S, /* cutoff score */
-	FloatHi PNTR E, /* expected no. of HSPs scoring at or above S */
+	FloatHi* E, /* expected no. of HSPs scoring at or above S */
 	BLAST_KarlinBlkPtr kbp,
 	FloatHi searchsp, /* size of search space. */
 	Boolean dodecay) /* TRUE ==> use gapdecay feature */
@@ -3382,7 +3385,7 @@ static FloatHi	tab4[] = { /* table for r == 4 */
 0.8699,   0.9127,   0.9451,   0.9679,   0.9827,   0.9915,   0.9963
 		};
 
-static FloatHi PNTR table[] = { tab2, tab3, tab4 };
+static FloatHi* table[] = { tab2, tab3, tab4 };
 static short tabsize[] = { DIM(tab2)-1, DIM(tab3)-1, DIM(tab4)-1 };
 
 static FloatHi f (FloatHi,VoidPtr);
@@ -3533,7 +3536,7 @@ BlastSumPCalc(int r, FloatHi s)
 static FloatHi
 g(FloatHi	s, VoidPtr	vp)
 {
-	register FloatHi PNTR	args = vp;
+	register FloatHi*	args = vp;
 	FloatHi	mx;
 	
 	ARG_ADJ2 = ARG_ADJ1 - s;
@@ -3545,7 +3548,7 @@ g(FloatHi	s, VoidPtr	vp)
 static FloatHi
 f(FloatHi	x, VoidPtr	vp)
 {
-	register FloatHi PNTR	args = vp;
+	register FloatHi*	args = vp;
 	register FloatHi	y;
 
 	y = exp(x - ARG_SDIVR);
@@ -3749,11 +3752,11 @@ ConvertPseudoStoE(Int2 s, FloatHi n)
 #define TX_MATRIX_SIZE 128
 #endif
 
-Int4Ptr PNTR BlastMatrixToTxMatrix(BLAST_MatrixPtr blast_matrix)
+Int4Ptr* BlastMatrixToTxMatrix(BLAST_MatrixPtr blast_matrix)
 {
    Uint1 i, j, index1, index2;
-   Int4Ptr PNTR matrix = blast_matrix->original_matrix;
-   Int4Ptr PNTR txmatrix;
+   Int4Ptr* matrix = blast_matrix->original_matrix;
+   Int4Ptr* txmatrix;
 
    if (!blast_matrix->is_prot || matrix == NULL) 
       return NULL;
@@ -3777,7 +3780,7 @@ Int4Ptr PNTR BlastMatrixToTxMatrix(BLAST_MatrixPtr blast_matrix)
    return txmatrix;
 }
 
-Int4Ptr PNTR TxMatrixDestruct(Int4Ptr PNTR txmatrix) 
+Int4Ptr* TxMatrixDestruct(Int4Ptr* txmatrix) 
 {
    Int2 i;
 

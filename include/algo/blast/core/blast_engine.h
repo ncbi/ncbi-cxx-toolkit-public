@@ -127,7 +127,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
 Int2 LookupTableWrapInit(BLAST_SequenceBlkPtr query, 
         const LookupTableOptionsPtr lookup_options,	
         ListNodePtr lookup_segments, BLAST_ScoreBlkPtr sbp, 
-        LookupTableWrapPtr PNTR lookup_wrap_ptr);
+        LookupTableWrapPtr* lookup_wrap_ptr);
 
 /** Function to calculate effective query length and db length as well as
  * effective search space. 
@@ -148,12 +148,12 @@ typedef Int2 (*BlastGetGappedScoreType)
      (Uint1, BLAST_SequenceBlkPtr, BLAST_SequenceBlkPtr, 
       BlastGapAlignStructPtr, BlastScoringOptionsPtr,
       BlastExtensionParametersPtr, BlastHitSavingParametersPtr,
-      BlastInitHitListPtr, BlastHSPListPtr PNTR);
+      BlastInitHitListPtr, BlastHSPListPtr*);
      
 /** Word finder function pointer type */
 typedef Int4 (*BlastWordFinderType) 
      (BLAST_SequenceBlkPtr, BLAST_SequenceBlkPtr,
-      LookupTableWrapPtr, Int4Ptr PNTR, BlastInitialWordParametersPtr,
+      LookupTableWrapPtr, Int4Ptr*, BlastInitialWordParametersPtr,
       BLAST_ExtendWordPtr, Uint4Ptr, Uint4Ptr, Int4, BlastInitHitListPtr);
 
 /** Structure to be passed to BLAST_SearchEngineCore, containing pointers 
@@ -179,7 +179,7 @@ typedef struct BlastCoreAuxStruct {
    Uint1Ptr translation_table; /**< Translation table for forward strand */
    Uint1Ptr translation_table_rc; /**< Translation table for reverse 
                                      strand */
-} BlastCoreAuxStruct, PNTR BlastCoreAuxStructPtr;
+} BlastCoreAuxStruct,* BlastCoreAuxStructPtr;
 
 #ifdef __cplusplus
 }

@@ -73,7 +73,7 @@ extern "C" {
       Int4 entries[HITS_ON_BACKBONE];
     } payload;
 
-  } LookupBackboneCell, PNTR LookupBackboneCellPtr;
+  } LookupBackboneCell,* LookupBackboneCellPtr;
     
   typedef struct LookupTable {
     Int4 threshold; /* the score threshold for neighboring words */

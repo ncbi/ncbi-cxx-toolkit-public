@@ -69,7 +69,7 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
 #if 0
 /** Create the subject sequence block given an ordinal id in a database */
 void
-MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_blk,
+MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr* seq_blk,
                      Int4 oid, Uint1 encoding)
 {
   Int4 length, buf_len = 0;
@@ -553,7 +553,7 @@ BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length,
 
 /** Reverse a nucleotide sequence in the ncbi4na encoding */
 Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length, 
-                            Uint1Ptr PNTR rev_sequence_ptr)
+                            Uint1Ptr* rev_sequence_ptr)
 {
    Uint1Ptr rev_sequence;
    Int4 index;
@@ -621,7 +621,7 @@ BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info)
  * in ncbi2na encoding. Needed for 2 sequences BLASTn comparison.
  */
 Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding, 
-                          Uint1Ptr PNTR packed_seq)
+                          Uint1Ptr* packed_seq)
 {
    Int4 new_length = (length+COMPRESSION_RATIO-1)/COMPRESSION_RATIO;
    Uint1Ptr new_buffer = (Uint1Ptr) malloc(new_length);
@@ -782,8 +782,8 @@ BLAST_GetTranslationTable(Uint1Ptr genetic_code, Boolean reverse_complement)
 
 Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
         Int4 nucl_length, Uint1Ptr genetic_code,
-        Uint1Ptr PNTR translation_buffer_ptr, Int4Ptr PNTR frame_offsets_ptr,
-        Uint1Ptr PNTR mixed_seq_ptr)
+        Uint1Ptr* translation_buffer_ptr, Int4Ptr* frame_offsets_ptr,
+        Uint1Ptr* mixed_seq_ptr)
 {
    Uint1Ptr translation_buffer, mixed_seq;
    Uint1Ptr translation_table, translation_table_rc;

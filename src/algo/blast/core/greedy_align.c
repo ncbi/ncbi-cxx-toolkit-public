@@ -296,7 +296,7 @@ static Int4 gdb3(Int4Ptr a, Int4Ptr b, Int4Ptr c)
     return g;
 }
 
-static Int4 get_lastC(ThreeValPtr PNTR flast_d, Int4Ptr lower, Int4Ptr upper, 
+static Int4 get_lastC(ThreeValPtr* flast_d, Int4Ptr lower, Int4Ptr upper, 
                       Int4Ptr d, Int4 diag, Int4 Mis_cost, Int4Ptr row1)
 {
     Int4 row;
@@ -318,7 +318,7 @@ static Int4 get_lastC(ThreeValPtr PNTR flast_d, Int4Ptr lower, Int4Ptr upper,
     }
 }
 
-static Int4 get_last_ID(ThreeValPtr PNTR flast_d, Int4Ptr lower, Int4Ptr upper, 
+static Int4 get_last_ID(ThreeValPtr* flast_d, Int4Ptr lower, Int4Ptr upper, 
                         Int4Ptr d, Int4 diag, Int4 GO_cost, 
                         Int4 GE_cost, Int4 IorD)
 {
@@ -337,14 +337,14 @@ static Int4 get_last_ID(ThreeValPtr PNTR flast_d, Int4Ptr lower, Int4Ptr upper,
     return IorD;
 }
 
-static Int4 get_lastI(ThreeValPtr PNTR flast_d, Int4Ptr lower, Int4Ptr upper, 
+static Int4 get_lastI(ThreeValPtr* flast_d, Int4Ptr lower, Int4Ptr upper, 
                       Int4Ptr d, Int4 diag, Int4 GO_cost, Int4 GE_cost)
 {
     return get_last_ID(flast_d, lower, upper, d, diag, GO_cost, GE_cost, sI);
 }
 
 
-static int get_lastD(ThreeValPtr PNTR flast_d, Int4Ptr lower, Int4Ptr upper, 
+static int get_lastD(ThreeValPtr* flast_d, Int4Ptr lower, Int4Ptr upper, 
                      Int4Ptr d, Int4 diag, Int4 GO_cost, Int4 GE_cost)
 {
     return get_last_ID(flast_d, lower, upper, d, diag, GO_cost, GE_cost, sD);
@@ -400,7 +400,7 @@ Int4 BLAST_GreedyAlign(const Uint1Ptr s1, Int4 len1,
         MAX_D, 			/* maximum cost */
         ORIGIN,
         return_val = 0;
-    Int4Ptr PNTR flast_d = gamp->flast_d; /* rows containing the last d */
+    Int4Ptr* flast_d = gamp->flast_d; /* rows containing the last d */
     Int4Ptr max_row;		/* reached for cost d=0, ... len1.  */
     
     Int4 X_pen = xdrop_threshold;
@@ -616,7 +616,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1Ptr s1, Int4 len1,
         MAX_D, 			/* maximum cost */
         ORIGIN,
         return_val = 0;
-    ThreeValPtr PNTR flast_d;	/* rows containing the last d */
+    ThreeValPtr* flast_d;	/* rows containing the last d */
     Int4Ptr max_row_free = gamp->max_row_free;
     Int4Ptr max_row;		/* reached for cost d=0, ... len1.  */
     Int4 Mis_cost, GO_cost, GE_cost;
