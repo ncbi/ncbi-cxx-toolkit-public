@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/08 23:32:47  vakatov
+* Redesigned to support "transient" parameters.
+* Still "a very draft"(compile through only).
+*
 * Revision 1.1  1998/12/04 23:41:00  vakatov
 * Initial revision
 * Very draft;  compiles fine but:  never tested!
@@ -50,8 +54,8 @@ CNcbiRegistry::CNcbiRegistry(void) {}
 
 CNcbiRegistry::~CNcbiRegistry(void) {}
 
-CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is) {
-    Read(is, true);
+CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, bool transient) {
+    Read(is, true, transient);
 }
 
 bool CNcbiRegistry::Empty(void) const {
@@ -59,11 +63,11 @@ bool CNcbiRegistry::Empty(void) const {
 }
 
 
-void CNcbiRegistry::Read(CNcbiIstream& is, bool override)
+void CNcbiRegistry::Read(CNcbiIstream& is, bool override, bool transient)
 {
-    string    str;  // the line being parsed
-    SIZE_TYPE line; // # of the line being parsed
-    string section; // current section name
+    string    str;     // the line being parsed
+    SIZE_TYPE line;    // # of the line being parsed
+    string    section; // current section name
 
     for (line = 0;  NcbiGetline(is >> NcbiWs, str, '\n');  line++) {
         _ASSERT( !str.empty()  &&  !isspace(str[0]) );
@@ -120,13 +124,14 @@ void CNcbiRegistry::Read(CNcbiIstream& is, bool override)
             // value
             if (mid == len) {
                 if ( override )
-                    Unset(section, name);
+                    Set(section, name, NcbiEmptyString, true, transient);
                 break;
             }
             SIZE_TYPE end;
             for (end = len-1;  isspace(str[end]);  end--);
             _ASSERT( end >= mid );
-            Set(section, name, str.substr(mid, end-mid+1), override);
+            Set(section, name, str.substr(mid, end-mid+1),
+                override, transient);
         }
         }
     }
@@ -153,7 +158,9 @@ const
         _ASSERT( !xx_RegSection.empty() );
         for (TRegSection::const_iterator entry = xx_RegSection.begin();
              entry != xx_RegSection.end();  entry++) {
-            os << entry->first << '=' << entry->second << NcbiEndl;
+            if ( entry->second.solid.empty() )
+                continue; // dont dump transient values
+            os << entry->first << '=' << entry->second.solid << NcbiEndl;
             if ( !os )
                 return false;
         }
@@ -168,7 +175,8 @@ void CNcbiRegistry::Clear(void)
 }
 
 
-const string& CNcbiRegistry::Get(const string& section, const string& name)
+const string& CNcbiRegistry::Get(const string& section, const string& name,
+                                 bool search_transient)
 const
 {
     if ( name.empty() )  // no empty names allowed
@@ -189,19 +197,26 @@ const
         return NcbiEmptyString;
 
     // ok -- found the requested entry
-    return find_entry->second;
+    const TRegEntry& entry = find_entry->second;
+    _ASSERT( !entry.solid.empty()  ||  !entry.transient.empty() );
+    return (search_transient  &&  !entry.transient.empty()) ?
+        entry.transient : entry.solid;
 }
 
 
 bool CNcbiRegistry::Set(const string& section, const string& name,
-                        const string& value, bool override)
+                        const string& value, bool override, bool transient)
 {
     // find section
     TRegistry::iterator find_section = m_Registry.find(section);
     if (find_section == m_Registry.end()) {
-        if ( name.empty() )  // the "unset" case
+        if ( value.empty() )  // the "unset" case
             return false;
-        m_Registry[section][name] = value;  // new section, new entry
+        TRegEntry& entry = m_Registry[section][name]; // new section, new entry
+        if ( transient )
+            entry.transient = value;
+        else
+            entry.solid = value;
         return true;
     }
 
@@ -210,9 +225,13 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
     _ASSERT( !reg_section.empty() );
     TRegSection::iterator find_entry = reg_section.find(name);
     if (find_entry == reg_section.end()) {
-        if ( name.empty() )  // the "unset" case
+        if ( value.empty() )  // the "unset" case
             return false;
-        reg_section[name] = value;  // new entry
+        TRegEntry& entry = reg_section[name]; // new entry
+        if ( transient )
+            entry.transient = value;
+        else
+            entry.solid = value;
         return true;
     }
 
@@ -220,22 +239,24 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
     if ( !override )
         return false;  // cannot override
 
-    if ( name.empty() ) { // unset(remove) the entry
+    TRegEntry& entry = find_entry->second;
+
+    // modify
+    if ( transient )
+        entry.transient = value;
+    else
+        entry.solid = value;
+
+    // unset(remove) the entry, if empty
+    if (entry.solid.empty()  &&  entry.transient.empty()) {
         reg_section.erase(find_entry);
-        if ( reg_section.empty() ) {  // remove section, if empty
+        // remove section, if empty
+        if ( reg_section.empty() ) {
             m_Registry.erase(find_section);
         }
-        return true;
     }
 
-    find_entry->second = value;  // just modify
     return true;
-}
-
-
-bool CNcbiRegistry::Unset(const string& section, const string& name)
-{
-    return Set(section, name, NcbiEmptyString, true);
 }
 
 

@@ -36,6 +36,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/08 23:32:46  vakatov
+* Redesigned to support "transient" parameters.
+* Still "a very draft"(compile through only).
+*
 * Revision 1.1  1998/12/04 23:40:58  vakatov
 * Initial revision
 * Very draft;  compiles fine but:  never tested!
@@ -68,29 +72,33 @@ BEGIN_NCBI_SCOPE
 class CNcbiRegistry {
 public:
     CNcbiRegistry(void);
-    CNcbiRegistry(CNcbiIstream& is);  // see Read()
+    CNcbiRegistry(CNcbiIstream& is, bool transient=false);  // see Read()
     ~CNcbiRegistry(void);
 
     bool Empty(void) const;  // "false" if the registry contains no entries
     // Parse "is" and merge its content to current entries.
     // If "override==true" than in the case of conflict between the current
     // and the loaded entry, replace the current one by the new one.
+    // If "transient==true" then store the newly retrieved parameters as
+    // transient.
     // Throw CParseException on error.
-    void Read(CNcbiIstream& is, bool override=true);
-    bool Write(CNcbiOstream& os) const;  // dump to "os"
+    void Read(CNcbiIstream& is, bool override=true, bool transient=false);
+    bool Write(CNcbiOstream& os) const;  // dump to "os"(only non-transient)
     void Clear(void);  // reset the whole registry content
 
     // Return empty string if the config. parameter not found
-    const string& Get(const string& section, const string& name) const;
-    // Set config. parameter value(unset if "value" is empty)
-    // Return "true" if the "value" is succesfully set(or unset)
+    // If "search_transient==true" then first search in the list of
+    // transient parameters;  otherwise, dont search in transients at all
+    const string& Get(const string& section, const string& name,
+                      bool search_transient=true) const;
+    // Set configuration parameter value(unset if "value" is empty)
+    // Return "true" if the new "value" is succesfully set(or unset)
     // If there was already an entry with the same <section,name> key:
     //   if "override==true" then override the old value, return "true";
     //   if "override==false"  then do not override old value, return "false"
+    // If "transient==true" then store the entry as transient
     bool Set(const string& section, const string& name, const string& value,
-             bool override=true);
-    // Set config. parameter;  return "false" if there was no such entry
-    bool Unset(const string& section, const string& name);
+             bool override=true, bool transient=false);
 
     // These functions first erase the passed list, then fill it out by:
     //    name of sections that comprise the whole registry
@@ -99,7 +107,11 @@ public:
     void EnumerateEntries(const string& section, list<string>* entries) const;
 
 private:
-    typedef map<string, string>      TRegSection;
+    struct TRegEntry {
+        string solid;     // non-transient
+        string transient; // transient
+    };
+    typedef map<string, TRegEntry>   TRegSection;
     typedef map<string, TRegSection> TRegistry;
     TRegistry m_Registry;
 
