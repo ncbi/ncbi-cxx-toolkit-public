@@ -264,6 +264,30 @@ void CSeq_id_Handle::DumpRegister(const char* _DEBUG_ARG(msg))
 }
 
 
+bool CSeq_id_Handle::HaveMatchingHandles(void) const
+{
+    return GetMapper().HaveMatchingHandles(*this);
+}
+
+
+bool CSeq_id_Handle::HaveReverseMatch(void) const
+{
+    return GetMapper().HaveReverseMatch(*this);
+}
+
+
+void CSeq_id_Handle::GetMatchingHandles(TMatches& matches) const
+{
+    GetMapper().GetMatchingHandles(*this, matches);
+}
+
+
+void CSeq_id_Handle::GetReverseMatchingHandles(TMatches& matches) const
+{
+    GetMapper().GetReverseMatchingHandles(*this, matches);
+}
+
+
 bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
 {
     return GetMapper().x_IsBetter(*this, h);
@@ -306,6 +330,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/12/22 15:56:01  vasilche
+* Added helper functions to avoid retrieval of CSeq_id_Mapper.
+*
 * Revision 1.27  2004/09/30 18:41:04  vasilche
 * Added CSeq_id_Handle::GetMapper() and MatchesTo().
 *

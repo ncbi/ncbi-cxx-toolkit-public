@@ -36,6 +36,7 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -126,6 +127,15 @@ public:
 
     /// Reset the handle (remove seq-id reference)
     void Reset(void);
+
+    //
+    bool HaveMatchingHandles(void) const;
+    bool HaveReverseMatch(void) const;
+
+    //
+    typedef set<CSeq_id_Handle> TMatches;
+    void GetMatchingHandles(TMatches& matches) const;
+    void GetReverseMatchingHandles(TMatches& matches) const;
 
     /// True if *this matches to h.
     /// This mean that *this is either the same as h,
@@ -374,6 +384,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/12/22 15:56:01  vasilche
+* Added helper functions to avoid retrieval of CSeq_id_Mapper.
+*
 * Revision 1.29  2004/11/29 19:52:56  grichenk
 * +Which, IdentifyAccession
 *
