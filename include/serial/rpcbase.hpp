@@ -60,16 +60,27 @@ public:
     CRPCClient(const string&     service     = kEmptyStr,
                ESerialDataFormat format      = eSerial_AsnBinary,
                unsigned int      retry_limit = 3)
-        : m_Service(service), m_Format(format), m_RetryLimit(retry_limit)
+        : m_Service(service), m_Format(format), m_Timeout(kDefaultTimeout),
+          m_RetryLimit(retry_limit)
         { }
-    virtual ~CRPCClient(void) { Disconnect(); }
+    virtual ~CRPCClient(void);
 
     virtual void Ask(const TRequest& request, TReply& reply);
             void Connect(void);
             void Disconnect(void);
             void Reset(void);
-      EIO_Status SetTimeout(const STimeout* timeout,
-                            EIO_Event direction = eIO_ReadWrite);
+
+    const string& GetService(void)                  { return m_Service; }
+             void SetService(const string& service) { m_Service = service; }
+
+    ESerialDataFormat GetFormat(void)                  { return m_Format; }
+                 void SetFormat(ESerialDataFormat fmt) { m_Format = fmt; }
+
+    unsigned int GetRetryLimit(void)           { return m_RetryLimit; }
+            void SetRetryLimit(unsigned int n) { m_RetryLimit = n; }
+
+    EIO_Status SetTimeout(const STimeout* timeout,
+                          EIO_Event direction = eIO_ReadWrite);
 
 protected:
     /// These run with m_Mutex already acquired.
@@ -85,6 +96,9 @@ protected:
     virtual bool x_ShouldRetry(unsigned int tries);
 
 private:
+    static bool x_IsSpecial(const STimeout* timeout)
+        { return timeout == kDefaultTimeout  ||  timeout == kInfiniteTimeout; }
+
     typedef CRPCClient<TRequest, TReply> TSelf;
     /// Prohibit default copy constructor and assignment operator.
     CRPCClient(const TSelf& x);
@@ -96,6 +110,7 @@ private:
     string                   m_Service; ///< Used by default Connect().
     ESerialDataFormat        m_Format;
     CMutex                   m_Mutex;   ///< To allow sharing across threads.
+    const STimeout*          m_Timeout; ///< Cloned if not special.
 
 protected:
     unsigned int             m_RetryLimit;
@@ -104,6 +119,17 @@ protected:
 
 ///////////////////////////////////////////////////////////////////////////
 // Inline methods
+
+
+template <class TRequest, class TReply>
+inline
+CRPCClient<TRequest, TReply>::~CRPCClient(void)
+{
+    Disconnect();
+    if ( !x_IsSpecial(m_Timeout) ) {
+        delete m_Timeout;
+    }
+}
 
 
 template <class TRequest, class TReply>
@@ -153,9 +179,25 @@ inline
 EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
                                                     EIO_Event direction)
 {
-    CConn_IOStream* conn_stream = dynamic_cast<CConn_IOStream*>(m_Stream.get());
+    // save for future use, especially if there's no stream at present.
+    {{
+        const STimeout* old_timeout = m_Timeout;
+        if (x_IsSpecial(timeout)) {
+            m_Timeout = timeout;
+        } else { // make a copy
+            m_Timeout = new STimeout(timeout);
+        }
+        if ( !x_IsSpecial(old_timeout) ) {
+            delete old_timeout;
+        }
+    }}
+
+    CConn_IOStream* conn_stream
+        = dynamic_cast<CConn_IOStream*>(m_Stream.get());
     if (conn_stream) {
         return CONN_SetTimeout(conn_stream->GetCONN(), direction, timeout);
+    } else if ( !m_Stream.get() ) {
+        return eIO_Success; // we've saved it, which is the best we can do...
     } else {
         return eIO_NotSupported;
     }
@@ -188,7 +230,8 @@ inline
 void CRPCClient<TRequest, TReply>::x_Connect(void)
 {
     _ASSERT( !m_Service.empty() );
-    x_SetStream(new CConn_ServiceStream(m_Service));
+    x_SetStream(new CConn_ServiceStream(m_Service, fSERV_Any, 0, 0,
+                                        m_Timeout));
 }
 
 
@@ -232,6 +275,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/06/22 21:10:03  ucko
+* Add accessors for service, format, and retry limit.
+* Save requested timeout, and apply it to new connections; this should
+* be particularly useful when the client's not yet actually connected.
+*
 * Revision 1.5  2004/03/16 19:41:41  gorelenk
 * Fixed errors inside implementation of
 * CRPCClient<TRequest, TReply>::SetTimeout .
