@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/03/22 19:47:31  lavr
+ * Test_assert.h made last among the include files
+ *
  * Revision 6.2  2002/02/20 20:53:48  lavr
  * Use xconntest to perform standard tests
  *
@@ -39,11 +42,11 @@
  * ==========================================================================
  */
 
-#include "test_assert.h"
-
 #include "ncbi_conntest.h"
 #include <connect/ncbi_memory_connector.h>
 #include <connect/ncbi_util.h>
+/* This header must go last */
+#include "test_assert.h"
 
 
 int main(void)

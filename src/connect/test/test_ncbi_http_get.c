@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/03/22 19:47:23  lavr
+ * Test_assert.h made last among the include files
+ *
  * Revision 6.3  2002/02/05 21:45:55  lavr
  * Included header files rearranged
  *
@@ -42,15 +45,14 @@
  * ==========================================================================
  */
 
-
-#include "test_assert.h"
-
 #include "../ncbi_priv.h"
 #include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
 #include <stdlib.h>
 #include <string.h>
+/* This header must go last */
+#include "test_assert.h"
 
 
 int main(int argc, char* argv[])

@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/03/22 19:46:11  lavr
+ * Test_assert.h made last among the include files
+ *
  * Revision 6.2  2002/01/16 21:23:14  vakatov
  * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
  *
@@ -40,10 +43,10 @@
  * ==========================================================================
  */
 
-#include "test_assert.h"
-
 #include <connect/ncbi_socket.h>
 #include <stdio.h>
+/* This header must go last */
+#include "test_assert.h"
 
 
 static FILE* s_LogFile;

@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/03/22 19:46:51  lavr
+ * Test_assert.h made last among the include files
+ *
  * Revision 6.7  2002/02/20 19:12:39  lavr
  * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced; test cleaned
  *
@@ -54,11 +57,11 @@
  * ===========================================================================
  */
 
-#include "test_assert.h"
-
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_util.h>
 #include <string.h>
+/* This header must go last */
+#include "test_assert.h"
 
 
 /***********************************************************************

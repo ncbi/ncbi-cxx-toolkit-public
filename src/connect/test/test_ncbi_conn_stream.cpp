@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2002/03/22 19:46:37  lavr
+ * Test_assert.h made last among the include files
+ *
  * Revision 6.16  2002/02/05 21:45:55  lavr
  * Included header files rearranged
  *
@@ -83,14 +86,14 @@
  * ==========================================================================
  */
 
-#include "test_assert.h"
-
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+/* This header must go last */
+#include "test_assert.h"
 
 
 BEGIN_NCBI_SCOPE

@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/03/22 19:47:48  lavr
+ * Test_assert.h made last among the include files
+ *
  * Revision 6.13  2002/02/11 20:36:45  lavr
  * Use "ncbi_config.h"
  *
@@ -78,8 +81,6 @@
  * ===========================================================================
  */
 
-#include "test_assert.h"
-
 #include "../ncbi_config.h"
 
 /* OS must be specified in the command-line ("-D....") or in the conf. header
@@ -91,7 +92,6 @@
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_util.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -102,6 +102,8 @@
 #else
 #  define X_SLEEP(x) ((void) 0)
 #endif
+/* This header must go last */
+#include "test_assert.h"
 
 
 /* #define DO_CLIENT */

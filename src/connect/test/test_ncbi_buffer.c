@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/03/22 19:46:30  lavr
+ * Test_assert.h made last among the include files
+ *
  * Revision 6.7  2002/01/16 21:23:14  vakatov
  * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
  *
@@ -56,14 +59,12 @@
  * ===========================================================================
  */
 
-#include "test_assert.h"
-
 #include <connect/ncbi_buffer.h>
-
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+/* This header must go last */
+#include "test_assert.h"
 
 
 static unsigned s_Rand(void)
