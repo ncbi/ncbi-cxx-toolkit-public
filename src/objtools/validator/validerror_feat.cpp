@@ -921,7 +921,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
         ValidateImpGbquals(imp, feat);
 
         // Make sure a feature has its mandatory qualifiers
-        iterate( CFeatQualAssoc::GBQualTypeVec,
+        iterate( CFeatQualAssoc::TGBQualTypeVec,
                  required,
                  CFeatQualAssoc::GetMandatoryGbquals(subtype) ) {
             bool found = false;
@@ -1901,6 +1901,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/01/06 16:43:01  shomrat
+* naming convention
+*
 * Revision 1.3  2003/01/02 22:13:04  shomrat
 * Implemented checks relying on overlapping features (IsOverlappingGenePseudo, PeptideOnCodonBoundry, CommonCDSProduct, BadMRNAOverlap, BadGeneOverlap, GeneXRef); Check for bad product seq id in ValidateSeqFeat
 *
