@@ -109,6 +109,27 @@ SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
 
     CSeq_id::E_Choice choice =
         CSeq_id::WhichInverseSeqId(str.substr(pos, vbar - pos).c_str());
+
+#if 1
+    if (choice != CSeq_id::e_not_set) {
+        SIZE_TYPE vbar_prev = vbar;
+        int count;
+        for (count=0; ; ++count, vbar_prev = vbar) {
+            vbar = str.find('|', vbar_prev + 1);
+            if (vbar == NPOS) {
+                break;
+            }
+            choice = CSeq_id::WhichInverseSeqId(
+                str.substr(vbar_prev + 1, vbar - vbar_prev - 1).c_str());
+            if (choice != CSeq_id::e_not_set) {
+                vbar = vbar_prev;
+                break;
+            }
+        }
+    } else {
+        return NPOS; // bad
+    }
+#else
     switch (choice) {
     case CSeq_id::e_Patent: case CSeq_id::e_Other: // 3 args
         vbar = str.find('|', vbar + 1);
@@ -143,6 +164,7 @@ SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
     default: // unrecognized or not set
         return NPOS; // bad
     }
+#endif
 
     return (vbar == NPOS) ? str.size() : vbar;
 }
@@ -348,6 +370,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.13  2003/01/13 20:01:24  gouriano
+ * corrected parsing fasta seq ids
+ *
  * Revision 6.12  2003/01/10 19:34:50  gouriano
  * corrected s_EndOfFastaID in case of incomplete CSeq_id::e_Other
  *
