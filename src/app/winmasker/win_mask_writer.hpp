@@ -26,58 +26,88 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Header file for CWinMaskWriterInt class.
+ *   Header file for CWinMaskWriter class.
  *
  */
 
-#ifndef C_WIN_MASK_WRITER_INT_H
-#define C_WIN_MASK_WRITER_INT_H
+#ifndef C_WIN_MASK_WRITER_H
+#define C_WIN_MASK_WRITER_H
 
-#include <algo/winmask/win_mask_writer.hpp>
+#include <corelib/ncbistre.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+
+#include <algo/winmask/seq_masker.hpp>
 
 BEGIN_NCBI_SCOPE
 
 /**
- **\brief Output filter to print masked sequences as sets of
- **       intervals.
+ **\brief A base class for winmasker output writers.
  **
- ** Masking data for each new sequence in the file starts with
- ** a fasta stile id. Then each contiguous interval of
- ** masked sequence starting at position 'start' and ending
- ** at position 'end' it is printed on a separate line 
- ** [start] - [end].
+ ** This class provides support for the ability of winmasker
+ ** to generate output in multiple formats. A derived class
+ ** should be written for each supported format.
  **
  **/
-class NCBI_XALGOWINMASK_EXPORT CWinMaskWriterInt : public CWinMaskWriter
+class CWinMaskWriter
 {
 public:
 
     /**
      **\brief Object constructor.
      **
-     **\param arg_os output stream used to initialize the
-     **              base class instance
+     **\param arg_os the ostream object used to output masked
+     **              sequences
      **
      **/
-    CWinMaskWriterInt( CNcbiOstream & arg_os ) 
-        : CWinMaskWriter( arg_os ) {}
+    CWinMaskWriter( CNcbiOstream & arg_os ) : os( arg_os ) {}
 
     /**
      **\brief Object destructor.
      **
      **/
-    virtual ~CWinMaskWriterInt() {}
+    virtual ~CWinMaskWriter() {}
 
     /**
-     **\brief Send the masking data to the output stream.
+     **\brief Output masked sequence data.
      **
-     **\param seh the sequence entry handle (via object manager)
-     **\param seq the original sequence
+     ** Each implementation of this abstract method will recieve the
+     ** original sequence and the list of masked intervals and is
+     ** responsible to formatting it masked sequence and printing
+     ** it using the ostream object passed to the writer at 
+     ** construction time.
+     **
+     **\param seh the sequence entry handle
+     **\param seq the bioseq instance
      **\param mask the resulting list of masked intervals
      **
      **/
-    virtual void Print( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq, 
-                        const CSeqMasker::TMaskList & mask );
+    virtual void Print( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq,
+                        const CSeqMasker::TMaskList & mask ) = 0;
+
+protected:
+
+    /**
+     **\brief Output of the sequence id.
+     **
+     ** By default prints id in fasta format but implementations
+     ** can redefine it as necessary and use from within Print()
+     ** method.
+     **
+     **\param seh seq entry handle (via object manager)
+     **\param seq the sequence whose id is to be printed
+     **
+     **/
+    virtual void PrintId( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq );
+
+    /**
+     **\brief the standard C++ ostream object 
+     **
+     ** Determines the destination of the output.
+     **
+     **/
+    CNcbiOstream & os;
 };
 
 END_NCBI_SCOPE
@@ -85,6 +115,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/02/25 21:32:55  dicuccio
+ * Rearranged winmasker files:
+ * - move demo/winmasker to a separate app directory (src/app/winmasker)
+ * - move win_mask_* to app directory
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

@@ -26,69 +26,77 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   CWinMaskWriterFasta class member and method definitions.
+ *   Header file for CWinMaskReader class.
  *
  */
 
-#include <ncbi_pch.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seq/seqport_util.hpp>
-#include <objects/seq/IUPACna.hpp>
+#ifndef C_WIN_MASK_READER_H
+#define C_WIN_MASK_READER_H
 
-#include <algo/winmask/win_mask_writer_fasta.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbistre.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 
-//-------------------------------------------------------------------------
-void CWinMaskWriterFasta::Print( CSeq_entry_Handle & seh, 
-                                 const CBioseq & seq,
-                                 const CSeqMasker::TMaskList & mask )
+/**
+ **\brief Virtual base class for all input readers.
+ **
+ ** Each derived class should implement GetNextSequence()
+ ** interface to supply new sequences to the user.
+ **
+ **/
+class CWinMaskReader
 {
-    PrintId( seh, seq );
-    TSeqPos len = seq.GetInst().GetLength();
-    const CSeq_data & seqdata = seq.GetInst().GetSeq_data();
-    auto_ptr< CSeq_data > dest( new CSeq_data );
-    CSeqportUtil::Convert( seqdata, dest.get(), CSeq_data::e_Iupacna, 
-                           0, len );
+public:
 
-    // if( dest->GetIupacna().CanGet() )
-    if( true )
-    {
-        const string & data = dest->GetIupacna().Get();
-        string accumulator;
-        CSeqMasker::TMaskList::const_iterator imask = mask.begin();
+    /**
+     **\brief Object constructor.
+     **
+     **\param newInputStream iostream object from which the
+     **                      data will be read. The format
+     **                      of the data is determined by
+     **                      the implementation.
+     **
+     **/
+    CWinMaskReader( CNcbiIstream & newInputStream )
+        : input_stream( newInputStream ) {}
 
-        for( TSeqPos i = 0; i < len; ++i )
-        {
-            char letter = data[i];
+    /**
+     **\brief Object destructor.
+     **/
+    virtual ~CWinMaskReader() {}
 
-            if( imask != mask.end() && i >= imask->first )
-                if( i <= imask->second ) letter = tolower( letter );
-                else ++imask;
+    /**
+     **\brief Read the next sequence from the source stream.
+     **
+     **\return Pointer (reference counting) to the next biological
+     **        sequence entry read from the data source. Returns
+     **        CRef( CSeq_entry >( NULL ) if no more data is
+     **        available.
+     **
+     **/
+    virtual CRef< objects::CSeq_entry > GetNextSequence() = 0;
 
-                accumulator.append( 1, letter );
+protected:
 
-                if( !((i + 1)%60) )
-                {
-                    os << accumulator << "\n";
-                    accumulator = "";
-                }
-        }
-
-        if( accumulator.length() ) os << accumulator << "\n";
-    }
-}
-
+    /**\internal
+     **\brief istream object to read data from.
+     **
+     **/
+    CNcbiIstream & input_stream;
+};
 
 END_NCBI_SCOPE
-
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/02/25 21:32:55  dicuccio
+ * Rearranged winmasker files:
+ * - move demo/winmasker to a separate app directory (src/app/winmasker)
+ * - move win_mask_* to app directory
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.
@@ -98,4 +106,6 @@ END_NCBI_SCOPE
  *
  * ========================================================================
  */
+
+#endif
 

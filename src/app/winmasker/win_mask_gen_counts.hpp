@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
  **       functionality of winmasker.
  **
  **/
-class NCBI_XALGOWINMASK_EXPORT CWinMaskCountsGenerator
+class CWinMaskCountsGenerator
 {
 public:
 
@@ -135,6 +135,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/02/25 21:32:54  dicuccio
+ * Rearranged winmasker files:
+ * - move demo/winmasker to a separate app directory (src/app/winmasker)
+ * - move win_mask_* to app directory
+ *
  * Revision 1.4  2005/02/25 21:09:18  morgulis
  * 1. Reduced the number of binary searches by the factor of 2 by locally
  *    caching some search results.

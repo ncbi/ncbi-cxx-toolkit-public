@@ -26,48 +26,54 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Header file for CWinMaskFastaReader class.
+ *   Header file for CWinMaskWriterFasta class.
  *
  */
 
-#ifndef C_WIN_MASK_FASTA_READER_H
-#define C_WIN_MASK_FASTA_READER_H
+#ifndef C_WIN_MASK_WRITER_FASTA_H
+#define C_WIN_MASK_WRITER_FASTA_H
 
-#include <algo/winmask/win_mask_reader.hpp>
+#include "win_mask_writer.hpp"
 
 BEGIN_NCBI_SCOPE
 
 /**
- **\brief Class for reading sequences from fasta files.
+ **\brief Output filter to write masked data in fasta format.
+ **
+ ** In the output the sequence ids are preserved. The masked
+ ** portions of sequences are printed in lower case letters.
+ ** 
  **/
-class NCBI_XALGOWINMASK_EXPORT CWinMaskFastaReader : public CWinMaskReader
+class CWinMaskWriterFasta : public CWinMaskWriter
 {
 public:
 
     /**
      **\brief Object constructor.
      **
-     **\param newInputStream input stream to read data from.
+     **\param arg_os the output stream used to initialize the
+     **              base class instance.
      **
      **/
-    CWinMaskFastaReader( CNcbiIstream & newInputStream )
-        : CWinMaskReader( newInputStream ) {}
+    CWinMaskWriterFasta( CNcbiOstream & arg_os ) 
+        : CWinMaskWriter( arg_os ) {}
 
     /**
      **\brief Object destructor.
      **
      **/
-    virtual ~CWinMaskFastaReader() {}
+    virtual ~CWinMaskWriterFasta() {}
 
     /**
-     **\brief Read next sequence from fasta stream.
+     **\brief Output masked sequence data.
      **
-     **\return pointer (reference counting) to the object 
-     **        containing information about the sequence, or
-     **        CRef( NULL ) if end of file is reached.
+     **\param seh the sequence entry handle (via object manager)
+     **\param seq the sequence subject to masking
+     **\param mask the resulting list of masked intervals
      **
      **/
-    virtual CRef< objects::CSeq_entry > GetNextSequence();
+    virtual void Print( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq, 
+                        const CSeqMasker::TMaskList & mask );
 };
 
 END_NCBI_SCOPE
@@ -75,6 +81,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/02/25 21:32:55  dicuccio
+ * Rearranged winmasker files:
+ * - move demo/winmasker to a separate app directory (src/app/winmasker)
+ * - move win_mask_* to app directory
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

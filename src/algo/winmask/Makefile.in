@@ -5,8 +5,6 @@
 
 LIB_PROJ = xalgowinmask
 
-SUB_PROJ = demo
-
 REQUIRES = objects
 
 srcdir = @srcdir@

@@ -26,33 +26,22 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   CWinMaskWriterInt class member and method definitions.
+ *   CWinMaskReader class member and method definitions.
  *
  */
 
 #include <ncbi_pch.hpp>
-#include <algo/winmask/win_mask_writer_int.hpp>
-
-BEGIN_NCBI_SCOPE
-
-//-------------------------------------------------------------------------
-void CWinMaskWriterInt::Print( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq, 
-                               const CSeqMasker::TMaskList & mask )
-{
-    PrintId( seh, seq );
-
-    for( CSeqMasker::TMaskList::const_iterator i = mask.begin();
-         i != mask.end(); ++i )
-        os << i->first << " - " << i->second << "\n";
-}
-
-
-END_NCBI_SCOPE
+#include "win_mask_reader.hpp"
 
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/02/25 21:32:55  dicuccio
+ * Rearranged winmasker files:
+ * - move demo/winmasker to a separate app directory (src/app/winmasker)
+ * - move win_mask_* to app directory
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

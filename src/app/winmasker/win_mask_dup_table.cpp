@@ -40,8 +40,8 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <algo/winmask/win_mask_fasta_reader.hpp>
-#include <algo/winmask/win_mask_dup_table.hpp>
+#include "win_mask_fasta_reader.hpp"
+#include "win_mask_dup_table.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -560,6 +560,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/02/25 21:32:54  dicuccio
+ * Rearranged winmasker files:
+ * - move demo/winmasker to a separate app directory (src/app/winmasker)
+ * - move win_mask_* to app directory
+ *
  * Revision 1.3  2005/02/12 20:24:39  dicuccio
  * Dropped use of std:: (not needed)
  *

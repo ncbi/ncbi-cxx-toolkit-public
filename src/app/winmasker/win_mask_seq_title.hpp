@@ -26,42 +26,58 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   CWinMaskWriter class member and method definitions.
+ *   Header file for CWinMaskSeqTitle class.
  *
  */
 
-#include <ncbi_pch.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_descr.hpp>
+#ifndef C_WIN_MASK_SEQ_TITLE_H
+#define C_WIN_MASK_SEQ_TITLE_H
 
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
+#include <corelib/ncbistre.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-
-#include <algo/winmask/win_mask_seq_title.hpp>
-#include <algo/winmask/win_mask_writer.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 
-//-------------------------------------------------------------------------
-void CWinMaskWriter::PrintId( CSeq_entry_Handle & seh, 
-                              const CBioseq & seq )
+/**
+ **\brief Some utilities for extracting title strings from
+ **       bioseqs.
+ **/
+class CWinMaskSeqTitle
 {
-    string title( CWinMaskSeqTitle::GetTitle( seh, seq ) );
-    os << ">" << title << "\n";
-}
+public:
+
+    /**
+     **\brief Get the complete title of the bioseq including 
+     **       id and description.
+     **
+     **\param seh seq entry handle (via object manager)
+     **\param seq the sequence whose id is to be printed
+     **
+     **/
+    static const string GetTitle( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq );
+
+    /**
+     **\brief Get the id part of the title (the first word).
+     **
+     **\param seh seq entry handle (via object manager)
+     **\param seq the sequence whose id is to be printed
+     **
+     **/
+    static const string GetId( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq );
+};
 
 END_NCBI_SCOPE
-
-
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/02/25 21:32:55  dicuccio
+ * Rearranged winmasker files:
+ * - move demo/winmasker to a separate app directory (src/app/winmasker)
+ * - move win_mask_* to app directory
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.
@@ -71,4 +87,6 @@ END_NCBI_SCOPE
  *
  * ========================================================================
  */
+
+#endif
 

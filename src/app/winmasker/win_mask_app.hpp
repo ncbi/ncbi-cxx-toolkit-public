@@ -26,75 +26,60 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Header file for CWinMaskReader class.
+ *   Header file for CWinMaskApplication class.
  *
  */
 
-#ifndef C_WIN_MASK_READER_H
-#define C_WIN_MASK_READER_H
+#ifndef C_WIN_MASK_APPLICATION_H
+#define C_WIN_MASK_APPLICATION_H
 
-#include <corelib/ncbiobj.hpp>
-#include <corelib/ncbistre.hpp>
-#include <objects/seqset/Seq_entry.hpp>
+#include <corelib/ncbiapp.hpp>
 
 BEGIN_NCBI_SCOPE
 
-/**
- **\brief Virtual base class for all input readers.
- **
- ** Each derived class should implement GetNextSequence()
- ** interface to supply new sequences to the user.
+/** 
+ **\brief Window based masker main class.
  **
  **/
-class NCBI_XALGOWINMASK_EXPORT CWinMaskReader
+class CWinMaskApplication : public CNcbiApplication
 {
 public:
 
-    /**
-     **\brief Object constructor.
-     **
-     **\param newInputStream iostream object from which the
-     **                      data will be read. The format
-     **                      of the data is determined by
-     **                      the implementation.
+    /** 
+     **\brief Short description of the program.
      **
      **/
-    CWinMaskReader( CNcbiIstream & newInputStream )
-        : input_stream( newInputStream ) {}
+    static const char * const USAGE_LINE;
+
+    /** 
+     **\brief Initialization. 
+     **
+     ** Setting up descriptions of command line parameters.
+     **
+     **/
+    virtual void Init(void);
 
     /**
-     **\brief Object destructor.
-     **/
-    virtual ~CWinMaskReader() {}
-
-    /**
-     **\brief Read the next sequence from the source stream.
+     **\brief Main routine of the window based masker.
      **
-     **\return Pointer (reference counting) to the next biological
-     **        sequence entry read from the data source. Returns
-     **        CRef( CSeq_entry >( NULL ) if no more data is
-     **        available.
-     **
+     ** @return the exit status
      **/
-    virtual CRef< objects::CSeq_entry > GetNextSequence() = 0;
-
-protected:
-
-    /**\internal
-     **\brief istream object to read data from.
-     **
-     **/
-    CNcbiIstream & input_stream;
+    virtual int Run (void);
 };
 
 END_NCBI_SCOPE
 
+
 /*
  * ========================================================================
  * $Log$
- * Revision 1.2  2005/02/12 19:58:04  dicuccio
- * Corrected file type issues introduced by CVS (trailing return).  Updated
- * typedef names to match C++ coding standard.
+ * Revision 1.1  2005/02/25 21:32:54  dicuccio
+ * Rearranged winmasker files:
+ * - move demo/winmasker to a separate app directory (src/app/winmasker)
+ * - move win_mask_* to app directory
+ *
+ * Revision 1.2  2005/02/12 20:24:21  dicuccio
+ * Fixed white space anomalies introduced by cvs (trailing return)
  *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
@@ -103,4 +88,3 @@ END_NCBI_SCOPE
  */
 
 #endif
-

@@ -41,9 +41,9 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/IUPACna.hpp>
 
-#include <algo/winmask/win_mask_fasta_reader.hpp>
-#include <algo/winmask/win_mask_gen_counts.hpp>
-#include <algo/winmask/win_mask_dup_table.hpp>
+#include "win_mask_fasta_reader.hpp"
+#include "win_mask_gen_counts.hpp"
+#include "win_mask_dup_table.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -342,6 +342,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/02/25 21:32:54  dicuccio
+ * Rearranged winmasker files:
+ * - move demo/winmasker to a separate app directory (src/app/winmasker)
+ * - move win_mask_* to app directory
+ *
  * Revision 1.4  2005/02/25 21:09:18  morgulis
  * 1. Reduced the number of binary searches by the factor of 2 by locally
  *    caching some search results.

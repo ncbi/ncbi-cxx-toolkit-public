@@ -26,63 +26,30 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   CWinMaskSeqTitle class member and method definitions.
+ *   Main routine of the window based masker application.
  *
  */
 
 #include <ncbi_pch.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_descr.hpp>
-
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-
-#include <algo/winmask/win_mask_seq_title.hpp>
+#include "win_mask_app.hpp"
 
 
-BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+USING_NCBI_SCOPE;
 
-
-//-------------------------------------------------------------------------
-const string CWinMaskSeqTitle::GetTitle( CSeq_entry_Handle & seh, 
-                                         const CBioseq & seq )
+int main( int argc, char * argv[] )
 {
-    list< CRef< CSeq_id > > idlist = seq.GetId();
-    string title, result( "UNKNOWN" );
-
-    CBioseq_CI it(seh);
-    CSeqdesc_CI descit( *it, CSeqdesc::e_Title );
-
-    if( descit )
-        title = descit->GetTitle();
-
-    if( !idlist.empty() )
-        result = (*idlist.begin())->GetSeqIdString() + " " + title;
-
-    return result;
+    return CWinMaskApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-//-------------------------------------------------------------------------
-const string CWinMaskSeqTitle::GetId( CSeq_entry_Handle & seh, 
-                                      const CBioseq & seq )
-{
-    string title( GetTitle( seh, seq ) );
-    string::size_type pos = title.find_first_of( " \t" );
-    return title.substr( 0, pos );
-}
-
-
-END_NCBI_SCOPE
 
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/02/25 21:32:54  dicuccio
+ * Rearranged winmasker files:
+ * - move demo/winmasker to a separate app directory (src/app/winmasker)
+ * - move win_mask_* to app directory
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.
