@@ -32,6 +32,9 @@ classes</a></li>
 <a href="#copyhooks">The <i>Copy</i> hook classes</a></li>
 
 <li>
+<a href="#hookguard">The <i>CObjectHookGuard</i> class</a></li>
+
+<li>
 <a href="#blocks">The <i>ByteBlock</i> and <i>CharBlock</i> classes</a></li>
 
 </ul>
@@ -72,6 +75,8 @@ method on the output stream which accesses the object's type information.
 The object's type information defines what tag names and value types should
 be encountered on the stream, while the <i>CObject[IO]Stream</i> subclasses
 specialize the data serialization format.
+<p>The input and output operators (&lt;&lt; and &gt;&gt;) are declared in
+<a href=../lxr/source/include/serial/serial.hpp>serial/serial.hpp</a> header.
 <p><a NAME="objistr"></a>
 <h3>
 The <i><a href="../docxx/CObjectIStream.html">CObjectIStream</a></i> classes</h3>
@@ -109,7 +114,7 @@ includes the following methods:
 <i><a href="#skipobj">SkipObject()</a></i></li>
 </ul>
 <a NAME="open"></a>There are several <i>Open()</i> methods; most of these
-are static class methods that return a pointer to a newly created <i>CobjectIstream</i>.
+are static class methods that return a pointer to a newly created <i>CObjectIStream</i>.
 Typically, these methods are used with an
 <i>auto_ptr</i>, as in:
 <br>&nbsp;
@@ -145,21 +150,21 @@ and returns it in a string. This might be used for example, in the following
 context:
 
 <font size="-1">
-<pre><font color="#008080">&nbsp;&nbsp; auto_ptr&lt;CObjectIStream> in(CObjectIStream::Open(fname, eSerial_AsnText));
-&nbsp;&nbsp; string type = in.ReadFileHeader();
-&nbsp;
-&nbsp;&nbsp; if (type.compare("Seq-entry") == 0) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CSeq_entry seqent;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; in->Read(ObjectInfo(seqent), eNoFileHeader);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ...
-&nbsp;&nbsp; }
-&nbsp;
-&nbsp;&nbsp; else if (type.compare("Bioseq-set") == 0) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBioseq_set seqset;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; in->Read(ObjectInfo(seqset), eNoFileHeader);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ...
-&nbsp;&nbsp; }
-&nbsp;&nbsp; // ...</font></pre>
+<pre><font color="#008080">    auto_ptr&lt;CObjectIStream> in(CObjectIStream::Open(fname, eSerial_AsnText));
+    string type = in.ReadFileHeader();
+
+    if (type.compare("Seq-entry") == 0) {
+        CSeq_entry seqent;
+        in->Read(ObjectInfo(seqent), eNoFileHeader);
+        // ...
+    }
+
+    else if (type.compare("Bioseq-set") == 0) {
+        CBioseq_set seqset;
+        in->Read(ObjectInfo(seqset), eNoFileHeader);
+        // ...
+    }
+    // ...</font></pre>
 </font>
 
 The <i>ReadFileHeader()</i> method for the base <i>CObjectIStream</i> class
@@ -174,7 +179,7 @@ on the input stream, using a <i><a href="typeinfo.html#cobjinfo">CObjectTypeInfo
 object derived from <i>myObject</i>. By default, the <i>Read()</i> method
 first calls
 <i>ReadFileHeader()</i>, and then calls <i>ReadObject()</i>.
-Accordingly, calls to <i>Read()</i> which follow the usage of <i>ReadFileHeader()</i><b>must</b>
+Accordingly, calls to <i>Read()</i> which follow the usage of <i>ReadFileHeader()</i> <b>must</b>
 include the optional
 <i>eNoFileHeader</i> argument.
 <p><a NAME="readobj"></a><a NAME="readsep"></a>Most data objects also contain
@@ -187,7 +192,7 @@ two methods, <i><a href="../lxr/ident?i=ReadObject">ReadObject()</a></i>and
 can be used to load subobjects as either persistent data members of the
 root object or as temporary local objects. In contrast to <i>Read()</i>,
 these methods assume that there is <i>not</i> a file header on the stream.
-<p>&nbsp;As a result of executing <i>ReadObject(member)</i>, the newly
+<p>As a result of executing <i>ReadObject(member)</i>, the newly
 created subobject will be instantiated as a member of its parent object.
 In contrast, <i>ReadSeparateObject(local)</i>, instantiates the subobject
 in the local temporary variable only, and the corresponding data member
@@ -216,7 +221,7 @@ with the data object. This scheme allows the user to install type-specific
 read, write, and copy hooks, which are described below. For example, the
 default behavior of loading all subobjects of the top-level object can
 be modified by installing appropriate read hooks which use the <i>ReadSeparateObject()</i>
-and <i>SkipObject()</i> methods where needed.&nbsp;<a NAME="objostr"></a>
+and <i>SkipObject()</i> methods where needed. <a NAME="objostr"></a>
 <h3>
 The <i><a href="../docxx/CObjectOStream.html">CObjectOStream</a></i> classes</h3>
 The output object stream classes mirror the <i>CObjectIStream</i> classes.
@@ -257,11 +262,11 @@ Again, there are several <i>Open()</i> methods, which are static class
 methods that return a pointer to a newly created <i>CobjectOstream</i>:
 
 <font size="-1">
-<pre><font color="#008080">&nbsp;static CObjectOStream* Open(const string&amp; fileName, ESerialDataFormat format);
-&nbsp;static CObjectOStream* Open(ESerialDataFormat format,&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const string&amp; fileName, unsigned openFlags = 0);
-&nbsp;static CObjectOStream* Open(ESerialDataFormat format,&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CNcbiOstream&amp; os, bool deleteOutStream = false);</font></pre>
+<pre><font color="#008080">static CObjectOStream* Open(const string&amp; fileName, ESerialDataFormat format);
+static CObjectOStream* Open(ESerialDataFormat format,
+                            const string&amp; fileName, unsigned openFlags = 0);
+static CObjectOStream* Open(ESerialDataFormat format,
+                            CNcbiOstream&amp; os, bool deleteOutStream = false);</font></pre>
 </font>
 The <i>Write*()</i> methods correspond to the <i>Read*()</i> methods defined
 for the input streams. <i>Write()</i> first calls <i>WriteFileHeader()</i>,
@@ -298,29 +303,24 @@ available in the input and should not be generated on the output. The <i>CopyObj
 method corresponds to the <i>ReadObject()</i> and
 <i>WriteObject()</i>
 methods.
-<p>As an example, consider how the <i>Run()</i> method in&nbsp; <i><a href="xml2asn_cpp.html">xml2asn.cpp</a></i>
+<p>As an example, consider how the <i>Run()</i> method in <i><a href="xml2asn_cpp.html">xml2asn.cpp</a></i>
 might be implemented differently using the <i>CObjectStreamCopier </i>class:
-<p><tt><font color="#008080">int CTestAsn::Run() {</font></tt><tt><font color="#008080"></font></tt>
-<p><tt><font color="#008080">&nbsp;&nbsp;&nbsp; auto_ptr&lt;CObjectIStream></font></tt>
-<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xml_in(CObjectIStream::Open("1001.xml",
-eSerial_Xml));</font></tt><tt><font color="#008080"></font></tt>
-<p><tt><font color="#008080">&nbsp;&nbsp;&nbsp; auto_ptr&lt;CObjectOStream></font></tt>
-<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; txt_out(CObjectOStream::Open("1001.asntxt",
-eSerial_AsnText));</font></tt><tt><font color="#008080"></font></tt>
-<p><tt><font color="#008080">&nbsp;&nbsp;&nbsp; CObjectStreamCopier txt_copier(*xml_in,
-*txt_out);</font></tt>
-<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp; txt_copier.copy(CBiostruc::GetTypeInfo());</font></tt><tt><font color="#008080"></font></tt>
-<p><tt><font color="#008080">&nbsp;&nbsp;&nbsp; auto_ptr&lt;CObjectOStream></font></tt>
-<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bin_out(CObjectOStream::Open("1001.asnbin",
-eSerial_AsnBinary));</font></tt><tt><font color="#008080"></font></tt>
-<p><tt><font color="#008080">&nbsp;&nbsp;&nbsp; CObjectStreamCopier bin_copier(*xml_in,
-*bin_out);</font></tt>
-<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp; bin_copier.copy(CBiostruc::GetTypeInfo());</font></tt><tt><font color="#008080"></font></tt>
-<p><tt><font color="#008080">&nbsp;&nbsp;&nbsp; return 0;</font></tt>
-<br><tt><font color="#008080">}</font></tt><font color="#008080"></font>
+<font size="-1">
+<pre><font color="#008080">int CTestAsn::Run() {
+    auto_ptr&lt;CObjectIStream&gt;
+        xml_in(CObjectIStream::Open("1001.xml", eSerial_Xml));
+    auto_ptr&lt;CObjectOStream&gt;
+        txt_out(CObjectOStream::Open("1001.asntxt", eSerial_AsnText));
+    CObjectStreamCopier txt_copier(*xml_in, *txt_out);
+    txt_copier.Copy(CBiostruc::GetTypeInfo());
+    auto_ptr&lt;CObjectOStream&gt;
+        bin_out(CObjectOStream::Open("1001.asnbin", eSerial_AsnBinary));
+    CObjectStreamCopier bin_copier(*xml_in, *bin_out);
+    bin_copier.Copy(CBiostruc::GetTypeInfo());
+    return 0;
+}</font></pre></font>
 <p>It is also possible to install type-specific <i>Copy</i> hooks. Like
-the <i>Read</i> and
-<i>Write()</i> methods, the <i>Copy</i> methods serve
+the <i>Read</i> and <i>Write</i> methods, the <i>Copy</i> methods serve
 as wrapper functions that define what occurs immediately before and after
 the data is actually copied.
 <p><a NAME="cback"></a>
@@ -351,7 +351,7 @@ recently installed hook.
 <h3>
 The <i>Read</i> hook classes</h3>
 All of the different contexts in which an object might be encountered on
-an input stream can be reduced to four cases:
+an input stream can be reduced to three cases:
 <ol>
 <li>
 as a stand-alone object</li>
@@ -362,10 +362,8 @@ as a data member of a containing object</li>
 <li>
 as a variant of a <i>choice</i> object</li>
 
-<li>
-as an element of a container</li>
 </ol>
-Hooks can be installed for each of the first three of these contexts, depending
+Hooks can be installed for each of these contexts, depending
 on the desired level of specificity. Corresponding to these contexts, three
 abstract base classes provide the foundations for deriving new <i>Read</i>
 hooks:
@@ -379,10 +377,7 @@ hooks:
 <li>
 <i>CReadChoiceVariantHook</i></li>
 </ul>
-The mechanisms for installing read hooks for container elements impose
-very different requirements on the implementation, and are described in
-another section.
-<p>Each of these base hook classes exists only to define a pure virtual
+Each of these base hook classes exists only to define a pure virtual
 <i>Read</i>
 method, which can then be implemented (in a derived subclass) to install
 the desired type of read hook. If the goal is to apply the new
@@ -394,23 +389,26 @@ type information object. For example, to install a new
 for a
 <i>CBioseq</i>, one might use:
 <font size="-1">
-<pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBioseq::GetTypeInfo()->SetGlobalReadObjectHook(myReadBioseqHook);</font></pre>
+<pre><font color="#008080">    CBioseq::GetTypeInfo()->SetGlobalReadObjectHook(myReadBioseqHook);</font></pre>
 </font>
+Another way of installing hooks of any type (read/write/copy, object/member/variant)
+is provided by <i>CObjectHookGuard</i> class described below.
+<p>
 Alternatively, if the desired behavior is to trigger the specialized <i>Read</i>
 method only when the object occurs as a data member of a particular containing
 class, then the new hook should be derived from the <i>CReadClassMemberHook</i>,
 and registered with that member's type information object:
 <font size="-1">
 <pre>
-<font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBioseq::GetTypeInfo()->FindMember("Seq-inst")
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ->SetGlobalReadClassMemberHook(myReadSeqinstHook);</font></pre>
+<font color="#008080">    CBioseq::GetTypeInfo()->FindMember("Seq-inst")
+        ->SetGlobalReadClassMemberHook(myReadSeqinstHook);</font></pre>
 </font>
 
 Similarly, one can install a read hook that will only be triggered when
 the object occurs as a choice variant:
 <font size="-1">
-<pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CSeq_entry::GetTypeInfo()->FindVariant("Bioseq")
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ->SetGlobalReadChoiceVariantHook(myReadBioseqHook);</font></pre>
+<pre><font color="#008080">    CSeq_entry::GetTypeInfo()->FindVariant("Bioseq")
+        ->SetGlobalReadChoiceVariantHook(myReadBioseqHook);</font></pre>
 </font>
 The new hook classes for these examples should be derived from <i>CReadObjectHook</i>,
 <i>CReadClassMemberHook</i>,
@@ -425,15 +423,15 @@ and a reference to a <i><a href="typeinfo.html#objinfo">CObjectInfo</a></i>.
 For example, the <i>CReadObjectHook</i> class declares the <i>ReadObject()</i>
 method as:
 <font size="-1">
-<pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp; virtual void ReadObject(CObjectIStream&amp; in,&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CObjectInfo&amp; object) = 0;</font></pre>
+<pre><font color="#008080">    virtual void ReadObject(CObjectIStream&amp; in,
+                            const CObjectInfo&amp; object) = 0;</font></pre>
 </font>
 The <i>ReadClassMember</i> and <i>ReadChoiceVariant</i> hooks differ from
 the <i>ReadObject</i> hook class, in that the second argument to the virtual
 <i>Read</i>
 method is an iterator, pointing to the object type information for a data
 member or choice variant respectively.
-<p>&nbsp;In summary, to install a read hook for an object type:
+<p>In summary, to install a read hook for an object type:
 <ol>
 <li>
 derive a new class from the appropriate hook class:</li>
@@ -469,7 +467,27 @@ method defined in</li>
 <li>
 <i>CVariantInfo</i> for a <i>CReadChoiceVariantHook</i></li>
 </ul>
+or use <i>CObjectHookGuard</i> class to install any of these hooks.
 </ol>
+In many cases you will need to read the hooked object and do
+some special processing, or to skip the entire object. To simplify
+object reading or skipping all base hook classes have DefaultRead()
+and DefaultSkip() methods taking the same arguments as the user
+provided ReadXXXX() methods. Thus, to read a bioseq object from a hook:
+
+<font size="-1">
+<pre><font color="#008080">    void CMyReadObjectHook::ReadObject(CObjectIStream& in, const CObjectInfo& object)
+    {
+        DefaultRead(in, object);
+        // Do some user-defined processing of the bioseq
+    }
+</font></pre>
+</font>
+
+Note that from a choice variant hook you can not skip stream data -- this could leave the
+choice object in an uninitialized state. For this reason the CReadChoiceVariantHook class
+has no DefaultSkip() method.
+<p>
 For a good example of using a <i>CReadClassMemberHook</i> object, see the
 <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i> and
 <i><a href="../lxr/source/src/serial/test/testserial.cpp">testserial.cpp</a></i>
@@ -492,13 +510,13 @@ again, we have three base classes:
 These classes define the pure virtual methods:
 <font size="-1">
 <pre><font color="#008080">CWriteObjectHook::WriteObject(CObjectOStream&amp;,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CConstObjectInfo&amp; object) = 0;
+                              const CConstObjectInfo&amp; object) = 0;
 
 CWriteClassMemberHook::WriteClassMember(CObjectOStream&amp;,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CConstObjectInfoMI&amp; member) = 0;
+                                        const CConstObjectInfoMI&amp; member) = 0;
 
 CWriteChoiceVariantHook::WriteChoiceVariant(CObjectOStream&amp;,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CConstObjectInfoCV&amp; variant) = 0;</font></pre>
+                                            const CConstObjectInfoCV&amp; variant) = 0;</font></pre>
 </font>
 Like the read hooks, your derived write hooks can be installed by invoking
 the
@@ -506,14 +524,16 @@ the
 methods for the appropriate type information objects. Corresponding to
 the examples for read hooks then, we would have:
 <font size="-1">
-<pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBioseq::GetTypeInfo()->SetGlobalWriteObjectHook(myWriteBioseqHook);
+<pre><font color="#008080">    CBioseq::GetTypeInfo()->SetGlobalWriteObjectHook(myWriteBioseqHook);
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBioseq::GetTypeInfo()->FindMember("Seq-inst")
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ->SetGlobalWriteClassMemberHook(myWriteSeqinstHook);
+    CBioseq::GetTypeInfo()->FindMember("Seq-inst")
+        ->SetGlobalWriteClassMemberHook(myWriteSeqinstHook);
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CSeq_entry::GetTypeInfo()->FindVariant("Bioseq")
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ->SetGlobalWriteChoiceVariantHook(myWriteBioseqHook);</font></pre>
+    CSeq_entry::GetTypeInfo()->FindVariant("Bioseq")
+        ->SetGlobalWriteChoiceVariantHook(myWriteBioseqHook);</font></pre>
 </font>
+<i>CObjectHookGuard</i> class provides is a simple way to install write hooks.
+<p>
 The <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i> and
 <i><a href="../lxr/source/src/serial/test/testserial.cpp">testserial.cpp</a></i>
 demo programs also demonstrate the usage of the <i>CWriteClassMemberHook</i>
@@ -524,19 +544,75 @@ The <i>Copy</i> hook classes</h3>
 As with the <i>Read</i> and <i>Write</i> hook classes, there are three
 base classes which define the following <i>Copy</i> methods:
 <font size="-1">
-<pre><font color="#008080">CCopyObjectHook::CopyObject(CObjectStreamCopier&amp;,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CConstObjectInfo&amp; object) = 0;
+<pre><font color="#008080">CCopyObjectHook::CopyObject(CObjectStreamCopier&amp; copier,
+                            const CObjectTypeInfo&amp; object) = 0;
 
-CCopyClassMemberHook::CopyClassMember(CObjectStreamCopier&amp;,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CConstObjectInfoMI&amp; member) = 0;
+CCopyClassMemberHook::CopyClassMember(CObjectStreamCopier&amp; copier,
+                                      const CObjectTypeInfoMI&amp; member) = 0;
 
 CCopyChoiceVariantHook::CopyChoiceVariant(CObjectStreamCopier&amp;,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CConstObjectInfoCV&amp; variant) = 0;</font></pre>
+                                          const CObjectTypeInfoCV&amp; variant) = 0;</font></pre>
 </font>
 Newly derived copy hooks can be installed by invoking the <i>SetGlobalCopyObjectHook()</i>
 or
 <i>SetLocalCopyObjectHook()</i> methods for the appropriate type information
-objects.
+objects. The other way of installing hooks is described below in the <i>CObjectHookGuard</i>
+section.
+<p>To do default copying of an object in the overloaded hook method
+each of the base copy hook classes has <i>DefaultCopy()</i> method.
+
+<p><a NAME="hookguard"></a>
+<h3>
+The <i>CObjectHookGuard</i> class</h3>
+
+To simplify hooks usage <i>CObjectHookGuard</i> class may be used.
+It's a template class: the template parameter is the class to be
+hooked (in case of member or choice variant hooks it's the parent
+class of the member).
+
+<p>
+The CObjectHookGuard class has several constructors for installing
+different hook types. The last argument to all constructors is
+a stream pointer. By default the pointer is NULL and the hook is
+intalled as a global one. To make the hook stream-local pass the
+stream to the guard constructor.
+
+<ul>
+<li>
+Object read/write hooks:
+<font size="-1">
+<pre><font color="#008080">    CObjectHookGuard(CReadObjectHook& hook, CObjectIStream* in = 0);
+    CObjectHookGuard(CWriteObjectHook& hook, CObjectOStream* out = 0);
+</font></pre>
+</font></li>
+
+<li>
+Class member read/write hooks:
+<font size="-1">
+<pre><font color="#008080">    CObjectHookGuard(string id, CReadClassMemberHook& hook, CObjectIStream* in = 0);
+    CObjectHookGuard(string id, CWriteClassMemberHook& hook, CObjectOStream* out = 0);
+</font></pre>
+</font>
+The string "id" argument is the name of the member in ASN.1 specification
+for generated classes.
+</li>
+
+<li>
+Choice variant read/write hooks:
+<font size="-1">
+<pre><font color="#008080">    CObjectHookGuard(string id, CReadChoiceVariantHook& hook, CObjectIStream* in = 0);
+    CObjectHookGuard(string id, CWriteChoiceVariantHook& hook, CObjectOStream* out = 0);
+</font></pre>
+</font>
+The string "id" argument is the name of the variant in ASN.1 specification
+for generated classes.
+</li>
+
+</ul>
+
+The guard's destructor will uninstall the hook. Since all hook classes are derived
+from CObject and stored as CRef<>-s, the hooks are destroyed automatically when
+uninstalled. For this reason it's recommended to create hook objects on heap.
 
 <p><a NAME="blocks"></a>
 <h3>
@@ -584,7 +660,7 @@ void CWriteMyObjectHook::WriteObject(CObjectOStream&amp; out,
         (object.GetObjectPtr());
     if ( NothingToProcess(obj) ) {
         // No special processing - use default write method
-        object.GetTypeInfo()-&gt;DefaultWriteData(out, object.GetObjectPtr());
+        DefaultWrite(out, object);
         return;
     }
 
@@ -627,7 +703,7 @@ void CWriteMyObjectHook::WriteObject(CObjectOStream&amp; out,
 </font></pre>
 </font>
 
-<p><i><a href="../index.html">up&nbsp;</a></i>&nbsp;&nbsp; <a href="asn.html"><i>next</i>&nbsp;</a>
+<p><i><a href="../index.html">up</a></i> <a href="asn.html"><i>next</i></a>
 
 
 <!--#include virtual="../ssi/navlinks.shtml" -->
