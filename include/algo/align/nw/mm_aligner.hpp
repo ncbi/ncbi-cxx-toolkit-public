@@ -69,13 +69,9 @@ public:
 
     virtual ~CMMAligner() {}
 
-    void    EnableMultipleThreads(bool enable = true);
-
 protected:
 
     list<ETranscriptSymbol>  m_TransList;
-    bool                     m_mt; // multiple threads
-    unsigned int             m_maxthreads;
 
     virtual TScore   x_Run();
     
@@ -142,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/06/29 20:46:04  kapustin
+ * Support simultaneous segment computing
+ *
  * Revision 1.14  2003/09/30 19:49:32  kapustin
  * Make use of standard score matrix interface
  *

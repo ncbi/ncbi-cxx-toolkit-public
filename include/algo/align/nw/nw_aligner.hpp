@@ -159,7 +159,10 @@ public:
         return 1;
     }
 
+    void    EnableMultipleThreads(bool enable = true);
+
 protected:
+
     // Bonuses and penalties
     TScore   m_Wm;   // match bonus (eNucl)
     TScore   m_Wms;  // mismatch penalty (eNucl)
@@ -195,13 +198,16 @@ protected:
     TScore                    m_score;
     vector<size_t>            m_guides;
 
+    // multiple threads flag
+    bool                      m_mt;
+    size_t                    m_maxthreads;
+ 
     // facilitate guide pre- and  post-processing, if applicable
     virtual TScore x_Run   (void);
 
     // core dynamic programming
-    virtual TScore x_Align (const char* seg1, size_t len1,
-                            const char* seg2, size_t len2,
-                            vector<ETranscriptSymbol>* transcript);
+    struct SAlignInOut;
+    virtual TScore x_Align (SAlignInOut* data);
 
     virtual TScore x_ScoreByTranscript(void) const;
 
@@ -212,6 +218,46 @@ protected:
     void x_DoBackTrace(const unsigned char* backtrace_matrix,
                        size_t N1, size_t N2,
                        vector<ETranscriptSymbol>* transcript);
+
+    friend class CNWAlignerThread_Align;
+};
+
+
+struct CNWAligner::SAlignInOut {
+
+    SAlignInOut(): m_seg1(0), m_len1(0), m_seg2(0), m_len2(0), m_space(0) {}
+    SAlignInOut(const char* seg1, size_t len1, bool esfL1, bool esfR1,
+                const char* seg2, size_t len2, bool esfL2, bool esfR2):
+        m_seg1(seg1), m_len1(len1), m_esf_L1(esfL1), m_esf_R1(esfR1),
+        m_seg2(seg2), m_len2(len2), m_esf_L2(esfL2), m_esf_R2(esfR2)
+    {
+        m_space = m_len1*m_len2;
+    }
+
+    // [in] first sequence
+    const char* m_seg1;
+    size_t      m_len1;
+    bool        m_esf_L1, m_esf_R1;
+
+    // [in] second sequence
+    const char* m_seg2;
+    size_t      m_len2;
+    bool        m_esf_L2, m_esf_R2;
+
+    // [out]
+    vector<ETranscriptSymbol> m_transcript;
+
+    size_t      GetSpace(void) const {
+        return m_space;
+    }
+
+    static bool PSpace(const SAlignInOut* p1, const SAlignInOut* p2) {
+        return p1->m_space >= p2->m_space;
+    }
+
+private:    
+
+    size_t m_space; // required dynprog dimension
 };
 
 
@@ -224,6 +270,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/06/29 20:46:04  kapustin
+ * Support simultaneous segment computing
+ *
  * Revision 1.33  2004/05/17 14:50:46  kapustin
  * Add/remove/rearrange some includes and object declarations
  *

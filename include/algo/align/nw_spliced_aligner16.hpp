@@ -71,9 +71,7 @@ protected:
     virtual TScore* x_GetSpliceScores(void) {
         return m_Wi;
     }
-    virtual TScore  x_Align ( const char* seg1, size_t len1,
-                              const char* seg2, size_t len2,
-                              vector<ETranscriptSymbol>* transcript );
+    virtual TScore  x_Align (SAlignInOut* data);
 
     // backtrace
     void x_DoBackTrace( const Uint2* backtrace_matrix,
@@ -91,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/06/29 20:46:04  kapustin
+ * Support simultaneous segment computing
+ *
  * Revision 1.8  2004/04/23 14:39:22  kapustin
  * Add Splign librry and other changes
  *
