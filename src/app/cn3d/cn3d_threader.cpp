@@ -123,6 +123,7 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
                     weightPSSM * SCALING_FACTOR *
                         GetBLOSUM62Score(multiple->GetMaster()->sequenceString[res],
                                          ThreaderResidues[aa]));
+        TRACEMSG("Created Seq_Mtf (PSSM) from BLOSUM62 scores");
         return seqMtf;
     }
 
@@ -1230,6 +1231,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/06/18 11:38:42  thiessen
+* add another trace message
+*
 * Revision 1.36  2003/04/14 18:13:58  thiessen
 * retry pseudocounts until matrix is constructed okay
 *
