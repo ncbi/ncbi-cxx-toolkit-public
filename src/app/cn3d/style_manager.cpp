@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2001/06/15 14:06:40  thiessen
+* save/load asn styles now complete
+*
 * Revision 1.40  2001/06/15 13:00:05  thiessen
 * fix enumerated type casts fo unix compilers
 *
@@ -187,7 +190,7 @@ BEGIN_SCOPE(Cn3D)
 
 static void Vector2ASNColor(const Vector &vec, CCn3d_color *asnColor)
 {
-    static const int SCALE = 1000;
+    static const int SCALE = 10000;
     asnColor->SetScale_factor(SCALE);
     asnColor->SetRed((int) (vec[0] * SCALE));
     asnColor->SetGreen((int) (vec[1] * SCALE));

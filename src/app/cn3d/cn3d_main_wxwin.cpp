@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2001/06/15 14:06:40  thiessen
+* save/load asn styles now complete
+*
 * Revision 1.52  2001/06/14 17:45:10  thiessen
 * progress in styles<->asn ; add structure limits
 *
@@ -844,7 +847,7 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 
     wxString outputFilename = wxFileSelector(
         "Choose a filename for output", userDir.c_str(), "",
-        ".val", "ASCII ASN (*.prt)|*.prt|Binary ASN (*.val)|*.val",
+        ".prt", "Binary ASN (*.val)|*.val|ASCII ASN (*.prt)|*.prt",
         wxSAVE | wxOVERWRITE_PROMPT);
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
     if (!outputFilename.IsEmpty())

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/06/15 14:06:20  thiessen
+* save/load asn styles now complete
+*
 * Revision 1.27  2001/06/14 17:44:46  thiessen
 * progress in styles<->asn ; add structure limits
 *
@@ -143,42 +146,42 @@ public:
     // for different types of backbone displays
     enum eBackboneType {
         eOff = 1,
-        eTrace,
-        ePartial,
-        eComplete
+        eTrace = 2,
+        ePartial = 3,
+        eComplete = 4
     };
 
     // available drawing styles (not all necessarily applicable to all objects)
     enum eDrawingStyle {
         // for atoms and bonds
         eWire = 1,
-        eTubes,
-        eBallAndStick,
-        eSpaceFill,
-        eWireWorm,
-        eTubeWorm,
+        eTubes = 2,
+        eBallAndStick = 3,
+        eSpaceFill = 4,
+        eWireWorm = 5,
+        eTubeWorm = 6,
 
         // for 3d-objects
-        eWithArrows,
-        eWithoutArrows
+        eWithArrows = 7,
+        eWithoutArrows = 8
     };
 
     // available color schemes (not all necessarily applicable to all objects)
     enum eColorScheme {
         eElement = 1,
-        eObject,
-        eMolecule,
-        eDomain,
-        eSecondaryStructure,
-        eUserSelect,
+        eObject = 2,
+        eMolecule = 3,
+        eDomain = 4,
+        eSecondaryStructure = 5,
+        eUserSelect = 6,
 
         // different alignment conservation coloring (currently only used for proteins)
-        eAligned,
-        eIdentity,
-        eVariety,
-        eWeightedVariety,
-        eInformationContent,
-        eFit
+        eAligned = 7,
+        eIdentity = 8,
+        eVariety = 9,
+        eWeightedVariety = 10,
+        eInformationContent = 11,
+        eFit = 12
     };
 
     typedef struct {
@@ -217,8 +220,8 @@ public:
     void SetToAlignment(StyleSettings::eColorScheme protBBType);
 
     // default and copy constructors
-    StyleSettings::StyleSettings(void) { SetToSecondaryStructure(); }
-    StyleSettings::StyleSettings(const StyleSettings& orig) { *this = orig; }
+    StyleSettings(void) { SetToSecondaryStructure(); }
+    StyleSettings(const StyleSettings& orig) { *this = orig; }
 
     // copy settings
     StyleSettings& operator = (const StyleSettings& v);
@@ -323,14 +326,14 @@ public:
 class BondStyle
 {
 public:
-    typedef struct EndStyle {
+    typedef struct {
         StyleManager::eDisplayStyle style;
         Vector color;
         double radius;
         bool atomCap;
         unsigned int name;
         bool isHighlighted;
-    };
+    } EndStyle;
     EndStyle end1, end2;
     bool midCap;
     double tension;

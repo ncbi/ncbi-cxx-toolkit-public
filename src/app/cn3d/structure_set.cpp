@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2001/06/15 14:06:40  thiessen
+* save/load asn styles now complete
+*
 * Revision 1.65  2001/06/14 17:45:10  thiessen
 * progress in styles<->asn ; add structure limits
 *
@@ -408,6 +411,7 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
     Init();
     mimeData = mime;
     StructureObject *object;
+    const CCn3d_style_dictionary *styleDictionary = NULL;
 
     // create StructureObjects from (list of) biostruc
     if (mime->IsStrucseq()) {
@@ -416,6 +420,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         sequenceSet = new SequenceSet(this, mime->GetStrucseq().GetSequences());
         MatchSequencesToMolecules();
         alignmentManager = new AlignmentManager(sequenceSet, NULL);
+        if (mime->GetStrucseq().IsSetStyle_dictionary())
+            styleDictionary = &(mime->GetStrucseq().GetStyle_dictionary());
 
     } else if (mime->IsStrucseqs()) {
         object = new StructureObject(this, mime->GetStrucseqs().GetStructure(), true, false);
@@ -425,6 +431,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         alignmentSet = new AlignmentSet(this, mime->GetStrucseqs().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
         styleManager->SetToAlignment(StyleSettings::eAligned);
+        if (mime->GetStrucseqs().IsSetStyle_dictionary())
+            styleDictionary = &(mime->GetStrucseqs().GetStyle_dictionary());
 
     } else if (mime->IsAlignstruc()) {
         TESTMSG("Master:");
@@ -449,6 +457,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
         styleManager->SetToAlignment(StyleSettings::eAligned);
         structureAlignments = &(mime->GetAlignstruc().SetAlignments());
+        if (mime->GetAlignstruc().IsSetStyle_dictionary())
+            styleDictionary = &(mime->GetAlignstruc().GetStyle_dictionary());
 
     } else if (mime->IsEntrez() && mime->GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime->GetEntrez().GetData().GetStructure(), true, false);
@@ -460,6 +470,15 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
 
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);
+    if (styleDictionary) {
+        if (!styleManager->LoadFromASNStyleDictionary(*styleDictionary) ||
+            !styleManager->CheckGlobalStyleSettings(this))
+            ERR_POST(Error << "Error loading style dictionary from mime");
+        // remove now; recreated with current settings upon save
+        if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetStyle_dictionary();
+        else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetStyle_dictionary();
+        else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().ResetStyle_dictionary();
+    }
 }
 
 static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
@@ -472,12 +491,6 @@ static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
     CORE_SetREG(REG_cxx2c(reg, true));
-
-    // for network debugging
-//    SetDiagTrace(eDT_Enable);
-//    SetDiagPostFlag(eDPF_All);
-//    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "DATA");
-//    CORE_SetLOG(LOG_cxx2c());
 
     try {
         // create HHTP stream from mmdbsrv URL
@@ -496,22 +509,12 @@ static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
         CObjectIStreamAsnBinary asnStream(httpStream);
         asnStream >> biostruc;
 
-        // for debugging only - save stream to file
-//        CNcbiOfstream ofstr("test-http-connector.val", IOS_BASE::out | IOS_BASE::binary);
-//        while (!(httpStream.eof() || httpStream.fail() || httpStream.bad())) {
-//            unsigned char ch;
-//            httpStream >> ch;
-//            ofstr << ch;
-//        }
-//        return false;
-
     } catch (exception& e) {
         err = e.what();
         okay = false;
     }
 
     CORE_SetREG(NULL);
-//    CORE_SetLOG(NULL);    // only when debugging
     return okay;
 }
 
@@ -634,6 +637,12 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
     styleManager->SetToAlignment(StyleSettings::eAligned);
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);
+    if (cdd->IsSetStyle_dictionary()) {
+        if (!styleManager->LoadFromASNStyleDictionary(cdd->GetStyle_dictionary()) ||
+            !styleManager->CheckGlobalStyleSettings(this))
+            ERR_POST(Error << "Error loading style dictionary from cdd");
+        cdd->ResetStyle_dictionary();   // remove now; recreated with current settings upon save
+    }
 }
 
 StructureSet::~StructureSet(void)
@@ -843,10 +852,10 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     CRef < CCn3d_style_dictionary > styleDictionary(styleManager->CreateASNStyleDictionary());
     if (mimeData) {
         if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().SetStyle_dictionary(styleDictionary);
-//        else if (mimeData->IsAlignseq()) mimeData->SetAlignseq().SetStyle_dictionary(styleDictionary);
         else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().SetStyle_dictionary(styleDictionary);
         else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().SetStyle_dictionary(styleDictionary);
     } else if (cddData) {
+        cddData->SetStyle_dictionary(styleDictionary);
     }
 
     std::string err;
@@ -864,10 +873,10 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     // remove style dictionary from asn
     if (mimeData) {
         if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetStyle_dictionary();
-//        else if (mimeData->IsAlignseq()) mimeData->SetAlignseq().ResetStyle_dictionary();
         else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetStyle_dictionary();
         else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().ResetStyle_dictionary();
     } else if (cddData) {
+        cddData->ResetStyle_dictionary();
     }
 
     return writeOK;
