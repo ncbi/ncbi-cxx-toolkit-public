@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/05/30 14:16:44  gouriano
+* fix in debugdump: memory leak
+*
 * Revision 1.2  2002/05/29 21:19:17  gouriano
 * added debug dump
 *
@@ -77,8 +80,8 @@ void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 // this is not good, but better than nothing
     ostrstream ostr;
     ostr << endl << "****** begin ASN dump ******" << endl;
-    CObjectOStream& oos = *(CObjectOStream::Open(eSerial_AsnText, ostr));
-    oos.Write(this, GetThisTypeInfo());
+    auto_ptr<CObjectOStream> oos(CObjectOStream::Open(eSerial_AsnText, ostr));
+    oos->Write(this, GetThisTypeInfo());
     ostr << endl << "****** end   ASN dump ******" << endl;
     ostr << '\0';
     ddc.Log( "Serial_AsnText", string(ostr.str()));
