@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.10  2002/07/02 13:46:05  kholodov
+* Fixed: Incorrect exception class used CDB_Exception
+*
 * Revision 1.9  2002/07/01 13:15:11  kholodov
 * Added ITDescriptor diagnostics
 *
@@ -211,7 +214,7 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
 #ifdef _DEBUG
         _ASSERT(0);
 #else
-        throw CDB_Exception("CResultSet::GetBlobOStream(): Invalid IT Descriptor");
+        throw CDbapiException("CResultSet::GetBlobOStream(): Invalid IT Descriptor");
 #endif
     }
 
