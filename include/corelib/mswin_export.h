@@ -136,6 +136,7 @@
 #  define NCBI_GUIOPENGL_EXPORTS
 #endif
 
+
 // -------------------------------------------------
 
 //
@@ -516,6 +517,14 @@
 #  define NCBI_GUIWIDGETS_EXPORT    __declspec(dllimport)
 #endif
 
+//
+// Export specifier for library objects_validator
+//
+#ifdef NCBI_VALIDATOR_EXPORTS
+#  define NCBI_VALIDATOR_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_VALIDATOR_EXPORT     __declspec(dllimport)
+#endif
 
 
 #else  //  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)
@@ -567,6 +576,8 @@
 #  define NCBI_XOBJUTIL_EXPORT
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XUTIL_EXPORT
+#  define NCBI_VALIDATOR_EXPORT
+
 
 #endif
 
@@ -576,6 +587,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2003/01/07 19:58:25  shomrat
+ * Added NCBI_VALIDATOR_EXPORT
+ *
  * Revision 1.4  2002/12/31 16:15:46  dicuccio
  * Added missing NCBI_SUBMIT_EXPORT to empty define list
  *
