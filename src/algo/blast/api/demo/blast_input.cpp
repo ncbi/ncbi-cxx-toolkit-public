@@ -92,11 +92,14 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CObjectManager& objmgr,
     int index = 0;
     scope->AddTopLevelSeqEntry(*seq_entry);
 
+    from = MAX(from - 1, 0);
+    to = MAX(to - 1, 0);
+
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
 
         CRef<CSeq_loc> seqloc(new CSeq_loc());
         TSeqPos seq_length = sequence::GetLength(*itr->GetId().front(), 
-                                                scope)-1;
+                                                scope) - 1;
 
         if (to > 0 && to < seq_length)
             seqloc->SetInt().SetTo(to);
