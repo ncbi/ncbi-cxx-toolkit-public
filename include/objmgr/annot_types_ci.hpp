@@ -44,7 +44,6 @@
 #include <objects/seqloc/Seq_loc.hpp>
 
 #include <set>
-#include <map>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -684,6 +683,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2004/02/19 17:14:36  vasilche
+* Removed unused include.
+*
 * Revision 1.64  2004/02/06 18:31:53  vasilche
 * Fixed annot sorting class - deal with different annot types (graph align feat).
 *

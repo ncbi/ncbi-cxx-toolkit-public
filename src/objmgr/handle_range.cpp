@@ -35,7 +35,6 @@
 #include <objmgr/impl/handle_range.hpp>
 
 #include <algorithm>
-//#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -214,6 +213,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/02/19 17:17:23  vasilche
+* Removed unused include.
+*
 * Revision 1.19  2003/07/17 20:07:56  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.

@@ -37,7 +37,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <set>
 #include <map>
 #include <memory>
 
@@ -263,6 +262,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/02/19 17:16:35  vasilche
+* Removed unused include.
+*
 * Revision 1.12  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

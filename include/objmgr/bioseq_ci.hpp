@@ -39,8 +39,6 @@
 
 #include <objects/seq/Seq_inst.hpp>
 
-#include <set>
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -125,6 +123,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/02/19 17:15:02  vasilche
+* Removed unused include.
+*
 * Revision 1.13  2003/10/01 19:24:36  vasilche
 * Added export specifier to CBioseq_CI as it's not completely inlined anymore.
 *
