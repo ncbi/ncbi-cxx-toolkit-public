@@ -173,6 +173,7 @@ static const SImportEntry kImportTable[] = {
     { "conflict",            CSeqFeatData::eSubtype_conflict },
     { "enhancer",            CSeqFeatData::eSubtype_enhancer },
     { "exon",                CSeqFeatData::eSubtype_exon },
+    { "gap",                 CSeqFeatData::eSubtype_gap },
     { "iDNA",                CSeqFeatData::eSubtype_iDNA },
     { "intron",              CSeqFeatData::eSubtype_intron },
     { "mat_peptide",         CSeqFeatData::eSubtype_mat_peptide },
@@ -186,6 +187,8 @@ static const SImportEntry kImportTable[] = {
     { "modified_base",       CSeqFeatData::eSubtype_modified_base },
     { "mutation",            CSeqFeatData::eSubtype_mutation },
     { "old_sequence",        CSeqFeatData::eSubtype_old_sequence },
+    { "operon",              CSeqFeatData::eSubtype_operon },
+    { "oriT",                CSeqFeatData::eSubtype_oriT },
     { "polyA_signal",        CSeqFeatData::eSubtype_polyA_signal },
     { "polyA_site",          CSeqFeatData::eSubtype_polyA_site },
     { "precursor_RNA",       CSeqFeatData::eSubtype_precursor_RNA },
@@ -346,6 +349,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.10  2003/10/24 17:14:28  shomrat
+* added gap, operaon and oriT subtypes
+*
 * Revision 6.9  2003/06/02 18:06:10  ucko
 * GetSubtype: handle imported features more efficiently.
 *

@@ -144,6 +144,9 @@ public:
         eSubtype_5UTR,
         eSubtype_10_signal,
         eSubtype_35_signal,
+        eSubtype_gap,
+        eSubtype_operon,
+        eSubtype_oriT,
         eSubtype_site_ref,
         eSubtype_region,
         eSubtype_comment,
@@ -208,6 +211,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/10/24 17:13:49  shomrat
+* added gap, operaon and oriT subtypes
+*
 * Revision 1.4  2003/04/19 16:38:06  dicuccio
 * Remove compiler warning about nested c-style comments
 *
