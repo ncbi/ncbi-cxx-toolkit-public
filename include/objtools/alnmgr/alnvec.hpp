@@ -45,15 +45,15 @@ BEGIN_objects_SCOPE
 class CObjectManager;
 class CScope;
 
-
 class NCBI_XALNMGR_EXPORT CAlnVec : public CAlnMap
 {
     typedef CAlnMap                         Tparent;
-    typedef CSeqVector::TResidue            TResidue;
     typedef map<TNumrow, CBioseq_Handle>    TBioseqHandleCache;
     typedef map<TNumrow, CRef<CSeqVector> > TSeqVectorCache;
 
 public:
+    typedef CSeqVector::TResidue            TResidue;
+
     // constructor
     CAlnVec(const CDense_seg& ds);
     CAlnVec(const CDense_seg& ds, TNumrow anchor);
@@ -330,6 +330,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2003/10/15 21:18:57  yazhuk
+ * Made TResidue declaration public
+ *
  * Revision 1.26  2003/09/10 15:28:11  todorov
  * improved the Get{,Seg,Aln}SeqString comments
  *
