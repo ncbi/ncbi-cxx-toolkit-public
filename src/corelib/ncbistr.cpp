@@ -583,14 +583,14 @@ SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
         pat += (char)toupper(pat[0]);
     }
     if (where == eFirst) {
-        SIZE_TYPE pos = str.find_first_of(pat);
+        SIZE_TYPE pos = str.find_first_of(pat, start);
         while (pos != NPOS  &&  pos <= end
                &&  CompareNocase(str, pos, l, pattern) != 0) {
             pos = str.find_first_of(pat, pos + 1);
         }
         return pos > end ? NPOS : pos;
     } else { // eLast
-        SIZE_TYPE pos = str.find_last_of(pat);
+        SIZE_TYPE pos = str.find_last_of(pat, end);
         while (pos != NPOS  &&  pos >= start
                &&  CompareNocase(str, pos, l, pattern) != 0) {
             pos = str.find_last_of(pat, pos - 1);
@@ -1220,6 +1220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2003/06/16 15:19:03  ucko
+ * FindNoCase: always honor both start and end (oops).
+ *
  * Revision 1.92  2003/05/22 20:09:29  gouriano
  * added UTF8 strings
  *
