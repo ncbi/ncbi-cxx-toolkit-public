@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.137  2002/05/24 11:32:17  thiessen
+* API fix for wx2.2/2.3
+*
 * Revision 1.136  2002/05/23 16:13:31  thiessen
 * update wxFontDialog ctor
 *
@@ -1503,7 +1506,11 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
     initialFontData.SetInitialFont(initialFont);
 
     // bring up font chooser dialog
+#if wxVERSION_NUMBER > 2302
     wxFontDialog dialog(this, initialFontData);
+#else
+    wxFontDialog dialog(this, &initialFontData);
+#endif
     int result = dialog.ShowModal();
 
     // if user selected a font
