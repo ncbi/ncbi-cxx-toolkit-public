@@ -141,6 +141,16 @@ public:
     // By default ArgDescriptions are enabled (i.e. required)
     void DisableArgDescriptions(void);
 
+    // Hide descriptions of the standard flags (-h, -logfile, -conffile)
+    // in the usage message (you still can pass them in the cmd.-line)
+    enum EHideStdArgs {
+        fHideHelp     = 0x01,
+        fHideLogfile  = 0x02,
+        fHideConffile = 0x04
+    };
+    typedef int THideStdArgs;  // binary OR of "EHideStdArgs"
+    void HideStdArgs(THideStdArgs hide_mask);
+
     // Get the application's cached environment
     const CNcbiEnvironment& GetEnvironment(void) const;
 
@@ -210,6 +220,7 @@ private:
     auto_ptr<CArgDescriptions> m_ArgDesc;    // cmd.-line arg descriptions
     auto_ptr<CArgs>            m_Args;       // parsed cmd.-line args
     bool                       m_DisableArgDesc;
+    THideStdArgs               m_HideArgs;
 };
 
 
@@ -247,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2002/08/08 18:38:16  gouriano
+ * added HideStdArgs function
+ *
  * Revision 1.24  2002/08/02 20:11:51  gouriano
  * added possibility to disable arg descriptions
  *

@@ -71,6 +71,7 @@ CNcbiApplication* CNcbiApplication::Instance(void)
 CNcbiApplication::CNcbiApplication(void)
 {
     m_DisableArgDesc = false;
+    m_HideArgs = 0;
 
     // Register the app. instance
     if ( m_Instance ) {
@@ -353,12 +354,24 @@ int CNcbiApplication::AppMain
         }
         catch (CArgHelpException&) {
             if (!m_DisableArgDesc) {
-                m_ArgDesc->AddOptionalKey(&s_ArgLogFile[1], "File_Name",
-                    "File to which the program log will be redirected",
-                    CArgDescriptions::eOutputFile);
-                m_ArgDesc->AddOptionalKey(&s_ArgCfgFile[1], "File_Name",
-                    "File with the program's configuration (registry) data",
-                    CArgDescriptions::eInputFile);
+                if ((m_HideArgs & fHideHelp) != 0)
+                {
+                    if (m_ArgDesc->Exist("h")) {
+                        m_ArgDesc->Delete("h");
+                    }
+                }
+                if ((m_HideArgs & fHideLogfile) == 0 &&
+                    !m_ArgDesc->Exist(s_ArgLogFile+1)) {
+                    m_ArgDesc->AddOptionalKey( s_ArgLogFile+1, "File_Name",
+                        "File to which the program log should be redirected",
+                        CArgDescriptions::eOutputFile);
+                }
+                if ((m_HideArgs & fHideConffile) == 0 &&
+                    !m_ArgDesc->Exist(s_ArgCfgFile+1)) {
+                    m_ArgDesc->AddOptionalKey( s_ArgCfgFile+1, "File_Name",
+                        "Program's configuration (registry) data file",
+                        CArgDescriptions::eInputFile);
+                }
             }
             // Print USAGE
             string str;
@@ -629,6 +642,11 @@ void CNcbiApplication::DisableArgDescriptions(void)
     m_DisableArgDesc = true;
 }
 
+void CNcbiApplication::HideStdArgs(THideStdArgs hide_mask)
+{
+    m_HideArgs = hide_mask;
+}
+
 
 END_NCBI_SCOPE
 
@@ -636,6 +654,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2002/08/08 18:36:50  gouriano
+ * added HideStdArgs function
+ *
  * Revision 1.48  2002/08/08 13:39:06  gouriano
  * logfile & conffile-related correction
  *
