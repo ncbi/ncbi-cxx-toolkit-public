@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/01/05 21:03:01  sandomir
+* GetEntry() changes
+*
 * Revision 1.10  1998/12/31 19:47:29  sandomir
 * GetEntry() fixed
 *
@@ -148,8 +151,7 @@ bool CNcbiCommand::IsRequested( const CNcbiMsgRequest& request ) const
   const string value = GetName();
   
   TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
-  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( 
-                                          CNcbiCommand::GetEntry() );
+  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
 
   for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
     if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
@@ -167,8 +169,7 @@ bool CNcbiCommand::IsRequested( const CNcbiMsgRequest& request ) const
 bool CNcbiDatabaseInfo::IsRequested( const CNcbiMsgRequest& request ) const
 {  
   TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
-  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( 
-                                          CNcbiDatabaseInfo::GetEntry() );
+  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
   
   for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
     if( CheckName( itEntr->second ) == true ) {
@@ -199,8 +200,7 @@ bool CNcbiDataObjectReport::IsRequested( const CNcbiMsgRequest& request ) const
   const string value = GetName();
   
   TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
-  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( 
-                                          CNcbiDataObjectReport::GetEntry() );
+  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
 
   for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
     if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
