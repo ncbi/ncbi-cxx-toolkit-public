@@ -302,6 +302,27 @@ void display_object(const T& obj)
 }
 
 
+// ********************** CValidException used internally only **********
+
+class CValidException : public CException
+{
+public:
+    enum EErrCode {
+        eSeqId
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())  {
+        case eSeqId:  return "eSeqId";
+        default:      return CException::GetErrCodeString();
+        }
+    }
+    
+    NCBI_EXCEPTION_DEFAULT(CValidException,CException);
+};
+
+
 // *********************** CValidErrItem implementation ********************
 
 CValidErrItem::CValidErrItem
@@ -5150,6 +5171,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2002/10/29 19:35:46  clausen
+* Moved CValidException definition here
+*
 * Revision 1.18  2002/10/29 19:23:24  clausen
 * Added new NCBI_THROW & NCBI_RETHROW macros
 *
