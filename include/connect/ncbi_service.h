@@ -89,6 +89,9 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
 #define SERV_LOCALHOST  ((unsigned int)(~0UL))
 #define SERV_ANYHOST    0           /* default, may be used as just 0 in code*/
 
+/* Can be combined in types to get even dead services (not off ones!) */
+#define fSERV_Promiscuous 0x80000000
+
 
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenEx
 (const char*         service,       /* service name                          */
@@ -199,6 +202,9 @@ extern NCBI_XCONNECT_EXPORT void DISP_SetMessageHook(FDISP_MessageHook);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2004/08/19 15:26:54  lavr
+ * +fSERV_Promiscuous
+ *
  * Revision 6.33  2004/06/14 16:36:13  lavr
  * Client minor version number incremented
  *
