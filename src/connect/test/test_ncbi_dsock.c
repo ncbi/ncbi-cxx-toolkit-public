@@ -112,7 +112,7 @@ static int s_Server(int x_port)
 
     len = 0;
     do {
-        n = (size_t)(((double) rand()/(double) RAND_MAX)*(msgsize - len));
+        n = (size_t)(((double) rand()/(double) RAND_MAX)*(msgsize - len) +0.5);
         if ((status = SOCK_Read(server, buf + len, n, &n, eIO_ReadPlain))
             != eIO_Success) {
             CORE_LOGF(eLOG_Error,("[Server]  Error reading msg @ byte %lu: %s",
@@ -135,7 +135,7 @@ static int s_Server(int x_port)
 
     len = 0;
     do {
-        n = (size_t)(((double) rand()/(double) RAND_MAX)*(msgsize - len));
+        n = (size_t)(((double) rand()/(double) RAND_MAX)*(msgsize - len) +0.5);
         if ((status = SOCK_Write(server, buf + len, n, &n, eIO_WritePlain))
             != eIO_Success) {
             CORE_LOGF(eLOG_Error,("[Server]  Error writing msg @ byte %lu: %s",
@@ -307,6 +307,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2003/02/04 22:04:47  lavr
+ * Protection from truncation to 0 in double->int conversion
+ *
  * Revision 6.2  2003/01/17 01:26:44  lavr
  * Test improved/extended
  *
