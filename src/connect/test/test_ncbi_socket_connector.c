@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/12/04 15:55:33  lavr
+ * +Test for SOCK_CreateConnectorOnTop()
+ *
  * Revision 6.2  2000/04/12 15:21:15  vakatov
  * Moved the log initialization to after the cmd.line args' parsing
  *
@@ -44,6 +47,7 @@
 #endif 
 
 #include "ncbi_conntest.h"
+#include "../ncbi_priv.h"
 #include <connect/ncbi_socket_connector.h>
 #include <connect/ncbi_util.h>
 
@@ -57,6 +61,7 @@ int main(int argc, const char* argv[])
     const char*    host;
     unsigned short port;
     unsigned int   max_try;
+    SOCK           sock;
 
     /* defaults */
     host         = 0;
@@ -109,7 +114,7 @@ int main(int argc, const char* argv[])
     data_file = fopen("test_ncbi_socket_connector.log", "wb");
     assert(data_file);
 
-    /* run the tests */
+    /* Tests for SOCKET CONNECTOR */
     fprintf(stderr,
             "Starting the SOCKET CONNECTOR test...\n"
             "%s:%hu,  timeout = %u.%06u, max # of retry = %u\n",
@@ -124,6 +129,19 @@ int main(int argc, const char* argv[])
                        fTC_SingleBounceCheck);
 
     connector = SOCK_CreateConnector(host, port, max_try);
+    CONN_TestConnector(connector, &timeout, data_file,
+                       fTC_Everything);
+
+    /* Tests for OnTop SOCKET CONNECTOR connector */
+    fprintf(stderr,
+            "Starting the SOCKET CONNECTOR test for \"OnTop\" connectors...\n"
+            "%s:%hu,  timeout = %u.%06u, max # of retry = %u\n",
+            host, port, timeout.sec, timeout.usec, max_try);
+
+    if (SOCK_Create(host, port, &timeout, &sock) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Cannot create socket");
+
+    connector = SOCK_CreateConnectorOnTop(sock, max_try);
     CONN_TestConnector(connector, &timeout, data_file,
                        fTC_Everything);
 
