@@ -249,7 +249,7 @@ string CHTMLPopupMenu::ShowMenu(void) const
         string color_back   = GetMenuAttributeValue(eHTML_PM_bgColor);
         string s = "','"; 
         return "PopUpMenu2_Set(" + m_Name + ",'" + align_h + s + align_v + s + 
-                color_border + s + color_title + s + color_back + "');";
+                color_border + s + color_title + s + color_back + "'); return false;";
         }
     case eKurdinSide:
         return "<script language=\"JavaScript1.2\">\n<!--\n" \
@@ -405,6 +405,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/12/03 12:39:24  ivanov
+ * ShowMenu(): finalize JS code for eKurdin type with "return false;"
+ *
  * Revision 1.21  2003/12/02 14:27:06  ivanov
  * Removed obsolete functions GetCodeBodyTag[Handler|Action]().
  *
