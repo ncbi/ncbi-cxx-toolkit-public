@@ -66,6 +66,10 @@ public:
                                                     const string& annotname,
                                                     const TFlags flags = 0);
 
+    static CRef<CSeq_feat> CreateSeqFeat (const string& feat,
+                                          CSeq_loc& location,
+                                          const TFlags flags = 0);
+
 private:
     // this class uses a singleton internally to manage the specifics
     // of the feature table reader implementation

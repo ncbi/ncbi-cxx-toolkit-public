@@ -168,6 +168,11 @@ public:
                                              const string& annotname,
                                              const CFeature_table_reader::TFlags flags);
 
+    // create single feature from key
+    CRef<CSeq_feat> CreateSeqFeat (const string& feat,
+                                   CSeq_loc& location,
+                                   const CFeature_table_reader::TFlags flags);
+
 private:
     // Prohibit copy constructor and assignment operator
     CFeature_table_reader_imp(const CFeature_table_reader_imp& value);
@@ -1290,10 +1295,10 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSe
 
 
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
-  CNcbiIstream& ifs,
-  const string& seqid,
-  const string& annotname,
-  const CFeature_table_reader::TFlags flags
+    CNcbiIstream& ifs,
+    const string& seqid,
+    const string& annotname,
+    const CFeature_table_reader::TFlags flags
 )
 
 {
@@ -1334,7 +1339,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                 // set offset !!!!!!!!
 
-            } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3, &ispoint, feat, qual, val, offset)) {
+            } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
+                                                &ispoint, feat, qual, val, offset)) {
 
                 // process line in feature table
 
@@ -1472,13 +1478,75 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     return sap;
 }
 
+
+CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
+    const string& feat,
+    CSeq_loc& location,
+    const CFeature_table_reader::TFlags flags
+)
+
+{
+    CRef<CSeq_feat> sfp (new CSeq_feat);
+
+    if (! feat.empty ()) {
+        if (m_FeatKeys.find (feat) != m_FeatKeys.end ()) {
+            CSeqFeatData::ESubtype sbtyp = m_FeatKeys [feat];
+            CSeqFeatData::E_Choice typ = CSeqFeatData::GetTypeFromSubtype (sbtyp);
+            sfp->SetData ().Select (typ);
+            CSeqFeatData& sfdata = sfp->SetData ();
+            sfp->SetLocation (location);
+            if (typ == CSeqFeatData::e_Rna) {
+                CRNA_ref& rrp = sfdata.SetRna ();
+                CRNA_ref::EType rnatyp = CRNA_ref::eType_unknown;
+                switch (sbtyp) {
+                    case CSeqFeatData::eSubtype_preRNA :
+                        rnatyp = CRNA_ref::eType_premsg;
+                        break;
+                    case CSeqFeatData::eSubtype_mRNA :
+                        rnatyp = CRNA_ref::eType_mRNA;
+                        break;
+                    case CSeqFeatData::eSubtype_tRNA :
+                        rnatyp = CRNA_ref::eType_tRNA;
+                        break;
+                    case CSeqFeatData::eSubtype_rRNA :
+                        rnatyp = CRNA_ref::eType_rRNA;
+                        break;
+                    case CSeqFeatData::eSubtype_snRNA :
+                        rnatyp = CRNA_ref::eType_snRNA;
+                        break;
+                    case CSeqFeatData::eSubtype_scRNA :
+                        rnatyp = CRNA_ref::eType_scRNA;
+                        break;
+                    case CSeqFeatData::eSubtype_snoRNA :
+                        rnatyp = CRNA_ref::eType_snoRNA;
+                        break;
+                    case CSeqFeatData::eSubtype_otherRNA :
+                        rnatyp = CRNA_ref::eType_other;
+                        break;
+                    default :
+                        break;
+                }
+                rrp.SetType (rnatyp);
+
+            } else if (typ == CSeqFeatData::e_Imp) {
+                CImp_feat_Base& imp = sfdata.SetImp ();
+                imp.SetKey (feat);
+            }
+            sfp->SetLocation (location);
+        }
+    }
+
+    return sfp;
+}
+
+
 // public access functions
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
-  CNcbiIstream& ifs,
-  const string& seqid,
-  const string& annotname,
-  const TFlags flags
+    CNcbiIstream& ifs,
+    const string& seqid,
+    const string& annotname,
+    const TFlags flags
 )
 
 {
@@ -1510,8 +1578,8 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 }
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
-  CNcbiIstream& ifs,
-  const TFlags flags
+    CNcbiIstream& ifs,
+    const TFlags flags
 )
 
 {
@@ -1539,6 +1607,20 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
     return ReadSequinFeatureTable (ifs, seqid, annotname, flags);
 
+}
+
+CRef<CSeq_feat> CFeature_table_reader::CreateSeqFeat (
+    const string& feat,
+    CSeq_loc& location,
+    const TFlags flags
+)
+
+{
+    // just read features from 5-column table
+
+    CRef<CSeq_feat> sfp = x_GetImplementation ().CreateSeqFeat (feat, location, flags);
+
+    return sfp;
 }
 
 END_objects_SCOPE
