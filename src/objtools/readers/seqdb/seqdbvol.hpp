@@ -333,14 +333,59 @@ public:
     ///   True if a GI was returned.
     bool GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const;
     
+    /// Find OIDs for the specified accession or formatted Seq-id
+    ///
+    /// An attempt will be made to simplify the string by parsing it
+    /// into a list of Seq-ids.  If this works, the best Seq-id (for
+    /// lookup purposes) will be formatted and the resulting string
+    /// will be looked up in the string ISAM file.  The resulting set
+    /// of OIDs will be returned.  If the string is not found, the
+    /// array will be left empty.  Most matches only produce one OID.
+    ///
+    /// @param acc
+    ///   An accession or formatted Seq-id.
+    /// @param oids
+    ///   A set of OIDs found for this sequence.
+    /// @param locked
+    ///   The lock holder object for this thread.
     void AccessionToOids(const string   & acc,
                          vector<Uint4>  & oids,
                          CSeqDBLockHold & locked) const;
     
+    /// Find OIDs for the specified Seq-id
+    ///
+    /// The Seq-id will be formatted and the resulting string will be
+    /// looked up in the string ISAM file.  The resulting set of OIDs
+    /// will be returned.  If the string is not found, the array will
+    /// be left empty.  Most matches only produce one OID.
+    ///
+    /// @param acc
+    ///   An accession or formatted Seq-id.
+    /// @param oids
+    ///   A set of OIDs found for this sequence.
+    /// @param locked
+    ///   The lock holder object for this thread.
     void SeqidToOids(CSeq_id        & seqid,
                      vector<Uint4>  & oids,
                      CSeqDBLockHold & locked) const;
     
+    /// Find the OID at a given index into the database.
+    ///
+    /// This method considers the database as one long array of bases,
+    /// and finds the base at an offset into that array.  The sequence
+    /// nearest that base is determined, and the sequence's OID is
+    /// returned.  The OIDs are assigned to volumes in a different
+    /// order than with the readdb library, which can be an issue when
+    /// splitting the database for load balancing purposes.  When
+    /// computing the OID range, be sure to use GetNumOIDs(), not
+    /// GetNumSeqs().
+    ///
+    /// @param first_seq
+    ///   This OID or later is always returned.
+    /// @param residue
+    ///   The position to find relative to the total length.
+    /// @return
+    ///   The OID of the sequence nearest the specified residue.
     Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
     
 private:

@@ -53,28 +53,57 @@ USING_SCOPE(objects);
 
 class CSeqDBTaxNames {
 public:
+    /// Constructor
     CSeqDBTaxNames()
         : m_TaxId(0)
     {
     }
     
-    Int4   GetTaxId()      { return m_TaxId; }
-    string GetSciName()    { return m_SciName; }
-    string GetCommonName() { return m_CommonName; }
-    string GetBlastName()  { return m_BlastName; }
-    string GetSKing()      { return m_SKing; }
+    /// Get the taxonomic identifier
+    Int4 GetTaxId() { return m_TaxId; }
     
+    /// Get the scientific name (genus and species)
+    string GetSciName() { return m_SciName; }
+    
+    /// Get the common name for this organism
+    string GetCommonName() { return m_CommonName; }
+    
+    /// Get a organism category name used by BLAST for this organism
+    string GetBlastName() { return m_BlastName; }
+    
+    /// Get a single letter string representing the "super kingdom"
+    string GetSKing() { return m_SKing; }
+    
+    
+    /// Set the taxonomic identifier
     void SetTaxId     (Int4 v)   { m_TaxId      = v; }
+    
+    /// Set the scientific name (genus and species)
     void SetSciName   (string v) { m_SciName    = v; }
+    
+    /// Set the common name for this organism
     void SetCommonName(string v) { m_CommonName = v; }
+    
+    /// Set a organism category name used by BLAST for this organism
     void SetBlastName (string v) { m_BlastName  = v; }
+    
+    /// Set a single letter string representing the "super kingdom"
     void SetSKing     (string v) { m_SKing      = v; }
     
 private:
-    Int4   m_TaxId;
+    /// The taxonomic identifier
+    Int4 m_TaxId;
+
+    /// The scientific name (genus and species)
     string m_SciName;
+
+    /// The common name for this organism
     string m_CommonName;
+
+    /// A taxonomic category used by BLAST for this organism
     string m_BlastName;
+
+    /// A string of length one indicating the "super kingdom"
     string m_SKing;
 };
 
@@ -89,30 +118,35 @@ private:
 
 class CSeqDBTaxId {
 public:
-    // This class should not be constructed - it exists only to
-    // describe the memory layout of the data in the database.
-    
+    /// Constructor
+    ///
+    /// This class is a read-only memory overlay and is not expected
+    /// to ever be constructed.
     CSeqDBTaxId()
     {
         _ASSERT(0);
     }
     
-    // Swaps and returns the tax id field.
+    /// Return the taxonomic identifier field (in host order)
     Int4 GetTaxId()
     {
         return SeqDB_GetStdOrd(& m_Taxid);
     }
     
-    // Swaps and returns the offset field.
+    /// Return the offset field (in host order)
     Int4 GetOffset()
     {
         return SeqDB_GetStdOrd(& m_Offset);
     }
     
 private:
+    /// This structure should not be copy constructed
     CSeqDBTaxId(const CSeqDBTaxId &);
     
+    /// The taxonomic identifier
     Uint4 m_Taxid;
+    
+    /// The offset of the start of the taxonomy data.
     Uint4 m_Offset;
 };
 
@@ -122,22 +156,47 @@ private:
 
 class CSeqDBTaxInfo : public CObject {
 public:
+    /// Constructor
     CSeqDBTaxInfo(CSeqDBAtlas & atlas);
     
+    /// Destructor
     virtual ~CSeqDBTaxInfo();
     
+    /// Get the taxonomy names for a given tax id
+    ///
+    /// The tax id is looked up in the taxonomy database and the
+    /// corresponding strings indicating the taxonomy names are
+    /// returned in the provided structure.
+    ///
+    /// @param tax_id
+    ///   The taxonomic identiifer.
+    /// @param tnames
+    ///   A container structure in which to return the names.
+    /// @locked
+    ///   The lock holder object for this thread.
+    /// @return true if the taxonomic id was found
     bool GetTaxNames(Int4             tax_id,
                      CSeqDBTaxNames & tnames,
                      CSeqDBLockHold & locked);
     
 private:
-    CSeqDBAtlas    & m_Atlas;
-    CSeqDBMemLease   m_Lease;
-    string           m_IndexFN;
-    string           m_DataFN;
+    /// The memory management layer
+    CSeqDBAtlas & m_Atlas;
     
-    Int4             m_AllTaxidCount; /* Total number of taxids in the database */
-    CSeqDBTaxId    * m_TaxData;         // Mapped array of TaxId objects.
+    /// A memory lease for the index file
+    CSeqDBMemLease m_Lease;
+    
+    /// The filename of the taxonomic db index file
+    string m_IndexFN;
+    
+    /// The filename of the taxnomoic db data file
+    string m_DataFN;
+    
+    /// Total number of taxids in the database
+    Int4 m_AllTaxidCount;
+    
+    /// Memory map of the index file
+    CSeqDBTaxId * m_TaxData;
 };
 
 END_NCBI_SCOPE
