@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2001/11/02 20:54:51  ucko
+* Make gbqual.hpp private; clean up cruft from genbank.hpp.
+*
+*
+* ---------------------------------------------------------------------------
+* Old log (before move):
+*
 * Revision 1.1  2001/11/01 16:32:23  ucko
 * Rework qualifier handling to support appropriate reordering
 *

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/11/02 20:54:50  ucko
+* Make gbqual.hpp private; clean up cruft from genbank.hpp.
+*
 * Revision 1.4  2001/11/01 16:32:23  ucko
 * Rework qualifier handling to support appropriate reordering
 *
@@ -55,9 +58,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <serial/serialbase.hpp>
 #include <objects/objmgr/objmgr.hpp>
-#include <objects/util/gbqual.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -68,7 +69,6 @@ BEGIN_SCOPE(objects)
 class CBioSource;
 class CFeat_id;
 class COrg_ref;
-class CSeq_descr;
 class CSeq_entry;
 class CSeq_feat;
 class CSeq_loc;

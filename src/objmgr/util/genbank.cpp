@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/11/02 20:54:51  ucko
+* Make gbqual.hpp private; clean up cruft from genbank.hpp.
+*
 * Revision 1.12  2001/11/02 20:32:28  ucko
 * Cope better with references to unavailable sequences.
 *
@@ -169,6 +172,8 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+
+#include "gbqual.hpp"
 
 
 BEGIN_NCBI_SCOPE

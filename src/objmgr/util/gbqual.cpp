@@ -30,13 +30,16 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/11/02 20:54:51  ucko
+* Make gbqual.hpp private; clean up cruft from genbank.hpp.
+*
 * Revision 1.1  2001/11/01 16:32:24  ucko
 * Rework qualifier handling to support appropriate reordering
 *
 * ===========================================================================
 */
 
-#include <objects/util/gbqual.hpp>
+#include "gbqual.hpp"
 
 #include <serial/serialimpl.hpp>
 
