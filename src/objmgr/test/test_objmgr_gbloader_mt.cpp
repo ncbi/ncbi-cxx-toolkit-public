@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/07/23 15:32:49  kimelman
+* tuning test
+*
 * Revision 1.17  2002/07/22 22:49:05  kimelman
 * test fixes for confidential data retrieval
 *
@@ -197,7 +200,7 @@ void* CTestThread::Main(void)
     x.SetGi(gi);
     CBioseq_Handle h = s->GetBioseqHandle(x);
     if ( !h ) {
-      LOG_POST(CThread::GetSelf() << ":: gi=" << gi << " :: not found in ID");
+      LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " :: not found in ID");
     } else {
       //CObjectOStreamAsn oos(NcbiCout);
       iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
@@ -205,7 +208,7 @@ void* CTestThread::Main(void)
         //NcbiCout << NcbiEndl;
                ;
       }
-      LOG_POST(CThread::GetSelf() << ":: gi=" << gi << " OK");
+      LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " OK");
     }
     s->ResetHistory();
   }
@@ -309,12 +312,11 @@ int CTestApplication::Run()
     for(unsigned global_scope=0;global_scope<=2; ++global_scope)
       for(unsigned thr=0; thr < tc ; ++thr)
         {
+          if(timing[thr][global_om][global_scope]==0) continue;
           if(timing[thr][global_om][global_scope]>0)
-            {
-              LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local ") <<
-                       ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")) <<
-                       " ==>> " << timing[thr][global_om][global_scope] << " sec");
-            }
+          LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local ") <<
+                   ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")) <<
+                   " ==>> " << timing[thr][global_om][global_scope] << " sec");
         }
   
   LOG_POST("Tests completed");
