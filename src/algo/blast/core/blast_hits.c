@@ -47,7 +47,6 @@ static char const rcsid[] = "$Id$";
 #include <blast_hits.h>
 #include <blast_util.h>
 
-extern Int4 BinarySearchInt4 (Int4 n, Int4Ptr A, Int4 size);
 extern Int4 
 HspArrayPurge (BlastHSPPtr PNTR hsp_array, Int4 hspcnt, 
                      Boolean clear_num);
