@@ -1,10 +1,10 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
 <head>
-<title>Connection library</title>
+<title>Connection Library</title>
 </head>
 <body bgcolor="white" link="blue" vlink="blue">
-<center><h1>Connection library</h1></center>
+<center><h1>Connection Library (<tt>connect</tt>)</h1></center>
 
 <font size=1><u><b>Note</b></u>: Due to security issues, not all links in the public version
 of this file could be accessible by outside NCBI users. Unrestricted version of this document is available to
@@ -17,7 +17,7 @@ inside NCBI users at:
 <ol>
 <ul>
     <li> <a href="#ref_Overview">Overview</a>
-    <li> <a href="#ref_Connections">Connections</a>: notion of connection; different types of connections, which library provides;
+    <li> <a href="#ref_Connections">Connections</a>: notion of connection; different types of connections that library provides;
 	programming API.
     <ul> 
 	<li> <a href="#ref_SocketConnector">Socket Connector</a>
@@ -87,15 +87,13 @@ returning the connector's handle. Connectors' constructors are defined in indivi
 header files, like <a href="../lxr/source/include/connect/ncbi_socket_connector.h"><i><b>connect/ncbi_socket_connector.h</b></i></a>,
 <a href="../lxr/source/include/connect/ncbi_http_connector.h"><i><b>connect/ncbi_http_connector.h</b></i></a>,
 <a href="../lxr/source/include/connect/ncbi_service_connector.h"><i><b>connect/ncbi_service_connector.h</b></i></a> etc.
-<b><i>CONN_Create</i></b> resets all timeouts (<a href="#CONN_SetTimeout">see
-below</a>) to the default value <tt>CONN_DEFAULT_TIMEOUT</tt>.
+<b><i>CONN_Create()</i></b> <a href="#CONN_SetTimeout">resets</a> all timeouts to the default value <tt>CONN_DEFAULT_TIMEOUT</tt>.
 
 <p>
 After successful creation with <i><b>CONN_Create()</b></i>, the following
-calls from <tt>CONN</tt> API become available (all declared and documented in
-<a
-href="../lxr/source/include/connect/ncbi_connection.h"><i><b>connect/ncbi_connection.h</b></i></a>). All calls (except
-<a href="#CONN_GetTimeout"><i><b>CONN_GetTimeout()</b></i></a> and <a href="#CONN_GetType"><i><b>CONN_GetType()</b></i></a>)
+calls from <tt>CONN</tt> API
+<a href="../lxr/source/include/connect/ncbi_connection.h"><i><b>connect/ncbi_connection.h</b></i></a>become available.
+All calls (except <a href="#CONN_GetTimeout"><i><b>CONN_GetTimeout()</b></i></a> and <a href="#CONN_GetType"><i><b>CONN_GetType()</b></i></a>)
 return I/O completion status of type <a href="../lxr/ident?i=EIO_Status"><i><b>EIO_Status</b></i></a>.
 Normal completion has code <i><b>eIO_Success</b></i>.
 <ul>
@@ -130,7 +128,7 @@ cannot be established (closed) within the specified period, <i><b>eIO_Timeout</b
 be completed within specified time range, correspondingly. A timeout can be passed as
 the <tt>NULL</tt>-pointer. This special case denotes an infinite value for that timeout.
 Also, a special value <tt>CONN_DEFAULT_TIMEOUT</tt> may be used for any timeout.
-This value specifies the timeout set by default for current connection type.
+This value specifies the timeout set by default for the current connection type.
 
 <li> <a name="CONN_GetTimeout"><a href="../lxr/ident?i=CONN_GetTimeout"><i><b>CONN_GetTimeout</b></i></a>&nbsp;<tt>(CONN conn, EIO_Event action);</tt></a><br>
 Obtain (via return value of type <b><i>const <a href="../lxr/ident?i=STimeout">STimeout</a>*</i></b>)
@@ -147,8 +145,9 @@ Previous connector (if any) is closed first (if open),
 then gets destroyed, and thus must not be referenced again in the program.
 As a special case, new connector can be
 the same connector, which is currently active within the connection. It this case, the connector is not destroyed,
-instead it will be effectively re-opened. If connector passed as <tt>NULL</tt>, then the <tt>conn</tt> handle is kept existing but
-unusable (can be <i><b>CONN_ReInit()</b></i>ed later). None of the timeouts are touched by this call.
+instead it will be effectively re-opened. If connector passed as <tt>NULL</tt>, then the <tt>conn</tt> handle is kept
+existing but unusable (the old connector closed and destroyed), and can be <i><b>CONN_ReInit()</b></i>ed later.
+None of the timeouts are touched by this call.
 
 <li> <a href="../lxr/ident?i=CONN_Wait"><i><b>CONN_Wait</b></i></a>&nbsp;<tt>(CONN conn, EIO_Event event, const STimeout* timeout);</tt><br>
 Suspend the program until connection is ready to perform reading (<tt>event</tt> = <i><b>eIO_Read</b></i>) or writing
@@ -160,13 +159,13 @@ Provide the information about recent low-level data exchange in the link.
 Operation direction has to be specified as either <i><b>eIO_Read</b></i> or <i><b>eIO_Write</b></i>.
 The necessity of this call arises from the fact that
 sometimes return value of a <tt>CONN</tt> API function does not really tell that the
-problem has been detected: suppose, a user peeks data, and gets 10 bytes.
+problem has been detected: suppose, the user peeks data in a 100-byte buffer and gets 10 bytes.
 Return status <i><b>eIO_Success</b></i> signals that those 10 bytes were found
-in the connection okay. But how to know whether the end of file condition
-occurred during this operation? It is where <i><b>CONN_Status()</b></i> comes
-handy. When inquired about read operation, return value <i><b>eIO_Closed</b></i> denotes that the
-<tt>EOF</tt> was actually hit while making the peek, and those 10 bytes are actually the only data left untaken, no more are
-expected to come.
+in the connection okay. But how to know whether the end-of-file condition
+occurred during last operation? It is where <i><b>CONN_Status()</b></i> comes
+handy. When inquired about read operation, return value <i><b>eIO_Closed</b></i> denotes that
+<tt>EOF</tt> was actually hit while making the peek, and those 10 bytes are in fact the only data
+left untaken, no more are expected to come.
 
 <li> <a name="CONN_Close"><a href="../lxr/ident?i=CONN_Close"><i><b>CONN_Close</b></i></a>&nbsp;<tt>(CONN conn);</tt></a><br>
 Close the connection by closing the link (if open), deleting underlying
@@ -190,7 +189,7 @@ following prototype:
 <ul><tt>
   typedef void (*FConnCallback)(CONN conn, ECONN_Callback type, void* data);
 </tt></ul>
-When called, <tt>type</tt> of callback and <tt>data</tt> pointer
+When called, both <tt>type</tt> of callback and <tt>data</tt> pointer
 are supplied. The only callback type defined as of writing of
 this note is <a href="../lxr/ident?i=ECONN_Callback"><b><i>eCONN_OnClose</i></b></a>.
 Callback function is always called prior to the event to happed, e.g. close callback is
@@ -203,7 +202,7 @@ the first I/O operation.
 But forming of actual link between source and destination
 can be postponed even longer. These details are hidden and made transparent to
 the connection's user. The connection is seen as a two-way communication channel,
-which is clear to use right away after call to <i><b>CONN_Create()</b></i>.
+which is clear to use right away after a call to <i><b>CONN_Create()</b></i>.
 <p>
 <u>Note</u>: If for some reason <i><b>CONN_Create()</b></i> failed to create
 a connection (return code differs from <i><b>eIO_Success</b></i>), then the
@@ -211,15 +210,13 @@ connector, which was passed to this function, is left intact; that is, its
 handle can be used again.
 Otherwise, if connection is created successfully, the passed
 connector handle becomes invalid, and cannot be used anywhere else throughout
-the program (with one, however, exception: it may be used as a replacing connector in a call to <i><b>CONN_ReInit()</b></i> for the same connection;
-<a href="#CONN_ReInit">see above</a>).
-Such connector will be deleted automatically along with the connection
-it is placed in, or explicitly with a call to <i><b>CONN_ReInit()</b></i>
-provided that replacing connector is <tt>NULL</tt> or different from the original.
+the program (with one, however, exception: it may be used as a replacing connector in a call to
+<a href="#CONN_ReInit"><i><b>CONN_ReInit()</b></i></a> for the same connection).
 <p>
-<u>Note</u>: There are no public connectors' "destructors". The only way to
-delete a connector is to create a connection and then to call either <i><b>CONN_Close()</b></i> or <i><b>CONN_ReInit()</b></i> (as described in
-the preceding note).
+<u>Note</u>: There are no public connectors' "destructors". Connector successfully put into connection
+is deleted automatically along with that connection by <i><b>CONN_Close()</b></i>,
+or explicitly with a call to <i><b>CONN_ReInit()</b></i> provided that replacing connector is
+<tt>NULL</tt> or different from the original.
 
 <p>
 <hr>
@@ -372,7 +369,7 @@ defined in <a href="../lxr/source/include/connect/ncbi_connutil.h"><i><b>connect
 to deal with this structure:
 
 <ul>
-<li> <a href="../lxr/ident?i=ConnNetInfo_Create"><i><b>ConnNetInfo_Create</b></i></a>&nbsp;<tt>(const char* service)</tt><br>
+<li> <a name="ref_ConnNetInfo_Create"><a href="../lxr/ident?i=ConnNetInfo_Create"><i><b>ConnNetInfo_Create</b></i></a></a>&nbsp;<tt>(const char* service)</tt><br>
   Create and return a pointer to new <tt>SConnNetInfo</tt> structure, filled with
   parameters specific either for a named <tt>service</tt> or by default if <tt>service</tt> specified as <tt>NULL</tt> (most likely
   the case for ordinary HTTP connections). Parameters for the structure are taken from (in order of precedence):<ul>
@@ -402,9 +399,9 @@ to deal with this structure:
   Set the new HTTP user header (freeing the previous one if any) by cloning the passed string argument and storing it in
   <tt>http_user_header</tt> field. <tt>New_user_header</tt> passed as <tt>NULL</tt> resets the field.
 <li> <a href="../lxr/ident?i=ConnNetInfo_Clone"><i><b>ConnNetInfo_Clone</b></i></a>&nbsp;<tt>(SConnNetInfo* info)</tt><br>
- Create and return pointer to a new <tt>SConnNetInfo</tt> structure, which is an exact
- copy of the passed structure. This function is aware of dynamic nature of the HTTP user header field noted
- <a href="#ref_HttpUserHeader">above</a>.
+  Create and return pointer to a new <tt>SConnNetInfo</tt> structure, which is an exact
+  copy of the passed structure. This function is aware of dynamic nature of the HTTP
+  <a href="#ref_HttpUserHeader">user header field</a>.
 </ul>
 
 <ol>
@@ -434,7 +431,7 @@ includes the following C++ functions:
 </ul>
 Returned <b><i>REG</i></b> and <b><i>LOG</i></b> are created on top of the corresponding C++ objects,
 and then both C and C++ objects could be manipulated interchangeably, causing exactly the same effect on the underlying
-registry or logger. An example could be seen in the following test program:
+registry or logger. An example could be seen in the test program
 <a href="../lxr/source/src/connect/test/test_ncbi_conn_stream.cpp"><tt>test_ncbi_conn_stream.cpp</tt></a>.
 Also, returned C handles <b><i>REG</i></b> and <b><i>LOG</i></b>
 can be set as <i>CORE</i> registry and logger using <b><i>CORE_SetREG()</i></b> and <b><i>CORE_SetLOG()</i></b>,
@@ -445,8 +442,8 @@ respectively.
 The following fields of <b><i>SConnNetInfo</i></b> pertain to the HTTP connector:
 <tt>client_host</tt>, <tt>host</tt>, <tt>port</tt>, <tt>path</tt>, <tt>args</tt>, <tt>req_method</tt> (can be one of
 <tt>"GET"</tt>, <tt>"POST"</tt>, and <tt>"ANY"</tt>),
-<tt>timeout</tt>, <tt>max_try</tt> (see maximal try parameter for the <a href="#ref_SocketConnector">socket
-connector</a> above), <tt>http_proxy_host</tt>, <tt>http_proxy_port</tt>,
+<tt>timeout</tt>, <tt>max_try</tt> (analog of maximal try parameter for the
+<a href="#ref_SocketConnector">socket connector</a>), <tt>http_proxy_host</tt>, <tt>http_proxy_port</tt>,
 <tt>debug_printout</tt> (values are <tt>"NONE"</tt> to disable any trace printout
 of the connection data, <tt>"SOME"</tt> to enable printing of <tt>SConnNetInfo</tt>
 structure before each connection attempt, and <tt>"DATA"</tt> to print both
@@ -494,7 +491,7 @@ Argument <tt>flags</tt> in the HTTP connector's constructor is a bitwise <tt>OR<
 
 The HTTP connection will be established using the following URL:
 <pre>
-<font color="green">http://host:port/path?args</font>
+<font color="#009900">http://host:port/path?args</font>
 </pre>
 <u>Note</u> that <tt>path</tt> has to have a leading slash "/" as the very first character, that is, only "http://" and "?" are added by the connector,
 all other characters appear exactly as specified (but maybe encoded with <i><b>fHCC_UrlEncodeArgs</b></i>).
@@ -612,7 +609,7 @@ error replies are actually sent from different hosts, so is the successful proce
 first link done by one of several hosts running the bouncing service).
 
 <p>
-<a name="ref_dispd_cgi"><a href="../tools/dispatcher/DISPD.html">Dispatching exchange protocol</a></a>&nbsp;<i>per se</i> is implemented on top of the HTTP protocol, and is parsed by a
+<a name="ref_dispd_cgi"><a href="../tools/dispatcher/DISPD.html">Dispatching protocol</a></a>&nbsp;<i>per se</i> is implemented on top of the HTTP protocol, and is parsed by a
 CGI program <a href="../lxr/source/src/connect/daemons/dispd_cgi.c"><tt>dispd.cgi</tt></a> (or another dispatching CGI), which is
 available on the NCBI Web. On every server running the named services, another program, called
 <a href="../tools/dispatcher/LBSMD.html">load-balancing daemon</a>&nbsp; (<a href="../lxr/source/src/connect/daemons/lbsmd.c"><tt>lbsmd</tt></a>),
@@ -623,26 +620,25 @@ the client request can be passed, or a dedicated connection to the server can be
 can be also used directly from the Internet browsers.
 
 <p>
-The named service facility uses the following distinction of server types:
+The named service facility uses the following distinction of <a name="ref_ServerTypes">server types</a>:
 <ul>
 <li>HTTP servers, which are usually CGI programs:
   <ul>
-  <li><font color="magenta"><tt>HTTP_GET</tt></font> servers are those accepting requests only using HTTP <tt>GET</tt>
+  <li><font color="#CC33CC"><tt>HTTP_GET</tt></font> servers are those accepting requests only using HTTP <tt>GET</tt>
       method.
-  <li><font color="magenta"><tt>HTTP_POST</tt></font> servers are those accepting requests only using HTTP
+  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> servers are those accepting requests only using HTTP
       <tt>POST</tt> method.
-  <li><font color="magenta"><tt>HTTP</tt></font> servers are those accepting both of either <tt>GET</tt> or <tt>POST</tt> methods.
+  <li><font color="#CC33CC"><tt>HTTP</tt></font> servers are those accepting both of either <tt>GET</tt> or <tt>POST</tt> methods.
   </ul>
-  <li><font color="magenta"><tt>NCBID</tt></font> servers are those run by a special CGI engine, called
+  <li><font color="#CC33CC"><tt>NCBID</tt></font> servers are those run by a special
+      <a href="../tools/dispatcher/DISPD.html#ref_NCBID">CGI engine</a>, called
       <a href="../lxr/source/src/connect/daemons/dispd_cgi.c"><tt>ncbid.cgi</tt></a>, a configurable program
       (now integrated within <a href="#ref_dispd_cgi"><tt>dispd.cgi</tt></a> itself), which can convert byte-stream
-      output from another program (server) started by the request
-      from dispatcher to an HTTP-compliant reply (that is a packet
-      having both HTTP header and body, and suitable e.g. for the Internet
-      browsers).
-  <li><font color="magenta"><tt>STANDALONE</tt></font> servers, like mailing daemons, are those listening on their own
+      output from another program (server) started by the request from dispatcher to an HTTP-compliant reply
+      (that is a packet having both HTTP header and body, and suitable e.g. for Web-browsers).
+  <li><font color="#CC33CC"><tt>STANDALONE</tt></font> servers, like mailing daemons, are those listening on their own
       onto the network for incoming connections.
-  <li><font color="magenta"><tt>FIREWALL</tt></font> servers are the special pseudo-servers, not existing in reality, but are created
+  <li><font color="#CC33CC"><tt>FIREWALL</tt></font> servers are the special pseudo-servers, not existing in reality, but are created
       and used internally by the dispatcher software to indicate that only a firewall connection mode can
       be used to access the requested service.
 </ul>
@@ -708,7 +704,7 @@ such wrapping would have been made by the dispatching facility as well.
 
 <p>
 The last parameter of the extended constructor is the network info,
-described in the <a href="#ref_HTTPConnector">previous section</a> devoted to HTTP connector.
+described in section devoted to <a href="#ref_HTTPConnector">HTTP connector</a>.
 Service connector uses all fields of this structure, except for
 <a href="#ref_HttpUserHeader"><tt>http_user_header</tt></a>,
 and the following assumptions apply:
@@ -735,12 +731,11 @@ via dispatcher if stateless server is used;
 <p>
 As with HTTP connector, if network information structure is specified as
 <tt>NULL</tt>, default values are obtained as described above, as with the call to
-<i><b>ConnNetInfo_Create(</b></i><tt>service_name</tt><i><b>)</b></i>.
+<a href="#ref_ConnNetInfo_Create"><i><b>ConnNetInfo_Create(</b></i><tt>service_name</tt><i><b>)</b></i></a>.
 
 <p>
-Library provides additional interface to named service mapper, which
-can be found in <a href="../lxr/source/include/connect/ncbi_service.h"><i><b>connect/ncbi_service.h</b></i></a>
-and described <a href="#ref_ServiceAPI">below</a>.
+Library provides additional <a href="#ref_ServiceAPI">interface to named service mapper</a>, which
+can be found in <a href="../lxr/source/include/connect/ncbi_service.h"><i><b>connect/ncbi_service.h</b></i></a>.
 
 <p>
 <u>Note</u>: Requesting&nbsp; <b><i>fSERV_Firewall</i></b> in the <tt>types</tt> parameter effectively selects
@@ -794,7 +789,8 @@ maps required sevice name into server address. Internally, the mapping is done <
 <a href="../tools/dispatcher/LBSMD.html">load-balancing daemon</a>, running at NCBI site.
 For the client, the mapping is seen as a reading from an iterator created by a call to
 <b><i>SERV_Open()</i></b> like in the following
-fragment (for more examples please see test program <a href="../lxr/source/src/connect/test/test_ncbi_disp.c"><tt>test_ncbi_disp.c</tt></a>):
+fragment (for more examples please refer to the test program
+<a href="../lxr/source/src/connect/test/test_ncbi_disp.c"><tt>test_ncbi_disp.c</tt></a>):
 <pre>
 #include &lt;connect/ncbi_service.h&gt;
 
@@ -858,8 +854,8 @@ handling, if the server is to be selected and used on this host. For the time of
 getting the host environment is only implemented if the service was obtained via <a href="#ref_DirectIndirect">direct access</a> to
 the load-balancing daemon. Unlike returned server descriptors, the returned host environment is not a constant object i.e. it
 could be modified, and it must be explicitly freed by the application when no longer needed.
-If the server descriptor was obtained using dispatching CGI (<a href="#ref_DirectIndirect">see below</a>), then the
-host enrivonment is always returned as <tt>NULL</tt> (no host environment available).
+If the server descriptor was obtained using dispatching CGI (<a href="#ref_DirectIndirect">indirect dispatching</a>),
+then the host enrivonment is always returned as <tt>NULL</tt> (no host environment available).
 
 <p>
 <a name="ref_DirectIndirect">The</a> back end of the service API is split into 2 independent parts: <i><u>direct</u></i> access to

@@ -28,9 +28,9 @@ inside NCBI users at:
 
 <h2><a name="ref_Overview">Overview</a></h2>
 
-In general, <tt>LBSMD</tt> should be run at NCBI site on every host, which carries either public
-or private servers implementing NCBI service(s) (see however discussion about <i>static</i> servers
-<a href="#ref_Static">below</a>). The services include CGI programs or standalone servers
+In general, <tt>LBSMD</tt> should be run at NCBI site on every host that carries either public
+or private servers implementing NCBI service(s) (see however discussion about
+<a href="#ref_Static"><i>static</i></a> servers). The services include CGI programs or standalone servers
 to access NCBI data. Each service has a name assigned to it, <tt>TaxServer</tt>
 for instance. The name uniquely identifies the service, and - <u>most importantly</u> -
 the protocol used for data exchange, i.e. any client connecting to service <tt>TaxServer</tt>
@@ -63,7 +63,7 @@ The principle of load-balancing is simple: each server, implementing
 the required service, is assigned a (calculated) rate. The higher the rate
 the better the chance for that the server to be chosen. Note that load-balancing
 is thus almost never deterministic (see however, discussion of negative
-<a href="#ref_Bonus">local bonus coefficient</a> below).
+<a href="#ref_Bonus">local bonus coefficient</a>).
 
 <p>
 It is not obviously enough that the load-balancing daemon does not calculate the rates of servers.
@@ -79,8 +79,8 @@ which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a>
 
 <h2><a name="ref_Details"><tt>LBSMD</tt> in Details</a></h2>
 
-<tt>LBSMD</tt> is configured by means of a configuration file, which is also
-shared with <a href="DISPD.html">NCBI dispatching CGI</a>.
+<tt>LBSMD</tt> is configured by means of a configuration file (default name <tt>servrc.cfg</tt>),
+which is also shared with <a href="DISPD.html#ref_NCBID">NCBI CGI engine</a>, <tt>NCBID.CGI</tt>.
 Each line in the file either defines a service,
 or is a part of the host environment (including address substitutions),
 or is en empty line (the one entirely blank or containing a
@@ -123,7 +123,7 @@ host address and port number are legal. Then the right hand-side is checked, and
 the entire text is placed in the host environment, with exception that left-hand side is
 always in the form IP:host (i.e. name converted to dotted IP notation), while the right-hand
 side is completely preserved. IP address substitutions are used by dispatcher, when non-local
-client tries to access internal NCBI service. The substitution is seen as a part of host
+client tries to access a service, located at NCBI site. The substitution is seen as a part of host
 environment obtained from the service iterator via call to
 <a href="../../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx</i></b></a>,
 which is documented in <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a>.
@@ -132,7 +132,7 @@ IP substitution like <tt>@host:port=host:port</tt> matches the host and port of
 the server, just by preserving the port number, and substituting the host only.
 
 <p>
-A <i>service</i> is defined by a line of the form
+A <a name="ref_Service"><i>service</i></a> is defined by a line of the form
 <pre>
 <font color="#009900">service_name [check_time] server_descriptor [| launcher_info ]</font>
 </pre>
@@ -148,7 +148,7 @@ every 2 minutes. Note the square brackets - they are required.
 supplies additional information, which is described in details later in this document.
 An example of the <tt>server_descriptor</tt>:
 <pre>
-<font color="navy">STANDALONE somehost:1234 R=3000 L=yes S=yes B=-200</font>
+<font color="navy">STANDALONE somehost:1234 R=3000 L=yes S=yes B=-20</font>
 </pre>
 <li><font color="#CC33CC"><tt>launcher_info</tt></font> is basically a command line,
 preceded by a pipe symbol (|), delimiting from <tt>server_descriptor</tt>.
@@ -163,7 +163,8 @@ consists of the following fields
 <font color="#009900"><tt>server_type [host][:port] [arguments] [flags]</tt><br></font>
 where:
 <ul type=square>
-<li><a name="ref_ServerType"><tt>server_type</tt></a> is one of the following keywords:<br>
+<li><a name="ref_ServerType"><font color="#009900"><tt>server_type</tt></font></a> is one of the following keywords (see also
+  <a href="../../libs/conn.html#ref_ServerTypes">here</a>):<br>
   <ul compact type=bullet>
   <li><font color="#CC33CC"><tt>NCBID</tt></font> for servers launched by <a href="DISPD.html#ref_NCBID"><tt>ncbid.cgi</tt></a>;
   <li><font color="#CC33CC"><tt>STANDALONE</tt></font> for standalone servers listening on dedicated ports;
@@ -172,12 +173,12 @@ where:
   <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs, accepting both of either <i>GET</i> or <i>POST</i> request methods.<br>
   <u>Note</u>: Despite valid <tt>FIREWALL</tt> server specification may not be used in configuration file.
   </ul>
-<li>Both <font color="#CC33CC"><tt>host</tt></font> and <font color="#CC33CC"><tt>port</tt></font> parameters are optional. Defaults are local host, and
+<li>Both <font color="#009900"><tt>host</tt></font> and <font color="#009900"><tt>port</tt></font> parameters are optional. Defaults are local host, and
 port 80 except for <tt>STANDALONE</tt> servers, which do <i>not</i> have a default port value.</br>
 <a name="ref_Static">If <tt>host</tt> <b><u>is specified</u></b></a> (either <tt>localhost</tt> or local host name/IP)
 then the described server is not a subject for variable load-balancing, but is a so-called <i>static</i>
 server. Such a server always has a constant rate, independent on the host load.
-<li><font color="#CC33CC"><tt>arguments</tt></font> are required for <tt>HTTP*</tt> servers, and must specify
+<li><font color="#009900"><tt>arguments</tt></font> are required for <tt>HTTP*</tt> servers, and must specify
 local part of URL of the CGI program, and optionally parameters, like:
 <ol>
 <font color="navy"><tt>/somepath/somecgi.cgi?param1&amp;param2=value2&amp;param3=value3</tt></font>
@@ -190,7 +191,7 @@ pass to the server, and are formed as arguments for CGI programs, i.e.
 </ol>
 As a special rule, <font color="navy"><tt>''</tt></font> (two single quotes) may be used to denote an empty argument for <tt>NCBID</tt> server.<br>
 <tt>STANDALONE</tt> servers do <i>not</i> take any <tt>arguments</tt>.
-<li><font color="#CC33CC"><tt>flags</tt></font> can come in no specific order (but no more than one instance of a flag is allowed),
+<li><font color="#009900"><tt>flags</tt></font> can come in no specific order (but no more than one instance of a flag is allowed),
 and essentially are the optional modifiers of values used by default. The following flags are
 recognized:
 <ul type=circle>
@@ -208,16 +209,17 @@ recognized:
   default is 1000. Any negative value makes the server unreachable, and a value of 0
   uses the default. The maximal base rate is 100000.
   </ul>
-  <li>locality marker:
+  <li><a name="ref_Local">locality marker</a>:
   <ul type=bullet>
-     <li><font color="#CC33CC"><tt>L={yes|no}</tt></font> sets (if <tt>yes</tt>) the server to be <i>local only</i>. Default is <tt>no</tt>.
+     <li><font color="#CC33CC"><tt>L={yes|no}</tt></font> sets (if <tt>yes</tt>) the server to be <i>local only</i>.
+     Default is <tt>no</tt>.
      <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a> returns <i>local only</i> servers
-     in the case of mapping with the use of <tt>LBSMD</tt> running on the same (local) host,
-     or if the dispatching occurs within the NCBI Intranet. Otherwise, if service mapping
-     occurs using non-local network (via exchange with <a href="DISPD.html"><tt>dispd.cgi</tt></a>), then
-     <i>local only</i> servers are not seen.
+     in the case of mapping with the use of <tt>LBSMD</tt> running on the same - local - host (direct mapping),
+     or if the dispatching (indirect mapping) occurs within the NCBI Intranet. Otherwise, if service mapping
+     occurs using non-local network (certainly indirectly, via exchange with <a href="DISPD.html"><tt>dispd.cgi</tt></a>)
+     then <i>local only</i> servers are not seen.
   </ul>
-  <li>stateful server:
+  <li><a name="ref_Stateful">stateful server</a>:
   <ul type=bullet>
      <li><font color="#CC33CC"><tt>S={yes|no}</tt></font> sets (if <tt>yes</tt>) that the server can only accept dedicated connections,
      and is not capable of doing <i>stateless</i> (HTTP-like) data exchange. Such a server can only be
@@ -299,8 +301,10 @@ advertizes one standalone stateful server, and one <tt>NCBID</tt> service, both 
 service, and one HTTP service, which is a local service only.
 
 <pre>
+#         This is a configuration file of new NCBI service dispatcher
 #
-# This is a configuraiton file of LBSMD and DISPD
+# Documentation:
+# <a href="LBSMD.html">http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/tools/dispatcher/LBSMD.html</a>
 #
 
 # This goes to host environment (rather practical)
