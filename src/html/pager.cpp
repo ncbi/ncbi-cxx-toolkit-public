@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/06/04 16:35:29  golikov
+* Fix
+*
 * Revision 1.13  1999/06/04 13:38:46  golikov
 * Items counter shown always
 *
@@ -261,6 +264,8 @@ CNCBINode* CPager::GetPageInfo(void) const
 
 CNCBINode* CPager::GetItemInfo(void) const
 {
+    if( m_ItemCount == 0 )
+        return new CHTMLText("0 items found");
     int firstItem = m_DisplayPage * m_PageSize + 1;
     int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
     return new CHTMLText(
