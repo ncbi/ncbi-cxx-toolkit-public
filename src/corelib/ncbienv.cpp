@@ -96,6 +96,30 @@ const string& CNcbiEnvironment::Get(const string& name) const
 }
 
 
+void CNcbiEnvironment::Set(const string& name, const string& value)
+{
+#ifdef NCBI_OS_MSWIN
+#define putenv _putenv
+#endif
+
+    char* str = strdup((name + "=" + value).c_str());
+    if ( !str ) {
+        throw bad_alloc();
+    }
+
+    if (putenv(str) != 0) {
+        NCBI_THROW(CException, eUnknown,
+                   "failed to set environment variable " + name);
+    }
+
+    m_Cache[name] = value;
+
+#ifdef NCBI_OS_MSWIN
+#undef putenv
+#endif
+}
+
+
 string CNcbiEnvironment::Load(const string& name) const
 {
     const char* s = getenv(name.c_str());
@@ -244,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/01/06 18:17:49  dicuccio
+ * Added APIs for setting environment variables
+ *
  * Revision 1.8  2003/10/01 14:32:09  ucko
  * +EFollowLinks
  *

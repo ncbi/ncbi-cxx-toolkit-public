@@ -228,6 +228,12 @@ public:
     /// Get the application's cached environment.
     const CNcbiEnvironment& GetEnvironment(void) const;
 
+    /// Get a non-const copy of the application's cached environment.
+    CNcbiEnvironment& SetEnvironment(void);
+
+    /// Set a specified environment variable by name
+    void SetEnvironment(const string& name, const string& value);
+
     /// Get the application's cached configuration parameters.
     const CNcbiRegistry& GetConfig(void) const;
     CNcbiRegistry& GetConfig(void);
@@ -463,6 +469,10 @@ inline const CNcbiEnvironment& CNcbiApplication::GetEnvironment(void) const {
     return *m_Environ;
 }
 
+inline CNcbiEnvironment& CNcbiApplication::SetEnvironment(void) {
+    return *m_Environ;
+}
+
 inline const CNcbiRegistry& CNcbiApplication::GetConfig(void) const {
     return *m_Config;
 }
@@ -483,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/01/06 18:17:21  dicuccio
+ * Added APIs for setting environment variables
+ *
  * Revision 1.39  2003/09/29 20:27:59  vakatov
  * + LoadConfig(...., reg_flags)
  *

@@ -132,6 +132,11 @@ public:
     /// cached, too, after the call to "Get()".
     const string& Get(const string& name) const;
 
+    /// Set an environment variable by name
+    ///
+    /// This will throw an exception if setting the variable fails
+    void Set(const string& name, const string& value);
+
 protected:
     /// Load value of specified environment variable.
     virtual string Load(const string& name) const;
@@ -224,6 +229,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/01/06 18:17:21  dicuccio
+ * Added APIs for setting environment variables
+ *
  * Revision 1.13  2003/10/01 14:32:09  ucko
  * +EFollowLinks
  *

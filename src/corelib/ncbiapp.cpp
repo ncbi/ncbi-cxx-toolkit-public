@@ -524,6 +524,12 @@ int CNcbiApplication::AppMain
 }
 
 
+void CNcbiApplication::SetEnvironment(const string& name, const string& value)
+{
+    SetEnvironment().Set(name, value);
+}
+
+
 void CNcbiApplication::SetVersion(const CVersionInfo& version)
 {
     m_Version.reset(new CVersionInfo(version));
@@ -907,6 +913,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2004/01/06 18:17:49  dicuccio
+ * Added APIs for setting environment variables
+ *
  * Revision 1.81  2003/12/17 20:25:46  ucko
  * x_SetupStdio: for the sake of interactive applications, don't buffer
  * cin if it's a terminal.
