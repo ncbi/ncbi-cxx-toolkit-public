@@ -295,10 +295,26 @@ const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
 
         GetMappedLocation();
 
-        dst.SetLocation(IsMappedLocation(0)? *m_MappedSeq_loc: src.SetLocation());
+        {
+            CSeq_loc* loc;
+            if ( IsMappedLocation(0) ) {
+                loc = const_cast<CSeq_loc*>(m_MappedSeq_loc.GetPointer());
+            }
+            else {
+                loc = &src.SetLocation();
+            }
+            dst.SetLocation(*loc);
+        }
 
         if ( src.IsSetProduct() ) {
-            dst.SetProduct(IsMappedLocation(1)? *m_MappedSeq_loc: src.SetProduct());
+            CSeq_loc* loc;
+            if ( IsMappedLocation(1) ) {
+                loc = const_cast<CSeq_loc*>(m_MappedSeq_loc.GetPointer());
+            }
+            else {
+                loc = &src.SetProduct();
+            }
+            dst.SetProduct(*loc);
         }
         else {
             dst.ResetProduct();
@@ -363,6 +379,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/08/27 14:48:56  vasilche
+* Fixed constness of mapped location.
+*
 * Revision 1.21  2003/08/27 14:29:52  vasilche
 * Reduce object allocations in feature iterator.
 *
