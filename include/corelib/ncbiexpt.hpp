@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/07/30 14:40:57  lavr
+* eDiag_Trace and eDiag_Fatal always print as much as possible
+*
 * Revision 1.23  2001/05/21 21:44:43  vakatov
 * SIZE_TYPE --> string::size_type
 *
@@ -212,7 +215,7 @@ template<typename T>
 inline
 const T& DbgPrintP(const char* file, int line, const T& e, const char* e_str)
 {
-    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << e_str << ": " << e;
+    CNcbiDiag(file, line, eDiag_Trace) << e_str << ": " << e;
     DoThrowTraceAbort();
     return e;
 }

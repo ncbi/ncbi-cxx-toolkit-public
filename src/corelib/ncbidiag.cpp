@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/07/30 14:42:10  lavr
+* eDiag_Trace and eDiag_Fatal always print as much as possible
+*
 * Revision 1.33  2001/07/26 21:29:00  lavr
 * Remove printing DateTime stamp by default
 *
@@ -248,10 +251,12 @@ void CDiagBuffer::Flush(void)
     if ( ostr->pcount() ) {
         const char* message = ostr->str();
         ostr->rdbuf()->freeze(0);
-        SDiagMessage mess(sev, message, ostr->pcount(), 0,
-                          m_Diag->GetFile(), m_Diag->GetLine(),
-                          m_Diag->GetPostFlags(), 0,
-                          m_Diag->GetErrorCode(), m_Diag->GetErrorSubCode());
+        SDiagMessage mess
+            (sev, message, ostr->pcount(), 0,
+             m_Diag->GetFile(), m_Diag->GetLine(),
+             m_Diag->GetPostFlags() | (sev == eDiag_Trace ||
+                                       sev == eDiag_Fatal ? eDPF_Trace : 0),
+             0, m_Diag->GetErrorCode(), m_Diag->GetErrorSubCode());
         DiagHandler(mess);
 
 #if defined(NCBI_COMPILER_KCC)

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/07/30 14:42:10  lavr
+* eDiag_Trace and eDiag_Fatal always print as much as possible
+*
 * Revision 1.18  2001/05/21 21:44:00  vakatov
 * SIZE_TYPE --> string::size_type
 *
@@ -126,20 +129,20 @@ extern void DoThrowTraceAbort(void)
 
 extern void DoDbgPrint(const char* file, int line, const char* message)
 {
-    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    CNcbiDiag(file, line, eDiag_Trace) << message;
     DoThrowTraceAbort();
 }
 
 extern void DoDbgPrint(const char* file, int line, const string& message)
 {
-    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    CNcbiDiag(file, line, eDiag_Trace) << message;
     DoThrowTraceAbort();
 }
 
 extern void DoDbgPrint(const char* file, int line,
                        const char* msg1, const char* msg2)
 {
-    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << msg1 << ": " << msg2;
+    CNcbiDiag(file, line, eDiag_Trace) << msg1 << ": " << msg2;
     DoThrowTraceAbort();
 }
 

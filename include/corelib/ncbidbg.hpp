@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/07/30 14:40:47  lavr
+* eDiag_Trace and eDiag_Fatal always print as much as possible
+*
 * Revision 1.22  2001/05/17 14:50:41  lavr
 * Typos corrected
 *
@@ -110,19 +113,16 @@ BEGIN_NCBI_SCOPE
 #if defined(_DEBUG)
 
 #  define _TRACE(message) \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
-      NCBI_NS_NCBI::eDiag_Trace, NCBI_NS_NCBI::eDPF_Trace) \
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, NCBI_NS_NCBI::eDiag_Trace) \
       << message << NCBI_NS_NCBI::Endm )
 
 #  define _TROUBLE \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
-      NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) \
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, NCBI_NS_NCBI::eDiag_Fatal) \
       << "Trouble!" << NCBI_NS_NCBI::Endm )
 
 #  define _ASSERT(expr) \
     if (!( expr )) \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
-      NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) \
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, NCBI_NS_NCBI::eDiag_Fatal) \
       << "Assertion failed: (" #expr ")" << NCBI_NS_NCBI::Endm )
 
 #  define _VERIFY(expr) _ASSERT(expr)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2001/07/30 14:42:46  lavr
+* eDiag_Trace and eDiag_Fatal always print as much as possible
+*
 * Revision 1.60  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -437,14 +440,14 @@ void CObjectOStream::ThrowError1(EFailFlags fail, const string& message)
 void CObjectOStream::ThrowError1(const char* file, int line, 
                                  EFailFlags fail, const char* message)
 {
-    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    CNcbiDiag(file, line, eDiag_Trace) << message;
     ThrowError1(fail, message);
 }
 
 void CObjectOStream::ThrowError1(const char* file, int line, 
                                  EFailFlags fail, const string& message)
 {
-    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    CNcbiDiag(file, line, eDiag_Trace) << message;
     ThrowError1(fail, message);
 }
 

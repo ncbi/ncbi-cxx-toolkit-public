@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2001/07/30 14:42:46  lavr
+* eDiag_Trace and eDiag_Fatal always print as much as possible
+*
 * Revision 1.82  2001/07/25 19:14:25  grichenk
 * Implemented functions for reading/writing parent classes
 *
@@ -554,14 +557,14 @@ void CObjectIStream::ThrowError1(EFailFlags fail, const string& message)
 void CObjectIStream::ThrowError1(const char* file, int line, 
                                  EFailFlags fail, const char* message)
 {
-    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    CNcbiDiag(file, line, eDiag_Trace) << message;
     ThrowError1(fail, message);
 }
 
 void CObjectIStream::ThrowError1(const char* file, int line, 
                                  EFailFlags fail, const string& message)
 {
-    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    CNcbiDiag(file, line, eDiag_Trace) << message;
     ThrowError1(fail, message);
 }
 

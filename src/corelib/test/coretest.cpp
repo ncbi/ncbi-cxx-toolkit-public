@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2001/07/30 14:42:27  lavr
+* eDiag_Trace and eDiag_Fatal always print as much as possible
+*
 * Revision 1.76  2001/07/25 19:14:14  lavr
 * Added test for date/time stamp in message logging
 *
@@ -892,7 +895,7 @@ static void TestThrowTrace(void)
         THROW1_TRACE(runtime_error, "Message");
     }
     catch (...) {
-        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace, eDPF_Trace) <<
+        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace) <<
             "runtime_error: Message";
     }
     string mess = "ERROR";
@@ -900,7 +903,7 @@ static void TestThrowTrace(void)
         THROW1_TRACE(runtime_error, mess);
     }
     catch (...) {
-        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace, eDPF_Trace) <<
+        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace) <<
             "runtime_error: ERROR";
     }
     int i = 123;
@@ -908,7 +911,7 @@ static void TestThrowTrace(void)
         THROW0p_TRACE(i);
     }
     catch (...) {
-        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace, eDPF_Trace) <<
+        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace) <<
             "i: 123";
     }
     SetDiagTrace(eDT_Default);
