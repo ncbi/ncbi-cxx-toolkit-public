@@ -491,9 +491,10 @@ END_TEST_FUNCTION
 // test to make sure that a value of -1 converted to an unsigned int will still read/write
 BEGIN_TEST_FUNCTION(UnsignedInt)
 
+    int signedInt = -1;
     CRef < CSeq_loc > seqloc(new CSeq_loc());
-    seqloc->SetInt().SetFrom(-1);
-    seqloc->SetInt().SetTo(-1);
+    seqloc->SetInt().SetFrom(signedInt);
+    seqloc->SetInt().SetTo(signedInt);
     seqloc->SetInt().SetId().SetGi(0);
 
     if (!WriteASNToFile(*seqloc, false, &err))
@@ -600,6 +601,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/02/12 17:59:58  thiessen
+* remove one gcc warning
+*
 * Revision 1.11  2004/02/12 17:55:12  thiessen
 * add UnsignedInt test
 *
