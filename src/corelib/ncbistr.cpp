@@ -1346,9 +1346,9 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 best_score = eNewline;
                 break;
             } else if (isspace(c)) {
-                //if (pos2 > 0  &&  isspace(str[pos2 - 1])) {
-                //    continue; // take the first space of a group
-                //}
+                if (pos2 > 0  &&  isspace(str[pos2 - 1])) {
+                    continue; // take the first space of a group
+                }
                 score = eSpace;
             } else if (is_html  &&  c == '<') {
                 // treat tags as zero-width...
@@ -1357,16 +1357,17 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             } else if (is_html  &&  c == '&') {
                 // ...and references as single characters
                 pos2 = s_EndOfReference(str, pos2);
+            } else if (c == ','  &&  score_pos < len - 1  &&  column < width) {
+                score = eComma;
+                ++score_pos;
             } else if (ispunct(c)) {
                 if (c == '('  ||  c == '['  ||  c == '{'  ||  c == '<'
                     ||  c == '`') { // opening element
-                    // score = ePunct;
-                } else if (c == ','  &&  score_pos < len - 1) {
-                    if (column < width) {
-                        // Prefer breaking *after* most types of punctuation.
-                        score = ((c == ',') ? eComma : ePunct);
-                        ++score_pos;
-                    }
+                    score = ePunct;
+                } else if (score_pos < len - 1  &&  column < width) {
+                    // Prefer breaking *after* most types of punctuation.
+                    score = ePunct;
+                    ++score_pos;
                 }
             }
 
@@ -1679,6 +1680,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.126  2004/11/23 17:04:40  ucko
+ * Roll back changes to Wrap in revisions 1.118 and 1.120.
+ *
  * Revision 1.125  2004/10/21 18:16:24  ucko
  * NStr::Wrap: don't loop forever in HTML mode if the string ends with
  * an unterminated entity reference.
