@@ -200,7 +200,7 @@ void CSeqDBAtlas::GarbageCollect(CSeqDBLockHold & locked)
     x_GarbageCollect(0);
 }
 
-void CSeqDBAtlas::x_GarbageCollect(TIndx reduce_to)
+void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
 {
     if (m_CurAlloc <= reduce_to) {
         return;

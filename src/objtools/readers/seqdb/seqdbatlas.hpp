@@ -421,7 +421,7 @@ private:
     
     /// Clean up unreferenced objects (non-locking version.)
     // Assumes lock is held
-    void x_GarbageCollect(TIndx reduce_to);
+    void x_GarbageCollect(Uint8 reduce_to);
     
     // Assumes lock is held
     Uint4 x_LookupFile(const string  & fname,
