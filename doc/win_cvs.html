@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Using CVS on MS Windows in NCBI</title>
+  </head>
+
+  <body>
+	 <h1>Using CVS on MS Windows in NCBI</h1>
+
+	 <ol>
+		<li>
+		Download the
+		<a href="http://download.cyclic.com/pub/cvs-1.10.5/windows/cvs.exe">
+		  CVS executable</a>
+		to <i><b>C:\WINNT\System32\cvs.exe</b></i>.
+
+		<li>
+		Create environment variable CVSROOT:
+	 <ol>
+		<li>
+		Click the right mouse button on the icon of your NT PC name
+		(it is usually located in the upper left corner of NT desktop),
+		and select item <i>"Properties"</i>.
+		<li>
+		Form <i>"System Properties</i> shows up. -- Here, choose folder
+		<i>"Environment"</i> and click on the lower window
+      (<i>"User Variables for Yourname:"</i>) on the string with TEMP variable.
+		<li>
+		Now, type "CVSROOT" in the <i>"Variable:"</i> text field, then type 
+		something like <b>:server:yourlogname@ray:/src/NCBI/vault.ncbi</b> in the
+		<i>"Value:"</i> text field. Here, the <b>yourlogname</b> stands for your
+		NCBI account name with all letter lowercased.
+      <b>:server:beloslyu@ray:/src/NCBI/vault.ncbi</b>
+		<li>
+		Press the "Set" button. The new variable CVSROOT and its value should
+		appear in the lower window(<i>"User Variables for Yourname:"</i>).
+		<li>
+		Press the "Apply" button.
+		<li>
+		Press the "OK" button.
+	 </ol>
+	   <li> Login to machine <b>"ray"</b> and add the following two lines to
+	   your <i><b>~/.rhosts</b></i> file:
+	 <ul>
+		<li> <b>pcname username</b> (for example: <b>dnb beloslyu</b>)
+		<li> <b>pcname Username</b> (for example: <b>dnb Beloslyu</b>)
+	 </ul>
+	 where the <b>pcname</b> stands for your PC name, <b>username</b> is your
+	 NCBI UNIX domain account name(usually all lowercased),
+	 and <b>Username</b> is your NCBI NT domain account name(usually it is just
+	 like the UNIX domain account name, but with the first letter uppercased).
+    </ol>
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address>
+				<a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a>
+			 </address></td>
+		  <td align=right>($Revision$)</td></tr>
+		<tr>
+		  <td><address>
+				<a href="mailto:beloslyu@ncbi.nlm.nih.gov">Dmitriy  Beloslyudtsev</a>
+			 </address></td></tr>
+	 </table>
+  </body>
+</html>
