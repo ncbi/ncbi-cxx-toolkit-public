@@ -527,7 +527,7 @@ CCgiStatistics::~CCgiStatistics()
 
 void CCgiStatistics::Reset(const CTime& start_time,
                            int          result,
-                           const exception*  ex)
+                           const std::exception*  ex)
 {
     m_StartTime = start_time;
     m_Result    = result;
@@ -684,6 +684,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2003/03/03 16:36:46  kuznets
+* explicit use of std namespace when reffering exception
+*
 * Revision 1.41  2003/02/26 17:34:35  kuznets
 * CCgiStatistics::Reset changed to take exception as a parameter
 *

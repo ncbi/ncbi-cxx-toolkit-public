@@ -173,7 +173,7 @@ protected:
     // applications and every iteration if it is FastCGI.
     virtual void Reset(const CTime& start_time,
                        int          result,
-                       const exception*  ex = 0);
+                       const std::exception*  ex = 0);
 
     // Compose message for statistics logging.
     // This default implementation constructs the message from the fragments
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/03/03 16:36:33  kuznets
+* explicit use of std namespace when reffering exception
+*
 * Revision 1.34  2003/02/27 17:55:05  ucko
 * +x_FCGI_ShouldRestart
 *
