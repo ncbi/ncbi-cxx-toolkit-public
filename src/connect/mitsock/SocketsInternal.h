@@ -53,6 +53,7 @@
 /* External Types, Function Prototypes and Definitions */
 #include "s_socket.h"
 #include "sock_ext.h"
+#include "IdleInternal.h"
 
 
 /* The constant that sets the maximum number of sockets that can be 
@@ -67,10 +68,6 @@
 #define INET_SUCCESS 1
 #define INET_FAILURE 0
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Structures to hold sockets */
 typedef struct Socket {
   EndpointRef ref;				/* The Open Transport reference number				*/
@@ -84,7 +81,6 @@ typedef struct Socket {
   Boolean     writeClosed;		/* true if we have sent the TCP close request		*/
   Boolean     readClosed;		/* true if we have received the TCP close request	*/
 } Socket, *SocketPtr;
-
 
 /* Internal global variables */
 extern SocketPtr             *gSockets;
@@ -115,10 +111,6 @@ OSStatus	ot_DNRInit(void);
 OSStatus	ot_DNRClose( InetSvcRef theRef);
 void		herror(char *s);
 char		*herror_str(int theErr);
-
-#ifdef __cplusplus
-}
-#endif
 
 
 #endif _SOCKETS_INTERNAL_
