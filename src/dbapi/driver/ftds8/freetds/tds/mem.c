@@ -327,7 +327,11 @@ char hostname[30];
 	config->server_name = strdup(TDS_DEF_SERVER);
 	config->major_version = TDS_DEF_MAJOR;
 	config->minor_version = TDS_DEF_MINOR;
+#ifdef NCBI_FTDS
+	config->port[0] = TDS_DEF_PORT;
+#else
 	config->port = TDS_DEF_PORT;
+#endif
 	config->block_size = TDS_DEF_BLKSZ;
 	if (locale) {
 		if (locale->language) 
@@ -451,7 +455,15 @@ void tds_free_config(TDSCONFIGINFO *config)
 {
 	if (config->server_name) free(config->server_name);
 	if (config->host_name) free(config->host_name);
+#ifdef NCBI_FTDS
+	{int i;
+	    for(i= 0; i < NCBI_NUM_SERVERS; i++) {
+	        if(config->ip_addr[i]) free(config->ip_addr[i]);
+	    }
+	}
+#else
 	if (config->ip_addr) free(config->ip_addr);
+#endif
 	if (config->language) free(config->language);
 	if (config->char_set) free(config->char_set);
 	if (config->database) free(config->database);

@@ -56,7 +56,9 @@ void tds_unget_byte(TDSSOCKET *tds);
 char *tds_get_n(TDSSOCKET *tds, void *dest, int n);
 int tds_read_packet (TDSSOCKET *tds);
 int set_interfaces_file_loc(char *interfloc);
+#ifndef NCBI_FTDS
 int get_server_info(char *server, char *ip_addr, char *ip_port, char *tds_ver);
+#endif
 int get_size_by_type(int servertype);
 int tds_flush_packet(TDSSOCKET *tds);
 int tds_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config);

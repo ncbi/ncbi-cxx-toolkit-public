@@ -401,11 +401,20 @@ typedef struct tds_login {
 	int port;
 } TDSLOGIN;
 
+#ifdef NCBI_FTDS
+#define NCBI_NUM_SERVERS 8
+#endif
+
 typedef struct tds_config_info {
         char *server_name;
         char *host;
+#ifdef NCBI_FTDS
+        char *ip_addr[NCBI_NUM_SERVERS];
+        int port[NCBI_NUM_SERVERS];
+#else
         char *ip_addr;
         int port;
+#endif
         TDS_SMALLINT minor_version;
         TDS_SMALLINT major_version;
         int block_size;

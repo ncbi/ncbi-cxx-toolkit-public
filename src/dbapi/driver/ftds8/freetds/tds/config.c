@@ -94,6 +94,7 @@ TDSCONFIGINFO *config;
 char *s;
 char path[MAXPATH];
 pid_t pid;
+
 	/* allocate a new structure with hard coded and build-time defaults */
 	config = tds_alloc_config(locale);
 
@@ -319,12 +320,22 @@ int found = 0;
 			} else if (!strcmp(option,TDS_STR_HOST)) {
 				tdsdump_log(TDS_DBG_INFO1, "%L Found host entry %s.\n",value);
    				lookup_host(value, NULL, tmp, NULL);
+#ifdef NCBI_FTDS
+				if (config->ip_addr[0]) free(config->ip_addr[0]);
+				config->ip_addr[0] = strdup(tmp);
+				tdsdump_log(TDS_DBG_INFO1, "%L IP addr is %s.\n",config->ip_addr[0]);
+#else
 				if (config->ip_addr) free(config->ip_addr);
 				config->ip_addr = strdup(tmp);
 				tdsdump_log(TDS_DBG_INFO1, "%L IP addr is %s.\n",config->ip_addr);
+#endif
 			} else if (!strcmp(option,TDS_STR_PORT)) {
 				if (atoi(value)) 
+#ifdef NCBI_FTDS
+					config->port[0] = atoi(value);
+#else
 					config->port = atoi(value);
+#endif
 			} else if (!strcmp(option,TDS_STR_EMUL_LE)) {
 				config->emul_little_endian = tds_config_boolean(value);
 			} else if (!strcmp(option,TDS_STR_TEXTSZ)) {
@@ -348,13 +359,39 @@ int found = 0;
 	}
 	return found;
 }
-
+#ifdef NCBI_FTDS
+static int get_server_info(char *server, int entry_num, char *ip_addr, char *ip_port,  
+char *tds_ver);
+#endif
 static void tds_read_interfaces(char *server, TDSCONFIGINFO *config)
 {
 char ip_addr[255], ip_port[255], tds_ver[255];
 
 	/* read $SYBASE/interfaces */
 	/* This needs to be cleaned up */
+#ifdef NCBI_FTDS
+    int entry_num;
+	for(entry_num= 0; entry_num < NCBI_NUM_SERVERS; entry_num++) {
+	    get_server_info(server, entry_num+1, ip_addr, ip_port, tds_ver);
+		if (strlen(ip_addr) == 0) break;
+		if (config->ip_addr[entry_num]) free(config->ip_addr[entry_num]);
+		/* FIXME check result, use strdup */
+		config->ip_addr[entry_num] = (char *) malloc(strlen(ip_addr)+1);
+		strcpy(config->ip_addr[entry_num], ip_addr);
+		if (atoi(ip_port)) {
+		    config->port[entry_num] = atoi(ip_port);
+		}
+		if (strlen(tds_ver)) {
+		    tds_config_verstr(tds_ver, config);
+			/* if it doesn't match a known version do nothing with it */
+		}	
+	}
+	while(entry_num < NCBI_NUM_SERVERS) {
+		if (config->ip_addr[entry_num]) free(config->ip_addr[entry_num]);
+		config->ip_addr[entry_num++]= NULL;
+	}
+
+#else
 	get_server_info(server, ip_addr, ip_port, tds_ver);
 	if (strlen(ip_addr)) {
 		if (config->ip_addr) free(config->ip_addr);
@@ -369,6 +406,7 @@ char ip_addr[255], ip_port[255], tds_ver[255];
 		tds_config_verstr(tds_ver, config);
 		/* if it doesn't match a known version do nothing with it */
 	}	
+#endif
 }
 static void tds_config_login(TDSCONFIGINFO *config, TDSLOGIN *login)
 {
@@ -435,7 +473,11 @@ static void tds_config_login(TDSCONFIGINFO *config, TDSLOGIN *login)
 		config->block_size = login->block_size;
 	}
         if (login->port) {
+#ifdef NCBI_FTDS
+		config->port[0] = login->port;
+#else
 		config->port = login->port;
+#endif
 	}
 
 }
@@ -484,7 +526,11 @@ static void tds_config_env_tdsport(TDSCONFIGINFO *config)
 char *s;
 
 	if ((s=getenv("TDSPORT"))) {
+#ifdef NCBI_FTDS
+            config->port[0]=atoi(s);
+#else
             config->port=atoi(s);
+#endif
             tdsdump_log(TDS_DBG_INFO1, "%L Setting 'port' to %s from $TDSPORT.\n",s);
 	}
 	return;
@@ -508,9 +554,15 @@ char tmp[256];
 
 	if ((tdshost=getenv("TDSHOST"))) {
 		lookup_host (tdshost, NULL, tmp, NULL);
+#ifdef NCBI_FTDS
+		if (config->ip_addr[0])
+			free (config->ip_addr[0]);
+		config->ip_addr[0] = strdup (tmp);
+#else
 		if (config->ip_addr)
 			free (config->ip_addr);
 		config->ip_addr = strdup (tmp);
+#endif
                 tdsdump_log(TDS_DBG_INFO1, "%L Setting 'ip_addr' to %s (%s) from $TDSHOST.\n",tmp, tdshost);
 
 	}
@@ -670,6 +722,9 @@ static void search_interface_file(
    const char *dir,     /* (I) Name of base directory for interface file */
    const char *file,    /* (I) Name of the interface file                */
    const char *host,    /* (I) Logical host to search for                */
+#ifdef NCBI_FTDS
+   int       entry_num, /* (I) entry number for host in interface file   */
+#endif
    char       *ip_addr, /* (O) dotted-decimal IP address                 */
    char       *ip_port, /* (O) Port number for database server           */
    char       *tds_ver) /* (O) Protocol version to use when connecting   */
@@ -735,6 +790,9 @@ char *lasts;
 		} else if (found && isspace(line[0])) {
 			field = tds_strtok_r(line,"\n\t ", &lasts);
 			if (field!=NULL && !strcmp(field,"query")) {
+#ifdef NCBI_FTDS
+			  if(--entry_num > 0) continue;
+#endif
 				field = tds_strtok_r(NULL,"\n\t ", &lasts); /* tcp or tli */
 				if (!strcmp(field,"tli")) {
 					tdsdump_log(TDS_DBG_INFO1, "%L TLI service.\n");
@@ -758,6 +816,9 @@ char *lasts;
 					field = tds_strtok_r(NULL,"\n\t ", &lasts); /* port */
 					strcpy(tmp_port,field);
 				} /* else */
+#ifdef NCBI_FTDS
+				break;
+#endif
 			} /* if */
 		} /* else if */
 	} /* while */
@@ -768,6 +829,9 @@ free(pathname);
    /*
     * Look up the host and service
     */
+#ifdef NCBI_FTDS
+   if(*tmp_ip != '\0') 
+#endif
    lookup_host(tmp_ip, tmp_port, ip_addr, ip_port);
    tdsdump_log(TDS_DBG_INFO1, "%L Resolved IP as '%s'.\n",ip_addr);
    strcpy(tds_ver,tmp_ver);
@@ -789,8 +853,14 @@ free(pathname);
  *
  * ===========================================================================
  */
+#ifdef NCBI_FTDS
+static
+#endif
 int get_server_info(
    char *server,   /* (I) logical or physical server name      */
+#ifdef NCBI_FTDS
+   int entry_num,  /* (I) entry number in interface file */
+#endif
    char *ip_addr,  /* (O) string representation of IP address  */
    char *ip_port,  /* (O) string representation of port number */
    char *tds_ver)  /* (O) string value specifying which protocol version */
@@ -814,7 +884,11 @@ int get_server_info(
 	*/
 	if (ip_addr[0]=='\0' && interf_file[0]!='\0') {
                 tdsdump_log(TDS_DBG_INFO1, "%L Looking for server in interf_file %s.\n",interf_file);
+#ifdef NCBI_FTDS
+                search_interface_file("", interf_file, server, entry_num, ip_addr,
+#else
                 search_interface_file("", interf_file, server, ip_addr,
+#endif
                 ip_port, tds_ver);
 	}
 
@@ -826,7 +900,11 @@ int get_server_info(
 		char  *home = getenv("HOME");
 		if (home!=NULL && home[0]!='\0') {
                         tdsdump_log(TDS_DBG_INFO1, "%L Looking for server in %s/.interfaces.\n", home);
+#ifdef NCBI_FTDS
+			search_interface_file(home, ".interfaces", server, entry_num, ip_addr,
+#else
 			search_interface_file(home, ".interfaces", server, ip_addr,
+#endif
 				ip_port, tds_ver);
 		}
 	}
@@ -838,11 +916,18 @@ int get_server_info(
 		char  *sybase = getenv("SYBASE");
 		if (sybase!=NULL && sybase[0]!='\0') {
                         tdsdump_log(TDS_DBG_INFO1, "%L Looking for server in %s/interfaces.\n", sybase);
+#ifdef NCBI_FTDS
+			search_interface_file(sybase, "interfaces", server, entry_num, ip_addr,
+#else
 			search_interface_file(sybase, "interfaces", server, ip_addr,
+#endif
 				ip_port, tds_ver);
 		} else {
                         tdsdump_log(TDS_DBG_INFO1, "%L Looking for server in /etc/freetds/interfaces.\n");
 			search_interface_file("/etc/freetds", "interfaces", server,
+#ifdef NCBI_FTDS
+								  entry_num,
+#endif
 				ip_addr, ip_port, tds_ver);
 		}
 	}
@@ -904,7 +989,11 @@ static int parse_server_name_for_port( TDSCONFIGINFO *config, TDSLOGIN *login )
         config->server_name = strdup( login->server_name );
         
         /* modify config-> && login->server_name & ->port */
+#ifdef NCBI_FTDS
+        login->port = config->port[0] = atoi( pSep + 1 );
+#else
         login->port = config->port = atoi( pSep + 1 );
+#endif
         config->server_name[pSep - login->server_name] = 0;/* end the server_name before the ':' */
         *pSep = 0;
 
@@ -913,9 +1002,15 @@ static int parse_server_name_for_port( TDSCONFIGINFO *config, TDSLOGIN *login )
             char tmp[256];
 
             lookup_host (config->server_name, NULL, tmp, NULL);
+#ifdef NCBI_FTDS
+            if (config->ip_addr[0])
+                    free (config->ip_addr[0]);
+            config->ip_addr[0] = strdup (tmp);
+#else
             if (config->ip_addr)
                     free (config->ip_addr);
             config->ip_addr = strdup (tmp);
+#endif
         }
 
         return 1;/* TRUE */
