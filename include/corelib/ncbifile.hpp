@@ -124,11 +124,14 @@ public:
     /// Copy constructor - for Mac file system.
     CDirEntry(const CDirEntry& other);
 
+    /// Constructor with FSSpec argument - for Mac file system.
+    CDirEntry(const FSSpec& fss);
+
     /// Assignment operator - for Mac file system.
     CDirEntry& operator= (const CDirEntry& other);
 
-    /// Constructor with FSSpec argument - for Mac file system.
-    CDirEntry(const FSSpec& fss);
+    /// Equality operator.
+    bool operator== (const CDirEntry& other) const;
 #  endif
 
     /// Constructor using specified path string.
@@ -139,9 +142,6 @@ public:
 
     /// Destructor.
     virtual ~CDirEntry(void);
-
-    /// Equality operator.
-    bool operator== (const CDirEntry& other) const;
 
 # if defined(NCBI_OS_MAC)
     /// Get FSSpec setting - for Mac file system.
@@ -1136,6 +1136,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/04/29 16:18:58  ivanov
+ * operator== defined only for MAC OS
+ *
  * Revision 1.40  2004/04/29 16:14:03  kuznets
  * Removed unnecessary typename
  *
