@@ -48,9 +48,7 @@ extern "C" {
 #define kScoreMatrixScoreRange 10000
 
 /** positions of true characters in protein alphabet*/
-static Int4 trueCharPositions[PRO_TRUE_ALPHABET_SIZE] =
-  {1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22};
-
+extern const Int4 trueCharPositions[PRO_TRUE_ALPHABET_SIZE];
 
 /** Structure used to pass data into the scaling routines */
 typedef struct Kappa_posSearchItems {
@@ -142,6 +140,9 @@ int Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/02/23 14:20:51  camacho
+ * Remove compiler warnings
+ *
  * Revision 1.2  2005/02/22 22:48:30  camacho
  * doxygen fixes
  *

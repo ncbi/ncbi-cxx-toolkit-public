@@ -39,6 +39,10 @@ static char const rcsid[] =
 #include "blast_posit.h"
 #include "blast_psi_priv.h"
 
+const Int4 trueCharPositions[PRO_TRUE_ALPHABET_SIZE] =
+  {1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22};
+
+
 Kappa_posSearchItems*
 Kappa_posSearchItemsNew(unsigned int queryLength,
                   const char* matrix_name,
@@ -419,6 +423,9 @@ Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/02/23 14:20:51  camacho
+ * Remove compiler warnings
+ *
  * Revision 1.3  2005/02/22 22:48:52  camacho
  * Use matrix data in sbp in Kappa_compactSearchItemsNew
  *
