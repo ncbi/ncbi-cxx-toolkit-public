@@ -88,7 +88,8 @@ bool CDiagStrPathMatcher::Match(const char* str) const
     string lstr(str);
 #   ifdef NCBI_OS_MSWIN
     // replace \ in windows path to /
-    while ( (size_t pos = lstr.find('\\'))  !=  string::npos )
+    size_t pos;
+    while ( (pos = lstr.find('\\'))  !=  string::npos )
         lstr[pos] = '/';
 #   endif
 #   ifdef NCBI_OS_MACOS
@@ -97,7 +98,7 @@ bool CDiagStrPathMatcher::Match(const char* str) const
         lstr[pos] = '/';
 #   endif
 
-    size_t pos = lstr.find(m_Pattern);
+    pos = lstr.find(m_Pattern);
     if (pos == string::npos)
         return false;
 
@@ -198,7 +199,7 @@ void CDiagFilter::Fill(const char* filter_string)
         message << "Syntax error in string \"" << filter_string
                 << "\" at position:"
                 << err_info.second << " - " << err_info.first << ends;
-        NCBI_THROW(CCoreException, CCoreException::eDiagFilter,
+        NCBI_THROW(CCoreException, eDiagFilter,
                    CNcbiOstrstreamToString(message));
     }
 }
@@ -639,6 +640,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2004/09/22 14:40:23  kuznets
+ * Fixed MSVC compile
+ *
  * Revision 1.1  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
