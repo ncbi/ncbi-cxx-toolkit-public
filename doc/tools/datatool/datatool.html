@@ -1,4 +1,4 @@
-<!--#set var="TITLE" value="DATATOOL -- the data serialization utility (NCBI C++)" -->
+<!--#set var="TITLE" value="DATATOOL -- code generation utility (NCBI C++)" -->
 <!--#set var="DOCROOT" value="../.." -->
 <!--#include virtual="../../ssi/header.shtml" -->
 
@@ -29,22 +29,30 @@ code generation and data serialization utility</h1>
     <a href="#refDefCommon">Common definitions</a>
   </li>
   <li>
-    <a href="#refDefINT">INTEGER, REAL, BOOLEAN, NULL</a>
+    <a href="#refDefSpecific">Definitions which affect specific types</a>
+	<ul>
+    <li>
+      <a href="#refDefINT">INTEGER, REAL, BOOLEAN, NULL</a>
+    </li>
+    <li>
+      <a href="#refDefENUM">ENUMERATED</a>
+    </li>
+    <li>
+      <a href="#refDefOCTETS">OCTET STRING</a>
+    </li>
+    <li>
+      <a href="#refDefArray">SEQUENCE OF, SET OF</a>
+    </li>
+    <li>
+      <a href="#refDefClass">SEQUENCE, SET</a>
+    </li>
+    <li>
+      <a href="#refDefChoice">CHOICE</a>
+    </li>
+	</ul>
   </li>
   <li>
-    <a href="#refDefENUM">ENUMERATED</a>
-  </li>
-  <li>
-    <a href="#refDefOCTETS">OCTET STRING</a>
-  </li>
-  <li>
-    <a href="#refDefArray">SEQUENCE OF, SET OF</a>
-  </li>
-  <li>
-    <a href="#refDefClass">SEQUENCE, SET</a>
-  </li>
-  <li>
-    <a href="#refDefChoice">CHOICE</a>
+    <a href="#refDefExample">Examples</a>
   </li>
   </ul>
 </li>
@@ -68,6 +76,10 @@ code generation and data serialization utility</h1>
     <a href="#refCodeOther">Other</a>
   </li>
   </ul>
+</li>
+
+<li>
+  <a href="dt_inside.html">Inside <span class="ncbi_app">DATATOOL</span></a>
 </li>
 </ul>
 
@@ -135,7 +147,7 @@ functions are supported only partially.
 
 <tr>
   <td><span class="ncbi_app_a">-h</span></td>
-  <td>display the DATATOOL arguments</a></td>
+  <td>display the <span class="ncbi_app">DATATOOL</span> arguments</a></td>
   <td>&nbsp;</td>
 </tr>
 
@@ -359,7 +371,7 @@ functions are supported only partially.
 </tr>
 
 <tr>
-  <td><span class="ncbi_app_a">-oex &lt;export&gt;</span></td>
+  <td><a name="refArg_oex"></a><span class="ncbi_app_a">-oex &lt;export&gt;</span></td>
   <td>add storage-class modifier to generated classes</td>
   <td>can be overriden by<br />
     <a href="#refDefCommon"><span class="ncbi_keyword">[-]._export</span></a>
@@ -373,140 +385,128 @@ functions are supported only partially.
 
 <a name="refDefFile"></a>
 <h2>Definition file</h2>
-There is a possibility of fine tuning of code generation. It is performed
-via definition file specified in <a href="#refArg_od"><span class="ncbi_app_a">-od</span></a> argument.
-<br>
-Definition file uses the <a href="../../programming_manual/registry.html#syntax">generic NCBI configuration</a> format (also used in the standard NCBI application configuration (*.ini) files.
+<p>
+It is possible to tune up the C++ code generation by using a definition file, which
+could be specified in <a href="#refArg_od"><span class="ncbi_app_a">-od</span></a> argument.
+Definition file utilizes the generic
+<a href="../../programming_manual/registry.html#syntax">NCBI configuration</a>
+format also used in NCBI application's configuration (*.ini) files.
+</p>
 
-files.
-<p>Tuning parameters are searched in several sections:
+<p>
+<span class="ncbi_app">DATATOOL</span> looks for code generation parameters
+in several sections of the file in the following order:
 <ol>
-  <li>[ModuleName.TypeName]</li>
-  <li>[TypeName]</li>
-  <li>[ModuleName]</li>
+  <li><span class="ncbi_reg">[ModuleName.TypeName]</span></li>
+  <li><span class="ncbi_reg">[TypeName]</span></li>
+  <li><span class="ncbi_reg">[ModuleName]</span></li>
+  <li><span class="ncbi_reg">[-]</span></li>
 </ol>
-Prefix of parameter name in section is determined from location of element
-we want to affect in ASN.1 definition.
-<br>For root type itself prefix is empty.
-<br>For element of 'SET OF' or 'SEQUENCE OF' add "E." to prefix.
-<br>For element of 'SET', 'SEQUENCE' or 'CHOICE' add element name
-and dot (".") to prefix.
-<br>For example, if we have ASN.1 definitions:
-
-<blockquote>
-<pre class="ncbi_code">
-<a NAME="refType_Date"></a>Date ::= CHOICE {
-    <a NAME="refMember_Date_str"></a>str VisibleString,
-    std <a href="#refType_Date_std">Date-std</a>
-}
-<a NAME="refType_Date_std"></a>Date-std ::= SEQUENCE {
-    year INTEGER,     month INTEGER OPTIONAL
-}
-<a NAME="refType_Dates"></a>Dates ::= SEQUENCE OF <a href="#refType_Date">Date</a>    
-<a NAME="refType_Int_fuzz"></a>Int-fuzz ::= CHOICE {
-    p-m INTEGER,
-    <a NAME="refMember_Int_fuzz_range"></a>range SEQUENCE {
-        max INTEGER,
-        <a NAME="refMember_Int_fuzz_range_min"></a>min INTEGER
-    },
-    pct INTEGER,
-    lim ENUMERATED {
-        unk (0),
-        gt (1),
-        lt (2),
-        tr (3),
-        tl (4),
-        circle (5),
-        other (255)
-    },
-    <a NAME="refMember_Int_fuzz_alt"></a>alt SET OF INTEGER
-}
-</pre>
-</blockquote>
+Prefix of the parameter name in section is determined from the location of an element
+in the data format specification (ASN.1 or DTD).
+<br />For the root element prefix is empty.
+<br />For an element of type
+  <span class="ncbi_keyword">SET OF</span> or
+  <span class="ncbi_keyword">SEQUENCE OF</span> - add
+  <span class="ncbi_reg_var">E.</span> to prefix.
+<br />For an element of type
+  <span class="ncbi_keyword">SET</span>,
+  <span class="ncbi_keyword">SEQUENCE</span> or
+  <span class="ncbi_keyword">CHOICE</span> - add the element name
+and dot (&quot;.&quot;) to prefix.
+</p>
 
 
-Then definitions:
-<blockquote class="ncbi_code">[<a href="#refType_Date">Date</a>]
-<br>&nbsp;&nbsp;&nbsp; <a href="#refMember_Date_str">str</a>._type = string
-</blockquote>
-will affect generation of <a href="#refMember_Date_str">str</a>
-member in <a href="#refType_Date">Date</a></i> structure.
-
-<blockquote class="ncbi_code">[<a href="#refType_Dates">Dates</a>]<br>
-E._pointer = true
-</blockquote>
-will affect generation of elements in <a href="#refType_Dates">Dates</a> container.
-
-<blockquote class="ncbi_code">[<a href="#refType_Int_fuzz">Int-fuzz</a>]<br>
-<a href="#refMember_Int_fuzz_range">range</a>.<a href="#refMember_Int_fuzz_range_min">min</a>._type
-= long
-</blockquote>
-will affect generation of <a href="#refMember_Int_fuzz_range_min">min</a>
-member of <a href="#refMember_Int_fuzz_range">range</a> member of <a href="#refType_Int_fuzz">Int-fuzz</a> structure.
-
-<blockquote class="ncbi_code">[<a href="#refType_Int_fuzz">Int-fuzz</a>]<br>
-<a href="#refMember_Int_fuzz_alt">alt</a>.E._type = long
-</blockquote>
-will affect generation of elements of <a href="#refMember_Int_fuzz_alt">alt</a>
-member of <a href="#refType_Int_fuzz">Int-fuzz</a> structure.
-<br>
 
 <a NAME="refDefCommon"></a>
 <h3>Common definitions</h3>
 
-Some definitions affect the whole generated type:
-
-<table border cellspacing=0>
-<tr VALIGN=BASELINE NOSAVE>
-<td width="150"><a NAME="refDef_file"></a><span class="ncbi_keyword">_file</span></td>
-
-<td width="400">basename for generated C++ files</td>
-</tr>
-
-<tr VALIGN=BASELINE NOSAVE>
-<td NOSAVE><a NAME="refDef_dir"></a><span class="ncbi_keyword">_dir</span></td>
-
-<td>subdirectory for generated C++ files
-<br>(if <a href="#refDef_file" class="ncbi_keyword">_file</a> not specified)</td>
-</tr>
-
-<tr VALIGN=BASELINE NOSAVE>
-<td NOSAVE><a NAME="refDef_class"></a><span class="ncbi_keyword">_class</span></td>
-
-<td>generated class name
-<br>(if "-" then do not generated code for this type)</td>
-</tr>
-
-<tr VALIGN=BASELINE NOSAVE>
-<td NOSAVE><a NAME="refDef_namespace"></a><span class="ncbi_keyword">_namespace</span></td>
-
-<td>namespace where to place generated class</td>
-</tr>
-
-<tr VALIGN=BASELINE NOSAVE>
-<td NOSAVE><a NAME="refDef_parent_class"></a><span class="ncbi_keyword">_parent_class</span></td>
-
-<td>inherit generated C++ class from specified class</td>
-</tr>
-
-<tr VALIGN=BASELINE NOSAVE>
-<td><a NAME="refDef_parent_type"></a><span class="ncbi_keyword">_parent_type</span></td>
-
-<td NOSAVE>inherit generated C++ class from class corresponding to specified
-type
-<br>(if <a href="#refDef_parent_class" class="ncbi_keyword">_parent_class</a> not specified)</td>
-</tr>
-</table>
-
+<p>
+Some definitions refer to the generated class as a whole:
+<dl>
+  <dt><span class="ncbi_keyword">_file</span></dt>
+  <dd>
+Defines the base file name for the generated C++ class.
+<blockquote>
+For example, the following definitions:
+<br /><span class="ncbi_reg">[ModuleName.TypeName]</span>
+<br /><span class="ncbi_reg_var">_file=AnotherName</span>
+<br />or
+<br /><span class="ncbi_reg">[TypeName]</span>
+<br /><span class="ncbi_reg_var">_file=AnotherName</span>
+<br />would put the class <span class="ncbi_class">CTypeName</span>
+in files with the base name <span class="ncbi_file">AnotherName</span>.
 <br />
+<br />While these two:
+<br /><span class="ncbi_reg">[ModuleName]</span>
+<br /><span class="ncbi_reg_var">_file=AnotherName</span>
+<br />or
+<br /><span class="ncbi_reg">[-]</span>
+<br /><span class="ncbi_reg_var">_file=AnotherName</span>
+<br />put <em>all</em> the generated classes
+into a single file with the base name <span class="ncbi_file">AnotherName</span>.
+</blockquote>
+  </dd>
+
+  <dt><span class="ncbi_keyword">_dir</span></dt>
+  <dd>Subdirectory in which the generated C++ files will be stored
+    (in case <span class="ncbi_reg_var">_file</span> not specified).
+  </dd>
+
+  <dt><span class="ncbi_keyword">_class</span></dt>
+  <dd>
+The name of the generated class
+(if <span class="ncbi_reg_var">_class=-</span> is specified, then
+no code is generated for this type).
+<blockquote>
+For example, the following definitions:
+<br /><span class="ncbi_reg">[ModuleName.TypeName]</span>
+<br /><span class="ncbi_reg_var">_class=AnotherName</span>
+<br />or
+<br /><span class="ncbi_reg">[TypeName]</span>
+<br /><span class="ncbi_reg_var">_class=AnotherName</span>
+<br />would cause the class generated for the type 
+<span class="ncbi_reg">TypeName</span> to be named
+<span class="ncbi_class">CAnotherName</span>.
+<br />
+<br />While these two:
+<br /><span class="ncbi_reg">[ModuleName]</span>
+<br /><span class="ncbi_reg_var">_class=AnotherName</span>
+<br />or
+<br /><span class="ncbi_reg">[-]</span>
+<br /><span class="ncbi_reg_var">_class=AnotherName</span>
+<br />would result in <em>all</em> the generated classes
+having the same name <span class="ncbi_class">CAnotherName</span>
+(which is probably not what you want).
+</blockquote>
+  </dd>
+
+  <dt><span class="ncbi_keyword">_namespace</span></dt>
+  <dd>The namespace in which the generated class (or classes) will be placed.</dd>
+
+  <dt><span class="ncbi_keyword">_parent_class</span></dt>
+  <dd>The name of the base class from which the generated C++ class is derived.</dd>
+
+  <dt><span class="ncbi_keyword">_parent_type</span></dt>
+  <dd>Derive the generated C++ class from the class, which corresponds to the specified
+type (in case <span class="ncbi_keyword">_parent_class</span> is not specified).
+  </dd>
+  <dt></dt>
+  <dd></dd>
+</dl>
+</p>
+
+<p>
 It is also possible to specify a storage-class modifier, which is required on Microsoft Windows
 to export/import generated classes from/to a DLL. This setting affects all generated classes
 in a module. Appropriate section of the definition file should look like this:
-<blockquote class="ncbi_code">[-]<br />
-_export = EXPORT_SPECIFIER
+<blockquote>
+<span class="ncbi_reg">[-]</span>
+<br /><span class="ncbi_reg_var">_export = EXPORT_SPECIFIER</span>
 </blockquote>
-Since this modifier could also be specified in the <a href="#refArg_od">command line</a>,
-datatool code generator uses the followig rules to choose the proper one:
+Since this modifier could also be specified in the <a href="#refArg_oex">command line</a>,
+<span class="ncbi_app">DATATOOL</span> code generator uses the following rules to choose
+the proper one:
 <ol>
   <li>
 If no <span class="ncbi_app_a">-oex</span> flag is given in the command line,
@@ -525,124 +525,176 @@ storage-class modifier, unless another one is specified in the definition file.
 The modifier from the definition file always takes precedence.
   </li>
 </ol>
+</p>
 
 
 
-<h3>
-Definitions which affect specific types:</h3>
+<a name="refDefSpecific"></a>
+<h3>Definitions which affect specific types</h3>
 
-<h3>
-<a NAME="refDefINT"></a>INTEGER, REAL, BOOLEAN, NULL:</h3>
 
-<table border cellspacing=0>
-<tr VALIGN=BASELINE NOSAVE>
-<td width="150"><span class="ncbi_keyword">_type</span></td>
+<a name="refDefINT"></a>
+<h4>INTEGER, REAL, BOOLEAN, NULL</h4>
+<dl>
+  <dt><span class="ncbi_keyword">_type</span></dt>
+  <dd>C++ type: int, short, unsigned, long etc.</dd>
+</dl>
 
-<td width="400">C++ type (int, short, unsigned, long etc.)</td>
-</tr>
-</table>
 
-<h3>
-<a NAME="refDefENUM"></a>ENUMERATED</h3>
+<a name="refDefENUM"></a>
+<h4>ENUMERATED</h4>
+<dl>
+  <dt><span class="ncbi_keyword">_type</span></dt>
+  <dd>C++ type: int, short, unsigned, long etc.</dd>
+  <dt><span class="ncbi_keyword">_prefix</span></dt>
+  <dd>Prefix for enum values' names. Default is "e".</dd>
+</dl>
 
-<table border cellspacing=0>
-<tr VALIGN=BASELINE NOSAVE>
-<td width="150"><span class="ncbi_keyword">_type</span></td>
 
-<td width="400">C++ type of variable (int, short, unsigned, long etc.)</td>
-</tr>
+<a name="refDefOCTETS"></a>
+<h4>OCTET STRING</h4>
+<dl>
+  <dt><span class="ncbi_keyword">_char</span></dt>
+  <dd>Vector element type: char, unsigned char or signed char.</dd>
+</dl>
 
-<tr VALIGN=BASELINE NOSAVE>
-<td NOSAVE><span class="ncbi_keyword">_prefix</span></td>
 
-<td>prefix for enum values' names (default "e")</td>
-</tr>
-</table>
+<a name="refDefArray"></a>
+<h4>SEQUENCE OF, SET OF</h4>
+<dl>
+  <dt><span class="ncbi_keyword">_type</span></dt>
+  <dd>STL container type: list, vector, set, or multiset.</dd>
+</dl>
 
-<h3>
-<a NAME="refDefOCTETS"></a>OCTET STRING</h3>
 
-<table border cellspacing=0>
-<tr VALIGN=BASELINE>
-<td width="150" ><span class="ncbi_keyword">_char</span></td>
+<a name="refDefClass"></a>
+<h4>SEQUENCE, SET</h4>
+<dl>
+  <dt><span class="ncbi_reg_var">memberName.</span><span class="ncbi_keyword">_delay</span></dt>
+  <dd>Mark the specified member for delayed reading.</dd>
+</dl>
 
-<td width="400">vector element type (char, unsigned char or signed char)</td>
-</tr>
-</table>
 
-<h3>
-<a NAME="refDefArray"></a>SEQUENCE OF, SET OF</h3>
+<a name="refDefChoice"></a>
+<h4>CHOICE</h4>
+<dl>
+  <dt><span class="ncbi_keyword">_virtual_choice</span></dt>
+  <dd>If non-empty, do not generate a special class for choice.
+    Rather make the choice class as parent one of all its variants.</dd>
+  <dt><span class="ncbi_reg_var">variantName.</span><span class="ncbi_keyword">_delay</span></dt>
+  <dd>Mark the specified variant for delayed reading.</dd>
+</dl>
 
-<table border cellspacing=0>
-<tr VALIGN=BASELINE NOSAVE>
-<td width="150"><span class="ncbi_keyword">_type</span></td>
 
-<td width="400">STL container type (list, vector, set, multiset)</td>
-</tr>
-</table>
 
-<h3>
-<a NAME="refDefClass"></a>SEQUENCE, SET</h3>
+<a name="refDefExample"></a>
+<h3>Examples</h3>
+<p>
+If we have the following ASN.1 specification:
+<blockquote>
+<pre class="ncbi_cmd">
+<a name="refType_Date"></a>Date ::= CHOICE {
+    <a name="refMember_Date_str"></a>str VisibleString,
+    std <a href="#refType_Date_std">Date-std</a>
+}
+<a name="refType_Date_std"></a>Date-std ::= SEQUENCE {
+    year INTEGER,
+    month INTEGER OPTIONAL
+}
+<a name="refType_Dates"></a>Dates ::= SEQUENCE OF <a href="#refType_Date">Date</a>    
+<a name="refType_Int_fuzz"></a>Int-fuzz ::= CHOICE {
+    p-m INTEGER,
+    <a name="refMember_Int_fuzz_range"></a>range SEQUENCE {
+        max INTEGER,
+        <a name="refMember_Int_fuzz_range_min"></a>min INTEGER
+    },
+    pct INTEGER,
+    lim ENUMERATED {
+        unk (0),
+        gt (1),
+        lt (2),
+        tr (3),
+        tl (4),
+        circle (5),
+        other (255)
+    },
+    <a name="refMember_Int_fuzz_alt"></a>alt SET OF INTEGER
+}
+</pre>
+</blockquote>
 
-<table border cellspacing=0>
-<tr VALIGN=BASELINE NOSAVE>
-<td width="150"><span class="ncbi_keyword">memberName._delay</span></td>
 
-<td width="400">mark specified member for <a href="#refDelayed">delayed reading</a></td>
-</tr>
-</table>
+Then the following definitions:
+<blockquote>
+      <span class="ncbi_reg">[<a href="#refType_Date">Date</a>]</span>
+<br /><span class="ncbi_reg_var"><a href="#refMember_Date_str">str</a>._type = string</span>
+</blockquote>
+would affect the generation of <a href="#refMember_Date_str">str</a>
+member of the <a href="#refType_Date">Date</a> structure.
 
-<h3>
-<a NAME="refDefChoice"></a>CHOICE</h3>
+<blockquote>
+      <span class="ncbi_reg">[<a href="#refType_Dates">Dates</a>]</span>
+<br /><span class="ncbi_reg_var">E._pointer = true</span>
+</blockquote>
+would affect the generation of elements of the <a href="#refType_Dates">Dates</a> container.
 
-<table border cellspacing=0>
-<tr VALIGN=BASELINE NOSAVE>
-<td width="150"><span class="ncbi_keyword">_virtual_choice</span></td>
+<blockquote>
+      <span class="ncbi_reg">[<a href="#refType_Int_fuzz">Int-fuzz</a>]</span>
+<br /><span class="ncbi_reg_var"><a href="#refMember_Int_fuzz_range">range</a>.
+        <a href="#refMember_Int_fuzz_range_min">min</a>._type = long</span>
+</blockquote>
+would affect the generation of the <a href="#refMember_Int_fuzz_range_min">min</a>
+member of the <a href="#refMember_Int_fuzz_range">range</a> member of the
+<a href="#refType_Int_fuzz">Int-fuzz</a> structure.
 
-<td width="400">if non empty, do not generate special class for choice
-<br>instead make choice class as parent class for all its variants</td>
-</tr>
+<blockquote>
+      <span class="ncbi_reg">[<a href="#refType_Int_fuzz">Int-fuzz</a>]</span>
+<br /><span class="ncbi_reg_var"><a href="#refMember_Int_fuzz_alt">alt</a>.E._type = long</span>
+</blockquote>
+would affect the generation of elements of the <a href="#refMember_Int_fuzz_alt">alt</a>
+member of the <a href="#refType_Int_fuzz">Int-fuzz</a> structure.
+</p>
 
-<tr VALIGN=BASELINE NOSAVE>
-<td NOSAVE><span class="ncbi_keyword">variantName._delay</span></td>
 
-<td>mark specified variant for <a href="#refDelayed">delayed reading</a></td>
-</tr>
-</table>
 
-<h2>
-<a NAME="refCode"></a>Generated code</h2>
 
-<h3>
-<a NAME="refNormalizedName"></a>Normalized name</h3>
+<a name="refCode"></a>
+<h2>Generated code</h2>
 
-Everywhere in generated code we use so called NormalizedName which is produced
-from ASN.1 type name by replacing all minuses ("-") with underscores ("_")
+<a name="refNormalizedName"></a>
+<h3>Normalized name</h3>
+
+<p>
+Everywhere in generated code we use so-called 
+<span class="ncbi_term">NormalizedName</span> which is produced
+from an ASN.1 type name by replacing all minuses ("-") with underscores ("_")
 and making first letter capital.
+</p>
 
-<h3>
-<a NAME="refCodeEnum"></a>ENUMERATED types</h3>
-For every ENUMERATED type datatool will produce C++ enum type by default
-having name E<a href="#refNormalizedName">NormalizedName</a>.
-<h3>
-<a NAME="refCodeClass"></a>SEQUENCE and SET code</h3>
+<a name="refCodeEnum"></a>
+<h3>ENUMERATED types</h3>
+By default, for every ENUMERATED type <span class="ncbi_app">DATATOOL</span>
+will produce a C++ enum type with the name <span class="ncbi_term">ENormalizedName</span>.
 
-<h3>
-<a NAME="refCodeChoice"></a>CHOICE code</h3>
+<a name="refCodeClass"></a>
+<h3>SEQUENCE and SET code</h3>
 
-<h3>
-<a NAME="refCodeOther"></a>Other types code</h3>
+<a name="refCodeChoice"></a>
+<h3>CHOICE code</h3>
 
-<br>
+<a name="refCodeOther"></a>
+<h3>Other types code</h3>
+
+<br />
 <!--#include virtual="../../ssi/navlinks.shtml" -->
 
 <!-- Begin footer content -->
 
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<table border="0" cellspacing="0" width="100%" >
 <tr>
-<td ALIGN=LEFT>
+<td align="left">
 <address>
-<a NAME="copyright"></a><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Eugene
+<a name="copyright"></a><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Eugene
 Vasilchenko</a>&nbsp;</address>
 </td>
 
@@ -650,7 +702,7 @@ Vasilchenko</a>&nbsp;</address>
 
 <!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> --></td>
 
-<td ALIGN=RIGHT><span class="ncbi_cvs_date">$Date$</span></td>
+<td align="right"><span class="ncbi_cvs_date">$Date$</span></td>
 </tr>
 </table>
 
