@@ -153,7 +153,7 @@ void s_SetService(string & service, string & /*program*/, const CArgs & args)
 }
 
 
-extern bool trace_blast_api;
+extern bool ncbi::trace_blast_api;
 
 int CRemote_blastApplication::Run(void)
 {
@@ -236,6 +236,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/18 13:49:04  camacho
+ * Correct use of namespaces
+ *
  * Revision 1.3  2004/03/16 19:41:03  vasilche
  * Namespace qualifier is invalid in extern declaration
  *

@@ -33,10 +33,10 @@
 
 #include "search_opts.hpp"
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-bool ncbi::trace_blast_api = false;
+bool trace_blast_api = false;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -220,10 +220,15 @@ void COptionWalker::ReadOpt(const ncbi::CArgs & args,
     field = CheckArgsString(args[key]);
 }
 
+END_NCBI_SCOPE
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/03/18 13:49:04  camacho
+ * Correct use of namespaces
+ *
  * Revision 1.1  2004/02/18 17:04:42  bealer
  * - Adapt blast_client code for Remote Blast API, merging code into the
  *   remote_blast demo application.
