@@ -22,6 +22,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.2  2000/11/01 18:56:00  kans
+* remove colliding symbols for CodeWarrior 6
+*
 * Revision 6.1  1997/10/19 23:15:59  kans
 * latest CodeWarrior needs EACCES defined here
 *
@@ -54,7 +57,7 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 /*#define	ENOENT		2*/		/* No such file or directory */
 #define	ESRCH		3		/* No such process */
 #define	EINTR		4		/* Interrupted system call */
-#define	EIO		5		/* Input/output error */
+/*#define	EIO		5*/		/* Input/output error */
 #endif /* __MWERKS__ */
 
 #ifndef ENXIO
@@ -64,7 +67,7 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 #ifdef __MWERKS__
 #define	E2BIG		7		/* Argument list too long */
 #define	ENOEXEC		8		/* Exec format error */
-#define	EBADF		9		/* Bad file descriptor */
+/*#define	EBADF		9*/		/* Bad file descriptor */
 #define	ECHILD		10		/* No child processes */
 #define	EDEADLK		11		/* Resource deadlock avoided */
 					/* 11 was EAGAIN */
@@ -75,7 +78,7 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 #endif /* ENOMEM */
 
 #ifdef __MWERKS__
-#define	EACCES		13		/* Permission denied */
+/*#define	EACCES		13*/		/* Permission denied */
 #endif /* __MWERKS__ */
 
 #ifndef EFAULT
@@ -92,15 +95,15 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 #define	ENODEV		19		/* Operation not supported by device */
 #define	ENOTDIR		20		/* Not a directory */
 #define	EISDIR		21		/* Is a directory */
-#define	EINVAL		22		/* Invalid argument */
-#define	ENFILE		23		/* Too many open files in system */
-#define	EMFILE		24		/* Too many open files */
+/*#define	EINVAL		22*/		/* Invalid argument */
+/*#define	ENFILE		23*/		/* Too many open files in system */
+/*#define	EMFILE		24*/		/* Too many open files */
 #define	ENOTTY		25		/* Inappropriate ioctl for device */
 #ifndef _POSIX_SOURCE
 #define	ETXTBSY		26		/* Text file busy */
 #endif
 #define	EFBIG		27		/* File too large */
-#define	ENOSPC		28		/* No space left on device */
+/*#define	ENOSPC		28*/		/* No space left on device */
 #define	ESPIPE		29		/* Illegal seek */
 #define	EROFS		30		/* Read-only file system */
 #define	EMLINK		31		/* Too many links */
@@ -151,14 +154,14 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 
 #define	ELOOP		62		/* Too many levels of symbolic links */
 #endif /* _POSIX_SOURCE */
-#define	ENAMETOOLONG	63		/* File name too long */
+#/*define	ENAMETOOLONG	63*/		/* File name too long */
 
 /* should be rearranged */
 #ifndef _POSIX_SOURCE
 #define	EHOSTDOWN	64		/* Host is down */
 #define	EHOSTUNREACH	65		/* No route to host */
 #endif /* _POSIX_SOURCE */
-#define	ENOTEMPTY	66		/* Directory not empty */
+/*#define	ENOTEMPTY	66*/		/* Directory not empty */
 
 /* quotas & mush */
 #ifndef _POSIX_SOURCE
