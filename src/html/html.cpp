@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/01/21 21:12:59  vasilche
+* Added/used descriptions for HTML submit/select/text.
+* Fixed some bugs in paging.
+*
 * Revision 1.24  1999/01/21 16:18:05  sandomir
 * minor changes due to NStr namespace to contain string utility functions
 *
@@ -475,20 +479,19 @@ int CHTML_table::sx_GetSpan(const CNCBINode* node,
     return span;
 }
 
-CNCBINode* CHTML_table::Cell(int needRow, int needCol)  // todo: exception
+CHTMLNode* CHTML_table::Cell(int needRow, int needCol)  // todo: exception
 {
     vector<int> rowSpans; // hanging down cells (with rowspan > 1)
 
     // beginning with row 0
     int row = 0;
     int needRowCols = 0;
-    CNCBINode* needRowNode = 0;
+    CHTMLNode* needRowNode = 0;
     // scan all children (which should be <TR> tags)
     for ( TChildList::const_iterator iRow = ChildBegin();
           iRow != ChildEnd(); ++iRow ) {
-        CNCBINode* trNode = *iRow;
-
-        if ( !sx_IsRow(trNode) ) {
+        CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(*iRow);
+        if ( !trNode || !sx_IsRow(trNode) ) {
             throw runtime_error("Table contains non <TR> tag");
         }
 
@@ -497,9 +500,9 @@ CNCBINode* CHTML_table::Cell(int needRow, int needCol)  // todo: exception
         // scan all children (which should be <TH> or <TD> tags)
         for ( TChildList::iterator iCol = trNode->ChildBegin();
               iCol != trNode->ChildEnd(); ++iCol ) {
-            CNCBINode* cell = *iCol;
+            CHTMLNode* cell = dynamic_cast<CHTMLNode*>(*iCol);
 
-            if ( !sx_IsCell(cell) ) {
+            if ( !cell || !sx_IsCell(cell) ) {
                 throw runtime_error("Table row contains non <TH> or <TD> tag");
             }
 
@@ -579,7 +582,7 @@ CNCBINode* CHTML_table::Cell(int needRow, int needCol)  // todo: exception
     } while ( needRowCols <= needCol );
 
     // add needed columns
-    CNCBINode* cell;
+    CHTMLNode* cell;
     for ( int i = 0; i < addCells; ++i ) {
         needRowNode->AppendChild(cell = new CHTML_td);
     }

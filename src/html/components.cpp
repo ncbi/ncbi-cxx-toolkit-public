@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/01/21 21:12:58  vasilche
+* Added/used descriptions for HTML submit/select/text.
+* Fixed some bugs in paging.
+*
 * Revision 1.21  1999/01/21 16:18:05  sandomir
 * minor changes due to NStr namespace to contain string utility functions
 *
@@ -115,9 +119,112 @@
 
 BEGIN_NCBI_SCOPE
 
-CQueryBox::CQueryBox(const string& URL)
-    : CParent(URL), m_TermWidth(0), m_SubmitName("Search")
+CSubmitDescription::CSubmitDescription(void)
 {
+}
+
+CSubmitDescription::CSubmitDescription(const string& name)
+    : m_Name(name)
+{
+}
+
+CSubmitDescription::CSubmitDescription(const string& name, const string& label)
+    : m_Name(name), m_Label(label)
+{
+}
+
+CNCBINode* CSubmitDescription::CreateComponent(void) const
+{
+    if ( m_Name.empty() )
+        return 0;
+
+    if ( m_Label.empty() )
+        return new CHTML_submit(m_Name);
+    else
+        return new CHTML_submit(m_Name, m_Label);
+}
+
+CNCBINode* COptionDescription::CreateComponent(const string& def) const
+{
+    if ( m_Value.empty() )
+        return new CHTML_option(m_Label, m_Label == def);
+    else if ( m_Label.empty() )
+        return new CHTML_option(m_Value, m_Value == def);
+    else
+        return new CHTML_option(m_Label, m_Value, m_Value == def);
+}
+
+CSelectDescription::CSelectDescription(void)
+{
+}
+
+CSelectDescription::CSelectDescription(const string& name)
+    : m_Name(name)
+{
+}
+
+void CSelectDescription::Add(const string& value)
+{
+    m_List.push_back(COptionDescription(value));
+}
+
+void CSelectDescription::Add(const string& value, const string& label)
+{
+    m_List.push_back(COptionDescription(value, label));
+}
+
+CNCBINode* CSelectDescription::CreateComponent(void) const
+{
+    if ( m_Name.empty() || m_List.empty() )
+        return 0;
+
+    CNCBINode* select = new CHTML_select(m_Name);
+    for ( list<COptionDescription>::const_iterator i = m_List.begin();
+          i != m_List.end(); ++i ) {
+        select->AppendChild(i->CreateComponent(m_Default));
+    }
+    if ( !m_TextBefore.empty() || !m_TextAfter.empty() ) {
+        CNCBINode* combine = new CNCBINode;
+        if ( !m_TextBefore.empty() )
+            combine->AppendChild(new CHTMLPlainText(m_TextBefore));
+        combine->AppendChild(select);
+        if ( !m_TextAfter.empty() )
+            combine->AppendChild(new CHTMLPlainText(m_TextAfter));
+        select = combine;
+    }
+    return select;
+}
+
+CTextInputDescription::CTextInputDescription(void)
+    : m_Width(0)
+{
+}
+
+CTextInputDescription::CTextInputDescription(const string& name)
+    : m_Name(name), m_Width(0)
+{
+}
+
+CNCBINode* CTextInputDescription::CreateComponent(void) const
+{
+    if ( m_Name.empty() )
+        return 0;
+
+    if ( m_Width )
+        return new CHTML_text(m_Name, m_Width, m_Value);
+    else
+        return new CHTML_text(m_Name, m_Value);
+}
+
+CQueryBox::CQueryBox(const string& URL)
+    : CParent(URL),
+      m_Submit("cmd", "Search"), m_Database("db"),
+      m_Term("term"), m_DispMax("dispmax")
+{
+    m_Database.m_TextBefore = "Search ";
+    m_Database.m_TextAfter = "for";
+    m_DispMax.m_TextBefore = "Show ";
+    m_DispMax.m_TextAfter = "documents per page";
 }
 
 CNCBINode* CQueryBox::CloneSelf(void) const
@@ -132,41 +239,15 @@ void CQueryBox::CreateSubNodes()
         AddHidden(i->first, i->second);
     }
 
-    if ( !m_Databases.empty() ) {
-        AppendPlainText("Search ");
-
-        CHTML_select* select = new CHTML_select(m_DbName);
-        AppendChild(select);
-        for ( map<string, string>::iterator i = m_Databases.begin();
-              i != m_Databases.end(); ++i ) {
-            select->AppendOption(i->second, i->first, i->first == m_DefaultDatabase);
-        }
-        AppendHTMLText(" for<p>");
-    }
+    AppendChild(m_Database.CreateComponent());
    
     CHTML_table* table = new CHTML_table();
     table->SetCellSpacing(0)->SetCellPadding(5)->SetBgColor(m_BgColor)->SetWidth(m_Width);
     AppendChild(table);
 
-    CHTML_text* term;
-    if ( m_TermWidth )
-        term = new CHTML_text(m_TermName, m_TermWidth, m_TermValue);
-    else
-        term = new CHTML_text(m_TermName, m_TermValue);
-    table->InsertAt(0, 0, term);
-
-    table->InsertAt(0, 0, new CHTMLText("&nbsp;"));
-    table->InsertAt(0, 0, m_SubmitLabel.empty()?
-                    new CHTML_submit(m_SubmitName):
-                    new CHTML_submit(m_SubmitName, m_SubmitLabel));
-    table->InsertAt(0, 0, new CHTML_br);
-        
-    CHTML_select * selectpage = new CHTML_select(m_DispMax);
-    table->InsertAt(0, 0, selectpage); 
-    for ( list<string>::iterator i = m_Disp.begin(); i != m_Disp.end(); ++i )
-        selectpage->AppendOption(*i, *i == m_DefaultDispMax);
-        
-    table->InsertTextAt(0, 0, "documents per page");
+    table->InsertAt(0, 0, m_Term.CreateComponent());
+    table->InsertAt(0, 0, m_Submit.CreateComponent());
+    table->InsertAt(1, 0, m_DispMax.CreateComponent()); 
 }
 
 CNCBINode* CQueryBox::CreateComments(void)
@@ -188,18 +269,10 @@ CNCBINode* CButtonList::CloneSelf(void) const
 
 void CButtonList::CreateSubNodes()
 {
-    if ( m_List.empty() )
-        return; // nothing to display
-
-    AppendChild(m_SubmitLabel.empty()?
-                new CHTML_submit(m_SubmitName):
-                new CHTML_submit(m_SubmitName, m_SubmitLabel));
-
-    CHTML_select * Select = new CHTML_select(m_SelectName);
-    AppendChild(Select);
-    for (map<string, string>::iterator i = m_List.begin();
-         i != m_List.end(); ++i ) {
-        Select->AppendOption(i->second, i->first, i->second == m_Selected);
+    CNCBINode* select = m_List.CreateComponent();
+    if ( select ) {
+        AppendChild(m_Button.CreateComponent());
+        AppendChild(select);
     }
 }
 

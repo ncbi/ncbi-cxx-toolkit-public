@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/01/21 21:12:54  vasilche
+* Added/used descriptions for HTML submit/select/text.
+* Fixed some bugs in paging.
+*
 * Revision 1.7  1999/01/11 15:13:33  vasilche
 * Fixed CHTML_font size.
 * CHTMLHelper extracted to separate file.
@@ -225,14 +229,14 @@ inline CHTMLListElementTmpl<TagName>* CHTMLListElementTmpl<TagName>::AppendItem(
     return this;
 }
 
-inline CNCBINode* CHTML_table::InsertAt(int row, int column, CNCBINode* node)
+inline CHTMLNode* CHTML_table::InsertAt(int row, int column, CNCBINode* node)
 {
-    CNCBINode* cell = Cell(row, column);
+    CHTMLNode* cell = Cell(row, column);
     cell->AppendChild(node);
     return cell;
 }
 
-inline CNCBINode* CHTML_table::InsertTextAt(int row, int column, const string& text)
+inline CHTMLNode* CHTML_table::InsertTextAt(int row, int column, const string& text)
 {
     return InsertAt(row, column, new CHTMLText(text));
 }

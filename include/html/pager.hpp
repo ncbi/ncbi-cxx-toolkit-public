@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/01/21 21:12:56  vasilche
+* Added/used descriptions for HTML submit/select/text.
+* Fixed some bugs in paging.
+*
 * Revision 1.1  1999/01/19 21:17:38  vasilche
 * Added CPager class
 *
@@ -55,6 +59,8 @@ class CPager : public CNCBINode
 
 public:
     CPager(CCgiRequest& request, int pageBlockSize = 10);
+
+    static bool IsPagerCommand(const CCgiRequest& request);
 
     bool PageChanged(void) const;
 
@@ -88,7 +94,6 @@ public:
     static const string KParam_Page;
     // ".x" suffix for image buttons
     static const string KParam_x;
-
 
 private:
     // pager parameters

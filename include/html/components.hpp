@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/01/21 21:12:53  vasilche
+* Added/used descriptions for HTML submit/select/text.
+* Fixed some bugs in paging.
+*
 * Revision 1.17  1999/01/20 18:12:42  vasilche
 * Added possibility to change label of buttons.
 *
@@ -101,6 +105,64 @@
 
 BEGIN_NCBI_SCOPE
 
+class CSubmitDescription
+{
+public:
+    string m_Name;
+    string m_Label;
+
+    CSubmitDescription(void);
+    CSubmitDescription(const string& name);
+    CSubmitDescription(const string& name, const string& label);
+
+    CNCBINode* CreateComponent(void) const;
+};
+
+class COptionDescription
+{
+public:
+    string m_Value;
+    string m_Label;
+
+    COptionDescription(void);
+    COptionDescription(const string& value);
+    COptionDescription(const string& value, const string& label);
+
+    CNCBINode* CreateComponent(const string& def) const;
+};
+
+class CSelectDescription
+{
+public:
+    string m_Name;
+    list<COptionDescription> m_List;
+    string m_Default;
+
+    string m_TextBefore;
+    string m_TextAfter;
+
+    CSelectDescription(void);
+    CSelectDescription(const string& value);
+
+    void Add(const string& value);
+    void Add(const string& value, const string& label);
+    void Add(int value);
+
+    CNCBINode* CreateComponent(void) const;
+};
+
+class CTextInputDescription
+{
+public:
+    string m_Name;
+    string m_Value;
+    int m_Width;
+
+    CTextInputDescription(void);
+    CTextInputDescription(const string& value);
+
+    CNCBINode* CreateComponent(void) const;
+};
 
 class CQueryBox: public CHTML_form
 {
@@ -121,24 +183,12 @@ public:
     int m_Width; // in pixels
     string m_BgColor;
 
-    string m_SubmitName;
-    string m_SubmitLabel;
-
-    string m_DbName;  // name of the database field
-    map<string, string> m_Databases;  // the list of databases
-    string m_DefaultDatabase;  // initially selected database
-
     map<string, string> m_HiddenValues;
 
-    string m_TermName; // name of query string value
-    string m_TermValue; // initial query string value
-    int m_TermWidth; // width of query string
-
-    string m_DispMax;  // name of dispmax field
-    list<string> m_Disp;  // the values in dispmax field
-    string m_DefaultDispMax;  // initially selected dispmax field
-
-    string m_URL;
+    CSubmitDescription m_Submit;
+    CSelectDescription m_Database;
+    CTextInputDescription m_Term;
+    CSelectDescription m_DispMax;
 
     //////// subpages
 
@@ -161,11 +211,8 @@ class CButtonList: public CNCBINode
 public:
     CButtonList(void);
 
-    string m_SubmitName;
-    string m_SubmitLabel;
-    string m_SelectName;  // select tag name
-    map<string, string> m_List;
-    string m_Selected;
+    CSubmitDescription m_Button;
+    CSelectDescription m_List;
 
     virtual void CreateSubNodes(void);
 
@@ -242,6 +289,8 @@ protected:
     // cloning
     virtual CNCBINode* CloneSelf() const;
 };
+
+#include <html/components.inl>
 
 END_NCBI_SCOPE
 

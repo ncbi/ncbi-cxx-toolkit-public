@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/01/21 21:13:00  vasilche
+* Added/used descriptions for HTML submit/select/text.
+* Fixed some bugs in paging.
+*
 * Revision 1.3  1999/01/21 16:18:06  sandomir
 * minor changes due to NStr namespace to contain string utility functions
 *
@@ -124,6 +128,39 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize)
     m_PageBlockStart = m_DisplayPage - m_DisplayPage % m_PageBlockSize;
 }
 
+bool CPager::IsPagerCommand(const CCgiRequest& request)
+{
+    const TCgiEntries& entries = request.GetEntries();
+
+    if ( entries.find(KParam_PreviousPagesX) != entries.end() ) {
+        // previous pages
+        return true;
+    }
+    else if ( entries.find(KParam_NextPagesX) != entries.end() ) {
+        // next pages
+        return true;
+    }
+    else {
+        // look for params like: "page 2.x=..."
+        for ( TCgiEntriesCI i = entries.begin(); i != entries.end(); ++i ) {
+            const string& param = i->first;
+            if ( NStr::StartsWith(param, KParam_Page) &&
+                 NStr::EndsWith(param, KParam_x) ) {
+                // "page xxx"
+                string page = param.substr(KParam_Page.size(),
+                        param.size() - KParam_Page.size() - KParam_x.size());
+                try {
+                    NStr::StringToInt(page);
+                    return true;
+                } catch (exception e) {
+                    // ignore exception right now
+                }
+            }
+        }
+    }
+    return false;
+}
+
 int CPager::GetDisplayPage(CCgiRequest& request)
 {
     const TCgiEntries& entries = request.GetEntries();
@@ -168,6 +205,9 @@ int CPager::GetPageSize(CCgiRequest& request)
 void CPager::SetItemCount(int itemCount)
 {
     m_ItemCount = itemCount;
+    if ( m_DisplayPage * m_PageSize >= itemCount ) {
+        m_DisplayPage = 0;
+    }
 }
 
 pair<int, int> CPager::GetRange(void) const

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/01/21 21:12:54  vasilche
+* Added/used descriptions for HTML submit/select/text.
+* Fixed some bugs in paging.
+*
 * Revision 1.20  1999/01/14 21:25:16  vasilche
 * Changed CPageList to work via form image input elements.
 *
@@ -508,15 +512,16 @@ public:
 
     // returns cell, will add rows/columns if needed
     // throws exception if it is not left upper corner of cell
-    CNCBINode* Cell(int row, int column);
+    CHTMLNode* Cell(int row, int column);
     // checks table contents for validaty, throws exception if invalid
     void CheckTable(void) const;
     // returns width of table in columns. Should call CheckTable before
     int CalculateNumberOfColumns(void) const;
     int CalculateNumberOfRows(void) const;
 
-    CNCBINode* InsertAt(int row, int column, CNCBINode* node);
-    CNCBINode* InsertTextAt(int row, int column, const string& text);
+    // return cell of insertion
+    CHTMLNode* InsertAt(int row, int column, CNCBINode* node);
+    CHTMLNode* InsertTextAt(int row, int column, const string& text);
 
     void ColumnWidth(CHTML_table*, int column, const string & width);
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/01/21 21:13:00  vasilche
+* Added/used descriptions for HTML submit/select/text.
+* Fixed some bugs in paging.
+*
 * Revision 1.10  1999/01/15 17:47:56  vasilche
 * Changed CButtonList options: m_Name -> m_SubmitName, m_Select ->
 * m_SelectName. Added m_Selected.
@@ -97,24 +101,19 @@ CNCBINode* CPmFrontPage::CreateView(void)
     CQueryBox * QueryBox = new CQueryBox("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query");
     QueryBox->m_Width = 400;
     QueryBox->m_BgColor = "#CCCCCFF";
-    QueryBox->m_DispMax = "dispmax";
-    QueryBox->m_DefaultDispMax = "20";
-    QueryBox->m_DbName = "db";
-    QueryBox->m_TermName = "term";
-    QueryBox->m_URL = "http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query";
-    QueryBox->m_Disp.push_back("10");
-    QueryBox->m_Disp.push_back("20");
-    QueryBox->m_Disp.push_back("50");
-    QueryBox->m_Disp.push_back("100");
-    QueryBox->m_Disp.push_back("200");
-    QueryBox->m_Disp.push_back("1000");
-    QueryBox->m_Disp.push_back("2000");
-    QueryBox->m_Disp.push_back("5000");
-    QueryBox->m_Databases["m"] = "Medline";
-    QueryBox->m_Databases["n"] = "GenBank DNA Sequences";
-    QueryBox->m_Databases["p"] = "GenBank Protein Sequences";
-    QueryBox->m_Databases["t"] = "Biomolecule 3D Structures";
-    QueryBox->m_Databases["c"] = "Complete Genomes";
+    QueryBox->m_DispMax.m_Default = "20";
+    QueryBox->m_DispMax.Add(10);
+    QueryBox->m_DispMax.Add(20);
+    QueryBox->m_DispMax.Add(50);
+    QueryBox->m_DispMax.Add(100);
+    QueryBox->m_DispMax.Add(200);
+    QueryBox->m_DispMax.Add(1000);
+    QueryBox->m_DispMax.Add(2000);
+    QueryBox->m_Database.Add("m", "Medline");
+    QueryBox->m_Database.Add("n", "GenBank DNA Sequences");
+    QueryBox->m_Database.Add("p", "GenBank Protein Sequences");
+    QueryBox->m_Database.Add("t", "Biomolecule 3D Structures");
+    QueryBox->m_Database.Add("c", "Complete Genomes");
     QueryBox->m_HiddenValues["form"] = "4";
 
     return QueryBox;
@@ -155,15 +154,15 @@ CNCBINode* CPmDocSumPage::CreatePager(void)
     //
     CPagerBox * Pager = new CPagerBox;
     Pager->m_Width = 600;
-    Pager->m_TopButton->m_SubmitName = "Display";
-    Pager->m_TopButton->m_SelectName = "display";
-    Pager->m_TopButton->m_List["dopt"] = "Top";
-    Pager->m_RightButton->m_SubmitName = "Save";
-    Pager->m_RightButton->m_SelectName = "save";
-    Pager->m_RightButton->m_List["m_s"] = "Right";
-    Pager->m_LeftButton->m_SubmitName = "Order";
-    Pager->m_LeftButton->m_SelectName = "order";
-    Pager->m_LeftButton->m_List["m_o"] = "Left";
+    Pager->m_TopButton->m_Button.m_Name = "Display";
+    Pager->m_TopButton->m_List.m_Name = "display";
+    Pager->m_TopButton->m_List.Add("dopt", "Top");
+    Pager->m_RightButton->m_Button.m_Name = "Save";
+    Pager->m_RightButton->m_List.m_Name = "save";
+    Pager->m_RightButton->m_List.Add("m_s", "Right");
+    Pager->m_LeftButton->m_Button.m_Name = "Order";
+    Pager->m_LeftButton->m_List.m_Name = "order";
+    Pager->m_LeftButton->m_List.Add("m_o", "Left");
     Pager->m_PageList->m_Pages[1] = "page_one";
     Pager->m_PageList->m_Pages[2] = "page_two";
     Pager->m_PageList->m_Pages[3] = "page_three";
@@ -193,18 +192,15 @@ CNCBINode* CPmDocSumPage::CreateQueryBox(void)
     CQueryBox * QueryBox = new CQueryBox("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query");
     QueryBox->m_Width = 600;
     QueryBox->m_BgColor = "#FFFFFF";
-    QueryBox->m_DispMax = "dispmax";
-    QueryBox->m_DefaultDispMax = "20";
-    QueryBox->m_DbName = "db";
-    QueryBox->m_TermName = "term";
-    QueryBox->m_Disp.push_back("10");
-    QueryBox->m_Disp.push_back("20");
-    QueryBox->m_Disp.push_back("50");
-    QueryBox->m_Disp.push_back("100");
-    QueryBox->m_Disp.push_back("200");
-    QueryBox->m_Disp.push_back("1000");
-    QueryBox->m_Disp.push_back("2000");
-    QueryBox->m_Disp.push_back("5000");
+    QueryBox->m_DispMax.m_Default = "20";
+    QueryBox->m_DispMax.Add(10);
+    QueryBox->m_DispMax.Add(20);
+    QueryBox->m_DispMax.Add(50);
+    QueryBox->m_DispMax.Add(100);
+    QueryBox->m_DispMax.Add(200);
+    QueryBox->m_DispMax.Add(1000);
+    QueryBox->m_DispMax.Add(2000);
+    QueryBox->m_DispMax.Add(5000);
 /*
     QueryBox->m_Databases["m"] = "Medline";
     QueryBox->m_Databases["n"] = "GenBank DNA Sequences";
