@@ -239,7 +239,13 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     typedef ClassName CClass; \
 	typedef BaseClassName CClass_Base; \
     static InfoType* info = 0; \
-    if ( !info ) { \
+    volatile static bool info_ready = false; \
+    static CFastMutex lock; \
+    if ( !info_ready ) { \
+        CFastMutexGuard GUARD(lock); \
+        if ( info_ready ) { \
+            return info; \
+        } \
         DECLARE_BASE_OBJECT(CClass); \
         info = Code; \
         NCBI_NS_NCBI::RegisterTypeInfoObject(info);
@@ -247,6 +253,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 	BEGIN_BASE_TYPE_INFO(ClassName, ClassName, Method, InfoType, Code)
     
 #define END_TYPE_INFO \
+        info_ready = true; \
     } \
     return info; \
 }
