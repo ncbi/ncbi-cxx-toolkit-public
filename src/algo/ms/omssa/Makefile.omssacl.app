@@ -14,4 +14,5 @@ SRC = omssacl
 
 LIB = xomssa omssa xser xutil xncbi xregexp regexp
 
-
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
