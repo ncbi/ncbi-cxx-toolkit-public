@@ -282,6 +282,8 @@ public:
 
     // NULL if block before is aligned; if NULL passed, retrieves last block (if unaligned; else NULL)
     const UnalignedBlock * GetUnalignedBlockBefore(const UngappedAlignedBlock *aBlock) const;
+    // NULL if block after is aligned; if NULL passed, retrieves first block (if unaligned; else NULL)
+    const UnalignedBlock * GetUnalignedBlockAfter(const UngappedAlignedBlock *aBlock) const;
 
     int NBlocks(void) const { return blocks.size(); }
     bool HasNoAlignedBlocks(void) const;
@@ -413,6 +415,9 @@ public:
     void DeleteRows(std::vector < bool >& removeRows, int nToRemove);
 
     Block * Clone(const BlockMultipleAlignment *newMultiple) const;
+
+    // return the length of the shortest region that any row contributes to this block
+    int MinResidues(void) const;
 };
 
 END_SCOPE(Cn3D)
@@ -422,6 +427,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2004/09/23 10:31:14  thiessen
+* add block extension algorithm
+*
 * Revision 1.42  2004/07/27 17:38:12  thiessen
 * don't call GetPSSM() w/ no aligned blocks
 *

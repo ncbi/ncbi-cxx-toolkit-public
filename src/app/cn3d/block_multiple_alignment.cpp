@@ -757,6 +757,17 @@ const UnalignedBlock * BlockMultipleAlignment::GetUnalignedBlockBefore(
     return dynamic_cast<const UnalignedBlock*>(prevBlock);
 }
 
+const UnalignedBlock * BlockMultipleAlignment::GetUnalignedBlockAfter(
+    const UngappedAlignedBlock *aBlock) const
+{
+    const Block *nextBlock;
+    if (aBlock)
+        nextBlock = GetBlockAfter(aBlock);
+    else
+        nextBlock = blocks.front();
+    return dynamic_cast<const UnalignedBlock*>(nextBlock);
+}
+
 Block * BlockMultipleAlignment::GetBlockAfter(const Block *block) const
 {
     BlockList::const_iterator b, be = blocks.end();
@@ -1825,12 +1836,28 @@ Block * UnalignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
     return copy;
 }
 
+int UnalignedBlock::MinResidues(void) const
+{
+    int min = -1, m;
+    const Block::Range *range;
+    for (int row=0; row<NSequences(); ++row) {
+        range = GetRangeOfRow(row);
+        m = range->to - range->from + 1;
+        if (row == 0 || m < min)
+            min = m;
+    }
+    return min;
+}
+
 END_SCOPE(Cn3D)
 
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2004/09/23 10:31:14  thiessen
+* add block extension algorithm
+*
 * Revision 1.59  2004/07/27 17:38:12  thiessen
 * don't call GetPSSM() w/ no aligned blocks
 *

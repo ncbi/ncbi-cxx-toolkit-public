@@ -907,7 +907,7 @@ void AlignmentManager::BlockAlignAllUpdates(void)
             currentUpdates, &newAlignmentsList, &nRowsAddedToMultiple,
             sequenceViewer->EditorIsOn())) {
 
-        // replace update alignments with new ones (or leftovers where threader/merge failed)
+        // replace update alignments with new ones (or leftovers where algorithm failed)
         updateViewer->ReplaceAlignments(newAlignmentsList);
 
         // tell the sequenceViewer that rows have been merged into the multiple
@@ -934,7 +934,7 @@ void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
             currentMultiple, singleList, &newAlignments, &nRowsAddedToMultiple,
             sequenceViewer->EditorIsOn())) {
 
-        // replace threaded alignment with new one(s) (or leftover where threader/merge failed)
+        // replace threaded alignment with new one
         UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
         for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; ++a) {
             if (*a == single) {
@@ -946,7 +946,7 @@ void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
                 replacedList.push_back((*a)->Clone());
         }
         if (!foundSingle) ERRORMSG(
-            "AlignmentManager::ThreadUpdate() - threaded alignment not found in update viewer!");
+            "AlignmentManager::BlockAlignUpdate() - changed alignment not found in update viewer!");
         updateViewer->ReplaceAlignments(replacedList);
 
         // tell the sequenceViewer that rows have been merged into the multiple
@@ -956,12 +956,173 @@ void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
     }
 }
 
+typedef struct {
+    unsigned int multBlock, pairBlock;
+    bool extendPairBlockLeft;
+    int nResidues;
+} ExtendInfo;
+
+static bool CreateNewPairwiseAlignmentsByBlockExtension(const BlockMultipleAlignment& multiple,
+    const UpdateViewer::AlignmentList& toExtend, UpdateViewer::AlignmentList *newAlignments)
+{
+    if (multiple.HasNoAlignedBlocks())
+        return false;
+
+    bool anyChanges = false;
+
+    BlockMultipleAlignment::UngappedAlignedBlockList multBlocks, pairBlocks;
+    multiple.GetUngappedAlignedBlocks(&multBlocks);
+
+    newAlignments->clear();
+    UpdateViewer::AlignmentList::const_iterator t, te = toExtend.end();
+    for (t=toExtend.begin(); t!=te; ++t) {
+        BlockMultipleAlignment *p = (*t)->Clone();
+        newAlignments->push_back(p);
+
+        pairBlocks.clear();
+        p->GetUngappedAlignedBlocks(&pairBlocks);
+        if (pairBlocks.size() == 0)
+            continue;
+
+        typedef list < ExtendInfo > ExtendList;
+        typedef map < const UnalignedBlock *, ExtendList > ExtendMap;
+        ExtendMap extendMap;
+
+        // find cases where a pairwise block ends inside a multiple block
+        const UnalignedBlock *ub;
+        for (unsigned int mb=0; mb<multBlocks.size(); ++mb) {
+            const Block::Range *multRange = multBlocks[mb]->GetRangeOfRow(0);
+            for (unsigned int pb=0; pb<pairBlocks.size(); ++pb) {
+                const Block::Range *pairRange = pairBlocks[pb]->GetRangeOfRow(0);
+
+                if (pairRange->from > multRange->from && pairRange->from <= multRange->to &&
+                    (ub = p->GetUnalignedBlockBefore(pairBlocks[pb])) != NULL)
+                {
+                    ExtendList& el = extendMap[ub];
+                    el.resize(el.size() + 1);
+                    el.back().multBlock = mb;
+                    el.back().pairBlock = pb;
+                    el.back().extendPairBlockLeft = true;
+                    el.back().nResidues = pairRange->from - multRange->from;
+                    TRACEMSG("block " << (pb+1) << " wants to be extended to the left");
+                }
+
+                if (pairRange->to < multRange->to && pairRange->to >= multRange->from &&
+                    (ub = p->GetUnalignedBlockAfter(pairBlocks[pb])) != NULL)
+                {
+                    ExtendList& el = extendMap[ub];
+                    el.resize(el.size() + 1);
+                    el.back().multBlock = mb;
+                    el.back().pairBlock = pb;
+                    el.back().extendPairBlockLeft = false;
+                    el.back().nResidues = multRange->to - pairRange->to;
+                    TRACEMSG("block " << (pb+1) << " wants to be extended to the right");
+                }
+            }
+        }
+
+        ExtendMap::const_iterator u, ue = extendMap.end();
+        for (u=extendMap.begin(); u!=ue; ++u) {
+
+            // don't slurp residues into non-adjacent aligned blocks from the multiple
+            if (u->second.size() == 2 && (u->second.back().multBlock - u->second.front().multBlock > 1)) {
+                TRACEMSG("can't extend with intervening block(s) in multiple between blocks "
+                    << (u->second.front().pairBlock+1) << " and " << (u->second.back().pairBlock+1));
+                continue;
+            }
+
+            // check to see if there are sufficient unaligned residues to extend from both sides
+            int available = u->first->MinResidues(), totalShifts = 0;
+            ExtendList::const_iterator e, ee = u->second.end();
+            for (e=u->second.begin(); e!=ee; ++e)
+                totalShifts += e->nResidues;
+            if (totalShifts > available) {
+                TRACEMSG("inadequate residues to the "
+                    << (u->second.front().extendPairBlockLeft ? "left" : "right")
+                    << " of block " << (u->second.front().pairBlock+1) << "; no extension performed");
+                continue;
+            }
+
+            // perform any allowed extensions
+            for (e=u->second.begin(); e!=ee; ++e) {
+                int alnIdx = p->GetAlignmentIndex(0,
+                    (e->extendPairBlockLeft ?
+                        pairBlocks[e->pairBlock]->GetRangeOfRow(0)->from :
+                        pairBlocks[e->pairBlock]->GetRangeOfRow(0)->to),
+                    BlockMultipleAlignment::eLeft); // justification is irrelevant since this is an aligned block
+                TRACEMSG("extending " << (e->extendPairBlockLeft ? "left" : "right")
+                    << " side of block " << (e->pairBlock+1) << " by " << e->nResidues << " residues");
+                if (p->MoveBlockBoundary(alnIdx, alnIdx + (e->extendPairBlockLeft ? -e->nResidues : e->nResidues)))
+                    anyChanges = true;
+                else
+                    ERRORMSG("MoveBlockBoundary() failed!");
+            }
+        }
+    }
+
+    return anyChanges;
+}
+
+void AlignmentManager::ExtendAllUpdates(void)
+{
+    BlockMultipleAlignment *currentMultiple =
+        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
+            sequenceViewer->GetCurrentAlignments().front() : NULL;
+    if (!currentMultiple) return;
+
+    const UpdateViewer::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
+    if (currentUpdates.size() == 0)
+        return;
+
+    // run the block extender on update pairwise alignments
+    UpdateViewer::AlignmentList newAlignmentsList;
+    if (CreateNewPairwiseAlignmentsByBlockExtension(*currentMultiple, currentUpdates, &newAlignmentsList))
+        updateViewer->ReplaceAlignments(newAlignmentsList);
+}
+
+void AlignmentManager::ExtendUpdate(BlockMultipleAlignment *single)
+{
+    BlockMultipleAlignment *currentMultiple =
+        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
+            sequenceViewer->GetCurrentAlignments().front() : NULL;
+    if (!currentMultiple) return;
+
+    // run the threader on the given alignment
+    UpdateViewer::AlignmentList singleList, replacedList;
+    BlockAligner::AlignmentList newAlignments;
+
+    singleList.push_back(single);
+    if (CreateNewPairwiseAlignmentsByBlockExtension(*currentMultiple, singleList, &newAlignments)) {
+        if (newAlignments.size() != 1) {
+            ERRORMSG("AlignmentManager::ExtendUpdate() - returned alignment list size != 1!");
+            return;
+        }
+
+        // replace threaded alignment with new one
+        UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
+        bool foundSingle = false;   // sanity check
+        for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; ++a) {
+            if (*a == single) {
+                replacedList.push_back(newAlignments.front());
+                foundSingle = true;
+            } else
+                replacedList.push_back((*a)->Clone());
+        }
+        if (!foundSingle)
+            ERRORMSG("AlignmentManager::ExtendUpdate() - changed alignment not found in update viewer!");
+        updateViewer->ReplaceAlignments(replacedList);
+    }
+}
+
 END_SCOPE(Cn3D)
 
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2004/09/23 10:31:14  thiessen
+* add block extension algorithm
+*
 * Revision 1.96  2004/07/27 17:38:12  thiessen
 * don't call GetPSSM() w/ no aligned blocks
 *

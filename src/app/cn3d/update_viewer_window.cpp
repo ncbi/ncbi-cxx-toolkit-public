@@ -73,6 +73,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_NEIGHBOR,   UpdateViewerWindow::OnRunBlast)
     EVT_MENU_RANGE(MID_SET_REGION, MID_RESET_REGIONS,   UpdateViewerWindow::OnSetRegion)
     EVT_MENU_RANGE(MID_BLOCKALIGN_ONE, MID_BLOCKALIGN_ALL,  UpdateViewerWindow::OnBlockAlign)
+    EVT_MENU_RANGE(MID_EXTEND_ONE, MID_EXTEND_ALL,      UpdateViewerWindow::OnExtend)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -106,6 +107,9 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->AppendSeparator();
     menu->Append(MID_THREAD_ONE, "Thread &Single", "", true);
     menu->Append(MID_THREAD_ALL, "Thread &All");
+    menu->AppendSeparator();
+    menu->Append(MID_EXTEND_ONE, "&Extend Single", "", true);
+    menu->Append(MID_EXTEND_ALL, "E&xtend All");
     menu->AppendSeparator();
     menu->Append(MID_SET_REGION, "Set &Region", "", true);
     menu->Append(MID_RESET_REGIONS, "Reset All Re&gions");
@@ -353,6 +357,21 @@ void UpdateViewerWindow::OnBlockAlign(wxCommandEvent& event)
 
     else if (event.GetId() == MID_BLOCKALIGN_ALL) {
         updateViewer->alignmentManager->BlockAlignAllUpdates();
+    }
+}
+
+void UpdateViewerWindow::OnExtend(wxCommandEvent& event)
+{
+    if (event.GetId() == MID_EXTEND_ONE) {
+        CancelAllSpecialModesExcept(MID_EXTEND_ONE);
+        if (DoExtendSingle())
+            SetCursor(*wxCROSS_CURSOR);
+        else
+            ExtendSingleOff();
+    }
+
+    else if (event.GetId() == MID_EXTEND_ALL) {
+        updateViewer->alignmentManager->ExtendAllUpdates();
     }
 }
 
@@ -625,6 +644,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2004/09/23 10:31:14  thiessen
+* add block extension algorithm
+*
 * Revision 1.61  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *

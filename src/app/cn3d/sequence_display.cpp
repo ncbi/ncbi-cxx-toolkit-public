@@ -592,6 +592,13 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 return false;
             }
 
+            // Block extend single
+            if (updateWindow->DoExtendSingle()) {
+                updateWindow->updateViewer->alignmentManager->ExtendUpdate(alignment);
+                if (!controlDown) updateWindow->ExtendSingleOff();
+                return false;
+            }
+
             // set region (on slave sequence)
             if (updateWindow->DoSetRegion()) {
                 // dialog uses 1-based sequence locations
@@ -1277,6 +1284,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2004/09/23 10:31:14  thiessen
+* add block extension algorithm
+*
 * Revision 1.73  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

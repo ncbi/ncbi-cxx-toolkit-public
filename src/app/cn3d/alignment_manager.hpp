@@ -113,8 +113,10 @@ public:
     void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign);
     void ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single);
     void ThreadAllUpdates(const ThreaderOptions& options);
-    void BlockAlignAllUpdates(void );
+    void BlockAlignAllUpdates(void);
     void BlockAlignUpdate(BlockMultipleAlignment *single);
+    void ExtendAllUpdates(void);
+    void ExtendUpdate(BlockMultipleAlignment *single);
 
     // merge functions
     typedef std::map < BlockMultipleAlignment *, bool > UpdateMap;
@@ -167,6 +169,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2004/09/23 10:31:14  thiessen
+* add block extension algorithm
+*
 * Revision 1.49  2004/02/19 17:04:40  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

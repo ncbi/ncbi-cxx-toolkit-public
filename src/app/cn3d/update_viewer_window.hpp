@@ -75,6 +75,8 @@ private:
         MID_BLAST_NEIGHBOR,
         MID_BLOCKALIGN_ONE,
         MID_BLOCKALIGN_ALL,
+        MID_EXTEND_ONE,
+        MID_EXTEND_ALL,
         MID_SET_REGION,
         MID_RESET_REGIONS,
         MID_MERGE_ONE,
@@ -89,6 +91,7 @@ private:
     void OnRunThreader(wxCommandEvent& event);
     void OnRunBlast(wxCommandEvent& event);
     void OnBlockAlign(wxCommandEvent& event);
+    void OnExtend(wxCommandEvent& event);
     void OnSetRegion(wxCommandEvent& event);
     void OnMerge(wxCommandEvent& event);
     void OnDelete(wxCommandEvent& event);
@@ -122,6 +125,11 @@ private:
     void BlockAlignSingleOff(void)
     {
         menuBar->Check(MID_BLOCKALIGN_ONE, false);
+        SetCursor(wxNullCursor);
+    }
+    void ExtendSingleOff(void)
+    {
+        menuBar->Check(MID_EXTEND_ONE, false);
         SetCursor(wxNullCursor);
     }
     void SetRegionOff(void)
@@ -159,6 +167,7 @@ public:
     bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
     bool DoBlastNeighborSingle(void) const { return menuBar->IsChecked(MID_BLAST_NEIGHBOR); }
     bool DoBlockAlignSingle(void) const { return menuBar->IsChecked(MID_BLOCKALIGN_ONE); }
+    bool DoExtendSingle(void) const { return menuBar->IsChecked(MID_EXTEND_ONE); }
     bool DoSetRegion(void) const { return menuBar->IsChecked(MID_SET_REGION); }
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
     bool DoMergeNeighbor(void) const { return menuBar->IsChecked(MID_MERGE_NEIGHBOR); }
@@ -172,6 +181,7 @@ public:
         if (id != MID_BLAST_PSSM_ONE && DoBlastPSSMSingle()) BlastPSSMSingleOff();
         if (id != MID_BLAST_NEIGHBOR && DoBlastNeighborSingle()) BlastNeighborSingleOff();
         if (id != MID_BLOCKALIGN_ONE && DoBlockAlignSingle()) BlockAlignSingleOff();
+        if (id != MID_EXTEND_ONE && DoExtendSingle()) ExtendSingleOff();
         if (id != MID_SET_REGION && DoSetRegion()) SetRegionOff();
         if (id != MID_MERGE_ONE && DoMergeSingle()) MergeSingleOff();
         if (id != MID_MERGE_NEIGHBOR && DoMergeNeighbor()) MergeNeighborOff();
@@ -234,6 +244,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/09/23 10:31:14  thiessen
+* add block extension algorithm
+*
 * Revision 1.37  2004/02/19 17:05:21  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
