@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/02/22 22:45:39  vasilche
+* Fixed map::insert(value_type) usage.
+*
 * Revision 1.6  1998/12/28 17:56:36  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -130,7 +133,7 @@ void CCgiResponse::SetHeaderValue(const string &name, const string& value)
     if ( value.empty() ) {
         RemoveHeaderValue(name);
     } else {
-        m_HeaderValues.insert(TMap::value_type(name, value));
+        m_HeaderValues[name] = value;
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/02/22 22:45:43  vasilche
+* Fixed map::insert(value_type) usage.
+*
 * Revision 1.3  1999/02/03 15:03:58  vasilche
 * Added check for wrong link names.
 *
@@ -83,7 +86,7 @@ CLinkBar::~CLinkBar(void)
 
 void CLinkBar::AddLink(const string& name, const string& linkUrl)
 {
-    m_Links.insert(map<string, string>::value_type(name, linkUrl));
+    m_Links[name] = linkUrl;
     
     // check that this link is in template
     for ( TLinkBarTemplate::const_iterator i = m_Template->begin();
