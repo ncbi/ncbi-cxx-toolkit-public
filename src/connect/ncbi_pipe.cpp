@@ -42,16 +42,14 @@
 #    include <ncbi_mslextras.h>
 #  endif
 #else
-
-#error "Class CPipe is supported only on Windows and Unix"
-
+#  error "Class CPipe is supported only on Windows and Unix"
 #endif
 
 
 BEGIN_NCBI_SCOPE
 
 
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
 
 //
 // Class CPipeHandle handles forwarded requests from CPipe
@@ -266,7 +264,7 @@ int CPipeHandle::Close()
     }
     if ( m_ChildStdout ) {
         ::CloseHandle(m_ChildStdout);
-       m_ChildStdout = NULL;
+        m_ChildStdout = NULL;
     }
     if ( m_ChildStderr ) {
         ::CloseHandle(m_ChildStderr);
@@ -344,7 +342,7 @@ size_t CPipeHandle::Write(const void* buf, size_t size) const
 }
 
 
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
 
 
 
@@ -433,45 +431,46 @@ void CPipeHandle::Open(const char* cmdname, const vector<string>& args,
     case -1:
         // fork failed
         NCBI_THROW(CPipeException, eRun,
-                  "Pipe has failed to fork the current process");
+                   "Pipe has failed to fork the current process");
     case 0:
         // Now we are in the child process
         int status = -1;
 
         // Bind childs standard I/O file handlers to pipe
         if ( mode_stdin != CPipe::eDoNotUse ) {
-#ifdef NCBI_COMPILER_MW_MSL  // Codewarrior's MSL library does not have fileno().
-            if ( dup2(fd_pipe_in[0], 0) < 0)
-#else
-            if ( dup2(fd_pipe_in[0], fileno(stdin)) < 0)
-#endif
-            {
-                _exit(status);
-            }
+#  ifdef NCBI_COMPILER_MW_MSL
+            // Codewarrior's MSL library does not have fileno().
+            if (dup2(fd_pipe_in[0], 0) < 0)
+#  else
+            if (dup2(fd_pipe_in[0], fileno(stdin)) < 0)
+#  endif
+                {
+                    _exit(status);
+                }
             close(fd_pipe_in[0]);
             close(fd_pipe_in[1]);
         }
         if ( mode_stdout != CPipe::eDoNotUse ) {
-#ifdef NCBI_COMPILER_MW_MSL 
-            if ( dup2(fd_pipe_out[1], 1) < 0)
-#else
-            if ( dup2(fd_pipe_out[1], fileno(stdout)) < 0)
-#endif
-            {
-                _exit(status);
-            }
+#  ifdef NCBI_COMPILER_MW_MSL 
+            if (dup2(fd_pipe_out[1], 1) < 0)
+#  else
+            if (dup2(fd_pipe_out[1], fileno(stdout)) < 0)
+#  endif      
+                {
+                    _exit(status);
+                }
             close(fd_pipe_out[0]);
             close(fd_pipe_out[1]);
         }
         if ( mode_stderr != CPipe::eDoNotUse ) {
-#ifdef NCBI_COMPILER_MW_MSL 
-            if ( dup2(fd_pipe_err[1], 2) < 0)
-#else
-            if ( dup2(fd_pipe_err[1], fileno(stderr)) < 0)
-#endif
-            {
-                _exit(status);
-            }
+#  ifdef NCBI_COMPILER_MW_MSL 
+            if (dup2(fd_pipe_err[1], 2) < 0)
+#  else
+            if (dup2(fd_pipe_err[1], fileno(stderr)) < 0)
+#  endif      
+                {
+                    _exit(status);
+                }
             close(fd_pipe_err[0]);
             close(fd_pipe_err[1]);
         }
@@ -479,7 +478,7 @@ void CPipeHandle::Open(const char* cmdname, const vector<string>& args,
         // Prepare a program arguments
         size_t cnt = args.size();
         size_t i   = 0;
-        const char** x_args = new const char*[cnt+2];
+        const char** x_args = new const char*[cnt + 2];
         typedef ArrayDeleter<const char*> TArgsDeleter;
         AutoPtr<const char*, TArgsDeleter> p_args = x_args;
         ITERATE (vector<string>, arg, args) {
@@ -490,7 +489,7 @@ void CPipeHandle::Open(const char* cmdname, const vector<string>& args,
         x_args[cnt + 1] = 0;
 
         // Spawn a program
-        status = execvp(cmdname, const_cast<char**>(x_args));
+        status = execvp(cmdname, const_cast<char**> (x_args));
         _exit(status);
     }
 
@@ -517,7 +516,7 @@ int CPipeHandle::Close()
             exit_code = WEXITSTATUS(exit_code);
         }
     }
-    if ( m_StdIn != -1 ) {
+    if ( m_StdIn  != -1 ) {
         close(m_StdIn);
     }
     if ( m_StdOut != -1 ) {
@@ -534,7 +533,7 @@ int CPipeHandle::Close()
 
 void CPipeHandle::CloseHandle(CPipe::EChildIOHandle handle)
 {
-    switch(handle) {
+    switch ( handle ) {
     case CPipe::eStdIn:
         if ( m_StdIn != -1 ) {
             close(m_StdIn);
@@ -576,11 +575,7 @@ size_t CPipeHandle::Write(const void* buffer, size_t size) const
     return write(m_StdIn, buffer, size);
 }
 
-#else
-
-#error "Class CPipe is supported only on Windows and Unix"
-
-#endif
+#endif  /* NCBI_OS_UNIX | NCBI_OS_MSWIN */
 
 
 
@@ -740,7 +735,7 @@ CT_INT_TYPE CPipeStreambuf::overflow(CT_INT_TYPE c)
         // Update buffer content (get rid of the sent data)
         if ((n_written /= sizeof(CT_CHAR_TYPE)) != n_write) {
             memmove(m_WriteBuf, pbase() + n_written,
-                    (n_write - n_written)*sizeof(CT_CHAR_TYPE));
+                    (n_write - n_written) * sizeof(CT_CHAR_TYPE));
         }
         setp(m_WriteBuf + n_write - n_written, m_WriteBuf + m_BufSize);
 
@@ -771,7 +766,7 @@ CT_INT_TYPE CPipeStreambuf::underflow(void)
         return CT_EOF;
     }
     // Update input buffer with the data we just read
-    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read/sizeof(CT_CHAR_TYPE));
+    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read / sizeof(CT_CHAR_TYPE));
 
     return CT_TO_INT_TYPE(*m_ReadBuf);
 }
@@ -825,6 +820,7 @@ CPipeIOStream::~CPipeIOStream(void)
 #endif
 }
 
+
 void CPipeIOStream::SetReadHandle(const CPipe::EChildIOHandle handle) const
 {
     if (m_StreamBuf) {
@@ -839,8 +835,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/06/18 21:21:48  vakatov
+ * Formal code formatting
+ *
  * Revision 1.21  2003/06/18 18:59:33  rsmith
- * put in 0,1,2 for fileno(stdin/out/err) for library that does not have fileno().
+ * put in 0,1,2 for fileno(stdin/out/err) for library that does not have
+ * fileno().
  *
  * Revision 1.20  2003/05/19 21:21:38  vakatov
  * Get rid of unnecessary unreached statement
