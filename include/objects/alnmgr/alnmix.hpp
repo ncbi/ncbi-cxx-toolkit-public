@@ -164,11 +164,11 @@ public:
           m_Score(0),
           m_Factor(1),
           m_RefBy(0),
-          m_RefseqCandidate(false),
           m_ExtraRow(0)
     {};
 
     typedef CAlnMixSegment::TStarts TStarts;
+    typedef list<CAlnMixMatch *>    TMatchList;
 
     int                   m_DS_Count;
     const CBioseq_Handle* m_BioseqHandle;
@@ -178,11 +178,11 @@ public:
     bool                  m_PositiveStrand;
     TStarts               m_Starts;
     CAlnMixSeq *          m_RefBy;
-    bool                  m_RefseqCandidate;
     CAlnMixSeq *          m_ExtraRow;
     int                   m_RowIndex;
     int                   m_SeqIndex;
     TStarts::iterator     m_StartIt;
+    TMatchList            m_MatchList;
 
     CSeqVector& GetSeqVector(void) {
         if ( !m_SeqVector ) {
@@ -204,10 +204,11 @@ public:
           m_Len(0), m_StrandsDiffer(false)
     {};
         
-    int           m_Score;
-    CAlnMixSeq    * m_AlnSeq1, * m_AlnSeq2;
-    TSeqPos       m_Start1, m_Start2, m_Len;
-    bool          m_StrandsDiffer;
+    int                              m_Score;
+    CAlnMixSeq                       * m_AlnSeq1, * m_AlnSeq2;
+    TSeqPos                          m_Start1, m_Start2, m_Len;
+    bool                             m_StrandsDiffer;
+    CAlnMixSeq::TMatchList::iterator m_MatchIter1, m_MatchIter2;
 };
 
 
@@ -287,6 +288,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/03/05 17:42:28  todorov
+* Allowing multiple mixes + general case speed optimization
+*
 * Revision 1.17  2003/02/11 21:32:37  todorov
 * fMinGap optional merging algorithm
 *

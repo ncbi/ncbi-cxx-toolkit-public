@@ -389,6 +389,8 @@ void CAlnMix::x_Merge()
     CAlnMixSeq * refseq = 0, * seq1 = 0, * seq2 = 0;
     TSeqPos start, start1, start2, len, curr_len;
     CAlnMixMatch * match;
+    CAlnMixSeq::TMatchList::iterator match_list_iter1, match_list_iter2;
+    CAlnMixSeq::TMatchList::iterator match_list_i;
 
     refseq = *(m_Seqs.begin());
     refseq->m_PositiveStrand = ! (m_MergeFlags & fNegativeStrand);
@@ -397,8 +399,14 @@ void CAlnMix::x_Merge()
     CRef<CAlnMixSegment> seg;
     CAlnMixSeq::TStarts::iterator start_i, lo_start_i, hi_start_i, tmp_start_i;
 
-    while (m_Matches.size()) {
-        match = *match_i;
+    bool first_refseq = true; // mark the first loop
+
+    while (true) {
+        if (first_refseq) {
+            match = *(match_i++);
+        } else {
+            match = *(match_list_i++);
+        }
 
         curr_len = len = match->m_Len;
 
@@ -406,20 +414,27 @@ void CAlnMix::x_Merge()
         if (match->m_AlnSeq1 == refseq) {
             seq1 = match->m_AlnSeq1;
             start1 = match->m_Start1;
+            match_list_iter1 = match->m_MatchIter1;
             seq2 = match->m_AlnSeq2;
             start2 = match->m_Start2;
+            match_list_iter2 = match->m_MatchIter2;
         } else if (match->m_AlnSeq2 == refseq) {
             seq1 = match->m_AlnSeq2;
             start1 = match->m_Start2;
+            match_list_iter1 = match->m_MatchIter2;
             seq2 = match->m_AlnSeq1;
             start2 = match->m_Start1;
+            match_list_iter2 = match->m_MatchIter1;
         } else {
             seq1 = match->m_AlnSeq1;
             seq2 = match->m_AlnSeq2;
+
             // mark the two refseqs, they are candidates for next refseq(s)
-            seq1->m_RefseqCandidate = true;
+            seq1->m_MatchList.push_back(match);
+            (match->m_MatchIter1 = seq1->m_MatchList.end())--;
             if (seq2) {
-                seq2->m_RefseqCandidate = true;
+                seq2->m_MatchList.push_back(match);
+                (match->m_MatchIter2 = seq2->m_MatchList.end())--;
             }
 
             // mark that there's no match with this refseq
@@ -434,10 +449,20 @@ void CAlnMix::x_Merge()
             match->m_AlnSeq2 = seq2;
             match->m_Start2 = start2;
 
+            // this match is used erase from seq1 list
+            if ( !first_refseq ) {
+                seq1->m_MatchList.erase(match_list_iter1);
+            }
+
             CAlnMixSeq::TStarts& starts = refseq->m_Starts;
             if (seq2) {
                 // mark it, it is linked to the refseq
                 seq2->m_RefBy = refseq;
+
+                // this match is used erase from seq2 list
+                if ( !first_refseq ) {
+                    seq2->m_MatchList.erase(match_list_iter2);
+                }
             }
 
             start_i = starts.end();
@@ -637,32 +662,19 @@ void CAlnMix::x_Merge()
                     }
                 }
             }
-
-            // match was used, remove it
-            match_i = m_Matches.erase(match_i, match_i+1);
-        } else {
-            match_i++;
         }
         
-        if (match_i == m_Matches.end()  &&  m_Matches.size()) {
-            //////////////////
-            // TEMPORARY, for the single refseq version
-            if (!m_SingleRefseq) {
-                m_Matches.clear();
-            }
-            //////////////////
-
-            // rewind matches
-            match_i = m_Matches.begin();
+        if (first_refseq  &&  
+            match_i == m_Matches.end()  &&  m_Matches.size()  ||
+            !first_refseq  &&  match_list_i == refseq->m_MatchList.end()) {
 
             // and move on to the next refseq
             refseq->m_RefBy = 0;
-            refseq->m_RefseqCandidate = false;
 
             // try to find the best scoring 'connected' candidate
             iterate (TSeqs, it, m_Seqs){
-                if ((*it)->m_RefseqCandidate  &&
-                    (*it)->m_RefBy == refseq) {
+                if ( !((*it)->m_MatchList.empty())  &&
+                     (*it)->m_RefBy == refseq) {
                     refseq = *it;
                     break;
                 }
@@ -671,11 +683,29 @@ void CAlnMix::x_Merge()
                 // no candidate was found 'connected' to the refseq
                 // continue with the highest scoring candidate
                 iterate (TSeqs, it, m_Seqs){
-                    if ((*it)->m_RefseqCandidate) {
+                    if ( !((*it)->m_MatchList.empty()) ) {
                         refseq = *it;
                         break;
                     }
                 }
+            }
+
+            if (refseq->m_MatchList.empty()) {
+                break; // done
+            } else {
+                first_refseq = false;
+                match_list_i = refseq->m_MatchList.begin();
+            }
+
+            if ( !m_SingleRefseq ) {
+                // TEMPORARY, for the single refseq version of mix,
+                // clear all MatchLists and exit
+                iterate (TSeqs, it, m_Seqs){
+                    if ( !((*it)->m_MatchList.empty()) ) {
+                        (*it)->m_MatchList.clear();
+                    }
+                }
+                break; 
             }
         }
     }
@@ -1140,8 +1170,8 @@ void CAlnMix::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
                 }
                 seg_i++;
             }
-            non_const_iterate (TLenMap, len_i, len_map) {
-                new_segs.push_back(len_i->second);
+            non_const_iterate (TLenMap, len_it, len_map) {
+                new_segs.push_back(len_it->second);
             }
             len_map.clear();
             seg_i_begin = seg_i_end;
@@ -1253,6 +1283,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/03/05 17:42:41  todorov
+* Allowing multiple mixes + general case speed optimization
+*
 * Revision 1.32  2003/03/05 16:18:17  todorov
 * + str len err check
 *
