@@ -52,7 +52,9 @@ bool CAnnotObject_Less::x_CompareAnnot(const CAnnotObject& x,
     if ( x.IsFeat()  &&  y.IsFeat() ) {
         // CSeq_feat::operator<() may report x == y while the features
         // are different. In this case compare pointers too.
-        int diff = x.GetFeat().Compare(y.GetFeat());
+        int diff = x.GetFeat().Compare(y.GetFeat(),
+            x.IsMappedLoc() ? &x.GetMappedLoc() : 0,
+            y.IsMappedLoc() ? &y.GetMappedLoc() : 0);
         if ( diff != 0 )
             return diff < 0;
     }
@@ -370,9 +372,9 @@ CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const
             }
             if ( fsrc.IsSetProduct() ) {
                 lcopy.Reset(new CSeq_loc);
-                conv_res = x_ConvertLocToMaster(fsrc.GetLocation(), *lcopy);
+                conv_res = x_ConvertLocToMaster(fsrc.GetProduct(), *lcopy);
                 if (conv_res != eNone) {
-                    AnnotCopy->SetMappedLoc(*lcopy);
+                    AnnotCopy->SetMappedProd(*lcopy);
                     AnnotCopy->SetPartial(conv_res == ePartial);
                 }
             }
@@ -623,6 +625,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/02/10 15:53:24  grichenk
+* Sort features by mapped location
+*
 * Revision 1.38  2003/02/06 22:31:02  vasilche
 * Use CSeq_feat::Compare().
 *
