@@ -86,7 +86,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-USING_SCOPE(feature);
+BEGIN_SCOPE(feature)
 USING_SCOPE(sequence);
 
 
@@ -575,12 +575,16 @@ void GetLabel
 }
 
 
+END_SCOPE(feature)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2002/06/07 16:11:21  ucko
+* Move everything into the "feature" namespace.
+*
 * Revision 1.1  2002/06/06 18:45:03  clausen
 * Initial version
 *

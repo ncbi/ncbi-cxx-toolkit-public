@@ -50,7 +50,6 @@ enum ELabelType {
     eBoth
 };
 
-END_SCOPE(feature)
 
 // Returns a label for a CSeq_feat. Label may be based on just the type of 
 // feature, just the content of the feature, or both. If scope is 0, then the
@@ -61,12 +60,16 @@ void GetLabel (const CSeq_feat&    feat,
                CScope*             scope = 0);
 
 
+END_SCOPE(feature)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2002/06/07 16:09:52  ucko
+* Move everything into the "feature" namespace.
+*
 * Revision 1.1  2002/06/06 18:46:38  clausen
 * Initial version
 *
