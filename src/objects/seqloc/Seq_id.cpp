@@ -35,6 +35,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/07/16 16:22:48  grichenk
+ * Added CSerialUserOp class to create Assign() and Equals() methods for
+ * user-defind classes.
+ * Added SerialAssign<>() and SerialEquals<>() functions.
+ *
  * Revision 6.12  2001/05/24 20:24:27  grichenk
  * Renamed seq/objmgrstub.hpp -> obgmgr/objmgr_base.hpp
  * Added Genbank, Embl and Ddbj support in CSeq_id::Compare()
@@ -293,6 +298,19 @@ CConstRef<CBioseq> CSeq_id::Resolve(void) const
         THROW1_TRACE(runtime_error, "CSeq_id::Resolve: null pointer");
 
     return m_ObjectManager->GetBioseq(*this);
+}
+
+
+void CSeq_id::Assign(const CSerialUserOp& source)
+{
+    const CSeq_id& src = dynamic_cast<const CSeq_id&>(source);
+    m_ObjectManager = src.m_ObjectManager;
+}
+
+bool CSeq_id::Equals(const CSerialUserOp& object) const
+{
+    const CSeq_id& obj = dynamic_cast<const CSeq_id&>(object);
+    return m_ObjectManager == obj.m_ObjectManager;
 }
 
 

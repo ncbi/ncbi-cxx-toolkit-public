@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/07/16 16:22:51  grichenk
+* Added CSerialUserOp class to create Assign() and Equals() methods for
+* user-defind classes.
+* Added SerialAssign<>() and SerialEquals<>() functions.
+*
 * Revision 1.26  2001/05/17 15:07:04  lavr
 * Typos corrected
 *
@@ -158,6 +163,7 @@
 #include <serial/objcopy.hpp>
 #include <serial/variant.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/serialbase.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -273,6 +279,19 @@ bool CChoiceTypeInfo::IsDefault(TConstObjectPtr object) const
 bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
                                  TConstObjectPtr object2) const
 {
+    // User defined comparison
+    const CSerialUserOp* op1 =
+        dynamic_cast<const CSerialUserOp*>
+        (static_cast<const CObject*>(object1));
+    const CSerialUserOp* op2 =
+        dynamic_cast<const CSerialUserOp*>
+        (static_cast<const CObject*>(object2));
+    if ( op1  &&  op2 ) {
+        if ( !op1->Equals(*op2) )
+            return false;
+    }
+
+    // Default comparison
     TMemberIndex index = GetIndex(object1);
     if ( index != GetIndex(object2) )
         return false;
@@ -299,6 +318,17 @@ void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
         SetIndex(dst, index);
         GetVariantInfo(index)->GetTypeInfo()->Assign(GetData(dst, index),
                                                      GetData(src, index));
+    }
+
+    // User defined assignment
+    const CSerialUserOp* opsrc =
+        dynamic_cast<const CSerialUserOp*>
+        (static_cast<const CObject*>(src));
+    CSerialUserOp* opdst =
+        dynamic_cast<CSerialUserOp*>
+        (static_cast<CObject*>(dst));
+    if ( opdst  &&  opsrc ) {
+        opdst->Assign(*opsrc);
     }
 }
 

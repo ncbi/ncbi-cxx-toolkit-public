@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/07/16 16:22:47  grichenk
+* Added CSerialUserOp class to create Assign() and Equals() methods for
+* user-defind classes.
+* Added SerialAssign<>() and SerialEquals<>() functions.
+*
 * Revision 1.8  2000/12/15 21:28:49  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -85,9 +90,9 @@ enum EResetVariant {
 typedef void (*TPostReadFunction)(const CTypeInfo* info, void* object);
 typedef void (*TPreWriteFunction)(const CTypeInfo* info, const void* object);
 
-void SetPostRead(CClassTypeInfo* info, TPostReadFunction function);
+void SetPostRead(CClassTypeInfo*  info, TPostReadFunction function);
 void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction function);
-void SetPreWrite(CClassTypeInfo* info, TPreWriteFunction function);
+void SetPreWrite(CClassTypeInfo*  info, TPreWriteFunction function);
 void SetPreWrite(CChoiceTypeInfo* info, TPreWriteFunction function);
 
 template<class Class>
@@ -103,6 +108,44 @@ public:
             static_cast<const Class*>(object)->PreWrite();
         }
 };
+
+
+// Base class for user-defined serializable classes
+// to allow for objects assignment and comparison.
+// EXAMPLE:
+//   class CSeq_entry : public CSeq_entry_Base, CSerialUserOp
+//
+class CSerialUserOp
+{
+    friend class CClassTypeInfo;
+    friend class CChoiceTypeInfo;
+protected:
+    // will be called after...
+    virtual void Assign(const CSerialUserOp& source) = 0;
+    // ...
+    virtual bool Equals(const CSerialUserOp& object) const = 0;
+};
+
+
+/////////////////////////////////////////////////////////////////////
+//
+//  Assignment and comparison for serializable objects
+//
+
+template <class C>
+C& SerialAssign(C& dest, const C& src)
+{
+    C::GetTypeInfo()->Assign(&dest, &src);
+    return dest;
+}
+
+
+template <class C>
+bool SerialEquals(const C& object1, const C& object2)
+{
+    return C::GetTypeInfo()->Equals(&object1, &object2);
+}
+
 
 END_NCBI_SCOPE
 

@@ -35,6 +35,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/07/16 16:22:50  grichenk
+ * Added CSerialUserOp class to create Assign() and Equals() methods for
+ * user-defind classes.
+ * Added SerialAssign<>() and SerialEquals<>() functions.
+ *
  * Revision 6.1  2001/06/13 14:59:33  grichenk
  * Initial revision
  *
@@ -79,6 +84,18 @@ void CSeq_entry::Parentize(void)
     }
     // Consider this to be the tree root.
     m_ParentEntry = this;
+}
+
+void CSeq_entry::Assign(const CSerialUserOp& source)
+{
+    const CSeq_entry& src = dynamic_cast<const CSeq_entry&>(source);
+    m_ParentEntry = src.m_ParentEntry;
+}
+
+bool CSeq_entry::Equals(const CSerialUserOp& object) const
+{
+    const CSeq_entry& obj = dynamic_cast<const CSeq_entry&>(object);
+    return m_ParentEntry == obj.m_ParentEntry;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

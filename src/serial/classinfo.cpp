@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2001/07/16 16:22:51  grichenk
+* Added CSerialUserOp class to create Assign() and Equals() methods for
+* user-defind classes.
+* Added SerialAssign<>() and SerialEquals<>() functions.
+*
 * Revision 1.59  2001/05/17 15:07:04  lavr
 * Typos corrected
 *
@@ -282,6 +287,7 @@
 #include <serial/objcopy.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/stdtypes.hpp>
+#include <serial/serialbase.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -666,6 +672,18 @@ bool CClassTypeInfo::Equals(TConstObjectPtr object1,
                 return false;
         }
     }
+
+    // User defined comparison
+    const CSerialUserOp* op1 =
+        dynamic_cast<const CSerialUserOp*>
+        (static_cast<const CObject*>(object1));
+    const CSerialUserOp* op2 =
+        dynamic_cast<const CSerialUserOp*>
+        (static_cast<const CObject*>(object2));
+    if ( op1  &&  op2 ) {
+        return op1->Equals(*op2);
+    }
+
     return true;
 }
 
@@ -681,6 +699,17 @@ void CClassTypeInfo::Assign(TObjectPtr dst,
         if ( info->HaveSetFlag() ) {
             info->GetSetFlag(dst) = info->GetSetFlag(src);
         }
+    }
+
+    // User defined assignment
+    const CSerialUserOp* opsrc =
+        dynamic_cast<const CSerialUserOp*>
+        (static_cast<const CObject*>(src));
+    CSerialUserOp* opdst =
+        dynamic_cast<CSerialUserOp*>
+        (static_cast<CObject*>(dst));
+    if ( opdst  &&  opsrc ) {
+        opdst->Assign(*opsrc);
     }
 }
 

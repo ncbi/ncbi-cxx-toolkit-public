@@ -35,6 +35,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2001/07/16 16:22:44  grichenk
+ * Added CSerialUserOp class to create Assign() and Equals() methods for
+ * user-defind classes.
+ * Added SerialAssign<>() and SerialEquals<>() functions.
+ *
  * Revision 1.9  2001/06/25 18:52:01  grichenk
  * Prohibited copy constructor and assignment operator
  *
@@ -86,7 +91,9 @@ class CBioseq;
 class CAbstractObjectManager;
 
 
-class CSeq_id : public CSeq_id_Base, public CSerializable
+class CSeq_id : public CSeq_id_Base,
+                public CSerializable,
+                public CSerialUserOp
 {
     typedef CSeq_id_Base Tparent;
 public:
@@ -119,6 +126,10 @@ public:
     // Implement serializable interface
     virtual void WriteAsFasta(ostream& out) const;
     const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
+
+    // From CAssignableObject
+    virtual void Assign(const CSerialUserOp& source);
+    virtual bool Equals(const CSerialUserOp& object) const;
 
 private:
     // Prohibit copy constructor & assignment operator

@@ -35,6 +35,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/07/16 16:22:45  grichenk
+ * Added CSerialUserOp class to create Assign() and Equals() methods for
+ * user-defind classes.
+ * Added SerialAssign<>() and SerialEquals<>() functions.
+ *
  * Revision 1.3  2001/06/25 18:52:03  grichenk
  * Prohibited copy constructor and assignment operator
  *
@@ -61,7 +66,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeq_entry : public CSeq_entry_Base
+class CSeq_entry : public CSeq_entry_Base, public CSerialUserOp
 {
     typedef CSeq_entry_Base Tparent;
 public:
@@ -72,6 +77,10 @@ public:
     // Manage Seq-entry tree structure
     void Parentize(void);
     CSeq_entry* GetParentEntry(void) const;
+
+    // From CAssignableObject
+    virtual void Assign(const CSerialUserOp& source);
+    virtual bool Equals(const CSerialUserOp& object) const;
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_entry(const CSeq_entry& value);
