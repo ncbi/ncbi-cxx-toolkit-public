@@ -44,20 +44,18 @@ BEGIN_SCOPE(blast)
 
 CDbBlastTraceback::CDbBlastTraceback(const TSeqLocVector& queries, 
                        BlastSeqSrc* seq_src, EProgram p, 
-                       BlastHSPResults* results)
+                       BlastHSPStream* hsp_stream)
     : CDbBlast(queries, seq_src, p)
 {
-    Blast_HSPResultsFree(m_ipResults);
-    m_ipResults = results;
+    m_ipHspStream = hsp_stream;
 }
 
 CDbBlastTraceback::CDbBlastTraceback(const TSeqLocVector& queries, 
                        BlastSeqSrc* seq_src, CBlastOptionsHandle& opts,
-                       BlastHSPResults* results)
+                       BlastHSPStream* hsp_stream)
     : CDbBlast(queries, seq_src, opts)
 {
-    Blast_HSPResultsFree(m_ipResults);
-    m_ipResults = results;
+    m_ipHspStream = hsp_stream;
 }
 
 int CDbBlastTraceback::SetupSearch()
@@ -109,9 +107,9 @@ CDbBlastTraceback::RunSearchEngine()
 
     status = 
         BLAST_ComputeTraceback(GetOptionsHandle().GetOptions().GetProgram(), 
-            m_ipResults, m_iclsQueries, m_iclsQueryInfo,
+            m_ipHspStream, m_iclsQueries, m_iclsQueryInfo,
             GetSeqSrc(), m_ipGapAlign, m_ipScoringParams, m_ipExtParams, 
-            m_ipHitParams, m_ipEffLenParams, GetDbOpts(), NULL);
+            m_ipHitParams, m_ipEffLenParams, GetDbOpts(), NULL, &m_ipResults);
 }
 
 /// Resets query data structures; does only part of the work in the base 
@@ -130,11 +128,12 @@ CDbBlastTraceback::x_ResetQueryDs()
     m_ipEffLenParams = BlastEffectiveLengthsParametersFree(m_ipEffLenParams);
     m_ipGapAlign = BLAST_GapAlignStructFree(m_ipGapAlign);
 
+    m_ipResults = Blast_HSPResultsFree(m_ipResults);
+
     sfree(m_ipDiagnostics);
     NON_CONST_ITERATE(TBlastError, itr, m_ivErrors) {
         *itr = Blast_MessageFree(*itr);
     }
-
 }
 
 
@@ -145,6 +144,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/06/08 15:20:44  dondosha
+ * Use BlastHSPStream interface
+ *
  * Revision 1.10  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

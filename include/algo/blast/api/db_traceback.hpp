@@ -44,9 +44,9 @@ class NCBI_XBLAST_EXPORT CDbBlastTraceback : public CDbBlast
 {
 public:
     CDbBlastTraceback(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
-                      EProgram p, BlastHSPResults* results);
+                      EProgram p, BlastHSPStream* hsp_stream);
     CDbBlastTraceback(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
-                      CBlastOptionsHandle& opts, BlastHSPResults* results);
+                      CBlastOptionsHandle& opts, BlastHSPStream* hsp_stream);
     void PartialRun(); 
 
 protected:    
@@ -54,6 +54,7 @@ protected:
     void RunSearchEngine();
     void x_ResetQueryDs();
 private:
+    BlastHSPStream* m_ipHspStream;
     BlastScoringParameters* m_ipScoringParams;
     BlastExtensionParameters* m_ipExtParams;
     BlastHitSavingParameters* m_ipHitParams;
@@ -73,6 +74,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/06/08 15:18:39  dondosha
+* Use BlastHSPStream interface
+*
 * Revision 1.5  2004/05/07 15:40:19  papadopo
 * add BlastScoringParameters private member
 *

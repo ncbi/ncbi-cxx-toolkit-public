@@ -48,6 +48,7 @@
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_message.h>
+#include <algo/blast/core/hspstream_collector.h>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -165,8 +166,6 @@ int CDbBlast::SetupSearch()
             BlastMaskLocProteinToDNA(&m_ipFilteredRegions, m_tQueries);
         }
 
-        Blast_HSPResultsInit(m_iclsQueryInfo->num_queries, &m_ipResults);
-
         LookupTableWrapInit(m_iclsQueries, 
             m_OptsHandle->GetOptions().GetLutOpts(), 
             m_ipLookupSegments, m_ipScoreBlock, &m_ipLookupTable, m_pRpsInfo);
@@ -275,7 +274,18 @@ CDbBlast::TrimBlastHSPResults()
 void 
 CDbBlast::RunSearchEngine()
 {
+    BlastHSPStream* hsp_stream = NULL;
+                  
     if (m_ipLookupTable->lut_type == RPS_LOOKUP_TABLE) {
+        /* Initialize an HSPList stream to collect hits; 
+           results should be sorted when reading from this stream.
+           Number of "queries" for this purpose is number of sequences
+           in the RPS BLAST database, because queries and subjects are
+           switched in an RPS search. */
+        hsp_stream = Blast_HSPListCollectorInit(
+                        m_OptsHandle->GetOptions().GetProgram(), 
+                        m_OptsHandle->GetOptions().GetHitSaveOpts(),
+                        BLASTSeqSrcGetNumSeqs(m_pSeqSrc), TRUE);
         BLAST_RPSSearchEngine(m_OptsHandle->GetOptions().GetProgram(), 
             m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, m_ipScoreBlock,
             m_OptsHandle->GetOptions().GetScoringOpts(), 
@@ -285,8 +295,14 @@ CDbBlast::RunSearchEngine()
             m_OptsHandle->GetOptions().GetEffLenOpts(),
             m_OptsHandle->GetOptions().GetPSIBlastOpts(), 
             m_OptsHandle->GetOptions().GetDbOpts(),
-            m_ipResults, m_ipDiagnostics);
+            hsp_stream, m_ipDiagnostics, &m_ipResults);
     } else {
+        /* Initialize an HSPList stream to collect hits; 
+           results should be sorted when reading from this stream. */
+        hsp_stream = Blast_HSPListCollectorInit(
+                        m_OptsHandle->GetOptions().GetProgram(), 
+                        m_OptsHandle->GetOptions().GetHitSaveOpts(),
+                        m_iclsQueryInfo->num_queries, TRUE);
         BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
             m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, m_ipScoreBlock, 
             m_OptsHandle->GetOptions().GetScoringOpts(), 
@@ -295,8 +311,10 @@ CDbBlast::RunSearchEngine()
             m_OptsHandle->GetOptions().GetHitSaveOpts(), 
             m_OptsHandle->GetOptions().GetEffLenOpts(), NULL, 
             m_OptsHandle->GetOptions().GetDbOpts(),
-            m_ipResults, m_ipDiagnostics);
+            hsp_stream, m_ipDiagnostics, &m_ipResults);
     }
+
+    hsp_stream = BlastHSPStreamFree(hsp_stream);
     m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
     m_iclsQueries = BlastSequenceBlkFree(m_iclsQueries);
 
@@ -332,6 +350,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2004/06/08 15:20:44  dondosha
+ * Use BlastHSPStream interface
+ *
  * Revision 1.31  2004/06/07 21:34:55  dondosha
  * Use 2 booleans for gapped and out-of-frame mode instead of scoring options in function arguments
  *

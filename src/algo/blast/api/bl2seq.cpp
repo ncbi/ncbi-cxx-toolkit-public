@@ -50,6 +50,7 @@
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_traceback.h>
+#include <algo/blast/core/hspstream_collector.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -244,8 +245,13 @@ CBl2Seq::ScanDB()
     mi_pResults = NULL;
     mi_pDiagnostics = Blast_DiagnosticsInit();
 
-    Blast_HSPResultsInit(mi_clsQueryInfo->num_queries, &mi_pResults);
-
+    /* Initialize an HSPList stream to collect hits; 
+       results should not be sorted for reading from the stream. */
+    BlastHSPStream* hsp_stream = 
+        Blast_HSPListCollectorInit(m_OptsHandle->GetOptions().GetProgram(), 
+            m_OptsHandle->GetOptions().GetHitSaveOpts(),
+            mi_clsQueryInfo->num_queries, FALSE);
+                  
     BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
                        mi_clsQueries, mi_clsQueryInfo, 
                        mi_pSeqSrc, mi_pScoreBlock, 
@@ -256,7 +262,8 @@ CBl2Seq::ScanDB()
                        m_OptsHandle->GetOptions().GetHitSaveOpts(),
                        m_OptsHandle->GetOptions().GetEffLenOpts(),
                        NULL, m_OptsHandle->GetOptions().GetDbOpts(),
-                       mi_pResults, mi_pDiagnostics);
+                       hsp_stream, mi_pDiagnostics, &mi_pResults);
+    hsp_stream = BlastHSPStreamFree(hsp_stream);
 }
 
 /** Unlike the database search, we want to make sure that a seqalign list is   
@@ -322,6 +329,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.56  2004/06/08 15:20:44  dondosha
+ * Use BlastHSPStream interface
+ *
  * Revision 1.55  2004/06/07 21:34:55  dondosha
  * Use 2 booleans for gapped and out-of-frame mode instead of scoring options in function arguments
  *
