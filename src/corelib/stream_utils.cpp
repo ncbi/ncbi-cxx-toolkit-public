@@ -400,7 +400,7 @@ streamsize CStreamUtils::Readsome(istream&      is,
 #endif
     streamsize count = is.gcount();
     // Reset "eof" flag if some data have been read
-    if (count  &&  is.eof())
+    if (count  &&  is.eof()  &&  !is.bad())
         is.clear();
     return count;
 #else
@@ -426,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.24  2003/05/20 16:44:59  lavr
+ * CStreamUtils::Readsome() not to clear() in a bad() stream
+ *
  * Revision 1.23  2003/04/14 21:08:39  lavr
  * Take advantage of HAVE_BUGGY_IOS_CALLBACKS
  *
