@@ -63,7 +63,7 @@ public:
         eSubSat_main =    0,
         eSubSat_SNP  = 1<<0,
         eSubSat_CDD  = 1<<3,
-        eSubSat_MGS  = 1<<4
+        eSubSat_MGC  = 1<<4
     };
     typedef int TSubSat;
 
@@ -179,6 +179,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2004/08/19 16:55:45  vasilche
+* Fixed typo MGS -> MGC.
+*
 * Revision 1.3  2004/08/04 14:55:18  vasilche
 * Changed TSE locking scheme.
 * TSE cache is maintained by CDataSource.
