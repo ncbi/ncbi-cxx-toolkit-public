@@ -64,17 +64,11 @@
 #endif
 
 
-/* This is a static lib on MSVC 7.10 */
-
-#if (_MSC_VER >= 1310)
-#  define NCBI_TABLES_EXPORT
+#ifdef NCBI_TABLES_EXPORTS
+#  define NCBI_TABLES_EXPORT      __declspec(dllexport)
 #else
-# ifdef NCBI_TABLES_EXPORTS
-#   define NCBI_TABLES_EXPORT      __declspec(dllexport)
-# else
-#   define NCBI_TABLES_EXPORT      __declspec(dllimport)
-# endif /* NCBI_TABLES_EXPORTS */
-#endif  /* (_MSC_VER >= 1310) */
+#  define NCBI_TABLES_EXPORT      __declspec(dllimport)
+#endif /* NCBI_TABLES_EXPORTS */
 
 
 
@@ -97,6 +91,10 @@
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/03/12 19:37:20  gorelenk
+ * Changed export prefixes defines for tables to be used as a dll
+ * on MSVC 7.10 dll build.
+ *
  * Revision 1.2  2004/03/11 20:32:20  gorelenk
  * Conditionaly changed definition of NCBI_TABLES_EXPORT export prefix.
  *
