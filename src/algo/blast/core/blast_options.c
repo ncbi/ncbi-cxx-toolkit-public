@@ -1091,8 +1091,10 @@ BlastHitSavingParameters*
 BlastHitSavingParametersFree(BlastHitSavingParameters* parameters)
 
 {
-   sfree(parameters->link_hsp_params);
-   sfree(parameters);
+   if (parameters) {
+      sfree(parameters->link_hsp_params);
+      sfree(parameters);
+   }
    return NULL;
 }
 
@@ -1406,6 +1408,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
    } else {
       link_hsp_params->cutoff_big_gap = 
          (Int4) floor((log(x_variable)/kbp->Lambda)) + 1;
+      /* The following is equivalent to forcing small gap rule to be ignored
+         when linking HSPs. */
+      link_hsp_params->gap_prob = 0;
       link_hsp_params->cutoff_small_gap = 0;
    }	
 
@@ -1418,6 +1423,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.121  2004/06/28 21:41:02  dondosha
+ * Test for NULL input in BlastHitSavingParametersFree
+ *
  * Revision 1.120  2004/06/23 14:43:04  dondosha
  * Return 0 from PSIBlastOptionsNew if NULL pointer argument is provided
  *
