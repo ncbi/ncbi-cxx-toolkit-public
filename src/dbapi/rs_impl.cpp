@@ -31,6 +31,12 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/04/05 19:29:50  kholodov
+* Modified: GetBlobIStream() returns one and the same object, which is created
+* on the first call.
+* Added: GetVariant(const string& colName) to retrieve column value by
+* column name
+*
 * Revision 1.2  2002/03/13 16:40:16  kholodov
 * Modified indent formatting
 *
@@ -52,6 +58,8 @@
 
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/exception.hpp>
+
+#include <corelib/ncbistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -122,35 +130,32 @@ bool CResultSet::Next()
 
 size_t CResultSet::Read(void* buf, size_t size)
 {
-    CheckValid();
     return m_rs->ReadItem(buf, size);
 }
 
 istream& CResultSet::GetBlobIStream(size_t buf_size)
 {
-    CheckValid();
-    delete m_istr;
-    m_istr = new CBlobIStream(m_rs, buf_size);
+    if( m_istr == 0 ) {
+        m_istr = new CBlobIStream(m_rs, buf_size);
+    }
     return *m_istr;
 }
 
 ostream& CResultSet::GetBlobOStream(size_t blob_size, 
                                     size_t buf_size)
 {
-    CheckValid();
     // GetConnAux() returns pointer to pooled CDB_Connection.
     // we need to delete it every time we request new one.
     // The same with ITDescriptor
     delete m_ostr;
+
+    // Call ReadItem(0, 0) before getting text/image descriptor
+    m_rs->ReadItem(0, 0);
+
     m_ostr = new CBlobOStream(m_conn->GetConnAux(),
                               m_rs->GetImageOrTextDescriptor(),
                               blob_size,
                               buf_size);
-    // To avoid write locks we need to read the column to /dev/null
-    const unsigned int SIZE = 2048;
-    char buf[SIZE];
-    while( m_rs->ReadItem(buf, SIZE) == SIZE );
-
     return *m_ostr;
 }
 
@@ -173,6 +178,19 @@ void CResultSet::Action(const CDbapiEvent& e)
             //SetValid(false);
         }
     }
+}
+
+
+int CResultSet::GetColNum(const string& name) {
+    
+    int i = 0;
+    for( ; i < m_rs->NofItems(); ++i ) {
+        
+        if( !NStr::Compare(m_rs->ItemName(i), name) )
+            return i;
+    }
+
+    throw CDbapiException("CResultSet::GetVariant(): invalid column name");
 }
 
 END_NCBI_SCOPE

@@ -34,6 +34,12 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/04/05 19:29:50  kholodov
+* Modified: GetBlobIStream() returns one and the same object, which is created
+* on the first call.
+* Added: GetVariant(const string& colName) to retrieve column value by
+* column name
+*
 * Revision 1.1  2002/01/30 14:51:23  kholodov
 * User DBAPI implementation, first commit
 *
@@ -52,37 +58,42 @@
 BEGIN_NCBI_SCOPE
 
 class CResultSet : public CActiveObject, 
-		   public IEventListener,
-		   public IResultSet
+                   public IEventListener,
+                   public IResultSet
 {
 public:
-  CResultSet(class CConnection* conn, CDB_Result *rs);
+    CResultSet(class CConnection* conn, CDB_Result *rs);
 
-  virtual ~CResultSet();
+    virtual ~CResultSet();
   
-  virtual EDB_ResType GetResultType();
+    virtual EDB_ResType GetResultType();
 
-  virtual bool Next();
-  virtual const CVariant& GetVariant(unsigned int idx);
-  virtual size_t Read(void* buf, size_t size);
-  virtual void Close();
-  virtual IResultSetMetaData* GetMetaData();
-  virtual istream& GetBlobIStream(size_t buf_size);
-  virtual ostream& GetBlobOStream(size_t blob_size, 
-				  size_t buf_size);
+    virtual bool Next();
 
-  // Interface IEventListener implementation
-  virtual void Action(const CDbapiEvent& e);
+    virtual const CVariant& GetVariant(unsigned int idx);
+    virtual const CVariant& GetVariant(const string& colName);
+  
+    virtual size_t Read(void* buf, size_t size);
+    virtual void Close();
+    virtual IResultSetMetaData* GetMetaData();
+    virtual istream& GetBlobIStream(size_t buf_size);
+    virtual ostream& GetBlobOStream(size_t blob_size, 
+                                    size_t buf_size);
+
+    // Interface IEventListener implementation
+    virtual void Action(const CDbapiEvent& e);
 
 
 private:
-
-  class CConnection* m_conn;
-  CDB_Result *m_rs;
-  //CResultSetMetaDataImpl *m_metaData;
-  CDynArray<CVariant> m_data;
-  CBlobIStream *m_istr;
-  CBlobOStream *m_ostr;
+    
+    int GetColNum(const string& name);
+    
+    class CConnection* m_conn;
+    CDB_Result *m_rs;
+    //CResultSetMetaDataImpl *m_metaData;
+    CDynArray<CVariant> m_data;
+    CBlobIStream *m_istr;
+    CBlobOStream *m_ostr;
 
 };
 
@@ -90,7 +101,13 @@ private:
 inline
 const CVariant& CResultSet::GetVariant(unsigned int idx) 
 {
-  return m_data[idx-1];
+    return m_data[idx-1];
+}
+
+inline
+const CVariant& CResultSet::GetVariant(const string& name) 
+{
+    return m_data[GetColNum(name)];
 }
 
 END_NCBI_SCOPE
