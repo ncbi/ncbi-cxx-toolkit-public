@@ -288,14 +288,15 @@ public:
     /// DLL resolution descriptor.
     struct SResolvedEntry
     {
-        CDll*    dll;           ///< Loaded DLL instance
-        void*    entry_point;   ///< Entry point pointer
+        CDll*                       dll;    ///< Loaded DLL instance
+        CDll::TEntryPoint    entry_point;   ///< DLL entry point
 
         SResolvedEntry(CDll* dll_ptr = 0, 
                        void* entry_point_ptr = 0)
-        : dll(dll_ptr), 
-          entry_point(entry_point_ptr)
-        {}
+        : dll(dll_ptr)
+        {
+            entry_point.data = entry_point_ptr;
+        }
     };
 
     /// Container, keeps list of all resolved entry points
@@ -398,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/11/19 15:42:01  kuznets
+ * Using new entry point structure (union) in CDllResolver
+ *
  * Revision 1.18  2003/11/19 13:50:28  ivanov
  * GetEntryPoint() revamp: added GetEntryPoin_[Func|Data]()
  *
