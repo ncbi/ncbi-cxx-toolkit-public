@@ -5,7 +5,7 @@
 # 
 
 testprefix=c
-echo " $features " | grep " C-Toolkit " > /dev/null  ||  testprefix=cpp
+echo " $FEATURES " | grep " C-Toolkit " > /dev/null  ||  testprefix=cpp
 
 for f in webenv.ent webenv.bin ${testprefix}test_serial.asn ${testprefix}test_serial.asb ; do
     cp $top_srcdir/src/serial/test/$f ./
