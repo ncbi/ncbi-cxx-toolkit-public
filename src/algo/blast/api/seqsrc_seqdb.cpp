@@ -342,9 +342,7 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
     if (!retval)
         return NULL;
 
-    CSeqDB* seqdb(new CSeqDB(FindBlastDbPath(rargs->dbname, 
-                                             rargs->is_protein), 
-                             rargs->dbname, (rargs->is_protein ? 'p' : 'n')));
+    CSeqDB* seqdb(new CSeqDB(rargs->dbname, (rargs->is_protein ? 'p' : 'n')));
 
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
@@ -415,6 +413,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/04/07 18:45:13  bealer
+ * - Update constructor for CSeqDB to omit obsolete first argument.
+ *
  * Revision 1.1  2004/04/06 20:43:59  dondosha
  * Sequence source for CSeqDB BLAST database interface
  *
