@@ -45,13 +45,16 @@
  *      bigger with time.
  */
 
-#define NCBI_OBJMGR_VERSION 20040819
+#define NCBI_OBJMGR_VERSION 20040831
 
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/08/31 17:02:25  grichenk
+ * Removed duplicate methods in CSeqMap and SAnnotSelector::SetCombineMethod()
+ *
  * Revision 1.3  2004/08/19 17:05:31  vasilche
  * Mark latest changes in object manager.
  *
