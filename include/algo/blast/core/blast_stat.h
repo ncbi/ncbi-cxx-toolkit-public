@@ -34,6 +34,9 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 
 /* $Revision$ 
 * $Log$
+* Revision 1.9  2003/07/30 22:01:08  dondosha
+* Added some comments
+*
 * Revision 1.8  2003/07/30 21:52:57  camacho
 * Follow conventional structure definition
 *
@@ -466,6 +469,13 @@ Int2 BlastScoreSetAmbigRes (BLAST_ScoreBlkPtr sbp, Char ambiguous_res);
 
 Int2 BlastScoreBlkFill (BLAST_ScoreBlkPtr sbp, CharPtr string, Int4 length, Int2 context_number);
  
+/** This function fills in the BLAST_ScoreBlk structure.  
+ * Tasks are:
+ *	-read in the matrix
+ *	-set maxscore
+ * @param sbp Scoring block [in] [out]
+ * @param matrix_path Full path to the matrix in the directory structure [in]
+*/
 Int2 BlastScoreBlkMatFill (BLAST_ScoreBlkPtr sbp, CharPtr matrix);
 BLAST_ScorePtr* BlastScoreBlkMatCreateEx(BLAST_ScorePtr* matrix,BLAST_Score penalty, BLAST_Score reward);
  
