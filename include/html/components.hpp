@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/10/28 13:40:29  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.20  1999/04/15 22:03:44  vakatov
 * CQueryBox:: use "enum { kNo..., };" rather than "static const int kNo...;"
 *
@@ -205,10 +208,6 @@ public:
 
     virtual void CreateSubNodes(void);
     virtual CNCBINode* CreateComments(void);
-
-protected:
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
 };
 
 
@@ -226,10 +225,6 @@ public:
     CSelectDescription m_List;
 
     virtual void CreateSubNodes(void);
-
-protected:
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
 };
 
 // makes a set of pagination links
@@ -274,10 +269,6 @@ public:
     string m_BgColor;
     
     virtual void CreateSubNodes(void);
-
-protected:
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
 };
 
 class CSmallPagerBox: public CNCBINode
@@ -295,10 +286,6 @@ public:
     string m_BgColor;
     
     virtual void CreateSubNodes(void);
-
-protected:
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
 };
 
 #include <html/components.inl>

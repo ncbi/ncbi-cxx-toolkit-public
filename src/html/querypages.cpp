@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/10/28 13:40:36  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.15  1999/04/26 21:59:31  vakatov
 * Cleaned and ported to build with MSVC++ 6.0 compiler
 *
@@ -98,11 +101,6 @@ CPmFrontPage::CPmFrontPage()
 {
 }
 
-CNCBINode* CPmFrontPage::CloneSelf(void) const
-{
-    return new CPmFrontPage(*this);
-}
-
 CNCBINode* CPmFrontPage::CreateView(void)
 {
     //
@@ -145,11 +143,6 @@ CPmDocSumPage::CPmDocSumPage()
               CreateTagMapper(this, &CPmDocSumPage::CreatePager));
     AddTagMap("QUERYBOX",
               CreateTagMapper(this, &CPmDocSumPage::CreateQueryBox));
-}
-
-CNCBINode* CPmDocSumPage::CloneSelf(void) const
-{
-    return new CPmDocSumPage(*this);
 }
 
 CNCBINode* CPmDocSumPage::CreateView(void) 

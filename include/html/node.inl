@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/10/28 13:40:30  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.3  1999/01/21 16:18:04  sandomir
 * minor changes due to NStr namespace to contain string utility functions
 *
@@ -46,82 +49,292 @@
 * ===========================================================================
 */
 
-
-//  !!!!!!!!!!!!!!!!!!!!!!!!!!
-//  !!! PUT YOUR CODE HERE !!!
-//  !!!!!!!!!!!!!!!!!!!!!!!!!!
-
-inline CNCBINode::TChildList::iterator CNCBINode::ChildBegin(void)
+inline
+void CNCBINode::Ref(void)
 {
-    return m_ChildNodes.begin();
+    if ( m_RefCount++ <= 0 )
+        BadRef();
 }
 
-inline CNCBINode::TChildList::iterator CNCBINode::ChildEnd(void)
+inline
+void CNCBINode::UnRef(void)
 {
-    return m_ChildNodes.end();
+    if ( --m_RefCount <= 0 )
+        Destroy();
 }
 
-inline CNCBINode::TChildList::const_iterator CNCBINode::ChildBegin(void) const
+inline
+CNodeRef::TObjectType* CNodeRef::Ref(TObjectType* data)
 {
-    return m_ChildNodes.begin();
+    if ( data )
+        data->Ref();
+    return data;
 }
 
-inline CNCBINode::TChildList::const_iterator CNCBINode::ChildEnd(void) const
+inline
+void CNodeRef::UnRef() const
 {
-    return m_ChildNodes.end();
+    if ( m_Data )
+        m_Data->UnRef();
 }
 
-inline const string& CNCBINode::GetName(void) const
+inline
+CNodeRef::CNodeRef(void)
+    : m_Data(0)
+{
+}
+
+inline
+CNodeRef::CNodeRef(TObjectType* data)
+    : m_Data(Ref(data))
+{
+}
+
+inline
+CNodeRef::CNodeRef(const CNodeRef& ref)
+    : m_Data(Ref(ref.m_Data))
+{
+}
+
+inline
+CNodeRef::~CNodeRef(void)
+{
+    UnRef();
+}
+
+inline
+CNodeRef& CNodeRef::operator=(TObjectType* data)
+{
+    if ( data != m_Data ) {
+        UnRef();
+        m_Data = Ref(data);
+    }
+    return *this;
+}
+
+inline
+CNodeRef& CNodeRef::operator=(const CNodeRef& ref)
+{
+    return *this = ref.m_Data;
+}
+
+inline
+CNodeRef::operator bool(void) const
+{
+    return m_Data != 0;
+}
+
+inline
+CNodeRef::operator CNodeRef::TObjectType*(void)
+{
+    return m_Data;
+}
+
+inline
+CNodeRef::operator const CNodeRef::TObjectType*(void) const
+{
+    return m_Data;
+}
+
+inline
+CNodeRef::TObjectType& CNodeRef::operator*(void)
+{
+    return *m_Data;
+}
+
+inline
+const CNodeRef::TObjectType& CNodeRef::operator*(void) const
+{
+    return *m_Data;
+}
+
+inline
+CNodeRef::TObjectType* CNodeRef::operator->(void)
+{
+    return m_Data;
+}
+
+inline
+const CNodeRef::TObjectType* CNodeRef::operator->(void) const
+{
+    return m_Data;
+}
+
+inline
+CNodeRef::TObjectType* CNodeRef::get(void)
+{
+    return m_Data;
+}
+
+inline
+const CNodeRef::TObjectType* CNodeRef::get(void) const
+{
+    return m_Data;
+}
+
+inline
+const string& CNCBINode::GetName(void) const
 {
     return m_Name;
 }
 
-inline void CNCBINode::SetName(const string& name)
+inline
+bool CNCBINode::HaveChildren(void) const
 {
-    m_Name = name;
+#if NCBI_LIGHTWEIGHT_LIST
+    return !m_Children.empty();
+#else
+    return m_Children.get() != 0;
+#endif
 }
 
-inline void CNCBINode::SetAttribute(const string& name, int value)
+inline
+CNCBINode::TChildren& CNCBINode::Children(void)
 {
-    SetAttribute(name, NStr::IntToString(value));
+#if NCBI_LIGHTWEIGHT_LIST
+    return m_Children;
+#else
+    return *m_Children;
+#endif
 }
 
-inline void CNCBINode::SetAttribute(const char* name, int value)
+inline
+const CNCBINode::TChildren& CNCBINode::Children(void) const
 {
-    SetAttribute(name, NStr::IntToString(value));
+#if NCBI_LIGHTWEIGHT_LIST
+    return m_Children;
+#else
+    return *m_Children;
+#endif
 }
 
-inline void CNCBINode::SetOptionalAttribute(const string& name, const string& value)
+inline
+CNCBINode::TChildren& CNCBINode::GetChildren(void)
 {
-    if ( !value.empty() )
-        SetAttribute(name, value);
+#if NCBI_LIGHTWEIGHT_LIST
+    return m_Children;
+#else
+    TChildren* children = m_Children.get();
+    if ( !children )
+        m_Children.reset(children = new TChildren);
+    return *children;
+#endif
 }
 
-inline void CNCBINode::SetOptionalAttribute(const string& name, bool value)
+inline
+CNCBINode::TChildren::iterator CNCBINode::ChildBegin(void)
 {
-    if ( value )
-        SetAttribute(name);
+    return Children().begin();
 }
 
-inline void CNCBINode::SetOptionalAttribute(const char* name, const string& value)
+inline
+CNCBINode::TChildren::iterator CNCBINode::ChildEnd(void)
 {
-    if ( !value.empty() )
-        SetAttribute(name, value);
+    return Children().end();
 }
 
-inline void CNCBINode::SetOptionalAttribute(const char* name, bool value)
+inline
+CNCBINode* CNCBINode::Node(TChildren::iterator i)
 {
-    if ( value )
-        SetAttribute(name);
+    return i->get();
+}
+
+inline
+CNCBINode::TChildren::const_iterator CNCBINode::ChildBegin(void) const
+{
+    return Children().begin();
+}
+
+inline
+CNCBINode::TChildren::const_iterator CNCBINode::ChildEnd(void) const
+{
+    return Children().end();
+}
+
+inline
+const CNCBINode* CNCBINode::Node(TChildren::const_iterator i)
+{
+    return i->get();
 }
 
 // append a child
-inline CNCBINode* CNCBINode::AppendChild(CNCBINode* child)
+inline
+CNCBINode* CNCBINode::AppendChild(CNCBINode* child)
 {
     if ( child )
         DoAppendChild(child);
-
     return this;
+}
+
+inline
+bool CNCBINode::HaveAttributes(void) const
+{
+    return m_Attributes.get() != 0;
+}
+
+inline 
+CNCBINode::TAttributes& CNCBINode::Attributes(void)
+{
+    return *m_Attributes;
+}
+
+inline 
+const CNCBINode::TAttributes& CNCBINode::Attributes(void) const
+{
+    return *m_Attributes;
+}
+
+inline
+CNCBINode::TAttributes& CNCBINode::GetAttributes(void)
+{
+#if NCBI_LIGHTWEIGHT_LIST
+    return m_Attributes;
+#else
+    TAttributes* attributes = m_Attributes.get();
+    if ( !attributes )
+        m_Attributes.reset(attributes = new TAttributes);
+    return *attributes;
+#endif
+}
+
+inline
+void CNCBINode::SetAttribute(const string& name, int value)
+{
+    SetAttribute(name, NStr::IntToString(value));
+}
+
+inline
+void CNCBINode::SetAttribute(const char* name, int value)
+{
+    SetAttribute(name, NStr::IntToString(value));
+}
+
+inline
+void CNCBINode::SetOptionalAttribute(const string& name, const string& value)
+{
+    if ( !value.empty() )
+        SetAttribute(name, value);
+}
+
+inline
+void CNCBINode::SetOptionalAttribute(const string& name, bool value)
+{
+    if ( value )
+        SetAttribute(name);
+}
+
+inline
+void CNCBINode::SetOptionalAttribute(const char* name, const string& value)
+{
+    if ( !value.empty() )
+        SetAttribute(name, value);
+}
+
+inline
+void CNCBINode::SetOptionalAttribute(const char* name, bool value)
+{
+    if ( value )
+        SetAttribute(name);
 }
 
 #endif /* def NODE__HPP  &&  ndef NODE__INL */

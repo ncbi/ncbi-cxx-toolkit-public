@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/10/28 13:40:36  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.5  1999/05/28 16:32:15  vasilche
 * Fixed memory leak in page tag mappers.
 *
@@ -71,11 +74,6 @@ StaticTagMapper::StaticTagMapper(CNCBINode* (*function)(void))
 {
 }
 
-BaseTagMapper* StaticTagMapper::Clone(void) const
-{
-    return new StaticTagMapper(*this);
-}
-
 CNCBINode* StaticTagMapper::MapTag(CNCBINode*, const string&) const
 {
     return (*m_Function)();
@@ -84,11 +82,6 @@ CNCBINode* StaticTagMapper::MapTag(CNCBINode*, const string&) const
 StaticTagMapperByName::StaticTagMapperByName(CNCBINode* (*function)(const string& name))
     : m_Function(function)
 {
-}
-
-BaseTagMapper* StaticTagMapperByName::Clone(void) const
-{
-    return new StaticTagMapperByName(*this);
 }
 
 CNCBINode* StaticTagMapperByName::MapTag(CNCBINode*, const string& name) const
@@ -101,18 +94,9 @@ ReadyTagMapper::ReadyTagMapper(CNCBINode* node)
 {
 }
 
-BaseTagMapper* ReadyTagMapper::Clone(void) const
-{
-    return new ReadyTagMapper(m_Node->Clone());
-}
-
 CNCBINode* ReadyTagMapper::MapTag(CNCBINode*, const string&) const
 {
-    // we decided to avoid use of cloning
-    // also to avoid double delete of node we release it
-    if ( !m_Node.get() )
-        ERR_POST("double call of ReadyTagMapper::MapTag");
-    return const_cast<ReadyTagMapper*>(this)->m_Node.release();
+    return m_Node;
 }
 
 END_NCBI_SCOPE

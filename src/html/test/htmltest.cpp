@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/10/28 13:40:39  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.13  1999/07/08 16:45:55  vakatov
 * Get rid of the redundant `extern "C"' at "main()
 *
@@ -111,14 +114,21 @@ int CMyApp::ProcessRequest(CCgiContext& ctx)
         auto_ptr<CHTMLBasicPage> Page((PageList[i].pFactory)());
         Page->SetApplication(this);
         Page->SetStyle(PageList[i].Style);
-/*        Page->AppendChild(new CHTML_p(new CHTML_b("bold paragraph")));
-        CHTML_form* form;
+        Page->AppendChild(new CHTML_p(new CHTML_b("bold paragraph")));
+        CNodeRef form;
         Page->AppendChild(form = new CHTML_form("FORM"));
         form->AppendChild(new CHTML_textarea("area", 10, 10));
         form->AppendChild(new CHTML_textarea("area1", 10, 10, "area1"));
-        form->AppendChild(new CHTML_select("Select")->AppendOption("One", "ONE")->AppendOption("Two")->AppendOption("THREE", "Three"));
-        Page->AppendChild(new CHTML_ol("A")->AppendItem("item 1")->AppendItem("item 2")->AppendItem("Item 3")->AppendItem("Fourth item"));
-        Page->AppendChild(new CHTMLComment("this is comment"));*/
+        form->AppendChild((new CHTML_select("Select"))
+                          ->AppendOption("One", "ONE")
+                          ->AppendOption("Two")
+                          ->AppendOption("THREE", "Three"));
+        Page->AppendChild((new CHTML_ol("A"))
+                          ->AppendItem("item 1")
+                          ->AppendItem("item 2")
+                          ->AppendItem("Item 3")
+                          ->AppendItem("Fourth item"));
+        Page->AppendChild(new CHTMLComment("this is comment"));
         ctx.GetResponse().WriteHeader();
         Page->Print(ctx.GetResponse().out());
         return 0;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/10/28 13:40:31  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.9  1999/04/15 22:08:00  vakatov
 * CPmDocSumPage:: use "enum { kNo..., };" rather than "static const int kNo...;"
 *
@@ -80,10 +83,6 @@ public:
     static CHTMLBasicPage * New(void) { return new CPmFrontPage;}
 
     virtual CNCBINode* CreateView(void);
-
-protected:
-    // Clone support
-    CNCBINode* CloneSelf(void) const;
 };
 
 
@@ -103,10 +102,6 @@ public:
     virtual CNCBINode* CreateQueryBox(void);
 
     static CHTMLBasicPage * New(void) { return new CPmDocSumPage;}
-
-protected:
-    // Clone support
-    CNCBINode* CloneSelf(void) const;
 };
 
 END_NCBI_SCOPE

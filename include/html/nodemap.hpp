@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/10/28 13:40:31  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.9  1999/09/03 21:27:28  vakatov
 * + #include <memory>
 *
@@ -66,7 +69,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <memory>
+#include <html/node.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -76,8 +79,6 @@ struct BaseTagMapper
 {
     virtual ~BaseTagMapper(void);
 
-    virtual BaseTagMapper* Clone(void) const = 0;
-
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const = 0;
 };
 
@@ -85,8 +86,6 @@ struct StaticTagMapper : public BaseTagMapper
 {
     StaticTagMapper(CNCBINode* (*function)(void));
 
-    virtual BaseTagMapper* Clone(void) const;
-    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
@@ -96,8 +95,6 @@ private:
 struct StaticTagMapperByName : public BaseTagMapper
 {
     StaticTagMapperByName(CNCBINode* (*function)(const string& name));
-    
-    virtual BaseTagMapper* Clone(void) const;
     
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
@@ -110,8 +107,6 @@ struct StaticTagMapperByNode : public BaseTagMapper
 {
     StaticTagMapperByNode(CNCBINode* (*function)(C* node));
     
-    virtual BaseTagMapper* Clone(void) const;
-    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
@@ -123,8 +118,6 @@ struct StaticTagMapperByNodeAndName : public BaseTagMapper
 {
     StaticTagMapperByNodeAndName(CNCBINode* (*function)(C* node, const string& name));
     
-    virtual BaseTagMapper* Clone(void) const;
-    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
@@ -135,12 +128,10 @@ struct ReadyTagMapper : public BaseTagMapper
 {
     ReadyTagMapper(CNCBINode* node);
 
-    virtual BaseTagMapper* Clone(void) const;
-    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
-    auto_ptr<CNCBINode> m_Node;
+    mutable CNodeRef m_Node;
 };
 
 template<class C>
@@ -148,8 +139,6 @@ struct TagMapper : public BaseTagMapper
 {
     TagMapper(CNCBINode* (C::*method)(void));
 
-    virtual BaseTagMapper* Clone(void) const;
-    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
@@ -161,8 +150,6 @@ struct TagMapperByName : public BaseTagMapper
 {
     TagMapperByName(CNCBINode* (C::*method)(const string& name));
 
-    virtual BaseTagMapper* Clone(void) const;
-    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:

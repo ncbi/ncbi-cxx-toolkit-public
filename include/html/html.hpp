@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  1999/10/28 13:40:29  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.37  1999/08/20 16:14:36  golikov
 * 'non-<TR> tag' bug fixed
 *
@@ -166,9 +169,7 @@ BEGIN_NCBI_SCOPE
 // base class for html node
 class CHTMLNode : public CNCBINode
 {
-    // parent class
     typedef CNCBINode CParent;
-
 public:
     CHTMLNode(void);
     CHTMLNode(const string& name);
@@ -189,6 +190,7 @@ public:
 
     // convenient way to add CHTMLPlainText or CHTMLText
     void AppendPlainText(const string &);
+    void AppendPlainText(const string &, bool noEncode);
     void AppendHTMLText (const string &);
 };
 
@@ -196,110 +198,88 @@ public:
 class CHTMLTagNode : public CNCBINode
 {
     typedef CNCBINode CParent;
-
 public:
     CHTMLTagNode(const string& tagname);
 
-    virtual void CreateSubNodes(void);
-
-protected:
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
 };
 
 
 // A text node that contains plain text
 class CHTMLPlainText : public CNCBINode
 {
-    // parent class
     typedef CNCBINode CParent;
-
 public:
     CHTMLPlainText(const string& text);
+    CHTMLPlainText(const string& text, bool noEncode);
     
     const string& GetText(void) const;
     void SetText(const string& text);
 
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode = eHTML);
+    bool NoEncode(void) const
+        {
+            return m_NoEncode;
+        }
+    void SetNoEncode(bool noEncode = true)
+        {
+            m_NoEncode = noEncode;
+        }
 
-protected:
-    string m_Text;  // the text
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
 
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
+private:
+    bool m_NoEncode;
 };
 
 // A text node that contains html text with tags and possibly <@TAG@>
 class CHTMLText : public CNCBINode
 {
     typedef CNCBINode CParent;
-
 public:
     CHTMLText(const string& text);
     
     const string& GetText(void) const;
+    void SetText(const string& text);
 
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode = eHTML);
-    virtual void CreateSubNodes();
-
-protected:
-    string m_Text;  // the text
-
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
 };
 
 // An html tag
 class CHTMLOpenElement: public CHTMLNode
 {
     typedef CHTMLNode CParent;
-
 public:
     CHTMLOpenElement(const string& name);
     CHTMLOpenElement(const string& name, CNCBINode* node);
     CHTMLOpenElement(const string& name, const string& text);
 
     // prints tag itself
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode = eHTML);   
-
-protected:
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);   
 };
 
 // An html tag
 class CHTMLElement: public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
-
 public:
     CHTMLElement(const string& name);
     CHTMLElement(const string& name, CNCBINode* node);
     CHTMLElement(const string& name, const string& text);
 
     // prints tag close    
-    virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode = eHTML);   
-
-protected:
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);   
 };
 
 class CHTMLComment : public CHTMLNode
 {
     typedef CHTMLNode CParent;
-
 public:
     CHTMLComment();
     CHTMLComment(CNCBINode* node);
     CHTMLComment(const string& text);
 
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode = eHTML);
-    virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode = eHTML);
-
-protected:
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);
 };
 
 // HTML element names (in order of appearence in third edition of
@@ -414,7 +394,6 @@ template<const string* TagName>
 class CHTMLElementTmpl : public CHTMLElement
 {
     typedef CHTMLElement CParent;
-
 public:
     static const string& s_GetTagName(void)
         { return *TagName; }
@@ -433,7 +412,6 @@ template<const string* TagName>
 class CHTMLOpenElementTmpl : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
-
 public:
     static const string& s_GetTagName(void)
         { return *TagName; }
@@ -451,7 +429,6 @@ template<const string* TagName>
 class CHTMLListElementTmpl : public CHTMLElement
 {
     typedef CHTMLElement CParent;
-
 public:
     static const string& s_GetTagName(void);
 
@@ -484,7 +461,6 @@ template<const string* TagName>
 class CHTML_tcTmpl : public CHTML_tc
 {
     typedef CHTML_tc CParent;
-
 public:
     static const string& s_GetTagName(void)
         { return *TagName; }
@@ -495,7 +471,6 @@ public:
         : CParent(s_GetTagName()) { AppendChild(node); }
     CHTML_tcTmpl(const string& text)
         : CParent(s_GetTagName()) { AppendPlainText(text); }
-
 };
 
 typedef CHTMLElementTmpl<&KHTMLTagName_html> CHTML_html;
@@ -578,7 +553,6 @@ typedef CHTMLElementTmpl<&KHTMLTagName_area> CHTML_area;
 class CHTML_a : public CHTML_a_Base
 {
     typedef CHTML_a_Base CParent;
-
 public:
     CHTML_a(const string& href, const string& text);
     CHTML_a(const string& href, CNCBINode* node);
@@ -588,7 +562,6 @@ public:
 class CHTML_table : public CHTML_table_Base
 {
     typedef CHTML_table_Base CParent;
-
 public:
     // type for row and column indexing
     typedef unsigned TIndex;
@@ -658,12 +631,10 @@ public:
     CHTML_table* SetCellSpacing(int spacing);
     CHTML_table* SetCellPadding(int padding);
 
-    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode = eHTML);
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
 
 protected:
     TIndex m_CurrentRow, m_CurrentCol;
-
-    virtual CNCBINode* CloneSelf(void) const;
 
     struct CTableInfo
     {
@@ -692,7 +663,6 @@ protected:
 class CHTML_form : public CHTML_form_Base
 {
     typedef CHTML_form_Base CParent;
-
 public:
     enum EMethod {
         eGet,
@@ -713,18 +683,16 @@ public:
 class CHTML_textarea : public CHTML_textarea_Base
 {
     typedef CHTML_textarea_Base CParent;
-
 public:
     CHTML_textarea(const string& name, int cols, int rows);
-    CHTML_textarea(const string& name, int cols, int rows, const string& value);
-
+    CHTML_textarea(const string& name, int cols, int rows,
+                   const string& value);
 };
 
 // input tag
 class CHTML_input : public CHTML_input_Base
 {
     typedef CHTML_input_Base CParent;
-
 public:
     CHTML_input(const string& type, const string& name);
 };
@@ -733,13 +701,13 @@ public:
 class CHTML_checkbox : public CHTML_input
 {
     typedef CHTML_input CParent;
-
 public:
     CHTML_checkbox(const string& name);
-    CHTML_checkbox(const string& name, bool checked, const string& description = NcbiEmptyString);
+    CHTML_checkbox(const string& name, bool checked,
+                   const string& description = NcbiEmptyString);
     CHTML_checkbox(const string& name, const string& value);
-    CHTML_checkbox(const string& name, const string& value, bool checked, const string& description = NcbiEmptyString);
-
+    CHTML_checkbox(const string& name, const string& value,
+                   bool checked, const string& description = NcbiEmptyString);
 
     static const string& s_GetInputType(void);
 };
@@ -748,7 +716,6 @@ public:
 class CHTML_hidden : public CHTML_input
 {
     typedef CHTML_input CParent;
-
 public:
     CHTML_hidden(const string& name, const string& value);
     CHTML_hidden(const string& name, int value);
@@ -760,7 +727,6 @@ public:
 class CHTML_image : public CHTML_input
 {
     typedef CHTML_input CParent;
-
 public:
     CHTML_image(const string& name, const string& src);
     CHTML_image(const string& name, const string& src, int border);
@@ -772,7 +738,6 @@ public:
 class CHTML_radio : public CHTML_input
 {
     typedef CHTML_input CParent;
-
 public:
     CHTML_radio(const string& name, const string& value);
     CHTML_radio(const string& name, const string& value, bool checked, const string& description = NcbiEmptyString);
@@ -784,7 +749,6 @@ public:
 class CHTML_reset : public CHTML_input
 {
     typedef CHTML_input CParent;
-
 public:
     CHTML_reset(const string& label = NcbiEmptyString);
 
@@ -795,7 +759,6 @@ public:
 class CHTML_submit : public CHTML_input
 {
     typedef CHTML_input CParent;
-
 public:
     CHTML_submit(const string& name);
     CHTML_submit(const string& name, const string& label);
@@ -807,7 +770,6 @@ public:
 class CHTML_text : public CHTML_input
 {
     typedef CHTML_input CParent;
-
 public:
     CHTML_text(const string& name, const string& value = NcbiEmptyString);
     CHTML_text(const string& name, int size, const string& value = NcbiEmptyString);
@@ -820,7 +782,6 @@ public:
 class CHTML_file : public CHTML_input
 {
     typedef CHTML_input CParent;
-
 public:
     CHTML_file(const string& name, const string& value = NcbiEmptyString);
 
@@ -831,7 +792,6 @@ public:
 class CHTML_select : public CHTML_select_Base
 {
     typedef CHTML_select_Base CParent;
-
 public:
     CHTML_select(const string& name, bool multiple = false);
     CHTML_select(const string& name, int size, bool multiple = false);
@@ -846,7 +806,6 @@ public:
 class CHTML_option: public CHTML_option_Base
 {
     typedef CHTML_option_Base CParent;
-
 public:
     CHTML_option(const string& value, bool selected = false);
     CHTML_option(const string& value, const string& label,
@@ -857,20 +816,18 @@ public:
 class CHTML_br : public CHTML_br_Base
 {
     typedef CHTML_br_Base CParent;
-
 public:
     CHTML_br(void);
     // create <number> of <br> tags
     CHTML_br(int number);
 
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode = eHTML);
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
 };
 
 
 class CHTML_img : public CHTML_img_Base
 {
     typedef CHTML_img_Base CParent;
-
 public:
     CHTML_img(const string& url);
     CHTML_img(const string& url, int width, int height);
@@ -880,7 +837,6 @@ public:
 class CHTML_dl : public CHTML_dl_Base
 {
     typedef CHTML_dl_Base CParent;
-
 public:
     CHTML_dl(bool compact = false);
 
@@ -889,13 +845,11 @@ public:
     CHTML_dl* AppendTerm(const string& term, const string& definition);
     CHTML_dl* AppendTerm(CNCBINode* term, CNCBINode* definition = 0);
     CHTML_dl* AppendTerm(CNCBINode* term, const string& definition);
-
 };
 
 class CHTML_ol : public CHTML_ol_Base
 {
     typedef CHTML_ol_Base CParent;
-
 public:
     CHTML_ol(bool compact = false);
     CHTML_ol(const string& type, bool compact = false);
@@ -906,7 +860,6 @@ public:
 class CHTML_font : public CHTML_font_Base
 {
     typedef CHTML_font_Base CParent;
-
 public:
     CHTML_font(void);
     CHTML_font(int size, CNCBINode* node = 0);
@@ -917,8 +870,10 @@ public:
     CHTML_font(const string& typeface, const string& text);
     CHTML_font(const string& typeface, int size, CNCBINode* node = 0);
     CHTML_font(const string& typeface, int size, const string& text);
-    CHTML_font(const string& typeface, int size, bool absolute, CNCBINode* node = 0);
-    CHTML_font(const string& typeface, int size, bool absolute, const string& text);
+    CHTML_font(const string& typeface, int size,
+               bool absolute, CNCBINode* node = 0);
+    CHTML_font(const string& typeface, int size,
+               bool absolute, const string& text);
 
     CHTML_font* SetFontSize(int size, bool absolute);
     CHTML_font* SetRelativeSize(int size);
@@ -927,7 +882,6 @@ public:
 class CHTML_basefont : public CHTML_basefont_Base
 {
     typedef CHTML_basefont_Base CParent;
-
 public:
     CHTML_basefont(int size);
     CHTML_basefont(const string& typeface);
@@ -937,7 +891,6 @@ public:
 class CHTML_color : public CHTML_font
 {
     typedef CHTML_font CParent;
-
 public:
     CHTML_color(const string& color, CNCBINode* node = 0);
     CHTML_color(const string& color, const string& text);
@@ -955,7 +908,7 @@ public:
     CHTML_hr* SetNoShade(void);
     CHTML_hr* SetNoShade(bool noShade);
 
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode = eHTML);
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
 };
 
 #include <html/html.inl>

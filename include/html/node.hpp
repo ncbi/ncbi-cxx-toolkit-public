@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/10/28 13:40:30  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.10  1999/05/28 16:32:09  vasilche
 * Fixed memory leak in page tag mappers.
 *
@@ -71,60 +74,138 @@
 #include <corelib/ncbistd.hpp>
 #include <map>
 #include <list>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
+
+class CNCBINode;
+
+class CNodeRef
+{
+public:
+    typedef CNCBINode TObjectType;
+
+    CNodeRef(void);
+    CNodeRef(TObjectType* data);
+    CNodeRef(const CNodeRef& ref);
+    ~CNodeRef(void);
+    CNodeRef& operator=(TObjectType* data);
+    CNodeRef& operator=(const CNodeRef& ref);
+
+    operator bool(void) const;
+    operator TObjectType*(void);
+    operator const TObjectType*(void) const;
+    TObjectType& operator*(void);
+    const TObjectType& operator*(void) const;
+    TObjectType* operator->(void);
+    const TObjectType* operator->(void) const;
+    TObjectType* get(void);
+    const TObjectType* get(void) const;
+
+private:
+    TObjectType* m_Data;
+
+    static TObjectType* Ref(TObjectType* data);
+    void UnRef() const;
+};
 
 // base class for a graph node
 
 class CNCBINode
 {
-public:    
-    typedef list<CNCBINode*> TChildList;
+public:
+    typedef list<CNodeRef> TChildren;
+#if NCBI_LIGHTWEIGHT_LIST
+    typedef TChildren TChildrenMember;
+#else
+    typedef auto_ptr<TChildren> TChildrenMember;
+#endif
     typedef map<string, string> TAttributes;
     
-    enum EMode { eHTML = 0, ePlainText  = 1 };
-    typedef int TMode; // combination of EMode
+    enum EMode {
+        eHTML = 0,
+        ePlainText  = 1
+    };
+    class TMode {
+    public:
+        TMode(EMode mode = eHTML)
+            : m_Mode(mode), m_Node(0), m_Previous(0)
+            {
+            }
+        TMode(int mode)
+            : m_Mode(EMode(mode)), m_Node(0), m_Previous(0)
+            {
+            }
+        TMode(const TMode* mode, CNCBINode* node)
+            : m_Mode(mode->m_Mode), m_Node(node), m_Previous(mode)
+            {
+            }
+        operator EMode(void) const
+            {
+                return m_Mode;
+            }
+        bool operator==(EMode mode) const
+            {
+                return mode == m_Mode;
+            }
+
+        CNCBINode* GetNode(void) const
+            {
+                return m_Node;
+            }
+        const TMode* GetPreviousContext(void) const
+            {
+                return m_Previous;
+            }
+    private:
+        // to avoid allocation in 
+        EMode m_Mode;
+        CNCBINode* m_Node;
+        const TMode* m_Previous;
+    };
 
     // 'structors
     CNCBINode(void);
     CNCBINode(const string& name);
     virtual ~CNCBINode();
 
-    // removes a child
-    void RemoveChild(CNCBINode* child);
-    // adds a child to the child list at iterator.
-    // returns this for chained AppendChild
-    CNCBINode* InsertBefore(CNCBINode* newChild, CNCBINode* refChild);
-    // add a Node * to the end of m_ChildNodes
+    // add a Node * to the end of m_Children
     // returns this for chained AppendChild
     CNCBINode* AppendChild(CNCBINode* child);
+    void RemoveAllChildren(void);
 
-    // helpers
-    TChildList::iterator ChildBegin(void);
-    TChildList::iterator ChildEnd(void);
-    TChildList::const_iterator ChildBegin(void) const;
-    TChildList::const_iterator ChildEnd(void) const;
+    // all child operations (except AppendChild) are valid only if
+    // have children returns true
+    bool HaveChildren(void) const;
+    TChildren& Children(void);
+    const TChildren& Children(void) const;
+    TChildren::iterator ChildBegin(void);
+    TChildren::iterator ChildEnd(void);
+    static CNCBINode* Node(TChildren::iterator i);
+    TChildren::const_iterator ChildBegin(void) const;
+    TChildren::const_iterator ChildEnd(void) const;
+    static const CNCBINode* Node(TChildren::const_iterator i);
 
-    // finds iterator pointing to child
-    TChildList::iterator FindChild(CNCBINode* child);
-
-    virtual CNcbiOstream& Print(CNcbiOstream& out,TMode mode = eHTML);
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode = eHTML);
-    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode = eHTML);
-    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode = eHTML);
+    virtual CNcbiOstream& Print(CNcbiOstream& out, TMode mode = eHTML);
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode);
 
     // this method will be called when printing and "this" node doesn't
     // contain any children
     virtual void CreateSubNodes(void);
     // finds and replaces text with a node    
     virtual CNCBINode* MapTag(const string& tagname);
+    CNodeRef MapTagAll(const string& tagname, const TMode& mode);
 
     const string& GetName(void) const;
-    void SetName(const string& namein);
 
+    bool HaveAttributes(void) const;
+    TAttributes& Attributes(void);
+    const TAttributes& Attributes(void) const;
     // retreive attribute
     bool HaveAttribute(const string& name) const;
-    string GetAttribute(const string& name) const;
+    const string& GetAttribute(const string& name) const;
     const string* GetAttributeValue(const string& name) const;
 
     // set attribute
@@ -140,30 +221,31 @@ public:
     void SetOptionalAttribute(const char* name, const string& value);
     void SetOptionalAttribute(const char* name, bool set);
 
-    // clone whole node tree
-    CNCBINode* Clone() const;
-
 protected:
-    TChildList m_ChildNodes;  // Child nodes.
-    CNCBINode* m_ParentNode;  // Parent node (or null).
-
-    bool m_Initialized;
+    int m_RefCount;
+    TChildrenMember m_Children;  // Child nodes.
 
     string m_Name; // node name
 
-    TAttributes m_Attributes; // attributes, e.g. href="link.html"
-
-    // Support for cloning
-    void CloneChildrenTo(CNCBINode* copy) const;
-    virtual CNCBINode* CloneSelf() const;
-    CNCBINode(const CNCBINode& origin);
+    auto_ptr<TAttributes> m_Attributes; // attributes, e.g. href="link.html"
 
 private:
+    // to prevent copy contructor
+    CNCBINode(const CNCBINode& node);
     // to prevent assignment operator
     CNCBINode& operator=(const CNCBINode& node);
 
+    // return children list (create if needed)
+    TChildren& GetChildren(void);
+    // return attributes map (create if needed)
+    TAttributes& GetAttributes(void);
     void DoAppendChild(CNCBINode* child);
-    void DetachFromParent();
+
+    void Ref(void);
+    void UnRef(void);
+    void BadRef(void);
+    void Destroy(void);
+    friend class CNodeRef;
 };
 
 // inline functions are defined here:

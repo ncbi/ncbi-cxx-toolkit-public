@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/10/28 13:40:30  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.18  1999/07/08 18:05:12  vakatov
 * Fixed compilation warnings
 *
@@ -186,62 +189,13 @@ inline string CHTMLNode::GetNameAttribute(void) const
 
 inline const string& CHTMLPlainText::GetText(void) const
 {
-    return m_Text;
+    return GetName();
 }
 
 inline const string& CHTMLText::GetText(void) const
 {
-    return m_Text;
+    return GetName();
 }
-/*
-template<const string* TagName>
-inline const string& CHTMLElementTmpl<TagName>::s_GetTagName(void)
-{
-    return *TagName;
-}
-
-template<const string* TagName>
-inline CHTMLElementTmpl<TagName>::CHTMLElementTmpl(void)
-    : CParent(s_GetTagName())
-{
-}
-
-template<const string* TagName>
-inline CHTMLElementTmpl<TagName>::CHTMLElementTmpl(CNCBINode* node)
-    : CParent(s_GetTagName(), node)
-{
-}
-
-template<const string* TagName>
-inline CHTMLElementTmpl<TagName>::CHTMLElementTmpl(const string& text)
-    : CParent(s_GetTagName(), text)
-{
-}
-
-template<const string* TagName>
-inline const string& CHTMLOpenElementTmpl<TagName>::s_GetTagName(void)
-{
-    return *TagName;
-}
-
-template<const string* TagName>
-inline CHTMLOpenElementTmpl<TagName>::CHTMLOpenElementTmpl(void)
-    : CParent(s_GetTagName())
-{
-}
-
-template<const string* TagName>
-inline CHTMLOpenElementTmpl<TagName>::CHTMLOpenElementTmpl(CNCBINode* node)
-    : CParent(s_GetTagName(), node)
-{
-}
-
-template<const string* TagName>
-inline CHTMLOpenElementTmpl<TagName>::CHTMLOpenElementTmpl(const string& text)
-    : CParent(s_GetTagName(), text)
-{
-}
-*/
 
 template<const string* TagName>
 inline const string& CHTMLListElementTmpl<TagName>::s_GetTagName(void)

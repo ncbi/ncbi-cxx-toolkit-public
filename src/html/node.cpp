@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/10/28 13:40:35  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.13  1999/05/27 21:43:30  vakatov
 * Get rid of some minor compiler warnings
 *
@@ -81,179 +84,143 @@
 BEGIN_NCBI_SCOPE
 
 CNCBINode::CNCBINode(void)
-    : m_ParentNode(0), m_Initialized(false)
+    : m_RefCount(0)
 {
 }
 
 CNCBINode::CNCBINode(const string& name)
-    : m_ParentNode(0), m_Initialized(false), m_Name(name)
+    : m_RefCount(0), m_Name(name)
 {
 }
 
-// we leak memory like crazy until the sunpro compiler is upgraded
-// it can't handle a virtual destructor in any form for some reason.
 CNCBINode::~CNCBINode(void)
 {
-    while ( !m_ChildNodes.empty() ) {
-        delete *ChildBegin();
-    }
-    DetachFromParent();
-}
-
-CNCBINode::CNCBINode(const CNCBINode& origin)
-    : m_ParentNode(0), m_Initialized(origin.m_Initialized),
-      m_Name(origin.m_Name), m_Attributes(origin.m_Attributes)
-{
-}
-
-CNCBINode* CNCBINode::Clone() const
-{
-    CNCBINode* copy = CloneSelf();
-
-    CloneChildrenTo(copy);
-
-    return copy;
-}
-
-void CNCBINode::CloneChildrenTo(CNCBINode* copy) const
-{
-    for (TChildList::const_iterator i = ChildBegin(); i != ChildEnd(); ++i) {
-        CNCBINode* childOrigin = *i;
-        CNCBINode* child = childOrigin->CloneSelf();
-        copy->AppendChild(child);
-        childOrigin->CloneChildrenTo(child);
+    if ( m_RefCount != 0 ) {
+        THROW1_TRACE(runtime_error,
+                     "~CNCBINode(" + m_Name + "): refCount = " +
+                     NStr::IntToString(m_RefCount));
     }
 }
 
-CNCBINode* CNCBINode::CloneSelf() const
+void CNCBINode::Destroy(void)
 {
-    return new CNCBINode(*this);
-}
-
-void CNCBINode::DetachFromParent(void)
-{
-    if ( m_ParentNode ) {
-        m_ParentNode->RemoveChild(this);
-        _ASSERT(m_ParentNode == 0);
+    if ( m_RefCount < 0 ) {
+        THROW1_TRACE(runtime_error,
+                     "CNCBINode::Destroy(" + m_Name + "): refCount = " +
+                     NStr::IntToString(m_RefCount));
     }
+    delete this;
 }
 
-void CNCBINode::RemoveChild(CNCBINode* child)
+void CNCBINode::BadRef(void)
 {
-    if ( child->m_ParentNode != this )
-        return;
-
-    m_ChildNodes.erase(FindChild(child));
-    child->m_ParentNode = 0;
-}
-
-CNCBINode::TChildList::iterator CNCBINode::FindChild(CNCBINode* child)
-{
-    for (TChildList::iterator i = ChildBegin(); i != ChildEnd(); ++i) {
-        if (*i == child) {
-            return i;
-        }
+    if ( m_RefCount <= 0 ) {
+        THROW1_TRACE(runtime_error,
+                     "CNCBINode::BadRef: Reference count was negative");
     }
-    throw runtime_error("Broken CNCBINode tree");
 }
 
 // append a child
-void CNCBINode::DoAppendChild(CNCBINode * child)
+void CNCBINode::DoAppendChild(CNCBINode* child)
 {
-    child->DetachFromParent();
-    m_ChildNodes.push_back(child);
-    child->m_ParentNode = this;
+    GetChildren().push_back(child);
 }
 
-
-// insert a child before the given node
-CNCBINode* CNCBINode::InsertBefore(CNCBINode * newChild, CNCBINode * refChild)
+void CNCBINode::RemoveAllChildren(void)
 {
-    if ( !newChild || !refChild || refChild->m_ParentNode != this )
-        return this;
-
-    newChild->DetachFromParent();
-
-    m_ChildNodes.insert(++FindChild(refChild), newChild);
-    newChild->m_ParentNode = this;
-
-    return this;
+#if NCBI_LIGHTWEIGHT_LIST
+    m_Children.clear();
+#else
+    m_Children.reset(0);
+#endif
 }
 
 bool CNCBINode::HaveAttribute(const string& name) const
 {
-    TAttributes& Attributes = const_cast<TAttributes&>(m_Attributes); // SW_01
-    return Attributes.find(name) != Attributes.end();
+    return HaveAttributes() && Attributes().find(name) != Attributes().end();
 }
 
-string CNCBINode::GetAttribute(const string& name) const
+const string& CNCBINode::GetAttribute(const string& name) const
 {
-    TAttributes& Attributes = const_cast<TAttributes&>(m_Attributes); // SW_01
-    TAttributes::iterator ptr = Attributes.find(name);
-    if ( ptr == Attributes.end() )
-        return NcbiEmptyString;
-    return ptr->second;
+    if ( HaveAttributes() ) {
+        TAttributes::const_iterator ptr = Attributes().find(name);
+        if ( ptr != Attributes().end() ) {
+            return ptr->second;
+        }
+    }
+    return NcbiEmptyString;
 }
 
 const string* CNCBINode::GetAttributeValue(const string& name) const
 {
-    TAttributes& Attributes = const_cast<TAttributes&>(m_Attributes); // SW_01
-    TAttributes::iterator ptr = Attributes.find(name);
-    if ( ptr == Attributes.end() )
-        return 0;
-    return &ptr->second;
+    if ( HaveAttributes() ) {
+        TAttributes::const_iterator ptr = Attributes().find(name);
+        if ( ptr != Attributes().end() ) {
+            return &ptr->second;
+        }
+    }
+    return 0;
 }
 
 void CNCBINode::SetAttribute(const string& name)
 {
-    m_Attributes[name];
+    GetAttributes()[name];
 }
 
 void CNCBINode::SetAttribute(const string& name, const string& value)
 {
-    m_Attributes[name] = value;
+    GetAttributes()[name] = value;
 }
 
 void CNCBINode::SetAttribute(const char* name)
 {
-    m_Attributes[name];
+    GetAttributes()[name];
 }
 
 void CNCBINode::SetAttribute(const char* name, const string& value)
 {
-    m_Attributes[name] = value;
+    GetAttributes()[name] = value;
 }
 
 // this function searches for a text string in a Text node and replaces it with a node
-CNCBINode* CNCBINode::MapTag(const string& tagname)
+CNCBINode* CNCBINode::MapTag(const string& /*tagname*/)
 {
-    if ( !m_ParentNode )
-        return 0;
+    return 0;
+}
 
-    return m_ParentNode->MapTag(tagname);
+// this function searches for a text string in a Text node and replaces it with a node
+CNodeRef CNCBINode::MapTagAll(const string& tagname, const TMode& mode)
+{
+    const TMode* context = &mode;
+    do {
+        CNCBINode* node = context->GetNode()->MapTag(tagname);
+        if ( node )
+            return node;
+        context = context->GetPreviousContext();
+    } while ( context );
+    return 0;
 }
 
 // print the whole node tree (with possible initialization)
-CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode mode)
+CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
 {
-    if ( !m_Initialized ) { // if there is no children
+    if ( !HaveChildren() ) { // if there is no children
         CreateSubNodes();             // create them
-        m_Initialized = true;
     }
 
-    PrintBegin(out,mode);
+    TMode mode(&prev, this);
+    PrintBegin(out, mode);
 
     try {
-        PrintChildren(out,mode);
+        PrintChildren(out, mode);
     }
     catch (...) {
-        ERR_POST("\
-CNCBINode::Print: exception in PrintChildren, trying to PrintEnd");
-        PrintEnd(out,mode);
+        ERR_POST("CNCBINode::Print: exception in PrintChildren, trying to PrintEnd");
+        PrintEnd(out, mode);
         throw;
     }
 
-    PrintEnd(out,mode);
+    PrintEnd(out, mode);
     return out;
 }
 
@@ -270,8 +237,11 @@ CNcbiOstream& CNCBINode::PrintEnd(CNcbiOstream& out, TMode)
 // print all children
 CNcbiOstream& CNCBINode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
-    for (TChildList::iterator i = ChildBegin(); i != ChildEnd(); ++i) {
-        (*i)->Print(out,mode);
+    if ( HaveChildren() ) {
+        for ( TChildren::iterator i = Children().begin();
+              i != Children().end(); ++i) {
+            Node(i)->Print(out, mode);
+        }
     }
     return out;
 }
@@ -282,6 +252,3 @@ void CNCBINode::CreateSubNodes(void)
 }
 
 END_NCBI_SCOPE
-
-
-

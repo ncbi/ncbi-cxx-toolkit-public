@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/10/28 13:40:38  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.8  1999/07/08 16:45:53  vakatov
 * Get rid of the redundant `extern "C"' at "main()
 *
@@ -68,9 +71,9 @@ USING_NCBI_SCOPE;  // this turns on the ncbi namespace
 int s_Demo(void)
 {
     CCgiResponse Response; // used to write out the html
-    CHTML_html * Html = 0; // the following are tags used in the page.
-    CHTML_body * Body = 0;
-    CHTML_form * Form = 0;
+    CNodeRef Html; // the following are tags used in the page.
+    CNodeRef Body;
+    CNodeRef Form;
 
     try {
         // write out the Content-type header
@@ -96,9 +99,6 @@ int s_Demo(void)
     // check to see if there were any errors
     catch (exception& exc) { 
         // deallocate memory in case of error
-        delete Html;
-        delete Body;
-        delete Form;
         NcbiCerr << "\n" << exc.what() << NcbiEndl;
     }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/10/28 13:40:36  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.22  1999/09/27 16:17:18  vasilche
 * Fixed several incompatibilities with Windows
 *
@@ -113,16 +116,6 @@ CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
 {
 }
 
-CHTMLBasicPage::CHTMLBasicPage(const CHTMLBasicPage& page)
-    : CParent(page),
-      m_CgiApplication(page.m_CgiApplication), m_Style(page.m_Style)
-{
-    for ( TTagMap::const_iterator i = page.m_TagMap.begin();
-          i != page.m_TagMap.end(); ++i ) {
-        m_TagMap.insert(TTagMap::value_type(i->first, i->second->Clone()));
-    }
-}
-
 CHTMLBasicPage::~CHTMLBasicPage(void)
 {
     // BW_02:  the following does not compile on MSVC++ 6.0 SP3:
@@ -132,11 +125,6 @@ CHTMLBasicPage::~CHTMLBasicPage(void)
         delete i->second;
     }
 
-}
-
-CNCBINode* CHTMLBasicPage::CloneSelf(void) const
-{
-    return new CHTMLBasicPage(*this);
 }
 
 void CHTMLBasicPage::SetApplication(CCgiApplication* App)
@@ -155,7 +143,6 @@ CNCBINode* CHTMLBasicPage::MapTag(const string& name)
     if ( i != m_TagMap.end() ) {
         return (i->second)->MapTag(this, name);
     }
-
     return CParent::MapTag(name);
 }
 
@@ -191,11 +178,6 @@ void CHTMLPage::Init(void)
 {
     AddTagMap("TITLE", CreateTagMapper(this, &CHTMLPage::CreateTitle));
     AddTagMap("VIEW",  CreateTagMapper(this, &CHTMLPage::CreateView));
-}
-
-CNCBINode* CHTMLPage::CloneSelf(void) const
-{
-    return new CHTMLPage(*this);
 }
 
 void CHTMLPage::CreateSubNodes(void)

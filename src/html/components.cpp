@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/10/28 13:40:34  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.29  1999/06/07 15:21:04  vasilche
 * Fixed some warnings.
 *
@@ -251,11 +254,6 @@ CQueryBox::CQueryBox(void)
     m_DispMax.m_TextAfter = "documents per page";
 }
 
-CNCBINode* CQueryBox::CloneSelf(void) const
-{
-    return new CQueryBox(*this);
-}
-
 void CQueryBox::CreateSubNodes()
 {
 /*
@@ -287,11 +285,6 @@ CNCBINode* CQueryBox::CreateComments(void)
 
 CButtonList::CButtonList(void)
 {
-}
-
-CNCBINode* CButtonList::CloneSelf(void) const
-{
-    return new CButtonList(*this);
 }
 
 void CButtonList::CreateSubNodes()
@@ -389,19 +382,9 @@ void CPagerBox::CreateSubNodes(void)
     tableBot->InsertAt(0, 2, new CHTMLText(NStr::IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
 }
 
-CNCBINode* CPagerBox::CloneSelf(void) const
-{
-    return new CPagerBox(*this);
-}
-
 CSmallPagerBox::CSmallPagerBox()
     : m_Width(460), m_PageList(0), m_NumResults(0)
 {
-}
-
-CNCBINode* CSmallPagerBox::CloneSelf(void) const
-{
-    return new CSmallPagerBox(*this);
 }
 
 void CSmallPagerBox::CreateSubNodes()

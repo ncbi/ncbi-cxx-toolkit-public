@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/10/28 13:40:31  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.19  1999/05/28 16:32:11  vasilche
 * Fixed memory leak in page tag mappers.
 *
@@ -114,7 +117,6 @@ class CHTMLBasicPage: public CNCBINode
 public: 
     CHTMLBasicPage(void);
     CHTMLBasicPage(CCgiApplication* app, int style = 0);
-    CHTMLBasicPage(const CHTMLBasicPage& page);
     virtual ~CHTMLBasicPage(void);
 
     virtual CCgiApplication* GetApplication(void) const;
@@ -136,9 +138,6 @@ protected:
 
     // tag resolvers (as registered by AddTagMap)
     TTagMap m_TagMap;
-
-    // cloning
-    virtual CNCBINode* CloneSelf(void) const;
 };
 
 
@@ -181,9 +180,6 @@ public:
     // to set title or template file outside(after) the constructor
     void SetTitle       (const string& title);
     void SetTemplateFile(const string& template_file);
-
-protected:
-    virtual CNCBINode* CloneSelf(void) const;
 
 private:
     void Init(void);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/10/28 13:40:31  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.6  1999/05/28 16:32:10  vasilche
 * Fixed memory leak in page tag mappers.
 *
@@ -64,12 +67,6 @@ inline StaticTagMapperByNode<C>::StaticTagMapperByNode(CNCBINode* (*function)(C*
 }
 
 template<class C>
-BaseTagMapper* StaticTagMapperByNode<C>::Clone(void) const
-{
-    return new StaticTagMapperByNode(*this);
-}
-
-template<class C>
 CNCBINode* StaticTagMapperByNode<C>::MapTag(CNCBINode* _this, const string&) const
 {
     return m_Function(dynamic_cast<C*>(_this));
@@ -79,12 +76,6 @@ template<class C>
 inline StaticTagMapperByNodeAndName<C>::StaticTagMapperByNodeAndName(CNCBINode* (*function)(C* node, const string& name))
     : m_Function(function)
 {
-}
-
-template<class C>
-BaseTagMapper* StaticTagMapperByNodeAndName<C>::Clone(void) const
-{
-    return new StaticTagMapperByNodeAndName(*this);
 }
 
 template<class C>
@@ -100,12 +91,6 @@ inline TagMapper<C>::TagMapper(CNCBINode* (C::*method)(void))
 }
 
 template<class C>
-BaseTagMapper* TagMapper<C>::Clone(void) const
-{
-    return new TagMapper(*this);
-}
-
-template<class C>
 CNCBINode* TagMapper<C>::MapTag(CNCBINode* _this, const string&) const
 {
     return (dynamic_cast<C*>(_this)->*m_Method)();
@@ -115,12 +100,6 @@ template<class C>
 inline TagMapperByName<C>::TagMapperByName(CNCBINode* (C::*method)(const string& name))
     : m_Method(method)
 {
-}
-
-template<class C>
-BaseTagMapper* TagMapperByName<C>::Clone(void) const
-{
-    return new TagMapperByName(*this);
 }
 
 template<class C>

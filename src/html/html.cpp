@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  1999/10/28 13:40:35  vasilche
+* Added reference counters to CNCBINode.
+*
 * Revision 1.49  1999/08/20 16:14:54  golikov
 * 'non-<TR> tag' bug fixed
 *
@@ -322,6 +325,12 @@ void CHTMLNode::AppendPlainText(const string& appendstring)
         AppendChild(new CHTMLPlainText(appendstring));
 }
 
+void CHTMLNode::AppendPlainText(const string& appendstring, bool noEncode)
+{
+    if ( !appendstring.empty() )
+        AppendChild(new CHTMLPlainText(appendstring, noEncode));
+}
+
 void CHTMLNode::AppendHTMLText(const string& appendstring)
 {
     if ( !appendstring.empty() )
@@ -335,98 +344,95 @@ CHTMLTagNode::CHTMLTagNode(const string& name)
 {
 }
 
-CNCBINode* CHTMLTagNode::CloneSelf(void) const
+CNcbiOstream& CHTMLTagNode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
-    return new CHTMLTagNode(*this);
-}
-
-void CHTMLTagNode::CreateSubNodes(void)
-{
-    AppendChild(MapTag(GetName()));
+    CNodeRef node = MapTagAll(GetName(), mode);
+    if ( node )
+        node->Print(out, mode);
+    return out;
 }
 
 // plain text node
 
 CHTMLPlainText::CHTMLPlainText(const string& text)
-    : m_Text(text)
+    : CNCBINode(text), m_NoEncode(false)
 {
 }
 
-CNCBINode* CHTMLPlainText::CloneSelf() const
+CHTMLPlainText::CHTMLPlainText(const string& text, bool noEncode)
+    : CNCBINode(text), m_NoEncode(noEncode)
 {
-    return new CHTMLPlainText(*this);
 }
 
 void CHTMLPlainText::SetText(const string& text)
 {
-    m_Text = text;
+    m_Name = text;
 }
 
 CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)  
 {
-    if( mode == ePlainText ) {
-        return out << m_Text;
-    } else {
-        return out << CHTMLHelper::HTMLEncode(m_Text);
+    if ( mode == ePlainText || NoEncode() ) {
+        return out << GetText();
+    }
+    else {
+        return out << CHTMLHelper::HTMLEncode(GetText());
     }
 }
 
 // text node
 
 CHTMLText::CHTMLText(const string& text)
-    : m_Text(text)
+    : CNCBINode(text)
 {
 }
 
-CNCBINode* CHTMLText::CloneSelf() const
+void CHTMLText::SetText(const string& text)
 {
-    return new CHTMLText(*this);
+    m_Name = text;
 }
 
 static const string KTagStart = "<@";
 static const string KTagEnd = "@>";
 
-CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode)  
+CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    return out << m_Text;
-}
-
-// text node
-
-void CHTMLText::CreateSubNodes()
-{
-    SIZE_TYPE tagStart = m_Text.find(KTagStart);
-    if ( tagStart != NPOS ) {
-        string text = m_Text.substr(tagStart);
-        m_Text = m_Text.substr(0, tagStart);
-        SIZE_TYPE last = 0;
-        tagStart = 0;
-        do {
-            SIZE_TYPE tagNameStart = tagStart + KTagStart.size();
-            SIZE_TYPE tagNameEnd = text.find(KTagEnd, tagNameStart);
-            if ( tagNameEnd != NPOS ) {
-                // tag found
-                if ( last != tagStart ) {
-                    AppendChild(new CHTMLText(text.substr(last, tagStart - last)));
-                }
-
-                AppendChild(new CHTMLTagNode(text.substr(tagNameStart, tagNameEnd - tagNameStart)));
-                last = tagNameEnd + KTagEnd.size();
-                tagStart = text.find(KTagStart, last);
-            }
-            else {
-                // tag not closed
-                throw runtime_error("tag not closed");
-            }
-        } while ( tagStart != NPOS );
-
-        if ( last != text.size() ) {
-            AppendChild(new CHTMLText(text.substr(last)));
-        }
+    const string& text = GetText();
+    SIZE_TYPE tagStart = text.find(KTagStart);
+    if ( tagStart == NPOS ) {
+        return out << text;
     }
-}
+    
+    out << text.substr(0, tagStart);
+    SIZE_TYPE last = tagStart;
+    do {
+        SIZE_TYPE tagNameStart = tagStart + KTagStart.size();
+        SIZE_TYPE tagNameEnd = text.find(KTagEnd, tagNameStart);
+        if ( tagNameEnd == NPOS ) {
+            // tag not closed
+            THROW1_TRACE(runtime_error, "tag not closed");
+        }
+        else {
+            // tag found
+            if ( last != tagStart ) {
+                out << text.substr(last, tagStart - last);
+            }
+            
+            CNodeRef tag = MapTagAll(text.substr(tagNameStart,
+                                                 tagNameEnd - tagNameStart),
+                                     mode);
+            if ( tag )
+                tag->Print(out, mode);
 
-// tag node
+            last = tagNameEnd + KTagEnd.size();
+            tagStart = text.find(KTagStart, last);
+        }
+    } while ( tagStart != NPOS );
+    
+    if ( last != text.size() ) {
+        out << text.substr(last);
+    }
+    return out;
+}
 
 CHTMLOpenElement::CHTMLOpenElement(const string& name)
     : CParent(name)
@@ -445,25 +451,22 @@ CHTMLOpenElement::CHTMLOpenElement(const string& name, const string& text)
     AppendPlainText(text);
 }
 
-CNCBINode* CHTMLOpenElement::CloneSelf(void) const
-{
-    return new CHTMLOpenElement(*this);
-}
-
 CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if( mode == ePlainText ) {
         return out;
-    } else {
+    }
+    else {
         out << '<' << m_Name;
-        for (TAttributes::iterator i = m_Attributes.begin(); 
-             i != m_Attributes.end(); ++i ) {
-            out << ' ' << i->first;
-            if ( !i->second.empty() ) {
-                out << "=\"" << CHTMLHelper::HTMLEncode(i->second) << '"';
+        if ( HaveAttributes() ) {
+            for ( TAttributes::const_iterator i = Attributes().begin(); 
+                  i != Attributes().end(); ++i ) {
+                out << ' ' << i->first;
+                if ( !i->second.empty() ) {
+                    out << "=\"" << CHTMLHelper::HTMLEncode(i->second) << '"';
+                }
             }
         }
-        
         return out << '>';
     }
 }
@@ -483,11 +486,6 @@ CHTMLElement::CHTMLElement(const string& name, const string& text)
     : CParent(name)
 {
     AppendPlainText(text);
-}
-
-CNCBINode* CHTMLElement::CloneSelf(void) const
-{
-    return new CHTMLElement(*this);
 }
 
 CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
@@ -514,11 +512,6 @@ CHTMLComment::CHTMLComment(const string& text)
     AppendPlainText(text);
 }
 
-CNCBINode* CHTMLComment::CloneSelf(void) const
-{
-    return new CHTMLComment(*this);
-}
-
 CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if( mode == ePlainText ) {
@@ -542,11 +535,6 @@ CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out, TMode mode)
 CHTML_table::CHTML_table(void)
     : m_CurrentRow(0), m_CurrentCol(TIndex(-1))
 {
-}
-
-CNCBINode* CHTML_table::CloneSelf(void) const
-{
-    return new CHTML_table(*this);
 }
 
 CHTML_table* CHTML_table::SetCellSpacing(int spacing)
@@ -601,22 +589,26 @@ CHTML_tr* CHTML_table::Row(TIndex needRow)  // todo: exception
     // beginning with row 0
     TIndex row = 0;
     // scan all children (which should be <TR> tags)
-    for ( TChildList::const_iterator iRow = ChildBegin();
-          iRow != ChildEnd(); ++iRow, ++row ) {
-        CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(*iRow);
-        if ( !trNode ) {
-            throw runtime_error("Table contains non-HTML node");
-        }
-        if( !sx_IsRow(trNode) ) {
-            if( !sx_CanContain(trNode) ) {
-                throw runtime_error("Table contains wrong tag '"
-                                    + trNode->GetName() + "'");
+    if ( HaveChildren() ) {
+        for ( TChildren::iterator iRow = ChildBegin();
+              iRow != ChildEnd(); ++iRow, ++row ) {
+            CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(Node(iRow));
+            if ( !trNode ) {
+                THROW1_TRACE(runtime_error,
+                             "Table contains non-HTML node");
             }
-            continue;
-        }
-
-        if ( row == needRow ) {
-            return static_cast<CHTML_tr*>(trNode);
+            if( !sx_IsRow(trNode) ) {
+                if( !sx_CanContain(trNode) ) {
+                    THROW1_TRACE(runtime_error,
+                                 "Table contains wrong tag '" +
+                                  trNode->GetName() + "'");
+                }
+                continue;
+            }
+            
+            if ( row == needRow ) {
+                return static_cast<CHTML_tr*>(trNode);
+            }
         }
     }
 
@@ -634,11 +626,13 @@ CHTML_tc* CHTML_table::sx_CheckType(CHTMLNode* cell, ECellType type)
     switch (type) {
     case eHeaderCell:
         if ( cell->GetName() != CHTML_th::s_GetTagName() )
-            throw runtime_error("CHTML_table::CheckType: wrong cell type: TH expected");
+            THROW1_TRACE(runtime_error,
+                         "CHTML_table::CheckType: wrong cell type: TH expected");
         break;
     case eDataCell:
         if ( cell->GetName() != CHTML_td::s_GetTagName() )
-            throw runtime_error("CHTML_table::CheckType: wrong cell type: TD expected");
+            THROW1_TRACE(runtime_error,
+                         "CHTML_table::CheckType: wrong cell type: TD expected");
         break;
     case eAnyCell:
         // no check
@@ -656,81 +650,92 @@ CHTML_tc* CHTML_table::Cell(TIndex needRow, TIndex needCol, ECellType type)
     TIndex needRowCols = 0;
     CHTMLNode* needRowNode = 0;
     // scan all children (which should be <TR> tags)
-    for ( TChildList::const_iterator iRow = ChildBegin();
-          iRow != ChildEnd(); ++iRow ) {
-        CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(*iRow);
-        if( !trNode ) {
-            throw runtime_error("Table contains non-HTML node");
-        }
-        if( !sx_IsRow(trNode) ) {
-            if( !sx_CanContain(trNode) ) {
-                throw runtime_error("Table contains wrong tag '"
-                                    + trNode->GetName() + "'");
+    if ( HaveChildren() ) {
+        for ( TChildren::iterator iRow = ChildBegin();
+              iRow != ChildEnd(); ++iRow ) {
+            CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(Node(iRow));
+            if( !trNode ) {
+                THROW1_TRACE(runtime_error,
+                             "Table contains non-HTML node");
             }
-            continue;
-        }
-
-        // beginning with column 0
-        TIndex col = 0;
-        // scan all children (which should be <TH> or <TD> tags)
-        for ( TChildList::iterator iCol = trNode->ChildBegin();
-              iCol != trNode->ChildEnd(); ++iCol ) {
-            CHTMLNode* cell = dynamic_cast<CHTMLNode*>(*iCol);
-
-            if ( !cell || !sx_IsCell(cell) ) {
-                throw runtime_error("Table row contains non- <TH> or <TD> tag");
-            }
-
-            // skip all used cells
-            while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
-                --rowSpans[col++];
-            }
-
-            if ( row == needRow ) {
-                if ( col == needCol ) {
-                    CHTML_tc* c = sx_CheckType(cell, type);
-                    m_CurrentRow = needRow;
-                    m_CurrentCol = needCol;
-                    return c;
+            if( !sx_IsRow(trNode) ) {
+                if( !sx_CanContain(trNode) ) {
+                    THROW1_TRACE(runtime_error,
+                                 "Table contains wrong tag '" +
+                                 trNode->GetName() + "'");
                 }
-                if ( col > needCol )
-                    throw runtime_error("Table cells are overlapped");
+                continue;
             }
-
-            // determine current cell size
-            TIndex rowSpan = sx_GetSpan(cell, KHTMLAttributeName_rowspan, 0);
-            TIndex colSpan = sx_GetSpan(cell, KHTMLAttributeName_colspan, 0);
-
-            // end of new cell in columns
-            const TIndex colEnd = col + colSpan;
-            // check that there is enough space
-            for ( TIndex i = col; i < colEnd && i < rowSpans.size(); ++i ) {
-                if ( rowSpans[i] ) {
-                    throw runtime_error("Table cells are overlapped");
+            
+            // beginning with column 0
+            TIndex col = 0;
+            // scan all children (which should be <TH> or <TD> tags)
+            if ( trNode->HaveChildren() ) {
+                for ( TChildren::iterator iCol = trNode->ChildBegin();
+                      iCol != trNode->ChildEnd(); ++iCol ) {
+                    CHTMLNode* cell = dynamic_cast<CHTMLNode*>(Node(iCol));
+                    
+                    if ( !cell || !sx_IsCell(cell) ) {
+                        THROW1_TRACE(runtime_error,
+                                     "Table row contains non- <TH> or <TD> tag");
+                    }
+                    
+                    // skip all used cells
+                    while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
+                        --rowSpans[col++];
+                    }
+                    
+                    if ( row == needRow ) {
+                        if ( col == needCol ) {
+                            CHTML_tc* c = sx_CheckType(cell, type);
+                            m_CurrentRow = needRow;
+                            m_CurrentCol = needCol;
+                            return c;
+                        }
+                        if ( col > needCol )
+                            THROW1_TRACE(runtime_error,
+                                         "Table cells are overlapped");
+                    }
+                    
+                    // determine current cell size
+                    TIndex rowSpan =
+                        sx_GetSpan(cell, KHTMLAttributeName_rowspan, 0);
+                    TIndex colSpan =
+                        sx_GetSpan(cell, KHTMLAttributeName_colspan, 0);
+                    
+                    // end of new cell in columns
+                    const TIndex colEnd = col + colSpan;
+                    // check that there is enough space
+                    for ( TIndex i = col; i < colEnd && i < rowSpans.size(); ++i ) {
+                        if ( rowSpans[i] ) {
+                            THROW1_TRACE(runtime_error,
+                                         "Table cells are overlapped");
+                        }
+                    }
+                    
+                    if ( rowSpan > 1 ) {
+                        // we should remember space used by this cell
+                        // first expand rowSpans vector if needed
+                        if ( rowSpans.size() < colEnd )
+                            rowSpans.resize(colEnd);
+                        
+                        // then store span number
+                        for ( TIndex i = col; i < colEnd; ++i ) {
+                            rowSpans[i] = max(rowSpans[i], rowSpan - 1);
+                        }
+                    }
+                    // skip this cell's columns
+                    col += colSpan;
                 }
             }
 
-            if ( rowSpan > 1 ) {
-                // we should remember space used by this cell
-                // first expand rowSpans vector if needed
-                if ( rowSpans.size() < colEnd )
-                    rowSpans.resize(colEnd);
-
-                // then store span number
-                for ( TIndex i = col; i < colEnd; ++i ) {
-                    rowSpans[i] = max(rowSpans[i], rowSpan - 1);
-                }
+            ++row;
+            
+            if ( row > needRow ) {
+                needRowCols = col;
+                needRowNode = trNode;
+                break;
             }
-            // skip this cell's columns
-            col += colSpan;
-        }
-
-        ++row;
-
-        if ( row > needRow ) {
-            needRowCols = col;
-            needRowNode = trNode;
-            break;
         }
     }
 
@@ -752,7 +757,8 @@ CHTML_tc* CHTML_table::Cell(TIndex needRow, TIndex needCol, ECellType type)
         // skip hanging cells
         while ( needRowCols < rowSpans.size() && rowSpans[needRowCols] > 0 ) {
             if ( needRowCols == needCol )
-                throw runtime_error("Table cells are overlapped");
+                THROW1_TRACE(runtime_error,
+                             "Table cells are overlapped");
             ++needRowCols;
         }
         // allocate one column cell
@@ -804,84 +810,95 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
     // beginning with row 0
     TIndex row = 0;
     // scan all children (which should be <TR> tags)
-    for ( TChildList::const_iterator iRow = ChildBegin(); iRow != ChildEnd();
-          ++iRow ) {
-        CNCBINode* trNode = *iRow;
-        if( !sx_IsRow(trNode) ) {
-            if( !sx_CanContain(trNode) ) {
-                if ( info ) {
-                    // we just gathering info -> skip wrong tag
-                    info->m_BadNode = info->m_BadRowNode = true;
-                    continue;
+    if ( HaveChildren() ) {
+        for ( TChildren::const_iterator iRow = ChildBegin();
+              iRow != ChildEnd();
+              ++iRow ) {
+            const CNCBINode* trNode = Node(iRow);
+            if( !sx_IsRow(trNode) ) {
+                if( !sx_CanContain(trNode) ) {
+                    if ( info ) {
+                        // we just gathering info -> skip wrong tag
+                        info->m_BadNode = info->m_BadRowNode = true;
+                        continue;
+                    }
+                    THROW1_TRACE(runtime_error,
+                                 "Table contains wrong tag '" +
+                                 trNode->GetName() + "'");
                 }
-                throw runtime_error("Table contains wrong tag '"
-                                    + trNode->GetName() + "'");
+                continue;
             }
-            continue;
-        }
-
-        // beginning with column 0
-        TIndex col = 0;
-        // scan all children (which should be <TH> or <TD> tags)
-        for ( TChildList::iterator iCol = trNode->ChildBegin();
-              iCol != trNode->ChildEnd(); ++iCol ) {
-            CNCBINode* cell = *iCol;
-
-            if ( !sx_IsCell(cell) ) {
-                if ( info ) {
-                    // we just gathering info -> skip wrong tag
-                    info->m_BadNode = info->m_BadCellNode = true;
-                    continue;
+            
+            // beginning with column 0
+            TIndex col = 0;
+            // scan all children (which should be <TH> or <TD> tags)
+            if ( trNode->HaveChildren() ) {
+                for ( TChildren::const_iterator iCol = trNode->ChildBegin();
+                      iCol != trNode->ChildEnd(); ++iCol ) {
+                    const CNCBINode* cell = Node(iCol);
+                    
+                    if ( !sx_IsCell(cell) ) {
+                        if ( info ) {
+                            // we just gathering info -> skip wrong tag
+                            info->m_BadNode = info->m_BadCellNode = true;
+                            continue;
+                        }
+                        THROW1_TRACE(runtime_error,
+                                     "Table row contains non- <TH> or <TD> tag");
+                    }
+                    
+                    // skip all used cells
+                    while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
+                        --rowSpans[col++];
+                    }
+                    
+                    // determine current cell size
+                    TIndex rowSpan =
+                        sx_GetSpan(cell, KHTMLAttributeName_rowspan, info);
+                    TIndex colSpan =
+                        sx_GetSpan(cell, KHTMLAttributeName_colspan, info);
+                    
+                    // end of new cell in columns
+                    const TIndex colEnd = col + colSpan;
+                    // check that there is enough space
+                    for ( TIndex i = col; i < colEnd && i < rowSpans.size(); ++i ) {
+                        if ( rowSpans[i] ) {
+                            if ( info )
+                                info->m_Overlapped = true;
+                            else {
+                                THROW1_TRACE(runtime_error,
+                                             "Table cells are overlapped");
+                            }
+                        }
+                    }
+                    
+                    if ( rowSpan > 1 ) {
+                        // we should remember space used by this cell
+                        // first expand rowSpans vector if needed
+                        if ( rowSpans.size() < colEnd )
+                            rowSpans.resize(colEnd);
+                        
+                        // then store span number
+                        for ( TIndex i = col; i < colEnd; ++i ) {
+                            rowSpans[i] = rowSpan - 1;
+                        }
+                    }
+                    // skip this cell's columns
+                    col += colSpan;
                 }
-                throw runtime_error("Table row contains non- <TH> or <TD> tag");
             }
-
+            
             // skip all used cells
             while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
                 --rowSpans[col++];
             }
-
-            // determine current cell size
-            TIndex rowSpan= sx_GetSpan(cell, KHTMLAttributeName_rowspan, info);
-            TIndex colSpan= sx_GetSpan(cell, KHTMLAttributeName_colspan, info);
-
-            // end of new cell in columns
-            const TIndex colEnd = col + colSpan;
-            // check that there is enough space
-            for ( TIndex i = col; i < colEnd && i < rowSpans.size(); ++i ) {
-                if ( rowSpans[i] ) {
-                    if ( info )
-                        info->m_Overlapped = true;
-                    else
-                        throw runtime_error("Table cells are overlapped");
-                }
-            }
-
-            if ( rowSpan > 1 ) {
-                // we should remember space used by this cell
-                // first expand rowSpans vector if needed
-                if ( rowSpans.size() < colEnd )
-                    rowSpans.resize(colEnd);
-
-                // then store span number
-                for ( TIndex i = col; i < colEnd; ++i ) {
-                    rowSpans[i] = rowSpan - 1;
-                }
-            }
-            // skip this cell's columns
-            col += colSpan;
+            
+            if ( info )
+                info->AddRowSize(col);
+            ++row;
         }
-	
-        // skip all used cells
-        while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
-            --rowSpans[col++];
-        }
-
-        if ( info )
-            info->AddRowSize(col);
-        ++row;
     }
-
+    
     if ( info )
         info->SetFinalRowSpans(row, rowSpans);
 }
@@ -936,18 +953,20 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out, TMode mode)
         out << CHTMLHelper::GetNL();
     }
     TIndex row = 0;
-    for ( TChildList::iterator iRow = ChildBegin();
-          iRow != ChildEnd(); ++iRow ) {
-
-        CNCBINode* rowNode = *iRow;
-        if ( !sx_IsRow(rowNode) )
-            rowNode->Print(out,mode);
-        else {
-            rowNode->Print(out,mode); 
-            ++row;
-        }
-        if( mode == ePlainText ) {
-            out << CHTMLHelper::GetNL();
+    if ( HaveChildren() ) {
+        for ( TChildren::iterator iRow = ChildBegin();
+              iRow != ChildEnd(); ++iRow ) {
+            
+            CNCBINode* rowNode = *iRow;
+            if ( !sx_IsRow(rowNode) )
+                rowNode->Print(out,mode);
+            else {
+                rowNode->Print(out,mode); 
+                ++row;
+            }
+            if( mode == ePlainText ) {
+                out << CHTMLHelper::GetNL();
+            }
         }
     }
 
@@ -956,7 +975,7 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out, TMode mode)
         for ( TIndex i = info.m_FinalRow; i < info.m_Rows; ++i )
             out << "<TR></TR>";
     }
-
+    
     return out;
 }
 
