@@ -195,7 +195,6 @@ public:
         CDBAPI_CursorGuard cg(cur);
         IResultSet *rs = cur->Open();
 
-        size_t blob_size = 0;
         while (rs->Next()) {
             const CVariant& v = rs->GetVariant(1);
             if (!v.IsNull()) {
@@ -309,9 +308,9 @@ public:
                       const string&            subkey)
     : m_Cache(cache),
       m_TmpFile(0),
-      m_Conn(cache->GetConnection()),
       m_GoodStateFlag(true),
       m_Flushed(false),
+      m_Conn(cache->GetConnection()),
       m_Key(key),
       m_Version(version),
       m_SubKey(subkey),
@@ -523,7 +522,6 @@ private:
     bool                  m_GoodStateFlag; //!< Stream is in the good state
     bool                  m_Flushed;       //!< Flush been called flag
 
-    ostream*              m_Out;
     IConnection*          m_Conn;
 
     string                m_Key;
@@ -706,7 +704,6 @@ bool CDBAPI_Cache::Read(const string& key,
     CDBAPI_CursorGuard cg(cur);
     IResultSet *rs = cur->Open(); 
 
-    size_t blob_size = 0;
     while (rs->Next()) {
         const CVariant& v = rs->GetVariant(1);
         size_t blob_size = 0;
@@ -1158,6 +1155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/07/21 16:04:10  kuznets
+ * Fixed GCC warnings, etc
+ *
  * Revision 1.7  2004/07/20 14:18:25  kuznets
  * Fixed SQL related bug (busy wire) in removing old BLOBs
  *
