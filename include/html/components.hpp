@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/23 21:20:56  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
 * Revision 1.7  1998/12/21 22:24:55  vasilche
 * A lot of cleaning.
 *
@@ -59,7 +63,7 @@
 
 #include <ncbistd.hpp>
 #include <html.hpp>
-#include <page.hpp>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -186,6 +190,6 @@ protected:
     virtual CNCBINode* CloneSelf() const;
 };
 
-
 END_NCBI_SCOPE
+
 #endif

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/23 21:20:59  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
 * Revision 1.2  1998/12/22 16:39:11  vasilche
 * Added ReadyTagMapper to map tags to precreated nodes.
 *
@@ -43,7 +47,6 @@
 */
 
 #include <ncbistd.hpp>
-#include <page.hpp>
 
 //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //  !!! PUT YOUR OTHER #include's HERE !!!

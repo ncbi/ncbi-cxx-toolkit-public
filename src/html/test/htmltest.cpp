@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/23 21:21:06  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
 * Revision 1.4  1998/12/23 14:28:12  vasilche
 * Most of closed HTML tags made via template.
 *
@@ -103,6 +107,8 @@ int CMyApp::Run(void)
         Page->AppendChild(form = new CHTML_form("FORM"));
         form->AppendChild(new CHTML_textarea("area", 10, 10));
         form->AppendChild(new CHTML_textarea("area1", 10, 10, "area1"));
+        form->AppendChild(new CHTML_select("Select")->AppendOption("One", "ONE")->AppendOption("Two")->AppendOption("THREE", "Three"));
+        Page->AppendChild(new CHTML_ol("A")->AppendItem("item 1")->AppendItem("item 2")->AppendItem("Item 3")->AppendItem("Fourth item"));
         Page->Print(NcbiCout);  // serialize it
         delete Page;
     }

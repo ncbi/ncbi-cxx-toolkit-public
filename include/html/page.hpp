@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1998/12/23 21:21:00  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
 * Revision 1.9  1998/12/22 16:39:12  vasilche
 * Added ReadyTagMapper to map tags to precreated nodes.
 *
@@ -106,14 +110,6 @@ public:
     //    void AddTagMap(const string& name, CNCBINode* (*function)(void));
     //    void AddTagMap(const string& name, CNCBINode* (*function)(const string& name));
 
-/*
-    template<class C>
-    void AddTagMap(const string& name, CNCBINode* (C::*method)(void));
-
-    template<class C>
-    void AddTagMap(const string& name, CNCBINode* (C::*method)(const string& name));
-*/
-
 protected:
     CCgiApplication * m_CgiApplication;  // pointer to runtime information
     int m_Style;
@@ -122,7 +118,6 @@ protected:
 
     // cloning
     virtual CNCBINode* CloneSelf() const;
-    //    CHTMLBasicPage(const CHTMLBasicPage& origin);
 };
 
 
@@ -161,11 +156,8 @@ public:
 
     // cloning
     virtual CNCBINode* CloneSelf() const;
-    //    CHTMLPage(const CHTMLPage& origin);
 };
 
-
-// inline functions here:
 #include <page.inl>
 
 END_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/23 21:21:04  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
 * Revision 1.4  1998/12/21 22:25:04  vasilche
 * A lot of cleaning.
 *
@@ -47,7 +51,6 @@
 
 #include <ncbistd.hpp>
 #include <node.hpp>
-// #include <html.hpp> //remove!
 
 BEGIN_NCBI_SCOPE
 
@@ -111,14 +114,13 @@ void CNCBINode::DetachFromParent(void)
     }
 }
 
-CNCBINode* CNCBINode::RemoveChild(CNCBINode* child)
+void CNCBINode::RemoveChild(CNCBINode* child)
 {
     if ( child->m_ParentNode != this )
-        return 0;
+        return;
 
     m_ChildNodes.erase(FindChild(child));
     child->m_ParentNode = 0;
-    return child;
 }
 
 CNCBINode::TChildList::iterator CNCBINode::FindChild(CNCBINode* child)
@@ -132,35 +134,34 @@ CNCBINode::TChildList::iterator CNCBINode::FindChild(CNCBINode* child)
 }
 
 // append a child
-CNCBINode* CNCBINode::AppendChild(CNCBINode * child)
+void CNCBINode::DoAppendChild(CNCBINode * child)
 {
-    if ( !child )
-        return 0;
-
     child->DetachFromParent();
-
     m_ChildNodes.push_back(child);
     child->m_ParentNode = this;
-
-    return child;
 }
 
 
 // insert a child before the given node
-CNCBINode * CNCBINode::InsertBefore(CNCBINode * newChild, CNCBINode * refChild)
+CNCBINode* CNCBINode::InsertBefore(CNCBINode * newChild, CNCBINode * refChild)
 {
     if ( !newChild || !refChild || refChild->m_ParentNode != this )
-        return 0;
+        return this;
 
     newChild->DetachFromParent();
 
     m_ChildNodes.insert(++FindChild(refChild), newChild);
     newChild->m_ParentNode = this;
 
-    return newChild;
+    return this;
 }
 
-// set attributes
+bool CNCBINode::HaveAttribute(const string& name) const
+{
+    TAttributes& Attributes = const_cast<TAttributes&>(m_Attributes); // SW_01
+    return Attributes.find(name) != Attributes.end();
+}
+
 string CNCBINode::GetAttribute(const string& name) const
 {
     TAttributes& Attributes = const_cast<TAttributes&>(m_Attributes); // SW_01
@@ -176,6 +177,16 @@ void CNCBINode::SetAttribute(const string& name)
 }
 
 void CNCBINode::SetAttribute(const string& name, const string& value)
+{
+    m_Attributes[name] = value;
+}
+
+void CNCBINode::SetAttribute(const char* name)
+{
+    m_Attributes[name];
+}
+
+void CNCBINode::SetAttribute(const char* name, const string& value)
 {
     m_Attributes[name] = value;
 }

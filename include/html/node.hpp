@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/23 21:20:58  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
 * Revision 1.5  1998/12/23 14:28:08  vasilche
 * Most of closed HTML tags made via template.
 *
@@ -70,23 +74,23 @@ public:
     CNCBINode(void);
     CNCBINode(const string& name);
     virtual ~CNCBINode();
- 
-    // need to include explicit copy and assignment op.  I don't think the child list should be copied, nor parent.
 
+    // removes a child
+    void RemoveChild(CNCBINode* child);
+    // adds a child to the child list at iterator.
+    // returns this for chained AppendChild
+    CNCBINode* InsertBefore(CNCBINode* newChild, CNCBINode* refChild);
+    // add a Node * to the end of m_ChildNodes
+    // returns this for chained AppendChild
+    CNCBINode* AppendChild(CNCBINode* child);
+
+    // helpers
     TChildList::iterator ChildBegin(void);
     TChildList::iterator ChildEnd(void);
     TChildList::const_iterator ChildBegin(void) const;
     TChildList::const_iterator ChildEnd(void) const;
 
-    // removes a child
-    CNCBINode* RemoveChild(CNCBINode* child);
-    // adds a child to the child list at iterator.
-    // returns inserted child
-    CNCBINode* InsertBefore(CNCBINode* newChild, CNCBINode* refChild);
-    // add a Node * to the end of m_ChildNodes
-    // returns inserted child
-    CNCBINode* AppendChild(CNCBINode* child);
-    // finds child's iterator
+    // finds iterator pointing to child
     TChildList::iterator FindChild(CNCBINode* child);
 
     virtual CNcbiOstream& Print(CNcbiOstream& out);
@@ -102,12 +106,21 @@ public:
 
     const string& GetName(void) const;
     void SetName(const string& namein);
+
+    // retreive attribute
+    bool HaveAttribute(const string& name) const;
     string GetAttribute(const string& name) const;
+
+    // set attribute
     void SetAttribute(const string& name, const string& value);
     void SetAttribute(const string& name);
     void SetAttribute(const string& name, int value);
     void SetOptionalAttribute(const string& name, const string& value);
     void SetOptionalAttribute(const string& name, bool set);
+
+    void SetAttribute(const char* name, const string& value);
+    void SetAttribute(const char* name);
+    void SetAttribute(const char* name, int value);
     void SetOptionalAttribute(const char* name, const string& value);
     void SetOptionalAttribute(const char* name, bool set);
 
@@ -130,6 +143,7 @@ protected:
     CNCBINode(const CNCBINode& origin);
 
 private:
+    void DoAppendChild(CNCBINode* child);
     void DetachFromParent();
 };
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/23 21:21:03  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
 * Revision 1.7  1998/12/21 22:25:02  vasilche
 * A lot of cleaning.
 *
@@ -54,31 +58,15 @@
 * ===========================================================================
 */
 
-
-#include <ncbistd.hpp>
-#include <ncbidbg.hpp>
-#include <html.hpp>
 #include <components.hpp>
 #include <nodemap.hpp>
+
 BEGIN_NCBI_SCOPE
-
-
 
 CQueryBox::CQueryBox(const string& URL)
     : CParent(URL)
 {
 }
-
-/*
-CQueryBox::CQueryBox(const CQueryBox* origin)
-    : CParent(origin), m_Width(origin->m_Width), m_BgColor(origin->m_BgColor),
-      m_DbName(origin->m_DbName), m_Databases(origin->m_Databases),
-      m_HiddenValues(origin->m_HiddenValues), m_TermName(origin->m_TermName),
-      m_DispMax(origin->m_DispMax), m_DefaultDispMax(origin->m_DefaultDispMax),
-      m_Disp(origin->m_Disp)
-{
-}
-*/
 
 CNCBINode* CQueryBox::CloneSelf(void) const
 {
@@ -134,13 +122,6 @@ CNCBINode* CQueryBox::CreateComments(void)
 CButtonList::CButtonList(void)
 {
 }
-
-/*
-CButtonList::CButtonList(const CButtonList* origin)
-    : CParent(origin), m_Select(origin->m_Select), m_List(origin->m_List)
-{
-}
-*/
 
 CNCBINode* CButtonList::CloneSelf(void) const
 {

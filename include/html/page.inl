@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/23 21:21:00  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
 * Revision 1.2  1998/12/22 16:39:13  vasilche
 * Added ReadyTagMapper to map tags to precreated nodes.
 *
@@ -41,7 +45,6 @@
 *
 * ===========================================================================
 */
-
 
 static inline CHTMLBasicPage* CHTMLPage::New(void)
 {

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1998/12/23 21:21:03  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
 * Revision 1.11  1998/12/23 14:28:10  vasilche
 * Most of closed HTML tags made via template.
 *
@@ -73,6 +77,110 @@
 #include <string>
 BEGIN_NCBI_SCOPE
 
+// HTML element names
+const string KHTMLTagName_html = "HTML";
+const string KHTMLTagName_head = "HEAD";
+const string KHTMLTagName_body = "BODY";
+const string KHTMLTagName_base = "BASE";
+const string KHTMLTagName_isindex = "ISINDEX";
+const string KHTMLTagName_link = "LINK";
+const string KHTMLTagName_meta = "META";
+const string KHTMLTagName_script = "SCRIPT";
+const string KHTMLTagName_style = "STYLE";
+const string KHTMLTagName_title = "TITLE";
+const string KHTMLTagName_address = "ADDRESS";
+const string KHTMLTagName_blockquote = "BLOCKQUOTE";
+const string KHTMLTagName_center = "CENTER";
+const string KHTMLTagName_div = "DIV";
+const string KHTMLTagName_h1 = "H1";
+const string KHTMLTagName_h2 = "H2";
+const string KHTMLTagName_h3 = "H3";
+const string KHTMLTagName_h4 = "H4";
+const string KHTMLTagName_h5 = "H5";
+const string KHTMLTagName_h6 = "H6";
+const string KHTMLTagName_hr = "HR";
+const string KHTMLTagName_p = "P";
+const string KHTMLTagName_pre = "PRE";
+const string KHTMLTagName_form = "FORM";
+const string KHTMLTagName_input = "INPUT";
+const string KHTMLTagName_select = "SELECT";
+const string KHTMLTagName_option = "OPTION";
+const string KHTMLTagName_textarea = "TEXTAREA";
+const string KHTMLTagName_dl = "DL";
+const string KHTMLTagName_dt = "DT";
+const string KHTMLTagName_dd = "DD";
+const string KHTMLTagName_ol = "OL";
+const string KHTMLTagName_ul = "UL";
+const string KHTMLTagName_dir = "DIR";
+const string KHTMLTagName_menu = "MENU";
+const string KHTMLTagName_li = "LI";
+const string KHTMLTagName_table = "TABLE";
+const string KHTMLTagName_caption = "CAPTION";
+const string KHTMLTagName_col = "COL";
+const string KHTMLTagName_colgroup = "COLGROUP";
+const string KHTMLTagName_thead = "THEAD";
+const string KHTMLTagName_tbody = "TBODY";
+const string KHTMLTagName_tfoot = "TFOOT";
+const string KHTMLTagName_tr = "TR";
+const string KHTMLTagName_th = "TH";
+const string KHTMLTagName_td = "TD";
+const string KHTMLTagName_applet = "APPLET";
+const string KHTMLTagName_param = "PARAM";
+const string KHTMLTagName_img = "IMG";
+const string KHTMLTagName_a = "A";
+const string KHTMLTagName_cite = "CITE";
+const string KHTMLTagName_code = "CODE";
+const string KHTMLTagName_dfn = "DFN";
+const string KHTMLTagName_em = "EM";
+const string KHTMLTagName_kbd = "KBD";
+const string KHTMLTagName_samp = "SAMP";
+const string KHTMLTagName_strike = "STRIKE";
+const string KHTMLTagName_strong = "STRONG";
+const string KHTMLTagName_var = "VAR";
+const string KHTMLTagName_b = "B";
+const string KHTMLTagName_big = "BIG";
+const string KHTMLTagName_font = "FONT";
+const string KHTMLTagName_i = "I";
+const string KHTMLTagName_s = "S";
+const string KHTMLTagName_small = "SMALL";
+const string KHTMLTagName_sub = "SUB";
+const string KHTMLTagName_sup = "SUP";
+const string KHTMLTagName_tt = "TT";
+const string KHTMLTagName_u = "U";
+const string KHTMLTagName_blink = "BLINK";
+const string KHTMLTagName_br = "BR";
+const string KHTMLTagName_basefont = "BASEFONT";
+const string KHTMLTagName_map = "MAP";
+const string KHTMLTagName_area = "AREA";
+
+
+// HTML attribute names
+const string KHTMLAttributeName_action = "ACTION";
+const string KHTMLAttributeName_align = "ALIGN";
+const string KHTMLAttributeName_bgcolor = "BGCOLOR";
+const string KHTMLAttributeName_cellpadding = "CELLPADDING";
+const string KHTMLAttributeName_cellspacing = "CELLSPACING";
+const string KHTMLAttributeName_checked = "CHECKED";
+const string KHTMLAttributeName_color = "COLOR";
+const string KHTMLAttributeName_cols = "COLS";
+const string KHTMLAttributeName_compact = "COMPACT";
+const string KHTMLAttributeName_enctype = "ENCTYPE";
+const string KHTMLAttributeName_face = "FACE";
+const string KHTMLAttributeName_height = "HEIGHT";
+const string KHTMLAttributeName_href = "HREF";
+const string KHTMLAttributeName_maxlength = "MAXLENGTH";
+const string KHTMLAttributeName_method = "METHOD";
+const string KHTMLAttributeName_multiple = "MULTIPLE";
+const string KHTMLAttributeName_name = "NAME";
+const string KHTMLAttributeName_rows = "ROWS";
+const string KHTMLAttributeName_selected = "SELECTED";
+const string KHTMLAttributeName_size = "SIZE";
+const string KHTMLAttributeName_src = "SRC";
+const string KHTMLAttributeName_start = "START";
+const string KHTMLAttributeName_type = "TYPE";
+const string KHTMLAttributeName_value = "VALUE";
+const string KHTMLAttributeName_width = "WIDTH";
+
 
 string CHTMLHelper::HTMLEncode(const string& input)
 {
@@ -113,8 +221,51 @@ string CHTMLHelper::HTMLEncode(const string& input)
     if ( last != input.size() )
         output.append(input, last, input.size());
 
-    return input;
+    return output;
 }
+
+/*
+NcbiOstream& CHTMLHelper::PrintEncoded(NcbiOstream& out, const string& input)
+{
+    SIZE_TYPE last = 0;
+
+    // find first symbol to encode
+    SIZE_TYPE ptr = input.find_first_of("\"&<>", last);
+    while ( ptr != NPOS ) {
+        // copy plain part of input
+        if ( ptr != last )
+            out << input.substr(last, ptr - last);
+
+        // append encoded symbol
+        switch ( input[ptr] ) {
+        case '"':
+            out << "&quot;";
+            break;
+        case '&':
+            out << "&amp;";
+            break;
+        case '<':
+            out << "&lt;";
+            break;
+        case '>':
+            out << "&gt;";
+            break;
+        }
+
+        // skip it
+        last = ptr + 1;
+
+        // find next symbol to encode
+        ptr = input.find_first_of("\"&<>", last);
+    }
+
+    // append last part of input
+    if ( last != input.size() )
+        out << input.substr(last);
+
+    return out;
+}
+*/
 
 CHTMLNode::CHTMLNode(const string& name)
     : CParent(name)
@@ -234,6 +385,18 @@ CHTMLOpenElement::CHTMLOpenElement(const string& name)
 {
 }
 
+CHTMLOpenElement::CHTMLOpenElement(const string& name, CNCBINode* node)
+    : CParent(name)
+{
+    AppendChild(node);
+}
+
+CHTMLOpenElement::CHTMLOpenElement(const string& name, const string& text)
+    : CParent(name)
+{
+    AppendHTMLText(text);
+}
+
 CNCBINode* CHTMLOpenElement::CloneSelf(void) const
 {
     return new CHTMLOpenElement(*this);
@@ -245,7 +408,7 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out)
     for (TAttributes::iterator i = m_Attributes.begin(); i != m_Attributes.end(); ++i ) {
         out << ' ' << i->first;
         if ( !i->second.empty() ) {
-            out << '=' << i->second;
+            out << "=\"" << CHTMLHelper::HTMLEncode(i->second) << '"';
         }
     }
     return out << '>';
@@ -256,16 +419,16 @@ CHTMLElement::CHTMLElement(const string& name)
 {
 }
 
-CHTMLElement::CHTMLElement(const string& name, const string& text)
-    : CParent(name)
-{
-    AppendHTMLText(text);
-}
-
 CHTMLElement::CHTMLElement(const string& name, CNCBINode* node)
     : CParent(name)
 {
     AppendChild(node);
+}
+
+CHTMLElement::CHTMLElement(const string& name, const string& text)
+    : CParent(name)
+{
+    AppendHTMLText(text);
 }
 
 CNCBINode* CHTMLElement::CloneSelf(void) const
@@ -278,49 +441,23 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out)
     return out << "</" << m_Name << ">\n";
 }
 
-
-// anchor element
-
-CHTML_a::CHTML_a(const string& href)
-    : CParent()
-{
-    SetOptionalAttribute("href", href);
-}
-
-CHTML_a::CHTML_a(const string& href, const string& text)
-    : CParent(text)
-{
-    SetOptionalAttribute("href", href);
-}
-
-
-CHTML_a::CHTML_a(const string& href, CNCBINode* node)
-    : CParent(node)
-{
-    SetOptionalAttribute("href", href);
-}
-
-
 // TABLE element
 
 CHTML_table::CHTML_table(void)
-    : CParent("table")
 {
 }
 
 
 CHTML_table::CHTML_table(const string& bgcolor)
-    : CParent("table")
 {
-     SetAttribute("bgcolor", bgcolor);
+     SetBgColor(bgcolor);
 }
 
 
 CHTML_table::CHTML_table(const string& bgcolor, const string& width)
-    : CParent("table")
 {
-    SetAttribute("bgcolor", bgcolor);
-    SetAttribute("width", width);
+    SetBgColor(bgcolor);
+    SetWidth(width);
 }
 
 
@@ -339,42 +476,33 @@ void CHTML_table::MakeTable(int rows, int columns)  // throw(bad_alloc)
 
 // contructors that also instantiate rows and cells
 CHTML_table::CHTML_table(int row, int column)
-    : CParent("table")
 {
      MakeTable(row, column);
 }
 
 
 CHTML_table::CHTML_table(const string & bgcolor, int row, int column)
-    : CParent("table")
 {
-    SetAttribute("bgcolor", bgcolor);
+    SetBgColor(bgcolor);
     MakeTable(row, column);
 }
 
 
 CHTML_table::CHTML_table(const string & bgcolor, const string & width, int row, int column)
-    : CParent("table")
 {
-    SetAttribute("bgcolor", bgcolor);
-    SetAttribute("width", width);
+    SetBgColor(bgcolor);
+    SetWidth(width);
     MakeTable(row, column);
 }
 
 
 CHTML_table::CHTML_table(const string & bgcolor, const string & width, const string & cellspacing, const string & cellpadding, int row, int column)
-    : CParent("table")
 {
-    SetAttribute("bgcolor", bgcolor);
-    SetAttribute("width", width);
-    SetAttribute("cellspacing", cellspacing);
-    SetAttribute("cellpadding", cellpadding);
+    SetBgColor(bgcolor);
+    SetWidth(width);
+    SetOptionalAttribute(KHTMLAttributeName_cellspacing, cellspacing);
+    SetOptionalAttribute(KHTMLAttributeName_cellpadding, cellpadding);
     MakeTable(row, column);
-}
-
-CNCBINode* CHTML_table::CloneSelf(void) const
-{
-    return new CHTML_table(*this);
 }
 
 /*
@@ -423,7 +551,7 @@ CNCBINode* CHTML_table::InsertInTable(int row, int column, CNCBINode * Child)  /
     iChildren = m_ChildNodes.begin();
 
     while ( iRow <= row && iChildren != m_ChildNodes.end() ) {
-        if ( (*iChildren)->GetName() == "tr" )
+        if ( (*iChildren)->GetName() == KHTMLTagName_tr )
             iRow++;
         iChildren++;
     }
@@ -436,7 +564,7 @@ CNCBINode* CHTML_table::InsertInTable(int row, int column, CNCBINode * Child)  /
     iRowChildren = (*iChildren)->ChildBegin();
 
     while ( iColumn <= column && iRowChildren != (*iChildren)->ChildEnd() ) {
-        if ( (*iRowChildren)->GetName() == "td" )
+        if ( (*iRowChildren)->GetName() == KHTMLTagName_td )
             iColumn++;
         iRowChildren++;
     }
@@ -473,17 +601,17 @@ void CHTML_table::ColumnWidth(CHTML_table * table, int column, const string & wi
     iChildren = m_ChildNodes.begin();
     
     while (iChildren != m_ChildNodes.end()) {
-        if ( (*iChildren)->GetName() == "tr" ) {
+        if ( (*iChildren)->GetName() == KHTMLTagName_tr ) {
             ix = 1;
             iyChildren = (*iChildren)->ChildBegin();
             
             while ( ix < column && iyChildren != (*iChildren)->ChildEnd() ) {
-                if ( (*iyChildren)->GetName() == "td" )
+                if ( (*iyChildren)->GetName() == KHTMLTagName_td )
                     ix++;  
                 iyChildren++;
             }
             if ( iyChildren != (*iChildren)->ChildEnd() ) {
-                (*iyChildren)->SetAttribute("width", width);
+                (*iyChildren)->SetAttribute(KHTMLAttributeName_width, width);
             }
         }
         iChildren++;
@@ -491,110 +619,13 @@ void CHTML_table::ColumnWidth(CHTML_table * table, int column, const string & wi
 }
 
 
-// tr tag
-
-
-CHTML_tr::CHTML_tr(void)
-    : CParent("tr")
-{
-}
-
-
-CHTML_tr::CHTML_tr(const string & bgcolor) 
-    : CParent("tr")
-{
-    SetAttribute("bgcolor", bgcolor);
-}
-
-
-CHTML_tr::CHTML_tr(const string & bgcolor, const string & width)
-    : CParent("tr")
-{
-    SetAttribute("bgcolor", bgcolor);
-    SetAttribute("width", width);
-}
-
-
-CHTML_tr::CHTML_tr(const string & bgcolor, const string & width, const string & align)
-    : CParent("tr")
-{ 
-    SetAttribute("bgcolor", bgcolor);
-    SetAttribute("width", width);
-    SetAttribute("align", align);
-}
-
-
-// td tag
-
-CHTML_td::CHTML_td(void)
-    : CParent("td")
-{
-}
-
-
-CHTML_td::CHTML_td(const string & bgcolor)
-    : CParent("td")
-{
-    SetAttribute("bgcolor", bgcolor);
-}
-
-
-CHTML_td::CHTML_td(const string & bgcolor, const string & width)
-    : CParent("td")
-{
-    SetAttribute("bgcolor", bgcolor);
-    SetAttribute("width", width);
-}
-
-
-CHTML_td::CHTML_td(const string & bgcolor, const string & width, const string & align)
-    : CParent("td")
-{
-    SetAttribute("bgcolor", bgcolor);
-    SetAttribute("width", width);
-    SetAttribute("align", align);
-}
-
-
-// td tag
-
-CHTML_th::CHTML_th(void)
-    : CParent("th")
-{
-}
-
-
-CHTML_th::CHTML_th(const string & bgcolor)
-    : CParent("th")
-{
-    SetAttribute("bgcolor", bgcolor);
-}
-
-
-CHTML_th::CHTML_th(const string & bgcolor, const string & width)
-    : CParent("th")
-{
-    SetAttribute("bgcolor", bgcolor);
-    SetAttribute("width", width);
-}
-
-
-CHTML_th::CHTML_th(const string & bgcolor, const string & width, const string & align)
-    : CParent("th")
-{
-    SetAttribute("bgcolor", bgcolor);
-    SetAttribute("width", width);
-    SetAttribute("align", align);
-}
-
-
 // form element
 
 CHTML_form::CHTML_form (const string& action, const string& method, const string& enctype)
 {
-    SetOptionalAttribute("action", action);
-    SetOptionalAttribute("method", method);
-    SetOptionalAttribute("enctype", enctype);
+    SetOptionalAttribute(KHTMLAttributeName_action, action);
+    SetOptionalAttribute(KHTMLAttributeName_method, method);
+    SetOptionalAttribute(KHTMLAttributeName_enctype, enctype);
 }
 
 void CHTML_form::AddHidden(const string& name, const string& value)
@@ -606,44 +637,43 @@ void CHTML_form::AddHidden(const string& name, const string& value)
 
 CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows)
 {
-    SetAttribute("name", name);
-    SetAttribute("cols", cols);
-    SetAttribute("rows", rows);
+    SetAttribute(KHTMLAttributeName_name, name);
+    SetAttribute(KHTMLAttributeName_cols, cols);
+    SetAttribute(KHTMLAttributeName_rows, rows);
 }
 
 CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows, const string& value)
     : CParent(value)
 {
-    SetAttribute("name", name);
-    SetAttribute("cols", cols);
-    SetAttribute("rows", rows);
+    SetAttribute(KHTMLAttributeName_name, name);
+    SetAttribute(KHTMLAttributeName_cols, cols);
+    SetAttribute(KHTMLAttributeName_rows, rows);
 }
 
 
 //input tag
 
 CHTML_input::CHTML_input(const string& type, const string& name)
-    : CParent("input")
 {
-    SetAttribute("type", type);
-    SetAttribute("name", name);
+    SetAttribute(KHTMLAttributeName_type, type);
+    SetOptionalAttribute(KHTMLAttributeName_name, name);
 };
 
 
 // checkbox tag 
 
 CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool checked, const string& description)
-    : CParent("checkbox", name)
+    : CParent("CHECKBOX", name)
 {
-    SetOptionalAttribute("value", value);
-    SetOptionalAttribute("checked", checked);
+    SetOptionalAttribute(KHTMLAttributeName_value, value);
+    SetOptionalAttribute(KHTMLAttributeName_checked, checked);
     AppendHTMLText(description);  // adds the description at the end
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, bool checked, const string& description)
-    : CParent("checkbox", name)
+    : CParent("CHECKBOX", name)
 {
-    SetOptionalAttribute("checked", checked);
+    SetOptionalAttribute(KHTMLAttributeName_checked, checked);
     AppendHTMLText(description);  // adds the description at the end
 }
 
@@ -651,158 +681,62 @@ CHTML_checkbox::CHTML_checkbox(const string& name, bool checked, const string& d
 // radio tag 
 
 CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, const string& description)
-    : CParent("radio", name)
+    : CParent("RADIO", name)
 {
-    SetAttribute("value", value);
-    SetAttribute("checked", checked);
+    SetAttribute(KHTMLAttributeName_value, value);
+    SetAttribute(KHTMLAttributeName_checked, checked);
     AppendHTMLText(description);  // adds the description at the end
 }
 
 // hidden tag 
 
 CHTML_hidden::CHTML_hidden(const string& name, const string& value)
-    : CParent("hidden", name)
+    : CParent("HIDDEN", name)
 {
-    SetAttribute("value", value);
+    SetAttribute(KHTMLAttributeName_value, value);
 }
 
-// hidden tag 
-
 CHTML_submit::CHTML_submit(const string& name)
-    : CParent("input")
+    : CParent("SUBMIT", name)
 {
-    SetAttribute("type", "submit");
-    SetOptionalAttribute("value", name);
+}
+
+CHTML_submit::CHTML_submit(const string& name, const string& label)
+    : CParent("SUBMIT", name)
+{
+    SetOptionalAttribute(KHTMLAttributeName_value, label);
+}
+
+CHTML_reset::CHTML_reset(const string& label)
+    : CParent("RESET", NcbiEmptyString)
+{
+    SetOptionalAttribute(KHTMLAttributeName_value, label);
 }
 
 // text tag 
 
 CHTML_text::CHTML_text(const string& name, const string& value)
-    : CParent("text", name)
+    : CParent("TEXT", name)
 {
-    SetOptionalAttribute("value", value);
+    SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_text::CHTML_text(const string& name, int size, const string& value)
-    : CParent("text", name)
+    : CParent("TEXT", name)
 {
-    SetAttribute("size", size);
-    SetOptionalAttribute("value", value);
+    SetAttribute(KHTMLAttributeName_size, size);
+    SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_text::CHTML_text(const string& name, int size, int maxlength, const string& value)
-    : CParent("text", name)
+    : CParent("TEXT", name)
 {
-    SetAttribute("size", size);
-    SetAttribute("maxlength", maxlength);
-    SetOptionalAttribute("value", value);
-}
-
-// option tag
-
-CHTML_option::CHTML_option(const string& content, bool selected)
-    : CParent("option")
-{
-    SetOptionalAttribute("selected", selected);
-    AppendPlainText(content);
-};
-
-
-CHTML_option::CHTML_option(const string& content, const string& value, bool selected)
-    : CParent("option")
-{
-    SetAttribute("value", value);
-    SetOptionalAttribute("selected", selected);
-    AppendPlainText(content);
-};
-
-
-// select tag
-
-CHTML_select::CHTML_select(const string& name, bool multiple)
-    : CParent("select")
-{
-    SetAttribute("name", name);
-    SetOptionalAttribute("multiple", multiple);
-}
-
-CHTML_select::CHTML_select(const string& name, int size, bool multiple)
-    : CParent("select")
-{
-    SetAttribute("name", name);
-    SetAttribute("size", size);
-    SetOptionalAttribute("multiple", multiple);
-}
-
-
-CHTML_select* CHTML_select::AppendOption(const string& option, bool selected)
-{
-    AppendChild(new CHTML_option(option, selected));
-    return this;
-};
-
-
-CHTML_select* CHTML_select::AppendOption(const string& option, const string& value, bool selected)
-{
-    AppendChild(new CHTML_option(option, value, selected));
-    return this;
-};
-
-
-const string KHTMLTagName_html = "html";
-const string KHTMLTagName_head = "head";
-const string KHTMLTagName_title = "title";
-const string KHTMLTagName_body = "body";
-const string KHTMLTagName_address = "address";
-const string KHTMLTagName_blockquote = "blockquote";
-const string KHTMLTagName_form = "form";
-const string KHTMLTagName_textarea = "textarea";
-const string KHTMLTagName_select = "select";
-const string KHTMLTagName_h1 = "h1";
-const string KHTMLTagName_h2 = "h2";
-const string KHTMLTagName_h3 = "h3";
-const string KHTMLTagName_h4 = "h4";
-const string KHTMLTagName_h5 = "h5";
-const string KHTMLTagName_h6 = "h6";
-const string KHTMLTagName_p = "p";
-const string KHTMLTagName_pre = "pre";
-const string KHTMLTagName_a = "a";
-const string KHTMLTagName_cite = "cite";
-const string KHTMLTagName_code = "code";
-const string KHTMLTagName_em = "em";
-const string KHTMLTagName_kbd = "kbd";
-const string KHTMLTagName_samp = "samp";
-const string KHTMLTagName_strong = "strong";
-const string KHTMLTagName_var = "var";
-const string KHTMLTagName_b = "b";
-const string KHTMLTagName_i = "i";
-const string KHTMLTagName_tt = "tt";
-const string KHTMLTagName_u = "u";
-const string KHTMLTagName_caption = "caption";
-const string KHTMLTagName_sub = "sub";
-const string KHTMLTagName_sup = "sup";
-const string KHTMLTagName_big = "big";
-const string KHTMLTagName_small = "small";
-const string KHTMLTagName_center = "center";
-const string KHTMLTagName_font = "font";
-const string KHTMLTagName_blink = "blink";
-
-// p tag without close
-
-CHTML_pnop::CHTML_pnop(void)
-    : CParent("p")
-{
-}
-
-// br tag
-
-CHTML_br::CHTML_br(void)
-    : CParent("br")
-{
+    SetAttribute(KHTMLAttributeName_size, size);
+    SetAttribute(KHTMLAttributeName_maxlength, maxlength);
+    SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_br::CHTML_br(int count)
-    : CParent("br")
 {
     for ( int i = 1; i < count; ++i )
         AppendChild(new CHTML_br());
@@ -810,27 +744,19 @@ CHTML_br::CHTML_br(int count)
 
 // img tag
 
-CHTML_img::CHTML_img(void)
-    : CParent("img")
+CHTML_img::CHTML_img(const string& url)
 {
+    SetAttribute(KHTMLAttributeName_src, url);
 }
 
-CHTML_img::CHTML_img(const string & src, const string & width, const string & height, const string & border)
-    : CParent("img")
+CHTML_img::CHTML_img(const string& url, int width, int height)
 {
-    SetAttribute("src", src);
-    SetAttribute("width", width);
-    SetAttribute("height", height);
-    SetAttribute("border", border);
+    SetAttribute(KHTMLAttributeName_src, url);
+    SetWidth(width);
+    SetHeight(height);
 }
 
 // dl tag
-
-CHTML_dl::CHTML_dl(bool compact)
-    : CParent("dl")
-{
-    SetOptionalAttribute("compact", compact);
-}
 
 CHTML_dl* CHTML_dl::AppendTerm(const string& term, const string& definition)
 {
@@ -863,37 +789,5 @@ CHTML_dl* CHTML_dl::AppendTerm(CNCBINode* term, CNCBINode* definition)
         AppendChild(new CHTML_dd(definition));
     return this;
 }
-
-// dt tag
-
-CHTML_dt::CHTML_dt(CNCBINode* term)
-    : CParent("dt")
-{
-    if ( term )
-        AppendChild(term);
-}
-
-CHTML_dt::CHTML_dt(const string& term)
-    : CParent("dt")
-{
-    AppendHTMLText(term);
-}
-
-// dd tag
-
-CHTML_dd::CHTML_dd(CNCBINode* term)
-    : CParent("dd")
-{
-    if ( term )
-        AppendChild(term);
-}
-
-CHTML_dd::CHTML_dd(const string& term)
-    : CParent("dd")
-{
-    AppendHTMLText(term);
-}
-
-
 
 END_NCBI_SCOPE

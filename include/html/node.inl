@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/23 21:20:58  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
 * Revision 1.1  1998/12/21 22:24:57  vasilche
 * A lot of cleaning.
 *
@@ -79,6 +83,11 @@ inline void CNCBINode::SetAttribute(const string& name, int value)
     SetAttribute(name, IntToString(value));
 }
 
+inline void CNCBINode::SetAttribute(const char* name, int value)
+{
+    SetAttribute(name, IntToString(value));
+}
+
 inline void CNCBINode::SetOptionalAttribute(const string& name, const string& value)
 {
     if ( !value.empty() )
@@ -101,6 +110,15 @@ inline void CNCBINode::SetOptionalAttribute(const char* name, bool value)
 {
     if ( value )
         SetAttribute(name);
+}
+
+// append a child
+inline CNCBINode* CNCBINode::AppendChild(CNCBINode* child)
+{
+    if ( child )
+        DoAppendChild(child);
+
+    return this;
 }
 
 #endif /* def NODE__HPP  &&  ndef NODE__INL */
