@@ -513,11 +513,11 @@ void CTar::x_ReadAndProcess(EAction action, void* data)
                  info.GetType() == CTarEntryInfo::eDir) {
                 if ( !m_LongName.empty() ) {
                     info.SetName(m_LongName);
-                    m_LongName.clear();
+                    m_LongName.erase();
                 }
                 if ( !m_LongLinkName.empty() ) {
                     info.SetLinkName(m_LongLinkName);
-                    m_LongLinkName.clear();
+                    m_LongLinkName.erase();
                 }
             }
 
@@ -817,6 +817,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/01/31 20:53:09  ucko
+ * Use string::erase() rather than string::clear(), which GCC 2.95
+ * continues not to support.
+ *
  * Revision 1.7  2005/01/31 15:31:22  ivanov
  * Lines wrapped at 79th column
  *
