@@ -80,7 +80,7 @@ s_TokenizeKeepDelims(const string   & input,
     {
         int orig_loc = 0;
         
-        for(Uint4 i = 0; i < numres; i++) {
+        for(int i = 0; i < numres; i++) {
             orig_loc += (int) results[i].length();
             
             if (orig_loc < (int) input.size()) {
@@ -92,9 +92,9 @@ s_TokenizeKeepDelims(const string   & input,
     {
         string reconstr;
         
-        for(Uint4 i = 0; i < numres; i++) {
+        for(int i = 0; i < numres; i++) {
             reconstr += results[i];
-            if (i < taken.size()) {
+            if (i < (int) taken.size()) {
                 reconstr += taken[i];
             }
         }
@@ -106,10 +106,10 @@ s_RebuildTokens(vector<string> & results,
                 vector<char>   & taken,
                 string         & reconstr)
 {
-    for(Uint4 i = 0; i < results.size(); i++) {
+    for(int i = 0; i < (int)results.size(); i++) {
         reconstr += results[i];
         
-        if (i < taken.size()) {
+        if (i < (int)taken.size()) {
             reconstr += taken[i];
         }
     }
@@ -840,12 +840,10 @@ int test1(int argc, char ** argv)
                 
                 if (randomize) {
                     cout << "Randomizing " << oids.size() << " entries ..." << endl;
-                
-                    int i2 = 0;
-                
+                    
                     CRandom prng;
-                
-                    for(i2 = 0; i2<oids.size(); i2+= jump) {
+                    
+                    for(int i2 = 0; i2 < (int)oids.size(); i2+= jump) {
                         Uint4 j = prng.GetRand(0, (int) oids.size()-1);
                     
                         Uint4 oid_tmp = oids[i2];
