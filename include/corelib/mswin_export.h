@@ -110,6 +110,7 @@
 #  define NCBI_XOBJMGR_EXPORTS
 #  define NCBI_XOBJREAD_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORTS
+#  define NCBI_XOBJMANIP_EXPORTS
 #endif
 
 
@@ -926,6 +927,37 @@
 #  define NCBI_XLOADER_LDS_EXPORT    __declspec(dllimport)
 #endif
 
+/*
+ * Export specifier for library ncbi_xloader_table
+ */
+#ifdef NCBI_XLOADER_TABLE_EXPORTS
+#  define NCBI_XLOADER_TABLE_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_TABLE_EXPORT    __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library xobjmanip
+ */
+#ifdef NCBI_XOBJMANIP_EXPORTS
+#  define NCBI_XOBJMANIP_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XOBJMANIP_EXPORT    __declspec(dllimport)
+#endif
+
+
+/*
+ * Export specifier for library xsqlite
+ */
+#ifdef NCBI_XSQLITE_EXPORTS
+#  define NCBI_XSQLITE_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XSQLITE_EXPORT    __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library blastdb_reader
+ */
 #ifdef NCBI_XLOADER_BLASTDB_EXPORTS
 #  define NCBI_XLOADER_BLASTDB_EXPORT     __declspec(dllexport)
 #else
@@ -1018,11 +1050,14 @@
 #  define NCBI_XIMAGE_EXPORT
 #  define NCBI_XLOADER_BLASTDB_EXPORT
 #  define NCBI_XLOADER_LDS_EXPORT
+#  define NCBI_XLOADER_TABLE_EXPORT
 #  define NCBI_XNCBI_EXPORT
+#  define NCBI_XOBJMANIP_EXPORT
 #  define NCBI_XOBJMGR_EXPORT
 #  define NCBI_XOBJREAD_EXPORT
 #  define NCBI_XOBJUTIL_EXPORT
 #  define NCBI_XSERIAL_EXPORT
+#  define NCBI_XSQLITE_EXPORT
 #  define NCBI_XUTIL_EXPORT
 
 #endif
@@ -1033,6 +1068,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.39  2003/09/29 13:50:17  dicuccio
+ * Added export specifiers for XSQLITE, XLOADER_TABLE, and XOBJMANIP
+ *
  * Revision 1.38  2003/09/16 14:33:01  dicuccio
  * Cleaned up and clarified export specifiers for the gui/widgets/ libraries -
  * added a specifier for each static project, added top-level groupings for DLL
