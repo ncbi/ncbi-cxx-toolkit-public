@@ -34,7 +34,9 @@
  */
 
 #include <objects/taxon1/taxon1.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
 #include "ctreecont.hpp"
+
 #include <map>
 
 
@@ -208,6 +210,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.3  2002/02/14 22:44:50  vakatov
+ * Use STimeout instead of time_t.
+ * Get rid of warnings and extraneous #include's, shuffled code a little.
+ *
  * Revision 6.2  2002/01/31 00:31:26  vakatov
  * Follow the renaming of "CTreeCont.hpp" to "ctreecont.hpp".
  * Get rid of "std::" which is unnecessary and sometimes un-compilable.

@@ -34,25 +34,22 @@
  */
 
 
-#include <connect/ncbi_util.h>
-#include <connect/ncbi_socket.h>
-#include <connect/ncbi_core_cxx.hpp>
-#include <connect/ncbi_conn_stream.hpp>
-
-#include <serial/serialbase.hpp>
-#include <serial/serial.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasnb.hpp>
-#include <serial/objistrasn.hpp>
-#include <serial/objostrasn.hpp>
-
-#include <objects/general/general__.hpp>
-#include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/taxon1/taxon1__.hpp>
+#include <serial/serialdef.hpp>
+#include <connect/ncbi_types.h>
+
+#include <list>
+#include <vector>
+#include <map>
+
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
 
+class CObjectOStream;
+class CConn_ServiceStream;
+
+
+BEGIN_objects_SCOPE
 
 class COrgRefCache;
 
@@ -64,12 +61,14 @@ public:
 
     CTaxon1();
     ~CTaxon1();
+
     //---------------------------------------------
     // Taxon1 server init
     // Returns: TRUE - OK
     //          FALSE - Can't open connection to taxonomy service
     ///
-    bool Init(time_t timeout=120, unsigned reconnect_attempts=5);
+    bool Init(void);  // default:  120 sec timeout, 5 reconnect attempts
+    bool Init(const STimeout* timeout=0, unsigned reconnect_attempts=5);
 
     //---------------------------------------------
     // Taxon1 server fini (closes connection, frees memory)
@@ -232,7 +231,8 @@ private:
 
     ESerialDataFormat        m_eDataFormat;
     const char*              m_pchService;
-    STimeout                 m_timeout;
+    STimeout*                m_timeout;  // NULL, or points to "m_timeout_value"
+    STimeout                 m_timeout_value;
 
     CConn_ServiceStream*     m_pServer;
 
@@ -262,6 +262,10 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.3  2002/02/14 22:44:48  vakatov
+// Use STimeout instead of time_t.
+// Get rid of warnings and extraneous #include's, shuffled code a little.
+//
 // Revision 1.2  2002/01/31 00:30:11  vakatov
 // Get rid of "std::" which is unnecessary and sometimes un-compilable.
 // Also done some source identation/beautification.

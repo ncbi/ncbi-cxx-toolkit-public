@@ -31,6 +31,11 @@
  */
 
 #include <objects/taxon1/taxon1.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
+#include <connect/ncbi_conn_stream.hpp>
+#include <serial/serial.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 
 #include "cache.hpp"
 
@@ -73,8 +78,17 @@ CTaxon1::Reset()
     m_plCache = NULL;
 }
 
+
 bool
-CTaxon1::Init( time_t timeout, unsigned reconnect_attempts )
+CTaxon1::Init(void)
+{
+    static const STimeout def_timeout = { 120, 0 };
+    return CTaxon1::Init(&def_timeout);
+}
+
+
+bool
+CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts)
 {
     SetLastError(NULL);
     if( m_pServer ) { // Already inited
@@ -85,8 +99,14 @@ CTaxon1::Init( time_t timeout, unsigned reconnect_attempts )
         // Open connection to Taxonomy service
         CTaxon1_req req;
         CTaxon1_resp resp;
-	
-        m_timeout.sec = timeout; m_timeout.usec = 0;
+
+        if ( timeout ) {
+            m_timeout_value = *timeout;
+            m_timeout = &m_timeout_value;
+        } else {
+            m_timeout = 0;
+        }
+
         m_nReconnectAttempts = reconnect_attempts;
         m_pchService = "TaxService";
         const char* tmp;
@@ -97,7 +117,7 @@ CTaxon1::Init( time_t timeout, unsigned reconnect_attempts )
         auto_ptr<CObjectIStream> pIn;
         auto_ptr<CConn_ServiceStream>
             pServer( new CConn_ServiceStream(m_pchService, fSERV_Any,
-                                             0, 0, &m_timeout) );
+                                             0, 0, m_timeout) );
 
 #ifdef USE_TEXT_ASN
         m_eDataFormat = eSerial_AsnText;
@@ -608,6 +628,102 @@ CTaxon1::GetBlastName(int tax_id, string& blast_name_out )
     return false;
 }
 
+bool
+CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
+{
+    unsigned nIterCount( 0 );
+    unsigned fail_flags( 0 );
+    if( !m_pServer ) {
+        SetLastError( "Service is not initialized" );
+        return false;
+    }
+    SetLastError( NULL );
+
+    do {
+        bool bNeedReconnect( false );
+
+        try {
+            *m_pOut << req;
+            m_pOut->Flush();
+
+            if( m_pOut->InGoodState() ) {
+                try {
+                    *m_pIn >> resp;
+		
+                    if( m_pIn->InGoodState() ) {
+                        if( resp.IsError() ) { // Process error here
+                            string err;
+                            resp.GetError().GetErrorText( err );
+                            SetLastError( err.c_str() );
+                            return false;
+                        } else
+                            return true;
+                    }
+                } catch( exception& e ) {
+                    SetLastError( e.what() );
+                }
+                fail_flags = m_pIn->GetFailFlags();
+                bNeedReconnect = (fail_flags & ( CObjectIStream::eEOF
+                                                 |CObjectIStream::eReadError
+                                                 |CObjectIStream::eOverflow
+                                                 |CObjectIStream::eFail
+                                                 |CObjectIStream::eNotOpen ));
+            } else {
+                m_pOut->ThrowError1((CObjectOStream::EFailFlags)
+                                    m_pOut->GetFailFlags(),
+                                    "Output stream is in bad state");
+            }
+        } catch( exception& e ) {
+            SetLastError( e.what() );
+            fail_flags = m_pOut->GetFailFlags();
+            bNeedReconnect = (fail_flags & ( CObjectOStream::eEOF
+                                             |CObjectOStream::eWriteError
+                                             |CObjectOStream::eOverflow
+                                             |CObjectOStream::eFail
+                                             |CObjectOStream::eNotOpen ));
+        }	    
+	
+        if( !bNeedReconnect )
+            break;
+        // Reconnect the service
+        if( nIterCount < m_nReconnectAttempts ) {
+            delete m_pOut;
+            delete m_pIn;
+            delete m_pServer;
+            m_pOut = NULL;
+            m_pIn = NULL;
+            m_pServer = NULL;
+            try {
+                auto_ptr<CObjectOStream> pOut;
+                auto_ptr<CObjectIStream> pIn;
+                auto_ptr<CConn_ServiceStream>
+                    pServer( new CConn_ServiceStream(m_pchService, fSERV_Any,
+                                                     0, 0, m_timeout) );
+		
+                pOut.reset( CObjectOStream::Open(m_eDataFormat, *pServer) );
+                pIn.reset( CObjectIStream::Open(m_eDataFormat, *pServer) );
+                m_pServer = pServer.release();
+                m_pIn = pIn.release();
+                m_pOut = pOut.release();
+            } catch( exception& e ) {
+                SetLastError( e.what() );
+            }
+        } else { // No more attempts left
+            break;
+        }
+    } while( nIterCount++ < m_nReconnectAttempts );
+    return false;
+}
+
+void
+CTaxon1::SetLastError( const char* pchErr )
+{
+    if( pchErr )
+        m_sLastError.assign( pchErr );
+    else
+        m_sLastError.erase();
+}
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE
@@ -616,6 +732,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.4  2002/02/14 22:44:50  vakatov
+ * Use STimeout instead of time_t.
+ * Get rid of warnings and extraneous #include's, shuffled code a little.
+ *
  * Revision 6.3  2002/01/31 00:31:26  vakatov
  * Follow the renaming of "CTreeCont.hpp" to "ctreecont.hpp".
  * Get rid of "std::" which is unnecessary and sometimes un-compilable.

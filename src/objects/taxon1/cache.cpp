@@ -92,10 +92,9 @@ COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
             if( m_host.SendRequest( req, resp ) ) {
                 if( resp.IsTaxalineage() ) {
                     // Correct response, return object
-                    list< CRef< CTaxon1_name > >&
-                        lLin = ( resp.GetTaxalineage() );
-                    CTaxon1Node* pParent = ( NULL );
-                    CTaxon1Node* pNode;
+                    list< CRef<CTaxon1_name> >& lLin = resp.GetTaxalineage();
+                    CTaxon1Node* pParent = 0;
+                    pNode   = 0;
                     list< CRef< CTaxon1_name > >::reverse_iterator i;
                     // Fill in storage
                     for( i = lLin.rbegin(); i != lLin.rend(); ++i ) {
@@ -118,6 +117,7 @@ COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
                         pIt->AddChild( pNode );
                         pIt->GoNode( pNode );
                     }
+                    _ASSERT( pNode );
                     *ppData = pNode;
                     return true;
                 } else { // Internal: wrong respond type
@@ -477,7 +477,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
                         /* we are below species */
                         /* first try to find species or min rank which
                            below species but above us */
-                        CTaxon1Node* pNode = ( NULL );
+                        pNode = 0;
                         CTaxon1Node* pTmp = ( node.GetParent() );
 			
                         while( pTmp && !pTmp->IsRoot() ) {
@@ -877,6 +877,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.6  2002/02/14 22:44:50  vakatov
+ * Use STimeout instead of time_t.
+ * Get rid of warnings and extraneous #include's, shuffled code a little.
+ *
  * Revision 6.5  2002/01/31 00:31:26  vakatov
  * Follow the renaming of "CTreeCont.hpp" to "ctreecont.hpp".
  * Get rid of "std::" which is unnecessary and sometimes un-compilable.
