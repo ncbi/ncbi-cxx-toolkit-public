@@ -262,10 +262,15 @@ RunTest() {
    # Goto the test's directory 
    cd "\$x_path"
 
+   # Fix empty parameters (replace "" to \"\", '' to \'\')
+   x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
+   # Fix empty parameters (put each in '' or "")
+   x_run_fix=\`echo "\$x_run" | sed -e 's/""/'"'&'/g" -e "s/''/\\\\'\\\\'/g"\`
+
    # Run check
    check_exec="$x_root_dir/scripts/check/check_exec.sh"
    test -x \$check_exec  ||  check_exec="$x_build_dir/check_exec.sh"
-   \$check_exec \$x_timeout `eval echo \$x_run` >> \$x_test_out 2>&1
+   \$check_exec \$x_timeout \`eval echo \$x_run_fix\` >> \$x_test_out 2>&1
    result=\$?
 
    # Write result of the test into the his output file
@@ -341,7 +346,7 @@ x_test_prev=""
 # For all tests
 for x_row in $x_tests; do
    # Get one row from list
-   x_row=`echo "$x_row" | sed -e 's/%gj_s4%/ /g' -e 's/^ *//' -e 's/\"/\\"/g' -e 's/ ____ /~/g'`
+   x_row=`echo "$x_row" | sed -e 's/%gj_s4%/ /g' -e 's/^ *//' -e 's/ ____ /~/g'`
 
    # Split it to parts
    x_src_dir="$x_root_dir/src/`echo \"$x_row\" | sed -e 's/~.*$//'`"
