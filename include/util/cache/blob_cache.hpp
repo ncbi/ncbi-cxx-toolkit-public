@@ -1,5 +1,5 @@
-#ifndef UTIL__BLOBCACHE__HPP
-#define UTIL__BLOBCACHE__HPP
+#ifndef UTIL___BLOB_CACHE__HPP
+#define UTIL___BLOB_CACHE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,11 +28,11 @@
  *
  * Authors:  Anatoliy Kuznetsov
  *
- * File Description: BLOB cache interface specs. 
+ * File Description: BLOB cache interface specs.
  *
  */
 
-#include <util/readerwriter.hpp>
+#include <util/reader_writer.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -41,74 +41,100 @@ BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////
 //
-// BLOB cache read/write/maintanance interface.
+// BLOB cache read/write/maintenance interface.
 //
 
 class IBLOB_Cache
 {
 public:
+    /// If to keep already cached versions of the BLOB when storing
+    /// another version of it (not necessarily a newer one)
+    /// @sa Store(), GetWriteStream()
+    enum EKeepVersions {
+        // Do not delete other versions of the BLOB from the cache
+        eKeepAll,
+        // Delete the earlier (than the one being stored) versions of
+        // the BLOB
+        eDropOlder,
+        // Delete all versions of the BLOB, even those which are newer
+        // than the one being stored
+        eDropAll
+    };
 
-    enum EKeepOldVersions
-    {
-        eKeepOld,
-        eDropOld
+    /// If to keep at least the most recent version of the BLOB(s) being
+    /// purged -- even when it was last accessed earlier than the "access time"
+    /// @sa Purge()
+    enum EKeepLastVersion {
+        eKeepLast,  ///< Keep the most recent version of the BLOB, regardless
+        eDropAll    ///< Drop all versions last accessed before "access time"
     };
 
     // Add or replace BLOB
     // flag parameter specifies our approach to old versions of the same BLOB
     // (keep or drop)
     virtual void Store(const string& key,
-                       int version, 
-                       const void* data, 
-                       size_t size,
-                       EKeepOldVersions flag=eDropOld) = 0;
+                       int           version,
+                       const void*   data,
+                       size_t        size,
+                       EKeepVersions keep_versions = eDropOlder) = 0;
 
     // Check if BLOB exists, return non zero size.
     // 0 value indicates that BLOB does not exist in the cache
     virtual size_t GetSize(const string& key,
-                           int version) = 0;
+                           int           version) = 0;
 
     // Fetch the BLOB
-    // Function returns FALSE if BLOB does not exists. 
+    // Function returns FALSE if BLOB does not exists.
     // Throws an exception if provided memory is insufficient to read the BLOB
-    virtual bool Read(const string& key, 
-                      int version, 
-                      void* buf, 
-                      size_t buf_size) = 0;
+    virtual bool Read(const string& key,
+                      int           version,
+                      void*         buf,
+                      size_t        buf_size) = 0;
 
     // Return sequential stream interface to read BLOB data.
     // Function returns NULL if BLOB does not exist
-    virtual IReader* GetReadStream(const string& key, 
-                                        int version) = 0;
+    virtual IReader* GetReadStream(const string& key,
+                                   int           version) = 0;
 
     // Return sequential stream interface to write BLOB data.
-    virtual IWriter* GetWriteStream(const string& key, 
-                                    int version,
-                                    EKeepOldVersions flag=eDropOld) = 0;
+    virtual IWriter* GetWriteStream(const string& key,
+                                    int           version,
+                                    EKeepVersions keep_versions = eDropOlder)
+        = 0;
 
     // Remove all versions of the specified BLOB
     virtual void Remove(const string& key) = 0;
 
     // Return access time for the specified BLOB
     virtual time_t GetAccessTime(const string& key,
-                                 int version)=0;
+                                 int           version) = 0;
 
     // Delete all BLOBs with access time older than specified
-    virtual void Purge(time_t access_time) = 0;
+    virtual void Purge(time_t           access_time,
+                       EKeepLastVersion keep_last_version = eDropAll) = 0;
 
-    // Delete BLOBs with access time older than specified
-    virtual void Purge(const string& key, time_t access_time) = 0;
+    // Delete all versions of the given BLOB with the access time earlier
+    // than specified
+    virtual void Purge(const string&    key,
+                       time_t           access_time,
+                       EKeepLastVersion keep_last_version = eDropAll) = 0;
 
-
-    virtual ~IBLOB_Cache(){}
-
+    virtual ~IBLOB_Cache() {}
 };
 
+
 END_NCBI_SCOPE
+
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/22 22:42:14  vakatov
+ * Extended EKeepVersions.
+ * + EKeepLastVersion -- for Purge().
+ * Self-doc and style fixes.
+ *
  * Revision 1.3  2003/09/22 19:15:13  kuznets
  * Added support of reader-writer interface (util/readerwriter.hpp)
  *
@@ -117,9 +143,7 @@ END_NCBI_SCOPE
  *
  * Revision 1.1  2003/09/17 20:51:15  kuznets
  * Local cache interface - first revision
- *
- *
  * ===========================================================================
  */
 
-#endif
+#endif  /* UTIL___BLOB_CACHE__HPP */
