@@ -38,6 +38,7 @@
 
 #include <objects/objmgr/scope.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/GIBB_mol.hpp>
 #include <util/strsearch.hpp>
 
 #include <objects/validator/validator.hpp>
@@ -587,6 +588,8 @@ private:
     void ValidateSeqDescContext(const CBioseq& seq);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol,
         const CBioseq& seq, const CSeqdesc& desc);
+    void ValidateMolTypeContext(const EGIBB_mol& gibb, EGIBB_mol& seq_biomol,
+        const CBioseq& seq, const CSeqdesc& desc);
     void ValidateUpdateDateContext(const CDate& update,const CDate& create,
         const CBioseq& seq, const CSeqdesc& desc);
     void ValidateOrgContext(const CSeqdesc_CI& iter, const COrg_ref& this_org,
@@ -783,6 +786,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/04/10 19:25:07  shomrat
+* Added ValidateMolTypeContext
+*
 * Revision 1.23  2003/04/07 14:56:09  shomrat
 * Added Seq-loc ids validation
 *
