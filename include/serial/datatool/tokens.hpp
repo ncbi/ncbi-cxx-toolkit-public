@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/01/06 20:28:55  gouriano
+* Added identifier_end token
+*
 * Revision 1.11  2005/01/03 16:51:34  gouriano
 * Added parsing of conditional sections
 *
@@ -121,9 +124,10 @@ static const TToken K_BIGINT = 125;
 static const TToken K_UTF8String = 126;
 
 
-static const TToken T_ENTITY          =  11;
-static const TToken T_CONDITIONAL_BEGIN =  12;
-static const TToken T_CONDITIONAL_END   =  13;
+static const TToken T_ENTITY            =  11;
+static const TToken T_IDENTIFIER_END    =  12;
+static const TToken T_CONDITIONAL_BEGIN =  13;
+static const TToken T_CONDITIONAL_END   =  14;
 
 static const TToken K_ELEMENT  = 201;
 static const TToken K_ATTLIST  = 202;
