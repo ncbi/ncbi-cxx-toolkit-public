@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/12/29 18:11:41  ostell
+ * added Upcase
+ *
  * Revision 6.5  2000/12/26 17:28:55  vasilche
  * Simplified and formatted code.
  *
@@ -82,12 +85,12 @@ ostream& CPatent_seq_id::AsFastaString(ostream& s) const
 {
 	const CId_pat& idp = GetCit();
 	
-	s << idp.GetCountry() << '|';
+	s << Upcase(idp.GetCountry()) << '|';
 
 	if (idp.GetId().IsNumber())
-		s << idp.GetId().GetNumber();
+		s << Upcase(idp.GetId().GetNumber());
 	else
-		s << idp.GetId().GetApp_number();
+		s << Upcase(idp.GetId().GetApp_number());
 	s << '|' << GetSeqid();
 	return s;
 }
