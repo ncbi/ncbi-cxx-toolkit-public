@@ -1,5 +1,5 @@
-#ifndef NCBI_UTIL__H
-#define NCBI_UTIL__H
+#ifndef CONNECT___NCBI_UTIL__H
+#define CONNECT___NCBI_UTIL__H
 
 /*  $Id$
  * ===========================================================================
@@ -40,52 +40,11 @@
  *                LOG_WRITE(), LOG_DATA(),  THIS_FILE, THIS_MODULE
  *                LOG_WRITE_ERRNO()
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.12  2002/05/07 18:20:34  lavr
- * +fLOG_None
- *
- * Revision 6.11  2002/02/11 21:49:06  lavr
- * +CORE_GetPlatform()
- *
- * Revision 6.10  2001/08/09 16:23:34  lavr
- * Added: fLOG_OmitNoteLevel to log message format flags
- *
- * Revision 6.9  2001/07/30 14:39:47  lavr
- * Do not include date/time in default logging (for ncbidiag.cpp compatibility)
- *
- * Revision 6.8  2001/07/25 19:12:31  lavr
- * Added date/time stamp for message logging
- *
- * Revision 6.7  2001/05/17 18:10:22  vakatov
- * Moved the logging macros from <ncbi_core.h> to <ncbi_util.h>.
- * Logging::  always call the logger if severity is eLOG_Fatal.
- *
- * Revision 6.6  2001/01/12 23:50:37  lavr
- * "a+" -> "a" as a mode in fopen() for a logfile
- *
- * Revision 6.5  2000/06/23 19:34:41  vakatov
- * Added means to log binary data
- *
- * Revision 6.4  2000/05/30 23:23:24  vakatov
- * + CORE_SetLOGFILE_NAME()
- *
- * Revision 6.3  2000/04/07 19:56:06  vakatov
- * Get rid of <errno.h>
- *
- * Revision 6.2  2000/03/24 23:12:05  vakatov
- * Starting the development quasi-branch to implement CONN API.
- * All development is performed in the NCBI C++ tree only, while
- * the NCBI C tree still contains "frozen" (see the last revision) code.
- *
- * Revision 6.1  2000/02/23 22:30:40  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <connect/ncbi_core.h>
 #include <stdio.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -263,4 +222,53 @@ extern const char* CORE_GetPlatform(void);
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_UTIL__H */
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.13  2002/09/19 18:05:47  lavr
+ * Header file guard macro changed; log moved to end
+ *
+ * Revision 6.12  2002/05/07 18:20:34  lavr
+ * +fLOG_None
+ *
+ * Revision 6.11  2002/02/11 21:49:06  lavr
+ * +CORE_GetPlatform()
+ *
+ * Revision 6.10  2001/08/09 16:23:34  lavr
+ * Added: fLOG_OmitNoteLevel to log message format flags
+ *
+ * Revision 6.9  2001/07/30 14:39:47  lavr
+ * Do not include date/time in default logging (for ncbidiag.cpp compatibility)
+ *
+ * Revision 6.8  2001/07/25 19:12:31  lavr
+ * Added date/time stamp for message logging
+ *
+ * Revision 6.7  2001/05/17 18:10:22  vakatov
+ * Moved the logging macros from <ncbi_core.h> to <ncbi_util.h>.
+ * Logging::  always call the logger if severity is eLOG_Fatal.
+ *
+ * Revision 6.6  2001/01/12 23:50:37  lavr
+ * "a+" -> "a" as a mode in fopen() for a logfile
+ *
+ * Revision 6.5  2000/06/23 19:34:41  vakatov
+ * Added means to log binary data
+ *
+ * Revision 6.4  2000/05/30 23:23:24  vakatov
+ * + CORE_SetLOGFILE_NAME()
+ *
+ * Revision 6.3  2000/04/07 19:56:06  vakatov
+ * Get rid of <errno.h>
+ *
+ * Revision 6.2  2000/03/24 23:12:05  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
+ * Revision 6.1  2000/02/23 22:30:40  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
+
+#endif /* CONNECT___NCBI_UTIL__H */

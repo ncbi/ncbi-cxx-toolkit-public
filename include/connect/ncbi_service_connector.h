@@ -1,5 +1,5 @@
-#ifndef NCBI_SERVICE_CONNECTOR__H
-#define NCBI_SERVICE_CONNECTOR__H
+#ifndef CONNECT___NCBI_SERVICE_CONNECTOR__H
+#define CONNECT___NCBI_SERVICE_CONNECTOR__H
 
 /*  $Id$
  * ===========================================================================
@@ -34,32 +34,11 @@
  *   See in "ncbi_connector.h" for the detailed specification of the underlying
  *   connector("CONNECTOR", "SConnectorTag") methods and structures.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.6  2002/04/26 16:27:13  lavr
- * SSERVICE_Params: reset added for use in open/close pairs
- *
- * Revision 6.5  2001/09/24 20:25:11  lavr
- * +SSERVICE_Extra, +4th parameter for SERVICE_CreateConnectorEx()
- * -SERVICE_CreateConnector() - now implemented as macro
- *
- * Revision 6.4  2001/09/10 21:20:19  lavr
- * Few unimportant layout changes
- *
- * Revision 6.3  2001/06/04 17:00:18  lavr
- * Include files adjusted
- *
- * Revision 6.2  2000/12/29 17:48:34  lavr
- * Accepted server types included in SERVICE_CreateConnectorEx arguments.
- *
- * Revision 6.1  2000/10/07 22:15:12  lavr
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_server_info.h>
 #include <connect/ncbi_service.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,4 +70,33 @@ extern CONNECTOR SERVICE_CreateConnectorEx(const char*           service,
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_SERVICE_CONNECTOR__H */
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.7  2002/09/19 18:05:09  lavr
+ * Header file guard macro changed; log moved to end
+ *
+ * Revision 6.6  2002/04/26 16:27:13  lavr
+ * SSERVICE_Params: reset added for use in open/close pairs
+ *
+ * Revision 6.5  2001/09/24 20:25:11  lavr
+ * +SSERVICE_Extra, +4th parameter for SERVICE_CreateConnectorEx()
+ * -SERVICE_CreateConnector() - now implemented as macro
+ *
+ * Revision 6.4  2001/09/10 21:20:19  lavr
+ * Few unimportant layout changes
+ *
+ * Revision 6.3  2001/06/04 17:00:18  lavr
+ * Include files adjusted
+ *
+ * Revision 6.2  2000/12/29 17:48:34  lavr
+ * Accepted server types included in SERVICE_CreateConnectorEx arguments.
+ *
+ * Revision 6.1  2000/10/07 22:15:12  lavr
+ * Initial revision
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___NCBI_SERVICE_CONNECTOR__H */

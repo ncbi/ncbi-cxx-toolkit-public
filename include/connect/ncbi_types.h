@@ -1,5 +1,5 @@
-#ifndef NCBI_TYPES__H
-#define NCBI_TYPES__H
+#ifndef CONNECT___NCBI_TYPES__H
+#define CONNECT___NCBI_TYPES__H
 
 /*  $Id$
  * ===========================================================================
@@ -45,15 +45,10 @@
  *       which make simultaneous access to inter-process communication
  *       data areas, like shared memory segments
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.1  2001/06/19 20:15:58  lavr
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <stddef.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,4 +82,17 @@ typedef unsigned int TNCBI_Time;
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_TYPES__H */
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.2  2002/09/19 18:05:41  lavr
+ * Header file guard macro changed; log moved to end
+ *
+ * Revision 6.1  2001/06/19 20:15:58  lavr
+ * Initial revision
+ *
+ * ===========================================================================
+ */
+
+#endif /* CONNECT___NCBI_TYPES__H */

@@ -1,5 +1,5 @@
-#ifndef NCBI_SERVICEP_LBSMD__H
-#define NCBI_SERVICEP_LBSMD__H
+#ifndef CONNECT___NCBI_SERVICEP_LBSMD__H
+#define CONNECT___NCBI_SERVICEP_LBSMD__H
 
 /*  $Id$
  * ===========================================================================
@@ -32,8 +32,31 @@
  *   Low-level API to resolve NCBI service name to the server meta-address
  *   with the use of NCBI Load-Balancing Service Mapper (LBSMD).
  *
+ */
+
+#include "ncbi_servicep.h"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
+                                    SSERV_Info** info, char** env);
+
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
+
+
+/*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/09/19 18:09:02  lavr
+ * Header file guard macro changed; log moved to end
+ *
  * Revision 6.5  2002/04/13 06:40:28  lavr
  * Few tweaks to reduce the number of syscalls made
  *
@@ -53,20 +76,4 @@
  * ==========================================================================
  */
 
-#include "ncbi_servicep.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
-                                    SSERV_Info** info, char** env);
-
-
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif
-
-#endif /* NCBI_SERVICEP_LBSMD__H */
-
+#endif /* CONNECT___NCBI_SERVICEP_LBSMD__H */

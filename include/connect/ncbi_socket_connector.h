@@ -1,5 +1,5 @@
-#ifndef NCBI_SOCKET_CONNECTOR__H
-#define NCBI_SOCKET_CONNECTOR__H
+#ifndef CONNECT___NCBI_SOCKET_CONNECTOR__H
+#define CONNECT___NCBI_SOCKET_CONNECTOR__H
 
 /*  $Id$
  * ===========================================================================
@@ -34,28 +34,11 @@
  *   See in "connectr.h" for the detailed specification of the underlying
  *   connector("CONNECTOR", "SConnectorTag") methods and structures.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.5  2002/08/07 16:31:40  lavr
- * Added eSCC_SetReadOnWrite to constructor flags; log moved to end
- *
- * Revision 6.4  2002/01/12 22:15:28  lavr
- * Fixed function description to use not former but current parameter names
- *
- * Revision 6.3  2001/12/04 15:54:29  lavr
- * +SOCK_CreateConnectorOnTop(), +SOCK_CreateConnectorOnTopEx()
- *
- * Revision 6.2  2001/01/23 23:09:18  lavr
- * Flags added to 'Ex' constructor
- *
- * Revision 6.1  2000/04/07 20:05:37  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_connector.h>
 #include <connect/ncbi_socket.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,10 +56,10 @@ extern CONNECTOR SOCK_CreateConnector
 
 
 typedef enum {
-    eSCC_DebugPrintout = 1,
+    eSCC_DebugPrintout  = 1,
     eSCC_SetReadOnWrite = 2
 } ESCC_Flags;
-typedef unsigned int TSCC_Flags;  /* binary OR of "ESCC_Flags */
+typedef unsigned int TSCC_Flags;  /* bitwise OR of "ESCC_Flags */
 
 
 /* Create new CONNECTOR structure to handle connection to a socket.
@@ -116,11 +99,11 @@ extern CONNECTOR SOCK_CreateConnectorOnTop
  * (aka server-side socket) is not allowed to have reconnects (max_try = 0).
  */
 extern CONNECTOR SOCK_CreateConnectorOnTopEx
-(SOCK         sock,      /* socket object                                */
- unsigned int max_try,   /* max.# of tries to reconnect if disconnected  */
- const void*  init_data, /* initial data to send right away down to link */
- size_t       init_size, /* size of data to send                         */
- TSCC_Flags   flags      /* bitwise OR of additional flags: see above    */
+(SOCK         sock,      /* socket object                                    */
+ unsigned int max_try,   /* max.# of tries to reconnect if disconnected      */
+ const void*  init_data, /* initial data to send right away down to link     */
+ size_t       init_size, /* size of data to send                             */
+ TSCC_Flags   flags      /* bitwise OR of additional flags: see above        */
  );
 
 
@@ -128,4 +111,29 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_SOCKET_CONNECTOR__H */
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.6  2002/09/19 18:05:34  lavr
+ * Header file guard macro changed; log moved to end
+ *
+ * Revision 6.5  2002/08/07 16:31:40  lavr
+ * Added eSCC_SetReadOnWrite to constructor flags; log moved to end
+ *
+ * Revision 6.4  2002/01/12 22:15:28  lavr
+ * Fixed function description to use not former but current parameter names
+ *
+ * Revision 6.3  2001/12/04 15:54:29  lavr
+ * +SOCK_CreateConnectorOnTop(), +SOCK_CreateConnectorOnTopEx()
+ *
+ * Revision 6.2  2001/01/23 23:09:18  lavr
+ * Flags added to 'Ex' constructor
+ *
+ * Revision 6.1  2000/04/07 20:05:37  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___NCBI_SOCKET_CONNECTOR__H */

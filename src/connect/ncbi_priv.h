@@ -1,5 +1,5 @@
-#ifndef NCBI_PRIV__H
-#define NCBI_PRIV__H
+#ifndef CONNECT___NCBI_PRIV__H
+#define CONNECT___NCBI_PRIV__H
 
 /*  $Id$
  * ===========================================================================
@@ -40,25 +40,6 @@
  *    macro:      CORE_LOG(), CORE_DATA(),
  *                CORE_LOG_SYS_ERRNO(), CORE_LOG_ERRNO()
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.5  2002/04/13 06:38:45  lavr
- * More *_LOGF_* macros added
- *
- * Revision 6.4  2001/05/17 18:07:15  vakatov
- * Logging::  always call the logger if severity is eLOG_Fatal
- *
- * Revision 6.3  2001/01/08 22:37:36  lavr
- * Added GNU attribute to g_CORE_sprintf for compiler to trace
- * format specifier/parameter correspondence
- *
- * Revision 6.2  2000/06/23 19:34:44  vakatov
- * Added means to log binary data
- *
- * Revision 6.1  2000/03/24 22:53:35  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <connect/ncbi_util.h>
@@ -204,4 +185,30 @@ extern char* g_CORE_RegistryGET
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_PRIV__H */
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.6  2002/09/19 18:08:31  lavr
+ * Header file guard macro changed; log moved to end
+ *
+ * Revision 6.5  2002/04/13 06:38:45  lavr
+ * More *_LOGF_* macros added
+ *
+ * Revision 6.4  2001/05/17 18:07:15  vakatov
+ * Logging::  always call the logger if severity is eLOG_Fatal
+ *
+ * Revision 6.3  2001/01/08 22:37:36  lavr
+ * Added GNU attribute to g_CORE_sprintf for compiler to trace
+ * format specifier/parameter correspondence
+ *
+ * Revision 6.2  2000/06/23 19:34:44  vakatov
+ * Added means to log binary data
+ *
+ * Revision 6.1  2000/03/24 22:53:35  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
+
+#endif /* CONNECT___NCBI_PRIV__H */

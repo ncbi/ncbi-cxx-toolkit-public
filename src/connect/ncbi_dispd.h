@@ -1,5 +1,5 @@
-#ifndef NCBI_SERVICEP_DISPD__H
-#define NCBI_SERVICEP_DISPD__H
+#ifndef CONNECT___NCBI_SERVICEP_DISPD__H
+#define CONNECT___NCBI_SERVICEP_DISPD__H
 
 /*  $Id$
  * ===========================================================================
@@ -32,8 +32,33 @@
  *   Low-level API to resolve NCBI service name to the server meta-address
  *   with the use of NCBI network dispatcher (DISPD).
  *
+ */
+
+#include "ncbi_servicep.h"
+#include <connect/ncbi_connutil.h>
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
+                                    const SConnNetInfo *net_info,
+                                    SSERV_Info** info, char** env);
+
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
+
+
+/*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/09/19 18:08:56  lavr
+ * Header file guard macro changed; log moved to end
+ *
  * Revision 6.9  2002/04/13 06:40:16  lavr
  * Few tweaks to reduce the number of syscalls made
  *
@@ -66,21 +91,4 @@
  * ==========================================================================
  */
 
-#include "ncbi_servicep.h"
-#include <connect/ncbi_connutil.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
-                                    const SConnNetInfo *net_info,
-                                    SSERV_Info** info, char** env);
-
-
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif
-
-#endif /* NCBI_SERVICEP_DISPD__H */
+#endif /* CONNECT___NCBI_SERVICEP_DISPD__H */

@@ -1,5 +1,5 @@
-#ifndef NCBI_COMM__H
-#define NCBI_COMM__H
+#ifndef CONNECT___NCBI_COMM__H
+#define CONNECT___NCBI_COMM__H
 
 /*  $Id$
  * ===========================================================================
@@ -32,8 +32,33 @@
  *   Common part of internal communication protocol used by both sides
  *   (client and server) of firewall daemon and service dispatcher.
  *
+ */
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#define NCBID_NAME              "/Service/ncbid.cgi"
+#define HTTP_CONNECTION_INFO    "Connection-Info:"
+#define HTTP_DISP_FAILURES      "Dispatcher-Failures:"
+#define DISPATCHER_CFGFILE      "servrc.cfg"
+
+typedef unsigned int ticket_t;
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+
+/*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/09/19 18:07:57  lavr
+ * Header file guard macro changed; log moved to end
+ *
  * Revision 6.4  2001/08/20 21:59:05  lavr
  * New macro: DISPATCHER_CFGFILE
  *
@@ -49,11 +74,4 @@
  * ==========================================================================
  */
 
-#define NCBID_NAME              "/Service/ncbid.cgi"
-#define HTTP_CONNECTION_INFO    "Connection-Info:"
-#define HTTP_DISP_FAILURES      "Dispatcher-Failures:"
-#define DISPATCHER_CFGFILE      "servrc.cfg"
-
-typedef unsigned int ticket_t;
-
-#endif /* NCBI_COMM__H */
+#endif /* CONNECT___NCBI_COMM__H */

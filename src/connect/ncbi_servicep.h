@@ -1,5 +1,5 @@
-#ifndef NCBI_SERVICEP__H
-#define NCBI_SERVICEP__H
+#ifndef CONNECT___NCBI_SERVICEP__H
+#define CONNECT___NCBI_SERVICEP__H
 
 /*  $Id$
  * ===========================================================================
@@ -31,59 +31,10 @@
  * File Description:
  *   Private API to define server iterator structure.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.14  2002/05/06 19:17:04  lavr
- * +SERV_ServiceName() - translation of service name
- *
- * Revision 6.13  2001/09/28 20:50:41  lavr
- * Update VT method changed - now called on per-line basis
- *
- * Revision 6.12  2001/09/24 20:23:39  lavr
- * Reset() method added to VT
- *
- * Revision 6.11  2001/06/25 15:38:00  lavr
- * Heap of services is now not homogeneous, but can
- * contain entries of different types. As of now,
- * Service and Host entry types are introduced and defined
- *
- * Revision 6.10  2001/05/11 15:30:02  lavr
- * Correction in comment
- *
- * Revision 6.9  2001/04/26 14:18:45  lavr
- * SERV_MapperName moved to the private header
- *
- * Revision 6.8  2001/04/24 21:33:58  lavr
- * Added members of mapper V-table: penalize(method) and name(data).
- * Service iterator has got new field 'last' to keep the latest given info.
- *
- * Revision 6.7  2001/03/06 23:57:49  lavr
- * Minor beautifications
- *
- * Revision 6.6  2000/12/29 18:12:51  lavr
- * SERV_Print added to private interface
- *
- * Revision 6.5  2000/12/06 22:21:27  lavr
- * SERV_Print added to private interface
- *
- * Revision 6.4  2000/10/20 17:22:55  lavr
- * VTable changed to have 'Update' method
- * 'SERV_Update' added to private interface
- *
- * Revision 6.3  2000/10/05 21:37:51  lavr
- * Mapper-specific private data field added
- *
- * Revision 6.2  2000/05/22 16:53:12  lavr
- * Rename service_info -> server_info everywhere (including
- * file names) as the latter name is more relevant
- *
- * Revision 6.1  2000/05/12 18:38:16  lavr
- * First working revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_service.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -152,4 +103,61 @@ const char* SERV_ServiceName(const char* service);
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_SERVICEP__H */
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.15  2002/09/19 18:08:43  lavr
+ * Header file guard macro changed; log moved to end
+ *
+ * Revision 6.14  2002/05/06 19:17:04  lavr
+ * +SERV_ServiceName() - translation of service name
+ *
+ * Revision 6.13  2001/09/28 20:50:41  lavr
+ * Update VT method changed - now called on per-line basis
+ *
+ * Revision 6.12  2001/09/24 20:23:39  lavr
+ * Reset() method added to VT
+ *
+ * Revision 6.11  2001/06/25 15:38:00  lavr
+ * Heap of services is now not homogeneous, but can
+ * contain entries of different types. As of now,
+ * Service and Host entry types are introduced and defined
+ *
+ * Revision 6.10  2001/05/11 15:30:02  lavr
+ * Correction in comment
+ *
+ * Revision 6.9  2001/04/26 14:18:45  lavr
+ * SERV_MapperName moved to the private header
+ *
+ * Revision 6.8  2001/04/24 21:33:58  lavr
+ * Added members of mapper V-table: penalize(method) and name(data).
+ * Service iterator has got new field 'last' to keep the latest given info.
+ *
+ * Revision 6.7  2001/03/06 23:57:49  lavr
+ * Minor beautifications
+ *
+ * Revision 6.6  2000/12/29 18:12:51  lavr
+ * SERV_Print added to private interface
+ *
+ * Revision 6.5  2000/12/06 22:21:27  lavr
+ * SERV_Print added to private interface
+ *
+ * Revision 6.4  2000/10/20 17:22:55  lavr
+ * VTable changed to have 'Update' method
+ * 'SERV_Update' added to private interface
+ *
+ * Revision 6.3  2000/10/05 21:37:51  lavr
+ * Mapper-specific private data field added
+ *
+ * Revision 6.2  2000/05/22 16:53:12  lavr
+ * Rename service_info -> server_info everywhere (including
+ * file names) as the latter name is more relevant
+ *
+ * Revision 6.1  2000/05/12 18:38:16  lavr
+ * First working revision
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___NCBI_SERVICEP__H */

@@ -1,5 +1,5 @@
-#ifndef NCBI_SERVICE__H
-#define NCBI_SERVICE__H
+#ifndef CONNECT___NCBI_SERVICE__H
+#define CONNECT___NCBI_SERVICE__H
 
 /*  $Id$
  * ===========================================================================
@@ -33,8 +33,146 @@
  *   More elaborate documentation could be found in:
  *   http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/libs/conn.html#ref_ServiceAPI
  *
+ */
+
+#include <connect/ncbi_server_info.h>
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+/* Iterator through the servers
+ */
+struct SSERV_IterTag;
+typedef struct SSERV_IterTag* SERV_ITER;
+
+
+/* Create an iterator for the iterative server lookup.
+ * Connection information 'info' can be a NULL pointer, which means
+ * not to make any network connections (only LBSMD will be consulted).
+ * If 'info' is not NULL, LBSMD is consulted first (unless 'info->lb_disable'
+ * is non-zero, meaning to skip LBSMD), and then DISPD is consulted
+ * (using the information provided) but only if mapping with LBSMD (if any)
+ * has failed. This scheme permits to use any combination of service mappers.
+ * Note that if 'info' is not NULL then non-zero value of 'info->stateless'
+ * forces 'types' to have 'fSERV_StatelessOnly' set.
+ * NB: 'nbo' in comments denotes parameters coming in network byte order.
+ */
+
+/* Allocate an iterator and consult either local database (if present),
+ * or network database, using all default communication parameters
+ * found in registry and environment variables (implicit parameter
+ * 'info' found in two subsequent variations of this call is filled out
+ * internally by ConnNetInfo_Create(service) and then automatically used).
+ * NOTE that no preferred host (0) is set in the resultant iterator.
+ */
+SERV_ITER SERV_OpenSimple
+(const char*         service        /* service name                          */
+ );
+
+
+/* Special values for preferred_host parameter */
+#define SERV_LOCALHOST  ((unsigned int)(~0UL))
+#define SERV_ANYHOST    0           /* default, may be used as just 0 in code*/
+
+
+SERV_ITER SERV_OpenEx
+(const char*         service,       /* service name                          */
+ TSERV_Type          types,         /* mask of type(s) of servers requested  */
+ unsigned int        preferred_host,/* preferred host to use service on, nbo */
+ const SConnNetInfo* net_info,      /* connection information                */
+ const SSERV_Info*   const skip[],  /* array of servers NOT to select        */
+ size_t              n_skip         /* number of servers in preceding array  */
+ );
+
+#define SERV_Open(service, types, preferred_host, net_info) \
+        SERV_OpenEx(service, types, preferred_host, net_info, 0, 0)
+
+
+/* Get the next server meta-address, optionally accompanied by host
+ * environment, specified in LBSMD configuration file on that host.
+ * Return 0 if no more servers were found for the service requested
+ * (parameter 'env' remains untouched in this case).
+ * Only when completing successfully, i.e. returning non-NULL info,
+ * this function can also provide the host environment as follows:
+ * when 'env' parameter is passed as a non-NULL pointer, then a copy of
+ * the host environment is allocated, and pointer to it is stored in *env.
+ * Environment is a set of pairs in the form "name=value" separated by
+ * '\n' from each other. NULL value stored if no environment is available
+ * for the host, which is referred to by returned server info.
+ * NOTE that an application program should NOT destroy returned server info:
+ * it will be freed automatically upon iterator destruction. On the other hand,
+ * environment has to be explicitly free()'d when no longer needed.
+ */
+const SSERV_Info* SERV_GetNextInfoEx
+(SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
+ char**              env            /* ptr to copy of host envir to store in */
+ );
+
+#define SERV_GetNextInfo(iter)  SERV_GetNextInfoEx(iter, 0)
+
+
+/* This is a 'fast track' routine equivalent to creation of an iterator
+ * as with SERV_OpenEx() and then taking an info as with SERV_GetNextInfoEx().
+ * However, this call is optimized for an application, which only needs
+ * a single entry (the first one), and which is not interested in iterating
+ * over all available entries. Both returned server info and env have to be
+ * explicitly free()'d by the application when no longer needed.
+ * Note that env is only supplied if the function returns a non-NULL result.
+ */
+SSERV_Info* SERV_GetInfoEx
+(const char*         service,       /* service name                          */
+ TSERV_Type          types,         /* mask of type(s) of servers requested  */
+ unsigned int        preferred_host,/* preferred host to use service on, nbo */
+ const SConnNetInfo* net_info,      /* connection information                */
+ const SSERV_Info*   const skip[],  /* array of servers NOT to select        */
+ size_t              n_skip,        /* number of servers in preceding array  */
+ char**              env            /* environment to store into             */
+ );
+
+
+#define SERV_GetInfo(service, types, preferred_host, net_info) \
+    SERV_GetInfoEx(service, types, preferred_host, net_info, 0, 0, 0)
+
+
+/* Penalize server returned last from SERV_GetNextInfo[Ex]().
+ * Return 0 if failed, 1 if successful.
+ */
+int/*bool*/ SERV_Penalize
+(SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
+ double              fine           /* fine in a range [0=min..100=max] (%%) */
+ );
+
+
+/* Reset the iterator to the state as if it'd just been opened.
+ * Caution: All previously obtained with this iterator pointers (if any)
+ * to server descriptors (SSERV_Info*) become invalid.
+ */
+void SERV_Reset
+(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
+ );
+
+
+/* Deallocate the iterator. Must be called to finish lookup process.
+ */
+void SERV_Close
+(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
+ );
+
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
+
+
+/*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2002/09/19 18:05:00  lavr
+ * Header file guard macro changed; log moved to end
+ *
  * Revision 6.25  2002/05/06 19:08:35  lavr
  * Removed mention of IP substitutions (mistakenly left behind a while ago)
  *
@@ -114,134 +252,4 @@
  * ==========================================================================
  */
 
-#include <connect/ncbi_server_info.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-/* Iterator through the servers
- */
-struct SSERV_IterTag;
-typedef struct SSERV_IterTag* SERV_ITER;
-
-
-/* Create iterator for the iterative server lookup.
- * Connection information 'info' can be a NULL pointer, which means
- * not to make any network connections (only LBSMD will be consulted).
- * If 'info' is not NULL, LBSMD is consulted first (unless 'info->lb_disable'
- * is non-zero, meaning to skip LBSMD), and then DISPD is consulted
- * (using the information provided) but only if mapping with LBSMD (if any)
- * has failed. This scheme permits to use any combination of service mappers.
- * Note that if 'info' is not NULL then non-zero value of 'info->stateless'
- * forces 'types' to have 'fSERV_StatelessOnly' set.
- * NB: 'nbo' in comments denotes parameters coming in network byte order.
- */
-
-/* Allocate iterator and consult either local database (if present),
- * or network database, using all default communication parameters
- * found in registry and environment variables (implicit parameter
- * 'info' found in two subsequent variations of this call is filled out
- * internally by ConnNetInfo_Create(service) and then automatically used).
- * NOTE that no preferred host (0) is set in the resultant iterator.
- */
-SERV_ITER SERV_OpenSimple
-(const char*         service        /* service name                          */
- );
-
-
-/* Special values for preferred_host parameter */
-#define SERV_LOCALHOST  ((unsigned int)(~0UL))
-#define SERV_ANYHOST    0           /* default, may be used as just 0 in code*/
-
-
-SERV_ITER SERV_OpenEx
-(const char*         service,       /* service name                          */
- TSERV_Type          types,         /* mask of type(s) of servers requested  */
- unsigned int        preferred_host,/* preferred host to use service on, nbo */
- const SConnNetInfo* net_info,      /* connection information                */
- const SSERV_Info*   const skip[],  /* array of servers NOT to select        */
- size_t              n_skip         /* number of servers in preceding array  */
- );
-
-#define SERV_Open(service, types, preferred_host, net_info) \
-        SERV_OpenEx(service, types, preferred_host, net_info, 0, 0)
-
-
-/* Get the next server meta-address, optionally accompanied by host
- * environment, specified in LBSMD configuration file on that host.
- * Return 0 if no more servers were found for the service requested
- * (parameter 'env' remains untouched in this case).
- * Only when completing successfully, i.e. returning non-NULL info,
- * this function can also provide the host environment as follows:
- * when 'env' parameter is passed as a non-NULL pointer, then a copy of
- * the host environment is allocated, and pointer to it is stored in *env.
- * Environment is the set of pairs in the form "name=value" separated by
- * '\n' from each other. NULL value stored if no environment is available for
- * the host, which is referred to by returned server info.
- * NOTE that the application program should NOT destroy returned server info:
- * it will be freed automatically upon iterator destruction. On the other hand,
- * environment has to be explicitly free()'d when no longer needed.
- */
-const SSERV_Info* SERV_GetNextInfoEx
-(SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
- char**              env            /* ptr to copy of host envir to store in */
- );
-
-#define SERV_GetNextInfo(iter)  SERV_GetNextInfoEx(iter, 0)
-
-
-/* This is a 'fast track' routine equivalent to creation of an iterator
- * as with SERV_OpenEx() and then taking an info as with SERV_GetNextInfoEx().
- * However, this call is optimized for an application, which only needs
- * a single entry (the first one), and which is not interested in iterating
- * over all available entries. Both returned server info and env have to be
- * explicitly free()'d by the application when no longer needed.
- * Note that env is only supplied if the function returned non-NULL result.
- */
-SSERV_Info* SERV_GetInfoEx
-(const char*         service,       /* service name                          */
- TSERV_Type          types,         /* mask of type(s) of servers requested  */
- unsigned int        preferred_host,/* preferred host to use service on, nbo */
- const SConnNetInfo* net_info,      /* connection information                */
- const SSERV_Info*   const skip[],  /* array of servers NOT to select        */
- size_t              n_skip,        /* number of servers in preceding array  */
- char**              env            /* environment to store into             */
- );
-
-
-#define SERV_GetInfo(service, types, preferred_host, net_info) \
-    SERV_GetInfoEx(service, types, preferred_host, net_info, 0, 0, 0)
-
-
-/* Penalize server returned last from SERV_GetNextInfo[Ex]().
- * Return 0 if failed, 1 if successful.
- */
-int/*bool*/ SERV_Penalize
-(SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
- double              fine           /* fine in a range [0=min..100=max] (%%) */
- );
-
-
-/* Reset iterator to the state as if it'd just been opened.
- * Caution: All previously obtained with this iterator pointers to
- * server descriptors (SSERV_Info*) become invalid.
- */
-void SERV_Reset
-(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
- );
-
-
-/* Deallocate iterator. Must be called to finish lookup process.
- */
-void SERV_Close
-(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
- );
-
-
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif
-
-#endif /* NCBI_SERVICE__H */
+#endif /* CONNECT___NCBI_SERVICE__H */

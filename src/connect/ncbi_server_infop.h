@@ -1,5 +1,5 @@
-#ifndef NCBI_SERVER_INFOP__H
-#define NCBI_SERVER_INFOP__H
+#ifndef CONNECT___NCBI_SERVER_INFOP__H
+#define CONNECT___NCBI_SERVER_INFOP__H
 
 /*  $Id$
  * ===========================================================================
@@ -31,16 +31,8 @@
  * File Description:
  *   NCBI server meta-address info (private part)
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.2  2001/11/25 22:12:06  lavr
- * Replaced g_SERV_LocalServerDefault -> SERV_SetLocalServerDefault()
- *
- * Revision 6.1  2001/11/16 20:25:53  lavr
- * +g_SERV_LocalServerDefault as a private global parameter
- *
- * ==========================================================================
  */
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,4 +46,20 @@ int/*bool*/ SERV_SetLocalServerDefault(int/*bool*/ onoff);
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_SERVER_INFOP__H */
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.3  2002/09/19 18:08:38  lavr
+ * Header file guard macro changed; log moved to end
+ *
+ * Revision 6.2  2001/11/25 22:12:06  lavr
+ * Replaced g_SERV_LocalServerDefault -> SERV_SetLocalServerDefault()
+ *
+ * Revision 6.1  2001/11/16 20:25:53  lavr
+ * +g_SERV_LocalServerDefault as a private global parameter
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___NCBI_SERVER_INFOP__H */
