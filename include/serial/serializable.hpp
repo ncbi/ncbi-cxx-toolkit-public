@@ -64,8 +64,7 @@ public:
         const CSerializable& m_Obj;
         EOutputType          m_OutputType;
         friend NCBI_XSERIAL_EXPORT
-        CNcbiOstream& operator << (CNcbiOstream& out,
-                                          const CProxy& src);
+        CNcbiOstream& operator << (CNcbiOstream& out, const CProxy& src);
     };
 
     CProxy Dump(EOutputType output_type) const;
@@ -77,7 +76,8 @@ protected:
     virtual void WriteAsXML       (CNcbiOstream& out) const;
     virtual void WriteAsString    (CNcbiOstream& out) const;
 
-    friend CNcbiOstream& operator << (CNcbiOstream& out, const CProxy& src);
+    friend NCBI_XSERIAL_EXPORT
+    CNcbiOstream& operator << (CNcbiOstream& out, const CProxy& src);
 };
 
 
@@ -104,6 +104,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/01/20 15:11:19  dicuccio
+* Oops, forgot one export specifier.  Fixed code formatting.
+*
 * Revision 1.8  2004/01/20 14:58:47  dicuccio
 * FIxed use of export specifiers - located before return type of function
 *
