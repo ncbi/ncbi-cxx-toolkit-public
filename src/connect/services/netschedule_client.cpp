@@ -195,6 +195,22 @@ CNetScheduleClient::~CNetScheduleClient()
 {
 }
 
+string CNetScheduleClient::StatusToString(EJobStatus status)
+{
+    switch(status) {
+    case eJobNotFound: return "NotFound";
+    case ePending:     return "Pending";
+    case eRunning:     return "Running";
+    case eReturned:    return "Returned";
+    case eCanceled:    return "Canceled";
+    case eFailed:      return "Failed";
+    case eDone:        return "Done";
+    default: _ASSERT(0);
+    }
+    return kEmptyStr;
+}
+
+
 void CNetScheduleClient::ActivateRequestRateControl(bool on_off)
 {
     m_RequestRateControl = on_off;
@@ -854,6 +870,31 @@ string CNetScheduleClient::ServerVersion()
     return m_Tmp;
 }
 
+void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "STAT ");
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+
+    WaitForServer();
+    while (1) {
+        if (!ReadStr(*m_Sock, &m_Tmp)) {
+            break;
+        }
+        TrimPrefix(&m_Tmp);
+        if (m_Tmp == "END")
+            break;
+        out << m_Tmp << "\n";
+    }
+}
+
+
 void CNetScheduleClient::DropQueue()
 {
     CheckConnect(kEmptyStr);
@@ -969,6 +1010,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/03/21 13:05:58  kuznets
+ * + PrintStatistics
+ *
  * Revision 1.13  2005/03/17 20:36:22  kuznets
  * +PutFailure()
  *
