@@ -42,6 +42,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -71,7 +72,7 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_set.hpp>
 
-#include <objmgr/util/sequence.hpp>
+#include <objects/general/Dbtag.hpp>
 
 #include <algorithm>
 #include <string>
@@ -527,7 +528,9 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
 
             for ( int j = 0; j < 4; ++j ) {
                 if (partials[i] & errtype) {
-                    if ( i == 1  &&  j < 2  &&
+                    if ( i == 1  &&  j < 2  &&  IsCDDFeat(feat) ) {
+                        // supress warning
+                    } else if ( i == 1  &&  j < 2  &&
                         IsPartialAtSpliceSite(feat.GetLocation(), errtype) ) {
                         PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                             parterr[i] + ": " + parterrs[j] + 
@@ -2430,6 +2433,21 @@ bool CValidError_feat::IsSameAsCDS(const CSeq_feat& feat)
 }
 
 
+bool CValidError_feat::IsCDDFeat(const CSeq_feat& feat) const
+{
+    if ( feat.GetData().IsRegion() ) {
+        if ( feat.CanGetDbxref() ) {
+            ITERATE(CSeq_feat::TDbxref, db, feat.GetDbxref()) {
+                if ( (*db)->CanGetDb()  &&
+                    NStr::Compare((*db)->GetDb(), "CDD") == 0 ) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -2439,6 +2457,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/10/01 21:00:24  shomrat
+* suppress partial not at end warning for CDD region
+*
 * Revision 1.36  2003/09/22 20:25:10  shomrat
 * lower severity for far product partial inconsistency and mrnatranscheck, also check for 95% polyA
 *
