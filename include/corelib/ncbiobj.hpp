@@ -1,5 +1,5 @@
-#ifndef NCBIOBJ__HPP
-#define NCBIOBJ__HPP
+#ifndef CORELIB___NCBIOBJ__HPP
+#define CORELIB___NCBIOBJ__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -1332,6 +1332,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2003/10/20 20:07:10  siyan
+ * Added CORELIB___ prefix in conditional includes.
+ *
  * Revision 1.52  2003/10/01 00:24:02  ucko
  * CConstRef::AtomicSwap: use reinterpret_cast rather than static_cast to
  * placate MIPSpro.
