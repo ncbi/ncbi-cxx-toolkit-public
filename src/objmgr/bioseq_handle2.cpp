@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/03/21 17:01:20  ucko
+* Fix stupid bug in s_FindLongestFeature (also fixed in old objmgr).
+*
 * Revision 1.3  2002/03/19 19:16:28  gouriano
 * added const qualifier to GetTitle and GetSeqVector
 *
@@ -540,6 +543,7 @@ static CConstRef<CSeq_feat> s_FindLongestFeature(const CSeq_loc& location,
             result = &*it;
             BREAK(it);
         } else if (it->GetLocation().GetLength() > best_length) {
+            best_length = it->GetLocation().GetLength();
             result = &*it;
         }
     }
