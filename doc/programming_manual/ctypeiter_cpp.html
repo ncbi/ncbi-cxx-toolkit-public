@@ -66,12 +66,12 @@ int main(int argc, char** argv)
     list&lt;CPerson> blocks = district1.GetBlocks();
 
     for (list&lt;CPerson>::iterator b = blocks.begin();
-	 b != blocks.end(); ++b) {
+     b != blocks.end(); ++b) {
 
         for (CStdTypeIterator&lt;string> i = Begin(*b); i; ++i) {
             cout << *i << ' ';
-	}
-	cout << endl;
+    }
+    cout << endl;
     }
     return 0;
 }

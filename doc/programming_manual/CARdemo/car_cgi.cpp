@@ -1,11 +1,12 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
-  <head>
+<head>
     <title>car_cgi.cpp</title>
-  </head>
+</head>
 
-  <body BGCOLOR="#FFFFFF">
-  <pre><font color = "red">// File name: car_cgi.cpp
+<body BGCOLOR="#FFFFFF">
+
+<pre><font color = "red">// File name: car_cgi.cpp
 // Description: Implement the CCarCgi class and function main
 <font color = "green">
 #include &lt;cgi/cgiapp.hpp>
@@ -225,3 +226,7 @@ int main(int argc, char* argv[])
     SetDiagStream(&NcbiCerr);
     return CCarCgi().AppMain(argc, argv);
 }
+
+</pre>
+</body>
+</html>

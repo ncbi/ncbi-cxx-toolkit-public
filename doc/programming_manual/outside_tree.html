@@ -21,95 +21,98 @@ There are two topics relevant to writing an application using the NCBI C++ Toolk
 </ol>
 
 What you put in your makefile will depend on where you define your working directory. In
-this discussion, we assume you will be working <i><b> outside </i></b> the NCBI C++ tree,
-say in a directory called <i>NewProj</i>. This is where you will write both your source
+this discussion, we assume you will be working <em> outside </em> the NCBI C++ tree,
+say in a directory called <span class="ncbi_dir">NewProj</span>. This is where you will write both your source
 and header files.  The first step then, is to create the new working directory and use the
-<a href="../new_proj.html#ref_OutsideCreate"> <i> new_project.sh</i></a> script to install
+<a href="../new_proj.html#ref_OutsideCreate" class="ncbi_script">new_project.sh</a> script to install
 a makefile there:<p>
 
-<font size="-1">
-<pre>
-birch% mkdir NewProj
-
-birch% $NCBI/c++/scripts/new_project.sh NewProj app $NCBI/c++/GCC-Debug/build
-Created a model makefile "/home/zimmerma/NewProj/Makefile.NewProj_app". </font>
-</pre>
-</font>
+<blockquote>
+<pre class="ncbi_cmd">
+mkdir NewProj
+$NCBI/c++/scripts/new_project.sh NewProj app $NCBI/c++/GCC-Debug/build
+   Created a model makefile "/home/zimmerma/NewProj/Makefile.NewProj_app". </font>
+</pre></blockquote>
 
 The syntax of the script command is:
-<center> <xmp>
-new_project.sh  project_name  <app | lib>  [builddir]
-</xmp></center>
+<blockquote>
+<pre class="ncbi_cmd">
+new_project.sh &lt;project_name> &lt;app | lib> [builddir]
+</pre>
+</blockquote>
+
 where:
 <dl>
-  <dt> - <i> project_name </i> is the name of the directory you will be working in
-  <dt> - <i> app (lib) </i> is used to indicate whether you will be building an application or a library
-  <dt> - <i> builddir </i>  (optional) specifies what version of the pre-built NCBI C++ Toolkit
-		  libraries to link to
+  <dt> - <span class="ncbi_script_a">project_name</span> is the name of the directory you will be working in
+  <dt> - <span class="ncbi_script_a">app (lib)</span> is used to indicate whether you will be building an application or a library
+  <dt> - <span class="ncbi_script_a">builddir</span> (optional) specifies what version of the pre-built NCBI C++ Toolkit
+          libraries to link to
 </dl>
 Several build environments have been pre-configured and are available for developing on various
-platforms using different compilers, in either <i> debug</i> or <i> release </i> mode. These
+platforms using different compilers, in either <em>debug</em> or <em>release</em> mode. These
 environments include custom-made configuration files, makefile templates, and links to the
 appropriate pre-built C++ Toolkit libraries. To see a list of the available environments for
-the platform you are working on, use: <i>ls -d $NCBI/c++/*/build</i>. For example, on <i>Solaris</i>,
-the following <i>build</i> directories are currently available:
+the platform you are working on, use: <span class="ncbi_cmd">ls -d $NCBI/c++/*/build</span>. For example, on <span class="ncbi_os">Solaris</span>,
+the following build directories are currently available:
 <center><p>
-<table border=1 width="600" cellspacing=1>
+<table border=1 width="600" cellspacing=0>
   <caption></caption>
 <tr> <th> Directory </th> <th> Compiler </th> <th> Version </th> </tr>
-<tr> <td><i> /netopt/ncbi_tools/c++/Debug/build </i> </td> <td> Sun Workshop</td><td> Debug </td></tr>
-<tr> <td><i> /netopt/ncbi_tools/c++/Debug64/build </i> </td> <td> Sun Workshop</td><td> Debug (64 bit) </td></tr>
-<tr> <td><i> /netopt/ncbi_tools/c++/DebugMT/build </i> </td> <td> Sun Workshop</td><td> Debug (Multi-thread safe)</td></tr>
-<tr> <td><i> /netopt/ncbi_tools/c++/Release/build </i></td> <td> Sun Workshop</td><td> Release </td></tr>
-<tr> <td><i> /netopt/ncbi_tools/c++/ReleaseMT/build </i></td> <td> Sun Workshop</td><td> Release (Multi-thread safe)</td></tr>
-<tr> <td><i> /netopt/ncbi_tools/c++/GCC-Debug/build     </i></td> <td> GCC </td><td> Debug </td></tr>
-<tr> <td><i> /netopt/ncbi_tools/c++/GCC-Release/build   </i></td> <td> GCC </td><td> Release </td></tr>
+<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/Debug/build </span> </td> <td> Sun Workshop</td><td> Debug </td></tr>
+<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/Debug64/build </span> </td> <td> Sun Workshop</td><td> Debug (64 bit) </td></tr>
+<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/DebugMT/build </span> </td> <td> Sun Workshop</td><td> Debug (Multi-thread safe)</td></tr>
+<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/Release/build </span></td> <td> Sun Workshop</td><td> Release </td></tr>
+<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/ReleaseMT/build </span></td> <td> Sun Workshop</td><td> Release (Multi-thread safe)</td></tr>
+<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/GCC-Debug/build     </span></td> <td> GCC </td><td> Debug </td></tr>
+<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/GCC-Release/build   </span></td> <td> GCC </td><td> Release </td></tr>
 </table>
 </center><p>
 
 In the example above, we specified the GNU compiler debug environment:
-<i>$NCBI/c++/GCC-Debug/build</i>. For a list of currently supported compilers, see the
-Reference Manual's <a href="../config.html#ref_Compilers"> <i>Installation and configuration</i></a>
-page.  Running the <i>new_project.sh</i> script will generate a ready-to-use makefile in the
+<span class="ncbi_dir">$NCBI/c++/GCC-Debug/build</span>. For a list of currently supported compilers, see the
+Reference Manual's <a href="../config.html#ref_Compilers">Installation and configuration</a>
+page.  Running the <span class="ncbi_script">new_project.sh</span> script will generate a ready-to-use makefile in the
 directory you just created.  For a more detailed description of this and other scripts to
 assist you in the set-up of your working environment, see the Reference Manual page <a
-href="../new_proj.html"> <i>Starting a new C++ project</i></a>.
+href="../new_proj.html">Starting a new C++ project</a>.
+<p><br>
 
 <a name="makefiles"></a>
 <h3> The Project's Makefile </h3>
 
-The file you just created with the above script will be called <i>Makefile.NewProj_app</i>. In
+The file you just created with the above script will be called <span class="ncbi_file">Makefile.NewProj_app</span>. In
 addition to other things, you will see definitions for:
 
 <dl>
-  <dt> - <i> $(builddir) </i> - a path to the build directory specified in the last argument to the above script
-  <dt> - <i> $(srcdir) </i> - the path to your current working directory (".")
-  <dt> - <i> $(APP) </i> - the application name
-  <dt> - <i> $(OBJ) </i> - the names of the object modules to build and link to the application
-  <dt> - <i> $(LIB)</i> - specific libraries to link to in the NCBI C++ Toolkit
-  <dt> - <i> $(LIBS) </i> - all other libraries to link to (outside the C++ Toolkit)
+  <dt> - <span class="ncbi_make_var"> $(builddir) </span> - a path to the build directory specified in the last argument to the above script
+  <dt> - <span class="ncbi_make_var"> $(srcdir) </span> - the path to your current working directory (".")
+  <dt> - <span class="ncbi_make_var"> $(APP) </span> - the application name
+  <dt> - <span class="ncbi_make_var"> $(OBJ) </span> - the names of the object modules to build and link to the application
+  <dt> - <span class="ncbi_make_var"> $(LIB)</span> - specific libraries to link to in the NCBI C++ Toolkit
+  <dt> - <span class="ncbi_make_var"> $(LIBS) </span> - all other libraries to link to (outside the C++ Toolkit)
 </dl>
 
-<i>$(builddir)/lib</i> specifies the library path (-L), which in this case points to the
+<span class="ncbi_dir">$(builddir)/lib</span> specifies the library path (-L), which in this case points to the
 GNU debug versions of the NCBI C++ Toolkit libraries. $(LIB)
 lists the individual libraries in this path that you will be linking to. Minimally, this should
-include <i>xncbi</i> - the library which implements the foundational classes for the C++
-tools. Additional library names (e.g. <i>xhtml, xcgi, </i> etc.) can be added here. <p>
+include <span class="ncbi_proj">xncbi</span> - the library which implements the foundational classes for the C++
+tools. Additional library names (e.g. <span class="ncbi_proj">xhtml, xcgi, </span> etc.) can be added here. <p>
 
 Since the shell script assumes you will be building a single executable with the same name
-as your working directory, the application is defined simply as <i>NewProj</i>. Additional
+as your working directory, the application is defined simply as <span class="ncbi_app">NewProj</span>. Additional
 targets to build can be added in the area indicated towards the end of the file. The list
 of objects (OBJ) should include the names (without extensions) of all source files for the
 application (APP). Again, the script makes the simplest assumption, i.e. that there is a
-single source file named <i>NewProj.cpp</i>. Additional source names can be added here.
+single source file named <span class="ncbi_file">NewProj.cpp</span>. Additional source names can be added here.
+<p><br>
+
 
 <a name="testing"></a>
 <h3>Testing your setup </h3>
 For a very simple application, this makefile is ready to be run. Try it out now, by creating
-the file <i>NewProj.cpp</i>:
-
-<font color = "#008080">
-<pre>
+the file <span class="ncbi_file">NewProj.cpp</span>:
+<blockquote>
+<pre class="ncbi_code">
 // File name: NewProj.cpp
 
 #include &lt;iostream&gt;
@@ -120,22 +123,26 @@ int main() {
     cout << "Hello again, world" << endl;
 }
 </pre>
-<font color = black>
+</blockquote>
 
-and running: <i> make -f Makefile.NewProj_app</i>. <p>
+and running:
 
-Of course, it wasn't necessary to set up the directories and makefiles to accomplish this much,
+<blockquote>
+<pre class="ncbi_code">
+make -f Makefile.NewProj_app
+</pre>
+</blockquote>
+ 
+<p>Of course, it wasn't necessary to set up the directories and makefiles to accomplish this much,
 as this example does not use any of the C++ classes or resources defined in the NCBI C++
 Toolkit. But having accomplished this, you are now prepared to write an actual application,
-such as described in <a href="applic.html"> <i>Writing a simple application project</i></a>
+such as described in <a href="applic.html">Writing a simple application project</a>
 <p>
 
-Most real applications will at a minimum, require that you <i>#include</i>
-<a href="../lxr/source/include/corelib/ncbistd.hpp">
-<i>ncbistd.hpp</i></a> in your header file. In addition to defining some basic NCBI C++ Toolkit
+Most real applications will at a minimum, require that you <span class="ncbi_ccode">#include <a href="../lxr/source/include/corelib/ncbistd.hpp">ncbistd.hpp</a></span> in your header file. In addition to defining some basic NCBI C++ Toolkit
 objects and templates, this header file in turn includes other header files that define the C
 Toolkit data types, NCBI namespaces, debugging macros, and exception classes. A  set of <a
-href="../new_mod.html"> template </a> files are also provided for
+href="../new_mod.html">template</a> files are also provided for
 your use in developing new applications. <p>
 
 <a href="../index.html"> <i> up </i> </a>
@@ -144,11 +151,11 @@ your use in developing new applications. <p>
 
 <!--#include virtual="../ssi/navlinks.shtml" -->
 
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
-		  <!-- <td align=center><i>$Revision$</i></td> -->
-		  <td align=right><i>$Date$</i></td>
-	 </table>
+     <table border=0 width="100%" cellspacing=0>
+        <tr>
+          <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+          <!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+          <td align=right><span class="ncbi_cvs_date">$Date$</span></td>
+     </table>
 
 <!--#include virtual="../ssi/footer.shtml" -->

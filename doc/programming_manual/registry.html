@@ -13,7 +13,7 @@ The CNcbiRegistry Class</h1>
 <a href="#syntax">Syntax of the configuration file</a></li>
 
 <li>
-<i><a href="#eflags">CNcbiRegistry::EFlags</a></i></li>
+<a href="#eflags">CNcbiRegistry::EFlags</a></li>
 
 <li>
 <a href="#methods">Additional Methods</a></li>
@@ -22,13 +22,13 @@ The CNcbiRegistry Class</h1>
 <h3>
 <a NAME="intro"></a>Introduction</h3>
 <p>
-The <i><a href="../docxx/CNcbiRegistry.html">CNcbiRegistry</a></i> class
+The <a href="../docxx/CNcbiRegistry.html" class="ncbi_class">CNcbiRegistry</a> class
 is used to access, modify and store runtime information read from a
 configuration file.
 
 <p>
 If you are programming in the standard C++ Toolkit framework, using
-<i><a href="applic.html#CNcbiApplication">CNcbiApplication</a></i>
+<a href="applic.html#CNcbiApplication" class="ncbi_class">CNcbiApplication</a>
 class, you should definitely read the rules on where the
 application is looking for the configuration file, and how
 you can access the loaded application-wide coniguration (registry)
@@ -41,38 +41,36 @@ from your code. This is described in the
 
 <h3>
 Syntax of the configuration file</h3>
-The configuration file is composed of <i>section</i> headers and &lt;<i>name=value</i>>
-strings, which occur within the named sections.&nbsp; It is also possible
-to include comments in the file,&nbsp; which are indicated by a new line
-with a leading semi-colon.&nbsp; Figure 1 shows an example configuration
+The configuration file is composed of <span class="ncbi_term">section</span> headers and "<span class="ncbi_value">name=value</span>"
+strings, which occur within the named sections.  It is also possible
+to include comments in the file,  which are indicated by a new line
+with a leading semi-colon. Figure 1 shows an example configuration
 file.
+
 <blockquote>
-<blockquote>
-<blockquote>
-<blockquote>
-<blockquote><tt>; MyProgram.ini</tt>
-<p><tt>; parameters for section1</tt>
-<br><tt><font color="#3366FF">[section1]</font></tt>
-<br><tt>name1 = value1 and value1.2</tt>
-<br><tt>n-2.3 = "&nbsp; this value has two spaces at its very beginning
-and at the end&nbsp; "</tt>
-<br><tt>name3 = this is a multi\</tt>
-<br><tt>line value</tt>
-<br><tt>name4 = this is a single line ended by back slash\\</tt>
-<br><tt>name5 = all backslashes and \</tt>
-<br><tt>new lines must be \\escaped\\...</tt>
-<p><tt><font color="#3366FF">[ section2.9-bis ]</font></tt>
-<br><tt>; This is a comment...</tt>
-<br><tt>name2 = value2</tt>
-<br>&nbsp;</blockquote>
+<pre class="ncbi_code">
+; MyProgram.ini
+
+; parameters for section1
+<span class="ncbi_reg">[section1]</span>
+name1 = value1 and value1.2
+n-2.3 = "  this value has two spaces at its very beginning and at the end  "
+name3 = this is a multi\
+line value</tt>
+name4 = this is a single line ended by back slash\\
+name5 = all backslashes and \
+new lines must be \\escaped\\...
+
+<span class="ncbi_reg">[ section2.9-bis ]</span>
+This is a comment...
+name2 = value2
+</pre>
+Figure1. An example configuration file
 </blockquote>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Figure
-1. An example configuration file</blockquote>
-</blockquote>
-</blockquote>
-All comments and empty lines are ignored by the registry file parser.&nbsp;
+
+All comments and empty lines are ignored by the registry file parser. 
 Line continuations, as usual, are indicated with a backslash escape. More
-generally,&nbsp; backslashes are processed as:
+generally,  backslashes are processed as:
 <ul>
 <li>
 [backslash] + [backslash] -- converted into a single [backslash]</li>
@@ -81,20 +79,20 @@ generally,&nbsp; backslashes are processed as:
 [backslash] + [space(s)] + [EndOfLine] -- converted to an [EndOfLine]</li>
 
 <li>
-[backslash] + ["]&nbsp; -- converted into a ["]</li>
+[backslash] + ["]  -- converted into a ["]</li>
 </ul>
-Character strings with embedded spaces do not need to be quoted,&nbsp;
+Character strings with embedded spaces do not need to be quoted, 
 and an unescaped double quote at the very beginning or end of a value is
 ignored. All other combinations with [backslash] and ["] are invalid.
-<p>The following restrictions apply to the <i>section</i> and <i>name</i>
+<p>The following restrictions apply to the <span class="ncbi_term">section</span> and <span class="ncbi_term">name</span>
 identifiers occurring in a registry file:
 <ul>
 <li>
-the string must contain only:&nbsp; [a-z], [A-Z], [0-9], [_.-] characters</li>
+the string must contain only:  [a-z], [A-Z], [0-9], [_.-] characters</li>
 
 <li>
-the interpretation of the string is <i>not</i> case-sensitive, e.g. <i>PATH
-== path == PaTh</i></li>
+the interpretation of the string is <em>not</em> case-sensitive, e.g. <span class="ncbi_value">PATH
+== path == PaTh</span></li>
 
 <li>
 all leading and trailing spaces will be truncated</li>
@@ -104,146 +102,152 @@ all leading and trailing spaces will be truncated</li>
 <a NAME="transience"></a></h3>
 
 <h3>
-<i>CNcbiRegistry::EFlags</i></h3>
+<span class="ncbi_type">CNcbiRegistry::EFlags</span></h3>
 In addition to the constructor, which initializes the registry in memory
-and loads parameters from a file, the <i>CNcbiRegistry</i> class provides
-methods for <i>saving</i> the registry (as a new configuration file), and
-<i>reading
-in</i> additonal parameters from a secondary file(s).&nbsp; Each &lt;<i>name=value</i>>
+and loads parameters from a file, the <span class="ncbi_class">CNcbiRegistry</span> class provides
+methods for saving the registry (as a new configuration file), and
+reading in additonal parameters from a secondary file(s).
+Each "<span class="ncbi_value">name=value</span>"
 pair stored in the registry has three attributes, specifying whether or
 not that value is:
 <ul>
 <li>
-<b><i>persistent,</i></b> meaning the value will be written to a file when
+<span class="ncbi_term">persistent</span>, meaning the value will be written to a file when
 the registry is saved</li>
 
 <li>
-<b><i>overridable,</i></b> meaning the value can be overridden by a new
+<span class="ncbi_term">overridable</span> meaning the value can be overridden by a new
 value with the same name</li>
 
 <li>
-<b><i>truncatable,</i></b> meaning that leading and trailing blanks can
+<span class="ncbi_term">truncatable</span> meaning that leading and trailing blanks can
 be truncated from the value</li>
 </ul>
-By default, all of the configuration's parameters are <i>persistent, overridable</i>,
-and <i>truncatable</i>.&nbsp; The <i>EFlags</i> enumeration that quantifies
-these attributes, and the related <i>typedef</i> <i>TFlags</i>, are defined
+By default, all of the configuration's parameters are <span class="ncbi_term">persistent, overridable</span>,
+and <span class="ncbi_term">truncatable</span>.  The <span class="ncbi_type">EFlags</span> enumeration that quantifies
+these attributes, and the related <span class="ncbi_keyword">typedef</span> <span class="ncbi_type">TFlags</span>, are defined
 as:
 
 <blockquote>
-<blockquote>
-<blockquote><tt><font color="#005050">&nbsp;&nbsp;&nbsp; enum EFlags {</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-eTransient&nbsp;&nbsp; = 0x1,</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-ePersistent&nbsp; = 0x100,</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-eOverride&nbsp;&nbsp;&nbsp; = 0x2,</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-eNoOverride&nbsp; = 0x200,</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-eTruncate&nbsp;&nbsp;&nbsp; = 0x4,</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-eNoTruncate&nbsp; = 0x400</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp; };</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp; typedef int TFlags;</font></tt></blockquote>
+<pre class="ncbi_code">
+enum EFlags {
+    eTransient   = 0x1,
+    ePersistent  = 0x100,
+    eOverride    = 0x2,
+    eNoOverride  = 0x200,
+    eTruncate    = 0x4,
+    eNoTruncate  = 0x400
+};
+typedef int TFlags;
+</pre>
 </blockquote>
-</blockquote>
-<i>TFlags</i> is simply used to clarify that an <i>int</i> derived from
-a combination (bit-wise <i>OR</i>) of <i>EFlags</i> is expected - not just
-an arbitrary "regular" <i>int</i>.&nbsp; Many of <i>CNcbiRegistry</i>'s
-methods take an optional <i>TFlags</i> argument, which qualifies the selected
+
+<span class="ncbi_type">TFlags</span> is simply used to clarify that an <span class="ncbi_type">int</span> derived from
+a combination (bit-wise <i>OR</i><!--NCBI_MARK-->) of <span class="ncbi_type">EFlags</span> is expected - not just
+an arbitrary "regular" <span class="ncbi_type">int</span>.  Many of <span class="ncbi_class">CNcbiRegistry</span>'s
+methods take an optional <span class="ncbi_type">TFlags</span> argument, which qualifies the selected
 values with respect to these attributes.
 <p>For example, the following code excerpt sets the value of registry entry
-<i>MyName</i>
-in section <i>MySection</i> to <i>"Eugene"</i>.&nbsp; In particular, the
-<i>TFlags</i> argument, derived from the bit-wise OR of
-<i>eTruncate </i>and
-<i>eNoOverride</i>, specifies that (1) all leading and trailing blanks
-in the new value should be truncated, and (2) that the new value <b>cannot</b>
+<span class="ncbi_reg_var">MyName</span>
+in section <span class="ncbi_reg">MySection</span> to <span class="ncbi_value">"Eugene"</span>.  In particular, the
+<span class="ncbi_type">TFlags</span> argument, derived from the bit-wise OR of
+<span class="ncbi_var">eTruncate </span>and
+<span class="ncbi_var">eNoOverride</span>, specifies that (1) all leading and trailing blanks
+in the new value should be truncated, and (2) that the new value <em>cannot</em>
 be applied to override a previous value if one exists:
-<p><tt><font color="#005050">&nbsp;&nbsp; CNcbiRegistry reg(.....);</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp; .....................</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp; reg.Set("MySection", "MyName",
-" Eugene&nbsp;&nbsp; ",</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-CNcbiRegistry::eNoOverride | CNcbiRegistry::eTruncate);</font></tt>
-<p><font color="#000000">The </font><i>CNcbiRegistry </i><font color="#000000">class
+
+<blockquote>
+<pre class="ncbi_code">
+CNcbiRegistry reg(.....);
+...
+reg.Set("MySection", "MyName", " Eugene   ",
+        CNcbiRegistry::eNoOverride | CNcbiRegistry::eTruncate);
+</pre>
+</blockquote>
+
+<p>The <span class="ncbi_class">CNcbiRegistry</span> class
 constructor takes two arguments - an input stream to read the registry
 from (usually a file), and an optional
-<i>TFlags</i> argument, where the
+<span class="ncbi_type">TFlags</span> argument, where the
 latter can be used to specify that all of the values should be stored as
-<i>transient</i>
-rather than in the default mode, which is <i>persistent</i>:</font>
-<center>
-<p><tt><font color="#005050">CNcbiRegistry(CNcbiIstream&amp; is, TFlags
-flags = 0);</font></tt></center>
+<span class="ncbi_term">transient</span>
+rather than in the default mode, which is <span class="ncbi_term">persistent</span>:
+
+<blockquote>
+<pre class="ncbi_code">
+CNcbiRegistry(CNcbiIstream&amp; is, TFlags flags = 0);
+</pre>
+</blockquote>
 
 <p>Once the registry has been initialized by its constructor, it is also
 possible to load additional parameters from other file(s) using the
-<i>Read()
-</i>method:
-<center>
-<p><tt><font color="#005050">void Read(CNcbiIstream&amp; is, TFlags flags
-= 0);</font></tt></center>
+<span class="ncbi_func">Read()</span> method:
 
-<p>Valid flags for the <i>Read() </i>method include <font color="#000000"><i>eTransient
-</i>and<i>
-eNoOverride. </i></font>The default is for all&nbsp; values to be read
-in as <i>persistent</i>, with the capability of overriding any previously
-loaded value associated with the same name.&nbsp; Either or both of these
-defaults can be modified by specifying <font color="#000000"><i>eTransient,
-eNoOverride,
-</i>or (<i>eTransient | eNoOverride</i>) as the <i>flags</i>
-argument in the above expression.</font>
-<p>The <i>Write() </i>method takes as its sole argument, a destination
-stream to which only the <i>persistent</i> configuration parameters will
+<blockquote>
+<pre class="ncbi_code">
+void Read(CNcbiIstream&amp; is, TFlags flags = 0);
+</pre>
+</blockquote>
+
+<p>Valid flags for the <span class="ncbi_func">Read() </span>method include 
+<span class="ncbi_var">eTransient </span>and<span class="ncbi_var">eNoOverride</span>.
+The default is for all  values to be read
+in as <span class="ncbi_term">persistent</span>, with the capability of overriding any previously
+loaded value associated with the same name.  Either or both of these
+defaults can be modified by specifying <span class="ncbi_var">eTransient,
+eNoOverride</span>, or (<span class="ncbi_var">eTransient | eNoOverride</span>) as the <span class="ncbi_var">flags</span>
+argument in the above expression.
+<p>The <span class="ncbi_func">Write() </span>method takes as its sole argument, a destination
+stream to which only the <span class="ncbi_term">persistent</span> configuration parameters will
 be written.
 <p>Values can also be set directly inside your application, using:
-<center>
-<p><tt><font color="#005050">&nbsp;&nbsp;&nbsp; bool Set(const string&amp;
-section, const string&amp; name,</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-const string&amp; value, TFlags flags = 0);</font></tt></center>
+<blockquote>
+<pre class="ncbi_code">
+bool Set(const string&amp; section, const string&amp; name, const string&amp; value, TFlags flags = 0);
+</pre>
+</blockquote>
 
-<p>Here, valid flag values include <font color="#000000"><i>ePersistent,
-eNoOverride,</i> <i>eTruncate, </i>or any logical combination of these.&nbsp;
-If <i>eNoOverride</i> is set and there <i>is</i> a previously defined value
+<p>Here, valid flag values include <span class="ncbi_var">ePersistent,
+eNoOverride</span>, <span class="ncbi_var">eTruncate, </span> or any logical combination of these. 
+If <span class="ncbi_var">eNoOverride</span> is set and there is a previously defined value
 for this parameter, then the value is not reset, and the method returns
-<i>false.</i></font>
-<p><font color="#000000">The <i>Get()</i> method first searches the set
-of <i>transient</i> parameters for a parameter named <i>name</i>, in section
-<i>section</i>,
-and if this fails,&nbsp; continues by searching the set of <i>persistent</i>
-parameters. However, if the <i>ePersistent</i> flag is used, then only&nbsp;
-the set of <i>persistent</i> parameters will be searched. On success, <i>Get()
-</i>returns
-the stored value. On failure, the empty string is returned.</font>
-<center>
-<p><tt><font color="#005050">const string&amp; Get(const string&amp; section,
-const string&amp; name, TFlags flags = 0) const;</font></tt></center>
+<span class="ncbi_value">false</span>.
+<p>The <span class="ncbi_func">Get()</span> method first searches the set
+of <span class="ncbi_term">transient</span> parameters for a parameter named <span class="ncbi_var">name</span>, in section <span class="ncbi_var">section</span>,
+and if this fails,  continues by searching the set of <span class="ncbi_term">persistent</span>
+parameters. However, if the <span class="ncbi_var">ePersistent</span> flag is used, then only 
+the set of <span class="ncbi_term">persistent</span> parameters will be searched. On success, <span class="ncbi_func">Get()</span> returns the stored value. On failure, the empty string is returned.
 
-<h3>
-<a NAME="methods"></a></h3>
+<blockquote>
+<pre class="ncbi_code">
+const string&amp; Get(const string&amp; section, const string&amp; name, TFlags flags = 0) const;
+</pre>
+</blockquote>
 
-<h3>
-<font color="#000000">Additonal methods</font></h3>
+
+<a NAME="methods"></a>
+<h3>Additonal methods</h3>
+
 Four additional methods are defined in the interface.
-<p><tt><font color="#005050">&nbsp;bool Empty(void) const;</font></tt>
-<br><tt><font color="#005050">&nbsp;void Clear(void);</font></tt>
-<br><tt><font color="#005050">&nbsp;void EnumerateSections(list&lt;string>*
-sections) const;</font></tt>
-<br><tt><font color="#005050">&nbsp;void EnumerateEntries(const string&amp;
-section,&nbsp; list&lt;string>* entries) const;</font></tt>
-<p><i>Empty() </i>returns<i> true </i>if the registry is empty. <i>Clear()
-</i>empties
-out the registry, discarding all stored parameters. <i>EnumerateSections()&nbsp;</i>
-writes all registry section names to <i>sections.&nbsp;</i> <i>EnumerateEntries()&nbsp;</i>
-writes the list of parameter names in <i>section </i>to<i> entries.</i>
-<p><a href="argdescr.html"><i>previous</i>&nbsp;</a>&nbsp; <i><a href="../index.html">up</a></i>&nbsp;&nbsp;
 
-<i><a href="diag.html">next</a></i>
+<blockquote>
+<pre class="ncbi_code">
+bool Empty(void) const;
+void Clear(void);
+void EnumerateSections(list&lt;string>*sections) const;
+void EnumerateEntries(const string&amp; section,  list&lt;string>* entries) const;
+</pre>
+</blockquote>
 
+<p><span class="ncbi_func">Empty()</span> returns <span class="ncbi_value">true</span>
+if the registry is empty. <span class="ncbi_func">Clear()</span> empties
+out the registry, discarding all stored parameters. <span class="ncbi_func">EnumerateSections() </span>
+writes all registry section names to sections.. <span class="ncbi_func">EnumerateEntries()</span>
+writes the list of parameter names in section to entries.
+
+<p><a href="argdescr.html"><i>previous</i>&nbsp;</a>&nbsp; <i><a href="../index.html">up</a></i><!--NCBI_MARK-->&nbsp;&nbsp;
+
+<i><a href="diag.html">next</a></i><!--NCBI_MARK-->
 
 <!--#include virtual="../ssi/navlinks.shtml" -->
 
@@ -254,9 +258,9 @@ writes the list of parameter names in <i>section </i>to<i> entries.</i>
 <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
-<td><!-- <td align=center><i>$Revision$</i></td> --></td>
+<td><!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> --></td>
 
-<td ALIGN=RIGHT><i>$Date$</i></td>
+<td ALIGN=RIGHT><span class="ncbi_cvs_date">$Date$</span></td>
 </tr>
 </table>
 

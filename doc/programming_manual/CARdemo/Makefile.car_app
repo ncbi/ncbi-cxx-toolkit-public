@@ -3,6 +3,7 @@
 <head>
   <title> Makefile.car_app. </title>
 </head>
+
 <body BGCOLOR=white>
 <pre><font color = "red">
 # Makefile:  /home/zimmerma/car/Makefile.car_app
@@ -44,3 +45,7 @@ include $(builddir)/Makefile.app
 
 <font color = red>
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE  ###
+</font></pre>
+
+</body>
+</html>

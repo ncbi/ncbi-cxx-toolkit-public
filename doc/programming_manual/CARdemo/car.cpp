@@ -4,8 +4,10 @@
     <title>car.cpp</title>
   </head>
 
-  <body BGCOLOR="#FFFFFF">
-  <pre><font color = "red">// File name: car.cpp
+<body BGCOLOR="#FFFFFF">
+
+<pre>
+<font color = "red">// File name: car.cpp
 // Description: Implement the CCarAttr class
 <font color = "green">
 #include "car.hpp"
@@ -47,3 +49,7 @@ CCarAttr::CCarAttr(void)
 static CCarAttr s_InitCarAttr;
 <font color=blue>
 END_NCBI_SCOPE
+</font></pre>
+
+</body>
+</html>

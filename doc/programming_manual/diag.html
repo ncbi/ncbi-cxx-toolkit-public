@@ -30,16 +30,16 @@
 <a href="#trace">The _TRACE macro</a></li>
 
 <li>
-<a href="#example">Example of using the <i>CNcbiDiag</i> class</a></li>
+<a href="#example">Example of using the CNcbiDiag class</a></li>
 </ul>
 The
-<i><a href="../docxx/CNcbiDiag.html">CNcbiDiag </a></i>class implements
+<a href="../docxx/CNcbiDiag.html" class="ncbi_class">CNcbiDiag </a> class implements
 the functionality of an output stream enhanced with error posting mechanisms
-similar to those found in the NCBI C Toolkit. A <i>CNcbiDiag </i>object
+similar to those found in the NCBI C Toolkit. A <span class="ncbi_class">CNcbiDiag </span>object
 has the look and feel of an output stream; its member functions and friends
-include output operators and format manipulators. A <i>CNcbiDiag</i> object
+include output operators and format manipulators. A <span class="ncbi_class">CNcbiDiag</span> object
 is not itself a stream, but serves as an interface to a stream which allows
-multiple threads to write to the same output. Each instance of <i>CNcbiDiag</i>
+multiple threads to write to the same output. Each instance of <span class="ncbi_class">CNcbiDiag</span>
 includes the following private data members:
 <ul>
 <li>
@@ -51,18 +51,19 @@ a severity level</li>
 <li>
 a set of post flags</li>
 </ul>
-Limiting each instance of <i>CNcbiDiag</i> to the storage and handling
+Limiting each instance of <span class="ncbi_class">CNcbiDiag</span> to the storage and handling
 of a single message ensures that multiple threads writing to the same stream
 will not have interleaving message texts.
+<p><br>
 
 <a NAME="severity"></a>
 <h3>Severity levels</h3>
-Each <i>CNcbiDiag</i> instance has its own (<i><a href="../lxr/ident?i=EDiagSev">EDiagSev</a></i>)
+Each <span class="ncbi_class">CNcbiDiag</span> instance has its own (<a href="../lxr/ident?i=EDiagSev" class="ncbi_class">EDiagSev</a>)
 severity level, which is compared to a global severity threshold to determine
 whether or not its message should be posted. Six levels of severity are
-defined by the <i>EDiagSev</i> enumeration:
+defined by the <span class="ncbi_type">EDiagSev</span> enumeration:
 <blockquote>
-<pre>enum EDiagSev {
+<pre class="ncbi_code">enum EDiagSev {
     eDiag_Info = 0,
     eDiag_Warning,
     eDiag_Error,
@@ -73,35 +74,36 @@ defined by the <i>EDiagSev</i> enumeration:
 </blockquote>
 The default is to post only those messages whose severity level exceeds
 the
-<i>eDiag_Warning</i> level (i.e. <i>eDiag_Error, eDiag_Critical</i>,
-and <i>eDiag_Fatal</i>). The global severity threshold for posting messages
-can be reset using <i><a href="../lxr/ident?i=SetDiagPostLevel">SetDiagPostLevel</a>
-(EDiagSev postSev)</i>. A parallel function, <i><a href="../lxr/ident?i=SetDiagDieLevel">SetDiagDieLevel</a>
-(EDiagSev dieSev)</i>, defines the severity level at which execution will
+<span class="ncbi_var">eDiag_Warning</span> level (i.e. <span class="ncbi_var">eDiag_Error, eDiag_Critical</span>,
+and <span class="ncbi_var">eDiag_Fatal</span>). The global severity threshold for posting messages
+can be reset using <span class="ncbi_func"><a href="../lxr/ident?i=SetDiagPostLevel">SetDiagPostLevel</a>
+(EDiagSev postSev)</span>. A parallel function, <span class="ncbi_func"><a href="../lxr/ident?i=SetDiagDieLevel">SetDiagDieLevel</a>
+(EDiagSev dieSev)</span>, defines the severity level at which execution will
 abort.
 <p>Tracing is considered to be a special, debug-oriented feature, and therefore
-messages with severity level <i>eDiag_Trace</i> are not affected by these
-global <i>post/die</i> levels. Instead, <i><a href="../lxr/ident?i=SetDiagTrace">SetDiagTrace</a>
-(EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on
+messages with severity level <span class="ncbi_var">eDiag_Trace</span> are not affected by these
+global <span class="ncbi_term">post/die</span> levels. Instead, <span class="ncbi_func"><a href="../lxr/ident?i=SetDiagTrace">SetDiagTrace</a>
+(EDiagTrace enable, EDiagTrace default)</span> is used to turn tracing on
 or off. By default, the tracing is off -- unless you assign the environment
-variable $DIAG_TRACE to an arbitrary non-empty string or, alternatively,
-define a DIAG_TRACE entry in the [DEBUG] section of your <a href="registry.html">registry</a>
+variable <span class="ncbi_env">$DIAG_TRACE</span> to an arbitrary non-empty string or, alternatively,
+define a <span class="ncbi_reg_var">DIAG_TRACE</span> entry in the <span class="ncbi_reg">[DEBUG]</span> section of your <a href="registry.html">registry</a>
 file.
-<p><a NAME="sevman"></a>The <i>CNcbiDiag</i> class also has class-specific
-<i>manipulators</i> to control the message severity level. These can be
-invoked as in the following examples on diagnostic stream <i>diag</i>:
-<blockquote><pre>diag &lt;&lt; Info;     // set severity level to <i>eDiag_Info</i>
-diag &lt;&lt; Warning;  // set severity level to <i>eDiag_Warning</i>
-diag &lt;&lt; Error;    // set severity level to <i>eDiag_Error</i> [default]
-diag &lt;&lt; Fatal;    // set severity level to <i>eDiag_Fatal</i>
-diag &lt;&lt; Trace;    // set severity level to <i>eDiag_Trace</i>
+<p><a NAME="sevman"></a>The <span class="ncbi_class">CNcbiDiag</span> class also has class-specific
+<span class="ncbi_term">manipulators</span> to control the message severity level. These can be
+invoked as in the following examples on diagnostic stream <span class="ncbi_var">diag</span>:
+<blockquote><pre class="ncbi_code">diag &lt;&lt; Info;     // set severity level to <span class="ncbi_var">eDiag_Info</span>
+diag &lt;&lt; Warning;  // set severity level to <span class="ncbi_var">eDiag_Warning</span>
+diag &lt;&lt; Error;    // set severity level to <span class="ncbi_var">eDiag_Error</span> [default]
+diag &lt;&lt; Fatal;    // set severity level to <span class="ncbi_var">eDiag_Fatal</span>
+diag &lt;&lt; Trace;    // set severity level to <span class="ncbi_var">eDiag_Trace</span>
 </pre></blockquote>
+<p><br>
 
 <a NAME="PostFlags"></a>
 <h3>Post Flags</h3>
 The post flags define additional information that will appear along with
 the message body. The standard format of a message is:
-<blockquote><pre>"&lt;file&gt;", line &lt;line&gt;: &lt;severity&gt;: (&lt;err_code&gt;.&lt;err_subcode&gt;)
+<blockquote><pre class="ncbi_code">"&lt;file&gt;", line &lt;line&gt;: &lt;severity&gt;: (&lt;err_code&gt;.&lt;err_subcode&gt;)
 [&lt;prefix1&gt;::&lt;prefix2&gt;::&lt;prefixN&gt;] &lt;message&gt;\n
 &lt;err_code_message\n
 &lt;err_code_explanation&gt;
@@ -109,10 +111,9 @@ the message body. The standard format of a message is:
 
 where the each field are displayed (or not) depending on the post flags
 <a href="../lxr/ident?i=EDiagPostFlag">EDiagPostFlag
-</a>associated with the <i>CNcbiDiag</i>:
-<font size="-1">
+</a>associated with the <span class="ncbi_class">CNcbiDiag</span>:
 <blockquote>
-<pre>enum EDiagPostFlag {
+<pre class="ncbi_code">enum EDiagPostFlag {
     eDPF_File               = 0x1,   // set by default #if _DEBUG; else not set
     eDPF_LongFilename       = 0x2,   // set by default #if _DEBUG; else not set
     eDPF_Line               = 0x4,   // set by default #if _DEBUG; else not set
@@ -137,29 +138,25 @@ where the each field are displayed (or not) depending on the post flags
 };</pre>
 </blockquote>
 
-</font>
-
 The default message format displays only the severity level and the message
 body. This can be overridden inside the constructor for a specific instance
-of <i>CNcbiDiag</i>, or globally, using <i><a href="../lxr/ident?i=SetDiagPostFlag">SetDiagPostFlag</a>(EDiagPostFlag
-flag)</i> on a selected flag.
+of <span class="ncbi_class">CNcbiDiag</span>, or globally, using 
+<span class="ncbi_func"><a href="../lxr/ident?i=SetDiagPostFlag">SetDiagPostFlag</a>(EDiagPostFlagflag)</span> on a selected flag.
+<p><br>
 
 <a NAME="setStream"></a>
 <h3>Defining the output stream</h3>
-All <i>CNcbiDiag</i> objects are associated with a single globally defined
+All <span class="ncbi_class">CNcbiDiag</span> objects are associated with a single globally defined
 object, which often writes the messages to an output stream. The default
-is to post messages to <i>cerr</i>, but the stream destination can be reset
+is to post messages to <span class="ncbi_var">cerr</span>, but the stream destination can be reset
 at any time using:
 <blockquote>
-   <i><a href="../lxr/ident?i=SetDiagStream">SetDiagStream</a>
-(CNcbiOstream* os, bool quick_flush,
-<a href="../lxr/ident?i=FDiagCleanup">FDiagCleanup</a>
-cleanup, void* cleanup_data)</i>
+   <span class="ncbi_func"><a href="../lxr/ident?i=SetDiagStream">SetDiagStream</a>(CNcbiOstream* os, bool quick_flush, <a href="../lxr/ident?i=FDiagCleanup">FDiagCleanup</a>cleanup, void* cleanup_data)</span>
 </blockquote>
 
 <p>This function can be called numerous times, thus allowing different
 sections of the executable to write to different files. At any given time
-however, all <i>CNcbiDiag</i> objects will be associated with the same
+however, all <span class="ncbi_class">CNcbiDiag</span> objects will be associated with the same
 global output stream. Because the messages are completely buffered, each
 message will appear on whatever stream is active at the time the message
 actually completes.
@@ -172,77 +169,78 @@ which does not necessarily write the messages to a standard C++ output
 stream.  (To preserve compatibility with old code, SetDiagHandler also
 continues to accept raw callback functions of type
 <a href="../lxr/ident?i=FDiagHandler">FDiagHandler</a>.)
+<p><br>
+
 
 <a NAME="buffering"></a>
 <h3>The message buffer</h3>
-The <i>CNcbiDiag</i> message buffer is initialized when the class is first
+The <span class="ncbi_class">CNcbiDiag</span> message buffer is initialized when the class is first
 instantiated. Additional information can then be appended to the message
 using the overloaded stream operator
-<i>&lt;&lt;</i>. Messages can then
-be terminated explicitly using <i>CNcbiDiag's</i> stream manipulator <i>Endm</i>,
-or implicitly, when the <i>CNcbiDiag</i> object exits scope.
+<span class="ncbi_ccode">&lt;&lt;</span>. Messages can then
+be terminated explicitly using CNcbiDiag's stream manipulator <span class="ncbi_class">Endm</span>,
+or implicitly, when the <span class="ncbi_class">CNcbiDiag</span> object exits scope.
 <p>Implicit message termination also occurs as a side effect of applying
 one of the
 <a href="#sevman">severity level manipulators</a>. Whenever
 the severity level is changed,
-<i>CNcbiDiag</i> also automatically executes
-the following two <i>manipulators</i>:
+<span class="ncbi_class">CNcbiDiag</span> also automatically executes
+the following two <span class="ncbi_term">manipulators</span>:
 <ul>
 <li>
-<i>Endm</i> -- the message is complete and to be flushed</li>
+<span class="ncbi_class">Endm</span> -- the message is complete and to be flushed</li>
 
 <li>
-<i>Reset</i> -- empty the contents of current message buffer</li>
+<span class="ncbi_class">Reset</span> -- empty the contents of current message buffer</li>
 </ul>
-When the message controlled by an instance of <i>CNcbiDiag</i> is complete,
-<i>CNcbiDiag</i> calls a global callback function (of type <i><a href="../lxr/ident?i=FDiagHandler">FDiagHandler</a></i>)
+When the message controlled by an instance of <span class="ncbi_class">CNcbiDiag</span> is complete,
+<span class="ncbi_class">CNcbiDiag</span> calls a global callback function (of type <a href="../lxr/ident?i=FDiagHandler" class="ncbi_type">FDiagHandler</a>)
 and passes the message (along with its severity level) as the function
 arguments. The default callback function posts errors to the currently
 designated output stream, with the action (continue or abort) determined
 by the severity level of the message.
-<p>
-
+<p><br>
 
 
 <a NAME="errcodes"></a>
 <h3>Error codes and a message file</h3>
 
-The <i>CNcbiDiag</i> class is capable of posting messages with error codes using
-<i><a href="../lxr/ident?i=ErrCode">ErrCode</a> manipulator</i>.
+The <span class="ncbi_class">CNcbiDiag</span> class is capable of posting messages with error codes using
+<a href="../lxr/ident?i=ErrCode">ErrCode</a> <span class="ncbi_term">manipulator</span>.
 For example:
-<blockquote><pre>
+<blockquote><pre class="ncbi_code">
 diag &lt;&lt; ErrCode(2,1);  // set error code 2, subcode 1
 </pre></blockquote>
 
 Error codes and subcodes are posted to an output stream only if applicable 
 <a href="#PostFlags">post flags</a> were set. 
 <br>
-In addition to error codes, <i>CNcbiDiag</i> can also post their text explanations.
-It uses <i><a href="../lxr/ident?i=CDiagErrCodeInfo">CDiagErrCodeInfo</a></i> class to find an error message, which
+In addition to error codes, <span class="ncbi_class">CNcbiDiag</span> can also post their text explanations.
+It uses <a href="../lxr/ident?i=CDiagErrCodeInfo" class="ncbi_class">CDiagErrCodeInfo</a> class to find an error message, which
 corresponds to a given error code/subcode. Such descriptions could be
 specified directly in the program code or placed in a separate message file.
 It is even possible to use several such files simultaneously.
-<i>CDiagErrCodeInfo</i> can also read error descriptions from any input
+<span class="ncbi_class">CDiagErrCodeInfo</span> can also read error descriptions from any input
 stream(s), not necessarily files.
 
 
 <h4>Preparing error message file</h4>
 
 Error message file is a plain ASCII text. We would suggest using
-<var>.msg</var> extension, but it is not mandatory. For example,
-the message file for an application named <i>SomeApp</i> might be called
-<i>SomeApp.msg</i>.
+<span class="ncbi_file">.msg</span> extension, but it is not mandatory. For example,
+the message file for an application named <span class="ncbi_app">SomeApp</span> might be called
+<span class="ncbi_file">SomeApp.msg</span>.
 <br>
-The message file must contain a  line with the keyword <i>MODULE</i> in it,
-followed by the name of the module (in our example <i>SomeApp</i>).
+The message file must contain a  line with the keyword <span class="ncbi_value">MODULE</span> in it,
+followed by the name of the module (in our example <span class="ncbi_value">SomeApp</span>).
 This line must be placed in the beginning of the file, before any other declarations.
-Lines with symbol <var>#</var> in the first position are treated as comments
+Lines with symbol <span class="ncbi_ccode">#</span> in the first position are treated as comments
 and ignored.
 
 <br>
 Here is an example of the message file:
 
-<blockquote><pre>
+<blockquote><pre class="ncbi_code">
 # This is a message file for application "SomeApp"
 
 MODULE SomeApp
@@ -270,63 +268,63 @@ $^   Param, 20
 $^   Range, 3
 </pre></blockquote>
 
-Lines beginning with <var>$$</var> define a top-level error code.
-Similarly, lines beginning with <var>$^</var> define
+Lines beginning with <span class="ncbi_keyword">$$</span> define a top-level error code.
+Similarly, lines beginning with <span class="ncbi_keyword">$^</span> define
 subcodes of the top-level error code. 
 In the above example
-<var>Open</var> is a subcode of <var>File</var>
+<span class="ncbi_value">Open</span> is a subcode of <span class="ncbi_value">File</span>
 top-level error, which means the error with code 2 and subcode 1.
 <br>
 Both types of lines have similar structure:
 <br>
-<blockquote><pre>
+<blockquote><pre class="ncbi_code">
 $$/$^ &lt;mnemonic_name&gt;, &lt;code&gt; [, &lt;severity&gt; ] [: &lt;message&gt; ] \n
 [ &lt;explanation&gt; ]
 </pre></blockquote>
 where
 
 <ul>
-<li><b>mnemonic_name</b> (<i>required</i>)<br>
+<li><span class="ncbi_var">mnemonic_name</span> (<i>required</i><!--NCBI_MARK-->)<br>
 Internal name of the error code/subcode. This is used as a part of an error name
 in a program code - so, it should also be a correct  C/C++ identifier.
 </li>
 
-<li><b>code</b> (<i>required</i>)<br>
+<li><span class="ncbi_var">code</span> (<i>required</i><!--NCBI_MARK-->)<br>
 Integer identifier of the error.
 </li>
 
-<li><b>severity</b> (<i>optional</i>)<br>
+<li><span class="ncbi_var">severity</span> (<i>optional</i><!--NCBI_MARK-->)<br>
 This may be supplied to specify the severity level of the
 error. It may be specified as a severity level string
-(Valid values are <i>Info, Warning, Error, Critical, Fatal, Trace</i>) or as
-an integer in the range from 0 (eDiag_Info) to 5 (eDiag_Trace).
+(Valid values are <span class="ncbi_value">Info, Warning, Error, Critical, Fatal, Trace</span>) or as
+an integer in the range from 0 (<span class="ncbi_var">eDiag_Info</span>) to 5 (<span class="ncbi_var">eDiag_Trace</span>).
 While the latter is acceptable, it is way more readable to use string
 values instead.
 <br>
 If the severity level was not specified or could not be recognized, it is ignored,
 or inherited from a higher level (the severity of a subcode becomes the same
 as the severity of a top-level error code, which contains this subcode).
-As long as diagnostic <i>eDPF_ErrCodeUseSeverity</i> flag is set,
+As long as diagnostic <span class="ncbi_var">eDPF_ErrCodeUseSeverity</span> flag is set,
 the severity level specified in the message file overrides the one
 specified in a program, which allows for runtime customization.
-In the above example, <i>Critical</i> severity level will be used for
-all <var>File</var> errors, except <var>Read</var> subcode,
-which would have <i>Error</i> severity level.
+In the above example, <span class="ncbi_value">Critical</span> severity level will be used for
+all <span class="ncbi_value">File</span> errors, except <span class="ncbi_value">Read</span> subcode,
+which would have <span class="ncbi_value">Error</span> severity level.
 </li>
 
-<li><b>message</b> (<i>optional</i>)<br>
+<li><span class="ncbi_var">message</span> (<i>optional</i><!--NCBI_MARK-->)<br>
 Short description of the error. It must be a single-line message.
-As long as diagnostic <i>eDPF_ErrCodeMessage</i> flag is set,
+As long as diagnostic <span class="ncbi_var">eDPF_ErrCodeMessage</span> flag is set,
 this message is posted as a part of the diagnostic output.
 </li>
 
-<li><b>explanation</b> (<i>optional</i>)<br>
+<li><span class="ncbi_var">explanation</span> (<i>optional</i><!--NCBI_MARK-->)<br>
 Following a top-level error code or a subcode definition string,
 it may be one or several lines of an explanation text.
 Its purpose is to provide additional information, which could be
 more detailed description of the error, or possible reasons of the problem.
 This text is posted in a diagnostic channel only if
-<i>eDPF_ErrCodeExplanaton</i> flag was set.
+<span class="ncbi_var">eDPF_ErrCodeExplanaton</span> flag was set.
 </li>
 </ul>
 
@@ -334,10 +332,10 @@ This text is posted in a diagnostic channel only if
 <h4>Using error codes in the program</h4>
 
 Taking a message file as an input,
-script <a href="../lxr/source/scripts/msg2hpp.sh">msg2hpp.sh</a> could generate
+script <a href="../lxr/source/scripts/msg2hpp.sh"  class="ncbi_script">msg2hpp.sh</a> could generate
 a C/C++ header file with macro definitions of error codes.
 Based on our example, this script would generate the following:
-<blockquote><pre>
+<blockquote><pre class="ncbi_code">
 #ifndef __MODULE_SomeApp__
 #define __MODULE_SomeApp__
 
@@ -355,24 +353,23 @@ Based on our example, this script would generate the following:
 
 Having included this file in an application, it is possible to
 use mnemonic error names:
-<blockquote><pre>
+<blockquote><pre class="ncbi_code">
 diag &lt;&lt; ErrCode(ERR_File_Open);
 </pre></blockquote>
 instead of their numeric representations:
-<blockquote><pre>
+<blockquote><pre class="ncbi_code">
 diag &lt;&lt; ErrCode(2,1);
 </pre></blockquote>
-
-
+<p><br>
 
 <a NAME="callback"></a>
 <h3>Custom handlers: CDiagHandler</h3>
 The user can install his own handler (of type
-<i><a href="../lxr/ident?i=CDiagHandler">CDiagHandler</a></i>,) using
-<i><a href="../lxr/ident?i=SetDiagHandler">SetDiagHandler()</a></i>.
+<a href="../lxr/ident?i=CDiagHandler" class="ncbi_class">CDiagHandler</a>,) using
+<a href="../lxr/ident?i=SetDiagHandler" class="ncbi_func">SetDiagHandler()</a>.
 CDiagHandler is a simple abstract class:
 <blockquote>
-<pre>class CDiagHandler
+<pre class="ncbi_code">class CDiagHandler
 {
 public:
     virtual ~CDiagHandler(void) {}
@@ -380,88 +377,93 @@ public:
 };
 </pre>
 </blockquote>
-where <i><a href="../lxr/ident?i=SDiagMessage">SDiagMessage</a></i>
-is a simple struct defined in <i>ncbidiag.hpp</i> whose data members' values
-are obtained from the <i>CNcbiDiag</i> object. The transfer of data values
-occurs at the time that <i>Post</i> is invoked. See also the section of
-the Reference Manual on <i><a href="../libs/err_msg.html#ref_Message">Message
-posting</a></i> for a more technical discussion.
+where <a href="../lxr/ident?i=SDiagMessage" class="ncbi_type">SDiagMessage</a>
+is a simple struct defined in <span class="ncbi_file">ncbidiag.hpp</span> whose data members' values
+are obtained from the <span class="ncbi_class">CNcbiDiag</span> object. The transfer of data values
+occurs at the time that <span class="ncbi_func">Post</span> is invoked. See also the section of
+the Reference Manual on <a href="../libs/err_msg.html#ref_Message">Message
+posting</a> for a more technical discussion.
+<p><br>
+
 
 <a NAME="errpost"></a>
 <h3>The ERR_POST macro</h3>
-An <i>ERR_POST(message)</i> macro is also available for routine error posting.
-This macro implicitly creates a temporary <i>CNcbiDiag</i> object and puts
-the passed "message" into it with a default severity of <i>eDiag_Error</i>.
+An <span class="ncbi_macro">ERR_POST(message)</span> macro is also available for routine error posting.
+This macro implicitly creates a temporary <span class="ncbi_class">CNcbiDiag</span> object and puts
+the passed "message" into it with a default severity of <span class="ncbi_var">eDiag_Error</span>.
 A <a href="#sevman">severity level manipulator</a> can be applied if desired,
 to modify the message's severity level. For example:
-<blockquote><pre>long lll = 345;
+<blockquote><pre class="ncbi_code">long lll = 345;
 ERR_POST("My ERR_POST message, print long: " &lt;&lt; lll);</pre>
 </blockquote>
 would write to the diagnostic stream something like:
-<blockquote><pre>"somefile.cpp", line 111: Error:  My ERR_POST message, print long: 345</pre>
+<blockquote><pre class="ncbi_output">"somefile.cpp", line 111: Error:  My ERR_POST message, print long: 345</pre>
 </blockquote>
 while:
-<blockquote><pre>double ddd = 123.345;
+<blockquote><pre class="ncbi_code">double ddd = 123.345;
 ERR_POST(Warning &lt;&lt; "...print double: " &lt;&lt; ddd);</pre>
 </blockquote>
 would write to the diagnostic stream something like:
-<blockquote><pre>"somefile.cpp", line 222: Warning:  ...print double: 123.345</pre>
+<blockquote><pre class="ncbi_output">"somefile.cpp", line 222: Warning:  ...print double: 123.345</pre>
 </blockquote>
+<p><br>
+
 
 <a NAME="trace"></a>
 <h3>The _TRACE macro</h3>
-The <i>_TRACE(message)</i> macro is a debugging tool that allows the user
+The <span class="ncbi_macro">_TRACE(message)</span> macro is a debugging tool that allows the user
 to insert trace statements that will only be posted if the code was <a href="../libs/err_msg.html#ref_Assert">compiled
-in <i>debug mode</i> </a>, and provided that the tracing has been turned
-on. If <i>DIAG_TRACE</i> is defined as an enviroment variable, or as an
-entry in the [DEBUG] section of your configuration file (<i>*.ini</i>),
-the initial state of tracing is <b><i>on</i></b>. By default, if no such
+in debug mode</a>, and provided that the tracing has been turned
+on. If <span class="ncbi_env">DIAG_TRACE</span> is defined as an enviroment variable, or as an
+entry in the [DEBUG] section of your configuration file (<span class="ncbi_file">*.ini</span>),
+the initial state of tracing is <span class="ncbi_value">on</span>. By default, if no such
 variable or registry entry is defined, tracing is
-<b><i>off</i></b>. <i><a href="../lxr/ident?i=SetDiagTrace">SetDiagTrace</a>
-(EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on/off.
-<p> Just like <i>ERR_POST</i>, the <i>_TRACE</i> macro takes a message,
+<span class="ncbi_value">off</span>. <span class="ncbi_func"><a href="../lxr/ident?i=SetDiagTrace">SetDiagTrace</a>
+(EDiagTrace enable, EDiagTrace default)</span> is used to turn tracing on/off.
+<p> Just like <span class="ncbi_macro">ERR_POST</span>, the <span class="ncbi_macro">_TRACE</span> macro takes a message,
 and the message will be posted only if tracing has been enabled. For example:
 <blockquote>
-<pre>SetDiagTrace(eDT_Disable);
+<pre class="ncbi_code">SetDiagTrace(eDT_Disable);
 _TRACE("Testing the _TRACE macro");
 SetDiagTrace(eDT_Enable);
 _TRACE("Testing the _TRACE macro AGAIN");</pre>
 </blockquote>
 
 Here, only the second trace message will be posted, as tracing is disabled
-when the first <i>_TRACE()</i> macro call is executed. <a NAME="example"></a>
-<h4>Example usage of the <i>CNcbiDiag</i> class</h4>
-<i><b>NOTE:</b> Normally, one should use ERR_POST() and _TRACE() macro
+when the first <span class="ncbi_macro">_TRACE()</span> macro call is executed. <a NAME="example"></a>
+<h4>Example usage of the <span class="ncbi_class">CNcbiDiag</span> class</h4>
+<span class="ncbi_note">NOTE:</span> Normally, one should use ERR_POST() and _TRACE() macro
 to post messages, and regulate the severity level by using
-<a href="#sevman">severity
-level manipulators</a>, like:</i>
-<blockquote><pre><i>ERR_POST(Info &lt;&lt; "A notice" &lt;&lt; "Fooo");
-ERR_POST(Critical &lt;&lt; "Some critical error");</i>
+<a href="#sevman">severity level manipulators</a>, like:
+
+<blockquote><pre class="ncbi_code">ERR_POST(Info &lt;&lt; "A notice" &lt;&lt; "Fooo");
+ERR_POST(Critical &lt;&lt; "Some critical error");
 </pre></blockquote>
-Examples in <i><a href="diag_cpp.html">diag.cpp</a></i> demonstrate the
-features described above. <i>CTestApp::Run()</i> begins by testing the
-<i>ERR_POST</i> and <i>_TRACE</i> macros. Initially, tracing is enabled
-(from the registry file), so the first <i>_TRACE</i> message is posted.
-Tracing is then explicitly disabled, so the second <i>_TRACE</i> message
-is <i>not</i> posted.
+
+Examples in <a href="diag_cpp.html" class="ncbi_file">diag.cpp</a> demonstrate the
+features described above. <span class="ncbi_func">CTestApp::Run()</span> begins by testing the
+<span class="ncbi_macro">ERR_POST</span> and <span class="ncbi_macro">_TRACE</span> macros. Initially, tracing is enabled
+(from the registry file), so the first <span class="ncbi_macro">_TRACE</span> message is posted.
+Tracing is then explicitly disabled, so the second <span class="ncbi_macro">_TRACE</span> message
+is <em>not</em> posted.
 <p>Next, the global severity level for posting messages is set to the lowest
-level (<i>eDiag_Info</i>) so that all but the trace messages will be visible.
-Trace messages are still disabled by the explicit call to <i>SetDiagTrace()</i>.
+level (<span class="ncbi_var">eDiag_Info</span>) so that all but the trace messages will be visible.
+Trace messages are still disabled by the explicit call to <span class="ncbi_func">SetDiagTrace()</span>.
 Five instances of the
-<i>CNcbiDiag</i> class are then created, each with
+<span class="ncbi_class">CNcbiDiag</span> class are then created, each with
 an associated file name, line number, severity level, and enumerated value
-for the post flags. A single message, <i>Msg</i> will be posted on all
+for the post flags. A single message, <span class="ncbi_var">Msg</span> will be posted on all
 of the diagnostic streams.
-<p><i>myHandler()</i> is then installed to replace the default message
+<p><span class="ncbi_func">myHandler()</span> is then installed to replace the default message
 handler. The last two messages, which are created after the new handler
-has been installed, are handled by <i>myHandler()</i>. The first of these
+has been installed, are handled by <span class="ncbi_func">myHandler()</span>. The first of these
 is a trace message however, and because tracing is now disabled, this message
 will not be made visible. All of the messages which do not explicitly use
-the <i>Endm</i> manipulator are automatically terminated when <i>Run()</i>
+the <span class="ncbi_class">Endm</span> manipulator are automatically terminated when <span class="ncbi_func">Run()</span>
 exits.
-<p>Output generated by <i>diag.cpp</i>:
+<p>Output generated by <span class="ncbi_file">diag.cpp</span>:
 <blockquote>
-<pre>"/home/zimmerma/internal/c++/src/Demos/DiagStream/diag.cpp",
+<pre class="ncbi_output">"/home/zimmerma/internal/c++/src/Demos/DiagStream/diag.cpp",
    line 23: Error: My ERR_POST message, print long: 345
 "/home/zimmerma/internal/c++/src/Demos/DiagStream/diag.cpp",
    line 26: Warning: ...print double: 123.345
@@ -473,9 +475,9 @@ exits.
 Installed Handler "diag.cpp", line 45: Critical: This is a test message</pre>
 </blockquote>
 
-<i><a href="registry.html">previous</a></i>
-<i><a href="../index.html">up</a></i>
-<i><a href="exceptions.html">next</a></i>
+<i><a href="registry.html">previous</a></i><!--NCBI_MARK-->
+<i><a href="../index.html">up</a></i><!--NCBI_MARK-->
+<i><a href="exceptions.html">next</a></i><!--NCBI_MARK-->
 
 <!--#include virtual="../ssi/navlinks.shtml" -->
 <!--#include virtual="../ssi/footer.shtml" -->

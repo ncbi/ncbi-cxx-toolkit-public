@@ -6,74 +6,71 @@
 Working with the serializable object classes</h1>
 
 <ul>
-<li>
-<a href="#intro">Introduction</a></li>
-
-<li>
-<a href="#locate">Locating and browsing serializable objects in the C++
+<li><a href="#intro">Introduction</a></li>
+<li><a href="#locate">Locating and browsing serializable objects in the C++
 Toolkit</a></li>
-
-<li>
-<a href="#base"><i>Base classes</i> and <i>user classes</i></a></li>
-
-<li>
-<a href="#methods">Adding methods to the <i>user classes</i></a></li>
+<li><a href="#base"><span class="ncbi_term">Base classes</span> and <span class="ncbi_term">user classes</span></a></li>
+<li><a href="#methods">Adding methods to the <span class="ncbi_term">user classes</span></a></li>
 </ul>
 
-<h3>
-<a NAME="intro"></a>Introduction</h3>
+<p><br>
+
+<a NAME="intro"></a>
+<h3>Introduction</h3>
+
 All of the ASN.1 data types defined in the C Toolkit have been re-implemented
 in the C++ Toolkit as serializable objects. Header files for these classes
-can be found in the <i><a href="../lxr/source/include/objects/">include/objects</a></i>
-directories, and their implementations are located in the <i><a href="../lxr/source/src/objects/">src/objects</a></i>
+can be found in the <a href="../lxr/source/include/objects/" class="ncbi_dir">include/objects</a>
+directories, and their implementations are located in the <a href="../lxr/source/src/objects/" class="ncbi_dir">src/objects</a>
 directories.&nbsp; and
 <p>The implementation of these classes as serializable objects has a number
-of implications. It must be possible to use expressions like: <i>instream
->> myObject </i>and <i>outstream &lt;&lt; myObject,&nbsp;</i> where specializations
-are entailed for the <i>serial format</i> of the iostreams (ASN.1, XML,
+of implications. It must be possible to use expressions like: <span class="ncbi_ccode">instream
+>> myObject</span> and <span class="ncbi_ccode">outstream &lt;&lt; myObject,&nbsp;</span> where specializations
+are entailed for the <span class="ncbi_term">serial format</span> of the iostreams (ASN.1, XML,
 etc.) , as well as for the internal structure of the object.&nbsp; The
-C++ Toolkit deploys several <a href="objstream.html"><i>object stream</i>
+C++ Toolkit deploys several <a href="objstream.html">object stream
 classes</a> that specialize in various formats, and which know how to access
-and apply the <i><a href="typeinfo.html">type information </a></i>that
+and apply the <a href="typeinfo.html">type information </a> that
 is associated with the serializable object.
 <p>The type information for each class is defined in a separate static
-<i><a href="typeinfo.html#ctypeinfo">CTypeInfo</a></i>
+<a href="typeinfo.html#ctypeinfo" class="ncbi_class">CTypeInfo</a>
 object, which can be accessed by all instances of that class.&nbsp; This
 is a very powerful device, which allows for the implementation of many
 features generally found only in languages which have built-in class reflection.&nbsp;
 Using the Toolkit's serializable objects will require some&nbsp; familiarity
 with the usage of this type information, and several sections of this manual
-cover these topics (see <a href="typeinfo.html"><i>Runtime Object Type
-Information</i> </a>for a general discussion).
-<h3>
-<a NAME="locate"></a>Locating and browsing serializable objects in the
-C++ Toolkit</h3>
-The top level of the <i><a href="../lxr/source/include/objects/">include/objects</a></i>
+cover these topics (see <a href="typeinfo.html"><span class="ncbi_term">Runtime Object Type
+Information</span> </a>for a general discussion).
+<p><br>
+
+<a NAME="locate"></a>
+<he>Locating and browsing serializable objects in the C++ Toolkit</h3>
+
+The top level of the <a href="../lxr/source/include/objects/" class="ncbi_dir">include/objects</a>
 subtree is a set of subdirectories, where each subdirectory includes the
-public header files for a separately compiled library. Similarly, the <i><a href="../lxr/source/src/objects/">src/objects</a></i>
+public header files for a separately compiled library. Similarly, the <a href="../lxr/source/src/objects/" class="ncbi_dir">src/objects</a>
 subtree includes a set of subtrees containing the source files for these
-libraries. Finally, your<i> build/objects</i> directory will contain a
+libraries. Finally, your <span class="ncbi_dir">build/objects</span> directory will contain a
 corresponding set of build subtrees where these libraries are actually
 built.
 <p>If you checked out the entire C++ CVS tree,&nbsp; you may be surprised
-to find that initially, the&nbsp; <i>include/objects</i> subtrees are empty,
-and the subdirectories in the <i>src/objects</i> subtree contain only ASN.1
-modules.&nbsp; This is because both the header files and source files are
-auto-generated from the ASN.1 specifications by the <i><a href="../tools/datatool/datatool.html">datatool</a></i>
-program. As described in <i><a href="inside_tree.html">Working within the
-C++ source tree</a></i>, you can build everything by running
-<i>make all_r
-</i>in
+to find that initially, the&nbsp; <span class="ncbi_dir">include/objects</span> subtrees are empty,
+and the subdirectories in the <span class="ncbi_dir">src/objects</span> subtree contain only ASN.1
+modules. This is because both the header files and source files are
+auto-generated from the ASN.1 specifications by the <a href="../tools/datatool/datatool.html" class="ncbi_app">datatool</a>
+program. As described in <a href="inside_tree.html">Working within the
+C++ source tree</a>, you can build everything by running
+<span class="ncbi_cmd">make all_r</span> in
 the build directory.
-<p><font color="#FF0000">N.B.</font> If you would like to have the <i>objects</i>
-libraries built locally, you <b>must</b> use the <i>--with-objects</i>
-flag when running the <i>configure</i> script.
+<p><span class="ncbi_note">Note:</span> If you would like to have the <span class="ncbi_lib">objects</span>
+libraries built locally, you <em>must</em> use the <span class="ncbi_conf_flag">--with-objects</span>
+flag when running the <span class="ncbi_script">configure</span> script.
 <p>You can also access the pre-generated serializable objects in the public
 area, using the source browsers to locate the objects you are particularly
 interested in. For example, if you are seeking the new class definition
-for the <i>Bioseq struct</i> defined in the C Toolkit, you can search for
-the <i>CBioseq</i> class, using either the <i><a href="../lxr/ident/">LXR</a></i>
-identifier search tool, or the <i>DOC++</i>&nbsp; <a href="../docxx/HIER.html">class
+for the <span class="ncbi_term">Bioseq struct</span> defined in the C Toolkit, you can search for
+the <span class="ncbi_class">CBioseq</span> class, using either the <a href="../lxr/ident/">LXR</a>
+identifier search tool, or the DOC++ <a href="../docxx/HIER.html">class
 hierarchy</a> browser. Starting with the name of the data object as it
 appears in the ASN.1 module, two simple rules apply in deriving the new
 C++ class name:
@@ -84,141 +81,170 @@ The one letter 'C' (for class) prefix should precede the ASN.1 name</li>
 <li>
 All hyphens ('-') should be replaced by underscores ('_')</li>
 </ol>
-For example, <i>Seq-descr </i>becomes <i>CSeq_descr</i>.
-<h3>
-<a NAME="base"></a><i>Base classes </i>and <i>user classes</i></h3>
-The classes whose names are derived in this manner are called the <i>user
-classes</i>, and each also has a corresponding <i>base class </i>implementation.
-The name of the <i>base class</i> is arrived at by appending "<i>_Base"</i>&nbsp;
-to the <i>user class</i> name.&nbsp; Most of the <i>user classes </i>are
+For example, <span class="ncbi_term">Seq-descr </span> becomes <span class="ncbi_class">CSeq_descr</span>.
+<p><br>
+
+<a NAME="base"></a>
+<h3><span class="ncbi_term">Base classes </span>and <span class="ncbi_term">user classes</span></h3>
+
+The classes whose names are derived in this manner are called the <span class="ncbi_term">user
+classes</span>, and each also has a corresponding <span class="ncbi_term">base class </span>implementation.
+The name of the <span class="ncbi_term">base class</span> is arrived at by appending <span class="ncbi_value">"_Base"</span>
+to the <span class="ncbi_term">user class</span> name.&nbsp; Most of the <span class="ncbi_term">user classes </span>are
 empty wrapper classes that do not bring any new functionality or data members
-to the inherited <i>base class</i>; they are simply provided as a platform
-for development. In contrast, the <i>base classes</i> are <b>not</b> intended
+to the inherited <span class="ncbi_term">base class</span>; they are simply provided as a platform
+for development. In contrast, the <span class="ncbi_term">base classes</span> are <em>not</em> intended
 for public use (other than browsing), and should never be modified.
-<p>More generally, the <i>base classes</i> should <b>never</b> be instantiated
+<p>More generally, the <span class="ncbi_term">base classes</span> should <em>never</em> be instantiated
 or accessed directly in an application. The relation between the two source
 files and the classes they define reflects a general design used in developing
-the object libraries: the base class files are auto-generated by <i><a href="../tools/datatool/datatool.html">datatool</a></i>
-according to the ASN.1 specifications in the <i>src/objects</i> directories;
-the inherited class files (the so-called <i>user</i> classes) are intended
+the object libraries: the base class files are auto-generated by
+<a href="../tools/datatool/datatool.html" class="ncbi_app">datatool</a>
+according to the ASN.1 specifications in the <span class="ncbi_dir">src/objects</span> directories;
+the inherited class files (the so-called <span class="ncbi_term">user classes</span>) are intended
 for developers who can extend these classes to support features above and
 beyond the ASN.1 specifications.
 <p>Many applications will involve a "tangled hierarchy" of these objects,
 reflecting the complexity of the real world data that they represent.&nbsp;
-For example, a <i>CBioseq_set</i> contains a list of <i>CSeq_entry</i>
-objects, where each <i>CSeq_entry&nbsp; </i>is, in turn, a <i><a href="choice.html">choice</a></i>
-between a <i>CBioseq</i> and a <i>CBioseq_set</i>.
+For example, a <span class="ncbi_class">CBioseq_set</span> contains a list of <span class="ncbi_class">CSeq_entry</span>
+objects, where each <span class="ncbi_class">CSeq_entry</span> is, in turn, a
+<a href="choice.html">choice</a>
+between a <span class="ncbi_class">CBioseq</span> and a <span class="ncbi_class">CBioseq_set</span>.
 <p>Given the potential for this complexity of interactions, a critical
 design issue becomes how one can ensure that methods which may have been
-defined only in the <i>user class</i> will be available for all instances
+defined only in the <span class="ncbi_term">user class</span> will be available for all instances
 of that class. In particular, these instances may occur as contained elements
 of another object which is compiled in a different library.&nbsp; These
-inter-object dependencies are the motivation for the <i>user classes.</i>
+inter-object dependencies are the motivation for the <span class="ncbi_term">user classes</span>.
 As depicted schematically below, all references to external objects which
-occur inside the <i>base classes</i>, access external <i>user</i> <i>classes</i>,
-so as to include any methods which may be defined only in the<i> user classes</i>:
+occur inside the <span class="ncbi_term">base classes</span>, access external <span class="ncbi_term">user classes</span>,
+so as to include any methods which may be defined only in the <span class="ncbi_term">user classes</span>:
 <center><img SRC="user_base.gif" height=216 width=540></center>
-In most cases, adding <i>non</i>-virtual methods to a <i>user class</i>
-will <b>not</b> require re-compiling any libraries except the one which
-defines the modified object.&nbsp; Note however, that addiing <i>non</i>-static
-data members and/or <i>virtual</i> methods to the <i>user classes</i> <b>will</b>
-change the class layouts, and in these cases only, <b>will</b> entail recompiling
-any external library objects which access these classes.
-<h3>
-<a NAME="methods"></a>Adding methods to the <i>user</i> <i>classes</i></h3>
-<font color="#FF0000">N.B.: </font>This section describes the steps <b>currently</b>
-required to add new methods to the <i>user</i> <i>classes</i>.&nbsp; It
-is subject to change, and there is no guarantee the material here is up-to-date.
-In general, it is not recommended practice to add methods to the <i>user
-classes,</i> unless your purpose is to extend these classes across all
+In most cases, adding non-virtual methods to a <span class="ncbi_term">user class</span>
+will <em>not</em> require re-compiling any libraries except the one which
+defines the modified object. Note however, that addiing non-static
+data members and/or <span class="ncbi_keyword">virtual</span> methods to the <span class="ncbi_term">user classes</span> <em>will change</em> the class layouts, and in these cases only, 
+will entail recompiling any external library objects which access these classes.
+
+<p><br>
+
+<a NAME="methods"></a>
+<h3>Adding methods to the <span class="ncbi_term">user classes</span></h3>
+
+<span class="ncbi_note">Note:</span> This section describes the steps currently
+required to add new methods to the <span class="ncbi_term">user classes</span>.
+It is subject to change, and there is no guarantee the material here is up-to-date.
+In general, it is not recommended practice to add methods to the <span class="ncbi_term">user
+classes</span>, unless your purpose is to extend these classes across all
 applications as part of a development effort.
-<h4>
-Checking out source code, configuring the working environment, building
+
+<h4>Checking out source code, configuring the working environment, building
 the libraries.</h4>
 
 <ol>
 <li>
-Create a working directory (e.g. <i><font color="#990000">Work</font></i>)
-and check out the C++ tree to that directory:, using either <i><a href="../new_proj.html#ref_Checkout">cvs
-checkout</a></i> or the shell script, <i>cvs_core.sh &lt;dirname></i>.</li>
+Create a working directory (e.g. <span class="ncbi_dir">Work</span>)
+and check out the C++ tree to that directory:, using either <a href="../new_proj.html#ref_Checkout">cvs checkout</a> or the shell script, <span class="ncbi_cmd">cvs_core.sh &lt;dirname></span>.</li>
 
 <br>&nbsp;
 <li>
 <a href="../config.html#ref_Running">Configure</a>
 the environment to work inside this tree using one of the configure <a href="../config.html#ref_Wrappers">scripts</a>,
-according to the platform you will be working on. Be sure to<b> include
-the <i>--with-objects</i> flag</b> in invoking the <i>configure</i> script.</li>
+according to the platform you will be working on. Be sure to include
+the <span class="ncbi_conf_flag">--with-objects</span> flag in invoking the <span class="ncbi_script">configure</span> script.</li>
 
 <br>&nbsp;
 <li>
-Build the <i>xncbi</i> and <i>xser</i> libraries, e.g,:</li>
+Build the <span class="ncbi_lib">xncbi</span> and <span class="ncbi_lib">xser</span> libraries, e.g,:</li>
 
-<p><br>&nbsp;cd ~/Work/internal/c++/GCC-Debug/build/corelib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# build <i>xncbi</i> library
-<br>make
-<br>cd ~/Work/internal/c++/GCC-Debug/build/serial&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# build <i>xser </i>library
-<br>make
-<br>&nbsp;
+<blockquote>
+<pre class="ncbi_cmd">
+cd ~/Work/internal/c++/GCC-Debug/build/corelib     # build <span class="ncbi_lib">xncbi</span> library
+make
+cd ~/Work/internal/c++/GCC-Debug/build/serial      # build <span class="ncbi_lib">xser </span>library
+make
+</pre></blockquote>
+
 <li>
-Run <i>datatool</i> to create the objects header and source files, and
+Run <span class="ncbi_app">datatool</span> to create the objects header and source files, and
 build all of the object module libraries:</li>
 
-<p><br>cd ~/Work/internal/c++/GCC-Debug/build/objects
-<br>make all_r
-<p>In addition to creating the header and source files, using <i>make all_r
-</i>(instead
-of just<i> make</i>) will build all the libraries. All libraries that are
-built are also copied to the <i>lib</i> dir, e.g.: <i>~/Work/internal/c++/GCC-Debug/lib.</i>
-Similarly, all executables (such as <i>asn2asn</i>) are copied to the bin
-dir, e.g.: <i>~/Work/internal/c++/GCC-Debug/bin.</i></ol>
+<blockquote>
+<pre class="ncbi_code">
+cd ~/Work/internal/c++/GCC-Debug/build/objects
+make all_r
+</pre>
+</blockquote>
+
+<p>In addition to creating the header and source files, using <span class="ncbi_cmd">make all_r
+</span>(instead
+of just <span class="ncbi_util">make</span>) will build all the libraries. All libraries that are
+built are also copied to the <span class="ncbi_dir">lib</span> dir, e.g.: <span class="ncbi_dir">~/Work/internal/c++/GCC-Debug/lib</span>.
+Similarly, all executables (such as <span class="ncbi_app">asn2asn</span>) are copied to the bin
+dir, e.g.: <span class="ncbi_dir">~/Work/internal/c++/GCC-Debug/bin</span>.</ol>
 You are now ready to edit the user class files and add methods.
-<h4>
-Adding methods</h4>
+
+<h4>Adding methods</h4>
+
 As an example, suppose that we would like to&nbsp; add a method to the
-<i>CSeq_inst</i>
-class to calculate sequence length, e.g.: <i>CSeq_inst::CalculateLength()</i>.
+<span class="ncbi_class">CSeq_inst</span>
+class to calculate sequence length, e.g.: <span class="ncbi_func">CSeq_inst::CalculateLength()</span>.
 We begin by adding a declaration of this method to the public section of
-the user class definition in <i>Seq_inst.hpp</i>:
-<p><tt><font color="#3366FF">class CSeq_inst : public CSeq_inst_Base</font></tt>
-<br><tt><font color="#3366FF">{</font></tt>
-<br><tt><font color="#3366FF">public</font><font color="#005050">:</font></tt>
-<br><tt><font color="#999999">&nbsp;&nbsp;&nbsp; CSeq_inst(void);</font></tt>
-<br><tt><font color="#999999">&nbsp;&nbsp;&nbsp; ~CSeq_inst(void);</font></tt>
-<p><tt><font color="#999999">&nbsp;&nbsp;&nbsp; static CSeq_inst* New(void)</font></tt>
-<br><tt><font color="#999999">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-{</font></tt>
-<br><tt><font color="#999999">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-return new CSeq_inst(eCanDelete);</font></tt>
-<br><tt><font color="#999999">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-}</font></tt>
-<p><b><tt><font color="#33CC00">&nbsp;&nbsp;&nbsp; int CalculateLength()
-const;</font></tt></b>
-<p><tt><font color="#3366FF">protected</font><font color="#005050">:</font></tt>
-<br><tt><font color="#999999">&nbsp;&nbsp;&nbsp; CSeq_inst(ECanDelete);</font></tt>
-<br><tt><font color="#999999">};</font></tt>
-<p>and in the source file, <i>Seq_inst.cpp</i>, we implement
-<p><tt><font color="#3366FF">int <i>CSeq_inst::CalculateLength()</i> const
-</font><font color="#666666">{</font></tt>
-<br><tt><font color="#666666">&nbsp;&nbsp;&nbsp; // implementation goes
-here</font></tt>
-<br><tt><font color="#666666">}</font></tt>
-<p>These files are in the <i><a href="../lxr/source/include/objects/seq">include/objects/seq</a></i>
-and <i><a href="../lxr/source/src/objects/seq">src/objects/seq
-</a></i>subdirectories,
+the user class definition in <span class="ncbi_file">Seq_inst.hpp</span>:
+
+<blockquote>
+<pre class="ncbi_code">
+class CSeq_inst : public CSeq_inst_Base
+{
+public:
+    CSeq_inst(void);
+    ~CSeq_inst(void);
+
+    static CSeq_inst* New(void) 
+        {
+            return new CSeq_inst(eCanDelete);
+        }
+
+    int CalculateLength() const;
+
+protected:
+    CSeq_inst(ECanDelete);
+};
+</pre></blockquote>
+
+and in the source file, <span class="ncbi_file">Seq_inst.cpp</span>, we implement
+
+<blockquote>
+<pre class="ncbi_code">
+int CSeq_inst::CalculateLength() const
+{
+    // implementation goes here
+}
+</pre>
+</blockquote>
+
+These files are in the <a href="../lxr/source/include/objects/seq" class="ncbi_dir">include/objects/seq</a>
+and <a href="../lxr/source/src/objects/seq" class="ncbi_dir">src/objects/seq
+</a> subdirectories,
 respectively. Once you have made the modifications to the files, you need
-to recompile the <i>seq</i> library,<i> libseq.a</i>, i.e.:
-<p><i>cd ~/Work/internal/c++/GCC-Debug/build/objects/seq</i>
-<br><i>make</i>
-<p>The new method can now be invoked from within a <i>CBioseq</i> object
-as: <i>myBioseq.GetInst().CalculateLength().</i>
+to recompile the <span class="ncbi_lib">seq</span> library,<span class="ncbi_lib"> libseq.a</span>, i.e.:
+
+<blockquote>
+<pre class="ncbi_cmd">
+cd ~/Work/internal/c++/GCC-Debug/build/objects/seq
+make
+</pre>
+</blockquote>
+
+<p>The new method can now be invoked from within a <span class="ncbi_class">CBioseq</span> object
+as: <span class="ncbi_ccode">myBioseq.GetInst().CalculateLength().</span>
 <p>The key issue that determines whether or not you will need to rebuild
-any <i>external</i> libraries that <i>use</i> the modified user class involves
-the class layout in memory.&nbsp; All of the external libraries which reference
+any <span class="ncbi_term">external</span> libraries that use the modified user class involves
+the class layout in memory.  All of the external libraries which reference
 the object refer to the class layout that existed prior to the changes
-you have made. Thus, if your modifications do <i>not</i> affect the class
-layout, you do not have to rebuild any external libraries.&nbsp; Changes
-that <i>do</i> affect memory mapping include:
+you have made. Thus, if your modifications do <em>not</em> affect the class
+layout, you do not have to rebuild any external libraries.  Changes
+that <em>do</em> affect memory mapping include:
 <ul>
 <li>
 The addition of new, non-static data members</li>
@@ -226,11 +252,11 @@ The addition of new, non-static data members</li>
 <li>
 The addition of virtual methods</li>
 </ul>
-If you have added either of the above to the <i>user class</i>, then you
+If you have added either of the above to the <span class="ncbi_term">user class</span>, then you
 will need to identify all external objects which use your object, and recompile
 the libraries in which these objects are defined.
 
-<p><a href="inside_tree.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp; <i><a href="../index.html">up&nbsp;</a></i><!-- a href=".html"> <i>next</a></i-->
+<p><a href="inside_tree.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp; <i><a href="../index.html">up&nbsp;</a></i><!--NCBI_MARK--><!-- a href=".html"> <i>next</a></i-->
 
 
 <!--#include virtual="../ssi/navlinks.shtml" -->
@@ -242,9 +268,9 @@ the libraries in which these objects are defined.
 <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
-<td><!-- <td align=center><i>$Revision$</i></td> --></td>
+<td><!-- <td align=center><i>$Revision$</i><!--NCBI_MARK--></td> --></td>
 
-<td ALIGN=RIGHT><i>$Date$</i></td>
+<td ALIGN=RIGHT><span class="ncbi_cvs_date">$Date$</span></td>
 </tr>
 </table>
 

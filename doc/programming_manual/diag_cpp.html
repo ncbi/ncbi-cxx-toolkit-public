@@ -65,7 +65,7 @@ int CTestApp::Run()
 <font color = "red">   // Install a new handler for all subsequent messages <font color = "black">
     SetDiagHandler (myHandler, 0, 0);
 
-    diagTrace << Msg;	<font color=red>	// not posted since trace is disabled </font>
+    diagTrace << Msg;   <font color=red>    // not posted since trace is disabled </font>
     diagCritical << Msg;
 
 <font color = "red">   // Allow the class destructors to force flushing of remaining messages <font color = "black">

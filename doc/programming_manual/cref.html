@@ -2,44 +2,44 @@
 <!--#set var="DOCROOT" value=".." -->
 <!--#include virtual="../ssi/header.shtml" -->
 
-<h1> Smart Pointers: the <i>CObject</i> and <i>CRef</i> Classes</h1>
+<h1> Smart Pointers: the <span class="ncbi_class">CObject</span> and <span class="ncbi_class">CRef</span> Classes</h1>
 
 <ul>
-  <li> <a href="#autoptr"> <i>STL auto_ptrs</i> </a>
-  <li> <a href="#cref"> The <i>CRef</i> Class </a>
-  <li> <a href="#cobject"> The <i>CObject</i> Class </a>
-  <li> <a href="#exmpl"> The <i>CObjectFor</i> class: Using smart pointers for standard types</a>
-  <li> <a href="#usage"> When to use <i>CRef</i>s and <i>auto_ptr</i>s</a>
-  <li> <a href="#pitfalls"> <i>CRef</i> Pitfalls</a>
+  <li> <a href="#autoptr">STL auto_ptrs </a>
+  <li> <a href="#cref">The CRef Class </a>
+  <li> <a href="#cobject">The CObject Class </a>
+  <li> <a href="#exmpl">The CObjectFor class: Using smart pointers for standard types</a>
+  <li> <a href="#usage">When to use CRefs and auto_ptrs</a>
+  <li> <a href="#pitfalls">CRef Pitfalls</a>
 </ul>
 
 <a name="autoptr"></a>
 <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-utilities.html#lib.auto.ptr">
- <h3> <i>STL auto_ptrs</i> </h3> </a>
+ <h3>STL auto_ptrs</h3> </a>
 C programmers are well-acquainted with the advantages and pitfalls of using pointers. As is often
 the case, the good news is also the bad news:
 <ul>
 <li> memory can be dynamically allocated as needed, but may not be deallocated as needed, due
-	  to unanticipated execution paths;
+      to unanticipated execution paths;
 <li> void pointers allow heterogeneous function arguments of different types, but type
-	  information may not be there when you need it.
+      information may not be there when you need it.
 </ul>
-C++ adds some additional considerations to pointer management: STL containers cannot hold <i>
-reference</i> objects, so you are left with the choice of using either pointers or <i>copies</i>
+C++ adds some additional considerations to pointer management: STL containers cannot hold <span class="ncbi_term">
+reference</span> objects, so you are left with the choice of using either pointers or <span class="ncbi_term">copies</span>
 of objects. Neither choice is attractive, as pointers can cause memory leaks and the copy
 constructor may be expensive. </p>
 
-The idea behind a C++ <i>smart pointer</i> is to create a wrapper class capable of holding a
+The idea behind a C++ <span class="ncbi_term">smart pointer</span> is to create a wrapper class capable of holding a
 pointer.  The wrapper class's constructors and destructors can then handle memory management as
 the object goes in and out of scope. The problem with this solution is that it does not handle
 multiple pointers to the same resource properly, and it raises the issue of ownership. This is
 essentially what the
 <a href="../lxr/ident?i=auto_ptr">
-<i>auto_ptr</i></a> offers, but this strategy is only safe to use when the
+<span class="ncbi_class">auto_ptr</span></a> offers, but this strategy is only safe to use when the
 resource maps to a single pointer variable.<p>
 
 For example, the following code has two very serious problems:
-<pre>
+<pre class="ncbi_code">
     int* ip = new int(5);
     {
         auto_ptr&lt;int&gt; a1(ip);
@@ -48,181 +48,186 @@ For example, the following code has two very serious problems:
     *ip = 10/(*ip);
 </pre>
 
-The first problem occurs inside the block where the two <i>auto_ptrs</i> are defined.
-Both are referencing the same variable pointed to by yet another <i>C</i> pointer, and
+The first problem occurs inside the block where the two <span class="ncbi_class">auto_ptr</span>s are defined.
+Both are referencing the same variable pointed to by yet another C pointer, and
 each considers itself to be the owner of that reference. Thus, when the block is exited,
-the <i>delete[]</i> operation is executed twice for the same pointer. <p>
+the <span class="ncbi_ccode">delete[]</span> operation is executed twice for the same pointer. <p>
 
-Even if this first problem did not occur - for example if only one <i>auto_ptr</i> had been
-defined - the second problem occurs when we try to dereference <i>ip</i>. The
-<i>delete</i> operation occurring as the block exits has now reset <i>*ip</i> to <i>0</i>,
+Even if this first problem did not occur - for example if only one <span class="ncbi_class">auto_ptr</span> had been
+defined - the second problem occurs when we try to dereference <span class="ncbi_var">ip</span>. The
+<span class="ncbi_keyword">delete</span> operation occurring as the block exits has now reset <span class="ncbi_var">*ip</span> to <span class="ncbi_value">0</span>,
 so an attempt to divide by zero occurs.
+<p><br>
 
 <a name="cref"></a>
-<a href="../docxx/CRef.html"><h3>The <i>CRef</i> Class </h3></a>
+<h3>The <a href="../docxx/CRef.html">CRef</a> Class </h3>
 
-These issues are addressed in the NCBI C++ Toolkit by using <i>reference-counted</i> smart
-pointers: a resource cannot be deallocated until <i>all</i> references to it have ceased to
+These issues are addressed in the NCBI C++ Toolkit by using <span class="ncbi_term">reference-counted</span> smart
+pointers: a resource cannot be deallocated until <em>all</em> references to it have ceased to
 exist. The implementation of a smart pointer in the NCBI C++ Toolkit is actually divided
 between two classes:
-<a href="../docxx/CRef.html"> <i>CRef</i></a> and
+<a href="../docxx/CRef.html"> <span class="ncbi_class">CRef</span></a> and
 <a href="../docxx/CObject.html">
-<i>CObject</i></a>. <p>
+<span class="ncbi_class">CObject</span></a>. <p>
 
-The <i>CRef</i> class essentially provides a pointer interface to a <i>CObject</i>, while the
-<i>CObject</i> actually stores the data and maintains the reference count to it.  The
-constructor used to create a new <i>CRef</i> pointing to a particular <i>CObject</i>
-automatically increments the object's reference count. Similarly, the <i>CRef</i> destructor
+The <span class="ncbi_class">CRef</span> class essentially provides a pointer interface to a <span class="ncbi_class">CObject</span>, while the
+<span class="ncbi_class">CObject</span> actually stores the data and maintains the reference count to it.  The
+constructor used to create a new <span class="ncbi_class">CRef</span> pointing to a particular <span class="ncbi_class">CObject</span>
+automatically increments the object's reference count. Similarly, the <span class="ncbi_class">CRef</span> destructor
 automatically decrements the reference count. In both cases however, the modification of the
-reference count is implemented by a member function of the <i>CObject</i>.  The <i>CRef</i>
+reference count is implemented by a member function of the <span class="ncbi_class">CObject</span>.  The <span class="ncbi_class">CRef</span>
 class itself does not have direct access to the reference count and contains only a single data
-member -- its pointer to a <i>CObject</i>. In addition to the <i>CRef</i> class's constructors and
-destructors, its interface to the <i>CObject</i> pointer includes access/mutate functions such as:
+member -- its pointer to a <span class="ncbi_class">CObject</span>. In addition to the <span class="ncbi_class">CRef</span> class's constructors and
+destructors, its interface to the <span class="ncbi_class">CObject</span> pointer includes access/mutate functions such as:
 
-<dl>
- <dt><i>bool Empty() </i>
- <dt><i>bool NotEmpty() </i>
- <dt><i>CObject* GetPointer()</i>
- <dt><i>CObject& GetObject()</i>
- <dt><i>CObject* Release()</i>
- <dt><i>void Reset(CObject* newPtr)</i>
- <dt><i>void Reset(void)</i>
- <dt><i>operator bool()</i>
- <dt><i>bool operator!()</i>
- <dt><i>CRefBase& operator=(const CRefBase& ref)</i>
+<blockquote>
+<dl class="ncbi_code">
+ <dt>bool Empty()
+ <dt>bool NotEmpty()
+ <dt>CObject* GetPointer()
+ <dt>CObject& GetObject()
+ <dt>CObject* Release()
+ <dt>void Reset(CObject* newPtr)
+ <dt>void Reset(void)
+ <dt>operator bool()
+ <dt>bool operator!()
+ <dt>CRefBase& operator=(const CRefBase& ref)
 </dl>
-Both the <i>Release()</i> and <i>Reset()</i> functions set the <i>CRef</i> object's <i>m_ptr</i> to
-0, thus effectively removing the reference to its <i>CObject</i>. There are important distinctions
-between these two functions however. The <i>Release()</i> method removes the reference without
-destroying the object, while the <i>Reset()</i> method may lead to the destruction of the
+</blockquote>
+
+Both the <span class="ncbi_func">Release()</span> and <span class="ncbi_func">Reset()</span> functions set the <span class="ncbi_class">CRef</span> object's <span class="ncbi_var">m_ptr</span> to
+0, thus effectively removing the reference to its <span class="ncbi_class">CObject</span>. There are important distinctions
+between these two functions however. The <span class="ncbi_func">Release()</span> method removes the reference without
+destroying the object, while the <span class="ncbi_func">Reset()</span> method may lead to the destruction of the
 object if there are no other references to it.
 <p>
-If the <i>CObject</i>'s internal reference count is 1 at the time <i>Release()</i> is invoked,
-that reference count will be decremented to 0, and a pointer to the <i>CObject</i> is
-returned. The <i>Release()</i> method can throw two types of exceptions: (1) a <i>null
-pointer</i> exception if <i>m_ptr</i> is already <i>0</i>, and (2) an <i>Illegal
-CObject::ReleaseReference()</i> exception if there are currently other references to that
+If the <span class="ncbi_class">CObject</span>'s internal reference count is 1 at the time <span class="ncbi_func">Release()</span> is invoked,
+that reference count will be decremented to 0, and a pointer to the <span class="ncbi_class">CObject</span> is
+returned. The <span class="ncbi_func">Release()</span> method can throw two types of exceptions: (1) a <span class="ncbi_term">null pointer</span> exception if <span class="ncbi_var">m_ptr</span> is already <span class="ncbi_value">0</span>, and (2) an <span class="ncbi_term">Illegal
+CObject::ReleaseReference()</span> exception if there are currently other references to that
 object. An object must be free of all references (but this one) before it can be
-"released". In contrast, the <i>Reset(void)</i> function simply resets the <i>CRef</i>'s
-<i>m_ptr</i> to 0, decrements the <i>CObject</i>'s reference count, and, if the <i>CObject</i>
-has no other references and was dynamically allocated, deletes the <i>CObject</i>.
+"released". In contrast, the <span class="ncbi_func">Reset(void)</span> function simply resets the <span class="ncbi_class">CRef</span>'s
+<span class="ncbi_var">m_ptr</span> to 0, decrements the <span class="ncbi_class">CObject</span>'s reference count, and, if the <span class="ncbi_class">CObject</span>
+has no other references and was dynamically allocated, deletes the <span class="ncbi_class">CObject</span>.
 
 <p>
-Each member function of the <i>CRef</i> class also has a <i>const</i> implementation that is
-invoked when the pointer is to a <i>const</i> object. In addition, there is also a
+Each member function of the <span class="ncbi_class">CRef</span> class also has a <span class="ncbi_keyword">const</span> implementation that is
+invoked when the pointer is to a <span class="ncbi_keyword">const</span> object. In addition, there is also a
 <a href="../docxx/CConstRef.html">
-<i>CConstRef</i></a> class that parallels the <i>CRef</i> class.
+<span class="ncbi_class">CConstRef</span></a> class that parallels the <span class="ncbi_class">CRef</span> class.
 
-Both <i>CRef</i> and <i>CConstRef</i> are implemented as template classes, where the template
+Both <span class="ncbi_class">CRef</span> and <span class="ncbi_class">CConstRef</span> are implemented as template classes, where the template
 argument specifies the type of object which will be pointed to. For example, in the section on <a
-href="traverse.html#accessMember"> <i>Traversing an ASN.1 Data Structure</i></a> we examined the structure of the
-<i>CBiostruc</i> class and found the following type definition
+href="traverse.html#accessMember">Traversing an ASN.1 Data Structure</a> we examined the structure of the
+<span class="ncbi_class">CBiostruc</span> class and found the following type definition
 
-<pre>
+<pre class="ncbi_code">
     typedef list< CRef< ::CBiostruc_id > > TId;
 </pre>
 
-As described there, this <i>typedef</i> defines <i>TId</i> to be a list of pointers to
+As described there, this <span class="ncbi_keyword">typedef</span> defines <span class="ncbi_type">TId</span> to be a list of pointers to
 <a href="../docxx/CBiostruc_id.html">
-<i>CBiostruc_id</i></a> objects. And as you might expect, <i>CBiostruc_id</i> is a
-specialized subclass of  <i>CObject</i>.
-<p>
+<span class="ncbi_class">CBiostruc_id</span></a> objects. And as you might expect, <span class="ncbi_class">CBiostruc_id</span> is a
+specialized subclass of  <span class="ncbi_class">CObject</span>.
+<p><br>
 
 <a name="cobject"></a>
-<a href="../docxx/CObject.html"><h3> The CObject Class </h3></a>
+<h3> The <a href="../docxx/CObject.html">CObject</a> Class </h3>
 
-The <i>CObject</i> class serves as a base class for all objects requiring a reference
+The <span class="ncbi_class">CObject</span> class serves as a base class for all objects requiring a reference
 count. There is little overhead entailed by deriving a new class from this base
-class, and most objects in the NCBI C++ Toolkit are derived from the <i>CObject</i> class.
+class, and most objects in the NCBI C++ Toolkit are derived from the <span class="ncbi_class">CObject</span> class.
 For example,
 <a href="../docxx/CNCBINode.html">
-<i>CNCBINode</i></a> is a direct descendant of <i>CObject</i>, and all of the other
-<i>HTML</i> classes descend either directly or indirectly from <i>CNCBINode</i>. Similarly, all
+<span class="ncbi_class">CNCBINode</span></a> is a direct descendant of <span class="ncbi_class">CObject</span>, and all of the other
+<span class="ncbi_interface">HTML</span> classes descend either directly or indirectly from <span class="ncbi_class">CNCBINode</span>. Similarly, all
 of the ASN.1 classes defined in the
 <a href="../lxr/source/include/objects">
-<i>include/objects</i></a> directory, as well as many of the classes defined in the
+<span class="ncbi_dir">include/objects</span></a> directory, as well as many of the classes defined in the
 <a href="../lxr/source/include/serial">
-<i>include/serial</i></a> directory are derived either directly or indirectly from the
-<i>CObject</i> class.<p>
+<span class="ncbi_dir">include/serial</span></a> directory are derived either directly or indirectly from the
+<span class="ncbi_class">CObject</span> class.<p>
 
-The <i>CObject</i> class contains a single private data member, the reference counter, and a
+The <span class="ncbi_class">CObject</span> class contains a single private data member, the reference counter, and a
 set of member functions which provide an interface to the reference counter. As such, it is
 truly a base class which has no stand-alone utility, as it does not even provide allocation
-for data values. It is the <i>descendant</i> classes, which inherit all the functionality of
-the <i>CObject</i> class, that provide the necessary richness in representation and
+for data values. It is the <span class="ncbi_term">descendant</span> classes, which inherit all the functionality of
+the <span class="ncbi_class">CObject</span> class, that provide the necessary richness in representation and
 allocation required for the widely diverse set of objects implemented in the NCBI
 C++ Toolkit. Nevertheless, it is often necessary to use smart pointers on simple data types,
-such as <i>int</i>, <i>string</i> etc. The <i>CObjectFor</i> class, described below, was
+such as <span class="ncbi_type">int</span>, <span class="ncbi_type">string</span> etc. The <span class="ncbi_class">CObjectFor</span> class, described below, was
 designed for this purpose.
 
-<p>
+<p><br>
 
 <a name="exmpl"></a>
-<h3> The <a href="../docxx/CObjectFor.html"><i>CObjectFor</i> class</a>: Using smart pointers for standard types</h3>
+<h3> The <a href="../docxx/CObjectFor.html">CObjectFor</a> class: Using smart pointers for standard types</h3>
 
-The <i>CObjectFor</i> class is derived directly from <i>CObject</i>, and is implemented as a
+The <span class="ncbi_class">CObjectFor</span> class is derived directly from <span class="ncbi_class">CObject</span>, and is implemented as a
 template class whose argument specifies the standard type that will be pointed to. In addition to
-the reference counter inherited from its parent class, <i>CObjectFor</i> has a private
-data member of the parameterized type, and a member function <i>GetData()</i> to access it.<p>
+the reference counter inherited from its parent class, <span class="ncbi_class">CObjectFor</span> has a private
+data member of the parameterized type, and a member function <span class="ncbi_func">GetData()</span> to access it.<p>
 
-An example program, <a href="smart_cpp.html"> <i>smart.cpp</i></a>, uses the
+An example program, <a href="smart_cpp.html"> <span class="ncbi_file">smart.cpp</span></a>, uses the
 <a href="../docxx/CRef.html">
-<i>CRef</i></a> and <a href="../docxx/CObjectFor.html">
-<i>CObjectFor</i></a> classes, and demonstrates the differences in memory management that arise
-using <i>auto_ptr</i> and <i>CRef</i>.
+<span class="ncbi_class">CRef</span></a> and <a href="../docxx/CObjectFor.html">
+<span class="ncbi_class">CObjectFor</span></a> classes, and demonstrates the differences in memory management that arise
+using <span class="ncbi_class">auto_ptr</span> and <span class="ncbi_class">CRef</span>.
 
-Using an <i>auto_ptr</i> to reference an <i>int</i>, the
-program tests whether or not the reference is still accessible after an auxilliary <i>auto_ptr</i>
+Using an <span class="ncbi_class">auto_ptr</span> to reference an <span class="ncbi_type">int</span>, the
+program tests whether or not the reference is still accessible after an auxilliary <span class="ncbi_class">auto_ptr</span>
 which goes out of scope has also been used to reference it. The same sequence is then tested
-using <i>CRef</i> objects instead. <p>
+using <span class="ncbi_class">CRef</span> objects instead. <p>
 
-In the first case, the original <i>auto_ptr,
-orig_ap,</i> becomes NULL at the moment when ownership is transferred to
-<i>copy_ap</i> by the copy constructor.  Using <i>CRef</i> objects however, the reference
-contained in the original <i>CRef</i> remains accessible (via <i>orig</i>) in all blocks where <i>orig</i>
+In the first case, the original auto_ptr, <span class="ncbi_var">orig_ap</span>,
+becomes <span class="ncbi_value">NULL</span> at the moment when ownership is transferred to
+<span class="ncbi_var">copy_ap</span> by the copy constructor.  Using <span class="ncbi_class">CRef</span> objects however, the reference
+contained in the original <span class="ncbi_class">CRef</span> remains accessible (via <span class="ncbi_var">orig</span>) in all blocks where <span class="ncbi_var">orig</span>
 is defined. Moreover, the reference itself, i.e. the object pointed to, continues to exist
-until <i>all</i> references to it have been removed.
+until <em>all</em> references to it have been removed.
 
-	  <p>
+<p><br>
+
 <a name="usage"></a>
-<h3>When to use <i>CRef</i>s and <i>auto_ptr</i>s</h3>
+<h3>When to use CRefs and auto_ptrs</h3>
 
-There is some overhead in using <i>CRef</i> and <i>auto_ptr</i>, and these objects should only be used
+There is some overhead in using <span class="ncbi_class">CRef</span> and <span class="ncbi_class">auto_ptr</span>, and these objects should only be used
 where needed.  Memory leaks are generally caused as a result of unexpected execution paths. For
 example:
 
-<pre>
-{
-    int *num = new int(5);
-    ComplexFunction (num);
-    delete num;
-    ...
-}
+<pre class="ncbi_code">
+    {
+        int *num = new int(5);
+        ComplexFunction (num);
+        delete num;
+        ...
+    }
 </pre>
-If <i>ComplexFunction()</i> executes normally, control returns to the block where it was
-invoked, and memory is freed by the <i>delete</i> statement. Unforeseen events however, may
-trigger exceptions, causing control to pass elsewhere. In these cases, the <i>delete</i>
-statement may never be reached. The use of a <i>CRef</i> or an <i>auto_ptr</i> is appropriate
+If <span class="ncbi_func">ComplexFunction()</span> executes normally, control returns to the block where it was
+invoked, and memory is freed by the <span class="ncbi_keyword">delete</span> statement. Unforeseen events however, may
+trigger exceptions, causing control to pass elsewhere. In these cases, the <span class="ncbi_keyword">delete</span>
+statement may never be reached. The use of a <span class="ncbi_class">CRef</span> or an <span class="ncbi_class">auto_ptr</span> is appropriate
 for these situations, as they both guarantee that the object will be destroyed when the
 reference goes out of scope. <p>
 
 One situation where they may not be required is when a pointer is embedded inside another
 object. If that object's destructor also handles the deallocation of its embedded objects, then
-it is sufficient to use a <i>CRef</i> on the containing object only.
+it is sufficient to use a <span class="ncbi_class">CRef</span> on the containing object only.
 
-<p>
+<p><br>
+
 <a name="pitfalls"></a>
-<h3> <i>CRef</i> Pitfalls</h3>
+<h3> CRef  Pitfalls</h3>
 
-<dl>
-    <dt> <b>Inadvertent Object Destruction</b><p>
-    <dd> When the last reference to a <i>CRef</i> object goes out of scope or
-        the <i>CRef</i> is otherwise marked for garbage collection, the object to
-        which the <i>CRef</i> points is also destroyed.  This  feature
-        helps to prevent memory leaks, but it also requires care in the use of
-        <i>CRef</i>s within methods and functions.
+<h4>Inadvertent Object Destruction</h4>
 
-<pre>
+When the last reference to a <span class="ncbi_class">CRef</span> object goes out of scope or
+the <span class="ncbi_class">CRef</span> is otherwise marked for garbage collection, the object to
+which the <span class="ncbi_class">CRef</span> points is also destroyed.  This  feature
+helps to prevent memory leaks, but it also requires care in the use of
+<span class="ncbi_class">CRef</span>s within methods and functions.
+
+<pre class="ncbi_code">
     class CMy : public CObject
     {
     .....
@@ -236,23 +241,21 @@ it is sufficient to use a <i>CRef</i> on the containing object only.
 
     CMy* a = new CMy();
     f(a);
-    <b>// the object "a" is now destroyed!</b>
+    <em>// the object "a" is now destroyed!</em>
 </pre>
 
-        In this example the function <tt>f()</tt> establishes a local <i>CRef</i> to the
-        <tt>CMy</tt> object <tt>a</tt>.  On exitting <tt>f()</tt> the <i>CRef</i> <tt>b</tt>
-        is destroyed, including the implied destruction of the <tt>CMy</tt> objects <tt>a</tt>.
-        To avoid this behavior, pass a <i>CRef</i> to the function <tt>f()</tt> instead of
-        a normal pointer variable:
-<pre>
+In this example the function <span class="ncbi_func">f()</span> establishes a local <span class="ncbi_class">CRef</span> to the
+<span class="ncbi_class">CMy</span> object <span class="ncbi_var">a</span>.
+ On exitting <span class="ncbi_func">f()</span> the <span class="ncbi_class">CRef</span> <span class="ncbi_var">b</span>
+is destroyed, including the implied destruction of the <span class="ncbi_class">CMy</span> objects <span class="ncbi_var">a</span>.
+To avoid this behavior, pass a <span class="ncbi_class">CRef</span> to the function <span class="ncbi_func">f()</span> instead of
+a normal pointer variable:
+
+<pre class="ncbi_code">
     CRef<CMy> a = new CMy();
     f(a);
-    <b>// the CMy object pointed to by "a" is <i>not</i> destroyed!</b>
+    <em>// the CMy object pointed to by "a" is not  destroyed!</em>
 </pre>
-        </dd>
-
-</dl>
-
 
 <p>
 <hr>
@@ -264,11 +267,11 @@ it is sufficient to use a <i>CRef</i> on the containing object only.
 
 <!--#include virtual="../ssi/navlinks.shtml" -->
 
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
-		  <!-- <td align=center><i>$Revision$</i></td> -->
-		  <td align=right><i>$Date$</i></td>
-	 </table>
+     <table border=0 width="100%" cellspacing=0>
+        <tr>
+          <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+          <!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+          <td align=right><span class="ncbi_cvs_date">$Date$</span></td>
+     </table>
 
 <!--#include virtual="../ssi/footer.shtml" -->

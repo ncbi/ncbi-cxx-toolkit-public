@@ -7,507 +7,571 @@ The NCBI C++ Toolkit Iterators</h1>
 
 <ul>
 <li>
-<a href="#generic"><i>STL</i> generic iterators</a></li>
+<a href="#generic">STL generic iterators</a></li>
 
 <li>
-<a href="#typeIt"><i>CTypeIterator</i> and <i>CTypeConstIterator</i></a></li>
+<a href="#typeIt">CTypeIterator and CTypeConstIterator</a></li>
 
 <li>
 <a href="#hier">Class hierarchies, embedded objects, and the NCBI C++ type
 iterators</a></li>
 
 <li>
-<a href="#cobjType"><i>CObjectIterator</i> and <i>CObjectConstIterator</i></a></li>
+<a href="#cobjType">CObjectIterator and CObjectConstIterator</a></li>
 
 <li>
-<a href="#stdType"><i>CStdTypeIterator</i> and <i>CStdTypeConstIterator</i></a></li>
+<a href="#stdType">CStdTypeIterator and CStdTypeConstIterator</a></li>
 
 <li>
-<i><a href="#typesIt">CTypesIterator</a></i></li>
+<a href="#typesIt">CTypesIterator</a></li>
 
 <li>
-<i><a href="#appendix">Appendix</a></i></li>
+<a href="#appendix">Appendix</a></li>
 </ul>
+<p><br>
+
 <a NAME="generic"></a>
-<h3>
-<i>STL</i> generic iterators</h3>
+<h3><span class="ncbi_lib">STL</span> generic iterators</h3>
 Iterators are an important cornerstone in the generic programming paradigm
 - they serve as intermediaries between generic containers and generic algorithms.
 Different containers have different access properties, and the interface
 to a generic algorithm must account for this. This is depicted graphically
 below, for the
-<i>list</i> and <i>vector</i> containers and the <i>sort,
-find,</i> and <i>merge</i> algorithms.
+<span class="ncbi_class">list</span> and <span class="ncbi_class">vector</span> containers and the <span class="ncbi_func">sort,
+find,</span> and <span class="ncbi_func">merge</span> algorithms.
 <br>&nbsp;
 <center>
 <p><img SRC="iters.gif" >
 <br>Figure 1</center>
 
-<p>The <i>vector</i> class allows <i>input, output, bidirectional,</i>
-and <i>random access</i> iterators. In contrast, the <i>list</i> container
-class does <i>not</i> allow random access to its elements. This is depicted
+<p>The <span class="ncbi_class">vector</span> class allows <span class="ncbi_term">input, output, bidirectional,</span>
+and <span class="ncbi_term">random access</span> iterators. In contrast, the <span class="ncbi_class">list</span> container
+class does <em>not</em> allow random access to its elements. This is depicted
 graphically by one less strand in the ribbon connector. In addition to
 the iterators, the generic algorithms may require function objects such
-as <i>less&lt;T></i> to support the template implementations.
+as <span class="ncbi_ccode">less&lt;T></span> to support the template implementations.
 <p>The STL standard iterators are designed to iterate through any STL container
-of homogeneous elements, e.g., <i>vectors, lists, deques, stacks, maps,
-multimaps, sets, multisets, </i>etc. A prerequisite however, is that the
-container must have <i>begin()</i> and
-<i>end()</i> functions defined on
+of homogeneous elements, e.g., <span class="ncbi_term">vectors, lists, deques, stacks, maps,
+multimaps, sets, multisets, </span>etc. A prerequisite however, is that the
+container must have <span class="ncbi_func">begin()</span> and
+<span class="ncbi_func">end()</span> functions defined on
 it as start and end points for the iteration.
 <p>But while these standard iterators are powerful tools for generic programming,
-they are of no help in iterating over the elements of <i>aggregate</i>
+they are of no help in iterating over the elements of <span class="ncbi_term">aggregate</span>
 objects - e.g., over the heterogeneous data members of a class object.
 As this is an essential operation in processing serialized data structures,
 the NCBI C++ Toolkit provides additional types of iterators for just this
-purpose. In the section on <i><a href="typeinfo.html">Runtime object type
-information</a></i>, we described the
-<i><a href="typeinfo.html#cmemit">CMemberIterator</a></i>
-and <i><a href="typeinfo.html#cvarit">CVariantIterator</a></i> classes,
-which provide access to the instance and type information for
-<i>all</i>
+purpose. In the section on <a href="typeinfo.html">Runtime object type
+information</a>, we described the
+<a href="typeinfo.html#cmemit" class="ncbi_class">CMemberIterator</a>
+and <a href="typeinfo.html#cvarit" class="ncbi_class">CVariantIterator</a> classes,
+which provide access to the instance and type information for <em>all</em>
 of the data members and choice variants of a class or choice object. In
 some cases however, we may wish to visit only those data members which
 are of a certain type, and do not require any type information. The iterators
-described in this section are of this type.&nbsp;<a NAME="typeIt"></a>
-<h3>
-<i><a href="../docxx/CTypeIterator.html">CTypeIterator</a></i> and
-<i><a href="../docxx/CTypeConstIterator.html">CTypeConstIterator</a></i></h3>
-The <i>CTypeIterator</i> and <i>CTypeConstIterator</i> can be used to traverse
+described in this section are of this type.
+
+<p><br>
+
+
+<a NAME="typeIt"></a>
+<h3><a href="../docxx/CTypeIterator.html" class="ncbi_class">CTypeIterator</a> and
+<a href="../docxx/CTypeConstIterator.html" class="ncbi_class">CTypeConstIterator</a></h3>
+
+
+The <span class="ncbi_class">CTypeIterator</span> and <span class="ncbi_class">CTypeConstIterator</span> can be used to traverse
 a structured object, stopping at all data members of a specified type.
 For example, it is very common to represent a linked list of objects by
-encoding a <i>next</i> field that embeds an object of the same type. One
+encoding a next field that embeds an object of the same type. One
 way to traverse the linked list then, would be to "iterate" over all objects
 of that type, beginning at the head of the list. For example, suppose you
-have a <i>CPerson </i>class defined as:&nbsp;<a NAME="CPerson"></a>
-<pre><font color="#000080">class CPerson
-{&nbsp;
+have a <span class="ncbi_class">CPerson </span>class defined as: 
+<a NAME="CPerson"></a>
+
+<blockquote>
+<pre class="ncbi_code">
+class CPerson
+{ 
 public:
-&nbsp;&nbsp;&nbsp; CPerson(void);
-&nbsp;&nbsp;&nbsp; CPerson(const string&amp; name, const string&amp; address, CPerson* p);
-&nbsp;&nbsp;&nbsp; virtual ~CPerson(void);
+    CPerson(void);
+    CPerson(const string&amp; name, const string&amp; address, CPerson* p);
+    virtual ~CPerson(void);
 
-&nbsp;&nbsp;&nbsp; static const CTypeInfo* GetTypeInfo(void);
+    static const CTypeInfo* GetTypeInfo(void);
 
-&nbsp;&nbsp;&nbsp; string m_Name, m_Addr;
-&nbsp;&nbsp;&nbsp; CPerson *m_NextDoor;
-};</font></pre>
-<font color="#000000">Given this definition, one might then define a <i>neighborhood</i>
-using a single <i>CPerson</i>. Assuming a function <i>FullerBrushMan(CPerson&amp;)</i>
+    string m_Name, m_Addr;
+    CPerson *m_NextDoor;
+};</pre></blockquote>
+
+Given this definition, one might then define a <span class="ncbi_var">neighborhood</span>
+using a single <span class="ncbi_class">CPerson</span>. Assuming a function <span class="ncbi_func">FullerBrushMan(CPerson&amp;)</span>
 must now be applied to each person in the neighborhood, this could be implemented
-using a <i>CTypeIterator</i> as follows:</font>
-<pre><font color="#000080">&nbsp; CPerson neighborhood("Moe", "123 Main St",&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; new CPerson("Larry", "127 Main St",&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; new CPerson("Curly", "131 Main St", 0)));
+using a <span class="ncbi_class">CTypeIterator</span> as follows:
 
-&nbsp; for (CTypeIterator&lt;CPerson> house(Begin(neighborhood)); house; ++house ) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FullerBrushMan(*house);
-&nbsp; }</font></pre>
-<font color="#000000">In this example, the data members visited by the
+<blockquote>
+<pre class="ncbi_code">
+CPerson neighborhood("Moe", "123 Main St", 
+                     new CPerson("Larry", "127 Main St", 
+                     new CPerson("Curly", "131 Main St", 0)));
+
+for (CTypeIterator&lt;CPerson> house(Begin(neighborhood)); house; ++house ) {
+    FullerBrushMan(*house);
+}
+</pre>
+</blockquote>
+
+In this example, the data members visited by the
 iterator are of the same type as the top-level aggregate object, since
-<i>neighbor</i> is an instance of <i>CPerson</i>. Thus, the first "member"
+<span class="ncbi_var">neighbor</span> is an instance of <span class="ncbi_class">CPerson</span>. Thus, the first "member"
 visited is the top-level object itself. This is not always the case however.
 The top-level object is only included in the iteration when it is an instance
-of the type specified in the template argument (<i>CPerson</i> in this
-case).</font>
-<p><font color="#000000">&nbsp;All of the NCBI C++ Toolkit type iterators
-are <i>recursive</i>. Thus, since <i>neighborhood</i> has
-<i>CPerson</i>
-data members, which in turn contain objects of type <i>CPerson</i>, all
+of the type specified in the template argument (<span class="ncbi_class">CPerson</span> in this
+case).
+<p>All of the NCBI C++ Toolkit type iterators
+are <span class="ncbi_term">recursive</span>. Thus, since <span class="ncbi_var">neighborhood</span> has
+<span class="ncbi_class">CPerson</span>
+data members, which in turn contain objects of type <span class="ncbi_class">CPerson</span>, all
 of the nested data members will also be visited by the above iterator.
 More generally, given a hierarchically structured object containing data
 elements of a given type nested several levels deep, the NCBI C++ Toolkit
-type iterators effectively generate a "flat" list of all these elements.</font>
-<p><font color="#000000">&nbsp;It is not difficult to imagine situations
-where recursive iterators such as the <i>CTypeIterator</i> could lead to
+type iterators effectively generate a "flat" list of all these elements.
+<p>&nbsp;It is not difficult to imagine situations
+where recursive iterators such as the <span class="ncbi_class">CTypeIterator</span> could lead to
 infinite loops. An obvious example of this would be a doubly-linked list.
-For example, suppose <i>CPerson</i> had both <i>previous</i> and <i>next</i>
+For example, suppose <span class="ncbi_class">CPerson</span> had both <span class="ncbi_var">previous</span> and <span class="ncbi_var">next</span>
 data members, where
-<i>x->next->previous == x</i>. In this case, visiting
-<i>x</i> followed by <i>x->next</i> would lead back to <i>x</i> with no
-terminating condition. To address this issue, the <i>Begin()</i> function
-accepts an optional second argument, <i><a href="../lxr/ident?i=EDetectLoops">eDetectLoops</a></i>.
-<i>eDetectLoops</i> is an <i>enum</i> value which, if included, specifies
+<span class="ncbi_ccode">x->next->previous == x</span>. In this case, visiting
+<span class="ncbi_var">x</span> followed by <span class="ncbi_var">x->next</span> would lead back to <span class="ncbi_var">x</span> with no
+terminating condition. To address this issue, the <span class="ncbi_func">Begin()</span> function
+accepts an optional second argument, <a href="../lxr/ident?i=EDetectLoops" class="ncbi_class">eDetectLoops</a>.
+<span class="ncbi_var">eDetectLoops</span> is an <span class="ncbi_keyword">enum</span> value which, if included, specifies
 that the iterator should detect and avoid infinite loops. The resulting
 iterator will be somewhat slower but can be safely used on objects whose
-references might create loops.</font>
-<p><font color="#000000">Let's compare the syntax of this new iterator class
-to the standard iterators:</font>
-<pre><font color="#000080">&nbsp; ContainerType&lt;T> x;
-&nbsp; for (ContainerType&lt;T>::IteratorType i = x.begin(); i != x.end(); ++i)&nbsp;
+references might create loops.
+<p>Let's compare the syntax of this new iterator class
+to the standard iterators:
 
-&nbsp; for (CTypeIterator&lt;T> i(Begin(ObjectName)); i; ++i)</font></pre>
-<font color="#000000">The standard iterator begins by pointing to the first
+
+<blockquote>
+<pre class="ncbi_code">
+ContainerType&lt;T> x;
+for (ContainerType&lt;T>::IteratorType i = x.begin(); i != x.end(); ++i)
+
+for (CTypeIterator&lt;T> i(Begin(ObjectName)); i; ++i)
+</pre>
+</blockquote>
+
+The standard iterator begins by pointing to the first
 item in the container
-<i>x.begin()</i>, and with each iteration, visits
-subsequent items until the end of the container <i>x.end()</i> is reached.
-Similarly, the <i>CTypeIterator</i> begins by pointing to the first data
-member of <i>ObjectName</i> that is of type
-<i>T</i>, and with each iteration,
-visits subsequent data members of type <i>T</i> until the end of the top-level
-object is reached.</font>
-<p><font color="#000000">A lot of code actually uses
-<i>=&nbsp;Begin(...)</i> instead of <i>(Begin(...))</i> to initialize
+<span class="ncbi_func">x.begin()</span>, and with each iteration, visits
+subsequent items until the end of the container <span class="ncbi_func">x.end()</span> is reached.
+Similarly, the <span class="ncbi_class">CTypeIterator</span> begins by pointing to the first data
+member of <span class="ncbi_var">ObjectName</span> that is of type
+<span class="ncbi_type">T</span>, and with each iteration,
+visits subsequent data members of type <span class="ncbi_type">T</span> until the end of the top-level
+object is reached.
+<p>A lot of code actually uses
+<span class="ncbi_ccode">= Begin(...)</span> instead of <span class="ncbi_ccode">(Begin(...))</span> to initialize
 iterators; although the alternate syntax is somewhat more readable and
 often works, some compilers can mis-handle it and give you link errors.
 As such, direct initialization as shown above generally works better.
 Also, note that this issue only applies to construction; you should
-(and must) continue to use <i>=</i> to reset existing iterators.</font>
-<p><font color="#000000">How are generic iterators such as these implemented?
-The <i><a href="../lxr/ident?i=Begin">Begin()</a></i>
+(and must) continue to use <span class="ncbi_ccode">=</span> to reset existing iterators.
+<p>How are generic iterators such as these implemented?
+The <a href="../lxr/ident?i=Begin" class="ncbi_func">Begin()</a>
 expression returns an object containing a pointer to the input object
-<i>ObjectName</i>,
-as well as a pointer to a <i><a href="typeinfo.html#ctypeinfo">CTypeInfo</a></i>
-object containing <i>type information</i> about that object. On each iteration,
-the <i>++</i> operator examines the <i>current</i> type information to
+<span class="ncbi_var">ObjectName</span>,
+as well as a pointer to a <a href="typeinfo.html#ctypeinfo" class="ncbi_class">CTypeInfo</a>
+object containing <span class="ncbi_term">type information</span> about that object. On each iteration,
+the <span class="ncbi_ccode">++</span> operator examines the <em>current</em> type information to
 find the next data member which is of type
-<i>T</i>. The current object,
+<span class="ncbi_type">T</span>. The current object,
 its type information, and the state of iteration is pushed onto a local
 stack, and the iterator is then reset with a pointer to the next object
-found, and in turn, a pointer to <i>its</i> type information. Each data
-member of type <i>T</i> (or derived from type
-<i>T</i>) must be capable
+found, and in turn, a pointer to its type information. Each data
+member of type <span class="ncbi_type">T</span> (or derived from type
+<span class="ncbi_type">T</span>) must be capable
 of providing its own type information as needed. This allows the iterator
 to recursively visit all data members of the specified type at all levels
-of nesting.</font>
-<p><font color="#000000">&nbsp;More specifically, each object included
+of nesting.
+<p>&nbsp;More specifically, each object included
 in the iteration, as well as the initial argument to
-<i>Begin()</i>, must
+<span class="ncbi_func">Begin()</span>, must
 have a statically implemented
-<i><a href="../lxr/ident?i=GetTypeInfo">GetTypeInfo()</a></i>
+<a href="../lxr/ident?i=GetTypeInfo" class="ncbi_class">GetTypeInfo()</a>
 class member function to provide the needed type information. For example,
 all of the serializable objects generated by
-<i><a href="../tools/datatool/datatool.html">datatool</a></i>
-in the <i>src/objects</i> subtrees have <i>GetTypeInfo()</i> member functions.
+<a href="../tools/datatool/datatool.html" class="ncbi_app">datatool</a>
+in the <span class="ncbi_dir">src/objects</span> subtrees have <span class="ncbi_func">GetTypeInfo()</span> member functions.
 In order to apply type iterators to user-defined classes (as in the above
 example), these classes must also make their type information explicit.
-A set of macros described in the section on <i><a href="usrtypeinfo.html">User-defined
-Type Information</a></i> are provided to simplify the implementation of
-the <i>GetTypeInfo()</i> methods for user-defined classes. The example
+A set of macros described in the section on <a href="usrtypeinfo.html" class="ncbi_term">User-defined
+Type Information</a> are provided to simplify the implementation of
+the <span class="ncbi_func">GetTypeInfo()</span> methods for user-defined classes. The example
 included at the end of this section (see <a href="#appendix">Appendix</a>)
 uses several of the C++ Toolkit type iterators and demonstrates how to
-apply some of these macros.</font>
-<p><font color="#000000">The <i>CType<b>Const</b>Iterator</i> parallels
-the <i>CTypeIterator</i>, and is intended for use with <i>const</i> objects
+apply some of these macros.
+<p>The <span class="ncbi_class">CType<b>Const</b>Iterator</span><!--NCBI_MARK--> parallels
+the <span class="ncbi_class">CTypeIterator</span>, and is intended for use with <span class="ncbi_keyword">const</span> objects
 (i.e. when you want to prohibit modifications to the objects you are iterating
-over). For <i>const</i> iterators, the <i>ConstBegin()</i> function should
-be used in place of <i>Begin()</i>.</font>
-<p><a NAME="hier"></a>
-<h3>
-<font color="#000000">Class hierarchies, embedded objects, and the NCBI
-C++ type iterators</font></h3>
-<font color="#000000">As emphasized above, all of the objects visited by
+over). For <span class="ncbi_keyword">const</span> iterators, the <span class="ncbi_func">ConstBegin()</span> function should
+be used in place of <span class="ncbi_func">Begin()</span>.
+<p><br>
+
+<a NAME="hier"></a>
+
+<h3>Class hierarchies, embedded objects, and the NCBI
+C++ type iterators</h3>
+
+As emphasized above, all of the objects visited by
 an iterator must have the
-<i>GetTypeInfo()</i> member function defined
+<span class="ncbi_func">GetTypeInfo()</span> member function defined
 in order for the iterators to work properly. For an iterator that visits
-objects of type <i>T</i>, the type information provided by <i>GetTypeInfo()</i>
-is used to identify:</font>
+objects of type <span class="ncbi_type">T</span>, the type information provided by <span class="ncbi_func">GetTypeInfo()</span>
+is used to identify:
 <ul>
 <li>
-<font color="#000000">data members of type <i>T</i></font></li>
+data members of type <span class="ncbi_type">T</span></li>
 
 <li>
-<font color="#000000">data members <i>containing</i> objects of type <i>T</i></font></li>
+data members containing objects of type <span class="ncbi_type">T</span></li>
 
 <li>
-<font color="#000000">data members derived from type <i>T</i></font></li>
+data members derived from type <span class="ncbi_type">T</span></li>
 
 <li>
-<font color="#000000">data members <i>containing</i> objects derived from
-type <i>T</i></font></li>
+data members containing objects derived from
+type <span class="ncbi_type">T</span></li>
 </ul>
-<font color="#000000">Explicit encoding of the class hierarchy via the
-<i>GetTypeInfo()</i> methods allows the user to deploy a type iterator
+Explicit encoding of the class hierarchy via the
+<span class="ncbi_func">GetTypeInfo()</span> methods allows the user to deploy a type iterator
 over a single specified type which may in practice include a set of types
 via inheritance. The <a href="#xmpl">Appendix</a> details a simple example
 of this feature. The preprocessor macros used in this example which support
-the encoding of hierarchical class relations are described in the <i><a href="usrtypeinfo.html">User-defined
-Type Information</a></i> section. A further generalization of this idea
-is implemented by the <i><a href="#typesIt">CTypesIterator</a></i> described
-later.</font>
-<p><a NAME="cobjType"></a>
-<h3>
-<font color="#000000"><i><a href="../docxx/CObjectIterator.html">CObjectIterator</a></i>
-and <i><a href="../docxx/CObjectConstIterator.html">CObjectConstIterator</a></i></font></h3>
-<font color="#000000">Because the <i>CObject</i> class is so central to
+the encoding of hierarchical class relations are described in the
+<a href="usrtypeinfo.html" class="ncbi_term">User-defined
+Type Information</a> section. A further generalization of this idea
+is implemented by the <a href="#typesIt" class="ncbi_class">CTypesIterator</a> described
+later.
+
+<p></br>
+
+
+<a NAME="cobjType"></a>
+<h3><a href="../docxx/CObjectIterator.html" class="ncbi_class">CObjectIterator</a>
+and <a href="../docxx/CObjectConstIterator.html" class="ncbi_class">CObjectConstIterator</a></h3>
+
+Because the <span class="ncbi_class">CObject</span> class is so central to
 the Toolkit, a special iterator is also defined, which can automatically
-distinguish <i>CObject</i>s from other class types. The syntax of a <i>CObjectIterator</i>
-is:</font>
-<center><pre><font color="#000080">&nbsp;for (CObjectIterator i(Begin(ObjectName)); i; ++i)</font></pre></center>
-<font color="#000000">Note that there is no need to specify the object
+distinguish <span class="ncbi_class">CObject</span>s from other class types. The syntax of a <span class="ncbi_class">CObjectIterator</span>
+is:
+
+
+<blockquote>
+<pre class="ncbi_code">
+for (CObjectIterator i(Begin(ObjectName)); i; ++i)
+</pre></blockquote>
+
+Note that there is no need to specify the object
 type to iterate over, as the type
-<i>CObject</i> is built into the iterator
+<span class="ncbi_class">CObject</span> is built into the iterator
 itself. This iterator will recursively visit all
-<i>CObject</i>s contained
-or referenced in <i>ObjectName</i>. The <i>CObjectConstIterator</i> is
-identical to the <i>CObjectIterator</i> but is designed to operate on <i>const</i>
-elements and uses the <i>ConstBegin()</i> function.</font>
-<p><font color="#000000">&nbsp;User-defined classes that are derived from
-<i>CObject</i> can also be iterated over (assuming their <i>GetTypeInfo()</i>
+<span class="ncbi_class">CObject</span>s contained
+or referenced in <span class="ncbi_var">ObjectName</span>. The <span class="ncbi_class">CObjectConstIterator</span> is
+identical to the <span class="ncbi_class">CObjectIterator</span> but is designed to operate on <span class="ncbi_keyword">const</span>
+elements and uses the <span class="ncbi_func">ConstBegin()</span> function.
+<p>User-defined classes that are derived from
+<span class="ncbi_class">CObject</span> can also be iterated over (assuming their <span class="ncbi_func">GetTypeInfo()</span>
 methods have been implemented). In general however, care should be used
 in applying this type of iterator, as not all of the NCBI C++ Toolkit classes
 derived from
-<i>CObject</i> have implementations of the <i>GetTypeInfo()</i>
-method. <i>All</i> of the generated serializable objects in <i>include/objects</i>
+<span class="ncbi_func">CObject</span> have implementations of the <span class="ncbi_func">GetTypeInfo()</span>
+method. <em>All</em> of the generated serializable objects in <span class="ncbi_dir">include/objects</span>
 <b>do</b> have a defined
-<i>GetTypeInfo()</i> member function however,
+<span class="ncbi_func">GetTypeInfo()</span> member function however,
 and thus can be iterated over using either a
-<i>CObjectIterator</i> or
-a <i>CTypeIterator</i> with an appropriate template argument.</font>
-<p><a NAME="stdType"></a>
-<h3>
-<font color="#000000"><i><a href="../docxx/CStdTypeIterator.html">CStdTypeIterator</a></i>
-and <i><a href="../docxx/CStdTypeConstIterator.html">CStdTypeConstIterator</a></i></font></h3>
-<font color="#000000">All of the type iterators described thus far require
+<span class="ncbi_class">CObjectIterator</span> or
+a <span class="ncbi_class">CTypeIterator</span> with an appropriate template argument.
+<p><br>
+
+<a NAME="stdType"></a>
+<h3><a href="../docxx/CStdTypeIterator.html" class="ncbi_class">CStdTypeIterator</a>
+and <a href="../docxx/CStdTypeConstIterator.html" class="ncbi_class">CStdTypeConstIterator</a></h3>
+
+All of the type iterators described thus far require
 that each object visited must provide its own type information. Hence,
-none of these can be applied to standard types such as <i>int, float, double</i>
-or the STL type <i>string</i>. The
-<i>CStdTypeIterator</i> and <i>CStdTypeConstIterator</i>
+none of these can be applied to standard types such as <span class="ncbi_type">int, float, double</span>
+or the STL type <span class="ncbi_type">string</span>. The
+<span class="ncbi_class">CStdTypeIterator</span> and <span class="ncbi_class">CStdTypeConstIterator</span>
 classes selectively iterate over data members of a specified type. But
-for these iterators, the type <i>must</i> be a simple C type (<i>int, double,
-char*, etc.</i>) or an STL type <i>string</i>. For example, to iterate
-over all the <i>string</i> data members in a
-<i>CPerson</i> object, we
-could use:</font>
-<pre><font color="#000080">&nbsp;&nbsp;&nbsp; for (CStdTypeIterator&lt;string> i(Begin(neighborhood)); i; ++i) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; *i &lt;&lt; ' ';
-&nbsp;&nbsp;&nbsp; }</font></pre>
-<font color="#000000">The <i>CStdTypeConstIterator</i> is identical to
-the <i>CStdTypeIterator</i> but is designed to operate on <i>const</i>
-elements and requires the <i>ConstBegin()</i> function.</font>
-<p><font color="#000000">&nbsp;Code examples using the <i>CTypeIterator</i>
-and <i>CStdTypeIterator</i> are given in <i><a href="ctypeiter_cpp.html">ctypeiter.cpp</a></i>.&nbsp;</font><a NAME="typesIt"></a>
-<h3>
-<i><font color="#000000"><a href="../docxx/CTypesIterator.html">CTypesIterator</a></font></i></h3>
-<font color="#000000">Sometimes it is necessary to iterate over a <i>set</i>
-of types contained inside an object. The <i>CTypesIterator</i>, as its
+for these iterators, the type <em>must</em> be a simple C type (<span class="ncbi_type">int, double,
+char*, etc.</span>) or an STL type <span class="ncbi_type">string</span>. For example, to iterate
+over all the <span class="ncbi_type">string</span> data members in a
+<span class="ncbi_class">CPerson</span> object, we
+could use:
+
+<blockquote>
+<pre class="ncbi_code">
+    for (CStdTypeIterator&lt;string> i(Begin(neighborhood)); i; ++i) {
+        cout &lt;&lt; *i &lt;&lt; ' ';
+    }
+</pre>
+</blockquote>
+
+The <span class="ncbi_class">CStdTypeConstIterator</span> is identical to
+the <span class="ncbi_class">CStdTypeIterator</span> but is designed to operate on <span class="ncbi_keyword">const</span>
+elements and requires the <span class="ncbi_func">ConstBegin()</span> function.
+<p> Code examples using the <span class="ncbi_class">CTypeIterator</span>
+and <span class="ncbi_class">CStdTypeIterator</span> are given in <a href="ctypeiter_cpp.html" class="ncbi_file">ctypeiter.cpp</a>. 
+
+<p><br>
+
+
+<a NAME="typesIt"></a>
+<h3><a href="../docxx/CTypesIterator.html" class="ncbi_class">CTypesIterator</a></h3>
+
+Sometimes it is necessary to iterate over a set
+of types contained inside an object. The <span class="ncbi_class">CTypesIterator</span>, as its
 name suggests, is designed for this purpose. For example, suppose you have
-loaded a gene sequence into memory as a <i>CBioseq</i> (named <i>seq</i>),
+loaded a gene sequence into memory as a <span class="ncbi_class">CBioseq</span> (named <span class="ncbi_var">seq</span>),
 and want to iterate over all of its references to genes and organisms.
 The following sequence of statements defines an iterator that will step
-through all of <i>seq</i>'s data members (recursively), stopping only at
-references to gene and organism citations:</font>
-<pre><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp; CTypesIterator i;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp; Type&lt;CGene_ref>::AddTo(i);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // define the types to stop at
-&nbsp;&nbsp;&nbsp;&nbsp; Type&lt;COrg_ref>::AddTo(i);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp; for (i = Begin(seq); i; ++i) {
-&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (Type&lt;CGene_ref>::Match(i)) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGene_ref* geneRef = Type&lt;CGene_ref>::Get(i);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else if (Type&lt;COrg_ref>::Match(i) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; COrg_ref* orgRef = Type&lt;COrg_ref>::Get(i);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp;&nbsp; }</font></pre>
-<font color="#000000">Here, <i><a href="../docxx/Type.html">Type</a></i>
+through all of <span class="ncbi_var">seq</span>'s data members (recursively), stopping only at
+references to gene and organism citations:
+
+<blockquote>
+<pre class="ncbi_code">
+CTypesIterator i;                  
+Type&lt;CGene_ref>::AddTo(i);              // define the types to stop at
+Type&lt;COrg_ref>::AddTo(i);
+        
+for (i = Begin(seq); i; ++i) {
+ 
+    if (Type&lt;CGene_ref>::Match(i)) {
+        CGene_ref* geneRef = Type&lt;CGene_ref>::Get(i);
+        ...
+    } 
+    else if (Type&lt;COrg_ref>::Match(i) {
+        COrg_ref* orgRef = Type&lt;COrg_ref>::Get(i);
+        ...
+    }
+}</pre>
+</blockquote>
+
+Here, <a href="../docxx/Type.html" class="ncbi_class">Type</a>
 is a helper template class that simplifies the syntax required to use the
-multiple types iterator:</font>
+multiple types iterator:
 <ul>
 <li>
-<font color="#000000"><i>Type&lt;TypeName>::AddTo(i)</i> specifies that
-iterator <i>i</i> should stop at type <i>TypeName</i>.</font></li>
+<span class="ncbi_ccode">Type&lt;TypeName>::AddTo(i)</span> specifies that
+iterator <span class="ncbi_var">i</span> should stop at type <span class="ncbi_type">TypeName</span>.</li>
 
 <li>
-<font color="#000000"><i>Type&lt;TypeName>::Match(i)</i> returns <i>true</i>
-if the specified type <i>TypeName</i> is the type currently pointed to
-by iterator <i>i</i>.</font></li>
+<span class="ncbi_ccode">Type&lt;TypeName>::Match(i)</span> returns <span class="ncbi_value">true</span>
+if the specified type <span class="ncbi_type">TypeName</span> is the type currently pointed to
+by iterator <span class="ncbi_var">i</span>.</li>
 
 <li>
-<font color="#000000"><i>Type&lt;TypeName>::Get(i)</i> retrieves the object
-currently pointed to by iterator <i>i</i> <b><i>if</i></b> there is a type
-match to <i>TypeName</i>, and otherwise returns 0. In the event there is
-a type match, the retrieved object is type cast to <i>TypeName</i> before
-it is returned.</font></li>
+<span class="ncbi_ccode">Type&lt;TypeName>::Get(i)</span> retrieves the object
+currently pointed to by iterator <span class="ncbi_var">i</span> <em>if</em> there is a type
+match to <span class="ncbi_type">TypeName</span>, and otherwise returns 0. In the event there is
+a type match, the retrieved object is type cast to <span class="ncbi_type">TypeName</span> before
+it is returned.</li>
 </ul>
-<font color="#000000">The <i>Begin()</i> expression is as described for
-the above <i>CTypeIterator</i> and
-<i>CTypeConstIterator</i> classes. The
-<i><a href="../lxr/ident?i=CTypesConstIterator">CTypesConstIterator</a></i>
-is the <i>const</i> implementation of this type of iterator, and requires
-the <i>ConstBegin()</i> function.</font>
-<p><a NAME="appendix"></a>
-<h3>
-<font color="#000000">Appendix</font></h3>
-<a NAME="xmpl"></a><font color="#000000">The following example demonstrates
+The <span class="ncbi_func">Begin()</span> expression is as described for
+the above <span class="ncbi_class">CTypeIterator</span> and
+<span class="ncbi_class">CTypeConstIterator</span> classes. The
+<a href="../lxr/ident?i=CTypesConstIterator" class="ncbi_class">CTypesConstIterator</a>
+is the <span class="ncbi_keyword">const</span> implementation of this type of iterator, and requires
+the <span class="ncbi_func">ConstBegin()</span> function.
+
+<p><br>
+
+<a NAME="appendix"></a>
+<h3>Appendix</h3>
+
+<a NAME="xmpl"></a>The following example demonstrates
 how the class hierarchy determines which data members will be included
-in a type iterator. The example uses five simple classes:</font>
+in a type iterator. The example uses five simple classes:
 <ul>
 <li>
-<font color="#000000">Class <i>CA</i> contains a single <i>int</i> data
-member and is used as a target object type for the type iterators demonstrated.</font></li>
+Class <span class="ncbi_class">CA</span> contains a single <span class="ncbi_type">int</span> data
+member and is used as a target object type for the type iterators demonstrated.</li>
 
 <li>
-<font color="#000000">class <i>CB</i> contains an <i>auto_ptr</i> to a
-<i>CA</i> object.</font></li>
+class <span class="ncbi_class">CB</span> contains an <span class="ncbi_class">auto_ptr</span> to a
+<span class="ncbi_class">CA</span> object.</li>
 
 <li>
-<font color="#000000">Class <i>CC</i> is derived from <i>CA</i> and is
-used to demonstrate the usage of class hierarchy information.</font></li>
+Class <span class="ncbi_class">CC</span> is derived from <span class="ncbi_class">CA</span> and is
+used to demonstrate the usage of class hierarchy information.</li>
 
 <li>
-<font color="#000000">Class <i>CD</i> contains an <i>auto_ptr</i> to a
-<i>CC</i> object, and, since it is derived from <i>CObject</i>, can be
-used as the object pointed to by a <i><a href="cref.html">CRef</a></i>.</font></li>
+Class <span class="ncbi_class">CD</span> contains an <span class="ncbi_class">auto_ptr</span> to a
+<span class="ncbi_class">CC</span> object, and, since it is derived from <span class="ncbi_class">CObject</span>, can be
+used as the object pointed to by a <a href="cref.html" class="ncbi_class">CRef</a>.</li>
 
 <li>
-<font color="#000000">Class <i>CX</i> contains both pointers-to and instances-of
-<i>CA, CB, CC</i>, and <i>CD</i> objects, and is used as the argument to
-<i>Begin()</i> for the demonstrated type iterators.</font></li>
+Class <span class="ncbi_class">CX</span> contains both pointers-to and instances-of
+<span class="ncbi_class">CA, CB, CC</span>, and <span class="ncbi_class">CD</span> objects, and is used as the argument to
+<span class="ncbi_func">Begin()</span> for the demonstrated type iterators.</li>
 </ul>
-<font color="#000000">The preprocessor macros used in this example implement
-the <i>GetTypeInfo()</i> methods for the classes, and are described in
-the section on <i><a href="usrtypeinfo.html">User-defined type information</a></i>.</font>
-<pre>
-<font color="#FF0000">&nbsp; // Define a simple class to use as iterator's target objects
-</font><font color="#000080">&nbsp; class CA
-&nbsp; {
-&nbsp; public:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CA() : m_Data(0) {};
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CA(int n) : m_Data(n) {};
+The preprocessor macros used in this example implement
+the <span class="ncbi_func">GetTypeInfo()</span> methods for the classes, and are described in
+the section on <a href="usrtypeinfo.html" class="ncbi_term">User-defined type information</a>.  
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static const CTypeInfo* GetTypeInfo(void);
+<blockquote>
+<pre class="ncbi_code">
+// Define a simple class to use as iterator's target objects
+class CA
+{
+public:
+    CA() : m_Data(0) {};
+    CA(int n) : m_Data(n) {};
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int m_Data;
-&nbsp; };
+    static const CTypeInfo* GetTypeInfo(void);
 
-</font><font color="#FF0000">&nbsp; // Define a class containing an auto_ptr to the target class&nbsp;
-</font><font color="#000080">&nbsp; class CB&nbsp;
-&nbsp; {
-&nbsp; public:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CB() : m_a(0) {};
+    int m_Data;
+};
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static const CTypeInfo* GetTypeInfo(void);
+// Define a class containing an auto_ptr to the target class 
+class CB 
+{
+public:
+    CB() : m_a(0) {};
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; auto_ptr&lt;CA> m_a;
-&nbsp; };&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    static const CTypeInfo* GetTypeInfo(void);
 
-</font><font color="#FF0000">&nbsp; // define a subclass of the target class&nbsp;
-</font><font color="#000080">&nbsp; class CC : public CA
-&nbsp; {
-&nbsp; public:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CC() : CA(0){};
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CC(int n) : CA(n){};
+    auto_ptr&lt;CA> m_a;
+};      
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static const CTypeInfo* GetTypeInfo(void);
-&nbsp; };
-</font><font color="#FF0000">&nbsp;
-&nbsp; // define a class derived from CObject to use in a CRef
-&nbsp; // this class also contains an auto_ptr to the target class&nbsp;
-</font><font color="#000080">&nbsp; class CD : public CObject
-&nbsp; {
-&nbsp; public:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CD() : m_c(0) {};
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static const CTypeInfo* GetTypeInfo(void);
+// define a subclass of the target class 
+class CC : public CA
+{
+public:
+    CC() : CA(0){};
+    CC(int n) : CA(n){};
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; auto_ptr&lt;CC> m_c;
-&nbsp; };
+    static const CTypeInfo* GetTypeInfo(void);
+};
+ 
+// define a class derived from CObject to use in a CRef
+// this class also contains an auto_ptr to the target class 
+class CD : public CObject
+{
+public:
+    CD() : m_c(0) {};
+    static const CTypeInfo* GetTypeInfo(void);
 
-</font><font color="#FF0000">&nbsp; // This class will be the argument to the iterator. It contains 4
-&nbsp; // instances of CA - directly, through pointers, and via inheritance&nbsp;
-</font><font color="#000080">&nbsp; class CX
-&nbsp; {
-&nbsp; public:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CX() : m_a(0), m_b(0), m_d(0) {};
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ~CX(){};
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static const CTypeInfo* GetTypeInfo(void);
+    auto_ptr&lt;CC> m_c;
+};
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; auto_ptr&lt;CA> m_a; // auto_ptr to a CA
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CB *m_b;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // pointer to an object containing a CA
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CC&nbsp; m_c;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // instance of a subclass of CA
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CRef&lt;CD> m_d;&nbsp;&nbsp;&nbsp;&nbsp; // CRef to an object containing an auto_ptr to CC
-&nbsp; };
+// This class will be the argument to the iterator. It contains 4
+// instances of CA - directly, through pointers, and via inheritance 
+class CX
+{
+public:
+    CX() : m_a(0), m_b(0), m_d(0) {};
+    ~CX(){};
+    static const CTypeInfo* GetTypeInfo(void);
 
-
-</font><font color="#FF0000">&nbsp; //////////&nbsp; Implement the GetTypeInfo() methods /////////
-&nbsp; ////////// (see&nbsp;<a href="usrtypeinfo.html"> <i>User-defined type information</i></a>)&nbsp; /////////
+    auto_ptr&lt;CA> m_a; // auto_ptr to a CA
+    CB *m_b;          // pointer to an object containing a CA
+    CC  m_c;          // instance of a subclass of CA
+    CRef&lt;CD> m_d;     // CRef to an object containing an auto_ptr to CC
+};
 
 
-</font><font color="#0000FF">&nbsp; BEGIN_CLASS_INFO(CA)
-</font><font color="#000080">&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_STD_MEMBER(m_Data);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_SUB_CLASS(CC);
-&nbsp; }
-&nbsp; END_CLASS_INFO
-&nbsp;&nbsp;
-&nbsp;&nbsp;
-</font><font color="#0000FF">&nbsp; BEGIN_CLASS_INFO(CB)
-</font><font color="#000080">&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_MEMBER(m_a, STL_auto_ptr, (CLASS, (CA)));
-&nbsp; }
-&nbsp; END_CLASS_INFO
-&nbsp;&nbsp;
-&nbsp;&nbsp;
-</font><font color="#0000FF">&nbsp; BEGIN_DERIVED_CLASS_INFO(CC, CA)
-</font><font color="#000080">&nbsp; {
-&nbsp; }
-&nbsp; END_DERIVED_CLASS_INFO
-&nbsp;&nbsp;
-&nbsp;&nbsp;
-</font><font color="#0000FF">&nbsp; BEGIN_CLASS_INFO(CD)
-</font><font color="#000080">&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_MEMBER(m_c, STL_auto_ptr, (CLASS, (CC)));
-&nbsp; }
-&nbsp; END_CLASS_INFO
-&nbsp;&nbsp;
-&nbsp;&nbsp;
-</font><font color="#0000FF">&nbsp; BEGIN_CLASS_INFO(CX)&nbsp;
-</font><font color="#000080">&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_MEMBER(m_a, STL_auto_ptr, (CLASS, (CA)));
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_MEMBER(m_b, POINTER, (CLASS, (CB)));
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_MEMBER(m_c, CLASS, (CC));
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_MEMBER(m_d, STL_CRef, (CLASS, (CD)));
-&nbsp; }
-&nbsp; END_CLASS_INFO
+//////////  Implement the GetTypeInfo() methods /////////
+////////// (see <a href="usrtypeinfo.html">User-defined type information</a>)  /////////
 
-&nbsp;&nbsp;
-&nbsp; int main(int argc, char** argv)
-&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CB b;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CD d;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; b.m_a.reset(new CA(2));
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; d.m_c.reset(new CC(4));
-&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CX x;
-&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x.m_a.reset(new CA(1));&nbsp;&nbsp; </font><font color="#FF0000">// auto_ptr to CA&nbsp;
-</font><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x.m_b = &amp;b;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// pointer to CB containing auto_ptr to CA&nbsp;
-</font><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x.m_c = *(new CC(3));&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// instance of subclass of CA&nbsp;
-</font><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x.m_d = &amp;d;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// CRef to CD containing auto_ptr to CC&nbsp;
-</font><font color="#000080">&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; "Iterating over CA objects in x" &lt;&lt; endl &lt;&lt; endl;
-&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (CTypeIterator&lt;CA> i(Begin(x)); i; ++i)
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; (*i).m_Data &lt;&lt; endl;
-&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; "Iterating over CC objects in x" &lt;&lt; endl &lt;&lt; endl;
-&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (CTypeIterator&lt;CC> i(Begin(x)); i; ++i)
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; (*i).m_Data &lt;&lt; endl;
-&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; "Iterating over CObjects in x" &lt;&lt; endl &lt;&lt; endl;
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (CObjectIterator i(Begin(x)); i; ++i) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CD *tmp = dynamic_cast&lt;const CD*>(&amp;*i);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; tmp->m_c->m_Data &lt;&lt; endl;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 0;
-&nbsp; }</font></pre>
-<font color="#000000">Figure 2 illustrates the paths traversed by <i>CTypeIterator&lt;CA></i>
-and <i>CTypeIterator&lt;CC></i>, where both iterators are initialized with
-<i>Begin(a)</i>. The data members visited by the iterator are indicated
-by enclosing boxes.</font>
+BEGIN_CLASS_INFO(CA)
+{
+    ADD_STD_MEMBER(m_Data);
+    ADD_SUB_CLASS(CC);
+}
+END_CLASS_INFO
+  
+  
+BEGIN_CLASS_INFO(CB)
+{
+    ADD_MEMBER(m_a, STL_auto_ptr, (CLASS, (CA)));
+}
+END_CLASS_INFO
+  
+  
+BEGIN_DERIVED_CLASS_INFO(CC, CA)
+{
+}
+END_DERIVED_CLASS_INFO
+  
+  
+BEGIN_CLASS_INFO(CD)
+{
+    ADD_MEMBER(m_c, STL_auto_ptr, (CLASS, (CC)));
+}
+END_CLASS_INFO
+  
+  
+BEGIN_CLASS_INFO(CX) 
+{
+    ADD_MEMBER(m_a, STL_auto_ptr, (CLASS, (CA)));
+    ADD_MEMBER(m_b, POINTER, (CLASS, (CB)));
+    ADD_MEMBER(m_c, CLASS, (CC));
+    ADD_MEMBER(m_d, STL_CRef, (CLASS, (CD)));
+}
+END_CLASS_INFO
+
+  
+int main(int argc, char** argv)
+{
+    CB b;                     
+    CD d;                     
+  
+    b.m_a.reset(new CA(2));
+    d.m_c.reset(new CC(4));
+
+    CX x;
+  
+    x.m_a.reset(new CA(1));    // auto_ptr to CA 
+    x.m_b = &amp;b;            // pointer to CB containing auto_ptr to CA 
+    x.m_c = *(new CC(3));      // instance of subclass of CA 
+    x.m_d = &amp;d;            // CRef to CD containing auto_ptr to CC 
+  
+    cout &lt;&lt; "Iterating over CA objects in x" &lt;&lt; endl &lt;&lt; endl;
+  
+    for (CTypeIterator&lt;CA> i(Begin(x)); i; ++i)
+        cout &lt;&lt; (*i).m_Data &lt;&lt; endl;
+  
+    cout &lt;&lt; "Iterating over CC objects in x" &lt;&lt; endl &lt;&lt; endl;
+  
+    for (CTypeIterator&lt;CC> i(Begin(x)); i; ++i)
+        cout &lt;&lt; (*i).m_Data &lt;&lt; endl;
+  
+    cout &lt;&lt; "Iterating over CObjects in x" &lt;&lt; endl &lt;&lt; endl;
+
+    for (CObjectIterator i(Begin(x)); i; ++i) {
+        const CD *tmp = dynamic_cast&lt;const CD*>(&amp;*i);
+        cout &lt;&lt; tmp->m_c->m_Data &lt;&lt; endl;
+    }
+    return 0;
+}</pre>
+</blockquote>
+
+Figure 2 illustrates the paths traversed by <span class="ncbi_class">CTypeIterator&lt;CA></span>
+and <span class="ncbi_class">CTypeIterator&lt;CC></span>, where both iterators are initialized with
+<span class="ncbi_func">Begin(a)</span>. The data members visited by the iterator are indicated
+by enclosing boxes.
+
 <center><img SRC="typeiter.gif" ></center>
-<font color="#000000">For additional examples of using the type iterators
-described in this section, see
-<i><a href="ctypeiter_cpp.html">ctypeiter.cpp</a></i>.</font>
-<p><font color="#000000">&nbsp;
-<i><a href="usrtypeinfo.html">previous</a></i>&nbsp;&nbsp;&nbsp;
+For additional examples of using the type iterators described in this section, see
+<a href="ctypeiter_cpp.html" class="ncbi_file">ctypeiter.cpp</a>.
 
-<i><a href="../index.html">up&nbsp;</a></i></font>
+<p> 
+<i><a href="usrtypeinfo.html">previous</a></i><!--NCBI_MARK-->&nbsp;&nbsp;&nbsp;
+
+<i><a href="../index.html">up&nbsp;</a></i><!--NCBI_MARK-->
 
 
 <!--#include virtual="../ssi/navlinks.shtml" -->
@@ -519,9 +583,9 @@ described in this section, see
 <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
-<td><!-- <td align=center><i>$Revision$</i></td> --></td>
+<td><!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> --></td>
 
-<td ALIGN=RIGHT><i>$Date$</i></td>
+<td ALIGN=RIGHT><span class="ncbi_cvs_date">$Date$</span></td>
 </tr>
 </table>
 

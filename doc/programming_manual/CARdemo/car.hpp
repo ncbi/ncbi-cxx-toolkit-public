@@ -1,11 +1,12 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
-  <head>
+<head>
     <title>car.hpp</title>
-  </head>
+</head>
 
-  <body BGCOLOR="#FFFFFF">
-  <pre><font color = "red">// File name: car.hpp
+<body BGCOLOR="#FFFFFF">
+
+<pre><font color = "red">// File name: car.hpp
 // Description: Define the CCar and CCarAttr classes
 <font color = "green">
 #ifndef CAR_HPP
@@ -61,4 +62,7 @@ private:
 END_NCBI_SCOPE
 <font color = green>
 #endif  /* CAR__HPP */
+</font></pre>
 
+</body>
+</html>

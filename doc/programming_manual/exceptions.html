@@ -5,36 +5,36 @@
 <a href="../lxr/source/include/corelib/ncbiexpt.hpp"><h1>Exception handling </a> in the NCBI C++ Toolkit</h1>
 
 <ul>
-  <li><a href="#NcbiException">NCBI C++ exceptions.</a>
+  <li><a href="#NcbiException">NCBI C++ exceptions</a>
     <ul>
-    <li><a href="#Requirements">Requirements.</a></li>
-    <li><a href="#Architecture">Architecture.</a></li>
-    <li><a href="#Implementation">Implementation.</a>
+    <li><a href="#Requirements">Requirements</a></li>
+    <li><a href="#Architecture">Architecture</a></li>
+    <li><a href="#Implementation">Implementation</a>
       <ul>
-        <li><a href="#CException">CException.</a></li>
-        <li><a href="#DerivedExceptions">Derived exceptions.</a></li>
-        <li><a href="#ReportingExceptions">Reporting an exception.</a></li>
-        <li><a href="#CExceptionReporter">CExceptionReporter.</a></li>
-        <li><a href="#ErrorCodes">Choosing and analyzing error codes.</a></li>
+        <li><a href="#CException">CException</a></li>
+        <li><a href="#DerivedExceptions">Derived exceptions</a></li>
+        <li><a href="#ReportingExceptions">Reporting an exception</a></li>
+        <li><a href="#CExceptionReporter">CExceptionReporter</a></li>
+        <li><a href="#ErrorCodes">Choosing and analyzing error codes</a></li>
       </ul>
-    <li><a href="#Examples">Examples.</a></li>
+    <li><a href="#Examples">Examples</a></li>
       <ul>
-        <li><a href="#ThrowingExample">Throwing an exception.</a></li>
-        <li><a href="#ReportingExample">Reporting an exception.</a></li>
+        <li><a href="#ThrowingExample">Throwing an exception</a></li>
+        <li><a href="#ReportingExample">Reporting an exception</a></li>
       </ul>
     </ul>
   </li>
-  <li> <a href="#errno">The CErrnoException Class </a>
-  <li> <a href="#parse">The CParseException Class </a>
+  <li> <a href="#errno">The CErrnoException Class</a>
+  <li> <a href="#parse">The CParseException Class</a>
   <li> <a href="#macro">Macros for standard C++ exception handling</a>
   <li> <a href="#tracex">Exception Tracing </a>
   <li> <a href="../libs/err_msg.html#ref_Exception">Reference Manual pages</a>
 </ul>
-
+<p><br>
 
 
 <a name="NcbiException"></a>
-<h3>NCBI C++ exceptions.</h3>
+<h3>NCBI C++ exceptions</h3>
 
 <p>
 C++ exceptions is a standard mechanism of communicating abnormal or
@@ -59,10 +59,10 @@ and a text message. The latter probably makes sense for a human, but not for
 a program. The former does not seem to be clear enough.
 </p>
 
-
+<p><br>
 
 <a name="#Requirements"></a>
-<h4>Requirements.</h4>
+<h4>Requirements</h4>
 <ul>
   <li>
   Exception should contain information about where exactly has it
@@ -88,10 +88,10 @@ a program. The former does not seem to be clear enough.
   </li>
 </ul>
 
-
+<p><br>
 
 <a name="Architecture"></a>
-<h4>Architecture.</h4>
+<h4>Architecture</h4>
 <p>
 Each subsystem (library) has its own type of exceptions. It may have several types,
 if necessary, but all of them should be derived from a single base class (which in turn is
@@ -128,7 +128,7 @@ parameters.
 </p>
 <p>
 NCBI exception has a sophisticated reporting mechanism -- the standard
-<tt>exception::what()</tt> function is definitely not enough. There are three
+<span class="ncbi_func">exception::what()</span> function is definitely not enough. There are three
 groups of reporting mechanisms:
 </p>
 <ul>
@@ -138,16 +138,16 @@ groups of reporting mechanisms:
   <li>NCBI standard diagnostic mechanism is used.</li>
 </ul>
 
-
+<p><br>
 
 <a name="Implementation"></a>
-<h4>Implementation.</h4>
+<h4>Implementation</h4>
 
 <a name="CException"></a>
-<h5>CException.</h5>
+<h5>CException</h5>
 <p>
 There is a single system-wide exception base class --
-<var><a href="../lxr/ident?i=CException&d=C">CException</a></var>.
+<a href="../lxr/ident?i=CException&d=C" class="ncbi_class">CException</a>.
 Each subsystem <em>must</em> implement its own type of exceptions, which must be
 be derived from this class. The class defines basic requirements of an exception
 construction, backlog and reporting mechanisms.
@@ -156,7 +156,7 @@ construction, backlog and reporting mechanisms.
 Constructor includes location information, exception id and a message.
 Each exception class defines its own error codes. So, the error code "by itself"
 is meaningless -- one should also know the the exception class, which produced it.
-<pre>
+<pre class="ncbi_code">
     // When throwing an exception initially, "prev_exception" must be 0
     CException(const char* file, int line,
                const CException* prev_exception, 
@@ -166,19 +166,19 @@ is meaningless -- one should also know the the exception class, which produced i
 
 <p>
 To make it easier to throw/re-throw an exception, the following macros are defined:
-<pre>
+<pre class="ncbi_code">
     NCBI_THROW(exception_class,err_code,message)
     NCBI_RETHROW(prev_exception,exception_class,err_code,message)
     NCBI_RETHROW_SAME(prev_exception,message)
 </pre>
-The last one (<var>NCBI_RETHROW_SAME</var>) re-throws
+The last one (<span class="ncbi_macro">NCBI_RETHROW_SAME</span>) re-throws
 the same exception with backlog information added. 
 </p>
 
 <p>
 The class has numerous reporting methods (the contents of reports is defined by
 <a href="diag.html#PostFlags">diagnostics post flags</a>):
-<pre>
+<pre class="ncbi_code">
     // Standard report (includes full backlog)
     virtual const char* what(void) const throw();
 
@@ -209,12 +209,12 @@ The class has numerous reporting methods (the contents of reports is defined by
     static bool EnableBackgroundReporting(bool enable);
 </pre>
 Also, the following macro is defined:
-<pre>
+<pre class="ncbi_code">
     NCBI_REPORT_EXCEPTION(title,e)
 </pre>
 Finally, the following data access functions help to analyze exception
 from a program:
-<pre>
+<pre class="ncbi_code">
     // Return class name as a string
     virtual const char* GetType(void) const;
     // Interpretation of error code (as text)
@@ -230,7 +230,7 @@ from a program:
 
 
 <a name="DerivedExceptions"></a>
-<h5>Derived exceptions.</h5>
+<h5>Derived exceptions</h5>
 <p>
 The only requirement for a derived exception is to define error codes
 as well as its textual representation. Implementation of several other
@@ -239,7 +239,8 @@ pretty straightforward -- so we put it into a macro definition.
 Please note, this macro can only be used when the derived class has
 no additional data members.
 Here is an example of an exception declaration:
-<pre>
+<blockquote>
+<pre class="ncbi_code">
 class CSubsystemException : public CException
 {
 public:
@@ -257,16 +258,16 @@ public:
     }
     NCBI_EXCEPTION_DEFAULT(CSubsystemException,CException);
 };
-</pre>
+</pre></blockquote>
 In case the derived exception has data members not found in the base class,
-it should also impelement its own <var>ReportExtra</var> method -- to report
+it should also impelement its own <span class="ncbi_func">ReportExtra</span> method -- to report
 this non-standard data.
 </p>
 
 
 
 <a name="ReportingExceptions"></a>
-<h5>Reporting an exception.</h5>
+<h5>Reporting an exception</h5>
 <p>
 There are several way to report an NCBI C++ exception:
 <ol>
@@ -281,7 +282,7 @@ of the exception class and error code, and a description of the error.
 The content of the report is defined by
 <a href="diag.html#PostFlags">diagnostics post flags</a>.
 The following methods generate reports of this type:
-<pre>
+<pre class="ncbi_code">
     // Standard report (includes full backlog)
     virtual const char* what(void) const throw();
     // Report as a string
@@ -290,10 +291,10 @@ The following methods generate reports of this type:
     // including full backlog
     string ReportAll (TDiagPostFlags flags = eDPF_Trace) const;
 </pre>
-Functions <var>what()</var> and <var>ReportAll()</var> may also generate a
-<tt>background</tt> report - the one generated by a default exception reporter.
+Functions <span class="ncbi_func">what()</span> and <span class="ncbi_func">ReportAll()</span> may also generate a
+<span class="ncbi_term">background</span> report - the one generated by a default exception reporter.
 This feature can be disabled by calling the static method
-<pre>
+<pre class="ncbi_code">
     CException::EnableBackgroundReporting(false);
 </pre>
   </li>
@@ -302,19 +303,19 @@ Client can provide its own
 <a href="#CExceptionReporter">exception reporter</a>.
 An object of this class may either use exception data access functions to
 create its own reports, or redirect reports into its own output channel(s).
-While it is possible to specify the reporter in the <var>CException::Report()</var>
+While it is possible to specify the reporter in the <span class="ncbi_func">CException::Report()</span>
 function, it seems to be better to install the reporter as a default one instead,
 using
-<pre>
+<pre class="ncbi_code">
     CExceptionReporter::SetDefault(const CExceptionReporter* handler);
 </pre>
-static function, and use the standard <var>NCBI_REPORT_EXCEPTION</var> macro in the program.
+static function, and use the standard <span class="ncbi_macro">NCBI_REPORT_EXCEPTION</span> macro in the program.
   </li>
   <li>
 Still another way to report an exception is to use the standard
 <a href="diag.html">diagnostic</a> mechanism provided by NCBI C++ toolkit.
 In this case the code to generate the report would look like this:
-<pre>
+<pre class="ncbi_code">
     try {
         ...
     } catch (CException&amp; e) {
@@ -328,15 +329,15 @@ In this case the code to generate the report would look like this:
 
 
 <a name="CExceptionReporter"></a>
-<h5>CExceptionReporter.</h5>
+<h5>CExceptionReporter</h5>
 <p>
 One of possible ways to report an exception is to use an external "reporter".
 Reporter is an object that formats exception data and sends it to its own output
 channel. Client can install its own, custom exception reporter (this is not
 required though -- in case the default was not set,
 the standard NCBI diagnostic mechanism is used).<br />
-<var>CExceptionReporter</var> is an abstract class, which defines reporter interface:
-<pre>
+<span class="ncbi_class">CExceptionReporter</span> is an abstract class, which defines reporter interface:
+<pre class="ncbi_code">
     // Default reporter
     static  void SetDefault(CExceptionReporter* handler);
     static  const CExceptionReporter* GetDefault(void);
@@ -359,7 +360,7 @@ the standard NCBI diagnostic mechanism is used).<br />
 
 
 <a name="ErrorCodes"></a>
-<h5>Choosing and analyzing error codes.</h5>
+<h5>Choosing and analyzing error codes</h5>
 <p>
 Choosing and interpreting error codes can potentially create some problems.
 The matter of fact is that each exception class has its own error codes, as well as
@@ -368,10 +369,11 @@ as numbers. So, same number can be interpreted incorrectly,
 as soon as we somehow misinterpret the exception class.
 <br />
 Say for instance, there is an exception class, which is derived from
-<var><a href="#DerivedExceptions">CSubsystemException</a></var> -- let us call
-it <var>CSupersystemException</var> -- which also defines two error codes:
-<var>eSuper1</var> and <var>eSuper2</var>:
-<pre>
+<a href="#DerivedExceptions" class="ncbi_class">CSubsystemException</a> -- let us call
+it <span class="ncbi_class">CSupersystemException</span> -- which also defines two error codes:
+<span class="ncbi_var">eSuper1</span> and <span class="ncbi_var">eSuper2</span>:
+<blockquote>
+<pre class="ncbi_code">
 class CSupersystemException : public CSubsystemException
 {
 public:
@@ -389,13 +391,13 @@ public:
     }
     NCBI_EXCEPTION_DEFAULT(CSupersystemException, CSubsystemException);
 };
-</pre>
-Now, suppose
-an exception <var>CSupersystemException</var> has been thrown
-somewhere. On a higher level it has been caught as <var>CSubsystemException</var>.
+</pre></blockquote>
+
+Now, suppose an exception <span class="ncbi_class">CSupersystemException</span> has been thrown
+somewhere. On a higher level it has been caught as <span class="ncbi_class">CSubsystemException</span>.
 It is easy to see that the error code returned by this object would be
-completely meaningless: the error code of <var>CSupersystemException</var>
-cannot be interpreted in terms of <var>CSubsystemException</var>.
+completely meaningless: the error code of <span class="ncbi_class">CSupersystemException</span>
+cannot be interpreted in terms of <span class="ncbi_class">CSubsystemException</span>.
 <br />
 One reasonable solution seems to be isolating error codes of different
 exception classes  -- by assigning different numeric values to them
@@ -405,11 +407,9 @@ derivatives only.
 <br />
 Another solution is to make sure that the exception in question does 
 belong to the desired class, not to any intermediate ones. Template
-function
-<var><a href="../lxr/ident?i=UppermostCast">UppermostCast</a></var>
-does the trick. It utilizes the runtime
-information and dynamic cast conversion:
-<pre>
+function <a href="../lxr/ident?i=UppermostCast" class="ncbi_func">UppermostCast()</a>
+does the trick. It utilizes the runtime information and dynamic cast conversion:
+<pre class="ncbi_code">
     try {
         ...
         NCBI_THROW(CSupersystemException,eSuper1,"your message here");
@@ -436,34 +436,34 @@ information and dynamic cast conversion:
     }
 </pre>
 Finally, the runtime information makes it possible to do it even better.
-Since <var>GetErrCode</var> function is non-virtual, it might check the
+Since <span class="ncbi_func">GetErrCode</span> function is non-virtual, it might check the
 type of the object, for which it has been called, against the type of
 the class to which it belong. If these two do not match, the
-function returns <tt>invalid</tt> error code. Such code only means that the caller
+function returns <span class="ncbi_term">invalid</span> error code. Such code only means that the caller
 did not know the correct type of the exception, and the function is unable
 to interpret it.
 </p>
 
-
+<p><br>
 
 <a name="Examples"></a>
-<h4>Examples.</h4>
+<h4>Examples</h4>
 
 <a name="ThrowingExample"></a>
-<h5>Throwing an exception.</h5>
+<h5>Throwing an exception</h5>
 <p>
 It is worth to remind: the system only provides a mechanism to create a backlog
 of unfinished tasks, it does not create it automatically. It is up to
 developer to catch exceptions and re-throw them with the backlog information added.
 Here is an example of throwing
-<var><a href="#DerivedExceptions">CSubsystemException</a></var> exception:
-<pre>
+<a href="#DerivedExceptions" class="ncbi_class">CSubsystemException</a> exception:
+<pre class="ncbi_code">
     ... // your code
     NCBI_THROW(CSubsystemException,eType1,"your message here");
     ...
 </pre>
 The code that catches, and possibly re-throws the exception might look like this:
-<pre>
+<pre class="ncbi_code">
     try {
         ... // your code
     } catch (CSubsystemException&amp; e) {
@@ -479,12 +479,12 @@ The code that catches, and possibly re-throws the exception might look like this
 </p>
 
 <a name="ReportingExample"></a>
-<h5>Reporting an exception.</h5>
+<h5>Reporting an exception</h5>
 <p>
 There is a
 <a href="#ReportingExceptions">number of ways</a>
-to report <var>CException</var>, for example:
-<pre>
+to report <span class="ncbi_class">CException</span>, for example:
+<pre class="ncbi_code">
     try {
         ... // your code
     } catch (CSubsystemException&amp; e) {
@@ -495,215 +495,223 @@ to report <var>CException</var>, for example:
         e.Report(__FILE__,__LINE__,"your message here");
     }
 </pre>
-We suggest using <var>NCBI_REPORT_EXCEPTION(title,e)</var> macro
+We suggest using <span class="ncbi_macro">NCBI_REPORT_EXCEPTION(title,e)</span> macro
 (which is equivalent to calling
-<var>e.Report(__FILE__,__LINE__,title)</var>) -
+<span class="ncbi_ccode">e.Report(__FILE__,__LINE__,title)</span>) -
 it redirects the output into standard diagnostic channels
 and is highly configurable.
 </p>
 
-
+<p>&nbsp;</p>
 
 <a name="errno"></a>
 <a href="../docxx/CErrnoException.html"><h3>The CErrnoException Class</h3></a>
 <p>
-The <var>CErrnoException</var> class is derived from <var>CException</var>, and in addition to the
-description string, has an <i>int</i> data member called <var>m_Errno</var>.
+The <span class="ncbi_class">CErrnoException</span> class is derived from <span class="ncbi_class">CException</span>, and in addition to the
+description string, has an <span class="ncbi_type">int</span> data member called <span class="ncbi_var">m_Errno</span>.
 The constructor itself automatically adds information about the most recent error state as
-obtained via the global system variable <i>errno</i>. The <var>CErrnoException</var>
-has only one <a href="#ErrorCodes">error core</a> - <var>eErrno</var>. To analyze the
-actual reason of the exception one should use <var>GetErrno()</var> data access function:
-<pre>
+obtained via the global system variable <span class="ncbi_var">errno</span>. The <span class="ncbi_class">CErrnoException</span>
+has only one <a href="#ErrorCodes">error core</a> - <span class="ncbi_var">eErrno</span>. To analyze the
+actual reason of the exception one should use <span class="ncbi_func">GetErrno()</span> data access function:
+<pre class="ncbi_code">
     int GetErrno(void) const;
 </pre>
-To throw a CErrnoException, the standard <var>NCBI_THROW</var> macro can be used:
-<pre>
+To throw a CErrnoException, the standard <span class="ncbi_macro">NCBI_THROW</span> macro can be used:
+<pre class="ncbi_code">
     NCBI_THROW(CErrnoException,eErrno,"Your message here");
 </pre>
 </p>
 
-
+<p>&nbsp;</p>
 
 <a name="parse"></a>
 <a href="../docxx/CParseException.html"><h3>The CParseException Class</h3></a>
 <p>
-The <var>CParseException</var> class is derived from <var>CException</var>,
-and includes an additional <i>int</i> data member, in this case called <var>m_Pos</var>.
+The <span class="ncbi_class">CParseException</span> class is derived from <span class="ncbi_class">CException</span>,
+and includes an additional <span class="ncbi_type">int</span> data member, in this case called <span class="ncbi_var">m_Pos</span>.
 This class was specifically defined to support complex parsing tasks,
 and its constructor requires that positional information be supplied along with the
 description message. This makes it impossible to use the standard
-<var>NCBI_THROW</var> macro to throw it, so we defined two additional macros:
-<pre>
-// To throw exceptions with one more parameter (e.g. CParseException)
-#define NCBI_THROW2(exception_class, err_code, message, extra)
-#define NCBI_RETHROW2(prev_exception,exception_class,err_code,message,extra) \
+<span class="ncbi_macro">NCBI_THROW</span> macro to throw it, so we defined two additional macros:
+<pre class="ncbi_code">
+    // To throw exceptions with one more parameter (e.g. CParseException)
+    #define NCBI_THROW2(exception_class, err_code, message, extra)
+    #define NCBI_RETHROW2(prev_exception,exception_class,err_code,message,extra) \
 </pre>
 </p>
 
 
-
+<p>&nbsp;</p>
 
 
 <a name="macro"></a>
 <h3> Macros for standard C++ exception handling</h3>
 
-The C++ <i>throw()</i> statement provides a mechanism for specifying the types of exceptions that
-may be thrown by a function. Functions that do <i>not</i> include a <i>throw()</i> statement in
-their declaration can throw any type of exception, but where the <i>throw()</i> statement <i>is</i>
-used, undeclared exception types that are thrown will cause <i>std::unexpected()</i> to be raised.
+The C++ <span class="ncbi_func">throw()</span> statement provides a mechanism for specifying the types of exceptions that
+may be thrown by a function. Functions that do <em>not</em> include a <span class="ncbi_func">throw()</span> statement in
+their declaration can throw any type of exception, but where the <span class="ncbi_func">throw()</span> statement <em>is</em>
+used, undeclared exception types that are thrown will cause <span class="ncbi_func">std::unexpected()</span> to be raised.
 Various compilers handle these events differently, and the first two macros listed below,
-(<i>THROWS(()), THROWS_NONE</i>), are provided to support platform-independent exception
-specifications.<p>
+(<span class="ncbi_macro">THROWS(())</span>, <span class="ncbi_macro">THROWS_NONE</span>, are provided to support platform-independent exception specifications.<p>
 
 <table border=1 cellspacing=1>
   <caption></caption>
   <tr>
-	 <th>Macro</th>
-	 <th>C++ Equivalent </th>
-	 <th>Synopsis </th>
+     <th>Macro</th>
+     <th>C++ Equivalent </th>
+     <th>Synopsis </th>
   </tr>
 
   <tr>
-	 <td><i>THROWS((types)) </i></td>
-    <td><i> throw (types)  </i></td>
-	 <td> Defines the type of exceptions thrown by the given function. <i>types</i> may be a single
-	 object type or a comma delimited list.    </td>
+     <td><span class="ncbi_macro">THROWS((types))</span></td>
+    <td><span class="ncbi_ccode"> throw(types)</span></td>
+     <td> Defines the type of exceptions thrown by the given function. <span class="ncbi_var">types</span> may be a single
+     object type or a comma delimited list.</td>
   </tr>
 
   <tr>
-	 <td><i> THROWS_NONE </i></td>
-    <td><i> throw ()    </i></td>
-	 <td> Specifies that the given function throws no exceptions.     </td>
+     <td><span class="ncbi_macro"> THROWS_NONE</span></td>
+    <td><span class="ncbi_ccode"> throw()</span></td>
+     <td> Specifies that the given function throws no exceptions.     </td>
   </tr>
 
   <tr>
-	 <td><i>STD_CATCH(message)</i></td>
-	 <td><i> catch(std::exception)</i></td>
-	 <td> Provides uniform handling of all exceptions derived from <i>std::exception</i>. </td>
+     <td><span class="ncbi_macro">STD_CATCH(message)</span></td>
+     <td><span class="ncbi_ccode">catch(std::exception)</span></td>
+     <td> Provides uniform handling of all exceptions derived from <span class="ncbi_class">std::exception</span>. </td>
   </tr>
 
   <tr>
-	 <td><i> STD_CATCH_ALL(message)</i></td>
-	 <td><i> catch(...)</i></td>
-	 <td> Applies <i>STD_CATCH()</i> to <i>std::exception</i> derived objects;
-	 catches non-standard exceptions and generates an "Unknown exception" message.
+     <td><span class="ncbi_macro">STD_CATCH_ALL(message)</span></td>
+     <td><span class="ncbi_ccode">catch(...)</span></td>
+     <td> Applies <span class="ncbi_macro">STD_CATCH()</span> to <span class="ncbi_class">std::exception</span> derived objects;
+     catches non-standard exceptions and generates an "Unknown exception" message.
     </td>
   </tr>
 </table>
 <p>
 
-The <i> catch</i> macros provide uniform, routine exception handling with minimal effort from the
-programmer.  We provide a convenient <i>STD_CATCH()</i> macro to print formatted messages to the
-application's <a href="diag.html"> <i> diagnostic stream</i></a>. For example, if <i> F() </i>
+The <span class="ncbi_macro"> catch</span> macros provide uniform, routine exception handling with minimal effort from the
+programmer.  We provide a convenient <span class="ncbi_macro">STD_CATCH()</span> macro to print formatted messages to the
+application's <a href="diag.html" class="ncbi_term">diagnostic stream</a>. For example, if <span class="ncbi_func">F()</span>
 throws an exception of the form:
-
-<center> <tt> throw std::runtime_error(</tt><i>throw-msg</i>)</center> <br>
+<pre class="ncbi_code">
+    throw std::runtime_error(throw-msg)
+</pre>
 
 then
-<pre>
-		try {F();}
-		STD_CATCH(catch-msg);
+<pre class="ncbi_code">
+    try {F();}
+    STD_CATCH(catch-msg);
 </pre>
-will generate a message of the form:<p>
+will generate a message of the form:
 
-<center> <tt> Error: [</tt><i>catch-msg</i><tt>] Exception: </tt><i>throw-msg</i></center><br>
+<pre class="ncbi_output">
+    Error: [catch-msg] Exception: throw-msg
+</pre>
 
-In this example, the generated message starts with the <i>Error</i> tag, as that is the <a
-href="diag.html#severity"> severity level</a> for the default diagnostic stream.  User-defined
-classes that are derived from <i>std::exception</i> will be treated uniformly in the same
-manner. The <i>throw</i> clause in this case creates a new instance of
-<i>std::runtime_error</i> whose data member <i>desc</i> is initialized to
-<i>throw-msg</i>. When the exception is then caught, the exception's member function
-<i>what()</i> can be used to retrieve that message.<p>
+In this example, the generated message starts with the Error tag, as that is the
+<a href="diag.html#severity">severity level</a> for the default diagnostic stream.  User-defined
+classes that are derived from <span class="ncbi_class">std::exception</span> will be treated uniformly in the same
+manner. The <span class="ncbi_keyword">throw</span> clause in this case creates a new instance of
+<span class="ncbi_class">std::runtime_error</span> whose data member <span class="ncbi_var">desc</span> is initialized to
+<span class="ncbi_var">throw-msg</span>. When the exception is then caught, the exception's member function
+<span class="ncbi_func">what()</span> can be used to retrieve that message.<p>
 
-The <i>STD_CATCH_ALL</i> macro catches all exceptions. If however, the exception
-caught is <i>not</i> derived from <i>std::exception</i>, then the <i>catch</i> clause cannot
-assume that <i>what()</i> has been defined for this object, and a default message is generated:<p>
+The <span class="ncbi_macro">STD_CATCH_ALL</span> macro catches all exceptions. If however, the exception
+caught is <em>not</em> derived from <span class="ncbi_class">std::exception</span>, then the <span class="ncbi_keyword">catch</span> clause cannot
+assume that <span class="ncbi_func">what()</span> has been defined for this object, and a default message is generated:
 
-<center> <tt> Error: [</tt><i>catch-msg</i><tt>] Exception: Unknown exception </tt></center><p>
+<pre class="ncbi_output">
+    Error: [catch-msg] Exception: Unknown exception
+</pre>
 
+<p>&nbsp;</p>
 
 <a name="tracex"></a>
 <h3> Exception Tracing </h3>
 
 Knowing exactly where an exception first occurs can be very useful for debugging purposes.
-<a href="#CException"><var>CException</var></a>
+<a href="#CException"><span class="ncbi_class">CException</span></a>
 class has this functionality built in, so it is highly recommended to use exceptions derived
 from it. In addition to this a set of
-<i>THROW*_TRACE()</i> macros defined in the NCBI C++ Toolkit combine exception handling with <a
-href="diag.html#trace"> <i>trace</i></a> mechanisms to provide such information.<p>
+<span class="ncbi_macro">THROW*_TRACE()</span> macros defined in the NCBI C++ Toolkit combine
+exception handling with <a href="diag.html#trace">trace</a> mechanisms to provide such information.
+<p>
 
-The most commonly used of these macros, <i>THROW1_TRACE(class_name, init_arg)</i>, instantiates
-an exception object of type <i>class_name</i> using <i>init_arg</i> to initialize it. The definition of this
+The most commonly used of these macros, <span class="ncbi_ccode">THROW1_TRACE(class_name, init_arg)</span>, instantiates
+an exception object of type <span class="ncbi_var">class_name</span> using
+<span class="ncbi_var">init_arg</span> to initialize it. The definition of this
 macro is:
 
-<pre>
-#define THROW1_TRACE(class_name, init_arg) \
-    throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
-        class_name(init_arg), #class_name)
+<pre class="ncbi_code">
+    #define THROW1_TRACE(class_name, init_arg) \
+        throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, class_name(init_arg), #class_name)
 </pre>
 
-From the <i>throw()</i> statement here, we see that the object actually being thrown by this macro
+From the <span class="ncbi_func">throw()</span> statement here, we see that the object actually being thrown by this macro
 is the value returned by <a href="../lxr/ident?i=DbgPrint">DbgPrint</a>().
-<i>DbgPrint()</i> in turn calls
-<a href="../lxr/ident?i=DbgPrint"><i>DoDbgPrint</i></a>().
+<span class="ncbi_func">DbgPrint()</span> in turn calls
+<a href="../lxr/ident?i=DbgPrint"><span class="ncbi_func">DoDbgPrint</span></a>().
 The latter is an overloaded function that simply creates a diagnostic stream and writes the file name,
-line number, and the exception's <i>what()</i> message to that stream. The exception object
-(which is of type <i>class_name</i>) is then the value returned by <i>DbgPrint</i>.<p>
+line number, and the exception's <span class="ncbi_func">what()</span> message to that stream. The exception object
+(which is of type <span class="ncbi_var">class_name</span>) is then the value returned by <span class="ncbi_func">DbgPrint()</span>.<p>
 
-More generally, three sets of <i>THROW*_TRACE</i> macros are defined:
+More generally, three sets of <span class="ncbi_macro">THROW*_TRACE</span> macros are defined:
 
-<ul><font color="#000080">
- <li><i> THROW0_TRACE(exception_object) </i>
- <li><i> THROW0p_TRACE(exception_object) </i>
- <li><i> THROW0np_TRACE(exception_object) </i>
-</font><font color="#008080">
- <li><i> THROW1_TRACE(exception_class, exception_arg) </i>
- <li><i> THROW1p_TRACE(exception_class, exception_arg)</i>
- <li><i> THROW1np_TRACE(exception_class, exception_arg) </i>
-</font><font color="#004080">
- <li><i> THROW_TRACE(exception_class, exception_args) </i>
- <li><i> THROWp_TRACE(exception_class, exception_args) </i>
- <li><i> THROWnp_TRACE(exception_class, exception_args) </i>
-</font>
+<ul>
+ <li><span class="ncbi_macro"> THROW0_TRACE(exception_object) </span>
+ <li><span class="ncbi_macro"> THROW0p_TRACE(exception_object) </span>
+ <li><span class="ncbi_macro"> THROW0np_TRACE(exception_object) </span>
+ <br><br>
+ <li><span class="ncbi_macro"> THROW1_TRACE(exception_class, exception_arg) </span>
+ <li><span class="ncbi_macro"> THROW1p_TRACE(exception_class, exception_arg)</span>
+ <li><span class="ncbi_macro"> THROW1np_TRACE(exception_class, exception_arg) </span>
+<br><br>
+ <li><span class="ncbi_macro"> THROW_TRACE(exception_class, exception_args) </span>
+ <li><span class="ncbi_macro"> THROWp_TRACE(exception_class, exception_args) </span>
+ <li><span class="ncbi_macro"> THROWnp_TRACE(exception_class, exception_args) </span>
 </ul>
 
-The first three macros (<i>THROW0*_TRACE</i>) take a single argument, which may be a newly
-constructed exception, as in: <p> <center><i>THROW0_TRACE(runtime_error("message"))</i></center><p>
+The first three macros (<span class="ncbi_macro">THROW0*_TRACE</span>) take a single argument, which may be a newly
+constructed exception, as in:
+<pre class="ncbi_code">
+    THROW0_TRACE(runtime_error("message"))
+</pre>
+or simply a <span class="ncbi_term">printable</span> object to be thrown, as in:
+<pre class="ncbi_code">
+    THROW0_TRACE("print this message")
+</pre>
 
-or simply a <i>printable</i> object to be thrown, as in:
-
-<p> <center> <i>THROW0_TRACE("print this message")</i> </center> <p>
-
-The <i>THROW0_TRACE</i> macro accepts either an exception object or a string as the argument to be
-thrown. The <i>THROW0p_TRACE</i> macro generalizes this functionality by accepting any
-<i>printable</i> object, such as <i>complex(1,3)</i>, as its single argument.  Any object with a
+The <span class="ncbi_macro">THROW0_TRACE</span> macro accepts either an exception object or a string as the argument to be
+thrown. The <span class="ncbi_macro">THROW0p_TRACE</span> macro generalizes this functionality by accepting any
+<span class="ncbi_term">printable</span> object, such as <span class="ncbi_ccode">complex(1,3)</span>, as its single argument.  Any object with a
 defined output operator is, of course, printable.  The third macro generalizes this one step
-further, and accepts aggregate arguments such as <i>vector&lt;T&gt;</i>, where <i>T</i> is a printable
-object.  Note that in cases where the object to be thrown is not a <i>std::exception</i>,
-you will need to use <i>STD_CATCH_ALL</i> or a custom catch to catch the thrown object. <p>
+further, and accepts aggregate arguments such as <span class="ncbi_type">vector&lt;T&gt;</span>, where <span class="ncbi_var">T</span> is a printable
+object.  Note that in cases where the object to be thrown is not a <span class="ncbi_class">std::exception</span>,
+you will need to use <span class="ncbi_macro">STD_CATCH_ALL</span> or a custom catch to catch the thrown object. <p>
 
 The remaining six macros accept two arguments: an "exception" class name and an initialization
 argument, where both arguments are also passed to the trace message.  The class argument need not actually
-be derived from <i>std::exception</i>, as the pre-processor simply uses the class name to construct
+be derived from <span class="ncbi_class">std::exception</span>, as the pre-processor simply uses the class name to construct
 a new object of that type using the initialization argument.
 
-All of the <i>THROW1*_TRACE</i> macros assume that there is a single initialization argument.  As in
-the first three macros, <i>THROW1_TRACE()</i>, THROW1p_TRACE()</i> and <i>THROW1np_TRACE()</i>
+All of the <span class="ncbi_macro">THROW1*_TRACE</span> macros assume that there is a single initialization argument.  As in
+the first three macros, <span class="ncbi_macro">THROW1_TRACE()</span>, <span class="ncbi_macro">THROW1p_TRACE()</span> and <span class="ncbi_macro">THROW1np_TRACE()</span>
 specialize in different types of printable objects, ranging from exceptions and numeric and
 character types, to aggregate and container types. <p>
 
 The last three macros parallel the previous two sets of macros in their specializations, and
 may be applied where the exception object's constructor takes multiple arguments. (See also the
-discussion of <a href="../libs/err_msg.html#ref_Exception"><i>Exception handling</i></a> in the Reference Manual).
+discussion of <a href="../libs/err_msg.html#ref_Exception">Exception handling</a> in the Reference Manual).
 <p>
 
 It is also possible to specify that execution should abort immediately when an exception occurs. By
 default, this feature is not activated, but the
 <a href="../lxr/ident?i=SetThrowTraceAbort">
-<i>SetThrowTraceAbort()</i> </a> function can be used to activate it. Alternatively, you can turn it
-on for the entire application by setting either the $ABORT_ON_THROW environment variable, or
-the application's registry ABORT_ON_THROW  entry (in the [DEBUG] section) to an arbitrary non-empty value.
+<span class="ncbi_func">SetThrowTraceAbort()</span> </a> function can be used to activate it. Alternatively, you can turn it
+on for the entire application by setting either the <span class="ncbi_env">$ABORT_ON_THROW</span> environment variable, or
+the application's registry <span class="ncbi_reg_var">ABORT_ON_THROW</span>  entry (in the <span class="ncbi_reg">[DEBUG]</span> section) to an arbitrary non-empty value.
 
 
 <p>
@@ -715,11 +723,11 @@ the application's registry ABORT_ON_THROW  entry (in the [DEBUG] section) to an 
 
 <!--#include virtual="../ssi/navlinks.shtml" -->
 
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
-		  <!-- <td align=center><i>$Revision$</i></td> -->
-		  <td align=right><i>$Date$</i></td>
-	 </table>
+     <table border=0 width="100%" cellspacing=0>
+        <tr>
+          <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+          <!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+          <td align=right><span class="ncbi_cvs_date">$Date$</span></td>
+     </table>
 
 <!--#include virtual="../ssi/footer.shtml" -->
