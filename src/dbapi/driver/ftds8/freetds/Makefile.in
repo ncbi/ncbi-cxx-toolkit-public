@@ -1,0 +1,12 @@
+# $Id$
+#################################
+
+# FreeTDS Projects
+#################################
+
+
+SUB_PROJ = tds ctlib dblib
+USR_PROJ = config
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,10 @@
+# $Id$
+#
+# FreeTDS CTLIB library
+
+LIB_PROJ = ctlib
+
+srcdir = @srcdir@
+
+include @srcdir@/../Makefile.conf
+include @builddir@/Makefile.meta

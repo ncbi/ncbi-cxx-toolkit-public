@@ -1,0 +1,9 @@
+# $Id$
+
+USR_PROJ = @freetds@
+LIB_PROJ = dbapi_driver_ftds
+SUB_PROJ = samples
+POTENTIAL_SUB_PROJ = @freetds@
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

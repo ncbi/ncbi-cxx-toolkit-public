@@ -1,0 +1,14 @@
+# $Id$
+#################################
+
+# TDS library
+#################################
+
+
+LIB_PROJ = tds
+#SUB_PROJ = unittests
+
+srcdir = @srcdir@
+
+include @srcdir@/../Makefile.conf
+include @builddir@/Makefile.meta
