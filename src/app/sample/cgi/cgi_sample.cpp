@@ -137,17 +137,20 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
 
 int main(int argc, const char* argv[])
 {
-    int result = 
-        CSampleCgiApplication().AppMain(argc, argv, 0, eDS_Default, 
-                                                         "cgi_sample.ini");
+    int result = CSampleCgiApplication().AppMain(argc, argv, 0, eDS_Default);
     _TRACE("back to normal diags");
     return result;
 }
 
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/11/19 22:51:56  vakatov
+ * Rely on the default mechanism for searching config.file (so plain CGI should
+ * not find any).
+ *
  * Revision 1.6  2004/11/19 16:24:46  kuznets
  * Added FastCGI configuration
  *
