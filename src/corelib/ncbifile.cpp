@@ -219,9 +219,9 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
     // eBlockSpecial
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
           CDirEntry::fDefaultOther },
-     // eCharSpecial
-     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-           CDirEntry::fDefaultOther }
+    // eCharSpecial
+    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
+          CDirEntry::fDefaultOther }
 };
 
 
@@ -238,10 +238,10 @@ void CDirEntry::Reset(const string& path)
 string CDirEntry::GetPath(void) const
 {
     OSErr err;
-    char *path;
+    char* path;
     err = MacFSSpec2FullPathname(&FSS(), &path);
     if (err != noErr) {
-        return "";
+        return kEmptyStr;
     }
     return string(path);
 }
@@ -480,7 +480,8 @@ string CDirEntry::ConcatPathEx(const string& first, const string& second)
     }
     // Remove leading separator in "second" part
     string part = NStr::TruncateSpaces(second);
-    if ( part.length() > 0  &&  string(ALL_OS_SEPARATORS).find(part[0]) != NPOS ) {
+    if ( part.length() > 0  &&
+         string(ALL_OS_SEPARATORS).find(part[0]) != NPOS ) {
         part.erase(0,1);
     }
     // Add second part
@@ -1170,15 +1171,13 @@ bool CDir::Remove(EDirRemoveMode mode) const
     // Remove
     iterate(TEntries, entry, contents) {
         string name = (*entry)->GetName();
-#if !defined(NCBI_OS_MAC)
+#if defined(NCBI_OS_MAC)
+        CDirEntry& item = **entry;
+#else
         if ( name == "."  ||  name == ".."  ||  
              name == string(1, GetPathSeparator()) ) {
             continue;
         }
-#endif
-#if defined(NCBI_OS_MAC)
-        CDirEntry& item = **entry;
-#else
         // Get entry item with full pathname
         CDirEntry item(GetPath() + GetPathSeparator() + name);
 #endif
@@ -1231,7 +1230,7 @@ CMemoryFile::CMemoryFile(const string& file_name)
 
     if (GetSize() < 0) {
         NCBI_THROW(CFileException,eMemoryMap,
-            "File memory mapping cannot be created");
+                   "File memory mapping cannot be created");
     }
 }
 
@@ -1334,45 +1333,51 @@ bool CMemoryFile::Unmap(void)
 }
 
 
-bool CMemoryFile::MemMapAdviseAddr(void* addr, size_t len, EMemMapAdvise advise)
+#if !defined(HAVE_MADVISE)
+
+bool CMemoryFile::MemMapAdviseAddr(void*, size_t, EMemMapAdvise) {
+    return true;
+}
+bool CMemoryFile::MemMapAdvise(EMemMapAdvise) {
+    return true;
+}
+
+#else  /* HAVE_MADVISE */
+
+bool CMemoryFile::MemMapAdviseAddr(void* addr, size_t len,
+                                   EMemMapAdvise advise)
 {
-#if defined(HAVE_MADVISE)
     int adv;
     if (!addr || !len) {
         return false;
     }
     switch (advise) {
-	case eMMA_Random:
+    case eMMA_Random:
         adv = MADV_RANDOM;     break;
-	case eMMA_Sequential:
+    case eMMA_Sequential:
         adv = MADV_SEQUENTIAL; break;
-	case eMMA_WillNeed:
+    case eMMA_WillNeed:
         adv = MADV_WILLNEED;   break;
-	case eMMA_DontNeed:
+    case eMMA_DontNeed:
         adv = MADV_DONTNEED;   break;
-	default:
+    default:
         adv = MADV_NORMAL;
     }
     // Conversion type of "addr" to char* -- Sun Solaris fix
     return madvise((char*)addr, len, adv) == 0;
-#else
-    return true;
-#endif
 }
 
 
 bool CMemoryFile::MemMapAdvise(EMemMapAdvise advise)
 {
-#if defined(HAVE_MADVISE)
-  if (m_DataPtr  &&   m_Size > 0) {
-      return MemMapAdviseAddr(m_DataPtr, m_Size, advise);
-  } else {
-      return false;
-  }
-#else
-  return true;
-#endif
+    if (m_DataPtr  &&   m_Size > 0) {
+        return MemMapAdviseAddr(m_DataPtr, m_Size, advise);
+    } else {
+        return false;
+    }
 }
+
+#endif  /* HAVE_MADVISE */
 
 
 END_NCBI_SCOPE
@@ -1381,6 +1386,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2002/09/05 18:35:38  vakatov
+ * Formal code rearrangement to get rid of comp.warnings;  some nice-ification
+ *
  * Revision 1.29  2002/07/18 20:22:59  lebedev
  * NCBI_OS_MAC: fcntl.h added
  *
@@ -1397,7 +1405,8 @@ END_NCBI_SCOPE
  * exceptions replaced by CNcbiException-type ones
  *
  * Revision 1.24  2002/06/07 16:11:37  ivanov
- * Chenget GetTime() -- using CTime instead time_t, modification time by default
+ * Chenget GetTime() -- using CTime instead time_t, modification time
+ * by default
  *
  * Revision 1.23  2002/06/07 15:21:06  ivanov
  * Added CDirEntry::GetTime()

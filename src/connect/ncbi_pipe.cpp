@@ -66,7 +66,12 @@ BEGIN_NCBI_SCOPE
 
 // Create pipe and bind original handle
 static int s_BindHandle(const int fd_orig, const bool is_input, 
-                        const bool is_binary, int* fd_save)
+#if defined(NCBI_OS_MSWIN)
+                        const bool   is_binary,
+#else
+                        const bool /*is_binary*/,
+#endif
+                        int* fd_save)
 {
     // Index in "fd_pipe[]"
     int i_orig = is_input ? 0 : 1;
@@ -75,14 +80,14 @@ static int s_BindHandle(const int fd_orig, const bool is_input,
     // Create a pipe
     int fd_pipe[2];
 
-#  if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
     int mode = is_binary ? O_BINARY : O_TEXT;
     int result = _pipe(fd_pipe, 512, mode | O_NOINHERIT);
-#  elif defined(NCBI_OS_UNIX)
+#elif defined(NCBI_OS_UNIX)
     int result = pipe(fd_pipe);
-#  elif defined(NCBI_OS_MAC)
-    ?
-#  endif   
+#elif defined(NCBI_OS_MAC)
+    __NOT_IMPLEMENTED__;
+#endif   
 
     if (result == -1)  {
         *fd_save = -1;
@@ -93,11 +98,11 @@ static int s_BindHandle(const int fd_orig, const bool is_input,
     // store the duplicated copy of original handle in "fd_save"
     *fd_save = dup(fd_orig);
 
-#  if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
     if (*fd_save < 0  ||  dup2(fd_pipe[i_orig], fd_orig) != 0) {
-#  elif defined(NCBI_OS_UNIX)
+#elif defined(NCBI_OS_UNIX)
     if (*fd_save < 0  ||  dup2(fd_pipe[i_orig], fd_orig) < 0) {
-#  endif
+#endif
         if (*fd_save != -1)
             close(*fd_save);
         else
@@ -118,12 +123,13 @@ static bool s_RestoreHandle(const int fd_orig, const int fd_save)
   if (fd_save < 0)
     return true;
 
-#  if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
   if (dup2(fd_save, fd_orig) != 0)
-#  elif defined(NCBI_OS_UNIX)
-  if (dup2(fd_save, fd_orig) < 0)
-#  endif
     return false;
+#elif defined(NCBI_OS_UNIX)
+  if (dup2(fd_save, fd_orig) < 0)
+    return false;
+#endif
 
   close(fd_save);
   return true;
@@ -136,7 +142,7 @@ CPipe::CPipe()
 }
 
 
-CPipe::CPipe(const char *cmdname, const vector<string> args, 
+CPipe::CPipe(const char* cmdname, const vector<string> args, 
              const EMode mode_stdin, const EMode mode_stdout, 
              const EMode mode_stderr)
 {
@@ -158,7 +164,7 @@ void CPipe::Init()
 }
 
 
-void CPipe::Open(const char *cmdname, const vector<string> args,
+void CPipe::Open(const char* cmdname, const vector<string> args,
                  const EMode mode_stdin, const EMode mode_stdout, 
                  const EMode mode_stderr)
 {
@@ -246,7 +252,8 @@ int CPipe::Close()
 }
 
 
-size_t CPipe::Read(void *buffer, const size_t count, const EChildIOHandle from_handle) const
+size_t CPipe::Read(void* buffer, const size_t count,
+                   const EChildIOHandle from_handle) const
 {
     int fd = (from_handle == eStdOut) ? m_StdOut : m_StdErr;
     if ( m_Pid == -1  ||  fd == -1 ) {
@@ -256,7 +263,7 @@ size_t CPipe::Read(void *buffer, const size_t count, const EChildIOHandle from_h
 }
 
 
-size_t CPipe::Write(const void *buffer, const size_t count) const
+size_t CPipe::Write(const void* buffer, const size_t count) const
 {
     if ( m_Pid == -1  ||  m_StdIn == -1 ) {
         NCBI_THROW(CPipeException,eNoInit, "Pipe is not initialized properly");
@@ -296,8 +303,9 @@ private:
 
 
 CPipeStreambuf::CPipeStreambuf(const CPipe& pipe, streamsize buf_size)
-    : m_Pipe(&pipe), m_Buf(0), m_BufSize(buf_size ? buf_size : 1), 
-    m_ReadHandle(CPipe::eStdOut)
+    : m_Pipe(&pipe),
+      m_Buf(0), m_BufSize(buf_size ? buf_size : 1), 
+      m_ReadHandle(CPipe::eStdOut)
 {
     auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[2 * m_BufSize]);
 
@@ -363,7 +371,8 @@ CT_INT_TYPE CPipeStreambuf::underflow(void)
 {
     _ASSERT(!gptr() || gptr() >= egptr());
     // Read from the pipe
-    size_t n_read = m_Pipe->Read(m_ReadBuf, m_BufSize * sizeof(CT_CHAR_TYPE), m_ReadHandle);
+    size_t n_read = m_Pipe->Read(m_ReadBuf, m_BufSize * sizeof(CT_CHAR_TYPE),
+                                 m_ReadHandle);
     if (n_read == 0) {
         return CT_EOF;
     }
@@ -422,6 +431,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/09/05 18:38:07  vakatov
+ * Formal code rearrangement to get rid of comp.warnings;  some nice-ification
+ *
  * Revision 1.8  2002/07/15 18:17:24  gouriano
  * renamed CNcbiException and its descendents
  *
@@ -435,7 +447,8 @@ END_NCBI_SCOPE
  * Fixed some bugs in CPipeStreambuf class.
  *
  * Revision 1.4  2002/06/12 13:48:56  ivanov
- * Fixed contradiction in types of constructor CPipeStreambuf and it realization
+ * Fixed contradiction in types of constructor CPipeStreambuf and its
+ * realization
  *
  * Revision 1.3  2002/06/11 19:25:35  ivanov
  * Added class CPipeIOStream, CPipeStreambuf
