@@ -36,39 +36,43 @@
 #include <stdlib.h>
 
 #if defined(NCBI_OS_MSWIN)
-#   include <sys/timeb.h>
+#  include <sys/timeb.h>
 #elif defined(NCBI_OS_UNIX)
-#   include <sys/time.h>
+#  include <sys/time.h>
 #endif
 
 #if defined(NCBI_OS_MAC) || defined(NCBI_COMPILER_MW_MSL)
-#    include <OSUtils.h>
-typedef
-struct MyTZDLS {
-	long timezone;
-	bool daylight;
+#  include <OSUtils.h>
+
+typedef struct MyTZDLS {
+    long timezone;
+    bool daylight;
 } MyTZDLS;
+
 static MyTZDLS MyReadLocation()
 {
-	MachineLocation loc;
-	ReadLocation(&loc);
-	long tz = loc.u.gmtDelta & 0x00ffffff;
-   	// Propogate sign bit from bit 23 to bit 31 if West of UTC.
+    MachineLocation loc;
+    ReadLocation(&loc);
+    long tz = loc.u.gmtDelta & 0x00ffffff;
+    // Propogate sign bit from bit 23 to bit 31 if West of UTC.
     // (Sign-extend the GMT correction)
-	if ((tz & 0x00800000) != 0) tz |= 0xFF000000;
-	bool dls = (loc.u.dlsDelta != 0);
-	MyTZDLS tzdls = {tz, dls};
-	return tzdls;
+    if ((tz & 0x00800000) != 0)
+        tz |= 0xFF000000;
+    bool dls = (loc.u.dlsDelta != 0);
+    MyTZDLS tzdls = {tz, dls};
+    return tzdls;
 }
+
 static MyTZDLS sTZDLS = MyReadLocation();
-#	define TimeZone() sTZDLS.timezone
-#	define Daylight() sTZDLS.daylight
+
+#  define TimeZone()  sTZDLS.timezone
+#  define Daylight()  sTZDLS.daylight
 #elif defined(__CYGWIN__)
-#	define TimeZone() _timezone
-#	define Daylight() _daylight
+#  define TimeZone() _timezone
+#  define Daylight() _daylight
 #else
-#	define TimeZone() timezone
-#	define Daylight() daylight
+#  define TimeZone()  timezone
+#  define Daylight()  daylight
 #endif
 
 
@@ -1210,14 +1214,19 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2003/04/04 16:02:38  lavr
+ * Lines wrapped at 79th column; some minor reformatting
+ *
  * Revision 1.33  2003/04/03 14:15:48  rsmith
- * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS into NCBI_COMPILER_MW_MSL
+ * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS
+ * into NCBI_COMPILER_MW_MSL
  *
  * Revision 1.32  2003/04/02 16:22:34  rsmith
  * clean up metrowerks ifdefs.
  *
  * Revision 1.31  2003/04/02 13:31:18  rsmith
- * change #ifdefs to allow compilation on MacOSX w/codewarrior using MSL headers.
+ * change #ifdefs to allow compilation on MacOSX w/codewarrior
+ * using MSL headers.
  *
  * Revision 1.30  2003/02/10 17:17:30  lavr
  * Fix off-by-one bug in DayOfWeek() calculation

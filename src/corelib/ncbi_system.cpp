@@ -419,8 +419,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/04/04 16:02:37  lavr
+ * Lines wrapped at 79th column; some minor reformatting
+ *
  * Revision 1.28  2003/04/03 14:15:48  rsmith
- * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS into NCBI_COMPILER_MW_MSL
+ * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS
+ * into NCBI_COMPILER_MW_MSL
  *
  * Revision 1.27  2003/04/02 16:22:33  rsmith
  * clean up metrowerks ifdefs.

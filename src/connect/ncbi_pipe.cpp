@@ -33,13 +33,13 @@
 
 
 #ifdef NCBI_OS_MSWIN
-#   include <windows.h>
+#  include <windows.h>
 #elif defined NCBI_OS_UNIX
-#   include <unistd.h>
-#   include <errno.h>
-#   ifdef NCBI_COMPILER_MW_MSL
-#       include <ncbi_mslextras.h>
-#   endif
+#  include <unistd.h>
+#  include <errno.h>
+#  ifdef NCBI_COMPILER_MW_MSL
+#    include <ncbi_mslextras.h>
+#  endif
 #else
 
 #error "Class CPipe is supported only on Windows and Unix"
@@ -93,9 +93,9 @@ private:
 
 
 CPipeHandle::CPipeHandle()
-: m_ChildStdout(NULL)
-, m_ChildStdin(NULL)
-, m_ChildStderr(NULL)
+    : m_ChildStdout(NULL),
+      m_ChildStdin(NULL),
+      m_ChildStderr(NULL)
 {
     //ZeroMemory(&m_ProcInfo, sizeof(m_ProcInfo));
 }
@@ -748,20 +748,25 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/04/04 16:02:38  lavr
+ * Lines wrapped at 79th column; some minor reformatting
+ *
  * Revision 1.16  2003/04/03 14:15:48  rsmith
- * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS into NCBI_COMPILER_MW_MSL
+ * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS
+ * into NCBI_COMPILER_MW_MSL
  *
  * Revision 1.15  2003/04/02 16:22:34  rsmith
  * clean up metrowerks ifdefs.
  *
  * Revision 1.14  2003/04/02 13:29:53  rsmith
- * include ncbi_mslextras.h when compiling with MSL libs in Codewarrior.\
+ * include ncbi_mslextras.h when compiling with MSL libs in Codewarrior.
  *
  * Revision 1.13  2003/03/10 18:57:08  kuznets
  * iterate->ITERATE
  *
  * Revision 1.12  2003/03/07 16:19:39  ivanov
- * MSWin CPipeHandle::Close() -- Handling GetExitCodeProcess() returns value 259 (STILL_ACTIVE)
+ * MSWin CPipeHandle::Close() -- Handling GetExitCodeProcess() returns
+ * value 259 (STILL_ACTIVE)
  *
  * Revision 1.11  2003/03/06 21:12:10  ivanov
  * Formal comments rearrangement
