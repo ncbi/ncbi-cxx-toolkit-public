@@ -10,19 +10,41 @@
 	 <ul>
 		<li> <a href="#ref_Assert">
 		  Debug-mode(internal use) checks and diagnostics</a>
+
 		<li> <a href="#ref_Exception">
 		  C++ exceptions</a>
-		<li> <a href="#ref_Message">
-		  Standard NCBI C++ message posting</a>
-	 <ul>
-		<li> <a href="#ref_Manipulators">
-		  <i>Manipulators</i></a>
-		<li> <a href="#ref_ERR_POST">
-		  <i><b>ERR_POST(message)</i></b> macro</a>
-		<li> <a href="#ref_Tracing">
-		  <i>Turn on the tracing (as per <b>_TRACE, eDiag_Trace</b></i>)</a>
+		  <ul>
+			 <li> <a href="#ref_ExceptionStd">
+				  Standard C++ exception classes; NCBI exception
+				  classes (<i>CErrnoException, CParseException</i>) </a>
+			 <li> <a href="#ref_ExceptionCatch">
+				  Using <i><b>STD_CATCH*(...)</b></i>
+				  to <i>catch</i> and report exceptions </a>
+			 <li> <a href="#ref_ExceptionThrow">
+				  Using <i><b>THROW*_TRACE(...)</b></i>
+				  to <i>throw</i> exceptions </a>
+				<ul>
+				  <li> <a href="#ref_ExceptionThrowTrace">
+						Trace the exception at the <i>throw</i> </a>
+				  <li> <a href="#ref_ExceptionThrowAbort">
+						Abort the program at the <i>throw</i> </a>
+				</ul>
+			 <li> <a href="#ref_ExceptionSpec">
+				  <i><b>THROWS*(...)</b></i> -- exception specification
+				</a>
+		  </ul>
 
-	 </ul></ul>
+		<li> <a href="#ref_Message">
+			 Standard NCBI C++ message posting</a>
+		  <ul>
+			 <li> <a href="#ref_Manipulators">
+				  <i>Manipulators</i></a>
+			 <li> <a href="#ref_ERR_POST">
+				  <i><b>ERR_POST(message)</i></b> macro</a>
+			 <li> <a href="#ref_Tracing">
+				  <i>Turn on the tracing (as per <b>_TRACE, eDiag_Trace</b></i>)</a>		
+		  </ul>
+	 </ul>
 
 
 	 <br></br>
@@ -90,16 +112,28 @@ _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
        &nbsp;&nbsp;[also included in <i>&lt;corelib/ncbistd.hpp&gt;</i>]
 
 	 <p>
+	 <a name="ref_ExceptionStd">
+		  <h4>Standard C++ exception classes, and two useful NCBI exception
+			 classes (
+		<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CErrnoException.html"> CErrnoException </a>
+		,
+		<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CParseException.html"> CParseException </a>
+		)
+	 </h4>
+	 </a>
+
 	 One must use
 	 <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-diagnostics.html#lib.std.exceptions">standard C++ exceptions</a>
 	 as much as possible. There is also a couple of auxiliary exception
-	 classes(derived from <i>std::runtime_error</i>):
+	 classes derived from <i>std::runtime_error</i>:
 	 <ul>
-		<li> <i>CErrnoException</i> -- to report failure in a standard C library
-		function; it automatically appends to the user message a system-spefific
-		description reported by <b>errno</b>
-		<li> <i>CParseException</i> -- to report an erroneous position (passed in
-		the additional constructor parameter) along with the user message
+		<li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CErrnoException.html"> CErrnoException </a>
+		  -- to report failure in a standard C library
+		  function; it automatically appends to the user message a
+		  system-spefific description reported by <b>errno</b>
+		<li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CParseException.html"> CParseException </a>
+		  -- to report an erroneous position (passed in
+		  the additional constructor parameter) along with the user message
 	 </ul>
 	 
 	 <p>
@@ -112,9 +146,17 @@ _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 	 <b><i>STD_CATCH_ALL(message)</i></b> preprocessor macros.
 
 	 <p>
-	 Use <b><i>STD_CATCH(message)</i></b> macro to catch any exception derived from
-	 the standard exception class (<i>std::exception</i>) and prints out "message"
-	 along with the info passed with the <i>std::exception::what()</i>.
+	 <a name="ref_ExceptionCatch">
+		  <h4>
+			 Using <i><b>STD_CATCH*(...)</b></i> to <i>catch</i> and report exceptions
+		  </h4>
+		</a>
+
+	 <p>
+	 You can use <b><i>STD_CATCH(message)</i></b> macro to catch an exception
+    derived from the standard exception class (<i>std::exception</i>) --
+    when all you want to do about this exception is just to print out
+    the "message" along with the info passed with the <i>std::exception::what()</i>.
 	 <b><i>STD_CATCH_ALL(message)</i></b> first tries to catch a
 	 <i>std::exception</i>-derived exception (with <b><i>STD_CATCH(message)</i></b>); and
 	 if the thrown exception is not "standard" then it posts the "message".
@@ -125,7 +167,7 @@ _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 	 
 
 	 <p>
-	 This way, the standard way of dealing with exception in the NCBI C++
+	 This way, the easy way of dealing with exception in the NCBI C++
 	 code will be like:
 	 <pre>
 class foreign_exception { ..... };
@@ -154,6 +196,64 @@ Error: [in SomeFunc(qqq,888)] Exception: Invalid Arg2
 	 </pre>
 
 	 <p>
+	 <a name="ref_ExceptionThrow">
+		  <h4>
+			 Using <i><b>THROW*_TRACE(...)</b></i> to <i>throw</i> exceptions
+		  </h4>
+		</a>
+
+		If you use one of <i><b>THROW*_TRACE(...)</b></i> macros to <i>throw</i>
+		an exception, and the source was compiled in a debug mode
+		(i.e. with the preprocessor <i>"_DEBUG"</i> defined), then
+		you can turn on the following features that proved to be very useful
+		for debugging:
+	 <ul>
+		<li> <a name="ref_ExceptionThrowTrace"> </a>
+		  If the <a href="#ref_Tracing">tracing is on</a>, then the location
+		  of the <i>throw</i> in the source code and the thrown exception will
+		  be printed out to the current diagnostic stream, e.g.:
+<pre>
+THROW_TRACE(CParseException, ("Failed parsing(at pos. 123)", 123));
+
+"coretest.cpp", line 708: Trace: CParseException: {123} Failed parsing(at pos. 123)
+
+---------------------------------
+
+strtod("1e-999999", 0);
+THROW1_TRACE(CErrnoException, "Failed strtod('1e-999999', 0)");
+
+"coretest.cpp", line 718: Trace: CErrnoException: Failed strtod('1e-999999', 0): Result too large
+</pre>
+
+
+		<li> <a name="ref_ExceptionThrowAbort"> </a>
+		  Sometimes, it can be convenient to just abort the program execution
+		  at the place where you throw an exception, e.g. in order to examine
+		  the program stack and overall state that led to this <i>throw</i>.
+
+		  By default, this feature is not activated. You can turn it on
+		  for your whole application by either setting the environment
+		  variable <b><i>$ABORT_ON_THROW</i></b> to an arbitrary non-empty
+		  string, or by setting the application's registry entry
+		  <b><i>ABORT_ON_THROW</i></b> (in the <b><i>[DEBUG]</i></b> section)
+		  to an arbitrary non-empty value.
+
+		  You also can turn it on and off in your program code, calling
+		  function <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/General.html#SetThrowTraceAbort">SetThrowTraceAbort()</a>.
+	 </ul>
+
+	 NOTE: if the source was not compiled in the debug mode, then the 
+	 <i><b>THROW*_TRACE(...)</b></i> would just <i>throw</i> the specified
+	 exception, without doing any of the "fancy stuff" we just described.
+
+	 <p>
+	 <a name="ref_ExceptionSpec">
+		  <h4>
+			 <i><b>THROWS*(...)</b></i> -- exception specification
+		  </h4>
+		</a>
+
+	 <p>
 	 One is encouraged to write
 	 <a href="http://www.cygnus.com/misc/wp/dec96pub/except.html#except.spec">
 		exception specifications</a>
@@ -174,6 +274,7 @@ void f1(int i) throw();
 int  f2(void)  throw(e0);
 int  f3(long)  throw(e1,e2); </pre>
 	 respectively. -- Please note the double parenthesis for <i>THROWS()</i>.
+
 
 
 	 <br></br>
@@ -321,7 +422,7 @@ ERR_POST(Warning << "...print double: " << ddd); </pre>
     to be a special, debug-oriented feature, and therefore it is not
     affected by <i>SetDiagPostLevel()</i> and <i>SetDiagDieLevel()</i>.
 	 To turn the tracing on or off in your code you can use function
-    <i>SetDiagTrace()</i>.
+    <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/General.html#SetDiagTrace">SetDiagTrace()</a>.
 
 	 <p>
 	 By default, the tracing is off -- unless you assign environment
