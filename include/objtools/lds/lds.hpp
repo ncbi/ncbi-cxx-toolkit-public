@@ -67,6 +67,9 @@ public:
     // Syncronize LDS database content with directory. 
     // Function will do format guessing, files parsing, etc
     void SyncWithDir(const string& dir_name);
+
+    // Return reference on database tables
+    SLDS_TablesCollection& GetTables() { return m_db; }
 private:
     // Loads types map from m_ObjectTypeDB to memory.
     void x_LoadTypeMap();
@@ -88,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/06/06 16:35:51  kuznets
+ * Added CLDS_Database::GetTables()
+ *
  * Revision 1.5  2003/06/03 19:14:02  kuznets
  * Added lds dll export/import specifications
  *
