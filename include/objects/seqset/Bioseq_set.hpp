@@ -16,7 +16,9 @@ public:
     ~Bioseq_set();
 
     const TSeq_set& GetSeq_set(void) const
-        { return m_Seq_set; }
+        {
+            return Bioseq_set_Base::GetSeq_set();
+        }
 };
 
 #endif // OBJECTS_SEQSET_BIOSEQ_SET_HPP
