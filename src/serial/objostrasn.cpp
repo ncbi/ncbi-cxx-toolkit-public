@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2003/02/04 17:06:26  gouriano
+* added check for NaN in WriteDouble
+*
 * Revision 1.75  2003/01/22 18:53:26  gouriano
 * corrected stream destruction
 *
@@ -459,7 +462,10 @@ void CObjectOStreamAsn::WriteUint8(Uint8 data)
 
 void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
 {
-	if ( data == 0.0 ) {
+    if (isnan(data)) {
+        ThrowError(fInvalidData, "invalid double: not a number");
+    }
+    if ( data == 0.0 ) {
         m_Output.PutString("{ 0, 10, 0 }");
         return;
 	}

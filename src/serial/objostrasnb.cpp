@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2003/02/04 17:06:26  gouriano
+* added check for NaN in WriteDouble
+*
 * Revision 1.71  2002/12/13 21:50:41  gouriano
 * corrected reading of choices
 *
@@ -802,6 +805,9 @@ static const size_t kMaxDoubleLength = 64;
 
 void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
 {
+    if (isnan(data)) {
+        ThrowError(fInvalidData, "invalid double: not a number");
+    }
     int shift = int(ceil(log10(fabs(data))));
     int precision = int(digits - shift);
     if ( precision < 0 )

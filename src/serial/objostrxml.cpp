@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/02/04 17:06:25  gouriano
+* added check for NaN in WriteDouble
+*
 * Revision 1.48  2003/01/22 21:03:16  gouriano
 * remove trailing zeros when writing a float value
 *
@@ -476,6 +479,9 @@ void CObjectOStreamXml::WriteUint8(Uint8 data)
 
 void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
 {
+    if (isnan(data)) {
+        ThrowError(fInvalidData, "invalid double: not a number");
+    }
     char buffer[512];
     SIZE_TYPE width;
     if (m_RealFmt == eRealFixedFormat) {
