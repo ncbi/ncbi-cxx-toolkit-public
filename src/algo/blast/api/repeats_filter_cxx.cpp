@@ -66,10 +66,10 @@ char* GetRepeatsFilterOption(const char* filter_string)
         return NULL;
 
     char* repeat_filter_string = NULL;
-    char* ptr = strchr(filter_string, 'R');
+    const char* ptr = strchr(filter_string, 'R');
     
     if (ptr) {
-        char* end = strstr(ptr, ";");
+        const char* end = strstr(ptr, ";");
         int length;
         if (end)
             length = end - ptr;
@@ -222,6 +222,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.3  2004/06/15 22:51:54  dondosha
+ *  Added const qualifiers to variables assigned returns from strchr and strstr - needed for SunOS compiler
+ *
  *  Revision 1.2  2004/06/15 20:08:03  ucko
  *  Drop inclusion of unused ctools header.
  *
