@@ -177,9 +177,9 @@ public:
         return m_VolList[0].GetSimpleMask();
     }
     
-    Uint4 GetNumSeqs(void) const
+    Uint4 GetNumOIDs(void) const
     {
-        return x_GetNumSeqs();
+        return x_GetNumOIDs();
     }
     
     void GetMaskFiles(Uint4          index,
@@ -200,6 +200,19 @@ public:
         
         oid_start = v.OIDStart();
         oid_end   = v.OIDEnd();
+    }
+    
+    void AddMaskedVolume(const string & volname,
+                         const string & maskfile,
+                         const string & gilist)
+    {
+        CVolEntry * v = x_FindVolName(volname);
+        if (! v) {
+            NCBI_THROW(CSeqDBException, eFileErr,
+                       "Error: Could not find volume (" + volname + ").");
+        }
+        v->AddMask(maskfile);
+        v->AddGiList(gilist);
     }
     
     void AddMaskedVolume(const string & volname, const string & maskfile)
@@ -272,13 +285,20 @@ private:
         void SetStartEnd(Uint4 start)
         {
             m_OIDStart = start;
-            m_OIDEnd   = start + m_Vol->GetNumSeqs();
+            m_OIDEnd   = start + m_Vol->GetNumOIDs();
         }
         
         void AddMask(const string & mask_file)
         {
             if (! m_AllOIDs) {
                 m_MaskFiles.insert(mask_file);
+            }
+        }
+        
+        void AddGiList(const string & gilist_file)
+        {
+            if (! m_AllOIDs) {
+                m_GiListFiles.insert(gilist_file);
             }
         }
         
@@ -340,9 +360,10 @@ private:
         Uint4           m_OIDEnd;
         bool            m_AllOIDs;
         set<string>     m_MaskFiles;
+        set<string>     m_GiListFiles;
     };
     
-    Uint4 x_GetNumSeqs(void) const
+    Uint4 x_GetNumOIDs(void) const
     {
         if (m_VolList.empty())
             return 0;

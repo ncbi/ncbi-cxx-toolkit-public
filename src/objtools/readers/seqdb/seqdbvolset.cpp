@@ -87,7 +87,7 @@ void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas  & atlas,
     CSeqDBVol * new_volp = new CSeqDBVol(atlas, nm, pn);
     
     CVolEntry new_vol( new_volp );
-    new_vol.SetStartEnd( x_GetNumSeqs() );
+    new_vol.SetStartEnd( x_GetNumOIDs() );
     m_VolList.push_back( new_vol );
 }
 
