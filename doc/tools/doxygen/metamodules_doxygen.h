@@ -200,6 +200,10 @@
  *  @ingroup CONNECT
  */
 
+/** @defgroup NetScheduleClient Client API to NCBI NetSchedule
+ *  @ingroup CONNECT
+ */
+
 
 /* ========================================================================= */
 
