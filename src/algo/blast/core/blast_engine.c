@@ -626,7 +626,7 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    concat_db_info.last_context = num_db_seqs - 1;
    concat_db_info.context_offsets = lookup->rps_seq_offsets;
 
-   BLAST_RPSTraceback(program_number, hsp_stream, &concat_db, 
+   BLAST_RPSTraceback(program_number, hsp_stream, seq_src, 
             &concat_db_info, query, query_info, gap_align, 
             score_params, ext_params, hit_params, db_options, 
             rps_info->karlin_k, results);
@@ -738,39 +738,31 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          break;
 
       if (hsp_list && hsp_list->hspcnt > 0) {
-         if (program_number == eBlastTypeBlastn) {
-            if (prelim_traceback || !gapped_calculation) {
-               status = 
-                  Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
-                     seq_arg.seq, hit_options, query_info, sbp, score_params, 
-                     seq_src);
-            }
-            /* Check for HSP inclusion */
-            status = Blast_HSPListUniqSort(hsp_list);
-            /* Relink HSPs if sum statistics is used. */
-            if (hit_params->link_hsp_params) {
-               status = BLAST_LinkHsps(program_number, hsp_list, query_info,
-                           seq_arg.seq->length, sbp, hit_params->link_hsp_params, 
-                           gapped_calculation);
-	    }
-
-         }
-         if (prelim_traceback || !gapped_calculation) {
-             /* Calculate and fill the bit scores, but only if final scores are
-                already available, i.e. either traceback has already been done,
-                or this is an ungapped search. */
-             Blast_HSPListGetBitScores(hsp_list, 
-                                       gapped_calculation, sbp);
+         if (program_number == eBlastTypeBlastn &&
+             (prelim_traceback || !gapped_calculation)) {
+             status = 
+                 Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
+                    seq_arg.seq, hit_options, query_info, sbp, score_params, 
+                    seq_src);
+               
+             /* Check for HSP inclusion in a diagonal strip around another
+                HSP. */
+             status = Blast_HSPListUniqSort(hsp_list);
+             /* Relink HSPs if sum statistics is used. Since this is an 
+                ungapped search, it is the last time HSPs are linked. */
+             if (hit_params->link_hsp_params) {
+                 status = 
+                     BLAST_LinkHsps(program_number, hsp_list, query_info,
+                                    seq_arg.seq->length, sbp, 
+                                    hit_params->link_hsp_params, 
+                                    gapped_calculation);
+             }
+             
+             /* Calculate and fill the bit scores, since there will be no
+                traceback stage where this can be done. */
+             Blast_HSPListGetBitScores(hsp_list, gapped_calculation, sbp);
          } 
 
-         /* Sort HSPs with e-values as first priority and scores as 
-          * tie-breakers. This will guarantee that HSP lists will be ordered
-          * by best e-value after preliminary stage. The HSPs will then have to
-          * be sorted by score at the beginning of traceback stage.
-          * Note that for RPS BLAST e-values are not available at this stage,
-          * so the HSPs will be sorted by score here.
-          */
-         Blast_HSPListSortByEvalue(hsp_list);
 	 /* Save the results. */
 	 BlastHSPStreamWrite(hsp_stream, &hsp_list);
       }
