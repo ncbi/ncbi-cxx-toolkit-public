@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.162  2002/09/21 12:36:28  thiessen
+* add frozen block position validation; add select-other-by-distance
+*
 * Revision 1.161  2002/09/19 12:51:08  thiessen
 * fix block aligner / update bug; add distance select for other molecules only
 *
@@ -1165,7 +1168,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU      (MID_PNG,                                 Cn3DMainFrame::OnPNG)
     EVT_MENU_RANGE(MID_ZOOM_IN,  MID_ALL_FRAMES,            Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
-    EVT_MENU_RANGE(MID_DIST_SELECT_RESIDUES, MID_DIST_SELECT_OTHER, Cn3DMainFrame::OnDistanceSelect)
+    EVT_MENU_RANGE(MID_DIST_SELECT_RESIDUES, MID_DIST_SELECT_OTHER_ALL, Cn3DMainFrame::OnDistanceSelect)
     EVT_MENU      (MID_REFIT_ALL,                           Cn3DMainFrame::OnAlignStructures)
     EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,    Cn3DMainFrame::OnEditFavorite)
@@ -1261,7 +1264,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     subMenu = new wxMenu;
     subMenu->Append(MID_DIST_SELECT_RESIDUES, "&Residues Only");
     subMenu->Append(MID_DIST_SELECT_ALL, "&All Molecules");
-    subMenu->Append(MID_DIST_SELECT_OTHER, "&Other Molecules");
+    subMenu->Append(MID_DIST_SELECT_OTHER_RESIDUES, "&Other Residues");
+    subMenu->Append(MID_DIST_SELECT_OTHER_ALL, "Other &Molecules");
     menu->Append(MID_DIST_SELECT, "Select by Dis&tance...", subMenu);
     menuBar->Append(menu, "Show/&Hide");
 
@@ -1481,8 +1485,8 @@ void Cn3DMainFrame::OnDistanceSelect(wxCommandEvent& event)
     if (dialog.ShowModal() == wxOK) {
         latestCutoff = dialog.GetValue();
         glCanvas->structureSet->SelectByDistance(latestCutoff,
-            (event.GetId() == MID_DIST_SELECT_RESIDUES),
-            (event.GetId() == MID_DIST_SELECT_OTHER));
+            (event.GetId() == MID_DIST_SELECT_RESIDUES || event.GetId() == MID_DIST_SELECT_OTHER_RESIDUES),
+            (event.GetId() == MID_DIST_SELECT_OTHER_RESIDUES || event.GetId() == MID_DIST_SELECT_OTHER_ALL));
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2002/09/21 12:36:29  thiessen
+* add frozen block position validation; add select-other-by-distance
+*
 * Revision 1.65  2002/09/19 12:51:08  thiessen
 * fix block aligner / update bug; add distance select for other molecules only
 *
@@ -372,7 +375,8 @@ public:
             MID_DIST_SELECT,
                 MID_DIST_SELECT_RESIDUES,
                 MID_DIST_SELECT_ALL,
-                MID_DIST_SELECT_OTHER,
+                MID_DIST_SELECT_OTHER_RESIDUES,
+                MID_DIST_SELECT_OTHER_ALL,
         // Structure Alignments menu
         // Style menu
             MID_EDIT_STYLE,

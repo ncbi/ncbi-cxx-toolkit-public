@@ -1256,46 +1256,94 @@ Int4 getSearchSpaceSize(Int4 masterLength, Int4 databaseLength, Int4 initSearchS
 */              
 
 static void parseFrozenBlocksString(Char *inputBlockString, Int4 *frozenBlocks,
-                                     Int4 numBlocks, Int4 queryLength, 
-				     Int4 lastBlockLength) 
-
+     Int4 numBlocks)
 {
      Char *blockStr, *posStr; /*strings to temporarily hold one block number and
+
                            one position*/  
      Int4 block, pos; /*Integer versions of blockStr and posStr*/
-     Boolean WarningIssued;
 
      blockStr = StrTok(inputBlockString, ",");
      posStr = StrTok(NULL, ",");
      while (posStr != NULL) {
        block = atoi(blockStr);
        pos = atoi(posStr);
-       WarningIssued = FALSE;
        if (block <= 0) {
          ErrPostEx(SEV_WARNING, 0, 0, "block numbers must be >=1");
-	 WarningIssued = TRUE;
+         return;
        }
        if (block > numBlocks) {
          ErrPostEx(SEV_WARNING, 0, 0, "block number %d greater than number of blocks %d",block,numBlocks);
-	 WarningIssued = TRUE;
+         return;
        }
-       if (pos <= 0) {
-         ErrPostEx(SEV_WARNING, 0, 0, "positions in query must be >=1");
-	 WarningIssued = TRUE;
-       }
-       if ((pos + lastBlockLength -1) > queryLength) {
-         ErrPostEx(SEV_WARNING, 0, 0, "postion %d + last block length %d -1  exceeds query length %d",pos,lastBlockLength,queryLength);
-	 WarningIssued = TRUE;
-       }
-       if (WarningIssued)
-	 break;
        /* the '-1' here is to convert one-numbered user strings to zero-numbered */
        frozenBlocks[block - 1] = pos - 1;
        blockStr = StrTok(NULL, ",");
        posStr = StrTok(NULL, ",");
-     };
+     }
    }
 
+/* checks to make sure frozen block positions are legal */
+Boolean ValidateFrozenBlockPositions(Int4 *frozenBlocks,
+   Int4 numBlocks, Int4 startQueryRegion, Int4 endQueryRegion,
+   Int4 *blockStarts, Int4 *blockEnds, Int4 *allowedGaps)
+{
+    Int4
+        i,
+        blockLength,
+        unfrozenBlocksLength = 0,
+        prevFrozenBlockEnd = startQueryRegion - 1,
+        maxGapsLength = 0;
+
+    for (i=0; i<numBlocks; i++) {
+        blockLength = blockEnds[i] - blockStarts[i] + 1;
+
+        /* keep track of max gap space between frozen blocks */
+        if (i > 0) maxGapsLength += allowedGaps[i - 1];
+
+        /* to allow room for unfrozen blocks between frozen ones */
+        if (frozenBlocks[i] < 0) {
+            unfrozenBlocksLength += blockLength;
+            continue;
+        }
+
+        /* check absolute block end positions */
+        if (frozenBlocks[i] < startQueryRegion) {
+            ErrPostEx(SEV_WARNING, 0, 0, "Frozen block %i can't start < %i", i+1, startQueryRegion+1);
+            return FALSE;
+        }
+        if (frozenBlocks[i] + blockLength > endQueryRegion) {
+            ErrPostEx(SEV_WARNING, 0, 0, "Frozen block %i can't end >= %i", i+1, endQueryRegion+1);
+            return FALSE;
+        }
+
+        /* checks for legal distances between frozen blocks */
+        if (prevFrozenBlockEnd >= startQueryRegion) {
+
+            /* check for adequate room for unfrozen blocks between frozen blocks */
+            if (frozenBlocks[i] <= prevFrozenBlockEnd + unfrozenBlocksLength) {
+                ErrPostEx(SEV_WARNING, 0, 0,
+                    "Frozen block %i starts before end of prior frozen block, "
+		    "or doesn't leave room for intervening unfrozen block(s)", i+1);
+                return FALSE;
+            }
+
+            /* check for too much gap space since last frozen block */
+            if (frozenBlocks[i] > prevFrozenBlockEnd + 1 + unfrozenBlocksLength + maxGapsLength) {
+                ErrPostEx(SEV_WARNING, 0, 0,
+                    "Frozen block %i is too far away from prior frozen block"
+		    " given allowed gap length(s) (%i)", i+1, maxGapsLength);
+                return FALSE;
+            }
+        }
+
+        /* reset counters after each frozen block */
+        prevFrozenBlockEnd = frozenBlocks[i] + blockLength - 1;
+        unfrozenBlocksLength = maxGapsLength = 0;
+    }
+
+    return TRUE;
+}
 
 #define NUMARG (sizeof(myargs)/sizeof(myargs[0]))
 
@@ -1488,6 +1536,11 @@ Int2  Main(void)
 	      &allowedGaps, &subject_id, myargs[21].floatvalue, myargs[22].intvalue, 
               myargs[26].floatvalue);
 
+   startQueryRegion = MAX(0,myargs[27].intvalue -1);
+   endQueryRegion = queryLength;
+   if (1 <= myargs[28].intvalue)
+     endQueryRegion = MIN(queryLength, myargs[28].intvalue);
+
    /* 
     * blocks to be frozen; if any, then the frozenBlocks array
     * will contain numBlocks integers, where the value of frozenBlocks[N]
@@ -1499,12 +1552,12 @@ Int2  Main(void)
    for(i = 0; i < numBlocks; i++)
      frozenBlocks[i] = -1;
    if (myargs[30].strvalue && StrCmp(myargs[30].strvalue, "none") != 0) {
-     parseFrozenBlocksString(myargs[30].strvalue, frozenBlocks, numBlocks,
-             queryLength, 
-	     blockEnds[numBlocks-1] - blockStarts[numBlocks -1] + 1); 
+     parseFrozenBlocksString(myargs[30].strvalue, frozenBlocks, numBlocks);
      for(i = 0; i < numBlocks; i++)
        if (-1 != frozenBlocks[i])
-	 fprintf(diagfp, "block #%i frozen at residue %i\n", i , frozenBlocks[i]);
+     fprintf(diagfp, "block #%i frozen at residue %i\n", i+1 , frozenBlocks[i]+1);
+     ValidateFrozenBlockPositions(frozenBlocks, numBlocks, startQueryRegion, endQueryRegion,
+        blockStarts, blockEnds, allowedGaps);
    }
 
    init_buff_ex(90);
@@ -1542,10 +1595,6 @@ Int2  Main(void)
    local_sequence_id = SeqIdFindBest(SeqLocId(private_slp), SEQID_GI);
    query_id = SeqIdDup(local_sequence_id);
 
-   startQueryRegion = MAX(0,myargs[27].intvalue -1);
-   endQueryRegion = queryLength;
-   if (1 <= myargs[28].intvalue) 
-     endQueryRegion = MIN(queryLength, myargs[28].intvalue);
    allocateAlignPieceMemory(numBlocks);
    localAlignment = (Boolean) myargs[29].intvalue;
    if (localAlignment)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/09/21 12:36:28  thiessen
+* add frozen block position validation; add select-other-by-distance
+*
 * Revision 1.15  2002/09/20 17:48:39  thiessen
 * fancier trace statements
 *
@@ -123,6 +126,9 @@ extern SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks, Int4 q
 extern void freeBestPairs(Int4 numBlocks);
 extern void freeAlignPieceLists(Int4 numBlocks);
 extern void freeBestScores(Int4 numBlocks);
+extern Boolean ValidateFrozenBlockPositions(Int4 *frozenBlocks,
+   Int4 numBlocks, Int4 startQueryRegion, Int4 endQueryRegion,
+   Int4 *blockStarts, Int4 *blockEnds, Int4 *allowedGaps);
 }
 
 // hack so I can catch memory leaks specific to this module, at the line where allocation occurs
@@ -406,24 +412,32 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
                 ((*s)->alignTo + 1) : query->Length();
 
         // set frozen blocks
-        if (currentOptions.alignAllBlocks)
+        Boolean validFrozenBlocks = TRUE;
+        if (currentOptions.alignAllBlocks) {
             for (i=0; i<numBlocks; i++) frozenBlocks[i] = -1;
-        else
+        } else {
             FreezeBlocks(multiple, *s, frozenBlocks);
+            validFrozenBlocks = ValidateFrozenBlockPositions(frozenBlocks,
+                numBlocks, startQueryPosition, endQueryPosition,
+                blockStarts, blockEnds, allowedGaps);
+        }
 
         // actually do the block alignment
-        TESTMSG("doing " << (localAlignment ? "local" : "global") << " block alignment of "
-            << query->identifier->ToString());
-        allocateAlignPieceMemory(numBlocks);
-        findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition,
-            numBlocks, blockStarts, blockEnds, masterLength, thisScoreMat,
-            scoreThresholdSingleBlock, frozenBlocks, localAlignment);
-        sortAlignPieces(numBlocks);
-        results = makeMultiPieceAlignments(convertedQuery, numBlocks,
-            queryLength, masterSequence, masterLength,
-            blockStarts, blockEnds, allowedGaps, scoreThresholdMultipleBlock,
-            subject_id, query_id, &bestFirstBlock, &bestLastBlock,
-            Lambda, K, searchSpaceSize, localAlignment);
+        if (validFrozenBlocks) {
+            TESTMSG("doing " << (localAlignment ? "local" : "global") << " block alignment of "
+                << query->identifier->ToString());
+            allocateAlignPieceMemory(numBlocks);
+            findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition,
+                numBlocks, blockStarts, blockEnds, masterLength, thisScoreMat,
+                scoreThresholdSingleBlock, frozenBlocks, localAlignment);
+            sortAlignPieces(numBlocks);
+            results = makeMultiPieceAlignments(convertedQuery, numBlocks,
+                queryLength, masterSequence, masterLength,
+                blockStarts, blockEnds, allowedGaps, scoreThresholdMultipleBlock,
+                subject_id, query_id, &bestFirstBlock, &bestLastBlock,
+                Lambda, K, searchSpaceSize, localAlignment);
+        } else
+            results = NULL;
 
         // process results; assume first result SeqAlign is the highest scoring
         BlockMultipleAlignment *newAlignment;
@@ -467,21 +481,27 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 
         // no alignment block aligner failed - add old alignment to list so it doesn't get lost
         else {
-            ERR_POST(Warning <<
-                "block aligner found no significant alignment - current alignment unchanged");
+            std::string error;
+            if (!validFrozenBlocks)
+                error = "invalid frozen block positions";
+            else
+                error = "block aligner found no significant alignment";
+            ERR_POST(Warning << error << " - current alignment unchanged");
             newAlignment = (*s)->Clone();
             newAlignment->SetRowDouble(0, -1.0);
             newAlignment->SetRowDouble(1, -1.0);
-            newAlignment->SetRowStatusLine(0, "block aligner found no significant alignment");
-            newAlignment->SetRowStatusLine(1, "block aligner found no significant alignment");
+            newAlignment->SetRowStatusLine(0, error);
+            newAlignment->SetRowStatusLine(1, error);
             newAlignments->push_back(newAlignment);
         }
 
         // cleanup
         MemFree(convertedQuery);
-        freeBestPairs(numBlocks);
-        freeAlignPieceLists(numBlocks);
-        freeBestScores(numBlocks);
+        if (validFrozenBlocks) {
+            freeBestPairs(numBlocks);
+            freeAlignPieceLists(numBlocks);
+            freeBestScores(numBlocks);
+        }
     }
 
     // cleanup
