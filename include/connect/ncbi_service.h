@@ -35,6 +35,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2002/04/13 06:35:10  lavr
+ * Fast track routine SERV_GetInfoEx(), many syscalls optimizations
+ *
  * Revision 6.23  2001/09/26 16:55:10  lavr
  * Revision log updated; in-line documentation corrected
  *
@@ -155,7 +158,7 @@ SERV_ITER SERV_OpenEx
  TSERV_Type          types,         /* mask of type(s) of servers requested  */
  unsigned int        preferred_host,/* preferred host to use service on, nbo */
  const SConnNetInfo* net_info,      /* connection information                */
- const SSERV_Info*   const skip[], /* array of servers NOT to select        */
+ const SSERV_Info*   const skip[],  /* array of servers NOT to select        */
  size_t              n_skip         /* number of servers in preceding array  */
  );
 
@@ -187,6 +190,28 @@ const SSERV_Info* SERV_GetNextInfoEx
  );
 
 #define SERV_GetNextInfo(iter)  SERV_GetNextInfoEx(iter, 0)
+
+
+/* This is a 'fast track' routine equivalent to creation of an iterator
+ * as with SERV_OpenEx() and then taking an info as with SERV_GetNextInfoEx().
+ * However, this call is optimized for an application, which only needs
+ * a single entry (the first one), and which is not interested in iterating
+ * over all available entries. Both returned server info and env have to be
+ * explicitly free()'d by the application when no longer needed. 
+ */
+SSERV_Info* SERV_GetInfoEx
+(const char*         service,       /* service name                          */
+ TSERV_Type          types,         /* mask of type(s) of servers requested  */
+ unsigned int        preferred_host,/* preferred host to use service on, nbo */
+ const SConnNetInfo* net_info,      /* connection information                */
+ const SSERV_Info*   const skip[],  /* array of servers NOT to select        */
+ size_t              n_skip,        /* number of servers in preceding array  */
+ char**              env            /* environment to store into             */
+ );
+
+
+#define SERV_GetInfo(service, types, preferred_host, net_info) \
+    SERV_GetInfoEx(service, types, preferred_host, net_info, 0, 0, 0)
 
 
 /* Penalize server returned last from SERV_GetNextInfo[Ex]().
