@@ -1288,8 +1288,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             else if ( SMakeProjectT::IsMakeAppFile(name) )
 	            ProcessMakeAppFile(path, makefiles);
         } 
-        else if ( (*i)->IsDir()  &&  
-                  filter->CheckProject(path)) {
+        else if ( (*i)->IsDir() ) {
 
             ProcessDir(path, false, filter, makefiles);
         }
@@ -1480,6 +1479,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/02/27 18:08:25  gorelenk
+ * Changed implementation of CProjectTreeBuilder::ProcessDir.
+ *
  * Revision 1.19  2004/02/26 21:29:04  gorelenk
  * Changed implementations of member-functions of class CProjectTreeBuilder:
  * BuildProjectTree, BuildOneProjectTree and ProcessDir because of use
