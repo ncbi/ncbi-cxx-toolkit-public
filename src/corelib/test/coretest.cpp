@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  1999/09/29 18:21:58  vakatov
+* + TestException_Features() -- to test how the thrown object is handled
+*
 * Revision 1.50  1999/09/02 21:54:42  vakatov
 * Tests for CNcbiRegistry:: allowed '-' and '.' in the section/entry name
 *
@@ -515,6 +518,47 @@ static void TE_logic(void) THROWS((runtime_error,logic_error)) {
 }
 
 
+class XXX {
+    string mess;
+public:
+    XXX(const XXX&    x);
+    XXX(const string& m);
+    ~XXX(void);
+    const string& what(void) const { return mess; }
+};
+
+XXX::XXX(const string& m) : mess(m) {
+    NcbiCerr << "XXX: " << long(this) << NcbiEndl;
+}
+XXX::XXX(const XXX&x) : mess(x.mess) {
+    NcbiCerr << "XXX(" << long(&x) << "): " << long(this) << NcbiEndl;
+}
+XXX::~XXX(void) {
+    NcbiCerr << "~XXX: " << long(this) << NcbiEndl;
+}
+
+static void s_ThrowXXX(void) {
+    NcbiCerr << NcbiEndl << "Throw class XXX" << NcbiEndl;
+    throw XXX("s_ThrowXXX message");
+   
+}
+
+static void TestException_Features(void)
+{
+    try {
+        s_ThrowXXX();
+    } catch (XXX& x) {
+        NcbiCerr << "Catch (XXX& x): " << x.what() << NcbiEndl;
+    }
+
+    try {
+        s_ThrowXXX();
+    } catch (XXX x) {
+        NcbiCerr << "Catch (XXX x): " << x.what() << NcbiEndl << NcbiEndl;
+    }
+}
+
+
 static void TestException_Std(void)
 {
     try { TE_runtime(); }
@@ -604,6 +648,7 @@ static void TestException(void)
 {
     SetDiagStream(&NcbiCout);
 
+    TestException_Features();
     TestException_Std();
     TestException_Aux();
 }
