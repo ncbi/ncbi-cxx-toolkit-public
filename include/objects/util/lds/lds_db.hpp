@@ -162,6 +162,7 @@ inline SLDS_ObjectDB::SLDS_ObjectDB()
     BindKey("object_id", &object_id);
 
     BindData("file_id", &file_id);
+    BindData("primary_seqid", &primary_seqid);
     BindData("seqlist_id", &seqlist_id);
     BindData("object_type", &object_type);
     BindData("file_offset", &file_offset);
@@ -195,6 +196,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2003/05/30 14:05:39  kuznets
+* Added primary_seqid field to the objects table.
+*
 * Revision 1.4  2003/05/23 20:33:33  kuznets
 * Bulk changes in lds library, code reorganizations, implemented top level
 * objects read, metainformation persistance implemented for top level objects...
