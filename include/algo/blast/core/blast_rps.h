@@ -43,35 +43,61 @@ extern "C" {
 #endif
 
 #define RPS_MAGIC_NUM 0x1e16    /* RPS data files contain this number */
+#define NUM_EXPANSION_WORDS 3
+
+/* header of RPS blast '.loo' file */
 
 typedef struct RPSLookupFileHeader {
-    Int4 magic_number;
-    Int4 num_lookup_tables;
-    Int4 num_hits;
-    Int4 num_filled_backbone_cells;
-    Int4 overflow_hits;
-    Int4 unused[3];
-    Int4 start_of_backbone;
-    Int4 end_of_overflow;
+    Int4 magic_number;               /* value should be RPS_MAGIC_NUM */
+    Int4 num_lookup_tables;          /* hardwired to 1 at present */
+    Int4 num_hits;                   /* number of hits in the lookup table */
+    Int4 num_filled_backbone_cells;  /* backbone cells that contain hits */
+    Int4 overflow_hits;              /* number of hits in overflow array */
+    Int4 unused[NUM_EXPANSION_WORDS];/* empty space in the on-disk format */
+    Int4 start_of_backbone;          /* byte offset of start of backbone */
+    Int4 end_of_overflow;            /* byte offset to end of overflow array */
 } RPSLookupFileHeader;
 
+/* header of RPS blast '.rps' file */
+
 typedef struct RPSProfileHeader {
-    Int4 magic_number;
-    Int4 num_profiles;
-    Int4 start_offsets[1]; /* variable number of Int4's beyond this point */
+    Int4 magic_number;     /* value should be RPS_MAGIC_NUM */
+    Int4 num_profiles;     /* number of PSSMs in the file */
+    Int4 start_offsets[1]; /* start of an Int4 array that gives the starting */
+                           /* byte offset of each RPS DB sequence. There */
+                           /* are num_profiles+1 entries in the list, and*/
+                           /* the last entry effectively contains the length */
+                           /* of all protein sequences combined. Note that */
+                           /* the length of each sequence includes one byte */
+                           /* at the end for an end-of-sequence sentinel */
+
+    /* After the list of sequence start offsets comes the list
+       of PSSM rows. There is one row for each letter in the RPS
+       sequence database, and each row has PSI_ALPHABET_SIZE entries.
+       Because there is a sentinel byte at the end of each sequence,
+       there is also a PSSM row for each sentinel byte */
+
 } RPSProfileHeader;
 
+/* information derived from RPS blast '.aux' file */
+
 typedef struct RPSAuxInfo {
-    Int1 orig_score_matrix[256];
-    Int4 gap_open_penalty;
+    Int1 orig_score_matrix[PATH_MAX]; /* score matrix used to derive PSSMs */
+    Int4 gap_open_penalty;    /* gap penalties used in deriving PSSMs */
     Int4 gap_extend_penalty;
-    double ungapped_k;
+    double ungapped_k;        /* ungapped Karlin values for orig_score_matrix */
     double ungapped_h;
     Int4 max_db_seq_length;
     Int4 db_length;
-    double scale_factor;
-    double *karlin_k;
+    double scale_factor;      /* the PSSMs are scaled by this amount, and so */
+                              /* all scores and all cutoff values must be */
+                              /* similarly scaled during the search */
+    double *karlin_k;         /* one Karlin value for each DB sequence */
 } RPSAuxInfo;
+
+/* The RPS engine uses this structure to access all of the
+   RPS blast related data (assumed to be collected in an 
+   implementation-specific manner). */
 
 typedef struct RPSInfo {
     RPSLookupFileHeader *lookup_header;
