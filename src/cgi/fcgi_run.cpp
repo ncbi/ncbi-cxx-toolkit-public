@@ -145,7 +145,6 @@ inline
 bool CCgiWatchFile::HasChanged(void)
 {
     TBuf buf(new char[m_Limit]);
-    bool changed = false;
     if (x_Read(buf.get()) != m_Count) {
         return true;
     } else if (m_Count == -1) { // couldn't be opened
@@ -540,6 +539,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.48  2004/09/27 23:49:15  vakatov
+ * Warning fix:  removed unused local variable
+ *
  * Revision 1.47  2004/09/15 20:16:19  ucko
  * Make sure to define CCgiWatchFile::x_Read before its callers so it can
  * be inlined.
