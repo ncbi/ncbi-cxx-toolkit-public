@@ -112,7 +112,8 @@ Int4 LIBCALLBACK BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
    Int4 total_hits = 0;
    Int4 compressed_wordsize, compressed_scan_step;
    Boolean full_byte_scan = (lookup->scan_step % COMPRESSION_RATIO == 0);
-   
+   Int4 i;
+
    abs_start = subject->sequence;
    s = abs_start + start_offset/COMPRESSION_RATIO;
    compressed_scan_step = lookup->scan_step / COMPRESSION_RATIO;
@@ -126,7 +127,9 @@ Int4 LIBCALLBACK BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
       Uint1Ptr s_end = abs_start + subject->length/COMPRESSION_RATIO - 
          compressed_wordsize;
       for ( ; s <= s_end; s += compressed_scan_step) {
-         BlastNaLookupInitIndex(compressed_wordsize, s, &index);
+         index = 0;
+         for (i = 0; i < compressed_wordsize; ++i)
+            index = ((index)<<FULL_BYTE_SHIFT) | s[i];
          
          if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
             num_hits = lookup->thick_backbone[index].num_used;
@@ -166,10 +169,11 @@ Int4 LIBCALLBACK BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
          s = abs_start + (s_off / COMPRESSION_RATIO);
          bit = 2*(s_off % COMPRESSION_RATIO);
          /* Compute index for a word made of full bytes */
-         s = BlastNaLookupInitIndex(compressed_wordsize, s, &index);
-         /* Adjust the word index by the base within a byte */
-         adjusted_index = BlastNaLookupAdjustIndex(s, index, lookup->mask, 
-                                                   bit);
+         index = 0;
+         for (i = 0; i < compressed_wordsize; ++i)
+            index = ((index)<<FULL_BYTE_SHIFT) | (*s++);
+         adjusted_index = 
+            (((index)<<bit) & lookup->mask) | ((*s)>>(FULL_BYTE_SHIFT-bit));
          
          if (NA_PV_TEST(pv_array, adjusted_index, PV_ARRAY_BTS)) {
             num_hits = lookup->thick_backbone[adjusted_index].num_used;
@@ -297,15 +301,17 @@ Int4 LIBCALLBACK BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
    PV_ARRAY_TYPE *pv_array = lookup->pv;
    Int4 total_hits = 0;
    Boolean full_byte_scan = (lookup->scan_step % COMPRESSION_RATIO == 0);
-   
+   Int4 i;
+
    abs_start = subject->sequence;
-   s_start = abs_start + start_offset/COMPRESSION_RATIO;
+   s = abs_start + start_offset/COMPRESSION_RATIO;
    /* s_end points to the place right after the last full sequence byte */ 
    s_end = abs_start + (*end_offset)/COMPRESSION_RATIO;
    index = 0;
    
    /* Compute the first index */
-   s = BlastNaLookupInitIndex(lookup->reduced_wordsize, s_start, &index);
+   for (i = 0; i < lookup->reduced_wordsize; ++i)
+      index = ((index)<<FULL_BYTE_SHIFT) | *s++;
 
    if (full_byte_scan) {
       /* s points to the byte right after the end of the current word */
@@ -335,9 +341,10 @@ Int4 LIBCALLBACK BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
                s_offsets[total_hits++] = s_off;
             }
          }
+
          /* Compute the next value of the index */
-         index = BlastNaLookupComputeIndex(FULL_BYTE_SHIFT, lookup->mask,
-                                           s++, index);
+         index = (((index)<<FULL_BYTE_SHIFT) & lookup->mask) | (*s++);  
+
       }
       /* Ending offset should point to the start of the word that ends 
          at s */
