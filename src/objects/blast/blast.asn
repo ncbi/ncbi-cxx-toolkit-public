@@ -30,6 +30,9 @@
 NCBI-Blast4 DEFINITIONS ::=
 BEGIN
 
+EXPORTS
+    Blast4-ka-block;
+
 IMPORTS
     Bioseq                  FROM NCBI-Sequence
     Bioseq-set              FROM NCBI-Seqset
