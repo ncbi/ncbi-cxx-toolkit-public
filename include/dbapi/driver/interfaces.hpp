@@ -599,6 +599,10 @@ public:
     virtual ~I_DriverMgr(void);
 };
 
+
+END_NCBI_SCOPE
+
+
 #if defined(NCBI_OS_MSWIN)
 #include <io.h>
 inline int close(int fd)
@@ -607,8 +611,6 @@ inline int close(int fd)
 }
 #endif
 
-END_NCBI_SCOPE
-
 
 /* @} */
 
@@ -616,6 +618,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/02/25 13:04:31  lavr
+ * Indeed don't #include <unistd.h> within ncbi:: (or any other scope)
+ *
  * Revision 1.31  2005/02/24 17:17:19  ucko
  * Whoops, don't #include <unistd.h> within ncbi:: (or any other scope).
  *
