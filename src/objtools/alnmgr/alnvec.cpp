@@ -150,8 +150,8 @@ string& CAlnVec::GetAlnSeqString(string& buffer,
     string buff;
     buffer.erase();
 
-    CSeqVector& seq_vec = x_GetSeqVector(row);
-    TSignedSeqPos seq_vec_size = seq_vec.size();
+    CSeqVector& seq_vec      = x_GetSeqVector(row);
+    TSeqPos     seq_vec_size = seq_vec.size();
     
     // get the chunks which are aligned to seq on anchor
     CRef<CAlnMap::CAlnChunkVec> chunk_vec = 
@@ -248,7 +248,7 @@ void CAlnVec::CreateConsensus(void)
                         x_GetSeqVector(i).GetSeqData(start, stop, segs[i]);
                     } else {
                         CSeqVector &  seq_vec = x_GetSeqVector(i);
-                        TSignedSeqPos size = seq_vec.size();
+                        TSeqPos size = seq_vec.size();
                         seq_vec.GetSeqData(size - stop, size - start, segs[i]);
                     }
                     for (int c = 0;  c < segs[i].length();  ++c) {
@@ -564,7 +564,7 @@ int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2)
     string        buff1, buff2;
     bool          isAA1, isAA2;
     int           score = 0;
-    TSignedSeqPos len;
+    TSeqPos len;
     
     isAA1 = GetBioseqHandle(row1).GetBioseqCore()
         ->GetInst().GetMol() == CSeq_inst::eMol_aa;
@@ -573,9 +573,9 @@ int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2)
         ->GetInst().GetMol() == CSeq_inst::eMol_aa;
 
     CSeqVector&   seq_vec1 = x_GetSeqVector(row1);
-    TSignedSeqPos size1 = seq_vec1.size();
+    TSeqPos       size1    = seq_vec1.size();
     CSeqVector &  seq_vec2 = x_GetSeqVector(row2);
-    TSignedSeqPos size2 = seq_vec2.size();
+    TSeqPos       size2    = seq_vec2.size();
 
     for (TNumseg seg = 0; seg < m_DS->GetNumseg(); seg++) {
         start1 = m_DS->GetStarts()[index1];
@@ -618,6 +618,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/02/11 21:32:44  todorov
+* fMinGap optional merging algorithm
+*
 * Revision 1.21  2003/01/29 20:54:37  todorov
 * CalculateScore speed optimization
 *

@@ -192,7 +192,7 @@ string& CAlnVec::GetSeqString(string& buffer,
         x_GetSeqVector(row).GetSeqData(seq_from, seq_to + 1, buffer);
     } else {
         CSeqVector& seq_vec = x_GetSeqVector(row);
-        TSignedSeqPos size = seq_vec.size();
+        TSeqPos size = seq_vec.size();
         seq_vec.GetSeqData(size - seq_to - 1, size - seq_from, buffer);
     }        
     return buffer;
@@ -210,7 +210,7 @@ string& CAlnVec::GetSegSeqString(string& buffer,
                                        buffer);
     } else {
         CSeqVector& seq_vec = x_GetSeqVector(row);
-        TSignedSeqPos size = seq_vec.size();
+        TSeqPos size = seq_vec.size();
         x_GetSeqVector(row).GetSeqData(size - GetStop(row, seg, offset) - 1,
                                        size - GetStart(row, seg, offset),
                                        buffer);
@@ -230,7 +230,7 @@ string& CAlnVec::GetSeqString(string& buffer,
                                        buffer);
     } else {
         CSeqVector& seq_vec = x_GetSeqVector(row);
-        TSignedSeqPos size = seq_vec.size();
+        TSeqPos size = seq_vec.size();
         x_GetSeqVector(row).GetSeqData(size - seq_rng.GetTo() - 1,
                                        size - seq_rng.GetFrom(),
                                        buffer);
@@ -344,6 +344,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2003/02/11 21:32:37  todorov
+ * fMinGap optional merging algorithm
+ *
  * Revision 1.18  2003/01/27 22:30:24  todorov
  * Attune to seq_vector interface change
  *

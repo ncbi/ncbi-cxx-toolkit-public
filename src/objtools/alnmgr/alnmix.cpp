@@ -275,7 +275,7 @@ void CAlnMix::Add(const CDense_seg &ds)
                                     aln_seq1->m_BioseqHandle->GetSeqVector
                                     (CBioseq_Handle::eCoding_Iupac,
                                      CBioseq_Handle::eStrand_Minus);
-                                TSignedSeqPos size = seq_vec.size();
+                                TSeqPos size = seq_vec.size();
                                 seq_vec.GetSeqData(size - (start1 + len),
                                                    size - start1, 
                                                    s1);
@@ -290,7 +290,7 @@ void CAlnMix::Add(const CDense_seg &ds)
                                     aln_seq2->m_BioseqHandle->GetSeqVector
                                     (CBioseq_Handle::eCoding_Iupac,
                                      CBioseq_Handle::eStrand_Minus);
-                                TSignedSeqPos size = seq_vec.size();
+                                TSeqPos size = seq_vec.size();
                                 seq_vec.GetSeqData(size - (start2 + len),
                                                    size - start2, 
                                                    s2);
@@ -333,7 +333,7 @@ void CAlnMix::x_Merge()
 {
     // Find the refseq (if such exists)
     {{
-        TSeqs::iterator refseq_it;
+        TSeqs::iterator refseq_it = m_Seqs.end();
         non_const_iterate (TSeqs, it, m_Seqs){
             CAlnMixSeq * aln_seq = *it;
 
@@ -802,7 +802,7 @@ void CAlnMix::x_CreateRowsVector()
 
 void CAlnMix::x_CreateSegmentsVector()
 {
-    TSegments gapped_segs;
+    TSegmentsContainer gapped_segs;
 
     // init the start iterators for each row
     non_const_iterate (TSeqs, row_i, m_Rows) {
@@ -866,7 +866,7 @@ void CAlnMix::x_CreateSegmentsVector()
                 }
 #endif
                 // index the segment
-                CAlnMixSegment * seg = row->m_StartIt->second;
+                CRef<CAlnMixSegment> seg = row->m_StartIt->second;
                 seg->m_Index1 = index++;
                 seg->m_Index2 = row->m_RowIndex;
                 gapped_segs.push_back(seg);
@@ -890,11 +890,14 @@ void CAlnMix::x_CreateSegmentsVector()
                  x_CompareAlnSegIndexes);
 
             if (m_MergeFlags & fGapJoin) {
-                // request for trying to align gapped segments
+                // request for trying to align gapped segments w/ equal len
                 x_ConsolidateGaps(gapped_segs);
+            } else if (m_MergeFlags & fMinGap) {
+                // request for trying to align all gapped segments
+                x_MinimizeGaps(gapped_segs);
             }
-            iterate (TSegments, seg_i, gapped_segs) {
-                m_Segments.push_back(*seg_i);
+            non_const_iterate (TSegmentsContainer, seg_i, gapped_segs) {
+                m_Segments.push_back(&**seg_i);
             }
             gapped_segs.clear();
         }
@@ -911,9 +914,9 @@ void CAlnMix::x_CreateSegmentsVector()
 }
 
 
-void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
+void CAlnMix::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
 {
-    TSegments::iterator seg1_i, seg2_i;
+    TSegmentsContainer::iterator seg1_i, seg2_i;
 
     seg2_i = seg1_i = gapped_segs.begin();
     seg2_i++;
@@ -923,6 +926,7 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
     TSeqPos      start1;
     int          score1;
     CAlnMixSeq * seq1;
+    CAlnMixSeq * seq2;
 
     while (seg2_i != gapped_segs.end()) {
 
@@ -935,7 +939,7 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
         if (seg2->m_Len == seg1->m_Len  && 
             seg2->m_StartIts.size() == 1) {
 
-            CAlnMixSeq * seq2 = (seg2->m_StartIts.begin())->first;
+            seq2 = seg2->m_StartIts.begin()->first;
 
             // check if this seq was already used
             iterate (CAlnMixSegment::TStartIterators,
@@ -951,8 +955,8 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
             if (possible) {
                 if (!cache) {
 
-                    seq1 = ((*seg1_i)->m_StartIts.begin())->first;
-                
+                    seq1 = seg1->m_StartIts.begin()->first;
+                    
                     start1 = seg1->m_StartIts[seq1]->first;
 
                     if (seq1->m_PositiveStrand) {
@@ -965,7 +969,7 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
                             seq1->m_BioseqHandle->GetSeqVector
                             (CBioseq_Handle::eCoding_Iupac,
                              CBioseq_Handle::eStrand_Minus);
-                        TSignedSeqPos size = seq_vec.size();
+                        TSeqPos size = seq_vec.size();
                         seq_vec.GetSeqData(size - (start1 + seg1->m_Len),
                                            size - start1, 
                                            s1);
@@ -992,13 +996,11 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
                         seq2->m_BioseqHandle->GetSeqVector
                         (CBioseq_Handle::eCoding_Iupac,
                          CBioseq_Handle::eStrand_Minus);
-                    TSignedSeqPos size = seq_vec.size();
+                    TSeqPos size = seq_vec.size();
                     seq_vec.GetSeqData(size - (start2 + seg2->m_Len),
                                        size - start2, 
                                        s2);
                 }                                
-                
-                
 
                 int score2 = 
                     CAlnVec::CalculateScore(s1, s2, seq1->m_IsAA, seq2->m_IsAA);
@@ -1016,8 +1018,7 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
             // consolidate the ones so far
             
             // add the new row
-            seg1->m_StartIts[seg2->m_StartIts.begin()->first] =
-                seg2->m_StartIts.begin()->second;
+            seg1->m_StartIts[seq2] = seg2->m_StartIts.begin()->second;
             
             // point the row's start position to the beginning seg
             seg2->m_StartIts.begin()->second->second = seg1;
@@ -1030,6 +1031,115 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
         }
     }
 }
+
+
+void CAlnMix::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
+{
+    TSegmentsContainer::iterator  seg_i, seg_i_end, seg_i_begin;
+    CAlnMixSegment       * seg1, * seg2;
+    CRef<CAlnMixSegment> seg;
+    CAlnMixSeq           * seq;
+    TSegmentsContainer            new_segs;
+
+    seg_i_begin = seg_i_end = seg_i = gapped_segs.begin();
+
+    typedef map<TSeqPos, CRef<CAlnMixSegment> > TLenMap;
+    TLenMap len_map;
+
+    while (seg_i_end != gapped_segs.end()) {
+
+        len_map[(*seg_i_end)->m_Len];
+        
+        // check if this seg can possibly be minimized
+        bool possible = true;
+
+        seg_i = seg_i_begin;
+        while (seg_i != seg_i_end) {
+            seg1 = *seg_i;
+            seg2 = *seg_i_end;
+            
+            iterate (CAlnMixSegment::TStartIterators,
+                     st_it,
+                     seg2->m_StartIts) {
+                seq = st_it->first;
+                // check if this seq was already used
+                if (seg1->m_StartIts.find(seq) != seg1->m_StartIts.end()) {
+                    possible = false;
+                    break;
+                }
+            }
+            if ( !possible ) {
+                break;
+            }
+            seg_i++;
+        }
+        seg_i_end++;
+
+        if ( !possible  ||  seg_i_end == gapped_segs.end()) {
+            // use the accumulated len info to create the new segs
+
+            // create new segs with appropriate len
+            TSeqPos len_so_far = 0;
+            TLenMap::iterator len_i = len_map.begin();
+            while (len_i != len_map.end()) {
+                len_i->second = new CAlnMixSegment();
+                len_i->second->m_Len = len_i->first - len_so_far;
+                len_so_far += len_i->second->m_Len;
+                len_i++;
+            }
+                
+            // loop through the accumulated orig segs.
+            // copy info from them into the new segs
+            TLenMap::iterator len_i_end;
+            seg_i = seg_i_begin;
+            while (seg_i != seg_i_end) {
+
+                // determine the span of the current seg
+                len_i_end = len_map.find((*seg_i)->m_Len);
+                len_i_end++;
+
+                // loop through its sequences
+                non_const_iterate (CAlnMixSegment::TStartIterators,
+                                   st_it,
+                                   (*seg_i)->m_StartIts) {
+
+                    seq = st_it->first;
+                    TSeqPos orig_start = st_it->second->first;
+
+                    len_i = len_map.begin();
+                    len_so_far = 0;
+                    // loop through the new segs
+                    while (len_i != len_i_end) {
+                        seg = len_i->second;
+                    
+                        // calc the start
+                        TSeqPos this_start = orig_start + 
+                            (seq->m_PositiveStrand ? 
+                             len_so_far :
+                             seg2->m_Len - len_so_far);
+
+                        // create the bindings:
+                        seq->m_Starts[this_start] = seg;
+                        seg->m_StartIts[seq] = seq->m_Starts.find(this_start);
+                        len_i++;
+                        len_so_far += seg->m_Len;
+                    }
+                }
+                seg_i++;
+            }
+            non_const_iterate (TLenMap, len_i, len_map) {
+                new_segs.push_back(len_i->second);
+            }
+            len_map.clear();
+            seg_i_begin = seg_i_end;
+        }
+    }
+    gapped_segs.clear();
+    iterate (TSegmentsContainer, new_seg_i, new_segs) {
+        gapped_segs.push_back(*new_seg_i);
+    }
+}
+
 
 void CAlnMix::x_CreateDenseg()
 {
@@ -1131,6 +1241,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/02/11 21:32:44  todorov
+* fMinGap optional merging algorithm
+*
 * Revision 1.28  2003/02/04 00:05:16  todorov
 * GetSeqData neg strand range bug
 *

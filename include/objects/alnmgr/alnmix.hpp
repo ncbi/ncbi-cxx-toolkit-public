@@ -69,8 +69,9 @@ public:
         fTruncateOverlaps     = 0x02, // otherwise put on separate rows
         fNegativeStrand       = 0x04,
         fTryOtherMethodOnFail = 0x08,
-        fGapJoin              = 0x10,
-        fSortSeqsByScore      = 0x20  // Seqs with better scoring aligns on top
+        fGapJoin              = 0x10, // join equal len segs gapped on refseq
+        fMinGap               = 0x20, // minimize segs gapped on refseq
+        fSortSeqsByScore      = 0x40  // Seqs with better scoring aligns on top
     };
     typedef int TMergeFlags; // binary OR of EMergeFlags
     void Merge(TMergeFlags flags = 0);
@@ -95,6 +96,7 @@ private:
     typedef map<CBioseq_Handle, CRef<CAlnMixSeq> > TBioseqHandleMap;
     typedef vector<CRef<CAlnMixMatch> >            TMatches;
     typedef vector<CAlnMixSegment*>                TSegments;
+    typedef vector<CRef<CAlnMixSegment> >          TSegmentsContainer;
 
     void x_Reset               (void);
     void x_InitBlosum62Map     (void);
@@ -104,7 +106,8 @@ private:
     void x_CreateRowsVector    (void);
     void x_CreateSegmentsVector(void);
     void x_CreateDenseg        (void);
-    void x_ConsolidateGaps     (TSegments& gapped_segs);
+    void x_ConsolidateGaps     (TSegmentsContainer& gapped_segs);
+    void x_MinimizeGaps        (TSegmentsContainer& gapped_segs);
 
 
     static bool x_CompareAlnSeqScores  (const CAlnMixSeq* aln_seq1,
@@ -284,6 +287,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/02/11 21:32:37  todorov
+* fMinGap optional merging algorithm
+*
 * Revision 1.16  2003/01/23 16:30:36  todorov
 * Moved calc score to alnvec
 *
