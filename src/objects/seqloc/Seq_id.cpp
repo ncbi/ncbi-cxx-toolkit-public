@@ -545,7 +545,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'C':
             switch (pfx[1]) {
             case 'A': case 'B': case 'D': case 'F': return eAcc_gb_est;
-            case 'C': case 'E':                     return eAcc_gb_gss;
+            case 'C': case 'E': case 'G':           return eAcc_gb_gss;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1343,6 +1343,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.59  2003/08/11 14:37:20  ucko
+ * IdentifyAccession: "CG" is GenBank GSS.
+ *
  * Revision 6.58  2003/07/14 20:11:59  ucko
  * +CF (eAcc_gb_est)
  *
