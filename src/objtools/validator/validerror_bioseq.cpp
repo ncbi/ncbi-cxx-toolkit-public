@@ -860,7 +860,9 @@ size_t CValidError_bioseq::NumOfIntervals(const CSeq_loc& loc)
 {
     size_t counter = 0;
     for ( CSeq_loc_CI slit(loc); slit; ++slit ) {
-        ++counter;
+        if ( !m_Imp.IsFarLocation(slit.GetSeq_loc()) ) {
+            ++counter;
+        }
     }
     return counter;
 }
@@ -1406,7 +1408,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
     // Validate extension data -- wrap in CSeq_loc_mix for convenience
     CSeq_loc loc;
     if ( GetLocFromSeq(seq, &loc) ) {
-        m_Imp.ValidateSeqLoc(loc, seq, "Segmented Bioseq", seq);
+        m_Imp.ValidateSeqLoc(loc, &seq, "Segmented Bioseq", seq);
     }
 
     // Validate Length
@@ -1771,11 +1773,12 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
     }
 
     // Check for CPubdesc on the biodseq
-    CSeqdesc_CI desc( bsh, CSeqdesc::e_Pub );
-    if ( desc ) {
-        return;
+    if ( !CSeqdesc_CI( bsh, CSeqdesc::e_Pub)  &&
+         !CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Pub) ) {
+        m_Imp.AddBioseqWithNoPub(seq);
     }
     
+    /*
     if ( !seq.GetInst().IsSetLength() ) {
         return;
     }
@@ -1796,6 +1799,7 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
     if ( !covered ) {
         m_Imp.AddBioseqWithNoPub(seq);
     }
+    */
 }
 
 
@@ -1819,7 +1823,7 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
         EDiagSev sev = m_Imp.IsNC() ? eDiag_Warning : eDiag_Error;
         PostErr(sev, eErr_SEQ_FEAT_MultiIntervalGene,
             "Gene feature on non-segmented sequence should not "
-            "have multiple intervals", fi->GetMappedFeature());
+            "have multiple intervals", fi->GetOriginalFeature());
     }
 }
 
@@ -1855,7 +1859,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             case CSeqFeatData::e_Txinit:
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
                     "Invalid feature for a protein Bioseq.",
-                        fi->GetMappedFeature());
+                        fi->GetOriginalFeature());
                 break;
 
             default:
@@ -1867,7 +1871,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             case CSeqFeatData::e_Psec_str:
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
                     "Invalid feature for a nucleotide Bioseq.",
-                        fi->GetMappedFeature());
+                        fi->GetOriginalFeature());
                 break;
                 
             default:
@@ -1890,7 +1894,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                         PostErr(sev, eErr_SEQ_FEAT_InvalidForType,
                             "Multi-interval CDS feature is invalid on an mRNA "
                             "(cDNA) Bioseq.",
-                                fi->GetMappedFeature());
+                                fi->GetOriginalFeature());
                     }
                 }
                 break;
@@ -1901,7 +1905,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     if ( rref.GetType() == CRNA_ref::eType_mRNA ) {
                         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
                             "mRNA feature is invalid on an mRNA (cDNA) Bioseq.",
-                            fi->GetMappedFeature());
+                            fi->GetOriginalFeature());
                     }
                 }
                 break;
@@ -1913,7 +1917,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                         imp.GetKey() == "CAAT_signal" ) {
                         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
                             "Invalid feature for an mRNA Bioseq.",
-                                fi->GetMappedFeature());
+                                fi->GetOriginalFeature());
                     }
                 }
                 break;
@@ -1929,7 +1933,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     if ( imp.GetKey() == "CAAT_signal" ) {
                         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
                             "Invalid feature for a pre-RNA Bioseq.",
-                                fi->GetMappedFeature());
+                                fi->GetOriginalFeature());
                     }
                 }
                 break;
@@ -1942,7 +1946,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         if ( !m_Imp.IsNC()  &&  m_Imp.IsFarLocation(fi->GetLocation()) ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_FarLocation,
                 "Feature has 'far' location - accession not packaged in record",
-                fi->GetMappedFeature());
+                fi->GetOriginalFeature());
         }
 
         if ( seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg ) {
@@ -1951,7 +1955,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     sev = m_Imp.IsNC() ? eDiag_Warning : eDiag_Error;
                     PostErr(sev, eErr_SEQ_FEAT_LocOnSegmentedBioseq,
                         "Feature location on segmented bioseq, not on parts",
-                            fi->GetMappedFeature());
+                            fi->GetOriginalFeature());
                 }
             }
         }
@@ -2019,9 +2023,9 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                     const string &prev_comment = prev->GetComment();
                     curr_label.erase();
                     prev_label.erase();
-                    feature::GetLabel(curr->GetMappedFeature(),
+                    feature::GetLabel(curr->GetOriginalFeature(),
                                       &curr_label, feature::eContent, m_Scope);
-                    feature::GetLabel(prev->GetMappedFeature(),
+                    feature::GetLabel(prev->GetOriginalFeature(),
                                       &prev_label, feature::eContent, m_Scope);
                     if ( NStr::CompareNocase(curr_comment, prev_comment) != 0  ||
                          NStr::CompareNocase(curr_label, prev_label) != 0 ) {
@@ -2081,48 +2085,50 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                     } else if ( IsSameSeqAnnot(curr, prev) ) {
                         if (same_label) {
                             PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
-                                "Duplicate feature",
-                                     curr->GetMappedFeature());
+                                "Duplicate feature", 
+                                curr->GetOriginalFeature());
                         } else if ( curr_subtype != CSeqFeatData::eSubtype_pub ) {
                             PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                                 "Features have identical intervals, but labels "
-                                "differ",
-                                curr->GetMappedFeature());
+                                "differ", 
+                                curr->GetOriginalFeature());
                         }
                     } else {
                         if (same_label) {
                             PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                                 "Duplicate feature (packaged in different feature table)",
-                                curr->GetMappedFeature());
+                                curr->GetOriginalFeature());
                         } else if ( prev_subtype != CSeqFeatData::eSubtype_pub ) {
                             PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                                 "Features have identical intervals, but labels "
                                 "differ (packaged in different feature table)",
-                                curr->GetMappedFeature());
+                                curr->GetOriginalFeature());
                         }
-                    }
-                }
-
-                if ( (curr_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
-                      curr_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
-                      curr_subtype == CSeqFeatData::eSubtype_transit_peptide_aa)  &&
-                     (prev_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
-                      prev_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
-                      prev_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) ) {
-                    if ( sequence::Compare(*curr_location,
-                                           *prev_location,
-                                           m_Scope) == eOverlap &&
-                         NotPeptideException(curr, prev) ) {
-                        EDiagSev overlapPepSev = 
-                            m_Imp.IsOvlPepErr()? eDiag_Error :eDiag_Warning;
-                        PostErr( overlapPepSev,
-                            eErr_SEQ_FEAT_OverlappingPeptideFeat,
-                            "Signal, Transit, or Mature peptide features overlap",
-                            curr->GetMappedFeature());
                     }
                 }
             }
         }
+        
+        
+        if ( (curr_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
+            curr_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
+            curr_subtype == CSeqFeatData::eSubtype_transit_peptide_aa)  &&
+            (prev_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
+            prev_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
+            prev_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) ) {
+            if ( sequence::Compare(*curr_location,
+                *prev_location,
+                m_Scope) != eNoOverlap &&
+                NotPeptideException(curr, prev) ) {
+                EDiagSev overlapPepSev = 
+                    m_Imp.IsOvlPepErr()? eDiag_Error :eDiag_Warning;
+                PostErr( overlapPepSev,
+                    eErr_SEQ_FEAT_OverlappingPeptideFeat,
+                    "Signal, Transit, or Mature peptide features overlap",
+                    curr->GetOriginalFeature());
+            }
+        }
+
         ++prev; 
         ++curr;
     }  // end of while loop
@@ -2322,9 +2328,22 @@ void CValidError_bioseq::ValidateMolInfoContext
                     "Nucleic acid with Molinfo-biomol = peptide", seq, desc);
             }
             break;
+
+        case CMolInfo::eBiomol_other_genetic:
+            PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                    "Molinfo-biomol = other genetic", seq, desc);
+            break;
             
         case CMolInfo::eBiomol_unknown:
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                    "Molinfo-biomol unknown used", seq, desc);
+            break;
+
         case CMolInfo::eBiomol_other:
+            if ( !m_Imp.IsXR() ) {
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                    "Molinfo-biomol other used", seq, desc);
+            }
             break;
             
         default:  // the rest are nucleic acid
@@ -2498,24 +2517,23 @@ void CValidError_bioseq::ValidateCollidingGeneNames(const CBioseq& seq)
     typedef multimap<string, const CSeq_feat*, CNoCaseCompare> TStrFeatMap;
 
     // Loop through genes and insert into multimap sorted by
-    // gene label--case insensitive
+    // gene label--case insensitive      
+    TStrFeatMap label_map;
+
     CFeat_CI fi(m_Scope->GetBioseqHandle(seq),
                 0, 0,
                 CSeqFeatData::e_Gene);
-    
-    TStrFeatMap label_map;
-    string label;
-    for (; fi; ++fi) {
-        label.erase();
-        GetLabel(fi->GetMappedFeature(), &label, feature::eContent, m_Scope);
+    for ( ; fi; ++fi ) {
+        string label;
+        GetLabel(fi->GetOriginalFeature(), &label, feature::eContent, m_Scope);
         label_map.insert(TStrFeatMap::value_type(label,
-                                                 &fi->GetMappedFeature()));
+                                                 &fi->GetOriginalFeature()));
     }
 
     // Iterate through multimap and compare labels
     bool first = true;
     const string* plabel = 0;
-    ITERATE (TStrFeatMap, it, label_map) {
+    ITERATE ( TStrFeatMap, it, label_map ) {
         if (first) {
             first = false;
             plabel = &(it->first);
@@ -3051,6 +3069,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/05/28 16:25:22  shomrat
+* Error messages contain original feature (not mapped).
+*
 * Revision 1.34  2003/05/14 21:48:18  shomrat
 * Bug fix in ValidateMultiIntervalGene
 *
