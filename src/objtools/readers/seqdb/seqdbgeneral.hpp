@@ -189,6 +189,10 @@ string SeqDB_FindBlastDBPath(const string & file_name,
                              string       * sp,
                              bool           exact_name);
 
+void SeqDB_JoinDelim(string & a, const string & b, const string & delim);
+
+
 END_NCBI_SCOPE
 
 #endif // CORELIB__SEQDB__SEQDBGENERAL_HPP
+

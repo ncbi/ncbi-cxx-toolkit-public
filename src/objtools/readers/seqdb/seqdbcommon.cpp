@@ -175,5 +175,21 @@ string SeqDB_FindBlastDBPath(const string & dbname,
     return s_SeqDB_TryPaths(pathology, dbname, dbtype, exact_name);
 }
 
+void SeqDB_JoinDelim(string & a, const string & b, const string & delim)
+{
+    if (b.empty()) {
+        return;
+    }
+    
+    if (a.empty()) {
+        a = b;
+        return;
+    }
+    
+    a.reserve(a.length() + b.length() + delim.length());
+    a += delim;
+    a += b;
+}
+
 END_NCBI_SCOPE
 
