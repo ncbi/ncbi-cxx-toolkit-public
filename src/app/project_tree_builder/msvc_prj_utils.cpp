@@ -442,7 +442,8 @@ CBasicProjectsFilesInserter::CBasicProjectsFilesInserter
     :m_Vcproj     (vcproj),
      m_SrcInserter(project_id, 
                    configs, 
-                   project_dir)
+                   project_dir),
+     m_Filters    (project_dir)
 {
     m_Filters.Initilize();
 }
@@ -468,8 +469,44 @@ void CBasicProjectsFilesInserter::AddInlineFile(const string& rel_file_path)
 void CBasicProjectsFilesInserter::Finalize(void)
 {
     m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_SourceFiles);
+    if ( m_Filters.m_HeaderFilesPrivate->IsSetFF() )
+    {
+        CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+        ce->SetFilter(*m_Filters.m_HeaderFilesPrivate);
+        m_Filters.m_HeaderFiles->SetFF().SetFF().push_back(ce);
+    }
+    if ( m_Filters.m_HeaderFilesImpl->IsSetFF() )
+    {
+        CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+        ce->SetFilter(*m_Filters.m_HeaderFilesImpl);
+        m_Filters.m_HeaderFiles->SetFF().SetFF().push_back(ce);
+    }
     m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_HeaderFiles);
     m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_InlineFiles);
+}
+
+//-----------------------------------------------------------------------------
+static bool s_IsPrivateHeader(const string& header_abs_path)
+{
+    string src_dir = GetApp().GetProjectTreeInfo().m_Src;
+    return header_abs_path.find(src_dir) != NPOS;
+
+}
+static bool s_IsImplHeader(const string& header_abs_path)
+{
+    string src_trait = CDirEntry::GetPathSeparator()        +
+                       GetApp().GetProjectTreeInfo().m_Impl +
+                       CDirEntry::GetPathSeparator();
+    return header_abs_path.find(src_trait) != NPOS;
+}
+//-----------------------------------------------------------------------------
+CBasicProjectsFilesInserter::SFiltersItem::SFiltersItem(void)
+{
+}
+CBasicProjectsFilesInserter::SFiltersItem::SFiltersItem
+                                                    (const string& project_dir)
+    :m_ProjectDir(project_dir)
+{
 }
 
 
@@ -483,6 +520,14 @@ void CBasicProjectsFilesInserter::SFiltersItem::Initilize(void)
     m_HeaderFiles.Reset(new CFilter());
     m_HeaderFiles->SetAttlist().SetName("Header Files");
     m_HeaderFiles->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+
+    m_HeaderFilesPrivate.Reset(new CFilter());
+    m_HeaderFilesPrivate->SetAttlist().SetName("Private");
+    m_HeaderFilesPrivate->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+
+    m_HeaderFilesImpl.Reset(new CFilter());
+    m_HeaderFilesImpl->SetAttlist().SetName("Impl");
+    m_HeaderFilesImpl->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
 
     m_InlineFiles.Reset(new CFilter());
     m_InlineFiles->SetAttlist().SetName("Inline Files");
@@ -505,7 +550,17 @@ void CBasicProjectsFilesInserter::SFiltersItem::AddHeaderFile
 
     CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
     ce->SetFile(*file);
-    m_HeaderFiles->SetFF().SetFF().push_back(ce);
+    
+    string abs_header_path = 
+        CDirEntry::ConcatPath(m_ProjectDir, rel_file_path);
+    abs_header_path = CDirEntry::NormalizePath(abs_header_path);
+    if ( s_IsPrivateHeader(abs_header_path) ) {
+        m_HeaderFilesPrivate->SetFF().SetFF().push_back(ce);
+    } else if ( s_IsImplHeader(abs_header_path) ) {
+        m_HeaderFilesImpl->SetFF().SetFF().push_back(ce);
+    } else {
+        m_HeaderFiles->SetFF().SetFF().push_back(ce);
+    }
 }
 
 
@@ -527,12 +582,13 @@ CDllProjectFilesInserter::CDllProjectFilesInserter
                                  const CProjKey           dll_project_key,
                                  const list<SConfigInfo>& configs,
                                  const string&            project_dir)
-    :m_Vcproj       (vcproj),
-     m_DllProjectKey(dll_project_key),
-     m_ProjectDir   (project_dir),
-     m_SrcInserter  (dll_project_key.Id(), 
-                     configs, 
-                     project_dir)
+    :m_Vcproj        (vcproj),
+     m_DllProjectKey (dll_project_key),
+     m_ProjectDir    (project_dir),
+     m_SrcInserter   (dll_project_key.Id(), 
+                      configs, 
+                      project_dir),
+     m_PrivateFilters(project_dir)
 {
     // Private filters initilization
     m_PrivateFilters.m_SourceFiles.Reset(new CFilter());
@@ -543,6 +599,14 @@ CDllProjectFilesInserter::CDllProjectFilesInserter
     m_PrivateFilters.m_HeaderFiles.Reset(new CFilter());
     m_PrivateFilters.m_HeaderFiles->SetAttlist().SetName("Header Files");
     m_PrivateFilters.m_HeaderFiles->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+
+    m_PrivateFilters.m_HeaderFilesPrivate.Reset(new CFilter());
+    m_PrivateFilters.m_HeaderFilesPrivate->SetAttlist().SetName("Private");
+    m_PrivateFilters.m_HeaderFilesPrivate->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+    
+    m_PrivateFilters.m_HeaderFilesImpl.Reset(new CFilter());
+    m_PrivateFilters.m_HeaderFilesImpl->SetAttlist().SetName("Impl");
+    m_PrivateFilters.m_HeaderFilesImpl->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
 
     m_PrivateFilters.m_InlineFiles.Reset(new CFilter());
     m_PrivateFilters.m_InlineFiles->SetAttlist().SetName("Inline Files");
@@ -579,7 +643,7 @@ void CDllProjectFilesInserter::AddSourceFile (const string& rel_file_path)
         return;
     }
 
-    TFiltersItem new_item;
+    TFiltersItem new_item(m_ProjectDir);
     new_item.Initilize();
     new_item.AddSourceFile(m_SrcInserter, rel_file_path);
     m_HostedLibs[proj_key] = new_item;
@@ -604,7 +668,7 @@ void CDllProjectFilesInserter::AddHeaderFile(const string& rel_file_path)
         return;
     }
 
-    TFiltersItem new_item;
+    TFiltersItem new_item(m_ProjectDir);
     new_item.Initilize();
     new_item.AddHeaderFile(rel_file_path);
     m_HostedLibs[proj_key] = new_item;
@@ -629,7 +693,7 @@ void CDllProjectFilesInserter::AddInlineFile(const string& rel_file_path)
         return;
     }
 
-    TFiltersItem new_item;
+    TFiltersItem new_item(m_ProjectDir);
     new_item.Initilize();
     new_item.AddInlineFile(rel_file_path);
     m_HostedLibs[proj_key] = new_item;
@@ -639,7 +703,21 @@ void CDllProjectFilesInserter::AddInlineFile(const string& rel_file_path)
 void CDllProjectFilesInserter::Finalize(void)
 {
     m_Vcproj->SetFiles().SetFilter().push_back(m_PrivateFilters.m_SourceFiles);
+
+    if ( !m_PrivateFilters.m_HeaderFilesPrivate->IsSetFF() )
+    {
+        CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+        ce->SetFilter(*m_PrivateFilters.m_HeaderFilesPrivate);
+        m_PrivateFilters.m_HeaderFiles->SetFF().SetFF().push_back(ce);
+    }
+    if ( !m_PrivateFilters.m_HeaderFilesImpl->IsSetFF() )
+    {
+        CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+        ce->SetFilter(*m_PrivateFilters.m_HeaderFilesImpl);
+        m_PrivateFilters.m_HeaderFiles->SetFF().SetFF().push_back(ce);
+    }
     m_Vcproj->SetFiles().SetFilter().push_back(m_PrivateFilters.m_HeaderFiles);
+
     m_Vcproj->SetFiles().SetFilter().push_back(m_PrivateFilters.m_InlineFiles);
 
     NON_CONST_ITERATE(THostedLibs, p, m_HostedLibs) {
@@ -657,11 +735,24 @@ void CDllProjectFilesInserter::Finalize(void)
             hosted_lib_filter->SetFF().SetFF().push_back(ce);
         }}
 
+        if ( filters_item.m_HeaderFilesPrivate->IsSetFF() )
+        {
+            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+            ce->SetFilter(*filters_item.m_HeaderFilesPrivate);
+            filters_item.m_HeaderFiles->SetFF().SetFF().push_back(ce);
+        }
+        if ( filters_item.m_HeaderFilesImpl->IsSetFF() )
+        {
+            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+            ce->SetFilter(*filters_item.m_HeaderFilesImpl);
+            filters_item.m_HeaderFiles->SetFF().SetFF().push_back(ce);
+        }
         {{
             CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
             ce->SetFilter(*(filters_item.m_HeaderFiles));
             hosted_lib_filter->SetFF().SetFF().push_back(ce);
         }}
+
         {{
             CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
             ce->SetFilter(*(filters_item.m_InlineFiles));
@@ -936,6 +1027,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/06/08 16:32:25  gorelenk
+ * Added static functions s_IsPrivateHeader and s_IsImplHeader.
+ * Changed imlementation of SFiltersItem ( to take into account
+ * new struct members ). Changed implementation of classes
+ * CBasicProjectsFilesInserter and CDllProjectFilesInserter.
+ *
  * Revision 1.25  2004/05/26 17:59:07  gorelenk
  * Old inserter -> CSrcToFilterInserterWithPch.
  * Implemented CBasicProjectsFilesInserter and CDllProjectFilesInserter .
