@@ -34,8 +34,8 @@
 
 
 
-#ifndef __NCBI_STD__
-#define __NCBI_STD__
+#ifndef ALGO_BLAST_CORE__NCBI_STD
+#define ALGO_BLAST_CORE__NCBI_STD
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,8 +47,6 @@
 
 /* which toolkit are we using? */
 #include "blast_toolkit.h"
-
-#include <algo/blast/core/ncbi_math.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -217,4 +215,13 @@ ListNode* ListNodeCopyStr (ListNode** head, Uint1 choice, const char* str);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__NCBI_STD__ */
+
+/** The following header file needs some of the definitions from this header, 
+ * so it #include's ncbi_std.h. The circular inclusion is avoided because of
+ * the header-specific macros that are #define'd only once. On the other hand
+ * it is convenient to include ncbi_math.h automatically whenever ncbi_std.h
+ * is included in any other file.
+ */
+#include <algo/blast/core/ncbi_math.h>
+
+#endif /* !ALGO_BLAST_CORE__NCBI_STD */
