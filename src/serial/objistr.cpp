@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2001/10/22 15:17:41  grichenk
+* Protected objects being read from destruction by temporary CRef<>-s
+*
 * Revision 1.85  2001/10/17 20:41:23  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -750,9 +753,13 @@ CObjectInfo CObjectIStream::ReadObject(void)
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
 
     objectPtr = typeInfo->Create();
+    CRef<CObject> ref;
+    if ( typeInfo->IsCObject() )
+        ref.Reset(static_cast<CObject*>(objectPtr));
     RegisterObject(objectPtr, typeInfo);
     ReadObject(objectPtr, typeInfo);
-
+    if ( typeInfo->IsCObject() )
+        ref.Release();
     END_OBJECT_FRAME();
     return make_pair(objectPtr, typeInfo);
 }
@@ -807,8 +814,13 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
         {
             _TRACE("CObjectIStream::ReadPointer: new");
             objectPtr = declaredType->Create();
+            CRef<CObject> ref;
+            if ( declaredType->IsCObject() )
+                ref.Reset(static_cast<CObject*>(objectPtr));
             RegisterObject(objectPtr, declaredType);
             ReadObject(objectPtr, declaredType);
+            if ( declaredType->IsCObject() )
+                ref.Release();
             return make_pair(objectPtr, declaredType);
         }
     case eOtherPointer:
@@ -821,8 +833,13 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             BEGIN_OBJECT_FRAME2(eFrameNamed, objectType);
                 
             objectPtr = objectType->Create();
+            CRef<CObject> ref;
+            if ( declaredType->IsCObject() )
+                ref.Reset(static_cast<CObject*>(objectPtr));
             RegisterObject(objectPtr, objectType);
             ReadObject(objectPtr, objectType);
+            if ( declaredType->IsCObject() )
+                ref.Release();
                 
             END_OBJECT_FRAME();
 
