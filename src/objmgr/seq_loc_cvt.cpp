@@ -247,7 +247,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         // Convert to the allowed master seq interval
         if ( GoodSrcId(src_id) ) {
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id);
-            ConvertInterval(0, bh.GetBioseqLength(), eNa_strand_unknown);
+            ConvertInterval(0, bh.GetBioseqLength()-1, eNa_strand_unknown);
         }
         break;
     }
@@ -414,6 +414,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/10/29 19:55:47  vasilche
+* Avoid making 'whole' features on 'whole' segment partial (by Aleksey Grichenko)
+*
 * Revision 1.5  2003/09/30 16:22:03  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
