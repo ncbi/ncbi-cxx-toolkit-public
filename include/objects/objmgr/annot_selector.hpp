@@ -32,13 +32,16 @@
  */
 
 
-#warning "Please redirect your code to include @header@"
-#include <objmgr//annot_selector.hpp>
+#warning "Please redirect your code to include objmgr/annot_selector.hpp"
+#include <objmgr/annot_selector.hpp>
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/06/02 16:49:29  dicuccio
+ * Forgot to sed the warning tag's header indicator
+ *
  * Revision 1.11  2003/06/02 16:01:33  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr

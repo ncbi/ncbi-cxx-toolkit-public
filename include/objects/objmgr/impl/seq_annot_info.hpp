@@ -32,13 +32,16 @@
  */
 
 
-#warning "Please redirect your code to include @header@"
+#warning "Please redirect your code to include objmgr/impl/seq_annot_info.hpp"
 #include <objmgr/impl/seq_annot_info.hpp>
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/02 16:49:31  dicuccio
+ * Forgot to sed the warning tag's header indicator
+ *
  * Revision 1.2  2003/06/02 16:01:34  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr

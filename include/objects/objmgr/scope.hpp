@@ -32,13 +32,16 @@
  */
 
 
-#warning "Please redirect your code to include @header@"
+#warning "Please redirect your code to include objmgr/scope.hpp"
 #include <objmgr//scope.hpp>
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2003/06/02 16:49:30  dicuccio
+ * Forgot to sed the warning tag's header indicator
+ *
  * Revision 1.50  2003/06/02 16:01:34  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr
