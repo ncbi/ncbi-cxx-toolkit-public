@@ -52,9 +52,7 @@ Int4 PHIBlastWordFinder(BLAST_SequenceBlk* subject,
    Int4 totalhits=0;
    Int4 first_offset = 0;
    Int4 last_offset  = subject->length;
-   Int4 pat_len;
    Int4 i;
-   Int4 score;
 
    while(first_offset < last_offset)
    {
