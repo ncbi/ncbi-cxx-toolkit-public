@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/12/01 17:36:21  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.23  1999/10/26 15:25:21  vasilche
 * Added multiset implementation.
 *
@@ -222,14 +225,14 @@ public:
 };
 
 template<typename Data>
-class CStlClassInfoChoiceAutoPtr : public CChoicePointerTypeInfo
+class CChoiceStlClassInfoAutoPtr : public CChoicePointerTypeInfo
 {
     typedef CChoicePointerTypeInfo CParent;
 public:
     typedef Data TDataType;
     typedef auto_ptr<TDataType> TObjectType;
 
-    CStlClassInfoChoiceAutoPtr<Data>(void)
+    CChoiceStlClassInfoAutoPtr<Data>(void)
         : CParent("auto_ptr<X>", GetTypeRef(static_cast<TDataType*>(0)).Get())
         { }
     
@@ -250,7 +253,7 @@ public:
 
     static TTypeInfo GetTypeInfo(void)
         {
-            static TTypeInfo typeInfo = new CStlClassInfoChoiceAutoPtr<Data>;
+            static TTypeInfo typeInfo = new CChoiceStlClassInfoAutoPtr<Data>;
             return typeInfo;
         }
 };

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/12/01 17:36:20  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.7  1999/11/18 20:16:12  vakatov
 * Included <serial/typeref.hpp> to fix for the CodeWarrior(MAC) C++ compiler
 *
@@ -60,6 +63,7 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbiutil.hpp>
 #include <serial/typeref.hpp>
 #include <serial/ptrinfo.hpp>
 #include <serial/memberlist.hpp>
@@ -105,6 +109,40 @@ private:
     mutable auto_ptr<TVariantsByType> m_VariantsByType;
 
     static CTypeInfoMap<CChoicePointerTypeInfo> sm_Map;
+};
+
+template<typename Data>
+class CChoiceAutoPtrTypeInfo : public CChoicePointerTypeInfo
+{
+    typedef CChoicePointerTypeInfo CParent;
+public:
+    typedef Data TDataType;
+    typedef AutoPtr<TDataType> TObjectType;
+
+    CChoiceAutoPtrTypeInfo<Data>(void)
+        : CParent("AutoPtr<X>", GetTypeRef(static_cast<TDataType*>(0)).Get())
+        { }
+    
+    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
+        {
+            return static_cast<const TObjectType*>(object)->get();
+        }
+    void SetObjectPointer(TObjectPtr object, TObjectPtr data) const
+        {
+            static_cast<TObjectType*>(object)->
+                reset(static_cast<TDataType*>(data));
+        }
+
+    virtual size_t GetSize(void) const
+        {
+            return sizeof(TObjectType);
+        }
+
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CChoiceAutoPtrTypeInfo<Data>;
+            return typeInfo;
+        }
 };
 
 //#include <serial/choiceptr.inl>

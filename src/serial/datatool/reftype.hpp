@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/01 17:36:26  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.2  1999/11/15 19:36:18  vasilche
 * Fixed warnings on GCC
 *
@@ -48,6 +51,7 @@ public:
 
     void PrintASN(CNcbiOstream& out, int indent) const;
 
+    void FixTypeTree(void) const;
     bool CheckType(void) const;
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
@@ -59,9 +63,6 @@ public:
 
     virtual const CDataType* Resolve(void) const; // resolve or this
     virtual CDataType* Resolve(void); // resolve or this
-
-    void SetInSet(void);
-    void SetInChoice(const CChoiceDataType* choice);
 
     const string& GetUserTypeName(void) const
         {

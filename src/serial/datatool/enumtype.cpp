@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/01 17:36:25  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.2  1999/11/15 19:36:14  vasilche
 * Fixed warnings on GCC
 *
@@ -191,7 +194,7 @@ void CEnumDataType::GetCType(CTypeStrings& tType, CClassCode& code) const
 
 void CEnumDataType::GenerateCode(CClassCode& code) const
 {
-    if ( InChoice() ) {
+    if ( IsInChoice() ) {
         CParent::GenerateCode(code);
         return;
     }

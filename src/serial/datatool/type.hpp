@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/12/01 17:36:27  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.21  1999/11/19 15:48:11  vasilche
 * Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
 *
@@ -65,6 +68,8 @@ class CDataType;
 class CDataTypeModule;
 class CDataValue;
 class CChoiceDataType;
+class CUniSequenceDataType;
+class CReferenceDataType;
 class CClassCode;
 class CTypeStrings;
 
@@ -100,6 +105,7 @@ private:
 class CDataType {
 public:
     typedef void* TObjectPtr;
+    typedef list<const CReferenceDataType*> TReferences;
 
     CDataType(void);
     virtual ~CDataType(void);
@@ -150,15 +156,34 @@ public:
     virtual const CDataType* Resolve(void) const;
     virtual CDataType* Resolve(void);
 
-    bool InSet(void) const
+    bool IsInSet(void) const
         {
-            return m_InSet;
+            return m_Set != 0;
         }
-    virtual void SetInSet(void);
-    virtual void SetInChoice(const CChoiceDataType* choice);
-    const set<const CChoiceDataType*>& GetChoices(void) const
+    const CUniSequenceDataType* GetInSet(void) const
         {
-            return m_Choices;
+            return m_Set;
+        }
+    void SetInSet(const CUniSequenceDataType* sequence);
+
+    bool IsInChoice(void) const
+        {
+            return m_Choice != 0;
+        }
+    const CChoiceDataType* GetInChoice(void) const
+        {
+            return m_Choice;
+        }
+    void SetInChoice(const CChoiceDataType* choice);
+
+    bool IsReferenced(void) const
+        {
+            return m_References;
+        }
+    void AddReference(const CReferenceDataType* reference);
+    const TReferences& GetReferences(void) const
+        {
+            return *m_References;
         }
 
     static string Identifier(const string& typeName, bool capitalize = true);
@@ -184,8 +209,10 @@ private:
     int m_SourceLine;
 
     // tree info
-    set<const CChoiceDataType*> m_Choices;
-    bool m_InSet;
+    const CUniSequenceDataType* m_Set;
+    const CChoiceDataType* m_Choice;
+    AutoPtr<TReferences> m_References;
+
     bool m_Checked;
 
     AutoPtr<CTypeInfo> m_CreatedTypeInfo;

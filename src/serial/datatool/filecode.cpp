@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/01 17:36:25  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.3  1999/11/22 21:04:49  vasilche
 * Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
 *
@@ -75,9 +78,7 @@ string CFileCode::GetUserCPPName(void) const
 string CFileCode::GetBaseDefine(void) const
 {
     string s;
-    for ( string::const_iterator i = GetFileBaseName().begin();
-          i != GetFileBaseName().end();
-          ++i ) {
+    iterate ( string, i, GetFileBaseName() ) {
         char c = *i;
         if ( c >= 'a' && c <= 'z' )
             c = c + ('A' - 'a');
@@ -129,27 +130,23 @@ void CFileCode::AddForwardDeclaration(const string& cls, const string& ns)
 
 void CFileCode::AddHPPIncludes(const TIncludes& includes)
 {
-    for ( TIncludes::const_iterator i = includes.begin();
-          i != includes.end();
-          ++i ) {
+    iterate ( TIncludes, i, includes ) {
         AddHPPInclude(*i);
     }
 }
 
 void CFileCode::AddCPPIncludes(const TIncludes& includes)
 {
-    for ( TIncludes::const_iterator i = includes.begin();
-          i != includes.end();
-          ++i ) {
+    iterate ( TIncludes, i, includes ) {
         AddCPPInclude(*i);
     }
 }
 
 void CFileCode::AddForwardDeclarations(const TForwards& forwards)
 {
-	for ( TForwards::const_iterator i = forwards.begin();
-          i != forwards.end(); ++i )
+	iterate ( TForwards, i, forwards ) {
 		m_ForwardDeclarations.insert(*i);
+    }
 }
 
 void CFileCode::GenerateHPP(const string& path) const
@@ -171,18 +168,14 @@ void CFileCode::GenerateHPP(const string& path) const
         "#include <corelib/ncbistd.hpp>" << NcbiEndl;
 
     // collect parent classes
-    for ( TClasses::const_iterator ci = m_Classes.begin();
-          ci != m_Classes.end();
-          ++ci) {
+    iterate ( TClasses, ci, m_Classes ) {
         ci->second->GetParentType();
     }
 
     if ( !m_HPPIncludes.empty() ) {
         header << NcbiEndl <<
             "// generated includes" << NcbiEndl;
-        for ( TIncludes::const_iterator stri = m_HPPIncludes.begin();
-              stri != m_HPPIncludes.end();
-              ++stri) {
+        iterate ( TIncludes, stri, m_HPPIncludes ) {
             header <<
                 "#include " << *stri << NcbiEndl;
         }
@@ -193,9 +186,7 @@ void CFileCode::GenerateHPP(const string& path) const
     if ( !m_ForwardDeclarations.empty() ) {
         header << NcbiEndl <<
             "// forward declarations" << NcbiEndl;
-        for ( TForwards::const_iterator fi = m_ForwardDeclarations.begin();
-              fi != m_ForwardDeclarations.end();
-              ++fi) {
+        iterate ( TForwards, fi, m_ForwardDeclarations ) {
             ns.Set(fi->second);
             header <<
                 "class " << fi->first << ';'<< NcbiEndl;
@@ -205,9 +196,7 @@ void CFileCode::GenerateHPP(const string& path) const
     if ( !m_Classes.empty() ) {
         header << NcbiEndl <<
             "// generated classes" << NcbiEndl;
-        for ( TClasses::const_iterator ci = m_Classes.begin();
-              ci != m_Classes.end();
-              ++ci) {
+        iterate ( TClasses, ci, m_Classes ) {
             CClassCode* cls = ci->second.get();
             ns.Set(cls->GetNamespace());
             cls->GenerateHPP(header);
@@ -241,11 +230,7 @@ void CFileCode::GenerateCPP(const string& path) const
         "#include <" << GetUserHPPName() << ">" << NcbiEndl;
 
     if ( !m_CPPIncludes.empty() ) {
-        code << NcbiEndl <<
-            "// generated includes" << NcbiEndl;
-        for ( TIncludes::const_iterator stri = m_CPPIncludes.begin();
-              stri != m_CPPIncludes.end();
-              ++stri) {
+        iterate ( TIncludes, stri, m_CPPIncludes ) {
             code <<
                 "#include " << *stri << NcbiEndl;
         }
@@ -256,9 +241,7 @@ void CFileCode::GenerateCPP(const string& path) const
     if ( !m_Classes.empty() ) {
         code << NcbiEndl <<
             "// generated classes" << NcbiEndl;
-        for ( TClasses::const_iterator ci = m_Classes.begin();
-              ci != m_Classes.end();
-              ++ci) {
+        iterate ( TClasses, ci, m_Classes ) {
             CClassCode* cls = ci->second.get();
             ns.Set(cls->GetNamespace());
             cls->GenerateCPP(code);
@@ -302,9 +285,7 @@ bool CFileCode::GenerateUserHPP(const string& path) const
     if ( !m_Classes.empty() ) {
         header << NcbiEndl <<
             "// generated classes" << NcbiEndl;
-        for ( TClasses::const_iterator ci = m_Classes.begin();
-              ci != m_Classes.end();
-              ++ci) {
+        iterate ( TClasses, ci, m_Classes ) {
             CClassCode* cls = ci->second.get();
             ns.Set(cls->GetNamespace());
             cls->GenerateUserHPP(header);
@@ -348,9 +329,7 @@ bool CFileCode::GenerateUserCPP(const string& path) const
     if ( !m_Classes.empty() ) {
         code << NcbiEndl <<
             "// generated classes" << NcbiEndl;
-        for ( TClasses::const_iterator ci = m_Classes.begin();
-              ci != m_Classes.end();
-              ++ci) {
+        iterate ( TClasses, ci, m_Classes ) {
             CClassCode* cls = ci->second.get();
             ns.Set(cls->GetNamespace());
             cls->GenerateUserCPP(code);

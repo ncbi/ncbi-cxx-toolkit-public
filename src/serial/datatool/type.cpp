@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  1999/12/01 17:36:27  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.31  1999/11/16 15:41:17  vasilche
 * Added plain pointer choice.
 * By default we use C pointer instead of auto_ptr.
@@ -49,6 +52,8 @@
 #include "code.hpp"
 #include "typestr.hpp"
 #include "exceptions.hpp"
+#include "reftype.hpp"
+#include "unitype.hpp"
 #include "blocktype.hpp"
 
 TTypeInfo CAnyTypeSource::GetTypeInfo(void)
@@ -85,7 +90,7 @@ string CDataType::GetTemplateHeader(const string& tmpl)
     if ( tmpl == "auto_ptr" )
         return "<memory>";
     if ( tmpl == "AutoPtr" )
-        return "<corelib/autoptr.hpp>";
+        return "<corelib/ncbiutil.hpp>";
     return '<' + tmpl + '>';
 }
 
@@ -105,14 +110,12 @@ string CDataType::GetTemplateNamespace(const string& tmpl)
 
 string CDataType::GetTemplateMacro(const string& tmpl)
 {
-    if ( tmpl == "auto_ptr" )
-        return "STL_CHOICE_auto_ptr";
     return "STL_" + tmpl;
 }
 
 CDataType::CDataType(void)
     : m_ParentType(0), m_Module(0), m_SourceLine(0),
-      m_InSet(false), m_Checked(false)
+      m_Set(0), m_Choice(0), m_Checked(false)
 {
 }
 
@@ -130,14 +133,24 @@ void CDataType::Warning(const string& mess) const
     CNcbiDiag() << LocationString() << ": " << mess;
 }
 
-void CDataType::SetInSet(void)
+void CDataType::SetInSet(const CUniSequenceDataType* sequence)
 {
-    m_InSet = true;
+    _ASSERT(GetParentType() == sequence);
+    m_Set = sequence;
 }
 
 void CDataType::SetInChoice(const CChoiceDataType* choice)
 {
-    m_Choices.insert(choice);
+    _ASSERT(GetParentType() == choice);
+    m_Choice = choice;
+}
+
+void CDataType::AddReference(const CReferenceDataType* reference)
+{
+    _ASSERT(GetParentType() == 0);
+    if ( !m_References )
+        m_References = new TReferences;
+    m_References->push_back(reference);
 }
 
 void CDataType::SetParent(const CDataType* parent, const string& memberName)
@@ -151,7 +164,8 @@ void CDataType::SetParent(const CDataType* parent, const string& memberName)
     FixTypeTree();
 }
 
-void CDataType::SetParent(const CDataTypeModule* module, const string& typeName)
+void CDataType::SetParent(const CDataTypeModule* module,
+                          const string& typeName)
 {
     _ASSERT(module != 0);
     _ASSERT(m_ParentType == 0 && m_Module == 0 && m_MemberName.empty());
@@ -281,10 +295,45 @@ string CDataType::InheritFromClass(void) const
 const CDataType* CDataType::InheritFromType(void) const
 {
     const string& parentName = GetVar("_parent");
-    if ( parentName.empty() )
-        return 0;
+    if ( !parentName.empty() )
+        return GetModule()->InternalResolve(parentName);
 
-    return GetModule()->InternalResolve(parentName);
+    // try to detect implicit inheritance
+    if ( IsInChoice() ) // directly in CHOICE
+        return GetInChoice();
+
+    if ( IsReferenced() ) {
+        // have references to me
+        const CDataType* namedParent = 0;
+        const CDataType* unnamedParent = 0;
+        int unnamedParentCount;
+        // try to find exactly one reference from named CHOICE
+        iterate ( TReferences, ri, GetReferences() ) {
+            const CReferenceDataType* ref = *ri;
+            if ( ref->IsInChoice() ) {
+                const CChoiceDataType* choice = ref->GetInChoice();
+                if ( !choice->GetParentType() ) {
+                    // named CHOICE
+                    if ( !namedParent )
+                        namedParent = choice;
+                    else
+                        return 0; // more then one named CHOICE
+                }
+                else {
+                    // unnamed CHOICE
+                    if ( unnamedParentCount++ == 0 )
+                        unnamedParent = choice;
+                }
+            }
+        }
+        if ( namedParent ) {
+            return namedParent;
+        }
+        if ( unnamedParentCount == 1 ) {
+            return unnamedParent;
+        }
+    }
+    return 0;
 }
 
 CDataType* CDataType::Resolve(void)
@@ -311,9 +360,11 @@ void CDataType::GenerateCode(CClassCode& code) const
 {
     // by default, generate implicit class with one data member
     string memberName = GetVar("_member");
+    string idName = Identifier(IdName());
     if ( memberName.empty() ) {
-        memberName = "m_" + Identifier(IdName());
+        memberName = "m_" + idName;
     }
+    string typeDefName = 'T' + idName;
     code.TypeInfoBody() <<
         "    info->SetImplicit();" << NcbiEndl;
     CTypeStrings tType;
@@ -321,20 +372,16 @@ void CDataType::GenerateCode(CClassCode& code) const
     tType.AddMember(code, memberName);
     code.TypeInfoBody() << ';' << NcbiEndl;
     code.ClassPublic() <<
-        "    operator "<<tType.GetCType()<<"&(void)"<<NcbiEndl<<
+        "    typedef "<<tType.GetCType()<<' '<<typeDefName<<';'<<NcbiEndl<<
+        "    operator "<<typeDefName<<"&(void)"<<NcbiEndl<<
         "    {"<<NcbiEndl<<
         "        return "<<memberName<<';'<<NcbiEndl<<
         "    }"<<NcbiEndl<<
-        "    operator const "<<tType.GetCType()<<"&(void) const"<<NcbiEndl<<
+        "    operator const "<<typeDefName<<"&(void) const"<<NcbiEndl<<
         "    {"<<NcbiEndl<<
         "        return "<<memberName<<';'<<NcbiEndl<<
         "    }"<<NcbiEndl<<
         NcbiEndl;
-}
-
-bool CDataType::InChoice(void) const
-{
-    return dynamic_cast<const CChoiceDataType*>(GetParentType()) != 0;
 }
 
 void CDataType::GetCType(CTypeStrings& , CClassCode& ) const

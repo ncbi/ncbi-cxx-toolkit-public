@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/12/01 17:36:26  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.19  1999/11/15 20:01:34  vasilche
 * Fixed GCC error
 *
@@ -54,12 +57,6 @@
 #include "generate.hpp"
 
 USING_NCBI_SCOPE;
-
-static void Error(const char* msg, const char* msg2 = "")
-{
-    NcbiCerr << msg << msg2 << NcbiEndl;
-    exit(1);
-}
 
 class SourceFile
 {
@@ -91,7 +88,7 @@ SourceFile::SourceFile(const string& name, bool binary)
         if ( !*m_StreamPtr ) {
             delete m_StreamPtr;
             m_StreamPtr = 0;
-            Error("cannot open file ", name.c_str());
+            ERR_POST(Fatal << "cannot open file " << name);
         }
         m_Open = true;
     }
@@ -134,7 +131,7 @@ DestinationFile::DestinationFile(const string& name, bool binary)
         if ( !*m_StreamPtr ) {
             delete m_StreamPtr;
             m_StreamPtr = 0;
-            Error("cannot open file ", name.c_str());
+            ERR_POST(Fatal << "cannot open file " << name);
         }
         m_Open = true;
     }
@@ -197,14 +194,15 @@ static void Help(void)
         "  -od C++ code definition file [File In] Optional" << NcbiEndl <<
         "  -oh Directory for generated C++ headers [Directory] Optional" << NcbiEndl <<
         "  -oc Directory for generated C++ code [Directory] Optional" << NcbiEndl <<
-        "  -of File for list of generated C++ files [File Out] Optional" << NcbiEndl;
+        "  -of File for list of generated C++ files [File Out] Optional" << NcbiEndl <<
+        "  -i  Ignore unresolved symbols Optional" << NcbiEndl;
 }
 
 static
 const char* StringArgument(const char* arg)
 {
     if ( !arg || !arg[0] ) {
-        Error("argument expected");
+        ERR_POST(Fatal << "argument expected");
     }
     return arg;
 }
@@ -242,7 +240,7 @@ EFileType FileType(const char* arg, EFileType defType = eASNText)
     case 'x':
         return eXMLText;
     default:
-        Error("Invalid argument: ", arg);
+        ERR_POST(Fatal << "Invalid argument: " << arg);
         return defType;
     }
 }
@@ -288,6 +286,7 @@ int main(int argc, const char*argv[])
     FileInfo dataIn;
     string dataInTypeName;
     FileInfo dataOut;
+    bool ignoreErrors = false;
 
     bool generateAllTypes = false;
     CCodeGenerator generator;
@@ -300,7 +299,7 @@ int main(int argc, const char*argv[])
         for ( int i = 1; i < argc; ++i ) {
             const char* arg = argv[i];
             if ( arg[0] != '-' ) {
-                Error("Invalid argument: ", arg);
+                ERR_POST(Fatal << "Invalid argument: " << arg);
             }
             switch ( arg[1] ) {
             case 'm':
@@ -326,6 +325,9 @@ int main(int argc, const char*argv[])
                 break;
             case 't':
                 dataInTypeName = StringArgument(argv[++i]);
+                break;
+            case 'i':
+                ignoreErrors = true;
                 break;
             case 'o':
                 switch ( arg[2] ) {
@@ -354,18 +356,18 @@ int main(int argc, const char*argv[])
                     generator.SetFileListFileName(FileOutArgument(argv[++i]));
                     break;
                 default:
-                    Error("Invalid argument: ", arg);
+                    ERR_POST(Fatal << "Invalid argument: " << arg);
                 }
                 break;
             default:
-                Error("Invalid argument: ", arg);
+                ERR_POST(Fatal << "Invalid argument: " << arg);
             }
         }
     }
 
     try {
         if ( mainModules.empty() )
-            Error("Module file not specified");
+            ERR_POST(Fatal << "Module file not specified");
 
         
         LoadDefinitions(generator.GetMainModules(), mainModules);
@@ -373,8 +375,9 @@ int main(int argc, const char*argv[])
             StoreDefinition(generator.GetMainModules(), moduleOut);
 
         LoadDefinitions(generator.GetImportModules(), importModules);
-        if ( !generator.Check() )
-            Error("Errors was found...");
+        if ( !generator.Check() ) {
+            ERR_POST((ignoreErrors? Error: Fatal) << "Errors was found...");
+        }
     
         if ( generateAllTypes )
             generator.IncludeAllMainTypes();
@@ -390,11 +393,11 @@ int main(int argc, const char*argv[])
         generator.GenerateCode();
     }
     catch (exception& e) {
-        Error("Error: ", e.what());
+        ERR_POST(Fatal << e.what());
         return 1;
     }
     catch (...) {
-        Error("Error: unknown");
+        ERR_POST(Fatal << "unknown");
         return 1;
     }
 	return 0;
@@ -428,7 +431,7 @@ void LoadDefinitions(CFileSet& fileSet, const list<FileInfo>& names)
 void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
 {
     if ( file.type != eASNText )
-        Error("data definition format not supported");
+        ERR_POST(Fatal << "data definition format not supported");
     
     DestinationFile out(file);
     fileSet.PrintASN(out);
@@ -448,13 +451,13 @@ TObject LoadValue(CFileSet& types, const FileInfo& file,
         objIn.reset(new CObjectIStreamAsnBinary(in));
         break;
     default:
-        Error("value format not supported");
+        ERR_POST(Fatal << "value format not supported");
     }
     //    objIn->SetTypeMapper(&types);
     string typeName = objIn->ReadTypeName();
     if ( typeName.empty() ) {
         if ( defTypeName.empty() )
-            Error("ASN.1 value type must be specified (-t)");
+            ERR_POST(Fatal << "ASN.1 value type must be specified (-t)");
         typeName = defTypeName;
     }
     TTypeInfo typeInfo =
@@ -477,7 +480,7 @@ void StoreValue(const TObject& object, const FileInfo& file)
         objOut.reset(new CObjectOStreamAsnBinary(out));
         break;
     default:
-        Error("value format not supported");
+        ERR_POST(Fatal << "value format not supported");
     }
     objOut->Write(&object.first, object.second);
 }

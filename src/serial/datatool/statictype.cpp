@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/01 17:36:26  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.4  1999/11/18 17:13:06  vasilche
 * Fixed generation of ENUMERATED CHOICE and VisibleString.
 * Added generation of initializers to zero for primitive types and pointers.
@@ -94,8 +97,9 @@ TTypeInfo CNullDataType::GetTypeInfo(void)
     THROW1_TRACE(runtime_error, "NULL type not implemented");
 }
 
-void CNullDataType::GenerateCode(CClassCode& ) const
+string CNullDataType::GetDefaultCType(void) const
 {
+    return "bool";
 }
 
 const char* CBoolDataType::GetASNKeyword(void) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/01 17:36:29  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.3  1999/11/16 15:41:18  vasilche
 * Added plain pointer choice.
 * By default we use C pointer instead of auto_ptr.
@@ -49,9 +52,9 @@
 #include "typestr.hpp"
 #include "value.hpp"
 
-CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& elementType)
+CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
 {
-    SetElementType(elementType);
+    SetElementType(element);
 }
 
 const char* CUniSequenceDataType::GetASNKeyword(void) const
@@ -74,7 +77,9 @@ void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
 
 void CUniSequenceDataType::FixTypeTree(void) const
 {
+    CParent::FixTypeTree();
     m_ElementType->SetParent(this, "_E");
+    m_ElementType->SetInSet(this);
 }
 
 bool CUniSequenceDataType::CheckType(void) const
@@ -84,14 +89,14 @@ bool CUniSequenceDataType::CheckType(void) const
 
 bool CUniSequenceDataType::CheckValue(const CDataValue& value) const
 {
-    const CBlockDataValue* block = dynamic_cast<const CBlockDataValue*>(&value);
+    const CBlockDataValue* block =
+        dynamic_cast<const CBlockDataValue*>(&value);
     if ( !block ) {
         value.Warning("block of values expected");
         return false;
     }
     bool ok = true;
-    for ( CBlockDataValue::TValues::const_iterator i = block->GetValues().begin();
-          i != block->GetValues().end(); ++i ) {
+    iterate ( CBlockDataValue::TValues, i, block->GetValues() ) {
         if ( !m_ElementType->CheckValue(**i) )
             ok = false;
     }
@@ -106,10 +111,12 @@ TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
 CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
 {
     return new CAutoPointerTypeInfo(
-        new CStlClassInfoList<AnyType>(new CAnyTypeSource(m_ElementType.get())));
+        new CStlClassInfoList<AnyType>(
+            new CAnyTypeSource(m_ElementType.get())));
 }
 
-void CUniSequenceDataType::GetCType(CTypeStrings& tType, CClassCode& code) const
+void CUniSequenceDataType::GetCType(CTypeStrings& tType,
+                                    CClassCode& code) const
 {
     string templ = GetVar("_type");
     CTypeStrings tData;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/01 17:36:27  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.3  1999/11/18 17:13:07  vasilche
 * Fixed generation of ENUMERATED CHOICE and VisibleString.
 * Added generation of initializers to zero for primitive types and pointers.
@@ -62,7 +65,7 @@ public:
     TObjectPtr CreateDefault(const CDataValue& value) const;
 
     const CTypeInfo* GetTypeInfo(void);
-    virtual void GenerateCode(CClassCode& code) const;
+    string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
 };
 

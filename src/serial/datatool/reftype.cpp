@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/01 17:36:26  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.4  1999/11/16 15:41:16  vasilche
 * Added plain pointer choice.
 * By default we use C pointer instead of auto_ptr.
@@ -54,27 +57,17 @@ CReferenceDataType::CReferenceDataType(const string& n)
 {
 }
 
-void CReferenceDataType::SetInSet(void)
-{
-    CParent::SetInSet();
-    CDataType* resolved = ResolveOrNull();
-    if ( resolved )
-        resolved->SetInSet();
-}
-
-void CReferenceDataType::SetInChoice(const CChoiceDataType* choice)
-{
-    CParent::SetInChoice(choice);
-    if ( !choice->GetParentType() ) {
-        CDataType* resolved = ResolveOrNull();
-        if ( resolved )
-            resolved->SetInChoice(choice);
-    }
-}
-
 void CReferenceDataType::PrintASN(CNcbiOstream& out, int ) const
 {
     out << m_UserTypeName;
+}
+
+void CReferenceDataType::FixTypeTree(void) const
+{
+    CParent::FixTypeTree();
+    CDataType* resolved = ResolveOrNull();
+    if ( resolved )
+        resolved->AddReference(this);
 }
 
 bool CReferenceDataType::CheckType(void) const
@@ -120,22 +113,7 @@ void CReferenceDataType::GenerateCode(CClassCode& code) const
 
 void CReferenceDataType::GetCType(CTypeStrings& tType, CClassCode& code) const
 {
-    const CDataType* userType = ResolveOrThrow();
-
-    userType->GetCType(tType, code);
-
-    string memberType = GetVar("_type");
-    if ( !memberType.empty() ) {
-        if ( memberType == "*" ) {
-            tType.ToPointer();
-        }
-        else {
-            tType.AddHPPInclude(GetTemplateHeader(memberType));
-            tType.SetTemplate(GetTemplateNamespace(memberType)+"::"+memberType,
-                              GetTemplateMacro(memberType), tType,
-                              IsSimplePointerTemplate(memberType));
-        }
-    }
+    ResolveOrThrow()->GetCType(tType, code);
 }
 
 CDataType* CReferenceDataType::ResolveOrNull(void) const

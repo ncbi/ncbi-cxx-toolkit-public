@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/12/01 17:36:25  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.17  1999/11/15 19:36:15  vasilche
 * Fixed warnings on GCC
 *
@@ -145,17 +148,12 @@ CDataType* CCodeGenerator::ResolveMain(const string& fullName) const
 void CCodeGenerator::IncludeAllMainTypes(void)
 {
     const CFileSet::TModuleSets& moduleSets = m_MainFiles.GetModuleSets();
-    for ( CFileSet::TModuleSets::const_iterator msi = moduleSets.begin();
-          msi != moduleSets.end();
-          ++msi ) {
+    iterate ( CFileSet::TModuleSets, msi, moduleSets ) {
         const CModuleSet::TModules& modules = (*msi)->GetModules();
-        for ( CModuleSet::TModules::const_iterator mi = modules.begin();
-              mi != modules.end(); ++mi ) {
+        iterate ( CModuleSet::TModules, mi, modules ) {
             const CDataTypeModule* module = mi->second.get();
-            for ( CDataTypeModule::TDefinitions::const_iterator ti =
-                      module->GetDefinitions().begin();
-                  ti != module->GetDefinitions().end();
-                  ++ti ) {
+            iterate ( CDataTypeModule::TDefinitions, ti,
+                      module->GetDefinitions() ) {
                 const string& name = ti->first;
                 const CDataType* type = ti->second.get();
                 if ( !name.empty() && !type->Skipped() ) {
@@ -188,8 +186,7 @@ void CCodeGenerator::ExcludeTypes(const string& typeList)
 {
     TTypeNames typeNames;
     GetTypes(typeNames, typeList);
-    for ( TTypeNames::const_iterator i = typeNames.begin();
-          i != typeNames.end(); ++i ) {
+    iterate ( TTypeNames, i, typeNames ) {
         m_Config.Set(*i, "_class", "-");
     }
 }
@@ -216,16 +213,12 @@ void CCodeGenerator::GenerateCode(void)
     m_HeaderPrefix = MkDir(m_Config.Get("-", "headers_prefix"));
 
     // collect types
-    for ( TTypeNames::const_iterator ti = m_GenerateTypes.begin();
-          ti != m_GenerateTypes.end();
-          ++ti ) {
+    iterate ( TTypeNames, ti, m_GenerateTypes ) {
         CollectTypes(ResolveMain(*ti), eRoot);
     }
     
     // generate output files
-    for ( TOutputFiles::const_iterator filei = m_Files.begin();
-          filei != m_Files.end();
-          ++filei ) {
+    iterate ( TOutputFiles, filei, m_Files ) {
         CFileCode* code = filei->second.get();
         code->GenerateHPP(m_HeadersDir);
         code->GenerateCPP(m_SourcesDir);
@@ -238,9 +231,7 @@ void CCodeGenerator::GenerateCode(void)
         
         fileList << "GENFILES =";
         {
-            for ( TOutputFiles::const_iterator filei = m_Files.begin();
-                  filei != m_Files.end();
-                  ++filei ) {
+            iterate ( TOutputFiles, filei, m_Files ) {
                 fileList << ' ' << filei->first << "_Base";
             }
         }
@@ -248,9 +239,7 @@ void CCodeGenerator::GenerateCode(void)
 
         fileList << "GENUSERFILES =";
         {
-            for ( TOutputFiles::const_iterator filei = m_Files.begin();
-                  filei != m_Files.end();
-                  ++filei ) {
+            iterate ( TOutputFiles, filei, m_Files ) {
                 fileList << ' ' << filei->first;
             }
         }
@@ -273,7 +262,6 @@ bool CCodeGenerator::Imported(const CDataType* type) const
         m_MainFiles.ExternalResolve(type->GetModule()->GetName(),
                                     type->IdName(),
                                     true);
-        
         return false;
     }
     catch ( CTypeNotFound& /* ignored */ ) {
@@ -302,16 +290,24 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
         dynamic_cast<const CReferenceDataType*>(type);
     if ( user != 0 ) {
         // reference to another type
-        const CDataType* resolved = user->Resolve();
+        const CDataType* resolved;
+        try {
+            resolved = user->Resolve();
+        }
+        catch (CTypeNotFound& exc) {
+            ERR_POST(Warning <<
+                     "Skipping type: " << user->GetUserTypeName() <<
+                     ": " << exc.what());
+            return;
+        }
         if ( resolved->Skipped() ) {
             ERR_POST(Warning << "Skipping type: " << user->GetUserTypeName());
             return;
         }
         if ( context == eChoice ) {
             // in choice
-            if ( /*user->InChoice() ||*/ resolved->GetChoices().size() != 1 ) {
-                // in unnamed choice OR in several choices
-                _TRACE("Will create adapter class for member " << user->LocationString() << ": " << resolved->ClassName() << " uc=" << user->GetChoices().size() << " rc=" << resolved->GetChoices().size());
+            if ( resolved->InheritFromType() != user->GetParentType() ) {
+                // add intermediate class
                 AddType(user);
             }
         }
@@ -352,9 +348,8 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
             return;
 
         // collect member's types
-        for ( CDataMemberContainerType::TMembers::const_iterator mi =
-                  choice->GetMembers().begin();
-              mi != choice->GetMembers().end(); ++mi ) {
+        iterate ( CDataMemberContainerType::TMembers, mi,
+                  choice->GetMembers() ) {
             const CDataType* memberType = mi->get()->GetType();
             CollectTypes(memberType, eChoice);
         }
@@ -372,9 +367,8 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
             return;
 
         // collect member's types
-        for ( CDataMemberContainerType::TMembers::const_iterator mi =
-                  cont->GetMembers().begin();
-              mi != cont->GetMembers().end(); ++mi ) {
+        iterate ( CDataMemberContainerType::TMembers, mi,
+                  cont->GetMembers() ) {
             const CDataType* memberType = mi->get()->GetType();
             CollectTypes(memberType);
         }

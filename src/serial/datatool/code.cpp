@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/12/01 17:36:25  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.22  1999/11/18 17:13:06  vasilche
 * Fixed generation of ENUMERATED CHOICE and VisibleString.
 * Added generation of initializers to zero for primitive types and pointers.
@@ -120,20 +123,10 @@ const CDataType* CClassCode::GetParentType(void) const
 {
     const CDataType* t = GetType();
     const CDataType* parent = t->InheritFromType();
-    if ( !parent ) {
-        switch ( t->GetChoices().size() ) {
-        case 0:
-            // no parent type
-            return 0;
-        case 1:
-            parent = *(t->GetChoices().begin());
-            break;
-        default:
-            return 0;
-        }
-    }
     if ( parent ) {
         m_Code.AddHPPInclude(parent->FileName());
+        m_Code.AddForwardDeclaration(parent->ClassName(),
+                                     parent->Namespace());
     }
     return parent;
 }

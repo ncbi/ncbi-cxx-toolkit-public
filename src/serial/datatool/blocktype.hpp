@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/01 17:36:25  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.3  1999/11/15 20:31:38  vasilche
 * Fixed error on GCC
 *
@@ -150,7 +153,7 @@ public:
 class CChoiceDataType : public CDataMemberContainerType {
     typedef CDataMemberContainerType CParent;
 public:
-    bool CheckType(void) const;
+    void FixTypeTree(void) const;
     bool CheckValue(const CDataValue& value) const;
 
     CTypeInfo* CreateTypeInfo(void);

@@ -313,13 +313,21 @@ CTypeRef GetTypeRef(const multimap<Key, Value>* object)
 #define SERIAL_REF_STL_auto_ptr(Type,Args) \
     &NCBI_NS_NCBI::CStlClassInfoAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
 
-#define SERIAL_TYPE_STL_CHOICE_auto_ptr(Type,Args) NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args>
-#define SERIAL_REF_STL_CHOICE_auto_ptr(Type,Args) \
-    &NCBI_NS_NCBI::CStlClassInfoChoiceAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
+#define SERIAL_TYPE_STL_AutoPtr(Type,Args) NCBI_NS_NCBI::AutoPtr<SERIAL_TYPE(Type)Args>
+#define SERIAL_REF_STL_AutoPtr(Type,Args) \
+    &NCBI_NS_NCBI::CAutoPtrTypeInfo<SERIAL_TYPE(Type)Args>::GetTypeInfo
 
-#define SERIAL_TYPE_CHOICE_POINTER(Type,Args) SERIAL_TYPE(Type)Args*
 #define SERIAL_REF_CHOICE_POINTER(Type,Args) \
     NCBI_NS_NCBI::CTypeRef(&NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo,SERIAL_REF(Type)Args)
+
+#define SERIAL_REF_CHOICE_STL_auto_ptr(Type,Args) \
+    &NCBI_NS_NCBI::CChoiceStlClassInfoAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
+
+#define SERIAL_REF_CHOICE_STL_AutoPtr(Type,Args) \
+    &NCBI_NS_NCBI::CChoiceAutoPtrTypeInfo<SERIAL_TYPE(Type)Args>::GetTypeInfo
+
+#define SERIAL_TYPE_CHOICE(Type,Args) SERIAL_TYPE(Type)Args
+#define SERIAL_REF_CHOICE(Type,Args) SERIAL_REF(SERIAL_NAME2(CHOICE_,Type))Args
 
 template<typename T>
 struct Check

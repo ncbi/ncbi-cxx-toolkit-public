@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/01 17:36:28  vasilche
+* Fixed CHOICE processing.
+*
 * Revision 1.3  1999/11/16 15:41:17  vasilche
 * Added plain pointer choice.
 * By default we use C pointer instead of auto_ptr.
@@ -71,15 +74,15 @@ public:
     void SetClass(const string& c);
     void SetTemplate(const string& c, const string& m);
     void SetTemplate(const string& c, const string& m,
-                     const CTypeStrings& arg,
-                     bool simplePointer = false);
+                     const CTypeStrings& arg);
     void SetTemplate(const string& c, const string& m,
                      const CTypeStrings& arg1, const CTypeStrings& arg2);
-
+    void SetChoice(void);
 
     bool CanBeKey(void) const;
     bool CanBeInSTL(void) const;
     void ToPointer(void);
+    void ToPointer(const string& c, const string& m, bool simplePointer);
         
     ETypeType GetType(void) const
         {
@@ -93,6 +96,11 @@ public:
         {
             return m_Macro;
         }
+    bool IsChoice(void) const
+        {
+            return m_Choice;
+        }
+
     string GetRef(void) const;
     string GetInitializer(void) const;
     string GetDestructorCode(void) const;
@@ -122,6 +130,7 @@ private:
     ETypeType m_Type;
     string m_CType;
     string m_Macro;
+    bool m_Choice;
 
     TIncludes m_HPPIncludes;
     TIncludes m_CPPIncludes;
