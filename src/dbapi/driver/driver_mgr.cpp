@@ -122,7 +122,11 @@ C_xDriverMgr::C_xDriverMgr( unsigned int nof_drivers )
     bool created = false;
 
     m_ContextManager.Reset( TContextManagerStore::Get( &created ) );
+#ifndef NCBI_COMPILER_COMPAQ
+    // For some reason, Compaq's compiler thinks m_ContextManager is
+    // inaccessible here!
     _ASSERT( m_ContextManager );
+#endif
 }
 
 void
@@ -362,6 +366,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/03/08 21:06:17  ucko
+ * Work around a bizarre bug in Compaq's compiler.
+ *
  * Revision 1.20  2005/03/08 17:12:58  ssikorsk
  * Allow to add a driver search path for the driver manager
  *
