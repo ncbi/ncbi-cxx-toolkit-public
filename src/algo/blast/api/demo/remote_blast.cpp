@@ -25,10 +25,10 @@
  *
  * Authors:  Kevin Bealer
  *
- * File Description:
- *   Example program for remote_blast C++ interface
- *
  */
+
+/// @file demo/remote_blast.cpp
+/// Example program for remote_blast C++ interface
 
 #include "queue_poll.hpp"
 #include "align_parms.hpp"
@@ -233,6 +233,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/23 14:11:04  camacho
+ * Minor doxygen fix
+ *
  * Revision 1.5  2004/03/22 20:46:22  bealer
  * - Fix non-literate comments to look less like doxygen comments.
  *

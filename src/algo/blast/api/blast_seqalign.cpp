@@ -28,7 +28,7 @@
 * ===========================================================================
 */
 
-/// @file blast_seqalign.hpp
+/// @file blast_seqalign.cpp
 /// Utility function to convert internal BLAST result structures into
 /// CSeq_align_set objects.
 
@@ -1357,6 +1357,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2004/03/23 14:10:50  camacho
+* Minor doxygen fix
+*
 * Revision 1.32  2004/03/19 19:22:55  camacho
 * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
 *

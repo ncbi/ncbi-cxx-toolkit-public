@@ -281,7 +281,7 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
  * @param combined_hsp_list_ptr Pointer to the combined list of HSPs, possibly
  *                              containing previously saved HSPs [in] [out]
  * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if 0) [in]
- * @param return Status: 0 on success, -1 on failure.
+ * @return Status: 0 on success, -1 on failure.
  */ 
 Int2 AppendHSPList(BlastHSPList* hsp_list, BlastHSPList** combined_hsp_list_ptr, 
                    Int4 hsp_num_max);
