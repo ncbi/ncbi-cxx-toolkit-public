@@ -65,7 +65,7 @@ class CAlnMrgApp : public CNcbiApplication
     void             SetOptions          (void);
     void             LoadInputAlignments (void);
     void             PrintMergedAlignment(void);
-    CRef<CDense_seg> ConvertStdsegToDenseg(const CStd_seg& ss);
+    void             View4               (int screen_width);
 
 private:
     CRef<CAlnMix>        m_Mix;
@@ -148,16 +148,6 @@ void CAlnMrgApp::Init(void)
 }
 
 
-// Create a Dense_seg from a Std_seg
-CRef<CDense_seg> 
-CAlnMrgApp::ConvertStdsegToDenseg(const CStd_seg& ss)
-{
-    CRef<CDense_seg> ds(new CDense_seg);
-
-    return ds;
-}
-
-
 void CAlnMrgApp::LoadInputAlignments(void)
 {
     CArgs args = GetArgs();
@@ -178,20 +168,15 @@ void CAlnMrgApp::LoadInputAlignments(void)
         (CObjectIStream::Open(eSerial_AsnText, is));
     
     CTypesIterator i;
-    CType<CDense_seg>::AddTo(i);
-    CType<CStd_seg>::AddTo(i);
+    CType<CSeq_align>::AddTo(i);
 
     if (asn_type == "Seq-entry") {
         CRef<CSeq_entry> se(new CSeq_entry);
         *in >> *se;
         m_Mix->GetScope().AddTopLevelSeqEntry(*se);
         for (i = Begin(*se); i; ++i) {
-            if (CType<CDense_seg>::Match(i)) {
-                m_Mix->Add(*(CType<CDense_seg>::Get(i)),
-                           m_AddFlags);
-            } else if (CType<CStd_seg>::Match(i)) {
-                m_Mix->Add(*ConvertStdsegToDenseg(*(CType<CStd_seg>::Get(i))),
-                           m_AddFlags);
+            if (CType<CSeq_align>::Match(i)) {
+                m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
             }
         }
     } else if (asn_type == "Seq-submit") {
@@ -200,12 +185,8 @@ void CAlnMrgApp::LoadInputAlignments(void)
         CType<CSeq_entry>::AddTo(i);
         int tse_cnt = 0;
         for (i = Begin(*ss); i; ++i) {
-            if (CType<CDense_seg>::Match(i)) {
-                m_Mix->Add(*(CType<CDense_seg>::Get(i)),
-                           m_AddFlags);
-            } else if (CType<CStd_seg>::Match(i)) {
-                m_Mix->Add(*ConvertStdsegToDenseg(*(CType<CStd_seg>::Get(i))),
-                           m_AddFlags);
+            if (CType<CSeq_align>::Match(i)) {
+                m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
             } else if (CType<CSeq_entry>::Match(i)) {
                 if ( !(tse_cnt++) ) {
                     //m_Mix->GetScope().AddTopLevelSeqEntry
@@ -217,37 +198,24 @@ void CAlnMrgApp::LoadInputAlignments(void)
         CRef<CSeq_align> sa(new CSeq_align);
         *in >> *sa;
         for (i = Begin(*sa); i; ++i) {
-            if (CType<CDense_seg>::Match(i)) {
-                m_Mix->Add(*(CType<CDense_seg>::Get(i)),
-                           m_AddFlags);
-            } else if (CType<CStd_seg>::Match(i)) {
-                m_Mix->Add(*ConvertStdsegToDenseg(*(CType<CStd_seg>::Get(i))),
-                           m_AddFlags);
+            if (CType<CSeq_align>::Match(i)) {
+                m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
             }
         }
     } else if (asn_type == "Seq-align-set") {
         CRef<CSeq_align_set> sas(new CSeq_align_set);
         *in >> *sas;
         for (i = Begin(*sas); i; ++i) {
-            if (CType<CDense_seg>::Match(i)) {
-                m_Mix->Add(*(CType<CDense_seg>::Get(i)),
-                           m_AddFlags);
-            } else if (CType<CStd_seg>::Match(i)) {
-                m_Mix->Add(*ConvertStdsegToDenseg(*(CType<CStd_seg>::Get(i))),
-                           m_AddFlags);
+            if (CType<CSeq_align>::Match(i)) {
+                m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
             }
         }
     } else if (asn_type == "Seq-annot") {
         CRef<CSeq_annot> san(new CSeq_annot);
         *in >> *san;
         for (i = Begin(*san); i; ++i) {
-            if (CType<CDense_seg>::Match(i)) {
-                m_Mix->Add(*(CType<CDense_seg>::Get(i)),
-                           m_AddFlags);
-            } else if (CType<CStd_seg>::Match(i)) {
-                m_Mix->Add(*ConvertStdsegToDenseg(*(CType<CStd_seg>::Get(i))),
-                           m_AddFlags);
-                           
+            if (CType<CSeq_align>::Match(i)) {
+                m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
             }
         }
     } else if (asn_type == "Dense-seg") {
@@ -259,6 +227,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
         return;
     }
 }
+
 
 void CAlnMrgApp::SetOptions(void)
 {
@@ -315,7 +284,76 @@ void CAlnMrgApp::PrintMergedAlignment(void)
         (CObjectOStream::Open(eSerial_AsnText, cout));
         
     *asn_out << m_Mix->GetDenseg();
+
+    View4(40);
+    return;
+
+    CAlnVec av(m_Mix->GetDenseg());
+    cout << ",";
+    for (int seg=0; seg<av.GetNumSegs(); seg++) {
+        cout << "," << av.GetLen(seg) << ",";
+    }
+    cout << endl;
+    for (int row=0; row<av.GetNumRows(); row++) {
+        cout << row << ",";
+        for (int seg=0; seg<av.GetNumSegs(); seg++) {
+            cout << av.GetStart(row, seg) << "," 
+                 << av.GetStop(row, seg) << ",";
+        }
+        cout << endl;
+    }
+
 }
+
+
+void CAlnMrgApp::View4(int scrn_width)
+{
+    CAlnVec av(m_Mix->GetDenseg());
+    CAlnMap::TNumrow row, nrows = av.GetNumRows();
+
+    vector<string> buffer(nrows);
+    vector<CAlnMap::TSeqPosList> insert_aln_starts(nrows);
+    vector<CAlnMap::TSeqPosList> insert_starts(nrows);
+    vector<CAlnMap::TSeqPosList> insert_lens(nrows);
+    vector<CAlnMap::TSeqPosList> scrn_lefts(nrows);
+    vector<CAlnMap::TSeqPosList> scrn_rights(nrows);
+    
+    // Fill in the vectors for each row
+    for (row = 0; row < nrows; row++) {
+        av.GetWholeAlnSeqString
+            (row,
+             buffer[row],
+             &insert_aln_starts[row],
+             &insert_starts[row],
+             &insert_lens[row],
+             scrn_width,
+             &scrn_lefts[row],
+             &scrn_rights[row]);
+    }
+        
+    // Visualization
+    TSeqPos pos = 0, aln_len = av.GetAlnStop() + 1;
+    do {
+        for (row = 0; row < nrows; row++) {
+            cout << av.GetSeqId(row)
+                 << "\t" 
+                 << scrn_lefts[row].front()
+                 << "\t"
+                 << buffer[row].substr(pos, scrn_width)
+                 << "\t"
+                 << scrn_rights[row].front()
+                 << endl;
+            scrn_lefts[row].pop_front();
+            scrn_rights[row].pop_front();
+        }
+        cout << endl;
+        pos += scrn_width;
+        if (pos + scrn_width > aln_len) {
+            scrn_width = aln_len - pos;
+        }
+    } while (pos < aln_len);
+}
+
 
 int CAlnMrgApp::Run(void)
 {
@@ -344,6 +382,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/20 14:43:01  todorov
+* Support for NA2AA Densegs
+*
 * Revision 1.7  2003/07/24 16:26:09  ucko
 * Undouble CAlnMix:: prefix in one place.
 *
