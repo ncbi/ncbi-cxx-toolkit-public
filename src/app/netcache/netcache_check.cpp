@@ -94,7 +94,7 @@ int CNetCacheCheck::Run(void)
     }
 
     // functionality test
-
+/*
     if (!cl->IsAlive()) {
         NcbiCerr << "Netcache server at " 
                  << service_addr 
@@ -102,7 +102,7 @@ int CNetCacheCheck::Run(void)
                  << NcbiEndl;
         return 1;
     }
-
+*/
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     const char test_data2[] = "Test 2.";
@@ -163,6 +163,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/15 19:07:48  kuznets
+ * IsAlive call removed
+ *
  * Revision 1.1  2005/02/07 18:33:45  kuznets
  * Initial revision
  *
