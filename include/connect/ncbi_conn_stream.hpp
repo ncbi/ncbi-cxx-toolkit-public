@@ -1,5 +1,5 @@
-#ifndef NCBI_CONN_STREAM__HPP
-#define NCBI_CONN_STREAM__HPP
+#ifndef CONNECT___CONN_STREAM__HPP
+#define CONNECT___CONN_STREAM__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -50,45 +50,6 @@
  *
  *   CConn_MemoryStream  - In-memory stream of data (analogous to strstream).
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.12  2002/02/21 18:04:24  lavr
- * +class CConn_MemoryStream
- *
- * Revision 6.11  2002/01/28 20:17:43  lavr
- * +Forward declaration of CConn_Streambuf and a private member pointer
- * of this type (for clean destruction of a streambuf sub-object)
- *
- * Revision 6.10  2001/12/10 19:41:16  vakatov
- * + CConn_SocketStream::CConn_SocketStream(SOCK sock, ....)
- *
- * Revision 6.9  2001/12/07 22:55:41  lavr
- * More comments added
- *
- * Revision 6.8  2001/09/24 20:25:57  lavr
- * +SSERVICE_Extra* parameter for CConn_ServiceStream::CConn_ServiceStream()
- *
- * Revision 6.7  2001/04/24 21:18:41  lavr
- * Default timeout is set as a special value CONN_DEFAULT_TIMEOUT.
- * Removed wrong log for R6.6.
- *
- * Revision 6.5  2001/02/09 17:38:16  lavr
- * Typo fixed in comments
- *
- * Revision 6.4  2001/01/12 23:48:51  lavr
- * GetCONN method added
- *
- * Revision 6.3  2001/01/11 23:04:04  lavr
- * Bugfixes; tie is now done at streambuf level, not in iostream
- *
- * Revision 6.2  2001/01/10 21:41:08  lavr
- * Added classes: CConn_SocketStream, CConn_HttpStream, CConn_ServiceStream.
- * Everything is now wordly documented.
- *
- * Revision 6.1  2001/01/09 23:35:24  vakatov
- * Initial revision (draft, not tested in run-time)
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistd.hpp>
@@ -106,6 +67,7 @@ class CConn_Streambuf;
 
 
 const streamsize kConn_DefBufSize = 4096;
+
 
 /*
  * Base class, derived from "std::iostream", does both input
@@ -259,4 +221,51 @@ public:
 
 END_NCBI_SCOPE
 
-#endif  /* NCBI_CONN_STREAM__HPP */
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.13  2002/06/06 19:01:31  lavr
+ * Take advantage of CConn_Exception class
+ * Some housekeeping: guard macro name changed, log moved to the end
+ *
+ * Revision 6.12  2002/02/21 18:04:24  lavr
+ * +class CConn_MemoryStream
+ *
+ * Revision 6.11  2002/01/28 20:17:43  lavr
+ * +Forward declaration of CConn_Streambuf and a private member pointer
+ * of this type (for clean destruction of a streambuf sub-object)
+ *
+ * Revision 6.10  2001/12/10 19:41:16  vakatov
+ * + CConn_SocketStream::CConn_SocketStream(SOCK sock, ....)
+ *
+ * Revision 6.9  2001/12/07 22:55:41  lavr
+ * More comments added
+ *
+ * Revision 6.8  2001/09/24 20:25:57  lavr
+ * +SSERVICE_Extra* parameter for CConn_ServiceStream::CConn_ServiceStream()
+ *
+ * Revision 6.7  2001/04/24 21:18:41  lavr
+ * Default timeout is set as a special value CONN_DEFAULT_TIMEOUT.
+ * Removed wrong log for R6.6.
+ *
+ * Revision 6.5  2001/02/09 17:38:16  lavr
+ * Typo fixed in comments
+ *
+ * Revision 6.4  2001/01/12 23:48:51  lavr
+ * GetCONN method added
+ *
+ * Revision 6.3  2001/01/11 23:04:04  lavr
+ * Bugfixes; tie is now done at streambuf level, not in iostream
+ *
+ * Revision 6.2  2001/01/10 21:41:08  lavr
+ * Added classes: CConn_SocketStream, CConn_HttpStream, CConn_ServiceStream.
+ * Everything is now wordly documented.
+ *
+ * Revision 6.1  2001/01/09 23:35:24  vakatov
+ * Initial revision (draft, not tested in run-time)
+ *
+ * ===========================================================================
+ */
+
+#endif  /* CONNECT___CONN_STREAM__HPP */

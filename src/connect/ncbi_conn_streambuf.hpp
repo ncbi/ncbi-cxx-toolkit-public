@@ -1,5 +1,5 @@
-#ifndef NCBI_CONN_STREAMBUF__HPP
-#define NCBI_CONN_STREAMBUF__HPP
+#ifndef CONNECT___CONN_STREAMBUF__HPP
+#define CONNECT___CONN_STREAMBUF__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -31,43 +31,6 @@
  * File Description:
  *   CONN-based C++ stream buffer
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.11  2002/02/05 16:05:26  lavr
- * List of included header files revised
- *
- * Revision 6.10  2002/02/04 20:19:10  lavr
- * +xsgetn() for MIPSPro compiler (buggy version supplied with std.library)
- *
- * Revision 6.9  2002/01/30 20:09:14  lavr
- * Define xsgetn() for WorkShop compiler also
- *
- * Revision 6.8  2002/01/28 20:21:11  lavr
- * Do not use auto_ptr in class body; auto_ptr moved to constructor
- *
- * Revision 6.7  2001/12/07 22:58:44  lavr
- * More comments added
- *
- * Revision 6.6  2001/05/29 19:35:21  grichenk
- * Fixed non-blocking stream reading for GCC
- *
- * Revision 6.5  2001/05/14 16:47:46  lavr
- * streambuf::xsgetn commented out as it badly interferes
- * with truly-blocking stream reading via istream::read.
- *
- * Revision 6.4  2001/05/11 14:04:08  grichenk
- * + CConn_Streambuf::xsgetn(), CConn_Streambuf::showmanyc()
- *
- * Revision 6.3  2001/01/12 23:49:20  lavr
- * Timeout and GetCONN method added
- *
- * Revision 6.2  2001/01/11 23:04:07  lavr
- * Bugfixes; tie is now done at streambuf level, not in iostream
- *
- * Revision 6.1  2001/01/09 23:34:51  vakatov
- * Initial revision (draft, not tested in run-time)
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistre.hpp>
@@ -109,6 +72,7 @@ private:
     streamsize          m_BufSize;   // of m_WriteBuf, m_ReadBuf
 
     bool                m_Tie;       // always flush before reading
+    bool                m_Dying;     // set true when destructor called
 
     void x_CheckThrow(EIO_Status status, const string& msg);
 };
@@ -116,4 +80,49 @@ private:
 
 END_NCBI_SCOPE
 
-#endif  /* NCBI_CONN_STREAMBUF__HPP */
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.12  2002/06/06 19:02:01  lavr
+ * Take advantage of CConn_Exception class
+ * Some housekeeping: guard macro name changed, log moved to the end
+ *
+ * Revision 6.11  2002/02/05 16:05:26  lavr
+ * List of included header files revised
+ *
+ * Revision 6.10  2002/02/04 20:19:10  lavr
+ * +xsgetn() for MIPSPro compiler (buggy version supplied with std.library)
+ *
+ * Revision 6.9  2002/01/30 20:09:14  lavr
+ * Define xsgetn() for WorkShop compiler also
+ *
+ * Revision 6.8  2002/01/28 20:21:11  lavr
+ * Do not use auto_ptr in class body; auto_ptr moved to constructor
+ *
+ * Revision 6.7  2001/12/07 22:58:44  lavr
+ * More comments added
+ *
+ * Revision 6.6  2001/05/29 19:35:21  grichenk
+ * Fixed non-blocking stream reading for GCC
+ *
+ * Revision 6.5  2001/05/14 16:47:46  lavr
+ * streambuf::xsgetn commented out as it badly interferes
+ * with truly-blocking stream reading via istream::read.
+ *
+ * Revision 6.4  2001/05/11 14:04:08  grichenk
+ * + CConn_Streambuf::xsgetn(), CConn_Streambuf::showmanyc()
+ *
+ * Revision 6.3  2001/01/12 23:49:20  lavr
+ * Timeout and GetCONN method added
+ *
+ * Revision 6.2  2001/01/11 23:04:07  lavr
+ * Bugfixes; tie is now done at streambuf level, not in iostream
+ *
+ * Revision 6.1  2001/01/09 23:34:51  vakatov
+ * Initial revision (draft, not tested in run-time)
+ *
+ * ===========================================================================
+ */
+
+#endif  /* CONNECT___CONN_STREAMBUF__HPP */
