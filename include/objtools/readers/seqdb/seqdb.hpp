@@ -126,6 +126,12 @@ private:
 
 class NCBI_XOBJREAD_EXPORT CSeqDB : public CObject {
 public:
+    /// Indicates how block of OIDs was returned.
+    enum EOidListType {
+        eOidList,
+        eOidRange
+    };
+    
     /// Sequence type accepted and returned for OID indexes.
     typedef Uint4 TOID;
     
@@ -303,6 +309,41 @@ public:
     /// @return
     ///   True if a valid OID was found, false otherwise.
     bool CheckOrFindOID(TOID & next_oid) const;
+    
+    /// Return a chunk of OIDs, and update the OID bookmark.
+    /// 
+    /// This method allows the caller to iterate over the database by
+    /// fetching batches of OIDs.  It will either return a list of OIDs in
+    /// a vector, or set a pair of integers to indicate a range of OIDs.
+    /// The return value will indicate which technique was used.  The
+    /// caller sets the number of OIDs to get by setting the size of the
+    /// vector.  If eOidRange is returned, the first included oid is
+    /// oid_begin and oid_end is the oid after the last included oid.  If
+    /// eOidList is returned, the vector contain the included OIDs, and may
+    /// be resized to a smaller value if fewer entries are available (for
+    /// the last chunk).  In some cases it may be desireable to have
+    /// several concurrent, independent iterations over the same database
+    /// object.  If this is required, the caller should specify the address
+    /// of a Uint4 to the optional parameter oid_state.  This should be
+    /// initialized to zero (before the iteration begins) but should
+    /// otherwise not be modified by the calling code (except that it can
+    /// be reset to zero to restart the iteration).  For the normal case of
+    /// one iteration per program, this parameter can be omitted.
+    /// @param begin_chunk
+    ///   First included oid (if eOidRange is returned).
+    /// @param end_chunk
+    ///   OID after last included (if eOidRange is returned).
+    /// @param oid_list
+    ///   List of oids (if eOidList is returned).  Set size before call.
+    /// @param oid_state
+    ///   Optional address of a state variable (for concurrent iterations).
+    /// @return
+    ///   eOidList in enumeration case, or eOidRange in begin/end range case.
+    EOidListType
+    GetNextOIDChunk(TOID         & begin_chunk,       // out
+                    TOID         & end_chunk,         // out
+                    vector<TOID> & oid_list,          // out
+                    Uint4        * oid_state = NULL); // in+out
     
     /// Get list of database names.
     ///

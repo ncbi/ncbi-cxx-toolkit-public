@@ -162,10 +162,7 @@ public:
     
     Uint4 GetNumSeqs(void) const
     {
-        if (! m_VolList.empty()) {
-            return m_VolList.back().OIDEnd();
-        }
-        return 0;
+        return x_GetNumSeqs();
     }
     
     void GetMaskFiles(Uint4          index,
@@ -302,7 +299,7 @@ private:
         set<string>     m_MaskFiles;
     };
     
-    Uint4 x_GetNumSeqs(void)
+    Uint4 x_GetNumSeqs(void) const
     {
         if (m_VolList.empty())
             return 0;

@@ -43,7 +43,8 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_Aliases      (m_Atlas, db_name_list, prot_nucl, use_mmap),
       m_VolSet       (m_Atlas, m_Aliases.GetVolumeNames(), prot_nucl),
       m_RestrictBegin(oid_begin),
-      m_RestrictEnd  (oid_end)
+      m_RestrictEnd  (oid_end),
+      m_NextChunkOID (0)
 {
     m_Aliases.SetMasks(m_VolSet);
     
@@ -51,8 +52,15 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
         m_OIDList.Reset( new CSeqDBOIDList(m_Atlas, m_VolSet, use_mmap) );
     }
     
-    if ((oid_begin == oid_end) || (m_RestrictEnd > GetNumSeqs())) {
-        m_RestrictEnd = GetNumSeqs();
+    if ((oid_begin == 0) && (oid_end == 0)) {
+        m_RestrictEnd = m_VolSet.GetNumSeqs();
+    } else {
+        if (m_RestrictEnd > m_VolSet.GetNumSeqs()) {
+            m_RestrictEnd = m_VolSet.GetNumSeqs();
+        }
+        if (m_RestrictBegin > m_RestrictEnd) {
+            m_RestrictBegin = m_RestrictEnd;
+        }
     }
 }
 
@@ -86,6 +94,77 @@ bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid) const
     }
     
     return success;
+}
+
+CSeqDB::EOidListType
+CSeqDBImpl::GetNextOIDChunk(TOID         & begin_chunk, // out
+                            TOID         & end_chunk,   // out
+                            vector<TOID> & oid_list,    // out
+                            Uint4        * state_obj)   // in+out
+{
+    CFastMutexGuard guard(m_OIDLock);
+    
+    if (! state_obj) {
+        state_obj = & m_NextChunkOID;
+    }
+    
+    Uint4 max_oids = oid_list.size();
+    
+    // This has to be done before ">=end" check, to insure correctness
+    // in empty-range cases.
+    
+    if (*state_obj < m_RestrictBegin) {
+        *state_obj = m_RestrictBegin;
+    }
+    
+    // Case 1: Iteration's End.
+    
+    if (*state_obj >= m_RestrictEnd) {
+        begin_chunk = 0;
+        end_chunk   = 0;
+        
+        return CSeqDB::eOidRange;
+    }
+    
+    // Case 2: Return a range
+    
+    if (m_OIDList.Empty()) {
+        begin_chunk = * state_obj;
+        end_chunk   = m_RestrictEnd;
+        
+        if ((end_chunk - begin_chunk) > max_oids) {
+            end_chunk = begin_chunk + max_oids;
+        }
+        
+        *state_obj = end_chunk;
+        
+        return CSeqDB::eOidRange;
+    }
+    
+    // Case 3: Ones and Zeros
+    
+    Uint4 next_oid = *state_obj;
+    Uint4 iter = 0;
+    
+    while(iter < max_oids) {
+        if (next_oid >= m_RestrictEnd) {
+            break;
+        }
+        
+        if (m_OIDList->CheckOrFindOID(next_oid)) {
+            oid_list[iter++] = next_oid++;
+        } else {
+            next_oid = m_RestrictEnd;
+            break;
+        }
+    }
+    
+    if (iter < max_oids) {
+        oid_list.resize(iter);
+    }
+    
+    *state_obj = next_oid;
+    return CSeqDB::eOidList;
 }
 
 Uint4 CSeqDBImpl::GetSeqLength(Uint4 oid) const

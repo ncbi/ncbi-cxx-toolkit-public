@@ -46,6 +46,8 @@ using namespace ncbi::objects;
 
 class CSeqDBImpl {
 public:
+    typedef Uint4 TOID;
+    
     CSeqDBImpl(const string & db_name_list,
                char           prot_nucl,
                Uint4          oid_begin,
@@ -89,6 +91,12 @@ public:
     
     bool CheckOrFindOID(Uint4 & next_oid) const;
     
+    CSeqDB::EOidListType
+    GetNextOIDChunk(TOID         & begin_chunk,
+                    TOID         & end_chunk,
+                    vector<TOID> & oid_list,
+                    Uint4        * oid_state);
+    
     const string & GetDBNameList(void) const;
     
 private:
@@ -101,6 +109,8 @@ private:
     CRef<CSeqDBOIDList>   m_OIDList;
     Uint4                 m_RestrictBegin;
     Uint4                 m_RestrictEnd;
+    CFastMutex            m_OIDLock;
+    Uint4                 m_NextChunkOID;
 };
 
 END_NCBI_SCOPE
