@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.116 2002/08/08 20:27:13 ucko Exp $
+#  $Id: configure.ac,v 1.117 2002/08/14 19:47:28 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1569,6 +1569,7 @@ NCBI_CHECK_LIBS(DL, dl, dlopen)
 
 ## SYBASE libraries
 
+NETWORK_PURE_LIBS="$NETWORK_LIBS"
 if test "$with_sybase" != "no" ; then
    net_sybase_root="/netopt/Sybase/clients"
    local_sybase_root="/export/home/sybase/clients"
@@ -2737,6 +2738,7 @@ AC_SUBST(f_outexe)
 
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NETWORK_LIBS)
+AC_SUBST(NETWORK_PURE_LIBS)
 AC_SUBST(MATH_LIBS)
 AC_SUBST(KSTAT_LIBS)
 AC_SUBST(RPCSVC_LIBS)

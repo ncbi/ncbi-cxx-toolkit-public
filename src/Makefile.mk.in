@@ -183,6 +183,12 @@ RPCSVC_LIBS  = @RPCSVC_LIBS@
 CRYPT_LIBS   = @CRYPT_LIBS@
 DL_LIBS      = @DL_LIBS@
 
+# This is a temporary workaround for Solaris/Intel platforms where
+# we had to do a kludgy patch to work around a faulty Sybase "tli" lib.
+# One can use this instead of $(NETWORK_LIBS) (which has the patch built in)
+# if he is not using Sybase libs (and maybe even does not have them installed).
+NETWORK_PURE_LIBS = @NETWORK_PURE_LIBS@
+
 
 #################################
 # Optional variables that may be needed to build some projects

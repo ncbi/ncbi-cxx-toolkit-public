@@ -8948,6 +8948,7 @@ fi
 
 ## SYBASE libraries
 
+NETWORK_PURE_LIBS="$NETWORK_LIBS"
 if test "$with_sybase" != "no" ; then
    net_sybase_root="/netopt/Sybase/clients"
    local_sybase_root="/export/home/sybase/clients"
@@ -14643,6 +14644,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -15341,6 +15343,7 @@ s,@f_runpath@,$f_runpath,;t t
 s,@f_outexe@,$f_outexe,;t t
 s,@THREAD_LIBS@,$THREAD_LIBS,;t t
 s,@NETWORK_LIBS@,$NETWORK_LIBS,;t t
+s,@NETWORK_PURE_LIBS@,$NETWORK_PURE_LIBS,;t t
 s,@MATH_LIBS@,$MATH_LIBS,;t t
 s,@KSTAT_LIBS@,$KSTAT_LIBS,;t t
 s,@RPCSVC_LIBS@,$RPCSVC_LIBS,;t t
