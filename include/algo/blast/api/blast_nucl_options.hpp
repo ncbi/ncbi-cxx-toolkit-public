@@ -143,6 +143,9 @@ public:
     EBlastPrelimGapExt GetGapExtnAlgorithm() const { return m_Opts->GetGapExtnAlgorithm(); }
     void SetGapExtnAlgorithm(EBlastPrelimGapExt algo) { m_Opts->SetGapExtnAlgorithm(algo); }
 
+    EBlastTbackExt GetGapTracebackAlgorithm() const { return m_Opts->GetGapTracebackAlgorithm(); }
+    void SetGapTracebackAlgorithm(EBlastTbackExt algo) { m_Opts->SetGapTracebackAlgorithm(algo); }
+
     /************************ Scoring options ************************/
     int GetMatchReward() const { return m_Opts->GetMatchReward(); }
     void SetMatchReward(int r) { m_Opts->SetMatchReward(r); }
@@ -205,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/05/18 12:48:24  madden
+ * Add setter and getter for GapTracebackAlgorithm (EBlastTbackExt)
+ *
  * Revision 1.10  2004/05/17 15:28:54  madden
  * Int algorithm_type replaced with enum EBlastPrelimGapExt
  *

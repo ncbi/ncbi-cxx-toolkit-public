@@ -117,7 +117,8 @@ enum EBlastOptIdx {
     eBlastOpt_PHIPattern,
     eBlastOpt_SkipTraceback,
     eBlastOpt_InclusionThreshold,
-    eBlastOpt_PseudoCount
+    eBlastOpt_PseudoCount,
+    eBlastOpt_GapTracebackAlgorithm
 };
 
 
@@ -209,6 +210,9 @@ public:
 
     EBlastPrelimGapExt GetGapExtnAlgorithm() const;
     void SetGapExtnAlgorithm(EBlastPrelimGapExt a);
+
+    EBlastTbackExt GetGapTracebackAlgorithm() const;
+    void SetGapTracebackAlgorithm(EBlastTbackExt a);
 
     void SetSkipTraceback(bool skip);
 
@@ -1023,6 +1027,24 @@ public:
         }
         if (m_Remote) {
             m_Remote->SetValue(eBlastOpt_GapExtnAlgorithm, a);
+        }
+    }
+
+    EBlastTbackExt GetGapTracebackAlgorithm() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetGapTracebackAlgorithm() not available.");
+        }
+        return m_Local->GetGapTracebackAlgorithm();
+    }
+
+    void SetGapTracebackAlgorithm(EBlastTbackExt a)
+    {
+        if (m_Local) {
+            m_Local->SetGapTracebackAlgorithm(a);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_GapTracebackAlgorithm, a);
         }
     }
 
@@ -2048,6 +2070,18 @@ CBlastOptionsLocal::SetGapExtnAlgorithm(EBlastPrelimGapExt a)
     m_ExtnOpts->ePrelimGapExt = a;
 }
 
+inline EBlastTbackExt
+CBlastOptionsLocal::GetGapTracebackAlgorithm() const
+{
+    return m_ExtnOpts->eTbackExt;
+}
+
+inline void
+CBlastOptionsLocal::SetGapTracebackAlgorithm(EBlastTbackExt a)
+{
+    m_ExtnOpts->eTbackExt = a;
+}
+
 inline void
 CBlastOptionsLocal::SetSkipTraceback(bool skip)
 {
@@ -2432,6 +2466,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2004/05/18 12:48:24  madden
+* Add setter and getter for GapTracebackAlgorithm (EBlastTbackExt)
+*
 * Revision 1.58  2004/05/17 18:07:19  bealer
 * - Add PSI Blast support.
 *
