@@ -28,9 +28,8 @@
  */
 
 /** @file mb_lookup.h
- * Functions responsible for the creation of a lookup table
- * @todo FIXME: shouldn't file description read megablast lookup table? ; use
- * doxygen comments
+ * Functions responsible for creating and scanning
+ * megablast lookup tables
  */
 
 
