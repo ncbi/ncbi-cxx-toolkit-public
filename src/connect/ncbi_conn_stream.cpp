@@ -30,49 +30,6 @@
  *
  *   See file <connect/ncbi_conn_stream.hpp> for more detailed information.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.13  2002/02/21 18:04:25  lavr
- * +class CConn_MemoryStream
- *
- * Revision 6.12  2002/02/05 22:04:12  lavr
- * Included header files rearranged
- *
- * Revision 6.11  2002/02/05 16:05:26  lavr
- * List of included header files revised
- *
- * Revision 6.10  2002/01/28 21:29:25  lavr
- * Use iostream(0) as a base class constructor
- *
- * Revision 6.9  2002/01/28 20:19:11  lavr
- * Clean destruction of streambuf sub-object; no exception throw in GetCONN()
- *
- * Revision 6.8  2001/12/10 19:41:18  vakatov
- * + CConn_SocketStream::CConn_SocketStream(SOCK sock, ....)
- *
- * Revision 6.7  2001/12/07 22:58:01  lavr
- * GetCONN(): throw exception if the underlying streambuf is not CONN-based
- *
- * Revision 6.6  2001/09/24 20:26:17  lavr
- * +SSERVICE_Extra* parameter for CConn_ServiceStream::CConn_ServiceStream()
- *
- * Revision 6.5  2001/01/12 23:49:19  lavr
- * Timeout and GetCONN method added
- *
- * Revision 6.4  2001/01/11 23:04:06  lavr
- * Bugfixes; tie is now done at streambuf level, not in iostream
- *
- * Revision 6.3  2001/01/11 17:22:41  thiessen
- * fix args copy in s_HttpConnectorBuilder()
- *
- * Revision 6.2  2001/01/10 21:41:10  lavr
- * Added classes: CConn_SocketStream, CConn_HttpStream, CConn_ServiceStream.
- * Everything is now wordly documented.
- *
- * Revision 6.1  2001/01/09 23:35:25  vakatov
- * Initial revision (draft, not tested in run-time)
- *
- * ===========================================================================
  */
 
 
@@ -222,4 +179,55 @@ CConn_MemoryStream::CConn_MemoryStream(CRWLock*   lk,
     return;
 }
 
+
 END_NCBI_SCOPE
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.14  2002/06/06 19:02:32  lavr
+ * Some housekeeping: log moved to the end
+ *
+ * Revision 6.13  2002/02/21 18:04:25  lavr
+ * +class CConn_MemoryStream
+ *
+ * Revision 6.12  2002/02/05 22:04:12  lavr
+ * Included header files rearranged
+ *
+ * Revision 6.11  2002/02/05 16:05:26  lavr
+ * List of included header files revised
+ *
+ * Revision 6.10  2002/01/28 21:29:25  lavr
+ * Use iostream(0) as a base class constructor
+ *
+ * Revision 6.9  2002/01/28 20:19:11  lavr
+ * Clean destruction of streambuf sub-object; no exception throw in GetCONN()
+ *
+ * Revision 6.8  2001/12/10 19:41:18  vakatov
+ * + CConn_SocketStream::CConn_SocketStream(SOCK sock, ....)
+ *
+ * Revision 6.7  2001/12/07 22:58:01  lavr
+ * GetCONN(): throw exception if the underlying streambuf is not CONN-based
+ *
+ * Revision 6.6  2001/09/24 20:26:17  lavr
+ * +SSERVICE_Extra* parameter for CConn_ServiceStream::CConn_ServiceStream()
+ *
+ * Revision 6.5  2001/01/12 23:49:19  lavr
+ * Timeout and GetCONN method added
+ *
+ * Revision 6.4  2001/01/11 23:04:06  lavr
+ * Bugfixes; tie is now done at streambuf level, not in iostream
+ *
+ * Revision 6.3  2001/01/11 17:22:41  thiessen
+ * fix args copy in s_HttpConnectorBuilder()
+ *
+ * Revision 6.2  2001/01/10 21:41:10  lavr
+ * Added classes: CConn_SocketStream, CConn_HttpStream, CConn_ServiceStream.
+ * Everything is now wordly documented.
+ *
+ * Revision 6.1  2001/01/09 23:35:25  vakatov
+ * Initial revision (draft, not tested in run-time)
+ *
+ * ===========================================================================
+ */
