@@ -150,14 +150,14 @@ BLAST_GapAlignSetUp(Uint1 program_number,
  *                       with the current sequence data [in] [out]
  */
 Int2 BLAST_OneSubjectUpdateParameters(Uint1 program_number,
-                    Uint4 subject_length,
-                    const BlastScoringOptions* scoring_options,
-                    BlastQueryInfo* query_info, 
-                    BlastScoreBlk* sbp, 
-                    const BlastExtensionParameters* ext_params,
-                    BlastHitSavingParameters* hit_params,
-                    BlastInitialWordParameters* word_params,
-                    BlastEffectiveLengthsParameters* eff_len_params);
+    Uint4 subject_length,
+    const BlastScoringOptions* scoring_options,
+    BlastQueryInfo* query_info, 
+    BlastScoreBlk* sbp, 
+    const BlastExtensionParameters* ext_params,
+    BlastHitSavingParameters* hit_params,
+    BlastInitialWordParameters* word_params,
+    BlastEffectiveLengthsParameters* eff_len_params);
 
 /** BlastScoreBlkMatrixInit, fills score matrix parameters in the ScoreBlkPtr
  *      Should be moved to blast_stat.c in the future.
@@ -169,14 +169,19 @@ Int2 BLAST_OneSubjectUpdateParameters(Uint1 program_number,
 
 Int2
 BlastScoreBlkMatrixInit(Uint1 program_number, 
-   const BlastScoringOptions* scoring_options,
-   BlastScoreBlk* sbp);
+    const BlastScoringOptions* scoring_options,
+    BlastScoreBlk* sbp);
 
 
 Int2
-BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, 
-    const BlastScoringOptions* scoring_options, Uint1 program_number, Boolean phi_align, 
-    BlastScoreBlk* *sbpp, double scale_factor, Blast_Message* *blast_message);
+BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, 
+    BlastQueryInfo* query_info, 
+    const BlastScoringOptions* scoring_options, 
+    Uint1 program_number, 
+    Boolean phi_align, 
+    BlastScoreBlk* *sbpp, 
+    double scale_factor, 
+    Blast_Message* *blast_message);
 
 #ifdef __cplusplus
 }
@@ -186,6 +191,9 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_inf
 /*
  *
 * $Log$
+* Revision 1.38  2004/05/17 16:38:08  camacho
+* Make function declarations more readable
+*
 * Revision 1.37  2004/05/07 15:36:40  papadopo
 * add scale factor as input argument to BlastMainSetup and GetScoreBlk
 *
