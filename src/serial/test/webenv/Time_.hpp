@@ -46,9 +46,9 @@ class CFull_Time;
 
 // generated classes
 
-class CTime_Base : public ncbi::CObject
+class CTime_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CTime_Base(void);
@@ -98,7 +98,7 @@ public:
 
     CFull_Time& GetFull(void);
     CFull_Time& SetFull(void);
-    void SetFull(const ncbi::CRef<CFull_Time>& ref);
+    void SetFull(const CFull_Time& value);
 
 
 private:
@@ -115,7 +115,7 @@ private:
     // variants' data
     union {
         TUnix m_Unix;
-        NCBI_NS_NCBI::CObject *m_object;
+        NCBI_NS_NCBI::CSerialObject *m_object;
     };
 };
 

@@ -51,9 +51,9 @@ class CDb_Env;
 
 // generated classes
 
-class CWeb_Settings_Base : public ncbi::CObject
+class CWeb_Settings_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CWeb_Settings_Base(void);

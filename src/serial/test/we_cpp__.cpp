@@ -35,8 +35,8 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -92,8 +92,8 @@ CArgument::~CArgument(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -149,8 +149,8 @@ CDb_Clipboard::~CDb_Clipboard(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -206,8 +206,8 @@ CDb_Env::~CDb_Env(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -263,8 +263,8 @@ CFilter_Value::~CFilter_Value(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -320,8 +320,8 @@ CFull_Time::~CFull_Time(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -377,8 +377,8 @@ CItem_Set::~CItem_Set(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -434,8 +434,8 @@ CName::~CName(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -491,8 +491,8 @@ CNamed_Item_Set::~CNamed_Item_Set(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -548,8 +548,8 @@ CNamed_Query::~CNamed_Query(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -605,8 +605,8 @@ CQuery_Command::~CQuery_Command(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -662,8 +662,8 @@ CQuery_History::~CQuery_History(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -719,8 +719,8 @@ CQuery_Related::~CQuery_Related(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -776,8 +776,8 @@ CQuery_Search::~CQuery_Search(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -833,8 +833,8 @@ CQuery_Select::~CQuery_Select(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -890,8 +890,8 @@ CTime::~CTime(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -947,8 +947,8 @@ CWeb_Env::~CWeb_Env(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================
@@ -1004,8 +1004,8 @@ CWeb_Saved::~CWeb_Saved(void)
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.1  2001/07/27 18:28:47  grichenk
- * Initial revision
+ * Revision 1.2  2002/05/15 20:22:51  grichenk
+ * Renamed CSerialObject -> CTestSerialObject
  *
  *
  * ===========================================================================

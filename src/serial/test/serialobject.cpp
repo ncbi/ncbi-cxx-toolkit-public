@@ -8,7 +8,7 @@ string Ptr(const void* p)
     return CNcbiOstrstreamToString(b);
 }
 
-void CSerialObject::Dump(CNcbiOstream& out) const
+void CTestSerialObject::Dump(CNcbiOstream& out) const
 {
     out << '{' << endl;
     out << "m_Name: \"" << m_Name << "\" (*" << Ptr(&m_Name) << ")" << endl;
@@ -53,15 +53,15 @@ void CSerialObject::Dump(CNcbiOstream& out) const
     out << '}' << endl;
 }
 
-void CSerialObject2::Assign(const CSerialUserOp& source)
+void CTestSerialObject2::Assign(const CSerialUserOp& source)
 {
-    const CSerialObject2& src = dynamic_cast<const CSerialObject2&>(source);
+    const CTestSerialObject2& src = dynamic_cast<const CTestSerialObject2&>(source);
     m_Name2 = src.m_Name2;
 }
 
 
-bool CSerialObject2::Equals(const CSerialUserOp& object) const
+bool CTestSerialObject2::Equals(const CSerialUserOp& object) const
 {
-    const CSerialObject2& obj = dynamic_cast<const CSerialObject2&>(object);
+    const CTestSerialObject2& obj = dynamic_cast<const CTestSerialObject2&>(object);
     return obj.m_Name2 == m_Name2;
 }

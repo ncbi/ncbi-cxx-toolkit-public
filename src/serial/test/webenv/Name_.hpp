@@ -46,9 +46,9 @@
 
 // generated classes
 
-class CName_Base : public ncbi::CObject
+class CName_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CName_Base(void);

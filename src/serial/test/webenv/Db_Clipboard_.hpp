@@ -42,14 +42,17 @@
 
 // generated includes
 #include <string>
-#include <Item_Set.hpp>
+
+
+// forward declarations
+class CItem_Set;
 
 
 // generated classes
 
-class CDb_Clipboard_Base : public ncbi::CObject
+class CDb_Clipboard_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CDb_Clipboard_Base(void);
@@ -78,12 +81,11 @@ public:
 
     void ResetItems(void);
     const CItem_Set& GetItems(void) const;
+    void SetItems(CItem_Set& value);
     CItem_Set& SetItems(void);
 
     // reset whole object
     virtual void Reset(void);
-
-    virtual void DoNotDeleteThisObject(void);
 
 
 private:
@@ -94,7 +96,7 @@ private:
     // members' data
     TName m_Name;
     TCount m_Count;
-    TItems m_Items;
+    ncbi::CRef< TItems > m_Items;
 };
 
 
@@ -148,15 +150,9 @@ CDb_Clipboard_Base::TCount& CDb_Clipboard_Base::SetCount(void)
 }
 
 inline
-const CDb_Clipboard_Base::TItems& CDb_Clipboard_Base::GetItems(void) const
-{
-    return m_Items;
-}
-
-inline
 CDb_Clipboard_Base::TItems& CDb_Clipboard_Base::SetItems(void)
 {
-    return m_Items;
+    return (*m_Items);
 }
 
 ///////////////////////////////////////////////////////////

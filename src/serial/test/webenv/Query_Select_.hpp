@@ -42,14 +42,17 @@
 
 // generated includes
 #include <string>
-#include <Item_Set.hpp>
+
+
+// forward declarations
+class CItem_Set;
 
 
 // generated classes
 
-class CQuery_Select_Base : public ncbi::CObject
+class CQuery_Select_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CQuery_Select_Base(void);
@@ -72,12 +75,11 @@ public:
 
     void ResetItems(void);
     const CItem_Set& GetItems(void) const;
+    void SetItems(CItem_Set& value);
     CItem_Set& SetItems(void);
 
     // reset whole object
     virtual void Reset(void);
-
-    virtual void DoNotDeleteThisObject(void);
 
 
 private:
@@ -87,7 +89,7 @@ private:
 
     // members' data
     TDb m_Db;
-    TItems m_Items;
+    ncbi::CRef< TItems > m_Items;
 };
 
 
@@ -117,15 +119,9 @@ CQuery_Select_Base::TDb& CQuery_Select_Base::SetDb(void)
 }
 
 inline
-const CQuery_Select_Base::TItems& CQuery_Select_Base::GetItems(void) const
-{
-    return m_Items;
-}
-
-inline
 CQuery_Select_Base::TItems& CQuery_Select_Base::SetItems(void)
 {
-    return m_Items;
+    return (*m_Items);
 }
 
 ///////////////////////////////////////////////////////////

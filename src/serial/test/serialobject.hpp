@@ -20,15 +20,15 @@ typedef CWeb_Env TWebEnv;
 
 USING_NCBI_SCOPE;
 
-class CSerialObject : public CObject
+class CTestSerialObject : public CSerialObject
 {
 public:
-    CSerialObject(void);
-    virtual ~CSerialObject(void);
+    CTestSerialObject(void);
+    virtual ~CTestSerialObject(void);
 
     virtual void Dump(CNcbiOstream& out) const;
 
-    static const CTypeInfo* GetTypeInfo(void);
+    DECLARE_INTERNAL_TYPE_INFO();
 
     string m_Name;
     bool m_HaveName;
@@ -39,16 +39,16 @@ public:
     vector<short> m_Offsets;
     map<long, string> m_Names;
     
-    CSerialObject* m_Next;
+    CTestSerialObject* m_Next;
     TWebEnv* m_WebEnv;
 };
 
-class CSerialObject2 : public CSerialObject, public CSerialUserOp
+class CTestSerialObject2 : public CTestSerialObject, public CSerialUserOp
 {
 public:
-    CSerialObject2(void);
+    CTestSerialObject2(void);
 
-    static const CTypeInfo* GetTypeInfo(void);
+    DECLARE_INTERNAL_TYPE_INFO();
 
     string m_Name2;
 protected:

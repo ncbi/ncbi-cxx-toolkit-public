@@ -42,9 +42,9 @@
 
 // generated classes
 
-class CFull_Time_Base : public ncbi::CObject
+class CFull_Time_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CFull_Time_Base(void);

@@ -48,9 +48,9 @@ class CQuery_Select;
 
 // generated classes
 
-class CQuery_Command_Base : public ncbi::CObject
+class CQuery_Command_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CQuery_Command_Base(void);
@@ -95,21 +95,21 @@ public:
 
     CQuery_Search& GetSearch(void);
     CQuery_Search& SetSearch(void);
-    void SetSearch(const ncbi::CRef<CQuery_Search>& ref);
+    void SetSearch(const CQuery_Search& value);
 
     bool IsSelect(void) const;
     const CQuery_Select& GetSelect(void) const;
 
     CQuery_Select& GetSelect(void);
     CQuery_Select& SetSelect(void);
-    void SetSelect(const ncbi::CRef<CQuery_Select>& ref);
+    void SetSelect(const CQuery_Select& value);
 
     bool IsRelated(void) const;
     const CQuery_Related& GetRelated(void) const;
 
     CQuery_Related& GetRelated(void);
     CQuery_Related& SetRelated(void);
-    void SetRelated(const ncbi::CRef<CQuery_Related>& ref);
+    void SetRelated(const CQuery_Related& value);
 
 
 private:
@@ -124,7 +124,7 @@ private:
 
     static const char* const sm_SelectionNames[];
     // variants' data
-    NCBI_NS_NCBI::CObject *m_object;
+    NCBI_NS_NCBI::CSerialObject *m_object;
 };
 
 

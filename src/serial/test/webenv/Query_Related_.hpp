@@ -42,18 +42,18 @@
 
 // generated includes
 #include <string>
-#include <Query_Command.hpp>
 
 
 // forward declarations
 class CItem_Set;
+class CQuery_Command;
 
 
 // generated classes
 
-class CQuery_Related_Base : public ncbi::CObject
+class CQuery_Related_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CQuery_Related_Base(void);
@@ -63,9 +63,9 @@ public:
     // type info
     DECLARE_INTERNAL_TYPE_INFO();
 
-    class C_Items : public ncbi::CObject
+    class C_Items : public ncbi::CSerialObject
     {
-        typedef ncbi::CObject Tparent;
+        typedef ncbi::CSerialObject Tparent;
     public:
         // constructor
         C_Items(void);
@@ -108,7 +108,7 @@ public:
     
         CItem_Set& GetItems(void);
         CItem_Set& SetItems(void);
-        void SetItems(const ncbi::CRef<CItem_Set>& ref);
+        void SetItems(const CItem_Set& value);
     
         bool IsItemCount(void) const;
         const int& GetItemCount(void) const;
@@ -132,7 +132,7 @@ public:
         // variants' data
         union {
             TItemCount m_ItemCount;
-            NCBI_NS_NCBI::CObject *m_object;
+            NCBI_NS_NCBI::CSerialObject *m_object;
         };
     };
     // members' types
@@ -145,6 +145,7 @@ public:
     // members' setters
     void ResetBase(void);
     const CQuery_Command& GetBase(void) const;
+    void SetBase(CQuery_Command& value);
     CQuery_Command& SetBase(void);
 
     void ResetRelation(void);
@@ -159,12 +160,11 @@ public:
 
     void ResetItems(void);
     const C_Items& GetItems(void) const;
+    void SetItems(C_Items& value);
     C_Items& SetItems(void);
 
     // reset whole object
     virtual void Reset(void);
-
-    virtual void DoNotDeleteThisObject(void);
 
 
 private:
@@ -173,10 +173,10 @@ private:
     CQuery_Related_Base& operator=(const CQuery_Related_Base&);
 
     // members' data
-    TBase m_Base;
+    ncbi::CRef< TBase > m_Base;
     TRelation m_Relation;
     TDb m_Db;
-    TItems m_Items;
+    ncbi::CRef< TItems > m_Items;
 };
 
 
@@ -251,15 +251,9 @@ void CQuery_Related_Base::C_Items::SetItemCount(const TItemCount& value)
 }
 
 inline
-const CQuery_Related_Base::TBase& CQuery_Related_Base::GetBase(void) const
-{
-    return m_Base;
-}
-
-inline
 CQuery_Related_Base::TBase& CQuery_Related_Base::SetBase(void)
 {
-    return m_Base;
+    return (*m_Base);
 }
 
 inline
@@ -299,15 +293,9 @@ CQuery_Related_Base::TDb& CQuery_Related_Base::SetDb(void)
 }
 
 inline
-const CQuery_Related_Base::TItems& CQuery_Related_Base::GetItems(void) const
-{
-    return m_Items;
-}
-
-inline
 CQuery_Related_Base::TItems& CQuery_Related_Base::SetItems(void)
 {
-    return m_Items;
+    return (*m_Items);
 }
 
 ///////////////////////////////////////////////////////////

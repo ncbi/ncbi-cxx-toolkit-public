@@ -1,4 +1,4 @@
-CSerialObject ::= {
+CTestSerialObject ::= {
   m_Name "name",
   m_HaveName FALSE,
   m_Size -1,
@@ -34,7 +34,7 @@ CSerialObject ::= {
       "ten"
     }
   },
-  m_Next : CSerialObject2 {
+  m_Next : CTestSerialObject2 {
     {
       m_Name "write1",
       m_HaveName TRUE,

@@ -42,15 +42,18 @@
 
 // generated includes
 #include <string>
-#include <Item_Set.hpp>
-#include <Name.hpp>
+
+
+// forward declarations
+class CItem_Set;
+class CName;
 
 
 // generated classes
 
-class CNamed_Item_Set_Base : public ncbi::CObject
+class CNamed_Item_Set_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CNamed_Item_Set_Base(void);
@@ -69,6 +72,7 @@ public:
     // members' setters
     void ResetName(void);
     const CName& GetName(void) const;
+    void SetName(CName& value);
     CName& SetName(void);
 
     void ResetDb(void);
@@ -78,12 +82,11 @@ public:
 
     void ResetItem_Set(void);
     const CItem_Set& GetItem_Set(void) const;
+    void SetItem_Set(CItem_Set& value);
     CItem_Set& SetItem_Set(void);
 
     // reset whole object
     virtual void Reset(void);
-
-    virtual void DoNotDeleteThisObject(void);
 
 
 private:
@@ -92,9 +95,9 @@ private:
     CNamed_Item_Set_Base& operator=(const CNamed_Item_Set_Base&);
 
     // members' data
-    TName m_Name;
+    ncbi::CRef< TName > m_Name;
     TDb m_Db;
-    TItem_Set m_Item_Set;
+    ncbi::CRef< TItem_Set > m_Item_Set;
 };
 
 
@@ -106,15 +109,9 @@ private:
 ///////////////////// inline methods //////////////////////
 ///////////////////////////////////////////////////////////
 inline
-const CNamed_Item_Set_Base::TName& CNamed_Item_Set_Base::GetName(void) const
-{
-    return m_Name;
-}
-
-inline
 CNamed_Item_Set_Base::TName& CNamed_Item_Set_Base::SetName(void)
 {
-    return m_Name;
+    return (*m_Name);
 }
 
 inline
@@ -136,15 +133,9 @@ CNamed_Item_Set_Base::TDb& CNamed_Item_Set_Base::SetDb(void)
 }
 
 inline
-const CNamed_Item_Set_Base::TItem_Set& CNamed_Item_Set_Base::GetItem_Set(void) const
-{
-    return m_Item_Set;
-}
-
-inline
 CNamed_Item_Set_Base::TItem_Set& CNamed_Item_Set_Base::SetItem_Set(void)
 {
-    return m_Item_Set;
+    return (*m_Item_Set);
 }
 
 ///////////////////////////////////////////////////////////

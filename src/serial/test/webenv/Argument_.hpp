@@ -46,9 +46,9 @@
 
 // generated classes
 
-class CArgument_Base : public ncbi::CObject
+class CArgument_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CArgument_Base(void);

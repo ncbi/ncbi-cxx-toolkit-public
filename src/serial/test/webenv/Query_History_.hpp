@@ -42,15 +42,18 @@
 
 // generated includes
 #include <string>
-#include <Query_Command.hpp>
-#include <Time.hpp>
+
+
+// forward declarations
+class CQuery_Command;
+class CTime;
 
 
 // generated classes
 
-class CQuery_History_Base : public ncbi::CObject
+class CQuery_History_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CQuery_History_Base(void);
@@ -81,16 +84,16 @@ public:
 
     void ResetTime(void);
     const CTime& GetTime(void) const;
+    void SetTime(CTime& value);
     CTime& SetTime(void);
 
     void ResetCommand(void);
     const CQuery_Command& GetCommand(void) const;
+    void SetCommand(CQuery_Command& value);
     CQuery_Command& SetCommand(void);
 
     // reset whole object
     virtual void Reset(void);
-
-    virtual void DoNotDeleteThisObject(void);
 
 
 private:
@@ -102,8 +105,8 @@ private:
     bool m_set_Name;
     TName m_Name;
     TSeqNumber m_SeqNumber;
-    TTime m_Time;
-    TCommand m_Command;
+    ncbi::CRef< TTime > m_Time;
+    ncbi::CRef< TCommand > m_Command;
 };
 
 
@@ -165,27 +168,15 @@ CQuery_History_Base::TSeqNumber& CQuery_History_Base::SetSeqNumber(void)
 }
 
 inline
-const CQuery_History_Base::TTime& CQuery_History_Base::GetTime(void) const
-{
-    return m_Time;
-}
-
-inline
 CQuery_History_Base::TTime& CQuery_History_Base::SetTime(void)
 {
-    return m_Time;
-}
-
-inline
-const CQuery_History_Base::TCommand& CQuery_History_Base::GetCommand(void) const
-{
-    return m_Command;
+    return (*m_Time);
 }
 
 inline
 CQuery_History_Base::TCommand& CQuery_History_Base::SetCommand(void)
 {
-    return m_Command;
+    return (*m_Command);
 }
 
 ///////////////////////////////////////////////////////////

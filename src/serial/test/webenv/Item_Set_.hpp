@@ -46,9 +46,9 @@
 
 // generated classes
 
-class CItem_Set_Base : public ncbi::CObject
+class CItem_Set_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CItem_Set_Base(void);

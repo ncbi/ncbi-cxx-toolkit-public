@@ -37,19 +37,19 @@ void PrintAsn(CNcbiOstream& out, const CConstObjectInfo& object);
 class CWriteSerialObjectHook : public CWriteObjectHook
 {
 public:
-    CWriteSerialObjectHook(CSerialObject* hooked)
+    CWriteSerialObjectHook(CTestSerialObject* hooked)
         : m_HookedObject(hooked) {}
     void WriteObject(CObjectOStream& out,
                      const CConstObjectInfo& object);
 private:
-    CSerialObject* m_HookedObject;
+    CTestSerialObject* m_HookedObject;
 };
 
 
 void CWriteSerialObjectHook::WriteObject(CObjectOStream& out,
                                          const CConstObjectInfo& object)
 {
-    const CSerialObject& obj = *reinterpret_cast<const CSerialObject*>
+    const CTestSerialObject& obj = *reinterpret_cast<const CTestSerialObject*>
         (object.GetObjectPtr());
     
     if (&obj != m_HookedObject) {
@@ -101,19 +101,19 @@ void CWriteSerialObjectHook::WriteObject(CObjectOStream& out,
 class CReadSerialObjectHook : public CReadObjectHook
 {
 public:
-    CReadSerialObjectHook(CSerialObject* hooked)
+    CReadSerialObjectHook(CTestSerialObject* hooked)
         : m_HookedObject(hooked) {}
     void ReadObject(CObjectIStream& in,
                     const CObjectInfo& object);
 private:
-    CSerialObject* m_HookedObject;
+    CTestSerialObject* m_HookedObject;
 };
 
 
 void CReadSerialObjectHook::ReadObject(CObjectIStream& in,
                                        const CObjectInfo& object)
 {
-    const CSerialObject& obj = *reinterpret_cast<const CSerialObject*>
+    const CTestSerialObject& obj = *reinterpret_cast<const CTestSerialObject*>
         (object.GetObjectPtr());
     
     if (&obj != m_HookedObject) {
@@ -177,7 +177,7 @@ void CReadSerialObject_NameHook::ReadClassMember
 }
 
 
-void TestHooks(CSerialObject& obj)
+void TestHooks(CTestSerialObject& obj)
 {
     // Test object hooks
     char* buf = 0;
@@ -185,7 +185,7 @@ void TestHooks(CSerialObject& obj)
         CNcbiOstrstream ostrs;
         auto_ptr<CObjectOStream> os(CObjectOStream::Open
             (eSerial_AsnText, ostrs));
-        CObjectTypeInfo info = Type<CSerialObject>();
+        CObjectTypeInfo info = Type<CTestSerialObject>();
         info.SetLocalWriteHook(*os, new CWriteSerialObjectHook(&obj));
         *os << obj;
         buf = ostrs.rdbuf()->str();
@@ -194,14 +194,14 @@ void TestHooks(CSerialObject& obj)
         CNcbiIstrstream istrs(buf);
         auto_ptr<CObjectIStream> is(CObjectIStream::Open
             (eSerial_AsnText, istrs));
-        CSerialObject obj_copy;
-        CObjectTypeInfo info = Type<CSerialObject>();
+        CTestSerialObject obj_copy;
+        CObjectTypeInfo info = Type<CTestSerialObject>();
         info.SetLocalReadHook(*is, new CReadSerialObjectHook(&obj_copy));
         *is >> obj_copy;
 #if HAVE_NCBI_C
         // Can not use SerialEquals<> with C-objects
 #else
-        _ASSERT(SerialEquals<CSerialObject>(obj, obj_copy));
+        _ASSERT(SerialEquals<CTestSerialObject>(obj, obj_copy));
 #endif
     }}
     delete[] buf;
@@ -212,7 +212,7 @@ void TestHooks(CSerialObject& obj)
         CNcbiOstrstream ostrs;
         auto_ptr<CObjectOStream> os(CObjectOStream::Open
             (eSerial_AsnText, ostrs));
-        CObjectTypeInfo info = Type<CSerialObject>();
+        CObjectTypeInfo info = Type<CTestSerialObject>();
         info.FindMember("m_Name").SetLocalWriteHook(*os,
             new CWriteSerialObject_NameHook);
         *os << obj;
@@ -222,15 +222,15 @@ void TestHooks(CSerialObject& obj)
         CNcbiIstrstream istrs(buf2);
         auto_ptr<CObjectIStream> is(CObjectIStream::Open
             (eSerial_AsnText, istrs));
-        CSerialObject obj_copy;
-        CObjectTypeInfo info = Type<CSerialObject>();
+        CTestSerialObject obj_copy;
+        CObjectTypeInfo info = Type<CTestSerialObject>();
         info.FindMember("m_Name").SetLocalReadHook(*is,
             new CReadSerialObject_NameHook);
         *is >> obj_copy;
 #if HAVE_NCBI_C
         // Can not use SerialEquals<> with C-objects
 #else
-        _ASSERT(SerialEquals<CSerialObject>(obj, obj_copy));
+        _ASSERT(SerialEquals<CTestSerialObject>(obj, obj_copy));
 #endif
     }}
     delete[] buf2;
@@ -301,13 +301,13 @@ int CTestSerial::Run(void)
         }
 #endif
 
-        CSerialObject write;
-        CSerialObject2 write1;
+        CTestSerialObject write;
+        CTestSerialObject2 write1;
 
-        _TRACE("CSerialObject(object1): " << long(&write));
-        _TRACE("CSerialObject2(object2): " << long(&write1));
-        _TRACE("CSerialObject(object2): " <<
-               long(static_cast<CSerialObject*>(&write1)));
+        _TRACE("CTestSerialObject(object1): " << long(&write));
+        _TRACE("CTestSerialObject2(object2): " << long(&write1));
+        _TRACE("CTestSerialObject(object2): " <<
+               long(static_cast<CTestSerialObject*>(&write1)));
 
         write.m_Name = "name";
         write.m_HaveName = false;
@@ -339,27 +339,27 @@ int CTestSerial::Run(void)
 
         TestHooks(write);
 
-        const CSerialObject& cwrite = write;
+        const CTestSerialObject& cwrite = write;
 
-        CTypeIterator<CSerialObject> j1; j1 = Begin(write);
-        CTypeIterator<CSerialObject> j2(Begin(write));
-        CTypeIterator<CSerialObject> j3 = Begin(write);
+        CTypeIterator<CTestSerialObject> j1; j1 = Begin(write);
+        CTypeIterator<CTestSerialObject> j2(Begin(write));
+        CTypeIterator<CTestSerialObject> j3 = Begin(write);
 
         //j1.Erase();
 
-        CTypeConstIterator<CSerialObject> k1; k1 = Begin(write);
-        CTypeConstIterator<CSerialObject> k2(Begin(write));
-        CTypeConstIterator<CSerialObject> k3 = ConstBegin(write);
+        CTypeConstIterator<CTestSerialObject> k1; k1 = Begin(write);
+        CTypeConstIterator<CTestSerialObject> k2(Begin(write));
+        CTypeConstIterator<CTestSerialObject> k3 = ConstBegin(write);
 
         //k1.Erase();
 
-        CTypeConstIterator<CSerialObject> l1; l1 = ConstBegin(write);
-        CTypeConstIterator<CSerialObject> l2(ConstBegin(write));
-        CTypeConstIterator<CSerialObject> l3 = ConstBegin(write);
+        CTypeConstIterator<CTestSerialObject> l1; l1 = ConstBegin(write);
+        CTypeConstIterator<CTestSerialObject> l2(ConstBegin(write));
+        CTypeConstIterator<CTestSerialObject> l3 = ConstBegin(write);
 
-        CTypeConstIterator<CSerialObject> m1; m1 = ConstBegin(cwrite);
-        CTypeConstIterator<CSerialObject> m2(ConstBegin(cwrite));
-        CTypeConstIterator<CSerialObject> m3 = ConstBegin(cwrite);
+        CTypeConstIterator<CTestSerialObject> m1; m1 = ConstBegin(cwrite);
+        CTypeConstIterator<CTestSerialObject> m2(ConstBegin(cwrite));
+        CTypeConstIterator<CTestSerialObject> m3 = ConstBegin(cwrite);
 
         CTypesIterator n1; n1 = Begin(write);
         CTypesConstIterator n2; n2 = ConstBegin(write);
@@ -367,37 +367,37 @@ int CTestSerial::Run(void)
         //CTypesConstIterator n4; n4 = Begin(cwrite);
 
         {
-            for ( CTypeIterator<CSerialObject> oi = Begin(write); oi; ++oi ) {
-                const CSerialObject& obj = *oi;
-                NcbiCerr<<"CSerialObject @ "<<NStr::PtrToString(&obj)<<
+            for ( CTypeIterator<CTestSerialObject> oi = Begin(write); oi; ++oi ) {
+                const CTestSerialObject& obj = *oi;
+                NcbiCerr<<"CTestSerialObject @ "<<NStr::PtrToString(&obj)<<
                     NcbiEndl;
                 //            oi.Erase();
-                CTypeIterator<CSerialObject> oi1(Begin(write));
-                CTypeIterator<CSerialObject> oi2;
+                CTypeIterator<CTestSerialObject> oi1(Begin(write));
+                CTypeIterator<CTestSerialObject> oi2;
                 oi2 = Begin(write);
             }
         }
         {
-            for ( CTypeConstIterator<CSerialObject> oi = ConstBegin(write); oi;
+            for ( CTypeConstIterator<CTestSerialObject> oi = ConstBegin(write); oi;
                   ++oi ) {
-                const CSerialObject& obj = *oi;
-                NcbiCerr<<"CSerialObject @ "<<NStr::PtrToString(&obj)<<
+                const CTestSerialObject& obj = *oi;
+                NcbiCerr<<"CTestSerialObject @ "<<NStr::PtrToString(&obj)<<
                     NcbiEndl;
                 //            oi.Erase();
-                CTypeConstIterator<CSerialObject> oi1(Begin(write));
-                CTypeConstIterator<CSerialObject> oi2;
+                CTypeConstIterator<CTestSerialObject> oi1(Begin(write));
+                CTypeConstIterator<CTestSerialObject> oi2;
                 oi2 = Begin(write);
             }
         }
         {
-            for ( CTypeConstIterator<CSerialObject> oi = ConstBegin(cwrite);
+            for ( CTypeConstIterator<CTestSerialObject> oi = ConstBegin(cwrite);
                   oi; ++oi ) {
-                const CSerialObject& obj = *oi;
-                NcbiCerr<<"CSerialObject @ "<<NStr::PtrToString(&obj)<<
+                const CTestSerialObject& obj = *oi;
+                NcbiCerr<<"CTestSerialObject @ "<<NStr::PtrToString(&obj)<<
                     NcbiEndl;
                 //oi.Erase();
-                CTypeConstIterator<CSerialObject> oi1(ConstBegin(cwrite));
-                CTypeConstIterator<CSerialObject> oi2;
+                CTypeConstIterator<CTestSerialObject> oi1(ConstBegin(cwrite));
+                CTypeConstIterator<CTestSerialObject> oi2;
                 oi2 = ConstBegin(cwrite);
             }
         }
@@ -418,16 +418,16 @@ int CTestSerial::Run(void)
 
         {
             CTypesIterator i;
-            Type<CSerialObject>::AddTo(i);
-            Type<CSerialObject2>::AddTo(i);
+            Type<CTestSerialObject>::AddTo(i);
+            Type<CTestSerialObject2>::AddTo(i);
             for ( i = Begin(write); i; ++i ) {
-                CSerialObject* obj = Type<CSerialObject>::Get(i);
+                CTestSerialObject* obj = Type<CTestSerialObject>::Get(i);
                 if ( obj ) {
                     NcbiCerr <<"CObject: @ "<<NStr::PtrToString(obj)<<NcbiEndl;
                 }
                 else {
                     NcbiCerr <<"CObject2: @ "<<
-                        NStr::PtrToString(Type<CSerialObject2>::Get(i))<<
+                        NStr::PtrToString(Type<CTestSerialObject2>::Get(i))<<
                         NcbiEndl;
                 }
             }
@@ -435,16 +435,16 @@ int CTestSerial::Run(void)
 
         {
             CTypesConstIterator i;
-            Type<CSerialObject>::AddTo(i);
-            Type<CSerialObject2>::AddTo(i);
+            Type<CTestSerialObject>::AddTo(i);
+            Type<CTestSerialObject2>::AddTo(i);
             for ( i = ConstBegin(write); i; ++i ) {
-                const CSerialObject* obj = Type<CSerialObject>::Get(i);
+                const CTestSerialObject* obj = Type<CTestSerialObject>::Get(i);
                 if ( obj ) {
                     NcbiCerr <<"CObject: @ "<<NStr::PtrToString(obj)<<NcbiEndl;
                 }
                 else {
                     NcbiCerr <<"CObject2: @ "<<
-                        NStr::PtrToString(Type<CSerialObject2>::Get(i))<<
+                        NStr::PtrToString(Type<CTestSerialObject2>::Get(i))<<
                         NcbiEndl;
                 }
             }
@@ -460,7 +460,7 @@ int CTestSerial::Run(void)
                 CNcbiOfstream out("test.asno2");
                 PrintAsn(out, ConstObjectInfo(write));
             }
-            CSerialObject read;
+            CTestSerialObject read;
             {
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asn",
                                                                  eSerial_AsnText));
@@ -474,7 +474,7 @@ int CTestSerial::Run(void)
             read.m_WebEnv = 0;
             write.m_WebEnv = 0;
 #endif
-            _ASSERT(SerialEquals<CSerialObject>(read, write));
+            _ASSERT(SerialEquals<CTestSerialObject>(read, write));
 #if HAVE_NCBI_C
             // Restore C-style objects
             read.m_WebEnv = saved_env_read;
@@ -497,7 +497,7 @@ int CTestSerial::Run(void)
                                                                   eSerial_AsnBinary));
                 *out << write;
             }
-            CSerialObject read;
+            CTestSerialObject read;
             {
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asb",
                                                                  eSerial_AsnBinary));
@@ -511,7 +511,7 @@ int CTestSerial::Run(void)
             read.m_WebEnv = 0;
             write.m_WebEnv = 0;
 #endif
-            _ASSERT(SerialEquals<CSerialObject>(read, write));
+            _ASSERT(SerialEquals<CTestSerialObject>(read, write));
 #if HAVE_NCBI_C
             // Restore C-style objects
             read.m_WebEnv = saved_env_read;

@@ -53,9 +53,9 @@ class CFilter_Value;
 
 // generated classes
 
-class CDb_Env_Base : public ncbi::CObject
+class CDb_Env_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CDb_Env_Base(void);

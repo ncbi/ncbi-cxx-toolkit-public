@@ -51,9 +51,9 @@ class CFilter_Value;
 
 // generated classes
 
-class CQuery_Search_Base : public ncbi::CObject
+class CQuery_Search_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CQuery_Search_Base(void);

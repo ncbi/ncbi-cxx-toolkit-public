@@ -51,9 +51,9 @@ class CNamed_Query;
 
 // generated classes
 
-class CWeb_Saved_Base : public ncbi::CObject
+class CWeb_Saved_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CWeb_Saved_Base(void);

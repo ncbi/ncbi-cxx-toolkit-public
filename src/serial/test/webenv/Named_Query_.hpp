@@ -40,17 +40,17 @@
 // standard includes
 #include <serial/serialbase.hpp>
 
-// generated includes
-#include <Name.hpp>
-#include <Query_Command.hpp>
-#include <Time.hpp>
+// forward declarations
+class CName;
+class CQuery_Command;
+class CTime;
 
 
 // generated classes
 
-class CNamed_Query_Base : public ncbi::CObject
+class CNamed_Query_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CNamed_Query_Base(void);
@@ -69,20 +69,21 @@ public:
     // members' setters
     void ResetName(void);
     const CName& GetName(void) const;
+    void SetName(CName& value);
     CName& SetName(void);
 
     void ResetTime(void);
     const CTime& GetTime(void) const;
+    void SetTime(CTime& value);
     CTime& SetTime(void);
 
     void ResetCommand(void);
     const CQuery_Command& GetCommand(void) const;
+    void SetCommand(CQuery_Command& value);
     CQuery_Command& SetCommand(void);
 
     // reset whole object
     virtual void Reset(void);
-
-    virtual void DoNotDeleteThisObject(void);
 
 
 private:
@@ -91,9 +92,9 @@ private:
     CNamed_Query_Base& operator=(const CNamed_Query_Base&);
 
     // members' data
-    TName m_Name;
-    TTime m_Time;
-    TCommand m_Command;
+    ncbi::CRef< TName > m_Name;
+    ncbi::CRef< TTime > m_Time;
+    ncbi::CRef< TCommand > m_Command;
 };
 
 
@@ -105,39 +106,21 @@ private:
 ///////////////////// inline methods //////////////////////
 ///////////////////////////////////////////////////////////
 inline
-const CNamed_Query_Base::TName& CNamed_Query_Base::GetName(void) const
-{
-    return m_Name;
-}
-
-inline
 CNamed_Query_Base::TName& CNamed_Query_Base::SetName(void)
 {
-    return m_Name;
-}
-
-inline
-const CNamed_Query_Base::TTime& CNamed_Query_Base::GetTime(void) const
-{
-    return m_Time;
+    return (*m_Name);
 }
 
 inline
 CNamed_Query_Base::TTime& CNamed_Query_Base::SetTime(void)
 {
-    return m_Time;
-}
-
-inline
-const CNamed_Query_Base::TCommand& CNamed_Query_Base::GetCommand(void) const
-{
-    return m_Command;
+    return (*m_Time);
 }
 
 inline
 CNamed_Query_Base::TCommand& CNamed_Query_Base::SetCommand(void)
 {
-    return m_Command;
+    return (*m_Command);
 }
 
 ///////////////////////////////////////////////////////////

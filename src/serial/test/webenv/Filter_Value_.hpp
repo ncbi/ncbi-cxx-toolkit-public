@@ -46,9 +46,9 @@
 
 // generated classes
 
-class CFilter_Value_Base : public ncbi::CObject
+class CFilter_Value_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CFilter_Value_Base(void);

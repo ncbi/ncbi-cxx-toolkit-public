@@ -130,6 +130,7 @@ CArgument_Base::~CArgument_Base(void)
 
 // generated includes
 #include <Db_Clipboard.hpp>
+#include <Item_Set.hpp>
 
 // generated classes
 
@@ -140,7 +141,17 @@ void CDb_Clipboard_Base::ResetName(void)
 
 void CDb_Clipboard_Base::ResetItems(void)
 {
-    m_Items.Reset();
+    (*m_Items).Reset();
+}
+
+const CDb_Clipboard_Base::TItems& CDb_Clipboard_Base::GetItems(void) const
+{
+    return (*m_Items);
+}
+
+void CDb_Clipboard_Base::SetItems(TItems& value)
+{
+    m_Items.Reset(&value);
 }
 
 void CDb_Clipboard_Base::Reset(void)
@@ -150,25 +161,19 @@ void CDb_Clipboard_Base::Reset(void)
     ResetItems();
 }
 
-void CDb_Clipboard_Base::DoNotDeleteThisObject(void)
-{
-    CObject::DoNotDeleteThisObject();
-    m_Items.DoNotDeleteThisObject();
-}
-
 BEGIN_NAMED_BASE_CLASS_INFO("Db-Clipboard", CDb_Clipboard)
 {
     SET_CLASS_MODULE("NCBI-Env");
     ADD_NAMED_STD_MEMBER("name", m_Name);
     ADD_NAMED_STD_MEMBER("count", m_Count);
-    ADD_NAMED_MEMBER("items", m_Items, CLASS, (CItem_Set));
+    ADD_NAMED_REF_MEMBER("items", m_Items, CItem_Set);
     info->RandomOrder();
 }
 END_CLASS_INFO
 
 // constructor
 CDb_Clipboard_Base::CDb_Clipboard_Base(void)
-    : m_Count(0)
+    : m_Count(0), m_Items(new CItem_Set())
 {
 }
 
@@ -639,12 +644,24 @@ CName_Base::~CName_Base(void)
 
 // generated includes
 #include <Named_Item_Set.hpp>
+#include <Item_Set.hpp>
+#include <Name.hpp>
 
 // generated classes
 
 void CNamed_Item_Set_Base::ResetName(void)
 {
-    m_Name.Reset();
+    (*m_Name).Reset();
+}
+
+const CNamed_Item_Set_Base::TName& CNamed_Item_Set_Base::GetName(void) const
+{
+    return (*m_Name);
+}
+
+void CNamed_Item_Set_Base::SetName(TName& value)
+{
+    m_Name.Reset(&value);
 }
 
 void CNamed_Item_Set_Base::ResetDb(void)
@@ -654,7 +671,17 @@ void CNamed_Item_Set_Base::ResetDb(void)
 
 void CNamed_Item_Set_Base::ResetItem_Set(void)
 {
-    m_Item_Set.Reset();
+    (*m_Item_Set).Reset();
+}
+
+const CNamed_Item_Set_Base::TItem_Set& CNamed_Item_Set_Base::GetItem_Set(void) const
+{
+    return (*m_Item_Set);
+}
+
+void CNamed_Item_Set_Base::SetItem_Set(TItem_Set& value)
+{
+    m_Item_Set.Reset(&value);
 }
 
 void CNamed_Item_Set_Base::Reset(void)
@@ -664,25 +691,19 @@ void CNamed_Item_Set_Base::Reset(void)
     ResetItem_Set();
 }
 
-void CNamed_Item_Set_Base::DoNotDeleteThisObject(void)
-{
-    CObject::DoNotDeleteThisObject();
-    m_Name.DoNotDeleteThisObject();
-    m_Item_Set.DoNotDeleteThisObject();
-}
-
 BEGIN_NAMED_BASE_CLASS_INFO("Named-Item-Set", CNamed_Item_Set)
 {
     SET_CLASS_MODULE("NCBI-Env");
-    ADD_NAMED_MEMBER("name", m_Name, CLASS, (CName));
+    ADD_NAMED_REF_MEMBER("name", m_Name, CName);
     ADD_NAMED_STD_MEMBER("db", m_Db);
-    ADD_NAMED_MEMBER("item-Set", m_Item_Set, CLASS, (CItem_Set));
+    ADD_NAMED_REF_MEMBER("item-Set", m_Item_Set, CItem_Set);
     info->RandomOrder();
 }
 END_CLASS_INFO
 
 // constructor
 CNamed_Item_Set_Base::CNamed_Item_Set_Base(void)
+    : m_Name(new CName()), m_Item_Set(new CItem_Set())
 {
 }
 
@@ -734,22 +755,55 @@ CNamed_Item_Set_Base::~CNamed_Item_Set_Base(void)
 
 // generated includes
 #include <Named_Query.hpp>
+#include <Name.hpp>
+#include <Query_Command.hpp>
+#include <Time.hpp>
 
 // generated classes
 
 void CNamed_Query_Base::ResetName(void)
 {
-    m_Name.Reset();
+    (*m_Name).Reset();
+}
+
+const CNamed_Query_Base::TName& CNamed_Query_Base::GetName(void) const
+{
+    return (*m_Name);
+}
+
+void CNamed_Query_Base::SetName(TName& value)
+{
+    m_Name.Reset(&value);
 }
 
 void CNamed_Query_Base::ResetTime(void)
 {
-    m_Time.Reset();
+    (*m_Time).Reset();
+}
+
+const CNamed_Query_Base::TTime& CNamed_Query_Base::GetTime(void) const
+{
+    return (*m_Time);
+}
+
+void CNamed_Query_Base::SetTime(TTime& value)
+{
+    m_Time.Reset(&value);
 }
 
 void CNamed_Query_Base::ResetCommand(void)
 {
-    m_Command.Reset();
+    (*m_Command).Reset();
+}
+
+const CNamed_Query_Base::TCommand& CNamed_Query_Base::GetCommand(void) const
+{
+    return (*m_Command);
+}
+
+void CNamed_Query_Base::SetCommand(TCommand& value)
+{
+    m_Command.Reset(&value);
 }
 
 void CNamed_Query_Base::Reset(void)
@@ -759,26 +813,19 @@ void CNamed_Query_Base::Reset(void)
     ResetCommand();
 }
 
-void CNamed_Query_Base::DoNotDeleteThisObject(void)
-{
-    CObject::DoNotDeleteThisObject();
-    m_Name.DoNotDeleteThisObject();
-    m_Time.DoNotDeleteThisObject();
-    m_Command.DoNotDeleteThisObject();
-}
-
 BEGIN_NAMED_BASE_CLASS_INFO("Named-Query", CNamed_Query)
 {
     SET_CLASS_MODULE("NCBI-Env");
-    ADD_NAMED_MEMBER("name", m_Name, CLASS, (CName));
-    ADD_NAMED_MEMBER("time", m_Time, CLASS, (CTime));
-    ADD_NAMED_MEMBER("command", m_Command, CLASS, (CQuery_Command));
+    ADD_NAMED_REF_MEMBER("name", m_Name, CName);
+    ADD_NAMED_REF_MEMBER("time", m_Time, CTime);
+    ADD_NAMED_REF_MEMBER("command", m_Command, CQuery_Command);
     info->RandomOrder();
 }
 END_CLASS_INFO
 
 // constructor
 CNamed_Query_Base::CNamed_Query_Base(void)
+    : m_Name(new CName()), m_Time(new CTime()), m_Command(new CQuery_Command())
 {
 }
 
@@ -903,9 +950,9 @@ CQuery_Command_Base::TSearch& CQuery_Command_Base::SetSearch(void)
     return *static_cast<TSearch*>(m_object);
 }
 
-void CQuery_Command_Base::SetSearch(const NCBI_NS_NCBI::CRef<TSearch>& ref)
+void CQuery_Command_Base::SetSearch(const TSearch& value)
 {
-    TSearch* ptr = const_cast<TSearch*>(&*ref);
+    TSearch* ptr = const_cast<TSearch*>(&value);
     if ( m_choice != e_Search || m_object != ptr ) {
         Reset();
         (m_object = ptr)->AddReference();
@@ -931,9 +978,9 @@ CQuery_Command_Base::TSelect& CQuery_Command_Base::SetSelect(void)
     return *static_cast<TSelect*>(m_object);
 }
 
-void CQuery_Command_Base::SetSelect(const NCBI_NS_NCBI::CRef<TSelect>& ref)
+void CQuery_Command_Base::SetSelect(const TSelect& value)
 {
-    TSelect* ptr = const_cast<TSelect*>(&*ref);
+    TSelect* ptr = const_cast<TSelect*>(&value);
     if ( m_choice != e_Select || m_object != ptr ) {
         Reset();
         (m_object = ptr)->AddReference();
@@ -959,9 +1006,9 @@ CQuery_Command_Base::TRelated& CQuery_Command_Base::SetRelated(void)
     return *static_cast<TRelated*>(m_object);
 }
 
-void CQuery_Command_Base::SetRelated(const NCBI_NS_NCBI::CRef<TRelated>& ref)
+void CQuery_Command_Base::SetRelated(const TRelated& value)
 {
-    TRelated* ptr = const_cast<TRelated*>(&*ref);
+    TRelated* ptr = const_cast<TRelated*>(&value);
     if ( m_choice != e_Related || m_object != ptr ) {
         Reset();
         (m_object = ptr)->AddReference();
@@ -1037,6 +1084,8 @@ CQuery_Command_Base::~CQuery_Command_Base(void)
 
 // generated includes
 #include <Query_History.hpp>
+#include <Query_Command.hpp>
+#include <Time.hpp>
 
 // generated classes
 
@@ -1048,12 +1097,32 @@ void CQuery_History_Base::ResetName(void)
 
 void CQuery_History_Base::ResetTime(void)
 {
-    m_Time.Reset();
+    (*m_Time).Reset();
+}
+
+const CQuery_History_Base::TTime& CQuery_History_Base::GetTime(void) const
+{
+    return (*m_Time);
+}
+
+void CQuery_History_Base::SetTime(TTime& value)
+{
+    m_Time.Reset(&value);
 }
 
 void CQuery_History_Base::ResetCommand(void)
 {
-    m_Command.Reset();
+    (*m_Command).Reset();
+}
+
+const CQuery_History_Base::TCommand& CQuery_History_Base::GetCommand(void) const
+{
+    return (*m_Command);
+}
+
+void CQuery_History_Base::SetCommand(TCommand& value)
+{
+    m_Command.Reset(&value);
 }
 
 void CQuery_History_Base::Reset(void)
@@ -1064,27 +1133,20 @@ void CQuery_History_Base::Reset(void)
     ResetCommand();
 }
 
-void CQuery_History_Base::DoNotDeleteThisObject(void)
-{
-    CObject::DoNotDeleteThisObject();
-    m_Time.DoNotDeleteThisObject();
-    m_Command.DoNotDeleteThisObject();
-}
-
 BEGIN_NAMED_BASE_CLASS_INFO("Query-History", CQuery_History)
 {
     SET_CLASS_MODULE("NCBI-Env");
     ADD_NAMED_STD_MEMBER("name", m_Name)->SetOptional(MEMBER_PTR(m_set_Name));
     ADD_NAMED_STD_MEMBER("seqNumber", m_SeqNumber);
-    ADD_NAMED_MEMBER("time", m_Time, CLASS, (CTime));
-    ADD_NAMED_MEMBER("command", m_Command, CLASS, (CQuery_Command));
+    ADD_NAMED_REF_MEMBER("time", m_Time, CTime);
+    ADD_NAMED_REF_MEMBER("command", m_Command, CQuery_Command);
     info->RandomOrder();
 }
 END_CLASS_INFO
 
 // constructor
 CQuery_History_Base::CQuery_History_Base(void)
-    : m_set_Name(false), m_SeqNumber(0)
+    : m_set_Name(false), m_SeqNumber(0), m_Time(new CTime()), m_Command(new CQuery_Command())
 {
 }
 
@@ -1137,6 +1199,7 @@ CQuery_History_Base::~CQuery_History_Base(void)
 // generated includes
 #include <Query_Related.hpp>
 #include <Item_Set.hpp>
+#include <Query_Command.hpp>
 
 // generated classes
 
@@ -1201,9 +1264,9 @@ CQuery_Related_Base::C_Items::TItems& CQuery_Related_Base::C_Items::SetItems(voi
     return *static_cast<TItems*>(m_object);
 }
 
-void CQuery_Related_Base::C_Items::SetItems(const NCBI_NS_NCBI::CRef<TItems>& ref)
+void CQuery_Related_Base::C_Items::SetItems(const TItems& value)
 {
-    TItems* ptr = const_cast<TItems*>(&*ref);
+    TItems* ptr = const_cast<TItems*>(&value);
     if ( m_choice != e_Items || m_object != ptr ) {
         Reset();
         (m_object = ptr)->AddReference();
@@ -1237,7 +1300,17 @@ CQuery_Related_Base::C_Items::~C_Items(void)
 
 void CQuery_Related_Base::ResetBase(void)
 {
-    m_Base.Reset();
+    (*m_Base).Reset();
+}
+
+const CQuery_Related_Base::TBase& CQuery_Related_Base::GetBase(void) const
+{
+    return (*m_Base);
+}
+
+void CQuery_Related_Base::SetBase(TBase& value)
+{
+    m_Base.Reset(&value);
 }
 
 void CQuery_Related_Base::ResetRelation(void)
@@ -1252,7 +1325,17 @@ void CQuery_Related_Base::ResetDb(void)
 
 void CQuery_Related_Base::ResetItems(void)
 {
-    m_Items.Reset();
+    (*m_Items).Reset();
+}
+
+const CQuery_Related_Base::TItems& CQuery_Related_Base::GetItems(void) const
+{
+    return (*m_Items);
+}
+
+void CQuery_Related_Base::SetItems(TItems& value)
+{
+    m_Items.Reset(&value);
 }
 
 void CQuery_Related_Base::Reset(void)
@@ -1263,26 +1346,20 @@ void CQuery_Related_Base::Reset(void)
     ResetItems();
 }
 
-void CQuery_Related_Base::DoNotDeleteThisObject(void)
-{
-    CObject::DoNotDeleteThisObject();
-    m_Base.DoNotDeleteThisObject();
-    m_Items.DoNotDeleteThisObject();
-}
-
 BEGIN_NAMED_BASE_CLASS_INFO("Query-Related", CQuery_Related)
 {
     SET_CLASS_MODULE("NCBI-Env");
-    ADD_NAMED_MEMBER("base", m_Base, CLASS, (CQuery_Command));
+    ADD_NAMED_REF_MEMBER("base", m_Base, CQuery_Command);
     ADD_NAMED_STD_MEMBER("relation", m_Relation);
     ADD_NAMED_STD_MEMBER("db", m_Db);
-    ADD_NAMED_MEMBER("items", m_Items, CLASS, (C_Items));
+    ADD_NAMED_REF_MEMBER("items", m_Items, C_Items);
     info->RandomOrder();
 }
 END_CLASS_INFO
 
 // constructor
 CQuery_Related_Base::CQuery_Related_Base(void)
+    : m_Base(new CQuery_Command()), m_Items(new C_Items())
 {
 }
 
@@ -1436,6 +1513,7 @@ CQuery_Search_Base::~CQuery_Search_Base(void)
 
 // generated includes
 #include <Query_Select.hpp>
+#include <Item_Set.hpp>
 
 // generated classes
 
@@ -1446,7 +1524,17 @@ void CQuery_Select_Base::ResetDb(void)
 
 void CQuery_Select_Base::ResetItems(void)
 {
-    m_Items.Reset();
+    (*m_Items).Reset();
+}
+
+const CQuery_Select_Base::TItems& CQuery_Select_Base::GetItems(void) const
+{
+    return (*m_Items);
+}
+
+void CQuery_Select_Base::SetItems(TItems& value)
+{
+    m_Items.Reset(&value);
 }
 
 void CQuery_Select_Base::Reset(void)
@@ -1455,23 +1543,18 @@ void CQuery_Select_Base::Reset(void)
     ResetItems();
 }
 
-void CQuery_Select_Base::DoNotDeleteThisObject(void)
-{
-    CObject::DoNotDeleteThisObject();
-    m_Items.DoNotDeleteThisObject();
-}
-
 BEGIN_NAMED_BASE_CLASS_INFO("Query-Select", CQuery_Select)
 {
     SET_CLASS_MODULE("NCBI-Env");
     ADD_NAMED_STD_MEMBER("db", m_Db);
-    ADD_NAMED_MEMBER("items", m_Items, CLASS, (CItem_Set));
+    ADD_NAMED_REF_MEMBER("items", m_Items, CItem_Set);
     info->RandomOrder();
 }
 END_CLASS_INFO
 
 // constructor
 CQuery_Select_Base::CQuery_Select_Base(void)
+    : m_Items(new CItem_Set())
 {
 }
 
@@ -1588,9 +1671,9 @@ CTime_Base::TFull& CTime_Base::SetFull(void)
     return *static_cast<TFull*>(m_object);
 }
 
-void CTime_Base::SetFull(const NCBI_NS_NCBI::CRef<TFull>& ref)
+void CTime_Base::SetFull(const TFull& value)
 {
-    TFull* ptr = const_cast<TFull*>(&*ref);
+    TFull* ptr = const_cast<TFull*>(&value);
     if ( m_choice != e_Full || m_object != ptr ) {
         Reset();
         (m_object = ptr)->AddReference();

@@ -52,9 +52,9 @@ class CQuery_History;
 
 // generated classes
 
-class CWeb_Env_Base : public ncbi::CObject
+class CWeb_Env_Base : public ncbi::CSerialObject
 {
-    typedef ncbi::CObject Tparent;
+    typedef ncbi::CSerialObject Tparent;
 public:
     // constructor
     CWeb_Env_Base(void);
