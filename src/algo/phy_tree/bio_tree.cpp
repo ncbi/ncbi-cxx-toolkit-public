@@ -36,6 +36,11 @@
 
 BEGIN_NCBI_SCOPE
 
+IBioTreeNode::~IBioTreeNode()
+{}
+
+
+
 CBioTreeFeatureList::CBioTreeFeatureList()
 {
 }
@@ -163,6 +168,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/10 15:46:35  kuznets
+ * Minor changes.
+ *
  * Revision 1.1  2004/04/06 17:58:31  kuznets
  * Initial revision
  *
