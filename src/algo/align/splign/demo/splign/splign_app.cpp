@@ -47,6 +47,7 @@
 #include <objmgr/scope.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <algo/blast/api/bl2seq.hpp>
 
@@ -500,13 +501,19 @@ int CSplignApp::Run()
   while(x_GetNextPair(hit_stream.get(), &hits) ) {
 
     if(hits.size() == 0) {
-      continue;
+        continue;
     }
 
     const string query (hits[0].m_Query);
-    CConstRef<CSeq_id> seqid_query (new CSeq_id (query));
+    CRef<CSeq_id> seqid_query (new CSeq_id (query));
+    if (seqid_query->Which() == CSeq_id::e_not_set) {
+        seqid_query->SetLocal().SetStr(query);
+    }
     const string subj (hits[0].m_Subj);
-    CConstRef<CSeq_id> seqid_subj (new CSeq_id (subj));
+    CRef<CSeq_id> seqid_subj (new CSeq_id (subj));
+    if (seqid_subj->Which() == CSeq_id::e_not_set) {
+        seqid_subj->SetLocal().SetStr(subj);
+    }
     formatter.SetSeqIds(seqid_query, seqid_subj);
 
     const string strand = args["strand"].AsString();
@@ -549,7 +556,7 @@ int CSplignApp::Run()
         mid = max(mid_plus, mid_minus);
     }
 
-    cout << formatter.AsText(&splign_results);
+    cout << formatter.AsText(&splign_results) << flush;
 
     if(asn_ofs.get()) {
 
@@ -653,6 +660,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/01/31 13:45:19  kapustin
+ * Enforce local seq-id if type not recognized
+ *
  * Revision 1.33  2005/01/03 22:47:35  kapustin
  * Implement seq-ids with CSeq_id instead of generic strings
  *
