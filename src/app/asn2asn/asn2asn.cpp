@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/10/17 18:46:25  vasilche
+* Added print usage to asn2asn
+* Remove unnecessary warning about missing config file.
+*
 * Revision 1.25  2000/10/13 16:29:40  vasilche
 * Fixed processing of optional -o argument.
 *
@@ -111,12 +115,17 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbienv.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
 
+// CSEQ_ENTRY_REF_CHOICE macro to switch implementation of CSeq_entry choice
+// as choice class or virtual base class.
+// 0 -> generated choice class
+// 1 -> virtual base class
 #define CSEQ_ENTRY_REF_CHOICE 0
 
 #if CSEQ_ENTRY_REF_CHOICE
@@ -171,7 +180,7 @@ typedef CSeq_entry TSeqEntry;
 
 int main(int argc, char** argv)
 {
-    return CAsn2Asn().AppMain(argc, argv);
+    return CAsn2Asn().AppMain(argc, argv, 0, eDS_Default, 0, "asn2asn");
 }
 
 static
@@ -244,6 +253,17 @@ int CAsn2Asn::Run(void)
         argDesc.AddFlag("oh", "Use write hooks");
 
         args.reset(argDesc.CreateArgs(GetArguments()));
+        try {
+            args.reset(argDesc.CreateArgs(GetArguments()));
+        }
+        catch (exception & e ) {
+            NcbiCerr << e.what() << NcbiEndl;
+            argDesc.SetUsageContext(GetArguments().GetProgramName(),
+                                    "Test program");
+            string s;
+            NcbiCerr << argDesc.PrintUsage(s);
+            return -1;
+        }
     }
 
     if ( args->IsProvided("l") )
