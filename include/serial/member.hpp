@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/06/15 19:26:33  vasilche
+* Fixed compilation error on Mac.
+*
 * Revision 1.8  2000/04/28 16:58:01  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -74,6 +77,7 @@
 #include <serial/serialdef.hpp>
 #include <serial/typeref.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/delaybuf.hpp>
 
 BEGIN_NCBI_SCOPE
 
