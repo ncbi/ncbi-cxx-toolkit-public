@@ -6,6 +6,21 @@
 # By Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #############################################################################
 
+
+if test -z "$1" ; then
+cat << EOF
+USAGE: Go to the root c++ directory and run:
+  ./compilers/`basename $0` build_dir [--without-debug] [--without-fastcgi]
+
+  build_dir           - name of the target build directory(e.g. just ".")
+  --without-debug     - to build the release versions of libs and apps
+  --without-fastcgi   - to explicitely prohibit the use of Fast-CGI library
+EOF
+
+exit 1
+fi
+
+
 USR_BUILD_DIR="$1"
 DEF_BUILD_DIR="."
 
