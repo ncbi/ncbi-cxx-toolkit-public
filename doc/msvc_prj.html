@@ -108,9 +108,9 @@ No explicit call to this script is ever necessary: it is entirely internal to CV
 <b><i>Additional</i></b> functionality has been added to this script: if it detects that the file being committed
 contains paths either to standard NCBI C Toolkit include files/libraries, or wxWindows include files/libraries,
 then the paths are expanded to specify both relative (i.e. local) and absolute (i.e. via
-<tt><font color="navy">\\DIZZY\public</font></tt>) locations, thus making possible to build
+<tt><font color="navy">\\DIZZY\public\ncbi</font></tt>) locations, thus making possible to build
 the project using either local or pre-built libraries. We require that if a toolkit is used locally (i.e. <b><i>not</i></b> via
-<tt><font color="navy">\\DIZZY\public</font></tt>), then the upper-level directory of the toolkit has to be placed
+<tt><font color="navy">\\DIZZY\public\ncbi</font></tt>), then the upper-level directory of the toolkit has to be placed
 at the same level as the NCBI C++ Toolkit top-level directory. We reserve that <tt>wxwin</tt> and <tt>ncbi</tt> subdirectories, when appear in the same parent directory as <tt>cxx</tt>, contain wxWindows and NCBI C Toolkit correspondingly.
 Click <a href="config.html#ref_MsvcProjWxwin">here</a> to know how to use the wxWindows package in these requirements.
 One can later remove absolute references to <tt><font color="navy">\\DIZZY\</font></tt> using option

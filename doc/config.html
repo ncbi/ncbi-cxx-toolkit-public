@@ -1559,14 +1559,20 @@ there are pre-built libraries located at:
 <ul>
 	<li> <i>\\dizzy\public\cxx\<b>ReleaseMT</b></i> -- statically linked against standard Microsoft run-time library,
 	MT-safe versions
+	<li> <i>\\dizzy\public\cxx\<b>Release</b></i> -- statically linked against standard Microsoft run-time library,
+	<emph>not</emph> MT-safe versions
 	<li> <i>\\dizzy\public\cxx\<b>DebugMT</b></i> -- statically linked against standard Microsoft run-time library,
 	MT-safe versions with debug information preserved
+	<li> <i>\\dizzy\public\cxx\<b>Debug</b></i> -- statically linked against standard Microsoft run-time library,
+	<emph>not</emph> MT-safe versions with debug information preserved
 </ul>
 along with the header and source files at:
 <ul>
   <li> <i>\\dizzy\public\cxx\<b>include</b></i>
   <li> <i>\\dizzy\public\cxx\<b>src</b></i>
 </ul>
+There is a "one-blob" Toolkit source directory, <i>\\dizzy\public\cxx\<b>altsrc</b></i>, which is primarily
+needed for debugging a program linked against pre-compiled Toolkit libraries.
 <p>
 
 The recommended way to refer to the include file directory is to put <i>\\dizzy\public\cxx\<b>include</b></i>
@@ -1576,8 +1582,8 @@ in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor
 You have to specify the used library name(s) in <i>"Project"/"Settings..."</i>, tab <i>"Link"</i>,
 category <i>"Input"</i>, list <i>"Object/Library modules"</i>.
 <br>
-You also have to put the correct path to the libraries (either <i>\\dizzy\public\cxx\<b>ReleaseMT</b></i>
-or <i>\\dizzy\public\cxx\<b>DebugMT</b></i>, according to the configuration you are tuning)
+You also have to put the correct path to the libraries (either <i>\\dizzy\public\cxx\<b>ReleaseMT</b></i>,
+<i>\\dizzy\public\cxx\<b>DebugMT</b></i> etc, according to the configuration you are tuning)
 in the field <i>"Additional library path"</i>.
 <p>
 No further configuration is necessary unless you want to trace and/or debug library sources.
@@ -1585,8 +1591,8 @@ Moreover, if one of <a href="msvc_prj.html#scripts">conversion scripts</a> is th
 the proper links to required versions of the libraries are automatically maintained according to a chosen configuration.
 <p>
 If, however, you need to trace through the library source code, then you have to put
-<i>\\dizzy\public\cxx\<b>src</b></i> to <i>"Tools"/"Options..."</i>, tab <i>"Directories"</i>,
-list <i>"Source files"</i>.
+<i>\\dizzy\public\cxx\<b>src</b></i>, or sometimes <i>\\dizzy\public\cxx\<b>altsrc</b></i> to
+<i>"Tools"/"Options..."</i>, tab <i>"Directories"</i>, list <i>"Source files"</i>.
 <p>
 In either case, don't forget to provide the right <a href="#ref_MsvcProjSettings">settings</a> for your project
 to make sure that it is built compatible with the chosen NCBI C++ libraries.
@@ -1699,7 +1705,7 @@ to make sure that it is built compatible with the chosen libraries.
 <h4>Using NCBI C Toolkit</h4>
 
 <p>
-There are projects (such as <b>tool</b>, <b>xasn</b> and <b>xhist</b>) that engage the
+There are projects (such as <b>ctools</b>, <b>xasn</b> etc) that engage the
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/ncbi_toolbox/README.htm">NCBI C Toolkit</a>.
 To build these, you have to have the NCBI C Toolkit libraries and
 header files accessible from your PC, and you must specify path to them:
@@ -1713,15 +1719,19 @@ list <i>"Additional include directories"</i>.
 </ol>
 For example, here are the paths to the automatically built C Toolkit:
 <ul>
-  <li> <i>\\dizzy\public\<b>include</b></i>
-  <li> <i>\\dizzy\public\<b>altsrc</b></i>
-  <li> <i>\\dizzy\public\<b>lib</b></i>
-  <li> <i>\\dizzy\public\<b>dbglib</b></i>
+  <li> <i>\\dizzy\public\ncbi\<b>include</b></i>
+  <li> <i>\\dizzy\public\ncbi\<b>altsrc</b></i>
+  <li> <i>\\dizzy\public\ncbi\<b>ReleaseMT</b></i>
+  <li> <i>\\dizzy\public\ncbi\<b>Release</b></i>
+  <li> <i>\\dizzy\public\ncbi<b>DebugMT</b></i>
+  <li> <i>\\dizzy\public\ncbi<b>Debug</b></i>
+  <li> <i>\\dizzy\public\ncbi<b>src</b></i>
 </ul>
 
-From now on, we maintain copies of production libraries (<b>lib</b>) in <i>\\dizzy\public\<b>ReleaseMT</b></i>, and
-copies of debug libraries (<b>dbglib</b>) in <i>\\dizzy\public\<b>DebugMT</b></i>, and it's better to use exactly
-these directories the same way, as explained earlier in <a href="#ref_MsvcProjCXX">"How to use pre-built NCBI C++ libraries"</a>.
+For backward compatibility we maintain copies of production MT-safe libraries (<b>ReleaseMT</b>) in <i>\\dizzy\public\<b>lib</b></i>,
+and copies of MT-safe debug libraries (<b>DebugMT</b>) in <i>\\dizzy\public\<b>dbglib</b></i>. The use of there
+"historically kept" directories is deprecated, and all new projects have to refer to the new names from the list
+above precisely the same way, as explained earlier in <a href="#ref_MsvcProjCXX">"How to use pre-built NCBI C++ libraries"</a>.
 For convenience and uniformity, a copy of the source code directory (<b>altsrc</b>) is now maintained in
 <i>\\dizzy\public\<b>src</b></i>.
 <p>
@@ -1729,9 +1739,8 @@ As in case with <a href="#refWxwinPaths">wxWindows</a> library, if the project t
 is using the NCBI C Toolkit, then the include files and libraries are referred by means of both
 relative and absolute paths. If you are going to use your local copy of the NCBI C Toolkit, then
 place it in directory <tt>ncbi</tt>, which must reside in the same directory, where the C++ Toolkit does
-(i.e. <tt>ncbi</tt> and <tt>cxx</tt> subdirectories must appear in the same parent directory). Then, you have to copy the C Toolkit libraries to either
-<tt>ncbi/ReleaseMT</tt> or <tt>ncbi/DebugMT</tt>
-subdirectories (according to the configuration used).
+(i.e. <tt>ncbi</tt> and <tt>cxx</tt> subdirectories must appear in the same parent directory). Then, you have to copy the C Toolkit
+libraries to one of <tt>ncbi/ReleaseMT</tt>, <tt>ncbi/DebugMT</tt> etc subdirectories (according to the configuration used).
 Again, if a project file is being commited to the CVS and found to use the NCBI C Toolkit (either
 locally, or via <tt>\\DIZZY\</tt>), then the project <a href="msvc_prj.html#commit_sh">automatically</a> gets
 both paths (relative and absolute) for both include files and libraries.
