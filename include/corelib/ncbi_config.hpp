@@ -72,7 +72,7 @@ public:
 
 
 
-class CNcbiRegistry;
+class IRegistry;
 
 class NCBI_XNCBI_EXPORT CConfig
 {
@@ -93,7 +93,7 @@ public:
     CConfig(const TParamTree* param_tree);
 
     /// Take registry and create a config tree out of it
-    CConfig(const CNcbiRegistry& reg);
+    CConfig(const IRegistry& reg);
     ~CConfig();
 
     /// Defines how to behave when parameter is missing
@@ -189,7 +189,7 @@ public:
     ///     Application registry (loaded from the INI file)
     /// @return 
     ///     Reconstructed tree (caller is responsible for deletion)
-    static TParamTree* ConvertRegToTree(const CNcbiRegistry&  reg);
+    static TParamTree* ConvertRegToTree(const IRegistry&  reg);
 
 private:
     CConfig(const CConfig&);
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/12/20 16:43:10  ucko
+ * Accept any IRegistry rather than specifically requiring a CNcbiRegistry.
+ *
  * Revision 1.8  2004/10/15 12:01:31  ivanov
  * Changed return type for CConfig::GetDataSize to Uint8.
  * Some cosmetics.

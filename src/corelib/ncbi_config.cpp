@@ -46,12 +46,12 @@ BEGIN_NCBI_SCOPE
 
 /// @internal
 static
-void s_ParamTree_ConvertSubNodes(const CNcbiRegistry&  reg,
+void s_ParamTree_ConvertSubNodes(const IRegistry&      reg,
                                  const list<string>&   sub_nodes,
                                  CConfig::TParamTree*  node);
 /// @internal
 static
-void s_ParamTree_SplitConvertSubNodes(const CNcbiRegistry&  reg,
+void s_ParamTree_SplitConvertSubNodes(const IRegistry&      reg,
                                       const string&         sub_nodes,
                                       CConfig::TParamTree*  node);
 
@@ -86,7 +86,7 @@ bool s_IsSubNode(const string& str)
 
 /// @internal
 static
-void s_GetSubNodes(const CNcbiRegistry&  reg, 
+void s_GetSubNodes(const IRegistry&      reg, 
                    const string&         section, 
                    set<string>*          dst)
 {
@@ -105,9 +105,9 @@ void s_GetSubNodes(const CNcbiRegistry&  reg,
 
 /// @internal
 static
-void s_ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
-                              const string&             sub_node_name,
-                              CConfig::TParamTree*               node)
+void s_ParamTree_ConvertSubNode(const IRegistry&      reg,
+                                const string&         sub_node_name,
+                                CConfig::TParamTree*  node)
 {
     const string& section_name = sub_node_name;
     const string& alias_name = reg.Get(section_name, kNodeName);
@@ -161,7 +161,7 @@ void s_ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
 
 /// @internal
 static
-void s_ParamTree_SplitConvertSubNodes(const CNcbiRegistry&  reg,
+void s_ParamTree_SplitConvertSubNodes(const IRegistry&      reg,
                                       const string&         sub_nodes,
                                       CConfig::TParamTree*  node)
 {
@@ -173,7 +173,7 @@ void s_ParamTree_SplitConvertSubNodes(const CNcbiRegistry&  reg,
 
 /// @internal
 static
-void s_ParamTree_ConvertSubNodes(const CNcbiRegistry&  reg,
+void s_ParamTree_ConvertSubNodes(const IRegistry&      reg,
                                  const list<string>&   sub_nodes,
                                  CConfig::TParamTree*  node)
 {
@@ -184,7 +184,7 @@ void s_ParamTree_ConvertSubNodes(const CNcbiRegistry&  reg,
     }
 }
 
-CConfig::TParamTree* CConfig::ConvertRegToTree(const CNcbiRegistry& reg)
+CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
 {
     auto_ptr<TParamTree> tree_root(new TParamTree);
 
@@ -253,7 +253,7 @@ CConfig::CConfig(TParamTree* param_tree, EOwnership own)
 }
 
 
-CConfig::CConfig(const CNcbiRegistry& reg)
+CConfig::CConfig(const IRegistry& reg)
 {
     m_ParamTree = ConvertRegToTree(reg);
     _ASSERT(m_ParamTree);
@@ -406,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/12/20 16:43:16  ucko
+ * Accept any IRegistry rather than specifically requiring a CNcbiRegistry.
+ *
  * Revision 1.9  2004/10/15 12:01:51  ivanov
  * Changed return type for CConfig::GetDataSize to Uint8.
  * Added 's_' to names of local static functions.

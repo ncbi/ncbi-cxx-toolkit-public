@@ -68,7 +68,7 @@ public:
 				map<string, string> *attr = 0);
 
     class IDataSource* CreateDsFrom(const string& drivers,
-				    CNcbiRegistry* reg = 0);
+				    const IRegistry* reg = 0);
 
     // Destroy datasource object
     void DestroyDs(const string& driver_name);
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/12/20 16:45:27  ucko
+ * Accept any IRegistry rather than specifically requiring a CNcbiRegistry.
+ *
  * Revision 1.7  2004/04/22 11:28:41  ivanov
  * Use pointer to driver manager instance instead auto_ptr
  *
