@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/11/27 17:14:51  kholodov
+* Modified: CToMulitExHandler definition moved to err_handler.hpp.
+*
 * Revision 1.5  2002/09/30 19:16:27  kholodov
 * Added: public GetHandler() method
 *
@@ -107,26 +110,6 @@ private:
     I_DriverContext *m_context;
     bool m_poolUsed;
     class CToMultiExHandler *m_multiExH;
-};
-
-//=================================================================
-// 
-class CToMultiExHandler : public CDB_UserHandler
-{
-public:
-    CToMultiExHandler();
-    virtual ~CToMultiExHandler();
-
-    // Return TRUE (i.e. always process the "ex").
-    virtual bool HandleIt(CDB_Exception* ex);
-    
-    CDB_MultiEx* GetMultiEx() {
-        return m_ex;
-    }
-
-private:
-    bool m_parse;
-    CDB_MultiEx *m_ex;
 };
 
 //====================================================================
