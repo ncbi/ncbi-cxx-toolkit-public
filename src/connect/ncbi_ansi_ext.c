@@ -125,11 +125,11 @@ extern char* strncpy0(char* s1, const char* s2, size_t n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2002/10/28 18:55:26  lavr
+ * Fix change log to remove duplicate log entry for R6.12
+ *
  * Revision 6.12  2002/10/28 18:52:07  lavr
  * Conditionalize definitions of strdup() and str[n]casecmp()
- *
- * Revision 6.12  2002/10/28 18:50:40  lavr
- * Conditionalize definition of strdup() and str[n]casecmp()
  *
  * Revision 6.11  2002/10/28 15:41:56  lavr
  * Use "ncbi_ansi_ext.h" privately
