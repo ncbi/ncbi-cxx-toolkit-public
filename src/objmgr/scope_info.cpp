@@ -154,12 +154,36 @@ CSeq_id_ScopeInfo::ClearCacheOnNewData(void)
 }
 */
 
+SSeq_id_ScopeInfo::SSeq_id_ScopeInfo(void)
+{
+}
+
+SSeq_id_ScopeInfo::~SSeq_id_ScopeInfo(void)
+{
+}
+
+SSeq_id_ScopeInfo::SSeq_id_ScopeInfo(const SSeq_id_ScopeInfo& info)
+: m_Bioseq_Info(info.m_Bioseq_Info), m_AnnotRef_Info(info.m_AnnotRef_Info)
+{
+}
+
+
+const SSeq_id_ScopeInfo& SSeq_id_ScopeInfo::operator=(const SSeq_id_ScopeInfo& info)
+{
+    m_Bioseq_Info = info.m_Bioseq_Info;
+    m_AnnotRef_Info = info.m_AnnotRef_Info;
+    return *this;
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/06/19 19:08:55  vasilche
+* Added explicit constructor/destructor.
+*
 * Revision 1.1  2003/06/19 18:23:46  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
