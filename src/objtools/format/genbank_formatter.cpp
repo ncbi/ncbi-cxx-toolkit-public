@@ -205,12 +205,16 @@ void CGenbankFormatter::FormatVersion
     list<string> l;
     CNcbiOstrstream version_line;
 
-    version_line << version.GetAccession();
-    if ( version.GetGi() > 0 ) {
-        version_line << "  GI:" << version.GetGi();
+    if ( version.GetAccession().empty() ) {
+        l.push_back("VERSION");
+    } else {
+        version_line << version.GetAccession();
+        if ( version.GetGi() > 0 ) {
+            version_line << "  GI:" << version.GetGi();
+        }
+        Wrap(l, GetWidth(), "VERSION", CNcbiOstrstreamToString(version_line));
     }
 
-    Wrap(l, GetWidth(), "VERSION", CNcbiOstrstreamToString(version_line));
     text_os.AddParagraph(l);
 }
 
@@ -729,6 +733,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/10 21:29:01  shomrat
+* Fix VERSION formatting when empty
+*
 * Revision 1.7  2004/03/05 18:46:05  shomrat
 * fixed formatting of empty qualifier
 *
