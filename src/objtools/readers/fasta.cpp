@@ -291,7 +291,7 @@ static void s_GuessMol(CSeq_inst::EMol& mol, const string& data,
 
 
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
-                           int* counter, vector<CRef<CSeq_loc> >* lcv)
+                           int* counter, vector<CConstRef<CSeq_loc> >* lcv)
 {
     CRef<CSeq_entry>       entry(new CSeq_entry);
     CBioseq_set::TSeq_set& sset  = entry->SetSet().SetSeq_set();
@@ -505,6 +505,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/08/08 21:29:12  dondosha
+* Changed type of lcase_mask in ReadFasta to vector of CConstRefs
+*
 * Revision 1.5  2003/08/07 21:13:21  ucko
 * Support a counter for assigning local IDs to sequences with no ID given.
 * Fix some minor bugs in lowercase-character support.
