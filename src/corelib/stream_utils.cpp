@@ -41,12 +41,19 @@
 BEGIN_NCBI_SCOPE
 
 
+#ifdef NCBI_COMPILER_MIPSPRO
+#  define CPushback_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
+#else
+#  define CPushback_StreambufBase CNcbiStreambuf
+#endif/*NCBI_COMPILER_MIPSPRO*/
+
+
 /*****************************************************************************
  *  Helper class: internal streambuf to be substituted instead of
  *  the original one in the stream, when the data are pushed back.
  */
 
-class CPushback_Streambuf : public CNcbiStreambuf
+class CPushback_Streambuf : public CPushback_StreambufBase
 {
     friend struct CStreamUtils;
 
@@ -187,6 +194,12 @@ CT_INT_TYPE CPushback_Streambuf::underflow(void)
 {
     // we are here because there is no more data in the pushback buffer
     _ASSERT(!gptr()  ||  gptr() >= egptr());
+
+#ifdef NCBI_COMPILER_MIPSPRO
+    if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
+        return CT_EOF;
+    m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1L);
+#endif
 
     x_FillBuffer();
     if (gptr() < egptr())
@@ -385,8 +398,10 @@ static streamsize s_Readsome(CNcbiIstream& is,
 #elif defined(NCBI_COMPILER_MIPSPRO)
     /* MIPSPro does not comply with the standard and always checks for EOF
      * doing one extra read from the stream [which might be a killing idea
-     * for network connections]. We introduced an ugly workaround here... */
-    //#  define NCBI_NO_READSOME 1
+     * for network connections]. We introduced an ugly workaround here...
+     * Don't use istream::readsome() but istream::read() instead in order to be
+     * able to clear fake EOF caused by the unnecessary underflow() upcall.*/
+#  define NCBI_NO_READSOME 1
 #endif /*NCBI_COMPILER*/
 
 #ifdef NCBI_NO_READSOME
@@ -444,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.29  2003/11/04 13:39:01  lavr
+ * CPushback_Streambuf is conditioanally specially based on MIPSPro
+ *
  * Revision 1.28  2003/11/03 20:05:11  lavr
  * CStreamUtils::Readsome() reorganized: s_Readsome() introduced.
  * Add and elaborate notes about I/O on MSVC and MIPSPro.
