@@ -350,6 +350,10 @@ Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list,
  */
 void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset);
 
+/** Sort the HSPs in an HSP list by diagonal and remove redundant HSPs. */
+Int2
+Blast_HSPListUniqSort(BlastHSPList* hsp_list);
+
 /********************************************************************************
           HitList API.
 ********************************************************************************/
