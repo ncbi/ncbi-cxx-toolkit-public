@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:35  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:26  vasilche
 * Commit just in case.
 *
@@ -41,20 +44,34 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/objlist.hpp>
+#include <map>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectList
+class CClassInfoTmpl;
+
+class COClassInfo
 {
 public:
-    typedef CTypeInfo::TConstObjectPtr TConstObjectPtr;
+    typedef unsigned TIndex;
     typedef CTypeInfo::TTypeInfo TTypeInfo;
 
-    // add object to object list
-    // return true if object is new
-    // return false if object was already added
-    // may throw an exception if there is error in objects placements
-    bool Add(TConstObjectPtr, TTypeInfo);
+    COClassInfo(void)
+        : m_Index(-1), m_TypeInfo(0), m_StreamDefinition(0)
+        { }
+
+    bool IsWritten(void) const
+        { return m_StreamDefinition != 0; }
+    TIndex GetIndex(void) const
+        { return m_Index; }
+    TTypeInfo GetTypeInfo(void) const
+        { return m_TypeInfo; }
+private:
+    TIndex m_Index;
+    TTypeInfo m_TypeInfo;
+    void* m_StreamDefinition;
 };
 
 class CObjectOStream
@@ -63,25 +80,48 @@ public:
     typedef void* TObjectPtr;
     typedef const void* TConstObjectPtr;
     typedef const CTypeInfo* TTypeInfo;
+    typedef unsigned TIndex;
 
-    struct CObjectInfo
-    {
-        offset_t m_Id;
-        TTypeInfo m_TypeInfo;
-    };
+    virtual ~CObjectOStream(void);
 
     // root writer
     void Write(TConstObjectPtr object, TTypeInfo typeInfo);
 
     // std C types readers
-#define PROCESS_STD_TYPE(TYPE) virtual void WriteStd(const TYPE& data) = 0;
-    FOR_ALL_STD_TYPES
-#undef PROCESS_STD_TYPE
+    virtual void WriteStd(const char& data) = 0;
+    virtual void WriteStd(const unsigned char& data) = 0;
+    virtual void WriteStd(const signed char& data) = 0;
+    virtual void WriteStd(const short& data) = 0;
+    virtual void WriteStd(const unsigned short& data) = 0;
+    virtual void WriteStd(const int& data) = 0;
+    virtual void WriteStd(const unsigned int& data) = 0;
+    virtual void WriteStd(const long& data) = 0;
+    virtual void WriteStd(const unsigned long& data) = 0;
+    virtual void WriteStd(const float& data) = 0;
+    virtual void WriteStd(const double& data) = 0;
     virtual void WriteStd(const string& data) = 0;
+    virtual void WriteStd(char* const& data) = 0;
+    virtual void WriteStd(const char* const& data) = 0;
+
+    // object level writers
+    // type info writers
+    virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo) = 0;
+    // write object content
+    virtual void WriteObject(TConstObjectPtr object,
+                             const CClassInfoTmpl* typeInfo) = 0;
+
+    virtual void WriteTypeInfo(TTypeInfo typeInfo) = 0;
+    virtual void WriteClassInfo(TTypeInfo typeInfo) = 0;
+    virtual void WriteTemplateInfo(const string& name, TTypeInfo tmpl,
+                                   TTypeInfo arg) = 0;
+    virtual void WriteTemplateInfo(const string& name, TTypeInfo tmpl,
+                                   TTypeInfo arg1, TTypeInfo arg2) = 0;
+    virtual void WriteTemplateInfo(const string& name, TTypeInfo tmpl,
+                                   const vector<TTypeInfo>& args) = 0;
 
     // block interface
     class Block;
-    virtual void Begin(Block& block, bool tmpl);
+    virtual void Begin(Block& block, unsigned count, bool tmpl);
     virtual void Next(Block& block);
     virtual void End(Block& block);
     class Block
@@ -90,7 +130,7 @@ public:
         Block(CObjectOStream& out, unsigned count, bool tmpl = false)
             : m_Out(out), m_Count(count)
             {
-                m_Out.Begin(*this, tmpl);
+                m_Out.Begin(*this, count, tmpl);
             }
         void Next(void)
             {
@@ -105,28 +145,27 @@ public:
                     throw runtime_error("3");
                 m_Out.End(*this);
             }
+
+        unsigned GetCount(void) const
+            {
+                return m_Count;
+            }
+
     private:
         CObjectOStream& m_Out;
         unsigned m_Count;
     };
+    
+    COClassInfo* GetRegisteredClass(TTypeInfo typeInfo) const;
+    virtual void RegisterClass(TTypeInfo typeInfo);
 
 protected:
-    // object level writers
-    // type info writers
-    virtual void WriteTypeInfo(TTypeInfo typeInfo);
-    virtual void WriteClassInfo(const string& name);
-    virtual void WriteTemplateInfo(const string& name, TTypeInfo arg);
-    virtual void WriteTemplateInfo(const string& name,
-                                   TTypeInfo arg1, TTypeInfo arg2);
-
-    // write object content
-    void WriteObjectData(TConstObjectPtr object, TTypeInfo typeInfo);
-    // write object reference
-    void WriteObject(TConstObjectPtr object, TTypeInfo typeInfo);
-
     // low level writers
-    virtual void WriteString(const string& str);
+    virtual void WriteString(const string& str) = 0;
     virtual void WriteId(const string& id);
+
+    COObjectList m_Objects;
+    map<TTypeInfo, COClassInfo> m_Classes;
 };
 
 //#include <serial/objostr.inl>

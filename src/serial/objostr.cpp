@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:47  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:54  vasilche
 * Commit just in case.
 *
@@ -37,10 +40,47 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <objostr.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objlist.hpp>
 
 BEGIN_NCBI_SCOPE
 
+CObjectOStream::~CObjectOStream(void)
+{
+}
 
+void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
+{
+    typeInfo->CollectObjects(m_Objects, object);
+    typeInfo->WriteData(*this, object);
+    m_Objects.CheckAllWritten();
+}
+
+void CObjectOStream::WriteId(const string& id)
+{
+    WriteString(id);
+}
+
+void CObjectOStream::Begin(Block& , unsigned , bool )
+{
+}
+
+void CObjectOStream::Next(Block& )
+{
+}
+
+void CObjectOStream::End(Block& )
+{
+}
+
+void CObjectOStream::RegisterClass(TTypeInfo )
+{
+    throw runtime_error("not implemented");
+}
+
+COClassInfo* CObjectOStream::GetRegisteredClass(TTypeInfo ) const
+{
+    throw runtime_error("not implemented");
+}
 
 END_NCBI_SCOPE

@@ -1,6 +1,3 @@
-#ifndef OBJSTRB__HPP
-#define OBJSTRB__HPP
-
 /*  $Id$
 * ===========================================================================
 *
@@ -33,46 +30,49 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/06/04 20:51:36  vasilche
+* Revision 1.1  1999/06/04 20:51:48  vasilche
 * First compilable version of serialization.
-*
-* Revision 1.1  1999/05/19 19:56:27  vasilche
-* Commit just in case.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/ptrinfo.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectStreamBinaryDefs
+size_t CPointerTypeInfo::GetSize(void) const
 {
-public:
-    enum {
-        eNull = 0,
+    return sizeof(void*);
+}
 
-        eStd_char = 0xC0, // char
-        eStd_ubyte,       // unsigned char or any with sizeof() == 1
-        eStd_sbyte,       // signed char or any with sizeof() == 1
-        eStd_uordinal,    // any unsigned
-        eStd_sordinal,    // any signed
-        eStd_string,      // string
-        eStd_float,       // float, double, long double
+CTypeInfo::TObjectPtr CPointerTypeInfo::Create(void) const
+{
+    return new(void*);
+}
 
-        eClass = 0xE0,
-        eClassDefinition,
-        eTemplate,
-        eClassReference,
-        eObject,
-        eObjectReference,
-        eMember,
-        eBlock
-    };
-};
+bool CPointerTypeInfo::IsDefault(TConstObjectPtr object) const
+{
+    return GetObject(object) == 0;
+}
 
-//#include <objstrb.inl>
+void CPointerTypeInfo::CollectObjects(COObjectList& list,
+                                      TConstObjectPtr object) const
+{
+    AddObject(list, GetObject(object), GetRealDataTypeInfo(object));
+}
+
+void CPointerTypeInfo::WriteData(CObjectOStream& out,
+                                 TConstObjectPtr object) const
+{
+    out.WritePointer(GetObject(object), GetRealDataTypeInfo(object));
+}
+
+void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
+{
+    GetObject(object) = in.ReadPointer(GetDataTypeInfo());
+}
 
 END_NCBI_SCOPE
-
-#endif  /* OBJSTRB__HPP */

@@ -1,5 +1,5 @@
-#ifndef OBJSTRB__HPP
-#define OBJSTRB__HPP
+#if defined(OBJLIST__HPP)  &&  !defined(OBJLIST__INL)
+#define OBJLIST__INL
 
 /*  $Id$
 * ===========================================================================
@@ -33,46 +33,17 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/06/04 20:51:36  vasilche
+* Revision 1.1  1999/06/04 20:51:33  vasilche
 * First compilable version of serialization.
-*
-* Revision 1.1  1999/05/19 19:56:27  vasilche
-* Commit just in case.
 *
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CObjectStreamBinaryDefs
+inline
+COObjectInfo::COObjectInfo(const COObjectList& list,
+                           TConstObjectPtr object, TTypeInfo typeInfo)
 {
-public:
-    enum {
-        eNull = 0,
+    list.SetObject(*this, object, typeInfo);
+}
 
-        eStd_char = 0xC0, // char
-        eStd_ubyte,       // unsigned char or any with sizeof() == 1
-        eStd_sbyte,       // signed char or any with sizeof() == 1
-        eStd_uordinal,    // any unsigned
-        eStd_sordinal,    // any signed
-        eStd_string,      // string
-        eStd_float,       // float, double, long double
-
-        eClass = 0xE0,
-        eClassDefinition,
-        eTemplate,
-        eClassReference,
-        eObject,
-        eObjectReference,
-        eMember,
-        eBlock
-    };
-};
-
-//#include <objstrb.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* OBJSTRB__HPP */
+#endif /* def OBJLIST__HPP  &&  ndef OBJLIST__INL */

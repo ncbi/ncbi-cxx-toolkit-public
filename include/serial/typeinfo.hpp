@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:40  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:32  vasilche
 * Commit just in case.
 *
@@ -46,36 +49,56 @@ BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
 class CObjectOStream;
-class CObjectList;
+class COObjectList;
+class CTypeRef;
 
 class CTypeInfo
 {
 public:
     typedef const CTypeInfo* TTypeInfo;
-    typedef map<string, TTypeInfo> TTypes;
     typedef void* TObjectPtr;
     typedef const void* TConstObjectPtr;
 
-    CTypeInfo(const string& name);
-    virtual ~CTypeInfo(void);
-
-    const string& GetName(void) const
+    string GetName(void) const
         { return m_Name; }
 
     // finds type info (throws runtime_error if absent)
-    static TTypeInfo GetTypeInfo(const string& name);
+    static TTypeInfo GetTypeInfoByName(const string& name);
+    static TTypeInfo GetTypeInfoById(const type_info& id);
+    static TTypeInfo GetTypeInfoBy(const type_info& id, void (*creator)(void));
 
     // returns type info of pointer to this type
-    TTypeInfo GetPointerTypeInfo(void) const;
+    static TTypeInfo GetPointerTypeInfo(const type_info& id,
+                                        const CTypeRef& typeRef);
 
     virtual size_t GetSize(void) const = 0;
+
+    static TObjectPtr Add(TObjectPtr object, offset_t offset)
+        { return static_cast<char*>(object) + offset; }
+    static TConstObjectPtr Add(TConstObjectPtr object, offset_t offset)
+        { return static_cast<const char*>(object) + offset; }
+
+    TObjectPtr EndOf(TObjectPtr object) const
+        { return Add(object, GetSize()); }
+    TConstObjectPtr EndOf(TConstObjectPtr object) const
+        { return Add(object, GetSize()); }
 
     // creates object of this type in heap (can be deleted by operator delete)
     virtual TObjectPtr Create(void) const = 0;
 
+    virtual bool IsDefault(TConstObjectPtr object) const;
+
+    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr ) const
+        {
+            return this;
+        }
+
+    virtual ~CTypeInfo(void);
+
 protected:
 
-    virtual CTypeInfo* CreatePointerTypeInfo(void);
+    CTypeInfo(void);
+    CTypeInfo(const type_info& id);
 
     friend class CObjectOStream;
     friend class CObjectIStream;
@@ -84,98 +107,27 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const = 0;
 
     // collect info about all memory chunks for writing
-    static void AddObject(CObjectList& list,
+    virtual void CollectObjects(COObjectList& list,
+                                TConstObjectPtr object) const;
+    static void AddObject(COObjectList& list,
                           TConstObjectPtr object, TTypeInfo typeInfo);
-
-    void CollectObjects(CObjectList& list, TConstObjectPtr object) const
-        {
-            AddObject(list, object, this);
-        }
-
-    virtual void CollectMembers(CObjectList& list, TConstObjectPtr object) const;
 
     // write object
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const = 0;
 
 private:
-    const string m_Name;
+    typedef map<string, TTypeInfo> TTypesByName;
+    typedef map<const type_info*, TTypeInfo> TTypesById;
 
-    mutable auto_ptr<CTypeInfo> m_PointerTypeInfo;
+    const type_info& m_Id;
+    string m_Name;
 
-    static TTypes sm_Types;
+    static TTypesByName* sm_TypesByName;
+    static TTypesById* sm_TypesById;
+
+    static TTypesById& TypesById(void);
+    static TTypesByName& TypesByName(void);
 };
-
-// define type info getter for user classes
-template<typename CLASS>
-inline
-CTypeInfo::TTypeInfo GetTypeInfo(const CLASS& object)
-{
-    return CTypeInfo::GetTypeInfo(typeid(object).name());
-}
-
-class CPointerTypeInfo : public CTypeInfo
-{
-public:
-    CPointerTypeInfo(TTypeInfo dataTypeInfo)
-        : CTypeInfo('*' + dataTypeInfo->GetName()), m_DataTypeInfo(dataTypeInfo)
-        { }
-
-    TTypeInfo GetDataTypeInfo(void) const
-        { return m_DataTypeInfo; }
-
-    virtual size_t GetSize(void) const;
-
-    virtual TObjectPtr Create(void) const;
-
-protected:
-    virtual void CollectMembers(CObjectList& list, TConstObjectPtr object) const;
-
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-    virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
-
-private:
-    const TTypeInfo m_DataTypeInfo;
-};
-
-template<class CLASS>
-class CClassPointerTypeInfo : public CPointerTypeInfo
-{
-public:
-    CClassPointerType(TTypeInfo dataTypeInfo) const
-        : CPointerTypeInfo(dataTypeInfo)
-        {
-        }
-
-protected:
-    virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const
-        {
-            return GetTypeInfo(*static_cast<const CLASS*>(object));
-        }
-};
-
-template<typename CLASS>
-inline
-CTypeInfo::TTypeInfo GetTypeInfo(const CLASS* object)
-{
-    return GetTypeInfo(*object).GetPointerTypeInfo();
-}
-
-// this macro is used to do something for all basic C types
-#define FOR_ALL_STD_TYPES \
-PROCESS_STD_TYPE(char) \
-PROCESS_STD_TYPE(unsigned char) \
-PROCESS_STD_TYPE(signed char) \
-PROCESS_STD_TYPE(short) \
-PROCESS_STD_TYPE(unsigned short) \
-PROCESS_STD_TYPE(int) \
-PROCESS_STD_TYPE(unsigned int) \
-PROCESS_STD_TYPE(long) \
-PROCESS_STD_TYPE(unsigned long) \
-PROCESS_STD_TYPE(float) \
-PROCESS_STD_TYPE(double)
 
 #include <serial/typeinfo.inl>
 

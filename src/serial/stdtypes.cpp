@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:49  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:57  vasilche
 * Commit just in case.
 *
@@ -42,7 +45,5 @@
 #include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
-
-
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:44  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:51  vasilche
 * Commit just in case.
 *
@@ -44,13 +47,20 @@
 BEGIN_NCBI_SCOPE
 
 CClassInfoTmpl::CClassInfoTmpl(const type_info& ti, size_t size,
-                               const type_info& pti, offset_t offset,
                                TObjectPtr (*creator)(void))
-    : CParent(ti.name()), m_Size(size), m_Creator(creator)
+    : CParent(ti), m_Size(size), m_Creator(creator)
 {
-    if ( pti != typeid(void) ) {
-        AddMember(CMemberInfo(offset, GetTypeInfo(pti.name())));
-    }
+    _TRACE(ti.name());
+}
+
+CClassInfoTmpl::CClassInfoTmpl(const type_info& ti, size_t size,
+                               TObjectPtr (*creator)(void),
+                               const CTypeRef& parent, offset_t offset)
+    : CParent(ti), m_Size(size), m_Creator(creator)
+{
+    _TRACE(ti.name());
+    AddMember(CMemberInfo(offset, parent));
+    _TRACE(ti.name());
 }
 
 size_t CClassInfoTmpl::GetSize(void) const
@@ -69,40 +79,25 @@ CClassInfoTmpl* CClassInfoTmpl::AddMember(const CMemberInfo& member)
     if ( m_Members.find(member.GetName()) != m_Members.end() )
         throw runtime_error("duplicated members: " + member.GetName());
 
-    //    m_MembersByOffset.Add(member.GetOffset(), member.GetTypeInfo());
     m_Members[member.GetName()] = member;
-/*
-    offset_t start = member.GetOffset();
-    offset_t end = start + member.GetSize();
-    if ( start > GetSize() || end > GetSize() )
-        throw runtime_error("member expands past end of object");
-
-    TMembersByOffset::iterator prev = m_Members.lower_bound(start);
-    TMembersByOffset::iterator next = m_Members.lower_bound(end);
-    
-    TMembersByOffset::iterator 
-    if ( i == 
-*/
     return this;
 }
 
-void CClassInfoTmpl::CollectMembers(CObjectList& list,
+void CClassInfoTmpl::CollectObjects(COObjectList& list,
                                     TConstObjectPtr object) const
 {
-    AddObject(list, *static_cast<TConstObjectPtr*>(object),
-              GetRealDataTypeInfo(object));
+    AddObject(list, object, this);
 }
 
 void CClassInfoTmpl::WriteData(CObjectOStream& out,
                                TConstObjectPtr object) const
 {
-    out.WriteObject(*static_cast<TConstObjectPtr*>(object),
-                    GetRealDataTypeInfo(object));
+    out.WriteObject(object, this);
 }
 
 void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    *static_cast<TConstObjectPtr*>(object) = in.ReadObject(this);
+    in.ReadObject(object, this);
 }
 
 

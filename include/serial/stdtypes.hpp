@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:38  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:29  vasilche
 * Commit just in case.
 *
@@ -56,12 +59,33 @@ public:
     typedef TYPE TObjectType;
 
     static TObjectType& Get(TObjectPtr object)
-        { return *static_cast<TObjectType*>(object); }
+        {
+            return *static_cast<TObjectType*>(object);
+        }
     static const TObjectType& Get(TConstObjectPtr object)
-        { return *static_cast<const TObjectType*>(object); }
+        {
+            return *static_cast<const TObjectType*>(object);
+        }
 
     virtual size_t GetSize(void) const
-        { return sizeof(TObjectType); }
+        {
+            return sizeof(TObjectType);
+        }
+
+protected:
+    CStdTypeInfoTmpl()
+        : CTypeInfo(typeid(TObjectType))
+        {
+        }
+
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            in.ReadStd(Get(object));
+        }
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
+        {
+            out.WriteStd(Get(object));
+        }
 };
 
 template<class TYPE>
@@ -69,16 +93,19 @@ class CStdTypeInfo : public CStdTypeInfoTmpl<TYPE>
 {
 public:
     virtual TObjectPtr Create(void) const
-        { return new TObjectType(0); }
+        {
+            return new TObjectType(0);
+        }
 
-    static const CStdTypeInfo sm_TypeInfo;
+    static void CreateTypeInfo(void)
+        {
+            new CStdTypeInfo;
+        }
 
-protected:
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        { in.ReadStd(Get(object)); }
-
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const
-        { out.WriteStd(Get(object)); }
+    virtual bool IsDefault(TConstObjectPtr object) const
+        {
+            return Get(object) == TObjectType(0);
+        }
 };
 
 template<>
@@ -91,7 +118,10 @@ public:
     virtual TObjectPtr Create(void) const
         { throw runtime_error("void cannot be created"); }
     
-    static const CStdTypeInfo<void> sm_TypeInfo;
+    static void CreateTypeInfo(void)
+        {
+            new CStdTypeInfo;
+        }
 
 protected:
     virtual void ReadData(CObjectIStream& , TObjectPtr ) const
@@ -99,6 +129,12 @@ protected:
     
     virtual void WriteData(CObjectOStream& , TConstObjectPtr ) const
         { throw runtime_error("void cannot be written"); }
+
+private:
+    CStdTypeInfo(void)
+        : CTypeInfo(typeid(void))
+        {
+        }
 };
 
 template<>
@@ -106,34 +142,20 @@ class CStdTypeInfo<string> : public CStdTypeInfoTmpl<string>
 {
 public:
     virtual TObjectPtr Create(void) const
-        { return new TObjectType(); }
+        {
+            return new TObjectType();
+        }
 
-    static const CStdTypeInfo<string> sm_TypeInfo;
+    static void CreateTypeInfo(void)
+        {
+            new CStdTypeInfo;
+        }
 
-protected:
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        { in.ReadStd(Get(object)); }
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
-        { out.WriteStd(Get(object)); }
+    virtual bool IsDefault(TConstObjectPtr object) const
+        {
+            return Get(object).empty();
+        }
 };
-
-/*
-template<>
-class CStdTypeInfo<char*> : public CStdTypeInfoTmpl<char*>
-{
-public:
-    virtual TObjectPtr Create(void) const
-        { return new TObjectType(0); }
-
-    static const CStdTypeInfo<char*> sm_TypeInfo;
-
-protected:
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        { in.ReadCString(Get(object)); }
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
-        { out.WriteCString(Get(object)); }
-};
-*/
 
 #include <serial/stdtypes.inl>
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:51  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:59  vasilche
 * Commit just in case.
 *
@@ -38,121 +41,130 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/ptrinfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CTypeInfo::CTypeInfo(const string& name)
-    : m_Name(name)
+CTypeInfo::TTypesByName* CTypeInfo::sm_TypesByName = 0;
+CTypeInfo::TTypesById* CTypeInfo::sm_TypesById = 0;
+
+inline
+CTypeInfo::TTypesByName& CTypeInfo::TypesByName(void)
 {
-    if ( !sm_Types.insert(TTypes::value_type(name, this)).second )
-        throw runtime_error("duplicated types: " + name);
+    TTypesByName* types = sm_TypesByName;
+    if ( !types )
+        types = sm_TypesByName = new TTypesByName;
+    return *types;
+}
+
+inline
+CTypeInfo::TTypesById& CTypeInfo::TypesById(void)
+{
+    TTypesById* types = sm_TypesById;
+    if ( !types )
+        types = sm_TypesById = new TTypesById;
+    return *types;
+}
+
+CTypeInfo::CTypeInfo(const type_info& id)
+    : m_Id(id), m_Name(id.name())
+{
+    NcbiCerr << GetName() << endl;
+    if ( !TypesById().insert(TTypesById::value_type(&id, this)).second ) {
+        NcbiCerr << "duplicated types: " << GetName() << endl;
+        throw runtime_error("duplicated types: " + GetName());
+    }
+    if ( !TypesByName().insert(TTypesByName::value_type(GetName(), this)).second ) {
+        NcbiCerr << "duplicated types: " << GetName() << endl;
+        throw runtime_error("duplicated types: " + GetName());
+    }
+    NcbiCerr << "-" << GetName() << endl;
+}
+
+CTypeInfo::CTypeInfo(void)
+    : m_Id(typeid(void))
+{
 }
 
 CTypeInfo::~CTypeInfo(void)
 {
-    sm_Types.erase(m_Name);
+    if ( !GetName().empty() ) {
+        TypesById().erase(&m_Id);
+        TypesByName().erase(GetName());
+        if ( TypesById().empty() ) {
+            delete sm_TypesById;
+            sm_TypesById = 0;
+            delete sm_TypesByName;
+            sm_TypesByName = 0;
+        }
+    }
 }
 
-CTypeInfo::TTypes CTypeInfo::sm_Types;
-
-CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfo(const string& name)
+CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoByName(const string& name)
 {
-    TTypes::iterator i = sm_Types.find(name);
-    if ( i == sm_Types.end() )
+    TTypesByName& types = TypesByName();
+    TTypesByName::iterator i = types.find(name);
+    if ( i == types.end() ) {
+        NcbiCerr << "type not found: " << name << endl;
         throw runtime_error("type not found: "+name);
+    }
     return i->second;
 }
 
-CTypeInfo::TTypeInfo CTypeInfo::GetPointerTypeInfo(void) const
+CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoById(const type_info& id)
 {
-    CTypeInfo* info = m_PointerTypeInfo.get();
-    if ( !info ) {
-        m_PointerTypeInfo.reset(info = new CPointerTypeInfo(this));
+    TTypesById& types = TypesById();
+    TTypesById::iterator i = types.find(&id);
+    if ( i == types.end() ) {
+        NcbiCerr << "type not found: " << id.name() << endl;
+        throw runtime_error("type not found: "+string(id.name()));
     }
-    return info;
+    return i->second;
 }
 
-void CTypeInfo::AddObject(CObjectList& list,
+CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoBy(const type_info& id,
+                                              void (*creator)(void))
+{
+    TTypesById& types = TypesById();
+    TTypesById::iterator i = types.find(&id);
+    if ( i != types.end() )
+        return i->second;
+
+    creator();
+    return GetTypeInfoById(id);
+}
+
+CTypeInfo::TTypeInfo CTypeInfo::GetPointerTypeInfo(const type_info& id,
+                                                   const CTypeRef& typeRef)
+{
+    TTypesById& types = TypesById();
+    TTypesById::iterator i = types.find(&id);
+    if ( i != types.end() )
+        return i->second;
+
+    new CPointerTypeInfo(id, typeRef);
+    return GetTypeInfoById(id);
+}
+
+void CTypeInfo::AddObject(COObjectList& list,
                           TConstObjectPtr object, TTypeInfo typeInfo)
 {
     if ( list.Add(object, typeInfo) ) {
         // new object
-        typeInfo->CollectMembers(list, object);
+        typeInfo->CollectObjects(list, object);
     }
 }
 
-void CTypeInfo::CollectMembers(CObjectList& , TConstObjectPtr ) const
+void CTypeInfo::CollectObjects(COObjectList& , TConstObjectPtr ) const
 {
     // there is no members by default
 }
 
-size_t CPointerTypeInfo::GetSize(void) const
+bool CTypeInfo::IsDefault(TConstObjectPtr ) const
 {
-    return sizeof(void*);
+    return false;
 }
-
-CTypeInfo::TObjectPtr CPointerTypeInfo::Create(void) const
-{
-    return new(void*);
-}
-
-void CPointerTypeInfo::CollectMembers(CObjectList& list,
-                                      TConstObjectPtr object) const
-{
-    AddObject(list, *static_cast<TConstObjectPtr*>(object),
-              GetRealDataTypeInfo(object));
-}
-
-void CPointerTypeInfo::WriteData(CObjectOStream& out,
-                                 TConstObjectPtr object) const
-{
-    out.WriteObject(*static_cast<TConstObjectPtr*>(object),
-                    GetRealDataTypeInfo(object));
-}
-
-void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
-{
-    *static_cast<TConstObjectPtr*>(object) = in.ReadObject(GetDataTypeInfo());
-}
-
-CTypeInfo::TTypeInfo CPointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr ) const
-{
-    return GetDataTypeInfo();
-}
-
-/*
-
-
-
-
-CClassInfo::CClassInfo(const type_info& info, const CClassInfo* parent,
-                       void* (*creator)())
-    : m_CTypeInfo(info), m_ParentClass(parent), m_Creator(creator)
-{
-    if ( !sm_Types.insert(TTypeByType::value_type(&m_CTypeInfo, this)).second )
-        throw runtime_error("type alrady defined");
-}
-
-CClassInfo::~CClassInfo(void)
-{
-    if ( !sm_Types.erase(&m_CTypeInfo) ) {
-        ERR_POST("CClassInfo not in map! " << m_CTypeInfo.name());
-    }
-    // TODO: delete members
-    m_Members.clear();
-}
-
-void CClassInfo::Read(CArchiver& archiver, TObjectPtr object) const
-{
-    archiver.ReadClass(object, *this);
-}
-
-void CClassInfo::Write(CArchiver& archiver, TConstObjectPtr object) const
-{
-    archiver.WriteClass(object, *this);
-}
-*/
 
 END_NCBI_SCOPE

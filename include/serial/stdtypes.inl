@@ -33,29 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:39  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:30  vasilche
 * Commit just in case.
 *
 * ===========================================================================
 */
-
-inline
-const CTypeInfo& GetTypeInfo(void)
-{
-    return CStdTypeInfo<void>::sm_TypeInfo;
-}
-
-// define type info getter for all basic types
-#define PROCESS_STD_TYPE(TYPE) \
-template<> \
-inline \
-CTypeInfo::TTypeInfo GetTypeInfo<TYPE>(const TYPE&) \
-{ \
-    return &CStdTypeInfo<TYPE>::sm_TypeInfo; \
-}
-FOR_ALL_STD_TYPES
-PROCESS_STD_TYPE(string)
-//PROCESS_STD_TYPE(CStdTypeInfo<char*>::TObjectType)
-#undef PROCESS_STD_TYPE
 
 #endif /* def STDTYPES__HPP  &&  ndef STDTYPES__INL */

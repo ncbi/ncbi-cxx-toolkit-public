@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:50  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:58  vasilche
 * Commit just in case.
 *
@@ -38,7 +41,22 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/stltypes.hpp>
+#include <serial/tmplinfo.hpp>
 
 BEGIN_NCBI_SCOPE
+
+CTemplateResolver1 CStlClassInfoListImpl::sm_Resolver("list");
+
+CStlClassInfoListImpl::CStlClassInfoListImpl(const type_info& id,
+                                             const CTypeRef& dataType)
+    : CParent(id), m_DataTypeRef(dataType)
+{
+    sm_Resolver.Register(this, GetDataTypeInfo());
+}
+
+void CStlClassInfoListImpl::AnnotateTemplate(CObjectOStream& out) const
+{
+    sm_Resolver.Write(out, this, GetDataTypeInfo());
+}
 
 END_NCBI_SCOPE

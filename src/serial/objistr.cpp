@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:45  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:52  vasilche
 * Commit just in case.
 *
@@ -44,18 +47,25 @@ BEGIN_NCBI_SCOPE
 // root reader
 void CObjectIStream::Read(TObjectPtr data, TTypeInfo typeInfo)
 {
-    if ( ReadTypeInfo() != typeInfo )
-        throw runtime_error("wrong type");
-    ReadObjectData(data, typeInfo);
+    typeInfo->ReadData(*this, data);
 }
 
-void CObjectIStream::ReadObjectData(TObjectPtr data, TTypeInfo typeInfo)
+unsigned CObjectIStream::Begin(Block& , bool )
 {
-
-    typeInfo->Read(*this, data);
+    return unsigned(-1);
 }
 
-TObjectPtr CObjectIStream::ReadObject(TTypeInfo typeInfo)
+bool CObjectIStream::Next(Block& )
+{
+    return false;
+}
+
+void CObjectIStream::End(Block& )
+{
+}
+
+/*
+CObjectIStream::TObjectPtr CObjectIStream::ReadObject(TTypeInfo typeInfo)
 {
     CObjectInfo oInfo;
     switch ( ReadReferenceType() ) {
@@ -151,11 +161,6 @@ bool CObjectIStream::ReadMemberReference(void)
     return false;
 }
 
-const string& ReadId(void)
-{
-    return ReadString();
-}
-
 CObjectInfo CObjectIStream::CreateAndRegister(TTypeInfo typeInfo)
 {
     CObjectInfo oInfo;
@@ -187,19 +192,7 @@ CObjectIStream::TTypeInfo CObjectIStream::ReadTypeInfo(void)
     m_ClassIds[typeInfo] = id;
     return typeInfo;
 }
+*/
 
-CObjectIStream::Block::Block(CObjectIStream& in, bool templ)
-    : m_In(in), m_Count(0)
-{
-    in.BeginBlock(*this, templ);
-}
+END_NCBI_SCOPE
 
-bool CObjectIStream::Block::NextElement(void)
-{
-    return m_In.NextElement(*this);
-}
-
-CObjectIStream::Block::~Block(void)
-{
-    m_In.EndBlock(*this);
-}

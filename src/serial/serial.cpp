@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/04 20:51:49  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.2  1999/05/19 19:56:57  vasilche
 * Commit just in case.
 *
@@ -43,79 +46,6 @@
 #include <serial/serial.hpp>
 
 BEGIN_NCBI_SCOPE
-
-
-
-CTypeInfo::~CTypeInfo(void)
-{
-}
-
-const CTypeInfo& CTypeInfo::GetPointerTypeInfo(void) const
-{
-    CTypeInfo* info = m_PointerTypeInfo.get();
-    if ( !info ) {
-        m_PointerTypeInfo.reset(info = new CPointerTypeInfo(*this));
-    }
-    return *info;
-}
-
-
-
-void* CPointerTypeInfo::Create(void) const
-{
-    return new void*;
-}
-
-void CPointerTypeInfo::Read(CArchiver& archiver, TObjectPtr object) const
-{
-    Get(object) = m_ObjectTypeInfo.Create();
-    m_ObjectTypeInfo.Read(archiver, Get(object));
-}
-
-void CPointerTypeInfo::Write(CArchiver& archiver, TConstObjectPtr object) const
-{
-    if ( Get(object) == 0 )
-        throw runtime_error("cannot write null pointer");
-
-    m_ObjectTypeInfo.Write(archiver, Get(object));
-}
-
-bool CPointerTypeInfo::HasDefaultValue(TConstObjectPtr object) const
-{
-    return Get(object) == 0;
-}
-
-
-
-CClassInfo::TTypeByType CClassInfo::sm_Types;
-
-CClassInfo::CClassInfo(const type_info& info, const CClassInfo* parent,
-                       void* (*creator)())
-    : m_CTypeInfo(info), m_ParentClass(parent), m_Creator(creator)
-{
-    if ( !sm_Types.insert(TTypeByType::value_type(&m_CTypeInfo, this)).second )
-        throw runtime_error("type alrady defined");
-}
-
-CClassInfo::~CClassInfo(void)
-{
-    if ( !sm_Types.erase(&m_CTypeInfo) ) {
-        ERR_POST("CClassInfo not in map! " << m_CTypeInfo.name());
-    }
-    // TODO: delete members
-    m_Members.clear();
-}
-
-void CClassInfo::Read(CArchiver& archiver, TObjectPtr object) const
-{
-    archiver.ReadClass(object, *this);
-}
-
-void CClassInfo::Write(CArchiver& archiver, TConstObjectPtr object) const
-{
-    archiver.WriteClass(object, *this);
-}
-
 
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:45  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:53  vasilche
 * Commit just in case.
 *
@@ -39,186 +42,408 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objistrb.hpp>
 #include <serial/objstrb.hpp>
+#include <serial/tmplinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
 CObjectIStreamBinary::CObjectIStreamBinary(CNcbiIstream* in)
-    : m_In(in)
+    : m_Input(in)
 {
     m_Strings.push_back(string());
 }
 
 unsigned char CObjectIStreamBinary::ReadByte(void)
 {
-    int c = m_In->get();
-    if ( c == m_In->eof() )
+    char c;
+    if ( !m_Input->get(c) ) {
         throw runtime_error("unexpected EOF");
+    }
     return c;
 }
 
 CTypeInfo::TTypeInfo CObjectIStreamBinary::ReadTypeInfo(void)
 {
-    unsigned code = ReadByte();
+    TByte code = ReadByte();
 
-    if ( code >= CObjectStreamBinaryDefs::eStd_first &&
-         code <= CObjectStreamBinaryDefs::eStd_last )
-        return CObjectStreamBinaryDefs::sm_StdTypes[code - eStd_first];
 
     switch ( code ) {
     case CObjectStreamBinaryDefs::eClassReference:
         return GetRegiteredClass(ReadId());
     case CObjectStreamBinaryDefs::eClass:
-        return RegisterClass(CTypeInfo::GetTypeInfo(ReadString()));
+        return RegisterClass(CTypeInfo::GetTypeInfoByName(ReadString()));
     case CObjectStreamBinaryDefs::eTemplate:
-        return RegisterClass(CTemplateResolver::Resolve(*this));
+        //        return RegisterClass(CTemplateResolver::Resolve(*this));
     default:
         ERR_POST("CObjectIStreamBinary::ReadTypeInfo(): undefined type: " << code);
         throw runtime_error("undefined type ");
     }
 }
 
+class CDataReader
+{
+public:
+    typedef CObjectIStreamBinary::TByte TByte;
+
+    static string binary(TByte byte);
+
+    virtual void ReadStd(char& ) const
+        {
+            throw runtime_error("incompatible type: char");
+        }
+    virtual void ReadStd(unsigned char& ) const
+        {
+            throw runtime_error("incompatible type: unsigned char");
+        }
+    virtual void ReadStd(signed char& ) const
+        {
+            throw runtime_error("incompatible type: signed char");
+        }
+    virtual void ReadStd(short& ) const
+        {
+            throw runtime_error("incompatible type: short");
+        }
+    virtual void ReadStd(unsigned short& ) const
+        {
+            throw runtime_error("incompatible type: unsigned short");
+        }
+    virtual void ReadStd(int& ) const
+        {
+            throw runtime_error("incompatible type: int");
+        }
+    virtual void ReadStd(unsigned int& ) const
+        {
+            throw runtime_error("incompatible type: unsigned int");
+        }
+    virtual void ReadStd(long& ) const
+        {
+            throw runtime_error("incompatible type: signed long");
+        }
+    virtual void ReadStd(unsigned long& ) const
+        {
+            throw runtime_error("incompatible type: unsigned long");
+        }
+    virtual void ReadStd(float& ) const
+        {
+            throw runtime_error("incompatible type: float");
+        }
+    virtual void ReadStd(double& ) const
+        {
+            throw runtime_error("incompatible type: double");
+        }
+    virtual void ReadStd(string& ) const
+        {
+            throw runtime_error("incompatible type: string");
+        }
+
+    TByte ReadByte(void) const
+        {
+            return m_Input->ReadByte();
+        }
+
+    CObjectIStreamBinary* m_Input;
+};
+
+class CNumberReader : public CDataReader
+{
+public:
+    static runtime_error overflow_error(const type_info& type, bool sign,
+                                        const string& bytes);
+
+    static runtime_error overflow_error(const type_info& type, bool sign,
+                                        TByte c0)
+        {
+            return overflow_error(type, sign, binary(c0));
+        }
+    static runtime_error overflow_error(const type_info& type, bool sign,
+                                        TByte c0, TByte c1)
+        {
+            return overflow_error(type, sign, binary(c0) + ' ' + binary(c1));
+        }
+    static runtime_error overflow_error(const type_info& type, bool sign,
+                                       TByte c0, TByte c1, TByte c2)
+        {
+            return overflow_error(type, sign, binary(c0) + ' ' + binary(c1) +
+                                  ' ' + binary(c2));
+        }
+    static runtime_error overflow_error(const type_info& type, bool sign,
+                                       TByte c0, TByte c1, TByte c2, TByte c3)
+        {
+            return overflow_error(type, sign, binary(c0) + ' ' + binary(c1) +
+                                  ' ' + binary(c2) + ' ' + binary(c3));
+        }
+
+    static bool isSignExpansion(TByte signByte, TByte highByte)
+        {
+            return (signByte + (highByte >> 7)) == 0;
+        }
+};
+
+runtime_error CNumberReader::overflow_error(const type_info& type, bool sign, 
+                                            const string& bytes)
+{
+    return runtime_error((sign? "": "un") +
+                         string("signed number too big to fit in ") +
+                         type.name() + " bytes: " + bytes);
+}
+
+template<class TYPE>
+class CStdDataReader : public CNumberReader
+{
+public:
+
+    static TByte checkSign(TByte code, TByte highBit, bool sign)
+        {
+            // check if signed number is returned as unsigned
+            if ( !numeric_limits<TYPE>::is_signed &&
+                 sign && (code & highBit) ) {
+                throw overflow_error(typeid(TYPE), sign, code);
+            }
+            // mask data bits
+            code &= (highBit << 1) - 1;
+            if ( numeric_limits<TYPE>::is_signed && sign ) {
+                // extend sign
+                return (code ^ highBit) - highBit;
+            }
+            else {
+                return code;
+            }
+        }
+
+    static TYPE ReadNumber(CObjectIStreamBinary& in, bool sign);
+
+    static void ReadStdNumber(CObjectIStreamBinary& in, TYPE& data)
+        {
+            CObjectIStreamBinary::TByte code = in.ReadByte();
+            switch ( code ) {
+            case CObjectStreamBinaryDefs::eNull:
+                data = 0;
+                return;
+            case CObjectStreamBinaryDefs::eStd_sordinal:
+                data = ReadNumber(in, true);
+                return;
+            case CObjectStreamBinaryDefs::eStd_uordinal:
+                data = ReadNumber(in, false);
+                return;
+            default:
+                throw runtime_error("bad number code: " + binary(code));
+            }
+        }
+};
+
+template<class TYPE>
+TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
+{
+    bool incompatibleSign = !numeric_limits<TYPE>::is_signed && sign;
+    bool expandSign = numeric_limits<TYPE>::is_signed && sign;
+    TByte code = in.ReadByte();
+    if ( !(code & 0x80) ) {
+        // one byte: 0xxxxxxx
+        return TYPE(checkSign(code, 0x40, sign));
+    }
+    else if ( !(code & 0x40) ) {
+        // two bytes: 10xxxxxx xxxxxxxx
+        TByte c0 = in.ReadByte();
+        TByte c1 = checkSign(code, 0x20, sign);
+        if ( sizeof(TYPE) == 1 ) {
+            // check for byte fit
+            if ( !numeric_limits<TYPE>::is_signed && (c1) ||
+                 numeric_limits<TYPE>::is_signed && !(isSignExpansion(c1, c0)) )
+                throw overflow_error(typeid(TYPE), sign, code, c0);
+            return TYPE(c0);
+        }
+        else {
+            return TYPE((c1 << 8) | c0);
+        }
+    }
+    else if ( !(code & 0x20) ) {
+        // three bytes: 110xxxxx xxxxxxxx xxxxxxxx
+        TByte c1 = in.ReadByte();
+        TByte c0 = in.ReadByte();
+        TByte c2 = checkSign(code, 0x10, sign);
+        if ( sizeof(TYPE) == 1 ) {
+            // check for byte fit
+            if ( !numeric_limits<TYPE>::is_signed && (c2 || c1) ||
+                 numeric_limits<TYPE>::is_signed && !(isSignExpansion(c2, c0) &&
+                                                      isSignExpansion(c1, c0)) )
+                throw overflow_error(typeid(TYPE), sign, code, c1, c0);
+            return TYPE(c0);
+        }
+        else if ( sizeof(TYPE) == 2 ) {
+            // check for two byte fit
+            if ( !numeric_limits<TYPE>::is_signed && (c2) ||
+                 numeric_limits<TYPE>::is_signed && !(isSignExpansion(c2, c1)) )
+                throw overflow_error(typeid(TYPE), sign, code, c1, c0);
+            return TYPE((c1 << 8) | c0);
+        }
+        else {
+            return TYPE((TYPE(c2) << 16) | (c1 << 8) | c0);
+        }
+    }
+    else if ( !(code & 0x10) ) {
+        // four bytes: 1110xxxx xxxxxxxx xxxxxxxx xxxxxxxx
+        TByte c2 = in.ReadByte();
+        TByte c1 = in.ReadByte();
+        TByte c0 = in.ReadByte();
+        TByte c3 = checkSign(code, 0x08, sign);
+        if ( sizeof(TYPE) == 1 ) {
+            // check for byte fit
+            if ( !numeric_limits<TYPE>::is_signed && (c3 || c2 || c1) ||
+                 numeric_limits<TYPE>::is_signed && !(isSignExpansion(c3, c0) &&
+                                                      isSignExpansion(c2, c0) &&
+                                                      isSignExpansion(c1, c0)) )
+                throw overflow_error(typeid(TYPE), sign, code, c2, c1, c0);
+            return TYPE(c0);
+        }
+        else if ( sizeof(TYPE) == 2 ) {
+            // check for two byte fit
+            if ( !numeric_limits<TYPE>::is_signed && (c3 || c2) ||
+                 numeric_limits<TYPE>::is_signed && !(isSignExpansion(c3, c1) &&
+                                                      isSignExpansion(c2, c1)) )
+                throw overflow_error(typeid(TYPE), sign, code, c2, c1, c0);
+            return TYPE((c1 << 8) | c0);
+        }
+        return TYPE((TYPE(c3) << 24) | (TYPE(c2) << 16) | (c1 << 8) | c0);
+    }
+    else {
+        // 1111xxxx (xxxxxxxx)*
+        size_t size = (code & 0xF) + 4;
+        if ( size > 16 ) {
+            throw runtime_error("reserved number code: " + binary(code));
+        }
+        // skip high bytes
+        while ( size > sizeof(TYPE) ) {
+            TByte c = in.ReadByte();
+            if ( c ) {
+                throw overflow_error(typeid(TYPE), sign,
+                                     binary(code) + " ... " + binary(c));
+            }
+            --size;
+        }
+        // read number
+        TYPE n = 0;
+        while ( size-- ) {
+            n = (n << 8) | in.ReadByte();
+        }
+        return n;
+    }
+}
+
 void CObjectIStreamBinary::ReadStd(char& data)
 {
-    data = ReadByte();
+    CObjectIStreamBinary::TByte code = ReadByte();
+    switch ( code ) {
+    case CObjectStreamBinaryDefs::eNull:
+        data = 0;
+        return;
+    case CObjectStreamBinaryDefs::eStd_char:
+        data = ReadByte();
+        return;
+    default:
+        throw runtime_error("bad number code: " + NStr::UIntToString(code));
+    }
 }
 
 void CObjectIStreamBinary::ReadStd(signed char& data)
 {
-    data = ReadByte();
+    CObjectIStreamBinary::TByte code = ReadByte();
+    switch ( code ) {
+    case CObjectStreamBinaryDefs::eNull:
+        data = 0;
+        return;
+    case CObjectStreamBinaryDefs::eStd_sbyte:
+        data = ReadByte();
+        return;
+    case CObjectStreamBinaryDefs::eStd_ubyte:
+        if ( (data = ReadByte()) & 0x80 ) {
+            // unsigned -> signed overflow
+            throw runtime_error("unsigned char doesn't fit in signed char");
+        }
+        return;
+    default:
+        throw runtime_error("bad number code: " + NStr::UIntToString(code));
+    }
 }
 
 void CObjectIStreamBinary::ReadStd(unsigned char& data)
 {
-    data = ReadByte();
+    CObjectIStreamBinary::TByte code = ReadByte();
+    switch ( code ) {
+    case CObjectStreamBinaryDefs::eNull:
+        data = 0;
+        return;
+    case CObjectStreamBinaryDefs::eStd_ubyte:
+        data = ReadByte();
+        return;
+    case CObjectStreamBinaryDefs::eStd_sbyte:
+        if ( (data = ReadByte()) & 0x80 ) {
+            // signed -> unsigned overflow
+            throw runtime_error("signed char doesn't fit in unsigned char");
+        }
+        return;
+    default:
+        throw runtime_error("bad number code: " + NStr::UIntToString(code));
+    }
 }
 
 void CObjectIStreamBinary::ReadStd(short& data)
 {
-    data = short(ReadInt(16));
+    CStdDataReader<short>::ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamBinary::ReadStd(unsigned short& data)
 {
-    data = static_cast<unsigned short>(ReadUInt(16));
+    CStdDataReader<unsigned short>::ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamBinary::ReadStd(int& data)
 {
-    data = ReadInt();
+    CStdDataReader<int>::ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamBinary::ReadStd(unsigned int& data)
 {
-    data = ReadUInt();
+    CStdDataReader<unsigned int>::ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamBinary::ReadStd(long& data)
 {
-    int high = ReadInt();
-    data = long(high << 32) | ReadUInt();
+    CStdDataReader<long>::ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamBinary::ReadStd(unsigned long& data)
 {
-    unsigned high = ReadUInt();
-    data = (unsigned long)(high << 32) | ReadUInt();
+    CStdDataReader<unsigned long>::ReadStdNumber(*this, data);
 }
 
-void CObjectIStreamBinary::ReadStd(float& data)
+void CObjectIStreamBinary::ReadStd(float& )
 {
     throw runtime_error("float is not supported");
 }
 
-void CObjectIStreamBinary::ReadStd(double& data)
+void CObjectIStreamBinary::ReadStd(double& )
 {
     throw runtime_error("double is not supported");
 }
 
-void CObjectIStreamBinary::ReadString(string& data)
+void CObjectIStreamBinary::ReadStd(string& data)
 {
     data = ReadString();
 }
 
-unsigned int CObjectIStreamBinary::ReadUInt(void)
+CObjectIStreamBinary::TIndex CObjectIStreamBinary::ReadIndex(void)
 {
-    unsigned char c0 = ReadByte();
-    unsigned char c1, c2, c3;
-    switch ( c0 >> 4 ) {
-    case 8: case 9: case 10: case 11:
-        return ((c0 & 0x3F) << 8) | ReadByte();
-    case 12: case 13:
-        c1 = ReadByte();
-        return ((c0 & 0x1F) << 16) | (c1 << 8) | ReadByte();
-    case 14:
-        c1 = ReadByte();
-        c2 = ReadByte();
-        return ((c0 & 0x0F) << 24) | (c1 << 16) | (c2 << 8) | ReadByte();
-    case 15:
-        if ( c0 == 0xF0 ) {
-            c1 = ReadByte();
-            c2 = ReadByte();
-            c3 = ReadByte();
-            return (c1 << 24) | (c2 << 16) | (c3 << 8) | ReadByte();
-        }
-        else if ( c0 >= 0xF8 ) {
-            return MAX_UINT - (c0 & 0x07);
-        }
-        else {
-            throw runtime_error("bad number start");
-        }
-    default:
-        return c0;
-    }
-}
-
-inline
-int makesign(unsigned n, unsigned bits)
-{
-    unsigned highbit = 1 << (bits - 1);
-    return int(n ^ hignbit) - int(highbit);
-}
-
-int CObjectIStreamBinary::ReadInt(void)
-{
-    unsigned char c0 = ReadByte();
-    unsigned char c1, c2, c3;
-    switch ( c0 >> 4 ) {
-    case 8: case 9: case 10: case 11:
-        return makesign(((c0 & 0x3F) << 8) | ReadByte(), 14);
-    case 12: case 13:
-        c1 = ReadByte();
-        return makesign(((c0 & 0x1F) << 16) | (c1 << 8) | ReadByte(), 21);
-    case 14:
-        c1 = ReadByte();
-        c2 = ReadByte();
-        return makesign(((c0 & 0x0F) << 24) | (c1 << 16) | (c2 << 8) | ReadByte(), 28);
-    case 15:
-        if ( c0 == 0xF0 ) {
-            c1 = ReadByte();
-            c2 = ReadByte();
-            c3 = ReadByte();
-            return (c1 << 24) | (c2 << 16) | (c3 << 8) | ReadByte();
-        }
-        else if ( c0 >= 0xF8 ) {
-            return MAX_INT - makesign(c0 & 0x07, 3);
-        }
-        else {
-            throw runtime_error("bad number start");
-        }
-    default:
-        return makesign(c0, 7);
-    }
+    return CStdDataReader<TIndex>::ReadNumber(*this, false);
 }
 
 const string& CObjectIStreamBinary::ReadString(void)
 {
-    unsigned index = ReadUInt();
-    if ( index == unsigned(-1) ) {
+    TIndex index = ReadIndex();
+    if ( index == m_Strings.size() ) {
         // new string
         m_Strings.push_back(string());
         string& s = m_Strings.back();
-        unsigned length = ReadUInt();
+        SIZE_TYPE length = CStdDataReader<SIZE_TYPE>::ReadNumber(*this, false);
         s.reserve(length);
         return s;
     }

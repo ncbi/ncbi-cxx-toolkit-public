@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/04 20:51:37  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.2  1999/05/19 19:56:28  vasilche
 * Commit just in case.
 *
@@ -46,11 +49,79 @@
 #include <serial/typeinfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
+#include <serial/ptrinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
 class CObjectOStream;
+
+// define type info getter for standard classes
+inline
+CTypeRef GetTypeRef(void)
+{
+    return CTypeRef(typeid(void), CStdTypeInfo<void>::CreateTypeInfo);
+}
+
+inline
+CTypeRef GetTypeRef(const int& )
+{
+    return CTypeRef(typeid(int), CStdTypeInfo<int>::CreateTypeInfo);
+}
+
+inline
+CTypeRef GetTypeRef(const string& )
+{
+    return CTypeRef(typeid(string), CStdTypeInfo<string>::CreateTypeInfo);
+}
+
+template<typename CLASS>
+inline
+CTypeRef GetTypeRef(const list<CLASS>& )
+{
+    return CTypeRef(typeid(list<CLASS>),
+                    CStlClassInfoList<CLASS>::CreateTypeInfo);
+}
+
+template<typename Data>
+inline
+CStlClassInfoList<Data>::CStlClassInfoList(void)
+    : CParent(typeid(TObjectType), GetTypeRef(*static_cast<const Data*>(0)))
+{
+}
+
+// define type info getter for user classes
+template<typename CLASS>
+inline
+CTypeRef GetTypeRef(const CLASS& )
+{
+    return CTypeRef(typeid(CLASS), CLASS::CreateTypeInfo);
+}
+
+// define type info getter for pointers
+template<typename CLASS>
+inline
+CTypeRef GetTypeRef(const CLASS* object)
+{
+    return CTypeRef(CTypeInfo::GetPointerTypeInfo(typeid(CLASS*),
+                                                  GetTypeRef(*object)));
+}
+
+inline
+CTypeInfo::TTypeInfo GetTypeInfo(void)
+{
+    return GetTypeRef().Get();
+}
+
+template<typename CLASS>
+inline
+CTypeInfo::TTypeInfo GetTypeInfo(const CLASS& object)
+{
+    return GetTypeRef(object).Get();
+}
+
+
+
 
 template<class CLASS>
 inline

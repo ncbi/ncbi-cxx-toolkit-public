@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:31  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:23  vasilche
 * Commit just in case.
 *
@@ -41,6 +44,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/typeref.hpp>
 #include <list>
 #include <map>
 
@@ -48,7 +52,7 @@ BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
 class CObjectOStream;
-class CObjectList;
+class COObjectList;
 class CTypeInfo;
 class CMemberInfo;
 
@@ -63,13 +67,13 @@ public:
         { }
 
     // superclass member
-    CMemberInfo(offset_t offset, TTypeInfo info)
-        : m_Offset(offset), m_Info(info)
+    CMemberInfo(offset_t offset, const CTypeRef& type)
+        : m_Offset(offset), m_Type(type)
         { }
     
     // common member
-    CMemberInfo(const string& name, offset_t offset, TTypeInfo info)
-        : m_Name(name), m_Offset(offset), m_Info(info)
+    CMemberInfo(const string& name, offset_t offset, const CTypeRef& type)
+        : m_Name(name), m_Offset(offset), m_Type(type)
         { }
 
     const string& GetName(void) const
@@ -78,21 +82,25 @@ public:
     offset_t GetOffset(void) const
         { return m_Offset; }
 
-    size_t GetSize(void) const
-        { return m_Info->GetSize(); }
-
     TTypeInfo GetTypeInfo(void) const
-        { return m_Info; }
+        { return m_Type.Get(); }
 
-    TObjectPtr GetMemeberPtr(TObjectPtr object) const
-        { return static_cast<char*>(object) + m_Offset; }
-    TConstObjectPtr GetMemberPtr(TConstObjectPtr object) const
-        { return static_cast<const char*>(object) + m_Offset; }
+    size_t GetSize(void) const
+        { return GetTypeInfo()->GetSize(); }
+
+    TObjectPtr GetMember(TObjectPtr object) const
+        { return CTypeInfo::Add(object, m_Offset); }
+    TConstObjectPtr GetMember(TConstObjectPtr object) const
+        { return CTypeInfo::Add(object, m_Offset); }
+    TObjectPtr GetContainer(TObjectPtr object) const
+        { return CTypeInfo::Add(object, -m_Offset); }
+    TConstObjectPtr GetContainer(TConstObjectPtr object) const
+        { return CTypeInfo::Add(object, -m_Offset); }
 
 private:
     string m_Name;
     offset_t m_Offset;
-    TTypeInfo m_Info;
+    CTypeRef m_Type;
 };
 
 class CClassInfoTmpl : public CTypeInfo {
@@ -102,9 +110,9 @@ public:
     typedef map<size_t, CMemberInfo> TMembersByOffset;
     typedef TMembers::const_iterator TMemberIterator;
 
-    CClassInfoTmpl(const type_info& ti, size_t size,
-                   const type_info& pti, offset_t offset,
-                   void* (*creator)(void));
+    CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void));
+    CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void),
+                   const CTypeRef& parent, offset_t offset);
 
     virtual size_t GetSize(void) const;
 
@@ -113,15 +121,19 @@ public:
     CClassInfoTmpl* AddMember(const CMemberInfo& member);
 
     const CMemberInfo& FindMember(const string& name) const;
-    TMemberIterator MemberBegin(void) const;
-    TMemberIterator MemberEnd(void) const;
+    TMemberIterator MemberBegin(void) const
+        {
+            return m_Members.begin();
+        }
+    TMemberIterator MemberEnd(void) const
+        {
+            return m_Members.end();
+        }
 
 protected:
-    virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const = 0;
-
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
-    virtual void CollectMembers(CObjectList& list,
+    virtual void CollectObjects(COObjectList& list,
                                 TConstObjectPtr object) const;
 
     virtual void WriteData(CObjectOStream& out,
@@ -140,39 +152,29 @@ class CClassInfo : public CClassInfoTmpl
 {
 public:
     CClassInfo(void)
-        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS),
-                         typeid(PCLASS),
-                         size_t(static_cast<const PCLASS*>
-                                (reinterpret_cast<const CLASS*>(0))),
-                         &sm_Create)
+        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create)
         {
+        }
+    CClassInfo(const CTypeRef& pTypeRef)
+        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create,
+                         pTypeRef,
+                         offset_t(static_cast<const PCLASS*>
+                                  (static_cast<const CLASS*>(0))))
+        {
+        }
+
+    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const
+        {
+            return GetTypeInfoById(typeid(*static_cast<const CLASS*>(object)));
         }
 
 protected:
 
-    static TObjectPtr sm_Create(void)
+    static TObjectPtr sx_Create(void)
         {
             return new CLASS();
         }
-
-    virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const
-        {
-            return GetTypeInfo(typeid(*static_cast<const CLASS*>(object)).name());
-        }
-
-    virtual CTypeInfo* CreatePointerTypeInfo(void) const
-        {
-            return new CPointerTypeInfo<CLASS>(this);
-        }
 };
-
-#define NEW_CLASS_INFO(CLASS, PCLASS) \
-    new CClassInfo(typeid(CLASS).name(), \
-                   new CMemberInfo(typeid(PCLASS).name(), \
-                                   size_t(static_cast<PCLASS>, reinterpret_cast<CLASS*>(0)) \
-                                          ), \
-                          CLASS::s_Create); \
-
 
 //#include <serial/classinfo.inl>
 

@@ -1,5 +1,5 @@
-#ifndef OBJSTRB__HPP
-#define OBJSTRB__HPP
+#ifndef PTRINFO__HPP
+#define PTRINFO__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,46 +33,62 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/06/04 20:51:36  vasilche
+* Revision 1.1  1999/06/04 20:51:36  vasilche
 * First compilable version of serialization.
-*
-* Revision 1.1  1999/05/19 19:56:27  vasilche
-* Commit just in case.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/typeinfo.hpp>
+#include <serial/typeref.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectStreamBinaryDefs
+class CPointerTypeInfo : public CTypeInfo
 {
 public:
-    enum {
-        eNull = 0,
+    typedef void* TObjectType;
 
-        eStd_char = 0xC0, // char
-        eStd_ubyte,       // unsigned char or any with sizeof() == 1
-        eStd_sbyte,       // signed char or any with sizeof() == 1
-        eStd_uordinal,    // any unsigned
-        eStd_sordinal,    // any signed
-        eStd_string,      // string
-        eStd_float,       // float, double, long double
+    static TObjectPtr& GetObject(TObjectPtr object)
+        { return *static_cast<TObjectPtr*>(object); }
+    static const TConstObjectPtr& GetObject(TConstObjectPtr object)
+        { return *static_cast<const TConstObjectPtr*>(object); }
 
-        eClass = 0xE0,
-        eClassDefinition,
-        eTemplate,
-        eClassReference,
-        eObject,
-        eObjectReference,
-        eMember,
-        eBlock
-    };
+    CPointerTypeInfo(const type_info& id, const CTypeRef& typeRef)
+        : CTypeInfo(id), m_DataTypeRef(typeRef)
+        { }
+
+    TTypeInfo GetDataTypeInfo(void) const
+        {
+            return m_DataTypeRef.Get();
+        }
+
+    TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const
+        {
+            return GetDataTypeInfo()->GetRealTypeInfo(GetObject(object));
+        }
+
+
+    virtual size_t GetSize(void) const;
+
+    virtual TObjectPtr Create(void) const;
+
+    virtual bool IsDefault(TConstObjectPtr object) const;
+
+protected:
+    virtual void CollectObjects(COObjectList& list, TConstObjectPtr object) const;
+
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
+
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+
+private:
+    CTypeRef m_DataTypeRef;
 };
 
-//#include <objstrb.inl>
+//#include <ptrinfo.inl>
 
 END_NCBI_SCOPE
 
-#endif  /* OBJSTRB__HPP */
+#endif  /* PTRINFO__HPP */

@@ -1,5 +1,5 @@
-#ifndef OBJSTRB__HPP
-#define OBJSTRB__HPP
+#ifndef TYPEREF__HPP
+#define TYPEREF__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,46 +33,57 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/06/04 20:51:36  vasilche
+* Revision 1.1  1999/06/04 20:51:41  vasilche
 * First compilable version of serialization.
-*
-* Revision 1.1  1999/05/19 19:56:27  vasilche
-* Commit just in case.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/typeinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectStreamBinaryDefs
+class CTypeInfo;
+
+class CTypeRef
 {
 public:
-    enum {
-        eNull = 0,
+    typedef CTypeInfo::TTypeInfo TTypeInfo;
 
-        eStd_char = 0xC0, // char
-        eStd_ubyte,       // unsigned char or any with sizeof() == 1
-        eStd_sbyte,       // signed char or any with sizeof() == 1
-        eStd_uordinal,    // any unsigned
-        eStd_sordinal,    // any signed
-        eStd_string,      // string
-        eStd_float,       // float, double, long double
+    CTypeRef(void)
+        : m_Id(0), m_Creator(0), m_TypeInfo(0)
+        {
+        }
+    CTypeRef(const type_info& id, void (*creator)(void))
+        : m_Id(&id), m_Creator(creator), m_TypeInfo(0)
+        {
+        }
+    CTypeRef(TTypeInfo typeInfo)
+        : m_Id(0), m_Creator(0), m_TypeInfo(typeInfo)
+        {
+        }
 
-        eClass = 0xE0,
-        eClassDefinition,
-        eTemplate,
-        eClassReference,
-        eObject,
-        eObjectReference,
-        eMember,
-        eBlock
-    };
+    TTypeInfo Get(void) const
+        {
+            TTypeInfo typeInfo = m_TypeInfo;
+            if ( !typeInfo ) {
+                typeInfo = m_TypeInfo =
+                    CTypeInfo::GetTypeInfoBy(*m_Id, m_Creator);
+            }
+            return typeInfo;
+        }
+
+private:
+
+    const type_info* m_Id;
+    void (*m_Creator)(void);
+
+    mutable TTypeInfo m_TypeInfo;
 };
 
-//#include <objstrb.inl>
+//#include <serial/typeref.inl>
 
 END_NCBI_SCOPE
 
-#endif  /* OBJSTRB__HPP */
+#endif  /* TYPEREF__HPP */

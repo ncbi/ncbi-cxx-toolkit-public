@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/04 20:51:32  vasilche
+* First compilable version of serialization.
+*
 * Revision 1.1  1999/05/19 19:56:25  vasilche
 * Commit just in case.
 *
@@ -40,6 +43,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
 #include <serial/objistr.hpp>
 #include <vector>
 
@@ -48,7 +52,9 @@ BEGIN_NCBI_SCOPE
 class CObjectIStreamBinary : public CObjectIStream
 {
 public:
-    CObjectIStream(CNcbiIstream* in);
+    typedef unsigned char TByte;
+
+    CObjectIStreamBinary(CNcbiIstream* in);
 
     virtual void ReadStd(char& data);
     virtual void ReadStd(unsigned char& data);
@@ -62,18 +68,20 @@ public:
     virtual void ReadStd(float& data);
     virtual void ReadStd(double& data);
     virtual void ReadStd(string& data);
+    virtual void ReadStd(const char*& data);
+    virtual void ReadStd(char*& data);
 
+    virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
     virtual TTypeInfo ReadTypeInfo(void);
 
-protected:
-    unsigned char ReadByte(void);
-    int ReadInt(void);
-    unsigned ReadUInd(void);
+    TByte ReadByte(void);
+    TIndex ReadIndex(void);
+    const string& ReadString(void);
 
 private:
     vector<string> m_Strings;
 
-    CNcbiIstream* m_In;
+    CNcbiIstream* m_Input;
 };
 
 //#include <objistrb.inl>
