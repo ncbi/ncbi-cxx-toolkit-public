@@ -84,6 +84,8 @@ public:
     
     Int4 GetSequence(Int4 oid, const char ** buffer);
     
+    Int4 GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code);
+    
     string GetTitle(void);
     
     string GetDate(void);
@@ -105,6 +107,7 @@ private:
     char x_GetSeqType(void);
     bool x_GetAmbChar(Uint4 oid, vector<Int4> ambchars);
     Int4 x_GetSequence(Int4 oid, const char ** buffer);
+    Int4 x_GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code);
     
     string        m_VolName;
     CFastMutex    m_Lock;

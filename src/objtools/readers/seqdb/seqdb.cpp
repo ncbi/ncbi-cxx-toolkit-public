@@ -81,6 +81,11 @@ Int4 CSeqDB::GetSequence(TOID oid, const char ** buffer)
     return m_Impl->GetSequence(oid, buffer);
 }
 
+Int4 CSeqDB::GetAmbigSeq(TOID oid, const char ** buffer, bool nucl_code)
+{
+    return m_Impl->GetAmbigSeq(oid, buffer, nucl_code);
+}
+
 string CSeqDB::GetTitle(void)
 {
     return m_Impl->GetTitle();
@@ -117,9 +122,9 @@ CSeqDBIter CSeqDB::Begin(void)
     return CSeqDBIter(this, 0);
 }
 
-bool CSeqDB::GetNextOID(TOID & oid)
+bool CSeqDB::CheckOrFindOID(TOID & oid)
 {
-    return m_Impl->GetNextOID(oid);
+    return m_Impl->CheckOrFindOID(oid);
 }
 
 CSeqDBIter::CSeqDBIter(CSeqDB * db, TOID oid)
@@ -128,7 +133,7 @@ CSeqDBIter::CSeqDBIter(CSeqDB * db, TOID oid)
       m_Data  (0),
       m_Length((TOID) -1)
 {
-    if (m_DB->GetNextOID(m_OID)) {
+    if (m_DB->CheckOrFindOID(m_OID)) {
         x_GetSeq();
     }
 }
@@ -139,7 +144,7 @@ CSeqDBIter & CSeqDBIter::operator++(void)
     
     ++m_OID;
     
-    if (m_DB->GetNextOID(m_OID)) {
+    if (m_DB->CheckOrFindOID(m_OID)) {
         x_GetSeq();
     } else {
         m_Length = (Uint4)-1;

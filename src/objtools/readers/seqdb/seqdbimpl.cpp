@@ -46,13 +46,13 @@ CSeqDBImpl::~CSeqDBImpl(void)
 {
 }
 
-bool CSeqDBImpl::GetNextOID(Uint4 & next_oid)
+bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid)
 {
     if (m_OIDList.Empty()) {
         return next_oid < GetNumSeqs();
     }
     
-    return m_OIDList->FindNext(next_oid);
+    return m_OIDList->CheckOrFindOID(next_oid);
 }
 
 Int4 CSeqDBImpl::GetSeqLength(Uint4 oid)
@@ -112,6 +112,16 @@ Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer)
     Uint4 vol_oid = 0;
     if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSequence(vol_oid, buffer);
+    }
+    
+    return -1;
+}
+
+Int4 CSeqDBImpl::GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code)
+{
+    Uint4 vol_oid = 0;
+    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+        return vol->GetAmbigSeq(vol_oid, buffer, nucl_code);
     }
     
     return -1;

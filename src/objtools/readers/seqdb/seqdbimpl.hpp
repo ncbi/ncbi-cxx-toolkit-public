@@ -57,8 +57,6 @@ public:
     
     CRef<CBlast_def_line_set> GetHdr(Uint4 oid);
     
-    void RetSequence(const char ** buffer);
-    
     char GetSeqType(void);
     
     CRef<CBioseq> GetBioseq(Int4 oid,
@@ -66,6 +64,10 @@ public:
                             bool insert_ctrlA);
     
     Int4 GetSequence(Int4 oid, const char ** buffer);
+    
+    Int4 GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code);
+    
+    void RetSequence(const char ** buffer);
     
     string GetTitle(void);
     
@@ -77,12 +79,12 @@ public:
     
     Uint4  GetMaxLength(void);
     
-    bool   GetNextOID(Uint4 & next_oid);
+    bool   CheckOrFindOID(Uint4 & next_oid);
     
 private:
     CSeqDBAliasFile     m_Aliases;
     CSeqDBVolSet        m_VolSet;
-    CRef<CSeqDBOIDSrc>  m_OIDList;
+    CRef<CSeqDBOIDList> m_OIDList;
 };
 
 END_NCBI_SCOPE

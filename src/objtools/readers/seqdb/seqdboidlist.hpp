@@ -43,22 +43,15 @@ BEGIN_NCBI_SCOPE
 using namespace ncbi;
 using namespace ncbi::objects;
 
-class CSeqDBOIDSrc : public CObject {
+class CSeqDBOIDList : public CObject {
 public:
-    typedef CSeqDB::TOID TOID;
+    typedef Uint4 TOID;
     
-    // If next_oid does not point to an included OID, move it forward
-    // until it does.  Returns true if another OID is found.
-    virtual bool FindNext(TOID & next_oid) = 0;
-};
-
-class CSeqDBOIDList : public CSeqDBOIDSrc {
-public:
     CSeqDBOIDList(CSeqDBVolSet & volumes, bool use_mmap);
     
     ~CSeqDBOIDList();
     
-    bool FindNext(TOID & next_oid)
+    bool CheckOrFindOID(TOID & next_oid)
     {
         if (x_IsSet(next_oid)) {
             return true;

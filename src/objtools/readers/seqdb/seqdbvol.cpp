@@ -89,12 +89,11 @@ Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx)
 
 static CFastMutex s_MapNaMutex;
 
+
 vector<Uint1> CSeqDBMapNa2ToNa4Setup(void)
 {
     vector<Uint1> translated;
     translated.resize(512);
-    
-    // var construction - not done
     
     Uint1 convert[16] = {17,  18,  20,  24,  33,  34,  36,  40,
                          65,  66,  68,  72, 129, 130, 132, 136};
@@ -123,7 +122,7 @@ void CSeqDBMapNa2ToNa4(const char * buf2bit, vector<char> & buf4bit, int base_le
     int inp_chars = base_length/4;
     
     for(int i=0; i<inp_chars; i++) {
-        char inp_char = buf2bit[i];
+        Uint4 inp_char = (buf2bit[i] & 0xFF);
         
         buf4bit.push_back(expanded[ (inp_char*2)     ]);
         buf4bit.push_back(expanded[ (inp_char*2) + 1 ]);
@@ -133,16 +132,65 @@ void CSeqDBMapNa2ToNa4(const char * buf2bit, vector<char> & buf4bit, int base_le
     
     if (bases_remain) {
         Uint1 remainder_bits = 2 * bases_remain;
-        Uint1 remainder_mask = 0xFF << (8 - remainder_bits);
-        char last_masked = buf2bit[inp_chars] & remainder_mask;
+        Uint1 remainder_mask = (0xFF << (8 - remainder_bits)) & 0xFF;
+        Uint4 last_masked = buf2bit[inp_chars] & remainder_mask;
         
-        buf4bit.push_back(expanded[ (last_masked*2)   ]);
+        buf4bit.push_back(expanded[ (last_masked*2) ]);
+        
         if (bases_remain > 2) {
             buf4bit.push_back(expanded[ (last_masked*2)+1 ]);
         }
     }
     
     assert(estimated_length == buf4bit.size());
+}
+
+vector<Uint1> CSeqDBMapNcbi4NaToBlastNaSetup(void)
+{
+    vector<Uint1> translated;
+    translated.resize(256);
+    
+    // This mapping stolen., er, courtesy of blastkar.c.
+    
+    Uint1 trans_ncbi4na_to_blastna[] = {
+        15, /* Gap, 0 */
+        0,  /* A,   1 */
+        1,  /* C,   2 */
+        6,  /* M,   3 */
+        2,  /* G,   4 */
+        4,  /* R,   5 */
+        9,  /* S,   6 */
+        13, /* V,   7 */
+        3,  /* T,   8 */
+        8,  /* W,   9 */
+        5,  /* Y,  10 */
+        12, /* H,  11 */
+        7,  /* K,  12 */
+        11, /* D,  13 */
+        10, /* B,  14 */
+        14  /* N,  15 */
+    };
+    
+    for(int i = 0; i<256; i++) {
+        int a1 = (i >> 4) & 0xF;
+        int a2 = i & 0xF;
+        
+        int b1 = trans_ncbi4na_to_blastna[a1];
+        int b2 = trans_ncbi4na_to_blastna[a2];
+        
+        translated[i] = (b1 << 4) | b2;
+    }
+    
+    return translated;
+}
+
+void CSeqDBMapNcbiNa4ToBlastNa(vector<char> & buf)
+{
+    static vector<Uint1> trans = CSeqDBMapNcbi4NaToBlastNaSetup();
+    
+    for(Uint4 i = 0; i < buf.size(); i++) {
+        buf[i] = trans[ unsigned(buf[i]) & 0xFF ];
+    }
 }
 
 //--------------------
@@ -338,8 +386,8 @@ void s_GetDescrFromDefline(CRef<CBlast_def_line_set> deflines, string & descr)
 
 CRef<CBioseq>
 CSeqDBVol::GetBioseq(Int4 oid,
-                      bool use_objmgr,
-                      bool insert_ctrlA)
+                     bool use_objmgr,
+                     bool insert_ctrlA)
 {
     CFastMutexGuard guard(m_Lock);
     
@@ -519,6 +567,74 @@ Int4 CSeqDBVol::GetSequence(Int4 oid, const char ** buffer)
 {
     CFastMutexGuard guard(m_Lock);
     return x_GetSequence(oid, buffer);
+}
+
+Int4 CSeqDBVol::GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code)
+{
+    CFastMutexGuard guard(m_Lock);
+    return x_GetAmbigSeq(oid, buffer, nucl_code);
+}
+
+Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code)
+{
+    if (kSeqTypeProt == m_Idx.GetSeqType()) {
+        return x_GetSequence(oid, buffer);
+    } else {
+        vector<char> buffer_4na;
+        Int4 base_length = -1;
+        
+        {
+            // The code in this block is a few excerpts from
+            // GetBioseq() and s_CSeqDBWriteSeqDataNucl().
+            
+            // Get the length and the (probably mmapped) data.
+            
+            const char * seq_buffer = 0;
+            
+            base_length = x_GetSequence(oid, & seq_buffer);
+            
+            if (base_length < 1)
+                assert(0);
+        
+            // Get ambiguity characters.
+        
+            vector<Int4> ambchars;
+        
+            if (! x_GetAmbChar(oid, ambchars) ) {
+                // Should be a throw..
+                assert(0);
+            }
+            
+            // Combine and translate to 4 bits-per-character encoding.
+            
+            CSeqDBMapNa2ToNa4(seq_buffer, buffer_4na, base_length);
+            CSeqDBRebuildDNA_4na(buffer_4na, ambchars);
+            
+            if (nucl_code == kSeqDBNuclBlastNA) {
+                // Translate bytewise, in place.
+                CSeqDBMapNcbiNa4ToBlastNa(buffer_4na);
+            }
+            
+            // Return probably-mmapped sequence
+            
+            x_RetSequence(& seq_buffer);
+        }
+        
+        // NOTE:!! This is a memory leak; this is known, and I am
+        // fixing it, but the fix involves reorganization of code, and
+        // I don't want to bundle any more in this checkin. (kmb)
+        
+        int bytelen = buffer_4na.size();
+        char * uncomp_buf = new char[bytelen];
+        
+        for(int i = 0; i < bytelen; i++) {
+            uncomp_buf[i] = buffer_4na[i];
+        }
+        
+        *buffer = uncomp_buf;
+        
+        return base_length;
+    }
 }
 
 Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer)
