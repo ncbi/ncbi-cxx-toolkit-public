@@ -246,9 +246,12 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = GetNumberOfFrames(prog);
 
+    BlastMask* mask = NULL, *head_mask = NULL, *last_mask = NULL;
+
     // Unless the strand option is set to single strand, the actual
     // CSeq_locs dictacte which strand to examine during the search
     ENa_strand strand_opt = options.GetStrandOption();
+    int index = 0;
 
     ITERATE(TSeqLocVector, itr, queries) {
 
@@ -264,6 +267,9 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
         } else {
             strand = strand_opt;
         }
+
+        mask = CSeqLoc2BlastMask(*itr->mask, index);
+        ++index;
 
         if (translate) {
 
@@ -295,6 +301,8 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                    na_length, frame, &buf[offset], gc.get());
             }
             sfree(seqbuf);
+            // Translate the lower case mask coordinates;
+            BlastMaskDNAToProtein(&mask, *itr->seqloc, itr->scope);
 
         } else if (is_na) {
 
@@ -321,6 +329,15 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
         }
 
         ctx_index += nframes;
+        
+        if (mask) {
+            if ( !last_mask )
+                head_mask = last_mask = mask;
+            else {
+                last_mask->next = mask;
+                last_mask = last_mask->next;
+            }
+        }
     }
 
     (*seqblk) = (BLAST_SequenceBlk*) calloc(1, sizeof(BLAST_SequenceBlk));
@@ -330,6 +347,8 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     }
     // FIXME: is buflen calculated correctly here?
     BlastSetUp_SeqBlkNew(buf, buflen - 2, 0, seqblk, true);
+
+    (*seqblk)->lcase_mask = head_mask;
 
     return;
 }
@@ -368,6 +387,7 @@ SetupSubjects(const TSeqLocVector& subjects,
     // TODO: Should strand selection on the subject sequences be allowed?
     //ENa_strand strand = options->GetStrandOption(); 
     Int8 dblength = 0;
+    int index = 0; // Needed for lower case masks only.
 
     ITERATE(TSeqLocVector, itr, subjects) {
         BLAST_SequenceBlk* subj = NULL;
@@ -379,8 +399,13 @@ SetupSubjects(const TSeqLocVector& subjects,
                         eNa_strand_plus, use_sentinels);
 
         BlastSetUp_SeqBlkNew(seqbuf, seqbuflen, 0, &subj, TRUE);
+
         /* Should something more informative be done here????? */
         ASSERT(subj);
+
+        /* Set the lower case mask, if it exists */
+        subj->lcase_mask = CSeqLoc2BlastMask(*itr->mask, index);
+        ++index;
 
         /* If subject sequence is nucleotide, create compressed sequence 
            buffer and save it in 'sequence'. For blastn, the sentinel 
@@ -397,6 +422,7 @@ SetupSubjects(const TSeqLocVector& subjects,
         seqblk_vec->push_back(subj);
         (*max_subjlen) = MAX((*max_subjlen),
                 sequence::GetLength(*itr->seqloc, itr->scope));
+
     }
     options->SetDbSeqNum(seqblk_vec->size());
     options->SetDbLength(dblength);
@@ -718,6 +744,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/10/07 17:34:05  dondosha
+* Add lower case masks to SSeqLocs forming the vector of sequence locations
+*
 * Revision 1.34  2003/10/03 16:12:18  dondosha
 * Fix in previous change for plus strand search
 *

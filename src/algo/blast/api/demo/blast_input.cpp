@@ -50,15 +50,16 @@ BEGIN_SCOPE(blast)
 TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope, 
     ENa_strand strand, TSeqPos from, TSeqPos to, int *counter, 
-    BlastMask** lcase_mask)
+    bool get_lcase_mask)
 {
     _ASSERT(scope);
     TSeqLocVector retval;
     CRef<CSeq_entry> seq_entry;
-    vector <CConstRef<CSeq_loc> > mask_loc;
+    vector<CConstRef<CSeq_loc> > lcase_mask;
 
-    if (lcase_mask) {
-        if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, counter, &mask_loc)))
+    if (get_lcase_mask) {
+        if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, counter, 
+                                     &lcase_mask)))
             throw runtime_error("Could not retrieve seq entry");
     } else {
         if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, counter)))
@@ -66,6 +67,8 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
     }
 
     scope->AddTopLevelSeqEntry(*seq_entry);
+    
+    int index = 0;
 
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
 
@@ -82,8 +85,15 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
             seqloc->SetWhole(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
         }
         CRef<CScope> s(scope);
-        SSeqLoc sl(seqloc, s);
-        retval.push_back(sl);
+        SSeqLoc *slp;
+
+        if (get_lcase_mask) {
+            slp = new SSeqLoc(seqloc, s, lcase_mask[index]);
+            ++index;
+        } else {
+            slp = new SSeqLoc (seqloc, s);
+        }
+        retval.push_back(*slp);
 
         // Add this seqentry to the scope
         CBioseq_Handle bh;
@@ -91,21 +101,6 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
             bh = scope->GetBioseqHandle(*seqloc);
         } catch (CException& e) {
             scope->AddTopLevelSeqEntry(*seq_entry);
-        }
-    }
-
-    if (lcase_mask) {
-        *lcase_mask = NULL;
-        BlastMask* last_mask = NULL, *new_mask = NULL;
-
-        for (unsigned int i = 0; i < retval.size(); i++) {
-            new_mask = CSeqLoc2BlastMask(mask_loc[i], i);
-            if ( !last_mask )
-                *lcase_mask = last_mask = new_mask;
-            else {
-                last_mask->next = new_mask;
-                last_mask = last_mask->next;
-            }
         }
     }
 
