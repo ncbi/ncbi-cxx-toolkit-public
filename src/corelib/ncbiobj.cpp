@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/15 19:41:41  vasilche
+* Changed refernce counter to allow detection of more errors.
+*
 * Revision 1.6  2000/06/16 16:29:51  vasilche
 * Added SetCanDelete() method to allow to change CObject 'in heap' status immediately after creation.
 *
@@ -77,34 +80,76 @@ const char* CNullPointerError::what() const
 
 CObject::~CObject(void)
 {
-    if ( Referenced() )
-        THROW1_TRACE(runtime_error, "delete referenced CObject object");
+#if _DEBUG
+    TCounter counter = m_Counter;
+    if ( ObjectStateIsInvalid(counter) ) {
+        if ( counter == TCounter(eObjectDeletedValue) )
+            THROW1_TRACE(runtime_error, "double deletion of CObject");
+        else
+            THROW1_TRACE(runtime_error, "deletion of corrupted CObject");
+    }
+    if ( ObjectStateReferenced(counter) )
+        THROW1_TRACE(runtime_error, "deletion of referenced CObject");
+#endif
+    // mark object as deleted
+    m_Counter = TCounter(eObjectDeletedValue);
+}
+
+void CObject::InvalidObject(void) const
+{
+    if ( m_Counter == TCounter(eObjectDeletedValue) )
+        THROW1_TRACE(runtime_error, "using of deleted CObject");
+    else
+        THROW1_TRACE(runtime_error, "using of corrupted CObject");
+}
+
+void CObject::AddReferenceOverflow(void) const
+{
+    TCounter counter = m_Counter;
+    if ( ObjectStateIsInvalid(counter) )
+        InvalidObject();
+    else
+        THROW1_TRACE(runtime_error, "AddReferenceOverflow");
+}
+
+void CObject::CannotSetCanDelete(void) const
+{
+    TCounter counter = m_Counter;
+    if ( ObjectStateIsInvalid(counter) )
+        InvalidObject();
+    else
+        THROW1_TRACE(runtime_error, "SetCanDelete for used CObject");
 }
 
 void CObject::RemoveLastReference(void) const
 {
-    switch ( m_Counter ) {
-    case 0:
-        // last reference removed
+    TCounter counter = m_Counter;
+    if ( counter == TCounter(eObjectInHeap + eObjectCounterStep) ) {
+        // last reference to heap object -> delete
+        m_Counter = eObjectInHeap;
         delete const_cast<CObject*>(this);
-        break;
-    case eDoNotDelete:
-        // last reference to static object removed -> do nothing
-        break;
-    default:
-        m_Counter++;
-        THROW1_TRACE(runtime_error, "RemoveReference() without AddReference()");
     }
+    else if ( counter == TCounter(eObjectInStack + eObjectCounterStep) ) {
+        // last reference to stack object
+        m_Counter = eObjectInStack;
+    }
+    else if ( ObjectStateIsInvalid(counter) )
+        InvalidObject();
+    else
+        THROW1_TRACE(runtime_error, "RemoveReference of unreferenced CObject");
 }
 
 void CObject::ReleaseReference(void) const
 {
-    if ( m_Counter == 1 ) {
-        m_Counter = 0;
+    TCounter counter = m_Counter;
+    if ( counter == TCounter(eObjectInHeap + eObjectCounterStep) ) {
+        // release reference to object in heap
+        m_Counter = eObjectInHeap;
     }
-    else {
-        THROW1_TRACE(runtime_error, "Illegal CObject::ReleaseReference() call");
-    }
+    else if ( ObjectStateIsInvalid(counter) )
+        InvalidObject();
+    else
+        THROW1_TRACE(runtime_error, "Illegal ReleaseReference to CObject");
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/15 19:42:06  vasilche
+* Changed refernce counter to allow detection of more errors.
+*
 * Revision 1.10  2000/06/16 16:29:42  vasilche
 * Added SetCanDelete() method to allow to change CObject 'in heap' status immediately after creation.
 *
@@ -87,15 +90,74 @@ public:
 class CObject
 {
 private:
+    typedef unsigned TCounter; // TCounter must be unsigned
+
     // special flag in counter meaning that object is not allocated in heap
-    enum {
-        eDoNotDelete = int(0x80000000u)
+    // 0x...xxx - invalid (deleted)
+    // 1c...cc0 - valid object in stack
+    // 1c...cc1 - valid object in heap
+    enum EObjectState {
+        eObjectCounterBits    = (sizeof(TCounter) * 8), // bits in TCounter
+        eObjectCounterHighBit = int(1 << (eObjectCounterBits - 1)),
+        eObjectInStack        = eObjectCounterHighBit | 0,
+        eObjectInHeap         = eObjectCounterHighBit | 1,
+        eObjectDeletedValue   = int(0x1b4d9f34 & ~eObjectCounterHighBit),
+        eObjectStateMask      = eObjectInHeap | eObjectInStack,
+
+        eMinimumValidCounter  = eObjectCounterHighBit,
+        eMinimumInHeapCounter = eObjectInHeap,
+
+        eObjectCounterStep    = 2
     };
 
+    static bool ObjectStateIsValid(TCounter counter)
+        {
+            return counter >= TCounter(eMinimumValidCounter);
+        }
+    static bool ObjectStateIsInvalid(TCounter counter)
+        {
+            return counter < TCounter(eMinimumValidCounter);
+        }
+    static bool ObjectStateCanBeDeleted(TCounter counter)
+        {
+            return counter >= TCounter(eMinimumInHeapCounter);
+        }
+    static bool ObjectStateReferenced(TCounter counter)
+        {
+            return counter >=
+                TCounter(eMinimumValidCounter + eObjectCounterStep);
+        }
+    static bool ObjectStateDoubleReferenced(TCounter counter)
+        {
+            return counter >=
+                TCounter(eMinimumValidCounter + eObjectCounterStep*2);
+        }
+    static bool ObjectStateReferencedOnlyOnce(TCounter counter)
+        {
+            return ObjectStateReferenced(counter) &&
+                !ObjectStateDoubleReferenced(counter);
+        }
+
 public:
+    inline
+    bool CanBeDeleted(void) const THROWS_NONE
+        {
+            return ObjectStateCanBeDeleted(m_Counter);
+        }
+    inline
+    bool Referenced(void) const THROWS_NONE
+        {
+            return ObjectStateReferenced(m_Counter);
+        }
+    inline
+    bool ReferencedOnlyOnce(void) const THROWS_NONE
+        {
+            return ObjectStateReferencedOnlyOnce(m_Counter);
+        }
+
     // main constructor for static/automatic/enclosed objects
     CObject(void) THROWS_NONE
-        : m_Counter(eDoNotDelete)
+        : m_Counter(eObjectInStack)
         {
         }
     // virtual destructor
@@ -105,44 +167,48 @@ public:
         eCanDelete = 0
     };
 
+    // copy
+    CObject(const CObject& /*src*/) THROWS_NONE
+        : m_Counter(eObjectInStack)
+        {
+        }
+    CObject& operator=(const CObject& /*src*/) THROWS_NONE
+        {
+            if ( ObjectStateIsInvalid(m_Counter) )
+                InvalidObject();
+            return *this;
+        }
+
 protected:
     // special constructor for objects allocated in heap
     CObject(ECanDelete) THROWS_NONE
-        : m_Counter(0)
+        : m_Counter(eObjectInHeap)
+        {
+        }
+    CObject(ECanDelete, const CObject& /*src*/) THROWS_NONE
+        : m_Counter(eObjectInHeap)
         {
         }
 
 public:
     inline
-    bool CanBeDeleted(void) const THROWS_NONE
+    void AddReference(void) const
         {
-            return (m_Counter & eDoNotDelete) == 0;
-        }
-
-    inline
-    unsigned ReferenceCount(void) const THROWS_NONE
-        {
-            return (m_Counter & ~eDoNotDelete);
-        }
-
-    inline
-    bool Referenced(void) const THROWS_NONE
-        {
-            return ReferenceCount() != 0;
-        }
-
-    inline
-    void AddReference(void) const THROWS_NONE
-        {
-            ++m_Counter;
+            TCounter newCounter = m_Counter + TCounter(eObjectCounterStep);
+            if ( ObjectStateReferenced(newCounter) )
+                m_Counter = newCounter;
+            else
+                AddReferenceOverflow();
         }
 
     inline
     void RemoveReference(void) const
         {
-            if ( unsigned(m_Counter-- & ~eDoNotDelete) <= 1 ) {
+            TCounter oldCounter = m_Counter;
+            if ( ObjectStateDoubleReferenced(oldCounter) )
+                m_Counter = oldCounter - eObjectCounterStep;
+            else
                 RemoveLastReference();
-            }
         }
 
     // remove reference without deleting object
@@ -151,14 +217,19 @@ public:
     // set flag eCanDelete meaning that object was allocated in heap
     void SetCanDelete(void)
         {
-            _ASSERT(m_Counter == unsigned(eDoNotDelete));
-            m_Counter = 0;
+            if ( m_Counter != TCounter(eObjectInStack) )
+                CannotSetCanDelete();
+            m_Counter = eObjectInHeap;
         }
 
 private:
-    void RemoveLastReference(void) const;
+    void RemoveLastReference(void) const; // check special states
+    // report different kinds of error
+    void InvalidObject(void) const; // using of deleted object
+    void CannotSetCanDelete(void) const; // invalid call to SetCanDelete
+    void AddReferenceOverflow(void) const; // counter overflow (or deleted)
 
-    mutable unsigned m_Counter;
+    mutable TCounter m_Counter;
 };
 
 template<class C>
@@ -293,6 +364,14 @@ public:
 
     // getters
     inline
+    TObjectType* GetNonNullPointer(void) const THROWS_NONE
+        {
+            TObjectType* ptr = m_Ptr;
+            if ( !ptr )
+                throw CNullPointerError();
+            return m_Ptr;
+        }
+    inline
     TObjectType* GetPointerOrNull(void) const THROWS_NONE
         {
             return m_Ptr;
@@ -300,15 +379,12 @@ public:
     inline
     TObjectType* GetPointer(void) const
         {
-            TObjectType* ptr = m_Ptr;
-            if ( !ptr )
-                throw CNullPointerError();
-            return ptr;
+            return GetPointerOrNull();
         }
     inline
     TObjectType& GetObject(void) const
         {
-            return *GetPointer();
+            return *GetNonNullPointer();
         }
 
     inline
@@ -328,6 +404,16 @@ public:
         }
     inline
     TObjectType* operator->(void)
+        {
+            return GetPointer();
+        }
+    inline
+    operator const TObjectType*(void) const
+        {
+            return GetPointer();
+        }
+    inline
+    operator TObjectType*(void)
         {
             return GetPointer();
         }
@@ -458,6 +544,14 @@ public:
 
     // getters
     inline
+    TObjectType* GetNonNullPointer(void) const
+        {
+            TObjectType* ptr = m_Ptr;
+            if ( !ptr )
+                throw CNullPointerError();
+            return m_Ptr;
+        }
+    inline
     TObjectType* GetPointerOrNull(void) const THROWS_NONE
         {
             return m_Ptr;
@@ -465,15 +559,12 @@ public:
     inline
     TObjectType* GetPointer(void) const
         {
-            TObjectType* ptr = m_Ptr;
-            if ( !ptr )
-                throw CNullPointerError();
-            return ptr;
+            return GetPointerOrNull();
         }
     inline
     TObjectType& GetObject(void) const
         {
-            return *GetPointer();
+            return *GetNonNullPointer();
         }
 
     inline
@@ -483,6 +574,11 @@ public:
         }
     inline
     TObjectType* operator->(void) const
+        {
+            return GetPointer();
+        }
+    inline
+    operator TObjectType*(void) const
         {
             return GetPointer();
         }
