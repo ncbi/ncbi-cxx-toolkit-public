@@ -930,7 +930,7 @@ bool CAnnot_Collector::x_Search(const TTSE_Lock&      tse,
 {
     bool found = false;
 
-    CTSE_Info::TAnnotReadLockGuard guard(tse->m_AnnotObjsLock);
+    CTSE_Info::TAnnotLockReadGuard guard(tse->GetAnnotLock());
 
     if (cvt) {
         cvt->SetSrcId(id);
@@ -1052,7 +1052,7 @@ bool CAnnot_Collector::x_AddObject(CAnnotObject_Ref&    object_ref,
 
 void CAnnot_Collector::x_Search(const TTSE_Lock&      tse,
                                 const SIdAnnotObjs*   objs,
-                                CReadLockGuard&       guard,
+                                CTSE_Info::TAnnotLockReadGuard& guard,
                                 const CAnnotName&     annot_name,
                                 const CSeq_id_Handle& id,
                                 const CHandleRange&   hr,
@@ -1124,7 +1124,7 @@ void CAnnot_Collector::x_Search(const TTSE_Lock&      tse,
 
 void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
                                      const SIdAnnotObjs*   objs,
-                                     CReadLockGuard&       guard,
+                                     CTSE_Info::TAnnotLockReadGuard& guard,
                                      const CAnnotName&     annot_name,
                                      const CSeq_id_Handle& id,
                                      const CHandleRange&   hr,
@@ -1171,7 +1171,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
                     chunk.Load();
 
                     // Acquire the lock again:
-                    guard.Guard(tse->m_AnnotObjsLock);
+                    guard.Guard(tse->GetAnnotLock());
 
                     // Reget range map pointer as it may change:
                     objs = tse->x_GetIdObjects(name, id);
@@ -1346,7 +1346,7 @@ bool CAnnot_Collector::x_Search(const CHandleRangeMap& loc,
                 m_Scope->GetSynonyms(idit->first, GetGetFlag());
             TSeq_id_HandleSet idh_set;
             if (syns) {
-                CRef<CSeq_id_Mapper> mapper = CSeq_id_Mapper::GetInstance();
+                //CRef<CSeq_id_Mapper> mapper = CSeq_id_Mapper::GetInstance();
                 ITERATE(CSynonymsSet, syn_it, *syns) {
                     idh_set.insert(syns->GetSeq_id_Handle(syn_it));
                     /*CSeq_id_Handle syn = syns->GetSeq_id_Handle(syn_it);
@@ -1521,6 +1521,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/10/07 14:03:32  vasilche
+* Use shared among TSEs CTSE_Split_Info.
+* Use typedefs and methods for TSE and DataSource locking.
+* Load split CSeqdesc on the fly in CSeqdesc_CI.
+*
 * Revision 1.25  2004/09/30 15:03:41  grichenk
 * Fixed segments resolving
 *

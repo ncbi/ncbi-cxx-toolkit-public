@@ -56,6 +56,7 @@ class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CSeq_annot_SNP_Info;
 class CTSE_Chunk_Info;
+class CTSE_Split_Info;
 class CTSE_Info_Object;
 class CTSE_Lock;
 class CTSE_LoadLock;
@@ -194,9 +195,6 @@ public:
     typedef set<CAnnotName>                                  TNames;
     typedef map<CSeq_id_Handle, TNames>                      TSeqIdToNames;
 
-    typedef vector< pair<CSeq_id_Handle, TChunkId> >         TSeqIdToChunks;
-    typedef map<TChunkId, CRef<CTSE_Chunk_Info> >            TChunks;
-
     bool ContainsSeqid(const CSeq_id_Handle& id) const;
     CConstRef<CBioseq_Info> FindBioseq(const CSeq_id_Handle& key) const;
 
@@ -204,6 +202,7 @@ public:
     void UpdateAnnotIndex(const CTSE_Info_Object& object) const;
     void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(CTSE_Info_Object& object);
+    void UpdateAnnotIndex(CTSE_Chunk_Info& chunk);
 
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
@@ -214,9 +213,10 @@ public:
     virtual void x_ResetDirtyAnnotIndexNoParent(void);
 
     void x_GetRecords(const CSeq_id_Handle& id, bool bioseq);
+    void x_LoadChunk(TChunkId chunk_id) const;
+    void x_LoadChunks(const TChunkIds& chunk_ids) const;
 
-    CTSE_Chunk_Info& GetChunk(TChunkId chunk_id);
-    CTSE_Chunk_Info& GetSkeletonChunk(void);
+    CTSE_Split_Info& GetSplitInfo(void);
 
 private:
     friend class CTSE_Guard;
@@ -229,21 +229,18 @@ private:
     friend class CBioseq_Info;
     friend class CBioseq_set_Info;
     friend class CTSE_Chunk_Info;
+    friend class CTSE_Split_Info;
     friend class CSeq_annot_SNP_Info;
     friend class CSeqMatch_Info;
 
     CBioseq_set_Info& x_GetBioseq_set(int id);
-    CBioseq_Info& x_GetBioseq(int gi);
+    CBioseq_Info& x_GetBioseq(const CSeq_id_Handle& id);
     
     void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
     void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
-    void x_SetBioseqChunkId(TChunkId chunk_id);
-
     void x_SetBioseqId(const CSeq_id_Handle& id, CBioseq_Info* info);
     void x_ResetBioseqId(const CSeq_id_Handle& id, CBioseq_Info* info);
-
-    void x_SetContainedId(const CSeq_id_Handle& id, TChunkId chunk_id);
 
     void x_SetBioseq_setId(int key, CBioseq_set_Info* info);
     void x_ResetBioseq_setId(int key, CBioseq_set_Info* info);
@@ -309,6 +306,12 @@ private:
 
     void x_DoUpdate(TNeedUpdateFlags flags);
 
+    // annot object map mutex
+    typedef CRWLock        TAnnotLock;
+    typedef TAnnotLock::TReadLockGuard  TAnnotLockReadGuard;
+    typedef TAnnotLock::TWriteLockGuard TAnnotLockWriteGuard;
+    TAnnotLock& GetAnnotLock(void) const;
+
     friend class CTSE_Lock;
     friend class CTSE_LoadLock;
 
@@ -363,10 +366,7 @@ private:
     TBioseqs               m_Bioseqs;
 
     // Split chunks
-    TChunks                m_Chunks;
-    CRef<CTSE_Chunk_Info>  m_BioseqChunk;
-    TSeqIdToChunks         m_SeqIdToChunks;
-    bool                   m_SeqIdToChunksSorted;
+    CRef<CTSE_Split_Info>  m_Split;
 
     // SNP info set: temporarily used in SetSeq_entry()
     TSNP_InfoMap           m_SNP_InfoMap;
@@ -375,11 +375,7 @@ private:
     TNamedAnnotObjs        m_NamedAnnotObjs;
     TSeqIdToNames          m_SeqIdToNames;
 
-    // annot object map mutex
-    typedef CRWLock        TAnnotObjsLock;
-    typedef TAnnotObjsLock::TReadLockGuard  TAnnotReadLockGuard;
-    typedef TAnnotObjsLock::TWriteLockGuard TAnnotWriteLockGuard;
-    mutable TAnnotObjsLock m_AnnotObjsLock;
+    mutable TAnnotLock     m_AnnotLock;
 
 private:
     // Hide copy methods
@@ -461,6 +457,13 @@ inline
 const CTSE_Info::TBlobId& CTSE_Info::GetBlobId(void) const
 {
     return m_BlobId;
+}
+
+
+inline
+CTSE_Info::TAnnotLock& CTSE_Info::GetAnnotLock(void) const
+{
+    return m_AnnotLock;
 }
 
 

@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
@@ -52,9 +53,9 @@ BEGIN_SCOPE(objects)
 
 
 CTSE_Chunk_Info::CTSE_Chunk_Info(TChunkId id)
-    : m_TSE_Info(0),
+    : m_SplitInfo(0),
       m_ChunkId(id),
-      m_AnnotIndexState(eAnnotIndex_disabled)
+      m_AnnotIndexEnabled(false)
 {
 }
 
@@ -64,34 +65,45 @@ CTSE_Chunk_Info::~CTSE_Chunk_Info(void)
 }
 
 
-void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
+bool CTSE_Chunk_Info::x_Attached(void) const
 {
-    // attach to tse
+    return m_SplitInfo;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// chunk identification getters
+CTSE_Chunk_Info::TBlobId CTSE_Chunk_Info::GetBlobId(void) const
+{
+    _ASSERT(x_Attached());
+    return m_SplitInfo->GetBlobId();
+}
+
+
+CTSE_Chunk_Info::TBlobVersion CTSE_Chunk_Info::GetBlobVersion(void) const
+{
+    _ASSERT(x_Attached());
+    return m_SplitInfo->GetBlobVersion();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// attach chunk to CTSE_Split_Info
+void CTSE_Chunk_Info::x_SplitAttach(CTSE_Split_Info& split_info)
+{
+    _ASSERT(!x_Attached());
+    m_SplitInfo = &split_info;
+
     TChunkId chunk_id = GetChunkId();
-    _ASSERT(!m_TSE_Info);
-    _ASSERT(tse_info.m_Chunks.find(chunk_id) == tse_info.m_Chunks.end());
-    m_TSE_Info = &tse_info;
-    tse_info.m_Chunks[chunk_id].Reset(this);
 
     // register descrs places
-    ITERATE ( TPlaces, it, m_DescrPlaces ) {
-        x_GetBase(*it).x_AddDescrChunkId(chunk_id);
+    ITERATE ( TDescPlaces, it, m_DescrPlaces ) {
+        split_info.x_AddDescrPlace(*it, chunk_id);
     }
 
     // register annots places
     ITERATE ( TPlaces, it, m_AnnotPlaces ) {
-        x_GetBase(*it).x_AddAnnotChunkId(chunk_id);
-    }
-
-    // register bioseqs places
-    ITERATE ( TBioseqPlaces, it, m_BioseqPlaces ) {
-        TPlaceId bioseq_set_id = *it;
-        if ( bioseq_set_id ) {
-            x_GetBioseq_set(*it).x_AddBioseqChunkId(chunk_id);
-        }
-        else {
-            tse_info.x_SetBioseqChunkId(chunk_id);
-        }
+        split_info.x_AddAnnotPlace(*it, chunk_id);
     }
 
     // register bioseq ids
@@ -99,25 +111,63 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
         set<CSeq_id_Handle> ids;
         sort(m_BioseqIds.begin(), m_BioseqIds.end());
         ITERATE ( TBioseqIds, it, m_BioseqIds ) {
-            tse_info.x_SetContainedId(*it, chunk_id);
+            split_info.x_SetContainedId(*it, chunk_id);
             _VERIFY(ids.insert(*it).second);
         }
         ITERATE ( TAnnotContents, it, m_AnnotContents ) {
             ITERATE ( TAnnotTypes, tit, it->second ) {
                 ITERATE ( TLocationSet, lit, tit->second ) {
                     if ( ids.insert(lit->first).second ) {
-                        tse_info.x_SetContainedId(lit->first, chunk_id);
+                        split_info.x_SetContainedId(lit->first, chunk_id);
                     }
                 }
             }
         }
     }}
 
+    // register bioseqs places
+    ITERATE ( TBioseqPlaces, it, m_BioseqPlaces ) {
+        split_info.x_AddBioseqPlace(*it, chunk_id);
+    }
+
     // register seq-data
-    x_TSEAttachSeq_data();
+    split_info.x_AddSeq_data(m_Seq_data, *this);
 }
 
 
+// attach chunk to CTSE_Info
+void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
+{
+    _ASSERT(x_Attached());
+
+    TChunkId chunk_id = GetChunkId();
+
+    // register descrs places
+    ITERATE ( TDescPlaces, it, m_DescrPlaces ) {
+        m_SplitInfo->x_AddDescrPlace(tse_info, *it, chunk_id);
+    }
+
+    // register annots places
+    ITERATE ( TPlaces, it, m_AnnotPlaces ) {
+        m_SplitInfo->x_AddAnnotPlace(tse_info, *it, chunk_id);
+    }
+
+    // register bioseqs places
+    ITERATE ( TBioseqPlaces, it, m_BioseqPlaces ) {
+        m_SplitInfo->x_AddBioseqPlace(tse_info, *it, chunk_id);
+    }
+
+    // register seq-data
+    m_SplitInfo->x_AddSeq_data(tse_info, m_Seq_data, *this);
+
+    if ( m_AnnotIndexEnabled ) {
+        x_UpdateAnnotIndex(tse_info);
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// loading methods
 bool CTSE_Chunk_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
 {
     if ( IsLoaded() ) {
@@ -128,14 +178,9 @@ bool CTSE_Chunk_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
         Load();
         return true;
     }
-    if ( !bioseq && m_AnnotIndexState == eAnnotIndex_disabled ) {
-        if ( m_AnnotContents.empty() ) {
-            m_AnnotIndexState = eAnnotIndex_indexed;
-        }
-        else {
-            m_AnnotIndexState = eAnnotIndex_dirty;
-            m_TSE_Info->x_SetDirtyAnnotIndex();
-        }
+    if ( !bioseq ) {
+        // we are requested to index annotations
+        x_EnableAnnotIndex();
     }
     return false;
 }
@@ -144,14 +189,11 @@ bool CTSE_Chunk_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
 void CTSE_Chunk_Info::Load(void) const
 {
     CTSE_Chunk_Info* chunk = const_cast<CTSE_Chunk_Info*>(this);
-    CDataSource& ds = chunk->GetTSE_Info().GetDataSource();
-    CInitGuard init(chunk->m_LoadLock, ds.m_MutexPool);
+    _ASSERT(x_Attached());
+    CInitGuard init(chunk->m_LoadLock, m_SplitInfo->GetMutexPool());
     if ( init ) {
-        ds.GetDataLoader()->GetChunk(Ref(chunk));
-        _ASSERT(!NotLoaded());
-        if ( chunk->m_AnnotIndexState == eAnnotIndex_dirty ) {
-            chunk->m_AnnotIndexState = eAnnotIndex_disabled;
-        }
+        m_SplitInfo->GetDataLoader().GetChunk(Ref(chunk));
+        chunk->x_DisableAnnotIndexWhenLoaded();
     }
 }
 
@@ -165,39 +207,50 @@ void CTSE_Chunk_Info::SetLoaded(CObject* obj)
 }
 
 
-void CTSE_Chunk_Info::x_UpdateAnnotIndex(CTSE_Info& tse)
+/////////////////////////////////////////////////////////////////////////////
+// chunk content description
+void CTSE_Chunk_Info::x_AddDescrPlace(TDescTypes types,
+                                      EPlaceType place_type, TPlaceId place_id)
 {
-    if ( m_AnnotIndexState == eAnnotIndex_dirty ) {
-        x_UpdateAnnotIndexContents(tse);
-        m_AnnotIndexState = eAnnotIndex_indexed;
+    TDescPlace place(types, TPlace(place_type, place_id));
+    m_DescrPlaces.push_back(place);
+    if ( m_SplitInfo ) {
+        m_SplitInfo->x_AddDescrPlace(place, GetChunkId());
     }
-}
-
-
-void CTSE_Chunk_Info::x_AddDescrPlace(EPlaceType place_type, TPlaceId place_id)
-{
-    _ASSERT(!m_TSE_Info);
-    m_DescrPlaces.push_back(TPlace(place_type, place_id));
 }
 
 
 void CTSE_Chunk_Info::x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id)
 {
-    _ASSERT(!m_TSE_Info);
-    m_AnnotPlaces.push_back(TPlace(place_type, place_id));
+    TPlace place(place_type, place_id);
+    m_AnnotPlaces.push_back(place);
+    if ( m_SplitInfo ) {
+        m_SplitInfo->x_AddAnnotPlace(place, GetChunkId());
+    }
 }
 
 
 void CTSE_Chunk_Info::x_AddBioseqPlace(TPlaceId place_id)
 {
-    _ASSERT(!m_TSE_Info);
     m_BioseqPlaces.push_back(place_id);
+    if ( m_SplitInfo ) {
+        m_SplitInfo->x_AddBioseqPlace(place_id, GetChunkId());
+    }
+}
+
+
+void CTSE_Chunk_Info::x_AddSeq_data(const TLocationSet& location)
+{
+    m_Seq_data.insert(m_Seq_data.end(), location.begin(), location.end());
+    if ( m_SplitInfo ) {
+        m_SplitInfo->x_AddSeq_data(location, *this);
+    }
 }
 
 
 void CTSE_Chunk_Info::x_AddBioseqId(const CSeq_id_Handle& id)
 {
-    _ASSERT(!m_TSE_Info);
+    _ASSERT(!x_Attached());
     m_BioseqIds.push_back(id);
 }
 
@@ -207,7 +260,7 @@ void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
                                      const TLocationId& location_id,
                                      const TLocationRange& location_range)
 {
-    _ASSERT(!m_TSE_Info);
+    _ASSERT(!x_Attached());
     TLocationSet& dst = m_AnnotContents[annot_name][annot_type];
     dst.push_back(TLocation(location_id, location_range));
 }
@@ -215,18 +268,53 @@ void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
 
 void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
                                      const SAnnotTypeSelector& annot_type,
+                                     const TLocationId& location_id)
+{
+    _ASSERT(!x_Attached());
+    TLocationSet& dst = m_AnnotContents[annot_name][annot_type];
+    TLocation location(location_id, TLocationRange::GetWhole());
+    dst.push_back(location);
+}
+
+
+void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
+                                     const SAnnotTypeSelector& annot_type,
                                      const TLocationSet& location)
 {
-    _ASSERT(!m_TSE_Info);
+    _ASSERT(!x_Attached());
     TLocationSet& dst = m_AnnotContents[annot_name][annot_type];
     dst.insert(dst.end(), location.begin(), location.end());
 }
 
 
-void CTSE_Chunk_Info::x_AddSeq_data(const TLocationSet& location)
+/////////////////////////////////////////////////////////////////////////////
+// annot index maintainance
+void CTSE_Chunk_Info::x_EnableAnnotIndex(void)
 {
-    _ASSERT(!m_TSE_Info);
-    m_Seq_data.insert(m_Seq_data.end(), location.begin(), location.end());
+    if ( !m_AnnotIndexEnabled ) {
+        // enable index
+        if ( !m_AnnotContents.empty() ) {
+            m_SplitInfo->x_UpdateAnnotIndex(*this);
+        }
+        else {
+            m_AnnotIndexEnabled = true;
+        }
+    }
+    _ASSERT(m_AnnotIndexEnabled);
+}
+
+
+void CTSE_Chunk_Info::x_DisableAnnotIndexWhenLoaded(void)
+{
+    _ASSERT(IsLoaded());
+    m_AnnotIndexEnabled = false;
+    _ASSERT(!m_AnnotIndexEnabled);
+}
+
+
+void CTSE_Chunk_Info::x_UpdateAnnotIndex(CTSE_Info& tse)
+{
+    x_UpdateAnnotIndexContents(tse);
 }
 
 
@@ -275,117 +363,37 @@ void CTSE_Chunk_Info::x_DropAnnotObjects(CTSE_Info& /*tse*/)
 }
 
 
-CBioseq_Info& CTSE_Chunk_Info::x_GetBioseq(TPlaceId place_id)
-{
-    return GetTSE_Info().x_GetBioseq(place_id);
-}
-
-
-CBioseq_set_Info& CTSE_Chunk_Info::x_GetBioseq_set(TPlaceId place_id)
-{
-    return GetTSE_Info().x_GetBioseq_set(place_id);
-}
-
-
-CBioseq_Base_Info& CTSE_Chunk_Info::x_GetBase(const TPlace& place)
-{
-    if ( place.first == eBioseq ) {
-        return x_GetBioseq(place.second);
-    }
-    else {
-        return x_GetBioseq_set(place.second);
-    }
-}
-
-
-CBioseq_Info& CTSE_Chunk_Info::x_GetBioseq(const TPlace& place)
-{
-    if ( place.first == eBioseq ) {
-        return x_GetBioseq(place.second);
-    }
-    else {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "Bioseq-set id where gi is expected");
-    }
-}
-
-
-CBioseq_set_Info& CTSE_Chunk_Info::x_GetBioseq_set(const TPlace& place)
-{
-    if ( place.first == eBioseq_set ) {
-        return x_GetBioseq_set(place.second);
-    }
-    else {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "Gi where Bioseq-set id is expected");
-    }
-}
-
-
+/////////////////////////////////////////////////////////////////////////////
+// interface load methods
 void CTSE_Chunk_Info::x_LoadDescr(const TPlace& place,
                                   const CSeq_descr& descr)
 {
-    x_GetBase(place).AddSeq_descr(descr);
+    _ASSERT(x_Attached());
+    m_SplitInfo->x_LoadDescr(place, descr);
 }
 
 
 void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
                                   CRef<CSeq_annot_Info> annot)
 {
-    {{
-        CTSE_Info& tse = GetTSE_Info();
-        _ASSERT(tse.HasDataSource());
-        CDataSource::TMainLock::TWriteLockGuard guard
-            (tse.GetDataSource().m_DSMainLock);
-        x_GetBase(place).AddAnnot(annot);
-    }}
-    CDataSource::TAnnotLock::TWriteLockGuard guard2
-        (GetTSE_Info().GetDataSource().m_DSAnnotLock);
-    GetTSE_Info().UpdateAnnotIndex(*annot);
+    _ASSERT(x_Attached());
+    m_SplitInfo->x_LoadAnnot(place, annot);
 }
 
 
 void CTSE_Chunk_Info::x_LoadBioseq(const TPlace& place,
                                    const CBioseq& bioseq)
 {
-    CRef<CSeq_entry_Info> entry(new CSeq_entry_Info(*new CSeq_entry));
-    entry->SelectSeq(const_cast<CBioseq&>(bioseq));
-    x_GetBioseq_set(place).AddEntry(entry);
-}
-
-
-void CTSE_Chunk_Info::x_TSEAttachSeq_data(void)
-{
-    ITERATE ( TLocationSet, it, m_Seq_data ) {
-        const CSeq_id_Handle& id = it->first;
-        const TLocationRange& range = it->second;
-        CConstRef<CBioseq_Info> bioseq = GetTSE_Info().FindBioseq(id);
-        if ( !bioseq ) {
-            NCBI_THROW(CObjMgrException, eOtherError,
-                       "Chunk-Info Seq-data has bad Seq-id: "+id.AsString());
-        }
-        const_cast<CBioseq_Info&>(*bioseq).x_AddSeq_dataChunkId(GetChunkId());
-        const CSeqMap& seq_map = bioseq->GetSeqMap();
-        const_cast<CSeqMap&>(seq_map).SetRegionInChunk(*this,
-                                                       range.GetFrom(),
-                                                       range.GetLength());
-    }
+    _ASSERT(x_Attached());
+    m_SplitInfo->x_LoadBioseq(place, bioseq);
 }
 
 
 void CTSE_Chunk_Info::x_LoadSequence(const TPlace& place, TSeqPos pos,
                                      const TSequence& sequence)
 {
-    if ( place.first != eBioseq ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "cannot add Seq-data to Bioseq-set");
-    }
-    CSeqMap& seq_map = const_cast<CSeqMap&>(x_GetBioseq(place).GetSeqMap());
-    ITERATE ( TSequence, it, sequence ) {
-        const CSeq_literal& literal = **it;
-        seq_map.LoadSeq_data(pos, literal.GetLength(), literal.GetSeq_data());
-        pos += literal.GetLength();
-    }
+    _ASSERT(x_Attached());
+    m_SplitInfo->x_LoadSequence(place, pos, sequence);
 }
 
 
@@ -395,6 +403,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/10/07 14:03:32  vasilche
+* Use shared among TSEs CTSE_Split_Info.
+* Use typedefs and methods for TSE and DataSource locking.
+* Load split CSeqdesc on the fly in CSeqdesc_CI.
+*
 * Revision 1.16  2004/08/31 14:26:14  vasilche
 * Postpone indexing of split blobs.
 *

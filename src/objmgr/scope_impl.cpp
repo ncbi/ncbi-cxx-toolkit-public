@@ -819,6 +819,17 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
 }
 
 
+CRef<CTSE_Info> CScope_Impl::x_GetEditTSE(const CTSE_Info& src_tse)
+{
+    CRef<CTSE_Info> ret;
+    if ( src_tse.GetDataSource().GetDataLoader() ) {
+        NCBI_THROW(CObjMgrException, eNotImplemented,
+                   "CScope::GetEditHandle: detach is not implemented");
+    }
+    return ret;
+}
+
+
 CBioseq_EditHandle CScope_Impl::GetEditHandle(const CBioseq_Handle& h)
 {
     if ( !h ) {
@@ -826,12 +837,23 @@ CBioseq_EditHandle CScope_Impl::GetEditHandle(const CBioseq_Handle& h)
                    "CScope::GetEditHandle: null handle");
     }
     
-    if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
-        NCBI_THROW(CObjMgrException, eNotImplemented,
-                   "CScope::GetEditHandle: detach is not implemented");
+    CRef<CTSE_Info> edit_tse(x_GetEditTSE(h.x_GetInfo().GetTSE_Info()));
+    if ( !edit_tse ) {
+        // use original TSE
+        return CBioseq_EditHandle(h);
     }
     
-    return CBioseq_EditHandle(h);
+    // find corresponding info in edit_tse
+    TEditInfoMap::iterator iter =
+        m_EditInfoMap.find(CConstRef<CObject>(&h.x_GetScopeInfo()));
+    if ( iter == m_EditInfoMap.end() ) {
+        NCBI_THROW(CObjMgrException, eNotImplemented,
+                   "CScope::GetEditHandle: Bioseq already removed from TSE");
+    }
+    CRef<CBioseq_ScopeInfo> edit_info
+        (&dynamic_cast<CBioseq_ScopeInfo&>(*iter->second));
+    _ASSERT(&edit_tse->GetTSE_Info() == edit_tse);
+    return CBioseq_Handle(h.GetSeq_id_Handle(), edit_info);
 }
 
 
@@ -842,11 +864,14 @@ CSeq_entry_EditHandle CScope_Impl::GetEditHandle(const CSeq_entry_Handle& h)
                    "CScope::GetEditHandle: null handle");
     }
     
-    if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
-        NCBI_THROW(CObjMgrException, eNotImplemented,
-                   "CScope::GetEditHandle: detach is not implemented");
+    CRef<CTSE_Info> edit_tse(x_GetEditTSE(h.x_GetInfo().GetTSE_Info()));
+    if ( !edit_tse ) {
+        // use original TSE
+        return CSeq_entry_EditHandle(h);
     }
     
+    // find corresponding info in edit_tse
+
     return CSeq_entry_EditHandle(h);
 }
 
@@ -858,11 +883,14 @@ CSeq_annot_EditHandle CScope_Impl::GetEditHandle(const CSeq_annot_Handle& h)
                    "CScope::GetEditHandle: null handle");
     }
     
-    if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
-        NCBI_THROW(CObjMgrException, eNotImplemented,
-                   "CScope::GetEditHandle: detach is not implemented");
+    CRef<CTSE_Info> edit_tse(x_GetEditTSE(h.x_GetInfo().GetTSE_Info()));
+    if ( !edit_tse ) {
+        // use original TSE
+        return CSeq_annot_EditHandle(h);
     }
     
+    // find corresponding info in edit_tse
+
     return CSeq_annot_EditHandle(h);
 }
 
@@ -874,11 +902,14 @@ CBioseq_set_EditHandle CScope_Impl::GetEditHandle(const CBioseq_set_Handle& h)
                    "CScope::GetEditHandle: null handle");
     }
     
-    if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
-        NCBI_THROW(CObjMgrException, eNotImplemented,
-                   "CScope::GetEditHandle: detach is not implemented");
+    CRef<CTSE_Info> edit_tse(x_GetEditTSE(h.x_GetInfo().GetTSE_Info()));
+    if ( !edit_tse ) {
+        // use original TSE
+        return CBioseq_set_EditHandle(h);
     }
     
+    // find corresponding info in edit_tse
+
     return CBioseq_set_EditHandle(h);
 }
 
@@ -1472,6 +1503,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/10/07 14:03:32  vasilche
+* Use shared among TSEs CTSE_Split_Info.
+* Use typedefs and methods for TSE and DataSource locking.
+* Load split CSeqdesc on the fly in CSeqdesc_CI.
+*
 * Revision 1.27  2004/09/28 14:30:02  vasilche
 * Implemented CScope::AddSeq_annot().
 *

@@ -49,6 +49,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CTSE_Info;
+class CTSE_Split_Info;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CSeq_literal;
@@ -57,11 +58,18 @@ class CSeq_annot;
 class CBioseq_Base_Info;
 class CBioseq_Info;
 class CBioseq_set_Info;
+class CDataLoader;
 
 class NCBI_XOBJMGR_EXPORT CTSE_Chunk_Info : public CObject
 {
 public:
+    //////////////////////////////////////////////////////////////////
+    // types used
+    //////////////////////////////////////////////////////////////////
+
     // chunk identification
+    typedef CConstRef<CObject> TBlobId;
+    typedef int TBlobVersion;
     typedef int TChunkId;
 
     // contents place identification
@@ -71,7 +79,10 @@ public:
     };
     typedef int TPlaceId;
     typedef pair<EPlaceType, TPlaceId> TPlace;
+    typedef unsigned TDescTypes;
+    typedef pair<TDescTypes, TPlace> TDescPlace;
     typedef vector<TPlace> TPlaces;
+    typedef vector<TDescPlace> TDescPlaces;
     typedef vector<TPlaceId> TBioseqPlaces;
     typedef vector<CSeq_id_Handle> TBioseqIds;
 
@@ -87,30 +98,41 @@ public:
     typedef SAnnotObjects_Info TObjectInfos;
     typedef list<TObjectInfos> TObjectInfosList;
 
-    // constructors
+    // sequence data
+    typedef list< CRef<CSeq_literal> > TSequence;
+
+    //////////////////////////////////////////////////////////////////
+    // constructor & destructor
+    //////////////////////////////////////////////////////////////////
     CTSE_Chunk_Info(TChunkId id);
     virtual ~CTSE_Chunk_Info(void);
 
-    CTSE_Info& GetTSE_Info(void);
-
+    //////////////////////////////////////////////////////////////////
+    // chunk identification getters
+    //////////////////////////////////////////////////////////////////
+    TBlobId GetBlobId(void) const;
+    TBlobVersion GetBlobVersion(void) const;
     TChunkId GetChunkId(void) const;
 
+    //////////////////////////////////////////////////////////////////
+    // loading control
+    //////////////////////////////////////////////////////////////////
     bool NotLoaded(void) const;
     bool IsLoaded(void) const;
     void Load(void) const;
 
-    void x_TSEAttach(CTSE_Info& tse_info);
-
-    void x_AddDescrPlace(EPlaceType place_type, TPlaceId place_id);
+    //////////////////////////////////////////////////////////////////
+    // chunk content identification
+    // should be set before attaching to CTSE_Info
+    //////////////////////////////////////////////////////////////////
+    void x_AddDescrPlace(TDescTypes types,
+                         EPlaceType place_type, TPlaceId place_id);
     void x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id);
     void x_AddBioseqPlace(TPlaceId place_id);
-    CBioseq_Base_Info& x_GetBase(const TPlace& place);
-    CBioseq_Info& x_GetBioseq(const TPlace& place);
-    CBioseq_set_Info& x_GetBioseq_set(const TPlace& place);
-    CBioseq_Info& x_GetBioseq(TPlaceId place_id);
-    CBioseq_set_Info& x_GetBioseq_set(TPlaceId place_id);
-
     void x_AddBioseqId(const CSeq_id_Handle& id);
+    void x_AddAnnotType(const CAnnotName& annot_name,
+                        const SAnnotTypeSelector& annot_type,
+                        const TLocationId& location_id);
     void x_AddAnnotType(const CAnnotName& annot_name,
                         const SAnnotTypeSelector& annot_type,
                         const TLocationId& location_id,
@@ -120,48 +142,59 @@ public:
                         const TLocationSet& location);
     void x_AddSeq_data(const TLocationSet& location);
 
-    void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);
-    void x_LoadAnnot(const TPlace& place, CRef<CSeq_annot_Info> annot);
-    void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
+    //////////////////////////////////////////////////////////////////
+    // chunk data loading interface
+    // is called from CDataLoader
+    //////////////////////////////////////////////////////////////////
 
-    // return true if chunk is loaded
-    bool x_GetRecords(const CSeq_id_Handle& id, bool bioseq);
-
-    typedef list< CRef<CSeq_literal> > TSequence;
-    void x_LoadSequence(const TPlace& place, TSeqPos pos,
-                        const TSequence& seq);
-
+    // synchronization
     operator CInitMutex_Base&(void)
         {
             return m_LoadLock;
         }
     void SetLoaded(CObject* obj = 0);
 
+    // data attachment
+    void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);
+    void x_LoadAnnot(const TPlace& place, CRef<CSeq_annot_Info> annot);
+    void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
+    void x_LoadSequence(const TPlace& place, TSeqPos pos,
+                        const TSequence& seq);
+
 protected:
+    //////////////////////////////////////////////////////////////////
+    // interaction with CTSE_Info
+    //////////////////////////////////////////////////////////////////
+
+    // attach to CTSE_Info
+    void x_SplitAttach(CTSE_Split_Info& split_info);
+    void x_TSEAttach(CTSE_Info& tse_info);
+    bool x_Attached(void) const;
+
+    // return true if chunk is loaded
+    bool x_GetRecords(const CSeq_id_Handle& id, bool bioseq);
+
+    // annot index maintainance
+    void x_EnableAnnotIndex(void);
+    void x_DisableAnnotIndexWhenLoaded(void);
     void x_UpdateAnnotIndex(CTSE_Info& tse);
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
 
-    void x_TSEAttachSeq_data(void);
-
 private:
     friend class CTSE_Info;
+    friend class CTSE_Split_Info;
 
     CTSE_Chunk_Info(const CTSE_Chunk_Info&);
     CTSE_Chunk_Info& operator=(const CTSE_Chunk_Info&);
 
-    CTSE_Info*      m_TSE_Info;
+    CTSE_Split_Info*m_SplitInfo;
     TChunkId        m_ChunkId;
 
-    enum EAnnotIndexState {
-        eAnnotIndex_disabled,
-        eAnnotIndex_dirty,
-        eAnnotIndex_indexed
-    };
-    EAnnotIndexState m_AnnotIndexState;
+    bool            m_AnnotIndexEnabled;
 
-    TPlaces         m_DescrPlaces;
+    TDescPlaces     m_DescrPlaces;
     TPlaces         m_AnnotPlaces;
     TBioseqPlaces   m_BioseqPlaces;
     TBioseqIds      m_BioseqIds;
@@ -172,13 +205,6 @@ private:
 
     TObjectInfosList    m_ObjectInfosList;
 };
-
-
-inline
-CTSE_Info& CTSE_Chunk_Info::GetTSE_Info(void)
-{
-    return *m_TSE_Info;
-}
 
 
 inline
@@ -202,13 +228,17 @@ bool CTSE_Chunk_Info::IsLoaded(void) const
 }
 
 
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/10/07 14:03:32  vasilche
+* Use shared among TSEs CTSE_Split_Info.
+* Use typedefs and methods for TSE and DataSource locking.
+* Load split CSeqdesc on the fly in CSeqdesc_CI.
+*
 * Revision 1.11  2004/08/31 14:22:56  vasilche
 * Postpone indexing of split blobs.
 *

@@ -46,67 +46,69 @@ CSeq_descr_CI::CSeq_descr_CI(void)
 
 CSeq_descr_CI::CSeq_descr_CI(const CBioseq_Handle& handle,
                              size_t search_depth)
-    : m_NextEntry(handle.GetParentEntry()),
-      m_MaxCount(search_depth)
+    : m_CurrentEntry(handle.GetParentEntry()),
+      m_ParentLimit(search_depth-1)
 {
-    x_Next(); // Skip entries without descriptions
+    x_Settle(); // Skip entries without descriptions
 }
 
 
 CSeq_descr_CI::CSeq_descr_CI(const CSeq_entry_Handle& entry,
                              size_t search_depth)
-    : m_NextEntry(entry),
-      m_MaxCount(search_depth)
+    : m_CurrentEntry(entry),
+      m_ParentLimit(search_depth-1)
 {
-    x_Next(); // Skip entries without descriptions
+    x_Settle(); // Skip entries without descriptions
+    _ASSERT(!m_CurrentEntry || m_CurrentEntry.IsSetDescr());
 }
 
     
 CSeq_descr_CI::CSeq_descr_CI(const CSeq_descr_CI& iter)
-    : m_NextEntry(iter.m_NextEntry),
-      m_CurrentEntry(iter.m_CurrentEntry),
-      m_MaxCount(iter.m_MaxCount)
+    : m_CurrentEntry(iter.m_CurrentEntry),
+      m_ParentLimit(iter.m_ParentLimit)
 {
-    return;
+    _ASSERT(!m_CurrentEntry || m_CurrentEntry.IsSetDescr());
 }
 
 
 CSeq_descr_CI::~CSeq_descr_CI(void)
 {
-    return;
 }
 
 
 CSeq_descr_CI& CSeq_descr_CI::operator= (const CSeq_descr_CI& iter)
 {
     if (this != &iter) {
-        m_NextEntry = iter.m_NextEntry;
         m_CurrentEntry = iter.m_CurrentEntry;
-        m_MaxCount = iter.m_MaxCount;
+        m_ParentLimit = iter.m_ParentLimit;
     }
+    _ASSERT(!m_CurrentEntry || m_CurrentEntry.IsSetDescr());
     return *this;
 }
 
 
 void CSeq_descr_CI::x_Next(void)
 {
-    if ( !m_NextEntry ) {
-        m_CurrentEntry = CSeq_entry_Handle();
-        return;
+    x_Step();
+    x_Settle();
+    _ASSERT(!m_CurrentEntry || m_CurrentEntry.IsSetDescr());
+}
+
+
+void CSeq_descr_CI::x_Settle(void)
+{
+    while ( m_CurrentEntry && !m_CurrentEntry.IsSetDescr() ) {
+        x_Step();
     }
-    // Find an entry with seq-descr member set
-    while (m_NextEntry  &&  !m_NextEntry.IsSetDescr()) {
-        m_NextEntry = m_NextEntry.GetParentEntry();
-    }
-    if ( m_NextEntry ) {
-        m_CurrentEntry = m_NextEntry;
-        m_NextEntry = m_NextEntry.GetParentEntry();
-        if (m_MaxCount) {
-            --m_MaxCount;
-            if ( !m_MaxCount ) {
-                m_NextEntry = CSeq_entry_Handle();
-            }
-        }
+    _ASSERT(!m_CurrentEntry || m_CurrentEntry.IsSetDescr());
+}
+
+
+void CSeq_descr_CI::x_Step(void)
+{
+    if ( m_CurrentEntry && m_ParentLimit > 0 ) {
+        --m_ParentLimit;
+        m_CurrentEntry = m_CurrentEntry.GetParentEntry();
     }
     else {
         m_CurrentEntry = CSeq_entry_Handle();
@@ -121,9 +123,9 @@ CSeq_descr_CI& CSeq_descr_CI::operator++(void)
 }
 
 
-CSeq_descr_CI::operator bool (void) const
+CSeq_descr_CI::operator bool(void) const
 {
-    return m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr();
+    return m_CurrentEntry;
 }
 
 
@@ -153,6 +155,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/10/07 14:03:32  vasilche
+* Use shared among TSEs CTSE_Split_Info.
+* Use typedefs and methods for TSE and DataSource locking.
+* Load split CSeqdesc on the fly in CSeqdesc_CI.
+*
 * Revision 1.13  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -133,7 +133,8 @@ public:
 
     typedef int TChunkId;
     typedef vector<TChunkId> TChunkIds;
-    void x_LoadChunks(const TChunkIds& chunks) const;
+    void x_LoadChunk(TChunkId chunk_id) const;
+    void x_LoadChunks(const TChunkIds& chunk_ids) const;
 
 protected:
     void x_BaseParentAttach(CTSE_Info_Object& parent);
@@ -195,6 +196,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2004/10/07 14:03:32  vasilche
+ * Use shared among TSEs CTSE_Split_Info.
+ * Use typedefs and methods for TSE and DataSource locking.
+ * Load split CSeqdesc on the fly in CSeqdesc_CI.
+ *
  * Revision 1.4  2004/08/04 14:53:26  vasilche
  * Revamped object manager:
  * 1. Changed TSE locking scheme

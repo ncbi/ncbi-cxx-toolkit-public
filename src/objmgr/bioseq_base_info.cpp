@@ -161,9 +161,11 @@ void CBioseq_Base_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 }
 
 
-void CBioseq_Base_Info::x_AddDescrChunkId(TChunkId id)
+void CBioseq_Base_Info::x_AddDescrChunkId(const TDescTypeMask& types,
+                                          TChunkId id)
 {
     m_DescrChunks.push_back(id);
+    m_DescrTypeMasks.push_back(types);
     x_SetNeedUpdate(fNeedUpdate_descr);
 }
 
@@ -274,6 +276,94 @@ void CBioseq_Base_Info::AddSeq_descr(const TDescr& v)
 }
 
 
+const CSeq_descr::Tdata& CBioseq_Base_Info::x_GetDescList(void) const
+{
+    try {
+        return x_GetDescr().Get();
+    }
+    catch (...) {
+        if ( !x_IsSetDescr() && IsSetDescr() ) {
+            return const_cast<CBioseq_Base_Info*>(this)->x_SetDescr().Get();
+        }
+        throw;
+    }
+}
+
+
+bool CBioseq_Base_Info::x_IsEndDesc(TDesc_CI iter) const
+{
+    return iter == x_GetDescList().end();
+}
+
+
+inline
+bool CBioseq_Base_Info::x_IsEndNextDesc(TDesc_CI iter) const
+{
+    _ASSERT(!x_IsEndDesc(iter));
+    return x_IsEndDesc(++iter);
+}
+
+
+CBioseq_Base_Info::TDesc_CI
+CBioseq_Base_Info::x_GetFirstDesc(TDescTypeMask types) const
+{
+    x_PrefetchDesc(x_GetDescList().begin(), types);
+    return x_FindDesc(x_GetDescList().begin(), types);
+}
+
+
+CBioseq_Base_Info::TDesc_CI
+CBioseq_Base_Info::x_GetNextDesc(TDesc_CI iter, TDescTypeMask types) const
+{
+    _ASSERT(!x_IsEndDesc(iter));
+    if ( x_IsEndNextDesc(iter) ) {
+        x_PrefetchDesc(iter, types);
+    }
+    return x_FindDesc(++iter, types);
+}
+
+
+CBioseq_Base_Info::TDesc_CI
+CBioseq_Base_Info::x_FindDesc(TDesc_CI iter, TDescTypeMask types) const
+{
+    _ASSERT(CSeqdesc::e_MaxChoice < 32);
+    while ( !x_IsEndDesc(iter) ) {
+        if ( types & (1<<(**iter).Which()) ) {
+            break;
+        }
+        if ( x_IsEndNextDesc(iter) ) {
+            x_PrefetchDesc(iter, types);
+        }
+        ++iter;
+    }
+    return iter;
+}
+
+
+void CBioseq_Base_Info::x_PrefetchDesc(TDesc_CI last,
+                                       TDescTypeMask types) const
+{
+    // there might be a chunk with this descriptors
+    for ( size_t i = 0, count = m_DescrTypeMasks.size(); i < count; ++i ) {
+        if ( m_DescrTypeMasks[i] & types ) {
+            x_LoadChunk(m_DescrChunks[i]);
+            // check if new data appeared
+            if ( x_IsEndDesc(last) ) {
+                // first one
+                if ( !x_GetDescList().empty() )
+                    return;
+            }
+            else {
+                // next one
+                if ( !x_IsEndNextDesc(last) ) {
+                    return;
+                }
+            }
+        }
+    }
+}
+
+
 void CBioseq_Base_Info::x_AttachAnnot(CRef<CSeq_annot_Info> annot)
 {
     _ASSERT(!annot->HasParent_Info());
@@ -344,6 +434,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/10/07 14:03:32  vasilche
+* Use shared among TSEs CTSE_Split_Info.
+* Use typedefs and methods for TSE and DataSource locking.
+* Load split CSeqdesc on the fly in CSeqdesc_CI.
+*
 * Revision 1.6  2004/07/12 16:57:32  vasilche
 * Fixed loading of split Seq-descr and Seq-data objects.
 * They are loaded correctly now when GetCompleteXxx() method is called.

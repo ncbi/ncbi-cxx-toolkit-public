@@ -37,6 +37,7 @@
 #include <objmgr/impl/tse_info_object.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <vector>
 #include <list>
 
@@ -125,6 +126,13 @@ public:
     bool AddSeqdesc(CSeqdesc& d);
     bool RemoveSeqdesc(const CSeqdesc& d);
     void AddDescr(CSeq_entry_Info& src);
+
+    // low level access for CSeqdesc_CI in case sequence is split
+    typedef CSeq_descr::Tdata::const_iterator TDesc_CI;
+    typedef unsigned TDescTypeMask;
+    bool x_IsEndDesc(TDesc_CI iter) const;
+    TDesc_CI x_GetFirstDesc(TDescTypeMask types) const;
+    TDesc_CI x_GetNextDesc(TDesc_CI iter, TDescTypeMask types) const;
 
     CRef<CSeq_annot_Info> AddAnnot(const CSeq_annot& annot);
     void AddAnnot(CRef<CSeq_annot_Info> annot);
@@ -260,6 +268,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/10/07 14:03:32  vasilche
+* Use shared among TSEs CTSE_Split_Info.
+* Use typedefs and methods for TSE and DataSource locking.
+* Load split CSeqdesc on the fly in CSeqdesc_CI.
+*
 * Revision 1.15  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

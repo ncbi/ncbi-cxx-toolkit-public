@@ -520,6 +520,26 @@ void CSeq_entry_Info::AddDescr(CSeq_entry_Info& src)
 }
 
 
+bool CSeq_entry_Info::x_IsEndDesc(TDesc_CI iter) const
+{
+    return m_Contents->x_IsEndDesc(iter);
+}
+
+
+CSeq_entry_Info::TDesc_CI
+CSeq_entry_Info::x_GetFirstDesc(TDescTypeMask types) const
+{
+    return m_Contents->x_GetFirstDesc(types);
+}
+
+
+CSeq_entry_Info::TDesc_CI
+CSeq_entry_Info::x_GetNextDesc(TDesc_CI iter, TDescTypeMask types) const
+{
+    return m_Contents->x_GetNextDesc(iter, types);
+}
+
+
 CRef<CSeq_annot_Info> CSeq_entry_Info::AddAnnot(const CSeq_annot& annot)
 {
     return m_Contents->AddAnnot(annot);
@@ -566,6 +586,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/10/07 14:03:32  vasilche
+ * Use shared among TSEs CTSE_Split_Info.
+ * Use typedefs and methods for TSE and DataSource locking.
+ * Load split CSeqdesc on the fly in CSeqdesc_CI.
+ *
  * Revision 1.19  2004/08/17 15:56:22  vasilche
  * Added mapping and unmapping CSeq_entry -> CSeq_entry_Info in x_SetObject().
  *

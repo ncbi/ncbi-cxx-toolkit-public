@@ -36,6 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/impl/tse_info_object.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/Seq_descr.hpp>
 
 #include <vector>
 #include <list>
@@ -93,6 +94,20 @@ public:
     virtual void x_SetDescr(TDescr& v) = 0;
     virtual void x_ResetDescr(void) = 0;
 
+
+    // low level access for CSeqdesc_CI in case sequence is split
+    typedef TDescr::Tdata TDescList;
+    typedef TDescList::const_iterator TDesc_CI;
+    typedef unsigned TDescTypeMask;
+    
+    const TDescList& x_GetDescList(void) const;
+    TDesc_CI x_GetFirstDesc(TDescTypeMask types) const;
+    TDesc_CI x_GetNextDesc(TDesc_CI iter, TDescTypeMask types) const;
+    bool x_IsEndDesc(TDesc_CI iter) const;
+    bool x_IsEndNextDesc(TDesc_CI iter) const;
+    TDesc_CI x_FindDesc(TDesc_CI iter, TDescTypeMask types) const;
+    void x_PrefetchDesc(TDesc_CI last, TDescTypeMask types) const;
+
     // annot
     typedef vector< CRef<CSeq_annot_Info> > TAnnot;
     typedef list< CRef<CSeq_annot> > TObjAnnot;
@@ -124,7 +139,7 @@ public:
     void x_SetAnnot(void);
     void x_SetAnnot(const CBioseq_Base_Info& info);
 
-    void x_AddDescrChunkId(TChunkId chunk_id);
+    void x_AddDescrChunkId(const TDescTypeMask& types, TChunkId chunk_id);
     void x_AddAnnotChunkId(TChunkId chunk_id);
 
     virtual TObjAnnot& x_SetObjAnnot(void) = 0;
@@ -145,6 +160,8 @@ private:
     TObjAnnot*          m_ObjAnnot;
 
     TChunkIds           m_DescrChunks;
+    typedef vector<TDescTypeMask> TDescTypeMasks;
+    TDescTypeMasks      m_DescrTypeMasks;
     TChunkIds           m_AnnotChunks;
 };
 
@@ -199,6 +216,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2004/10/07 14:03:32  vasilche
+ * Use shared among TSEs CTSE_Split_Info.
+ * Use typedefs and methods for TSE and DataSource locking.
+ * Load split CSeqdesc on the fly in CSeqdesc_CI.
+ *
  * Revision 1.5  2004/07/12 16:57:32  vasilche
  * Fixed loading of split Seq-descr and Seq-data objects.
  * They are loaded correctly now when GetCompleteXxx() method is called.

@@ -34,6 +34,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/seq_entry_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -45,198 +46,217 @@ BEGIN_SCOPE(objects)
 //
 
 
-static const list< CRef<CSeqdesc> > kEmptySeqdescList;
-static const list< CRef<CSeqdesc> >::const_iterator kDummyInner
-    = kEmptySeqdescList.end();
+// inline methods first
+inline
+bool CSeqdesc_CI::x_ValidDesc(void) const
+{
+    _ASSERT(m_Entry);
+    return m_Desc_CI != m_Entry.GetSeq_entry_Handle().GetDescr().Get().end();
+}
+
+
+inline
+bool CSeqdesc_CI::x_RequestedType(void) const
+{
+    _ASSERT(CSeqdesc::e_MaxChoice < 32);
+    _ASSERT(x_ValidDesc());
+    return m_Choice & (1<<(**m_Desc_CI).Which());
+}
+
+
+inline
+bool CSeqdesc_CI::x_Valid(void) const
+{
+    return !m_Entry || x_ValidDesc() && x_RequestedType();
+}
 
 
 CSeqdesc_CI::CSeqdesc_CI(void)
-    : m_Outer(),
-      m_Inner(kDummyInner),
-      m_InnerEnd(kDummyInner),
-      m_Current(NULL)
-{}
+{
+    _ASSERT(x_Valid());
+}
 
 
 CSeqdesc_CI::CSeqdesc_CI(const CSeq_descr_CI& desc_it,
                          CSeqdesc::E_Choice choice)
-    : m_Outer(desc_it),
-      m_Current(NULL)
 {
-    if (choice != CSeqdesc::e_not_set) {
-        m_Choice.set(choice);
-    }
-    else {
-        m_Choice.set();
-    }
-    if ( !m_Outer )
-        return;
-    m_Inner = desc_it->Get().begin();
-    m_InnerEnd = desc_it->Get().end();
-    // Advance to the first relevant Seqdesc, if any.
-    x_Next();
+    x_SetChoice(choice);
+    x_SetEntry(desc_it);
+    _ASSERT(x_Valid());
 }
 
 
 CSeqdesc_CI::CSeqdesc_CI(const CBioseq_Handle& handle,
                          CSeqdesc::E_Choice choice,
                          size_t search_depth)
-    : m_Outer(handle, search_depth),
-      m_Current(NULL)
 {
-    if (choice != CSeqdesc::e_not_set) {
-        m_Choice.set(choice);
-    }
-    else {
-        m_Choice.set();
-    }
-    if ( !m_Outer )
-        return;
-    m_Inner = m_Outer->Get().begin();
-    m_InnerEnd = m_Outer->Get().end();
-    // Advance to the first relevant Seqdesc, if any.
-    x_Next();
+    x_SetChoice(choice);
+    x_SetEntry(CSeq_descr_CI(handle, search_depth));
+    _ASSERT(x_Valid());
 }
 
 
 CSeqdesc_CI::CSeqdesc_CI(const CSeq_entry_Handle& entry,
                          CSeqdesc::E_Choice choice,
                          size_t search_depth)
-    : m_Outer(entry, search_depth),
-      m_Current(NULL)
+    : m_Entry(entry, search_depth)
 {
-    if (choice != CSeqdesc::e_not_set) {
-        m_Choice.set(choice);
-    }
-    else {
-        m_Choice.set();
-    }
-    if ( !m_Outer )
-        return;
-    m_Inner = m_Outer->Get().begin();
-    m_InnerEnd = m_Outer->Get().end();
-    // Advance to the first relevant Seqdesc, if any.
-    x_Next();
+    x_SetChoice(choice);
+    x_SetEntry(CSeq_descr_CI(entry, search_depth));
+    _ASSERT(x_Valid());
 }
 
 
 CSeqdesc_CI::CSeqdesc_CI(const CBioseq_Handle& handle,
                          const TDescChoices& choices,
                          size_t search_depth)
-    : m_Outer(handle, search_depth),
-      m_Current(NULL)
 {
-    ITERATE(TDescChoices, it, choices) {
-        m_Choice.set(*it);
-    }
-    if ( !m_Outer )
-        return;
-    m_Inner = m_Outer->Get().begin();
-    m_InnerEnd = m_Outer->Get().end();
-    // Advance to the first relevant Seqdesc, if any.
-    x_Next();
+    x_SetChoices(choices);
+    x_SetEntry(CSeq_descr_CI(handle, search_depth));
+    _ASSERT(x_Valid());
 }
 
 
 CSeqdesc_CI::CSeqdesc_CI(const CSeq_entry_Handle& entry,
                          const TDescChoices& choices,
                          size_t search_depth)
-    : m_Outer(entry, search_depth),
-      m_Current(NULL)
 {
-    ITERATE(TDescChoices, it, choices) {
-        m_Choice.set(*it);
-    }
-    if ( !m_Outer )
-        return;
-    m_Inner = m_Outer->Get().begin();
-    m_InnerEnd = m_Outer->Get().end();
-    // Advance to the first relevant Seqdesc, if any.
-    x_Next();
+    x_SetChoices(choices);
+    x_SetEntry(CSeq_descr_CI(entry, search_depth));
+    _ASSERT(x_Valid());
 }
 
 
 CSeqdesc_CI::CSeqdesc_CI(const CSeqdesc_CI& iter)
-    : m_Outer(iter.m_Outer),
-      m_Inner(iter.m_Inner),
-      m_InnerEnd(iter.m_InnerEnd),
-      m_Current(iter.m_Current),
-      m_Choice(iter.m_Choice)
+    : m_Choice(iter.m_Choice),
+      m_Entry(iter.m_Entry),
+      m_Desc_CI(iter.m_Desc_CI)
 {
+    _ASSERT(x_Valid());
 }
 
 
 CSeqdesc_CI::~CSeqdesc_CI(void)
 {
-    return;
 }
 
 
 CSeqdesc_CI& CSeqdesc_CI::operator= (const CSeqdesc_CI& iter)
 {
     if (this != &iter) {
-        m_Current  = iter.m_Current;
-        m_Outer    = iter.m_Outer;
-        m_Inner    = iter.m_Inner;
-        m_InnerEnd = iter.m_InnerEnd;
         m_Choice   = iter.m_Choice;
+        m_Entry    = iter.m_Entry;
+        m_Desc_CI  = iter.m_Desc_CI;
     }
+    _ASSERT(x_Valid());
     return *this;
+}
+
+
+void CSeqdesc_CI::x_AddChoice(CSeqdesc::E_Choice choice)
+{
+    if ( choice != CSeqdesc::e_not_set ) {
+        _ASSERT(choice < 32);
+        m_Choice |= (1<<choice);
+    }
+    else {
+        // set all bits
+        m_Choice |= ~0;
+    }
+}
+
+
+void CSeqdesc_CI::x_SetChoice(CSeqdesc::E_Choice choice)
+{
+    m_Choice = 0;
+    x_AddChoice(choice);
+}
+
+
+void CSeqdesc_CI::x_SetChoices(const TDescChoices& choices)
+{
+    m_Choice = 0;
+    ITERATE ( TDescChoices, it, choices ) {
+        x_AddChoice(*it);
+    }
+}
+
+
+void CSeqdesc_CI::x_NextDesc(void)
+{
+    _ASSERT(x_ValidDesc());
+    const CSeq_entry_Info& entry = m_Entry.GetSeq_entry_Handle().x_GetInfo();
+    m_Desc_CI = entry.x_GetNextDesc(m_Desc_CI, m_Choice);
+}
+
+
+void CSeqdesc_CI::x_FirstDesc(void)
+{
+    if ( !m_Entry ) {
+        return;
+    }
+    const CSeq_entry_Info& entry = m_Entry.GetSeq_entry_Handle().x_GetInfo();
+    m_Desc_CI = entry.x_GetFirstDesc(m_Choice);
+}
+
+
+void CSeqdesc_CI::x_Settle(void)
+{
+    while ( m_Entry && !x_ValidDesc() ) {
+        ++m_Entry;
+        x_FirstDesc();
+    }
+}
+
+
+void CSeqdesc_CI::x_SetEntry(const CSeq_descr_CI& entry)
+{
+    m_Entry = entry;
+    x_FirstDesc();
+    // Advance to the first relevant Seqdesc, if any.
+    x_Settle();
 }
 
 
 void CSeqdesc_CI::x_Next(void)
 {
-    while (m_Outer) {
-        while (m_Inner != m_InnerEnd) {
-            if ( m_Choice[(*m_Inner)->Which()] ) {
-                m_Current = *m_Inner;
-                ++m_Inner;
-                return;
-            } else {
-                ++m_Inner;
-            }
-        }
-        if (++m_Outer) {
-            m_Inner    = m_Outer->Get().begin();
-            m_InnerEnd = m_Outer->Get().end();
-        }
-    }
-    m_Current = NULL;
+    x_NextDesc();
+    x_Settle();
 }
 
 
 CSeqdesc_CI& CSeqdesc_CI::operator++(void)
 {
     x_Next();
+    _ASSERT(x_Valid());
     return *this;
 }
 
 
 CSeqdesc_CI::operator bool(void) const
 {
-    return bool(m_Current)  &&  (m_Inner != m_InnerEnd  ||  m_Outer);
+    _ASSERT(x_Valid());
+    return m_Entry;
 }
 
 
 const CSeqdesc& CSeqdesc_CI::operator*(void) const
 {
-    _ASSERT(m_Current);
-    return *m_Current;
+    _ASSERT(x_ValidDesc() && x_RequestedType());
+    return **m_Desc_CI;
 }
 
 
 const CSeqdesc* CSeqdesc_CI::operator->(void) const
 {
-    _ASSERT(m_Current);
-    return m_Current;
+    _ASSERT(x_ValidDesc() && x_RequestedType());
+    return *m_Desc_CI;
 }
 
 
 CSeq_entry_Handle CSeqdesc_CI::GetSeq_entry_Handle(void) const
 {
-    return m_Outer ? m_Outer.GetSeq_entry_Handle() :
-        CSeq_entry_Handle();
+    return m_Entry.GetSeq_entry_Handle();
 }
 
 
@@ -246,6 +266,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/10/07 14:03:32  vasilche
+* Use shared among TSEs CTSE_Split_Info.
+* Use typedefs and methods for TSE and DataSource locking.
+* Load split CSeqdesc on the fly in CSeqdesc_CI.
+*
 * Revision 1.13  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

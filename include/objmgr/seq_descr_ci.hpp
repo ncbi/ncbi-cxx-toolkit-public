@@ -33,7 +33,6 @@
 *
 */
 
-#include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <corelib/ncbistd.hpp>
@@ -67,13 +66,13 @@ public:
     /// from a bioseq with limit number of seq-entries
     /// to "search_depth" (0 = unlimited).
     explicit CSeq_descr_CI(const CBioseq_Handle& handle,
-                  size_t search_depth = 0);
+                           size_t search_depth = 0);
 
     /// Create an iterator that enumerates CSeq_descr objects 
     /// from a seq-entry, limit number of seq-entries
     /// to "search_depth" (0 = unlimited).
     explicit CSeq_descr_CI(const CSeq_entry_Handle& entry,
-                  size_t search_depth = 0);
+                           size_t search_depth = 0);
 
     CSeq_descr_CI(const CSeq_descr_CI& iter);
     ~CSeq_descr_CI(void);
@@ -94,10 +93,11 @@ public:
 private:
     // Move to the next entry containing a descriptor
     void x_Next(void);
+    void x_Step(void);
+    void x_Settle(void);
 
-    CSeq_entry_Handle     m_NextEntry;
     CSeq_entry_Handle     m_CurrentEntry;
-    size_t                m_MaxCount;
+    size_t                m_ParentLimit;
 };
 
 
@@ -110,6 +110,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/10/07 14:03:32  vasilche
+* Use shared among TSEs CTSE_Split_Info.
+* Use typedefs and methods for TSE and DataSource locking.
+* Load split CSeqdesc on the fly in CSeqdesc_CI.
+*
 * Revision 1.12  2004/10/01 15:22:28  kononenk
 * Added doxygen formatting
 *

@@ -305,12 +305,15 @@ void CTSE_Info_Object::x_DoUpdate(TNeedUpdateFlags flags)
 }
 
 
-void CTSE_Info_Object::x_LoadChunks(const TChunkIds& chunks) const
+void CTSE_Info_Object::x_LoadChunk(TChunkId chunk_id) const
 {
-    CTSE_Info& tse = const_cast<CTSE_Info&>(GetTSE_Info());
-    ITERATE ( TChunkIds, it, chunks ) {
-        tse.GetChunk(*it).Load();
-    }
+    GetTSE_Info().x_LoadChunk(chunk_id);
+}
+
+
+void CTSE_Info_Object::x_LoadChunks(const TChunkIds& chunk_ids) const
+{
+    GetTSE_Info().x_LoadChunks(chunk_ids);
 }
 
 
@@ -320,6 +323,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/07 14:03:32  vasilche
+ * Use shared among TSEs CTSE_Split_Info.
+ * Use typedefs and methods for TSE and DataSource locking.
+ * Load split CSeqdesc on the fly in CSeqdesc_CI.
+ *
  * Revision 1.4  2004/07/12 16:57:32  vasilche
  * Fixed loading of split Seq-descr and Seq-data objects.
  * They are loaded correctly now when GetCompleteXxx() method is called.

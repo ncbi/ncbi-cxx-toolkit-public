@@ -640,10 +640,23 @@ void CDataSource::x_ResetDirtyAnnotIndex(CTSE_Info& tse)
 }
 
 
+CDataSource::CAnnotLockReadGuard::CAnnotLockReadGuard(CDataSource& ds)
+    : m_MainGuard(ds.m_DSMainLock),
+      m_AnnotGuard(ds.m_DSAnnotLock)
+{
+}
+
+
+CDataSource::CAnnotLockWriteGuard::CAnnotLockWriteGuard(CDataSource& ds)
+    : m_MainGuard(ds.m_DSMainLock),
+      m_AnnotGuard(ds.m_DSAnnotLock)
+{
+}
+
+
 void CDataSource::UpdateAnnotIndex(void)
 {
-    TMainLock::TWriteLockGuard guard(m_DSMainLock);
-    TAnnotLock::TWriteLockGuard guard2(m_DSAnnotLock);
+    TAnnotLockWriteGuard guard(*this);
     while ( !m_DirtyAnnot_TSEs.empty() ) {
         CRef<CTSE_Info> tse_info = *m_DirtyAnnot_TSEs.begin();
         tse_info->UpdateAnnotIndex();
@@ -697,9 +710,7 @@ CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
 
     UpdateAnnotIndex();
 
-    TMainLock::TReadLockGuard main_guard(m_DSMainLock);
-    // collect all relevant TSEs
-    TAnnotLock::TReadLockGuard guard(m_DSAnnotLock);
+    TAnnotLockReadGuard guard(*this);
 #ifdef DEBUG_MAPS
     debug::CReadGuard<TSeq_id2TSE_Set> g1(m_TSE_annot);
 #endif
@@ -725,58 +736,12 @@ CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
             }
         }
     }
-    //ERR_POST("GetTSESetWithAnnots("<<idh.AsString()<<").size() = "<<annot_locks.size());
+    if ( idh.IsGi() && annot_locks.size() < load_locks.size() ) {
+        ERR_POST("GetTSESetWithAnnots("<<idh.AsString()<<").size() = "<<annot_locks.size()<<" load_locks.size() = "<<load_locks.size());
+    }
     return annot_locks;
 }
 
-/*
-void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
-                              set<CSeq_id_Handle>& syns)
-{
-    //### The TSE returns locked, unlock it
-    CSeq_id_Handle idh = main_idh;
-    TTSE_Lock tse_info(x_FindBestTSE(main_idh));
-    if ( !tse_info ) {
-        // Try to find the best matching id (not exactly equal)
-        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetInstance();
-        if ( mapper.HaveMatchingHandles(idh) ) {
-            TSeq_id_HandleSet hset;
-            mapper.GetMatchingHandles(idh, hset);
-            ITERATE(TSeq_id_HandleSet, hit, hset) {
-                if ( *hit == main_idh ) // already checked
-                    continue;
-                if ( bool(tse_info)  &&  idh.IsBetter(*hit) ) // worse hit
-                    continue;
-                TTSE_Lock tmp_tse(x_FindBestTSE(*hit));
-                if ( tmp_tse ) {
-                    tse_info = tmp_tse;
-                    idh = *hit;
-                }
-            }
-        }
-    }
-    // At this point the tse_info (if not null) should be locked
-    if ( tse_info ) {
-        CTSE_Info::TBioseqs::const_iterator info =
-            tse_info->m_Bioseqs.find(idh);
-        if (info == tse_info->m_Bioseqs.end()) {
-            // Just copy the existing id
-            syns.insert(main_idh);
-        }
-        else {
-            // Create range list for each synonym of a seq_id
-            const CBioseq_Info::TId& syn = info->second->GetId();
-            ITERATE ( CBioseq_Info::TId, syn_it, syn ) {
-                syns.insert(*syn_it);
-            }
-        }
-    }
-    else {
-        // Just copy the existing range map
-        syns.insert(main_idh);
-    }
-}
-*/
 
 void CDataSource::x_IndexTSE(TSeq_id2TSE_Set& tse_map,
                              const CSeq_id_Handle& id,

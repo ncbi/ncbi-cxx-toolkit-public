@@ -34,12 +34,13 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_info.hpp>
-#include <objmgr/impl/annot_type_index.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <objmgr/impl/annot_type_index.hpp>
 #include <objmgr/impl/handle_range.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -115,8 +116,7 @@ CTSE_Info::CTSE_Info(void)
       m_SuppressionLevel(eSuppression_none),
       m_UsedMemory(0),
       m_LoadState(eNotLoaded),
-      m_CacheState(eNotInCache),
-      m_SeqIdToChunksSorted(true)
+      m_CacheState(eNotInCache)
 {
     m_LockCounter.Set(0);
     x_TSEAttach(*this);
@@ -131,8 +131,7 @@ CTSE_Info::CTSE_Info(const TBlobId& blob_id,
       m_SuppressionLevel(eSuppression_none),
       m_UsedMemory(0),
       m_LoadState(eNotLoaded),
-      m_CacheState(eNotInCache),
-      m_SeqIdToChunksSorted(true)
+      m_CacheState(eNotInCache)
 {
     m_LockCounter.Set(0);
     x_TSEAttach(*this);
@@ -149,8 +148,7 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
       m_SuppressionLevel(level),
       m_UsedMemory(0),
       m_LoadState(eLoaded),
-      m_CacheState(eNotInCache),
-      m_SeqIdToChunksSorted(true)
+      m_CacheState(eNotInCache)
 {
     m_LockCounter.Set(0);
     entry.Parentize();
@@ -167,8 +165,7 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
       m_SuppressionLevel(level),
       m_UsedMemory(0),
       m_LoadState(eLoaded),
-      m_CacheState(eNotInCache),
-      m_SeqIdToChunksSorted(true)
+      m_CacheState(eNotInCache)
 {
     m_LockCounter.Set(0);
     entry.Parentize();
@@ -187,7 +184,7 @@ CTSE_Info::CTSE_Info(const CTSE_Info& info)
       m_UsedMemory(info.m_UsedMemory),
       m_LoadState(eLoaded),
       m_CacheState(eNotInCache),
-      m_SeqIdToChunksSorted(true)
+      m_Split(info.m_Split)
 {
     m_LockCounter.Set(0);
     x_TSEAttach(*this);
@@ -249,9 +246,10 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry, const TSNP_InfoMap& snps)
                 (GetDataSource().m_DSMainLock);
             SetSeq_entry(entry);
         }}
-        CDataSource::TAnnotLock::TWriteLockGuard guard2
-            (GetDataSource().m_DSAnnotLock);
-        UpdateAnnotIndex(*this);
+        {{
+            CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
+            UpdateAnnotIndex(*this);
+        }}
     }
     else {
         SetSeq_entry(entry);
@@ -312,6 +310,9 @@ void CTSE_Info::x_DSAttachContents(CDataSource& ds)
 
     m_DataSource = &ds;
     TParent::x_DSAttachContents(ds);
+    if ( m_Split ) {
+        m_Split->x_DSAttach(ds);
+    }
     ITERATE ( TBioseqs, it, m_Bioseqs ) {
         ds.x_IndexSeqTSE(it->first, this);
     }
@@ -403,8 +404,8 @@ void CTSE_Info::x_UnindexAnnotTSE(const CAnnotName& name,
 void CTSE_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
     if ( flags & (fNeedUpdate_core|fNeedUpdate_children_core) ) {
-        if ( m_BioseqChunk ) {
-            m_BioseqChunk->Load();
+        if ( m_Split ) {
+            m_Split->x_UpdateCore();
         }
     }
     TParent::x_DoUpdate(flags);
@@ -450,36 +451,23 @@ CConstRef<CBioseq_Info> CTSE_Info::FindBioseq(const CSeq_id_Handle& id) const
 }
 
 
-void CTSE_Info::x_SetBioseqChunkId(TChunkId chunk_id)
-{
-    m_BioseqChunk = &GetChunk(chunk_id);
-    x_SetNeedUpdate(fNeedUpdate_core);
-}
-
-
-void CTSE_Info::x_SetContainedId(const CSeq_id_Handle& id, TChunkId chunk_id)
-{
-    m_SeqIdToChunks.push_back(pair<CSeq_id_Handle, TChunkId>(id, chunk_id));
-    m_SeqIdToChunksSorted = false;
-}
-
-
 void CTSE_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
 {
-    if ( m_SeqIdToChunks.empty() ) {
-        return;
+    if ( m_Split ) {
+        m_Split->x_GetRecords(id, bioseq);
     }
-    TAnnotWriteLockGuard guard(m_AnnotObjsLock);
-    if ( !m_SeqIdToChunksSorted ) {
-        sort(m_SeqIdToChunks.begin(), m_SeqIdToChunks.end());
-        m_SeqIdToChunksSorted = true;
-    }
-    pair<CSeq_id_Handle, TChunkId> key(id, -1);
-    for ( TSeqIdToChunks::iterator iter =
-              lower_bound(m_SeqIdToChunks.begin(), m_SeqIdToChunks.end(), key);
-          iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
-        GetChunk(iter->second).x_GetRecords(id, bioseq);
-    }
+}
+
+
+void CTSE_Info::x_LoadChunk(TChunkId chunk_id) const
+{
+    const_cast<CTSE_Split_Info&>(*m_Split).x_LoadChunk(chunk_id);
+}
+
+
+void CTSE_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
+{
+    const_cast<CTSE_Split_Info&>(*m_Split).x_LoadChunks(chunk_ids);
 }
 
 
@@ -582,45 +570,23 @@ void CTSE_Info::UpdateAnnotIndex(void)
 void CTSE_Info::UpdateAnnotIndex(CTSE_Info_Object& object)
 {
     _ASSERT(&object.GetTSE_Info() == this);
-    CTSE_Info::TAnnotWriteLockGuard guard(m_AnnotObjsLock);
+    TAnnotLockWriteGuard guard(GetAnnotLock());
     object.x_UpdateAnnotIndex(*this);
     _ASSERT(!object.x_DirtyAnnotIndex());
+}
+
+
+void CTSE_Info::UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
+{
+    TAnnotLockWriteGuard guard(GetAnnotLock());
+    chunk.x_UpdateAnnotIndex(*this);
 }
 
 
 void CTSE_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
     _ASSERT(this == &tse);
-    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
-        it->second->x_UpdateAnnotIndex(tse);
-    }
     TParent::x_UpdateAnnotIndexContents(tse);
-}
-
-
-CTSE_Chunk_Info& CTSE_Info::GetChunk(TChunkId chunk_id)
-{
-    TChunks::iterator iter = m_Chunks.find(chunk_id);
-    if ( iter == m_Chunks.end() ) {
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   "invalid chunk id: "+NStr::IntToString(chunk_id));
-    }
-    return *iter->second;
-}
-
-
-CTSE_Chunk_Info& CTSE_Info::GetSkeletonChunk(void)
-{
-    TChunks::iterator iter = m_Chunks.find(0);
-    if ( iter != m_Chunks.end() ) {
-        return *iter->second;
-    }
-    
-    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(0));
-    chunk->x_TSEAttach(*this);
-    
-    _ASSERT((iter = m_Chunks.find(0))!=m_Chunks.end() && iter->second==chunk);
-    return *chunk;
 }
 
 
@@ -873,18 +839,24 @@ CBioseq_set_Info& CTSE_Info::x_GetBioseq_set(int id)
 }
 
 
-CBioseq_Info& CTSE_Info::x_GetBioseq(int gi)
+CBioseq_Info& CTSE_Info::x_GetBioseq(const CSeq_id_Handle& id)
 {
-    TBioseqs::iterator iter = m_Bioseqs.find(CSeq_id_Handle::GetGiHandle(gi));
+    TBioseqs::iterator iter = m_Bioseqs.find(id);
     if ( iter == m_Bioseqs.end() ) {
         NCBI_THROW(CObjMgrException, eRegisterError,
-                   "cannot find Bioseq by gi");
-    }
-    if ( !iter->second ) {
-        NCBI_THROW(CObjMgrException, eRegisterError,
-                   "cannot get split Bioseq by gi");
+                   "cannot find Bioseq by Seq-id "+id.AsString());
     }
     return *iter->second;
+}
+
+
+CTSE_Split_Info& CTSE_Info::GetSplitInfo(void)
+{
+    if ( !m_Split ) {
+        m_Split = new CTSE_Split_Info;
+        m_Split->x_TSEAttach(*this);
+    }
+    return *m_Split;
 }
 
 

@@ -36,7 +36,7 @@
 
 #include <objmgr/seq_descr_ci.hpp>
 #include <corelib/ncbistd.hpp>
-#include <bitset>
+#include <objects/seq/Seqdesc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -114,16 +114,32 @@ public:
 
 private:
     CSeqdesc_CI operator++ (int); // prohibit postfix
-    typedef list< CRef<CSeqdesc> >::const_iterator TRawIterator;
-    typedef bitset<CSeqdesc::e_MaxChoice> TDescTypeMask;
+
+    typedef unsigned TDescTypeMask;
+
+    typedef list< CRef<CSeqdesc> >        TDescList;
+    typedef TDescList::const_iterator     TDescList_CI;
+
+    void x_AddChoice(CSeqdesc::E_Choice choice);
+    void x_SetChoice(CSeqdesc::E_Choice choice);
+    void x_SetChoices(const TDescChoices& choices);
+
+    bool x_RequestedType(void) const;
+
+    bool x_Valid(void) const; // for debugging
+    bool x_ValidDesc(void) const;
+
+    void x_FirstDesc(void);
+    void x_NextDesc(void);
+    
+    void x_SetEntry(const CSeq_descr_CI& entry);
 
     void x_Next(void);
+    void x_Settle(void);
 
-    CSeq_descr_CI       m_Outer;
-    TRawIterator        m_Inner;
-    TRawIterator        m_InnerEnd;
-    CConstRef<CSeqdesc> m_Current;
     TDescTypeMask       m_Choice;
+    CSeq_descr_CI       m_Entry;
+    TDescList_CI        m_Desc_CI;
 };
 
 
@@ -136,6 +152,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/10/07 14:03:32  vasilche
+* Use shared among TSEs CTSE_Split_Info.
+* Use typedefs and methods for TSE and DataSource locking.
+* Load split CSeqdesc on the fly in CSeqdesc_CI.
+*
 * Revision 1.11  2004/10/01 16:47:00  kononenk
 * Added doxygen formatting
 *

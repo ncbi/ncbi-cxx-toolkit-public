@@ -258,7 +258,7 @@ private:
     friend class CBioseq_Handle; // using mutex
     friend class CGBDataLoader;  //
     friend class CTSE_Info;
-    friend class CTSE_Chunk_Info;
+    friend class CTSE_Split_Info;
     friend class CTSE_Lock;
     friend class CTSE_LoadLock;
     friend class CSeq_entry_Info;
@@ -339,6 +339,29 @@ private:
     typedef CRWLock TMainLock;
     typedef CRWLock TAnnotLock;
     typedef CRWLock TCacheLock;
+
+    class CAnnotLockReadGuard
+    {
+    public:
+        CAnnotLockReadGuard(CDataSource& ds);
+
+    private:
+        CDataSource::TMainLock::TReadLockGuard     m_MainGuard;
+        CDataSource::TAnnotLock::TReadLockGuard    m_AnnotGuard;
+    };
+    class CAnnotLockWriteGuard
+    {
+    public:
+        CAnnotLockWriteGuard(CDataSource& ds);
+
+    private:
+        CDataSource::TMainLock::TReadLockGuard      m_MainGuard;
+        CDataSource::TAnnotLock::TWriteLockGuard    m_AnnotGuard;
+    };
+    friend class CAnnotLockReadGuard;
+    friend class CAnnotLockWriteGuard;
+    typedef CAnnotLockReadGuard TAnnotLockReadGuard;
+    typedef CAnnotLockWriteGuard TAnnotLockWriteGuard;
 
     // Used to lock: m_*_InfoMap, m_TSE_seq
     // Is locked before locks in CTSE_Info
