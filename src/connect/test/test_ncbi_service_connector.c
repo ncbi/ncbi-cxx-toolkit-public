@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/06/01 16:19:10  lavr
+ * Added (ifdef'ed out) an internal test connection to service ID1
+ *
  * Revision 6.11  2001/05/11 16:05:41  lavr
  * Change log message corrected
  *
@@ -135,6 +138,34 @@ int main(int argc, const char* argv[])
               ("%d bytes read from service (%s):\n%.*s",
                (int)n, CONN_GetType(conn), (int)n, ibuf));
     CONN_Close(conn);
+
+#if 0
+    CORE_LOG(eLOG_Note, "Trying ID1 service");
+
+    info = ConnNetInfo_Create(service);
+    connector = SERVICE_CreateConnectorEx("ID1", fSERV_Any, info);
+    ConnNetInfo_Destroy(info);
+
+    if (!connector)
+        CORE_LOG(eLOG_Fatal, "Service ID1 not available");
+
+    if (CONN_Create(connector, &conn) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Failed to create connection");
+
+    if (CONN_Write(conn, "\xA4\x80\x02\x01\x02\x00\x00", 7, &n) !=
+        eIO_Success || n != 7) {
+        CONN_Close(conn);
+        CORE_LOG(eLOG_Fatal, "Error writing to service ID1");
+    }
+
+    if (CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_Plain) != eIO_Success) {
+        CONN_Close(conn);
+        CORE_LOG(eLOG_Fatal, "Error reading from service ID1");
+    }
+
+    CORE_LOGF(eLOG_Note, ("%d bytes read from service ID1", n));
+    CONN_Close(conn);
+#endif
 
     return 0/*okay*/;
 }
