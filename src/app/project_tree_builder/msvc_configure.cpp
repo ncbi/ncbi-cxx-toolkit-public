@@ -149,22 +149,22 @@ void CMsvcConfigure::operator() (const CMsvcSite&         site,
     // For static buid
     ITERATE(list<SConfigInfo>, p, configs) {
         const SConfigInfo& config = *p;
+        const CBuildType static_build(false);
         s_CreateThirdPartyLibsInstallMakefile(site, 
                                               third_party_to_install, 
                                               config, 
-                                              CBuildType::eStatic);
+                                              static_build);
     }
     // For dll build
     list<SConfigInfo> dll_configs;
     GetApp().GetDllsInfo().GetBuildConfigs(&dll_configs);
     ITERATE(list<SConfigInfo>, p, dll_configs) {
-
         const SConfigInfo& config = *p;
+        const CBuildType dll_build(true);
         s_CreateThirdPartyLibsInstallMakefile(site, 
                                               third_party_to_install, 
                                               config, 
-                                              CBuildType::eDll);
-
+                                              dll_build);
     }
 }
 
@@ -277,6 +277,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/06/15 15:04:41  gorelenk
+ * Changed CMsvcConfigure::operator() to be correctly compiled on GCC295 and
+ * GCC333 .
+ *
  * Revision 1.12  2004/06/09 14:14:45  gorelenk
  * Added static helper function s_CreateThirdPartyLibsInstallMakefile.
  * Changed implementation of CMsvcConfigure::operator() to use helper above.
