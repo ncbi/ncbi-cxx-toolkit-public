@@ -279,7 +279,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     case CMolInfo::eTech_htgs_1:
     case CMolInfo::eTech_htgs_2:
     {
-        bool is_draft = false;
+        bool is_draft  = false;
+        bool cancelled = false;
         CSeqdesc_CI gb(hnd, CSeqdesc::e_Genbank);
         for (;  gb;  ++gb) {
             iterate (CGB_block::TKeywords, it,
@@ -287,13 +288,18 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                 if (NStr::Compare(*it, "HTGS_DRAFT", NStr::eNocase) == 0) {
                     is_draft = true;
                     break;
+                } else if (NStr::Compare(*it, "HTGS_CANCELLED", NStr::eNocase)
+                           == 0) {
+                    cancelled = true;
+                    break;
                 }
             }
             BREAK(gb);
         }
         if (is_draft  &&  title.find("WORKING DRAFT") == NPOS) {
             suffix = ", WORKING DRAFT SEQUENCE";
-        } else if (!is_draft  &&  title.find("SEQUENCING IN") == NPOS) {
+        } else if (!is_draft  &&  !cancelled
+                   &&  title.find("SEQUENCING IN") == NPOS) {
             suffix = ", *** SEQUENCING IN PROGRESS ***";
         }
         
@@ -759,6 +765,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2002/06/28 18:39:20  ucko
+* htgs_cancelled keyword suppresses sequencing in progress phrase in defline
+*
 * Revision 1.3  2002/06/07 16:13:01  ucko
 * Move everything into the "sequence" namespace.
 *
