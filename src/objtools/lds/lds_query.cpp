@@ -33,6 +33,8 @@
 
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_util.hpp>
+#include <bdb/bdb_query.hpp>
+#include <bdb/bdb_query_parser.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Object_id.hpp>
@@ -46,11 +48,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-//////////////////////////////////////////////////////////////////
-//
-// Base class for sequence search functors.
-//
-
+/// Base class for sequence search functors.
+///
+/// @internal
 class CLDS_FindSeqIdBase
 {
 public:
@@ -100,14 +100,12 @@ protected:
     CLDS_Set*               m_ResultSet; // Search result 
 };
 
-//////////////////////////////////////////////////////////////////
-//
-// Functor used for scanning the Berkeley DB database.
-// This functor is driven by the BDB_iterate_file algorithm,
-// checks every object record to determine if it contains 
-// objects(molecules) satisfying the the given set of ids.
-//
-
+/// Functor used for scanning the Berkeley DB database.
+/// This functor is driven by the BDB_iterate_file algorithm,
+/// checks every object record to determine if it contains 
+/// objects(molecules) satisfying the the given set of ids.
+///
+/// @internal
 class CLDS_FindSeqIdFunctor : public CLDS_FindSeqIdBase
 {
 public:
@@ -194,11 +192,10 @@ private:
     SLDS_TablesCollection&  m_db;        // The LDS database
 };
 
-//////////////////////////////////////////////////////////////////
-//
-// Functor used for scanning the SLDS_SeqId_List database.
-//
-
+///
+/// Functor used for scanning the SLDS_SeqId_List database.
+///
+/// @internal
 class CLDS_FindSeqIdListFunctor : public CLDS_FindSeqIdBase
 {
 public:
@@ -245,6 +242,31 @@ string LDS_TypeMapSearch(const map<string, int>& type_map, int type)
     return kEmptyStr;
 }
 
+/// Query scanner functor for objects
+///
+/// @internal
+class CLDS_IdTableScanner : public CBDB_FileScanner
+{
+public:
+
+    CLDS_IdTableScanner(CBDB_File& dbf, CLDS_Set* rec_ids)
+    : CBDB_FileScanner(dbf),
+      m_ResultSet(*rec_ids)
+    {}
+
+    virtual EScanAction OnRecordFound()
+    {
+        int rowid = BDB_get_rowid(m_File);
+        if (rowid) {
+            m_ResultSet.insert(rowid);
+        }
+        return eContinue;
+    }
+
+protected:
+    CLDS_Set&   m_ResultSet;
+};
+
 
 //////////////////////////////////////////////////////////////////
 //
@@ -276,6 +298,19 @@ void CLDS_Query::FindSeqIdList(const vector<string>& seqids, CLDS_Set* obj_ids)
     BDB_iterate_file(m_db.seq_id_list, search_func);
 }
 
+void CLDS_Query::FindSequences(const string& query_str, CLDS_Set* obj_ids)
+{
+    _ASSERT(obj_ids);
+    CLDS_IdTableScanner scanner(m_db.object_db, obj_ids);
+    CBDB_Query    query;
+    try {
+        BDB_ParseQuery(query_str.c_str(), &query);
+    } catch (CBDB_LibException&) {
+        return; // ignore errors
+    }
+
+    scanner.Scan(query); 
+}
 
 CLDS_Query::SObjectDescr 
 CLDS_Query::GetObjectDescr(const map<string, int>& type_map, 
@@ -366,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/03/11 18:43:41  kuznets
+ * + FindSequences
+ *
  * Revision 1.10  2004/03/09 17:16:59  kuznets
  * Merge object attributes with objects
  *
