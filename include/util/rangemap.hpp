@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/05/06 20:38:56  grichenk
+* Fixed unsigned values handling
+*
 * Revision 1.16  2002/02/13 22:39:15  ucko
 * Support AIX.
 *
@@ -338,8 +341,12 @@ private:
                 // Skip all ranges, which can NOT intersect with the
                 // range to search, return the first one that CAN
                 // (but not always does).
+                // Special handling for unsigned position types
+                position_type min_from =
+                    (range_type::GetWholeFrom() != 0  ||  from + 1 >= maxLength) ?
+                    from + 1 - maxLength : 0;
                 return m_SelectIter->second.lower_bound
-                    (range_type(from - maxLength + 1, from));
+                    (range_type(min_from, from));
             }
         }
 
