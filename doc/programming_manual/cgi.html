@@ -1,10 +1,8 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-  <head>
-    <title> Developing CGI applications </title>
-  </head>
-  <body bgcolor = white>
-    <h1>Developing CGI applications  </h1>
+<!--#set var="TITLE" value="Developing CGI applications" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
+
+<h1>Developing CGI applications</h1>
 
 <ul>
   <li> <a href="#overview"> Overview of the CGI classes </a>
@@ -35,7 +33,7 @@ to the discussion of
 <a href="../libs/cgi.html">
 <i>NCBI C++ CGI Classes</i></a> in the Reference Manual.
 
-<a name="overview"> <h3> Overview of the CGI classes </h3>
+<a name="overview"></a><h3> Overview of the CGI classes </h3>
 Figure 1 illustrates the layered design of the CGI classes. 
 
 <center><img SRC="cgi.gif"> <br> Figure 1</center><br>
@@ -92,7 +90,7 @@ declarations are generally not included here. Certain virtual functions and data
 that have no meaning outside of a web application are also omitted. For complete
 definitions, refer to the header files via the source browsers.
 
-<a name="ccgiapp"> 
+<a name="ccgiapp"></a> 
 <a href="../docxx/CCgiApplication.html">
 <h3> The CCgiApplication class </h3></a>
 As mentioned, the <i>CCgiApplication </i> class implements its own version of 
@@ -150,7 +148,7 @@ iterated over <i>def_iter</i> times, with the initialization methods and
 RunFastCGI()</i>, and if that returns <i>false</i>, the application is run as a plain CGI
 program.
 
-<a name="cncbires">
+<a name="cncbires"></a>
 <a href="../docxx/CNcbiResource.html">
 <h3> The CNcbiResource</a> and 
 <a href="../docxx/CNcbiCommand.html">
@@ -241,7 +239,7 @@ entry is found.  When <i>IsRequested()</i> returns <i>true</i>, the command is <
 and the cloned command is then <i>executed</i>.  Both the <i>Execute()</i> and <i>Clone</i>
 methods are pure virtual functions which must be implemented by the user.
 
-<a name="ccgireq"> 
+<a name="ccgireq"></a>
 <a href="../docxx/CCgiRequest.html">
 <h3> The CCgiRequest class </h3></a>
 
@@ -324,7 +322,7 @@ multimap of <i>&lt;string,string></i> pairs. The <i>CCgiCookies</i> class (descr
 href="#cookies"> below</a>) contains an STL set of <a
 href="#ccgicoo"><i>CCgiCookie</i></a>, and implements an interface to this set.<p>
 
-<a name="ccgires"> 
+<a name="ccgires"></a>
 <a href="../docxx/CCgiResponse.html">
 <h3> The CCgiResponse class </h3></a>
 
@@ -409,7 +407,7 @@ protected:
 };
 </font></pre>
 
-<a name="ccgicoo"> 
+<a name="ccgicoo"></a>
 <a href="../docxx/CCgiCookie.html">
 <h3> The CCgiCookie class </h3></a>
 
@@ -499,7 +497,7 @@ if no value has been set, a reference to <i>NcbiEmptyString</i>. <i>GetExpDate(t
 returns <i>false</i> if no expiration date was previously set. Otherwise, <i>tm</i> is
 reset to <i>m_Expire</i>, and <i>true</i> is returned.
 
-<a name="cookies"> 
+<a name="cookies"></a>
 <a href="../docxx/CCgiCookies.html">
 <h3> The CCgiCookies class </h3></a>
 
@@ -557,7 +555,7 @@ private:
 };  
 </font></pre>
 
-<a name="ccgictx">
+<a name="ccgictx"></a>
 <a href="../docxx/CCgiContext.html">
 <h3> The CCgiContext class </h3></a> As depicted in <a href="#overview"> Figure 1</a>, a
 <i>CCgiContext</i> object contains an application object, a request object, and a response
@@ -616,7 +614,7 @@ private:
 }; 
 </font></pre>
 
-<a name=xmpl> <h3>Example code using the CGI classes</h3>
+<a name=xmpl></a><h3>Example code using the CGI classes</h3>
 The <a href="../tools.html#ref_TableTools"> <i>hello</i></a> program demonstrates a 
 simple application that combines the NCBI C++ Toolkit's CGI and HTML classes. 
 <a href="cgi_cpp.html"><i>justcgi.cpp</i></a> is an adaptation of
@@ -643,7 +641,7 @@ Additional examples using the CGI classes can be found in
 <a href="../lxr/source/src/cgi/test/">
 <i>src/cgi/test</i></a>.
 
-<a name=appendix> <h3>Appendix</h3>
+<a name=appendix></a><h3>Appendix</h3>
 <h4> Restrictions on arguments to the <i>CCgiCookie</i> constructor </h4>
 <table border=1 width=550 cellspacing=1>
   <caption></caption>
@@ -656,13 +654,11 @@ Additional examples using the CGI classes can be found in
 </table>
 <p>
 
-   </body>
 <a href="exceptions.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="webpgs.html"> <i> next</i> </a>
-</html>
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
@@ -671,3 +667,5 @@ Additional examples using the CGI classes can be found in
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>
+
+<!--#include virtual="../ssi/footer.shtml" -->

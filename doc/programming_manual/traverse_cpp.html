@@ -1,11 +1,8 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-  <head>
-    <title>traverseBS.cpp</title>
-  </head>
+<!--#set var="TITLE" value="traverseBS.cpp" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
 
-  <body BGCOLOR="#FFFFFF">
-  <pre><font color = "red">// File name: traverseBS.cpp
+<pre><font color = "red">// File name: traverseBS.cpp
 // Description: Reads an ASN.1 Biostruc text file into memory
 //		and visits its components
 <font color = "green">
@@ -60,7 +57,7 @@ int CTestAsn::Run()
 *  access to its private data via "get" functions.
 *
 ******************************************************************/
-<font color = "black"><a name="visitBS">
+<font color = "black"><a name="visitBS"></a>
 void Visit (const CBiostruc& bs) {
     cout << "Biostruc:\n" << endl;
     Visit (bs.GetId());
@@ -114,7 +111,7 @@ void Visit (const CBiostruc::TId& idList)
 *  CBiostruc_descr, where each descriptor has a choice state and a value.
 *
 *************************************************************************/
-<font color = "black"><a name="visitDscr">
+<font color = "black"><a name="visitDscr"></a>
 void Visit (const CBiostruc::TDescr& descList)
 {
     cout << "\n Visiting Descriptors of Biostruc:\n";
@@ -246,8 +243,5 @@ int main(int argc, const char* argv[])
     return theTestApp.AppMain(argc, argv);
 }
 </pre>
-</body>
-</html>
 
-
-
+<!--#include virtual="../ssi/footer.shtml" -->

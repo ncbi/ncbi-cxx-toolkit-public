@@ -1,10 +1,6 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-<head>
-<title>Thread manipulation and synchronization</title>
-</head>
-
-<body>
+<!--#set var="TITLE" value="Thread manipulation and synchronization" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
 
 
 <h2>Thread manipulation and synchronization</h2>
@@ -41,7 +37,7 @@ and
 <p>
 
 
-<a name=usingthreads>
+<a name=usingthreads></a>
 <h3>Using threads</h3>
 
 <p>
@@ -144,7 +140,7 @@ function is used to wait for the child thread termination.
 <p>
 
 
-<a name=cthreadpublic>
+<a name=cthreadpublic></a>
 <h4><a href=../lxr/ident?i=CThread>CThread</a>
 class public methods</h4>
 <p>
@@ -206,7 +202,7 @@ has no associated <i><b>CThread</i></b> object, a special value of 0
 
 
 
-<a name=cthreadprotected>
+<a name=cthreadprotected></a>
 <h4><a href=../lxr/ident?i=CThread>CThread</a> class protected methods</h4>
 <p>
 
@@ -238,7 +234,7 @@ class destructor as <tt>protected</tt>.
 
 
 
-<a name=threadlifecycle>
+<a name=threadlifecycle></a>
 <h4>Thread life cycle</h4>
 <p>
 
@@ -362,7 +358,7 @@ are <i><b>CRef</i></b>s referencing it.
 <p>
 
 
-<a name=threadref>
+<a name=threadref></a>
 <h4>Referencing thread objects</h4>
 <p>
 
@@ -380,7 +376,7 @@ if there are <i><b>CRef</i></b> references to the thread object.
 <p>
 
 
-<a name=synchronization>
+<a name=synchronization></a>
 <h3>Synchronization</h3>
 
 The following classes implement threads synchronization mechanisms:
@@ -395,7 +391,7 @@ The following classes implement threads synchronization mechanisms:
 
 
 
-<a name=cfastmutex>
+<a name=cfastmutex></a>
 <h4><a href=../lxr/ident?i=CFastMutex>CFastMutex</a>,
 <a href=../lxr/ident?i=CFastMutexGuard>CFastMutexGuard</a></h4>
 <p>
@@ -432,7 +428,7 @@ void ThreadSafe(void)
 
 
 
-<a name=cmutex>
+<a name=cmutex></a>
 <h4><a href=../lxr/ident?i=CMutex>CMutex</a>,
 <a href=../lxr/ident?i=CAutoMutex>CAutoMutex</a>,
 <a href=../lxr/ident?i=CMutexGuard>CMutexGuard</a></h4>
@@ -499,7 +495,7 @@ regular <i><b>Lock()</i></b>.
 <p>
 
 
-<a name=crwlock>
+<a name=crwlock></a>
 <h4><a href=../lxr/ident?i=CRWLock>CRWLock</a>,
 <a href=../lxr/ident?i=CAutoRW>CAutoRW</a>,
 <a href=../lxr/ident?i=CReadLockGuard>CReadLockGuard</a>,
@@ -537,7 +533,7 @@ on success (the RW-lock becomes R-locked or W-locked) or
 <p>
 
 
-<a name=tls>
+<a name=tls></a>
 <h3>Thread local storage
 (<a href=../lxr/ident?i=CTls>CTls&lt;&gt;</a> class)</h3>
 
@@ -610,5 +606,5 @@ The method should be used with care.
 <td align=right><i>$Date$</i></td>
 </tr>
 </table>
-</body>
-</html>
+
+<!--#include virtual="../ssi/footer.shtml" -->

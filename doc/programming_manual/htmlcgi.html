@@ -1,10 +1,8 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-  <head>
-    <title>  An example web-based CGI application </title>
-  </head>
-  <body bgcolor = white>
-    <h1>   An example  web-based CGI application </h1>
+<!--#set var="TITLE" value="An example web-based CGI application" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
+
+<h1>An example web-based CGI application</h1>
 
 <ul>
   <li> <a href="#intro"> Introduction </a>
@@ -12,7 +10,7 @@
   <li> <a href="#design">  Program design: Distributing the work </a>
 </ul>
 
-<a name="intro"> <h3>Introduction </h3>
+<a name="intro"></a> <h3>Introduction </h3>
 The previous two chapters described the NCBI C++ Toolkit's <a href="cgi.html"> CGI</a> and
 <a href="webpgs.html"> HTML</a> classes, with an emphasis on their independence from one 
 another. In practice however, a real application must employ both types of objects, with
@@ -35,7 +33,7 @@ use a <i>CNcbiResource</i> object, or <i>CNcbiCommand</i> objects, as the necess
 can be encoded directly in the application's <i>ProcessRequest()</i> method. The example program
 described in this section uses this simpler approach.<p>
 
-<a name="descrip"> <h3> Program description </h3>
+<a name="descrip"></a> <h3> Program description </h3>
 
 The <a href="../bin/car/car.cgi"><i>car.cgi</i></a> program presents an HTML
 form for ordering a custom color car with selected features. The form includes a group of checkboxes
@@ -84,7 +82,7 @@ feature. The <i>submit</i> button generates a fresh page with the new query stri
 <i>action</i> attribute of the form is the URL of <i>car.cgi</i>.
 
 
-<a name="design"> <h3> Program design: Distributing the work</h3>
+<a name="design"></a><h3> Program design: Distributing the work</h3>
 <p>
 The program uses three classes: <i>CCar, CCarAttr</i>, and <i>CCarCgi</i>. The <i>CCar</i> class
 knows nothing about HTML nodes or CGI objects - its only functions are to store the currently 
@@ -170,13 +168,12 @@ The additional files needed to compile and run the program are:
 </ol>
 
 <p>
-   </body>
+
 <a href="webpgs.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="cgi_diag.html"> <i> next</i> </a>
-</html>
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
@@ -185,3 +182,5 @@ The additional files needed to compile and run the program are:
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>
+
+<!--#include virtual="../ssi/footer.shtml" -->

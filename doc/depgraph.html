@@ -1,13 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-  <head>
-    <title>NCBI C++ Library Dependency Graph</title>
-  </head>
+<!--#set var="TITLE" value="NCBI C++ Library Dependency Graph" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
-  <body>
-    <h1>NCBI C++ Library Dependency Graph</h1>
-    This graph was obtained by building the full toolkit and then
-    running the following commands: <pre>
+<h1>NCBI C++ Library Dependency Graph</h1>
+
+This graph was obtained by building the full toolkit and then
+running the following commands: <pre>
 .../bin/depgraph .../lib/lib* > depgraph.out
 .../bin/depgraph2dot -simplify -in depgraph.out -out depgraph.dot
 dot -Tgif -o depgraph.gif.tmp depgraph.dot
@@ -34,5 +32,5 @@ You can find a version of the graph which includes internal projects
 -->
 <br><br>
 <img src="depgraph.gif">
-</body>
-</html>
+
+<!--#include virtual="./ssi/footer.shtml" -->

@@ -1,9 +1,7 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-<head>
-  <title> Makefile.xml2asn.app. </title>
-</head>
-<body BGCOLOR=white>
+<!--#set var="TITLE" value="Makefile.xml2asn.app" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
+
 <pre><font color = "green">
 #########################################################################
 # This file was originally generated from by shell script "new_project.sh"
@@ -15,4 +13,6 @@ OBJ = xml2asn
 LIB = mmdb1 mmdb2 mmdb3 seqloc seqfeat pub medline biblio general xser xncbi
 
 LIBS = $(NCBI_C_LIBPATH) -lncbi $(ORIG_LIBS)
-</body>
+</pre>
+
+<!--#include virtual="../ssi/footer.shtml" -->

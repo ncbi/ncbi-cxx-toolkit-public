@@ -1,11 +1,8 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-<head>
-  <title> Processing Serial Data. </title>
-</head>
-<body BGCOLOR="white">
+<!--#set var="TITLE" value="Processing Serial Data" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
 
-<h1> Processing Serial Data </h1>
+<h1>Processing Serial Data</h1>
 
 <ul>
   <li> <a href="#headersandlibs"> Accessing the object header files and serialization libraries </a>
@@ -19,7 +16,7 @@ described here have been designed to (potentially) support any formalized serial
 specification.  Many of the tools and objects have open-ended abstract or template
 implementations that can be instantiated differently to fit various specifications. <p>
 
-<a name="headersandlibs">
+<a name="headersandlibs"></a>
 <h3> Accessing the object header files and serialization libraries </h3> 
 
 Reading and writing serialized data is implemented by an integrated set of streams, filters,
@@ -83,7 +80,7 @@ according to the format specified. Similarly, Format specializations on an outpu
 <a href="../docxx/CObjectOStream.html">
 <i>CObjectOStream</i></a> objects.
 
-<a name="example1">
+<a name="example1"></a>
 <h3> Reading and writing serial data </h3>
 
 Let's consider a program <a href="xml2asn_cpp.html"> <i>xml2asn.cpp</i></a> that translates an
@@ -138,7 +135,7 @@ formats, but it contains explicit type information about itself.  Thus, the
 <i>CBiostruc</i> using the <a href="typeinfo.html#ctypeinfo"><i>type information</i></a> associated with
 that object's class.
 
-<a name="includes">
+<a name="includes"></a>
 <h3>Determining Which Header Files to Include </h3>
 
 As always, we include the <i>corelib</i> header files, <i>ncbistd.hpp</i> and <i>ncbiapp.hpp</i>.
@@ -169,7 +166,7 @@ following <i>#include</i> statements appear at the top of <a href="xml2asn_cpp.h
 #include <objects/mmdb1/Biostruc.hpp>
 </xmp>
 
-<a name="linklibs">
+<a name="linklibs"></a>
 <h3>Determining Which Libraries to Link To </h3>
 Determining which libraries must be linked to requires a bit more work and may involve
 some trial and error. The list of available libraries currently includes:<p>
@@ -206,14 +203,12 @@ See also the example program,
 <i>seqset.asn</i></a>).  
 
 <p>
-</body>
+
 <a href="objstream.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="choice.html"> <i> next </i> </a>
-</html>
-
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
@@ -222,3 +217,5 @@ See also the example program,
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>
+
+<!--#include virtual="../ssi/footer.shtml" -->

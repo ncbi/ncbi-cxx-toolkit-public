@@ -1,10 +1,8 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-  <head>
-    <title> Adding methods to serial objects </title>
-  </head>
-  <body bgcolor = white>
-    <h1> Adding methods to serial objects </h1>
+<!--#set var="TITLE" value="Adding methods to serial objects" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
+
+<h1>Adding methods to serial objects</h1>
 
 <ul>
   <li> <a href="#intro"> Introduction </a>
@@ -12,7 +10,7 @@
   <li> <a href="#xmpl"> An example </a>
 </ul>
 
-<a name="intro"> <h3> Introduction </h3>
+<a name="intro"></a> <h3> Introduction </h3>
 
 Each of the objects defined in the <i>objects/</i> subdirectories has both a <i>user</i> and
 a <i>base</i> class definition. For example, the header file for the user class
@@ -44,7 +42,7 @@ complicated.  The next section describes how you can work independently in your 
 <i>objects</i> subdirectories, and provides a script for setting things up.
 <p>
 
-<a name="environ"> <h3> Setting up the work environment </h3>
+<a name="environ"></a><h3> Setting up the work environment </h3>
 Here is an outline of the steps required to set things up:
 <ol>
 <li> Create a new directory to work in, and <i>cd</i> to that directory.<p>
@@ -128,7 +126,7 @@ cat tmp2 tmp > Makefile.testmod_app
 rm tmp*
 </pre></font>
 <p>
-<a name="xmpl"> <h3> An example </h3>
+<a name="xmpl"></a><h3> An example </h3>
 As a simple example, we defined the following new methods:
 
 <ul><i>
@@ -252,13 +250,11 @@ int main(int argc, char* argv[])
 }
 </pre>
 
-   </body>
 <a href="usrtypeinfo.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
 <!-- a href=".html"> <i> next</i> </a-->
-</html>
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
@@ -267,3 +263,5 @@ int main(int argc, char* argv[])
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>
+
+<!--#include virtual="../ssi/footer.shtml" -->

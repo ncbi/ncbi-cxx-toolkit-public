@@ -1,11 +1,8 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-  <head>
-    <title>Exception handling in the NCBI C++ Toolkit</title>
-  </head>
-  <body bgcolor = white>
-  <a href="../lxr/source/include/corelib/ncbiexpt.hpp">
-    <h1> Exception handling </a> in the NCBI C++ Toolkit </h1>
+<!--#set var="TITLE" value="Exception handling in the NCBI C++ Toolkit" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
+
+<a href="../lxr/source/include/corelib/ncbiexpt.hpp"><h1>Exception handling </a> in the NCBI C++ Toolkit</h1>
 
 <ul>
   <li> <a href="#macro"> Macros for standard C++ exception handling</a>
@@ -15,7 +12,8 @@
   <li> <a href="../libs/err_msg.html#ref_Exception"> Reference Manual pages</a>
 </ul>
 
-<a name="macro"> <h3> Macros for standard C++ exception handling</h3>
+<a name="macro"></a>
+<h3> Macros for standard C++ exception handling</h3>
 
 The C++ <i>throw()</i> statement provides a mechanism for specifying the types of exceptions that
 may be thrown by a function. Functions that do <i>not</i> include a <i>throw()</i> statement in
@@ -92,8 +90,8 @@ assume that <i>what()</i> has been defined for this object, and a default messag
 
 <center> <tt> Error: [</tt><i>catch-msg</i><tt>] Exception: Unknown exception </tt></center><p>
 
-<a name="errno"> <a href="../docxx/CErrnoException.html">
-<h3> The CErrnoException Class </h3></a>
+<a name="errno"></a>
+<a href="../docxx/CErrnoException.html"><h3> The CErrnoException Class </h3></a>
 The <i>CErrnoException</i> class is derived from <i>std::runtime_error</i>, and in addition to the
 <i>desc</i> string, has an <i>int</i> data member called <i>m_Errno</i>.  Like its parent class, 
 its constructor takes a single string argument which will be stored in <i>desc</i>. The constructor
@@ -107,8 +105,8 @@ CErrnoException::CErrnoException(const string& what) THROWS_NONE
 }
 </pre>
 
-<a name="parse"> <a href="../docxx/CParseException.html">
-<h3> The CParseException Class </h3></a>
+<a name="parse"></a>
+<a href="../docxx/CParseException.html"><h3> The CParseException Class </h3></a>
 Similar to <i>CErrnoException</i>, the <i>CParseException</i> class is derived from 
 <i>std::runtime_error</i>, and includes an additional <i>int</i> data member, in this
 case called <i>m_Pos</i>. This class was specifically defined to support complex parsing tasks,
@@ -116,7 +114,8 @@ and its constructor requires that positional information be supplied along with 
 to be caught. Thus the call to instantiate a <i>CParseException</i> object is:  
 <i>CParseException(msg, position)</i>.
 
-<a name="tracex"> <h3> Exception Tracing </h3>
+<a name="tracex"></a>
+<h3> Exception Tracing </h3>
 
 Knowing exactly where an exception first occurs can be very useful for debugging purposes. Standard
 C++ exception handling mechanisms do not have access to this information, but a set of
@@ -196,14 +195,12 @@ on for the entire application by setting either the $ABORT_ON_THROW environment 
 the application's registry ABORT_ON_THROW  entry (in the [DEBUG] section) to an arbitrary non-empty value.
 
 
-
-<p>  </body>
+<p>
 <a href="diag.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="cref.html"> <i> next</i> </a>
-</html>
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
@@ -212,3 +209,5 @@ the application's registry ABORT_ON_THROW  entry (in the [DEBUG] section) to an 
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>
+
+<!--#include virtual="../ssi/footer.shtml" -->

@@ -1,11 +1,8 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-  <head>
-    <title>Smart Pointers: the CRef Class</title>
-  </head>
+<!--#set var="TITLE" value="Smart Pointers: the CRef Class" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
 
-  <body bgcolor = white>
-    <h1> Smart Pointers: the <i>CObject</i> and <i>CRef</i> Classes</h1>
+<h1> Smart Pointers: the <i>CObject</i> and <i>CRef</i> Classes</h1>
 
 <ul>
   <li> <a href="#autoptr"> <i>STL auto_ptrs</i> </a> 
@@ -15,7 +12,8 @@
   <li> <a href="#usage"> When to use <i>CRef</i>s and <i>auto_ptr</i>s</a>
 </ul>
 
-<a name="autoptr"> <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-utilities.html#lib.auto.ptr">
+<a name="autoptr"></a>
+<a href="http://www.cygnus.com/misc/wp/dec96pub/lib-utilities.html#lib.auto.ptr">
  <h3> <i>STL auto_ptrs</i> </h3> </a>
 C programmers are well-acquainted with the advantages and pitfalls of using pointers. As is often 
 the case, the good news is also the bad news: 
@@ -59,8 +57,8 @@ defined - the second problem occurs when we try to dereference <i>ip</i>. The
 <i>delete</i> operation occurring as the block exits has now reset <i>*ip</i> to <i>0</i>, 
 so an attempt to divide by zero occurs. 
 
-<a name="cref"> <a href="../docxx/CRef.html">
-<h3>The <i>CRef</i> Class </h3></a>
+<a name="cref"></a>
+<a href="../docxx/CRef.html"><h3>The <i>CRef</i> Class </h3></a>
 
 These issues are addressed in the NCBI C++ Toolkit by using <i>reference-counted</i> smart
 pointers: a resource cannot be deallocated until <i>all</i> references to it have ceased to
@@ -129,8 +127,9 @@ As described there, this <i>typedef</i> defines <i>TId</i> to be a list of point
 specialized subclass of  <i>CObject</i>. 
 <p>
 
-<a name="cobject"> <a href="../docxx/CObject.html">
- <h3> The CObject Class </h3></a>
+<a name="cobject"></a>
+<a href="../docxx/CObject.html"><h3> The CObject Class </h3></a>
+
 The <i>CObject</i> class serves as a base class for all objects requiring a reference
 count. There is little overhead entailed by deriving a new class from this base
 class, and most objects in the NCBI C++ Toolkit are derived from the <i>CObject</i> class.
@@ -156,10 +155,9 @@ such as <i>int</i>, <i>string</i> etc. The <i>CObjectFor</i> class, described be
 designed for this purpose.
 
 <p>
-<a name="exmpl"> <h3>
-The 
-<a href="../docxx/CObjectFor.html">
-<i>CObjectFor</i> class</a>: Using smart pointers for standard types</h3>
+
+<a name="exmpl"></a>
+<h3> The <a href="../docxx/CObjectFor.html"><i>CObjectFor</i> class</a>: Using smart pointers for standard types</h3>
 
 The <i>CObjectFor</i> class is derived directly from <i>CObject</i>, and is implemented as a
 template class whose argument specifies the standard type that will be pointed to. In addition to
@@ -185,7 +183,8 @@ is defined. Moreover, the reference itself, i.e. the object pointed to, continue
 until <i>all</i> references to it have been removed.
 
 	  <p>
-<a name="usage"> <h3>When to use <i>CRef</i>s and <i>auto_ptr</i>s</h3>
+<a name="usage"></a>
+<h3>When to use <i>CRef</i>s and <i>auto_ptr</i>s</h3>
 
 There is some overhead in using <i>CRef</i> and <i>auto_ptr</i>, and these objects should only be used
 where needed.  Memory leaks are generally caused as a result of unexpected execution paths. For
@@ -211,13 +210,12 @@ object. If that object's destructor also handles the deallocation of its embedde
 it is sufficient to use a <i>CRef</i> on the containing object only.
 
 <p>
-  </body>
+
 <a href="exceptions.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
-<!--a href="typeinfo.html"> <i> next</i> </a-->
-</html>
+<!--a href="typeinfo.html"> <i> next</i> </a -->
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
@@ -227,3 +225,4 @@ it is sufficient to use a <i>CRef</i> on the containing object only.
 		  <td align=right><i>$Date$</i></td>
 	 </table>
 
+<!--#include virtual="../ssi/footer.shtml" -->

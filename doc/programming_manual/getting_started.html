@@ -1,9 +1,7 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-<head>
-  <title>A Simple Application Project</title>
-</head>
-<body BGCOLOR=white>
+<!--#set var="TITLE" value="A Simple Application Project" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
+
 <h1> Writing a Simple Application Project </h1>
 
 This page describes what you will need to know to write the simplest possible
@@ -20,7 +18,7 @@ to set up your work environment and makefiles.
   <li> <a href="#inside"> Inside the Application Class </a>
 </ul>
 
-<a name="overview">
+<a name="overview"></a>
 <h3> Overview </h3>
 
 There are three topics relevant to writing your first C++ project:
@@ -74,7 +72,7 @@ created.  For a more detailed description of this and other scripts to assist yo
 of your working environment, see the Reference Manual page <a href="../new_proj.html"> <i>Starting a
 new C++ project</i></a>.
 
-<a name="makefiles">
+<a name="makefiles"></a>
 <h3> The Project's Makefile </h3>
 
 This is the file you just created with the above script - take a look
@@ -126,7 +124,7 @@ as this example does not use any of the C++ classes or resources defined in the 
 Toolkit. The next example however, demonstrates a minimal application class that does use the NCBI
 C++ Toolkit, and therefore does require this type of set up.
 
-<a name="using">
+<a name="using"></a>
 <h3> Using the NCBI Application Class </h3>
 
 Five fundmental classes form the foundation of the C++ toolkit and more generally, the C++
@@ -140,7 +138,7 @@ libraries at NCBI:
  <li> class <a href="#CNcbiDiag"> CNcbiDiag</a>
 </ul>
 
-<a name="CNcbiApplication">
+<a name="CNcbiApplication"></a>
 
 <a href="../docxx/CNcbiApplication.html">
 <i>CNcbiApplication </i></a> is an abstract class used to define the basic functionality and
@@ -167,7 +165,7 @@ will be automatically invoked by <i>CNcbiApplication::AppMain()</i>,
 after it has initialized its
 <i> CNcbiArguments, CNcbiEnvironment, CNcbiRegistry</i>, and <i> CNcbiDiag</i> data members.<p>
 
-<a name="CNcbiArguments"> The 
+<a name="CNcbiArguments"></a> The 
 <a href="../docxx/CNcbiArguments.html">
 <i> CNcbiArguments </i></a> class provides a data structure for holding the application's
 command-line arguments, along with methods for accessing and modifying these.  The data
@@ -176,14 +174,14 @@ functions using the built-in [] operator for arrays and vectors. Four additional
 functions support retrieval and modification of the program name (initially
 <i>argv</i>[0]). <p>
 
-<a name="CNcbiEnvironment"> Similarly, the 
+<a name="CNcbiEnvironment"></a> Similarly, the 
 <a href="../docxx/CNcbiEnvironment.html">
 <i> CNcbiEnvironment </i></a> class provides a data structure for
 storing, accessing, and modifying the environment variables accessed by the C library
 routine <i>getenv()</i>. In this case the data structure is an associative array - a
 C++ map container, that allows <i>[]</i> access with string rather than integer indexes. <p>
 
-<a name="CNcbiRegistry"> The
+<a name="CNcbiRegistry"></a> The
 <a href="../docxx/CNcbiRegistry.html">
 <i> CNcbiRegistry </i></a> class is used to store, access, and modify runtime
 information read from a configuration file. Previously, these files were by convention named
@@ -196,7 +194,7 @@ the key-value pairs must be associated with specific sections. Accordingly, the 
 class's main data structure uses a map of maps, where the "containing" map is indexed by
 sections while the "contained" map is indexed by keywords. <p>
 
-<a name="CNcbiDiag"> The
+<a name="CNcbiDiag"></a> The
 <a href="../docxx/CNcbiDiag.html">
 <i> CNcbiDiag </i></a> class implements much of the functionality of the NCBI C Toolkit error
 processing mechanisms. Each instance of <i>CNcbiDiag</i> has a private buffer to
@@ -211,7 +209,7 @@ callback function may be invoked to handle the message. The default is to post e
 with the action determined by the severity level of the message. See also the discussion in the Reference Manual
 section on <a href="../libs/err_msg.html#ref_Message"> <i>message posting</i></a> for a more in-depth coverage.
 <p>
-<a name="creating">
+<a name="creating"></a>
 <h3> Creating a Simple Application Class </h3>
 
 <b>Step 1.</b> Define a subclass of the <i> CNcbiApplication </i> class.<p>
@@ -300,7 +298,7 @@ currently defined in the namespace without requiring the :: scope operator.
 
 
 
-<a name="inside">
+<a name="inside"></a>
 <h3> Inside the NCBI Application Class </h3>
 
 To review what we've done so far:
@@ -371,12 +369,9 @@ additional initialization/termination, these two functions simply return. The <i
 method prints out the message defined in <i>justApp.cpp</i> and exits.
 <p>
 
-</body>
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="sub_tree.html"> <i> next </i> </a>
-</html>
-
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
@@ -385,3 +380,5 @@ method prints out the message defined in <i>justApp.cpp</i> and exits.
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>
+
+<!--#include virtual="../ssi/footer.shtml" -->

@@ -1,10 +1,8 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-<head>
-  <title>Working in a separate directory </title>
-</head>
-<body BGCOLOR=white>
-<h1> Working in a separate directory </h1>
+<!--#set var="TITLE" value="Working in a separate directory " -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
+
+<h1>Working in a separate directory</h1>
 
 <ul>
   <li> <a href="#overview"> Overview </a> 
@@ -12,7 +10,7 @@
   <li> <a href="#testing"> Testing your setup </a>
 </ul>
 
-<a name="overview">
+<a name="overview"></a>
 <h3> Overview </h3>
 
 There are two topics relevant to writing an application using the NCBI C++ Toolkit:
@@ -75,7 +73,7 @@ directory you just created.  For a more detailed description of this and other s
 assist you in the set-up of your working environment, see the Reference Manual page <a
 href="../new_proj.html"> <i>Starting a new C++ project</i></a>.
 
-<a name="makefiles">
+<a name="makefiles"></a>
 <h3> The Project's Makefile </h3>
 
 The file you just created with the above script will be called <i>Makefile.NewProj_app</i>. In
@@ -103,7 +101,8 @@ of objects (OBJ) should include the names (without extensions) of all source fil
 application (APP). Again, the script makes the simplest assumption, i.e. that there is a
 single source file named <i>NewProj.cpp</i>. Additional source names can be added here.
 
-<a name="testing"> <h3>Testing your setup </h3>
+<a name="testing"></a>
+<h3>Testing your setup </h3>
 For a very simple application, this makefile is ready to be run. Try it out now, by creating
 the file <i>NewProj.cpp</i>:
 
@@ -137,12 +136,9 @@ Toolkit data types, NCBI namespaces, debugging macros, and exception classes. A 
 href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/new_mod.html"> template </a> files are also provided for
 your use in developing new applications. <p>
 
-</body>
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="sub_tree.html"> <i> next </i> </a>
-</html>
-
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
@@ -151,3 +147,5 @@ your use in developing new applications. <p>
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>
+
+<!--#include virtual="../ssi/footer.shtml" -->

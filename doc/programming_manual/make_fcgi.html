@@ -1,8 +1,7 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
-<head>
-  <title> Makefile.fastcgi.app. </title>
-</head>
+<!--#set var="TITLE" value="Makefile.fastcgi.app" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
+
 <body BGCOLOR=white>
 <pre><font color = "green"># $Id$
 # Author:  Diane Zimmerman
@@ -18,5 +17,6 @@ APP = fastcgi
 OBJ = cgiapp 
 LIB = xfcgi xncbi
 LIBS = $(FASTCGI_LIBS) $(ORIG_LIBS)
+</pre>
 
-</body>
+<!--#include virtual="../ssi/footer.shtml" -->
