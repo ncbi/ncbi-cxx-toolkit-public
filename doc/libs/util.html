@@ -1,0 +1,305 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=koi8-r">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>Util library</title>
+</head>
+<body>
+
+<h1>
+Util library</h1>
+
+<h2>
+Containers</h2>
+
+<ul>
+<li>
+<a href="#CWeakMapKey">CWeakMapKey&lt;typename Object></a></li>
+
+<li>
+<a href="#CWeakMap">CWeakMap&lt;typename Object></a></li>
+
+<li>
+<a href="#CRange">CRange&lt;typename Coordinate = int></a></li>
+
+<li>
+<a href="#CRangeMap">CRangeMap&lt;typename Object, typename Coordinate
+= int></a></li>
+
+<li>
+<a href="#CRangeMultiMap">CRangeMultimap&lt;typename Object, typename Coordinate
+= int></a></li>
+
+<li>
+<a href="#CIntervalTree">CIntervalTree</a></li>
+</ul>
+
+<h2>
+I/O classes</h2>
+
+<ul>
+<li>
+CIStreamBuffer</li>
+
+<li>
+COStreamBuffer</li>
+
+<li>
+CByteSource</li>
+
+<ul>
+<li>
+CStreamByteSource</li>
+
+<li>
+CFStreamByteSource</li>
+
+<li>
+CFileByteSource</li>
+
+<li>
+CMemoryByteSource</li>
+</ul>
+
+<li>
+CByteSourceReader</li>
+
+<ul>
+<li>
+CStreamByteSourceReader</li>
+
+<li>
+CFileByteSourceReader</li>
+
+<li>
+CSubFileByteSource</li>
+
+<li>
+CMemoryByteSourceReader</li>
+</ul>
+
+<li>
+CSubSourceCollector</li>
+
+<ul>
+<li>
+CMemorySourceCollector</li>
+
+<li>
+CFileSourceCollector</li>
+</ul>
+</ul>
+
+<h2>
+Other classes</h2>
+
+<ul>
+<li>
+<a href="#CLightString">CLightString</a></li>
+
+<li>
+CChecksum</li>
+</ul>
+Exceptions
+<ul>
+<li>
+CIOException</li>
+
+<li>
+CEofException</li>
+</ul>
+
+<h1>
+Classes descriptions</h1>
+
+<h2>
+<a NAME="CWeakMapKey"></a>template&lt;typename Object> class CWeakMapKey</h2>
+
+<pre>&nbsp;&nbsp;&nbsp; #include &lt;util/weakmap.hpp></pre>
+This class is used in conjunction with <a href="#CWeakMap">CWeakMap</a>.
+<br>&nbsp;
+<h2>
+<a NAME="CWeakMap"></a>template&lt;typename Object> class CWeakMap</h2>
+
+<pre>&nbsp;&nbsp;&nbsp; #include &lt;util/weakmap.hpp></pre>
+This class is used in conjunction with <a href="#CWeakMapKey">CWeakMapKey</a>.
+<br>It is extension for regular maps with additional feature: it automatically
+removes elements from map when corresponding key is destructed.
+<br>Key is of type <a href="#CWeakMapKey">CWeakMapKey&lt;Object></a>.
+<p>//&nbsp;&nbsp; Generic example of usage of these templates:
+<p>#include &lt;util/weakmap.hpp>
+<p>class CKey
+<br>{
+<br>public:
+<br>&nbsp;&nbsp;&nbsp; CWeakMapKey&lt;string> m_MapKey;
+<br>};
+<p>void Test(void)
+<br>{
+<br>&nbsp;&nbsp;&nbsp; // declare map object
+<br>&nbsp;&nbsp;&nbsp; CWeakMap&lt;string> map;
+<br>&nbsp;&nbsp;&nbsp; {
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // declare temporary key
+object
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CKey key;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // insert string value
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; map.insert(key.m_MapKey,
+"value");
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; map.size();
+// == 1
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; map.empty();
+// == false
+<br>&nbsp;&nbsp;&nbsp; } // end of block: key object is destructed and
+map forgets about value
+<br>&nbsp;&nbsp;&nbsp; cout &lt;&lt; map.size(); // == 0
+<br>&nbsp;&nbsp;&nbsp; cout &lt;&lt; map.empty(); // == true
+<br>};
+<br>&nbsp;
+<h3>
+typedefs</h3>
+
+<blockquote>
+<pre>key_type
+mapped_type
+value_type
+iterator
+const_iterator</pre>
+
+<blockquote>are the same as in standard C++ template map&lt;>.</blockquote>
+</blockquote>
+
+<h3>
+methods</h3>
+
+<blockquote>
+<pre>size_t size() const;
+bool empty() const;
+
+const_iterator begin() const;
+const_iterator end() const;
+const_iterator find() const;
+
+iterator begin();
+iterator end();
+iterator find();</pre>
+
+<blockquote>are the same as in standard C++ template map&lt;>.</blockquote>
+</blockquote>
+
+<blockquote>
+<pre>void insert(key_type&amp; key, const mapped_type&amp; value);
+void erase(key_type&amp; key);</pre>
+
+<blockquote>do the same as corresponding methods of standard C++ template
+map&lt;>.
+<br>They differ only in return type.</blockquote>
+</blockquote>
+
+<h2>
+<a NAME="CRange"></a>template&lt;typename Coordinate> class CRange</h2>
+Class for storing information about some interval (from:to).
+<br>From and to points are inclusive.
+<br>&nbsp;
+<h3>
+typedefs</h3>
+
+<blockquote>
+<pre>position_type</pre>
+
+<blockquote>synonym of Coordinate.</blockquote>
+</blockquote>
+
+<h3>
+methods</h3>
+
+<blockquote>
+<pre>CRange();
+CRange(position_type from, position_type to);</pre>
+
+<blockquote>constructors</blockquote>
+
+<pre>static position_type GetEmptyFrom();
+static position_type GetEmptyTo();
+static position_type GetWholeFrom();
+static position_type GetWholeTo();</pre>
+
+<blockquote>get special coordinate values</blockquote>
+
+<pre>static CRange&lt;position_type> GetEmpty();
+static CRange&lt;position_type> GetWhole();</pre>
+
+<blockquote>get special interval objects</blockquote>
+
+<pre>bool HaveEmptyBound() const;</pre>
+
+<blockquote>check if any bound have special 'empty' value</blockquote>
+
+<pre>bool HaveInfiniteBound() const;</pre>
+
+<blockquote>check if any bound have special 'whole' value</blockquote>
+
+<pre>bool Empty() const;</pre>
+
+<blockquote>check if interval is empty (any bound have special 'empty'
+value or left bound greater then right bound)</blockquote>
+
+<pre>bool Regular() const;</pre>
+
+<blockquote>check if interval's bounds are not special and length is positive</blockquote>
+
+<pre>position_type GetFrom() const;
+position_type GetTo() const;
+position_type GetLength() const;</pre>
+
+<blockquote>get parameters of interval</blockquote>
+
+<pre>CRange&lt;position_type>&amp; SetFrom();
+CRange&lt;position_type>&amp; SetTo();</pre>
+
+<blockquote>set bounds of interval</blockquote>
+
+<pre>CRange&lt;position_type>&amp; SetLength();</pre>
+
+<blockquote>set length of interval leaving left bound (from) unchanged</blockquote>
+
+<pre>CRange&lt;position_type>&amp; SetLengthDown();</pre>
+
+<blockquote>set length of interval leaving right bound (to) unchanged</blockquote>
+
+<pre>bool IntersectingWith(CRange&lt;position_type> range) const;</pre>
+
+<blockquote>check if non empty intervals intersect</blockquote>
+
+<pre>bool IntersectingWithPossiblyEmpty(CRange&lt;position_type> range) const;</pre>
+
+<blockquote>check if intervals intersect</blockquote>
+</blockquote>
+
+<h3>
+<a NAME="CRangeMap"></a>template&lt;typename Object, typename Coordinate
+= int> class CRangeMap</h3>
+
+<h3>
+<a NAME="CRangeMultiMap"></a>template&lt;typename Object, typename Coordinate
+= int> class CRangeMultiMap</h3>
+Almost the same as <a href="#CRangeMap">CRangeMap</a> but allows several
+values have the same key interval.
+<h3>
+<a NAME="CIntervalTree"></a>class CIntervalTree</h3>
+
+<h3>
+<a NAME="CLightString"></a>class CLightString</h3>
+Class for storing information about char strings. Unlike standard C++ string
+class it doesn't take ownership over string contents. So, char array containing
+string value should exist for whole life of holding CLightString object.
+This char array should be deleted (if needed) after CLightString object
+destruction by some other mechanism.
+<p>
+<hr>
+<address>
+<a href="mailto:vasilche@ncbi.nlm.nih.gov">Eugene Vasilchenko</a></address>
+
+<br><!-- Created: Mon Jan 29 13:58:54 EST 2001 --><!-- hhmts start -->Last
+modified: Mon Jan 29 13:58:56 EST 2001<!-- hhmts end -->
+</body>
+</html>
