@@ -485,6 +485,8 @@ bool CThread::Run(TRunMode flags)
                                   this) == 0,
                    "CThread::Run() -- error creating thread");
 
+    xncbi_Validate(pthread_attr_destroy(&attr) == 0,
+                   "CThread::Run() - error destroying thread attributes");
 
 #else
     if (flags & fRunAllowST) {
@@ -653,6 +655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/05/20 14:23:49  vasilche
+ * Added call to pthread_attr_destroy as memory leak was detected.
+ *
  * Revision 1.26  2003/05/08 20:50:10  grichenk
  * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
  *
