@@ -105,9 +105,6 @@ typedef struct BLAST_KarlinBlk {
 		double	Lambda; /* Lambda value used in statistics */
 		double	K, logK; /* K value used in statistics */
 		double	H; /* H value used in statistics */
-		/* "real" values are ones actually found, may be replaced by above */
-		double	Lambda_real, K_real, logK_real, H_real;
-		Int4 q_frame, s_frame; /* reading frame for query and subject.*/
 		double	paramC;	/* for use in seed. */
 	} BLAST_KarlinBlk;
 

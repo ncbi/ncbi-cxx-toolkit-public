@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.40  2003/11/19 15:17:42  dondosha
+ * Removed unused members from Karlin block structure
+ *
  * Revision 1.39  2003/10/16 15:55:22  coulouri
  * fix uninitialized variables
  *
@@ -2203,35 +2206,34 @@ BlastKarlinBlkCalc(BLAST_KarlinBlk* kbp, BLAST_ScoreFreq* sfp)
 
 	/* Calculate the parameter Lambda */
 
-	kbp->Lambda_real = kbp->Lambda = BlastKarlinLambdaNR(sfp);
+	kbp->Lambda = BlastKarlinLambdaNR(sfp);
 	if (kbp->Lambda < 0.)
 		goto ErrExit;
 
 
 	/* Calculate H */
 
-	kbp->H_real = kbp->H = BlastKarlinLtoH(sfp, kbp->Lambda);
+	kbp->H = BlastKarlinLtoH(sfp, kbp->Lambda);
 	if (kbp->H < 0.)
 		goto ErrExit;
 
 
 	/* Calculate K and log(K) */
 
-	kbp->K_real = kbp->K = BlastKarlinLHtoK(sfp, kbp->Lambda, kbp->H);
+	kbp->K = BlastKarlinLHtoK(sfp, kbp->Lambda, kbp->H);
 	if (kbp->K < 0.)
 		goto ErrExit;
-	kbp->logK_real = kbp->logK = log(kbp->K);
+	kbp->logK = log(kbp->K);
 
 	/* Normal return */
 	return 0;
 
 ErrExit:
-	kbp->Lambda = kbp->H = kbp->K
-		= kbp->Lambda_real = kbp->H_real = kbp->K_real = -1.;
+	kbp->Lambda = kbp->H = kbp->K = -1.;
 #ifdef BLASTKAR_HUGE_VAL
-	kbp->logK_real = kbp->logK = BLASTKAR_HUGE_VAL;
+	kbp->logK = BLASTKAR_HUGE_VAL;
 #else
-	kbp->logK_real = kbp->logK = 1.e30;
+	kbp->logK = 1.e30;
 #endif
 	return 1;
 }
@@ -2741,10 +2743,10 @@ BLAST_KarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, In
 			{
 				if (kbp)
 				{
-					kbp->Lambda_real = kbp->Lambda = values[index][3];
-					kbp->K_real = kbp->K = values[index][4];
-					kbp->logK_real = kbp->logK = log(kbp->K);
-					kbp->H_real = kbp->H = values[index][5];
+					kbp->Lambda = values[index][3];
+					kbp->K = values[index][4];
+					kbp->logK = log(kbp->K);
+					kbp->H = values[index][5];
 				}
 				found_values = TRUE;
 				break;
