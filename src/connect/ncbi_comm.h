@@ -45,6 +45,7 @@ extern "C" {
 #define HTTP_DISP_FAILURES      "Dispatcher-Failures:"
 #define DISPATCHER_CFGPATH      "/var/etc/lbsmd/"
 #define DISPATCHER_CFGFILE      "servrc.cfg"
+#define DISP_PROTOCOL_VERSION   "1.0"
 
 typedef unsigned int ticket_t;
 
@@ -57,6 +58,9 @@ typedef unsigned int ticket_t;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/12/10 22:11:14  lavr
+ * Add DISP_PROTOCOL_VERSION
+ *
  * Revision 6.6  2002/10/11 19:44:51  lavr
  * NCBID_NAME changed into NCBID_WEBAPTH; DISPATCHER_CFGPATH added
  *
