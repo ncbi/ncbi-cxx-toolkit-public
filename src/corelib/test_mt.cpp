@@ -30,7 +30,7 @@
  *
  */
 
-#include "test_mt.hpp"
+#include <corelib/test_mt.hpp>
 #include <test/test_assert.h>  /* This header must go last */
 
 
@@ -244,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.1  2002/04/23 13:11:49  gouriano
+ * test_mt.cpp/hpp moved into another location
+ *
  * Revision 6.5  2002/04/16 18:49:07  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.

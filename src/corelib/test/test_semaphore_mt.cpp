@@ -38,7 +38,7 @@
  */
 
 #include <corelib/ncbithr.hpp>
-#include "test_mt.hpp"
+#include <corelib/test_mt.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -206,6 +206,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2002/04/23 13:11:50  gouriano
+ * test_mt.cpp/hpp moved into another location
+ *
  * Revision 6.5  2002/04/16 18:49:09  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
