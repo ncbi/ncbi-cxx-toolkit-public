@@ -62,4 +62,10 @@
 #define HAVE_ODBCSS_H    1
 
 /* optional parameters */
-/*#define HAVE_PUBSEQ_OS   1*/
+/*#define HAVE_PUBSEQ_OS   1/**/
+/*#define HAVE_LIBZ        1/**/
+/*#define HAVE_LIBBZ2      1/**/
+#define HAVE_LIBJPEG     1
+#define HAVE_LIBTIFF     1
+#define HAVE_LIBPNG      1
+#define HAVE_LIBGIF      1

@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.ms6,v 1.23 2003/08/21 20:28:34 ivanov Exp $
+/* $Id: ncbiconf.ms6,v 1.24 2003/08/26 12:19:56 dicuccio Exp $
  * By Denis Vakatov, NCBI (vakatov@ncbi.nlm.nih.gov)
  *
  * Win32, MSVC++ 6.0
@@ -62,4 +62,10 @@
 #define HAVE_ODBCSS_H    1
 
 /* optional parameters */
-/*#define HAVE_PUBSEQ_OS   1*/
+/*#define HAVE_PUBSEQ_OS   1/**/
+/*#define HAVE_LIBZ        1/**/
+/*#define HAVE_LIBBZ2      1/**/
+#define HAVE_LIBJPEG     1
+#define HAVE_LIBTIFF     1
+#define HAVE_LIBPNG      1
+#define HAVE_LIBGIF      1
