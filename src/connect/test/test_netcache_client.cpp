@@ -263,6 +263,7 @@ int CTestNetCacheClient::Run(void)
         CNetCacheClient nc_client(&sock);
 
         key = nc_client.PutData(test_data, sizeof(test_data));
+        NcbiCout << key << NcbiEndl;
 
         assert(!key.empty());
     }}
@@ -356,6 +357,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/10/27 14:17:15  kuznets
+ * Cosmetics
+ *
  * Revision 1.7  2004/10/25 15:16:20  kuznets
  * Added more tests
  *
