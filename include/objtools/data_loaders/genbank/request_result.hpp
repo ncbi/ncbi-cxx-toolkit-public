@@ -451,12 +451,12 @@ public:
     //typedef CLoadInfoBlob TInfoBlob;
     typedef CLoadLockBlob TLockBlob;
 
-    virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids& seq_id);
-    virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids2& seq_id);
-    virtual CRef<TInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& seq_id);
-    //virtual CRef<TInfoBlob>     GetInfoBlob(const TKeyBlob& blob_id);
+    virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids& seq_id) = 0;
+    virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids2& seq_id) = 0;
+    virtual CRef<TInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& seq_id) = 0;
+    //virtual CRef<TInfoBlob>     GetInfoBlob(const TKeyBlob& blob_id) = 0;
     CTSE_LoadLock GetBlobLoadLock(const TKeyBlob& blob_id);
-    virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
+    virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id) = 0;
 
     // load ResultBlob
     //virtual CRef<CTSE_Info> GetTSE_Info(const TLockBlob& blob);
@@ -474,10 +474,12 @@ public:
         }
     void SaveLocksTo(TTSE_LockSet& locks);
 
+    void ReleaseLocks(void);
+
     //virtual TTSE_Lock AddTSE(CRef<CTSE_Info> tse, const TKeyBlob& blob_id);
     //virtual TTSE_Lock LockTSE(CRef<CTSE_Info> tse);
 
-    virtual operator CInitMutexPool&(void);
+    virtual operator CInitMutexPool&(void) = 0;
     CRef<CLoadInfoLock> GetLoadLock(const CRef<CLoadInfo>& info);
 
     typedef map<CRef<CLoadInfoLock>, CRef<CObject> > TLoadedSet;
@@ -496,8 +498,8 @@ public:
 protected:
     friend class CReaderRequestConn;
 
-    virtual TConn GetConn(void);
-    virtual void ReleaseConn(void);
+    virtual TConn GetConn(void) = 0;
+    virtual void ReleaseConn(void) = 0;
 
 private:
     friend class CLoadInfoLock;
@@ -515,6 +517,35 @@ private:
 private: // hide methods
     CReaderRequestResult(const CReaderRequestResult&);
     CReaderRequestResult& operator=(const CReaderRequestResult&);
+};
+
+
+class NCBI_XREADER_EXPORT CStandaloneRequestResult :
+    public CReaderRequestResult
+{
+public:
+    CStandaloneRequestResult(void);
+    virtual ~CStandaloneRequestResult(void);
+
+    virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids& seq_id);
+    virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids2& seq_id);
+    virtual CRef<TInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& seq_id);
+
+    virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
+
+    virtual operator CInitMutexPool&(void);
+
+
+    virtual TConn GetConn(void);
+    virtual void ReleaseConn(void);
+
+    CInitMutexPool    m_MutexPool;
+
+    CRef<CDataSource> m_DataSource;
+
+    map<TKeySeq_ids, CRef<TInfoSeq_ids> >   m_InfoSeq_ids;
+    map<TKeySeq_ids2, CRef<TInfoSeq_ids> >  m_InfoSeq_ids2;
+    map<TKeyBlob_ids, CRef<TInfoBlob_ids> > m_InfoBlob_ids;
 };
 
 

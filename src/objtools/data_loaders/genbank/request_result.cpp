@@ -297,48 +297,6 @@ CReaderRequestResult::~CReaderRequestResult(void)
 }
 
 
-CReaderRequestResult::TConn CReaderRequestResult::GetConn(void)
-{
-    return -1;
-}
-
-
-void CReaderRequestResult::ReleaseConn(void)
-{
-}
-
-
-CRef<CLoadInfoSeq_ids>
-CReaderRequestResult::GetInfoSeq_ids(const string& /*key*/)
-{
-    NCBI_THROW(CLoaderException, eOtherError,
-               "CReaderRequestResult::GetInfoSeq_ids(): invalid call");
-}
-
-
-CRef<CLoadInfoSeq_ids>
-CReaderRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& /*key*/)
-{
-    NCBI_THROW(CLoaderException, eOtherError,
-               "CReaderRequestResult::GetInfoSeq_ids(): invalid call");
-}
-
-
-CRef<CLoadInfoBlob_ids>
-CReaderRequestResult::GetInfoBlob_ids(const CSeq_id_Handle& key)
-{
-    return Ref(new CLoadInfoBlob_ids(key));
-}
-
-#if 0
-CRef<CLoadInfoBlob>
-CReaderRequestResult::GetInfoBlob(const CBlob_id& /*key*/)
-{
-    NCBI_THROW(CLoaderException, eOtherError,
-               "CReaderRequestResult::GetInfoBlob(): invalid call");
-}
-#endif
-
 CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
 {
     CTSE_LoadLock& lock = m_BlobLoadLocks[blob_id];
@@ -348,12 +306,6 @@ CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
     return lock;
 }
 
-
-CTSE_LoadLock CReaderRequestResult::GetTSE_LoadLock(const CBlob_id& blob_id)
-{
-    NCBI_THROW(CLoaderException, eOtherError,
-               "CReaderRequestResult::GetTSE_LoadLock(): invalid call");
-}
 
 #if 0
 void CReaderRequestResult::SetTSE_Info(CLoadLockBlob& blob,
@@ -384,13 +336,6 @@ CRef<CTSE_Info> CReaderRequestResult::GetTSE_Info(const CBlob_id& blob_id)
     return GetTSE_Info(CLoadLockBlob(*this, blob_id));
 }
 #endif
-
-CReaderRequestResult::operator CInitMutexPool&(void)
-{
-    NCBI_THROW(CLoaderException, eOtherError,
-               "CReaderRequestResult::CInitMutexPool(): invalid call");
-}
-
 
 CRef<CLoadInfoLock>
 CReaderRequestResult::GetLoadLock(const CRef<CLoadInfo>& info)
@@ -471,6 +416,15 @@ void CReaderRequestResult::SaveLocksTo(TTSE_LockSet& locks)
 }
 
 
+void CReaderRequestResult::ReleaseLocks(void)
+{
+    m_BlobLoadLocks.clear();
+    m_LoadedSet.clear();
+    m_TSE_LockSet.clear();
+    m_LockMap.clear();
+}
+
+
 void CReaderRequestResult::ResetLoadedSet(void)
 {
     m_LoadedSet.clear();
@@ -491,6 +445,83 @@ void CReaderRequestResult::UpdateLoadedSet(void)
 {
     UpdateLoadedSet(m_LoadedSet);
     ResetLoadedSet();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CStandaloneRequestResult
+/////////////////////////////////////////////////////////////////////////////
+
+
+CStandaloneRequestResult::CStandaloneRequestResult(void)
+{
+}
+
+
+CStandaloneRequestResult::~CStandaloneRequestResult(void)
+{
+    ReleaseLocks();
+}
+
+
+CRef<CLoadInfoSeq_ids>
+CStandaloneRequestResult::GetInfoSeq_ids(const string& key)
+{
+    CRef<CLoadInfoSeq_ids>& ret = m_InfoSeq_ids[key];
+    if ( !ret ) {
+        ret = new CLoadInfoSeq_ids();
+    }
+    return ret;
+}
+
+
+CRef<CLoadInfoSeq_ids>
+CStandaloneRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& key)
+{
+    CRef<CLoadInfoSeq_ids>& ret = m_InfoSeq_ids2[key];
+    if ( !ret ) {
+        ret = new CLoadInfoSeq_ids();
+    }
+    return ret;
+}
+
+
+CRef<CLoadInfoBlob_ids>
+CStandaloneRequestResult::GetInfoBlob_ids(const CSeq_id_Handle& key)
+{
+    CRef<CLoadInfoBlob_ids>& ret = m_InfoBlob_ids[key];
+    if ( !ret ) {
+        ret = new CLoadInfoBlob_ids(key);
+    }
+    return ret;
+}
+
+
+CTSE_LoadLock
+CStandaloneRequestResult::GetTSE_LoadLock(const CBlob_id& blob_id)
+{
+    if ( !m_DataSource ) {
+        m_DataSource = new CDataSource;
+    }
+    CConstRef<CObject> key(new CBlob_id(blob_id));
+    return m_DataSource->GetTSE_LoadLock(key);
+}
+
+
+CStandaloneRequestResult::operator CInitMutexPool&(void)
+{
+    return m_MutexPool;
+}
+
+
+CStandaloneRequestResult::TConn CStandaloneRequestResult::GetConn(void)
+{
+    return -1;
+}
+
+
+void CStandaloneRequestResult::ReleaseConn(void)
+{
 }
 
 
