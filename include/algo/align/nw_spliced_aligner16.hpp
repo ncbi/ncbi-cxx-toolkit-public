@@ -33,6 +33,12 @@
 #include "nw_spliced_aligner.hpp"
 
 
+/** @addtogroup AlgoAlignSpliced
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 const size_t splice_type_count_16 = 4;
@@ -81,10 +87,14 @@ protected:
 
 END_NCBI_SCOPE
 
+/* @} */
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/10 20:12:47  kapustin
+ * Update Doxygen tags
+ *
  * Revision 1.1  2003/09/02 22:27:44  kapustin
  * Initial revision
  *

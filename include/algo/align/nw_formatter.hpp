@@ -36,6 +36,13 @@
 #include <objects/seqalign/Seq_align.hpp>
 
 
+/** @addtogroup AlgoAlignFormat
+ *
+ * @{
+ */
+
+
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -79,10 +86,14 @@ private:
 
 END_NCBI_SCOPE
 
+/* @} */
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/10 20:12:47  kapustin
+ * Update Doxygen tags
+ *
  * Revision 1.1  2003/09/02 22:26:34  kapustin
  * Initial revision
  *

@@ -43,7 +43,7 @@
 #include <string>
 
 
-/** @addtogroup AlgoGlobal
+/** @addtogroup AlgoAlignRoot
  *
  * @{
  */
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/09/10 20:12:47  kapustin
+ * Update Doxygen tags
+ *
  * Revision 1.26  2003/09/02 22:30:34  kapustin
  * Move formatting functionality out of the class
  *
