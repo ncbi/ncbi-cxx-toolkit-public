@@ -429,20 +429,6 @@ EIO_Status CDatagramSocket::Send(const void*     data,
 }
 
 
-EIO_Status CDatagramSocket::Send(const void*    data,
-                                 size_t         datalen,
-                                 unsigned int   host,
-                                 unsigned short port)
-{
-    char addr[32];
-    if (host  &&  SOCK_ntoa(host, addr, sizeof(addr)) != 0)
-        return eIO_Unknown;
-    return m_Socket
-        ? DSOCK_SendMsg(m_Socket, host ? addr : 0, port, data, datalen)
-        : eIO_Closed;
-}
-
-
 EIO_Status CDatagramSocket::Recv(void*           buf,
                                  size_t          buflen,
                                  size_t*         msglen,
@@ -675,6 +661,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2005/03/09 15:05:27  lavr
+ * Remove CDatagramSocket::Send(...unsigned int host = 0...)
+ *
  * Revision 6.30  2005/03/02 16:12:11  lavr
  * Extend CDatagramSocket::Connect and Send with addtl signatures
  *

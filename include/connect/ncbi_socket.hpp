@@ -243,11 +243,6 @@ public:
                     const string&   host    = string(),
                     unsigned short  port    = 0);  // host byte order
 
-    EIO_Status Send(const void*     data    = 0,
-                    size_t          datalen = 0,
-                    unsigned int    host    = 0,   // network byte order
-                    unsigned short  port    = 0);  // host byte order
-
     EIO_Status Recv(void*           buf         = 0,
                     size_t          buflen      = 0,
                     size_t*         msglen      = 0,
@@ -645,6 +640,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2005/03/09 15:04:16  lavr
+ * Remove CDatagramSocket::Send(...unsigned int host = 0...)
+ *
  * Revision 6.41  2005/03/02 16:11:46  lavr
  * Extend CDatagramSocket::Connect and Send with addtl signatures
  *
