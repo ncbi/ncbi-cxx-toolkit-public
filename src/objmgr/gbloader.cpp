@@ -223,7 +223,7 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap,
             if(x_GetRecords(hrange->first,hrange->second,choice))
                 unreleased_mutex_run=false;
         }
-        _ASSERT(count++ < 10); // actually I would expect it to be 2 at most
+        _VERIFY(count++ < 10); // actually I would expect it to be 2 at most
     } while (unreleased_mutex_run!=true);
     //GBLOG_POST( "GetRecords-end" );
     return true;
@@ -922,6 +922,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2003/06/10 15:25:33  vasilche
+* Changed wrong _ASSERT to _VERIFY
+*
 * Revision 1.73  2003/06/02 16:06:37  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
