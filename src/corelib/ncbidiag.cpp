@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/06/05 20:58:16  vakatov
+* ~CDiagBuffer()::  to check for consistency and call "abort()" only
+* #if (_DEBUG > 1)
+*
 * Revision 1.28  2001/05/17 15:04:59  lavr
 * Typos corrected
 *
@@ -176,8 +180,10 @@ CDiagBuffer::CDiagBuffer(void)
 
 CDiagBuffer::~CDiagBuffer(void)
 {
+#if (_DEBUG > 1)
     if (m_Diag  ||  dynamic_cast<CNcbiOstrstream*>(m_Stream)->pcount())
         ::abort();
+#endif
     delete m_Stream;
     m_Stream = 0;
 }
