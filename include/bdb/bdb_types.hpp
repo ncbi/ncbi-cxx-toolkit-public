@@ -56,7 +56,7 @@ class CBDB_FC_Condition;
 // BDB Data Field interface definition.
 //
 
-class IBDB_Field
+class NCBI_BDB_EXPORT IBDB_Field
 {
 public:
     // Comparison function. p1 and p2 are void pointers on field buffers.
@@ -83,7 +83,7 @@ public:
 // All interface functions by default throw "bad conversion" exception.
 //
 
-class IBDB_FieldConvert
+class NCBI_BDB_EXPORT IBDB_FieldConvert
 {
 public:
     virtual void SetInt(int)
@@ -107,8 +107,8 @@ public:
 // Some interfaces are declared non-public here (IFieldConvert).
 //
 
-class CBDB_FieldInterfaces : public    IBDB_Field,
-                             protected IBDB_FieldConvert
+class NCBI_BDB_EXPORT CBDB_FieldInterfaces : public    IBDB_Field,
+                                             protected IBDB_FieldConvert
 {
     friend class CBDB_FileCursor;
 };
@@ -124,7 +124,7 @@ class CBDB_FieldInterfaces : public    IBDB_Field,
 // (CBDB_FieldBuf). Class cannot be used independently without record manager.
 //
 
-class CBDB_Field : public CBDB_FieldInterfaces
+class NCBI_BDB_EXPORT CBDB_Field : public CBDB_FieldInterfaces
 {
 public:
     //
@@ -191,8 +191,6 @@ protected:
 
 
 protected:
-    CBDB_Field(const CBDB_Field& data);
-
     // Unpack the buffer which contains this field (using CBDB_BufferManager).
     // Return new pointer to the field data -- located in the unpacked buffer.
     void*  Unpack();
@@ -213,6 +211,7 @@ protected:
 
 private:
     CBDB_Field& operator= (const CBDB_Field& data);
+    CBDB_Field(const CBDB_Field& data);
 
 private:
     CBDB_BufferManager*  m_BufferManager;
@@ -364,7 +363,7 @@ public:
 //  Int4 field type
 //
 
-class CBDB_FieldInt4 : public CBDB_FieldSimpleInt<Int4>
+class NCBI_BDB_EXPORT CBDB_FieldInt4 : public CBDB_FieldSimpleInt<Int4>
 {
 public:
     const CBDB_FieldInt4& operator= (Int4 val)
@@ -397,7 +396,7 @@ public:
 //  Uint4 field type
 //
 
-class CBDB_FieldUint4 : public CBDB_FieldSimpleInt<Uint4>
+class NCBI_BDB_EXPORT CBDB_FieldUint4 : public CBDB_FieldSimpleInt<Uint4>
 {
 public:
     const CBDB_FieldUint4& operator= (Uint4 val)
@@ -430,7 +429,7 @@ public:
 //  Float field type
 //
 
-class CBDB_FieldFloat : public CBDB_FieldSimpleFloat<float>
+class NCBI_BDB_EXPORT CBDB_FieldFloat : public CBDB_FieldSimpleFloat<float>
 {
 public:
     const CBDB_FieldFloat& operator= (float val)
@@ -463,7 +462,7 @@ public:
 //  String field type
 //
 
-class CBDB_FieldString : public CBDB_Field
+class NCBI_BDB_EXPORT CBDB_FieldString : public CBDB_Field
 {
 public:
     CBDB_FieldString();
@@ -507,7 +506,7 @@ public:
 //  Case-insensitive string field type 
 //
 
-class CBDB_FieldStringCase : public CBDB_FieldString
+class NCBI_BDB_EXPORT CBDB_FieldStringCase : public CBDB_FieldString
 {
 public:
     typedef CBDB_FieldString CParent;
@@ -552,7 +551,7 @@ public:
 // For internal use in BDB library.
 //
 
-class CBDB_BufferManager
+class NCBI_BDB_EXPORT CBDB_BufferManager
 {
 public:
     // Return number of fields attached using function Bind
@@ -665,17 +664,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_Field::
 //
-
-inline CBDB_Field::CBDB_Field(ELengthType length_type)
-    : m_BufferManager(0),
-      m_Buffer(0),
-      m_BufferSize(0),
-      m_BufferIdx(0)
-{   
-    m_Flags.VariableLength = (length_type == eFixedLength) ? 0 : 1;
-    m_Flags.Attached = 0;
-    m_Flags.Nullable = 0;
-}
 
 
 inline bool CBDB_Field::IsVariableLength() const
@@ -1178,6 +1166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/06/03 18:50:09  kuznets
+ * Added dll export/import specifications
+ *
  * Revision 1.5  2003/05/27 16:13:21  kuznets
  * Destructors of key classes declared virtual to make GCC happy
  *

@@ -62,7 +62,7 @@ class CBDB_FC_Condition;
 // </pre>
 //
 
-class CBDB_ConditionHandle
+class NCBI_BDB_EXPORT CBDB_ConditionHandle
 {
 public:
     CBDB_ConditionHandle& operator<< (int           val);
@@ -90,7 +90,7 @@ protected:
 // BDB btree cursors can retrieve values using FROM-TO range criteria.
 //
 
-class CBDB_FileCursor
+class NCBI_BDB_EXPORT CBDB_FileCursor
 {
 public:
     // Cursor search conditions
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/03 18:50:09  kuznets
+ * Added dll export/import specifications
+ *
  * Revision 1.2  2003/04/29 16:48:31  kuznets
  * Fixed minor warnings in Sun Workshop compiler
  *

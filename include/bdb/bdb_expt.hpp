@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 // Base BDB exception class
 //
 
-class CBDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_BDB_EXPORT CBDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
 {
     NCBI_EXCEPTION_DEFAULT(CBDB_Exception, CException);
 };
@@ -58,7 +58,7 @@ class CBDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
 // Auxiliary class to wrap up Berkeley DB strerror function
 // 
 
-class CBDB_StrErrAdapt
+class NCBI_BDB_EXPORT CBDB_StrErrAdapt
 {
 public:
     static const char* strerror(int errnum)
@@ -82,7 +82,7 @@ public:
 // BDB error codes.
 //
 
-class CBDB_ErrnoException : 
+class NCBI_BDB_EXPORT CBDB_ErrnoException : 
     public CErrnoTemplExceptionEx<CBDB_Exception, CBDB_StrErrAdapt::strerror>
 {
 public:
@@ -120,7 +120,7 @@ public:
 // Thrown if error is specific to the BDB C++ library.
 //
 
-class CBDB_LibException : public CBDB_Exception
+class NCBI_BDB_EXPORT CBDB_LibException : public CBDB_Exception
 {
 public:
     enum EErrCode {
@@ -164,7 +164,7 @@ public:
     do { \
         if ( errnum ) { \
             std::string message = "BerkeleyDB error:"; \
-            message.append(::db_strerror(errnum)); \
+            message.append(CBDB_StrErrAdapt::strerror(errnum)); \
             if (dbfile) { \
                 message.append(" File:'"); \
                 message.append(dbfile); \
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/03 18:50:09  kuznets
+ * Added dll export/import specifications
+ *
  * Revision 1.3  2003/04/30 19:04:06  kuznets
  * Error diagnostics improved
  *

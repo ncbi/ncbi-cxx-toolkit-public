@@ -83,7 +83,7 @@ enum EBDB_ErrCode {
 // Raw file class wraps up basic Berkeley DB operations. 
 //
 
-class CBDB_RawFile
+class NCBI_BDB_EXPORT CBDB_RawFile
 {
 public:
     static const char kDefaultDatabase[];  // = "_table"
@@ -195,7 +195,7 @@ private:
 // Implements primary key and fields functionality.
 //
 
-class CBDB_File : public CBDB_RawFile
+class NCBI_BDB_EXPORT CBDB_File : public CBDB_RawFile
 {
 public:
     CBDB_File();
@@ -295,7 +295,7 @@ private:
 // tables having int as the primary key.
 //
 
-class CBDB_IdFile : public CBDB_File
+class NCBI_BDB_EXPORT CBDB_IdFile : public CBDB_File
 {
 public:
     CBDB_FieldInt4  IdKey;
@@ -381,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/06/03 18:50:09  kuznets
+ * Added dll export/import specifications
+ *
  * Revision 1.5  2003/05/27 16:13:21  kuznets
  * Destructors of key classes declared virtual to make GCC happy
  *

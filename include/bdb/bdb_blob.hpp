@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 //
 //
 
-class CBDB_BLobFile : public CBDB_File
+class NCBI_BDB_EXPORT CBDB_BLobFile : public CBDB_File
 {
 public:
 
@@ -79,7 +79,7 @@ public:
 // Implements simple BLOB storage based on single unsigned integer key
 //
 
-class CBDB_LobFile : public CBDB_RawFile
+class NCBI_BDB_EXPORT CBDB_LobFile : public CBDB_RawFile
 {
 public:
     CBDB_LobFile();
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/03 18:50:09  kuznets
+ * Added dll export/import specifications
+ *
  * Revision 1.3  2003/05/05 20:14:41  kuznets
  * Added CBDB_BLobFile, CBDB_File changed to support more flexible data record
  * management.
