@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("objects" project)
+#################################
+
+SUB_PROJ = alnmgr cddalignview flat validator
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
