@@ -34,10 +34,218 @@
  *   'general.asn'.
  *
  * ---------------------------------------------------------------------------
+ */
+
+// standard includes
+
+// generated includes
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
+#include <corelib/ncbistd.hpp>
+
+#include <algorithm>
+
+// generated classes
+
+BEGIN_NCBI_SCOPE
+
+BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+
+struct SApprovedDbXref {
+    CDbtag::EDbtagType type;
+    const char* name;
+
+    SApprovedDbXref(CDbtag::EDbtagType t, const char* n)
+        : type(t), name(n)
+    {
+    }
+};
+
+
+static const SApprovedDbXref kApprovedDbXrefs[] = {
+    SApprovedDbXref(CDbtag::eDbtagType_ATCC, "ATCC"),
+    SApprovedDbXref(CDbtag::eDbtagType_ATCC_dna, "ATCC(dna)"),
+    SApprovedDbXref(CDbtag::eDbtagType_ATCC_in_host, "ATCC(in host)"),
+    SApprovedDbXref(CDbtag::eDbtagType_AceView_WormGenes, "AceView/WormGenes"),
+    SApprovedDbXref(CDbtag::eDbtagType_BDGP_EST, "BDGP_EST"),
+    SApprovedDbXref(CDbtag::eDbtagType_BDGP_INS, "BDGP_INS"),
+    SApprovedDbXref(CDbtag::eDbtagType_CDD, "CDD"),
+    SApprovedDbXref(CDbtag::eDbtagType_CK, "CK"),
+    SApprovedDbXref(CDbtag::eDbtagType_COG, "COG"),
+    SApprovedDbXref(CDbtag::eDbtagType_ENSEMBL, "ENSEMBL"),
+    SApprovedDbXref(CDbtag::eDbtagType_ESTLIB, "ESTLIB"),
+    SApprovedDbXref(CDbtag::eDbtagType_FANTOM_DB, "FANTOM_DB"),
+    SApprovedDbXref(CDbtag::eDbtagType_FLYBASE, "FLYBASE"),
+    SApprovedDbXref(CDbtag::eDbtagType_GABI, "GABI"),
+    SApprovedDbXref(CDbtag::eDbtagType_GDB, "GDB"),
+    SApprovedDbXref(CDbtag::eDbtagType_GI, "GI"),
+    SApprovedDbXref(CDbtag::eDbtagType_GO, "GO"),
+    SApprovedDbXref(CDbtag::eDbtagType_GOA, "GOA"),
+    SApprovedDbXref(CDbtag::eDbtagType_GeneDB, "GeneDB"),
+    SApprovedDbXref(CDbtag::eDbtagType_GeneID, "GeneID"),
+    SApprovedDbXref(CDbtag::eDbtagType_IFO, "IFO"),
+    SApprovedDbXref(CDbtag::eDbtagType_IMGT_HLA, "IMGT/HLA"),
+    SApprovedDbXref(CDbtag::eDbtagType_IMGT_LIGM, "IMGT/LIGM"),
+    SApprovedDbXref(CDbtag::eDbtagType_ISFinder, "ISFinder"),
+    SApprovedDbXref(CDbtag::eDbtagType_InterimID, "InterimID"),
+    SApprovedDbXref(CDbtag::eDbtagType_Interpro, "Interpro"),
+    SApprovedDbXref(CDbtag::eDbtagType_JCM, "JCM"),
+    SApprovedDbXref(CDbtag::eDbtagType_LocusID, "LocusID"),
+    SApprovedDbXref(CDbtag::eDbtagType_MGD, "MGD"),
+    SApprovedDbXref(CDbtag::eDbtagType_MGI, "MGI"),
+    SApprovedDbXref(CDbtag::eDbtagType_MIM, "MIM"),
+    SApprovedDbXref(CDbtag::eDbtagType_MaizeDB, "MaizeDB"),
+    SApprovedDbXref(CDbtag::eDbtagType_NextDB, "NextDB"),
+    SApprovedDbXref(CDbtag::eDbtagType_PID, "PID"),
+    SApprovedDbXref(CDbtag::eDbtagType_PIDd, "PIDd"),
+    SApprovedDbXref(CDbtag::eDbtagType_PIDe, "PIDe"),
+    SApprovedDbXref(CDbtag::eDbtagType_PIDg, "PIDg"),
+    SApprovedDbXref(CDbtag::eDbtagType_PIR, "PIR"),
+    SApprovedDbXref(CDbtag::eDbtagType_PSEUDO, "PSEUDO"),
+    SApprovedDbXref(CDbtag::eDbtagType_RATMAP, "RATMAP"),
+    SApprovedDbXref(CDbtag::eDbtagType_REMTREMBL, "REMTREMBL"),
+    SApprovedDbXref(CDbtag::eDbtagType_RGD, "RGD"),
+    SApprovedDbXref(CDbtag::eDbtagType_RZPD, "RZPD"),
+    SApprovedDbXref(CDbtag::eDbtagType_RiceGenes, "RiceGenes"),
+    SApprovedDbXref(CDbtag::eDbtagType_SGD, "SGD"),
+    SApprovedDbXref(CDbtag::eDbtagType_SPTREMBL, "SPTREMBL"),
+    SApprovedDbXref(CDbtag::eDbtagType_SWISS_PROT, "SWISS-PROT"),
+    SApprovedDbXref(CDbtag::eDbtagType_SoyBase, "SoyBase"),
+    SApprovedDbXref(CDbtag::eDbtagType_UniGene, "UniGene"),
+    SApprovedDbXref(CDbtag::eDbtagType_UniSTS, "UniSTS"),
+    SApprovedDbXref(CDbtag::eDbtagType_WorfDB, "WorfDB"),
+    SApprovedDbXref(CDbtag::eDbtagType_WormBase, "WormBase"),
+    SApprovedDbXref(CDbtag::eDbtagType_ZFIN, "ZFIN"),
+    SApprovedDbXref(CDbtag::eDbtagType_dbEST, "dbEST"),
+    SApprovedDbXref(CDbtag::eDbtagType_dbSNP, "dbSNP"),
+    SApprovedDbXref(CDbtag::eDbtagType_dbSTS, "dbSTS"),
+    SApprovedDbXref(CDbtag::eDbtagType_niaEST, "niaEST"),
+    SApprovedDbXref(CDbtag::eDbtagType_taxon, "taxon")
+};
+static const size_t
+kApprovedDbXrefs_size = sizeof(kApprovedDbXrefs)/sizeof(kApprovedDbXrefs_size);
+
+
+
+// destructor
+CDbtag::~CDbtag(void)
+{
+}
+
+bool CDbtag::Match(const CDbtag& dbt2) const
+{
+	if (! PNocase().Equals(GetDb(), dbt2.GetDb()))
+		return false;
+	return ((GetTag()).Match((dbt2.GetTag())));
+}
+
+
+// Appends a label to "label" based on content of CDbtag 
+void CDbtag::GetLabel(string* label) const
+{
+    const CObject_id& id = GetTag();
+    switch (id.Which()) {
+    case CObject_id::e_Str:
+        *label += GetDb() + ": " + id.GetStr();
+        break;
+    case CObject_id::e_Id:
+        *label += GetDb() + ": " + NStr::IntToString(id.GetId());
+        break;
+    default:
+        *label += GetDb();
+    }
+}
+
+static inline
+bool LessByName(const SApprovedDbXref& s1, const SApprovedDbXref& s2)
+{
+    return NStr::strcmp(s1.name, s2.name) < 0;
+}
+
+// Test if CDbtag.dbis in the approved databases list.
+// NOTE: 'GenBank', 'EMBL' and 'DDBJ' are approved only in 
+//        the context of a RefSeq record.
+bool CDbtag::IsApproved(bool refseq) const
+{
+    if ( !CanGetDb() ) {
+        return false;
+    }
+    const string& db = GetDb();
+
+    // if refseq, first test if GenBank, EMBL, DDBJ or REBASE
+    if ( refseq ) {
+        if ( db == "GenBank"  ||
+             db == "EMBL"     ||  
+             db == "DDBJ"     ||  
+             db == "REBASE" ) {
+            return true;
+        }
+    }
+
+    // Check the rest of approved databases
+    return binary_search(kApprovedDbXrefs,
+                         kApprovedDbXrefs + kApprovedDbXrefs_size,
+                         SApprovedDbXref(CDbtag::eDbtagType_bad, db.c_str()),
+                         LessByName);
+}
+
+
+// Retrieve the enumerated type for the dbtag
+CDbtag::EDbtagType CDbtag::GetType(void) const
+{
+    if (m_Type == eDbtagType_bad) {
+        if ( !CanGetDb() ) {
+            return m_Type;
+        }
+
+        const string& db = GetDb();
+
+        const SApprovedDbXref* item =
+            lower_bound(kApprovedDbXrefs,
+                        kApprovedDbXrefs + kApprovedDbXrefs_size,
+                        SApprovedDbXref(CDbtag::eDbtagType_bad, db.c_str()),
+                        LessByName);
+
+        if (item != kApprovedDbXrefs + kApprovedDbXrefs_size  &&
+            db == item->name) {
+            m_Type = static_cast<EDbtagType>(item - kApprovedDbXrefs);
+        } else {
+            if (db == "GenBank") {
+                m_Type = eDbtagType_GenBank;
+            } else if (db == "EMBL") {
+                m_Type = eDbtagType_EMBL;
+            } else if (db == "DDBJ") {
+                m_Type = eDbtagType_DDBJ;
+            } else if (db == "REBASE") {
+                m_Type = eDbtagType_REBASE;
+            }
+        }
+    }
+    return m_Type;
+}
+
+
+// Force a refresh of the internal type
+void CDbtag::InvalidateType(void)
+{
+    m_Type = eDbtagType_bad;
+}
+
+
+END_objects_SCOPE // namespace ncbi::objects::
+
+END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
  * $Log$
+ * Revision 6.11  2004/01/20 16:04:36  dicuccio
+ * Implemented enumerated type interpretation of string-based database name
+ *
  * Revision 6.10  2004/01/06 14:36:06  dicuccio
- * Removed unnecessary #include of ncbiapp.hpp and ncbireg.hpp.  Added <set> where
- * needed.
+ * Removed unnecessary #include of ncbiapp.hpp and ncbireg.hpp.  Added <set>
+ * where needed.
  *
  * Revision 6.9  2003/10/01 13:12:24  shomrat
  * REBASE is legal refseq dbxref
@@ -70,152 +278,3 @@
  *
  * ===========================================================================
  */
-
-// standard includes
-
-// generated includes
-#include <objects/general/Dbtag.hpp>
-#include <objects/general/Object_id.hpp>
-#include <corelib/ncbistd.hpp>
-
-#include <algorithm>
-
-// generated classes
-
-BEGIN_NCBI_SCOPE
-
-BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-
-// List of approved DB names.
-// NOTE: these must stay in ASCIIbetical order!
-static const char* const kApprovedDbXrefs[] = {
-    "ATCC",
-    "ATCC(dna)",
-    "ATCC(in host)",
-    "AceView/WormGenes",
-    "BDGP_EST",
-    "BDGP_INS",
-    "CDD",
-    "CK",
-    "COG",
-    "ENSEMBL",
-    "ESTLIB",
-    "FANTOM_DB"         ,
-    "FLYBASE",
-    "GABI",
-    "GDB",
-    "GI",
-    "GO",
-    "GOA",
-    "GeneDB",
-    "GeneID",
-    "IFO",
-    "IMGT/HLA",
-    "IMGT/LIGM",
-    "ISFinder",
-    "InterimID",
-    "Interpro",
-    "JCM",
-    "LocusID",
-    "MGD",
-    "MGI",
-    "MIM",
-    "MaizeDB",
-    "NextDB",
-    "PID",
-    "PIDd",
-    "PIDe",
-    "PIDg",
-    "PIR",
-    "PSEUDO",
-    "RATMAP",
-    "REMTREMBL",
-    "RGD",
-    "RZPD",
-    "RiceGenes",
-    "SGD",
-    "SPTREMBL",
-    "SWISS-PROT",
-    "SoyBase",
-    "UniGene",
-    "UniSTS",
-    "WorfDB",
-    "WormBase",
-    "ZFIN",
-    "dbEST",
-    "dbSNP",
-    "dbSTS",
-    "niaEST",
-    "taxon"
-};
-static const size_t
-kApprovedDbXrefs_size = sizeof(kApprovedDbXrefs)/sizeof(kApprovedDbXrefs_size);
-
-// destructor
-CDbtag::~CDbtag(void)
-{
-}
-
-bool CDbtag::Match(const CDbtag& dbt2) const
-{
-	if (! PNocase().Equals(GetDb(), dbt2.GetDb()))
-		return false;
-	return ((GetTag()).Match((dbt2.GetTag())));
-}
-
-
-// Appends a label to "label" based on content of CDbtag 
-void CDbtag::GetLabel(string* label) const
-{
-    const CObject_id& id = GetTag();
-    switch (id.Which()) {
-    case CObject_id::e_Str:
-        *label += GetDb() + ": " + id.GetStr();
-        break;
-    case CObject_id::e_Id:
-        *label += GetDb() + ": " + NStr::IntToString(id.GetId());
-        break;
-    default:
-        *label += GetDb();
-    }
-}
-
-static inline
-bool StrLess(const char* s1, const char* s2)
-{
-    return NStr::strcmp(s1, s2) < 0;
-}
-
-// Test if CDbtag.dbis in the approved databases list.
-// NOTE: 'GenBank', 'EMBL' and 'DDBJ' are approved only in 
-//        the context of a RefSeq record.
-bool CDbtag::IsApproved(bool refseq) const
-{
-    if ( !CanGetDb() ) {
-        return false;
-    }
-    const string& db = GetDb();
-
-    // if refseq, first test if GenBank, EMBL, DDBJ or REBASE
-    if ( refseq ) {
-        if ( db == "GenBank"  ||
-             db == "EMBL"     ||  
-             db == "DDBJ"     ||  
-             db == "REBASE" ) {
-            return true;
-        }
-    }
-
-    // Check the rest of approved databases
-    return binary_search(kApprovedDbXrefs,
-                         kApprovedDbXrefs + kApprovedDbXrefs_size,
-                         db.c_str(),
-                         StrLess);
-}
-
-
-END_objects_SCOPE // namespace ncbi::objects::
-
-END_NCBI_SCOPE
-

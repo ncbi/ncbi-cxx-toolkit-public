@@ -34,24 +34,6 @@
  *   'general.asn'.
  *
  * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2003/06/27 15:39:49  shomrat
- * Added IsApproved
- *
- * Revision 1.4  2002/12/26 12:40:33  dicuccio
- * Added Win32 export specifiers
- *
- * Revision 1.3  2002/01/10 19:48:26  clausen
- * Added GetLabel
- *
- * Revision 1.2  2001/06/25 18:51:58  grichenk
- * Prohibited copy constructor and assignment operator
- *
- * Revision 1.1  2000/11/21 18:58:04  vasilche
- * Added Match() methods for CSeq_id, CObject_id and CDbtag.
- *
- *
- * ===========================================================================
  */
 
 #ifndef OBJECTS_GENERAL_DBTAG_HPP
@@ -71,6 +53,77 @@ class NCBI_GENERAL_EXPORT CDbtag : public CDbtag_Base
 {
     typedef CDbtag_Base Tparent;
 public:
+
+    // this must be kept in sync with the (private) list in Dbtag.cpp!
+    enum EDbtagType {
+        eDbtagType_bad,
+
+        eDbtagType_ATCC,
+        eDbtagType_ATCC_dna,
+        eDbtagType_ATCC_in_host,
+        eDbtagType_AceView_WormGenes,
+        eDbtagType_BDGP_EST,
+        eDbtagType_BDGP_INS,
+        eDbtagType_CDD,
+        eDbtagType_CK,
+        eDbtagType_COG,
+        eDbtagType_ENSEMBL,
+        eDbtagType_ESTLIB,
+        eDbtagType_FANTOM_DB,
+        eDbtagType_FLYBASE,
+        eDbtagType_GABI,
+        eDbtagType_GDB,
+        eDbtagType_GI,
+        eDbtagType_GO,
+        eDbtagType_GOA,
+        eDbtagType_GeneDB,
+        eDbtagType_GeneID,
+        eDbtagType_IFO,
+        eDbtagType_IMGT_HLA,
+        eDbtagType_IMGT_LIGM,
+        eDbtagType_ISFinder,
+        eDbtagType_InterimID,
+        eDbtagType_Interpro,
+        eDbtagType_JCM,
+        eDbtagType_LocusID,
+        eDbtagType_MGD,
+        eDbtagType_MGI,
+        eDbtagType_MIM,
+        eDbtagType_MaizeDB,
+        eDbtagType_NextDB,
+        eDbtagType_PID,
+        eDbtagType_PIDd,
+        eDbtagType_PIDe,
+        eDbtagType_PIDg,
+        eDbtagType_PIR,
+        eDbtagType_PSEUDO,
+        eDbtagType_RATMAP,
+        eDbtagType_REMTREMBL,
+        eDbtagType_RGD,
+        eDbtagType_RZPD,
+        eDbtagType_RiceGenes,
+        eDbtagType_SGD,
+        eDbtagType_SPTREMBL,
+        eDbtagType_SWISS_PROT,
+        eDbtagType_SoyBase,
+        eDbtagType_UniGene,
+        eDbtagType_UniSTS,
+        eDbtagType_WorfDB,
+        eDbtagType_WormBase,
+        eDbtagType_ZFIN,
+        eDbtagType_dbEST,
+        eDbtagType_dbSNP,
+        eDbtagType_dbSTS,
+        eDbtagType_niaEST,
+        eDbtagType_taxon,
+
+        // unapproved
+        eDbtagType_GenBank,
+        eDbtagType_EMBL,
+        eDbtagType_DDBJ,
+        eDbtagType_REBASE
+    };
+
     // constructor
     CDbtag(void);
     // destructor
@@ -86,8 +139,18 @@ public:
     // 'GenBank', 'EMBL' and 'DDBJ' are approved only in the
     // context of a RefSeq record.
     bool IsApproved(bool refseq = false) const;
+
+    // Retrieve the enumerated type for the dbtag
+    EDbtagType GetType(void) const;
+
+    // Force a refresh of the internal type
+    void InvalidateType(void);
     
 private:
+
+    // our enumerated (parsed) type
+    mutable EDbtagType m_Type;
+
     // Prohibit copy constructor & assignment operator
     CDbtag(const CDbtag&);
     CDbtag& operator= (const CDbtag&);
@@ -100,6 +163,7 @@ private:
 // constructor
 inline
 CDbtag::CDbtag(void)
+    : m_Type(eDbtagType_bad)
 {
 }
 
@@ -111,5 +175,28 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.6  2004/01/20 16:04:36  dicuccio
+ * Implemented enumerated type interpretation of string-based database name
+ *
+ * Revision 1.5  2003/06/27 15:39:49  shomrat
+ * Added IsApproved
+ *
+ * Revision 1.4  2002/12/26 12:40:33  dicuccio
+ * Added Win32 export specifiers
+ *
+ * Revision 1.3  2002/01/10 19:48:26  clausen
+ * Added GetLabel
+ *
+ * Revision 1.2  2001/06/25 18:51:58  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
+ * Revision 1.1  2000/11/21 18:58:04  vasilche
+ * Added Match() methods for CSeq_id, CObject_id and CDbtag.
+ *
+ * ===========================================================================
+ */
 
 #endif // OBJECTS_GENERAL_DBTAG_HPP
