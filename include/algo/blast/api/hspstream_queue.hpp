@@ -41,12 +41,14 @@
 #include <algo/blast/core/blast_hspstream.h>
 #include <list>
 
+BEGIN_NCBI_SCOPE
+
 /** @addtogroup AlgoBlast
  *
  * @{
  */
 
-USING_NCBI_SCOPE;
+BEGIN_SCOPE(blast)
 
 /// Data structure for the queue implementation of BlastHSPStream
 class CBlastHSPListQueueData
@@ -76,12 +78,18 @@ private:
 NCBI_XBLAST_EXPORT
 BlastHSPStream* Blast_HSPListCQueueInit();
 
+END_SCOPE(blast)
+END_NCBI_SCOPE
+
 /* @} */
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/03/29 15:58:54  dondosha
+* Added blast scope
+*
 * Revision 1.3  2004/08/11 11:59:07  ivanov
 * Added export specifier NCBI_XBLAST_EXPORT
 *

@@ -40,7 +40,8 @@ static char const rcsid[] =
 #include <corelib/ncbimtx.hpp>
 #include <algo/blast/api/blast_mtlock.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 extern "C" {
 
@@ -80,3 +81,6 @@ MT_LOCK Blast_CMT_LOCKInit()
         MT_LOCK_Create((void*)mutex, BlastLockHandler, BlastLockCleanup);
     return lock;
 }
+
+END_SCOPE(blast)
+END_NCBI_SCOPE

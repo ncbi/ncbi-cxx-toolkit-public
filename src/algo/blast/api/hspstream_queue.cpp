@@ -40,7 +40,8 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/hspstream_queue.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 /// Constructor for the queue HSP stream data class
 CBlastHSPListQueueData::CBlastHSPListQueueData()
@@ -221,3 +222,6 @@ BlastHSPStream* Blast_HSPListCQueueInit()
 
     return BlastHSPStreamNew(&info);
 }
+
+END_SCOPE(blast)
+END_NCBI_SCOPE

@@ -46,9 +46,9 @@
  * @{
  */
 
-USING_SCOPE(ncbi);
+BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-USING_SCOPE(blast);
+BEGIN_SCOPE(blast)
 
 /** Finds repeats locations for a given set of sequences. The locations are
  * saved in the respective fields of the SSeqLoc structures. If previous masks
@@ -61,12 +61,18 @@ NCBI_XBLAST_EXPORT
 void
 Blast_FindRepeatFilterLoc(TSeqLocVector& query_loc, const char* filter_sting);
 
+END_SCOPE(BLAST)
+END_NCBI_SCOPE
+
 /* @} */
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/03/29 15:58:54  dondosha
+* Added blast scope
+*
 * Revision 1.4  2005/02/08 20:34:49  dondosha
 * Moved auxiliary functions and definitions for repeats filtering from C++ api into core; renamed FindRepeatFilterLoc into Blast_FindRepeatFilterLoc
 *

@@ -36,20 +36,29 @@
 
 #include <connect/ncbi_core.h>
 
+BEGIN_NCBI_SCOPE
+
 /** @addtogroup AlgoBlast
  *
  * @{
  */
 
+BEGIN_SCOPE(blast)
+
 /** Initialize a mutex locking mechanism for BLAST. */
 MT_LOCK Blast_CMT_LOCKInit(void);
 
+END_SCOPE(blast)
+END_NCBI_SCOPE
 /* @} */
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/03/29 15:58:54  dondosha
+* Added blast scope
+*
 * Revision 1.2  2004/07/06 15:43:59  dondosha
 * Added doxygen comments
 *

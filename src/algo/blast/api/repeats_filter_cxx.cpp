@@ -62,9 +62,9 @@ static char const rcsid[] = "$Id$";
  * @{
  */
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-USING_SCOPE(blast);
+BEGIN_SCOPE(blast)
 
 /** Convert a list of mask locations to a CSeq_loc object.
  * @param query Query sequence location [in]
@@ -243,12 +243,18 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_string)
     s_FillMaskLocFromBlastHSPResults(query, blaster.GetResults());
 }
 
+END_SCOPE(blast)
+END_NCBI_SCOPE
+
 /* @} */
 
 /*
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.18  2005/03/29 15:59:21  dondosha
+ *  Added blast scope
+ *
  *  Revision 1.17  2005/03/02 13:56:25  madden
  *  Rename Filtering option funcitons to standard naming convention
  *
