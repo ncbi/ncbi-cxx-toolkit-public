@@ -30,7 +30,7 @@
  *
  */
 
-/// @file seqdb.hpp
+/// @file seqdbalias.hpp
 /// Defines database alias file access classes.
 ///
 /// Defines classes:

@@ -29,7 +29,7 @@
  * Author:  Kevin Bealer
  *
  */
-/// @file blast_options_handle.cpp
+/// @file seqdbatlas.hpp
 /// Implementation for the CBlastOptionsHandle and the
 /// CBlastOptionsFactory classes.
 

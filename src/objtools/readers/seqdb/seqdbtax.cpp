@@ -27,7 +27,7 @@
  *
  */
 
-/// @file seqdbvol.cpp
+/// @file seqdbtax.cpp
 /// Implementation for the CSeqDBVol class, which provides an
 /// interface for all functionality of one database volume.
 
