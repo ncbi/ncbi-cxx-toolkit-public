@@ -316,6 +316,14 @@ CPssmEngine::x_Validate()
            "IPssmInputData returns NULL multiple sequence alignment");
     }
 
+    Blast_Message* errors = NULL;
+    if (PSIBlastOptionsValidate(m_PssmInput->GetOptions(), &errors) != 0) {
+        string msg("IPssmInputData returns invalid PSIBlastOptions: ");
+        msg += string(errors->message);
+        errors = Blast_MessageFree(errors);
+        NCBI_THROW(CBlastException, eBadParameter, msg);
+    }
+
     x_ValidateNoFlankingGaps();
     x_ValidateNoGapsInQuery();
     x_ValidateAlignedColumns();
@@ -519,6 +527,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2004/12/08 14:34:37  camacho
+ * Call PSIBlastOptions validation function
+ *
  * Revision 1.23  2004/12/02 16:01:24  bealer
  * - Change multiple-arrays to array-of-struct in BlastQueryInfo
  *
