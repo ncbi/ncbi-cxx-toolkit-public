@@ -75,7 +75,7 @@ private:
 
 template<class Seq>
 void COrf::FindOrfs(const Seq& seq, vector<COrf>& results,
-                    unsigned int min_length_bp = 3)
+                    unsigned int min_length_bp)
 {
     vector<TSeqPos> begins, ends;
 
@@ -105,7 +105,7 @@ template<class Seq>
 inline
 void COrf::FindForwardOrfs(const Seq& seq, vector<TSeqPos>& begins,
                                 vector<TSeqPos>& ends,
-                                unsigned int min_length_bp = 3)
+                                unsigned int min_length_bp)
 {
     string scodons1, scodons2;
     CSeqMatch::IupacToNcbi8na("TAR", scodons1);  // uaa and uag
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/14 21:18:20  ucko
+ * Don't repeat default argument specifications in definitions.
+ *
  * Revision 1.1  2003/08/14 17:59:22  jcherry
  * Initial version
  *
