@@ -132,7 +132,7 @@ void copy_2bit_any(DstIter dst, size_t count,
 
 
 CSeqVector_CI::CSeqVector_CI(void)
-    : m_Vector(0),
+    : m_Strand(eNa_strand_unknown),
       m_Coding(CSeq_data::e_not_set),
       m_Cache(0),
       m_CachePos(0),
@@ -152,7 +152,7 @@ CSeqVector_CI::~CSeqVector_CI(void)
 
 
 CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
-    : m_Vector(0),
+    : m_Strand(eNa_strand_unknown),
       m_Coding(CSeq_data::e_not_set),
       m_Cache(0),
       m_CachePos(0),
@@ -173,8 +173,10 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
 
 
 CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
-    : m_Vector(&seq_vector),
-      m_Coding(seq_vector.GetCoding()),
+    : m_SeqMap(seq_vector.m_SeqMap),
+      m_Scope(seq_vector.m_Scope),
+      m_Strand(seq_vector.m_Strand),
+      m_Coding(seq_vector.m_Coding),
       m_Cache(0),
       m_CachePos(0),
       m_CacheData(0),
@@ -195,15 +197,17 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
 
 void CSeqVector_CI::x_SetVector(CSeqVector& seq_vector)
 {
-    if ( m_Vector ) {
+    if ( m_SeqMap ) {
         // reset old values
         m_Seg = CSeqMap_CI();
         x_ResetCache();
         x_ResetBackup();
     }
 
-    m_Vector.Reset(&seq_vector);
-    m_Coding = seq_vector.GetCoding();
+    m_SeqMap = seq_vector.m_SeqMap;
+    m_Scope  = seq_vector.m_Scope;
+    m_Strand = seq_vector.m_Strand;
+    m_Coding = seq_vector.m_Coding;
     m_CachePos = seq_vector.size();
 }
 
@@ -211,16 +215,14 @@ void CSeqVector_CI::x_SetVector(CSeqVector& seq_vector)
 inline
 TSeqPos CSeqVector_CI::x_GetSize(void) const
 {
-    return m_Vector->size();
+    return m_SeqMap->GetLength(m_Scope);
 }
 
 
 inline
 void CSeqVector_CI::x_InitSeg(TSeqPos pos)
 {
-    m_Seg = m_Vector->x_GetSeqMap().FindResolved(pos,
-                                                 m_Vector->m_Scope,
-                                                 m_Vector->m_Strand);
+    m_Seg = m_SeqMap->FindResolved(pos, m_Scope, m_Strand);
 }
 
 
@@ -241,7 +243,9 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
         return *this;
     }
 
-    m_Vector = sv_it.m_Vector;
+    m_Scope = sv_it.m_Scope;
+    m_SeqMap = sv_it.m_SeqMap;
+    m_Strand = sv_it.m_Strand;
     m_Coding = sv_it.GetCoding();
     m_Seg = sv_it.m_Seg;
     m_CachePos = sv_it.x_CachePos();
@@ -354,15 +358,14 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         const CSeq_data& data = m_Seg.GetRefData();
 
         CSeqVector::TCoding dataCoding = data.Which();
-        CSeqVector::TCoding cacheCoding =
-            m_Vector->x_GetCoding(m_Coding, dataCoding);
+        CSeqVector::TCoding cacheCoding = x_GetCoding(m_Coding, dataCoding);
         bool reverse = m_Seg.GetRefMinusStrand();
 
         const char* table = 0;
         if ( cacheCoding != dataCoding || reverse ) {
-            table = m_Vector->sx_GetConvertTable(dataCoding,
-                                                 cacheCoding,
-                                                 reverse);
+            table = CSeqVector::sx_GetConvertTable(dataCoding,
+                                                   cacheCoding,
+                                                   reverse);
             if ( !table && cacheCoding != dataCoding ) {
                 NCBI_THROW(CSeqVectorException, eCodingError,
                            "Incompatible sequence codings");
@@ -426,8 +429,8 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         break;
     }
     case CSeqMap::eSeqGap:
-        m_Vector->x_GetCoding(m_Coding, CSeq_data::e_not_set);
-        fill(m_Cache, m_Cache + count, m_Vector->x_GetGapChar(m_Coding));
+        x_GetCoding(m_Coding, CSeq_data::e_not_set);
+        fill(m_Cache, m_Cache + count, CSeqVector::x_GetGapChar(m_Coding));
         break;
     default:
         NCBI_THROW(CSeqVectorException, eDataError,
@@ -549,7 +552,7 @@ void CSeqVector_CI::GetSeqData(string& buffer, TSeqPos count)
 
 void CSeqVector_CI::x_NextCacheSeg()
 {
-    _ASSERT(m_Vector);
+    _ASSERT(m_SeqMap);
     TSeqPos pos = x_CacheEndPos();
     // save current cache in backup
     _ASSERT(x_CacheSize());
@@ -583,7 +586,7 @@ void CSeqVector_CI::x_NextCacheSeg()
 
 void CSeqVector_CI::x_PrevCacheSeg()
 {
-    _ASSERT(m_Vector);
+    _ASSERT(m_SeqMap);
     TSeqPos pos = x_CachePos();
     if ( pos-- == 0 ) {
         // Can not go further
@@ -624,6 +627,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/10/08 14:16:55  vasilche
+* Removed circular reference CSeqVector <-> CSeqVector_CI.
+*
 * Revision 1.26  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

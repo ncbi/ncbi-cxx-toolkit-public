@@ -63,10 +63,10 @@ CSeqVector::CSeqVector(void)
 CSeqVector::CSeqVector(const CSeqVector& vec)
     : m_SeqMap(vec.m_SeqMap),
       m_Scope(vec.m_Scope),
-      m_Coding(vec.m_Coding),
-      m_Strand(vec.m_Strand),
       m_Size(vec.m_Size),
-      m_Mol(vec.m_Mol)
+      m_Mol(vec.m_Mol),
+      m_Strand(vec.m_Strand),
+      m_Coding(vec.m_Coding)
 {
     m_Iterator.x_SetVector(*this);
 }
@@ -76,10 +76,10 @@ CSeqVector::CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
                        EVectorCoding coding, ENa_strand strand)
     : m_SeqMap(seqMap),
       m_Scope(&scope),
-      m_Coding(CSeq_data::e_not_set),
-      m_Strand(strand),
       m_Size(seqMap->GetLength(&scope)),
-      m_Mol(seqMap->GetMol())
+      m_Mol(seqMap->GetMol()),
+      m_Strand(strand),
+      m_Coding(CSeq_data::e_not_set)
 {
     m_Iterator.x_SetVector(*this);
     SetCoding(coding);
@@ -89,10 +89,10 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
                        EVectorCoding coding, ENa_strand strand)
     : m_SeqMap(&seqMap),
       m_Scope(&scope),
-      m_Coding(CSeq_data::e_not_set),
-      m_Strand(strand),
       m_Size(seqMap.GetLength(&scope)),
-      m_Mol(seqMap.GetMol())
+      m_Mol(seqMap.GetMol()),
+      m_Strand(strand),
+      m_Coding(CSeq_data::e_not_set)
 {
     m_Iterator.x_SetVector(*this);
     SetCoding(coding);
@@ -106,20 +106,20 @@ CSeqVector::~CSeqVector(void)
 
 CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
 {
-    if (&vec != this) {
+    if ( &vec != this ) {
         m_SeqMap = vec.m_SeqMap;
-        m_Scope = vec.m_Scope;
-        m_Coding = vec.m_Coding;
+        m_Scope  = vec.m_Scope;
+        m_Size   = vec.m_Size;
+        m_Mol    = vec.m_Mol;
         m_Strand = vec.m_Strand;
-        m_Size = vec.m_Size;
-        m_Mol = vec.m_Mol;
+        m_Coding = vec.m_Coding;
         m_Iterator.x_SetVector(*this);
     }
     return *this;
 }
 
 
-CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding) const
+CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding)
 {
     switch (coding) {
     case CSeq_data::e_Iupacna: // DNA - N
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/10/08 14:16:55  vasilche
+* Removed circular reference CSeqVector <-> CSeqVector_CI.
+*
 * Revision 1.63  2003/09/30 16:22:04  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

@@ -97,6 +97,10 @@ public:
     bool IsProtein(void) const;
     bool IsNucleotide(void) const;
 
+    CScope& GetScope(void) const;
+    const CSeqMap& GetSeqMap(void) const;
+    ENa_strand GetStrand(void) const;
+
     // Target sequence coding. CSeq_data::e_not_set -- do not
     // convert sequence (use GetCoding() to check the real coding).
     TCoding GetCoding(void) const;
@@ -121,10 +125,8 @@ private:
     friend class CBioseq_Handle;
     friend class CSeqVector_CI;
 
-    TCoding x_GetCoding(TCoding cacheCoding, TCoding dataCoding) const;
     void x_InitSequenceType(void);
-    TResidue x_GetGapChar(TCoding coding) const;
-    const CSeqMap& x_GetSeqMap(void) const;
+    static TResidue x_GetGapChar(TCoding coding);
     CSeqVector_CI& x_GetIterator(TSeqPos pos) const;
     CSeqVector_CI* x_CreateIterator(TSeqPos pos) const;
 
@@ -133,10 +135,10 @@ private:
 
     CConstRef<CSeqMap>    m_SeqMap;
     CHeapScope            m_Scope;
-    TCoding               m_Coding;
-    ENa_strand            m_Strand;
     TSeqPos               m_Size;
     TMol                  m_Mol;
+    ENa_strand            m_Strand;
+    TCoding               m_Coding;
 
     mutable CSeqVector_CI m_Iterator;
 };
@@ -190,9 +192,21 @@ CSeqVector::TResidue CSeqVector::GetGapChar(void) const
 }
 
 inline
-const CSeqMap& CSeqVector::x_GetSeqMap(void) const
+const CSeqMap& CSeqVector::GetSeqMap(void) const
 {
     return *m_SeqMap;
+}
+
+inline
+CScope& CSeqVector::GetScope(void) const
+{
+    return m_Scope;
+}
+
+inline
+ENa_strand CSeqVector::GetStrand(void) const
+{
+    return m_Strand;
 }
 
 inline
@@ -230,20 +244,15 @@ void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
 }
 
 
-inline
-CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding cacheCoding,
-                                            TCoding dataCoding) const
-{
-    return cacheCoding != CSeq_data::e_not_set? cacheCoding: dataCoding;
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/10/08 14:16:54  vasilche
+* Removed circular reference CSeqVector <-> CSeqVector_CI.
+*
 * Revision 1.44  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

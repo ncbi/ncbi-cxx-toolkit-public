@@ -80,7 +80,8 @@ public:
 
 private:
     TSeqPos x_GetSize(void) const;
-    
+    TCoding x_GetCoding(TCoding cacheCoding, TCoding dataCoding) const;
+
     void x_SetPos(TSeqPos pos);
     void x_InitializeCache(void);
     void x_DestroyCache(void);
@@ -114,7 +115,9 @@ private:
     typedef char* TCacheData;
     typedef char* TCache_I;
 
-    CConstRef<CSeqVector>   m_Vector;
+    CConstRef<CSeqMap>      m_SeqMap;
+    CHeapScope              m_Scope;
+    ENa_strand              m_Strand;
     TCoding                 m_Coding;
     // Current CSeqMap segment
     CSeqMap::const_iterator m_Seg;
@@ -296,12 +299,23 @@ void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
 }
 
 
+inline
+CSeqVector_CI::TCoding CSeqVector_CI::x_GetCoding(TCoding cacheCoding,
+                                                  TCoding dataCoding) const
+{
+    return cacheCoding != CSeq_data::e_not_set? cacheCoding: dataCoding;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/10/08 14:16:55  vasilche
+* Removed circular reference CSeqVector <-> CSeqVector_CI.
+*
 * Revision 1.14  2003/08/29 13:34:47  vasilche
 * Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
 * CSeqVector::operator[] made significantly faster.
