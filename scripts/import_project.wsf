@@ -56,24 +56,28 @@ function VerifyArguments(oArgs)
 // Verify task object
 function VerifyTask(oTask)
 {
+    var err = false;
+    if (oShell.CurrentDirectory.search(/ /) != -1) {
+		WScript.Echo("ERROR: Name of the current directory contains spaces");
+		err = true;
+    }
     //Project name
     var oRe = /^[a-z]([a-z]|\d|[_]|[/])*$/g;
     if (oTask.ProjectName.match(oRe) == null) {
-        WScript.Echo("Invalid project name: \'" + oTask.ProjectName + "\'");
-        WScript.Echo("Project name should starts from lower-case letter");
-        WScript.Echo("             and containts lower-case letter(s),");
-        WScript.Echo("                           underscore(s),");
-        WScript.Echo("                           digit(s)");
-        WScript.Echo("                        or slashe(s)");
-        WScript.Quit(1);
+        WScript.Echo("ERROR: Invalid project name: \"" + oTask.ProjectName + "\"");
+		WScript.Echo("       Project name should start with a lower-case character");
+		WScript.Echo("       and contain lower-case character(s), underscore(s), digit(s), or slash(es)");
+		err = true;
     }
-
     //Path to C++ Toolkit
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
     if ( !oFso.FolderExists(oTask.ToolkitPath) ) {
-        WScript.Echo("Path to Pre-built C++ Toolkit: " + oTask.ToolkitPath + " does not exist");
-        WScript.Quit(1);    
+		WScript.Echo("ERROR: Pre-built NCBI C++ toolkit is not found in:\n\"" + oTask.ToolkitPath + "\"");
+		err = true;
     }
+	if (err) {
+		WScript.Quit(1);	
+	}
 }       
 // Task object constructor
 function Task()
@@ -85,13 +89,6 @@ function Task()
     }
     SetVerbose(oArgs, "-v", false);
 
-    //this.ProjectName     = WScript.Arguments.Item(0);
-    //this.ToolkitPath     = WScript.Arguments.Item(1);
-    //if (WScript.Arguments.Length == 2) {
-    //  this.DllBuild    = false; // default is static build
-    //} else {
-    //  this.DllBuild    = WScript.Arguments.Item(2).toLowerCase() == "-dll";
-    //}
     this.ProjectName = GetPositionalValue(oArgs, 0);
     this.DllBuild    = GetFlagValue(oArgs, "-dll", false);
     if ( this.DllBuild ) {
@@ -105,11 +102,8 @@ function Task()
         this.CopyRes    = false;
     }
 
-    var toolkit_path = GetOptionalPositionalValue(oArgs, 
-                                                  1, 
-                                                  GetDefaultCXX_ToolkitFolder() +
-                                                  "\\" +
-                                                  GetDefaultCXX_ToolkitSubFolder());
+    var toolkit_path = GetOptionalPositionalValue(oArgs, 1, 
+        GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
     if (toolkit_path.indexOf("\\\\") == 0 || toolkit_path.indexOf(":\\") == 1) {
         this.ToolkitPath = toolkit_path;
     } else {
@@ -119,10 +113,11 @@ function Task()
 // Diagnostic dump of task object
 function DumpTask(oTask)
 {
-    WScript.Echo("Project name: " + oTask.ProjectName        );
-    WScript.Echo("Toolkit path: " + oTask.ToolkitPath        );
-    WScript.Echo("DLL Build:    " + oTask.DllBuild.toString());
-    WScript.Echo("Copy DLLs:    " + oTask.CopyDlls.toString());
+    VerboseEcho("ProjectName: " + oTask.ProjectName        );
+    VerboseEcho("ToolkitPath: " + oTask.ToolkitPath        );
+    VerboseEcho("DllBuild:    " + oTask.DllBuild.toString());
+    VerboseEcho("CopyDlls:    " + oTask.CopyDlls.toString());
+    VerboseEcho("CopyRes:     " + oTask.CopyRes.toString());
 }
 
 // Fill local tree
@@ -134,6 +129,11 @@ function FillTree(oShell, oTree, oTask)
     var src_dir     = "src/"     + oTask.ProjectName;
     CheckoutSubDir(oShell, oTree, include_dir);
     CheckoutSubDir(oShell, oTree, src_dir);
+
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+    GetFileFromTree(oShell, oTree, oTask,
+        "/" + oFso.GetParentFolderName(src_dir) + "/Makefile.in",
+        oFso.GetParentFolderName(oTree.SrcRootBranch + "\\" + oTask.ProjectName));
 }
 // Project will require pre-built C++ Toolkit       
 function AdjustProject(oShell, oTree, oTask)
@@ -163,9 +163,14 @@ function SolutionName(oTask)
 // Run project tree builder
 function RunPtb(oShell, oTree, oTask)
 {
-    var conf = GetConfigs(oTask)[0];
-    var target_path = oTree.BinPathStatic + "\\" + conf;
-    var ptb_command_line = target_path + "\\project_tree_builder.exe";
+	var ptb_command_line;
+	if ((typeof(oTask.RemotePtb) == "undefined") || oTask.RemotePtb.length == 0) {
+        var conf = GetConfigs(oTask)[0];
+        var target_path = oTree.BinPathStatic + "\\" + conf;
+        ptb_command_line = target_path + "\\project_tree_builder.exe";
+    } else {
+		ptb_command_line = oTask.RemotePtb;
+    }
     if ( oTask.DllBuild ) {
         ptb_command_line += " -dll";
     }
@@ -201,28 +206,31 @@ function LoadSolution(oShell, oTree, oTask)
 var oShell = WScript.CreateObject("WScript.shell");
 
 var oTask  = new Task();
-DumpTask(oTask);
 VerifyTask(oTask);
+VerboseEcho("========================= Task ========================================");
+DumpTask(oTask);
 
 var oTree  = new Tree(oShell, oTask);
-//DumpTree(oTree);
+VerboseEcho("========================= Tree ========================================");
+DumpTree(oTree);
 
 VerboseEcho("========================= CreateTreeStructure =========================");
 CreateTreeStructure(oTree, oTask);
 VerboseEcho("========================= FillTree ====================================");
 FillTree           (oShell, oTree, oTask);
-VerboseEcho("========================= CopyPtb =====================================");
-CopyPtb            (oShell, oTree, oTask);
-VerboseEcho("========================= CopyDatatool ================================");
-CopyDatatool       (oShell, oTree, oTask);
-VerboseEcho("========================= AdjustProject ===============================");
-AdjustProject      (oShell, oTree, oTask);
 VerboseEcho("========================= AdjustLocalSite =============================");
 AdjustLocalSite    (oShell, oTree, oTask);
+VerboseEcho("========================= AdjustProject ===============================");
+AdjustProject      (oShell, oTree, oTask);
 VerboseEcho("========================= CopyDlls ====================================");
 CopyDlls           (oShell, oTree, oTask);
 VerboseEcho("========================= CopyRes =====================================");
 CopyRes            (oShell, oTree, oTask);
+
+VerboseEcho("========================= CopyPtb =====================================");
+CopyPtb            (oShell, oTree, oTask);
+VerboseEcho("========================= CopyDatatool ================================");
+CopyDatatool       (oShell, oTree, oTask);
 
 VerboseEcho("========================= RunPtb ======================================");
 RunPtb             (oShell, oTree, oTask);

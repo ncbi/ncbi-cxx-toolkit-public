@@ -20,43 +20,39 @@
 			return true;
 		}
 		// Verify task object
-		function VerifyTask(oTask)
+		function VerifyTask(oShell, oTask)
 		{
-			//Project name
+            var err = false;
+            if (oShell.CurrentDirectory.search(/ /) != -1) {
+		        WScript.Echo("ERROR: Name of the current directory contains spaces");
+				err = true;
+            }
+			// Project name
 			var oRe = /^[a-z]([a-z]|\d|[_])*$/g;
 			if (oTask.ProjectName.match(oRe) == null) {
-				WScript.Echo("Invalid project name: \'" + oTask.ProjectName + "\'");
-				WScript.Echo("Project name should start with lower-case letter");
-				WScript.Echo("             and containt lower-case letter(s),");
-				WScript.Echo("                          underscore(s)");
-				WScript.Echo("                          or digit(s)");
-				WScript.Quit(1);
+				WScript.Echo("ERROR: Invalid project name: \"" + oTask.ProjectName + "\"");
+				WScript.Echo("       Project name should start with a lower-case character");
+				WScript.Echo("       and contain lower-case character(s), underscore(s), or digit(s)");
+				err = true;
 			}
-			
-			//Project template
-			templates_dict = new ActiveXObject("Scripting.Dictionary");
-			templates_dict.Add("app/sample/alnmgr",  "app/alnmgr" );
-			templates_dict.Add("app/sample/basic",   "app/basic"  );
-			templates_dict.Add("app/sample/cgi",     "app/cgi"    );
-			templates_dict.Add("app/sample/dbapi",   "app/dbapi"  );
-			templates_dict.Add("app/sample/gui",     "app/gui"    );
-			templates_dict.Add("app/sample/objects", "app/objects");
-			templates_dict.Add("app/sample/objmgr",  "app/objmgr" );
-			if ( !templates_dict.Exists(oTask.ProjectTemplate) ) {
-				WScript.Echo("Project template \'" + oTask.ProjectTemplate + "\' is not supported by this script.");
-				WScript.Echo("Supported project templates are:");
-
-				var keys = (new VBArray(templates_dict.Keys())).toArray();   // Get the keys.
+			// Project type
+			if ((typeof(oTask.ProjectTemplate) == "undefined") || oTask.ProjectTemplate.length == 0) {
+				WScript.Echo("ERROR: Invalid project type: \"" + oTask.ProjectType + "\"");
+				WScript.Echo("       Supported project types are:");
+				var keys = (new VBArray(oTask.TemplatesDict.Keys())).toArray();
 				for(var key_ind in keys) {
-					WScript.Echo( templates_dict(keys[key_ind]) );
+					WScript.Echo( "         " + keys[key_ind] );
 				}
-				WScript.Quit(1);
+				err = true;
 			}
 			
-			//Path to C++ Toolkit
+			// Path to C++ Toolkit
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
 			if ( !oFso.FolderExists(oTask.ToolkitPath) ) {
-				WScript.Echo("Path to Pre-built C++ Toolkit: " + oTask.ToolkitPath + " does not exist");
+				WScript.Echo("ERROR: Pre-built NCBI C++ toolkit is not found in:\n\"" + oTask.ToolkitPath + "\"");
+				err = true;
+			}
+			if (err) {
 				WScript.Quit(1);	
 			}
 		}
@@ -66,32 +62,32 @@
 			var usage_str;
 			//usage_str  = "Usage:\n";
 			//usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
-			usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll]\n";
+			usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll] [-v]\n";
 			usage_str += "SYNOPSIS:\n";
 			usage_str += "    Create new MSVC7.1 application project from sample template:\n";
-			usage_str += "      Create local build tree structure. Fill-in local tree.\n";
+			usage_str += "      Create local build tree structure. Fill-in the local tree.\n";
 			usage_str += "      Copy and adjust sample code.\n";
 			usage_str += "      Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
 			usage_str += "      Run project tree builder on local build tree.\n";
 			usage_str += "      Open created solution in MSVC7.1 IDE.\n";
 			usage_str += "ARGUMENTS:\n";
-			usage_str += "    <name>      -- name of project\n";
-			usage_str += "    <type>      -- one of following:\n";
-			usage_str += "                   app/alnmgr  for application using the alignment manager\n";
-			usage_str += "                   app/basic   for simple application\n";
-			usage_str += "                   app/cgi     for CGI application\n";
-			usage_str += "                   app/dbapi   for DBAPI application\n";
-			usage_str += "                   app/gui     for FLTK application\n";
-			usage_str += "                   app/objects for application using ASN.1 objects\n";
-			usage_str += "                   app/objmgr  for application using object manager.\n";
-			usage_str += "    [builddir]       -- path to the pre-built NCBI C++ toolkit\n";
-			usage_str += "                        default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
-			usage_str += "                        you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
+			usage_str += "    <name>      -- name of the project\n";
+			usage_str += "    <type>      -- one of the following:\n";
+			usage_str += "                   app[/basic]  for a simple application\n";
+			usage_str += "                   app/cgi      for a CGI application\n";
+			usage_str += "                   app/dbapi    for a DBAPI application\n";
+			usage_str += "                   app/gui      for a FLTK application\n";
+			usage_str += "                   app/objects  for an application that uses ASN.1 objects\n";
+			usage_str += "                   app/objmgr   for an application that uses Object Manager.\n";
+			usage_str += "                   app/alnmgr   for an application that uses Alignment Manager\n";
+			usage_str += "    [builddir]  -- path to the pre-built NCBI C++ toolkit\n";
+			usage_str += "                       default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
+			usage_str += "                       you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
 			usage_str += "    [-dll]      -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
             usage_str += "    [-v]        -- show details about what is being made\n";
 			usage_str += "EXAMPLES:\n";
 			usage_str += "    cscript new_project.wsf my_app app/basic\n";
-			usage_str += "    cscript new_project.wsf my_app app/basic -dll\n";
+			usage_str += "    cscript new_project.wsf my_app app/basic -dll -v\n";
 			usage_str += "    cscript new_project.wsf my_app app/basic cxx.potluck -dll\n";
 			usage_str += "    cscript new_project.wsf my_app app/basic \\\\Snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc71\\cxx.current -dll\n";
 			
@@ -106,28 +102,39 @@
 				WScript.Quit(1);
 			}
             SetVerbose(oArgs, "-v", false);
-			this.ProjectName     = GetPositionalValue(oArgs, 0);
-			this.ProjectTemplate = GetPositionalValue(oArgs, 1).replace("/", "/sample/");
+			this.ProjectName = GetPositionalValue(oArgs, 0);
+			this.ProjectType = GetPositionalValue(oArgs, 1);
+
+			this.TemplatesDict = new ActiveXObject("Scripting.Dictionary");
+			this.TemplatesDict.Add("app",         "app/sample/basic");
+			this.TemplatesDict.Add("app/basic",   "app/sample/basic");
+			this.TemplatesDict.Add("app/cgi",     "app/sample/cgi");
+			this.TemplatesDict.Add("app/dbapi",   "app/sample/dbapi");
+			this.TemplatesDict.Add("app/gui",     "app/sample/gui");
+			this.TemplatesDict.Add("app/objects", "app/sample/objects");
+			this.TemplatesDict.Add("app/objmgr",  "app/sample/objmgr");
+			this.TemplatesDict.Add("app/alnmgr",  "app/sample/alnmgr");
+			if (this.TemplatesDict.Exists(this.ProjectType)) {
+			    this.ProjectTemplate = this.TemplatesDict.Item(this.ProjectType);
+			}
+
 			this.DllBuild        = GetFlagValue(oArgs, "-dll", false);
-			var toolkit_path     = GetOptionalPositionalValue(oArgs, 
-			                                              2, 
-			                                              GetDefaultCXX_ToolkitFolder() +
-			                                                     "\\" +
-			                                                     GetDefaultCXX_ToolkitSubFolder());
+			var toolkit_path     = GetOptionalPositionalValue(oArgs, 2, 
+			    GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
 			if (toolkit_path.indexOf("\\\\") == 0 || toolkit_path.indexOf(":\\") == 1) {
 				this.ToolkitPath = toolkit_path;
 			} else {
 				this.ToolkitPath = GetDefaultCXX_ToolkitFolder() + "\\" + toolkit_path;	
 			}
-
 		}
 		// Diagnostic dump of task object
 		function DumpTask(oTask)
 		{
-			WScript.Echo(oTask.ProjectName        );
-			WScript.Echo(oTask.ProjectTemplate    );
-			WScript.Echo(oTask.ToolkitPath        );
-			WScript.Echo(oTask.DllBuild.toString());
+			VerboseEcho("ProjectName     = " + oTask.ProjectName);
+			VerboseEcho("ProjectType     = " + oTask.ProjectType);
+			VerboseEcho("ProjectTemplate = " + oTask.ProjectTemplate);
+			VerboseEcho("ToolkitPath     = " + oTask.ToolkitPath);
+			VerboseEcho("DllBuild        = " + oTask.DllBuild.toString());
 		}
 		
 		// Fill local tree
@@ -135,34 +142,31 @@
 		{
 			FillTreeStructure(oShell, oTree);
 		}
+
 		// Copy project template from CVS
 		function CopyProjectTemplate(oShell, oTree, oTask)
 		{
-			var temp_dir = oTree.TreeRoot + "\\temp";
-			var oFso = new ActiveXObject("Scripting.FileSystemObject");
-			
-			RemoveTempFolder(oShell, oFso, oTree);
-			execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+"/src/" + oTask.ProjectTemplate);
-			execute(oShell, "copy /Y temp\\*.* \"" + oTree.SrcProjectBranch + "\"");
-			RemoveTempFolder(oShell, oFso, oTree);
+		    var src = "/src/" + oTask.ProjectTemplate + "/*.*";
+		    GetFileFromTree(oShell, oTree, oTask, src, oTree.SrcProjectBranch)
 		}
+
 		// Change Makefile.in and Makefile.*.app
 		function AdjustProject(oShell, oTree, oTask)
 		{
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
 			
+			var filename = oTree.SrcProjectBranch + "\\Makefile.in";
+			var modelname = filename + ".old";
+			var samplename = "";
+
 			// Makefile.in
-			oFso.CopyFile(oTree.SrcProjectBranch + "\\Makefile.in",
-			              oTree.SrcProjectBranch + "\\Makefile.in.old");
-			
-			              
-			// open for reading
-			var old_file = oFso.OpenTextFile(oTree.SrcProjectBranch + "\\Makefile.in.old", 1);
-			var new_file = oFso.CreateTextFile(oTree.SrcProjectBranch + "\\Makefile.in", true);
+            VerboseEcho("Modifying      " + filename);
+			oFso.CopyFile(filename, modelname);
+			var old_file = oFso.OpenTextFile(modelname, 1);
+			var new_file = oFso.CreateTextFile(filename, true);
 			while( !old_file.AtEndOfStream ) {
 				var old_line = old_file.ReadLine();
 				if (old_line.indexOf("APP_PROJ") == 0) {
-					new_file.WriteLine("# " + old_line);
 					new_file.WriteLine("APP_PROJ = " + oTask.ProjectName);
 					new_file.WriteLine("REQUIRES = CXX_Toolkit");
 				} else {
@@ -171,45 +175,65 @@
 			}
 			old_file.Close();
 			new_file.Close();
-			oFso.DeleteFile(oTree.SrcProjectBranch + "\\Makefile.in.old", true);
+			oFso.DeleteFile(modelname, true);
 			
 			// Makefile.*.app
-			
 			// lookup file name
 			var src_folder = oFso.GetFolder(oTree.SrcProjectBranch);
 			var src_folder_contents = new Enumerator(src_folder.files);
-			var makefile_app = "";
+			modelname = "";
 			for( ; !src_folder_contents.atEnd(); src_folder_contents.moveNext()) {
 				var src_file = src_folder_contents.item();
 				if (oFso.GetExtensionName(src_file) == "app") {
-					makefile_app = src_file;
+					modelname = src_file;
+					samplename = oFso.GetExtensionName( oFso.GetBaseName(src_file) );
 				}
 			}
-			WScript.Echo("Makefile.*.app: " + makefile_app);
-			
+			filename = oTree.SrcProjectBranch + "\\Makefile." + oTask.ProjectName + ".app";
+            VerboseEcho("Converting model file " + modelname + " to " + filename);
 			// open for reading
-			var old_makefile = oFso.OpenTextFile(makefile_app, 1);
+			var old_makefile = oFso.OpenTextFile(modelname, 1);
 			// Create new makefile with new project name
-			var new_makefile = oFso.CreateTextFile(oTree.SrcProjectBranch + "\\Makefile." + oTask.ProjectName + ".app", true);
+			var new_makefile = oFso.CreateTextFile(filename, true);
 			while( !old_makefile.AtEndOfStream ) {
 				var old_line = old_makefile.ReadLine();
 				if (old_line.indexOf("APP") == 0) {
-					new_makefile.WriteLine("# " + old_line);
 					new_makefile.WriteLine("APP = " + oTask.ProjectName);
+//				} else if (old_line.indexOf("SRC") == 0) {
+//					new_makefile.WriteLine("SRC = " + oTask.ProjectName);
 				} else {
 					new_makefile.WriteLine(old_line);
 				}
 			}
 			old_makefile.Close();
 			new_makefile.Close();
-			oFso.DeleteFile(makefile_app, true);
+			oFso.DeleteFile(modelname, true);
+
+			// samplename.*
+/*
+			for( src_folder_contents.moveFirst(); !src_folder_contents.atEnd(); src_folder_contents.moveNext()) {
+				var src_file = src_folder_contents.item();
+				if (oFso.GetBaseName(src_file) == samplename) {
+				    var ext = oFso.GetExtensionName(src_file);
+				    var dest = oTree.SrcProjectBranch + "\\" + oTask.ProjectName + "." + ext;
+                    VerboseEcho("Converting model file " + src_file + " to " + dest);
+        			oFso.CopyFile(src_file, dest);
+        			oFso.DeleteFile(src_file);
+				}
+			}
+*/
 		}
 		// Run project tree builder
 		function RunPtb(oShell, oTree, oTask)
 		{
-			var conf = GetConfigs(oTask)[0];
-			var target_path = oTree.BinPathStatic + "\\" + conf;
-			var ptb_command_line = target_path + "\\project_tree_builder.exe";
+			var ptb_command_line;
+			if ((typeof(oTask.RemotePtb) == "undefined") || oTask.RemotePtb.length == 0) {
+			    var conf = GetConfigs(oTask)[0];
+			    var target_path = oTree.BinPathStatic + "\\" + conf;
+			    ptb_command_line = target_path + "\\project_tree_builder.exe";
+			} else {
+			    ptb_command_line = oTask.RemotePtb;
+			}
 			if ( oTask.DllBuild ) {
 				ptb_command_line += " -dll";
 			}
@@ -222,7 +246,6 @@
 			} else {
 				ptb_command_line += " " + oTree.CompilersBranchStatic + "\\build\\" + oTask.ProjectName + ".sln";
 			}
-			WScript.Echo(ptb_command_line);
 			execute(oShell, ptb_command_line);
 		}
 		// Open generated solution in  MSVC IDE
@@ -245,24 +268,26 @@
 		var oShell = WScript.CreateObject("WScript.shell");
 		
 		var oTask  = new Task();
-		VerifyTask(oTask);
-		//DumpTask(oTask);
+		VerifyTask(oShell, oTask);
+        VerboseEcho("========================= Task ========================================");
+		DumpTask(oTask);
 		
 		var oTree  = new Tree(oShell, oTask);
-		//DumpTree(oTree);
+        VerboseEcho("========================= Tree ========================================");
+		DumpTree(oTree);
 		
         VerboseEcho("========================= CreateTreeStructure =========================");
 		CreateTreeStructure(oTree, oTask);
         VerboseEcho("========================= FillTree ====================================");
 		FillTree           (oShell, oTree);
-        VerboseEcho("========================= CopyProjectTemplate =========================");
- 		CopyProjectTemplate(oShell, oTree, oTask);
-        VerboseEcho("========================= CopyPtb =====================================");
- 		CopyPtb            (oShell, oTree, oTask);
-        VerboseEcho("========================= AdjustProject ===============================");
- 		AdjustProject      (oShell, oTree, oTask);
         VerboseEcho("========================= AdjustLocalSite =============================");
  		AdjustLocalSite    (oShell, oTree, oTask);
+        VerboseEcho("========================= CopyProjectTemplate =========================");
+ 		CopyProjectTemplate(oShell, oTree, oTask);
+        VerboseEcho("========================= AdjustProject ===============================");
+ 		AdjustProject      (oShell, oTree, oTask);
+        VerboseEcho("========================= CopyPtb =====================================");
+ 		CopyPtb            (oShell, oTree, oTask);
         VerboseEcho("========================= RunPtb ======================================");
  		RunPtb             (oShell, oTree, oTask);
         VerboseEcho("========================= LoadSolution ================================");

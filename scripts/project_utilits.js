@@ -47,12 +47,6 @@ function EscapeBackSlashes(str)
 // tree object constructor
 function Tree(oShell, oTask)
 {
-    var re = / /
-    if (oShell.CurrentDirectory.search(re) != -1) {
-		WScript.Echo("ERROR:  Name of the current directory contains spaces");
-		WScript.Quit(1);
-    }
-
     this.TreeRoot              = oShell.CurrentDirectory;
     this.CompilersBranch       = this.TreeRoot + "\\compilers\\msvc710_prj";
     this.CompilersBranchStatic = this.CompilersBranch + "\\static";
@@ -70,17 +64,15 @@ function Tree(oShell, oTask)
 // diagnostic dump of the tree object
 function DumpTree(oTree)
 {
-    WScript.Echo(oTree.TreeRoot              );
-    WScript.Echo(oTree.CompilersBranch       );
-    WScript.Echo(oTree.CompilersBranchStatic );
-    WScript.Echo(oTree.BinPathStatic         );
-    WScript.Echo(oTree.CompilersBranchDll    );
-
-    WScript.Echo(oTree.IncludeRootBranch     );
-    WScript.Echo(oTree.IncludeProjectBranch  );
-
-    WScript.Echo(oTree.SrcRootBranch         );
-    WScript.Echo(oTree.SrcProjectBranch      );
+    VerboseEcho("TreeRoot              = " + oTree.TreeRoot);
+    VerboseEcho("CompilersBranch       = " + oTree.CompilersBranch);
+    VerboseEcho("CompilersBranchStatic = " + oTree.CompilersBranchStatic);
+    VerboseEcho("BinPathStatic         = " + oTree.BinPathStatic);
+    VerboseEcho("CompilersBranchDll    = " + oTree.CompilersBranchDll);
+    VerboseEcho("IncludeRootBranch     = " + oTree.IncludeRootBranch);
+    VerboseEcho("IncludeProjectBranch  = " + oTree.IncludeProjectBranch);
+    VerboseEcho("SrcRootBranch         = " + oTree.SrcRootBranch);
+    VerboseEcho("SrcProjectBranch      = " + oTree.SrcProjectBranch);
 }
 
 // build configurations -  object oTask is supposed to have DllBuild property
@@ -108,7 +100,7 @@ function CreateFolderIfAbsent(oFso, path)
         VerboseEcho("Creating folder: " + path);
         oFso.CreateFolder(path);
     } else {
-        VerboseEcho("Folder exists: " + path);
+        VerboseEcho("Folder exists  : " + path);
     }
 }
 // create local build tree directories structure
@@ -146,8 +138,7 @@ function FillTreeStructure(oShell, oTree)
     var temp_dir = oTree.TreeRoot + "\\temp";
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
-    // Fill-in infra-structure for build tree
-
+    // Fill-in infrastructure for the build tree
     GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.in",                                oTree.SrcRootBranch);
     GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.mk.in",                             oTree.SrcRootBranch);
     GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.mk.in.msvc",                        oTree.SrcRootBranch);
@@ -182,16 +173,16 @@ function CheckoutSubDir(oShell, oTree, sub_dir)
 }
 
 // remove temporary dir ( used for get something for CVS ) 
-function RemoveTempFolder(oShell, oFso, oTree)
+function RemoveFolder(oShell, oFso, folder)
 {
-    var temp_dir = oTree.TreeRoot + "\\temp";
-    if ( oFso.FolderExists(temp_dir) ) {
-        execute(oShell, "rmdir /S /Q \"" + temp_dir + "\"");
+    if ( oFso.FolderExists(folder) ) {
+        execute(oShell, "rmdir /S /Q \"" + folder + "\"");
     }
 }
 // copy project_tree_builder app to appropriate places of the local tree
 function CopyPtb(oShell, oTree, oTask)
 {
+    var remote_ptb_found = false;
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
     var configs = GetConfigs(oTask);
     for(var config_i = 0; config_i < configs.length; config_i++) {
@@ -204,6 +195,10 @@ function CopyPtb(oShell, oTree, oTask)
                 WScript.Echo("WARNING: File not found: " + source_file);
                 continue;
             }
+        }
+        if (!remote_ptb_found) {
+            oTask.RemotePtb = source_file;
+            remote_ptb_found = true;
         }
         execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
     }
@@ -476,7 +471,7 @@ function CopyRes(oShell, oTree, oTask)
             CreateFolderIfAbsent(oFso, res_target_dir);
         execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+"/src/gui/res");
         execute(oShell, "copy /Y temp\\*.* \"" + res_target_dir + "\"");
-        RemoveTempFolder(oShell, oFso, oTree);
+        RemoveFolder(oShell, oFso, "temp");
     } else {
         VerboseEcho("CopyRes:  skipped (not requested)");
     }
@@ -491,18 +486,27 @@ function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
 {
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
-    // 1. Try to get file from pre-buit toolkit first
+    // Try to get the file from the pre-built toolkit
     var toolkit_file_path = BackSlashes(oTask.ToolkitPath + cvs_rel_path);
-    if ( oFso.FileExists(toolkit_file_path) ) {
-        oFso.CopyFile(toolkit_file_path, target_abs_dir + "\\", true);
+    var dir = oFso.GetFolder(oFso.GetParentFolderName(toolkit_file_path));
+    var dir_files = new Enumerator(dir.files);
+    if (!dir_files.atEnd()) {
+        execute(oShell, "copy /Y \"" + toolkit_file_path + "\" \"" + target_abs_dir + "\"");
         return;
     }
 
-    // 2. Last attempt - get it from CVS tree.
-    RemoveTempFolder(oShell, oFso, oTree);
-    execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+ cvs_rel_path);
-    execute(oShell, "copy /Y temp\\*.* \"" + target_abs_dir + "\"");
-    RemoveTempFolder(oShell, oFso, oTree);
+    // Get it from CVS
+    RemoveFolder(oShell, oFso, "temp");
+    var cvs_path = GetCvsTreeRoot() + cvs_rel_path;
+    var cvs_dir = oFso.GetParentFolderName(cvs_path);
+    var cvs_file = oFso.GetFileName(cvs_path);
+    if (cvs_file.search(/\*/) != -1 || cvs_file.search(/\?/) != -1) {
+        execute(oShell, "cvs checkout -l -d temp " + cvs_dir);
+    } else {
+        execute(oShell, "cvs checkout -d temp " + cvs_path);
+    }
+    execute(oShell, "copy /Y \"temp\\" + cvs_file + "\" \""+ target_abs_dir + "\"");
+    RemoveFolder(oShell, oFso, "temp");
 }
 
 
