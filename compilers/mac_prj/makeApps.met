@@ -720,6 +720,7 @@ on SetupTarget(proj, targetIndex)
 		end if
 		Add Files filesToAdd
 		
+		Reset File Paths
 	end tell
 end SetupTarget
 
@@ -813,7 +814,10 @@ on UpdateTarget(proj, targetIndex)
 			Remove Files fileNotList
 		end tell
 	end repeat
-	
+
+		tell application "CodeWarrior IDE"
+		Reset File Paths
+end	
 end UpdateTarget
 
 on CreateFolder(folderPath)
