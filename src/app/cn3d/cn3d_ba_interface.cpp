@@ -54,6 +54,9 @@
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/wx_tools.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/cn3d_blast.hpp"
+
+#include "struct_dp/struct_dp.h"
 
 // necessary C-toolkit headers
 #include <ncbi.h>
@@ -120,8 +123,8 @@ private:
 BlockAligner::BlockAligner(void)
 {
     // default options
-    currentOptions.singleBlockThreshold = 7;
-    currentOptions.multipleBlockThreshold = 7;
+    currentOptions.singleBlockThreshold = -99;
+    currentOptions.multipleBlockThreshold = -99;
     currentOptions.allowedGapExtension = 10;
     currentOptions.gapLengthPercentile = 0.6;
     currentOptions.lambda = 0.0;
@@ -130,7 +133,7 @@ BlockAligner::BlockAligner(void)
     currentOptions.searchSpaceLength = 0;
     currentOptions.globalAlignment = true;
     currentOptions.mergeAfterEachSequence = false;
-    currentOptions.keepExistingBlocks = true;
+    currentOptions.keepExistingBlocks = false;
     currentOptions.allowLongGaps = true;
 }
 
@@ -239,22 +242,62 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(CSeq_align& sa,
     return bma.release();
 }
 
+static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_AlignmentResult *result,
+    const Sequence *master, const Sequence *query)
+{
+
+    // create new alignment structure
+    BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
+    (*seqs)[0] = master;
+    (*seqs)[1] = query;
+    auto_ptr<BlockMultipleAlignment>
+        bma(new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
+
+    // unpack result blocks
+    for (int b=0; b<result->nBlocks; b++) {
+        UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(bma.get());
+        newBlock->width = blocks->blockSizes[b - result->firstBlock];
+        newBlock->SetRangeOfRow(0,
+            blocks->blockPositions[b - result->firstBlock],
+            blocks->blockPositions[b - result->firstBlock] + newBlock->width - 1);
+        newBlock->SetRangeOfRow(1,
+            result->blockPositions[b],
+            result->blockPositions[b] + newBlock->width - 1);
+        bma->AddAlignedBlockAtEnd(newBlock);
+    }
+
+    // finalize the alignment
+    if (!bma->AddUnalignedBlocks() || !bma->UpdateBlockMapAndColors(false)) {
+        ERRORMSG("Error finalizing alignment!");
+        return NULL;
+    }
+
+    // get scores
+    wxString score;
+    score.Printf(" raw score: %i", result->score);
+    bma->SetRowStatusLine(0, score.c_str());
+    bma->SetRowStatusLine(1, score.c_str());
+
+    // success
+    return bma.release();
+}
+
 static void FreezeBlocks(const BlockMultipleAlignment *multiple,
     const BlockMultipleAlignment *pairwise, Int4 *frozenBlocks)
 {
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-        multipleABlocks(multiple->GetUngappedAlignedBlocks()),
-        pairwiseABlocks(pairwise->GetUngappedAlignedBlocks());
+    BlockMultipleAlignment::UngappedAlignedBlockList multipleABlocks, pairwiseABlocks;
+    multiple->GetUngappedAlignedBlocks(&multipleABlocks);
+    pairwise->GetUngappedAlignedBlocks(&pairwiseABlocks);
 
     // if a block in the multiple is contained in the pairwise (looking at master coords),
     // then add a constraint to keep it there
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator
-        m, me = multipleABlocks->end(), p, pe = pairwiseABlocks->end();
+        m, me = multipleABlocks.end(), p, pe = pairwiseABlocks.end();
     const Block::Range *multipleRangeMaster, *pairwiseRangeMaster, *pairwiseRangeSlave;
     int i;
-    for (i=0, m=multipleABlocks->begin(); m!=me; i++, m++) {
+    for (i=0, m=multipleABlocks.begin(); m!=me; i++, m++) {
         multipleRangeMaster = (*m)->GetRangeOfRow(0);
-        for (p=pairwiseABlocks->begin(); p!=pe; p++) {
+        for (p=pairwiseABlocks.begin(); p!=pe; p++) {
             pairwiseRangeMaster = (*p)->GetRangeOfRow(0);
             if (pairwiseRangeMaster->from <= multipleRangeMaster->from &&
                     pairwiseRangeMaster->to >= multipleRangeMaster->to) {
@@ -270,6 +313,69 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
 //        else
 //            TESTMSG("block " << (i+1) << " unfrozen");
     }
+}
+
+static bool SameAlignments(const BlockMultipleAlignment *a, const BlockMultipleAlignment *b)
+{
+    try {
+        if (a->NRows() != b->NRows())
+            throw "different # rows";
+
+        int row;
+        for (row=0; row<a->NRows(); row++)
+            if (a->GetSequenceOfRow(row) != b->GetSequenceOfRow(row))
+                throw "different sequences (or different order)";
+
+        if (a->GetRowStatusLine(0) != b->GetRowStatusLine(0))
+            throw "different status (score)";
+
+        if (a->NBlocks() != b->NBlocks())
+            throw "different # blocks";
+
+        BlockMultipleAlignment::UngappedAlignedBlockList au, bu;
+        a->GetUngappedAlignedBlocks(&au);
+        b->GetUngappedAlignedBlocks(&bu);
+        if (au.size() != bu.size())
+            throw "different # aligned blocks";
+
+        for (int block=0; block<au.size(); block++) {
+            for (row=0; row<a->NRows(); row++) {
+                const Block::Range *ar = au[block]->GetRangeOfRow(row), *br = bu[block]->GetRangeOfRow(row);
+                if (ar->from != br->from || ar->to != br->to)
+                    throw "different block ranges";
+            }
+        }
+    }
+
+    catch (const char *err) {
+        ERRORMSG("Alignments are different: " << err);
+        return false;
+    }
+
+    return true;
+}
+
+// global stuff for DP block aligner score callback
+DP_BlockInfo *dpBlocks = NULL;
+const BLAST_Matrix *dpPSSM = NULL;
+const Sequence *dpQuery = NULL;
+
+// sum of scores for residue vs. PSSM
+int dpScoreFunction(unsigned int block, unsigned int queryPos)
+{
+    if (!dpBlocks || !dpPSSM || !dpQuery || block >= dpBlocks->nBlocks ||
+        queryPos > dpQuery->Length() - dpBlocks->blockSizes[block])
+    {
+        ERRORMSG("dpScoreFunction() - bad parameters");
+        return DP_NEGATIVE_INFINITY;
+    }
+
+    int i, masterPos = dpBlocks->blockPositions[block], score = 0;
+    for (i=0; i<dpBlocks->blockSizes[block]; i++)
+        score += dpPSSM->matrix[masterPos + i]
+            [LookupBLASTResidueNumberFromCharacter(dpQuery->sequenceString[queryPos + i])];
+
+    return score;
 }
 
 bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlignment *multiple,
@@ -315,9 +421,10 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     Nlm_FloatHi maxEValue = 10.0;
 
     newAlignments->clear();
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
-    numBlocks = blocks->size();
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+    multiple->GetUngappedAlignedBlocks(&blocks);
+    numBlocks = blocks.size();
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
     if (nRowsAddedToMultiple) *nRowsAddedToMultiple = 0;
 
     // use Alejandro's per-block threshold parser, to make sure same values are used
@@ -343,7 +450,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     blockEnds = (Int4*) MemNew(sizeof(Int4) * masterLength);
     allowedGaps = (Int4*) MemNew(sizeof(Int4) * (numBlocks - 1));
     currentAllowedGaps = (Int4*) MemNew(sizeof(Int4) * (numBlocks - 1));
-    for (i=0, b=blocks->begin(); b!=be; i++, b++) {
+    for (i=0, b=blocks.begin(); b!=be; i++, b++) {
         const Block::Range *range = (*b)->GetRangeOfRow(0);
         blockStarts[i] = range->from;
         blockEnds[i] = range->to;
@@ -356,6 +463,15 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     }
 //    for (i=0; i<numBlocks-1; i++)
 //        TESTMSG("allowed gap after block " << (i+1) << ": " << allowedGaps[i]);
+
+    // use my own block aligner
+    dpBlocks = DP_CreateBlockInfo(numBlocks);
+    for (i=0; i<numBlocks; i++) {
+        dpBlocks->blockPositions[i] = blockStarts[i];
+        dpBlocks->blockSizes[i] = blockEnds[i] - blockStarts[i] + 1;
+        if (i < numBlocks-1)
+            dpBlocks->maxLoops[i] = allowedGaps[i];
+    }
 
     // set up PSSM
     const BLAST_Matrix *matrix = multiple->GetPSSM();
@@ -411,8 +527,19 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             }
         }
 
+        for (i=0; i<numBlocks; i++) {
+            if (frozenBlocks[i] >= 0)
+                dpBlocks->freezeBlocks[i] = frozenBlocks[i];
+            else
+                dpBlocks->freezeBlocks[i] = DP_UNFROZEN_BLOCK;
+        }
+        DP_AlignmentResult *dpResult = NULL;
+        int dpStatus;
+
         // actually do the block alignment
         if (validFrozenBlocks) {
+
+            // Alejandro's
             INFOMSG("doing " << (localAlignment ? "local" : "global") << " block alignment of "
                 << query->identifier->ToString());
             allocateAlignPieceMemory(numBlocks);
@@ -425,6 +552,17 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
                 blockStarts, blockEnds, currentAllowedGaps, scoreThresholdMultipleBlock,
                 subject_id, query_id, &bestFirstBlock, &bestLastBlock,
                 Lambda, K, searchSpaceSize, localAlignment, maxEValue);
+
+            // mine
+            dpPSSM = matrix;
+            dpQuery = query;
+            if (localAlignment)
+                dpStatus = DP_LocalBlockAlign(dpBlocks, dpScoreFunction,
+                    startQueryPosition, endQueryPosition-1, &dpResult);
+            else
+                dpStatus = DP_GlobalBlockAlign(dpBlocks, dpScoreFunction,
+                    startQueryPosition, endQueryPosition-1, &dpResult);
+
         } else
             results = NULL;
 
@@ -441,7 +579,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             string err;
             if (!ConvertAsnFromCToCPP(results, (AsnWriteFunc) SeqAlignAsnWrite, &best, &err) ||
                 (newAlignment=UnpackBlockAlignerSeqAlign(best, multiple->GetMaster(), query)) == NULL) {
-                ERRORMSG("conversion of results to C++ object failed: " << err);
+                ERRORMSG("conversion of results to BlockMultipleAlignment object failed: " << err);
             } else {
 
                 if (currentOptions.mergeAfterEachSequence) {
@@ -459,7 +597,9 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
                     } else {                 // otherwise keep it
                         newAlignments->push_back(newAlignment);
                     }
-                } else {
+                }
+
+                else {
                     newAlignments->push_back(newAlignment);
                 }
             }
@@ -467,7 +607,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             SeqAlignSetFree(results);
         }
 
-        // no alignment block aligner failed - add old alignment to list so it doesn't get lost
+        // no alignment or block aligner failed - add old alignment to list so it doesn't get lost
         else {
             string error;
             if (!validFrozenBlocks)
@@ -481,6 +621,36 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             newAlignment->SetRowStatusLine(0, error);
             newAlignment->SetRowStatusLine(1, error);
             newAlignments->push_back(newAlignment);
+        }
+
+
+        // add result from DP
+        if (dpResult) {
+            BlockMultipleAlignment *dpAlignment =
+                UnpackDPResult(dpBlocks, dpResult, multiple->GetMaster(), query);
+            if (dpAlignment) {
+                if (!results) {
+                    ERRORMSG("DP aligner found alignment, but Alejandro's didn't");
+                    dpAlignment->SetRowStatusLine(0,
+                        dpAlignment->GetRowStatusLine(0) + " (DP)");
+                    newAlignments->push_back(dpAlignment);
+                } else if (!SameAlignments(newAlignment, dpAlignment)) {
+                    newAlignment->SetRowStatusLine(0,
+                        newAlignment->GetRowStatusLine(0) + " (A)");
+                    dpAlignment->SetRowStatusLine(0,
+                        dpAlignment->GetRowStatusLine(0) + " (DP)");
+                    newAlignments->push_back(dpAlignment);
+                } else {
+                    INFOMSG("Alejandro and DP alignment results are identical");
+                    delete dpAlignment;
+                }
+            }
+            DP_DestroyAlignmentResult(dpResult);
+        } else {
+            if (results)
+                ERRORMSG("DP aligner found no alignment, but Alejandro's did");
+            else
+                WARNINGMSG("DP block aligner returned no alignment");
         }
 
         // cleanup
@@ -501,6 +671,11 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     MemFree(masterSequence);
     MemFree(frozenBlocks);
     MemFree(perBlockThresholds);
+
+    DP_DestroyBlockInfo(dpBlocks);
+    dpBlocks = NULL;
+    dpPSSM = NULL;
+    dpQuery = NULL;
 
     return true;
 }
@@ -745,6 +920,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/07/14 18:35:27  thiessen
+* run DP and Alejandro's block aligners, and compare results
+*
 * Revision 1.25  2003/03/27 18:45:59  thiessen
 * update blockaligner code
 *
