@@ -1923,6 +1923,26 @@ Int8 AbsInt8(Int8 x)
 }
 
 
+// Checks for eContained.
+// May be used for eContains with reverse order of ranges.
+inline
+Int8 x_GetRangeDiff(const CHandleRange& hrg1,
+                    const CHandleRange& hrg2,
+                    CHandleRange::ETotalRangeFlags strand_flag)
+{
+    CRange<TSeqPos> rg1 =
+        hrg1.GetOverlappingRange(strand_flag);
+    CRange<TSeqPos> rg2 =
+        hrg2.GetOverlappingRange(strand_flag);
+    if ( rg1.GetFrom() <= rg2.GetFrom()  &&
+        rg1.GetTo() >= rg2.GetTo() ) {
+        return Int8(rg2.GetFrom() - rg1.GetFrom()) +
+            Int8(rg1.GetTo() - rg2.GetTo());
+    }
+    return -1;
+}
+
+
 Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
                               const CSeq_loc& loc2,
                               EOverlapType type)
@@ -1937,6 +1957,11 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
             for (CSeq_loc_CI li1(loc1); li1; ++li1) {
                 for (CSeq_loc_CI li2(loc2); li2; ++li2) {
                     if ( !li1.GetSeq_id().Equals(li2.GetSeq_id()) ) {
+                        continue;
+                    }
+                    // Compare strands
+                    if ( IsReverse(li1.GetStrand()) !=
+                        IsReverse(li2.GetStrand()) ) {
                         continue;
                     }
                     CRange<TSeqPos> rg1 = li1.GetRange();
@@ -1965,17 +1990,20 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
                     // loc2 has region on a sequence not present in loc1
                     return -1;
                 }
-                CRange<TSeqPos> rg1 = it1->second.GetOverlappingRange();
-                CRange<TSeqPos> rg2 = it2->second.GetOverlappingRange();
-                if ( rg1.GetFrom() <= rg2.GetFrom()  &&
-                    rg1.GetTo() >= rg2.GetTo() ) {
-                    diff += Int8(rg2.GetFrom() - rg1.GetFrom()) +
-                        Int8(rg1.GetTo() - rg2.GetTo());
-                }
-                else {
-                    // Found an interval on loc2 not contained in loc1
+                Int8 diff_plus = x_GetRangeDiff(it1->second,
+                                                it2->second,
+                                                CHandleRange::eStrandPlus);
+                if (diff_plus < 0) {
                     return -1;
                 }
+                diff += diff_plus;
+                Int8 diff_minus = x_GetRangeDiff(it1->second,
+                                                 it2->second,
+                                                 CHandleRange::eStrandPlus);
+                if (diff_minus < 0) {
+                    return -1;
+                }
+                diff += diff_minus;
             }
             return diff;
         }
@@ -1994,17 +2022,20 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
                     // loc1 has region on a sequence not present in loc2
                     return -1;
                 }
-                CRange<TSeqPos> rg1 = it1->second.GetOverlappingRange();
-                CRange<TSeqPos> rg2 = it2->second.GetOverlappingRange();
-                if ( rg2.GetFrom() <= rg1.GetFrom()  &&
-                    rg2.GetTo() >= rg1.GetTo() ) {
-                    diff += Int8(rg1.GetFrom() - rg2.GetFrom()) +
-                        Int8(rg2.GetTo() - rg1.GetTo());
-                }
-                else {
-                    // Found an interval on loc1 not contained in loc2
+                Int8 diff_plus = x_GetRangeDiff(it2->second,
+                                                it1->second,
+                                                CHandleRange::eStrandPlus);
+                if (diff_plus < 0) {
                     return -1;
                 }
+                diff += diff_plus;
+                Int8 diff_minus = x_GetRangeDiff(it2->second,
+                                                 it1->second,
+                                                 CHandleRange::eStrandPlus);
+                if (diff_minus < 0) {
+                    return -1;
+                }
+                diff += diff_minus;
             }
             return diff;
         }
@@ -2015,6 +2046,80 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
             // For this types the function should not be called
             NCBI_THROW(CObjmgrUtilException, eNotImplemented,
                 "TestForOverlap() -- error processing multi-ID seq-loc");
+        }
+    }
+    return -1;
+}
+
+
+Int8 x_TestForOverlap_MultiStrand(const CSeq_loc& loc1,
+                                  const CSeq_loc& loc2,
+                                  EOverlapType type)
+{
+    switch (type) {
+    case eOverlap_Interval:
+        {
+            if (Compare(loc1, loc2) == eNoOverlap) {
+                return -1;
+            }
+            // Proceed to eSimple case to calculate diff by strand
+        }
+    case eOverlap_Simple:
+        {
+            CHandleRangeMap hrm1;
+            CHandleRangeMap hrm2;
+            // Each range map should have single ID
+            hrm1.AddLocation(loc1);
+            _ASSERT(hrm1.GetMap().size() == 1);
+            hrm2.AddLocation(loc2);
+            _ASSERT(hrm2.GetMap().size() == 1);
+            if (hrm1.begin()->first != hrm2.begin()->first) {
+                // Different IDs
+                return -1;
+            }
+            Int8 diff_plus = -1;
+            Int8 diff_minus = -1;
+            {{
+                // Plus strand
+                CRange<TSeqPos> rg1 = hrm1.begin()->second.
+                    GetOverlappingRange(CHandleRange::eStrandPlus);
+                CRange<TSeqPos> rg2 = hrm2.begin()->second.
+                    GetOverlappingRange(CHandleRange::eStrandPlus);
+                if ( rg1.GetTo() >= rg2.GetFrom()  &&
+                    rg1.GetFrom() <= rg2.GetTo() ) {
+                    diff_plus = AbsInt8(rg2.GetFrom() - rg1.GetFrom()) +
+                        AbsInt8(rg1.GetTo() - rg2.GetTo());
+                }
+            }}
+            {{
+                // Minus strand
+                CRange<TSeqPos> rg1 = hrm1.begin()->second.
+                    GetOverlappingRange(CHandleRange::eStrandMinus);
+                CRange<TSeqPos> rg2 = hrm2.begin()->second.
+                    GetOverlappingRange(CHandleRange::eStrandMinus);
+                if ( rg1.GetTo() >= rg2.GetFrom()  &&
+                    rg1.GetFrom() <= rg2.GetTo() ) {
+                    diff_minus = AbsInt8(rg2.GetFrom() - rg1.GetFrom()) +
+                        AbsInt8(rg1.GetTo() - rg2.GetTo());
+                }
+            }}
+            if (diff_plus < 0  &&  diff_minus < 0) {
+                return -1;
+            }
+            return (diff_plus < 0 ? 0 : diff_plus) +
+                (diff_minus < 0 ? 0 : diff_minus);
+        }
+    case eOverlap_Contained:
+    case eOverlap_Contains:
+        {
+            return x_TestForOverlap_MultiSeq(loc1, loc2, type);
+        }
+    case eOverlap_CheckIntervals:
+    default:
+        {
+            // For this types the function should not be called
+            NCBI_THROW(CObjmgrUtilException, eNotImplemented,
+                "TestForOverlap() -- error processing multi-strand seq-loc");
         }
     }
     return -1;
@@ -2076,8 +2181,15 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
 
     ENa_strand strand1 = GetStrand(loc1);
     ENa_strand strand2 = GetStrand(loc2);
-    if ( !TestForStrands(strand1, strand2) )
-        return -1;
+    if ( !TestForStrands(strand1, strand2) ) {
+        if ( type != eOverlap_Subset ) { // Subset does not use total ranges
+            if ( strand1 == eNa_strand_other  ||
+                strand2 == eNa_strand_other ) {
+                return x_TestForOverlap_MultiStrand(loc1, loc2, type);
+            }
+            return -1;
+        }
+    }
     switch (type) {
     case eOverlap_Simple:
         {
@@ -4796,6 +4908,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.99  2004/10/26 14:18:18  grichenk
+* Added processing of multi-strand locations in TestForOverlap
+*
 * Revision 1.98  2004/10/20 18:12:17  grichenk
 * Fixed seq-id ranking.
 *
