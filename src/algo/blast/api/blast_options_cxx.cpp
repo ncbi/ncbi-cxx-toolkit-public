@@ -475,50 +475,50 @@ x_BlastScoringOptions_cmp(const BlastScoringOptions* a,
 }
 
 bool
-operator==(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs)
+CBlastOptionsLocal::operator==(const CBlastOptionsLocal& rhs) const
 {
-    if (&lhs == &rhs)
+    if (this == &rhs)
         return true;
 
-    if (lhs.m_Program != rhs.m_Program)
+    if (m_Program != rhs.m_Program)
         return false;
 
-    if ( !x_QuerySetupOptions_cmp(lhs.m_QueryOpts, rhs.m_QueryOpts) )
+    if ( !x_QuerySetupOptions_cmp(m_QueryOpts, rhs.m_QueryOpts) )
         return false;
 
-    if ( !x_LookupTableOptions_cmp(lhs.m_LutOpts, rhs.m_LutOpts) )
+    if ( !x_LookupTableOptions_cmp(m_LutOpts, rhs.m_LutOpts) )
         return false;
 
     void *a, *b;
 
-    a = static_cast<void*>( (BlastInitialWordOptions*) lhs.m_InitWordOpts);
+    a = static_cast<void*>( (BlastInitialWordOptions*) m_InitWordOpts);
     b = static_cast<void*>( (BlastInitialWordOptions*) rhs.m_InitWordOpts);
     if ( x_safe_memcmp(a, b, sizeof(BlastInitialWordOptions)) != 0 )
          return false;
 
-    a = static_cast<void*>( (BlastExtensionOptions*) lhs.m_ExtnOpts);
+    a = static_cast<void*>( (BlastExtensionOptions*) m_ExtnOpts);
     b = static_cast<void*>( (BlastExtensionOptions*) rhs.m_ExtnOpts);
     if ( x_safe_memcmp(a, b, sizeof(BlastExtensionOptions)) != 0 )
          return false;
 
-    a = static_cast<void*>( (BlastHitSavingOptions*) lhs.m_HitSaveOpts);
+    a = static_cast<void*>( (BlastHitSavingOptions*) m_HitSaveOpts);
     b = static_cast<void*>( (BlastHitSavingOptions*) rhs.m_HitSaveOpts);
     if ( x_safe_memcmp(a, b, sizeof(BlastHitSavingOptions)) != 0 )
          return false;
 
-    a = static_cast<void*>( (PSIBlastOptions*) lhs.m_ProtOpts);
+    a = static_cast<void*>( (PSIBlastOptions*) m_ProtOpts);
     b = static_cast<void*>( (PSIBlastOptions*) rhs.m_ProtOpts);
     if ( x_safe_memcmp(a, b, sizeof(PSIBlastOptions)) != 0 )
          return false;
 
-    if ( !x_BlastDatabaseOptions_cmp(lhs.m_DbOpts, rhs.m_DbOpts) )
+    if ( !x_BlastDatabaseOptions_cmp(m_DbOpts, rhs.m_DbOpts) )
         return false;
 
-    if ( !x_BlastScoringOptions_cmp(lhs.m_ScoringOpts, rhs.m_ScoringOpts) )
+    if ( !x_BlastScoringOptions_cmp(m_ScoringOpts, rhs.m_ScoringOpts) )
         return false;
     
     a = static_cast<void*>( (BlastEffectiveLengthsOptions*)
-                            lhs.m_EffLenOpts.get());
+                            m_EffLenOpts.get());
     b = static_cast<void*>( (BlastEffectiveLengthsOptions*)
                             rhs.m_EffLenOpts.get());
     if ( x_safe_memcmp(a, b, sizeof(BlastEffectiveLengthsOptions)) != 0 )
@@ -528,26 +528,26 @@ operator==(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs)
 }
 
 bool
-operator!=(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs)
+CBlastOptionsLocal::operator!=(const CBlastOptionsLocal& rhs) const
 {
-    return !(lhs == rhs);
+    return !(*this== rhs);
 }
 
 bool
-operator==(const CBlastOptions& lhs, const CBlastOptions& rhs)
+CBlastOptions::operator==(const CBlastOptions& rhs) const
 {
-    if (lhs.m_Local && rhs.m_Local) {
-        return (*lhs.m_Local == *rhs.m_Local);
+    if (m_Local && rhs.m_Local) {
+        return (*m_Local == *rhs.m_Local);
     } else {
         NCBI_THROW(CBlastException, eInternal, 
-                   "Equality operator unsupported for remote options");
+                   "Equality operator unsupported for arguments");
     }
 }
 
 bool
-operator!=(const CBlastOptions& lhs, const CBlastOptions& rhs)
+CBlastOptions::operator!=(const CBlastOptions& rhs) const
 {
-    return !(lhs == rhs);
+    return !(*this == rhs);
 }
 
 END_SCOPE(blast)
@@ -557,6 +557,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2004/01/20 17:06:50  camacho
+* Made operator== a member function
+*
 * Revision 1.35  2004/01/20 15:59:40  camacho
 * Added missing implementations of overloaded operators
 *

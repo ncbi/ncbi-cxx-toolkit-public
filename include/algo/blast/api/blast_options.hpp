@@ -361,6 +361,9 @@ public:
         return m_EffLenOpts.get();
     }
     
+    bool operator==(const CBlastOptionsLocal& rhs) const;
+    bool operator!=(const CBlastOptionsLocal& rhs) const;
+
 protected:
 
     /// Query sequence settings
@@ -403,8 +406,6 @@ private:
 
     friend class CBl2Seq;
     friend class CDbBlast;
-    friend bool operator==(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs);
-    friend bool operator!=(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs);
 };
 
 
@@ -1627,6 +1628,9 @@ public:
         return result;
     }
     
+    bool operator==(const CBlastOptions& rhs) const;
+    bool operator!=(const CBlastOptions& rhs) const;
+    
 protected:
     QuerySetUpOptions * GetQueryOpts() const
     {
@@ -1684,9 +1688,6 @@ private:
 
     friend class CBlastGapAlignTest;
 
-    friend bool operator==(const CBlastOptions& lhs, const CBlastOptions& rhs);
-    friend bool operator!=(const CBlastOptions& lhs, const CBlastOptions& rhs);
-    
     // Pointers to local and remote objects
     
     CBlastOptionsLocal  * m_Local;
@@ -1698,10 +1699,6 @@ private:
         NCBI_THROW(CBlastException, eInternal, msg);
     }
 };
-
-
-bool 
-operator==(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs);
 
 inline EProgram
 CBlastOptionsLocal::GetProgram() const
@@ -2393,6 +2390,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2004/01/20 17:06:39  camacho
+* Made operator== a member function
+*
 * Revision 1.43  2004/01/20 16:42:16  camacho
 * Do not use runtime_error, use NCBI Exception classes
 *
