@@ -231,8 +231,12 @@ features="$x_features"
 export features
 
 # Add current, build and scripts directories to PATH
-PATH=".:${x_build_dir}:${x_root_dir}/scripts:${x_root_dir}/scripts/check:\${PATH}"
+PATH=".:${x_build_dir}:${x_root_dir}/scripts:\${PATH}"
 export PATH
+
+# Define time-guard script to run tests from other scripts
+CHECK_EXEC="${x_root_dir}/scripts/check/check_exec_test.sh"
+export CHECK_EXEC
 
 EOF
 

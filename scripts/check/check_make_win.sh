@@ -190,8 +190,12 @@ top_srcdir="\$root_dir"
 export top_srcdir
 
 # Add current, build and scripts directories to PATH
-PATH=".:\${build_dir}:\${root_dir}/scripts:\${root_dir}/scripts/check:\${PATH}"
+PATH=".:\${build_dir}:\${root_dir}/scripts:\${PATH}"
 export PATH
+
+# Define time-guard script to run tests from other scripts
+CHECK_EXEC="\${x_root_dir}/scripts/check/check_exec_test.sh"
+export CHECK_EXEC
 
 count_ok=0
 count_err=0
