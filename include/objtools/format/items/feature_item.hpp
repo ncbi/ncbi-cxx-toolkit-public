@@ -158,11 +158,6 @@ public:
     bool IsMappedFromProt   (void) const { return m_Mapped == eMapped_from_prot;    }
 
 private:
-    // typdef
-    typedef multimap<EFeatureQualifier, CConstRef<IFlatQVal> > TQuals;
-    typedef TQuals::iterator TQI;
-    typedef TQuals::const_iterator TQCI;
-
     void x_GatherInfo(CFFContext& ctx);
 
     // qualifier collection
@@ -172,7 +167,7 @@ private:
     void x_AddGeneQuals(const CSeq_feat& gene, CScope& scope) const;
     void x_AddCdregionQuals(const CSeq_feat& cds, CFFContext& ctx,
         bool& pseudo) const;
-    void x_AddProteinQuals(CBioseq_Handle& prot) const;
+    const CProt_ref* x_AddProteinQuals(CBioseq_Handle& prot) const;
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot) const;
     void x_AddRnaQuals(const CSeq_feat& feat, CFFContext& ctx,
         bool& pseudo) const;
@@ -184,18 +179,28 @@ private:
     void x_AddGoQuals(const CUser_object& uo) const;
     void x_AddExceptionQuals(CFFContext& ctx) const;
     void x_ImportQuals(const CSeq_feat::TQual& quals) const;
+    void x_CleanQuals(void) const;
+    
+    // typdef
+    typedef CQualContainer<EFeatureQualifier> TQuals;
+    typedef TQuals::iterator TQI;
+    typedef TQuals::const_iterator TQCI;
+
     
     // qualifiers container
-    void x_AddQual(EFeatureQualifier slot, const IFlatQVal* value) const
-        { m_Quals.insert(TQuals::value_type(slot,CConstRef<IFlatQVal>(value))); }
-    void x_RemoveQuals(EFeatureQualifier slot) const;
-    pair<TQI, TQI> x_GetQual(EFeatureQualifier slot) const {
-        return m_Quals.equal_range(slot);
+    void x_AddQual(EFeatureQualifier slot, const IFlatQVal* value) const {
+        m_Quals.AddQual(slot, value);
+    }
+    void x_RemoveQuals(EFeatureQualifier slot) const {
+        m_Quals.RemoveQuals(slot);
     }
     bool x_HasQual(EFeatureQualifier slot) const { 
-        return m_Quals.lower_bound(slot) != m_Quals.end();
+        return m_Quals.HasQual(slot);
     }
-
+    pair<TQCI, TQCI> x_GetQual(EFeatureQualifier slot) const {
+        return m_Quals.GetQuals(slot);
+    }
+    
     // format
     void x_FormatQuals(void) const;
     void x_FormatNoteQuals(void) const;
@@ -249,8 +254,9 @@ private:
     void x_AddQuals(const COrg_ref& org, CFFContext& ctx) const;
 
     // XXX - massage slot as necessary and perhaps sanity-check value's type
-    void x_AddQual (ESourceQualifier slot, const IFlatQVal* value) const
-        { m_Quals.insert(TQuals::value_type(slot,CConstRef<IFlatQVal>(value))); }
+    void x_AddQual (ESourceQualifier slot, const IFlatQVal* value) const {
+        m_Quals.AddQual(slot, value); 
+    }
 
     void x_FormatQuals   (void) const;
     void x_FormatGBNoteQuals(void) const;
@@ -262,8 +268,8 @@ private:
         x_FormatQual(slot, name, qvec, flags | IFlatQVal::fIsNote); 
     }
 
-    typedef multimap<ESourceQualifier, CConstRef<IFlatQVal> > TQuals;
-    typedef TQuals::const_iterator                            TQCI;
+    typedef CQualContainer<ESourceQualifier> TQuals;
+    typedef TQuals::const_iterator           TQCI;
 
     bool           m_WasDesc;
     mutable TQuals m_Quals;
@@ -277,6 +283,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/30 20:26:32  shomrat
+* Separated quals container from feature class
+*
 * Revision 1.8  2004/03/25 20:27:52  shomrat
 * moved constructor body to .cpp file
 *

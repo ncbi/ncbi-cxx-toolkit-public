@@ -541,7 +541,7 @@ void CFeatureItem::x_AddQuals(CFFContext& ctx) const
     }
     // dbxref
     if (m_Feat->IsSetDbxref()) {
-        x_AddQual(eFQ_db_xref, new CFlatXrefQVal(m_Feat->GetDbxref()));
+        x_AddQual(eFQ_db_xref, new CFlatXrefQVal(m_Feat->GetDbxref(), &m_Quals));
     }
     // model_evidance and go quals
     if ( m_Feat->IsSetExt() ) {
@@ -690,6 +690,9 @@ void CFeatureItem::x_AddQuals(CFFContext& ctx) const
     if (m_Feat->IsSetQual()) {
         x_ImportQuals(m_Feat->GetQual());
     }
+
+    // cleanup (drop illegal quals, duplicate information etc.)
+    x_CleanQuals();
 }
 
 
@@ -824,7 +827,8 @@ void CFeatureItem::x_AddRnaQuals
         try {
             if ( feat.CanGetProduct() ) {
                 const CSeq_id& id = GetId(feat.GetProduct(), &ctx.GetScope());
-                CBioseq_Handle prod = ctx.GetScope().GetBioseqHandle(id);
+                CBioseq_Handle prod = 
+                    ctx.GetScope().GetBioseqHandleFromTSE(id, ctx.GetHandle());
                 EFeatureQualifier slot = 
                     (ctx.IsRefSeq()  ||  ctx.IsModeDump()  ||  ctx.IsModeGBench()) ?
                     eFQ_transcript_id : eFQ_transcript_id_note;
@@ -832,6 +836,9 @@ void CFeatureItem::x_AddRnaQuals
                     x_AddProductIdQuals(prod, slot);
                 } else {
                     x_AddQual(slot, new CFlatSeqIdQVal(id));
+                    if ( id.IsGi() ) {
+                        x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(id, true));
+                    }
                 }
             }
         } catch (CNotUnique&) {}
@@ -899,15 +906,46 @@ void CFeatureItem::x_AddCdregionQuals
                     // entity, but flag can override and force far /translation
                     prot = ctx.ShowFarTranslations() ? 
                         scope.GetBioseqHandle(*prot_id) : 
-                    scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
+                        scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
                 }
+                const CProt_ref* pref = 0;
                 if ( prot ) {
                     // Add protein quals (comment, note, names ...) 
-                    x_AddProteinQuals(prot);
+                    pref = x_AddProteinQuals(prot);
                 } else {
                     x_AddQual(eFQ_protein_id, new CFlatSeqIdQVal(*prot_id));
+                    if ( prot_id->IsGi() ) {
+                        x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*prot_id, true));
+                    }
                 }
                 
+                // protein xref overrides names, but should not prevent /protein_id, etc.
+                const CProt_ref* p = m_Feat->GetProtXref();
+                if ( p != 0 ) {
+                    pref = p;
+                }
+                if ( pref != 0 ) {
+                    if ( !pref->GetName().empty() ) {
+                        CProt_ref::TName names = pref->GetName();
+                        x_AddQual(eFQ_cds_product, new CFlatStringQVal(names.front()));
+                        names.pop_front();
+                        if ( !names.empty() ) {
+                            x_AddQual(eFQ_prot_names, new CFlatStringListQVal(names));
+                        }
+                    }
+                    if ( pref->CanGetDesc() ) {
+                        x_AddQual(eFQ_prot_desc, new CFlatStringQVal(pref->GetDesc()));
+                    }
+                    if ( !pref->GetActivity().empty() ) {
+                        x_AddQual(eFQ_prot_activity,
+                            new CFlatStringListQVal(pref->GetActivity()));
+                    }
+                    if ( !pref->GetEc().empty() ) {
+                        x_AddQual(eFQ_prot_EC_number,
+                            new CFlatStringListQVal(pref->GetEc()));
+                    }
+                }
+
                 // translation
                 if ( !pseudo ) {
                     string translation;
@@ -940,7 +978,7 @@ void CFeatureItem::x_AddCdregionQuals
 }
 
 
-void CFeatureItem::x_AddProteinQuals(CBioseq_Handle& prot) const
+const CProt_ref* CFeatureItem::x_AddProteinQuals(CBioseq_Handle& prot) const
 {
     _ASSERT(prot);
 
@@ -977,32 +1015,7 @@ void CFeatureItem::x_AddProteinQuals(CBioseq_Handle& prot) const
         }
     }
 
-    // protein xref overrides names, but should not prevent /protein_id, etc.
-    const CProt_ref* p = m_Feat->GetProtXref();
-    if ( p != 0 ) {
-        pref = p;
-    }
-    if ( pref != 0 ) {
-        if ( !pref->GetName().empty() ) {
-            CProt_ref::TName names = pref->GetName();
-            x_AddQual(eFQ_cds_product, new CFlatStringQVal(names.front()));
-            names.pop_front();
-            if ( !names.empty() ) {
-                x_AddQual(eFQ_prot_names, new CFlatStringListQVal(names));
-            }
-        }
-        if ( pref->CanGetDesc() ) {
-            x_AddQual(eFQ_prot_desc, new CFlatStringQVal(pref->GetDesc()));
-        }
-        if ( !pref->GetActivity().empty() ) {
-            x_AddQual(eFQ_prot_activity,
-                      new CFlatStringListQVal(pref->GetActivity()));
-        }
-        if ( !pref->GetEc().empty() ) {
-            x_AddQual(eFQ_prot_EC_number,
-                      new CFlatStringListQVal(pref->GetEc()));
-        }
-    }
+    return pref;
 }
 
 
@@ -1207,14 +1220,28 @@ void CFeatureItem::x_AddRegionQuals(const CSeq_feat& feat, CFFContext& ctx) cons
 
 void CFeatureItem::x_AddExtQuals(const CSeq_feat::TExt& ext) const
 {
-    if ( ext.CanGetType() ) {
-        const CObject_id& oid = ext.GetType();
-        if ( oid.IsStr() ) {
-            if ( oid.GetStr() == "ModelEvidence" ) {
-                x_AddQual(eFQ_modelev, new CFlatModelEvQVal(ext));
-            } else if ( oid.GetStr() == "GeneOntology" ) {
-                x_AddGoQuals(ext);
+    ITERATE (CUser_object::TData, it, ext.GetData()) {
+        const CUser_field& field = **it;
+        if ( !field.CanGetData() ) {
+            continue;
+        }
+        if ( field.GetData().IsObject() ) {
+            const CUser_object& obj = field.GetData().GetObject();
+            x_AddExtQuals(obj);
+            return;
+        } else if ( field.GetData().IsObjects() ) {
+            ITERATE (CUser_field::C_Data::TObjects, o, field.GetData().GetObjects()) {
+                x_AddExtQuals(**o);
             }
+            return;
+        }
+    }
+    if ( ext.CanGetType()  &&  ext.GetType().IsStr() ) {
+        const string& oid = ext.GetType().GetStr();
+        if ( oid == "ModelEvidence" ) {
+            x_AddQual(eFQ_modelev, new CFlatModelEvQVal(ext));
+        } else if ( oid == "GeneOntology" ) {
+            x_AddGoQuals(ext);
         }
     }
 }
@@ -1460,7 +1487,7 @@ void CFeatureItem::x_AddProtQuals
     if ( processed == CProt_ref::eProcessed_preprotein  &&
          !ctx.IsRefSeq()  &&  !ctx.IsProt()  &&  
          feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_preprotein ) {
-        TQuals::iterator product = m_Quals.find(eFQ_product);
+        TQuals::iterator product = m_Quals.Find(eFQ_product);
         if (  product != m_Quals.end() ) {
             x_AddQual(eFQ_encodes, product->second);
             x_RemoveQuals(eFQ_product);
@@ -1552,7 +1579,7 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals) const
 
 void CFeatureItem::x_FormatQuals(void) const
 {
-    m_FF->SetQuals().reserve(m_Quals.size());
+    m_FF->SetQuals().reserve(m_Quals.Size());
     CFlatFeature::TQuals& qvec = m_FF->SetQuals();
 
 #define DO_QUAL(x) x_FormatQual(eFQ_##x, #x, m_FF->SetQuals())
@@ -1684,10 +1711,13 @@ void CFeatureItem::x_FormatNoteQuals(void) const
     CFlatFeature::TQuals::const_iterator last = qvec.end();
     CFlatFeature::TQuals::const_iterator end = last--;
     CFlatFeature::TQuals::const_iterator it = qvec.begin();
+    bool add_period = false;
     for ( ; it != end; ++it ) {
+        add_period = false;
         string note = (*it)->GetValue();
         if ( NStr::EndsWith(note, ".")  &&  !NStr::EndsWith(note, "...") ) {
             note.erase(note.length() - 1);
+            add_period = true;
         }
         const string& prefix = *suffix + (*it)->GetPrefix();
         JoinNoRedund(notestr, prefix, note);
@@ -1695,6 +1725,10 @@ void CFeatureItem::x_FormatNoteQuals(void) const
     }
 
     if ( !notestr.empty() ) {
+        NStr::TruncateSpaces(notestr);
+        if ( add_period  &&  !NStr::EndsWith(notestr, ".") ) {
+            notestr += ".";
+        }
         CRef<CFlatQual> note(new CFlatQual("note", 
             ExpandTildes(notestr, eTilde_newline)));
         m_FF->SetQuals().push_back(note);
@@ -1708,20 +1742,26 @@ void CFeatureItem::x_FormatQual
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
-    pair<TQCI, TQCI> range
-        = const_cast<const TQuals&>(m_Quals).equal_range(slot);
+    pair<TQCI, TQCI> range = m_Quals.GetQuals(slot);
     for (TQCI it = range.first;  it != range.second;  ++it) {
         it->second->Format(qvec, name, GetContext(), flags);
     }
 }
 
 
-void CFeatureItem::x_RemoveQuals(EFeatureQualifier slot) const
+void CFeatureItem::x_CleanQuals(void) const
 {
-    pair<TQI, TQI> range = m_Quals.equal_range(slot);
-    m_Quals.erase(range.first, range.second);
+    // /gene same as feature.comment will suppress /note
+    if ( m_Feat->CanGetComment()  &&  x_HasQual(eFQ_gene) ) {
+        const IFlatQVal* qval = m_Quals.Find(eFQ_gene)->second;
+        const CFlatStringQVal* strval = 
+            dynamic_cast<const CFlatStringQVal*>(qval);
+        if ( strval != 0  &&  
+             NStr::EqualNocase(strval->GetValue(), m_Feat->GetComment()) ) {
+            x_RemoveQuals(eFQ_seqfeat_note);
+        }
+    }
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1919,7 +1959,7 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CFFContext& ctx) cons
 
 void CSourceFeatureItem::x_FormatQuals(void) const
 {
-    m_FF->SetQuals().reserve(m_Quals.size());
+    m_FF->SetQuals().reserve(m_Quals.Size());
     CFlatFeature::TQuals& qvec = m_FF->SetQuals();
 
 #define DO_QUAL(x) x_FormatQual(eSQ_##x, #x, qvec)
@@ -2142,8 +2182,7 @@ void CSourceFeatureItem::x_FormatQual
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
-    pair<TQCI, TQCI> range
-        = const_cast<const TQuals&>(m_Quals).equal_range(slot);
+    pair<TQCI, TQCI> range = m_Quals.GetQuals(slot);
     for (TQCI it = range.first;  it != range.second;  ++it) {
         it->second->Format(qvec, name, GetContext(),
                            flags | IFlatQVal::fIsSource);
@@ -2158,6 +2197,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/03/30 20:27:09  shomrat
+* Separated quals container from feature class
+*
 * Revision 1.13  2004/03/25 20:37:41  shomrat
 * Use handles
 *
