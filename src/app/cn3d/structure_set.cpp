@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.115  2002/09/26 18:30:58  thiessen
+* fix RMS bug when coords missing
+*
 * Revision 1.114  2002/09/26 17:32:13  thiessen
 * show distance between picked atoms; show RMS for structure alignments
 *
@@ -1553,13 +1556,16 @@ void StructureObject::RealignStructure(int nCoords,
     // print out RMS
     Vector x;
     double rms = 0.0, d;
+    int n = 0;
     for (int c=0; c<nCoords; c++) {
+        if (!slaveCoords[c] || !masterCoords[c]) continue;
         x = *(slaveCoords[c]);
         ApplyTransformation(&x, *transformToMaster);
         d = (*(masterCoords[c]) - x).length();
         rms += d * d;
+        n++;
     }
-    rms = sqrt(rms / nCoords);
+    rms = sqrt(rms / n);
     TESTMSG("RMS of aligned alpha coordinates between master structure and " << pdbID << ": "
         << setprecision(3) << rms << setprecision(6) << " A");
 
