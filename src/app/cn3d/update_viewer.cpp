@@ -628,21 +628,21 @@ void UpdateViewer::ImportStructure(void)
         if (filename.size() == 0) return;
         bool readOK = false;
         string err;
-        INFOMSG("trying to read file '" << filename << "' as binary mime");
+        TRACEMSG("trying to read file '" << filename << "' as binary mime");
         CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1());
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
         readOK = ReadASNFromFile(filename.c_str(), mime.GetPointer(), true, &err);
         SetDiagPostLevel(eDiag_Info);
         if (!readOK) {
-            WARNINGMSG("error: " << err);
-            INFOMSG("trying to read file '" << filename << "' as ascii mime");
+            TRACEMSG("error: " << err);
+            TRACEMSG("trying to read file '" << filename << "' as ascii mime");
             mime.Reset(new CNcbi_mime_asn1());
             SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
             readOK = ReadASNFromFile(filename.c_str(), mime.GetPointer(), false, &err);
             SetDiagPostLevel(eDiag_Info);
         }
         if (!readOK) {
-            WARNINGMSG("error: " << err);
+            TRACEMSG("error: " << err);
             ERRORMSG("Couldn't read structure from " << filename);
             return;
         }
@@ -1161,6 +1161,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/03/13 18:55:17  thiessen
+* tweak file load error reporting
+*
 * Revision 1.57  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -1238,7 +1238,7 @@ void StructureWindow::LoadFile(const char *filename)
     bool readOK = false;
     string err;
     if (!isCDD) {
-        INFOMSG("trying to read file '" << filename << "' as " <<
+        TRACEMSG("trying to read file '" << filename << "' as " <<
             ((isBinary) ? "binary" : "ascii") << " mime");
         CNcbi_mime_asn1 *mime = new CNcbi_mime_asn1();
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
@@ -1249,12 +1249,12 @@ void StructureWindow::LoadFile(const char *filename)
             // if CDD is contained in a mime, then show CDD splash screen
             if (glCanvas->structureSet->IsCDD()) ShowCDDOverview();
         } else {
-//            WARNINGMSG("error: " << err);
+            TRACEMSG("error: " << err);
             delete mime;
         }
     }
     if (!readOK) {
-        INFOMSG("trying to read file '" << filename << "' as " <<
+        TRACEMSG("trying to read file '" << filename << "' as " <<
             ((isBinary) ? "binary" : "ascii") << " cdd");
         CCdd *cdd = new CCdd();
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
@@ -1263,7 +1263,7 @@ void StructureWindow::LoadFile(const char *filename)
         if (readOK) {
             glCanvas->structureSet = new StructureSet(cdd, structureLimit, glCanvas->renderer);
         } else {
-//            WARNINGMSG("error: " << err);
+            TRACEMSG("error: " << err);
             delete cdd;
         }
     }
@@ -1390,6 +1390,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/13 18:55:17  thiessen
+* tweak file load error reporting
+*
 * Revision 1.2  2003/03/13 16:57:14  thiessen
 * fix favorites load/save problem
 *
