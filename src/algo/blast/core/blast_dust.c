@@ -1,34 +1,34 @@
 static char const rcsid[] = "$Id";
-/*
+/* 
 * ===========================================================================
 *
-*                            PUBLIC DOMAIN NOTICE                          
+*                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
-*                                                                          
-*  This software/database is a "United States Government Work" under the   
-*  terms of the United States Copyright Act.  It was written as part of    
-*  the author's official duties as a United States Government employee and 
-*  thus cannot be copyrighted.  This software/database is freely available 
-*  to the public for use. The National Library of Medicine and the U.S.    
-*  Government have not placed any restriction on its use or reproduction.  
-*                                                                          
-*  Although all reasonable efforts have been taken to ensure the accuracy  
-*  and reliability of the software and data, the NLM and the U.S.          
-*  Government do not and cannot warrant the performance or results that    
-*  may be obtained by using this software or data. The NLM and the U.S.    
-*  Government disclaim all warranties, express or implied, including       
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.                                                                
-*                                                                          
-*  Please cite the author in any work or product based on this material.   
 *
-* ===========================================================================
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's offical duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
 *
 * File Name:  blast_dust.c
 *
-* Author(s): Ilya Dondoshansky
+* Author(s): Richa Agarwala (based upon versions variously worked upon by Roma Tatusov,
+* John Kuzio, and Ilya Dondoshansky).
 *   
-* Version Creation Date: 05/28/2003
+* Version Creation Date: 02/09/2004
 *
 * $Revision$
 *
@@ -37,6 +37,7 @@ static char const rcsid[] = "$Id";
 *                   but without using the structures generated from ASN.1 spec.
 * ==========================================================================
 */
+
 
 #include <algo/blast/core/blast_dust.h>
 
@@ -53,8 +54,8 @@ typedef struct DCURLOC { /* localcurrents */
 
 /* local functions */
 
-static Int4 wo (Int4, Uint1*, Int4, DCURLOC*, Uint1* seq);
-static void wo1 (Int4, Uint1*, Int4, DCURLOC*);
+static void wo (Int4, Uint1*, Int4, DCURLOC*, Uint1*, Boolean, Int4);
+static Boolean wo1 (Int4, Uint1*, Int4, DCURLOC*);
 static Int4 dust_triplet_find (Uint1*, Int4, Int4, Uint1*);
 
 /* entry point for dusting */
@@ -65,18 +66,16 @@ static Int4 dust_segs (Uint1* sequence, Int4 length, Int4 start,
 {
    Int4    len;
    Int4	i;
-   Int4 retlen;
    Uint1* seq;
    DREGION* regold = NULL;
    DCURLOC	cloc;
-   Int4	nreg, windowhalf;
+   Int4	nreg;
    
    /* defaults are more-or-less in keeping with original dust */
    if (level < 2 || level > 64) level = 20;
    if (windowsize < 8 || windowsize > 64) windowsize = 64;
    if (minwin < 4 || minwin > 128) minwin = 4;
    if (linker < 1 || linker > 32) linker = 1;
-   windowhalf = windowsize / 2;
    
    nreg = 0;
    seq = (Uint1*) calloc(1, windowsize);			/* triplets */
@@ -84,36 +83,31 @@ static Int4 dust_segs (Uint1* sequence, Int4 length, Int4 start,
       return -1;
    }
 
-   for (i = 0; i < length; i += windowhalf) {
+   len = (Int4) ((length > windowsize) ? windowsize : length);
+   len -= 2;
+   dust_triplet_find (sequence, 0, len-1, seq+1);
+
+   for (i = 0; i < length-2; i++) {
       len = (Int4) ((length > i+windowsize) ? windowsize : length-i);
       len -= 2;
-      retlen = wo (len, sequence, i, &cloc, seq);
+      if ((length >= i+windowsize) || (i==0))
+          wo (len, sequence, i, &cloc, seq, TRUE, level);
+      else /* remaining portion of sequence is less than windowsize */
+          wo (len, sequence, i, &cloc, seq, FALSE, level);
       
-      /* get rid of itsy-bitsy's, dust_triplet_find aborts - 
-         move 1 triplet away */
-      if ((cloc.curend - cloc.curstart + 1) < minwin) {
-         if (retlen != len) {
-            i += (retlen - windowhalf + 3);
-         }
-         continue;
-      }
-
       if (cloc.curlevel > level) {
          if (nreg &&
              regold->to + linker >= cloc.curstart+i+start &&
-             regold->from <= cloc.curstart + i + start) {
+             regold->from <= cloc.curend + i + start + linker) {
             /* overlap windows nicely if needed */
-            regold->to = cloc.curend + i + start;
+            if (regold->to < cloc.curend + i + start)
+                regold->to = cloc.curend + i + start;
+            if (regold->from > cloc.curstart + i + start)
+                regold->from = cloc.curstart + i + start;
          } else	{
             /* new window or dusted regions do not overlap */
             reg->from = cloc.curstart + i + start;
             reg->to = cloc.curend + i + start;
-            /* 5' edge effects - 3' edge effects - are best handled 
-               interactively.
-               It probabbly would be good to put 'linker' as an interactive 
-               option.
-               Interactive means wrapping stuff up in a graphics shell
-            */
             regold = reg;
             reg = (DREGION*) calloc(1, sizeof(DREGION));
             if (!reg) {
@@ -124,39 +118,57 @@ static Int4 dust_segs (Uint1* sequence, Int4 length, Int4 start,
             regold->next = reg;
             nreg++;
          }
-         /* kill virtually all 3' tiling anomalies */
-         if (cloc.curend < windowhalf)
-            i += (cloc.curend - windowhalf);
       }				/* end 'if' high score	*/
    }					/* end for */
    sfree (seq);
    return nreg;
 }
 
-static Int4 wo (Int4 len, Uint1* seq_start, Int4 iseg, DCURLOC* cloc, 
-                Uint1* seq)
+static void wo (Int4 len, Uint1* seq_start, Int4 iseg, DCURLOC* cloc, 
+                Uint1* seq, Boolean FIND_TRIPLET, Int4 level)
 {
-	Int4 i, flen;
+	Int4 smaller_window_start, mask_window_end;
+        Boolean SINGLE_TRIPLET;
 
 	cloc->curlevel = 0;
 	cloc->curstart = 0;
 	cloc->curend = 0;
 
-        /* get the chunk of sequence in triplets */
+	if (len < 1)
+		return;
 
-        memset (seq,0,len+2);        /* Zero the triplet buffer */
-	flen = dust_triplet_find (seq_start, iseg, len, seq);
+        /* get the chunk of sequence in triplets */
+	if (FIND_TRIPLET==TRUE) /* Copy suffix as prefix and find one */
+	{
+		memmove(seq,seq+1,(len-1)*sizeof(Uint1));
+		seq[len-1] = seq[len] = seq[len+1] = 0;
+		dust_triplet_find (seq_start, iseg+len-1, 1, seq+len-1);
+	}
+	else /* Copy suffix */
+		memmove(seq,seq+1,len*sizeof(Uint1));
 
         /* dust the chunk */
-	for (i = 0; i < flen; i++)
-           wo1 (flen-i, seq+i, i, cloc);
+	SINGLE_TRIPLET = wo1 (len, seq, 0, cloc); /* dust at start of window */
+
+        /* consider smaller windows only if anything interesting 
+           found for starting position  and smaller windows have potential of
+           being at higher level */
+	if ((cloc->curlevel > level) && (!SINGLE_TRIPLET)) {
+		mask_window_end = cloc->curend-1;
+		smaller_window_start = 1;
+                while ((smaller_window_start < mask_window_end) &&
+                       (!SINGLE_TRIPLET)) {
+			SINGLE_TRIPLET = wo1(mask_window_end-smaller_window_start,
+                             seq+smaller_window_start, smaller_window_start, cloc);
+                	smaller_window_start++;
+	        }
+	}
 
 	cloc->curend += cloc->curstart;
-
-	return flen;
 }
 
-static void wo1 (Int4 len, Uint1* seq, Int4 iwo, DCURLOC* cloc)
+/* returns TRUE if there is single triplet in the sequence considered */
+static Boolean wo1 (Int4 len, Uint1* seq, Int4 iwo, DCURLOC* cloc)
 {
    Uint4 sum;
 	Int4 loop;
@@ -164,6 +176,8 @@ static void wo1 (Int4 len, Uint1* seq, Int4 iwo, DCURLOC* cloc)
 
 	Int2* countsptr;
 	Int2 counts[4*4*4];
+	Uint1 triplet_count = 0;
+
 	memset (counts, 0, sizeof (counts));
 /* zero everything */
 	sum = 0;
@@ -186,9 +200,14 @@ static void wo1 (Int4 len, Uint1* seq, Int4 iwo, DCURLOC* cloc)
 				cloc->curend = loop + 2; /* triplets */
 			}
 		}
+		else
+			triplet_count++;
 		(*countsptr)++;
 	}
-	return;
+
+	if (triplet_count > 1)
+		return(FALSE);
+	return(TRUE);
 }
 
 #define NCBI_2NA_MASK 0x03
@@ -214,8 +233,6 @@ dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
    s2 = s1 + 1;
    s3 = s1 + 2;
    
-   /* set up needs streamlining */
-   /* start again at segment or virtual sequence bounderies */
    /* set up 1 */
    if ((c = *seq++) == end_byte)
       return n;
@@ -231,7 +248,7 @@ dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
    *s2 |= c;
    
    /* triplet fill loop */
-   while ((c = *seq++) != end_byte && n < max) {
+   while (n < max && (c = *seq++) != end_byte) {
       c &= NCBI_2NA_MASK;
       *s1 <<= 2;
       *s2 <<= 2;
@@ -247,7 +264,7 @@ dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
    return n;
 }
 
-/* look for dustable locations (as slpDust from dust.c */
+/* look for dustable locations (as slpDust from dust.c) */
 
 static Int2 
 GetDustLocations (ListNode** loc, DREGION* reg, Int4 nreg)
@@ -297,9 +314,6 @@ Int2 SeqBufferDust (Uint1* sequence, Int4 length, Int4 offset,
                   (Int4)window, (Int4)minwin, (Int4)linker);
 
         status = GetDustLocations(dust_loc, reg, nreg);
-        /* find tail - this way avoids referencing the pointer */
-        while (reg->next) reg = reg->next;
-
 
         /* clean up memory */
 	reg = regold;
