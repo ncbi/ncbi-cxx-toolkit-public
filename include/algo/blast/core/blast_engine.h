@@ -130,10 +130,10 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
  * @param eff_len_params Parameters for setting effective lengths [in]
  * @param psi_options Options specific to PSI-BLAST [in]
  * @param db_options Options for handling BLAST database [in]
+ * @param hsp_stream Placeholder for saving HSP lists [in]
  * @param diagnostics Return statistics containing numbers of hits on 
  *                    different stages of the search. Statistics saved only 
  *                    for the allocated parts of the structure. [in] [out]
- * @param itr Iterator over the subject sequences source [in]
  */
 Int4 
 BLAST_PreliminarySearchEngine(EBlastProgramType program_number, 

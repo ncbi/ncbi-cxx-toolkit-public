@@ -49,8 +49,9 @@ extern "C" {
 #define NCBI4NA_ENCODING 2 /**< NCBI8na */
 #define NCBI2NA_ENCODING 3 /**< NCBI2na */
 #define ERROR_ENCODING 255 /**< Error value for encoding */
-/**< Does character encode a residue? */
+
 #ifndef IS_residue
+/** Does character encode a residue? */
 #define IS_residue(x) (x <= 250)
 #endif
 
