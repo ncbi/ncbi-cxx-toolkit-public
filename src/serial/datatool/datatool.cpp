@@ -38,6 +38,7 @@
 
 #include <memory>
 
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/lexer.hpp>
@@ -463,6 +464,7 @@ void CDataTool::LoadDefinitions(CFileSet& fileSet,
             switch (fName.GetType()) {
             default:
                 // throw exception here
+                NCBI_THROW(CDatatoolException,eWrongInput,"Unknown file type: "+name);
                 break;
             case SourceFile::eASN:
                 {
@@ -498,6 +500,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2003/05/23 13:54:48  gouriano
+* throw exception on unknown module file type
+*
 * Revision 1.63  2003/05/14 14:42:22  gouriano
 * added generation of XML schema
 *
