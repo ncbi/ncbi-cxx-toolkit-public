@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.27  2002/03/19 18:47:57  thiessen
 * small bug fixes; remember PSSM weight
 *
@@ -151,10 +154,6 @@ BEGIN_SCOPE(Cn3D)
 #endif
 
 
-static const double SCALING_FACTOR = 100000;
-
-static const std::string ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
-
 // default threading options
 ThreaderOptions::ThreaderOptions(void) :
     weightPSSM(0.5),
@@ -170,20 +169,23 @@ ThreaderOptions::ThreaderOptions(void) :
 ThreaderOptions globalThreaderOptions;
 
 // gives threader residue number for a character (-1 if non-standard aa)
-static int LookupResidueNumber(char r)
+static int LookupThreaderResidueNumberFromCharacterAbbrev(char r)
 {
     typedef std::map < char, int > Char2Int;
     static Char2Int charMap;
 
     if (charMap.size() == 0) {
-        for (int i=0; i<ThreaderResidues.size(); i++)
-            charMap[ThreaderResidues[i]] = i;
+        for (int i=0; i<Threader::ThreaderResidues.size(); i++)
+            charMap[Threader::ThreaderResidues[i]] = i;
     }
 
     Char2Int::const_iterator c = charMap.find(toupper(r));
     return ((c != charMap.end()) ? c->second : -1);
 }
 
+const double Threader::SCALING_FACTOR = 100000;
+
+const std::string Threader::ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
 
 Threader::Threader(void)
 {
@@ -195,56 +197,13 @@ Threader::~Threader(void)
     for (c=contacts.begin(); c!=ce; c++) FreeFldMtf(c->second);
 }
 
-// creates a SeqAlign from a BlockMultipleAlignment
-static SeqAlignPtr CreateSeqAlign(const BlockMultipleAlignment *multiple)
-{
-    // one SeqAlign (chained into a linked list) for each slave row
-    SeqAlignPtr prevSap = NULL, firstSap = NULL;
-    for (int row=1; row<multiple->NRows(); row++) {
-
-        SeqAlignPtr sap = SeqAlignNew();
-        if (prevSap) prevSap->next = sap;
-        prevSap = sap;
-		if (!firstSap) firstSap = sap;
-
-        sap->type = SAT_PARTIAL;
-        sap->dim = 2;
-        sap->segtype = SAS_DENDIAG;
-
-        DenseDiagPtr prevDd = NULL;
-        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-            blocks(multiple->GetUngappedAlignedBlocks());
-        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.get()->end();
-
-        for (b=blocks.get()->begin(); b!=be; b++) {
-            DenseDiagPtr dd = DenseDiagNew();
-            if (prevDd) prevDd->next = dd;
-            prevDd = dd;
-            if (b == blocks.get()->begin()) sap->segs = dd;
-
-            dd->dim = 2;
-            multiple->GetSequenceOfRow(0)->AddCSeqId(&(dd->id), false);      // master
-            multiple->GetSequenceOfRow(row)->AddCSeqId(&(dd->id), false);    // slave
-            dd->len = (*b)->width;
-
-            dd->starts = (Int4Ptr) MemNew(2 * sizeof(Int4));
-            const Block::Range *range = (*b)->GetRangeOfRow(0);
-            dd->starts[0] = range->from;
-            range = (*b)->GetRangeOfRow(row);
-            dd->starts[1] = range->from;
-        }
-    }
-
-	return firstSap;
-}
-
 Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM)
 {
     // convert all sequences to Bioseqs
     multiple->GetMaster()->parentSet->CreateAllBioseqs(multiple);
 
     // create SeqAlign from this BlockMultipleAlignment
-    SeqAlignPtr seqAlign = CreateSeqAlign(multiple);
+    SeqAlignPtr seqAlign = multiple->CreateCSeqAlign();
 
 #ifdef DEBUG_THREADER
     // dump for debugging
@@ -360,7 +319,7 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
     // fill in residue numbers
     int i;
     for (i=0; i<slaveSeq->Length(); i++)
-        qrySeq->sq[i] = LookupResidueNumber(slaveSeq->sequenceString[i]);
+        qrySeq->sq[i] = LookupThreaderResidueNumberFromCharacterAbbrev(slaveSeq->sequenceString[i]);
 
     // if a block in the multiple is contained in the pairwise (looking at master coords),
     // then add a constraint to keep it there
@@ -1219,7 +1178,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
         const Sequence *seq = multiple->GetSequenceOfRow(row);
         residueNumbers.resize(seq->Length());
         for (int i=0; i<seq->Length(); i++)
-            residueNumbers[i] = LookupResidueNumber(seq->sequenceString[i]);
+            residueNumbers[i] = LookupThreaderResidueNumberFromCharacterAbbrev(seq->sequenceString[i]);
 
         // sum score types (weightPSSM already built into seqMtf & rcxPtl)
         double

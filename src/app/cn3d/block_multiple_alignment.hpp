@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.26  2002/02/21 22:01:49  thiessen
 * remember alignment range on demotion
 *
@@ -119,6 +122,8 @@
 #include <objects/cdd/Update_align.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
+#include <objalign.h>
+
 #include <list>
 #include <vector>
 #include <map>
@@ -148,6 +153,9 @@ public:
 
     const SequenceList *sequences;
     AlignmentManager *alignmentManager;
+
+    // create a C-object SeqAlign from this alignment (should be freed with SeqAlignFree())
+    SeqAlignPtr CreateCSeqAlign(void) const;
 
     // to track the origin of this alignment if it came from an update
     ncbi::CRef < ncbi::objects::CUpdate_align > updateOrigin;

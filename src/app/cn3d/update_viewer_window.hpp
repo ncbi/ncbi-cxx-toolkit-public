@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.18  2002/02/13 14:53:30  thiessen
 * add update sort
 *
@@ -129,6 +132,7 @@ private:
         MID_THREAD_ONE,
         MID_THREAD_ALL,
         MID_BLAST_ONE,
+        MID_BLAST_PSSM_ONE,
         MID_MERGE_ONE,
         MID_MERGE_ALL,
         MID_DELETE_ONE,
@@ -153,6 +157,11 @@ private:
         menuBar->Check(MID_BLAST_ONE, false);
         SetCursor(wxNullCursor);
     }
+    void BlastPSSMSingleOff(void)
+    {
+        menuBar->Check(MID_BLAST_PSSM_ONE, false);
+        SetCursor(wxNullCursor);
+    }
     void MergeSingleOff(void)
     {
         menuBar->Check(MID_MERGE_ONE, false);
@@ -174,6 +183,7 @@ private:
 public:
     bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
     bool DoBlastSingle(void) const { return menuBar->IsChecked(MID_BLAST_ONE); }
+    bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
     bool DoDeleteSingle(void) const { return menuBar->IsChecked(MID_DELETE_ONE); }
 
@@ -181,6 +191,7 @@ public:
     {
         if (DoThreadSingle()) ThreadSingleOff();
         if (DoBlastSingle()) BlastSingleOff();
+        if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
         if (DoDeleteSingle()) DeleteSingleOff();
         if (DoMergeSingle()) MergeSingleOff();
     }

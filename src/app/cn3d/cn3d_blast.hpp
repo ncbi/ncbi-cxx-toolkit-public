@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.2  2001/09/27 15:36:47  thiessen
 * decouple sequence import and BLAST
 *
@@ -58,6 +61,8 @@ public:
     BLASTer(void) { }
     ~BLASTer(void) { }
 
+    static const std::string BLASTResidues;
+
     typedef std::list < const Sequence * > SequenceList;
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
 
@@ -65,7 +70,8 @@ public:
     // the given master and one of the given sequences. If the alignment algorithm fails to
     // align the new sequence, it will include a null-alignment for that sequence.
     void CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
-        const SequenceList& slaves, AlignmentList *newAlignments);
+        const SequenceList& slaves, AlignmentList *newAlignments,
+        const BlockMultipleAlignment *multipleForPSSM);
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.22  2002/02/12 21:15:59  thiessen
 * add move up/down to CDD annotations
 *
@@ -131,6 +134,7 @@
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/opengl_renderer.hpp"
+#include "cn3d/show_hide_manager.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -820,6 +824,7 @@ void CDDAnnotateDialog::ShowEvidence(void)
                 StructureSet::DisplayLists::const_iterator d, de = structureSet->frameMap[frame].end();
                 for (d=structureSet->frameMap[frame].begin(); d!=de; d++) {
                     if (*d == displayList) { // is display list in this frame?
+                        structureSet->showHideManager->MakeAllVisible();
                         structureSet->renderer->ShowFrameNumber(frame);
                         GetParent()->Refresh(false);    // assumes parent is structure window
                         frame = structureSet->frameMap.size();

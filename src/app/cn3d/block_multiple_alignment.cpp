@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.35  2002/02/21 22:01:49  thiessen
 * remember alignment range on demotion
 *
@@ -153,6 +156,8 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
+
+#include <memory>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -1596,6 +1601,49 @@ int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJ
     // should never get here...
     ERR_POST(Error << "BlockMultipleAlignment::GetAlignmentIndex() - confused");
     return -1;
+}
+
+// creates a SeqAlign from a BlockMultipleAlignment
+SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
+{
+    // one SeqAlign (chained into a linked list) for each slave row
+    SeqAlignPtr prevSap = NULL, firstSap = NULL;
+    for (int row=1; row<NRows(); row++) {
+
+        SeqAlignPtr sap = SeqAlignNew();
+        if (prevSap) prevSap->next = sap;
+        prevSap = sap;
+		if (!firstSap) firstSap = sap;
+
+        sap->type = SAT_PARTIAL;
+        sap->dim = 2;
+        sap->segtype = SAS_DENDIAG;
+
+        DenseDiagPtr prevDd = NULL;
+        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+            blocks(GetUngappedAlignedBlocks());
+        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.get()->end();
+
+        for (b=blocks.get()->begin(); b!=be; b++) {
+            DenseDiagPtr dd = DenseDiagNew();
+            if (prevDd) prevDd->next = dd;
+            prevDd = dd;
+            if (b == blocks.get()->begin()) sap->segs = dd;
+
+            dd->dim = 2;
+            GetSequenceOfRow(0)->AddCSeqId(&(dd->id), false);      // master
+            GetSequenceOfRow(row)->AddCSeqId(&(dd->id), false);    // slave
+            dd->len = (*b)->width;
+
+            dd->starts = (Int4Ptr) MemNew(2 * sizeof(Int4));
+            const Block::Range *range = (*b)->GetRangeOfRow(0);
+            dd->starts[0] = range->from;
+            range = (*b)->GetRangeOfRow(row);
+            dd->starts[1] = range->from;
+        }
+    }
+
+	return firstSap;
 }
 
 

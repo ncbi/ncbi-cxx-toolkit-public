@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.97  2002/02/27 16:29:41  thiessen
 * add model type flag to general mime type
 *
@@ -780,7 +783,12 @@ void StructureSet::Load(int structureLimit)
     // set default rendering style
     if (alignmentSet) {
         styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
-        styleManager->SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
+        if (dataManager->IsCDD()) {
+            // special starting style for CDD's - info. content and aligned domains only
+            styleManager->SetGlobalColorScheme(StyleSettings::eInformationContentShortcut);
+            showHideManager->ShowAlignedDomains(this);
+        } else
+            styleManager->SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
     } else {
         styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
         styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);

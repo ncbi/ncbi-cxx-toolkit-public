@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.13  2002/02/21 12:26:30  thiessen
 * fix row delete bug ; remember threader options
 *
@@ -116,6 +119,9 @@ public:
     Threader(void);
     ~Threader(void);
 
+    static const double SCALING_FACTOR;
+    static const std::string ThreaderResidues;
+
     // create new BlockMultipleAlignments from the given multiple and master/slave pairs; returns
     // true if threading successful. If so, depending on options, nRowsAddedToMultiple will be
     // merged into the multiple, and newAlignments will contain all un-merged master/slave pairs
@@ -161,13 +167,15 @@ private:
     ContactMap contacts;
 
     // threading structure setups
-    Seq_Mtf * CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM);
     Cor_Def * CreateCorDef(const BlockMultipleAlignment *multiple, double loopLengthMultiplier);
     Qry_Seq * CreateQrySeq(const BlockMultipleAlignment *multiple,
         const BlockMultipleAlignment *pairwise, int terminalCutoff);
     Rcx_Ptl * CreateRcxPtl(double weightContacts);
     Gib_Scd * CreateGibScd(bool fast, int nRandomStarts);
     Fld_Mtf * CreateFldMtf(const Sequence *masterSequence);
+public:
+    // also used by blast module
+    static Seq_Mtf * CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM);
 };
 
 END_SCOPE(Cn3D)

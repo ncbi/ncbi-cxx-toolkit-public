@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.44  2002/02/28 19:11:52  thiessen
 * wrap sequences in single-structure mode
 *
@@ -678,8 +681,15 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
 
             // BLAST single
             if (updateWindow->DoBlastSingle()) {
-                updateWindow->updateViewer->BlastUpdate(alignment);
+                updateWindow->updateViewer->BlastUpdate(alignment, false);
                 if (!controlDown) updateWindow->BlastSingleOff();
+                return false;
+            }
+
+            // BLAST/PSSM single
+            if (updateWindow->DoBlastPSSMSingle()) {
+                updateWindow->updateViewer->BlastUpdate(alignment, true);
+                if (!controlDown) updateWindow->BlastPSSMSingleOff();
                 return false;
             }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.12  2002/02/13 14:53:30  thiessen
 * add update sort
 *
@@ -125,7 +128,7 @@ public:
 
     // run BLAST on given pairwise alignment - if BLAST is successful, then alignment will be
     // replaced with the result, otherwise the alignment is left unchanged
-    void BlastUpdate(BlockMultipleAlignment *alignment);
+    void BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFromMultiple);
 
     // set window title
     void SetWindowTitle(const std::string& title) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
 * Revision 1.31  2002/03/07 19:16:04  thiessen
 * don't auto-show sequence windows
 *
@@ -794,8 +797,17 @@ void UpdateViewer::SavePendingStructures(void)
     }
 }
 
-void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment)
+void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFromMultiple)
 {
+    const BlockMultipleAlignment *multipleForPSSM = NULL;
+    if (usePSSMFromMultiple) {
+        multipleForPSSM = alignmentManager->GetCurrentMultipleAlignment();
+        if (!multipleForPSSM) {
+            ERR_POST(Error << "Can't do BLAST/PSSM when no multiple alignment is present");
+            return;
+        }
+    }
+
     // find alignment, and replace it with BLAST result
     AlignmentList::iterator a, ae = alignmentStack.back().end();
     for (a=alignmentStack.back().begin(); a!=ae; a++) {
@@ -806,13 +818,13 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment)
         seqs.push_back(alignment->GetSequenceOfRow(1));
         BLASTer::AlignmentList newAlignments;
         alignmentManager->blaster->CreateNewPairwiseAlignmentsByBlast(
-            alignment->GetSequenceOfRow(0), seqs, &newAlignments);
+            alignment->GetSequenceOfRow(0), seqs, &newAlignments, multipleForPSSM);
         if (newAlignments.size() != 1) {
             ERR_POST(Error << "UpdateViewer::BlastUpdate() - CreateNewPairwiseAlignmentsByBlast() failed");
             return;
         }
         if (newAlignments.front()->NAlignedBlocks() == 0) {
-            ERR_POST(Warning << "BLAST failed; alignment unchanged");
+            ERR_POST(Warning << "alignment unchanged");
             delete newAlignments.front();
             return;
         }
