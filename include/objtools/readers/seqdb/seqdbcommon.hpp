@@ -208,6 +208,7 @@ private:
     void x_FindOid(int oid, int & indexB, int & indexE);
 };
 
+NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis);
 
 END_NCBI_SCOPE
