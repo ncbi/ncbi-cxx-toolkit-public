@@ -144,6 +144,9 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
       m_BackupPos(kInvalidSeqPos)
 {
     m_Cache = m_CacheData.end();
+    if (pos >= m_Vector->size()) {
+        pos = m_Vector->size() ? m_Vector->size() - 1 : 0;
+    }
     m_Seg = m_Vector->m_SeqMap->FindResolved(
         pos, m_Vector->m_Scope, m_Vector->m_Strand);
     x_UpdateCache(pos);
@@ -491,6 +494,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/06/06 15:09:43  grichenk
+* One more fix for coordinates
+*
 * Revision 1.10  2003/06/05 20:20:22  grichenk
 * Fixed bugs in assignment functions,
 * fixed minor problems with coordinates.
