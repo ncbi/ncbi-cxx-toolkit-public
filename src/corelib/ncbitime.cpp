@@ -100,22 +100,35 @@ static void s_TlsFormatCleanup(string* fmt, void* /* data */)
 //============================================================================
 
 
-// Day's count in months
-static int s_DaysInMonth[] = {31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+// Number of days per month
+static int s_DaysInMonth[12] = {
+    31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+};
 
 // Month names
-static const char* s_MonthNamesAbbr[12] = {
-    "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec" };
-static const char* s_MonthNamesFull[12] = {
-    "January","February","March","April","May","June","July","August",
-    "September","October","November","December"};
+static const char* kMonthAbbr[12] = {
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+static const char* kMonthFull[12] = {
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+};
 
+// Weekday names
+static const char* kWeekdayAbbr[7] = {
+    "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+};
+static const char* kWeekdayFull [7] = {
+    "Sunday", "Monday", "Tuesday", "Wednesday",
+    "Thursday", "Friday", "Saturday"
+};
+ 
 // Default value for time format
-//const string kDefaultFormat = "M/D/Y h:m:s";
-#define kDefaultFormat "M/D/Y h:m:s"
+static const char* kDefaultFormat = "M/D/Y h:m:s";
 
 // Set of the checked format symbols (w,W not included)
-#define kFormatSymbols "YyMbBDhmsSZ"
+static const char* kFormatSymbols = "YyMbBDhmsSZwW";
 
 
 // Get number of days in "date"
@@ -220,8 +233,9 @@ void CTime::x_VerifyFormat(const string& fmt)
         count[i] = 0;
     }
     for (string::const_iterator j = fmt.begin();  j != fmt.end();  ++j) {
-        if (strchr(kFormatSymbols, *j) != 0  &&  ++count[(unsigned int) *j] > 1) {
-            NCBI_THROW(CTimeException,eFormat,"CTime's format is incorrect");
+        if (strchr(kFormatSymbols, *j) != 0  &&
+            ++count[(unsigned int) *j] > 1) {
+            NCBI_THROW(CTimeException, eFormat, "CTime's format is incorrect");
         }
     }
 }
@@ -234,9 +248,10 @@ void CTime::x_Init(const string& str, const string& fmt)
     const char* fff;
     const char* sss = str.c_str();
 
-    for ( fff = fmt.c_str();  *fff != '\0';  fff++ ) {
+    int weekday = -1;
+    for (fff = fmt.c_str();  *fff != '\0';  fff++) {
 
-        // Process non-format symbols
+        // Non-format symbols
         if (strchr(kFormatSymbols, *fff) == 0) {
             if ( *fff == *sss ) {
                 sss++;
@@ -245,19 +260,19 @@ void CTime::x_Init(const string& str, const string& fmt)
             break;  // error: non-matching non-format symbols
         }
 
-        // Process month name format symbol
-        if ( *fff == 'b' || *fff == 'B' ) {
+        // Month
+        if (*fff == 'b'  ||  *fff == 'B') {
             const char** name;
             if (*fff == 'b') {
-                name = &s_MonthNamesAbbr[0];
+                name = &kMonthAbbr[0];
             } else {
-                name = &s_MonthNamesFull[0];
+                name = &kMonthFull[0];
             }
-            for (unsigned char i=0; i<12; i++) {
+            for (unsigned char i = 0;  i < 12;  i++) {
                 size_t namelen = strlen(*name);
                 if ( strncmp(sss, *name, namelen) == 0 ) {
                     sss += namelen;
-                    m_Month = i+1;
+                    m_Month = i + 1;
                     break;
                 }
                 name++;
@@ -265,9 +280,26 @@ void CTime::x_Init(const string& str, const string& fmt)
             continue;
         }
 
-        // Process timezone format symbol
-        if ( *fff == 'Z' ) {
-            if ( strncmp(sss, "GMT", 3) == 0 ) {
+        // Weekday
+        if (*fff == 'w'  ||  *fff == 'W') {
+            const char** day =
+                (*fff == 'w') ? &kWeekdayAbbr[0] : &kWeekdayFull[0];
+
+            for (unsigned char i = 0;  i < 7;  i++) {
+                size_t len = strlen(*day);
+                if (strncmp(sss, *day, len) == 0) {
+                    sss += len;
+                    weekday = i;
+                    break;
+                }
+                day++;
+            }
+            continue;
+        }
+
+        // Timezone
+        if (*fff == 'Z') {
+            if (strncmp(sss, "GMT", 3) == 0) {
                 m_Tz = eGmt;
                 sss += 3;
             } else {
@@ -276,10 +308,10 @@ void CTime::x_Init(const string& str, const string& fmt)
             continue;
         }
 
-        // Process format symbols - read the next data ingredient
+        // Other format symbols -- read the next data ingredient
         char value_str[10];
         char* s = value_str;
-        for ( size_t len = (*fff == 'Y') ? 4 : ((*fff == 'S') ? 9 : 2 );
+        for (size_t len = (*fff == 'Y') ? 4 : ((*fff == 'S') ? 9 : 2);
              len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
             *s++ = *sss++; 
         }
@@ -292,9 +324,9 @@ void CTime::x_Init(const string& str, const string& fmt)
             m_Year = (int) value;
             break;
         case 'y':
-            if ( value >= 0  &&  value < 50 ) {
+            if (value >= 0  &&  value < 50) {
                 value += 2000;
-            } else if ( value >= 50  &&  value < 100 ) {
+            } else if (value >= 50  &&  value < 100) {
                 value += 1900;
             }
             m_Year = (int) value;
@@ -321,12 +353,18 @@ void CTime::x_Init(const string& str, const string& fmt)
             _TROUBLE;
         }
     }
+
     // Check on errors
-    if ( *fff != '\0'  ||  *sss != '\0' ) {
-        NCBI_THROW(CTimeException,eFormat,"CTime's format is incorrect");
+    if (weekday != -1  &&  weekday != DayOfWeek()) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid weekday");
     }
+
+    if (*fff != '\0'  ||  *sss != '\0') {
+        NCBI_THROW(CTimeException, eFormat, "CTime:  format is incorrect");
+    }
+
     if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime is invalid");
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid");
     }
 }
 
@@ -453,26 +491,20 @@ string CTime::AsString(const string& fmt) const
   
     string str;
     for ( string::const_iterator it = fmt.begin();  it != fmt.end();  ++it ) {
-        static const char* s_DaysOfWeekShort[7] = {
-            "Sun","Mon","Tue","Wed","Thu","Fri","Sat" };
-        static const char* s_DaysOfWeekLong [7] = {
-            "Sunday","Monday","Tuesday","Wednesday",
-                "Thursday","Friday","Saturday" };
- 
         switch ( *it ) {
         case 'Y':  s_AddZeroPadInt(str, Year(), 4);       break;
         case 'y':  s_AddZeroPadInt(str, Year() % 100);    break;
         case 'M':  s_AddZeroPadInt(str, Month());         break;
-        case 'b':  str += s_MonthNamesAbbr[Month()-1];    break;
-        case 'B':  str += s_MonthNamesFull[Month()-1];    break;
+        case 'b':  str += kMonthAbbr[Month()-1];          break;
+        case 'B':  str += kMonthFull[Month()-1];          break;
         case 'D':  s_AddZeroPadInt(str, Day());           break;
         case 'h':  s_AddZeroPadInt(str, Hour());          break;
         case 'm':  s_AddZeroPadInt(str, Minute());        break;
         case 's':  s_AddZeroPadInt(str, Second());        break;
         case 'S':  s_AddZeroPadInt(str, NanoSecond(), 9); break;
         case 'Z':  if (IsGmtTime()) str += "GMT";         break;
-        case 'w':  str += s_DaysOfWeekShort[DayOfWeek()]; break;
-        case 'W':  str += s_DaysOfWeekLong[DayOfWeek()];  break;
+        case 'w':  str += kWeekdayAbbr[DayOfWeek()];      break;
+        case 'W':  str += kWeekdayFull[DayOfWeek()];      break;
         default :
             str += *it;  break;
         }
@@ -1256,6 +1288,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2003/07/15 19:37:03  vakatov
+ * CTime::x_Init() -- recognize (but then just skip, ignoring the value)
+ * the weekday
+ *
  * Revision 1.36  2003/04/23 21:07:31  ivanov
  * CStopWatch::GetTimeMark: removed 'f' to avoid a conversion float
  * 1e6f to double.
