@@ -111,9 +111,9 @@ void* SwapPointers(void * volatile * location, void* new_value)
     }
     return old_value;
 #  elif defined(NCBI_OS_DARWIN)
-    Boolean swapped = FALSE;
+    bool swapped = false;
     void*   old_value;
-    while (swapped == FALSE) {
+    while (swapped == false) {
         old_value = *nv_loc;
         swapped = CompareAndSwap(reinterpret_cast<UInt32>(old_value),
                                  reinterpret_cast<UInt32>(new_value),
@@ -186,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/23 19:46:41  rsmith
+ * Get rid of old Boolean macros and use built in bool on Mac OSX
+ *
  * Revision 1.1  2003/09/17 15:20:45  vasilche
  * Moved atomic counter swap functions to separate file.
  * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
