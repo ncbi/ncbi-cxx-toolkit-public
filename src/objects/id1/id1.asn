@@ -1,4 +1,4 @@
---$Revision: 1.11 $
+--$Revision: 1.12 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -86,6 +86,9 @@ ID1blob-info ::= SEQUENCE {
 		suppress	INTEGER,
 		withdrawn	INTEGER,
 		confidential	INTEGER,
+                -- blob-state now contains blob version info.
+                -- it's actually minutes from 01/01/1970
+                -- and it's negative if blob is dead.
 		blob-state	INTEGER,
                 comment         VisibleString OPTIONAL, -- public comment for withdrawn record 
 		extfeatmask	INTEGER	      OPTIONAL  -- mask for external features (SNP,...)
