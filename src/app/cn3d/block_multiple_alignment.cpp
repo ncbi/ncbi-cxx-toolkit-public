@@ -1050,6 +1050,94 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
     return true;
 }
 
+bool BlockMultipleAlignment::OptimizeBlock(int row, int alignmentIndex, eUnalignedJustification justification)
+{
+    // is this an aligned block?
+    UngappedAlignedBlock *block = dynamic_cast<UngappedAlignedBlock*>(blockMap[alignmentIndex].block);
+    if (!block) {
+        TRACEMSG("block is unaligned");
+        return false;
+    }
+
+    // see if there's any room to shift
+    const UnalignedBlock *prevBlock = GetUnalignedBlockBefore(block), *nextBlock = GetUnalignedBlockAfter(block);
+    int maxShiftRight = 0, maxShiftLeft = 0;
+    const Block::Range *range;
+    if (prevBlock) {
+        range = prevBlock->GetRangeOfRow(row);
+        maxShiftRight = range->to - range->from + 1;
+    }
+    if (nextBlock) {
+        range = nextBlock->GetRangeOfRow(row);
+        maxShiftLeft = range->to - range->from + 1;
+    }
+    TRACEMSG("maxShiftRight " << maxShiftRight << ", maxShiftLeft " << maxShiftLeft);
+    if (maxShiftRight == 0 && maxShiftLeft == 0) {
+        TRACEMSG("no room to shift this block");
+        return false;
+    }
+
+    // scan all possible block positions, find max information content
+    range = block->GetRangeOfRow(row);
+    int bestSeqIndexStart = range->from;
+    float score, maxScore;
+    for (int seqIndexStart = range->from - maxShiftRight; seqIndexStart <= range->from + maxShiftLeft; ++seqIndexStart) {
+
+        // calculate block's info content given each position of this row
+        score = 0.0f;
+        for (int blockColumn=0; blockColumn<block->width; ++blockColumn) {
+
+            // create profile for this column
+            typedef std::map < char, int > ColumnProfile;
+            ColumnProfile profile;
+            ColumnProfile::iterator p, pe;
+            for (int r=0; r<NRows(); ++r) {
+                int seqIndex = (r == row) ? (seqIndexStart + blockColumn) : (block->GetRangeOfRow(r)->from + blockColumn);
+                char ch = ScreenResidueCharacter(GetSequenceOfRow(r)->sequenceString[seqIndex]);
+                if ((p=profile.find(ch)) != profile.end())
+                    ++(p->second);
+                else
+                    profile[ch] = 1;
+            }
+
+            // information content (calculated in bits -> logs of base 2) for this column
+            for (p=profile.begin(), pe=profile.end(); p!=pe; ++p) {
+                static const float ln2 = log(2.0f), threshhold = 0.0001f;
+                float expFreq = GetStandardProbability(p->first);
+                if (expFreq > threshhold) {
+                    float obsFreq = 1.0f * p->second / NRows(),
+                          freqRatio = obsFreq / expFreq;
+                    if (freqRatio > threshhold)
+                        score += obsFreq * ((float) log(freqRatio)) / ln2; // information content
+                }
+            }
+        }
+
+        // keep track of best position
+        if (seqIndexStart == range->from - maxShiftRight || score > maxScore) {
+            maxScore = score;
+            bestSeqIndexStart = seqIndexStart;
+        }
+    }
+
+    // if the best position is other than the current, then shift the block accordingly
+    bool moved = (bestSeqIndexStart != range->from);
+    if (moved) {
+        if (bestSeqIndexStart < range->from)
+            TRACEMSG("shifting block right by " << (range->from - bestSeqIndexStart));
+        else
+            TRACEMSG("shifting block left by " << (bestSeqIndexStart - range->from));
+        alignmentIndex = GetAlignmentIndex(row, range->from, justification);
+        int alnIdx2 = GetAlignmentIndex(row, bestSeqIndexStart, justification);
+        moved = ShiftRow(row, alnIdx2, alignmentIndex, justification);
+        if (!moved)
+            ERRORMSG("ShiftRow() failed!");
+    } else
+        TRACEMSG("block was not moved");
+
+    return moved;
+}
+
 bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
 {
     const BlockInfo& info = blockMap[alignmentIndex];
@@ -1855,6 +1943,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2004/09/27 15:33:04  thiessen
+* add block info content optimization on ctrl+shift+click
+*
 * Revision 1.61  2004/09/27 01:00:44  thiessen
 * extend "complete contained" blocks ; merge adjacent blocks after extension"
 *

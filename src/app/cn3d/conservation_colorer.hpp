@@ -149,6 +149,9 @@ public:
     }
 };
 
+extern char ScreenResidueCharacter(char original);
+extern float GetStandardProbability(char ch);
+
 END_SCOPE(Cn3D)
 
 #endif // CN3D_CONSERVATION_COLORER__HPP
@@ -156,6 +159,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/09/27 15:33:04  thiessen
+* add block info content optimization on ctrl+shift+click
+*
 * Revision 1.15  2004/02/19 17:04:54  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

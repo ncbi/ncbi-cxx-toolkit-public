@@ -54,7 +54,7 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-static inline char ScreenResidueCharacter(char original)
+char ScreenResidueCharacter(char original)
 {
     char ch = toupper(original);
     switch (ch) {
@@ -92,10 +92,10 @@ static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
     return pssm->matrix[masterIndex][LookupBLASTResidueNumberFromCharacter(ch)];
 }
 
-static map < char, float > StandardProbabilities;
+typedef map < char, float > CharFloatMap;
+static CharFloatMap StandardProbabilities;
 
-ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
-    nColumns(0), basicColorsCurrent(false), fitColorsCurrent(false), alignment(parent)
+float GetStandardProbability(char ch)
 {
     if (StandardProbabilities.size() == 0) {  // initialize static stuff
 
@@ -136,13 +136,23 @@ ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
         goto cleanup;
 
 on_error:
-        ERRORMSG("ConservationColorer::ConservationColorer() - "
-            "error initializing standard residue probabilities");
+        ERRORMSG("error initializing standard residue probabilities");
 
 cleanup:
         if (stdrfp) BlastResFreqDestruct(stdrfp);
         if (sbp) BLAST_ScoreBlkDestruct(sbp);
     }
+
+    CharFloatMap::const_iterator f = StandardProbabilities.find(ch);
+    if (f != StandardProbabilities.end())
+        return f->second;
+    ERRORMSG("GetStandardProbability() - unknown residue character " << ch);
+    return 0.0f;
+}
+
+ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
+    nColumns(0), basicColorsCurrent(false), fitColorsCurrent(false), alignment(parent)
+{
 }
 
 void ConservationColorer::AddBlock(const UngappedAlignedBlock *block)
@@ -240,7 +250,7 @@ void ConservationColorer::CalculateBasicConservationColors(void)
             float &columnInfo = informationContents[profileColumn];
             for (p=profile.begin(); p!=pe; ++p) {
                 static const float ln2 = log(2.0f), threshhold = 0.0001f;
-                float residueScore = 0.0f, expFreq = StandardProbabilities[p->first];
+                float residueScore = 0.0f, expFreq = GetStandardProbability(p->first);
                 if (expFreq > threshhold) {
                     float obsFreq = 1.0f * p->second / nRows,
                           freqRatio = obsFreq / expFreq;
@@ -520,6 +530,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/09/27 15:33:04  thiessen
+* add block info content optimization on ctrl+shift+click
+*
 * Revision 1.35  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

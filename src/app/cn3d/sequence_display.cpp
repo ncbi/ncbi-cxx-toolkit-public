@@ -687,10 +687,18 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
 {
     // special shift-by-one if shift/ctrl click w/ no drag
     if (columnFrom == columnTo && rowFrom == rowTo) {
-        if (shiftDown && columnTo > 0)
+        if (shiftDown && !controlDown && columnTo > 0)
             --columnTo;
-        else if (controlDown && columnTo < maxRowWidth-1)
+        else if (controlDown && !shiftDown && columnTo < maxRowWidth-1)
             ++columnTo;
+        else if (shiftDown && controlDown) {
+            BlockMultipleAlignment *alignment = GetAlignmentForRow(rowFrom);
+            DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom]);
+            if (alignment && alnRow &&
+                    alignment->OptimizeBlock(alnRow->row, columnFrom, (*viewerWindow)->GetCurrentJustification()))
+                UpdateAfterEdit(alignment);
+            return;
+        }
     }
 
     TRACEMSG("got DraggedCell " << columnFrom << ',' << rowFrom << " to "
@@ -1284,6 +1292,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2004/09/27 15:33:04  thiessen
+* add block info content optimization on ctrl+shift+click
+*
 * Revision 1.74  2004/09/23 10:31:14  thiessen
 * add block extension algorithm
 *

@@ -207,6 +207,9 @@ public:
     // aligned block; returns true if any shift occurs.
     bool ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex, eUnalignedJustification justification);
 
+    // scans for the best position of a particular block; returns true if the block moved
+    bool OptimizeBlock(int row, int alignmentIndex, eUnalignedJustification justification);
+
     // delete a row; returns true if successful
     bool DeleteRow(int row);
 
@@ -427,6 +430,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/09/27 15:33:04  thiessen
+* add block info content optimization on ctrl+shift+click
+*
 * Revision 1.44  2004/09/27 01:00:44  thiessen
 * extend "complete contained" blocks ; merge adjacent blocks after extension"
 *
