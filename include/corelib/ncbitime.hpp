@@ -896,12 +896,14 @@ class NCBI_XNCBI_EXPORT CStopWatch
 {
 public:
     /// Constructor.
+    /// NB. Ctor doesn't start timer, it merely creates it.
     CStopWatch(void);
 
     /// Start the timer.
     void Start(void);
 
-    /// Check the elapsed time for a given call.
+    /// Return time elapsed time since last Start() call.
+    /// Result is underfined if Start() wasn't previously called.
     double Elapsed(void) const;
 
 protected:
@@ -1230,6 +1232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/04/07 19:07:29  lavr
+ * Document CStopWatch in a little more details
+ *
  * Revision 1.32  2004/03/24 15:52:50  ivanov
  * Added new format symbol support 'z' (local time in format GMT{+|-}HHMM).
  * Added second parameter to AsString() method that specify an output
