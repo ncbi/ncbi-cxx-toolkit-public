@@ -388,6 +388,15 @@ bool CCdd::IsAMatchFor(CRef<CSeq_id>& ID) {
 //-------------------------------------------------------------------------
 // look through each row of the alignment for a matching ID
 //-------------------------------------------------------------------------
+  int  Dummy;
+  return(IsAMatchFor(ID, Dummy));
+}
+
+
+bool CCdd::IsAMatchFor(CRef<CSeq_id>& ID, int& RowIndex) {
+//-------------------------------------------------------------------------
+// look through each row of the alignment for a matching ID
+//-------------------------------------------------------------------------
   int  k, Pair, DenDiagRow, NumRows=GetNumRows();
   CRef< CSeq_id >  TestID(new CSeq_id);
 
@@ -396,6 +405,7 @@ bool CCdd::IsAMatchFor(CRef<CSeq_id>& ID) {
     DenDiagRow = (k == 0) ? 0 : 1;
     GetSeqID(Pair, DenDiagRow, TestID);
     if (SeqIdsMatch(ID, TestID)) {
+      RowIndex = k;
       return(true);
     }
   }
@@ -455,6 +465,39 @@ bool CCdd::EraseRows(std::deque<int>& KeepRows) {
     }
   }
   return(true);
+}
+
+
+bool CCdd::MoveToBottom(int RowIndex) {
+//-------------------------------------------------------------------------
+// move the RowIndex-1 seq-align pair to the bottom of the alignment.
+// don't move RowIndex 0 (cuz that's the master).
+//-------------------------------------------------------------------------
+  list< CRef< CSeq_annot > >::iterator i;
+  list< CRef< CSeq_align > >::iterator j;
+  CRef< CSeq_align > SeqAlign;
+  int  RowCount;
+
+  if (RowIndex == 0) return(false);
+
+  if (IsSetSeqannot()) {
+    i = SetSeqannot().begin();
+    if ((*i)->GetData().IsAlign()) {
+      RowCount = 1;
+      for (j= (*i)->SetData().SetAlign().begin();
+           j!= (*i)->SetData().SetAlign().end(); j++) {
+        if (RowCount == RowIndex) {
+          SeqAlign = *j;
+          (*i)->SetData().SetAlign().erase(j);
+          (*i)->SetData().SetAlign().push_back(SeqAlign);
+          return(true);
+        }
+        RowCount++;
+        if (RowCount > RowIndex) break;
+      }
+    }
+  }
+  return(false);
 }
 
 
@@ -1290,6 +1333,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/09/20 18:35:01  hurwitz
+ * added functions to support membership display
+ *
  * Revision 1.12  2002/08/30 21:26:08  hurwitz
  * added function to re-arrange rows of alignment
  *

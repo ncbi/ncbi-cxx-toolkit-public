@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2002/09/20 18:33:48  hurwitz
+ * added functions to support membership display
+ *
  * Revision 1.7  2002/08/30 21:25:26  hurwitz
  * added function to re-arrange rows of alignment
  *
@@ -132,10 +135,12 @@ public:
     bool   EraseRows(std::deque<int>& KeepRows);      // erase rows from alignment
     bool   EraseRow(int RowIndex);                    // erase a row from alignment
     bool   MoveToTop(int RowIndex);                   // move row to top of alignment
+    bool   MoveToBottom(int RowIndex);                // move row to bottom of alignment
     void   EraseSequences();                          // erase sequences not in alignment
     void   EraseSequence(int SeqIndex);               // erase a sequence from the set of seqs
     bool   SeqIdsMatch(CRef<CSeq_id>& ID1, CRef<CSeq_id>& ID2);  // see if ID's match
     bool   IsAMatchFor(CRef<CSeq_id>& ID);            // see if ID matches any ID in alignment
+    bool   IsAMatchFor(CRef<CSeq_id>& ID, int& RowIndex);  // same, but return row that matches
     void   EraseStructureEvidence();                  // scan structure-evidence, erase missing biostruc-ids
     void   EraseUID();                                // erase CD's uid
     string GetDefline(int SeqIndex);                  // get description from sequence list
