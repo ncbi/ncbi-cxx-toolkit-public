@@ -749,8 +749,10 @@ const string CCountries::sm_Countries[] = {
   "Antigua and Barbuda",
   "Argentina",
   "Armenia",
+  "Arctic Ocean",
   "Aruba",
   "Ashmore and Cartier Islands",
+  "Atlantic Ocean",
   "Australia",
   "Austria",
   "Azerbaijan",
@@ -846,6 +848,7 @@ const string CCountries::sm_Countries[] = {
   "Hungary",
   "Iceland",
   "India",
+  "Indian Ocean",
   "Indonesia",
   "Iran",
   "Iraq",
@@ -917,6 +920,7 @@ const string CCountries::sm_Countries[] = {
   "Northern Mariana Islands",
   "Norway",
   "Oman",
+  "Pacific Ocean",
   "Pakistan",
   "Palau",
   "Palmyra Atoll",
@@ -1013,11 +1017,8 @@ bool CCountries::IsValid(const string& country)
 
   const string *begin = sm_Countries;
   const string *end = &(sm_Countries[sizeof(sm_Countries) / sizeof(string)]);
-  if ( find (begin, end, name) == end ) {
-    return false;
-  }
 
-  return true;
+  return find(begin, end, name) != end;
 }
 
 
@@ -1141,6 +1142,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/07/29 16:12:10  shomrat
+* added four oceans to list of valid countries
+*
 * Revision 1.20  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *
