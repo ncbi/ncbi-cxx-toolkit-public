@@ -372,8 +372,9 @@ void CObject::DoDeleteThisObject(void)
 void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
     ddc.SetFrame("CObject");
-    ddc.Log("this", dynamic_cast<const void*>(this));
-    ddc.Log("onHeap", CanBeDeleted());
+    ddc.Log("address",   dynamic_cast<const CDebugDumpable*>(this));
+//    ddc.Log("memory starts at", dynamic_cast<const void*>(this));
+//    ddc.Log("onHeap", CanBeDeleted());
 }
 
 
@@ -383,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2002/05/28 17:59:55  gouriano
+ * minor modification od DebugDump
+ *
  * Revision 1.26  2002/05/24 14:12:10  ucko
  * Provide CAtomicCounter::sm_Mutex if necessary.
  *
