@@ -147,7 +147,7 @@ int CalculateGlobalMatrix(Matrix& matrix,
     unsigned int queryFrom, unsigned int queryTo)
 {
     unsigned int block, residue, prevResidue, lastBlock = blocks->nBlocks - 1;
-    int score, sum;
+    int score = 0, sum;
 
     // find possible block positions, based purely on block lengths
     vector < unsigned int > firstPos(blocks->nBlocks), lastPos(blocks->nBlocks);
@@ -228,7 +228,7 @@ int CalculateLocalMatrix(Matrix& matrix,
     const DP_BlockInfo *blocks, DP_BlockScoreFunction BlockScore,
     unsigned int queryFrom, unsigned int queryTo)
 {
-    unsigned int block, residue, prevResidue, lastBlock = blocks->nBlocks - 1, tracebackResidue;
+    unsigned int block, residue, prevResidue, lastBlock = blocks->nBlocks - 1, tracebackResidue = 0;
     int score, sum, bestPrevScore;
 
     // find last possible block positions, based purely on block lengths
@@ -326,7 +326,7 @@ int TracebackGlobalAlignment(const Matrix& matrix,
 {
     // find max score (e.g., best-scoring position of last block)
     int score = DP_NEGATIVE_INFINITY;
-    unsigned int residue, lastBlockPos;
+    unsigned int residue, lastBlockPos = 0;
     for (residue=queryFrom; residue<=queryTo; residue++) {
         if (matrix[blocks->nBlocks - 1][residue - queryFrom].score > score) {
             score = matrix[blocks->nBlocks - 1][residue - queryFrom].score;
@@ -349,7 +349,7 @@ int TracebackLocalAlignment(const Matrix& matrix,
 {
     // find max score (e.g., best-scoring position of any block)
     int score = DP_NEGATIVE_INFINITY;
-    unsigned int block, residue, lastBlock, lastBlockPos;
+    unsigned int block, residue, lastBlock = 0, lastBlockPos = 0;
     for (block=0; block<blocks->nBlocks; block++) {
         for (residue=queryFrom; residue<=queryTo; residue++) {
             if (matrix[block][residue - queryFrom].score > score) {
@@ -474,6 +474,9 @@ void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/08/19 19:36:48  thiessen
+* avoid annoying 'might be used uninitialized' warnings
+*
 * Revision 1.9  2003/08/19 19:26:21  thiessen
 * error if block size > query range length
 *
