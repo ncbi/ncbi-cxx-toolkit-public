@@ -8,6 +8,8 @@ MODULEFILE = $(MODULE).module
 
 all: sources makefiles
 
+all_files: sources makefiles
+
 sources: $(FILES)
 
 clean_sources:
