@@ -1785,8 +1785,8 @@ echo "$ac_t""" 1>&6
 
 x_std=""
 if test "$x_have_no_namespace" != "yes" ; then
-   echo $ac_n "checking whether namespace std:: is used""... $ac_c" 1>&6
-echo "configure:1790: checking whether namespace std:: is used" >&5
+   echo $ac_n "checking if namespace std:: is used""... $ac_c" 1>&6
+echo "configure:1790: checking if namespace std:: is used" >&5
    cat > conftest.$ac_ext <<EOF
 #line 1792 "configure"
 #include "confdefs.h"
@@ -1818,7 +1818,7 @@ echo "configure:1818: checking if in-class template functions are supported" >&5
 cat > conftest.$ac_ext <<EOF
 #line 1820 "configure"
 #include "confdefs.h"
-class C { template<class T> operator<<(const T& t) {} };
+class C { template<class T> void operator<<(const T& t) {} };
 int main() {
 
 ; return 0; }
@@ -1839,8 +1839,8 @@ rm -f conftest*
 echo "$ac_t""" 1>&6
 
 
-echo $ac_n "checking can we use exception specifications throw(...) in func.proto""... $ac_c" 1>&6
-echo "configure:1844: checking can we use exception specifications throw(...) in func.proto" >&5
+echo $ac_n "checking if can use exception specifications throw(...) in func.proto""... $ac_c" 1>&6
+echo "configure:1844: checking if can use exception specifications throw(...) in func.proto" >&5
 if test "$cross_compiling" = yes; then
     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
 else
@@ -1874,8 +1874,8 @@ fi
 echo "$ac_t""" 1>&6
 
 
-echo $ac_n "checking obsolete basic_string::compare()""... $ac_c" 1>&6
-echo "configure:1879: checking obsolete basic_string::compare()" >&5
+echo $ac_n "checking if have an obsolete basic_string::compare()""... $ac_c" 1>&6
+echo "configure:1879: checking if have an obsolete basic_string::compare()" >&5
 cat > conftest.$ac_ext <<EOF
 #line 1881 "configure"
 #include "confdefs.h"

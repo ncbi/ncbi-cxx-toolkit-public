@@ -263,7 +263,7 @@ AC_MSG_RESULT()
 
 x_std=""
 if test "$x_have_no_namespace" != "yes" ; then
-   AC_MSG_CHECKING(whether namespace std:: is used)
+   AC_MSG_CHECKING(if namespace std:: is used)
    AC_TRY_COMPILE(
       [#include <vector>],
       [std::vector<char> std_vector_char; ],
@@ -276,7 +276,7 @@ fi
 
 AC_MSG_CHECKING(if in-class template functions are supported)
 AC_TRY_COMPILE(
-   [class C { template<class T> operator<<(const T& t) {} };],
+   [class C { template<class T> void operator<<(const T& t) {} };],
    ,
    ,
    AC_DEFINE_UNQUOTED(NO_INCLASS_TMPL, 1)
@@ -284,7 +284,7 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
-AC_MSG_CHECKING(can we use exception specifications throw(...) in func.proto)
+AC_MSG_CHECKING(if can use exception specifications throw(...) in func.proto)
 AC_TRY_RUN(
    [template <class T> inline int test_throw_spec(const T&) throw() {
       return 0;
@@ -297,7 +297,7 @@ AC_TRY_RUN(
 AC_MSG_RESULT()
 
 
-AC_MSG_CHECKING(obsolete basic_string::compare())
+AC_MSG_CHECKING(if have an obsolete basic_string::compare())
 AC_TRY_COMPILE(
    [#include <string>],
    [$x_std::string s;  int i = 0;  i = s.compare("aaa", 0, 2); ],
