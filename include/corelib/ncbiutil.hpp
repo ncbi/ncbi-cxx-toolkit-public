@@ -51,7 +51,7 @@ template <class T>
 struct p_equal_to : public binary_function
 <const T*, const T*, bool>
 {
-#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_OS_MAC) || defined(NCBI_COMPILER_VISUALAGE)
+#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_COMPILER_METROWERKS) || defined(NCBI_COMPILER_VISUALAGE)
     // fails to define these
     typedef const T* first_argument_type;
     typedef const T* second_argument_type;
@@ -237,6 +237,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/03/06 19:33:27  rsmith
+ * in p_equal_to change NCBI_OS_MAC to NCBI_COMPILER_METROWERKS to more accurately reflect when the fix is needed.
+ *
  * Revision 1.28  2003/02/05 22:41:11  ucko
  * +ncbi_limits.h (for FindBestChoice)
  *
