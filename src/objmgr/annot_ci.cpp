@@ -79,7 +79,6 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
       m_OverlapType(overlap_type)
 {
     CTSE_Guard guard(tse);
-    const TAnnotMap* annot_map = &m_TSEInfo->m_AnnotMap;
     iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
         if ( !it->second.Empty() ) {
             TAnnotMap::const_iterator ait =
@@ -225,6 +224,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/02/26 18:00:01  vasilche
+* Removed unused variable.
+*
 * Revision 1.19  2003/02/25 20:10:40  grichenk
 * Reverted to single total-range index for annotations
 *
