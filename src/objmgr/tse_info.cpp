@@ -111,6 +111,7 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
                     DebugDumpValue(ddc2, member_name, (it->second).size());
                 } else {
                     // CRangeMultimap
+                    /*
                     CDebugDumpContext ddc3(ddc2, member_name);
                     iterate ( TRangeMap, itrm, it->second ) {
                         // CRange as string
@@ -131,6 +132,7 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
                         // CAnnotObject
                         ddc3.Log(rm_name, itrm->second, depth2-1);
                     }
+                    */
                 }
             }
         }
@@ -145,6 +147,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/01/29 17:45:03  vasilche
+* Annotaions index is split by annotation/feature type.
+*
 * Revision 1.12  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

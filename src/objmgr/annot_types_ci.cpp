@@ -46,15 +46,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-bool CAnnotObject_Less::x_CompareAnnot(const CAnnotObject& x, const CAnnotObject& y) const
+bool CAnnotObject_Less::x_CompareAnnot(const CAnnotObject& x,
+                                       const CAnnotObject& y) const
 {
     if ( x.IsFeat()  &&  y.IsFeat() ) {
         // CSeq_feat::operator<() may report x == y while the features
         // are different. In this case compare pointers too.
-        if ( x.GetFeat() < y.GetFeat() )
-            return true;
-        if ( y.GetFeat() < x.GetFeat() )
-            return false;
+        int diff = Compare(x.GetFeat(), y.GetFeat());
+        if ( diff != 0 )
+            return diff < 0;
     }
     // Compare pointers
     return &x < &y;
@@ -612,6 +612,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/01/29 17:45:02  vasilche
+* Annotaions index is split by annotation/feature type.
+*
 * Revision 1.33  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

@@ -60,6 +60,21 @@ struct SAnnotSelector
           m_FeatProduct(feat_product)
     {}
 
+    bool operator==(const SAnnotSelector& sel) const
+        {
+            return m_AnnotChoice == sel.m_AnnotChoice &&
+                m_FeatChoice == sel.m_FeatChoice &&
+                m_FeatProduct == sel.m_FeatProduct;
+        }
+    bool operator< (const SAnnotSelector& sel) const
+        {
+            return m_AnnotChoice < sel.m_AnnotChoice ||
+                (m_AnnotChoice == sel.m_AnnotChoice &&
+                 (m_FeatChoice < sel.m_FeatChoice ||
+                  (m_FeatChoice == sel.m_FeatChoice &&
+                   m_FeatProduct < sel.m_FeatProduct)));
+        }
+
     TAnnotChoice m_AnnotChoice;  // Annotation type
     TFeatChoice  m_FeatChoice;   // Seq-feat subtype
     bool         m_FeatProduct;  // set to "true" for searching products
@@ -77,7 +92,8 @@ class NCBI_XOBJMGR_EXPORT CAnnot_CI
 public:
     typedef CRange<TSeqPos>                                          TRange;
     typedef CRangeMultimap<CRef<CAnnotObject>,TRange::position_type> TRangeMap;
-    typedef map<CSeq_id_Handle, TRangeMap>                           TAnnotMap;
+    typedef map<SAnnotSelector, TRangeMap>                   TAnnotSelectorMap;
+    typedef map<CSeq_id_Handle, TAnnotSelectorMap>                   TAnnotMap;
 
     enum EOverlapType {
         eOverlap_Intervals,  // default - check overlapping of individual intervals
@@ -157,6 +173,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/01/29 17:45:04  vasilche
+* Annotaions index is split by annotation/feature type.
+*
 * Revision 1.14  2002/12/26 20:42:55  dicuccio
 * Added Win32 export specifier.  Removed unimplemented (private) operator++(int)
 *

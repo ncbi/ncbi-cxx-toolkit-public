@@ -59,6 +59,8 @@ class CSeq_entry;
 class CBioseq;
 class CAnnotObject;
 
+struct SAnnotSelector;
+
 
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CObject, public CMutableAtomicCounter
 {
@@ -80,7 +82,8 @@ public:
     typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >                 TBioseqMap;
     typedef CRange<TSeqPos>                                          TRange;
     typedef CRangeMultimap<CRef<CAnnotObject>,TRange::position_type> TRangeMap;
-    typedef map<CSeq_id_Handle, TRangeMap>                           TAnnotMap;
+    typedef map<SAnnotSelector, TRangeMap>                   TAnnotSelectorMap;
+    typedef map<CSeq_id_Handle, TAnnotSelectorMap>                   TAnnotMap;
 
     // Reference to the TSE
     CRef<CSeq_entry> m_TSE;
@@ -185,6 +188,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/01/29 17:45:05  vasilche
+* Annotaions index is split by annotation/feature type.
+*
 * Revision 1.13  2002/12/26 21:03:33  dicuccio
 * Added Win32 export specifier.  Moved file from src/objects/objmgr to
 * include/objects/objmgr.

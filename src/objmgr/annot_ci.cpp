@@ -86,7 +86,11 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
                 m_TSEInfo->m_AnnotMap.find(it->first);
             if (ait == m_TSEInfo->m_AnnotMap.end())
                 continue;
-            m_RangeMap = &ait->second;
+            TAnnotSelectorMap::iterator sit =
+                ait->second.find(selector);
+            if ( sit == ait->second.end() )
+                continue;
+            m_RangeMap = &sit->second;
             m_CurrentHandle = it->first;
             m_CoreRange = it->second.GetOverlappingRange();
             m_Current = m_RangeMap->begin(m_CoreRange);
@@ -208,7 +212,11 @@ void CAnnot_CI::x_Walk(void)
                 m_TSEInfo->m_AnnotMap.find(h->first);
             if (ait == m_TSEInfo->m_AnnotMap.end())
                 continue;
-            m_RangeMap = &ait->second;
+            TAnnotSelectorMap::iterator sit =
+                ait->second.find(m_Selector);
+            if ( sit == ait->second.end() )
+                continue;
+            m_RangeMap = &sit->second;
             m_CurrentHandle = h->first;
             m_CoreRange = h->second.GetOverlappingRange();
             m_Current = m_RangeMap->begin(m_CoreRange);
@@ -229,6 +237,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/01/29 17:45:02  vasilche
+* Annotaions index is split by annotation/feature type.
+*
 * Revision 1.13  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.
