@@ -130,6 +130,7 @@ void CInt_fuzz::AssignTranslated(const CInt_fuzz& f2, TSeqPos n1, TSeqPos n2)
         ITERATE (TAlt, it, f2.GetAlt()) {
             SetAlt().push_back(*it + n1 - n2);
         }
+        break;
     default:
         Assign(f2);
         break;
@@ -191,6 +192,7 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
             default:
                 break;
             }
+            break;
 
         case e_Alt:
         {
@@ -358,6 +360,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.8  2003/10/15 17:37:15  ucko
+ * Fix a couple of instances of unintentional fall-through.
+ *
  * Revision 6.7  2003/10/15 16:22:24  ucko
  * Sigh, add missing parenthesis.
  *
