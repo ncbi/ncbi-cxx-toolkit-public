@@ -71,6 +71,8 @@ static int name_id = 1;
 static string s_Node2String(const CBioTreeDynamic::TBioTreeNode& node)
 {
     const CBioTreeDynamic::TBioTreeNode::TValueType& v = node.GetValue();
+//    cout << v.GetTree() << endl;
+//    _ASSERT(v.GetTree());
     return v.features.GetFeatureValue(label_id);
 }
 
@@ -245,6 +247,18 @@ int main(int argc, char** argv)
 
     BioTreeConvert2Dynamic(dtr, tr, NodeConvert(dtr));
 
+    {{
+    const CBioTreeDynamic::TBioTreeNode* dnode = dtr.GetTreeNode();
+    const string& st = dnode->GetFeature("label");
+    cout << st << endl;
+    }}
+    {{
+    CBioTreeDynamic::TBioTreeNode* dnode = dtr.GetTreeNodeNonConst();
+    dnode->SetFeature("label", "n0-new");
+    const string& st = (*dnode)["label"];
+    cout << st << endl;
+    }}
+
     // ----------------------------------------------------------
     
     // Print the tree to check if everything is correct...
@@ -280,6 +294,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/08/18 12:15:22  kuznets
+ * Test for node feature access
+ *
  * Revision 1.2  2004/06/09 13:39:05  kuznets
  * Fixed compilation errors
  *
