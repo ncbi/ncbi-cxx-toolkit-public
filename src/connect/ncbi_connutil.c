@@ -276,8 +276,8 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     }
 
     /* host & port first */
-    if ((s = strstr(url, "//")) != 0) {
-        const char* h = s + 2; /* host starts here */
+    if ((s = strstr(url, "://")) != 0) {
+        const char* h = s + 3; /* host starts here */
         const char* p;         /* host ends here   */
 
         if (strncasecmp(url, "http://", 7) != 0)
@@ -1474,6 +1474,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2003/01/31 21:17:04  lavr
+ * More robust search for sheme in URL
+ *
  * Revision 6.50  2003/01/17 19:44:46  lavr
  * Reduce dependencies
  *
