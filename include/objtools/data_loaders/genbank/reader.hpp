@@ -74,12 +74,13 @@ private:
 class CIStream : public istream
 {
 public:
-  CIStream(streambuf *sb) : istream(sb) { setf(0, ios_base::skipws); };
+  CIStream(streambuf *sb) : istream(sb), m_sb(sb) { setf(0, ios_base::skipws); }
+  ~CIStream() { delete m_sb ; }
 
   bool Eof();
   static size_t CIStream::Read(istream &is, char* buffer, size_t bufferLength);
 
-  istream *m_sb;
+  streambuf *m_sb;
 };
 
 class CBlobDescr : public CStringStreamable
@@ -157,6 +158,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.6  2002/03/26 17:16:59  kimelman
+* reader stream fixes
+*
 * Revision 1.5  2002/03/22 18:49:23  kimelman
 * stream fix: WS skipping in binary stream
 *

@@ -141,17 +141,19 @@ CSeqref *CId1Reader::RetrieveSeqref(istream &is)
 struct CId1StreamBuf : public streambuf
 {
   CId1StreamBuf(CId1Seqref &id1Seqref);
+  ~CId1StreamBuf();
   CT_INT_TYPE underflow();
   void Close() { m_Server = 0; }
 
   CId1Seqref&                   m_Id1Seqref;
-  char                          buffer[1024];
+  CT_CHAR_TYPE                  buffer[1024];
   CConn_ServiceStream          *m_Server;
   auto_ptr<CConn_ServiceStream> m_ID1_Server;
 };
 
 CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref) : m_Id1Seqref(id1Seqref)
 {
+  
   CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
   params->SetGi(m_Id1Seqref.Gi());
   params->SetEnt(m_Id1Seqref.SatKey());
@@ -171,6 +173,12 @@ CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref) : m_Id1Seqref(id1Seqref)
     server_output << id1_request;
     server_output.Flush();
   }
+  LOG_POST("CId1StreamBuf new (" << ((void*)this) << ")");
+}
+
+CId1StreamBuf::~CId1StreamBuf()
+{
+  LOG_POST("CId1StreamBuf delete (" << ((void*)this) << ")");
 }
 
 CT_INT_TYPE CId1StreamBuf::underflow()
@@ -180,7 +188,7 @@ CT_INT_TYPE CId1StreamBuf::underflow()
 
   int n = CIStream::Read(*m_Server, buffer, sizeof(buffer));
   setg(buffer, buffer, buffer + n);
-  return n == 0 ? CT_EOF : static_cast<unsigned char>(buffer[0]);
+  return n == 0 ? CT_EOF : CT_TO_INT_TYPE(buffer[0]);
 }
 
 streambuf *CId1Seqref::BlobStreamBuf(int, int, const CBlobClass &)
@@ -271,6 +279,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.11  2002/03/26 17:17:02  kimelman
+* reader stream fixes
+*
 * Revision 1.10  2002/03/26 15:39:25  kimelman
 * GC fixes
 *
