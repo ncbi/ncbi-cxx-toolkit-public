@@ -411,9 +411,6 @@ GENBANK_READER_ID1_LIBS = ncbi_xreader_id1 $(GENBANK_READER_ID1_LDEP)
 GENBANK_READER_ID2_LDEP = xconnect id2 seqsplit $(GENBANK_READER_LIBS)
 GENBANK_READER_ID2_LIBS = ncbi_xreader_id2 $(GENBANK_READER_ID2_LDEP)
 
-GENBANK_READER_ID1C_LDEP = $(GENBANK_READER_ID1_LIBS)
-GENBANK_READER_ID1C_LIBS = ncbi_xreader_id1c $(GENBANK_READER_ID1C_LDEP)
-
 SEQ_LIBS = seq seqcode sequtil
 SOBJMGR_LDEP = seqset $(SEQ_LIBS) pub medline biblio general \
 	xser xutil xncbi

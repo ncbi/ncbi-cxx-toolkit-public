@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = reader_id1
+SRC = reader_id1 reader_id1_cache
 
 LIB = ncbi_xreader_id1
 

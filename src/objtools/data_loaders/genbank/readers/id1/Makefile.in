@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = ncbi_xreader_id1 ncbi_xreader_id1c
+LIB_PROJ = ncbi_xreader_id1
 EXPENDABLE_SUB_PROJ = split_cache
 
 srcdir = @srcdir@

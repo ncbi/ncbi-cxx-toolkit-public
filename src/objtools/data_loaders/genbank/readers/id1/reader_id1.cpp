@@ -33,6 +33,7 @@
 #include <corelib/ncbienv.hpp>
 
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
+#include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
@@ -70,6 +71,8 @@
 #include <util/compress/reader_zlib.hpp>
 #include <util/stream_utils.hpp>
 #include <util/static_map.hpp>
+#include <corelib/plugin_manager_store.hpp>
+#include <util/cache/icache.hpp>
 
 #include <memory>
 #include <algorithm>
@@ -1010,8 +1013,17 @@ void CId1Reader::x_ReceiveReply(CConn_ServiceStream* stream,
 
 END_SCOPE(objects)
 
-const string kId1ReaderDriverName("id1");
+void GenBankReaders_Register_Id1(void)
+{
+    RegisterEntryPoint<objects::CReader>(NCBI_EntryPoint_Id1Reader);
+}
 
+
+const string kId1ReaderDriverName("id1");
+const string kId1Reader_NoConn("no_conn");
+const string kId1Reader_BlobCacheSection("blob_cache");
+const string kId1Reader_IdCacheSection("id_cache");
+const string kId1Reader_DriverKey("driver");
 
 /// Class factory for ID1 reader
 ///
@@ -1025,10 +1037,53 @@ public:
       CSimpleClassFactoryImpl<objects::CReader, objects::CId1Reader> TParent;
 public:
     CId1ReaderCF() : TParent(kId1ReaderDriverName, 0)
-    {
-    }
+        {
+        }
     ~CId1ReaderCF()
+        {
+        }
+
+    objects::CReader* 
+    CreateInstance(const string& driver  = kEmptyStr,
+                   CVersionInfo version =
+                   NCBI_INTERFACE_VERSION(objects::CReader),
+                   const TPluginManagerParamTree* params = 0) const
     {
+        objects::CReader* drv = 0;
+        if ( !driver.empty()  &&  driver != m_DriverName ) {
+            return 0;
+        }
+        if (version.Match(NCBI_INTERFACE_VERSION(objects::CReader)) 
+                            != CVersionInfo::eNonCompatible) {
+            objects::CReader::TConn noConn = GetParamDataSize(
+                params,
+                kId1Reader_NoConn,
+                false,
+                3);
+            typedef CPluginManager<ICache> TCacheManager;
+            typedef CPluginManagerStore::CPMMaker<ICache> TCacheManagerStore;
+            CRef<TCacheManager> CacheManager(TCacheManagerStore::Get());
+            _ASSERT(CacheManager);
+            const TPluginManagerParamTree* blob_params = params ?
+                params->FindNode(kId1Reader_BlobCacheSection) : 0;
+            const TPluginManagerParamTree* id_params = params ?
+                params->FindNode(kId1Reader_IdCacheSection) : 0;
+            ICache* blob_cache = CacheManager->CreateInstanceFromKey(
+                blob_params,
+                kId1Reader_DriverKey);
+            ICache* id_cache = CacheManager->CreateInstanceFromKey(
+                id_params,
+                kId1Reader_DriverKey);
+            if ( blob_cache  ||  id_cache ) {
+                drv = new objects::CCachedId1Reader(noConn,
+                                                    blob_cache,
+                                                    id_cache);
+            }
+            else {
+                drv = new objects::CId1Reader(noConn);
+            }
+        }
+        return drv;
     }
 };
 

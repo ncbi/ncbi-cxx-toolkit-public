@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.335 2004/12/21 20:32:39 ucko Exp $
+#  $Id: configure.ac,v 1.336 2004/12/22 20:49:37 grichenk Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1543,7 +1543,7 @@ elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
       # need one of these libraries.  (There seems to be no general
       # equivalent of -rpath-link.)
       for l in dbapi_driver gui_utils ncbi_xloader_genbank ncbi_xreader \
-               ncbi_xreader_id1 ncbi_xreader_id1c ncbi_xreader_pubseqos; do
+               ncbi_xreader_id1 ncbi_xreader_pubseqos; do
          ll=lib$l.dylib
          LDFLAGS="$LDFLAGS -dylib_file ${pure_runpath}/$ll:\$(libdir)/$ll"
       done
