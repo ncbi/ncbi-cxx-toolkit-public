@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.136 2002/10/09 22:11:30 ucko Exp $
+#  $Id: configure.ac,v 1.137 2002/10/10 15:56:31 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -635,6 +635,10 @@ case "$host_os:$compiler" in
    # See <http://fink.sourceforge.net/doc/porting/shared.php>.
    CONF_dll_ext=".dylib"
    CONF_loadable_ext=".so"
+   # Suppress warnings about potential changes in the size of long double;
+   # our ABI isn't too stable yet anyway.
+   CFLAGS="-Wno-long-double $CFLAGS"
+   CXXFLAGS="-Wno-long-double $CXXFLAGS"
    ;;
 esac
 
@@ -2009,10 +2013,19 @@ if test "$with_wxwin" != "no" ; then
    WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_ARCH_PATH/bin"}
    WXWIN_LIBPATH=${WXWIN_LIBPATH:="$WXWIN_ARCH_PATH/lib"}
    WXWIN_INCLUDE=
+   wxconf=$WXWIN_BINPATH/wx-config
+   if test -x "$WXWIN_BINPATH/gtk-config"; then
+      gtkconf=$WXWIN_BINPATH/gtk-config
+   elif `gtk-config --version >/dev/null 2>&1`; then
+      gtkconf=gtk-config
+   else
+      # May work without gtk-config (e.g., on Mac OS X)
+      gtkconf=:
+   fi
    AC_CACHE_CHECK([for wxWindows in $WXWIN_ARCH_PATH], ncbi_cv_lib_wxwindows,
-      [if test -x "$WXWIN_BINPATH/wx-config" ; then
-          WXWIN_INCLUDE="`$WXWIN_BINPATH/gtk-config --cflags` `$WXWIN_BINPATH/wx-config --cflags`"
-          WXWIN_LIBS=`$WXWIN_BINPATH/wx-config --libs`
+      [if test -x "$wxconf" ; then
+          WXWIN_INCLUDE="`$gtkconf --cflags` `$wxconf --cflags`"
+          WXWIN_LIBS=`$wxconf --libs`
     
           CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIN_LIBS $orig_LIBS"
@@ -2038,10 +2051,10 @@ else
    WithPackages="$WithPackages wxWindows"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIN_INCLUDE"; then
-      WXWIN_INCLUDE="`$WXWIN_BINPATH/gtk-config --cflags` `$WXWIN_BINPATH/wx-config --cflags`"
-      WXWIN_LIBS=`$WXWIN_BINPATH/wx-config --libs`
+      WXWIN_INCLUDE="`$gtkconf --cflags` `$wxconf --cflags`"
+      WXWIN_LIBS=`$wxconf --libs`
    fi
-   WXWIN_GL_LIBS=`$WXWIN_BINPATH/wx-config --gl-libs`
+   WXWIN_GL_LIBS=`$wxconf --gl-libs`
    AC_DEFINE(HAVE_WXWINDOWS, 1, [Define to 1 if wxWindows is available.])
 fi
 
