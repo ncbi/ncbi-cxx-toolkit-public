@@ -305,80 +305,15 @@ string RLE(const string& in)
 }
 
 
-CNWAligner::TScore ScoreByTranscript(const CNWAligner& aligner,
-				     const char* transcript)
-{
-  const int Wg  = aligner.GetWg();
-  const int Ws  = aligner.GetWs();
-  const int Wm  = aligner.GetWm();
-  const int Wms = aligner.GetWms();
-
-  const size_t dim = strlen(transcript);
-  if(dim == 0) return 0;
-
-  CNWAligner::TScore score = 0;
-
-  char state1, state2;
-
-  switch(transcript[0]) {
-    case 'M':
-    case 'R':  state1 = state2 = 0;
-    break;
-    case 'I':  state1 = 1; state2 = 0; score += Wg;
-    break;
-    case 'D':  state1 = 0; state2 = 1; score += Wg;
-    break;
-    default:
-      NCBI_THROW(CAlgoAlignException, eInternal,
-                 string(g_msg_UnknownTranscriptSymbol) + transcript[0]);
-  }
-
-  for(size_t i = 0; i < dim; ++i) {
-
-    switch(transcript[i]) {
-
-      case 'M': {
-        state1 = state2 = 0;
-        score += Wm;
-      }
-      break;
-
-      case 'R': {
-        state1 = state2 = 0;
-        score += Wms;
-      }
-      break;
-
-      case 'I': {
-        if(state1 != 1) score += Wg;
-        state1 = 1; state2 = 0;
-        score += Ws;
-      }
-      break;
-
-      case 'D': {
-        if(state2 != 1) score += Wg;
-        state1 = 0; state2 = 1;
-        score += Ws;
-      }
-      break;
-
-      default:
-        NCBI_THROW(CAlgoAlignException, eInternal,
-                   string(g_msg_UnknownTranscriptSymbol) + transcript[i]);
-    }
-  }
-
-  return score;
-}
-
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/11/29 15:55:55  kapustin
+ * -ScoreByTranscript
+ *
  * Revision 1.9  2004/11/29 14:37:16  kapustin
  * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
  *

@@ -136,8 +136,6 @@ void   GetHitsMinMax(const vector<CHit>& hits,
 string RLE(const string& in);
 
 void   XFilter(vector<CHit>* hits);
-CNWAligner::TScore ScoreByTranscript(const CNWAligner& aligner,
-                                     const char* transcript);
 bool   IsConsensus(const char* donor, const char* acceptor);
 
 struct SCompliment
@@ -159,6 +157,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/11/29 15:55:55  kapustin
+ * -ScoreByTranscript
+ *
  * Revision 1.4  2004/05/04 15:23:45  ucko
  * Split splign code out of xalgoalign into new xalgosplign.
  *
