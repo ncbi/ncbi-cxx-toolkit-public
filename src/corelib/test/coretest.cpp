@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/11/03 23:33:04  vakatov
+* Added test for the "Reset" manipulator
+*
 * Revision 1.3  1998/11/03 22:32:04  vakatov
 * + Test for a serializable class
 *
@@ -76,6 +79,9 @@ extern void TestDiag(void)
     diag << Warning << cntd << Endm;
     SetDiagPostLevel(eDiag_Info);
     diag << Warning << cntd << Endm;
+
+    diag << Error << "This message has severity \"Info\"" << Reset
+         << Info  << "This message has severity \"Info\"" << Endm;
 }
 
 
