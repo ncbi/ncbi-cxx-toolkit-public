@@ -78,9 +78,9 @@ CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
             x_Attach(*ret, content.GetSeq_data());
             break;
         case CID2S_Chunk_Content::e_Bioseq_place:
-            ITERATE ( CID2S_Chunk_Content::TBioseq_place, it,
+            ITERATE ( CID2S_Chunk_Content::TBioseq_place, it2,
                       content.GetBioseq_place() ) {
-                x_Attach(*ret, **it);
+                x_Attach(*ret, **it2);
             }
             break;
         default:
@@ -427,6 +427,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.15  2005/03/14 17:20:32  vasilche
+ * Removed variable name clash.
+ *
  * Revision 1.14  2005/03/10 20:55:07  vasilche
  * New CReader/CWriter schema of CGBDataLoader.
  *
