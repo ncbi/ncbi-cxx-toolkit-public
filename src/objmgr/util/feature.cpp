@@ -66,13 +66,6 @@
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
-#include <objects/featdef/FeatDef.hpp>
-#include <objects/featdef/FeatDefGroupSet.hpp>
-#include <objects/featdef/FeatDefSet.hpp>
-#include <objects/featdef/FeatDispGroup.hpp>
-#include <objects/featdef/FeatDispGroupSet.hpp>
-#include <objects/featdef/FeatMolType.hpp>
-
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
@@ -607,6 +600,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2002/12/31 15:09:58  dicuccio
+* Removed unneeded headers for Featdef classes
+*
 * Revision 1.6  2002/12/26 21:17:06  dicuccio
 * Minor tweaks to avoid compiler warnings in MSVC (remove unused variables)
 *
