@@ -232,7 +232,7 @@ struct CNWAligner::SAlignInOut {
     SAlignInOut(size_t offset1, size_t len1, bool esfL1, bool esfR1,
                 size_t offset2, size_t len2, bool esfL2, bool esfR2):
         m_offset1(offset1), m_len1(len1), m_esf_L1(esfL1), m_esf_R1(esfR1),
-        m_offset2(offset1), m_len2(len2), m_esf_L2(esfL2), m_esf_R2(esfR2)
+        m_offset2(offset2), m_len2(len2), m_esf_L2(esfL2), m_esf_R2(esfR2)
     {
         m_space = m_len1*m_len2;
     }
@@ -273,6 +273,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/08/31 20:37:29  papadopo
+ * fix cut-and-paste-error
+ *
  * Revision 1.35  2004/08/31 16:19:03  papadopo
  * 1. Make 'Run' method virtual
  * 2. Make SAlignInOut use sequence offsets instead of char pointers
