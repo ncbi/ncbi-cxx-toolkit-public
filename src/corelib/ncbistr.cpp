@@ -836,7 +836,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             }
         }
 
-        if (best_score != eNewline  &&  column < width) {
+        if (best_score != eNewline  &&  column <= width) {
             // If the whole remaining text can fit, don't split it...
             best_pos = len;
         } else if (best_score == eForced  &&  (flags & fWrap_Hyphenate)) {
@@ -930,6 +930,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2003/02/06 21:31:35  ucko
+ * Fixed an off-by-one error in NStr::Wrap.
+ *
  * Revision 1.71  2003/02/04 21:54:12  ucko
  * NStr::Wrap: when breaking on punctuation, try to position the break
  * *after* everything but opening delimiters.
