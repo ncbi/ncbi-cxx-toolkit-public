@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/07/30 14:41:37  lavr
+ * Added: CORE_SetLOGFormatFlags()
+ *
  * Revision 6.12  2001/07/26 15:13:02  lavr
  * Always do stream flush after message output (previously was in DEBUG only)
  *
@@ -159,6 +162,17 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME(const char* filename)
 }
 
 
+static TLOG_FormatFlags s_LogFormatFlags = fLOG_Default;
+
+extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags flags)
+{
+    TLOG_FormatFlags old_flags = s_LogFormatFlags;
+
+    s_LogFormatFlags = flags;
+    return old_flags;
+}
+
+
 extern char* LOG_ComposeMessage
 (const SLOG_Handler* call_data,
  TLOG_FormatFlags    format_flags)
@@ -181,7 +195,7 @@ extern char* LOG_ComposeMessage
 
     /* Adjust formatting flags */
     if (call_data->level == eLOG_Trace) {
-        format_flags = fLOG_Full;
+        format_flags |= fLOG_Full;
     } else if (format_flags == fLOG_Default) {
 #ifdef NDEBUG
         format_flags = fLOG_Short;
@@ -316,7 +330,7 @@ static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
     assert(call_data);
 
     if ( fp ) {
-        char* str = LOG_ComposeMessage(call_data, fLOG_Default);
+        char* str = LOG_ComposeMessage(call_data, s_LogFormatFlags);
         if ( str ) {
             fprintf(fp, "%s\n", str);
             fflush(fp);
