@@ -24,6 +24,8 @@ ARGUMENTS:
                   lib         to build a library
                   app[/basic] to build a simple application
                   app/cgi     to build a CGI or FastCGI application
+                  app/dbapi   to build a DBAPI application
+                  app/gui     to build an FLTK application
                   app/objects to build an application using ASN.1 objects
                   app/objmgr  to build an application using the object manager
    [builddir]  -- path to the pre-built NCBI C++ toolkit
