@@ -4,7 +4,7 @@
 # Build application "cn3d"
 #################################
 
-REQUIRES = objects wxWindows ctools OpenGL
+REQUIRES = objects wxWindows ctools OpenGL C-Toolkit
 
 APP = cn3d
 
