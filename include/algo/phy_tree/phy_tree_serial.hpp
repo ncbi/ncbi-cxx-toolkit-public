@@ -44,7 +44,7 @@ class NCBI_XALGOPHYTREE_EXPORT CPhyTreeSerial : public CSerialObject
 {
 public:
     /// Seq-ids of terminal nodes
-    typedef vector<CRef<objects::CSeq_id> > TIds;
+    typedef vector< CConstRef<objects::CSeq_id> > TIds;
     
     CPhyTreeSerial(void) {}
 
@@ -79,6 +79,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/04/16 16:38:30  dicuccio
+ * Changed TIds typedef - store CConstRef<>, not CRef<>
+ *
  * Revision 1.3  2004/03/17 16:52:47  jcherry
  * Added optional Seq-ids
  *
