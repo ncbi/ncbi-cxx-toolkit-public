@@ -31,6 +31,18 @@
 */
 #include <corelib/ncbistd.hpp>
 
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seq/Seq_hist.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
+
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/primary_item.hpp>
@@ -39,11 +51,16 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+USING_SCOPE(sequence);
 
 
-CPrimaryItem::CPrimaryItem(CFFContext& ctx) :
-    CFlatItem(ctx)
+CPrimaryItem::CPrimaryItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx)
 {
+    x_GatherInfo(ctx);
+    if ( m_Str.empty() ) {
+        x_SetSkip();
+    }
 }
 
 
@@ -56,10 +73,138 @@ void CPrimaryItem::Format
 }
 
 
-void CPrimaryItem::x_GatherInfo(CFFContext& ctx)
+static bool s_IsTPA(CBioseqContext& ctx, bool has_tpa_assembly)
 {
-    // !!!
+    ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
+        const CSeq_id& id = **it;
+        switch ( id.Which() ) {
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+            return true;
+        case CSeq_id::e_Local:
+            return has_tpa_assembly;
+        case CSeq_id::e_General:
+            if ( id.GetGeneral().CanGetDb() ) {
+                const string& db = id.GetGeneral().GetDb();
+                if ( db == "BankIt"  ||  db == "TMSMART" ) {
+                    return has_tpa_assembly;
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return false;
 }
+
+
+void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
+{
+    const CUser_object* uo = 0;
+    for ( CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User); desc; ++desc ) {
+        const CUser_object& o = desc->GetUser();
+        if ( o.CanGetType()  &&  o.GetType().IsStr()  &&
+             o.GetType().GetStr() == "TpaAssembly" ) {
+            uo = &o;
+            break;
+        }
+    }
+    if ( !s_IsTPA(ctx, uo != 0) ) {
+        return;
+    }
+    CBioseq_Handle& seq = ctx.GetHandle();
+    if ( seq.IsSetInst_Hist()  &&  !seq.GetInst_Hist().GetAssembly().empty() ) {
+        x_GetStrForPrimary(ctx);   
+    }
+}
+
+
+static const char* s_PrimaryHeader(bool is_refseq)
+{
+    return is_refseq ?
+        "REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP" :
+        "TPA_SPAN            PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP";
+}
+
+
+
+void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
+{
+    CBioseq_Handle& seq = ctx.GetHandle();
+
+    TDense_seg_Map segmap;
+    x_CollectSegments(segmap, seq.GetInst_Hist().GetAssembly());
+    
+    string str;
+    string s;
+
+    ITERATE (TDense_seg_Map, it, segmap) {
+        s.erase();
+        CAlnMap alnmap(*it->second);
+        
+        s += NStr::IntToString(alnmap.GetSeqStart(0) + 1) + '-' +
+             NStr::IntToString(alnmap.GetSeqStop(0) + 1);
+        s.resize(20, ' ');
+        const CSeq_id* other_id = &alnmap.GetSeqId(1);
+        if ( other_id->IsGi() ) {
+            // !!! Change implementation to fetch only ids (not entire bioseq)
+            // !!! when it is available.
+            CBioseq_Handle bsh = ctx.GetScope().GetBioseqHandle(*other_id);
+            if ( !bsh ) {
+                continue;
+            }
+            other_id = &GetId(bsh, eGetId_Best);
+            if ( other_id ->IsGi() ) {
+                continue;
+            }
+        }
+        s += other_id->GetSeqIdString(true);
+        s.resize(39, ' ');
+        s += NStr::IntToString(alnmap.GetSeqStart(1) + 1) + '-' +
+            NStr::IntToString(alnmap.GetSeqStop(1) + 1);
+        s.resize(59, ' ');
+        s += alnmap.IsNegativeStrand(1) ? 'c' : ' ';
+
+        str += '\n';
+        str+= s;
+    }
+
+    if ( !str.empty() ) {
+        m_Str = s_PrimaryHeader(ctx.IsRefSeq());
+        m_Str += str;
+    }
+}
+
+
+void CPrimaryItem::x_CollectSegments
+(TDense_seg_Map& segmap,
+ const TAlnList& aln_list)
+{
+    ITERATE (TAlnList, it, aln_list) {
+        x_CollectSegments(segmap, **it);
+    }
+}
+
+
+void CPrimaryItem::x_CollectSegments
+(TDense_seg_Map& segmap, const CSeq_align& aln)
+{
+    if ( !aln.CanGetSegs() ) {
+        return;
+    }
+
+    const CSeq_align::C_Segs& segs = aln.GetSegs();
+    if ( segs.IsDenseg() ) {
+        const CDense_seg& dseg = segs.GetDenseg();
+        CAlnMap alnmap(dseg);
+        segmap.insert(TDense_seg_Map::value_type(alnmap.GetSeqRange(0), TDenseRef(&dseg)));
+    } else if ( segs.IsDisc() ) {
+        x_CollectSegments(segmap, segs.GetDisc().Get());
+    }
+}
+
 
 
 END_SCOPE(objects)
@@ -70,6 +215,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:57:36  shomrat
+* New implementation of Primary item
+*
 * Revision 1.2  2003/12/18 17:43:35  shomrat
 * context.hpp moved
 *
