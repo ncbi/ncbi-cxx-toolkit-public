@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/01/17 17:57:14  vakatov
+* [GCC > 3.0]  CStreamByteSourceReader::Read() -- use "readsome()", thus
+* avoid blocking on timeout at EOF for non-blocking input stream.
+*
 * Revision 1.15  2001/08/15 18:43:34  lavr
 * FIXED CStreamByteSourceReader::Read:
 * ios::clear() has to have no arguments in order to clear EOF state.
@@ -87,52 +91,72 @@
 #include <util/bytesrc.hpp>
 #include <algorithm>
 
+
 BEGIN_NCBI_SCOPE
+
 
 typedef CFileSourceCollector::TFilePos TFilePos;
 typedef CFileSourceCollector::TFileOff TFileOff;
 
+
 CByteSource::~CByteSource(void)
 {
+    return;
 }
+
 
 CByteSourceReader::~CByteSourceReader(void)
 {
+    return;
 }
+
 
 CRef<CSubSourceCollector> CByteSourceReader::SubSource(size_t /*prevent*/)
 {
     return new CMemorySourceCollector();
 }
 
+
 CSubSourceCollector::~CSubSourceCollector(void)
 {
+    return;
 }
+
 
 /* Mac compiler doesn't like getting these flags as unsigned int (thiessen)
 static inline
 unsigned IFStreamFlags(bool binary)
 {
-    return binary? (IOS_BASE::in | IOS_BASE::binary): IOS_BASE::in;
+    return binary ? (IOS_BASE::in | IOS_BASE::binary) : IOS_BASE::in;
 }
 */
 #define IFStreamFlags(isBinary) \
   (isBinary? (IOS_BASE::in | IOS_BASE::binary): IOS_BASE::in)
+
 
 bool CByteSourceReader::EndOfData(void) const
 {
     return true;
 }
 
+
 CRef<CByteSourceReader> CStreamByteSource::Open(void)
 {
     return new CStreamByteSourceReader(this, m_Stream);
 }
 
+
 size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
 #ifdef NCBI_COMPILER_GCC
-    // Special case: GCC has no readsome()
+#  if NCBI_COMPILER_VERSION < 300
+#    define NCBI_NO_READSOME
+#  endif
+#endif
+
+#ifdef NCBI_NO_READSOME
+#undef NCBI_NO_READSOME
+    // Special case: GCC had no readsome() prior to ver 3.0;
     // read() will set "eof" flag if gcount() < bufferLength
     m_Stream->read(buffer, bufferLength);
     size_t count = m_Stream->gcount();
@@ -156,49 +180,61 @@ size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
 #endif
 }
 
+
 bool CStreamByteSourceReader::EndOfData(void) const
 {
     return m_Stream->eof();
 }
+
 
 CFStreamByteSource::CFStreamByteSource(const string& fileName, bool binary)
     : CStreamByteSource(*new CNcbiIfstream(fileName.c_str(),
                                            IFStreamFlags(binary)))
 {
     if ( !*m_Stream )
-        THROW1_TRACE(runtime_error, "file not found: "+fileName);
+        THROW1_TRACE(runtime_error, "file not found: " + fileName);
 }
+
 
 CFStreamByteSource::~CFStreamByteSource(void)
 {
     delete m_Stream;
 }
 
+
 CFileByteSource::CFileByteSource(const string& fileName, bool binary)
     : m_FileName(fileName), m_Binary(binary)
 {
+    return;
 }
+
 
 CFileByteSource::CFileByteSource(const CFileByteSource& file)
     : m_FileName(file.m_FileName), m_Binary(file.m_Binary)
 {
+    return;
 }
+
 
 CRef<CByteSourceReader> CFileByteSource::Open(void)
 {
     return new CFileByteSourceReader(this);
 }
 
+
 CSubFileByteSource::CSubFileByteSource(const CFileByteSource& file,
                                        TFilePos start, TFileOff length)
     : CParent(file), m_Start(start), m_Length(length)
 {
+    return;
 }
+
 
 CRef<CByteSourceReader> CSubFileByteSource::Open(void)
 {
     return new CSubFileByteSourceReader(this, m_Start, m_Length);
 }
+
 
 CFileByteSourceReader::CFileByteSourceReader(const CFileByteSource* source)
     : CStreamByteSourceReader(source, 0),
@@ -207,9 +243,10 @@ CFileByteSourceReader::CFileByteSourceReader(const CFileByteSource* source)
                 IFStreamFlags(source->IsBinary()))
 {
     if ( !m_FStream )
-        THROW1_TRACE(runtime_error, "file not found: "+source->GetFileName());
+        THROW1_TRACE(runtime_error, "file not found: " +source->GetFileName());
     m_Stream = &m_FStream;
 }
+
 
 CSubFileByteSourceReader::CSubFileByteSourceReader(const CFileByteSource* s,
                                                    TFilePos start,
@@ -218,6 +255,7 @@ CSubFileByteSourceReader::CSubFileByteSourceReader(const CFileByteSource* s,
 {
     m_Stream->seekg(start);
 }
+
 
 size_t CSubFileByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
@@ -228,10 +266,12 @@ size_t CSubFileByteSourceReader::Read(char* buffer, size_t bufferLength)
     return count;
 }
 
+
 bool CSubFileByteSourceReader::EndOfData(void) const
 {
     return m_Length == 0;
 }
+
 
 CRef<CSubSourceCollector> CFileByteSourceReader::SubSource(size_t prepend)
 {
@@ -239,18 +279,23 @@ CRef<CSubSourceCollector> CFileByteSourceReader::SubSource(size_t prepend)
                                     m_Stream->tellg() - TFileOff(prepend));
 }
 
+
 CFileSourceCollector::CFileSourceCollector(const CConstRef<CFileByteSource>& s,
                                            TFilePos start)
     : m_FileSource(s),
-      m_Start(start), m_Length(0)
+      m_Start(start),
+      m_Length(0)
 {
+    return;
 }
+
 
 void CFileSourceCollector::AddChunk(const char* /*buffer*/,
                                     size_t bufferLength)
 {
     m_Length += TFileOff(bufferLength);
 }
+
 
 CRef<CByteSource> CFileSourceCollector::GetSource(void)
 {
@@ -261,7 +306,8 @@ CRef<CByteSource> CFileSourceCollector::GetSource(void)
 
 CMemoryChunk::CMemoryChunk(const char* data, size_t dataSize,
                            CRef<CMemoryChunk>& prevChunk)
-    : m_Data(new char[dataSize]), m_DataSize(dataSize)
+    : m_Data(new char[dataSize]),
+      m_DataSize(dataSize)
 {
     memcpy(m_Data, data, dataSize);
     if ( prevChunk )
@@ -269,24 +315,29 @@ CMemoryChunk::CMemoryChunk(const char* data, size_t dataSize,
     prevChunk = this;
 }
 
+
 CMemoryChunk::~CMemoryChunk(void)
 {
     delete m_Data;
 }
 
+
 CMemoryByteSource::~CMemoryByteSource(void)
 {
 }
+
 
 CRef<CByteSourceReader> CMemoryByteSource::Open(void)
 {
     return new CMemoryByteSourceReader(m_Bytes);
 }
 
+
 size_t CMemoryByteSourceReader::GetCurrentChunkAvailable(void) const
 {
     return m_CurrentChunk->GetDataSize() - m_CurrentChunkOffset;
 }
+
 
 size_t CMemoryByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
@@ -308,10 +359,12 @@ size_t CMemoryByteSourceReader::Read(char* buffer, size_t bufferLength)
     return 0;
 }
 
+
 bool CMemoryByteSourceReader::EndOfData(void) const
 {
     return !m_CurrentChunk;
 }
+
 
 void CMemorySourceCollector::AddChunk(const char* buffer,
                                       size_t bufferLength)
@@ -321,9 +374,11 @@ void CMemorySourceCollector::AddChunk(const char* buffer,
         m_FirstChunk = m_LastChunk;
 }
 
+
 CRef<CByteSource> CMemorySourceCollector::GetSource(void)
 {
     return new CMemoryByteSource(m_FirstChunk);
 }
+
 
 END_NCBI_SCOPE
