@@ -62,6 +62,7 @@
 #include "wx_tools.hpp"
 #include "cn3d_tools.hpp"
 #include "cn3d_blast.hpp"
+#include "sequence_viewer.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -207,17 +208,18 @@ static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_Alignmen
 }
 
 bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlignment *multiple,
-    const AlignmentList& toRealign, AlignmentList *newAlignments, int *nRowsAddedToMultiple,
-    bool canMerge)
+    const AlignmentList& toRealign, AlignmentList *newAlignments,
+    int *nRowsAddedToMultiple, SequenceViewer *sequenceViewer)
 {
     // show options dialog each time block aligner is run
     if (!SetOptions(NULL)) return false;
-    if (currentOptions.mergeAfterEachSequence && !canMerge) {
-        ERRORMSG("Can only merge when editing is enabled in the sequence window");
+    if (currentOptions.mergeAfterEachSequence && !sequenceViewer) {
+        ERRORMSG("merge selected but NULL sequenceViewer");
         return false;
     }
 
     newAlignments->clear();
+    *nRowsAddedToMultiple = 0;
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     multiple->GetUngappedAlignedBlocks(&blocks);
     if (blocks.size() == 0) {
@@ -225,7 +227,6 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         return false;
     }
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-    if (nRowsAddedToMultiple) *nRowsAddedToMultiple = 0;
     int i;
 
     // set up block info
@@ -307,19 +308,20 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         if (dpStatus == STRUCT_DP_FOUND_ALIGNMENT && dpAlignment) {
 
             // merge or add alignment to list
-            if (currentOptions.mergeAfterEachSequence && multiple->MergeAlignment(dpAlignment)) {
-                delete dpAlignment; // if merge is successful, we can delete this alignment;
-                if (nRowsAddedToMultiple)
-                    (*nRowsAddedToMultiple)++;
-                else
-                    ERRORMSG("BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment() "
-                        "called with merge on, but NULL nRowsAddedToMultiple pointer");
-                // recalculate PSSM
-                dpPSSM = multiple->GetPSSM();
-
-            } else {
-                newAlignments->push_back(dpAlignment);
+            if (currentOptions.mergeAfterEachSequence) {
+                if (!sequenceViewer->EditorIsOn())
+                    sequenceViewer->TurnOnEditor();
+                if (multiple->MergeAlignment(dpAlignment)) {
+                    // if merge is successful, we can delete this alignment;
+                    delete dpAlignment;
+                    dpAlignment = NULL;
+                    ++(*nRowsAddedToMultiple);
+                    // recalculate PSSM
+                    dpPSSM = multiple->GetPSSM();
+                }
             }
+            if (dpAlignment)
+                newAlignments->push_back(dpAlignment);
         }
 
         // no alignment or block aligner failed - add old alignment to list so it doesn't get lost
@@ -515,6 +517,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/09/28 14:18:28  thiessen
+* turn on editor automatically on merge
+*
 * Revision 1.35  2004/07/27 17:38:12  thiessen
 * don't call GetPSSM() w/ no aligned blocks
 *

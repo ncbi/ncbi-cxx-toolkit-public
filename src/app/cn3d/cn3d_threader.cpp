@@ -51,6 +51,7 @@
 #include "atom_set.hpp"
 #include "cn3d_tools.hpp"
 #include "molecule_identifier.hpp"
+#include "sequence_viewer.hpp"
 
 // C-toolkit stuff
 #include <objseq.h>
@@ -865,8 +866,8 @@ static bool FreezeIsolatedBlocks(Cor_Def *corDef, const Cor_Def *masterCorDef, c
 }
 
 bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *masterMultiple,
-    const AlignmentList *originalAlignments,
-    int *nRowsAddedToMultiple, AlignmentList *newAlignments)
+    const AlignmentList *originalAlignments, AlignmentList *newAlignments,
+    int *nRowsAddedToMultiple, SequenceViewer *sequenceViewer)
 {
     *nRowsAddedToMultiple = 0;
     if (!masterMultiple || !originalAlignments || !newAlignments || originalAlignments->size() == 0)
@@ -988,18 +989,18 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
                 delete oss.str();
 
                 if (options.mergeAfterEachSequence) {
+                    if (!sequenceViewer->EditorIsOn())
+                        sequenceViewer->TurnOnEditor();
                     if (masterMultiple->MergeAlignment(newAlignment)) {
                         delete newAlignment; // if merge is successful, we can delete this alignment;
+                        newAlignment = NULL;
                         ++(*nRowsAddedToMultiple);
-                    } else {                 // otherwise keep it
-                        newAlignments->push_back(newAlignment);
                     }
                 }
 
-                // no merge - add new alignment to list, let calling function deal with it
-                else {
+                // no merge or merge failed - add new alignment to list, let calling function deal with it
+                if (newAlignment)
                     newAlignments->push_back(newAlignment);
-                }
             }
         }
 
@@ -1244,6 +1245,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/09/28 14:18:28  thiessen
+* turn on editor automatically on merge
+*
 * Revision 1.44  2004/07/27 17:38:12  thiessen
 * don't call GetPSSM() w/ no aligned blocks
 *

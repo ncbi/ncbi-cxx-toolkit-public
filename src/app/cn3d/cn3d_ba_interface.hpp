@@ -44,6 +44,7 @@ class wxWindow;
 BEGIN_SCOPE(Cn3D)
 
 class BlockMultipleAlignment;
+class SequenceViewer;
 
 class BlockAligner
 {
@@ -57,8 +58,8 @@ public:
     // the given master and one of the given sequences. If the alignment algorithm fails to
     // align the new sequence, it will include a null-alignment for that sequence.
     bool CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlignment *multiple,
-        const AlignmentList& toRealign, AlignmentList *newAlignments, int *nRowsAddedToMultiple,
-        bool canMerge);
+        const AlignmentList& toRealign, AlignmentList *newAlignments,
+        int *nRowsAddedToMultiple, SequenceViewer *sequenceViewer);
 
     // brings up a dialog that lets the user set block aligner ; returns false if cancelled
     bool SetOptions(wxWindow* parent);
@@ -83,6 +84,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/09/28 14:18:28  thiessen
+* turn on editor automatically on merge
+*
 * Revision 1.10  2003/08/23 22:26:23  thiessen
 * switch to new dp block aligner, remove Alejandro's
 *

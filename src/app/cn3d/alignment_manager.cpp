@@ -615,12 +615,6 @@ void AlignmentManager::ThreadUpdate(const ThreaderOptions& options, BlockMultipl
     const ViewerBase::AlignmentList& currentAlignments = sequenceViewer->GetCurrentAlignments();
     if (currentAlignments.size() == 0) return;
 
-    // make sure the editor is on in the sequenceViewer if merge is selected
-    if (!sequenceViewer->EditorIsOn() && options.mergeAfterEachSequence) {
-        ERRORMSG("Can only merge updates when editing is enabled in the sequence window");
-        return;
-    }
-
     // run the threader on the given alignment
     UpdateViewer::AlignmentList singleList, replacedList;
     Threader::AlignmentList newAlignments;
@@ -629,8 +623,7 @@ void AlignmentManager::ThreadUpdate(const ThreaderOptions& options, BlockMultipl
 
     singleList.push_back(single);
     if (threader->Realign(
-            options, currentAlignments.front(), &singleList,
-            &nRowsAddedToMultiple, &newAlignments)) {
+            options, currentAlignments.front(), &singleList, &newAlignments, &nRowsAddedToMultiple, sequenceViewer)) {
 
         // replace threaded alignment with new one(s) (or leftover where threader/merge failed)
         UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
@@ -649,8 +642,7 @@ void AlignmentManager::ThreadUpdate(const ThreaderOptions& options, BlockMultipl
 
         // tell the sequenceViewer that rows have been merged into the multiple
         if (nRowsAddedToMultiple > 0)
-            sequenceViewer->GetCurrentDisplay()->
-                RowsAdded(nRowsAddedToMultiple, currentAlignments.front());
+            sequenceViewer->GetCurrentDisplay()->RowsAdded(nRowsAddedToMultiple, currentAlignments.front());
     }
 }
 
@@ -659,18 +651,12 @@ void AlignmentManager::ThreadAllUpdates(const ThreaderOptions& options)
     const ViewerBase::AlignmentList& currentAlignments = sequenceViewer->GetCurrentAlignments();
     if (currentAlignments.size() == 0) return;
 
-    // make sure the editor is on in the sequenceViewer
-    if (!sequenceViewer->EditorIsOn() && options.mergeAfterEachSequence) {
-        ERRORMSG("Can only merge updates when editing is enabled in the sequence window");
-        return;
-    }
-
     // run the threader on update pairwise alignments
     Threader::AlignmentList newAlignments;
     int nRowsAddedToMultiple;
     if (threader->Realign(
             options, currentAlignments.front(), &(updateViewer->GetCurrentAlignments()),
-            &nRowsAddedToMultiple, &newAlignments)) {
+            &newAlignments, &nRowsAddedToMultiple, sequenceViewer)) {
 
         // replace update alignments with new ones (or leftovers where threader/merge failed)
         updateViewer->ReplaceAlignments(newAlignments);
@@ -727,10 +713,8 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
     }
 
     // make sure the editor is on in the sequenceViewer
-    if (!sequenceViewer->EditorIsOn()) {
-        ERRORMSG("Can only merge updates when editing is enabled in the sequence window");
-        return;
-    }
+    if (!sequenceViewer->EditorIsOn())
+        sequenceViewer->TurnOnEditor();
 
     int nSuccessfulMerges = 0;
     ViewerBase::AlignmentList updatesToKeep;
@@ -904,8 +888,7 @@ void AlignmentManager::BlockAlignAllUpdates(void)
     int nRowsAddedToMultiple;
 
     if (blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(currentMultiple,
-            currentUpdates, &newAlignmentsList, &nRowsAddedToMultiple,
-            sequenceViewer->EditorIsOn())) {
+            currentUpdates, &newAlignmentsList, &nRowsAddedToMultiple, sequenceViewer)) {
 
         // replace update alignments with new ones (or leftovers where algorithm failed)
         updateViewer->ReplaceAlignments(newAlignmentsList);
@@ -923,7 +906,7 @@ void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
 			sequenceViewer->GetCurrentAlignments().front() : NULL;
     if (!currentMultiple) return;
 
-    // run the threader on the given alignment
+    // run the block aligner on the given alignment
     UpdateViewer::AlignmentList singleList, replacedList;
     BlockAligner::AlignmentList newAlignments;
     int nRowsAddedToMultiple;
@@ -931,8 +914,7 @@ void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
 
     singleList.push_back(single);
     if (blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(
-            currentMultiple, singleList, &newAlignments, &nRowsAddedToMultiple,
-            sequenceViewer->EditorIsOn())) {
+            currentMultiple, singleList, &newAlignments, &nRowsAddedToMultiple, sequenceViewer)) {
 
         // replace threaded alignment with new one
         UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
@@ -951,8 +933,7 @@ void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
 
         // tell the sequenceViewer that rows have been merged into the multiple
         if (nRowsAddedToMultiple > 0)
-            sequenceViewer->GetCurrentDisplay()->
-                RowsAdded(nRowsAddedToMultiple, currentMultiple);
+            sequenceViewer->GetCurrentDisplay()->RowsAdded(nRowsAddedToMultiple, currentMultiple);
     }
 }
 
@@ -1161,6 +1142,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2004/09/28 14:18:28  thiessen
+* turn on editor automatically on merge
+*
 * Revision 1.99  2004/09/27 01:43:52  thiessen
 * fix alignment index bug
 *

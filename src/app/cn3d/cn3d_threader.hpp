@@ -69,6 +69,7 @@ extern ThreaderOptions globalThreaderOptions;
 class BlockMultipleAlignment;
 class Sequence;
 class StructureBase;
+class SequenceViewer;
 
 class Threader
 {
@@ -84,8 +85,8 @@ public:
     // merged into the multiple, and newAlignments will contain all un-merged master/slave pairs
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
     bool Realign(const ThreaderOptions& options, BlockMultipleAlignment *masterMultiple,
-        const AlignmentList *originalAlignments,
-        int *nRowsAddedToMultiple, AlignmentList *newAlignments);
+        const AlignmentList *originalAlignments, AlignmentList *newAlignments,
+        int *nRowsAddedToMultiple, SequenceViewer *sequenceViewer);
 
     // calculate scores for each row in the alignment (and store them in the alignment itself)
     bool CalculateScores(const BlockMultipleAlignment *multiple, double weightPSSM);
@@ -144,6 +145,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/09/28 14:18:28  thiessen
+* turn on editor automatically on merge
+*
 * Revision 1.19  2004/02/19 17:04:52  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
