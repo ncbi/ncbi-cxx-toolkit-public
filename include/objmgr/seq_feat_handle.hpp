@@ -62,7 +62,7 @@ class CSeq_annot_Handle;
 ///  Proxy to access the seq-feat objects data
 ///
 
-class CSeq_feat_Handle
+class NCBI_XOBJMGR_EXPORT CSeq_feat_Handle
 {
 public:
     CSeq_feat_Handle(void);
@@ -438,6 +438,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/12/03 19:25:55  shomrat
+* Added export prefix
+*
 * Revision 1.4  2004/09/29 16:59:54  kononenk
 * Added doxygen formatting
 *
