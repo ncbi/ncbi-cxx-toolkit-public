@@ -311,7 +311,9 @@ PSIExtractQuerySequenceInfo(PsiAlignmentData* alignment)
     ASSERT(alignment);
 
     for (i = 0; i < alignment->dimensions->query_sz; i++) {
-        alignment->desc_matrix[kQueryIndex][i].letter = alignment->query[i];
+        const Uint1 kResidue = alignment->query[i];
+
+        alignment->desc_matrix[kQueryIndex][i].letter = kResidue;
         alignment->desc_matrix[kQueryIndex][i].used = TRUE;
         alignment->desc_matrix[kQueryIndex][i].e_value = 
             PSI_INCLUSION_ETHRESH / 2;
@@ -319,7 +321,10 @@ PSIExtractQuerySequenceInfo(PsiAlignmentData* alignment)
         alignment->desc_matrix[kQueryIndex][i].extents.right =
             alignment->dimensions->query_sz;
 
-        alignment->res_counts[i][alignment->query[i]]++;
+        alignment->res_counts[i][kResidue]++;
         alignment->match_seqs[i]++;
+
+        ASSERT(alignment->res_counts[i][kResidue] == (Uint4)1);
+        ASSERT(alignment->match_seqs[i] == (Uint4)1);
     }
 }
