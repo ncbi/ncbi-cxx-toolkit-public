@@ -314,8 +314,16 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 NCBI_XNCBI_EXPORT
 extern bool DisableDiagPostLevelChange(bool disable_change = true);
 
-// Abrupt the application if severity is >= "max_sev"
-// Return previous die-level
+// Abrupt the application if severity is >= "max_sev".
+// Return previous die-level.
+//
+// SPECIAL CASE -- not recommended to use unless you are real desperate:
+// You can make your application not to exit/abort on "eDiag_Fatal"
+// (by setting the die level to "eDiag_Trace" or "eDiagSevMax", but
+// this is usually a VERY BAD thing to do! -- as any library code
+// counts on it to exit unconditionally and thus what happens after
+// "eDiag_Fatal" is posted is in general totally unpredictable!
+// So, use it on your own risk.
 NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
 
@@ -594,6 +602,11 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.57  2003/04/25 16:00:03  vakatov
+ * Document an ugly, absolutely not recommended for use, very special case
+ * for SetDiagDieLevel() which prevents the application from exiting when
+ * an error with FATAL severity is posted.
+ *
  * Revision 1.56  2003/04/11 17:55:44  lavr
  * Proper indentation of some fragments
  *
