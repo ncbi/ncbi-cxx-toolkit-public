@@ -52,6 +52,7 @@ extern "C" {
 #define BLASTP_ENCODING 0
 #define BLASTNA_ENCODING 1
 #define NCBI4NA_ENCODING 2
+#define NCBI2NA_ENCODING 3
 #define ERROR_ENCODING 255
 
 /** Retrieve a sequence from the BLAST database
@@ -95,13 +96,6 @@ Int2
 BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
 	const Int4Ptr frame, BLAST_SequenceBlkPtr *seq_blk, 
         Boolean buffer_allocated);
-
-/** Deallocate the sequence block.
- * @param seq_blk The sequence block to be freed [in]
- * @return NULL
- */
-BLAST_SequenceBlkPtr 
-BLAST_SequenceBlkDestruct(BLAST_SequenceBlkPtr seq_blk);
 
 #define CODON_LENGTH 3
 
