@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.4  2002/03/19 20:29:48  gouriano
+* added "windows.h"
+*
 * Revision 6.3  2002/03/14 19:10:04  gouriano
 * added checking of number of threads
 *
@@ -51,6 +54,9 @@
 
 #include <corelib/ncbithr.hpp>
 #include "test_mt.hpp"
+#if defined(NCBI_OS_MSWIN)
+    #include <windows.h>
+#endif
 
 USING_NCBI_SCOPE;
 
