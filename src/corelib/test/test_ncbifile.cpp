@@ -462,6 +462,21 @@ static void s_TEST_Dir(void)
     }
     cout << endl;
 
+
+    vector<string> masks;
+    masks.push_back("*");
+    CDir::TEntries contents2 = dir.GetEntries(masks);
+    assert(contents.size() == contents2.size());
+
+    for (unsigned int i = 0; i < contents.size(); ++i) {
+        const CDirEntry& entry1 = *contents[i];
+        const CDirEntry& entry2 = *contents2[i];
+        string ep1 = entry1.GetPath();
+        string ep2 = entry2.GetPath();
+        assert(ep1 == ep2);
+    }
+
+
     // Create dir structure for deletion
     assert( CDir("dir_3").Create() );
     assert( CDir(REL "dir_3" SEP "subdir_1").Create() );
@@ -651,6 +666,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/11/05 15:38:14  kuznets
+ * Added test for new GetEntries()
+ *
  * Revision 1.27  2003/10/08 15:45:53  ivanov
  * Added tests for [Add|Delete]TrailingPathSeparator()
  *
