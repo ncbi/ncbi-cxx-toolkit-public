@@ -547,11 +547,10 @@ bool GetAsnDataViaHTTP(
     bool okay = false;
 
     // set up registry field to set GET connection method for HTTP
-    REG orig_reg = CORE_GetREG();
+    REG origREG = CORE_GetREG();
     CNcbiRegistry* reg = new CNcbiRegistry;
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
-    REG origREG = CORE_GetREG();
     CORE_SetREG(REG_cxx2c(reg, true));
 
     try {
@@ -672,6 +671,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/09/22 19:05:14  thiessen
+* whoops, double fix, updated
+*
 * Revision 1.20  2004/09/22 18:53:13  thiessen
 * fix left out GetREG call
 *
