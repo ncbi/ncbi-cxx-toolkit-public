@@ -64,7 +64,9 @@ public:
     // means that residue #10 in the master is aligned to residue #5 of the slave.
     // Residues are numbered from zero. masterToSlave[n] = UNALIGNED means that master
     // residue n is unaligned.
-    static const unsigned int UNALIGNED;
+    enum {
+        UNALIGNED = kMax_UInt
+    };
     typedef std::vector < unsigned int > ResidueVector;
     ResidueVector m_masterToSlave;
 
@@ -100,6 +102,10 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/25 21:22:28  ucko
+* Some compilers don't support static const members, so make
+* MasterSlaveAlignment::UNALIGNED a member of an (anonymous) enum instead.
+*
 * Revision 1.2  2004/05/25 15:52:17  thiessen
 * add BlockMultipleAlignment, IBM algorithm
 *
