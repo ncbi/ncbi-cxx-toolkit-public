@@ -28,6 +28,8 @@
  */
 
 #include <corelib/ncbistr.hpp>
+#include <algorithm>
+
 #include "seqdbalias.hpp"
 #include "seqdbfile.hpp"
 
