@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/05/30 23:21:36  vakatov
+ * LOG_WriteInternal():  exit/abort on "eLOG_Fatal"
+ *
  * Revision 6.2  2000/03/24 23:12:07  vakatov
  * Starting the development quasi-branch to implement CONN API.
  * All development is performed in the NCBI C++ tree only, while
@@ -291,6 +294,15 @@ extern void LOG_WriteInternal
     }
 
     LOG_UNLOCK;
+
+    /* unconditional exit/abort on fatal error */
+    if (level == eLOG_Fatal) {
+#if defined(NDEBUG)
+        exit(1);
+#else
+        abort();
+#endif
+    }
 }
 
 
