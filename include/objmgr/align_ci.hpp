@@ -46,21 +46,45 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CAlign_CI --
+///
+///  Enumerate CSeq_align objects related to the specified bioseq or seq-loc
+///
+
 class NCBI_XOBJMGR_EXPORT CAlign_CI : public CAnnotTypes_CI
 {
 public:
+    /// Create an empty iterator
     CAlign_CI(void);
+
+    /// Create an iterator that enumerates CSeq_align objects 
+    /// related to the given seq-loc
     CAlign_CI(CScope& scope, const CSeq_loc& loc,
               const SAnnotSelector& sel);
+
+    /// Create an iterator that enumerates CSeq_align objects 
+    /// related to the given bioseq
     CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               const SAnnotSelector& sel);
-    // Search all TSEs in all datasources
+
+    /// Create an iterator that enumerates CSeq_align objects
+    /// from all TSEs in all datasources
     CAlign_CI(CScope& scope, const CSeq_loc& loc,
               SAnnotSelector::EOverlapType overlap_type
               = SAnnotSelector::eOverlap_Intervals,
               SAnnotSelector::EResolveMethod resolve
               = SAnnotSelector::eResolve_TSE);
-    // Search only in TSE, containing the bioseq
+
+    /// Create an iterator that enumerates CSeq_align objects
+    /// from the only TSE that contains the bioseq
     CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               SAnnotSelector::EOverlapType overlap_type
               = SAnnotSelector::eOverlap_Intervals,
@@ -68,25 +92,54 @@ public:
               = SAnnotSelector::eResolve_TSE);
 
     // Iterate all features from the object regardless of their location
+
+    /// Create an iterator that enumerates CSeq_align objects
+    /// from the annotation regardless of their location
     CAlign_CI(const CSeq_annot_Handle& annot);
+
+    /// Create an iterator that enumerates CSeq_align objects
+    /// from the annotation regardless of their location
+    /// based on selection
+    ///
+    /// @sa
+    ///   SAnnotSelector
     CAlign_CI(const CSeq_annot_Handle& annot,
               const SAnnotSelector& sel);
+
+    /// Create an iterator that enumerates CSeq_align objects
+    /// from the seq-entry regardless of their location
     CAlign_CI(const CSeq_entry_Handle& entry);
+
+    /// Create an iterator that enumerates CSeq_align objects
+    /// from the seq-entry regardless of their location
+    /// based on selection
+    ///
+    /// @sa
+    ///   SAnnotSelector
     CAlign_CI(const CSeq_entry_Handle& entry,
               const SAnnotSelector& sel);
 
     virtual ~CAlign_CI(void);
 
+    /// Move to the next object in iterated sequence
     CAlign_CI& operator++ (void);
+
+    /// Move to the pervious object in iterated sequence
     CAlign_CI& operator-- (void);
+
+    /// Check if iterator points to an object
     operator bool (void) const;
 
-    // Mapped alignment, not the original one
+    /// Mapped alignment, not the original one
     const CSeq_align& operator* (void) const;
+
+    /// Mapped alignment, not the original one
     const CSeq_align* operator-> (void) const;
 
+    /// Get original alignment
     const CSeq_align& GetOriginalSeq_align(void) const;
-    // Original align handle
+
+    /// Get original alignment handle
     CSeq_align_Handle GetSeq_align_Handle(void) const;
 
 private:
@@ -157,12 +210,18 @@ CAlign_CI::operator bool (void) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/09/30 23:11:11  kononenk
+* Added doxygen formatting
+*
 * Revision 1.29  2004/05/04 18:08:47  grichenk
 * Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
 *
