@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/03/08 14:18:22  vasilche
+* Fixed throws instructions.
+*
 * Revision 1.1  2000/03/07 14:03:15  vasilche
 * Added CObject class as base for reference counted objects.
 * Added CRef templace for reference to CObject descendant.
@@ -60,14 +63,12 @@ const char* CNullPointerError::what() const
 }
 
 CObject::~CObject(void)
-    THROWS((runtime_error))
 {
     if ( Referenced() )
         throw runtime_error("delete referenced CObject object");
 }
 
 void CObject::RemoveLastReference(void)
-    THROWS((runtime_error))
 {
     switch ( m_Counter ) {
     case 0:

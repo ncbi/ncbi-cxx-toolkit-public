@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/03/08 14:18:19  vasilche
+* Fixed throws instructions.
+*
 * Revision 1.2  2000/03/07 15:25:42  vasilche
 * Fixed implementation of CRef::->
 *
@@ -55,7 +58,7 @@ public:
     CNullPointerError(void) THROWS_NONE;
     ~CNullPointerError(void) THROWS_NONE;
 
-	const char* what() const THROWS_NONE;
+    const char* what() const THROWS_NONE;
 };
 
 
@@ -69,12 +72,12 @@ private:
 
 public:
     // main constructor for static/automatic/enclosed objects
-    CObject(void)
+    CObject(void) THROWS_NONE
         : m_Counter(eDoNotDelete)
         {
         }
     // virtual destructor
-    virtual ~CObject(void) THROWS((runtime_error));
+    virtual ~CObject(void);
 
 protected:
     // special constructor for objects allocated in heap
@@ -82,32 +85,32 @@ protected:
         eCanDelete = 0
     };
 
-    CObject(ECanDelete)
+    CObject(ECanDelete) THROWS_NONE
         : m_Counter(0)
         {
         }
 
 public:
     inline
-    unsigned ReferenceCount(void) const
+    unsigned ReferenceCount(void) const THROWS_NONE
         {
             return (m_Counter & ~eDoNotDelete);
         }
 
     inline
-    bool Referenced(void) const
+    bool Referenced(void) const THROWS_NONE
         {
             return ReferenceCount() != 0;
         }
 
     inline
-    void AddReference(void)
+    void AddReference(void) THROWS_NONE
         {
             ++m_Counter;
         }
 
     inline
-    void RemoveReference(void) THROWS((runtime_error))
+    void RemoveReference(void)
         {
             if ( unsigned(m_Counter-- & ~eDoNotDelete) <= 1 ) {
                 RemoveLastReference();
@@ -118,7 +121,7 @@ public:
     void ReleaseReference(void) THROWS((runtime_error));
 
 private:
-    void RemoveLastReference(void) THROWS((runtime_error));
+    void RemoveLastReference(void);
 
     unsigned m_Counter;
 };
@@ -129,23 +132,23 @@ public:
     typedef C TObjectType;
 
     inline
-    CRef(void)
+    CRef(void) THROWS_NONE
         : m_Ptr(0)
         {
         }
-    CRef(TObjectType* ptr)
+    CRef(TObjectType* ptr) THROWS_NONE
         : m_Ptr(ptr)
         {
             if ( ptr )
                 ptr->AddReference();
         }
-    CRef(const CRef<C>& ref)
+    CRef(const CRef<C>& ref) THROWS_NONE
         {
             TObjectType* ptr = m_Ptr = ref.m_Ptr;
             if ( ptr )
                 ptr->AddReference();
         }
-    ~CRef(void) THROWS((runtime_error))
+    ~CRef(void)
         {
             TObjectType* ptr = m_Ptr;
             if ( ptr )
@@ -154,18 +157,18 @@ public:
     
     // check whether reference in not null
     inline
-    operator bool(void)
+    operator bool(void) THROWS_NONE
         {
             return m_Ptr != 0;
         }
     inline
-    operator bool(void) const
+    operator bool(void) const THROWS_NONE
         {
             return m_Ptr != 0;
         }
 
     inline
-    void Reset(TObjectType* newPtr = 0) THROWS((runtime_error))
+    void Reset(TObjectType* newPtr = 0)
         {
             TObjectType* oldPtr = m_Ptr;
             if ( newPtr != oldPtr ) {
