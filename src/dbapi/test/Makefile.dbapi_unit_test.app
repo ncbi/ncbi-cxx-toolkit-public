@@ -9,3 +9,4 @@ LIB  = dbapi dbapi_driver xncbi
 LIBS = $(CPPUNIT_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = dbapi_unit_test
+CHECK_REQUIRES = DLL
