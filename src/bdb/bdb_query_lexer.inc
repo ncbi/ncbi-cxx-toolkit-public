@@ -135,9 +135,8 @@ int yylex(YYSTYPE *lvalp, void* param)
         // check if token is all digits
         string::size_type pos = 
             token.find_first_not_of("0123456789", 0, token.length());
-        return pos = string::npos ? NUM : NAME;
+        return (pos == string::npos) ? NUM : NAME;
 
-        return NAME;
     }
 
 
@@ -152,6 +151,9 @@ int yylex(YYSTYPE *lvalp, void* param)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/18 17:24:36  kuznets
+ * Minor bug fix
+ *
  * Revision 1.4  2004/03/18 13:39:31  kuznets
  * Changed algorithm of identification of numbers in the query
  *
