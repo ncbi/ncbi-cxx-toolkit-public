@@ -394,12 +394,13 @@ const TTo* UppermostCast(const TFrom& from)
 
 #define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class) \
     { \
+        x_Init(file,line,message, prev_exception); \
         x_InitErrCode((CException::EErrCode) err_code); \
     } \
     exception_class(const exception_class& other) throw() \
        : base_class(other) \
     { \
-        x_AssignErrCode(other); \
+        x_Assign(other); \
     } \
     virtual ~exception_class(void) throw() {} \
     virtual const char* GetType(void) const {return #exception_class;} \
@@ -658,6 +659,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2002/07/31 18:32:04  gouriano
+ * fix for virtual base classes
+ *
  * Revision 1.35  2002/07/29 19:30:43  gouriano
  * changes to allow multiple inheritance in CException classes
  *
