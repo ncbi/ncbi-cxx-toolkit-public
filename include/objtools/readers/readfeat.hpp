@@ -52,15 +52,19 @@ class CFeature_table_reader_imp;
 class NCBI_XOBJREAD_EXPORT CFeature_table_reader
 {
 public:
+    enum EFlags {
+        fReportBadKey = 0x1,
+        fKeepBadKey = 0x2
+    };
+    typedef int TFlags;
+
     // read 5-column feature table and return Seq-annot
     static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
-                                                    const bool reportBadKeys = false,
-                                                    const bool keepBadKeys = false);
+                                                    const TFlags flags = 0);
     static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                                     const string& seqid,
                                                     const string& annotname,
-                                                    const bool reportBadKeys = false,
-                                                    const bool keepBadKeys = false);
+                                                    const TFlags flags = 0);
 
 private:
     // this class uses a singleton internally to manage the specifics
