@@ -195,6 +195,13 @@ on GuiProjectData(projName, features, section)
 	return (ProjectData(projName, features, {GuiFileData(section)}))
 end GuiProjectData
 
+on GuiProjectDataExcept(projName, features, section, notFiles)
+	if features does not contain "fltk" then
+		copy "fltk" to end of features
+	end if
+	return (ProjectData(projName, features, {GuiFileDataExcept(section, notFiles)}))
+end GuiProjectDataExcept
+
 on AddGuiProject(projName, features, section)
 	AddProject(GuiProjectData(projName, features, section))
 end AddGuiProject
@@ -204,6 +211,12 @@ on AddPlugin(projName, features, section, staticLibs)
 	set projData to GuiProjectData(projName, features, section)
 	AddProject(DataPlusLibs(projData, staticLibs, {"gui_core"}))
 end AddPlugin
+
+on AddPluginExcept(projName, features, section, staticLibs, notFiles)
+	if features does not contain "plugin" then set features to features & {"plugin"}
+	set projData to GuiProjectDataExcept(projName, features, section, notFiles)
+	AddProject(DataPlusLibs(projData, staticLibs, {"gui_core"}))
+end AddPluginExcept
 
 on DataPlusSources(dataRec, newSrcs)
 	repeat with i in newSrcs
@@ -272,14 +285,11 @@ on SetProjectData()
 		AddSimpleProject("sequtil", {}, "util:sequtil")
 		AddSimpleProject("creaders", {}, "util:creaders")
 		
-		AddSimpleProjectExceptFiles("bdb", {"bdb"}, "bdb", {"bdb_query_bison.tab.c", "bdb_query_lexer.cpp"})
-		
 		AddSimpleProject("xalgoalign", {}, "algo:align")
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProject("xalgognomon", {}, "algo:gnomon")
 		AddSimpleProject("xalgophytree", {}, "algo:phy_tree")
 		AddSimpleProject("fastme", {}, "algo:phy_tree:fastme")
-		
 		set xblastfiles to {Â
 			mkFileData(gSourceDir & "algo:blast:api"), Â
 			mkFileData(gSourceDir & "algo:blast:core") Â
@@ -288,13 +298,11 @@ on SetProjectData()
 		AddSimpleProject("blast", {}, "algo:blast:core")
 		
 		AddSimpleProject("xsqlite", {"sqlite"}, "sqlite")
+		AddSimpleProjectExceptFiles("bdb", {"bdb"}, "bdb", {"bdb_query_bison.tab.c", "bdb_query_lexer.cpp"})
 		
 		set libdbFiles to {Â
 			mkFileData(gBdbRootFolder & "btree"), Â
 			mkFileDataExceptFiles(gBdbRootFolder & "common", {"util_arg.c"}), Â
-			mkFileData(gBdbRootFolder & "crypto"), Â
-			mkFileData(gBdbRootFolder & "crypto:mersenne"), Â
-			mkFileData(gBdbRootFolder & "crypto:rijndael"), Â
 			mkFileData(gBdbRootFolder & "db"), Â
 			mkFileData(gBdbRootFolder & "dbm"), Â
 			mkFileData(gBdbRootFolder & "dbreg"), Â
@@ -306,13 +314,19 @@ on SetProjectData()
 			mkFileData(gBdbRootFolder & "lock"), Â
 			mkFileData(gBdbRootFolder & "log"), Â
 			mkFileData(gBdbRootFolder & "mp"), Â
-			mkFileDataListFiles(gBdbRootFolder & "mutex", {"mutex.c", "mut_pthread.c"}), Â
+			mkFileDataListFiles(gBdbRootFolder & "mutex", {"mutex.c", " mut_tas.c"}), Â
 			mkFileData(gBdbRootFolder & "os"), Â
 			mkFileData(gBdbRootFolder & "qam"), Â
 			mkFileData(gBdbRootFolder & "rep"), Â
 			mkFileData(gBdbRootFolder & "txn"), Â
 			mkFileData(gBdbRootFolder & "xa")}
 		AddProject(ProjectData("libdb", {"bdblib"}, libdbFiles))
+		(* use the following in place of mut_tas.c above if using pthread mutexes in Bdb *)
+		-- "mut_pthread.c"
+		(* use the following to build Bdb with encryption. *)
+		-- mkFileData(gBdbRootFolder & "crypto"), Â
+		-- mkFileData(gBdbRootFolder & "crypto:mersenne"), Â
+		-- mkFileData(gBdbRootFolder & "crypto:rijndael"), Â
 	end if
 	
 	if pCreateSocketLibs then
@@ -390,10 +404,12 @@ on SetProjectData()
 		AddSimpleProject("xvalidate", {}, "objtools:validator")
 		AddSimpleProject("xobjmanip", {}, "objtools:manip")
 		AddSimpleProject("xobjread", {}, "objtools:readers")
+		AddSimpleProject("seqdb", {}, "objtools:readers:seqdb")
 		AddSimpleProject("xformat", {}, "objtools:format")
 		
 		AddSimpleProject("ncbi_xloader_lds", {}, "objtools:data_loaders:lds")
 		AddSimpleProject("ncbi_xloader_table", {}, "objtools:data_loaders:table")
+		AddSimpleProject("ncbi_xloader_trace", {}, "objtools:data_loaders:trace")
 		AddSimpleProject("ncbi_xloader_genbank", {}, "objtools:data_loaders:genbank")
 		AddSimpleProjectListFiles("ncbi_xreader_id1", {}, "objtools:data_loaders:genbank:readers:id1", {"reader_id1.cpp"})
 		AddSimpleProjectListFiles("ncbi_xreader_id1c", {}, "objtools:data_loaders:genbank:readers:id1", {"reader_id1_cache.cpp"})
@@ -492,12 +508,12 @@ on SetProjectData()
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
 			{"xflat", "ncbi_xloader_lds", "gbseq", "xalgophytree", "fastme"})
-		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds", "ncbi_xreader_id1c"})
+		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_lds", "ncbi_xreader_id1c", "ncbi_xloader_trace"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "gui_multi_col_dlg", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
 		
 		-- Algorithm plugins
-		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "scoremat", "xblast", "xnetblast", "xnetblastcli"})
+		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "scoremat", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		AddProject(DataPlusLibs(ProjectData("gui_algo_external", Â
 			{"plugin", "fltk", "libdl"}, Â
@@ -522,7 +538,7 @@ on SetProjectData()
 			{"gui_dlg_feature", "w_seq_graphic", "w_gl"})
 		-- AddPlugin("gui_view_sequence", {}, "plugins:view:sequence",  {}) -- empty
 		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d", "gui_graph"})
-		AddPlugin("gui_view_table", {}, "plugins:view:table", {})
+		AddPluginExcept("gui_view_table", {}, "plugins:view:table", {}, {"view_alntable.cpp"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
 			{"gbseq", "xflat", "xformat", "taxon1", "w_taxtree", "w_seq"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
@@ -785,6 +801,7 @@ on CopyHeaders()
 		my UpdateHeader("Carbon-debugMSL.pfx", prefixFolder)
 		my UpdateHeader("Carbon-releaseMSL.pfx", prefixFolder)
 		my UpdateHeader("ncbi_mslextras.h", prefixFolder)
+		my UpdateHeader("MW-BSD-limits-fix.h", prefixFolder)
 		
 	end tell
 end CopyHeaders
@@ -794,7 +811,7 @@ on AppendAccessPath(aPath, isRecursive, isUserPath)
 		if (aPath does not end with ":") then set aPath to aPath & ":"
 		
 		set aPath to POSIX path of aPath
-		set pathsToAdd to {{name:aPath, recursive:isRecursive, origin:root relative, root:"OS X Volume", format:Unix Path}}
+		set pathsToAdd to {{name:aPath, recursive:isRecursive, origin:absolute, format:Unix Path}}
 		if isUserPath then
 			Set Preferences of panel "Access Paths" to {User Paths:pathsToAdd}
 		else
@@ -808,7 +825,7 @@ on PushAccessPath(aPath, isRecursive, isUserPath)
 		if (aPath does not end with ":") then set aPath to aPath & ":"
 		
 		set aPath to POSIX path of aPath
-		set pathToAdd to {name:aPath, recursive:isRecursive, origin:root relative, root:"OS X Volume", format:Unix Path}
+		set pathToAdd to {name:aPath, recursive:isRecursive, origin:absolute, format:Unix Path}
 		if isUserPath then
 			set newPaths to Get Preferences of {User Paths} from panel "Access Paths"
 			copy pathToAdd to beginning of User Paths of newPaths
@@ -1008,13 +1025,13 @@ on SetupTarget(proj, targetIndex)
 			end if
 		end if
 		
-		--try
-		Add Files filesToAdd
-		--on error errmsg number errnum
-		-- ignore errors when none of those libraries exist.
-		-- happens when populating a target when we haven't built any of the libraries for that target spec.
-		--if errnum is not 9393 then error errmsg number errnum
-		--end try
+		try
+			Add Files filesToAdd
+		on error errmsg number errnum
+			-- ignore errors when none of those libraries exist.
+			-- happens when populating a target when we haven't built any of the libraries for that target spec.
+			if errnum is not 9393 then error errmsg number errnum
+		end try
 	end tell
 	
 	-- add sqlite libraries.
@@ -1199,9 +1216,12 @@ end UpdateTarget
 on CreateFolder(folderPath)
 	set text item delimiters of AppleScript to ":"
 	-- strip off disk name.
-	set folderPath to (rest of text items of folderPath) as string
-	set pathSoFar to ""
 	tell application "Finder"
+		set pathSoFar to ""
+		if (exists disk (first text item of folderPath)) then
+			set pathSoFar to first text item of folderPath
+			set folderPath to (rest of text items of folderPath) as string
+		end if
 		repeat with f in (text items of folderPath)
 			set longerPath to pathSoFar & ":" & f
 			if not (exists folder (longerPath)) then
@@ -1471,5 +1491,6 @@ with timeout of 60000 seconds
 	SignalCompletion()
 	
 end timeout
+
 
 
