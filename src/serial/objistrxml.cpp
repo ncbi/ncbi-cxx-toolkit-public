@@ -372,6 +372,19 @@ CLightString CObjectIStreamXml::ReadName(char c)
         }
     } else {
         m_CurrNsPrefix.erase();
+        if (m_Attlist && m_LastTag == "xmlns") {
+            string value;
+            ReadAttributeValue(value, true);
+            if (FetchFrameFromTop(1).HasTypeInfo()) {
+                TTypeInfo type = FetchFrameFromTop(1).GetTypeInfo();
+                type->SetNamespacePrefix(m_CurrNsPrefix);
+                type->SetNamespaceName(value);
+            }
+            m_NsPrefixToName[m_LastTag] = value;
+            m_NsNameToPrefix[value] = m_LastTag;
+            char ch = SkipWS();
+            return IsEndOfTagChar(ch) ? CLightString() : ReadName(ch);
+        }
     }
 #if defined(NCBI_SERIAL_IO_TRACE)
     cout << ", Read= " << m_LastTag;
@@ -820,7 +833,7 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
     obj.SetNamespacePrefix(ns_prefix);
     obj.SetNamespaceName(m_NsPrefixToName[ns_prefix]);
     string value;
-    ReadAnyContentTo(ns_prefix,value,tagName);
+    ReadAnyContentTo(ns_prefix,value,obj.GetName());
     obj.SetValue(value);
     END_OBJECT_FRAME();
 }
@@ -2077,6 +2090,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2004/06/30 13:51:17  gouriano
+* Corrected reading of object namespace name
+*
 * Revision 1.64  2004/06/22 14:58:58  gouriano
 * Corrected reading namespace name of AnyContentObject
 *
