@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/11/07 17:26:24  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.23  2000/08/28 13:22:03  vasilche
 * Fixed reference to undefined kEmptyChoice.
 *
@@ -834,9 +838,13 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     methods <<
         "(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassName()<<")\n"
         "{\n";
+    if ( !GetModuleName().empty() ) {
+        methods <<
+            "    SET_CHOICE_MODULE(\""<<GetModuleName()<<"\");\n";
+    }
     if ( delayed ) {
         methods <<
-            "    info->SetSelectDelay(&NCBI_NS_NCBI::CClassInfoHelper<CClass>::SelectDelayBuffer);\n";
+            "    SET_CHOICE_DELAYED();\n";
     }
     {
         iterate ( TVariants, i, m_Variants ) {

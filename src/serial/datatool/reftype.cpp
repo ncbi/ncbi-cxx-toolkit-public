@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/07 17:26:26  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.18  2000/11/01 20:38:59  vasilche
 * OPTIONAL and DEFAULT are not permitted in CHOICE.
 * Fixed code generation for DEFAULT.
@@ -169,6 +173,10 @@ CTypeInfo* CReferenceDataType::CreateTypeInfo(void)
     CClassTypeInfo* info = CClassInfoHelper<AnyType>::CreateClassInfo(m_UserTypeName.c_str());
     info->SetImplicit();
     info->AddMember("", 0, ResolveOrThrow()->GetTypeInfo());
+    if ( GetParentType() == 0 ) {
+        // global
+        info->SetModuleName(GetModule()->GetName());
+    }
     return info;
 }
 

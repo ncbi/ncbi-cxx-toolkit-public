@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/11/07 17:26:25  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.27  2000/11/02 14:42:34  vasilche
 * MSVC doesn't understand namespaces in parent class specifier in subclass methods.
 *
@@ -827,24 +831,22 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     }
 
     // generate type info
-    if ( haveUserClass ) {
-        methods <<
-            "BEGIN_NAMED_BASE_CLASS_INFO";
-    }
-    else {
-        methods <<
-            "BEGIN_NAMED_CLASS_INFO";
-    }
-    methods<<"(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassName()<<")\n"
+    methods << "BEGIN_NAMED_";
+    if ( haveUserClass )
+        methods << "BASE_";
+    if ( wrapperClass )
+        methods << "IMPLICIT_";
+    methods <<
+        "CLASS_INFO(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassName()<<")\n"
         "{\n";
+    if ( !GetModuleName().empty() ) {
+        methods <<
+            "    SET_CLASS_MODULE(\""<<GetModuleName()<<"\");\n";
+    }
     if ( !m_ParentClassName.empty() ) {
         code.SetParentClass(m_ParentClassName, m_ParentClassNamespace);
         methods <<
             "    SET_PARENT_CLASS("<<m_ParentClassNamespace.GetNamespaceRef(code.GetNamespace())<<m_ParentClassName<<");\n";
-    }
-    if ( m_Members.size() == 1 && m_Members.front().cName.empty() ) {
-        methods <<
-            "    info->SetImplicit();\n";
     }
     {
         iterate ( TMembers, i, m_Members ) {

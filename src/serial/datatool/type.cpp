@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/11/07 17:26:26  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.52  2000/09/26 17:38:27  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -350,9 +354,13 @@ string CDataType::FileName(void) const
             m_CachedFileName = file;
         }
         else {
-            _ASSERT(!GetParentType()); // for non internal classes
+            string dir = GetVar("_dir");
+            if ( dir.empty() ) {
+                _ASSERT(!GetParentType()); // for non internal classes
+                dir = GetModule()->GetFileNamePrefix();
+            }
             m_CachedFileName =
-                Path(GetModule()->GetFileNamePrefix(),
+                Path(dir,
                      MakeFileName(m_MemberName, 5 /* strlen("_.cpp") */ ));
         }
     }
@@ -460,6 +468,13 @@ TTypeInfo CDataType::GetRealTypeInfo(void)
 CTypeInfo* CDataType::CreateTypeInfo(void)
 {
     THROW1_TRACE(runtime_error, "cannot create type info of "+IdName());
+}
+
+CTypeInfo* CDataType::UpdateModuleName(CTypeInfo* typeInfo) const
+{
+    if ( HaveModuleName() )
+        typeInfo->SetModuleName(GetModule()->GetName());
+    return typeInfo;
 }
 
 AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const

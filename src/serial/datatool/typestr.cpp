@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/07 17:26:26  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.18  2000/08/25 15:59:25  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -117,6 +121,12 @@ CTypeStrings::CTypeStrings(void)
 
 CTypeStrings::~CTypeStrings(void)
 {
+}
+
+void CTypeStrings::SetModuleName(const string& name)
+{
+    _ASSERT(m_ModuleName.empty());
+    m_ModuleName = name;
 }
 
 const CNamespace& CTypeStrings::GetNamespace(void) const

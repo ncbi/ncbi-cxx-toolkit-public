@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/07 17:26:26  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.15  2000/10/13 16:28:45  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -164,6 +168,8 @@ TObjectPtr CNullDataType::CreateDefault(const CDataValue& ) const
 
 CTypeRef CNullDataType::GetTypeInfo(void)
 {
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<bool>::CreateTypeInfoNullBool());
     return &CStdTypeInfo<bool>::GetTypeInfoNullBool;
 }
 
@@ -210,6 +216,8 @@ string CBoolDataType::GetDefaultString(const CDataValue& value) const
 
 CTypeRef CBoolDataType::GetTypeInfo(void)
 {
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<bool>::CreateTypeInfo());
     return &CStdTypeInfo<bool>::GetTypeInfo;
 }
 
@@ -253,6 +261,8 @@ TObjectPtr CRealDataType::CreateDefault(const CDataValue& ) const
 
 TTypeInfo CRealDataType::GetRealTypeInfo(void)
 {
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<double>::CreateTypeInfo());
     return CStdTypeInfo<double>::GetTypeInfo();
 }
 
@@ -314,6 +324,8 @@ string CStringDataType::GetDefaultString(const CDataValue& value) const
 
 TTypeInfo CStringDataType::GetRealTypeInfo(void)
 {
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<string>::CreateTypeInfo());
     return CStdTypeInfo<string>::GetTypeInfo();
 }
 
@@ -407,6 +419,8 @@ TObjectPtr COctetStringDataType::CreateDefault(const CDataValue& ) const
 
 TTypeInfo COctetStringDataType::GetRealTypeInfo(void)
 {
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<vector<char> >::CreateTypeInfo());
     return CStdTypeInfo< vector<char> >::GetTypeInfo();
 }
 
@@ -451,6 +465,8 @@ string CIntDataType::GetDefaultString(const CDataValue& value) const
 
 CTypeRef CIntDataType::GetTypeInfo(void)
 {
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<AnyType::TInteger>::CreateTypeInfo());
     return &CStdTypeInfo<AnyType::TInteger>::GetTypeInfo;
 }
 

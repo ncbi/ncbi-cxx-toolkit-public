@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/11/07 17:26:24  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.25  2000/10/03 17:22:49  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -135,6 +139,7 @@
 #include <serial/autoptrinfo.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/classstr.hpp>
+#include <serial/datatool/module.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
 #include <typeinfo>
@@ -285,6 +290,8 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
             memInfo->SetSetFlag(typeInfo->GetSetFlagPtr(index++));
         }
     }
+    if ( HaveModuleName() )
+        typeInfo->SetModuleName(GetModule()->GetName());
     return typeInfo.release();
 }
 
@@ -298,7 +305,6 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
     bool isRootClass = GetParentType() == 0;
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
                                                           ClassName()));
-
     bool haveUserClass = isRootClass;
 /*
     bool isObject;

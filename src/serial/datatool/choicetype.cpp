@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/07 17:26:25  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.18  2000/10/03 17:22:49  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -211,7 +215,7 @@ CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
         typeInfo->AddVariant(member->GetName(), 0,
                              member->GetType()->GetTypeInfo());
     }
-    return typeInfo.release();
+    return UpdateModuleName(typeInfo.release());
 }
 
 AutoPtr<CTypeStrings> CChoiceDataType::GenerateCode(void) const
@@ -251,7 +255,6 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
         bool rootClass = GetParentType() == 0;
         AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(GlobalName(),
                                                                 ClassName()));
-        
         bool haveUserClass = rootClass;
         code->SetHaveUserClass(haveUserClass);
         code->SetObject(true);

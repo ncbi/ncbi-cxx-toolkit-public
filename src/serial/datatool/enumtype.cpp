@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/11/07 17:26:25  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.13  2000/09/18 20:00:29  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -88,6 +92,7 @@
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/enumstr.hpp>
 #include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/module.hpp>
 #include <serial/enumerated.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -216,6 +221,8 @@ CTypeInfo* CEnumDataType::CreateTypeInfo(void)
           i != m_Values.end(); ++i ) {
         info->AddValue(i->first, i->second);
     }
+    if ( HaveModuleName() )
+        info->SetModuleName(GetModule()->GetName());
     return new CEnumeratedTypeInfo(sizeof(AnyType::TInteger), info.release());
 }
 

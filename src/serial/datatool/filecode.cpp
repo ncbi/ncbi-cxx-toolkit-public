@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/11/07 17:26:25  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.23  2000/08/25 15:59:21  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -124,6 +128,7 @@
 #include <serial/datatool/typestr.hpp>
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/namespace.hpp>
+#include <serial/datatool/module.hpp>
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE
@@ -599,7 +604,9 @@ bool CFileCode::AddType(const CDataType* type)
     m_AddedClasses.insert(idName);
     _TRACE("AddType: " << idName << ": " << typeid(*type).name());
     m_SourceFiles.insert(type->GetSourceFileName());
-    m_Classes.push_front(SClassInfo(type->Namespace(), type->GenerateCode()));
+    AutoPtr<CTypeStrings> code = type->GenerateCode();
+    code->SetModuleName(type->GetModule()->GetName());
+    m_Classes.push_front(SClassInfo(type->Namespace(), code));
     return true;
 }
 

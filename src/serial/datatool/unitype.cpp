@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/07 17:26:26  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.15  2000/11/01 20:38:59  vasilche
 * OPTIONAL and DEFAULT are not permitted in CHOICE.
 * Fixed code generation for DEFAULT.
@@ -180,7 +184,7 @@ TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
 
 CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
 {
-    return CStlClassInfo_list<AnyType>::CreateTypeInfo(m_ElementType->GetTypeInfo().Get());
+    return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateTypeInfo(m_ElementType->GetTypeInfo().Get()));
 }
 
 bool CUniSequenceDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
@@ -210,7 +214,7 @@ const char* CUniSetDataType::GetASNKeyword(void) const
 
 CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
 {
-    return CStlClassInfo_list<AnyType>::CreateSetTypeInfo(GetElementType()->GetTypeInfo().Get());
+    return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateSetTypeInfo(GetElementType()->GetTypeInfo().Get()));
 }
 
 AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const

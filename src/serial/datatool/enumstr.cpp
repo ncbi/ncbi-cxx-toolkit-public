@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/11/07 17:26:25  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
 * Revision 1.11  2000/08/25 15:59:21  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -198,6 +202,10 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         }
         cpp <<", "<<m_EnumName<<", "<<(m_IsInteger?"true":"false")<<")\n"
             "{\n";
+        if ( !GetModuleName().empty() ) {
+            cpp <<
+                "    SET_ENUM_MODULE(\""<<GetModuleName()<<"\");\n";
+        }
         iterate ( TValues, i, m_Values ) {
             string id = Identifier(i->first, false);
             cpp <<
