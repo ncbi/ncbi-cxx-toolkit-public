@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>traverseBS.hpp</title>
+  </head>
+
+<body BGCOLOR=white>
+
+<pre><font color = "red">// File name traverseBS.hpp<font color = "green">
+
+#ifndef NCBI_TRAVERSEBS__HPP
+#define NCBI_TRAVERSEBS__HPP
+
+#include < corelib/ncbistd.hpp >
+#include < corelib/ncbiapp.hpp >
+
+<font color = "blue">BEGIN_NCBI_SCOPE
+
+<font color = "red">// class CTestAsn <font color = "black">
+
+class CTestAsn : public CNcbiApplication {
+public:
+  virtual int Run ();
+};
+
+void Visit(const CBiostruc&); 
+void Visit(const CBiostruc::TId&);
+void Visit(const CBiostruc::TDescr&);
+void Visit(const CBiostruc::TChemical_graph&);
+
+<font color = "red">// Not implemented <font color = "black">
+
+void Visit(const CBiostruc::TFeatures&) {};
+void Visit(const CBiostruc::TModel&) {};
+void Visit(const CBiostruc_descr::THistory&) {};
+void Visit(const CBiostruc_descr::TAttribution&) {};
+
+<font color = "blue">END_NCBI_SCOPE
+
+<font color = "green">#endif /* NCBI_TRAVERSEBS__HPP */
+
+</pre>
+</body>
+</html>
+

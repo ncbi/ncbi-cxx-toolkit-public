@@ -1,0 +1,253 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>traverseBS.cpp</title>
+  </head>
+
+  <body BGCOLOR="#FFFFFF">
+  <pre><font color = "red">// File name: traverseBS.cpp
+// Description: Reads an ASN.1 Biostruc text file into memory
+//		and visits its components
+<font color = "green">
+#include < serial/serial.hpp >		
+#include < serial/objistrasnb.hpp >	
+#include < serial/serialasn.hpp >		
+#include < objects/general/Dbtag.hpp >
+#include < objects/general/Object_id.hpp >
+#include < objects/mmdb1/Biostruc.hpp >
+#include < objects/mmdb1/Biostruc_id.hpp >
+#include < objects/mmdb1/Biostruc_history.hpp >
+#include < objects/mmdb1/Mmdb_id.hpp >
+#include < objects/mmdb1/Biostruc_descr.hpp >
+#include < objects/mmdb1/Biomol_descr.hpp >
+#include < objects/mmdb1/Molecule_graph.hpp >
+#include < objects/mmdb1/Inter_residue_bond.hpp >
+#include < objects/mmdb1/Residue_graph.hpp >
+#include < objects/mmdb3/Biostruc_feature_set.hpp >
+#include < objects/mmdb2/Biostruc_model.hpp >
+#include < objects/pub/Pub.hpp >
+#include < corelib/ncbistre.hpp >
+#include <a href="traverse_hpp.html"> "traverseBS.hpp" </a>
+<font color = "blue">
+BEGIN_NCBI_SCOPE
+<font color = "black">
+int CTestAsn::Run() {
+
+<font color = "red">  // initialize diagnostic stream <font color = "black">
+
+  CNcbiOfstream diag("errs.traverseBS");
+  SetDiagStream(&diag);
+
+<font color = "red">  // initialize ASN input stream <font color = "black">
+
+  auto_ptr< CNcbiIstream > inFStream;
+  CNcbiIstream* inStream;
+  inFStream.reset(inStream = new CNcbiIfstream("1001.txt"));
+  if ( !*inStream )
+    ERR_POST(Fatal << "Cannot open input file");
+
+<font color = "red">  // associate an ASN input object with the input <font color = "black">
+
+  auto_ptr< CObjectIStream > inObject;
+  inObject.reset(new CObjectIStreamAsnBinary(*inStream));
+
+<font color = "red">  // initialize and traverse the Biostruc <font color = "black">
+
+  CBiostruc bs;
+  *inObject >> bs;
+  Visit (bs);     
+
+  inObject.reset(0);
+  return 0;
+}
+<font color = "red">
+/*****************************************************************
+*
+*  The overloaded free "visit" functions are used to explore the
+*  Biostruc and all its component members - most of which are also 
+*  class objects. Each class has a public interface that provides 
+*  access to its private data via "get" functions. 
+*
+******************************************************************/
+<font color = "black"><a name="visitBS">
+void Visit (const CBiostruc& bs) {
+  cout << "Biostruc:\n" << endl;
+  Visit (bs.GetId());
+  Visit (bs.GetDescr());
+  Visit (bs.GetChemical_graph());
+  Visit (bs.GetFeatures());
+  Visit (bs.GetModel());
+}
+<font color = "red">
+/************************************************************************
+*
+*  TId is a type defined in the CBiostruc class as a list of CBiostruc_id,
+*  where each id has a choice state and a value. Depending on the choice 
+*  state, a different get() function is used. 
+*
+*************************************************************************/
+<font color = "black">
+void Visit (const CBiostruc::TId& idList)
+{
+  cout << "\n Visiting Ids of Biostruc:\n";
+
+  for ( CBiostruc::TId::const_iterator i = idList.begin();
+  	i != idList.end(); ++i ) {
+
+<font color = "red">  // dereference the iterator to get to the id object <font color = "black">
+
+    const CBiostruc_id& thisId = **i;
+    CBiostruc_id::E_Choice choice = thisId.Which();
+    cout << "choice = " << choice;
+
+<font color = "red">  // select id's get member function depending on choice <font color = "black">
+
+    switch (choice) {
+
+    case CBiostruc_id::e_Mmdb_id:
+      cout << " mmdbId: " << thisId.GetMmdb_id().Get() << endl;
+      break;
+
+    case CBiostruc_id::e_Local_id:
+      cout << " Local Id: " << thisId.GetLocal_id().GetId() << endl;
+      break;
+
+    case CBiostruc_id::e_Other_database:
+      cout << " Other DB Id: " << thisId.GetOther_database().GetDb() << endl;
+      break;
+
+    default:
+      cout << "Choice not set or unrecognized" << endl;
+    }
+  }
+}
+<font color = "red">
+/*************************************************************************
+*
+*  TDescr is also a type defined in the Biostruc class as a list of 
+*  CBiostruc_descr, where each descriptor has a choice state and a value. 
+*
+**************************************************************************
+/<font color = "black"><a name="visitDscr">
+void Visit (const CBiostruc::TDescr& descList)
+{ 
+  cout << "\n Visiting Descriptors of Biostruc:\n";
+
+  for ( CBiostruc::TDescr::const_iterator i = descList.begin();
+  	i != descList.end(); ++i ) {
+
+<font color = "red">  // dereference the iterator to get the descriptor <font color = "black">
+
+    const CBiostruc_descr& thisDescr = **i;
+    CBiostruc_descr::E_Choice choice = thisDescr.Which();
+    cout << "choice = " << choice;
+
+<font color = "red">  // select the get function depending on choice <font color = "black">
+
+    switch (choice) {
+
+    case CBiostruc_descr::e_Name:
+      cout << " Name: " << thisDescr.GetName() << endl;
+      break;
+
+    case CBiostruc_descr::e_Pdb_comment:
+      cout << " Pdb comment: " << thisDescr.GetPdb_comment() << endl;
+      break;
+
+    case CBiostruc_descr::e_Other_comment:
+      cout << " Other comment: " << thisDescr.GetOther_comment() << endl;
+      break;
+
+    case CBiostruc_descr::e_History:
+      Visit (thisDescr.GetHistory());
+      break;
+
+    case CBiostruc_descr::e_Attribution:
+      Visit (thisDescr.GetAttribution());
+      break;
+
+    default:
+      cout << "Choice not set or unrecognized" << endl;
+    }
+  }
+}
+<!--font color = "red">  //  <font color = "black"-->
+<font color = "red">
+/****************************************************************************
+*
+*  Chemical graphs contain lists of descriptors, molecule_graphs, bonds, and
+*  residue graphs. Here we just visit some of the descriptors.
+*
+*****************************************************************************
+/<font color = "black">
+void Visit (const CBiostruc::TChemical_graph& G)
+{ 
+  cout << "\n\n Visiting Chemical Graph of Biostruc\n";
+
+  const CBiostruc_graph::TDescr& descList = G.GetDescr();
+  for ( CBiostruc_graph::TDescr::const_iterator i = descList.begin();
+  	i != descList.end(); ++i ) {
+
+<font color = "red">  // dereference the iterator to get the descriptor <font color = "black">
+
+    const CBiomol_descr& thisDescr = **i;
+    CBiomol_descr::E_Choice choice = thisDescr.Which();
+    cout << "choice = " << choice;
+
+<font color = "red">  // select the get function depending on choice <font color = "black">
+
+    switch (choice) {
+
+    case CBiomol_descr::e_Name:
+      cout << " Name: " << thisDescr.GetName() << endl;
+      break;
+
+    case CBiomol_descr::e_Pdb_class:
+      cout << " Pdb class: " << thisDescr.GetPdb_class() << endl;
+      break;
+
+    case CBiomol_descr::e_Pdb_source:
+      cout << " Pdb Source: " << thisDescr.GetPdb_source() << endl;
+      break;
+
+    case CBiomol_descr::e_Pdb_comment:
+      cout << " Pdb comment: " << thisDescr.GetPdb_comment() << endl;
+      break;
+
+    case CBiomol_descr::e_Other_comment:
+      cout << " Other comment: " << thisDescr.GetOther_comment() << endl;
+      break;
+
+    case CBiomol_descr::e_Assembly_type:
+      cout << " Assembly Type: " << thisDescr.GetAssembly_type() << endl;
+      break;
+
+    case CBiomol_descr::e_Molecule_type:
+      cout << " Molecule Type: " << thisDescr.GetMolecule_type() << endl;
+      break;
+
+    case CBiomol_descr::e_Organism: <font color = "red">    // skipped <font color = "black">
+    case CBiomol_descr::e_Attribution: 
+      break;
+
+    default:
+      cout << "Choice not set or unrecognized" << endl;
+    }
+  }
+}
+<font color = "blue">
+END_NCBI_SCOPE
+
+USING_NCBI_SCOPE;
+<font color = "black">
+int main(int argc, const char* argv[]) 
+{
+  CTestAsn theTestApp;
+  return theTestApp.AppMain(argc, argv);
+}
+</pre>
+</body>
+</html>
+
+
+
