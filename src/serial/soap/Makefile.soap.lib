@@ -6,6 +6,6 @@
 SRC = \
 	soap_body soap_code soap_detail soap_envelope soap_fault \
 	soap_header soap_message soap_readhook soap_reason \
-	soap_subcode soap_text soap_writehook soap_server
+	soap_subcode soap_text soap_writehook soap_server soap_client
 
 LIB    = xsoap
