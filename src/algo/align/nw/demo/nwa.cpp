@@ -38,19 +38,16 @@ BEGIN_NCBI_SCOPE
 
 void CAppNWA::Init()
 {
+    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
+
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "Global alignment algorithms demo application.\n"
-                              "Build 1.00.08 - 01/22/03");
+                              "Build 1.00.09 - 01/24/03");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
          CArgDescriptions::eString, "nucl");
-
-    argdescr->AddFlag("mm",
-                      "Limit memory use to linear (Myers and Miller method)");
-
-    argdescr->AddFlag("mt", "Use multiple threads");
 
     argdescr->AddFlag("mrna2dna", "mRna vs. Dna alignment");
 
@@ -93,6 +90,23 @@ void CAppNWA::Init()
         ("IntronMinSize", "IntronMinSize", "intron minimum size",
          CArgDescriptions::eInteger,
          NStr::IntToString(intron_min_size).c_str());
+
+    argdescr->AddFlag("mm",
+                      "Limit memory use to linear (Myers and Miller method)");
+    argdescr->AddFlag("mt", "Use multiple threads");
+
+    // supported output formats
+    argdescr->AddOptionalKey
+        ("o1", "o1", "Filename for type 1 output", CArgDescriptions::eString);
+
+    argdescr->AddOptionalKey
+        ("o2", "o2", "Filename for type 2 output", CArgDescriptions::eString);
+
+    argdescr->AddFlag("ofasta", 
+        "Generate gapped FastA output for the aligner sequences");
+
+    argdescr->AddOptionalKey
+        ("oasn", "oasn", "ASN.1 output filename", CArgDescriptions::eString);
     
     CArgAllow_Strings* paa_st = new CArgAllow_Strings;
     paa_st->Allow("nucl")->Allow("blosum62");
@@ -106,6 +120,20 @@ int CAppNWA::Run()
 { 
     x_RunOnPair();
     return 0;
+}
+
+
+auto_ptr<ofstream> open_ofstream (const string& filename) {
+
+    auto_ptr<ofstream> pofs0 ( new ofstream (filename.c_str()) );
+    if(*pofs0) {
+        return pofs0;
+    }
+    else {
+        NCBI_THROW(CAppNWAException,
+                   eCannotWriteFile,
+                   "Cannot write to file" + filename);
+    }
 }
 
 
@@ -128,7 +156,7 @@ void CAppNWA::x_RunOnPair() const
     if(bMrna2Dna && bMM) {
         NCBI_THROW(CAppNWAException,
                    eInconsistentParameters,
-                   "Linear memory approach is not yet supported by the "
+                   "Linear memory approach is not yet supported for the "
                    "spliced alignment algorithm");
     }
      
@@ -187,9 +215,66 @@ void CAppNWA::x_RunOnPair() const
         pmma -> EnableMultipleThreads();
     }
 
+    bool   output_type1  ( args["o1"] );
+    bool   output_type2  ( args["o2"] );
+    bool   output_asn    ( args["oasn"] );
+    bool   output_fasta  ( args["ofasta"] );
+    
+    auto_ptr<ofstream> pofs1 (0);
+    auto_ptr<ofstream> pofs2 (0);
+    auto_ptr<ofstream> pofsAsn (0);
+    auto_ptr<ofstream> pofsFastA_seq1 (0);
+    auto_ptr<ofstream> pofsFastA_seq2 (0);
+
+    if(output_type1) {
+        pofs1 = open_ofstream (args["o1"].AsString());
+    }
+
+    if(output_type2) {
+        pofs2 = open_ofstream (args["o2"].AsString());
+    }
+
+    if(output_asn) {
+        pofsAsn = open_ofstream (args["asn"].AsString());
+    }
+
+    if(output_fasta) {
+        pofsFastA_seq1 = open_ofstream (args["seq1"].AsString() + ".gfa");
+        pofsFastA_seq2 = open_ofstream (args["seq2"].AsString() + ".gfa");
+    }
+
     int score = aligner->Run();
     cerr << "Score = " << score << endl;
-    cout << aligner->Format();
+
+
+    const size_t line_width = 50;
+    if(pofs1.get()) {
+        *pofs1 << aligner->Format(line_width, CNWAligner::eFormatType1);
+    }
+
+    if(pofs2.get()) {
+        *pofs2 << aligner->Format(line_width, CNWAligner::eFormatType2);
+    }
+
+    if(pofsAsn.get()) {
+        *pofsAsn << aligner->Format(line_width, CNWAligner::eFormatAsn);
+    }
+
+    if(pofsFastA_seq1.get()) {
+        *pofsFastA_seq1 << '>' << seqname1 << endl;
+        *pofsFastA_seq1 << aligner->Format(line_width,
+                                           CNWAligner::eFormatFastA, 1);
+    }
+
+    if(pofsFastA_seq2.get()) {
+        *pofsFastA_seq2 << '>' << seqname2 << endl;
+        *pofsFastA_seq2 << aligner->Format(line_width, 
+                                           CNWAligner::eFormatFastA, 2);
+    }
+    
+    if(!output_type1 && !output_type2 && !output_asn && !output_fasta) {
+        cout << aligner->Format(line_width, CNWAligner::eFormatType2);
+    }
 }
 
 
@@ -238,6 +323,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/01/24 16:49:59  kapustin
+ * Support different output formats
+ *
  * Revision 1.6  2003/01/21 16:34:22  kapustin
  * mm
  *
