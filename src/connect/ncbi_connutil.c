@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2002/03/19 22:13:09  lavr
+ * Minor tweak in recognizing "infinite" (and part) as a special timeout
+ *
  * Revision 6.30  2002/03/11 21:53:18  lavr
  * Recognize ALL in CONN_DEBUG_PRINTOUT; bugfix for '//' in proxy adjustement
  *
@@ -246,7 +249,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* request method */
     REG_VALUE(REG_CONN_REQ_METHOD, str, DEF_CONN_REQ_METHOD);
-    if (strcasecmp(str, "ANY") == 0)
+    if (!*str  ||  strcasecmp(str, "ANY") == 0)
         info->req_method = eReqMethod_Any;
     else if (strcasecmp(str, "POST") == 0)
         info->req_method = eReqMethod_Post;
@@ -255,7 +258,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
-    if (*str  &&  strncasecmp(str, "infinite", strlen(str)) == 0) {
+    if (strlen(str) > 2  &&  strncasecmp(str, "infinite", strlen(str)) == 0) {
         info->timeout = 0;
     } else {
         info->timeout = &info->tmo;
@@ -266,7 +269,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->timeout->usec = (unsigned int)
             ((dbl - info->timeout->sec) * 1000000);
     }
-    
+
     /* max. # of attempts to establish a connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
     val = atoi(str);
