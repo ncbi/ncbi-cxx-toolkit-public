@@ -57,6 +57,7 @@ Blast4-request-body ::= CHOICE {
     get-databases           NULL,
     get-matrices            NULL,
     get-parameters          NULL,
+    get-paramsets           NULL,
     get-programs            NULL,
     get-search-results      Blast4-get-search-results-request,
     get-sequences           Blast4-get-sequences-request,
@@ -104,6 +105,7 @@ Blast4-reply-body ::= CHOICE {
     get-databases           Blast4-get-databases-reply,
     get-matrices            Blast4-get-matrices-reply,
     get-parameters          Blast4-get-parameters-reply,
+    get-paramsets           Blast4-get-paramsets-reply,
     get-programs            Blast4-get-programs-reply,
     get-search-results      Blast4-get-search-results-reply,
     get-sequences           Blast4-get-sequences-reply,
@@ -117,6 +119,8 @@ Blast4-get-databases-reply ::= SEQUENCE OF Blast4-database-info
 Blast4-get-matrices-reply ::= SEQUENCE OF Blast4-matrix-id
 
 Blast4-get-parameters-reply ::= SEQUENCE OF Blast4-parameter-info
+
+Blast4-get-paramsets-reply ::= SEQUENCE OF Blast4-paramset-info
 
 Blast4-get-programs-reply ::= SEQUENCE OF Blast4-program-info
 
@@ -229,6 +233,11 @@ Blast4-parameter ::= SEQUENCE {
 Blast4-parameter-info ::= SEQUENCE {
     name                    VisibleString,
     type                    VisibleString
+}
+
+Blast4-paramset-info ::= SEQUENCE {
+    program                 VisibleString,
+    name                    VisibleString
 }
 
 Blast4-program-info ::= SEQUENCE {
