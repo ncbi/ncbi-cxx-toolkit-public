@@ -44,7 +44,22 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Reader-based stream
+/// Reader-based stream; @sa IReader
+///
+/// @param buf_size
+///     specifies the number bytes for internal I/O buffer,
+///     with half used for reading and the other half for writing
+///     by underlying stream buffer CRWStreambuf;
+///     0 causes to create the buffer of some default size.
+///
+/// @param buf
+///     may specify the buffer location (if 0, an internal storage gets
+///     allocated and later freed upon stream destruction).
+///
+/// @param own
+///     controls whether IReader is destroyed upon stream destruction.
+///
+/// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 
 class CRStream : public CNcbiIstream
 {
@@ -70,7 +85,8 @@ private:
 };
 
 
-/// Writer-based stream
+/// Writer-based stream; @sa IWriter
+/// @sa IRStream
 
 class CWStream : public CNcbiOstream
 {
@@ -96,7 +112,8 @@ private:
 };
 
 
-/// Reader-writer based stream
+/// Reader-writer based stream; @sa IReaderWriter
+/// @sa IRStream
 
 class CRWStream : public CNcbiIostream
 {
@@ -128,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/17 19:06:10  lavr
+ * Document parameters
+ *
  * Revision 1.7  2005/03/10 20:50:45  vasilche
  * Do not forget to pass ownership to CRWStreambuf.
  *
