@@ -2,8 +2,8 @@
 _export =
 
 [PC-InfoData]
-value.blist._type = vector
-value.blist.E._type = char
+value.bvec._type = vector
+value.bvec.E._type = char
 value.ivec._type = vector
 value.fvec._type = vector
 
