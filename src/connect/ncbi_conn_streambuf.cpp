@@ -41,10 +41,11 @@ BEGIN_NCBI_SCOPE
 
 CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                                  streamsize buf_size, bool tie)
-    : m_Buf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie), m_Dying(false)
+    : m_Buf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie)
 {
     if ( !connector ) {
-        x_CheckThrow(eIO_Unknown, "CConn_Streambuf(): NULL connector");
+        ERR_POST("CConn_Streambuf::CConn_Streambuf(): NULL connector");
+        return;
     }
 
     auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[2 * m_BufSize]);
@@ -55,8 +56,10 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
     m_ReadBuf = bp.get() + m_BufSize;
     setg(0, 0, 0); // we wish to have underflow() called at the first read
 
-    x_CheckThrow(CONN_Create(connector, &m_Conn),
-                 "CConn_Streambuf(): CONN_Create() failed");
+    if (x_LogIfError(CONN_Create(connector, &m_Conn),
+                     "CConn_Streambuf(): CONN_Create() failed") !=eIO_Success){
+        return;
+    }
 
     CONN_SetTimeout(m_Conn, eIO_Open,  timeout);
     CONN_SetTimeout(m_Conn, eIO_Read,  timeout);
@@ -69,7 +72,6 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
 
 CConn_Streambuf::~CConn_Streambuf(void)
 {
-    m_Dying = true;
     sync();
     if (CONN_Close(m_Conn) != eIO_Success) {
         _TRACE("CConn_Streambuf::~CConn_Streambuf(): CONN_Close() failed");
@@ -90,10 +92,9 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
             return CT_NOT_EOF(CT_EOF);
         }
 
-        x_CheckThrow
-            (CONN_Write(m_Conn, m_WriteBuf,
-                        n_write*sizeof(CT_CHAR_TYPE), &n_written),
-             "overflow(): CONN_Write() failed");
+        x_LogIfError(CONN_Write(m_Conn, m_WriteBuf,
+                                n_write*sizeof(CT_CHAR_TYPE), &n_written),
+                     "overflow(): CONN_Write() failed");
         if ( !n_written )
             return CT_EOF;
 
@@ -112,9 +113,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
         // send char
-        x_CheckThrow
-            (CONN_Write(m_Conn, &b, sizeof(b), &n_written),
-             "overflow(): CONN_Write(1) failed");
+        x_LogIfError(CONN_Write(m_Conn, &b, sizeof(b), &n_written),
+                     "overflow(): CONN_Write(1) failed");
         return n_written == sizeof(b) ? c : CT_EOF;
     } else if (CONN_Flush(m_Conn) != eIO_Success)
         return CT_EOF;
@@ -139,14 +139,12 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 
     // read from the connection
     size_t n_read;
-    EIO_Status status;
-    status = CONN_Read(m_Conn, m_ReadBuf, m_BufSize*sizeof(CT_CHAR_TYPE),
-                       &n_read, eIO_ReadPlain);
-    if (status == eIO_Closed) {
-        assert(n_read == 0);
+    if (x_LogIfError(CONN_Read(m_Conn, m_ReadBuf,
+                               m_BufSize*sizeof(CT_CHAR_TYPE),
+                               &n_read, eIO_ReadPlain),
+                     "underflow(): CONN_Read() failed") != eIO_Success) {
         return CT_EOF;
     }
-    x_CheckThrow(status, "underflow(): CONN_Read() failed");
     _ASSERT(n_read);
 
     // update input buffer with the data we have just read
@@ -250,16 +248,14 @@ streambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 }
 
 
-void CConn_Streambuf::x_CheckThrow(EIO_Status status, const string& msg)
+EIO_Status CConn_Streambuf::x_LogIfError(EIO_Status status, const string& msg)
 {
     if (status != eIO_Success) {
         string message("CConn_Streambuf::" + msg +
                        " (" + IO_StatusStr(status) + ")");
-        if (m_Dying)
-            ERR_POST(message);
-        else
-            NCBI_THROW(CConnException, eConn, message);
+        ERR_POST(message);
     }
+    return status;
 }
 
 
@@ -269,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2003/05/12 18:32:27  lavr
+ * Modified not to throw exceptions from stream buffer; few more improvements
+ *
  * Revision 6.27  2003/04/25 15:20:37  lavr
  * Avoid GCC signed/unsigned warning by explicit cast
  *

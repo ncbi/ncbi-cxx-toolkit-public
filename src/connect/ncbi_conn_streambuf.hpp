@@ -52,7 +52,8 @@ class CConn_Streambuf : public CConn_StreambufBase
 public:
     CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                     streamsize buf_size, bool tie);
-    CONN GetCONN() const { return m_Conn; };
+    CONN    GetCONN()    const { return m_Conn;  };
+    bool    IsOkay(void) const { return !!m_Buf; };
     virtual ~CConn_Streambuf();
 
 protected:
@@ -75,9 +76,8 @@ private:
     streamsize          m_BufSize;   // of m_WriteBuf, m_ReadBuf
 
     bool                m_Tie;       // always flush before reading
-    bool                m_Dying;     // set true when destructor called
 
-    void x_CheckThrow(EIO_Status status, const string& msg);
+    EIO_Status          x_LogIfError(EIO_Status status, const string& msg);
 };
 
 
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/05/12 18:32:27  lavr
+ * Modified not to throw exceptions from stream buffer; few more improvements
+ *
  * Revision 6.17  2003/04/22 18:29:38  lavr
  * Conditionally define CConn_Streambuf's base class (to help Doc++ SB)
  *

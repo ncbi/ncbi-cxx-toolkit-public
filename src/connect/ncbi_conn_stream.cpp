@@ -51,6 +51,8 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
         csb(new CConn_Streambuf(connector, timeout, buf_size, do_tie));
     init(csb.get());
     m_CSb = csb.release();
+    if ( !m_CSb->IsOkay() )
+        setstate(badbit | eofbit);
 }
 
 
@@ -249,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/05/12 18:32:27  lavr
+ * Modified not to throw exceptions from stream buffer; few more improvements
+ *
  * Revision 6.19  2003/04/29 19:58:24  lavr
  * Constructor taking a URL added in CConn_HttpStream
  *
