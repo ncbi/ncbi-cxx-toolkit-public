@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/12/27 19:39:12  vakatov
+* [_DEBUG]  Forcibly flush ("<< Endm") the diag. stream
+*
 * Revision 1.17  1999/09/27 16:23:19  vasilche
 * Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
 * so that they will be much easier for compilers to eat.
@@ -96,16 +99,19 @@ BEGIN_NCBI_SCOPE
 
 #  define _TRACE(message) \
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
-        NCBI_NS_NCBI::eDiag_Trace, NCBI_NS_NCBI::eDPF_Trace) << message )
+      NCBI_NS_NCBI::eDiag_Trace, NCBI_NS_NCBI::eDPF_Trace) \
+      << message << Endm )
 
 #  define _TROUBLE \
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
-        NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) << "Trouble!" )
+      NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) \
+      << "Trouble!" << Endm )
 
 #  define _ASSERT(expr) \
-    if ( expr ) ; else ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
-        NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) \
-            << "Assertion failed: (" #expr ")")
+    if ( expr ) ; else \
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
+      NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) \
+      << "Assertion failed: (" #expr ")" << Endm )
 
 #  define _VERIFY(expr) _ASSERT(expr)
 
