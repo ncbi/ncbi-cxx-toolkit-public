@@ -151,7 +151,7 @@ class NCBI_XUTIL_EXPORT CZipCompressionFile : public CZipCompression,
                                               public CCompressionFile
 {
 public:
-    // 'ctors (for a special parameters description see CBZip2Compression)
+    // 'ctors (for a special parameters description see CZipCompression)
     // Throw exception CCompressionException::eCompressionFile on error.
     CZipCompressionFile(
         const string& file_name,
@@ -256,75 +256,39 @@ protected:
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// Stream classes (for detail see "stream.hpp")
+// Compression/decompression stream processors (for details see "stream.hpp")
 //
 
-class NCBI_XUTIL_EXPORT CZipCompressIStream : public CCompressIStream
+class NCBI_XUTIL_EXPORT CZipStreamCompressor
+    : public CCompressionStreamProcessor
 {
 public:
-    CZipCompressIStream(
-        istream&             in_stream,
-        CCompression::ELevel level        = CCompression::eLevel_Default,
-        streamsize           in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize           out_buf_size = kCompressionDefaultOutBufSize,
-        int                  window_bits  = MAX_WBITS,
-        int                  mem_level    = DEF_MEM_LEVEL,
-        int                  strategy     = Z_DEFAULT_STRATEGY)
+    CZipStreamCompressor(
+        CCompression::ELevel level       = CCompression::eLevel_Default,
+        streamsize           in_bufsize  = kCompressionDefaultBufSize,
+        streamsize           out_bufsize = kCompressionDefaultBufSize,
+        int                  window_bits = MAX_WBITS,
+        int                  mem_level   = DEF_MEM_LEVEL,
+        int                  strategy    = Z_DEFAULT_STRATEGY)
 
-        : CCompressIStream(
+        : CCompressionStreamProcessor(
               new CZipCompressor(level, window_bits, mem_level, strategy),
-              &in_stream, in_buf_size, out_buf_size, eDelete)
-   {}
-};
-
-
-class NCBI_XUTIL_EXPORT CZipCompressOStream : public CCompressOStream
-{
-public:
-    CZipCompressOStream(
-        ostream&             out_stream,
-        CCompression::ELevel level        = CCompression::eLevel_Default,
-        streamsize           in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize           out_buf_size = kCompressionDefaultOutBufSize,
-        int                  window_bits  = MAX_WBITS,
-        int                  mem_level    = DEF_MEM_LEVEL,
-        int                  strategy     = Z_DEFAULT_STRATEGY)
-
-        : CCompressOStream(
-              new CZipCompressor(level, window_bits, mem_level, strategy),
-              &out_stream, in_buf_size, out_buf_size, eDelete)
+              eDelete, in_bufsize, out_bufsize)
     {}
 };
 
 
-class NCBI_XUTIL_EXPORT CZipDecompressIStream : public CDecompressIStream
+class NCBI_XUTIL_EXPORT CZipStreamDecompressor
+    : public CCompressionStreamProcessor
 {
 public:
-    CZipDecompressIStream(
-        istream&    in_stream,
-        streamsize  in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize  out_buf_size = kCompressionDefaultOutBufSize,
+    CZipStreamDecompressor(
+        streamsize  in_bufsize   = kCompressionDefaultBufSize,
+        streamsize  out_bufsize  = kCompressionDefaultBufSize,
         int         window_bits  = MAX_WBITS)
 
-        : CDecompressIStream(
-              new CZipDecompressor(window_bits),
-              &in_stream, in_buf_size, out_buf_size, eDelete)
-    {}
-};
-
-
-class NCBI_XUTIL_EXPORT CZipDecompressOStream : public CDecompressOStream
-{
-public:
-    CZipDecompressOStream(
-        ostream&    out_stream,
-        streamsize  in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize  out_buf_size = kCompressionDefaultOutBufSize,
-        int         window_bits  = MAX_WBITS)
-
-        : CDecompressOStream(
-              new CZipDecompressor(window_bits),
-              &out_stream, in_buf_size, out_buf_size, eDelete)
+        : CCompressionStreamProcessor(new CZipDecompressor(window_bits),
+                                      eDelete, in_bufsize, out_bufsize)
     {}
 };
 
@@ -338,6 +302,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/17 15:48:59  ivanov
+ * Removed all standalone compression/decompression I/O classes.
+ * Added CZipStream[De]compressor classes. Now all zlib-based I/O stream
+ * classes can be constructed using unified CCompression[I/O]Stream
+ * (see stream.hpp) and CZipStream[De]compressor classes.
+ *
  * Revision 1.2  2003/06/03 20:09:54  ivanov
  * The Compression API redesign. Added some new classes, rewritten old.
  *
