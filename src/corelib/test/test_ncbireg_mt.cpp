@@ -312,6 +312,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2003/05/14 20:57:30  ivanov
+ * Made WIN to UNIX eol conversion
+ *
  * Revision 6.6  2003/05/14 20:49:04  ivanov
  * Added MT lock for m_Registry protection
  *
