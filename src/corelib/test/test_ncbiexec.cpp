@@ -75,8 +75,6 @@ int CTest::Run(void)
 
     int pid = 0;
 
-    //char *app_p  = "echo";
-    //char *app_pp = "This message is from child process";
     const char* app_p  = "ls";
     const char* app_pp = "-l";
 
@@ -171,14 +169,12 @@ int CTest::Run(void)
 
 int main(int argc, const char* argv[])
 {
-     // Test exec run
+     // Exec from test?
     if ( argc > 1) {
-        cout << endl << "Exec: " << argv[1] << endl;
         // Check environment
-        if (strstr(argv[1],"E_e")) {
-#if defined(NCBI_OS_UNIX)
-           CExec::System("env");
-#endif
+        assert(argv[1] && *argv[1]);
+        cout << endl << "Exec: " << argv[1] << endl;
+        if ( strstr(argv[1],"E_e")) {
            char* ptr = getenv("TEST_NCBI_EXEC");
            if (!ptr) {
                cout << "Environment variable TEST_NCBI_EXEC not found " << endl;
@@ -195,6 +191,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2002/07/17 15:14:21  ivanov
+ * Minor changes in the test exec branch
+ *
  * Revision 6.4  2002/07/15 15:20:37  ivanov
  * Added extended error dignostic
  *
