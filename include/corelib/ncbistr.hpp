@@ -43,6 +43,11 @@
 #include <list>
 #include <vector>
 
+/** @addtogroup String
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 
 
@@ -411,7 +416,7 @@ bool AStrEquiv(const Arg1& x, const Arg2& y, Pred pr)
 }
 
 
-
+/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -730,6 +735,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2003/03/31 13:22:02  siyan
+ * Added doxygen support
+ *
  * Revision 1.38  2003/02/26 16:42:27  siyan
  * Added base parameter to NStr::StringToUInt8 to support different radixes
  * such as base 10 (default), 16, 8, 2.

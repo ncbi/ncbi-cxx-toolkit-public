@@ -50,6 +50,11 @@
 #endif
 
 
+/** @addtogroup AppFramework
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -253,6 +258,8 @@ private:
 };
 
 
+/* @} */
+
 
 // Inline (getters)
 
@@ -287,6 +294,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/03/31 13:26:00  siyan
+ * Added doxygen support
+ *
  * Revision 1.29  2003/03/19 19:36:09  gouriano
  * added optional adjustment of stdio streams
  *
