@@ -1,6 +1,7 @@
 #! /bin/sh
 # $Id$
-# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+# Authors:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov),
+#           Aaron Ucko    (ucko@ncbi.nlm.nih.gov)
 
 def_builddir="$NCBI/c++/Debug/build"
 
@@ -16,9 +17,14 @@ USAGE:  $script <name> <type> [builddir]
 SYNOPSIS:
    Create a model makefile "Makefile.<name>_<type>" to build
    a library or an application that uses pre-built NCBI C++ toolkit.
+   Also include sample code when creating applications.
 ARGUMENTS:
    <name>      -- name of the project (will be subst. to the makefile name)
-   <type>      -- one of {lib, app} (whether to build library or application)
+   <type>      -- one of the following:
+                  lib         to build a library
+                  app[/basic] to build a simple application
+                  app/cgi     to build a CGI or FastCGI application
+                  app/objects to build an application using ASN.1 objects
    [builddir]  -- path to the pre-built NCBI C++ toolkit
                   (default = $def_builddir)
 
@@ -90,6 +96,7 @@ CreateMakefile_App()
 {
   makefile_name="$1"
   proj_name="$2"
+  proj_subtype="$3"
 
   cat > "$makefile_name" <<EOF
 #
@@ -119,11 +126,21 @@ SRC = $proj_name
 # OBJ =
 
 # PRE_LIBS = \$(NCBI_C_LIBPATH) .....
-LIB        = xncbi
-# LIB      = xser xhtml xcgi xconnect xutil xncbi
-# LIBS     = \$(NCBI_C_LIBPATH) -lncbi \$(NETWORK_LIBS) \$(ORIG_LIBS)
 
-# CPPFLAGS = \$(ORIG_CPPFLAGS) \$(NCBI_C_INCLUDE)
+EOF
+
+  copying=false
+  while read line; do
+    case "$line" in
+      "### BEGIN COPIED SETTINGS") copying=true ;;
+      "### END COPIED SETTINGS"  ) break        ;;
+      *)                           test $copying = true && echo "$line" ;;
+    esac
+  done < $src/app/sample/${proj_subtype}/Makefile.${proj_subtype}_sample.app \
+      >> "$makefile_name"
+
+  cat >> "$makefile_name" <<EOF
+
 # CFLAGS   = \$(ORIG_CFLAGS)
 # CXXFLAGS = \$(ORIG_CXXFLAGS)
 # LDFLAGS  = \$(ORIG_LDFLAGS)
@@ -140,6 +157,13 @@ EOF
 }
 
 
+Capitalize()
+{
+  FIRST=`echo $1 | sed -e 's/^\(.\).*/\1/' | tr '[a-z]' '[A-Z]'`
+  rest=`echo $1 | sed -e 's/^.//'`
+  echo "${FIRST}${rest}" | sed -e 's/[^a-zA-Z0-9]/_/g'
+}
+
 
 #################################
 
@@ -155,15 +179,34 @@ if test ! -d "$builddir"  ||  test ! -f "$builddir/../inc/ncbiconf.h" ; then
 fi
 builddir=`(cd "${builddir}" ; pwd)`
 
+src=`sed -ne 's:^top_srcdir *= *\([^ ]*\):\1/src:p' < $builddir/Makefile.mk \
+     | head -1`
+test -n $src || src=${NCBI}/c++/src
+
+case "${proj_type}" in
+  app/*)
+    proj_subtype=`echo ${proj_type} | sed -e 's@^app/@@'`
+    proj_type=app
+    if test ! -d $src/app/sample/$proj_subtype; then
+      Usage "Unsupported application type ${proj_subtype}"
+    fi
+    ;;
+  app)
+    proj_subtype=basic
+    ;;
+esac
+
 if test "$proj_name" != `basename $proj_name` ; then
   Usage "Invalid project name:  \"$proj_name\""
 fi
 
 makefile_name="Makefile.${proj_name}_${proj_type}"
 if test ! -d $proj_name ; then
-  if test ! -d ../$proj_name ; then
+  touch tmp$$
+  if test ! -f ../$proj_name/tmp$$ ; then
      mkdir $proj_name
   fi
+  rm -f tmp$$
 fi
 test -d $proj_name &&  makefile_name="$proj_name/$makefile_name"
 makefile_name=`pwd`/$makefile_name
@@ -171,15 +214,56 @@ makefile_name=`pwd`/$makefile_name
 if test -f $makefile_name ; then
   echo "\"$makefile_name\" already exists.  Do you want to override it?  [y/n]"
   read answer
-  test "$answer" = "y"  ||  test "$answer" = "Y"  ||  exit 2
+  case "$answer" in
+    [Yy]*) ;;
+    *    ) exit 2 ;;
+  esac
 fi
 
 
 case "$proj_type" in
   lib )  CreateMakefile_Lib $makefile_name $proj_name ;;
-  app )  CreateMakefile_App $makefile_name $proj_name ;;
+  app )  CreateMakefile_App $makefile_name $proj_name $proj_subtype ;;
   * )  Usage "Invalid project type:  \"$proj_type\"" ;;
 esac
 
 echo "Created a model makefile \"$makefile_name\"."
 
+if test "$proj_type" != "app"; then
+  exit 0
+fi
+
+
+old_class_name=CSample`Capitalize ${proj_subtype}`Application
+new_class_name=C`Capitalize ${proj_name}`Application
+
+old_proj_name=${proj_subtype}_sample
+
+old_dir=${src}/app/sample/${proj_subtype}
+if test -d "${proj_name}"; then
+  new_dir=`pwd`/$proj_name
+else
+  new_dir=`pwd`
+fi
+
+for input in $old_dir/*; do
+  base=`basename $input | sed -e "s/${old_proj_name}/${proj_name}/g"`
+  case $base in
+    *~ | Makefile.*) continue ;; # skip
+  esac
+
+  output=$new_dir/$base
+  if test -f $output ; then
+    echo "\"$output\" already exists.  Do you want to override it?  [y/n]"
+    read answer
+    case "$answer" in
+      [Yy]*) ;;
+      *    ) exit 3 ;;
+    esac
+  fi
+
+  sed -e "s/${old_proj_name}/${proj_name}/g" \
+      -e "s/${old_class_name}/${new_class_name}/g" < $input > $output
+  
+  echo "Created a model source file \"$output\"."
+done
