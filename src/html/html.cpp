@@ -61,6 +61,22 @@ const char* kTagStartEnd = "</@";  ///< Tag start in the end of
     }
 
 
+static string s_GenerateNodeInternalName(const string& basename,
+                                         const string& v1,
+                                         const string& v2 = kEmptyStr)
+{
+    string name(basename);
+    if ( !v1.empty() ) {
+        name += "(\"" + v1.substr(0,10) + "\"";
+        if ( !v2.empty() ) {
+            name += "|\"" + v2.substr(0,10) + "\"";
+        }
+        name += ")";
+    }
+    return name;
+}
+
+
 // CHTMLNode
 
 CHTMLNode::~CHTMLNode(void)
@@ -301,14 +317,14 @@ CNcbiOstream& CHTMLTagNode::PrintChildren(CNcbiOstream& out, TMode mode)
 // Dual text node.
 
 CHTMLDualNode::CHTMLDualNode(const char* html, const char* plain)
-    : CParent("dualnode")
+    : CParent(s_GenerateNodeInternalName("dualnode", html, plain))
 {
     AppendChild(new CHTMLText(html));
     m_Plain = plain;
 }
 
 CHTMLDualNode::CHTMLDualNode(CNCBINode* child, const char* plain)
-    : CParent("dualnode")
+    : CParent(s_GenerateNodeInternalName("dualnode", "[node]", plain))
 {
     AppendChild(child);
     m_Plain = plain;
@@ -334,13 +350,15 @@ CNcbiOstream& CHTMLDualNode::PrintChildren(CNcbiOstream& out, TMode mode)
 // plain text node
 
 CHTMLPlainText::CHTMLPlainText(const char* text, bool noEncode)
-    : CNCBINode("plaintext"), m_NoEncode(noEncode), m_Text(text)
+    : CNCBINode(s_GenerateNodeInternalName("plaintext", text)),
+      m_NoEncode(noEncode), m_Text(text)
 {
     return;
 }
 
 CHTMLPlainText::CHTMLPlainText(const string& text, bool noEncode)
-    : CNCBINode("plaintext"), m_NoEncode(noEncode), m_Text(text)
+    : CNCBINode(s_GenerateNodeInternalName("plaintext", text)),
+      m_NoEncode(noEncode), m_Text(text)
 {
     return;
 }
@@ -367,13 +385,15 @@ CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 // text node
 
 CHTMLText::CHTMLText(const string& text)
-    : CParent("htmltext"), m_Text(text)
+    : CParent(s_GenerateNodeInternalName("htmltext", text)),
+      m_Text(text)
 {
     return;
 }
 
 CHTMLText::CHTMLText(const char* text)
-    : CParent("htmltext"), m_Text(text)
+    : CParent(s_GenerateNodeInternalName("htmltext", text)),
+      m_Text(text)
 {
     return;
 }
@@ -638,7 +658,7 @@ CHTMLSpecialChar::CHTMLSpecialChar(const char* html, const char* plain,
                                    int count)
     : CParent("", plain)
 {
-    m_Name  = html;
+    m_Name  = s_GenerateNodeInternalName("specialchar", html);
     m_Html  = html;
     m_Count = count;
 }
@@ -2294,6 +2314,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.100  2004/02/04 17:20:10  ivanov
+ * Added s_GenerateNodeInternalName() function.
+ * Use it insteed dummy names in the meta-tags node classes.
+ *
  * Revision 1.99  2004/02/04 12:43:47  ivanov
  * Fixed CHTMLText::SetText() -- do not use m_Name for store HTML code.
  * Bind internal name for objects of the CHTMLSpecialChar class.
