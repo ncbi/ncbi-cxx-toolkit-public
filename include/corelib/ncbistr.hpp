@@ -963,6 +963,22 @@ public:
     static size_t strftime (char* s, size_t maxsize, const char* format,
                             const struct tm* timeptr);
 
+    /// Match "str" against the "mask".
+    ///
+    /// This function do not use regular expressions.
+    /// @param str
+    ///   String to match.
+    /// @param mask
+    ///   Mask used to match string "str". And can contains next
+    ///   wildcard characters:
+    ///     ? - matches to any one symbol in the string.
+    ///     * - matches to any number of symbols in the string. 
+    /// @return
+    ///   Return TRUE if "str" matches "mask", and FALSE otherwise.
+    /// @sa
+    ///    CRegexp, CRegexpUtil
+    static bool MatchesMask(const char *str, const char *mask);
+
     // The following 4 methods change the passed string, then return it
 
     /// Convert string to lower case -- string& version.
@@ -2191,6 +2207,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.51  2004/03/05 12:28:00  ivanov
+ * Moved CDirEntry::MatchesMask() to NStr class.
+ *
  * Revision 1.50  2004/03/04 20:45:21  shomrat
  * Added equality checks
  *

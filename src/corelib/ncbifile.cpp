@@ -665,8 +665,8 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 #  ifdef NCBI_OS_MSWIN
                 // Remove leading "\\?\". Replace leading "\\?\UNC\" with "\\"
                 static const char* const kUNC[] = { "", "", "?", "UNC" };
-                list<string>::iterator it      = pretail.begin();
-                unsigned int           matched = 0;
+                list<string>::iterator it = pretail.begin();
+                unsigned int matched = 0;
                 while (matched < 4  &&  it != pretail.end()
                        &&  !NStr::CompareNocase(*it, kUNC[matched])) {
                     ++it;
@@ -755,50 +755,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 //
 bool CDirEntry::MatchesMask(const char* name, const char* mask) 
 {
-    char c;
-    bool infinite = true;
-
-    while (infinite) {
-        // Analyze symbol in mask
-        switch ( c = *mask++ ) {
-        
-        case '\0':
-            return *name == '\0';
-
-        case '?':
-            if ( *name == '\0' ) {
-                return false;
-            }
-            ++name;
-            break;
-		
-        case '*':
-            c = *mask;
-            // Collapse multiple stars
-            while ( c == '*' ) {
-                c = *++mask;
-            }
-            if (c == '\0') {
-                return true;
-            }
-            // General case, use recursion
-            while ( *name ) {
-                if ( MatchesMask(name, mask) ) {
-                    return true;
-                }
-                ++name;
-            }
-            return false;
-		
-        default:
-            // Compare nonpattern character in mask and name
-            if ( c != *name++ ) {
-                return false;
-            }
-            break;
-        }
-    }
-    return false;
+    return NStr::MatchesMask(name, mask);
 }
 
 
@@ -1935,6 +1892,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2004/03/05 12:26:43  ivanov
+ * Moved CDirEntry::MatchesMask() to NStr class.
+ *
  * Revision 1.70  2004/02/12 19:50:34  ivanov
  * Fixed CDirEntry::DeleteTrailingPathSeparator and CDir::CreatePath()
  * to avoid creating empty directories with disk name in the case if

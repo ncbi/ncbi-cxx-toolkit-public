@@ -183,6 +183,57 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 
+// NOTE: This code is used also in the CDirEntry::MatchesMask.
+
+bool NStr::MatchesMask(const char* str, const char* mask) 
+{
+    char c;
+    bool infinite = true;
+
+    while (infinite) {
+        // Analyze symbol in mask
+        switch ( c = *mask++ ) {
+        
+        case '\0':
+            return *str == '\0';
+
+        case '?':
+            if ( *str == '\0' ) {
+                return false;
+            }
+            ++str;
+            break;
+		
+        case '*':
+            c = *mask;
+            // Collapse multiple stars
+            while ( c == '*' ) {
+                c = *++mask;
+            }
+            if (c == '\0') {
+                return true;
+            }
+            // General case, use recursion
+            while ( *str ) {
+                if ( MatchesMask(str, mask) ) {
+                    return true;
+                }
+                ++str;
+            }
+            return false;
+		
+        default:
+            // Compare nonpattern character in mask and name
+            if ( c != *str++ ) {
+                return false;
+            }
+            break;
+        }
+    }
+    return false;
+}
+
+
 char* NStr::ToLower(char* str)
 {
     char* s;
@@ -1429,6 +1480,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2004/03/05 12:26:43  ivanov
+ * Moved CDirEntry::MatchesMask() to NStr class.
+ *
  * Revision 1.105  2004/03/04 13:38:57  kuznets
  * + set of ToString conversion functions taking outout string as a parameter,
  * not a return value (should give a performance advantage in some cases)
