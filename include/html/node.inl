@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/03/07 15:40:37  vasilche
+* Added AppendChild(CNodeRef&)
+*
 * Revision 1.7  2000/03/07 15:26:06  vasilche
 * Removed second definition of CRef.
 *
@@ -167,6 +170,12 @@ CNCBINode* CNCBINode::AppendChild(CNCBINode* child)
     if ( child )
         DoAppendChild(child);
     return this;
+}
+
+inline
+CNCBINode* CNCBINode::AppendChild(CNodeRef& ref)
+{
+    return AppendChild(&*ref);
 }
 
 inline

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/03/07 15:40:37  vasilche
+* Added AppendChild(CNodeRef&)
+*
 * Revision 1.14  2000/03/07 15:26:06  vasilche
 * Removed second definition of CRef.
 *
@@ -160,6 +163,7 @@ public:
     // add a Node * to the end of m_Children
     // returns this for chained AppendChild
     CNCBINode* AppendChild(CNCBINode* child);
+    CNCBINode* AppendChild(CNodeRef& ref);
     void RemoveAllChildren(void);
 
     // all child operations (except AppendChild) are valid only if
