@@ -418,7 +418,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
         Int4 xdrop_score;
         Int4 curr_extent;
         Int4 curr_score;
-        Int4 curr_diag;
+        Int4 curr_diag = 0;
         Int4 orig_diag_lower;
         Int4 orig_diag_upper;
 
@@ -918,7 +918,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
         Int4 xdrop_score;
         Int4 curr_score;
         Int4 curr_extent;
-        Int4 curr_diag;
+        Int4 curr_diag = 0;
         Int4 tmp_diag_lower;
         Int4 tmp_diag_upper;
 
