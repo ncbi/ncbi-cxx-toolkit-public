@@ -323,6 +323,13 @@ public:
     /// Flush pending data (if any) down to output device.
     virtual ERW_Result Flush(void)
     {
+        // Dumping the buffer
+        CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
+        CBDB_Transaction trans(*m_AttrDB.GetEnv());
+        m_AttrDB.SetTransaction(&trans);
+        m_BlobDB.SetTransaction(&trans);
+
         if (m_Buffer) {
             LOG_POST(Info << "LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
@@ -337,6 +344,9 @@ public:
                 return eRW_Error;
             }
         }
+
+        trans.Commit();
+
         return eRW_Success;
     }
 private:
@@ -1977,6 +1987,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2003/12/29 16:53:25  kuznets
+ * Made Flush transactional
+ *
  * Revision 1.34  2003/12/29 15:39:59  vasilche
  * Fixed subkey value in GetReadStream/GetWriteStream.
  *
