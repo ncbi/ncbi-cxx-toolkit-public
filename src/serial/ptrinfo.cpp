@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/03/20 20:42:36  vasilche
+* Reuse old object in CRef<> reader.
+*
 * Revision 1.30  2000/10/17 18:45:36  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -301,7 +304,16 @@ void CPointerTypeInfo::ReadPointer(CObjectIStream& in,
     const CPointerTypeInfo* pointerType =
         CTypeConverter<CPointerTypeInfo>::SafeCast(objectType);
 
-    pointerType->SetObjectPointer(objectPtr, in.ReadPointer(pointerType->GetPointedType()).first);
+    TTypeInfo pointedType = pointerType->GetPointedType();
+    TObjectPtr pointedPtr = pointerType->GetObjectPointer(objectPtr);
+    if ( pointedPtr ) {
+        pointedType->SetDefault(pointedPtr);
+        in.ReadObject(pointedPtr, pointedType);
+    }
+    else {
+        pointerType->SetObjectPointer(objectPtr,
+                                      in.ReadPointer(pointedType).first);
+    }
 }
 
 void CPointerTypeInfo::WritePointer(CObjectOStream& out,
