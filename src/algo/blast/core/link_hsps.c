@@ -636,12 +636,16 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
       length_adjustment = query_info->length_adjustments[query_context];
       query_length = BLAST_GetQueryLength(query_info, query_context);
       query_length = MAX(query_length - length_adjustment, 1);
+      subject_length = subject->length; /* in nucleotides even for tblast[nx] */
       /* If subject is translated, length adjustment is given in nucleotide
          scale. */
       if (program_number == blast_type_tblastn || 
           program_number == blast_type_tblastx)
+      {
          length_adjustment /= CODON_LENGTH;
-      subject_length = MAX(subject->length - length_adjustment, 1);
+         subject_length /= CODON_LENGTH;
+      }
+      subject_length = MAX(subject_length - length_adjustment, 1);
 
       lh_helper[0].ptr = hp_start;
       lh_helper[0].q_off_trim = 0;
