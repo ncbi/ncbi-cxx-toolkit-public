@@ -190,23 +190,56 @@ bool IsOneBioseq(const CSeq_loc& loc, CScope* scope)
 }
 
 
+struct SSeq_id_Sorter
+{
+    bool operator() (const CConstRef<CSeq_id>& ref1,
+                     const CConstRef<CSeq_id>& ref2) const
+    {
+        if (ref1 == ref2) {
+            return true;
+        }
+        if ( !ref1 ) {
+            return false;
+        }
+
+        return ref1->CompareOrdered(*ref2) < 0;
+    }
+};
+
 const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope)
 {
-    CTypeConstIterator<CSeq_id> cur = ConstBegin(loc);
-    CTypeConstIterator<CSeq_id> first = ConstBegin(loc);
+    typedef set< CConstRef<CSeq_id>, SSeq_id_Sorter> TIds;
+    TIds ids;
 
-    if (!first) {
+    CTypeConstIterator<CSeq_id> iter(loc);
+    for ( ;  iter;  ++iter) {
+        ids.insert(CConstRef<CSeq_id>(&*iter));
+    }
+
+    switch (ids.size()) {
+    case 0:
         NCBI_THROW(CObjmgrUtilException, eNotUnique,
-            "CSeq_ids do not refer to unique CBioseq");
-    }
+                   "Location contains no IDs.");
 
-    for (++cur; cur; ++cur) {
-        if ( !IsSameBioseq(*cur, *first, scope) ) {
-            NCBI_THROW(CObjmgrUtilException, eNotUnique,
-                "CSeq_ids do not refer to unique CBioseq");
-        }
+    case 1:
+        return **ids.begin();
+
+    default:
+        {{
+            TIds::const_iterator iter = ids.begin();
+            TIds::const_iterator end  = ids.end();
+            CConstRef<CSeq_id> first_id = *iter++;
+            for ( ;  iter != end;  ++iter) {
+                if ( !IsSameBioseq(*first_id, **iter, scope) ) {
+                    NCBI_THROW(CObjmgrUtilException, eNotUnique,
+                               "Location contains segments on "
+                               "more than one bioseq.");
+                }
+            }
+
+            return *first_id;
+        }}
     }
-    return *first;
 }
 
 
@@ -296,36 +329,39 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
 }
 
 
+
 ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope)
 {
-    if (!IsOneBioseq(loc, scope)) {
-        return eNa_strand_unknown;  // multiple bioseqs
-    }
+    switch (loc.Which()) {
+    case CSeq_loc::e_Int:
+        if (loc.GetInt().IsSetStrand()) {
+            return loc.GetInt().GetStrand();
+        }
+        break;
 
-    ENa_strand strand = eNa_strand_unknown, cstrand;
-    bool strand_set = false;
-    for (CSeq_loc_CI i(loc); i; ++i) {
-        switch (i.GetSeq_loc().Which()) {
-        case CSeq_loc::e_Equiv:
-            break;
-        default:
-            cstrand = s_GetStrand(i.GetSeq_loc());
-            if (strand == eNa_strand_unknown  &&  cstrand == eNa_strand_plus) {
-                strand = eNa_strand_plus;
-                strand_set = true;
-            } else if (strand == eNa_strand_plus  &&
-                cstrand == eNa_strand_unknown) {
-                cstrand = eNa_strand_plus;
-                strand_set = true;
-            } else if (!strand_set) {
-                strand = cstrand;
-                strand_set = true;
-            } else if (cstrand != strand) {
-                return eNa_strand_other;
-            }
+    case CSeq_loc::e_Whole:
+        return eNa_strand_both;
+
+    case CSeq_loc::e_Pnt:
+        if (loc.GetPnt().IsSetStrand()) {
+            return loc.GetPnt().GetStrand();
+        }
+        break;
+
+    case CSeq_loc::e_Packed_pnt:
+        return loc.GetPacked_pnt().IsSetStrand() ?
+            loc.GetPacked_pnt().GetStrand() : eNa_strand_unknown;
+
+    default:
+        if (!IsOneBioseq(loc, scope)) {
+            return eNa_strand_unknown;  // multiple bioseqs
+        } else {
+            return s_GetStrand(loc);
         }
     }
-    return strand;
+
+    /// default to unknown strand
+    return eNa_strand_unknown;
 }
 
 
@@ -2804,6 +2840,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2004/11/22 16:10:30  dicuccio
+* Optimized sequence::GetId(const CSeq_loc&) and sequence::GetStrand(const
+* CSeq_loc&)
+*
 * Revision 1.5  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *
