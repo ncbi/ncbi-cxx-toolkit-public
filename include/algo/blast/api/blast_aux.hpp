@@ -203,6 +203,8 @@ DECLARE_AUTO_CLASS_WRAPPER(PSIDiagnosticsResponse, PSIDiagnosticsResponseFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastSeqSrc, BlastSeqSrcFree);
 
+DECLARE_AUTO_CLASS_WRAPPER(BlastMaskLoc, BlastMaskLocFree);
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 END_SCOPE(blast)
@@ -214,6 +216,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2004/12/28 18:47:38  dondosha
+* Added auto class wrapper for BlastMaskLoc
+*
 * Revision 1.50  2004/12/28 16:45:57  camacho
 * Move typedefs to AutoPtr to public header so that they are used consistently
 *
