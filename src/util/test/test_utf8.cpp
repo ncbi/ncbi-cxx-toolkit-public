@@ -1,44 +1,34 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author: Vladimir Ivanov
-*
-* File Description:
-*   Test program for test UTF-8 conversion functions
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2001/04/18 16:32:24  ivanov
-* Change types TUnicodeChar, TUnicodeString to simple types.
-* TUnicode char to long, TUnicodeString to vector<long>.
-*
-* Revision 1.1  2001/04/06 19:16:04  ivanov
-* Initial revision
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *   This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Vladimir Ivanov
+ *
+ * File Description:
+ *   Test program for test UTF-8 conversion functions
+ *
+ */
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -77,9 +67,10 @@ int CTestUtf8::Run(void)
           "Phillip Journal für restaurative Zahnmedizin.",
           "Revista odontológica.",
           "Veterinární medicína.",
-          "Zhōnghuá zhŏngliú zázhì"
+          "Zhōnghuá zhŏngliú zázhì",
+          "Biokhimii\357\270\240a\357\270\241"
     };
-    const size_t MAX_TEST_NUM=5;
+    const size_t MAX_TEST_NUM = 6;
     string sRes;
     string s;
     vector<long> v;
@@ -138,3 +129,18 @@ int main(int argc, const char* argv[])
 {
     return CTestUtf8().AppMain(argc, argv);
 }
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3  2002/01/18 19:25:26  ivanov
+ * Polish source code. Appended one more test string.
+ *
+ * Revision 1.2  2001/04/18 16:32:24  ivanov
+ * Change types TUnicodeChar, TUnicodeString to simple types.
+ * TUnicode char to long, TUnicodeString to vector<long>.
+ *
+ * Revision 1.1  2001/04/06 19:16:04  ivanov
+ * Initial revision
+ * ===========================================================================
+ */
