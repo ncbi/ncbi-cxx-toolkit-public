@@ -56,6 +56,63 @@ USING_SCOPE(objects);
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CSeqDBIter --
+///
+/// Small class to iterate over a seqdb database.
+///
+/// This serves something of the same role for a CSeqDB object that a
+/// vector iterator might serve in the standard template library.
+
+class CSeqDB;
+
+class CSeqDBIter {
+public:
+    typedef Uint4 TOID;
+    
+    virtual ~CSeqDBIter()
+    {
+        x_RetSeq();
+    }
+    
+    CSeqDBIter & operator++(void);
+    
+    TOID GetOID(void)
+    {
+        return m_OID;
+    }
+    
+    const char * GetData(void)
+    {
+        return m_Data;
+    }
+    
+    Int4 GetLength(void)
+    {
+        return m_Length;
+    }
+    
+    operator bool();
+    
+    CSeqDBIter(const CSeqDBIter &);
+    
+    CSeqDBIter & operator =(const CSeqDBIter &);
+    
+private:
+    inline void x_GetSeq(void);
+    inline void x_RetSeq(void);
+    
+    friend class CSeqDB;
+    
+    CSeqDBIter(CSeqDB *, Uint4 oid);
+    
+    CSeqDB     * m_DB;
+    TOID         m_OID;
+    const char * m_Data;
+    Uint4        m_Length;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CSeqDB --
 ///
 /// User interface class for blast databases.
@@ -172,6 +229,21 @@ public:
     /// or alias files.  This might be used to chose buffer sizes.
     Uint4 GetMaxLength(void);
     
+    /// Returns a sequence iterator.
+    ///
+    /// This gets an iterator designed to allow traversal of the
+    /// database from beginning to end.
+    CSeqDBIter Begin(void);
+    
+    /// Gets next OID in list.
+    ///
+    /// If the specified oid is not included in the set (i.e. it was
+    /// not in the OID list), it is incremented until the end of the
+    /// database is reached or an OID in the set is found.
+    /// @return
+    ///   True if a valid OID was found, false otherwise.
+    bool GetNextOID(TOID & next_oid);
+    
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
@@ -230,6 +302,18 @@ private:
     Uint4        m_Length;
 };
 
+// Inline methods for CSeqDBIter
+
+void CSeqDBIter::x_GetSeq(void)
+{
+    m_Length = m_DB->GetSequence(m_OID, & m_Data);
+}
+
+void CSeqDBIter::x_RetSeq(void)
+{
+    if (m_Data)
+        m_DB->RetSequence(& m_Data);
+}
 
 END_NCBI_SCOPE
 
