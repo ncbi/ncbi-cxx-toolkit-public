@@ -34,10 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/typeinfo.hpp>
-#include <serial/objectinfo.hpp>
 #include <serial/objecttype.hpp>
-#include <serial/stdtypes.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/serialbase.hpp>
 #include <set>
@@ -807,6 +804,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/02/04 16:05:48  dicuccio
+* Header file clean-up - removed redundant includes
+*
 * Revision 1.23  2002/12/23 19:02:30  dicuccio
 * Moved template function bodies from .cpp -> .hpp to make MSVC happy.  Added an
 * #ifdef'd wrapper to unimplemented protected ctors - MSVC doesn't like these.
