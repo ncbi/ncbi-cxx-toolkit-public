@@ -34,6 +34,9 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/11/16 16:34:34  ivanov
+* Added including "windows.h" under MS Windows
+*
 * Revision 1.13  2001/11/09 16:22:16  ivanov
 * Polish source code of GetCpuCount()
 *
@@ -86,6 +89,9 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 
+#ifdef NCBI_OS_WIN
+#  include <windows.h>
+#endif
 
 #ifdef NCBI_OS_UNIX
 #  include <sys/resource.h>
