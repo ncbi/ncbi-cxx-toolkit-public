@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2002/03/11 21:59:32  lavr
+ * 'Client version' changed into 'Client revision'
+ *
  * Revision 6.32  2001/11/09 20:03:14  lavr
  * Minor fix to remove a trailing space in client version tag
  *
@@ -195,8 +198,7 @@ SERV_ITER SERV_OpenEx(const char* service,
     iter->service = (char*) iter + sizeof(*iter);
     strcpy((char*) iter->service, service);
     iter->type = type;
-    iter->preferred_host =
-        preferred_host == SERV_LOCALHOST
+    iter->preferred_host = preferred_host == SERV_LOCALHOST
         ? SOCK_gethostbyname(0) : preferred_host;
     iter->n_skip = iter->n_max_skip = 0;
     iter->skip = 0;
@@ -376,7 +378,7 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
 char* SERV_Print(SERV_ITER iter)
 {
     static const char revision[] = "$Revision$";
-    static const char client_version[] = "Client-Version:";
+    static const char client_revision[] = "Client-Revision:";
     static const char accepted_types[] = "Accepted-Server-Types:";
     TSERV_Type type = (TSERV_Type) (iter->type & ~fSERV_StatelessOnly);
     char buffer[128], *str;
@@ -385,8 +387,8 @@ char* SERV_Print(SERV_ITER iter)
     BUF buf = 0;
 
     /* Put client version number */
-    buflen = sizeof(client_version) - 1;
-    memcpy(buffer, client_version, buflen);
+    buflen = sizeof(client_revision) - 1;
+    memcpy(buffer, client_revision, buflen);
     for (i = 0; revision[i]; i++)
         if (isspace((unsigned char) revision[i]))
             break;
