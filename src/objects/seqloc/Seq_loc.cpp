@@ -577,6 +577,12 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             if ( loc.GetInt().IsSetStrand() )
                 info.m_Strand = loc.GetInt().GetStrand();
             info.m_Loc = &loc;
+            if (loc.GetInt().IsSetFuzz_from()) {
+                info.m_Fuzz[0] = &loc.GetInt().GetFuzz_from();
+            }
+            if (loc.GetInt().IsSetFuzz_to()) {
+                info.m_Fuzz[1] = &loc.GetInt().GetFuzz_to();
+            }
             m_LocList.push_back(info);
             return;
         }
@@ -588,6 +594,9 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             if ( loc.GetPnt().IsSetStrand() )
                 info.m_Strand = loc.GetPnt().GetStrand();
             info.m_Loc = &loc;
+            if (loc.GetPnt().IsSetFuzz()) {
+                info.m_Fuzz[0] = info.m_Fuzz[1] = &loc.GetPnt().GetFuzz();
+            }
             m_LocList.push_back(info);
             return;
         }
@@ -600,6 +609,12 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 if ( (*ii)->IsSetStrand() )
                     info.m_Strand = (*ii)->GetStrand();
                 info.m_Loc = &loc;
+                if ((*ii)->IsSetFuzz_from()) {
+                    info.m_Fuzz[0] = &(*ii)->GetFuzz_from();
+                }
+                if ((*ii)->IsSetFuzz_to()) {
+                    info.m_Fuzz[1] = &(*ii)->GetFuzz_to();
+                }
                 m_LocList.push_back(info);
             }
             return;
@@ -613,6 +628,10 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 if ( loc.GetPacked_pnt().IsSetStrand() )
                     info.m_Strand = loc.GetPacked_pnt().GetStrand();
                 info.m_Loc = &loc;
+                if (loc.GetPacked_pnt().IsSetFuzz()) {
+                    info.m_Fuzz[0] = info.m_Fuzz[1]
+                        = &loc.GetPacked_pnt().GetFuzz();
+                }
                 m_LocList.push_back(info);
             }
             return;
@@ -640,6 +659,10 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             if ( loc.GetBond().GetA().IsSetStrand() )
                 infoA.m_Strand = loc.GetBond().GetA().GetStrand();
             infoA.m_Loc = &loc;
+            if (loc.GetBond().GetA().IsSetFuzz()) {
+                infoA.m_Fuzz[0] = infoA.m_Fuzz[1]
+                    = &loc.GetBond().GetA().GetFuzz();
+            }
             m_LocList.push_back(infoA);
             if ( loc.GetBond().IsSetB() ) {
                 SLoc_Info infoB;
@@ -649,6 +672,10 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
                 if ( loc.GetBond().GetB().IsSetStrand() )
                     infoB.m_Strand = loc.GetBond().GetB().GetStrand();
                 infoB.m_Loc = &loc;
+                if (loc.GetBond().GetB().IsSetFuzz()) {
+                    infoB.m_Fuzz[0] = infoB.m_Fuzz[1]
+                        = &loc.GetBond().GetB().GetFuzz();
+                }
                 m_LocList.push_back(infoB);
             }
             return;
@@ -1017,6 +1044,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.35  2003/10/15 15:50:36  ucko
+ * CSeq_loc_CI: expose fuzz (if present).
+ *
  * Revision 6.34  2003/10/14 16:48:53  dicuccio
  * Added SetId() function.  Added correct printing of packed seq-points in
  * Getlabel()
