@@ -98,9 +98,9 @@ public:
     
     string GetDate() const;
     
-    Uint4  GetNumSeqs() const;
+    Uint4  GetNumOIDs() const;
     
-    Uint8  GetTotalLength() const;
+    Uint8  GetVolumeLength() const;
     
     Uint4  GetMaxLength() const;
     

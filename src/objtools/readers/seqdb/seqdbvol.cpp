@@ -732,7 +732,7 @@ CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
 {
     const bool  provide_old_taxonomy_info = false;
     const bool  provide_new_taxonomy_info = true;
-    const bool  use_taxinfo_cache         = true;
+    const bool  use_taxinfo_cache         = false;
     const Uint4 max_taxcache_size         = 200;
     
     const char * TAX_DATA_OBJ_LABEL = "TaxNamesData";
@@ -1226,9 +1226,9 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid, CSeqDBLockHold & locked) c
     return seqids;
 }
 
-Uint8 CSeqDBVol::GetTotalLength(void) const
+Uint8 CSeqDBVol::GetVolumeLength(void) const
 {
-    return m_Idx.GetTotalLength();
+    return m_Idx.GetVolumeLength();
 }
 
 CRef<CBlast_def_line_set>
@@ -1337,9 +1337,9 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold 
     return true;
 }
 
-Uint4 CSeqDBVol::GetNumSeqs(void) const
+Uint4 CSeqDBVol::GetNumOIDs(void) const
 {
-    return m_Idx.GetNumSeqs();
+    return m_Idx.GetNumOIDs();
 }
 
 string CSeqDBVol::GetTitle(void) const
@@ -1568,8 +1568,8 @@ Uint4 CSeqDBVol::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
     // 2. For nucleotide, the input value is 0..(num residues).  We
     // scale this value to the length of the byte data.
     
-    Uint4 vol_cnt = GetNumSeqs();
-    Uint8 vol_len = GetTotalLength();
+    Uint4 vol_cnt = GetNumOIDs();
+    Uint8 vol_len = GetVolumeLength();
     
     if (first_seq >= vol_cnt) {
         NCBI_THROW(CSeqDBException,
