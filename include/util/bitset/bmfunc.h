@@ -1424,7 +1424,7 @@ bm::id_t gap_bitset_or_count(const unsigned* block, const T*  buf)
    @ingroup gapfunc
 */
 template<typename T> 
-void gap_convert_to_bitset(unsigned* dest, const T*  buf,  unsigned  dest_len)
+void gap_convert_to_bitset(unsigned* dest, const T*  buf,  unsigned)
 {
     bit_block_set(dest, 0);
 // ::memset(dest, 0, dest_len * sizeof(unsigned));

@@ -207,13 +207,13 @@ public:
             return bv_.get_bit(position_);
         }
 
-        reference& operator=(const reference& ref)
+        const reference& operator=(const reference& ref) const
         {
             bv_.set(position_, (bool)ref);
             return *this;
         }
 
-        reference& operator=(bool value)
+        const reference& operator=(bool value) const
         {
             bv_.set(position_, value);
             return *this;
@@ -225,14 +225,14 @@ public:
         }
 
         /*! Bitwise AND. Performs operation: bit = bit AND value */
-        reference& operator&=(bool value)
+        const reference& operator&=(bool value) const
         {
             bv_.set(position_, value);
             return *this;
         }
 
         /*! Bitwise OR. Performs operation: bit = bit OR value */
-        reference& operator|=(bool value)
+        const reference& operator|=(bool value) const
         {
             if (value != bv_.get_bit(position_))
             {
@@ -242,7 +242,7 @@ public:
         }
 
         /*! Bitwise exclusive-OR (XOR). Performs operation: bit = bit XOR value */
-        reference& operator^=(bool value)
+        const reference& operator^=(bool value) const
         {
             bv_.set(position_, value != bv_.get_bit(position_));
             return *this;
@@ -3192,6 +3192,7 @@ public:
                 {
                     A::free_bit_block(block);
                 }
+                idx = 0;
             }
         };
 
