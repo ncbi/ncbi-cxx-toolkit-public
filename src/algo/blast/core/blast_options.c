@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.100  2004/04/29 15:08:43  madden
+ * Add BlastScoringOptionsDup
+ *
  * Revision 1.99  2004/04/23 14:02:25  papadopo
  * ignore validation of LookupTableOptions if performing an RPS search
  *
@@ -966,6 +969,25 @@ BlastScoringOptionsValidate(Uint1 program_number,
 
 	return 0;
 
+}
+
+Int2 
+BlastScoringOptionsDup(BlastScoringOptions* *new_opt, const BlastScoringOptions* old_opt)
+{
+    if (old_opt == NULL || new_opt == NULL)
+       return -1;
+
+    *new_opt = (BlastScoringOptions*) BlastMemDup(old_opt, sizeof(BlastScoringOptions));
+    if (*new_opt == NULL)
+       return -1;
+
+    if (old_opt->matrix)
+       (*new_opt)->matrix = strdup(old_opt->matrix);
+
+    if (old_opt->matrix_path)
+       (*new_opt)->matrix_path = strdup(old_opt->matrix_path);
+
+    return 0;
 }
 
 
