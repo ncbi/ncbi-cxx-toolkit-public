@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/05/24 20:52:57  pubmed
+* minor changes
+*
 * Revision 1.3  1999/05/24 15:15:19  golikov
 * class CNcbiRelocateCommand added
 *
@@ -267,7 +270,8 @@ public:
     const TFilterList& GetFilterList( void ) const
         { return m_filter; }
 
-    virtual CNcbiQueryResult* Execute( CCgiContext& ctx ) = 0;
+    virtual CNcbiQueryResult* Execute( CCgiContext& ctx )
+        { return 0; }
 
 protected:
 
