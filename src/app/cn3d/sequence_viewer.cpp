@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
 * Revision 1.55  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -248,7 +251,7 @@ void SequenceViewer::CreateSequenceWindow(void)
 
 void SequenceViewer::SaveAlignment(void)
 {
-    KeepOnlyStackTop();
+    KeepCurrent();
 
     // go back into the original pairwise alignment data and save according to the
     // current edited BlockMultipleAlignment and display row order
@@ -258,13 +261,11 @@ void SequenceViewer::SaveAlignment(void)
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
         if (alnRow) rowOrder.push_back(alnRow->row);
     }
-    alignmentManager->SavePairwiseFromMultiple(alignmentStack.back().back(), rowOrder);
+    alignmentManager->SavePairwiseFromMultiple(GetCurrentAlignments().back(), rowOrder);
 }
 
 void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
 {
-    ClearStacks();
-
     SequenceDisplay *display = new SequenceDisplay(true, viewerWindow);
     for (int row=0; row<alignment->NRows(); row++)
         display->AddRowFromAlignment(row, alignment);
@@ -274,7 +275,7 @@ void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
 
     AlignmentList alignments;
     alignments.push_back(alignment);
-    InitStacks(&alignments, display);
+    InitData(&alignments, display);
     if (sequenceWindow)
         sequenceWindow->UpdateDisplay(display);
     else
@@ -300,21 +301,11 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 
         if (display->NRows() > 0) display->AddRowFromString("");
 
-        // wrap long sequences
-//        from = 0;
-//        to = width - 1;
-//        do {
-//            display->AddRowFromSequence(*s, from, ((to >= (*s)->Length()) ? (*s)->Length() - 1 : to));
-//            from += width;
-//            to += width;
-//        } while (from < (*s)->Length());
-
         // whole sequence on one row
         display->AddRowFromSequence(*s, 0, (*s)->Length() - 1);
     }
 
-    ClearStacks();
-    InitStacks(NULL, display);
+    InitData(NULL, display);
     if (sequenceWindow)
         sequenceWindow->UpdateDisplay(display);
     else

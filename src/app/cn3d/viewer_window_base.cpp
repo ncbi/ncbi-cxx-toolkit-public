@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
 * Revision 1.36  2002/10/07 13:29:32  thiessen
 * add double-click -> show row to taxonomy tree
 *
@@ -195,7 +198,8 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos,
 
     editMenu = new wxMenu;
     editMenu->Append(MID_ENABLE_EDIT, "&Enable Editor", "", true);
-    editMenu->Append(MID_UNDO, "&Undo\tCtrl-Z");
+    editMenu->Append(MID_UNDO, "Undo\tCtrl-Z");
+    editMenu->Append(MID_REDO, "Redo\tShift-Ctrl-Z");
     editMenu->AppendSeparator();
     editMenu->Append(MID_SPLIT_BLOCK, "&Split Block", "", true);
     editMenu->Append(MID_MERGE_BLOCKS, "&Merge Blocks", "", true);
@@ -267,6 +271,7 @@ void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)
     menuBar->Enable(MID_DRAG_HORIZ, enabled);
     if (!enabled) CancelBaseSpecialModesExcept(-1);
     menuBar->Enable(MID_UNDO, false);
+    menuBar->Enable(MID_REDO, false);
     menuBar->Enable(MID_SHOW_GEOM_VLTNS,
         viewer->GetCurrentDisplay() && viewer->GetCurrentDisplay()->IsEditable());
     EnableDerivedEditorMenuItems(enabled);
@@ -278,6 +283,7 @@ void ViewerWindowBase::NewDisplay(SequenceDisplay *display, bool enableSelectByC
     menuBar->EnableTop(menuBar->FindMenu("Edit"), display->IsEditable());
     menuBar->EnableTop(menuBar->FindMenu("Unaligned Justification"), display->IsEditable());
     menuBar->Enable(MID_SELECT_COLS, enableSelectByColumn);
+    viewer->SetUndoRedoMenuStates();
 }
 
 void ViewerWindowBase::UpdateDisplay(SequenceDisplay *display)
@@ -288,6 +294,7 @@ void ViewerWindowBase::UpdateDisplay(SequenceDisplay *display)
     menuBar->EnableTop(menuBar->FindMenu("Edit"), display->IsEditable());
     menuBar->EnableTop(menuBar->FindMenu("Unaligned Justification"), display->IsEditable());
     GlobalMessenger()->PostRedrawAllSequenceViewers();
+    viewer->SetUndoRedoMenuStates();
 }
 
 void ViewerWindowBase::OnTitleView(wxCommandEvent& event)
@@ -316,7 +323,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
                 TESTMSG("turning on editor");
                 EnableBaseEditorMenuItems(true);
                 viewer->GetCurrentDisplay()->AddBlockBoundaryRows();    // add before push!
-                viewer->PushAlignment();    // keep copy of original at bottom of the stack
+                viewer->EnableStacks();     // start up undo/redo stack system
                 Command(MID_DRAG_HORIZ);    // switch to drag mode
             } else {
                 if (!RequestEditorEnable(false)) {   // cancelled
@@ -333,7 +340,15 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
 
         case MID_UNDO:
             TESTMSG("undoing...");
-            viewer->PopAlignment();
+            viewer->Undo();
+            UpdateDisplay(viewer->GetCurrentDisplay());
+            if (AlwaysSyncStructures()) SyncStructures();
+            break;
+
+        case MID_REDO:
+            TESTMSG("redoing...");
+            viewer->Redo();
+            UpdateDisplay(viewer->GetCurrentDisplay());
             if (AlwaysSyncStructures()) SyncStructures();
             break;
 
@@ -418,12 +433,12 @@ void ViewerWindowBase::OnJustification(wxCommandEvent& event)
 
 void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
 {
-    const ViewerBase::AlignmentList *alignments = viewer->GetCurrentAlignments();
-    if (!alignments) return;
+    const ViewerBase::AlignmentList& alignments = viewer->GetCurrentAlignments();
+    if (alignments.size() > 0) return;
 
     Threader::GeometryViolationsForRow violations;
-    ViewerBase::AlignmentList::const_iterator a, ae = alignments->end();
-    for (a=alignments->begin(); a!=ae; a++) {
+    ViewerBase::AlignmentList::const_iterator a, ae = alignments.end();
+    for (a=alignments.begin(); a!=ae; a++) {
         viewer->alignmentManager->threader->GetGeometryViolations(*a, &violations);
         (*a)->ShowGeometryViolations(violations);
     }

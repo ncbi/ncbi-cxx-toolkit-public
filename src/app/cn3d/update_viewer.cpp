@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
 * Revision 1.48  2002/09/30 17:13:02  thiessen
 * change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
 *
@@ -238,20 +241,18 @@ UpdateViewer::UpdateViewer(AlignmentManager *alnMgr) :
     // when first created, start with blank display
     AlignmentList emptyAlignmentList;
     SequenceDisplay *blankDisplay = new SequenceDisplay(true, viewerWindow);
-    InitStacks(&emptyAlignmentList, blankDisplay);
-    PushAlignment();
+    InitData(&emptyAlignmentList, blankDisplay);
+    EnableStacks();
 }
 
 UpdateViewer::~UpdateViewer(void)
 {
-    DestroyGUI();
-    ClearStacks();
 }
 
 void UpdateViewer::SetInitialState(void)
 {
-    KeepOnlyStackTop();
-    PushAlignment();
+    KeepCurrent();
+    EnableStacks();
 }
 
 void UpdateViewer::SaveDialog(bool prompt)
@@ -268,7 +269,6 @@ void UpdateViewer::CreateUpdateWindow(void)
         SequenceDisplay *display = GetCurrentDisplay();
         if (display) {
             updateWindow = new UpdateViewerWindow(this);
-            if (displayStack.size() > 2) updateWindow->EnableUndo(true);
             updateWindow->NewDisplay(display, false);
             updateWindow->ScrollToColumn(display->GetStartingColumn());
             updateWindow->Show(true);
@@ -280,8 +280,8 @@ void UpdateViewer::CreateUpdateWindow(void)
 
 void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
 {
-    AlignmentList& alignments = alignmentStack.back();
-    SequenceDisplay *display = displayStack.back();
+    AlignmentList& alignments = GetCurrentAlignments();
+    SequenceDisplay *display = GetCurrentDisplay();
 
     // populate successive lines of the display with each alignment, with blank lines inbetween
     AlignmentList::const_iterator a, ae = newAlignments.end();
@@ -312,17 +312,18 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
     if (alignments.size() > 0)
         display->SetStartingColumn(alignments.front()->GetFirstAlignedBlockPosition() - 5);
 
-    PushAlignment();    // make this an undoable operation
+    Save();    // make this an undoable operation
+	if (updateWindow) updateWindow->UpdateDisplay(display);
 }
 
 void UpdateViewer::ReplaceAlignments(const AlignmentList& alignmentList)
 {
     // empty out the current alignment list and display (but not the undo stacks!)
-    AlignmentList::const_iterator a, ae = alignmentStack.back().end();
-    for (a=alignmentStack.back().begin(); a!=ae; a++) delete *a;
-    alignmentStack.back().clear();
+    AlignmentList::const_iterator a, ae = GetCurrentAlignments().end();
+    for (a=GetCurrentAlignments().begin(); a!=ae; a++) delete *a;
+    GetCurrentAlignments().clear();
 
-    displayStack.back()->Empty();
+    GetCurrentDisplay()->Empty();
 
     AddAlignments(alignmentList);
 }
@@ -330,8 +331,8 @@ void UpdateViewer::ReplaceAlignments(const AlignmentList& alignmentList)
 void UpdateViewer::DeleteAlignment(BlockMultipleAlignment *toDelete)
 {
     AlignmentList keepAlignments;
-    AlignmentList::const_iterator a, ae = alignmentStack.back().end();
-    for (a=alignmentStack.back().begin(); a!=ae; a++)
+    AlignmentList::const_iterator a, ae = GetCurrentAlignments().end();
+    for (a=GetCurrentAlignments().begin(); a!=ae; a++)
         if (*a != toDelete)
             keepAlignments.push_back((*a)->Clone());
 
@@ -346,8 +347,8 @@ void UpdateViewer::SaveAlignments(void)
     CCdd::TPending updates;
     std::map < CUpdate_align * , bool > usedUpdateAligns;
 
-    AlignmentList::const_iterator a, ae = alignmentStack.back().end();
-    for (a=alignmentStack.back().begin(); a!=ae; a++) {
+    AlignmentList::const_iterator a, ae = GetCurrentAlignments().end();
+    for (a=GetCurrentAlignments().begin(); a!=ae; a++) {
 
         // create a Seq-align (with Dense-diags) out of this update
         if ((*a)->NRows() != 2) {
@@ -424,8 +425,8 @@ const Sequence * UpdateViewer::GetMasterSequence(void) const
         master = alignmentManager->GetCurrentMultipleAlignment()->GetMaster();
     }
     // if there's already an update present, use same master as that
-    else if (alignmentStack.back().size() > 0) {
-        master = alignmentStack.back().front()->GetMaster();
+    else if (GetCurrentAlignments().size() > 0) {
+        master = GetCurrentAlignments().front()->GetMaster();
     }
     // otherwise, this must be a single structure with no updates, so we need to pick one of its
     // chains as the new master
@@ -844,8 +845,8 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
     }
 
     // find alignment, and replace it with BLAST result
-    AlignmentList::iterator a, ae = alignmentStack.back().end();
-    for (a=alignmentStack.back().begin(); a!=ae; a++) {
+    AlignmentList::iterator a, ae = GetCurrentAlignments().end();
+    for (a=GetCurrentAlignments().begin(); a!=ae; a++) {
         if (*a != alignment) continue;
 
         // run BLAST between master and first slave (should be only one slave...)
@@ -872,11 +873,11 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
     }
 
     // recreate alignment display with new alignment
-    AlignmentList copy = alignmentStack.back();
-    alignmentStack.back().clear();
-    displayStack.back()->Empty();
+    AlignmentList copy = GetCurrentAlignments();
+    GetCurrentAlignments().clear();
+    GetCurrentDisplay()->Empty();
     AddAlignments(copy);
-    (*viewerWindow)->ScrollToColumn(displayStack.back()->GetStartingColumn());
+    (*viewerWindow)->ScrollToColumn(GetCurrentDisplay()->GetStartingColumn());
 }
 
 // comparison function: if CompareRows(a, b) == true, then row a moves up
@@ -906,20 +907,20 @@ void UpdateViewer::SortUpdates(void)
     }
 
     // make vector of alignments
-    const AlignmentList *currentAlignments = GetCurrentAlignments();
-    if (!currentAlignments) return;
-    std::vector < BlockMultipleAlignment * > sortedVector(currentAlignments->size());
-    AlignmentList::const_iterator a, ae = currentAlignments->end();
+    AlignmentList& currentAlignments = GetCurrentAlignments();
+    if (currentAlignments.size() < 2) return;
+    std::vector < BlockMultipleAlignment * > sortedVector(currentAlignments.size());
+    AlignmentList::const_iterator a, ae = currentAlignments.end();
     int i = 0;
-    for (a=currentAlignments->begin(); a!=ae; a++) sortedVector[i++] = *a;
+    for (a=currentAlignments.begin(); a!=ae; a++) sortedVector[i++] = *a;
 
     // sort them
     stable_sort(sortedVector.begin(), sortedVector.end(), updateComparisonFunction);
     updateComparisonFunction = NULL;
 
     // replace window contents with sorted list
-    alignmentStack.back().clear();
-    displayStack.back()->Empty();
+    currentAlignments.clear();
+    GetCurrentDisplay()->Empty();
 
     AlignmentList sortedList;
     for (i=0; i<sortedVector.size(); i++) sortedList.push_back(sortedVector[i]);

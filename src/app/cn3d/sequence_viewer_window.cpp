@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
 * Revision 1.42  2002/10/07 18:51:53  thiessen
 * add abbreviated taxonomy tree
 *
@@ -263,7 +266,7 @@ void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
             return;
         }
         SaveDialog(true, false);
-        viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
+        viewer->RemoveBlockBoundaryRows();
         viewer->GUIDestroyed(); // make sure SequenceViewer knows the GUI is gone
         GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
     }
@@ -349,7 +352,7 @@ bool SequenceViewerWindow::SaveDialog(bool prompt, bool canCancel)
 
     // quick & dirty check for whether save is necessary, by whether Undo is enabled
     if (!menuBar->IsEnabled(MID_UNDO)) {
-        viewer->KeepOnlyStackTop();  // remove any unnecessary copy from stack
+        viewer->KeepCurrent();  // remove any unnecessary copy from stack
         return true;
     }
 
@@ -365,10 +368,12 @@ bool SequenceViewerWindow::SaveDialog(bool prompt, bool canCancel)
         if (option == wxID_CANCEL) return false; // user cancelled this operation
     }
 
-    if (option == wxID_YES)
+    if (option == wxID_YES) {
         sequenceViewer->SaveAlignment();    // save data
-    else
-        sequenceViewer->RevertAlignment();  // revert to original
+    } else {
+        sequenceViewer->Revert();  // revert to original
+		UpdateDisplay(sequenceViewer->GetCurrentDisplay());
+	}
 
     return true;
 }
@@ -434,11 +439,11 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     }
 
     // bring up selection dialog for realigning multiple rows
-    if (!sequenceViewer->GetCurrentAlignments()) {
+    if (sequenceViewer->GetCurrentAlignments().size() == 0) {
         ERR_POST(Error << "SequenceViewerWindow::OnRealign() - no alignment!");
         return;
     }
-    BlockMultipleAlignment *alignment = sequenceViewer->GetCurrentAlignments()->front();
+    BlockMultipleAlignment *alignment = sequenceViewer->GetCurrentAlignments().front();
 
     // get titles of current slave display rows (*not* rows from the AlignmentSet!)
     SequenceDisplay::SequenceList sequences;
@@ -538,8 +543,8 @@ void SequenceViewerWindow::OnMarkBlock(wxCommandEvent& event)
                 MarkBlockOff();
             break;
         case MID_CLEAR_MARKS:
-            if (sequenceViewer->GetCurrentAlignments() &&
-                    sequenceViewer->GetCurrentAlignments()->front()->ClearMarks())
+            if (sequenceViewer->GetCurrentAlignments().size() > 0 &&
+                    sequenceViewer->GetCurrentAlignments().front()->ClearMarks())
                 GlobalMessenger()->PostRedrawSequenceViewer(sequenceViewer);
             break;
     }
@@ -563,8 +568,8 @@ void SequenceViewerWindow::OnExport(wxCommandEvent& event)
 
 void SequenceViewerWindow::OnSelfHit(wxCommandEvent& event)
 {
-    if (sequenceViewer->GetCurrentAlignments()) {
-        const BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments()->front();
+    if (sequenceViewer->GetCurrentAlignments().size() > 0) {
+        const BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments().front();
         sequenceViewer->alignmentManager->blaster->CalculateSelfHitScores(multiple);
     }
 }
@@ -572,8 +577,8 @@ void SequenceViewerWindow::OnSelfHit(wxCommandEvent& event)
 void SequenceViewerWindow::OnTaxonomy(wxCommandEvent& event)
 {
     if (!taxonomyTree) taxonomyTree = new TaxonomyTree();
-    if (sequenceViewer->GetCurrentAlignments())
-        taxonomyTree->ShowTreeForAlignment(this, sequenceViewer->GetCurrentAlignments()->front(),
+    if (sequenceViewer->GetCurrentAlignments().size() > 0)
+        taxonomyTree->ShowTreeForAlignment(this, sequenceViewer->GetCurrentAlignments().front(),
             (event.GetId() == MID_TAXONOMY_ABBR));
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
 * Revision 1.16  2002/10/07 13:29:32  thiessen
 * add double-click -> show row to taxonomy tree
 *
@@ -90,18 +93,19 @@
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/alignment_manager.hpp"
+#include "cn3d/cn3d_blast.hpp"
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
 
-// limits the size of the stack (set to zero for unlimited)
-static const int MAX_UNDO_STACK_SIZE = 50;
-
+// limits the size of the stack (set to -1 for unlimited)
+const int ViewerBase::MAX_UNDO_STACK_SIZE = 50;
 
 ViewerBase::ViewerBase(ViewerWindowBase* *window, AlignmentManager *alnMgr) :
-    viewerWindow(window), alignmentManager(alnMgr)
+    viewerWindow(window), alignmentManager(alnMgr), currentDisplay(NULL)
 {
     if (!window) ERR_POST(Error << "ViewerBase::ViewerBase() - got NULL handle");
 }
@@ -109,7 +113,7 @@ ViewerBase::ViewerBase(ViewerWindowBase* *window, AlignmentManager *alnMgr) :
 ViewerBase::~ViewerBase(void)
 {
     DestroyGUI();
-    ClearStacks();
+    ClearAllData();
 }
 
 void ViewerBase::DestroyGUI(void)
@@ -126,121 +130,185 @@ void ViewerBase::SetWindowTitle(void) const
         (*viewerWindow)->SetWindowTitle();
 }
 
-void ViewerBase::InitStacks(const AlignmentList *alignments, SequenceDisplay *display)
+void ViewerBase::InitData(const AlignmentList *alignments, SequenceDisplay *display)
 {
-    ClearStacks();
-    alignmentStack.resize(1);
-    if (alignments) alignmentStack.back() = *alignments;    // copy list
-    displayStack.push_back(display);
+    ClearAllData();
+    if (alignments) currentAlignments = *alignments;    // copy list
+    currentDisplay = display;
+    stacksEnabled = false;
+    SetUndoRedoMenuStates();
 }
 
-// this works like the OpenGL transform stack: when data is to be saved by pushing,
-// the current data (display + alignment) is copied and put on the top of the stack,
-// becoming the current viewed/edited alignment.
-void ViewerBase::PushAlignment(void)
+void ViewerBase::EnableStacks(void)
 {
-    TESTMSG("ViewerBase::PushAlignment() - stack size before push: " << displayStack.size());
-    if (alignmentStack.size() == 0) {
-        ERR_POST(Error << "ViewerBase::PushAlignment() - can't be called with empty alignment stack");
+    if (stacksEnabled) {
+        ERR_POST(Error << "ViewerBase::EnableStacks() - already enabled!");
         return;
     }
 
-    // clone alignments
-    Old2NewAlignmentMap newAlignmentMap;
-    AlignmentList::const_iterator a = alignmentStack.back().begin(), ae = alignmentStack.back().end();
+    stacksEnabled = true;
+    nRedosStored = 0;
+    Save();
+}
+
+void ViewerBase::Save(void)
+{
+    if (!currentDisplay || !stacksEnabled) {
+        ERR_POST(Error << "ViewerBase::Save() - stacks not enabled, or no alignment/display data");
+        return;
+    }
+
+    // clear out any data in the stack above the current position (deletes "redo" list)
+    if (nRedosStored > 0) {
+        TESTMSG("deleting " << nRedosStored << " redo elements from the stack");
+        for (; nRedosStored>0; nRedosStored--) {
+            DELETE_ALL_AND_CLEAR(alignmentStack.back(), AlignmentList);
+            alignmentStack.pop_back();
+            delete displayStack.back();
+            displayStack.pop_back();
+        }
+    }
+
+    // remove the one-up-from-bottom of the stack if it's too big (so original isn't lost)
+    if (alignmentStack.size() == MAX_UNDO_STACK_SIZE) {
+        ERR_POST(Warning << "max undo stack size exceeded - deleting next-from-bottom item");
+        DELETE_ALL_AND_CLEAR(*(++(alignmentStack.begin())), AlignmentList);
+        alignmentStack.erase(++(alignmentStack.begin()));
+        delete *(++(displayStack.begin()));
+        displayStack.erase(++(displayStack.begin()));
+    }
+
+    // clone current alignments onto top of stack
     alignmentStack.resize(alignmentStack.size() + 1);
-    for (; a!=ae; a++) {
-        (*a)->FreeColors();   // don't store colors in undo stack - uses too much memory
+    Old2NewAlignmentMap newAlignmentMap;
+    AlignmentList::const_iterator a, ae = currentAlignments.end();
+    for (a=currentAlignments.begin(); a!=ae; a++) {
         BlockMultipleAlignment *newAlignment = (*a)->Clone();
-//        (*a)->ClearRowInfo();
         alignmentStack.back().push_back(newAlignment);
         newAlignmentMap[*a] = newAlignment;
     }
 
-    // clone and update display
-    displayStack.push_back(displayStack.back()->Clone(newAlignmentMap));
-    if (*viewerWindow) {
-        (*viewerWindow)->UpdateDisplay(displayStack.back());
-        (*viewerWindow)->EnableUndo(displayStack.size() > 2);
-    }
+    // clone display
+    displayStack.push_back(currentDisplay->Clone(newAlignmentMap));
 
-    // trim the stack to some max size; but don't delete the bottom of the stack, which is
-    // the original before editing was begun.
-    if (MAX_UNDO_STACK_SIZE > 0 && alignmentStack.size() > MAX_UNDO_STACK_SIZE) {
-        AlignmentStack::iterator al = alignmentStack.begin();
-        al++;
-        for (a=al->begin(), ae=al->end(); a!=ae; a++) delete *a;
-        alignmentStack.erase(al);
-        DisplayStack::iterator d = displayStack.begin();
-        d++;
-        delete *d;
-        displayStack.erase(d);
-    }
+    SetUndoRedoMenuStates();
 }
 
-// there can be a miminum of two items on the stack - the bottom is always the original
-// before editing; the top, when the editor is on, is always the current data, and just beneath
-// the top is a copy of the current data
-void ViewerBase::PopAlignment(void)
+void ViewerBase::Undo(void)
 {
-    if (alignmentStack.size() < 3 || displayStack.size() < 3) {
-        ERR_POST(Error << "ViewerBase::PopAlignment() - no more data to pop off the stack");
+    if ((alignmentStack.size() - nRedosStored) <= 1 || !stacksEnabled) {
+        ERR_POST(Error << "ViewerBase::Undo() - stacks disabled, or no more undo data");
         return;
     }
 
-    // top two stack items are identical; delete both...
-    for (int i=0; i<2; i++) {
-        AlignmentList::const_iterator a, ae = alignmentStack.back().end();
-        for (a=alignmentStack.back().begin(); a!=ae; a++) delete *a;
-        alignmentStack.pop_back();
-        delete displayStack.back();
-        displayStack.pop_back();
-    }
-
-    // ... then add a copy of what's underneath, making that copy the current data
-    PushAlignment();
+    nRedosStored++;
+    CopyDataFromStack();
+    SetUndoRedoMenuStates();
 }
 
-void ViewerBase::ClearStacks(void)
+void ViewerBase::Redo(void)
 {
+    if (nRedosStored == 0 || !stacksEnabled) {
+        ERR_POST(Error << "ViewerBase::Redo() - stacks disabled, or no more redo data");
+        return;
+    }
+
+    nRedosStored--;
+    CopyDataFromStack();
+    SetUndoRedoMenuStates();
+}
+
+void ViewerBase::SetUndoRedoMenuStates(void)
+{
+    if (*viewerWindow) {
+        (*viewerWindow)->EnableUndo((alignmentStack.size() - nRedosStored) > 1 && stacksEnabled);
+        (*viewerWindow)->EnableRedo(nRedosStored > 0 && stacksEnabled);
+    }
+}
+
+void ViewerBase::CopyDataFromStack(void)
+{
+    // delete current objects
+    DELETE_ALL_AND_CLEAR(currentAlignments, AlignmentList);
+    delete currentDisplay;
+
+    // move to appropriate stack object
+    AlignmentStack::reverse_iterator as = alignmentStack.rbegin();
+    DisplayStack::reverse_iterator ds = displayStack.rbegin();
+    for (int i=0; i<nRedosStored; i++) {
+        as++;
+        ds++;
+    }
+
+    // clone alignments into current
+    Old2NewAlignmentMap newAlignmentMap;
+    AlignmentList::const_iterator a, ae = as->end();
+    for (a=as->begin(); a!=ae; a++) {
+        BlockMultipleAlignment *newAlignment = (*a)->Clone();
+        currentAlignments.push_back(newAlignment);
+        newAlignmentMap[*a] = newAlignment;
+    }
+
+    // clone display
+    currentDisplay = (*ds)->Clone(newAlignmentMap);
+}
+
+void ViewerBase::ClearAllData(void)
+{
+    DELETE_ALL_AND_CLEAR(currentAlignments, AlignmentList);
     while (alignmentStack.size() > 0) {
-        AlignmentList::const_iterator a, ae = alignmentStack.back().end();
-        for (a=alignmentStack.back().begin(); a!=ae; a++) delete *a;
+        DELETE_ALL_AND_CLEAR(alignmentStack.back(), AlignmentList);
         alignmentStack.pop_back();
     }
+
+    delete currentDisplay;
+    currentDisplay = NULL;
     while (displayStack.size() > 0) {
         delete displayStack.back();
         displayStack.pop_back();
     }
 }
 
-void ViewerBase::RevertAlignment(void)
+void ViewerBase::Revert(void)
 {
-    // revert to the bottom of the stack
-    while (alignmentStack.size() > 1) {
-        AlignmentList::const_iterator a, ae = alignmentStack.back().end();
-        for (a=alignmentStack.back().begin(); a!=ae; a++) delete *a;
+    if (!stacksEnabled) {
+        ERR_POST(Error << "ViewerBase::Revert() - stacks disabled!");
+        return;
+    }
+
+    nRedosStored = 0;
+
+    // revert to the bottom of the stack; delete the rest
+    while (alignmentStack.size() > 0) {
+
+        if (alignmentStack.size() == 1)
+            CopyDataFromStack();
+
+        DELETE_ALL_AND_CLEAR(alignmentStack.back(), AlignmentList);
         alignmentStack.pop_back();
         delete displayStack.back();
         displayStack.pop_back();
     }
-
-    if (*viewerWindow) {
-        (*viewerWindow)->UpdateDisplay(displayStack.back());
-        if ((*viewerWindow)->AlwaysSyncStructures()) (*viewerWindow)->SyncStructures();
-    }
+    stacksEnabled = false;
+    SetUndoRedoMenuStates();
 }
 
-void ViewerBase::KeepOnlyStackTop(void)
+void ViewerBase::KeepCurrent(void)
 {
-    // keep only the top of the stack
-    while (alignmentStack.size() > 1) {
-        AlignmentList::const_iterator a, ae = alignmentStack.front().end();
-        for (a=alignmentStack.front().begin(); a!=ae; a++) delete *a;
-        alignmentStack.pop_front();
-        delete displayStack.front();
-        displayStack.pop_front();
+    if (!stacksEnabled) return;
+
+    // delete all stack data (leaving current stuff unchanged)
+    while (alignmentStack.size() > 0) {
+        DELETE_ALL_AND_CLEAR(alignmentStack.back(), AlignmentList);
+        alignmentStack.pop_back();
     }
+    while (displayStack.size() > 0) {
+        delete displayStack.back();
+        displayStack.pop_back();
+    }
+    nRedosStored = 0;
+    stacksEnabled = false;
+    SetUndoRedoMenuStates();
 }
 
 bool ViewerBase::EditorIsOn(void) const
@@ -276,6 +344,16 @@ void ViewerBase::SaveDialog(bool prompt)
 void ViewerBase::Refresh(void)
 {
     if (*viewerWindow) (*viewerWindow)->Refresh();
+}
+
+void ViewerBase::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
+{
+    alignmentManager->blaster->CalculateSelfHitScores(multiple);
+}
+
+void ViewerBase::RemoveBlockBoundaryRows(void)
+{
+    currentDisplay->RemoveBlockBoundaryRows();
 }
 
 END_SCOPE(Cn3D)

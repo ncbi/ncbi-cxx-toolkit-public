@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
 * Revision 1.59  2002/09/16 21:24:58  thiessen
 * add block freezing to block aligner
 *
@@ -582,7 +585,8 @@ void SequenceDisplay::UpdateAfterEdit(const BlockMultipleAlignment *forAlignment
 {
     UpdateBlockBoundaryRow(forAlignment);
     UpdateMaxRowWidth(); // in case alignment width has changed
-    (*viewerWindow)->viewer->PushAlignment();
+    (*viewerWindow)->viewer->Save();    // make undoable
+    (*viewerWindow)->UpdateDisplay(this);
     if ((*viewerWindow)->AlwaysSyncStructures())
         (*viewerWindow)->SyncStructures();
 }
@@ -889,7 +893,8 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
     }
     if (masterOK) {
         rows = newRows;
-        (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+        (*viewerWindow)->UpdateDisplay(this);
+        (*viewerWindow)->viewer->Save();   // make this an undoable operation
         GlobalMessenger()->PostRedrawAllSequenceViewers();
     }
 }
@@ -1079,7 +1084,8 @@ void SequenceDisplay::SortRowsByIdentifier(void)
 {
     rowComparisonFunction = CompareRowsByIdentifier;
     SortRows();
-    (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+    (*viewerWindow)->viewer->Save();   // make this an undoable operation
+	(*viewerWindow)->UpdateDisplay(this);
 }
 
 void SequenceDisplay::SortRowsByThreadingScore(double weightPSSM)
@@ -1088,21 +1094,24 @@ void SequenceDisplay::SortRowsByThreadingScore(double weightPSSM)
     rowComparisonFunction = CompareRowsByScore;
     SortRows();
     TESTMSG("sorted rows");
-    (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+    (*viewerWindow)->viewer->Save();   // make this an undoable operation
+	(*viewerWindow)->UpdateDisplay(this);
 }
 
 void SequenceDisplay::FloatPDBRowsToTop(void)
 {
     rowComparisonFunction = CompareRowsFloatPDB;
     SortRows();
-    (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+    (*viewerWindow)->viewer->Save();   // make this an undoable operation
+	(*viewerWindow)->UpdateDisplay(this);
 }
 
 void SequenceDisplay::FloatHighlightsToTop(void)
 {
     rowComparisonFunction = CompareRowsFloatHighlights;
     SortRows();
-    (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+    (*viewerWindow)->viewer->Save();   // make this an undoable operation
+	(*viewerWindow)->UpdateDisplay(this);
 }
 
 void SequenceDisplay::SortRowsBySelfHit(void)
@@ -1112,12 +1121,13 @@ void SequenceDisplay::SortRowsBySelfHit(void)
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow) {
             // do self-hit calculation
-            (*viewerWindow)->viewer->alignmentManager->blaster->CalculateSelfHitScores(alnRow->alignment);
+            (*viewerWindow)->viewer->CalculateSelfHitScores(alnRow->alignment);
 
             // then sort by score
             rowComparisonFunction = CompareRowsByEValue;
             SortRows();
-            (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+			(*viewerWindow)->viewer->Save();   // make this an undoable operation
+			(*viewerWindow)->UpdateDisplay(this);
             break;
         }
     }
@@ -1251,7 +1261,8 @@ bool SequenceDisplay::ProximitySort(int displayRow)
     GlobalMessenger()->RemoveAllHighlights(true);
     GlobalMessenger()->AddHighlights(seq1, 0, seq1->Length() - 1);
     (*viewerWindow)->ScrollToRow((M - 3) > 0 ? (M - 3) : 0);
-    (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+    (*viewerWindow)->viewer->Save();   // make this an undoable operation
+	(*viewerWindow)->UpdateDisplay(this);
     return true;
 }
 

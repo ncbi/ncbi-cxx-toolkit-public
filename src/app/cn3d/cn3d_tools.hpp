@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
 * Revision 1.21  2002/10/11 17:21:39  thiessen
 * initial Mac OSX build
 *
@@ -119,10 +122,10 @@ class wxFrame;
 #if wxVERSION_NUMBER < 2302
 #error Cn3D requires at wxWindows version 2.3.2 or higher!
 #endif
-  
+
 #if !defined(__WXMSW__) && !defined(__WXGTK__) && !defined(__WXMAC__)
 #error Cn3D will only work with wxMSW, wxGTK, or wxMac!
-#endif 
+#endif
 
 #if defined(__WXMAC__) && !defined(__DARWIN__)
 #error Cn3D compilation is no longer supported for Mac OS 8/9
@@ -243,6 +246,15 @@ static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool 
 
     v = copy;
 }
+
+// utility function to delete all elements from an STL container
+#define DELETE_ALL_AND_CLEAR(container, ContainerType) \
+do { \
+    ContainerType::iterator i, ie = (container).end(); \
+    for (i=(container).begin(); i!=ie; i++) \
+        delete *i; \
+    (container).clear(); \
+} while (0)
 
 END_SCOPE(Cn3D)
 

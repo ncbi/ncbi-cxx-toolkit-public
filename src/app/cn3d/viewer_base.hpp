@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
 * Revision 1.14  2002/10/07 13:29:32  thiessen
 * add double-click -> show row to taxonomy tree
 *
@@ -99,7 +102,7 @@ class MoleculeIdentifier;
 class ViewerBase
 {
     friend class ViewerWindowBase;
-    friend class SequenceDisplay;
+    friend class AlignmentManager;
 
 public:
 
@@ -107,16 +110,15 @@ public:
     void Refresh(void);
     void DestroyGUI(void);
 
+    void GUIDestroyed(void) { *viewerWindow = NULL; }
+
+    // set customized window title
+    void SetWindowTitle(void) const;
+
     // ask whether the editor is enabled for this viewer
     bool EditorIsOn(void) const;
 
-    // to push/pop alignment+display data for undo during editing
-    void PushAlignment(void);
-    void PopAlignment(void);
-
-    // revert back to original (w/o save)
-    void RevertAlignment(void);
-    void KeepOnlyStackTop(void);
+    void RemoveBlockBoundaryRows(void);
 
     // tell viewer to save its data
     virtual void SaveDialog(bool prompt);
@@ -128,41 +130,59 @@ public:
     void MakeResidueVisible(const Molecule *molecule, int seqIndex);
     void MakeSequenceVisible(const MoleculeIdentifier *identifier);
 
+    void CalculateSelfHitScores(const BlockMultipleAlignment *multiple);
+
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
 
 protected:
-
-    AlignmentManager *alignmentManager;
-
     // can't instantiate this base class
     ViewerBase(ViewerWindowBase* *window, AlignmentManager *alnMgr);
     virtual ~ViewerBase(void);
 
+    AlignmentManager *alignmentManager;
+
     // handle to the associated window
     ViewerWindowBase* *const viewerWindow;
 
+private:
+    // alignment and display stack data
+    AlignmentList currentAlignments;
     typedef std::list < AlignmentList > AlignmentStack;
     AlignmentStack alignmentStack;
 
+    SequenceDisplay *currentDisplay;
     typedef std::list < SequenceDisplay * > DisplayStack;
     DisplayStack displayStack;
 
-    void InitStacks(const AlignmentList *alignments, SequenceDisplay *display);
-    void ClearStacks(void);
+    // limits the size of the stack (set to -1 for unlimited)
+    static const int MAX_UNDO_STACK_SIZE;
+
+    int nRedosStored;
+    bool stacksEnabled;
+
+    void CopyDataFromStack(void);
+    void ClearAllData(void);
+    void SetUndoRedoMenuStates(void);
 
 public:
 
-    void GUIDestroyed(void) { *viewerWindow = NULL; }
+    // initialization
+    void InitData(const AlignmentList *alignments, SequenceDisplay *display);
 
-    const AlignmentList * GetCurrentAlignments(void) const
-        { return ((alignmentStack.size() > 0 && alignmentStack.back().size() > 0) ?
-            &(alignmentStack.back()) : NULL); }
+    // to store alignment+display data for undo/redo during editing
+    void EnableStacks(void);
+    void Save(void);
+    void Undo(void);
+    void Redo(void);
 
-    SequenceDisplay * GetCurrentDisplay(void) const
-        { return ((displayStack.size() > 0) ? displayStack.back() : NULL); }
+    // revert back to bottom of stack, or keep current
+    void Revert(void);
+    void KeepCurrent(void);
 
-    // set customized window title
-    void SetWindowTitle(void) const;
+protected:
+    const AlignmentList& GetCurrentAlignments(void) const { return currentAlignments; }
+    AlignmentList& GetCurrentAlignments(void) { return currentAlignments; }
+    SequenceDisplay * GetCurrentDisplay(void) { return currentDisplay; }
 };
 
 END_SCOPE(Cn3D)

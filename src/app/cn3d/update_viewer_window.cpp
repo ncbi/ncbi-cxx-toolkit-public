@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
 * Revision 1.51  2002/09/19 12:51:08  thiessen
 * fix block aligner / update bug; add distance select for other molecules only
 *
@@ -319,12 +322,12 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
                 ERR_POST(Error << "Can't run threader without existing core alignment");
                 return;
             }
-            if (!updateViewer->GetCurrentAlignments()) return;
+            if (updateViewer->GetCurrentAlignments().size() == 0) return;
 
             // base nRS estimate on first update...
             globalThreaderOptions.nRandomStarts = Threader::EstimateNRandomStarts(
                 updateViewer->alignmentManager->GetCurrentMultipleAlignment(),
-                updateViewer->GetCurrentAlignments()->front());
+                updateViewer->GetCurrentAlignments().front());
             ThreaderOptionsDialog optDialog(this, globalThreaderOptions);
             if (optDialog.ShowModal() == wxCANCEL) return;  // user cancelled
 
@@ -355,10 +358,10 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
         case MID_MERGE_ALL:
         {
             AlignmentManager::UpdateMap all;    // construct map/list of all updates
-            const ViewerBase::AlignmentList *currentUpdates = updateViewer->GetCurrentAlignments();
-            if (currentUpdates) {
-                ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
-                for (u=currentUpdates->begin(); u!=ue; u++) all[*u] = true;
+            const ViewerBase::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
+            if (currentUpdates.size() > 0) {
+                ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
+                for (u=currentUpdates.begin(); u!=ue; u++) all[*u] = true;
                 updateViewer->alignmentManager->MergeUpdates(all);
             }
             break;
@@ -404,8 +407,8 @@ bool UpdateViewerWindow::SaveDialog(bool prompt, bool canCancel)
     if (option == wxID_YES)
         updateViewer->SaveAlignments();     // save data
     else {
-        updateViewer->RevertAlignment();    // revert to original
-        updateViewer->PushAlignment();      // but keep undo stack active
+        updateViewer->Revert();				// revert to original
+        updateViewer->EnableStacks();       // but keep undo stack active
     }
 
     return true;

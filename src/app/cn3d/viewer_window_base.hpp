@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
 * Revision 1.23  2002/10/07 13:29:32  thiessen
 * add double-click -> show row to taxonomy tree
 *
@@ -195,6 +198,7 @@ protected:
         // edit menu
         MID_ENABLE_EDIT,
         MID_UNDO,
+        MID_REDO,
         MID_SPLIT_BLOCK,
         MID_MERGE_BLOCKS,
         MID_CREATE_BLOCK,
@@ -290,6 +294,7 @@ public:
 
     bool EditorIsOn(void) const { return menuBar->IsChecked(MID_ENABLE_EDIT); }
     void EnableUndo(bool enabled) { menuBar->Enable(MID_UNDO, enabled); }
+    void EnableRedo(bool enabled) { menuBar->Enable(MID_REDO, enabled); }
 
     bool DoSplitBlock(void) const { return menuBar->IsChecked(MID_SPLIT_BLOCK); }
     bool DoMergeBlocks(void) const { return menuBar->IsChecked(MID_MERGE_BLOCKS); }
