@@ -688,8 +688,8 @@ extern void SOCK_AllowSigPipeAPI(void)
 
 static void s_ShowDataLayout(void)
 {
-    CORE_LOGF(eLOG_Note, ("SOCK data layout:"
-                          "Sizeof(SOCK_struct) = %u\n"
+    CORE_LOGF(eLOG_Note, ("SOCK data layout:\n"
+                          "    Sizeof(SOCK_struct) = %u, offsets follow\n"
                           "\tsock:      %u\n"
                           "\tid:        %u\n"
                           "\thost:      %u\n"
@@ -1412,6 +1412,11 @@ static EIO_Status s_Connect(SOCK            sock,
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
         s_DoLog(sock, eIO_Open, 0, 0, &peer);
 
+    sock->host      = x_host;
+    sock->port      = x_port;
+    sock->r_status  = eIO_Success;
+    sock->eof       = 0/*false*/;
+    sock->w_status  = eIO_Success;
     /* establish connection to the peer */
     if (connect(x_sock, (struct sockaddr*) &peer, sizeof(peer)) != 0) {
         if (SOCK_ERRNO != SOCK_EINTR  &&  SOCK_ERRNO != SOCK_EINPROGRESS  &&
@@ -1454,13 +1459,7 @@ static EIO_Status s_Connect(SOCK            sock,
     } else
         sock->connect = 1;
 
-    /* success */
-    /* NOTE:  it does not change the timeouts */
-    sock->host      = x_host;
-    sock->port      = x_port;
-    sock->r_status  = eIO_Success;
-    sock->eof       = 0/*false*/;
-    sock->w_status  = eIO_Success;
+    /* success: do not change any timeouts */
     sock->n_read    = 0;
     sock->n_written = 0;
     sock->pending   = (long) BUF_Size(sock->w_buf);
@@ -1904,8 +1903,15 @@ static EIO_Status s_Read(SOCK        sock,
         if (sock->r_status == eIO_Unknown)
             break;
 
-        if (sock->r_status == eIO_Closed  ||  sock->eof)
+        if (sock->r_status == eIO_Closed  ||  sock->eof) {
+            if ( !sock->eof ) {
+                char _id[32];
+                CORE_LOGF(eLOG_Warning, ("%s[SOCK::s_Read]  Socket has been "
+                                         "shut down for reading",
+                                         s_ID(sock, _id)));
+            }
             return eIO_Closed;
+        }
 
         x_errno = SOCK_ERRNO;
         /* blocked -- wait for data to come;  exit if timeout/error */
@@ -2670,14 +2676,21 @@ extern EIO_Status SOCK_PushBack(SOCK        sock,
 extern EIO_Status SOCK_Status(SOCK      sock,
                               EIO_Event direction)
 {
+    if ( !sock )
+        return eIO_InvalidArg;
+
     switch ( direction ) {
     case eIO_Read:
+        if (sock->sock == SOCK_INVALID)
+            return eIO_Closed;
         if (sock->type != eSOCK_Datagram) {
             return sock->r_status != eIO_Success
                 ? sock->r_status : (sock->eof ? eIO_Closed : eIO_Success);
         }
         return sock->r_status;
     case eIO_Write:
+        if (sock->sock == SOCK_INVALID)
+            return eIO_Closed;
         return sock->w_status;
     default:
         return eIO_InvalidArg;
@@ -3585,6 +3598,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.104  2003/05/14 14:51:27  lavr
+ * BUGFIX: Connection stall in s_Connect()
+ *
  * Revision 6.103  2003/05/14 13:19:18  lavr
  * Define SOCK_SHUTDOWN_RDWR for MSVC compilation
  *
