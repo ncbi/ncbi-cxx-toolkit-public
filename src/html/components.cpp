@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/02/23 19:04:27  vasilche
+* Fixed uninitialized m_Width in CQueryBox
+*
 * Revision 1.23  1999/01/28 21:58:07  vasilche
 * QueryBox now inherits from CHTML_table (not CHTML_form as before).
 * Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
@@ -221,7 +224,7 @@ CNCBINode* CTextInputDescription::CreateComponent(void) const
 }
 
 CQueryBox::CQueryBox(void)
-    : m_Submit("cmd", "Search"), m_Database("db"),
+    : m_Width(-1), m_Submit("cmd", "Search"), m_Database("db"),
       m_Term("term"), m_DispMax("dispmax")
 {
     SetCellSpacing(0);
@@ -246,7 +249,8 @@ void CQueryBox::CreateSubNodes()
     }
 */
     SetBgColor(m_BgColor);
-    SetWidth(m_Width);
+    if ( m_Width >= 0 )
+        SetWidth(m_Width);
 
     CheckTable();
     int row = CalculateNumberOfRows();
