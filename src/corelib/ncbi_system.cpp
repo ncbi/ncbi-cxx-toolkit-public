@@ -343,10 +343,41 @@ unsigned int GetCpuCount(void)
     nproc = sysconf(_SC_NPROCESSORS_ONLN);
 #   endif
     return nproc <= 0 ? 1 : (unsigned int) nproc;
-
 #else
     return 1;
 #endif
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Sleep
+//
+
+void SleepMicroSec(unsigned int mc_sec)
+{
+#if defined(NCBI_OS_MSWIN)
+    Sleep(mc_sec / 1000);
+#elif defined(NCBI_OS_UNIX)
+    struct timeval delay;
+    delay.tv_sec  = mc_sec / kMicroSecondsPerSecond;
+    delay.tv_usec = mc_sec % kMicroSecondsPerSecond;
+    select(0, (fd_set*)NULL, (fd_set*)NULL, (fd_set*)NULL, &delay);
+#else
+    ?
+#endif
+}
+
+
+void SleepMilliSec(unsigned int ml_sec)
+{
+    SleepMicroSec(ml_sec * 1000);
+}
+
+
+void SleepSec(unsigned int sec)
+{
+    SleepMicroSec(sec * kMicroSecondsPerSecond);
 }
 
 
@@ -356,6 +387,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2002/07/15 21:43:04  ivanov
+ * Added functions SleepMicroSec, SleepMilliSec, SleepSec
+ *
  * Revision 1.19  2002/04/11 21:08:00  ivanov
  * CVS log moved to end of the file
  *

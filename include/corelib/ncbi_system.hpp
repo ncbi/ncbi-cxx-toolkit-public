@@ -28,12 +28,7 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:
- *
- *   System functions:
- *      SetHeapLimit()
- *      SetCpuTimeLimit()
- *      GetCpuCount()
+ * File Description: System functions
  *
  */
 
@@ -99,12 +94,23 @@ extern bool SetCpuTimeLimit(size_t max_cpu_time,
 extern unsigned int GetCpuCount(void);
 
 
+/* [UNIX & Windows]
+ * Sleep specified number of microseconds/millisecond/seconds
+ */
+extern void SleepSec(unsigned int sec);
+extern void SleepMilliSec(unsigned int ml_sec);
+extern void SleepMicroSec(unsigned int mc_sec);
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/07/15 21:43:25  ivanov
+ * Added functions SleepMicroSec, SleepMilliSec, SleepSec
+ *
  * Revision 1.7  2002/04/11 20:39:16  ivanov
  * CVS log moved to end of the file
  *
