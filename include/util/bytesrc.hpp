@@ -76,8 +76,13 @@ public:
         SubSource(size_t prepend, CRef<CSubSourceCollector> parent);
 };
 
-/// Sub-source collector
+/// Abstract class for implementing "sub collectors".
 ///
+/// Sub source collectors can accumulate data in memory, disk
+/// or uany other media. This is used to temporarily 
+/// store fragments of binary streams or BLOBs. 
+/// Typically such collected data can be re-read by provided 
+/// CByteSource interface.
 class NCBI_XUTIL_EXPORT CSubSourceCollector : public CObject
 {
 public:
@@ -94,6 +99,14 @@ public:
     /// call is redirected to the parent chain.
     virtual void AddChunk(const char* buffer, size_t bufferLength);
 
+    /// Get CByteSource implementation.
+    ///
+    /// Calling program can try to re-read collected data using CByteSource and
+    /// CByteSourceReader interfaces, though it is legal to return NULL pointer
+    /// if CSubSourceCollector implementation does not support re-reading
+    /// (for example if collector sends data away using network or just writes
+    /// down logs to a write-only database).
+    /// @sa CByteSource, CByteSourceReader
     virtual CRef<CByteSource> GetSource(void) = 0;
 
 protected:
@@ -276,6 +289,9 @@ public:
                    EOwnership own);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength);
+
+    /// Return pointer on "reader" interface. In this implementation
+    /// returns NULL, since IWriter is a one way (write only interface)
     virtual CRef<CByteSource> GetSource(void);
 
 private:
@@ -361,6 +377,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/09/26 15:23:03  kuznets
+* Documented CSubSourceCollector and it's relations with CByteSource
+* and CByteSourceReader
+*
 * Revision 1.14  2003/09/25 16:37:47  kuznets
 * + IWriter based sub source collector
 *
