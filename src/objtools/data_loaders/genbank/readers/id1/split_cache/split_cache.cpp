@@ -458,8 +458,9 @@ private:
 };
 
 
-static
-string GetFileName(const string& key, const string& suffix, const string& ext)
+string CSplitCacheApp::GetFileName(const string& key,
+                                   const string& suffix,
+                                   const string& ext)
 {
     string dir = key;
     string file = key + suffix;
@@ -634,6 +635,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/12/02 19:59:15  vasilche
+* Added GetFileName() declaration.
+*
 * Revision 1.5  2003/12/02 19:12:24  vasilche
 * Fixed compilation on MSVC.
 *
