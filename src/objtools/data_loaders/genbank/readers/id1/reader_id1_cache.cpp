@@ -57,6 +57,7 @@
 
 #include <serial/serial.hpp>
 
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -802,6 +803,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.16  2003/12/09 17:30:32  ucko
+ * +<stdio.h> for sprintf
+ *
  * Revision 1.15  2003/11/26 17:55:59  vasilche
  * Implemented ID2 split in ID1 cache.
  * Fixed loading of splitted annotations.
