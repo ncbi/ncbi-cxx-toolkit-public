@@ -928,6 +928,10 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
                ext_params->options, hit_params, db_options->gen_code_string);
             BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
          }
+         /* Calculate and fill the bit scores. This is the only time when 
+            they are calculated. */
+         Blast_HSPListGetBitScores(hsp_list, 
+            score_params->options->gapped_calculation, sbp);
       }
      }
    }
@@ -1104,8 +1108,13 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
       /* Revert query and subject to their traditional meanings. 
          This involves switching the offsets around and reversing
          any traceback information */
-
       RPSUpdateHSPList(hsp_list);
+
+      /* Calculate and fill the bit scores. This is the only time when 
+	 they are calculated. */
+      Blast_HSPListGetBitScores(hsp_list, 
+         score_params->options->gapped_calculation, sbp);
+
    }
 
    gap_align->sbp->posMatrix = orig_pssm;
