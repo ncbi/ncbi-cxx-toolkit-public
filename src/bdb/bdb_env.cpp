@@ -161,14 +161,16 @@ void CBDB_Env::OpenErrFile(const char* file_name)
 
 void CBDB_Env::SetDirectDB(bool on_off)
 {
-    int ret = m_Env->set_flags(m_Env, DB_DIRECT_DB, (int)on_off);
-    BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_DB)");   
+    // error checking commented (not all platforms support direct IO)
+    /*int ret = */ m_Env->set_flags(m_Env, DB_DIRECT_DB, (int)on_off);
+    // BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_DB)");   
 }
 
 void CBDB_Env::SetDirectLog(bool on_off)
 {
-    int ret = m_Env->set_flags(m_Env, DB_DIRECT_LOG, (int)on_off);
-    BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_LOG)");   
+    // error checking commented (not all platforms support direct IO)
+    /*int ret = */ m_Env->set_flags(m_Env, DB_DIRECT_LOG, (int)on_off);
+    // BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_LOG)");   
 }
 
 void CBDB_Env::TransactionCheckpoint()
@@ -185,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/03/26 14:53:59  kuznets
+ * No error checking for direct IO functions (does not work on some platforms)
+ *
  * Revision 1.16  2004/03/26 14:05:04  kuznets
  * + implemented transaction checkpoints and buffering functions
  *
