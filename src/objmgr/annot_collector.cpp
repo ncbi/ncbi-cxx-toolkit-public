@@ -847,6 +847,7 @@ void CAnnot_Collector::x_GetTSE_Info(void)
     {
         const CTSE_Info* info = CTypeConverter<CTSE_Info>::
             SafeCast(m_Selector.m_LimitObject.GetPointer());
+        m_LimitTSE_Lock = m_Selector.m_LimitTSE_Lock;
         _ASSERT(m_LimitTSE_Lock && &*m_LimitTSE_Lock == info);
         m_MappingCollector->m_LimitObjectInfo.Reset(info);
         break;
@@ -855,6 +856,7 @@ void CAnnot_Collector::x_GetTSE_Info(void)
     {
         const CSeq_entry_Info* info = CTypeConverter<CSeq_entry_Info>::
             SafeCast(m_Selector.m_LimitObject.GetPointer());
+        m_LimitTSE_Lock = m_Selector.m_LimitTSE_Lock;
         _ASSERT(m_LimitTSE_Lock && &*m_LimitTSE_Lock == &info->GetTSE_Info());
         m_MappingCollector->m_LimitObjectInfo.Reset(info);
         break;
@@ -863,6 +865,7 @@ void CAnnot_Collector::x_GetTSE_Info(void)
     {
         const CSeq_annot_Info* info = CTypeConverter<CSeq_annot_Info>::
             SafeCast(m_Selector.m_LimitObject.GetPointer());
+        m_LimitTSE_Lock = m_Selector.m_LimitTSE_Lock;
         _ASSERT(m_LimitTSE_Lock && &*m_LimitTSE_Lock == &info->GetTSE_Info());
         m_MappingCollector->m_LimitObjectInfo.Reset(info);
         break;
@@ -1480,6 +1483,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/08/05 18:27:21  vasilche
+* Fixed assert when LimitTSE is used.
+*
 * Revision 1.18  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
