@@ -51,7 +51,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 ///
 /// the number of mods defined in asn.1 spec
 ///
-const int kNumMods = 9;
+const int kNumMods = 16;
 
 ///
 /// Modification types
@@ -84,9 +84,20 @@ enum EMSModType {
 /// categorizes existing mods as the types listed above
 ///
 const EMSModType ModTypes[kNumMods] = {
-    eModN,
+    eModAA,
+    eModAA,
+    eModAA,
+    eModAA,
+    eModAA,
+    eModAA,
+    eModAA,
+    eModAA,
     eModAA,
     eModNAA,
+    eModN,
+    eModN,
+    eModN,
+    eModAA,
     eModAA,
     eModAA
 };
@@ -96,14 +107,21 @@ const EMSModType ModTypes[kNumMods] = {
 ///
 char const * const kModNames[kNumMods] = {
     "methylation of K",
-    "oxidation of methionine",
-    "carboxymethyl cysteine",
-    "carbamidomethyl cysteine",
+    "oxidation of M",
+    "carboxymethyl C",
+    "carbamidomethyl C",
     "deamidation of K and Q",
-    "propionamide cysteine",
+    "propionamide C",
     "phosphorylation of S",
     "phosphorylation of T",
-    "phosphorylation of Y"
+    "phosphorylation of Y",
+    "N-term M removal",
+    "N-term acetylation",
+    "N-term methylation",
+    "N-term trimethylation",
+    "beta methythiolation of D",
+    "methylation of Q",
+    "trimethylation of K"
 };	   
  
 ///
@@ -112,20 +130,20 @@ char const * const kModNames[kNumMods] = {
 /// column are the AA's modified (if any)
 ///
 const char ModChar [3][kNumMods] = {
-    {'\x0a','\x0c','\x03','\x03','\x0d','\x03','\x11','\x12','\x16' },
-    {'\x00','\x00','\x00','\x00','\x0f','\x00','\x00','\x00','\x00' },
-    {'\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' }
+    {'\x0a','\x0c','\x03','\x03','\x0d','\x03','\x11','\x12','\x16','\x0c','\x00','\x00','\x00','\x04','\x0f','\x0a' },
+    {'\x00','\x00','\x00','\x00','\x0f','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' },
+    {'\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' }
 };
 
 ///
 /// the number of characters to compare
 ///
-const int NumModChars[] = { 1, 1, 1, 1, 2, 1, 1, 1, 1 };
+const int NumModChars[] = { 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1 };
 
 ///
 /// the modification masses
 ///
-const int ModMass[] = { 1403, 1600, 5801, 5702, 98, 7104, 7997, 7997, 7997};
+const int ModMass[] = { 1402, 1600, 5801, 5702, 98, 7104, 7997, 7997, 7997, -13104, 4201, 1402, 4205, 4599, 1402, 4205};
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -140,14 +158,15 @@ public:
     CMSMod(const CMSSearchSettings::TVariable &Mods);
     // initialize variable mod type array
     void Init(const CMSSearchSettings::TVariable &Mods);
-    CMSSearchSettings::TVariable &GetAAMods(EMSModType Type);    
+    const CMSSearchSettings::TVariable &GetAAMods(EMSModType Type) const;    
 private:
     CMSSearchSettings::TVariable ModLists[kNumModType];
 };
 
 ///////////////////  CMSMod  inline methods
 
-inline CMSSearchSettings::TVariable & CMSMod::GetAAMods(EMSModType Type) 
+inline 
+const CMSSearchSettings::TVariable & CMSMod::GetAAMods(EMSModType Type) const
 { 
     return ModLists[Type]; 
 }
@@ -162,6 +181,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/06/21 21:19:27  lewisg
+* new mods (including n term) and sample perl parser
+*
 * Revision 1.4  2004/06/08 19:46:21  lewisg
 * input validation, additional user settable parameters
 *

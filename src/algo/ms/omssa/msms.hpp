@@ -60,7 +60,8 @@ const int kNumUniqueAA = 26;
 // all blast protein databases are encoded with this.
 // U is selenocystine
 const char * const UniqueAA = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
-//                                            01234567890123456789012345
+//                             01234567890123456789012345
+//                             0123456789abcdef0123456789
 
 // non-redundified integer intervals of amino acids
 const int kNumAAIntervals = 19;
@@ -109,7 +110,7 @@ public:
     // initialize mass arrays
     void Init(const CMSSearchSettings::TSearchtype &SearchType);
     // initialize mass arrays with fixed mods
-    void Init(const CMSSearchSettings::TFixed &Mods, 
+    void Init(const CMSMod &Mods, 
 	      const CMSSearchSettings::TSearchtype &SearchType);
 private:
     // inits mass arrays
@@ -191,6 +192,7 @@ public:
 			    int MaxNumMod, // max num mods 
 			    int *EndMasses,
 			    CMSMod &VariableMods,
+			    CMSMod &FixedMods,
 			    const char **Site,
 			    int *DeltaMass,
 			    const int *IntCalcMass  // array of int AA masses
@@ -203,7 +205,31 @@ public:
     
     void EndMass(int *Masses
 		 );
+
     int findfirst(char* Seq, int Pos, int SeqLen);
+
+    ///
+    /// looks for non-specific ptms
+    ///
+    void CheckNonSpecificMods(EMSModType ModType, // the type of mod
+			      CMSMod &VariableMods, // list of mods to look for
+			      int& NumMod, // number of mods applied to peptide
+			      int MaxNumMod,  // maximum mods for a peptide
+			      const char **Site,  // list of mod sites
+			      int *DeltaMass, // mass of mod
+			      const char *iPepStart);  // position in protein
+
+    ///
+    /// looks for amino acid specific ptms
+    ///
+    void CheckAAMods(EMSModType ModType,  // the type of mod
+		     CMSMod &VariableMods, // list of mods to look for
+		     int& NumMod, // number of mods applied to peptide
+		     char SeqChar,  // the amino acid
+		     int MaxNumMod,  // maximum mods for a peptide
+		     const char **Site,  // list of mod sites
+		     int *DeltaMass, // mass of mod
+		     const char *iPepStart);  // position in protein
 
 protected:
     int ProtonMass; // mass of the proton
@@ -232,6 +258,7 @@ void CCleave::CalcMass(char SeqChar,
     *Masses += IntCalcMass[Reverse[SeqChar]];
 }
 
+
 inline
 void CCleave::EndMass( int *EndMasses
 		       )
@@ -239,6 +266,48 @@ void CCleave::EndMass( int *EndMasses
     //  int i;
     //  for(i = 0; i < NumEndMasses; i++)   
     *EndMasses = TermMass;
+}
+
+
+inline
+void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
+			 char SeqChar, int MaxNumMod, const char **Site,
+			 int *DeltaMass, const char *iPepStart)
+{
+    // iterator thru mods
+    CMSSearchSettings::TVariable::const_iterator iMods;
+    int iChar;
+
+    for(iMods = VariableMods.GetAAMods(ModType).begin();
+	iMods !=  VariableMods.GetAAMods(ModType).end(); iMods++) {
+	for(iChar = 0; iChar < NumModChars[*iMods]; iChar++) {
+	    if (SeqChar == ModChar[iChar][*iMods] && NumMod < MaxNumMod) {
+		Site[NumMod] = iPepStart;
+		DeltaMass[NumMod] = ModMass[*iMods];
+		NumMod++; 
+	    }
+	}
+    }
+}
+
+
+inline
+void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
+				   int& NumMod, int MaxNumMod,
+				   const char **Site,
+				   int *DeltaMass, const char *iPepStart)
+{
+    // iterator thru mods
+    CMSSearchSettings::TVariable::const_iterator iMods;
+
+    for(iMods = VariableMods.GetAAMods(ModType).begin();
+	iMods !=  VariableMods.GetAAMods(ModType).end(); iMods++) {
+	if (NumMod < MaxNumMod) {
+	    Site[NumMod] = iPepStart;
+	    DeltaMass[NumMod] = ModMass[*iMods];
+	    NumMod++; 
+	}
+    }
 }
 
 /////////////////// end of CCleave inline methods
@@ -302,6 +371,7 @@ public:
 			    int MaxNumMod,
 			    int *EndMasses,
 			    CMSMod &VariableMods,
+			    CMSMod &FixedMods,
 			    const char **Site,
 			    int *DeltaMass,
 			    const int *IntCalcMass  // array of int AA masses
@@ -334,6 +404,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.8  2004/06/21 21:19:27  lewisg
+  new mods (including n term) and sample perl parser
+
   Revision 1.7  2004/06/08 19:46:21  lewisg
   input validation, additional user settable parameters
 

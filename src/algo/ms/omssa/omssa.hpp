@@ -165,6 +165,7 @@ private:
     //    CMSHistSet HistSet;  // score arrays
     CMassArray MassArray;  // amino acid mass arrays
     CMSMod VariableMods;  // categorized variable mods
+    CMSMod FixedMods;  // categorized fixed mods
     int numseq; // number of sequences in blastdb
 };
 
@@ -238,6 +239,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.12  2004/06/21 21:19:27  lewisg
+  new mods (including n term) and sample perl parser
+
   Revision 1.11  2004/06/08 19:46:21  lewisg
   input validation, additional user settable parameters
 

@@ -404,7 +404,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	int iSearch, hits;
 	unsigned char *Sequence;  // start position
 	int endposition, position;
-	MassArray.Init(MyRequest.GetSettings().GetFixed(), MyRequest.GetSettings().GetSearchtype());
+	FixedMods.Init(MyRequest.GetSettings().GetFixed());
+	MassArray.Init(FixedMods, MyRequest.GetSettings().GetSearchtype());
 	VariableMods.Init(MyRequest.GetSettings().GetVariable());
 	const int *IntMassArray = MassArray.GetIntMass();
 	const char *PepStart[MAXMISSEDCLEAVE];
@@ -528,7 +529,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 				       NumMod[Missed - 1],
 				       MAXMOD,
 				       &(EndMasses[Missed - 1]),
-				       VariableMods,
+				       VariableMods, FixedMods,
 				       Site[Missed - 1],
 				       DeltaMass[Missed - 1],
 				       IntMassArray);
@@ -1060,6 +1061,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.22  2004/06/21 21:19:27  lewisg
+new mods (including n term) and sample perl parser
+
 Revision 1.21  2004/06/08 19:46:21  lewisg
 input validation, additional user settable parameters
 

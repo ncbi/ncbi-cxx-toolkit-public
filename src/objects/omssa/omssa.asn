@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.8 2004/06/08 19:46:20 lewisg Exp $
+-- $Id: omssa.asn,v 1.9 2004/06/21 21:19:49 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -64,7 +64,13 @@ MSMod ::= INTEGER {
     sphosphorylation (6), -- phosphorylation of S
     tphosphorylation (7), -- phosphorylation of T
     yphosphorylation (8), -- phosphorylation of Y    
-    ntermacetyl (9),      -- N terminal acetylation
+    ntermmcleave (9),     -- N terminal methionine cleavage
+    ntermacetyl (10),     -- N terminal acetyl
+    ntermmethyl (11),     -- N terminal methyl
+    ntermtrimethyl (12),  -- N terminal trimethyl
+    dmethythiol (13),     -- beta methythiolation of D
+    qmethyl (14),         -- methylation of Q
+    ktrimethyl (15),      -- trimethylation of K
     none(255)
     }
 

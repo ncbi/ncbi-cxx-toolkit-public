@@ -37,7 +37,6 @@
 #include <fstream>
 
 #include "msms.hpp"
-#include "Mod.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -139,6 +138,7 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
 			  int MaxNumMod,
 			  int *EndMasses,
 			  CMSMod &VariableMods,
+			  CMSMod &FixedMods,
 			  const char **Site,
 			  int *DeltaMass,
 			  const int *IntCalcMass  // array of int AA masses
@@ -156,21 +156,22 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
 	SeqChar = **PepStart;
 
 	// check for mods that are type AA only
-	for(iMods = VariableMods.GetAAMods(eModAA).begin();
-	    iMods !=  VariableMods.GetAAMods(eModAA).end(); iMods++) {
-	    for(iChar = 0; iChar < NumModChars[*iMods]; iChar++) {
-		if (SeqChar == ModChar[iChar][*iMods] && NumMod < MaxNumMod) {
-		    Site[NumMod] = *PepStart;
-		    DeltaMass[NumMod] = ModMass[*iMods];
-		    NumMod++; 
-		}
-	    }
+	CheckAAMods(eModAA, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
+		    DeltaMass, *PepStart);
+
+
+	// n terminus
+	if(*PepStart == SeqStart) {
+	    // check non-specific mods
+	    CheckNonSpecificMods(eModN, VariableMods, NumMod, MaxNumMod, Site,
+				 DeltaMass, *PepStart);
+	    CheckNonSpecificMods(eModN, FixedMods, NumMod, MaxNumMod, Site,
+				 DeltaMass, *PepStart);
+
+	    // check specific mods
+	    CheckAAMods(eModNAA, VariableMods, NumMod, SeqChar, MaxNumMod,
+			Site, DeltaMass, *PepStart);
 	}
-	//	if((SeqChar == 'M' || SeqChar == '\x0c') && NumMod < MaxNumMod) {
-	//	    NumMod++;
-	//	    Masses[NumCleave][NumMod-1] = Masses[NumCleave][NumMod-2] +
-	//		16*MSSCALE;
-	//	}
 
 	CalcMass(SeqChar, Masses, IntCalcMass);
 
@@ -252,13 +253,14 @@ void CMassArray::x_Init(const CMSSearchSettings::TSearchtype &SearchType)
 }
 
 // set up the mass array with fixed mods
-void CMassArray::Init(const CMSSearchSettings::TFixed &Mods, 
+void CMassArray::Init(const CMSMod &Mods, 
 		      const CMSSearchSettings::TSearchtype &SearchType)
 {
     x_Init(SearchType);
-    CMSSearchSettings::TFixed::const_iterator i;  // iterate thru fixed mods
+    CMSSearchSettings::TVariable::const_iterator i;  // iterate thru fixed mods
     int j; // the number of characters affected by the fixed mod
-    for(i = Mods.begin(); i != Mods.end(); i++) {
+
+    for(i = Mods.GetAAMods(eModAA).begin(); i != Mods.GetAAMods(eModAA).end(); i++) {
 	for(j = 0; j < NumModChars[*i]; j++) {
 	    CalcMass[ModChar[j][*i]] +=  ModMass[*i]/(double)MSSCALE;
 	    IntCalcMass[ModChar[j][*i]] += ModMass[*i];
@@ -269,6 +271,9 @@ void CMassArray::Init(const CMSSearchSettings::TFixed &Mods,
 
 /*
   $Log$
+  Revision 1.8  2004/06/21 21:19:27  lewisg
+  new mods (including n term) and sample perl parser
+
   Revision 1.7  2004/06/08 19:46:21  lewisg
   input validation, additional user settable parameters
 
