@@ -3,5 +3,5 @@
 # Master (top-level) makefile for all NCBI C++ projects
 ##################################################################
 
-SUB_PROJ = connect corelib cgi html hello @serial@ @objects@ @internal@
+SUB_PROJ = connect corelib cgi html hello ddv @serial@ @objects@ @internal@
 include @builddir@/Makefile.meta
