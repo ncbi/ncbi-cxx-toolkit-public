@@ -353,8 +353,8 @@ struct NCBI_XOBJUTIL_EXPORT SRelLoc
             TFlags flags = 0);
     CRef<CSeq_loc> Resolve(CScope* scope = 0, TFlags flags = 0) const;
 
-    typedef CSeq_loc::TRange TRange;
-    typedef vector<TRange>   TRanges;
+    typedef CSeq_interval         TRange;
+    typedef vector<CRef<TRange> > TRanges;
     CConstRef<CSeq_loc> m_ParentLoc;
     TRanges             m_Ranges;
 };
@@ -493,6 +493,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.23  2003/01/08 20:43:05  ucko
+* Adjust SRelLoc to use (ID-less) Seq-intervals for ranges, so that it
+* will be possible to add support for fuzz and strandedness/orientation.
+*
 * Revision 1.22  2003/01/03 19:27:45  shomrat
 * Added Win32 export specifier where missing
 *
