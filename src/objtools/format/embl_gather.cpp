@@ -32,7 +32,6 @@
 */
 #include <corelib/ncbistd.hpp>
 
-#include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/item_ostream.hpp>
 #include <objtools/format/flat_expt.hpp>
 #include <objtools/format/items/locus_item.hpp>
@@ -63,18 +62,11 @@ CEmblGatherer::CEmblGatherer(void)
 }
 
 
-void CEmblGatherer::x_DoSingleSection(const CBioseq& seq) const
+void CEmblGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
 {
     CFFContext& ctx = Context();
 
     ctx.SetActiveBioseq(seq);
-
-    if ( (ctx.IsNa()  &&  
-          ((ctx.GetFilterFlags() & fSkipNucleotides) != 0))  ||
-         (ctx.IsProt()  &&
-          ((ctx.GetFilterFlags() & fSkipProteins) != 0)) ) {
-        return;
-    }
 
     ItemOS() << new CStartSectionItem(ctx);
 
@@ -123,6 +115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/25 20:36:56  shomrat
+* Use handles
+*
 * Revision 1.6  2004/02/19 18:06:42  shomrat
 * Skip source-features if flag is set
 *

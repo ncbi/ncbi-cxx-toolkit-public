@@ -92,8 +92,14 @@ static int s_ScoreForDBSource(const CRef<CSeq_id>& x) {
 
 void CDBSourceItem::x_GatherInfo(CFFContext& ctx)
 {
-    const CBioseq& seq = ctx.GetHandle().GetBioseq();
-    CConstRef<CSeq_id> id = FindBestChoice(seq.GetId(), s_ScoreForDBSource);
+    const CBioseq_Handle& bsh = ctx.GetHandle();
+    CBioseq_Handle::TBioseqCore seq(bsh.GetBioseqCore());
+    if ( !seq ) {
+        return;
+    }
+
+    const CBioseq::TId& ids = seq->GetId();
+    CConstRef<CSeq_id> id = FindBestChoice(ids, s_ScoreForDBSource);
 
     if ( !id ) {
         m_DBSource.push_back("UNKNOWN");
@@ -133,10 +139,10 @@ void CDBSourceItem::x_GatherInfo(CFFContext& ctx)
     {
         set<CBioseq_Handle> sources;
         CScope& scope = ctx.GetHandle().GetScope();
-        const CSeq_feat* feat = GetCDSForProduct(seq, &scope);
+        const CSeq_feat* feat = GetCDSForProduct(bsh);
         if ( feat == 0 ) {
             // may also be protein product of mature peptide feature
-            feat = GetPROTForProduct(seq, &scope);
+            feat = GetPROTForProduct(bsh);
         }
         if ( feat != 0 ) {
             const CSeq_loc& loc = feat->GetLocation();
@@ -152,7 +158,7 @@ void CDBSourceItem::x_GatherInfo(CFFContext& ctx)
             }
         }
         ITERATE (set<CBioseq_Handle>, it, sources) {
-            CConstRef<CSeq_id> id2 = FindBestChoice(it->GetBioseq().GetId(),
+            CConstRef<CSeq_id> id2 = FindBestChoice(it->GetBioseqCore()->GetId(),
                 s_ScoreForDBSource);
             if ( id2 != 0 ) {
                 string str = x_FormatDBSourceID(*id2);
@@ -485,6 +491,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/25 20:36:31  shomrat
+* Use handles
+*
 * Revision 1.3  2004/03/16 19:07:25  vasilche
 * Use CConstRef<CSeq_id> to store returned CConstRef<CSeq_id>.
 *

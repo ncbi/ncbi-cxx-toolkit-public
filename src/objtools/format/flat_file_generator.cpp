@@ -33,10 +33,10 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seq/Bioseq.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/text_ostream.hpp>
@@ -89,12 +89,11 @@ SAnnotSelector& CFlatFileGenerator::SetAnnotSelector(void)
 
 
 // Generate a flat-file report for a Seq-entry
-
 void CFlatFileGenerator::Generate
-(const CSeq_entry& entry,
+(const CSeq_entry_Handle& entry,
  CFlatItemOStream& item_os)
 {
-    _ASSERT(entry.Which() != CSeq_entry::e_not_set);
+    _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
 
     m_Ctx->SetTSE(entry);
 
@@ -125,10 +124,12 @@ void CFlatFileGenerator::Generate
     // NB: though the spec specifies a submission may contain multiple entries
     // this is not the case. A submission should only have a single Top-level
     // Seq-entry
-    const CSeq_entry& entry = *(submit.GetData().GetEntrys().front());
-
-    m_Ctx->SetSubmit(submit.GetSub());
-    Generate(entry, item_os);
+    CConstRef<CSeq_entry> e(submit.GetData().GetEntrys().front());
+    if ( e ) {
+        CSeq_entry_Handle entry = m_Ctx->GetScope().GetSeq_entryHandle(*e);
+        m_Ctx->SetSubmit(submit.GetSub());
+        Generate(entry, item_os);
+    }
 }
 
 
@@ -141,26 +142,17 @@ void CFlatFileGenerator::Generate
             "locations must be an interval on a bioseq (or whole)");
     }
 
-    const CSeq_entry* entry = 0;
     CBioseq_Handle bsh = m_Ctx->GetScope().GetBioseqHandle(loc);
-    if ( bsh ) {
-        entry = bsh.GetBioseq().GetParentEntry();
+    if ( !bsh ) {
+        NCBI_THROW(CFlatException, eInvalidParam, "location not in scope");
     }
-    if ( entry == 0 ) {
+    CSeq_entry_Handle entry = bsh.GetParentEntry();
+    if ( !entry ) {
         NCBI_THROW(CFlatException, eInvalidParam, "Id not in scope");
     }
     m_Ctx->SetLocation(&loc);
 
-    Generate(*entry, item_os);
-}
-
-
-void CFlatFileGenerator::Generate(const CSeq_entry& entry, CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream> 
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    Generate(entry, *item_os);
+    Generate(entry, item_os);
 }
 
 
@@ -172,10 +164,52 @@ void CFlatFileGenerator::Generate(const CSeq_submit& submit, CNcbiOstream& os)
     Generate(submit, *item_os);
 }
 
+
+void CFlatFileGenerator::Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os)
+{
+    CRef<CFlatItemOStream> 
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    Generate(entry, *item_os);
+}
+
+
+void CFlatFileGenerator::Generate(const CSeq_loc& loc, CNcbiOstream& os)
+{
+    CRef<CFlatItemOStream> 
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    Generate(loc, *item_os);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
-// PRIVATE
+// DEPRECATED
 
+void CFlatFileGenerator::Generate
+(const CSeq_entry& entry,
+ CFlatItemOStream& item_os)
+{
+    ERR_POST_ONCE(Warning<<
+        "CFlatFileGenerator::Generate(const CSeq_entry&, ...) is deprecated"
+        <<" use CFlatFileGenerator::Generate(const CSeq_entry_Handle, ...).");
+    
+    CSeq_entry_Handle h = m_Ctx->GetScope().GetSeq_entryHandle(entry);
+    Generate(h, item_os);
+}
+
+
+void CFlatFileGenerator::Generate(const CSeq_entry& entry, CNcbiOstream& os)
+{
+    ERR_POST_ONCE(Warning<<
+        "CFlatFileGenerator::Generate(const CSeq_entry&, ...) is deprecated"
+        <<" use CFlatFileGenerator::Generate(const CSeq_entry_Handle, ...).");
+
+    CRef<CFlatItemOStream> 
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    Generate(entry, os);
+}
 
 
 END_SCOPE(objects)
@@ -186,6 +220,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/25 20:38:17  shomrat
+* Use handles
+*
 * Revision 1.5  2004/02/11 22:52:06  shomrat
 * allow user to specify selector for feature gathering
 *

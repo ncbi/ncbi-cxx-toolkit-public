@@ -34,7 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#include <objtools/format/flat_file_generator.hpp>
+#include <objtools/format/flat_file_flags.hpp>
 #include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/items/feature_item.hpp>
 
@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CBioseq;
+class CBioseq_Handle;
 class CSeq_feat;
 class CFlatItemOStream;
 class CFFContext;
@@ -67,11 +67,12 @@ protected:
     CFlatItemOStream& ItemOS(void) const  { return *m_ItemOS;  }
     CFFContext&     Context(void) const { return *m_Context; }
 
-    virtual void x_GatherSeqEntry(const CSeq_entry& entry) const;
-    virtual void x_GatherBioseq(const CBioseq& seq) const;
-    virtual void x_DoMultipleSections(const CBioseq& seq) const;
-    virtual bool x_DisplayBioseq(const CSeq_entry& entry, const CBioseq& seq) const;
-    virtual void x_DoSingleSection(const CBioseq& seq) const = 0;
+    virtual void x_GatherSeqEntry(const CSeq_entry_Handle& entry) const;
+    virtual void x_GatherBioseq(const CBioseq_Handle& seq) const;
+    virtual void x_DoMultipleSections(const CBioseq_Handle& seq) const;
+    virtual bool x_DisplayBioseq(const CSeq_entry_Handle& entry,
+        const CBioseq_Handle& seq) const;
+    virtual void x_DoSingleSection(const CBioseq_Handle& seq) const = 0;
 
     // references
     void x_GatherReferences(void) const;
@@ -80,6 +81,8 @@ protected:
     void x_GatherFeatures  (void) const;
     void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, CFFContext& ctx) const;
     bool x_SkipFeature(const CSeq_feat& feat, const CFFContext& ctx) const;
+    void x_GatherFeaturesOnLocation(const CSeq_loc& loc, SAnnotSelector& sel,
+        CFFContext& ctx) const;
 
     // source features
     typedef CRef<CSourceFeatureItem>    TSFItem;
@@ -134,6 +137,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/25 20:31:28  shomrat
+* Use handles
+*
 * Revision 1.6  2004/03/16 15:40:21  vasilche
 * Added required include
 *

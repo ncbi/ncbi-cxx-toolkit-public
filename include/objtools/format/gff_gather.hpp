@@ -48,7 +48,7 @@ class CGFFGatherer : public CFlatGatherer
 public:
     CGFFGatherer(void);
 
-    virtual void x_DoSingleSection(const CBioseq& seq) const;
+    virtual void x_DoSingleSection(const CBioseq_Handle& seq) const;
 
 private:
 };
@@ -62,6 +62,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/03/25 20:32:23  shomrat
+* Use handles
+*
 * Revision 1.1  2004/01/14 15:59:35  shomrat
 * Initial Revision
 *

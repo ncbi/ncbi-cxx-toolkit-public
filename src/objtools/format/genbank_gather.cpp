@@ -86,8 +86,7 @@ bool s_ShowContig(CFFContext& ctx)
 }
 
 
-void CGenbankGatherer::x_DoSingleSection
-(const CBioseq& seq) const
+void CGenbankGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
 {
     CFFContext& ctx = Context();
 
@@ -198,6 +197,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/25 20:40:17  shomrat
+* Use handles
+*
 * Revision 1.8  2004/03/18 15:42:12  shomrat
 * Remove redundant include directives
 *

@@ -55,6 +55,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <util/static_set.hpp>
@@ -399,6 +400,39 @@ void CFeatureItem::x_GatherInfo(CFFContext& ctx)
     m_Type = m_Feat->GetData().GetSubtype();
     x_AddQuals(ctx);
 }
+
+
+static bool s_HasNull(const CSeq_loc& loc)
+{
+    for ( CSeq_loc_CI it(loc, CSeq_loc_CI::eEmpty_Allow); it; ++it ) {
+        if ( it.GetSeq_loc().IsNull() ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+// constructor
+CFeatureItemBase::CFeatureItemBase
+(const CSeq_feat& feat,
+ CFFContext& ctx,
+ const CSeq_loc* loc) 
+    :   CFlatItem(ctx), m_Feat(&feat), m_Loc(loc)
+{
+    if ( !m_Loc.Empty()  &&  ctx.IsSegmented()  &&  ctx.IsStyleMaster() ) {
+        if ( m_Loc->IsMix() ) {
+            // !!! correct the mapping of the location
+            /*
+            CSeq_loc_Mapper mapper(ctx.GetHandle());
+            mapper.SetMergeAbutting();
+            m_Loc = mapper.Map(*m_Loc);
+            */
+        }
+    }
+}
+
 
 
 CRef<CFlatFeature> CFeatureItemBase::Format(void) const
@@ -948,12 +982,14 @@ void CFeatureItem::x_AddProteinQuals(CBioseq_Handle& prot) const
     if ( p != 0 ) {
         pref = p;
     }
-    if ( pref  &&  !pref->GetName().empty() ) {
-        CProt_ref::TName names = pref->GetName();
-        x_AddQual(eFQ_cds_product, new CFlatStringQVal(names.front()));
-        names.pop_front();
-        if ( !names.empty() ) {
-            x_AddQual(eFQ_prot_names, new CFlatStringListQVal(names));
+    if ( pref != 0 ) {
+        if ( !pref->GetName().empty() ) {
+            CProt_ref::TName names = pref->GetName();
+            x_AddQual(eFQ_cds_product, new CFlatStringQVal(names.front()));
+            names.pop_front();
+            if ( !names.empty() ) {
+                x_AddQual(eFQ_prot_names, new CFlatStringListQVal(names));
+            }
         }
         if ( pref->CanGetDesc() ) {
             x_AddQual(eFQ_prot_desc, new CFlatStringQVal(pref->GetDesc()));
@@ -1112,7 +1148,7 @@ void CFeatureItem::x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier s
         return;
     }
 
-    const CBioseq::TId& ids = prod.GetBioseq().GetId();
+    const CBioseq::TId& ids = prod.GetBioseqCore()->GetId();
     if ( ids.empty() ) {
         return;
     }
@@ -1376,8 +1412,7 @@ void CFeatureItem::x_AddProtQuals
             }
         }
         if ( pref.IsSetActivity()  &&  !pref.GetActivity().empty() ) {
-            if ( ctx.GetHandle().GetBioseq().IsNa()  ||
-                 processed != CProt_ref::eProcessed_mature ) {
+            if ( ctx.IsNa()  ||  processed != CProt_ref::eProcessed_mature ) {
                 x_AddQual(eFQ_prot_activity, 
                     new CFlatStringListQVal(pref.GetActivity()));
             }
@@ -2123,6 +2158,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/03/25 20:37:41  shomrat
+* Use handles
+*
 * Revision 1.12  2004/03/18 15:37:57  shomrat
 * Fixes to note qual formatting
 *

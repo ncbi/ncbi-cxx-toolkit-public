@@ -51,8 +51,7 @@ CGFFGatherer::CGFFGatherer(void)
 }
 
 
-void CGFFGatherer::x_DoSingleSection
-(const CBioseq& seq) const
+void CGFFGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
 {
     CFFContext& ctx = Context();
 
@@ -89,6 +88,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/25 20:43:28  shomrat
+* Use handles
+*
 * Revision 1.4  2004/02/19 18:15:25  shomrat
 * supress source-features if flag is set
 *

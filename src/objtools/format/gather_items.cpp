@@ -46,7 +46,10 @@
 #include <objects/seqfeat/BioSource.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -55,7 +58,6 @@
 
 #include <algorithm>
 
-#include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/item_ostream.hpp>
 #include <objtools/format/flat_expt.hpp>
 #include <objtools/format/items/locus_item.hpp>
@@ -145,9 +147,9 @@ CFlatGatherer::~CFlatGatherer(void)
 // Protected:
 
 
-void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry& entry) const
+void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry_Handle& entry) const
 {
-    if ( entry.IsSet() ) {
+    if ( entry.IsSet()  &&  entry.GetSet().IsSetClass() ) {
         CBioseq_set::TClass clss = entry.GetSet().GetClass();
         if ( clss == CBioseq_set::eClass_genbank  ||
              clss == CBioseq_set::eClass_mut_set  ||
@@ -156,44 +158,42 @@ void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry& entry) const
              clss == CBioseq_set::eClass_eco_set  ||
              clss == CBioseq_set::eClass_wgs_set  ||
              clss == CBioseq_set::eClass_gen_prod_set ) {
-            ITERATE(CBioseq_set::TSeq_set, iter, entry.GetSet().GetSeq_set()) {
-                x_GatherSeqEntry(**iter);
+            for ( CSeq_entry_CI it(entry); it; ++it ) {
+                x_GatherSeqEntry(*it);
             }
             return;
         }
     }
 
     // visit each bioseq in the entry (excluding segments)
-    CBioseq_CI seq_iter(m_Context->GetScope(),
-        entry,
-        CSeq_inst::eMol_not_set,
+    CBioseq_CI seq_iter(entry, CSeq_inst::eMol_not_set,
         CBioseq_CI::eLevel_Mains);
     for ( ; seq_iter; ++seq_iter ) {
-        if ( x_DisplayBioseq(entry, seq_iter->GetBioseq()) ) {
-            x_GatherBioseq(seq_iter->GetBioseq());
+        if ( x_DisplayBioseq(entry, *seq_iter) ) {
+            x_GatherBioseq(*seq_iter);
         }
     }
 } 
 
 
 bool CFlatGatherer::x_DisplayBioseq
-(const CSeq_entry& entry,
- const CBioseq& seq) const
+(const CSeq_entry_Handle& entry,
+ const CBioseq_Handle& seq) const
 {
     CFFContext& ctx = Context();
 
-    const CSeq_id* id = FindBestChoice(seq.GetId(), CSeq_id::Score);
-    if ( id == 0  ||  (id->IsLocal()  &&  ctx.SuppressLocalId()) ) {
+    const CSeq_id& id = GetId(seq, eGetId_Best);
+    if ( id.IsLocal()  &&  ctx.SuppressLocalId() ) {
         return false;
     }
 
     // display if an entry consisting of a single bioseq.
-    if ( entry.IsSeq()  &&  &entry.GetSeq() == &seq ) {
+    if ( entry.IsSeq()  &&  entry.GetSeq() == seq ) {
         return true;
     }
 
-    if ( (seq.IsNa()  &&  ctx.ViewNuc())  ||
-         (seq.IsAa()  &&  ctx.ViewProt()) ) {
+    if ( (CSeq_inst::IsNa(seq.GetBioseqMolType())  &&  ctx.ViewNuc())  ||
+         (CSeq_inst::IsAa(seq.GetBioseqMolType())  &&  ctx.ViewProt()) ) {
         return true;
     }
 
@@ -201,15 +201,22 @@ bool CFlatGatherer::x_DisplayBioseq
 }
 
 
-// a defualt implementation for GenBank /  DDBJ formats
-void CFlatGatherer::x_GatherBioseq(const CBioseq& seq) const
+bool s_IsSegmented(const CBioseq_Handle& h)
 {
-    if ( !seq.CanGetInst() ) {
-        return;
+    if ( !h ) {
+        return false;
     }
+    CConstRef<CBioseq> seq = h.GetCompleteBioseq();
+    return !seq.Empty()  &&  seq->CanGetInst()  &&  
+        seq->GetInst().CanGetRepr()  &&  
+        seq->GetInst().GetRepr() == CSeq_inst::eRepr_seg;
+}
 
-    bool segmented = seq.GetInst().CanGetRepr()  &&
-        seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg;
+
+// a defualt implementation for GenBank /  DDBJ formats
+void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq) const
+{
+    bool segmented = s_IsSegmented(seq);
     if ( segmented  && 
          (m_Context->IsStyleNormal()  ||  m_Context->IsStyleSegment()) ) {
         // display individual segments (multiple sections)
@@ -221,33 +228,18 @@ void CFlatGatherer::x_GatherBioseq(const CBioseq& seq) const
 }
 
 
-void CFlatGatherer::x_DoMultipleSections(const CBioseq& seq) const
+void CFlatGatherer::x_DoMultipleSections(const CBioseq_Handle& seq) const
 {
     m_Context->SetMasterBioseq(seq);
 
-    // we need to remove the const because of the SeqMap creation interface.
-    CBioseq& non_const_seq = const_cast<CBioseq&>(seq);
+    CScope* scope = &seq.GetScope();
+    const CSeqMap& seqmap = seq.GetSeqMap();
 
-    CConstRef<CSeqMap> seqmap = CSeqMap::CreateSeqMapForBioseq(non_const_seq);
-    SSeqMapSelector selector;
-    selector.SetResolveCount(1); // do not resolve segments
-
-    CScope& scope = m_Context->GetScope();
-
-    // iterate over the segments, gathering a segment at a time.
-    ITERATE (CSeg_ext::Tdata, seg, seq.GetInst().GetExt().GetSeg().Get()) {
-        // skip gaps
-        if ( (*seg)->IsNull() ) {
-            continue;
-        }
-
-        // !!! set the context location
-
-        const CSeq_id& seg_id = sequence::GetId(**seg, &scope);
-        CBioseq_Handle bsh = scope.GetBioseqHandle(seg_id);
-        if ( bsh ) {
-            x_DoSingleSection(bsh.GetBioseq());
-        }
+    CSeqMap::TSegment_CI it = seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
+    while ( it ) {
+        CSeq_id_Handle id = it.GetRefSeqid();
+        x_DoSingleSection(scope->GetBioseqHandleFromTSE(id, seq));
+        ++it;
     }
 }
 
@@ -706,7 +698,7 @@ void CFlatGatherer::x_CollectSourceDescriptors
             }
             CRange<TSeqPos> seg_range(smit.GetPosition(), smit.GetEndPosition());
             // collect descriptors only from the segment 
-            const CBioseq& seq = segh.GetBioseq();
+            const CBioseq& seq = *segh.GetCompleteBioseq();
             if ( seq.CanGetDescr() ) {
                 ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
                     if ( (*it)->IsSource() ) {
@@ -773,7 +765,7 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
     
     // if protein with no sources, get sources applicable to DNA location of CDS
     if ( srcs.empty()  &&  ctx.IsProt() ) {
-        const CSeq_feat* cds = GetCDSForProduct(ctx.GetActiveBioseq(), scope);
+        const CSeq_feat* cds = GetCDSForProduct(ctx.GetHandle());
         if ( cds != 0 ) {
             const CSeq_loc& cds_loc = cds->GetLocation();
             x_CollectBioSourcesOnBioseq(
@@ -908,13 +900,87 @@ void s_SetSelection(SAnnotSelector& sel, CFFContext& ctx)
         }
     }}
     sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
-    sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);     // !!! should be set according to user flags
     if ( GetStrand(*ctx.GetLocation(), &ctx.GetScope()) == eNa_strand_minus ) {
         sel.SetSortOrder(SAnnotSelector::eSortOrder_Reverse);  // sort in reverse biological order
     } else {
         sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
     }
-    sel.SetLimitTSE(&ctx.GetHandle().GetTopLevelSeqEntry());
+    sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
+    sel.SetResolveTSE();
+}
+
+
+bool s_FeatEndsOnBioseq(const CSeq_feat& feat, const CBioseq_Handle& seq)
+{
+    CSeq_loc_CI last;
+    for ( CSeq_loc_CI it(feat.GetLocation()); it; ++it ) {
+        last = it;
+    }
+    
+    if ( last  &&  seq.IsSynonym(last.GetSeq_id()) ) {
+        return true;
+    }
+    
+    return false;
+}
+
+
+
+void CFlatGatherer::x_GatherFeaturesOnLocation
+(const CSeq_loc& loc,
+ SAnnotSelector& sel,
+ CFFContext& ctx) const
+{
+    CScope& scope = ctx.GetScope();
+    CFlatItemOStream& out = *m_ItemOS;
+
+    for ( CFeat_CI it(scope, loc, sel); it; ++it ) {
+        // if segment show only features ending on that segment
+        if ( ctx.IsPart()  &&  
+             !s_FeatEndsOnBioseq(it->GetOriginalFeature(), ctx.GetHandle()) ) {
+            continue;
+        }
+        
+        out << new CFeatureItem(*it, ctx);
+
+        // Add more features depending on user preferences
+        switch ( it->GetData().GetSubtype() ) {
+        case CSeqFeatData::eSubtype_mRNA:
+            {{
+                // optionally map CDS from cDNA onto genomic
+                if ( ctx.IsGPS()  &&  ctx.IsNa()  &&  ctx.CopyCDSFromCDNA() ) {
+                    const CSeq_feat& mrna = it->GetOriginalFeature();
+                    if ( mrna.IsSetProduct() ) {
+                        CBioseq_Handle cdna = 
+                            scope.GetBioseqHandle(mrna.GetProduct());
+                        if ( cdna ) {
+                            // There is only one CDS on an mRNA
+                            CFeat_CI cds(cdna, 0, 0, CSeqFeatData::e_Cdregion);
+                            if ( cds ) {
+                                CSeq_loc_Mapper mapper(mrna,
+                                    CSeq_loc_Mapper::eProductToLocation, &scope);
+                                CRef<CSeq_loc> loc = mapper.Map(cds->GetLocation());
+                                out << new CFeatureItem(
+                                    cds->GetOriginalFeature(),
+                                    ctx, loc,
+                                    CFeatureItem::eMapped_from_cdna);
+                            }
+                        }
+                    }
+                }
+                break;
+            }}
+        case CSeqFeatData::eSubtype_cdregion:
+            {{  
+                if ( !ctx.IsFormatFTable() ) {
+                    x_GetFeatsOnCdsProduct(it->GetOriginalFeature(), ctx);
+                }
+                break;
+            }}
+        default:
+            break;
+        }
+    }
 }
 
 
@@ -934,7 +1000,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
     // optionally map gene from genomic onto cDNA
     if ( ctx.IsGPS()  &&  ctx.CopyGeneToCDNA()  &&
          ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) {
-        const CSeq_feat* mrna = GetmRNAForProduct(ctx.GetActiveBioseq(), &scope);
+        const CSeq_feat* mrna = GetmRNAForProduct(ctx.GetHandle());
         if ( mrna != 0 ) {
             CConstRef<CSeq_feat> gene = 
                 GetOverlappingGene(mrna->GetLocation(), scope);
@@ -948,6 +1014,30 @@ void CFlatGatherer::x_GatherFeatures(void) const
     }
 
     // collect features
+    if ( ctx.IsSegmented()  &&  ctx.IsStyleMaster()  &&  ctx.OldFeatsOrder() ) {
+        if ( ctx.GetAnnotSelector() == 0 ) {
+            sel.SetResolveNone();
+        }
+        // do the master bioeseq
+        x_GatherFeaturesOnLocation(*ctx.GetLocation(), sel, ctx);
+
+        // now go over each of the segments
+        CConstRef<CSeqMap> seqmap = 
+            CSeqMap::CreateSeqMapForSeq_loc(*ctx.GetLocation(), &scope);
+        for ( CSeqMap_CI it = seqmap->begin(); it; ++it ) {
+            if ( it.GetType() == CSeqMap::eSeqRef ) {
+                CSeq_loc seg_loc;
+                CSeq_interval& sint = seg_loc.SetInt();
+                sint.SetId(*const_cast<CSeq_id*>(it.GetRefSeqid().GetSeqId().GetPointer()));
+                sint.SetFrom(it.GetRefPosition());
+                sint.SetTo(it.GetRefEndPosition());
+                x_GatherFeaturesOnLocation(seg_loc, sel, ctx);
+            }
+        }
+    } else {
+        x_GatherFeaturesOnLocation(*ctx.GetLocation(), sel, ctx);
+    }
+    /*
     for ( CFeat_CI it(scope, *ctx.GetLocation(), *selp); it; ++it ) {
         out << new CFeatureItem(*it, ctx);
 
@@ -989,14 +1079,14 @@ void CFlatGatherer::x_GatherFeatures(void) const
             break;
         }
     }
-
+    */
     if ( ctx.IsProt() ) {
         // Also collect features which this protein is their product.
         // Currently there are only two possible candidates: Coding regions
         // and Prot features (rare).
         
         // look for the Cdregion feature for this protein
-        const CSeq_feat* cds = GetCDSForProduct(ctx.GetActiveBioseq(), &scope);
+        const CSeq_feat* cds = GetCDSForProduct(ctx.GetHandle());
         if ( cds != 0 ) {
             out << new CFeatureItem(*cds, ctx, &cds->GetProduct(), 
                     CFeatureItem::eMapped_from_cdna);
@@ -1006,7 +1096,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
         // GenBank not release_mode).
         if ( ctx.IsRefSeq()  ||  !ctx.ForGBRelease() ) {
             SAnnotSelector sel(CSeqFeatData::e_Prot, true);
-            sel.SetLimitTSE(&ctx.GetHandle().GetTopLevelSeqEntry());
+            sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
             sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);
             sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
             for ( CFeat_CI it(ctx.GetHandle(), 0, 0, sel); it; ++it ) {  
@@ -1115,6 +1205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/03/25 20:39:47  shomrat
+* Use handles
+*
 * Revision 1.10  2004/03/18 15:39:40  shomrat
 * + Filtering of displayed records
 *

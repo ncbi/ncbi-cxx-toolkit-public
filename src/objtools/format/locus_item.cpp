@@ -51,7 +51,6 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/locus_item.hpp>
@@ -191,8 +190,8 @@ void CLocusItem::x_SetStrand(CFFContext& ctx)
 {
     const CBioseq_Handle& bsh = ctx.GetHandle();
 
-    const CSeq_inst* inst = bsh.GetBioseq().CanGetInst() ? 
-        &(bsh.GetBioseq().GetInst()) : 0;
+    const CSeq_inst* inst = bsh.GetBioseqCore()->CanGetInst() ? 
+        &(bsh.GetBioseqCore()->GetInst()) : 0;
     CSeq_inst::TMol bmol = (inst  &&  inst->CanGetMol()) ?
         inst->GetMol() : CSeq_inst::eMol_not_set;
 
@@ -260,12 +259,12 @@ void CLocusItem::x_SetTopology(CFFContext& ctx)
 {
     const CBioseq_Handle& bsh = ctx.GetHandle();
     
-    const CSeq_inst* inst = bsh.GetBioseq().CanGetInst() ? 
-        &(bsh.GetBioseq().GetInst()) : 0;
+    const CSeq_inst* inst = bsh.GetBioseqCore()->CanGetInst() ? 
+        &(bsh.GetBioseqCore()->GetInst()) : 0;
 
     m_Topology = (inst  &&  inst->CanGetTopology()) ?
         inst->GetTopology() : CSeq_inst::eTopology_not_set;
-    if ( ctx.GetLocation() != 0 ) {
+    if ( ctx.GetLocation() != 0   &&  !ctx.GetLocation()->IsWhole() ) {
         m_Topology = CSeq_inst::eTopology_linear;
     }
 }
@@ -298,11 +297,10 @@ void CLocusItem::x_SetDivision(CFFContext& ctx)
         CFeat_CI feat(bsh, 0, 0, CSeqFeatData::e_Biosrc);
         if ( feat ) {
             bsrc = &(feat->GetData().GetBiosrc());
-        } else if ( bsh.GetBioseq().IsAa() ) {
+        } else if ( CSeq_inst::IsAa(bsh.GetBioseqMolType()) ) {
             // if protein with no sources, get sources applicable to 
             // DNA location of CDS
-            const CSeq_feat* cds = 
-                GetCDSForProduct(bsh.GetBioseq(), &ctx.GetScope());
+            const CSeq_feat* cds = GetCDSForProduct(bsh);
             if ( cds ) {
                 CConstRef<CSeq_feat> nuc_fsrc = GetBestOverlappingFeat(
                     cds->GetLocation(),
@@ -367,7 +365,7 @@ void CLocusItem::x_SetDivision(CFFContext& ctx)
             m_Division = "SYN";
         }
 
-        ITERATE( CBioseq::TId, id, bsh.GetBioseq().GetId() ) {
+        ITERATE( CBioseq::TId, id, bsh.GetBioseqCore()->GetId() ) {
             if ( (*id)->IdentifyAccession() == CSeq_id::eAcc_patent ) {
                 m_Division = "PAT";
                 break;
@@ -422,10 +420,9 @@ void CLocusItem::x_SetDate(CFFContext& ctx)
     if ( date == 0 ) {
         // if bioseq is product of CDS or mRNA feature, get 
         // date from parent bioseq.
-        const CBioseq* parent = 
-            GetNucleotideParent(bsh.GetBioseq(), &ctx.GetScope());
-        if ( parent != 0 ) {
-            date = x_GetDateForBioseq(ctx.GetScope().GetBioseqHandle(*parent));
+        CBioseq_Handle parent = GetNucleotideParent(bsh);
+        if ( parent ) {
+            date = x_GetDateForBioseq(parent);
         }
     }
 
@@ -536,6 +533,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/25 20:45:05  shomrat
+* Use handles
+*
 * Revision 1.5  2004/03/05 18:41:14  shomrat
 * bug fix
 *

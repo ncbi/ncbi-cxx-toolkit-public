@@ -50,7 +50,7 @@ class CGenbankGatherer : public CFlatGatherer
 public:
     CGenbankGatherer(void);
 
-    virtual void x_DoSingleSection(const CBioseq& seq) const;
+    virtual void x_DoSingleSection(const CBioseq_Handle& seq) const;
 
 private:
     void x_GatherWGS(CFFContext& ctx) const;
@@ -65,6 +65,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/25 20:31:51  shomrat
+* Use handles
+*
 * Revision 1.2  2004/01/14 15:55:08  shomrat
 * *** empty log message ***
 *

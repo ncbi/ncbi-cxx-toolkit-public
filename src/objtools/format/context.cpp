@@ -44,6 +44,9 @@
 #include <objects/general/Dbtag.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -69,7 +72,7 @@ CFFContext::CFFContext
  TFlags flags) :
     m_Format(format), m_Mode(mode), m_Style(style), m_FilterFlags(filter),
     m_Flags(mode, flags),
-    m_TSE(0), m_Scope(&scope), m_SeqSub(0),
+    m_Scope(&scope), m_SeqSub(0),
     m_Master(0), m_Bioseq(0)
 {
 }
@@ -80,13 +83,13 @@ CFFContext::~CFFContext(void)
 }
 
 
-void CFFContext::SetMasterBioseq(const CBioseq& seq)
+void CFFContext::SetMasterBioseq(const CBioseq_Handle& h)
 {
-    m_Master.Reset(new CMasterContext(seq, *this));
+    m_Master.Reset(new CMasterContext(h, *this));
 }
 
 
-void CFFContext::SetActiveBioseq(const CBioseq& seq)
+void CFFContext::SetActiveBioseq(const CBioseq_Handle& seq)
 {
     m_Bioseq.Reset(new CBioseqContext(seq, *this));
 }
@@ -97,16 +100,12 @@ void CFFContext::SetActiveBioseq(const CBioseq& seq)
 // CMasterContext
 
 
-CMasterContext::CMasterContext(const CBioseq& seq, CFFContext& ctx) :
-    m_Seq(&seq), m_Ctx(&ctx)
+CMasterContext::CMasterContext(const CBioseq_Handle& h, CFFContext& ctx) :
+    m_Handle(h), m_Ctx(&ctx)
 {
-    _ASSERT(seq.CanGetInst());
-    _ASSERT(seq.GetInst().CanGetExt());
-    _ASSERT(seq.GetInst().GetExt().IsSeg());
+    _ASSERT(h);
 
-    m_Handle = m_Ctx->GetScope().GetBioseqHandle(seq);
-
-    x_SetBaseName(seq);
+    x_SetBaseName();
 }
 
 
@@ -121,10 +120,10 @@ SIZE_TYPE CMasterContext::GetPartNumber(const CBioseq_Handle& h) const
         return 0;
     }
 
-    CScope& scope = m_Ctx->GetScope();
+    CScope& scope = m_Handle.GetScope();
 
     SIZE_TYPE serial = 1;
-    ITERATE (CSeg_ext::Tdata, it, m_Seq->GetInst().GetExt().GetSeg().Get()) {
+    ITERATE (CSeg_ext::Tdata, it, m_Handle.GetBioseqCore()->GetInst().GetExt().GetSeg().Get()) {
         if ( (*it)->IsNull() ) {
             continue;
         }
@@ -143,7 +142,7 @@ SIZE_TYPE CMasterContext::GetPartNumber(const CBioseq_Handle& h) const
 SIZE_TYPE CMasterContext::GetNumSegments(void) const
 {
     SIZE_TYPE count = 0;
-    ITERATE (CSeg_ext::Tdata, it, m_Seq->GetInst().GetExt().GetSeg().Get()) {
+    ITERATE (CSeg_ext::Tdata, it, m_Handle.GetBioseqCore()->GetInst().GetExt().GetSeg().Get()) {
         if ( (*it)->IsNull() ) {
             continue;
         }
@@ -154,7 +153,7 @@ SIZE_TYPE CMasterContext::GetNumSegments(void) const
 }
 
 
-void CMasterContext::x_SetBaseName(const CBioseq& seq)
+void CMasterContext::x_SetBaseName(void)
 {
     // !!!
 }
@@ -164,7 +163,7 @@ void CMasterContext::x_SetBaseName(const CBioseq& seq)
 //
 // CBioseqContext
 
-CBioseqContext::CBioseqContext(const CBioseq& seq, CFFContext& ctx) :
+CBioseqContext::CBioseqContext(const CBioseq_Handle& seq, CFFContext& ctx) :
     m_Repr(CSeq_inst::eRepr_not_set),
     m_Mol(CSeq_inst::eMol_not_set),
     m_Accession(kEmptyStr),
@@ -197,41 +196,36 @@ CBioseqContext::CBioseqContext(const CBioseq& seq, CFFContext& ctx) :
     m_Ctx(&ctx),
     m_Master(ctx.Master())
 {
-    if ( !seq.CanGetInst() ) {
+    if ( !seq  ||  !seq.GetBioseqCore()->CanGetInst() ) {
         return;
         //NCBI_THROW(...) !!!
     }
 
-    m_Handle = ctx.GetScope().GetBioseqHandle(seq);
-    if ( !m_Handle ) {
-        //NCBI_THROW(...) !!!
-    }
+    m_Handle = seq;
 
     // NB: order of execution is important
     m_Repr = x_GetRepr(seq);
     m_Molinfo.Reset(x_GetMolinfo());
-    if ( seq.GetInst().CanGetMol() ) {
-        m_Mol  = seq.GetInst().GetMol();
-    }
+    m_Mol  = seq.GetBioseqMolType();
     if ( IsSegmented() ) {
-        m_HasParts = x_HasParts(seq);
+        m_HasParts = x_HasParts();
     }
     if ( IsDelta() ) {
-        m_IsDeltaLitOnly = x_IsDeltaLitOnly(seq);
+        m_IsDeltaLitOnly = x_IsDeltaLitOnly();
     }
 
-    m_IsPart = x_IsPart(seq);
+    m_IsPart = x_IsPart();
     if ( IsPart() ) {
         if ( !m_Master ) {
-            m_Ctx->SetMasterBioseq(x_GetMasterForPart(seq));
+            m_Ctx->SetMasterBioseq(x_GetMasterForPart());
             m_Master = m_Ctx->Master();
         }
         m_PartNumber = x_GetPartNumber(m_Handle);
     }
 
-    m_IsProt = seq.IsAa();
+    m_IsProt = CSeq_inst::IsAa(seq.GetBioseqMolType());
 
-    x_SetId(seq);
+    x_SetId();
 
     m_IsGPS = x_IsGPS();
     
@@ -243,7 +237,10 @@ CBioseqContext::CBioseqContext(const CBioseq& seq, CFFContext& ctx) :
 
 bool CBioseqContext::x_IsGPS(void) const
 {
-    return GetHandle().GetComplexityLevel(CBioseq_set::eClass_gen_prod_set);
+    CSeq_entry_Handle e = 
+        GetHandle().GetComplexityLevel(CBioseq_set::eClass_gen_prod_set);
+    return e  &&  e.IsSet()  &&  e.GetSet().IsSetClass()  &&
+        e.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set;
 }
 
 
@@ -261,7 +258,7 @@ bool CBioseqContext::DoContigStyle(void) const
     return false;
 }
 
-
+/*
 // count the number of non-virtual parts
 SIZE_TYPE CBioseqContext::x_CountSegs(const CBioseq& seq) const
 {
@@ -301,13 +298,13 @@ SIZE_TYPE CBioseqContext::x_CountSegs(const CBioseq& seq) const
     }
     return num_parts;
 }
+*/
 
-
-CSeq_inst::TRepr CBioseqContext::x_GetRepr(const CBioseq& seq) const
+CSeq_inst::TRepr CBioseqContext::x_GetRepr(const CBioseq_Handle& seq) const
 {
     try
     {
-        return seq.GetInst().GetRepr();
+        return seq.GetBioseqCore()->GetInst().GetRepr();
     } catch ( CException& ) {
         return CSeq_inst::eRepr_not_set;
     }
@@ -320,29 +317,20 @@ const CMolInfo* CBioseqContext::x_GetMolinfo(void)
     return mi ? &(mi->GetMolinfo()) : 0;
 }
 
-/*
-CMolInfo::TTech CBioseqContext::x_GetTech(void)
-{
-    CSeqdesc_CI mi(GetHandle(), CSeqdesc::e_Molinfo);
-    return mi->GetMolinfo().CanGetTech() ? mi->GetMolinfo().GetTech() :
-        CMolInfo::eTech_unknown;
-}
-*/
 
-
-bool CBioseqContext::x_IsPart(const CBioseq& seq) const
+bool CBioseqContext::x_IsPart() const
 {
     if ( m_Repr == CSeq_inst::eRepr_raw    ||
          m_Repr == CSeq_inst::eRepr_const  ||
          m_Repr == CSeq_inst::eRepr_delta  ||
          m_Repr == CSeq_inst::eRepr_virtual ) {
-        const CSeq_entry* e = seq.GetParentEntry();
-        _ASSERT(e != 0  &&  e->IsSeq());
+        CSeq_entry_Handle eh = m_Handle.GetParentEntry();
+        _ASSERT(eh  &&  eh.IsSeq());
 
-        e = e->GetParentEntry();
-        if ( e != 0  &&  e->IsSet() ) {
-            const CBioseq_set& bsst = e->GetSet();
-            if ( bsst.CanGetClass()  &&  
+        eh = eh.GetParentEntry();
+        if ( eh  &&  eh.IsSet() ) {
+            CBioseq_set_Handle bsst = eh.GetSet();
+            if ( bsst.IsSetClass()  &&  
                  bsst.GetClass() == CBioseq_set::eClass_parts ) {
                 return true;
             }
@@ -358,28 +346,38 @@ SIZE_TYPE CBioseqContext::x_GetPartNumber(const CBioseq_Handle& h) const
 }
 
 
-const CBioseq& CBioseqContext::x_GetMasterForPart(const CBioseq& part) const
+CBioseq_Handle CBioseqContext::x_GetMasterForPart(void) const
 {
-    CBioseq_Handle bsh = m_Ctx->GetScope().GetBioseqHandle(part);
-    CSeq_entry_Handle segset =
-        bsh.GetComplexityLevel(CBioseq_set::eClass_segset);
-    _ASSERT(segset.IsSet());
-    const CBioseq_set& bsst = *segset.GetSet().GetBioseq_setCore();
-    _ASSERT(!bsst.GetSeq_set().empty());
-    _ASSERT(bsst.GetSeq_set().front()->IsSeq());
+    CBioseq_Handle null;
+    if ( !IsPart() ) {
+        return null;
+    }
 
-    return bsst.GetSeq_set().front()->GetSeq();
+    CSeq_entry_Handle eh =
+        m_Handle.GetComplexityLevel(CBioseq_set::eClass_segset);
+    if ( !eh  ||  !eh.IsSet()  ||  !eh.GetSet().IsSetClass()  ||
+        eh.GetSet().GetClass() != CBioseq_set::eClass_segset) {
+        return null;
+    }
+
+    for ( CSeq_entry_CI it(eh); it; ++it ) {
+        if ( it->IsSeq() ) {
+            return it->GetSeq();
+        }
+    }
+
+    return null;
 }
 
 
-void CBioseqContext::x_SetId(const CBioseq& seq)
+void CBioseqContext::x_SetId(void)
 {
     //m_PrimaryId.Reset(FindBestChoice(seq.GetId(), CSeq_id::Score));
     m_PrimaryId.Reset(new CSeq_id);
     m_PrimaryId->Assign(GetId(m_Handle, eGetId_Best));
     m_Accession = m_PrimaryId->GetSeqIdString(true);
 
-    ITERATE(CBioseq::TId, id_iter, seq.GetId()) {
+    ITERATE (CBioseq::TId, id_iter, m_Handle.GetBioseqCore()->GetId()) {
         const CSeq_id& id = **id_iter;
         const CTextseq_id* tsip = id.GetTextseq_Id();
         const string& acc = (tsip != 0  &&  tsip->CanGetAccession()) ?
@@ -487,50 +485,53 @@ const CSeq_id& CBioseqContext::GetPreferredSynonym(const CSeq_id& id) const
 }
 
 
-bool CBioseqContext::x_HasParts(const CBioseq& seq) const
+bool CBioseqContext::x_HasParts(void) const
 {
     _ASSERT(m_Ctx);
     _ASSERT(IsSegmented());
 
-    CBioseq_Handle bsh = m_Ctx->GetScope().GetBioseqHandle(seq);
-
-    CSeq_entry_Handle segset_entry =
-        bsh.GetComplexityLevel(CBioseq_set::eClass_segset);
-    if ( !segset_entry.IsSet() ) { 
-        return false;
-    }
-    const CBioseq_set& segset = *segset_entry.GetSet().GetBioseq_setCore();
-    if ( !segset.CanGetClass()  ||
-         segset.GetClass() != CBioseq_set::eClass_segset ) {
+    CSeq_entry_Handle h =
+        m_Handle.GetComplexityLevel(CBioseq_set::eClass_segset);
+    if ( !h  ||  !h.IsSet()   ||  !h.GetSet().IsSetClass()  ||
+         h.GetSet().GetClass() != CBioseq_set::eClass_segset ) {
         return false;
     }
 
-    CBioseq_set::TSeq_set::const_iterator iter = segset.GetSeq_set().begin();
-    CBioseq_set::TSeq_set::const_iterator end  = segset.GetSeq_set().end();
-    for ( ; iter != end; ++iter ) {
-        if ( (*iter)->IsSeq()  &&  &((*iter)->GetSeq()) == &seq ) {
-            ++iter;
-            if ( (iter != end)  &&  (*iter)->IsSet() ) {
-                const CBioseq_set& parts = (*iter)->GetSet();
-                if ( parts.CanGetClass()  &&
-                     parts.GetClass() == CBioseq_set::eClass_parts ) {
-                    return true;
-                }
+    // make sure the segmented set contains our bioseq
+    {{
+        bool has_seq = false;
+        for ( CSeq_entry_CI it(h); it; ++it ) {
+            if ( it->IsSeq()  &&  it->GetSeq() == m_Handle ) {
+                has_seq = true;
+                break;
             }
-            break;
         }
-    }
+        if ( !has_seq ) {
+            return false;
+        }
+    }}
+
+    // find the parts set
+    {{
+        for ( CSeq_entry_CI it(h); it; ++it ) {
+            if ( it->IsSet()  &&  it->GetSet().IsSetClass()  &&
+                it->GetSet().GetClass() == CBioseq_set::eClass_parts ) {
+                return true;
+            }
+        }
+    }}
 
     return false;
 }
 
 
-bool CBioseqContext::x_IsDeltaLitOnly(const CBioseq& seq)
+bool CBioseqContext::x_IsDeltaLitOnly(void) const
 {
     _ASSERT(IsDelta());
 
-    if ( seq.GetInst().CanGetExt()  &&  seq.GetInst().GetExt().IsDelta() ) {
-        ITERATE (CDelta_ext::Tdata, it, seq.GetInst().GetExt().GetDelta().Get()) {
+    const CSeq_inst& inst = m_Handle.GetBioseqCore()->GetInst();
+    if ( inst.CanGetExt()  &&  inst.GetExt().IsDelta() ) {
+        ITERATE (CDelta_ext::Tdata, it, inst.GetExt().GetDelta().Get()) {
             if ( (*it)->IsLoc() ) {
                 return false;
             }
@@ -567,6 +568,7 @@ CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
     m_ShowTranscript((flags & fShowTranscriptions) != 0),
     m_ShowPeptides((flags & fShowPeptides) != 0),
     m_ShowFtableRefs((flags & fShowFtableRefs) != 0),
+    m_OldFeatsOrder((flags & fOldFeatsOrder) != 0),
     m_DoHtml((flags & fProduceHTML) != 0)
 {
     switch ( mode ) {
@@ -717,6 +719,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/03/25 20:36:02  shomrat
+* Use handles
+*
 * Revision 1.10  2004/03/24 18:57:04  vasilche
 * CBioseq_Handle::GetComplexityLevel() now returns CSeq_entry_Handle.
 *

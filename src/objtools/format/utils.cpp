@@ -44,6 +44,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -495,11 +496,10 @@ bool GetModelEvidance
         return true;
     }
 
-    if ( bsh.GetBioseq().IsAa() ) {
-        const CBioseq* nuc =
-            sequence::GetNucleotideParent(bsh.GetBioseq(), &scope);
-        if ( nuc != 0 ) {
-            return s_GetModelEvidance(scope.GetBioseqHandle(*nuc), me);
+    if ( CSeq_inst::IsAa(bsh.GetBioseqMolType()) ) {
+        CBioseq_Handle nuc = sequence::GetNucleotideParent(bsh);
+        if ( nuc  ) {
+            return s_GetModelEvidance(nuc, me);
         }
     }
 
@@ -515,6 +515,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/25 20:47:26  shomrat
+* Use handles
+*
 * Revision 1.4  2004/03/18 15:35:17  shomrat
 * Fixes in JoinNoRedund
 *
