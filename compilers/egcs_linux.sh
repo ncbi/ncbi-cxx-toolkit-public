@@ -12,7 +12,9 @@ DEF_BUILD_DIR="egcs_linux"
 set -a
 
 PM_PATH="/net/neptune/pubmed1/Cvs5"
-NCBI_C_INCLUDE="/export/home/coremake/ncbi/include"
-NCBI_C_LIB="/export/home/coremake/ncbi/altlib"
+NCBI_C_INCLUDE="/home/vakatov/ncbi/include"
+NCBI_C_RELEASE_LIB="/home/vakatov/ncbi/lib"
+NCBI_C_DEBUG_LIB="/home/vakatov/ncbi/lib"
 
-sh configure --exec_prefix=${USR_BUILD_DIR:=$DEF_BUILD_DIR}
+if test $# -gt 0; then shift ; fi
+sh configure --exec_prefix=${USR_BUILD_DIR:=$DEF_BUILD_DIR} $*

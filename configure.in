@@ -146,8 +146,10 @@ if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_ou
 #### GNU compiler
 if test "$GCC" = "yes" ; then
    # GNU compiler
-   CFLAGS="-Wall -ansi -D__EXTENSIONS__ $CFLAGS"
-   CXXFLAGS="-Wall -ansi -D__EXTENSIONS__ $CXXFLAGS"
+   CFLAGS="-Wall -ansi $CFLAGS"
+   CXXFLAGS="-Wall -ansi $CXXFLAGS"
+   AC_DEFINE_UNQUOTED(__EXTENSIONS__, 1)
+   AC_DEFINE_UNQUOTED(_SVID_SOURCE,   1)
 fi
 
 #### MSVC++ compiler
@@ -213,9 +215,25 @@ AC_MSG_CHECKING(if C++ namespaces are supported)
 AC_TRY_COMPILE(
    [namespace NS { int i; }  using namespace NS;],
    ,
-   AC_DEFINE_UNQUOTED(HAVE_NAMESPACE, 1)
+   ,
+   [AC_DEFINE_UNQUOTED(HAVE_NO_NAMESPACE, 1)
+    x_have_no_namespace="yes" ]
 )
 AC_MSG_RESULT()
+
+
+x_std=""
+if test "$x_have_no_namespace" != "yes" ; then
+   AC_MSG_CHECKING(whether namespace std:: is used)
+   AC_TRY_COMPILE(
+      [#include <vector>],
+      [std::vector<char> std_vector_char; ],
+      x_std="std",
+      AC_DEFINE_UNQUOTED(HAVE_NO_STD, 1)
+   )
+   AC_MSG_RESULT()
+fi
+
 
 AC_MSG_CHECKING(if in-class template functions are supported)
 AC_TRY_COMPILE(
@@ -225,6 +243,7 @@ AC_TRY_COMPILE(
    AC_DEFINE_UNQUOTED(NO_INCLASS_TMPL, 1)
 )
 AC_MSG_RESULT()
+
 
 AC_MSG_CHECKING(can we use exception specifications throw(...) in func.proto)
 AC_TRY_RUN(
@@ -242,15 +261,16 @@ AC_MSG_RESULT()
 AC_MSG_CHECKING(obsolete basic_string::compare())
 AC_TRY_COMPILE(
    [#include <string>],
-   [std::string s;  int i = 0;  i = s.compare("aaa", 0, 2); ],
+   [$x_std::string s;  int i = 0;  i = s.compare("aaa", 0, 2); ],
    AC_DEFINE_UNQUOTED(NCBI_OBSOLETE_STR_COMPARE, 1)
 )
 AC_MSG_RESULT()
 
+
 AC_MSG_CHECKING(if the auto_ptr template class is poor or not implemented)
 AC_TRY_COMPILE(
    [#include <memory>],
-   [int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap;  ap.reset(ip); ],
+   [int *ip = 0;  $x_std::auto_ptr<int> ap(ip);  *ip = *ap;  ap.reset(ip); ],
    ,
    AC_DEFINE_UNQUOTED(HAVE_NO_AUTO_PTR, 1)
 )
@@ -273,10 +293,21 @@ else
       ],
       [FASTCGI_LIBS= ]
    )
-   AC_MSG_RESULT()
    LIBS="$orig_LIBS"
    CPPFLAGS="$orig_CPPFLAGS"
 fi
+AC_MSG_RESULT()
+
+
+AC_MSG_CHECKING(if new C++ streams dont have ios_base::)
+AC_TRY_COMPILE(
+   [#include <iostream>],
+   [(void)($x_std::ios_base::out != $x_std::ios_base::beg); ],
+   ,
+   AC_DEFINE_UNQUOTED(HAVE_NO_IOS_BASE, 1)
+)
+AC_MSG_RESULT()
+
 
 
 dnl Check for C standard types

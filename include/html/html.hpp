@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  1999/05/10 14:26:09  vakatov
+* Fixes to compile and link with the "egcs" C++ compiler under Linux
+*
 * Revision 1.32  1999/04/27 14:49:57  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -902,7 +905,6 @@ public:
     CHTML_font(const string& typeface, int size, bool absolute, CNCBINode* node = 0);
     CHTML_font(const string& typeface, int size, bool absolute, const string& text);
 
-    using CParent::SetSize;
     CHTML_font* SetSize(int size, bool absolute);
     CHTML_font* SetRelativeSize(int size);
 };

@@ -4,8 +4,11 @@
 #undef HOST_VENDOR
 #undef HOST_OS
 
-/* Define if C++ namespaces are supported */
-#undef HAVE_NAMESPACE
+/* Define if C++ namespaces are not supported */
+#undef HAVE_NO_NAMESPACE
+
+/* Define if C++ namespace std:: is used */
+#undef HAVE_NO_STD
 
 /* Microsoft C++ specific */
 #undef SIZEOF___INT64
@@ -24,3 +27,12 @@
 
 /* Fast-CGI library is available */
 #undef HAVE_LIBFASTCGI
+
+/* New C++ streams dont have ios_base:: */
+#undef HAVE_NO_IOS_BASE
+
+/* This is good for the GNU C/C++ compiler on Solaris */ 
+#undef __EXTENSIONS__
+
+/* This is good for the EGCS C/C++ compiler on Linux(e.g. proto for putenv) */
+#undef _SVID_SOURCE

@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/05/10 14:26:07  vakatov
+* Fixes to compile and link with the "egcs" C++ compiler under Linux
+*
 * Revision 1.12  1999/05/06 23:02:38  vakatov
 * Use the new(template-based, std::) stream library by default
 *
@@ -93,12 +96,16 @@
 #  include <fstream>
 #  include <strstream>
 #  include <iomanip>
-#  if defined(NCBI_NO_NAMESPACE)
+#  if defined(HAVE_NO_STD)
 #    define IO_PREFIX
 #  else
 #    define IO_PREFIX  NCBI_NS_STD
 #  endif
-#  define IOS_BASE    IO_PREFIX::ios_base
+#  if defined HAVE_NO_IOS_BASE
+#    define IOS_BASE    IO_PREFIX::ios
+#  else
+#    define IOS_BASE    IO_PREFIX::ios_base
+#  endif
 #  define IOS_PREFIX  IO_PREFIX::ios
 #  define SEEKOFF     pubseekoff
 

@@ -3,7 +3,10 @@
 # Build library "XNCBI"
 #################################
 
-LIBOBJ = ncbidiag ncbiexpt ncbistre ncbicgi ncbiapp cgiapp cgictx ncbireg ncbicgir ncbires ncbistd asnio ncbienv dbres $(FASTCGI_OBJS)
+LIBOBJ = ncbidiag ncbiexpt ncbistre ncbiapp ncbicgi ncbireg ncbienv ncbistd \
+  $(FASTCGI_OBJS) cgiapp cgictx ncbicgir ncbires \
+  asnio \
+  dbres
 LIB    = xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \

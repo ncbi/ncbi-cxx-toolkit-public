@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/05/10 14:26:07  vakatov
+* Fixes to compile and link with the "egcs" C++ compiler under Linux
+*
 * Revision 1.10  1999/04/14 19:41:19  vakatov
 * [MSVC++] Added pragma's to get rid of some warnings
 *
@@ -108,33 +111,41 @@
 #endif /* _MSC_VER >= 1200 */
 
 // Check if this compiler supports namespaces at all... (see in <ncbiconf.h>)
-#if !defined(NCBI_NO_NAMESPACES)  &&  !defined(HAVE_NAMESPACE)
+#if !defined(NCBI_NO_NAMESPACES)  &&  defined(HAVE_NO_NAMESPACE)
 #  define NCBI_NO_NAMESPACES
 #endif
 
 
-// Using the STL and NCBI namespaces
+// Using the STD and NCBI namespaces
 // To avoid the annoying(and potentially dangerous -- e.g. when dealing with a
 // non-namespace-capable compiler) use of "std::" prefix in NCBI header files
 // and "std::" and/or "ncbi::" prefixes in the source files
-#if defined(NCBI_NO_NAMESPACES)
+#if defined(HAVE_NO_STD)
 #  define NCBI_NS_STD
-#  define NCBI_NS_NCBI
 #  define NCBI_USING_NAMESPACE_STD
+#else
+#  define NCBI_NS_STD  std
+#  define NCBI_USING_NAMESPACE_STD using namespace NCBI_NS_STD
+#endif
+
+#if defined(NCBI_NO_NAMESPACES)
+#  define NCBI_NS_NCBI
 #  define BEGIN_NCBI_SCOPE
 #  define END_NCBI_SCOPE
 #  define USING_NCBI_SCOPE
 #else
-#  define NCBI_NS_STD  std
 #  define NCBI_NS_NCBI ncbi
-#  define NCBI_USING_NAMESPACE_STD using namespace NCBI_NS_STD
-namespace NCBI_NS_STD  { /* the fake one */ }
-namespace NCBI_NS_NCBI { /* the fake one, +"std" */ NCBI_USING_NAMESPACE_STD; }
-namespace NCBI_NS_NCBI { /* the fake one */ }
 #  define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
 #  define END_NCBI_SCOPE }
 #  define USING_NCBI_SCOPE using namespace NCBI_NS_NCBI
+#  if !defined(HAVE_NO_STD)
+// Magic spells ;-) needed for some weird compilers... very empiric
+namespace NCBI_NS_STD  { /* the fake one */ }
+namespace NCBI_NS_NCBI { /* the fake one, +"std" */ NCBI_USING_NAMESPACE_STD; }
+namespace NCBI_NS_NCBI { /* the fake one */ }
+#  endif
 #endif
+
 
 // These two macros are used in STLport's Modena string library
 #if !defined(SIZE_TYPE)
