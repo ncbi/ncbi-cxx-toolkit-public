@@ -713,23 +713,25 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
     // Digital value
     int nsev = NStr::StringToNumeric(str_sev);
 
-    if (nsev > kDiagSevMax) {
-        nsev = kDiagSevMax;
+    if (nsev > eDiagSevMax) {
+        nsev = eDiagSevMax;
     } else if ( nsev == -1 ) {
         // String value
-        for (int s = eDiag_Info; s<= eDiag_Trace; s++) {
-            if (NStr::CompareNocase(str_sev, CNcbiDiag::SeverityName((EDiagSev)s)) == 0) {
+        for (int s = eDiagSevMin; s <= eDiagSevMax; s++) {
+            if (NStr::CompareNocase(CNcbiDiag::SeverityName(EDiagSev(s)),
+                                    str_sev) == 0) {
                 nsev = s;
                 break;
             }
         }
     }
-    sev = (EDiagSev)nsev;
+    sev = EDiagSev(nsev);
     // Unknown value
-    return sev >= 0  && sev <= kDiagSevMax;
+    return sev >= eDiagSevMin && sev <= eDiagSevMax;
 }
 
-void CNcbiDiag::DiagFatal(const char* file, size_t line, const char* message)
+void CNcbiDiag::DiagFatal(const char* file, size_t line,
+                          const char* message)
 {
     CNcbiDiag(file, line, NCBI_NS_NCBI::eDiag_Fatal) << message << Endm;
 }
@@ -739,7 +741,8 @@ void CNcbiDiag::DiagTrouble(const char* file, size_t line)
     DiagFatal(file, line, "Trouble!");
 }
 
-void CNcbiDiag::DiagAssert(const char* file, size_t line, const char* expression)
+void CNcbiDiag::DiagAssert(const char* file, size_t line,
+                           const char* expression)
 {
     CNcbiDiag(file, line, NCBI_NS_NCBI::eDiag_Fatal) <<
         "Assertion failed: (" << expression << ")" << Endm;
@@ -749,11 +752,11 @@ void CNcbiDiag::DiagValidate(const char* file, size_t line,
                              const char* expression, const char* message)
 {
 #ifdef _DEBUG
-    if ( xncbi_GetValidateAction() == eValidate_Throw ) {
-        throw CCoreException(file, line, 0, CCoreException::eCore, message);
+    if ( xncbi_GetValidateAction() != eValidate_Throw ) {
+        DiagAssert(file, line, expression);
     }
 #endif
-    DiagAssert(file, line, expression);
+    throw CCoreException(file, line, 0, CCoreException::eCore, message);
 }
 
 ///////////////////////////////////////////////////////
@@ -1067,6 +1070,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.67  2002/09/24 18:28:20  vasilche
+ * Fixed behavour of CNcbiDiag::DiagValidate() in release mode
+ *
  * Revision 1.66  2002/09/19 20:05:42  vasilche
  * Safe initialization of static mutexes
  *

@@ -67,9 +67,11 @@ enum EDiagSev {
     eDiag_Error,
     eDiag_Critical,
     eDiag_Fatal,   // guarantees to exit(or abort)
-    eDiag_Trace
+    eDiag_Trace,
+    // limits
+    eDiagSevMin = eDiag_Info,
+    eDiagSevMax = eDiag_Trace
 };
-const EDiagSev kDiagSevMax = eDiag_Trace;
 
 
 // Severity level change state
@@ -553,6 +555,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.53  2002/09/24 18:28:20  vasilche
+ * Fixed behavour of CNcbiDiag::DiagValidate() in release mode
+ *
  * Revision 1.52  2002/09/19 20:05:41  vasilche
  * Safe initialization of static mutexes
  *
