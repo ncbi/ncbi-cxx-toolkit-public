@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.6  2001/05/29 19:35:21  grichenk
+* Fixed non-blocking stream reading for GCC
+*
 * Revision 6.5  2001/05/14 16:47:46  lavr
 * streambuf::xsgetn commented out as it badly interferes
 * with truly-blocking stream reading via istream::read.
@@ -71,7 +74,7 @@ public:
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual CT_INT_TYPE underflow(void);
-#if 0
+#if defined(NCBI_COMPILER_GCC)
     virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
 #endif
     virtual streamsize  showmanyc(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/05/29 19:35:23  grichenk
+* Fixed non-blocking stream reading for GCC
+*
 * Revision 1.12  2001/05/17 15:07:15  lavr
 * Typos corrected
 *
@@ -121,9 +124,13 @@ CRef<CByteSourceReader> CStreamByteSource::Open(void)
 
 size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
-#ifdef __GNUC__
+#ifdef NCBI_COMPILER_GCC
     m_Stream->read(buffer, bufferLength);
-    return m_Stream->gcount();
+    size_t count = m_Stream->gcount();
+    if (count  &&  m_Stream->eof()) {
+        m_Stream->clear(ios::eofbit);
+    }
+    return count;
 #else
     size_t n = m_Stream->readsome(buffer, bufferLength);
     if (n != 0  ||  m_Stream->eof())

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.10  2001/05/29 19:35:21  grichenk
+* Fixed non-blocking stream reading for GCC
+*
 * Revision 6.9  2001/05/17 15:02:50  lavr
 * Typos corrected
 *
@@ -169,7 +172,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 }
 
 
-#if 0
+#if defined(NCBI_COMPILER_GCC)
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     static const STimeout s_ZeroTimeout = {0, 0};
