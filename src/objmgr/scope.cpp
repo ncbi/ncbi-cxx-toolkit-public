@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/03/20 21:20:39  grichenk
+* +CScope::ResetHistory()
+*
 * Revision 1.13  2002/02/28 20:53:32  grichenk
 * Implemented attaching segmented sequence data. Fixed minor bugs.
 *
@@ -370,6 +373,16 @@ void CScope::x_ThrowConflict(EConflict conflict_type,
                 x_GetIdMapper().GetSeq_id(info2.m_Handle).DumpAsFasta());
         }
     }
+}
+
+
+void CScope::ResetHistory(void)
+{
+    CMutexGuard guard(sm_Scope_Mutex);
+    iterate(TRequestHistory, it, m_History) {
+        (*it)->Unlock();
+    }
+    m_History.clear();
 }
 
 

@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/03/20 21:20:38  grichenk
+* +CScope::ResetHistory()
+*
 * Revision 1.9  2002/02/21 19:27:00  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -131,6 +134,8 @@ public:
 
     // History of requests
     typedef set< CConstRef<CTSE_Info> > TRequestHistory;
+
+    void ResetHistory(void);
 
 private:
     // Get requests history (used by data sources to process requests)
