@@ -23,13 +23,16 @@
 *
 * ===========================================================================
 *
-* Author:  !!! PUT YOUR NAME(s) HERE !!!
+* Author:  Lewis Geer
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Play around with the HTML library
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/03/08 22:24:42  lewisg
+* make compilable
+*
 * Revision 1.8  1998/12/28 23:29:13  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -69,15 +72,24 @@
 #include <html/querypages.hpp>
 BEGIN_NCBI_SCOPE
 
-class CMyApp : public CSimpleCgiApp
+class CMyApp : public CCgiApplication
 {
 public:
     CMyApp(int argc = 0, char** argv = 0)
-        : CSimpleCgiApp(argc, argv)
+        : CCgiApplication(argc, argv), m_CgiRequest(argc, argv)
         {
         }
 
+    CCgiRequest& GetCgiRequest()
+	{
+	    return m_CgiRequest;
+	}
+
     virtual int Run(void);
+
+private:
+    CCgiRequest m_CgiRequest;
+
 };
 
 extern "C" int main(int argc, char *argv[])
@@ -106,7 +118,7 @@ int CMyApp::Run(void)
     NcbiCout << "Content-TYPE: text/html\n\n";  // CgiResponse
 
     try {
-        int i = Factory.CgiFactory( (TCgiEntries&)(GetRequest()->GetEntries()), PageList);
+        int i = Factory.CgiFactory( (TCgiEntries&)(GetCgiRequest().GetEntries()), PageList);
         CHTMLBasicPage * Page = (PageList[i].pFactory)();
         Page->SetApplication(this);
         Page->SetStyle(PageList[i].Style);
