@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/08/31 16:00:36  clausen
+ * Added new constructors for FastA construction.
+ *
  * Revision 1.5  2001/06/25 18:52:02  grichenk
  * Prohibited copy constructor and assignment operator
  *
@@ -70,18 +73,36 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CTextseq_id : public CTextseq_id_Base
 {
     typedef CTextseq_id_Base Tparent;
-public:
-    // constructor
-    CTextseq_id(void);
-    // destructor
-    ~CTextseq_id(void);
 
-    // comaprison function
+public:
+    // 'ctors
+    CTextseq_id(void);
+    CTextseq_id(const string& acc,
+                const string& name,
+                const string& version,
+                const string& release  = kEmptyStr,
+                bool allow_dot_version = true);
+    CTextseq_id(const string& acc,
+                const string& name,
+                int           version  = 0,
+                const string& release  = kEmptyStr,
+                bool allow_dot_version = true);
+    virtual ~CTextseq_id(void);
+
+
+    // Comparison function
     bool Match(const CTextseq_id& tsip2) const;
 
-    // format the contents FASTA string style
+    // Format the contents FASTA string style
     ostream& AsFastaString(ostream& s) const;
+
 private:
+    void x_Init(const string& acc,
+                const string& name,
+                int           version,
+                const string& release,
+                bool          is_nucore3);
+
     // Prohibit copy constructor & assignment operator
     CTextseq_id(const CTextseq_id&);
     CTextseq_id& operator= (const CTextseq_id&);
