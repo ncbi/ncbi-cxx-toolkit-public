@@ -59,8 +59,8 @@ static char const rcsid[] =
 #include "blast_psi_priv.h"
 
 /* OSF1 apparently doesn't like this. */
-#if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1) /**< Rename HUGE_VAL for OSF1. */
-#define BLASTKAR_HUGE_VAL HUGE_VAL
+#if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1) 
+#define BLASTKAR_HUGE_VAL HUGE_VAL /**< Rename HUGE_VAL for OSF1. */
 #else
 #define BLASTKAR_HUGE_VAL 1.e30 /**< Redefine HUGE_VAL for OSF1. */
 #endif
@@ -76,6 +76,25 @@ static SBLASTMatrixStructure* BlastMatrixAllocate (Int2 alphabet_size);
 static double BlastSumPCalc (int r, double s);
 
 #define BLAST_MAX_ALPHABET 40 /* ncbistdaa is only 26, this should be enough */
+
+#define BLAST_SCORE_RANGE_MAX   (BLAST_SCORE_MAX - BLAST_SCORE_MIN)
+
+/****************************************************************************
+For more accuracy in the calculation of K, set K_SUMLIMIT to 0.00001.
+For high speed in the calculation of K, use a K_SUMLIMIT of 0.001
+Note:  statistical significance is often not greatly affected by the value
+of K, so high accuracy is generally unwarranted.
+*****************************************************************************/
+#define BLAST_KARLIN_K_SUMLIMIT_DEFAULT 0.0001 /**< K_SUMLIMIT_DEFAULT == sumlimit used in BlastKarlinLHtoK() */
+
+#define BLAST_KARLIN_LAMBDA_ACCURACY_DEFAULT    (1.e-5) /**< LAMBDA_ACCURACY_DEFAULT == accuracy to which Lambda should be calc'd */
+
+#define BLAST_KARLIN_LAMBDA_ITER_DEFAULT        17 /**< LAMBDA_ITER_DEFAULT == no. of iterations in LambdaBis = ln(accuracy)/ln(2)*/
+
+#define BLAST_KARLIN_LAMBDA0_DEFAULT    0.5 /**< Initial guess for the value of Lambda in BlastKarlinLambdaNR */
+
+#define BLAST_KARLIN_K_ITER_MAX 100 /**< upper limit on iterations for BlastKarlinLHtoK */
+#define BLAST_SUMP_EPSILON_DEFAULT 0.002 /**< accuracy for SumP calculations */
 
 
 typedef double array_of_8[8]; /**< Holds values (gap-opening, extension, etc.) for a matrix. */
@@ -940,13 +959,13 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
             strcpy(temp, cp);
             
             if (strcasecmp(temp, "na") == 0)  {
-                score = BLAST_SCORE_1MIN;
+                score = BLAST_SCORE_MIN;
             } else  {
                 if (sscanf(temp, "%lg", &xscore) != 1) {
                     return 2;
                 }
 				/*xscore = MAX(xscore, BLAST_SCORE_1MIN);*/
-                if (xscore > BLAST_SCORE_1MAX || xscore < BLAST_SCORE_1MIN) {
+                if (xscore > BLAST_SCORE_MAX || xscore < BLAST_SCORE_MIN) {
                     return 2;
                 }
                 xscore += (xscore >= 0. ? 0.5 : -0.5);
@@ -977,8 +996,8 @@ BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
 	Int4 ** matrix; 
 	Int2 index1, index2;
 
-	sbp->loscore = BLAST_SCORE_1MAX;
-        sbp->hiscore = BLAST_SCORE_1MIN;
+	sbp->loscore = BLAST_SCORE_MAX;
+        sbp->hiscore = BLAST_SCORE_MIN;
 	matrix = sbp->matrix;
 	for (index1=0; index1<sbp->alphabet_size; index1++)
 	{
@@ -1002,10 +1021,10 @@ BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
 /* If the lo/hi-scores are BLAST_SCORE_MIN/BLAST_SCORE_MAX, (i.e., for
 gaps), then use other scores. */
 
-	if (sbp->loscore < BLAST_SCORE_1MIN)
-		sbp->loscore = BLAST_SCORE_1MIN;
-	if (sbp->hiscore > BLAST_SCORE_1MAX)
-		sbp->hiscore = BLAST_SCORE_1MAX;
+	if (sbp->loscore < BLAST_SCORE_MIN)
+		sbp->loscore = BLAST_SCORE_MIN;
+	if (sbp->hiscore > BLAST_SCORE_MAX)
+		sbp->hiscore = BLAST_SCORE_MAX;
 
 	return 0;
 }
@@ -1489,7 +1508,7 @@ static Int2
 BlastScoreChk(Int4 lo, Int4 hi)
 {
 	if (lo >= 0 || hi <= 0 ||
-			lo < BLAST_SCORE_1MIN || hi > BLAST_SCORE_1MAX)
+			lo < BLAST_SCORE_MIN || hi > BLAST_SCORE_MAX)
 		return 1;
 
 	if (hi - lo > BLAST_SCORE_RANGE_MAX)
@@ -1598,9 +1617,6 @@ BlastScoreFreqCalc(BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq* rfp1
 	return 0;
 }
 
-
-#define DIMOFP0	(iterlimit*range + 1)
-#define DIMOFP0_MAX (BLAST_KARLIN_K_ITER_MAX*BLAST_SCORE_RANGE_MAX+1)
 
 
 #define SMALL_LAMBDA_THRESHOLD 20 /*defines special case in K computation*/
@@ -1731,11 +1747,8 @@ BlastKarlinLHtoK(Blast_ScoreFreq* sfp, double lambda, double H)
     sumlimit  = BLAST_KARLIN_K_SUMLIMIT_DEFAULT;
     iterlimit = BLAST_KARLIN_K_ITER_MAX;
 
-    if (DIMOFP0 > DIMOFP0_MAX) {
-        return -1.;
-    }
     alignmentScoreProbabilities =
-        (double *)calloc(DIMOFP0, sizeof(*alignmentScoreProbabilities));
+        (double *)calloc((iterlimit*range + 1), sizeof(*alignmentScoreProbabilities));
     if (alignmentScoreProbabilities == NULL)
         return -1.;
 
@@ -2102,11 +2115,7 @@ Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp)
 
 ErrExit:
 	kbp->Lambda = kbp->H = kbp->K = -1.;
-#ifdef BLASTKAR_HUGE_VAL
 	kbp->logK = BLASTKAR_HUGE_VAL;
-#else
-	kbp->logK = 1.e30;
-#endif
 	return 1;
 }
 
@@ -3050,10 +3059,8 @@ BlastSumPCalc(int r, double s)
 
 	do {
 		d = BLAST_RombergIntegrate(g, args, s, t, epsilon, 0, itmin);
-#ifdef BLASTKAR_HUGE_VAL
 		if (d == BLASTKAR_HUGE_VAL)
 			return d;
-#endif
 	} while (s < mean && d < 0.4 && itmin++ < 4);
 
 	return (d < 1. ? d : 1.);
@@ -3078,10 +3085,8 @@ f(double	x, void*	vp)
 	register double	y;
 
 	y = exp(x - ARG_SDIVR);
-#ifdef BLASTKAR_HUGE_VAL
 	if (y == BLASTKAR_HUGE_VAL)
 		return 0.;
-#endif
 	if (ARG_R2 == 0.)
 		return exp(ARG_ADJ2 - y);
 	if (x == 0.)
@@ -3227,6 +3232,40 @@ BLAST_LargeGapSumE(
     return sum_e;
 }
 
+/**  Given a sequence of 'length' amino acid residues, compute the
+ *   probability of each residue and put that in the array resProb
+ *
+ * @param sequence the sequence to be computed upon [in]
+ * @param length the length of the sequence [in]
+ * @param resProb the object to be filled in [in|out]
+ */
+
+void 
+Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resProb)
+{
+    Int4 frequency[PSI_ALPHABET_SIZE];  /*frequency of each letter*/
+    Int4 i;                             /*index*/
+    Int4 denominator;                   /*length not including X's*/
+
+    denominator = length;
+    for(i = 0; i < PSI_ALPHABET_SIZE; i++)
+        frequency[i] = 0;
+
+    for(i = 0; i < length; i++) {
+        if (sequence[i] != AMINOACID_TO_NCBISTDAA['X'])
+            frequency[sequence[i]]++;
+        else
+            denominator--;
+    }
+
+    for(i = 0; i < PSI_ALPHABET_SIZE; i++) {
+        if (frequency[i] == 0)
+            resProb[i] = 0.0;
+        else
+            resProb[i] = ((double) frequency[i]) /((double) denominator);
+    }
+}
+
 /*------------------- RPS BLAST functions --------------------*/
 
 static double
@@ -3266,6 +3305,7 @@ RPSfindUngappedLambda(Char *matrixName)
    for indexing convenience the field storing scoreArray points to the
         entry for score 0, so that referring to the -k index corresponds to
         score -k 
+ FIXME: This can be replaced by _PSIComputeScoreProbabilities??
 */
 
 static void
@@ -3313,35 +3353,6 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
         return_sfp->score_avg += i * return_sfp->sprob[i];
 }
 
-/*  Given a sequence of 'length' amino acid residues, compute the
-    probability of each residue and put that in the array resProb*/
-
-static void 
-RPSFillResidueProbability(Uint1 * sequence, Int4 length, double * resProb)
-{
-    Int4 frequency[PSI_ALPHABET_SIZE];  /*frequency of each letter*/
-    Int4 i;                             /*index*/
-    Int4 denominator;                   /*length not including X's*/
-
-    denominator = length;
-    for(i = 0; i < PSI_ALPHABET_SIZE; i++)
-        frequency[i] = 0;
-
-    for(i = 0; i < length; i++) {
-        if (sequence[i] != AMINOACID_TO_NCBISTDAA['X'])
-            frequency[sequence[i]]++;
-        else
-            denominator--;
-    }
-
-    for(i = 0; i < PSI_ALPHABET_SIZE; i++) {
-        if (frequency[i] == 0)
-            resProb[i] = 0.0;
-        else
-            resProb[i] = ((double) frequency[i]) /((double) denominator);
-    }
-}
-
 /* Calculate a new PSSM, using composition-based statistics, for use
    with RPS BLAST. This function produces a PSSM for a single RPS DB
    sequence (of size db_seq_length) and incorporates information from 
@@ -3370,7 +3381,7 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
     scoreArray = (double *)malloc(BLAST_SCORE_RANGE_MAX * sizeof(double));
     return_sfp = (Blast_ScoreFreq *)malloc(sizeof(Blast_ScoreFreq));
 
-    RPSFillResidueProbability(rps_query_seq, rps_query_length, resProb);
+    Blast_FillResidueProbability(rps_query_seq, rps_query_length, resProb);
 
     RPSFillScores(posMatrix, db_seq_length, resProb, scoreArray, 
                  return_sfp, BLAST_SCORE_RANGE_MAX);
@@ -3539,6 +3550,12 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.82  2004/06/10 13:21:24  madden
+ * Rename RPSFillResidueProbability to Blast_FillResidueProbability, made public.
+ * Removed usage of BLAST_SCORE_1MIN/MAX, simply use BLAST_SCORE_MIN/MAX instead
+ * Removed useless defines DIMOFP0 and DIMOFP0_MAX
+ * Moved over some defines from blast_stat.h
+ *
  * Revision 1.81  2004/06/08 15:05:05  madden
  * Doxygen fixes
  *
