@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/07/10 15:07:51  lavr
+ * More comments added
+ *
  * Revision 6.3  2001/03/01 01:03:46  lavr
  * SendMailInfo_Init got extern
  *
@@ -72,22 +75,34 @@ typedef struct {
     STimeout     mx_timeout;    /* Timeout for all network transactions  */
 } SSendMailInfo;
 
-/* Init passed structure, setting:
- *   'magic_number' to proper value (verified by CORE_SendMailEx);
+
+/* NOTE about recipient lists:
+ * They are not parsed; valid recipient (according to a standard)
+ * can be specified in the form "Name" <address>; recipients should
+ * be separated by commas. In case of address-only recipients (no "Name"
+ * part as above), angle brackets around address may be omitted.
+ */
+
+
+/* Initialize SSendMailInfo structure, setting:
+ *   'magic_number' to proper value (verified by CORE_SendMailEx()!);
  *   'cc', 'bcc', 'header' to NULL (means no recipients/additional headers);
  *   'from' is filled out using current user name (if discovered, 'anonymous'
- *          otherwise) and host in the form: username@hostname; may be reset
- *          to "" by application for sending no-return messages
- *          (aka MAILER-DAEMON);
+ *          otherwise) and host in the form: username@hostname; may be later
+ *          reset by application to "" for sending no-return messages
+ *          (aka MAILER-DAEMON messages);
  *   'mx_*' filled out with accordance to corresponding macros defined above;
  *          application may choose different values afterwards.
+ * Return value equals passed argument.
+ * Note: This call is the only valid way to init SSendMailInfo.
  */
 extern SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info);
 
 
-/* Send a simple message to recipient defined in 'to',
- * and having subject 'subject', which can be empty (both NULL and "" treated
- * as having empty subject), and message body 'body' (may be NULL/empty).
+/* Send a simple message to recipient(s) defined in 'to',
+ * and having subject 'subject', which may be empty (both NULL and "" treated
+ * equally as empty subjects), and message body 'body' (may be NULL/empty,
+ * if not empty, lines are separated by '\n').
  * Return value 0 means success; otherwise descriptive error message
  * gets returned. Communicaiton parameters for connection with sendmail
  * are set using default values as described in SendMailInfo_Init().
@@ -96,9 +111,9 @@ extern const char* CORE_SendMail(const char* to,
                                  const char* subject,
                                  const char* body);
 
-/* Send message as in CORE_SendMail but with specifying explicitly
+/* Send a message as in CORE_SendMail() but with specifying explicitly
  * all additional parameters of the message and communication via
- * 'info'. In case of 'info' == NULL, the call is completely
+ * argument 'info'. In case of 'info' == NULL, the call is completely
  * equivalent to CORE_SendMail().
  */
 extern const char* CORE_SendMailEx(const char* to,
