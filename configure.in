@@ -123,6 +123,7 @@ case "$host:$compiler" in
 
  *-osf*:GCC )
    CXXFLAGS="-fsquangle $CXXFLAGS"
+   NETWORK_LIBS=${NETWORK_LIBS:=" "}
    ;;
 
  *:WorkShop5 )
@@ -140,7 +141,7 @@ case "$host:$compiler" in
       compiler_extra="_32"
    fi
    CFLAGS=${CFLAGS:="-mt $WS64_CFLAGS"}
-   CXXFLAGS=${CXX_FLAGS:="-mt +w +w2 $WS64_CFLAGS"}
+   CXXFLAGS=${CXXFLAGS:="-mt +w +w2 $WS64_CFLAGS"}
    LDFLAGS="-xildoff $WS64_CFLAGS $LDFLAGS"
    AR="$CXX -xar -o"
    RANLIB=":"
@@ -148,9 +149,10 @@ case "$host:$compiler" in
 
  *:MIPSpro73 )
    COMMON_FLAGS="-fullwarn -signed -brief_diagnostics -use_readonly_const -G0 -rdata_shared -n32"
-   CFLAGS=${CFLAGS:="$COMMON_FLAGS -ansi"}
-   CXXFLAGS=${CXXFLAGS:="$COMMON_FLAGS -ansiW -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"}
+   CFLAGS="$COMMON_FLAGS -ansi"
+   CXXFLAGS=$COMMON_FLAGS -ansiW -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
+   LDFLAGS="-LANG:std $LDFLAGS"
    AR=${AR:="$CXX -ar -WR,-v -o"}
    ;;
 
