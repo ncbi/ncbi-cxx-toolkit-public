@@ -104,12 +104,7 @@ CBlastNucleotideOptionsHandle::SetLookupTableDefaults()
     SetLookupTableType(NA_LOOKUP_TABLE);
     SetWordSize(BLAST_WORDSIZE_NUCL);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTN);
-    SetAlphabetSize(BLASTNA_SIZE);
-
-    unsigned int stride = CalculateBestStride(GetWordSize(), 
-                                              BLAST_VARWORD_NUCL, 
-                                              GetLookupTableType());
-    SetScanStep(stride);
+    SetVariableWordSize(BLAST_VARWORD_NUCL);
 }
 
 void 
@@ -119,14 +114,7 @@ CBlastNucleotideOptionsHandle::SetMBLookupTableDefaults()
     SetWordSize(BLAST_WORDSIZE_MEGABLAST);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_MEGABLAST);
     m_Opts->SetMBMaxPositions(INT4_MAX);
-    SetAlphabetSize(BLASTNA_SIZE);
-
-    // Note: stride makes no sense in the context of eRight extension 
-    // method
-    unsigned int stride = CalculateBestStride(GetWordSize(), 
-                                              BLAST_VARWORD_MEGABLAST, 
-                                              GetLookupTableType());
-    SetScanStep(stride);
+    SetVariableWordSize(BLAST_VARWORD_MEGABLAST);
 }
 
 void
@@ -141,9 +129,6 @@ CBlastNucleotideOptionsHandle::SetInitialWordOptionsDefaults()
 {
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
-    SetSeedContainerType(eDiagArray);
-    SetVariableWordSize(BLAST_VARWORD_NUCL);
-    SetSeedExtensionMethod(eRightAndLeft);
     SetUngappedExtension();
 }
 
@@ -151,9 +136,6 @@ void
 CBlastNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
 {
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
-    SetSeedContainerType(eWordStacks);
-    SetVariableWordSize(BLAST_VARWORD_MEGABLAST);
-    SetSeedExtensionMethod(eRightAndLeft);
 }
 
 void
@@ -256,6 +238,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/01/10 13:34:45  madden
+ * Calls to SetAlphabetSize, CalculateBestStride, SetScanStep, SetSeedContainerType,
+ * and SetSeedExtensionMethod removed as no longe applicable.  Calls to SetVariableWordSize
+ * moved.
+ *
  * Revision 1.17  2004/12/21 17:18:24  dondosha
  * eSkipTbck option has been removed
  *
