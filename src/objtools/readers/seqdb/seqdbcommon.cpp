@@ -373,12 +373,6 @@ void CSeqDBGiList::FindGis(const vector<int> & oids, vector<int> & gis)
     }
 }
 
-void CSeqDBGiList::SetTranslation(int index, int oid)
-{
-    _ASSERT(m_CurrentOrder != eOid);
-    m_GisOids[index].oid = oid;
-}
-
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
 {
     CMemoryFile mfile(fname);

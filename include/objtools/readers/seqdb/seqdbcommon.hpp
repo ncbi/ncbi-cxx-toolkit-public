@@ -184,7 +184,11 @@ public:
     ///   The location in the array of the GI, OID pair.
     /// @param oid
     ///   The oid to store in that element.
-    void SetTranslation(int index, int oid);
+    void SetTranslation(int index, int oid)
+    {
+        _ASSERT(m_CurrentOrder != eOid);
+        m_GisOids[index].oid = oid;
+    }
     
 protected:
     ESortOrder     m_CurrentOrder;
