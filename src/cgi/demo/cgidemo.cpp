@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/01/13 19:21:47  lewisg
+* check for end of multimap
+*
 * Revision 1.1  1999/01/13 14:46:45  lewisg
 * simple cgi demo
 *
@@ -61,7 +64,10 @@ extern "C" int main(int argc, char *argv[])
 
     // this program expects queries of the form cgidemo?name=Fred
     // the following line extracts the "Fred"
-    string Name = (Entries.find("name"))->second;
+    string Name;
+    TCgiEntries::iterator iName = Entries.find("name");
+    if (iName == Entries.end()) Name = "World"; 
+    else Name = iName->second;
 
     // print out the results
     Response.out() << "<html><body>Hello, " << Name;
