@@ -60,6 +60,9 @@ public:
                      size_t index);
     ~CSeq_feat_Handle(void);
 
+    operator bool(void) const;
+    bool operator !(void) const;
+
     CSeq_annot_Handle GetAnnot(void) const;
 
     CConstRef<CSeq_feat> GetSeq_feat(void) const;
@@ -131,6 +134,20 @@ private:
     EAnnotInfoType             m_AnnotInfoType;
     size_t                     m_Index;
 };
+
+
+inline
+CSeq_feat_Handle::operator bool(void) const
+{
+    return m_Annot;
+}
+
+
+inline
+bool CSeq_feat_Handle::operator !(void) const
+{
+    return !m_Annot;
+}
 
 
 inline
@@ -391,6 +408,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/08/25 20:44:52  grichenk
+* Added operator bool() and operator !()
+*
 * Revision 1.2  2004/05/06 17:32:37  grichenk
 * Added CanGetXXXX() methods
 *

@@ -54,6 +54,9 @@ public:
                       size_t index);
     ~CSeq_graph_Handle(void);
 
+    operator bool(void) const;
+    bool operator !(void) const;
+
     CSeq_annot_Handle GetAnnot(void) const;
 
     CConstRef<CSeq_graph> GetSeq_graph(void) const;
@@ -84,6 +87,20 @@ private:
     CConstRef<CSeq_annot_Info> m_Annot;
     size_t                     m_Index;
 };
+
+
+inline
+CSeq_graph_Handle::operator bool(void) const
+{
+    return m_Annot;
+}
+
+
+inline
+bool CSeq_graph_Handle::operator !(void) const
+{
+    return !m_Annot;
+}
 
 
 inline
@@ -211,6 +228,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/08/25 20:44:52  grichenk
+* Added operator bool() and operator !()
+*
 * Revision 1.1  2004/05/04 18:06:06  grichenk
 * Initial revision
 *
