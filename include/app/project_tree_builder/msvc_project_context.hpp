@@ -111,10 +111,10 @@ public:
     const CMsvcCombinedProjectMakefile& GetMsvcProjectMakefile(void) const;
 
     
-    static bool IsRequiresOk(const CProjItem& prj);
+    static bool IsRequiresOk(const CProjItem& prj, string* unmet);
 
     
-    bool IsConfigEnabled(const SConfigInfo& config) const;
+    bool IsConfigEnabled(const SConfigInfo& config, string* unmet) const;
 
 
     const list<SCustomBuildInfo>& GetCustomBuildInfo(void) const
@@ -525,6 +525,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/12/20 15:19:58  gouriano
+ * Added diagnostic information
+ *
  * Revision 1.20  2004/10/12 16:19:04  ivanov
  * Cosmetics
  *
