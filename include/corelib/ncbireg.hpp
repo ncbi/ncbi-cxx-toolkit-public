@@ -1,0 +1,116 @@
+#ifndef NCBIREG__HPP
+#define NCBIREG__HPP
+
+/*  $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Author:  Denis Vakatov
+*
+* File Description:
+*   Handle info in the NCBI configuration file(s):
+*      read and parse config. file
+*      search, edit, etc. in the retrieved configuration info
+*      dump info back to config. file
+*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.1  1998/12/04 23:40:58  vakatov
+* Initial revision
+* Very draft;  compiles fine but:  never tested!
+*
+* ===========================================================================
+*/
+
+#include <ncbistd.hpp>
+#include <list>
+#include <map>
+
+
+// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+BEGIN_NCBI_SCOPE
+
+
+// [section1]
+// name1 = value1
+// name2 = value2
+// ..............
+// [section2]
+// # This is a comment...
+// name1 = value1
+// .............. 
+
+///  Leading and trailing spaces in "section", "name" and "value" get truncated
+///  Comments and empty lines are skipped during the parsing
+///  "Section" and "name" must contain only [a-z], [A-Z], [0-9] and underscore
+
+class CNcbiRegistry {
+public:
+    CNcbiRegistry(void);
+    CNcbiRegistry(CNcbiIstream& is);  // see Read()
+    ~CNcbiRegistry(void);
+
+    bool Empty(void) const;  // "false" if the registry contains no entries
+    // Parse "is" and merge its content to current entries.
+    // If "override==true" than in the case of conflict between the current
+    // and the loaded entry, replace the current one by the new one.
+    // Throw CParseException on error.
+    void Read(CNcbiIstream& is, bool override=true);
+    bool Write(CNcbiOstream& os) const;  // dump to "os"
+    void Clear(void);  // reset the whole registry content
+
+    // Return empty string if the config. parameter not found
+    const string& Get(const string& section, const string& name) const;
+    // Set config. parameter value(unset if "value" is empty)
+    // Return "true" if the "value" is succesfully set(or unset)
+    // If there was already an entry with the same <section,name> key:
+    //   if "override==true" then override the old value, return "true";
+    //   if "override==false"  then do not override old value, return "false"
+    bool Set(const string& section, const string& name, const string& value,
+             bool override=true);
+    // Set config. parameter;  return "false" if there was no such entry
+    bool Unset(const string& section, const string& name);
+
+    // These functions first erase the passed list, then fill it out by:
+    //    name of sections that comprise the whole registry
+    void EnumerateSections(list<string>* sections) const;
+    //    name of entries that belong to the specified "section"
+    void EnumerateEntries(const string& section, list<string>* entries) const;
+
+private:
+    typedef map<string, string>      TRegSection;
+    typedef map<string, TRegSection> TRegistry;
+    TRegistry m_Registry;
+
+    // prohibit default initialization and assignment
+    CNcbiRegistry(const CNcbiRegistry&) { _TROUBLE; }
+    CNcbiRegistry& operator=(const CNcbiRegistry&) { _TROUBLE;  return *this; }
+};  // CNcbiRegistry
+
+
+// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+END_NCBI_SCOPE
+
+#endif  /* NCBIREG__HPP */
+
