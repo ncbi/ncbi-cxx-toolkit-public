@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/05/31 18:54:21  thiessen
+* TESTMSG moved
+*
 * Revision 1.10  2001/02/08 23:01:50  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -73,6 +76,7 @@
 #include "cn3d/coord_set.hpp"
 #include "cn3d/atom_set.hpp"
 #include "cn3d/object_3d.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
