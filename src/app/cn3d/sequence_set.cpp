@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2002/12/12 15:04:11  thiessen
+* fix for report launch on nucleotides
+*
 * Revision 1.54  2002/12/09 16:25:04  thiessen
 * allow negative score threshholds
 *
@@ -633,8 +636,9 @@ void LaunchWebPage(const char *url)
 void Sequence::LaunchWebBrowserWithInfo(void) const
 {
     std::string db = isProtein ? "Protein" : "Nucleotide";
+    std::string opt = isProtein ? "GenPept" : "GenBank";
     CNcbiOstrstream oss;
-    oss << "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Search&doptcmdl=GenPept"
+    oss << "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Search&doptcmdl=" << opt
         << "&db=" << db << "&term=";
     if (identifier->pdbID.size() > 0) {
         oss << identifier->pdbID.c_str();
