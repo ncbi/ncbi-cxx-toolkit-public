@@ -31,9 +31,7 @@
  */
 
 #include "ncbi_comm.h"
-#if defined(_DEBUG) && !defined(NDEBUG)
-#  include "ncbi_priv.h"
-#endif
+#include "ncbi_priv.h"
 #include "ncbi_servicep.h"
 #include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_connection.h>
@@ -742,6 +740,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2002/09/06 17:45:33  lavr
+ * Include <connect/ncbi_priv.h> unconditionally (reported by J.Kans)
+ *
  * Revision 6.41  2002/09/06 15:44:02  lavr
  * Use fHCC_SureFlush and CONN_Flush() instead of dummy read
  *

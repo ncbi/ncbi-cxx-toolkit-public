@@ -32,9 +32,7 @@
  */
 
 #include "ncbi_comm.h"
-#if defined(_DEBUG) && !defined(NDEBUG)
-#  include "ncbi_priv.h"
-#endif
+#include "ncbi_priv.h"
 #include "ncbi_servicep_dispd.h"
 #include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_connection.h>
@@ -395,6 +393,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2002/09/06 17:45:40  lavr
+ * Include <connect/ncbi_priv.h> unconditionally (reported by J.Kans)
+ *
  * Revision 6.41  2002/09/06 15:44:19  lavr
  * Use fHCC_SureFlush and CONN_Flush() instead of dummy read
  *
