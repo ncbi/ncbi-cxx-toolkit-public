@@ -51,7 +51,7 @@ BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
 Int4 
 BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 
         LookupTableWrapPtr lookup, BlastQueryInfoPtr query_info,
-        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject_blk, Int4 numseqs, 
+        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject_blk, 
         BLAST_ExtendWordPtr ewp, BlastGapAlignStructPtr gap_align, 
         BlastScoringOptionsPtr score_options, 
         BlastInitialWordParametersPtr word_params, 
@@ -138,7 +138,6 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    subject_offsets = Malloc(offset_array_size * sizeof(Uint4));
 
    /* end prologue */
-
 
    BLAST_ResultsInit(query_info->num_queries, results_ptr);
    results = *results_ptr;

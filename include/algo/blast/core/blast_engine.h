@@ -56,7 +56,6 @@ extern "C" {
  * @param query_info Additional query information [in]
  * @param db Structure containing BLAST database [in]
  * @param subject_blk Subject sequence in two sequences case [in]
- * @param numseqs Number of sequences in the database [in]
  * @param ewp Structure for tracking the initial hits [in]
  * @param gap_align Structure for gapped alignment [in]
  * @param score_options Hit scoring options [in]
@@ -68,7 +67,7 @@ extern "C" {
 Int4 
 BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 
         LookupTableWrapPtr lookup, BlastQueryInfoPtr query_info,
-        ReadDBFILEPtr db, BLAST_SequenceBlkPtr subject_blk, Int4 numseqs, 
+        ReadDBFILEPtr db, BLAST_SequenceBlkPtr subject_blk, 
         BLAST_ExtendWordPtr ewp, BlastGapAlignStructPtr gap_align, 
         BlastScoringOptionsPtr score_options, 
         BlastInitialWordParametersPtr word_params, 
