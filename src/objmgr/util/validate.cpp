@@ -94,6 +94,8 @@
 #include <objects/util/feature.hpp>
 #include <objects/util/validate.hpp>
 
+#include <util/strsearch.hpp>
+
 #include <algorithm>
 #include <list>
 
@@ -552,7 +554,7 @@ private:
     void ValidateSegRef(const CBioseq& seq);
     void ValidateDelta(const CBioseq& seq);
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj);
-    void ValidateSourceQualTags(void);
+    void ValidateSourceQualTags(const string& str, const CSerialObject& obj);
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj);
     void ValidateGene(const CGene_ref& gene, const CSerialObject& obj);
     void ValidateProt(const CProt_ref& prot, const CSerialObject& obj);
@@ -561,20 +563,25 @@ private:
     void ValidateImp(const CImp_feat& imp, const CSerialObject& obj);
     void ValidateFeatPartialness(const CSeq_feat& feat);
     void ValidateExcept(const CSeq_feat& feat);
-    void ValidateExceptText(const string &text, const CSeq_feat& feat);
+    void ValidateExceptText(const string& text, const CSeq_feat& feat);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj);
-    void ValidateDbxref(const list< CRef< CDbtag > > &xref_list, const CSerialObject& obj);
-    bool IsCountryValid(const string &str);
+    void ValidateDbxref(const list< CRef< CDbtag > >& xref_list, const CSerialObject& obj);
+    bool IsCountryValid(const string& str);
     bool OverlappingGeneIsPseudo(const CSeq_feat& obj);
-    void CheckForBothStrands(const CSeq_feat &feat);
-    void CdTransCheck(const CSeq_feat &feat);
-    void SpliceCheck (const CSeq_feat &feat);
-    void CheckForBadGeneOverlap (const CSeq_feat &feat);
-    void CheckForBadMRNAOverlap (const CSeq_feat &feat);
-    void CheckForCommonCDSProduct (const CSeq_feat &feat);
-    void CheckTrnaCodons(const CTrna_ext &trna, const CSeq_feat &feat);
-
-
+    void CheckForBothStrands(const CSeq_feat& feat);
+    void CdTransCheck(const CSeq_feat& feat);
+    void SpliceCheck (const CSeq_feat& feat);
+    void CheckForBadGeneOverlap (const CSeq_feat& feat);
+    void CheckForBadMRNAOverlap (const CSeq_feat& feat);
+    void CheckForCommonCDSProduct (const CSeq_feat& feat);
+    void CheckTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
+    bool IsEqualSeqAnnot(const CFeat_CI& fi1, const CFeat_CI& fi2) const;
+    bool IsEqualSeqAnnotDesc(const CFeat_CI& fi1, const CFeat_CI& fi2) const;
+    void InitializeSourceQualTags();
+    size_t SearchNoCase(const string& text, const string& pat) const;
+    bool NotPeptideException(const CFeat_CI& curr, const CFeat_CI& prev) const;
+    bool DifferentDbxrefs(const list< CRef< CDbtag > >& dbxref1,
+                          const list< CRef< CDbtag > >& dbxref2) const;
     typedef const CSeq_feat& TFeat;
     typedef const CBioseq& TBioseq;
     typedef const CBioseq_set& TSet;
@@ -602,9 +609,101 @@ private:
     // legal exception strings
     static const string legalExceptionStrings [];
     static const string refseqExceptionStrings [];
+
+    static const string plastidtxt [];
+
+    static const string source_qual_prefixes [];
+
+    CTextFsa sourceQualTags;
 };
 
 //********************** CValidError_impl implementation ******************
+
+const string CValidError_impl::source_qual_prefixes [] = {
+  "acronym:",
+  "anamorph:",
+  "authority:",
+  "biotype:",
+  "biovar:",
+  "breed:",
+  "cell_line:",
+  "cell_type:",
+  "chemovar:",
+  "chromosome:",
+  "clone:",
+  "clone_lib:",
+  "common:",
+  "country:",
+  "cultivar:",
+  "dev_stage:",
+  "dosage:",
+  "ecotype:",
+  "endogenous_virus_name:",
+  "environmental_sample:",
+  "forma:",
+  "forma_specialis:",
+  "frequency:",
+  "genotype:",
+  "germline:",
+  "group:",
+  "haplotype:",
+  "insertion_seq_name:",
+  "isolate:",
+  "isolation_source:",
+  "lab_host:",
+  "map:",
+  "nat_host:",
+  "pathovar:",
+  "plasmid_name:",
+  "plastid_name:",
+  "pop_variant:",
+  "rearranged:",
+  "segment:",
+  "serogroup:",
+  "serotype:",
+  "serovar:",
+  "sex:",
+  "specimen_voucher:",
+  "strain:",
+  "subclone:",
+  "subgroup:",
+  "substrain:",
+  "subtype:",
+  "sub_species:",
+  "synonym:",
+  "taxon:",
+  "teleomorph:",
+  "tissue_lib:",
+  "tissue_type:",
+  "transgenic:",
+  "transposon_name:",
+  "type:",
+  "variety:",
+};
+
+
+const string CValidError_impl::plastidtxt [] = {
+  "",
+  "",
+  "chloroplast",
+  "chromoplast",
+  "",
+  "",
+  "plastid",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "cyanelle",
+  "",
+  "",
+  "",
+  "apicoplast",
+  "leucoplast",
+  "proplastid",
+  "",
+};
 
 
 const string CValidError_impl::legalExceptionStrings [] = {
@@ -664,6 +763,7 @@ CValidError_impl::CValidError_impl
       m_IsXR(false),
       m_IsGI(false)
 {
+    InitializeSourceQualTags();
 }
 
 
@@ -1509,7 +1609,7 @@ bool s_IsType(const CSeq_entry& se)
     return false;
 }
 
-
+/*
 inline
 static bool s_NotPeptideException(const CSeq_feat& ft)
 {
@@ -1527,7 +1627,7 @@ static bool s_NotPeptideException(const CSeq_feat& ft)
 
     return true;
 }
-
+*/
 
 void CValidError_impl::ValidErr
 (EDiagSev sv,
@@ -1569,7 +1669,7 @@ void CValidError_impl::ValidErr
     ds.GetLabel (&msg, CSeqdesc::eBoth);
 
     m_Errors->push_back(CRef<CValidErrItem>
-                        (new CValidErrItem(sv, et, msg, ds)));
+        (new CValidErrItem(sv, et, msg, ds)));
 }
 
 
@@ -1633,7 +1733,7 @@ void CValidError_impl::ValidErr
         }
     }
     m_Errors->push_back(CRef<CValidErrItem>
-                        (new CValidErrItem(sv, et, msg, ft)));
+        (new CValidErrItem(sv, et, msg, ft)));
 }
 
 
@@ -1651,7 +1751,7 @@ void CValidError_impl::ValidErr
         sq.GetLabel(&msg, CBioseq::eBoth, false);
     }
     m_Errors->push_back(CRef<CValidErrItem>
-                        (new CValidErrItem(sv, et, msg, sq)));
+        (new CValidErrItem(sv, et, msg, sq)));
 }
 
 
@@ -2250,7 +2350,7 @@ void CValidError_impl::ValidateExcept(const CSeq_feat& feat)
 }
 
 
-void CValidError_impl::ValidateExceptText(const string &text, const CSeq_feat& feat)
+void CValidError_impl::ValidateExceptText(const string& text, const CSeq_feat& feat)
 {
     if ( text.empty() ) return;
 
@@ -2737,6 +2837,18 @@ void CValidError_impl::Validate(const CSeq_submit& ss)
 }
 
 
+void CValidError_impl::InitializeSourceQualTags() 
+{
+    int size = sizeof(source_qual_prefixes) / sizeof(string);
+
+    for (int i = 0; i < size; ++i ) {
+        sourceQualTags.AddWord(source_qual_prefixes[i]);
+    }
+
+    sourceQualTags.Prime();
+}
+
+
 void CValidError_impl::ValidateSeqLen(const CBioseq& seq)
 {
 
@@ -2919,6 +3031,7 @@ void CValidError_impl::ValidateProteinTitle(const CBioseq& seq)
             "generated title", seq);
     }
 }
+
 
 void CValidError_impl::ValidateFeatPartialness(const CSeq_feat& feat)
 {
@@ -3119,8 +3232,210 @@ public:
 };
 
 
-void CValidError_impl::ValidateDupOrOverlapFeats(const CBioseq& ) //seq)
+size_t CValidError_impl::SearchNoCase
+(const string& text,
+ const string &pat) const {
+    string str = text, pattern = pat;
+    NStr::ToLower(str);
+    NStr::ToLower(pattern);
+    return str.find(pattern);
+}
+
+
+bool CValidError_impl::NotPeptideException
+(const CFeat_CI& curr,
+ const CFeat_CI& prev) const
 {
+    string  alternative = "alternative processing",
+            alternate   = "alternate processing";
+    
+    if ( curr->GetExcept() ) {
+        if ( SearchNoCase(curr->GetExcept_text(), alternative) != string::npos ||
+             SearchNoCase(curr->GetExcept_text(), alternate) != string::npos) {
+            return false;
+        }
+    }
+    if ( prev->GetExcept() ) {
+        if ( SearchNoCase(prev->GetExcept_text(), alternative) != string::npos ||
+             SearchNoCase(prev->GetExcept_text(), alternate) != string::npos ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool CValidError_impl::IsEqualSeqAnnot
+(const CFeat_CI& fi1,
+ const CFeat_CI& fi2) const
+{
+    // !!!
+    return true;
+}
+
+
+bool CValidError_impl::IsEqualSeqAnnotDesc
+(const CFeat_CI& fi1,
+ const CFeat_CI& fi2) const
+{
+    // !!!
+    return true;
+}
+
+
+bool CValidError_impl::DifferentDbxrefs
+(const list< CRef< CDbtag > >& dbxref1,
+ const list< CRef< CDbtag > >& dbxref2) const
+{
+    if ( dbxref1.empty() || dbxref2.empty() ) {
+        return false;
+    }
+
+    const CDbtag& dbt1 = **dbxref1.begin();
+    const CDbtag& dbt2 = **dbxref2.begin();
+    return !dbt1.Match(dbt2);
+}
+
+
+void CValidError_impl::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
+{
+    ENa_strand              curr_strand, prev_strand;
+    CCdregion::EFrame       curr_frame, prev_frame;
+    const CSeq_loc*         curr_location = 0, *prev_location = 0;
+    EDiagSev                severity;
+    CSeqFeatData::ESubtype  curr_subtype = CSeqFeatData::eSubtype_bad, 
+                            prev_subtype = CSeqFeatData::eSubtype_bad;
+    bool same_label;
+    string curr_label, prev_label;
+    
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle (bioseq);
+
+    bool fruit_fly = false;
+    const string &taxname = 
+        CSeqdesc_CI(bsh, CSeqdesc::e_Source)->GetSource().GetOrg().GetTaxname();
+    if ( NStr::CompareNocase(taxname, "Drosophila melanogaster") == 0 ) {
+        fruit_fly = true;
+    }
+
+    CFeat_CI curr(bsh, 0, 0, CSeqFeatData::e_not_set);
+    CFeat_CI prev = curr;
+    ++curr;
+    while ( curr ) {
+        curr_location = &(curr->GetLocation());
+        prev_location = &(prev->GetLocation());
+        curr_subtype = curr->GetData().GetSubtype();
+        prev_subtype = prev->GetData().GetSubtype();
+
+        // if same location, subtype and strand
+        if ( Compare(*curr_location, *prev_location, m_Scope) == eSame &&
+             curr_subtype == prev_subtype ) {
+
+            curr_strand = GetStrand(curr->GetLocation(), m_Scope);
+            prev_strand = GetStrand(prev->GetLocation(), m_Scope);
+            if ( curr_strand == prev_strand         || 
+                 curr_strand == eNa_strand_unknown  ||
+                 prev_strand == eNa_strand_unknown  ) {
+
+                if ( IsEqualSeqAnnot(curr, prev)  ||
+                     IsEqualSeqAnnotDesc(curr, prev) ) {
+                    severity = eDiag_Error;
+
+                    // compare labels and comments
+                    same_label = true;
+                    const string &curr_comment = curr->GetComment();
+                    const string &prev_comment = prev->GetComment();
+                    curr_label.erase();
+                    prev_label.erase();
+                    feature::GetLabel(*curr, &curr_label, feature::eContent, m_Scope);
+                    feature::GetLabel(*prev, &prev_label, feature::eContent, m_Scope);
+                    if ( NStr::CompareNocase(curr_comment, prev_comment) != 0  ||
+                         NStr::CompareNocase(curr_label, prev_label) != 0 ) {
+                        same_label = false;
+                    }
+
+                    // lower sevrity for the following cases:
+
+                    if ( curr_subtype == CSeqFeatData::eSubtype_pub          ||
+                         curr_subtype == CSeqFeatData::eSubtype_region       ||
+                         curr_subtype == CSeqFeatData::eSubtype_misc_feature ||
+                         curr_subtype == CSeqFeatData::eSubtype_STS          ||
+                         curr_subtype == CSeqFeatData::eSubtype_variation ) {
+                        severity = eDiag_Warning;
+                    } else if ( !(m_IsGPS || m_IsNT || m_IsNC) ) {
+                        severity = eDiag_Warning;
+                    } else if ( fruit_fly ) {
+                        // curated fly source still has duplicate features
+                        severity = eDiag_Warning;
+                    }
+                    
+                    // if different CDS frames, lower to warning
+                    if ( curr->GetData().Which() == CSeqFeatData::e_Cdregion ) {
+                        curr_frame = curr->GetData().GetCdregion().GetFrame();
+                        prev_frame = CCdregion::eFrame_not_set;
+                        if ( prev->GetData().Which() == CSeqFeatData::e_Cdregion ) {
+                            prev_frame = prev->GetData().GetCdregion().GetFrame();
+                        }
+                        
+                        if ( (curr_frame != CCdregion::eFrame_not_set  &&
+                            curr_frame != CCdregion::eFrame_one)     ||
+                            (prev_frame != CCdregion::eFrame_not_set  &&
+                            prev_frame != CCdregion::eFrame_one) ) {
+                            if ( curr_frame != prev_frame ) {
+                                severity = eDiag_Warning;
+                            }
+                        }
+                    }
+
+                    // Report duplicates
+                    if ( curr_subtype == CSeqFeatData::eSubtype_region  &&
+                        DifferentDbxrefs(curr->GetDbxref(), prev->GetDbxref()) ) {
+                        // do not report if both have dbxrefs and they are 
+                        // different.
+                    } else if ( IsEqualSeqAnnot(curr, prev) ) {  // !!!
+                        if (same_label) {
+                            ValidErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
+                                "Duplicate feature", *curr);
+                        } else if ( curr_subtype != CSeqFeatData::eSubtype_pub ) {
+                            ValidErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
+                                "Features have identical intervals, but labels"
+                                "differ", *curr);
+                        }
+                    } else {
+                        if (same_label) {
+                            ValidErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
+                                "Duplicate feature (packaged in different feature table)",
+                                *curr);
+                        } else if ( prev_subtype != CSeqFeatData::eSubtype_pub ) {
+                            ValidErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
+                                "Features have identical intervals, but labels"
+                                "differ (packaged in different feature table)",
+                                *curr);
+                        }
+                    }
+                }
+
+                if ( (curr_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
+                      curr_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
+                      curr_subtype == CSeqFeatData::eSubtype_transit_peptide_aa)  &&
+                     (prev_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
+                      prev_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
+                      prev_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) ) {
+                    if ( Compare(*curr_location, *prev_location, m_Scope) == eOverlap &&
+                        NotPeptideException(curr, prev) ) {
+                        EDiagSev overlapPepSev = 
+                            m_OvlPepErr ? eDiag_Error :eDiag_Warning;
+                        ValidErr( overlapPepSev,
+                            eErr_SEQ_FEAT_OverlappingPeptideFeat,
+                            "Signal, Transit, or Mature peptide features overlap",
+                            *curr);
+                    }
+                }
+            }
+        }
+
+        prev = curr; 
+        ++curr;
+    }  // end of while loop
 }
 
 
@@ -3629,8 +3944,8 @@ void CValidError_impl::ValidateDelta(const CBioseq& seq)
 
 
 void CValidError_impl::ValidatePubdesc
-(const CPubdesc &pub, 
- const CSerialObject &obj)
+(const CPubdesc& pub, 
+ const CSerialObject& obj)
 {
 }
 
@@ -3992,7 +4307,7 @@ const string CValidError_impl::countrycodes [] = {
   "Zimbabwe"
 };
 
-bool CValidError_impl::IsCountryValid(const string &str) {
+bool CValidError_impl::IsCountryValid(const string& str) {
   if ( str.empty() ) {
     return false;
   }
@@ -4012,27 +4327,25 @@ bool CValidError_impl::IsCountryValid(const string &str) {
   return true;
 }
 
-void CValidError_impl::ValidateSourceQualTags(void) {
-/*
-  if (vsp->sourceQualTags == NULL || StringHasNoText (str)) return;
-  state = 0;
-  ptr = str;
-  ch = *ptr;
-  while (ch != '\0') {
-    matches = NULL;
-    state = TextFsaNext (vsp->sourceQualTags, state, ch, &matches);
-    if (matches != NULL) {
-      hit = (CharPtr) matches->data.ptrvalue;
-      if (StringHasNoText (hit)) {
-        hit = "?";
-      }
-      ValidErr (vsp, SEV_WARNING, ERR_SEQ_DESCR_StructuredSourceNote,
-                "Source note has structured tag %s", hit);
+
+void CValidError_impl::ValidateSourceQualTags(
+    const string& str, 
+    const CSerialObject& obj)
+{
+    if ( str.empty() ) return;
+
+    int state = sourceQualTags.GetInitialState();
+    for ( int i = 0; i < str.length(); ++i ) {
+        state = sourceQualTags.GetNextState(state, str[i]);
+        if ( sourceQualTags.IsMatchFound(state) ) {
+            string match = sourceQualTags.GetMatches(state)[0];
+            if ( match.empty() ) {
+                match = "?";
+            }
+            ValidErr (eDiag_Warning, eErr_SEQ_DESCR_StructuredSourceNote, 
+                "Source note has structured tag " + match, obj);
+        }
     }
-    ptr++;
-    ch = *ptr;
-  }
-*/
 }
 
 
@@ -4040,7 +4353,7 @@ void CValidError_impl::ValidateBioSource
 (const CBioSource&    bsrc,
  const CSerialObject& obj)
 {
-	const COrg_ref &orgref = bsrc.GetOrg();
+	const COrg_ref& orgref = bsrc.GetOrg();
   
 	// Organism must have a name.
 	if ( orgref.GetTaxname().empty() && orgref.GetCommon().empty() ) {
@@ -4057,7 +4370,7 @@ void CValidError_impl::ValidateBioSource
 
 	int chrom_count = 0;
 	bool chrom_conflict = false;
-	const CSubSource *chromosome = 0;
+    const CSubSource *chromosome = 0;
 	string countryname;
 	iterate( CBioSource::TSubtype, ssit, bsrc.GetSubtype() ) {
 		switch ( (**ssit).GetSubtype() ) {
@@ -4096,7 +4409,7 @@ void CValidError_impl::ValidateBioSource
 			break;
     
 		case CSubSource::eSubtype_other:
-			//ValidateSourceQualTags 
+			ValidateSourceQualTags((**ssit).GetName(), obj);
 			break;
 		}
 	}
@@ -4106,8 +4419,8 @@ void CValidError_impl::ValidateBioSource
 		ValidErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj);
 	}
 
-	const COrgName &orgname = orgref.GetOrgname();
-	const string &lineage = orgname.GetLineage();
+	const COrgName& orgname = orgref.GetOrgname();
+	const string& lineage = orgname.GetLineage();
 	if ( lineage.empty() ) {
 		ValidErr(eDiag_Error, eErr_SEQ_DESCR_MissingLineage, 
 			     "No lineage for this BioSource.", obj);
@@ -4141,7 +4454,7 @@ void CValidError_impl::ValidateBioSource
 			}
 		}
 		if ( subtype == COrgMod::eSubtype_other ) {
-			//ValidateSourceQualTags 
+			ValidateSourceQualTags( (**omit).GetSubname(), obj);
 		}
 	}
 
@@ -4151,7 +4464,7 @@ void CValidError_impl::ValidateBioSource
 }
 
 
-void CValidError_impl::ValidateGene(const CGene_ref &gene, const CSerialObject& obj)
+void CValidError_impl::ValidateGene(const CGene_ref& gene, const CSerialObject& obj)
 {
     if ( gene.GetLocus().empty()      &&
          gene.GetAllele().empty()     &&
@@ -4169,7 +4482,7 @@ void CValidError_impl::ValidateGene(const CGene_ref &gene, const CSerialObject& 
 }
 
 
-void CValidError_impl::ValidateProt(const CProt_ref &prot, const CSerialObject& obj) 
+void CValidError_impl::ValidateProt(const CProt_ref& prot, const CSerialObject& obj) 
 {
     if ( prot.GetProcessed() != CProt_ref::eProcessed_signal_peptide  &&
          prot.GetProcessed() != CProt_ref::eProcessed_transit_peptide ) {
@@ -4186,9 +4499,9 @@ void CValidError_impl::ValidateProt(const CProt_ref &prot, const CSerialObject& 
 }
 
 
-void CValidError_impl::ValidateRna(const CRNA_ref &rna, const CSeq_feat& feat) 
+void CValidError_impl::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat) 
 {
-    const CRNA_ref::EType &rna_type = rna.GetType ();
+    const CRNA_ref::EType& rna_type = rna.GetType ();
 
     if ( rna_type == CRNA_ref::eType_mRNA ) {
         // 
@@ -4232,32 +4545,10 @@ void CValidError_impl::ValidateRna(const CRNA_ref &rna, const CSeq_feat& feat)
 
 }
 
-static char * plastidtxt [] = {
-  "",
-  "",
-  "chloroplast",
-  "chromoplast",
-  "",
-  "",
-  "plastid",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "cyanelle",
-  "",
-  "",
-  "",
-  "apicoplast",
-  "leucoplast",
-  "proplastid",
-  "",
-};
 
 void CValidError_impl::ValidateCdregion (
     const CCdregion& cdregion, 
-    const CSeq_feat &feat
+    const CSeq_feat& feat
 ) 
 {
     bool pseudo;
@@ -4371,45 +4662,45 @@ void CValidError_impl::ValidateImp(const CImp_feat& imp, const CSerialObject& ob
 }
 
 
-bool CValidError_impl::OverlappingGeneIsPseudo (const CSeq_feat &feat)
+bool CValidError_impl::OverlappingGeneIsPseudo (const CSeq_feat& feat)
 {
     return false;
 }
 
 
-void CValidError_impl::CheckTrnaCodons(const CTrna_ext &trna, const CSeq_feat &feat)
+void CValidError_impl::CheckTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat)
 {
 }
 
 
-void CValidError_impl::CheckForCommonCDSProduct (const CSeq_feat &feat)
+void CValidError_impl::CheckForCommonCDSProduct (const CSeq_feat& feat)
 {
 }
 
 
-void CValidError_impl::CheckForBadMRNAOverlap (const CSeq_feat &feat)
+void CValidError_impl::CheckForBadMRNAOverlap (const CSeq_feat& feat)
 {
 }
 
-void CValidError_impl::CheckForBadGeneOverlap (const CSeq_feat &feat)
-{
-}
-
-
-void CValidError_impl::SpliceCheck (const CSeq_feat &feat)
+void CValidError_impl::CheckForBadGeneOverlap (const CSeq_feat& feat)
 {
 }
 
 
-void CValidError_impl::CdTransCheck(const CSeq_feat &feat)
+void CValidError_impl::SpliceCheck (const CSeq_feat& feat)
 {
 }
 
 
-void CValidError_impl::CheckForBothStrands (const CSeq_feat &feat)
+void CValidError_impl::CdTransCheck(const CSeq_feat& feat)
+{
+}
+
+
+void CValidError_impl::CheckForBothStrands (const CSeq_feat& feat)
 {
     bool bothstrands = false;
-    const CSeq_loc &location = feat.GetLocation ();
+    const CSeq_loc& location = feat.GetLocation ();
     for (CSeq_loc_CI citer (location); citer; ++citer) {
         if ( citer.GetStrand () == eNa_strand_both ) {
             ValidErr (eDiag_Error, eErr_SEQ_FEAT_BothStrands, 
@@ -5217,6 +5508,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.23  2002/11/08 20:13:39  kans
+* implemented ValidateDupOrOverlapFeats, ValidateSourceQualTags (MS)
+*
 * Revision 1.22  2002/11/04 21:29:19  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
