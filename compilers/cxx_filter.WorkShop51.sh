@@ -12,8 +12,9 @@ std_incpath='^"/netopt/forte6/WS6/include/CC/'
 std_incpath_Cstd=${std_incpath}'Cstd/'
 
 egrep -v -e '
+'$std_incpath_Cstd'.*Conversion of 64 bit type value to \".*\" causes truncation
 '$std_incpath'std/errno\.h", line 20:
-'$std_incpath_Cstd'errno_iso_SUNWCC\.h", line 16:
+'$std_incpath'errno_iso_SUNWCC\.h", line 16:
 '$std_incpath_Cstd'\./fstream", line 275:
 '$std_incpath_Cstd'\./fstream", line 319:
 '$std_incpath_Cstd'\./fstream", line 362: 
@@ -22,6 +23,7 @@ egrep -v -e '
 '$std_incpath_Cstd'\./sstream", line 126:
 ^"/netopt/ncbi_tools/include/..*\.h", line [0-9]*: Warning \(Anachronism\): Attempt to redefine .* without using #undef\.$
 ^"/netopt/Sybase/clients/current/include/sybdb\.h", line [0-9]*: Warning: There are two consecutive underbars in "db__
+: Warning: Could not find source for std::basic_string.*::npos
 : Warning: Could not find source for std::is[a-z][a-z]*\(int\)
 : Warning: Could not find source for std::toupper\(int\)\.
 : Warning: Could not find source for std::tolower\(int\)\.
