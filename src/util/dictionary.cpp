@@ -42,10 +42,12 @@ BEGIN_NCBI_SCOPE
 // edit distance method; as CSimpleDictionary relies heavily on edit distance
 // computations, the size of its internal metaphone keys is tuned by this
 // parameter.
-static const size_t kMaxMetaphoneStack = 5;
+static const size_t kMaxMetaphoneStack = 10;
 
 
-CSimpleDictionary::CSimpleDictionary(const string& file)
+CSimpleDictionary::CSimpleDictionary(const string& file,
+                                     size_t meta_key_size)
+    : m_MetaphoneKeySize(meta_key_size)
 {
     CNcbiIfstream istr(file.c_str());
     string word;
@@ -64,7 +66,7 @@ void CSimpleDictionary::AddWord(const string& word)
 
     // compute the metaphone code
     string metaphone;
-    CDictionaryUtil::GetMetaphone(tmp, &metaphone, kMaxMetaphoneStack);
+    CDictionaryUtil::GetMetaphone(tmp, &metaphone, m_MetaphoneKeySize);
 
     // insert forward and reverse dictionary pairings
     m_ForwardDict.insert(TForwardDict::value_type(tmp, metaphone));
@@ -84,7 +86,7 @@ void CSimpleDictionary::SuggestAlternates(const string& word,
                                           size_t max_alts) const
 {
     string metaphone;
-    CDictionaryUtil::GetMetaphone(word, &metaphone, kMaxMetaphoneStack);
+    CDictionaryUtil::GetMetaphone(word, &metaphone, m_MetaphoneKeySize);
     if ( !metaphone.length() ) {
         return;
     }
@@ -745,6 +747,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/08/02 15:09:15  dicuccio
+ * Parameterized metaphone key size.  Made data members of CSimpleDictionary
+ * protected (not private)
+ *
  * Revision 1.2  2004/07/16 18:36:12  ucko
  * Use string::erase() rather than string::clear(), which some older
  * compilers lack.

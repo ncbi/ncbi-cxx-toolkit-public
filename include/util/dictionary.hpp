@@ -107,7 +107,7 @@ class NCBI_XUTIL_EXPORT CSimpleDictionary : public IDictionary
 public:
     /// initialize the dictionary with a set of correctly spelled words.  The
     //words must be one word per line, and will be automatically lower-cased.
-    CSimpleDictionary(const string& file);
+    CSimpleDictionary(const string& file, size_t metaphone_key_size = 5);
 
     /// Virtual requirement: check a word for existence in the dictionary.
     /// This function provides a mechanism for returning a list of alternates to
@@ -122,7 +122,7 @@ public:
     /// Add a word to the dictionary
     void AddWord(const string& str);
 
-private:
+protected:
 
     /// forward dictionary: word -> phonetic representation
     typedef map<string, string, PNocase> TForwardDict;
@@ -132,6 +132,9 @@ private:
     typedef set<string, PNocase> TNocaseStringSet;
     typedef map<string, TNocaseStringSet> TReverseDict;
     TReverseDict m_ReverseDict;
+
+    /// the size of our metaphone keys
+    const size_t m_MetaphoneKeySize;
 };
 
 
@@ -267,6 +270,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/08/02 15:09:15  dicuccio
+ * Parameterized metaphone key size.  Made data members of CSimpleDictionary
+ * protected (not private)
+ *
  * Revision 1.1  2004/07/16 15:32:55  dicuccio
  * Initial revision
  *
