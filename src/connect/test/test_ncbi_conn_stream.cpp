@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2002/04/22 20:31:01  lavr
+ * s_Read() made independent of the compiler: should work with any now
+ *
  * Revision 6.20  2002/03/31 02:37:19  lavr
  * Additional registry entries for ID1 added
  *
@@ -131,7 +134,6 @@ static CNcbiRegistry* s_CreateRegistry(void)
 
 static size_t s_Read(iostream& ios, char* buffer, size_t size)
 {
-#ifdef NCBI_COMPILER_GCC
     size_t read = 0;
     for (;;) {
         ios.read(buffer, size);
@@ -146,10 +148,6 @@ static size_t s_Read(iostream& ios, char* buffer, size_t size)
         ios.clear();
     }
     return read;
-#else
-    ios.read(buffer, size);
-    return ios.gcount();
-#endif
 }
 
 
@@ -249,6 +247,8 @@ int main(void)
             LOG_POST("Bytes requested: " << k << ", received: " << j);
         buflen += j;
         l++;
+        if (!j && ios.eof())
+            break;
     }
 
     LOG_POST(Info << buflen << " bytes obtained in " << l << " iteration(s)" <<
