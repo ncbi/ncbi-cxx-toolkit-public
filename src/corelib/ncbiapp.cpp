@@ -290,6 +290,7 @@ int CNcbiApplication::AppMain
 
     // Check command line for presence special arguments
     // "-logfile", "-conffile", "-version"
+    string cmdline_log;
     bool is_diag_setup = false;
     if (!m_DisableArgDesc && argc > 1  &&  argv) {
         const char** v = new const char*[argc];
@@ -318,6 +319,7 @@ int CNcbiApplication::AppMain
                               (void*) os_log);
                 diag = eDS_ToStdlog;
                 is_diag_setup = true;
+                cmdline_log = log;
 
                 // Configuration file
             } else if ( NStr::strcmp(argv[i], s_ArgCfgFile) == 0 ) {
@@ -404,7 +406,7 @@ int CNcbiApplication::AppMain
             // Don't call till after LoadConfig()
             // NOTE: this will override environment variables, 
             // except DIAG_POST_LEVEL which is Set*Fixed*.
-            x_HonorStandardSettings();
+            x_HonorStandardSettings(cmdline_log);
 
             // Do init
             Init();
@@ -880,7 +882,8 @@ string CNcbiApplication::FindProgramExecutablePath
 }
 
 
-void CNcbiApplication::x_HonorStandardSettings(CNcbiRegistry* reg)
+void CNcbiApplication::x_HonorStandardSettings(
+    const string& cmdline_log, CNcbiRegistry* reg)
 {
     if (reg == 0) {
         reg = m_Config;
@@ -888,6 +891,33 @@ void CNcbiApplication::x_HonorStandardSettings(CNcbiRegistry* reg)
             return;
     }
 
+    // LOG settings
+    if (cmdline_log.empty() ||
+        (!cmdline_log.empty() && reg->GetBool("LOG","IgnoreEnvArg",false))) {
+        string logname = reg->GetString("LOG","File",kEmptyStr);
+        if (!logname.empty()) {
+            bool truncate_log = reg->GetBool("LOG","Truncate",false);
+            bool nocreate_log = reg->GetBool("LOG","NoCreate",false);
+            CFile file_log(logname);
+            if (!nocreate_log || file_log.Exists()) {
+                ios::openmode mode = ios::out | (truncate_log ? ios::trunc : ios::app);
+                auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(logname.c_str(), mode));
+                if ( os->good() ) {
+                    _TRACE("CNcbiApplication() -- opened log file: " << logname);
+                    // (re)direct the global diagnostics to the log.file
+                    CNcbiOfstream* os_log = os.release();
+                    SetDiagStream(os_log, true, s_DiagToStdlog_Cleanup,
+                                (void*) os_log);
+                    if (!cmdline_log.empty()) {
+                        CDirEntry(cmdline_log).Remove();
+                    }
+                } else {
+                    _TRACE("CNcbiApplication() -- cannot open log file: "
+                           << logname);
+                }
+            }
+        }
+    }
     // Debugging features
 
     // [DEBUG.DIAG_TRACE]
@@ -979,6 +1009,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2004/10/18 18:59:19  gouriano
+ * Allow to turn the logging on from the config.file
+ *
  * Revision 1.97  2004/09/29 13:40:39  ivanov
  * Changed standard exit code to positive values.
  * Exit codes must be in range 0..255.

@@ -421,9 +421,11 @@ private:
     ///
     /// [NCBI]:   HeapSizeLimit, CpuTimeLimit
     /// [DEBUG]:  ABORT_ON_THROW, DIAG_POST_LEVEL, MessageFile
+    /// @param cmdline_log
+    ///   Name of already opened log file that has been specified in command line.
     /// @param reg
     ///   Registry to read from. If NULL, use the current registry setting.
-    void x_HonorStandardSettings(CNcbiRegistry* reg = 0);
+    void x_HonorStandardSettings(const string& cmdline_log, CNcbiRegistry* reg = 0);
 
     /// Setup C++ standard I/O streams' behaviour.
     ///
@@ -512,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/10/18 18:59:36  gouriano
+ * Allow to turn the logging on from the config.file
+ *
  * Revision 1.45  2004/09/24 17:48:19  gouriano
  * Enable treating standard input and output as binary
  *
