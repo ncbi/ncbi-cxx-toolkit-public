@@ -43,6 +43,7 @@ extern "C" {
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_rps.h>
 #include <algo/blast/core/blast_stat.h>
 
 /** Wrapper structure for different types of BLAST lookup tables */
@@ -62,7 +63,7 @@ typedef struct LookupTableWrap {
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	
         ListNode* lookup_segments, BlastScoreBlk* sbp, 
-        LookupTableWrap** lookup_wrap_ptr);
+        LookupTableWrap** lookup_wrap_ptr, RPSInfo *rps_info);
 
 /** Deallocate memory for the lookup table */
 LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup);

@@ -28,6 +28,7 @@
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_rps.h>
 #include <algo/blast/core/lookup_wrap.h>
 
 #ifndef BLAST_LOOKUP__H
@@ -81,15 +82,6 @@ extern "C" {
 
   } LookupBackboneCell;
     
-#define RPS_HITS_PER_CELL 3
-
-  typedef struct RPSBackboneCell {
-    Int4 num_used;
-    Int4 entries[RPS_HITS_PER_CELL];
-  } RPSBackboneCell;
-
-#define RPS_MAGIC_NUM 0x1e16
-
   typedef struct LookupTable {
     Int4 threshold; /* the score threshold for neighboring words */
     Int4 neighbor_matches; /* the number of neighboring words found while indexing the queries, used for informational/debugging purposes */
@@ -106,10 +98,6 @@ extern "C" {
     Int4 longest_chain; /* length of the longest chain on the backbone */
     Int4 ** thin_backbone; /* the "thin" backbone. for each index cell, maintain a pointer to a dynamically-allocated chain of hits. */
     LookupBackboneCell * thick_backbone; /* the "thick" backbone. after queries are indexed, compact the backbone to put at most HITS_ON_BACKBONE hits on the backbone, otherwise point to some overflow storage */
-    RPSBackboneCell * rps_backbone; /* the lookup table used for RPS blast */
-    Int4 ** rps_pssm; /* Pointer to memory-mapped RPS Blast profile file */
-    Int4 * rps_seq_offsets; /* array of start offsets for each RPS DB seq. */
-    RPSAuxInfo* rps_aux_info; /* RPS Blast auxiliary information */
     Int4 * overflow; /* the overflow array for the compacted lookup table */
     Int4  overflow_size; /* Number of elements in the overflow array (above). */
     PV_ARRAY_TYPE *pv; /* presence vector. a bit vector indicating which cells are occupied */
@@ -159,6 +147,21 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap, /* in: the LUT */
                         Uint4 * NCBI_RESTRICT subject_offsets, /* out : pointer to the array where offsets will be stored */
                         Int4 array_size);
 
+/**
+ * Scans the RPS query sequence from "offset" to the end of the sequence.
+ * Copies at most array_size hits.
+ * Returns the number of hits found.
+ * If there isn't enough room to copy all the hits, return early, and update
+ * "offset". 
+ *
+ * @param lookup_wrap the lookup table [in]
+ * @param subject the subject sequence [in]
+ * @param offset the offset in the subject at which to begin scanning [in/out]
+ * @param query_offsets array to which hits will be copied [out]
+ * @param subject_offsets array to which hits will be copied [out]
+ * @param array_size length of the offset arrays [in]
+ * @return The number of hits found.
+ */
 Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap, /* in: the LUT */
                         const BLAST_SequenceBlk *sequence,
                         Int4* offset,
@@ -182,13 +185,6 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt, LookupTable* * lut);
   
 Int4 LookupTableNew(const LookupTableOptions* opt, LookupTable* * lut, 
 		    Boolean is_protein);
-
-/** Create a new RPS blast lookup table.
-  * @param opt pointer to lookup table options structure [in]
-  * @param lut handle to lookup table [in/modified]
-  */
-  
-Int4 RPSLookupTableNew(const LookupTableOptions* opt, LookupTable* * lut);
 
 /** Free the lookup table. */
 LookupTable* LookupTableDestruct(LookupTable* lookup);
@@ -257,6 +253,41 @@ Int4 AddNeighboringWords(LookupTable* lookup,
 #define SET_HIGH_BIT(x) (x |= 0x80000000)
 #define CLEAR_HIGH_BIT(x) (x &= 0x7FFFFFFF)
 #define TEST_HIGH_BIT(x) ( ((x) >> 31) & 1 )
+
+/* RPS blast structures and functions */
+
+#define RPS_HITS_PER_CELL 3
+
+typedef struct RPSBackboneCell {
+    Int4 num_used;
+    Int4 entries[RPS_HITS_PER_CELL];
+} RPSBackboneCell;
+
+typedef struct RPSLookupTable {
+    Int4 wordsize; /* number of full bytes in a full word */
+    Int4 longest_chain; /* length of the longest chain on the backbone */
+    Int4 mask; /* part of index to mask off, that is, top (wordsize*charsize) bits should be discarded. */
+    Int4 alphabet_size; /* number of letters in the alphabet */
+    Int4 charsize; /* number of bits for a base/residue */
+    Int4 backbone_size; /* number of cells in the backbone */
+    RPSBackboneCell * rps_backbone; /* the lookup table used for RPS blast */
+    Int4 ** rps_pssm; /* Pointer to memory-mapped RPS Blast profile file */
+    Int4 * rps_seq_offsets; /* array of start offsets for each RPS DB seq. */
+    RPSAuxInfo* rps_aux_info; /* RPS Blast auxiliary information */
+    Int4 * overflow; /* the overflow array for the compacted lookup table */
+    Int4  overflow_size; /* Number of elements in the overflow array (above). */
+    PV_ARRAY_TYPE *pv; /* presence vector. a bit vector indicating which cells are occupied */
+} RPSLookupTable;
+  
+/** Create a new RPS blast lookup table.
+  * @param rps_info pointer to structure with RPS setup information [in]
+  * @param lut handle to lookup table [in/modified]
+  */
+  
+Int4 RPSLookupTableNew(const RPSInfo *rps_info, RPSLookupTable* * lut);
+
+/** Free the lookup table. */
+RPSLookupTable* RPSLookupTableDestruct(RPSLookupTable* lookup);
 
 /*********************************
  * 
