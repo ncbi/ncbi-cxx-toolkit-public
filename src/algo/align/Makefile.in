@@ -6,5 +6,7 @@
 LIB_PROJ = algo
 SUB_PROJ = demo
 
+REQUIRES = objects
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
