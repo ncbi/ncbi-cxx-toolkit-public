@@ -1,214 +1,27 @@
-<!--#set var="TITLE" value="C++/STL pit-falls and discouraged/prohibited features" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
 
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
 
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<hr>
-<!--EOW-->
-
-<h1>C++/STL pit-falls and discouraged/prohibited features</h1>
-
-<ul>
-  <li> <a href="#ref_STL">STL and standard C++ library's bad guys</a>
-  <ul>
-    <li> <a href="#ref_STL_Stream">Old vs. new stream classes</a>
-    <li> <a href="#ref_STL_NonStd">Non-standard classes</a>
-  </ul>
-  <li> <a href="#ref_CPP">C++ bad guys</a>
-  <ul>
-    <li> <a href="#ref_CPP_OpOverload">Operation overload</a>
-    <li> <a href="#ref_CPP_OpAssignment">Assignment and copy constructor overload</a>
-    <li> <a href="#ref_CPP_Namespace">Namespaces</a>
-    <li> <a href="#ref_CPP_NoArg">Omitting "void" in a no-arg function proto</a>
-    <li> <a href="#ref_CPP_Malloc">Do not mix malloc and new</a>
-  </ul>
-</ul>
-
-<br>
-
-<a name="ref_STL"></a>
-<h2>STL and standard C++ library's bad guys</h2>
-
-<br>
-<a name="ref_STL_Stream"></a> <h3>Old vs. new stream classes</h3>
-
-<p>
-<p> <span class="ncbi_ccode">#include &lt;corelib/ncbistre.hpp&gt;</span>
- &nbsp;&nbsp;[also included in &lt;<span class="ncbi_file">corelib/ncbistd.hpp</span>&gt;]
-
-<p>
-Do not use the new iostream library included with Sunpro C++ 5.0 early
-access release refresh. It is extremely buggy. Instead we will use the
-older version of iostream.h by default.
-
-<p>
-It was a big question if we should use "old-fashioned" C++ stream
-classes(from <span class="ncbi_ccode">#include &lt;iostream.h&gt;</span>, etc.) or
-"templated" ones(from <span class="ncbi_ccode">#include &lt;iostream&gt;</span>, etc.).
-Some platforms do not support "new" streams yet; and although
-there is a way to import most STL classes and string template class
-using package like <a href="tips.html#ref_STL">STLport</a>, however
-C++ stream classes usually cannot be implemented formally(yet in full)
-by a third party because of their close interaction with the underlying
-file system.
-
-<p>
-The solution is to use an <span class="ncbi_term">"intersection"</span> between the new and old
-stream functionality, and thus allow one to use either
-old or new streams depending on whether the given platform supports
-new streams or not. Thus, for the reason of the "old/new streams"
-portability, one <em>must</em> use:
-
-<ul>
-  <li> <span class="ncbi_ccode">#include &lt;corelib/ncbistre.hpp&gt;</span>
-       &nbsp;&nbsp;[also included in &lt<span class="ncbi_file">;corelib/ncbistd.hpp</span>&gt;]
-</ul>
-
-and <em>must never</em> do directly:
-
-<ul>
-  <li> <span class="ncbi_ccode">#include &lt;iostream&gt;</span>, etc.
-  <li> <span class="ncbi_ccode">#include &lt;iostream.h&gt;</span>, etc.
-</ul>
-
-Then, <em>always</em> use:
-
-<ul>
-  <li> <span class="ncbi_class">"CNcbiIstream", "CNcbiOstream"</span>, etc.
-</ul>
-
-and <em>never</em> use:
-
-<ul>
-  <li> <span class="ncbi_class">"istream", "ostream"</span>, etc. or even
-  <li> <span class="ncbi_ccode">"::istream", "::ostream"</span>, etc. or <span class="ncbi_ccode">"std::istream", "std::ostream"</span>, etc.
-</ul>
-
-and, of course, the use of stream iterators and
-"<span class="ncbi_class">stringstream</span>"-related classes (from <span class="ncbi_class">&lt;sstream&gt;</span>)
-is not allowed as well.
-
-<p>
-By following this approach, we should be able to use both "new" and "old"
-stream libs now "for free". The needed code discipline will be maintained
-"automagically" as any "old streams"-only and "new streams"-only code
-would not compile immediately. On the other hand, we reserve a possibility
-to replace "<span class="ncbi_keyword">typedef</span>"s by derived classes with added functionality
-(e.g. in order to extend the new/old stream API intersection area, or to
-add some features like overridden <span class="ncbi_func">overflow()</span>/<span class="ncbi_func">underflow()</span> callbacks).
-
-<p>
-If compiler supports both "old" and "new" C++ streams then
-"old-fashioned" C++ libs will be engaged by default.
-This can be alternated by <span class="ncbi_ccode">#defin</span>'ing preprocessor variable
-"<span class="ncbi_var">NCBI_USE_NEW_IOSTREAM</span>".
-
-<br><br>
-<a name="ref_STL_NonStd"></a> <h3>Non-standard STL classes</h3> <p>
-Don't use <span class="ncbi_class">hash</span> or the <span class="ncbi_class">rope</span> classes from
-some versions of the STL.
-These are non-standard additions. If you have questions about what
-is/isn't in the standard library, consult the
-<a href="http://www.cygnus.com/misc/wp/">C++ standards</a>.</p>
-
-<br>
-<a name="ref_CPP"></a>
-<h2>C++ bad guys</h2><br>
-
-<a name="ref_CPP_OpOverload"></a> <h3>Operation overload</h3> <p>
-Do not use operator overloading for the objects where
-they have unnatural or ambiguous meaning. E.g. the defining of operation
-"==" for your class <span class="ncbi_class">"CFoo"</span> so that there exist { CFoo a,b,c; } such
-that <span class="ncbi_ccode">(a == b)</span> and  <span class="ncbi_ccode">(b == c)</span> are <span class="ncbi_value">true</span>
-while <span class="ncbi_ccode">(a == c)</span> is <span class="ncbi_value">false</span> would be a very bad idea.
-It turns out that otherwise, especially in large projects, people have
-different ideas of what an overloaded operator means, leading to all
-sorts of bugs.
-
-<a name="ref_CPP_OpAssignment"></a> <h3>Assignment and copy constructor overload</h3> <p>
-Be advised that the default initialization
-<span class="ncbi_ccode">{CFoo foo = bar;}</span> and assignment<span class="ncbi_ccode">{CFoo foo; ...; foo = bar;}</span>
-do a member-by-member copying. This is not suitable and can be dangerous
-sometimes. And if you decide overwrite this default behaviour by your own
-code like:
-
-<pre class="ncbi_code">
-class CFoo {
-    // a copy constructor for initialization
-    CFoo(const CFoo& bar) { ... }
-    // an overloaded assignment(=) operator
-    CFoo& operator=(const CFoo& bar) { if (&bar != this) ... }
-};
-</pre>
-
-it is <em>extremely important</em> that:
-
-<ul>
-  <li> <em>both</em> copy constructor and overloaded assignment be defined
-  <li> they have <em>just the same</em> meaning that is
-       <span class="ncbi_ccode">{CFoo foo = bar;}</span> is equivalent to <span class="ncbi_ccode">{CFoo foo;  foo = bar;}</span>
-  <li> there is a check for a self-assignment case in your
-       overloaded assignment operation
-</ul>
-
-In many cases when you dont want to have the assignment and copy
-constructor at all, just add to your class something like:
-
-<pre class="ncbi_code">
-class CFoo {
-   .............................
-private:
-   // Prohibit default initialization and assignment
-   CFooClass(const CFooClass&) { _TROUBLE; }
-   CFooClass& operator=(const CFooClass&) { _TROUBLE; return *this;}
-};
-</pre>
-
-<br>
-<a name="ref_CPP_Namespace"></a> <h3>Namespaces</h3> <p>
-Do not define your own namespaces at all.
-Instead, if you want to ensure that you will not get into a name conflict,
-see the workaround (<a href="style.html#ref_Prefix">quasi-namespace</a>)
-technique.
-Do not engage foreign namespaces (with <span class="ncbi_ccode">"using namespace XXX;"</span>)
-unless this is practically unavoidable.
-For the use of standard C++ template classes(including STL) and/or
-NCBI namespaces
-<a href="style.html#ref_Scope">click here</a>.
-
-<a name="ref_CPP_NoArg"></a> <h3>Omitting <span class="ncbi_keyword">"void"</span> in a no-arg function proto</h3> <p>
-Do not omit <span class="ncbi_keyword">"void"</span> in prototype of a function without arguments
-(e.g. always write <span class="ncbi_func">"int f(<em>void</em>)"</span>
-rather than just <span class="ncbi_func">"int f()"</span>).
-
-<a name="ref_CPP_Malloc"></a> <h3>Do not mix malloc and new</h3> <p>
-On some platforms, malloc and new may use completely different memory
-managers, so never "free()" what you created using "new" and never "delete"
-what you created using "malloc()".  Also, when calling C code from C++
-<em>always</em> allocate any structs or other items using "malloc()".
-The C routine may use "realloc()" or "free()" on the items, which can cause
-memory corruption if you allocated using "new."
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
 <table border=0 width="100%" cellspacing=0>
-  <tr>
-    <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
-    <td align=right>($Revision$)</td></tr>
-  <tr>
-    <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td></tr>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->
