@@ -1,3 +1,6 @@
+#ifndef ALGO_BLAST_API___MULTISEQ_SRC__HPP
+#define ALGO_BLAST_API___MULTISEQ_SRC__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -25,14 +28,12 @@
 *
 * Author:  Ilya Dondoshansky
 *
-* File Description:
-*   Implementation of the BlastSeqSrc interface for a vector of sequence 
-*   locations.
-*
 */
 
-#ifndef MULTISEQ_SRC_H
-#define MULTISEQ_SRC_H
+/// @file multiseq_src.hpp
+/// Implementation of the BlastSeqSrc interface for a vector of sequence 
+/// locations.
+
 
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_def.h>
@@ -40,23 +41,31 @@
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 
+/** @addtogroup Miscellaneous
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 //USING_SCOPE(blast);
 BEGIN_SCOPE(blast)
 
-/** Encapsulates the arguments needed to initialize multi-sequence source. */
+/// Encapsulates the arguments needed to initialize multi-sequence source.
 typedef struct MultiSeqSrcNewArgs {
     TSeqLocVector seq_vector;
     EProgram program;
 } MultiSeqSrcNewArgs;
 
-/** Contains information about all sequences in a set */
+/// Contains information about all sequences in a set
 class MultiSeqInfo : public CObject 
 {
 public: 
+    /// Constructor from a vector of sequence location/scope pairs and a 
+    /// BLAST program type.
     MultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program);
     ~MultiSeqInfo();
+    /// Setter and getter functions for the private fields
     Uint4 GetMaxLength();
     void SetMaxLength(Uint4 val);
     Uint4 GetAvgLength();
@@ -68,9 +77,9 @@ public:
     void* GetSeqLoc(int index);
     Blast_Message* GetErrorMessage();
 private:
-    // Passed from outside - not owned:
+    /// Passed from outside - not owned:
     TSeqLocVector m_vSeqVector; ///< Vector of sequence locations
-    // Internal fields
+    /// Internal fields
     bool m_ibIsProt; ///< Are these sequences protein or nucleotide? 
     vector<BLAST_SequenceBlk*> m_ivSeqBlkVec; ///< Vector of sequence blocks
     unsigned int m_iMaxLength; ///< Length of the longest sequence in this set
@@ -141,4 +150,16 @@ BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
-#endif /* MULTISEQ_SRC_H */
+
+/* @} */
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.2  2004/03/15 18:34:19  dondosha
+ * Made doxygen comments and top #ifndef adhere to toolkit standard
+ *
+ * ===========================================================================
+ */
+
+#endif /* ALGO_BLAST_API___MULTISEQ_SRC__HPP */
