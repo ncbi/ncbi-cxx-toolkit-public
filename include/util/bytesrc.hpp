@@ -64,12 +64,12 @@ class NCBI_XUTIL_EXPORT CByteSourceReader : public CObject
 public:
     virtual ~CByteSourceReader(void);
 
-    // read up to bufferLength bytes into buffer
-    // return amount of bytes read (if zero - see EndOfData())
+    /// read up to bufferLength bytes into buffer
+    /// return amount of bytes read (if zero - see EndOfData())
     virtual size_t Read(char* buffer, size_t bufferLength) = 0;
 
-    // call this method after Read returned zero to determine whether
-    // end of data reached or error occurred
+    /// call this method after Read returned zero to determine whether
+    /// end of data reached or error occurred
     virtual bool EndOfData(void) const;
 
     virtual CRef<CSubSourceCollector> 
@@ -175,6 +175,27 @@ public:
 protected:
     CConstRef<CByteSource> m_Source;
     CNcbiIstream* m_Stream;
+};
+
+
+/// Class adapter from IReader to CByteSourceReader
+///
+class NCBI_XUTIL_EXPORT CIRByteSourceReader : public CByteSourceReader
+{
+public:
+    CIRByteSourceReader(IReader* reader)
+        : m_Reader(reader), m_EOF(false)
+    {}
+
+    size_t Read(char* buffer, size_t bufferLength);
+    bool EndOfData(void) const;
+
+private:
+    CIRByteSourceReader(const CIRByteSourceReader&);
+    CIRByteSourceReader& operator=(const CIRByteSourceReader&);
+protected:
+    IReader*   m_Reader;
+    bool       m_EOF;
 };
 
 
@@ -410,6 +431,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/10/01 18:45:12  kuznets
+* + CIRByteSourceReader
+*
 * Revision 1.18  2003/09/30 20:37:35  kuznets
 * Class names clean up (Removed I from CI prefix for classes based in
 * interfaces)
