@@ -2090,7 +2090,7 @@ CHTML_font::~CHTML_font(void)
 
 CHTML_font* CHTML_font::SetTypeFace(const string& typeface)
 {
-    SetAttribute("typeface", typeface);
+    SetAttribute("face", typeface);
     return this;
 }
 
@@ -2271,6 +2271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2003/12/16 19:08:49  ivanov
+ * CHTML_font::SetTypeFace: replaced attribute name "typeface" to "face".
+ *
  * Revision 1.91  2003/12/10 19:15:14  ivanov
  * Move adding a string "return false;" to menues JS code call from ShowMenu()
  * to AttachPopupMenu()
