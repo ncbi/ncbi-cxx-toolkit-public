@@ -34,7 +34,7 @@
 /// Declares the CBlastRPSOptionsHandle class.
 
 
-#include <algo/blast/api/blast_options_handle.hpp>
+#include <algo/blast/api/blast_prot_options.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -51,7 +51,7 @@ BEGIN_SCOPE(blast)
 /// this type of search.
 
 class NCBI_XBLAST_EXPORT CBlastRPSOptionsHandle : 
-                                            public CBlastOptionsHandle
+                                            public CBlastProteinOptionsHandle
 {
 public:
     
@@ -87,14 +87,8 @@ public:
     void SetUseRealDbSize(bool u = true) { m_Opts->SetUseRealDbSize(u); }
 
 protected:
-    virtual void SetLookupTableDefaults();
-    virtual void SetQueryOptionDefaults();
-    virtual void SetInitialWordOptionsDefaults();
-    virtual void SetGappedExtensionDefaults();
-    virtual void SetScoringOptionsDefaults();
-    virtual void SetHitSavingOptionsDefaults();
-    virtual void SetEffectiveLengthsOptionsDefaults();
-    virtual void SetSubjectSequenceOptionsDefaults(); 
+    void SetLookupTableDefaults();
+    void SetQueryOptionDefaults();
 };
 
 END_SCOPE(blast)
@@ -107,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/04/16 14:31:49  papadopo
+ * make this class a derived class of CBlastProteinOptionsHandle, that corresponds to the eRPSBlast program
+ *
  * Revision 1.2  2004/03/19 14:53:24  camacho
  * Move to doxygen group AlgoBlast
  *

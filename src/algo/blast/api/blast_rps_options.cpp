@@ -45,76 +45,27 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CBlastRPSOptionsHandle::CBlastRPSOptionsHandle(EAPILocality locality)
-    : CBlastOptionsHandle(locality)
+    : CBlastProteinOptionsHandle(locality)
 {
+    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
+        return;
+    }
     SetDefaults();
     m_Opts->SetProgram(eRPSBlast);
 }
 
-// Empty implementation as this does not apply to rpsblast
 void
 CBlastRPSOptionsHandle::SetLookupTableDefaults()
-{}
-
+{
+    m_Opts->SetLookupTableType(RPS_LOOKUP_TABLE);
+}
 
 void
 CBlastRPSOptionsHandle::SetQueryOptionDefaults()
 {
-    SetFilterString("S");
+    SetFilterString("F");
     m_Opts->SetStrandOption(objects::eNa_strand_unknown);
 }
-
-void
-CBlastRPSOptionsHandle::SetInitialWordOptionsDefaults()
-{
-    SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_PROT);
-    SetWindowSize(BLAST_WINDOW_SIZE_PROT);
-    m_Opts->SetUngappedExtension();
-}
-
-
-// Empty implementation as this does not apply to rpsblast
-void
-CBlastRPSOptionsHandle::SetScoringOptionsDefaults()
-{}
-
-void
-CBlastRPSOptionsHandle::SetGappedExtensionDefaults()
-{
-    SetGapXDropoff(BLAST_GAP_X_DROPOFF_PROT);
-    SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_PROT);
-    SetGapTrigger(BLAST_GAP_TRIGGER_PROT);
-    m_Opts->SetGapExtnAlgorithm(EXTEND_DYN_PROG);
-}
-
-
-void
-CBlastRPSOptionsHandle::SetHitSavingOptionsDefaults()
-{
-    SetHitlistSize(500);
-    SetPrelimHitlistSize(550);
-    SetEvalueThreshold(BLAST_EXPECT_VALUE);
-    SetPercentIdentity(0);
-    m_Opts->SetSumStatisticsMode(false);
-
-    SetCutoffScore(0); // will be calculated based on evalue threshold,
-    // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
-    // and passed to the engine in the params structure
-}
-
-void
-CBlastRPSOptionsHandle::SetEffectiveLengthsOptionsDefaults()
-{
-    SetDbLength(0);
-    SetDbSeqNum(1);
-    SetEffectiveSearchSpace(0);
-    SetUseRealDbSize();
-}
-
-// Empty implementation as this does not apply to rpsblast
-void
-CBlastRPSOptionsHandle::SetSubjectSequenceOptionsDefaults()
-{}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -126,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/04/16 14:27:47  papadopo
+ * make this class a derived class of CBlastProteinOptionsHandle, that corresponds to the eRPSBlast program
+ *
  * Revision 1.2  2004/03/19 15:13:34  camacho
  * Move to doxygen group AlgoBlast
  *
