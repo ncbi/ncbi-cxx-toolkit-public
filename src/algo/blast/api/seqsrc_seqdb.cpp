@@ -48,16 +48,11 @@ USING_SCOPE(blast);
 
 extern "C" {
 
-/* Function prototypes */
-static Int4 SeqDbGetMaxLength(void* seqdb_handle, void* ignoreme);
-static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void* ignoreme);
-static Int8 SeqDbGetTotLen(void* seqdb_handle, void* ignoreme);
-static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme);
-
 /** Retrieves the length of the longest sequence in the BlastSeqSrc.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  */
-static Int4 SeqDbGetMaxLength(void* seqdb_handle, void*)
+static Int4 
+s_SeqDbGetMaxLength(void* seqdb_handle, void*)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     return (*seqdb)->GetMaxLength();
@@ -66,7 +61,8 @@ static Int4 SeqDbGetMaxLength(void* seqdb_handle, void*)
 /** Retrieves the number of sequences in the BlastSeqSrc.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  */
-static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void*)
+static Int4 
+s_SeqDbGetNumSeqs(void* seqdb_handle, void*)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     return (*seqdb)->GetNumSeqs();
@@ -75,7 +71,8 @@ static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void*)
 /** Retrieves the total length of all sequences in the BlastSeqSrc.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  */
-static Int8 SeqDbGetTotLen(void* seqdb_handle, void*)
+static Int8 
+s_SeqDbGetTotLen(void* seqdb_handle, void*)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     return (*seqdb)->GetTotalLength();
@@ -85,10 +82,11 @@ static Int8 SeqDbGetTotLen(void* seqdb_handle, void*)
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
+static Int4 
+s_SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
 {
-   Int8 total_length = SeqDbGetTotLen(seqdb_handle, ignoreme);
-   Int4 num_seqs = MAX(1, SeqDbGetNumSeqs(seqdb_handle, ignoreme));
+   Int8 total_length = s_SeqDbGetTotLen(seqdb_handle, ignoreme);
+   Int4 num_seqs = MAX(1, s_SeqDbGetNumSeqs(seqdb_handle, ignoreme));
 
    return (Int4) (total_length/num_seqs);
 }
@@ -97,7 +95,7 @@ static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  */
 static const char* 
-SeqDbGetName(void* seqdb_handle, void*)
+s_SeqDbGetName(void* seqdb_handle, void*)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     return (*seqdb)->GetDBNameList().c_str();
@@ -106,7 +104,8 @@ SeqDbGetName(void* seqdb_handle, void*)
 /** Retrieves the date of the BLAST database.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  */
-static Boolean SeqDbGetIsProt(void* seqdb_handle, void*)
+static Boolean 
+s_SeqDbGetIsProt(void* seqdb_handle, void*)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
 
@@ -118,7 +117,8 @@ static Boolean SeqDbGetIsProt(void* seqdb_handle, void*)
  * @param args Pointer to GetSeqArg structure [in]
  * @return return codes defined in blast_seqsrc.h
  */
-static Int2 SeqDbGetSequence(void* seqdb_handle, void* args)
+static Int2 
+s_SeqDbGetSequence(void* seqdb_handle, void* args)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     GetSeqArg* seqdb_args = (GetSeqArg*) args;
@@ -178,7 +178,8 @@ static Int2 SeqDbGetSequence(void* seqdb_handle, void* args)
  *             with the buffer that needs to be deallocated. [in]
  * @return return codes defined in blast_seqsrc.h
  */
-static Int2 SeqDbRetSequence(void* seqdb_handle, void* args)
+static Int2 
+s_SeqDbRetSequence(void* seqdb_handle, void* args)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     GetSeqArg* seqdb_args = (GetSeqArg*) args;
@@ -210,7 +211,8 @@ static Int2 SeqDbRetSequence(void* seqdb_handle, void* args)
  * @param args Pointer to integer indicating ordinal id [in]
  * @return Length of the database sequence or BLAST_SEQSRC_ERROR.
  */
-static Int4 SeqDbGetSeqLen(void* seqdb_handle, void* args)
+static Int4 
+s_SeqDbGetSeqLen(void* seqdb_handle, void* args)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     Int4* oid = (Int4*) args;
@@ -221,7 +223,8 @@ static Int4 SeqDbGetSeqLen(void* seqdb_handle, void* args)
     return (*seqdb)->GetSeqLength(*oid);
 }
 
-static Int2 SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
+static Int2 
+s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
 
@@ -253,7 +256,8 @@ static Int2 SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
     return BLAST_SEQSRC_SUCCESS;
 }
 
-static Int4 SeqDbIteratorNext(void* ptr, BlastSeqSrcIterator* itr)
+static Int4 
+s_SeqDbIteratorNext(void* ptr, BlastSeqSrcIterator* itr)
 {
     BlastSeqSrc* seq_src = (BlastSeqSrc*) ptr;
     Int4 retval = BLAST_SEQSRC_EOF;
@@ -321,32 +325,68 @@ private:
     Uint4 m_FinalDbSeq;     /**< Ordinal id of the last sequence to search */
 };
 
-static void s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
+extern "C" {
+
+/** SeqDb sequence source destructor: frees its internal data structure and the
+ * BlastSeqSrc structure itself.
+ * @param seq_src BlastSeqSrc structure to free [in]
+ * @return NULL
+ */
+static BlastSeqSrc* 
+s_SeqDbSrcFree(BlastSeqSrc* seq_src)
+{
+    if (!seq_src) 
+        return NULL;
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*)(GetDataStructure(seq_src));
+    delete seqdb;
+    sfree(seq_src);
+    return NULL;
+}
+
+/** SeqDb sequence source copier: creates a new reference to the CSeqDB object
+ * and copies the rest of the BlastSeqSrc structure.
+ * @param seq_src BlastSeqSrc structure to copy [in]
+ * @return Pointer to the new BlastSeqSrc.
+ */
+static BlastSeqSrc* 
+s_SeqDbSrcCopy(BlastSeqSrc* seq_src)
+{
+    if (!seq_src) 
+        return NULL;
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*)(GetDataStructure(seq_src));
+    CRef<CSeqDB>* new_seqdb = new CRef<CSeqDB>(*seqdb);
+
+    SetDataStructure(seq_src, (void*) new_seqdb);
+    
+    return seq_src;
+}
+
+static void 
+s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
 {
     ASSERT(retval);
     ASSERT(seqdb);
     
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
-    SetDeleteFnPtr   (retval, & SeqDbSrcFree);
-    SetCopyFnPtr     (retval, & SeqDbSrcCopy);
+    SetDeleteFnPtr   (retval, & s_SeqDbSrcFree);
+    SetCopyFnPtr     (retval, & s_SeqDbSrcCopy);
     SetDataStructure (retval, (void*) seqdb);
-    SetGetNumSeqs    (retval, & SeqDbGetNumSeqs);
-    SetGetMaxSeqLen  (retval, & SeqDbGetMaxLength);
-    SetGetAvgSeqLen  (retval, & SeqDbGetAvgLength);
-    SetGetTotLen     (retval, & SeqDbGetTotLen);
-    SetGetName       (retval, & SeqDbGetName);
-    SetGetIsProt     (retval, & SeqDbGetIsProt);
-    SetGetSequence   (retval, & SeqDbGetSequence);
-    SetGetSeqLen     (retval, & SeqDbGetSeqLen);
-    SetGetNextChunk  (retval, & SeqDbGetNextChunk);
-    SetIterNext      (retval, & SeqDbIteratorNext);
-    SetRetSequence   (retval, & SeqDbRetSequence);
+    SetGetNumSeqs    (retval, & s_SeqDbGetNumSeqs);
+    SetGetMaxSeqLen  (retval, & s_SeqDbGetMaxLength);
+    SetGetAvgSeqLen  (retval, & s_SeqDbGetAvgLength);
+    SetGetTotLen     (retval, & s_SeqDbGetTotLen);
+    SetGetName       (retval, & s_SeqDbGetName);
+    SetGetIsProt     (retval, & s_SeqDbGetIsProt);
+    SetGetSequence   (retval, & s_SeqDbGetSequence);
+    SetGetSeqLen     (retval, & s_SeqDbGetSeqLen);
+    SetGetNextChunk  (retval, & s_SeqDbGetNextChunk);
+    SetIterNext      (retval, & s_SeqDbIteratorNext);
+    SetRetSequence   (retval, & s_SeqDbRetSequence);
 }
 
-extern "C" {
-
-BlastSeqSrc* SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
+static BlastSeqSrc* 
+s_SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
 {
     if ( !retval ) {
         return (BlastSeqSrc*) NULL;
@@ -360,7 +400,14 @@ BlastSeqSrc* SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
     return retval;
 }
 
-BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
+/** SeqDb sequence source constructor 
+ * @param seq_src BlastSeqSrc structure (already allocated) to populate [in]
+ * @param args Pointer to internal CSeqDbSrcNewArgs structure (@sa
+ * CSeqDbSrcNewArgs) [in]
+ * @return Updated seq_src structure (with all function pointers initialized
+ */
+static BlastSeqSrc* 
+s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 {
     if ( !retval ) {
         return (BlastSeqSrc*) NULL;
@@ -394,28 +441,6 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
     return retval;
 }
 
-BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* seq_src)
-{
-    if (!seq_src) 
-        return NULL;
-    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*)(GetDataStructure(seq_src));
-    delete seqdb;
-    sfree(seq_src);
-    return NULL;
-}
-
-BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* seq_src)
-{
-    if (!seq_src) 
-        return NULL;
-    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*)(GetDataStructure(seq_src));
-    CRef<CSeqDB>* new_seqdb = new CRef<CSeqDB>(*seqdb);
-
-    SetDataStructure(seq_src, (void*) new_seqdb);
-    
-    return seq_src;
-}
-
 }
 
 BlastSeqSrc* 
@@ -426,7 +451,7 @@ SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot,
     BlastSeqSrc* seq_src = NULL;
     CSeqDbSrcNewArgs seqdb_args(dbname, is_prot, first_seq, last_seq);
 
-    bssn_info.constructor = &SeqDbSrcNew;
+    bssn_info.constructor = &s_SeqDbSrcNew;
     bssn_info.ctor_argument = (void*) &seqdb_args;
     seq_src = BlastSeqSrcNew(&bssn_info);
     return seq_src;
@@ -439,7 +464,7 @@ SeqDbBlastSeqSrcInit(CSeqDB * seqdb)
     BlastSeqSrc * seq_src = NULL;
     CRef<CSeqDB> db(seqdb);
     
-    bssn_info.constructor = & SeqDbSrcSharedNew;
+    bssn_info.constructor = & s_SeqDbSrcSharedNew;
     bssn_info.ctor_argument = (void*) & db;
     seq_src = BlastSeqSrcNew(& bssn_info);
     return seq_src;
@@ -456,6 +481,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2005/01/26 21:03:29  dondosha
+ * Made internal functions static, moved internal class from .hpp file
+ *
  * Revision 1.24  2005/01/07 14:02:09  camacho
  * doxygen fixes
  *
