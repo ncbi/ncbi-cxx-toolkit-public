@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2001/02/28 00:55:38  lavr
+ * SOCK_gethostaddr: InitAPI added, SOCK_gethostname used instead of gethostname
+ *
  * Revision 6.16  2001/01/26 23:50:32  vakatov
  * s_NCBI_Recv() -- added check for ENOTCONN to catch EOF (mostly for Mac)
  *
@@ -1433,8 +1436,10 @@ extern unsigned int SOCK_gethostaddr(const char* hostname)
     unsigned int host;
     char buf[1024];
 
+    verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
+
     if (!hostname) {
-        if (gethostname(buf, sizeof(buf)) != 0)
+        if (SOCK_gethostname(buf, sizeof(buf)) != 0)
             return 0;
         hostname = buf;
     }
