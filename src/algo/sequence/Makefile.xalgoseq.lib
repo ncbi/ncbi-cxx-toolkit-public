@@ -1,6 +1,7 @@
 # $Id$
 
-SRC = cpg nuc_prop orf prot_prop regexp_loc seq_match restriction antigenic
+SRC = cpg nuc_prop orf prot_prop regexp_loc seq_match restriction antigenic \
+	   coiled_coil
 LIB = xalgoseq
 
 CXXFLAGS = $(FAST_CXXFLAGS)
