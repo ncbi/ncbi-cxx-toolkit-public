@@ -16,7 +16,7 @@ fi
 echo "Checking GenBank loader $method:"
 GENBANK_LOADER_METHOD="$method"
 export GENBANK_LOADER_METHOD
-$CHECK_EXEC "$@"
+$CHECK_EXEC ../../../run_sybase_app.sh "$@"
 exitcode=$?
 if test $exitcode -ne 0; then
     echo "Test of GenBank loader $method failed: $exitcode"
