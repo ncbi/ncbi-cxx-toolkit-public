@@ -917,7 +917,7 @@ x_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
 
     // Set the E-Value
     double evalue = (hsp->evalue < SMALLEST_EVALUE) ? 0.0 : hsp->evalue;
-    score_type = (hsp->num == 1) ? "e_value" : "sum_e";
+    score_type = (hsp->num <= 1) ? "e_value" : "sum_e";
     if (evalue >= 0.0)
         scores.push_back(x_MakeScore(score_type, evalue));
 
@@ -1200,6 +1200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2004/11/22 16:08:54  dondosha
+* Minor fix to make sure that "evalue" score type is always used when hsp is not part of a linked set
+*
 * Revision 1.49  2004/11/01 18:05:17  dondosha
 * Added doxygen comments
 *
