@@ -288,6 +288,11 @@ private:
     ASNType* m_Type;
 };
 
+ASNType::ASNType(ASNModule& module)
+    : line(0), parent(0), m_Module(module)
+{
+}
+
 ASNType::ASNType(ASNModule& module, const string& n)
     : line(0), name(n), parent(0), m_Module(module)
 {
@@ -363,7 +368,7 @@ if ( dynamic_cast<const type*>(&(value)) == 0 ) { \
 
 
 ASNFixedType::ASNFixedType(ASNModule& module, const string& kw)
-    : ASNType(module, kw), keyword(kw)
+    : ASNType(module), keyword(kw)
 {
 }
 
@@ -553,13 +558,13 @@ void ASNOctetStringType::GetCType(CTypeStrings& tType,
     string charType = code.GetVar(key + "._char");
     if ( charType.empty() )
         charType = "char";
-    tType.SetComplex("NSBI_NS_STD::vector<" + charType + '>',
+    tType.SetComplex("NCBI_NS_STD::vector<" + charType + '>',
                      "STL_CHAR_vector, (" + charType + ')');
     tType.AddHPPInclude("<vector>");
 }
 
 ASNEnumeratedType::ASNEnumeratedType(ASNModule& module, const string& kw)
-    : ASNType(module, kw), keyword(kw)
+    : ASNType(module), keyword(kw)
 {
 }
 
@@ -744,7 +749,7 @@ ASNType* ASNUserType::Resolve(void) const
 }
 
 ASNOfType::ASNOfType(const string& kw, const AutoPtr<ASNType>& t)
-    : ASNType(t->GetModule(), kw + " OF " + t->name), type(t), keyword(kw)
+    : ASNType(t->GetModule()), type(t), keyword(kw)
 {
 }
 
@@ -848,7 +853,7 @@ void ASNSequenceOfType::GetCType(CTypeStrings& tType,
 
 ASNMemberContainerType::ASNMemberContainerType(ASNModule& module,
                                                const string& kw)
-    : ASNType(module, kw), keyword(kw)
+    : ASNType(module), keyword(kw)
 {
 }
 
@@ -1096,7 +1101,7 @@ void ASNChoiceType::GetCType(CTypeStrings& tType,
     tType.SetClass(className);
     tType.AddHPPInclude(FileName(code));
     tType.AddForwardDeclaration(className, Namespace(code));
-    tType.AddHPPInclude(GetTemplateHeader("<memory>"));
+    tType.AddHPPInclude(GetTemplateHeader("memory"));
     tType.SetComplex("NCBI_NS_STD::auto_ptr", "STL_CHOICE_auto_ptr", tType);
 }
 

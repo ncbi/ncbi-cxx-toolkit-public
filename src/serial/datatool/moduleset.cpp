@@ -40,10 +40,27 @@ const ASNModule::TypeInfo* CModuleSet::FindType(const ASNModule::TypeInfo* t) co
 const ASNModule::TypeInfo* CModuleSet::FindType(const string& fullName) const
 {
     SIZE_TYPE dot = fullName.find('.');
-    if ( dot == NPOS )
-        THROW1_TRACE(runtime_error, "module not specified: " + fullName);
-
-    return FindType(fullName.substr(0, dot), fullName.substr(dot + 1));
+    if ( dot == NPOS ) {
+        const ASNModule::TypeInfo* type = 0;
+        for ( TModules::const_iterator i = modules.begin();
+              i != modules.end(); ++i ) {
+            ASNModule* module = (*i).get();
+            const ASNModule::TypeInfo* t = module->FindType(fullName);
+            if ( t ) {
+                if ( type == 0 )
+                    type = t;
+                else {
+                    THROW1_TRACE(runtime_error, "ambiguous type: " + fullName);
+                }
+            }
+        }
+        if ( !type )
+            THROW1_TRACE(runtime_error, "type not found: " + fullName);
+        return type;
+    }
+    else {
+        return FindType(fullName.substr(0, dot), fullName.substr(dot + 1));
+    }
 }
 
 const ASNModule::TypeInfo* CModuleSet::FindType(const string& moduleName,

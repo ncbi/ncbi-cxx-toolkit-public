@@ -10,6 +10,7 @@
 #include "moduleset.hpp"
 #include "module.hpp"
 #include "type.hpp"
+#include "generate.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -142,8 +143,9 @@ static void Help(void)
         "  -d  Read value in ASN.1 binary format (type required) [File In]  Optional" << endl <<
         "  -t  Binary value type [String]  Optional" << endl <<
         "  -e  Write value in ASN.1 binary format [File Out]  Optional" << endl <<
-        "  -o  generate C++ files for all types Optional" << endl <<
+        "  -oA generate C++ files for all types Optional" << endl <<
         "  -ot generate C++ files for listed types [Types] Optional" << endl <<
+        "  -ox exclude listed types from generation [Types] Optional" << endl <<
         "  -od C++ code definition file [File In] Optional" << endl <<
         "  -oh Directory for generated C++ headers [Directory] Optional" << endl <<
         "  -oc Directory for generated C++ code [Directory] Optional" << endl <<
@@ -182,9 +184,6 @@ static void StoreDefinition(const CModuleSet& types, const FileInfo& file);
 static TObject LoadValue(CModuleSet& types, const FileInfo& file,
                          const string& typeName);
 static void StoreValue(const TObject& object, const FileInfo& file);
-void GenerateCode(const CModuleSet& types, const set<string>& typeNames,
-                  const string& fileName, const string& sourcesListName,
-                  const string& headersDir, const string& sourcesDir);
 
 inline
 EFileType FileType(const char* arg, EFileType defType = eASNText)
@@ -231,36 +230,6 @@ void GetFileOut(FileInfo& info, const char* typeArg, const char* name,
     info.name = FileOutArgument(name);
 }
 
-static
-void GetTypes(set<string>& typeSet, const char* typesIn)
-{
-    string types = StringArgument(typesIn);
-    SIZE_TYPE pos = 0;
-    SIZE_TYPE next = types.find(',');
-    while ( next != NPOS ) {
-        typeSet.insert(types.substr(pos, next - pos));
-        pos = next + 1;
-        next = types.find(',', pos);
-    }
-    typeSet.insert(types.substr(pos));
-}
-
-static
-void GetTypes(set<string>& typeSet, const CModuleSet& moduleSet)
-{
-    for ( CModuleSet::TModules::const_iterator mi = moduleSet.modules.begin();
-          mi != moduleSet.modules.end();
-          ++mi ) {
-        const ASNModule* module = mi->get();
-        for ( ASNModule::TDefinitions::const_iterator ti =
-                  module->definitions.begin();
-              ti != module->definitions.end();
-              ++ti ) {
-            typeSet.insert(module->name + '.' + (*ti)->name);
-        }
-    }
-}
-
 int main(int argc, const char*argv[])
 {
     SetDiagStream(&NcbiCerr);
@@ -273,11 +242,7 @@ int main(int argc, const char*argv[])
     FileInfo dataOut;
 
     bool generateAllTypes = false;
-    set<string> generateTypes;
-    string codeInFile;
-    string headersDir;
-    string sourcesDir;
-    string sourcesListFile;
+    CCodeGenerator generator;
 
     if ( argc <= 1 ) {
         Help();
@@ -320,19 +285,24 @@ int main(int argc, const char*argv[])
                     generateAllTypes = true;
                     break;
                 case 't':
-                    GetTypes(generateTypes, argv[++i]);
+                    generator.GetTypes(generator.m_GenerateTypes,
+                                       StringArgument(argv[++i]));
+                    break;
+                case 'x':
+                    generator.GetTypes(generator.m_ExcludeTypes,
+                                       StringArgument(argv[++i]));
                     break;
                 case 'd':
-                    codeInFile = FileInArgument(argv[++i]);
+                    generator.LoadConfig(FileInArgument(argv[++i]));
                     break;
                 case 'h':
-                    headersDir = DirArgument(argv[++i]);
+                    generator.m_HeadersDir = DirArgument(argv[++i]);
                     break;
                 case 'c':
-                    sourcesDir = DirArgument(argv[++i]);
+                    generator.m_SourcesDir = DirArgument(argv[++i]);
                     break;
                 case 'f':
-                    sourcesListFile = FileOutArgument(argv[++i]);
+                    generator.m_FileListFileName = FileOutArgument(argv[++i]);
                     break;
                 default:
                     Error("Invalid argument: ", arg);
@@ -348,32 +318,30 @@ int main(int argc, const char*argv[])
         if ( !moduleIn )
             Error("Module file not specified");
 
-        CModuleSet types;
-        LoadDefinition(types, moduleIn);
+        LoadDefinition(generator.m_Modules, moduleIn);
 
         if ( moduleOut )
-            StoreDefinition(types, moduleOut);
+            StoreDefinition(generator.m_Modules, moduleOut);
 
-        if ( generateAllTypes ) {
-            GetTypes(generateTypes, types);
-        }
+        if ( generateAllTypes )
+            generator.GetAllTypes();
 
         for ( list<FileInfo>::const_iterator fi = importModules.begin();
               fi != importModules.end();
               ++fi ) {
-            LoadDefinition(types, *fi);
+            LoadDefinition(generator.m_Modules, *fi);
         }
     
         if ( dataIn ) {
-            TObject object = LoadValue(types, dataIn, dataInTypeName);
+            TObject object = LoadValue(generator.m_Modules,
+                                       dataIn, dataInTypeName);
             
             if ( dataOut )
                 StoreValue(object, dataOut);
         }
 
-        if ( !generateTypes.empty() )
-            GenerateCode(types, generateTypes, codeInFile,
-                         sourcesListFile, headersDir, sourcesDir);
+        if ( !generator.m_GenerateTypes.empty() )
+            generator.GenerateCode();
     }
     catch (exception& e) {
         Error("Error: ", e.what());

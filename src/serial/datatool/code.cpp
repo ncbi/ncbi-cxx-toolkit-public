@@ -102,7 +102,8 @@ void CFileCode::GenerateHPP(const string& path) const
     for ( TClasses::const_iterator ci = m_Classes.begin();
           ci != m_Classes.end();
           ++ci) {
-        (*ci)->GetParentClass();
+        CClassCode* cls = ci->second.get();
+        cls->GetParentClass();
     }
 
     if ( !m_HPPIncludes.empty() ) {
@@ -136,8 +137,9 @@ void CFileCode::GenerateHPP(const string& path) const
         for ( TClasses::const_iterator ci = m_Classes.begin();
               ci != m_Classes.end();
               ++ci) {
-            ns.Set((*ci)->GetNamespace());
-            (*ci)->GenerateHPP(header);
+            CClassCode* cls = ci->second.get();
+            ns.Set(cls->GetNamespace());
+            cls->GenerateHPP(header);
         }
     }
     ns.End();
@@ -182,15 +184,40 @@ void CFileCode::GenerateCPP(const string& path) const
         for ( TClasses::const_iterator ci = m_Classes.begin();
               ci != m_Classes.end();
               ++ci) {
-            ns.Set((*ci)->GetNamespace());
-            (*ci)->GenerateCPP(code);
+            CClassCode* cls = ci->second.get();
+            ns.Set(cls->GetNamespace());
+            cls->GenerateCPP(code);
         }
     }
 }
 
-void CFileCode::AddType(const ASNType* type)
+bool CFileCode::AddType(const ASNType* type)
 {
-    m_Classes.push_back(new CClassCode(*this, type));
+/*
+    _TRACE(m_CPPName << '(' << long(this) << ')' <<
+           " AddType: " << type->name << '(' << long(type) << ')');
+*/
+    AutoPtr<CClassCode>& cls = m_Classes[type->name];
+    if ( cls )
+        return false;
+
+    cls = new CClassCode(*this, type);
+
+    GetClassCode(type);
+    return true;
+}
+
+CClassCode* CFileCode::GetClassCode(const ASNType* type)
+{
+/*
+    _TRACE(m_CPPName << '(' << long(this) << ')' <<
+           " GetClassCode: " << type->name << '(' << long(type) << ')');
+*/
+    TClasses::const_iterator ci = m_Classes.find(type->name);
+    if ( ci == m_Classes.end() )
+        THROW1_TRACE(runtime_error, "cannot get class info for " + type->name);
+
+    return ci->second.get();
 }
 
 CNamespace::CNamespace(CNcbiOstream& out)
@@ -244,25 +271,49 @@ CClassCode::CClassCode(CFileCode& code, const ASNType* type)
     m_CPP << endl << '\0';
 }
 
-string CClassCode::GetParentClass(void) const
-{
-    const ASNType* parent = GetType()->ParentType(*this);
-    if ( parent ) {
-        m_Code.AddHPPInclude(parent->FileName(*this));
-        return parent->ClassName(*this);
-    }
-    else {
-        return GetType()->ParentClass(*this);
-    }
-}
-
 CClassCode::~CClassCode(void)
 {
+}
+
+const ASNType* CClassCode::GetParentType(void) const
+{
+    const ASNType* parent = GetType()->ParentType(*this);
+    if ( !parent ) {
+        switch ( m_ParentTypes.size() ) {
+        case 0:
+            // no parent type
+            return 0;
+        case 1:
+            parent = (*m_ParentTypes.begin())->GetType();
+            break;
+        default:
+            ERR_POST("more then one parent of type: " + GetType()->name);
+            return 0;
+        }
+    }
+    if ( parent ) {
+        m_Code.AddHPPInclude(parent->FileName(*this));
+    }
+    return parent;
+}
+
+string CClassCode::GetParentClass(void) const
+{
+    const ASNType* parent = GetParentType();
+    if ( parent )
+        return parent->ClassName(*this);
+    else
+        return GetType()->ParentClass(*this);
 }
 
 const string& CClassCode::GetVar(const string& value) const
 {
     return GetType()->GetVar(*this, value);
+}
+
+void CClassCode::AddParentType(CClassCode* parent)
+{
+    m_ParentTypes.insert(parent);
 }
 
 CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const

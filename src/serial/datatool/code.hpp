@@ -22,13 +22,14 @@ class CFileCode
 public:
     typedef set<string> TIncludes;
     typedef map<string, string> TForwards;
-    typedef list< AutoPtr<CClassCode> > TClasses;
+    typedef map<string, AutoPtr<CClassCode> > TClasses;
 
     CFileCode(const CNcbiRegistry& registry,
               const string& baseName, const string& headerPrefix);
     ~CFileCode(void);
 
-    void AddType(const ASNType* type);
+    bool AddType(const ASNType* type);
+    CClassCode* GetClassCode(const ASNType* type);
 
     string Include(const string& s) const;
 
@@ -103,11 +104,9 @@ public:
         {
             return m_ClassName;
         }
+
+    const ASNType* GetParentType(void) const;
     string GetParentClass(void) const;
-    const ASNType* GetParentType(void) const
-        {
-            return m_ParentType;
-        }
 
     void SetAbstract(bool abstract = true)
         {
@@ -143,6 +142,8 @@ public:
             m_Code.AddForwardDeclarations(forwards);
         }
 
+    void AddParentType(CClassCode* parent);
+
     CNcbiOstream& HPP(void)
         {
             return m_HPP;
@@ -159,7 +160,7 @@ public:
 private:
     CFileCode& m_Code;
     const ASNType* m_Type;
-    const ASNType* m_ParentType;
+    set<CClassCode*> m_ParentTypes;
     string m_Namespace;
     string m_ClassName;
     string m_ParentClass;
