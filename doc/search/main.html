@@ -15,12 +15,16 @@
 <table border="0"  width="608" cellspacing="0" cellpadding="0">
   <tr>
     <td width="130" colspan="2" align="LEFT" class="teal"><a href="http://www.ncbi.nlm.nih.gov" class="GUTTER"> <img src="http://www.ncbi.nlm.nih.gov/corehtml/left.GIF" width="130" height="45" border="0"></a></td>
-    <td width="478" align="CENTER" valign="CENTER"><h1> &nbsp;&nbsp;C++ Toolkit Documentation</h1></td>
+    <td width="478" align="CENTER" valign="CENTER"><h1>C++ Toolkit Documentation</h1></td>
   </tr>
   <tr>
     <td width="8" class="teal">&nbsp;</td>
     <td width="122" align="CENTER" class="shade"><a href="http://www.ncbi.nlm.nih.gov/IEB"><i>IEB Home</i></a></td>
-    <td width="478" align="RIGHT"><font size="-1"><i><a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/index.html" class="NAVBAR">http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/index.html</a></i></font></td>
+    <form method=POST action="search.cgi">
+    <td width="478" height="25" valign="TOP" align="RIGHT">
+        <input class="search_text" type=text name="keywords" value="!!Keywords!!" size=40><input class="search_start" type=submit value="Search" name="textsubmit">
+    </td>
+    </form>
   </tr>
 </table>
 
@@ -69,10 +73,6 @@
 <div align="left">
 <table border="0" width="608" cellspacing="0" cellpadding="5" bgcolor="#D8D8D8">
   <tr><td width="100%" bgcolor="#FFFFFF">
-    <form method="POST" action="search.cgi">
-      <input type="text" name="keywords" value="!!Keywords!!" size="30">
-      <input type="submit" value="Search">
-    </form>
     <font size=+1><strong>Search  results:</strong></font>&nbsp;&nbsp;
     found <strong>!!Matches!!</strong> for <strong>"!!Keywords!!"</strong>
     <p>!!SearchResults!!</p>
@@ -124,8 +124,8 @@
 	<table>
 	<tr><td>
         <form method=POST action="search.cgi">
-	    <input type=text name="keywords"  value="!!Keywords!!" size=30>
-        <input type=submit value="Search" name="textsubmit"></form>
+        <input class="search_text" type=text name="keywords" value="!!Keywords!!" size=40><input class="search_start" type=submit value="Search" name="textsubmit">
+        </form>
     </td></tr>
     </table>
 </td></tr>
