@@ -7,6 +7,14 @@
   <body BGCOLOR="#FFFFFF">
   <pre><font color = "red">// File name: diag.cpp
 // Description: Examples of using the CNcbiDiag Class
+
+<font color="gray">
+/* Uses diag.ini:
+
+[DEBUG]
+DIAG_TRACE=yes
+
+*/
 <font color = "green">
 #include &lt;corelib/ncbiapp.hpp&gt;
 #include &lt;corelib/ncbiobj.hpp&gt;
@@ -24,19 +32,18 @@ public:
 
 int CTestApp::Run()
 {
-<font color = "red">   // Test the ERR_POST and _TRACE macros </font>
+<font color = "red">   // Test the ERR_POST macro </font>
     long lll = 345;
     ERR_POST("My ERR_POST message, print long: " << lll);
 
     double ddd = 123.345;
     ERR_POST(Warning << "...print double: " << ddd); 
 
-<font color = "red">   // Disable diagnostic tracing  </font>
-    SetDiagTrace(eDT_Disable, eDT_Default);
+<font color = "red">   //  See if _TRACE is enabled (from *ini file) </font>
     _TRACE("Testing the _TRACE macro");
 
-<font color = "red">   // Enable diagnostic tracing and retest _TRACE </font>
-    SetDiagTrace(eDT_Enable, eDT_Default);
+<font color = "red">   // Disable diagnostic tracing and retest _TRACE </font>
+    SetDiagTrace(eDT_Disable, eDT_Default);
     _TRACE("Testing the _TRACE macro AGAIN");
 
 <font color = "red">   // Reset the global severity level to Info <font color = "black">
@@ -50,7 +57,7 @@ int CTestApp::Run()
     CNcbiDiag diagTrace     ("diag.cpp", 44, eDiag_Trace, eDPF_All);
     CNcbiDiag diagCritical  ("diag.cpp", 45, eDiag_Critical, eDPF_All);
 
-    string Msg = "This is a test message\n\n";
+    string Msg = "This is a test message";
 
 <font color = "red">   // Insert a message into the buffers and flush all but one <font color = "black">
     diagInfo << Msg << Endm;
@@ -60,7 +67,7 @@ int CTestApp::Run()
 <font color = "red">   // Install a new handler for all subsequent messages <font color = "black">
     SetDiagHandler (myHandler, 0, 0);
   
-    diagTrace << Msg;
+    diagTrace << Msg;	<font color=red>	// not posted since trace is disabled </font>
     diagCritical << Msg;
 
 <font color = "red">   // Allow the class destructors to force flushing of remaining messages <font color = "black">
