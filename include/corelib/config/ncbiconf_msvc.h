@@ -1,4 +1,4 @@
-/* //e/ncbi_cpp/msvc/inc/ncbiconf.h.  Generated automatically by configure.  */
+/* /cxx/msvc_nt/inc/ncbiconf.h.  Generated automatically by configure.  */
 /* config.h.in.  Generated automatically from configure.in by autoheader.  */
 
 /* Define if type char is unsigned and you are not using gcc.  */
@@ -54,6 +54,9 @@
 
 /* This is good for the EGCS C/C++ compiler on Linux(e.g. proto for putenv) */
 /* #undef _SVID_SOURCE */
+
+/* There is no "std::char_traits" type defined */
+/* #undef HAVE_NO_CHAR_TRAITS */
 
 /* The number of bytes in a __int64.  */
 #define SIZEOF___INT64 8
