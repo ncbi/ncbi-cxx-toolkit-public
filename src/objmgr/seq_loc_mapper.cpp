@@ -361,6 +361,8 @@ int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_id& id, int width)
             }
             break;
         }
+    default:
+        return width;
     }
     // Destination width should always be checked first
     if ( !m_Dst_width ) {
@@ -1547,6 +1549,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/03/31 20:44:26  grichenk
+* Fixed warnings about unhandled cases in switch.
+*
 * Revision 1.10  2004/03/30 21:21:09  grichenk
 * Reduced number of includes.
 *
