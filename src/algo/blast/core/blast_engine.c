@@ -347,7 +347,7 @@ Int8 ComputeEffectiveSearchSpace(BLAST_KarlinBlk* kbp, /* [in] */
 
         } else {
 
-            length_adjustment = (Int4) ((kbp->logK+log((double)(query_length-last_length_adjustment)*(double)MAX(1, db_length-db_num_seqs*last_length_adjustment)))/(kbp->H));
+            length_adjustment = BLAST_Nint((kbp->logK+log((double)(query_length-last_length_adjustment)*(double)MAX(1, db_length-db_num_seqs*last_length_adjustment)))/(kbp->H));
         }
 
         if (length_adjustment >= query_length-min_query_length) {
