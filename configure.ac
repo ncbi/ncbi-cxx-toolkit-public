@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.265 2004/02/03 19:11:49 ucko Exp $
+#  $Id: configure.ac,v 1.266 2004/02/04 00:36:00 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1952,15 +1952,15 @@ fi
 
 
 
-AC_CACHE_CHECK([for POSIX/SysV semaphores], ncbi_cv_sys_semaphores,
+AC_CACHE_CHECK([for SysV semaphores], ncbi_cv_sys_semaphores,
    AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <sys/types.h>
 #include <sys/sem.h>],
       [struct sembuf buf; int id = semget(0x1234, 0, IPC_CREAT);
        buf.sem_op = SEM_UNDO;])],
       [ncbi_cv_sys_semaphores=yes], [ncbi_cv_sys_semaphores=no]))
 if test "$ncbi_cv_sys_semaphores" = yes; then
-   AC_DEFINE(HAVE_POSIX_SEMAPHORES, 1,
-             [Define to 1 if you have POSIX/SysV semaphores.])
+   AC_DEFINE(HAVE_SYSV_SEMAPHORES, 1,
+             [Define to 1 if you have SysV semaphores.])
 fi
 
 AC_CHECK_TYPE([union semun],

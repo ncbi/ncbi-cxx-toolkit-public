@@ -12807,8 +12807,8 @@ fi
 
 
 
-echo "$as_me:$LINENO: checking for POSIX/SysV semaphores" >&5
-echo $ECHO_N "checking for POSIX/SysV semaphores... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for SysV semaphores" >&5
+echo $ECHO_N "checking for SysV semaphores... $ECHO_C" >&6
 if test "${ncbi_cv_sys_semaphores+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -12856,7 +12856,7 @@ echo "${ECHO_T}$ncbi_cv_sys_semaphores" >&6
 if test "$ncbi_cv_sys_semaphores" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_POSIX_SEMAPHORES 1
+#define HAVE_SYSV_SEMAPHORES 1
 _ACEOF
 
 fi

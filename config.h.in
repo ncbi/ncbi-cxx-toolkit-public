@@ -207,9 +207,6 @@
 /* Define to 1 if the ORBacus CORBA package is available. */
 #undef HAVE_ORBACUS
 
-/* Define to 1 if you have POSIX/SysV semaphores. */
-#undef HAVE_POSIX_SEMAPHORES
-
 /* Define to 1 if you have the `pthread_atfork' function. */
 #undef HAVE_PTHREAD_ATFORK
 
@@ -270,6 +267,9 @@
 
 /* Define to 1 if you have the `sysmp' function. */
 #undef HAVE_SYSMP
+
+/* Define to 1 if you have SysV semaphores. */
+#undef HAVE_SYSV_SEMAPHORES
 
 /* Define to 1 if you have the <sys/poll.h> header file. */
 #undef HAVE_SYS_POLL_H
