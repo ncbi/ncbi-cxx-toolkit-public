@@ -195,12 +195,9 @@ int CTestApp::Run(void)
     // 1.2.7. one entry in two scopes
     for (idx = 1; idx <= 1; idx++) {
         // populate scopes
-        CScope Scope1(*m_ObjMgr);
         CRef<CScope> pScope2(new CScope(*m_ObjMgr));
         CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
         CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
-        Scope1.AddTopLevelSeqEntry(*entry1);
-        Scope1.AddTopLevelSeqEntry(*entry2);
         pScope2->AddTopLevelSeqEntry(*entry2);
         // Test with unresolvable references
         id.SetGi(21+idx*1000);
@@ -257,6 +254,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/06/03 18:33:48  grichenk
+* Modified annot collector to better resolve synonyms
+* and matching IDs. Do not add id to scope history when
+* collecting annots. Exclude TSEs with bioseqs from data
+* source's annot index.
+*
 * Revision 1.41  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -866,10 +866,11 @@ void CAnnot_Collector::x_GetTSE_Info(void)
 }
 
 
+/*
 bool CAnnot_Collector::x_Search(const CSeq_id_Handle& id,
-                                   const CBioseq_Handle& bh,
-                                   const CHandleRange& hr,
-                                   CSeq_loc_Conversion* cvt)
+                                const CBioseq_Handle& bh,
+                                const CHandleRange& hr,
+                                CSeq_loc_Conversion* cvt)
 {
     if ( cvt )
         cvt->SetSrcId(id);
@@ -877,7 +878,7 @@ bool CAnnot_Collector::x_Search(const CSeq_id_Handle& id,
     bool found = false;
     if ( m_Selector.m_LimitObjectType == SAnnotSelector::eLimit_None ) {
         // any data source
-        CConstRef<CScope_Impl::TAnnotRefSet> tse_set;
+        CConstRef<CScope_Impl::TAnnotRefMap> tse_set;
         if ( bh ) {
             tse_set = m_Scope->GetTSESetWithAnnots(bh);
         }
@@ -889,10 +890,11 @@ bool CAnnot_Collector::x_Search(const CSeq_id_Handle& id,
         }
     }
     else {
-        found = x_Search(m_TSE_LockSet, id, hr, cvt) || found;
+        found = x_Search(m_TSE_LockMap, id, hr, cvt) || found;
     }
     return found;
 }
+*/
 
 
 static CSeqFeatData::ESubtype s_DefaultAdaptiveTriggers[] = {
@@ -902,88 +904,89 @@ static CSeqFeatData::ESubtype s_DefaultAdaptiveTriggers[] = {
 };
 
 
-bool CAnnot_Collector::x_Search(const TTSE_LockSet& tse_set,
-                                   const CSeq_id_Handle& id,
-                                   const CHandleRange& hr,
-                                   CSeq_loc_Conversion* cvt)
+bool CAnnot_Collector::x_Search(const TTSE_Lock& tse_lock,
+                                const CSeq_id_Handle& id,
+                                const CHandleRange& hr,
+                                CSeq_loc_Conversion* cvt)
 {
     bool found = false;
-    ITERATE ( TTSE_LockSet, tse_it, tse_set ) {
-        const CTSE_Info& tse = **tse_it;
+    const CTSE_Info& tse = *tse_lock;
 
-        CTSE_Info::TAnnotReadLockGuard guard(tse.m_AnnotObjsLock);
+    CTSE_Info::TAnnotReadLockGuard guard(tse.m_AnnotObjsLock);
 
-        // Skip excluded TSEs
-        //if ( ExcludedTSE(tse) ) {
-        //continue;
-        //}
+    if (cvt) {
+        cvt->SetSrcId(id);
+    }
+    // Skip excluded TSEs
+    //if ( ExcludedTSE(tse) ) {
+    //continue;
+    //}
 
-        if ( m_Selector.m_AdaptiveDepth && tse.ContainsSeqid(id) ) {
-            const SIdAnnotObjs* objs = tse.x_GetUnnamedIdObjects(id);
-            if ( objs ) {
-                vector<char> indexes;
-                if ( m_Selector.m_AdaptiveTriggers.empty() ) {
-                    const size_t count =
-                        sizeof(s_DefaultAdaptiveTriggers)/
-                        sizeof(s_DefaultAdaptiveTriggers[0]);
-                    for ( int i = count - 1; i >= 0; --i ) {
-                        CSeqFeatData::ESubtype subtype =
-                            s_DefaultAdaptiveTriggers[i];
-                        size_t index = CAnnotType_Index::GetSubtypeIndex(subtype);
-                        if ( index ) {
-                            indexes.resize(max(indexes.size(), index + 1));
-                            indexes[index] = 1;
-                        }
-                    }
-                }
-                else {
-                    ITERATE ( SAnnotSelector::TAdaptiveTriggers, it,
-                        m_Selector.m_AdaptiveTriggers ) {
-                        pair<size_t, size_t> idxs =
-                            CAnnotType_Index::GetIndexRange(*it);
-                        indexes.resize(max(indexes.size(), idxs.second));
-                        for ( size_t i = idxs.first; i < idxs.second; ++i ) {
-                            indexes[i] = 1;
-                        }
-                    }
-                }
-                for ( size_t index = 0; index < indexes.size(); ++index ) {
-                    if ( !indexes[index] ) {
-                        continue;
-                    }
-                    if ( index >= objs->m_AnnotSet.size() ) {
-                        break;
-                    }
-                    if ( !objs->m_AnnotSet[index].empty() ) {
-                        found = true;
-                        break;
+    if ( m_Selector.m_AdaptiveDepth && tse.ContainsSeqid(id) ) {
+        const SIdAnnotObjs* objs = tse.x_GetUnnamedIdObjects(id);
+        if ( objs ) {
+            vector<char> indexes;
+            if ( m_Selector.m_AdaptiveTriggers.empty() ) {
+                const size_t count =
+                    sizeof(s_DefaultAdaptiveTriggers)/
+                    sizeof(s_DefaultAdaptiveTriggers[0]);
+                for ( int i = count - 1; i >= 0; --i ) {
+                    CSeqFeatData::ESubtype subtype =
+                        s_DefaultAdaptiveTriggers[i];
+                    size_t index = CAnnotType_Index::GetSubtypeIndex(subtype);
+                    if ( index ) {
+                        indexes.resize(max(indexes.size(), index + 1));
+                        indexes[index] = 1;
                     }
                 }
             }
-        }
-        
-        if ( !m_Selector.m_IncludeAnnotsNames.empty() ) {
-            // only 'included' annots
-            ITERATE ( SAnnotSelector::TAnnotsNames, iter,
-                m_Selector.m_IncludeAnnotsNames ) {
-                _ASSERT(!m_Selector.ExcludedAnnotName(*iter)); // consistency check
-                const SIdAnnotObjs* objs = tse.x_GetIdObjects(*iter, id);
-                if ( objs ) {
-                    x_Search(tse, objs, guard, *iter, id, hr, cvt);
+            else {
+                ITERATE ( SAnnotSelector::TAdaptiveTriggers, it,
+                    m_Selector.m_AdaptiveTriggers ) {
+                    pair<size_t, size_t> idxs =
+                        CAnnotType_Index::GetIndexRange(*it);
+                    indexes.resize(max(indexes.size(), idxs.second));
+                    for ( size_t i = idxs.first; i < idxs.second; ++i ) {
+                        indexes[i] = 1;
+                    }
                 }
             }
-        }
-        else {
-            // all annots, skipping 'excluded'
-            ITERATE (CTSE_Info::TNamedAnnotObjs, iter, tse.m_NamedAnnotObjs) {
-                if ( m_Selector.ExcludedAnnotName(iter->first) ) {
+            for ( size_t index = 0; index < indexes.size(); ++index ) {
+                if ( !indexes[index] ) {
                     continue;
                 }
-                const SIdAnnotObjs* objs =
-                    tse.x_GetIdObjects(iter->second, id);
-                if ( objs ) {
-                    x_Search(tse, objs, guard, iter->first, id, hr, cvt);
+                if ( index >= objs->m_AnnotSet.size() ) {
+                    break;
                 }
+                if ( !objs->m_AnnotSet[index].empty() ) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if ( !m_Selector.m_IncludeAnnotsNames.empty() ) {
+        // only 'included' annots
+        ITERATE ( SAnnotSelector::TAnnotsNames, iter,
+            m_Selector.m_IncludeAnnotsNames ) {
+            _ASSERT(!m_Selector.ExcludedAnnotName(*iter)); // consistency check
+            const SIdAnnotObjs* objs = tse.x_GetIdObjects(*iter, id);
+            if ( objs ) {
+                x_Search(tse, objs, guard, *iter, id, hr, cvt);
+            }
+        }
+    }
+    else {
+        // all annots, skipping 'excluded'
+        ITERATE (CTSE_Info::TNamedAnnotObjs, iter, tse.m_NamedAnnotObjs) {
+            if ( m_Selector.ExcludedAnnotName(iter->first) ) {
+                continue;
+            }
+            const SIdAnnotObjs* objs =
+                tse.x_GetIdObjects(iter->second, id);
+            if ( objs ) {
+                x_Search(tse, objs, guard, iter->first, id, hr, cvt);
             }
         }
     }
@@ -1031,12 +1034,12 @@ bool CAnnot_Collector::x_AddObject(CAnnotObject_Ref& object_ref,
 
 
 void CAnnot_Collector::x_Search(const CTSE_Info& tse,
-                                   const SIdAnnotObjs* objs,
-                                   CReadLockGuard& guard,
-                                   const CAnnotName& annot_name,
-                                   const CSeq_id_Handle& id,
-                                   const CHandleRange& hr,
-                                   CSeq_loc_Conversion* cvt)
+                                const SIdAnnotObjs* objs,
+                                CReadLockGuard& guard,
+                                const CAnnotName& annot_name,
+                                const CSeq_id_Handle& id,
+                                const CHandleRange& hr,
+                                CSeq_loc_Conversion* cvt)
 {
     if (m_Selector.m_AnnotTypesSet.size() == 0) {
         pair<size_t, size_t> range =
@@ -1208,35 +1211,56 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info& tse,
 
 
 bool CAnnot_Collector::x_Search(const CHandleRangeMap& loc,
-                                   CSeq_loc_Conversion* cvt)
+                                CSeq_loc_Conversion* cvt)
 {
     bool found = false;
     ITERATE ( CHandleRangeMap, idit, loc ) {
         if ( idit->second.Empty() ) {
             continue;
         }
-
-        bool have_main = false;
-        CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idit->first);
-        if ( !syns ) {
-            if (m_Selector.m_IdResolving == SAnnotSelector::eFailUnresolved) {
-                NCBI_THROW(CAnnotException, eFindFailed,
-                           "Cannot find id synonyms");
+        if ( m_Selector.m_LimitObjectType == SAnnotSelector::eLimit_None ) {
+            // any data source
+            CConstRef<CScope_Impl::TAnnotRefMap> tse_map =
+                m_Scope->GetTSESetWithAnnots(idit->first);
+            if (!tse_map) {
+                if (m_Selector.m_IdResolving == SAnnotSelector::eFailUnresolved) {
+                    NCBI_THROW(CAnnotException, eFindFailed,
+                                "Cannot find id synonyms");
+                }
+                continue;
+            }
+            ITERATE(CScope_Impl::TTSE_LockMap, tse_it, tse_map->GetData()) {
+                ITERATE(TSeq_id_HandleSet, id_it, tse_it->second) {
+                    found |= x_Search(tse_it->first,
+                        *id_it, idit->second, cvt);
+                }
             }
         }
         else {
-            ITERATE ( CSynonymsSet, synit, *syns ) {
-                CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(synit);
-                if ( !have_main ) {
-                    have_main = idit->first == idh;
+            // Search in the limit objects
+            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first,
+                CScope::eGetBioseq_All);
+            TSeq_id_HandleSet idh_set;
+            if (bh) {
+                CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
+                ITERATE(CBioseq_Handle::TId, syn_it, bh.GetId()) {
+                    if (mapper.HaveReverseMatch(*syn_it)) {
+                        mapper.GetReverseMatchingHandles(*syn_it, idh_set);
+                    }
+                    else {
+                        idh_set.insert(*syn_it);
+                    }
                 }
-                found = x_Search(idh, CSynonymsSet::GetBioseqHandle(synit),
-                                 idit->second, cvt)  ||  found;
             }
-        }
-        if ( !have_main ) {
-            found = x_Search(idit->first, CBioseq_Handle(),
-                             idit->second, cvt)  ||  found;
+            else {
+                idh_set.insert(idit->first);
+            }
+            ITERATE(TSeq_id_HandleSet, id_it, idh_set) {
+                ITERATE(TTSE_LockSet, tse_it, m_TSE_LockSet) {
+                    found = x_Search(*tse_it,
+                        *id_it, idit->second, cvt) || found;
+                }
+            }
         }
     }
     return found;
@@ -1391,6 +1415,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/06/03 18:33:48  grichenk
+* Modified annot collector to better resolve synonyms
+* and matching IDs. Do not add id to scope history when
+* collecting annots. Exclude TSEs with bioseqs from data
+* source's annot index.
+*
 * Revision 1.7  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.

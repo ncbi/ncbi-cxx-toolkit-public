@@ -116,7 +116,8 @@ public:
     typedef CRef<CBioseq_ScopeInfo>                  TBioseqMapValue;
     typedef const CBioseq_Info*                      TBioseqMapKey;
     typedef map<TBioseqMapKey, TBioseqMapValue>      TBioseqMap;
-    typedef SSeq_id_ScopeInfo::TAnnotRefSet          TAnnotRefSet;
+    typedef SSeq_id_ScopeInfo::TTSE_LockMap          TTSE_LockMap;
+    typedef SSeq_id_ScopeInfo::TAnnotRefMap          TAnnotRefMap;
     typedef int                                      TPriority;
 
     //////////////////////////////////////////////////////////////////
@@ -243,10 +244,11 @@ private:
     void UpdateAnnotIndex(const CSeq_annot& limit_annot);
     void UpdateAnnotIndex(const CSeq_annot_Handle& annot);
 
-    CConstRef<TAnnotRefSet>
+    CConstRef<TAnnotRefMap>
     GetTSESetWithAnnots(const CSeq_id_Handle& idh_type);
-    CConstRef<TAnnotRefSet>
-    GetTSESetWithAnnots(const CBioseq_Handle& bh);
+    void GetTSESetWithAnnotsRef(const CBioseq_ScopeInfo& binfo,
+                                const CSeq_id_Handle& idh,
+                                TAnnotRefMap& tse_map);
 
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
@@ -314,6 +316,8 @@ private:
     void x_AddSynonym(const CSeq_id_Handle& idh,
                       CSynonymsSet& syn_set, CBioseq_ScopeInfo& info);
 
+    // Check if any bioseq synonym has been resolved
+    bool x_HaveResolvedSynonym(CSeqMatch_Info& info);
     // Conflict reporting function
     enum EConflict {
         eConflict_History,
@@ -381,6 +385,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/06/03 18:33:48  grichenk
+* Modified annot collector to better resolve synonyms
+* and matching IDs. Do not add id to scope history when
+* collecting annots. Exclude TSEs with bioseqs from data
+* source's annot index.
+*
 * Revision 1.8  2004/04/16 13:31:46  grichenk
 * Added data pre-fetching functions.
 *

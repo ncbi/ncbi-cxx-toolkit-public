@@ -777,7 +777,9 @@ void CDataSource::x_UnindexTSE(TTSEMap& tse_map,
                                CTSE_Info* tse_info)
 {
     TTSEMap::iterator it = tse_map.find(id);
-    _ASSERT(it != tse_map.end() && it->first == id);
+    if (it == tse_map.end() || it->first != id) {
+        return;
+    }
     it->second.erase(tse_info);
     if ( it->second.empty() ) {
         tse_map.erase(it);
@@ -805,6 +807,22 @@ void CDataSource::x_IndexAnnotTSE(const CSeq_id_Handle& id,
                                   CTSE_Info* tse_info)
 {
     TAnnotWriteLockGuard guard(m_DSAnnotLock);
+    if (tse_info) {
+        // Filter out TSEs which contain the sequence
+        CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
+        TSeq_id_HandleSet hset;
+        if (mapper.HaveMatchingHandles(id)) {
+            mapper.GetMatchingHandles(id, hset);
+        }
+        else {
+            hset.insert(id);
+        }
+        ITERATE(TSeq_id_HandleSet, match_it, hset) {
+            if ( tse_info->ContainsSeqid(*match_it) ) {
+                return;
+            }
+        }
+    }
     x_IndexTSE(m_TSE_annot, id, tse_info);
 }
 
@@ -1058,6 +1076,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.134  2004/06/03 18:33:48  grichenk
+* Modified annot collector to better resolve synonyms
+* and matching IDs. Do not add id to scope history when
+* collecting annots. Exclude TSEs with bioseqs from data
+* source's annot index.
+*
 * Revision 1.133  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -963,11 +963,25 @@ CScope_Impl::x_FindBioseqInfo(const CPriorityTree& tree,
         CDataSource_ScopeInfo* new_ret =
             x_FindBioseqInfo(mit->second, idh, hset, match_info, get_flag);
         if ( new_ret ) {
-            _ASSERT(!ret); // should be checked by match_info already
             ret = new_ret;
         }
     }
     return ret;
+}
+
+
+bool CScope_Impl::x_HaveResolvedSynonym(CSeqMatch_Info& info)
+{
+    const CBioseq_Info::TId& syns = info.GetBioseq_Info()->GetId();
+    ITERATE(CBioseq_Info::TId, syn_it, syns) {
+        CRef<CBioseq_ScopeInfo> res_info =
+            x_FindBioseq_Info(*syn_it, CScope::eGetBioseq_Resolved);
+        if (bool(res_info)  &&
+            (&res_info->GetBioseq_Info() == info.GetBioseq_Info())) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -1018,9 +1032,19 @@ CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
     }
     if ( info ) {
         if ( match_info ) {
-            x_ThrowConflict(eConflict_Live, match_info, info);
+            bool resolved1 = x_HaveResolvedSynonym(match_info);
+            bool resolved2 = x_HaveResolvedSynonym(info);
+            if (resolved1  ==  resolved2) {
+                x_ThrowConflict(eConflict_Live, match_info, info);
+            }
+            if ( resolved2 ) {
+                // info has resolved synonym, replace match_info
+                match_info = info;
+            }
         }
-        match_info = info;
+        else {
+            match_info = info;
+        }
         return &ds_info;
     }
     return 0;
@@ -1114,7 +1138,7 @@ void CScope_Impl::UpdateAnnotIndex(const CSeq_annot_Handle& annot)
 }
 
 
-CConstRef<CScope_Impl::TAnnotRefSet>
+CConstRef<CScope_Impl::TAnnotRefMap>
 CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
 {
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
@@ -1124,73 +1148,57 @@ CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
     {{
         CInitGuard init(info.second.m_AllAnnotRef_Info, m_MutexPool);
         if ( init ) {
-            CRef<TAnnotRefSet> ref_set(new TAnnotRefSet);
-            TTSE_LockSet& tse_set = *ref_set;
+            CRef<TAnnotRefMap> ref_map(new TAnnotRefMap);
+            TTSE_LockMap& tse_map = *ref_map;
 
-            if ( binfo->HasBioseq() ) {
-                TTSE_Lock tse(&binfo->GetTSE_Info());
-                tse_set.insert(tse);
+            TTSE_LockMap with_ref;
+            const CBioseq_Info::TId& syns =
+                binfo->GetBioseq_Info().GetId();
+            ITERATE(CBioseq_Info::TId, syn_it, syns) {
+                // Search current id
+                GetTSESetWithAnnotsRef(*binfo, *syn_it, *ref_map);
             }
-
-            TTSE_LockSet with_ref;
-            for (CPriority_I it(m_setDataSrc); it; ++it) {
-                it->GetDataSource().GetTSESetWithAnnots(idh, with_ref);
-                CFastMutexGuard guard(it->GetMutex());
-                const TTSE_LockSet& tse_cache = it->GetTSESet();
-                ITERATE(TTSE_LockSet, ref_it, with_ref) {
-                    if ( (*ref_it)->IsDead() &&
-                         tse_cache.find(*ref_it) == tse_cache.end() ) {
-                        continue;
-                    }
-                    tse_set.insert(*ref_it);
-                }
-                with_ref.clear();
-            }
-            info.second.m_AllAnnotRef_Info = ref_set;
+            info.second.m_AllAnnotRef_Info = ref_map;
         }
     }}
     return info.second.m_AllAnnotRef_Info;
 }
 
 
-CConstRef<CScope_Impl::TAnnotRefSet>
-CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh)
+void
+CScope_Impl::GetTSESetWithAnnotsRef(const CBioseq_ScopeInfo& binfo,
+                                    const CSeq_id_Handle& idh,
+                                    TAnnotRefMap& tse_map)
 {
-    TReadLockGuard rguard(m_Scope_Conf_RWLock);
-    TSeq_idMapValue& info = x_GetSeq_id_Info(bh);
-    _ASSERT(info.second.m_Bioseq_Info);
-    CRef<CBioseq_ScopeInfo> binfo = info.second.m_Bioseq_Info;
-    {{
-        CInitGuard init(info.second.m_AllAnnotRef_Info, m_MutexPool);
-        if ( init ) {
-            CRef<TAnnotRefSet> ref_set(new TAnnotRefSet);
-            TTSE_LockSet& tse_set = *ref_set;
-
-            if ( binfo->HasBioseq() ) {
-                TTSE_Lock tse(&binfo->GetTSE_Info());
-                
-                tse_set.insert(tse);
-            }
-
-            TTSE_LockSet with_ref;
-            for (CPriority_I it(m_setDataSrc); it; ++it) {
-                it->GetDataSource().GetTSESetWithAnnots(info.first, with_ref);
-                CFastMutexGuard guard(it->GetMutex());
-                const TTSE_LockSet& tse_cache = it->GetTSESet();
-                ITERATE(TTSE_LockSet, ref_it, with_ref) {
-                    if ( (*ref_it)->IsDead() &&
-                         tse_cache.find(*ref_it) == tse_cache.end() ) {
-                        continue;
-                    }
-
-                    tse_set.insert(*ref_it);
-                }
-                with_ref.clear();
-            }
-            info.second.m_AllAnnotRef_Info = ref_set;
+    TSeq_id_HandleSet idh_set;
+    CSeq_id_Mapper& id_mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
+    if (id_mapper.HaveReverseMatch(idh)) {
+        id_mapper.GetReverseMatchingHandles(idh, idh_set);
+    }
+    else {
+        idh_set.insert(idh);
+    }
+    ITERATE(TSeq_id_HandleSet, match_it, idh_set) {
+        if ( binfo.HasBioseq() ) {
+            TTSE_Lock tse(&binfo.GetTSE_Info());
+            tse_map.GetData()[tse].insert(*match_it);
         }
-    }}
-    return info.second.m_AllAnnotRef_Info;
+        // Search in all data sources
+        TTSE_LockSet tse_set;
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            it->GetDataSource().GetTSESetWithAnnots(*match_it, tse_set);
+            CFastMutexGuard guard(it->GetMutex());
+            const TTSE_LockSet& tse_cache = it->GetTSESet();
+            ITERATE(TTSE_LockSet, ref_it, tse_set) {
+                if ( (*ref_it)->IsDead() &&
+                        tse_cache.find(*ref_it) == tse_cache.end() ) {
+                    continue;
+                }
+                tse_map.GetData()[*ref_it].insert(*match_it);
+            }
+            tse_set.clear();
+        }
+    }
 }
 
 
@@ -1386,6 +1394,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/06/03 18:33:48  grichenk
+* Modified annot collector to better resolve synonyms
+* and matching IDs. Do not add id to scope history when
+* collecting annots. Exclude TSEs with bioseqs from data
+* source's annot index.
+*
 * Revision 1.15  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -37,6 +37,7 @@
 #include <corelib/ncbimtx.hpp>
 
 #include <objmgr/seq_id_handle.hpp>
+#include <objmgr/seq_id_mapper.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -142,8 +143,9 @@ struct NCBI_XOBJMGR_EXPORT SSeq_id_ScopeInfo
 
     typedef CConstRef<CTSE_Info>                     TTSE_Lock;
     typedef set<TTSE_Lock>                           TTSE_LockSet;
-    typedef CObjectFor<TTSE_LockSet>                 TAnnotRefSet;
-    typedef CInitMutex<TAnnotRefSet>                 TAnnotRefInfo;
+    typedef map<TTSE_Lock, TSeq_id_HandleSet>        TTSE_LockMap;
+    typedef CObjectFor<TTSE_LockMap>                 TAnnotRefMap;
+    typedef CInitMutex<TAnnotRefMap>                 TAnnotRefInfo;
 
     // owner scope
     CScope*                       m_Scope;
@@ -262,6 +264,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/06/03 18:33:48  grichenk
+* Modified annot collector to better resolve synonyms
+* and matching IDs. Do not add id to scope history when
+* collecting annots. Exclude TSEs with bioseqs from data
+* source's annot index.
+*
 * Revision 1.8  2004/01/27 17:10:12  ucko
 * +tse_info.hpp due to use of CConstRef<CTSE_Info>
 *

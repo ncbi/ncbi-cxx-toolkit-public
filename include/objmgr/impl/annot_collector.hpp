@@ -202,11 +202,13 @@ private:
                         const CHandleRange& master_hr);
     bool x_Search(const CHandleRangeMap& loc,
                   CSeq_loc_Conversion* cvt);
+/*
     bool x_Search(const CSeq_id_Handle& id,
                   const CBioseq_Handle& bh,
                   const CHandleRange& hr,
                   CSeq_loc_Conversion* cvt);
-    bool x_Search(const TTSE_LockSet& tse_set,
+*/
+    bool x_Search(const TTSE_Lock& tse_lock,
                   const CSeq_id_Handle& id,
                   const CHandleRange& hr,
                   CSeq_loc_Conversion* cvt);
@@ -575,6 +577,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/06/03 18:33:48  grichenk
+* Modified annot collector to better resolve synonyms
+* and matching IDs. Do not add id to scope history when
+* collecting annots. Exclude TSEs with bioseqs from data
+* source's annot index.
+*
 * Revision 1.6  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.
