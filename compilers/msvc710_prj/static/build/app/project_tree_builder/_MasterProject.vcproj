@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="_MasterProject" Keyword="ManagedCProj" RootNamespace="MasterProject">
+  <Platforms>
+    <Platform Name="Win32"></Platform>
+  </Platforms>
+  <Configurations>
+    <Configuration Name="Debug|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="DebugDLL|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="DebugMT|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="Release|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="ReleaseDLL|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="ReleaseMT|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+  </Configurations>
+  <References></References>
+  <Files>
+    <Filter Name="app" Filter="">
+      <Filter Name="project_tree_builder" Filter="">
+        <File RelativePath="project_tree_builder._">
+          <FileConfiguration Name="Debug|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+          <FileConfiguration Name="DebugDLL|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+          <FileConfiguration Name="DebugMT|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+          <FileConfiguration Name="Release|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+          <FileConfiguration Name="ReleaseDLL|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+          <FileConfiguration Name="ReleaseMT|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+        </File>
+      </Filter>
+    </Filter>
+    <Filter Name="corelib" Filter="">
+      <File RelativePath="xncbi._">
+        <FileConfiguration Name="Debug|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugDLL|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugMT|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="Release|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseMT|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+      </File>
+    </Filter>
+    <Filter Name="serial" Filter="">
+      <File RelativePath="xser._">
+        <FileConfiguration Name="Debug|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugDLL|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugMT|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="Release|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseMT|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+      </File>
+      <Filter Name="datatool" Filter="">
+        <File RelativePath="datatool._">
+          <FileConfiguration Name="Debug|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+          <FileConfiguration Name="DebugDLL|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+          <FileConfiguration Name="DebugMT|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+          <FileConfiguration Name="Release|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+          <FileConfiguration Name="ReleaseDLL|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+          <FileConfiguration Name="ReleaseMT|Win32">
+            <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+          </FileConfiguration>
+        </File>
+      </Filter>
+    </Filter>
+    <Filter Name="util" Filter="">
+      <File RelativePath="xutil._">
+        <FileConfiguration Name="Debug|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugDLL|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugMT|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="Release|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseMT|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
+        </FileConfiguration>
+      </File>
+    </Filter>
+  </Files>
+  <Globals></Globals>
+</VisualStudioProject>
