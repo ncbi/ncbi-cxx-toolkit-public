@@ -421,7 +421,9 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
                   mb_lt->hashtable[ecode] = 0;
                   if (two_templates)
                      mb_lt->hashtable2[ecode] = 0;
+#if ERR_POST_EX_DEFINED
                   ErrPostEx(SEV_WARNING, 0, 0, "%lx - %d", ecode, pcount);
+#endif
                   masked_word_count++;
                }
                longest_chain = MAX(longest_chain, pcount);
@@ -429,8 +431,10 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
          }
       }
       if (masked_word_count)
+#if ERR_POST_EX_DEFINED
 	 ErrPostEx(SEV_WARNING, 0, 0, "Masked %d %dmers", masked_word_count,
 		   4*width);
+#endif
 #if 0
    }
 #endif
