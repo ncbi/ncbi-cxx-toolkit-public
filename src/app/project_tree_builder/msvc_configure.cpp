@@ -99,8 +99,8 @@ void CMsvcConfigure::operator() (const CMsvcSite&         site,
             CDir(dir).CreatePath();
         }
 
-        CNcbiOfstream ofs = CNcbiOfstream(makefile_path.c_str(), 
-                                          IOS_BASE::out | IOS_BASE::trunc );
+        CNcbiOfstream ofs(makefile_path.c_str(), 
+                          IOS_BASE::out | IOS_BASE::trunc );
         if ( !ofs )
             NCBI_THROW(CProjBulderAppException, eFileCreation, makefile_path);
 
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/24 15:14:07  gorelenk
+ * Changed implementation of CMsvcConfigure::operator().
+ *
  * Revision 1.8  2004/05/24 14:43:19  gorelenk
  * Changed implementation of CMsvcConfigure::operator() - added code section
  * for generation of makefile to install third-party libs.
