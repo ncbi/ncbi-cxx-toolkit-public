@@ -3,4 +3,4 @@
 ASN_DEP = seq blastdb
 
 LIB = xblastformat
-SRC = blastfmtutil showdefline showalign
+SRC = blastfmtutil showdefline showalign tabular
