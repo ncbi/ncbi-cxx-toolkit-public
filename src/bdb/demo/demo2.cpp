@@ -25,7 +25,7 @@
  *
  * Author: Anatoliy Kuznetsov
  *
- * File Description: Demo1 application for NCBI Berkeley DB library (BDB).
+ * File Description: Demo2 application for NCBI Berkeley DB library (BDB).
  *                   Application shows how to fetch a single known record from 
  *                   the datafile. Also demonstrated how to delete records and handle
  *                   record not found situations.
@@ -247,6 +247,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/30 15:59:51  kuznets
+ * Fixed typo
+ *
  * Revision 1.1  2003/04/30 15:44:40  kuznets
  * Initial revision
  *
