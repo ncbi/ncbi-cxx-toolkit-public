@@ -878,6 +878,31 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
 }
 
 
+void NStr::TruncateSpaces(string& str, ETrunc where)
+{
+    if (str.empty()) return;
+
+    SIZE_TYPE beg = 0;
+    if (where == eTrunc_Begin  ||  where == eTrunc_Both) {
+        while (beg < str.length()  &&  isspace(str[beg]))
+            ++beg;
+        if (beg == str.length()) {
+            str.erase();
+            return;
+        }
+    }
+
+    SIZE_TYPE end = str.length() - 1;
+    if (where == eTrunc_End  ||  where == eTrunc_Both) {
+        while ( end > beg  &&  isspace(str[end]) )
+            --end;
+    }
+    _ASSERT(beg <= end);
+
+    str.replace(0, str.size(), str, beg, end - beg + 1);
+}
+
+
 string& NStr::Replace(const string& src,
                       const string& search, const string& replace,
                       string& dst, SIZE_TYPE start_pos, size_t max_replace)
@@ -1609,6 +1634,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.121  2004/10/05 16:13:19  shomrat
+ * + in place TruncateSpaces
+ *
  * Revision 1.120  2004/10/05 16:07:04  shomrat
  * Changed Wrap
  *

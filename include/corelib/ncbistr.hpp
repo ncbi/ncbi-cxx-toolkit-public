@@ -1247,6 +1247,15 @@ public:
     ///   truncate space from both ends (eTrunc_Both).
     static string TruncateSpaces(const string& str, ETrunc where=eTrunc_Both);
 
+    /// Truncate spaces in a string (in-place)
+    ///
+    /// @param str
+    ///   String to truncate spaces from.
+    /// @param where
+    ///   Which end of the string to truncate space from. Default is to
+    ///   truncate space from both ends (eTrunc_Both).
+    static void TruncateSpaces(string& str, ETrunc where=eTrunc_Both);
+    
     /// Replace occurrences of a substring within a string.
     ///
     /// @param src
@@ -2447,6 +2456,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.66  2004/10/05 16:12:58  shomrat
+ * + in place TruncateSpaces
+ *
  * Revision 1.65  2004/10/04 14:27:31  ucko
  * Treat all letters as lowercase for case-insensitive comparisons.
  *
