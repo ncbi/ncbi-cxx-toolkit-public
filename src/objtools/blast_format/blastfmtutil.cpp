@@ -62,6 +62,8 @@
 
 #include <objtools/blast_format/blastfmtutil.hpp>
 
+#include <stdio.h>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
 USING_SCOPE(objects);

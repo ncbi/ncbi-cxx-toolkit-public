@@ -68,6 +68,8 @@
 #include <objtools/blast_format/showdefline.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
 
+#include <stdio.h>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
@@ -836,6 +838,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.2  2005/01/25 22:14:10  ucko
+*#include <stdio.h> due to use of sprintf()
+*
 *Revision 1.1  2005/01/25 15:38:12  jianye
 *Initial check in
 *
