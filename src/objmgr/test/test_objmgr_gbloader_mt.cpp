@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/04/11 20:03:29  kimelman
+* switch to pubseq
+*
 * Revision 1.7  2002/04/09 18:48:17  kimelman
 * portability bugfixes: to compile on IRIX, sparc gcc
 *
@@ -90,6 +93,7 @@
 #include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/gbloader.hpp>
 #include <objects/objmgr1/reader_id1.hpp>
+#include <objects/objmgr1/reader_pubseq.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
@@ -128,7 +132,7 @@ CTestThread::CTestThread(int id, CObjectManager& objmgr, CScope& scope,int start
 void* CTestThread::Main(void)
 {
   CObjectManager om;
-  om.RegisterDataLoader(*new CGBDataLoader("ID", new CId1Reader(1),2),CObjectManager::eDefault);
+  om.RegisterDataLoader(*new CGBDataLoader("ID",0,2),CObjectManager::eDefault);
   CObjectManager *pom=0;
   switch((m_mode>>2)&1) {
   case 1: pom =  &*m_ObjMgr; break;

@@ -121,7 +121,7 @@ CDB_Connection *CPubseqReader::NewConn()
   if(m_Context.get() == NULL)
     m_Context.reset((*createContextFunc)(0));
 
-  return m_Context->Connect("PUBSEQ_OS", "anyone", "allowed", 0);
+  return m_Context->Connect(m_Server,m_User,m_Password, 0);
 }
 
 void CPubseqReader::Reconnect(unsigned conn)
@@ -371,6 +371,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.6  2002/04/11 20:03:26  kimelman
+* switch to pubseq
+*
 * Revision 1.5  2002/04/11 17:59:36  butanaev
 * Typo fixed.
 *
