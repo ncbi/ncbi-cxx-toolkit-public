@@ -96,7 +96,7 @@ public:
     virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) = 0;
     virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) = 0;
     virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) = 0;
-    virtual void FormatAlignment(const CAlignmentItem& aln, IFlatTextOStream& text_os) {}
+    virtual void FormatAlignment(const CAlignmentItem& aln, IFlatTextOStream& text_os) = 0;
     virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os) = 0;
     virtual void FormatDate(const CDateItem& date, IFlatTextOStream& text_os) = 0;
     virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os) = 0;
@@ -119,6 +119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/01/12 16:42:42  shomrat
+* FormatAlignment made pure virtual
+*
 * Revision 1.8  2004/11/24 16:48:02  shomrat
 * Handle gap items
 *
