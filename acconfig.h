@@ -10,11 +10,8 @@
 #undef NCBI_OS_MSWIN
 #undef NCBI_OS_MAC
 
-/* Define if C++ namespaces are not supported */
-#undef HAVE_NO_NAMESPACE
-
-/* Define if C++ namespace std:: is used */
-#undef HAVE_NO_STD
+/* There is gethostbyname_r() */
+#undef HAVE_GETHOSTBYNAME_R
 
 /* Microsoft C++ specific */
 #undef SIZEOF___INT64

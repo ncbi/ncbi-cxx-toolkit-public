@@ -376,7 +376,6 @@ dnl ---------------------------------
 AC_CHECK_HEADERS(iostream  iostream.h)
 AC_CHECK_HEADERS(fstream   fstream.h)
 AC_CHECK_HEADERS(strstream strstream.h strstrea.h)
-AC_CHECK_HEADERS(string limits)
 
 
 dnl Check for the platform (very roughly)
@@ -394,6 +393,12 @@ else
    AC_DEFINE_UNQUOTED(NCBI_OS_MAC, 1)
    AC_DEFINE_UNQUOTED(NCBI_OS, "MAC")
 fi
+
+
+dnl Check for some library functions.
+dnl ------------------------------------------------------
+AC_CHECK_LIB(nsl, gethostbyname_r, AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, 1))
+
 
 
 dnl Check for typedefs, structures, and compiler features.
@@ -795,7 +800,6 @@ Optional configure flags:
  --without-fastcgi       do not Fast-CGI library
  --without-sssdb         do not use NCBI SSS DB library
  --without-pubmed        do not use NCBI PubMed libraries
- --without-serial        do not build the serialization library and tests
  --exec-prefix           to specify a non-default build directory name
  --without-debug-sfx     do not add Release/Debug to the build dir name
  --with-hostspec         add full host specs(OS, CPU) to the build dir name

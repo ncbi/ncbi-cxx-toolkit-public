@@ -30,6 +30,9 @@
 #undef NCBI_OS_MSWIN
 #undef NCBI_OS_MAC
 
+/* There is gethostbyname_r() */
+#undef HAVE_GETHOSTBYNAME_R
+
 /* Does not give enough support to the in-class template functions */
 #undef NO_INCLASS_TMPL
 
@@ -107,12 +110,6 @@
 
 /* Define if you have the <iostream.h> header file.  */
 #undef HAVE_IOSTREAM_H
-
-/* Define if you have the <limits> header file.  */
-#undef HAVE_LIMITS
-
-/* Define if you have the <string> header file.  */
-#undef HAVE_STRING
 
 /* Define if you have the <strstrea.h> header file.  */
 #undef HAVE_STRSTREA_H
