@@ -86,9 +86,21 @@ void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas  & atlas,
 {
     CSeqDBVol * new_volp = new CSeqDBVol(atlas, nm, pn);
     
-    CVolEntry new_vol( new_volp );
+    CSeqDBVolEntry new_vol( new_volp );
     new_vol.SetStartEnd( x_GetNumOIDs() );
     m_VolList.push_back( new_vol );
+}
+
+void CSeqDBVolEntry::GetFilterFiles(list<string> & mask_files,
+                                    list<string> & gilist_files) const
+{
+    ITERATE(set<string>, i, m_MaskFiles) {
+        mask_files.push_back(*i);
+    }
+    
+    ITERATE(set<string>, i, m_GiListFiles) {
+        gilist_files.push_back(*i);
+    }
 }
 
 END_NCBI_SCOPE

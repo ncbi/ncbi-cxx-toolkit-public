@@ -46,14 +46,235 @@ BEGIN_NCBI_SCOPE
 /// Import definitions from the ncbi::objects namespace.
 USING_SCOPE(objects);
 
+
+/// CSeqDBVolEntry
+/// 
+/// This class controls access to the CSeqDBVol class.  It contains
+/// data that is not relevant to the internal operation of a volume,
+/// but is associated with that volume for operations over the volume
+/// set as a whole, such as the starting OID of the volume and masking
+/// information (GI and OID lists).
+
+class CSeqDBVolEntry {
+public:
+    /// Constructor
+    ///
+    /// This creates a object containing the specified volume object
+    /// pointer.  Although this object owns the pointer, it uses a
+    /// vector, so it does not keep an auto pointer or CRef<>.
+    /// Instead, the destructor of the CSeqDBVolSet class deletes the
+    /// volumes by calling Free() in a destructor.  Using indirect
+    /// pointers (CRef<> for example) would require slightly more
+    /// cycles in several performance critical paths.
+    ///
+    /// @param new_vol
+    ///   A pointer to a volume.
+    CSeqDBVolEntry(CSeqDBVol * new_vol)
+        : m_Vol     (new_vol),
+          m_OIDStart(0),
+          m_OIDEnd  (0),
+          m_AllOIDs (false)
+    {
+    }
+    
+    /// Free the volume object
+    ///
+    /// The associated volume object is deleted.
+    void Free()
+    {
+        if (m_Vol) {
+            delete m_Vol;
+            m_Vol = 0;
+        }
+    }
+    
+    /// Set the OID range
+    ///
+    /// The volume is queried for the number of OIDs it contains, and
+    /// the starting and ending OIDs are set.
+    ///
+    /// @param start
+    ///   The first OID in the range.
+    void SetStartEnd(Uint4 start)
+    {
+        m_OIDStart = start;
+        m_OIDEnd   = start + m_Vol->GetNumOIDs();
+    }
+    
+    /// Filter the volume with an OID mask file
+    /// 
+    /// The specified filename is recorded in this object as an OID
+    /// mask file unless the volume is already marked as unfiltered.
+    /// 
+    /// @param mask_file
+    ///   The file name of an OID mask file.
+    void AddMask(const string & mask_file)
+    {
+        if (! m_AllOIDs) {
+            m_MaskFiles.insert(mask_file);
+        }
+    }
+    
+    /// Filter the volume with a GI list file
+    /// 
+    /// The specified filename is recorded as a GI list file, unless
+    /// the volume is already marked as unfiltered.
+    /// 
+    /// @param gilist_file
+    ///   The file name of GI list file.
+    void AddGiList(const string & gilist_file)
+    {
+        if (! m_AllOIDs) {
+            m_GiListFiles.insert(gilist_file);
+        }
+    }
+    
+    /// Set this volume to an unfiltered state
+    /// 
+    /// The volume is marked as unfiltered (all OIDs are included),
+    /// and any existing filters are cleared.
+    void SetIncludeAll()
+    {
+        m_AllOIDs = true;
+        m_MaskFiles.clear();
+        m_GiListFiles.clear();
+    }
+    
+    /// Test whether the volume is filtered.
+    /// 
+    /// This method checks whether any filtering should be done on
+    /// this volume and returns true if it is unfiltered or completely
+    /// included.
+    /// 
+    /// @return
+    ///   true if the volume is completely included
+    bool GetIncludeAll() const
+    {
+        return (m_AllOIDs ||
+                (m_MaskFiles.empty() && m_GiListFiles.empty()));
+    }
+    
+    /// Test whether the volume has a filtering mechanism.
+    /// 
+    /// This method checks whether any filtering should be done on
+    /// this volume and returns true if it is unfiltered.
+    /// 
+    /// @return
+    ///   true if the volume is not restricted by a filter.
+    bool HasFilter() const
+    {
+        return (NumMasks() != 0) || (NumGiLists() != 0);
+    }
+    
+    /// Get the number of masks applied to this volume
+    /// 
+    /// This returns the number of OID mask files associated with this
+    /// volume.
+    /// 
+    /// @return
+    ///   The number of OID mask files.
+    Uint4 NumMasks() const
+    {
+        return m_MaskFiles.size();
+    }
+    
+    /// Get the number of GI lists applied to this volume
+    /// 
+    /// This returns the number of GI lists associated with this
+    /// volume.
+    /// 
+    /// @return
+    ///   The number of GI list files.
+    Uint4 NumGiLists() const
+    {
+        return m_GiListFiles.size();
+    }
+    
+    /// Get the starting OID in this volume's range.
+    /// 
+    /// This returns the first OID in this volume's OID range.
+    /// 
+    /// @return
+    ///   The starting OID of the range
+    Uint4 OIDStart() const
+    {
+        return m_OIDStart;
+    }
+    
+    /// Get the ending OID in this volume's range.
+    /// 
+    /// This returns the first OID past the end of this volume's OID
+    /// range.
+    /// 
+    /// @return
+    ///   The ending OID of the range
+    Uint4 OIDEnd() const
+    {
+        return m_OIDEnd;
+    }
+    
+    /// Get a pointer to the underlying volume object.
+    CSeqDBVol * Vol()
+    {
+        return m_Vol;
+    }
+    
+    /// Get a const pointer to the underlying volume object.
+    const CSeqDBVol * Vol() const
+    {
+        return m_Vol;
+    }
+    
+    /// Get the filename of the mask file for this volume.
+    string GetSimpleMask() const
+    {
+        _ASSERT((1 == m_MaskFiles.size()) && (m_GiListFiles.empty()));
+        return *(m_MaskFiles.begin());
+    }
+    
+    /// Get the filenames of all files used to filter this volume
+    ///
+    /// There can be any number of GI lists and OID masks applied to
+    /// volumes by the hierarchy of alias files.  This method returns
+    /// all such files.  Note that some possible alias file
+    /// configurations are not supported by SeqDB.
+    ///
+    /// @param mask_files
+    ///   Returned list of OID mask files for this volume.
+    /// @param gilist_files
+    ///   Returned list of GI list files for this volume.
+    void GetFilterFiles(list<string> & mask_files,
+                        list<string> & gilist_files) const;
+    
+private:
+    /// The underlying volume object
+    CSeqDBVol     * m_Vol;
+    
+    /// The start of the OID range.
+    Uint4           m_OIDStart;
+    
+    /// The end of the OID range.
+    Uint4           m_OIDEnd;
+    
+    /// True if all OIDs are included.
+    bool            m_AllOIDs;
+    
+    /// The OID masks applied to this volume.
+    set<string>     m_MaskFiles;
+    
+    /// The GI lists applied to this volume.
+    set<string>     m_GiListFiles;
+};
+
+
 /// CSeqDBVolSet
 /// 
 /// This class stores a set of CSeqDBVol objects and defines an
 /// interface to control usage of them.  Several methods are provided
 /// to create the set of volumes, or to get the required volumes by
 /// different criteria.  Also, certain methods perform operations over
-/// the set of volumes.  The CVolEntry class, defined internally to
-/// this one, provides some of this abstraction.
+/// the set of volumes.  The CSeqDBVolEntry class, defined internally
+/// to this one, provides some of this abstraction.
 
 class CSeqDBVolSet {
 public:
@@ -101,7 +322,7 @@ public:
         Uint4 rec_indx = m_RecentVol;
         
         if (rec_indx < m_VolList.size()) {
-            const CVolEntry & rvol = m_VolList[rec_indx];
+            const CSeqDBVolEntry & rvol = m_VolList[rec_indx];
             
             if ((rvol.OIDStart() <= oid) &&
                 (rvol.OIDEnd()   >  oid)) {
@@ -164,7 +385,7 @@ public:
     ///   A pointer to the volume matching the specified name, or NULL.
     const CSeqDBVol * GetVol(const string & volname) const
     {
-        if (const CVolEntry * v = x_FindVolName(volname)) {
+        if (const CSeqDBVolEntry * v = x_FindVolName(volname)) {
             return v->Vol();
         }
         return 0;
@@ -183,7 +404,7 @@ public:
     ///   A pointer to the volume matching the specified name, or NULL.
     CSeqDBVol * GetVol(const string & volname)
     {
-        if (CVolEntry * v = x_FindVolName(volname)) {
+        if (CSeqDBVolEntry * v = x_FindVolName(volname)) {
             return v->Vol();
         }
         return 0;
@@ -287,7 +508,7 @@ public:
                       Uint4        & oid_start,
                       Uint4        & oid_end) const
     {
-        const CVolEntry & v = m_VolList[index];
+        const CSeqDBVolEntry & v = m_VolList[index];
         
         if (v.GetIncludeAll()) {
             all_oids = true;
@@ -313,7 +534,7 @@ public:
     void AddGiListVolume(const string & volname,
                          const string & gilist)
     {
-        CVolEntry * v = x_FindVolName(volname);
+        CSeqDBVolEntry * v = x_FindVolName(volname);
         if (! v) {
             NCBI_THROW(CSeqDBException, eFileErr,
                        "Error: Could not find volume (" + volname + ").");
@@ -332,7 +553,7 @@ public:
     ///   The filename of the OID mask used to filter this volume.
     void AddMaskedVolume(const string & volname, const string & maskfile)
     {
-        CVolEntry * v = x_FindVolName(volname);
+        CSeqDBVolEntry * v = x_FindVolName(volname);
         if (! v) {
             NCBI_THROW(CSeqDBException, eFileErr,
                        "Error: Could not find volume (" + volname + ").");
@@ -349,7 +570,7 @@ public:
     ///   The name of the new volume.
     void AddFullVolume(const string & volname)
     {
-        CVolEntry * v = x_FindVolName(volname);
+        CSeqDBVolEntry * v = x_FindVolName(volname);
         if (! v) {
             NCBI_THROW(CSeqDBException, eFileErr,
                        "Error: Could not find volume (" + volname + ").");
@@ -422,235 +643,6 @@ private:
     /// Private operator to prevent assignment.
     CSeqDBVolSet & operator=(const CSeqDBVolSet &);
     
-    /// CVolEntry class
-    /// 
-    /// This class provides access to the CSeqDBVol class.  It also
-    /// contains data that is not relevant to the internal operation
-    /// of a volume, but is associated with that volume for operations
-    /// over the volume set as a whole, such as the starting OID of
-    /// the volume and masking information (GI and OID lists).
-    
-    class CVolEntry {
-    public:
-        /// Constructor for CVolEntry class
-        ///
-        /// This creates a object containing the specified volume
-        /// object pointer.  Although this object owns the pointer, it
-        /// uses a vector, so it does not keep an auto pointer or
-        /// CRef<>.  Instead, the destructor of the CSeqDBVolSet class
-        /// deletes the volumes by calling Free() in a destructor.
-        /// Using indirect pointers (CRef<> for example) would require
-        /// slightly more cycles in several performance critical
-        /// paths.
-        ///
-        /// @param new_vol
-        ///   A pointer to a volume.
-        CVolEntry(CSeqDBVol * new_vol)
-            : m_Vol     (new_vol),
-              m_OIDStart(0),
-              m_OIDEnd  (0),
-              m_AllOIDs (false)
-        {
-        }
-        
-        /// Free the volume object
-        ///
-        /// The associated volume object is deleted.
-        void Free()
-        {
-            if (m_Vol) {
-                delete m_Vol;
-                m_Vol = 0;
-            }
-        }
-        
-        /// Set the OID range
-        ///
-        /// The volume is queried for the number of OIDs it contains,
-        /// and the starting and ending OIDs are set.
-        ///
-        /// @param start
-        ///   The first OID in the range.
-        void SetStartEnd(Uint4 start)
-        {
-            m_OIDStart = start;
-            m_OIDEnd   = start + m_Vol->GetNumOIDs();
-        }
-        
-        /// Filter the volume with an OID mask file
-        /// 
-        /// The specified filename is recorded in this object as an
-        /// OID mask file unless the volume is already marked as
-        /// unfiltered.
-        /// 
-        /// @param mask_file
-        ///   The file name of an OID mask file.
-        void AddMask(const string & mask_file)
-        {
-            if (! m_AllOIDs) {
-                m_MaskFiles.insert(mask_file);
-            }
-        }
-        
-        /// Filter the volume with a GI list file
-        /// 
-        /// The specified filename is recorded as a GI list file,
-        /// unless the volume is already marked as unfiltered.
-        /// 
-        /// @param gilist_file
-        ///   The file name of GI list file.
-        void AddGiList(const string & gilist_file)
-        {
-            if (! m_AllOIDs) {
-                m_GiListFiles.insert(gilist_file);
-            }
-        }
-        
-        /// Set this volume to an unfiltered state
-        /// 
-        /// The volume is marked as unfiltered (all OIDs are
-        /// included), and any existing filters are cleared.
-        void SetIncludeAll()
-        {
-            m_AllOIDs = true;
-            m_MaskFiles.clear();
-            m_GiListFiles.clear();
-        }
-        
-        /// Test whether the volume is filtered.
-        /// 
-        /// This method checks whether any filtering should be done on
-        /// this volume and returns true if it is unfiltered or
-        /// completely included.
-        /// 
-        /// @return
-        ///   true if the volume is completely included
-        bool GetIncludeAll() const
-        {
-            return (m_AllOIDs ||
-                    (m_MaskFiles.empty() && m_GiListFiles.empty()));
-        }
-        
-        /// Test whether the volume has a filtering mechanism.
-        /// 
-        /// This method checks whether any filtering should be done on
-        /// this volume and returns true if it is unfiltered.
-        /// 
-        /// @return
-        ///   true if the volume is not restricted by a filter.
-        bool HasFilter() const
-        {
-            return (NumMasks() != 0) || (NumGiLists() != 0);
-        }
-        
-        /// Get the number of masks applied to this volume
-        /// 
-        /// This returns the number of OID mask files associated with
-        /// this volume.
-        /// 
-        /// @return
-        ///   The number of OID mask files.
-        Uint4 NumMasks() const
-        {
-            return m_MaskFiles.size();
-        }
-        
-        /// Get the number of GI lists applied to this volume
-        /// 
-        /// This returns the number of GI lists associated with this
-        /// volume.
-        /// 
-        /// @return
-        ///   The number of GI list files.
-        Uint4 NumGiLists() const
-        {
-            return m_GiListFiles.size();
-        }
-        
-        /// Get the starting OID in this volume's range.
-        /// 
-        /// This returns the first OID in this volume's OID range.
-        /// 
-        /// @return
-        ///   The starting OID of the range
-        Uint4 OIDStart() const
-        {
-            return m_OIDStart;
-        }
-        
-        /// Get the ending OID in this volume's range.
-        /// 
-        /// This returns the first OID past the end of this volume's
-        /// OID range.
-        /// 
-        /// @return
-        ///   The ending OID of the range
-        Uint4 OIDEnd() const
-        {
-            return m_OIDEnd;
-        }
-        
-        /// Get a pointer to the underlying volume object.
-        CSeqDBVol * Vol()
-        {
-            return m_Vol;
-        }
-        
-        /// Get a const pointer to the underlying volume object.
-        const CSeqDBVol * Vol() const
-        {
-            return m_Vol;
-        }
-        
-        /// Get the filename of the mask file for this volume.
-        string GetSimpleMask() const
-        {
-            _ASSERT((1 == m_MaskFiles.size()) && (m_GiListFiles.empty()));
-            return *(m_MaskFiles.begin());
-        }
-        
-        /// Get the filenames of all files used to filter this volume
-        ///
-        /// There can be any number of GI lists and OID masks applied
-        /// to volumes by the hierarchy of alias files.  This method
-        /// returns all such files.  Note that some possible alias
-        /// file configurations are not supported by SeqDB.
-        ///
-        /// @param mask_files
-        ///   Returned list of OID mask files for this volume.
-        /// @param gilist_files
-        ///   Returned list of GI list files for this volume.
-        void GetFilterFiles(list<string> & mask_files, list<string> & gilist_files) const
-        {
-            ITERATE(set<string>, i, m_MaskFiles) {
-                mask_files.push_back(*i);
-            }
-            
-            ITERATE(set<string>, i, m_GiListFiles) {
-                gilist_files.push_back(*i);
-            }
-        }
-        
-    private:
-        /// The underlying volume object
-        CSeqDBVol     * m_Vol;
-        
-        /// The start of the OID range.
-        Uint4           m_OIDStart;
-        
-        /// The end of the OID range.
-        Uint4           m_OIDEnd;
-        
-        /// True if all OIDs are included.
-        bool            m_AllOIDs;
-        
-        /// The OID masks applied to this volume.
-        set<string>     m_MaskFiles;
-        
-        /// The GI lists applied to this volume.
-        set<string>     m_GiListFiles;
-    };
-    
     /// Get the size of the entire OID range.
     Uint4 x_GetNumOIDs() const
     {
@@ -676,14 +668,14 @@ private:
     
     /// Find a volume by name
     /// 
-    /// This returns the CVolEntry object for the volume matching the
-    /// specified name.
+    /// This returns the CSeqDBVolEntry object for the volume matching
+    /// the specified name.
     /// 
     /// @param volname
     ///   The name of the volume.
     /// @return
-    ///   A const pointer to the CVolEntry object, or NULL.
-    const CVolEntry * x_FindVolName(const string & volname) const
+    ///   A const pointer to the CSeqDBVolEntry object, or NULL.
+    const CSeqDBVolEntry * x_FindVolName(const string & volname) const
     {
         for(Uint4 i = 0; i<m_VolList.size(); i++) {
             if (volname == m_VolList[i].Vol()->GetVolName()) {
@@ -696,14 +688,14 @@ private:
     
     /// Find a volume by name
     /// 
-    /// This returns the CVolEntry object for the volume matching the
-    /// specified name (non const version).
+    /// This returns the CSeqDBVolEntry object for the volume matching
+    /// the specified name (non const version).
     /// 
     /// @param volname
     ///   The name of the volume.
     /// @return
-    ///   A non-const pointer to the CVolEntry object, or NULL.
-    CVolEntry * x_FindVolName(const string & volname)
+    ///   A non-const pointer to the CSeqDBVolEntry object, or NULL.
+    CSeqDBVolEntry * x_FindVolName(const string & volname)
     {
         for(Uint4 i = 0; i<m_VolList.size(); i++) {
             if (volname == m_VolList[i].Vol()->GetVolName()) {
@@ -714,10 +706,8 @@ private:
         return 0;
     }
     
-    // Data
-    
     /// The actual set of volumes.
-    vector<CVolEntry>        m_VolList;
+    vector<CSeqDBVolEntry> m_VolList;
     
     /// The index of the most recently used volume
     ///
