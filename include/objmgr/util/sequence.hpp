@@ -218,6 +218,7 @@ NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
                                TP2SFlags flags = 0, CScope* scope = 0);
 
+
 enum EOffsetType {
     // For positive-orientation strands, start = left and end = right;
     // for reverse-orientation strands, start = right and end = left.
@@ -270,10 +271,32 @@ enum ESeqlocPartial {
     eSeqlocPartial_Limwrong   = 128,
     eSeqlocPartial_Haderror   = 256
 };
+   
 
 // Sets bits for incomplete location and/or errors
 NCBI_XOBJUTIL_EXPORT
 int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope);
+
+
+// Get the encoding CDS feature of a given protein sequence.
+NCBI_XOBJUTIL_EXPORT
+const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope);
+
+
+// Get the mature peptide feature of a protein
+NCBI_XOBJUTIL_EXPORT
+const CSeq_feat* GetPROTForProduct(const CBioseq& product, CScope* scope);
+
+
+// Get the encoding mRNA feature of a given mRNA (cDNA) bioseq.
+NCBI_XOBJUTIL_EXPORT
+const CSeq_feat* GetmRNAForProduct(const CBioseq& product, CScope* scope);
+
+
+// Get the encoding nucleotide sequnce of a protein.
+NCBI_XOBJUTIL_EXPORT
+const CBioseq* GetNucleotideParent(const CBioseq& product, CScope* scope);
+
 
 END_SCOPE(sequence)
 
@@ -508,6 +531,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.34  2003/12/16 19:37:13  shomrat
+* Retrieve encoding feature and bioseq of a protein
+*
 * Revision 1.33  2003/10/15 19:51:13  ucko
 * More adjustments to SRelLoc: rearrange so that the constructors appear
 * next to each other, and support resolving against an alternate parent.

@@ -2292,6 +2292,103 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 }
 
 
+// Get the encoding CDS feature of a given protein sequence.
+const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope)
+{
+    if ( scope == 0 ) {
+        return 0;
+    }
+
+    CBioseq_Handle bsh = scope->GetBioseqHandle(product);
+    if ( bsh ) {
+        CFeat_CI fi(bsh, 
+                    0, 0,
+                    CSeqFeatData::e_Cdregion,
+                    SAnnotSelector::eOverlap_Intervals,
+                    CFeat_CI::eResolve_TSE,
+                    CFeat_CI::e_Product,
+                    0);
+        if ( fi ) {
+            // return the first one (should be the one packaged on the
+            // nuc-prot set).
+            return &(fi->GetOriginalFeature());
+        }
+    }
+
+    return 0;
+}
+
+
+// Get the mature peptide feature of a protein
+const CSeq_feat* GetPROTForProduct(const CBioseq& product, CScope* scope)
+{
+    if ( scope == 0 ) {
+        return 0;
+    }
+
+    CBioseq_Handle bsh = scope->GetBioseqHandle(product);
+    if ( bsh ) {
+        CFeat_CI fi(bsh, 
+                    0, 0,
+                    CSeqFeatData::e_Prot,
+                    SAnnotSelector::eOverlap_Intervals,
+                    CFeat_CI::eResolve_TSE,
+                    CFeat_CI::e_Product,
+                    0);
+        if ( fi ) {
+            return &(fi->GetOriginalFeature());
+        }
+    }
+
+    return 0;
+}
+
+
+
+// Get the encoding mRNA feature of a given mRNA (cDNA) bioseq.
+const CSeq_feat* GetmRNAForProduct(const CBioseq& product, CScope* scope)
+{
+    if ( scope == 0 ) {
+        return 0;
+    }
+
+    CBioseq_Handle bsh = scope->GetBioseqHandle(product);
+
+    if ( bsh ) {
+        SAnnotSelector as;
+        as.SetFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+        as.SetByProduct();
+
+        CFeat_CI fi(bsh, 0, 0, as);
+        if ( fi ) {
+            return &(fi->GetOriginalFeature());
+        }
+    }
+
+    return 0;
+}
+
+
+// Get the encoding sequnce of a protein
+const CBioseq* GetNucleotideParent(const CBioseq& product, CScope* scope)
+{
+    if ( scope == 0 ) {
+        return 0;
+    }
+
+    // If protein use CDS to get to the encoding Nucleotide.
+    // if nucleotide (cDNA) use mRNA feature.
+    const CSeq_feat* sfp = product.IsAa() ? 
+        GetCDSForProduct(product, scope) : GetmRNAForProduct(product, scope);
+
+    CBioseq_Handle bsh;
+    if ( sfp ) {
+        bsh = scope->GetBioseqHandle(sfp->GetLocation());
+    }
+    return bsh ? &(bsh.GetBioseq()) : 0;
+}
+
+
 END_SCOPE(sequence)
 
 
@@ -3310,6 +3407,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.66  2003/12/16 19:37:43  shomrat
+* Retrieve encoding feature and bioseq of a protein
+*
 * Revision 1.65  2003/11/19 22:18:05  grichenk
 * All exceptions are now CException-derived. Catch "exception" rather
 * than "runtime_error".
