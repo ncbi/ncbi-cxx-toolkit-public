@@ -43,14 +43,17 @@ CImage* CImageUtil::Scale(const CImage& image, size_t width, size_t height,
 
     float w_step = (float)(image.GetWidth())  / (float)(width);
     float h_step = (float)(image.GetHeight()) / (float)(height);
+    _TRACE("scale: "
+           << image.GetWidth() << "x" << image.GetHeight() << " -> "
+           << width << "x" << height);
 
     float h_offs = 0;
-    for (int i = 0;  i < height;  ++i) {
+    for (size_t i = 0;  i < height;  ++i) {
         int i_start = (int)h_offs;
         int i_end = (int)(h_offs + h_step);
 
         float w_offs = 0;
-        for (int j = 0;  j < width;  ++j) {
+        for (size_t j = 0;  j < width;  ++j) {
             CImage::TPixel to = (*new_image)(i, j);
 
             int j_start = (int)w_offs;
@@ -69,14 +72,14 @@ CImage* CImageUtil::Scale(const CImage& image, size_t width, size_t height,
                         for (int from_j = j_start;  from_j < j_end;  ++from_j) {
                             CImage::TConstPixel from_pixel =
                                 image(from_i, from_j);
-                            for (int k = 0;  k < image.GetDepth();  ++k) {
+                            for (size_t k = 0;  k < image.GetDepth();  ++k) {
                                 vals[k] += from_pixel[k];
                             }
 
                             ++count;
                         }
                     }
-                    for (int k = 0;  k < new_image->GetDepth();  ++k) {
+                    for (size_t k = 0;  k < new_image->GetDepth();  ++k) {
                         to[k] = (vals[k] / count) & 0xff;
                     }
                 }}
@@ -88,7 +91,6 @@ CImage* CImageUtil::Scale(const CImage& image, size_t width, size_t height,
                     // to compute luminance, we borrow from PNG's
                     // integer-only computation:
                     //   Y = (6969 * R + 23434 * G + 2365 * B)/32768
-                    size_t count = 0;
                     size_t max_lum = 0;
                     for (int from_i = i_start;  from_i < i_end;  ++from_i) {
                         for (int from_j = j_start;  from_j < j_end;  ++from_j) {
@@ -100,7 +102,7 @@ CImage* CImageUtil::Scale(const CImage& image, size_t width, size_t height,
                                            2365 * from_pixel[2])/32768;
                             if (lum > max_lum) {
                                 max_lum = lum;
-                                for (int k = 0;  k < image.GetDepth();  ++k) {
+                                for (size_t k = 0;  k < image.GetDepth();  ++k) {
                                     to[k] = from_pixel[k];
                                 }
                             }
@@ -115,7 +117,6 @@ CImage* CImageUtil::Scale(const CImage& image, size_t width, size_t height,
                     // to compute luminance, we borrow from PNG's
                     // integer-only computation:
                     //   Y = (6969 * R + 23434 * G + 2365 * B)/32768
-                    size_t count = 0;
                     size_t min_lum = kMax_Int;
                     for (int from_i = i_start;  from_i < i_end;  ++from_i) {
                         for (int from_j = j_start;  from_j < j_end;  ++from_j) {
@@ -127,7 +128,7 @@ CImage* CImageUtil::Scale(const CImage& image, size_t width, size_t height,
                                            2365 * from_pixel[2])/32768;
                             if (lum < min_lum) {
                                 min_lum = lum;
-                                for (int k = 0;  k < image.GetDepth();  ++k) {
+                                for (size_t k = 0;  k < image.GetDepth();  ++k) {
                                     to[k] = from_pixel[k];
                                 }
                             }
@@ -156,6 +157,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/16 16:16:56  dicuccio
+ * Fixed compiler warnings
+ *
  * Revision 1.1  2003/11/03 15:12:09  dicuccio
  * Initial revision
  *

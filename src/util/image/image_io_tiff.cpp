@@ -134,7 +134,7 @@ static toff_t s_TIFFSeekHandler(thandle_t handle, toff_t offset,
 
         return istr->tellg();
     }
-    return -1;
+    return (toff_t)-1;
 }
 
 static int s_TIFFCloseHandler(thandle_t handle)
@@ -425,6 +425,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/16 16:16:55  dicuccio
+ * Fixed compiler warnings
+ *
  * Revision 1.4  2003/12/16 15:49:37  dicuccio
  * Large re-write of image handling.  Added improved error-handling and support
  * for streams-based i/o (via hooks into each client library).
