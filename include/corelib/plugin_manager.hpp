@@ -72,6 +72,7 @@
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbi_tree.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_paramtree.hpp>
 
 #include <set>
 #include <string>
@@ -158,26 +159,7 @@ CVersionInfo(ncbi::CInterfaceVersion<iface>::eMajor, \
              ncbi::CInterfaceVersion<iface>::ePatchLevel)
 
 
-
-/// Instantiation parameters tree.
-/// 
-/// Plugin manager's intantiation model is based on class factories.
-/// Recursive class factory calls are modeled as tree, where specific
-/// subtree is responsible for CF parameters
-///
-typedef CTreePairNode<string, string>  TPluginManagerParamTree;
-
-class CNcbiRegistry;
-
-/// Reconstruct param tree from the application registry
-/// @param reg
-///     Application registry (loaded from the INI file)
-/// @return 
-///     Reconstructed tree (caller is responsible for deletion)
-///
-NCBI_XNCBI_EXPORT
-TPluginManagerParamTree*
-PluginManager_ConvertRegToTree(const CNcbiRegistry&  reg);
+typedef TParamTree TPluginManagerParamTree;
 
 
 /// IClassFactory<> --
@@ -863,6 +845,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/09/22 13:55:20  kuznets
+ * All tree realted stuff moved to ncbi_paramtree.hpp
+ *
  * Revision 1.32  2004/09/17 15:05:34  kuznets
  * +CPluginMananger::TInterfaceVersion
  *
