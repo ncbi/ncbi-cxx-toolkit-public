@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/07/26 15:28:48  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.14  2002/06/05 14:28:41  thiessen
 * reorganize handling of window titles
 *
@@ -132,6 +135,9 @@ public:
     // run BLAST on given pairwise alignment - if BLAST is successful, then alignment will be
     // replaced with the result, otherwise the alignment is left unchanged
     void BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFromMultiple);
+
+    // run block alignment algorithm on an update
+    void BlockAlignUpdate(BlockMultipleAlignment *alignment);
 
     // save pending structures
     void SavePendingStructures(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/07/26 15:28:49  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.25  2002/06/05 14:28:41  thiessen
 * reorganize handling of window titles
 *
@@ -153,6 +156,7 @@ private:
         MID_THREAD_ALL,
         MID_BLAST_ONE,
         MID_BLAST_PSSM_ONE,
+        MID_BLOCKALIGN_ONE,
         MID_SET_REGION,
         MID_MERGE_ONE,
         MID_MERGE_ALL,
@@ -164,6 +168,7 @@ private:
     void OnSortUpdates(wxCommandEvent& event);
     void OnRunThreader(wxCommandEvent& event);
     void OnRunBlast(wxCommandEvent& event);
+    void OnBlockAlign(wxCommandEvent& event);
     void OnSetRegion(wxCommandEvent& event);
     void OnMerge(wxCommandEvent& event);
     void OnDelete(wxCommandEvent& event);
@@ -182,6 +187,11 @@ private:
     void BlastPSSMSingleOff(void)
     {
         menuBar->Check(MID_BLAST_PSSM_ONE, false);
+        SetCursor(wxNullCursor);
+    }
+    void BlockAlignSingleOff(void)
+    {
+        menuBar->Check(MID_BLOCKALIGN_ONE, false);
         SetCursor(wxNullCursor);
     }
     void SetRegionOff(void)
@@ -211,6 +221,7 @@ public:
     bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
     bool DoBlastSingle(void) const { return menuBar->IsChecked(MID_BLAST_ONE); }
     bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
+    bool DoBlockAlignSingle(void) const { return menuBar->IsChecked(MID_BLOCKALIGN_ONE); }
     bool DoSetRegion(void) const { return menuBar->IsChecked(MID_SET_REGION); }
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
     bool DoDeleteSingle(void) const { return menuBar->IsChecked(MID_DELETE_ONE); }
@@ -220,6 +231,7 @@ public:
         if (id != MID_THREAD_ONE && DoThreadSingle()) ThreadSingleOff();
         if (id != MID_BLAST_ONE && DoBlastSingle()) BlastSingleOff();
         if (id != MID_BLAST_PSSM_ONE && DoBlastPSSMSingle()) BlastPSSMSingleOff();
+        if (id != MID_BLOCKALIGN_ONE && DoBlockAlignSingle()) BlockAlignSingleOff();
         if (id != MID_SET_REGION && DoSetRegion()) SetRegionOff();
         if (id != MID_MERGE_ONE && DoMergeSingle()) MergeSingleOff();
         if (id != MID_DELETE_ONE && DoDeleteSingle()) DeleteSingleOff();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/07/26 15:28:48  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.40  2002/07/26 13:07:01  thiessen
 * fix const object problem
 *
@@ -199,6 +202,7 @@
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cn3d_cache.hpp"
+#include "cn3d/cn3d_ba_interface.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -853,6 +857,52 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
 
         // replace alignment with BLAST result
         TESTMSG("BLAST succeeded - replacing alignment");
+        delete alignment;
+        *a = newAlignments.front();
+        break;
+    }
+
+    // recreate alignment display with new alignment
+    AlignmentList copy = alignmentStack.back();
+    alignmentStack.back().clear();
+    displayStack.back()->Empty();
+    AddAlignments(copy);
+    (*viewerWindow)->ScrollToColumn(displayStack.back()->GetStartingColumn());
+}
+
+void UpdateViewer::BlockAlignUpdate(BlockMultipleAlignment *alignment)
+{
+    const BlockMultipleAlignment *multipleForPSSM = alignmentManager->GetCurrentMultipleAlignment();
+    if (!multipleForPSSM) {
+        ERR_POST(Error << "Can't do block alignment when no multiple alignment is present");
+        return;
+    }
+
+    // find alignment, and replace it with block alignment result
+    AlignmentList::iterator a, ae = alignmentStack.back().end();
+    for (a=alignmentStack.back().begin(); a!=ae; a++) {
+        if (*a != alignment) continue;
+
+        // run block alignment between master and first slave (should be only one slave...)
+        TESTMSG("Running block alignment algorithm...");
+        BlockAligner::AlignmentList toRealign;
+        toRealign.push_back(alignment);
+        BlockAligner::AlignmentList newAlignments;
+        alignmentManager->blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(
+            multipleForPSSM, toRealign, &newAlignments);
+        if (newAlignments.size() != 1) {
+            ERR_POST(Error <<
+                "UpdateViewer::BlockAlignUpdate() - CreateNewPairwiseAlignmentsByBlockAlignment() failed");
+            return;
+        }
+        if (newAlignments.front()->NAlignedBlocks() == 0) {
+            ERR_POST(Warning << "alignment unchanged");
+            delete newAlignments.front();
+            return;
+        }
+
+        // replace alignment with result
+        TESTMSG("block alignment succeeded - replacing alignment");
         delete alignment;
         *a = newAlignments.front();
         break;

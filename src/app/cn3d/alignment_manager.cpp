@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2002/07/26 15:28:43  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.72  2002/07/01 15:30:20  thiessen
 * fix for container type switch in Dense-seg
 *
@@ -274,6 +277,7 @@
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cn3d_blast.hpp"
 #include "cn3d/style_manager.hpp"
+#include "cn3d/cn3d_ba_interface.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -293,6 +297,7 @@ void AlignmentManager::Init(void)
 
     threader = new Threader();
     blaster = new BLASTer();
+    blockAligner = new BlockAligner();
 }
 
 AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet)
@@ -366,6 +371,7 @@ AlignmentManager::~AlignmentManager(void)
     delete updateViewer;
     delete threader;
     delete blaster;
+    delete blockAligner;
 }
 
 void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/07/26 15:28:44  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.40  2002/03/07 19:16:04  thiessen
 * don't auto-show sequence windows
 *
@@ -183,6 +186,7 @@ class UpdateViewer;
 class BLASTer;
 class StructureSet;
 class MoleculeIdentifier;
+class BlockAligner;
 
 class AlignmentManager : public ShowHideCallbackObject
 {
@@ -194,6 +198,7 @@ public:
 
     Threader *threader; // made public so viewers have access to it
     BLASTer *blaster;
+    BlockAligner *blockAligner;
 
     void NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet);
     void ReplaceUpdatesInASN(const ncbi::objects::CCdd::TPending& newUpdates) const;

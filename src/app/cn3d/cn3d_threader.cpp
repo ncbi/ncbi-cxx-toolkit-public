@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/07/26 15:28:47  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.30  2002/07/12 13:24:10  thiessen
 * fixes for PSSM creation to agree with cddumper/RPSBLAST
 *
@@ -239,7 +242,7 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
     );
     TESTMSG("created Seq_Mtf (PSSM)");
 
-    SeqAlignFree(seqAlign);
+    SeqAlignSetFree(seqAlign);
 	return seqMtf;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/07/26 15:28:44  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.36  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -158,6 +161,14 @@
 #include "cn3d/molecule_identifier.hpp"
 
 #include <memory>
+
+// hack so I can catch memory leaks specific to this module, at the line where allocation occurs
+#ifdef _DEBUG
+#ifdef MemNew
+#undef MemNew
+#endif
+#define MemNew(sz) memset(malloc(sz), 0, (sz))
+#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2002/07/26 15:28:48  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.52  2002/07/23 15:46:50  thiessen
 * print out more BLAST info; tweak save file name
 *
@@ -720,6 +723,13 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             if (updateWindow->DoBlastPSSMSingle()) {
                 updateWindow->updateViewer->BlastUpdate(alignment, true);
                 if (!controlDown) updateWindow->BlastPSSMSingleOff();
+                return false;
+            }
+
+            // Block align single
+            if (updateWindow->DoBlockAlignSingle()) {
+                updateWindow->updateViewer->BlockAlignUpdate(alignment);
+                if (!controlDown) updateWindow->BlockAlignSingleOff();
                 return false;
             }
 

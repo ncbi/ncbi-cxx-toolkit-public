@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2002/07/26 15:28:48  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.44  2002/07/03 13:39:40  thiessen
 * fix for redundant sequence removal
 *
@@ -200,6 +203,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,  UpdateViewerWindow::OnImport)
     EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_PSSM_ONE,   UpdateViewerWindow::OnRunBlast)
     EVT_MENU      (MID_SET_REGION,                      UpdateViewerWindow::OnSetRegion)
+    EVT_MENU      (MID_BLOCKALIGN_ONE,                  UpdateViewerWindow::OnBlockAlign)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -227,6 +231,8 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->AppendSeparator();
     menu->Append(MID_BLAST_ONE, "&BLAST Single", "", true);
     menu->Append(MID_BLAST_PSSM_ONE, "BLAST/&PSSM Single", "", true);
+    menu->AppendSeparator();
+    menu->Append(MID_BLOCKALIGN_ONE, "B&lock Align Single", "", true);
     menu->AppendSeparator();
     menu->Append(MID_SET_REGION, "Set &Region", "", true);
     menuBar->Append(menu, "Al&gorithms");
@@ -422,6 +428,17 @@ void UpdateViewerWindow::OnSetRegion(wxCommandEvent& event)
             SetCursor(*wxCROSS_CURSOR);
         else
             SetRegionOff();
+    }
+}
+
+void UpdateViewerWindow::OnBlockAlign(wxCommandEvent& event)
+{
+    if (event.GetId() == MID_BLOCKALIGN_ONE) {
+        CancelAllSpecialModesExcept(MID_BLOCKALIGN_ONE);
+        if (DoBlockAlignSingle())
+            SetCursor(*wxCROSS_CURSOR);
+        else
+            BlockAlignSingleOff();
     }
 }
 

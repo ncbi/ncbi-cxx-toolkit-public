@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/07/26 15:28:45  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.15  2002/07/23 15:46:49  thiessen
 * print out more BLAST info; tweak save file name
 *
@@ -107,6 +110,14 @@
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cn3d_threader.hpp"
 
+// hack so I can catch memory leaks specific to this module, at the line where allocation occurs
+#ifdef _DEBUG
+#ifdef MemNew
+#undef MemNew
+#endif
+#define MemNew(sz) memset(malloc(sz), 0, (sz))
+#endif
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -153,7 +164,7 @@ static Int4 Round(double d)
         return (Int4) (d - 0.5);
 }
 
-static BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM)
+BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM)
 {
     // for now, use threader's SeqMtf
     BLAST_KarlinBlkPtr karlinBlock = BlastKarlinBlkCreate();
@@ -365,7 +376,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 #endif
             CSeq_align sa;
             bool okay = ConvertAsnFromCToCPP(salp, (AsnWriteFunc) SeqAlignAsnWrite, &sa, &err);
-            SeqAlignFree(salp);
+            SeqAlignSetFree(salp);
             if (!okay) {
                 ERR_POST(Error << "Conversion of SeqAlign to C++ object failed");
                 continue;
@@ -398,9 +409,11 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 #ifdef _DEBUG
                     // calculate score manually, to compare with that returned by BLAST
                     for (int j=0; j<len; j++) {
-                        raw_pssm += BLASTmatrix->matrix
-                            [masterStart + j] [LookupBLASTResidueNumberFromCharacter(
-                                slaveSeq->sequenceString[slaveStart + j])];
+                        if (usePSSM)
+                            raw_pssm += BLASTmatrix->matrix
+                                [masterStart + j]
+                                [LookupBLASTResidueNumberFromCharacter(
+                                    slaveSeq->sequenceString[slaveStart + j])];
                         raw_bl62 += GetBLOSUM62Score(
                             masterSeq->sequenceString[masterStart + j],
                             slaveSeq->sequenceString[slaveStart + j]);
@@ -410,7 +423,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 #ifdef _DEBUG
                 else if ((masterStart < 0 || slaveStart < 0) && len > 0) {
                     int gap = options->gap_open + options->gap_extend * len;
-                    raw_pssm -= gap;
+                    if (usePSSM) raw_pssm -= gap;
                     raw_bl62 -= gap;
                 }
 #endif
@@ -538,7 +551,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
             // convert C SeqAlign to C++ for convenience
             CSeq_align sa;
             bool okay = ConvertAsnFromCToCPP(salp, (AsnWriteFunc) SeqAlignAsnWrite, &sa, &err);
-            SeqAlignFree(salp);
+            SeqAlignSetFree(salp);
             if (!okay) {
                 ERR_POST(Error << "Conversion of SeqAlign to C++ object failed");
                 continue;

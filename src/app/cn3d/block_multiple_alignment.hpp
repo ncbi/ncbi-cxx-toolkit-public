@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/07/26 15:28:44  thiessen
+* add Alejandro's block alignment algorithm
+*
 * Revision 1.29  2002/06/13 13:32:38  thiessen
 * add self-hit calculation
 *
@@ -160,7 +163,8 @@ public:
     const SequenceList *sequences;
     AlignmentManager *alignmentManager;
 
-    // create a C-object SeqAlign from this alignment (should be freed with SeqAlignFree())
+    // create a C-object SeqAlign from this alignment (actually a linked list of pairwise
+    // SeqAlign's; should be freed with SeqAlignSetFree())
     SeqAlignPtr CreateCSeqAlign(void) const;
 
     // to track the origin of this alignment if it came from an update
