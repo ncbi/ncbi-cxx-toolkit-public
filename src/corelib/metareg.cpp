@@ -87,7 +87,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
         switch (style) {
         case eName_AsIs:
         {
-            CNcbiIfstream in(name.c_str());
+            CNcbiIfstream in(name.c_str(), IOS_BASE::in | IOS_BASE::binary);
             if (in.good()) {
                 _TRACE("CMetaRegistry::Load() -- reading registry file "
                        << name);
@@ -196,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/08/12 15:15:50  ucko
+* Open registry files in binary mode per CNcbiRegistry's expectations.
+*
 * Revision 1.3  2003/08/06 20:26:17  ucko
 * Allow Load to take an existing registry to reuse; properly handle flags.
 *
