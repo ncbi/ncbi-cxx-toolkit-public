@@ -84,7 +84,7 @@ private:
     typedef CSeq_entry_Info::TAnnots::const_iterator TAnnot_I;
     typedef stack<SAnnotILevel>                      TLevel_Stack;
 
-    mutable CRef<CScope> m_Scope;
+    mutable CHeapScope   m_Scope;
     TLevel_Stack         m_Level_Stack;
     SAnnotILevel         m_Level;
     TAnnot_I             m_Annot;
@@ -163,6 +163,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/10/08 14:14:53  vasilche
+* Use CHeapScope instead of CRef<CScope> internally.
+*
 * Revision 1.5  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

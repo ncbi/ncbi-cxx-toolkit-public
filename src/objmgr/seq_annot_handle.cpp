@@ -74,14 +74,14 @@ CSeq_annot_Handle& CSeq_annot_Handle::operator=(const CSeq_annot_Handle& sah)
 
 void CSeq_annot_Handle::x_Set(CScope& scope, const CSeq_annot_Info& annot)
 {
-    m_Scope.Reset(&scope);
+    m_Scope = CHeapScope(&scope);
     m_Seq_annot.Reset(&annot);
 }
 
 
 void CSeq_annot_Handle::x_Reset(void)
 {
-    m_Scope.Reset();
+    m_Scope = CHeapScope();
     m_Seq_annot.Reset();
 }
 
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/10/08 14:14:27  vasilche
+* Use CHeapScope instead of CRef<CScope> internally.
+*
 * Revision 1.2  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

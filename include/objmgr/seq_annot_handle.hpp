@@ -36,6 +36,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <objmgr/scope.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -77,7 +79,7 @@ private:
     void x_Set(CScope& scope, const CSeq_annot_Info& annot);
     void x_Reset(void);
 
-    mutable CRef<CScope>       m_Scope;
+    mutable CHeapScope         m_Scope;
     CConstRef<CSeq_annot_Info> m_Seq_annot;
 
     friend class CSeq_annot_CI;
@@ -132,6 +134,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/10/08 14:14:54  vasilche
+* Use CHeapScope instead of CRef<CScope> internally.
+*
 * Revision 1.2  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

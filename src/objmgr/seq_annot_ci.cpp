@@ -44,7 +44,7 @@ CSeq_annot_CI::CSeq_annot_CI(CScope& scope,
     : m_Scope(&scope),
       m_Flags(flags)
 {
-    m_Level.m_Seq_entry = m_Scope->m_Impl->x_GetSeq_entry_Info(entry);
+    m_Level.m_Seq_entry = m_Scope->x_GetSeq_entry_Info(entry);
     if ( !m_Level.m_Seq_entry ) {
         NCBI_THROW(CAnnotException, eFindFailed,
                    "Can not find seq-entry in the scope");
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/10/08 14:14:27  vasilche
+* Use CHeapScope instead of CRef<CScope> internally.
+*
 * Revision 1.4  2003/09/30 16:22:03  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
