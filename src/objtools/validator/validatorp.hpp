@@ -679,6 +679,7 @@ private:
     bool GraphsOnBioseq(const CBioseq& seq) const;
     bool IsOtherDNA(const CBioseq& seq) const;
     bool IsSynthetic(const CBioseq& seq) const;
+    bool x_IsArtificial(const CBioseq& seq) const;
     bool x_IsActiveFin(const CBioseq& seq) const;
     bool x_IsMicroRNA(const CBioseq& seq) const;
     bool x_IsDeltaLitOnly(const CSeq_inst& inst) const;
@@ -893,6 +894,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2003/10/20 18:30:43  shomrat
+* added x_IsArtificial
+*
 * Revision 1.43  2003/10/20 16:08:55  shomrat
 * genes and gene xrefs counters
 *
