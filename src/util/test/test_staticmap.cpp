@@ -206,7 +206,7 @@ void CTestStaticMap::TestStaticMap(void) const
     {{
         int index = 0;
         ITERATE ( TRef, it, ref ) {
-            arr[index++].first = it->first;
+            arr[index].first = it->first;
             arr[index++].second = it->second;
         }
         if ( m_NumberOfElements >= 2 ) {
@@ -329,6 +329,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/23 18:15:48  vasilche
+ * Fixed initialization of test map.
+ *
  * Revision 1.2  2004/01/23 18:09:42  vasilche
  * Fixed for WorkShop compiler.
  *
