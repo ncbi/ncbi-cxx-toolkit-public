@@ -28,6 +28,7 @@
  */
 #include <app/project_tree_builder/proj_projects.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
+#include <app/project_tree_builder/proj_tree.hpp>
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
@@ -134,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/02 16:27:10  gorelenk
+ * Added include for proj_tree.hpp.
+ *
  * Revision 1.4  2004/02/27 18:09:14  gorelenk
  * Changed implementation of CProjectsLstFileFilter::CmpLstElementWithPath.
  *
