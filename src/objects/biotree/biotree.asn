@@ -1,0 +1,52 @@
+--$Revision: 1.1 $
+--*********************************************************************
+--
+--  biotree.asn
+--
+--     BioTree ASN
+--     Anatoliy Kuznetsov
+--
+--*********************************************************************
+
+NCBI-BioTree DEFINITIONS ::=
+BEGIN
+
+EXPORTS BioTree;
+
+BioTree ::= SEQUENCE {
+   treetype  VisibleString OPTIONAL,  -- hint on what kind of tree is that
+   fdict     FeatureDictSet,          -- features dictionary 
+   nodes     NodeSet                  -- set of nodes with encoded topology
+}
+
+
+NodeSet ::= SET OF Node
+
+
+Node ::= SEQUENCE {
+   id         INTEGER,             -- node uid
+   parent     INTEGER OPTIONAL,    -- parent node id
+   features   NodeFeatureSet OPTIONAL
+}
+
+
+NodeFeatureSet ::= SET OF NodeFeature
+
+
+NodeFeature ::= SEQUENCE {
+   featureid   INTEGER,
+   value       VisibleString
+}
+
+
+FeatureDictSet ::= SET OF FeatureDescr
+
+
+FeatureDescr ::= SEQUENCE {
+   id    INTEGER,              -- feature id
+   name  VisibleString         -- feature name
+}
+
+
+
+END

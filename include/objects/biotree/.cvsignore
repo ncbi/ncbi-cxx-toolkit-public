@@ -1,0 +1,16 @@
+.cvsignore
+BioTree_.hpp
+FeatureDescr_.hpp
+FeatureDictSet_.hpp
+Node_.hpp
+NodeFeature_.hpp
+NodeFeatureSet_.hpp
+NodeSet_.hpp
+BioTree.hpp
+FeatureDescr.hpp
+FeatureDictSet.hpp
+Node.hpp
+NodeFeature.hpp
+NodeFeatureSet.hpp
+NodeSet.hpp
+biotree__.hpp
