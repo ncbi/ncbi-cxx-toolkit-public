@@ -123,9 +123,10 @@ NETWORK_LIBS = @NETWORK_LIBS@
 SYBASE_INCLUDE = @SYBASE_INCLUDE@
 SYBASE_LIBS    = @SYBASE_LIBS@
 
-# NCBI C Toolkit:  headers and path to the libs
+# NCBI C Toolkit:  headers and libs
 NCBI_C_INCLUDE = @NCBI_C_INCLUDE@
 NCBI_C_LIBPATH = @NCBI_C_LIBPATH@
+NCBI_C_ncbi = @NCBI_C_ncbi@
 
 # Fast-CGI lib:  headers and libs
 FASTCGI_INCLUDE = @FASTCGI_INCLUDE@
