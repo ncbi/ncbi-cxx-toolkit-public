@@ -307,6 +307,9 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
         ENa_strand strand = eNa_strand_unknown;
         bool strand_set = false;
         ITERATE(CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
+            if ((*it)->IsNull()  ||  (*it)->IsEmpty()) {
+                continue;
+            }
             ENa_strand istrand = GetStrand(**it);
             if (strand == eNa_strand_unknown  &&  istrand == eNa_strand_plus) {
                 strand = eNa_strand_plus;
@@ -2841,6 +2844,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2004/11/24 15:32:06  shomrat
+* Skip Null and Empty locations when calculating strand for mixed location
+*
 * Revision 1.7  2004/11/22 19:56:57  shomrat
 * Bug fix (s_GetStrand for mix location)
 *
