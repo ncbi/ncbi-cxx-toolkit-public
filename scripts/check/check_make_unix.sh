@@ -58,6 +58,9 @@ else
    fi
 fi
 
+# Bin dir
+x_bin_dir=`(cd "$x_build_dir/../bin"; pwd | sed -e 's/\/$//g')`
+
 # Check for target dir
 if [ ! -z "$x_target_dir" ]; then
    if [ ! -d "$x_target_dir" ]; then
@@ -241,6 +244,8 @@ count_absent=0
 rm -f "\$res_journal"
 rm -f "\$res_log"
 
+ulimit -c 1000000
+
 ##  Run one test
 
 RunTest() {
@@ -295,9 +300,14 @@ RunTest() {
          # Write result of the test into the his output file
          echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
          echo "@@@ EXIT CODE: \$result" >> \$x_test_out
+
          if [ -f "\$x_work_dir/core" ]; then
             echo "@@@ CORE DUMPED" >> \$x_test_out
-            rm -f "\$x_work_dir/core"
+		    if [ -d "$x_bin_dir" ]; then
+               mv "\$x_work_dir/core" "$x_bin_dir/\$x_test.core"
+            else
+               rm -f "\$x_work_dir/core"
+		    fi
          fi
 
          # And write result also on the screen and into the log
