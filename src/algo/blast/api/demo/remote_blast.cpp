@@ -150,8 +150,6 @@ void s_SetService(string & service, string & /*program*/, const CArgs & args)
 }
 
 
-extern bool ncbi::trace_blast_api;
-
 int CRemote_blastApplication::Run(void)
 {
     // Setup application registry, error log, and MT-lock for CONNECT library
@@ -233,6 +231,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/12 14:59:29  ucko
+ * Don't redeclare trace_blast_api.  (search_opts.hpp already declares it.)
+ *
  * Revision 1.6  2004/03/23 14:11:04  camacho
  * Minor doxygen fix
  *
