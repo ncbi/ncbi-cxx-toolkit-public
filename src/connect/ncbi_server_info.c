@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2001/12/06 16:07:44  lavr
+ * More accurate string length estimation in SERV_WriteInfo()
+ *
  * Revision 6.33  2001/11/25 22:12:00  lavr
  * Replaced g_SERV_LocalServerDefault -> SERV_SetLocalServerDefault()
  *
@@ -252,7 +255,7 @@ char* SERV_WriteInfo(const SSERV_Info* info)
         *c_t = 0;
     attr = s_GetAttrByType(info->type);
     reserve = attr->tag_len+1 + strlen(c_t)+3 + MAX_IP_ADDR_LEN + 5+1/*port*/ +
-        10+1/*algorithm*/ + 12+1/*time*/ + 12+1/*rate*/ + 12+1/*coef*/ +
+        10+1/*algorithm*/ + 12+1/*time*/ + 14+1/*rate*/ + 9+1/*coef*/ +
         5+1/*locl*/ + 5+1/*sful*/ + 1/*EOL*/;
     /* write server-specific info */
     if ((str = attr->vtable.Write(reserve, &info->u)) != 0) {
