@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.243 2003/12/04 13:03:26 ucko Exp $
+#  $Id: configure.ac,v 1.244 2003/12/09 15:53:00 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1230,6 +1230,12 @@ signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${
 #### Check if there is "${build_root}" dir
 test -d "${build_root}"  ||  mkdir -p "${build_root}"
 
+#### Try to find a version of pwd that yields /net paths.
+if amq -w >/dev/null 2>&1; then
+   smart_pwd='amq -w'
+else
+   smart_pwd='pwd'
+fi
 
 #### Make "build_root" absolute
 case "${build_root}" in
@@ -1240,10 +1246,10 @@ case "${build_root}" in
       then
          build_root="$PWD"
       else
-         build_root="`(cd ${build_root}; pwd)`"
+         build_root="`(cd ${build_root}; $smart_pwd)`"
       fi
    ;;
-   *  ) build_root="`(cd ${build_root}; pwd)`" ;;
+   *  ) build_root="`(cd ${build_root}; $smart_pwd)`" ;;
 esac
 
 
@@ -1348,10 +1354,10 @@ case "${srcdir}" in
       then
         srcdir="$PWD"
       else
-        srcdir="`(cd ${srcdir}; pwd)`"
+        srcdir="`(cd ${srcdir}; $smart_pwd)`"
       fi
    ;;
-   * ) srcdir="`(cd ${srcdir}; pwd)`" ;;
+   * ) srcdir="`(cd ${srcdir}; $smart_pwd)`" ;;
 esac
 
 
