@@ -775,11 +775,12 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
 
     for(size_t i = 0; i < dim; ++i) {
 
-        unsigned char c1 = m_Seq1? *p1: 'N';
-        unsigned char c2 = m_Seq2? *p2: 'N';
         switch(transcript[i]) {
 
         case eTS_Match: {
+
+            unsigned char c1 = p1? *p1: 'N';
+            unsigned char c2 = p2? *p2: 'N';
             state1 = state2 = 0;
             score += sm[c1][c2];
             ++p1; ++p2;
@@ -787,6 +788,7 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
         break;
 
         case eTS_Insert: {
+
             if(state1 != 1) score += m_Wg;
             state1 = 1; state2 = 0;
             score += m_Ws;
@@ -795,6 +797,7 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
         break;
 
         case eTS_Delete: {
+
             if(state2 != 1) score += m_Wg;
             state1 = 0; state2 = 1;
             score += m_Ws;
@@ -803,8 +806,9 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
         break;
         
         default: {
-        NCBI_THROW(CAlgoAlignException, eInternal,
-                   "Invalid transcript symbol");
+
+            NCBI_THROW(CAlgoAlignException, eInternal,
+                       "Invalid transcript symbol");
         }
         }
     }
@@ -1108,6 +1112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2004/09/23 15:31:24  kapustin
+ * Eliminate reading past sequence ends in x_ScoreByTranscript()
+ *
  * Revision 1.57  2004/08/31 16:17:21  papadopo
  * make SAlignInOut work with sequence offsets rather than char pointers
  *
@@ -1115,7 +1122,8 @@ END_NCBI_SCOPE
  * Avoid dynamic double-dimension for iupacna to make msvc happy
  *
  * Revision 1.55  2004/08/30 16:29:30  kapustin
- * Use the NCBI packed score matrix to initialize the unpacked matrix for nucleotides
+ * Use the NCBI packed score matrix to initialize the unpacked
+ * matrix for nucleotides
  *
  * Revision 1.54  2004/08/19 20:33:45  papadopo
  * mark lower-case and raw numerical characters as valid sequence data
