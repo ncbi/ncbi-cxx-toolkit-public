@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/10/05 18:34:35  thiessen
+* first working editing operation
+*
 * Revision 1.8  2000/10/04 17:40:47  thiessen
 * rearrange STL #includes
 *
@@ -193,6 +196,7 @@ public:
         eDragVertical       // move one cell only vertically
     };
     void SetMouseMode(eMouseMode mode);
+    eMouseMode GetMouseMode(void) const;
 
     // sets the background color for the window after refresh
     void SetBackgroundColor(const wxColor& backgroundColor);

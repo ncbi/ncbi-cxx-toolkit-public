@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/10/05 18:34:35  thiessen
+* first working editing operation
+*
 * Revision 1.8  2000/10/04 17:40:47  thiessen
 * rearrange STL #includes
 *
@@ -77,6 +80,7 @@ BEGIN_SCOPE(Cn3D)
 class Sequence;
 class Messenger;
 class SequenceDisplay;
+class DisplayRowFromString;
 
 class SequenceViewer
 {
@@ -86,19 +90,26 @@ public:
     SequenceViewer(Messenger *messenger);
     ~SequenceViewer(void);
 
-    void NewAlignment(SequenceDisplay *display);
-
     // to create displays from unaligned sequence(s), or multiple alignment
     typedef std::list < const Sequence * > SequenceList;
     void DisplaySequences(const SequenceList *sequenceList);
-    void DisplayAlignment(const BlockMultipleAlignment *multipleAlignment);
+    void DisplayAlignment(BlockMultipleAlignment *multipleAlignment);
+
+    // adds a string row to the alignment, that contains block boundary indicators
+    void AddBlockBoundaryRow(void);
+    void RemoveBlockBoundaryRow(void);
+    void UpdateBlockBoundaryRow(void);
 
     void Refresh(void);
-
     void ClearGUI(void);
     void DestroyGUI(void);
 
 private:
+
+    bool isEditableAlignment;
+    void NewAlignment(SequenceDisplay *display);
+
+    DisplayRowFromString *blockBoundaryRow;
 
     Messenger *messenger;
     SequenceViewerWindow *viewerWindow;
@@ -106,6 +117,7 @@ private:
 
 public:
 
+    bool IsEditableAlignment(void) const { return isEditableAlignment; }
     void SetUnalignedJustification(BlockMultipleAlignment::eUnalignedJustification justification);
 };
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/05 18:34:35  thiessen
+* first working editing operation
+*
 * Revision 1.11  2000/10/04 17:40:44  thiessen
 * rearrange STL #includes
 *
@@ -106,10 +109,13 @@ public:
     // add a new aligned block - will be "owned" and deallocated by BlockMultipleAlignment
     bool AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock);
 
-    // should be called after all aligned blocks have been added; fills out
-    // unaligned blocks inbetween aligned blocks (and at ends). Also sets length,
-    // and fills out the BlockMap for mapping alignment column -> block+column.
-    bool AddUnalignedBlocksAndIndex(void);
+    // these two should be called after all aligned blocks have been added; fills out
+    // unaligned blocks inbetween aligned blocks (and at ends). Also sets length.
+    bool AddUnalignedBlocks(void);
+
+    // Fills out the BlockMap for mapping alignment column -> block+column,
+    // and calculates conservation colors.
+    bool UpdateBlockMapAndConservationColors(void);
 
     // find out if a residue is aligned - only works for non-repeated sequences!
     bool IsAligned(const Sequence *sequence, int seqIndex) const;
@@ -145,6 +151,15 @@ public:
 
     // return alignment position of left side first aligned block (-1 if no aligned blocks)
     int GetFirstAlignedBlockPosition(void) const;
+
+
+    ///// editing functions /////
+
+    // if in an alingned block, give block column and width of that position; otherwise, -1
+    void GetAlignedBlockPosition(int alignmentIndex, int *blockColumn, int *blockWidth) const;
+
+    // returns true if any boundary shift actually occurred
+    bool MoveBlockBoundary(int columnFrom, int columnTo);
     
 private:
     ConservationColorer *conservationColorer;
@@ -156,14 +171,16 @@ private:
     int totalWidth;
 
     typedef struct {
-        const Block *block;
+        Block *block;
         int blockColumn;
     } BlockInfo;
     typedef std::vector < BlockInfo > BlockMap;
     BlockMap blockMap;
 
     Block * CreateNewUnalignedBlockBetween(const Block *left, const Block *right);
-
+    Block * GetBlockBefore(Block *block) const;
+    void InsertBlockBefore(Block *newBlock, Block *insertAt);
+    
     eUnalignedJustification currentJustification;
 
     // for cacheing of residue->block lookups
@@ -205,16 +222,6 @@ public:
         int from, to;
     } Range;
 
-    // given a row number (from 0 ... nSequences-1), give the sequence range covered by this block
-    const Range * GetRangeOfRow(int row) const { return &(ranges[row]); }
-
-    // set range
-    void SetRangeOfRow(int row, int from, int to)
-    {
-        ranges[row].from = from;
-        ranges[row].to = to;
-    }
-
     // get sequence index for a column, which must be in block range (0 ... width-1)
     virtual int GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const = 0;
@@ -228,6 +235,16 @@ protected:
     const SequenceList *sequences;
 
 public:
+    // given a row number (from 0 ... nSequences-1), give the sequence range covered by this block
+    const Range* GetRangeOfRow(int row) const { return &(ranges[row]); }
+
+    // set range
+    void SetRangeOfRow(int row, int from, int to)
+    {
+        ranges[row].from = from;
+        ranges[row].to = to;
+    }
+
     Block(const SequenceList *sequenceList) :
         sequences(sequenceList), ranges(sequenceList->size()) { }
 

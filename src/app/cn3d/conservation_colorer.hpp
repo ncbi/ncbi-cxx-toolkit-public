@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/10/05 18:34:35  thiessen
+* first working editing operation
+*
 * Revision 1.2  2000/10/04 17:40:45  thiessen
 * rearrange STL #includes
 *
@@ -83,6 +86,13 @@ private:
     AlignmentColors varietyColors, weightedVarietyColors;
 
 public:
+
+    void Clear(void)
+    {
+        blocks.clear();
+        nColumns = 0;
+    }
+
     // color accessors
     const Vector *GetIdentityColor(const UngappedAlignedBlock *block, int blockColumn) const
         { return &(identities[GetProfileIndex(block, blockColumn)]

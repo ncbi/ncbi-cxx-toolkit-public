@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/05 18:34:43  thiessen
+* first working editing operation
+*
 * Revision 1.12  2000/10/04 17:41:31  thiessen
 * change highlight color (cell background) handling
 *
@@ -185,6 +188,7 @@ public:
     int GetCellHeight(void) const { return cellHeight; }
     void SetTitleArea(SequenceViewerWidget_TitleArea *titleA)
         { titleArea = titleA; }
+    SequenceViewerWidget::eMouseMode GetMouseMode(void) const { return mouseMode; }
 };
 
 
@@ -937,6 +941,11 @@ bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment)
 void SequenceViewerWidget::SetMouseMode(eMouseMode mode)
 {
     sequenceArea->SetMouseMode(mode);
+}
+
+SequenceViewerWidget::eMouseMode SequenceViewerWidget::GetMouseMode(void) const
+{
+    return sequenceArea->GetMouseMode();
 }
 
 void SequenceViewerWidget::SetBackgroundColor(const wxColor& backgroundColor)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/05 18:34:43  thiessen
+* first working editing operation
+*
 * Revision 1.13  2000/10/04 17:41:29  thiessen
 * change highlight color (cell background) handling
 *
@@ -207,9 +210,10 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
         masterFrom = masterTo + 1;
     }
 
-    if (!multipleAlignment->AddUnalignedBlocksAndIndex()) {
+    if (!multipleAlignment->AddUnalignedBlocks() ||
+        !multipleAlignment->UpdateBlockMapAndConservationColors()) {
         ERR_POST(Error << "AlignmentManager::CreateMultipleFromPairwiseWithIBM() - "
-            "AddUnalignedBlocksAndIndex() failed");
+            "error finalizing alignment");
         return NULL;
     }
 
@@ -263,7 +267,6 @@ bool BlockMultipleAlignment::AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock
     }
 
     blocks.push_back(newBlock);
-    conservationColorer->AddBlock(newBlock);
     return true;
 }
 
@@ -311,7 +314,7 @@ Block * BlockMultipleAlignment::
         return newBlock;
 }
 
-bool BlockMultipleAlignment::AddUnalignedBlocksAndIndex(void)
+bool BlockMultipleAlignment::AddUnalignedBlocks(void)
 {
     BlockList::iterator a, ae = blocks.end();
     const Block *alignedBlock = NULL, *prevAlignedBlock = NULL;
@@ -338,20 +341,30 @@ bool BlockMultipleAlignment::AddUnalignedBlocksAndIndex(void)
         totalWidth += newUnalignedBlock->width;
     }
 
-    // now fill out the block map
-    blockMap.resize(totalWidth);
+    TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
+    return true;
+}
+
+bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(void)
+{
     int i = 0, j;
+    BlockList::iterator a, ae = blocks.end();
+    conservationColorer->Clear();
+
+    // fill out the block map
+    blockMap.resize(totalWidth);
     for (a=blocks.begin(); a!=ae; a++) {
         for (j=0; j<(*a)->width; j++, i++) {
             blockMap[i].block = *a;
             blockMap[i].blockColumn = j;
         }
+        UngappedAlignedBlock *uaBlock = dynamic_cast<UngappedAlignedBlock*>(*a);
+        if (uaBlock) conservationColorer->AddBlock(uaBlock);
     }
 
     // do conservation coloring
     conservationColorer->CalculateConservationColors();
 
-    TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
     return true;
 }
 
@@ -570,6 +583,82 @@ void BlockMultipleAlignment::SelectedRange(int row, int from, int to) const
     }
         
     messenger->AddHighlights(sequence, fromIndex, toIndex);
+}
+
+void BlockMultipleAlignment::GetAlignedBlockPosition(int alignmentIndex, 
+    int *blockColumn, int *blockWidth) const
+{
+    *blockColumn = *blockWidth = -1;
+    const BlockInfo& info = blockMap[alignmentIndex];
+    if (info.block->IsAligned()) {
+        *blockColumn = info.blockColumn;
+        *blockWidth = info.block->width;
+    }
+}
+
+Block * BlockMultipleAlignment::GetBlockBefore(Block *block) const
+{
+    Block *prevBlock = NULL;
+    BlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++) {
+        if (*b == block) break;
+        prevBlock = *b;
+    }
+    return prevBlock;
+}
+
+void BlockMultipleAlignment::InsertBlockBefore(Block *newBlock, Block *insertAt)
+{
+    BlockList::iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++) {
+        if (*b == insertAt) {
+            blocks.insert(b, newBlock);
+            return;
+        }
+    }
+    ERR_POST(Warning << "BlockMultipleAlignment::InsertBlockBefore() - couldn't find insertAt block");
+}
+
+bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
+{
+    int blockColumn, blockWidth;
+    GetAlignedBlockPosition(columnFrom, &blockColumn, &blockWidth);
+    if (blockColumn < 0 || blockWidth <= 0) return false;
+
+    TESTMSG("trying to move block boundary from " << columnFrom << " to " << columnTo);
+
+    const BlockInfo& info = blockMap[columnFrom];
+    int row, requestedShift = columnTo - columnFrom, actualShift = 0;
+    const Block::Range *range;
+
+    // shrink block from left
+    if (blockColumn == 0 && requestedShift > 0 && requestedShift < info.block->width) {
+        actualShift = requestedShift;
+        TESTMSG("shrinking block from left");
+        for (row=0; row<NRows(); row++) {
+            range = info.block->GetRangeOfRow(row);
+            info.block->SetRangeOfRow(row, range->from + requestedShift, range->to);
+        }
+        info.block->width -= requestedShift;
+        Block *prevBlock = GetBlockBefore(info.block);
+        if (prevBlock && !prevBlock->IsAligned()) {
+            for (row=0; row<NRows(); row++) {
+                range = prevBlock->GetRangeOfRow(row);
+                prevBlock->SetRangeOfRow(row, range->from, range->to + requestedShift);
+            }
+            prevBlock->width += requestedShift;
+        } else {
+            Block *newUnalignedBlock = CreateNewUnalignedBlockBetween(prevBlock, info.block);
+            if (newUnalignedBlock) InsertBlockBefore(newUnalignedBlock, info.block);
+        }
+    }
+
+    if (actualShift != 0) {
+        UpdateBlockMapAndConservationColors();
+        messenger->PostRedrawSequenceViewers();
+        return true;
+    } else
+        return false;
 }
 
 

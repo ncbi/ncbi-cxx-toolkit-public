@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/10/05 18:34:43  thiessen
+* first working editing operation
+*
 * Revision 1.16  2000/09/20 22:22:30  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -262,12 +265,12 @@ bool StyleManager::CheckStyleSettings(const StructureSet *set)
     if (set->isAlphaOnly) {
         if (globalStyle.proteinBackbone.type == StyleSettings::ePartial ||
             globalStyle.proteinBackbone.type == StyleSettings::eComplete) {
-            ERR_POST(Error << "CheckStyleSettings(): can only have backbone trace with ncbi-backbone models");
+            ERR_POST(Error << "CheckStyleSettings(): ncbi-backbone models can only show backbone trace");
             globalStyle.proteinBackbone.type = StyleSettings::eTrace;
         }
         if (globalStyle.nucleotideBackbone.type == StyleSettings::ePartial ||
             globalStyle.nucleotideBackbone.type == StyleSettings::eComplete) {
-            ERR_POST(Error << "CheckStyleSettings(): can only have backbone trace with ncbi-backbone models");
+            ERR_POST(Error << "CheckStyleSettings(): ncbi-backbone models can only show backbone trace");
             globalStyle.nucleotideBackbone.type = StyleSettings::eTrace;
         }
     }
