@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.336 2004/12/22 20:49:37 grichenk Exp $
+#  $Id: configure.ac,v 1.337 2004/12/23 16:58:58 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3755,12 +3755,17 @@ if test "$with_bdb" = "no" ; then
    WithoutProjects="$WithoutProjects bdb"
    bdb=
    BDB_LIB=
+   BDB_CACHE_LIB=
 else
    WithProjects="$WithProjects bdb"
    bdb="bdb"
    BDB_LIB="bdb"
    AC_DEFINE(HAVE_BDB, 1,
              [Define to 1 if NCBI C++ API for BerkeleyDB is available.])
+   bdb_cache="bdb_cache"
+   BDB_CACHE_LIB="bdb_cache"
+   AC_DEFINE(HAVE_BDB_CACHE, 1,
+             [Define to 1 if NCBI C++ API for BerkeleyDB based data cache is available.])
 fi
 
 
@@ -4135,6 +4140,7 @@ AC_SUBST(f_runpath)
 AC_SUBST(f_outexe)
 
 AC_SUBST(BDB_LIB)
+AC_SUBST(BDB_CACHE_LIB)
 
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NETWORK_LIBS)
