@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/14 15:30:08  sandomir
+* minor fixes in CNcbiApplication; command handling fixed
+*
 * Revision 1.2  1998/12/10 20:40:21  sandomir
 * #include <algorithm> added in ncbires.cpp
 *
@@ -59,13 +62,20 @@ CNcbiResource::~CNcbiResource( void )
 
 void CNcbiResource::HandleRequest( const CCgiRequest& request )
 {
-  TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
-                                         CNcbiCommand::CFind( request ) );
-  if( it == m_cmd.end() ) {
-    // command not found
+  try {
+    TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
+                                     CNcbiCommand::CFind( request ) );
+    if( it == m_cmd.end() ) {
+      // command not found
+      throw runtime_error( "unknown command" );
 
-  } else for( ; it != m_cmd.end(); it++ ) {
-    (*it)->Execute( request );
+    } else for( ; it != m_cmd.end(); it++ ) {
+      CNcbiCommand* cmd = (*it)->Clone();
+      cmd->Execute( request );
+      delete cmd;
+    } // else
+
+  } catch( exception& e ) {
   }
 }
 

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1998/12/14 15:30:07  sandomir
+* minor fixes in CNcbiApplication; command handling fixed
+*
 * Revision 1.10  1998/12/09 22:59:35  lewisg
 * use new cgiapp class
 *
@@ -91,6 +94,7 @@ CNcbiApplication::CNcbiApplication(int    argc,
         throw logic_error("CNcbiApplication::CNcbiApplication: "
                           "cannot create second instance");
     }
+    m_Instance = this;
 }
 
 CNcbiApplication::~CNcbiApplication(void)
