@@ -61,6 +61,7 @@ class CSeqVector;
 class CCdregion;
 class CSeq_feat;
 class CSeq_entry;
+class CSeq_entry_handle;
 class CGenetic_code;
 
 BEGIN_SCOPE(sequence)
@@ -382,22 +383,24 @@ public:
         eAssembleParts   = 0x1,
         eInstantiateGaps = 0x2
     };
-    typedef int TFlags; // binary OR of EFlags
+    typedef int TFlags; ///< binary OR of EFlags
 
     CFastaOstream(CNcbiOstream& out) : m_Out(out), m_Width(70), m_Flags(0) { }
 
     /// Unspecified locations designate complete sequences
+    void Write        (const CSeq_entry_Handle& handle,
+                       const CSeq_loc* location = 0);
     void Write        (const CBioseq_Handle& handle,
                        const CSeq_loc* location = 0);
     void WriteTitle   (const CBioseq_Handle& handle);
     void WriteSequence(const CBioseq_Handle& handle,
                        const CSeq_loc* location = 0);
 
-    /// These versions set up a temporary object manager
+    /// These versions set up a temporary object manager scope
     void Write(CSeq_entry& entry, const CSeq_loc* location = 0);
     void Write(CBioseq&    seq,   const CSeq_loc* location = 0);
 
-    /// Used only by Write(CSeq_entry, ...); permissive by default
+    /// Used only by Write(CSeq_entry[_Handle], ...); permissive by default
     virtual bool SkipBioseq(const CBioseq& /* seq */) { return false; }
 
     /// To adjust various parameters...
@@ -648,6 +651,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.57  2005/01/06 21:04:00  ucko
+* CFastaOstream: support CSeq_entry_Handle.
+*
 * Revision 1.56  2005/01/04 14:51:09  dicuccio
 * Improved documentation for sequence::GetId(CBioseq_Handle, ...) and
 * sequence::GetId(const CSeq_id&, ...)
