@@ -31,37 +31,13 @@
  *   This test use simple DLL (coremake/test/test_dll). It must be compiled 
  *   and copied to project's directory before run the test.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.6  2002/04/01 18:55:41  ivanov
- * Using ASSERT in stead VERIFY
- *
- * Revision 6.5  2002/03/25 17:08:18  ucko
- * Centralize treatment of Cygwin as Unix rather than Windows in configure.
- *
- * Revision 6.4  2002/03/22 20:00:44  ucko
- * Tweak to build on Cygwin.  (Still doesn't run successfully. :-/)
- *
- * Revision 6.3  2002/01/17 15:50:48  ivanov
- * Added #include <windows.h> on MS Windows platform
- *
- * Revision 6.2  2002/01/16 18:47:44  ivanov
- * Added new constructor and related "basename" rules for DLL names. Polished source code.
- *
- * Revision 6.1  2002/01/15 19:09:20  ivanov
- * Initial revision
- *
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbidll.hpp>
 
-#if defined(NCBI_OS_MSWIN)
-#  include <windows.h>
-#endif
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -105,22 +81,22 @@ static void s_TEST_SimpleDll(void)
 
     // Call loaded function
 
-    _ASSERT( *DllVar_Counter == 0  );
-    _ASSERT( Dll_Inc(3)      == 3  );
-    _ASSERT( *DllVar_Counter == 3  );
-    _ASSERT( Dll_Inc(100)    == 103);
-    _ASSERT( *DllVar_Counter == 103);
+    assert( *DllVar_Counter == 0  );
+    assert( Dll_Inc(3)      == 3  );
+    assert( *DllVar_Counter == 3  );
+    assert( Dll_Inc(100)    == 103);
+    assert( *DllVar_Counter == 103);
     *DllVar_Counter = 1;
-    _ASSERT( Dll_Inc(0)      == 1  );
+    assert( Dll_Inc(0)      == 1  );
 
-    _ASSERT( Dll_Add(3,4)    == 7  );
-    _ASSERT( Dll_Add(-2,-1)  == -3 );
+    assert( Dll_Add(3,4)    == 7  );
+    assert( Dll_Add(-2,-1)  == -3 );
     
     string* str = Dll_StrRepeat("ab",2);
-    _ASSERT( *str == "abab");
+    assert( *str == "abab");
 
     str = Dll_StrRepeat("a",4);  
-    _ASSERT( *str == "aaaa");
+    assert( *str == "aaaa");
 
     // Unload used dll
     dll.Unload();
@@ -237,3 +213,32 @@ int main(int argc, const char* argv[])
 {
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.7  2002/04/16 18:49:08  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 6.6  2002/04/01 18:55:41  ivanov
+ * Using ASSERT in stead VERIFY
+ *
+ * Revision 6.5  2002/03/25 17:08:18  ucko
+ * Centralize treatment of Cygwin as Unix rather than Windows in configure.
+ *
+ * Revision 6.4  2002/03/22 20:00:44  ucko
+ * Tweak to build on Cygwin.  (Still doesn't run successfully. :-/)
+ *
+ * Revision 6.3  2002/01/17 15:50:48  ivanov
+ * Added #include <windows.h> on MS Windows platform
+ *
+ * Revision 6.2  2002/01/16 18:47:44  ivanov
+ * Added new constructor and related "basename" rules for DLL names. Polished source code.
+ *
+ * Revision 6.1  2002/01/15 19:09:20  ivanov
+ * Initial revision
+ *
+ * ===========================================================================
+ */

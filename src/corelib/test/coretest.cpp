@@ -1,307 +1,41 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Denis Vakatov
-*
-* File Description:
-*   TEST for:  NCBI C++ core API
-*
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.79  2001/10/15 19:48:24  vakatov
-* Use two #if's instead of "#if ... && ..." as KAI cannot handle #if x == y
-*
-* Revision 1.78  2001/09/05 18:47:12  ucko
-* Work around WorkShop 5.3 type-equivalence bug.
-*
-* Revision 1.77  2001/07/30 14:42:27  lavr
-* eDiag_Trace and eDiag_Fatal always print as much as possible
-*
-* Revision 1.76  2001/07/25 19:14:14  lavr
-* Added test for date/time stamp in message logging
-*
-* Revision 1.75  2001/06/22 21:46:15  ivanov
-* Added test for read/write the registry file with comments
-*
-* Revision 1.74  2001/06/13 23:19:39  vakatov
-* Revamped previous revision (prefix and error codes)
-*
-* Revision 1.73  2001/06/13 20:50:00  ivanov
-* Added test for stack post prefix messages and ErrCode manipulator.
-*
-* Revision 1.72  2001/03/26 20:59:57  vakatov
-* String-related tests moved to "test_ncbistr.cpp" (by A.Grichenko)
-*
-* Revision 1.71  2001/01/30 00:40:28  vakatov
-* Do not use arg "envp[]" in main() -- as it is not working on MAC
-*
-* Revision 1.70  2000/12/11 20:42:52  vakatov
-* + NStr::PrintableString()
-*
-* Revision 1.69  2000/10/24 21:51:23  vakatov
-* [DEBUG] By default, do not print file name and line into the diagnostics
-*
-* Revision 1.68  2000/10/24 19:54:48  vakatov
-* Diagnostics to go to CERR by default (was -- disabled by default)
-*
-* Revision 1.67  2000/10/11 21:03:50  vakatov
-* Cleanup to avoid 64-bit to 32-bit values truncation, etc.
-* (reported by Forte6 Patch 109490-01)
-*
-* Revision 1.66  2000/08/03 20:21:35  golikov
-* Added predicate PCase for AStrEquiv
-* PNocase, PCase goes through NStr::Compare now
-*
-* Revision 1.65  2000/06/26 20:56:35  vakatov
-* TestDiag() -- using user-istalled message posting handler
-*
-* Revision 1.64  2000/06/23 19:57:19  vakatov
-* TestDiag() -- added tests for the switching diag.handlers
-*
-* Revision 1.63  2000/06/11 01:47:34  vakatov
-* IsDiagSet(0) to return TRUE if the diag stream is unset
-*
-* Revision 1.62  2000/06/09 21:22:49  vakatov
-* Added test for IsDiagStream()
-*
-* Revision 1.61  2000/05/24 20:57:13  vasilche
-* Use new macro _DEBUG_ARG to avoid warning about unused argument.
-*
-* Revision 1.60  2000/04/19 18:36:44  vakatov
-* Test NStr::Compare() for non-zero "pos"
-*
-* Revision 1.59  2000/04/17 04:16:25  vakatov
-* Added tests for NStr::Compare() and NStr::ToLower/ToUpper()
-*
-* Revision 1.58  2000/04/04 22:34:32  vakatov
-* Checks for the NStr:: for "long", and for the debug tracing
-*
-* Revision 1.57  2000/02/18 16:54:10  vakatov
-* + eDiag_Critical
-*
-* Revision 1.56  2000/01/20 17:55:48  vakatov
-* Fixes to follow the "CNcbiApplication" change.
-*
-* Revision 1.55  1999/11/29 17:49:12  golikov
-* NStr::Replace tests modified obedience to Denis :)
-*
-* Revision 1.54  1999/11/26 18:45:30  golikov
-* NStr::Replace tests added
-*
-* Revision 1.53  1999/11/12 17:33:24  vakatov
-* To be more careful with _DEBUG to suit some ugly MSVC++ features
-*
-* Revision 1.52  1999/10/04 16:21:06  vasilche
-* Added full set of macros THROW*_TRACE
-*
-* Revision 1.51  1999/09/29 18:21:58  vakatov
-* + TestException_Features() -- to test how the thrown object is handled
-*
-* Revision 1.50  1999/09/02 21:54:42  vakatov
-* Tests for CNcbiRegistry:: allowed '-' and '.' in the section/entry name
-*
-* Revision 1.49  1999/08/30 16:00:45  vakatov
-* CNcbiRegistry:: Get()/Set() -- force the "name" and "section" to
-* consist of alphanumeric and '_' only;  ignore leading and trailing
-* spaces
-*
-* Revision 1.48  1999/07/07 14:17:07  vakatov
-* CNcbiRegistry::  made the section and entry names be case-insensitive
-*
-* Revision 1.47  1999/07/06 15:26:37  vakatov
-* CNcbiRegistry::
-*   - allow multi-line values
-*   - allow values starting and ending with space symbols
-*   - introduced EFlags/TFlags for optional parameters in the class
-*     member functions -- rather than former numerous boolean parameters
-*
-* Revision 1.46  1999/05/27 15:22:16  vakatov
-* Extended and fixed tests for the StringToXXX() functions
-*
-* Revision 1.45  1999/05/11 14:47:38  vakatov
-* Added missing <algorithm> header (for MSVC++)
-*
-* Revision 1.44  1999/05/11 02:53:52  vakatov
-* Moved CGI API from "corelib/" to "cgi/"
-*
-* Revision 1.43  1999/05/10 14:26:13  vakatov
-* Fixes to compile and link with the "egcs" C++ compiler under Linux
-*
-* Revision 1.42  1999/05/04 16:14:50  vasilche
-* Fixed problems with program environment.
-* Added class CNcbiEnvironment for cached access to C environment.
-*
-* Revision 1.41  1999/05/04 00:03:16  vakatov
-* Removed the redundant severity arg from macro ERR_POST()
-*
-* Revision 1.40  1999/05/03 20:32:31  vakatov
-* Use the (newly introduced) macro from <corelib/ncbidbg.h>:
-*   RETHROW_TRACE,
-*   THROW0_TRACE(exception_class),
-*   THROW1_TRACE(exception_class, exception_arg),
-*   THROW_TRACE(exception_class, exception_args)
-* instead of the former (now obsolete) macro _TRACE_THROW.
-*
-* Revision 1.39  1999/04/30 19:21:06  vakatov
-* Added more details and more control on the diagnostics
-* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
-*
-* Revision 1.38  1999/04/27 14:50:12  vasilche
-* Added FastCGI interface.
-* CNcbiContext renamed to CCgiContext.
-*
-* Revision 1.37  1999/04/14 20:12:52  vakatov
-* + <stdio.h>, <stdlib.h>
-*
-* Revision 1.36  1999/03/12 18:04:09  vakatov
-* Added ERR_POST macro to perform a plain "standard" error posting
-*
-* Revision 1.35  1999/01/21 16:18:04  sandomir
-* minor changes due to NStr namespace to contain string utility functions
-*
-* Revision 1.34  1999/01/12 17:10:16  sandomir
-* test restored
-*
-* Revision 1.33  1999/01/12 17:06:37  sandomir
-* GetLink changed
-*
-* Revision 1.32  1999/01/07 21:15:24  vakatov
-* Changed prototypes for URL_DecodeString() and URL_EncodeString()
-*
-* Revision 1.31  1999/01/07 20:06:06  vakatov
-* + URL_DecodeString()
-* + URL_EncodeString()
-*
-* Revision 1.30  1999/01/04 22:41:44  vakatov
-* Do not use so-called "hardware-exceptions" as these are not supported
-* (on the signal level) by UNIX
-* Do not "set_unexpected()" as it works differently on UNIX and MSVC++
-*
-* Revision 1.29  1998/12/28 17:56:43  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.28  1998/12/15 15:43:24  vasilche
-* Added utilities to convert string <> int.
-*
-* Revision 1.27  1998/12/11 18:00:56  vasilche
-* Added cookies and output stream
-*
-* Revision 1.26  1998/12/10 22:59:49  vakatov
-* CNcbiRegistry:: API is ready(and by-and-large tested)
-*
-* Revision 1.25  1998/12/10 18:05:40  vakatov
-* CNcbiReg::  Just passed a draft test.
-*
-* Revision 1.24  1998/12/10 17:36:56  sandomir
-* ncbires.cpp added
-*
-* Revision 1.23  1998/12/09 19:38:53  vakatov
-* Started with TestRegistry().  Freeze in the "compilable" state.
-*
-* Revision 1.22  1998/12/07 23:48:03  vakatov
-* Changes in the usage of CCgiApplication class
-*
-* Revision 1.21  1998/12/03 21:24:23  sandomir
-* NcbiApplication and CgiApplication updated
-*
-* Revision 1.20  1998/12/03 16:40:15  vakatov
-* Initial revision
-* Aux. function "Getline()" to read from "istream" to a "string"
-* Adopted standard I/O "string" <--> "istream" for old-fashioned streams
-*
-* Revision 1.19  1998/12/01 00:27:21  vakatov
-* Made CCgiRequest::ParseEntries() to read ISINDEX data, too.
-* Got rid of now redundant CCgiRequest::ParseIndexesAsEntries()
-*
-* Revision 1.18  1998/11/30 21:23:20  vakatov
-* CCgiRequest:: - by default, interprete ISINDEX data as regular FORM entries
-* + CCgiRequest::ParseIndexesAsEntries()
-* Allow FORM entry in format "name1&name2....." (no '=' necessary after name)
-*
-* Revision 1.17  1998/11/27 20:55:23  vakatov
-* CCgiRequest::  made the input stream arg. be optional(std.input by default)
-*
-* Revision 1.16  1998/11/27 19:46:06  vakatov
-* TestCgi() -- test the query string passed as a cmd.-line argument
-*
-* Revision 1.15  1998/11/27 15:55:07  vakatov
-* + TestCgi(USER STDIN)
-*
-* Revision 1.14  1998/11/26 00:29:55  vakatov
-* Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
-*
-* Revision 1.13  1998/11/24 23:07:31  vakatov
-* Draft(almost untested) version of CCgiRequest API
-*
-* Revision 1.12  1998/11/24 21:31:34  vakatov
-* Updated with the ISINDEX-related code for CCgiRequest::
-* TCgiEntries, ParseIndexes(), GetIndexes(), etc.
-*
-* Revision 1.11  1998/11/24 17:52:38  vakatov
-* + TestException_Aux() -- tests for CErrnoException:: and CErrnoException::
-* + TestCgi_Request()   -- tests for CCgiRequest::ParseEntries()
-*
-* Revision 1.10  1998/11/20 22:34:39  vakatov
-* Reset diag. stream to get rid of a mem.leak
-*
-* Revision 1.9  1998/11/19 23:41:14  vakatov
-* Tested version of "CCgiCookie::" and "CCgiCookies::"
-*
-* Revision 1.8  1998/11/13 00:18:08  vakatov
-* Added a test for the "unexpected" exception.
-* Turned off "hardware" exception tests for UNIX.
-*
-* Revision 1.7  1998/11/10 01:17:38  vakatov
-* Cleaned, adopted to the standard NCBI C++ framework and incorporated
-* the "hardware exceptions" code and tests(originally written by
-* V.Sandomirskiy).
-* Only tested for MSVC++ compiler yet -- to be continued for SunPro...
-*
-* Revision 1.6  1998/11/06 22:42:42  vakatov
-* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
-* API to namespace "ncbi::" and to use it by default, respectively
-* Introduced THROWS_NONE and THROWS(x) macros for the exception
-* specifications
-* Other fixes and rearrangements throughout the most of "corelib" code
-*
-* Revision 1.5  1998/11/04 23:48:15  vakatov
-* Replaced <ncbidiag> by <ncbistd>
-* ==========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Denis Vakatov
+ *
+ * File Description:
+ *   TEST for:  NCBI C++ core API
+ *
+ */
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <algorithm>
 
-// Workaround for non-Debug compilation
-#ifndef _DEBUG
-#  undef  _ASSERT
-#  define _ASSERT(expr) ((void)(expr))
-#endif
-
+#include <test/test_assert.h>  /* This header must go last */
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
 // and to use NCBI C++ entities without the "ncbi::" prefix
@@ -319,27 +53,27 @@ static void TestIostream(void)
     string str;
 
     NcbiGetline(is, str, '\n');
-    _ASSERT( is.good() );
-    _ASSERT( str.compare("abc") == 0 );
+    assert( is.good() );
+    assert( str.compare("abc") == 0 );
 
     is >> str;
-    _ASSERT( is.good() );
-    _ASSERT( str.compare("x0123456789") == 0 );
+    assert( is.good() );
+    assert( str.compare("x0123456789") == 0 );
 
     is >> str;
-    _ASSERT( is.good() );
-    _ASSERT( str.compare("y012345") == 0 );
+    assert( is.good() );
+    assert( str.compare("y012345") == 0 );
 
     is >> str;
-    _ASSERT( is.eof() );
-    _ASSERT( str.compare("cba") == 0 );
+    assert( is.eof() );
+    assert( str.compare("cba") == 0 );
 
     is >> str;
-    _ASSERT( !is.good() );
+    assert( !is.good() );
 
     is.clear();
     is >> str;
-    _ASSERT( !is.good() );
+    assert( !is.good() );
 
     str = "0 1 2 3 4 5\n6 7 8 9";
     NcbiCout << "String output: "  << str << NcbiEndl;
@@ -354,87 +88,87 @@ static void TestIostream(void)
 static void TestRegistry(void)
 {
     CNcbiRegistry reg;
-    _ASSERT( reg.Empty() );
+    assert( reg.Empty() );
 
     list<string> sections;
     reg.EnumerateSections(&sections);
-    _ASSERT( sections.empty() );
+    assert( sections.empty() );
 
     list<string> entries;
     reg.EnumerateEntries(NcbiEmptyString, &entries);
-    _ASSERT( entries.empty() );
+    assert( entries.empty() );
 
     // Compose a test registry
-    _ASSERT(  reg.Set("Section0", "Name01", "Val01_BAD!!!") );
-    _ASSERT(  reg.Set("Section1 ", "\nName11", "Val11_t") );
-    _ASSERT( !reg.Empty() );
-    _ASSERT(  reg.Get(" Section1", "Name11\t") == "Val11_t" );
-    _ASSERT(  reg.Get("Section1", "Name11",
+    assert(  reg.Set("Section0", "Name01", "Val01_BAD!!!") );
+    assert(  reg.Set("Section1 ", "\nName11", "Val11_t") );
+    assert( !reg.Empty() );
+    assert(  reg.Get(" Section1", "Name11\t") == "Val11_t" );
+    assert(  reg.Get("Section1", "Name11",
                       CNcbiRegistry::ePersistent).empty() );
-    _ASSERT(  reg.Set("Section1", "Name11", "Val11_t") );
-    _ASSERT( !reg.Set("Section1", "Name11", "Val11_BAD!!!",
+    assert(  reg.Set("Section1", "Name11", "Val11_t") );
+    assert( !reg.Set("Section1", "Name11", "Val11_BAD!!!",
                       CNcbiRegistry::eNoOverride) );
 
-    _ASSERT(  reg.Set("   Section2", "\nName21  ", "Val21",
+    assert(  reg.Set("   Section2", "\nName21  ", "Val21",
                       CNcbiRegistry::ePersistent |
                       CNcbiRegistry::eNoOverride) );
-    _ASSERT(  reg.Set("Section2", "Name21", "Val21_t") );
-    _ASSERT( !reg.Empty() );
-    _ASSERT(  reg.Set("Section3", "Name31", "Val31_t") );
+    assert(  reg.Set("Section2", "Name21", "Val21_t") );
+    assert( !reg.Empty() );
+    assert(  reg.Set("Section3", "Name31", "Val31_t") );
 
-    _ASSERT( reg.Get(" \nSection1", " Name11  ") == "Val11_t" );
-    _ASSERT( reg.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
+    assert( reg.Get(" \nSection1", " Name11  ") == "Val11_t" );
+    assert( reg.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
              "Val21" );
-    _ASSERT( reg.Get(" Section2", " Name21\n") == "Val21_t" );
-    _ASSERT( reg.Get("SectionX", "Name21").empty() );
+    assert( reg.Get(" Section2", " Name21\n") == "Val21_t" );
+    assert( reg.Get("SectionX", "Name21").empty() );
 
-    _ASSERT( reg.Set("Section4", "Name41", "Val410 Val411 Val413",
+    assert( reg.Set("Section4", "Name41", "Val410 Val411 Val413",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT(!reg.Set("Sect ion4", "Name41", "BAD1",
+    assert(!reg.Set("Sect ion4", "Name41", "BAD1",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT(!reg.Set("Section4", "Na me41", "BAD2") );
-    _ASSERT( reg.Set("SECTION4", "Name42", "V420 V421\nV422 V423 \"",
+    assert(!reg.Set("Section4", "Na me41", "BAD2") );
+    assert( reg.Set("SECTION4", "Name42", "V420 V421\nV422 V423 \"",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("Section4", "NAME43",
+    assert( reg.Set("Section4", "NAME43",
                      " \tV430 V431  \n V432 V433 ",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("\tSection4", "Name43T",
+    assert( reg.Set("\tSection4", "Name43T",
                      " \tV430 V431  \n V432 V433 ",
                      CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
-    _ASSERT( reg.Set("Section4", "Name44", "\n V440 V441 \r\n",
+    assert( reg.Set("Section4", "Name44", "\n V440 V441 \r\n",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("\r Section4", "  \t\rName45", "\r\n V450 V451  \n  ",
+    assert( reg.Set("\r Section4", "  \t\rName45", "\r\n V450 V451  \n  ",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("Section4 \n", "  Name46  ", "\n\nV460\" \n \t \n\t",
+    assert( reg.Set("Section4 \n", "  Name46  ", "\n\nV460\" \n \t \n\t",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set(" Section4", "Name46T", "\n\nV460\" \n \t \n\t",
+    assert( reg.Set(" Section4", "Name46T", "\n\nV460\" \n \t \n\t",
                      CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
-    _ASSERT( reg.Set("Section4", "Name47", "470\n471\\\n 472\\\n473\\",
+    assert( reg.Set("Section4", "Name47", "470\n471\\\n 472\\\n473\\",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("Section4", "Name47T", "470\n471\\\n 472\\\n473\\",
+    assert( reg.Set("Section4", "Name47T", "470\n471\\\n 472\\\n473\\",
                      CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
     string xxx("\" V481\" \n\"V482 ");
-    _ASSERT( reg.Set("Section4", "Name48", xxx, CNcbiRegistry::ePersistent) );
+    assert( reg.Set("Section4", "Name48", xxx, CNcbiRegistry::ePersistent) );
 
-    _ASSERT( reg.Set("Section5", "Name51", "Section5/Name51",
+    assert( reg.Set("Section5", "Name51", "Section5/Name51",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("_Section_5", "Name51", "_Section_5/Name51",
+    assert( reg.Set("_Section_5", "Name51", "_Section_5/Name51",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("_Section_5_", "_Name52", "_Section_5_/_Name52",
+    assert( reg.Set("_Section_5_", "_Name52", "_Section_5_/_Name52",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("_Section_5_", "Name52", "_Section_5_/Name52",
+    assert( reg.Set("_Section_5_", "Name52", "_Section_5_/Name52",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("_Section_5_", "_Name53_", "_Section_5_/_Name53_",
+    assert( reg.Set("_Section_5_", "_Name53_", "_Section_5_/_Name53_",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("Section-5.6", "Name-5.6", "Section-5.6/Name-5.6",
+    assert( reg.Set("Section-5.6", "Name-5.6", "Section-5.6/Name-5.6",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("-Section_5", ".Name.5-3", "-Section_5/.Name.5-3",
+    assert( reg.Set("-Section_5", ".Name.5-3", "-Section_5/.Name.5-3",
                      CNcbiRegistry::ePersistent) );
 
 
     // Dump
     CNcbiOstrstream os;
-    _ASSERT ( reg.Write(os) );
+    assert ( reg.Write(os) );
     os << '\0';
     const char* os_str = os.str();  os.rdbuf()->freeze(false);
     NcbiCerr << "\nRegistry:\n" << os_str << NcbiEndl;
@@ -442,75 +176,75 @@ static void TestRegistry(void)
     // "Persistent" load
     CNcbiIstrstream is1(os_str);
     CNcbiRegistry  reg1(is1);
-    _ASSERT(  reg1.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
+    assert(  reg1.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
               "Val21" );
-    _ASSERT(  reg1.Get("Section2", "Name21") == "Val21" );
-    _ASSERT( !reg1.Set("Section2", "Name21", NcbiEmptyString) );
-    _ASSERT( !reg1.Set("Section2", "Name21", NcbiEmptyString,
+    assert(  reg1.Get("Section2", "Name21") == "Val21" );
+    assert( !reg1.Set("Section2", "Name21", NcbiEmptyString) );
+    assert( !reg1.Set("Section2", "Name21", NcbiEmptyString,
                        CNcbiRegistry::ePersistent |
                        CNcbiRegistry::eNoOverride) );
-    _ASSERT( !reg1.Empty() );
-    _ASSERT(  reg1.Set("Section2", "Name21", NcbiEmptyString,
+    assert( !reg1.Empty() );
+    assert(  reg1.Set("Section2", "Name21", NcbiEmptyString,
                        CNcbiRegistry::ePersistent) );
 
     // "Transient" load
     CNcbiIstrstream is2(os_str);
     CNcbiRegistry  reg2(is2, CNcbiRegistry::eTransient);
-    _ASSERT(  reg2.Get("Section2", "Name21",
+    assert(  reg2.Get("Section2", "Name21",
                        CNcbiRegistry::ePersistent).empty() );
-    _ASSERT(  reg2.Get("Section2", "Name21") == "Val21" );
-    _ASSERT( !reg2.Set("Section2", "Name21", NcbiEmptyString,
+    assert(  reg2.Get("Section2", "Name21") == "Val21" );
+    assert( !reg2.Set("Section2", "Name21", NcbiEmptyString,
                        CNcbiRegistry::ePersistent) );
-    _ASSERT( !reg2.Set("Section2", "Name21", NcbiEmptyString,
+    assert( !reg2.Set("Section2", "Name21", NcbiEmptyString,
                        CNcbiRegistry::ePersistent |
                        CNcbiRegistry::eNoOverride) );
-    _ASSERT( !reg2.Empty() );
-    _ASSERT(  reg2.Set("Section2", "Name21", NcbiEmptyString) );
+    assert( !reg2.Empty() );
+    assert(  reg2.Set("Section2", "Name21", NcbiEmptyString) );
 
 
-    _ASSERT( reg.Get("Sect ion4 ", "Name41 ").empty() );
-    _ASSERT( reg.Get("Section4 ", "Na me41 ").empty() );
+    assert( reg.Get("Sect ion4 ", "Name41 ").empty() );
+    assert( reg.Get("Section4 ", "Na me41 ").empty() );
 
-    _ASSERT( reg.Get("Section4 ", "Name41 ") == "Val410 Val411 Val413" );
-    _ASSERT( reg.Get("Section4",  " Name42") == "V420 V421\nV422 V423 \"" );
-    _ASSERT( reg.Get("Section4",  "Name43")  == " \tV430 V431  \n V432 V433 ");
-    _ASSERT( reg.Get("Section4",  "Name43T") == "V430 V431  \n V432 V433" );
-    _ASSERT( reg.Get("Section4",  " Name44") == "\n V440 V441 \r\n" );
-    _ASSERT( reg.Get(" SecTIon4", "Name45")  == "\r\n V450 V451  \n  " );
-    _ASSERT( reg.Get("SecTion4 ", "Name46")  == "\n\nV460\" \n \t \n\t" );
-    _ASSERT( reg.Get("Section4",  "NaMe46T") == "\n\nV460\" \n \t \n" );
-    _ASSERT( reg.Get(" Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
-    _ASSERT( reg.Get("Section4 ", "NAme47T") == "470\n471\\\n 472\\\n473\\" );
-    _ASSERT( reg.Get("Section4",  "Name48")  == xxx );
+    assert( reg.Get("Section4 ", "Name41 ") == "Val410 Val411 Val413" );
+    assert( reg.Get("Section4",  " Name42") == "V420 V421\nV422 V423 \"" );
+    assert( reg.Get("Section4",  "Name43")  == " \tV430 V431  \n V432 V433 ");
+    assert( reg.Get("Section4",  "Name43T") == "V430 V431  \n V432 V433" );
+    assert( reg.Get("Section4",  " Name44") == "\n V440 V441 \r\n" );
+    assert( reg.Get(" SecTIon4", "Name45")  == "\r\n V450 V451  \n  " );
+    assert( reg.Get("SecTion4 ", "Name46")  == "\n\nV460\" \n \t \n\t" );
+    assert( reg.Get("Section4",  "NaMe46T") == "\n\nV460\" \n \t \n" );
+    assert( reg.Get(" Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
+    assert( reg.Get("Section4 ", "NAme47T") == "470\n471\\\n 472\\\n473\\" );
+    assert( reg.Get("Section4",  "Name48")  == xxx );
 
-    _ASSERT( reg2.Get("Section4", "Name41")  == "Val410 Val411 Val413" );
-    _ASSERT( reg2.Get("Section4", "Name42")  == "V420 V421\nV422 V423 \"" );
-    _ASSERT( reg2.Get("Section4", "Name43")  == " \tV430 V431  \n V432 V433 ");
-    _ASSERT( reg2.Get("Section4", "Name43T") == "V430 V431  \n V432 V433" );
-    _ASSERT( reg2.Get("Section4", "Name44")  == "\n V440 V441 \r\n" );
-    _ASSERT( reg2.Get("Section4", "NaMe45")  == "\r\n V450 V451  \n  " );
-    _ASSERT( reg2.Get("SecTIOn4", "NAme46")  == "\n\nV460\" \n \t \n\t" );
-    _ASSERT( reg2.Get("Section4", "Name46T") == "\n\nV460\" \n \t \n" );
-    _ASSERT( reg2.Get("Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
-    _ASSERT( reg2.Get("Section4", "Name47T") == "470\n471\\\n 472\\\n473\\" );
-    _ASSERT( reg2.Get("Section4", "Name48")  == xxx );
+    assert( reg2.Get("Section4", "Name41")  == "Val410 Val411 Val413" );
+    assert( reg2.Get("Section4", "Name42")  == "V420 V421\nV422 V423 \"" );
+    assert( reg2.Get("Section4", "Name43")  == " \tV430 V431  \n V432 V433 ");
+    assert( reg2.Get("Section4", "Name43T") == "V430 V431  \n V432 V433" );
+    assert( reg2.Get("Section4", "Name44")  == "\n V440 V441 \r\n" );
+    assert( reg2.Get("Section4", "NaMe45")  == "\r\n V450 V451  \n  " );
+    assert( reg2.Get("SecTIOn4", "NAme46")  == "\n\nV460\" \n \t \n\t" );
+    assert( reg2.Get("Section4", "Name46T") == "\n\nV460\" \n \t \n" );
+    assert( reg2.Get("Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
+    assert( reg2.Get("Section4", "Name47T") == "470\n471\\\n 472\\\n473\\" );
+    assert( reg2.Get("Section4", "Name48")  == xxx );
 
-    _ASSERT( reg2.Get(" Section5",    "Name51 ")   == "Section5/Name51" );
-    _ASSERT( reg2.Get("_Section_5",   " Name51")   == "_Section_5/Name51" );
-    _ASSERT( reg2.Get(" _Section_5_", " _Name52")  == "_Section_5_/_Name52");
-    _ASSERT( reg2.Get("_Section_5_ ", "Name52")    == "_Section_5_/Name52");
-    _ASSERT( reg2.Get("_Section_5_",  "_Name53_ ") == "_Section_5_/_Name53_" );
-    _ASSERT( reg2.Get(" Section-5.6", "Name-5.6 ") == "Section-5.6/Name-5.6");
-    _ASSERT( reg2.Get("-Section_5",   ".Name.5-3") == "-Section_5/.Name.5-3");
+    assert( reg2.Get(" Section5",    "Name51 ")   == "Section5/Name51" );
+    assert( reg2.Get("_Section_5",   " Name51")   == "_Section_5/Name51" );
+    assert( reg2.Get(" _Section_5_", " _Name52")  == "_Section_5_/_Name52");
+    assert( reg2.Get("_Section_5_ ", "Name52")    == "_Section_5_/Name52");
+    assert( reg2.Get("_Section_5_",  "_Name53_ ") == "_Section_5_/_Name53_" );
+    assert( reg2.Get(" Section-5.6", "Name-5.6 ") == "Section-5.6/Name-5.6");
+    assert( reg2.Get("-Section_5",   ".Name.5-3") == "-Section_5/.Name.5-3");
 
     // Printout of the whole registry content
-    _ASSERT( reg.Set("Section0", "Name01", "") );
+    assert( reg.Set("Section0", "Name01", "") );
     reg.EnumerateSections(&sections);
-    _ASSERT( find(sections.begin(), sections.end(), "Section0")
+    assert( find(sections.begin(), sections.end(), "Section0")
              == sections.end() );
-    _ASSERT( find(sections.begin(), sections.end(), "Section1")
+    assert( find(sections.begin(), sections.end(), "Section1")
              != sections.end() );
-    _ASSERT( !sections.empty() );
+    assert( !sections.empty() );
     NcbiCout << "\nRegistry Content:\n";
     for (list<string>::const_iterator itSection = sections.begin();
          itSection != sections.end();   itSection++) {
@@ -528,7 +262,7 @@ static void TestRegistry(void)
     }
 
     reg.Clear();
-    _ASSERT( reg.Empty() );
+    assert( reg.Empty() );
     
     // Test read/write registry
 
@@ -672,8 +406,8 @@ static void TestDiag(void)
     diag << "01234";
 
     SetDiagStream(&NcbiCerr);
-    _ASSERT(  IsDiagStream(&NcbiCerr) );
-    _ASSERT( !IsDiagStream(&NcbiCout) );
+    assert(  IsDiagStream(&NcbiCerr) );
+    assert( !IsDiagStream(&NcbiCout) );
     diag << "56789" << Endm;
     diag <<   "[Set Diag Stream(cerr)]  Diagnostics double = " << d << Endm;
     ERR_POST("[Set Diag Stream(cerr)]  Std.Diag. double = "    << d );
@@ -831,7 +565,7 @@ static void TestException_Std(void)
 static void TestException_Aux(void)
 {
     try {
-        _VERIFY( !strtod("1e-999999", 0) );
+        assert( !strtod("1e-999999", 0) );
         throw CErrnoException("Failed strtod(\"1e-999999\", 0)");
     }
     catch (CErrnoException& e) {
@@ -847,7 +581,7 @@ static void TestException_Aux(void)
 static void TestException_AuxTrace(void)
 {
     try {
-        _VERIFY( !strtod("1e-999999", 0) );
+        assert( !strtod("1e-999999", 0) );
         THROW1_TRACE(CErrnoException, "Failed strtod('1e-999999', 0)");
     }
     catch (CErrnoException& e) {
@@ -958,8 +692,8 @@ int CTestApplication::Run(void)
 CTestApplication::~CTestApplication()
 {
     SetDiagStream(0);
-    _ASSERT( IsDiagStream(0) );
-    _ASSERT( !IsDiagStream(&NcbiCout) );
+    assert( IsDiagStream(0) );
+    assert( !IsDiagStream(&NcbiCout) );
 }
 
 
@@ -985,8 +719,278 @@ static CTestApplication theTestApplication;
 
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
+    // Post error message
     ERR_POST("This message goes to the default diag.stream, CERR");
-
     // Execute main application function
     return theTestApplication.AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.80  2002/04/16 18:49:06  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 1.79  2001/10/15 19:48:24  vakatov
+ * Use two #if's instead of "#if ... && ..." as KAI cannot handle #if x == y
+ *
+ * Revision 1.78  2001/09/05 18:47:12  ucko
+ * Work around WorkShop 5.3 type-equivalence bug.
+ *
+ * Revision 1.77  2001/07/30 14:42:27  lavr
+ * eDiag_Trace and eDiag_Fatal always print as much as possible
+ *
+ * Revision 1.76  2001/07/25 19:14:14  lavr
+ * Added test for date/time stamp in message logging
+ *
+ * Revision 1.75  2001/06/22 21:46:15  ivanov
+ * Added test for read/write the registry file with comments
+ *
+ * Revision 1.74  2001/06/13 23:19:39  vakatov
+ * Revamped previous revision (prefix and error codes)
+ *
+ * Revision 1.73  2001/06/13 20:50:00  ivanov
+ * Added test for stack post prefix messages and ErrCode manipulator.
+ *
+ * Revision 1.72  2001/03/26 20:59:57  vakatov
+ * String-related tests moved to "test_ncbistr.cpp" (by A.Grichenko)
+ *
+ * Revision 1.71  2001/01/30 00:40:28  vakatov
+ * Do not use arg "envp[]" in main() -- as it is not working on MAC
+ *
+ * Revision 1.70  2000/12/11 20:42:52  vakatov
+ * + NStr::PrintableString()
+ *
+ * Revision 1.69  2000/10/24 21:51:23  vakatov
+ * [DEBUG] By default, do not print file name and line into the diagnostics
+ *
+ * Revision 1.68  2000/10/24 19:54:48  vakatov
+ * Diagnostics to go to CERR by default (was -- disabled by default)
+ *
+ * Revision 1.67  2000/10/11 21:03:50  vakatov
+ * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
+ * (reported by Forte6 Patch 109490-01)
+ *
+ * Revision 1.66  2000/08/03 20:21:35  golikov
+ * Added predicate PCase for AStrEquiv
+ * PNocase, PCase goes through NStr::Compare now
+ *
+ * Revision 1.65  2000/06/26 20:56:35  vakatov
+ * TestDiag() -- using user-istalled message posting handler
+ *
+ * Revision 1.64  2000/06/23 19:57:19  vakatov
+ * TestDiag() -- added tests for the switching diag.handlers
+ *
+ * Revision 1.63  2000/06/11 01:47:34  vakatov
+ * IsDiagSet(0) to return TRUE if the diag stream is unset
+ *
+ * Revision 1.62  2000/06/09 21:22:49  vakatov
+ * Added test for IsDiagStream()
+ *
+ * Revision 1.61  2000/05/24 20:57:13  vasilche
+ * Use new macro _DEBUG_ARG to avoid warning about unused argument.
+ *
+ * Revision 1.60  2000/04/19 18:36:44  vakatov
+ * Test NStr::Compare() for non-zero "pos"
+ *
+ * Revision 1.59  2000/04/17 04:16:25  vakatov
+ * Added tests for NStr::Compare() and NStr::ToLower/ToUpper()
+ *
+ * Revision 1.58  2000/04/04 22:34:32  vakatov
+ * Checks for the NStr:: for "long", and for the debug tracing
+ *
+ * Revision 1.57  2000/02/18 16:54:10  vakatov
+ * + eDiag_Critical
+ *
+ * Revision 1.56  2000/01/20 17:55:48  vakatov
+ * Fixes to follow the "CNcbiApplication" change.
+ *
+ * Revision 1.55  1999/11/29 17:49:12  golikov
+ * NStr::Replace tests modified obedience to Denis :)
+ *
+ * Revision 1.54  1999/11/26 18:45:30  golikov
+ * NStr::Replace tests added
+ *
+ * Revision 1.53  1999/11/12 17:33:24  vakatov
+ * To be more careful with _DEBUG to suit some ugly MSVC++ features
+ *
+ * Revision 1.52  1999/10/04 16:21:06  vasilche
+ * Added full set of macros THROW*_TRACE
+ *
+ * Revision 1.51  1999/09/29 18:21:58  vakatov
+ * + TestException_Features() -- to test how the thrown object is handled
+ *
+ * Revision 1.50  1999/09/02 21:54:42  vakatov
+ * Tests for CNcbiRegistry:: allowed '-' and '.' in the section/entry name
+ *
+ * Revision 1.49  1999/08/30 16:00:45  vakatov
+ * CNcbiRegistry:: Get()/Set() -- force the "name" and "section" to
+ * consist of alphanumeric and '_' only;  ignore leading and trailing
+ * spaces
+ *
+ * Revision 1.48  1999/07/07 14:17:07  vakatov
+ * CNcbiRegistry::  made the section and entry names be case-insensitive
+ *
+ * Revision 1.47  1999/07/06 15:26:37  vakatov
+ * CNcbiRegistry::
+ *   - allow multi-line values
+ *   - allow values starting and ending with space symbols
+ *   - introduced EFlags/TFlags for optional parameters in the class
+ *     member functions -- rather than former numerous boolean parameters
+ *
+ * Revision 1.46  1999/05/27 15:22:16  vakatov
+ * Extended and fixed tests for the StringToXXX() functions
+ *
+ * Revision 1.45  1999/05/11 14:47:38  vakatov
+ * Added missing <algorithm> header (for MSVC++)
+ *
+ * Revision 1.44  1999/05/11 02:53:52  vakatov
+ * Moved CGI API from "corelib/" to "cgi/"
+ *
+ * Revision 1.43  1999/05/10 14:26:13  vakatov
+ * Fixes to compile and link with the "egcs" C++ compiler under Linux
+ *
+ * Revision 1.42  1999/05/04 16:14:50  vasilche
+ * Fixed problems with program environment.
+ * Added class CNcbiEnvironment for cached access to C environment.
+ *
+ * Revision 1.41  1999/05/04 00:03:16  vakatov
+ * Removed the redundant severity arg from macro ERR_POST()
+ *
+ * Revision 1.40  1999/05/03 20:32:31  vakatov
+ * Use the (newly introduced) macro from <corelib/ncbidbg.h>:
+ *   RETHROW_TRACE,
+ *   THROW0_TRACE(exception_class),
+ *   THROW1_TRACE(exception_class, exception_arg),
+ *   THROW_TRACE(exception_class, exception_args)
+ * instead of the former (now obsolete) macro _TRACE_THROW.
+ *
+ * Revision 1.39  1999/04/30 19:21:06  vakatov
+ * Added more details and more control on the diagnostics
+ * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+ *
+ * Revision 1.38  1999/04/27 14:50:12  vasilche
+ * Added FastCGI interface.
+ * CNcbiContext renamed to CCgiContext.
+ *
+ * Revision 1.37  1999/04/14 20:12:52  vakatov
+ * + <stdio.h>, <stdlib.h>
+ *
+ * Revision 1.36  1999/03/12 18:04:09  vakatov
+ * Added ERR_POST macro to perform a plain "standard" error posting
+ *
+ * Revision 1.35  1999/01/21 16:18:04  sandomir
+ * minor changes due to NStr namespace to contain string utility functions
+ *
+ * Revision 1.34  1999/01/12 17:10:16  sandomir
+ * test restored
+ *
+ * Revision 1.33  1999/01/12 17:06:37  sandomir
+ * GetLink changed
+ *
+ * Revision 1.32  1999/01/07 21:15:24  vakatov
+ * Changed prototypes for URL_DecodeString() and URL_EncodeString()
+ *
+ * Revision 1.31  1999/01/07 20:06:06  vakatov
+ * + URL_DecodeString()
+ * + URL_EncodeString()
+ *
+ * Revision 1.30  1999/01/04 22:41:44  vakatov
+ * Do not use so-called "hardware-exceptions" as these are not supported
+ * (on the signal level) by UNIX
+ * Do not "set_unexpected()" as it works differently on UNIX and MSVC++
+ *
+ * Revision 1.29  1998/12/28 17:56:43  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.28  1998/12/15 15:43:24  vasilche
+ * Added utilities to convert string <> int.
+ *
+ * Revision 1.27  1998/12/11 18:00:56  vasilche
+ * Added cookies and output stream
+ *
+ * Revision 1.26  1998/12/10 22:59:49  vakatov
+ * CNcbiRegistry:: API is ready(and by-and-large tested)
+ *
+ * Revision 1.25  1998/12/10 18:05:40  vakatov
+ * CNcbiReg::  Just passed a draft test.
+ *
+ * Revision 1.24  1998/12/10 17:36:56  sandomir
+ * ncbires.cpp added
+ * 
+ * Revision 1.23  1998/12/09 19:38:53  vakatov
+ * Started with TestRegistry().  Freeze in the "compilable" state.
+ *
+ * Revision 1.22  1998/12/07 23:48:03  vakatov
+ * Changes in the usage of CCgiApplication class
+ *
+ * Revision 1.21  1998/12/03 21:24:23  sandomir
+ * NcbiApplication and CgiApplication updated
+ *
+ * Revision 1.20  1998/12/03 16:40:15  vakatov
+ * Initial revision
+ * Aux. function "Getline()" to read from "istream" to a "string"
+ * Adopted standard I/O "string" <--> "istream" for old-fashioned streams
+ *
+ * Revision 1.19  1998/12/01 00:27:21  vakatov
+ * Made CCgiRequest::ParseEntries() to read ISINDEX data, too.
+ * Got rid of now redundant CCgiRequest::ParseIndexesAsEntries()
+ *
+ * Revision 1.18  1998/11/30 21:23:20  vakatov
+ * CCgiRequest:: - by default, interprete ISINDEX data as regular FORM entries
+ * + CCgiRequest::ParseIndexesAsEntries()
+ * Allow FORM entry in format "name1&name2....." (no '=' necessary after name)
+ *
+ * Revision 1.17  1998/11/27 20:55:23  vakatov
+ * CCgiRequest::  made the input stream arg. be optional(std.input by default)
+ *
+ * Revision 1.16  1998/11/27 19:46:06  vakatov
+ * TestCgi() -- test the query string passed as a cmd.-line argument
+ *
+ * Revision 1.15  1998/11/27 15:55:07  vakatov
+ * + TestCgi(USER STDIN)
+ *
+ * Revision 1.14  1998/11/26 00:29:55  vakatov
+ * Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
+ *
+ * Revision 1.13  1998/11/24 23:07:31  vakatov
+ * Draft(almost untested) version of CCgiRequest API
+ *
+ * Revision 1.12  1998/11/24 21:31:34  vakatov
+ * Updated with the ISINDEX-related code for CCgiRequest::
+ * TCgiEntries, ParseIndexes(), GetIndexes(), etc.
+ *
+ * Revision 1.11  1998/11/24 17:52:38  vakatov
+ * + TestException_Aux() -- tests for CErrnoException:: and CErrnoException::
+ * + TestCgi_Request()   -- tests for CCgiRequest::ParseEntries()
+ *
+ * Revision 1.10  1998/11/20 22:34:39  vakatov
+ * Reset diag. stream to get rid of a mem.leak
+ *
+ * Revision 1.9  1998/11/19 23:41:14  vakatov
+ * Tested version of "CCgiCookie::" and "CCgiCookies::"
+ *
+ * Revision 1.8  1998/11/13 00:18:08  vakatov
+ * Added a test for the "unexpected" exception.
+ * Turned off "hardware" exception tests for UNIX.
+ *
+ * Revision 1.7  1998/11/10 01:17:38  vakatov
+ * Cleaned, adopted to the standard NCBI C++ framework and incorporated
+ * the "hardware exceptions" code and tests(originally written by
+ * V.Sandomirskiy).
+ * Only tested for MSVC++ compiler yet -- to be continued for SunPro...
+ *
+ * Revision 1.6  1998/11/06 22:42:42  vakatov
+ * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+ * API to namespace "ncbi::" and to use it by default, respectively
+ * Introduced THROWS_NONE and THROWS(x) macros for the exception
+ * specifications
+ * Other fixes and rearrangements throughout the most of "corelib" code
+ *
+ * Revision 1.5  1998/11/04 23:48:15  vakatov
+ * Replaced <ncbidiag> by <ncbistd>
+ *
+ * ==========================================================================
+ */

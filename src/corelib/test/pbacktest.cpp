@@ -28,34 +28,15 @@
  * File Description:
  *   Test UTIL_PushbackStream() interface.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2002/02/05 21:45:19  lavr
- * Included header files rearranged
- *
- * Revision 1.4  2002/02/05 16:06:41  lavr
- * List of included header files revised; Use macro IOS_BASE instead of raw ios
- *
- * Revision 1.3  2002/02/04 20:23:40  lavr
- * Long comment and workaround for MSVC putback()/unget() bug/feature
- * Additional test for stream positioning during read back
- *
- * Revision 1.2  2002/01/30 20:07:13  lavr
- * Verbose message about the difference, not just a position number
- *
- * Revision 1.1  2002/01/29 16:02:19  lavr
- * Initial revision
- *
- * ==========================================================================
  */
-
-#include "../../connect/test/test_assert.h"
 
 #include "pbacktest.hpp"
 #include <corelib/ncbidbg.hpp>
 #include <util/stream_pushback.hpp>
 #include <stdlib.h>
 #include <time.h>
+
+#include <test/test_assert.h>  /* This header must go last */
 
 #define _GLUE2(a, b) a ## b
 #define _GLUE1(a, b) _GLUE2(#a, b)
@@ -151,7 +132,7 @@ extern int TEST_StreamPushback(iostream&    ios,
         }
         if (j != i)
             LOG_POST("Bytes requested: " << i << ", received: " << j);
-        _ASSERT(j > 0);
+        assert(j > 0);
         if (c && buf2[buflen] != c) {
             LOG_POST(Error <<
                      "Mismatch, putback: " << c << ", read: " << buf2[buflen]);
@@ -231,3 +212,30 @@ extern int TEST_StreamPushback(iostream&    ios,
 }
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.6  2002/04/16 18:52:15  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 1.5  2002/02/05 21:45:19  lavr
+ * Included header files rearranged
+ *
+ * Revision 1.4  2002/02/05 16:06:41  lavr
+ * List of included header files revised; Use macro IOS_BASE instead of raw ios
+ *
+ * Revision 1.3  2002/02/04 20:23:40  lavr
+ * Long comment and workaround for MSVC putback()/unget() bug/feature
+ * Additional test for stream positioning during read back
+ *
+ * Revision 1.2  2002/01/30 20:07:13  lavr
+ * Verbose message about the difference, not just a position number
+ *
+ * Revision 1.1  2002/01/29 16:02:19  lavr
+ * Initial revision
+ *
+ * ==========================================================================
+ */

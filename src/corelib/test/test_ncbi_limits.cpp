@@ -23,18 +23,11 @@
  *
  * ===========================================================================
  * Author:  Denis Vakatov
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.2  2001/09/19 17:55:17  ucko
- * Fix GCC 3 build.
  *
- * Revision 6.1  2001/01/03 17:40:31  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbi_limits.hpp>
+#include <test/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
@@ -51,9 +44,9 @@ void s_TestType(const char* type_name, T value)
              << " <= "<< value  << " <= "
              << numeric_limits<T>::max());
 
-    _ASSERT(numeric_limits<T>::min() <= value);
-    _ASSERT(numeric_limits<T>::max() >= value);
-    _ASSERT(numeric_limits<T>::min() < numeric_limits<T>::max());
+    assert(numeric_limits<T>::min() <= value);
+    assert(numeric_limits<T>::max() >= value);
+    assert(numeric_limits<T>::min() < numeric_limits<T>::max());
 
     if (value != (T) (int) value)
         return;
@@ -64,8 +57,8 @@ void s_TestType(const char* type_name, T value)
              << " <= "<< min_minus_1  << " <= "
              << numeric_limits<T>::max());
 
-    _ASSERT(numeric_limits<T>::min() <= min_minus_1);
-    _ASSERT(numeric_limits<T>::max() >= min_minus_1);
+    assert(numeric_limits<T>::min() <= min_minus_1);
+    assert(numeric_limits<T>::max() >= min_minus_1);
 
     T max_plus_1 = numeric_limits<T>::max() + (T) 1;
     LOG_POST(type_name << ":  "
@@ -73,8 +66,8 @@ void s_TestType(const char* type_name, T value)
              << " <= "<< max_plus_1  << " <= "
              << numeric_limits<T>::max());
 
-    _ASSERT(numeric_limits<T>::min() <= max_plus_1);
-    _ASSERT(numeric_limits<T>::max() >= max_plus_1);
+    assert(numeric_limits<T>::min() <= max_plus_1);
+    assert(numeric_limits<T>::max() >= max_plus_1);
 }
 
 
@@ -130,3 +123,20 @@ int main()
     // Success
     return 0;
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.3  2002/04/16 18:49:07  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 6.2  2001/09/19 17:55:17  ucko
+ * Fix GCC 3 build.
+ *
+ * Revision 6.1  2001/01/03 17:40:31  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */

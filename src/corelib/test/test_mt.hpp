@@ -39,24 +39,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
-#include <assert.h>
-
-
 BEGIN_NCBI_SCOPE
-
-
-// Verification function to be used in user-provided tests
-#ifndef _DEBUG
-inline
-void s_Verify(bool expr)
-{
-    if ( !expr ) {
-        throw runtime_error("Test failed");
-    }
-}
-#else
-#define s_Verify( expr ) assert( expr )
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -112,6 +95,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2002/04/16 18:49:07  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
  * Revision 6.4  2002/04/11 20:00:46  ivanov
  * Returned standard assert() vice CORE_ASSERT()
  *

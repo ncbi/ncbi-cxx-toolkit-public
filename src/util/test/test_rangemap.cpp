@@ -1,69 +1,34 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author: Eugene Vasilchenko
-*
-* File Description:
-*   Test program for CRangeMap<>
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2001/01/29 15:18:49  vasilche
-* Cleaned CRangeMap and CIntervalTree classes.
-*
-* Revision 1.8  2001/01/16 20:52:31  vasilche
-* Simplified some CRangeMap code.
-*
-* Revision 1.7  2001/01/11 15:00:47  vasilche
-* Added CIntervalTree for seraching on set of intervals.
-*
-* Revision 1.6  2001/01/05 20:09:13  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.5  2001/01/05 15:49:52  vasilche
-* Fixed warning.
-*
-* Revision 1.4  2001/01/05 13:59:17  vasilche
-* Reduced CRangeMap* templates size.
-* Added CRangeMultimap template.
-*
-* Revision 1.3  2001/01/03 16:39:29  vasilche
-* Added CAbstractObjectManager - stub for object manager.
-* CRange extracted to separate file.
-*
-* Revision 1.2  2000/12/26 17:27:47  vasilche
-* Implemented CRangeMap<> template for sorting Seq-loc objects.
-*
-* Revision 1.1  2000/12/21 21:52:53  vasilche
-* Added CRangeMap<> template for sorting integral ranges (Seq-loc).
-*
-* Revision 1.1  2000/12/19 20:52:19  vasilche
-* Test program of C++ object manager.
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Eugene Vasilchenko
+ *
+ * File Description:
+ *   Test program for CRangeMap<>
+ *
+ */
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -72,6 +37,8 @@
 #include <util/rangemap.hpp>
 #include <util/itree.hpp>
 #include <stdlib.h>
+
+#include <test/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 
@@ -382,3 +349,46 @@ int main(int argc, const char* argv[])
 {
     return NCBI_NS_NCBI::CTestRangeMap().AppMain(argc, argv);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.10  2002/04/16 18:52:16  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 1.9  2001/01/29 15:18:49  vasilche
+ * Cleaned CRangeMap and CIntervalTree classes.
+ *
+ * Revision 1.8  2001/01/16 20:52:31  vasilche
+ * Simplified some CRangeMap code.
+ *
+ * Revision 1.7  2001/01/11 15:00:47  vasilche
+ * Added CIntervalTree for seraching on set of intervals.
+ *
+ * Revision 1.6  2001/01/05 20:09:13  vasilche
+ * Added util directory for various algorithms and utility classes.
+ *
+ * Revision 1.5  2001/01/05 15:49:52  vasilche
+ * Fixed warning.
+ *
+ * Revision 1.4  2001/01/05 13:59:17  vasilche
+ * Reduced CRangeMap* templates size.
+ * Added CRangeMultimap template.
+ *
+ * Revision 1.3  2001/01/03 16:39:29  vasilche
+ * Added CAbstractObjectManager - stub for object manager.
+ * CRange extracted to separate file.
+ *
+ * Revision 1.2  2000/12/26 17:27:47  vasilche
+ * Implemented CRangeMap<> template for sorting Seq-loc objects.
+ *
+ * Revision 1.1  2000/12/21 21:52:53  vasilche
+ * Added CRangeMap<> template for sorting integral ranges (Seq-loc).
+ *
+ * Revision 1.1  2000/12/19 20:52:19  vasilche
+ * Test program of C++ object manager.
+ *
+ * ===========================================================================
+ */

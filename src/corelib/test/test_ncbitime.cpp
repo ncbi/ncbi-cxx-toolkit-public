@@ -22,51 +22,18 @@
  *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
- * Authors:  Anton Butanayev, Denis Vakatov
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.10  2001/09/27 18:02:45  ivanov
- * Fixed division at zero in test of speed CTime class on fast computers.
  *
- * Revision 6.9  2001/07/23 15:51:46  ivanov
- * Changed test for work with DB-time formats
+ * Authors:  Anton Butanayev, Denis Vakatov, Vladimir Ivanov
  *
- * Revision 6.8  2001/07/06 15:08:36  ivanov
- * Added tests for DataBase-time's
+ * File Description:
+ *   Test for CTime - the standard Date/Time class
  *
- * Revision 6.7  2001/05/29 16:14:02  ivanov
- * Return to nanosecond-revision. Corrected mistake of the work with local
- * time on Linux. Polish and improvement source code.
- * Renamed AsTimeT() -> GetTimerT().
- *
- * Revision 6.6  2001/04/30 22:01:31  lavr
- * Rollback to pre-nanosecond-revision due to necessity to use
- * configure to figure out names of global variables governing time zones
- *
- * Revision 6.5  2001/04/29 03:06:10  lavr
- * #include <time.h>" moved from .cpp to ncbitime.hpp
- *
- * Revision 6.4  2001/04/27 20:39:47  ivanov
- * Tests for check Local/UTC time and Nanoseconds added.
- * Also speed test added.
- *
- * Revision 6.3  2000/11/21 18:15:05  butanaev
- * Fixed bug in operator ++/-- (int)
- *
- * Revision 6.2  2000/11/21 15:22:57  vakatov
- * Do not enforce "_DEBUG" -- it messes up the MSVC++ compilation
- *
- * Revision 6.1  2000/11/20 22:17:49  vakatov
- * Added NCBI date/time class CTime ("ncbitime.[ch]pp") and
- * its test suite ("test/test_ncbitime.cpp")
- *
- * ===========================================================================
  */
-
 
 #include <corelib/ncbitime.hpp>
 #include <stdio.h>
 
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -93,11 +60,11 @@ static void s_TestMisc(void)
 
     CTime t2;
     cout << "[" << t2.AsString() << "]" << endl;
-    _ASSERT(t2.AsString() == "");
+    assert(t2.AsString() == "");
 
     CTime t3(2000, 365 / 2);
     cout << "[" << t3.AsString() << "]" << endl;
-    _ASSERT(t3.AsString() == "06/30/2000 00:00:00");
+    assert(t3.AsString() == "06/30/2000 00:00:00");
     cout << endl;
 
     CTime::SetFormat("M/D/Y");
@@ -105,20 +72,20 @@ static void s_TestMisc(void)
     cout << "Year 2000 problem:" << endl << endl;
     CTime t4(1999, 12, 30); 
     t4++; cout << "[" << t4.AsString() << "] " << endl;
-    _ASSERT(t4.AsString() == "12/31/1999");
+    assert(t4.AsString() == "12/31/1999");
     t4++; cout << "[" << t4.AsString() << "] " << endl;
-    _ASSERT(t4.AsString() == "01/01/2000");
+    assert(t4.AsString() == "01/01/2000");
     t4++; cout << "[" << t4.AsString() << "] " << endl;
-    _ASSERT(t4.AsString() == "01/02/2000");
+    assert(t4.AsString() == "01/02/2000");
     t4="02/27/2000";
     t4++; cout << "[" << t4.AsString() << "] " << endl;
-    _ASSERT(t4.AsString() == "02/28/2000");
+    assert(t4.AsString() == "02/28/2000");
     t4++; cout << "[" << t4.AsString() << "] " << endl;
-    _ASSERT(t4.AsString() == "02/29/2000");
+    assert(t4.AsString() == "02/29/2000");
     t4++; cout << "[" << t4.AsString() << "] " << endl;
-    _ASSERT(t4.AsString() == "03/01/2000");
+    assert(t4.AsString() == "03/01/2000");
     t4++; cout << "[" << t4.AsString() << "] " << endl;
-    _ASSERT(t4.AsString() == "03/02/2000");
+    assert(t4.AsString() == "03/02/2000");
     cout << endl;
 
     CTime::SetFormat("M/D/Y h:m:s");
@@ -126,10 +93,10 @@ static void s_TestMisc(void)
     try {
         CTime t5("02/15/2000 01:12:33");
         cout << "[" << t5.AsString() << "]" << endl;
-        _ASSERT(t5.AsString() == "02/15/2000 01:12:33");
+        assert(t5.AsString() == "02/15/2000 01:12:33");
         t5 = "3/16/2001 02:13:34";
         cout << "[" << t5.AsString() << "]" << endl;
-        _ASSERT(t5.AsString() == "03/16/2001 02:13:34");
+        assert(t5.AsString() == "03/16/2001 02:13:34");
     } catch (exception& e) {
         cout << e.what() << endl;
     }
@@ -144,7 +111,7 @@ static void s_TestMisc(void)
          t = t6, t6.AddNanoSecond(2)) {
          cout << "[" << t6.AsString() << "] " << endl;
     }
-    _ASSERT(t.AsString() == "01/01/2000 00:00:00.000000003");
+    assert(t.AsString() == "01/01/2000 00:00:00.000000003");
     cout << endl;
 
     cout << "Current time with NS (10 cicles)" << endl;
@@ -162,7 +129,7 @@ static void s_TestMisc(void)
          t = t6, t6.AddSecond(11)) {
          cout << "[" << t6.AsString() << "] " << endl;
     }
-    _ASSERT(t.AsString() == "01/01/2000 00:01:17");
+    assert(t.AsString() == "01/01/2000 00:01:17");
     cout << endl;
 
     cout << "Adding minutes:" << endl;
@@ -194,15 +161,15 @@ static void s_TestMisc(void)
 
     cout << "[" << t7.AsString() << " - " << t8.AsString() << "]" << endl;
     printf("DiffDay        = %.2f\n", t8.DiffDay   (t7));
-    _ASSERT((t8.DiffDay(t7)-1.12) < 0.01);
+    assert((t8.DiffDay(t7)-1.12) < 0.01);
     printf("DiffHour       = %.2f\n", t8.DiffHour  (t7));
-    _ASSERT((t8.DiffHour(t7)-26.85) < 0.01);
+    assert((t8.DiffHour(t7)-26.85) < 0.01);
     printf("DiffMinute     = %.2f\n", t8.DiffMinute(t7));
-    _ASSERT((t8.DiffMinute(t7)-1611.27) < 0.01);
+    assert((t8.DiffMinute(t7)-1611.27) < 0.01);
     printf("DiffSecond     = %d\n",   t8.DiffSecond(t7));
-    _ASSERT(t8.DiffSecond(t7) == 96676);
+    assert(t8.DiffSecond(t7) == 96676);
     printf("DiffNanoSecond = %.0f\n", t8.DiffNanoSecond(t7));
-    //    _ASSERT(t8.DiffNanoSecond(t7) == 96676000000001);
+    //    assert(t8.DiffNanoSecond(t7) == 96676000000001);
 
     CTime t9(2000, 1, 1, 1, 1, 1, 10000000);
     CTime::SetFormat("M/D/Y h:m:s.S");
@@ -228,7 +195,7 @@ static void s_TestMisc(void)
     dbi.time = 12301381;
     t10.SetTimeDBI(dbi);
     cout << "Time from DBI        = " << t10.AsString() << endl;
-    _ASSERT(t10.AsString() == "07/23/2001 11:23:24");
+    assert(t10.AsString() == "07/23/2001 11:23:24");
 
     cout << endl;
 }
@@ -279,11 +246,11 @@ static void s_TestFormats(void)
         CTime::SetFormat("MDY__s");
 
         CTime t2(t1_str, *fmt);
-        _ASSERT(t1 == t2);
+        assert(t1 == t2);
 
         CTime::SetFormat(*fmt);
         string t2_str = t2;
-        _ASSERT(t1_str.compare(t2_str) == 0);
+        assert(t1_str.compare(t2_str) == 0);
     }
 }
 
@@ -307,10 +274,10 @@ static void s_TestGMT(void)
 
         CTime t1(2001, 3, 12, 11, 22, 33, 999, CTime::eGmt);
         cout << "[" << t1.AsString() << "]" << endl;
-        _ASSERT(t1.AsString() == "03/12/2001 11:22:33 GMT");
+        assert(t1.AsString() == "03/12/2001 11:22:33 GMT");
         CTime t2(2001, 3, 12, 11, 22, 33, 999, CTime::eLocal);
         cout << "[" << t2.AsString() << "]" << endl;
-        _ASSERT(t2.AsString() == "03/12/2001 11:22:33 ");
+        assert(t2.AsString() == "03/12/2001 11:22:33 ");
 
         CTime t3(CTime::eCurrent, CTime::eLocal);
         cout << "Local time [" << t3.AsString() << "]" << endl;
@@ -325,10 +292,10 @@ static void s_TestGMT(void)
         t.SetFormat("M/D/Y h:m:s Z");
         t="03/12/2001 11:22:33 GMT";
         cout << "[" << t.AsString() << "]" << endl;
-        _ASSERT(t.AsString() == "03/12/2001 11:22:33 GMT");
+        assert(t.AsString() == "03/12/2001 11:22:33 GMT");
         t="03/12/2001 11:22:33 ";
         cout << "[" << t.AsString() << "]" << endl;
-        _ASSERT(t.AsString() == "03/12/2001 11:22:33 ");
+        assert(t.AsString() == "03/12/2001 11:22:33 ");
         cout << endl;
     }
     {   
@@ -339,7 +306,7 @@ static void s_TestGMT(void)
         int i;
         for (i=0; t<=CTime(2001, 4, 10); t++,i++) {
             cout << t.AsString() << " is " << t.DayOfWeek() << endl;
-            _ASSERT(t.DayOfWeek() == (i%7));
+            assert(t.DayOfWeek() == (i%7));
         }
         cout << endl;
     }
@@ -354,9 +321,9 @@ static void s_TestGMT(void)
         cout << "[" << t.AsString() << "] " << endl;
         cout << tg.GetTimeT()/3600 << " - " << tl.GetTimeT()/3600 << " - ";
         cout << t.GetTimeT()/3600 << " - " << timer/3600 << endl;
-        _ASSERT(timer == tg.GetTimeT());
-        _ASSERT(timer == tl.GetTimeT());
-        _ASSERT(timer == t.GetTimeT());
+        assert(timer == tg.GetTimeT());
+        assert(timer == tl.GetTimeT());
+        assert(timer == t.GetTimeT());
         cout << endl;
 
         for (int i = 0; i < 2; i++) {
@@ -380,10 +347,10 @@ static void s_TestGMT(void)
 
         cout << "[" << tw.AsString() << "] diff from GMT = " << \
             tw.TimeZoneDiff() / 3600 << endl;
-        _ASSERT(tw.TimeZoneDiff() / 3600 == -5);
+        assert(tw.TimeZoneDiff() / 3600 == -5);
         cout << "[" << ts.AsString() << "] diff from GMT = " << \
             ts.TimeZoneDiff() / 3600 << endl;
-        _ASSERT(ts.TimeZoneDiff()/3600 == -4);
+        assert(ts.TimeZoneDiff()/3600 == -4);
 
         for (; tw < ts; tw++) {
             if ((tw.TimeZoneDiff() / 3600) == -4) {
@@ -402,10 +369,10 @@ static void s_TestGMT(void)
         CTime ts(2002, 1, 1, 12);
         cout << "[" << tw.AsString() << "] diff from GMT = " << \
             tw.TimeZoneDiff() / 3600 << endl;
-        _ASSERT(tw.TimeZoneDiff() / 3600 == -4);
+        assert(tw.TimeZoneDiff() / 3600 == -4);
         cout << "[" << ts.AsString() << "] diff from GMT = " << \
             ts.TimeZoneDiff() / 3600 << endl;
-        _ASSERT(ts.TimeZoneDiff() / 3600 == -5);
+        assert(ts.TimeZoneDiff() / 3600 == -5);
 
         for (; tw < ts; tw++) {
             if ((tw.TimeZoneDiff() / 3600) == -5) {
@@ -431,18 +398,18 @@ static void s_TestGMT(void)
         cout << "GMT" << endl;
         tn = t + 5;  
         cout << "+5d   [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "04/06/2001 01:01:00");
+        assert(tn.AsString() == "04/06/2001 01:01:00");
         tn = t + 40; 
         cout << "+40d  [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "05/11/2001 01:01:00");
+        assert(tn.AsString() == "05/11/2001 01:01:00");
 
         t.SetTimeZoneFormat(CTime::eLocal);
         cout << "Local eNone" << endl;
         t.SetTimeZonePrecision(CTime::eNone);
         tn=t+5;  cout << "+5d   [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "04/06/2001 01:01:00");
+        assert(tn.AsString() == "04/06/2001 01:01:00");
         tn=t+40; cout << "+40d  [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "05/11/2001 01:01:00");
+        assert(tn.AsString() == "05/11/2001 01:01:00");
 
         t.SetTimeZonePrecision(CTime::eMonth);
         cout << "Local eMonth" << endl;
@@ -451,23 +418,23 @@ static void s_TestGMT(void)
         tn = t; 
         tn.AddMonth(-1);
         cout << "-1m   [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "03/01/2001 01:01:00");
+        assert(tn.AsString() == "03/01/2001 01:01:00");
         tn = t; 
         tn.AddMonth(+1);
         cout << "+1m   [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "05/01/2001 02:01:00");
+        assert(tn.AsString() == "05/01/2001 02:01:00");
 
         t.SetTimeZonePrecision(CTime::eDay);
         cout << "Local eDay" << endl;
         tn = t - 1; 
         cout << "-1d   [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "03/31/2001 01:01:00");
+        assert(tn.AsString() == "03/31/2001 01:01:00");
         tn++;   
         cout << "+0d   [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "04/01/2001 01:01:00");
+        assert(tn.AsString() == "04/01/2001 01:01:00");
         tn = t + 1; 
         cout << "+1d   [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "04/02/2001 02:01:00");
+        assert(tn.AsString() == "04/02/2001 02:01:00");
 
         cout << "Local eHour" << endl;
         t.SetTimeZonePrecision(CTime::eHour);
@@ -476,13 +443,13 @@ static void s_TestGMT(void)
         CTime te = t; 
         te.AddHour(3);
         cout << "-3h   [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "03/31/2001 22:01:00");
+        assert(tn.AsString() == "03/31/2001 22:01:00");
         cout << "+3h   [" << te.AsString() << "]" << endl;
-        _ASSERT(te.AsString() == "04/01/2001 05:01:00");
+        assert(te.AsString() == "04/01/2001 05:01:00");
         CTime th = tn; 
         th.AddHour(49);
         cout << "+49h  [" << th.AsString() << "]" << endl;
-        _ASSERT(th.AsString() == "04/03/2001 00:01:00");
+        assert(th.AsString() == "04/03/2001 00:01:00");
 
         for (int i = 0;  i < 8;  i++,  tn.AddHour()) {
             cout << (((tn.TimeZoneDiff()/3600) == -4) ? " ":"*") \
@@ -504,13 +471,13 @@ static void s_TestGMT(void)
         tn.AddHour(-3); 
         te.AddHour(9);
         cout << "-3h   [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "10/27/2001 21:01:00");
+        assert(tn.AsString() == "10/27/2001 21:01:00");
         cout << "+9h   [" << te.AsString() << "]" << endl;
-        _ASSERT(te.AsString() == "10/28/2001 08:01:00");
+        assert(te.AsString() == "10/28/2001 08:01:00");
         th = tn; 
         th.AddHour(49);
         cout << "+49h  [" << th.AsString() << "]" << endl;
-        _ASSERT(th.AsString() == "10/29/2001 21:01:00");
+        assert(th.AsString() == "10/29/2001 21:01:00");
 
         tn.AddHour(+2);
         for (int i = 0;  i < 10;  i++,  tn.AddHour()) {
@@ -532,9 +499,9 @@ static void s_TestGMT(void)
         tn.AddHour(-10); 
         te.AddHour(+10);
         cout << "-10h  [" << tn.AsString() << "]" << endl;
-        _ASSERT(tn.AsString() == "10/28/2001 00:01:00");
+        assert(tn.AsString() == "10/28/2001 00:01:00");
         cout << "+10h  [" << te.AsString() << "]" << endl;
-        _ASSERT(te.AsString() == "10/28/2001 19:01:00");
+        assert(te.AsString() == "10/28/2001 19:01:00");
         
         cout << endl; 
         cout << endl;
@@ -625,3 +592,49 @@ int main()
     // Success
     return 0;
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.11  2002/04/16 18:49:09  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 6.10  2001/09/27 18:02:45  ivanov
+ * Fixed division at zero in test of speed CTime class on fast computers.
+ *
+ * Revision 6.9  2001/07/23 15:51:46  ivanov
+ * Changed test for work with DB-time formats
+ *
+ * Revision 6.8  2001/07/06 15:08:36  ivanov
+ * Added tests for DataBase-time's
+ *
+ * Revision 6.7  2001/05/29 16:14:02  ivanov
+ * Return to nanosecond-revision. Corrected mistake of the work with local
+ * time on Linux. Polish and improvement source code.
+ * Renamed AsTimeT() -> GetTimerT().
+ *
+ * Revision 6.6  2001/04/30 22:01:31  lavr
+ * Rollback to pre-nanosecond-revision due to necessity to use
+ * configure to figure out names of global variables governing time zones
+ *
+ * Revision 6.5  2001/04/29 03:06:10  lavr
+ * #include <time.h>" moved from .cpp to ncbitime.hpp
+ *
+ * Revision 6.4  2001/04/27 20:39:47  ivanov
+ * Tests for check Local/UTC time and Nanoseconds added.
+ * Also speed test added.
+ *
+ * Revision 6.3  2000/11/21 18:15:05  butanaev
+ * Fixed bug in operator ++/-- (int)
+ *
+ * Revision 6.2  2000/11/21 15:22:57  vakatov
+ * Do not enforce "_DEBUG" -- it messes up the MSVC++ compilation
+ *
+ * Revision 6.1  2000/11/20 22:17:49  vakatov
+ * Added NCBI date/time class CTime ("ncbitime.[ch]pp") and
+ * its test suite ("test/test_ncbitime.cpp")
+ *
+ * ===========================================================================
+ */

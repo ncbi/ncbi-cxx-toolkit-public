@@ -1,53 +1,40 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Lewis Geer
-*
-* File Description:
-*   sample cgi program
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  1999/07/08 16:25:05  vakatov
-* Get rid of the redundant `extern "C"' at "main()"
-*
-* Revision 1.3  1999/05/11 03:11:55  vakatov
-* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
-*
-* Revision 1.2  1999/01/13 19:21:47  lewisg
-* check for end of multimap
-*
-* Revision 1.1  1999/01/13 14:46:45  lewisg
-* simple cgi demo
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Lewis Geer
+ *
+ * File Description:
+ *   sample cgi program
+ *
+ */
 
 // toolkit public headers
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
-// project private headers
+
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;  // this turns on the ncbi namespace
 
@@ -78,3 +65,25 @@ int main(int argc, char *argv[])
 
     return 0;  
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.5  2002/04/16 18:47:08  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 1.4  1999/07/08 16:25:05  vakatov
+ * Get rid of the redundant `extern "C"' at "main()"
+ *
+ * Revision 1.3  1999/05/11 03:11:55  vakatov
+ * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+ *
+ * Revision 1.2  1999/01/13 19:21:47  lewisg
+ * check for end of multimap
+ *
+ * Revision 1.1  1999/01/13 14:46:45  lewisg
+ * simple cgi demo
+ * ===========================================================================
+ */

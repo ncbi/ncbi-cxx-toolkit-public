@@ -28,19 +28,6 @@
  * File Description:
  *   Test for multithreading classes
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.3  2002/03/13 05:02:09  vakatov
- * sNumThreads = 35;  sSpawnBy = 6;
- *
- * Revision 6.2  2001/04/03 18:21:23  grichenk
- * + test for CThread::Exit()
- *
- * Revision 6.1  2001/03/13 22:45:20  vakatov
- * Initial revision
- *
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistd.hpp>
@@ -51,20 +38,9 @@
 #include <corelib/ncbidiag.hpp>
 #include <map>
 
-USING_NCBI_SCOPE;
+#include <test/test_assert.h>  /* This header must go last */
 
-#ifndef _DEBUG
-inline
-void s_Verify(bool expr)
-{
-    if ( !expr ) {
-        throw runtime_error("Test failed");
-    }
-}
-#else
-#include <assert.h>
-#define s_Verify assert
-#endif
+USING_NCBI_SCOPE;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -125,7 +101,7 @@ class CSharedResource
 public:
     CSharedResource(void) : m_Readers(0),
                             m_Writer(-1) {}
-    ~CSharedResource(void) { s_Verify(!m_Readers); }
+    ~CSharedResource(void) { assert(!m_Readers); }
     void BeginRead(int ID);
     void BeginWrite(int ID);
     void EndRead(int ID);
@@ -141,7 +117,7 @@ void CSharedResource::BeginRead(int ID)
 {
     CFastMutexGuard guard(m_Mutex);
     // Must be unlocked, R-locked, or W-locked by the same thread
-    s_Verify(m_Readers >= 0 || (m_Readers < 0 && ID == m_Writer));
+    assert(m_Readers >= 0 || (m_Readers < 0 && ID == m_Writer));
     (m_Readers >= 0) ? m_Readers++ : m_Readers--;
 }
 
@@ -150,7 +126,7 @@ void CSharedResource::BeginWrite(int ID)
 {
     CFastMutexGuard guard(m_Mutex);
     // Must be unlocked or W-locked by the same thread
-    s_Verify(m_Readers == 0 || (m_Readers < 0 && ID == m_Writer));
+    assert(m_Readers == 0 || (m_Readers < 0 && ID == m_Writer));
     m_Readers--;
     m_Writer = ID;
 }
@@ -160,7 +136,7 @@ void CSharedResource::EndRead(int ID)
 {
     CFastMutexGuard guard(m_Mutex);
     // Must be R-locked or W-locked by the same thread
-    s_Verify(m_Readers > 0 || (m_Readers < 0 && m_Writer == ID));
+    assert(m_Readers > 0 || (m_Readers < 0 && m_Writer == ID));
     (m_Readers > 0) ? m_Readers-- : m_Readers++;
     if (m_Readers == 0) {
         m_Writer = -1;
@@ -172,7 +148,7 @@ void CSharedResource::EndWrite(int ID)
 {
     CFastMutexGuard guard(m_Mutex);
     // Must be W-locked by the same thread;
-    s_Verify(m_Readers < 0 && m_Writer == ID);
+    assert(m_Readers < 0 && m_Writer == ID);
     m_Readers++;
     if (m_Readers == 0) {
         m_Writer = -1;
@@ -241,7 +217,7 @@ CTestThread::CTestThread(int index,
 CTestThread::~CTestThread(void)
 {
     CFastMutexGuard guard(s_GlobalLock);
-    s_Verify(m_CheckValue == 15);
+    assert(m_CheckValue == 15);
     states[m_Index] = eDestroyed;
 }
 
@@ -277,18 +253,18 @@ void* CTestThread::Main(void)
     // ======= CTls test =======
     // Verify TLS - initial value must be 0
     m_CheckValue = 0;
-    s_Verify(m_Tls->GetValue() == 0);
+    assert(m_Tls->GetValue() == 0);
     int* stored_value = new int;
-    s_Verify(stored_value != 0);
+    assert(stored_value != 0);
     *stored_value = 0;
     m_Tls->SetValue(stored_value, TestTlsCleanup, &m_CheckValue);
     for (int i=0; i<5; i++) {
         stored_value = new int;
-        s_Verify(stored_value != 0);
+        assert(stored_value != 0);
         *stored_value = *m_Tls->GetValue()+1;
         m_Tls->SetValue(stored_value,
                         TestTlsCleanup, &m_CheckValue);
-        s_Verify(*stored_value == m_CheckValue+1);
+        assert(*stored_value == m_CheckValue+1);
     }
 
     // ======= CThread test =======
@@ -303,7 +279,7 @@ void* CTestThread::Main(void)
             s_NextIndex++;
         }}
         thr[idx] = new CTestThread(idx, m_Tls, m_RW, m_Res);
-        s_Verify(states[idx] == eCreated);
+        assert(states[idx] == eCreated);
         thr[idx]->Run();
         {{
             CFastMutexGuard guard(s_GlobalLock);
@@ -313,14 +289,14 @@ void* CTestThread::Main(void)
 
     // ======= CTls test =======
     // Verify TLS - current value must be 5
-    s_Verify(*m_Tls->GetValue() == 5);
+    assert(*m_Tls->GetValue() == 5);
     for (int i=0; i<5; i++) {
         stored_value = new int;
-        s_Verify(stored_value != 0);
+        assert(stored_value != 0);
         *stored_value = *m_Tls->GetValue()+1;
         m_Tls->SetValue(stored_value,
                         TestTlsCleanup, &m_CheckValue);
-        s_Verify(*stored_value == m_CheckValue+1);
+        assert(*stored_value == m_CheckValue+1);
     }
 
     // ======= CRWLock test =======
@@ -335,48 +311,48 @@ void* CTestThread::Main(void)
             int l_var = s_var;    // must remain the same while R-locked
             
             m_Res->BeginRead(m_Index);
-            s_Verify(l_var == s_var);
+            assert(l_var == s_var);
 
             // Cascaded R-lock
             if (r_cycle % 6 == 0) {
                 m_RW->ReadLock();
                 m_Res->BeginRead(m_Index);
             }
-            s_Verify(l_var == s_var);
+            assert(l_var == s_var);
 
             // Cascaded R-lock must be allowed
             if (r_cycle % 12 == 0) {
-                s_Verify(m_RW->TryReadLock());
+                assert(m_RW->TryReadLock());
                 m_Res->BeginRead(m_Index);
                 m_Res->EndRead(m_Index);
                 m_RW->Unlock();
 	    }
 
             // W-after-R must be prohibited
-            s_Verify( !m_RW->TryWriteLock() );
+            assert( !m_RW->TryWriteLock() );
 
             delay(10);
 
             // ======= CTls test =======
             // Verify TLS - current value must be 10
-            s_Verify(*m_Tls->GetValue() == 10);
+            assert(*m_Tls->GetValue() == 10);
 
-            s_Verify(l_var == s_var);
+            assert(l_var == s_var);
 
             // Cascaded R-lock must be allowed
             if (r_cycle % 7 == 0) {
-                s_Verify(m_RW->TryReadLock());
+                assert(m_RW->TryReadLock());
                 m_Res->BeginRead(m_Index);
                 m_Res->EndRead(m_Index);
                 m_RW->Unlock();
             }
-            s_Verify(l_var == s_var);
+            assert(l_var == s_var);
 
             if (r_cycle % 6 == 0) {
                 m_Res->EndRead(m_Index);
                 m_RW->Unlock();
             }
-            s_Verify(l_var == s_var);
+            assert(l_var == s_var);
 
             m_Res->EndRead(m_Index);
             m_RW->Unlock();
@@ -404,19 +380,19 @@ void* CTestThread::Main(void)
 
             // Cascaded W-lock must be allowed
             if (w_cycle % 8 == 0) {
-                s_Verify(m_RW->TryWriteLock());
+                assert(m_RW->TryWriteLock());
                 m_Res->BeginWrite(m_Index);
             }
 
             // Cascaded R-lock must be allowed
             if (w_cycle % 10 == 0) {
-                s_Verify(m_RW->TryReadLock());
+                assert(m_RW->TryReadLock());
                 m_Res->BeginRead(m_Index);
             }
 
             // ======= CTls test =======
             // Verify TLS - current value must be 10
-            s_Verify(*m_Tls->GetValue() == 10);
+            assert(*m_Tls->GetValue() == 10);
 
             // Continue CRWLock test
             for (int i=0; i<7; i++) {
@@ -448,17 +424,17 @@ void* CTestThread::Main(void)
 
     // ======= CTls test =======
     // Verify TLS - current value must be 10
-    s_Verify(*m_Tls->GetValue() == 10);
+    assert(*m_Tls->GetValue() == 10);
     for (int i=0; i<5; i++) {
         stored_value = new int;
-        s_Verify(stored_value != 0);
+        assert(stored_value != 0);
         *stored_value = *m_Tls->GetValue()+1;
         m_Tls->SetValue(stored_value,
                         TestTlsCleanup, &m_CheckValue);
-        s_Verify(*stored_value == m_CheckValue+1);
+        assert(*stored_value == m_CheckValue+1);
     }
-    s_Verify(*m_Tls->GetValue() == 15);
-    s_Verify(m_CheckValue == 14);
+    assert(*m_Tls->GetValue() == 15);
+    assert(m_CheckValue == 14);
 
     // ======= CThread::Detach() and CThread::Join() test =======
     if (m_Index % 2 == 0) {
@@ -470,7 +446,7 @@ void* CTestThread::Main(void)
     {
         // Never verified, since CThread::Exit() terminates the thread
         // inside Test_CThreadExit().
-        s_Verify(Test_CThreadExit());
+        assert(Test_CThreadExit());
     }
 
     return reinterpret_cast<void*>(-1);
@@ -565,11 +541,11 @@ int CThreadedApp::Run(void)
     NcbiCout << "Creating/discarding TLS test...";
     int main_cleanup_flag = 0;
     CTls<int>* dummy_tls = new CTls<int>;
-    s_Verify(main_cleanup_flag == 0);
+    assert(main_cleanup_flag == 0);
     dummy_tls->SetValue(&main_cleanup_flag, Main_Thread_Tls_Cleanup);
-    s_Verify(main_cleanup_flag == 0);
+    assert(main_cleanup_flag == 0);
     dummy_tls->Discard();
-    s_Verify(main_cleanup_flag == 1);
+    assert(main_cleanup_flag == 1);
     NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
 
     // Create test objects
@@ -608,13 +584,13 @@ int CThreadedApp::Run(void)
         // Check Discard() for some threads
         if (i % 2 == 0) {
             thr[idx] = new CTestThread(idx, tls, &rw, &res);
-            s_Verify(states[idx] == eCreated);
+            assert(states[idx] == eCreated);
             thr[idx]->Discard();
-            s_Verify(states[idx] == eDestroyed);
+            assert(states[idx] == eDestroyed);
         }
         
         thr[idx] = new CTestThread(idx, tls, &rw, &res);
-        s_Verify(states[idx] == eCreated);
+        assert(states[idx] == eCreated);
         thr[idx]->Run();
         {{
             CFastMutexGuard guard(s_GlobalLock);
@@ -655,12 +631,12 @@ int CThreadedApp::Run(void)
     for (int i=0; i<sNumThreads; i++) {
         // Try to join before exit
         if (i % 4 == 2) {
-            s_Verify(states[i] < eTerminated);
+            assert(states[i] < eTerminated);
             exit_locks[i]->Unlock();
             void* exit_data = 0;
             thr[i]->Join(&exit_data);
             // Must be set to 1 by Main()
-            s_Verify(exit_data != 0);
+            assert(exit_data != 0);
             {{
                 CFastMutexGuard guard(s_GlobalLock);
                 NcbiCout << i << " ";
@@ -670,9 +646,9 @@ int CThreadedApp::Run(void)
 
     // Reset CRef to the test tls. One more CRef to the object
     // must have been stored in the CThread's m_UsedTlsSet.
-    s_Verify(main_cleanup_flag == 0);
+    assert(main_cleanup_flag == 0);
     tls.Reset();
-    s_Verify(main_cleanup_flag == 0);
+    assert(main_cleanup_flag == 0);
 
     {{
         CFastMutexGuard guard(s_GlobalLock);
@@ -682,7 +658,7 @@ int CThreadedApp::Run(void)
     for (int i=0; i<sNumThreads; i++) {
         // Detach before exit
         if (i % 4 == 0) {
-            s_Verify(states[i] < eTerminated);
+            assert(states[i] < eTerminated);
             thr[i]->Detach();
             exit_locks[i]->Unlock();
             {{
@@ -703,7 +679,7 @@ int CThreadedApp::Run(void)
     for (int i=0; i<sNumThreads; i++) {
         // Detach after exit
         if (i % 4 == 1) {
-            s_Verify(states[i] != eDestroyed);
+            assert(states[i] != eDestroyed);
             thr[i]->Detach();
             {{
                 CFastMutexGuard guard(s_GlobalLock);
@@ -720,7 +696,7 @@ int CThreadedApp::Run(void)
     for (int i=0; i<sNumThreads; i++) {
         // Join after exit
         if (i % 4 == 3) {
-            s_Verify(states[i] != eDestroyed);
+            assert(states[i] != eDestroyed);
             thr[i]->Join();
             {{
                 CFastMutexGuard guard(s_GlobalLock);
@@ -772,3 +748,23 @@ int main(int argc, const char* argv[])
     CThreadedApp app;
     return app.AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.4  2002/04/16 18:49:09  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 6.3  2002/03/13 05:02:09  vakatov
+ * sNumThreads = 35;  sSpawnBy = 6;
+ *
+ * Revision 6.2  2001/04/03 18:21:23  grichenk
+ * + test for CThread::Exit()
+ *
+ * Revision 6.1  2001/03/13 22:45:20  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */

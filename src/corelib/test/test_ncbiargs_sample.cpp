@@ -28,24 +28,13 @@
  * File Description:
  *   Sample for the command-line arguments' processing ("ncbiargs.[ch]pp"):
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.3  2001/06/01 15:36:21  vakatov
- * Fixed for the case when "logfile" is not provided in the cmd.line
- *
- * Revision 6.2  2001/06/01 15:17:57  vakatov
- * Workaround a bug in SUN WorkShop 5.1 compiler
- *
- * Revision 6.1  2001/05/31 16:32:51  ivanov
- * Initialization
- *
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -158,9 +147,9 @@ int CArgTestApplication::Run(void)
     cout << string(72, '=') << endl;
 
     // Self test
-    _ASSERT(args.Exist("f1"));
-    _ASSERT(args.Exist("logfile"));
-    _ASSERT(args["barfooetc"]);
+    assert(args.Exist("f1"));
+    assert(args.Exist("logfile"));
+    assert(args["barfooetc"]);
 
     // Stream to result output
     // (NOTE: "x_lg" is just a workaround for bug in SUN WorkShop 5.1 compiler)
@@ -188,14 +177,14 @@ int CArgTestApplication::Run(void)
         } catch (CArgException&) {
             is_thrown = true;
         }
-        _ASSERT(is_thrown);
+        assert(is_thrown);
     }
 
     if ( args["f1"] ) {
-        _ASSERT(args["f1"].AsBoolean());
+        assert(args["f1"].AsBoolean());
     }
     if ( args["f2"] ) {
-        _ASSERT(args["f2"].AsBoolean());
+        assert(args["f2"].AsBoolean());
     }
 
     // Extra (unnamed positional) arguments
@@ -241,3 +230,23 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CArgTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.4  2002/04/16 18:49:07  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 6.3  2001/06/01 15:36:21  vakatov
+ * Fixed for the case when "logfile" is not provided in the cmd.line
+ *
+ * Revision 6.2  2001/06/01 15:17:57  vakatov
+ * Workaround a bug in SUN WorkShop 5.1 compiler
+ *
+ * Revision 6.1  2001/05/31 16:32:51  ivanov
+ * Initialization
+ *
+ * ===========================================================================
+ */

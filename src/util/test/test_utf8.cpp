@@ -35,6 +35,7 @@
 #include <util/utf8.hpp>
 #include <stdio.h>
 
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -133,6 +134,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/04/16 18:52:16  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
  * Revision 1.3  2002/01/18 19:25:26  ivanov
  * Polish source code. Appended one more test string.
  *

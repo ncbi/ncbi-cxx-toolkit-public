@@ -28,29 +28,13 @@
  * File Description:
  *   Test UTIL_PushbackStream() interface.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2002/03/19 21:57:19  lavr
- * +IOS_BASE::binary in file open
- *
- * Revision 1.4  2002/02/05 21:45:19  lavr
- * Included header files rearranged
- *
- * Revision 1.3  2002/02/05 16:06:41  lavr
- * List of included header files revised; Use macro IOS_BASE instead of raw ios
- *
- * Revision 1.2  2002/02/04 20:24:04  lavr
- * Remove data file if successful
- *
- * Revision 1.1  2002/01/29 16:02:19  lavr
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include "pbacktest.hpp"
 #include <corelib/ncbidiag.hpp>
 #include <stdio.h>                 // remove()
+
+#include <test/test_assert.h>  /* This header must go last */
 
 
 int main(int argc, char* argv[])
@@ -73,3 +57,29 @@ int main(int argc, char* argv[])
         remove(filename);
     return ret;
 }
+
+
+/*
+ * ==========================================================================
+ * $Log$
+ * Revision 1.6  2002/04/16 18:52:15  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 1.5  2002/03/19 21:57:19  lavr
+ * +IOS_BASE::binary in file open
+ *
+ * Revision 1.4  2002/02/05 21:45:19  lavr
+ * Included header files rearranged
+ *
+ * Revision 1.3  2002/02/05 16:06:41  lavr
+ * List of included header files revised; Use macro IOS_BASE instead of raw ios
+ *
+ * Revision 1.2  2002/02/04 20:24:04  lavr
+ * Remove data file if successful
+ *
+ * Revision 1.1  2002/01/29 16:02:19  lavr
+ * Initial revision
+ *
+ * ==========================================================================
+ */

@@ -1,62 +1,46 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Andrei Gourianov, gouriano@ncbi.nlm.nih.gov
-*
-* File Description:
-*   Test CSemaphore class in multithreaded environment
-*   NOTE: in order to run correctly the number of threads MUST be even!
-*
-*   the test is a very simple producer/consumer model
-*   one thread produces "items" (increments integer counter)
-*	next thread consumes the same amount of items (decrements integer counter)
-*	"Content" semaphore is used to notify consumers of how many items are
-*   available.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 6.4  2002/03/19 20:29:48  gouriano
-* added "windows.h"
-*
-* Revision 6.3  2002/03/14 19:10:04  gouriano
-* added checking of number of threads
-*
-* Revision 6.2  2001/12/13 19:48:23  gouriano
-* *** empty log message ***
-*
-* Revision 6.1  2001/12/10 18:37:29  gouriano
-* *** empty log message ***
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Andrei Gourianov, gouriano@ncbi.nlm.nih.gov
+ *
+ * File Description:
+ *   Test CSemaphore class in multithreaded environment
+ *   NOTE: in order to run correctly the number of threads MUST be even!
+ *
+ *   the test is a very simple producer/consumer model
+ *   one thread produces "items" (increments integer counter)
+ *	next thread consumes the same amount of items (decrements integer counter)
+ *	"Content" semaphore is used to notify consumers of how many items are
+ *   available.
+ *
+ */
 
 #include <corelib/ncbithr.hpp>
 #include "test_mt.hpp"
-#if defined(NCBI_OS_MSWIN)
-    #include <windows.h>
-#endif
+
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -200,10 +184,10 @@ bool CTestSemaphoreApp::TestApp_Exit(void)
         << " counter = " << s_Counter
         << NcbiEndl;
     // storage must be available
-    _ASSERT( s_semStorage.TryWait());
+    assert( s_semStorage.TryWait());
     // content must be empty
-    _ASSERT( !s_semContent.TryWait());
-	_ASSERT( s_Counter == 0);
+    assert( !s_semContent.TryWait());
+	assert( s_Counter == 0);
     return true;
 }
 
@@ -214,5 +198,29 @@ bool CTestSemaphoreApp::TestApp_Exit(void)
 
 int main(int argc, const char* argv[]) 
 {
+    // Execute main application function
     return CTestSemaphoreApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.5  2002/04/16 18:49:09  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 6.4  2002/03/19 20:29:48  gouriano
+ * added "windows.h"
+ *
+ * Revision 6.3  2002/03/14 19:10:04  gouriano
+ * added checking of number of threads
+ *
+ * Revision 6.2  2001/12/13 19:48:23  gouriano
+ * *** empty log message ***
+ *
+ * Revision 6.1  2001/12/10 18:37:29  gouriano
+ * *** empty log message ***
+ *
+ * ===========================================================================
+ */

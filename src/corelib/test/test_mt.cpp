@@ -31,6 +31,8 @@
  */
 
 #include "test_mt.hpp"
+#include <test/test_assert.h>  /* This header must go last */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -67,21 +69,21 @@ CTestThread::CTestThread(int idx)
     : m_Idx(idx)
 {
     if ( s_Application != 0 )
-        s_Verify(s_Application->Thread_Init(m_Idx));
+        assert(s_Application->Thread_Init(m_Idx));
 }
 
 
 CTestThread::~CTestThread(void)
 {
     if ( s_Application != 0 )
-        s_Verify(s_Application->Thread_Destroy(m_Idx));
+        assert(s_Application->Thread_Destroy(m_Idx));
 }
 
 
 void CTestThread::OnExit(void)
 {
     if ( s_Application != 0 )
-        s_Verify(s_Application->Thread_Exit(m_Idx));
+        assert(s_Application->Thread_Exit(m_Idx));
 }
 
 CRef<CTestThread> thr[c_NumThreadsMax];
@@ -105,7 +107,7 @@ void* CTestThread::Main(void)
 
     // Run the test
     if ( s_Application != 0 )
-        s_Verify(s_Application->Thread_Run(m_Idx));
+        assert(s_Application->Thread_Run(m_Idx));
 
     return 0;
 }
@@ -167,7 +169,7 @@ int CThreadedApp::Run(void)
     s_NumThreads = args["threads"].AsInteger();
     s_SpawnBy    = args["spawnby"].AsInteger();
 
-    s_Verify(TestApp_Init());
+    assert(TestApp_Init());
 
     // Create and run threads
     for (int i=0; i<s_SpawnBy; i++) {
@@ -190,7 +192,7 @@ int CThreadedApp::Run(void)
         thr[i]->Join();
     }
 
-    s_Verify(TestApp_Exit());
+    assert(TestApp_Exit());
 
     // Destroy all threads
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -242,6 +244,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2002/04/16 18:49:07  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
  * Revision 6.4  2002/04/10 18:38:19  ivanov
  * Moved CVS log to end of file
  *

@@ -1,63 +1,42 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Vladimir Ivanov
-*
-* File Description:
-*      System functions
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 6.5  2001/11/08 21:31:45  ivanov
-* Renamed GetCPUNumber() -> GetCpuCount()
-*
-* Revision 6.4  2001/11/08 21:10:59  ivanov
-* Added test for GetCPUNumber()
-*
-* Revision 6.3  2001/07/23 15:24:06  ivanov
-* Fixed bug in Get/Set times in DB-format (1 day difference)
-*
-* Revision 6.2  2001/07/02 21:33:09  vakatov
-* Fixed against SIGXCPU during the signal handling.
-* Increase the amount of reserved memory for the memory limit handler
-* to 10K (to fix for the 64-bit WorkShop compiler).
-* Use standard C++ arg.processing (ncbiargs) in the test suite.
-* Cleaned up the code. Get rid of the "Ncbi_" prefix.
-*
-* Revision 6.1  2001/07/02 16:43:43  ivanov
-* Initialization
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Vladimir Ivanov
+ *
+ * File Description:
+ *      System functions
+ *
+ */
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
-
 #include <memory>
+
+#include <test/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
@@ -103,12 +82,12 @@ static void Test_MemLimit(void)
 
     const size_t kHeapLimit = 100000;
 
-    _VERIFY( SetHeapLimit(kHeapLimit, PrintHandler, &s_PrintParameter) );
+    assert( SetHeapLimit(kHeapLimit, PrintHandler, &s_PrintParameter) );
     
     for (size_t i = 0;  i <= kHeapLimit/10;  i++) {
         s_PrintParameter++;
         int* pi = new int[10];
-        _ASSERT(pi);
+        assert(pi);
     }
 }
 
@@ -121,7 +100,7 @@ static void Test_CpuLimit(void)
 {
     LOG_POST("\nCPU time limit test\n");
 
-    _VERIFY( SetCpuTimeLimit(2) );
+    assert( SetCpuTimeLimit(2) );
 
     for (;;) {
         continue;
@@ -204,3 +183,33 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return theTestApplication.AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.6  2002/04/16 18:49:07  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 6.5  2001/11/08 21:31:45  ivanov
+ * Renamed GetCPUNumber() -> GetCpuCount()
+ *
+ * Revision 6.4  2001/11/08 21:10:59  ivanov
+ * Added test for GetCPUNumber()
+ *
+ * Revision 6.3  2001/07/23 15:24:06  ivanov
+ * Fixed bug in Get/Set times in DB-format (1 day difference)
+ *
+ * Revision 6.2  2001/07/02 21:33:09  vakatov
+ * Fixed against SIGXCPU during the signal handling.
+ * Increase the amount of reserved memory for the memory limit handler
+ * to 10K (to fix for the 64-bit WorkShop compiler).
+ * Use standard C++ arg.processing (ncbiargs) in the test suite.
+ * Cleaned up the code. Get rid of the "Ncbi_" prefix.
+ *
+ * Revision 6.1  2001/07/02 16:43:43  ivanov
+ * Initialization
+ *
+ * ===========================================================================
+ */

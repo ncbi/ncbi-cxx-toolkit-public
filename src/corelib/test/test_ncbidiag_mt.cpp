@@ -28,21 +28,13 @@
  * File Description:
  *   Test for "NCBIDIAG" in multithreaded environment
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.2  2001/04/06 16:44:14  grichenk
- * Redesigned to use MT test suite API from "test_mt.[ch]pp"
- *
- * Revision 6.1  2001/03/30 22:46:59  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
  */
 
 #include "test_mt.hpp"
 #include <corelib/ncbidiag.hpp>
 #include <algorithm>
+
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -101,7 +93,7 @@ bool CTestDiagApp::TestApp_Exit(void)
     // Get the list of messages and check the size
     NStr::Split(test_res, "\xA\xD", messages);
 
-    s_Verify(messages.size() == s_NumThreads*3);
+    assert(messages.size() == s_NumThreads*3);
 
     // Verify "created" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -109,10 +101,10 @@ bool CTestDiagApp::TestApp_Exit(void)
             messages.begin(),
             messages.end(),
             "Thread " + NStr::IntToString(i) + " created");
-        s_Verify(it != messages.end());
+        assert(it != messages.end());
         messages.erase(it);
     }
-    s_Verify(messages.size() == s_NumThreads*2);
+    assert(messages.size() == s_NumThreads*2);
 
     // Verify "Error" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -120,10 +112,10 @@ bool CTestDiagApp::TestApp_Exit(void)
             messages.begin(),
             messages.end(),
             "Error: ERROR message from thread " + NStr::IntToString(i));
-        s_Verify(it != messages.end());
+        assert(it != messages.end());
         messages.erase(it);
     }
-    s_Verify(messages.size() == s_NumThreads);
+    assert(messages.size() == s_NumThreads);
 
     // Verify "Log" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -131,10 +123,10 @@ bool CTestDiagApp::TestApp_Exit(void)
             messages.begin(),
             messages.end(),
             "LOG message from thread " + NStr::IntToString(i));
-        s_Verify(it != messages.end());
+        assert(it != messages.end());
         messages.erase(it);
     }
-    s_Verify(messages.size() == 0);
+    assert(messages.size() == 0);
 
     // Cleaunp
     SetDiagStream(0);
@@ -154,3 +146,20 @@ int main(int argc, const char* argv[])
     CTestDiagApp app;
     return app.AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.3  2002/04/16 18:49:08  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 6.2  2001/04/06 16:44:14  grichenk
+ * Redesigned to use MT test suite API from "test_mt.[ch]pp"
+ *
+ * Revision 6.1  2001/03/30 22:46:59  grichenk
+ * Initial revision
+ *
+ * ===========================================================================
+ */

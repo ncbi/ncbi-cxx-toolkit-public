@@ -28,79 +28,14 @@
  * File Description:
  *   Test for the command-line arguments' processing ("ncbiargs.[ch]pp"):
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.17  2001/03/26 16:52:19  vakatov
- * Fixed a minor warning
- *
- * Revision 6.16  2000/12/24 00:13:00  vakatov
- * Radically revamped NCBIARGS.
- * Introduced optional key and posit. args without default value.
- * Added new arg.value constraint classes.
- * Passed flags to be detected by HasValue() rather than AsBoolean.
- * Simplified constraints on the number of mandatory and optional extra args.
- * Improved USAGE info and diagnostic messages. Etc...
- *
- * Revision 6.15  2000/11/29 00:09:19  vakatov
- * Added test #10 -- to auto-sort flag and key args alphabetically
- *
- * Revision 6.14  2000/11/24 23:37:46  vakatov
- * The test is now "CNcbiApplication" based (rather than "bare main()")
- * -- to use and to test standard processing of cmd.-line arguments implemented
- * in "CNcbiApplication".
- * Also, test for CArgValue::CloseFile().
- *
- * Revision 6.13  2000/11/22 22:04:32  vakatov
- * Added special flag "-h" and special exception CArgHelpException to
- * force USAGE printout in a standard manner
- *
- * Revision 6.12  2000/11/22 19:40:51  vakatov
- * s_Test3() -- fixed:  Exist() --> IsProvided()
- *
- * Revision 6.11  2000/11/20 19:49:40  vakatov
- * Test0::  printout all arg values
- *
- * Revision 6.10  2000/11/17 22:04:31  vakatov
- * CArgDescriptions::  Switch the order of optional args in methods
- * AddOptionalKey() and AddPlain(). Also, enforce the default value to
- * match arg. description (and constraints, if any) at all times.
- *
- * Revision 6.9  2000/11/13 20:31:09  vakatov
- * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
- *
- * Revision 6.8  2000/10/20 20:26:11  butanaev
- * Modified example #9.
- *
- * Revision 6.7  2000/10/11 21:03:50  vakatov
- * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
- * (reported by Forte6 Patch 109490-01)
- *
- * Revision 6.6  2000/10/06 21:57:07  butanaev
- * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
- *
- * Revision 6.5  2000/09/29 17:11:01  butanaev
- * Got rid of IsDefaultValue(), added IsProvided().
- *
- * Revision 6.4  2000/09/28 21:00:21  butanaev
- * fPreOpen with opposite meaning took over fDelayOpen.
- * IsDefaultValue() added which returns true if no
- * value for an optional argument was provided in cmd. line.
- *
- * Revision 6.3  2000/09/22 21:26:28  butanaev
- * Added example with default arg values.
- *
- * Revision 6.2  2000/09/12 15:01:30  butanaev
- * Examples now switching by environment variable EXAMPLE_NUM.
- *
- * Revision 6.1  2000/08/31 23:55:35  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+
+#include <test/test_assert.h>  /* This header must go last */
+
 
 USING_NCBI_SCOPE;
 
@@ -169,10 +104,10 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
 
 static void s_RunTest0(const CArgs& args, ostream& os)
 {
-    _ASSERT(!args.Exist(kEmptyStr));  // never exists;  use #1, #2, ... instead
-    _ASSERT(args.Exist("f1"));
-    _ASSERT(args.Exist("logfile"));
-    _ASSERT(args["barfooetc"]);
+    assert(!args.Exist(kEmptyStr));  // never exists;  use #1, #2, ... instead
+    assert(args.Exist("f1"));
+    assert(args.Exist("logfile"));
+    assert(args["barfooetc"]);
 
     if ( !args["logfile"] )
         return;
@@ -198,14 +133,14 @@ static void s_RunTest0(const CArgs& args, ostream& os)
         } catch (CArgException&) {
             is_thrown = true;
         }
-        _ASSERT(is_thrown);
+        assert(is_thrown);
     }
 
     if ( args["f1"] ) {
-        _ASSERT(args["f1"].AsBoolean());
+        assert(args["f1"].AsBoolean());
     }
     if ( args["f2"] ) {
-        _ASSERT(args["f2"].AsBoolean());
+        assert(args["f2"].AsBoolean());
     }
 
     // Extra (unnamed positional) arguments
@@ -567,3 +502,79 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CArgTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.18  2002/04/16 18:49:07  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 6.17  2001/03/26 16:52:19  vakatov
+ * Fixed a minor warning
+ *
+ * Revision 6.16  2000/12/24 00:13:00  vakatov
+ * Radically revamped NCBIARGS.
+ * Introduced optional key and posit. args without default value.
+ * Added new arg.value constraint classes.
+ * Passed flags to be detected by HasValue() rather than AsBoolean.
+ * Simplified constraints on the number of mandatory and optional extra args.
+ * Improved USAGE info and diagnostic messages. Etc...
+ *
+ * Revision 6.15  2000/11/29 00:09:19  vakatov
+ * Added test #10 -- to auto-sort flag and key args alphabetically
+ *
+ * Revision 6.14  2000/11/24 23:37:46  vakatov
+ * The test is now "CNcbiApplication" based (rather than "bare main()")
+ * -- to use and to test standard processing of cmd.-line arguments implemented
+ * in "CNcbiApplication".
+ * Also, test for CArgValue::CloseFile().
+ *
+ * Revision 6.13  2000/11/22 22:04:32  vakatov
+ * Added special flag "-h" and special exception CArgHelpException to
+ * force USAGE printout in a standard manner
+ *
+ * Revision 6.12  2000/11/22 19:40:51  vakatov
+ * s_Test3() -- fixed:  Exist() --> IsProvided()
+ *
+ * Revision 6.11  2000/11/20 19:49:40  vakatov
+ * Test0::  printout all arg values
+ *
+ * Revision 6.10  2000/11/17 22:04:31  vakatov
+ * CArgDescriptions::  Switch the order of optional args in methods
+ * AddOptionalKey() and AddPlain(). Also, enforce the default value to
+ * match arg. description (and constraints, if any) at all times.
+ *
+ * Revision 6.9  2000/11/13 20:31:09  vakatov
+ * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
+ *
+ * Revision 6.8  2000/10/20 20:26:11  butanaev
+ * Modified example #9.
+ *
+ * Revision 6.7  2000/10/11 21:03:50  vakatov
+ * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
+ * (reported by Forte6 Patch 109490-01)
+ *
+ * Revision 6.6  2000/10/06 21:57:07  butanaev
+ * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
+ *
+ * Revision 6.5  2000/09/29 17:11:01  butanaev
+ * Got rid of IsDefaultValue(), added IsProvided().
+ *
+ * Revision 6.4  2000/09/28 21:00:21  butanaev
+ * fPreOpen with opposite meaning took over fDelayOpen.
+ * IsDefaultValue() added which returns true if no
+ * value for an optional argument was provided in cmd. line.
+ *
+ * Revision 6.3  2000/09/22 21:26:28  butanaev
+ * Added example with default arg values.
+ *
+ * Revision 6.2  2000/09/12 15:01:30  butanaev
+ * Examples now switching by environment variable EXAMPLE_NUM.
+ *
+ * Revision 6.1  2000/08/31 23:55:35  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */

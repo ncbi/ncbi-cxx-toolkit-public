@@ -32,19 +32,6 @@
  *
  *   NOTE:  needs HTML template file "sample_cgi.html" in curr. dir to run!
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.3  2001/11/19 15:20:18  ucko
- * Switch CGI stuff to new diagnostics interface.
- *
- * Revision 1.2  2001/10/29 15:16:13  ucko
- * Preserve default CGI diagnostic settings, even if customized by app.
- *
- * Revision 1.1  2001/10/04 18:17:54  ucko
- * Accept additional query parameters for more flexible diagnostics.
- * Support checking the readiness of CGI input and output streams.
- *
- * ===========================================================================
  */
 
 #include <cgi/cgiapp.hpp>
@@ -54,6 +41,7 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -144,3 +132,24 @@ int main(int argc, const char* argv[])
     _TRACE("back to normal diags");
     return result;
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.4  2002/04/16 18:47:08  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 1.3  2001/11/19 15:20:18  ucko
+ * Switch CGI stuff to new diagnostics interface.
+ *
+ * Revision 1.2  2001/10/29 15:16:13  ucko
+ * Preserve default CGI diagnostic settings, even if customized by app.
+ *
+ * Revision 1.1  2001/10/04 18:17:54  ucko
+ * Accept additional query parameters for more flexible diagnostics.
+ * Support checking the readiness of CGI input and output streams.
+ *
+ * ===========================================================================
+ */
