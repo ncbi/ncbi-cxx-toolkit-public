@@ -41,8 +41,8 @@ BEGIN_NCBI_SCOPE
 class CMsvcPrjFilesCollector
 {
 public:
-    //no value type	semantics
     CMsvcPrjFilesCollector(const CMsvcPrjProjectContext& project_context,
+                           const list<SConfigInfo>&      project_configs,
                            const CProjItem&              project);
 
     ~CMsvcPrjFilesCollector(void);
@@ -59,28 +59,20 @@ private:
     CMsvcPrjFilesCollector(const CMsvcPrjFilesCollector&);
     CMsvcPrjFilesCollector&	operator= (const CMsvcPrjFilesCollector&);
 
+    void CollectSources(void);
+    void CollectHeaders(void);
+    void CollectInlines(void);
+    void CollectResources(void);
+
+private:
+    const CMsvcPrjProjectContext* m_Context;
+    const list<SConfigInfo>*      m_Configs;
+    const CProjItem*              m_Project;
+
     list<string> m_SourceFiles;
     list<string> m_HeaderFiles;
     list<string> m_InlineFiles;
     list<string> m_ResourceFiles;
-
-
-    static void CollectSources  (const CProjItem&              project,
-                                 const CMsvcPrjProjectContext& context,
-                                 list<string>*                 rel_pathes);
-
-
-    static void CollectHeaders  (const CProjItem&              project,
-                                 const CMsvcPrjProjectContext& context,
-                                 list<string>*                 rel_pathes);
-
-    static void CollectInlines  (const CProjItem&              project,
-                                 const CMsvcPrjProjectContext& context,
-                                 list<string>*                 rel_pathes);
-
-    static void CollectResources (const CProjItem&              project,
-                                 const CMsvcPrjProjectContext&  context,
-                                 list<string>*                  rel_pathes);
 };
 
 
@@ -89,6 +81,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/12 16:19:35  ivanov
+ * CMsvcPrjFilesCollector class: use private members instead of a lot of
+ * function arguments
+ *
  * Revision 1.4  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *
