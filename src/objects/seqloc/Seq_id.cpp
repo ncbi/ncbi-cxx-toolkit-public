@@ -304,11 +304,11 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'B':
             switch (pfx[1]) {
             case 'A':                               return eAcc_ddbj_con;
-            case 'B': case 'J': case 'P':           return eAcc_ddbj_est;
+            case 'B': case 'J': case 'P': case 'W': return eAcc_ddbj_est;
             case 'C': case 'T':                     return eAcc_gb_cdna;
             case 'D':                               return eAcc_ddbj_patent;
-            case 'E': case 'F': case 'G':
-            case 'I': case 'M': case 'Q': case 'U': return eAcc_gb_est;
+            case 'E': case 'F': case 'G': case 'I':
+            case 'M': case 'Q': case 'U':           return eAcc_gb_est;
             case 'H':                               return eAcc_gb_gss;
             case 'K': case 'L':                     return eAcc_gb_tpa_nuc;
             case 'N':                               return eAcc_embl_tpa_nuc;
@@ -816,6 +816,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.31  2002/08/26 20:44:06  ucko
+ * CSeq_id::IdentifyAccession: +BW (DDBJ EST)
+ *
  * Revision 6.30  2002/08/19 16:54:30  ucko
  * IdentifyAccession: add BV (eAcc_gb_sts).
  *
