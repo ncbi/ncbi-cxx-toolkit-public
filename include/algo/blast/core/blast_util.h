@@ -123,15 +123,6 @@ Int4 LIBCALL
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
    Int4 nt_length, Int2 frame, Uint1Ptr buffer, Uint1Ptr genetic_code);
 
-/** Given a file containing sequence(s) in fasta format,
- * read a sequence and fill out a BLAST_SequenceBlk structure.
- *
- * @param fasta_fp the file to read from, assumed to already be open
- * @param seq pointer to the sequence block to fill out
- * @return Zero if successful, one on any error.
- */
-Int4 MakeBlastSequenceBlkFromFasta(FILE *fasta_fp, BLAST_SequenceBlkPtr seq);
-
 /** Translate a nucleotide sequence without ambiguity codes.
  * This is used for the first-pass translation of the database.
  * The genetic code to be used is determined by the translation_table
