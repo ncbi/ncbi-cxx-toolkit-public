@@ -273,6 +273,12 @@ public:
         m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
     }
 
+protected:
+    virtual void ProcessOverflow(SOCK sock) 
+    { 
+        SOCK_Close(sock); 
+        ERR_POST("ProcessOverflow!");
+    }
 
 private:
     struct Request
@@ -1241,6 +1247,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/02/17 16:15:27  kuznets
+ * Added ProcessOverflow with ERR_POST
+ *
  * Revision 1.42  2005/02/15 15:16:50  kuznets
  * Rotated log stream, overloaded x_BackupName to self-rotate
  *
