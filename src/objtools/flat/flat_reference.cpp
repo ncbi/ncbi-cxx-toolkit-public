@@ -264,7 +264,7 @@ bool CFlatReference::Matches(const CPub_set& ps) const
     for (it = ps;  it;  ++it) {
         if (CType<CCit_gen>::Match(it)) {
             const CCit_gen& gen = *CType<CCit_gen>::Get(it);
-            if (HasMUID(gen.GetMuid())
+            if ((gen.IsSetMuid()  &&  HasMUID(gen.GetMuid()))
                 /* ||  gen.GetSerial_number() == m_Serial */) {
                 return true;
             }
@@ -277,7 +277,8 @@ bool CFlatReference::Matches(const CPub_set& ps) const
                 return true;
             }
         } else if (CType<CPub>::Match(it)) {
-            if (HasMUID(CType<CPub>::Get(it)->GetMuid())) {
+            const CPub& pub = *CType<CPub>::Get(it);
+            if (pub.IsMuid()  &&  HasMUID(pub.GetMuid())) {
                 return true;
             }
         } else if (CType<CPubMedId>::Match(it)) {
@@ -641,6 +642,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/04/09 20:03:11  ucko
+* Fix unsafe assumptions in CFlatReference::Matches.
+*
 * Revision 1.6  2003/03/28 17:46:21  dicuccio
 * Added missing include for CAnnotObject_Info because MSVC gets confused
 * otherwise....
