@@ -112,8 +112,9 @@ int CNetScheduleControl::Run(void)
     CNetScheduleClient_Control nc_client(host, port);
 
     if (args["log"]) {  // logging control
+/*        
         bool on_off = args["log"].AsBoolean();
-/*
+
         nc_client.Logging(on_off);
         NcbiCout << "Logging turned " 
                  << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
@@ -147,6 +148,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/22 17:47:02  kuznets
+ * commented out unused variable
+ *
  * Revision 1.1  2005/02/08 17:55:53  kuznets
  * Initial revision
  *
