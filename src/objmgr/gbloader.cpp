@@ -225,7 +225,10 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap,
             if(x_GetRecords(hrange->first,hrange->second,choice))
                 unreleased_mutex_run=false;
         }
-        _VERIFY(count++ < 10); // actually I would expect it to be 2 at most
+        if ( ++count > 10 ) { // actually I would expect it to be 2 at most
+            THROW1_TRACE(runtime_error,
+                         "CGBDataLoader::GetRecords: exceded attempt count");
+        }
     } while (unreleased_mutex_run!=true);
     //GBLOG_POST( "GetRecords-end" );
     return true;
@@ -930,6 +933,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2003/06/24 14:25:18  vasilche
+* Removed obsolete CTSE_Guard class.
+* Used separate mutexes for bioseq and annot maps.
+*
 * Revision 1.76  2003/06/11 14:54:06  vasilche
 * Fixed wrong error message in CGBDataLoader destructor when
 * some data requests were failed.

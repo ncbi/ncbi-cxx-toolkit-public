@@ -328,9 +328,9 @@ CBioseq_Handle CScope::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
         GetIdMapper().GetMatchingHandles(id, hset);
         ITERATE ( TSeq_id_HandleSet, hit, hset ) {
             CSeqMatch_Info match(id, tse);
-            CConstRef<CBioseq_Info> info = match.GetBioseq_Info();
-            if ( info ) {
-                ret.m_Bioseq_Info = new CBioseq_ScopeInfo(this, info);
+            CConstRef<CBioseq_Info> bioseq = match.GetBioseq_Info();
+            if ( bioseq ) {
+                ret.m_Bioseq_Info = new CBioseq_ScopeInfo(this, bioseq);
                 break;
             }
         }
@@ -454,9 +454,9 @@ void CScope::x_FindBioseqInfo(const CPriorityNode& node,
         {{
             CFastMutexGuard guard(ds_info.GetMutex());
             ITERATE(TTSE_LockSet, tse_it, ds_info.GetTSESet()) {
-                CTSE_Info::TBioseqMap::const_iterator seq =
-                    (*tse_it)->m_BioseqMap.find(idh);
-                if (seq != (*tse_it)->m_BioseqMap.end()) {
+                CTSE_Info::TBioseqs::const_iterator seq =
+                    (*tse_it)->m_Bioseqs.find(idh);
+                if (seq != (*tse_it)->m_Bioseqs.end()) {
                     // Use cached TSE (same meaning as from history). If info
                     // is set but not in the history just ignore it.
                     if ( info ) {
@@ -766,6 +766,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/06/24 14:25:18  vasilche
+* Removed obsolete CTSE_Guard class.
+* Used separate mutexes for bioseq and annot maps.
+*
 * Revision 1.72  2003/06/19 18:23:46  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.

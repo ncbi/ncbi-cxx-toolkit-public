@@ -271,7 +271,6 @@ public:
     // Internal typedefs
     typedef CTSE_Info::TRange                        TRange;
     typedef CTSE_Info::TRangeMap                     TRangeMap;
-    typedef CTSE_Info::TAnnotMap                     TAnnotMap;
 
     typedef map<CSeq_id_Handle, CTSE_LockingSet>     TTSEMap;
 
@@ -487,6 +486,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/06/24 14:25:18  vasilche
+* Removed obsolete CTSE_Guard class.
+* Used separate mutexes for bioseq and annot maps.
+*
 * Revision 1.58  2003/06/19 18:23:44  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.

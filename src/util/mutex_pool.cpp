@@ -50,9 +50,10 @@ CInitMutexPool::~CInitMutexPool(void)
 }
 
 
-CRef<CInitMutexPool::TMutex> CInitMutexPool::AcquireMutex(CInitMutex_Base& init)
+CRef<CInitMutexPool::TMutex>
+CInitMutexPool::AcquireMutex(CInitMutex_Base& init)
 {
-    CRef<TMutex> ret = init.m_Mutex;
+    CRef<TMutex> ret(init.m_Mutex);
     if ( !ret ) {
         CFastMutexGuard guard(m_Pool_Mtx);
         if ( !init.m_Mutex ) {
@@ -73,7 +74,7 @@ CRef<CInitMutexPool::TMutex> CInitMutexPool::AcquireMutex(CInitMutex_Base& init)
 void CInitMutexPool::ReleaseMutex(CInitMutex_Base& init)
 {
     _ASSERT(init);
-    CRef<TMutex> mutex = init.m_Mutex;
+    CRef<TMutex> mutex(init.m_Mutex);
     if ( mutex ) {
         CFastMutexGuard guard(m_Pool_Mtx);
         init.m_Mutex.Reset();
@@ -90,6 +91,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/06/24 14:25:18  vasilche
+* Removed obsolete CTSE_Guard class.
+* Used separate mutexes for bioseq and annot maps.
+*
 * Revision 1.1  2003/06/19 18:23:46  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.

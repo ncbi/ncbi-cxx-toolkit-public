@@ -876,15 +876,16 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 
     ITERATE ( TTSE_LockSet, tse_it, *entries ) {
         const CTSE_Info& tse_info = **tse_it;
-        CTSE_Guard guard(tse_info);
+        //CTSE_Guard guard(tse_info);
 
+        CTSE_Info::TAnnotObjsLock::TReadLockGuard
+            guard(tse_info.m_AnnotObjsLock);
         const CTSE_Info::TRangeMap* rmap = tse_info.x_GetRangeMap(id, *this);
         if ( !rmap ) {
             continue;
         }
 
         m_TSE_LockSet.insert(*tse_it);
-
         for ( CTSE_Info::TRangeMap::const_iterator aoit = rmap->begin(range);
               aoit; ++aoit ) {
             const SAnnotObject_Index& annot_index = aoit->second;
@@ -1031,6 +1032,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2003/06/24 14:25:18  vasilche
+* Removed obsolete CTSE_Guard class.
+* Used separate mutexes for bioseq and annot maps.
+*
 * Revision 1.71  2003/06/19 18:23:45  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.

@@ -95,8 +95,8 @@ const CTSE_Info::TRangeMap*
 CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id,
                          const SAnnotTypeSelector& sel) const
 {
-    TAnnotMap::const_iterator amit = m_AnnotMap.find(id);
-    if (amit == m_AnnotMap.end()) {
+    TAnnotObjs::const_iterator amit = m_AnnotObjs.find(id);
+    if (amit == m_AnnotObjs.end()) {
         return 0;
     }
     
@@ -121,7 +121,7 @@ CTSE_Info::TRangeMap& CTSE_Info::x_SetRangeMap(TAnnotSelectorMap& selMap,
 CTSE_Info::TRangeMap& CTSE_Info::x_SetRangeMap(const CSeq_id_Handle& id,
                                                const SAnnotTypeSelector& sel)
 {
-    return x_SetRangeMap(m_AnnotMap[id], sel);
+    return x_SetRangeMap(m_AnnotObjs[id], sel);
 }
 
 
@@ -135,7 +135,7 @@ void CTSE_Info::x_DropRangeMap(TAnnotSelectorMap& selMap,
 void CTSE_Info::x_DropRangeMap(const CSeq_id_Handle& id,
                                const SAnnotTypeSelector& sel)
 {
-    x_DropRangeMap(m_AnnotMap[id], sel);
+    x_DropRangeMap(m_AnnotObjs[id], sel);
 }
 
 
@@ -147,30 +147,30 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ddc.Log("m_TSE", m_Seq_entry.GetPointer(),0);
     ddc.Log("m_Dead", m_Dead);
     if (depth == 0) {
-        DebugDumpValue(ddc, "m_BioseqMap.size()", m_BioseqMap.size());
-        DebugDumpValue(ddc, "m_AnnotMap.size()",  m_AnnotMap.size());
+        DebugDumpValue(ddc, "m_Bioseqs.size()", m_Bioseqs.size());
+        DebugDumpValue(ddc, "m_AnnotObjs.size()",  m_AnnotObjs.size());
     } else {
         unsigned int depth2 = depth-1;
-        { //--- m_BioseqMap
-            DebugDumpValue(ddc, "m_BioseqMap.type",
+        { //--- m_Bioseqs
+            DebugDumpValue(ddc, "m_Bioseqs.type",
                 "map<CSeq_id_Handle, CRef<CBioseq_Info>>");
-            CDebugDumpContext ddc2(ddc,"m_BioseqMap");
-            TBioseqMap::const_iterator it;
-            for (it=m_BioseqMap.begin(); it!=m_BioseqMap.end(); ++it) {
-                string member_name = "m_BioseqMap[ " +
+            CDebugDumpContext ddc2(ddc,"m_Bioseqs");
+            TBioseqs::const_iterator it;
+            for (it=m_Bioseqs.begin(); it!=m_Bioseqs.end(); ++it) {
+                string member_name = "m_Bioseqs[ " +
                     (it->first).AsString() +" ]";
                 ddc2.Log(member_name, (it->second).GetPointer(),depth2);
             }
         }
-        { //--- m_AnnotMap_ByInt
-            DebugDumpValue(ddc, "m_AnnotMap_ByInt.type",
+        { //--- m_AnnotObjs_ByInt
+            DebugDumpValue(ddc, "m_AnnotObjs_ByInt.type",
                 "map<CSeq_id_Handle, CRangeMultimap<CRef<CAnnotObject>,"
                 "CRange<TSeqPos>::position_type>>");
 
-            CDebugDumpContext ddc2(ddc,"m_AnnotMap_ByInt");
-            TAnnotMap::const_iterator it;
-            for (it=m_AnnotMap.begin(); it!=m_AnnotMap.end(); ++it) {
-                string member_name = "m_AnnotMap[ " +
+            CDebugDumpContext ddc2(ddc,"m_AnnotObjs_ByInt");
+            TAnnotObjs::const_iterator it;
+            for (it=m_AnnotObjs.begin(); it!=m_AnnotObjs.end(); ++it) {
+                string member_name = "m_AnnotObjs[ " +
                     (it->first).AsString() +" ]";
                 if (depth2 == 0) {
                     member_name += "size()";
@@ -213,6 +213,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/06/24 14:25:18  vasilche
+* Removed obsolete CTSE_Guard class.
+* Used separate mutexes for bioseq and annot maps.
+*
 * Revision 1.26  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

@@ -62,6 +62,7 @@ class CSeq_entry;
 class CBioseq;
 class CDataSource;
 class CAnnotObject_Info;
+class CAnnotTypes_CI;
 
 struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index {
     SAnnotObject_Index(void);
@@ -98,7 +99,7 @@ public:
     const CConstRef<CObject>& GetBlobId(void) const;
 
     // indexes types
-    typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >         TBioseqMap;
+    typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >         TBioseqs;
 
     typedef CRange<TSeqPos>                                  TRange;
     typedef CRangeMultimap<SAnnotObject_Index,
@@ -106,7 +107,7 @@ public:
 
     typedef SAnnotTypeSelector TAnnotSelectorKey;
     typedef map<TAnnotSelectorKey, TRangeMap>                TAnnotSelectorMap;
-    typedef map<CSeq_id_Handle, TAnnotSelectorMap>           TAnnotMap;
+    typedef map<CSeq_id_Handle, TAnnotSelectorMap>           TAnnotObjs;
 
 
     // index access methods
@@ -131,17 +132,16 @@ private:
     // Dead seq-entry flag
     bool m_Dead;
 
-    typedef CFastMutex      TRWLock;
-    typedef CFastMutexGuard TReadLockGuard;
-    typedef CFastMutexGuard TWriteLockGuard;
-    
+    typedef CFastMutex      TBioseqsLock;
+    typedef CRWLock         TAnnotObjsLock;
 
     // ID to bioseq-info
-    TBioseqMap      m_BioseqMap;
-    mutable TRWLock m_BioseqMapLock;
+    TBioseqs               m_Bioseqs;
+    mutable TBioseqsLock   m_BioseqsLock;
+
     // ID to annot-selector-map
-    TAnnotMap       m_AnnotMap;
-    mutable TRWLock m_AnnotMapLock;
+    TAnnotObjs             m_AnnotObjs;
+    mutable TAnnotObjsLock m_AnnotObjsLock;
 
     // May be used by data loaders to store blob-id
     typedef CConstRef<CObject> TBlob_ID;
@@ -151,55 +151,23 @@ private:
     friend class CDataSource;
     friend class CScope;
     friend class CDataLoader;
+    friend class CAnnotTypes_CI;
 
     // Hide copy methods
     CTSE_Info(const CTSE_Info&);
     CTSE_Info& operator= (const CTSE_Info&);
 
     bool m_DirtyAnnotIndex;
-
-    mutable CMutex m_TSE_Mutex;
 };
 
 
 typedef CConstRef<CTSE_Info> TTSE_Lock;
-
-
-class NCBI_XOBJMGR_EXPORT CTSE_Guard
-{
-public:
-    explicit CTSE_Guard(const CTSE_Info& tse);
-    ~CTSE_Guard(void);
-private:
-    // Prohibit copy operation
-    CTSE_Guard(const CTSE_Guard&);
-    CTSE_Guard& operator= (const CTSE_Guard&);
-
-    CMutexGuard m_Guard;
-};
-
-
 
 /////////////////////////////////////////////////////////////////////
 //
 //  Inline methods
 //
 /////////////////////////////////////////////////////////////////////
-
-
-inline
-CTSE_Guard::CTSE_Guard(const CTSE_Info& tse)
-    : m_Guard(tse.m_TSE_Mutex)
-{
-    return;
-}
-
-inline
-CTSE_Guard::~CTSE_Guard(void)
-{
-    return;
-}
-
 
 inline
 CDataSource& CTSE_Info::GetDataSource(void) const
@@ -263,6 +231,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/06/24 14:25:18  vasilche
+* Removed obsolete CTSE_Guard class.
+* Used separate mutexes for bioseq and annot maps.
+*
 * Revision 1.32  2003/06/19 18:23:45  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
