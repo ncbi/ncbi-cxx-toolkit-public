@@ -64,15 +64,11 @@ Go to the relevant build dir, clean and rebuild everything using:
 Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a.</h4>
 The cause of this error is that the serialization library, by default,
 links in some code that references the C Toolkit library. You must link
-in the C Toolkit library by putting the following into your make file:
-<pre>CPPFLAGS = $(ORIG_CPPFLAGS) \
-&nbsp; $(NCBI_C_INCLUDE)
-
-LIBS = \
-&nbsp; $(NCBI_C_LIBPATH) -lncbi \
-&nbsp; $(ORIG_LIBS)</pre>
-If you are using the make file created by new_project.sh, then just uncomment
-the applicable lines.
+in the C Toolkit library by putting the following into your makefile:
+<pre>
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)</pre>
+If you are using the makefile created by script <i>new_project.sh</i>,
+then just uncomment the applicable lines.
 <p>
 <hr>
 <h4>
