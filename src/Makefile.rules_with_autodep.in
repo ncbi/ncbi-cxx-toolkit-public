@@ -54,15 +54,25 @@ D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	  &&  test -s $@_  &&  mv -f $@_ $@
 
 %.d: ./%.cpp
-	$(CXX_WRAPPER) $(CXX) $(D_TAIL)
+	@echo Updating dependency information for $<.
+	@$(CXX_WRAPPER) $(CXX) $(D_TAIL)
 %.d: $(srcdir)/%.cpp
-	$(CXX_WRAPPER) $(CXX) $(D_TAIL)
+	@echo Updating dependency information for $<.
+	@$(CXX_WRAPPER) $(CXX) $(D_TAIL)
 %.d: ./%.c
-	$(CC_WRAPPER) $(CC)   $(D_TAIL)
+	@echo Updating dependency information for $<.
+	@$(CC_WRAPPER) $(CC)   $(D_TAIL)
 %.d: $(srcdir)/%.c
-	$(CC_WRAPPER) $(CC)   $(D_TAIL)
+	@echo Updating dependency information for $<.
+	@$(CC_WRAPPER) $(CC)   $(D_TAIL)
 $(builddir)/corelib/ncbi_pch.hpp.d.$(PCHMODE): $(pchsrc)
-	$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
+	@echo Updating dependency information for $<.
+	@$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
+
+.d .o:
+	@echo "*** Illegal whitespace detected at the end of your makefile's"
+	@echo "*** SRC setting; please remove it."
+	@false
 
 
 ifeq ($(MAKECMDGOALS),clean)
@@ -77,7 +87,7 @@ endif
 
 ifndef DONT_INCLUDE
 ifdef SOURCES
- include $(SOURCES:=.d)
+ -include $(SOURCES:=.d)
 endif
 ifdef GCCPCH
  include $(builddir)/corelib/ncbi_pch.hpp.d.$(PCHMODE)
