@@ -1564,6 +1564,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
     Blast_KarlinBlk* kbp;
     Int4 expected_length, window_size, query_length;
     Int8 search_sp;
+	Int4 concat_qlen;
     Boolean translated_subject = (program == eBlastTypeTblastn || 
                                   program == eBlastTypeRpsTblastn || 
                                   program == eBlastTypeTblastx);
@@ -1579,7 +1580,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
     gap_decay_rate = link_hsp_params->gap_decay_rate;
     /* Use average query length */
     
-    Int4 concat_qlen =
+    concat_qlen =
         query_info->contexts[query_info->last_context].query_offset +
         query_info->contexts[query_info->last_context].query_length - 1;
     
@@ -1644,6 +1645,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.144  2004/12/02 17:22:41  camacho
+ * Fix compiler error
+ *
  * Revision 1.143  2004/12/02 15:55:54  bealer
  * - Change multiple-arrays to array-of-struct in BlastQueryInfo
  *
