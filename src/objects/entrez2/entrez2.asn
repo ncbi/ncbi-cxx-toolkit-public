@@ -1,4 +1,4 @@
---$Revision: 1.11 $********************************************
+--$Revision: 1.12 $********************************************
 --
 --  entrez2.asn
 --   Version 1
@@ -96,7 +96,8 @@ Entrez2-request ::= SEQUENCE {           -- a standard request
   request E2Request ,                    -- the actual request
   version INTEGER ,                      -- ASN1 spec version
   tool VisibleString OPTIONAL ,          -- tool making request
-  cookie VisibleString OPTIONAL }        -- history session cookie
+  cookie VisibleString OPTIONAL ,        -- history session cookie
+  use-history BOOLEAN DEFAULT FALSE }    -- request should use history
 
 E2Request ::= CHOICE {                   -- request types
   get-info NULL ,                        -- ask for info block
