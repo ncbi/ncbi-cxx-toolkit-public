@@ -164,6 +164,7 @@ on SetProjectData()
 		AddObject("entrez2")
 		AddObject("entrezgene")
 		AddObject("featdef")
+		AddObject("gbseq")
 		AddObject("general")
 		AddObject("id1")
 		AddObject("medlars")
@@ -189,6 +190,7 @@ on SetProjectData()
 		AddObject("seqset")
 		AddObject("submit")
 		AddSimpleProject("taxon1", {"C++"}, "objects:taxon1", {"taxon1__", "taxon1___", "taxon1", "cache", "utils", "ctreecont"})
+		AddObject("tinyseq")
 		
 		AddSimpleProject("object_objmgr", {"C++"}, "objects:objmgr", ¬
 			{"align_ci", "data_source", "handle_range_map", "seq_id_mapper", "annot_ci", "desc_ci", "object_manager", "seq_map", ¬
