@@ -172,36 +172,10 @@ CDB_Result* CTDS_LangCmd::Result()
     }
 
     while ((m_Status & 0x1) != 0) {
-        if ((m_Status & 0x20) != 0) { // check for return parameters from exec
-            m_Status ^= 0x20;
-            int n;
-            if ((n = dbnumrets(m_Cmd)) > 0) {
-                m_Res = new CTDS_ParamResult(m_Cmd, n);
-                m_RowCount = 1;
-                return Create_Result(*m_Res);
-            }
-        }
-
-        if ((m_Status & 0x40) != 0) { // check for ret status
-            m_Status ^= 0x40;
-            if (dbhasretstat(m_Cmd)) {
-                m_Res = new CTDS_StatusResult(m_Cmd);
-                m_RowCount = 1;
-                return Create_Result(*m_Res);
-            }
-        }
         switch (dbresults(m_Cmd)) {
         case SUCCEED:
-            m_Status |= 0x60;
-            if (DBCMDROW(m_Cmd) == SUCCEED) { // we could get rows in result
-                if (dbnumcols(m_Cmd) == 1) {
-                    int ct = dbcoltype(m_Cmd, 1);
-                    if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
-                        m_Res = new CTDS_BlobResult(m_Cmd);
-                    }
-                }
-                if (!m_Res)
-                    m_Res = new CTDS_RowResult(m_Cmd, &m_Status);
+            if (DBCMDROW(m_Cmd) == SUCCEED) { // we may get rows in this result
+                m_Res = new CTDS_RowResult(m_Cmd, &m_Status);
                 m_RowCount = -1;
                 return Create_Result(*m_Res);
             } else {
@@ -213,16 +187,36 @@ CDB_Result* CTDS_LangCmd::Result()
             break;
         default:
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Warning, 220016, "CTDS_LangCmd::Result",
-                               "an error was encountered by server");
+            throw CDB_ClientEx(eDB_Warning, 221016, "CTDS_RPCCmd::Result",
+                               "error encountered in command execution");
         }
         break;
+    }
+
+    // we've done with the row results at this point
+    // let's look at return parameters and ret status
+    if (m_Status == 2) {
+        m_Status = 4;
+        int n = dbnumrets(m_Cmd);
+        if (n > 0) {
+            m_Res = new CTDS_ParamResult(m_Cmd, n);
+            m_RowCount = 1;
+            return Create_Result(*m_Res);
+        }
+    }
+
+    if (m_Status == 4) {
+        m_Status = 6;
+        if (dbhasretstat(m_Cmd)) {
+            m_Res = new CTDS_StatusResult(m_Cmd);
+            m_RowCount = 1;
+            return Create_Result(*m_Res);
+        }
     }
 
     m_WasSent = false;
     return 0;
 }
-
 
 bool CTDS_LangCmd::HasMoreResults() const
 {
@@ -439,6 +433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/09/19 22:28:20  soussov
+ * changs order of result processing
+ *
  * Revision 1.8  2002/07/22 20:11:07  soussov
  * fixes the RowCount calculations
  *
