@@ -77,11 +77,15 @@ public:
     ///
     /// @param str
     ///   String to match.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(eCase -- default), or a
+    ///   case-insensitive compare (eNocase).
     /// @return 
     ///   Return TRUE if string 'str' matches to one of inclusion masks
     ///   and not matches none of exclusion masks, or match masks are
     ///   not specified. Otherwise return FALSE.
-    virtual bool Match(const string& str) const = 0;
+    virtual bool Match(const string& str,
+                       NStr::ECase use_case = NStr::eCase) const = 0;
 
 protected:
     list<string>  m_Inclusions;   ///< Inclusion masks list
@@ -106,13 +110,16 @@ public:
     ///
     /// @param str
     ///   String to match.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(eCase -- default), or a
+    ///   case-insensitive compare (eNocase).
     /// @return 
     ///   Return TRUE if string 'str' matches to one of inclusion masks
     ///   and not matches none of exclusion masks, or match masks are
     ///   not specified. Otherwise return FALSE.
     /// @sa
     ///   NStr::MatchesMask
-    bool Match(const string& str) const;
+    bool Match(const string& str, NStr::ECase use_case = NStr::eCase) const;
 };
 
 /* @} */
@@ -124,19 +131,19 @@ public:
 //
 
 inline
-bool CMaskFileName::Match(const string& str) const
+bool CMaskFileName::Match(const string& str, NStr::ECase use_case) const
 {
     bool found = m_Inclusions.empty();
 
     ITERATE(list<string>, it, m_Inclusions) {
-        if ( NStr::MatchesMask(str, *it) ) {
+        if ( NStr::MatchesMask(str, *it, use_case) ) {
             found = true;
             break;
         }                
     }
     if ( found ) {
         ITERATE(list<string>, it, m_Exclusions) {
-            if ( NStr::MatchesMask(str, *it) ) {
+            if ( NStr::MatchesMask(str, *it, use_case) ) {
                 found = false;
                 break;
             }                
@@ -152,6 +159,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/16 15:29:29  ivanov
+ * Match(): Added parameter for case sensitive/insensitive matching
+ *
  * Revision 1.1  2005/01/31 11:42:25  ivanov
  * Initial revision
  *
