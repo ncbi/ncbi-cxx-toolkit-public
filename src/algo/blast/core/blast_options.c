@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.17  2003/05/13 20:41:48  dondosha
+ * Correction in assigning of number of db sequences for 2 sequence case
+ *
  * Revision 1.16  2003/05/13 15:11:34  dondosha
  * Changed some char * arguments to const char *
  *
@@ -762,14 +765,14 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options,
          if (rdfp == NULL)
             return 2;
          readdb_get_totals_ex(rdfp, &options->db_length,
-                              &options->dbseq_num, TRUE);
+                              &dbseq_num, TRUE);
          rdfp = readdb_destruct(rdfp);
       }	else {
          dbseq_num = 1;
       }
-   } else {
-      options->dbseq_num = dbseq_num;
    }
+
+   options->dbseq_num = dbseq_num;
 
    if (db_length)
       options->db_length = db_length;
