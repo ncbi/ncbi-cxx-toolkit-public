@@ -346,7 +346,7 @@ end";
         }
 
         stmt->ClearParamList();
-        exit(1);
+        //exit(1);
 
         // Reconnect
         NcbiCout << "Reconnecting..." << endl;
@@ -558,6 +558,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/10/23 13:32:59  kholodov
+* Fixed: extra exit() call removed
+*
 * Revision 1.6  2002/10/03 18:59:55  kholodov
 * *** empty log message ***
 *
