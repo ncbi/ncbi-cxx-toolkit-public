@@ -252,6 +252,7 @@ typedef struct BlastHitSavingOptions {
    Boolean is_gapped;	/**< gapping is used. */
    Uint1 handle_results_method; /**< Formatting results on the fly if set to 
                                    non-zero */
+   Boolean phi_align;   /**< Is this a PHI BLAST search? */
 } BlastHitSavingOptions;
 
 /** Parameter block that contains a pointer to BlastHitSavingOptions
