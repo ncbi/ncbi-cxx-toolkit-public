@@ -749,34 +749,54 @@ string NStr::Join(const list<string>& arr, const string& delim)
     return result;
 }
 
-
 string NStr::PrintableString(const string&      str,
                              NStr::ENewLineMode nl_mode)
 {
-    string s;
-    ITERATE (string, it, str) {
-        if (*it == '\\') {
-            s += "\\\\";
-        } else if (*it == '\n') {
-            s += nl_mode == eNewLine_Quote ? "\\n" : "\n";
-        } else if (*it == '\t') {
-            s += "\\t";
-        } else if (*it == '\r') {
-            s += "\\r";
-        } else if (*it == '\v') {
-            s += "\\v";
-        } else if (*it == '"') {
-            s += "\\\"";
-        } else if ( isprint(*it) ) {
-            s += *it;
-        } else {
-            static const char s_Hex[] = "0123456789ABCDEF";
-            s += "\\x";
-            s += s_Hex[(unsigned char) *it / 16];
-            s += s_Hex[(unsigned char) *it % 16];
+    static const char s_Hex[] = "0123456789ABCDEF";
+    ITERATE ( string, it, str ) {
+        if ( !isprint(*it) || *it == '"' || *it == '\\' ) {
+            // bad character - convert via CNcbiOstrstream
+            CNcbiOstrstream out;
+            // write first good characters in one chunk
+            out.write(str.data(), it-str.begin());
+            // convert all other characters one by one
+            do {
+                if ( isprint(*it) ) {
+                    // escape '"' and '\\' anyway
+                    if ( *it == '"' || *it == '\\' )
+                        out.put('\\');
+                    out.put(*it);
+                }
+                else if (*it == '\n') {
+                    // newline needs special processing
+                    if ( nl_mode == eNewLine_Quote ) {
+                        out.write("\\n", 2);
+                    }
+                    else {
+                        out.put('\n');
+                    }
+                } else {
+                    // all other non-printable characters need to be escaped
+                    out.put('\\');
+                    if (*it == '\t') {
+                        out.put('t');
+                    } else if (*it == '\r') {
+                        out.put('r');
+                    } else if (*it == '\v') {
+                        out.put('v');
+                    } else {
+                        // hex string for non-standard codes
+                        out.put('x');
+                        out.put(s_Hex[(unsigned char) *it >> 4]);
+                        out.put(s_Hex[(unsigned char) *it & 15]);
+                    }
+                }
+            } while ( ++it < it_end ); // it_end is from ITERATE macro
+            return CNcbiOstrstreamToString(out);
         }
     }
-    return s;
+    // all characters are good - return orignal string
+    return str;
 }
 
 
@@ -1235,6 +1255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.95  2003/09/17 15:18:29  vasilche
+ * Reduce memory allocations in NStr::PrintableString()
+ *
  * Revision 1.94  2003/08/19 15:17:20  rsmith
  * Add NStr::SplitInTwo() function.
  *
