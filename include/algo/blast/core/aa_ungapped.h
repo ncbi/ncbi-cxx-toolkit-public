@@ -198,7 +198,6 @@ Int4 BlastAaExtendOneHit(const BLAST_DiagTablePtr diag,
  * at R and extend to the left. If we do not reach L, abort the extension.
  * Otherwise, begin at R and extend to the right.
  *
- * @param diag diagonal table [in/out]
  * @param matrix the substitution matrix [in]
  * @param subject subject sequence [in]
  * @param query query sequence [in]
@@ -212,8 +211,7 @@ Int4 BlastAaExtendOneHit(const BLAST_DiagTablePtr diag,
  * @return the score of the hsp.
  */
 
-Int4 BlastAaExtendTwoHit(const BLAST_DiagTablePtr diag,
-			 Int4 ** matrix,
+Int4 BlastAaExtendTwoHit(Int4 ** matrix,
                          const BLAST_SequenceBlkPtr subject,
                          const BLAST_SequenceBlkPtr query,
                          Int4 s_left_off,

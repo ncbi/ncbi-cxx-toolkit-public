@@ -100,9 +100,8 @@ typedef struct sequence
 SegParametersPtr SegParametersNewAa (void);
 void SegParametersFree(SegParametersPtr sparamsp);
 
-Int2 SeqBufferSeg (Uint1Ptr sequence, Int4 length,
-                    Int2 level, Int2 window, Int2 minwin, Int2 linker,
-                    BlastSeqLocPtr PNTR seg_loc);
+Int2 SeqBufferSeg (Uint1Ptr sequence, Int4 length, Int4 offset,
+                   SegParametersPtr sparamsp, BlastSeqLocPtr PNTR seg_locs);
 
 #ifdef __cplusplus
 }

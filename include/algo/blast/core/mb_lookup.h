@@ -249,7 +249,7 @@ typedef enum {
    TEMPL_12_21_OPT = 12
 } DiscTemplateType;
 
-DiscTemplateType GetDiscTemplateType(Int2 weight, Int2 length, 
+DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length, 
                                    DiscWordType type);
 
 #ifdef __cplusplus

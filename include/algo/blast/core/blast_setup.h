@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.11  2003/06/05 18:33:39  dondosha
+* Compiler warnings fixes
+*
 * Revision 1.10  2003/06/05 17:16:04  dondosha
 * SeqLoc is no longer used for query masking/filtering
 *
@@ -250,6 +253,16 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
         BlastQueryInfoPtr query_info, BlastMaskPtr *filter_slp_out,
         BLAST_ScoreBlkPtr *sbpp, Blast_MessagePtr *blast_message);
 
+/** Given a list of query SeqLoc's, create the sequence block and the query
+ * info structure. This is the last time SeqLoc is needed before formatting.
+ * @param query_slp List of query SeqLoc's [in]
+ * @param program_number Type of BLAST program [in]
+ * @param query_blk Query block, containing (concatenated) sequence [out]
+ * @param query_info Query information structure, containing offsets into 
+ *                   the concatenated sequence [out]
+ */
+Int2 BLAST_SetUpQuery(SeqLocPtr query_slp, const Uint1 program_number,
+        BLAST_SequenceBlkPtr *query_blk, BlastQueryInfoPtr *query_info);
 #ifdef __cplusplus
 }
 #endif
