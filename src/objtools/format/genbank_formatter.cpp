@@ -63,6 +63,7 @@
 #include "utils.hpp"
 
 #include <algorithm>
+#include <stdio.h>
 
 
 
@@ -779,6 +780,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2005/03/28 21:27:23  ucko
+* If we must use sprintf(), #include <stdio.h> for it.
+*
 * Revision 1.28  2005/03/28 17:21:39  shomrat
 * Optimized sequence formatting
 *
