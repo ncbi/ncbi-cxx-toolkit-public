@@ -410,7 +410,7 @@ CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
                                       const string& s) const
 {
     if ( mode == ePlainText ) {
-        out << CHTMLHelper::StripTags(s);
+        out << CHTMLHelper::StripHTML(s);
     } else {
         out << s;
     }
@@ -2299,6 +2299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.97  2004/02/02 15:48:16  ivanov
+ * CHTMLText::x_PrintBegin: using CHTMLHelper::StripHTML insteed StripTags
+ *
  * Revision 1.96  2004/02/02 14:30:24  ivanov
  * CHTMLText::PrintBegin - added repeat tag support. Some cosmetic changes.
  *
