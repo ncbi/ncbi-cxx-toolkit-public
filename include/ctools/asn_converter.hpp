@@ -1,5 +1,5 @@
-#ifndef CTOOLS__ASN_CONVERTER__HPP
-#define CTOOLS__ASN_CONVERTER__HPP
+#ifndef CTOOLS___ASN_CONVERTER__HPP
+#define CTOOLS___ASN_CONVERTER__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -119,25 +119,29 @@ inline TC* CAsnConverter<TCpp, TC>::ToC(const TCpp& cpp_obj)
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2003/06/12 15:58:06  lavr
-* +#include <serial/serial.hpp>
-*
-* Revision 1.3  2003/05/28 14:53:51  lavr
-* Reduce the number of included headers
-*
-* Revision 1.2  2003/04/11 17:46:30  siyan
-* Added doxygen support
-*
-* Revision 1.1  2002/08/08 18:18:01  ucko
-* Add central template class for converting ASN.1-based objects between
-* C and C++ representations.
-*
-*
-* ===========================================================================
-*/
 
-#endif  /* CTOOLS__ASN_CONVERTER__HPP */
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.5  2003/11/13 16:00:05  lavr
+ * Guard macro changed; log moved to end
+ *
+ * Revision 1.4  2003/06/12 15:58:06  lavr
+ * +#include <serial/serial.hpp>
+ *
+ * Revision 1.3  2003/05/28 14:53:51  lavr
+ * Reduce the number of included headers
+ *
+ * Revision 1.2  2003/04/11 17:46:30  siyan
+ * Added doxygen support
+ * 
+ * Revision 1.1  2002/08/08 18:18:01  ucko
+ * Add central template class for converting ASN.1-based objects between
+ * C and C++ representations.
+ *
+ *
+ * ===========================================================================
+ */
+
+#endif /* CTOOLS___ASN_CONVERTER__HPP */
