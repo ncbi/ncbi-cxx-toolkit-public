@@ -345,8 +345,7 @@ void CSplitCacheApp::SetupCache(void)
         cache->SetTimeStampPolicy(flags, id_age*24*60*60);
         cache->SetVersionRetention(ICache::eKeepAll);
         
-		string id_dir = cache_dir + CDirEntry::GetPathSeparator() + "id";
-        cache->Open(id_dir.c_str(), "ids");
+        cache->Open(cache_dir.c_str(), "ids");
     }}
 
     {{ // create object manager
@@ -747,8 +746,8 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
             Dump(this, *it->second, eSerial_AsnBinary, key, suffix);
         }
     }
-	if ( m_DumpAsnText || m_DumpAsnBinary ) {
-		// storing split data
+    if ( m_DumpAsnText || m_DumpAsnBinary ) {
+        // storing split data
         DumpData(this, blob.GetMainBlob(),
                  CID2_Reply_Data::eData_type_seq_entry, key, "-main");
         DumpData(this, blob.GetSplitInfo(),
@@ -801,6 +800,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/08/24 16:45:55  vasilche
+* Removed TAB symbols from sources.
+* Seq-id cache is put in the same directory as blob cache.
+*
 * Revision 1.26  2004/08/09 15:57:03  vasilche
 * Fine tuning of blob cache. Ids are moved to subdirectory.
 *
