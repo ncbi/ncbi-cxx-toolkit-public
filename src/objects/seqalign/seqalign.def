@@ -6,6 +6,13 @@ len._type      = TSeqPos
 ; may contain occurrences of -1
 starts.E._type = TSignedSeqPos
 lens.E._type   = TSeqPos
+; to support binary searching
+starts._type   = vector
+; to make binary searching on starts more useful
+lens._type     = vector
+ids._type      = vector
+strands._type  = vector
+scores._type   = vector
 
 [Packed-seg]
 starts.E._type = TSeqPos
