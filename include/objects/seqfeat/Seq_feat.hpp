@@ -70,6 +70,8 @@ public:
     // get protein (if present) from Seq-feat.xref list
     const CProt_ref* GetProtXref(void) const;
 
+    int Compare(const CSeq_feat& f2) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_feat(const CSeq_feat& value);
@@ -77,12 +79,11 @@ private:
 };
 
 // Corresponds to SortFeatItemListByPos from the C toolkit
-NCBI_SEQFEAT_EXPORT int Compare(const CSeq_feat& f1, const CSeq_feat& f2);
 NCBI_SEQFEAT_EXPORT
 inline
 bool operator< (const CSeq_feat& f1, const CSeq_feat& f2)
 {
-    return Compare(f1, f2) < 0;
+    return f1.Compare(f2) < 0;
 }
 
 /////////////////// CSeq_feat inline methods
@@ -108,6 +109,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2003/02/06 22:24:23  vasilche
+* Added int CSeq_feat::Compare().
+* Fixed slow comparison of CSeq_feat with mix seq locs.
+*
 * Revision 1.8  2003/01/29 17:43:22  vasilche
 * Added Compare(CSeq_feat, CSeq_feat) returning int for easier comparison.
 * operator<(CSeq_feat, CSeq_feat) uses Compare().

@@ -51,9 +51,9 @@ CSeq_feat::~CSeq_feat(void)
 }
 
 // Corresponds to SortFeatItemListByPos from the C toolkit
-int Compare(const CSeq_feat& f1, const CSeq_feat& f2)
+int CSeq_feat::Compare(const CSeq_feat& f2) const
 {
-    const CSeq_loc& loc1 = f1.GetLocation();
+    const CSeq_loc& loc1 = GetLocation();
     const CSeq_loc& loc2 = f2.GetLocation();
     CSeq_loc::TRange range1 = loc1.GetTotalRange();
     CSeq_loc::TRange range2 = loc2.GetTotalRange();
@@ -72,7 +72,7 @@ int Compare(const CSeq_feat& f1, const CSeq_feat& f2)
         return -1;
     }
 
-    CSeqFeatData::E_Choice type1 = f1.GetData().Which();
+    CSeqFeatData::E_Choice type1 = GetData().Which();
     CSeqFeatData::E_Choice type2 = f2.GetData().Which();
    
     // genes first
@@ -101,8 +101,8 @@ int Compare(const CSeq_feat& f1, const CSeq_feat& f2)
 
     // compare internal intervals
     if (loc1.IsMix()  &&  loc2.IsMix()) {
-        CSeq_loc_mix::Tdata ivals1 = loc1.GetMix().Get();
-        CSeq_loc_mix::Tdata ivals2 = loc2.GetMix().Get();
+        const CSeq_loc_mix::Tdata& ivals1 = loc1.GetMix().Get();
+        const CSeq_loc_mix::Tdata& ivals2 = loc2.GetMix().Get();
         for (CSeq_loc_mix::Tdata::const_iterator
                  it1 = ivals1.begin(), it2 = ivals2.begin();
              it1 != ivals1.end()  &&  it2 != ivals2.end();  it1++, it2++) {
@@ -123,7 +123,7 @@ int Compare(const CSeq_feat& f1, const CSeq_feat& f2)
     // compare frames of identical CDS ranges
     if (type1 == CSeqFeatData::e_Cdregion) {
         _ASSERT(type2 == CSeqFeatData::e_Cdregion);
-        CCdregion::EFrame frame1 = f1.GetData().GetCdregion().GetFrame();
+        CCdregion::EFrame frame1 = GetData().GetCdregion().GetFrame();
         CCdregion::EFrame frame2 = f2.GetData().GetCdregion().GetFrame();
         if (frame1 > CCdregion::eFrame_one
             ||  frame2 > CCdregion::eFrame_one) {
@@ -136,7 +136,7 @@ int Compare(const CSeq_feat& f1, const CSeq_feat& f2)
     }
 
     // compare subtypes
-    CSeqFeatData::ESubtype subtype1 = f1.GetData().GetSubtype();
+    CSeqFeatData::ESubtype subtype1 = GetData().GetSubtype();
     CSeqFeatData::ESubtype subtype2 = f2.GetData().GetSubtype();
     if (subtype1 < subtype2) {
         return -1;
@@ -180,6 +180,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.9  2003/02/06 22:24:23  vasilche
+ * Added int CSeq_feat::Compare().
+ * Fixed slow comparison of CSeq_feat with mix seq locs.
+ *
  * Revision 6.8  2003/01/29 17:43:23  vasilche
  * Added Compare(CSeq_feat, CSeq_feat) returning int for easier comparison.
  * operator<(CSeq_feat, CSeq_feat) uses Compare().
