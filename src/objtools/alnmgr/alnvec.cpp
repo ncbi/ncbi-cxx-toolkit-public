@@ -188,7 +188,7 @@ string& CAlnVec::GetAlnSeqString(string& buffer,
                                  const TSignedRange& aln_rng) const
 {
     string buff;
-    buffer.clear();
+    buffer.erase();
     
     // get the chunks which are aligned to seq on anchor
     CRef<CAlnMap::CAlnChunkVec> chunk_vec = 
@@ -483,6 +483,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/01/17 19:25:04  ucko
+* Clear buffer with erase(), as G++ 2.9x lacks string::clear.
+*
 * Revision 1.15  2003/01/17 18:16:53  todorov
 * Added a better-performing set of GetXXXString methods
 *
