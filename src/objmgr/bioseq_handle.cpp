@@ -530,7 +530,9 @@ CSeq_entry_Handle
 CBioseq_Handle::GetExactComplexityLevel(CBioseq_set::EClass cls) const
 {
     CSeq_entry_Handle ret = GetComplexityLevel(cls);
-    if ( ret && ret.GetSet().GetClass() != cls ) {
+    if ( ret  &&  
+         (!ret.IsSet()  ||  !ret.GetSet().IsSetClass()  ||
+         ret.GetSet().GetClass() != cls) ) {
         ret.Reset();
     }
     return ret;
@@ -753,6 +755,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2004/04/20 20:34:40  shomrat
+* fix GetExactComplexityLevel
+*
 * Revision 1.60  2004/03/31 19:54:08  vasilche
 * Fixed removal of bioseqs and bioseq-sets.
 *
