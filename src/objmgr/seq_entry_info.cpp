@@ -303,7 +303,9 @@ void CSeq_entry_Info::x_TSEDetachContents(CTSE_Info& tse)
 void CSeq_entry_Info::x_DSAttachContents(CDataSource& ds)
 {
     TParent::x_DSAttachContents(ds);
-    x_DSMapObject(m_Object, ds);
+    if ( m_Object ) {
+        x_DSMapObject(m_Object, ds);
+    }
     if ( m_Contents ) {
         m_Contents->x_DSAttach(ds);
     }
@@ -315,7 +317,9 @@ void CSeq_entry_Info::x_DSDetachContents(CDataSource& ds)
     if ( m_Contents ) {
         m_Contents->x_DSDetach(ds);
     }
-    x_DSUnmapObject(m_Object, ds);
+    if ( m_Object ) {
+        x_DSUnmapObject(m_Object, ds);
+    }
     TParent::x_DSDetachContents(ds);
 }
 
@@ -556,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/08/13 15:55:16  vasilche
+ * Do not map null Seq-entry.
+ *
  * Revision 1.17  2004/08/04 14:53:26  vasilche
  * Revamped object manager:
  * 1. Changed TSE locking scheme
