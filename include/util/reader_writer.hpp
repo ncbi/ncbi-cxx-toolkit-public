@@ -1,5 +1,5 @@
-#ifndef UTIL___READERWRITER__H
-#define UTIL___READERWRITER__H
+#ifndef UTIL___READER_WRITER__HPP
+#define UTIL___READER_WRITER__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -40,6 +40,10 @@
 BEGIN_NCBI_SCOPE
 
 
+/// A very basic data-read interface.
+///
+/// It is however slightly adapted to build std::istreambuf on top of it.
+
 class IReader
 {
 public:
@@ -49,16 +53,19 @@ public:
     /// Special case:  if buf_size is passed as 0, then the value of
     /// buf is ignored, and the return value is unspecified, but no
     /// change is done to the state of input device.
-    virtual ssize_t  Read    (void* buf, size_t buf_size) = 0;
+    virtual ssize_t Read(void* buf, size_t buf_size) = 0;
 
     /// Return the number of bytes ready to be read from input
     /// device without blocking.  Return 0 if no such number is
     /// available, -1 in case of EOF (or an error).
-    virtual ssize_t  SHowMany(void) { return 0; };
+    virtual ssize_t SHowMany(void)  { return 0; }
 
-    virtual         ~IReader (void) { };
+    virtual ~IReader() {}
 };
 
+
+
+/// A very basic data-write interface.
 
 class IWriter
 {
@@ -67,33 +74,35 @@ public:
     /// buf argument onto output device.  Return the number
     /// of bytes actually written, or 0 if buf_size was passed as 0
     /// (buf is ignored in this case), or -1 on error.
-    virtual ssize_t  Write (const void* buf, size_t buf_size) = 0;
+    virtual ssize_t Write(const void* buf, size_t buf_size) = 0;
 
-    virtual         ~IWriter(void) { };
+    virtual ~IWriter() {}
 };
 
 
-class IReaderWriter : public IReader, IWriter
+
+/// A very basic data-read/write interface.
+
+class IReaderWriter : public IReader, public IWriter
 {
 public:
-    virtual         ~IReaderWriter (void) { };
+    virtual ~IReaderWriter() {}
 };
 
 
 END_NCBI_SCOPE
 
 
-#endif /*UTIL___READERWRITER__H*/
-
 
 /*
- * ---------------------------------------------------------------------------
+ * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/22 22:38:21  vakatov
+ * Minor (mostly style) fixes;  renaming
+ *
  * Revision 1.1  2003/09/22 20:26:23  lavr
  * Initial revision
- *
- * Revision 1.1  2003/09/22 17:57:10  lavr
- * Initial revision
- *
- * ---------------------------------------------------------------------------
+ * ===========================================================================
  */
+
+#endif  /* UTIL___READER_WRITER__HPP */
