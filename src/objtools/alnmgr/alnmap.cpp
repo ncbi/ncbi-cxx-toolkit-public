@@ -476,7 +476,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     }
 
     // fix if extreme end
-    if (i == 0) {
+    if (i == 0 && m_LeftDelta) {
         if (m_AlnMap.IsPositiveStrand(m_Row)) {
             chunk->SetRange().SetFrom(chunk->GetRange().GetFrom()
                                       + m_LeftDelta);
@@ -486,7 +486,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         chunk->SetType(chunk->GetType() &
                     ~(fNoSeqOnLeft | fUnalignedOnLeft | fEndOnLeft));
     }
-    if (i == m_Size - 1) {
+    if (i == m_Size - 1 && m_RightDelta) {
         if (m_AlnMap.IsPositiveStrand(m_Row)) {
             chunk->SetRange().SetTo(chunk->GetRange().GetTo() - m_RightDelta);
         } else {
@@ -537,6 +537,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2002/09/18 19:24:54  todorov
+* fixing the flags on the extreme end only if delta
+*
 * Revision 1.4  2002/09/05 19:30:39  dicuccio
 * - added ability to reference a consensus sequence for a given alignment
 * - added caching for CSeqVector objects (big performance gain)
