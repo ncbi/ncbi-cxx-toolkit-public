@@ -37,7 +37,9 @@
 #if defined(NCBI_OS_MSWIN)
 #  include <windows.h>
 #elif defined(NCBI_OS_UNIX)
-#  include <dlfcn.h>
+#  ifdef HAVE_DLFCN_H
+#    include <dlfcn.h>
+#  endif
 #else
 #  error "Class CDll defined only for MS Windows and UNIX platforms"
 #endif
@@ -130,7 +132,11 @@ void CDll::Load(void)
 #if defined(NCBI_OS_MSWIN)
     HMODULE handle = LoadLibrary(m_Name.c_str());
 #elif defined(NCBI_OS_UNIX)
+#  ifdef HAVE_DLFCN_H
     void* handle = dlopen(m_Name.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+#  else
+    void* handle = 0;
+#  endif
 #endif
     if ( !handle ) {
         x_ThrowException("Load error");
@@ -150,7 +156,11 @@ void CDll::Unload(void)
 #if defined(NCBI_OS_MSWIN)
     BOOL unloaded = FreeLibrary(m_Handle->handle);
 #elif defined(NCBI_OS_UNIX)
+#  ifdef HAVE_DLFCN_H
     bool unloaded = dlclose(m_Handle->handle) == 0;
+#  else
+    bool unloaded = false;
+#  endif
 #endif
     if ( !unloaded ) {
         x_ThrowException("Unload error");
@@ -177,7 +187,11 @@ void* CDll::x_GetEntryPoint(const string& name, size_t pointer_size)
 #if defined(NCBI_OS_MSWIN)
     return GetProcAddress(m_Handle->handle, name.c_str());
 #elif defined(NCBI_OS_UNIX)
+#  ifdef HAVE_DLFCN_H
     return dlsym(m_Handle->handle, name.c_str());
+#  else
+    return 0;
+#  endif
 #endif
 }
 
@@ -195,10 +209,14 @@ void CDll::x_ThrowException(const string& what)
     string errmsg = ptr ? ptr : "unknown reason";
     LocalFree(ptr);
 #elif defined(NCBI_OS_UNIX)
+#  ifdef HAVE_DLFCN_H
     const char* errmsg = dlerror();
     if ( !errmsg ) {
         errmsg = "unknown reason";
     }
+#  else
+    const char* errmsg = "No DLL support on this platform."
+#  endif
 #endif
 
     // Throw exception
@@ -212,6 +230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/05/23 22:24:07  ucko
+ * Handle the absence of <dlfcn.h> better.
+ *
  * Revision 1.4  2002/04/11 21:08:02  ivanov
  * CVS log moved to end of the file
  *
