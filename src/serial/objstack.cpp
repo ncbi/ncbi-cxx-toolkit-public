@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/05/22 15:59:04  gouriano
+* corrected message in GetFrameInfo
+*
 * Revision 1.12  2003/05/16 18:02:17  gouriano
 * revised exception error messages
 *
@@ -223,10 +226,10 @@ string CObjectStackFrame::GetFrameInfo(void) const
     string info(" Frame type= ");
     info += GetFrameTypeName();
     if (m_TypeInfo) {
-        info = ", Object type= " + m_TypeInfo->GetName();
+        info += ", Object type= " + m_TypeInfo->GetName();
     }
     if (m_MemberId) {
-        info = ", Member name= " + m_MemberId->GetName();
+        info += ", Member name= " + m_MemberId->GetName();
     }
     return info;
 }
