@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/10/22 20:22:55  gouriano
+* undo the prev change
+*
 * Revision 1.31  2002/10/22 19:01:36  gouriano
 * replaced THROW0_TRACE by throw in CIStreamBuffer::FillBuffer
 *
@@ -385,13 +388,11 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
                     return pos;
                 }
                 m_Error = "end of file";
-                throw CEofException();
-//                THROW0_TRACE(CEofException());
+                THROW0_TRACE(CEofException());
             }
             else {
                 m_Error = "read fault";
-                throw CIOException(m_Error);
-//                THROW1_TRACE(CIOException, "read fault");
+                THROW1_TRACE(CIOException, "read fault");
             }
         }
         m_DataEndPos += count;
