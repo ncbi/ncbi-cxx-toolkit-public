@@ -138,12 +138,14 @@ const BLAST_Matrix *dpPSSM = NULL;
 const Sequence *dpQuery = NULL;
 
 // sum of scores for residue vs. PSSM
+extern "C" {
 int dpScoreFunction(unsigned int block, unsigned int queryPos)
 {
     if (!dpBlocks || !dpPSSM || !dpQuery || block >= dpBlocks->nBlocks ||
         queryPos > dpQuery->Length() - dpBlocks->blockSizes[block])
     {
-        ERRORMSG("dpScoreFunction() - bad parameters");
+        ERRORMSG("dpScoreFunction() - bad parameters: block " << block << " queryPos " << queryPos <<
+            " query sequence " << dpQuery->identifier->ToString());
         return DP_NEGATIVE_INFINITY;
     }
 
@@ -153,6 +155,7 @@ int dpScoreFunction(unsigned int block, unsigned int queryPos)
             [LookupBLASTResidueNumberFromCharacter(dpQuery->sequenceString[queryPos + i])];
 
     return score;
+}
 }
 
 static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_AlignmentResult *result,
@@ -166,6 +169,8 @@ static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_Alignmen
         bma(new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
 
     // unpack result blocks
+    TRACEMSG("result nBlocks " << result->nBlocks << " firstBlock " << result->firstBlock);
+    int s, blockScoreSum = 0;
     for (unsigned int b=0; b<result->nBlocks; ++b) {
         UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(bma.get());
         newBlock->width = blocks->blockSizes[b + result->firstBlock];
@@ -176,10 +181,14 @@ static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_Alignmen
             result->blockPositions[b],
             result->blockPositions[b] + newBlock->width - 1);
         bma->AddAlignedBlockAtEnd(newBlock);
-        TRACEMSG("block " << (b+1)
-            << " position: " << (result->blockPositions[b]+1)
-            << " score: " << dpScoreFunction(b, result->blockPositions[b]));
+        s = dpScoreFunction(b + result->firstBlock, result->blockPositions[b]);
+        TRACEMSG("block " << (b + result->firstBlock + 1)
+            << " position: " << (result->blockPositions[b] + 1)
+            << " score: " << s);
+        blockScoreSum += s;
     }
+    if (blockScoreSum != result->score)
+        ERRORMSG("block aligner reported score doesn't match sum of block scores");
 
     // finalize the alignment
     if (!bma->AddUnalignedBlocks() || !bma->UpdateBlockMapAndColors(false)) {
@@ -502,6 +511,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/06/14 17:58:47  thiessen
+* fix error in block score reporting
+*
 * Revision 1.33  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
