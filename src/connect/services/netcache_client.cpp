@@ -250,6 +250,7 @@ void CNetCacheClient::RestoreHostPort()
         m_Host.erase(pos, m_Host.length());
     }
 	m_Sock->GetPeerAddress(0, &m_Port, eNH_HostByteOrder);
+    //cerr << m_Host << " ";
 }
 
 void CNetCacheClient::CheckConnect(const string& key)
@@ -299,16 +300,10 @@ string CNetCacheClient::PutData(const void*  buf,
     return CNetCacheClient::PutData(kEmptyStr, buf, size, time_to_live);
 }
 
-string  CNetCacheClient::PutData(const string& key,
-                                 const void*   buf,
-                                 size_t        size,
-                                 unsigned int  time_to_live)
+void CNetCacheClient::PutInitiate(string* key, unsigned int time_to_live)
 {
-    CheckConnect(key);
+    _ASSERT(key);
 
-    CSockGuard sg(*m_Sock);
-
-    string blob_id;
     string request;
     
     const char* client = 
@@ -319,29 +314,53 @@ string  CNetCacheClient::PutData(const string& key,
 
     request += NStr::IntToString(time_to_live);
     request += " ";
-    request += key;
+    request += *key;
    
     WriteStr(request.c_str(), request.length() + 1);
     s_WaitForServer(*m_Sock);
 
     // Read BLOB_ID answer from the server
-    ReadStr(*m_Sock, &blob_id);
-    if (NStr::FindCase(blob_id, "ID:") != 0) {
+    ReadStr(*m_Sock, key);
+    if (NStr::FindCase(*key, "ID:") != 0) {
         // Answer is not in "ID:....." format
         string msg = "Unexpected server response:";
-        msg += blob_id;
+        msg += *key;
         NCBI_THROW(CNetCacheException, eCommunicationError, msg);
     }
-    blob_id.erase(0, 3);
+    key->erase(0, 3);
     
-    if (blob_id.empty())
+    if (key->empty()) {
         NCBI_THROW(CNetCacheException, eCommunicationError, 
                    "Invalid server response. Empty key.");
+    }
+}
 
-    // Write the actual BLOB
+string  CNetCacheClient::PutData(const string& key,
+                                 const void*   buf,
+                                 size_t        size,
+                                 unsigned int  time_to_live)
+{
+    CheckConnect(key);
+    CSockGuard sg(*m_Sock);
+
+    string k(key);
+    PutInitiate(&k, time_to_live);
+    
     WriteStr((const char*) buf, size);
 
-    return blob_id;
+    return k;
+}
+
+IWriter* CNetCacheClient::PutData(string* key, unsigned int  time_to_live)
+{
+    _ASSERT(key);
+
+    CheckConnect(*key);
+
+    PutInitiate(key, time_to_live);
+
+    IWriter* writer = new CNetCacheSock_RW(m_Sock);
+    return writer;
 }
 
 
@@ -466,7 +485,7 @@ IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
         }
     }
 
-    IReader* reader = new CNetCacheSock_Reader(m_Sock);
+    IReader* reader = new CNetCacheSock_RW(m_Sock);
     return reader;
 }
 
@@ -601,12 +620,62 @@ bool CNetCacheClient::IsError(const char* str)
 }
 
 
+STimeout& CNetCacheClient::SetCommunicationTimeout() 
+{ 
+    return m_Timeout; 
+}
+
+STimeout  CNetCacheClient::GetCommunicationTimeout()
+{ 
+    return m_Timeout; 
+}
+
+CSocket* CNetCacheClient::DetachSocket() 
+{
+    CSocket* s = m_Sock; m_Sock = 0; return s; 
+}
+
+
+
+
+
+const char* CNetCacheException::GetErrCodeString(void) const
+{
+    switch (GetErrCode())
+    {
+    case eTimeout:            return "eTimeout";
+    case eCommunicationError: return "eCommunicationError";
+    case eKeyFormatError:     return "eKeyFormatError";
+    default:                  return CException::GetErrCodeString();
+    }
+}
+
+
+
+
+CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock) 
+: CSocketReaderWriter(sock) 
+{}
+
+CNetCacheSock_RW::~CNetCacheSock_RW() 
+{ 
+    if (m_Sock) m_Sock->Close(); 
+}
+
+void CNetCacheSock_RW::OwnSocket() 
+{ 
+    m_IsOwned = eTakeOwnership; 
+}
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/01/28 14:46:58  kuznets
+ * Code clean-up, added PutData returning IWriter
+ *
  * Revision 1.30  2005/01/19 12:21:47  kuznets
  * Fixed bug in restoring host name fron connection
  *

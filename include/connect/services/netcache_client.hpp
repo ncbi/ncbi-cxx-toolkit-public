@@ -95,7 +95,8 @@ public:
 
     /// Set communication timeout (ReadWrite)
     void SetCommunicationTimeout(const STimeout& to);
-    STimeout& SetCommunicationTimeout() { return m_Timeout; }
+    STimeout& SetCommunicationTimeout();
+    STimeout  GetCommunicationTimeout();
 
     /// Set socket (connected to the server)
     ///
@@ -109,22 +110,38 @@ public:
 
     /// Detach and return current socket.
     /// Caller is responsible for deletion.
-    CSocket* DetachSocket() {CSocket* s = m_Sock; m_Sock = 0; return s; }
+    CSocket* DetachSocket();
 
 
     /// Put BLOB to server
     ///
     /// @param time_to_live
     ///    BLOB time to live value in seconds. 
-    ///    0 - server side default assumed.
+    ///    0 - server side default is assumed.
     /// 
     /// Please note that time_to_live is controlled by the server-side
     /// parameter so if you set time_to_live higher than server-side value,
     /// server side TTL will be in effect.
+    ///
+    /// @return NetCache access key
     virtual 
     string PutData(const void*   buf,
                    size_t        size,
                    unsigned int  time_to_live = 0);
+
+    /// Put BLOB to server
+    ///
+    /// @param key
+    ///    NetCache key, if empty new key is created
+    ///    
+    /// @param time_to_live
+    ///    BLOB time to live value in seconds. 
+    ///    0 - server side default is assumed.
+    /// 
+    /// @return
+    ///    IReader* (caller must delete this). 
+    virtual
+    IWriter* PutData(string* key, unsigned int  time_to_live = 0);
 
     /// Update an existing BLOB
     ///
@@ -153,7 +170,7 @@ public:
     ///    Size of the BLOB
     /// @return
     ///    IReader* (caller must delete this). 
-    ///    When NULL BLOB was not found (expired).
+    ///    NULL means that BLOB was not found (expired).
     virtual 
     IReader* GetData(const string& key, 
                      size_t*       blob_size = 0);
@@ -218,6 +235,10 @@ protected:
 
     /// Extract host/port info from connected socket
     void RestoreHostPort();
+
+    /// @return netcache key
+    void PutInitiate(string*       key,
+                     unsigned int  time_to_live);
 
 private:
     CNetCacheClient(const CNetCacheClient&);
@@ -300,6 +321,9 @@ public:
                    const void*   buf,
                    size_t        size,
                    unsigned int  time_to_live = 0);
+    virtual
+    IWriter* PutData(string* key, unsigned int  time_to_live = 0);
+
     virtual 
     IReader* GetData(const string& key, 
                             size_t*       blob_size = 0);
@@ -345,16 +369,7 @@ public:
         eKeyFormatError
     };
 
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eTimeout:            return "eTimeout";
-        case eCommunicationError: return "eCommunicationError";
-        case eKeyFormatError:     return "eKeyFormatError";
-        default:                  return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     NCBI_EXCEPTION_DEFAULT(CNetCacheException, CException);
 };
@@ -389,17 +404,19 @@ void CNetCache_GenerateBlobKey(string*        key,
                                unsigned short port);
 
 
-/// IReader implementation returned by CNetCacheClient::GetData()
+/// IReader/IWriter implementation 
+/// returned by CNetCacheClient::GetData(), CNetCacheClient::PutData()
 ///
 /// @internal
 ///
-class CNetCacheSock_Reader : public CSocketReaderWriter
+class CNetCacheSock_RW : public CSocketReaderWriter
 {
 public:
-    CNetCacheSock_Reader(CSocket* sock) : CSocketReaderWriter(sock) {}
-    virtual ~CNetCacheSock_Reader() { if (m_Sock) m_Sock->Close(); }
+    CNetCacheSock_RW(CSocket* sock);
+    virtual ~CNetCacheSock_RW();
 
-    void OwnSocket() { m_IsOwned = eTakeOwnership; }
+    /// Take socket ownership
+    void OwnSocket();
 };
 
 
@@ -412,6 +429,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/01/28 14:46:38  kuznets
+ * Code clean-up, added PutData returning IWriter
+ *
  * Revision 1.19  2005/01/19 12:21:10  kuznets
  * +CNetCacheClient_LB
  *
