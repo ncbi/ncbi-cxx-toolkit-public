@@ -452,6 +452,44 @@ CSeq_loc_Mapper::x_GetMappedRanges(const CSeq_id_Handle& id,
 }
 
 
+void CSeq_loc_Mapper::x_PushMappedRange(const CSeq_id_Handle& id,
+                                        int                   strand_idx,
+                                        const TRange&         range,
+                                        const TRangeFuzz&     fuzz)
+{
+    switch ( m_MergeFlag ) {
+    case eMergeContained:
+    case eMergeAll:
+        {
+            x_GetMappedRanges(id, strand_idx)
+                .push_back(TRangeWithFuzz(range, fuzz));
+            break;
+        }
+    case eMergeNone:
+    case eMergeAbutting:
+    default:
+        {
+            TRangesById::iterator it = m_MappedLocs.begin();
+            if (it == m_MappedLocs.end()  ||
+                it->first != id  ||
+                (int)it->second.size() <= strand_idx  ||
+                it->second.empty()  ||
+                it->second[strand_idx].back().first.GetToOpen() <
+                range.GetFrom()) {
+                x_PushRangesToDstMix();
+                x_GetMappedRanges(id, strand_idx)
+                    .push_back(TRangeWithFuzz(range, fuzz));
+            }
+            else {
+                TRangeWithFuzz& last_rg = it->second[strand_idx].back();
+                last_rg.first.SetTo(range.GetTo());
+                last_rg.second.second = fuzz.second;
+            }
+        }
+    }
+}
+
+
 void CSeq_loc_Mapper::x_PushRangesToDstMix(void)
 {
     if (m_MappedLocs.size() == 0) {
@@ -1315,9 +1353,9 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
         ENa_strand dst_strand;
         bool is_set_dst_strand = cvt.Map_Strand(is_set_strand,
             src_strand, &dst_strand);
-        x_GetMappedRanges(cvt.m_Dst_id_Handle,
-            is_set_dst_strand ? int(dst_strand) + 1 : 0)
-            .push_back(TRangeWithFuzz(rg, fuzz));
+        x_PushMappedRange(cvt.m_Dst_id_Handle,
+            is_set_dst_strand ? int(dst_strand) + 1 : 0,
+            rg, fuzz);
         res = true;
     }
     return res;
@@ -1395,10 +1433,10 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         for ( ; mit; ++mit) {
             CMappingRange& cvt = *mit->second;
             if ( cvt.GoodSrcId(src_loc.GetEmpty()) ) {
-                x_GetMappedRanges(
-                    CSeq_id_Handle::GetHandle(src_loc.GetEmpty()), 0)
-                    .push_back(TRangeWithFuzz(TRange::GetEmpty(),
-                    TRangeFuzz(kEmptyFuzz, kEmptyFuzz)));
+                TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
+                x_PushMappedRange(
+                    CSeq_id_Handle::GetHandle(src_loc.GetEmpty()), 0,
+                    TRange::GetEmpty(), fuzz);
                 res = true;
                 break;
             }
@@ -1519,10 +1557,10 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
             if ( !res ) {
                 if ( m_KeepNonmapping ) {
                     x_PushRangesToDstMix();
-                    x_GetMappedRanges(CSeq_id_Handle::GetHandle(si.GetId()),
-                        si.IsSetStrand() ? int(si.GetStrand()) + 1 : 0)
-                        .push_back(TRangeWithFuzz(
-                        TRange(si.GetFrom(), si.GetTo()), fuzz));
+                    TRange rg(si.GetFrom(), si.GetTo());
+                    x_PushMappedRange(CSeq_id_Handle::GetHandle(si.GetId()),
+                        si.IsSetStrand() ? int(si.GetStrand()) + 1 : 0,
+                        rg, fuzz);
                 }
                 else {
                     m_Partial = true;
@@ -1550,11 +1588,12 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
             if ( !res ) {
                 if ( m_KeepNonmapping ) {
                     x_PushRangesToDstMix();
-                    x_GetMappedRanges(
+                    TRange rg(*i, *i);
+                    x_PushMappedRange(
                         CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()),
                         src_pack_pnts.IsSetStrand() ?
-                        int(src_pack_pnts.GetStrand()) + 1 : 0)
-                        .push_back(TRangeWithFuzz(TRange(*i, *i), fuzz));
+                        int(src_pack_pnts.GetStrand()) + 1 : 0,
+                        rg, fuzz);
                 }
                 else {
                     m_Partial = true;
@@ -1883,6 +1922,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/10/25 14:04:21  grichenk
+* Fixed order of ranges in mapped seq-loc.
+*
 * Revision 1.27  2004/10/14 13:55:08  grichenk
 * Fixed usage of widths
 *

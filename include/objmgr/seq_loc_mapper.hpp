@@ -197,6 +197,11 @@ private:
     friend class CSeq_loc_Conversion_Set;
     friend class CSeq_align_Mapper;
 
+    // eMergeNone and eMergeAbutting do not change the order of ranges
+    // in the destination seq-loc. No ranges will be merged if they
+    // are separated by any other sub-range.
+    // eMergeContained and eMergeAll sort ranges before sorting, so that
+    // any overlapping ranges can be merged.
     enum EMergeFlags {
         eMergeNone,      // no merging
         eMergeAbutting,  // merge only abutting intervals, keep overlapping
@@ -299,6 +304,10 @@ private:
     // Access mapped ranges, check vector size
     TMappedRanges& x_GetMappedRanges(const CSeq_id_Handle& id,
                                      int                   strand_idx) const;
+    void x_PushMappedRange(const CSeq_id_Handle& id,
+                           int                   strand_idx,
+                           const TRange&         range,
+                           const TRangeFuzz&     fuzz);
 
     CRef<CSeq_loc> x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                     TSeqPos               from,
@@ -448,6 +457,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/10/25 14:04:21  grichenk
+* Fixed order of ranges in mapped seq-loc.
+*
 * Revision 1.18  2004/09/27 16:52:27  grichenk
 * Fixed order of mapped intervals
 *
