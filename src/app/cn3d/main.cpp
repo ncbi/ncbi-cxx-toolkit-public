@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/08/04 22:49:03  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.13  2000/07/27 17:39:21  thiessen
 * catch exceptions upon bad file read
 *
@@ -369,8 +372,8 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
 #ifndef __WXMOTIF__
     if (!GetContext()) return;
 #endif
-
     SetCurrent();
+
     if (event.LeftIsDown()) {
         if (!dragging) {
             dragging = true;
@@ -383,6 +386,12 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
         last_y = event.GetY();
     } else
         dragging = false;
+
+    if (event.RightDown()) {
+        unsigned int name;
+        if (structureSet && renderer.GetSelected(event.GetX(), event.GetY(), &name))
+            structureSet->SelectedAtom(name);
+    }
 }
 
 void Cn3DGLCanvas::OnEraseBackground(wxEraseEvent& event)

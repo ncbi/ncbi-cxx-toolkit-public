@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/08/04 22:49:11  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.14  2000/08/03 15:12:29  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -79,6 +82,7 @@
 #define CN3D_STRUCTURESET__HPP
 
 #include <string>
+#include <map>
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/mmdb1/Biostruc.hpp>
@@ -96,6 +100,7 @@ class StructureObject;
 class OpenGLRenderer;
 class ShowHideManager;
 class StyleManager;
+class Residue;
 
 class StructureSet : public StructureBase
 {
@@ -123,7 +128,18 @@ public:
 
     bool Draw(const AtomSet *atomSet) const;
 
+    // keep a list of names to look atoms from GL selection
+    unsigned int CreateName(const Residue *residue, int atomID);
+    bool GetAtomFromName(unsigned int name, const Residue **residue, int *atomID);
+
+    // called when an atom is selected in the GL window
+    void SelectedAtom(unsigned int name);
+
 private:
+    typedef std::pair < const Residue*, int > NamePair;
+    typedef std::map < unsigned int, NamePair > NameMap;
+    NameMap nameMap;
+    unsigned int lastAtomName;
 };
 
 class ChemicalGraph;

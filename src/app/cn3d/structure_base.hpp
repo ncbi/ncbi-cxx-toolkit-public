@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/04 22:49:11  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.9  2000/08/03 15:12:29  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -136,7 +139,7 @@ public:
 class AtomPntr
 {
 public:
-    static int NO_ID;
+    static const int NO_ID;
     int mID, rID, aID;
 
     AtomPntr(int m = NO_ID, int r = NO_ID, int a = NO_ID) : mID(m), rID(r), aID(a) { }

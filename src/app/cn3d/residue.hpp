@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/04 22:49:11  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.6  2000/08/03 15:12:29  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -89,6 +92,7 @@ public:
     static const int NO_ALPHA_ID;
     int alphaID; // ID of "alpha" atom (C-alpha or P)
 
+    // residue type
     enum eType {
         eDNA = ncbi::objects::CResidue_graph::eResidue_type_deoxyribonucleotide,
         eRNA = ncbi::objects::CResidue_graph::eResidue_type_ribonucleotide,
@@ -97,10 +101,20 @@ public:
     };
     eType type;
 
+    // atom type
+    enum eAtomClassification {
+        eSideChainAtom,
+        ePartialBackboneAtom,   // for unbranched backbone trace
+        eCompleteBackboneAtom,  // all backbone atoms
+        eUnknownAtom
+    };
+
     typedef struct {
         std::string name, code;
         int atomicNumber;
         bool isIonizableProton;
+        eAtomClassification classification;
+        unsigned int glName;
     } AtomInfo;
 
     typedef LIST_TYPE < const Bond * > BondList;

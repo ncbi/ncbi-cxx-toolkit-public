@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/08/04 22:49:04  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.14  2000/08/03 15:12:23  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -104,7 +107,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
-    StructureBase(NULL), renderer(NULL)
+    StructureBase(NULL), renderer(NULL), lastAtomName(OpenGLRenderer::NO_NAME)
 {
     StructureObject *object;
     parentSet = this;
@@ -203,6 +206,35 @@ bool StructureSet::Draw(const AtomSet *atomSet) const
 {
     TESTMSG("drawing StructureSet");
     return true;
+}
+
+unsigned int StructureSet::CreateName(const Residue *residue, int atomID)
+{
+    lastAtomName++;
+    nameMap[lastAtomName] = std::make_pair(residue, atomID);
+    return lastAtomName;
+}
+
+bool StructureSet::GetAtomFromName(unsigned int name, const Residue **residue, int *atomID)
+{
+    NameMap::const_iterator i = nameMap.find(name);
+    if (i == nameMap.end()) return false;
+    *residue = i->second.first;
+    *atomID = i->second.second;
+	return true;
+}
+
+void StructureSet::SelectedAtom(unsigned int name)
+{
+    const Residue *residue;
+    int atomID;
+
+    if (name == OpenGLRenderer::NO_NAME || !GetAtomFromName(name, &residue, &atomID)) {
+        ERR_POST(Info << "nothing selected");
+        return;
+    }
+
+    TESTMSG("residue " << residue->id << ", atom " << atomID);
 }
 
 const int StructureObject::NO_MMDB_ID = -1;

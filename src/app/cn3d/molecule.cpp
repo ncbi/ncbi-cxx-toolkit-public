@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/04 22:49:03  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.6  2000/08/03 15:12:23  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -90,10 +93,9 @@ Molecule::Molecule(StructureBase *parent,
             ERR_POST(Fatal << "confused by repeated Residue ID");
         residues[residue->id] = residue;
 
-        if (prevResidue) {
-            // virtual bonds
-            if (prevResidue->alphaID == Residue::NO_ALPHA_ID) continue;
-            if (residue->alphaID == Residue::NO_ALPHA_ID) continue;
+        // virtual bonds
+        if (prevResidue && prevResidue->alphaID != Residue::NO_ALPHA_ID &&
+            residue->alphaID != Residue::NO_ALPHA_ID) {
             const Bond *bond = MakeBond(this, 
                 id, prevResidue->id, prevResidue->alphaID,
                 id, residue->id, residue->alphaID,

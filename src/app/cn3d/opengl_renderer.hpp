@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/04 22:49:10  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.7  2000/08/03 15:12:29  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -76,6 +79,7 @@ public:
     OpenGLRenderer(void);
 
     // public data
+    static const unsigned int NO_NAME;
 
     // public methods
 
@@ -87,7 +91,10 @@ public:
     void SetSize(int width, int height) const;
 
     // tells the renderer that new camera settings need to be applied
-    void NewView(void) const;
+    void NewView(int selectX = -1, int selectY = -1) const;
+
+    // get the name 
+    bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name);
 
     // reset camera to original state
     void ResetCamera(void);
@@ -120,8 +127,7 @@ public:
 
     // drawing methods
     void DrawAtom(const Vector& site, const AtomStyle& atomStyle);
-    void DrawBond(const Vector& site1, const Vector& site2, const BondStyle& bondStyle);
-
+    void DrawBond(const Vector& site1, const Vector& site2, const BondStyle& style);
 
 private:
     StructureSet *structureSet;
@@ -141,7 +147,7 @@ private:
     float background[3];
 
     // misc rendering stuff
-    int sphereSides, sphereStacks;
+    bool selectMode;
 };
 
 END_SCOPE(Cn3D)

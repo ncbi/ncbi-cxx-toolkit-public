@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/04 22:49:02  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.8  2000/08/03 15:12:23  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -140,7 +143,7 @@ bool Bond::Draw(const AtomSet *atomSet) const
         return false;
     }
     BondStyle bondStyle;
-    if (!parentSet->styleManager->GetBondStyle(object, atom1, atom2, &bondStyle))
+    if (!parentSet->styleManager->GetBondStyle(object, atom1, atom2, order, &bondStyle))
         return false;
 
     // draw the bond

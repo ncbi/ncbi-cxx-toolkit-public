@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/04 22:49:03  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.7  2000/08/03 15:12:23  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -79,6 +82,67 @@ BEGIN_SCOPE(Cn3D)
 const char Residue::NO_CODE = '?';
 const int Residue::NO_ALPHA_ID = -1;
 
+static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const CAtom& atom)
+{
+    if (!atom.IsSetIupac_code()) return Residue::eUnknownAtom;
+    std::string code = atom.GetIupac_code().front();
+    CAtom::EElement element = atom.GetElement();
+
+    if (residue->IsAminoAcid()) {
+
+        // amino acid partial backbone
+        if (
+            (element==CAtom::eElement_c && (code==" C  " || code==" CA ")) ||
+            (element==CAtom::eElement_n && code==" N  ")
+           ) 
+            return Residue::ePartialBackboneAtom;
+
+        // amino acid complete backbone (all backbone that's not part of "partial")
+        // including both GLY alpha hydrogens and terminal COOH and NH3+
+        else if (
+            (element==CAtom::eElement_o &&
+                (code==" O  " || code==" OXT")) ||
+            (element==CAtom::eElement_h && 
+                (code==" H  " || code==" HA " || code=="1HA " || code=="2HA " || 
+                 code==" HXT" || code=="1H  " || code=="2H  " || code=="3H  "))
+            )
+            return Residue::eCompleteBackboneAtom;
+
+        // anything else is side chain
+        else
+            return Residue::eSideChainAtom;
+
+    } else if (residue->IsNucleotide()) {
+
+        // nucleic acid partial backbone
+        if (
+            (element==CAtom::eElement_p && code==" P  ") ||
+            (element==CAtom::eElement_c && (code==" C5*" || code==" C4*" || code==" C3*")) ||
+            (element==CAtom::eElement_o && (code==" O5*" || code==" O3*")) ||
+            (element==CAtom::eElement_h && (code==" H3T" || code==" H5T"))
+           ) 
+            return Residue::ePartialBackboneAtom;
+
+        // nucleic acid complete backbone (all backbone that's not part of "partial")
+        else if (
+            (element==CAtom::eElement_o &&
+                (code==" O1P" || code==" O2P" || code==" O4*" || code==" O2*")) ||
+            (element==CAtom::eElement_c && (code==" C2*" || code==" C1*")) ||
+            (element==CAtom::eElement_h && 
+                (code=="1H5*" || code=="2H5*" || code==" H4*" || code==" H3*" || 
+                 code==" H2*" || code==" H1*" || code==" H1P" || code==" H2P" || 
+                 code==" HO2" || code=="1H2*" || code=="2H2*"))
+           )
+            return Residue::eCompleteBackboneAtom;
+
+        // anything else is side chain
+        else
+            return Residue::eSideChainAtom;
+
+    }
+
+    return Residue::eUnknownAtom;
+}
 
 Residue::Residue(StructureBase *parent,
     const CResidue& residue, int moleculeID,
@@ -159,8 +223,9 @@ Residue::Residue(StructureBase *parent,
     CResidue_graph::TAtoms::const_iterator a, ae = residueGraph->GetAtoms().end();
     for (a=residueGraph->GetAtoms().begin(); a!=ae; a++) {
         const CAtom& atom = a->GetObject();
+        int atomID = atom.GetId().Get();
 
-        AtomPntr ap(moleculeID, id, atom.GetId().Get());
+        AtomPntr ap(moleculeID, id, atomID);
 
         // first see if this atom is present each CoordSet; if not, don't
         // bother storing info. This forces an intersection on CoordSets - e.g.,
@@ -175,7 +240,7 @@ Residue::Residue(StructureBase *parent,
         // store alphaID
         if (alphaCode && atom.IsSetIupac_code() && atom.GetIupac_code().front()==alphaCode &&
             atom.GetElement()==alphaElement)
-            alphaID = atom.GetId().Get();
+            alphaID = atomID;
 
         AtomInfo *info = new AtomInfo;
         // get name if present
@@ -191,11 +256,15 @@ Residue::Residue(StructureBase *parent,
             info->isIonizableProton = true;
         else
             info->isIonizableProton = false;
+        // classify atom
+        info->classification = ClassifyAtom(this, atom);
+        // assign (unique) name
+        info->glName = parentSet->CreateName(this, atomID);
 
         // add info to map
         if (atomInfos.find(atom.GetId().Get()) != atomInfos.end())
             ERR_POST(Fatal << "Residue #" << id << ": confused by multiple atom IDs " << atom.GetId().Get());
-        atomInfos[atom.GetId().Get()] = info;
+        atomInfos[atomID] = info;
     }
 
     // get bonds

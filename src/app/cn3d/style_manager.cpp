@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/04 22:49:04  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.1  2000/08/03 15:13:59  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -57,18 +60,24 @@ bool StyleManager::GetAtomStyle(const StructureObject *object,
     
     // color by element for now
     const Residue::AtomInfo *info = object->graph->GetAtomInfo(atom);
+    if (info->classification != Residue::eUnknownAtom) {
+        atomStyle->style = StyleManager::eNotDisplayed;
+        return true;
+    }
+
     const Element *element = PeriodicTable.GetElement(info->atomicNumber);
     atomStyle->color = element->color;
     atomStyle->radius = 0.4;
     atomStyle->style = StyleManager::eSphereAtom;
     atomStyle->stacks = 3;
     atomStyle->slices = 6;
+    atomStyle->name = info->glName;
 
 	return true;
 }
 
 bool StyleManager::GetBondStyle(const StructureObject *object,
-        const AtomPntr& atom1, const AtomPntr& atom2,
+        const AtomPntr& atom1, const AtomPntr& atom2, Bond::eBondOrder order,
         BondStyle *bondStyle)
 {
     static const Vector magenta(1,0,1); 
@@ -79,6 +88,8 @@ bool StyleManager::GetBondStyle(const StructureObject *object,
         return false;
     }
     
+    //if (order == Bond::eVirtual) return false;
+
 /*
     // just do wireframe for now
     bondStyle->end1.style = bondStyle->end2.style = StyleManager::eLineBond;
@@ -102,10 +113,12 @@ bool StyleManager::GetBondStyle(const StructureObject *object,
     const Residue::AtomInfo *info = object->graph->GetAtomInfo(atom1);
     const Element *element = PeriodicTable.GetElement(info->atomicNumber);
     bondStyle->end1.color = element->color;
+    bondStyle->end1.name = info->glName;
 
     info = object->graph->GetAtomInfo(atom2);
     element = PeriodicTable.GetElement(info->atomicNumber);
     bondStyle->end2.color = element->color;
+    bondStyle->end2.name = info->glName;
 
     return true;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/04 22:49:03  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.10  2000/08/03 15:12:23  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -92,8 +95,14 @@ static inline double RadToDegrees(double rad) { return rad*180.0/PI; }
 
 static const GLuint FIRST_LIST = 1;
 
+
 // it's easier to keep one global qobj for now
 static GLUquadricObj *qobj = NULL;
+
+// pick buffer
+const unsigned int OpenGLRenderer::NO_NAME = 0;
+static const int pickBufSize = 1024;
+static GLuint selectBuf[pickBufSize];
 
 /* these are used for both matrial colors and light colors */
 static const GLfloat Color_Off[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -123,8 +132,12 @@ static void GL2Matrix(GLdouble *g, Matrix *m)
 
 // OpenGLRenderer methods - initialization and setup
 
-OpenGLRenderer::OpenGLRenderer(void)
+OpenGLRenderer::OpenGLRenderer(void) : selectMode(false)
 {
+    // make sure a name will fit in a GLuint
+    if (sizeof(GLuint) < sizeof(unsigned int))
+        ERR_POST(Fatal << "Cn3D requires that sizeof(GLuint) >= sizeof(unsigned int)");
+    
     if (!qobj) { // initialize global qobj
         qobj = gluNewQuadric();
         if (!qobj) ERR_POST(Fatal << "unable to allocate GLUQuadricObj");
@@ -132,10 +145,6 @@ OpenGLRenderer::OpenGLRenderer(void)
         gluQuadricNormals(qobj, GLU_SMOOTH);
         gluQuadricOrientation(qobj, GLU_OUTSIDE);
     }
-
-    // set default rendering options
-    sphereSides = 8;
-    sphereStacks = 4;
    
     AttachStructureSet(NULL);
 }
@@ -174,7 +183,7 @@ void OpenGLRenderer::Init(void) const
 
 // methods dealing with the view
 
-void OpenGLRenderer::NewView(void) const
+void OpenGLRenderer::NewView(int selectX, int selectY) const
 {
     GLint Viewport[4];
     glGetIntegerv(GL_VIEWPORT, Viewport);
@@ -182,7 +191,13 @@ void OpenGLRenderer::NewView(void) const
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    GLdouble aspect = ((GLdouble)(Viewport[2])) / Viewport[3];
+    if (selectMode) {
+        gluPickMatrix(static_cast<GLdouble>(selectX),
+                      static_cast<GLdouble>(Viewport[3] - selectY),
+                      1.0, 1.0, Viewport);
+    }
+
+    GLdouble aspect = (static_cast<GLdouble>(Viewport[2])) / Viewport[3];
     gluPerspective(RadToDegrees(cameraAngleRad),    // viewing angle (degrees)
                    aspect,                          // w/h aspect
                    cameraClipNear,                  // near clipping plane
@@ -209,7 +224,7 @@ void OpenGLRenderer::ResetCamera(void)
         // the window in any rotation (based on structureSet's maxDistFromCenter)
         GLint Viewport[4];
         glGetIntegerv(GL_VIEWPORT, Viewport);
-        double angle = cameraAngleRad, aspect = ((double)(Viewport[2])) / Viewport[3];
+        double angle = cameraAngleRad, aspect = (static_cast<double>(Viewport[2])) / Viewport[3];
         if (aspect < 1.0) angle *= aspect;
         cameraDistance = structureSet->maxDistFromCenter / sin(angle/2);
         cameraClipNear = cameraDistance - structureSet->maxDistFromCenter;
@@ -302,12 +317,62 @@ void OpenGLRenderer::Display(void) const
 
     glMultMatrixd(viewMatrix);
 
+    if (selectMode) {
+        glInitNames();
+        glPushName(0);
+    }
+    
     if (structureSet) {
         glCallList(FIRST_LIST);
     } else {
         glCallList(FIRST_LIST); // draw logo
     }
     glFlush();
+}
+
+// process selection; return gl-name of result
+bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
+{
+    // render with GL_SELECT mode, to fill selection buffer
+    glSelectBuffer(pickBufSize, selectBuf);
+    glRenderMode(GL_SELECT);
+    selectMode = true;
+    NewView(x, y);
+    Display();
+    GLint hits = glRenderMode(GL_RENDER);
+    selectMode = false;
+
+    // parse selection buffer to find name of selected item
+    int i, j, p=0, n, top=0;
+    GLuint minZ=0;
+    *name = NO_NAME;
+    for (i=0; i<hits; i++) {
+        n = selectBuf[p++];                 // # names
+        if (i==0 || minZ > selectBuf[p]) {  // find item with min depth
+            minZ = selectBuf[p];
+            top = 1;
+        } else
+            top = 0;
+        p++;
+        p++;                                // skip max depth
+        for (j=0; j<n; j++) {               // loop through n names
+            switch (j) {
+                case 0: 
+                    if (top) *name = static_cast<unsigned int>(selectBuf[p]);
+                    break;
+                default: 
+                    ERR_POST(Warning << "GL select: Got more than 1 name!");
+            }
+            p++;
+        }
+    }
+
+    NewView();
+    Display();
+    if (*name != NO_NAME)
+        return true;
+    else
+        return false;
 }
 
 void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
@@ -503,6 +568,7 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
 {
     if (atomStyle.radius <= 0.0) return;
     SetColor(GL_DIFFUSE, atomStyle.color[0], atomStyle.color[1], atomStyle.color[2]);
+    glLoadName(static_cast<GLuint>(atomStyle.name));
     glPushMatrix();
     glTranslated(site.x, site.y, site.z);
     gluSphere(qobj, atomStyle.radius, atomStyle.slices, atomStyle.stacks);
@@ -571,6 +637,7 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2, const Bo
         (style.end1.style == StyleManager::eLineBond || style.end1.radius <= 0.0)
         ? GL_AMBIENT : GL_DIFFUSE;
     SetColor(colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
+    glLoadName(static_cast<GLuint>(style.end1.name));
     DrawHalfBond(site1, midpoint, style.end1.style, style.end1.radius,
         style.end1.atomCap, style.midCap, style.end1.sides, style.end1.segments);
 
@@ -578,6 +645,7 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2, const Bo
         (style.end2.style == StyleManager::eLineBond || style.end2.radius <= 0.0)
         ? GL_AMBIENT : GL_DIFFUSE;
     SetColor(colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
+    glLoadName(static_cast<GLuint>(style.end2.name));
     DrawHalfBond(midpoint, site2, style.end2.style, style.end2.radius,
         style.midCap, style.end2.atomCap, style.end2.sides, style.end2.segments);
 }

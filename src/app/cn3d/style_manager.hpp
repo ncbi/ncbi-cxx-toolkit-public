@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/04 22:49:11  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.1  2000/08/03 15:14:18  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -41,6 +44,8 @@
 
 #include "cn3d/vector_math.hpp"
 #include "cn3d/structure_base.hpp"
+#include "cn3d/bond.hpp"
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -64,7 +69,7 @@ public:
     // style accessors
     bool GetAtomStyle(const StructureObject *object, const AtomPntr& atom, AtomStyle *atomStyle);
     bool GetBondStyle(const StructureObject *object,
-            const AtomPntr& atom1, const AtomPntr& atom2,
+            const AtomPntr& atom1, const AtomPntr& atom2, Bond::eBondOrder order,
             BondStyle *bondStyle);
 
 private:
@@ -77,6 +82,7 @@ public:
     Vector color;
     double radius;
     int slices, stacks;
+    unsigned int name;
 
     AtomStyle(void)
     {
@@ -96,6 +102,7 @@ public:
         double radius;
         bool atomCap;
         int sides, segments;
+        unsigned int name;
     } end1, end2;
     bool midCap;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/04 22:49:04  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
 * Revision 1.4  2000/08/03 15:12:23  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -51,7 +54,7 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-int AtomPntr::NO_ID = -1;
+const int AtomPntr::NO_ID = -1;
 
 // store children in parent upon construction
 StructureBase::StructureBase(StructureBase *parent)
