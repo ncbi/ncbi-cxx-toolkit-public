@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2004/04/28 19:24:29  gouriano
+* Corrected reading of containers
+*
 * Revision 1.58  2004/03/23 15:39:23  gouriano
 * Added setup options for skipping unknown data members
 *
@@ -1499,6 +1502,39 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
     return true;
 }
 
+
+TMemberIndex CObjectIStreamXml::FindDeep(TTypeInfo type,
+                                         const CLightString& name) const
+{
+    for (;;) {
+        if (type->GetTypeFamily() == eTypeFamilyContainer) {
+            const CContainerTypeInfo* cont =
+                dynamic_cast<const CContainerTypeInfo*>(type);
+            if (cont) {
+                type = cont->GetElementType();
+            }
+        } else if (type->GetTypeFamily() == eTypeFamilyPointer) {
+            const CPointerTypeInfo* ptr =
+                dynamic_cast<const CPointerTypeInfo*>(type);
+            if (ptr) {
+                type = ptr->GetPointedType();
+            }
+        } else {
+            break;
+        }
+    }
+    const CClassTypeInfoBase* classType =
+        dynamic_cast<const CClassTypeInfoBase*>(type);
+    if (classType) {
+        TMemberIndex i = classType->GetItems().FindDeep(name);
+        if (i != kInvalidMember) {
+            return i;
+        }
+    }
+    return kInvalidMember;
+}
+
+
 void CObjectIStreamXml::BeginArrayElement(TTypeInfo elementType)
 {
     if (x_IsStdXml() && GetRealTypeFamily(elementType) != eTypeFamilyPrimitive) {
@@ -1537,7 +1573,8 @@ void CObjectIStreamXml::ReadContainerContents(const CContainerTypeInfo* cType,
                 else {
                     cType->AddElement(containerPtr, *this);
                 }
-            } while (!m_RejectedTag.empty());
+            } while (!m_RejectedTag.empty() &&
+                     FindDeep(elementType,m_RejectedTag) != kInvalidMember);
             EndArrayElement();
             ++count;
         }

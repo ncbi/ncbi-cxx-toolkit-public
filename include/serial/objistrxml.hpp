@@ -127,6 +127,7 @@ protected:
 
     bool HasAnyContent(const CClassTypeInfoBase* classType);
     bool HasMoreElements(TTypeInfo elementType);
+    TMemberIndex FindDeep(TTypeInfo type, const CLightString& name) const;
     virtual void ReadContainer(const CContainerTypeInfo* containerType,
                                TObjectPtr containerPtr);
     virtual void SkipContainer(const CContainerTypeInfo* containerType);
@@ -253,6 +254,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/04/28 19:24:53  gouriano
+* Corrected reading of containers
+*
 * Revision 1.34  2004/01/30 20:31:05  gouriano
 * Corrected reading white spaces
 *
