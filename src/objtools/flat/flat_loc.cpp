@@ -110,7 +110,7 @@ void CFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
         const CSeq_point& pnt = loc.GetPnt();
         TSeqPos           pos = pnt.GetPoint();
         x_AddID(pnt.GetId(), oss, ctx, &accn);
-        if (IsReverse(pnt.GetStrand())) {
+        if (pnt.IsSetStrand() && IsReverse(pnt.GetStrand())) {
             oss << "complement(";
             x_AddPnt(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, ctx);
             oss << ')';
@@ -127,7 +127,7 @@ void CFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
         const CPacked_seqpnt& ppnt  = loc.GetPacked_pnt();
         SInterval::TFlags     flags = 0;
         x_AddID(ppnt.GetId(), oss, ctx, &accn);
-        if (IsReverse(ppnt.GetStrand())) {
+        if (ppnt.IsSetStrand() && IsReverse(ppnt.GetStrand())) {
             oss << "complement(";
             flags = SInterval::fReversed;
         }
@@ -138,7 +138,7 @@ void CFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
             x_AddInt(*it, *it, accn, flags);
             delim = ", \b";
         }
-        if (IsReverse(ppnt.GetStrand())) {
+        if (ppnt.IsSetStrand() && IsReverse(ppnt.GetStrand())) {
             oss << ")";
         }
         break;
@@ -178,7 +178,7 @@ void CFlatLoc::x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
     TSeqPos           from = si.GetFrom(), to = si.GetTo();
     SInterval::TFlags flags = 0;
     x_AddID(si.GetId(), oss, ctx, &accn);
-    if (IsReverse(si.GetStrand())) {
+    if (si.IsSetStrand() && IsReverse(si.GetStrand())) {
         oss << "complement(";
     }
     flags |= (x_AddPnt(from, si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0,
@@ -187,7 +187,7 @@ void CFlatLoc::x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
     oss << "..";
     flags |= (x_AddPnt(to, si.IsSetFuzz_to() ? &si.GetFuzz_to() : 0, oss, ctx)
               & SInterval::fPartialRight);
-    if (IsReverse(si.GetStrand())) {
+    if (si.IsSetStrand() && IsReverse(si.GetStrand())) {
         oss << ')';
         x_AddInt(to, from, accn, flags | SInterval::fReversed);
     } else {
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/07/17 20:27:30  vasilche
+* Added check for IsSetStrand().
+*
 * Revision 1.7  2003/06/02 16:06:42  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
