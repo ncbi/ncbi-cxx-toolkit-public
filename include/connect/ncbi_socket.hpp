@@ -227,6 +227,7 @@ protected:
     // NOTE: these calls are not valid with datagram sockets
     EIO_Status Shutdown(EIO_Event how);
     EIO_Status Reconnect(const STimeout* timeout);
+    EIO_Status Abort(void);
 
 private:
     // disable copy constructor and assignment
@@ -574,6 +575,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2003/05/21 17:51:50  lavr
+ * SOCK_Abort() redeclared protected in CDatagramSocket
+ *
  * Revision 6.25  2003/05/20 21:24:55  lavr
  * +CSocket::Abort()
  *
