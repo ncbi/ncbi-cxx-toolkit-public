@@ -88,7 +88,7 @@ int CDbBlastTraceback::SetupSearch()
         BLAST_GapAlignSetUp(x_eProgram, GetSeqSrc(), 
             GetScoringOpts(), GetEffLenOpts(), GetExtnOpts(), GetHitSaveOpts(),
             mi_clsQueries, mi_clsQueryInfo, mi_pScoreBlock, 0,
-            &mi_pExtParams, &mi_pHitParams, &mi_pGapAlign);
+            &mi_pExtParams, &mi_pHitParams, &mi_pEffLenParams, &mi_pGapAlign);
 
     }
     return status;
@@ -103,7 +103,7 @@ CDbBlastTraceback::RunSearchEngine()
         BLAST_ComputeTraceback(GetOptionsHandle().GetOptions().GetProgram(), 
             mi_pResults, mi_clsQueries, mi_clsQueryInfo,
             GetSeqSrc(), mi_pGapAlign, GetScoringOpts(), mi_pExtParams, 
-            mi_pHitParams, GetDbOpts(), GetProtOpts());
+            mi_pHitParams, mi_pEffLenParams, GetDbOpts(), GetProtOpts());
 }
 
 /// Resets query data structures; does only part of the work in the base 
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/03/09 18:54:06  dondosha
+ * Setup now needs the effective lengths parameters structure
+ *
  * Revision 1.1  2004/02/24 18:20:42  dondosha
  * Class derived from CDbBlast to do only traceback, given precomputed HSP results
  *
