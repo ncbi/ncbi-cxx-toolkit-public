@@ -76,7 +76,9 @@ ifeq ($(CURRENT_PLATFORM), SunOS)
 	EXTRA_LIBS = -lposix4
 endif
 ifeq ($(CURRENT_PLATFORM), Linux)
-        EXTRA_LIBS = -Wl,-Bstatic -lpng -lz -ltiff -ljpeg -Wl,-Bdynamic
+        EXTRA_LIBS = \
+		-Wl,-Bstatic -lpng -lz -ltiff -ljpeg -Wl,-Bdynamic \
+		-lpthread
 endif
 
 # ...the following two assignments switch to the development configuration:
