@@ -57,7 +57,12 @@ class BoyerMooreMatcher
 {
 public:
     // Initialize a matcher with the pattern to be matched.
-    BoyerMooreMatcher(const string &pattern);
+    // caseSensitive - should the search be case sensitive.
+    // wholeWord - a match is found ony if the pattern was found to 
+    //             be between whitespaces.
+    BoyerMooreMatcher(const string &pattern, 
+                      bool caseSensitive = false,
+                      bool wholeWord = false);
 
     // Search for the pattern over text starting at position pos.
     // Returns the position at which the pattern was found, -1 otherwise.
@@ -66,8 +71,12 @@ public:
 private:
     static const int ALPHABET_SIZE;
 
+    bool IsWholeWord (const string &text, int pos) const;
+
     string m_pattern;  
     unsigned int m_patlen;
+    bool m_caseSensitive;
+    bool m_wholeWord;
     vector<unsigned int> m_last_occurance;
 
 };  // class BoyerMooreMatcher 
@@ -353,6 +362,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/11/03 21:58:49  kans
+* BoyerMoore takes caseSensitive, wholeWord parameters (MS)
+*
 * Revision 1.1  2002/10/29 16:32:52  kans
 * initial checkin - Boyer-Moore string search and templated text search finite state machine (MS)
 *
