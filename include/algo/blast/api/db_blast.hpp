@@ -65,38 +65,38 @@ public:
     /// @param queries Vector of query locations [in]
     /// @param seq_src Source of subject sequences [in]
     /// @param p Blast program (task) [in]
-    /// @param rps_info RPS BLAST database information [in]
     /// @param hsp_stream Data structure for saving HSP lists. Passed in in case
     ///                   of on-the-fly formatting; otherwise 0. [in]
     /// @param num_threads How many threads to use in preliminary stage of the 
     ///                    search.
     CDbBlast(const TSeqLocVector& queries, 
-             BlastSeqSrc* seq_src, EProgram p, RPSInfo* rps_info=0,
+             BlastSeqSrc* seq_src, EProgram p,
              BlastHSPStream* hsp_stream=0, int num_threads=1);
     /// Constructor using a prebuilt options handle
     /// @param queries Vector of query locations [in]
     /// @param seq_src Source of subject sequences [in]
     /// @param opts Options handle for the BLAST search. [in]
-    /// @param rps_info RPS BLAST database information [in]
     /// @param hsp_stream Data structure for saving HSP lists. Passed in in case
     ///                   of on-the-fly formatting; otherwise 0. [in]
     /// @param num_threads How many threads to use in preliminary stage of the 
     ///                    search.
     CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
-             CBlastOptionsHandle& opts, RPSInfo* rps_info=0,
+             CBlastOptionsHandle& opts,
              BlastHSPStream* hsp_stream=0, int num_threads=1);
     /// Destructor
     virtual ~CDbBlast();
     /// Allocates and initializes internal data structures for the query 
     /// sequences.
     void SetQueries(const TSeqLocVector& queries);
-    /// 
+    /// Returns the vector of query Seq-locs
     const TSeqLocVector& GetQueries() const;
-
+    /// Returns the options object for modification
     CBlastOptions& SetOptions();
+    /// Returns the read-only options object
     const CBlastOptions& GetOptions() const;
-
+    /// Returns the options handle for modification
     CBlastOptionsHandle& SetOptionsHandle();
+    /// Returns the read only options handle
     const CBlastOptionsHandle& GetOptionsHandle() const;
 
     /// Perform BLAST search
@@ -157,9 +157,10 @@ protected:
     virtual void x_InitFields();
     /// Initialize the data structure for saving HSP lists
     virtual void x_InitHSPStream();
-    /// Retrieve the data structure with RPS BLAST database specific 
-    /// information.
-    RPSInfo * GetRPSInfo() const;    
+    /// Initialize the RPS database auxiliary structures
+    virtual void x_InitRPSFields();
+    /// Initialize the RPS database auxiliary structures
+    virtual void x_ResetRPSFields();
 
     /// Internal data structures used in this and all derived classes 
     bool                m_ibQuerySetUpDone; ///< Has the query set-up been done?
@@ -172,15 +173,10 @@ protected:
     BlastHSPResults*    m_ipResults;      /**< Results structure - not private, 
                                              because derived class will need to
                                              set it. */
-    bool                m_ibTracebackOnly;/**< Should only traceback be 
-                                             performed? Allows setup to recognize
-                                             that lookup table need not be 
-                                             created. */
 private:
     /// Data members received from client code
     TSeqLocVector        m_tQueries;      ///< query sequence(s)
     BlastSeqSrc*         m_pSeqSrc;       ///< Subject sequences sorce
-    RPSInfo*             m_pRpsInfo;      ///< RPS BLAST database information
     BlastHSPStream*      m_pHspStream;    /**< Placeholder for streaming HSP 
                                              lists out of the engine. */
     CRef<CBlastOptionsHandle>  m_OptsHandle; ///< Blast options
@@ -201,6 +197,13 @@ private:
                                              this class? */
     int                 m_iNumThreads;      /**< How many threads are used in 
                                                the preliminary stage? */
+    bool                m_ibTracebackOnly;/**< Should only traceback be 
+                                             performed? Allows setup to recognize
+                                             that lookup table need not be 
+                                             created. */
+    RPSInfo*            m_ipRpsInfo;      ///< RPS BLAST database information
+    CMemoryFile*        m_ipRpsMmap;      ///< Memory mapped RPS lookup table file
+    CMemoryFile*        m_ipRpsPssmMmap;  ///< Memory mapped RPS PSSM file
 };
 
 inline void
@@ -277,7 +280,6 @@ inline BlastScoreBlk* CDbBlast::GetScoreBlk() const
 inline const CBlastQueryInfo& CDbBlast::GetQueryInfo() const
 {
     return m_iclsQueryInfo;
-
 }
 
 inline const CBLAST_SequenceBlk& CDbBlast::GetQueryBlk() const
@@ -289,11 +291,6 @@ inline const CBLAST_SequenceBlk& CDbBlast::GetQueryBlk() const
 inline TBlastError& CDbBlast::GetErrorMessage()
 {
     return m_ivErrors;
-}
-
-inline RPSInfo * CDbBlast::GetRPSInfo() const
-{
-    return m_pRpsInfo;
 }
 
 inline LookupTableWrap* CDbBlast::GetLookupTable() const
@@ -310,6 +307,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2004/10/26 15:30:26  dondosha
+* Removed RPSInfo argument from constructors;
+* RPSInfo is now initialized inside the CDbBlast class if RPS search is requested;
+* multiple queries are now allowed for RPS search.
+*
 * Revision 1.25  2004/10/06 14:49:40  dondosha
 * Added RunTraceback method to perform a traceback only search, given the precomputed preliminary results, and return Seq-align; removed unused SetSeqSrc method; added doxygen comments
 *
