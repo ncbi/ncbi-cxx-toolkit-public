@@ -336,15 +336,6 @@ bool CSeq_loc_Conversion::IsSpecialLoc(void) const
 
 
 inline
-void CSeq_loc_Conversion::Reset(void)
-{
-    _ASSERT(!IsSpecialLoc());
-    m_TotalRange = TRange::GetEmpty();
-    m_Partial = false;
-}
-
-
-inline
 TSeqPos CSeq_loc_Conversion::ConvertPos(TSeqPos src_pos)
 {
     if ( src_pos < m_Src_from || src_pos > m_Src_to ) {
@@ -389,6 +380,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/10/27 19:30:25  vasilche
+* CSeq_loc_Conversion::Reset() made non-inline.
+*
 * Revision 1.27  2004/10/27 18:01:13  vasilche
 * Fixed order of mapping segments in annotation iterator.
 *
