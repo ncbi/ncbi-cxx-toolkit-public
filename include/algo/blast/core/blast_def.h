@@ -104,12 +104,6 @@ typedef struct BlastQueryInfo {
                                   query sequences. */
 } BlastQueryInfo;
 
-/** Wrapper structure for different types of BLAST lookup tables */
-typedef struct LookupTableWrap {
-   Uint1 lut_type; /**< What kind of a lookup table it is? */
-   void* lut; /**< Pointer to the actual lookup table structure */
-} LookupTableWrap;
-
 /** A structure containing two integers, used e.g. for locations for the 
  * lookup table.
  */
