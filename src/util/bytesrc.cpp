@@ -362,7 +362,19 @@ void CIWriterSourceCollector::AddChunk(const char* buffer, size_t bufferLength)
 
 CRef<CByteSource> CIWriterSourceCollector::GetSource(void)
 {
-    return CRef<CByteSource>(); // TODO: Add appropriate bytesource
+    // Return NULL byte source, this happens because we cannot derive
+    // any readers from IWriter (one way interface)
+    return CRef<CByteSource>();
+}
+
+
+size_t 
+CStreamRedirectByteSourceReader::Read(char* buffer, size_t bufferLength)
+{
+    size_t bytes_read = CStreamByteSourceReader::Read(buffer, bufferLength);
+    if (bytes_read)
+        m_Writer->Write(buffer, bytes_read);
+    return bytes_read;
 }
 
 
@@ -372,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.23  2003/09/30 20:08:02  kuznets
+ * +CStreamRedirectByteSourceReader implementation
+ *
  * Revision 1.22  2003/09/25 16:38:03  kuznets
  * + IWriter based sub source collector
  *
