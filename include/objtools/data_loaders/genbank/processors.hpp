@@ -233,7 +233,7 @@ public:
                      const CID2_Reply_Data& data,
                      TSplitVersion split_version = 0,
                      const CID2_Reply_Data* skel = 0) const;
-    
+
     void SaveData(CReaderRequestResult& result,
                   const TBlobId& blob_id,
                   TChunkId chunk_id,
@@ -244,6 +244,8 @@ public:
     static CObjectIStream* x_OpenDataStream(const CID2_Reply_Data& data);
     static void x_ReadData(const CID2_Reply_Data& data,
                            const CObjectInfo& object);
+    static void DumpDataAsText(const CID2_Reply_Data& data,
+                               CNcbiOstream& out);
 };
 
 

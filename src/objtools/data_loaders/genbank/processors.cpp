@@ -52,6 +52,9 @@
 
 #include <objmgr/objmgr_exception.hpp>
 
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/delaybuf.hpp>
@@ -1365,6 +1368,31 @@ void CProcessor_ID2::x_ReadData(const CID2_Reply_Data& data,
     }
     SetSeqEntryReadHooks(*in);
     in->Read(object);
+}
+
+
+void CProcessor_ID2::DumpDataAsText(const CID2_Reply_Data& data,
+                                    CNcbiOstream& out_stream)
+{
+    auto_ptr<CObjectIStream> in(x_OpenDataStream(data));
+    auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText,
+                                                      out_stream));
+    TTypeInfo type;
+    switch ( data.GetData_type() ) {
+    case CID2_Reply_Data::eData_type_seq_entry:
+        type = CSeq_entry::GetTypeInfo();
+        break;
+    case CID2_Reply_Data::eData_type_id2s_split_info:
+        type = CID2S_Split_Info::GetTypeInfo();
+        break;
+    case CID2_Reply_Data::eData_type_id2s_chunk:
+        type = CID2S_Chunk::GetTypeInfo();
+        break;
+    default:
+        return;
+    }
+    CObjectStreamCopier copier(*in, *out);
+    copier.Copy(type);
 }
 
 
