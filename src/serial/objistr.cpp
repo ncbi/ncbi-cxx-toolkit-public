@@ -306,8 +306,9 @@ CObjectIStream::TFailFlags CObjectIStream::SetFailFlags(TFailFlags flags,
         m_Fail |= flags;
         if ( !old && flags ) {
             // first fail
-            ERR_POST(Error << "CObjectIStream: error at "<<
-                     GetPosition()<<": "<<GetStackTrace() << ": " << message);
+// redundant
+//            ERR_POST(Error << "CObjectIStream: error at "<<
+//                     GetPosition()<<": "<<GetStackTrace() << ": " << message);
         }
     }
     return old;
@@ -1457,6 +1458,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.127  2004/03/18 20:18:05  gouriano
+* remove redundant diagnostic message
+*
 * Revision 1.126  2004/03/05 20:29:38  gouriano
 * make it possible to skip unknown data fields
 *
