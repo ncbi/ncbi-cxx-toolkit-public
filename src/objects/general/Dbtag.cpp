@@ -111,6 +111,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("WorfDB", CDbtag::eDbtagType_WorfDB),
     TDbxrefPair("WormBase", CDbtag::eDbtagType_WormBase),
     TDbxrefPair("ZFIN", CDbtag::eDbtagType_ZFIN),
+    TDbxrefPair("axeldb", CDbtag::eDbtagType_axeldb),
     TDbxrefPair("dbEST", CDbtag::eDbtagType_dbEST),
     TDbxrefPair("dbSNP", CDbtag::eDbtagType_dbSNP),
     TDbxrefPair("dbSTS", CDbtag::eDbtagType_dbSTS),
@@ -249,6 +250,164 @@ void CDbtag::InvalidateType(void)
 }
 
 
+//=========================================================================//
+//                              URLs                                       //
+//=========================================================================//
+
+// special case URLs
+static const string kFBan = "http://www.fruitfly.org/cgi-bin/annot/fban?";
+static const string kHInvDbHIT = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=30&KEN_STR=";
+static const string kHInvDbHIX = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR=";
+
+// mapping of DB to its URL
+typedef pair<CDbtag::EDbtagType, string>    TDbtUrl;
+static const TDbtUrl sc_url_prefix[] = {
+    TDbtUrl(CDbtag::eDbtagType_ASAP, "https://asap.ahabs.wisc.edu/annotation/php/feature_info.php?FeatureID="),
+    TDbtUrl(CDbtag::eDbtagType_AceView_WormGenes, "http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q="), 
+    TDbtUrl(CDbtag::eDbtagType_CDD, "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid="),
+    TDbtUrl(CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid="),
+    TDbtUrl(CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog="),
+    TDbtUrl(CDbtag::eDbtagType_FANTOM_DB, "http://fantom.gsc.riken.go.jp/db/view/main.cgi?masterid="),
+    TDbtUrl(CDbtag::eDbtagType_FLYBASE, "http://flybase.bio.indiana.edu/.bin/fbidq.html?"),
+    TDbtUrl(CDbtag::eDbtagType_GABI, "https://gabi.rzpd.de/cgi-bin-protected/GreenCards.pl.cgi?Mode=ShowBioObject&BioObjectName="),
+    TDbtUrl(CDbtag::eDbtagType_GDB, "http://www.gdb.org/gdb-bin/genera/genera/hgd/DBObject/GDB:"),
+    TDbtUrl(CDbtag::eDbtagType_GO, "http://www.godatabase.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query="),
+    TDbtUrl(CDbtag::eDbtagType_GeneDB, "http://www.genedb.org/genedb/Dispatcher?formType=navBar&submit=Search+for&organism=All%3Apombe%3Acerevisiae%3Adicty%3Aasp%3Atryp%3Aleish%3Amalaria%3Astyphi%3Aglossina&desc=yes&ohmr=%2F&name="),
+    TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=retrieve&dopt=graphics&list_uids="),
+    TDbtUrl(CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp"),
+    TDbtUrl(CDbtag::eDbtagType_IFO, "http://www.ifo.or.jp/index_e.html"),
+    TDbtUrl(CDbtag::eDbtagType_IMGT_LIGM, "http://imgt.cines.fr:8104/cgi-bin/IMGTlect.jv?query=202+"),
+    TDbtUrl(CDbtag::eDbtagType_ISFinder, "http://www-is.biotoul.fr/scripts/is/is_spec.idc?name="),
+    TDbtUrl(CDbtag::eDbtagType_InterimID, "http://www.ncbi.nlm.nih.gov/LocusLink/LocRpt.cgi?l="),
+    TDbtUrl(CDbtag::eDbtagType_Interpro, "http://www.ebi.ac.uk/interpro/ISearch?mode=ipr&query="),
+    TDbtUrl(CDbtag::eDbtagType_JCM, "http://www.jcm.riken.go.jp/cgi-bin/jcm/jcm_number?JCM="),
+    TDbtUrl(CDbtag::eDbtagType_LocusID, "http://www.ncbi.nlm.nih.gov/LocusLink/LocRpt.cgi?l="),
+    TDbtUrl(CDbtag::eDbtagType_MGD, "http://www.informatics.jax.org/searches/accession_report.cgi?id=MGI:"),
+    TDbtUrl(CDbtag::eDbtagType_MGI, "http://www.informatics.jax.org/searches/accession_report.cgi?id=MGI:"),
+    TDbtUrl(CDbtag::eDbtagType_MIM, "http://www.ncbi.nlm.nih.gov/entrez/dispomim.cgi?id="),
+    TDbtUrl(CDbtag::eDbtagType_MaizeGDB, "http://www.maizegdb.org/"),
+    TDbtUrl(CDbtag::eDbtagType_NextDB, "http://nematode.lab.nig.ac.jp/cgi-bin/db/ShowGeneInfo.sh?celk="),
+    TDbtUrl(CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier="),
+    TDbtUrl(CDbtag::eDbtagType_PID, "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?"),
+    TDbtUrl(CDbtag::eDbtagType_RATMAP, "http://ratmap.gen.gu.se/ShowSingleLocus.htm?accno="),
+    TDbtUrl(CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/query/query.cgi?id="),
+    TDbtUrl(CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object="),
+    TDbtUrl(CDbtag::eDbtagType_SGD, "http://db.yeastgenome.org/cgi-bin/SGD/locus.pl?locus="),
+    TDbtUrl(CDbtag::eDbtagType_SubtiList, "http://genolist.pasteur.fr/SubtiList/genome.cgi?external_query+"),
+    TDbtUrl(CDbtag::eDbtagType_UniProt_SwissProt, "http://www.uniprot.org/entry/"),
+    TDbtUrl(CDbtag::eDbtagType_UniProt_TrEMBL, "http://www.uniprot.org/entry/"),
+    TDbtUrl(CDbtag::eDbtagType_UniSTS, "http://www.ncbi.nlm.nih.gov/genome/sts/sts.cgi?uid="),
+    TDbtUrl(CDbtag::eDbtagType_VBASE2, "http://www.dnaplot.de/vbase2/vgene.php?id="),
+    TDbtUrl(CDbtag::eDbtagType_WorfDB, "http://worfdb.dfci.harvard.edu/search.pl?form=1&search="),
+    TDbtUrl(CDbtag::eDbtagType_WormBase, "http://www.wormbase.org/db/gene/gene?class=CDS;name="),
+    TDbtUrl(CDbtag::eDbtagType_ZFIN, "http://zfin.org/cgi-bin/webdriver?MIval=aa-markerview.apg&OID="),
+    TDbtUrl(CDbtag::eDbtagType_axeldb, "http://www.dkfz-heidelberg.de/tbi/services/axeldb/clone/xenopus?name="),
+    TDbtUrl(CDbtag::eDbtagType_dbEST, "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?"),
+    TDbtUrl(CDbtag::eDbtagType_dbSNP, "http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?type=rs&rs="),
+    TDbtUrl(CDbtag::eDbtagType_dbSTS, "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?"),
+    TDbtUrl(CDbtag::eDbtagType_dictyBase, "http://dictybase.org/db/cgi-bin/gene_page.pl?dictybaseid="),
+    TDbtUrl(CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1="),
+    TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?"),
+    TDbtUrl(CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/"),
+    TDbtUrl(CDbtag::eDbtagType_IMGT_GENEDB, "http://imgt.cines.fr/cgi-bin/GENElect.jv?species=Homo+sapiens&query=2+")
+};
+typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
+static const TUrlPrefixMap sc_UrlMap(sc_url_prefix, sizeof(sc_url_prefix));
+
+
+string CDbtag::GetUrl(void) const
+{
+    TUrlPrefixMap::const_iterator it = sc_UrlMap.find(GetType());
+    if (it == sc_UrlMap.end()) {
+        return kEmptyStr;
+    }
+    const string* prefix = &(it->second);
+
+    string tag;
+    if (GetTag().IsStr()) {
+        tag = GetTag().GetStr();
+    } else if (GetTag().IsId()) {
+        tag = NStr::IntToString(GetTag().GetId());
+    }
+    if (NStr::IsBlank(tag)) {
+        return kEmptyStr;
+    }
+
+    // URLs are constructed by catenating the URL prefix with the specific tag
+    // except in a few cases handaled below.
+    switch (GetType()) {
+        case CDbtag::eDbtagType_FLYBASE:
+            if (NStr::Find(tag, "FBan") != NPOS) {
+                prefix = &kFBan;
+            }
+            break;
+
+        case eDbtagType_MGI:
+        case eDbtagType_MGD:
+            if (NStr::StartsWith(tag, "MGI:", NStr::eNocase)  ||
+                NStr::StartsWith(tag, "MGD:", NStr::eNocase)) {
+                tag = tag.substr(4);
+            }
+            break;
+
+        case eDbtagType_PID:
+            if (tag[0] == 'g') {
+                tag = tag.substr(1);
+            }
+            break;
+
+        case eDbtagType_dbEST:
+        case eDbtagType_dbSTS:
+            tag.insert(0, "val=gnl|dbest|");
+            break;
+
+        case eDbtagType_niaEST:
+            tag += "&val=1";
+            break;
+
+        case eDbtagType_MaizeGDB:
+        case eDbtagType_IFO:
+            tag.erase();
+            break;
+
+        case eDbtagType_GDB:
+        {{
+            SIZE_TYPE pos = NStr::Find(tag, "G00-");
+            if (pos != NPOS) {
+                tag = tag.substr(pos + 4);
+                remove(tag.begin(), tag.end(), '-');
+            } else if (!isdigit(tag[0])) {
+                return kEmptyStr;
+            }
+            break;
+        }}
+        case eDbtagType_REBASE:
+            tag += ".html";
+            break;
+        case eDbtagType_H_InvDB:
+            if (NStr::Find(tag, "HIT")) {
+                prefix = &kHInvDbHIT;
+            } else if (NStr::Find(tag, "HIX")) {
+                prefix = &kHInvDbHIX;
+            }
+            break;
+
+        case CDbtag::eDbtagType_taxon:
+            if (isdigit(tag[0])) {
+                tag.insert(0, "id=");
+            } else {
+                tag.insert(0, "name=");
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    return *prefix + tag;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -256,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.20  2005/02/07 19:27:13  shomrat
+ * Added GetUrl()
+ *
  * Revision 6.19  2004/12/29 19:01:56  shomrat
  * Added VBASE2; Fixed MaizeGDB typo
  *

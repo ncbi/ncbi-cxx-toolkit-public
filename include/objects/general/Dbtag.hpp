@@ -115,6 +115,7 @@ public:
         eDbtagType_WorfDB,
         eDbtagType_WormBase,
         eDbtagType_ZFIN,
+        eDbtagType_axeldb,
         eDbtagType_dbEST,
         eDbtagType_dbSNP,
         eDbtagType_dbSTS,
@@ -157,6 +158,11 @@ public:
     // Force a refresh of the internal type
     void InvalidateType(void);
     
+    // Get a URL to the resource (if available)
+    // @return
+    //   the URL or an empty string if non is available
+    string GetUrl(void) const;
+
 private:
 
     // our enumerated (parsed) type
@@ -189,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/02/07 19:26:59  shomrat
+ * Added GetUrl()
+ *
  * Revision 1.11  2004/12/29 19:01:30  shomrat
  * Added VBASE2; Fixed MaizeGDB typo
  *
