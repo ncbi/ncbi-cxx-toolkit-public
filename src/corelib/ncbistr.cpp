@@ -550,6 +550,47 @@ list<string>& NStr::Split(const string& str, const string& delim,
     return arr;
 }
 
+vector<string> NStr::Tokenize(const string& str, const string& delim,
+                              vector<string>& arr)
+{
+    if (delim.empty()) {
+        arr.push_back(str);
+        return arr;
+    }
+    
+    size_t pos, prev_pos, len;
+
+    const char* pc = str.c_str();
+
+    // Count number of tokens to determine the array size
+    size_t tokens = 0;
+
+    for (pos = prev_pos = 0; pos < str.length(); ++pos) {
+        char c = str[pos];
+        size_t dpos = delim.find(c);
+        if (dpos != string::npos) ++tokens;
+    }
+
+    arr.reserve(arr.size() + tokens + 1);
+
+    // Tokenization
+    for (pos = prev_pos = 0; pos < str.length(); ++pos) {
+        char c = str[pos];
+        size_t dpos = delim.find(c);
+        if (dpos == string::npos) continue;
+        
+        len = pos - prev_pos;
+        arr.push_back(len ? str.substr(prev_pos, len) : "");
+
+        prev_pos = pos + 1;
+    }
+    
+    len = pos - prev_pos;
+    arr.push_back(len ? str.substr(prev_pos, len) : "");
+
+    return arr;
+}
+
 
 string NStr::Join(const list<string>& arr, const string& delim)
 {
@@ -841,6 +882,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2003/01/14 21:16:46  kuznets
+ * +Nstr::Tokenize
+ *
  * Revision 1.63  2003/01/13 14:47:16  kuznets
  * Implemented overflow checking for StringToInt8 function
  *
