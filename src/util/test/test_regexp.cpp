@@ -57,11 +57,11 @@ int CRegexApplication::Run(void)
 {
     // Simple way to use regular expressions
     CRegexp pattern("D\\w*g");
-    string hit = pattern.GetMatch("The Dodgers play baseball.");
-    cout << hit << endl;
+    cout << pattern.GetMatch("The Dodgers play baseball.") << endl;
     
     // Perl compatible regular expression pattern to match
     string pat("(q.*k).*f?x");
+    pattern.Set(pat);
     
     // String to find matching pattern in
     string text("The quick brown fox jumped over the lazy dogs.\n");
@@ -69,56 +69,47 @@ int CRegexApplication::Run(void)
     text += "country.\nTwas the night before Christmas and all through the ";
     text += "house, not a\n creature was stirring, not even a mouse.\n";
     
-    // Create a CRegexp object and compile pattern
-    CRegexp cpat(pat.c_str());
+    // Display pattern and sub pattern matches
+    cout << pattern.GetMatch(text.c_str()) << endl;
+    for (int k = 1; k < pattern.NumFound(); k++) {
+        cout << pattern.GetSub(text.c_str(), 1) << endl;
+    }    
     
-    // Find the matching substrings for pattern and sub patterns
-    // Return results as array of CRegexp::SMatches
-    const CRegexp::SMatches *rslt = cpat.Match(text.c_str());
+    // Set new pattern and ignore case
+    pattern.Set("t\\w*e", CRegexp::eCompile_ignore_case);
     
-    // Display m_Begin and m_End (1 past last) index for matching pattern 
-    // and sub patterns
-    for (size_t i = 0; i < 10 && rslt[i].m_Begin >= 0; i++) {
-        cout << rslt[i].m_Begin << endl;
-        cout << rslt[i].m_End << endl;
-    }
-        
-    // Display the matching substrings for pattern and sub patterns
-    for (size_t i = 0; i < 10 && rslt[i].m_Begin >= 0; i++) {
-        cout << cpat.GetSub(text.c_str(), i) << endl;
-    }
-    
-    // Use different pattern
-    pat = "t\\w*e";
-    
-    // Compile new pattern
-    cpat.Set(pat.c_str(), CRegexp::eCompile_ignore_case);
-    
-    // Create cstring from string
-    char *cstr = new char[text.length() + 1];
-    strcpy(cstr, text.c_str());
-    
-    // Loop through and display all non-overlapping matches
-    int offset = 0;
-    do {
-        rslt = cpat.Match(cstr + offset);
-        cout << cpat.GetSub(cstr + offset) << endl;
-        if (rslt[0].m_Begin >= 0) {
-            offset += rslt[0].m_End;
-            cout << (cstr+offset) << endl;
+    // Find all matches to pattern
+    size_t start = 0;
+    while (start != string::npos) {
+        string match = pattern.GetMatch(text.c_str(), start);
+        if (pattern.NumFound() > 0) {
+            cout << match << endl;
+            start = text.find(match, start) + 1;            
+        } else {
+            break;
         }
-    } while (rslt[0].m_Begin > -1);
+    }
     
-    // Loop through and display all matches   
-    string mstr;
-    size_t occ = 0;
-    do {
-        mstr = cpat.GetMatch(cstr, 0, occ);
-        cout << "occ: " << occ << "\t" << mstr << endl;
-        occ++;
-    } while (!mstr.empty());
-    
-    delete[] cstr;
+    // Same as above but with cstrings and elinates string return
+    start = 0;
+    char *txt = new char[text.length() + 1];
+    strcpy(txt, text.c_str());
+    size_t len = strlen(txt);
+    while (true)
+    {
+        pattern.GetMatch(txt, start, 0, 0, true);
+        if (pattern.NumFound() > 0) {
+            const int *rslt = pattern.GetResults(0);
+            start = rslt[1];
+            for (int i = rslt[0]; i < rslt[1]; i++) {
+                cout << txt[i];
+            }
+            cout << endl;
+        } else {
+            break;
+        }
+    }
+    delete[] txt;                  
     return 0;
 }
 
@@ -143,6 +134,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/20 18:31:51  clausen
+ * Switched to work with new CRegexp interface
+ *
  * Revision 1.1  2003/06/03 14:51:53  clausen
  * test_regexp.cpp
  *
