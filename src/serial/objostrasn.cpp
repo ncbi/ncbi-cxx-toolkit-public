@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/13 20:18:20  vasilche
+* Changed types naming.
+*
 * Revision 1.10  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -288,14 +291,14 @@ void CObjectOStreamAsn::StartMember(Member& , const CMemberId& id)
     m_Output << id.GetName() << ' ';
 }
 
-void CObjectOStreamAsn::Begin(const ByteBlock& block)
+void CObjectOStreamAsn::Begin(const ByteBlock& )
 {
 	m_Output << '\'';
 }
 
 static const char* const HEX = "0123456789ABCDEF";
 
-void CObjectOStreamAsn::WriteBytes(const ByteBlock& block, const char* bytes, size_t length)
+void CObjectOStreamAsn::WriteBytes(const ByteBlock& , const char* bytes, size_t length)
 {
 	while ( length-- > 0 ) {
 		char c = *bytes++;
@@ -303,7 +306,7 @@ void CObjectOStreamAsn::WriteBytes(const ByteBlock& block, const char* bytes, si
 	}
 }
 
-void CObjectOStreamAsn::End(const ByteBlock& block)
+void CObjectOStreamAsn::End(const ByteBlock& )
 {
 	m_Output << "\'H";
 }

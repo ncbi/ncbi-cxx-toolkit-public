@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/07/13 20:18:19  vasilche
+* Changed types naming.
+*
 * Revision 1.17  1999/07/09 20:27:07  vasilche
 * Fixed some bugs
 *
@@ -90,6 +93,7 @@
 #include <serial/objistrb.hpp>
 #include <serial/objstrb.hpp>
 #include <serial/member.hpp>
+#include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -734,7 +738,7 @@ CIObjectInfo CObjectIStreamBinary::ReadObjectPointer(void)
         {
             const string& className = ReadStringValue();
             _TRACE("CObjectIStreamBinary::ReadPointer: new " << className);
-            TTypeInfo typeInfo = CTypeInfo::GetTypeInfoByName(className);
+            TTypeInfo typeInfo = CClassInfoTmpl::GetClassInfoByName(className);
             TObjectPtr object = typeInfo->Create();
             RegisterObject(object, typeInfo);
             Read(object, typeInfo);

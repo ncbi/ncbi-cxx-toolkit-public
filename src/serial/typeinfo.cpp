@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/13 20:18:24  vasilche
+* Changed types naming.
+*
 * Revision 1.11  1999/07/07 19:59:09  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -76,103 +79,18 @@
 
 BEGIN_NCBI_SCOPE
 
-CTypeInfo::TTypesByName* CTypeInfo::sm_TypesByName = 0;
-CTypeInfo::TTypesById* CTypeInfo::sm_TypesById = 0;
-
-inline
-CTypeInfo::TTypesByName& CTypeInfo::TypesByName(void)
-{
-    TTypesByName* types = sm_TypesByName;
-    if ( !types ) {
-        types = sm_TypesByName = new TTypesByName;
-    }
-    return *types;
-}
-
-inline
-CTypeInfo::TTypesById& CTypeInfo::TypesById(void)
-{
-    TTypesById* types = sm_TypesById;
-    if ( !types )
-        types = sm_TypesById = new TTypesById;
-    return *types;
-}
-
 CTypeInfo::CTypeInfo(void)
-    : m_Id(typeid(void)), m_Default(0)
+    : m_Default(0)
 {
 }
 
-CTypeInfo::CTypeInfo(const type_info& id)
-    : m_Id(id), m_Name(id.name()), m_Default(0)
+CTypeInfo::CTypeInfo(const string& name)
+    : m_Name(name), m_Default(0)
 {
-    if ( id != typeid(void) ) {
-        if ( !TypesById().insert(TTypesById::value_type(&id, this)).second ) {
-            THROW1_TRACE(runtime_error, "duplicated types: " + GetName());
-        }
-        if ( !TypesByName().insert(TTypesByName::value_type(GetName(),
-                                                            this)).second ) {
-            THROW1_TRACE(runtime_error, "duplicated types: " + GetName());
-        }
-    }
 }
 
 CTypeInfo::~CTypeInfo(void)
 {
-    if ( !GetName().empty() ) {
-        TypesById().erase(&m_Id);
-        TypesByName().erase(GetName());
-        if ( TypesById().empty() ) {
-            delete sm_TypesById;
-            sm_TypesById = 0;
-            delete sm_TypesByName;
-            sm_TypesByName = 0;
-        }
-    }
-}
-
-TTypeInfo CTypeInfo::GetTypeInfoByName(const string& name)
-{
-    TTypesByName& types = TypesByName();
-    TTypesByName::iterator i = types.find(name);
-    if ( i == types.end() ) {
-        THROW1_TRACE(runtime_error, "type not found: "+name);
-    }
-    return i->second;
-}
-
-TTypeInfo CTypeInfo::GetTypeInfoById(const type_info& id)
-{
-    TTypesById& types = TypesById();
-    TTypesById::iterator i = types.find(&id);
-    if ( i == types.end() ) {
-        THROW1_TRACE(runtime_error, "type not found: "+string(id.name()));
-    }
-    return i->second;
-}
-
-TTypeInfo CTypeInfo::GetTypeInfoBy(const type_info& id,
-                                              void (*creator)(void))
-{
-    TTypesById& types = TypesById();
-    TTypesById::iterator i = types.find(&id);
-    if ( i != types.end() )
-        return i->second;
-
-    creator();
-    return GetTypeInfoById(id);
-}
-
-TTypeInfo CTypeInfo::GetPointerTypeInfo(const type_info& id,
-                                                   const CTypeRef& typeRef)
-{
-    TTypesById& types = TypesById();
-    TTypesById::iterator i = types.find(&id);
-    if ( i != types.end() )
-        return i->second;
-
-    new CPointerTypeInfo(id, typeRef);
-    return GetTypeInfoById(id);
 }
 
 void CTypeInfo::CollectObjects(COObjectList& objectList,

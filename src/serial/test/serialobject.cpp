@@ -2,20 +2,13 @@
 #include <serial/serial.hpp>
 #include <serial/classinfo.hpp>
 
-const CTypeInfo* CSerialObject::GetTypeInfo(void)
-{
-    static CClassInfoTmpl* info = 0;
-    typedef CSerialObject CClass;
-    if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
-        info->ADD_CLASS_MEMBER(m_Name);
-        info->ADD_PTR_CLASS_MEMBER(m_NamePtr);
-        info->ADD_CLASS_MEMBER(m_Size);
-        info->ADD_STL_CLASS_MEMBER(m_Attributes);
-        info->ADD_PTR_CLASS_MEMBER(m_Next);
-    }
-    return info;
-}
+BEGIN_CLASS_INFO(CSerialObject)
+    ADD_CLASS_MEMBER(m_Name);
+    ADD_PTR_CLASS_MEMBER(m_NamePtr);
+    ADD_CLASS_MEMBER(m_Size);
+    ADD_STL_CLASS_MEMBER(m_Attributes);
+    ADD_PTR_CLASS_MEMBER(m_Next);
+END_CLASS_INFO
 
 /*
 

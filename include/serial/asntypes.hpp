@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/13 20:18:04  vasilche
+* Changed types naming.
+*
 * Revision 1.5  1999/07/09 16:32:53  vasilche
 * Added OCTET STRING write/read.
 *
@@ -57,6 +60,7 @@
 #include <serial/typeref.hpp>
 #include <serial/memberid.hpp>
 #include <serial/memberlist.hpp>
+#include <serial/typemap.hpp>
 #include <vector>
 
 struct valnode;
@@ -64,31 +68,12 @@ struct bytestore;
 
 BEGIN_NCBI_SCOPE
 
-#define NAME2(n1, n2) n1##n2
-#define NAME3(n1, n2, n3) n1##n2##n3
-
-#define ASN_TYPE_INFO_GETTER_NAME(name) NAME2(GetTypeInfo_struct_, name)
-#define ASN_STRUCT_NAME(name) NAME2(struct_, name)
-
-#define ASN_TYPE_INFO_GETTER_DECL(name) \
-BEGIN_NCBI_SCOPE \
-const CTypeInfo* ASN_TYPE_INFO_GETTER_NAME(name)(void); \
-END_NCBI_SCOPE
-
-#define ASN_TYPE_REF(name) \
-struct ASN_STRUCT_NAME(name); \
-ASN_TYPE_INFO_GETTER_DECL(name) \
-BEGIN_NCBI_SCOPE \
-inline CTypeRef GetTypeRef(const ASN_STRUCT_NAME(name)* ) \
-{ return CTypeRef(typeid(void), ASN_TYPE_INFO_GETTER_NAME(name)); } \
-END_NCBI_SCOPE
-
-#define ASN_CHOICE_REF(name) \
-ASN_TYPE_INFO_GETTER_DECL(name)
-
 class CSequenceTypeInfo : public CTypeInfo {
 public:
-    CSequenceTypeInfo(const CTypeRef& typeRef);
+    CSequenceTypeInfo(TTypeInfo dataType)
+        : m_DataType(dataType)
+        {
+        }
 
     static TObjectPtr& Get(TObjectPtr object)
         {
@@ -99,13 +84,18 @@ public:
             return *static_cast<const TObjectPtr*>(object);
         }
 
+    static TTypeInfo GetTypeInfo(TTypeInfo base)
+        {
+            return sm_Map.GetTypeInfo(base);
+        }
+
     virtual size_t GetSize(void) const;
 
     virtual TConstObjectPtr GetDefault(void) const;
 
     TTypeInfo GetDataTypeInfo(void) const
         {
-            return m_DataType.Get();
+            return m_DataType;
         }
 
     virtual bool Equals(TConstObjectPtr object1,
@@ -126,19 +116,30 @@ protected:
                           TObjectPtr object) const;
 
 private:
-    CTypeRef m_DataType;
+    TTypeInfo m_DataType;
+
+    static CTypeInfoMap<CSequenceTypeInfo> sm_Map;
 };
 
 class CSetTypeInfo : public CSequenceTypeInfo {
 public:
-    CSetTypeInfo(const CTypeRef& typeRef);
+    CSetTypeInfo(TTypeInfo type)
+        : CSequenceTypeInfo(type)
+        { }
 };
 
 class CSequenceOfTypeInfo : public CSequenceTypeInfo {
 public:
-    CSequenceOfTypeInfo(const CTypeRef& typeRef);
+    CSequenceOfTypeInfo(TTypeInfo type)
+        : CSequenceTypeInfo(type)
+        { }
 
     virtual bool RandomOrder(void) const;
+
+    static TTypeInfo GetTypeInfo(TTypeInfo base)
+        {
+            return sm_Map.GetTypeInfo(base);
+        }
 
     virtual TConstObjectPtr GetDefault(void) const;
 
@@ -158,13 +159,26 @@ protected:
 
     virtual void ReadData(CObjectIStream& in,
                           TObjectPtr object) const;
+
+private:
+    static CTypeInfoMap<CSequenceOfTypeInfo> sm_Map;
 };
 
 class CSetOfTypeInfo : public CSequenceOfTypeInfo {
 public:
-    CSetOfTypeInfo(const CTypeRef& typeRef);
+    CSetOfTypeInfo(TTypeInfo type)
+        : CSequenceOfTypeInfo(type)
+        { }
+
+    static TTypeInfo GetTypeInfo(TTypeInfo base)
+        {
+            return sm_Map.GetTypeInfo(base);
+        }
 
     virtual bool RandomOrder(void) const;
+
+private:
+    static CTypeInfoMap<CSetOfTypeInfo> sm_Map;
 };
 
 class CChoiceTypeInfo : public CTypeInfo {
@@ -178,8 +192,14 @@ public:
             return *static_cast<const TObjectPtr*>(object);
         }
 
-    CChoiceTypeInfo(const CTypeRef& choices);
-    ~CChoiceTypeInfo(void);
+    CChoiceTypeInfo(TTypeInfo choices)
+        : m_ChoiceTypeInfo(choices)
+        { }
+
+    static TTypeInfo GetTypeInfo(TTypeInfo base)
+        {
+            return sm_Map.GetTypeInfo(base);
+        }
 
     virtual size_t GetSize(void) const;
 
@@ -190,7 +210,7 @@ public:
     virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
 
     TTypeInfo GetChoiceTypeInfo(void) const
-        { return m_ChoiceTypeInfo.Get(); }
+        { return m_ChoiceTypeInfo; }
 
 protected:
     
@@ -203,13 +223,13 @@ protected:
 
 private:
     
-    CTypeRef m_ChoiceTypeInfo;
+    TTypeInfo m_ChoiceTypeInfo;
+
+    static CTypeInfoMap<CChoiceTypeInfo> sm_Map;
 };
 
 class CChoiceValNodeInfo : public CTypeInfo {
 public:
-    CChoiceValNodeInfo(void);
-
     void AddVariant(const CMemberId& id, const CTypeRef& type);
     void AddVariant(const string& name, const CTypeRef& type);
 
@@ -254,6 +274,14 @@ public:
     static const TObjectType& Get(TConstObjectPtr object)
         {
             return *static_cast<const TObjectType*>(object);
+        }
+
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = 0;
+            if ( !typeInfo )
+                typeInfo = new COctetStringTypeInfo();
+            return typeInfo;
         }
 
     virtual size_t GetSize(void) const;

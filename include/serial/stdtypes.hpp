@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/07/13 20:18:08  vasilche
+* Changed types naming.
+*
 * Revision 1.8  1999/07/07 21:56:33  vasilche
 * Fixed problem with static variables in templates on SunPro
 *
@@ -103,7 +106,7 @@ public:
 
 protected:
     CStdTypeInfoTmpl()
-        : CTypeInfo(typeid(TObjectType))
+        : CTypeInfo(typeid(TObjectType).name())
         {
         }
 };
@@ -158,7 +161,7 @@ protected:
 
 private:
     CStdTypeInfo(void)
-        : CTypeInfo(typeid(void))
+        : CTypeInfo(typeid(void).name())
         {
         }
 };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/07/13 20:18:15  vasilche
+* Changed types naming.
+*
 * Revision 1.8  1999/07/09 20:27:05  vasilche
 * Fixed some bugs
 *
@@ -212,10 +215,7 @@ void BSWrite(bytestore* bs, char* data, size_t length)
 }
 #endif
 
-CSequenceTypeInfo::CSequenceTypeInfo(const CTypeRef& typeRef)
-    : m_DataType(typeRef)
-{
-}
+CTypeInfoMap<CSequenceTypeInfo> CSequenceTypeInfo::sm_Map;
 
 size_t CSequenceTypeInfo::GetSize(void) const
 {
@@ -285,15 +285,7 @@ void CSequenceTypeInfo::ReadData(CObjectIStream& in,
     in.ReadExternalObject(obj, GetDataTypeInfo());
 }
 
-CSetTypeInfo::CSetTypeInfo(const CTypeRef& typeRef)
-    : CSequenceTypeInfo(typeRef)
-{
-}
-
-CSequenceOfTypeInfo::CSequenceOfTypeInfo(const CTypeRef& typeRef)
-    : CSequenceTypeInfo(typeRef)
-{
-}
+CTypeInfoMap<CSequenceOfTypeInfo> CSequenceOfTypeInfo::sm_Map;
 
 bool CSequenceOfTypeInfo::RandomOrder(void) const
 {
@@ -363,25 +355,14 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
     }
 }
 
-CSetOfTypeInfo::CSetOfTypeInfo(const CTypeRef& typeRef)
-    : CSequenceOfTypeInfo(typeRef)
-{
-}
+CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo::sm_Map;
 
 bool CSetOfTypeInfo::RandomOrder(void) const
 {
     return true;
 }
 
-
-CChoiceTypeInfo::CChoiceTypeInfo(const CTypeRef& typeRef)
-    : m_ChoiceTypeInfo(typeRef)
-{
-}
-
-CChoiceTypeInfo::~CChoiceTypeInfo(void)
-{
-}
+CTypeInfoMap<CChoiceTypeInfo> CChoiceTypeInfo::sm_Map;
 
 size_t CChoiceTypeInfo::GetSize(void) const
 {
@@ -451,10 +432,6 @@ void CChoiceTypeInfo::ReadData(CObjectIStream& in,
     in.ReadExternalObject(obj, GetChoiceTypeInfo());
 }
 
-
-CChoiceValNodeInfo::CChoiceValNodeInfo(void)
-{
-}
 
 void CChoiceValNodeInfo::AddVariant(const CMemberId& id,
                                     const CTypeRef& typeRef)

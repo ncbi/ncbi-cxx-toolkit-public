@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/13 20:18:22  vasilche
+* Changed types naming.
+*
 * Revision 1.6  1999/07/07 19:59:08  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -56,8 +59,11 @@
 #include <serial/ptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/asntypes.hpp>
 
 BEGIN_NCBI_SCOPE
+
+CTypeInfoMap<CPointerTypeInfo> CPointerTypeInfo::sm_Map;
 
 size_t CPointerTypeInfo::GetSize(void) const
 {

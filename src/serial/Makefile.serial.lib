@@ -5,7 +5,7 @@
 
 LIBOBJ = typeinfo stdtypes ptrinfo \
 	member memberid memberlist \
-	tmplinfo stltypes \
+	stltypes \
 	asntypes classinfo \
 	objistr objostr objlist \
 	objistrb objostrb \

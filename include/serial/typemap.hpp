@@ -1,5 +1,5 @@
-#if defined(TYPEREF__HPP)  &&  !defined(TYPEREF__INL)
-#define TYPEREF__INL
+#ifndef TYPEMAP__HPP
+#define TYPEMAP__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,40 +33,37 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/07/13 20:18:13  vasilche
+* Revision 1.1  1999/07/13 20:18:11  vasilche
 * Changed types naming.
-*
-* Revision 1.1  1999/06/24 14:44:48  vasilche
-* Added binary ASN.1 output.
 *
 * ===========================================================================
 */
-/*
-inline
-CTypeRef::CTypeRef(void)
-    : m_Id(0), m_Getter(0), m_TypeInfo(0)
-{
-}
 
-inline
-CTypeRef::CTypeRef(const type_info& id, TTypeInfo (*getter)(void))
-    : m_Id(&id), m_Getter(getter), m_TypeInfo(0)
-{
-}
+#include <map>
 
-inline
-CTypeRef::CTypeRef(TTypeInfo typeInfo)
-    : m_Id(0), m_Getter(0), m_TypeInfo(typeInfo)
-{
-}
+BEGIN_NCBI_SCOPE
 
-inline
-TTypeInfo CTypeRef::Get(void) const
+class CTypeInfo;
+
+template<class Type>
+class CTypeInfoMap
 {
-    TTypeInfo typeInfo = m_TypeInfo;
-    if ( !typeInfo )
-        typeInfo = m_TypeInfo = (*m_Getter)();
-    return typeInfo;
-}
-*/
-#endif /* def TYPEREF__HPP  &&  ndef TYPEREF__INL */
+    typedef const CTypeInfo* TTypeInfo;
+public:
+
+    TTypeInfo GetTypeInfo(TTypeInfo key)
+        {
+            TTypeInfo& ret = m_Map[key];
+            if ( ret == 0 )
+                ret = new Type(key);
+            return ret;
+        }
+private:
+    map<TTypeInfo, TTypeInfo> m_Map;
+};
+
+//#include <typemap.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* TYPEMAP__HPP */

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/13 20:18:18  vasilche
+* Changed types naming.
+*
 * Revision 1.13  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -98,6 +101,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objistrasn.hpp>
 #include <serial/member.hpp>
+#include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -568,7 +572,7 @@ TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
             string className = ReadId();
             ExpectString("::=", true);
             _TRACE("CObjectIStreamAsn::ReadPointer: new " << className);
-            TTypeInfo typeInfo = CTypeInfo::GetTypeInfoByName(className);
+            TTypeInfo typeInfo = CClassInfoTmpl::GetClassInfoByName(className);
             TObjectPtr object = typeInfo->Create();
             ReadExternalObject(object, typeInfo);
             info = CIObjectInfo(object, typeInfo);

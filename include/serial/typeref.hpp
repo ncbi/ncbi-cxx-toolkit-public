@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/07/13 20:18:12  vasilche
+* Changed types naming.
+*
 * Revision 1.3  1999/06/24 14:44:47  vasilche
 * Added binary ASN.1 output.
 *
@@ -53,18 +56,57 @@ BEGIN_NCBI_SCOPE
 class CTypeRef
 {
 public:
-    CTypeRef(void);
-    CTypeRef(const type_info& id, TTypeInfo (*getter)(void));
-    CTypeRef(TTypeInfo typeInfo);
+    CTypeRef(void)
+        : m_Resolver(s_Abort)
+        { }
+    CTypeRef(TTypeInfo typeInfo)
+        : m_Resolver(s_Return), m_TypeInfo(typeInfo)
+        { }
+    CTypeRef(TTypeInfo (*getter)(void))
+        : m_Resolver(s_Resolve0), m_Getter0(getter)
+        { }
+    CTypeRef(TTypeInfo (*getter)(TTypeInfo typeInfo), const CTypeRef& arg)
+        : m_Resolver(s_Resolve1), m_TypeInfo(arg.Get()), m_Getter1(getter)
+        { }
 
-    TTypeInfo Get(void) const;
+    TTypeInfo Get(void) const
+        { return m_Resolver(*this); }
 
 private:
 
-    const type_info* m_Id;
-    TTypeInfo (*m_Getter)(void);
+    static TTypeInfo s_Abort(const CTypeRef& )
+        {
+            THROW1_TRACE(runtime_error, "uninitialized type ref");
+        }
+    static TTypeInfo s_Return(const CTypeRef& typeRef)
+        {
+            return typeRef.m_TypeInfo;
+        }
+    static TTypeInfo s_Resolve0(const CTypeRef& typeRef)
+        {
+            TTypeInfo typeInfo = typeRef.m_Getter0();
+            if ( !typeInfo )
+                THROW1_TRACE(runtime_error, "cannot resolve type ref");
+            typeRef.m_TypeInfo = typeInfo;
+            typeRef.m_Resolver = s_Return;
+            return typeInfo;
+        }
+    static TTypeInfo s_Resolve1(const CTypeRef& typeRef)
+        {
+            TTypeInfo typeInfo = typeRef.m_Getter1(typeRef.m_TypeInfo);
+            if ( !typeInfo )
+                THROW1_TRACE(runtime_error, "cannot resolve type ref");
+            typeRef.m_TypeInfo = typeInfo;
+            typeRef.m_Resolver = s_Return;
+            return typeInfo;
+        }
 
+    mutable TTypeInfo (*m_Resolver)(const CTypeRef& typeRef);
     mutable TTypeInfo m_TypeInfo;
+    union {
+        TTypeInfo (*m_Getter0)(void);
+        TTypeInfo (*m_Getter1)(TTypeInfo arg);
+    };
 };
 
 #include <serial/typeref.inl>

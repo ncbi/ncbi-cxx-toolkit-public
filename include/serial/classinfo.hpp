@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/13 20:18:04  vasilche
+* Changed types naming.
+*
 * Revision 1.12  1999/07/07 19:58:44  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -78,6 +81,7 @@
 #include <serial/typeinfo.hpp>
 #include <serial/memberlist.hpp>
 #include <map>
+#include <list>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -88,27 +92,49 @@ class COObjectList;
 class CMemberId;
 class CMemberInfo;
 
+struct CTypeInfoOrder
+{
+    // to avoid warning under MSVS, where type_info::before() erroneously
+    // returns int, we'll define overloaded functions:
+    static bool ToBool(bool b)
+        { return b; }
+    static bool ToBool(int i)
+        { return i != 0; }
+
+    bool operator()(const type_info* i1, const type_info* i2) const
+		{ return ToBool(i1->before(*i2)); }
+};
+
 class CClassInfoTmpl : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
+    enum ERandomOrder {
+        eRandomOrder
+    };
+
     typedef CMembers::TIndex TIndex;
     typedef vector<CMemberInfo*> TMembersInfo;
     typedef map<size_t, TIndex> TMembersByOffset;
 
-    CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void));
-    CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void),
-                   bool randomOrder);
-    CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void),
+    CClassInfoTmpl(const string& name, const type_info& ti,
+                   size_t size, bool randomOrder);
+    CClassInfoTmpl(const type_info& ti, size_t size, bool randomOrder);
+    CClassInfoTmpl(const type_info& ti, size_t size, bool randomOrder,
                    const CTypeRef& parent, size_t offset);
     virtual ~CClassInfoTmpl(void);
 
-    virtual size_t GetSize(void) const;
+    const type_info& GetId(void) const
+        { return m_Id; }
 
-    virtual TObjectPtr Create(void) const;
+    virtual size_t GetSize(void) const;
 
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
 
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+
+    // returns type info of pointer to this type
+    static TTypeInfo GetPointerTypeInfo(const type_info& id,
+                                        const CTypeRef& typeRef);
 
     // AddMember will take ownership of member
     CMemberInfo* AddMember(const string& name, CMemberInfo* member);
@@ -134,6 +160,11 @@ public:
     virtual const CMemberId* GetMemberId(TMemberIndex index) const;
     virtual const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
 
+    // finds type info (throws runtime_error if absent)
+    static TTypeInfo GetClassInfoByName(const string& name);
+    static TTypeInfo GetClassInfoById(const type_info& id);
+    static TTypeInfo GetClassInfoBy(const type_info& id, void (*creator)(void));
+
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
@@ -145,13 +176,28 @@ protected:
 
 private:
     size_t m_Size;
-    TObjectPtr (*m_Creator)(void);
+    bool m_RandomOrder;
 
     CMembers m_Members;
     TMembersInfo m_MembersInfo;
     mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
 
-    bool m_RandomOrder;
+    // class mapping
+    typedef list<CClassInfoTmpl*> TClasses;
+    typedef map<const type_info*, const CClassInfoTmpl*,
+        CTypeInfoOrder> TClassesById;
+    typedef map<string, const CClassInfoTmpl*> TClassesByName;
+
+    const type_info& m_Id;
+    static TClasses* sm_Classes;
+    static TClassesById* sm_ClassesById;
+    static TClassesByName* sm_ClassesByName;
+
+    void Register(void);
+    void Deregister(void) const;
+    static TClasses& Classes(void);
+    static TClassesById& ClassesById(void);
+    static TClassesByName& ClassesByName(void);
 };
 
 class CAliasInfo;
@@ -195,7 +241,6 @@ protected:
 
 private:
     size_t m_Size;
-    TObjectPtr (*m_Creator)(void);
 
     TAliases m_Aliases;
     TAliasesByName m_AliasesByName;
@@ -204,28 +249,26 @@ private:
 class CStructInfoTmpl : public CClassInfoTmpl
 {
 public:
-    enum ERandomOrder {
-        eRandomOrder
-    };
-
-    CStructInfoTmpl(size_t size, bool randomOrder)
-        : CClassInfoTmpl(typeid(void), size, 0, randomOrder)
+    CStructInfoTmpl(const string& name, const type_info& id,
+                    size_t size, bool randomOrder)
+        : CClassInfoTmpl(name, id, size, randomOrder)
         {
         }
 
     virtual TObjectPtr Create(void) const;
 };
 
-template<class CLASS>
+template<class Class>
 class CStructInfo : public CStructInfoTmpl
 {
 public:
-    CStructInfo(void)
-        : CStructInfoTmpl(sizeof(CLASS), false)
+    typedef Class TObjectType;
+    CStructInfo(const string& name)
+        : CStructInfoTmpl(name, typeid(Class), sizeof(Class), false)
         {
         }
-    CStructInfo(ERandomOrder)
-        : CStructInfoTmpl(sizeof(CLASS), true)
+    CStructInfo(const string& name, ERandomOrder)
+        : CStructInfoTmpl(name, typeid(Class), sizeof(Class), true)
         {
         }
 };
@@ -234,36 +277,33 @@ template<class CLASS, class PCLASS = CLASS>
 class CClassInfo : public CClassInfoTmpl
 {
 public:
-    enum ERandomOrder {
-        eRandomOrder
-    };
+    typedef CLASS TObjectType;
 
     CClassInfo(void)
-        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create)
+        : CClassInfoTmpl(typeid(TObjectType), sizeof(TObjectType), false)
         {
         }
     CClassInfo(ERandomOrder)
-        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create, true)
+        : CClassInfoTmpl(typeid(TObjectType), sizeof(TObjectType), true)
         {
         }
     CClassInfo(const CTypeRef& pTypeRef)
-        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create,
+        : CClassInfoTmpl(typeid(TObjectType), sizeof(TObjectType),
                          pTypeRef,
                          size_t(static_cast<const PCLASS*>
-                                (static_cast<const CLASS*>(0))))
+                                (static_cast<const TObjectType*>(0))))
         {
         }
 
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const
         {
-            return GetTypeInfoById(typeid(*static_cast<const CLASS*>(object)));
+            return GetClassInfoById(
+                typeid(*static_cast<const TObjectType*>(object)));
         }
 
-protected:
-
-    static TObjectPtr sx_Create(void)
+    virtual TObjectPtr Create(void) const
         {
-            return new CLASS();
+            return new TObjectType();
         }
 };
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/13 20:18:06  vasilche
+* Changed types naming.
+*
 * Revision 1.5  1999/07/07 19:58:46  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -55,6 +58,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/typeref.hpp>
+#include <serial/typemap.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -68,13 +72,18 @@ public:
     static const TConstObjectPtr& GetObject(TConstObjectPtr object)
         { return *static_cast<const TConstObjectPtr*>(object); }
 
-    CPointerTypeInfo(const type_info& id, const CTypeRef& typeRef)
-        : CTypeInfo(id), m_DataTypeRef(typeRef)
+    CPointerTypeInfo(TTypeInfo type)
+        : m_DataType(type)
         { }
+
+    static TTypeInfo GetTypeInfo(TTypeInfo base)
+        {
+            return sm_Map.GetTypeInfo(base);
+        }
 
     TTypeInfo GetDataTypeInfo(void) const
         {
-            return m_DataTypeRef.Get();
+            return m_DataType;
         }
 
     virtual size_t GetSize(void) const;
@@ -94,7 +103,9 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
 private:
-    CTypeRef m_DataTypeRef;
+    TTypeInfo m_DataType;
+
+    static CTypeInfoMap<CPointerTypeInfo> sm_Map;
 };
 
 //#include <ptrinfo.inl>

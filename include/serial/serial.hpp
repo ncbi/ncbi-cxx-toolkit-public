@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/07/13 20:18:07  vasilche
+* Changed types naming.
+*
 * Revision 1.16  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -118,30 +121,94 @@ inline CTypeRef GetTypeRef(const unsigned long* object);
 inline CTypeRef GetTypeRef(const float* object);
 inline CTypeRef GetTypeRef(const double* object);
 inline CTypeRef GetTypeRef(const string* object);
-template<typename CLASS>
-inline CTypeRef GetTypeRef(const CLASS* object);
-template<typename Data>
-inline CTypeRef GetTypeRef(const list<Data>* object);
 template<typename T>
 inline CTypeRef GetTypeRef(const T* const* object);
+template<typename Data>
+inline CTypeRef GetTypeRef(const list<Data>* object);
+template<class Class>
+inline CTypeRef GetTypeRef(const Class* object);
 
 
 
 
-// define type info getter for standard classes
+// define type info getter for pointers
+template<typename T>
 inline
-CTypeRef GetTypeRef(const void*)
+CTypeRef GetPtrTypeRef(const T* const* object)
 {
-    return CTypeRef(typeid(void), CStdTypeInfo<void>::GetTypeInfo);
+    const T* p = 0;
+    return CTypeRef(CPointerTypeInfo::GetTypeInfo, GetTypeRef(p));
 }
 
+// define type info getter for standard classes
 template<typename T>
 inline
 CTypeRef GetStdTypeRef(const T* )
 {
-    return CTypeRef(typeid(T), CStdTypeInfo<T>::GetTypeInfo);
+    return CTypeRef(CStdTypeInfo<T>::GetTypeInfo);
 }
 
+// STL
+template<typename Data>
+inline
+CTypeRef GetStlTypeRef(const list<Data>* )
+{
+    return CTypeRef(CStlClassInfoList<Data>::GetTypeInfo);
+}
+
+template<typename Key, typename Value>
+inline
+CTypeRef GetStlTypeRef(const map<Key, Value>* )
+{
+    return CTypeRef(CStlClassInfoMap<Key, Value>::GetTypeInfo);
+}
+
+// ASN
+inline
+CTypeRef GetOctetStringTypeRef(const void* const* )
+{
+    return CTypeRef(COctetStringTypeInfo::GetTypeInfo);
+}
+
+template<typename T>
+inline
+CTypeRef GetSetTypeRef(const T* const* )
+{
+    const T* p = 0;
+    return CTypeRef(CSetTypeInfo::GetTypeInfo, GetTypeRef(p));
+}
+
+template<typename T>
+inline
+CTypeRef GetSequenceTypeRef(const T* const* )
+{
+    const T* p = 0;
+    return CTypeRef(CSequenceTypeInfo::GetTypeInfo, GetTypeRef(p));
+}
+
+template<typename T>
+inline
+CTypeRef GetSetOfTypeRef(const T* const* )
+{
+    const T* p = 0;
+    return CTypeRef(CSetOfTypeInfo::GetTypeInfo, GetTypeRef(p));
+}
+
+template<typename T>
+inline
+CTypeRef GetSequenceOfTypeRef(const T* const* )
+{
+    const T* p = 0;
+    return CTypeRef(CSequenceOfTypeInfo::GetTypeInfo, GetTypeRef(p));
+}
+
+inline
+CTypeRef GetChoiceTypeRef(TTypeInfo (*func)(void))
+{
+    return CTypeRef(CChoiceTypeInfo::GetTypeInfo, CTypeRef(func));
+}
+
+//
 inline
 CTypeRef GetTypeRef(const char* object)
 {
@@ -225,174 +292,32 @@ CTypeRef GetTypeRef(const char* const* object)
 {
     return GetStdTypeRef(object);
 }
-/*
+
+template<typename Data>
 inline
-CTypeRef GetTypeRef(signed char* const* object)
+CTypeRef GetTypeRef(const list<Data>* object)
 {
-    return GetStdTypeRef(object);
+    return GetStlTypeRef(object);
 }
 
+template<typename Key, typename Value>
 inline
-CTypeRef GetTypeRef(unsigned char* const* object)
+CTypeRef GetTypeRef(const map<Key, Value>* object)
 {
-    return GetStdTypeRef(object);
+    return GetStlTypeRef(object);
 }
 
-inline
-CTypeRef GetTypeRef(const unsigned char* const* object)
-{
-    return GetStdTypeRef(object);
-}
-
-inline
-CTypeRef GetTypeRef(const signed char* const* object)
-{
-    return GetStdTypeRef(object);
-}
-*/
 // define type info getter for user classes
-template<typename CLASS>
+template<class Class>
 inline
-CTypeRef GetTypeRef(const CLASS* )
+CTypeRef GetTypeRef(const Class* )
 {
-    return CTypeRef(typeid(CLASS), CLASS::GetTypeInfo);
-}
-
-template<typename Data>
-inline
-CTypeRef GetTypeRef(const list<Data>* )
-{
-    return CTypeRef(typeid(list<Data>),
-                    CStlClassInfoList<Data>::GetTypeInfo);
-}
-
-template<typename Data>
-inline
-CTypeRef GetStlTypeRef(const list<Data>* )
-{
-    return CTypeRef(typeid(list<Data>),
-                    CStlClassInfoList<Data>::GetTypeInfo);
-}
-
-// define type info getter for pointers
-template<typename T>
-inline
-CTypeRef GetPtrTypeRef(const T* const* object, CTypeRef typeRef)
-{
-    typename T* p = 0;
-    return CTypeRef(CTypeInfo::GetPointerTypeInfo(typeid(p), typeRef));
-}
-
-template<typename T>
-inline
-CTypeRef GetPtrTypeRef(const T* const* object)
-{
-    typename T* p = 0;
-    return GetPtrTypeRef(object, GetTypeRef(p));
-}
-
-template<typename T>
-inline
-CTypeRef GetSetTypeRef(const T* const* )
-{
-    const T* object = 0;
-    return CTypeRef(new CSetTypeInfo(GetTypeRef(object)));
-}
-
-template<typename T>
-inline
-CTypeRef GetSequenceTypeRef(const T* const* )
-{
-    const T* object = 0;
-    return CTypeRef(new CSequenceTypeInfo(GetTypeRef(object)));
-}
-
-template<typename T>
-inline
-CTypeRef GetSetOfTypeRef(const T* const* )
-{
-    const T* object = 0;
-    return CTypeRef(new CSetOfTypeInfo(GetTypeRef(object)));
-}
-
-inline
-CTypeRef GetOctetStringTypeRef(const void* const* )
-{
-    return CTypeRef(new COctetStringTypeInfo());
-}
-
-template<typename T>
-inline
-CTypeRef GetSequenceOfTypeRef(const T* const* )
-{
-    const T* object = 0;
-    return CTypeRef(new CSequenceOfTypeInfo(GetTypeRef(object)));
-}
-
-inline
-CTypeRef GetChoiceTypeRef(TTypeInfo (*func)(void))
-{
-    return CTypeRef(new CChoiceTypeInfo(CTypeRef(typeid(void), func)));
+    return CTypeRef(Class::GetTypeInfo);
 }
 
 
 
-template<typename Data>
-inline
-CStlClassInfoList<Data>::CStlClassInfoList(void)
-    : CParent(typeid(TObjectType), GetTypeRef(static_cast<const Data*>(0)))
-{
-}
-
-
-
-inline
-TTypeInfo GetTypeInfo(void)
-{
-    return GetTypeRef(static_cast<const void*>(0)).Get();
-}
-
-template<typename CLASS>
-inline
-TTypeInfo GetTypeInfo(const CLASS& object)
-{
-    return GetTypeRef(&object).Get();
-}
-
-
-
-
-template<class CLASS>
-inline
-CObjectIStream& Read(CObjectIStream& in, CLASS& object)
-{
-    in.Read(&object, GetTypeInfo(object));
-    return in;
-}
-
-template<class CLASS>
-inline
-CObjectOStream& Write(CObjectOStream& out, const CLASS& object)
-{
-    out.Write(&object, GetTypeInfo(object));
-    return out;
-}
-
-template<class CLASS>
-inline
-CObjectOStream& operator<<(CObjectOStream& out, const CLASS& object)
-{
-    return Write(out, object);
-}
-
-template<class CLASS>
-inline
-CObjectIStream& operator>>(CObjectIStream& in, CLASS& object)
-{
-    return Read(in, object);
-}
-
-
+// member types
 template<typename T>
 inline
 CMemberInfo* MemberInfo(const T* member, const CTypeRef typeRef)
@@ -468,34 +393,120 @@ CMemberInfo* ChoiceMemberInfo(const valnode* const* member, TTypeInfo (*func)(vo
 	return MemberInfo(member, GetChoiceTypeRef(func));
 }
 
+
+// type info declaration
+#define NAME2(n1, n2) n1##n2
+#define NAME3(n1, n2, n3) n1##n2##n3
+
+#define ASN_TYPE_INFO_GETTER_NAME(name) NAME2(GetTypeInfo_struct_, name)
+#define ASN_STRUCT_NAME(name) NAME2(struct_, name)
+
+#define ASN_TYPE_INFO_GETTER_DECL(name) \
+BEGIN_NCBI_SCOPE \
+const CTypeInfo* ASN_TYPE_INFO_GETTER_NAME(name)(void); \
+END_NCBI_SCOPE
+
+#define ASN_TYPE_REF(name) \
+struct ASN_STRUCT_NAME(name); \
+ASN_TYPE_INFO_GETTER_DECL(name) \
+BEGIN_NCBI_SCOPE \
+inline CTypeRef GetTypeRef(const ASN_STRUCT_NAME(name)* ) \
+{ return CTypeRef(ASN_TYPE_INFO_GETTER_NAME(name)); } \
+END_NCBI_SCOPE
+
+#define ASN_CHOICE_REF(name) \
+ASN_TYPE_INFO_GETTER_DECL(name)
+
+// type info definition
+#define BEGIN_TYPE_INFO(Class, Method, Info, Args) \
+const CTypeInfo* Method(void) \
+{ \
+    typedef Class CClass; \
+    static Info* info = 0; \
+    if ( info == 0 ) { \
+        info = new Info(Args);
+
+#define END_TYPE_INFO \
+    } \
+    return info; \
+}
+ 
+#define BEGIN_CLASS_INFO(Class) \
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, )
+#define END_CLASS_INFO END_TYPE_INFO
+
+#define BEGIN_STRUCT_INFO(Class) \
+BEGIN_TYPE_INFO(NAME2(struct_, Class), NAME2(GetTypeInfo_struct_, Class), \
+                CStructInfo<CClass>, #Class)
+#define END_STRUCT_INFO END_TYPE_INFO
+
+#define BEGIN_CHOICE_INFO(Class) \
+BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
+                CChoiceValNodeInfo, )
+#define END_CHOICE_INFO END_TYPE_INFO
+
+// adding members
 #define CLASS_MEMBER(Member) \
 	MemberInfo(&static_cast<const CClass*>(0)->Member)
 #define ADD_CLASS_MEMBER(Member) \
-	AddMember(#Member, CLASS_MEMBER(Member))
+	info->AddMember(#Member, CLASS_MEMBER(Member))
 
 #define PTR_CLASS_MEMBER(Member) \
 	PtrMemberInfo(&static_cast<const CClass*>(0)->Member)
 #define ADD_PTR_CLASS_MEMBER(Member) \
-	AddMember(#Member, PTR_CLASS_MEMBER(Member))
+	info->AddMember(#Member, PTR_CLASS_MEMBER(Member))
 
 #define STL_CLASS_MEMBER(Member) \
 	StlMemberInfo(&static_cast<const CClass*>(0)->Member)
 #define ADD_STL_CLASS_MEMBER(Member) \
-	AddMember(#Member, STL_CLASS_MEMBER(Member))
+	info->AddMember(#Member, STL_CLASS_MEMBER(Member))
 
 #define ASN_MEMBER(Member, Type) \
 	NAME2(Type, MemberInfo)(&static_cast<const CClass*>(0)->Member)
 #define ADD_ASN_MEMBER(Member, Type) \
-	AddMember(#Member, ASN_MEMBER(Member, Type))
+	info->AddMember(#Member, ASN_MEMBER(Member, Type))
 
 #define CHOICE_MEMBER(Member, Choices) \
-    ChoiceMemberInfo(&static_cast<const CClass*>(0)->Member, NAME2(GetTypeInfo_struct_, Choices))
+    ChoiceMemberInfo(&static_cast<const CClass*>(0)->Member, \
+                     NAME2(GetTypeInfo_struct_, Choices))
 #define ADD_CHOICE_MEMBER(Member, Choices) \
-    AddMember(#Member, CHOICE_MEMBER(Member, Choices))
+    info->AddMember(#Member, CHOICE_MEMBER(Member, Choices))
 #define ADD_CHOICE_STD_VARIANT(Name, Member) \
-    AddVariant(#Name, GetTypeRef(&static_cast<const valnode*>(0)->data.NAME2(Member, value)))
+    info->AddVariant(#Name, GetTypeRef(&static_cast<const valnode*>(0)->data.NAME2(Member, value)))
 #define ADD_CHOICE_VARIANT(Name, Type, Struct) \
-    AddVariant(#Name, NAME3(Get, Type, TypeRef)(reinterpret_cast<const NAME2(struct_, Struct)* const*>(&static_cast<const valnode*>(0)->data.ptrvalue)))
+    info->AddVariant(#Name, NAME3(Get, Type, TypeRef)(reinterpret_cast<const NAME2(struct_, Struct)* const*>(&static_cast<const valnode*>(0)->data.ptrvalue)))
+
+
+// reader/writer
+template<typename T>
+inline
+CObjectOStream& Write(CObjectOStream& out, const T& object)
+{
+    out.Write(&object, GetTypeRef(&object).Get());
+    return out;
+}
+
+template<typename T>
+inline
+CObjectIStream& Read(CObjectIStream& in, T& object)
+{
+    in.Read(&object, GetTypeRef(&object).Get());
+    return in;
+}
+
+template<typename T>
+inline
+CObjectOStream& operator<<(CObjectOStream& out, const T& object)
+{
+    return Write(out, object);
+}
+
+template<typename T>
+inline
+CObjectIStream& operator>>(CObjectIStream& in, T& object)
+{
+    return Read(in, object);
+}
 
 #include <serial/serial.inl>
 

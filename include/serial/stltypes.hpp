@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/13 20:18:08  vasilche
+* Changed types naming.
+*
 * Revision 1.10  1999/07/01 17:55:22  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -78,27 +81,22 @@
 
 BEGIN_NCBI_SCOPE
 
-class CTemplateResolver1;
-class CTemplateResolver2;
-
 class CStlClassInfoListImpl : public CTypeInfo
 {
     typedef CTypeInfo CParent;
 public:
 
-    CStlClassInfoListImpl(const type_info& id, const CTypeRef& dataType);
+    CStlClassInfoListImpl(const CTypeRef& dataType)
+        : m_DataType(dataType)
+        { }
 
     TTypeInfo GetDataTypeInfo(void) const
         {
-            return m_DataTypeRef.Get();
+            return m_DataType.Get();
         }
 
-    virtual void AnnotateTemplate(CObjectOStream& out) const;
-
 private:
-    static CTemplateResolver1 sm_Resolver;
-
-    CTypeRef m_DataTypeRef;
+    CTypeRef m_DataType;
 };
 
 template<typename Data>
@@ -110,7 +108,13 @@ public:
     typedef Data TDataType;
     typedef list<TDataType> TObjectType;
 
-    CStlClassInfoList(void);
+    CStlClassInfoList(void)
+        : CParent(GetTypeRef(static_cast<const TDataType*>(0)))
+        { }
+    CStlClassInfoList(const CTypeRef& typeRef)
+        : CParent(typeRef)
+        { }
+        
 
     static const TObjectType& Get(TConstObjectPtr object)
         {
@@ -197,6 +201,136 @@ protected:
             while ( block.Next() ) {
                 l.push_back(TDataType());
                 in.ReadExternalObject(&l.back(), dataTypeInfo);
+            }
+        }
+};
+
+class CStlClassInfoMapImpl : public CTypeInfo
+{
+    typedef CTypeInfo CParent;
+public:
+
+    CStlClassInfoMapImpl(const CTypeRef& keyType, const CTypeRef& valueType)
+        : m_KeyType(keyType), m_ValueType(valueType)
+        { }
+
+    TTypeInfo GetKeyTypeInfo(void) const
+        {
+            return m_KeyType.Get();
+        }
+
+    TTypeInfo GetValueTypeInfo(void) const
+        {
+            return m_ValueType.Get();
+        }
+
+protected:
+    void CollectKeyValuePair(COObjectList& objectList,
+                             TConstObjectPtr key, TConstObjectPtr value) const;
+    void WriteKeyValuePair(CObjectOStream& out,
+                           TConstObjectPtr key, TConstObjectPtr value) const;
+    void ReadKeyValuePair(CObjectIStream& in,
+                          TObjectPtr key, TObjectPtr value) const;
+
+private:
+    CTypeRef m_KeyType;
+    CTypeRef m_ValueType;
+};
+
+template<typename Key, typename Value>
+class CStlClassInfoMap : CStlClassInfoMapImpl
+{
+    typedef CStlClassInfoMapImpl CParent;
+
+public:
+    typedef Key TKeyType;
+    typedef Value TValueType;
+    typedef map<TKeyType, TValueType> TObjectType;
+
+    CStlClassInfoMap(void);
+
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return *static_cast<const TObjectType*>(object);
+        }
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return *static_cast<TObjectType*>(object);
+        }
+
+    virtual size_t GetSize(void) const
+        {
+            return sizeof(TObjectType);
+        }
+
+    virtual TObjectPtr Create(void) const
+        {
+            return new TObjectType;
+        }
+
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStlClassInfoMap;
+            return typeInfo;
+        }
+
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
+        {
+            const TObjectType& o1 = Get(object1);
+            const TObjectType& o2 = Get(object2);
+            if ( o1.size() != o2.size() )
+                return false;
+            TTypeInfo keyTypeInfo = GetKeyTypeInfo();
+            TTypeInfo valueTypeInfo = GetValueTypeInfo();
+            for ( TObjectType::const_iterator i1 = o1.begin(), i2 = o2.begin();
+                  i1 != o1.end(); ++i1, ++i2 ) {
+                if ( !keyTypeInfo->Equals(&i1->first, &i2->first) ||
+                     !valueTypeInfo->Equals(&i1->second, &i2->second) )
+                    return false;
+            }
+            return true;
+        }
+
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
+        {
+            TObjectType& to = Get(dst);
+            const TObjectType& from = Get(src);
+            to.clear();
+            for ( TObjectType::const_iterator i = from.begin();
+                  i != from.end(); ++i ) {
+                to.insert(*i);
+            }
+        }
+
+protected:
+    virtual void CollectExternalObjects(COObjectList& objectList,
+                                        TConstObjectPtr object) const
+        {
+            const TObjectType& o = Get(object);
+            for ( TObjectType::const_iterator i = o.begin();
+                  i != o.end(); ++i ) {
+                CollectKeyValuePair(objectList, &i->first, &i->second);
+            }
+        }
+
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
+        {
+            const TObjectType& o = Get(object);
+            CObjectOStream::Block block(out, o.size());
+            for ( TObjectType::const_iterator i = o.begin();
+                  i != o.end(); ++i ) {
+                WriteKeyValuePair(out, &i->first, &i->second);
+            }
+        }
+
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            TObjectType& o = Get(object);
+            CObjectIStream::Block block(in, CObjectIStream::eFixed);
+            while ( block.Next() ) {
+                TObjectType::value_type value;
+                ReadKeyValuePair(in, &value->first, &value->second);
+                o.insert(value);
             }
         }
 };

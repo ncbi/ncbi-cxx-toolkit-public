@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/13 20:18:22  vasilche
+* Changed types naming.
+*
 * Revision 1.2  1999/06/04 20:51:50  vasilche
 * First compilable version of serialization.
 *
@@ -41,22 +44,51 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/stltypes.hpp>
-#include <serial/tmplinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CTemplateResolver1 CStlClassInfoListImpl::sm_Resolver("list");
-
-CStlClassInfoListImpl::CStlClassInfoListImpl(const type_info& id,
-                                             const CTypeRef& dataType)
-    : CParent(id), m_DataTypeRef(dataType)
+void CStlClassInfoMapImpl::CollectKeyValuePair(COObjectList& objectList,
+                                               TConstObjectPtr key,
+                                               TConstObjectPtr value) const
 {
-    sm_Resolver.Register(this, GetDataTypeInfo());
+    GetKeyTypeInfo()->CollectExternalObjects(objectList, key);
+    GetValueTypeInfo()->CollectExternalObjects(objectList, value);
 }
 
-void CStlClassInfoListImpl::AnnotateTemplate(CObjectOStream& out) const
+void CStlClassInfoMapImpl::WriteKeyValuePair(CObjectOStream& out,
+                                             TConstObjectPtr key,
+                                             TConstObjectPtr value) const
 {
-    sm_Resolver.Write(out, this, GetDataTypeInfo());
+    CObjectOStream::Block block(out, 2);
+    block.Next();
+    {
+        CObjectOStream::Member m(out, CMemberId(1));
+        GetKeyTypeInfo()->WriteData(out, key);
+    }
+    block.Next();
+    {
+        CObjectOStream::Member m(out, CMemberId(2));
+        GetValueTypeInfo()->WriteData(out, value);
+    }
+}
+
+void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
+                                            TObjectPtr key,
+                                            TObjectPtr value) const
+{
+    CObjectIStream::Block block(in, CObjectIStream::eFixed);
+    if ( !block.Next() )
+        THROW1_TRACE(runtime_error, "map key expected");
+    {
+        CObjectIStream::Member m(in);
+        GetKeyTypeInfo()->ReadData(in, key);
+    }
+    if ( !block.Next() )
+        THROW1_TRACE(runtime_error, "map value expected");
+    {
+        CObjectIStream::Member m(in);
+        GetValueTypeInfo()->ReadData(in, value);
+    }
 }
 
 END_NCBI_SCOPE

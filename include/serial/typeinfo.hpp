@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/13 20:18:10  vasilche
+* Changed types naming.
+*
 * Revision 1.12  1999/07/07 19:58:47  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -87,19 +90,6 @@ class CTypeRef;
 class CMemberId;
 class CMemberInfo;
 
-struct CTypeInfoOrder
-{
-    // to avoid warning under MSVS, where type_info::before() erroneously
-    // returns int, we'll define overloaded functions:
-    static bool ToBool(bool b)
-        { return b; }
-    static bool ToBool(int i)
-        { return i != 0; }
-
-    bool operator()(const type_info* i1, const type_info* i2) const
-		{ return ToBool(i1->before(*i2)); }
-};
-
 class CTypeInfo
 {
 public:
@@ -107,15 +97,6 @@ public:
 
     string GetName(void) const
         { return m_Name; }
-
-    // finds type info (throws runtime_error if absent)
-    static TTypeInfo GetTypeInfoByName(const string& name);
-    static TTypeInfo GetTypeInfoById(const type_info& id);
-    static TTypeInfo GetTypeInfoBy(const type_info& id, void (*creator)(void));
-
-    // returns type info of pointer to this type
-    static TTypeInfo GetPointerTypeInfo(const type_info& id,
-                                        const CTypeRef& typeRef);
 
     virtual size_t GetSize(void) const = 0;
 
@@ -155,7 +136,7 @@ public:
 protected:
 
     CTypeInfo(void);
-    CTypeInfo(const type_info& id);
+    CTypeInfo(const string& name);
 
     friend class CObjectOStream;
     friend class CObjectIStream;
@@ -171,18 +152,8 @@ public:
                            TConstObjectPtr object) const = 0;
 
 private:
-    typedef map<string, TTypeInfo> TTypesByName;
-    typedef map<const type_info*, TTypeInfo, CTypeInfoOrder> TTypesById;
-
-    const type_info& m_Id;
     string m_Name;
     mutable TConstObjectPtr m_Default;
-
-    static TTypesByName* sm_TypesByName;
-    static TTypesById* sm_TypesById;
-
-    static TTypesById& TypesById(void);
-    static TTypesByName& TypesByName(void);
 };
 
 #include <serial/typeinfo.inl>

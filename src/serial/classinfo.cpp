@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/07/13 20:18:17  vasilche
+* Changed types naming.
+*
 * Revision 1.15  1999/07/07 19:59:03  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -91,39 +94,130 @@
 
 BEGIN_NCBI_SCOPE
 
-CClassInfoTmpl::CClassInfoTmpl(const type_info& ti, size_t size,
-                               TObjectPtr (*creator)(void))
-    : CParent(ti), m_Size(size), m_Creator(creator), m_RandomOrder(false)
+CClassInfoTmpl::CClassInfoTmpl(const string& name, const type_info& id,
+                               size_t size, bool randomOrder)
+    : CParent(name), m_Id(id), m_Size(size), m_RandomOrder(randomOrder)
 {
+    Register();
 }
 
-CClassInfoTmpl::CClassInfoTmpl(const type_info& ti, size_t size,
-                               TObjectPtr (*creator)(void), bool randomOrder)
-    : CParent(ti), m_Size(size), m_Creator(creator), m_RandomOrder(randomOrder)
+CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size,
+                               bool randomOrder)
+    : CParent(id.name()), m_Id(id), m_Size(size), m_RandomOrder(randomOrder)
 {
+    Register();
 }
 
-CClassInfoTmpl::CClassInfoTmpl(const type_info& ti, size_t size,
-                               TObjectPtr (*creator)(void),
+CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size,
+                               bool randomOrder,
                                const CTypeRef& parent, size_t offset)
-    : CParent(ti), m_Size(size), m_Creator(creator), m_RandomOrder(false)
+    : CParent(id.name()), m_Id(id), m_Size(size), m_RandomOrder(randomOrder)
 {
+    Register();
     AddMember(NcbiEmptyString, new CRealMemberInfo(offset, parent));
 }
 
 CClassInfoTmpl::~CClassInfoTmpl(void)
 {
+    Deregister();
     DeleteElements(m_MembersInfo);
+}
+
+CClassInfoTmpl::TClasses* CClassInfoTmpl::sm_Classes = 0;
+CClassInfoTmpl::TClassesById* CClassInfoTmpl::sm_ClassesById = 0;
+CClassInfoTmpl::TClassesByName* CClassInfoTmpl::sm_ClassesByName = 0;
+
+inline
+CClassInfoTmpl::TClasses& CClassInfoTmpl::Classes(void)
+{
+    TClasses* classes = sm_Classes;
+    if ( !classes ) {
+        classes = sm_Classes = new TClasses;
+    }
+    return *classes;
+}
+
+inline
+CClassInfoTmpl::TClassesById& CClassInfoTmpl::ClassesById(void)
+{
+    TClassesById* classes = sm_ClassesById;
+    if ( !classes ) {
+        classes = sm_ClassesById = new TClassesById;
+        const TClasses& cc = Classes();
+        for ( TClasses::const_iterator i = cc.begin(); i != cc.end(); ++i ) {
+            const CClassInfoTmpl* info = *i;
+            if ( info->GetId() != typeid(void) ) {
+                if ( !classes->insert(
+                         TClassesById::value_type(&info->GetId(),
+                                                  info)).second ) {
+                    THROW1_TRACE(runtime_error,
+                                 "duplicated class ids " +
+                                 string(info->GetId().name()));
+                }
+            }
+        }
+    }
+    return *classes;
+}
+
+inline
+CClassInfoTmpl::TClassesByName& CClassInfoTmpl::ClassesByName(void)
+{
+    TClassesByName* classes = sm_ClassesByName;
+    if ( !classes ) {
+        classes = sm_ClassesByName = new TClassesByName;
+        const TClasses& cc = Classes();
+        for ( TClasses::const_iterator i = cc.begin(); i != cc.end(); ++i ) {
+            const CClassInfoTmpl* info = *i;
+            if ( !info->GetName().empty() ) {
+                if ( !classes->insert(
+                         TClassesByName::value_type(info->GetName(),
+                                                    info)).second ) {
+                    THROW1_TRACE(runtime_error,
+                                 "duplicated class names " + info->GetName());
+                }
+            }
+        }
+    }
+    return *classes;
+}
+
+void CClassInfoTmpl::Register(void)
+{
+    delete sm_ClassesById;
+    sm_ClassesById = 0;
+    delete sm_ClassesByName;
+    sm_ClassesByName = 0;
+    Classes().push_back(this);
+}
+
+void CClassInfoTmpl::Deregister(void) const
+{
+}
+
+TTypeInfo CClassInfoTmpl::GetClassInfoById(const type_info& id)
+{
+    TClassesById& types = ClassesById();
+    TClassesById::iterator i = types.find(&id);
+    if ( i == types.end() ) {
+        THROW1_TRACE(runtime_error, "class not found: "+string(id.name()));
+    }
+    return i->second;
+}
+
+TTypeInfo CClassInfoTmpl::GetClassInfoByName(const string& name)
+{
+    TClassesByName& classes = ClassesByName();
+    TClassesByName::iterator i = classes.find(name);
+    if ( i == classes.end() ) {
+        THROW1_TRACE(runtime_error, "class not found: " + name);
+    }
+    return i->second;
 }
 
 size_t CClassInfoTmpl::GetSize(void) const
 {
     return m_Size;
-}
-
-TObjectPtr CClassInfoTmpl::Create(void) const
-{
-    return m_Creator();
 }
 
 CMemberInfo* CClassInfoTmpl::AddMember(const CMemberId& id, CMemberInfo* member)

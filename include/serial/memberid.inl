@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/13 20:18:06  vasilche
+* Changed types naming.
+*
 * Revision 1.2  1999/07/01 17:55:18  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -57,6 +60,12 @@ CMemberId::CMemberId(const string& name)
 inline
 CMemberId::CMemberId(const string& name, TTag tag)
     : m_Name(name), m_Tag(tag)
+{
+}
+
+inline
+CMemberId::CMemberId(TTag tag)
+    : m_Tag(tag)
 {
 }
 

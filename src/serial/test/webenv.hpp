@@ -1,9 +1,8 @@
 #ifndef TEST_WEBENV_HPP
 #define TEST_WEBENV_HPP
 
-#include <corelib/ncbistd.hpp>
 #include <serial/serial.hpp>
-#include <serial/asntypes.hpp>
+//#include <serial/asntypes.hpp>
 
 ASN_TYPE_REF(Web_Env)
 ASN_TYPE_REF(Argument)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/13 20:18:05  vasilche
+* Changed types naming.
+*
 * Revision 1.2  1999/07/02 21:31:43  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -53,6 +56,7 @@ public:
     CMemberId(void);
     CMemberId(const string& name);
     CMemberId(const string& name, TTag tag);
+    CMemberId(TTag tag);
 
     string ToString(void) const;
 
