@@ -47,7 +47,7 @@
 #include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/items/basecount_item.hpp>
 #include <objtools/format/items/sequence_item.hpp>
-#include <objtools/format/items/endsection_item.hpp>
+#include <objtools/format/items/ctrl_items.hpp>
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/format/gather_items.hpp>
 #include <objtools/format/embl_gather.hpp>
@@ -75,6 +75,8 @@ void CEmblGatherer::x_DoSingleSection(const CBioseq& seq) const
           ((ctx.GetFilterFlags() & CFlatFileGenerator::fSkipProteins) != 0)) ) {
         return;
     }
+
+    ItemOS() << new CStartSectionItem(ctx);
 
     // The ID Line
     ItemOS() << new CLocusItem(ctx);
@@ -121,6 +123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/14 16:11:48  shomrat
+* using ctrl_items
+*
 * Revision 1.2  2003/12/18 17:43:33  shomrat
 * context.hpp moved
 *
