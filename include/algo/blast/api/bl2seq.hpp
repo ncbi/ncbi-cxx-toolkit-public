@@ -50,10 +50,10 @@ class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 public:
 
     /// Constructor to compare 2 sequences
-    CBl2Seq(SSeqLoc& query, SSeqLoc& subject, EProgram p);
+    CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p);
 
     /// Constructor to compare query against all subject sequences
-    CBl2Seq(SSeqLoc& query, const TSeqLocVector& subjects, EProgram p);
+    CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, EProgram p);
 
     /// Contructor to allow query concatenation
     CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
@@ -61,13 +61,13 @@ public:
 
     virtual ~CBl2Seq();
 
-    void SetQuery(SSeqLoc& query);
+    void SetQuery(const SSeqLoc& query);
     const SSeqLoc& GetQuery() const;
 
     void SetQueries(const TSeqLocVector& queries);
     const TSeqLocVector& GetQueries() const;
 
-    void SetSubject(SSeqLoc& subject);
+    void SetSubject(const SSeqLoc& subject);
     const SSeqLoc& GetSubject() const;
 
     void SetSubjects(const TSeqLocVector& subjects);
@@ -155,7 +155,7 @@ CBl2Seq::GetProgram() const
 }
 
 inline void
-CBl2Seq::SetQuery(SSeqLoc& query)
+CBl2Seq::SetQuery(const SSeqLoc& query)
 {
     x_ResetQueryDs();
     m_tQueries.push_back(query);
@@ -181,7 +181,7 @@ CBl2Seq::GetQueries() const
 }
 
 inline void
-CBl2Seq::SetSubject(SSeqLoc& subject)
+CBl2Seq::SetSubject(const SSeqLoc& subject)
 {
     x_ResetSubjectDs();
     m_tSubjects.push_back(subject);
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/09/09 20:31:21  camacho
+* Add const type qualifier
+*
 * Revision 1.18  2003/09/09 12:53:31  camacho
 * Moved setup member functions to blast_setup_cxx.cpp
 *

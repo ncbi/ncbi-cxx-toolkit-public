@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CBl2Seq::CBl2Seq(SSeqLoc& query, SSeqLoc& subject, EProgram p)
+CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p)
     : m_pOptions(new CBlastOption(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
 {
     TSeqLocVector queries;
@@ -68,7 +68,8 @@ CBl2Seq::CBl2Seq(SSeqLoc& query, SSeqLoc& subject, EProgram p)
     x_Init(queries, subjects);
 }
 
-CBl2Seq::CBl2Seq(SSeqLoc& query, const TSeqLocVector& subjects, EProgram p)
+CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
+                 EProgram p)
     : m_pOptions(new CBlastOption(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
 {
     TSeqLocVector queries;
@@ -299,6 +300,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2003/09/09 20:31:13  camacho
+ * Add const type qualifier
+ *
  * Revision 1.30  2003/09/09 15:18:02  camacho
  * Fix includes
  *
