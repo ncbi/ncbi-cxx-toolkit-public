@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/04 21:33:55  grichenk
+* Fixed x_FindSegment() for sequences with unresolved segments
+*
 * Revision 1.11  2002/04/03 18:06:48  grichenk
 * Fixed segmented sequence bugs (invalid positioning of literals
 * and gaps). Improved CSeqVector performance.
@@ -123,7 +126,9 @@ int CSeqMap::x_FindSegment(int pos)
     for ( ; seg_idx+1 < m_Data.size(); seg_idx++) {
         int cur_pos = m_Data[seg_idx]->m_Position;
         int next_pos = m_Data[seg_idx+1]->m_Position;
-        if (next_pos > pos  || (next_pos == pos  &&  cur_pos == pos))
+        // The commented part was used to get the first of all matching
+        // segments. It looks better to use the last one.
+        if (next_pos > pos/*  || (next_pos == pos  &&  cur_pos == pos)*/)
             break;
     }
     return seg_idx;
