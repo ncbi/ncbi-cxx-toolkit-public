@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/02/20 20:56:49  lavr
+ * Added missing calls to free(server_info)
+ *
  * Revision 6.9  2001/11/29 22:20:52  lavr
  * Flow control trace messages added
  *
@@ -64,6 +67,8 @@
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_service.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 
 /* One can define env.var. 'service'_CONN_HOST to reroute dispatching
  * information to particular dispatching host (instead of default).
@@ -87,6 +92,7 @@ int main(int argc, const char* argv[])
         while ((info = SERV_GetNextInfo(iter)) != 0) {
             char* info_str = SERV_WriteInfo(info);
             CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
+            free(info_str);
             n_found++;
         }
         CORE_LOG(eLOG_Trace, "Resetting service mapper");
@@ -115,6 +121,7 @@ int main(int argc, const char* argv[])
         while ((info = SERV_GetNextInfo(iter)) != 0) {
             char* info_str = SERV_WriteInfo(info);
             CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
+            free(info_str);
             n_found++;
         }
         SERV_Close(iter);
