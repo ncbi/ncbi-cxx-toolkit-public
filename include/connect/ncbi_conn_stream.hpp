@@ -50,6 +50,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.5  2001/02/09 17:38:16  lavr
+* Typo fixed in comments
+*
 * Revision 6.4  2001/01/12 23:48:51  lavr
 * GetCONN method added
 *
@@ -127,7 +130,7 @@ public:
  * http://host[:port]/path[?args]
  *
  * Note that 'path' must include a leading slash,
- * 'args' can be empty, is that case the '?' is not appended to the path.
+ * 'args' can be empty, in which case the '?' is not appended to the path.
  *
  * 'User_header' (if not empty) should be a sequence of lines
  * in the form 'HTTP-tag: Tag value', separated by '\r\n', and
