@@ -106,6 +106,7 @@ const int gz_magic[2] = {0x1f, 0x8b};
 #define RESERVED     0xE0 // bits 5..7: reserved/
 
 // Returns length of the .gz header if it exist or 0 otherwise.
+static
 unsigned int s_CheckGZipHeader(const void* src_buf, unsigned int src_len)
 {
     unsigned char* buf = (unsigned char*)src_buf;
@@ -179,8 +180,8 @@ bool CZipCompression::DecompressBuffer(
 
     // If gzip header found, skip it
     if ( header_len ) {
-        src_buf = (char*)src_buf + header_len;
-        src_len -= (header_len + 3);
+        src_buf  = (char*)src_buf + header_len;
+        src_len -= header_len;
     }
     stream.next_in  = (unsigned char*)src_buf;
     stream.avail_in = src_len;
@@ -556,7 +557,9 @@ CCompressionProcessor::EStatus CZipCompressor::End(void)
 
 
 CZipDecompressor::CZipDecompressor(int window_bits)
-    : CZipCompression(eLevel_Default, window_bits, 0, 0)    
+    : CZipCompression(eLevel_Default, window_bits, 0, 0),
+      m_NeedCheckHeader(true)
+
 {
 }
 
@@ -569,6 +572,7 @@ CZipDecompressor::~CZipDecompressor()
 CCompressionProcessor::EStatus CZipDecompressor::Init(void)
 {
     SetBusy();
+    m_NeedCheckHeader = true;
     // Initialize the compressor stream structure
     memset(&m_Stream, 0, sizeof(m_Stream));
     // Create a compressor stream
@@ -597,6 +601,26 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
     m_Stream.avail_in  = in_len;
     m_Stream.next_out  = (unsigned char*)out_buf;
     m_Stream.avail_out = out_size;
+
+    if ( m_NeedCheckHeader ) {
+        // Check gzip header in the buffer
+        unsigned int header_len = s_CheckGZipHeader(m_Stream.next_in, in_len);
+        // If gzip header found, skip it
+        if ( header_len ) {
+            int errcode = inflateInit2(&m_Stream, header_len ?
+                                                  -MAX_WBITS : m_WindowBits);
+            SetError(errcode, zError(errcode));
+            if ( errcode != Z_OK ) {
+                return eStatus_Error;
+            }
+            m_Stream.next_in   = (unsigned char*)const_cast<char*>
+			                                     (in_buf + header_len);
+            m_Stream.avail_in  = in_len - header_len;
+            m_Stream.next_out  = (unsigned char*)out_buf;
+            m_Stream.avail_out = out_size;
+            m_NeedCheckHeader  = false;
+        }
+    }
 
     int errcode = inflate(&m_Stream, Z_SYNC_FLUSH);
     SetError(errcode, zError(errcode));
@@ -647,6 +671,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/04/19 14:17:15  ivanov
+ * Added gzip file format support into stream decompressor
+ *
  * Revision 1.7  2004/04/01 14:14:03  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *

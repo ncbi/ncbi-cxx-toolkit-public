@@ -283,6 +283,8 @@ protected:
     virtual EStatus Finish (char*       out_buf, unsigned long  out_size,
                             /* out */            unsigned long* out_avail);
     virtual EStatus End    (void);
+private:
+    bool m_NeedCheckHeader;  //< Is true if need to check file header.
 };
 
 
@@ -335,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/04/19 14:17:54  ivanov
+ * Added gzip file format support into stream decompressor
+ *
  * Revision 1.7  2004/04/05 16:55:13  ucko
  * Include the internal zlib.h when using MSVC until its build system
  * catches up.
