@@ -306,11 +306,20 @@ void CAlnVec::CreateConsensus(void)
     new_ds->SetNumseg(m_DS->GetNumseg());
     new_ds->SetLens() = m_DS->GetLens();
     new_ds->SetStarts().reserve(m_DS->GetStarts().size() + m_DS->GetNumseg());
+    if ( !m_DS->GetStrands().empty() ) {
+        new_ds->SetStrands().reserve(m_DS->GetStrands().size() +
+                                     m_DS->GetNumseg());
+    }
 
     for (i = 0;  i < consens.size();  ++i) {
         // copy the old entries
-        for (j = 0;  j < m_DS->GetDim();  ++j)
-            new_ds->SetStarts().push_back(m_DS->GetStarts()[ i*m_DS->GetDim() + j ]);
+        for (j = 0;  j < m_DS->GetDim();  ++j) {
+            int idx = i * m_DS->GetDim() + j;
+            new_ds->SetStarts().push_back(m_DS->GetStarts()[idx]);
+            if ( !m_DS->GetStrands().empty() ) {
+                new_ds->SetStrands().push_back(m_DS->GetStrands()[idx]);
+            }
+        }
 
         // add our new entry
         // this places the consensus as the last sequence
@@ -322,6 +331,10 @@ void CAlnVec::CreateConsensus(void)
         } else {
             new_ds->SetStarts().push_back(-1);
         }
+        
+        if ( !m_DS->GetStrands().empty() ) {
+            new_ds->SetStrands().push_back(eNa_strand_unknown);
+        }
 
         total_bases += consens[i].length();
         data += consens[i];
@@ -332,6 +345,9 @@ void CAlnVec::CreateConsensus(void)
         new_ds->SetIds().push_back(m_DS->GetIds()[i]);
     }
 
+    // now, we construct a new Bioseq and add it to our scope
+    // this bioseq must have a local ID; it will be named "consensus"
+    // once this is in, the Denseg should resolve all IDs correctly
     {{
          CRef<CBioseq> bioseq = new CBioseq();
 
@@ -362,14 +378,15 @@ void CAlnVec::CreateConsensus(void)
          // scope
          CRef<CSeq_entry> entry = new CSeq_entry();
          entry->SetSeq(*bioseq);
-
          GetScope().AddTopLevelSeqEntry(*entry);
-
-         m_ConsensusSeq = new_ds->GetDim()-1;
     }}
 
     // drop the old, bring in the new
     m_DS.Reset(new_ds.Release());
+
+    // make sure that the consensus sequence row indicator is saved
+    // by default, this is placed in the last row of the alignment
+    m_ConsensusSeq = m_DS->GetDim() - 1;
     
 #if 0
 
@@ -400,6 +417,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2002/10/01 14:13:22  dicuccio
+* Added handling of strandedness in creation of consensus sequence.
+*
 * Revision 1.8  2002/09/25 20:20:24  todorov
 * x_GetSeqVector uses the strand info now
 *
