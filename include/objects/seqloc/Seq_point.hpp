@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2004/10/20 18:19:34  kans
+ * added IsLeftOf, IsRightOf, SetLeftOf, and SetRightOf member functions for Int-fuzz.lim. tr and tl
+ *
  * Revision 1.7  2004/05/06 16:54:41  shomrat
  * Added methods to set partial left and right
  *
@@ -87,10 +90,14 @@ public:
     // check left (5') or right (3') end of location for e_Lim fuzz
     bool IsPartialLeft  (void) const;
     bool IsPartialRight (void) const;
+    bool IsLeftOf       (void) const;
+    bool IsRightOf      (void) const;
 
     // set / remove e_Lim fuzz on left (5') or right (3') end
-    void SetPartialLeft (bool val);
-    void SetPartialRight(bool val);
+    void SetPartialLeft  (bool val);
+    void SetPartialRight (bool val);
+    void SetLeftOf       (bool val);
+    void SetRightOf      (bool val);
         
 private:
     // Prohibit copy constructor and assignment operator

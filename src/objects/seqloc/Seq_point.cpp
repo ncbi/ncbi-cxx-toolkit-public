@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2004/10/20 18:20:12  kans
+ * added IsLeftOf, IsRightOf, SetLeftOf, and SetRightOf member functions for Int-fuzz.lim. tr and tl
+ *
  * Revision 6.7  2004/05/19 17:26:25  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -125,6 +128,46 @@ bool CSeq_point::IsPartialRight (void) const
     return false;
 }
 
+bool CSeq_point::IsLeftOf (void) const
+{
+    if (x_IsMinusStrand()) {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_tr) {
+                return true;
+            }
+        }
+    } else {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_tl) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool CSeq_point::IsRightOf (void) const
+{
+    if (x_IsMinusStrand()) {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_tl) {
+                return true;
+            }
+        }
+    } else {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_tr) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 
 // set / remove e_Lim fuzz on left (5') or right (3') end
 void CSeq_point::SetPartialLeft (bool val)
@@ -154,6 +197,36 @@ void CSeq_point::SetPartialRight(bool val)
         ResetFuzz();
     }
     _ASSERT(val == IsPartialRight());
+}
+
+
+void CSeq_point::SetLeftOf (bool val)
+{
+    if (val == IsLeftOf()) {
+        return;
+    }
+
+    if (val) {
+        SetFuzz().SetLim(x_IsMinusStrand() ? CInt_fuzz::eLim_tr : CInt_fuzz::eLim_tl);
+    } else {
+        ResetFuzz();
+    }
+    _ASSERT(val == IsLeftOf());
+}
+
+
+void CSeq_point::SetRightOf(bool val)
+{
+    if (val == IsRightOf()) {
+        return;
+    }
+
+    if ( val ) {
+        SetFuzz().SetLim(x_IsMinusStrand() ? CInt_fuzz::eLim_tl : CInt_fuzz::eLim_tr);
+    } else {
+        ResetFuzz();
+    }
+    _ASSERT(val == IsRightOf());
 }
 
 
