@@ -45,6 +45,8 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+#include "win_mask_ustat.hpp"
+
 BEGIN_NCBI_SCOPE
 
 /**
@@ -83,6 +85,7 @@ public:
      **/
     CWinMaskCountsGenerator( const string & input,
                              const string & output,
+                             const string & sformat,
                              const string & th,
                              Uint4 mem_avail,
                              Uint1 unit_size,
@@ -134,7 +137,7 @@ private:
     Uint8 fastalen( const string & fname ) const;
 
     string input;                   /**<\internal input file (or list of input files) */
-    CNcbiOstream * out_stream;      /**<\internal output stream (standard C++ ostream) */
+    CRef< CWinMaskUstat > ustat;    /**<\internal object used to output the unit counts statistics */
     Uint4 max_mem;                  /**<\internal available memory in bytes */
     Uint4 unit_size;                /**<\internal n-mer length in base pairs */
     Uint8 genome_size;              /**<\internal genome size in bases */
@@ -157,6 +160,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/03/28 21:33:26  morgulis
+ * Added -sformat option to specify the output format for unit counts file.
+ * Implemented framework allowing usage of different output formats for
+ * unit counts. Rewrote the code generating the unit counts file using
+ * that framework.
+ *
  * Revision 1.3  2005/03/24 16:50:22  morgulis
  * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
  *

@@ -34,6 +34,7 @@
 #include <stdlib.h>
 
 #include <vector>
+#include <sstream>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -53,6 +54,7 @@
 #include "win_mask_gen_counts.hpp"
 #include "win_mask_dup_table.hpp"
 #include "win_mask_util.hpp"
+#include "win_mask_ustat_factory.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -141,6 +143,7 @@ static Uint4 reverse_complement( Uint4 seq, Uint1 size )
 CWinMaskCountsGenerator::CWinMaskCountsGenerator( 
     const string & arg_input,
     const string & output,
+    const string & sformat,
     const string & arg_th,
     Uint4 mem_avail,
     Uint1 arg_unit_size,
@@ -151,7 +154,8 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     bool arg_use_list,
     const set< CSeq_id_Handle > & arg_ids,
     const set< CSeq_id_Handle > & arg_exclude_ids )
-:   input( arg_input ), out_stream( &NcbiCout ),
+:   input( arg_input ),
+    ustat( CWinMaskUstatFactory::create( sformat, output ) ),
     max_mem( mem_avail*1024*1024 ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
     min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
@@ -162,9 +166,6 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     score_counts( arg_max_count == 0 ? 500 : arg_max_count, 0 ),
     ids( arg_ids ), exclude_ids( arg_exclude_ids )
 {
-    if( !output.empty() )
-        out_stream = new CNcbiOfstream( output.c_str() );
-
     // Parse arg_th to set up th[].
     string::size_type pos( 0 );
     Uint1 count( 0 );
@@ -178,11 +179,7 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
 }
 
 //------------------------------------------------------------------------------
-CWinMaskCountsGenerator::~CWinMaskCountsGenerator()
-{
-    if( out_stream != &NcbiCout )
-        delete out_stream;
-}
+CWinMaskCountsGenerator::~CWinMaskCountsGenerator() {}
 
 //------------------------------------------------------------------------------
 void CWinMaskCountsGenerator::operator()()
@@ -254,7 +251,7 @@ void CWinMaskCountsGenerator::operator()()
         suffix_size = unit_size;
     }
 
-    *out_stream << unit_size << endl;
+    ustat->setUnitSize( unit_size );
 
     // Now process for each prefix.
     Uint4 prefix_exp( 1<<(2*prefix_size) );
@@ -278,17 +275,25 @@ void CWinMaskCountsGenerator::operator()()
     double current;
 
     if( has_min_count )
-        *out_stream << "\n# " << total_ecodes << " ecodes" << endl;
+    {
+        ustat->setBlank();
+        ostringstream s;
+        s << " " << total_ecodes << " ecodes";
+        ustat->setComment( s.str() );
+    }
 
     for( Uint4 i( 1 ); i <= max_count; ++i )
     {
-        current 
-            = 100.0*(((double)(score_counts[i - 1] + offset))/((double)total_ecodes));
+        current = 100.0*(((double)(score_counts[i - 1] + offset))
+                  /((double)total_ecodes));
 
         if( has_min_count )
-            *out_stream << "# " << dec << i << "\t" 
-                        << score_counts[i - 1] + offset << "\t"
-                        << current << endl;
+        {
+            ostringstream s;
+            s << " " << dec << i << "\t" << score_counts[i - 1] + offset << "\t"
+              << current;
+            ustat->setComment( s.str() );
+        }
 
         for( Uint1 j( 0 ); j < 4; ++j )
             if( previous < th[j] && current >= th[j] )
@@ -320,31 +325,41 @@ void CWinMaskCountsGenerator::operator()()
             score_counts[i] += score_counts[i-1];
 
         offset = total_ecodes - score_counts[max_count - 1];
-        *out_stream << "\n# " << total_ecodes << " ecodes" << endl;
+
+        {
+            ustat->setBlank();
+            ostringstream s;
+            s << " " << total_ecodes << " ecodes";
+            ustat->setComment( s.str() );
+        }
 
         for( Uint4 i( 1 ); i <= max_count; ++i )
         {
             current 
-                = 100.0*(((double)(score_counts[i - 1] + offset))/((double)total_ecodes));
-    
-            *out_stream << "# " << dec << i << "\t" 
-                        << score_counts[i - 1] + offset << "\t"
-                        << current << endl;
+                = 100.0*(((double)(score_counts[i - 1] + offset))
+                  /((double)total_ecodes));
+            ostringstream s;
+            s << " " << dec << i << "\t" << score_counts[i - 1] + offset << "\t"
+              << current;
+            ustat->setComment( s.str() );
         }
     }
 
-    *out_stream << "#" << endl;
+    ustat->setComment( "" );
 
     for( Uint1 i( 0 ); i < 4; ++i )
-        *out_stream << "# " << th[i]
-            << "%% threshold at " << index[i] << endl;
+    {
+        ostringstream s;
+        s << " " << th[i] << "%% threshold at " << index[i];
+        ustat->setComment( s.str() );
+    }
 
-    *out_stream << endl;
-    *out_stream << ">t_low       " << index[0] << endl;
-    *out_stream << ">t_extend    " << index[1] << endl;
-    *out_stream << ">t_threshold " << index[2] << endl;
-    *out_stream << ">t_high      " << index[3] << endl;
-    *out_stream << endl;
+    ustat->setBlank();
+    ustat->setParam( "t_low      ", index[0] );
+    ustat->setParam( "t_extend   ", index[1] );
+    ustat->setParam( "t_threshold", index[2] );
+    ustat->setParam( "t_high     ", index[3] );
+    ustat->setBlank();
     cerr << endl;
 }
 
@@ -455,8 +470,7 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
             else score_counts[counts[i] - 1] += 2;
 
             if( do_output )
-                *out_stream << hex << prefix + i << " " 
-                            << dec << counts[i] << "\n";
+                ustat->setUnitCount( prefix + i, counts[i] );
         }
     }
 }
@@ -467,6 +481,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.9  2005/03/28 21:33:26  morgulis
+ * Added -sformat option to specify the output format for unit counts file.
+ * Implemented framework allowing usage of different output formats for
+ * unit counts. Rewrote the code generating the unit counts file using
+ * that framework.
+ *
  * Revision 1.8  2005/03/24 16:50:21  morgulis
  * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
  *

@@ -126,6 +126,9 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "oformat", "output_format",
                              "controls the format of the masker output",
                              CArgDescriptions::eString, "interval" );
+    arg_desc->AddDefaultKey( "sformat", "unit_counts_format",
+                             "controls the format of the file containing the unit counts",
+                             CArgDescriptions::eString, "ascii" );
 #if 0
     arg_desc->AddDefaultKey( "mpass", "merge_pass_flag",
                              "true if separate merging pass is needed",
@@ -240,6 +243,8 @@ void CWinMaskApplication::Init(void)
     arg_desc->SetConstraint( "oformat",
                              (new CArgAllow_Strings())->Allow( "interval" )
                              ->Allow( "fasta" ) );
+    arg_desc->SetConstraint( "sformat",
+                             (new CArgAllow_Strings())->Allow( "ascii" ) );
 #if 0
     arg_desc->SetConstraint( "trigger",
                              (new CArgAllow_Strings())->Allow( "mean" )
@@ -277,6 +282,7 @@ int CWinMaskApplication::Run (void)
     {
         CWinMaskCountsGenerator cg( aConfig.Input(),
                                     aConfig.Output(),
+                                    aConfig.SFormat(),
                                     aConfig.Th(),
                                     aConfig.Mem(),
                                     aConfig.UnitSize(),
@@ -380,6 +386,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2005/03/28 21:33:26  morgulis
+ * Added -sformat option to specify the output format for unit counts file.
+ * Implemented framework allowing usage of different output formats for
+ * unit counts. Rewrote the code generating the unit counts file using
+ * that framework.
+ *
  * Revision 1.6  2005/03/24 18:43:19  morgulis
  * Change to suppress an error message from GenBank data loader.
  *

@@ -96,7 +96,8 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
       dust_window( 64 ),
       dust_level( 20 ),
       dust_linker( 1 ),
-      checkdup( args["checkdup"].AsBoolean() )
+      checkdup( args["checkdup"].AsBoolean() ),
+      sformat( args["sformat"].AsString() )
 {
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 
@@ -202,6 +203,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2005/03/28 21:33:26  morgulis
+ * Added -sformat option to specify the output format for unit counts file.
+ * Implemented framework allowing usage of different output formats for
+ * unit counts. Rewrote the code generating the unit counts file using
+ * that framework.
+ *
  * Revision 1.6  2005/03/24 16:50:21  morgulis
  * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
  *

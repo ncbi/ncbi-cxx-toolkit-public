@@ -440,6 +440,15 @@ public:
     bool CheckDup() const { return checkdup; }
 
     /**
+     **\brief Format in which the unit counts generator should
+     **       generate its output.
+     **
+     **\return unit counts file format
+     **
+     **/
+    const string SFormat() const { return sformat; }
+
+    /**
      **\brief The list of query ids to process.
      **
      ** Only the sequences from the input file that match 
@@ -654,6 +663,7 @@ private:
     Uint4 dust_level;               /**< level value for dusting */
     Uint4 dust_linker;              /**< number of bases to use for linking */
     bool checkdup;                  /**< check for duplicate contigs */
+    string sformat;                 /**< unit counts format for counts generator */
     set< objects::CSeq_id_Handle > ids;              /**< list of ids to process */
     set< objects::CSeq_id_Handle > exclude_ids;      /**< list of ids to exclude from processing */
     //@}
@@ -664,6 +674,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/03/28 21:33:26  morgulis
+ * Added -sformat option to specify the output format for unit counts file.
+ * Implemented framework allowing usage of different output formats for
+ * unit counts. Rewrote the code generating the unit counts file using
+ * that framework.
+ *
  * Revision 1.3  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.
