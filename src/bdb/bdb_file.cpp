@@ -477,6 +477,30 @@ EBDB_ErrCode CBDB_File::Fetch()
 }
 
 
+DBT* CBDB_File::CloneDBT_Key()
+{
+    x_StartRead();
+    x_EndRead();
+
+    DBT* dbt = new DBT;
+    ::memset(dbt,  0, sizeof(DBT));
+
+    // Clone the "data" area (needs to be properly deleted!)
+    if (m_DBT_Key->size) {
+        dbt->size = m_DBT_Key->size;
+        dbt->data = new unsigned char(dbt->size);
+        ::memcpy(dbt->data, m_DBT_Key->data, dbt->size);
+    }
+    return dbt;
+}
+
+void CBDB_File::DestroyDBT_Clone(DBT* dbt)
+{
+    delete [] dbt->data;
+    delete dbt;
+}
+
+
 EBDB_ErrCode CBDB_File::Insert(EAfterWrite write_flag)
 {
     CheckNullDataConstraint();
@@ -636,6 +660,8 @@ EBDB_ErrCode CBDB_File::x_Write(unsigned int flags, EAfterWrite write_flag)
     return eBDB_Ok;
 }
 
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CBDB_IdFile::
@@ -660,6 +686,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/09/16 20:17:40  kuznets
+ * CBDB_File: added methods to clone (and then destroy) DBT Key.
+ *
  * Revision 1.22  2003/09/12 18:06:13  kuznets
  * Commenented out usage of the default sub-database name when no name is supplied.
  * When "database" argument is NULL BerkeleyDB create files of a slightly less-complex
