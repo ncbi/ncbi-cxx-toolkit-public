@@ -194,25 +194,6 @@ CScope_Impl::x_AttachEntry(const CBioseq_set_EditHandle& seqset,
     return CSeq_entry_EditHandle(*m_HeapScope, *entry);
 }
 
-/*
-CBioseq_EditHandle
-CScope_Impl::x_AttachBioseq(const CBioseq_set_EditHandle& seqset,
-                            CRef<CBioseq_Info> bioseq,
-                            int index)
-{
-    _ASSERT(seqset && bioseq);
-
-    TWriteLockGuard guard(m_Scope_Conf_RWLock);
-
-    CRef<CSeq_entry_Info> entry(new CSeq_entry_Info);
-    entry->SelectSeq(*bioseq);
-    x_AttachEntry(seqset, entry, index);
-
-    x_ClearCacheOnNewData();
-
-    return GetBioseqHandle(*bioseq).GetEditHandle();
-}
-*/
 
 CBioseq_EditHandle
 CScope_Impl::x_SelectSeq(const CSeq_entry_EditHandle& entry,
@@ -403,29 +384,38 @@ void CScope_Impl::x_ClearAnnotCache(void)
 
 void CScope_Impl::x_ClearCacheOnRemoveData(const CSeq_entry_Info& info)
 {
-    x_ClearAnnotCache();
     if ( info.IsSeq() ) {
-        const CBioseq_Info& seq = info.GetSeq();
-        // Clear bioseq from the scope cache
-        ITERATE ( CBioseq_Info::TId, si, seq.GetId() ) {
-            TSeq_idMap::iterator bs_id = m_Seq_idMap.find(*si);
-            if (bs_id != m_Seq_idMap.end()) {
-                if ( bs_id->second.m_Bioseq_Info ) {
-                    // detaching from scope
-                    bs_id->second.m_Bioseq_Info->m_ScopeInfo = 0;
-                    // breaking the link
-                    bs_id->second.m_Bioseq_Info->m_SynCache.Reset();
-                }
-                m_Seq_idMap.erase(bs_id);
-            }
-            m_BioseqMap.erase(&seq);
-        }
+        x_ClearCacheOnRemoveData(info.GetSeq());
     }
     else {
-        const CBioseq_set_Info& set = info.GetSet();
-        ITERATE( CBioseq_set_Info::TSeq_set, ei, set.GetSeq_set() ) {
-            x_ClearCacheOnRemoveData(**ei);
+        x_ClearCacheOnRemoveData(info.GetSet());
+    }
+}
+
+
+void CScope_Impl::x_ClearCacheOnRemoveData(const CBioseq_Info& seq)
+{
+    // Clear bioseq from the scope cache
+    ITERATE ( CBioseq_Info::TId, si, seq.GetId() ) {
+        TSeq_idMap::iterator bs_id = m_Seq_idMap.find(*si);
+        if (bs_id != m_Seq_idMap.end()) {
+            if ( bs_id->second.m_Bioseq_Info ) {
+                // detaching from scope
+                bs_id->second.m_Bioseq_Info->m_ScopeInfo = 0;
+                // breaking the link
+                bs_id->second.m_Bioseq_Info->m_SynCache.Reset();
+            }
+            m_Seq_idMap.erase(bs_id);
         }
+        m_BioseqMap.erase(&seq);
+    }
+}
+
+
+void CScope_Impl::x_ClearCacheOnRemoveData(const CBioseq_set_Info& seqset)
+{
+    ITERATE( CBioseq_set_Info::TSeq_set, ei, seqset.GetSeq_set() ) {
+        x_ClearCacheOnRemoveData(**ei);
     }
 }
 
@@ -529,11 +519,35 @@ void CScope_Impl::RemoveAnnot(const CSeq_annot_EditHandle& annot)
 }
 
 
+void CScope_Impl::SelectNone(const CSeq_entry_EditHandle& entry)
+{
+    _ASSERT(entry);
+
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+
+    CSeq_entry_Info& info = entry.x_GetInfo();
+    x_ClearAnnotCache();
+    switch ( info.Which() ) {
+    case CSeq_entry::e_Set:
+        x_ClearCacheOnRemoveData(info.GetSet());
+        break;
+    case CSeq_entry::e_Seq:
+        x_ClearCacheOnRemoveData(info.GetSeq());
+        break;
+    default:
+        break;
+    }
+    // duplicate bioseq info
+    info.Reset();
+}
+
+
 void CScope_Impl::RemoveEntry(const CSeq_entry_EditHandle& entry)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
 
     CSeq_entry_Info& info = entry.x_GetInfo();
+    x_ClearAnnotCache();
     x_ClearCacheOnRemoveData(info);
 
     if ( entry.GetParentEntry() ) {
@@ -557,6 +571,18 @@ void CScope_Impl::RemoveEntry(const CSeq_entry_EditHandle& entry)
                        "CScope::RemoveEntry(): cannot find data source");
         }
     }
+}
+
+
+void CScope_Impl::RemoveBioseq(const CBioseq_EditHandle& seq)
+{
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+
+    CBioseq_Info& info = seq.x_GetInfo();
+    x_ClearAnnotCache();
+    x_ClearCacheOnRemoveData(info);
+
+    info.GetParentSeq_entry_Info().Reset();
 }
 
 
@@ -872,27 +898,6 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandle(const CBioseq_Info& seq)
         }
     }
     return ret;
-}
-
-
-void CScope_Impl::FindSeqid(set< CConstRef<CSeq_id> >& setId,
-                            const string& searchBy)
-{
-    TReadLockGuard rguard(m_Scope_Conf_RWLock);
-    setId.clear();
-
-    TSeq_id_HandleSet setSource, setResult;
-    // find all
-    CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
-    mapper.GetMatchingHandlesStr(searchBy, setSource);
-    // filter those which "belong" to my data sources
-    for (CPriority_I it(m_setDataSrc); it; ++it) {
-        it->GetDataSource().FilterSeqid(setResult, setSource);
-    }
-    // create result
-    ITERATE(TSeq_id_HandleSet, itSet, setResult) {
-        setId.insert(itSet->GetSeqId());
-    }
 }
 
 
@@ -1307,6 +1312,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/31 17:08:07  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.6  2004/03/29 20:51:19  vasilche
 * Fixed ambiguity on MSVC.
 *

@@ -282,6 +282,10 @@ public:
 
     //////////////////////////////////////////////////////////////////
     // Bioseq members
+    // id
+    void ResetId(void) const;
+    bool AddId(const CSeq_id_Handle& id) const;
+    bool RemoveId(const CSeq_id_Handle& id) const;
     // descr
     void SetDescr(TDescr& v) const;
     // inst
@@ -401,6 +405,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2004/03/31 17:08:06  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.53  2004/03/29 20:13:05  vasilche
 * Implemented whole set of methods to modify Seq-entry object tree.
 * Added CBioseq_Handle::GetExactComplexityLevel().

@@ -75,41 +75,50 @@ public:
     typedef TObject::TId TId;
     bool IsSetId(void) const;
     const TId& GetId(void) const;
-    void SetId(const TId& v);
+    void SetId(TId& v);
+    void ResetId(void);
 
     bool IsSetDescr(void) const;
     const TDescr& GetDescr(void) const;
     void SetDescr(TDescr& v);
+    TDescr& x_SetDescr(void);
     void ResetDescr(void);
 
     typedef TObject::TColl TColl;
     bool IsSetColl(void) const;
     const TColl& GetColl(void) const;
-    void SetColl(const TColl& v);
+    void SetColl(TColl& v);
+    void ResetColl(void);
 
     typedef TObject::TLevel TLevel;
     bool IsSetLevel(void) const;
     TLevel GetLevel(void) const;
     void SetLevel(TLevel v);
+    void ResetLevel(void);
 
     typedef TObject::TClass TClass;
     bool IsSetClass(void) const;
     TClass GetClass(void) const;
     void SetClass(TClass v);
+    void ResetClass(void);
 
     typedef TObject::TRelease TRelease;
     bool IsSetRelease(void) const;
     const TRelease& GetRelease(void) const;
-    void SetRelease(const TRelease& v);
+    void SetRelease(TRelease& v);
+    void ResetRelease(void);
 
     typedef TObject::TDate TDate;
     bool IsSetDate(void) const;
     const TDate& GetDate(void) const;
-    void SetDate(const TDate& v);
+    void SetDate(TDate& v);
+    void ResetDate(void);
 
     typedef vector< CRef<CSeq_entry_Info> > TSeq_set;
     bool IsSetSeq_set(void) const;
     const TSeq_set& GetSeq_set(void) const;
+    TSeq_set& SetSeq_set(void);
+
     CRef<CSeq_entry_Info> AddEntry(CSeq_entry& entry, int index = -1);
     void AddEntry(CRef<CSeq_entry_Info> entry, int index = -1);
     void RemoveEntry(CRef<CSeq_entry_Info> entry);
@@ -211,9 +220,23 @@ bool CBioseq_set_Info::IsSetId(void) const
 
 
 inline
+void CBioseq_set_Info::ResetId(void)
+{
+    m_Object->ResetId();
+}
+
+
+inline
 const CBioseq_set_Info::TId& CBioseq_set_Info::GetId(void) const
 {
     return m_Object->GetId();
+}
+
+
+inline
+void CBioseq_set_Info::SetId(TId& v)
+{
+    m_Object->SetId(v);
 }
 
 
@@ -225,9 +248,23 @@ bool CBioseq_set_Info::IsSetColl(void) const
 
 
 inline
+void CBioseq_set_Info::ResetColl(void)
+{
+    m_Object->ResetColl();
+}
+
+
+inline
 const CBioseq_set_Info::TColl& CBioseq_set_Info::GetColl(void) const
 {
     return m_Object->GetColl();
+}
+
+
+inline
+void CBioseq_set_Info::SetColl(TColl& v)
+{
+    m_Object->SetColl(v);
 }
 
 
@@ -239,9 +276,23 @@ bool CBioseq_set_Info::IsSetLevel(void) const
 
 
 inline
+void CBioseq_set_Info::ResetLevel(void)
+{
+    m_Object->ResetLevel();
+}
+
+
+inline
 CBioseq_set_Info::TLevel CBioseq_set_Info::GetLevel(void) const
 {
     return m_Object->GetLevel();
+}
+
+
+inline
+void CBioseq_set_Info::SetLevel(TLevel v)
+{
+    m_Object->SetLevel(v);
 }
 
 
@@ -253,9 +304,23 @@ bool CBioseq_set_Info::IsSetClass(void) const
 
 
 inline
+void CBioseq_set_Info::ResetClass(void)
+{
+    m_Object->ResetClass();
+}
+
+
+inline
 CBioseq_set_Info::TClass CBioseq_set_Info::GetClass(void) const
 {
     return m_Object->GetClass();
+}
+
+
+inline
+void CBioseq_set_Info::SetClass(TClass v)
+{
+    m_Object->SetClass(v);
 }
 
 
@@ -267,9 +332,23 @@ bool CBioseq_set_Info::IsSetRelease(void) const
 
 
 inline
+void CBioseq_set_Info::ResetRelease(void)
+{
+    m_Object->ResetRelease();
+}
+
+
+inline
 const CBioseq_set_Info::TRelease& CBioseq_set_Info::GetRelease(void) const
 {
     return m_Object->GetRelease();
+}
+
+
+inline
+void CBioseq_set_Info::SetRelease(TRelease& v)
+{
+    m_Object->SetRelease(v);
 }
 
 
@@ -281,9 +360,23 @@ bool CBioseq_set_Info::IsSetDate(void) const
 
 
 inline
+void CBioseq_set_Info::ResetDate(void)
+{
+    m_Object->ResetDate();
+}
+
+
+inline
 const CBioseq_set_Info::TDate& CBioseq_set_Info::GetDate(void) const
 {
     return m_Object->GetDate();
+}
+
+
+inline
+void CBioseq_set_Info::SetDate(TDate& v)
+{
+    m_Object->SetDate(v);
 }
 
 
@@ -301,12 +394,22 @@ const CBioseq_set_Info::TSeq_set& CBioseq_set_Info::GetSeq_set(void) const
 }
 
 
+inline
+CBioseq_set_Info::TSeq_set& CBioseq_set_Info::SetSeq_set(void)
+{
+    return m_Seq_set;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/31 17:08:06  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.2  2004/03/24 18:30:28  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

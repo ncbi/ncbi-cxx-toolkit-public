@@ -49,6 +49,7 @@ class CSeq_entry_Info;
 class CSeq_annot;
 class CSeq_annot_Info;
 class CSeq_descr;
+class CSeqdesc;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -77,7 +78,11 @@ public:
     virtual bool IsSetDescr(void) const = 0;
     virtual const TDescr& GetDescr(void) const = 0;
     virtual void SetDescr(TDescr& v) = 0;
+    virtual TDescr& x_SetDescr(void) = 0;
     virtual void ResetDescr(void) = 0;
+    bool AddSeqdesc(CSeqdesc& d);
+    bool RemoveSeqdesc(const CSeqdesc& d);
+    void AddSeq_descr(TDescr& v);
 
     // annot
     typedef vector< CRef<CSeq_annot_Info> > TAnnot;
@@ -162,6 +167,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2004/03/31 17:08:06  vasilche
+ * Implemented ConvertSeqToSet and ConvertSetToSeq.
+ *
  * Revision 1.2  2004/03/24 18:30:28  vasilche
  * Fixed edit API.
  * Every *_Info object has its own shallow copy of original object.

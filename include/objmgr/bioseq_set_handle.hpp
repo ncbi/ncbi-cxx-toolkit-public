@@ -51,6 +51,7 @@ class CSeq_annot;
 class CSeq_entry;
 class CBioseq;
 class CBioseq_set;
+class CSeqdesc;
 
 class CScope;
 
@@ -85,26 +86,33 @@ public:
     CConstRef<CBioseq_set> GetBioseq_setCore(void) const;
 
     // member access
+    typedef CBioseq_set::TId TId;
     bool IsSetId(void) const;
-    const CBioseq_set::TId& GetId(void) const;
+    const TId& GetId(void) const;
 
+    typedef CBioseq_set::TColl TColl;
     bool IsSetColl(void) const;
-    const CBioseq_set::TColl& GetColl(void) const;
+    const TColl& GetColl(void) const;
 
+    typedef CBioseq_set::TLevel TLevel;
     bool IsSetLevel(void) const;
-    CBioseq_set::TLevel GetLevel(void) const;
+    TLevel GetLevel(void) const;
 
+    typedef CBioseq_set::TClass TClass;
     bool IsSetClass(void) const;
-    CBioseq_set::TClass GetClass(void) const;
+    TClass GetClass(void) const;
 
+    typedef CBioseq_set::TRelease TRelease;
     bool IsSetRelease(void) const;
-    const CBioseq_set::TRelease& GetRelease(void) const;
+    const TRelease& GetRelease(void) const;
 
+    typedef CBioseq_set::TDate TDate;
     bool IsSetDate(void) const;
-    const CBioseq_set::TDate& GetDate(void) const;
+    const TDate& GetDate(void) const;
 
+    typedef CBioseq_set::TDescr TDescr;
     bool IsSetDescr(void) const;
-    const CSeq_descr& GetDescr(void) const;
+    const TDescr& GetDescr(void) const;
 
     // Utility methods/operators
     operator bool(void) const;
@@ -143,6 +151,31 @@ public:
 
     // Navigate object tree
     CSeq_entry_EditHandle GetParentEntry(void) const;
+
+    // Member modification
+    void ResetId(void) const;
+    void SetId(TId& id) const;
+
+    void ResetColl(void) const;
+    void SetColl(TColl& v) const;
+
+    void ResetLevel(void) const;
+    void SetLevel(TLevel v) const;
+
+    void ResetClass(void) const;
+    void SetClass(TClass v) const;
+
+    void ResetRelease(void) const;
+    void SetRelease(TRelease& v) const;
+
+    void ResetDate(void) const;
+    void SetDate(TDate& v) const;
+
+    void ResetDescr(void) const;
+    void SetDescr(TDescr& v) const;
+    bool AddDesc(CSeqdesc& v) const;
+    bool RemoveDesc(CSeqdesc& v) const;
+    void AddAllDescr(CSeq_descr& v) const;
 
     // Modify object tree
     CSeq_entry_EditHandle AddNewEntry(int index) const;
@@ -282,6 +315,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/31 17:08:06  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.3  2004/03/29 20:13:05  vasilche
 * Implemented whole set of methods to modify Seq-entry object tree.
 * Added CBioseq_Handle::GetExactComplexityLevel().

@@ -80,18 +80,6 @@ CBioseq_set_EditHandle CBioseq_set_Handle::GetEditHandle(void) const
 }
 
 
-CSeq_entry_EditHandle CBioseq_set_EditHandle::GetParentEntry(void) const
-{
-    CSeq_entry_EditHandle ret;
-    CBioseq_set_Info& info = x_GetInfo();
-    if ( info.HasParent_Info() ) {
-        ret = CSeq_entry_EditHandle(GetScope(),
-                                    info.GetParentSeq_entry_Info());
-    }
-    return ret;
-}
-
-
 bool CBioseq_set_Handle::IsSetId(void) const
 {
     return x_GetInfo().IsSetId();
@@ -170,9 +158,108 @@ bool CBioseq_set_Handle::IsSetDescr(void) const
 }
 
 
-const CSeq_descr& CBioseq_set_Handle::GetDescr(void) const
+const CBioseq_set::TDescr& CBioseq_set_Handle::GetDescr(void) const
 {
     return x_GetInfo().GetDescr();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CBioseq_set_EditHandle
+
+CSeq_entry_EditHandle CBioseq_set_EditHandle::GetParentEntry(void) const
+{
+    CSeq_entry_EditHandle ret;
+    CBioseq_set_Info& info = x_GetInfo();
+    if ( info.HasParent_Info() ) {
+        ret = CSeq_entry_EditHandle(GetScope(),
+                                    info.GetParentSeq_entry_Info());
+    }
+    return ret;
+}
+
+
+void CBioseq_set_EditHandle::ResetId(void) const
+{
+    x_GetInfo().ResetId();
+}
+
+
+void CBioseq_set_EditHandle::SetId(TId& v) const
+{
+    x_GetInfo().SetId(v);
+}
+
+
+void CBioseq_set_EditHandle::ResetColl(void) const
+{
+    x_GetInfo().ResetColl();
+}
+
+
+void CBioseq_set_EditHandle::SetColl(TColl& v) const
+{
+    x_GetInfo().SetColl(v);
+}
+
+
+void CBioseq_set_EditHandle::ResetLevel(void) const
+{
+    x_GetInfo().ResetLevel();
+}
+
+
+void CBioseq_set_EditHandle::SetLevel(TLevel v) const
+{
+    x_GetInfo().SetLevel(v);
+}
+
+
+void CBioseq_set_EditHandle::ResetClass(void) const
+{
+    x_GetInfo().ResetClass();
+}
+
+
+void CBioseq_set_EditHandle::SetClass(TClass v) const
+{
+    x_GetInfo().SetClass(v);
+}
+
+
+void CBioseq_set_EditHandle::ResetRelease(void) const
+{
+    x_GetInfo().ResetRelease();
+}
+
+
+void CBioseq_set_EditHandle::SetRelease(TRelease& v) const
+{
+    x_GetInfo().SetRelease(v);
+}
+
+
+void CBioseq_set_EditHandle::ResetDate(void) const
+{
+    x_GetInfo().ResetDate();
+}
+
+
+void CBioseq_set_EditHandle::SetDate(TDate& v) const
+{
+    x_GetInfo().SetDate(v);
+}
+
+
+void CBioseq_set_EditHandle::ResetDescr(void) const
+{
+    x_GetInfo().ResetDescr();
+}
+
+
+void CBioseq_set_EditHandle::SetDescr(TDescr& v) const
+{
+    x_GetInfo().SetDescr(v);
 }
 
 
@@ -259,6 +346,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/31 17:08:07  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.4  2004/03/29 20:13:06  vasilche
 * Implemented whole set of methods to modify Seq-entry object tree.
 * Added CBioseq_Handle::GetExactComplexityLevel().

@@ -458,6 +458,38 @@ const CSeq_descr& CSeq_entry_Info::GetDescr(void) const
 }
 
 
+void CSeq_entry_Info::SetDescr(TDescr& v)
+{
+    m_Contents->SetDescr(v);
+}
+
+
+void CSeq_entry_Info::ResetDescr(void)
+{
+    m_Contents->ResetDescr();
+}
+
+
+bool CSeq_entry_Info::AddSeqdesc(CSeqdesc& d)
+{
+    return m_Contents->AddSeqdesc(d);
+}
+
+
+bool CSeq_entry_Info::RemoveSeqdesc(const CSeqdesc& d)
+{
+    return m_Contents->RemoveSeqdesc(d);
+}
+
+
+void CSeq_entry_Info::AddDescr(CSeq_entry_Info& src)
+{
+    if ( src.IsSetDescr() ) {
+        m_Contents->AddSeq_descr(src.m_Contents->x_SetDescr());
+    }
+}
+
+
 CRef<CSeq_annot_Info> CSeq_entry_Info::AddAnnot(const CSeq_annot& annot)
 {
     return m_Contents->AddAnnot(annot);
@@ -504,6 +536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/03/31 17:08:07  vasilche
+ * Implemented ConvertSeqToSet and ConvertSetToSeq.
+ *
  * Revision 1.13  2004/03/25 19:27:44  vasilche
  * Implemented MoveTo and CopyTo methods of handles.
  *

@@ -37,6 +37,7 @@
 #include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 #include <algorithm>
 
@@ -174,6 +175,48 @@ void CBioseq_Base_Info::x_DoUpdateObject(void)
 }
 
 
+bool CBioseq_Base_Info::AddSeqdesc(CSeqdesc& d)
+{
+    TDescr::Tdata& s = x_SetDescr().Set();
+    ITERATE ( TDescr::Tdata, it, s ) {
+        if ( it->GetPointer() == &d ) {
+            return false;
+        }
+    }
+    s.push_back(Ref(&d));
+    return true;
+}
+
+
+bool CBioseq_Base_Info::RemoveSeqdesc(const CSeqdesc& d)
+{
+    if ( !IsSetDescr() ) {
+        return false;
+    }
+    TDescr::Tdata& s = x_SetDescr().Set();
+    NON_CONST_ITERATE ( TDescr::Tdata, it, s ) {
+        if ( it->GetPointer() == &d ) {
+            s.erase(it);
+            if ( s.empty() ) {
+                ResetDescr();
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CBioseq_Base_Info::AddSeq_descr(TDescr& v)
+{
+    TDescr::Tdata& s = x_SetDescr().Set();
+    TDescr::Tdata& src = v.Set();
+    NON_CONST_ITERATE ( TDescr::Tdata, it, src ) {
+        s.push_back(*it);
+    }
+}
+
+
 void CBioseq_Base_Info::x_AttachAnnot(CRef<CSeq_annot_Info> annot)
 {
     _ASSERT(!annot->HasParent_Info());
@@ -244,6 +287,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/31 17:08:07  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.3  2004/03/24 18:57:35  vasilche
 * Added include <algorithm> for find().
 *

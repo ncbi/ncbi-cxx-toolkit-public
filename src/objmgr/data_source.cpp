@@ -301,12 +301,6 @@ TTSE_Lock CDataSource::GetBlobById(const CSeq_id_Handle& idh)
     return TTSE_Lock();
 }
 
-/*
-const CSeq_entry& CDataSource::GetTSEFromInfo(const TTSE_Lock& tse)
-{
-    return tse->GetCompleteSeq_entry();
-}
-*/
 
 CConstRef<CBioseq_Info> CDataSource::GetBioseq_Info(const CSeqMatch_Info& info)
 {
@@ -320,47 +314,6 @@ CConstRef<CBioseq_Info> CDataSource::GetBioseq_Info(const CSeqMatch_Info& info)
     return ret;
 }
 
-
-void CDataSource::FilterSeqid(TSeq_id_HandleSet& setResult,
-                              const TSeq_id_HandleSet& setSource) const
-{
-    _ASSERT(&setResult != &setSource);
-    TMainReadLockGuard guard(m_DSMainLock);
-    ITERATE ( TSeq_id_HandleSet, it, setSource ) {
-        // if it is in my map
-        if ( m_TSE_seq.find(*it) != m_TSE_seq.end() ) {
-            //### The id handle is reported to be good, but it can be deleted
-            //### by the next request!
-            setResult.insert(*it);
-        }
-    }
-}
-
-#if 0
-const CBioseq& CDataSource::GetBioseq(const CBioseq_Info& info)
-{
-    // the handle must be resolved to this data source
-    _ASSERT(&info.GetDataSource() == this);
-    // Bioseq core and TSE must be loaded if there exists a handle
-    // Loader may be called to load descriptions (not included in core)
-    if ( m_Loader ) {
-        // Send request to the loader
-        /*
-        m_Loader->GetRecords(idh, CDataLoader::eBioseq);
-        */
-    }
-    return info.GetCompleteBioseq();
-}
-
-
-const CSeq_entry& CDataSource::GetTSE(const CTSE_Info& info)
-{
-    // the handle must be resolved to this data source
-    _ASSERT(&info.GetDataSource() == this);
-    // Bioseq and TSE must be loaded if there exists a handle
-    return info.GetCompleteTSE();
-}
-#endif
 
 CRef<CTSE_Info> CDataSource::AddTSE(CSeq_entry& tse,
                                     bool dead,
@@ -380,38 +333,6 @@ void CDataSource::AddTSE(CRef<CTSE_Info> info)
 
 }
 
-/*
-bool CDataSource::DropTSE(CSeq_entry& tse)
-{
-    // Allow to drop top-level seq-entries only
-    if ( tse.GetParentEntry() ) {
-        _TRACE("DropTSE: DS="<<this<<" TSE="<<&tse<<" - non-top");
-        return false;
-    }
-
-    CRef<CSeq_entry> ref(&tse);
-
-    // Lock indexes
-    TMainWriteLockGuard guard(m_DSMainLock);
-
-    CRef<CTSE_Info> info_lock = x_FindTSE_Info(tse);
-    if ( !info_lock ) {
-        _TRACE("DropTSE: DS="<<this<<" TSE="<<&tse<<" - not mine");
-        return false;
-    }
-
-    CTSE_Info* info = &*info_lock;
-    _ASSERT(info->Locked());
-    info_lock.Reset();
-    if ( info->Locked() ) {
-        _TRACE("DropTSE: DS="<<this<<" TSE_Info="<<&info<<" - locked");
-        return false; // Not really dropped, although found
-    }
-    info_lock.Reset(info);
-    x_DropTSE(*info);
-    return true;
-}
-*/
 
 bool CDataSource::DropTSE(CTSE_Info& info)
 {
@@ -633,24 +554,6 @@ void CDataSource::RemoveEntry(CSeq_entry_Info& entry)
     parent.RemoveEntry(Ref(&entry));
 }
 
-
-#if 0
-void CDataSource::AttachMap(CSeq_entry_Info& seq_info, CSeqMap& seqmap)
-{
-    TMainWriteLockGuard guard(m_DSMainLock);
-    x_AttachMap(seq_info, seqmap);
-}
-
-
-void CDataSource::x_AttachMap(CSeq_entry_Info& seq_info, CSeqMap& seqmap)
-{
-    if ( !seq_info.IsSeq() ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "CDataSource::AttachMap: entry is not seq");
-    }
-    seq_info.m_Bioseq->x_AttachMap(seqmap);
-}
-#endif
 
 CRef<CSeq_annot_Info> CDataSource::AttachAnnot(CSeq_entry_Info& entry_info,
                                                const CSeq_annot& annot)
@@ -1129,6 +1032,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.131  2004/03/31 17:08:07  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.130  2004/03/24 18:30:29  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

@@ -31,6 +31,8 @@
 */
 
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_entry_ci.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/scope.hpp>
@@ -90,21 +92,32 @@ CSeq_entry_Handle CSeq_entry_Handle::GetParentEntry(void) const
 }
 
 
-CSeq_entry_EditHandle CSeq_entry_Handle::GetEditHandle(void) const
+CSeq_entry_Handle CSeq_entry_Handle::GetSingleSubEntry(void) const
 {
-    return m_Scope->GetEditHandle(*this);
+    if ( !IsSet() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CSeq_entry_Handle::GetSingleSubEntry: "
+                   "Seq-entry is not Bioseq-set");
+    }
+    CSeq_entry_CI iter(*this);
+    if ( !iter ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CSeq_entry_Handle::GetSingleSubEntry: "
+                   "Seq-entry is empty");
+    }
+    CSeq_entry_Handle entry = *iter;
+    if ( ++iter ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CSeq_entry_Handle::GetSingleSubEntry: "
+                   "Seq-entry contains more than one sub entry");
+    }
+    return entry;
 }
 
 
-CSeq_entry_EditHandle CSeq_entry_EditHandle::GetParentEntry(void) const
+CSeq_entry_EditHandle CSeq_entry_Handle::GetEditHandle(void) const
 {
-    CSeq_entry_EditHandle ret;
-    CSeq_entry_Info& info = x_GetInfo();
-    if ( info.HasParent_Info() ) {
-        ret = CSeq_entry_EditHandle(GetScope(),
-                                    info.GetParentSeq_entry_Info());
-    }
-    return ret;
+    return m_Scope->GetEditHandle(*this);
 }
 
 
@@ -114,18 +127,6 @@ CBioseq_set_Handle CSeq_entry_Handle::GetParentBioseq_set(void) const
     const CSeq_entry_Info& info = x_GetInfo();
     if ( info.HasParent_Info() ) {
         ret = CBioseq_set_Handle(GetScope(), info.GetParentBioseq_set_Info());
-    }
-    return ret;
-}
-
-
-CBioseq_set_EditHandle CSeq_entry_EditHandle::GetParentBioseq_set(void) const
-{
-    CBioseq_set_EditHandle ret;
-    CSeq_entry_Info& info = x_GetInfo();
-    if ( info.HasParent_Info() ) {
-        ret = CBioseq_set_EditHandle(GetScope(),
-                                     info.GetParentBioseq_set_Info());
     }
     return ret;
 }
@@ -171,6 +172,40 @@ CConstRef<CObject> CSeq_entry_Handle::GetBlobId(void) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_entry_EditHandle
+
+
+CSeq_entry_EditHandle CSeq_entry_EditHandle::GetParentEntry(void) const
+{
+    CSeq_entry_EditHandle ret;
+    CSeq_entry_Info& info = x_GetInfo();
+    if ( info.HasParent_Info() ) {
+        ret = CSeq_entry_EditHandle(GetScope(),
+                                    info.GetParentSeq_entry_Info());
+    }
+    return ret;
+}
+
+
+CSeq_entry_EditHandle CSeq_entry_EditHandle::GetSingleSubEntry(void) const
+{
+    return CSeq_entry_Handle::GetSingleSubEntry().GetEditHandle();
+}
+
+
+CBioseq_set_EditHandle CSeq_entry_EditHandle::GetParentBioseq_set(void) const
+{
+    CBioseq_set_EditHandle ret;
+    CSeq_entry_Info& info = x_GetInfo();
+    if ( info.HasParent_Info() ) {
+        ret = CBioseq_set_EditHandle(GetScope(),
+                                     info.GetParentBioseq_set_Info());
+    }
+    return ret;
+}
+
+
 CSeq_entry_Info& CSeq_entry_EditHandle::x_GetInfo(void) const
 {
     return const_cast<CSeq_entry_Info&>(CSeq_entry_Handle::x_GetInfo());
@@ -186,6 +221,36 @@ CBioseq_set_EditHandle CSeq_entry_EditHandle::SetSet(void) const
 CBioseq_EditHandle CSeq_entry_EditHandle::SetSeq(void) const
 {
     return m_Scope->GetBioseqHandle(x_GetInfo().SetSeq()).GetEditHandle();
+}
+
+
+void CSeq_entry_EditHandle::SetDescr(TDescr& v) const
+{
+    x_GetInfo().SetDescr(v);
+}
+
+
+void CSeq_entry_EditHandle::ResetDescr(void) const
+{
+    x_GetInfo().ResetDescr();
+}
+
+
+bool CSeq_entry_EditHandle::AddSeqdesc(CSeqdesc& v) const
+{
+    return x_GetInfo().AddSeqdesc(v);
+}
+
+
+bool CSeq_entry_EditHandle::RemoveSeqdesc(const CSeqdesc& v) const
+{
+    return x_GetInfo().RemoveSeqdesc(v);
+}
+
+
+void CSeq_entry_EditHandle::AddDescr(const CSeq_entry_EditHandle& entry) const
+{
+    x_GetInfo().AddDescr(entry.x_GetInfo());
 }
 
 
@@ -256,15 +321,39 @@ CSeq_entry_EditHandle::TakeAnnot(const CSeq_annot_EditHandle& annot) const
 }
 
 
+void
+CSeq_entry_EditHandle::TakeAllAnnots(const CSeq_entry_EditHandle& entry) const
+{
+    vector<CSeq_annot_Handle> annots;
+    // we have to copy all handles as moving annots directly could break iter
+    for ( CSeq_annot_CI it(entry, CSeq_annot_CI::eSearch_entry); it; ++it ) {
+        annots.push_back(*it);
+    }
+    ITERATE ( vector<CSeq_annot_Handle>, it, annots ) {
+        TakeAnnot(it->GetEditHandle());
+    }
+}
+
+
 void CSeq_entry_EditHandle::Remove(void) const
 {
     m_Scope->RemoveEntry(*this);
 }
 
 
-CBioseq_set_EditHandle CSeq_entry_EditHandle::SelectSet(void) const
+CBioseq_set_EditHandle CSeq_entry_EditHandle::SelectSet(TClass set_class) const
 {
-    return SelectSet(*new CBioseq_set);
+    CBioseq_set_EditHandle seqset = SelectSet(*new CBioseq_set);
+    if ( set_class != CBioseq_set::eClass_not_set ) {
+        seqset.SetClass(set_class);
+    }
+    return seqset;
+}
+
+
+void CSeq_entry_EditHandle::SelectNone(void) const
+{
+    m_Scope->SelectNone(*this);
 }
 
 
@@ -309,12 +398,71 @@ CSeq_entry_EditHandle::TakeSeq(const CBioseq_EditHandle& seq) const
 }
 
 
+CBioseq_set_EditHandle
+CSeq_entry_EditHandle::ConvertSeqToSet(TClass set_class) const
+{
+    if ( !IsSeq() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CSeq_entry_EditHandle::ConvertSeqToSet: "
+                   "Seq-entry is not in 'seq' state");
+    }
+    CRef<CBioseq_Info> seq(&x_GetInfo().SetSeq());
+    SetSeq().Remove();
+    _ASSERT(Which() == CSeq_entry::e_not_set);
+    CBioseq_set_EditHandle seqset = SelectSet(set_class);
+    m_Scope->x_SelectSeq(seqset.AddNewEntry(-1), seq);
+    return seqset;
+}
+
+
+void CSeq_entry_EditHandle::CollapseSet(void) const
+{
+    CSeq_entry_EditHandle entry = GetSingleSubEntry();
+    if ( entry.Which() == CSeq_entry::e_not_set ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CSeq_entry_EditHandle::CollapseSet: "
+                   "sub entry should be non-empty");
+    }
+    entry.AddDescr(*this);
+    entry.TakeAllAnnots(*this);
+    if ( entry.IsSet() ) {
+        CRef<CBioseq_set_Info> info(&entry.x_GetInfo().SetSet());
+        SelectNone();
+        m_Scope->x_SelectSet(*this, info);
+    }
+    else {
+        CRef<CBioseq_Info> info(&entry.x_GetInfo().SetSeq());
+        SelectNone();
+        m_Scope->x_SelectSeq(*this, info);
+    }
+}
+
+CBioseq_EditHandle
+CSeq_entry_EditHandle::ConvertSetToSeq(void) const
+{
+    CSeq_entry_EditHandle entry = GetSingleSubEntry();
+    if ( !entry.IsSeq() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CSeq_entry_EditHandle::ConvertSetToSeq: "
+                   "sub entry should contain Bioseq");
+    }
+    entry.AddDescr(*this);
+    entry.TakeAllAnnots(*this);
+    CRef<CBioseq_Info> info(&entry.x_GetInfo().SetSeq());
+    SelectNone();
+    return m_Scope->x_SelectSeq(*this, info);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/03/31 17:08:07  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.7  2004/03/29 20:13:06  vasilche
 * Implemented whole set of methods to modify Seq-entry object tree.
 * Added CBioseq_Handle::GetExactComplexityLevel().

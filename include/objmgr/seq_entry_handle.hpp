@@ -62,6 +62,8 @@ class CSeq_annot_EditHandle;
 class CSeq_entry_Info;
 class CTSE_Info;
 
+class CSeqdesc;
+
 class NCBI_XOBJMGR_EXPORT CSeq_entry_Handle
 {
 public:
@@ -75,6 +77,7 @@ public:
     bool HasParentEntry(void) const;
     CBioseq_set_Handle GetParentBioseq_set(void) const;
     CSeq_entry_Handle GetParentEntry(void) const;
+    CSeq_entry_Handle GetSingleSubEntry(void) const;
 
     // Get 'edit' version of handle
     CSeq_entry_EditHandle GetEditHandle(void) const;
@@ -143,6 +146,14 @@ public:
     // Navigate object tree
     CBioseq_set_EditHandle GetParentBioseq_set(void) const;
     CSeq_entry_EditHandle GetParentEntry(void) const;
+    CSeq_entry_EditHandle GetSingleSubEntry(void) const;
+
+    // Change descriptions
+    void SetDescr(TDescr& v) const;
+    void ResetDescr(void) const;
+    bool AddSeqdesc(CSeqdesc& v) const;
+    bool RemoveSeqdesc(const CSeqdesc& v) const;
+    void AddDescr(const CSeq_entry_EditHandle& src_entry) const;
 
     typedef CBioseq_EditHandle TSeq;
     typedef CBioseq_set_EditHandle TSet;
@@ -152,11 +163,11 @@ public:
 
     // Make this Seq-entry to be empty.
     // Old contents of the entry will be deleted.
-    void Clear(void) const;
+    void SelectNone(void) const;
 
     // Convert the empty Seq-entry to Bioseq-set.
     // Returns new Bioseq-set handle.
-    TSet SelectSet(void) const;
+    TSet SelectSet(TClass set_class = CBioseq_set::eClass_not_set) const;
 
     // Make the empty Seq-entry be in set state with given Bioseq-set object.
     // Returns new Bioseq-set handle.
@@ -211,6 +222,7 @@ public:
     CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
     CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle&annot) const;
     CSeq_annot_EditHandle TakeAnnot(const CSeq_annot_EditHandle& annot) const;
+    void TakeAllAnnots(const CSeq_entry_EditHandle& src_entry) const;
 
     // Attach new sub objects to Bioseq-set
     // index < 0 or index >= current number of entries means to add at the end.
@@ -237,6 +249,7 @@ protected:
     friend class CBioseq_EditHandle;
     friend class CBioseq_set_EditHandle;
     friend class CSeq_annot_EditHandle;
+    friend class CSeq_entry_I;
 
     CSeq_entry_EditHandle(CScope& scope, CSeq_entry_Info& info);
 
@@ -347,6 +360,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/03/31 17:08:06  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.8  2004/03/29 20:13:05  vasilche
 * Implemented whole set of methods to modify Seq-entry object tree.
 * Added CBioseq_Handle::GetExactComplexityLevel().

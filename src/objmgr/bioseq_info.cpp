@@ -281,6 +281,12 @@ void CBioseq_Info::SetDescr(TDescr& v)
 }
 
 
+CSeq_descr& CBioseq_Info::x_SetDescr(void)
+{
+    return m_Object->SetDescr();
+}
+
+
 void CBioseq_Info::ResetDescr(void)
 {
     m_Object->ResetDescr();
@@ -670,6 +676,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/03/31 17:08:07  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.17  2004/03/24 18:30:29  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

@@ -220,12 +220,6 @@ public:
     /// Return "NULL" handle if the Bioseq cannot be resolved.
     CConstRef<CBioseq_Info> GetBioseq_Info(const CSeqMatch_Info& info);
 
-    // Filter set of CSeq_id (setSource)
-    // Select from the setSource ones which are "owned" by this DataSource
-    // and move them into setResult
-    void FilterSeqid(TSeq_id_HandleSet& setResult,
-                     const TSeq_id_HandleSet& setSource) const;
-
     // Remove TSE from the datasource, update indexes
     void DropAllTSEs(void);
     bool DropTSE(CTSE_Info& info);
@@ -448,6 +442,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2004/03/31 17:08:06  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.72  2004/03/24 18:30:28  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

@@ -100,6 +100,7 @@ public:
     bool IsSetDescr(void) const;
     const TDescr& GetDescr(void) const;
     void SetDescr(TDescr& v);
+    TDescr& x_SetDescr(void);
     void ResetDescr(void);
 
     // inst
@@ -256,6 +257,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2004/03/31 17:08:06  vasilche
+ * Implemented ConvertSeqToSet and ConvertSetToSeq.
+ *
  * Revision 1.17  2004/03/24 18:30:28  vasilche
  * Fixed edit API.
  * Every *_Info object has its own shallow copy of original object.

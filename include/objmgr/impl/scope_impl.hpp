@@ -119,6 +119,8 @@ public:
     typedef SSeq_id_ScopeInfo::TAnnotRefSet          TAnnotRefSet;
     typedef int                                      TPriority;
 
+    //////////////////////////////////////////////////////////////////
+    // Adding top level objects: DataLoader, Seq-entry, Bioseq, Seq-annot
     enum EPriority {
         kPriority_NotSet = -1
     };
@@ -147,6 +149,13 @@ public:
                                TPriority pri = kPriority_NotSet);
 
 
+    //////////////////////////////////////////////////////////////////
+    // Modification of existing object tree
+    CBioseq_EditHandle GetEditHandle(const CBioseq_Handle& seq);
+    CSeq_entry_EditHandle GetEditHandle(const CSeq_entry_Handle& entry);
+    CSeq_annot_EditHandle GetEditHandle(const CSeq_annot_Handle& annot);
+    CBioseq_set_EditHandle GetEditHandle(const CBioseq_set_Handle& seqset);
+
     // Add new sub-entry to the existing tree if it is in this scope
     CSeq_entry_EditHandle AttachEntry(const CBioseq_set_EditHandle& seqset,
                                       CSeq_entry& entry,
@@ -157,7 +166,6 @@ public:
     CSeq_entry_EditHandle TakeEntry(const CBioseq_set_EditHandle& seqset,
                                     const CSeq_entry_EditHandle& entry,
                                     int index = -1);
-    void RemoveEntry(const CSeq_entry_EditHandle& entry);
 
     // Add annotations to a seq-entry (seq or set)
     CSeq_annot_EditHandle AttachAnnot(const CSeq_entry_EditHandle& entry,
@@ -166,10 +174,15 @@ public:
                                     const CSeq_annot_Handle& annot);
     CSeq_annot_EditHandle TakeAnnot(const CSeq_entry_EditHandle& entry,
                                     const CSeq_annot_EditHandle& annot);
-    // Remove annotation
+
+    // Remove methods
+    void RemoveEntry(const CSeq_entry_EditHandle& entry);
+    void RemoveBioseq(const CBioseq_EditHandle& seq);
+    void RemoveBioseq_set(const CBioseq_set_EditHandle& seqset);
     void RemoveAnnot(const CSeq_annot_EditHandle& annot);
 
     // Modify Seq-entry
+    void SelectNone(const CSeq_entry_EditHandle& entry);
     CBioseq_EditHandle SelectSeq(const CSeq_entry_EditHandle& entry,
                                  CBioseq& seq);
     CBioseq_EditHandle CopySeq(const CSeq_entry_EditHandle& entry,
@@ -183,10 +196,6 @@ public:
                                    const CBioseq_set_Handle& seqset);
     CBioseq_set_EditHandle TakeSet(const CSeq_entry_EditHandle& entry,
                                    const CBioseq_set_EditHandle& seqset);
-
-    CSeq_entry_EditHandle StartEdit(const CSeq_entry_Handle& seh);
-    CBioseq_EditHandle StartEdit(const CBioseq_Handle& bh);
-    CSeq_annot_EditHandle StartEdit(const CSeq_annot_Handle& sah);
 
     // Get bioseq handle by seq-id
     // Declared "virtual" to avoid circular dependencies with seqloc
@@ -210,12 +219,6 @@ public:
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
 
-    // Find set of CSeq_id by a string identifier
-    // The latter could be name, accession, something else
-    // which could be found in CSeq_id
-    void FindSeqid(set< CConstRef<CSeq_id> >& setId,
-                   const string& searchBy);
-
     void ResetHistory(void);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
@@ -223,13 +226,6 @@ public:
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id& id);
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id);
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
-
-    CBioseq_EditHandle GetEditHandle(const CBioseq_Handle& seq);
-    CSeq_entry_EditHandle GetEditHandle(const CSeq_entry_Handle& entry);
-    CSeq_annot_EditHandle GetEditHandle(const CSeq_annot_Handle& annot);
-    CBioseq_set_EditHandle GetEditHandle(const CBioseq_set_Handle& seqset);
-
-    CBioseq_Handle GetBioseqHandle(const CBioseq_Info& seq);
 
 private:
     // constructor/destructor visible from CScope
@@ -255,13 +251,10 @@ private:
     // clean some cache entries when new data source is added
     void x_ClearCacheOnNewData(void);
     void x_ClearAnnotCache(void);
-    void x_ClearCacheOnRemoveData(const CSeq_entry_Info& info);
+    void x_ClearCacheOnRemoveData(const CSeq_entry_Info& entry);
+    void x_ClearCacheOnRemoveData(const CBioseq_set_Info& seqset);
+    void x_ClearCacheOnRemoveData(const CBioseq_Info& seq);
 
-    /*
-    CBioseq_EditHandle x_AttachBioseq(const CBioseq_set_EditHandle& seqset,
-                                      CRef<CBioseq_Info> bioseq,
-                                      int index);
-    */
     CSeq_entry_EditHandle x_AttachEntry(const CBioseq_set_EditHandle& seqset,
                                         CRef<CSeq_entry_Info> entry,
                                         int index);
@@ -291,6 +284,8 @@ private:
 
     CBioseq_Handle x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                             const CTSE_Info& tse);
+
+    CBioseq_Handle GetBioseqHandle(const CBioseq_Info& seq);
     CBioseq_Handle x_GetBioseqHandle(const CBioseq_Info& seq);
 
 public:
@@ -358,6 +353,11 @@ private:
     friend class CBioseq_CI;
     friend class CAnnotTypes_CI;
     friend class CBioseq_Handle;
+    friend class CBioseq_set_Handle;
+    friend class CSeq_entry_Handle;
+    friend class CBioseq_EditHandle;
+    friend class CBioseq_set_EditHandle;
+    friend class CSeq_entry_EditHandle;
     friend class CTSE_CI;
     friend class CSeq_annot_CI;
     friend class CSeqMap_CI;
@@ -370,6 +370,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/31 17:08:06  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.3  2004/03/29 20:13:06  vasilche
 * Implemented whole set of methods to modify Seq-entry object tree.
 * Added CBioseq_Handle::GetExactComplexityLevel().

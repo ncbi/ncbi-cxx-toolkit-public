@@ -58,6 +58,7 @@ class CBioseq_set_Info;
 class CBioseq_Info;
 class CSeq_annot_Info;
 class CSeq_descr;
+class CSeqdesc;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -118,6 +119,11 @@ public:
     // Bioseq-set access
     bool IsSetDescr(void) const;
     const TDescr& GetDescr(void) const;
+    void ResetDescr(void);
+    void SetDescr(TDescr& v);
+    bool AddSeqdesc(CSeqdesc& d);
+    bool RemoveSeqdesc(const CSeqdesc& d);
+    void AddDescr(CSeq_entry_Info& src);
 
     CRef<CSeq_annot_Info> AddAnnot(const CSeq_annot& annot);
     void AddAnnot(CRef<CSeq_annot_Info> annot);
@@ -243,6 +249,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/03/31 17:08:06  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.11  2004/03/25 19:27:44  vasilche
 * Implemented MoveTo and CopyTo methods of handles.
 *

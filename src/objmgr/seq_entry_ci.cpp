@@ -48,11 +48,6 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CSeq_entry_CI::CSeq_entry_CI(void)
-{
-}
-
-
 CSeq_entry_CI::CSeq_entry_CI(const CSeq_entry_Handle& entry)
 {
     x_Initialize(entry.GetSet());
@@ -96,12 +91,63 @@ CSeq_entry_CI& CSeq_entry_CI::operator ++(void)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_entry_I
+/////////////////////////////////////////////////////////////////////////////
+
+
+CSeq_entry_I::CSeq_entry_I(const CSeq_entry_EditHandle& entry)
+{
+    x_Initialize(entry.SetSet());
+}
+
+
+CSeq_entry_I::CSeq_entry_I(const CBioseq_set_EditHandle& seqset)
+{
+    x_Initialize(seqset);
+}
+
+
+void CSeq_entry_I::x_Initialize(const CBioseq_set_EditHandle& seqset)
+{
+    if ( seqset ) {
+        m_Parent = seqset;
+        m_Iterator = seqset.x_GetInfo().SetSeq_set().begin();
+        x_SetCurrentEntry();
+    }
+}
+
+
+void CSeq_entry_I::x_SetCurrentEntry(void)
+{
+    if ( m_Parent && m_Iterator != m_Parent.x_GetInfo().SetSeq_set().end() ) {
+        m_Current = CSeq_entry_EditHandle(m_Parent.GetScope(), **m_Iterator);
+    }
+    else {
+        m_Current.Reset();
+    }
+}
+
+
+CSeq_entry_I& CSeq_entry_I::operator ++(void)
+{
+    if ( *this ) {
+        ++m_Iterator;
+        x_SetCurrentEntry();
+    }
+    return *this;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/31 17:08:07  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.2  2004/03/22 16:51:10  grichenk
 * Fixed CSeq_entry_CI initialization
 *

@@ -126,6 +126,12 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 inline
+CSeq_entry_CI::CSeq_entry_CI(void)
+{
+}
+
+
+inline
 CSeq_entry_CI::operator bool(void) const
 {
     return m_Current;
@@ -160,12 +166,60 @@ const CSeq_entry_Handle* CSeq_entry_CI::operator->(void) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_entry_I inline methods
+/////////////////////////////////////////////////////////////////////////////
+
+inline
+CSeq_entry_I::CSeq_entry_I(void)
+{
+}
+
+
+inline
+CSeq_entry_I::operator bool(void) const
+{
+    return m_Current;
+}
+
+
+inline
+bool CSeq_entry_I::operator ==(const CSeq_entry_I& iter) const
+{
+    return m_Current == iter.m_Current;
+}
+
+
+inline
+bool CSeq_entry_I::operator !=(const CSeq_entry_I& iter) const
+{
+    return m_Current != iter.m_Current;
+}
+
+
+inline
+const CSeq_entry_EditHandle& CSeq_entry_I::operator*(void) const
+{
+    return m_Current;
+}
+
+
+inline
+const CSeq_entry_EditHandle* CSeq_entry_I::operator->(void) const
+{
+    return &m_Current;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/31 17:08:06  vasilche
+* Implemented ConvertSeqToSet and ConvertSetToSeq.
+*
 * Revision 1.1  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

@@ -290,6 +290,12 @@ void CBioseq_set_Info::SetDescr(TDescr& v)
 }
 
 
+CSeq_descr& CBioseq_set_Info::x_SetDescr(void)
+{
+    return m_Object->SetDescr();
+}
+
+
 void CBioseq_set_Info::ResetDescr(void)
 {
     m_Object->ResetDescr();
@@ -409,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/31 17:08:07  vasilche
+ * Implemented ConvertSeqToSet and ConvertSetToSeq.
+ *
  * Revision 1.4  2004/03/24 20:05:17  vasilche
  * Fixed compilation error on Sun.
  *
