@@ -62,10 +62,23 @@ BEGIN_SCOPE(blast)
  */
 NCBI_XBLAST_EXPORT
 BlastMask*
-CSeqLoc2BlastMask(const objects::CSeq_loc *slp, int index);
+CSeqLoc2BlastMask(const objects::CSeq_loc &slp, int index);
 
-void BlastMaskDNAToProtein(BlastMask** mask, TSeqLocVector & slp);
+/** Convert coordinates in masking locations for one sequence from DNA to 
+ * protein, creating mask locations for each of the 6 translation frames.
+ * @param mask Pointer to masking locations structure [in] [out]
+ * @param seqloc DNA sequence data [in]
+ * @param scope Which scope this sequence belongs to? [in]
+ */
+void BlastMaskDNAToProtein(BlastMask** mask, 
+         const objects::CSeq_loc &seqloc, objects::CScope* scope);
 
+/** Convert coordinates in masking locations for a set of sequences from
+ * protein to DNA.
+ * @param mask Pointer to masking locations for all frames of a set 
+ *            of translated sequences [in] [out]
+ * @param slp Vector of DNA sequence data [in]
+ */
 void BlastMaskProteinToDNA(BlastMask** mask, TSeqLocVector &slp);
 
 
@@ -132,6 +145,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/10/07 17:27:37  dondosha
+* Lower case mask removed from options, added to the SSeqLoc structure
+*
 * Revision 1.24  2003/09/11 17:44:39  camacho
 * Changed CBlastOption -> CBlastOptions
 *

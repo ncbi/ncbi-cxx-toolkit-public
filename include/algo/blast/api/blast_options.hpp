@@ -497,38 +497,6 @@ CBlastOptions::SetStrandOption(objects::ENa_strand s)
     m_QueryOpts->strand_option = (unsigned char) s;
 }
 
-#if 0
-inline vector< CConstRef<objects::CSeq_loc> >& 
-CBlastOptions::GetLCaseMask() const
-{
-    // Convert BlastMaskPtrs to objects::CSeq_loc
-    return m_QueryOpts->lcase_mask;
-}
-#endif
-
-inline void 
-CBlastOptions::SetLCaseMask(vector< CConstRef<objects::CSeq_loc> >& sl_vector)
-{
-    BlastMask* mask = NULL,* curr = NULL,* tail = NULL;
-    int index = 0;
-
-    // Convert from objects::CSeq_loc's to BlastMask*'s
-    // index corresponds to the query index in the case of query concatenation
-    ITERATE(vector< CConstRef<objects::CSeq_loc> >, itr, sl_vector) {
-
-        curr = CSeqLoc2BlastMask(*itr, index++);
-        if (!mask) {
-            mask = tail = curr;
-        } else {
-            tail->next = curr;
-            tail = tail->next;
-        }
-
-    }
-
-    m_QueryOpts->lcase_mask = mask;
-}
-
 inline int
 CBlastOptions::GetQueryGeneticCode() const
 {
@@ -1029,6 +997,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/10/07 17:27:38  dondosha
+* Lower case mask removed from options, added to the SSeqLoc structure
+*
 * Revision 1.25  2003/09/26 15:42:42  dondosha
 * Added second argument to SetExtendWordMethod, so bit can be set or unset
 *

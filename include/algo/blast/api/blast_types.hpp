@@ -55,13 +55,20 @@ enum EProgram {
 struct SSeqLoc {
     CConstRef<objects::CSeq_loc>     seqloc;
     mutable CRef<objects::CScope>    scope;
+    CConstRef<objects::CSeq_loc>     mask;
 
     SSeqLoc()
         : seqloc(), scope() {}
     SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s)
-        : seqloc(sl), scope(s) {}
+        : seqloc(sl), scope(s), mask(0) {}
     SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s)
-        : seqloc(&sl), scope(&s) {}
+        : seqloc(&sl), scope(&s), mask(0) {}
+    SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s,
+            const objects::CSeq_loc* m)
+        : seqloc(sl), scope(s), mask(m) {}
+    SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s,
+            const objects::CSeq_loc& m)
+        : seqloc(&sl), scope(&s), mask(&m) {}
 };
 typedef vector<SSeqLoc>   TSeqLocVector;
 typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
@@ -73,6 +80,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/10/07 17:27:38  dondosha
+* Lower case mask removed from options, added to the SSeqLoc structure
+*
 * Revision 1.5  2003/09/05 01:48:38  ucko
 * Use full headers rather than forward declarations, which are
 * insufficient for arguments of C(Const)Ref<>.
