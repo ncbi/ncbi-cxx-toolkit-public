@@ -719,22 +719,6 @@ int CBDB_Test::Run(void)
     return 0;
 }
 
-#include <vector>
-
-using namespace std;
-
-
-template<class T> class MyFunc
-{
-public:
-    void operator() (T& val)
-    {
-        cout << *val << ";";
-    }
-};
-
-
-
 
 ///////////////////////////////////
 // APPLICATION OBJECT  and  MAIN
@@ -750,6 +734,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/04/29 20:50:22  kuznets
+ * Code cleanup
+ *
  * Revision 1.2  2003/04/29 19:04:13  kuznets
  * +Test makefiles
  *
