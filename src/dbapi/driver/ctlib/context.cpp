@@ -221,20 +221,22 @@ CDB_Connection* CTLibContext::Connect(const string&   srv_name,
                 }
             }
         }
+        else { // using server name as a pool name
 
-        if ( srv_name.empty() )
-            return 0;
+            if ( srv_name.empty() )
+                return 0;
 
-        // try to use a server name
-        for (int i = m_NotInUse.NofItems();  i--; ) {
-            CTL_Connection* t_con
-                = static_cast<CTL_Connection*> (m_NotInUse.Get(i));
+            // try to use a server name
+            for (int i = m_NotInUse.NofItems();  i--; ) {
+                CTL_Connection* t_con
+                    = static_cast<CTL_Connection*> (m_NotInUse.Get(i));
 
-            if (srv_name.compare(t_con->ServerName()) == 0) {
-                m_NotInUse.Remove(i);
-                m_InUse.Add((TPotItem) t_con);
-                t_con->Refresh();
-                return Create_Connection(*t_con);
+                if (srv_name.compare(t_con->ServerName()) == 0) {
+                    m_NotInUse.Remove(i);
+                    m_InUse.Add((TPotItem) t_con);
+                    t_con->Refresh();
+                    return Create_Connection(*t_con);
+                }
             }
         }
     }
@@ -874,6 +876,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/07/21 22:00:36  soussov
+ * fixes bug whith pool name mismatch in Connect()
+ *
  * Revision 1.25  2003/07/17 20:45:44  soussov
  * connections pool improvements
  *

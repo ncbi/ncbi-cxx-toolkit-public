@@ -191,20 +191,22 @@ CDB_Connection* CODBCContext::Connect(const string&   srv_name,
                 }
             }
         }
+        else {
 
-        if ( srv_name.empty() )
-            return 0;
-
-        // try to use a server name
-        for (int i = m_NotInUse.NofItems();  i--; ) {
-            CODBC_Connection* t_con
-                = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
-
-            if (srv_name.compare(t_con->ServerName()) == 0) {
-                m_NotInUse.Remove(i);
-                m_InUse.Add((TPotItem) t_con);
-                t_con->Refresh();
-                return Create_Connection(*t_con);
+            if ( srv_name.empty() )
+                return 0;
+            
+            // try to use a server name
+            for (int i = m_NotInUse.NofItems();  i--; ) {
+                CODBC_Connection* t_con
+                    = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+                
+                if (srv_name.compare(t_con->ServerName()) == 0) {
+                    m_NotInUse.Remove(i);
+                    m_InUse.Add((TPotItem) t_con);
+                    t_con->Refresh();
+                    return Create_Connection(*t_con);
+                }
             }
         }
     }
@@ -401,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/07/21 21:58:08  soussov
+ * fixes bug whith pool name mismatch in Connect()
+ *
  * Revision 1.8  2003/07/18 19:20:34  soussov
  * removes SetPacketSize function
  *
