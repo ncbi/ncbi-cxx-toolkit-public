@@ -72,6 +72,9 @@ public:
     NCBI_EXCEPTION_DEFAULT(CBlastException,CException);
 };
 
+// Function to throw a CBlastException, given the error code and message
+void ThrowBlastException(CBlastException::EErrCode code, const char* message);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -79,6 +82,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/13 00:27:04  dondosha
+* Added function to throw a CBlastException given code and message
+*
 * Revision 1.6  2004/03/11 17:11:25  dicuccio
 * Dropped export specifier (not needed on inline class)
 *
