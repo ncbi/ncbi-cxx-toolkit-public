@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/05/02 16:10:07  vasilche
+* CGI: Fixed URL parsing when Content-Length header is missing.
+*
 * Revision 1.40  2000/05/01 16:58:18  vasilche
 * Allow missing Content-Length and Content-Type headers.
 *
@@ -779,7 +782,16 @@ static void s_ParsePostQuery(const string& contentType, const string& str,
 {
     if ( contentType.empty() ||
          contentType == "application/x-www-form-urlencoded" ) {
-        SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
+        // remove trailing end of line '\n' (which could appear if
+        // Content-Length was not specified)
+        SIZE_TYPE err_pos;
+        SIZE_TYPE eol = str.find_first_of("\r\n");
+        if ( eol != NPOS ) {
+             err_pos = CCgiRequest::ParseEntries(str.substr(0, eol), entries);
+        }
+        else {
+             err_pos = CCgiRequest::ParseEntries(str, entries);
+        }
         if ( err_pos != 0 )
             throw CParseException("Init CCgiRequest::ParseFORM(\"" +
                                   str + "\")", err_pos);
