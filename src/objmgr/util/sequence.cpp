@@ -1606,7 +1606,7 @@ void CCdregion_translate::ReadSequenceByLocation (string& seq,
 
 {
     // clear contents of result string
-    seq.clear ();
+    seq.resize(0);
 
     // get vector of sequence under location
     CSeqVector seqv = bsh.GetSequenceView (loc,
@@ -1639,7 +1639,7 @@ void CCdregion_translate::TranslateCdregion (string& prot,
 
 {
     // clear contents of result string
-    prot.clear ();
+    prot.resize(0);
 
     // copy bases from coding region location
     string bases = "";
@@ -1745,6 +1745,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2002/09/13 14:28:34  ucko
+* string::clear() doesn't exist under g++ 2.95, so use resize(0) instead. :-/
+*
 * Revision 1.5  2002/09/12 21:39:13  kans
 * added CCdregion_translate and CCdregion_translate
 *
