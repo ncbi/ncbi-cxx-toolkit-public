@@ -26,7 +26,7 @@
 * Author:  Christiam Camacho
 *
 * File Description:
-*   Definition of ADT to retrieve sequences for the BLAST engine
+*   Declaration of ADT to retrieve sequences for the BLAST engine.
 *
 */
 
@@ -38,7 +38,22 @@
 extern "C" {
 #endif
 
-/** This incomplete type is the only handle to the Blast Sequence Source ADT */
+/** The BlastSeqSrc ADT is an opaque data type that defines an interface which
+ *  is used by the core BLAST code to retrieve sequences.
+ *  The interface currently provides the following services:
+ *  - Retrieving number of sequences in set
+ *  - Retrieving the total length (in bases/residues) of sequences in set.
+ *  - Retrieving the length of the longest sequence in set
+ *  - Retrieving an individual sequence in a user-specified encoding by ordinal
+ *    id (index into the set)
+ *  - Retrieving a sequence identifier for a given ordinal id
+ *  - Retrieving the length of a given sequence in set by ordinal id
+ *  - Allow MT-safe iteration over sequences in set through the
+ *    BlastSeqSrcIterator abstraction
+ *  .
+ *  Implementations of this interface should provide functions for all
+ *  the functions listed above.
+ */
 typedef struct BlastSeqSrc BlastSeqSrc;
 
 /** Function pointer typedef to create a new BlastSeqSrc structure.
@@ -86,9 +101,69 @@ typedef struct GetSeqArg {
 
 /* Return values from GetSeqBlkFnPtr */
 
-#define BLAST_SEQSRC_ERROR      -1  /**< Error while retrieving sequence */
-#define BLAST_SEQSRC_EOF        0   /**< No more sequences available */
-#define BLAST_SEQSRC_SUCCESS    1   /**< Successful sequence retrieval */
+#define BLAST_SEQSRC_ERROR      -2  /**< Error while retrieving sequence */
+#define BLAST_SEQSRC_EOF        -1  /**< No more sequences available */
+#define BLAST_SEQSRC_SUCCESS     0  /**< Successful sequence retrieval */
+
+/******************** BlastSeqSrcIterator API *******************************/
+
+/** Defines the type of data contained in the BlastSeqSrcIterator structure */
+typedef enum BlastSeqSrcItrType {
+    eOidList,   /**< Data is a list of discontiguous ordinal ids (indices) */
+    eOidRange   /**< Data is a range of contiguous ordinal ids (indices) */
+} BlastSeqSrcItrType;
+
+/** Definition of Blast Sequence Source Iterator */
+typedef struct BlastSeqSrcIterator {
+    /** Indicates which member to access: oid_list or oid_range */
+    BlastSeqSrcItrType  itr_type;
+
+    /** Array of ordinal ids used when itr_type is eOidList */
+    unsigned int* oid_list;
+    /** This is a half-closed interval [a,b) */
+    unsigned int  oid_range[2];
+
+    /** Keep track of this iterator's current position */
+    unsigned int  current_pos;
+    /** Size of the chunks to advance over the BlastSeqSrc, also size of 
+      * oid_list member */
+    unsigned int  chunk_sz;
+} BlastSeqSrcIterator;
+
+/** Allocated and initialized an iterator over a BlastSeqSrc. 
+ * @param chunk_sz sets the chunk size of the iterator. [in]
+ */
+BlastSeqSrcIterator* BlastSeqSrcIteratorNew(unsigned int chunk_sz);
+
+/** Frees the BlastSeqSrcIterator structure. 
+ * @param itr BlastSeqSrcIterator to free [in]
+ * @return NULL
+ */
+BlastSeqSrcIterator* BlastSeqSrcIteratorFree(BlastSeqSrcIterator* itr);
+Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* bssp, BlastSeqSrcIterator* itr);
+
+/** Function pointer typedef to obtain the next ordinal id to fetch from the
+ * BlastSeqSrc structure. First argument is the BlastSeqSrc structure used,
+ * second argument is the iterator structure. This structure should allow
+ * multi-threaded iteration over sequence sources such as a BLAST database.
+ * Return value is the next ordinal id, or BLAST_SEQSRC_EOF if no more
+ * sequences are available.
+ */
+typedef Int4 (*AdvanceIteratorFnPtr) (void*, BlastSeqSrcIterator*);
+
+/** Function pointer typedef to obtain the next chunk of ordinal ids for the
+ * BLAST engine to search. By calling this function with a give chunk size
+ * (stored in the iterator structure), one reduces the number of calls which
+ * have to be guarded by a mutex in a multi-threaded environment by examining
+ * the BlastSeqSrc structure infrequently.
+ * First argument is the BlastSeqSrc structure used, second argument is the 
+ * iterator structure which is updated with the next chunk of ordinal ids to
+ * retrieve.
+ * Return value is one of the BLAST_SEQSRC_* defines
+ */
+typedef Int2 (*GetNextChunkFnPtr) (void*, BlastSeqSrcIterator*);
+
+/*****************************************************************************/
 
 /** Structure that contains the information needed for BlastSeqSrcNew to fully
  * populate the BlastSeqSrc structure it returns */
@@ -130,6 +205,8 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
     (*GetGetSeqIdStr(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetSeqLen(bssp, arg) \
     (*GetGetSeqLen(bssp))(GetDataStructure(bssp), arg)
+#define BLASTSeqSrcGetNextChunk(bssp, iterator) \
+    (*GetGetNextChunk(bssp))(GetDataStructure(bssp), iterator)
 
 #define DECLARE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
 DECLARE_ACCESSOR(member_type, member, data_structure_type); \
@@ -151,6 +228,8 @@ DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*);
 
 #ifdef __cplusplus
 }
