@@ -1,5 +1,5 @@
-#ifndef NCBITYPE__H
-#define NCBITYPE__H
+#ifndef CORELIB___NCBITYPE__H
+#define CORELIB___NCBITYPE__H
 
 /*  $Id$
  * ===========================================================================
@@ -28,17 +28,19 @@
  *
  * Author:  Denis Vakatov
  *
- * File Description:
- *
- *   NCBI C/C++ fixed-size types:
- *      Char, Uchar
- *      Int1, Uint1
- *      Int2, Uint2
- *      Int4, Uint4
- *      Int8, Uint8
- *      Ncbi_BigScalar
  *
  */
+
+/// @file ncbitype.h
+///
+/// Defines NCBI C/C++ fixed-size types:
+/// -  Char, Uchar
+/// -  Int1, Uint1
+/// -  Int2, Uint2
+/// -  Int4, Uint4
+/// -  Int8, Uint8
+/// -  Ncbi_BigScalar
+
 
 #include <ncbiconf.h>
 
@@ -86,15 +88,15 @@
 #endif
 
 
-typedef          char  Char;
-typedef signed   char  Schar;
-typedef unsigned char  Uchar;
-typedef signed   char  Int1;
-typedef unsigned char  Uint1;
-typedef signed   short Int2;
-typedef unsigned short Uint2;
-typedef signed   int   Int4;
-typedef unsigned int   Uint4;
+typedef          char  Char;    ///< Alias for char
+typedef signed   char  Schar;   ///< Alias for signed char
+typedef unsigned char  Uchar;   ///< Alias for unsigned char
+typedef signed   char  Int1;    ///< Alias for signed char
+typedef unsigned char  Uint1;   ///< Alias for unsigned char
+typedef signed   short Int2;    ///< Alias for signed short
+typedef unsigned short Uint2;   ///< Alias for unsigned short
+typedef signed   int   Int4;    ///< Alias for signed int
+typedef unsigned int   Uint4;   ///< Alias for unsigned int
 
 
 /* Int8, Uint8
@@ -111,7 +113,10 @@ typedef unsigned int   Uint4;
 #  error "This platform does not support 8-byte integer"
 #endif
 
-typedef signed   INT8_TYPE Int8;
+/// Signed 8 byte sized integer.
+typedef signed   INT8_TYPE Int8;    
+
+/// Unsigned 8 byte sized integer.
 typedef unsigned INT8_TYPE Uint8;
 
 
@@ -139,6 +144,10 @@ typedef unsigned INT8_TYPE Uint8;
 #  define BIG_SIZE SIZEOF_VOIDP
 #endif
 
+/// Define large scalar type.
+///
+/// This is platform dependent. It could be an Int8, long double, double
+/// or void*.
 typedef BIG_TYPE Ncbi_BigScalar;
 
 
@@ -156,6 +165,9 @@ typedef BIG_TYPE Ncbi_BigScalar;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/09/03 14:46:33  siyan
+ * Minor doxygen related changes.
+ *
  * Revision 1.12  2003/04/01 19:19:03  siyan
  * Added doxygen support
  *
