@@ -396,6 +396,10 @@ public:
     /// Translate a PIG to a GI.
     bool PigToGi(TPIG pig, TGI & gi) const;
     
+    bool AccessionToOid(const string & acc, TOID & oid) const;
+
+    void AccessionToOids(const string & acc, vector<TOID> & oids) const;
+
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
