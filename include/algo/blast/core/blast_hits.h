@@ -202,7 +202,7 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
  * @param align_length_ptr The alignment length, including gaps [out]
  */
 Int2
-BlastHSPGetNumIdentical(Uint1* query, Uint1* subject, 
+BlastHSPGetNumIdentities(Uint1* query, Uint1* subject, 
    BlastHSP* hsp, Boolean is_gapped, Int4* num_ident_ptr, 
    Int4* align_length_ptr);
 
@@ -215,7 +215,7 @@ BlastHSPGetNumIdentical(Uint1* query, Uint1* subject,
  * @param align_length_ptr The alignment length, including gaps [out]
  */
 Int2
-BlastOOFGetNumIdentical(Uint1* query, Uint1* subject, 
+BlastOOFGetNumIdentities(Uint1* query, Uint1* subject, 
    BlastHSP* hsp, Uint1 program, 
    Int4* num_ident_ptr, Int4* align_length_ptr);
 
