@@ -123,11 +123,7 @@ on clicked theObject
 		
 		(* Help button pressed *)
 		if theObject is equal to button "helpButton" then
-			tell application "Safari"
-				activate
-				--open location "http://www.ncbi.nlm.nih.gov"
-				open location "http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2"
-			end tell
+			open location "http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2"
 		end if
 		
 		(* Handle Paths *)
@@ -423,6 +419,9 @@ end x_ShowAlert
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/09/23 12:05:33  lebedev
+ * Help button added with link to NCBI C++ Toolkit reference page
+ *
  * Revision 1.7  2004/08/13 13:41:45  lebedev
  * Display warning if installed xCode version is less than 1.5
  *
