@@ -47,6 +47,22 @@ extern const Uint1 kNuclMask;
 /** NCBISTDAA element used to mask residues in BLAST */
 extern const Uint1 kProtMask;
 
+/** Repeats filtering default options. */
+#define REPEATS_SEARCH_EVALUE 0.1       /**< Default e-value threshold */
+#define REPEATS_SEARCH_PENALTY -1       /**< Default mismatch penalty */
+#define REPEATS_SEARCH_GAP_OPEN 2       /**< Default gap opening cost */
+#define REPEATS_SEARCH_GAP_EXTEND 1     /**< Default gap extension cost */
+#define REPEATS_SEARCH_WORD_SIZE 11     /**< Default word size */
+#define REPEATS_SEARCH_XDROP_UNGAPPED 40/**< Default X-dropoff for ungapped 
+                                           extension */
+#define REPEATS_SEARCH_XDROP_FINAL 90   /**< Default X-dropoff for gapped 
+                                           extension with traceback */
+#define REPEATS_SEARCH_FILTER_STRING "F"/**< Default filter string - 
+                                           no filtering */
+
+/** Largest gap allowed to be filled between repeat mask intervals */
+#define REPEAT_MASK_LINK_VALUE 5
+
 /** Create and initialize a new sequence interval.
  * @param head existing BlastSeqLoc to add onto, if *head
  *   is NULL then it will be set to new BlastSeqLoc, may be NULL [in|out]
@@ -195,6 +211,20 @@ Int2
 BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
     BlastMaskLoc *filter_maskloc, EBlastProgramType program_number);
 
+
+/** Parses out thre repeats filtering option from a filter string option. 
+ * @param filter_string Full filtering string, e.g. "m L;R -d rodents.lib" [in]
+ * @return Part of filtering string corresponding to repeats filtering.
+ */
+char* Blast_GetRepeatsFilterOption(const char* filter_string);
+
+/** Extracts repeats database name from the repeat filtering options string.
+ * @param repeat_options Repeat filtering string, e.g. "R -d rodents.lib" [in]
+ * @param dbname Database name. Human repeats database "humrep" is returned if 
+ *               database is not specified in the option. [out]
+ */
+void 
+Blast_ParseRepeatOptions(const char* repeat_options, char** dbname);
 
 #ifdef __cplusplus
 }

@@ -1264,3 +1264,50 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, B
 
     return 0;
 }
+
+char* Blast_GetRepeatsFilterOption(const char* filter_string)
+{
+    if (!filter_string)
+        return NULL;
+
+    char* repeat_filter_string = NULL;
+    const char* ptr = strchr(filter_string, 'R');
+    
+    if (ptr) {
+        const char* end = strstr(ptr, ";");
+        unsigned int length;
+        if (end)
+            length = (unsigned int) (end - ptr);
+        else
+            length = strlen(ptr);
+        repeat_filter_string = (char*) malloc(length+1);
+        strncpy(repeat_filter_string, ptr, length);
+        repeat_filter_string[length] = NULLB;
+    }
+    
+    return repeat_filter_string;
+}
+
+void 
+Blast_ParseRepeatOptions(const char* repeat_options, char** dbname)
+{
+    char* ptr;
+
+    if (!dbname)
+        return;
+    if (!repeat_options || (*repeat_options != 'R')) {
+        *dbname = NULL;
+        return;
+    }
+    
+    ptr = strstr(repeat_options, "-d");
+    if (!ptr) {
+        *dbname = strdup("humrep");
+    } else {
+        ptr += 2;
+        while (*ptr == ' ' || *ptr == '\t')
+            ++ptr;
+        *dbname = strdup(ptr);
+    }
+}
+
