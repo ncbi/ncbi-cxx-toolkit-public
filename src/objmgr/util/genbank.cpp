@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/10/30 20:27:04  ucko
+* Force ASCII from Seq_vectors.
+* Take advantage of new seqfeat functionality.
+* Take advantage of CSeq_loc::GetTotalRange.
+*
 * Revision 1.9  2001/10/18 18:25:38  ucko
 * Fix off-by-one keyword-formatting error.
 * Remove unnecessary code to force use of GI IDs.
@@ -726,68 +731,6 @@ bool CGenbankWriter::WriteSource(const CBioseqHandle& handle)
 }
 
 
-static int s_FirstLocation(const CSeq_loc& loc)
-{
-    // XXX - should honor fuzz.
-    switch (loc.Which()) {
-    case CSeq_loc::e_Whole:
-        return 0;
-    case CSeq_loc::e_Int:
-        return loc.GetInt().GetFrom();
-    case CSeq_loc::e_Packed_int:
-        return loc.GetPacked_int().Get().front()->GetFrom();
-    case CSeq_loc::e_Pnt:
-        return loc.GetPnt().GetPoint();
-    case CSeq_loc::e_Packed_pnt:
-        return loc.GetPacked_pnt().GetPoints().front();
-    case CSeq_loc::e_Mix:
-        return s_FirstLocation(*loc.GetMix().Get().front());
-    case CSeq_loc::e_Equiv:
-        return s_FirstLocation(*loc.GetEquiv().Get().front());
-    case CSeq_loc::e_Bond:
-        if (loc.GetBond().IsSetB()) {
-            return min(loc.GetBond().GetA().GetPoint(),
-                       loc.GetBond().GetB().GetPoint());
-        } else {
-            return loc.GetBond().GetA().GetPoint();
-        }
-    default:
-        return -1;
-    }
-}
-
-
-static int s_LastLocation(const CSeq_loc& loc)
-{
-    // XXX - should honor fuzz.
-    switch (loc.Which()) {
-    case CSeq_loc::e_Whole:
-        return loc.GetLength() - 1;
-    case CSeq_loc::e_Int:
-        return loc.GetInt().GetTo();
-    case CSeq_loc::e_Packed_int:
-        return loc.GetPacked_int().Get().back()->GetTo();
-    case CSeq_loc::e_Pnt:
-        return loc.GetPnt().GetPoint();
-    case CSeq_loc::e_Packed_pnt:
-        return loc.GetPacked_pnt().GetPoints().back();
-    case CSeq_loc::e_Mix:
-        return s_LastLocation(*loc.GetMix().Get().back());
-    case CSeq_loc::e_Equiv:
-        return s_LastLocation(*loc.GetEquiv().Get().back());
-    case CSeq_loc::e_Bond:
-        if (loc.GetBond().IsSetB()) {
-            return max(loc.GetBond().GetA().GetPoint(),
-                       loc.GetBond().GetB().GetPoint());
-        } else {
-            return loc.GetBond().GetA().GetPoint();
-        }
-    default:
-        return -1;
-    }
-}
-
-
 static string s_FormatTitle(const CTitle& title) {
     string result;
     iterate (CTitle::Tdata, it, title.Get()) {
@@ -952,16 +895,17 @@ SReference::SReference(const CPubdesc& desc, const CSeq_loc& loc,
                 if (it != loc.GetMix().Get().begin()) {
                     location += "; ";
                 }
-                location += (NStr::IntToString(s_FirstLocation(**it) + 1)
-                             + " to "
-                             + NStr::IntToString(s_LastLocation(**it) + 1));
+                CSeq_loc::TRange range = (*it)->GetTotalRange();
+                location += (NStr::IntToString(range.GetFrom() + 1) + " to "
+                             + NStr::IntToString(range.GetTo() + 1));
             }
             break;
         }
         default:
+            CSeq_loc::TRange range = loc.GetTotalRange();
             location = (length_unit + ' '
-                        + NStr::IntToString(s_FirstLocation(loc) + 1)
-                        + " to " + NStr::IntToString(s_LastLocation(loc) + 1));
+                        + NStr::IntToString(range.GetFrom() + 1) + " to "
+                        + NStr::IntToString(range.GetTo() + 1));
             break;
         }
         break;
@@ -1348,60 +1292,6 @@ static string s_FormatDbtag(const CDbtag& dbtag)
 }
 
 
-static string s_FeatureName(const CSeqFeatData& data)
-{
-    switch (data.Which()) {
-    case CSeqFeatData::e_Gene:
-        return "gene";
-    case CSeqFeatData::e_Org:
-        return "source";
-    case CSeqFeatData::e_Cdregion:
-        return "CDS";
-    case CSeqFeatData::e_Prot:
-        return "Protein"; // XXX -- only Genpept?
-    case CSeqFeatData::e_Rna:
-        switch (data.GetRna().GetType()) {
-        case CRNA_ref::eType_premsg:  return "precursor_rna";
-        case CRNA_ref::eType_mRNA:    return "mRNA";
-        case CRNA_ref::eType_tRNA:    return "tRNA";
-        case CRNA_ref::eType_rRNA:    return "rRNA";
-        case CRNA_ref::eType_snRNA:   return "snRNA";
-        case CRNA_ref::eType_scRNA:   return "scRNA";
-        default:                      return "misc_RNA";
-        }
-    case CSeqFeatData::e_Imp:
-        return data.GetImp().GetKey();
-    case CSeqFeatData::e_Site:
-        switch (data.GetSite()) {
-        case CSeqFeatData::eSite_binding:
-        case CSeqFeatData::eSite_metal_binding:
-        case CSeqFeatData::eSite_lipid_binding:
-            return "misc_binding";
-        case CSeqFeatData::eSite_np_binding:
-            return "protein_bind";
-        case CSeqFeatData::eSite_dna_binding:
-            return "primer_bind"; // ?
-        case CSeqFeatData::eSite_signal_peptide:
-            return "sig_peptide";
-        case CSeqFeatData::eSite_transit_peptide:
-            return "transit_peptide";
-        default:
-            break;
-        }
-        break;
-    case CSeqFeatData::e_Txinit:
-        return "promoter";
-    case CSeqFeatData::e_Het:
-        return "misc_binding";
-    case CSeqFeatData::e_Biosrc:
-        return "source";
-    default:
-        break;
-    }
-    return "misc_feature";
-}
-
-
 static const CSeq_id& s_GetID(const CSeq_loc& loc)
 {
     static CSeq_id unknown;
@@ -1428,27 +1318,9 @@ static const CSeq_id& s_GetID(const CSeq_loc& loc)
 }
 
 
-static bool s_StartsBefore(CConstRef<CSeq_feat> f1, CConstRef<CSeq_feat> f2)
+static bool s_CompareFeats(CConstRef<CSeq_feat> f1, CConstRef<CSeq_feat> f2)
 {
-    const CSeq_loc& loc1 = f1->GetLocation();
-    const CSeq_loc& loc2 = f2->GetLocation();
-    if (SerialEquals<CSeq_id>(s_GetID(loc1), s_GetID(loc2))) {
-        return s_FirstLocation(loc1) < s_FirstLocation(loc2);
-    } else if (f1->IsSetProduct()) {        
-        if (SerialEquals<CSeq_id>(s_GetID(f1->GetProduct()), s_GetID(loc2))) {
-            return s_FirstLocation(f1->GetProduct()) < s_FirstLocation(loc2);
-        } else if (f2->IsSetProduct()
-                   &&  SerialEquals<CSeq_id>(s_GetID(f1->GetProduct()),
-                                             s_GetID(f2->GetProduct()))) {
-            return s_FirstLocation(f1->GetProduct())
-                < s_FirstLocation(f2->GetProduct());
-        }
-    }
-    if (f2->IsSetProduct()
-        &&  SerialEquals<CSeq_id>(s_GetID(loc1), s_GetID(f2->GetProduct()))) {
-        return s_FirstLocation(loc1) < s_FirstLocation(f2->GetProduct());
-    }
-    return false;
+    return *f1 < *f2;
 }
 
 
@@ -1542,10 +1414,11 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
         }
         v.push_back(CConstRef<CSeq_feat>(&*feat));
     }
-    sort(v.begin(), v.end(), s_StartsBefore);
+    sort(v.begin(), v.end(), s_CompareFeats);
 
     iterate (TFeatVect, feat, v) {
-        string name = s_FeatureName((*feat)->GetData());
+        string name
+            = (*feat)->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
         if ((*feat)->IsSetProduct()) {
             CNcbiOstrstream loc_stream, prod_stream;
             FormatFeatureLocation((*feat)->GetLocation(), seq, loc_stream);
@@ -1905,6 +1778,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                 }
                 {{
                     CSeq_vector vec = m_Scope.GetSequence(prot_handle);
+                    vec.SetIupacCoding();
                     string data;
                     data.resize(vec.size());
                     for (SIZE_TYPE n = 0; n < vec.size(); n++) {
@@ -2217,6 +2091,7 @@ void CGenbankWriter::WriteSourceQualifiers(const CBioSource& source)
 bool CGenbankWriter::WriteSequence(const CBioseqHandle& handle)
 {
     CSeq_vector vec = m_Scope.GetSequence(handle);
+    vec.SetIupacCoding();
     if (m_Format == eFormat_Genbank) {
         size_t a = 0, c = 0, g = 0, t = 0, other = 0;
         for (size_t pos = 0;  pos < vec.size();  ++pos) {
