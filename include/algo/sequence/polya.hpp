@@ -193,6 +193,9 @@ TSignedSeqPos FindPolyA(Iterator begin, Iterator end)
         if (uStrmMotif != end) {
             uStrmMotif += 6; // skip over upstream motif
             pos = uStrmMotif;
+            if (end - pos < 10) { //min skip of 10
+                break;
+            }
 
             Iterator maxCleavage = (end - pos < 30) ? end : pos + 30;
 
@@ -212,7 +215,7 @@ TSignedSeqPos FindPolyA(Iterator begin, Iterator end)
 
             //now let's look for poly-adenylated tail..
             unsigned int numA = 0, numOther = 0;
-            while (pos != end) {
+            while (pos < end) {
                 if (*pos == 'A') {
                     ++numA;
                 } else {
@@ -264,6 +267,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2004/05/12 19:13:36  johnson
+* make sure no iterator ever goes past end
+*
 * Revision 1.5  2004/05/11 18:36:56  johnson
 * made reverse iterator more standard (== base-1); avoid add a value to the
 * iterator that could potentially take it past the end
