@@ -63,7 +63,7 @@ public:
 private:
     void x_GatherInfo(CFFContext& ctx);
     // data
-    CConstRef<CSeq_loc>     m_Loc;
+    CRef<CSeq_loc>     m_Loc;
 };
 
 
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/19 17:49:35  shomrat
+* use non-const reference
+*
 * Revision 1.1  2003/12/17 19:45:27  shomrat
 * Initial revision (adapted from flat lib)
 *
