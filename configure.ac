@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.244 2003/12/09 15:53:00 ucko Exp $
+#  $Id: configure.ac,v 1.245 2003/12/11 01:41:48 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3120,7 +3120,7 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 : ${SQLITE_PATH=$NCBI/sqlite}
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
  AC_LANG_PROGRAM([#include <sqlite.h>],
-    [sqlite* db = sqlite_open("foo.db", 0, NULL);]))
+    [char *errs; sqlite* db = sqlite_open("foo.db", 0, &errs);]))
 
 
 ### Image libraries

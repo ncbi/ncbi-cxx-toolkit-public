@@ -17610,7 +17610,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-sqlite* db = sqlite_open("foo.db", 0, NULL);
+char *errs; sqlite* db = sqlite_open("foo.db", 0, &errs);
   ;
   return 0;
 }
