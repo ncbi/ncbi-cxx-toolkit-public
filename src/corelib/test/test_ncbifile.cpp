@@ -609,16 +609,39 @@ static void s_TEST_MemoryFile(void)
 {
     static const char   s_FileName[] = "test.tmp";
     static const char   s_Data[]     = "test data";
+    static const char   s_DataTest[] = "teen data";
     static const size_t s_DataLen    = sizeof(s_Data) - 1;
 
     // Create test file 
     FILE* file = fopen(s_FileName, "w+");
     assert( file );
+    fclose(file);
+    // Check if the file exists now and it size is 0
+    CFile f(s_FileName);
+    assert( f.Exists() );
+    assert( f.GetLength() == 0 );
+
+    // Common file checks
+    {{
+        // Map absent file, expect an exception.
+        try {
+            CMemoryFile m("some_absent_file_name");
+            _TROUBLE;
+        } catch (CFileException&) { }
+
+        // Map empty file, expect an exception also.
+        CMemoryFile m(s_FileName);
+        assert( m.GetPtr() == 0);
+        // Do not expect an exception here!!! (special case)
+        assert( m.GetSize() == 0);
+    }}
+
+    // Write something into out test file
+    file = fopen(s_FileName, "w+");
+    assert( file );
     fputs( s_Data, file);
     fclose(file);
-    
     // Check if the file exists now
-    CFile f(s_FileName);
     assert( f.Exists() );
     assert( f.GetLength() == s_DataLen );
 
@@ -637,8 +660,13 @@ static void s_TEST_MemoryFile(void)
 
         // Unmap second copy
         assert( m2.Unmap() );
-        assert( m2.GetSize() == -1 );
-        assert( m2.GetPtr()  ==  0 );
+        assert( m2.GetPtr() == 0);
+
+        try {
+            // Expect an exception now
+            m2.GetSize();
+            _TROUBLE;
+        } catch (CFileException&) { }
         assert( m2.Unmap() );
     }}
 
@@ -690,6 +718,34 @@ static void s_TEST_MemoryFile(void)
         assert( m1.GetSize() == m2.GetSize() );
         // m2 must contain the original data
         assert( memcmp(m2.GetPtr(), s_Data, s_DataLen) == 0 );
+    }}
+
+    // Length and offset test
+
+    {{
+        // Map file into memory
+        CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
+                       CMemoryFile::eMMS_Shared, 2, 3);
+        assert( m1.GetFileSize() == s_DataLen );
+        assert( m1.GetSize() == 3 );
+        assert( m1.GetOffset() == 2 );
+
+        // Map second copy of the file into the memory
+        CMemoryFile m2(s_FileName, CMemoryFile::eMMP_Read,
+                       CMemoryFile::eMMS_Shared);
+
+        // Change something in first copy
+        char* ptr = (char*)m1.GetPtr();
+        memcpy(ptr,"en ", 3);
+        assert( m1.Flush() );
+        assert( m2.GetSize() == s_DataLen );
+
+        // m2 must contain changes made via m1 
+        assert( memcmp(m2.GetPtr(), s_DataTest, s_DataLen) == 0 );
+
+        // Restore previous data
+        memcpy(ptr, s_Data, s_DataLen);
+        // Flushing data to disk at memory unmapping in the destructor
     }}
 
     // Remove the file
@@ -757,6 +813,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/07/28 15:49:27  ivanov
+ * Changed s_TEST_MemoryFile() accordingly last changes in the CMemoryFile,
+ * added some new tests.
+ *
  * Revision 1.38  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
