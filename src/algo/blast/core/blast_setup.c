@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.22  2003/06/05 17:15:23  dondosha
+* SeqLoc is no longer used for query masking/filtering
+*
 * Revision 1.21  2003/05/30 15:52:11  coulouri
 * various lint-induced cleanups
 *
@@ -273,6 +276,7 @@ static char const rcsid[] = "$Id$";
 #include <sequtil.h>
 #include <objloc.h>
 #include <blast_util.h>
+#include <blast_filter.h>
 
 extern Uint1 FrameToDefine PROTO((Int2 frame));
 extern void HackSeqLocId(SeqLocPtr slp, SeqIdPtr id);
@@ -286,7 +290,6 @@ extern Int4 SeqLocTotalLen (CharPtr prog_name, SeqLocPtr slp);
 /* BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
  *	Should be moved to blastkar.c (or it's successor) in the future.
 */
-
 Int2 
 BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp, const BlastScoringOptionsPtr scoring_options, const Uint1 program)
 {
@@ -518,821 +521,37 @@ Int2 BLAST_GetTranslatedSeqLoc(SeqLocPtr query_slp,
 */
 static Int2
 BlastSetUp_MaskTheResidues(Uint1Ptr buffer, Int4 max_length, Boolean is_na,
-	SeqLocPtr mask_slp, Boolean reverse, Int4 offset)
+	ValNodePtr mask_loc, Boolean reverse, Int4 offset)
 {
-	SeqLocPtr slp=NULL;
-	Int2 status=0;
-        Int4 index, start, stop;
-	Uint1 mask_letter;
-
-	if (is_na)
-		mask_letter = 14;
-	else
-		mask_letter = 21;
-
-       
-	while (mask_slp)
-	{
-		slp=NULL;
-        	while((slp = SeqLocFindNext(mask_slp, slp))!=NULL)
-        	{
-			if (reverse)
-			{
-				start = max_length - 1 - SeqLocStop(slp);
-				stop = max_length - 1 - SeqLocStart(slp);
-			}
-			else
-			{
-              			start = SeqLocStart(slp);
-              			stop = SeqLocStop(slp);
-			}
-
-			start -= offset;
-			stop  -= offset;
-
-			for (index=start; index<=stop; index++)
-			{
-				buffer[index] = mask_letter;
-			}
-        	}
-		mask_slp = mask_slp->next;
-	}
-
-	return status;
+   DoubleIntPtr loc = NULL;
+   Int2 status = 0;
+   Int4 index, start, stop;
+   Uint1 mask_letter;
+   
+   if (is_na)
+      mask_letter = 14;
+   else
+      mask_letter = 21;
+   
+   for ( ; mask_loc; mask_loc = mask_loc->next) {
+      loc = (DoubleIntPtr) mask_loc->data.ptrvalue;
+      if (reverse)	{
+         start = max_length - 1 - loc->i2;
+         stop = max_length - 1 - loc->i1;
+      } else {
+         start = loc->i1;
+         stop = loc->i2;
+      }
+      
+      start -= offset;
+      stop  -= offset;
+      
+      for (index = start; index <= stop; index++)
+         buffer[index] = mask_letter;
+   }
+   
+   return status;
 }
-
-/** Used for HeapSort, compares two SeqLoc's by starting position. */
-static int LIBCALLBACK MySeqLocSortByStartPosition(VoidPtr vp1, VoidPtr vp2)
-
-{
-	SeqLocPtr slp1, slp2;
-
-	slp1 = *((SeqLocPtr PNTR) vp1);
-	slp2 = *((SeqLocPtr PNTR) vp2);
-
-	if (SeqLocStart(slp1) < SeqLocStart(slp2))
-		return -1;
-	else if (SeqLocStart(slp1) > SeqLocStart(slp2))
-		return 1;
-	else
-		return 0;
-}
-
-/** Go through all SeqLoc's on the ValNodePtr seqloc_list, combine any that
- * overlap. Deallocate the memory for the SeqLoc's that were on the list,
- * produce a new (merged) SeqLoc. 
- * @param seqloc_list The SeqLoc's to be merged, SEQLOC_MIX expected of
- *                    PACKED_INTS expected [in] 
- * @param seqloc_out The new (merged) seqloc. [out]
-*/
-static Int2
-CombineSeqLocs(SeqLocPtr seqloc_list, SeqLocPtr *seqloc_out)
-
-{
-	Int2 status=0;		/* retrun value. */
-	Int4 start, stop;	/* USed to merge overlapping SeqLoc's. */
-	SeqLocPtr seqloc_var, new_seqloc=NULL;
-	SeqLocPtr my_seqloc=NULL, tmp_seqloc;
-	SeqLocPtr my_seqloc_head=NULL;
-	SeqIntPtr seq_int;
-
-	/* Put all the SeqLoc's into one big linked list. */
-	while (seqloc_list)
-	{
-		tmp_seqloc = seqloc_list->data.ptrvalue;
-		if (tmp_seqloc->choice == SEQLOC_PACKED_INT)
-			tmp_seqloc = tmp_seqloc->data.ptrvalue;
-
-		seqloc_list = seqloc_list->next;
-
-		if (my_seqloc_head == NULL) {
-                   my_seqloc_head = my_seqloc = 
-                      (SeqLocPtr)MemDup(tmp_seqloc, sizeof(SeqLoc));
-		} else {
-                   my_seqloc->next = 
-                      (SeqLocPtr)MemDup(tmp_seqloc, sizeof(SeqLoc));
-                   my_seqloc = my_seqloc->next;
-                }
-                
-                /* Copy all SeqLocs, so my_seqloc points at the end of the 
-                   chain */
-		while (my_seqloc->next) {		
-                   my_seqloc->next = 
-                      (SeqLocPtr)MemDup(my_seqloc->next, sizeof(SeqLoc));
-                   my_seqloc = my_seqloc->next;
-		}
-	}
-
-	/* Sort them by starting position. */
-	my_seqloc_head = (SeqLocPtr) ValNodeSort ((ValNodePtr) my_seqloc_head, MySeqLocSortByStartPosition);
-
-	start = SeqLocStart(my_seqloc_head);
-	stop = SeqLocStop(my_seqloc_head);
-	seqloc_var = my_seqloc_head;
-
-
-	while (seqloc_var)
-	{
-		if (seqloc_var->next && stop+1 >= SeqLocStart(seqloc_var->next))
-		{
-			stop = MAX(stop, SeqLocStop(seqloc_var->next));
-		}
-		else
-		{
-			seq_int = SeqIntNew();
-			seq_int->from = start;
-			seq_int->to = stop;
-			seq_int->strand = Seq_strand_plus;
-			seq_int->id = SeqIdDup(SeqIdFindBest(SeqLocId(seqloc_var), SEQID_GI));
-                	ValNodeAddPointer(&new_seqloc, SEQLOC_INT, seq_int);
-			if (seqloc_var->next)
-			{
-				start = SeqLocStart(seqloc_var->next);
-				stop = SeqLocStop(seqloc_var->next);
-			}
-		}
-		seqloc_var = seqloc_var->next;
-	}
-
-	if (new_seqloc)
-		ValNodeAddPointer(seqloc_out, SEQLOC_PACKED_INT, new_seqloc);
-
-        /* Free memory allocated for the temporary list of SeqLocs */
-        while (my_seqloc_head) {
-           my_seqloc = my_seqloc_head->next;
-           MemFree(my_seqloc_head);
-           my_seqloc_head = my_seqloc;
-        }
-
-	return status;
-}
-
-#define CC_WINDOW 22
-#define CC_CUTOFF 40.0
-#define CC_LINKER 32
-
-#define BLASTOPTIONS_BUFFER_SIZE 128
-
-/** Parses options used for dust.
- * @param ptr buffer containing instructions. [in]
- * @param level sets level for dust. [out]
- * @param window sets window for dust [out]
- * @param cutoff sets cutoff for dust. [out] 
- * @param linker sets linker for dust. [out]
-*/
-static Int2
-parse_dust_options(const Char *ptr, Int4Ptr level, Int4Ptr window,
-	Int4Ptr cutoff, Int4Ptr linker)
-
-{
-	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
-	Int4 arg, index, index1, window_pri=-1, linker_pri=-1, level_pri=-1, cutoff_pri=-1;
-	long	tmplong;
-
-	arg = 0;
-	index1 = 0;
-	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE; index++)
-	{
-		if (*ptr == ' ' || *ptr == NULLB)
-		{
-			buffer[index1] = NULLB;
-			index1 = 0;
-			switch(arg) {
-				case 0:
-					sscanf(buffer, "%ld", &tmplong);
-					level_pri = tmplong;
-					break;
-				case 1:
-					sscanf(buffer, "%ld", &tmplong);
-					window_pri = tmplong;
-					break;
-				case 2:
-					sscanf(buffer, "%ld", &tmplong);
-					cutoff_pri = tmplong;
-					break;
-				case 3:
-					sscanf(buffer, "%ld", &tmplong);
-					linker_pri = tmplong;
-					break;
-				default:
-					break;
-			}
-
-			arg++;
-			while (*ptr == ' ')
-				ptr++;
-
-			/* end of the buffer. */
-			if (*ptr == NULLB)
-				break;
-		}
-		else
-		{
-			buffer[index1] = *ptr; ptr++;
-			index1++;
-		}
-	}
-
-	*level = level_pri; 
-	*window = window_pri; 
-	*cutoff = cutoff_pri; 
-	*linker = linker_pri; 
-
-	return 0;
-}
-
-/** parses a string to set three seg options. 
- * @param ptr buffer containing instructions [in]
- * @param window returns "window" for seg algorithm. [out]
- * @param locut returns "locut" for seg. [out]
- * @param hicut returns "hicut" for seg. [out]
-*/
-static Int2
-parse_seg_options(const Char *ptr, Int4Ptr window, FloatHiPtr locut, FloatHiPtr hicut)
-
-{
-	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
-	Int4 arg, index, index1; 
-	long	tmplong;
-	FloatHi	tmpdouble;
-
-	arg = 0;
-	index1 = 0;
-	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE; index++)
-	{
-		if (*ptr == ' ' || *ptr == NULLB)
-		{
-			buffer[index1] = NULLB;
-			index1 = 0;
-			switch(arg) {
-				case 0:
-					sscanf(buffer, "%ld", &tmplong);
-					*window = tmplong;
-					break;
-				case 1:
-					sscanf(buffer, "%le", &tmpdouble);
-					*locut = tmpdouble;
-					break;
-				case 2:
-					sscanf(buffer, "%le", &tmpdouble);
-					*hicut = tmpdouble;
-					break;
-				default:
-					break;
-			}
-
-			arg++;
-			while (*ptr == ' ')
-				ptr++;
-
-			/* end of the buffer. */
-			if (*ptr == NULLB)
-				break;
-		}
-		else
-		{
-			buffer[index1] = *ptr; ptr++;
-			index1++;
-		}
-	}
-
-	return 0;
-}
-
-/** Coiled-coiled algorithm parameters. 
- * @param ptr buffer containing instructions. [in]
- * @param window returns window for coil-coiled algorithm. [out]
- * @param cutoff cutoff for coil-coiled algorithm [out]
- * @param linker returns linker [out]
-*/
-static Int2
-parse_cc_options(const Char *ptr, Int4Ptr window, FloatHiPtr cutoff, Int4Ptr linker)
-
-{
-	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
-	Int4 arg, index, index1;
-	long	tmplong;
-	FloatHi	tmpdouble;
-
-	arg = 0;
-	index1 = 0;
-	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE; index++)
-	{
-		if (*ptr == ' ' || *ptr == NULLB)
-		{
-			buffer[index1] = NULLB;
-			index1 = 0;
-			switch(arg) {
-				case 0:
-					sscanf(buffer, "%ld", &tmplong);
-					*window = tmplong;
-					break;
-				case 1:
-					sscanf(buffer, "%le", &tmpdouble);
-					*cutoff = tmpdouble;
-					break;
-				case 2:
-					sscanf(buffer, "%ld", &tmplong);
-					*linker = tmplong;
-					break;
-				default:
-					break;
-			}
-
-			arg++;
-			while (*ptr == ' ')
-				ptr++;
-
-			/* end of the buffer. */
-			if (*ptr == NULLB)
-				break;
-		}
-		else
-		{
-			buffer[index1] = *ptr; ptr++;
-			index1++;
-		}
-	}
-
-	return 0;
-}
-
-/** Copies filtering commands for one filtering algorithm from "instructions" to
- * "buffer". 
- * ";" is a delimiter for the commands for different algorithms, so it stops
- * copying when a ";" is found. 
- * Example filtering string: "m L; R -d rodents.lib"
- * @param instructions filtering commands [in] 
- * @param buffer filled with filtering commands for one algorithm. [out]
-*/
-static const Char *
-BlastSetUp_load_options_to_buffer(const Char *instructions, CharPtr buffer)
-{
-	Boolean not_started=TRUE;
-	CharPtr buffer_ptr;
-	const Char *ptr;
-	Int4 index;
-
-	ptr = instructions;
-	buffer_ptr = buffer;
-	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE && *ptr != NULLB; index++)
-	{
-		if (*ptr == ';')
-		{	/* ";" is a delimiter for different filtering algorithms. */
-			ptr++;
-			break;
-		}
-		/* Remove blanks at the beginning. */
-		if (not_started && *ptr == ' ')
-		{
-			ptr++;
-		}
-		else
-		{
-			not_started = FALSE;
-			*buffer_ptr = *ptr;
-			buffer_ptr++; ptr++;
-		}
-	}
-
-	*buffer_ptr = NULLB;
-
-	if (not_started == FALSE)
-	{	/* Remove trailing blanks. */
-		buffer_ptr--;
-		while (*buffer_ptr == ' ' && buffer_ptr > buffer)
-		{
-			*buffer_ptr = NULLB;
-			buffer_ptr--;
-		}
-	}
-
-	return ptr;
-}
-
-/** This function takes the list of filtered SeqLoc's (i.e., regions that 
- * should not be searches or not added to lookup table) and makes up a set 
- * of DoubleIntPtr's that should be searched (that is, takes the 
- * complement). If the entire sequence is filtered, then a DoubleInt is 
- * created and both of its elements (i1 and i2) are set to -1 to indicate 
- * this. 
- * If filter_slp is NULL, a DoubleInt for full span of the slp is created.
- * @param slp SeqLoc of sequence. [in]
- * @param filter_slp SeqLoc of filtered region. [in]
- * @param reverse Should locations from filter_slp be reversed? [in]
- * @param vnp_out Linked list of DoubleIntPtrs with offsets. [out]
- * @param offset Offset to be added to any start/stop [out]
-*/
-static Int2
-BlastSetUp_CreateDoubleInt(SeqLocPtr slp, SeqLocPtr filter_slp, 
-   Boolean reverse, ValNodePtr *vnp_out, Int4 *offset)
-
-{
-	DoubleIntPtr double_int=NULL; /* stores start/stop for each non-filtered region.*/
-	Int2 status=0;		/* return value. */
-	Int2 overlap;		/* stores return value of SeqLocCompare. */
-	Int4 seqloc_start=0;  /* Start of this SeqLoc, with added offset */
-        Int4 seqloc_end = 0;    /* End of this SeqLoc, with added offset */
-        Int4 filter_start, filter_end; /* Start and end of the SeqLoc for
-                                          the filtered segment */
-        
-	if (offset)
-	{
-		seqloc_start = *offset;
-                seqloc_end = *offset;
-                /* adjust offset so it's ready when function returns. */
-		*offset += SeqLocStop(slp) + 1;  
-	}
-	seqloc_start += SeqLocStart(slp);
-        seqloc_end += SeqLocStop(slp);
-
-	/* Check if filter_slp covers entire slp. */
-	overlap = SeqLocCompare(slp, filter_slp);
-	if (overlap == SLC_A_IN_B || overlap == SLC_A_EQ_B)
-	{
-		double_int = MemNew(sizeof(DoubleInt));
-		double_int->i1 = -1;
-		double_int->i2 = -1;
-		ValNodeAddPointer(vnp_out, 0, double_int);
-		filter_slp = NULL; /* Entire query is filtered. */
-		return 0;
-	}
-
-	if (filter_slp)
-	{
-		Boolean first=TRUE;	/* Specifies beginning of query. */
-		Boolean last_interval_open=TRUE; /* if TRUE last interval needs to be closed. */
-
-		while (filter_slp)
-		{
-			SeqLocPtr tmp_slp=NULL;
-
-			while((tmp_slp = SeqLocFindNext(filter_slp, tmp_slp))!=NULL)
-			{
-                           if (reverse) {
-                              filter_start = 
-                                 seqloc_end - SeqLocStop(tmp_slp);
-                              filter_end = 
-                                 seqloc_end - SeqLocStart(tmp_slp);
-                           } else {
-                              filter_start = 
-                                 seqloc_start + SeqLocStart(tmp_slp);
-                              filter_end = 
-                                 seqloc_start + SeqLocStop(tmp_slp);
-                           }
-                           /* The canonical "state" at the top of this 
-                              while loop is that a DoubleInt has been 
-                              created and one field was filled in on the 
-                              last iteration. The first time this loop is 
-                              entered in a call to the funciton this is not
-                              true and the following "if" statement moves 
-                              everything to the canonical state. */
-                           if (first) {
-                              first = FALSE;
-                              double_int = MemNew(sizeof(DoubleInt));
-                              
-                              if (reverse) {
-                                 if (filter_end < seqloc_end) {
-                                    /* end of sequence not filtered */
-                                    double_int->i2 = seqloc_end;
-                                 } else {
-                                    /* end of sequence filtered */
-                                    double_int->i2 = filter_start - 1;
-                                    continue;
-                                 }
-                              } else {
-                                 if (filter_start > seqloc_start) {
-                                    /* beginning of sequence not filtered */
-                                    double_int->i1 = seqloc_start;
-                                 } else {
-                                    /* beginning of sequence filtered */
-                                    double_int->i1 = filter_end + 1;
-                                    continue;
-                                 }
-                              }
-                           }
-                           if (reverse) {
-                              double_int->i1 = filter_end + 1;
-                              ValNodeAddPointer(vnp_out, 0, double_int);
-                              if (filter_start <= seqloc_start) {
-                                 /* last masked region at start of 
-                                    sequence */
-                                 last_interval_open = FALSE;
-                                 break;
-                              }	else {
-                                 double_int = MemNew(sizeof(DoubleInt));
-                                 double_int->i2 = filter_start - 1;
-                              }
-                           } else {
-                              double_int->i2 = filter_start - 1;
-                              ValNodeAddPointer(vnp_out, 0, double_int);
-                              if (filter_end >= seqloc_end) {
-                                 /* last masked region at end of sequence */
-                                 last_interval_open = FALSE;
-                                 break;
-                              }	else {
-                                 double_int = MemNew(sizeof(DoubleInt));
-                                 double_int->i1 = filter_end + 1;
-                              }
-                           }
-                           
-
-			}
-			filter_slp = filter_slp->next;
-		}
-
-		if (last_interval_open) {
-                   /* Need to finish DoubleIntPtr for last interval. */
-                   if (reverse) {
-                      double_int->i1 = seqloc_start;
-                   } else {
-                      double_int->i2 = seqloc_end;
-                   }
-                   ValNodeAddPointer(vnp_out, 0, double_int);
-		}
-	}
-	else
-	{
-		double_int = MemNew(sizeof(DoubleInt));
-		double_int->i1 = seqloc_start;
-		double_int->i2 = seqloc_end;
-		ValNodeAddPointer(vnp_out, 0, double_int);
-	}
-
-	return status;
-}
-
-
-/** Runs filtering functions, according to the string "instructions", on the
- * SeqLocPtr. Should combine all SeqLocs so they are non-redundant.
- * @param slp SeqLoc of sequence to be filtered. [in]
- * @param instructions String of instructions to filtering functions. [in]
- * @param mask_at_hash If TRUE masking is done while making the lookup table
- *                     only. [out] 
- * @param seqloc_retval Resutling seqloc for filtered region. [out]
-*/
-static Int2
-BlastSetUp_Filter( SeqLocPtr slp, CharPtr instructions, BoolPtr mask_at_hash, SeqLocPtr *seqloc_retval)
-{
-/* TEMP_BLAST_OPTIONS is set to zero until these are implemented. */
-#ifdef TEMP_BLAST_OPTIONS
-	BLAST_OptionsBlkPtr repeat_options, vs_options;
-#endif
-	Boolean do_default=FALSE, do_seg=FALSE, do_coil_coil=FALSE, do_dust=FALSE; 
-#ifdef TEMP_BLAST_OPTIONS
-	Boolean do_repeats=FALSE; 	/* screen for orgn. specific repeats. */
-	Boolean do_vecscreen=FALSE;	/* screen for vector contamination. */
-	Boolean myslp_allocated;
-	CharPtr repeat_database=NULL, vs_database=NULL, error_msg;
-#endif
-	CharPtr buffer=NULL;
-        const Char *ptr;
-	Int2 seqloc_num;
-	Int2 status=0;		/* return value. */
-	Int4 window_cc, linker_cc, window_dust, level_dust, minwin_dust, linker_dust;
-	SeqLocPtr cc_slp=NULL, dust_slp=NULL, seg_slp=NULL, seqloc_head=NULL, repeat_slp=NULL, vs_slp=NULL;
-	PccDatPtr pccp;
-	Nlm_FloatHiPtr scores;
-	Nlm_FloatHi cutoff_cc;
-	SegParamsPtr sparamsp=NULL;
-#ifdef TEMP_BLAST_OPTIONS
-	SeqAlignPtr seqalign;
-	SeqLocPtr myslp, seqloc_var, seqloc_tmp;
-	ValNodePtr vnp=NULL, vnp_var;
-#endif
-	SeqIdPtr sip;
-
-	cutoff_cc = CC_CUTOFF;
-
-	/* FALSE is the default right now. */
-	if (mask_at_hash)
-		*mask_at_hash = FALSE;
-
-	if (instructions == NULL || StringICmp(instructions, "F") == 0)
-		return status;
-
-	/* parameters for dust. */
-	/* -1 indicates defaults. */
-	level_dust = -1;
-	window_dust = -1;
-	minwin_dust = -1;
-	linker_dust = -1;
-	if (StringICmp(instructions, "T") == 0)
-	{ /* do_default actually means seg for proteins and dust for nt. */
-		do_default = TRUE;
-	}
-	else
-	{
-		buffer = MemNew(StringLen(instructions)*sizeof(Char));
-		ptr = instructions;
-		/* allow old-style filters when m cannot be followed by the ';' */
-		if (*ptr == 'm' && ptr[1] == ' ')
-		{
-			if (mask_at_hash)
-				*mask_at_hash = TRUE;
-			ptr += 2;
-		}
-		while (*ptr != NULLB)
-		{
-			if (*ptr == 'S')
-			{
-				sparamsp = SegParamsNewAa();
-				sparamsp->overlaps = TRUE;	/* merge overlapping segments. */
-				ptr = BlastSetUp_load_options_to_buffer(ptr+1, buffer);
-				if (buffer[0] != NULLB)
-				{
-					parse_seg_options(buffer, &sparamsp->window, &sparamsp->locut, &sparamsp->hicut);
-				}
-				do_seg = TRUE;
-			}
-			else if (*ptr == 'C')
-			{
-				ptr = BlastSetUp_load_options_to_buffer(ptr+1, buffer);
-				window_cc = CC_WINDOW;
-				cutoff_cc = CC_CUTOFF;
-				linker_cc = CC_LINKER;
-				if (buffer[0] != NULLB)
-					parse_cc_options(buffer, &window_cc, &cutoff_cc, &linker_cc);
-				do_coil_coil = TRUE;
-			}
-			else if (*ptr == 'D')
-			{
-				ptr = BlastSetUp_load_options_to_buffer(ptr+1, buffer);
-				if (buffer[0] != NULLB)
-					parse_dust_options(buffer, &level_dust, &window_dust, &minwin_dust, &linker_dust);
-				do_dust = TRUE;
-			}
-#ifdef TEMP_BLAST_OPTIONS
-			else if (*ptr == 'R')
-			{
-				repeat_options = BLASTOptionNew("blastn", TRUE);
-				repeat_options->expect_value = 0.1;
-				repeat_options->penalty = -1;
-				repeat_options->wordsize = 11;
-				repeat_options->gap_x_dropoff_final = 90;
-				repeat_options->dropoff_2nd_pass = 40;
-				repeat_options->gap_open = 2;
-				repeat_options->gap_extend = 1;
-				ptr = BlastSetUp_load_options_to_buffer(ptr+1, buffer);
-				if (buffer[0] != NULLB)
-                                   parse_blast_options(repeat_options,
-                                      buffer, &error_msg, &repeat_database,
-                                      NULL, NULL);
-				if (repeat_database == NULL)
-                                   repeat_database = StringSave("humlines.lib humsines.lib retrovir.lib");
-				do_repeats = TRUE;
-			}
-			else if (*ptr == 'V')
-			{
-				vs_options = VSBlastOptionNew();
-				ptr = BlastSetUp_load_options_to_buffer(ptr+1, buffer);
-				if (buffer[0] != NULLB)
-                                   parse_blast_options(vs_options, buffer,
-                                      &error_msg, &vs_database, NULL, NULL); 
-				vs_options = BLASTOptionDelete(vs_options);
-				if (vs_database == NULL)
-                                   vs_database = StringSave("UniVec_Core");
-				do_vecscreen = TRUE;
-			}
-#endif
-			else if (*ptr == 'L')
-			{ /* do low-complexity filtering; dust for blastn, otherwise seg.*/
-				do_default = TRUE;
-				ptr++;
-			}
-			else if (*ptr == 'm')
-			{
-				if (mask_at_hash)
-					*mask_at_hash = TRUE;
-				ptr++;
-			}
-			else
-			{	/* Nothing applied. */
-				ptr++;
-			}
-		}
-		buffer = MemFree(buffer);
-	}
-
-	seqloc_num = 0;
-	seqloc_head = NULL;
-	sip = SeqLocId(slp);
-	if (ISA_aa(SeqLocMol(slp)))
-	{
-		if (do_default || do_seg)
-		{
-			seg_slp = SeqlocSegAa(slp, sparamsp);
-			SegParamsFree(sparamsp);
-			sparamsp = NULL;
-			seqloc_num++;
-		}
-		if (do_coil_coil)
-		{
-			pccp = PccDatNew ();
-			pccp->window = window_cc;
-			ReadPccData (pccp);
-			scores = PredictCCSeqLoc(slp, pccp);
-			cc_slp = FilterCC(scores, cutoff_cc, SeqLocLen(slp), linker_cc, SeqIdDup(sip), FALSE);
-			MemFree(scores);
-			PccDatFree (pccp);
-			seqloc_num++;
-		}
-	}
-	else
-	{
-		if (do_default || do_dust)
-		{
-			dust_slp = SeqLocDust(slp, level_dust, window_dust, minwin_dust, linker_dust);
-			seqloc_num++;
-		}
-#ifdef TEMP_BLAST_OPTIONS
-		if (do_repeats)
-		{
-		/* Either the SeqLocPtr is SEQLOC_WHOLE (both strands) or SEQLOC_INT (probably 
-one strand).  In that case we make up a double-stranded one as we wish to look at both strands. */
-			myslp_allocated = FALSE;
-			if (slp->choice == SEQLOC_INT)
-			{
-				myslp = SeqLocIntNew(SeqLocStart(slp), SeqLocStop(slp), Seq_strand_both, SeqLocId(slp));
-				myslp_allocated = TRUE;
-			}
-			else
-			{
-				myslp = slp;
-			}
-start_timer;
-			repeat_slp = BioseqHitRangeEngineByLoc(myslp, "blastn", repeat_database, repeat_options, NULL, NULL, NULL, NULL, NULL, 0);
-stop_timer("after repeat filtering");
-			repeat_options = BLASTOptionDelete(repeat_options);
-			repeat_database = MemFree(repeat_database);
-			if (myslp_allocated)
-				SeqLocFree(myslp);
-			seqloc_num++;
-		}
-		if (do_vecscreen)
-		{
-		/* Either the SeqLocPtr is SEQLOC_WHOLE (both strands) or SEQLOC_INT (probably 
-one strand).  In that case we make up a double-stranded one as we wish to look at both strands. */
-			myslp_allocated = FALSE;
-			if (slp->choice == SEQLOC_INT)
-			{
-				myslp = SeqLocIntNew(SeqLocStart(slp), SeqLocStop(slp), Seq_strand_both, SeqLocId(slp));
-				myslp_allocated = TRUE;
-			}
-			else
-			{
-				myslp = slp;
-			}
-			VSScreenSequenceByLoc(myslp, NULL, vs_database, &seqalign, &vnp, NULL, NULL);
-			vnp_var = vnp;
-			while (vnp_var)
-			{
-				seqloc_tmp = vnp_var->data.ptrvalue;
-				if (vs_slp == NULL)
-				{
-					vs_slp = seqloc_tmp;
-				}
-				else
-				{
-					seqloc_var = vs_slp;
-					while (seqloc_var->next)
-						seqloc_var = seqloc_var->next;
-					seqloc_var->next = seqloc_tmp;
-				}
-				vnp_var->data.ptrvalue = NULL;
-				vnp_var = vnp_var->next;
-			}
-			vnp = ValNodeFree(vnp);
-			seqalign = SeqAlignSetFree(seqalign);
-			vs_database = MemFree(vs_database);
-			if (myslp_allocated)
-				SeqLocFree(myslp);
-			seqloc_num++;
-		}
-#endif
-	}
-
-	if (seqloc_num)
-	{ 
-		SeqLocPtr seqloc_list=NULL;  /* Holds all SeqLoc's for return. */
-
-		if (seg_slp)
-			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, seg_slp);
-		if (cc_slp)
-			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, cc_slp);
-		if (dust_slp)
-			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, dust_slp);
-		if (repeat_slp)
-			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, repeat_slp);
-		if (vs_slp)
-			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, vs_slp);
-
-		*seqloc_retval = seqloc_list;
-	}
-
-	return status;
-}
-
 
 /** Fills buffer with sequence, keeps list of Selenocysteines replaced by X.
  * Note: this function expects to have a buffer already allocated of  the proper
@@ -1602,12 +821,11 @@ Int2 BLAST_GetSubjectSequence(SeqLocPtr subject_slp, Uint1Ptr *buffer,
  * and array of offsets into a concatenated sequence, if needed.
  * @param prog_number Numeric value of the BLAST program [in]
  * @param query_slp List of query SeqLocs [in]
- * @param sbp Scoring and statistical information block [in]
  * @param query_info_ptr The filled structure [out]
  */
 static Int2
 BLAST_SetUpQueryInfo(Uint1 prog_number, SeqLocPtr query_slp, 
-   BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr PNTR query_info_ptr)
+   BlastQueryInfoPtr PNTR query_info_ptr)
 {
    Int4 query_length;
    BlastQueryInfoPtr query_info;
@@ -1615,7 +833,7 @@ BLAST_SetUpQueryInfo(Uint1 prog_number, SeqLocPtr query_slp,
    SeqLocPtr slp;
    Int4 total_length = 0;
 
-   if (!query_slp || !sbp || !query_info_ptr)
+   if (!query_slp || !query_info_ptr)
       return -1;
 
    /* Count the number of queries by parsing the SeqLoc list */
@@ -1680,14 +898,42 @@ BLAST_SetUpQueryInfo(Uint1 prog_number, SeqLocPtr query_slp,
    return 0;
 }
 
-Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program_number,
+Int2 BLAST_SetUpQuery(SeqLocPtr query_slp, const Uint1 program_number,
+        BLAST_SequenceBlkPtr *query_blk, BlastQueryInfoPtr *query_info)
+{
+   Uint1Ptr buffer;	/* holds sequence for plus strand or protein. */
+   Int4 buffer_length;
+   Int2 status;
+
+   if ((status=BlastSetUp_GetSequence(query_slp, TRUE, TRUE, &buffer, 
+                                      &buffer_length, NULL)))
+      return status; 
+        
+   /* Do not count the first and last sentinel bytes in the 
+      query length */
+   if ((status=BlastSetUp_SeqBlkNew(buffer, buffer_length-2, 
+                                    0, NULL, query_blk, TRUE)))
+      return status;
+
+   /* Fill the query information structure, including the context 
+      offsets for multiple queries */
+   if (query_info && 
+       (status = BLAST_SetUpQueryInfo(program_number, query_slp, 
+                                      query_info)) != 0)
+      return status;
+   
+   return 0;
+}
+
+
+Int2 BLAST_MainSetUp(const Uint1 program_number,
         const QuerySetUpOptionsPtr qsup_options,
         const BlastScoringOptionsPtr scoring_options,
         const LookupTableOptionsPtr lookup_options,	
         const BlastHitSavingOptionsPtr hit_options,
-        const Int4Ptr frame, BLAST_SequenceBlkPtr *query_blk,
-        ValNodePtr PNTR lookup_segments,
-        BlastQueryInfoPtr *query_info, SeqLocPtr *filter_slp_out,
+        BLAST_SequenceBlkPtr query_blk,
+        BlastSeqLocPtr *lookup_segments,
+        BlastQueryInfoPtr query_info, BlastMaskPtr *filter_out,
         BLAST_ScoreBlkPtr *sbpp, Blast_MessagePtr *blast_message)
 {
    BLAST_ScoreBlkPtr sbp;
@@ -1700,19 +946,18 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program_number,
    Int4 query_length=0;	/* Length of query described by SeqLocPtr. */
    Int4 dna_length=0;   /* Length of the underlying nucleotide sequence if
                            queries are translated */
-   Int4 double_int_offset=0;/* passed to BlastSetUp_CreateDoubleInt */
-   SeqLocPtr filter_slp=NULL;/* SeqLocPtr computed for filtering. */
-   SeqLocPtr filter_slp_combined;/* Used to hold combined SeqLoc's */
+   BlastSeqLocPtr filter_slp=NULL;/* SeqLocPtr computed for filtering. */
+   BlastSeqLocPtr filter_slp_combined;/* Used to hold combined SeqLoc's */
+   BlastSeqLocPtr loc; /* Iterator variable */
+   BlastMaskPtr last_filter_out = NULL; 
    Uint1Ptr buffer;	/* holds sequence for plus strand or protein. */
    Uint1Ptr buffer_var = NULL;/* holds offset of buffer to be worked on. */
-   SeqLocPtr tmp_slp=query_slp;/* loop variable */
-   SeqLocPtr slp = query_slp;  /* variable pointer */ 
    Boolean reverse; /* Indicates the strand when masking filtered locations */
-   SeqLocPtr mask_slp, next_mask_slp;/* Auxiliary locations for lower case 
-                                        masks */
-   Int4 counter;
-   SeqIdPtr seqid = NULL, mask_seqid = NULL, next_mask_seqid = NULL;
+   BlastMaskPtr mask_slp, next_mask_slp;/* Auxiliary locations for lower 
+                                              case masks */
+   Int4 seqid = -1, mask_seqid = -1, next_mask_seqid = -1;
    Int4 buffer_length;
+   Int4 context_offset;
    
    if ((status=
         BlastScoringOptionsValidate(scoring_options, blast_message)) != 0)
@@ -1727,16 +972,9 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program_number,
                                       blast_message)) != 0)
       return status;
    
-   is_na = ISA_na(SeqLocMol(slp));
-   while (tmp_slp) {
-      /* Only nucleotide can have two strands. */
-      if (is_na && SeqLocStrand(tmp_slp) == Seq_strand_both)	
-         total_num_contexts += 2;
-      else
-         total_num_contexts++;
-      
-      tmp_slp = tmp_slp->next;
-   }
+   /* At this stage query sequences are nucleotide only for blastn */
+   is_na = (program_number == blast_type_blastn);
+   total_num_contexts = query_info->last_context + 1;
 
    sbp = *sbpp;
    if (!sbp) {
@@ -1766,147 +1004,94 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program_number,
       *sbpp = sbp;
    }
    
-   buffer = NULL;
-   buffer_length=0;
-   
-   if ((status=BlastSetUp_GetSequence(slp, TRUE, TRUE, &buffer, 
-                                      &buffer_length, NULL)))
-      return status; 
-        
-   /* Do not count the first and last sentinel bytes in the 
-      query length */
-   if ((status=BlastSetUp_SeqBlkNew(buffer, buffer_length-2, 
-                                    context, NULL, query_blk, TRUE)))
-      return status;
-
-   buffer_var = buffer;
-   
-   /* First byte is sentinel */
-   ++buffer_var;
-   
    next_mask_slp = qsup_options->lcase_mask;
    mask_slp = NULL;
    
-   counter = 0;
-   *lookup_segments = NULL;
+   for (context = query_info->first_context; 
+        context <= query_info->last_context; ++context) {
+      context_offset = query_info->context_offsets[context];
+      buffer = &query_blk->sequence[context_offset];
+      query_length = query_info->context_offsets[context+1] 
+         - context_offset - 1;
 
-   while (slp) {
-      ++counter;
-           
-      if((status=BlastSetUp_Filter(slp, qsup_options->filter_string, 
-                                   &mask_at_hash, &filter_slp)))
-         return status;
+      reverse = (is_na && ((context & 1) != 0));
+
+      /* It is not necessary to do filtering on the reverse strand - the 
+         masking locations are the same as on the forward strand */
+      if (!reverse) {
+         if ((status = BlastSetUp_Filter(program_number, buffer, 
+                         query_length, 0, qsup_options->filter_string, 
+                         &mask_at_hash, &filter_slp)))
+            return status;
       
-      query_length = SeqLocLen(slp);
-      
-      /* Retrieve the id of the query sequence. If this id is for a 
-         translated sequence, get the underlying query id in the next 
-         pointer, and correct the ids in the filter SeqLoc */ 
-      seqid = SeqLocId(slp);
-      if (seqid->next) {
-         SeqLocPtr dna_seqloc = NULL;
-         seqid = seqid->next;
-         ValNodeAddPointer(&dna_seqloc, SEQLOC_WHOLE, seqid);
-         dna_length = SeqLocLen(dna_seqloc);
-         MemFree(dna_seqloc);
-      }
-      
-      /* Extract the mask location corresponding to this 
-         query, detach it from other queries' masks */
-      if (mask_slp || next_mask_slp) {
-         /* If previous mask is from this query, which can only 
-            happen when it's a different frame of the same query,
-            use it again, else go to the next mask */
-         if (!mask_seqid || 
-             SeqIdComp(mask_seqid, seqid) != SIC_YES) {
-            next_mask_seqid = SeqLocId(next_mask_slp);
-            if (SeqIdComp(next_mask_seqid, seqid) == SIC_YES) { 
-               mask_slp = next_mask_slp;
-               if (mask_slp) {
-                  mask_seqid = next_mask_seqid;
-                  next_mask_slp = mask_slp->next;
-                  mask_slp->next = NULL;
-               }
-            } else {
-               mask_slp = NULL;
-            }
-         }
-         if (mask_slp) {
-            if (frame) {
-               tmp_slp = NULL;
-               BlastSetUp_TranslateDNASeqLoc(mask_slp, 
-                  frame[context], dna_length, seqid, &tmp_slp);
-               ValNodeAddPointer(&filter_slp, SEQLOC_MIX, tmp_slp);
-            } else {
-               ValNodeAddPointer(&filter_slp, SEQLOC_MIX, mask_slp);
-               mask_seqid = NULL;
-            }
-         }
-      }
-      
-      filter_slp_combined = NULL;
-      CombineSeqLocs(filter_slp, &filter_slp_combined);
-      filter_slp = SeqLocSetFree(filter_slp);
-      
-      if (filter_slp_combined && !mask_at_hash) {
-         if ((frame && program_number == blast_type_blastx) || 
-             program_number == blast_type_tblastx) {
-            SeqLocPtr filter_slp_converted=NULL;
-            BlastSetUp_ConvertProteinSeqLoc(filter_slp_combined, 
-               frame[context], dna_length, &filter_slp_converted);
-            HackSeqLocId(filter_slp_converted, seqid);
-            ValNodeAddPointer(filter_slp_out, FrameToDefine(frame[context]), 
-                              filter_slp_converted);
+         /* Extract the mask locations corresponding to this query 
+            (frame, strand), detach it from other masks.
+            NB: for translated search the mask locations are expected in 
+            protein coordinates. The nucleotide locations must be converted
+            to protein coordinates prior to the call to BLAST_MainSetUp.
+         */
+         if (next_mask_slp && (next_mask_slp->index == context)) {
+            mask_slp = next_mask_slp;
+            next_mask_slp = mask_slp->next;
+            mask_slp->next = NULL;
          } else {
-            ValNodeAddPointer(filter_slp_out, SEQLOC_MASKING_NOTSET, 
-                              filter_slp_combined);
+            mask_slp = NULL;
          }
-      }
-           
-      /* For plus strand or protein. */
-      total_iterations=1;
-      if (is_na && SeqLocStrand(slp) == Seq_strand_both)
-         total_iterations++; /* Two iteration for two strands. */
-      reverse = FALSE;
-      while (total_iterations > 0)	{
-         if (buffer) {	
-            if (!mask_at_hash) {
-               if((status = BlastSetUp_MaskTheResidues(buffer_var, 
-                               query_length, is_na, filter_slp_combined, 
-                               reverse, 0)))
-                  return status;
-               /* Create lookup_segments spanning entire sequence. */
-               BlastSetUp_CreateDoubleInt(slp, NULL, FALSE, 
-                  lookup_segments, &double_int_offset);
+         
+         /* Attach the lower case mask locations to the filter locations 
+            and combine them */
+         if (filter_slp && mask_slp) {
+            for (loc = filter_slp; loc->next; loc = loc->next);
+            loc->next = mask_slp->loc_list;
+         }
+         
+         filter_slp_combined = NULL;
+         CombineMaskLocations(filter_slp, &filter_slp_combined);
+         /*filter_slp = SeqLocSetFree(filter_slp);*/
+         
+         /* NB: for translated searches filter locations are returned in 
+            protein coordinates, because the DNA lengths of sequences are 
+            not available here. The caller must take care of converting 
+            them back to nucleotide coordinates. */
+         if (filter_slp_combined) {
+            if (!last_filter_out) {
+               last_filter_out = *filter_out = 
+                  (BlastMaskPtr) MemNew(sizeof(BlastMask));
             } else {
-               BlastSetUp_CreateDoubleInt(slp, filter_slp_combined, reverse, 
-                  lookup_segments, &double_int_offset);
+               last_filter_out->next = 
+                  (BlastMaskPtr) MemNew(sizeof(BlastMask));
+               last_filter_out = last_filter_out->next;
             }
-            /* Add One for sentinel byte between sequences. */
-            double_int_offset++;
-            
-            if ((status=BlastScoreBlkFill(sbp, (CharPtr)(buffer_var+1), 
-                           query_length, context)))
-               return status;
-            
-            context++;
-            buffer_var += query_length+1;
-         }
-         total_iterations--;
-         reverse = !reverse;
-      }
-      
-      if (filter_slp_combined) {
-         if ((frame && program_number == blast_type_blastx) ||
-             program_number == blast_type_tblastx) {
-            /* Translated SeqLoc saved for blastx/tblastx. */
-            filter_slp_combined = SeqLocSetFree(filter_slp_combined);
+            if (is_na)
+               last_filter_out->index = context / 2;
+            else
+               last_filter_out->index = context;
+            last_filter_out->loc_list = filter_slp_combined;
          }
       }
-      
-      slp = slp->next;
+      if (buffer) {	
+         if (!mask_at_hash) {
+            if((status = 
+                BlastSetUp_MaskTheResidues(buffer, query_length, is_na, 
+                   filter_slp_combined, reverse, 0)))
+                  return status;
+         }
+            
+         if ((status=BlastScoreBlkFill(sbp, (CharPtr) buffer, 
+                                       query_length, context)))
+            return status;
+      }
    }
    
+   *lookup_segments = NULL;
+   BLAST_ComplementMaskLocations(program_number, query_info, *filter_out, 
+                                 lookup_segments);
+
+   /* Free the filtering locations if masking done for lookup table only */
+   if (mask_at_hash) {
+      *filter_out = BlastMaskFree(*filter_out);
+   }
+
    /* Get "ideal" values if the calculated Karlin-Altschul params bad. */
    if (program_number == blast_type_blastx || 
        program_number == blast_type_tblastx) {
@@ -1921,13 +1106,6 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program_number,
    sbp->kbp = sbp->kbp_std;
    sbp->kbp_gap = sbp->kbp_gap_std;
 
-   /* Fill the query information structure, including the context 
-      offsets for multiple queries */
-   if (query_info && 
-       (status = BLAST_SetUpQueryInfo(program_number, query_slp, sbp, 
-                                      query_info)) != 0)
-      return status;
-   
    return 0;
 }
 
@@ -1936,14 +1114,17 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program_number,
 
 Boolean
 BLAST_GetQuerySeqLoc(FILE *infp, Boolean query_is_na, 
-   SeqLocPtr PNTR lcase_mask, SeqLocPtr PNTR query_slp, Int4 ctr_start)
+   BlastMaskPtr PNTR lcase_mask, SeqLocPtr PNTR query_slp, Int4 ctr_start)
 {
    Int4 num_bsps;
    Int8 total_length;
    BioseqPtr query_bsp;
-   SeqLocPtr mask_slp, last_mask;
+   SeqLocPtr mask_slp;
+   BlastMaskPtr last_mask;
    Char prefix[2];     /* for FastaToSeqEntryForDb */
    Int2 ctr = ctr_start + 1; /* Counter for FastaToSeqEntryForDb */
+   Int4 query_index = 0;
+   BlastMaskPtr new_mask;
    SeqEntryPtr sep;
    Boolean done = TRUE;
    
@@ -1955,22 +1136,27 @@ BLAST_GetQuerySeqLoc(FILE *infp, Boolean query_is_na,
    *query_slp = NULL;
 
    SeqMgrHoldIndexing(TRUE);
-   mask_slp = last_mask = NULL;
+   mask_slp = NULL;
+   last_mask = NULL;
    
    StrCpy(prefix, "");
    
    while ((sep=FastaToSeqEntryForDb(infp, query_is_na, NULL, FALSE, prefix, 
                                     &ctr, (lcase_mask ? &mask_slp : NULL))) != NULL)
    {
-         if (mask_slp) {
-            if (!last_mask)
-               *lcase_mask = last_mask = mask_slp;
-            else {
-               last_mask->next = mask_slp;
-               last_mask = last_mask->next;
-            }
-            mask_slp = NULL;
+      if (mask_slp) {
+         new_mask = BlastMaskFromSeqLoc(mask_slp, query_index);
+         
+         if (!last_mask)
+            *lcase_mask = last_mask = new_mask;
+         else {
+            last_mask->next = new_mask;
+            last_mask = last_mask->next;
          }
+         /* Masking locations in a SeqLoc form are no longer needed */
+         mask_slp = SeqLocSetFree(mask_slp);
+      }
+      ++query_index;
       
       query_bsp = NULL;
       if (query_is_na) {

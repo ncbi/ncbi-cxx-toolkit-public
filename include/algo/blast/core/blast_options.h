@@ -130,7 +130,7 @@ typedef struct LookupTableOptions {
                      allows for traditional and megablast style lookup table */
    Int2 word_size; /**< Determines the size of the lookup table */
    Int4 alphabet_size; /**< Size of the alphabet */
-   Int2 mb_template_length; /**< Length of the discontiguous words */
+   Uint1 mb_template_length; /**< Length of the discontiguous words */
    Uint1 mb_template_type; /**< Type of a discontiguous word template */
    Int4 max_positions; /**< Max number of positions per word (MegaBlast only);
                          no restriction if 0 */
@@ -142,7 +142,7 @@ typedef struct LookupTableOptions {
 typedef struct QuerySetUpOptions {
    CharPtr filter_string; /**< Parseable string that determines the filtering
                              options */
-   SeqLocPtr lcase_mask; /**< Lower case masked locations on the query */
+   BlastMaskPtr lcase_mask; /**< Lower case masked locations on the query */
    Uint1 strand_option; /**< In blastn: which strand to search: 1 = forward;
                            2 = reverse; 3 = both */
 } QuerySetUpOptions, *QuerySetUpOptionsPtr;

@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.10  2003/06/05 17:16:04  dondosha
+* SeqLoc is no longer used for query masking/filtering
+*
 * Revision 1.9  2003/05/18 21:56:04  camacho
 * Use Uint1 for program name whenever possible
 *
@@ -195,7 +198,7 @@ Int2 BLAST_GetSubjectSequence(SeqLocPtr subject_slp, Uint1Ptr *buffer,
  */
 Boolean
 BLAST_GetQuerySeqLoc(FILE *infp, Boolean query_is_na, 
-   SeqLocPtr PNTR lcase_mask, SeqLocPtr PNTR query_slp, Int4 ctr_start);
+   BlastMaskPtr PNTR lcase_mask, SeqLocPtr PNTR query_slp, Int4 ctr_start);
 
 /** Given a list of nucleotide SeqLoc's, create a list of SeqLocs for their 
  * translations. 
@@ -237,14 +240,14 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
  * @param sbpp Contains scoring information. [out]
  * @param blast_message error or warning [out] 
  */
-Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program,
+Int2 BLAST_MainSetUp(const Uint1 program_number,
         const QuerySetUpOptionsPtr qsup_options,
         const BlastScoringOptionsPtr scoring_options,
         const LookupTableOptionsPtr lookup_options,	
         const BlastHitSavingOptionsPtr hit_options,
-        const Int4Ptr frame, BLAST_SequenceBlkPtr *query_blk_ptr,
-        ValNodePtr PNTR lookup_segments,
-        BlastQueryInfoPtr *query_info, SeqLocPtr *filter_slp_out,
+        BLAST_SequenceBlkPtr query_blk,
+        BlastSeqLocPtr *lookup_segments,
+        BlastQueryInfoPtr query_info, BlastMaskPtr *filter_slp_out,
         BLAST_ScoreBlkPtr *sbpp, Blast_MessagePtr *blast_message);
 
 #ifdef __cplusplus
