@@ -3438,7 +3438,9 @@ BLAST_ComputeLengthAdjustment(double K,
 {
     Int4 i;                     /* iteration index */
     const Int4 maxits = 20;     /* maximum allowed iterations */
-    double m = (double) query_length, n = (double) db_length, N = (double) db_num_seqs;
+    double m = (double) query_length;
+    double n = (double) db_length;
+    double N = (double) db_num_seqs;
 
     double ell;                 /* A float value of the length adjustment */
     double ss;                  /* effective size of the search space */
@@ -3516,6 +3518,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.77  2004/05/24 15:09:40  camacho
+ * Fixed conflict
+ *
  * Revision 1.76  2004/05/24 13:26:27  madden
  * Fix PC compiler warnings
  *
