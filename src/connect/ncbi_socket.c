@@ -116,7 +116,6 @@ extern void bzero(char* target, long numbytes);
 
 /* NCBI core headers
  */
-#include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_socket.h>
@@ -1810,34 +1809,43 @@ extern int/*bool*/ SOCK_IsServerSide(SOCK sock)
 extern int SOCK_gethostname(char*  name,
                             size_t namelen)
 {
-    int x_errno;
-    assert(namelen > 0);
+    int error = 0;
+
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
+
+    assert(name && namelen > 0);
     name[0] = name[namelen - 1] = '\0';
-    x_errno = gethostname(name, (int) namelen);
-    if (x_errno  ||  name[namelen - 1]) {
-        CORE_LOG_ERRNO(x_errno, eLOG_Error,
+    if (gethostname(name, (int) namelen) != 0) {
+        CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
                        "[SOCK_gethostname]  Cannot get local hostname");
-        name[0] = '\0';
-        return 1/*failed*/;
+        error = 1;
+    } else if ( name[namelen - 1] ) {
+        CORE_LOG(eLOG_Error, "[SOCK_gethostname]  Buffer too small");
+        error = 1;
     }
-    return 0/*success*/;
+
+    if ( !error )
+        return 0/*success*/;
+
+    name[0] = '\0';
+    return 1/*failed*/;
 }
 
 
 extern int SOCK_ntoa(unsigned int host,
                      char*        buf,
-                     size_t       buf_size)
+                     size_t       buflen)
 {
     const unsigned char* b = (const unsigned char*) &host;
     char str[16];
 
+    assert(buf && buflen > 0);
     verify(sprintf(str, "%u.%u.%u.%u",
                    (unsigned) b[0], (unsigned) b[1],
                    (unsigned) b[2], (unsigned) b[3]) > 0);
     assert(strlen(str) < sizeof(str));
 
-    if (strlen(str) >= buf_size) {
+    if (strlen(str) >= buflen) {
         CORE_LOG(eLOG_Error, "[SOCK_ntoa]  Buffer too small");
         buf[0] = '\0';
         return -1/*failed*/;
@@ -1863,7 +1871,7 @@ extern unsigned short SOCK_HostToNetShort(unsigned short value)
 extern unsigned int SOCK_gethostbyname(const char* hostname)
 {
     unsigned int host;
-    char buf[1024];
+    char buf[256];
 
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
@@ -1886,7 +1894,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
         } else {
             host = 0;
         }
-        if (out) {
+        if ( out ) {
             freeaddrinfo(out);
         }
 #else /* Use some variant of gethostbyname */
@@ -1933,11 +1941,12 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 {
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
+    assert(name && namelen > 0);
     if ( !host ) {
         host = SOCK_gethostbyname(0);
     }
 
-    if (host  &&  name  &&  namelen) {
+    if ( host ) {
 #if defined(HAVE_GETNAMEINFO)
         struct sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
@@ -1950,6 +1959,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
                         0, 0, 0) == 0) {
             return name;
         } else {
+            name[0] = '\0';
             return 0;
         }
 #else
@@ -1978,14 +1988,12 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 
         if (!he  ||  strlen(he->h_name) > namelen - 1) {
             if (he  ||  SOCK_ntoa(host, name, namelen) != 0) {
+                name[0] = '\0';
                 name = 0;
             }
-#  if !defined(HAVE_GETHOSTBYADDR_R)
-            CORE_UNLOCK;
-#  endif
-            return name;
+        } else {
+            strcpy(name, he->h_name);
         }
-        strncpy0(name, he->h_name, namelen - 1);
 #  if !defined(HAVE_GETHOSTBYADDR_R)
         CORE_UNLOCK;
 #  endif
@@ -1993,6 +2001,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 #endif /*HAVE_GETNAMEINFO*/
     }
 
+    name[0] = '\0';
     return 0;
 }
 
@@ -2000,6 +2009,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.68  2002/11/01 20:12:55  lavr
+ * Reimplement SOCK_gethostname() - was somewhat potentally buggy
+ *
  * Revision 6.67  2002/10/29 22:20:52  lavr
  * Use proper indentation of preproc. macros; note post-accept() socket state
  *
