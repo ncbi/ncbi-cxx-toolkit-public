@@ -162,8 +162,9 @@ static EIO_Status s_Connect(SHttpConnector* uuu, int/*bool*/ drop_unread)
 
     /* the re-try loop... */
     for (;;) {
-        char* http_user_header = 0;
-        char* null = 0;
+        int/*bool*/ reset_user_header = 0;
+        char*       http_user_header = 0;
+        char*       null = 0;
 
         if (uuu->net_info->http_user_header)
             http_user_header = strdup(uuu->net_info->http_user_header);
@@ -176,6 +177,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu, int/*bool*/ drop_unread)
                  " (C Toolkit)"
 #endif
                  "\r\n");
+            reset_user_header = 1;
         }
         /* connect & send HTTP header */
         uuu->sock = URL_Connect
@@ -188,7 +190,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu, int/*bool*/ drop_unread)
              uuu->net_info->debug_printout == eDebugPrintout_Data ? eOn :
              uuu->net_info->debug_printout == eDebugPrintout_None ? eOff :
              eDefault);
-        if (!uuu->net_info->http_user_header == !http_user_header) {
+        if (reset_user_header) {
             ConnNetInfo_SetUserHeader(uuu->net_info, 0);
             uuu->net_info->http_user_header = http_user_header;
         }
@@ -893,6 +895,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2003/01/15 20:27:29  lavr
+ * Fix breeding of NCBIHttpConnector token in User-Agent: header tag
+ *
  * Revision 6.40  2003/01/10 14:51:29  lavr
  * Revert to R6.37 but properly handle drop of "obuf" in s_FlushAndDisconnect()
  *
