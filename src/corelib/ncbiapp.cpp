@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/04/04 22:33:35  vakatov
+* Auto-set the tracing and the "abort-on-throw" debugging features
+* basing on the application environment and/or registry
+*
 * Revision 1.21  2000/01/20 17:51:18  vakatov
 * Major redesign and expansion of the "CNcbiApplication" class to
 *  - embed application arguments   "CNcbiArguments"
@@ -197,6 +201,14 @@ int CNcbiApplication::AppMain
     // Reset application environment
     m_Environ->Reset(envp);
 
+    // Setup some debugging features
+    if ( !m_Environ->Get(DIAG_TRACE).empty() ) {
+        SetDiagTrace(eDT_Enable, eDT_Enable);
+    }
+    if ( !m_Environ->Get(ABORT_ON_THROW).empty() ) {
+        SetThrowTraceAbort(true);
+    }
+
     // Clear registry content
     m_Config->Clear();
 
@@ -221,6 +233,14 @@ int CNcbiApplication::AppMain
     } catch (exception& e) {
         ERR_POST("CNcbiApplication::LoadConfig() failed: " << e.what());
         throw runtime_error("CNcbiApplication::LoadConfig() failed");
+    }
+
+    // Setup some debugging features
+    if ( !m_Config->Get("DEBUG", DIAG_TRACE).empty() ) {
+        SetDiagTrace(eDT_Enable, eDT_Enable);
+    }
+    if ( !m_Config->Get("DEBUG", ABORT_ON_THROW).empty() ) {
+        SetThrowTraceAbort(true);
     }
 
     // Init application
