@@ -300,8 +300,9 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                             scrn_rgt_seq_pos = scrn_lft_seq_pos +
                                 (plus ? -1 : 1);
                         } else {
+                            scrn_rgt_seq_pos = scrn_lft_seq_pos + (plus ? -1 : 1)
+                                + delta;
                             scrn_lft_seq_pos += delta;
-                            scrn_rgt_seq_pos += delta;
                         }
                         if (seg == left_seg  &&
                             scrn_lft_seq_pos == scrn_rgt_seq_pos) {
@@ -799,6 +800,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/07/23 20:26:14  todorov
+* fixed an unaligned pieces coords problem in GetWhole..
+*
 * Revision 1.37  2003/07/23 20:24:39  todorov
 * +aln_starts for the inserts in GetWhole...
 *
