@@ -5,12 +5,428 @@
 <a href="../lxr/source/include/corelib/ncbiexpt.hpp"><h1>Exception handling </a> in the NCBI C++ Toolkit</h1>
 
 <ul>
+  <li><a href="#NcbiException">NCBI C++ exceptions.</a>
+    <ul>
+    <li><a href="#Requirements">Requirements.</a></li>
+    <li><a href="#Architecture">Architecture.</a></li>
+    <li><a href="#Implementation">Implementation.</a>
+      <ul>
+        <li><a href="#CNcbiException">CNcbiException.</a></li>
+        <li><a href="#DerivedExceptions">Derived exceptions.</a></li>
+        <li><a href="#CExceptionReporter">CExceptionReporter.</a></li>
+        <li><a href="#ErrorCodes">Choosing and analyzing error codes.</a></li>
+      </ul>
+    <li><a href="#Examples">Examples.</a></li>
+      <ul>
+        <li><a href="#ThrowingException">Throwing an exception.</a></li>
+        <li><a href="#ReportingException">Reporting an exception.</a></li>
+      </ul>
+    </ul>
+  </li>
   <li> <a href="#macro"> Macros for standard C++ exception handling</a>
   <li> <a href="#errno"> The CErrnoException Class </a>
   <li> <a href="#parse"> The CParseException Class </a>
   <li> <a href="#tracex"> Exception Tracing </a>
   <li> <a href="../libs/err_msg.html#ref_Exception"> Reference Manual pages</a>
 </ul>
+
+
+
+<a name="NcbiException"></a>
+<h3>NCBI C++ exceptions.</h3>
+
+<p>
+C++ exceptions is a standard mechanism of communicating abnormal or
+unexpected events to a higher execution context. By throwing an exception
+a piece of code says it was unable to complete the task and it is
+up to others to decide what to do next.
+</p>
+<p>
+The problem with this approach, as we see it, is that there is only one
+place where a particular exception can be thrown and only one place
+where it can be caught. What the standard mechanism lacks is backlog,
+history of unfinished tasks and its consequences. Say for instance,
+a program tries to load some data from a database. An exception occurs,
+which says a connection to some port could not be created - so what?
+How meaningfull is it? What did the program try to do? Where did the request
+for the connection come from?
+</p>
+<p>
+Another problem is analyzing and handling exceptions in a program.
+When an exception is caught,
+what is known for sure is only that something bad has happened - but
+what exactly? The standard exception has only type (exception class)
+and a text message. The latter probably makes sense for a human, but not for
+a program. The former does not seem to be clear enough.
+</p>
+
+
+
+<a name="#Requirements"></a>
+<h4>Requirements.</h4>
+<ul>
+  <li>
+  Exception should contain information about where exactly has it
+  been thrown - for a human.
+  </li>
+  <li>
+  Exception should have a numeric id - for a program.
+  </li>
+  <li>
+  It should be possible to create a stack of exceptions - to accumulate
+  a backlog of events (unfinished jobs) which caused the problem. Still, for a client,
+  it should look like a single exception. That is, a client should be able
+  to ignore completely the compound structure of the exception being thrown
+  and still get some meaningful information.
+  </li>
+  <li>
+  The system should provide for the ability to analyze the exception backlog
+  and possibly print information about each exception separately.
+  </li>
+  <li>
+  It should be possible to report the exception data into an arbitrary
+  output channel and possibly format it differently for each channel.
+  </li>
+</ul>
+
+
+
+<a name="Architecture"></a>
+<h4>Architecture.</h4>
+<p>
+Each subsystem (library) has its own type of exceptions. It may have several types,
+if necessary, but all of them should be derived from a single base class (which in turn is
+derived from a system-wide base class). So, the type of an exception uniquely
+identifies the library which produced it.
+</p>
+<p>
+Each exception has a numeric id, which is unique throughout the subsystem.
+Such an id gives an unambiguous description of the problem occured.
+Each id is associated with a text message. Strictly speaking, there is only
+one message associated with a given id, so there is no need to include the
+message in the exception itself - it could be taken from an external source.
+Still, we suggest using the message - it serves as an additional comment.
+Also, it does not restrict us from using an external source of messages
+in the future.
+</p>
+<p>
+Each exception has information about location where it has been thrown - file
+name and line number.
+</p>
+<p>
+Exception can have a reference to the "lower level" one, which makes it possible
+to analyze the backlog. Naturally, such a backlog cannot be created automatically -
+it is a developer's responsibility. The system only provides the mechanism,
+it does not solve problems by itself. Developer is supposed to catch exceptions
+in proper places and re-throw them with the backlog information added.
+</p>
+<p>
+Exception's constructor mandatory parameters include location information,
+exception id and a message. Such constructor is to be used at the lower level, 
+when the exception is thrown initially. At higher levels we need a constructor,
+which would accept the exception from the lower level as one of its
+parameters.
+</p>
+<p>
+NCBI exception has a sophisticated reporting mechanism - the standard
+<tt>exception::what()</tt> function is definitely not enough. There are three
+groups of reporting mechanisms:
+</p>
+<ul>
+  <li>exception formats its data by itself and either returns the result as
+  a string or puts it into an output stream;</li>
+  <li>client provides an external exception data formatter;</li>
+  <li>NCBI standard diagnostic mechanism is used.</li>
+</ul>
+
+
+
+<a name="Implementation"></a>
+<h4>Implementation.</h4>
+
+<a name="CNcbiException"></a>
+<h5>CNcbiException.</h5>
+<p>
+There is a single system-wide exception base class -
+<var><a href="http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/ident?i=CNcbiException">CNcbiException</a></var>.
+Each subsystem <em>must</em> implement its own type of exceptions, which must be
+be derived from this class. The class defines basic requirements of an exception
+construction, backlog and reporting mechanisms.
+</p>
+<p>
+Constructor includes location information, exception id and a message.
+Each exception class defines its own error codes. So, the error code "by itself"
+is meaningless - one should also know the the exception class, which produced it.
+<pre>
+    // When throwing an exception initially, "prev_exception" must be 0
+    CNcbiException(const char* file, int line, EErrCode err_code,
+                   const char* message,
+                   const CNcbiException* prev_exception=0) throw();
+</pre>
+</p>
+
+<p>
+To make it easier to throw/re-throw an exception, the following macros are defined:
+<pre>
+    NCBI_THROW(exception_class,err_code,message)
+    NCBI_RETHROW(prev_exception,exception_class,err_code,message)
+    NCBI_RETHROW_SAME(prev_exception,message)
+</pre>
+The last one (<var>NCBI_RETHROW_SAME</var>) should be used to re-throw
+the same exception with backlog information added. 
+</p>
+
+<p>
+The class has also numerous reporting methods:
+<pre>
+    // Standard report (includes full backlog)
+    virtual const char* what(void) const throw();
+
+    // Report the exception using "reporter";
+    // if "reporter" is not specified (passed 0), then use the default reporter
+    // (as set with CExceptionReporter::SetDefault)
+    void Report(const char* file, int line,
+                CExceptionReporter* reporter = 0) const;
+
+    // Report as a string
+    string ReportThis(void) const;  // this exception only, no backlog attached
+    string ReportAll (void) const;  // including full backlog
+
+    // Report "standard" attributes (file, line, type, err.code, user message)
+    // into the "out" stream (this exception only, no backlog)
+    void ReportStd(ostream&amp; out) const;
+
+    // Report "non-standard" attributes (those of derived class)
+    // into the "out" stream
+    virtual void ReportExtra(ostream&amp; out) const;
+    // If _enabled_, then calling what() or ReportAll() would
+    // also report exception to the default exception reporter.
+    // Return the previous state of the flag.
+    static bool EnableBackgroundReporting(bool enable);
+</pre>
+Also, the following macro is defined:
+<pre>
+    REPORT_NCBI_EXCEPTION(e)
+</pre>
+Finally, the following data access functions help to analyze exception
+from a program:
+<pre>
+    // Return class name as a string
+    virtual const char* GetType(void) const;
+    // Interpretation of error code (as text)
+    virtual const char* GetErrCodeString(void) const;
+    const string&amp; GetFile(void)    const;
+    int           GetLine(void)    const;
+    EErrCode      GetErrCode(void) const;
+    const string&amp; GetMsg(void)     const;
+    // Get "previous" exception from the backlog
+    const CNcbiException* GetPredecessor(void) const;
+</pre>
+</p>
+
+<a name="DerivedExceptions"></a>
+<h5>Derived exceptions.</h5>
+<p>
+The only requirement for a derived exception is to define error codes
+as well as its textual representation. Implementation of several other
+functions (e.g. constructors) are, in general case,
+pretty straightforward - so we put it into a macro definition.
+Please note, this macro can only be used when the derived class has
+no additional data members.
+Here is an example of an exception declaration:
+<pre>
+class CExceptSubsystem : public CNcbiException
+{
+public:
+    enum EErrCode {
+        eType1,
+        eType2
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eType1: return "eType1";
+        case eType2: return "eType2";
+        default:     return CNcbiException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CExceptSubsystem,CNcbiException);
+};
+</pre>
+In case the derived exception has data members not found in the base class,
+it should also impelement its own <var>ReportExtra</var> method - to report
+this non-standard data.
+</p>
+
+<a name="CExceptionReporter"></a>
+<h5>CExceptionReporter.</h5>
+<p>
+One of possible ways to report an exception is to use an external "reporter".
+Reporter is an object that formats exception data and sends it to its own output
+channel. Client can install its own, custom exception reporter (this is not
+required though - in case the default was not set,
+the standard NCBI diagnostic mechanism is used).<br />
+<var>CExceptionReporter</var> is an abstract class, which defines reporter interface:
+<pre>
+    // Default reporter
+    static  void SetDefault(CExceptionReporter* handler);
+    static  const CExceptionReporter* GetDefault(void);
+    // Enable/disable using default reporter
+    // Return previous state of this flag
+    static  bool EnableDefault( bool enable);
+    // Report exception using default reporter
+    static  void Default(const char* file, int line,
+	                     const CNcbiException&amp; ex);
+
+    // Report exception with _this_ reporter
+    virtual void Report(const char* file, int line,
+	                    const CNcbiException&amp; ex) const = 0;
+</pre>
+</p>
+
+
+<a name="ErrorCodes"></a>
+<h5>Choosing and analyzing error codes.</h5>
+<p>
+Choosing and interpreting error codes can potentially create some problems.
+The matter of fact is that each exception class has its own error codes, as well as
+their interpretation. Enumerated values are stored internally (in a program)
+as numbers. So, same number can be interpreted incorrectly,
+as soon as we somehow misinterpret the exception class.
+<br />
+Say for instance, there is an exception class, which is derived from
+<var><a href="#DerivedExceptions">CExceptSubsystem</a></var> - let us call
+it <var>CExceptSupersystem</var> - which also defines two error codes:
+<var>eSuper1</var> and <var>eSuper2</var>:
+<pre>
+class CExceptSupersystem : public CExceptSubsystem
+{
+public:
+    enum EErrCode {
+        eSuper1,
+        eSuper2
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eSuper1: return "eSuper1";
+        case eSuper2: return "eSuper2";
+        default:      return CNcbiException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CExceptSupersystem, CExceptSubsystem);
+};
+</pre>
+Now, suppose
+an exception <var>CExceptSupersystem</var> has been thrown
+somewhere. On a higher level it has been caught as <var>CExceptSubsystem</var>.
+It is easy to see that the error code returned by this object would be
+completely meaningless: the error code of <var>CExceptSupersystem</var>
+cannot be interpreted in terms of <var>CExceptSubsystem</var>.
+<br />
+One reasonable solution seems to be isolating error codes of different
+exception classes  - by assigning different numeric values to them
+(there is only one person, who can do this - a developer).
+Apparently, such isolation should only be done within each branch of
+derivatives only.
+<br />
+Another solution is to make sure that the exception in question does 
+belong to the desired class, not to any intermediate ones. Template
+function <var>UppermostCast</var> does the trick. It utilizes the runtime
+information and dynamic cast conversion:
+<pre>
+    try {
+        ...
+        NCBI_THROW(CExceptSupersystem,eSuper1,"your message here");
+        ...
+    }
+    catch (CExceptSubsystem&amp; e) {
+        // call to UppermostCast&lt;CExceptSubsystem&gt;(e) would return 0 here!
+        // which means that "e" was actually the object of a different class
+        const CExceptSupersystem *p = UppermostCast&lt;CExceptSupersystem&gt;(e);
+        if (p) {
+            switch (p->GetErrCode()) {
+            case CExceptSupersystem::eSuper1:
+                ...
+                break;
+            case CExceptSupersystem::eSuper2:
+                ...
+                break;
+            default:
+                ...
+                break;
+            }
+        }
+        NCBI_RETHROW_SAME(e,"your message here");
+    }
+</pre>
+Finally, the runtime information makes it possible to do it even better.
+Since <var>GetErrCode</var> function is non-virtual, it might check the
+type of the object, for which it has been called, against the type of
+the class to which it belong. If these two do not match, the
+function returns <tt>invalid</tt> error code. Such code only means that the caller
+did not know the correct type of the exception, and the function is unable
+to interpret it.
+</p>
+
+
+
+<a name="Examples"></a>
+<h4>Examples.</h4>
+
+<a name="ThrowingException"></a>
+<h5>Throwing an exception.</h5>
+<p>
+It is worth to remind: the system only provides a mechanism to create a backlog
+of unfinished tasks, it does not create it automatically. It is up to
+developer to catch exceptions and re-throw them with the backlog information added.
+Here is an example of throwing
+<var><a href="#DerivedExceptions">CExceptSubsystem</a></var> exception:
+<pre>
+    ... // your code
+    NCBI_THROW(CExceptSubsystem,eType1,"your message here");
+    ...
+</pre>
+The code that catches, and possibly re-throws the exception might look like this:
+<pre>
+    try {
+        ... // your code
+    } catch (CExceptSubsystem&amp; e) {
+        if (e.GetErrCode() == CExceptSubsystem::eType2) {
+            ...
+        } else {
+            NCBI_RETHROW(e,CExceptSubsystem,eType1,"your message here")
+        }
+    } catch (CNcbiException&amp; e) {
+        NCBI_RETHROW(e,CNcbiException,eUnknown,"your message here")
+    }
+</pre>
+</p>
+
+<a name="ReportingException"></a>
+<h5>Reporting an exception.</h5>
+<p>
+There is a number of ways to report <var>CNcbiException</var>, for example:
+<pre>
+    try {
+        ... // your code
+    } catch (CExceptSubsystem&amp; e) {
+        REPORT_NCBI_EXCEPTION(e);
+        ERR_POST(e);
+        cerr << e.ReportAll();
+        cerr << e.what();
+        e.Report(__FILE__,__LINE__);
+    }
+</pre>
+We suggest using <var>REPORT_NCBI_EXCEPTION(e)</var> macro
+(which is equivalent to calling <var>e.Report(__FILE__,__LINE__)</var>) -
+it redirects the output into standard diagnostic channels
+and is highly configurable.
+</p>
+
+
+
+
 
 <a name="macro"></a>
 <h3> Macros for standard C++ exception handling</h3>
