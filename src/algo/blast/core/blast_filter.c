@@ -187,7 +187,8 @@ Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc,
         (BlastSeqLoc**) calloc(mask_loc->total_size, sizeof(BlastSeqLoc*));
 
     /* Loop over multiple DNA sequences */
-    for (seq_index = 0; seq_index < query_info->num_queries; ++seq_index) { 
+    for (seq_index = 0; seq_index < (Uint4)query_info->num_queries; 
+         ++seq_index) { 
         BlastSeqLoc** prot_seqloc = 
             &(prot_seqloc_array[NUM_FRAMES*seq_index]);
         BlastSeqLoc* dna_seqloc = mask_loc->seqloc_array[seq_index];
