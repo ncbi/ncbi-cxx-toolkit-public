@@ -61,9 +61,9 @@ class NCBI_XNCBI_EXPORT CVersionInfo
 {
 public:
     /// Constructor.
-    CVersionInfo(unsigned int  ver_major,
-                 unsigned int  ver_minor,
-                 unsigned int  patch_level = 0,
+    CVersionInfo(int  ver_major,
+                 int  ver_minor,
+                 int  patch_level = 0,
                  const string& name        = kEmptyStr);
 
     /// Constructor.
@@ -80,36 +80,36 @@ public:
     virtual string Print(void) const;
 
     /// Major version
-    unsigned int GetMajor(void) const { return m_Major; }
+    int GetMajor(void) const { return m_Major; }
     /// Minor version
-    unsigned int GetMinor(void) const { return m_Minor; }
+    int GetMinor(void) const { return m_Minor; }
     /// Patch level
-    unsigned int GetPatchLevel(void) const { return m_PatchLevel; }
+    int GetPatchLevel(void) const { return m_PatchLevel; }
 
     const string& GetName(void) const { return m_Name; }
 
-    /// Patch level comparison mode
+    static const CVersionInfo kAny;      /// { 0,  0,  0}
+    static const CVersionInfo kLatest;   /// {-1, -1, -1}
+
+    /// Version comparison result
     /// @sa Match
-    enum EPatchLevelCompare 
-    {
-        eAnyLevel,
-        eNewerLevel,
-        eExactLevel
+    enum EMatch {
+        eNonCompatible,           ///< major, minor does not match
+        eConditionallyCompatible, ///< patch level incompatibility
+        eBackwardCompatible,      ///< patch level is newer
+        eFullyCompatible          ///< exactly the same version
     };
 
     /// Check if version matches another version.
     /// @param version_info
     ///   Version Info to compare with
-    /// @param pl_mode
-    ///   Patch level comparison mode
-    bool Match(const CVersionInfo& version_info, 
-               EPatchLevelCompare  pl_mode) const;
+    EMatch Match(const CVersionInfo& version_info) const;
 
 protected:
-    unsigned  int    m_Major;       ///< Major number
-    unsigned  int    m_Minor;       ///< Minor number
-    unsigned  int    m_PatchLevel;  ///< Patch level
-    const     string m_Name;        ///< Name
+    int           m_Major;       ///< Major number
+    int           m_Minor;       ///< Minor number
+    int           m_PatchLevel;  ///< Patch level
+    const  string m_Name;        ///< Name
 };
 
 
@@ -128,22 +128,59 @@ protected:
 template<class It>
 It FindVersion(It first, It last, const CVersionInfo& info)
 {
-    It best_version = last;  // not found by default
-    unsigned int max_patch_level = 0;
+    It  best_version = last;  // not found by default
+    int best_major = -1;
+    int best_minor = -1;
+    int best_patch_level = -1;
 
-    for (;first != last; ++first) {
+    for ( ;first != last; ++first) {
         const CVersionInfo& vinfo = *first;
-        if (info.Match(vinfo, CVersionInfo::eNewerLevel)) {
-            // Candidate?
-            if (vinfo.GetPatchLevel() > max_patch_level) {
-                best_version = first;
-                max_patch_level = vinfo.GetPatchLevel();
+        
+        int major = vinfo.GetMajor();
+        int minor = vinfo.GetMinor();
+        int patch_level = vinfo.GetPatchLevel();
+
+        if (info.GetMajor() == -1) {  // best major search
+            if (major > best_major) { 
+                best_version = it;
+                best_major = major;
+                best_minor = minor;
+                best_patch_level = patch_level;
+                continue;
+            }
+        } else { // searching for the specific major version
+            if (info.GetMajor() != major) {
+                continue;
             }
         }
+
+        if (info.GetMinor() == -1) {  // best minor search
+            if (minor > best_minor) {
+                best_version = it;
+                best_major = major;
+                best_minor = minor;
+                best_patch_level = patch_level;
+                continue;
+            }
+        } else { 
+            if (info.GetMinor() != minor) {
+                continue;
+            }
+        }
+
+        // always looking for the best patch
+        if (patch_level > best_patch_level) {
+                best_version = it;
+                best_major = major;
+                best_minor = minor;
+                best_patch_level = patch_level;
+                continue;
+        }
+
     
     } // for
     
-    return best_version; 
+    return best_version;
 }
 
 /* @} */
@@ -157,6 +194,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/30 19:24:44  kuznets
+ * Merged together version of CVersionInfo mastered by Denis with my
+ * version of CVersionInfo...Best of both versions.
+ *
  * Revision 1.5  2003/10/30 16:38:08  kuznets
  * CVersionInfo changed:
  *  - added accessors for major, minor and patch level
