@@ -120,7 +120,14 @@ public:
 
     ~CBDB_FileCursor();
 
+    /// Set search condition(type of interval)
+    ///
+    /// @note
+    /// SetCondition resets cursor value assignments (From, To) so
+    /// should be always called before "cur.From << value ..."
+    ///
     void SetCondition(ECondition cond_from, ECondition cond_to = eNotSet);
+
     void SetFetchDirection(EFetchDirection fdir);
     EFetchDirection GetFetchDirection() const { return m_FetchDirection; }
     EFetchDirection GetReverseFetchDirection() const;
@@ -233,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/07/12 18:56:05  kuznets
+ * + comment on CBDB_FileCursor::SetCondition
+ *
  * Revision 1.11  2004/06/21 15:07:32  kuznets
  * + CBDB_Cursor::GetDBFile
  *
