@@ -4,7 +4,7 @@ SUB_PROJ = tests
 
 LIB_PROJ = python_ncbi_dbapi
 
-REQUIRES = PYTHON
+REQUIRES = PYTHON DLL
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -2,7 +2,7 @@
 
 APP_PROJ = dbapi_unit_test
 
-REQUIRES = CPPUNIT
+REQUIRES = CPPUNIT DLL
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
