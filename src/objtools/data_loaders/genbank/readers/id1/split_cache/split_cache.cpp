@@ -64,6 +64,8 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_map.hpp>
+#include <objmgr/seq_map_ci.hpp>
 #include <objmgr/desc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
@@ -496,9 +498,13 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
 
 void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
 {
-    if ( !m_ProcessedBlobs.insert(seqref.GetKeyByTSE()).second ) {
-        // already processed
-        return;
+    {
+        pair<int, int> key = seqref.GetKeyByTSE();
+        pair<TProcessedBlobs::iterator, bool> ins = m_ProcessedBlobs.insert(key);
+        if ( !ins.second ) {
+            // already processed
+            return;
+        }
     }
 
     LINE("Processing blob "<< seqref.printTSE());
@@ -662,6 +668,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/12/02 23:46:20  vasilche
+* Fixed INTERNAL COMPILER ERROR on MSVC - splitted expression.
+*
 * Revision 1.7  2003/12/02 23:24:33  vasilche
 * Added "-recurse" option to split all sequences referenced by SeqMap.
 *
