@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/09/24 17:00:05  vakatov
+* <just a save >
+*
 * Revision 1.6  1998/09/16 16:19:44  vakatov
 * *** empty log message ***
 *
@@ -65,19 +68,20 @@ namespace ncbi_cgi {
 
         // client data properties
         eProp_ContentType,
-        // eProp_ContentLength,     // see also "m_GetContentLength()"
 
         // request properties
-        // eProp_RequestMethod,     // see also "m_GetMethod()"
         eProp_PathInfo,
         eProp_PathTranslated,
         eProp_ScriptName,
-        // eProp_QueryString,
 
         // authentication info
         eProp_AuthType,
         eProp_RemoteUser,
-        eProp_RemoteIdent
+        eProp_RemoteIdent,
+
+        // # of CRequest-supported standard properties
+        // for internal use only!
+        eProp_NProperties
     };
 
 
@@ -90,38 +94,44 @@ namespace ncbi_cgi {
         CCookie(void);
         CCookie(const string& str);
 
-        void m_AddCookie(string key, string value);
-        void m_AddCookies(const string& key_value);
-        void m_AddCookies(const CCookie& cookie);
+        void f_AddCookie(string key, string value);
+        void f_AddCookies(const string& key_value);
+        void f_AddCookies(const CCookie& cookie);
 
-        list< pair<string,string> > m_FindCookie(const string& key);
+        list<pair<string,string> > f_FindCookie(const string& key);
 
     private:
         multimap<string,string> m_Cookies;
     };
 
+
+
     ///////////////////////////////////////////////////////
     // The CGI request class
     //
     class CRequest {
+        typedef map<string,string> TCookies;
+        typedef map<string,string> TProperties;
+        typedef map<string,string> TEntries;
+
     public:
         // The startup initialization using environment and/or standard input
         CRequest(void);
 
         // get "standard" properties(empty string if not found)
-        string  m_GetProperty(EProperty property);
+        const string& f_GetProperty(EProperty property);
         // get random client properties("HTTP_<key>")
-        string  m_GetRandomProperty(string key);
+        const string& f_GetRandomProperty(const string& key);
         // auxiliaries(to convert from the "string" representation)
-        Uint2   m_GetServerPort(void);
-        Uint4   m_GetServerAddr(void);  // (in the network byte order)
-        size_t  m_GetContentLength(void);
+        Uint2   f_GetServerPort(void);
+        Uint4   f_GetServerAddr(void);  // (in the network byte order)
+        size_t  f_GetContentLength(void);
 
         // Set of cookies received from the client
-        const multimap<string,string>& m_GetCookies(void);
+        const multimap<string,string>& f_GetCookies(void);
 
         // Set of entries(decoded) received from the client
-        const multimap<string,string>& m_GetEntries(void);
+        const multimap<string,string>& f_GetEntries(void);
 
         /* DANGER!!!  Direct access to the data received from client
          * NOTE 1: m_Entries() would not work(return an empty set) if
@@ -132,30 +142,23 @@ namespace ncbi_cgi {
          *         a reference to an empty string; in other words,
          *         m_Entries() and m_Content() are mutially exclusive
          */
-        istream& m_GetContent(void);
+        istream& f_GetContent(void);
 
     private:
-        // CGI request method
-        enum EMethod {
-            eMethod_Get,
-            eMethod_Post
-        } m_Method;
-
         // True after m_Entries() or m_Content() call
         bool m_IsContentFetched;
-
-        // "istream"-based wrapper for the QueryString(eMethod_Get);
+        // "istream"-based wrapper for the QueryString(for GET method);
         // only needed if m_Content() gets called
         istrstream m_QueryStream;
-
         // set of the request properties(already retrieved; cached)
-        map<string,string> m_Properties;
-
+        TProperties m_Properties;
         // set of the request entries(already retrieved; cached)
-        multimap<string,string> m_Entries;
-
+        TEntries m_Entries;
         // set of the request cookies(already retrieved; cached)
-        multimap<string,string> m_Cookies;
+        TCookies m_Cookies;
+
+        // retrieve the property
+        const string& f_GetPropertyByName(const string& name)
     };  // CRequest
 
 
@@ -180,7 +183,7 @@ namespace ncbi_cgi {
 
     
     ///////////////////////////////////////////////////////
-    // The bulky inline function implementations are here
+    // All inline function implementations are in this file
 #include <ncbicgi.inl>
 
 };  // namespace ncbi_cgi
