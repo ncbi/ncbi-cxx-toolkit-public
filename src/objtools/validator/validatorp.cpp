@@ -194,6 +194,11 @@ void CValidError_imp::PostErr
         PostErr (sv, et, msg, *annot);
         return;
     }
+    const CSeq_graph* graph = dynamic_cast < const CSeq_graph* > (&obj);
+    if (graph != 0) {
+        PostErr (sv, et, msg, *graph);
+        return;
+    }
 }
 
 
@@ -349,6 +354,47 @@ void CValidError_imp::PostErr
     // !!! need to decide on the message
 
     m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, an));
+}
+
+
+void CValidError_imp::PostErr
+(EDiagSev sv,
+ EErrType et,
+ const string& message,
+ TGraph graph)
+{
+    // Append Graph label
+    string msg(message + " GRAPH: ");
+    if ( graph.IsSetTitle() ) {
+        msg += graph.GetTitle();
+    } else {
+        msg += "Not Named";
+    }
+    msg += " ";
+    graph.GetLoc().GetLabel(&msg);
+
+    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, graph));
+}
+
+
+void CValidError_imp::PostErr
+(EDiagSev sv,
+ EErrType et,
+ const string& message,
+ TBioseq sq,
+ TGraph graph)
+{
+    // Append Graph label
+    string msg(message + " GRAPH: ");
+    if ( graph.IsSetTitle() ) {
+        msg += graph.GetTitle();
+    } else {
+        msg += "Not Named";
+    }
+    msg += " ";
+    graph.GetLoc().GetLabel(&msg);
+
+    PostErr(sv, et, msg, sq);
 }
 
 
@@ -902,8 +948,8 @@ void CValidError_imp::ValidateBioSource
 	}
 
 	// validate legal locations.
-	if ( bsrc.GetGenome() == CBioSource_Base::eGenome_transposon  ||
-		 bsrc.GetGenome() == CBioSource_Base::eGenome_insertion_seq ) {
+	if ( bsrc.GetGenome() == CBioSource::eGenome_transposon  ||
+		 bsrc.GetGenome() == CBioSource::eGenome_insertion_seq ) {
 		PostErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceLocation,
 			     "Transposon and insertion sequence are no longer legal locations.", obj);
 	}
@@ -965,13 +1011,13 @@ void CValidError_imp::ValidateBioSource
 			     "No lineage for this BioSource.", obj);
 	} else {
         const string& lineage = orgref.GetOrgname().GetLineage();
-		if ( bsrc.GetGenome() == CBioSource_Base::eGenome_kinetoplast ) {
+		if ( bsrc.GetGenome() == CBioSource::eGenome_kinetoplast ) {
 			if ( lineage.find("Kinetoplastida") == string::npos ) {
 				PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
 						 "Only Kinetoplastida have kinetoplasts", obj);
 			}
 		} 
-		if ( bsrc.GetGenome() == CBioSource_Base::eGenome_nucleomorph ) {
+		if ( bsrc.GetGenome() == CBioSource::eGenome_nucleomorph ) {
 			if ( lineage.find("Chlorarchniophyta") == string::npos  &&
 				lineage.find("Cryptophyta") == string::npos) {
 				PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
@@ -1613,7 +1659,6 @@ void CValidError_imp::SetScope(const CSeq_entry& se)
 {
     m_Scope.Reset(new CScope(*m_ObjMgr));
     m_Scope->AddTopLevelSeqEntry(*const_cast<CSeq_entry*>(&se));
-    m_Scope->AddDefaults();
 }
 
 
@@ -1857,6 +1902,26 @@ void CValidError_base::PostErr
     m_Imp.PostErr(sv, et, msg, annot);
 }
 
+void CValidError_base::PostErr
+(EDiagSev sv,
+ EErrType et,
+ const string& msg,
+ TGraph graph)
+{
+    m_Imp.PostErr(sv, et, msg, graph);
+}
+
+
+void CValidError_base::PostErr
+(EDiagSev sv,
+ EErrType et,
+ const string& msg,
+ TBioseq sq,
+ TGraph graph)
+{
+    m_Imp.PostErr(sv, et, msg, sq, graph);
+}
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)
@@ -1867,6 +1932,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/03/28 16:30:33  shomrat
+* Implemented PostErr method for graph errors.
+*
 * Revision 1.26  2003/03/21 21:11:09  shomrat
 * Initialization of m_ValidateIdSet
 *
