@@ -40,7 +40,7 @@ wait $pid > /dev/null 2>&1
 status=$?
 
 # Special check for core file on Darwin
-if [ $status != 0  -a  `uname -s` = "Darwin" -a -d "/cores"]; then
+if [ $status != 0  -a  `uname -s` = "Darwin" -a -d "/cores" ]; then
    sleep 0 > /dev/null 2>&1  &
    end_pid=$!
    p=$pid
