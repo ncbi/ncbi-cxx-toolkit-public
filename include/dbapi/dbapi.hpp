@@ -141,10 +141,12 @@ public:
     /// NOTE: no results are fetched before first call to this function.
     virtual bool Next() = 0;
 
-    /// Get variant given a column number.
+    /// Retrieve a CVariant class describing the data stored in a given column.
+    /// Note that the index supplied is one-based, not zero-based; the first
+    /// column is column 1.
     ///
     /// @param col
-    ///   Column number.
+    ///   Column number (one-based)
     /// @return
     ///   All data (for BLOB data see below) is returned as CVariant.
     virtual const CVariant& GetVariant(unsigned int col) = 0;
@@ -736,6 +738,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/01/13 15:30:03  dicuccio
+ * Adjusted comment for GetVariant(): note that column index is 1-based, not
+ * 0-based
+ *
  * Revision 1.34  2004/11/16 19:58:28  kholodov
  * Added: GetBlobOStream() with explicit connection
  *
