@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/10/18 20:10:34  grichenk
+* Save combining header on -oc
+*
 * Revision 1.35  2001/08/31 20:05:46  ucko
 * Fix ICC build.
 *
@@ -364,6 +367,24 @@ void CCodeGenerator::GenerateCode(void)
             if ( !out )
                 ERR_POST(Fatal << "Error writing file "<<fileName);
         }
+        // write combined *__.hpp file
+        const char* suffix = ".hpp";
+        // save to the includes directory
+        string fileName = Path(m_HPPDir,
+                               Path(m_FileNamePrefix,
+                                    m_CombiningFileName + "__" + suffix));
+
+        CDelayedOfstream out(fileName);
+        if ( !out )
+            ERR_POST(Fatal << "Cannot create file: " << fileName);
+
+        iterate ( TOutputFiles, filei, m_Files ) {
+            out << "#include \"" << BaseName(filei->first) << suffix << "\"\n";
+        }
+
+        out.close();
+        if ( !out )
+            ERR_POST(Fatal << "Error writing file " << fileName);
     }
 }
 
