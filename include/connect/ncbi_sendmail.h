@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *    Send mail (with accordance to RFC821 [protocol] and RFC822 [headers])
+ *    Send mail (in accordance with RFC821 [protocol] and RFC822 [headers])
  *
  */
 
@@ -115,6 +115,9 @@ extern const char* CORE_SendMailEx(const char* to,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/06/12 20:07:32  lavr
+ * Tiny correction of file description
+ *
  * Revision 6.5  2002/06/12 19:20:12  lavr
  * Few patches in comments; guard macro name standardized; log moved down
  *
