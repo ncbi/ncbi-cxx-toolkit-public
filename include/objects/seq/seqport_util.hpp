@@ -27,29 +27,13 @@
  * ===========================================================================
  *
  * Author:  Clifford Clausen
- *          (also reviewed/fixed/groomed by Denis Vakatov)
+ *          (also reviewed/fixed/groomed by Denis Vakatov and Aaron Ucko)
  *
  * File Description:
- *   
- *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.4  2002/05/03 21:28:03  ucko
- * Introduce T(Signed)SeqPos.
- *
- * Revision 1.3  2002/01/10 19:20:45  clausen
- * Added GetIupacaa3, GetCode, and GetIndex
- *
- * Revision 1.2  2001/09/07 14:16:49  ucko
- * Cleaned up external interface.
- *
- * Revision 1.1  2001/08/24 00:34:22  vakatov
- * Initial revision
- *
- * ===========================================================================
- */
+ */   
 
 #include <objects/seq/Seq_data.hpp>
+#include <objects/seqcode/Seq_code_type.hpp>
 #include <util/random_gen.hpp>
 #include <vector>
 
@@ -64,6 +48,26 @@ BEGIN_objects_SCOPE
 class CSeqportUtil
 {
 public:
+
+    // TypeDefs
+    typedef unsigned int TIndex;
+    typedef pair<TIndex, TIndex> TPair;
+    
+    // Classes thrown as errors
+    struct CBadIndex : public runtime_error
+    {
+        CBadIndex() : runtime_error("CSeqportUtil: bad index specified") {}
+    };
+    struct CBadSymbol : public runtime_error 
+    {
+        CBadSymbol() : runtime_error("CSeqportUtil: bad symbol specified") {}
+    };
+    struct CBadType : public runtime_error 
+    {
+        CBadType() : runtime_error("CSeqportUtil: specified code or code "
+                                   "combination not supported") {}
+    };
+    
     // Alphabet conversion function. Function returns the
     // number of converted codes.
     static TSeqPos Convert(const CSeq_data&       in_seq,
@@ -204,17 +208,98 @@ public:
                                      TSeqPos            uLength   = 0);
                                           
     // Given an Ncbistdaa input code index, returns the 3 letter Iupacaa3 code
-    static const string& GetIupacaa3(unsigned int ncbistdaa);
+    // Implementation is efficient
+    static const string& GetIupacaa3(TIndex ncbistdaa);
     
-    // Given a code index for any of Iupacna, Iupacaa, Ncbistdaa, and Ncbieaa,
-    // returns the code corresponding to the index                        
+    // Given a code type expressible as enum CSeq_data::E_Choice, returns
+    // true if the code type is available. See Seq_data_.hpp for definition 
+    // of enum CSeq_data::E_Choice.
+    static bool IsCodeAvailable(CSeq_data::E_Choice code_type);
+    
+    // Same as above, but for code types expressible as enum ESeq_code_type.
+    // See Seq_code_type_.hpp for definition of enum ESeq_code_type.
+    static bool IsCodeAvailable(ESeq_code_type code_type);
+    
+    // Gets the first and last indices of a code type (e.g., for iupacna,
+    // the first index is 65 and the last index is 89). Throws CBadType
+    // if code_type is not available
+    static TPair GetCodeIndexFromTo(CSeq_data::E_Choice code_type);
+    
+    // Same as above but takes code type expressed as an ESeq_code_type
+    static TPair GetCodeIndexFromTo(ESeq_code_type code_type);
+        
+    // Given an index for any code type expressible as a
+    // CSeq_data::E_Choice, returns the corresponding symbol (code)
+    // (e.g., for iupacna, idx 65 causes "A" to be returned)
+    // if the code type is available (e.g., ncbi8aa is not currently
+    // available). Use IsCodeAvailable() to find out which code types
+    // are available. Throws CBadType if code_type not available. Throws
+    // CBadIndex if idx out of range for code_type.                    
     static const string& GetCode(CSeq_data::E_Choice code_type, 
-                                 unsigned int        idx); 
+                                 TIndex              idx); 
+
+    // Similar to above, but works for all code types expressible as
+    // a ESeq_code_type (i.e., iupacaa3 is expressible as an
+    // ESeq_code_type but not as a CSeq_data::E_Choice)
+    static const string& GetCode(ESeq_code_type code_type, 
+                                 TIndex         idx); 
                         
-    // Given a code for any of Iupacna, Iupacaa, Ncbistdaa, and Ncbieaa,
-    // returns the index corresponding to the code. If no code
-    // exists, returns -1
-    static int GetIndex(CSeq_data::E_Choice code_type, const string& code);
+    // Given an index for any code type expressible as a
+    // CSeq_data::E_Choice, returns the corresponding name
+    // (e.g., for iupacna, idx 65 causes "Adenine" to be returned)
+    // if the code type is available (e.g., ncbi8aa is not currently
+    // available). Use IsCodeAvailable() to find out which code types
+    // are available. Throws CBadType if code_type not available. Throws
+    // CBadIndex if idx out of range for code_type.                  
+    static const string& GetName(CSeq_data::E_Choice code_type, 
+                                 TIndex              idx); 
+
+    // Similar to above, but works for all code types expressible as
+    // a ESeq_code_type (i.e., iupacaa3 is expressible as an
+    // ESeq_code_type but not as a CSeq_data::E_Choice)
+    static const string& GetName(ESeq_code_type code_type, 
+                                 TIndex         idx); 
+
+    // Given a code (symbol) for any code type expressible as a
+    // CSeq_data::E_Choice, returns the corresponding index
+    // (e.g., for iupacna, symbol "A" causes 65 to be returned)
+    // if the code type is available (e.g., ncbi8aa is not currently
+    // available). Use IsCodeAvailable() to find out which code types
+    // are available.Throws CBadType if code_type not available. Throws
+    // CBadSymbol if code is not a valid symbol for code_type.                     
+    static TIndex GetIndex(CSeq_data::E_Choice code_type, const string& code);
+    
+    // Similar to above, but works for all code types expressible as
+    // a ESeq_code_type (i.e., iupacaa3 is expressible as an
+    // ESeq_code_type but not as a CSeq_data::E_Choice)
+    static TIndex GetIndex(ESeq_code_type code_type, const string& code);
+    
+    // Get the index that is the complement of the index for the
+    // input CSeq_data::E_Choice code type (e.g., for iupacna, the
+    // complement of index 66 is 86). Throws CBadType if complements for 
+    // code_type not available. Throws CBadIndex if idx out of range for 
+    // code_type    
+    static TIndex GetIndexComplement(CSeq_data::E_Choice code_type,
+                                     TIndex              idx);
+
+    // Same as above, but for code type expressible as ESeq_code_type.                                  
+    static TIndex GetIndexComplement(ESeq_code_type code_type,
+                                     TIndex         idx);
+    
+    // Takes an index for a from_type code and returns the index for to_type
+    // (e.g., GetMapToIndex(CSeq_data::e_Iupacna, CSeq_data::e_Ncbi2na,
+    // 68) returns 2). Returns 255 if no map value exists for a legal
+    // index (e.g., GetMapToIndex(CSeq_data::e_Iupacna, CSeq_data::e_Ncbi2na,
+    // 69) returns 255). Throws CBadType if map for from_type to to_type not
+    // available. Throws CBadIndex if from_idx out of range for from_type.
+    static TIndex GetMapToIndex(CSeq_data::E_Choice from_type,
+                             CSeq_data::E_Choice    to_type,
+                             TIndex                 from_idx);
+    
+    // Same as above, but uses ESeq_code_type.                        
+    static TIndex GetMapToIndex(ESeq_code_type from_type,
+                                ESeq_code_type to_type,
+                                TIndex         from_idx);
 };
 
 
@@ -222,3 +307,24 @@ END_objects_SCOPE
 END_NCBI_SCOPE
 
 #endif  /* OBJECTS_SEQ___SEQPORT_UTIL__HPP */
+
+ /*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.5  2002/05/14 15:12:06  clausen
+ * Added IsCodeAvailable, GetCodeIndexFromTo, GetName, GetIndexComplement, GetMapToIndex
+ *
+ * Revision 1.4  2002/05/03 21:28:03  ucko
+ * Introduce T(Signed)SeqPos.
+ *
+ * Revision 1.3  2002/01/10 19:20:45  clausen
+ * Added GetIupacaa3, GetCode, and GetIndex
+ *
+ * Revision 1.2  2001/09/07 14:16:49  ucko
+ * Cleaned up external interface.
+ *
+ * Revision 1.1  2001/08/24 00:34:22  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */

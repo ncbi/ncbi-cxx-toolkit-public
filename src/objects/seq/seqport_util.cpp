@@ -1,4 +1,4 @@
-/*  $Id$
+ /*$Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,45 +24,10 @@
  * ===========================================================================
  *
  * Author:  Clifford Clausen
- *          (also reviewed/fixed/groomed by Denis Vakatov)
+ *          (also reviewed/fixed/groomed by Denis Vakatov and Aaron Ucko)
  *
  * File Description:
- *   
- *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.10  2002/05/03 21:28:14  ucko
- * Introduce T(Signed)SeqPos.
- *
- * Revision 6.9  2002/04/25 19:37:03  clausen
- * Fixed bug in MapNcbi2naToNcbi4na that caused corrupiton of out_seq
- *
- * Revision 6.8  2002/03/27 19:53:18  grichenk
- * Fixed CR/LF problem in the source
- *
- * Revision 6.7  2002/01/12 07:40:22  vakatov
- * Fixed multiple dangerous typos ('&' instead of '&&' in IFs)
- *
- * Revision 6.6  2002/01/10 19:21:34  clausen
- * Added GetIupacaa3, GetCode, and GetIndex
- *
- * Revision 6.5  2001/10/17 18:35:33  clausen
- * Fixed machine dependencies in InitFastNcbi4naIupacna and InitFastNcbi2naNcbi4na
- *
- * Revision 6.4  2001/10/17 13:04:30  clausen
- * Fixed InitFastNcbi2naIupacna to remove hardware dependency
- *
- * Revision 6.3  2001/09/07 14:16:50  ucko
- * Cleaned up external interface.
- *
- * Revision 6.2  2001/09/06 20:43:32  ucko
- * Fix iterator types (caught by gcc 3.0.1).
- *
- * Revision 6.1  2001/08/24 00:34:23  vakatov
- * Initial revision
- *
- * ===========================================================================
- */
+ */  
 
 #include <objects/seq/seqport_util.hpp>
 
@@ -89,6 +54,37 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+static const bool kSymbol = true;
+static const bool kName = false;
+static const unsigned int kNumCodes = 11;
+
+static inline ESeq_code_type EChoiceToESeq (CSeq_data::E_Choice from_type)
+{
+    switch (from_type) {
+    case CSeq_data::e_Iupacaa:
+        return eSeq_code_type_iupacaa;
+    case CSeq_data::e_Ncbi2na:
+        return eSeq_code_type_ncbi2na;
+    case CSeq_data::e_Ncbi4na:
+        return eSeq_code_type_ncbi4na;
+    case CSeq_data::e_Iupacna:
+        return eSeq_code_type_iupacna;
+    case CSeq_data::e_Ncbieaa:
+        return eSeq_code_type_ncbieaa;
+    case CSeq_data::e_Ncbistdaa:
+        return eSeq_code_type_ncbistdaa;
+    case CSeq_data::e_Ncbi8na:
+        return eSeq_code_type_ncbi8na;
+    case CSeq_data::e_Ncbipna:
+        return eSeq_code_type_ncbipna;
+    case CSeq_data::e_Ncbi8aa:
+        return eSeq_code_type_ncbi8aa;
+    case CSeq_data::e_Ncbipaa:
+        return eSeq_code_type_ncbipaa;
+    default:
+        throw CSeqportUtil::CBadType();
+    }
+}    
 
 // CSeqportUtil_implementation is a singleton.
 
@@ -96,6 +92,9 @@ class CSeqportUtil_implementation {
 public:
     CSeqportUtil_implementation();
     ~CSeqportUtil_implementation();
+    
+    typedef CSeqportUtil::TIndex TIndex;
+    typedef CSeqportUtil::TPair  TPair;
 
     TSeqPos Convert
     (const CSeq_data&      in_seq,
@@ -197,14 +196,43 @@ public:
      TSeqPos            uLength)
         const;
         
-    const string& GetIupacaa3(unsigned int ncbistdaa);
+    const string& GetIupacaa3(TIndex ncbistdaa);
     
-    const string& GetCode(CSeq_data::E_Choice code_type, 
-                          unsigned int        idx); 
+    bool IsCodeAvailable(CSeq_data::E_Choice code_type);
+    
+    bool IsCodeAvailable(ESeq_code_type code_type);
+    
+    TPair GetCodeIndexFromTo(CSeq_data::E_Choice code_type);
+    
+    TPair GetCodeIndexFromTo(ESeq_code_type code_type);
+    
+    const string& GetCodeOrName(CSeq_data::E_Choice code_type, 
+                                TIndex              idx,
+                                bool                get_code); 
                  
-    int GetIndex(CSeq_data::E_Choice code_type,
-                 const string&       code);
+    const string& GetCodeOrName(ESeq_code_type code_type, 
+                                TIndex         idx,
+                                bool           get_code); 
+                 
+    TIndex GetIndex(CSeq_data::E_Choice code_type,
+                    const string&       code);
 
+    TIndex GetIndex(ESeq_code_type code_type,
+                    const string&       code);
+                  
+    TIndex GetIndexComplement(CSeq_data::E_Choice code_type,
+                              TIndex              idx);
+                           
+    TIndex GetIndexComplement(ESeq_code_type code_type,
+                              TIndex         idx);
+
+    TIndex GetMapToIndex(CSeq_data::E_Choice from_type,
+                         CSeq_data::E_Choice to_type,
+                         TIndex              from_idx);
+
+    TIndex GetMapToIndex(ESeq_code_type from_type,
+                         ESeq_code_type to_type,
+                         TIndex         from_idx);
 private:
 
     // Template wrapper class used to create data type specific
@@ -366,32 +394,13 @@ private:
     // (2 bytes to 1 byte). Similar to m_FastIupacnaNcbi4na
     CRef<CFast_2_1> m_FastNcbi4naNcbi2na;
     
-    // Table used to return Iupacaa3 code given Ncbistdaa code index
-    vector<string> m_NcbistdaaIupacaa3;
-    
-    // Tables used to return an Iupacna code given an Iupacna code index
-    // and vice-versa
-    vector<string> m_IupacnaIndexCode;
-    map<string, int> m_IupacnaCodeIndex;
-    int m_iupacna_start_at;
-    
-    // Tables used to return an Iupacaa code given an Iupacaa code index
-    // and vice-versa
-    vector<string> m_IupacaaIndexCode;
-    map<string, int> m_IupacaaCodeIndex;
-    int m_iupacaa_start_at;
-    
-    // Tables used to return an Ncbistdaa code given an Ncbistdaa code index
-    // and vice-versa
-    vector<string> m_NcbistdaaIndexCode;
-    map<string, int> m_NcbistdaaCodeIndex;
-    
-    // Tables used to return an Ncbieaa code given an Ncbieaa code index
-    // and vice-versa
-    vector<string> m_NcbieaaIndexCode;
-    map<string, int> m_NcbieaaCodeIndex;
-    int m_ncbieaa_start_at; 
-
+    // Tables used to convert an index for a code type to a symbol or name
+    // for the same code type
+    vector<string> m_IndexString[2][kNumCodes];
+    vector<TIndex> m_IndexComplement[kNumCodes];
+    map<string, TIndex> m_StringIndex[kNumCodes];
+    TIndex m_StartAt[kNumCodes];
+        
     // Helper function to initialize fast conversion tables
     CRef<CFast_table4> InitFastNcbi2naIupacna();
     CRef<CFast_table2> InitFastNcbi2naNcbi4na();
@@ -400,8 +409,9 @@ private:
     CRef<CFast_2_1>    InitFastIupacnaNcbi4na();
     CRef<CFast_2_1>    InitFastNcbi4naNcbi2na();
     
-    // Helper functions to initialize Index to/from code conversion tables
-    void               InitIndexCode();
+    // Helper functions to initialize Index to/from code/name conversion tables
+    // and complement tables 
+    void               InitIndexCodeName();
     
     // Data members and functions used for random disambiguation
 
@@ -750,7 +760,7 @@ private:
                            TSeqPos           uBeginIdx,
                            TSeqPos           uLength)
         const;
-
+ 
     // Methods to reverse-complement an na sequences
 
     // In place methods
@@ -1011,27 +1021,104 @@ TSeqPos CSeqportUtil::ReverseComplement
 }
 
 
-const string& CSeqportUtil::GetIupacaa3(unsigned int ncbistdaa)
+const string& CSeqportUtil::GetIupacaa3(TIndex ncbistdaa)
 {
     return s_Implementation.GetIupacaa3(ncbistdaa);
 }
 
+bool CSeqportUtil::IsCodeAvailable(CSeq_data::E_Choice code_type)
+{
+    return s_Implementation.IsCodeAvailable(code_type);
+}
+
+bool CSeqportUtil::IsCodeAvailable(ESeq_code_type code_type)
+{
+    return s_Implementation.IsCodeAvailable(code_type);
+}
+
+CSeqportUtil::TPair CSeqportUtil::GetCodeIndexFromTo
+(CSeq_data::E_Choice code_type)
+{
+    return s_Implementation.GetCodeIndexFromTo(code_type);
+}
+
+CSeqportUtil::TPair CSeqportUtil::GetCodeIndexFromTo
+(ESeq_code_type code_type)
+{
+    return s_Implementation.GetCodeIndexFromTo(code_type);
+}
 
 const string& CSeqportUtil::GetCode
 (CSeq_data::E_Choice code_type, 
- unsigned int        idx) 
+ TIndex              idx) 
 {
-    return s_Implementation.GetCode(code_type, idx);
+    return s_Implementation.GetCodeOrName(code_type, idx, true);
 }
 
-int CSeqportUtil::GetIndex
+const string& CSeqportUtil::GetCode
+(ESeq_code_type code_type, 
+ TIndex         idx) 
+{
+    return s_Implementation.GetCodeOrName(code_type, idx, true);
+}
+
+const string& CSeqportUtil::GetName
+(CSeq_data::E_Choice code_type, 
+ TIndex              idx) 
+{
+    return s_Implementation.GetCodeOrName(code_type, idx, false);
+}
+
+const string& CSeqportUtil::GetName
+(ESeq_code_type code_type, 
+ TIndex         idx) 
+{
+    return s_Implementation.GetCodeOrName(code_type, idx, false);
+}
+
+CSeqportUtil::TIndex CSeqportUtil::GetIndex
 (CSeq_data::E_Choice code_type,
  const string&       code)
 {
     return s_Implementation.GetIndex(code_type, code);
 }
 
+CSeqportUtil::TIndex CSeqportUtil::GetIndex
+(ESeq_code_type code_type,
+ const string&  code)
+{
+    return s_Implementation.GetIndex(code_type, code);
+}
 
+CSeqportUtil::TIndex CSeqportUtil::GetIndexComplement
+(CSeq_data::E_Choice code_type,
+ TIndex        idx)
+{
+    return s_Implementation.GetIndexComplement(code_type, idx);
+}
+
+CSeqportUtil::TIndex CSeqportUtil::GetIndexComplement
+(ESeq_code_type code_type,
+ TIndex         idx)
+{
+    return s_Implementation.GetIndexComplement(code_type, idx);
+}
+
+CSeqportUtil::TIndex CSeqportUtil::GetMapToIndex
+(CSeq_data::E_Choice from_type,
+ CSeq_data::E_Choice to_type,
+ TIndex              from_idx)
+{
+    return s_Implementation.GetMapToIndex(from_type, to_type, from_idx);
+}
+
+CSeqportUtil::TIndex CSeqportUtil::GetMapToIndex
+(ESeq_code_type from_type,
+ ESeq_code_type to_type,
+ TIndex         from_idx)
+{
+    return s_Implementation.GetMapToIndex(from_type, to_type, from_idx);
+}
 
 CSeqportUtil_implementation::CSeqportUtil_implementation()
 {
@@ -1109,8 +1196,8 @@ CSeqportUtil_implementation::CSeqportUtil_implementation()
     m_FastIupacnaNcbi4na = InitFastIupacnaNcbi4na();
     m_FastNcbi4naNcbi2na = InitFastNcbi4naNcbi2na();
     
-    // Initialize tables for conversion of index to codes
-    InitIndexCode();
+    // Initialize tables for conversion of index to codes or names
+    InitIndexCodeName();
 
     // Initialize m_Masks used for random ambiguity resolution
     m_Masks = CSeqportUtil_implementation::InitMasks();
@@ -1400,7 +1487,8 @@ CRef<CSeqportUtil_implementation::CCode_rev> CSeqportUtil_implementation::InitNc
 
 
 // Function to initialize map tables
-CRef<CSeqportUtil_implementation::CMap_table> CSeqportUtil_implementation::InitMaps
+CRef<CSeqportUtil_implementation::CMap_table> 
+CSeqportUtil_implementation::InitMaps
 (ESeq_code_type from_type,
  ESeq_code_type to_type)
 {
@@ -1464,7 +1552,6 @@ CRef<CSeqportUtil_implementation::CFast_table4> CSeqportUtil_implementation::Ini
                         *(pt++) = chk;
                         *(pt) = chl;                       
                      }
-    m_Ncbi2naIupacna->drop_table();
     return fastTable;
 }
 
@@ -1491,7 +1578,6 @@ CRef<CSeqportUtil_implementation::CFast_table2> CSeqportUtil_implementation::Ini
                     *(pt++) = (chi << 4) | chj;
                     *pt = (chk << 4) | chl;
                 }
-    m_Ncbi2naNcbi4na->drop_table();
     return fastTable;
 }
 
@@ -1514,7 +1600,6 @@ CRef<CSeqportUtil_implementation::CFast_table2> CSeqportUtil_implementation::Ini
             *(pt++) = chi;
             *pt = chj;
         }
-    m_Ncbi4naIupacna->drop_table();
     return fastTable;
 }
 
@@ -1538,7 +1623,6 @@ CRef<CSeqportUtil_implementation::CFast_4_1> CSeqportUtil_implementation::InitFa
             for(unsigned int pos = 0; pos < 4; pos++)
                 fastTable->m_Table[pos][ch] = '\x00';
     }
-    m_IupacnaNcbi2na->drop_table();
     return fastTable;
 }
 
@@ -1563,7 +1647,6 @@ CRef<CSeqportUtil_implementation::CFast_2_1> CSeqportUtil_implementation::InitFa
                 fastTable->m_Table[1][ch] = '\x0F';
             }
     }
-    m_IupacnaNcbi4na->drop_table();
     return fastTable;
 }
 
@@ -1591,103 +1674,42 @@ CRef<CSeqportUtil_implementation::CFast_2_1> CSeqportUtil_implementation::InitFa
             fastTable->m_Table[1][nIdx] = (u1<<2) | u2;
         }
 
-    m_Ncbi4naNcbi2na->drop_table();
     return fastTable;
 }
 
 
-// Function to initialize m_NcbistdaaIupacaa3, m_IupacnaIndexCode, 
-// m_IupacaaIndexCode, m_NcbistdaaIndexCode, m_NcbieaaIndexCode, 
-// m_IupacnaCodeIndex, m_IupacaaCodeIndex, m_NcbieaaCodeIndex, and
-// m_NcbistdaaCodeIndex
-void CSeqportUtil_implementation::InitIndexCode()
+// Function to initialize m_IndexString and m_StringIndex
+void CSeqportUtil_implementation::InitIndexCodeName()
 {
     typedef list<CRef<CSeq_code_table> >      Ttables;
     typedef list<CRef<CSeq_code_table::C_E> > Tcodes;
     
-    bool iupacaa3_found = false, iupacna_found = false, iupacaa_found = false,
-         ncbistdaa_found = false, ncbieaa_found = false;
-         
-    // Get table for eSeq_code_type_iupacaa3
-    iterate (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
-        if((*i_ct)->GetCode() == eSeq_code_type_iupacaa3  &&
-           !iupacaa3_found) {
-            iupacaa3_found = true;
-           iterate(Tcodes, i_td1, (*i_ct)->GetTable()) {
-                m_NcbistdaaIupacaa3.push_back((*i_td1)->GetSymbol());
-            }
-        }
-        if((*i_ct)->GetCode() == eSeq_code_type_iupacna  &&  !iupacna_found) {
-            iupacna_found = true;
-            if (!(*i_ct)->IsSetStart_at()) {
-                throw runtime_error("Iupacna start_at not set");
-            }
-            m_iupacna_start_at = (*i_ct)->GetStart_at();
-            int i =  m_iupacna_start_at;       
-            iterate(Tcodes, i_td2, (*i_ct)->GetTable()) {
-                m_IupacnaIndexCode.push_back((*i_td2)->GetSymbol());
-                m_IupacnaCodeIndex.insert(make_pair((*i_td2)->GetSymbol(), i));
-                i++;
-            }
-        }
-        if((*i_ct)->GetCode() == eSeq_code_type_iupacaa  &&  !iupacaa_found) {
-            iupacaa_found = true;
-            if (!(*i_ct)->IsSetStart_at()) {
-                throw runtime_error("Iupacaa start_at not set");
-            }
-            m_iupacaa_start_at = (*i_ct)->GetStart_at();
-            int i =  m_iupacaa_start_at;       
-            iterate(Tcodes, i_td3, (*i_ct)->GetTable()) {
-                m_IupacaaIndexCode.push_back((*i_td3)->GetSymbol());
-                m_IupacaaCodeIndex.insert(make_pair((*i_td3)->GetSymbol(), i));
-                i++;
-            }
-        }
-        if((*i_ct)->GetCode() == eSeq_code_type_ncbieaa  &&  !ncbieaa_found) {
-            ncbieaa_found = true;
-            if (!(*i_ct)->IsSetStart_at()) {
-                throw runtime_error("Ncbieaa start_at not set");
-            }
-            m_ncbieaa_start_at = (*i_ct)->GetStart_at();
-            int i =  m_ncbieaa_start_at;       
-            iterate(Tcodes, i_td4, (*i_ct)->GetTable()) {
-                m_NcbieaaIndexCode.push_back((*i_td4)->GetSymbol());
-                m_NcbieaaCodeIndex.insert(make_pair((*i_td4)->GetSymbol(), i));
-                i++;
-            }
-        }
-        if((*i_ct)->GetCode() == eSeq_code_type_ncbistdaa  &&
-           !ncbistdaa_found) {
-            ncbistdaa_found = true;
-            int i = 0;
-            iterate(Tcodes, i_td5, (*i_ct)->GetTable()) {
-                m_NcbistdaaIndexCode.push_back((*i_td5)->GetSymbol());
-                m_NcbistdaaCodeIndex.insert(make_pair
-                    ((*i_td5)->GetSymbol(), i));
-                i++;
-            }
-        }
-
+    bool found[kNumCodes];
+    for (unsigned int ii = 0; ii < kNumCodes; ii++) {
+        found[ii] = false;
     }
-    if (!iupacaa3_found) {    
-        throw runtime_error("Iupacaa3 code table not found");
+    iterate (Ttables, it, m_SeqCodeSet->GetCodes()) {
+        const ESeq_code_type& code = (*it)->GetCode();
+        if (!found[code-1]) {
+            found[code-1] = true;
+            m_StartAt[code-1] = (*it)->IsSetStart_at() ?
+                (*it)->GetStart_at() : 0;
+            TIndex i = m_StartAt[code-1];
+            iterate(Tcodes, is, (*it)->GetTable()) {                
+                m_IndexString[kSymbol][code-1].push_back((*is)->GetSymbol());
+                m_IndexString[kName][code-1].push_back((*is)->GetName());
+                m_StringIndex[code-1].insert
+                    (make_pair((*is)->GetSymbol(), i++));
+            }
+            if ( (*it)->IsSetComps() ) {
+                iterate (list<int>, ic, (*it)->GetComps()) {
+                    m_IndexComplement[code-1].push_back(*ic);
+                }
+            }
+        }
     }
     
-    if (!iupacna_found) {    
-        throw runtime_error("Iupacna code table not found");
-    }
-    
-    if (!iupacaa_found) {    
-        throw runtime_error("Iupacaa code table not found");
-    }
-    
-    if (!ncbieaa_found) {    
-        throw runtime_error("Ncbieaa code table not found");
-    }
-    
-    if (!ncbistdaa_found) {    
-        throw runtime_error("Ncbistdaa code table not found");
-    }         
+     
 }
 
 
@@ -2465,7 +2487,7 @@ TSeqPos CSeqportUtil_implementation::MapNcbi2naToNcbi4na
     vector<char>::const_iterator i_in_begin =
         in_seq_data.begin() + uBeginIdx/4;
     vector<char>::const_iterator i_in_end = i_in_begin + uInBytes;
- 
+
     // Loop through in_seq_data and convert to out_seq_data
     for(i_in = i_in_begin; i_in != i_in_end; ++i_in) {
         unsigned short uVal =
@@ -5327,100 +5349,233 @@ TSeqPos CSeqportUtil_implementation::AppendIupacaa
     return uLength1 + uLength2;
 }
 
-// Returns the 3 letter Iupacaa3 code for the unsigned integer ncbistdaa code
+// Returns the 3 letter Iupacaa3 code for an ncbistdaa index
 const string& CSeqportUtil_implementation::GetIupacaa3
-(unsigned int ncbistdaa)
+(TIndex ncbistdaa)
 {
-    // Range check ncbistdaa
-    if (ncbistdaa >= m_NcbistdaaIupacaa3.size()) {
-        return kEmptyStr;
-    }
-        
-    // Return the 3 letter code for ncbistdaa
-    return m_NcbistdaaIupacaa3[ncbistdaa];    
+    return GetCodeOrName(eSeq_code_type_iupacaa3, ncbistdaa, true);
 }
 
-// Returns the code of type code_type for index idx. Does not modify
-// *code if idx is out of range for the code
-const string& CSeqportUtil_implementation::GetCode
-(CSeq_data::E_Choice code_type, 
- unsigned int        idx) 
+// Returns true if code type is available
+bool CSeqportUtil_implementation::IsCodeAvailable
+(CSeq_data::E_Choice code_type)
 {
+    if (code_type == CSeq_data::e_not_set) {
+        return false;
+    } else {
+        return IsCodeAvailable(EChoiceToESeq(code_type));
+    }
+}
+
+// Return true if code type is available
+bool CSeqportUtil_implementation::IsCodeAvailable (ESeq_code_type code_type)
+{
+    typedef list<CRef<CSeq_code_table> >      Ttables;
     
-    // return the code
-    switch (code_type) {
-    case CSeq_data::e_Iupacna:
-        idx -= m_iupacna_start_at;
-        if (idx < 0 || idx >= m_IupacnaIndexCode.size()) {
-            return kEmptyStr;
+    // Iterate through Seq-code-set looking for code type
+    iterate (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
+        if((*i_ct)->GetCode() == code_type) {
+            return true;  
         }
-        return m_IupacnaIndexCode[idx];
-    case CSeq_data::e_Iupacaa:
-        idx -= m_iupacaa_start_at;
-        if (idx < 0 || idx >= m_IupacaaIndexCode.size()) {
-            return kEmptyStr;
-        }
-        return m_IupacaaIndexCode[idx];
-    case CSeq_data::e_Ncbieaa:
-        idx -= m_ncbieaa_start_at;
-        if (idx < 0 || idx >= m_NcbieaaIndexCode.size()) {
-            return kEmptyStr;
-        }
-        return m_NcbieaaIndexCode[idx];
-    case CSeq_data::e_Ncbistdaa:
-        if (idx < 0 || idx >= m_NcbistdaaIndexCode.size()) {
-            return kEmptyStr;
-        }
-        return m_NcbistdaaIndexCode[idx];
-    default:
-        return kEmptyStr;
     }
+    return false;
 }
 
-// Get the index for code of type code_type. If not found, return -1
-int CSeqportUtil_implementation::GetIndex
+// Return a pair containing the first index (start-at) and last index 
+// for code_type. 
+CSeqportUtil::TPair  CSeqportUtil_implementation::GetCodeIndexFromTo
+(CSeq_data::E_Choice code_type)
+{
+    return GetCodeIndexFromTo(EChoiceToESeq(code_type));
+}
+
+// Return a pair containing the first index (start-at) and last index 
+// for code_type. 
+CSeqportUtil::TPair CSeqportUtil_implementation::GetCodeIndexFromTo
+(ESeq_code_type code_type)
+{
+    typedef list<CRef<CSeq_code_table> >      Ttables;
+    
+    // Iterate through Seq-code-set looking for code type
+    TPair p;
+    iterate (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
+        if((*i_ct)->GetCode() == code_type) {
+            if ( (*i_ct)->IsSetStart_at() ) {
+                p.first = static_cast<TIndex>((*i_ct)->GetStart_at());
+            } else {
+                p.first = 0;
+            }
+            p.second = p.first + static_cast<TIndex>((*i_ct)->GetNum() - 1);
+            return p;  
+        }
+    }
+    throw CSeqportUtil::CBadType();
+}
+
+// Converts CSeq_data::E_Choice type to ESeq_code_type
+// and calls overloaded GetCodeOrName()
+const string& CSeqportUtil_implementation::GetCodeOrName
+(CSeq_data::E_Choice code_type, 
+ TIndex              idx,
+ bool                get_code) 
+{ 
+    return GetCodeOrName(EChoiceToESeq(code_type), idx, get_code);   
+}
+
+// Returns the code (symbol) of type code_type for index idx. 
+const string& CSeqportUtil_implementation::GetCodeOrName
+(ESeq_code_type code_type, 
+ TIndex         idx,
+ bool           get_code) 
+{
+    typedef list<CRef<CSeq_code_table> >      Ttables;
+    typedef list<CRef<CSeq_code_table::C_E> > Tcodes;
+
+    if ( !m_IndexString[get_code][code_type-1].size() ) {
+        throw CSeqportUtil::CBadType();
+    }
+    idx -= m_StartAt[code_type-1];
+    if (idx >= m_IndexString[get_code][code_type-1].size()) {
+        throw CSeqportUtil::CBadIndex();
+    }
+    return m_IndexString[get_code][code_type-1][idx];
+       
+}
+
+// Converts CSeq_data::E_Choice type to ESeq_code_type and call
+// overloaded GetIndex();
+CSeqportUtil::TIndex CSeqportUtil_implementation::GetIndex
 (CSeq_data::E_Choice code_type, 
  const string&       code)
 {
-    // Iterator to a map mapping a string code to an integer code index
-    // An iterator for one of the member variables m_IupacaaCodeIndex, 
-    // m_IupacnaCodeIndex, m_NcbieaaCodeIndex,or m_NcbistdaaCodeIndex 
-    map<string, int>::const_iterator pos;
-    
-    switch (code_type) {
-    case CSeq_data::e_Iupacaa:
-        pos = m_IupacaaCodeIndex.find(code);
-        if (pos != m_IupacaaCodeIndex.end()) {
-            return pos->second;
-        } else {
-            return -1;
-        } 
-    case CSeq_data::e_Iupacna:
-        pos = m_IupacnaCodeIndex.find(code);
-        if (pos != m_IupacnaCodeIndex.end()) {
-            return pos->second;
-        } else {
-            return -1;
-        } 
-    case CSeq_data::e_Ncbieaa:
-        pos = m_NcbieaaCodeIndex.find(code);
-        if (pos != m_NcbieaaCodeIndex.end()) {
-            return pos->second;
-        } else {
-            return -1;
-        } 
-    case CSeq_data::e_Ncbistdaa:
-        pos = m_NcbistdaaCodeIndex.find(code);
-        if (pos != m_NcbistdaaCodeIndex.end()) {
-            return pos->second;
-        } else {
-            return -1;
-        } 
-    default:
-        return -1;
-    }
+    return GetIndex(EChoiceToESeq(code_type), code);
 }
 
+// Get the index for code of type code_type. If not found, return -1
+CSeqportUtil::TIndex CSeqportUtil_implementation::GetIndex
+(ESeq_code_type code_type, 
+ const string&  code)
+{
+    typedef list<CRef<CSeq_code_table> >      Ttables;
+    typedef list<CRef<CSeq_code_table::C_E> > Tcodes;
+    
+    // Iterator to a map mapping a string code to a code index
+    map<string, TIndex>::const_iterator pos;
+    
+    if ( !m_StringIndex[code_type-1].size() ) {
+        throw CSeqportUtil::CBadType();
+    }
+    pos = m_StringIndex[code_type-1].find(code);
+    if (pos != m_StringIndex[code_type-1].end()) {
+        return pos->second;
+    } else {
+        throw CSeqportUtil::CBadSymbol();
+    }
+    
+}
+
+// Gets complement of index for code type. Returns -1 if code
+// type does not exist
+CSeqportUtil::TIndex CSeqportUtil_implementation::GetIndexComplement
+(CSeq_data::E_Choice code_type,
+ TIndex              idx)
+{
+    return GetIndexComplement(EChoiceToESeq(code_type), idx);
+}
+
+// Returns the complement of the index for code_type. If code_type
+// does not exist, or complements for code_type do not exist,
+// returns -1
+CSeqportUtil::TIndex CSeqportUtil_implementation::GetIndexComplement
+(ESeq_code_type code_type,
+ TIndex         idx)
+{
+  
+    // Check that code is available
+    if (!m_IndexComplement[code_type-1].size()) {
+        throw CSeqportUtil::CBadType();
+    }
+    
+    // Check that idx is in range of code indices
+    idx -= m_StartAt[code_type-1];
+    if ( idx >= m_IndexComplement[code_type-1].size() ) {        
+        throw CSeqportUtil::CBadIndex();
+    }
+    
+    // Return the index of the complement   
+    return m_IndexComplement[code_type-1][idx];
+ }
+
+CSeqportUtil::TIndex CSeqportUtil_implementation::GetMapToIndex
+(CSeq_data::E_Choice from_type,
+ CSeq_data::E_Choice to_type,
+ TIndex              from_idx)
+{
+    return GetMapToIndex(EChoiceToESeq(from_type), 
+                         EChoiceToESeq(to_type),
+                         from_idx);
+}
+
+CSeqportUtil::TIndex CSeqportUtil_implementation::GetMapToIndex
+(ESeq_code_type from_type,
+ ESeq_code_type to_type,
+ TIndex            from_idx)
+{
+    CMap_table* Map = 0;
+    
+    if (from_type == eSeq_code_type_iupacna) {
+        if (to_type == eSeq_code_type_ncbi2na) {
+            Map = m_IupacnaNcbi2na.GetPointer();
+        } else if (to_type == eSeq_code_type_ncbi4na) {
+            Map = m_IupacnaNcbi4na.GetPointer();
+        }
+    } else if (from_type == eSeq_code_type_ncbi4na) {
+        if (to_type == eSeq_code_type_iupacna) {
+            Map = m_Ncbi4naIupacna.GetPointer();
+        } else if (to_type == eSeq_code_type_ncbi2na) {
+            Map = m_Ncbi4naNcbi2na.GetPointer();
+        }
+    } else if (from_type == eSeq_code_type_ncbi2na) {
+        if (to_type == eSeq_code_type_iupacna) {
+            Map = m_Ncbi2naIupacna.GetPointer();
+        } else if (to_type == eSeq_code_type_ncbi4na) {
+            Map = m_Ncbi2naNcbi4na.GetPointer();
+        }
+    } else if (from_type == eSeq_code_type_iupacaa) {
+        if (to_type == eSeq_code_type_ncbieaa) {
+            Map = m_IupacaaNcbieaa.GetPointer();
+        } else if (to_type == eSeq_code_type_ncbistdaa) {
+            Map = m_IupacaaNcbistdaa.GetPointer();
+        }
+    } else if (from_type == eSeq_code_type_ncbieaa) {
+        if (to_type == eSeq_code_type_iupacaa) {
+            Map = m_NcbieaaIupacaa.GetPointer();
+        } else if (to_type == eSeq_code_type_ncbistdaa) {
+            Map = m_NcbieaaNcbistdaa.GetPointer();
+        }
+    } else if (from_type == eSeq_code_type_ncbistdaa) {
+        if (to_type == eSeq_code_type_iupacaa) {
+            Map = m_NcbistdaaIupacaa.GetPointer();
+        } else if (to_type == eSeq_code_type_ncbieaa) {
+            Map = m_NcbistdaaNcbieaa.GetPointer();
+        }
+    }
+    
+    // Check that requested map is available
+    if (!Map) {
+        throw CSeqportUtil::CBadType();
+    }
+    
+    // Check that from_idx is within range of from_type
+    if (from_idx - (*Map).m_StartAt >= (TIndex)(*Map).m_Size) {
+        throw CSeqportUtil::CBadIndex();
+    }
+    
+    // Return map value
+    return (*Map).m_Table[from_idx];
+    
+
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CSeqportUtil_implementation::sm_StrAsnData  --  some very long and ugly string
@@ -5447,3 +5602,42 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
 
 END_objects_SCOPE
 END_NCBI_SCOPE
+
+ /*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.11  2002/05/14 15:15:16  clausen
+ * Added IsCodeAvailable, GetCodeIndexFromTo, GetName, GetIndexComplement, GetMapToIndex
+ *
+ * Revision 6.10  2002/05/03 21:28:14  ucko
+ * Introduce T(Signed)SeqPos.
+ *
+ * Revision 6.9  2002/04/25 19:37:03  clausen
+ * Fixed bug in MapNcbi2naToNcbi4na that caused corrupiton of out_seq
+ *
+ * Revision 6.8  2002/03/27 19:53:18  grichenk
+ * Fixed CR/LF problem in the source
+ *
+ * Revision 6.7  2002/01/12 07:40:22  vakatov
+ * Fixed multiple dangerous typos ('&' instead of '&&' in IFs)
+ *
+ * Revision 6.6  2002/01/10 19:21:34  clausen
+ * Added GetIupacaa3, GetCode, and GetIndex
+ *
+ * Revision 6.5  2001/10/17 18:35:33  clausen
+ * Fixed machine dependencies in InitFastNcbi4naIupacna and InitFastNcbi2naNcbi4na
+ *
+ * Revision 6.4  2001/10/17 13:04:30  clausen
+ * Fixed InitFastNcbi2naIupacna to remove hardware dependency
+ *
+ * Revision 6.3  2001/09/07 14:16:50  ucko
+ * Cleaned up external interface.
+ *
+ * Revision 6.2  2001/09/06 20:43:32  ucko
+ * Fix iterator types (caught by gcc 3.0.1).
+ *
+ * Revision 6.1  2001/08/24 00:34:23  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
