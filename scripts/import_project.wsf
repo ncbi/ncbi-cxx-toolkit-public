@@ -13,7 +13,7 @@ function Usage()
     var usage_str;
     //usage_str  = "Usage:\n";
     //usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
-    usage_str  = "USAGE: cscript import_project.wsf <cvs_tree_path> [builddir] [-dll [-b] [-r]]\n";
+    usage_str  = "USAGE: cscript import_project.wsf <cvs_tree_path> [builddir] [-dll [-b] [-r] [-v]\n";
     usage_str += "SYNOPSIS:\n";
     usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
     usage_str += "    CVS tree at:\n";
@@ -32,6 +32,7 @@ function Usage()
     usage_str += "    [-dll]           -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
     usage_str += "    [-b]             -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
     usage_str += "    [-r]             -- copy NCBI C++ gui resources\n";
+    usage_str += "    [-v]             -- show details about what is being made\n";
     usage_str += "EXAMPLES:\n";
     usage_str += "    cscript import_project.wsf objmgr/test\n";
     usage_str += "    cscript import_project.wsf objmgr/test -dll\n";
@@ -46,7 +47,7 @@ function VerifyArguments(oArgs)
     if (oArgs.Length < 1) {
         return false;
     }
-    if (oArgs.Length > 5) {
+    if (oArgs.Length > 6) {
         return false;
     }
 
@@ -82,6 +83,7 @@ function Task()
         WScript.Echo(Usage());
         WScript.Quit(1);
     }
+    SetVerbose(oArgs, "-v", false);
 
     //this.ProjectName     = WScript.Arguments.Item(0);
     //this.ToolkitPath     = WScript.Arguments.Item(1);
@@ -141,9 +143,12 @@ function AdjustProject(oShell, oTree, oTask)
     // Makefile.in - open for appending
     var makefile_path = oTree.SrcProjectBranch + "\\Makefile.in";
     if ( oFso.FileExists(makefile_path) ) {
+        VerboseEcho("Modifying (appending): " + makefile_path);
         var makefile = oFso.OpenTextFile(makefile_path, 8);
         makefile.WriteLine("REQUIRES = CXX_Toolkit");
         makefile.Close();
+    } else {
+        WScript.Echo("ERROR: " + makefile_path + " not found");
     }
 }
 // Generate solution name. Must be the same as we can import more projects
@@ -173,7 +178,6 @@ function RunPtb(oShell, oTree, oTask)
     } else {
         ptb_command_line += " " + oTree.CompilersBranchStatic + "\\build\\" + SolutionName(oTask) + ".sln";
     }
-    WScript.Echo(ptb_command_line);
     execute(oShell, ptb_command_line);
 }
 // Open (re-)generated solution in  MSVC IDE
@@ -203,17 +207,28 @@ VerifyTask(oTask);
 var oTree  = new Tree(oShell, oTask);
 //DumpTree(oTree);
 
+VerboseEcho("========================= CreateTreeStructure =========================");
 CreateTreeStructure(oTree, oTask);
+VerboseEcho("========================= FillTree ====================================");
 FillTree           (oShell, oTree, oTask);
+VerboseEcho("========================= CopyPtb =====================================");
 CopyPtb            (oShell, oTree, oTask);
+VerboseEcho("========================= CopyDatatool ================================");
 CopyDatatool       (oShell, oTree, oTask);
+VerboseEcho("========================= AdjustProject ===============================");
 AdjustProject      (oShell, oTree, oTask);
+VerboseEcho("========================= AdjustLocalSite =============================");
 AdjustLocalSite    (oShell, oTree, oTask);
+VerboseEcho("========================= CopyDlls ====================================");
 CopyDlls           (oShell, oTree, oTask);
+VerboseEcho("========================= CopyRes =====================================");
 CopyRes            (oShell, oTree, oTask);
 
+VerboseEcho("========================= RunPtb ======================================");
 RunPtb             (oShell, oTree, oTask);
+VerboseEcho("========================= LoadSolution ================================");
 LoadSolution       (oShell, oTree, oTask);
+VerboseEcho("========================= done ========================================");
 
 </script>
 </job>

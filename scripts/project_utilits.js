@@ -1,11 +1,15 @@
 ////////////////////////////////////////////////////////////////////////////////////
 // Shared part of new_project.wsf and import_project.wsf
 
+// global settings
+var g_verbose = false;
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
 // create cmd, execute command in cmd and redirect output to console stdou2t
 function execute(oShell, command)
 {
+    VerboseEcho("+  " + command);
     var oExec = oShell.Exec("cmd /c " + command);
     while( oExec.Status == 0 && !oExec.StdOut.AtEndOfStream )
         WScript.StdOut.WriteLine(oExec.StdOut.ReadLine());
@@ -94,9 +98,11 @@ function GetConfigs(oTask)
 function CreateFolderIfAbsent(oFso, path)
 {
     if ( !oFso.FolderExists(path) ) {
-        WScript.Echo("Creating folder: " + path);
         CreateFolderIfAbsent(oFso, oFso.GetParentFolderName(path));
+        VerboseEcho("Creating folder: " + path);
         oFso.CreateFolder(path);
+    } else {
+        VerboseEcho("Folder exists: " + path);
     }
 }
 // create local build tree directories structure
@@ -180,16 +186,26 @@ function RemoveTempFolder(oShell, oFso, oTree)
 // copy project_tree_builder app to appropriate places of the local tree
 function CopyPtb(oShell, oTree, oTask)
 {
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
     var configs = GetConfigs(oTask);
     for(var config_i = 0; config_i < configs.length; config_i++) {
         var conf = configs[config_i];
         var target_path = oTree.BinPathStatic + "\\" + conf;
-        execute(oShell, "copy /Y " + oTask.ToolkitPath + "\\bin\\project_tree_builder.exe " + target_path);
+        var source_file = oTask.ToolkitPath + "\\bin" + "\\project_tree_builder.exe";
+        if (!oFso.FileExists(source_file)) {
+            source_file = oTask.ToolkitPath + "\\bin"+ "\\" + conf + "\\project_tree_builder.exe";
+            if (!oFso.FileExists(source_file)) {
+                WScript.Echo("WARNING: File not found: " + source_file);
+                continue;
+            }
+        }
+        execute(oShell, "copy /Y " + source_file + " " + target_path);
     }
 }
 // copy datatool app to appropriate places of the local tree
 function CopyDatatool(oShell, oTree, oTask)
 {
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
     var configs = GetConfigs(oTask);
     for(var config_i = 0; config_i < configs.length; config_i++) {
         var conf = configs[config_i];
@@ -200,7 +216,15 @@ function CopyDatatool(oShell, oTree, oTask)
             target_path = oTree.BinPathStatic;
         }
         target_path += "\\" + conf;
-        execute(oShell, "copy /Y " + oTask.ToolkitPath + "\\bin\\datatool.exe " + target_path);
+        var source_file = oTask.ToolkitPath + "\\bin" + "\\datatool.exe";
+        if (!oFso.FileExists(source_file)) {
+            source_file = oTask.ToolkitPath + "\\bin"+ "\\" + conf + "\\datatool.exe";
+            if (!oFso.FileExists(source_file)) {
+                WScript.Echo("WARNING: File not found: " + source_file);
+                continue;
+            }
+        }
+        execute(oShell, "copy /Y " + source_file + " " + target_path);
     }
 }
 // Collect files names with particular extension
@@ -228,6 +252,9 @@ function CollectDllLibs(oTask, dll_names)
     for(var dll_i = 0; dll_i < dll_names.length; dll_i++) {
         var dll_base_name = dll_names[dll_i];
         var dll_lib_path = oTask.ToolkitPath + "\\DebugDLL\\" + dll_base_name + ".lib";
+        if ( !oFso.FileExists(dll_lib_path) ) {
+            dll_lib_path = oTask.ToolkitPath + "\\lib\\DebugDLL\\" + dll_base_name + ".lib";
+        }
         if ( oFso.FileExists(dll_lib_path) ) {
             dll_lib_names[dll_lib_i] = dll_base_name;
             dll_lib_i++;
@@ -241,15 +268,34 @@ function AdjustLocalSiteDll(oShell, oTree, oTask)
 {
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
     // open for appending
-    var file = oFso.OpenTextFile(oTree.CompilersBranch + "\\project_tree_builder.ini", 8)
-        file.WriteLine("[CXX_Toolkit]");
-    file.WriteLine("INCLUDE = " + EscapeBackSlashes(oTask.ToolkitPath + "\\include"));
+    var ptb_ini = oTree.CompilersBranch + "\\project_tree_builder.ini";
+    VerboseEcho("Modifying (appending): " + ptb_ini);
+    var file = oFso.OpenTextFile(ptb_ini, 8);
+    file.WriteLine("[CXX_Toolkit]");
+    var folder_root = oTask.ToolkitPath;
+    var folder_include = folder_root + "\\include";
+    while (!oFso.FolderExists(folder_include)) {
+        VerboseEcho("Folder not found: " + folder_include);
+        folder_root = oFso.GetParentFolderName(folder_root)
+        if (folder_root == "") {
+            break;
+        }
+        folder_include = folder_root + "\\include";
+    }
+    file.WriteLine("INCLUDE = " + EscapeBackSlashes(folder_include));
     file.WriteLine("LIBPATH = ");
 
-    file.WriteLine("LIB     = \\");
+    var libpath_prefix = "";
     var dll_names = CollectFileNames(oTask.ToolkitPath + "\\DebugDLL", "dll");
+    if (dll_names.length == 0) {
+        libpath_prefix = "\\lib";
+        dll_names = CollectFileNames(oTask.ToolkitPath + "\\lib\\DebugDLL", "dll");
+    }
     // we'll add only dll libraries for these .lib is available
     var dll_libs = CollectDllLibs(oTask, dll_names);
+    if (dll_libs.length > 0) {
+        file.WriteLine("LIB     = \\");
+    }
     for(var lib_i = 0; lib_i < dll_libs.length; lib_i++) {
         var lib_base_name = dll_libs[lib_i];
         if (lib_i != dll_libs.length-1) {
@@ -262,9 +308,9 @@ function AdjustLocalSiteDll(oShell, oTree, oTask)
 
     file.WriteLine("CONFS   = DebugDLL ReleaseDLL");
     file.WriteLine("[CXX_Toolkit.debug.DebugDLL]");
-    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\DebugDLL"));
+    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + libpath_prefix + "\\DebugDLL"));
     file.WriteLine("[CXX_Toolkit.release.ReleaseDLL]");
-    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\ReleaseDLL"));
+    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + libpath_prefix + "\\ReleaseDLL"));
 
     file.Close();       
 }
@@ -273,13 +319,32 @@ function AdjustLocalSiteStatic(oShell, oTree, oTask)
 {
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
     // open for appending
-    var file = oFso.OpenTextFile(oTree.CompilersBranch + "\\project_tree_builder.ini", 8)
+    var ptb_ini = oTree.CompilersBranch + "\\project_tree_builder.ini";
+    VerboseEcho("Modifying (appending): " + ptb_ini);
+    var file = oFso.OpenTextFile(ptb_ini, 8)
         file.WriteLine("[CXX_Toolkit]");
-    file.WriteLine("INCLUDE = " + EscapeBackSlashes(oTask.ToolkitPath + "\\include"));
+    var folder_root = oTask.ToolkitPath;
+    var folder_include = folder_root + "\\include";
+    while (!oFso.FolderExists(folder_include)) {
+        VerboseEcho("Folder not found: " + folder_include);
+        folder_root = oFso.GetParentFolderName(folder_root)
+        if (folder_root == "") {
+            break;
+        }
+        folder_include = folder_root + "\\include";
+    }
+    file.WriteLine("INCLUDE = " + EscapeBackSlashes(folder_include));
     file.WriteLine("LIBPATH = ");
 
-    file.WriteLine("LIB     = \\");
+    var libpath_prefix = "";
     var static_libs = CollectFileNames(oTask.ToolkitPath + "\\Debug", "lib");
+    if (static_libs.length == 0) {
+        libpath_prefix = "\\lib";
+        static_libs = CollectFileNames(oTask.ToolkitPath + "\\lib\\Debug", "lib");
+    }
+    if (static_libs.length > 0) {
+        file.WriteLine("LIB     = \\");
+    }
     for(var lib_i = 0; lib_i < static_libs.length; lib_i++) {
         var lib_base_name = static_libs[lib_i];
         if (lib_i != static_libs.length-1) {
@@ -292,13 +357,13 @@ function AdjustLocalSiteStatic(oShell, oTree, oTask)
 
     file.WriteLine("CONFS   = Debug DebugDLL Release ReleaseDLL");
     file.WriteLine("[CXX_Toolkit.debug.Debug]");
-    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\Debug"));
+    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + libpath_prefix + "\\Debug"));
     file.WriteLine("[CXX_Toolkit.debug.DebugDLL]");
-    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\DebugDLL"));
+    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + libpath_prefix + "\\DebugDLL"));
     file.WriteLine("[CXX_Toolkit.release.Release]");
-    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\Release"));
+    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + libpath_prefix + "\\Release"));
     file.WriteLine("[CXX_Toolkit.release.ReleaseDLL]");
-    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\ReleaseDLL"));
+    file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + libpath_prefix + "\\ReleaseDLL"));
 
     file.Close();       
 }
@@ -309,6 +374,23 @@ function AdjustLocalSite(oShell, oTree, oTask)
         AdjustLocalSiteDll(oShell, oTree, oTask);
     } else {
         AdjustLocalSiteStatic(oShell, oTree, oTask);
+    }
+}
+
+function SetVerbose(oArgs, flag, default_val)
+{
+    g_verbose = GetFlagValue(oArgs, flag, default_val);
+}
+
+function GetVerbose()
+{
+    return g_verbose;
+}
+
+function VerboseEcho(message)
+{
+    if (GetVerbose()) {
+        WScript.Echo(message);
     }
 }
 
@@ -375,6 +457,8 @@ function CopyDlls(oShell, oTree, oTask)
 
             execute(oShell, "copy /Y " + dlls_bin_path + "\\*.dll " + local_bin_path);
         }
+    } else {
+        VerboseEcho("CopyDlls:  skipped (not requested)");
     }
 }
 // Copy gui resources
@@ -387,6 +471,8 @@ function CopyRes(oShell, oTree, oTask)
         execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+"/src/gui/res");
         execute(oShell, "copy /Y temp\\*.* " + res_target_dir);
         RemoveTempFolder(oShell, oFso, oTree);
+    } else {
+        VerboseEcho("CopyRes:  skipped (not requested)");
     }
 }
 // CVS tree root
