@@ -42,6 +42,7 @@
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbistr.hpp>
 
 // generated classes
 
@@ -184,16 +185,33 @@ CUser_field& CUser_object::SetField(const string& str,
 
 // add a data field to the user object that holds a given value
 CUser_object& CUser_object::AddField(const string& label,
-                                     const string& value)
+                                     const string& value,
+                                     EParseField parse)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetData().SetStr(value);
-
+    switch (parse) {
+        case eParse_Number:
+            try {
+                int i = NStr::StringToInt(value);
+                field->SetData().SetInt(i);
+            } catch (...) {
+                try {
+                    double d = NStr::StringToDouble(value);
+                    field->SetData().SetReal(d);
+                } catch (...) {
+                    field->SetData().SetStr(value);
+                }
+            }
+            break;
+        default:
+        case eParse_String:
+            field->SetData().SetStr(value);
+            break;
+    }
     SetData().push_back(field);
     return *this;
 }
-
 
 CUser_object& CUser_object::AddField(const string& label,
                                      int           value)
@@ -229,6 +247,7 @@ CUser_object& CUser_object::AddField(const string& label,
     SetData().push_back(field);
     return *this;
 }
+
 
 
 CUser_object& CUser_object::AddField(const string& label,
@@ -562,6 +581,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.9  2004/09/21 15:08:11  kans
+* added EParseField parameter to AddField so it can optionally interpret the string value as numeric
+*
 * Revision 6.8  2004/07/27 15:12:03  ucko
 * Use vectors for User-field.data SEQUENCE-OF choices.
 *

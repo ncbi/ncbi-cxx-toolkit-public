@@ -56,8 +56,15 @@ public:
     // destructor
     ~CUser_object(void);
 
+    /// how to interpret the value in the AddField() conversion functions below.
+    enum EParseField {
+        eParse_String,    ///< Add string even if all numbers
+        eParse_Number     ///< Parse a real or integer number, otherwise string
+    };
+
     // add a data field to the user object that holds a given value
-    CUser_object& AddField(const string& label, const string& value);
+    CUser_object& AddField(const string& label, const string& value,
+                           EParseField parse = eParse_String);
     CUser_object& AddField(const string& label, int           value);
     CUser_object& AddField(const string& label, double        value);
     CUser_object& AddField(const string& label, bool          value);
@@ -158,6 +165,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/09/21 15:07:42  kans
+* added EParseField parameter to AddField so it can optionally interpret the string value as numeric
+*
 * Revision 1.6  2004/07/27 15:12:03  ucko
 * Use vectors for User-field.data SEQUENCE-OF choices.
 *
