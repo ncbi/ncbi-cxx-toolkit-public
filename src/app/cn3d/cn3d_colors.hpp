@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/22 00:32:35  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.2  2000/12/01 19:34:43  thiessen
 * better domain assignment
 *
@@ -47,17 +50,27 @@
 
 BEGIN_SCOPE(Cn3D)
 
+// for now, there is only a single global Colors object, which for convenience
+// can be accessed anywhere via this function
+class Colors;
+const Colors * GlobalColors(void);
+
+
 class Colors
 {
 public:
     Colors(void);
 
     enum eColor {
-        // individual colors
+        // sequence viewer colors
         eHighlight = 0,
+        eUnalignedInUpdate,
+
+        // secondary structures
         eHelix,
         eStrand,
         eCoil,
+
         eNumColors,
 
         // color cycles

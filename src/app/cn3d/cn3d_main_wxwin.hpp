@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/03/22 00:32:36  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.20  2001/03/17 14:06:52  thiessen
 * more workarounds for namespace/#define conflicts
 *
@@ -140,7 +143,6 @@ BEGIN_SCOPE(Cn3D)
 
 class Cn3DMainFrame;
 class SequenceViewer;
-class Messenger;
 class OpenGLRenderer;
 class StructureSet;
 

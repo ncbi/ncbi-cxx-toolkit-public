@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/03/22 00:33:17  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.18  2000/12/01 19:35:57  thiessen
 * better domain assignment; basic show/hide mechanism
 *
@@ -350,7 +353,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
 
         // use highlighting color if necessary
         if (atomStyle.isHighlighted)
-            atomStyle.color = parentSet->colors->Get(Colors::eHighlight);
+            atomStyle.color = GlobalColors()->Get(Colors::eHighlight);
 
         // get AtomCoord* for appropriate altConf and draw the atom
         if (atomStyle.style != StyleManager::eNotDisplayed &&

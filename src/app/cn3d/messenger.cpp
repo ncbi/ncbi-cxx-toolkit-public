@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/03/22 00:33:17  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.13  2001/03/01 20:15:51  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -74,6 +77,7 @@
 */
 
 #include <wx/string.h> // name conflict kludge
+#include <corelib/ncbistd.hpp>
 
 #include "cn3d/messenger.hpp"
 #include "cn3d/sequence_viewer.hpp"
@@ -81,13 +85,21 @@
 #include "cn3d/structure_set.hpp"
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/sequence_set.hpp"
-
 #include "cn3d/cn3d_main_wxwin.hpp"
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
+
+// the global Messenger object
+static Messenger messenger;
+
+Messenger * GlobalMessenger(void)
+{
+    return &messenger;
+}
+
 
 void Messenger::PostRedrawAllStructures(void)
 {

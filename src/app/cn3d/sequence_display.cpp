@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/03/22 00:33:17  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.7  2001/03/19 15:50:39  thiessen
 * add sort rows by identifier
 *
@@ -70,14 +73,12 @@
 #include "cn3d/sequence_viewer_window.hpp"
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/alignment_manager.hpp"
+#include "cn3d/cn3d_colors.hpp"
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
-
-// Should be replaced by some reference to a Colors object, eventually...
-static const wxColour highlightColor(255,255,0);  // yellow
 
 // block marker string stuff
 static const char
@@ -106,14 +107,14 @@ static inline void Vector2wxColor(const Vector& colorVec, wxColor *colorWX)
 bool DisplayRowFromAlignment::GetCharacterTraitsAt(
     int column, BlockMultipleAlignment::eUnalignedJustification justification,
     char *character, Vector *color,
-    bool *drawBackground, wxColour *cellBackgroundColor) const
+    bool *drawBackground, Vector *cellBackgroundColor) const
 {
     bool isHighlighted,
         result = alignment->GetCharacterTraitsAt(column, row, justification, character, color, &isHighlighted);
 
     if (isHighlighted) {
         *drawBackground = true;
-        *cellBackgroundColor = highlightColor;
+        *cellBackgroundColor = GlobalColors()->Get(Colors::eHighlight);
     } else
         *drawBackground = false;
 
@@ -122,7 +123,7 @@ bool DisplayRowFromAlignment::GetCharacterTraitsAt(
 
 bool DisplayRowFromSequence::GetCharacterTraitsAt(
 	int column, BlockMultipleAlignment::eUnalignedJustification justification,
-    char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const
+    char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const
 {
     if (column >= sequence->sequenceString.size())
         return false;
@@ -134,7 +135,7 @@ bool DisplayRowFromSequence::GetCharacterTraitsAt(
         color->Set(0,0,0);
     if (GlobalMessenger()->IsHighlighted(sequence, column)) {
         *drawBackground = true;
-        *cellBackgroundColor = highlightColor;
+        *cellBackgroundColor = GlobalColors()->Get(Colors::eHighlight);
     } else {
         *drawBackground = false;
     }
@@ -173,7 +174,7 @@ void DisplayRowFromSequence::SelectedRange(int from, int to, BlockMultipleAlignm
 
 bool DisplayRowFromString::GetCharacterTraitsAt(int column,
 	BlockMultipleAlignment::eUnalignedJustification justification,
-    char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const
+    char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const
 {
     if (column >= theString.size()) return false;
 
@@ -182,8 +183,7 @@ bool DisplayRowFromString::GetCharacterTraitsAt(int column,
 
     if (hasBackgroundColor) {
         *drawBackground = true;
-        // convert vector color to wxColour
-        Vector2wxColor(backgroundColor, cellBackgroundColor);
+        *cellBackgroundColor = backgroundColor;
     } else {
         *drawBackground = false;
     }
@@ -308,13 +308,18 @@ bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
     if (column >= displayRow->Width())
         return false;
 
-    Vector colorVec;
+    Vector colorVec, bgColorVec;
     if (!displayRow->GetCharacterTraitsAt(column,
             (*viewerWindow) ? (*viewerWindow)->GetCurrentJustification() : BlockMultipleAlignment::eLeft,
-            character, &colorVec, drawBackground, cellBackgroundColor))
+            character, &colorVec, drawBackground, &bgColorVec))
         return false;
-    Vector2wxColor(colorVec, color);
 
+    // don't override highlight color
+    if (bgColorVec != GlobalColors()->Get(Colors::eHighlight))
+        (*viewerWindow)->viewer->OverrideBackgroundColor(column, row, drawBackground, &bgColorVec);
+
+    Vector2wxColor(colorVec, color);
+    if (*drawBackground) Vector2wxColor(bgColorVec, cellBackgroundColor);
     return true;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/22 00:33:16  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.3  2000/12/22 19:26:40  thiessen
 * write cdd output files
 *
@@ -49,10 +52,21 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
+// the global Colors object
+static const Colors colors;
+
+const Colors * GlobalColors(void)
+{
+    return &colors;
+}
+
+
 Colors::Colors(void)
 {
     // default colors
     colors[eHighlight].Set(1, 1, 0);
+    colors[eUnalignedInUpdate].Set(1, .8, .8);
+
     colors[eHelix].Set(.1, .9, .1);
     colors[eStrand].Set(.9, .7, .2);
     colors[eCoil].Set(.3, .9, .9);

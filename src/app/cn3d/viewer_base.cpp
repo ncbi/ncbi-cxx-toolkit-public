@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/22 00:33:18  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.4  2001/03/13 01:25:06  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -110,6 +113,7 @@ void ViewerBase::PushAlignment(void)
     AlignmentList::const_iterator a = alignmentStack.back().begin(), ae = alignmentStack.back().end();
     alignmentStack.resize(alignmentStack.size() + 1);
     for (; a!=ae; a++) {
+        (*a)->FreeColors();   // don't store colors in undo stack - uses too much memory
         BlockMultipleAlignment *newAlignment = (*a)->Clone();
         alignmentStack.back().push_back(newAlignment);
         newAlignmentMap[*a] = newAlignment;

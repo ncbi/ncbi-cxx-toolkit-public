@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/22 00:32:36  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.3  2001/03/13 01:24:16  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -57,6 +60,7 @@ class Sequence;
 class Messenger;
 class SequenceDisplay;
 class BlockMultipleAlignment;
+class Vector;
 
 class ViewerBase
 {
@@ -76,6 +80,9 @@ public:
 
     // tell viewer to save its data (does nothing unless overridden)
     virtual void SaveDialog(void) { }
+
+    // allows the viewer to set its own cell background color
+    virtual void OverrideBackgroundColor(int column, int row, bool *drawBackground, Vector *bgColorVec) { }
 
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
 

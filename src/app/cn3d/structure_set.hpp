@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2001/03/22 00:32:36  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.40  2001/02/16 00:36:48  thiessen
 * remove unused sequences from asn data
 *
@@ -215,8 +218,6 @@ public:
     OpenGLRenderer *renderer;
     ShowHideManager *showHideManager;
     StyleManager *styleManager;
-
-    Colors *colors;
 
     Vector center; // center of structure (relative to Master's coordinates)
     double maxDistFromCenter; // max distance of any atom from center

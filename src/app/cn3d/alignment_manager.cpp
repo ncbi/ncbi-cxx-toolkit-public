@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2001/03/22 00:33:16  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.46  2001/03/17 14:06:48  thiessen
 * more workarounds for namespace/#define conflicts
 *
@@ -197,7 +200,7 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *
     sequenceViewer = new SequenceViewer(this);
     GlobalMessenger()->AddSequenceViewer(sequenceViewer);
 
-    updateViewer = new UpdateViewer();
+    updateViewer = new UpdateViewer(this);
     GlobalMessenger()->AddSequenceViewer(updateViewer);
 
     threader = new Threader();
@@ -578,7 +581,11 @@ void AlignmentManager::RealignSlaveSequences(
 
 void AlignmentManager::TestThreader(void)
 {
-    threader->Test(GetCurrentMultipleAlignment());
+    Threader::AlignmentList newAlignments;
+    if (threader->Realign(
+            GetCurrentMultipleAlignment(), updateViewer->GetCurrentAlignments(), &newAlignments)) {
+        updateViewer->AddAlignments(newAlignments);
+    }
 }
 
 END_SCOPE(Cn3D)

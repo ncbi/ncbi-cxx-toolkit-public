@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/03/22 00:33:16  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.8  2001/03/09 15:49:03  thiessen
 * major changes to add initial update viewer
 *
@@ -237,9 +240,6 @@ bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(void)
         uaBlock = dynamic_cast<UngappedAlignedBlock*>(*b);
         if (uaBlock) conservationColorer->AddBlock(uaBlock);
     }
-
-    // do conservation coloring
-    conservationColorer->CalculateConservationColors();
 
     return true;
 }
@@ -486,6 +486,17 @@ Block * BlockMultipleAlignment::GetBlockBefore(const Block *block) const
         prevBlock = *b;
     }
     return prevBlock;
+}
+
+const UnalignedBlock * BlockMultipleAlignment::GetUnalignedBlockBefore(
+    const UngappedAlignedBlock *aBlock) const
+{
+    const Block *prevBlock;
+    if (aBlock)
+        prevBlock = GetBlockBefore(aBlock);
+    else
+        prevBlock = blocks.back();
+    return dynamic_cast<const UnalignedBlock*>(prevBlock);
 }
 
 Block * BlockMultipleAlignment::GetBlockAfter(const Block *block) const
@@ -1105,6 +1116,12 @@ bool BlockMultipleAlignment::ExtractRows(
     UpdateBlockMapAndConservationColors();
     return true;
 }
+
+void BlockMultipleAlignment::FreeColors(void)
+{
+    conservationColorer->FreeColors();
+}
+
 
 ///// UngappedAlignedBlock methods /////
 

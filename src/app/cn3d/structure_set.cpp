@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2001/03/22 00:33:17  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.52  2001/03/01 20:15:51  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -229,7 +232,6 @@
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/messenger.hpp"
-#include "cn3d/cn3d_colors.hpp"
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 
@@ -346,7 +348,6 @@ void StructureSet::Init(void)
     alignmentSet = NULL;
     alignmentManager = NULL;
     dataChanged = 0;
-    colors = new Colors();
     nDomains = 0;
     parentSet = this;
     mimeData = NULL;
@@ -578,7 +579,6 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
 
 StructureSet::~StructureSet(void)
 {
-    delete colors;
     delete showHideManager;
     delete styleManager;
     if (alignmentManager) delete alignmentManager;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/03/22 00:33:16  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.8  2001/02/22 00:30:06  thiessen
 * make directories global ; allow only one Sequence per StructureObject
 *
@@ -111,7 +114,7 @@ static const char Blosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
 static std::map < char, std::map < char, char > > Blosum62Map;
 static std::map < char, float > StandardProbabilities;
 
-ConservationColorer::ConservationColorer(void) : nColumns(0)
+ConservationColorer::ConservationColorer(void) : nColumns(0), colorsCurrent(false)
 {
     if (Blosum62Map.size() == 0) {  // initialize static stuff
 
@@ -172,6 +175,8 @@ typedef std::map < char, int > ColumnProfile;
 
 void ConservationColorer::CalculateConservationColors(void)
 {
+    if (colorsCurrent) return;
+
     TESTMSG("calculating conservation colors");
 
     if (blocks.size() == 0) return;
@@ -341,6 +346,8 @@ void ConservationColorer::CalculateConservationColors(void)
             }
         }
     }
+
+    colorsCurrent = true;
 }
 
 void ConservationColorer::GetProfileIndexAndResidue(
@@ -350,6 +357,23 @@ void ConservationColorer::GetProfileIndexAndResidue(
     BlockMap::const_iterator b = blocks.find(block);
     *profileIndex = b->second.at(blockColumn);
     *residue = toupper(b->first->GetCharacterAt(blockColumn, row));
+}
+
+void ConservationColorer::Clear(void)
+{
+    nColumns = 0;
+    blocks.clear();
+    FreeColors();
+}
+
+void ConservationColorer::FreeColors(void)
+{
+    identities.clear();
+    varietyColors.clear();
+    weightedVarietyColors.clear();
+    informationContentColors.clear();
+    fitColors.clear();
+    colorsCurrent = false;
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/22 00:32:36  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.2  2001/03/13 01:24:16  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -64,10 +67,12 @@ private:
     UpdateViewer *updateViewer;
 
     // menu identifiers - additional items beyond base class items
-//    enum {
-//    };
+    enum {
+        MID_TEST_THREADER = START_VIEWER_WINDOW_DERIVED_MID
+    };
 
     void OnCloseWindow(wxCloseEvent& event);
+    void OnTestThreader(wxCommandEvent& event);
 
 public:
 };

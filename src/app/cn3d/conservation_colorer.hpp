@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/22 00:32:36  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.5  2001/02/13 20:31:45  thiessen
 * add information content coloring
 *
@@ -76,6 +79,12 @@ public:
     // create colors - should be done only after all blocks have been added
     void CalculateConservationColors(void);
 
+    // frees memory used by color storage (but keeps blocks around)
+    void FreeColors(void);
+
+    // clears everything, including alignment blocks
+    void Clear(void);
+
     static const Vector MinimumConservationColor, MaximumConservationColor;
 
 private:
@@ -88,6 +97,7 @@ private:
         int *profileIndex, char *residue) const;
 
     int nColumns;
+    bool colorsCurrent;
 
     std::vector < bool > identities;
 
@@ -100,30 +110,37 @@ private:
 
 public:
 
-    void Clear(void)
+    // color accessors
+    const Vector *GetIdentityColor(const UngappedAlignedBlock *block, int blockColumn)
     {
-        blocks.clear();
-        nColumns = 0;
+        CalculateConservationColors();
+        return &(identities[GetProfileIndex(block, blockColumn)]
+            ? MaximumConservationColor : MinimumConservationColor);
     }
 
-    // color accessors
-    const Vector *GetIdentityColor(const UngappedAlignedBlock *block, int blockColumn) const
-        { return &(identities[GetProfileIndex(block, blockColumn)]
-            ? MaximumConservationColor : MinimumConservationColor); }
+    const Vector *GetVarietyColor(const UngappedAlignedBlock *block, int blockColumn)
+    {
+        CalculateConservationColors();
+        return &(varietyColors[GetProfileIndex(block, blockColumn)]);
+    }
 
-    const Vector *GetVarietyColor(const UngappedAlignedBlock *block, int blockColumn) const
-        { return &(varietyColors[GetProfileIndex(block, blockColumn)]); }
+    const Vector *GetWeightedVarietyColor(const UngappedAlignedBlock *block, int blockColumn)
+    {
+        CalculateConservationColors();
+        return &(weightedVarietyColors[GetProfileIndex(block, blockColumn)]);
+    }
 
-    const Vector *GetWeightedVarietyColor(const UngappedAlignedBlock *block, int blockColumn) const
-        { return &(weightedVarietyColors[GetProfileIndex(block, blockColumn)]); }
+    const Vector *GetInformationContentColor(const UngappedAlignedBlock *block, int blockColumn)
+    {
+        CalculateConservationColors();
+        return &(informationContentColors[GetProfileIndex(block, blockColumn)]);
+    }
 
-    const Vector *GetInformationContentColor(const UngappedAlignedBlock *block, int blockColumn) const
-        { return &(informationContentColors[GetProfileIndex(block, blockColumn)]); }
-
-    const Vector *GetFitColor(const UngappedAlignedBlock *block, int blockColumn, int row) const
+    const Vector *GetFitColor(const UngappedAlignedBlock *block, int blockColumn, int row)
     {
         int profileIndex;
         char residue;
+        CalculateConservationColors();
         GetProfileIndexAndResidue(block, blockColumn, row, &profileIndex, &residue);
         return &(fitColors[profileIndex].find(residue)->second);
     }

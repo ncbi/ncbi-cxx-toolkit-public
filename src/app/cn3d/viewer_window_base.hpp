@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/22 00:32:37  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.5  2001/03/17 14:06:53  thiessen
 * more workarounds for namespace/#define conflicts
 *
@@ -157,8 +160,6 @@ protected:
     SequenceViewerWidget::eMouseMode prevMouseMode;
 
     BlockMultipleAlignment::eUnalignedJustification currentJustification;
-    BlockMultipleAlignment::eUnalignedJustification GetCurrentJustification(void) const
-        { return currentJustification; }
 
     void SplitBlockOff(void)
     {
@@ -192,6 +193,9 @@ protected:
     }
 
 public:
+
+    BlockMultipleAlignment::eUnalignedJustification GetCurrentJustification(void) const
+        { return currentJustification; }
 
     void Refresh(void) { viewerWidget->Refresh(false); }
     void KillWindow(void)

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/03/22 00:33:16  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.30  2001/03/13 01:25:05  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -264,15 +267,6 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
 }
 
 
-// global Messenger object
-static Messenger *messenger = NULL;
-
-Messenger * GlobalMessenger(void)
-{
-    return messenger;
-}
-
-
 // `Main program' equivalent, creating GUI framework
 IMPLEMENT_APP(Cn3DApp)
 
@@ -287,10 +281,8 @@ bool Cn3DApp::OnInit(void)
     SetDiagPostLevel(eDiag_Info); // report all messages
 
     // create the main frame window and messenger
-    messenger = new Messenger();
     structureWindow = new Cn3DMainFrame(NULL, "Cn3D++",
         wxPoint(0,0), wxSize(500,500), wxDEFAULT_FRAME_STYLE);
-    messenger->AddStructureWindow(structureWindow);
 
     // set up working directories
     workingDir = userDir = wxGetCwd().c_str();
@@ -319,11 +311,7 @@ bool Cn3DApp::OnInit(void)
 
 int Cn3DApp::OnExit(void)
 {
-    // delete dictionary
     DeleteStandardDictionary();
-
-    delete messenger;
-
 	return 0;
 }
 
@@ -425,6 +413,7 @@ Cn3DMainFrame::Cn3DMainFrame(
         this, -1, wxPoint(0, 0), wxSize(400, 400), wxSUNKEN_BORDER, "Cn3DGLCanvas", gl_attrib);
     glCanvas->SetCurrent();
 
+    GlobalMessenger()->AddStructureWindow(this);
     Show(true);
 }
 

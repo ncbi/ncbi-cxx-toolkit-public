@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/03/22 00:32:36  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.11  2001/03/01 20:15:29  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -79,19 +82,18 @@
 
 BEGIN_SCOPE(Cn3D)
 
+// for now, there is only a single global messenger, which for convenience
+// can be accessed anywhere via this function
+class Messenger;
+Messenger * GlobalMessenger(void);
+
+
 class ViewerBase;
 class BlockMultipleAlignment;
 class Sequence;
 class Cn3DMainFrame;
 class StructureObject;
 class Molecule;
-class Messenger;
-
-
-// for now, there is only a single global messenger, which for convenience
-// can be accessed anywhere via this function
-Messenger * GlobalMessenger(void);
-
 
 class Messenger
 {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/03/22 00:33:17  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.25  2001/03/09 15:49:05  thiessen
 * major changes to add initial update viewer
 *
@@ -464,26 +467,26 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             // if eAligned and not aligned, then fall through to use eObject coloring
 
         case StyleSettings::eObject:
-            atomStyle->color = object->parentSet->colors->Get(Colors::eCycle1, object->id - 1);
+            atomStyle->color = GlobalColors()->Get(Colors::eCycle1, object->id - 1);
             break;
 
         case StyleSettings::eDomain:
             atomStyle->color = (molecule->residueDomains[residue->id - 1] == Molecule::VALUE_NOT_SET) ?
-                object->parentSet->colors->Get(Colors::eCycle1, 0) :
-                object->parentSet->colors->Get(Colors::eCycle1, molecule->residueDomains[residue->id - 1]);
+                GlobalColors()->Get(Colors::eCycle1, 0) :
+                GlobalColors()->Get(Colors::eCycle1, molecule->residueDomains[residue->id - 1]);
             break;
 
         case StyleSettings::eMolecule:
-            atomStyle->color = object->parentSet->colors->Get(Colors::eCycle1, molecule->id - 1);
+            atomStyle->color = GlobalColors()->Get(Colors::eCycle1, molecule->id - 1);
             break;
 
         case StyleSettings::eSecondaryStructure:
             if (molecule->IsResidueInHelix(residue->id))
-                atomStyle->color = object->parentSet->colors->Get(Colors::eHelix);
+                atomStyle->color = GlobalColors()->Get(Colors::eHelix);
             else if (molecule->IsResidueInStrand(residue->id))
-                atomStyle->color = object->parentSet->colors->Get(Colors::eStrand);
+                atomStyle->color = GlobalColors()->Get(Colors::eStrand);
             else
-                atomStyle->color = object->parentSet->colors->Get(Colors::eCoil);
+                atomStyle->color = GlobalColors()->Get(Colors::eCoil);
             break;
 
         case StyleSettings::eUserSelect:
@@ -709,9 +712,9 @@ bool StyleManager::GetBondStyle(const Bond *bond,
 
     // set highlighting color if necessary
     if (atomStyle1.isHighlighted)
-        bondStyle->end1.color = bond->parentSet->colors->Get(Colors::eHighlight);
+        bondStyle->end1.color = GlobalColors()->Get(Colors::eHighlight);
     if (atomStyle2.isHighlighted)
-        bondStyle->end2.color = bond->parentSet->colors->Get(Colors::eHighlight);
+        bondStyle->end2.color = GlobalColors()->Get(Colors::eHighlight);
 
     return true;
 }
@@ -746,16 +749,16 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
     // set color
     switch (generalStyle.colorScheme) {
         case StyleSettings::eMolecule:
-            objectStyle->color = object->parentSet->colors->Get(Colors::eCycle1, object3D.moleculeID - 1);
+            objectStyle->color = GlobalColors()->Get(Colors::eCycle1, object3D.moleculeID - 1);
             break;
         case StyleSettings::eObject:
-            objectStyle->color = object->parentSet->colors->Get(Colors::eCycle1, object->id - 1);
+            objectStyle->color = GlobalColors()->Get(Colors::eCycle1, object->id - 1);
             break;
         case StyleSettings::eDomain:
             {
                 int domainID = molecule->residueDomains[object3D.fromResidueID - 1];
                 objectStyle->color =
-                    object->parentSet->colors->
+                    GlobalColors()->
                         Get(Colors::eCycle1, (domainID == Molecule::VALUE_NOT_SET) ? 0 : domainID);
             }
             break;
@@ -793,7 +796,7 @@ bool StyleManager::GetHelixStyle(const StructureObject *object,
         helixStyle->arrowTipWidthProportion = 0.4;
     }
     if (settings.helixObjects.colorScheme == StyleSettings::eSecondaryStructure)
-        helixStyle->color = object->parentSet->colors->Get(Colors::eHelix);
+        helixStyle->color = GlobalColors()->Get(Colors::eHelix);
 
     return true;
 }
@@ -821,7 +824,7 @@ bool StyleManager::GetStrandStyle(const StructureObject *object,
         strandStyle->arrowBaseWidthProportion = 1.6;
     }
     if (settings.strandObjects.colorScheme == StyleSettings::eSecondaryStructure)
-        strandStyle->color = object->parentSet->colors->Get(Colors::eStrand);
+        strandStyle->color = GlobalColors()->Get(Colors::eStrand);
 
     return true;
 }
@@ -838,7 +841,7 @@ const Vector& StyleManager::GetObjectColor(const Molecule *molecule) const
     static const Vector black(0,0,0);
     const StructureObject *object;
     if (!molecule || !molecule->GetParentOfType(&object)) return black;
-    return molecule->parentSet->colors->Get(Colors::eCycle1, object->id - 1);
+    return GlobalColors()->Get(Colors::eCycle1, object->id - 1);
 }
 
 END_SCOPE(Cn3D)

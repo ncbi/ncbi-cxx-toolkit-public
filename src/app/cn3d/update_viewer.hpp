@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/22 00:32:36  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.2  2001/03/13 01:24:16  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -53,6 +56,7 @@ BEGIN_SCOPE(Cn3D)
 
 class UpdateViewerWindow;
 class BlockMultipleAlignment;
+class AlignmentManager;
 
 class UpdateViewer : public ViewerBase
 {
@@ -60,7 +64,7 @@ class UpdateViewer : public ViewerBase
 
 public:
 
-    UpdateViewer(void);
+    UpdateViewer(AlignmentManager *alnMgr);
     ~UpdateViewer(void);
 
     void Refresh(void);             // refreshes the window only if present
@@ -69,8 +73,11 @@ public:
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
     void AddAlignments(const AlignmentList& alignmentList);
 
+    void OverrideBackgroundColor(int column, int row, bool *drawBackground, Vector *bgColorVec);
+
 private:
 
+    AlignmentManager *alignmentManager;
     UpdateViewerWindow *updateWindow;
 };
 

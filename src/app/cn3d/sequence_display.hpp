@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/22 00:32:36  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.5  2001/03/19 15:47:37  thiessen
 * add row sorting by identifier
 *
@@ -75,8 +78,7 @@ class DisplayRow
 public:
     virtual int Width(void) const = 0;
     virtual bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
-        char *character, Vector *color, bool *drawBackground,
-        wxColour *cellBackgroundColor) const = 0;
+        char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const = 0;
     virtual bool GetSequenceAndIndexAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         const Sequence **sequence, int *index) const = 0;
     virtual const Sequence * GetSequence(void) const = 0;
@@ -104,7 +106,7 @@ public:
         { return new DisplayRowFromAlignment(row, newAlignments.find(alignment)->second); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
-        char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const;
+        char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const;
 
     bool GetSequenceAndIndexAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         const Sequence **sequence, int *index) const
@@ -137,7 +139,7 @@ public:
         { return new DisplayRowFromSequence(sequence); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
-        char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const;
+        char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const;
 
     bool GetSequenceAndIndexAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         const Sequence **sequenceHandle, int *index) const;
@@ -171,7 +173,7 @@ public:
             newAlignments.find(alignment)->second); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
-        char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const;
+        char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const;
 
     bool GetSequenceAndIndexAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         const Sequence **sequenceHandle, int *index) const { return false; }
@@ -189,11 +191,13 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 class SequenceViewer;
+class UpdateViewer;
 class ViewerWindowBase;
 
 class SequenceDisplay : public ViewableAlignment
 {
     friend class SequenceViewer;
+    friend class UpdateViewer;
 
 public:
     SequenceDisplay(bool editable, ViewerWindowBase* const *parentViewerWindow);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/22 00:33:18  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.3  2001/03/17 14:06:49  thiessen
 * more workarounds for namespace/#define conflicts
 *
@@ -55,6 +58,7 @@
 #include "cn3d/update_viewer.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/sequence_display.hpp"
+#include "cn3d/alignment_manager.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -64,12 +68,17 @@ BEGIN_SCOPE(Cn3D)
 BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     INCLUDE_VIEWER_WINDOW_BASE_EVENTS
     EVT_CLOSE     (                                     UpdateViewerWindow::OnCloseWindow)
+    EVT_MENU      (MID_TEST_THREADER,                   UpdateViewerWindow::OnTestThreader)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *parentUpdateViewer) :
     ViewerWindowBase(parentUpdateViewer, "Cn3D++ Update Viewer", wxPoint(0,200), wxSize(1000,300)),
     updateViewer(parentUpdateViewer)
 {
+    wxMenu *menu = new wxMenu;
+    menu->Append(MID_TEST_THREADER, "&Test");
+    menuBar->Append(menu, "&Threader");
+
     menuBar->Enable(MID_SELECT_COLS, false);
 
     // editor always on
@@ -93,6 +102,13 @@ void UpdateViewerWindow::OnCloseWindow(wxCloseEvent& event)
 
 void UpdateViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
 {
+}
+
+void UpdateViewerWindow::OnTestThreader(wxCommandEvent& event)
+{
+    SetCursor(*wxHOURGLASS_CURSOR);
+    updateViewer->alignmentManager->TestThreader();
+    SetCursor(wxNullCursor);
 }
 
 END_SCOPE(Cn3D)

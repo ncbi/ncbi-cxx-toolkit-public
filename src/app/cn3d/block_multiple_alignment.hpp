@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/03/22 00:32:35  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.7  2001/03/09 15:48:42  thiessen
 * major changes to add initial update viewer
 *
@@ -74,6 +77,7 @@ class Block;
 class UngappedAlignedBlock;
 class UnalignedBlock;
 class Messenger;
+class Threader;
 
 class BlockMultipleAlignment
 {
@@ -146,7 +150,7 @@ public:
     // called when user selects some part of a row
     void SelectedRange(int row, int from, int to, eUnalignedJustification justification) const;
 
-    // get a list of UngappedAlignedBlock's; should be destroyed by called when done
+    // get a list of UngappedAlignedBlocks; should be destroyed by called when done
     typedef std::list < const UngappedAlignedBlock * > UngappedAlignedBlockList;
     UngappedAlignedBlockList *GetUngappedAlignedBlocks(void) const;
 
@@ -188,6 +192,9 @@ public:
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
     bool ExtractRows(const std::vector < bool >& removeSlaves, AlignmentList *pairwiseAlignments);
 
+    // free color storage
+    void FreeColors(void);
+
 private:
     ConservationColorer *conservationColorer;
 
@@ -221,6 +228,9 @@ private:
     const Block * GetBlock(int row, int seqIndex) const;
 
 public:
+    // NULL if block before is aligned; if NULL passed, retrieves last block (if unaligned; else NULL)
+    const UnalignedBlock * GetUnalignedBlockBefore(const UngappedAlignedBlock *aBlock) const;
+
     int NBlocks(void) const { return blocks.size(); }
     int NRows(void) const { return sequences->size(); }
     int AlignmentWidth(void) const { return totalWidth; }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/22 00:33:17  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
 * Revision 1.3  2001/03/17 14:06:49  thiessen
 * more workarounds for namespace/#define conflicts
 *
@@ -49,16 +52,18 @@
 #include "cn3d/update_viewer_window.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/sequence_display.hpp"
+#include "cn3d/cn3d_colors.hpp"
+#include "cn3d/alignment_manager.hpp"
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
 
-UpdateViewer::UpdateViewer(void) :
+UpdateViewer::UpdateViewer(AlignmentManager *alnMgr) :
     // not sure why this cast is necessary, but MSVC requires it...
     ViewerBase(reinterpret_cast<ViewerWindowBase**>(&updateWindow)),
-    updateWindow(NULL)
+    alignmentManager(alnMgr), updateWindow(NULL)
 {
 }
 
@@ -118,11 +123,34 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
     }
 
     // start undo stacks if this is the first set of alignments added
-    if (!GetCurrentDisplay())
+    if (!GetCurrentDisplay()) {
         InitStacks(&newAlignments, display);
+        display->SetStartingColumn(GetCurrentAlignments()->front()->GetFirstAlignedBlockPosition() - 5);
+    }
 
     if (!updateWindow) CreateUpdateWindow();
     PushAlignment();    // make this an undoable operation
+}
+
+void UpdateViewer::OverrideBackgroundColor(int column, int row, bool *drawBackground, Vector *bgColorVec)
+{
+    DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(GetCurrentDisplay()->rows[row]);
+    if (alnRow && alnRow->row == 0) {
+        const Sequence *sequence;
+        int seqIndex;
+        bool isAlignedInUpdate;
+        if (!alnRow->alignment->GetSequenceAndIndexAt(column, 0,
+                (*viewerWindow)->GetCurrentJustification(), &sequence, &seqIndex, &isAlignedInUpdate))
+            return;
+
+        // give special color if a residue residue on the master is aligned in the multiple alignment,
+        // but unaligned in a master/slave pairwise update alignment
+        if (!isAlignedInUpdate && seqIndex >= 0 &&
+                alignmentManager->GetCurrentMultipleAlignment()->IsAligned(sequence, seqIndex)) {
+            *drawBackground = true;
+            *bgColorVec = GlobalColors()->Get(Colors::eUnalignedInUpdate);
+        }
+    }
 }
 
 END_SCOPE(Cn3D)
