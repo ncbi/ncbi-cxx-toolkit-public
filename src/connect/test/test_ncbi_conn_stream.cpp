@@ -70,9 +70,9 @@ static size_t s_Read(iostream& ios, char* buffer, size_t size)
     for (;;) {
         ios.read(buffer, size);
         size_t count = ios.gcount();
-        read += count;
-        if (count == 0 && ios.eof())
-            return read;
+        if (count == 0 && (ios.eof() || ios.bad()))
+            break;
+        read   += count;
         buffer += count;
         size   -= count;
         if (!size)
@@ -251,6 +251,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2003/05/20 21:22:24  lavr
+ * Do not clear() if stream is bad() in s_Read()
+ *
  * Revision 6.26  2003/05/14 03:58:43  lavr
  * Match changes in respective APIs of the tests
  *
