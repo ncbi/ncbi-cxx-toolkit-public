@@ -499,7 +499,14 @@ ESerialSkipUnknown CObjectIStream::GetSkipUnknownMembers(void)
 inline
 bool CObjectIStream::HaveMoreData(void)
 {
-    return m_Input.PeekChar() != EOF;
+    return m_Input.HasMore();
+}
+
+
+inline
+CStreamDelayBufferGuard::CStreamDelayBufferGuard(void) 
+    : m_ObjectIStream(0) 
+{
 }
 
 
@@ -510,29 +517,48 @@ CStreamDelayBufferGuard::CStreamDelayBufferGuard(CObjectIStream& istr)
     istr.StartDelayBuffer();
 }
 
+
 inline
 CStreamDelayBufferGuard::~CStreamDelayBufferGuard()
 {
-    if (m_ObjectIStream)
+    if ( m_ObjectIStream ) {
         m_ObjectIStream->EndDelayBuffer();
+    }
 }
+
+
+inline
+void CStreamDelayBufferGuard::StartDelayBuffer(CObjectIStream& istr)
+{
+    if ( m_ObjectIStream ) {
+        m_ObjectIStream->EndDelayBuffer();
+    }
+    m_ObjectIStream = &istr;
+    istr.StartDelayBuffer();
+}
+
 
 inline
 CRef<CByteSource> CStreamDelayBufferGuard::EndDelayBuffer(void)
 {
-    CObjectIStream* tmp = m_ObjectIStream;
-    m_ObjectIStream = 0;
-    return tmp->EndDelayBuffer();
-
+    CRef<CByteSource> ret;
+    if ( m_ObjectIStream ) {
+        ret = m_ObjectIStream->EndDelayBuffer();
+        m_ObjectIStream = 0;
+    }
+    return ret;
 }
+
 
 inline
 void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
                                              const CItemInfo* itemInfo, 
                                              TObjectPtr objectPtr)
 {
-    m_ObjectIStream->EndDelayBuffer(buffer, itemInfo, objectPtr);
-    m_ObjectIStream = 0;
+    if ( m_ObjectIStream ) {
+        m_ObjectIStream->EndDelayBuffer(buffer, itemInfo, objectPtr);
+        m_ObjectIStream = 0;
+    }
 }
 
 
@@ -542,6 +568,9 @@ void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/02/23 21:07:44  vasilche
+* Allow to skip underlying stream flush.
+*
 * Revision 1.30  2004/03/23 15:39:52  gouriano
 * Added setup options for skipping unknown data members
 *

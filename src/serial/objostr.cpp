@@ -210,11 +210,23 @@ CObjectOStream::~CObjectOStream(void)
     }
 }
 
+
+void CObjectOStream::DefaultFlush(void)
+{
+    if ( GetFlags() & fFlagNoAutoFlush ) {
+        FlushBuffer();
+    }
+    else {
+        Flush();
+    }
+}
+
+
 void CObjectOStream::Close(void)
 {
     if (m_Fail != fNotOpen) {
         try {
-            m_Output.Flush();
+            DefaultFlush();
             if ( m_Objects )
                 m_Objects->Clear();
             ClearStack();
@@ -373,7 +385,7 @@ void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info,
     CSerialException::EErrCode err;
     SetFailFlags(fail, message.c_str());
     try {
-        Flush();
+        DefaultFlush();
     } catch(...) {
     }
     switch(fail)
@@ -990,8 +1002,8 @@ CObjectOStream::CharBlock::~CharBlock(void)
 
 void CObjectOStream::WriteSeparator(void)
 {
-    // do nothing by default
-    return;
+    // flush stream buffer by default
+    FlushBuffer();
 }
 
 
@@ -1000,6 +1012,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2005/02/23 21:07:44  vasilche
+* Allow to skip underlying stream flush.
+*
 * Revision 1.98  2004/11/30 15:06:04  dicuccio
 * Added #include for ncbithr.hpp
 *

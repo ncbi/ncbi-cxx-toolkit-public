@@ -631,13 +631,23 @@ void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line = 0);
 class NCBI_XSERIAL_EXPORT CStreamDelayBufferGuard 
 {
 public:
+    /// Construct empty guard instance
+    ///
+    CStreamDelayBufferGuard(void);
     /// Construct instance on a given CObjectIStream object.
     /// Call istr.StartDelayBuffer()
     ///
     /// @param istr  guard protected instance
     CStreamDelayBufferGuard(CObjectIStream& istr);
 
-    ~CStreamDelayBufferGuard();
+    ~CStreamDelayBufferGuard(void);
+
+
+    /// Start deley buffer collection on a given CObjectIStream object.
+    /// Call istr.StartDelayBuffer()
+    ///
+    /// @param istr  guard protected instance
+    void StartDelayBuffer(CObjectIStream& istr);
 
     /// Redirect call to protected CObjectIStream
     /// After this call guarding is finished.
@@ -671,6 +681,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.108  2005/02/23 21:07:44  vasilche
+* Allow to skip underlying stream flush.
+*
 * Revision 1.107  2004/09/22 13:32:17  kononenk
 * "Diagnostic Message Filtering" functionality added.
 * Added function SetDiagFilter()

@@ -1347,6 +1347,7 @@ void CObjectOStreamXml::WriteChars(const CharBlock& ,
 void CObjectOStreamXml::WriteSeparator(void)
 {
     m_Output.PutString(GetSeparator());
+    FlushBuffer();
 }
 
 #if defined(NCBI_SERIAL_IO_TRACE)
@@ -1363,6 +1364,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2005/02/23 21:07:44  vasilche
+* Allow to skip underlying stream flush.
+*
 * Revision 1.79  2005/02/09 14:32:11  gouriano
 * Implemented serialization of mixed content elements
 *

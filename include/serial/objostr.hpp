@@ -123,6 +123,8 @@ public:
     void FlushBuffer(void);
     // flush buffer and underlying stream
     void Flush(void);
+    // perform default flush defined by flags
+    void DefaultFlush(void);
 
     // root writer
     void Write(const CConstObjectInfo& object);
@@ -278,7 +280,8 @@ public:
         fFlagNone                = 0,
         eFlagNone                = fFlagNone,
         fFlagAllowNonAsciiChars  = 1 << 0,
-        eFlagAllowNonAsciiChars  = fFlagAllowNonAsciiChars
+        eFlagAllowNonAsciiChars  = fFlagAllowNonAsciiChars,
+        fFlagNoAutoFlush         = 1 << 1
     };
     typedef int TFlags;
     TFlags GetFlags(void) const;
@@ -526,6 +529,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2005/02/23 21:07:44  vasilche
+* Allow to skip underlying stream flush.
+*
 * Revision 1.89  2004/09/22 13:32:17  kononenk
 * "Diagnostic Message Filtering" functionality added.
 * Added function SetDiagFilter()
