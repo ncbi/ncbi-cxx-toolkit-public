@@ -258,6 +258,10 @@ void Cn3DApp::InitRegistry(void)
     // default log window startup
     RegistrySetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, false);
     RegistrySetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, NO_FAVORITES_FILE);
+    RegistrySetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_POS_X, 50);
+    RegistrySetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_POS_Y, 50);
+    RegistrySetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_SIZE_W, 400);
+    RegistrySetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_SIZE_H, 400);
 
     // default animation controls
     RegistrySetInteger(REG_ANIMATION_SECTION, REG_SPIN_DELAY, 50);
@@ -640,6 +644,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/01/04 16:06:59  thiessen
+* make MultiTextDialog remember its position+size
+*
 * Revision 1.22  2004/08/04 18:58:30  thiessen
 * add -s command line option for preferred favorite style
 *

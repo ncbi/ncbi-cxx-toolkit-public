@@ -1054,8 +1054,7 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
             if (!cddDescriptionDialog) {
                 StructureSet::TextLines line(1);
                 line[0] = glCanvas->structureSet->GetCDDDescription().c_str();
-                cddDescriptionDialog = new MultiTextDialog(this, line,
-                    this, -1, "CDD Description", wxPoint(50, 50), wxSize(400, 200));
+                cddDescriptionDialog = new MultiTextDialog(this, line, this, -1, "CDD Description");
             }
             cddDescriptionDialog->ShowDialog(true);
             break;
@@ -1064,8 +1063,7 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
             if (!cddNotesDialog) {
                 StructureSet::TextLines lines;
                 if (!glCanvas->structureSet->GetCDDNotes(&lines)) break;
-                cddNotesDialog = new MultiTextDialog(this, lines,
-                    this, -1, "CDD Notes", wxPoint(100, 100), wxSize(500, 400));
+                cddNotesDialog = new MultiTextDialog(this, lines, this, -1, "CDD Notes");
             }
             cddNotesDialog->ShowDialog(true);
             break;
@@ -1636,6 +1634,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/01/04 16:06:59  thiessen
+* make MultiTextDialog remember its position+size
+*
 * Revision 1.37  2004/10/05 14:57:54  thiessen
 * add distance selection dialog
 *

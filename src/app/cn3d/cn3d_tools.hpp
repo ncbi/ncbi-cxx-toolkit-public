@@ -138,6 +138,10 @@ static const std::string
     REG_FAVORITES_NAME = "Favorites",
         NO_FAVORITES_FILE = "(none)",   // to signal that no Favorites file is defined
     REG_SHOW_LOG_ON_START = "ShowLogOnStartup",
+    REG_MT_DIALOG_POS_X = "MultiTextDialogPositionX",
+    REG_MT_DIALOG_POS_Y = "MultiTextDialogPositionY",
+    REG_MT_DIALOG_SIZE_W = "MultiTextDialogWidth",
+    REG_MT_DIALOG_SIZE_H = "MultiTextDialogHeight",
     // animation
     REG_ANIMATION_SECTION = "Cn3D-4-Animation",
     REG_SPIN_DELAY = "SpinDelay",
@@ -260,6 +264,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/01/04 16:06:59  thiessen
+* make MultiTextDialog remember its position+size
+*
 * Revision 1.35  2004/05/28 21:01:45  thiessen
 * namespace/typename fixes for GCC 3.4
 *

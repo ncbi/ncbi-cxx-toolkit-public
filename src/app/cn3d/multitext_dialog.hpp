@@ -70,8 +70,7 @@ public:
     typedef std::vector < std::string > TextLines;
 
     MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& initialText,
-        wxWindow* parent, wxWindowID id, const wxString& title,
-        const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize);
+        wxWindow* parent, wxWindowID id, const wxString& title);
     ~MultiTextDialog(void);
 
     bool GetLines(TextLines *lines) const;
@@ -103,6 +102,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/01/04 16:06:59  thiessen
+* make MultiTextDialog remember its position+size
+*
 * Revision 1.8  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

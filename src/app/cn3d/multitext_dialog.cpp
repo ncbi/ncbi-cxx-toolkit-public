@@ -39,6 +39,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include "multitext_dialog.hpp"
+#include "cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -53,12 +54,24 @@ END_EVENT_TABLE()
 
 MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
         const TextLines& initialText,
-        wxWindow* parent, wxWindowID id, const wxString& title,
-        const wxPoint& pos, const wxSize& size) :
-    wxDialog(parent, id, title, pos, size,
+        wxWindow* parent, wxWindowID id, const wxString& title) :
+    wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxDIALOG_MODELESS | wxFRAME_NO_TASKBAR),
     myOwner(owner)
 {
+    // set size/position from registry
+    int posX, posY, sizeW, sizeH;
+    if (!RegistryGetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_POS_X, &posX) ||
+        !RegistryGetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_POS_Y, &posY) ||
+        !RegistryGetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_SIZE_W, &sizeW) ||
+        !RegistryGetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_SIZE_H, &sizeH))
+    {
+        ERRORMSG("Failed to get dialog position+size from registry, using default");
+        SetSize(100, 100, 500, 400);
+    } else {
+        SetSize(posX, posY, sizeW, sizeH);
+    }
+
     textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxHSCROLL);
     bDone = new wxButton(this, -1, "Done");
 
@@ -91,7 +104,6 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
             *textCtrl << initialText[i].c_str() << '\n';
     }
 
-    SetClientSize(size);
     SetSizeHints(200, 150); // min size
     SetAutoLayout(true);
     Layout();
@@ -100,6 +112,17 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
 MultiTextDialog::~MultiTextDialog(void)
 {
     if (myOwner) myOwner->DialogDestroyed(this);
+
+    int posX, posY, sizeW, sizeH;
+    GetPosition(&posX, &posY);
+    GetSize(&sizeW, &sizeH);
+    if (!RegistrySetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_POS_X, posX) ||
+        !RegistrySetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_POS_Y, posY) ||
+        !RegistrySetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_SIZE_W, sizeW) ||
+        !RegistrySetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_SIZE_H, sizeH))
+    {
+        ERRORMSG("Failed to set dialog position+size in registry");
+    }
 }
 
 void MultiTextDialog::OnCloseWindow(wxCloseEvent& event)
@@ -164,6 +187,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/01/04 16:06:59  thiessen
+* make MultiTextDialog remember its position+size
+*
 * Revision 1.12  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
