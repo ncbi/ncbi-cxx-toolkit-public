@@ -452,7 +452,7 @@ int CTestApplication::Run(void)
 
     {{
         int i = 0;
-        iterate(list<string>, it, split) {
+        ITERATE(list<string>, it, split) {
             assert(NStr::Compare(*it, split_result[i++]) == 0);
         }
     }}
@@ -491,7 +491,7 @@ int CTestApplication::Run(void)
 
     {{
         int i = 0;
-        iterate(vector<string>, it, tok) {
+        ITERATE(vector<string>, it, tok) {
             assert(NStr::Compare(*it, tok_result[i++]) == 0);
         }
     }}
@@ -616,6 +616,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/03/10 18:57:08  kuznets
+ * iterate->ITERATE
+ *
  * Revision 6.16  2003/02/27 15:34:23  lavr
  * Add tests for stray dots in numbers
  *

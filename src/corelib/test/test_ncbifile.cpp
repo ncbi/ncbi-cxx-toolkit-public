@@ -391,7 +391,7 @@ static void s_TEST_Dir(void)
 
     cout << endl;
     CDir::TEntries contents = dir.GetEntries("*");
-    iterate(CDir::TEntries, i, contents) {
+    ITERATE(CDir::TEntries, i, contents) {
         string entry = (*i)->GetPath();
         cout << entry << endl;
     }
@@ -586,6 +586,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/03/10 18:57:08  kuznets
+ * iterate->ITERATE
+ *
  * Revision 1.21  2003/03/06 21:22:30  ivanov
  * Rollback to R1.19 -- accidentally commit work version
  *

@@ -1551,18 +1551,18 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
 
     // Compose an ordered list of args
     list<const CArgDesc*> def_args;
-    iterate (TKeyFlagArgs, it, m_KeyFlagArgs) {
+    ITERATE (TKeyFlagArgs, it, m_KeyFlagArgs) {
         const CArgDesc& arg = **x_Find(*it);
         def_args.push_back(&arg);
     }
-    iterate (TPosArgs, it, m_PosArgs) {
+    ITERATE (TPosArgs, it, m_PosArgs) {
         const CArgDesc& arg = **x_Find(*it);
         def_args.push_back(&arg);
     }
 
     // Set default values (if available) for the arguments not defined
     // in the command line.
-    iterate (list<const CArgDesc*>, it, def_args) {
+    ITERATE (list<const CArgDesc*>, it, def_args) {
         const CArgDesc& arg = **it;
 
         // Nothing to do if defined in the command-line
@@ -2135,6 +2135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2003/03/10 18:57:07  kuznets
+ * iterate->ITERATE
+ *
  * Revision 1.43  2003/02/10 18:07:07  kuznets
  * Fixed problem with mandatory extra args
  *

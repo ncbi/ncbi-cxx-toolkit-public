@@ -1212,7 +1212,7 @@ bool CDir::Remove(EDirRemoveMode mode) const
     TEntries contents = GetEntries();
 
     // Remove
-    iterate(TEntries, entry, contents) {
+    ITERATE(TEntries, entry, contents) {
         string name = (*entry)->GetName();
 #if defined(NCBI_OS_MAC)
         CDirEntry& item = **entry;
@@ -1519,6 +1519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2003/03/10 18:57:08  kuznets
+ * iterate->ITERATE
+ *
  * Revision 1.41  2003/02/28 21:06:02  ivanov
  * Added close() call to CTmpStream destructor before the file deleting.
  *

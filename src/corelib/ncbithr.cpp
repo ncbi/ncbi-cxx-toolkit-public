@@ -138,7 +138,7 @@ void CTlsBase::x_Discard(void)
     }
 
     CFastMutexGuard guard(s_TlsMutex);
-    non_const_iterate(TTls_TlsSet, it, *s_Tls_TlsSet) {
+    NON_CONST_ITERATE(TTls_TlsSet, it, *s_Tls_TlsSet) {
         if (it->GetPointer() == this) {
             s_Tls_TlsSet->erase(it);
             break;
@@ -367,7 +367,7 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     // Cleanup local storages used by this thread
     {{
         CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
-        non_const_iterate(TTlsSet, it, thread_obj->m_UsedTls) {
+        NON_CONST_ITERATE(TTlsSet, it, thread_obj->m_UsedTls) {
             CRef<CTlsBase> tls = *it;
             tls->x_Reset();
         }
@@ -645,6 +645,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/03/10 18:57:08  kuznets
+ * iterate->ITERATE
+ *
  * Revision 1.23  2002/11/04 21:29:04  grichenk
  * Fixed usage of const CRef<> and CRef<> constructor
  *

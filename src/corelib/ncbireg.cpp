@@ -72,7 +72,7 @@ static bool s_IsNameSection(const string& str)
     if ( str.empty() )
         return false;
 
-    iterate (string, it, str) {
+    ITERATE (string, it, str) {
         if ( !s_IsNameSectionSymbol(*it) )
             return false;
     }
@@ -123,7 +123,7 @@ static bool s_WriteComment(CNcbiOstream& os, const string& comment)
     if (strcmp(s_Endl, "\n") == 0) {
         os << comment;
     } else {
-        iterate(string, i, comment) {
+        ITERATE(string, i, comment) {
             if (*i == '\n') {
                 os << s_Endl;
             } else {
@@ -376,7 +376,7 @@ bool CNcbiRegistry::Write(CNcbiOstream& os)
         return false;
 
     // write data
-    iterate (TRegistry, section, m_Registry) {
+    ITERATE (TRegistry, section, m_Registry) {
         //
         const TRegSection& reg_section = section->second;
         _ASSERT( !reg_section.empty() );
@@ -394,7 +394,7 @@ bool CNcbiRegistry::Write(CNcbiOstream& os)
             return false;
 
         // write section entries
-        iterate (TRegSection, entry, reg_section) {
+        ITERATE (TRegSection, entry, reg_section) {
             // if this entry is actually a section comment, then skip it
             if (entry == comm_entry)
                 continue;
@@ -774,7 +774,7 @@ void CNcbiRegistry::EnumerateSections(list<string>* sections)
     CFastMutexGuard LOCK(s_RegMutex);
 
     sections->clear();
-    iterate (TRegistry, section, m_Registry) {
+    ITERATE (TRegistry, section, m_Registry) {
         sections->push_back(section->first);
     }
 }
@@ -797,7 +797,7 @@ void CNcbiRegistry::EnumerateEntries(const string& section,
     _ASSERT( !reg_section.empty() );
 
     // enumerate through the entries in the found section
-    iterate (TRegSection, entry, reg_section) {
+    ITERATE (TRegSection, entry, reg_section) {
         if ( entry->first.empty() )
             continue;  // skip section comment
 
@@ -813,8 +813,8 @@ bool CNcbiRegistry::x_IsAllTransient(void)
         return false;
     }
 
-    iterate (TRegistry, section, m_Registry) {
-        iterate (TRegSection, entry, section->second) {
+    ITERATE (TRegistry, section, m_Registry) {
+        ITERATE (TRegSection, entry, section->second) {
             if (section->first.empty()  || !entry->second.persistent.empty()) {
                 return false;  // section comment or non-transient entry
             }
@@ -874,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/03/10 18:57:08  kuznets
+ * iterate->ITERATE
+ *
  * Revision 1.31  2003/02/28 19:24:51  vakatov
  * Get rid of redundant "const" in the return type of GetInt/Bool/Double()
  *

@@ -195,7 +195,7 @@ char* NStr::ToLower(char* str)
 
 string& NStr::ToLower(string& str)
 {
-    non_const_iterate (string, it, str) {
+    NON_CONST_ITERATE (string, it, str) {
         *it = tolower(*it);
     }
     return str;
@@ -214,7 +214,7 @@ char* NStr::ToUpper(char* str)
 
 string& NStr::ToUpper(string& str)
 {
-    non_const_iterate (string, it, str) {
+    NON_CONST_ITERATE (string, it, str) {
         *it = toupper(*it);
     }
     return str;
@@ -734,7 +734,7 @@ string NStr::PrintableString(const string&      str,
                              NStr::ENewLineMode nl_mode)
 {
     string s;
-    iterate (string, it, str) {
+    ITERATE (string, it, str) {
         if (*it == '\0') {
             s += "\\0";
         } else if (*it == '\\') {
@@ -959,7 +959,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
     SIZE_TYPE     column   = s_VisibleWidth(s,     is_html);
     SIZE_TYPE     delwidth = s_VisibleWidth(delim, is_html);
     bool          at_start = true;
-    iterate (list<string>, it, l) {
+    ITERATE (list<string>, it, l) {
         SIZE_TYPE term_width = s_VisibleWidth(*it, is_html);
         if (at_start) {
             if (column + term_width <= width) {
@@ -1014,6 +1014,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2003/03/10 18:57:08  kuznets
+ * iterate->ITERATE
+ *
  * Revision 1.84  2003/03/04 00:02:21  vakatov
  * NStr::PtrToString() -- use runtime check for "0x"
  * NStr::StringToPtr() -- minor polishing

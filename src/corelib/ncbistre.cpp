@@ -119,7 +119,7 @@ CNcbiOstrstreamToString::operator string(void) const
 
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s)
 {
-    iterate ( string, c, s.m_String ) {
+    ITERATE ( string, c, s.m_String ) {
         out.put(char(toupper(*c)));
     }
     return out;
@@ -127,7 +127,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s)
 
 CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseStringConverter s)
 {
-    iterate ( string, c, s.m_String ) {
+    ITERATE ( string, c, s.m_String ) {
         out.put(char(tolower(*c)));
     }
     return out;
@@ -203,7 +203,7 @@ void WritePrintable(CNcbiOstream& out, char c)
 
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s)
 {
-    iterate ( string, c, s.m_String ) {
+    ITERATE ( string, c, s.m_String ) {
         WritePrintable(out, *c);
     }
     return out;
@@ -303,6 +303,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/03/10 18:57:08  kuznets
+ * iterate->ITERATE
+ *
  * Revision 1.18  2002/10/17 22:10:33  vakatov
  * C&P typo fixed
  *

@@ -204,7 +204,7 @@ void CPipeHandle::Open(const char* cmd_line, const vector<string>& args,
     sinfo.cb = sizeof(sinfo);
 
     string cmds(cmd_line);
-    iterate (vector<string>, iter, args) {
+    ITERATE (vector<string>, iter, args) {
         if ( !cmds.empty() ) {
             cmds += " ";
         }
@@ -382,7 +382,7 @@ void CPipeHandle::Open(const char* cmdname, const vector<string>& args,
     const char** x_args = new const char*[cnt+2];
     typedef ArrayDeleter<const char*> TArgsDeleter;
     AutoPtr<const char*, TArgsDeleter> p_args = x_args;
-    iterate(vector<string>, arg, args) {
+    ITERATE (vector<string>, arg, args) {
         x_args[i+1] = arg->c_str();
         ++i;
     }
@@ -739,6 +739,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/03/10 18:57:08  kuznets
+ * iterate->ITERATE
+ *
  * Revision 1.12  2003/03/07 16:19:39  ivanov
  * MSWin CPipeHandle::Close() -- Handling GetExitCodeProcess() returns value 259 (STILL_ACTIVE)
  *

@@ -259,7 +259,7 @@ bool CDiagBuffer::GetSeverityChangeEnabledFirstTime(void)
 void CDiagBuffer::UpdatePrefix(void)
 {
     m_PostPrefix.erase();
-    iterate(TPrefixList, prefix, m_PrefixList) {
+    ITERATE(TPrefixList, prefix, m_PrefixList) {
         if (prefix != m_PrefixList.begin()) {
             m_PostPrefix += "::";
         }
@@ -1069,6 +1069,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.71  2003/03/10 18:57:08  kuznets
+ * iterate->ITERATE
+ *
  * Revision 1.70  2003/02/21 21:08:57  vakatov
  * Minor cast to get rid of 64-bit compilation warning
  *
