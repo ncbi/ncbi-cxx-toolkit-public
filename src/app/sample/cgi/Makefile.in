@@ -4,6 +4,7 @@
 #################################
 
 APP_PROJ = cgi_sample
+SUB_PROJ = cgires
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
