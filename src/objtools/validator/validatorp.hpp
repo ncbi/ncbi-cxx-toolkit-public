@@ -109,6 +109,7 @@ enum EErrType {
     eErr_SEQ_INST_GiWithoutAccession,
     eErr_SEQ_INST_MultipleAccessions,
     eErr_SEQ_INST_HistAssemblyMissing,
+    eErr_SEQ_INST_TerminalNs,
 
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
@@ -377,7 +378,7 @@ private:
     void InitializeSourceQualTags();
     void ValidateSourceQualTags(const string& str, const CSerialObject& obj);
 
-    bool IsMixedStrands(const CBioseq& seq, const CSeq_loc& loc);
+    bool IsMixedStrands(const CSeq_loc& loc);
 
     void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj);
     void ValidatePubArticle(const CCit_art& art, const CSerialObject& obj);
@@ -533,6 +534,7 @@ private:
     void ValidateSeqParts(const CBioseq& seq);
     void ValidateProteinTitle(const CBioseq& seq);
     void ValidateRawConst(const CBioseq& seq);
+    void ValidateNs(const CBioseq& seq);
     
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateSeqFeatContext(const CBioseq& seq);
@@ -629,6 +631,7 @@ private:
 
     bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype);
     bool IsTransgenic(const CBioSource& bsrc);
+    bool IsSameAsCDS(const CSeq_feat& feat);
 };
 
 
@@ -714,6 +717,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/02/07 21:09:43  shomrat
+* Added eErr_SEQ_INST_TerminalNs; Added helper methods
+*
 * Revision 1.11  2003/02/03 20:18:14  shomrat
 * Added flag to skip performance bottlenecks (for testing)
 *
