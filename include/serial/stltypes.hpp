@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2001/01/29 15:19:56  vasilche
+* Reduced memory usage on Sun.
+*
 * Revision 1.55  2000/11/07 17:25:13  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -402,13 +405,21 @@ public:
     static void AddElement(const CContainerTypeInfo* /*containerType*/,
                            TObjectPtr containerPtr, TConstObjectPtr elementPtr)
         {
-            Get(containerPtr).push_back(CTypeConverter<TElementType>::Get(elementPtr));
+            TObjectType& container = Get(containerPtr);
+#if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
+            container.allocation_size(container.size());
+#endif
+            container.push_back(CTypeConverter<TElementType>::Get(elementPtr));
         }
     static void AddElementIn(const CContainerTypeInfo* containerType,
                              TObjectPtr containerPtr, CObjectIStream& in)
         {
-            Get(containerPtr).push_back(TElementType());
-            containerType->GetElementType()->ReadData(in, &Get(containerPtr).back());
+            TObjectType& container = Get(containerPtr);
+#if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
+            container.allocation_size(container.size());
+#endif
+            container.push_back(TElementType());
+            containerType->GetElementType()->ReadData(in, &container.back());
         }
 
     static void SetMemFunctions(CStlOneArgTemplate* info)
@@ -432,7 +443,11 @@ public:
     static void InsertElement(TObjectPtr containerPtr,
                               const TElementType& element)
         {
-            if ( !Get(containerPtr).insert(element).second )
+            TObjectType& container = Get(containerPtr);
+#if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
+            container.allocation_size(container.size());
+#endif
+            if ( !container.insert(element).second )
                 CStlClassInfoUtil::ThrowDuplicateElementError();
         }
     static void AddElement(const CContainerTypeInfo* /*containerType*/,
@@ -467,7 +482,11 @@ public:
     static void InsertElement(TObjectPtr containerPtr,
                               const TElementType& element)
         {
-            Get(containerPtr).insert(element);
+            TObjectType& container = Get(containerPtr);
+#if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
+            container.allocation_size(container.size());
+#endif
+            container.insert(element);
         }
     static void AddElement(const CContainerTypeInfo* /*containerType*/,
                            TObjectPtr containerPtr, TConstObjectPtr elementPtr)
