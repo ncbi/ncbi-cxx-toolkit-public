@@ -213,6 +213,25 @@ public:
     static bool EndsWith(const string& str, const string& end,
                          ECase use_case = eCase);
 
+    enum EOccurrence {
+        eFirst,
+        eLast
+    };
+
+    // Return the start of the first or last (depending on WHICH)
+    // occurrence of PATTERN in STR that *starts* within [START, END],
+    // or NPOS if it does not occur.
+    static SIZE_TYPE Find      (const string& str, const string& pattern,
+                                SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
+                                EOccurrence which = eFirst,
+                                ECase use_case = eCase);
+    static SIZE_TYPE FindCase  (const string& str, const string& pattern,
+                                SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
+                                EOccurrence which = eFirst);
+    static SIZE_TYPE FindNoCase(const string& str, const string& pattern,
+                                SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
+                                EOccurrence which = eFirst);
+
     enum ETrunc {
         eTrunc_Begin,  /// truncate leading  spaces only
         eTrunc_End,    /// truncate trailing spaces only
@@ -541,6 +560,37 @@ bool NStr::EndsWith(const string& str, const string& end, ECase use_case)
 
 
 inline
+SIZE_TYPE NStr::Find(const string& str, const string& pattern, 
+                     SIZE_TYPE start, SIZE_TYPE end, EOccurrence where,
+                     ECase use_case)
+{
+    return use_case == eCase ? FindCase(str, pattern, start, end, where)
+        : FindNoCase(str, pattern, start, end, where);
+}
+
+inline
+SIZE_TYPE NStr::FindCase(const string& str, const string& pattern,
+                         SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
+{
+    if (where == eFirst) {
+        SIZE_TYPE result = str.find(pattern, start);
+        return (result == NPOS  ||  result > end) ? NPOS : result;
+    } else {
+        SIZE_TYPE result = str.rfind(pattern, end);
+        return (result == NPOS  ||  result < start) ? NPOS : result;
+    }
+}
+
+inline
+SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
+                           SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
+{
+    string str2 = str, pat2 = pattern;
+    return FindCase(ToLower(str2), ToLower(pat2), start, end, where);
+}
+
+
+inline
 list<string>& NStr::Wrap(const string& str, SIZE_TYPE width, list<string>& arr,
                          NStr::TWrapFlags flags, const string& prefix,
                          const string* prefix1)
@@ -644,6 +694,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2002/12/20 19:40:45  ucko
+ * Add NStr::Find and variants.
+ *
  * Revision 1.26  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
