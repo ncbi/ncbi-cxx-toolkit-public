@@ -80,11 +80,7 @@ public: \
 // this macro makes the syntax a little easier to understand when declaring a
 // promoted type
 //
-#ifdef NCBI_OS_MSWIN
-#  define NCBI_PROMOTE(a,b) SPromoteTraits<a,b>::TPromote
-#else
-#  define NCBI_PROMOTE(a,b) typename SPromoteTraits<a,b>::TPromote
-#endif
+#define NCBI_PROMOTE(a,b) typename SPromoteTraits<a,b>::TPromote
 
 //
 // comparisons for built-in types
@@ -199,6 +195,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/26 16:52:34  gorelenk
+ * Changed definition of NCBI_PROMOTE(a,b). MSVC compilers also demands
+ * "typename" in this case.
+ *
  * Revision 1.1  2004/02/09 17:34:12  dicuccio
  * Moved from gui/math
  *
