@@ -100,6 +100,39 @@ public:
 
     void Return(Value* v) { Put(v); }
 
+    /// Makes the pool to forget the object.
+    ///
+    /// Method scans the free objects list, finds the object and removes
+    /// it from the structure. It is important that the object is not
+    /// deleted and it is responsibility of the caller to destroy it.
+    ///
+    /// @return NULL if object does not belong to the pool or 
+    ///    object's pointer otherwise.
+    Value* Forget(Value* v)
+    {
+        NON_CONST_ITERATE(typename vector<Value*>, it, m_FreeObjects) {
+            Value* vp = *it;
+            if (v == vp) {
+                m_FreeObjects.erase(it);
+                return v;
+            }
+        }
+        return 0;
+    }
+
+    /// Makes pool to forget all objects
+    ///
+    /// Method removes all objects from the internal list but does NOT
+    /// deallocate the objects.
+    void ForgetAll()
+    {
+        m_FreeObjects.clear();
+    }
+
+protected:
+    CResourcePool(const CResourcePool&);
+    CResourcePool& operator=(const CResourcePool&);
+
 protected:
     vector<Value*>  m_FreeObjects;
 };
@@ -135,6 +168,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/23 19:18:20  kuznets
+ * +CResourcePool::Forget to manually remove objects from the pool.
+ *
  * Revision 1.2  2004/02/17 19:06:59  kuznets
  * GCC warning fix
  *
