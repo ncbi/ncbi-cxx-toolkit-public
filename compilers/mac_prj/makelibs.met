@@ -114,9 +114,9 @@ on SetProjectData()
 			"email_diag_handler.cpp""ncbi_ansi_ext", "ncbi_buffer", "ncbi_connection", ¬
 			"ncbi_connutil", "ncbi_core", "ncbi_file_connector", "ncbi_heapmgr", ¬
 			"ncbi_http_connector", "ncbi_priv", "ncbi_service", "ncbi_service_dispd", ¬
-			"ncbi_socket_", "ncbi_socket_connector", "ncbi_util_", ¬
+			"ncbi_socket", "ncbi_socket_connector", "ncbi_util_", ¬
 			"ncbi_connector", "ncbi_service_connector", "ncbi_service_lbsmd_stub", ¬
-			"ncbi_server_info", "ncbi_sendmail_"}
+			"ncbi_server_info", "ncbi_sendmail"}
 		
 		AddProject(DataPlusSysPaths(SimpleProjectData("connect", {"C"}, "connect", myFiles), ¬
 			{CToolkitRoot() & "include:", CToolkitRoot() & "corelib:"}))
