@@ -2300,7 +2300,7 @@ MatrixInfoDestruct(MatrixInfo* matrix_info)
 
 /** Allocates New MatrixInfo*
  * @param name name of matrix [in]
- * @param value array contains information about a matrix [in]
+ * @param values array contains information about a matrix [in]
  * @param prefs contains information on a which values are preferred [in]
  * @param max_number size of those arrays [in]
  * @return pointer to the allocated MatrixInfo
@@ -3598,6 +3598,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.87  2004/07/15 14:50:34  madden
+ * Doxygen fix
+ *
  * Revision 1.86  2004/07/14 18:04:52  camacho
  * Add const type qualifier to BlastScoreBlk in BlastScoreFreqCalc & Blast_KarlinBlkIdealCalc
  *
