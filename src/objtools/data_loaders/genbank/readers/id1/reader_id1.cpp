@@ -61,7 +61,15 @@ streambuf *CId1Reader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
   CID1server_back id1_reply;
   *server_input >> id1_reply;
 
-  int gi = id1_reply.GetGotgi();
+  int gi = 0;
+  if(id1_reply.IsGotgi())
+     gi = id1_reply.GetGotgi();
+  else
+    {
+      LOG_POST("SeqId is not found");
+      seqId.WriteAsFasta(cout);
+    }
+
   auto_ptr<strstream> ss(new strstream);
 
   if(gi == 0)
@@ -336,6 +344,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.18  2002/04/17 19:52:02  kimelman
+* fix: no gi found
+*
 * Revision 1.17  2002/04/09 16:10:56  ucko
 * Split CStrStreamBuf out into a common location.
 *
