@@ -69,6 +69,9 @@ protected:
     void x_SendRequest(const CSeqref& seqref,
                        CConn_ServiceStream* stream,
                        bool is_snp);
+
+    CRef<CSeq_annot_SNP_Info> x_ReceiveSNPAnnot(CConn_ServiceStream* stream);
+
 private:
 
     void x_RetrieveSeqrefs(TSeqrefs& sr,
@@ -81,10 +84,10 @@ private:
                               CConn_ServiceStream* stream);
 
     CRef<CTSE_Info> x_ReceiveMainBlob(CConn_ServiceStream* stream);
-    CRef<CSeq_annot_SNP_Info> x_ReceiveSNPAnnot(CConn_ServiceStream* stream);
 
     vector<CConn_ServiceStream *> m_Pool;
 };
+
 
 
 END_SCOPE(objects)
@@ -93,6 +96,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.20  2003/10/01 18:06:58  kuznets
+* x_ReceiveSNPAnnot made public
+*
 * Revision 1.19  2003/10/01 16:54:50  kuznets
 * Relaxed scope restriction of CId1Reader::x_SendRequest() (private->protected)
 *
