@@ -292,7 +292,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
             ++hits_extended;
             score=BlastAaExtendOneHit(matrix, subject, query,
                      subject_offsets[i], query_offsets[i], dropoff,
-                     &hsp_q, &hsp_s, &hsp_len, use_pssm, &s_last_off);
+                     &hsp_q, &hsp_s, &hsp_len, wordsize, use_pssm, &s_last_off);
 
             /* if the hsp meets the score threshold, report it */
             if (score >= cutoff) {
@@ -319,7 +319,7 @@ Int4 BlastAaExtendRight(Int4 ** matrix,
 			Int4 s_off,
 			Int4 q_off,
 			Int4 dropoff,
-			Int4* displacement,
+			Int4* length,
                         Int4 maxscore,
                         Int4* s_last_off)
 {
@@ -340,11 +340,14 @@ Int4 BlastAaExtendRight(Int4 ** matrix,
         best_i = i;
      }
 
+      /* The comparison below is really >= and is different than the old code (e.g., blast.c:BlastWordExtend_prelim).
+         In the old code the loop continued as long as sum > X (X being negative).  The loop control here
+         is different and we *break out* when the if statement below is true. */
      if (score <= 0 || (maxscore - score) >= dropoff)
         break;
   }
 
-  *displacement = best_i;
+  *length = best_i + 1;
   *s_last_off = s_off + i;
   return maxscore;
 }
@@ -355,14 +358,14 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
 		       Int4 s_off,
 		       Int4 q_off,
 		       Int4 dropoff,
-		       Int4* displacement)
+		       Int4* length,
+                       Int4 maxscore)
 {
    Int4 i, n, best_i;
-   Int4 score = 0;
-   Int4 maxscore = 0;
+   Int4 score = maxscore;
    
    Uint1* s,* q;
-   
+
    n = MIN( s_off , q_off );
    best_i = n + 1;
 
@@ -376,11 +379,14 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
          maxscore = score;
          best_i = i;
       }
+      /* The comparison below is really >= and is different than the old code (e.g., blast.c:BlastWordExtend_prelim).
+         In the old code the loop continued as long as sum > X (X being negative).  The loop control here
+         is different and we *break out* when the if statement below is true. */
       if ((maxscore - score) >= dropoff)
          break;
    }
-   
-   *displacement = n - best_i;
+
+   *length = n - best_i + 1;
    return maxscore;
 }
 
@@ -390,7 +396,7 @@ Int4 BlastPSSMExtendRight(Int4 ** matrix,
 			Int4 s_off,
 			Int4 q_off,
 			Int4 dropoff,
-			Int4* displacement,
+			Int4* length,
                         Int4 maxscore,
 			Int4* s_last_off)
 {
@@ -409,11 +415,14 @@ Int4 BlastPSSMExtendRight(Int4 ** matrix,
         best_i = i;
      }
 
+      /* The comparison below is really >= and is different than the old code (e.g., blast.c:BlastWordExtend_prelim).
+         In the old code the loop continued as long as sum > X (X being negative).  The loop control here
+         is different and we *break out* when the if statement below is true. */
      if (score <= 0 || (maxscore - score) >= dropoff)
         break;
   }
 
-  *displacement = best_i;
+  *length = best_i + 1;
   *s_last_off = s_off + i;
   return maxscore;
 }
@@ -423,11 +432,11 @@ Int4 BlastPSSMExtendLeft(Int4 ** matrix,
 		       Int4 s_off,
 		       Int4 q_off,
 		       Int4 dropoff,
-		       Int4* displacement)
+		       Int4* length,
+                       Int4 maxscore)
 {
    Int4 i, n, best_i;
-   Int4 score = 0;
-   Int4 maxscore = 0;
+   Int4 score = maxscore;
    Uint1* s;
    
    n = MIN( s_off , q_off );
@@ -441,11 +450,14 @@ Int4 BlastPSSMExtendLeft(Int4 ** matrix,
          maxscore = score;
          best_i = i;
       }
+      /* The comparison below is really >= and is different than the old code (e.g., blast.c:BlastWordExtend_prelim).
+         In the old code the loop continued as long as sum > X (X being negative).  The loop control here
+         is different and we *break out* when the if statement below is true. */
       if ((maxscore - score) >= dropoff)
          break;
    }
    
-   *displacement = n - best_i;
+   *length = n - best_i + 1;
    return maxscore;
 }
 
@@ -458,32 +470,67 @@ Int4 BlastAaExtendOneHit(Int4 ** matrix,
 			 Int4* hsp_q,
 			 Int4* hsp_s,
 			 Int4* hsp_len,
+                         Int4 word_size,
                          Boolean use_pssm,
                          Int4* s_last_off)
 {
-  Int4 left_score, right_score;
-  Int4 left_disp, right_disp;
+  Int4 score=0, left_score, total_score, sum=0;
+  Int4 left_disp=0, right_disp=0;
+  Int4 q_left_off=q_off, q_right_off=q_off+word_size, q_best_left_off=q_off; 
+  Int4 s_left_off, s_right_off;
+  Int4 init_hit_width = 0;
+  Int4 i; /* loop variable. */
+  Uint1 *q = query->sequence;
+  Uint1 *s = subject->sequence;
+
+  for (i = 0; i < word_size; i++) {
+      if (use_pssm)
+         sum += matrix[ q_off+i ][ s[s_off+i] ];
+      else
+         sum += matrix[ q[q_off+i] ][ s[s_off+i] ];
+
+      if (sum > score)
+      {
+           score = sum;
+           q_best_left_off = q_left_off;
+           q_right_off = q_off + i;
+      }
+      else if (sum <= 0)
+      {
+           sum = 0;
+           q_left_off = q_off + i + 1;
+      }
+  }
+
+  init_hit_width = q_right_off - q_left_off + 1;
+
+  q_left_off = q_best_left_off;  
+
+  s_left_off = q_left_off + (s_off-q_off);
+  s_right_off = q_right_off + (s_off-q_off);
 
   if (use_pssm) {
      left_score = BlastPSSMExtendLeft(matrix, subject, 
-                           s_off, q_off, dropoff, &left_disp);
-     right_score = BlastPSSMExtendRight(matrix, subject, query->length, 
-                           s_off+1, q_off+1, dropoff, &right_disp, 
+                           s_left_off-1, q_left_off-1, dropoff, &left_disp, score);
+
+     total_score = BlastPSSMExtendRight(matrix, subject, query->length, 
+                           s_right_off+1, q_right_off+1, dropoff, &right_disp, 
                            left_score, s_last_off);
   }
   else {
      left_score = BlastAaExtendLeft(matrix, subject, query, 
-                            s_off, q_off, dropoff, &left_disp);
-     right_score = BlastAaExtendRight(matrix, subject, query, 
-                            s_off+1, q_off+1, dropoff, &right_disp, 
+                            s_left_off-1, q_left_off-1, dropoff, &left_disp, score);
+
+     total_score = BlastAaExtendRight(matrix, subject, query, 
+                            s_right_off+1, q_right_off+1, dropoff, &right_disp, 
                             left_score, s_last_off);
   }
   
-  *hsp_q   = q_off - left_disp;
-  *hsp_s   = s_off - left_disp;
-  *hsp_len = left_disp + right_disp + 2;
-  
-  return right_score;
+  *hsp_q   = q_left_off - left_disp;
+  *hsp_s   = s_left_off - left_disp;
+  *hsp_len = left_disp + right_disp + init_hit_width;
+
+  return total_score;
 }
 
 Int4 
@@ -508,8 +555,10 @@ BlastAaExtendTwoHit(Int4 ** matrix,
    Uint1 *s = subject->sequence;
    Uint1 *q = query->sequence;
 
-   /* find the position (up to word_size-1 letters to the
+   /* find one beyond the position (up to word_size-1 letters to the
       right) that gives the largest starting score */
+  /* Use "one beyond" to make the numbering consistent with how it's done
+     for BlastAaExtendOneHit and the "Extend" functions called here. */
    for (i = 0; i < word_size; i++) {
       if (use_pssm)
          score += matrix[ q_right_off+i ][ s[s_right_off+i] ];
@@ -518,23 +567,23 @@ BlastAaExtendTwoHit(Int4 ** matrix,
 
       if (score > left_score) {
          left_score = score;
-         right_d = i;
+         right_d = i + 1; /* Position is one beyond the end of the word. */
       }
    }
    q_right_off += right_d;
    s_right_off += right_d;
 
-   right_d = -1;
+   right_d = 0;
    *right_extend = FALSE;
    *s_last_off = s_right_off;
 
    /* first, try to extend left, from the second hit to the first hit. */
    if (use_pssm)
       left_score = BlastPSSMExtendLeft(matrix, subject,
-    			     s_right_off, q_right_off, dropoff, &left_d);
+    			     s_right_off-1, q_right_off-1, dropoff, &left_d, 0);
    else
       left_score = BlastAaExtendLeft(matrix, subject, query,
-    			     s_right_off, q_right_off, dropoff, &left_d);
+    			     s_right_off-1, q_right_off-1, dropoff, &left_d, 0);
 
    /* Extend to the right only if left extension reached the first hit. */
    if (left_d >= (s_right_off - s_left_off)) {
@@ -542,17 +591,18 @@ BlastAaExtendTwoHit(Int4 ** matrix,
       *right_extend = TRUE;
       if (use_pssm)
          right_score = BlastPSSMExtendRight(matrix, subject, query->length,
-                                     s_right_off + 1, q_right_off + 1,
+                                     s_right_off, q_right_off,
                                      dropoff, &right_d, left_score, s_last_off);
       else 
          right_score = BlastAaExtendRight(matrix, subject, query,
-                                     s_right_off + 1, q_right_off + 1,
+                                     s_right_off, q_right_off,
                                      dropoff, &right_d, left_score, s_last_off);
    }
 
+
    *hsp_q = q_right_off - left_d;
    *hsp_s = s_right_off - left_d;
-   *hsp_len = left_d + right_d + 2;
+   *hsp_len = left_d + right_d;
    return MAX(left_score,right_score);
 }
 
