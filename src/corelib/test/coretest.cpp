@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  1999/09/02 21:54:42  vakatov
+* Tests for CNcbiRegistry:: allowed '-' and '.' in the section/entry name
+*
 * Revision 1.49  1999/08/30 16:00:45  vakatov
 * CNcbiRegistry:: Get()/Set() -- force the "name" and "section" to
 * consist of alphanumeric and '_' only;  ignore leading and trailing
@@ -320,6 +323,22 @@ static void TestRegistry(void)
     string xxx("\" V481\" \n\"V482 ");
     _ASSERT( reg.Set("Section4", "Name48", xxx, CNcbiRegistry::ePersistent) );
 
+    _ASSERT( reg.Set("Section5", "Name51", "Section5/Name51",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("_Section_5", "Name51", "_Section_5/Name51",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("_Section_5_", "_Name52", "_Section_5_/_Name52",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("_Section_5_", "Name52", "_Section_5_/Name52",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("_Section_5_", "_Name53_", "_Section_5_/_Name53_",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("Section-5.6", "Name-5.6", "Section-5.6/Name-5.6",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("-Section_5", ".Name.5-3", "-Section_5/.Name.5-3",
+                     CNcbiRegistry::ePersistent) );
+
+
     // Dump
     CNcbiOstrstream os;
     _ASSERT ( reg.Write(os) );
@@ -383,6 +402,13 @@ static void TestRegistry(void)
     _ASSERT( reg2.Get("Section4", "Name47T") == "470\n471\\\n 472\\\n473\\" );
     _ASSERT( reg2.Get("Section4", "Name48")  == xxx );
 
+    _ASSERT( reg2.Get(" Section5",    "Name51 ")   == "Section5/Name51" );
+    _ASSERT( reg2.Get("_Section_5",   " Name51")   == "_Section_5/Name51" );
+    _ASSERT( reg2.Get(" _Section_5_", " _Name52")  == "_Section_5_/_Name52");
+    _ASSERT( reg2.Get("_Section_5_ ", "Name52")    == "_Section_5_/Name52");
+    _ASSERT( reg2.Get("_Section_5_",  "_Name53_ ") == "_Section_5_/_Name53_" );
+    _ASSERT( reg2.Get(" Section-5.6", "Name-5.6 ") == "Section-5.6/Name-5.6");
+    _ASSERT( reg2.Get("-Section_5",   ".Name.5-3") == "-Section_5/.Name.5-3");
 
     // Printout of the whole registry content
     _ASSERT( reg.Set("Section0", "Name01", "") );
