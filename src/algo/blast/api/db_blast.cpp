@@ -496,14 +496,6 @@ void CDbBlast::SetupSearch()
             m_ivErrors.push_back(blast_message);
         }
         
-        /* If query is translated, the filtering locations are returned in 
-           protein scale; convert them back to nucleotide scale here. */
-        if (x_eProgram == eBlastTypeBlastx || 
-            x_eProgram == eBlastTypeTblastx ||
-            x_eProgram == eBlastTypeRpsTblastn) {
-            BlastMaskLocProteinToDNA(m_ipFilteredRegions, m_iclsQueryInfo);
-        }
-
         if (!m_ibTracebackOnly) {
             LookupTableWrapInit(m_iclsQueries, GetOptions().GetLutOpts(), 
                                 m_ipLookupSegments, m_ipScoreBlock, 
@@ -671,6 +663,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.57  2005/03/08 21:10:30  dondosha
+ * BlastMaskLocProteinToDNA is now called inside BLAST_MainSetUp, so extra call is no longer needed
+ *
  * Revision 1.56  2005/02/08 18:50:29  bealer
  * - Fix type truncation warnings.
  *
