@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.80  2004/02/07 15:48:30  ucko
+ * PSIBlastOptionsNew: rearrange slightly so that declarations come first.
+ *
  * Revision 1.79  2004/02/06 22:49:30  dondosha
  * Check for NULL pointer in PSIBlastOptionsNew
  *
@@ -1244,10 +1247,10 @@ BlastHitSavingParametersNew(Uint1 program_number,
 
 Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
 {
+   PSIBlastOptions* options;
    if (!psi_options)
       return 0;
-   PSIBlastOptions* options = 
-      (PSIBlastOptions*) calloc(1, sizeof(PSIBlastOptions));
+   options = (PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions));
    *psi_options = options;
    options->ethresh = PSI_ETHRESH;
    options->maxNumPasses = PSI_MAX_NUM_PASSES;
