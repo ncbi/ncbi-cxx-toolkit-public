@@ -461,7 +461,8 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
          context <= query_info->last_context; ++context) {
         context_offset = query_info->context_offsets[context];
         buffer = &query_blk->sequence[context_offset];
-        query_length = BLAST_GetQueryLength(query_info, context);
+        if ((query_length = BLAST_GetQueryLength(query_info, context)) <= 0)
+           continue;
 
         reverse = (is_na && ((context & 1) != 0));
         index = (is_na ? context / 2 : context);

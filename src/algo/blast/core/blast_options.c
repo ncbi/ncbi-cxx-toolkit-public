@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.62  2003/10/02 22:08:34  dondosha
+ * Corrections for one-strand translated searches
+ *
  * Revision 1.61  2003/10/01 22:36:52  dondosha
  * Correction of setting of e2 in revision 1.57 was wrong
  *
@@ -343,9 +346,12 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
    if (options == NULL)
       return 1;
    
-   if (strand_option && program == blast_type_blastn) {
+   if (strand_option && 
+       (program == blast_type_blastn || program == blast_type_blastx ||
+       program == blast_type_tblastx)) {
       options->strand_option = strand_option;
    }
+
    /* "L" indicates low-complexity (seg for proteins, 
       dust for nucleotides). */
    if (!filter_string || !strcasecmp(filter_string, "T")) {

@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.36  2003/10/02 22:08:34  dondosha
+ * Corrections for one-strand translated searches
+ *
  * Revision 1.35  2003/09/26 19:01:59  madden
  * Prefix ncbimath functions with BLAST_
  *
@@ -2299,6 +2302,8 @@ BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int2 context_start, Int2 context
 	for (index=context_start; index<=context_end; index++)
 	{
 		kbp = sbp->kbp[index];	
+      if (!kbp)
+         continue;
 		if (kbp->Lambda >= kbp_ideal->Lambda)
 		{
 			kbp->Lambda = kbp_ideal->Lambda;

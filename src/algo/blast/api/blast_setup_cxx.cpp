@@ -90,27 +90,35 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
     bool is_na = (prog == eBlastn) ? true : false;
     bool translate = ((prog == eBlastx) || (prog == eTblastx)) ? true : false;
 
-#if 0
     // Adjust first/last context depending on (first?) query strand
-    // is this really needed? (for kbp assignment in getting dropoff params)
-    // This is inconsistent, as the contexts in the middle of the
-    // context_offsets array are ignored
-    if (m_tQueries.front().IsInt()) {
-        if (m_tQueries.front().GetInt().GetStrand() == eNa_strand_minus) {
+    // Unless the strand option is set to single strand, the actual
+    // CSeq_locs dictate which strand to examine during the search.
+    ENa_strand strand_opt = options.GetStrandOption();
+    ENa_strand strand;
+
+    if (is_na || translate) {
+        if (strand_opt == eNa_strand_both || 
+            strand_opt == eNa_strand_unknown) {
+            strand = sequence::GetStrand(*queries.front().seqloc, 
+                                         queries.front().scope);
+        } else {
+            strand = strand_opt;
+        }
+
+        if (strand == eNa_strand_minus) {
             if (translate) {
-                mi_QueryInfo->first_context = 3;
+                (*qinfo)->first_context = 3;
             } else {
-                mi_QueryInfo->last_context = 1;
+                (*qinfo)->first_context = 1;
             }
-        } else if (m_tQueries.front().GetInt().GetStrand() = eNa_strand_plus) {
+        } else if (strand == eNa_strand_plus) {
             if (translate) {
-                mi_QueryInfo->last_context -= 3;
+                (*qinfo)->last_context -= 3;
             } else {
-                mi_QueryInfo->last_context -= 1;
+                (*qinfo)->last_context -= 1;
             }
         }
     }
-#endif
 
     // Allocate the various arrays of the query info structure
     int* context_offsets = NULL;
@@ -137,10 +145,7 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
         TSeqPos length = sequence::GetLength(*itr->seqloc, itr->scope);
         ASSERT(length != numeric_limits<TSeqPos>::max());
 
-        // Unless the strand option is set to single strand, the actual
-        // CSeq_locs dictacte which strand to examine during the search
-        ENa_strand strand_opt = options.GetStrandOption();
-        ENa_strand strand = sequence::GetStrand(*itr->seqloc, itr->scope);
+        strand = sequence::GetStrand(*itr->seqloc, itr->scope);
         if (strand_opt == eNa_strand_minus || strand_opt == eNa_strand_plus) {
             strand = strand_opt;
         }
@@ -245,10 +250,25 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = GetNumberOfFrames(prog);
+
+    // Unless the strand option is set to single strand, the actual
+    // CSeq_locs dictacte which strand to examine during the search
+    ENa_strand strand_opt = options.GetStrandOption();
+
     ITERATE(TSeqLocVector, itr, queries) {
 
-        Uint1* seqbuf = NULL;
+        Uint1* seqbuf = NULL, *seqbuf_rev = NULL;
         TSeqPos seqbuflen = 0;
+        ENa_strand strand;
+
+        if ((is_na || translate) &&
+            (strand_opt == eNa_strand_unknown || 
+             strand_opt == eNa_strand_both)) 
+        {
+            strand = sequence::GetStrand(*itr->seqloc, itr->scope);
+        } else {
+            strand = strand_opt;
+        }
 
         if (translate) {
 
@@ -257,37 +277,32 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             //pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
             seqbuf =
                 GetSequence(*itr->seqloc, encoding, itr->scope, &seqbuflen,
-                            eNa_strand_both, true);
+                            strand, true);
+            
 
             AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
                 FindGeneticCode(options.GetQueryGeneticCode());
             int na_length = sequence::GetLength(*itr->seqloc, itr->scope);
+            if (strand == eNa_strand_both)
+               seqbuf_rev = seqbuf + na_length + 1;
+            else if (strand == eNa_strand_minus)
+               seqbuf_rev = seqbuf + 1;
 
             // Populate the sequence buffer
             for (unsigned int i = 0; i < nframes; i++) {
-                if (BLAST_GetQueryLength(qinfo, i) == 0) {
+                if (BLAST_GetQueryLength(qinfo, i) <= 0) {
                     continue;
                 }
 
                 int offset = qinfo->context_offsets[ctx_index + i];
                 short frame = BLAST_ContextToFrame(prog, i);
-                BLAST_GetTranslation(seqbuf + 1, 
-                                     seqbuf + na_length + 1,
-                                     na_length, frame, &buf[offset], gc.get());
+                BLAST_GetTranslation(seqbuf + 1, seqbuf_rev,
+                   na_length, frame, &buf[offset], gc.get());
             }
             sfree(seqbuf);
 
         } else if (is_na) {
 
-            // Unless the strand option is set to single strand, the actual
-            // CSeq_locs dictacte which strand to examine during the search
-            ENa_strand strand_opt = options.GetStrandOption();
-            ENa_strand strand = sequence::GetStrand(*itr->seqloc,
-                                                    itr->scope);
-            if (strand_opt == eNa_strand_minus || 
-                strand_opt == eNa_strand_plus) {
-                strand = strand_opt;
-            }
             //pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
             seqbuf =
                 GetSequence(*itr->seqloc, encoding, itr->scope, &seqbuflen,
@@ -708,6 +723,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/10/02 22:10:46  dondosha
+* Corrections for one-strand translated searches
+*
 * Revision 1.32  2003/09/30 03:23:18  camacho
 * Fixes to FindMatrixPath
 *

@@ -288,7 +288,7 @@ CBlastOptions::SetBlastx()
     m_LutOpts->alphabet_size = BLASTAA_SIZE;
 
     // Query setup options
-    m_QueryOpts->strand_option = eNa_strand_unknown;
+    m_QueryOpts->strand_option = eNa_strand_both;
     SetFilterString("S");
 
     // Initial word options
@@ -389,7 +389,7 @@ CBlastOptions::SetTblastx()
     m_LutOpts->alphabet_size = BLASTAA_SIZE;
 
     // Query setup options
-    m_QueryOpts->strand_option = eNa_strand_unknown;
+    m_QueryOpts->strand_option = eNa_strand_both;
     SetFilterString("S");
 
     // Initial word options
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/10/02 22:10:46  dondosha
+* Corrections for one-strand translated searches
+*
 * Revision 1.21  2003/09/11 17:45:03  camacho
 * Changed CBlastOption -> CBlastOptions
 *
