@@ -223,7 +223,7 @@ if test -n "$mail_list"  -a  -s "$error_res" ; then
 fi
 
 # Post check statistics
-if test -n "$stat_list"  -a  -s "$error_res" ; then
+if test -n "$stat_list" ; then
    for loc in $stat_list ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
