@@ -35,6 +35,22 @@
 BEGIN_NCBI_SCOPE
 
 
+struct PLibExclude
+{
+    PLibExclude(const list<string>& excluded_lib_ids)
+    {
+        copy(excluded_lib_ids.begin(), excluded_lib_ids.end(), 
+             inserter(m_ExcludedLib, m_ExcludedLib.end()) );
+    }
+
+    bool operator() (const string& lib_id) const
+    {
+        return m_ExcludedLib.find(lib_id) != m_ExcludedLib.end();
+    }
+
+private:
+    set<string> m_ExcludedLib;
+};
 
 //-----------------------------------------------------------------------------
 CProjItem::CProjItem(void)
@@ -309,7 +325,7 @@ CProjectItemsTree::GetExternalDepends(list<string>* external_depends) const
 
 //-----------------------------------------------------------------------------
 CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
-                                                  const string& projname)
+                                                const string& projname)
 {
     string fname = "Makefile." + projname;
     
@@ -399,8 +415,8 @@ string SMakeProjectT::GetOneIncludeDir(const string& flag, const string& token)
 
 
 void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
-                                const string&       source_base_dir,
-                                list<string>*       include_dirs)
+                                      const string&       source_base_dir,
+                                      list<string>*       include_dirs)
 {
     include_dirs->clear();
     ITERATE(list<string>, p, cpp_flags) {
@@ -459,7 +475,7 @@ void SMakeProjectT::CreateDefines(const list<string>& cpp_flags,
 
 
 void SMakeProjectT::Create3PartyLibs(const list<string>& libs_flags, 
-                               list<string>*       libs_list)
+                                     list<string>*       libs_list)
 {
     libs_list->clear();
     ITERATE(list<string>, p, libs_flags) {
@@ -516,8 +532,8 @@ string SMakeProjectT::CreateMakeAppLibFileName
 
 
 void SMakeProjectT::CreateFullPathes(const string&      dir, 
-                                         const list<string> files,
-                                         list<string>*      full_pathes)
+                                     const list<string> files,
+                                     list<string>*      full_pathes)
 {
     ITERATE(list<string>, p, files) {
         string full_path = CDirEntry::ConcatPath(dir, *p);
@@ -528,10 +544,10 @@ void SMakeProjectT::CreateFullPathes(const string&      dir,
 
 //-----------------------------------------------------------------------------
 string SAppProjectT::DoCreate(const string& source_base_dir,
-                                             const string& proj_name,
-                                             const string& applib_mfilepath,
-                                             const TFiles& makeapp , 
-                                             CProjectItemsTree* tree)
+                              const string& proj_name,
+                              const string& applib_mfilepath,
+                              const TFiles& makeapp , 
+                              CProjectItemsTree* tree)
 {
     CProjectItemsTree::TFiles::const_iterator m = makeapp.find(applib_mfilepath);
     if (m == makeapp.end()) {
@@ -562,6 +578,25 @@ string SAppProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("LIB");
     if (k != m->second.m_Contents.end())
         depends = k->second;
+    //Adjust depends by information from msvc Makefile
+    CMsvcProjectMakefile project_makefile
+                       ((CDirEntry::ConcatPath
+                          (source_base_dir, 
+                           CreateMsvcProjectMakefileName(proj_name, 
+                                                         CProjItem::eApp))));
+    list<string> added_depends;
+    project_makefile.GetAdditionalLIB(SConfigInfo(), &added_depends);
+
+    list<string> excluded_depends;
+    project_makefile.GetExcludedLIB(SConfigInfo(), &excluded_depends);
+
+    list<string> adj_depends(depends);
+    copy(added_depends.begin(), added_depends.end(), back_inserter(adj_depends));
+    adj_depends.unique();
+
+    PLibExclude pred(excluded_depends);
+    EraseIf(adj_depends, pred);
+    ///////////////////////////////////
 
     //requires
     list<string> requires;
@@ -604,7 +639,7 @@ string SAppProjectT::DoCreate(const string& source_base_dir,
                                            proj_id,
                                            source_base_dir,
                                            sources, 
-                                           depends,
+                                           adj_depends,
                                            requires,
                                            libs_3_party,
                                            include_dirs,
@@ -615,10 +650,10 @@ string SAppProjectT::DoCreate(const string& source_base_dir,
 
 //-----------------------------------------------------------------------------
 string SLibProjectT::DoCreate(const string& source_base_dir,
-                                             const string& proj_name,
-                                             const string& applib_mfilepath,
-                                             const TFiles& makelib , 
-                                             CProjectItemsTree* tree)
+                              const string& proj_name,
+                              const string& applib_mfilepath,
+                              const TFiles& makelib , 
+                              CProjectItemsTree* tree)
 {
     TFiles::const_iterator m = makelib.find(applib_mfilepath);
     if (m == makelib.end()) {
@@ -803,11 +838,11 @@ string SAsnProjectSingleT::DoCreate(const string& source_base_dir,
 
 //-----------------------------------------------------------------------------
 string SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
-                                    const string& proj_name,
-                                    const string& applib_mfilepath,
-                                    const TFiles& makeapp, 
-                                    const TFiles& makelib, 
-                                    CProjectItemsTree* tree)
+                                      const string& proj_name,
+                                      const string& applib_mfilepath,
+                                      const TFiles& makeapp, 
+                                      const TFiles& makelib, 
+                                      CProjectItemsTree* tree)
 {
     CProjItem::TProjType proj_type = 
         SMakeProjectT::GetProjType(source_base_dir, proj_name);
@@ -875,7 +910,7 @@ string SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     string proj_id = 
         proj_type == CProjItem::eLib? 
         SLibProjectT::DoCreate(source_base_dir, 
-                               proj_name, applib_mfilepath, makelib, tree) : 
+                               proj_name, applib_mfilepath, makelib, tree) :
         SAppProjectT::DoCreate(source_base_dir, 
                                proj_name, applib_mfilepath, makeapp, tree);
     if ( proj_id.empty() )
@@ -1172,6 +1207,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/10 18:17:05  gorelenk
+ * Added support of depends fine-tuning.
+ *
  * Revision 1.10  2004/02/06 23:15:00  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.
