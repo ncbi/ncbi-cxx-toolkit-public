@@ -1,6 +1,2 @@
 .cvsignore
-*.cpp
-Makefile.in
-Makefile.*.lib
-*.files
-
+*
