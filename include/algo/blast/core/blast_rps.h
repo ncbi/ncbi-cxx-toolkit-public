@@ -82,7 +82,7 @@ typedef struct RPSProfileHeader {
 /* information derived from RPS blast '.aux' file */
 
 typedef struct RPSAuxInfo {
-    Int1 orig_score_matrix[PATH_MAX]; /* score matrix used to derive PSSMs */
+    char* orig_score_matrix; /* score matrix used to derive PSSMs */
     Int4 gap_open_penalty;    /* gap penalties used in deriving PSSMs */
     Int4 gap_extend_penalty;
     double ungapped_k;        /* ungapped Karlin values for orig_score_matrix */
