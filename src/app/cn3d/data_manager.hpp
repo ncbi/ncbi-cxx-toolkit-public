@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.1  2001/11/27 16:26:08  thiessen
 * major update to data management system
 *
@@ -102,7 +105,7 @@ public:
         std::string *err, ncbi::EFixNonPrint fixNonPrint = ncbi::eFNP_Default) const;
 
     // retrieve sequences
-    const SeqEntryList * GetSequences(void) const { return seqEntryList; }
+    SeqEntryList * GetSequences(void) const { return seqEntryList; }
 
     // retrieve structures
     bool IsSingleStructure(void) const { return isSingleStructure; }

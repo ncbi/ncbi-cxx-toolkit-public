@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.1  2001/11/27 16:26:08  thiessen
 * major update to data management system
 *
@@ -57,6 +60,7 @@
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/asn_converter.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -338,23 +342,65 @@ void ASNDataManager::SetStructureAlignments(ncbi::objects::CBiostruc_annot_set *
 
 void ASNDataManager::ReplaceUpdates(const UpdateAlignList& newUpdates)
 {
+    // if necessary, convert mime data into general type that has a place for imports,
+    // and update various subtree pointers
+    if (mimeData.NotEmpty() && !mimeData->IsGeneral() && newUpdates.size() > 0) {
+        CNcbi_mime_asn1 *newMime = new CNcbi_mime_asn1();
+        std::string err;
+
+        // copy structures
+        if (biostrucList)
+            newMime->SetGeneral().SetStructures() = *biostrucList;
+        if (masterBiostruc) {
+            newMime->SetGeneral().SetStructures().push_front(CRef<CBiostruc>(
+                CopyASNObject(*masterBiostruc, &err)));
+            masterBiostruc = NULL;
+        }
+        biostrucList = (newMime->SetGeneral().SetStructures().size() > 0) ?
+            &(newMime->SetGeneral().SetStructures()) : NULL;
+
+        // copy alignment data into bundle
+        CBundle_seqs_aligns *bundle = new CBundle_seqs_aligns();
+        newMime->SetGeneral().SetSeq_align_data().SetBundle(CRef<CBundle_seqs_aligns>(bundle));
+        if (seqEntryList) {
+            bundle->SetSequences() = *seqEntryList;
+            seqEntryList = &(bundle->SetSequences());
+        }
+        if (structureAlignments) {
+            structureAlignments = CopyASNObject(*structureAlignments, &err);
+            bundle->SetStrucaligns(CRef<CBiostruc_annot_set>(structureAlignments));
+        }
+        if (sequenceAlignments) {
+            bundle->SetSeqaligns() = *sequenceAlignments;
+            sequenceAlignments = &(bundle->SetSeqaligns());
+        }
+        if (err.size() > 0)
+            ERR_POST(Error << "CopyASNObject() - error: " << err);
+
+        // install new root mime structure
+        mimeData.Reset(newMime);
+        SetDataChanged(eOtherData);
+    }
+
+    // store new updates in asn data
     if (mimeData.NotEmpty() && mimeData->IsGeneral()) {
         if (mimeData->GetGeneral().GetSeq_align_data().IsCdd()) {
-            mimeData->SetGeneral().SetSeq_align_data().SetCdd().SetPending() = newUpdates;
             cddUpdates = &(mimeData->SetGeneral().SetSeq_align_data().SetCdd().SetPending());
+            *cddUpdates = newUpdates;
         } else {
+            bundleImportsFaked = newUpdates;
+            // convert to plain imports to store in mime data (some data loss...)
             bundleImports = &(mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetImports());
             bundleImports->clear();
-            // convert to plain imports to store in mime data (some data loss...)
             UpdateAlignList::const_iterator u, ue = newUpdates.end();
             for (u=newUpdates.begin(); u!=ue; u++)
                 if ((*u)->IsSetSeqannot())
                     bundleImports->push_back(CRef < CSeq_annot > (&((*u)->SetSeqannot())));
         }
     } else if (cddData.NotEmpty()) {
-        cddData->SetPending() = newUpdates;
         cddUpdates = &(cddData->SetPending());
-    } else
+        *cddUpdates = newUpdates;
+    } else if (newUpdates.size() > 0)
         ERR_POST(Error << "ASNDataManager::ReplaceUpdates() - can't put updates in this data type");
 
     SetDataChanged(eUpdateData);

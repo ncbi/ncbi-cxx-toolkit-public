@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.16  2001/11/28 14:16:13  thiessen
 * add 'show' to comment + structure name evidence
 *
@@ -110,6 +113,7 @@
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/opengl_renderer.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -660,7 +664,7 @@ void CDDAnnotateDialog::EditEvidence(void)
     }
 }
 
-static void HighlightResidues(const StructureSet *set, const CBiostruc_annot_set& annot)
+static const StructureObject * HighlightResidues(const StructureSet *set, const CBiostruc_annot_set& annot)
 {
     try {
         if (!annot.IsSetId() || annot.GetId().size() == 0 || !annot.GetId().front()->IsMmdb_id())
@@ -689,11 +693,11 @@ static void HighlightResidues(const StructureSet *set, const CBiostruc_annot_set
                     CResidue_pntrs::TInterval::const_iterator i, ie =
                         annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
                             GetSubgraph().GetResidues().GetInterval().end();
+                    ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
                     for (i=annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
                             GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; i++) {
 
                         // find molecule with moleculeID
-                        ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
                         for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
                             if (m->second->id == (*i)->GetMolecule_id().Get()) {
 
@@ -706,7 +710,7 @@ static void HighlightResidues(const StructureSet *set, const CBiostruc_annot_set
                         if (m == (*o)->graph->molecules.end())
                             throw "molecule with given ID not found";
                     }
-                    return; // finished!
+                    return (*o); // finished - return the object highlighted
                 }
                 throw "unrecognized annotation structure";
             }
@@ -716,7 +720,7 @@ static void HighlightResidues(const StructureSet *set, const CBiostruc_annot_set
     } catch (const char *err) {
         ERR_POST(Error << "HighlightResidues() - " << err);
     }
-    return;
+    return NULL;
 }
 
 void CDDAnnotateDialog::ShowEvidence(void)
@@ -742,7 +746,22 @@ void CDDAnnotateDialog::ShowEvidence(void)
 
     // highlight residues if structure evidence
     else if (IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvidence)) {
-        HighlightResidues(structureSet, selectedEvidence->GetBsannot());
+        const StructureObject *object = HighlightResidues(structureSet, selectedEvidence->GetBsannot());
+        if (object) {
+            // show the frame containing this object (get display list from first molecule)
+            unsigned int displayList = object->graph->molecules.find(1)->second->displayLists.front();
+            for (int frame=0; frame<structureSet->frameMap.size(); frame++) {
+                StructureSet::DisplayLists::const_iterator d, de = structureSet->frameMap[frame].end();
+                for (d=structureSet->frameMap[frame].begin(); d!=de; d++) {
+                    if (*d == displayList) { // is display list in this frame?
+                        structureSet->renderer->ShowFrameNumber(frame);
+                        GetParent()->Refresh(false);    // assumes parent is structure window
+                        frame = structureSet->frameMap.size();
+                        break;
+                    }
+                }
+            }
+        }
         wxMessageBox(
             selectedEvidence->GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str(),
             "Structure Evidence", wxOK | wxCENTRE, this);

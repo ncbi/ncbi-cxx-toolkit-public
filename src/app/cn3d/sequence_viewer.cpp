@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.42  2001/10/01 16:04:24  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -167,6 +170,8 @@
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/alignment_manager.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -253,6 +258,11 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
     // populate each line of the display with one sequence, with blank lines inbetween
     SequenceList::const_iterator s, se = sequenceList->end();
     for (s=sequenceList->begin(); s!=se; s++) {
+
+        // only do sequences from structure if this is a single-structure data file
+        if (!(*s)->parentSet->IsMultiStructure() &&
+            (*s)->parentSet->objects.front()->mmdbID != (*s)->identifier->mmdbID) continue;
+
         if (s != sequenceList->begin()) display->AddRowFromString("");
         display->AddRowFromSequence(*s);
     }

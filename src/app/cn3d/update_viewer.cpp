@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.18  2001/11/27 16:26:10  thiessen
 * major update to data management system
 *
@@ -274,8 +277,7 @@ void UpdateViewer::SaveAlignments(void)
             }
         }
 
-        // if this is a new update, then assume that it comes from user demotion from the multiple;
-        // create a new Update-align and tag it appropriately
+        // if this is a new update, create a new Update-align and tag it
         else {
             updateAlign = new CUpdate_align();
 
@@ -285,7 +287,7 @@ void UpdateViewer::SaveAlignments(void)
 
             // add a text comment
             CUpdate_comment *comment = new CUpdate_comment();
-            comment->SetComment("Demoted from the multiple alignment by Cn3D++");
+            comment->SetComment("Created by demotion or import in Cn3D++");
             updateAlign->SetDescription().resize(updateAlign->GetDescription().size() + 1);
             updateAlign->SetDescription().back().Reset(comment);
 
@@ -316,8 +318,7 @@ void UpdateViewer::SaveAlignments(void)
     }
 
     // save these changes to the ASN data
-    if (alignmentStack.back().size() > 0)
-        alignmentStack.back().front()->GetMaster()->parentSet->ReplaceUpdates(updates);
+    alignmentManager->ReplaceUpdatesInASN(updates);
 }
 
 void UpdateViewer::ImportSequence(void)
@@ -325,12 +326,16 @@ void UpdateViewer::ImportSequence(void)
     // determine the master sequence for new alignments
     const Sequence *master = NULL;
     // if there's a multiple alignment in the sequence viewer, use same master as that
-    const BlockMultipleAlignment *multiple = alignmentManager->GetCurrentMultipleAlignment();
-    if (multiple) {
-        master = multiple->GetMaster();
-    } else {
-        // otherwise, this must be a single structure, so we need to pick one of its
-        // chains as the new master
+    if (alignmentManager->GetCurrentMultipleAlignment()) {
+        master = alignmentManager->GetCurrentMultipleAlignment()->GetMaster();
+    }
+    // if there's already an update present, use same master as that
+    else if (alignmentStack.back().size() > 0) {
+        master = alignmentStack.back().front()->GetMaster();
+    }
+    // otherwise, this must be a single structure with no updates, so we need to pick one of its
+    // chains as the new master
+    else {
         std::vector < const Sequence * > chains;
         if (alignmentManager->GetStructureProteins(&chains)) {
             if (chains.size() == 1) {

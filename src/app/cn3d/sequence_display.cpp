@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.35  2001/11/27 16:26:08  thiessen
 * major update to data management system
 *
@@ -612,6 +615,10 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
 
             // thread single
             if (updateWindow->DoThreadSingle()) {
+                if (!updateWindow->updateViewer->alignmentManager->GetCurrentMultipleAlignment()) {
+                    ERR_POST(Error << "Can't run threader without existing core alignment");
+                    return false;
+                }
                 // get threader options
                 ThreaderOptions options;
                 options.nRandomStarts = Threader::EstimateNRandomStarts(

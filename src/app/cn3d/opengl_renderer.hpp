@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.35  2001/10/23 13:53:38  thiessen
 * add PNG export
 *
@@ -231,6 +234,7 @@ public:
     void ShowLastFrame(void);
     void ShowNextFrame(void);
     void ShowPreviousFrame(void);
+    void ShowFrameNumber(int frame);
 
     // drawing methods
     void DrawAtom(const Vector& site, const AtomStyle& atomStyle);

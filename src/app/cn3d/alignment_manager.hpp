@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.37  2001/11/27 16:26:06  thiessen
 * major update to data management system
 *
@@ -148,6 +151,7 @@
 #define CN3D_ALIGNMENT_MANAGER__HPP
 
 #include <corelib/ncbistl.hpp>
+#include <objects/cdd/Cdd.hpp>
 #include <objects/cdd/Update_align.hpp>
 
 #include <list>
@@ -171,6 +175,7 @@ class Threader;
 class ThreaderOptions;
 class UpdateViewer;
 class BLASTer;
+class StructureSet;
 
 class AlignmentManager : public ShowHideCallbackObject
 {
@@ -184,6 +189,7 @@ public:
     BLASTer *blaster;
 
     void NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet);
+    void ReplaceUpdatesInASN(const ncbi::objects::CCdd::TPending& newUpdates) const;
 
     // creates the current multiple alignment from the given pairwise alignments (which are
     // assumed to be members of the AlignmentSet).

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.40  2001/11/27 16:26:09  thiessen
 * major update to data management system
 *
@@ -457,9 +460,34 @@ void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
         if (identifier->pdbChain != ' ') sid->SetPdb().SetChain(identifier->pdbChain);
     } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) { // use gi
         sid->SetGi(identifier->gi);
+    } else if (identifier->accession.size() > 0) {
+        CRef<CObject_id> oid(new CObject_id());
+        oid->SetStr(identifier->accession);
+        sid->SetLocal(oid);
     } else {
         ERR_POST(Error << "Sequence::FillOutSeqId() - can't do Seq-id on sequence "
             << identifier->ToString());
+    }
+}
+
+void Sequence::AddCSeqId(SeqIdPtr *id, bool addAllTypes) const
+{
+    if (identifier->pdbID.size() > 0) {
+        PDBSeqIdPtr pdbid = PDBSeqIdNew();
+        pdbid->mol = StrSave(identifier->pdbID.c_str());
+        pdbid->chain = (Uint1) identifier->pdbChain;
+        ValNodeAddPointer(id, SEQID_PDB, pdbid);
+        if (!addAllTypes) return;
+    }
+    if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+        ValNodeAddInt(id, SEQID_GI, identifier->gi);
+        if (!addAllTypes) return;
+    }
+    if (identifier->accession.size() > 0) {
+        TextSeqIdPtr gbid = TextSeqIdNew();
+        gbid->accession = StrSave(identifier->accession.c_str());
+        ValNodeAddPointer(id, SEQID_GENBANK, gbid);
+        if (!addAllTypes) return;
     }
 }
 
@@ -710,27 +738,6 @@ bool Sequence::HighlightPattern(const std::string& prositePattern) const
     re_set_syntax(oldSyntax);
 
     return retval;
-}
-
-void Sequence::AddCSeqId(SeqIdPtr *id, bool addAllTypes) const
-{
-    if (identifier->pdbID.size() > 0) {
-        PDBSeqIdPtr pdbid = PDBSeqIdNew();
-        pdbid->mol = StrSave(identifier->pdbID.c_str());
-        pdbid->chain = (Uint1) identifier->pdbChain;
-        ValNodeAddPointer(id, SEQID_PDB, pdbid);
-        if (!addAllTypes) return;
-    }
-    if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-        ValNodeAddInt(id, SEQID_GI, identifier->gi);
-        if (!addAllTypes) return;
-    }
-    if (identifier->accession.size() > 0) {
-        TextSeqIdPtr gbid = TextSeqIdNew();
-        gbid->accession = StrSave(identifier->accession.c_str());
-        ValNodeAddPointer(id, SEQID_GENBANK, gbid);
-        if (!addAllTypes) return;
-    }
 }
 
 END_SCOPE(Cn3D)

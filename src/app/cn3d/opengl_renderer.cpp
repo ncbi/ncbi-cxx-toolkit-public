@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.54  2001/10/23 20:10:23  thiessen
 * fix scaling of fonts in high-res PNG output
 *
@@ -574,6 +577,15 @@ void OpenGLRenderer::ShowPreviousFrame(void)
         else
             currentFrame--;
     } while (IsFrameEmpty(currentFrame) && currentFrame != originalFrame);
+}
+
+void OpenGLRenderer::ShowFrameNumber(int frame)
+{
+    if (!structureSet) return;
+    if (frame >= 0 && frame < structureSet->frameMap.size() && !IsFrameEmpty(frame))
+        currentFrame = frame;
+    else
+        currentFrame = ALL_FRAMES;
 }
 
 

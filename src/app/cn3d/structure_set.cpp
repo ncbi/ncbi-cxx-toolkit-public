@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.86  2001/11/27 16:26:09  thiessen
 * major update to data management system
 *
@@ -470,8 +473,6 @@ bool StructureSet::MatchSequenceToMoleculeInObject(const Sequence *seq,
     return (m != me);
 }
 
-typedef std::list < CRef < CSeq_id > > SeqIdList;
-
 void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
 {
     // assume data manager has already screened the alignment list
@@ -485,6 +486,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
     bool seq1PresentInAll = true, seq2PresentInAll = true;
 
     // first, find sequences for first pairwise alignment
+    typedef std::list < CRef < CSeq_id > > SeqIdList;
     const SeqIdList& firstSids = seqAligns.front()->GetSegs().IsDendiag() ?
         seqAligns.front()->GetSegs().GetDendiag().front()->GetIds() :
         seqAligns.front()->GetSegs().GetDenseg().GetIds();
@@ -624,23 +626,37 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
         }
 
         // now loop through slave rows of the alignment; if the slave
-        // sequence has an MMDB ID but no structure yet, then load it via cache.
-        if (objects.size() < structureLimit && dataManager.IsCDD() || dataManager.IsGeneralMime()) {
+        // sequence has an MMDB ID but no structure yet, then load it.
+        if (objects.size() < structureLimit && (dataManager.IsCDD() || dataManager.IsGeneralMime())) {
             for (l=alignmentSet->alignments.begin(), row=0; l!=le && objects.size()<structureLimit; l++, row++) {
 
                 if ((*l)->slave->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
                     !loadedStructureForSlaveRow[row]) {
 
-                    // load Biostruc
-                    CBiostruc biostruc;
-                    if (!LoadBiostrucViaCache((*l)->slave->identifier->mmdbID,
-                            eModel_type_ncbi_all_atom, &biostruc)) {
-                        ERR_POST(Error << "Failed to load MMDB #" << (*l)->slave->identifier->mmdbID);
-                        continue;
+                    // first check the biostruc list to see if this structure is present already
+                    CRef < CBiostruc > biostruc;
+                    if (dataManager.GetStructureList()) {
+                        for (b=dataManager.GetStructureList()->begin(); b!=be ; b++) {
+                            if ((*b)->GetId().front()->IsMmdb_id() &&
+                                (*b)->GetId().front()->GetMmdb_id().Get() == (*l)->slave->identifier->mmdbID) {
+                                biostruc = *b;
+                                break;
+                            }
+                        }
+                    }
+
+                    // if not in list, load Biostruc via HTTP/cache
+                    if (biostruc.Empty()) {
+                        biostruc.Reset(new CBiostruc());
+                        if (!LoadBiostrucViaCache((*l)->slave->identifier->mmdbID,
+                                eModel_type_ncbi_all_atom, biostruc.GetPointer())) {
+                            ERR_POST(Error << "Failed to load MMDB #" << (*l)->slave->identifier->mmdbID);
+                            continue;
+                        }
                     }
 
                     // create StructureObject and cross-match
-                    StructureObject *object = new StructureObject(this, biostruc, false);
+                    StructureObject *object = new StructureObject(this, *biostruc, false);
                     objects.push_back(object);
                     if (dataManager.GetStructureAlignments())
                         object->SetTransformToMaster(
@@ -1054,10 +1070,20 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
 
 const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
 {
+    // add Sequence to SequenceSet
     SequenceSet *modifiableSet = const_cast<SequenceSet*>(sequenceSet);
     const Sequence *newSeq = new Sequence(modifiableSet, bioseq);
     modifiableSet->sequences.push_back(newSeq);
+
+    // add asn sequence to asn data
+    if (dataManager.GetSequences()) {
+        CRef < CSeq_entry > se(new CSeq_entry());
+        se->SetSeq(CRef<CBioseq>(&bioseq));
+        dataManager.GetSequences()->push_back(se);
+    } else
+        ERR_POST(Error << "StructureSet::CreateNewSequence() - no sequence list in asn data");
     dataManager.SetDataChanged(ASNDataManager::eSequenceData);
+
     return newSeq;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.26  2001/11/27 16:26:10  thiessen
 * major update to data management system
 *
@@ -221,6 +224,10 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
                 ThreadSingleOff();
             break;
         case MID_THREAD_ALL: {
+            if (!updateViewer->alignmentManager->GetCurrentMultipleAlignment()) {
+                ERR_POST(Error << "Can't run threader without existing core alignment");
+                return;
+            }
             if (updateViewer->GetCurrentAlignments()->size() == 0) return;
 
             ThreaderOptions options;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2001/11/30 14:02:04  thiessen
+* progress on sequence imports to single structures
+*
 * Revision 1.66  2001/11/27 16:26:05  thiessen
 * major update to data management system
 *
@@ -235,6 +238,9 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistl.hpp>
 
+#include <objects/seqalign/Dense_diag.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+
 #include <memory>
 
 #include "cn3d/alignment_manager.hpp"
@@ -294,8 +300,34 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet,
             CSeq_annot::C_Data::TAlign::const_iterator
                 s, se = u->GetObject().GetSeqannot().GetData().GetAlign().end();
             for (s=u->GetObject().GetSeqannot().GetData().GetAlign().begin(); s!=se; s++) {
+
+                // determine master sequence
+                const Sequence *master = NULL;
+                if (aSet) {
+                    master = aSet->master;
+                } else if (updateAlignments.size() > 0) {
+                    master = updateAlignments.front()->GetMaster();
+                } else {
+                    typedef std::list < CRef < CSeq_id > > SeqIdList;
+                    const SeqIdList& firstSids = (*s)->GetSegs().IsDendiag() ?
+                        (*s)->GetSegs().GetDendiag().front()->GetIds() :
+                        (*s)->GetSegs().GetDenseg().GetIds();
+                    SequenceSet::SequenceList::const_iterator s, se = sSet->sequences.end();
+                    for (s=sSet->sequences.begin(); s!=se; s++) {
+                        if ((*s)->identifier->MatchesSeqId(firstSids.front().GetObject())) {
+                            master = *s;
+                            break;
+                        }
+                    }
+                }
+                if (!master) {
+                    ERR_POST(Error << "AlignmentManager::AlignmentManager() - "
+                        << "can't determine master sequence for updates");
+                    return;
+                }
+
                 const MasterSlaveAlignment *alignment =
-                    new MasterSlaveAlignment(NULL, aSet->master, s->GetObject());
+                    new MasterSlaveAlignment(NULL, master, s->GetObject());
                 pairwise.front() = alignment;
                 BlockMultipleAlignment *multiple = CreateMultipleFromPairwiseWithIBM(pairwise);
                 multiple->updateOrigin = *u;    // to keep track of which Update-align this came from
@@ -399,8 +431,15 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
     BlockMultipleAlignment::SequenceList
         *sequenceList = new BlockMultipleAlignment::SequenceList(alignments.size() + 1);
     BlockMultipleAlignment::SequenceList::iterator s = sequenceList->begin();
-    *(s++) = alignmentSet->master;
-    for (a=alignments.begin(); a!=ae; a++, s++) *s = (*a)->slave;
+    *(s++) = alignments.front()->master;
+    for (a=alignments.begin(); a!=ae; a++) {
+        *(s++) = (*a)->slave;
+        if ((*a)->master != sequenceList->front()) {
+            ERR_POST(Error << "AlignmentManager::CreateMultipleFromPairwiseWithIBM() -\n"
+                << "all pairwise alignments must have the same master sequence");
+            return NULL;
+        }
+    }
     BlockMultipleAlignment *multipleAlignment = new BlockMultipleAlignment(sequenceList, this);
 
     // each block is a continuous region on the master, over which each master
@@ -409,7 +448,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
     int masterFrom = 0, masterTo, row;
     UngappedAlignedBlock *newBlock;
 
-    while (masterFrom < alignmentSet->master->Length()) {
+    while (masterFrom < multipleAlignment->GetMaster()->Length()) {
 
         // look for first all-aligned residue
         if (!AlignedToAllSlaves(masterFrom, alignments)) {
@@ -421,7 +460,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
         // block boundaries from the original master-slave pairs, so that
         // blocks don't get merged
         for (masterTo=masterFrom+1;
-                masterTo < alignmentSet->master->Length() &&
+                masterTo < multipleAlignment->GetMaster()->Length() &&
                 AlignedToAllSlaves(masterTo, alignments) &&
                 NoSlaveInsertionsBetween(masterFrom, masterTo, alignments) &&
                 NoBlockBoundariesBetween(masterFrom, masterTo, alignments);
@@ -829,6 +868,14 @@ bool AlignmentManager::GetStructureProteins(std::vector < const Sequence * > *ch
 
     sequenceViewer->GetCurrentDisplay()->GetProteinSequences(chains);
     return (chains->size() > 0);
+}
+
+void AlignmentManager::ReplaceUpdatesInASN(const ncbi::objects::CCdd::TPending& newUpdates) const
+{
+    if (sequenceSet)
+        sequenceSet->parentSet->ReplaceUpdates(newUpdates);
+    else
+        ERR_POST(Error << "AlignmentManager::ReplaceUpdatesInASN() - can't get StructureSet");
 }
 
 END_SCOPE(Cn3D)
