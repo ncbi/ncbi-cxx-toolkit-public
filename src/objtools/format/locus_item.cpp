@@ -169,31 +169,66 @@ static void s_AddLocusSuffix(string &basename, CBioseqContext& ctx)
 
 void CLocusItem::x_SetName(CBioseqContext& ctx)
 {
-    CBioseq_Handle::TBioseqCore seq  = ctx.GetHandle().GetBioseqCore();
-
     if (ctx.IsPart()) {
-        m_Name = ctx.GetMaster().GetBaseName();
-        if (!m_Name.empty()) {
+        string basename = ctx.GetMaster().GetBaseName();
+        if (!NStr::IsBlank(basename)) {
+            m_Name = basename;
             s_AddLocusSuffix(m_Name, ctx);
+            return;
         }
-    } else {
-        CConstRef<CSeq_id> id = FindBestChoice(seq->GetId(), CSeq_id::Score);
-        const CTextseq_id* tsid = id->GetTextseq_Id();
+    }
 
-        if (tsid) {
-            if (s_IsGenomeView(ctx)) {
-                if (tsid->CanGetAccession()) {
-                    m_Name = tsid->GetAccession();
-                }
-            } else {
-                if (tsid->CanGetName()) {
-                    m_Name = tsid->GetName();
+    CBioseq_Handle::TBioseqCore seq  = ctx.GetHandle().GetBioseqCore();
+    CConstRef<CSeq_id> id = FindBestChoice(seq->GetId(), CSeq_id::Score);
+
+    CSeq_id::E_Choice choice = id->Which();
+    switch (choice) {
+        case CSeq_id::e_Other:
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Ddbj:
+        case CSeq_id::e_Pir:
+        case CSeq_id::e_Swissprot:
+        case CSeq_id::e_Prf:
+        case CSeq_id::e_Pdb:
+        case CSeq_id::e_Tpd:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpg:
+            break;
+        default:
+            id.Reset();
+            break;
+    }
+    if (!id) {
+        ITERATE (CBioseq::TId, it, seq->GetId()) {
+            if ((*it)->IsGenbank()) {
+                id = *it;
+                break;
+            }
+        }
+    }
+    if (!id) {
+        return;
+    }
+
+    const CTextseq_id* tsip = id->GetTextseq_Id();
+    if (tsip != NULL) {
+        if (s_IsGenomeView(ctx)) {
+            if (tsip->IsSetAccession()) {
+                m_Name = tsip->GetAccession();
+            }
+        } else {
+            if (tsip->IsSetName()) {
+                m_Name = tsip->GetName();
+                if (x_NameHasBadChars(m_Name)  &&  tsip->IsSetAccession()) {
+                    m_Name = tsip->GetAccession();
                 }
             }
         }
-        if (m_Name.empty()  ||  x_NameHasBadChars(m_Name)) {
-            m_Name = id->GetSeqIdString();
-        }
+    }
+
+    if (x_NameHasBadChars(m_Name)  ||  NStr::IsBlank(m_Name)) {
+        m_Name = id->GetSeqIdString();
     }
 }
 
@@ -568,6 +603,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/01/11 20:38:30  shomrat
+* Fixed locus name gathering
+*
 * Revision 1.13  2004/11/01 19:33:09  grichenk
 * Removed deprecated methods
 *
