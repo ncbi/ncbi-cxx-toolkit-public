@@ -68,7 +68,7 @@
 #include <objects/objmgr/seq_map_rci.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Date.hpp>
-#include <objects/util/sequence.hpp>
+// #include <objects/util/sequence.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -815,9 +815,11 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
 
     handle.GetTopLevelSeqEntry();
+#if 0 // build order issues
     CHECK_WRAP();
     sequence::GetTitle(handle);
     CHECK_END("get sequence title");
+#endif
 
     CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
     CHECK_WRAP();
@@ -1103,6 +1105,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/01/22 19:25:11  ucko
+* Avoid use of xobjutil.
+*
 * Revision 1.22  2002/12/26 20:34:53  ucko
 * Drop unused header <sstream>, which older compilers (such as GCC 2.9x) lack;
 * move CVS log to end.
