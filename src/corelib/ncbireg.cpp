@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/08/30 16:00:41  vakatov
+* CNcbiRegistry:: Get()/Set() -- force the "name" and "section" to
+* consist of alphanumeric and '_' only;  ignore leading and trailing
+* spaces
+*
 * Revision 1.7  1999/07/06 15:26:35  vakatov
 * CNcbiRegistry::
 *   - allow multi-line values
@@ -73,6 +78,8 @@ BEGIN_NCBI_SCOPE
 } while (0)
 
 
+/* Get the next line taking into account platform specifics of End-of-Line
+ */
 static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str)
 {
 #if   defined(NCBI_OS_MAC)
@@ -91,6 +98,23 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str)
 
     return is;
 }
+
+/* Check if "str" consists of alphanumeric and '_' only
+ */
+static bool s_IsNameSection(const string& str)
+{
+    if ( str.empty() )
+        return false;
+
+    for (string::const_iterator it = str.begin();  it != str.end();  it++) {
+        if (!isalnum(*it)  &&  *it != '_')
+            return false;
+    }
+
+    return true;
+}
+
+
 
 
 CNcbiRegistry::CNcbiRegistry(void) {}
@@ -312,18 +336,28 @@ const
 {
     CHECK_FLAGS("Get", flags, ePersistent);
 
-    if ( name.empty() )  // no empty names allowed
+    // Truncate marginal spaces of "section" and "name"
+    // Make sure they aren't empty and consist of alpanum and '_' only
+    string x_section = NStr::TruncateSpaces(section);
+    if ( !s_IsNameSection(x_section) ) {
+        _TRACE("CNcbiRegistry::Get():  bad or empty section name: " + section);
         return NcbiEmptyString;
+    }
+    string x_name = NStr::TruncateSpaces(name);
+    if ( !s_IsNameSection(x_name) ) {
+        _TRACE("CNcbiRegistry::Get():  bad or empty entry name: " + name);
+        return NcbiEmptyString;
+    }
 
     // find section
-    TRegistry::const_iterator find_section = m_Registry.find(section);
+    TRegistry::const_iterator find_section = m_Registry.find(x_section);
     if (find_section == m_Registry.end())
         return NcbiEmptyString;
 
     // find entry in the section
     const TRegSection& reg_section = find_section->second;
     _ASSERT( !reg_section.empty() );
-    TRegSection::const_iterator find_entry = reg_section.find(name);
+    TRegSection::const_iterator find_entry = reg_section.find(x_name);
     if (find_entry == reg_section.end())
         return NcbiEmptyString;
 
@@ -340,25 +374,38 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
 {
     CHECK_FLAGS("Set", flags, ePersistent | eNoOverride | eTruncate);
 
+    // Truncate marginal spaces of "section" and "name"
+    // Make sure they aren't empty and consist of alpanum and '_' only
+    string x_section = NStr::TruncateSpaces(section);
+    if ( !s_IsNameSection(x_section) ) {
+        _TRACE("CNcbiRegistry::Set():  bad or empty section name: " + section);
+        return false;
+    }
+    string x_name = NStr::TruncateSpaces(name);
+    if ( !s_IsNameSection(x_name) ) {
+        _TRACE("CNcbiRegistry::Set():  bad or empty entry name: " + name);
+        return false;
+    }
+
     // find section
-    TRegistry::iterator find_section = m_Registry.find(section);
+    TRegistry::iterator find_section = m_Registry.find(x_section);
     if (find_section == m_Registry.end()) {
         if ( value.empty() )  // the "unset" case
             return false;
         // new section, new entry
-        x_SetValue(m_Registry[section][name], value, flags);
+        x_SetValue(m_Registry[x_section][x_name], value, flags);
         return true;
     }
 
     // find entry within the found section
     TRegSection& reg_section = find_section->second;
     _ASSERT( !reg_section.empty() );
-    TRegSection::iterator find_entry = reg_section.find(name);
+    TRegSection::iterator find_entry = reg_section.find(x_name);
     if (find_entry == reg_section.end()) {
         if ( value.empty() )  // the "unset" case
             return false;
         // new entry
-        x_SetValue(reg_section[name], value, flags);
+        x_SetValue(reg_section[x_name], value, flags);
         return true;
     }
 

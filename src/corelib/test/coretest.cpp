@@ -30,6 +30,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  1999/08/30 16:00:45  vakatov
+* CNcbiRegistry:: Get()/Set() -- force the "name" and "section" to
+* consist of alphanumeric and '_' only;  ignore leading and trailing
+* spaces
+*
 * Revision 1.48  1999/07/07 14:17:07  vakatov
 * CNcbiRegistry::  made the section and entry names be case-insensitive
 *
@@ -265,45 +270,48 @@ static void TestRegistry(void)
 
     // Compose a test registry
     _ASSERT(  reg.Set("Section0", "Name01", "Val01_BAD!!!") );
-    _ASSERT(  reg.Set("Section1", "Name11", "Val11_t") );
+    _ASSERT(  reg.Set("Section1 ", "\nName11", "Val11_t") );
     _ASSERT( !reg.Empty() );
-    _ASSERT(  reg.Get("Section1", "Name11") == "Val11_t" );
+    _ASSERT(  reg.Get(" Section1", "Name11\t") == "Val11_t" );
     _ASSERT(  reg.Get("Section1", "Name11",
                       CNcbiRegistry::ePersistent).empty() );
     _ASSERT(  reg.Set("Section1", "Name11", "Val11_t") );
     _ASSERT( !reg.Set("Section1", "Name11", "Val11_BAD!!!",
                       CNcbiRegistry::eNoOverride) );
 
-    _ASSERT(  reg.Set("Section2", "Name21", "Val21",
+    _ASSERT(  reg.Set("   Section2", "\nName21  ", "Val21",
                       CNcbiRegistry::ePersistent |
                       CNcbiRegistry::eNoOverride) );
     _ASSERT(  reg.Set("Section2", "Name21", "Val21_t") );
     _ASSERT( !reg.Empty() );
     _ASSERT(  reg.Set("Section3", "Name31", "Val31_t") );
 
-    _ASSERT( reg.Get("Section1", "Name11") == "Val11_t" );
+    _ASSERT( reg.Get(" \nSection1", " Name11  ") == "Val11_t" );
     _ASSERT( reg.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
              "Val21" );
-    _ASSERT( reg.Get("Section2", "Name21") == "Val21_t" );
+    _ASSERT( reg.Get(" Section2", " Name21\n") == "Val21_t" );
     _ASSERT( reg.Get("SectionX", "Name21").empty() );
 
     _ASSERT( reg.Set("Section4", "Name41", "Val410 Val411 Val413",
                      CNcbiRegistry::ePersistent) );
+    _ASSERT(!reg.Set("Sect ion4", "Name41", "BAD1",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT(!reg.Set("Section4", "Na me41", "BAD2") );
     _ASSERT( reg.Set("SECTION4", "Name42", "V420 V421\nV422 V423 \"",
                      CNcbiRegistry::ePersistent) );
     _ASSERT( reg.Set("Section4", "NAME43",
                      " \tV430 V431  \n V432 V433 ",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("Section4", "Name43T",
+    _ASSERT( reg.Set("\tSection4", "Name43T",
                      " \tV430 V431  \n V432 V433 ",
                      CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
     _ASSERT( reg.Set("Section4", "Name44", "\n V440 V441 \r\n",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("Section4", "Name45", "\r\n V450 V451  \n  ",
+    _ASSERT( reg.Set("\r Section4", "  \t\rName45", "\r\n V450 V451  \n  ",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("Section4", "Name46", "\n\nV460\" \n \t \n\t",
+    _ASSERT( reg.Set("Section4 \n", "  Name46  ", "\n\nV460\" \n \t \n\t",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("Section4", "Name46T", "\n\nV460\" \n \t \n\t",
+    _ASSERT( reg.Set(" Section4", "Name46T", "\n\nV460\" \n \t \n\t",
                      CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
     _ASSERT( reg.Set("Section4", "Name47", "470\n471\\\n 472\\\n473\\",
                      CNcbiRegistry::ePersistent) );
@@ -348,17 +356,20 @@ static void TestRegistry(void)
     _ASSERT(  reg2.Set("Section2", "Name21", NcbiEmptyString) );
 
 
-    _ASSERT( reg.Get("Section4", "Name41")  == "Val410 Val411 Val413" );
-    _ASSERT( reg.Get("Section4", "Name42")  == "V420 V421\nV422 V423 \"" );
-    _ASSERT( reg.Get("Section4", "Name43")  == " \tV430 V431  \n V432 V433 ");
-    _ASSERT( reg.Get("Section4", "Name43T") == "V430 V431  \n V432 V433" );
-    _ASSERT( reg.Get("Section4", "Name44")  == "\n V440 V441 \r\n" );
-    _ASSERT( reg.Get("SecTIon4", "Name45")  == "\r\n V450 V451  \n  " );
-    _ASSERT( reg.Get("Section4", "Name46")  == "\n\nV460\" \n \t \n\t" );
-    _ASSERT( reg.Get("Section4", "NaMe46T") == "\n\nV460\" \n \t \n" );
-    _ASSERT( reg.Get("Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
-    _ASSERT( reg.Get("Section4", "NAme47T") == "470\n471\\\n 472\\\n473\\" );
-    _ASSERT( reg.Get("Section4", "Name48")  == xxx );
+    _ASSERT( reg.Get("Sect ion4 ", "Name41 ").empty() );
+    _ASSERT( reg.Get("Section4 ", "Na me41 ").empty() );
+
+    _ASSERT( reg.Get("Section4 ", "Name41 ") == "Val410 Val411 Val413" );
+    _ASSERT( reg.Get("Section4",  " Name42") == "V420 V421\nV422 V423 \"" );
+    _ASSERT( reg.Get("Section4",  "Name43")  == " \tV430 V431  \n V432 V433 ");
+    _ASSERT( reg.Get("Section4",  "Name43T") == "V430 V431  \n V432 V433" );
+    _ASSERT( reg.Get("Section4",  " Name44") == "\n V440 V441 \r\n" );
+    _ASSERT( reg.Get(" SecTIon4", "Name45")  == "\r\n V450 V451  \n  " );
+    _ASSERT( reg.Get("SecTion4 ", "Name46")  == "\n\nV460\" \n \t \n\t" );
+    _ASSERT( reg.Get("Section4",  "NaMe46T") == "\n\nV460\" \n \t \n" );
+    _ASSERT( reg.Get(" Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
+    _ASSERT( reg.Get("Section4 ", "NAme47T") == "470\n471\\\n 472\\\n473\\" );
+    _ASSERT( reg.Get("Section4",  "Name48")  == xxx );
 
     _ASSERT( reg2.Get("Section4", "Name41")  == "Val410 Val411 Val413" );
     _ASSERT( reg2.Get("Section4", "Name42")  == "V420 V421\nV422 V423 \"" );
