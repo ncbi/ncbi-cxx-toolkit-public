@@ -216,8 +216,9 @@ void CSourceItem::x_SetSource
 
     // Common
     {{
+        const string* common = &kEmptyStr;
         if ( org.CanGetCommon() ) {
-            m_Common = &(org.GetCommon());
+            common = &(org.GetCommon());
         }
         
         if ( org.CanGetOrgname() ) {
@@ -255,24 +256,24 @@ void CSourceItem::x_SetSource
                 }
             }
             
-            if ( syn != 0 ) {
+            if ( m_Common->empty()  &&  syn != 0 ) {
                 m_Common = syn;
-            } else if ( acr != 0 ) {
+            } else if ( m_Common->empty()  &&  acr != 0 ) {
                 m_Common = acr;
-            } else if ( ana != 0 ) {
+            } else if ( m_Common->empty()  &&  ana != 0 ) {
                 m_Common = ana;
                 m_UsingAnamorph = true;
-            } else if ( com != 0 ) {
+            } else if ( m_Common->empty()  &&  com != 0 ) {
                 m_Common = com;
-            } else if ( gbsyn != 0 ) {
+            } else if ( m_Common->empty()  &&  gbsyn != 0 ) {
                 m_Common = gbsyn;
-            } else if ( gbacr != 0 ) {
-                m_Common = acr;
-            } else if ( gbacr != 0 ) {
-                m_Common = acr;
-            } else if ( gbana != 0 ) {
+            } else if ( m_Common->empty()  &&  gbacr != 0 ) {
+                m_Common = gbacr;
+            } else if ( m_Common->empty()  &&  gbana != 0 ) {
                 m_Common = gbana;
                 m_UsingAnamorph = true;
+            } else if ( m_Common->empty() ) {
+                m_Common = common;
             }
         }
     }}
@@ -297,6 +298,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/05 22:02:47  shomrat
+* fixed gathering of common name
+*
 * Revision 1.3  2004/02/11 22:56:14  shomrat
 * use IsFormatDDBJ method
 *
