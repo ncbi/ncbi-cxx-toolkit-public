@@ -619,9 +619,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToGene (CSeqFeatData& sfdata,
             grp.SetDesc (val);
             return true;
         case eQual_gene_syn:
-            CGene_ref::TSyn& synlist = grp.SetSyn ();
-            synlist.push_back (val);
-            return true;
+            {
+                CGene_ref::TSyn& synlist = grp.SetSyn ();
+                synlist.push_back (val);
+                return true;
+            }
         case eQual_map:
             grp.SetMaploc (val);
             return true;
@@ -662,12 +664,13 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
         case CRNA_ref::eType_other:
             switch (qtype) {
                 case eQual_product:
-                    CRNA_ref::TExt& tex = rrp.SetExt ();
-                    CRNA_ref::C_Ext::E_Choice exttype = tex.Which ();
-                    if (exttype == CRNA_ref::C_Ext::e_TRNA) return false;
-                    tex.SetName (val);
-                    return true;
-                    break;
+                    {
+                        CRNA_ref::TExt& tex = rrp.SetExt ();
+                        CRNA_ref::C_Ext::E_Choice exttype = tex.Which ();
+                        if (exttype == CRNA_ref::C_Ext::e_TRNA) return false;
+                        tex.SetName (val);
+                        return true;
+                    }
                 default:
                     break;
             }
@@ -772,7 +775,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
     CRef<CSeq_annot> sap(new CSeq_annot);
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
     CRef<CSeq_feat> sfp;
-    CSeq_loc_mix *mix;
+    CSeq_loc_mix *mix = 0;
 
     while (ifs.good ()) {
         NcbiGetlineEOL (ifs, str);
