@@ -459,6 +459,15 @@ static void s_TEST_BDB_Query(void)
     CBDB_Query    query;
 
     {{
+        const char* ch = " test";
+        CBDB_Query    query;
+        BDB_PrintQueryTree(cout, query);
+
+        BDB_ParseQuery(ch, &query);
+        BDB_PrintQueryTree(cout, query);
+    }}
+
+    {{
         const char* ch = "  '2' And ((name3 OR 1) & name3)";
         CBDB_Query    query;
         BDB_ParseQuery(ch, &query);
@@ -1732,6 +1741,7 @@ int CBDB_Test::Run(void)
 
     try
     {
+/*
         s_TEST_BDB_Types();
 
         s_TEST_BDB_IdTable_Fill();
@@ -1759,7 +1769,7 @@ int CBDB_Test::Run(void)
         s_TEST_ICache();
 
         s_TEST_IntCache(); 
-
+*/
         s_TEST_BDB_Query();
 
 
@@ -1795,6 +1805,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/03/10 16:19:55  kuznets
+ * + test case for single word queries
+ *
  * Revision 1.38  2004/03/08 13:36:09  kuznets
  * One more test case for queries
  *
