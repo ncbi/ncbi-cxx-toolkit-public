@@ -30,9 +30,9 @@
  *
  * File Description:
  *   Handle info in the NCBI configuration file(s):
- *      read and parse configuration file
- *      search, edit, etc. in the retrieved configuration info
- *      dump info back to config. file
+ *    - read and parse configuration file
+ *    - search, edit, etc. in the retrieved configuration info
+ *    - dump info back to config. file
  *
  */
 
@@ -91,7 +91,7 @@ public:
         eTruncate    = 0x4,
         eNoTruncate  = 0x400
     };
-    typedef int TFlags;
+    typedef int TFlags;  // binary OR of "EFlags"
 
     // 'ctors
     CNcbiRegistry(void);
@@ -121,20 +121,44 @@ public:
     // transient;  otherwise, store them as persistent.
     void Read(CNcbiIstream& is, TFlags flags = 0);
 
-    // Dump the registry content(non-transient entries only!) to "os"
+    // Dump the registry content (non-transient entries only!) to "os"
     bool Write(CNcbiOstream& os) const;
 
     // Reset the whole registry content
     void Clear(void);
 
     // First, search for the transient parameter value, and if cannot
-    // find in there then continue the search in the non-transient params.
+    // find in there, then continue the search in the non-transient params.
     // Return empty string if the config. parameter not found.
     //
     // Valid flags := { ePersistent }
-    // If "ePersistent" flag is set then dont search in transients at all.
+    // If "ePersistent" flag is set, then dont search in transients at all.
     const string& Get(const string& section, const string& name,
                       TFlags flags = 0) const;
+
+    // Like "GetString()", but if the config. parameter not found, then
+    // return 'default_value' (rather than empty string)
+    const string& GetString(const string& section, const string& name,
+                            const string& default_value, TFlags flags = 0)
+        const;
+
+    // Like "GetString()", plus convert the value into 'int', 'bool', etc.
+    // "fmt_throw" controls what to do if value is present but cannot be
+    // converted into the requested type.
+    enum EErrAction {
+        eThrow,  // throw an exception   if conversion error occurs
+        eReturn  // return default value if conversion error occurs
+    };
+
+    const int     GetInt    (const string& section, const string& name,
+                             int    default_value,  TFlags flags = 0,
+                             EErrAction err_action = eThrow) const;
+    const bool    GetBool   (const string& section, const string& name,
+                             bool   default_value,  TFlags flags = 0,
+                             EErrAction err_action = eThrow) const;
+    const double  GetDouble (const string& section, const string& name,
+                             double default_value,  TFlags flags = 0,
+                             EErrAction err_action = eThrow) const;
 
     // Set the configuration parameter value(unset if "value" is empty)
     // Return TRUE if the new "value" is successfully set(or unset)
@@ -174,7 +198,7 @@ public:
 private:
     struct TRegEntry {
         string persistent;  // non-transient
-        string transient;   // transient(thus does not get dumped by Write())
+        string transient;   // transient (thus does not get dumped by Write())
         string comment;     // entry's comment
     };
     typedef map<string, TRegEntry,   PNocase>  TRegSection;
@@ -197,15 +221,20 @@ private:
     // prohibit default initialization and assignment
     CNcbiRegistry(const CNcbiRegistry&);
     CNcbiRegistry& operator= (const CNcbiRegistry&);
-};  // CNcbiRegistry
+};
 
 
 END_NCBI_SCOPE
 
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2002/12/30 23:23:06  vakatov
+ * + GetString(), GetInt(), GetBool(), GetDouble() -- with defaults,
+ * conversions and error handling control (to extend Get()'s functionality).
+ *
  * Revision 1.17  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
@@ -256,4 +285,3 @@ END_NCBI_SCOPE
  */
 
 #endif  /* NCBIREG__HPP */
-

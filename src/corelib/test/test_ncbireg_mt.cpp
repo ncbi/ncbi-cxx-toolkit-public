@@ -65,106 +65,161 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     assert(!m_Registry.Empty() );
     assert( m_Registry.Get(" Section1", "Name11\t") == "Val11_t" );
     assert( m_Registry.Get("Section1", "Name11",
-                             CNcbiRegistry::ePersistent).empty() );
+                           CNcbiRegistry::ePersistent).empty() );
     assert( m_Registry.Set("Section1", "Name11", "Val11_t") );
     assert(!m_Registry.Set("Section1", "Name11", "Val11_BAD!!!",
-                             CNcbiRegistry::eNoOverride) );
+                           CNcbiRegistry::eNoOverride) );
 
     assert( m_Registry.Set("   Section2", "\nName21  ", "Val21",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("Section2", "Name21", "Val21_t") );
     assert(!m_Registry.Empty() );
     assert( m_Registry.Set("Section3", "Name31", "Val31_t") );
 
     assert( m_Registry.Get(" \nSection1", " Name11  ") == "Val11_t" );
     assert( m_Registry.Get("Section2", "Name21",
-                             CNcbiRegistry::ePersistent) == "Val21" );
+                           CNcbiRegistry::ePersistent) == "Val21" );
     assert( m_Registry.Get(" Section2", " Name21\n") == "Val21_t" );
     assert( m_Registry.Get("SectionX", "Name21").empty() );
 
     assert( m_Registry.Set("Section4", "Name41", "Val410 Val411 Val413",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert(!m_Registry.Set("Sect ion4", "Name41", "BAD1",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert(!m_Registry.Set("Section4", "Na me41", "BAD2") );
     assert( m_Registry.Set("SECTION4", "Name42", "V420 V421\nV422 V423 \"",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("Section4", "NAME43",
-                             " \tV430 V431  \n V432 V433 ",
-                             CNcbiRegistry::ePersistent) );
+                           " \tV430 V431  \n V432 V433 ",
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("\tSection4", "Name43T",
-                             " \tV430 V431  \n V432 V433 ",
-                             CNcbiRegistry::ePersistent |
-                             CNcbiRegistry::eTruncate) );
+                           " \tV430 V431  \n V432 V433 ",
+                           CNcbiRegistry::ePersistent |
+                           CNcbiRegistry::eTruncate) );
     assert( m_Registry.Set("Section4", "Name44", "\n V440 V441 \r\n",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("\r Section4", "  \t\rName45",
-                             "\r\n V450 V451  \n  ",
-                             CNcbiRegistry::ePersistent) );
+                           "\r\n V450 V451  \n  ",
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("Section4 \n", "  Name46  ",
-                             "\n\nV460\" \n \t \n\t",
-                             CNcbiRegistry::ePersistent) );
+                           "\n\nV460\" \n \t \n\t",
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set(" Section4", "Name46T", "\n\nV460\" \n \t \n\t",
-                             CNcbiRegistry::ePersistent |
-                             CNcbiRegistry::eTruncate) );
+                           CNcbiRegistry::ePersistent |
+                           CNcbiRegistry::eTruncate) );
     assert( m_Registry.Set("Section4", "Name47",
-                             "470\n471\\\n 472\\\n473\\",
-                             CNcbiRegistry::ePersistent) );
+                           "470\n471\\\n 472\\\n473\\",
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("Section4", "Name47T",
-                             "470\n471\\\n 472\\\n473\\",
-                             CNcbiRegistry::ePersistent |
-                             CNcbiRegistry::eTruncate) );
+                           "470\n471\\\n 472\\\n473\\",
+                           CNcbiRegistry::ePersistent |
+                           CNcbiRegistry::eTruncate) );
     string xxx("\" V481\" \n\"V482 ");
     assert( m_Registry.Set("Section4", "Name48", xxx,
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
 
     assert( m_Registry.Set("Section5", "Name51", "Section5/Name51",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("_Section_5", "Name51", "_Section_5/Name51",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("_Section_5_", "_Name52", "_Section_5_/_Name52",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("_Section_5_", "Name52", "_Section_5_/Name52",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("_Section_5_", "_Name53_", "_Section_5_/_Name53_",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("Section-5.6", "Name-5.6", "Section-5.6/Name-5.6",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
     assert( m_Registry.Set("-Section_5", ".Name.5-3", "-Section_5/.Name.5-3",
-                             CNcbiRegistry::ePersistent) );
+                           CNcbiRegistry::ePersistent) );
+
+    // Numeric conversions
+    assert( m_Registry.Set("Section_61", "Int_Good", "12345",
+                           CNcbiRegistry::ePersistent) );
+    assert( m_Registry.Set("Section_61", "Bool_Good", "true",
+                           CNcbiRegistry::ePersistent) );
+    assert( m_Registry.Set("Section_61", "Double_Good", "45.98",
+                           CNcbiRegistry::ePersistent) );
+
+    assert( m_Registry.Set("Section_62", "Int_Bad", "bad_int",
+                           CNcbiRegistry::ePersistent) );
+    assert( m_Registry.Set("Section_62", "Bool_Bad", "bad_bool",
+                           CNcbiRegistry::ePersistent) );
+    assert( m_Registry.Set("Section_62", "Double_Bad", "bad_double",
+                           CNcbiRegistry::ePersistent) );
+
+    assert( m_Registry.GetInt   ("Section_61", "Int_Good",    999)   == 12345);
+    assert( m_Registry.GetBool  ("Section_61", "Bool_Good",   false) == true);
+    assert( m_Registry.GetDouble("Section_61", "Double_Good", 9.99)  == 45.98);
+
+    assert( m_Registry.GetInt   ("Section_61", "Undef", 999)   == 999);
+    assert( m_Registry.GetBool  ("Section_61", "Undef", false) == false);
+    assert( m_Registry.GetDouble("Section_61", "Undef", 9.99)  == 9.99);
+
+    assert( m_Registry.GetInt   ("Section_62", "Int_Bad",    999,
+                                 0, CNcbiRegistry::eReturn) == 999);
+    assert( m_Registry.GetBool  ("Section_62", "Bool_Bad",   false,
+                                 0, CNcbiRegistry::eReturn) == false);
+    assert( m_Registry.GetDouble("Section_62", "Double_Bad", 9.99,
+                                 0, CNcbiRegistry::eReturn) == 9.99);
+
+    bool ex_int = false;
+    try {
+        (void) m_Registry.GetInt("Section_62", "Int_Bad", 999);
+    } catch (CException& e) {
+        ex_int = true;
+    }
+    assert( ex_int );
+
+    bool ex_bool = false;
+    try {
+        (void) m_Registry.GetBool("Section_62", "Bool_Bad", false);
+    } catch (CException& e) {
+        ex_bool = true;
+    }
+    assert( ex_bool );
+
+    bool ex_double = false;
+    try {
+        (void) m_Registry.GetDouble("Section_62", "Double_Bad", 9.99);
+    } catch (CException& e) {
+        ex_double = true;
+    }
+    assert( ex_double );
 
 
     // Dump
     CNcbiOstrstream os;
     assert ( m_Registry.Write(os) );
     os << '\0';
-    const char* os_str = os.str();  os.rdbuf()->freeze(false);
+    const char* os_str = os.str();
+    os.freeze(false);
 
     // "Persistent" load
     CNcbiIstrstream is1(os_str);
     CNcbiRegistry  reg1(is1);
     assert(  reg1.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
-               "Val21" );
+             "Val21" );
     assert(  reg1.Get("Section2", "Name21") == "Val21" );
     assert( !reg1.Set("Section2", "Name21", NcbiEmptyString) );
     assert( !reg1.Set("Section2", "Name21", NcbiEmptyString,
-                        CNcbiRegistry::ePersistent |
-                        CNcbiRegistry::eNoOverride) );
+                      CNcbiRegistry::ePersistent |
+                      CNcbiRegistry::eNoOverride) );
     assert( !reg1.Empty() );
     assert(  reg1.Set("Section2", "Name21", NcbiEmptyString,
-                        CNcbiRegistry::ePersistent) );
+                      CNcbiRegistry::ePersistent) );
 
     // "Transient" load
     CNcbiIstrstream is2(os_str);
     CNcbiRegistry  reg2(is2, CNcbiRegistry::eTransient);
     assert(  reg2.Get("Section2", "Name21",
-                        CNcbiRegistry::ePersistent).empty() );
+                      CNcbiRegistry::ePersistent).empty() );
     assert(  reg2.Get("Section2", "Name21") == "Val21" );
     assert( !reg2.Set("Section2", "Name21", NcbiEmptyString,
-                        CNcbiRegistry::ePersistent) );
+                      CNcbiRegistry::ePersistent) );
     assert( !reg2.Set("Section2", "Name21", NcbiEmptyString,
-                        CNcbiRegistry::ePersistent |
-                        CNcbiRegistry::eNoOverride) );
+                      CNcbiRegistry::ePersistent |
+                      CNcbiRegistry::eNoOverride) );
     assert( !reg2.Empty() );
     assert(  reg2.Set("Section2", "Name21", NcbiEmptyString) );
 
@@ -173,31 +228,31 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     assert( m_Registry.Get("Section4 ", "Na me41 ").empty() );
 
     assert( m_Registry.Get("Section4 ", "Name41 ") ==
-              "Val410 Val411 Val413" );
+            "Val410 Val411 Val413" );
     assert( m_Registry.Get("Section4",  " Name42") ==
-              "V420 V421\nV422 V423 \"" );
+            "V420 V421\nV422 V423 \"" );
     assert( m_Registry.Get("Section4",  "Name43")  ==
-              " \tV430 V431  \n V432 V433 ");
+            " \tV430 V431  \n V432 V433 ");
     assert( m_Registry.Get("Section4",  "Name43T") ==
-              "V430 V431  \n V432 V433" );
+            "V430 V431  \n V432 V433" );
     assert( m_Registry.Get("Section4",  " Name44") ==
-              "\n V440 V441 \r\n" );
+            "\n V440 V441 \r\n" );
     assert( m_Registry.Get(" SecTIon4", "Name45")  ==
-              "\r\n V450 V451  \n  " );
+            "\r\n V450 V451  \n  " );
     assert( m_Registry.Get("SecTion4 ", "Name46")  ==
-              "\n\nV460\" \n \t \n\t" );
+            "\n\nV460\" \n \t \n\t" );
     assert( m_Registry.Get("Section4",  "NaMe46T") ==
-              "\n\nV460\" \n \t \n" );
+            "\n\nV460\" \n \t \n" );
     assert( m_Registry.Get(" Section4", "Name47")  ==
-              "470\n471\\\n 472\\\n473\\" );
+            "470\n471\\\n 472\\\n473\\" );
     assert( m_Registry.Get("Section4 ", "NAme47T") ==
-              "470\n471\\\n 472\\\n473\\" );
+            "470\n471\\\n 472\\\n473\\" );
     assert( m_Registry.Get("Section4",  "Name48")  == xxx );
 
     assert( reg2.Get("Section4", "Name41")  == "Val410 Val411 Val413" );
     assert( reg2.Get("Section4", "Name42")  == "V420 V421\nV422 V423 \"" );
     assert( reg2.Get("Section4", "Name43")  ==
-              " \tV430 V431  \n V432 V433 ");
+            " \tV430 V431  \n V432 V433 ");
     assert( reg2.Get("Section4", "Name43T") == "V430 V431  \n V432 V433" );
     assert( reg2.Get("Section4", "Name44")  == "\n V440 V441 \r\n" );
     assert( reg2.Get("Section4", "NaMe45")  == "\r\n V450 V451  \n  " );
@@ -212,13 +267,13 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     assert( reg2.Get(" _Section_5_", " _Name52")  == "_Section_5_/_Name52");
     assert( reg2.Get("_Section_5_ ", "Name52")    == "_Section_5_/Name52");
     assert( reg2.Get("_Section_5_",  "_Name53_ ") ==
-              "_Section_5_/_Name53_" );
+            "_Section_5_/_Name53_" );
     assert( reg2.Get(" Section-5.6", "Name-5.6 ") == "Section-5.6/Name-5.6");
     assert( reg2.Get("-Section_5",   ".Name.5-3") == "-Section_5/.Name.5-3");
 
     m_Registry.EnumerateSections(&sections);
     assert( find(sections.begin(), sections.end(), "Section1")
-             != sections.end() );
+            != sections.end() );
     assert( !sections.empty() );
 
     return true;
@@ -267,9 +322,14 @@ int main(int argc, const char* argv[])
 }
 
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2002/12/30 23:23:09  vakatov
+ * + GetString(), GetInt(), GetBool(), GetDouble() -- with defaults,
+ * conversions and error handling control (to extend Get()'s functionality).
+ *
  * Revision 6.3  2002/04/23 13:11:50  gouriano
  * test_mt.cpp/hpp moved into another location
  *

@@ -100,7 +100,7 @@ static const string s_ConvertComment(const string& comment,
             endl_pos = comment.length();
         }
         if (((pos != NPOS  &&  comment[pos] != c_comment) ||
-            (pos == NPOS  &&  endl_pos == comment.length())) &&
+             (pos == NPOS  &&  endl_pos == comment.length())) &&
             (is_file_comment  ||  beg != endl_pos) ) {
             x_comment += c_comment;
         }
@@ -222,13 +222,14 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
             beg++;
             SIZE_TYPE end = str.find_first_of(']');
             if (end == NPOS)
-                NCBI_THROW2(CParseException,eSection,
-"Invalid registry section(']' is missing): `" + str + "'", line);
+                NCBI_THROW2(CParseException, eSection,
+                            "Invalid registry section(']' is missing): `"
+                            + str + "'", line);
             while ( isspace(str[beg]) )
                 beg++;
             if (str[beg] == ']') {
-                NCBI_THROW2(CParseException,eSection,
-"Unnamed registry section: `" + str + "'", line);
+                NCBI_THROW2(CParseException, eSection,
+                            "Unnamed registry section: `" + str + "'", line);
             }
 
             for (end = beg;  s_IsNameSectionSymbol(str[end]);  end++)
@@ -240,8 +241,9 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
                 end++;
             _ASSERT( end <= str.find_first_of(']', 0) );
             if (str[end] != ']')
-                NCBI_THROW2(CParseException,eSection,
-"Invalid registry section name: `" + str + "'", line);
+                NCBI_THROW2(CParseException, eSection,
+                            "Invalid registry section name: `"
+                            + str + "'", line);
             // add section comment
             if ( !comment.empty() ) {
                 _ASSERT( s_IsNameSection(section) );
@@ -257,8 +259,9 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
         default:  { // regular entry
             if (!s_IsNameSectionSymbol(str[beg])  ||
                 str.find_first_of('=') == NPOS)
-                NCBI_THROW2(CParseException,eEntry,
-"Invalid registry entry format: '" + str + "'", line);
+                NCBI_THROW2(CParseException, eEntry,
+                            "Invalid registry entry format: '" + str + "'",
+                            line);
             // name
             SIZE_TYPE mid;
             for (mid = beg;  s_IsNameSectionSymbol(str[mid]);  mid++)
@@ -269,8 +272,9 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
             while ( isspace(str[mid]) )
                 mid++;
             if (str[mid] != '=')
-                NCBI_THROW2(CParseException,eEntry,
-"Invalid registry entry name: '" + str + "'", line);
+                NCBI_THROW2(CParseException, eEntry,
+                            "Invalid registry entry name: '" + str + "'",
+                            line);
             for (mid++;  mid < len  &&  isspace(str[mid]);  mid++)
                 continue;
             _ASSERT( mid <= len );
@@ -308,8 +312,10 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
                 for (SIZE_TYPE i = beg;  i <= end;  i++) {
                     if (str[i] == '"') {
                         if (i != end) {
-                            NCBI_THROW2(CParseException,eValue,
-"Single(unescaped) '\"' in the middle of registry value: '" + str + "'", line);
+                            NCBI_THROW2(CParseException, eValue,
+                                        "Single(unescaped) '\"' in the middle "
+                                        "of registry value: '" + str + "'",
+                                        line);
                         }
                         break;
                     }
@@ -334,8 +340,9 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
                         value += '"';
                         i++;
                     } else {
-                        NCBI_THROW2(CParseException,eValue,
-"Badly placed '\\' in the registry value: '" + str + "'", line);
+                        NCBI_THROW2(CParseException, eValue,
+                                    "Badly placed '\\' in the registry "
+                                    "value: '" + str + "'", line);
                     }
                 }
             } while (read_next_line  &&  NcbiGetlineEOL(is, str));
@@ -347,8 +354,8 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
     }
 
     if ( !is.eof() ) {
-        NCBI_THROW2(CParseException,eErr,
-"Error in reading the registry: '" + str + "'", line);
+        NCBI_THROW2(CParseException, eErr,
+                    "Error in reading the registry: '" + str + "'", line);
     }
 
     if ( non_modifying ) {
@@ -360,7 +367,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
 /* Write data from reqistry to stream
  */
 bool CNcbiRegistry::Write(CNcbiOstream& os)
-const
+    const
 {
     CFastMutexGuard LOCK(s_RegMutex);
 
@@ -487,6 +494,83 @@ const string& CNcbiRegistry::Get(const string& section, const string& name,
         entry.transient : entry.persistent;
 }
 
+
+const string& CNcbiRegistry::GetString
+(const string& section,
+ const string& name,
+ const string& default_value,
+ TFlags        flags)
+    const
+{
+    const string& value = Get(section, name, flags);
+    return value.empty() ? default_value : value;
+}
+
+
+const int CNcbiRegistry::GetInt
+(const string& section,
+ const string& name,
+ int           default_value,
+ TFlags        flags,
+ EErrAction    err_action)
+    const
+{
+    const string& value = Get(section, name, flags);
+    if ( value.empty() )
+        return default_value;
+
+    try {
+        return NStr::StringToInt(value);
+    } catch (CStringException& ex) {
+        if (err_action == eThrow)
+            NCBI_RETHROW_SAME(ex, "CNcbiRegistry::GetInt()");
+        return default_value;
+    }
+}
+
+
+const bool CNcbiRegistry::GetBool
+(const string& section,
+ const string& name,
+ bool          default_value,
+ TFlags        flags,
+ EErrAction    err_action)
+    const
+{
+    const string& value = Get(section, name, flags);
+    if ( value.empty() )
+        return default_value;
+
+    try {
+        return NStr::StringToBool(value);
+    } catch (CStringException& ex) {
+        if (err_action == eThrow)
+            NCBI_RETHROW_SAME(ex, "CNcbiRegistry::GetBool()");
+        return default_value;
+    }
+}
+
+
+const double CNcbiRegistry::GetDouble
+(const string& section,
+ const string& name,
+ double        default_value,
+ TFlags        flags,
+ EErrAction    err_action)
+    const
+{
+    const string& value = Get(section, name, flags);
+    if ( value.empty() )
+        return default_value;
+
+    try {
+        return NStr::StringToDouble(value);
+    } catch (CStringException& ex) {
+        if (err_action == eThrow)
+            NCBI_RETHROW_SAME(ex, "CNcbiRegistry::GetDouble()");
+        return default_value;
+    }
+}
 
 
 bool CNcbiRegistry::Set(const string& section, const string& name,
@@ -759,9 +843,14 @@ void CNcbiRegistry::x_SetValue(TRegEntry& entry, const string& value,
 END_NCBI_SCOPE
 
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2002/12/30 23:23:07  vakatov
+ * + GetString(), GetInt(), GetBool(), GetDouble() -- with defaults,
+ * conversions and error handling control (to extend Get()'s functionality).
+ *
  * Revision 1.25  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *
