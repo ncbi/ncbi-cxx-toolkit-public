@@ -2346,6 +2346,76 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     }
 
     x_ValidateCDSmRNAmatch(bsh);
+
+    if (m_Imp.IsLocusTagGeneralMatch()) {
+        x_ValidateLocusTagGeneralMatch(bsh);
+    }
+}
+
+
+void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq)
+{
+    if (!seq  ||  !CSeq_inst::IsNa(seq.GetInst_Mol())) {
+        return;
+    }
+
+    // iterate coding regions and mRNAs
+    SAnnotSelector as;
+    as.IncludedFeatType(CSeqFeatData::e_Cdregion);
+    as.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+
+    for (CFeat_CI it(seq, 0, 0, as); it; ++it) {
+        const CSeq_feat& feat = it->GetOriginalFeature();
+        if (!feat.IsSetProduct()) {
+            continue;
+        }
+        
+        // obtain the gene-ref from the feature or the overlapping gene
+        const CGene_ref* grp = feat.GetGeneXref();
+        if (grp == NULL  ||  grp->IsSuppressed()) {
+            CConstRef<CSeq_feat> gene = 
+                GetOverlappingGene(feat.GetLocation(), *m_Scope);
+            if (gene) {
+                grp = &gene->GetData().GetGene();
+            }
+        }
+
+        if (grp == NULL  ||  !grp->IsSetLocus_tag()  ||  grp->GetLocus_tag().empty()) {
+            continue;
+        }
+        const string& locus_tag = grp->GetLocus_tag();
+   
+        
+        CBioseq_Handle prod =
+                m_Scope->GetBioseqHandleFromTSE(GetId(feat.GetProduct()), m_Imp.GetTSE());
+        if (prod == NULL) {
+            continue;
+        }
+        ITERATE (CBioseq_Handle::TId, it, prod.GetId()) {
+            if (!it->GetSeqId()->IsGeneral()) {
+                continue;
+            }
+            const CDbtag& dbt = it->GetSeqId()->GetGeneral();
+            if (!dbt.IsSetDb()) {
+                continue;
+            }
+            const string& db = dbt.GetDb();
+            if (NStr::EqualNocase(db, "TMSMART")  ||
+                NStr::EqualNocase(db, "BankIt")) {
+                continue;
+            }
+
+            if (dbt.IsSetTag()  &&  dbt.GetTag().IsStr()) {
+                SIZE_TYPE pos = dbt.GetTag().GetStr().find('-');
+                string str = dbt.GetTag().GetStr().substr(0, pos);
+                if (!NStr::EqualNocase(locus_tag, str)) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_LocusTagProductMismatch,
+                        "Gene locus_tag does not match general ID of product",
+                        feat);
+                }
+            }
+        }
+    }
 }
 
 
@@ -3815,6 +3885,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.87  2004/09/21 18:37:02  shomrat
+* Added ValidateLocusTagGeneral, reports eErr_SEQ_FEAT_LocusTagProductMismatch
+*
 * Revision 1.86  2004/09/21 15:49:41  shomrat
 * Added ValidateCDSmRNAmatch reporting eErr_SEQ_FEAT_CDSmRNAmismatch
 *

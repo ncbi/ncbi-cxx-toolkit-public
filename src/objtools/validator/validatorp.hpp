@@ -293,6 +293,7 @@ enum EErrType {
     eErr_SEQ_FEAT_MultipleBioseqs,
     eErr_SEQ_FEAT_CDSmRNAmismatch,
     eErr_SEQ_FEAT_UnnecessaryException,
+    eErr_SEQ_FEAT_LocusTagProductMismatch,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN),
@@ -432,6 +433,7 @@ public:
     bool IsRemoteFetch(void)          const { return m_RemoteFetch; }
     bool IsFarFetchMRNAproducts(void) const { return m_FarFetchMRNAproducts; }
     bool IsFarFetchCDSproducts(void)  const { return m_FarFetchCDSproducts; }
+    bool IsLocusTagGeneralMatch(void) const { return m_LocusTagGeneralMatch; }
 
     // !!! DEBUG {
     inline bool AvoidPerfBottlenecks() const { return m_PerfBottlenecks; }
@@ -528,6 +530,7 @@ private:
     bool m_RemoteFetch;          // Remote fetch enabled?
     bool m_FarFetchMRNAproducts; // Remote fetch mRNA products
     bool m_FarFetchCDSproducts;  // Remote fetch proteins
+    bool m_LocusTagGeneralMatch;
 
     // !!! DEBUG {
     bool m_PerfBottlenecks;         // Skip suspected performance bottlenecks
@@ -698,6 +701,7 @@ private:
     void x_ValidateAbuttingUTR(const CBioseq_Handle& seq);
     void x_ValidateAbuttingCDSGroup(const TMappedFeatVec& cds_group, bool minus);
     void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq);
+    void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
 
     void ValidateSeqDescContext(const CBioseq& seq);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol,
@@ -976,6 +980,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2004/09/21 18:35:08  shomrat
+* Added ValidateLocusTagGeneral, reports eErr_SEQ_FEAT_LocusTagProductMismatch
+*
 * Revision 1.75  2004/09/21 15:54:57  shomrat
 * + SEQ_FEAT_CDSmRNAmismatch, SEQ_FEAT_UnnecessaryException
 *
