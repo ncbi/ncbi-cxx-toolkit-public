@@ -392,37 +392,52 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 
 
+/// Make field index in CBDB_File format
+///
+/// @internal
+inline
+CBDB_File::TUnifiedFieldIndex BDB_GetUFieldIdx(int fidx, bool key)
+{
+    _ASSERT(fidx >= 0);
+    ++fidx;
+    return key ? (-fidx) : (fidx);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_RawFile::
 //
 
 
-
-inline void CBDB_RawFile::Open(const char* filename, EOpenMode open_mode)
+inline 
+void CBDB_RawFile::Open(const char* filename, EOpenMode open_mode)
 {
     Open(filename, 0, open_mode);
 }
 
 
-inline const string& CBDB_RawFile::FileName() const
+inline 
+const string& CBDB_RawFile::FileName() const
 {
     return m_FileName;
 }
 
 
-inline const string& CBDB_RawFile::Database() const
+inline 
+const string& CBDB_RawFile::Database() const
 {
     return m_Database;
 }
 
 
-inline bool CBDB_RawFile::IsOpen() const
+inline 
+bool CBDB_RawFile::IsOpen() const
 {
     return !m_FileName.empty();
 }
 
-inline bool CBDB_RawFile::IsAttached() const
+inline 
+bool CBDB_RawFile::IsAttached() const
 {
     return m_DB_Attached;
 }
@@ -463,6 +478,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/03/08 13:31:58  kuznets
+ * CBDB_File some methods made public
+ *
  * Revision 1.28  2004/02/13 15:00:12  kuznets
  * + typedef TUnifiedFieldIndex plus methods to work with fields in CBDB_File
  *
