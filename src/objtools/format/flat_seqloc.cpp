@@ -175,7 +175,11 @@ bool CFlatSeqLoc::x_Add
     case CSeq_loc::e_Whole:
     {{
         x_AddID(loc.GetWhole(), oss, ctx, type);
-        oss << "1.." << sequence::GetLength(loc, &scope);
+        TSeqPos len = sequence::GetLength(loc, &scope);
+        oss << "1";
+        if (len > 1) {
+            oss << ".." << len;
+        }
         break;
     }}
     case CSeq_loc::e_Int:
@@ -444,6 +448,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/11/30 17:39:13  shomrat
+* Handle whole locations of length 1
+*
 * Revision 1.15  2004/11/15 20:08:08  shomrat
 * Cleanup of ID formatting
 *
