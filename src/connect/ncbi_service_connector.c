@@ -847,6 +847,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.60  2003/08/25 14:41:53  lavr
+ * Employ new k..Timeout constants  --  log modification only
+ *
  * Revision 6.59  2003/05/31 05:16:45  lavr
  * Add ARGSUSED where args are meant to be unused
  *
@@ -919,7 +922,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
  *
  * Revision 6.36  2002/04/26 16:28:51  lavr
  * SSERVICE_Params: reset added for use in open/close pairs
- * No checks for CONN_DEFAULT_TIMEOUT: now real timeouts always go from CONN
+ * No checks for kDefaultTimeout: now real timeouts always go from CONN
  *
  * Revision 6.35  2002/03/30 03:34:32  lavr
  * BUGFIX: Memory leak from SERV_ITER in usused connector

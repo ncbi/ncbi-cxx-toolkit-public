@@ -373,6 +373,9 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/08/25 14:42:14  lavr
+ * Employ new k..Timeout constants  --  log modification only
+ *
  * Revision 6.18  2003/05/31 05:15:45  lavr
  * Add ARGSUSED where args are meant to be unused, remove Flush
  *
@@ -407,14 +410,14 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
  *
  * Revision 6.8  2002/04/26 16:37:05  lavr
  * Added setting of default timeout in meta-connector's setup routine
- * Remove all checks for CONN_DEFAULT_TIMEOUT: now supplied good from CONN
+ * Remove all checks for kDefaultTimeout: now supplied good from CONN
  *
  * Revision 6.7  2001/12/04 15:55:07  lavr
  * +SOCK_CreateConnectorOnTop(), +SOCK_CreateConnectorOnTopEx()
  * Redesign of open-retry loop
  *
  * Revision 6.6  2001/04/24 21:30:27  lavr
- * Added treatment of CONN_DEFAULT_TIMEOUT
+ * Added treatment of kDefaultTimeout
  *
  * Revision 6.5  2001/01/25 17:04:44  lavr
  * Reversed:: DESTROY method calls free() to delete connector structure
