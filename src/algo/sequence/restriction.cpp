@@ -223,13 +223,13 @@ void CFindRSites::x_AddPattern(const string& pat, CTextFsm<int>& fsm,
 }
 
 
-bool CFindRSites::x_IsAmbig(char nuc)
+bool CFindRSites::x_IsAmbig (char nuc)
 {
     static const bool ambig_table[16] = {
         0, 0, 0, 1, 0, 1, 1, 1,
         0, 1, 1, 1, 1, 1, 1, 1
     };
-    return ambig_table[nuc];
+    return ambig_table[(size_t) nuc];
 }
 
 
@@ -532,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/11/03 19:24:05  kskatz
+ * To avoid warnings I cast the subscripting variable in CFindRSites::x_IsAmbig() to size_t
+ *
  * Revision 1.11  2004/05/21 21:41:04  gorelenk
  * Added PCH ncbi_pch.hpp
  *
