@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/06 22:21:00  kholodov
+* Added constructor from long long to BigInt type
+*
 * Revision 1.1  2002/01/30 14:51:22  kholodov
 * User DBAPI implementation, first commit
 *
@@ -116,6 +119,9 @@ CVariant::CVariant(CDB_Object* o)
   return;
 }
 
+
+CVariant::CVariant(long long v) 
+  : m_data(new CDB_BigInt(v)) {}
 
 CVariant::CVariant(int v) 
   : m_data(new CDB_Int(v)) {}

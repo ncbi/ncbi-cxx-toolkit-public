@@ -83,6 +83,7 @@ class CVariant
 public:
 
     // Contructors to create CVariant from various primitive types
+    explicit CVariant(long long v);
     explicit CVariant(int v);
     explicit CVariant(long v);
     explicit CVariant(short v);
@@ -167,6 +168,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.2  2002/02/06 22:21:00  kholodov
+ * Added constructor from long long to BigInt type
+ *
  * Revision 1.1  2002/01/30 14:51:24  kholodov
  * User DBAPI implementation, first commit
  *
