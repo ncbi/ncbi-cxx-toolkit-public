@@ -858,11 +858,13 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
     //if (GetAppProperty ("NcbiSubutilValidation") != NULL)
     //    return;
 
+    bool report_errors = true, has_errors = false;
+
     // specific biological exceptions suppress check
     if ( feat.CanGetExcept()  &&  feat.GetExcept()  &&
          feat.CanGetExcept_text() ) {
         if ( SuppressCheck(feat.GetExcept_text()) ) {
-            return;
+            report_errors = false;
         }
     }
         
@@ -954,6 +956,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 
                 if ( IsResidue(res1)  &&  IsResidue(res2) ) {
                     if ( (res1 != 'G')  || (res2 != 'T' ) ) {
+                        has_errors = true;
                         string msg;
                         if ( (res1 == 'G')  && (res2 == 'C' ) ) { // GC minor splice site
                             sev = eDiag_Info;
@@ -965,7 +968,9 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                                 " ending at position " + 
                                 NStr::IntToString(donor + 1) + " of " + label;
                         }
-                        PostErr(sev, eErr_SEQ_FEAT_NotSpliceConsensus, msg, feat);
+                        if (report_errors) {
+                            PostErr(sev, eErr_SEQ_FEAT_NotSpliceConsensus, msg, feat);
+                        }
                     }
                 }
             } catch ( exception& ) {
@@ -981,16 +986,24 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                 
                 if ( IsResidue(res1)  &&  IsResidue(res2) ) {
                     if ( (res1 != 'A')  ||  (res2 != 'G') ) {
-                        PostErr(sev, eErr_SEQ_FEAT_NotSpliceConsensus,
-                            "Splice acceptor consensus (AG) not found before "
-                            "exon starting at position " + 
-                            NStr::IntToString(acceptor + 1) + " of " + label, feat);
+                        has_errors = true;
+                        if (report_errors) {
+                            PostErr(sev, eErr_SEQ_FEAT_NotSpliceConsensus,
+                                "Splice acceptor consensus (AG) not found before "
+                                "exon starting at position " + 
+                                NStr::IntToString(acceptor + 1) + " of " + label, feat);
+                        }
                     }
                 }
             } catch ( exception& ) {
             }
         }
     } // end of for loop
+
+    if (!report_errors  &&  !has_errors) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryException,
+            "feature has exception but passes splice site test", feat);
+    }
 }
 
 
@@ -3020,6 +3033,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2004/09/21 16:03:51  shomrat
+* ValidateSplices suppress messages if specific exceptions, but do tests and report if no problem detected
+*
 * Revision 1.66  2004/09/21 15:58:14  shomrat
 * ValidateMrnaTrans and ValidateCdTrans suppress messages if specific exceptions, but do tests and report if no problem detected
 *
