@@ -1337,8 +1337,8 @@ string CDir::GetHome(void)
     if ( str ) {
         home = str;
     } else {
-        // Try to retrieve the home dir -- first use user's ID, and if failed, 
-        // then use user's login name.
+        // Try to retrieve the home dir -- first use user's ID,
+        //  and if failed, then use user's login name.
         if ( !s_GetHomeByUID(home) ) { 
             s_GetHomeByLOGIN(home);
         }
@@ -1486,7 +1486,7 @@ CDir::TEntries CDir::GetEntries(const string&   mask,
 
     // Open directory stream and try read info about first entry
     struct _finddata_t entry;
-    long desc = _findfirst(pattern.c_str(), &entry);  // get first entry's name
+    long desc = _findfirst(pattern.c_str(), &entry);
     if (desc != -1) {
         CDirEntry* dir_entry = new CDirEntry(path_base + entry.name);
         if (mode == eIgnoreRecursive) {
@@ -1566,7 +1566,7 @@ CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
 
     // Open directory stream and try read info about first entry
     struct _finddata_t entry;
-    long desc = _findfirst(pattern.c_str(), &entry);  // get first entry's name
+    long desc = _findfirst(pattern.c_str(), &entry);
     if (desc != -1) {
         skip_recursive_entry =
             (mode == eIgnoreRecursive) &&
@@ -1764,6 +1764,7 @@ bool CDir::Remove(EDirRemoveMode mode) const
 }
 
 
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // CMemoryFile
@@ -1773,236 +1774,136 @@ bool CDir::Remove(EDirRemoveMode mode) const
 // Platform-dependent memory file handle definition
 struct SMemoryFileHandle {
 #if defined(NCBI_OS_MSWIN)
-    HANDLE  hMap;
+    HANDLE  hMap;   // File-mapping handle (see ::[Open/Create]FileMapping())
+#else /* UNIX */
+    int     hMap;   // File handle
+#endif
+};
+
+// Platform-dependent memory file attributes
+struct SMemoryFileAttrs {
+#if defined(NCBI_OS_MSWIN)
+    DWORD map_protect;
+    DWORD map_access;
+    DWORD file_share;
+    DWORD file_access;
 #else
-    int     hDummy;
+    int   map_protect;
+    int   map_access;
+    int   file_access;
 #endif
 };
 
 
-bool CMemoryFile::IsSupported(void)
+// Translate memory mapping attributes into OS specific flags.
+static SMemoryFileAttrs*
+s_TranslateAttrs(CMemoryFile_Base::EMemMapProtect protect_attr, 
+                 CMemoryFile_Base::EMemMapShare   share_attr)
 {
-#if defined(NCBI_OS_MAC)
-    return false;
-#else
-    return true;
+    SMemoryFileAttrs* attrs = new SMemoryFileAttrs();
+    memset(attrs, 0, sizeof(SMemoryFileAttrs));
+
+#if defined(NCBI_OS_MSWIN)
+
+    switch (protect_attr) {
+        case CMemoryFile_Base::eMMP_Read:
+            attrs->map_access  = FILE_MAP_READ;
+            attrs->map_protect = PAGE_READONLY;
+            attrs->file_access = GENERIC_READ;
+            break;
+        case CMemoryFile_Base::eMMP_Write:
+        case CMemoryFile_Base::eMMP_ReadWrite:
+            // On MS Windows platform Write & ReadWrite access
+            // to the mapped memory is equivalent
+            if  (share_attr == CMemoryFile_Base::eMMS_Shared ) {
+                attrs->map_access = FILE_MAP_ALL_ACCESS;
+            } else {
+                attrs->map_access = FILE_MAP_COPY;
+            }
+            attrs->map_protect = PAGE_READWRITE;
+            // So the file also must be open for reading and writing
+            attrs->file_access = GENERIC_READ | GENERIC_WRITE;
+            break;
+        default:
+            _TROUBLE;
+    }
+    if (share_attr == CMemoryFile_Base::eMMS_Shared) {
+        attrs->file_share = FILE_SHARE_READ | FILE_SHARE_WRITE;
+    } else {
+        attrs->file_share = 0;
+    }
+
+#elif defined(NCBI_OS_UNIX)
+
+    switch (protect_attr) {
+        case CMemoryFile_Base::eMMP_Read:
+            attrs->map_protect = PROT_READ;
+            attrs->file_access = O_RDONLY;
+            break;
+        case CMemoryFile_Base::eMMP_Write:
+            attrs->map_protect = PROT_WRITE;
+            if  (share_attr == CMemoryFile_Base::eMMS_Shared ) {
+                // Must be read + write
+                attrs->file_access = O_RDWR;
+            } else {
+                attrs->file_access = O_RDONLY;
+            }
+            break;
+        case CMemoryFile_Base::eMMP_ReadWrite:
+            attrs->map_protect = PROT_READ | PROT_WRITE;
+            if  (share_attr == CMemoryFile_Base::eMMS_Shared ) {
+                attrs->file_access = O_RDWR;
+            } else {
+                attrs->file_access = O_RDONLY;
+            }
+            break;
+        default:
+            _TROUBLE;
+    }
+    switch (share_attr) {
+        case CMemoryFile_Base::eMMS_Shared:
+            attrs->map_access = MAP_SHARED;
+            break;
+        case CMemoryFile_Base::eMMS_Private:
+            attrs->map_access = MAP_PRIVATE;
+            break;
+        default:
+            _TROUBLE;
+    }
+
 #endif
+    return attrs;
 }
 
 
-CMemoryFile::CMemoryFile(const string&  file_name,
-                         EMemMapProtect protect,
-                         EMemMapShare   share)
-    : m_Handle(0), m_Size(-1), m_DataPtr(0)
+CMemoryFile_Base::CMemoryFile_Base(void)
 {
-    x_Map(file_name, protect, share);
-
-    if (GetSize() < 0) {
+    // Check if memory-mapping is supported on this platform
+    if ( !IsSupported() ) {
         NCBI_THROW(CFileException, eMemoryMap,
-                   "File memory mapping cannot be created");
+                   "Memory-mapping is not supported by the C++ Toolkit"
+                   "on this platform");
     }
 }
 
 
-CMemoryFile::~CMemoryFile(void)
+bool CMemoryFile_Base::IsSupported(void)
 {
-    Unmap();
-}
-
-
-void CMemoryFile::x_Map(const string&  file_name,
-                        EMemMapProtect protect_attr,
-                        EMemMapShare   share_attr)
-{
-    if ( !IsSupported() )
-        return;
-
-    m_Handle = new SMemoryFileHandle();
-
-    for (;;) { // quasi-TRY block
-
-        CFile file(file_name);
-        m_Size = file.GetLength();
-
-        if (m_Size < 0)
-            break;
-
-        // Special case
-        if (m_Size == 0)
-            return;
-	
-#if defined(NCBI_OS_MSWIN)
-        // Name of a file-mapping object cannot contain '\'
-        string x_name = NStr::Replace(file_name, "\\", "/");
-
-        // Translate attributes 
-        DWORD map_protect = 0, map_access = 0, file_share = 0, file_access = 0;
-        switch (protect_attr) {
-            case eMMP_Read:
-                map_access  = FILE_MAP_READ;
-                map_protect = PAGE_READONLY;
-                file_access = GENERIC_READ;
-                break;
-            case eMMP_Write:
-            case eMMP_ReadWrite:
-                // On MS Windows platform Write & ReadWrite access
-                // to the mapped memory is equivalent
-                if  (share_attr == eMMS_Shared ) {
-                    map_access = FILE_MAP_ALL_ACCESS;
-                } else {
-                    map_access = FILE_MAP_COPY;
-                }
-                map_protect = PAGE_READWRITE;
-                // So the file also must be open for reading and writing
-                file_access = GENERIC_READ | GENERIC_WRITE;
-                break;
-            default:
-                _TROUBLE;
-        }
-        if (share_attr == eMMS_Shared) {
-            file_share = FILE_SHARE_READ | FILE_SHARE_WRITE;
-        } else {
-            file_share = 0;
-        }
-
-        // If failed to attach to an existing file-mapping object then
-        // create a new one (based on the specified file)
-        m_Handle->hMap = OpenFileMapping(map_access, false, x_name.c_str());
-        if ( !m_Handle->hMap ) { 
-            HANDLE hFile = CreateFile(x_name.c_str(), file_access, 
-                                      file_share, NULL, OPEN_EXISTING, 
-                                      FILE_ATTRIBUTE_NORMAL, NULL);
-            if (hFile == INVALID_HANDLE_VALUE)
-                break;
-
-            m_Handle->hMap = CreateFileMapping(hFile, NULL, map_protect,
-                                               0, 0, x_name.c_str());
-            CloseHandle(hFile);
-            if ( !m_Handle->hMap )
-                break;
-        }
-        m_DataPtr = MapViewOfFile(m_Handle->hMap, map_access,
-                                  0, 0, m_Size);
-        if ( !m_DataPtr ) {
-            CloseHandle(m_Handle->hMap);
-            break;
-        }
-
-#elif defined(NCBI_OS_UNIX)
-        // Translate attributes 
-        int map_protect = 0, map_share = 0, file_access = 0;
-        switch (protect_attr) {
-            case eMMP_Read:
-                map_protect = PROT_READ;
-                file_access = O_RDONLY;
-                break;
-            case eMMP_Write:
-                map_protect = PROT_WRITE;
-                if  (share_attr == eMMS_Shared ) {
-                    // Must be read + write
-                    file_access = O_RDWR;
-                } else {
-                    file_access = O_RDONLY;
-                }
-                break;
-            case eMMP_ReadWrite:
-                map_protect = PROT_READ | PROT_WRITE;
-                if  (share_attr == eMMS_Shared ) {
-                    file_access = O_RDWR;
-                } else {
-                    file_access = O_RDONLY;
-                }
-                break;
-            default:
-                _TROUBLE;
-        }
-        switch (share_attr) {
-            case eMMS_Shared:
-                map_share = MAP_SHARED;
-                break;
-            case eMMS_Private:
-                map_share = MAP_PRIVATE;
-                break;
-            default:
-                _TROUBLE;
-        }
-        // Open file
-        int fd = open(file_name.c_str(), file_access);
-        if (fd < 0) {
-            break;
-        }
-        // Map file to memory
-        m_DataPtr = mmap(0, (size_t) m_Size, map_protect, map_share, fd, 0);
-        close(fd);
-        if (m_DataPtr == MAP_FAILED) {
-            break;
-        }
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    return true;
+#else
+    return false;
 #endif
-
-        // Success
-        return;
-    }
-
-    // Error; cleanup
-    delete m_Handle;
-    m_Handle = 0;
-    m_Size = -1;
-}
-
-
-bool CMemoryFile::Flush(void) const
-{
-    // If file is not mapped do nothing
-    if ( !m_Handle )
-        return false;
-    bool status = false;
-
-#if defined(NCBI_OS_MSWIN)
-    status = (FlushViewOfFile(m_DataPtr, 0) != 0);
-#elif defined(NCBI_OS_UNIX)
-    status = (msync((char*)m_DataPtr, (size_t) m_Size, MS_SYNC) == 0);
-#endif
-    return status;
-}
-
-
-bool CMemoryFile::Unmap(void)
-{
-    // If file is not mapped do nothing
-    if ( !m_Handle )
-        return true;
-    bool status = false;
-
-#if defined(NCBI_OS_MSWIN)
-    status = (UnmapViewOfFile(m_DataPtr) != 0);
-    if ( status  &&  m_Handle->hMap )
-        status = (CloseHandle(m_Handle->hMap) != 0);
-#elif defined(NCBI_OS_UNIX)
-    status = (munmap((char*)m_DataPtr, (size_t) m_Size) == 0);
-#endif
-    delete m_Handle;
-
-    // Reinitialize members
-    m_Handle = 0;
-    m_DataPtr = 0;
-    m_Size = -1;
-    return status;
 }
 
 
 #if !defined(HAVE_MADVISE)
-
-bool CMemoryFile::MemMapAdviseAddr(void*, size_t, EMemMapAdvise) {
+bool CMemoryFile_Base::MemMapAdviseAddr(void*, size_t, EMemMapAdvise) {
     return true;
 }
-bool CMemoryFile::MemMapAdvise(EMemMapAdvise) {
-    return true;
-}
-
 #else  /* HAVE_MADVISE */
-
-bool CMemoryFile::MemMapAdviseAddr(void* addr, size_t len,
-                                   EMemMapAdvise advise)
+bool CMemoryFile_Base::MemMapAdviseAddr(void* addr, size_t len,
+                                        EMemMapAdvise advise)
 {
     int adv;
     if (!addr || !len) {
@@ -2023,18 +1924,259 @@ bool CMemoryFile::MemMapAdviseAddr(void* addr, size_t len,
     // Conversion type of "addr" to char* -- Sun Solaris fix
     return madvise((char*)addr, len, adv) == 0;
 }
+#endif  /* HAVE_MADVISE */
 
 
-bool CMemoryFile::MemMapAdvise(EMemMapAdvise advise)
+CMemoryFileMap::CMemoryFileMap(SMemoryFileHandle& handle,
+                               SMemoryFileAttrs&  attrs,
+                               off_t              offset,
+                               size_t             length)
+    : m_DataPtr(0), m_Offset(offset), m_Length(length),
+	  m_DataPtrReal(0), m_OffsetReal(offset), m_LengthReal(length)
 {
-    if (m_DataPtr  &&   m_Size > 0) {
-        return MemMapAdviseAddr(m_DataPtr, m_Size, advise);
-    } else {
-        return false;
+    if ( m_Offset < 0 ) {
+        NCBI_THROW(CFileException, eMemoryMap,
+            "CMemoryFileMap: The file offset cannot be negative");
+    }
+    if ( !m_Length ) {
+        NCBI_THROW(CFileException, eMemoryMap,
+            "CMemoryFileMap: The length of file mapping region must be above 0");
+    }
+    // Get system's memory allocation granularity.
+#if defined(NCBI_OS_MSWIN)
+    SYSTEM_INFO si;
+    GetSystemInfo(&si); 
+    DWORD mag = si.dwAllocationGranularity;
+#elif defined(NCBI_OS_UNIX)
+    long mag = sysconf(_SC_PAGESIZE);
+    if ( mag <= 0 ) {
+        NCBI_THROW(CFileException, eMemoryMap,
+            "CMemoryFileMap: Cannot determine size virtual page");
+    }    
+#endif
+    // Adjust mapped length and offset.
+    if ( m_Offset % mag ) {
+        m_OffsetReal -= (m_Offset % mag);
+        m_LengthReal += (m_Offset % mag);
+    }
+
+    // Map file view to memory
+#if defined(NCBI_OS_MSWIN)
+    DWORD offset_hi  = DWORD(Int8(m_OffsetReal) >> 32);
+    DWORD offset_low = DWORD(Int8(m_OffsetReal) & 0xFFFFFFFF);
+    m_DataPtrReal = MapViewOfFile(handle.hMap, attrs.map_access,
+                                  offset_hi, offset_low, m_LengthReal);
+#elif defined(NCBI_OS_UNIX)
+    m_DataPtrReal = mmap(0, m_LengthReal, attrs.map_protect,
+                         attrs.map_access, handle.hMap, m_OffsetReal);
+    if (m_DataPtrReal == MAP_FAILED) {
+        m_DataPtrReal = 0;
+    }
+#endif
+    // Calculate user's pointer to data
+    m_DataPtr = (char*)m_DataPtrReal + (m_Offset - m_OffsetReal);
+    if ( !m_DataPtr ) {
+        NCBI_THROW(CFileException, eMemoryMap,
+            "CMemoryFileMap: Unable to map a view of a file into memory " \
+            "(offset=" +
+            NStr::Int8ToString(m_Offset) + ", length=" +
+            NStr::Int8ToString(m_Length) + ")");
     }
 }
 
-#endif  /* HAVE_MADVISE */
+
+CMemoryFileMap::~CMemoryFileMap(void)
+{
+    Unmap();
+}
+
+
+bool CMemoryFileMap::Flush(void) const
+{
+    if ( !m_DataPtr ) {
+        return false;
+    }
+    bool status;
+#if defined(NCBI_OS_MSWIN)
+    status = (FlushViewOfFile(m_DataPtrReal, m_LengthReal) != 0);
+#elif defined(NCBI_OS_UNIX)
+    status = (msync((char*)m_DataPtrReal, m_LengthReal, MS_SYNC) == 0);
+#endif
+    return status;
+}
+
+
+bool CMemoryFileMap::Unmap(void)
+{
+    // If file view is not mapped do nothing
+    if ( !m_DataPtr ) {
+        return true;
+    }
+    bool status;
+#if defined(NCBI_OS_MSWIN)
+    status = (UnmapViewOfFile(m_DataPtrReal) != 0);
+#elif defined(NCBI_OS_UNIX)
+    status = (munmap((char*)m_DataPtrReal, (size_t) m_Length) == 0);
+#endif
+    if ( status ) {
+        m_DataPtr = 0;
+    }
+    return status;
+}
+
+
+void CMemoryFileMap::x_Verify(void) const
+{
+    if ( m_DataPtr ) {
+        return;
+    }
+    NCBI_THROW(CFileException, eMemoryMap,
+               "CMemoryFileMap: File view is not mapped");
+}
+
+
+bool CMemoryFileMap::MemMapAdvise(EMemMapAdvise advise)
+{
+    if ( !m_DataPtr ) {
+        return false;
+    }
+    return MemMapAdviseAddr(m_DataPtr, m_Length, advise);
+}
+
+
+CMemoryFile::CMemoryFile(const string&  file_name,
+                         EMemMapProtect protect,
+                         EMemMapShare   share,
+                         off_t          offset,
+                         size_t         length)
+    : m_FileName(file_name), m_FileSize(0), m_Handle(0), m_Attrs(0), m_Map(0)
+{
+    // Translate attributes 
+    m_Attrs = s_TranslateAttrs(protect, share);
+
+    // Check file size
+    m_FileSize = GetFileSize();
+    if (m_FileSize < 0) {
+        NCBI_THROW(CFileException, eMemoryMap,
+            "CMemoryFile: The mapped file \"" + m_FileName +"\" must exists");
+    }
+
+    // Open file
+    if (m_FileSize == 0) {
+        // Special case -- file is empty
+        m_Handle = new SMemoryFileHandle();
+        m_Handle->hMap = 0;
+        return;
+    }
+    x_Open();
+    // Map file wholly if the length of mapped region is not specified
+    if ( !length ) {
+        length = (size_t)m_FileSize;
+    }
+    // Map view of file
+    m_Map = new CMemoryFileMap(*m_Handle, *m_Attrs, offset, length);
+}
+
+
+CMemoryFile::~CMemoryFile(void)
+{
+    // Unmap memory and close file
+    x_Close();
+}
+
+
+void CMemoryFile::x_Open(void)
+{
+    m_Handle = new SMemoryFileHandle();
+    m_Handle->hMap = 0;
+
+    for (;;) { // quasi-TRY block
+
+#if defined(NCBI_OS_MSWIN)
+        // Name of a file-mapping object cannot contain '\'
+        string x_name = NStr::Replace(m_FileName, "\\", "/");
+
+        // If failed to attach to an existing file-mapping object then
+        // create a new one (based on the specified file)
+        m_Handle->hMap = OpenFileMapping(m_Attrs->map_access, false,
+                                         x_name.c_str());
+        if ( !m_Handle->hMap ) { 
+            HANDLE hFile = CreateFile(x_name.c_str(), m_Attrs->file_access, 
+                                      m_Attrs->file_share, NULL,
+                                      OPEN_EXISTING,
+                                      FILE_ATTRIBUTE_NORMAL, NULL);
+            if (hFile == INVALID_HANDLE_VALUE)
+                break;
+
+            m_Handle->hMap = CreateFileMapping(hFile, NULL,
+                                               m_Attrs->map_protect,
+                                               0, 0, x_name.c_str());
+            CloseHandle(hFile);
+            if ( !m_Handle->hMap ) {
+                break;
+            }
+        }
+
+#elif defined(NCBI_OS_UNIX)
+        // Open file
+        m_Handle->hMap = open(m_FileName.c_str(), m_Attrs->file_access);
+        if (m_Handle->hMap < 0) {
+            break;
+        }
+#endif
+        // Success
+        return;
+    }
+    // Error: close and cleanup
+    x_Close();
+    NCBI_THROW(CFileException, eMemoryMap,
+        "CMemoryFile: Unable to map file \"" + m_FileName + "\" into memory");
+}
+
+
+void CMemoryFile::x_Close()
+{
+    // Unmap mapped view of a file
+    Unmap();
+    // Close handle and cleanup
+    if ( m_Handle ) {
+        if ( m_Handle->hMap ) { 
+#if defined(NCBI_OS_MSWIN)
+            CloseHandle(m_Handle->hMap);
+#elif defined(NCBI_OS_UNIX)
+            close(m_Handle->hMap);
+#endif
+        }
+        delete m_Handle;
+        m_Handle  = 0;
+    }
+    if ( m_Attrs ) {
+        delete m_Attrs;
+        m_Attrs = 0;
+    }
+}
+
+
+void CMemoryFile::x_Verify(void) const
+{
+    if ( m_Map ) {
+        return;
+    }
+    NCBI_THROW(CFileException, eMemoryMap,"CMemoryFile: File is not mapped");
+}
+
+
+bool CMemoryFile::Unmap()
+{
+    // Unmap mapped view of a file
+    bool status = true;
+    if ( m_Map ) {
+        status = m_Map->Unmap();
+        delete m_Map;
+        m_Map = 0;
+    }
+    return status;
+}
 
 
 END_NCBI_SCOPE
@@ -2043,6 +2185,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2004/07/28 15:47:08  ivanov
+ * + CMemoryFile_Base, CMemoryFileMap.
+ * Added "offset" and "length" parameters to CMemoryFile constructor to map
+ * a part of file.
+ *
  * Revision 1.78  2004/05/18 16:51:34  ivanov
  * Added CDir::GetTmpDir()
  *

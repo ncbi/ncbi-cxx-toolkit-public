@@ -75,7 +75,7 @@ public:
         eRelativePath
     };
 
-    /// Translate from the error code value to its string representation.
+    /// Translate from an error code value to its string representation.
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
@@ -102,7 +102,7 @@ enum EFollowLinks {
 ///
 /// Base class to work with files and directories.
 ///
-/// Models the directory entry structure for the file system. Assumes that
+/// Models a directory entry structure for the file system. Assumes that
 /// the path argument has the following form, where any or all components may
 /// be missing:
 ///
@@ -110,7 +110,7 @@ enum EFollowLinks {
 ///
 /// - dir   - file path             ("/usr/local/bin/"  or  "c:\windows\")
 /// - title - file name without ext ("autoexec")
-/// - ext   - file extension        (".bat" - whatever goes after the last dot)
+/// - ext   - file extension        (".bat" - whatever goes after a last dot)
 ///
 /// Supported filename formats:  MS DOS/Windows, UNIX and MAC.
 
@@ -156,7 +156,7 @@ public:
     // Path processing.
     //
 
-    /// Split the path string into its basic components.
+    /// Split a path string into its basic components.
     ///
     /// @param path
     ///   Path string to be split.
@@ -169,7 +169,7 @@ public:
     static void SplitPath(const string& path,
                           string* dir = 0, string* base = 0, string* ext = 0);
 
-    /// Get the Directory component for this directory entry.
+    /// Get the directory component for this directory entry.
     string GetDir (void) const;
 
     /// Get the base entry name with extension.
@@ -197,10 +197,11 @@ public:
                            const string& base = kEmptyStr,
                            const string& ext  = kEmptyStr);
 
-    /// Get path separator symbol specific for the platform.
+    /// Get path separator symbol specific for current platform.
     static char GetPathSeparator(void);
 
-    /// Check character "c" as path separator symbol specific for the platform.
+    /// Check character "c" as path separator symbol specific for
+    /// current platform.
     static bool IsPathSeparator(const char c);
 
     /// Add trailing path separator, if needed.
@@ -863,10 +864,12 @@ void FindFiles(TContainer&           out,
 ///
 
 template<class TContainer, class It1, class It2>
-void FindFiles(TContainer&      out, 
-               It1  first_path, It1 last_path, 
-               It2  first_mask, It2 last_mask,
-               TFindFiles           flags = fFF_Default)
+void FindFiles(TContainer&  out, 
+               It1          first_path,
+               It1          last_path, 
+               It2          first_mask,
+               It2          last_mask,
+               TFindFiles   flags = fFF_Default)
 {
     CFindFileNamesFunc<TContainer> func(out);
     FindFiles(first_path, last_path, 
@@ -880,81 +883,39 @@ void FindFiles(TContainer&      out,
 /// fwd-decl of struct containing OS-specific mem.-file handle.
 
 struct SMemoryFileHandle;
-
+struct SMemoryFileAttrs;
 
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CMemoryFile --
+/// CMemoryFile_Base --
 ///
-/// Define class for support file memory mapping.
+/// Define base class for support file memory mapping. 
 
-class NCBI_XNCBI_EXPORT CMemoryFile
+class NCBI_XNCBI_EXPORT CMemoryFile_Base
 {
 public:
     /// Which operations are permitted in memory map file.
     typedef enum {
-        eMMP_Read,            ///< Data can be read
-        eMMP_Write,           ///< Data can be written
+        eMMP_Read,        ///< Data can be read
+        eMMP_Write,       ///< Data can be written
         eMMP_ReadWrite    ///< Data can be read and written
     } EMemMapProtect;
 
     /// Whether to share changes or not.
     typedef enum {
-        eMMS_Shared,      ///< Changes are shared.
-        eMMS_Private      ///< Changes are private.
+        eMMS_Shared,      ///< Changes are shared
+        eMMS_Private      ///< Changes are private
     } EMemMapShare;
 
     /// Constructor.
     ///
-    /// Initialize the memory mapping on file "file_name".  Throws an
-    /// exception on error.
-    /// @param filename
-    ///   Name of file to map to memory.
-    /// @param protect_attr
-    ///   Specify operations permitted on memory mapped file.
-    /// @param share_attr
-    ///   Specify if change to memory mapped file can be shared or not.
-    /// @sa
-    ///   EMemMapProtect, EMemMapShare
-    CMemoryFile(const string&  file_name,
-                EMemMapProtect protect_attr = eMMP_Read,
-                EMemMapShare   share_attr   = eMMS_Private);
+    CMemoryFile_Base(void);
 
-    /// Destructor.
-    ///
-    /// Calls Unmap() and cleans up memory mapped file.
-    ~CMemoryFile(void);
 
     /// Check if memory-mapping is supported by the C++ Toolkit on this
     /// platform.
     static bool IsSupported(void);
-
-    /// Get pointer to beginning of data.
-    ///
-    /// @return
-    ///    - Pointer to start of data, or
-    ///    - NULL if mapped to a file of zero length, or if unmapped already.
-    void* GetPtr(void) const;
-
-    /// Get size of the mapped area.
-    ///
-    /// @return
-    ///   - Size in bytes of mapped area, or
-    ///   - -1 if unmapped already.
-    Int8 GetSize(void) const;
-
-    /// Flush by writing all modified copies of memory pages to the
-    /// underlying file.
-    ///
-    /// NOTE: By default data will be flushed in Unmap() or destructor.
-    bool Flush(void) const;
-
-    /// Unmap file if mapped.
-    ///
-    /// @return
-    ///   TRUE on success; or FALSE on error.
-    bool Unmap(void);
 
     /// What type of data access pattern will be used for mapped region.
     ///
@@ -971,18 +932,6 @@ public:
         eMMA_DontNeed     ///< Don't need these pages
     } EMemMapAdvise;
 
-    /// Advise on memory map usage.
-    ///
-    /// @param advise
-    ///   One of the values in EMemMapAdvise that advises on expected
-    ///   usage pattern.
-    /// @return
-    ///   - TRUE, if memory advise operation successful. Always return
-    ///   TRUE if memory advise not implemented such as on Windows system.
-    ///   - FALSE, if memory advise operation not successful.
-    /// @sa
-    ///   EMemMapAdvise, MemMapAdviseAddr
-    bool MemMapAdvise(EMemMapAdvise advise);
 
     /// Advise on memory map usage for specified region.
     ///
@@ -999,28 +948,293 @@ public:
     ///   - FALSE, if memory advise operation not successful.
     /// @sa
     ///   EMemMapAdvise, MemMapAdvise
-    static bool MemMapAdviseAddr(void* addr, size_t len, EMemMapAdvise advise);
+    static bool MemMapAdviseAddr(void* addr, size_t len,EMemMapAdvise advise);
+};
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CMemoryFileMap --
+///
+/// Define class for mapping a memory file region of the file into
+/// the address space of the calling process. 
+/// 
+/// Throws an exceptions on error.
+
+class NCBI_XNCBI_EXPORT CMemoryFileMap : public CMemoryFile_Base
+{
+public:
+    /// Constructor.
+    ///
+    /// Maps a view of the file, represented by "handle", into the address
+    /// space of the calling process. 
+    /// @param handle
+    ///   Handle to view of the mapped file. 
+    /// @param attr
+    ///   Specify operations permitted on memory mapped region.
+    /// @param offset
+    ///   The file offset where mapping is to begin.
+    ///   Cannot accept values less than 0.
+    /// @param length
+    ///   Number of bytes to map. The parameter value should be more than 0.
+    /// @sa
+    ///    EMemMapProtect, EMemMapShare, GetPtr(), GetSize(), GetOffset().
+    CMemoryFileMap(SMemoryFileHandle& handle,
+                   SMemoryFileAttrs&  attrs,
+                   off_t              offset,
+                   size_t             lendth);
+
+    /// Destructor.
+    ///
+    /// Unmaps a mapped area of the file.
+    ~CMemoryFileMap(void);
+
+    /// Get pointer to beginning of data.
+    ///
+    /// @return
+    ///    - Pointer to start of data, or
+    ///    - NULL if mapped to a file of zero length, or if not mapped.
+    void* GetPtr(void) const;
+
+    /// Get offset of the mapped area from beginning of file.
+    ///
+    /// @return
+    ///   Offset in bytes of mapped area from beginning of the file.
+    ///   Always return value passed in constructor even if data
+    ///   was not succesfully mapped.
+    off_t GetOffset(void) const;
+
+    /// Get length of the mapped area.
+    ///
+    /// @return
+    ///   - Length in bytes of the mapped area, or
+    ///   - 0 if not mapped.
+    size_t GetSize(void) const;
+
+    /// Get pointer to beginning of really mapped data.
+    ///
+    /// When the mapping object is creating and the offset is not a multiple
+    /// of the allocation granularity, that offset and length can be adjusted
+    /// to match it. The "length" value will be automaticaly increased on the
+    /// difference between passed and real offsets.
+    /// @return
+    ///    - Pointer to start of data, or
+    ///    - NULL if mapped to a file of zero length, or if not mapped.
+    /// @sa
+    ///    GetRealOffset(), GetRealSize(), GetPtr(). 
+    void* GetRealPtr(void) const;
+
+    /// Get real offset of the mapped area from beginning of file.
+    ///
+    /// This real offset is adjusted to system's memory allocation granularity
+    /// value and can be less than requested "offset" in the constructor.
+    /// @return
+    ///   Offset in bytes of mapped area from beginning of the file.
+    ///   Always return adjusted value even if data was not succesfully mapped.
+    /// @sa
+    ///    GetRealPtr(), GetRealSize(), GetOffset(). 
+    off_t GetRealOffset(void) const;
+
+    /// Get real length of the mapped area.
+    ///
+    /// Number of really mapped bytes of file. This length value can be
+    /// increased if "offset" is not a multiple of the allocation granularity.
+    /// @return
+    ///   - Length in bytes of the mapped area, or
+    ///   - 0 if not mapped.
+    /// @sa
+    ///    GetRealPtr(), GetRealOffset(), GetSize(). 
+    size_t GetRealSize(void) const;
+
+    /// Flush by writing all modified copies of memory pages to the
+    /// underlying file.
+    ///
+    /// NOTE: By default data will be flushed in the destructor.
+    /// @return
+    ///   - TRUE, if all data was flushed succesfully.
+    ///   - FALSE, if not mapped or if an error occurs.
+    bool Flush(void) const;
+
+    /// Unmap file view from memory.
+    ///
+    /// @return
+    ///   TRUE on success; or FALSE on error.
+    bool Unmap(void);
+
+    /// Advise on memory map usage.
+    ///
+    /// @param advise
+    ///   One of the values in EMemMapAdvise that advises on expected
+    ///   usage pattern.
+    /// @return
+    ///   - TRUE, if memory advise operation successful. Always return
+    ///     TRUE if memory advise not implemented such as on Windows system.
+    ///   - FALSE, if memory advise operation not successful.
+    /// @sa
+    ///   EMemMapAdvise, MemMapAdviseAddr
+    bool MemMapAdvise(EMemMapAdvise advise);
 
 private:
-    /// Helper method to map file to memory.
+    // Check that file is mapped, throw excepton otherwise.
+    void x_Verify(void) const;
+
+private:
+    // Values for user
+    void*   m_DataPtr;     ///< Pointer to the begining of the mapped area.
+                           ///> The user seen this one.
+    off_t   m_Offset;      ///< Requested starting offset of the
+                           ///< mapped area from begining of file.
+    size_t  m_Length;      ///< Requested length of the mapped area.
+
+    // Internal real values
+    void*   m_DataPtrReal; ///< Real pointer to the begining of the mapped
+                           ///< area which should be fried later.
+    off_t   m_OffsetReal;  ///< Corrected starting offset of the
+                           ///< mapped area from begining of file.
+    size_t  m_LengthReal;  ///< Corrected length of the mapped area.
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CMemoryFile --
+///
+/// Define class for support file memory mapping.
+///
+/// Note, that the mapping file must exists and have non-zero length.
+/// This class cannot increase size of mapped file. If the size of
+/// the mapped file changes, the effect of references to portions of
+/// the mapped region that correspond to added or removed portions of the
+/// file is unspecified.
+///
+/// Throws an exceptions on error.
+
+class NCBI_XNCBI_EXPORT CMemoryFile : public CMemoryFile_Base
+{
+public:
+    /// Constructor.
     ///
+    /// Initialize the memory mapping on file "file_name".
     /// @param filename
     ///   Name of file to map to memory.
     /// @param protect_attr
     ///   Specify operations permitted on memory mapped file.
     /// @param share_attr
     ///   Specify if change to memory mapped file can be shared or not.
+    /// @param offset
+    ///   The file offset where mapping is to begin. If the offset is not
+    ///   a multiple of the allocation granularity, that it can be decreased 
+    ///   to match it. The "length" value will be automaticaly increased on
+    ///   the difference between passed and real offsets. The real offset can
+    ///   be obtained using GetOffset(). The parameter must be more than 0.
+    /// @param length
+    ///   Number of bytes to map. This value can be increased if "offset"
+    ///   is not a multiple of the allocation granularity.
+    ///   The real length of mapped region can be obtained using GetSize().
+    ///   The value 0 means that all file size will be mapped.
     /// @sa
     ///   EMemMapProtect, EMemMapShare
-    void x_Map(const string&  file_name,
-               EMemMapProtect protect_attr,
-               EMemMapShare   share_attr);
+    CMemoryFile(const string&  file_name,
+                EMemMapProtect protect_attr = eMMP_Read,
+                EMemMapShare   share_attr   = eMMS_Private,
+                off_t          offset       = 0,
+                size_t         lendth       = 0);
+
+    /// Destructor.
+    ///
+    /// Calls Unmap() and cleans up memory.
+    ~CMemoryFile(void);
+
+    /// Unmap file if mapped.
+    ///
+    /// @return
+    ///   TRUE on success; or FALSE on error.
+    bool Unmap(void);
+
+    /// Get pointer to beginning of data.
+    ///
+    /// @return
+    ///   Pointer to start of data.
+    void* GetPtr(void) const;
+
+    /// Get offset of the mapped area from beginning of the file.
+    ///
+    /// The offset can be adjusted to system's memory allocation granularity
+    /// value and can differ from "offset" parameter in the class constructor
+    /// or in the Map() method.
+    /// @return
+    ///   Offset in bytes of mapped area from beginning of the file.
+    off_t GetOffset(void) const;
+
+    /// Get length of the mapped area.
+    ///
+    /// @return
+    ///   Length in bytes of the mapped area.
+    size_t GetSize(void) const;
+
+    /// Get length of the mapped file.
+    ///
+    /// @return
+    ///   Size in bytes of the mapped file.
+    Int8 GetFileSize(void) const;
+
+    /// Flush by writing all modified copies of memory pages to the
+    /// underlying file.
+    ///
+    /// NOTE: By default data will be flushed in the destructor.
+    /// @return
+    ///   - TRUE, if all data was flushed succesfully.
+    ///   - FALSE, if not mapped or if an error occurs.
+    bool Flush(void) const;
+
+    /// What type of data access pattern will be used for mapped region.
+    ///
+    /// Advises the VM system that the a certain region of user mapped memory 
+    /// will be accessed following a type of pattern. The VM system uses this 
+    /// information to optimize work with mapped memory.
+    ///
+    /// NOTE: Now works on UNIX platform only.
+    typedef enum {
+        eMMA_Normal,      ///< No further special treatment.
+        eMMA_Random,      ///< Expect random page references.
+        eMMA_Sequential,  ///< Expect sequential page references.
+        eMMA_WillNeed,    ///< Will need these pages.
+        eMMA_DontNeed     ///< Don't need these pages.
+    } EMemMapAdvise;
+
+    /// Advise on memory map usage.
+    ///
+    /// @param advise
+    ///   One of the values in EMemMapAdvise that advises on expected
+    ///   usage pattern.
+    /// @return
+    ///   - TRUE, if memory advise operation successful. Always return
+    ///   TRUE if memory advise not implemented such as on Windows system.
+    ///   - FALSE, if memory advise operation not successful.
+    /// @sa
+    ///   EMemMapAdvise, MemMapAdviseAddr
+    bool MemMapAdvise(EMemMapAdvise advise);
 
 private:
-    SMemoryFileHandle*  m_Handle;   ///< Memory file handle
-    Int8                m_Size;     ///< Size (in bytes) of the mapped area
-    void*               m_DataPtr;  ///< Pointer to the begining of mapped
-                                    ///< data
+    // Open file mapping for file with name m_FileName.
+    void x_Open(void);
+
+    // Unmap mapped memory and close all handles.
+    void x_Close(void);
+
+    // Check that file is mapped, throw excepton otherwise.
+    void x_Verify(void) const;
+
+private:
+    string              m_FileName;  ///< File name. 
+    Int8                m_FileSize;  ///< Size (in bytes) of mapped file;
+    SMemoryFileHandle*  m_Handle;    ///< Memory file handle.
+    SMemoryFileAttrs*   m_Attrs;     ///< Specify operations permitted on
+                                     ///< memory mapped file and mapping mode.
+    CMemoryFileMap*     m_Map;       ///< Memory mapper.
 };
 
 
@@ -1119,18 +1333,88 @@ bool CDir::Exists(void) const
 }
 
 
-// CMemoryFile
+
+// CMemoryFileMap
 
 inline
-void* CMemoryFile::GetPtr(void) const
+void* CMemoryFileMap::GetPtr(void) const
 {
     return m_DataPtr;
 }
 
 inline
-Int8 CMemoryFile::GetSize(void) const
+size_t CMemoryFileMap::GetSize(void) const
 {
-    return m_Size;
+    return m_Length;
+}
+
+
+inline
+off_t CMemoryFileMap::GetOffset(void) const
+{
+    return m_Offset;
+}
+
+inline
+void* CMemoryFileMap::GetRealPtr(void) const
+{
+    return m_DataPtrReal;
+}
+
+inline
+size_t CMemoryFileMap::GetRealSize(void) const
+{
+    return m_LengthReal;
+}
+
+
+inline
+off_t CMemoryFileMap::GetRealOffset(void) const
+{
+    return m_OffsetReal;
+}
+
+// CMemoryFile
+
+inline
+void* CMemoryFile::GetPtr(void) const
+{
+    if ( !m_Map ) {
+        // Special case.
+        // Always return 0 if a file is unmapped or have zero length.
+        return 0;
+    }
+    return m_Map->GetPtr();
+}
+
+inline
+Int8 CMemoryFile::GetFileSize(void) const
+{
+    return CFile(m_FileName).GetLength();
+}
+
+inline
+size_t CMemoryFile::GetSize(void) const
+{
+    if ( !m_Map &&  m_FileSize == 0) {
+        return 0;
+    }
+    x_Verify();
+    return m_Map->GetSize();
+}
+
+inline
+off_t CMemoryFile::GetOffset(void) const
+{
+    x_Verify();
+    return m_Map->GetOffset();
+}
+
+inline
+bool CMemoryFile::Flush(void) const
+{
+    x_Verify();
+    return m_Map->Flush();
 }
 
 
@@ -1140,6 +1424,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/07/28 15:47:17  ivanov
+ * + CMemoryFile_Base, CMemoryFileMap.
+ * Added "offset" and "length" parameters to CMemoryFile constructor to map
+ * a part of file.
+ *
  * Revision 1.42  2004/05/18 16:51:25  ivanov
  * Added CDir::GetTmpDir()
  *
