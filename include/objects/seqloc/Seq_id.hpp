@@ -355,7 +355,7 @@ private:
 // Return the id of requested type, or null CRef.
 template<class container>
 CRef<CSeq_id> GetSeq_idByType(const container& ids,
-                              CSeq_id::E_Choice choice)
+                                    CSeq_id::E_Choice choice)
 {
     ITERATE (typename container, iter, ids) {
         if ((*iter)->Which() == choice){
@@ -371,6 +371,19 @@ int FindGi(const container& ids)
 {
     CRef<CSeq_id> id = GetSeq_idByType(ids, CSeq_id::e_Gi);
     return id ? id->GetGi() : 0;
+}
+
+
+//return text seq-id from id list if exists, return 0 otherwise
+template<class container>
+CRef<CSeq_id> FindTextseq_id(const container& ids)
+{
+    ITERATE (typename container, iter, ids) {
+        if ( (*iter)->GetTextseq_Id() ) {
+            return *iter;
+        }
+    }
+    return CRef<CSeq_id>(0);
 }
 
 
@@ -491,6 +504,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.46  2004/04/28 14:13:17  grichenk
+ * Added FindTextseq_id()
+ *
  * Revision 1.45  2004/04/19 18:20:16  grichenk
  * Added GetSeq_idByType() and FindGi()
  *
