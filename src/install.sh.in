@@ -170,13 +170,9 @@ case "`uname`" in
   Darwin ) bs=63 ;;
   *      ) bs=200 ;;
 esac
-if test "`uname`" = Darwin -a -x /Developer/Tools/CpMac; then
+if test "`uname`" = Darwin -a -x /usr/bin/ditto; then
    for d in $install_dirs ; do
-      /Developer/Tools/CpMac -r $build_dir/$d $install_dir/$d
-      test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
-      # Preserve time stamps (CpMac -p -r glitches out)
-      (cd $install_dir/$d  &&  find . -type f \
-          | while read f; do touch -r $build_dir/$d/$f $f; done)
+      ditto -rsrcFork $build_dir/$d $install_dir/$d
       test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
    done
 else
