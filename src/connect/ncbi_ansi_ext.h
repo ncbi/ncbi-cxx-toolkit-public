@@ -32,7 +32,7 @@
  *   Non-ANSI, yet widely used functions
  *
  */
-
+#include <connect/connect_export.h>
 #include "ncbi_config.h"
 #include <stddef.h>
 #include <string.h>
@@ -72,13 +72,13 @@ extern char* strdup(const char* str);
  * Return less than, equal to or greater than zero if
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
-extern int strcasecmp(const char* s1, const char* s2);
+extern NCBI_XCONNECT_EXPORT int strcasecmp(const char* s1, const char* s2);
 
 /* Compare not more than "n" characters of "s1" and "s2", ignoring case.
  * Return less than, equal to or greater than zero if
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
-extern int strncasecmp(const char* s1, const char* s2, size_t n);
+extern NCBI_XCONNECT_EXPORT int strncasecmp(const char* s1, const char* s2, size_t n);
 
 #endif/*HAVE_STRCASECMP*/
 
@@ -94,13 +94,13 @@ extern int strncasecmp(const char* s1, const char* s2, size_t n);
  * the altered string. Because the conversion is made in place, the
  * returned pointer is the same as the passed one.
  */
-extern char* strupr(char* s);
+extern NCBI_XCONNECT_EXPORT char* strupr(char* s);
 
 /* Convert a string to lowercase, then return pointer to
  * the altered string. Because the conversion is made in place, the
  * returned pointer is the same as the passed one.
  */
-extern char* strlwr(char* s);
+extern NCBI_XCONNECT_EXPORT char* strlwr(char* s);
 
 
 /* Copy not more than "n" characters from string "s2" into "s1"
@@ -109,7 +109,7 @@ extern char* strlwr(char* s);
  * that the result is always null-terminated and that the function
  * does not pad "s1" with null bytes should "s2" be shorter than "n".
  */
-extern char* strncpy0(char* s1, const char* s2, size_t n);
+extern NCBI_XCONNECT_EXPORT char* strncpy0(char* s1, const char* s2, size_t n);
 
 
 #ifdef __cplusplus
@@ -120,6 +120,9 @@ extern char* strncpy0(char* s1, const char* s2, size_t n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2004/03/12 23:25:37  gorelenk
+ * Added export prefixes.
+ *
  * Revision 6.11  2002/10/28 15:41:25  lavr
  * Header made private (moved from include/connect to here)
  *

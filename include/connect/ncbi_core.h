@@ -153,7 +153,7 @@ typedef enum {
 
 /* Return verbal description of the I/O status
  */
-extern const char* IO_StatusStr(EIO_Status status);
+extern NCBI_XCONNECT_EXPORT const char* IO_StatusStr(EIO_Status status);
 
 
 
@@ -480,6 +480,9 @@ extern NCBI_XCONNECT_EXPORT void REG_Set
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.25  2004/03/12 23:26:22  gorelenk
+ * Added export prefixes.
+ *
  * Revision 6.24  2003/09/02 20:45:45  lavr
  * -<connect/connect_export.h> -- now included from <connect/ncbi_types.h>
  *

@@ -56,7 +56,7 @@ extern "C" {
 /* Always use the following macros and functions to access "g_CORE_MT_Lock",
  * dont access/change it directly!
  */
-extern MT_LOCK g_CORE_MT_Lock;
+extern NCBI_XCONNECT_EXPORT MT_LOCK g_CORE_MT_Lock;
 
 #define CORE_LOCK_WRITE  verify( MT_LOCK_Do(g_CORE_MT_Lock, eMT_Lock    ) )
 #define CORE_LOCK_READ   verify( MT_LOCK_Do(g_CORE_MT_Lock, eMT_LockRead) )
@@ -71,9 +71,9 @@ extern MT_LOCK g_CORE_MT_Lock;
 /* Always use the following macros and functions to access "g_CORE_Log",
  * dont access/change it directly!
  */
-extern LOG g_CORE_Log;
+extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
 
-extern const char* g_CORE_Sprintf(const char* fmt, ...)
+extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 #ifdef __GNUC__
          __attribute__((format(printf, 1, 2)))
 #endif
@@ -154,7 +154,7 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
 /* Always use the following macros and functions to access "g_CORE_Registry",
  * dont access/change it directly!
  */
-extern REG g_CORE_Registry;
+extern NCBI_XCONNECT_EXPORT REG g_CORE_Registry;
 
 #define CORE_REG_GET(section, name, value, value_size, def_value) \
     g_CORE_RegistryGET(section, name, value, value_size, def_value)
@@ -167,7 +167,7 @@ extern REG g_CORE_Registry;
 
 
 /* (private, to be used exclusively by the above macro CORE_REG_GET) */
-extern char* g_CORE_RegistryGET
+extern NCBI_XCONNECT_EXPORT char* g_CORE_RegistryGET
 (const char* section,
  const char* name,
  char*       value,
@@ -183,6 +183,9 @@ extern char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2004/03/12 23:25:37  gorelenk
+ * Added export prefixes.
+ *
  * Revision 6.9  2002/12/05 21:43:00  lavr
  * Swap level and errno in CORE_LOG[F]_ERRNO(); add CORE_LOG[F]_ERRNO_EX()
  *
