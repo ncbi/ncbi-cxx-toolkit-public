@@ -49,7 +49,8 @@ typedef enum EGapAlignOpType {
    eGapAlignIns1 = 4,/**< Frame shift insertion of one nucleotide */
    eGapAlignIns2 = 5,/**< Frame shift insertion of two nucleotides */
    eGapAlignIns = 6, /**< Insertion: a gap in subject */
-   eGapAlignDecline = 7 /**< Non-aligned region */
+   eGapAlignDecline = 7, /**< Non-aligned region */
+   eGapAlignInvalid = 8 /**< Invalid operation */
 } EGapAlignOpType;
 
 /** Edit script: linked list of correspondencies between two sequences */
@@ -58,6 +59,13 @@ typedef struct GapEditScript {
    Int4 num;                   /**< Number of operations */
    struct GapEditScript* next; /**< Pointer to next link */
 } GapEditScript;
+
+/** A version of GapEditScript used to store initial results
+    from the gapped alignment routines */
+typedef struct GapPrelimEditScript {
+   EGapAlignOpType op_type;    /**< Type of operation */
+   Int4 num;                   /**< Number of operations */
+} GapPrelimEditScript;
 
 /** Editing block structure containing all information returned from a 
  * single gapped extension. */
@@ -78,6 +86,16 @@ typedef struct GapEditBlock {
    GapEditScript* esp; /**< Editing script for the traceback. */
 } GapEditBlock;
 
+/** Preliminary version of GapEditBlock, used directly by the low-
+ * level dynamic programming routines 
+ */
+typedef struct GapPrelimEditBlock {
+    GapPrelimEditScript *edit_ops;  /**< array of edit operations */
+    Uint4 num_ops_allocated;        /**< size of allocated array */
+    Uint4 num_ops;                  /**< number of edit ops presently in use */
+    EGapAlignOpType last_op;        /**< most recent operation added */
+} GapPrelimEditBlock;
+
 /** Structure to keep memory for state structure. */ 
 typedef struct GapStateArrayStruct {
 	Int4 	length,		/**< length of the state_array. */
@@ -86,23 +104,69 @@ typedef struct GapStateArrayStruct {
 	struct GapStateArrayStruct* next; /**< Next link in the list. */
 } GapStateArrayStruct;
 
-/** Initialize the gap editing script structure. */
+/** Initialize the edit script structure. 
+ *  @param old Pointer to existing edit script to which
+ *         the new script will be appended
+ *  @return Pointer to the new edit script
+ */
 GapEditScript* 
 GapEditScriptNew (GapEditScript* old);
 
-/** Free the gap editing script structure. */
-GapEditScript* GapEditScriptDelete (GapEditScript* esp);
+/** Free all links of an edit script structure. 
+ *  @param esp Pointer to first link in the edit script [in]
+ *  @return Always NULL
+ */
+GapEditScript* 
+GapEditScriptDelete (GapEditScript* esp);
 
-/** Initialize the gap editing block structure. 
+/** Initialize an edit block structure. 
  * @param start1 Offset to start alignment in first sequence. [in]
  * @param start2 Offset to start alignment in second sequence. [in]
  */
-GapEditBlock* GapEditBlockNew (Int4 start1, Int4 start2);
+GapEditBlock* 
+GapEditBlockNew (Int4 start1, Int4 start2);
 
-/** Free the edit block structure. */
-GapEditBlock* GapEditBlockDelete (GapEditBlock* edit_block);
+/** Free an edit block structure. 
+ *  @param edit_block The edit block to delete [in]
+ *  @return Always NULL
+ */
+GapEditBlock* 
+GapEditBlockDelete (GapEditBlock* edit_block);
 
-/** Free the gap state structure. */
+/** Frees a preliminary edit block structure 
+ *  @param edit_block The edit block to free [in]
+ *  @return Always NULL
+ */
+GapPrelimEditBlock *
+GapPrelimEditBlockFree(GapPrelimEditBlock *edit_block);
+
+/** Allocates a preliminary edit block structure 
+ *  @return Pointer to the allocated preliminary edit block
+ */
+GapPrelimEditBlock *
+GapPrelimEditBlockNew(void);
+
+/** Add a new operation to a preliminary edit block, possibly combining
+ *  it with the last operation if the two operations are identical
+ *
+ *  @param script The edit script to update [in/modified]
+ *  @param op_type The operation type to add [in]
+ *  @param num_ops The number of the specified type of operation to add [in]
+ */
+void
+GapPrelimEditBlockAdd(GapPrelimEditBlock *edit_block, 
+                 EGapAlignOpType op_type, Uint4 num_ops);
+
+/** Reset a preliminary edit block without freeing it 
+ * @param edit_block The preliminary edit block to reset
+ */
+void
+GapPrelimEditBlockReset(GapPrelimEditBlock *edit_block);
+
+/** Free the gap state structure. 
+ * @param state_struct The state structure to free
+ * @return Always NULL
+ */
 GapStateArrayStruct* 
 GapStateFree(GapStateArrayStruct* state_struct);
 
