@@ -501,7 +501,7 @@ Blast_ScoreFreqNew(Int4 score_min, Int4 score_max);
  * @return NULL
  */
 Blast_ScoreFreq*
-Blast_ScoreFreqDestruct(Blast_ScoreFreq* sfp);
+Blast_ScoreFreqFree(Blast_ScoreFreq* sfp);
 
 /** Fills a buffer with the 'standard' alphabet 
  * (given by STD_AMINO_ACID_FREQS[index].ch).

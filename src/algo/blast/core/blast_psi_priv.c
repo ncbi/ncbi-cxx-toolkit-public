@@ -2216,7 +2216,7 @@ _PSIUpdateLambdaK(const int** pssm,              /* [in] */
         /* what about Lambda? */
     }
 
-    score_freqs = Blast_ScoreFreqDestruct(score_freqs);
+    score_freqs = Blast_ScoreFreqFree(score_freqs);
 }
 
 
@@ -2357,6 +2357,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/11/29 13:53:23  camacho
+ * Renamed Blast_ScoreFreq structure free function
+ *
  * Revision 1.37  2004/11/23 21:48:21  camacho
  * Removed local initialization of ideal Karlin-Altschul parameters
  *

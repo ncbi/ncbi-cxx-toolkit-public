@@ -620,7 +620,7 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
 }
 
 Blast_ScoreFreq*
-Blast_ScoreFreqDestruct(Blast_ScoreFreq* sfp)
+Blast_ScoreFreqFree(Blast_ScoreFreq* sfp)
 {
 	if (sfp == NULL)
 		return NULL;
@@ -670,7 +670,7 @@ BlastScoreBlkFree(BlastScoreBlk* sbp)
     
     for (index=0; index<sbp->number_of_contexts; index++) {
         if (sbp->sfp)
-            sbp->sfp[index] = Blast_ScoreFreqDestruct(sbp->sfp[index]);
+            sbp->sfp[index] = Blast_ScoreFreqFree(sbp->sfp[index]);
         if (sbp->kbp_std)
             sbp->kbp_std[index] = Blast_KarlinBlkFree(sbp->kbp_std[index]);
         if (sbp->kbp_gap_std)
@@ -1568,7 +1568,7 @@ Blast_ScoreFreqNew(Int4 score_min, Int4 score_max)
 	sfp->sprob = (double*) calloc(range, sizeof(double));
 	if (sfp->sprob == NULL) 
 	{
-		Blast_ScoreFreqDestruct(sfp);
+		Blast_ScoreFreqFree(sfp);
 		return NULL;
 	}
 
@@ -2209,7 +2209,7 @@ Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
 	Blast_KarlinBlkCalc(sbp->kbp_ideal, sfp);
 
 	stdrfp = Blast_ResFreqDestruct(stdrfp);
-	sfp = Blast_ScoreFreqDestruct(sfp);
+	sfp = Blast_ScoreFreqFree(sfp);
 
     return status;
 }
@@ -3621,6 +3621,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.102  2004/11/29 13:53:23  camacho
+ * Renamed Blast_ScoreFreq structure free function
+ *
  * Revision 1.101  2004/11/24 16:02:51  dondosha
  * Added and/or fixed doxygen comments
  *
@@ -3742,7 +3745,7 @@ BLAST_ComputeLengthAdjustment(double K,
  * Fix to previous commit
  *
  * Revision 1.68  2004/05/06 14:44:27  camacho
- * Made Blast_ScoreFreqDestruct non-static
+ * Made Blast_ScoreFreqFree non-static
  *
  * Revision 1.67  2004/05/05 21:16:24  camacho
  * Make Blast_GetStdAlphabet and Blast_ScoreFreqNew non-static
