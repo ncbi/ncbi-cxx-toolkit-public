@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/02/12 16:43:39  vasilche
+* Use CTypeRef instead of TTypeInfo.
+*
 * Revision 1.10  2003/02/12 15:06:29  vasilche
 * Added missing CTypeRef constructors for map/multimap.
 *
@@ -92,7 +95,7 @@ CTypeRef::CTypeRef(TGet2Proc getter,
 
 CTypeRef::CTypeRef(TGet2Proc getter,
                   const CTypeRef& arg1,
-                  TGet1Proc getter2, TTypeInfo arg2)
+                  TGet1Proc getter2, const CTypeRef& arg2)
     : m_Getter(sx_GetResolve), m_ReturnData(0)
 {
     m_ResolveData = new CGet2TypeInfoSource(getter,
@@ -102,7 +105,7 @@ CTypeRef::CTypeRef(TGet2Proc getter,
 
 
 CTypeRef::CTypeRef(TGet2Proc getter,
-                   TGet1Proc getter1, TTypeInfo arg1,
+                   TGet1Proc getter1, const CTypeRef& arg1,
                    const CTypeRef& arg2)
     : m_Getter(sx_GetResolve), m_ReturnData(0)
 {
@@ -113,8 +116,8 @@ CTypeRef::CTypeRef(TGet2Proc getter,
 
 
 CTypeRef::CTypeRef(TGet2Proc getter,
-                   TGet1Proc getter1, TTypeInfo arg1,
-                   TGet1Proc getter2, TTypeInfo arg2)
+                   TGet1Proc getter1, const CTypeRef& arg1,
+                   TGet1Proc getter2, const CTypeRef& arg2)
     : m_Getter(sx_GetResolve), m_ReturnData(0)
 {
     m_ResolveData = new CGet2TypeInfoSource(getter,

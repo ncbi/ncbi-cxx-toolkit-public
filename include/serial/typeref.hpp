@@ -73,13 +73,13 @@ public:
 
     CTypeRef(TGet2Proc getter,
              const CTypeRef& arg1,
-             TGet1Proc getter2, TTypeInfo arg2);
+             TGet1Proc getter2, const CTypeRef& arg2);
     CTypeRef(TGet2Proc getter,
-             TGet1Proc getter1, TTypeInfo arg1,
+             TGet1Proc getter1, const CTypeRef& arg1,
              const CTypeRef& arg2);
     CTypeRef(TGet2Proc getter,
-             TGet1Proc getter1, TTypeInfo arg1,
-             TGet1Proc getter2, TTypeInfo arg2);
+             TGet1Proc getter1, const CTypeRef& arg1,
+             TGet1Proc getter2, const CTypeRef& arg2);
 
     CTypeRef(CTypeInfoSource* source);
     CTypeRef(const CTypeRef& typeRef);
@@ -146,6 +146,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/02/12 16:43:47  vasilche
+* Use CTypeRef instead of TTypeInfo.
+*
 * Revision 1.13  2003/02/12 15:06:21  vasilche
 * Added missing CTypeRef constructors for map/multimap.
 *
