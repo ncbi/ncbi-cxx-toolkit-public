@@ -69,7 +69,9 @@ void CGFFGatherer::x_DoSingleSection
 
     ItemOS() << new CDateItem(ctx);  // for UpdateDate
     ItemOS() << new CLocusItem(ctx); // for strand
-    x_GatherSourceFeatures();
+    if ( !ctx.HideSourceFeats() ) {
+        x_GatherSourceFeatures();
+    }
     x_GatherFeatures();
     ItemOS() << new CBaseCountItem(ctx);
     x_GatherSequence();
@@ -87,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/19 18:15:25  shomrat
+* supress source-features if flag is set
+*
 * Revision 1.3  2004/02/11 22:53:33  shomrat
 * using types in flag file
 *
