@@ -127,6 +127,8 @@ private:
 
 ///////////////////  CSearch inline methods
 
+// ModIndex contains the positions of the modified sites (aka set bits).
+// InitModIndex points ModIndex to all of the lower sites.
 inline void CSearch::InitModIndex(int *ModIndex, int& iMod, int& NumMod)
 {
     // pack all the mods to the first possible sites
@@ -134,6 +136,8 @@ inline void CSearch::InitModIndex(int *ModIndex, int& iMod, int& NumMod)
     for(j = 0; j < iMod; j++) ModIndex[j] = j;
 }
 
+// makes a bool map where each bit represents a site that can be modified
+// ModIndex contains the position of the set bit (aka modified sites)
 inline void CSearch::MakeBoolMap(bool *ModMask, int *ModIndex, int& iMod, int& NumMod)
 {
     int j;
@@ -145,6 +149,7 @@ inline void CSearch::MakeBoolMap(bool *ModMask, int *ModIndex, int& iMod, int& N
 	ModMask[ModIndex[j]] = true;
 }
 
+// creates a unique int for a given mod map.  used to track ladders
 inline unsigned CSearch::MakeIntFromBoolMap(bool *ModMask,  int& NumMod)
 {
     int j, retval(0);
@@ -153,6 +158,8 @@ inline unsigned CSearch::MakeIntFromBoolMap(bool *ModMask,  int& NumMod)
     return retval;
 }
 
+// CalcModIndex moves the set bits through all possible sites.  
+// site position is given by ModIndex
 inline bool CSearch::CalcModIndex(int *ModIndex, int& iMod, int& NumMod)
 {
     int j;
@@ -176,6 +183,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.7  2004/03/12 16:25:07  lewisg
+  add comments
+
   Revision 1.6  2004/03/01 18:24:08  lewisg
   better mod handling
 
