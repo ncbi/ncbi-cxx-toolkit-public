@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/02/04 20:19:10  lavr
+ * +xsgetn() for MIPSPro compiler (buggy version supplied with std.library)
+ *
  * Revision 6.9  2002/01/30 20:09:14  lavr
  * Define xsgetn() for WorkShop compiler also
  *
@@ -83,7 +86,9 @@ public:
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual CT_INT_TYPE underflow(void);
-#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP)
+#if defined(NCBI_COMPILER_GCC)      || \
+    defined(NCBI_COMPILER_WORKSHOP) || \
+    defined(NCBI_COMPILER_MIPSPRO)
     virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
 #endif
     virtual streamsize  showmanyc(void);
