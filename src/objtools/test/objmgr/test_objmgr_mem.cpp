@@ -28,7 +28,7 @@
 #include <serial/serial.hpp>
 
 #include <memory>
-#include <unistd.h>
+#include <fstream>
 
 USING_NCBI_SCOPE;
 using namespace objects;
@@ -212,6 +212,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/02/17 18:17:19  gorelenk
+* #include <unistd> changed to <fstream>.
+*
 * Revision 1.2  2004/02/09 19:18:56  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.
