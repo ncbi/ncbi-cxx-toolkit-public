@@ -256,7 +256,7 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos) const
             = seq_pos - m_DS->GetStarts()[raw_seg * m_DS->GetDim() + row];
         return (m_AlnStarts[seg.GetAlnSeg()]
                 + (IsPositiveStrand(row) ? delta
-                   : (m_DS->GetLens()[raw_seg] - delta)));
+                   : (m_DS->GetLens()[raw_seg] - 1 - delta)));
     }
 }
 
@@ -270,7 +270,8 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TSeqPos aln_pos, TNumrow for_row)
     } else {
         TSeqPos delta = aln_pos - GetAlnStart(seg);
         return (GetStart(for_row, seg) + 
-                (IsPositiveStrand(for_row) ? delta : (GetLen(seg) - delta)));
+                (IsPositiveStrand(for_row) ? delta
+                 : (GetLen(seg) - 1 - delta)));
     }
 }
 
@@ -284,7 +285,7 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
 
     return (GetStart(for_row, raw_seg)
             + (StrandSign(row) == StrandSign(for_row) ? delta
-               : m_DS->GetLens()[raw_seg] - delta));
+               : m_DS->GetLens()[raw_seg] - 1 - delta));
 }
 
 
@@ -498,6 +499,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/08/23 20:31:17  todorov
+* fixed neg strand deltas
+*
 * Revision 1.1  2002/08/23 14:43:52  ucko
 * Add the new C++ alignment manager to the public tree (thanks, Kamen!)
 *
