@@ -988,6 +988,12 @@ CBlastOption::SetDbGeneticCodeStr(const unsigned char* gc_str)
     if (!gc_str)
         return;
 
+    if (m_DbOpts->gen_code_string) 
+        sfree(m_DbOpts->gen_code_string);
+
+    m_DbOpts->gen_code_string =
+        (Uint1*) malloc(sizeof(Uint1)*GENCODE_STRLEN);
+
     copy(gc_str, gc_str+GENCODE_STRLEN, m_DbOpts->gen_code_string);
 }
 
@@ -998,6 +1004,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/08/21 19:30:17  dondosha
+* Free previous value of gen_code_string and allocate memory for new one in SetDbGeneticCodeStr
+*
 * Revision 1.18  2003/08/19 22:11:16  dondosha
 * Cosmetic changes
 *
