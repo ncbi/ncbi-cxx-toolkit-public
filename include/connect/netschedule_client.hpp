@@ -95,14 +95,16 @@ public:
     virtual ~CNetScheduleClient();
 
     /// Job status codes
+    ///
     enum EJobStatus
     {
         eJobNotFound = -1,  ///< No such job
         ePending     = 0,   ///< Waiting for execution
         eRunning,           ///< Running on a worker node
+        eReturned,          ///< Returned back to the queue(to be rescheduled)
         eCanceled,          ///< Explicitly canceled
         eFailed,            ///< Failed to run (execution timeout)
-        eDone,              ///< Job is ready
+        eDone,              ///< Job is ready (computed successfully)
 
         eLastStatus         ///< Fake status (do not use)
     };
@@ -170,6 +172,10 @@ protected:
     /// Shutdown the server daemon.
     ///
     void ShutdownServer();
+
+    /// Kill all jobs in the queue.
+    ///
+    void DropQueue();
 
 
 protected:
@@ -284,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/28 12:17:58  kuznets
+ * Added new job status (Returned), + DropQueue()
+ *
  * Revision 1.4  2005/02/22 16:14:00  kuznets
  * Reduced size of input data
  *
