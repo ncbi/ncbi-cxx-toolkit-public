@@ -100,8 +100,10 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
     m_Flags  = flags;
     m_Stream = &in;
 
+    size_t line_no = 0;
     string line;
     while (x_GetNextLine(line)) {
+        ++line_no;
         if (NStr::StartsWith(line, "##")) {
             x_ParseStructuredComment(line);
         } else if (NStr::StartsWith(line, "#")) {
@@ -113,6 +115,7 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
             x_ReadFastaSequences(in);
         } else {
             CRef<SRecord> record = x_ParseFeatureInterval(line);
+            record->line_no = line_no;
             if (record) {
                 string id = x_FeatureID(*record);
                 if (id.empty()) {
@@ -130,8 +133,36 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
         }
     }
 
-    ITERATE (TDelayedRecords, it, m_DelayedRecords) {
-        x_ParseAndPlace(*it->second);
+    NON_CONST_ITERATE (TDelayedRecords, it, m_DelayedRecords) {
+        SRecord& rec = *it->second;
+        /// merge mergeable ranges
+        NON_CONST_ITERATE (SRecord::TLoc, loc_iter, rec.loc) {
+            ITERATE (set<TSeqRange>, src_iter, loc_iter->merge_ranges) {
+                TSeqRange range(*src_iter);
+                set<TSeqRange>::iterator dst_iter =
+                    loc_iter->ranges.begin();
+                for ( ;  dst_iter != loc_iter->ranges.end();  ) {
+                    TSeqRange r(range);
+                    r += *dst_iter;
+                    if (r.GetLength() <=
+                        range.GetLength() + dst_iter->GetLength()) {
+                        range += *dst_iter;
+                        _TRACE("merging overlapping ranges: "
+                               << range.GetFrom() << " - "
+                               << range.GetTo() << " <-> "
+                               << dst_iter->GetFrom() << " - "
+                               << dst_iter->GetTo());
+                        loc_iter->ranges.erase(dst_iter++);
+                        break;
+                    } else {
+                        ++dst_iter;
+                    }
+                }
+                loc_iter->ranges.insert(range);
+            }
+        }
+
+        x_ParseAndPlace(rec);
     }
 
     CRef<CSeq_entry> tse(m_TSE); // need to save before resetting.
@@ -296,7 +327,7 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
     ENa_strand    strand = eNa_strand_unknown;
     s_URLDecode(v[0], accession);
     record->source = v[1];
-    record->key    = v[2];
+    record->key = v[2];
 
     try {
         from = NStr::StringToUInt(v[3]) - 1;
@@ -318,15 +349,6 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
         strand = eNa_strand_minus;
     } else if (v[6] != ".") {
         x_Warn("Bad strand " + v[6] + " (should be [+-.])", x_GetLineNumber());
-    }
-
-    if (v[7] == "0"  ||  v[7] == "1"  ||  v[7] == "2") {
-        record->frame = v[7][0] - '0';
-    } else if (v[7] == ".") {
-        record->frame = -1;
-    } else {
-        x_Warn("Bad frame " + v[7] + " (should be [012.])", x_GetLineNumber());
-        record->frame = -1;
     }
 
     {{
@@ -729,10 +751,13 @@ void CGFFReader::x_MergeRecords(SRecord& dest, const SRecord& src)
     bool merge_overlaps = false;
     if ((src.key == "start_codon"  ||  src.key == "stop_codon")  &&
         dest.key == "CDS") {
-        // start_codon and stop_codon features should be contained inside of
+        // start_codon and stop_codon features should be merged into
         // existing CDS locations
         merge_overlaps = true;
     }
+
+    // adjust the frame as needed
+    int best_frame = dest.frame;
 
     ITERATE (SRecord::TLoc, slit, src.loc) {
         bool merged = false;
@@ -748,51 +773,24 @@ void CGFFReader::x_MergeRecords(SRecord& dest, const SRecord& src)
                 }
                 continue;
             } else {
+                if (slit->strand == eNa_strand_plus) {
+                    if (slit->ranges.begin()->GetFrom() <
+                        dlit->ranges.begin()->GetFrom()) {
+                        best_frame = src.frame;
+                    }
+                } else {
+                    if (slit->ranges.begin()->GetTo() >
+                        dlit->ranges.begin()->GetTo()) {
+                        best_frame = src.frame;
+                    }
+                }
                 if (merge_overlaps) {
-                    ITERATE (set<TSeqRange>, src_iter, slit->ranges) {
-                        TSeqRange range(*src_iter);
-                        set<TSeqRange>::iterator dst_iter =
-                            dlit->ranges.begin();
-                        for ( ;  dst_iter != dlit->ranges.end();  ) {
-                            if (dst_iter->IntersectingWith(range)  ||
-                                dst_iter->GetTo() + 1 == range.GetFrom()  ||
-                                range.GetTo() + 1 == dst_iter->GetFrom() ) {
-                                range += *dst_iter;
-                                _TRACE("merging overlapping ranges: "
-                                       << range.GetFrom() << " - "
-                                       << range.GetTo() << " <-> "
-                                       << dst_iter->GetFrom() << " - "
-                                       << dst_iter->GetTo());
-                                dlit->ranges.erase(dst_iter++);
-                                break;
-                            } else {
-                                ++dst_iter;
-                            }
-                        }
-                        dlit->ranges.insert(range);
+                    ITERATE (set<TSeqRange>, set_iter, slit->ranges) {
+                        dlit->merge_ranges.insert(*set_iter);
                     }
                 } else {
                     ITERATE (set<TSeqRange>, set_iter, slit->ranges) {
                         dlit->ranges.insert(*set_iter);
-                        /**
-                    // we can still merge abutting ranges
-                    set<TSeqRange>::const_iterator set_iter =
-                        slit->ranges.begin();
-
-                    for ( ;  set_iter != slit->ranges.end();  ++set_iter) {
-                        TSeqRange range = *set_iter;
-                        set<TSeqRange>::const_iterator next_iter = set_iter;
-                        for (++next_iter;
-                             next_iter != slit->ranges.end();
-                             ++next_iter) {
-                            if (range.GetTo() + 1 == next_iter->GetFrom()) {
-                                range += *next_iter;
-                            } else {
-                                break;
-                            }
-                        }
-                        dlit->ranges.insert(range);
-                        **/
                     }
                 }
                 merged = true;
@@ -804,6 +802,7 @@ void CGFFReader::x_MergeRecords(SRecord& dest, const SRecord& src)
         }
     }
 
+    dest.frame = best_frame;
     if (src.key != dest.key) {
         if (dest.key == "CDS"  &&  NStr::EndsWith(src.key, "_codon")
             &&  !(x_GetFlags() & fNoGTF) ) {
@@ -1036,6 +1035,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/01/13 15:28:26  dicuccio
+* Handle merged ranges, strands, and frames when the ranges arrive out-of-order.
+* FIxed setting of line number
+*
 * Revision 1.10  2004/12/17 13:57:29  dicuccio
 * Drop unused exception variable
 *
