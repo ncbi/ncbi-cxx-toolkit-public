@@ -50,6 +50,64 @@ class CSeq_id;
 
 ////////////////////////////////////////////////////////////////////
 //
+//  CSeq_id_***_Tree::
+//
+//    Seq-id sub-type specific trees
+//
+
+
+// Base class for seq-id type-specific trees
+class CSeq_id_Which_Tree : public CObject
+{
+public:
+    // 'ctors
+    CSeq_id_Which_Tree(void) {}
+    virtual ~CSeq_id_Which_Tree(void) {}
+
+    typedef list<TSeq_id_Info> TSeq_id_MatchList;
+
+    // Find exaclty the same seq-id
+    virtual TSeq_id_Info FindEqual(const CSeq_id& id) const = 0;
+    // Get the list of matching seq-id.
+    // Not using list of handles since CSeq_id_Handle constructor
+    // is private.
+    virtual void FindMatch(const CSeq_id& id,
+                           TSeq_id_MatchList& id_list) const = 0;
+    virtual void FindMatchStr(string sid,
+                              TSeq_id_MatchList& id_list) const = 0;
+
+    // Map new seq-id
+    virtual void AddSeq_idMapping(CSeq_id_Handle& handle) = 0;
+
+    virtual bool IsBetterVersion(const CSeq_id_Handle& h1,
+                                 const CSeq_id_Handle& h2) const;
+
+    // Remove mapping for a given keys range
+    void DropKeysRange(TSeq_id_Key first, TSeq_id_Key last);
+
+    mutable CFastMutex m_TreeMutex; // Locked by CSeq_id_Mapper
+
+protected:
+    const CSeq_id& x_GetSeq_id(const CSeq_id_Handle& handle) const;
+    TSeq_id_Key    x_GetKey(const CSeq_id_Handle& handle) const;
+
+    void x_AddToKeyMap(const CSeq_id_Handle& handle);
+    void x_RemoveFromKeyMap(TSeq_id_Key key);
+    CSeq_id_Handle x_GetHandleByKey(TSeq_id_Key key) const;
+
+    // Called by DropKeysRange() for each handle to remove it from
+    // all maps. After calling x_DropHandle() the key is removed
+    // from the keys map.
+    virtual void x_DropHandle(const CSeq_id_Handle& handle) = 0;
+
+    // Map for reverse lookups
+    typedef map<TSeq_id_Key, CSeq_id_Handle> TKeyMap;
+    TKeyMap m_KeyMap;
+};
+
+
+////////////////////////////////////////////////////////////////////
+//
 //  CSeq_id_Mapper::
 //
 //    Allows fast convertions between CSeq_id and CSeq_id_Handle,
@@ -59,10 +117,6 @@ class CSeq_id;
 
 typedef pair< CConstRef<CSeq_id>, TSeq_id_Key > TSeq_id_Info;
 typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
-
-
-// forward declaration
-class CSeq_id_Which_Tree;
 
 
 const size_t kKeyUsageTableSegmentSize = 65536;
@@ -131,6 +185,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/10/02 21:26:53  ivanov
+* A CSeq_id_Which_Tree class declaration moved from .cpp to .hpp to make
+* KCC happy
+*
 * Revision 1.9  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *
