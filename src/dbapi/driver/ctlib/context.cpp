@@ -453,7 +453,15 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
     case CS_SV_RETRY_FAIL: {
         CDB_TimeoutEx to((int) msg->msgnumber, "ctlib", msg->msgstring);
         hs->PostMsg(&to);
-        break;
+	if(con) {
+	  CS_INT status;
+	  if((ct_con_props(con, CS_GET, CS_LOGIN_STATUS, (CS_VOID*)&status, CS_UNUSED, NULL) != CS_SUCCEED) ||
+	   (!status)) return false;
+	
+	  ct_cancel(con, (CS_COMMAND*)0, CS_CANCEL_ATTN);
+	}
+	else return false;
+	break;
     }
     case CS_SV_CONFIG_FAIL:
     case CS_SV_API_FAIL:
@@ -877,6 +885,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/05/15 21:54:30  soussov
+ * fixed bug in timeout handling
+ *
  * Revision 1.22  2003/04/29 21:15:35  soussov
  * new datatypes CDB_LongChar and CDB_LongBinary added
  *
