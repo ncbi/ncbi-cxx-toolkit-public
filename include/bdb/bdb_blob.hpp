@@ -118,7 +118,7 @@ public:
 class NCBI_BDB_EXPORT CBDB_BLobStream
 {
 protected:
-    CBDB_BLobStream(DB* db, DBT* dbt_key, size_t blob_size);
+    CBDB_BLobStream(DB* db, DBT* dbt_key, size_t blob_size, DB_TXN* txn);
 public:
 
     ~CBDB_BLobStream();
@@ -138,6 +138,7 @@ private:
     DB*        m_DB;
     DBT*       m_DBT_Key;
     DBT*       m_DBT_Data;
+    DB_TXN*    m_Txn;
     unsigned   m_Pos;
     size_t     m_BlobSize;
 private:
@@ -223,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/12/29 16:51:21  kuznets
+ * Added transaction support for BLOB stream
+ *
  * Revision 1.12  2003/10/24 13:39:59  kuznets
  * + PendingCount for BlobStream
  *
