@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2000/05/24 16:45:15  lavr
+ * Introduced replacement for inet_ntoa: my_ntoa
+ *
  * Revision 6.10  2000/05/23 21:05:33  lavr
  * Memory leaks fixed (appeared after recent server-info structure rearrangement)
  *
@@ -65,6 +68,7 @@
  */
 
 #include <connect/ncbi_ansi_ext.h>
+#include "ncbi_misc.h"
 #include <connect/ncbi_server_info.h>
 #include <assert.h>
 #include <ctype.h>
@@ -184,11 +188,7 @@ static const char* s_Read_HostPort(const char* str, unsigned int default_host,
  */
 static int s_Write_HostPort(char *str, unsigned int host, unsigned short port)
 {
-    struct sockaddr_in addr;
-
-    addr.sin_addr.s_addr = host;
-    return sprintf(str, "%s:%hu", host ? inet_ntoa(addr.sin_addr) : "",
-                   ntohs(port));
+    return sprintf(str, "%s:%hu", host ? my_ntoa(host) : "", ntohs(port));
 }
 
 #define N_FLAG_TAGS 2
