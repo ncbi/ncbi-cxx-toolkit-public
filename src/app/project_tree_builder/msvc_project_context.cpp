@@ -254,33 +254,33 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
     return NStr::Join(additional_libs, " ");
 }
 
-
+#if 0
 string CMsvcPrjProjectContext::AdditionalLibrarianOptions
                                             (const SConfigInfo& cfg_info) const
 {
     return AdditionalLinkerOptions(cfg_info);
 }
-
+#endif
 
 string CMsvcPrjProjectContext::AdditionalLibraryDirectories
                                             (const SConfigInfo& cfg_info) const
 {
-    string dirs_str("");
 
     // Take into account requires, default and makefiles libs
     list<string> libs_list;
     CreateLibsList(&libs_list);
+    list<string> dir_list;
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
         if ( !lib_info.m_LibPath.empty() ) {
-            dirs_str += lib_info.m_LibPath;
-            dirs_str += ", ";
+            dir_list.push_back(lib_info.m_LibPath);
         }
     }
-
-    return dirs_str;
+    dir_list.sort();
+    dir_list.unique();
+    return NStr::Join(dir_list, ", ");
 }
 
 
@@ -347,6 +347,30 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config) const
 
     return true;
 }
+
+
+const list<string> CMsvcPrjProjectContext::Defines(const SConfigInfo& cfg_info) const
+{
+    list<string> defines(m_Defines);
+
+    list<string> libs_list;
+    CreateLibsList(&libs_list);
+    ITERATE(list<string>, p, libs_list) {
+        const string& lib_id = *p;
+        SLibInfo lib_info;
+        GetApp().GetSite().GetLibInfo(lib_id, cfg_info, &lib_info);
+        if ( !lib_info.m_LibDefines.empty() ) {
+            copy(lib_info.m_LibDefines.begin(),
+                 lib_info.m_LibDefines.end(),
+                 back_inserter(defines));
+        }
+    }
+    defines.sort();
+    defines.unique();
+    return defines;
+}
+
+
 
 //-----------------------------------------------------------------------------
 CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
@@ -682,7 +706,7 @@ s_CreateCompilerTool(const CMsvcPrjGeneralContext& general_context,
         general_context.GetMsvcMetaMakefile(),
         general_context.m_Config,
         general_context.m_Type,
-        project_context.Defines());
+        project_context.Defines(general_context.m_Config));
 }
 
 
@@ -730,11 +754,7 @@ s_CreateLibrarianTool(const CMsvcPrjGeneralContext& general_context,
 {
     if ( s_IsLib  (general_context, project_context) )
 	    return new CLibrarianToolImpl
-                                (project_context.AdditionalLibrarianOptions
-                                                    (general_context.m_Config),
-                                 project_context.AdditionalLibraryDirectories
-                                                    (general_context.m_Config),
-								 project_context.ProjectId(),
+                                (project_context.ProjectId(),
                                  project_context.GetMsvcProjectMakefile(),
                                  general_context.GetMsvcMetaMakefile(),
                                  general_context.m_Config);
@@ -793,6 +813,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/03/22 14:50:50  gorelenk
+ * Removed implementation of
+ * CMsvcPrjProjectContext::AdditionalLibrarianOptions .
+ * Added implemetation of CMsvcPrjProjectContext::Defines .
+ *
  * Revision 1.23  2004/03/16 21:46:17  gorelenk
  * Changed implementation of
  * CMsvcPrjProjectContext::AdditionalIncludeDirectories : implemented
