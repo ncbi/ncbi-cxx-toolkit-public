@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/05/08 22:32:00  kimelman
+* log flags
+*
 * Revision 1.19  2002/05/06 03:28:53  vakatov
 * OM/OM1 renaming
 *
@@ -129,6 +132,7 @@ int CTestApplication::Run()
 {
     time_t start=time(0);
     NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
+    CORE_SetLOG(LOG_cxx2c());
 
     CRef< CObjectManager> pOm = new CObjectManager;
 
@@ -142,13 +146,13 @@ int CTestApplication::Run()
         int gi = i  + 18565551 - i  ; 
         CSeq_id x;
         x.SetGi(gi);
-        CObjectOStreamAsn oos(NcbiCout);
         CBioseq_Handle h = scope.GetBioseqHandle(x);
         if ( !h ) {
             LOG_POST("Gi (" << gi << "):: not found in ID");
         } else {
 //          scope.ResetHistory();
           iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
+            //CObjectOStreamAsn oos(NcbiCout);
             //oos << **it;
             //NcbiCout << NcbiEndl;
             ;
@@ -156,7 +160,7 @@ int CTestApplication::Run()
           CSeqVector v = h.GetSeqVector();
           v.SetIupacCoding();
           LOG_POST("Vector size = " << v.size());
-          string vs = "";
+          string vs;
           for (TSeqPos cc = 0; cc < v.size(); cc++) {
               vs += v[cc];
               if (cc > 40) break;
