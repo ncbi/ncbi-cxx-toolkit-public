@@ -193,8 +193,8 @@ private:
 };
 
 
-static void x_ExpandRecursion(string& s, unsigned int pos,
-                              CTextFsm<int>& fsm, int match_value)
+void CFindRSites::x_ExpandRecursion(string& s, unsigned int pos,
+                                    CTextFsm<int>& fsm, int match_value)
 {
     if (pos == s.size()) {
         // this is the place
@@ -214,15 +214,16 @@ static void x_ExpandRecursion(string& s, unsigned int pos,
 }
 
 
-static void x_AddPattern(const string& pat,
-                         CTextFsm<int>& fsm, int match_value)
+void CFindRSites::x_AddPattern(const string& pat, CTextFsm<int>& fsm,
+                               int match_value)
 {
     string s = pat;
     x_ExpandRecursion(s, 0, fsm, match_value);
 }
 
 
-static bool x_IsAmbig(char nuc) {
+bool CFindRSites::x_IsAmbig(char nuc)
+{
     static const bool ambig_table[16] = {
         0, 0, 0, 1, 0, 1, 1, 1,
         0, 1, 1, 1, 1, 1, 1, 1
@@ -237,9 +238,8 @@ static bool x_IsAmbig(char nuc) {
 /// (e.g., string, vector<char>, CSeqVector),
 /// but it must yield ncbi8na.
 template<class Seq>
-static void x_Find(const Seq& seq,
-                   const vector<CREnzyme>& enzymes,
-                   vector<CRef<CREnzResult> >& results)
+void CFindRSites::x_Find(const Seq& seq, const vector<CREnzyme>& enzymes,
+                         vector<CRef<CREnzResult> >& results)
 {
 
     results.clear();
@@ -269,13 +269,15 @@ static void x_Find(const Seq& seq,
             // to avoid combinatorial explosion,
             // if there are more than two Ns only use
             // part of pattern before first N
-            int fsm_pat_size;
+            SIZE_TYPE fsm_pat_size = pat.find_first_of(0x0f);
             CSeqMatch::IupacToNcbi8na(spec->GetSeq(), pat);
-            if (count(pat.begin(), pat.end(), (char)0x0f) > 2) {
-                fsm_pat_size = pat.find_first_of(0x0f);
-            } else {
-                fsm_pat_size = pat.size();
-            }
+            {{
+                SIZE_TYPE pos = pat.find_first_of(0x0f, fsm_pat_size + 1);
+                if (pos == NPOS
+                    ||  pat.find_first_of(0x0f, pos + 1) == NPOS) {
+                    fsm_pat_size = pat.size();
+                }
+            }}
             patterns.push_back(CPatternRec(pat, enzyme - enzymes.begin(),
                                            spec - specs.begin(), 
                                            CPatternRec::eIsNotComplement,
@@ -290,11 +292,14 @@ static void x_Find(const Seq& seq,
             string comp = pat;
             CSeqMatch::CompNcbi8na(comp);
             if (comp != pat) {
-                if (count(comp.begin(), comp.end(), 0x0f) > 2) {
+                {{
                     fsm_pat_size = comp.find_first_of(0x0f);
-                } else {
-                    fsm_pat_size = comp.size();
-                }
+                    SIZE_TYPE pos = comp.find_first_of(0x0f, fsm_pat_size + 1);
+                    if (pos == NPOS
+                        ||  comp.find_first_of(0x0f, pos + 1) == NPOS) {
+                        fsm_pat_size = comp.size();
+                    }
+                }}
                 patterns.push_back(CPatternRec(comp, enzyme 
                                                - enzymes.begin(),
                                                spec - specs.begin(), 
@@ -526,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/08/22 02:17:18  ucko
+ * Fix WorkShop compilation.
+ *
  * Revision 1.7  2003/08/21 20:05:59  dicuccio
  * Added USING_SCOPE(objects) for MSVC
  *

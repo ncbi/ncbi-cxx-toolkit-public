@@ -384,6 +384,17 @@ public:
     static void Find(const CSeqVector& seq,
                      const vector<CREnzyme>& enzymes,
                      vector<CRef<CREnzResult> >& results);
+
+private:
+    static void x_ExpandRecursion(string& s, unsigned int pos,
+                                  CTextFsm<int>& fsm, int match_value);
+    static void x_AddPattern(const string& pat, CTextFsm<int>& fsm,
+                             int match_value);
+    static bool x_IsAmbig(char nuc);
+
+    template<class Seq>
+    static void x_Find(const Seq& seq, const vector<CREnzyme>& enzymes,
+                       vector<CRef<CREnzResult> >& results);
 };
 
 
@@ -396,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/08/22 02:17:13  ucko
+ * Fix WorkShop compilation.
+ *
  * Revision 1.12  2003/08/21 19:21:44  jcherry
  * Moved restriction site finding to algo/sequence
  *
