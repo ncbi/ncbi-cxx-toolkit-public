@@ -15,13 +15,29 @@
   <li> <a href="#ref_Configure">
        Configuration and installation script <b><i>configure</i></b></a>
   <li> <a href="#ref_Build">
-		  Structure of the build directory tree produced by <b><i>configure</i></b></a>
+		  Structure of the <i>build tree</i> produced by <b><i>configure</i></b></a>
   <li> <a href="#ref_Running">
        Running the <b><i>configure</i></b> script</a>
+		 <ul>
+		   <li> <a href="#ref_DebugVsRelease">
+			<i>Debug</i> vs. <i>Release</i> configuration</a>
+		   <li> <a href="#ref_NamingBuildTree">
+			Naming the <i>build tree</i></a>
+		   <li> <a href="#ref_ToolsAndFlags">
+			Tools and Flags</a>
+         <li> <a href="#ref_Localization">
+         Localization for the system and third-party packages</a>
+         <li> <a href="#ref_ProhibitPackage">
+         Prohibiting the use of some of the system and third-party packages</a>
+         <li> <a href="#ref_Wrappers">
+         Compiler-specific <b><i>configure</i></b> wrappers
+         (<i>compilers/*.sh</i>) </a>
+         <li> <a href="#ref_PreBuiltHeaders">
+         Pre-built configuration headers
+         (<i>compilers/ncbiconf.*</i>) </a>
+		 </ul>
   <li> <a href="#ref_Reconf">
        Quick reconfiguration</a>
-  <li> <a href="#ref_Preset">
-       Preset platform-specific features for the <b><i>configure</i></b> script
 	 </a>
   <li> <a href="#ref_Example">
        An example of configuration, installation and build</a>
@@ -36,9 +52,10 @@
   </ul>
 
 <p>
-This page describes how to get the NCBI C++ sources and how to deploy
-a build directory(es) that has the <i>"ncbiconf.h"</i> header and makefiles
-configured to work with the platform and compiler(and its flags) you are using.
+This page describes how to get the NCBI C++ sources, and how to
+configure/deploy a build directory with the <i>ncbiconf.h</i> header and
+all makefiles configured to work on the specified platform with
+the specified compiler (and other tools) and flags.
 
 <br></br>
 <a name="ref_Source">
@@ -49,36 +66,45 @@ configured to work with the platform and compiler(and its flags) you are using.
 The NCBI C++ sources can be obtained from internal NCBI
 CVS tree (<i><b>"$CVSROOT/internal/c++/"</b></i>) or
 from a distribution archive. In either case, the root directory will
-contain the <a href="src_tree.gif"><i>NCBI C++  source tree</i></a>:
+contain the <a href="src_tree.gif"><i>NCBI C++  source tree</i></a> which
+includes:
 <ul>
-  <li> Set of files needed for the platform-specific
-		 <a href="#ref_Running">configuration and installation</a>
-		 with the
-       <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">
-       autoconf</a> utility.
-       It includes pre-built multiplatform <i>"configure"</i> script and its
-       <a href="#ref_Preset">platform-specific "wrappers"</a>
-       in the <i><b>"compilers/"</b></i> directory.
-       Here is also a template for the configuration header file
-       <i>"config.h.in"</i> and
-       <a href="#ref_PreBuiltHeaders">pre-built configuration headers</a>
-       (<i>"ncbiconf.*"</i>) for some platforms.
+  <li> set of files needed for the platform-specific
+		 <a href="#ref_Running">configuration and installation</a>:
+       <ul>
+         <li>  <i><b>configure</b></i> -- a multi-platform configuration shell
+               script (generated from template <i>configure.in</i> using
+               <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">
+               autoconf</a>)
+         <li>  various scripts and template files used by
+               <i><b>configure</b></i>,
+               <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">
+               autoconf</a> and
+               <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Invoking_autoheader.html"> autoheader</a>
+         <li>  <i><b>compilers/</b></i> -- directory containing
+               <a href="#ref_Wrappers">
+               compiler-specific <b><i>configure</i></b> wrappers</a>
+               (<i>*.sh</i>) and
+               <a href="#ref_PreBuiltHeaders">
+               pre-built configuration headers</a>
+               (<i>ncbiconf.*</i>) for some platforms
+       </ul>
 
-  <li> <i><b>"doc/"</b></i> directory. -- 
-       Here go the generic NCBI C++ documentation, manuals(e.g. including
-       this one <i>"doc/config.html"</i>) and guidelines for
-       <b>everybody</b> writing on C++ in NCBI SWG.
+  <li> <i><b>doc/</b></i> -- NCBI C++ documentation, manuals (including
+       this one, <i>doc/config.html</i>) and guidelines
+       for (hopefully) <b>everybody</b> writing on C++ in NCBI SWG
 
-  <li> <i><b>"src/"</b> and <b>"include/"</b></i> directories. --
-       These two contain a hierarchical directory tree of
-       <a href="new_proj.html">NCBI C++ projects</a>
-       , so that each project has its source and header directories
-       mirrored (e.g. <i>"src/corelib/" correstonds to "include/corelib/"</i>).
-       The <i><b>"src/"</b></i> directory also contains generic makefile
-       templates (<i>"src/Makefile.*.in</i>") and configurable makefiles for
-       each project or sub-project
-       (like e.g. <i>"src/corelib/Makefile.*.in"</i>
-       and <i>"src/corelib/test/Makefile.*.in"</i>).
+  <li> <i><b>src/</b></i> -- a hierarchical directory tree of
+       <a href="new_proj.html">NCBI C++ projects</a>. Here go
+       all source files (<i>*.cpp, *.c</i>), private header and inline files
+       (<i>*.hpp, *.inl, *.h</i>), makefiles (<i>Makefile.*</i>),
+       scripts (<i>*.sh</i>), and maybe some project-specific data
+
+  <li> <i><b>include/</b></i> -- a hierarchical directory tree whose
+       structure mirrors the <i><b>src/</b></i> directory tree. It
+       contains only public header and inline files (<i>*.hpp, *.inl, *.h</i>).
+       <br><i>Example:</i> <i><b>include/corelib/</b></i> contains public headers for the sources
+       located in <i><b>src/corelib/</b></i>
 </ul>
 
 
@@ -87,35 +113,35 @@ contain the <a href="src_tree.gif"><i>NCBI C++  source tree</i></a>:
 </a>
 
 <p>
-Practically every compiler compiles C++ (and even C!) code differently --
-different compilers may vary in the OS standard libraries and header files,
+Different compilers compile C++ (and even C!) code differently --
+they may vary in the OS standard libraries and header files,
 completeness of the C++ implementation, and... in compiler bugs.
-There are also different <b><i>make</i></b> tools and file naming conventions
-on different platforms.
+There are also different <b>make</b> and other tools and
+file naming conventions on different platforms.
 
 <p>
-Thus, a configuration is needed to encounter the said platform-
+Thus, a configuration is needed to encounter the platform-
 and compiler-specific features.
-For this purporse, we are using GNU
+For this purporse, we are using the GNU
 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">autoconf</a> 
-tool to automatically generate compiler-specific header file
-<i>"ncbiconf.h"</i> and makefiles that would work for the given platform.
+utility to automatically generate compiler-specific header file
+<i>ncbiconf.h</i> and makefiles that would work for the given platform.
 
 <p>
 User performs both configuration and installation by merely running
 platform-independent(<i>sh, bash</i>) shell script
-<b><i>configure</i></b> (generated by
+<b><i>configure</i></b> (we pre-generate it in-house from template
+<i>configure.in</i> using
 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">
-autoconf</a>
-from template <i>"configure.in"</i>) from the NCBI C++ top source directory.
+autoconf</a>).
 
 <p>
-During the configuration process, many compiler "features" are tested,
+During the configuration process, many compiler features are tested,
 and the results of this testing are recorded in the configuration header
-<i>"ncbiconf.h"</i> by the means of C preprocessor variables. E.g., the
-preprocessor variable <i>"NO_INCLASS_TMPL"</i> indicates whether the tested
+<i>ncbiconf.h</i> by the means of C preprocessor variables. E.g., the
+preprocessor variable <i>"NO_INCLASS_TMPL"</i> indicates whether the
 compiler supports template class methods; another example of the information 
-contained in <i>"ncbiconf.h"</i> are preprocessor variables used to
+contained in <i>ncbiconf.h</i> are preprocessor variables used to
 define <a href="types.html#ref_IntFixed">sized integer</a> and
 <a href="types.html#ref_BigScalar"><i>BigScalar</i></a> types.
 
@@ -124,50 +150,77 @@ The <b><i>configure</i></b> script will create so-called
 <a href="bld_tree.gif"><i>build tree</i></a>
 -- a hierarchy of directories where
 object modules, libraries and executables are to be built.
-User can create as many such trees as he needs.  All these
+<br>
+It will also configure all <i>*.in</i> template files located
+in the NCBI C++  source tree(<b><i>src/</i></b>) and deploy
+the resultant configured files in the relevant places of the
+<a href="bld_tree.gif"><i>build tree</i></a>.
+
+This way, all platform- and compiler-specific tools and flags will be "frozen"
+inside the configured makefiles in the
+<a href="bld_tree.gif"><i>build tree</i></a>.
+And, the <i>ncbiconf.h</i> (described above, also configured for
+the given compiler), will be put to the <b><i>inc/</i></b> sub-directory
+of the resultant
+<a href="bld_tree.gif"><i>build tree</i></a>.
+
+<p>
+User can create as many such build trees as he needs.  All these
 trees would refer to just the same (origin) NCBI C++ 
-<a href="src_tree.gif"><i>source tree</i></a>,
-while each <i>build tree</i> can contain its own (compilator-specific)
-<i>"ncbiconf.h"</i> header, and/or different set of compilation/linking/etc.
-flags and tools ("frozen" in the makefiles). This is to allow one to build
+<a href="src_tree.gif"><i>source tree</i></a> and <i>include tree</i>,
+while each
+<a href="bld_tree.gif"><i>build tree</i></a>
+can contain its own (platform/compilator-specific)
+<i>ncbiconf.h</i> header, and/or different set of compilation/linking/etc.
+flags and tools ("frozen" in the makefiles, especially in <i>Makefile.mk</i>).
+This is to allow one to build
 libraries and executables using different compilers and/or flags, yet from
 the same sources, and in a uniform way.
 
 
 <br></br>
 <a name="ref_Build">
-<h2>Structure of the build directory tree(s) produced by <b><i>configure</i></b></h2>
+<h2>Structure of the <i>build tree</i> produced by <b><i>configure</i></b></h2>
 </a>
 
 <p>
-Each configuration process results in a new tree of build directories.
-The structure of the tree is as follows(see also in
+Each configuration process results in a new <i>build tree</i>.
+The structure of the tree is as follows (see also in
 <a href="bld_tree.gif">chart</a>):
 <ul>
-  <li> <i><b>"inc/"</b></i> -- contains
-       <i>"ncbiconf.h"</i> configuration header generated by the
+  <li> <i><b>inc/</b></i> -- contains
+       <i>ncbiconf.h</i> configuration header generated by the
        <b><i>configure</i></b> script.
-  <li> <i><b>"build/"</b></i> -- contains a hierarchy of directories that
-       correspond to those in the <i><b>"src/"</b></i> (in NCBI C++ original
-       sources). These directories will contain makefiles (<i>"Makefile.*"</i>)
+  <li> <i><b>build/</b></i> -- contains a hierarchy of directories that
+       correspond to those in the <i><b>src/</b></i> (in NCBI C++ original
+       sources). These directories will contain makefiles (<i>Makefile.*</i>)
        generated by the <b><i>configure</i></b> script from the makefile
-       templates (<i>"Makefile.*.in"</i>) of corresponding project.
-       The makefiles will have all tools and flags set as they were
-       specified for the configuration process, and they will keep referencies
+       templates (<i>Makefile.*.in</i>) of corresponding project located in the
+		 <i>source tree</i>.
+       <br>
+       The resultant scripts and makefile will keep referencies
        to the original NCBI C++ source directories.
-       All build results (object modules, libraries and executables
+       <br>
+       There is a "very special" file <i>Makefile.mk</i> that contains all
+       configured
+       <a href="#ref_ToolsAndFlags">tools, flags</a>
+       and
+       <a href="#ref_Localization">local paths</a>.
+       This file is usually included by other makefiles.
+       <br>
+       Later, all build results (object modules, libraries and executables
        as well as any auxiliary files and directories created during the build)
-       will go exclusively into this <i><b>"build/"</b></i> tree, and not
+       will go exclusively into the <i>build tree</i>, and not
        to the original NCBI C++ source directories. This allows one to
-       have several build directories that use just the same sources, but
+       have several <i>build trees</i> that use just the same sources, but
        compile and link them with different flags and/or compilers.
-  <li> <i><b>"lib/"</b></i> -- here go all public libraries built by the
-       <i><b>"build/"</b></i>-located projects.
-  <li> <i><b>"bin/"</b></i> -- here go all public executables built by the
-       <i><b>"build/"</b></i>-located projects.
-  <li> <i><b>"status/"</b></i> -- contains cache (<i>"config.cache"</i>),
-       log file (<i>"config.log"</i>), and secondary confifuration script
-       (<i>"config.status"</i>) produced by <b><i>configure</i></b> during
+  <li> <i><b>lib/</b></i> -- here go all public libraries built by the
+       <i><b>build/</b></i>-located projects.
+  <li> <i><b>bin/</b></i> -- here go all public executables built by the
+       <i><b>build/</b></i>-located projects.
+  <li> <i><b>status/</b></i> -- contains cache (<i>config.cache</i>),
+       log file (<i>config.log</i>), and secondary configuration script
+       (<i>config.status</i>) produced by <b><i>configure</i></b> during
        the configuration process.
 </ul>
 
@@ -176,93 +229,83 @@ The structure of the tree is as follows(see also in
 <h2>Running the <b><i>configure</i></b> script</h2>
 </a>
 
-<p>
-By default, the configuration process will produce a <i>build tree</i>
-in the <i><b>"exec/"</b></i> subdirectory of the source root directory.
-However, one can alternate its location by specifying optional
-parameter <i>"--exec_prefix"</i> to the <b><i>configure</i></b>
-script. For example, <i>"configure --exec_prefix=my_foo_dir"</i> would deploy
-the build tree into directory <i>"my_foo_dir"</i>.
-There is a "special case"(<i>"configure --exec_prefix=."</i>) -- for the people
-who usually do not need different builds, and who prefer to have object
-files, libraries and executables where the sources are located.
 
 <p>
-<a name="ref_RunningFlags"></a>
-User can specify C and C++ compilers to use by setting environment variables
-<b>CC</b> and <b>CXX</b> for the <b><i>configure</i></b> script.
-By default, they will be (in the order of priority):
-<b><i>c++,g++,gcc,CC,cxx,cc++</i></b> and <b><i>gcc,cc</i></b>, respectively.
+<a name="ref_DebugVsRelease"></a>
+<h4><i>Debug</i> vs. <i>Release</i> configuration</h4>
 
-<p>
-Other tools and flags can be specified via the following shell
-environment variables:
+The following two <i><b>configure</b></i> flags control whether to target for
+the <i>Debug</i> or <i>Release</i> version. These options (default is
+<i><b>--with-debug</b></i>) control the appearance of preprocessor
+flags <b>-D_DEBUG</b> and <b>-DNDEBUG</b>, and compiler/linker flags
+<b>-g</b> and <b>-O</b> respectively:
 <ul>
-  <li> <b>CPP</b> -- C preprocessor;  "$CXX -E" or "$CC -E" by default
-  <li> <b>AR</b> -- "ar" by default
-  <li> <b>RANLIB</b> -- "ranlib"(":" if "ranlib" not found) by default
-  <li> <b>STRIP</b> -- "strip"(":" if "strip" not found) by default
-  <li> <b>CFLAGS</b> -- C compiler flags
-  <li> <b>CXXFLAGS</b> -- C++ compiler flags
-  <li> <b>CPPFLAGS</b> -- C preprocessor flags
-  <li> <b>LDFLAGS</b> -- linker flags
-  <li> <b>LIBS</b> -- standard libraries to be linked to every executable
+  <li> <i><b>--with-debug</b></i> --
+       engage <b>-D_DEBUG</b> and <b>-g</b>,
+       <br>strip <b>-DNDEBUG</b> and <b>-O</b>
+       (if not <i><b>--with-release</b></i>)
+  <li> <i><b>--without-debug</b></i> --
+       strip <b>-D_DEBUG</b> and <b>-g</b>,
+       <br>engage <b>-DNDEBUG</b> and <b>-O</b>
+		 (if not <i><b>--without-release</b></i>)
+  <li> <i><b>--with-release</b></i> --
+       engage <b>-DNDEBUG</b> and <b>-O</b>
+  <li> <i><b>--without-release</b></i> --
+       strip <b>-DNDEBUG</b> and <b>-O</b>
 </ul>
 
-These flags will be used to:
+
+<p>
+<br>
+<a name="ref_NamingBuildTree"></a>
+<h4>Naming the <i>build tree</i></h4>
+
+The configuration process will produce the new <i>build tree</i>
+in some default subdirectory of the root source directory, and the base name
+of this subdirectory will reflect the compiler name and a <i>Release/Debug</i>
+suffix, e.g.:  <i><b>GCC-Release/</b></i>. The default <i>build tree</i>
+name can be alternated by passing the following flags to the
+<i><b>configure</b></i> script:
 <ul>
-  <li> Compile C sources:  <b><i>$CC -c $CFLAGS $CPPFLAGS ...</i></b>
-  <li> Compile C++ sources:  <b><i>$CXX -c $CXXFLAGS $CPPFLAGS ...</i></b>
-  <li> Link:  <b><i>$CXX $LDFLAGS ... $LIBS</i></b>
+  <li> <i><b>--without-debug-sfx</b></i> --
+       do not add <i>Release/Debug</i> suffix to the <i>build tree</i> name
+       <br><i>Example:</i> <i><b>GCC/</b></i>
+  <li> <i><b>--with-hostspec</b></i> --
+       add full host specs to the <i>build tree</i> name
+       <br><i>Example:</i> <i><b>GCC-Debug--i586-pc-linux-gnu/</b></i>
+  <li> <i><b>--exec-prefix=</b>/home/foo/bar</i> --
+       specify your own <i>build tree</i> path and name
 </ul>
 
-For more info on these variables see in the
-<a href="http://sunland.gsfc.nasa.gov/info/autoconf/Preset_Output_Variables.html">autoconf documentation</a>.
-The specified tools and flags will then be "frozen" inside the makefiles of
-produced <i>build tree</i>.
-
-<a name="ref_Reconf">
-<h2>Quick reconfiguration</h2>
-</a>
-
-<p>
-Sometimes, you do changes in your existing <i>"*.in"</i> files (e.g. makefiles)
-in the <i>source tree</i>, and you want to reflect these changes in your
-<i>build tree</i>. To do this, just go to the <i><b>"status/"</i></b> subdirectory
-of the relevant <i>build tree</i> and run <i><b>config.status</i></b> script
-in it.
+With <i><b>--exec-prefix=</b></i>, you still can explicitely use
+<i><b>--without-debug-sfx</b></i> and <i><b>--with-hostspec</b></i>
+to add suffix(es) to your <i>build tree</i> name in a manner described above.
+<br><i>Example:</i>
+<i><b>--exec-prefix=</b>/home/foo/bar</i>
+<i><b>--without-debug</b></i>
+<i><b>--with-debug-sfx</b></i>
+would deploy the new <i>build tree</i> in
+<i><b>/home/foo/bar-Release</b></i>.
 
 <p>
-This technique also helps if some <i>"*.in"</i> files have been modified
-in the result of CVS update in your <i>source tree</i>.
+There is also a special case with <i><b>--exec_prefix=</b>.</i>
+-- for those who prefer to put object files, libraries and executables to where
+the sources are located. But be advised that this will disallow you
+to configure for other <i>build trees</i>.
+
 
 <p>
-If you <b>added</b> or <b>removed</b> any of <i>"*.in"</i> files then you must
-reconfigure your <i>build tree</i> anew by calling the configuration script
-again, just like you did it for the original configuration.
-(NOTE: In this case, you must also manualy remove the appropriate
-<i>"inc/ncbiconf.h"</i> file before running the configure script.)
+<br>
+<a name="ref_ToolsAndFlags"></a>
+<h4>Tools and flags</i></h4>
 
+There is a predefined set of tools and flags used in the build process.
+User can alternate these tools and flags by setting the following
+environment variables for the <b><i>configure</i></b> script.
 
 <br></br>
-<a name="ref_Preset">
-<h2>Preset platform-specific features for the <b><i>configure</i></b> script</h2>
-</a>
-
-<p>
-For the developer's convenience, there is an auxiliary script
-<b><i>configure.sh</i></b>. It provides some platform-specific pre-configuration
-that cannot be performed automatically -- such like installing local paths
-and compiler-specific flags. This script uses <b><i>compilers/*.env</i></b>
-sub-scripts to retrieve these local paths and flags. The following localization
-variables can be set in addition to the "generic" ones(
-<a href="#ref_RunningFlags">
-<b>CC, CXX, CPP, AR,RANLIB, STRIP, CFLAGS, CXXFLAGS, CPPFLAGS, LDFLAGS, LIBS</b></a>):
-
-<br></br>
-<a name="ref_TablePreset">
+<a name="ref_TableToolsAndFlags">
 <table border=1 cellspacing=0>
-  <caption>Localization variables</caption>
   <tr>
 	 <th>Name</th>
 	 <th>Default</th>
@@ -270,10 +313,130 @@ variables can be set in addition to the "generic" ones(
   </tr>
 
   <tr>
+	 <td><b>CC</b></td>
+	 <td><i>gcc, cc</i></td>
+	 <td>C compiler</td>
+  </tr>
+
+  <tr>
+	 <td><b>CXX</b></td>
+	 <td><i>c++, g++, gcc, CC, cxx, cc++</i></td>
+	 <td>C++ compiler, also being used as a linker</td>
+  </tr>
+
+  <tr>
+	 <td><b>CPP</b></td>
+	 <td><i>$CC -E</i></td>
+	 <td>C preprocessor</td>
+  </tr>
+
+  <tr>
+	 <td><b>CXXCPP</b></td>
+	 <td><i>$CXX -E</i></td>
+	 <td>C++ preprocessor</td>
+  </tr>
+
+  <tr>
+	 <td><b>AR</b></td>
+	 <td><i>ar cru</i></td>
+	 <td>Librarian</td>
+  </tr>
+
+  <tr>
+	 <td><b>STRIP</b></td>
+	 <td><i>strip</i></td>
+	 <td>To discard symbolic info</td>
+  </tr>
+
+  <tr>
+	 <td><b>CFLAGS</b></td>
+	 <td><i>-g</i>
+    <a href="#ref_DebugVsRelease">or/and/nor</a>
+	 <i>-O</i></td>
+	 <td>C compiler flags</td>
+  </tr>
+
+  <tr>
+	 <td><b>CXXFLAGS</b></td>
+	 <td><i>-g</i>
+    <a href="#ref_DebugVsRelease">or/and/nor</a>
+	 <i>-O</i></td>
+	 <td>C++ compiler flags</td>
+  </tr>
+
+  <tr>
+	 <td><b>CPP</b></td>
+	 <td><i>-D_DEBUG</i>
+    <a href="#ref_DebugVsRelease">or/and/nor</a>
+    <i>-DNDEBUG</i></td>
+	 <td>C/C++ preprocessor flags</td>
+  </tr>
+
+  <tr>
+	 <td><b>LDFLAGS</b></td>
+	 <td>none</td>
+	 <td>Linker flags</td>
+  </tr>
+
+  <tr>
+	 <td><b>LIBS</b></td>
+	 <td>none</td>
+	 <td>Libraries to link to every executable</td>
+  </tr>
+
+  <tr>
 	 <td><b>CONFIG_SHELL</b></td>
 	 <td><i>/bin/sh</i></td>
 	 <td>Command interpreter to use in the configuration scripts and makefiles
-	     (it must be compatible with "<b>sh</b>")</td>
+	     (it must be compatible with <b>sh</b>)</td>
+  </tr>
+</table>
+
+<p>
+E.g. these tools and flags are used in the following contexts:
+<ul>
+  <li> To compile C sources:
+    <br> <b><i>$CC -c $CFLAGS $CPPFLAGS .....</i></b>
+  <li> To compile C++ sources:
+    <br> <b><i>$CXX -c $CXXFLAGS $CPPFLAGS .....</i></b>
+  <li> To compose a library:
+    <br> <b><i> $AR     </i></b> <i>libXXX.a xxx1.o xxx2.o xxx3.o .....</i> 
+	 <br> <b><i> $RANLIB </i></b> <i>libXXX.a</i>
+</i></b>
+  <li> To link an executable:
+    <br> <b><i>$CXX $LDFLAGS ..... $LIBS</i></b>
+</ul>
+
+For more info on these and other variables see in the
+<a href="http://sunland.gsfc.nasa.gov/info/autoconf/Preset_Output_Variables.html">autoconf documentation</a>.
+The specified tools and flags will then be "frozen" inside the makefiles of
+<i>build tree</i> produced by this <b><i>configure</i></b> run.
+
+
+<p>
+<br>
+<a name="ref_Localization"></a>
+<h4>Localization for the system and third-party packages</h4>
+
+<p>
+There is some configuration info that usually cannot be guessed or detected
+automatically, and thus in most cases it must be specified "manually" for
+the given local host's working environment.
+
+The following localization environment variables can be set in addition
+to the "generic" ones
+<a href="#ref_ToolsAndFlags">
+<b>(CC, CXX, CPP, AR,RANLIB, STRIP, CFLAGS, CXXFLAGS, CPPFLAGS, LDFLAGS, LIBS)
+</b></a>:
+
+<br></br>
+<a name="ref_TableLocalization">
+<table border=1 cellspacing=0>
+  <caption>User-defined localization variables</caption>
+  <tr>
+	 <th>Name</th>
+	 <th>Default</th>
+	 <th>Synopsis</th>
   </tr>
 
   <tr>
@@ -285,13 +448,19 @@ variables can be set in addition to the "generic" ones(
   <tr>
 	 <td><b>NETWORK_LIBS</b></td>
 	 <td><i>-lsocket -lnsl</i></td>
-	 <td>System network library</td>
+	 <td>System network libraries</td>
   </tr>
 
   <tr>
-	 <td><b>FASTCGI_LIBS</b></td>
-	 <td><i>-lfcgi</i></td>
-	 <td>Library to create Fast-CGI scripts</td>
+	 <td><b>SYBASE_PATH</b></td>
+	 <td><i>/netopt/Sybase/clients/current</i></td>
+	 <td>Path to Sybase package</td>
+  </tr>
+
+  <tr>
+	 <td><b>FASTCGI_PATH<br></b></td>
+	 <td><i>$NCBI</i></td>
+	 <td>Path to the in-house Fast-CGI client lib</td>
   </tr>
 
   <tr>
@@ -301,118 +470,261 @@ variables can be set in addition to the "generic" ones(
   </tr>
 
   <tr>
-	 <td><b>NCBI_C_INCLUDE</b></td>
-	 <td><i>$NCBI_C_PATH/include</i></td>
-	 <td>Path to the NCBI C toolkit header files</td>
+	 <td><b>NCBI_SSSDB_PATH</b></td>
+	 <td><i>/net/neptune/pubmed1/sss/db</i></td>
+	 <td>Path to the NCBI SSS DB package</td>
   </tr>
 
   <tr>
-	 <td><b>NCBI_C_RELEASE_LIB</b></td>
-	 <td><i>$NCBI_C_PATH/lib</i></td>
-	 <td>Path to the NCBI C toolkit release libraries</td>
-  </tr>
-
-  <tr>
-	 <td><b>NCBI_C_DEBUG_LIB</b></td>
-	 <td><i>$NCBI_C_PATH/altlib</i></td>
-	 <td>Path to the NCBI C toolkit debug libraries</td>
-  </tr>
-
-  <tr>
-	 <td><b>PM_PATH</b></td>
-	 <td><i>No_PmPath</i></td>
+	 <td><b>NCBI_PM_PATH</b></td>
+	 <td><i>/net/neptune/pubmed1/Cvs5</i></td>
 	 <td>Path to the NCBI PubMed package</td>
   </tr>
+</table>
 
+
+<p>
+Based on the above, <b><i>configure</i></b> will derive the following variables
+to use in the generated makefiles: 
+
+<br></br>
+<a name="ref_TableLocalization1">
+<table border=1 cellspacing=0>
+  <caption>Derived localization variables for makefiles</caption>
   <tr>
-	 <td><b>NCBI_SSS_PATH</b></td>
-	 <td><i>No_NcbiSSSPath</i></td>
-	 <td>Path to the NCBI SSS package</td>
+	 <th>Name</th>
+	 <th>Value</th>
+	 <th>Fallback</th>
+	 <th>Used to...</th>
   </tr>
 
   <tr>
-	 <td><b>NCBI_SSS_INCLUDE</b></td>
-	 <td><i>$NCBI_SSS_PATH</i></td>
-	 <td>Path to the NCBI SSS header files</td>
+	 <td><i><b>THREAD_LIBS</b></i></td>
+	 <td>$THREAD_LIBS</td>
+	 <td>$THREAD_LIBS</td>
+	 <td>link with system thread lib</td>
   </tr>
 
   <tr>
-	 <td><b>NCBI_SSS_RELEASE_LIB</b></td>
-	 <td><i>$NCBI_SSS_PATH/Release</i></td>
-	 <td>Path to the NCBI SSS release libraries</td>
+	 <td><i><b>NETWORK_LIBS</b></i></td>
+	 <td>$NETWORK_LIBS</td>
+	 <td>$NETWORK_LIBS</td>
+	 <td>link with system network libs</td>
   </tr>
 
   <tr>
-	 <td><b>NCBI_SSS_DEBUG_LIB</b></td>
-	 <td><i>$NCBI_SSS_PATH/Debug</i></td>
-	 <td>Path to the NCBI SSS debug libraries</td>
+	 <td><i><b>SYBASE_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$SYBASE_PATH<i>/include</i></td>
+	 <td>none</td>
+	 <td><i>#include</i> Sybase headers</td>
   </tr>
 
   <tr>
-	 <td><b>SYBASE_PATH</b></td>
-	 <td><i>No_SybasePath</i></td>
-	 <td>Path to Sybase package</td>
+	 <td><i><b>SYBASE_LIBS</b></i></td>
+	 <td><i><b>-L</b></i>$SYBASE_PATH<i>/lib <br>
+       <b>-l</b>ct <b>-l</b>cs <b>-l</b>tcl <b>-l</b>comn <b>-l</b>intl
+    </i></td>
+	 <td>none</td>
+	 <td>link with Sybase libs</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>FASTCGI_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$FASTCGI_PATH<i>/include</i></td>
+	 <td>none</td>
+	 <td><i>#include</i> Fast-CGI headers</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>FASTCGI_LIBS</b></i></td>
+	 <td><i><b>-L</b></i>$FASTCGI_PATH<i>/lib <b>-l</b>fcgi</i>
+        <br> or <br>
+        <i><b>-L</b></i>$FASTCGI_PATH<i>/altlib <b>-l</b>fcgi</i> </td>
+	 <td>none</td>
+	 <td>link with Fast-CGI lib</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>NCBI_C_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$NCBI_C_PATH<i>/include</i></td>
+	 <td>none</td>
+	 <td><i>#include</i> NCBI C toolkit headers</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>NCBI_C_LIBPATH</b></i></td>
+	 <td><i><b>-L</b></i>$NCBI_C_PATH<i>/lib</i>
+        <br> or <br>
+        <i><b>-L</b></i>$NCBI_C_PATH<i>/altlib</i></td>
+	 <td>none</td>
+	 <td>path to NCBI C toolkit libs</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>NCBI_C_ncbi</b></i></td>
+	 <td><i><b>-l</b>ncbi</i></td>
+	 <td>none</td>
+	 <td>link with NCBI C CoreLib</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>NCBI_SSSDB_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$NCBI_SSSDB_PATH</td>
+	 <td>none</td>
+	 <td><i>#include</i> NCBI SSS DB headers</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>NCBI_SSSDB_LIBS</b></i></td>
+	 <td><i><b>-L</b></i>$NCBI_SSSDB_PATH<i>/Release -<b>l</b>sssdb</i> <br>or<br>
+        <i><b>-L</b></i>$NCBI_SSSDB_PATH<i>/Debug -<b>l</b>sssdb</i>
+    </td>
+	 <td>none</td>
+	 <td>link with NCBI SSS DB libs</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>NCBI_PM_PATH</b></i></td>
+	 <td>$NCBI_PM_PATH</td>
+	 <td><i>No_NCBI_PubMed</i></td>
+	 <td>path to the PubMed package</td>
   </tr>
 </table>
 
 <p>
-Yet, you may need to modify the relevant sub-script or even create a new one
-to adopt for your local environment.
+<br>
+<a name="ref_ProhibitPackage"></a>
+<h4>Prohibiting the use of some of the system and third-party packages</h4>
 
 <p>
-It is possible to use <b><i>configure</i></b> under Windows NT,
-e.g. for the MSVC++ compiler -- if there is a "<i>sh</i>" or
-<a href="http://www.lns.cornell.edu/public/COMP/info/bash/bashref_toc.html">
-"<i>bash</i>"</a>
-<a href="http://www.gci-net.com/~users/c/cteeple/windowsnttrueshells.htp">
-emulators for MS Windows</a>. Sub-script <b><i>compilers/msvc_nt.env</i></b> does the
-job.
+Some of the above system and third-party packages can
+be prohibited to use -- using the following <b><i>configure</i></b>
+flags:
+
+<ul>
+  <li> <i><b>--without-sybase</b></i> (Sybase)
+  <li> <i><b>--without-fastcgi</b></i> (Fast-CGI)
+  <li> <i><b>--without-ncbi-c</b></i> (NCBI C toolkit)
+  <li> <i><b>--without-sssdb</b></i> (NCBI SSS DB)
+  <li> <i><b>--without-pubmed</b></i> (NCBI PubMed)
+</ul>
+
+Also, the build of all internal projects
+(located under the <i><b>internal/c++/{src|include}/internal/</b></i> directories)
+is disabled by default on almost all platforms. To enable it, one
+must pass flag <b><i>--with-internal</i></b> to the <b><i>configure</i></b>
+script.
+
 
 <p>
-And, if you have installed
-<a href="http://sourceware.cygnus.com/cygwin/">CYGWIN</a>
-enviroment and "egcs" GNU C/C++ compiler on your NT, then you can use
-<b><i>compilers/egcs_nt.env</i></b> to configure your <i>build tree</i>.
+<br>
+<a name="ref_Wrappers"></a>
+<h4>Compiler-specific <b><i>configure</i></b> wrappers</h4>
+
+<p>
+Most of the non-GCC compilers require special tools and additional
+mandatory flags to compile and link C++ code properly. That's why we
+have to have special scripts that perform the required non-standard
+compiler-specific pre-initialization for the used
+<a href="#ref_ToolsAndFlags">tools and flags</a> before running
+<b><i>configure</i></b>.
+<br>
+These wrapper scripts are located in the <i><b>compilers/</b></i>
+directory, and now we have such wrappers for WorkShop 5.0, MIPSpro 7.20
+and MSVC++ compilers:
+  <ul>
+    <li> <i><b>WorkShop5.sh</b></i> {32|64} [build_dir] [--configure-flags]
+    <li> <i><b>MIPSpro73.sh</b></i> [--configure-flags]
+    <li> <i><b>msvc_nt.bash</b></i> [--configure-flags]
+  </ul>
+Note, that these scripts accept all regular <b><i>configure</i></b> flags
+and then pass them to the <b><i>configure</i></b> script.
 
 
 <p>
+<br>
 <a name="ref_PreBuiltHeaders"></a>
-However, most of NT users have neither <b><i>sh</b></i>-like interpreter nor
-GNU <b><i>make</i></b> installed on their PCs. They can use pre-built
-<b><i>ncbiconf.ms6</i></b> configuration header, and use a hierarchy of
+<h4>Pre-built configuration headers</h4>
+
+<p>
+Although it is possible to run <b><i>configure</i></b> under Windows NT,
+(as we do for the MSVC++ compiler), however it requires having a
+<i>sh</i>-compatible command interpreter installed on your PC.
+In-house, we run <i><b>msvc_nt.bash</b></i> using 
+<a href="http://www.lns.cornell.edu/public/COMP/info/bash/bashref_toc.html">
+<i>bash</i></a> in the
+<a href="http://sourceware.cygnus.com/cygwin/">CYGWIN</a>
+environment.
+
+<p>
+As soon as most of NT users do not usually "play" with the extensions
+like <i>bash/CYGWIN</i> on their PCs but just want to use MSVC++
+Development Studio, so there is a pre-build configuration header
+for MSVC++ 6.0:
+<i><b>compilers/ncbiconf.ms6</b></i>.
+
+MSVC++ users can use this header and a ready-to-use hierarchy of
 <a href="#ref_MsvcProj">projects for the MS Visual C++ Studio</a>.
 
 <p>
-The same is for Mac users -- we have a (manually maintained) 
-<b><i>compilers/ncbiconf.mac</i></b> configuration header.
+The same is for Mac Metrowerks CodeWarrior on PowerPC --
+we have a manually maintained <i><b>compilers/ncbiconf.mac</b></i>
+(however we dont have a ready-to-use Mac-specific project tree).
 
-<br></br>
+
+<p>
+<br>
+<a name="ref_Reconf">
+<h2>Quick reconfiguration</h2>
+</a>
+
+<p>
+Sometimes, after you have done some changes in your existing <i>*.in</i>
+files (e.g. makefiles) in the <i>source tree</i>, you may want to reconfigure
+one of your <i>build trees</i> to pick up your fixes. To do this, just
+just run script <i><b>status/config.status</i></b> located in
+the relevant <i>build tree</i>.
+<br>
+This technique also helps if some <i>*.in</i> files have been modified
+in the result of CVS update in your <i>source tree</i>.
+
+<p>
+If you <b>added</b> or <b>removed</b> any of <i>*.in</i> files then you must
+reconfigure your <i>build tree</i> all anew by calling the configuration script
+again, just like you did for the original configuration.
+
+
+<p>
+<br>
 <a name="ref_Example">
 <h2>An example of configuration, installation and build</h2>
 </a>
 
-To configure, install and build all NCBI C++ projects on Sun with
-SunPro 5.0 compilers using CVS repository and relevant sub-script
-<b><i>compilers/ws50_sun.env</i></b>:
+To retrieve, configure, install and build all available NCBI C++ projects:
 
 <pre>
-# Retrieve NCBI C++ sources from the NCBI CVS tree(to "cpp_foo" directory)
-cvs checkout -d cpp_foo internal/c++
+# Retrieve NCBI C++ sources from the NCBI CVS tree(e.g. to "cpp_foo/" dir)
+cvs checkout -d ~/cpp_foo internal/c++
 
-# Configure
-#  HINT:  run "configure.sh" without parameters to see the USAGE info
-#  HINT:  run "configure.sh" with one meaningless argument(e.g. "eee")
-#         to see all allowed values for the 1st argument
-cd cpp_foo
-sh ./configure.sh ws50_sun build_bar
 
-# Perform a recursive build
-cd build_bar
+# Configure for WorkShop 5.0 compilers, then build recursively
+cd ~/cpp_foo
+compilers/WorkShop5.sh 32 my_build_dir
+
+cd my_build_dir
+make all_r
+
+
+# Configure for GCC compiler, then build recursively
+cd ~/cpp_foo
+./configure
+
+cd GCC-Debug
 make all_r
 </pre>
 
 
-<br></br>
+<br>
 <a name="ref_Compilers"><h2>List of supported compilers</h2>
 </a>
 
@@ -421,50 +733,51 @@ As for now, at least the following compilers give enough support
 (as concerns to the C++ and STL implementation) to build NCBI C++
 libraries and tools:
 <ul>
-  <li> SunOS (5.6 and higher)
+  <li> <a href="http://egcs.cygnus.com/">
+       <b>GCC 2.95.1</b></a>
     <ul>
-      <li> <b>WorkShop</b> Compilers 5.0 on SUN sparc and PC i586
-      <li> <b>egcs</b>-2.91.66 (using "-fsquangle" compiler flag)
-		     on SUN sparc and PC i586
+      <li> Solaris 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
+      <li> Linux RedHat 5.2 --- <i>PC-Intel</i>
+      <li> OSF1 4.0 --- <i>DEC-Alpha</i>
+      <li> IRIX64 6.5 --- <i>SGI-Mips</i>
     </ul>
 
-  <li> MS Windows (NT)
+  <li> <a href="ftp://ftp.xraylith.wisc.edu/pub/khan/gnu-win32/cygwin/gcc-2.95/">
+       <b>GCC 2.95</b></a>
     <ul>
-      <li> <b>MSVC++</b> 6.0 (SP3) on PC i586
-		<li> <b>egcs</b>-2.91.57 for CYGWIN_NT-4.0 on PC i586
+      Windows NT 4.0 (with CYGWIN Beta 20.1) --- <i>PC-Intel</i>
     </ul>
 
-  <li> MacOS
+  <li> <a href="http://www.sun.com/workshop/visual/">
+       <b>Sun WorkShop 5.0</b></a>
     <ul>
-      <li> Metrowerks <b>CodeWarrior</b> on PowerPC
+      <li> 32-bit: Solaris 2.6, 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
+      <li> 64-bit: Solaris 2.7 --- <i>SUN-Sparc</i>
     </ul>
 
-  <li> Linux (RedHat 5.2)
+  <li> <b>MSVC++ 6.0 (SP3)</b> 
     <ul>
-      <li> <b>egcs</b>-2.91.66 on PC i586
+      <li> Windows NT 4.0  --- <i>PC-Intel</i>
     </ul>
 
-  <li> IRIX64 (6.5)
+  <li> <b>MIPSpro-7.30 (-n32)</b>
     <ul>
-      <li> <b>MIPSpro</b>-7.3 (-n32) on SGI mips
+      <li> IRIX64 6.5 --- <i>SGI-Mips</i>
     </ul>
 
-  <li> IRIX64 (6.4)
+  <li> <b>Metrowerks CodeWarrior</b>
     <ul>
-      <li> <b>egcs</b>-2.91.66 (using "-fsquangle" compiler flag) on SGI mips
-    </ul>
-
-  <li> OSF1 (V4.0)
-    <ul>
-      <li> <b>egcs</b>-2.91.66 (using "-fsquangle" compiler flag) on DEC alpha
+      <li> MacOS -- <i>PowerPC</i>
     </ul>
 </ul>
-NOTE: Some projects(e.g. "query") are very platform-specific, and they cannot
-be adopted(or even compiled) for all supported platforms. All such projects
-are located under the <i><b>internal/c++/{src|include}/internal/</b></i> directories.
+NOTE: Some projects are very platform-specific, and they cannot
+be built for all of the supported platforms.
+All such projects are located under the <i><b>internal/c++/{src|include}/internal/</b></i>
+directories.
 
 
-<br></br>
+<p>
+<br>
 <a name="ref_AdHoc"><h2>Ad-hoc installations</h2>
 </a>
 
@@ -499,10 +812,14 @@ In order to adjust the MSVC++ project files for your local
 </ol>
 
 Now when the installation is complete you can load workspace
-<i><b>compilers/msvc_prj/ncbi_cpp.dsw</b></i> and build all basic libraries and test
-applications(project <b>core_all</b>) or just libraries(project <b>core_lib</b>),
-or any single library and/or application(other projects in this
-workspace).
+<i><b>compilers/msvc_prj/ncbi_cpp.dsw</b></i> and build the following projects:
+<ul>
+  <li> <b>all</b> -- everything
+  <li> <b>core_all</b> -- all basic libraries and test applications
+  <li> <b>core_lib</b> -- all basic libraries
+  <li> any single library and/or application -- other projects in this
+       workspace
+</ul>
 
 <p>
 There are also projects(such as <b>tool</b>, <b>xasn</b> and <b>xhist</b>)
@@ -528,8 +845,12 @@ are as follows:
 <hr>
 <table border=0 width="100%" cellspacing=0>
 <tr>
-<td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
-<td align=right>($Revision$)</td></tr>
+<td align=left>
+  <address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+<td align=right><i>$Date$</i></td>
+</tr>
 </table>
 </body>
 </html>
