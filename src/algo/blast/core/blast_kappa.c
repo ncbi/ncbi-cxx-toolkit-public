@@ -2562,7 +2562,7 @@ Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
     if(positionBased) {
       matrix = sbp->psi_matrix->pssm->data;
       ASSERT(queryLength == searchParams->mRows);
-      ASSERT(queryLength == sbp->psi_matrix->pssm->ncols);
+      ASSERT(queryLength == (Int4)sbp->psi_matrix->pssm->ncols);
     } else {
       matrix = sbp->matrix->data;
       Blast_FillResidueProbability(query, queryLength, searchParams->queryProb);
@@ -2644,7 +2644,7 @@ Kappa_RescaleSearch(Kappa_SearchParameters * sp,
     if(positionBased) {
       int status = 0;
       ASSERT(queryLength == sp->mRows);
-      ASSERT(queryLength == sbp->psi_matrix->pssm->ncols);
+      ASSERT(queryLength == (Int4)sbp->psi_matrix->pssm->ncols);
       sp->startFreqRatios =
         getStartFreqRatios(sbp, query, scoringParams->options->matrix,
                            sbp->psi_matrix->freq_ratios, queryLength);

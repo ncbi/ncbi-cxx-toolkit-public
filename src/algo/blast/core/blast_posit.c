@@ -241,7 +241,7 @@ impalaScaleMatrix(Kappa_compactSearchItems* compactSearch,
     /* multiplicative factors in binary search */
     double factor, factor_low = 1.0, factor_high = 1.0;    
     double lambda, new_lambda;     /* Karlin-Altschul parameter */
-    int index;                 /* loop index for binary search */
+    unsigned int index;                 /* loop index for binary search */
     int** private_matrix;    /* pointer to locally manipulated version of
                                    the matrix */
     int** matrix;
@@ -418,6 +418,9 @@ Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/02/14 15:04:05  camacho
+ * Fix compiler warnings
+ *
  * Revision 1.1  2005/02/14 14:05:53  camacho
  * Initial revision
  *
