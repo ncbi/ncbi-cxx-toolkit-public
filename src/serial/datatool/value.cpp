@@ -38,7 +38,7 @@ ostream& ASNBoolValue::Print(ostream& out, int )
     return out << (value? "TRUE": "FALSE");
 }
 
-ASNIntegerValue::ASNIntegerValue(long v)
+ASNIntegerValue::ASNIntegerValue(int v)
     : value(v)
 {
 }

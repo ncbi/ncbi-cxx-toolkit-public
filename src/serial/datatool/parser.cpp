@@ -178,7 +178,8 @@ void ASNParser::TypesBlock(ASNModule& module, list<AutoPtr<ASNMember> >& members
 AutoPtr<ASNMember> ASNParser::NamedDataType(ASNModule& module)
 {
     AutoPtr<ASNMember> member(new ASNMember);
-    member->name = Identifier();
+    if ( Next() == T_IDENTIFIER )
+        member->name = Identifier();
     member->type = Type(module);
     switch ( Next() ) {
     case K_OPTIONAL:
@@ -209,7 +210,7 @@ void ASNParser::EnumeratedValue(ASNEnumeratedType* t)
 {
     string id = Identifier();
     ConsumeSymbol('(');
-    long value = Number();
+    int value = Number();
     ConsumeSymbol(')');
     t->AddValue(id, value);
 }
@@ -279,10 +280,10 @@ AutoPtr<ASNValue> ASNParser::x_Value(void)
 	return 0;
 }
 
-long ASNParser::Number(void)
+int ASNParser::Number(void)
 {
     bool minus = ConsumeIfSymbol('-');
-    long value = NStr::StringToUInt(ValueOf(T_NUMBER, "number"));
+    int value = NStr::StringToUInt(ValueOf(T_NUMBER, "number"));
     if ( minus )
         value = -value;
     return value;

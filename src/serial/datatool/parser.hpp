@@ -34,7 +34,7 @@ public:
     void TypeList(list<string>& ids);
     AutoPtr<ASNValue> Value(void);
     AutoPtr<ASNValue> x_Value(void);
-    long Number(void);
+    int Number(void);
     string String(void);
     string Identifier(void);
     string TypeReference(void);

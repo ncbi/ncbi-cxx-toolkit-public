@@ -37,11 +37,11 @@ public:
 
 class ASNIntegerValue : public ASNValue {
 public:
-    ASNIntegerValue(long v);
+    ASNIntegerValue(int v);
 
     CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
-    long value;
+    int value;
 };
 
 class ASNStringValue : public ASNValue {

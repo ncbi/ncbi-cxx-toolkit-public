@@ -27,7 +27,7 @@ public:
         list<string> types;
     };
     typedef list< AutoPtr<Import> > TImports;
-    typedef list< pair< string, AutoPtr< ASNType > > > TDefinitions;
+    typedef list< AutoPtr<ASNType> > TDefinitions;
 
     void AddDefinition(const string& name, const AutoPtr<ASNType> type);
 

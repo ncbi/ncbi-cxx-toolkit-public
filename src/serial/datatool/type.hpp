@@ -4,6 +4,7 @@
 #include <corelib/ncbistd.hpp>
 #include <ostream>
 #include <list>
+#include <set>
 #include <autoptr.hpp>
 #include <value.hpp>
 
@@ -11,6 +12,7 @@ BEGIN_NCBI_SCOPE
 
 class CTypeInfo;
 class CClassInfoTmpl;
+class CNcbiRegistry;
 
 END_NCBI_SCOPE
 
@@ -43,6 +45,27 @@ public:
 
     void Warning(const string& mess) const;
 
+    virtual void CollectUserTypes(set<string>& types) const;
+    virtual void GenerateCode(ostream& header, ostream& code,
+                              const string& name,
+                              const CNcbiRegistry& def,
+                              const string& section) const;
+/*
+    struct CTypeStrings {
+        CTypeStrings(const string& type)
+            : cType(type)
+            {}
+        string cType;
+        string macroTYPE;
+        string macroREF;
+    };
+*/        
+    virtual pair<string, string> GetCType(const CNcbiRegistry& def,
+                                          const string& section,
+                                          const string& key) const;
+    virtual string GetDefaultCType(void) const;
+    virtual bool SimpleType(void) const;
+
     int line;
     string name; // for named type
 
@@ -60,6 +83,7 @@ public:
 
     ostream& Print(ostream& out, int indent) const;
 
+    bool SimpleType(void) const;
 private:
     string keyword;
 };
@@ -72,6 +96,8 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
+    void GenerateCode(ostream& , ostream& , const string& ,
+                      const CNcbiRegistry& , const string& ) const;
 };
 
 class ASNBooleanType : public ASNFixedType {
@@ -82,6 +108,7 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
+    string GetDefaultCType(void) const;
 };
 
 class ASNRealType : public ASNFixedType {
@@ -92,6 +119,7 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
+    string GetDefaultCType(void) const;
 };
 
 class ASNVisibleStringType : public ASNFixedType {
@@ -103,6 +131,7 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
+    string GetDefaultCType(void) const;
 };
 
 class ASNStringStoreType : public ASNVisibleStringType {
@@ -124,6 +153,7 @@ public:
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
+    string GetDefaultCType(void) const;
 };
 
 class ASNEnumeratedType : public ASNType {
@@ -152,6 +182,8 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     CTypeInfo* CreateTypeInfo(void);
+    string GetDefaultCType(void) const;
+    bool SimpleType(void) const;
 
 private:
     string keyword;
@@ -168,6 +200,7 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
+    string GetDefaultCType(void) const;
 };
 
 class ASNUserType : public ASNType {
@@ -181,6 +214,11 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
+
+    virtual void CollectUserTypes(set<string>& types) const;
+    pair<string, string> GetCType(const CNcbiRegistry& def,
+                                  const string& section,
+                                  const string& key) const;
 
     string userTypeName;
 
@@ -197,6 +235,8 @@ public:
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
 
+    virtual void CollectUserTypes(set<string>& types) const;
+
     AutoPtr<ASNType> type;
 
 private:
@@ -208,6 +248,10 @@ public:
     ASNSetOfType(const AutoPtr<ASNType>& type);
 
     CTypeInfo* CreateTypeInfo(void);
+    
+    pair<string, string> GetCType(const CNcbiRegistry& def,
+                                  const string& section,
+                                  const string& key) const;
 };
 
 class ASNSequenceOfType : public ASNOfType {
@@ -215,6 +259,10 @@ public:
     ASNSequenceOfType(const AutoPtr<ASNType>& type);
 
     CTypeInfo* CreateTypeInfo(void);
+
+    pair<string, string> GetCType(const CNcbiRegistry& def,
+                                  const string& section,
+                                  const string& key) const;
 };
 
 class ASNMember {
@@ -239,25 +287,38 @@ public:
     AutoPtr<ASNValue> defaultValue;
 };
 
-class ASNContainerType : public ASNType {
+class ASNMemberContainerType : public ASNType {
 public:
     typedef list<AutoPtr<ASNMember> > TMembers;
 
-    ASNContainerType(ASNModule& module, const string& kw);
+    ASNMemberContainerType(ASNModule& module, const string& kw);
     
     ostream& Print(ostream& out, int indent) const;
 
     bool Check(void);
 
+    TObjectPtr CreateDefault(const ASNValue& value);
+    
+    virtual void CollectUserTypes(set<string>& types) const;
+
     TMembers members;
-
-    CTypeInfo* CreateTypeInfo(void);
-
-protected:
-    virtual CClassInfoTmpl* CreateClassInfo(void);
 
 private:
     string keyword;
+};
+
+class ASNContainerType : public ASNMemberContainerType {
+    typedef ASNMemberContainerType CParent;
+public:
+    ASNContainerType(ASNModule& module, const string& kw);
+    
+    CTypeInfo* CreateTypeInfo(void);
+    
+    void GenerateCode(ostream& , ostream& , const string& ,
+                      const CNcbiRegistry& , const string& ) const;
+
+protected:
+    virtual CClassInfoTmpl* CreateClassInfo(void);
 };
 
 class ASNSetType : public ASNContainerType {
@@ -266,7 +327,6 @@ public:
     ASNSetType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
-    TObjectPtr CreateDefault(const ASNValue& value);
 
 protected:
     CClassInfoTmpl* CreateClassInfo(void);
@@ -278,17 +338,20 @@ public:
     ASNSequenceType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
-    TObjectPtr CreateDefault(const ASNValue& value);
 };
 
-class ASNChoiceType : public ASNContainerType {
+class ASNChoiceType : public ASNMemberContainerType {
+    typedef ASNMemberContainerType CParent;
 public:
     ASNChoiceType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
-    TObjectPtr CreateDefault(const ASNValue& value);
 
     CTypeInfo* CreateTypeInfo(void);
+    void GenerateCode(ostream& header, ostream& code,
+                      const string& name,
+                      const CNcbiRegistry& def,
+                      const string& section) const;
 };
 
 #endif

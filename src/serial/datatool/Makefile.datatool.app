@@ -7,7 +7,7 @@
 #################################
 
 APP = datatool
-OBJ = moduleset alexer aparser parser lexer type value module main
+OBJ = moduleset alexer aparser parser lexer type value module main generate
 LIB = xser xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) -I.
