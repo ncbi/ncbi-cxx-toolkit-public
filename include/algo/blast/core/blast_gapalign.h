@@ -280,6 +280,23 @@ void
 AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr, 
                    Int4 query_offset, Int4 query_length, Int4* start_shift);
 
+/** Function to look for the highest scoring window (of size HSP_MAX_WINDOW)
+ * in an HSP and return the middle of this.  Used by the gapped-alignment
+ * functions to start the gapped alignments.
+ * @param query The query sequence [in]
+ * @param subject The subject sequence [in]
+ * @param sbp Scoring block, containing matrix [in]
+ * @param q_start Starting offset in query [in]
+ * @param q_length Length of HSP in query [in]
+ * @param s_start Starting offset in subject [in]
+ * @param s_length Length of HSP in subject [in]
+ * @return The offset at which alignment should be started [out]
+*/
+Int4 
+BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
+   const BlastScoreBlk* sbp, Uint4 q_start, Uint4 q_length, 
+   Uint4 s_start, Uint4 s_length);
+
 #ifdef __cplusplus
 }
 #endif
