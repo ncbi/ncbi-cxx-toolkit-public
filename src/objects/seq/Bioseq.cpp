@@ -65,16 +65,13 @@ CBioseq::~CBioseq(void)
 {
 }
 
-void CBioseq::UserOp_Assign(const CSerialUserOp& source)
+void CBioseq::UserOp_Assign(const CSerialUserOp& /*source*/)
 {
-    const CBioseq& src = dynamic_cast<const CBioseq&>(source);
-    m_ParentEntry = src.m_ParentEntry;
 }
 
-bool CBioseq::UserOp_Equals(const CSerialUserOp& object) const
+bool CBioseq::UserOp_Equals(const CSerialUserOp& /*object*/) const
 {
-    const CBioseq& obj = dynamic_cast<const CBioseq&>(object);
-    return m_ParentEntry == obj.m_ParentEntry;
+    return true;
 }
 
 
@@ -87,16 +84,9 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
         {
             // extract each range, create and add simple location
             ITERATE ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
-                CSeq_loc* int_loc = new CSeq_loc;
-                SerialAssign<CSeq_id>
-                    (int_loc->SetInt().SetId(), (*ii)->GetId());
-                int_loc->SetInt().SetFrom((*ii)->GetFrom());
-                int_loc->SetInt().SetTo((*ii)->GetTo());
-                if ( (*ii)->IsSetStrand() )
-                    int_loc->SetInt().SetStrand((*ii)->GetStrand());
-                CDelta_seq* dseq = new CDelta_seq;
-                dseq->SetLoc(*int_loc);
-                ext.Set().push_back(CRef<CDelta_seq>(dseq));
+                CRef<CDelta_seq> dseq(new CDelta_seq);
+                dseq->SetLoc().SetInt().Assign(**ii);
+                ext.Set().push_back(dseq);
             }
             break;
         }
@@ -105,15 +95,14 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
             // extract each point
             ITERATE ( CPacked_seqpnt::TPoints, pi,
                       loc.GetPacked_pnt().GetPoints() ) {
-                CSeq_loc* pnt_loc = new CSeq_loc;
-                SerialAssign<CSeq_id>
-                    (pnt_loc->SetPnt().SetId(), loc.GetPacked_pnt().GetId());
+                CRef<CSeq_loc> pnt_loc(new CSeq_loc);
+                pnt_loc->SetPnt().SetId().Assign(loc.GetPacked_pnt().GetId());
                 pnt_loc->SetPnt().SetPoint(*pi);
                 if ( loc.GetPacked_pnt().IsSetStrand() ) {
                     pnt_loc->SetPnt().SetStrand(
                         loc.GetPacked_pnt().GetStrand());
                 }
-                CDelta_seq* dseq = new CDelta_seq;
+                CRef<CDelta_seq> dseq(new CDelta_seq);
                 dseq->SetLoc(*pnt_loc);
                 ext.Set().push_back(CRef<CDelta_seq>(dseq));
             }
@@ -246,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.20  2003/04/24 16:14:12  vasilche
+ * Fixed Parentize().
+ *
  * Revision 6.19  2003/04/15 19:48:54  vasilche
  * Fixed uninitialized variable.
  *

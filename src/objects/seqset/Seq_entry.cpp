@@ -67,38 +67,55 @@ CSeq_entry::~CSeq_entry(void)
 {
 }
 
+void CSeq_entry::ResetParentEntry(void)
+{
+    m_ParentEntry = 0;
+}
+
+void CSeq_entry::SetParentEntry(CSeq_entry* entry)
+{
+    m_ParentEntry = entry;
+}
+
 void CSeq_entry::Parentize(void)
 {
-    if (m_ParentEntry != 0) {
-        return; // already parentized
-    }
-    if ( IsSeq() ) {
+    switch ( Which() ) {
+    case e_Seq:
         SetSeq().SetParentEntry(this);
-    }
-    else {
-        CBioseq_set::TSeq_set::iterator s_end =
-            SetSet().SetSeq_set().end();
-        for (CBioseq_set::TSeq_set::iterator si =
-            SetSet().SetSeq_set().begin(); si != s_end; si++) {
-            (*si)->SetParentEntry(0);
+        break;
+    case e_Set:
+        NON_CONST_ITERATE ( CBioseq_set::TSeq_set, si, SetSet().SetSeq_set() ) {
+            (*si)->SetParentEntry(this);
             (*si)->Parentize();
+        }
+        break;
+    }
+}
+
+void CSeq_entry::ParentizeOneLevel(void)
+{
+    switch ( Which() ) {
+    case e_Seq:
+        SetSeq().SetParentEntry(this);
+        break;
+    case e_Set:
+        NON_CONST_ITERATE ( CBioseq_set::TSeq_set, si, SetSet().SetSeq_set() ) {
             (*si)->SetParentEntry(this);
         }
+        break;
     }
-    // Consider this to be the tree root.
-    m_ParentEntry = this;
 }
 
 void CSeq_entry::UserOp_Assign(const CSerialUserOp& source)
 {
     const CSeq_entry& src = dynamic_cast<const CSeq_entry&>(source);
     m_ParentEntry = 0;
+    ParentizeOneLevel();
 }
 
-bool CSeq_entry::UserOp_Equals(const CSerialUserOp& object) const
+bool CSeq_entry::UserOp_Equals(const CSerialUserOp& /*object*/) const
 {
-    const CSeq_entry& obj = dynamic_cast<const CSeq_entry&>(object);
-    return m_ParentEntry == obj.m_ParentEntry;
+    return true;
 }
 
 
@@ -372,6 +389,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.18  2003/04/24 16:14:12  vasilche
+ * Fixed Parentize().
+ *
  * Revision 6.17  2003/03/11 15:56:34  kuznets
  * iterate -> ITERATE
  *

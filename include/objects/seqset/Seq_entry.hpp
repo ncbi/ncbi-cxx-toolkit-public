@@ -55,8 +55,18 @@ public:
     CSeq_entry(void);
     // destructor
     ~CSeq_entry(void);
+
     // Manage Seq-entry tree structure
+    // recursive update of parent Seq-entries (will not change parent of this)
     void Parentize(void);
+    // non-recursive update of direct childrent parents (will not change parent of this)
+    void ParentizeOneLevel(void);
+    // reset parent entry to NULL
+    void ResetParentEntry(void);
+
+    // get parent of this.
+    // NULL means that either this is top level Seq-entry,
+    // or Parentize() was never called.
     CSeq_entry* GetParentEntry(void) const;
 
 protected:
@@ -101,17 +111,9 @@ CSeq_entry::CSeq_entry(void)
 }
 
 inline
-void CSeq_entry::SetParentEntry(CSeq_entry* entry)
-{
-    m_ParentEntry = entry;
-}
-
-inline
 CSeq_entry* CSeq_entry::GetParentEntry(void) const
 {
-    // m_ParentEntry == this for top-level entries,
-    // which have no parents
-    return (m_ParentEntry == this) ? 0 : m_ParentEntry;
+    return m_ParentEntry;
 }
 
 /////////////////// end of CSeq_entry inline methods
@@ -125,6 +127,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2003/04/24 16:14:12  vasilche
+ * Fixed Parentize().
+ *
  * Revision 1.9  2002/12/26 12:44:06  dicuccio
  * Added Win32 export specifiers
  *

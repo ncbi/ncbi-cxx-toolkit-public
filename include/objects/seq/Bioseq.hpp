@@ -62,7 +62,11 @@ public:
     CBioseq(void);
     // destructor
     ~CBioseq(void);
+
     // Manage Seq-entry tree structure
+    // get parent Seq-entry.
+    // NULL means that either there is no parent Seq-entry,
+    // or CSeq_entry::Parentize() was never called.
     CSeq_entry* GetParentEntry(void) const;
 
     // see GetTitle in util/sequence.hpp
@@ -147,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/04/24 16:14:11  vasilche
+ * Fixed Parentize().
+ *
  * Revision 1.16  2002/12/26 12:42:59  dicuccio
  * Added Win32 export specifiers
  *
