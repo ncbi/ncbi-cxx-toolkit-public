@@ -40,21 +40,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class NCBI_XOBJMGR_EXPORT CResultZBtSrc : public CByteSource
-{
-public:
-    CResultZBtSrc(CByteSourceReader* src);
-    ~CResultZBtSrc();
-
-    virtual CRef<CByteSourceReader> Open(void);
-
-private:
-    CResultZBtSrc(const CResultZBtSrc&);
-    const CResultZBtSrc& operator=(const CResultZBtSrc&);
-
-    CRef<CByteSourceReader> m_Src;
-};
-
 
 class CResultZBtSrcX;
 class CResultZBtSrcRdr;
@@ -73,14 +58,15 @@ public:
     };
 
     virtual size_t Read(char* buffer, size_t bufferLength);
+
     size_t GetCompressedSize(void) const;
 
 private:
     CResultZBtSrcRdr(const CResultZBtSrcRdr&);
     const CResultZBtSrcRdr& operator=(const CResultZBtSrcRdr&);
 
-    CRef<CByteSourceReader> m_Src;
-    EType       m_Type;
+    CRef<CByteSourceReader>  m_Src;
+    EType                    m_Type;
     auto_ptr<CResultZBtSrcX> m_Decompressor;
 };
 
@@ -91,6 +77,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2003/10/15 13:43:57  vasilche
+* Removed obsolete class CResultZBtSrc.
+* Some code formatting.
+*
 * Revision 1.3  2003/10/14 22:35:09  ucko
 * Add missing declaration of CResultZBtSrcRdr::GetCompressedSize.
 *
