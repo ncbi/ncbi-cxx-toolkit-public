@@ -164,7 +164,7 @@ ln -s ${target_dir}/bin/run-gbench.sh ${src_dir}/bin/gbench
 COMMON_Exec cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
 COMMON_Exec cp -p ${source_dir}/gbench.ini ${target_dir}/etc/
 
-COMMON_Exec ${target_dir}/bin/move-gbench.sh
+COMMON_Exec ${target_dir}/bin/move-gbench.sh ${target_dir}
 
 echo "Configuring plugin cache"
 COMMON_AddRunpath ${target_dir}/lib
