@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/10/22 17:58:10  vasilche
+* Do not catch CLoaderException::eNoConnection.
+*
 * Revision 1.9  2003/09/30 16:22:05  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
@@ -103,6 +106,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 
 #include <objmgr/object_manager.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seqdesc_ci.hpp>
@@ -306,7 +310,16 @@ bool CTestOM::Thread_Run(int idx)
                     }
                 }
             }
-        } catch (exception& e) {
+        }
+        catch (CLoaderException& e) {
+            LOG_POST("T" << idx << ": gi = " << i 
+                << ": EXCEPTION = " << e.what());
+            ok = false;
+            if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                break;
+            }
+        }
+        catch (exception& e) {
             LOG_POST("T" << idx << ": gi = " << i 
                      << ": EXCEPTION = " << e.what());
             ok = false;
