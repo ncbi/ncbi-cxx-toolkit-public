@@ -697,6 +697,15 @@
 #endif
 
 /*
+ * Export specifier for library gui_graph
+ */
+#ifdef NCBI_GUIGRAPH_EXPORTS
+#  define NCBI_GUIGRAPH_EXPORT      __declspec(dllexport)
+#else
+#  define NCBI_GUIGRAPH_EXPORT      __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library gui_opengl
  */
 #ifdef NCBI_GUIOPENGL_EXPORTS
@@ -773,8 +782,8 @@
 #  define NCBI_ACCESS_EXPORT
 #  define NCBI_BDB_EXPORT
 #  define NCBI_BIBLIO_EXPORT
-#  define NCBI_BLAST_EXPORT
 #  define NCBI_BLASTDB_EXPORT
+#  define NCBI_BLAST_EXPORT
 #  define NCBI_CDD_EXPORT
 #  define NCBI_CN3D_EXPORT
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT
@@ -792,6 +801,7 @@
 #  define NCBI_GENERAL_EXPORT
 #  define NCBI_GUICORE_EXPORT
 #  define NCBI_GUIDIALOGS_EXPORT
+#  define NCBI_GUIGRAPH_EXPORT
 #  define NCBI_GUIOPENGL_EXPORT
 #  define NCBI_GUIUTILS_EXPORT
 #  define NCBI_GUIWIDGETS_EXPORT
@@ -829,6 +839,7 @@
 #  define NCBI_XALNUTIL_EXPORT
 #  define NCBI_XBLAST_EXPORT
 #  define NCBI_XGBPLUGIN_EXPORT
+#  define NCBI_XIMAGE_EXPORT
 #  define NCBI_XLOADER_BLASTDB_EXPORT
 #  define NCBI_XLOADER_LDS_EXPORT
 #  define NCBI_XNCBI_EXPORT
@@ -837,7 +848,6 @@
 #  define NCBI_XOBJUTIL_EXPORT
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XUTIL_EXPORT
-#  define NCBI_XIMAGE_EXPORT
 
 #endif
 
@@ -847,6 +857,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.34  2003/09/04 14:58:51  dicuccio
+ * Added export specifier for GUIGRAPH library
+ *
  * Revision 1.33  2003/08/27 16:41:43  ivanov
  * * Added export specifier NCBI_XIMAGE_EXPORT
  *
