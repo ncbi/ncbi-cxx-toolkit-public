@@ -209,30 +209,156 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo)
 }
 
 
-string CCommentItem::GetStatusForRefTrack(const CUser_object& uo)
+CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
+(const CUser_object& uo,
+ string* st)
+{
+    TRefTrackStatus retval = eRefTrackStatus_Unknown;
+    if ( st != 0 ) {
+        st->erase();
+    }
+    if ( !uo.HasField("Status") ) {
+        return retval;
+    }
+
+    const CUser_field& field = uo.GetField("Status");
+    if ( field.GetData().IsStr() ) {
+        string status = field.GetData().GetStr();
+        if ( status == "Inferred" ) { 
+            retval = eRefTrackStatus_Inferred;
+        } else if ( status == "Provisional" ) {
+            retval = eRefTrackStatus_Provisional;
+        } else if ( status == "Predicted" ) {
+            retval = eRefTrackStatus_Predicted;
+        } else if ( status == "Validated" ) {
+            retval = eRefTrackStatus_Validated;
+        } else if ( status == "Reviewed" ) {
+            retval = eRefTrackStatus_Reviewd;
+        } else if ( status == "Model" ) {
+            retval = eRefTrackStatus_Model;
+        } else if ( status == "WGS" ) {
+            retval = eRefTrackStatus_WGS;
+        }
+
+        if ( st != 0  &&  retval != eRefTrackStatus_Unknown ) {
+            *st = NStr::ToUpper(status);
+        }
+    }
+
+    return retval;
+}
+
+
+string CCommentItem::GetStringForRefTrack(const CUser_object& uo)
 {
     if ( !uo.CanGetType()  ||  !uo.GetType().IsStr()  ||
          uo.GetType().GetStr() != "RefGeneTracking" ) {
         return kEmptyStr;
     }
 
-    if ( uo.HasField("Status") ) {
-        const CUser_field& uf = uo.GetField("Status");
-        if ( uf.CanGetData()  &&  uf.GetData().IsStr() ) {
-            string str = uf.GetData().GetStr();
-            if ( NStr::CompareNocase(str, "Inferred")    == 0  ||
-                 NStr::CompareNocase(str, "Provisional") == 0  ||
-                 NStr::CompareNocase(str, "Predicted")   == 0  ||
-                 NStr::CompareNocase(str, "Validated")   == 0  ||
-                 NStr::CompareNocase(str, "Reviewed")    == 0  ||
-                 NStr::CompareNocase(str, "Model")       == 0  ||
-                 NStr::CompareNocase(str, "WGS")         == 0 ) {
-                return NStr::ToUpper(str);
+    string status_str;
+    TRefTrackStatus status = GetRefTrackStatus(uo, &status_str);
+    if ( status == eRefTrackStatus_Unknown ) {
+        return kEmptyStr;
+    }
+
+    string collaborator;
+    if ( uo.HasField("Collaborator") ) {
+        const CUser_field& colab_field = uo.GetField("Collaborator");
+        if ( colab_field.GetData().IsStr() ) {
+            collaborator = colab_field.GetData().GetStr();
+        }
+    }
+
+    string source;
+    if ( uo.HasField("GenomicSource") ) {
+        const CUser_field& source_field = uo.GetField("GenomicSource");
+        if ( source_field.GetData().IsStr() ) {
+            source = source_field.GetData().GetStr();
+        }
+    }
+
+    CNcbiOstrstream oss;
+    oss << status_str << " REFSEQ: ";
+    switch ( status ) {
+    case eRefTrackStatus_Inferred:
+        oss << "This record is predicted by genome sequence analysis and is "
+            << "not yet supported by experimental evidence.";
+        break;
+    case eRefTrackStatus_Provisional:
+        oss << "This record has not yet been subject to final NCBI review.";
+        break;
+    case eRefTrackStatus_Predicted:
+        oss << "The mRNA record is supported by experimental evidence;"
+            << "however, the coding sequence is predicted.";
+        break;
+    case eRefTrackStatus_Validated:
+        oss << "This record has undergone preliminary review of the sequence,"
+            << "but has not yet been subject to final review.";
+        break;
+    case eRefTrackStatus_Reviewd:
+        oss << "This record has been curated by " 
+            << (collaborator.empty() ? "NCBI staff" : collaborator) << '.';
+        break;
+    case eRefTrackStatus_Model:
+        oss << "This record is predicted by automated computational analysis.";
+        break;
+    case eRefTrackStatus_WGS:
+        oss << "This record is provided to represent a collection of "
+            << "whole genome shotgun sequences.";
+        break;
+    default:
+        break;
+    }
+
+    if ( status != eRefTrackStatus_Reviewd  &&  !collaborator.empty() ) {
+        oss << "This record has been curated by " << collaborator << '.';
+    }
+
+    if ( !source.empty() ) {
+        oss << "This record is derived from an annotated genomic sequence ("
+            << source << ").";
+    }
+
+    vector < pair<const string*, bool> > assembly;
+    if ( uo.HasField("Assembly") ) {
+        const CUser_field& field = uo.GetField("Assembly");
+        if ( field.GetData().IsFields() ) {
+            ITERATE (CUser_field::C_Data::TFields, fit, field.GetData().GetFields()) {
+                if ( !(*fit)->GetData().IsFields() ) {
+                    continue;
+                }
+                ITERATE (CUser_field::C_Data::TFields, it, (*fit)->GetData().GetFields()) {
+                    const CUser_field& uf = **it;
+                    if ( !uf.CanGetLabel()  ||  !uf.GetLabel().IsStr() ) {
+                        continue;
+                    }
+                    const string& label = uf.GetLabel().GetStr();
+                    if ( label == "accession"  ||  label == "name" ) {
+                        bool is_accn = (label == "accession");
+                        if ( uf.GetData().IsStr()  &&  !uf.GetData().GetStr().empty() ) {
+                            assembly.push_back(make_pair(&uf.GetData().GetStr(), is_accn));
+                        }
+                    }
+                }
             }
         }
     }
-    return kEmptyStr;
+    if ( assembly.size() > 0 ) {
+        oss << " The reference sequence was derived from ";
+        size_t assembly_size = assembly.size();
+        for ( size_t i = 0; i < assembly_size; ++i ) {
+            if ( i > 0  ) {
+                oss << ((i < assembly_size - 1) ? ", " : " and ");
+            }
+            oss << *(assembly[i].first);
+        }
+        oss << '.';
+    }
+
+    return CNcbiOstrstreamToString(oss);
 }
+
 
 
 bool CCommentItem::NsAreGaps(const CBioseq& seq, CFFContext& ctx)
@@ -521,8 +647,8 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc, CFFContext& ctx)
     if ( str.empty() ) {
         return;
     }
-    //StringCleanup(str);
-    if ( NStr::EndsWith(str, "..")  && !NStr::EndsWith(str, "...") ) {
+    
+    if ( NStr::EndsWith(str, "..")  &&  !NStr::EndsWith(str, "...") ) {
         str.erase(str.length() - 1);
     }
     if ( !NStr::EndsWith(str, ".") ) {
@@ -691,6 +817,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/05 18:44:05  shomrat
+* fixed RefTRack comments
+*
 * Revision 1.2  2003/12/18 17:43:31  shomrat
 * context.hpp moved
 *
