@@ -52,6 +52,9 @@ class CBioseq_set;
 class CSeqdesc;
 class CSeq_annot;
 class CTrna_ext;
+class CProt_ref;
+class CSeq_loc;
+class CFeat_CI;
 
 BEGIN_SCOPE(validator)
 
@@ -250,7 +253,7 @@ enum EErrType {
 //                            Validation classes                          
 // =============================================================================
 
-// ===========================  Top-Level Validation  ==========================
+// ===========================  Central Validation  ==========================
 
 // CValidError_imp provides the entry point to the validation process.
 // It calls upon the various validation classes to perform validation of
@@ -335,6 +338,15 @@ public:
     inline bool IsXR(void) const { return m_IsXR; }
     inline bool IsGI(void) const { return m_IsGI; }
 
+    void AddBioseqWithNoPub(const CBioseq& seq);
+    void AddBioseqWithNoBiosource(const CBioseq& seq);
+    void AddProtWithoutFullRef(const CBioseq& seq);
+    void ReportMissingPubs(const CBioseq& seq, const CCit_sub* cs);
+    void ReportMissingBiosource(const CBioseq& seq);
+    void ReportProtWithoutFullRef(void);
+
+    bool IsFarLocation(const CSeq_loc& loc) const;
+
 private:
     // Prohibit copy constructor & assignment operator
     CValidError_imp(const CValidError_imp&);
@@ -345,6 +357,9 @@ private:
 
     void InitializeSourceQualTags();
     void ValidateSourceQualTags(const string& str, const CSerialObject& obj);
+
+    bool IsMixedStrands(const CBioseq& seq, const CSeq_loc& loc);
+
 
     CObjectManager* const m_ObjMgr;
     CRef<CScope> m_Scope;
@@ -382,8 +397,9 @@ private:
     bool m_IsXR;
     bool m_IsGI;
 
-    // seq ids contained withinh the orignal seq entry.
-    set< CConstRef<CSeq_id> > m_InitialSeqIds;
+    // seq ids contained within the orignal seq entry. 
+    // (used to check for far location)
+    set< CConstRef<CSeq_id> >    m_InitialSeqIds;
     // prot bioseqs without a full reference
     vector< CConstRef<CBioseq> > m_ProtWithNoFullRef;
     // Bioseqs without pubs (should be considered only if m_NoPubs is false)
@@ -406,16 +422,48 @@ private:
 // =============================================================================
 
 
+
+class CValidError_base
+{
+protected:
+    // typedefs:
+    typedef const CSeq_feat& TFeat;
+    typedef const CBioseq& TBioseq;
+    typedef const CBioseq_set& TSet;
+    typedef const CSeqdesc& TDesc;
+    typedef const CSeq_annot& TAnnot;
+    typedef const list< CRef< CDbtag > >&TDbtags;
+
+    CValidError_base(CValidError_imp& imp);
+    virtual ~CValidError_base();
+
+    void PostErr(EDiagSev sv, EErrType et, const string& msg,
+        const CSerialObject& obj);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TDesc ds);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TFeat ft);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
+        TDesc ds);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TSet set);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TSet set, 
+        TDesc ds);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TAnnot annot);
+
+    CValidError_imp& m_Imp;
+    CScope* m_Scope;
+};
+
+
 // ===========================  Validate Bioseq_set  ===========================
 
 
-class CValidError_bioseqset
+class CValidError_bioseqset : private CValidError_base
 {
 public:
     CValidError_bioseqset(CValidError_imp& imp);
     virtual ~CValidError_bioseqset(void);
 
-    void ValidateBioseqSet(const CBioseq_set& bsset);
+    void ValidateBioseqSet(const CBioseq_set& seqset);
 
 private:
 
@@ -425,14 +473,14 @@ private:
     void ValidatePopSet(const CBioseq_set& seqset);
     void ValidateGenProdSet(const CBioseq_set& seqset);
 
-    CValidError_imp& m_Imp;
+    bool MrnaProductInGPS(const CBioseq& seq); 
 };
 
 
 // =============================  Validate Bioseq  =============================
 
 
-class CValidError_bioseq
+class CValidError_bioseq : private CValidError_base
 {
 public:
     CValidError_bioseq(CValidError_imp& imp);
@@ -458,14 +506,35 @@ private:
     void ValidateCollidingGeneNames(const CBioseq& seq);
     void ValidateSeqDescContext(const CBioseq& seq);
 
-    CValidError_imp& m_Imp;
+    void CheckForPubOnBioseq(const CBioseq& seq);
+    void CheckForBiosourceOnBioseq(const CBioseq& seq);
+    
+    TSeqPos GetDataLen(const CSeq_inst& inst);
+    bool CdError(const CBioseq& seq);
+    bool IsMrna(const CBioseq_Handle& bsh);
+    bool IsPrerna(const CBioseq_Handle& bsh);
+    size_t NumOfIntervals(const CSeq_loc& loc);
+    bool LocOnSeg(const CBioseq& seq, const CSeq_loc& loc);
+    bool NotPeptideException(const CFeat_CI& curr, const CFeat_CI& prev);
+    bool IsEqualSeqAnnot(const CFeat_CI& fi1, const CFeat_CI& fi2);
+    bool IsEqualSeqAnnotDesc(const CFeat_CI& fi1, const CFeat_CI& fi2);
+    bool IsIdIn(const CSeq_id& id, const CBioseq& seq);
+    bool SuppressTrailingXMsg(const CBioseq& seq);
+    bool GetLocFromSeq(const CBioseq& seq, CSeq_loc* loc);
+    bool IsDifferentDbxrefs(const list< CRef< CDbtag > >& dbxref1,
+        const list< CRef< CDbtag > >& dbxref2);
+
+    const CSeq_feat* GetCDSForProduct(const CBioseq& seq);
+    void GetGeneLabel(const CBioseq& seq, string* lbl);
+    void GetSeqLabel(const CBioseq& seq, string* lbl,
+        const char*  default_label = "prot?");
 };
 
 
 // =============================  Validate SeqFeat  ============================
 
 
-class CValidError_feat
+class CValidError_feat : private CValidError_base
 {
 public:
     CValidError_feat(CValidError_imp& imp);
@@ -477,17 +546,21 @@ private:
     void ValidateGene(const CGene_ref& gene, const CSerialObject& obj);
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
-    void CdTransCheck(const CSeq_feat& feat);
-    void SpliceCheckEx(const CSeq_feat& feat, bool check_all);
-    void CheckForBothStrands(const CSeq_feat& feat);
-    void CheckForBadGeneOverlap(const CSeq_feat& feat);
-    void CheckForBadMRNAOverlap(const CSeq_feat& feat);
-    void CheckForCommonCDSProduct(const CSeq_feat& feat);
+    void ValidateCdTrans(const CSeq_feat& feat);
+    void ReportCdTransErrors(const CSeq_feat& feat,
+        bool show_stop, bool got_stop, bool no_end, int ragged);
+    void ValidateSplice(const CSeq_feat& feat, bool check_all);
+    void ValidateBothStrands(const CSeq_feat& feat);
+    void ValidateCommonCDSProduct(const CSeq_feat& feat);
+    void ValidateBadMRNAOverlap(const CSeq_feat& feat);
+    void ValidateBadGeneOverlap(const CSeq_feat& feat);
+    void ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
+                                     const CCdregion& cdregion);
 
     void ValidateProt(const CProt_ref& prot, const CSerialObject& obj);
 
     void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
-    void CheckTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
+    void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
     
     void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat);
     void ValidateImpGbquals(const CImp_feat& imp, const CSeq_feat& feat);
@@ -495,15 +568,23 @@ private:
     void ValidateFeatPartialness(const CSeq_feat& feat);
     void ValidateExcept(const CSeq_feat& feat);
     void ValidateExceptText(const string& text, const CSeq_feat& feat);
-
-    CValidError_imp& m_Imp;
+    
+    bool SerialNumberInComment(const string& comment);
+    bool IsPlastid(int genome);
+    bool IsOverlappingGenePseudo(const CSeq_feat& feat);
+    bool IsResidue(unsigned char res);
+    unsigned char Residue(unsigned char res);
+    int  CheckForRaggedEnd(const CSeq_loc&, const CCdregion& cdr);
+    bool SuppressCheck(const string& except_text);
+    string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
+        TSeqPos pos);
 };
 
 
 // =============================  Validate SeqDesc  ============================
 
 
-class CValidError_desc
+class CValidError_desc : private CValidError_base
 {
 public:
     CValidError_desc(CValidError_imp& imp);
@@ -512,14 +593,13 @@ public:
     void ValidateSeqDesc(const CSeqdesc& desc);
 
 private:
-    CValidError_imp& m_Imp;
 };
 
 
 // ============================  Validate SeqAlign  ============================
 
 
-class CValidError_align
+class CValidError_align : private CValidError_base
 {
 public:
     CValidError_align(CValidError_imp& imp);
@@ -528,14 +608,13 @@ public:
     void ValidateSeqAlign(const CSeq_align& bsset);
 
 private:
-    CValidError_imp& m_Imp;
 };
 
 
 // ============================  Validate SeqGraph  ============================
 
 
-class CValidError_graph
+class CValidError_graph : private CValidError_base
 {
 public:
     CValidError_graph(CValidError_imp& imp);
@@ -544,14 +623,13 @@ public:
     void ValidateSeqGraph(const CSeq_graph& graph);
 
 private:
-    CValidError_imp& m_Imp;
 };
 
 
 // ============================  Validate SeqAnnot  ============================
 
 
-class CValidError_annot
+class CValidError_annot : private CValidError_base
 {
 public:
     CValidError_annot(CValidError_imp& imp);
@@ -559,14 +637,13 @@ public:
 
     void ValidateSeqAnnot(const CSeq_annot& annot);
 private:
-    CValidError_imp& m_Imp;
 };
 
 
 // ============================  Validate SeqDescr  ============================
 
 
-class CValidError_descr
+class CValidError_descr : private CValidError_base
 {
 public:
     CValidError_descr(CValidError_imp& imp);
@@ -574,7 +651,6 @@ public:
 
     void ValidateSeqDescr(const CSeq_descr& descr);
 private:
-    CValidError_imp& m_Imp;
 };
 
 
@@ -587,8 +663,8 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.1  2002/12/19 21:22:08  shomrat
-* Initial submition after split of former implementation
+* Revision 1.2  2002/12/23 20:09:02  shomrat
+* Added static functions as private members; Added base class for specific validation classes
 *
 *
 * ===========================================================================
