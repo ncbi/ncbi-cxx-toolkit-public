@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/11/30 16:13:12  ostell
+ * added support for Textseq_id to Seq_id.Match()
+ *
  * Revision 6.2  2000/11/28 12:47:41  ostell
  * fixed first switch statement to break properly
  *
@@ -71,6 +74,7 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 {
 	E_Choice type1 = Which();
 	E_Choice type2 = sid2.Which();
+	const CTextseq_id *tsip1 = 0, *tsip2 = 0;
 
 	if (type1 != type2)  // only one case where this will work
 	{
@@ -94,6 +98,40 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 			default:
 				return e_DIFF;
 		}
+		// now do the match
+		switch (type1)
+		{
+                        case e_Genbank:
+				tsip1 = &GetGenbank();
+				break;
+                        case e_Embl:
+				tsip1 = &GetEmbl();
+				break;
+                        case e_Ddbj:
+				tsip1 = &GetDdbj();
+				break;
+		}
+                switch (type2)
+                {
+                        case e_Genbank:
+                                tsip2 = &(sid2.GetGenbank());
+                                break;
+                        case e_Embl:
+                                tsip2 = &(sid2.GetEmbl());
+                                break;
+                        case e_Ddbj:
+                                tsip2 = &(sid2.GetDdbj());
+                                break;
+                }
+
+		if ((tsip1 != 0) && (tsip2 != 0))
+		{
+			if (tsip1->Match(*tsip2))
+				return e_YES;
+			else
+				return e_NO;
+		}
+		return e_DIFF;
 	}
 
 	switch (type1)    // now we only need to know one
@@ -106,8 +144,26 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 			return e_NO;
 	}
         case e_Gibbsq:
+	{
+		if ((GetGibbsq()) == (sid2.GetGibbsq()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_Gibbmt:
+	{
+		if ((GetGibbmt()) == (sid2.GetGibbmt()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_Giim:
+	{
+		if ((GetGiim().GetId()) == (sid2.GetGiim().GetId()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_Genbank:
         case e_Embl:
         case e_Pir:
@@ -116,6 +172,12 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
         case e_Other:
         case e_General:
         case e_Gi:
+	{
+		if ((GetGi()) == (sid2.GetGi()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_Ddbj:
         case e_Prf:
         case e_Pdb:
