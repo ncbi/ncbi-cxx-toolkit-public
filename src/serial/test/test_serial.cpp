@@ -6,6 +6,7 @@
 int main(int argc, char** argv)
 {
     CTestSerial().AppMain(argc, argv);
+	return 0;
 }
 
 int CTestSerial::Run(void)

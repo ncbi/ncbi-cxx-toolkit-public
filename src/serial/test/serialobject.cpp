@@ -2,23 +2,22 @@
 #include <serial/serial.hpp>
 #include <serial/classinfo.hpp>
 
-#if 0
-#define NEW_CLASS_INFO(Class, PClass) \
-new CClassInfo(typeid(Class).name(), typeid(PClass).name(), Class::s_Create)
+template<typename T>
+inline
+CMemberInfo MemberInfo(const string& name, const T* member, const CTypeRef typeRef)
+{
+	return CMemberInfo(name, size_t(member), typeRef);
+}
 
-#define ADD_CLASS_MEMBER(Class, Member) \
-AddMember(CMemberInfo(#Member, \
-                      size_t(&static_cast<const Class*>(0)->Member), \
-                      GetTypeRef(static_cast<const Class*>(0)->Member)))
-#endif
-
-#define NEW_CLASS_INFO(PClass) \
-new CClassInfo(typeid(CClass).name(), typeid(PClass).name(), Class::s_Create)
+template<typename T>
+inline
+CMemberInfo MemberInfo(const string& name, const T* member)
+{
+	return MemberInfo(name, member, GetTypeRef(member));
+}
 
 #define ADD_CLASS_MEMBER(Member) \
-AddMember(CMemberInfo(#Member, \
-                      size_t(&KObject->Member), \
-                      GetTypeRef(&KObject->Member)))
+	AddMember(MemberInfo(#Member, &static_cast<const CClass*>(0)->Member))
 
 const CTypeInfo* CSerialObject::GetTypeInfo(void)
 {
@@ -26,10 +25,11 @@ const CTypeInfo* CSerialObject::GetTypeInfo(void)
     typedef CSerialObject CClass;
     if ( info == 0 ) {
         info = new CClassInfo<CClass>();
-        const CClass* const KObject = 0;
+        //const CClass* const KObject = 0;
         info->ADD_CLASS_MEMBER(m_Name);
         info->ADD_CLASS_MEMBER(m_Size);
-        info->ADD_CLASS_MEMBER(m_Attributes);
+        info->AddMember(MemberInfo("m_Attributes", &static_cast<const CClass*>(0)->m_Attributes,
+				GetStlListRef(&static_cast<const CClass*>(0)->m_Attributes)));
     }
     return info;
 }

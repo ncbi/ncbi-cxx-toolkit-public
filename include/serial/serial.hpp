@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/09 19:58:31  vasilche
+* Added specialized templates for compilation in MS VS
+*
 * Revision 1.6  1999/06/09 18:38:58  vasilche
 * Modified templates to work on Sun.
 *
@@ -160,6 +163,15 @@ inline
 CTypeRef GetTypeRef(const list<Data>* )
 {
     NcbiCerr << "GetTypeRef(const list<Data>&) Data: " << typeid(Data).name() << endl;
+    return CTypeRef(typeid(list<Data>),
+                    CStlClassInfoList<Data>::GetTypeInfo);
+}
+
+template<typename Data>
+inline
+CTypeRef GetStlListRef(const list<Data>* )
+{
+    NcbiCerr << "GetListRef(const list<Data>&) Data: " << typeid(Data).name() << endl;
     return CTypeRef(typeid(list<Data>),
                     CStlClassInfoList<Data>::GetTypeInfo);
 }
