@@ -1,4 +1,4 @@
---$Revision: 1.23 $
+--$Revision: 1.24 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -38,7 +38,7 @@ IMPORTS  Date                    FROM NCBI-General
          Score-set               FROM NCBI-Seqalign
          Cn3d-style-dictionary,
          Cn3d-user-annotations   FROM NCBI-Cn3d
-         Score-matrix-parameters FROM NCBI-ScoreMat;
+         PssmWithParameters      FROM NCBI-ScoreMat;
          
 -- dealing with lists of preferred tax-nodes 
 
@@ -409,7 +409,7 @@ Cdd ::= SEQUENCE {
   style-dictionary Cn3d-style-dictionary OPTIONAL,  -- record rendering styles
   user-annotations Cn3d-user-annotations OPTIONAL,  -- user annotations in Cn3D
   ancestors     SEQUENCE OF Domain-parent OPTIONAL, -- list of parents
-  scoreparams   Score-matrix-parameters  OPTIONAL,
+  scoreparams   PssmWithParameters       OPTIONAL,
   seqtree       Sequence-tree            OPTIONAL
 }
 
