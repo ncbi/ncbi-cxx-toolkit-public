@@ -30,12 +30,12 @@ inside NCBI users at:
               <li><a href="#ref_SettingLOG">Setting <tt>LOG</tt></a>
               <li><a href="#ref_SettingREG">Setting <tt>REG</tt></a>
               <li><a href="#ref_SettingLOCK">Setting MT-Locking</a>
-              <li><a href="#ref_CONNECT_Init_Cxx">Convenience call <tt>CONNECT_Init()</tt>
+              <li><a href="#ref_CONNECT_Init_Cxx">Convenience call <tt>CONNECT_Init()</tt></a>
          </ul>
          <li> <a href="#ref_CToolkitDiag">C Toolkit diagnostics redirection</a>
          <li> <a href="#ref_ConnectC"><tt>CONNECT</tt> Library in C Code</a>
          <ul>
-              <li><a href="#ref_CONNECT_Init_C">Convenience call <tt>CONNECT_Init()</tt>
+              <li><a href="#ref_CONNECT_Init_C">Convenience call <tt>CONNECT_Init()</tt></a>
          </ul>
     </ul>
 </ul>
@@ -158,9 +158,9 @@ provides the following C++ function to convert a logging stream of the NCBI C++ 
 <pre>
 LOG <a href="../lxr/ident?i=LOG_cxx2c"><b><i>LOG_cxx2c</i></b></a>&nbsp;(void)
 </pre>
-which creates the <b><i>LOG</i></b> object on top of the corresponding C++ <b><i>CNcbiDiag</i></b> object,
+which creates the <tt>LOG</tt> object on top of the corresponding C++ <b><i>CNcbiDiag</i></b> object,
 and then both C and C++ objects could be manipulated interchangeably, causing exactly the same effect on the underlying
-logger. Then, the returned C handle <b><i>LOG</i></b> can be subsequently used as a <i>CORE C logger</i> by means of
+logger. Then, the returned C handle <tt>LOG</tt> can be subsequently used as a <i>CORE C logger</i> by means of
 <b><i>CORE_SetLOG()</i></b>, like in the following nested calls: <tt>CORE_SetLOG(LOG_cxx2c());</tt>
 
 <p>
@@ -192,12 +192,12 @@ There is a function
 MT_LOCK <a href="../lxr/ident?i=MT_LOCK_cxx2c"><b><i>MT_LOCK_cxx2c</i></b></a>&nbsp;<tt>(CRWLock* lock, bool pass_ownership = false)</tt>
 </pre>
 declared in <a href="../lxr/source/include/connect/ncbi_core_cxx.hpp"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>,
-which converts an object of class <b><i>CRWLock</i></b> into a C object <b><i>MT_LOCK</i></b>. The latter can
+which converts an object of class <b><i>CRWLock</i></b> into a C object <tt>MT_LOCK</tt>. The latter can
 be used as an argument to <a href="../lxr/ident?i=CORE_SetLOCK"><b><i>CORE_SetLOCK()</i></b></a> for
 setting the global <i>CORE C MT-lock</i>, used by a low level code, written in C. Note that passing 0 as the lock pointer
-will effectively create a new internal <tt>CRWLock</tt> object, which will then be converted into <tt>MT_LOCK</tt> and
+will effectively create a new internal <b><i>CRWLock</i></b> object, which will then be converted into <tt>MT_LOCK</tt> and
 returned. This object gets automatically destroyed when the corresponding <tt>MT_LOCK</tt> is asked to do so.
-If the pointer to <tt>CRWLock</tt> is passed non <tt>NULL</tt> then the second argument can specify whether
+If the pointer to <b><i>CRWLock</i></b> is passed non <tt>NULL</tt> then the second argument can specify whether
 resulting <tt>MT_LOCK</tt> acquires the ownership of the lock, thus is able to delete the lock when destructing itself.
 
 <p>
@@ -228,7 +228,7 @@ call is necessary:
 <pre>
     CORE_SetREG(REG_cxx2c(cxxreg, true));
 </pre>
-here <tt>cxxreg</tt> is a <b><i>CNcbiRegistry</i></b> registry object created and maintained by C++ application.
+here <tt>cxxreg</tt> is a <b><i>CNcbiRegistry</i></b> registry object created and maintained by a C++ application.
 
 <p>
 <hr>
@@ -336,9 +336,9 @@ Build a registry object <tt>REG</tt> from a named file <tt>conf_file</tt>.
 Passing <tt>NULL</tt> as an argument causes the default Toolkit registry file to be searched for and used.
 <p>
 <li><pre>
-MT_LOCK <a href="../../C_DOC/lxr/ident?i=MT_LOCK_c2c"><i><b>MT_LOCK_c2c</b></i></a>&nbsp;(<a href="../../C_DOC/lxr/ident?i=TNlmRWLock"><b><i>TNlmRWlock</i></b></a> lock, int/*bool*/ pass_ownership);
+MT_LOCK <a href="../../C_DOC/lxr/ident?i=MT_LOCK_c2c"><i><b>MT_LOCK_c2c</b></i></a>&nbsp;(<a href="../../C_DOC/lxr/ident?i=TNlmRWlock"><b><i>TNlmRWlock</i></b></a> lock, int/*bool*/ pass_ownership);
 </pre>
-Build an <tt>MT_LOCK</tt> object on top of <tt>TNlmRWLock</tt> handle. Note that passing <tt>NULL</tt> effectively
+Build an <tt>MT_LOCK</tt> object on top of <b><i>TNlmRWlock</i></b> handle. Note that passing <tt>NULL</tt> effectively
 creates an internal handle, which is used as an underlying object. Ownership of the original handle can be passed
 to the resulting <tt>MT_LOCK</tt> by setting the second argument to a non-zero value. The internally created handle
 always has its ownership passed along.
@@ -363,7 +363,7 @@ void <a href="../../C_DOC/lxr/ident?i=CONNECT_Init"><b><i>CONNECT_Init</i></b></
 This sets <i>CORE C logger</i> to go via Toolkit default logging facility, causes
 <i>CORE C registry</i> to be loaded from the named file (or from the Toolkit's default
 file if <tt>conf_file</tt> passed <tt>NULL</tt>), and creates <i>CORE C MT-lock</i> on top
-of internally created <b><i>TNlmRWLock</i></b> handle, the ownership of which is passed
+of internally created <b><i>TNlmRWlock</i></b> handle, the ownership of which is passed
 to the <tt>MT_LOCK</tt>.
 
 <p>
