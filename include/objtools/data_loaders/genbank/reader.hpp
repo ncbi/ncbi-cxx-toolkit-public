@@ -60,16 +60,6 @@ class CID2S_Chunk;
 class CReaderRequestResult;
 class CLoadLockBlob_ids;
 
-string NCBI_XREADER_EXPORT GetConfigString(const char* section,
-                                           const char* variable,
-                                           const char* default_value = 0);
-int NCBI_XREADER_EXPORT GetConfigInt(const char* section,
-                                     const char* variable,
-                                     int default_value = 0);
-bool NCBI_XREADER_EXPORT GetConfigFlag(const char* section,
-                                       const char* variable,
-                                       bool default_value = false);
-
 class NCBI_XREADER_EXPORT CReader : public CObject
 {
 public:

@@ -28,6 +28,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_config_value.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/seqref_pubseq.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>

@@ -29,8 +29,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
+#include <corelib/ncbi_config_value.hpp>
 #include <corelib/ncbi_system.hpp> // for SleepSec
 
 #include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>

@@ -63,7 +63,9 @@
 #include <objects/seqres/Seq_graph.hpp>
 
 #include <objmgr/impl/prefetch_impl.hpp>
+
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_config_value.hpp>
 
 #include <algorithm>
 
@@ -1111,22 +1113,7 @@ void CDataSource::SetLoaded(CTSE_LoadLock& lock)
 }
 
 
-static int sx_GetIntVar(const char* var_name, int def_value)
-{
-    int ret = def_value;
-    const char* value = getenv(var_name);
-    if ( value ) {
-        try {
-            ret = NStr::StringToInt(value);
-        }
-        catch (...) {
-            ret = def_value;
-        }
-    }
-    return ret;
-}
-
-static unsigned sx_CacheSize = sx_GetIntVar("OBJMGR_BLOB_CACHE", 10);
+static unsigned sx_CacheSize = GetConfigInt("OBJMGR", "BLOB_CACHE", 10);
 
 
 void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)

@@ -44,28 +44,18 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/tse_handle.hpp>
 
+#include <corelib/ncbi_config_value.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-static int sx_GetIntVar(const char* var_name, int def_value)
-{
-    int ret = def_value;
-    const char* value = getenv(var_name);
-    if ( value ) {
-        try {
-            ret = NStr::StringToInt(value);
-        }
-        catch (...) {
-            ret = def_value;
-        }
-    }
-    return ret;
-}
-
-static bool sx_ScopeAutoReleaseEnabled =
-    sx_GetIntVar("OBJMGR_SCOPE_AUTORELEASE", 1) != 0;
+static bool sx_ScopeAutoReleaseEnabled = GetConfigFlag("OBJMGR",
+                                                       "SCOPE_AUTORELEASE",
+                                                       true);
+static int sx_ScopeAutoReleaseSize = GetConfigInt("OBJMGR",
+                                                  "SCOPE_AUTORELEASE_SIZE",
+                                                  10);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -80,7 +70,7 @@ CDataSource_ScopeInfo::CDataSource_ScopeInfo(CScope_Impl& scope,
                       ds.GetDataLoader() &&
                       ds.GetDataLoader()->CanGetBlobById()),
       m_NextTSEIndex(0),
-      m_TSE_UnlockQueue(10)
+      m_TSE_UnlockQueue(sx_ScopeAutoReleaseSize)
 {
 }
 
@@ -995,6 +985,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/01/05 18:45:57  vasilche
+* Added GetConfigXxx() functions.
+*
 * Revision 1.11  2004/12/28 18:39:46  vasilche
 * Added lost scope lock in CTSE_Handle.
 *

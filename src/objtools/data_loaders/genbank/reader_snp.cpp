@@ -29,6 +29,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_config_value.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 
 #include <objtools/data_loaders/genbank/reader.hpp>
@@ -588,6 +589,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.17  2005/01/05 18:46:13  vasilche
+ * Added GetConfigXxx() functions.
+ *
  * Revision 1.16  2004/10/07 14:08:10  vasilche
  * Use static GetConfigXxx() functions.
  * Try to deal with withdrawn and private blobs without exceptions.

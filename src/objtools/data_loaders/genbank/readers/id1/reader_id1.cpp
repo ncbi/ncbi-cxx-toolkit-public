@@ -29,8 +29,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
+#include <corelib/ncbi_config_value.hpp>
 
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
