@@ -28,115 +28,6 @@
 * File Description:
 *   File generator
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.29  2001/08/31 20:05:46  ucko
-* Fix ICC build.
-*
-* Revision 1.28  2001/08/16 13:18:03  grichenk
-* Corrected calls to GetStdPath() -- moved '>' outside the call
-*
-* Revision 1.27  2001/08/15 20:27:14  juran
-* Convert native pathnames to unix-style for include directives.
-*
-* Revision 1.26  2001/01/05 20:10:57  vasilche
-* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
-* were moved to util.
-*
-* Revision 1.25  2000/11/22 16:26:29  vasilche
-* Added generation/checking of checksum to user files.
-*
-* Revision 1.24  2000/11/07 17:26:25  vasilche
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-* Added possibility to set include directory for whole module
-*
-* Revision 1.23  2000/08/25 15:59:21  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.22  2000/06/16 16:31:39  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.21  2000/04/28 16:58:16  vasilche
-* Added classes CByteSource and CByteSourceReader for generic reading.
-* Added delayed reading of choice variants.
-*
-* Revision 1.20  2000/04/17 19:11:08  vasilche
-* Fixed failed assertion.
-* Removed redundant namespace specifications.
-*
-* Revision 1.19  2000/04/12 15:36:51  vasilche
-* Added -on <namespace> argument to datatool.
-* Removed unnecessary namespace specifications in generated files.
-*
-* Revision 1.18  2000/04/07 19:26:26  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.17  2000/04/03 18:47:30  vasilche
-* Added main include file for generated headers.
-* serialimpl.hpp is included in generated sources with GetTypeInfo methods
-*
-* Revision 1.16  2000/03/29 15:52:26  vasilche
-* Generated files names limited to 31 symbols due to limitations of Mac.
-* Removed unions with only one member.
-*
-* Revision 1.15  2000/03/17 17:05:59  vasilche
-* String literal split to avoid influence of cvs.
-*
-* Revision 1.14  2000/03/17 16:49:55  vasilche
-* Added copyright message to generated files.
-* All objects pointers in choices now share the only CObject pointer.
-* All setters/getters made public until we'll find better solution.
-*
-* Revision 1.13  2000/03/07 14:06:31  vasilche
-* Added generation of reference counted objects.
-*
-* Revision 1.12  2000/02/17 21:26:18  vasilche
-* Inline methods now will be at the end of *_Base.hpp files.
-*
-* Revision 1.11  2000/02/17 20:05:07  vasilche
-* Inline methods now will be generated in *_Base.inl files.
-* Fixed processing of StringStore.
-* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
-* Enumerated values now will preserve case as in ASN.1 definition.
-*
-* Revision 1.10  2000/02/01 21:47:58  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.9  2000/01/06 16:13:17  vasilche
-* Fail of file generation now fatal.
-*
-* Revision 1.8  1999/12/28 18:55:57  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.7  1999/12/21 17:18:34  vasilche
-* Added CDelayedFostream class which rewrites file only if contents is changed.
-*
-* Revision 1.6  1999/12/20 21:00:17  vasilche
-* Added generation of sources in different directories.
-*
-* Revision 1.5  1999/12/03 21:42:12  vasilche
-* Fixed conflict of enums in choices.
-*
-* Revision 1.4  1999/12/01 17:36:25  vasilche
-* Fixed CHOICE processing.
-*
-* Revision 1.3  1999/11/22 21:04:49  vasilche
-* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
-*
-* Revision 1.2  1999/11/15 19:36:14  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <serial/datatool/filecode.hpp>
@@ -355,12 +246,23 @@ CNcbiOstream& CFileCode::WriteUserCopyright(CNcbiOstream& out) const
         " *   using specifications from the ASN data definition file\n"
         " *   ";
     WriteSourceFile(out) << ".\n"
-        " *\n"
-        " * ---------------------------------------------------------------------------\n"
-        " * $""Log$\n"
-        " *\n"
-        " * ===========================================================================\n"
         " */\n";
+    return out;
+}
+
+CNcbiOstream& CFileCode::WriteLogKeyword(CNcbiOstream& out) const
+{
+    out << "\n"
+        "/*\n"
+        "* ===========================================================================\n"
+        "*\n"
+        "* $Log$
+        "* Revision 1.30  2002/06/10 18:41:30  ucko
+        "* Move CVS logs (both internal and generated) to the end.
+        "*\n"
+        "*\n"
+        "* ===========================================================================\n"
+        "*/\n";
     return out;
 }
 
@@ -723,6 +625,7 @@ void CFileCode::GenerateUserHPPCode(CNcbiOstream& header) const
     }
     ns.Reset(header);
     
+    WriteLogKeyword(header);
     header <<
         "\n"
         "#endif // " << hppDefine << "\n";
@@ -749,6 +652,7 @@ void CFileCode::GenerateUserCPPCode(CNcbiOstream& code) const
         }
     }
     ns.Reset(code);
+    WriteLogKeyword(code);
 }
 
 bool CFileCode::AddType(const CDataType* type)
@@ -766,3 +670,118 @@ bool CFileCode::AddType(const CDataType* type)
 }
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.30  2002/06/10 18:41:30  ucko
+* Move CVS logs (both internal and generated) to the end.
+*
+* Revision 1.29  2001/08/31 20:05:46  ucko
+* Fix ICC build.
+*
+* Revision 1.28  2001/08/16 13:18:03  grichenk
+* Corrected calls to GetStdPath() -- moved '>' outside the call
+*
+* Revision 1.27  2001/08/15 20:27:14  juran
+* Convert native pathnames to unix-style for include directives.
+*
+* Revision 1.26  2001/01/05 20:10:57  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
+* Revision 1.25  2000/11/22 16:26:29  vasilche
+* Added generation/checking of checksum to user files.
+*
+* Revision 1.24  2000/11/07 17:26:25  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
+* Revision 1.23  2000/08/25 15:59:21  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.22  2000/06/16 16:31:39  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.21  2000/04/28 16:58:16  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
+* Revision 1.20  2000/04/17 19:11:08  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
+* Revision 1.19  2000/04/12 15:36:51  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
+* Revision 1.18  2000/04/07 19:26:26  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.17  2000/04/03 18:47:30  vasilche
+* Added main include file for generated headers.
+* serialimpl.hpp is included in generated sources with GetTypeInfo methods
+*
+* Revision 1.16  2000/03/29 15:52:26  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+* Removed unions with only one member.
+*
+* Revision 1.15  2000/03/17 17:05:59  vasilche
+* String literal split to avoid influence of cvs.
+*
+* Revision 1.14  2000/03/17 16:49:55  vasilche
+* Added copyright message to generated files.
+* All objects pointers in choices now share the only CObject pointer.
+* All setters/getters made public until we'll find better solution.
+*
+* Revision 1.13  2000/03/07 14:06:31  vasilche
+* Added generation of reference counted objects.
+*
+* Revision 1.12  2000/02/17 21:26:18  vasilche
+* Inline methods now will be at the end of *_Base.hpp files.
+*
+* Revision 1.11  2000/02/17 20:05:07  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
+* Revision 1.10  2000/02/01 21:47:58  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.9  2000/01/06 16:13:17  vasilche
+* Fail of file generation now fatal.
+*
+* Revision 1.8  1999/12/28 18:55:57  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
+* Revision 1.7  1999/12/21 17:18:34  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
+* Revision 1.6  1999/12/20 21:00:17  vasilche
+* Added generation of sources in different directories.
+*
+* Revision 1.5  1999/12/03 21:42:12  vasilche
+* Fixed conflict of enums in choices.
+*
+* Revision 1.4  1999/12/01 17:36:25  vasilche
+* Fixed CHOICE processing.
+*
+* Revision 1.3  1999/11/22 21:04:49  vasilche
+* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
+*
+* Revision 1.2  1999/11/15 19:36:14  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/

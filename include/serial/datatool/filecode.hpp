@@ -31,65 +31,6 @@
 * File Description:
 *   C++ file generator
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2000/11/22 16:26:22  vasilche
-* Added generation/checking of checksum to user files.
-*
-* Revision 1.9  2000/08/25 15:58:46  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.8  2000/04/17 19:11:05  vasilche
-* Fixed failed assertion.
-* Removed redundant namespace specifications.
-*
-* Revision 1.7  2000/04/12 15:36:41  vasilche
-* Added -on <namespace> argument to datatool.
-* Removed unnecessary namespace specifications in generated files.
-*
-* Revision 1.6  2000/04/07 19:26:09  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.5  2000/03/29 15:51:41  vasilche
-* Generated files names limited to 31 symbols due to limitations of Mac.
-*
-* Revision 1.4  2000/03/17 16:47:38  vasilche
-* Added copyright message to generated files.
-* All objects pointers in choices now share the only CObject pointer.
-*
-* Revision 1.3  2000/02/17 21:26:22  vasilche
-* Inline methods now will be at the end of *_Base.hpp files.
-*
-* Revision 1.2  2000/02/17 20:05:03  vasilche
-* Inline methods now will be generated in *_Base.inl files.
-* Fixed processing of StringStore.
-* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
-* Enumerated values now will preserve case as in ASN.1 definition.
-*
-* Revision 1.1  2000/02/01 21:46:18  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.5  1999/12/29 16:01:50  vasilche
-* Added explicit virtual destructors.
-* Resolved overloading of InternalResolve.
-*
-* Revision 1.4  1999/12/20 21:00:17  vasilche
-* Added generation of sources in different directories.
-*
-* Revision 1.3  1999/11/19 15:48:10  vasilche
-* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
-*
-* Revision 1.2  1999/11/15 19:36:15  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -168,6 +109,7 @@ public:
     CNcbiOstream& WriteCopyrightHeader(CNcbiOstream& out) const;
     CNcbiOstream& WriteCopyright(CNcbiOstream& out) const;
     CNcbiOstream& WriteUserCopyright(CNcbiOstream& out) const;
+    CNcbiOstream& WriteLogKeyword(CNcbiOstream& out) const;
 
 private:
     // file names
@@ -199,5 +141,70 @@ private:
 };
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.11  2002/06/10 18:41:25  ucko
+* Move CVS logs (both internal and generated) to the end.
+*
+* Revision 1.10  2000/11/22 16:26:22  vasilche
+* Added generation/checking of checksum to user files.
+*
+* Revision 1.9  2000/08/25 15:58:46  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.8  2000/04/17 19:11:05  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
+* Revision 1.7  2000/04/12 15:36:41  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
+* Revision 1.6  2000/04/07 19:26:09  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.5  2000/03/29 15:51:41  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+*
+* Revision 1.4  2000/03/17 16:47:38  vasilche
+* Added copyright message to generated files.
+* All objects pointers in choices now share the only CObject pointer.
+*
+* Revision 1.3  2000/02/17 21:26:22  vasilche
+* Inline methods now will be at the end of *_Base.hpp files.
+*
+* Revision 1.2  2000/02/17 20:05:03  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
+* Revision 1.1  2000/02/01 21:46:18  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.5  1999/12/29 16:01:50  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
+* Revision 1.4  1999/12/20 21:00:17  vasilche
+* Added generation of sources in different directories.
+*
+* Revision 1.3  1999/11/19 15:48:10  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
+* Revision 1.2  1999/11/15 19:36:15  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/
 
 #endif
