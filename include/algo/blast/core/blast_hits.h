@@ -111,6 +111,20 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, BlastHitSavingOptions* hit_options, 
         BlastScoreBlk* sbp);
 
+/** Calculate e-value for an HSP found by PHI BLAST.
+ * @param score Raw score of the HSP [in]
+ * @param sbp Scoring block with statistical parameters [in]
+ * @return The e-value corresponding to this score.
+ */
+double PHIScoreToEvalue(Int4 score, BlastScoreBlk* sbp);
+
+/** Calculate e-values for a PHI BLAST HSP list.
+ * @param hsp_list HSP list found by PHI BLAST [in] [out]
+ * @param sbp Scoring block with statistical parameters [in]
+ */
+void PHIGetEvalue(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
+
+
 /** Discard the HSPs above the e-value threshold from the HSP list 
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param hit_options Options block containing the e-value cut-off [in]
