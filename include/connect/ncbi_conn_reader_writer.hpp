@@ -33,7 +33,7 @@
  *
  */
 
-#include <corelib/ncbimisc.hpp>
+#include <connect/ncbi_socket.hpp>
 #include <util/reader_writer.hpp>
 
 
@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
  */
 
 
-class NCBI_XCONNECT_EXPORT CSocketReader
+class NCBI_XCONNECT_EXPORT CSocketReader : public IReader
 {
 public:
     CSocketReader(CSocket* sock, EOwnership if_to_own = eNoOwnership);
@@ -69,13 +69,13 @@ protected:
 };
 
 
-CSocketReader::CSocketReader(CSocket* sock, EOwnership if_to_own)
+inline CSocketReader::CSocketReader(CSocket* sock, EOwnership if_to_own)
     : m_Sock(sock), m_Owned(if_to_own)
 {
 }
 
 
-CSocketReader::~CSocketReader()
+inline CSocketReader::~CSocketReader()
 {
     if (m_Owned) {
         delete m_Sock;
@@ -83,15 +83,12 @@ CSocketReader::~CSocketReader()
 }
 
 
-ERW_Result CSocketReader::PendingCount(size_t* count)
+inline ERW_Result CSocketReader::PendingCount(size_t* count)
 {
     if (!m_Sock) {
         return eRW_Error;
     }
-    STimeout zero = {0, 0}, tmo;
-    if (m_Sock->GetTimeout(eIO_Read, &tmo) != eIO_Success) {
-        return eRW_Error;
-    }
+    STimeout zero = {0, 0}, tmo = *m_Sock->GetTimeout(eIO_Read);
     if (m_Sock->SetTimeout(eIO_Read, &zero) != eIO_Success) {
         return eRW_Error;
     }
@@ -100,15 +97,15 @@ ERW_Result CSocketReader::PendingCount(size_t* count)
     if (m_Sock->SetTimeout(eIO_Read, &tmo) != eIO_Success) {
         return eRW_Error;
     }
-    return status == eIO_Success ? eRW_Success : eIO_Error;
+    return status == eIO_Success ? eRW_Success : eRW_Error;
 }
 
 
-ERW_Result CSocketReader::Read(void* buf, size_t count, size_t* bytes_read)
+inline ERW_Result CSocketReader::Read(void* buf, size_t count, size_t* n_read)
 {
     if (!m_Sock)
         return eRW_Error;
-    switch (m_Sock->Read(buf, count, bytes_read, eIO_ReadPlain)) {
+    switch (m_Sock->Read(buf, count, n_read, eIO_ReadPlain)) {
     case eIO_Timeout:
         return eRW_Timeout;
     case eIO_Success:
@@ -132,6 +129,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/10/01 18:36:04  lavr
+ * Fix compilation errors
+ *
  * Revision 1.1  2004/10/01 18:27:41  lavr
  * Initial revision
  *
