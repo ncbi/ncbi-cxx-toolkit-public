@@ -1,4 +1,4 @@
--- $Id: docsum.asn,v 1.46 2004/10/08 19:48:03 kholodov Exp $
+-- $Id: docsum.asn,v 1.47 2004/10/28 21:16:55 kholodov Exp $
 
 NSE DEFINITIONS ::=
 BEGIN
@@ -181,6 +181,7 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	update-date NSE-Date OPTIONAL, -- most recent date the cluster was updated (member added or deleted)
 	create-build INTEGER,			-- build number when the cluster was created
 	update-build INTEGER,			-- latest build number when the cluster was updated
+	merge-history SET OF NSE-rsMerge OPTIONAL,  -- RefSNPs previously defined by dbSNP, but determined to be a single variation
 	observed VisibleString,			-- list of all alleles observed in ss-list members, correcting for reverse
 						-- complementation of memebers reported in reverse orientation
 	seq-5 SEQUENCE OF VisibleString OPTIONAL,	-- 5' sequence that flanks the variation
@@ -225,6 +226,13 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
  	structure-data SET OF NSE-rsStruct OPTIONAL -- set of snp to protein structure data based on map coordinates 
                                                 -- and protein structure neighbors
 
+}
+
+NSE-rsMerge ::= SEQUENCE {
+     rs-id INTEGER,                -- previously issued rs-id whose member assays have now been merged
+                                   -- into a single common set (ss-list) for the parent object (NSE-rs)
+     build-id INTEGER,             -- build when rs-id was merged into parent NSE-rs
+     orient-flip BOOLEAN OPTIONAL   -- TRUE if strand of rs-id is reverse to parent object’s current strand
 }
 
 
@@ -484,6 +492,9 @@ NSE-Date-std ::= SEQUENCE {        		-- NOTE: this is NOT a unix tm struct
 END
 
 -- $Log: docsum.asn,v $
+-- Revision 1.47  2004/10/28 21:16:55  kholodov
+-- Added: rs merge history
+--
 -- Revision 1.46  2004/10/08 19:48:03  kholodov
 -- Added: mixed(7) subsnp_class
 --
