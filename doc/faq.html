@@ -34,6 +34,8 @@ symbols, unfound libraries, etc., and nothing seems to help out much</a></li>
 
 <li><a href="#ref_WhichIncludeFile">Which include file should be used in *.cpp files, <i>class</i>.hpp or <i>class_</i>.hpp?</a></li>
 
+<li><a href="#ref_AddingASN">How to add new ASN.1 module from the C Toolkit to the C++ Toolkit?</a></li>
+
 </ol>
 
 
@@ -118,6 +120,159 @@ See <a href = "programming_manual/usrtypeinfo.html"><b>User-defined Type Informa
 
 <hr>
 <h4><a NAME="ref_WhichIncludeFile"></a>Which include file should be used in *.cpp files, <i>class</i>.hpp or <i>class_</i>.hpp?</h4>Include the <i>class</i>.hpp (file without underscore). Never instantiate or use a class of the form C*_Base directly. Instead use the C* form which inherits from the C*_Base class (e.g., don't use CSeq_id_Base directly--use CSeq_id instead).
+<hr><!-- **************************************************************** -->
+<h4>
+<a NAME="ref_AddingASN">How to add new ASN.1 module from the C Toolkit to the C++ Toolkit?</a></i></h4>
+
+This is a step-by-step history of adding the <b>"cdd"</b> ASN.1 specification
+originally located in the C Toolkit, <i>$CVSROOT/distrib/biostruc/cdd/cdd.asn</i>:
+
+<ol>
+		<li>
+		  Copy ASN.1 spec to the C++ Toolkit repository:
+		  <tt>
+		  <ul>
+			 <li> mkdir $CVSROOT/internal/c++/src/objects/cdd </li>
+			 <li> mkdir $CVSROOT/internal/c++/include/objects/cdd </li>
+			 <li> cp -p $CVSROOT/distrib/biostruc/cdd/cdd.asn,v $CVSROOT/internal/c++/src/objects/cdd/cdd.asn,v </li>
+		  </ul>
+		  </tt>
+		</li>
+
+		<li>
+		  Checkout the created directories into your local C++ Toolkit tree.
+		  For example, if your local C++ Toolkit tree is in <i>"~/c++"</i>:
+		  <tt>
+		  <ul>
+			 <li> cd ~/c++/src/objects/cdd ; cvs -q upd -d </li>
+			 <li> cd ~/c++/include/objects/cdd ; cvs -q upd -d </li>
+		  </ul>
+		  </tt>
+		  
+		</li>
+
+		<li>
+		  Add <i>"cdd.asn"</i> location to the C/C++ ASN.1 sync. dir.-list.
+		  <br> <b><i>c++/scripts/internal/c_toolkit/sync_asn.sh</i></b>:
+		  <br>
+		  <tt>
+			 <i>for d in ............  distrib/biostruc/cdd ; do</i>
+		  </tt>
+		  <br>
+		</li>
+
+		<li>
+		  Add <i>"cdd"</i> to the list of modules used to generate
+        serialization classes from ASN.1 specs in the C++ Toolkit.
+		  <ul>
+			 <li>
+				[UNIX] <b><i>c++/src/objects/Makefile</i></b>:
+				<br>
+				<tt>
+				  <i>MODULES = ............... cdd.asn</i>
+				</tt>
+			 </li>
+			 <li>
+				[NT] <b><i>c++/src/objects/nt_sources.sh</i></b>:
+				<br>
+				<tt>
+				  <i>MODULES='............... cdd.asn'</i>
+				</tt>
+			 </li>
+		  </ul>
+		</li>
+
+		<li>
+		  Create so-called <i>module file</i> that specifies the location
+		  of this ASN.1 spec, and locations of ASN.1 specs imported by
+		  <i>"cdd.asn"</i>.
+		  <br> <b><i>c++/src/objects/cdd/cdd.module</i></b>:
+		  <tt>
+			 <i>
+				<br> MODULE_PATH = objects/cdd
+				<br> MODULE_IMPORT = objects/general/general ..... objects/cn3d/cn3d
+				</i>
+		  </tt>
+		</li>
+
+		<li>
+		  Create <i>meta-makefile</i> for the <b>"cdd"</b> project.
+		  <br> <b><i>c++/src/objects/cdd/Makefile.in</i></b>:
+		  <tt>
+			 <i>
+				<br> LIB_PROJ = cdd
+				<br> srcdir = @srcdir@
+				<br> include @builddir@/Makefile.meta
+				</i>
+		  </tt>
+		</li>
+
+		<li>
+		  Add <b>"cdd"</b> project to the list of buildable projects.
+		  <ul>
+			 <li>
+				[UNIX] <b><i>c++/src/objects/cdd/Makefile.in</i></b>:
+				<tt>
+				  <i>
+					 <br> SUB_PROJ = ........ cdd
+				  </i>
+				</tt>
+			 </li>
+			 <li>
+				[MSVC] <b><i>c++/compilers/msvc_prj/ncbi_cpp.dsw</i></b>:
+				<br>
+				Create library project <b>"objects_cdd"</b> containing
+				source files <i>c++/src/objects/cdd/cdd__.cpp</i> and
+				<i>c++/src/objects/cdd/cdd___.cpp</i> in the workspace
+				<b>'objects_cdd'</b>.
+				<br>
+				The project file location should be:
+				<b><i>c++/compilers/msvc_prj/objects/cdd/objects_cdd.dsp</i></b>
+				<br>
+				Then, add project <b>"objects_cdd"</b> as a dependency to the
+            utility project <b>"all_objects_libs"</b>.
+			 </li>
+		  </ul>
+		</li>
+
+		<li>
+		  Test it out -- try to build.
+		</li>
+
+		<li>
+		  Now, commit the affected files back into CVS:
+		  <i>
+		  <ul>
+			 <li>
+				c++/scripts/internal/c_toolkit/<b>sync_asn.sh</b>
+			 </li>
+			 <li>
+				c++/src/objects/<b>Makefile</b>
+			 </li>
+			 <li>
+				c++/src/objects/<b>nt_sources.sh</b>
+			 </li>
+			 <li>
+				c++/src/objects/cdd/<b>cdd.module</b>  <tt>[new file]</tt>
+			 </li>
+			 <li>
+				c++/src/objects/cdd/<b>Makefile.in</b>  <tt>[new file]</tt>
+			 </li>
+			 <li>
+				c++/compilers/msvc_prj/objects/<b>cdd/</b>  <tt>[new directory]</tt>
+			 </li>
+			 <li>
+				c++/compilers/msvc_prj/objects/cdd/<b>objects_cdd.dsp</b>  <tt>[new file]</tt>
+			 </li>
+			 <li>
+				c++/compilers/msvc_prj/<b>ncbi_cpp.dsw</b>
+			 </li>
+		  </ul>
+		</i>
+		</li>
+</ol>
+
+
 <!-- **************************************************************** -->
 <br>
 <p>
