@@ -45,23 +45,24 @@ BEGIN_NCBI_SCOPE
 
 extern "C" {
     static int s_TDS_err_callback(DBPROCESS* dblink,   int   severity,
-                                    int        dberr,    int   oserr,
-                                    char*      dberrstr, char* oserrstr)
+                                  int        dberr,    int   oserr,
+                                  char*      dberrstr, char* oserrstr)
     {
         return CTDSContext::TDS_dberr_handler
             (dblink, severity, dberr, oserr, dberrstr? dberrstr : "", 
-	     oserrstr? oserrstr : "");
+             oserrstr? oserrstr : "");
     }
 
     static int s_TDS_msg_callback(DBPROCESS* dblink,   DBINT msgno,
-                                    int        msgstate, int   severity,
-                                    char*      msgtxt,   char* srvname,
-                                    char*      procname, int   line)
+                                  int        msgstate, int   severity,
+                                  char*      msgtxt,   char* srvname,
+                                  char*      procname, int   line)
     {
         CTDSContext::TDS_dbmsg_handler
             (dblink, msgno,   msgstate, severity,
-             msgtxt? msgtxt : "", srvname? srvname : "", procname? procname : "", 
-	     line);
+             msgtxt? msgtxt : "",
+             srvname? srvname : "", procname? procname : "", 
+             line);
         return 0;
     }
 }
@@ -123,11 +124,11 @@ bool CTDSContext::SetMaxTextImageSize(size_t nof_bytes)
 
 
 CDB_Connection* CTDSContext::Connect(const string&   srv_name,
-                                       const string&   user_name,
-                                       const string&   passwd,
-                                       TConnectionMode mode,
-                                       bool            reusable,
-                                       const string&   pool_name)
+                                     const string&   user_name,
+                                     const string&   passwd,
+                                     TConnectionMode mode,
+                                     bool            reusable,
+                                     const string&   pool_name)
 {
     CTDS_Connection* t_con;
 
@@ -213,11 +214,11 @@ bool CTDSContext::IsAbleTo(ECapability cpb) const
 {
     switch(cpb) {
     case fReturnITDescriptors:
-	return true;
+        return true;
     case fReturnComputeResults:
     case fBcp:
     default:
-	break;
+        break;
     }
     return false;
 }
@@ -269,9 +270,9 @@ bool CTDSContext::TDS_SetMaxNofConns(int n)
 
 
 int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
-                                       int           dberr,    int oserr,
-                                       const string& dberrstr,
-                                       const string& oserrstr)
+                                   int           dberr,    int oserr,
+                                   const string& dberrstr,
+                                   const string& oserrstr)
 {
     CTDS_Connection* link = dblink ?
         reinterpret_cast<CTDS_Connection*> (dbgetuserdata(dblink)) : 0;
@@ -327,11 +328,11 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
 
 
 void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
-                                        int           msgstate, int   severity,
-                                        const string& msgtxt,
-                                        const string& srvname,
-                                        const string& procname,
-                                        int           line)
+                                    int           msgstate, int   severity,
+                                    const string& msgtxt,
+                                    const string& srvname,
+                                    const string& procname,
+                                    int           line)
 {
     if ((severity == 0 && msgno == 0)  ||  msgno == 5701  ||  msgno == 5703)
         return;
@@ -363,9 +364,9 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
 
 
 DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
-					  const string&   user_name,
-					  const string&   passwd,
-					  TConnectionMode mode)
+                                          const string&   user_name,
+                                          const string&   passwd,
+                                          TConnectionMode mode)
 {
     if (!m_HostName.empty())
         DBSETLHOST(m_Login, (char*) m_HostName.c_str());
@@ -388,7 +389,7 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
 
     
     tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)m_LoginTimeout, 
-		     (int)m_Timeout, 0 /*(int)m_Timeout*/);
+                     (int)m_Timeout, 0 /*(int)m_Timeout*/);
     return dbopen(m_Login, (char*) srv_name.c_str());
 }
 
@@ -403,31 +404,57 @@ I_DriverContext* FTDS_CreateContext(map<string,string>* attr = 0)
     DBINT version= DBVERSION_UNKNOWN;
 
     if(attr) {
-	string vers= (*attr)["version"];
-	if(vers.find("42") != string::npos)
-	    version= DBVERSION_42;
-	else if(vers.find("46") != string::npos)
-	    version= DBVERSION_46;
-	else if(vers.find("70") != string::npos)
-	    version= DBVERSION_70;
-	else if(vers.find("100") != string::npos)
-	    version= DBVERSION_100;
+        string vers= (*attr)["version"];
+        if(vers.find("42") != string::npos)
+            version= DBVERSION_42;
+        else if(vers.find("46") != string::npos)
+            version= DBVERSION_46;
+        else if(vers.find("70") != string::npos)
+            version= DBVERSION_70;
+        else if(vers.find("100") != string::npos)
+            version= DBVERSION_100;
 
     }
     return new CTDSContext(version);
 }
 
+
+// Version-specific driver name and DLL entry point
+#if defined(NCBI_FTDS)
+#  if   NCBI_FTDS == 7
+#    define NCBI_FTDS_DRV_NAME    "ftds7"
+#    define NCBI_FTDS_ENTRY_POINT DBAPI_E_ftds7
+#  elif NCBI_FTDS == 8
+#    define NCBI_FTDS_DRV_NAME    "ftds8"
+#    define NCBI_FTDS_ENTRY_POINT DBAPI_E_ftds8
+#  elif
+#    error "This version of FreeTDS is not supported"
+#  endif
+#endif
+
+
+// NOTE:  we define a generic ("ftds") driver name here -- in order to
+//        provide a default, but also to prevent from accidental linking
+//        of more than one version of FreeTDS driver to the same application
+
+
 void DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
 {
-    mgr.RegisterDriver("ftds", FTDS_CreateContext);
+    mgr.RegisterDriver(NCBI_FTDS_DRV_NAME, FTDS_CreateContext);
+    mgr.RegisterDriver("ftds",             FTDS_CreateContext);
 }
 
 
 extern "C" {
+    void* NCBI_FTDS_ENTRY_POINT()
+    {
+        if (dbversion())  return 0;  /* to prevent linking to Sybase dblib */
+        return (void*) DBAPI_RegisterDriver_FTDS;
+    }
+
     void* DBAPI_E_ftds()
     {
-        if(dbversion()) return 0; /* to prevent linking to Sybase dblib */
-        return (void*)DBAPI_RegisterDriver_FTDS;
+        return NCBI_FTDS_ENTRY_POINT();
     }
 } 
 
@@ -439,6 +466,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/12/13 21:59:10  vakatov
+ * Provide FreeTDS-version specific driver name and DLL entry point
+ * ("ftds7" or "ftds8" in addition to the generic "ftds").
+ * On the way, put a safeguard against accidental linking of more than
+ * one version of FreeTDS driver to the same application.
+ *
  * Revision 1.12  2002/09/19 18:53:13  soussov
  * check if driver was linked to Sybase dblib added
  *
