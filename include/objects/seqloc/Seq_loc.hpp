@@ -219,7 +219,7 @@ CSeq_loc_CI::SLoc_Info::operator= (const SLoc_Info& loc_info)
 inline
 CSeq_loc_CI& CSeq_loc_CI::operator++ (void)
 {
-    m_CurLoc++;
+    ++m_CurLoc;
     return *this;
 }
 
@@ -304,6 +304,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/02/04 16:04:12  dicuccio
+ * Changed postfix to prefix operator in op++() - marginally faster
+ *
  * Revision 1.20  2003/02/04 15:15:11  grichenk
  * Overrided Assign() for CSeq_loc and CSeq_id
  *
