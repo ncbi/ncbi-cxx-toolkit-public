@@ -70,6 +70,7 @@ public:
     string GetUsePchThroughHeader (const string& project_id,
                                    const string& source_file_full_path,
                                    const string& tree_src_dir) const;
+    string GetPchUsageDefine      (void) const;
 
 protected:
     CNcbiRegistry m_MakeFile;
@@ -84,6 +85,8 @@ protected:
 
         typedef list<string> TDontUsePch;
         TDontUsePch    m_DontUsePchList;
+
+        string m_PchUsageDefine;
     };
     const SPchInfo& GetPchInfo(void) const;
 
@@ -178,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 14:33:53  gorelenk
+ * Added declaration of GetPchUsageDefine to class CMsvcMetaMakefile.
+ *
  * Revision 1.7  2004/05/10 14:24:44  gorelenk
  * + IsPchEnabled and GetUsePchThroughHeader.
  *
