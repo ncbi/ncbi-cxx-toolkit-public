@@ -243,8 +243,8 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
         swap(min_delta, max_delta);
     }
 
-    TSignedSeqPos min_delta_sp(floor(min_delta + 0.5));
-    TSignedSeqPos max_delta_sp(floor(max_delta + 0.5));
+    TSignedSeqPos min_delta_sp = TSignedSeqPos(floor(min_delta + 0.5));
+    TSignedSeqPos max_delta_sp = TSignedSeqPos(floor(max_delta + 0.5));
 
     if (min_delta < -kInfinity / 2) {
         if (max_delta > kInfinity / 2) {
@@ -361,6 +361,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.11  2004/04/12 16:51:46  vasilche
+ * Fixed conversion warnings.
+ *
  * Revision 6.10  2004/01/06 14:36:06  dicuccio
  * Removed unnecessary #include of ncbiapp.hpp and ncbireg.hpp.  Added <set> where
  * needed.
