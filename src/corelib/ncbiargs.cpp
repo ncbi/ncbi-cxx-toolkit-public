@@ -34,6 +34,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.25  2000/11/29 00:07:28  vakatov
+ * Flag and key args not to be sorted in alphabetical order by default; see
+ * "usage_sort_args" in SetUsageContext().
+ *
  * Revision 1.24  2000/11/24 23:28:33  vakatov
  * CArgValue::  added CloseFile()
  * CArgValue::  get rid of "change_mode" feature in AsInput/OutputFile()
@@ -1146,9 +1150,6 @@ void CArgDescriptions::AddPlain
         (new CArgDesc_Plain(comment, type, flags, default_value));
 
     x_AddDesc(name, *arg);
-    _ASSERT(find(m_PlainArgs.begin(), m_PlainArgs.end(), name)
-            == m_PlainArgs.end());
-    m_PlainArgs.push_back(name);
     arg.release();
 }
 
@@ -1204,6 +1205,14 @@ void CArgDescriptions::Delete(const string& name)
             ARG_THROW("Cannot delete non-existing argument description", name);
         }
         m_Args.erase(it);
+    }}
+
+    {{ // ...from the list of key/flag args
+        TKeyFlagArgs::iterator it =
+            find(m_KeyFlagArgs.begin(), m_KeyFlagArgs.end(), name);
+        _ASSERT(it != m_KeyFlagArgs.end());
+        _ASSERT(find(it, m_KeyFlagArgs.end(), name) == m_KeyFlagArgs.end());
+        m_KeyFlagArgs.erase(it);
     }}
 
     {{ // ...from the list of plain arg positions
@@ -1529,10 +1538,12 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
 void CArgDescriptions::SetUsageContext
 (const string& usage_name,
  const string& usage_description,
- SIZE_TYPE    usage_width)
+ bool          usage_sort_args,
+ SIZE_TYPE     usage_width)
 {
     m_UsageName        = usage_name;
     m_UsageDescription = usage_description;
+    m_UsageSortArgs    = usage_sort_args;
 
     const SIZE_TYPE kMinUsageWidth = 30;
     if (usage_width < kMinUsageWidth) {
@@ -1564,6 +1575,17 @@ void CArgDescriptions::x_AddDesc(const string& name, CArgDesc& arg)
 
     if (m_Args.find(name) != m_Args.end()) {
         ARG_THROW("Argument with this name already exists, cannot add", name);
+    }
+
+    if (dynamic_cast<const CArgDesc_OptionalKey*> (&arg)  ||
+        !dynamic_cast<const CArgDesc_Plain*> (&arg)) {
+        _ASSERT(find(m_KeyFlagArgs.begin(), m_KeyFlagArgs.end(), name)
+                == m_KeyFlagArgs.end());
+        m_KeyFlagArgs.push_back(name);
+    } else if ( !name.empty() ) {
+        _ASSERT(find(m_PlainArgs.begin(), m_PlainArgs.end(), name)
+                == m_PlainArgs.end());
+        m_PlainArgs.push_back(name);
     }
 
     m_Args[name] = &arg;
@@ -1696,7 +1718,8 @@ string& CArgDescriptions::PrintUsage(string& str) const
     TList args;
 
     // Keys and Flags
-    {{
+    if ( m_UsageSortArgs ) {
+        // Alphabetically ordered
         args.push_front(CArgUsage());
         TListI it_keys  = args.begin();
         args.push_front(CArgUsage());
@@ -1712,10 +1735,18 @@ string& CArgDescriptions::PrintUsage(string& str) const
                 args.insert(it_flags, CArgUsage(it->first, *desc));
             }
         }
-
         args.erase(it_flags);
         args.erase(it_keys);
-    }}
+    } else {
+        // Unsorted, just the order they were described by user
+        for (TKeyFlagArgs::const_iterator name = m_KeyFlagArgs.begin();
+             name != m_KeyFlagArgs.end();  ++name) {
+            TArgsCI it = m_Args.find(*name);
+            _ASSERT(it != m_Args.end());
+
+            args.push_back( CArgUsage(it->first, *it->second) );
+        }
+    }
 
     // Plain
     for (unsigned n = 0;  n < m_PlainArgs.size();  n++) {

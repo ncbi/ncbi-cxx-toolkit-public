@@ -37,6 +37,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2000/11/29 00:07:25  vakatov
+ * Flag and key args not to be sorted in alphabetical order by default; see
+ * "usage_sort_args" in SetUsageContext().
+ *
  * Revision 1.14  2000/11/24 23:28:31  vakatov
  * CArgValue::  added CloseFile()
  * CArgValue::  get rid of "change_mode" feature in AsInput/OutputFile()
@@ -381,6 +385,7 @@ public:
     // Set extra info to use by PrintUsage()
     void SetUsageContext(const string& usage_name,
                          const string& usage_description,
+                         bool          usage_sort_args = false,
                          SIZE_TYPE     usage_width = 78);
 
     // Printout (add to the end of) USAGE to the string "str" using
@@ -396,16 +401,19 @@ private:
     typedef map< string, AutoPtr<CArgDesc> >  TArgs;
     typedef TArgs::iterator                   TArgsI;
     typedef TArgs::const_iterator             TArgsCI;
-    typedef vector<string>                    TPlainArgs;  // (better use deque<> here; later)
+    typedef /*deque*/vector<string>           TPlainArgs;
+    typedef list<string>                      TKeyFlagArgs;
 
     TArgs        m_Args;        // assoc.map of arguments' name/descr
     TPlainArgs   m_PlainArgs;   // pos. args, ordered by position in cmd.-line
+    TKeyFlagArgs m_KeyFlagArgs; // key/flag args, ordered in order of insertion
     EConstraint  m_Constraint;  // policy for the position args
     unsigned     m_ConstrArgs;  // # of args to impose the constraint upon
 
     // extra USAGE info
     string    m_UsageName;         // program name
     string    m_UsageDescription;  // program description
+    bool      m_UsageSortArgs;     // sort alphabetically on usage printout
     SIZE_TYPE m_UsageWidth;        // max. length of a usage line
     bool      m_AutoHelp;          // special flag "-h" activated
 
