@@ -191,7 +191,7 @@ private:
     // Compute the transition to be performed on failure.
     void ComputeFail(void);
     void FindFail(int state, int new_state, char ch);
-    void QueueAdd(vector<int>& queue, int qbeg, int val);
+    void QueueAdd(vector<int>& in_queue, int qbeg, int val);
     
     // Member Variables
     bool                m_Primed;
@@ -315,18 +315,18 @@ int CTextFsm<MatchType>::GetNextState(int state, char letter) const
 
 
 template <typename MatchType>
-void CTextFsm<MatchType>::QueueAdd(vector<int>& queue, int qbeg, int val)
+void CTextFsm<MatchType>::QueueAdd(vector<int>& in_queue, int qbeg, int val)
 {
     int  q;
     
-    q = queue [qbeg];
+    q = in_queue [qbeg];
     if (q == 0) {
-        queue [qbeg] = val;
+        in_queue [qbeg] = val;
     } else {
-        for ( ;  queue [q] != 0;  q = queue [q]) continue;
-        queue [q] = val;
+        for ( ;  in_queue [q] != 0;  q = in_queue [q]) continue;
+        in_queue [q] = val;
     }
-    queue [val] = 0;
+    in_queue [val] = 0;
 }
 
 
@@ -334,10 +334,10 @@ template <typename MatchType>
 void CTextFsm<MatchType>::ComputeFail(void) 
 {
     int	qbeg, r, s, state;
-    vector<int> queue(m_States.size());
+    vector<int> state_queue(m_States.size());
     
     qbeg = 0;
-    queue [0] = 0;
+    state_queue [0] = 0;
     
     // queue up states reached directly from state 0 (depth 1) 
     
@@ -346,18 +346,18 @@ void CTextFsm<MatchType>::ComputeFail(void)
               m_States[GetInitialState()].GetTransitions() ) {
         s = it->second;
         m_States[s].SetOnFailure(0);
-        QueueAdd(queue, qbeg, s);
+        QueueAdd(state_queue, qbeg, s);
     }
     
-    while (queue [qbeg] != 0) {
-        r = queue [qbeg];
+    while (state_queue [qbeg] != 0) {
+        r = state_queue [qbeg];
         qbeg = r;
         
         // depth 1 states beget depth 2 states, etc. 
         
         ITERATE ( CState::TMapCharInt, it, m_States[r].GetTransitions() ) {
             s = it->second;
-            QueueAdd(queue, qbeg, s);
+            QueueAdd(state_queue, qbeg, s);
             
             //   State   Substring   Transitions   Failure
             //     2       st          a ->   3       6
@@ -431,6 +431,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/05/23 13:33:55  dicuccio
+* Changed local variable name from 'queue' to avoid clash with queue<>
+*
 * Revision 1.11  2003/04/17 17:50:36  siyan
 * Added doxygen support
 *
