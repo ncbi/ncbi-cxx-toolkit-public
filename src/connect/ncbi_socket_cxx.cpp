@@ -305,10 +305,10 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
     for (size_t i = 0;  i < x_n;  i++) {
         CSocket& s = polls[i].m_Socket;
         if (s.GetStatus(eIO_Open) == eIO_Success) {
-            x_polls[i].sock = s.GetSOCK();
+            x_polls[i].sock  = s.GetSOCK();
             x_polls[i].event = polls[i].m_Event;
         } else {
-            x_polls[i].sock = 0;
+            x_polls[i].sock  = 0;
         }
     }
 
@@ -334,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/11/14 01:11:49  lavr
+ * Minor formatting changes
+ *
  * Revision 6.7  2002/11/01 20:13:15  lavr
  * Expand hostname buffers to hold up to 256 chars
  *

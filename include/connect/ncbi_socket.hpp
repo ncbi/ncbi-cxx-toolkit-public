@@ -63,8 +63,8 @@ public:
     // Create a client-side socket connected to "host:port".
     // NOTE: the created underlying "SOCK" will be owned by the "CSocket".
     CSocket(const string&   host,
-            unsigned short  port,  // always in host byte order
-            const STimeout* timeout   = 0/*infinite*/);
+            unsigned short  port,      // always in host byte order
+            const STimeout* timeout = 0/*infinite*/);
 
     // Call Close(), then self-destruct
     ~CSocket(void);
@@ -80,13 +80,13 @@ public:
     // Connect to "host:port".
     // NOTE:  should not be called if already connected.
     EIO_Status Connect(const string&   host,
-                       unsigned short  port,  // always in host byte order
-                       const STimeout* timeout = 0);
+                       unsigned short  port,      // always in host byte order
+                       const STimeout* timeout = 0/*infinite*/);
 
     // Reconnect to the same address.
     // NOTE 1:  the socket must not be closed by the time this call is made.
     // NOTE 2:  not for the sockets created by CListeningSocket::Accept().
-    EIO_Status Reconnect(const STimeout* timeout = 0);
+    EIO_Status Reconnect(const STimeout* timeout = 0/*infinite*/);
 
     EIO_Status Shutdown(EIO_Event how);
 
@@ -107,7 +107,7 @@ public:
     EIO_Status Write(const void* buf, size_t size, size_t* n_written = 0,
                      EIO_WriteMethod how = eIO_WritePersist);
 
-    // NOTE 1:  either of "host", "port" can be NULL to opt out from storing
+    // NOTE 1:  either of "host", "port" can be NULL to opt out from
     //          obtaining the corresponding value;
     // NOTE 2:  both "*host" and "*port" come out in the same
     //          byte order requested by the third argument.
@@ -432,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/11/14 01:11:33  lavr
+ * Minor formatting changes
+ *
  * Revision 6.10  2002/09/19 18:05:25  lavr
  * Header file guard macro changed
  *
