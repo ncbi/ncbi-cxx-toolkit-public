@@ -83,7 +83,27 @@ void CAlnMix::Merge(TMergeFlags flags)
         default:
             m_DS = null;
             m_MergeFlags = flags;
-            x_Merge();
+            if (m_MergeFlags & fTryOtherMethodOnFail) {
+                try {
+                    x_Merge();
+                } catch(...) {
+                    if (m_MergeFlags & fGen2EST) {
+                        m_MergeFlags &= !fGen2EST;
+                    } else {
+                        m_MergeFlags |= fGen2EST;
+                    }
+                    try {
+                        x_Merge();
+                    } catch(...) {
+                        NCBI_THROW(CAlnException, eUnknownMergeFailure,
+                                   "CAlnMix::x_Merge(): "
+                                   "Both Gen2EST and Nucl2Nucl "
+                                   "merges failed.");
+                    }
+                }
+            } else {
+                x_Merge();
+            }
         }
     }
 }
@@ -146,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/10/25 20:02:41  todorov
+* new fTryOtherMethodOnFail flag
+*
 * Revision 1.2  2002/10/24 21:29:13  todorov
 * adding Dense-segs instead of Seq-aligns
 *

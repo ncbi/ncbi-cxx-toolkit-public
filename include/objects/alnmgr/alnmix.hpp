@@ -64,7 +64,9 @@ public:
     enum EMergeFlags {
         fGen2EST              = 0x01, // otherwise Nucl2Nucl
         fTruncateOverlaps     = 0x02, // otherwise put on separate rows
-        fNegativeStrand       = 0x04
+        fNegativeStrand       = 0x04,
+        fTryOtherMethodOnFail = 0x08,
+        fGapJoin              = 0x10
     };
     typedef int TMergeFlags; // binary OR of EMergeFlags
     void Merge(TMergeFlags flags = 0);
@@ -128,6 +130,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/10/25 20:02:20  todorov
+* new fTryOtherMethodOnFail flag
+*
 * Revision 1.3  2002/10/24 21:31:33  todorov
 * adding Dense-segs instead of Seq-aligns
 *
