@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/03/19 22:12:28  lavr
+ * strcasecmp and strncasecmp are optimized (for ASCII range)
+ *
  * Revision 6.8  2001/12/04 15:57:22  lavr
  * Tiny style adjustement
  *
@@ -70,6 +73,7 @@ extern char* strdup(const char* str)
 }
 
 
+/* We assume that we're using ASCII-based charsets */
 extern int strcasecmp(const char* s1, const char* s2)
 {
     const unsigned char* p1 = (const unsigned char*) s1;
@@ -80,8 +84,12 @@ extern int strcasecmp(const char* s1, const char* s2)
         return 0;
 
     do {
-        c1 = toupper(*p1++);
-        c2 = toupper(*p2++);
+        c1 = *p1++;
+        c2 = *p2++;
+        c1 = c1 >= ' ' && c1 <= 'Z' ? c1 :
+            (c1 >= 'a' && c1 <= 'z' ? c1 - ('a' - 'A') : toupper(c1));
+        c2 = c2 >= ' ' && c2 <= 'Z' ? c2 :
+            (c2 >= 'a' && c2 <= 'z' ? c2 - ('a' - 'A') : toupper(c2));
     } while (c1  &&  c1 == c2);
 
     return c1 - c2;
@@ -98,8 +106,12 @@ extern int strncasecmp(const char* s1, const char* s2, size_t n)
         return 0;
 
     do {
-        c1 = toupper(*p1++);
-        c2 = toupper(*p2++);
+        c1 = *p1++;
+        c2 = *p2++;
+        c1 = c1 >= ' ' && c1 <= 'Z' ? c1 :
+            (c1 >= 'a' && c1 <= 'z' ? c1 - ('a' - 'A') : toupper(c1));
+        c2 = c2 >= ' ' && c2 <= 'Z' ? c2 :
+            (c2 >= 'a' && c2 <= 'z' ? c2 - ('a' - 'A') : toupper(c2));
     } while (--n > 0  &&  c1  &&  c1 == c2);
 
     return c1 - c2;
