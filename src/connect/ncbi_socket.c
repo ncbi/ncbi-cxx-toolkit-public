@@ -359,7 +359,12 @@ extern EIO_Status SOCK_InitializeAPI(void)
     }}
 #elif defined(NCBI_OS_UNIX)
     if ( !s_AllowSigPipe ) {
-        signal(SIGPIPE, SIG_IGN);
+        struct sigaction sa;
+        if (sigaction(SIGPIPE, 0, &sa) < 0  ||  sa.sa_handler == SIG_DFL) {
+            memset(&sa, 0, sizeof(sa));
+            sa.sa_handler = SIG_IGN;
+            sigaction(SIGPIPE, &sa, 0);
+        }
     }
 #endif
 
@@ -1847,6 +1852,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2002/07/15 19:32:03  lavr
+ * Do not intercept SIGPIPE in the case of an installed signal handler
+ *
  * Revision 6.51  2002/07/01 20:52:23  lavr
  * Error (trace) printouts added in s_Select() and s_NCBI_Recv()
  *
