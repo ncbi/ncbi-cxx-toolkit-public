@@ -60,6 +60,82 @@ public:
 };
 
 
+/// @internal
+
+struct STransactionInfo
+{
+    string    key;
+    size_t    blob_size;
+    unsigned  transaction_time;
+    unsigned  connection_time;
+};
+
+
+
+/// @internal
+static 
+bool s_CheckExists(const string& host, unsigned short port, const string& key)
+{
+    CSocket sock(host, port);
+    CNetCacheClient nc_client(&sock);
+
+    unsigned char dataBuf[1024] = {0,};
+    CNetCacheClient::EReadResult rres = 
+        nc_client.GetData(key, dataBuf, sizeof(dataBuf));
+
+    if (rres == CNetCacheClient::eNotFound)
+        return false;
+
+    return true;
+}
+
+/// @internal
+static
+void s_PutBlob(const string&             host,
+               unsigned short            port,
+               const void*               buf, 
+               size_t                    size, 
+               vector<STransactionInfo>* log)
+{
+    STransactionInfo info;
+    info.blob_size = size;
+
+    CTime conn_begin(CTime::eCurrent);
+    CNetCacheClient nc_client(host, port);
+    CTime tr_begin(CTime::eCurrent);
+    info.key = nc_client.PutData(buf, size, 60 * 3);
+    CTime end(CTime::eCurrent);
+
+    info.transaction_time = end.GetTimeT() - tr_begin.GetTimeT();
+    info.connection_time = end.GetTimeT() - conn_begin.GetTimeT();
+
+    log->push_back(info);
+}
+
+
+
+
+/// @internal
+static
+void s_StressTest(const string&             host,
+                  unsigned short            port,
+                  const void*               buf, 
+                  size_t                    size, 
+                  unsigned int              repeats,
+                  vector<STransactionInfo>* log)
+{
+
+    cout << "Stress test. BLOB size = " << size 
+         << " Repeats = " << repeats
+         << ". Please wait... " << endl;
+    for (unsigned i = 0; i < repeats; ++i) {
+        s_PutBlob(host, port, buf, size, log);
+
+        if (i % 1000 == 0) cout << "." << flush;
+    }
+    cout << endl;
+}
+
 void CTestNetCacheClient::Init(void)
 {
     // Setup command line arguments and parameters
@@ -83,21 +159,6 @@ void CTestNetCacheClient::Init(void)
 }
 
 
-static bool s_CheckExists(const string& host, unsigned short port, const string& key)
-{
-    CSocket sock(host, port);
-    CNetCacheClient nc_client(&sock);
-
-    unsigned char dataBuf[1024] = {0,};
-    CNetCacheClient::EReadResult rres = 
-        nc_client.GetData(key, dataBuf, sizeof(dataBuf));
-
-    if (rres == CNetCacheClient::eNotFound)
-        return false;
-
-    return true;
-}
-
 
 int CTestNetCacheClient::Run(void)
 {
@@ -110,6 +171,8 @@ int CTestNetCacheClient::Run(void)
 
     {{
         CSocket sock(host, port);
+        STimeout to = {0,0};
+        sock.SetTimeout(eIO_ReadWrite, &to);
         CNetCacheClient nc_client(&sock);
 
         key = nc_client.PutData(test_data, sizeof(test_data));
@@ -142,6 +205,7 @@ int CTestNetCacheClient::Run(void)
 
         int res = strcmp(dataBuf, test_data);
         assert(res == 0);
+        sock.Close();
     }}
 
     // timeout test
@@ -151,12 +215,13 @@ int CTestNetCacheClient::Run(void)
 
         key = nc_client.PutData(test_data, sizeof(test_data), 60);
         assert(!key.empty());
+        sock.Close();
     }}
 
     bool exists;
     exists = s_CheckExists(host, port, key);
     assert(exists);
-
+/*
     unsigned delay = 70;
     cout << "Sleeping for " << delay << " seconds. Please wait...." << flush;
     SleepSec(delay);
@@ -164,6 +229,18 @@ int CTestNetCacheClient::Run(void)
 
     exists = s_CheckExists(host, port, key);
     assert(!exists);
+*/
+
+    vector<STransactionInfo> log;
+
+    CTime test_begin(CTime::eCurrent);
+    unsigned repeats = 20000;
+    s_StressTest(host, port, test_data, sizeof(test_data), repeats, &log);
+    CTime test_end(CTime::eCurrent);
+    unsigned elapsed = test_end.GetTimeT() - test_begin.GetTimeT();
+    cout << "Elapsed = " << elapsed << " per transaction = " 
+         << double(elapsed) / double(repeats) 
+         << endl;
 
     // Shutdown server
     {{
@@ -184,6 +261,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/13 12:54:34  kuznets
+ * +Stress test
+ *
  * Revision 1.3  2004/10/08 12:30:35  lavr
  * Cosmetics
  *
