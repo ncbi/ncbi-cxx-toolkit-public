@@ -45,19 +45,19 @@ BEGIN_NCBI_SCOPE
 
 // --------------------------------------------------------------------------
 
-/// Visitor functor to convert bio tree nodes to dynamic tree
+/// Visitor functor to convert tree nodes to dynamic tree
 ///
 /// @internal
 
-template<class TDynamicTree, class TSrcBioTree, class TNodeConvFunc>
-class CBioTreeConvert2DynamicFunc
+template<class TDynamicTree, class TSrcTree, class TNodeConvFunc>
+class CTreeConvert2DynamicFunc
 {
 public:
-    typedef typename TSrcBioTree::TBioTreeNode   TBioTreeNodeType;
+    typedef TSrcTree                             TBioTreeNodeType;
     typedef typename TDynamicTree::TBioTreeNode  TDynamicNodeType;
 
 public:
-    CBioTreeConvert2DynamicFunc(TDynamicTree* dyn_tree, TNodeConvFunc func)
+    CTreeConvert2DynamicFunc(TDynamicTree* dyn_tree, TNodeConvFunc func)
     : m_DynTree(dyn_tree),
       m_ConvFunc(func)
     {}
@@ -120,23 +120,44 @@ private:
 };
 
 
-/// Convert any tree to dynamic tree using a node converter
+
+/// Convert biotree to dynamic tree using a node converter
 ///
-template<class TDynamicTree, class TBioTree, class TNodeConvFunc>
-void BioTreeConvert2Dynamic(TDynamicTree&      dyn_tree, 
-                            const TBioTree&    bio_tree,
-                            TNodeConvFunc      node_conv)
+template<class TDynamicTree, class TSrcBioTree, class TNodeConvFunc>
+void BioTreeConvert2Dynamic(TDynamicTree&         dyn_tree, 
+                            const TSrcBioTree&    bio_tree,
+                            TNodeConvFunc         node_conv)
+{
+    dyn_tree.Clear();
+    typedef typename TSrcBioTree::TBioTreeNode   TBioTreeNodeType;
+
+    CTreeConvert2DynamicFunc<TDynamicTree, TBioTreeNodeType, TNodeConvFunc> 
+       func(&dyn_tree, node_conv);
+
+    const TBioTreeNodeType *n = bio_tree.GetTreeNode();
+
+    TreeDepthFirstTraverse(*(const_cast<TBioTreeNodeType*>(n)), func);
+}
+
+
+
+
+/// Convert CTreeNode<> to dynamic tree using a node converter
+///
+template<class TDynamicTree, class TTreeNode, class TNodeConvFunc>
+void TreeConvert2Dynamic(TDynamicTree&      dyn_tree, 
+                         const TTreeNode*   src_tree,
+                         TNodeConvFunc      node_conv)
 {
     dyn_tree.Clear();
 
-    CBioTreeConvert2DynamicFunc<TDynamicTree, TBioTree, TNodeConvFunc> 
+    CTreeConvert2DynamicFunc<TDynamicTree, TTreeNode, TNodeConvFunc> 
        func(&dyn_tree, node_conv);
 
-    typedef typename TBioTree::TBioTreeNode TTreeNode;
-    const TTreeNode *n = bio_tree.GetTreeNode();
-
-    TreeDepthFirstTraverse(*(const_cast<TTreeNode*>(n)), func);
+    TreeDepthFirstTraverse(*(const_cast<TTreeNode*>(src_tree)), func);
 }
+
+
 
 // --------------------------------------------------------------------------
 
@@ -574,6 +595,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/11/10 19:26:24  kuznets
+ * Added coverter from CTreeNode<> to dynamic
+ *
  * Revision 1.7  2004/10/08 11:15:44  kuznets
  * Doxygen formatting (group Tree)
  *
