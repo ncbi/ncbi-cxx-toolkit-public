@@ -83,20 +83,25 @@ public:
     /// sneaky in that it interprets a delimiter for recursion.
     /// This version will throw an exception if the field
     /// doesn't exist.
-    const CUser_field& GetField(const string& str,
-                                const string& delim = ".") const;
+    const CUser_field&     GetField(const string& str,
+                                    const string& delim = ".") const;
+    CConstRef<CUser_field> GetFieldRef(const string& str,
+                                       const string& delim = ".") const;
 
     /// Access a named field in this user object.  This is a little
     /// sneaky in that it interprets a delimiter for recursion.  The
     /// 'obj_subtype' parameter is used to set the subtype of a 
     /// sub-object if a new sub-object needs to be created
-    CUser_field&       SetField(const string& str,
-                                const string& delim = ".",
-                                const string& obj_subtype = kEmptyStr);
+    CUser_field&      SetField(const string& str,
+                               const string& delim = ".",
+                               const string& obj_subtype = kEmptyStr);
+    CRef<CUser_field> SetFieldRef(const string& str,
+                                  const string& delim = ".",
+                                  const string& obj_subtype = kEmptyStr);
 
     /// Verify that a named field exists
-    bool               HasField(const string& str,
-                                const string& delim = ".") const;
+    bool HasField(const string& str,
+                  const string& delim = ".") const;
 
     /// enum controlling what to return for a label
     /// this mirrors a request inside of feature::GetLabel()
@@ -171,6 +176,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/11/08 17:20:37  dicuccio
+* Added GetFieldRef() and SetFieldRef() - returns the CConstRef<>/CRef<>
+* corresponding to the named field.  White space changes.
+*
 * Revision 1.8  2004/10/28 18:38:57  dicuccio
 * Doxygenated comments. Extended SetField() to take a type string for sub-object
 * creation

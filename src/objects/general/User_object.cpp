@@ -63,48 +63,12 @@ CUser_object::~CUser_object(void)
 const CUser_field& CUser_object::GetField(const string& str,
                                           const string& delim) const
 {
-    list<string> toks;
-    NStr::Split(str, delim, toks);
-
-    CConstRef<CUser_object> obj_ref(this);
-    CConstRef<CUser_field>  field_ref;
-    ITERATE(list<string>, iter, toks) {
-        if (obj_ref) {
-            ITERATE(TData, field_iter, obj_ref->GetData()) {
-                const CUser_field& field = **field_iter;
-                if (field.IsSetLabel()  &&  field.GetLabel().IsStr()  &&
-                    field.GetLabel().GetStr() == *iter) {
-                    field_ref.Reset(&field);
-                    obj_ref.Reset();
-                    break;
-                }
-            }
-        } else if (field_ref) {
-            switch (field_ref->GetData().Which()) {
-            case CUser_field::TData::e_Object:
-                obj_ref.Reset(&field_ref->GetData().GetObject());
-                break;
-            case CUser_field::TData::e_Objects:
-                break;
-            case CUser_field::TData::e_Fields:
-                break;
-            default:
-                NCBI_THROW(CException, eUnknown,
-                    "illegal recursion");
-            }
-        }
-    }
-
-    if ( field_ref ) {
-        return *field_ref;
-    }
-    NCBI_THROW(CException, eUnknown,
-        "field not found");
+    return *GetFieldRef(str, delim);
 }
 
 
-bool CUser_object::HasField(const string& str,
-                            const string& delim) const
+CConstRef<CUser_field> CUser_object::GetFieldRef(const string& str,
+                                                 const string& delim) const
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
@@ -125,22 +89,29 @@ bool CUser_object::HasField(const string& str,
         } else if (field_ref) {
             switch (field_ref->GetData().Which()) {
             case CUser_field::TData::e_Object:
+                obj_ref.Reset(&field_ref->GetData().GetObject());
+                field_ref.Reset();
+                --iter;
                 break;
             case CUser_field::TData::e_Objects:
                 break;
             case CUser_field::TData::e_Fields:
                 break;
             default:
-                return false;
+                NCBI_THROW(CException, eUnknown,
+                    "illegal recursion");
             }
         }
     }
 
-    if ( field_ref ) {
-        return true;
-    }
+    return field_ref;
+}
 
-    return false;
+
+bool CUser_object::HasField(const string& str,
+                            const string& delim) const
+{
+    return GetFieldRef(str, delim).GetPointer() ? true : false;
 }
 
 
@@ -151,6 +122,14 @@ bool CUser_object::HasField(const string& str,
 CUser_field& CUser_object::SetField(const string& str,
                                     const string& delim,
                                     const string& obj_subtype)
+{
+    return *SetFieldRef(str, delim, obj_subtype);
+}
+
+
+CRef<CUser_field> CUser_object::SetFieldRef(const string& str,
+                                         const string& delim,
+                                         const string& obj_subtype)
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
@@ -179,10 +158,12 @@ CUser_field& CUser_object::SetField(const string& str,
             obj_ref->SetData().push_back(field_ref);
 
             obj_ref.Reset(&field_ref->SetData().SetObject());
+        } else if (field_ref->GetData().IsObject()) {
+            obj_ref.Reset(&field_ref->SetData().SetObject());
         }
     }
 
-    return *field_ref;
+    return field_ref;
 }
 
 
@@ -194,24 +175,31 @@ CUser_object& CUser_object::AddField(const string& label,
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
     switch (parse) {
-        case eParse_Number:
-            try {
-                int i = NStr::StringToInt(value);
-                field->SetData().SetInt(i);
-            } catch (...) {
-                try {
-                    double d = NStr::StringToDouble(value);
-                    field->SetData().SetReal(d);
-                } catch (...) {
-                    field->SetData().SetStr(value);
-                }
-            }
+    case eParse_Number:
+        try {
+            int i = NStr::StringToInt(value);
+            field->SetData().SetInt(i);
             break;
-        default:
-        case eParse_String:
-            field->SetData().SetStr(value);
+        }
+        catch (...) {
+        }
+
+        try {
+            double d = NStr::StringToDouble(value);
+            field->SetData().SetReal(d);
             break;
+        }
+        catch (...) {
+        }
+        field->SetData().SetStr(value);
+        break;
+
+    default:
+    case eParse_String:
+        field->SetData().SetStr(value);
+        break;
     }
+
     SetData().push_back(field);
     return *this;
 }
@@ -584,6 +572,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.11  2004/11/08 17:20:37  dicuccio
+* Added GetFieldRef() and SetFieldRef() - returns the CConstRef<>/CRef<>
+* corresponding to the named field.  White space changes.
+*
 * Revision 6.10  2004/10/28 18:40:54  dicuccio
 * Corrected field recursion.  Added optional type string to classes
 *
