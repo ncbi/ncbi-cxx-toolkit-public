@@ -66,7 +66,7 @@
 USING_NCBI_SCOPE;
 
 
-#define NETSCHEDULED_VERSION "NCBI NetSchedule server version=0.7"
+#define NETSCHEDULED_VERSION "NCBI NetSchedule server version=0.8"
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -177,7 +177,6 @@ public:
     {
         m_ThrdSrvAcceptTimeout.sec = 0;
         m_ThrdSrvAcceptTimeout.usec = 500;
-        m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
     }
 
     void ProcessSubmit(CSocket& sock, SThreadData& tdata);
@@ -295,6 +294,8 @@ CNetScheduleServer::CNetScheduleServer(unsigned int    port,
     m_QueueSize = m_MaxThreads * 2;
 
     s_netschedule_server = this;
+
+    m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
 }
 
 CNetScheduleServer::~CNetScheduleServer()
@@ -395,6 +396,7 @@ void CNetScheduleServer::Process(SOCK sock)
                 ProcessDropQueue(socket, *tdata);
                 break;
             case eLogging:
+                break;
             case eStatistics:
                 ProcessStatistics(socket, *tdata);
                 break;
@@ -679,6 +681,19 @@ void CNetScheduleServer::ProcessStatistics(CSocket& sock, SThreadData& tdata)
     string recs = "Records:";
     recs += NStr::UIntToString(db_recs);
     WriteMsg(sock, "OK:", recs.c_str());
+    WriteMsg(sock, "OK:", "[Database statistics]:");
+
+    CNcbiOstrstream ostr;
+    queue.PrintStat(ostr);
+
+    const char* stat_str = ostr.str();
+    try {
+        WriteMsg(sock, "OK:", stat_str);
+    } catch (...) {
+        ostr.freeze(false);
+        throw;
+    }
+
     WriteMsg(sock, "OK:", "END");
 }
 
@@ -1364,6 +1379,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/03/22 16:16:10  kuznets
+ * Statistics improvement: added database information
+ *
  * Revision 1.17  2005/03/21 13:08:24  kuznets
  * + STAT command support
  *
