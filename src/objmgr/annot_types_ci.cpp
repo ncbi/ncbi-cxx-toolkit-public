@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/04/23 15:18:33  grichenk
+* Fixed: missing features on segments and packed-int convertions
+*
 * Revision 1.15  2002/04/22 20:06:17  grichenk
 * Minor changes in private interface
 *
@@ -216,9 +219,6 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
 {
     // Search all possible TSEs
-    // PopulateTSESet must be called AFTER resolving
-    // references -- otherwise duplicate features may be
-    // found.
     TTSESet entries;
     m_Scope->x_PopulateTSESet(loc, m_Selector.m_AnnotChoice, entries);
     non_const_iterate(TTSESet, tse_it, entries) {
@@ -226,10 +226,10 @@ void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
             continue;
         if ( m_TSESet.insert(*tse_it).second ) {
             (*tse_it)->Lock();
-            CAnnot_CI annot_it(**tse_it, loc, m_Selector);
-            for ( ; annot_it; annot_it++ ) {
-                m_AnnotSet.insert(&(*annot_it));
-            }
+        }
+        CAnnot_CI annot_it(**tse_it, loc, m_Selector);
+        for ( ; annot_it; annot_it++ ) {
+            m_AnnotSet.insert(&(*annot_it));
         }
     }
 }
@@ -406,6 +406,7 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                         ((*conv_it)->m_RefMin + (*conv_it)->m_RefShift);
                     loc.SetInt().SetTo
                         ((*conv_it)->m_RefMax + (*conv_it)->m_RefShift);
+                    //### What about "+1"?
                     if (loc.GetInt().GetTo() - loc.GetInt().GetFrom() + 1 <
                         m_Scope->GetBioseqHandle(loc.GetInt().
                         GetId()).GetSeqVector().size())
@@ -470,12 +471,14 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                             new_from = (*conv_it)->m_RefMin;
                             partial = true;
                         }
-                        if (new_to < (*conv_it)->m_RefMax) {
+                        if (new_to > (*conv_it)->m_RefMax) {
                             new_to = (*conv_it)->m_RefMax;
                             partial = true;
                         }
-                        (*ii)->SetFrom(new_from + (*conv_it)->m_RefShift);
-                        (*ii)->SetTo(new_to + (*conv_it)->m_RefShift);
+                        new_from += (*conv_it)->m_RefShift;
+                        new_to += (*conv_it)->m_RefShift;
+                        (*ii)->SetFrom(new_from);
+                        (*ii)->SetTo(new_to);
                     }
                     continue;
                 }
