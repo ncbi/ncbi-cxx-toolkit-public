@@ -331,8 +331,9 @@ string ConfigName(const string& config)
     return config +'|'+ MSVC_PROJECT_PLATFORM;
 }
 
+
 //-----------------------------------------------------------------------------
-CSourceFileToProjectInserter::CSourceFileToProjectInserter
+CSrcToFilterInserterWithPch::CSrcToFilterInserterWithPch
                                         (const string&            project_id,
                                          const list<SConfigInfo>& configs,
                                          const string&            project_dir)
@@ -343,24 +344,14 @@ CSourceFileToProjectInserter::CSourceFileToProjectInserter
 }
 
 
-CSourceFileToProjectInserter::~CSourceFileToProjectInserter(void)
+CSrcToFilterInserterWithPch::~CSrcToFilterInserterWithPch(void)
 {
 }
 
 void 
-CSourceFileToProjectInserter::operator()(CRef<CFilter>&  filter, 
-                                         const string&   rel_source_file)
+CSrcToFilterInserterWithPch::operator()(CRef<CFilter>&  filter, 
+                                        const string&   rel_source_file)
 {
-#if 0
-    CRef< CFFile > file(new CFFile());
-    file->SetAttlist().SetRelativePath(rel_source_file);
-
-    CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
-    ce->SetFile(*file);
-    filter->SetFF().SetFF().push_back(ce);
-#endif
-
-#if 1
     CRef< CFFile > file(new CFFile());
     file->SetAttlist().SetRelativePath(rel_source_file);
     //
@@ -401,13 +392,11 @@ CSourceFileToProjectInserter::operator()(CRef<CFilter>&  filter,
     CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
     ce->SetFile(*file);
     filter->SetFF().SetFF().push_back(ce);
-
-#endif
 }
 
-CSourceFileToProjectInserter::TPch 
-CSourceFileToProjectInserter::DefinePchUsage(const string& project_dir,
-                                             const string& rel_source_file)
+CSrcToFilterInserterWithPch::TPch 
+CSrcToFilterInserterWithPch::DefinePchUsage(const string& project_dir,
+                                            const string& rel_source_file)
 {
     // Check global permission
     if ( !GetApp().GetMetaMakefile().IsPchEnabled() )
@@ -443,6 +432,254 @@ CSourceFileToProjectInserter::DefinePchUsage(const string& project_dir,
     }
 }
 
+
+//-----------------------------------------------------------------------------
+CBasicProjectsFilesInserter::CBasicProjectsFilesInserter
+                                (CVisualStudioProject*    vcproj,
+                                const string&            project_id,
+                                const list<SConfigInfo>& configs,
+                                const string&            project_dir)
+    :m_Vcproj     (vcproj),
+     m_SrcInserter(project_id, 
+                   configs, 
+                   project_dir)
+{
+    m_Filters.Initilize();
+}
+
+
+CBasicProjectsFilesInserter::~CBasicProjectsFilesInserter(void)
+{
+}
+
+void CBasicProjectsFilesInserter::AddSourceFile(const string& rel_file_path)
+{
+    m_Filters.AddSourceFile(m_SrcInserter, rel_file_path);
+}
+void CBasicProjectsFilesInserter::AddHeaderFile(const string& rel_file_path)
+{
+    m_Filters.AddHeaderFile(rel_file_path);
+}
+void CBasicProjectsFilesInserter::AddInlineFile(const string& rel_file_path)
+{
+    m_Filters.AddInlineFile(rel_file_path);
+}
+
+void CBasicProjectsFilesInserter::Finalize(void)
+{
+    m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_SourceFiles);
+    m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_HeaderFiles);
+    m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_InlineFiles);
+}
+
+
+void CBasicProjectsFilesInserter::SFiltersItem::Initilize(void)
+{
+    m_SourceFiles.Reset(new CFilter());
+    m_SourceFiles->SetAttlist().SetName("Source Files");
+    m_SourceFiles->SetAttlist().SetFilter
+            ("cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx");
+
+    m_HeaderFiles.Reset(new CFilter());
+    m_HeaderFiles->SetAttlist().SetName("Header Files");
+    m_HeaderFiles->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+
+    m_InlineFiles.Reset(new CFilter());
+    m_InlineFiles->SetAttlist().SetName("Inline Files");
+    m_InlineFiles->SetAttlist().SetFilter("inl");
+}
+
+
+void CBasicProjectsFilesInserter::SFiltersItem::AddSourceFile
+                           (CSrcToFilterInserterWithPch& inserter_w_pch,
+                            const string&                rel_file_path)
+{
+    inserter_w_pch(m_SourceFiles, rel_file_path);
+}
+
+void CBasicProjectsFilesInserter::SFiltersItem::AddHeaderFile
+                                                  (const string& rel_file_path)
+{
+    CRef< CFFile > file(new CFFile());
+    file->SetAttlist().SetRelativePath(rel_file_path);
+
+    CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+    ce->SetFile(*file);
+    m_HeaderFiles->SetFF().SetFF().push_back(ce);
+}
+
+
+void CBasicProjectsFilesInserter::SFiltersItem::AddInlineFile
+                                                  (const string& rel_file_path)
+{
+    CRef< CFFile > file(new CFFile());
+    file->SetAttlist().SetRelativePath(rel_file_path);
+
+    CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+    ce->SetFile(*file);
+    m_InlineFiles->SetFF().SetFF().push_back(ce);
+}
+
+
+//-----------------------------------------------------------------------------
+CDllProjectFilesInserter::CDllProjectFilesInserter
+                                (CVisualStudioProject*    vcproj,
+                                 const CProjKey           dll_project_key,
+                                 const list<SConfigInfo>& configs,
+                                 const string&            project_dir)
+    :m_Vcproj       (vcproj),
+     m_DllProjectKey(dll_project_key),
+     m_ProjectDir   (project_dir),
+     m_SrcInserter  (dll_project_key.Id(), 
+                     configs, 
+                     project_dir)
+{
+    // Private filters initilization
+    m_PrivateFilters.m_SourceFiles.Reset(new CFilter());
+    m_PrivateFilters.m_SourceFiles->SetAttlist().SetName("Source Files");
+    m_PrivateFilters.m_SourceFiles->SetAttlist().SetFilter
+            ("cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx");
+
+    m_PrivateFilters.m_HeaderFiles.Reset(new CFilter());
+    m_PrivateFilters.m_HeaderFiles->SetAttlist().SetName("Header Files");
+    m_PrivateFilters.m_HeaderFiles->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+
+    m_PrivateFilters.m_InlineFiles.Reset(new CFilter());
+    m_PrivateFilters.m_InlineFiles->SetAttlist().SetName("Inline Files");
+    m_PrivateFilters.m_InlineFiles->SetAttlist().SetFilter("inl");
+
+    // Hosted Libraries filter (folder)
+    m_HostedLibrariesRootFilter.Reset(new CFilter());
+    m_HostedLibrariesRootFilter->SetAttlist().SetName("Hosted Libraries");
+    m_HostedLibrariesRootFilter->SetAttlist().SetFilter("");
+}
+
+
+CDllProjectFilesInserter::~CDllProjectFilesInserter(void)
+{
+}
+
+
+void CDllProjectFilesInserter::AddSourceFile (const string& rel_file_path)
+{
+    string abs_path = CDirEntry::ConcatPath(m_ProjectDir, rel_file_path);
+    abs_path = CDirEntry::NormalizePath(abs_path);
+    
+    CProjKey proj_key = GetApp().GetDllFilesDistr().GetSourceLib(abs_path, m_DllProjectKey);
+    
+    if (proj_key == CProjKey()) {
+        m_PrivateFilters.AddSourceFile(m_SrcInserter, rel_file_path);
+        return;
+    }
+
+    THostedLibs::iterator p = m_HostedLibs.find(proj_key);
+    if (p != m_HostedLibs.end()) {
+        TFiltersItem& filters_item = p->second;
+        filters_item.AddSourceFile(m_SrcInserter, rel_file_path);
+        return;
+    }
+
+    TFiltersItem new_item;
+    new_item.Initilize();
+    new_item.AddSourceFile(m_SrcInserter, rel_file_path);
+    m_HostedLibs[proj_key] = new_item;
+}
+
+void CDllProjectFilesInserter::AddHeaderFile(const string& rel_file_path)
+{
+    string abs_path = CDirEntry::ConcatPath(m_ProjectDir, rel_file_path);
+    abs_path = CDirEntry::NormalizePath(abs_path);
+    
+    CProjKey proj_key = GetApp().GetDllFilesDistr().GetHeaderLib(abs_path, m_DllProjectKey);
+    
+    if (proj_key == CProjKey()) {
+        m_PrivateFilters.AddHeaderFile(rel_file_path);
+        return;
+    }
+
+    THostedLibs::iterator p = m_HostedLibs.find(proj_key);
+    if (p != m_HostedLibs.end()) {
+        TFiltersItem& filters_item = p->second;
+        filters_item.AddHeaderFile(rel_file_path);
+        return;
+    }
+
+    TFiltersItem new_item;
+    new_item.Initilize();
+    new_item.AddHeaderFile(rel_file_path);
+    m_HostedLibs[proj_key] = new_item;
+}
+
+void CDllProjectFilesInserter::AddInlineFile(const string& rel_file_path)
+{
+    string abs_path = CDirEntry::ConcatPath(m_ProjectDir, rel_file_path);
+    abs_path = CDirEntry::NormalizePath(abs_path);
+    
+    CProjKey proj_key = GetApp().GetDllFilesDistr().GetInlineLib(abs_path, m_DllProjectKey);
+    
+    if (proj_key == CProjKey()) {
+        m_PrivateFilters.AddInlineFile(rel_file_path);
+        return;
+    }
+
+    THostedLibs::iterator p = m_HostedLibs.find(proj_key);
+    if (p != m_HostedLibs.end()) {
+        TFiltersItem& filters_item = p->second;
+        filters_item.AddInlineFile(rel_file_path);
+        return;
+    }
+
+    TFiltersItem new_item;
+    new_item.Initilize();
+    new_item.AddInlineFile(rel_file_path);
+    m_HostedLibs[proj_key] = new_item;
+}
+
+
+void CDllProjectFilesInserter::Finalize(void)
+{
+    m_Vcproj->SetFiles().SetFilter().push_back(m_PrivateFilters.m_SourceFiles);
+    m_Vcproj->SetFiles().SetFilter().push_back(m_PrivateFilters.m_HeaderFiles);
+    m_Vcproj->SetFiles().SetFilter().push_back(m_PrivateFilters.m_InlineFiles);
+
+    NON_CONST_ITERATE(THostedLibs, p, m_HostedLibs) {
+
+        const CProjKey& proj_key     = p->first;
+        TFiltersItem&   filters_item = p->second;
+
+        CRef<CFilter> hosted_lib_filter(new CFilter());
+        hosted_lib_filter->SetAttlist().SetName(CreateProjectName(proj_key));
+        hosted_lib_filter->SetAttlist().SetFilter("");
+
+        {{
+            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+            ce->SetFilter(*(filters_item.m_SourceFiles));
+            hosted_lib_filter->SetFF().SetFF().push_back(ce);
+        }}
+
+        {{
+            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+            ce->SetFilter(*(filters_item.m_HeaderFiles));
+            hosted_lib_filter->SetFF().SetFF().push_back(ce);
+        }}
+        {{
+            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+            ce->SetFilter(*(filters_item.m_InlineFiles));
+            hosted_lib_filter->SetFF().SetFF().push_back(ce);
+        }}
+        {{
+            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+            ce->SetFilter(*hosted_lib_filter);
+            m_HostedLibrariesRootFilter->SetFF().SetFF().push_back(ce);
+        }}
+    }
+
+    m_Vcproj->SetFiles().SetFilter().push_back(m_HostedLibrariesRootFilter);
+}
+
+
+
+//-----------------------------------------------------------------------------
 void AddCustomBuildFileToFilter(CRef<CFilter>&          filter, 
                                 const list<SConfigInfo> configs,
                                 const string&           project_dir,
@@ -646,6 +883,12 @@ void CDllSrcFilesDistr::RegisterHeader(const string&   hdr_file_path,
     m_HeadersMap[ TDllSrcKey(hdr_file_path,dll_project_id) ] = lib_project_id;
 }
 
+void CDllSrcFilesDistr::RegisterInline(const string&   inl_file_path, 
+                                       const CProjKey& dll_project_id,
+                                       const CProjKey& lib_project_id)
+{
+    m_InlinesMap[ TDllSrcKey(inl_file_path,dll_project_id) ] = lib_project_id;
+}
 
 CProjKey CDllSrcFilesDistr::GetSourceLib(const string&   src_file_path, 
                                          const CProjKey& dll_project_id) const
@@ -674,6 +917,18 @@ CProjKey CDllSrcFilesDistr::GetHeaderLib(const string&   hdr_file_path,
     return CProjKey();
 }
 
+CProjKey CDllSrcFilesDistr::GetInlineLib(const string&   inl_file_path, 
+                                         const CProjKey& dll_project_id) const
+{
+    TDllSrcKey key(inl_file_path, dll_project_id);
+    TDistrMap::const_iterator p = m_InlinesMap.find(key);
+    if (p != m_InlinesMap.end()) {
+        const CProjKey& lib_id = p->second;
+        return lib_id;
+    }
+
+    return CProjKey();
+}
 
 
 END_NCBI_SCOPE
@@ -681,6 +936,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/05/26 17:59:07  gorelenk
+ * Old inserter -> CSrcToFilterInserterWithPch.
+ * Implemented CBasicProjectsFilesInserter and CDllProjectFilesInserter .
+ *
  * Revision 1.24  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
