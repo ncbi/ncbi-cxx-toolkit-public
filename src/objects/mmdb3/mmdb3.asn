@@ -1,4 +1,4 @@
---$Revision: 6.2 $
+--$Revision: 6.3 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -325,7 +325,28 @@ Camera ::= SEQUENCE {
 	y		INTEGER,
 	distance	INTEGER,
 	angle		INTEGER,
-	scale		INTEGER }
+	scale		INTEGER,
+    modelview   GL-matrix }
+    
+    
+GL-matrix ::= SEQUENCE {
+	scale		INTEGER,
+	m11			INTEGER,
+	m12			INTEGER,
+	m13			INTEGER,
+	m14			INTEGER,
+	m21			INTEGER,
+	m22			INTEGER,
+	m23			INTEGER,
+	m24			INTEGER,
+	m31			INTEGER,
+	m32			INTEGER,
+	m33			INTEGER,
+	m34			INTEGER,
+	m41			INTEGER,
+	m42			INTEGER,
+	m43			INTEGER,
+	m44			INTEGER }
 
 
 Color-prop ::= SEQUENCE {
