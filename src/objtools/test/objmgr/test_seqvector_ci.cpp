@@ -272,7 +272,8 @@ int CTestApp::Run(void)
         m_Vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     }
     else {
-        m_Vect = CSeqVector(handle.GetSeqMap(), *(CScope*)0,
+        CScope* no_scope = 0;
+        m_Vect = CSeqVector(handle.GetSeqMap(), *no_scope,
                             CBioseq_Handle::eCoding_Iupac);
     }
     // Prepare reference data
@@ -493,6 +494,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/04/12 23:24:27  ucko
+* Avoid directly "dereferencing" a null scope, to fix the MIPSpro build.
+*
 * Revision 1.3  2004/04/12 16:49:56  vasilche
 * Added option to test CSeqVector with null scope.
 *
