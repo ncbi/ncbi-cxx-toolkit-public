@@ -76,14 +76,15 @@ CSocket::CSocket(const string&   host,
 
 CSocket::~CSocket(void)
 {
-    Close();
+    if (m_Socket  &&  m_IsOwned != eNoOwnership)
+        SOCK_CloseEx(m_Socket, 1);
 }
 
 
 void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
 {
-    if ( m_Socket )
-        Close();
+    if (m_Socket  &&  m_IsOwned != eNoOwnership)
+        SOCK_CloseEx(m_Socket, 1);
     m_Socket  = sock;
     m_IsOwned = if_to_own;
     if ( sock ) {
@@ -160,11 +161,10 @@ EIO_Status CSocket::Reconnect(const STimeout* timeout)
 EIO_Status CSocket::Close(void)
 {
     if ( !m_Socket )
-        return eIO_Closed;
+        return eIO_Success;
 
     EIO_Status status = m_IsOwned != eNoOwnership
-        ? SOCK_Close(m_Socket) : eIO_Success;
-    m_Socket = 0;
+        ? SOCK_CloseEx(m_Socket, 0) : eIO_Success;
     return status;
 }
 
@@ -173,6 +173,7 @@ EIO_Status CSocket::SetTimeout(EIO_Event event, const STimeout* timeout)
 {
     if (timeout == kDefaultTimeout)
         return eIO_Success;
+
     switch (event) {
     case eIO_Open:
         if ( timeout ) {
@@ -288,8 +289,10 @@ void CSocket::GetPeerAddress(unsigned int* host, unsigned short* port,
 string CSocket::GetPeerAddress(void) const
 {
     char buf[PATH_MAX + 1];
-    if (SOCK_GetPeerAddressString(m_Socket, buf, sizeof(buf)) != 0)
+    if (m_Socket  &&
+        SOCK_GetPeerAddressString(m_Socket, buf, sizeof(buf)) != 0) {
         return string(buf);
+    }
     return "";
 }
 
@@ -336,13 +339,12 @@ EIO_Status CDatagramSocket::Recv(void*           buf,
                                  unsigned short* sender_port,
                                  size_t          maxmsglen)
 {
-    EIO_Status   status;
-    unsigned int addr;
-
     if ( !m_Socket )
         return eIO_Closed;
-    status = DSOCK_RecvMsg(m_Socket, buf, buflen, maxmsglen,
-                           msglen, &addr, sender_port);
+
+    unsigned int addr;
+    EIO_Status status = DSOCK_RecvMsg(m_Socket, buf, buflen, maxmsglen,
+                                      msglen, &addr, sender_port);
     if ( sender_host )
         *sender_host = CSocketAPI::ntoa(addr);
 
@@ -395,14 +397,14 @@ EIO_Status CListeningSocket::Accept(CSocket*&       sock,
                                     const STimeout* timeout) const
 {
     if ( !m_Socket )
-        return eIO_Unknown;
+        return eIO_Closed;
 
     SOCK x_sock;
     EIO_Status status = LSOCK_Accept(m_Socket, timeout, &x_sock);
     if (status != eIO_Success) {
         sock = 0;
     } else if ( !(sock = new CSocket) ) {
-        SOCK_Close(x_sock);
+        SOCK_CloseEx(x_sock, 1);
         status = eIO_Unknown;
     } else
         sock->Reset(x_sock, eTakeOwnership, eCopyTimeoutsToSOCK);
@@ -414,7 +416,7 @@ EIO_Status CListeningSocket::Accept(CSocket&        sock,
                                     const STimeout* timeout) const
 {
     if ( !m_Socket )
-        return eIO_Unknown;
+        return eIO_Closed;
 
     SOCK x_sock;
     EIO_Status status = LSOCK_Accept(m_Socket, timeout, &x_sock);
@@ -427,7 +429,7 @@ EIO_Status CListeningSocket::Accept(CSocket&        sock,
 EIO_Status CListeningSocket::Close(void)
 {
     if ( !m_Socket )
-        return eIO_Closed;
+        return eIO_Success;
 
     EIO_Status status = m_IsOwned != eNoOwnership
         ? LSOCK_Close(m_Socket) : eIO_Success;
@@ -525,6 +527,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2003/11/12 17:47:58  lavr
+ * Few fixes of return status; take advantage of SOCK_CloseEx()
+ *
  * Revision 6.21  2003/10/24 16:51:36  lavr
  * GetTimeout(eIO_ReadWrite): return the lesser of eIO_Read and eIO_Write
  *
