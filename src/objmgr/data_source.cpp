@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/03/05 16:09:10  grichenk
+* Added x_CleanupUnusedEntries()
+*
 * Revision 1.17  2002/03/04 15:09:27  grichenk
 * Improved MT-safety. Added live/dead flag to CDataSource methods.
 *
@@ -1384,6 +1387,17 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph)
                 m_TSE_ref.erase(tse_set);
             }
             break;
+        }
+    }
+}
+
+
+void CDataSource::x_CleanupUnusedEntries(void)
+{
+    CMutexGuard guard(sm_DataSource_Mutex);
+    iterate(TEntries, it, m_Entries) {
+        if ( !it->second->Locked() ) {
+            DropTSE(*it->first);
         }
     }
 }

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/03/05 16:09:10  grichenk
+* Added x_CleanupUnusedEntries()
+*
 * Revision 1.12  2002/03/04 15:09:27  grichenk
 * Improved MT-safety. Added live/dead flag to CDataSource methods.
 *
@@ -233,6 +236,9 @@ private:
     void x_DropFeature(const CSeq_feat& feat);
     void x_DropAlign(const CSeq_align& align);
     void x_DropGraph(const CSeq_graph& graph);
+
+    // Global cleanup -- search for unlocked TSEs and drop them.
+    void x_CleanupUnusedEntries(void);
 
     // Replace initial handle range map with the new one, containing duplicate
     // range sets for each synonym of each handle
