@@ -1,4 +1,4 @@
---$Revision: 1.1 $
+--$Revision: 1.2 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -64,7 +64,7 @@ SeqFeatData ::= CHOICE {
         disulfide (1) ,
         thiolester (2) ,
         xlink (3) ,
-		thioether (4) ,
+        thioether (4) ,
         other (255) } ,
     site ENUMERATED {
         active (1) ,
@@ -72,10 +72,10 @@ SeqFeatData ::= CHOICE {
         cleavage (3) ,
         inhibit (4) ,
         modified (5),
-		glycosylation (6) ,
-		myristoylation (7) ,
-		mutagenized (8) ,
-		metal-binding (9) ,
+        glycosylation (6) ,
+        myristoylation (7) ,
+        mutagenized (8) ,
+        metal-binding (9) ,
         other (255) } ,
     rsite Rsite-ref ,       -- restriction site  (for maps really)
     user User-object ,      -- user defined structure
