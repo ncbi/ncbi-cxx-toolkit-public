@@ -117,6 +117,16 @@ CConnParam::CConnParam(
             db_type_uc == "MS SQL") {
         m_ServerType = eMsSql;
     }
+
+    if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
+        // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
+        // BcpIn to it using protocol version other than "100".
+        m_DatabaseParameters["version"] = "100";
+    } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eSybase ) {
+        // ftds forks with Sybase databases using protocol v42 only ...
+        m_DatabaseParameters["version"] = "42";
+    }
+
 }
 
 CConnParam::~CConnParam(void)
@@ -135,7 +145,7 @@ CConnection::CConnection(
 , m_ConnectionMode( conn_mode )
 {
     try {
-        m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName() );
+        m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName(), const_cast<CConnParam::TDatabaseParameters*>(&m_ConnParam.GetDatabaseParameters()) );
     }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e.Message());
@@ -2174,6 +2184,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/02/17 15:06:30  ssikorsk
+* Setup TDS version with different database and driver types
+*
 * Revision 1.7  2005/02/10 17:43:42  ssikorsk
 * Changed: more 'precise' exception types
 *

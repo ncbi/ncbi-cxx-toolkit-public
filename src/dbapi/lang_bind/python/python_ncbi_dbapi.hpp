@@ -532,6 +532,7 @@ public:
         eMySql,     //< MySQL server
         eUnknown    //< Server type is not known
     };
+    typedef map<string, string> TDatabaseParameters;
 
 public:
     /// Return current driver name
@@ -564,6 +565,10 @@ public:
     {
         return m_user_pswd;
     }
+    const TDatabaseParameters& GetDatabaseParameters(void) const
+    {
+        return m_DatabaseParameters;
+    }
 
 private:
     const string m_driver_name;
@@ -573,7 +578,8 @@ private:
     const string m_user_name;
     const string m_user_pswd;
 
-    EServerType  m_ServerType;
+    EServerType         m_ServerType;
+    TDatabaseParameters m_DatabaseParameters;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -780,6 +786,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/02/17 15:06:30  ssikorsk
+* Setup TDS version with different database and driver types
+*
 * Revision 1.3  2005/02/08 19:18:19  ssikorsk
 * Added a "simple mode" database interface
 *
