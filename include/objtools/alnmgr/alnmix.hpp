@@ -171,11 +171,9 @@ private:
                                         const CRef<CAlnMixMatch>& aln_match2);
         
     
-#ifdef _DEBUG
     void x_SegmentStartItsConsistencyCheck(const CAlnMixSegment& seg,
                                            const CAlnMixSeq&     seq,
                                            const TSeqPos&        start);
-#endif
 
 
     mutable CRef<CScope>        m_Scope;
@@ -198,9 +196,7 @@ private:
     TSeqIdMap                   m_SeqIds;
     bool                        m_ContainsAA;
     bool                        m_ContainsNA;
-#if _ALNMGR_DEBUG
     size_t                      m_MatchIdx;
-#endif
 };
 
 
@@ -351,6 +347,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2004/10/13 17:50:56  todorov
+* rm contitional compilation logic
+*
 * Revision 1.44  2004/10/13 16:30:33  todorov
 * + conditionally compiled x_SegmentStartItsConsistencyCheck and m_MatchIdx
 *
