@@ -114,11 +114,11 @@ CReader* s_CreateReader(string env)
         try {
             return new CPubseqReader;
         }
-        catch(exception& e) {
+        catch ( exception& e ) {
             GBLOG_POST("CPubseqReader is not available ::" << e.what());
             return 0;
         }
-        catch(...) {
+        catch ( ... ) {
             LOG_POST("CPubseqReader:: unable to init ");
             return 0;
         }
@@ -255,11 +255,11 @@ CReader* CGBDataLoader::x_CreateReader(const string& env)
         try {
             return m_ReaderPluginManager->CreateInstance("pubseq_reader");
         }
-        catch(exception& e) {
+        catch ( exception& e ) {
             GBLOG_POST("CPubseqReader is not available ::" << e.what());
             return 0;
         }
-        catch(...) {
+        catch ( ... ) {
             LOG_POST("CPubseqReader:: unable to init ");
             return 0;
         }
@@ -269,11 +269,11 @@ CReader* CGBDataLoader::x_CreateReader(const string& env)
         try {
             return m_ReaderPluginManager->CreateInstance("id1_reader");
         }
-        catch(exception& e) {
+        catch ( exception& _DEBUG_ARG(e) ) {
             GBLOG_POST("CId1Reader is not available ::" << e.what());
             return 0;
         }
-        catch(...) {
+        catch ( ... ) {
             LOG_POST("CId1Reader:: unable to init ");
             return 0;
         }
@@ -887,12 +887,12 @@ void CGBDataLoader::x_GetChunk(CRef<STSEinfo> tse,
             LOG_POST("GenBank connection failed: Reconnecting....");
             m_Driver->Reconnect(conn);
         }
-        catch(const exception &e) {
+        catch ( const exception &e ) {
             LOG_POST(e.what());
             LOG_POST("GenBank connection failed: Reconnecting....");
             m_Driver->Reconnect(conn);
         }
-        catch (...) {
+        catch ( ... ) {
             LOG_POST("GenBank connection failed: Reconnecting....");
             m_Driver->Reconnect(conn);
             g.Lock();
@@ -985,7 +985,7 @@ CRef<SSeqrefs> CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
             }
             LOG_POST(e.what());
         }
-        catch(const exception &e) {
+        catch ( const exception &e ) {
             LOG_POST(e.what());
         }
         LOG_POST("GenBank connection failed: Reconnecting....");
@@ -1018,7 +1018,7 @@ CRef<SSeqrefs> CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
                 }
                 LOG_POST(e.what());
             }
-            catch(const exception &e) {
+            catch ( const exception& e ) {
                 LOG_POST(e.what());
             }
             LOG_POST("GenBank connection failed: Reconnecting....");
@@ -1059,7 +1059,7 @@ CRef<SSeqrefs> CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
                     }
                     LOG_POST(e.what());
                 }
-                catch(const exception &e) {
+                catch ( const exception &e ) {
                     LOG_POST(e.what());
                 }
                 LOG_POST("GenBank connection failed: Reconnecting....");
@@ -1233,6 +1233,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2003/12/30 16:41:19  vasilche
+* Removed warning about unused variable.
+*
 * Revision 1.95  2003/12/19 19:49:21  vasilche
 * Use direct Seq-id -> sat/satkey resolution without intermediate gi.
 *
