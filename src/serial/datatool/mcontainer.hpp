@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/29 16:01:50  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
 * Revision 1.2  1999/12/28 18:55:58  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -91,6 +95,9 @@ public:
 	const CModuleContainer& GetModuleContainer(void) const;
 private:
     const CModuleContainer* m_Parent;
+
+    CModuleContainer(const CModuleContainer&);
+    CModuleContainer& operator=(const CModuleContainer&);
 };
 
 #endif

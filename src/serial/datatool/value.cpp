@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/12/29 16:01:53  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
 * Revision 1.8  1999/11/15 19:36:21  vasilche
 * Fixed warnings on GCC
 *
@@ -91,11 +95,30 @@ bool CDataValue::IsComplex(void) const
     return false;
 }
 
+CNullDataValue::~CNullDataValue(void)
+{
+}
+
 void CNullDataValue::PrintASN(CNcbiOstream& out, int ) const
 {
     out << "NULL";
 }
+/*
+template<>
+CDataValueTmpl<bool>::~CDataValueTmpl(void)
+{
+}
 
+template<>
+CDataValueTmpl<long>::~CDataValueTmpl(void)
+{
+}
+
+template<>
+CDataValueTmpl<string>::~CDataValueTmpl(void)
+{
+}
+*/
 template<>
 void CDataValueTmpl<bool>::PrintASN(CNcbiOstream& out, int ) const
 {
@@ -112,8 +135,7 @@ template<>
 void CDataValueTmpl<string>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << '"';
-    for ( string::const_iterator i = GetValue().begin(), end = GetValue().end();
-          i != end; ++i ) {
+    iterate ( string, i, GetValue() ) {
         char c = *i;
         if ( c == '"' )
             out << "\"\"";
@@ -123,14 +145,26 @@ void CDataValueTmpl<string>::PrintASN(CNcbiOstream& out, int ) const
     out << '"';
 }
 
+CBitStringDataValue::~CBitStringDataValue(void)
+{
+}
+
 void CBitStringDataValue::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
 }
 
+CIdDataValue::~CIdDataValue(void)
+{
+}
+
 void CIdDataValue::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
+}
+
+CNamedDataValue::~CNamedDataValue(void)
+{
 }
 
 void CNamedDataValue::PrintASN(CNcbiOstream& out, int indent) const
@@ -149,6 +183,10 @@ void CNamedDataValue::PrintASN(CNcbiOstream& out, int indent) const
 bool CNamedDataValue::IsComplex(void) const
 {
     return true;
+}
+
+CBlockDataValue::~CBlockDataValue(void)
+{
 }
 
 void CBlockDataValue::PrintASN(CNcbiOstream& out, int indent) const

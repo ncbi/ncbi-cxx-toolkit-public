@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/29 16:01:50  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
 * Revision 1.4  1999/12/20 21:00:17  vasilche
 * Added generation of sources in different directories.
 *
@@ -108,7 +112,9 @@ private:
 
     // classes code
     TClasses m_Classes;
-
+    
+    CFileCode(const CFileCode&);
+    CFileCode& operator=(const CFileCode&);
 };
 
 class CNamespace

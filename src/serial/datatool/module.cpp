@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/12/29 16:01:51  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
 * Revision 1.15  1999/12/28 18:55:59  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -215,7 +219,7 @@ CDataType* CDataTypeModule::ExternalResolve(const string& typeName,
     THROW1_TRACE(CTypeNotFound, "undefined type: " + typeName);
 }
 
-CDataType* CDataTypeModule::InternalResolve(const string& typeName) const
+CDataType* CDataTypeModule::Resolve(const string& typeName) const
 {
     TTypesByName::const_iterator t = m_LocalTypes.find(typeName);
     if ( t != m_LocalTypes.end() )

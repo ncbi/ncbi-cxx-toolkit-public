@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/12/29 16:01:51  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
 * Revision 1.14  1999/12/28 18:55:59  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -107,7 +111,7 @@ public:
         }
 
     // return type visible from inside, or throw CTypeNotFound if none
-    CDataType* InternalResolve(const string& name) const;
+    CDataType* Resolve(const string& name) const;
     // return type visible from outside, or throw CTypeNotFound if none
     CDataType* ExternalResolve(const string& name,
                                bool allowInternal = false) const;

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/12/29 16:01:50  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
 * Revision 1.14  1999/11/19 15:48:09  vasilche
 * Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
 *
@@ -146,6 +150,9 @@ private:
     CNcbiOstrstream m_TypeInfoBody;
 
     EClassType m_ClassType;
+
+    CClassCode(const CClassCode&);
+    CClassCode& operator=(const CClassCode&);
 };
 
 #endif

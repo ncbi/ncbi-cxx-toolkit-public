@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/12/29 16:01:53  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
 * Revision 1.8  1999/11/19 15:48:11  vasilche
 * Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
 *
@@ -74,10 +78,15 @@ public:
 private:
     const CDataTypeModule* m_Module;
     int m_SourceLine;
+
+private:
+    CDataValue(const CDataValue&);
+    CDataValue& operator=(const CDataValue&);
 };
 
 class CNullDataValue : public CDataValue {
 public:
+    ~CNullDataValue(void);
     void PrintASN(CNcbiOstream& out, int indent) const;
 };
 
@@ -88,6 +97,9 @@ public:
 
     CDataValueTmpl(const TValueType& v)
         : m_Value(v)
+        {
+        }
+    ~CDataValueTmpl(void)
         {
         }
 
@@ -112,6 +124,7 @@ public:
         : CStringDataValue(v)
         {
         }
+    ~CBitStringDataValue(void);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
 };
@@ -122,6 +135,7 @@ public:
         : CStringDataValue(v)
         {
         }
+    ~CIdDataValue(void);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
 };
@@ -132,6 +146,7 @@ public:
         : m_Name(id), m_Value(v)
         {
         }
+    ~CNamedDataValue(void);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
 
@@ -159,6 +174,8 @@ private:
 class CBlockDataValue : public CDataValue {
 public:
     typedef list<AutoPtr<CDataValue> > TValues;
+
+    ~CBlockDataValue(void);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
 

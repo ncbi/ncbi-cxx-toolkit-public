@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/12/29 16:01:53  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
 * Revision 1.24  1999/12/21 17:18:38  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -222,6 +226,10 @@ private:
     bool m_Checked;
 
     AutoPtr<CTypeInfo> m_CreatedTypeInfo;
+
+
+    CDataType(const CDataType&);
+    CDataType& operator=(const CDataType&);
 };
 
 #define CheckValueType(value, type, name) do{ \

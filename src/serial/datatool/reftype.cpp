@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/12/29 16:01:51  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
 * Revision 1.6  1999/12/03 21:42:12  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -75,7 +79,7 @@ void CReferenceDataType::FixTypeTree(void) const
 bool CReferenceDataType::CheckType(void) const
 {
     try {
-        GetModule()->InternalResolve(m_UserTypeName);
+        GetModule()->Resolve(m_UserTypeName);
         return true;
     }
     catch ( CTypeNotFound& /* ignored */ ) {
@@ -151,7 +155,7 @@ void CReferenceDataType::GetFullCType(CTypeStrings& tType,
 CDataType* CReferenceDataType::ResolveOrNull(void) const
 {
     try {
-        return GetModule()->InternalResolve(m_UserTypeName);
+        return GetModule()->Resolve(m_UserTypeName);
     }
     catch (CTypeNotFound& /* ignored */) {
         return 0;
@@ -161,7 +165,7 @@ CDataType* CReferenceDataType::ResolveOrNull(void) const
 CDataType* CReferenceDataType::ResolveOrThrow(void) const
 {
     try {
-        return GetModule()->InternalResolve(m_UserTypeName);
+        return GetModule()->Resolve(m_UserTypeName);
     }
     catch (CTypeNotFound& exc) {
         THROW1_TRACE(CTypeNotFound, LocationString() + ": " + exc.what());

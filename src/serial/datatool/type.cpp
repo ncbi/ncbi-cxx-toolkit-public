@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  1999/12/29 16:01:51  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
 * Revision 1.37  1999/12/28 18:56:00  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -298,7 +302,7 @@ const CDataType* CDataType::InheritFromType(void) const
 {
     const string& parentName = GetVar("_parent");
     if ( !parentName.empty() )
-        return GetModule()->InternalResolve(parentName);
+        return GetModule()->Resolve(parentName);
 
     // try to detect implicit inheritance
     if ( IsInChoice() ) // directly in CHOICE
