@@ -194,6 +194,8 @@ typedef struct ListNode {
 	struct ListNode *next;  /* next in linked list */
 } ListNode, *ListNodePtr;
 
+ListNodePtr ListNodeNew (ListNodePtr vnp);
+ListNodePtr ListNodeAdd (ListNodePtr PNTR head);
 ListNodePtr ListNodeAddPointer (ListNodePtr PNTR head, Int2 choice, 
                                 void *value);
 ListNodePtr ListNodeFree (ListNodePtr vnp);
@@ -201,6 +203,7 @@ ListNodePtr ListNodeFreeData (ListNodePtr vnp);
 ListNodePtr ListNodeSort (ListNodePtr list, 
                int (*compar) (const void *, const void *));
 ListNodePtr ListNodeCopyStr (ListNodePtr PNTR head, Int2 choice, CharPtr str);
+Int4 ListNodeLen (ListNodePtr vnp);
 
 void * MemDup (const void *orig, size_t size);
 Boolean FindPath(const Char* file, const Char* section, const Char* type, Char* buf, Int2 buflen);
