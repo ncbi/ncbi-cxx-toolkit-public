@@ -201,6 +201,30 @@ public:
     ///   value is the sequence length (in base pairs or residues).
     Int4 GetAmbigSeq(TOID oid, const char ** buffer, Uint4 nucl_code);
     
+    /// Get a pointer to sequence data with embedded ambiguities.
+    ///
+    /// This is like GetAmbigSeq(), but the allocated object should be
+    /// deleted by the caller.  This is intended for users who are
+    /// going to modify the sequence data, or are going to mix the
+    /// data into a container with other data, and who are mixing data
+    /// from multiple sources and want to free the data in the same
+    /// way.  The fourth parameter should be given one of the values
+    /// from EAllocStrategy; the corresponding method should be used
+    /// to delete the object.  Note that "delete[]" should be used
+    /// instead of "delete"
+    /// @param oid
+    ///   Ordinal ID.
+    /// @param buffer
+    ///   Address of a char pointer to access the sequence data.
+    /// @param nucl_code
+    ///   The NA encoding, kSeqDBNuclNcbiNA8 or kSeqDBNuclBlastNA8.
+    /// @param alloc_strategy
+    ///   Indicate which allocation strategy to use.
+    Int4 GetAmbigSeqAlloc(TOID               oid,
+                          char            ** buffer,
+                          Uint4              nucl_code,
+                          ESeqDBAllocType    strategy);
+    
     /// Returns any resources associated with the sequence.
     /// 
     /// Note that if memory mapping was successful, the sequence data

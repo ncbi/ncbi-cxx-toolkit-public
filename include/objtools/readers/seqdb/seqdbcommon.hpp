@@ -73,6 +73,15 @@ const Uint4 kSeqDBNuclBlastNA8 = 1;
 const bool kSeqDBMMap   = true;
 const bool kSeqDBNoMMap = false;
 
+// Certain methods have an "Alloc" version; if this is used, the
+// following can be used to indicate how to allocate returned data, so
+// that the user can use corresponding methods to delete the data.
+
+enum ESeqDBAllocType {
+    eMalloc = 1,
+    eNew
+};
+
 
 END_NCBI_SCOPE
 
