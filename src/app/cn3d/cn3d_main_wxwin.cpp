@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.115  2002/01/03 16:18:40  thiessen
+* add distance selection
+*
 * Revision 1.114  2001/12/21 14:13:02  thiessen
 * tweak animation timer and menu stuff
 *
@@ -463,6 +466,7 @@
 #include "cn3d/preferences_dialog.hpp"
 #include "cn3d/cdd_ref_dialog.hpp"
 #include "cn3d/cn3d_png.hpp"
+#include "cn3d/wx_tools.hpp"
 
 #include <wx/file.h>
 #include <wx/fontdlg.h>
@@ -992,6 +996,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU      (MID_PNG,                                 Cn3DMainFrame::OnPNG)
     EVT_MENU_RANGE(MID_ZOOM_IN,  MID_ALL_FRAMES,            Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
+    EVT_MENU_RANGE(MID_DIST_SELECT_RESIDUES, MID_DIST_SELECT_ALL, Cn3DMainFrame::OnDistanceSelect)
     EVT_MENU      (MID_REFIT_ALL,                           Cn3DMainFrame::OnAlignStructures)
     EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,    Cn3DMainFrame::OnEditFavorite)
@@ -1079,6 +1084,11 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     subMenu->Append(MID_SHOW_UNALIGNED_ALL, "Show &All");
     subMenu->Append(MID_SHOW_UNALIGNED_ALN_DOMAIN, "Show in Aligned &Domains");
     menu->Append(MID_SHOW_UNALIGNED, "&Unaligned Residues", subMenu);
+    menu->AppendSeparator();
+    subMenu = new wxMenu;
+    subMenu->Append(MID_DIST_SELECT_RESIDUES, "&Residues Only");
+    subMenu->Append(MID_DIST_SELECT_ALL, "&All Molecules");
+    menu->Append(MID_DIST_SELECT, "Select by &Distance...", subMenu);
     menuBar->Append(menu, "Show/&Hide");
 
     // Style menu
@@ -1185,6 +1195,18 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
     if (logFrame) {
         logFrame->Destroy();
         logFrame = NULL;
+    }
+}
+
+void Cn3DMainFrame::OnDistanceSelect(wxCommandEvent& event)
+{
+    if (!glCanvas->structureSet) return;
+    static double latestCutoff = 5.0;
+    GetFloatingPointDialog dialog(this, "Enter a distance cutoff (in Angstroms):", "Distance?",
+        0.0, 1000.0, 0.5, latestCutoff);
+    if (dialog.ShowModal() == wxOK) {
+        latestCutoff = dialog.GetValue();
+        glCanvas->structureSet->SelectByDistance(latestCutoff, (event.GetId() == MID_DIST_SELECT_RESIDUES));
     }
 }
 

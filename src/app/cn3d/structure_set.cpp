@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2002/01/03 16:18:40  thiessen
+* add distance selection
+*
 * Revision 1.91  2001/12/21 23:08:48  thiessen
 * add residue info when structure selected
 *
@@ -356,6 +359,8 @@
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cn3d_cache.hpp"
+#include "cn3d/molecule.hpp"
+#include "cn3d/residue.hpp"
 
 #include <objseq.h>
 
@@ -707,7 +712,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
 void StructureSet::Load(int structureLimit)
 {
     // member data initialization
-    lastAtomName = OpenGLRenderer::NO_NAME;
+    lastAtomName = lastAtomSelected = OpenGLRenderer::NO_NAME;
     lastDisplayList = OpenGLRenderer::NO_LIST;
     sequenceSet = NULL;
     alignmentSet = NULL;
@@ -1063,7 +1068,7 @@ unsigned int StructureSet::CreateName(const Residue *residue, int atomID)
     return lastAtomName;
 }
 
-bool StructureSet::GetAtomFromName(unsigned int name, const Residue **residue, int *atomID)
+bool StructureSet::GetAtomFromName(unsigned int name, const Residue **residue, int *atomID) const
 {
     NameMap::const_iterator i = nameMap.find(name);
     if (i == nameMap.end()) return false;
@@ -1088,7 +1093,8 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     GlobalMessenger()->ToggleHighlight(molecule, residue->id);
     TESTMSG("selected " << molecule->identifier->ToString()
         << " residue " << residue->id << " (PDB: " << residue->nameGraph << ' ' << residue->namePDB
-        << ") atom " << atomID);
+        << ") atom " << atomID << " (PDB: " << residue->GetAtomInfo(atomID)->name << ')');
+    lastAtomSelected = name;
 
     // if indicated, use atom site as rotation center; use coordinate from first CoordSet, default altConf
     if (setCenter) {
@@ -1102,6 +1108,20 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
         if (object->IsSlave())
             ApplyTransformation(&rotationCenter, *(object->transformToMaster));
     }
+}
+
+void StructureSet::SelectByDistance(double cutoff, bool residuesOnly) const
+{
+    const Residue *residue;
+    int atomID;
+    if (lastAtomSelected == OpenGLRenderer::NO_NAME ||
+        !GetAtomFromName(lastAtomSelected, &residue, &atomID)) {
+        ERR_POST(Warning << "No previous atom selection!");
+        return;
+    }
+    const StructureObject *object;
+    if (!residue->GetParentOfType(&object)) return;
+    object->SelectByDistance(residue, atomID, cutoff, residuesOnly);
 }
 
 const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
@@ -1446,6 +1466,56 @@ void StructureObject::RealignStructure(int nCoords,
         << ", as computed by Cn3D" << '\0';
     feature->SetName(std::string(oss.str()));
     delete oss.str();
+}
+
+void StructureObject::SelectByDistance(
+    const Residue *residue, int atomID, double cutoff, bool residuesOnly) const
+{
+    // remove all highlights
+    GlobalMessenger()->RemoveAllHighlights(true);
+
+    // get coord of given atom
+    const Molecule *molecule;
+    if (!residue->GetParentOfType(&molecule)) return;
+    const AtomCoord *selected = coordSets.front()->atomSet->
+        GetAtom(AtomPntr(molecule->id, residue->id, atomID), true, false);
+    if (!selected) {
+        ERR_POST(Error << "Can't get coordinates for selected atom!");
+        return;
+    }
+
+    // loop over all molecules
+    ChemicalGraph::MoleculeMap::const_iterator m, me = graph->molecules.end();
+    for (m=graph->molecules.begin(); m!=me; m++) {
+
+        // do only biopolymers if residuesOnly is true
+        if (residuesOnly && !(m->second->IsProtein() || m->second->IsNucleotide())) continue;
+
+        // loop over all residues
+        Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
+        for (r=m->second->residues.begin(); r!=re; r++) {
+
+            // always highlight selected residue
+            if (r->second == residue) {
+                GlobalMessenger()->ToggleHighlight(m->second, r->second->id);
+                continue;
+            }
+
+            // loop through atoms (using default coordinate for each)
+            const Residue::AtomInfoMap& atomInfos = r->second->GetAtomInfos();
+            Residue::AtomInfoMap::const_iterator a, ae = atomInfos.end();
+            for (a=atomInfos.begin(); a!=ae; a++) {
+                const AtomCoord *atomCoord = coordSets.front()->atomSet->
+                    GetAtom(AtomPntr(m->second->id, r->second->id, a->first), true, true);
+
+                // if any atom is < cutoff away, highlight that residue
+                if (atomCoord && (atomCoord->site - selected->site).length() <= cutoff) {
+                    GlobalMessenger()->ToggleHighlight(m->second, r->second->id);
+                    break;
+                }
+            }
+        }
+    }
 }
 
 END_SCOPE(Cn3D)

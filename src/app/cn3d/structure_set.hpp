@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2002/01/03 16:18:40  thiessen
+* add distance selection
+*
 * Revision 1.61  2001/12/06 23:13:46  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -318,11 +321,15 @@ public:
 
     // keep a list of names to look atoms from GL selection
     unsigned int CreateName(const Residue *residue, int atomID);
-    bool GetAtomFromName(unsigned int name, const Residue **residue, int *atomID);
+    bool GetAtomFromName(unsigned int name, const Residue **residue, int *atomID) const;
 
     // called when an atom is selected in the GL window. If setCenter == true, then
     // the atom's location is used as the global rotation center
     void SelectedAtom(unsigned int name, bool setCenter);
+
+    // select either residues only or all residues/molecules within cutoff distance of last
+    // atom selected by the user
+    void SelectByDistance(double cutoff, bool residuesOnly) const;
 
     // updates sequences in the asn, to remove any sequences
     // that are not used by the current alignmentSet or updates
@@ -367,7 +374,7 @@ private:
     typedef std::pair < const Residue*, int > NamePair;
     typedef std::map < unsigned int, NamePair > NameMap;
     NameMap nameMap;
-    unsigned int lastAtomName;
+    unsigned int lastAtomName, lastAtomSelected;
 
     // holds C Bioseqs associated with Sequences
     typedef std::map < const Sequence *, Bioseq * > BioseqMap;
@@ -437,6 +444,9 @@ public:
     DomainIDMap domainID2MMDB;
 
     // public methods
+
+    // select either residues only or all residues/molecules within cutoff distance of given residue/atom
+    void SelectByDistance(const Residue *residue, int atomID, double cutoff, bool residuesOnly) const;
 
     // set transform based on asn1 data
     bool SetTransformToMaster(const ncbi::objects::CBiostruc_annot_set& annot, int masterMMDBID);

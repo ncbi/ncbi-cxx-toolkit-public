@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2002/01/03 16:18:40  thiessen
+* add distance selection
+*
 * Revision 1.54  2001/12/21 13:52:20  thiessen
 * add spin animation
 *
@@ -344,6 +347,9 @@ public:
                 MID_SHOW_UNALIGNED_ALL,
                 MID_SHOW_UNALIGNED_ALN_DOMAIN,
             MID_SHOW_SELECTED,
+            MID_DIST_SELECT,
+                MID_DIST_SELECT_RESIDUES,
+                MID_DIST_SELECT_ALL,
         // Structure Alignments menu
         // Style menu
             MID_EDIT_STYLE,
@@ -411,6 +417,7 @@ private:
     void OnAlignStructures(wxCommandEvent& event);
     void OnAdjustView(wxCommandEvent& event);
     void OnShowHide(wxCommandEvent& event);
+    void OnDistanceSelect(wxCommandEvent& event);
     void OnSetStyle(wxCommandEvent& event);
     void OnEditFavorite(wxCommandEvent& event);
     void OnSelectFavorite(wxCommandEvent& event);
