@@ -249,11 +249,22 @@ void CBDB_FileCursor::SetCondition(ECondition cond_from, ECondition cond_to)
 
 EBDB_ErrCode CBDB_FileCursor::Update(CBDB_File::EAfterWrite write_flag)
 {
-    if(m_DBC == 0) 
+    if (m_DBC == 0) 
         BDB_THROW(eInvalidValue, "Try to use invalid cursor");
     
     return m_Dbf.WriteCursor(m_DBC, DB_CURRENT, write_flag);
 }
+
+EBDB_ErrCode CBDB_FileCursor::UpdateBlob(const void* data, 
+                                         size_t      size, 
+                                         CBDB_File::EAfterWrite write_flag)
+{
+    if (m_DBC == 0) 
+        BDB_THROW(eInvalidValue, "Try to use invalid cursor");
+
+    return m_Dbf.WriteCursor(data, size, m_DBC, DB_CURRENT, write_flag);
+}
+
 
 EBDB_ErrCode CBDB_FileCursor::Delete(CBDB_File::EIgnoreError on_error)
 {
@@ -500,6 +511,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/11/23 17:09:11  kuznets
+ * Implemented BLOB update in cursor
+ *
  * Revision 1.15  2004/11/08 16:02:03  kuznets
  * Fixed bug with edit cursors (taken transaction from the database file)
  *

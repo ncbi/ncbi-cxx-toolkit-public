@@ -144,9 +144,15 @@ public:
     EBDB_ErrCode FetchFirst();    
     EBDB_ErrCode Fetch(EFetchDirection fdir = eDefault);
 
-    EBDB_ErrCode Update(CBDB_File::EAfterWrite = CBDB_File::eDiscardData);
+    EBDB_ErrCode Update(CBDB_File::EAfterWrite write_flag 
+                                    = CBDB_File::eDiscardData);
     EBDB_ErrCode Delete(CBDB_File::EIgnoreError on_error = 
                         CBDB_File::eThrowOnError);
+
+    EBDB_ErrCode UpdateBlob(const void* data, 
+                            size_t size, 
+                            CBDB_File::EAfterWrite write_flag 
+                                = CBDB_File::eDiscardData);
 
     // Returns number of records with same key as this cursor refers
     TRecordCount KeyDupCount() const;
@@ -250,6 +256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/11/23 17:08:53  kuznets
+ * Implemented BLOB update in cursor
+ *
  * Revision 1.13  2004/11/01 16:54:45  kuznets
  * Added support for RMW locks
  *

@@ -1383,7 +1383,7 @@ static void s_TEST_BDB_BLOB_File(void)
     }}
 
     cout << "Testing two-phase read." << endl;
-    blob.Reopen(CBDB_LobFile::eReadOnly);
+//    blob.Reopen(CBDB_LobFile::eReadOnly);
     
     blob.i1 = 1;
     blob.i2 = 2;
@@ -1409,6 +1409,7 @@ static void s_TEST_BDB_BLOB_File(void)
 
     cout << "Testing BLOB based cursor" << endl;
 
+    {{
     CBDB_FileCursor cur(blob);
     cur.SetCondition(CBDB_FileCursor::eEQ);
 
@@ -1462,6 +1463,40 @@ static void s_TEST_BDB_BLOB_File(void)
     }
 
     delete bstream;
+
+    }}
+
+    cout << "Testing BLOB based update cursor" << endl;
+
+    unsigned i2;
+    {{
+    CBDB_FileCursor cur(blob);
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+
+    cur.From << 1;
+
+    const char* tdata = test_data;
+    while (cur.Fetch() == eBDB_Ok) { 
+        i2 = blob.i2;
+        assert(i2 == 2 || i2 == 3 || i2 == 4);
+        char tbuf[] = "TEst";
+        ret = cur.UpdateBlob(tbuf, sizeof(tbuf));
+        break;
+    }
+    }}
+
+    blob.i1 = 1;
+    blob.i2 = i2;
+
+    char tbuf[256];
+
+    ret = blob.Fetch();
+    assert(ret == eBDB_Ok);
+    len1 = blob.LobSize();
+    assert(len1 = 5);
+    ret = blob.GetData(tbuf, sizeof(tbuf));
+    assert(strcmp("TEst", tbuf) == 0);
+
 
     cout << "======== BLob file test ok." << endl;
 }
@@ -1986,6 +2021,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2004/11/23 17:09:11  kuznets
+ * Implemented BLOB update in cursor
+ *
  * Revision 1.54  2004/11/01 16:55:15  kuznets
  * test for RMW locks
  *

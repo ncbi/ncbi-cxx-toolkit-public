@@ -871,6 +871,23 @@ EBDB_ErrCode CBDB_File::WriteCursor(DBC* dbc, unsigned int bdb_flag,
     return x_Write(bdb_flag, write_flag, dbc);
 }
 
+EBDB_ErrCode CBDB_File::WriteCursor(const void* data, 
+                                    size_t      size, 
+                                    DBC* dbc, 
+                                    unsigned int bdb_flag, 
+                                    EAfterWrite write_flag)
+{
+    if (!m_DataBufDisabled) {
+        BDB_THROW(eInvalidOperation, "BLOB operation on non BLOB table");
+    }
+
+    m_DBT_Data->data = const_cast<void*> (data);
+    m_DBT_Data->size = m_DBT_Data->ulen = (unsigned)size;
+
+    return x_Write(bdb_flag, write_flag, dbc);
+}
+
+
 EBDB_ErrCode CBDB_File::DeleteCursor(DBC* dbc, EIgnoreError on_error)
 {
     int ret = dbc->c_del(dbc,0);
@@ -1002,6 +1019,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/11/23 17:09:11  kuznets
+ * Implemented BLOB update in cursor
+ *
  * Revision 1.44  2004/11/08 16:00:11  kuznets
  * Added option to disable NULL values for data fileds (performance optimization)
  *

@@ -362,6 +362,12 @@ protected:
     EBDB_ErrCode WriteCursor(DBC* dbc, unsigned int bdb_flag, 
                              EAfterWrite write_flag);
 
+    /// Write BLOB to DB cursor
+    EBDB_ErrCode WriteCursor(const void* data, 
+                             size_t      size, 
+                             DBC* dbc, unsigned int bdb_flag, 
+                             EAfterWrite write_flag);
+
     /// Delete DB cursor
     EBDB_ErrCode DeleteCursor(DBC* dbc, EIgnoreError);
 
@@ -526,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/11/23 17:08:53  kuznets
+ * Implemented BLOB update in cursor
+ *
  * Revision 1.36  2004/11/08 16:00:06  kuznets
  * Added option to disable NULL values for data fileds (performance optimization)
  *
