@@ -39,6 +39,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/blast_dust.h>
 #include <algo/blast/core/blast_seg.h>
+#include "blast_inline.h"
 #ifdef CC_FILTER_ALLOWED
 #include <algo/blast/core/urkpcc.h>
 #endif
@@ -204,8 +205,8 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
       /* For blastn: check if this strand is not searched at all */
       if (end_offset < start_offset)
           continue;
-      index = (k_is_na ? context / 2 : context);
-      reverse = (k_is_na && ((context & 1) != 0));
+      index = BlastGetMaskLocIndexFromContext(k_is_na, context);
+      reverse = BlastIsReverseStrand(k_is_na, context);
       first = TRUE;
 
       if (!reverse) {
@@ -832,6 +833,37 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 }
 
 static Int2
+GetReversedLocation(BlastSeqLoc** filter_out, BlastSeqLoc* filter_in, Int4 query_length)
+{
+   BlastSeqLoc* mask_loc = NULL;
+   BlastSeqLoc* new_filter_per_context = NULL;
+   BlastSeqLoc* last_filter_per_context = NULL;
+
+   ASSERT(filter_out);
+
+
+   for (mask_loc=filter_in; mask_loc; mask_loc = mask_loc->next) {
+        Int4 start, stop;
+        SSeqRange* loc = (SSeqRange *) mask_loc->ptr;
+        
+        start = query_length - 1 - loc->right;
+        stop = query_length - 1 - loc->left;
+        if (last_filter_per_context == NULL)
+        {
+              last_filter_per_context = new_filter_per_context = BlastSeqLocNew(start, stop);
+        }
+        else
+        {
+              last_filter_per_context->next = BlastSeqLocNew(start, stop);
+              last_filter_per_context = last_filter_per_context->next;
+        }
+   }
+   *filter_out = new_filter_per_context;
+
+   return 0;
+}
+
+static Int2
 GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, EBlastProgramType program_number, const char* filter_string, BlastSeqLoc* *filter_out, Boolean* mask_at_hash)
 {
         Int2 status = 0;
@@ -839,11 +871,12 @@ GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo*
         Int4 context_offset;
         BlastMaskLoc *mask_slp, *mask_slp_var; /* Auxiliary locations for lower-case masking  */
         BlastSeqLoc *filter_slp = NULL;     /* SeqLocPtr computed for filtering. */
+        BlastSeqLoc *filter_slp_rev = NULL;     /* reversed SeqLocPtr (used only if minus strand) */
         BlastSeqLoc *filter_slp_combined;   /* Used to hold combined SeqLoc's */
         Uint1 *buffer;              /* holds sequence for plus strand or protein. */
 
-        Boolean is_na = (program_number == eBlastTypeBlastn);
-        Int2 index = (is_na ? context / 2 : context);
+        const Boolean k_is_na = (program_number == eBlastTypeBlastn);
+        Int2 index = BlastGetMaskLocIndexFromContext(k_is_na, context);
 
         context_offset = query_info->context_offsets[context];
         buffer = &query_blk->sequence[context_offset];
@@ -856,6 +889,13 @@ GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo*
                        query_length, 0, filter_string,
                              mask_at_hash, &filter_slp))) 
              return status;
+
+        if (BlastIsReverseStrand(k_is_na, context) == TRUE)
+        {  /* Reverse this as it's on minus strand. */
+              GetReversedLocation(&filter_slp_rev, filter_slp, query_length);
+              filter_slp = BlastSeqLocFree(filter_slp);
+              filter_slp = filter_slp_rev;
+        }
 
         /* Extract the mask locations corresponding to this query 
                (frame, strand), detach it from other masks.
@@ -911,45 +951,46 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
          context <= query_info->last_context; ++context) {
       
         BlastSeqLoc *filter_per_context = NULL;   /* Used to hold combined SeqLoc's */
-        Boolean reverse = (k_is_na && ((context & 1) != 0));
+        Boolean reverse = BlastIsReverseStrand(k_is_na, context);
         Int4 query_length;
 
         /* For each query, check if forward strand is present */
         if ((query_length = BLAST_GetQueryLength(query_info, context)) < 0)
         {
-            if ((context & 1) == 0)
-               no_forward_strand = TRUE;
+            if (k_is_na && (context & 1) == 0)  /* Needed only for blastn, or does this not apply FIXME */
+               no_forward_strand = TRUE;  /* No plus strand, we cannot simply infer locations by going from plus to minus */
             continue;
         }
+        else if (!reverse)  /* This is a plus strand, safe to set no_forward_strand to FALSE as clearly there is one. */
+               no_forward_strand = FALSE;
 
-      if (!reverse || no_forward_strand)
-      {
-        if ((status=GetFilteringLocationsForOneContext(query_blk, query_info, context, program_number, filter_string, &filter_per_context, mask_at_hash)))
+        if (!reverse || no_forward_strand)
         {
+            if ((status=GetFilteringLocationsForOneContext(query_blk, query_info, context, program_number, filter_string, &filter_per_context, mask_at_hash)))
+            {
                Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
                   "Failure at filtering");
                return status;
-        }
+            }
 
         /* NB: for translated searches filter locations are returned in 
                protein coordinates, because the DNA lengths of sequences are 
                not available here. The caller must take care of converting 
                them back to nucleotide coordinates. */
-       if (filter_per_context)
-       {
-        if (!last_maskloc) {
-                last_maskloc = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
-                filter_maskloc = last_maskloc;
-        } else {
-                last_maskloc->next =
-                        (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
-                last_maskloc = last_maskloc->next;
-        }
-
-        last_maskloc->index = (k_is_na ? context / 2 : context);
-        last_maskloc->loc_list = filter_per_context;
-       }
-      }
+             if (filter_per_context)
+             {
+                  if (!last_maskloc) {
+                    last_maskloc = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
+                    filter_maskloc = last_maskloc;
+                  } else {
+                    last_maskloc->next =
+                            (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
+                    last_maskloc = last_maskloc->next;
+                  }
+                  last_maskloc->index = BlastGetMaskLocIndexFromContext(k_is_na, context);
+                  last_maskloc->loc_list = filter_per_context;
+             }
+         }
     }
 
     if (filter_out && filter_maskloc)
@@ -1004,7 +1045,7 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, B
       
         BlastMaskLoc* filter_maskloc_var = NULL;
         BlastSeqLoc *filter_per_context = NULL;   /* Used to hold combined SeqLoc's */
-        Boolean reverse = (k_is_na && ((context & 1) != 0));
+        Boolean reverse = BlastIsReverseStrand(k_is_na, context);
         Int4 query_length;
         Int4 context_offset;
         Uint1 *buffer;              /* holds sequence */
@@ -1019,7 +1060,7 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, B
 	filter_maskloc_var = filter_maskloc;
         while (filter_maskloc_var)
         {
-             if (filter_maskloc_var->index == (k_is_na ? context / 2 : context))
+             if (filter_maskloc_var->index == BlastGetMaskLocIndexFromContext(k_is_na, context))
              {
 		filter_per_context = filter_maskloc_var->loc_list;
                 break;
