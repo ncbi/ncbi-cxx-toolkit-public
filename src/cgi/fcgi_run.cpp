@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Eugene Vasilchenko, Denis Vakatov
+ * Author: Eugene Vasilchenko, Denis Vakatov, Aaron Ucko
  *
  * File Description:
  *   Fast-CGI loop function -- used in "cgiapp.cpp"::CCgiApplication::Run().
@@ -158,7 +158,7 @@ extern "C" {
 // Decide if this FastCGI process should be finished prematurely, right now
 // (the criterion being whether the executable or a special watched file
 // has changed since the last iteration)
-static bool s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher)
+static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher)
 {
     // Check if this CGI executable has been changed
     CTime mtimeNew = s_GetModTime
@@ -166,16 +166,16 @@ static bool s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher)
     if (mtimeNew != mtime) {
         _TRACE("CCgiApplication::x_RunFastCGI: "
                "the program modification date has changed");
-        return true;
+        return 101;
     }
     
     // Check if the file we're watching (if any) has changed
     // (based on contents, not timestamp!)
     if (watcher  &&  watcher->HasChanged()) {
         _TRACE("CCgiApplication::x_RunFastCGI: the watch file has changed");
-        return true;
+        return 102;
     }
-    return false;
+    return 0;
 }
 
 
@@ -337,9 +337,13 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             if ( s_AcceptTimedOut ) {
                 _ASSERT(accept_errcode != 0);
                 s_AcceptTimedOut = false;
-                if ( s_ShouldRestart(mtime, watcher.get()) ) {
-                    break;
-                }
+                {{ // If to restart the application
+                    int restart_code = s_ShouldRestart(mtime, watcher.get());
+                    if (restart_code != 0) {
+                        *result = restart_code;
+                        break;
+                    }
+                }}
                 m_Iteration--;
                 continue;
             }
@@ -497,9 +501,14 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             stat->Submit(msg);
         }
 
-        if ( s_ShouldRestart(mtime, watcher.get()) ) {
-            break;
-        }
+        // If to restart the application
+        {{
+            int restart_code = s_ShouldRestart(mtime, watcher.get());
+            if (restart_code != 0) {
+                *result = restart_code;
+                break;
+            }
+        }}
     } // Main Fast-CGI loop
 
     // done
@@ -517,6 +526,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.41  2004/02/02 17:49:47  vakatov
+ * When restarted due to the change of the binary or watch-file, set the
+ * application return code to special values 101 and 102, respectively.
+ *
  * Revision 1.40  2003/10/16 15:18:55  lavr
  * Multiple flush bug fixed from R1.13
  *
