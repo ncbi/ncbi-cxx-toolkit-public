@@ -15,6 +15,9 @@
 /* Define to 1 if you have the `atoll' function. */
 #define HAVE_ATOLL 1
 
+/* Define to 1 if NCBI C++ API for BerkeleyDB is available. */
+#define HAVE_BDB 1
+
 /* Define to 1 if Berkeley DB libraries are available. */
 #define HAVE_BERKELEY_DB 1
 
@@ -67,6 +70,9 @@
 /* Define to 1 if DL is available, either in its own library or as part of the
    standard libraries. */
 #define HAVE_LIBDL 1
+
+/* Define to 1 if you have the `pthread_setconcurrency' function. */
+#define HAVE_PTHREAD_SETCONCURRENCY 1
 
 /* Define to 1 if libexpat is available. */
 /* #undef HAVE_LIBEXPAT */
@@ -233,13 +239,13 @@
 #define HAVE_WSTRING 1
 
 /* Full GNU-style system type */
-#define HOST "powerpc-apple-darwin7.2.0"
+#define HOST "powerpc-apple-darwin7.6.0"
 
 /* CPU type only */
 #define HOST_CPU "powerpc"
 
 /* System OS only */
-#define HOST_OS "darwin7.2.0"
+#define HOST_OS "darwin7.6.0"
 
 /* System vendor only */
 #define HOST_VENDOR "apple"
