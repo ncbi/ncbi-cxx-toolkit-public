@@ -264,6 +264,8 @@ enum EErrType {
     eErr_SEQ_GRAPH_GraphGapScore,
     eErr_SEQ_GRAPH_GraphOverlap,
 
+    eErr_Internal_Exception,
+
     eErr_UNKNOWN
 };
 
@@ -344,6 +346,7 @@ public:
     inline bool IsRequireTaxonID(void) const { return m_RequireTaxonID; }
     inline bool IsRequireISOJTA(void) const { return m_RequireISOJTA; }
     inline bool IsValidateIdSet(void) const { return m_ValidateIdSet; }
+    inline bool IsRemoteFetch(void) const { return m_RemoteFetch; }
 
     // !!! DEBUG {
     inline bool AvoidPerfBottlenecks() const { return m_PerfBottlenecks; }
@@ -390,6 +393,9 @@ public:
     const CSeq_entry* GetAncestor(const CBioseq& seq, CBioseq_set::EClass clss);
     bool IsSerialNumberInComment(const string& comment);
 
+    bool CheckSeqVector(const CSeqVector& vec);
+    bool IsSequenceAvaliable(const CSeqVector& vec);
+
 private:
     // Prohibit copy constructor & assignment operator
     CValidError_imp(const CValidError_imp&);
@@ -430,6 +436,7 @@ private:
     bool m_RequireTaxonID;      // BioSource requires taxonID dbxref
     bool m_RequireISOJTA;       // Journal requires ISO JTA
     bool m_ValidateIdSet;       // validate update against ID set in database
+    bool m_RemoteFetch;         // Remote fetch enabled?
 
     // !!! DEBUG {
     bool m_PerfBottlenecks;         // Skip suspected performance bottlenecks
@@ -585,7 +592,7 @@ private:
 
     void ValidateGraphsOnBioseq(const CBioseq& seq);
     void ValidateByteGraphOnBioseq(const CSeq_graph& graph, const CBioseq& seq);
-    void ValidateGraphOnDeltaBioseq(const CBioseq& seq);
+    void ValidateGraphOnDeltaBioseq(const CBioseq& seq, bool& validate_values);
     void ValidateGraphValues(const CSeq_graph& graph, const CBioseq& seq);
     void ValidateMinValues(const CByte_graph& bg);
     void ValidateMaxValues(const CByte_graph& bg);
@@ -617,6 +624,7 @@ private:
         const list< CRef< CDbtag > >& dbxref2);
     bool IsHistAssemblyMissing(const CBioseq& seq);
     bool IsFlybaseDbxrefs(const list< CRef< CDbtag > >& dbxrefs);
+    bool GraphsOnBioseq(const CBioseq& seq) const;
 
     const CBioseq* GetNucGivenProt(const CBioseq& prot);
     
@@ -773,6 +781,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/04/04 18:39:17  shomrat
+* Added Internal Exception error and tests for the availabilty of the sequence
+*
 * Revision 1.21  2003/03/31 14:41:21  shomrat
 * $id: -> $id$
 *
