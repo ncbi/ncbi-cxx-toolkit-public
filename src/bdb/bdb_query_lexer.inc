@@ -52,13 +52,14 @@ CBDB_Query::TQueryClause* LexerMakeTokenNode(CBDB_QueryParserEnvironment* env,
 /// Additional void* param is an additional environment variable
 /// (carries both the query string to parse and the resulting syntax tree)
 /// Lexer uses environment a state storage for the lexer's finit automata.
-static
+static 
 int yylex(YYSTYPE *lvalp, void* param)
 {
     static int char_tokens[]      = { '&', '|', '=' };
     static int char_token_codes[] = { AND, OR,  EQ };
 
-    int c, i;
+    char c;
+    unsigned int  i;
     string token;
 
     CBDB_QueryParserEnvironment* env = (CBDB_QueryParserEnvironment*) param;
@@ -131,6 +132,9 @@ int yylex(YYSTYPE *lvalp, void* param)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/24 19:26:14  kuznets
+ * Fix compilation(GCC & SUN Workshop)
+ *
  * Revision 1.1  2004/02/24 16:37:38  kuznets
  * Initial revision
  *

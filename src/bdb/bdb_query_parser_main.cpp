@@ -40,8 +40,8 @@
 
 USING_NCBI_SCOPE;
 
-extern "C" int yyerror (const char *s);
-extern "C" int yylex (CBDB_Query::TQueryClause** lvalp, void* param);
+/*extern "C" */ static int yyerror (const char *s);
+/* extern "C" */static int yylex (CBDB_Query::TQueryClause** lvalp, void* param);
 
 BEGIN_NCBI_SCOPE
 
@@ -62,7 +62,6 @@ public:
     ETreeTraverseCode 
     operator()(CTreeNode<CBDB_QueryNode>& tr, int delta)
     {
-        CBDB_QueryNode& qnode = tr.GetValue();
         if (delta == 0 || delta == 1) {
             m_Pool.Forget(&tr);
         }
@@ -176,7 +175,7 @@ BEGIN_NCBI_SCOPE
 void BDB_ParseQuery(const char* query_str, CBDB_Query* query)
 {
     CBDB_QueryParserEnvironment env(query_str);
-    int res = yyparse((void*) &env);
+    /*int res = */ yyparse((void*) &env);
     CBDB_Query::TQueryClause* qc = env.GetQueryClause();
 
     if (qc) {
@@ -191,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/24 19:26:14  kuznets
+ * Fix compilation(GCC & SUN Workshop)
+ *
  * Revision 1.1  2004/02/24 16:37:38  kuznets
  * Initial revision
  *
