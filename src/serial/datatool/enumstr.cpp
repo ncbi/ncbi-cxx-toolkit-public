@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/17 20:05:07  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.1  2000/02/01 21:47:57  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -115,7 +121,7 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     iterate ( TValues, i, m_Values ) {
         if ( i != m_Values.begin() )
             hpp << ',';
-        string id = Identifier(i->first);
+        string id = Identifier(i->first, false);
         hpp << "\n"
             "    "<<m_ValuesPrefix<<id<<" = "<<i->second;
         cpp <<

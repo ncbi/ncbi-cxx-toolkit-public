@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/02/17 20:05:07  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.6  2000/02/01 21:47:57  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -140,7 +146,7 @@ string CEnumDataType::GetDefaultString(const CDataValue& value) const
 {
     const CIdDataValue* id = dynamic_cast<const CIdDataValue*>(&value);
     if ( id ) {
-        return GetEnumCInfo().valuePrefix + Identifier(id->GetValue());
+        return GetEnumCInfo().valuePrefix + Identifier(id->GetValue(), false);
     }
     else {
         const CIntDataValue* intValue =
@@ -165,7 +171,7 @@ string CEnumDataType::DefaultEnumName(void) const
     // generate enum name from ASN type or field name
     if ( !GetParentType() ) {
         // root enum
-        return 'E' + ClassName();
+        return 'E' + Identifier(IdName());
     }
     else {
         // internal enum

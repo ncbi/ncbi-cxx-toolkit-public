@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/02/17 20:05:07  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.40  2000/02/01 21:48:07  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -282,14 +288,7 @@ string CDataType::ClassName(void) const
     const string& cls = GetVar("_class");
     if ( !cls.empty() )
         return cls;
-/*
-    const CDataType* parent = GetParentType();
-    if ( parent ) {
-        return parent->ClassName() +
-            "__" + Identifier(m_MemberName, false);
-    }
-*/
-    return Identifier(m_MemberName);
+    return 'C'+Identifier(m_MemberName);
 }
 
 string CDataType::FileName(void) const

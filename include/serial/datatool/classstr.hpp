@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/17 20:05:02  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.1  2000/02/01 21:46:16  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -111,6 +117,7 @@ public:
     bool CanBeInSTL(void) const;
 
     void GenerateTypeCode(CClassContext& ctx) const;
+    string GetResetCode(const string& var) const;
 
     void GenerateUserHPPCode(CNcbiOstream& out) const;
     void GenerateUserCPPCode(CNcbiOstream& out) const;
@@ -142,6 +149,8 @@ public:
 
     bool CanBeKey(void) const;
     bool CanBeInSTL(void) const;
+
+    string GetResetCode(const string& var) const;
 
     void GenerateTypeCode(CClassContext& ctx) const;
     void GeneratePointerTypeCode(CClassContext& ctx) const;

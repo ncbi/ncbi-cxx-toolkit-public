@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/02/17 20:05:06  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.5  2000/02/11 17:09:30  vasilche
 * Removed unneeded flags.
 *
@@ -40,7 +46,7 @@
 * Fixed bug in type info generation for templates.
 *
 * Revision 1.2  2000/02/02 14:57:06  vasilche
-* Added missing NCBI_NS_NSBI and NSBI_NS_STD macros to generated code.
+* Added missing NCBI_NS_NCBI and NCBI_NS_STD macros to generated code.
 *
 * Revision 1.1  2000/02/01 21:47:54  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
@@ -88,11 +94,12 @@
 #include <serial/tool/code.hpp>
 #include <serial/tool/fileutil.hpp>
 
-#define ENUM_NAME "E_choice"
+#define STATE_ENUM "E_Choice"
 #define STATE_MEMBER "m_choice"
-#define STRING_MEMBER "m_string"
 #define STRING_TYPE "NCBI_NS_STD::string"
-#define NOT_SET_VALUE "e_not_set"
+#define STRING_MEMBER "m_string"
+#define STATE_PREFIX "e_"
+#define STATE_NOT_SET "e_not_set"
 
 CChoiceTypeStrings::CChoiceTypeStrings(const string& externalName,
                                        const string& className)
@@ -154,57 +161,89 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         }
     }
     bool haveUnion = havePointers || haveSimple;
+    if ( haveUnion ) {
+        // convert string member to pointer member
+        haveString = false;
+        iterate ( TVariants, i, m_Variants ) {
+            if ( i->memberType == eStringMember ) {
+                const_cast<SVariantInfo&>(*i).memberType = ePointerMember;
+                const_cast<SVariantInfo&>(*i).memberRef = "*m_" + i->cName;
+                havePointers = true;
+            }
+        }
+    }
 
     // generated choice enum
     {
         code.ClassPublic() <<
             "    // choice state enum\n"
-            "    enum "<<ENUM_NAME<<" {\n"
-            "        "<<NOT_SET_VALUE;
+            "    enum "<<STATE_ENUM<<" {\n"
+            "        "<<STATE_NOT_SET;
         iterate ( TVariants, i, m_Variants ) {
             code.ClassPublic() << ",\n"
-                "        e" << i->cName;
+                "        "<<STATE_PREFIX<<i->cName;
         }
         code.ClassPublic() << "\n"
             "    };\n"
             "\n";
     }
 
+    code.ClassPublic() <<
+        "    // reset selection to none\n"
+        "    void Reset(void);\n"
+        "\n";
+
     // generate choice methods
     getters <<
         "    // choice state\n"
-        "    "<<ENUM_NAME<<" Selected(void) const\n"
-        "        {\n"
-        "            return "<<STATE_MEMBER<<";\n"
-        "        }\n"
+        "    "<<STATE_ENUM<<" Which(void) const;\n"
         "    // throw exception if current variant is not as requested\n"
-        "    void CheckSelected("<<ENUM_NAME<<" index) const\n"
-        "        {\n"
-        "            if ( "<<STATE_MEMBER<<" != index )\n"
-        "                InvalidSelection(index);\n"
-        "        }\n"
-        "    // reset selection\n"
-        "    void Reset(void);\n"
+        "    void CheckSelected("<<STATE_ENUM<<" index) const;\n"
         "    // select requested variant if needed\n"
-        "    void Select("<<ENUM_NAME<<" index);\n"
+        "    void Select("<<STATE_ENUM<<" index, NCBI_NS_NCBI::EResetVariant reset = NCBI_NS_NCBI::eDoResetVariant);\n"
         "    // throw exception about wrong selection\n"
-        "    void InvalidSelection("<<ENUM_NAME<<" index) const;\n"
+        "    void InvalidSelection("<<STATE_ENUM<<" index) const;\n"
         "    // return selection name (for diagnostic purposes)\n"
-        "    static NCBI_NS_STD::string SelectionName("<<ENUM_NAME<<" index);\n"
+        "    static NCBI_NS_STD::string SelectionName("<<STATE_ENUM<<" index);\n"
+        "\n";
+    code.InlineMethods() <<
+        "inline\n"<<
+        methodPrefix<<STATE_ENUM<<" "<<methodPrefix<<"Which(void) const\n"
+        "{\n"
+        "    return "<<STATE_MEMBER<<";\n"
+        "}\n"
+        "\n"
+        "inline\n"
+        "void "<<methodPrefix<<"CheckSelected("<<STATE_ENUM<<" index) const\n"
+        "{\n"
+        "    if ( "<<STATE_MEMBER<<" != index )\n"
+        "        InvalidSelection(index);\n"
+        "}\n"
+        "\n"
+        "inline\n"
+        "void "<<methodPrefix<<"Select("<<STATE_ENUM<<" index, NCBI_NS_NCBI::EResetVariant reset)\n"
+        "{\n"
+        "    if ( reset == NCBI_NS_NCBI::eDoResetVariant ||\n"
+        "         "<<STATE_MEMBER<<" != index ) {\n"
+        "        Reset();\n"
+        "        DoSelect(index);\n"
+        "    }\n"
+        "}\n"
         "\n";
 
     // generate choice state
     code.ClassPrivate() <<
         "    // choice state\n"
-        "    "<<ENUM_NAME<<' '<<STATE_MEMBER<<";\n"
+        "    "<<STATE_ENUM<<' '<<STATE_MEMBER<<";\n"
         "    // helper methods\n"
+        "    void DoSelect("<<STATE_ENUM<<" index);\n"
         "    static void* x_Create(void);\n"
         "    static int x_Selected(const void*);\n"
         "    static void x_Select(void*, int);\n"
         "\n";
 
     // generate initialization code
-    code.AddInitializer(STATE_MEMBER, NOT_SET_VALUE);
+    code.AddInitializer(STATE_MEMBER, STATE_NOT_SET);
 
     // generate destruction code
     code.AddDestructionCode("Reset();");
@@ -221,7 +260,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             iterate ( TVariants, i, m_Variants ) {
                 if ( i->memberType == ePointerMember ) {
                     code.Methods() <<
-                        "    case e"<<i->cName<<":\n";
+                        "    case "<<STATE_PREFIX<<i->cName<<":\n";
                     WriteTabbed(code.Methods(), 
                                 i->type->GetDestructionCode(i->memberRef),
                                 "        ");
@@ -235,7 +274,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 iterate ( TVariants, i, m_Variants ) {
                     if ( i->memberType == eStringMember ) {
                         code.Methods() <<
-                            "    case e"<<i->cName<<":\n";
+                            "    case "<<STATE_PREFIX<<i->cName<<":\n";
                     }
                 }
                 code.Methods() <<
@@ -248,7 +287,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 "    }\n";
         }
         code.Methods() <<
-            "    "<<STATE_MEMBER<<" = "<<NOT_SET_VALUE<<";\n"
+            "    "<<STATE_MEMBER<<" = "<<STATE_NOT_SET<<";\n"
             "}\n"
             "\n";
     }
@@ -256,11 +295,8 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate Select method
     {
         code.Methods() <<
-            "void "<<methodPrefix<<"Select("<<ENUM_NAME<<" index)\n"
-            "{\n"
-            "    if ( "<<STATE_MEMBER<<" == index )\n"
-            "        return;\n"
-            "    Reset();\n";
+            "void "<<methodPrefix<<"DoSelect("<<STATE_ENUM<<" index)\n"
+            "{\n";
         if ( haveUnion ) {
             code.Methods() <<
                 "    switch ( index ) {\n";
@@ -268,13 +304,13 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( i->memberType == eSimpleMember ) {
                     string init = i->type->GetInitializer();
                     code.Methods() <<
-                        "    case e"<<i->cName<<":\n"
+                        "    case "<<STATE_PREFIX<<i->cName<<":\n"
                         "        m_"<<i->cName<<" = "<<init<<";\n"
                         "        break;\n";
                 }
                 else if ( i->memberType == ePointerMember ) {
                     code.Methods() <<
-                        "    case e"<<i->cName<<":\n"
+                        "    case "<<STATE_PREFIX<<i->cName<<":\n"
                         "        m_"<<i->cName<<" = new "<<i->cType<<";\n"
                         "        break;\n";
                 }
@@ -304,14 +340,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         code.Methods() << "\n"
             "};\n"
             "\n"
-            "NCBI_NS_STD::string "<<methodPrefix<<"SelectionName("<<ENUM_NAME<<" index)\n"
+            "NCBI_NS_STD::string "<<methodPrefix<<"SelectionName("<<STATE_ENUM<<" index)\n"
             "{\n"
             "    if ( index < 0 || index > "<<m_Variants.size()<<" )\n"
             "        return \"?unknown?\";\n"
             "    return sm_SelectionNames[index];\n"
             "}\n"
             "\n"
-            "void "<<methodPrefix<<"InvalidSelection("<<ENUM_NAME<<" index) const\n"
+            "void "<<methodPrefix<<"InvalidSelection("<<STATE_ENUM<<" index) const\n"
             "{\n"
             "    throw NCBI_NS_STD::runtime_error(\""<<GetExternalName()<<": invalid selection \"+SelectionName("<<STATE_MEMBER<<")+\". Expected: \"+SelectionName(index));\n"
             "}\n"
@@ -336,32 +372,49 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    // variants\n";
         iterate ( TVariants, i, m_Variants ) {
             getters <<
-                "    bool Is"<<i->cName<<"(void) const\n"
-                "        {\n"
-                "            return "<<STATE_MEMBER<<" == e"<<i->cName<<";\n"
-                "        }\n"
-                "    const T"<<i->cName<<"& Get"<<i->cName<<"(void) const\n"
-                "        {\n"
-                "            CheckSelected(e"<<i->cName<<");\n"
-                "            return "<<i->memberRef<<";\n"
-                "        }\n"
-                "    T"<<i->cName<<"& Get"<<i->cName<<"(void)\n"
-                "        {\n"
-                "            CheckSelected(e"<<i->cName<<");\n"
-                "            return "<<i->memberRef<<";\n"
-                "        }\n"
-                "    T"<<i->cName<<"& Set"<<i->cName<<"(void)\n"
-                "        {\n"
-                "            Select(e"<<i->cName<<");\n"
-                "            return "<<i->memberRef<<";\n"
-                "        }\n";
+                "    bool Is"<<i->cName<<"(void) const;\n"
+                "    const T"<<i->cName<<"& Get"<<i->cName<<"(void) const;\n"
+                "    T"<<i->cName<<"& Get"<<i->cName<<"(void);\n"
+                "    T"<<i->cName<<"& Set"<<i->cName<<"(void);\n";
+            code.InlineMethods() <<
+                "inline\n"
+                "bool "<<methodPrefix<<"Is"<<i->cName<<"(void) const\n"
+                "{\n"
+                "    return "<<STATE_MEMBER<<" == "<<STATE_PREFIX<<i->cName<<";\n"
+                "}\n"
+                "\n"
+                "inline\n"
+                "const "<<methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                "{\n"
+                "    CheckSelected("<<STATE_PREFIX<<i->cName<<");\n"
+                "    return "<<i->memberRef<<";\n"
+                "}\n"
+                "\n"
+                "inline\n"<<
+                methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void)\n"
+                "{\n"
+                "    CheckSelected("<<STATE_PREFIX<<i->cName<<");\n"
+                "    return "<<i->memberRef<<";\n"
+                "}\n"
+                "\n"
+                "inline\n"<<
+                methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                "{\n"
+                "    Select("<<STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n"
+                "    return "<<i->memberRef<<";\n"
+                "}\n"
+                "\n";
             if ( i->memberType != ePointerMember ) {
                 getters <<
-                    "    void Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
-                    "        {\n"
-                    "            Select(e"<<i->cName<<");\n"
-                    "            "<<i->memberRef<<" = value;\n"
-                    "        }\n";
+                    "    void Set"<<i->cName<<"(const T"<<i->cName<<"& value);\n";
+                code.InlineMethods() <<
+                    "inline\n"
+                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
+                    "{\n"
+                    "    Select("<<STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n"
+                    "    "<<i->memberRef<<" = value;\n"
+                    "}\n"
+                    "\n";
             }
             getters <<
                 "\n";
@@ -399,11 +452,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "\n"
         "int "<<methodPrefix<<"x_Selected(const void* object)\n"
         "{\n"
-        "    return static_cast<const "<<codeClassName<<"*>(static_cast<const "<<GetClassName()<<"*>(object))->Selected()-1;\n"
+        "    return static_cast<const "<<codeClassName<<"*>(static_cast<const "<<GetClassName()<<"*>(object))->Which()-1;\n"
         "}\n"
         "void "<<methodPrefix<<"x_Select(void* object, int index)\n"
         "{\n"
-        "    static_cast<"<<codeClassName<<"*>(static_cast<"<<GetClassName()<<"*>(object))->Select("<<ENUM_NAME<<"(index+1));\n"
+        "    static_cast<"<<codeClassName<<"*>(static_cast<"<<GetClassName()<<"*>(object))->Select("<<STATE_ENUM<<"(index+1));\n"
         "}\n"
         "\n"
         "// type info\n"

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/17 20:05:07  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.1  2000/02/01 21:48:06  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -115,6 +121,16 @@ string CNullTypeStrings::GetRef(void) const
     return "&NCBI_NS_NCBI::CNullBoolTypeInfo::GetTypeInfo";
 }
 
+string CNullTypeStrings::GetTypeInfoCode(const string& externalName,
+                                         const string& memberName) const
+{
+    return "NCBI_NS_NCBI::AddMember("
+        "info->GetMembers(), "
+        "\""+externalName+"\", "
+        "MEMBER_PTR("+memberName+"), "
+        +GetRef()+")";
+}
+
 string CNullTypeStrings::GetInitializer(void) const
 {
     return "false";
@@ -149,3 +165,14 @@ string CStringStoreTypeStrings::GetRef(void) const
 {
     return "&NCBI_NS_NCBI::CStringStoreTypeInfo::GetTypeInfo";
 }
+
+string CStringStoreTypeStrings::GetTypeInfoCode(const string& externalName,
+                                                const string& memberName) const
+{
+    return "NCBI_NS_NCBI::AddMember("
+        "info->GetMembers(), "
+        "\""+externalName+"\", "
+        "MEMBER_PTR("+memberName+"), "
+        +GetRef()+")";
+}
+

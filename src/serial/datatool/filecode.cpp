@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/02/17 20:05:07  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.10  2000/02/01 21:47:58  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -72,6 +78,7 @@
 #include <serial/tool/typestr.hpp>
 #include <serial/tool/fileutil.hpp>
 #include <typeinfo>
+#include <unistd.h>
 
 CFileCode::CFileCode(const string& baseName)
     : m_BaseName(baseName)
@@ -85,6 +92,11 @@ CFileCode::~CFileCode(void)
 string CFileCode::GetHPPName(void) const
 {
     return GetFileBaseName() + "_Base.hpp";
+}
+
+string CFileCode::GetINLName(void) const
+{
+    return GetFileBaseName() + "_Base.inl";
 }
 
 string CFileCode::GetUserHPPName(void) const
@@ -165,6 +177,11 @@ void CFileCode::AddHPPCode(const CNcbiOstrstream& code)
     Write(m_HPPCode, code);
 }
 
+void CFileCode::AddINLCode(const CNcbiOstrstream& code)
+{
+    Write(m_INLCode, code);
+}
+
 void CFileCode::AddCPPCode(const CNcbiOstrstream& code)
 {
     Write(m_CPPCode, code);
@@ -174,9 +191,11 @@ void CFileCode::GenerateCode(void)
 {
     if ( !m_Classes.empty() ) {
         CNamespace nsHPP(m_HPPCode);
+        CNamespace nsINL(m_INLCode);
         CNamespace nsCPP(m_CPPCode);
         iterate ( TClasses, ci, m_Classes ) {
             nsHPP.Set(ci->namespaceName);
+            nsINL.Set(ci->namespaceName);
             nsCPP.Set(ci->namespaceName);
             ci->code->GenerateCode(*this);
         }
@@ -232,6 +251,35 @@ void CFileCode::GenerateHPP(const string& path) const
         "// generated classes\n";
     Write(header, m_HPPCode);
     
+    string inlName = GetINLName();
+    string inlFileName = Path(path, inlName);
+    if ( const_cast<CNcbiOstrstream&>(m_INLCode).pcount() != 0 ) {
+        // have inline methods
+        header <<
+            "\n"
+            "// inline methods\n"
+            "#include <" << inlName << ">\n";
+        // write .inl file
+        CDelayedOfstream code(inlFileName.c_str());
+        if ( !code ) {
+            ERR_POST(Fatal << "Cannot create file: " << inlFileName);
+            return;
+        }
+        
+        code <<
+            "// This is generated file, don't modify\n"
+            "\n"
+            "// generated inline methods\n";
+        Write(code, m_INLCode);
+        
+        code.close();
+        if ( !code )
+            ERR_POST("Error writing file " << inlFileName);
+    }
+    else {
+        // remove .inl file
+        unlink(inlFileName.c_str());
+    }
     header <<
         "\n"
         "#endif // " << hppDefine << "\n";

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/17 20:05:03  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.1  2000/02/01 21:46:18  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -93,6 +99,7 @@ public:
             return m_HeaderPrefix;
         }
     string GetHPPName(void) const;
+    string GetINLName(void) const;
     string GetCPPName(void) const;
     string GetUserHPPName(void) const;
     string GetUserCPPName(void) const;
@@ -106,6 +113,7 @@ public:
     void AddForwardDeclaration(const string& className,
                                const string& namespaceName);
     void AddHPPCode(const CNcbiOstrstream& code);
+    void AddINLCode(const CNcbiOstrstream& code);
     void AddCPPCode(const CNcbiOstrstream& code);
 
     void GenerateCode(void);
@@ -122,7 +130,7 @@ private:
     TIncludes m_HPPIncludes;
     TIncludes m_CPPIncludes;
     TForwards m_ForwardDeclarations;
-    CNcbiOstrstream m_HPPCode, m_CPPCode;
+    CNcbiOstrstream m_HPPCode, m_INLCode, m_CPPCode;
 
     // classes code
     TAddedClasses m_AddedClasses;

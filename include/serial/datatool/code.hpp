@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/17 20:05:02  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.1  2000/02/01 21:46:16  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -91,6 +97,14 @@ public:
         }
 
     void SetParentClass(const string& className, const string& namespaceName);
+    bool HaveVirtualDestructor(void) const
+        {
+            return m_VirtualDestructor;
+        }
+    void SetVirtualDestructor(bool v = true)
+        {
+            m_VirtualDestructor = v;
+        }
 
     string GetMethodPrefix(void) const;
     bool InternalClass(void) const;
@@ -112,17 +126,27 @@ public:
         {
             return m_ClassPrivate;
         }
-    CNcbiOstream& Methods(void)
+    CNcbiOstream& InlineMethods(void)
         {
-            return m_Methods;
+            return m_InlineMethods;
+        }
+    CNcbiOstream& Methods(bool inl = false)
+        {
+            return inl? m_InlineMethods: m_Methods;
+        }
+    CNcbiOstream& MethodStart(bool inl = false)
+        {
+            return inl? (m_InlineMethods << "inline\n"): m_Methods;
         }
 
     CNcbiOstream& GenerateHPP(CNcbiOstream& header) const;
+    CNcbiOstream& GenerateINL(CNcbiOstream& code) const;
     CNcbiOstream& GenerateCPP(CNcbiOstream& code) const;
     CNcbiOstream& GenerateUserHPP(CNcbiOstream& header) const;
     CNcbiOstream& GenerateUserCPP(CNcbiOstream& code) const;
 
     void AddHPPCode(const CNcbiOstrstream& code);
+    void AddINLCode(const CNcbiOstrstream& code);
     void AddCPPCode(const CNcbiOstrstream& code);
 
 private:
@@ -138,6 +162,7 @@ private:
     CNcbiOstrstream m_ClassPrivate;
     CNcbiOstrstream m_Initializers;
     list<string> m_DestructionCode;
+    CNcbiOstrstream m_InlineMethods;
     CNcbiOstrstream m_Methods;
 
     CClassCode(const CClassCode&);

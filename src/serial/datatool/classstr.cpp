@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/02/17 20:05:06  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.3  2000/02/02 19:08:20  vasilche
 * Fixed variable conflict in generated files on MSVC.
 *
@@ -134,6 +140,11 @@ bool CClassTypeStrings::CanBeInSTL(void) const
     return false;
 }
 
+string CClassTypeStrings::GetResetCode(const string& var) const
+{
+    return var+".Reset();\n";
+}
+
 void CClassTypeStrings::SetParentClass(const string& className,
                                        const string& namespaceName,
                                        const string& fileName)
@@ -187,114 +198,146 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "\n";
     }
 
-    // generate member getters
+    bool generateMainReset = true;
+    // generate member getters/setters
     {
         getters <<
             "    // members\n";
         iterate ( TMembers, i, m_Members ) {
+            // generate getter
             getters <<
-                "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const\n"
-                "        {\n"
-                "            return "<<i->mName<<";\n"
-                "        }\n";
+                "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
+            code.InlineMethods() <<
+                "inline\n"
+                "const "<<methodPrefix<<i->tName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                "{\n"
+                "    return "<<i->mName<<";\n"
+                "}\n"
+                "\n";
+            // generate setter
             if ( i->type->CanBeInSTL() ) {
                 getters <<
-                    "    void Set"<<i->cName<<"(const "<<i->tName<<"& value)\n"
-                    "        {\n"
-                    "            "<<i->mName<<" = value;\n";
+                    "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
+                code.InlineMethods() <<
+                    "inline\n"
+                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<i->tName<<"& value)\n"
+                    "{\n"
+                    "    "<<i->mName<<" = value;\n";
                 if ( i->optional && i->type->NeedSetFlag() ) {
-                    getters <<
-                        "            m_set_"<<i->cName<<" = true;\n";
+                    code.InlineMethods() <<
+                        "    m_set_"<<i->cName<<" = true;\n";
                 }
-                getters <<
-                    "        }\n";
+                code.InlineMethods() <<
+                    "}\n"
+                    "\n";
             }
             else {
                 getters <<
-                    "    "<<i->tName<<"& Set"<<i->cName<<"(void)\n"
-                    "        {\n";
+                    "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
+                code.InlineMethods() <<
+                    "inline\n"<<
+                    methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                    "{\n";
                 if ( i->optional && i->type->NeedSetFlag() ) {
-                    getters <<
-                        "            m_set_"<<i->cName<<" = true;\n";
+                    code.InlineMethods() <<
+                        "    m_set_"<<i->cName<<" = true;\n";
                 }
-                getters <<
-                    "            return "<<i->mName<<";\n"
-                    "        }\n";
+                code.InlineMethods() <<
+                    "    return "<<i->mName<<";\n"
+                    "}\n"
+                    "\n";
             }
+
+            // generate IsSet... method
             if ( i->optional ) {
+                getters <<
+                    "    bool IsSet"<<i->cName<<"(void);\n";
+                code.InlineMethods() <<
+                    "inline\n"
+                    "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void)\n"
+                    "{\n";
                 if ( i->type->NeedSetFlag() ) {
-                    getters <<
-                        "    bool IsSet"<<i->cName<<"(void)\n"
-                        "        {\n"
-                        "            return m_set_"<<i->cName<<";\n"
-                        "        }\n";
-                    string assignValue;
-                    string resetCode;
-                    if ( !i->defaultValue.empty() ) {
-                        assignValue = i->defaultValue;
-                    }
-                    else {
-                        resetCode =
-                            i->type->GetDestructionCode(i->mName) +
-                            i->type->GetResetCode(i->mName);
-                        if ( resetCode.empty() )
-                            assignValue = i->type->GetInitializer();
-                    }
-                    if ( !assignValue.empty() ) {
-                        // assign default value
-                        getters <<
-                            "    void Reset"<<i->cName<<"(void)\n"
-                            "        {\n"
-                            "            "<<i->mName<<" = "<<assignValue<<";\n"
-                            "            m_set_"<<i->cName<<" = false;\n"
-                            "        }\n";
-                    }
-                    else {
-                        // no default value
-                        getters <<
-                            "    void Reset"<<i->cName<<"(void);\n";
-                        code.Methods() <<
-                            "void "<<methodPrefix<<"Reset"<<i->cName<<"(void)\n"
-                            "{\n";
-                        WriteTabbed(code.Methods(), resetCode);
-                        code.Methods() <<
-                            "    m_set_"<<i->cName<<" = false;\n"
-                            "}\n"
-                            "\n";
-                    }
+                    code.InlineMethods() <<
+                        "    return m_set_"<<i->cName<<";\n";
                 }
                 else {
                     // doesn't need set flag -> use special code
-                    getters <<
-                        "    bool IsSet"<<i->cName<<"(void)\n"
-                        "        {\n"
-                        "            return "<<i->type->GetIsSetCode(i->mName)<<";\n"
-                        "        }\n"
-                        "    void Reset"<<i->cName<<"(void);\n";
-                    code.Methods() <<
-                        "void "<<methodPrefix<<"Reset"<<i->cName<<"(void)\n"
-                        "{\n";
-                    WriteTabbed(code.Methods(),
-                                i->type->GetDestructionCode(i->mName));
-                    WriteTabbed(code.Methods(),
-                                i->type->GetResetCode(i->mName));
-                    code.Methods() <<
-                        "}\n"
-                        "\n";
+                    code.InlineMethods() <<
+                        "    return "<<i->type->GetIsSetCode(i->mName)<<";\n";
                 }
+                code.InlineMethods() <<
+                    "}\n"
+                    "\n";
+            }
+            
+            // generate Reset... method
+            string assignValue;
+            string resetCode;
+            if ( !i->defaultValue.empty() ) {
+                assignValue = i->defaultValue;
+            }
+            else {
+                resetCode =
+                    i->type->GetDestructionCode(i->mName) +
+                    i->type->GetResetCode(i->mName);
+                if ( resetCode.empty() )
+                    assignValue = i->type->GetInitializer();
             }
             if ( i->cName.empty() ) {
-                _ASSERT(!i->optional);
-                getters <<
-                    "    operator const "<<i->tName<<"& (void) const\n"
-                    "        {\n"
-                    "            return "<<i->mName<<";\n"
-                    "        }\n"
-                    "    operator "<<i->tName<<"& (void)\n"
-                    "        {\n"
-                    "            return "<<i->mName<<";\n"
-                    "        }\n";
+                if ( m_Members.size() != 1 ) {
+                    THROW1_TRACE(runtime_error,
+                                 "unnamed member is not the only member");
+                }
+                generateMainReset = false;
             }
+            else {
+                getters <<
+                    "    void Reset"<<i->cName<<"(void);\n";
+            }
+            bool inl = !assignValue.empty();
+            code.MethodStart(inl) <<
+                "void "<<methodPrefix<<"Reset"<<i->cName<<"(void)\n"
+                "{\n";
+            if ( !assignValue.empty() ) {
+                // assign default value
+                code.Methods(inl) <<
+                    "    "<<i->mName<<" = "<<assignValue<<";\n";
+            }
+            else {
+                // no default value
+                WriteTabbed(code.Methods(inl), resetCode);
+            }
+            if ( i->optional && i->type->NeedSetFlag() ) {
+                code.Methods(inl) <<
+                    "    m_set_"<<i->cName<<" = false;\n";
+            }
+            code.Methods(inl) <<
+                "}\n"
+                "\n";
+
+            // generate conversion operators
+            if ( i->cName.empty() ) {
+                if ( i->optional ) {
+                    THROW1_TRACE(runtime_error, "the only member of adaptor class is optional");
+                }
+                getters <<
+                    "    operator const "<<i->tName<<"& (void) const;\n"
+                    "    operator "<<i->tName<<"& (void);\n";
+                code.InlineMethods() <<
+                    "inline\n"<<
+                    methodPrefix<<"operator const "<<methodPrefix<<i->tName<<"& (void) const\n"
+                    "{\n"
+                    "    return "<<i->mName<<";\n"
+                    "}\n"
+                    "\n"
+                    "inline\n"<<
+                    methodPrefix<<"operator "<<methodPrefix<<i->tName<<"& (void)\n"
+                    "{\n"
+                    "    return "<<i->mName<<";\n"
+                    "}\n"
+                    "\n";
+            }
+
             getters <<
                 "\n";
         }
@@ -320,7 +363,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 		}
     }
 
-    // generate member initializers/destructors
+    // generate member initializers
     {
 		{
 	        iterate ( TMembers, i, m_Members ) {
@@ -336,12 +379,28 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     init = i->type->GetInitializer();
                 if ( !init.empty() )
                     code.AddInitializer(i->mName, init);
-                string del = i->type->GetDestructionCode(i->mName);
-                if ( !del.empty() )
-                    code.AddDestructionCode(del);
             }
         }
     }
+
+    // generate Reset method
+    code.ClassPublic() <<
+        "    // reset whole object\n"
+        "    void Reset(void);\n"
+        "\n";
+    if ( generateMainReset ) {
+        code.Methods() <<
+            "void "<<methodPrefix<<"Reset(void)\n"
+            "{\n";
+        iterate ( TMembers, i, m_Members ) {
+            code.Methods() <<
+                "    Reset"<<i->cName<<"();\n";
+        }
+        code.Methods() <<
+            "}\n"
+            "\n";
+    }
+    code.AddDestructionCode("Reset();\n");
 
     // generate type info
     code.Methods() <<
@@ -391,6 +450,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     out <<
         "class "<<GetClassName()<<" : public "<<GetClassName()<<"_Base\n"
         "{\n"
+        "    typedef "<<GetClassName()<<"_Base CBase;\n"
         "public:\n"
         "    // constructors/destructors\n"
         "    "<<GetClassName()<<"(void);\n"
@@ -452,3 +512,9 @@ bool CClassRefTypeStrings::CanBeInSTL(void) const
 {
     return false;
 }
+
+string CClassRefTypeStrings::GetResetCode(const string& var) const
+{
+    return var+".Reset();\n";
+}
+

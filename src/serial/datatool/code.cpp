@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/02/17 20:05:06  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
 * Revision 1.25  2000/02/01 21:47:56  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -71,17 +77,31 @@ CClassCode::CClassCode(CClassContext& owner, const string& className,
 
 CClassCode::~CClassCode(void)
 {
-    CNcbiOstrstream hpp;
-    GenerateHPP(hpp);
-    CNcbiOstrstream cpp;
-    GenerateCPP(cpp);
-    m_Code.AddHPPCode(hpp);
-    m_Code.AddCPPCode(cpp);
+    {
+        CNcbiOstrstream hpp;
+        GenerateHPP(hpp);
+        m_Code.AddHPPCode(hpp);
+    }
+    {
+        CNcbiOstrstream inl;
+        GenerateINL(inl);
+        m_Code.AddINLCode(inl);
+    }
+    {
+        CNcbiOstrstream cpp;
+        GenerateCPP(cpp);
+        m_Code.AddCPPCode(cpp);
+    }
 }
 
 void CClassCode::AddHPPCode(const CNcbiOstrstream& code)
 {
     WriteTabbed(m_ClassPublic, code);
+}
+
+void CClassCode::AddINLCode(const CNcbiOstrstream& code)
+{
+    Write(m_InlineMethods, code);
 }
 
 void CClassCode::AddCPPCode(const CNcbiOstrstream& code)
@@ -149,7 +169,11 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
         "public:\n"
         "    // constructor/destructor\n"
         "    "<<GetClassName()<<"(void);\n"
-        "    "<<(m_VirtualDestructor? "virtual ": "")<<'~'<<GetClassName()<<"(void);\n"
+        "    ";
+    if ( HaveVirtualDestructor() )
+        header << "virtual ";
+    header <<
+        '~'<<GetClassName()<<"(void);\n"
         "\n";
     Write(header, m_ClassPublic);
     header << 
@@ -163,6 +187,12 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
     header <<
         "};\n";
     return header;
+}
+
+CNcbiOstream& CClassCode::GenerateINL(CNcbiOstream& code) const
+{
+    Write(code, m_InlineMethods);
+    return code;
 }
 
 CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
