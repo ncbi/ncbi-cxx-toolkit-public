@@ -271,12 +271,15 @@ on SetProjectData()
 		AddSimpleProject("xcompress", {}, "util:compress")
 		AddSimpleProjectListFiles("tables", {}, "util:tables", {"raw_scoremat.c"})
 		AddSimpleProject("sequtil", {}, "util:sequtil")
+		AddSimpleProject("creaders", {}, "util:creaders")
 		
 		AddSimpleProject("bdb", {"bdb"}, "bdb")
 		
 		AddSimpleProject("xalgoalign", {}, "algo:align")
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProject("xalgognomon", {}, "algo:gnomon")
+		AddSimpleProject("xalgophytree", {}, "algo:phy_tree")
+		AddSimpleProject("fastme", {}, "algo:phy_tree:fastme")
 		set xblastfiles to {Â
 			mkFileDataExceptFiles(gSourceDir & "algo:blast:api", {"db_blast.cpp"}), Â
 			mkFileData(gSourceDir & "algo:blast:core") Â
@@ -356,7 +359,7 @@ on SetProjectData()
 		AddObject("scoremat")
 		-- combine in seq: seq, seqalign, seqblock, seqfeat, seqloc, seqres
 		set seqFileData to {Â
-			ObjectFileData("seq", {"gencode", "seqport_util"}), Â
+			ObjectFileData("seq", {"seqport_util"}), Â
 			ObjectFileData("seqalign", {}), Â
 			ObjectFileData("seqblock", {}), Â
 			ObjectFileData("seqfeat", {}), Â
@@ -404,7 +407,7 @@ on SetProjectData()
 		AddGuiProject("gui_utils", {}, "utils")
 		-- AddGuiProject("gui_config", {}, "config")
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
-			{GuiFileDataList("config", {"feat_config.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "config___.cpp", "config__.cpp"})}))
+			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "config___.cpp", "config__.cpp"})}))
 		
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
@@ -438,7 +441,7 @@ on SetProjectData()
 		-- AddGuiProject("w_dock", {}, "widgets:dock") -- not ready yet.
 		
 		-- AddGuiProject("w_flek", {}, "widgets:Flek") -- use w_fltk instead.
-		-- AddGuiProject("w_seq", {}, "widgets:seq") -- empty
+		AddGuiProject("w_seq", {}, "widgets:seq")
 		--AddGuiProject("w_seq_icon", {}, "widgets:seq_icon") -- empty
 		--AddGuiProject("w_seq_info", {}, "widgets:seq_info") -- empty
 		-- AddGuiProject("w_table", {}, "widgets:table") -- merged into w_fltk
@@ -484,7 +487,7 @@ on SetProjectData()
 		
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"xflat", "ncbi_xloader_lds", "gbseq"})
+			{"xflat", "ncbi_xloader_lds", "gbseq", "xalgophytree", "fastme"})
 		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds", "ncbi_xreader_id1c"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "gui_multi_col_dlg", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
@@ -517,7 +520,7 @@ on SetProjectData()
 		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d", "gui_graph"})
 		AddPlugin("gui_view_table", {}, "plugins:view:table", {})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
-			{"gbseq", "xflat", "xformat", "taxon1", "w_taxtree"})
+			{"gbseq", "xflat", "xformat", "taxon1", "w_taxtree", "w_seq"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
 		
 	end if
