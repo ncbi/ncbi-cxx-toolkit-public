@@ -107,10 +107,10 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
         LookupTableOptionsPtr lookup_options)
 {
    Int4 query_length;
-   register Uint1Ptr seq, pos;
-   register Int4 index;
-   register Int4 ecode, extra_code;
-   register Int4 mask;
+   Uint1Ptr seq, pos;
+   Int4 index;
+   Int4 ecode, extra_code;
+   Int4 mask;
    Int4 ecode1, ecode2;
    Uint1 val, nuc_mask = 0xfc;
    MBLookupTablePtr mb_lt;

@@ -822,7 +822,7 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
    SeqIdPtr query_id, subject_id;
    BLAST_ScoreBlkPtr sbp;
    Uint1 num_frames;
-   Uint1 encoding;
+   Uint1 encoding=-1;
 
    *head_seqalign = NULL;
 

@@ -99,12 +99,12 @@ Int4 LIBCALLBACK BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
        Int4Ptr end_offset)
 {
    LookupTablePtr lookup = (LookupTablePtr) lookup_wrap->lut;
-   register Uint1Ptr s;
+   Uint1Ptr s;
    Uint1Ptr abs_start;
    Int4  index=0, s_off;
    
-   register Int4Ptr lookup_pos;
-   register Int4 num_hits;
+   Int4Ptr lookup_pos;
+   Int4 num_hits;
    Int4 q_off;
    PV_ARRAY_TYPE *pv_array = lookup->pv;
    Int4 total_hits = 0;
@@ -206,7 +206,7 @@ Int4 LIBCALLBACK MB_AG_ScanSubject(const LookupTableWrapPtr lookup_wrap,
        Int4Ptr end_offset)
 {
    MBLookupTablePtr mb_lt = (MBLookupTablePtr) lookup_wrap->lut;
-   register Uint1Ptr s;
+   Uint1Ptr s;
    Uint1Ptr abs_start;
    Int4  index=0, s_off;
    
@@ -285,12 +285,12 @@ Int4 LIBCALLBACK BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits, 
        Int4Ptr end_offset)
 {
-   register Uint1Ptr s;
+   Uint1Ptr s;
    Uint1Ptr s_start, abs_start, s_end;
    Int4  index=0, s_off;
    LookupTablePtr lookup = (LookupTablePtr) lookup_wrap->lut;
-   register Int4Ptr lookup_pos;
-   register Int4 num_hits;
+   Int4Ptr lookup_pos;
+   Int4 num_hits;
    Int4 q_off;
    PV_ARRAY_TYPE *pv_array = lookup->pv;
    Int4 total_hits = 0;

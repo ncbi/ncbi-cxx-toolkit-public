@@ -304,12 +304,12 @@ Int4 LIBCALL
 BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length, 
    Uint1Ptr nt_seq, Int2 frame, Uint1Ptr prot_seq)
 {
-   register int state;
+   int state;
    Int2 total_remainder;
    Int4 prot_length;
-   register int byte_value, codon=-1;
+   int byte_value, codon=-1;
    Uint1 last_remainder, last_byte, remainder;
-   register Uint1Ptr nt_seq_end, nt_seq_start;
+   Uint1Ptr nt_seq_end, nt_seq_start;
    Uint1Ptr prot_seq_start;
    int byte_value1,byte_value2,byte_value3,byte_value4,byte_value5;
    
