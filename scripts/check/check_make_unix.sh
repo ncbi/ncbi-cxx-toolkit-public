@@ -240,7 +240,7 @@ RunTest() {
       if test -f "\$x_app"; then
          # Run check
 		 check_exec="$x_root_dir/scripts/check/check_exec.sh"
-         \$check_exec "\$x_timeout" "\$x_run" >> \$x_test_out 2>&1
+         \$check_exec \$x_timeout \$x_run >> \$x_test_out 2>&1
          result=\$?
 
          # Write result of the test into the his output file
