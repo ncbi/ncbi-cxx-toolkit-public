@@ -155,7 +155,8 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             port,
                                             path.c_str(),
                                             args.c_str(),
-                                            user_header.c_str(),
+                                            user_header.empty()
+                                            ? 0 : user_header.c_str(),
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -291,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2004/06/22 17:00:12  lavr
+ * Handle empty user_header as no-op
+ *
  * Revision 6.31  2004/05/17 20:58:13  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
