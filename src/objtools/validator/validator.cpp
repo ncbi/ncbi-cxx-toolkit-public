@@ -384,6 +384,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_DESCR_Obsolete",
     "SEQ_DESCR_UnnecessaryBioSourceFocus",
     "SEQ_DESCR_RefGeneTrackingWithoutStatus",
+    "SEQ_DESCR_UnwantedCompleteFlag",
 
     "GENERIC_NonAsciiAsn",
     "GENERIC_Spell",
@@ -752,6 +753,9 @@ The data should probably be put into the appropriate field instead.",
 BioSource feature.",
 //  SEQ_DESCR_RefGeneTrackingWithoutStatus
 "The RefGeneTracking user object does not have the required Status field set.",
+//  SEQ_DESCR_UnwantedCompleteFlag
+"The Mol-info.completeness flag should not be set on a genomic sequence unless \
+the title also says it is a complete sequence or complete genome.",
 
 /* SEQ_GENERIC */
 
@@ -1150,6 +1154,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2004/03/10 21:22:35  shomrat
+* + SEQ_DESCR_UnwantedCompleteFlag
+*
 * Revision 1.40  2004/03/01 18:38:58  shomrat
 * Added alternative start codon error
 *

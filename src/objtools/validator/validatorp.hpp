@@ -168,6 +168,7 @@ enum EErrType {
     eErr_SEQ_DESCR_Obsolete,
     eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
     eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
+    eErr_SEQ_DESCR_UnwantedCompleteFlag,
 
     eErr_GENERIC_NonAsciiAsn,
     eErr_GENERIC_Spell,
@@ -649,6 +650,7 @@ private:
     void ValidateCollidingGenes(const CBioseq& seq);
     void x_CompareStrings(const TStrFeatMap& str_feat_map, const string& type,
         EErrType err, EDiagSev sev);
+    void x_ValidateCompletness(const CBioseq& seq, const CMolInfo& mi);
 
     void ValidateSeqDescContext(const CBioseq& seq);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol,
@@ -924,6 +926,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2004/03/10 21:23:09  shomrat
+* + SEQ_DESCR_UnwantedCompleteFlag
+*
 * Revision 1.57  2004/03/01 18:39:21  shomrat
 * Added alternative start codon error
 *
