@@ -89,8 +89,8 @@ BEGIN_NCBI_SCOPE
         static volatile int sx_to_show = count; \
         int to_show = sx_to_show; \
         if ( to_show > 0 ) { \
-            LOG_POST(message); \
             sx_to_show = to_show - 1; \
+            LOG_POST(message); \
         } \
     } while ( false )
 
@@ -100,8 +100,8 @@ BEGIN_NCBI_SCOPE
         static volatile int sx_to_show = count; \
         int to_show = sx_to_show; \
         if ( to_show > 0 ) { \
-            ERR_POST(message); \
             sx_to_show = to_show - 1; \
+            ERR_POST(message); \
         } \
     } while ( false )
 
@@ -927,6 +927,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.73  2004/06/15 14:12:42  vasilche
+ * Fixed order of commands in LOGPOST_ONCE to reduce number of messages.
+ *
  * Revision 1.72  2004/04/26 19:28:24  ucko
  * Make previous change compiler-dependent due to MSVC bugginess.
  *
