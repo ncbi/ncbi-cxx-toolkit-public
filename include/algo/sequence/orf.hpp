@@ -32,6 +32,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <algorithm>
@@ -186,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/08/19 17:40:02  rsmith
+ * include Seq_interval.hpp
+ *
  * Revision 1.8  2003/08/19 10:21:24  dicuccio
  * Compilation fixes - use objects:: namespace where appropriate
  *
