@@ -254,6 +254,7 @@ private:
         int score;
         double bits;
         double eValue;
+        int use_this_gi;
     };
 
     struct alnFeatureInfo {
@@ -304,7 +305,7 @@ private:
     MiddleLineStyle m_MidLineStyle;
       // helper functions
     void DisplayAlnvec(CNcbiOstream & out);
-    const void PrintDefLine(const CBioseq_Handle & bspHandle,
+    const void PrintDefLine(const CBioseq_Handle & bspHandle, int use_this_gi,
                             CNcbiOstream & out) const;
     // display sequence, start is seqalign coodinate
     const void OutputSeq(string & sequence, const CSeq_id & id, int start, 
@@ -316,7 +317,7 @@ private:
         GetBlastDefline(const CBioseq_Handle& handle) const;
     void AddLinkout(const CBioseq & cbsp, const CBlast_def_line & bdl,
                     int firstGi, int gi, CNcbiOstream & out) const;
-    string getUrl(const list < CRef < CSeq_id > >&ids, int row) const;
+    string getUrl(const list < CRef < CSeq_id > >&ids, int gi, int row) const;
     string getDumpgnlLink(const list < CRef < CSeq_id > >&ids, int row,
                           const string & alternativeUrl) const;
     void getFeatureInfo(list < alnFeatureInfo * >&feature, CScope & scope,
@@ -354,6 +355,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.19  2004/07/12 15:22:12  jianye
+*Handles use_this_gi in alignment score structure
+*
 *Revision 1.18  2004/04/14 16:29:46  jianye
 *change GetBlastDefline parameter
 *
