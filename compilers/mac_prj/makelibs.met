@@ -56,7 +56,7 @@ on SimpleProjectData(projName, features, section, fileList)
 		set projName to characters 1 through 18 of projName as string
 	end if
 	
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.1.0.3"
 		
 		if features does not contain "C" and features does not contain "C++" then
 			error "Project " & projName & "'s default language (a feature) must be C or C++."
@@ -125,8 +125,9 @@ on SetProjectData()
 	end if
 	
 	AddSimpleProject("corelib", {"C++"}, "corelib", ¬
-		{"ncbiapp", "ncbiargs", "ncbidiag", "ncbienv", "ncbiexpt", "ncbiobj", "ncbireg", "ncbistd", ¬
-			"ncbistre", "ncbithr", "ncbitime", "ncbimtx", "ncbi_safe_static", "ncbi_system"})
+		{"ncbiapp", "ncbiargs", "ncbidiag", "ncbienv", "ncbiexpt", "ncbifile", "ncbiobj", "ncbireg", ¬
+			"ncbistd", "ncbistre", "ncbithr", "ncbitime", "ncbimtx", "ncbi_safe_static", "ncbi_system", ¬
+			"ncbi_os_mac"})
 	
 	AddSimpleProject("util", {"C++"}, "util", ¬
 		{"bytesrc", "strbuffer", "checksum", "itree"})
@@ -204,8 +205,11 @@ end CopyHeaders
 -- Global variables
 --
 
+global gIsOSX
 global gStartupDisk
-global gMW6root
+global gHomeDir
+global gDevDir
+global gMWroot
 global gMWCWfolder
 global gMacLibs
 global gStubLibs
@@ -241,12 +245,39 @@ on ResolveAlias(pathname)
 	end tell
 end ResolveAlias
 
+on IsOSX()
+	tell application "Finder"
+		
+		set vers to the version as string as number
+		return vers > 10 or vers = 10
+		
+	end tell
+end IsOSX
+
+on HomeDir()
+	tell application "Finder"
+		
+		if my IsOSX() then
+			return the home as string
+		else
+			return gStartupDisk
+		end if
+		
+	end tell
+end HomeDir
+
+on DevDir()
+	
+	return ResolveAlias(HomeDir() & "Development")
+	
+end DevDir
+
 on SandboxDir()
 	
 	-- "<Boot>:Development:Trees:NCBI:vault.ncbi:"
+	-- "<Boot>:Users:<User>:Development:Trees:NCBI:vault.ncbi:"
 	
-	set Dev to ResolveAlias(gStartupDisk & "Development")
-	set Trees to ResolveAlias(Dev & "Trees")
+	set Trees to ResolveAlias(DevDir() & "Trees")
 	set NCBIgroup to ResolveAlias(Trees & "NCBI")
 	set Vault to ResolveAlias(NCBIgroup & "vault.ncbi")
 	return Vault
@@ -257,8 +288,7 @@ on DistribDir()
 	
 	-- "<Boot>:Development:NCBI:"
 	-- This is NOT the "distrib" directory!  This is where toolkit distributions go.
-	set Dev to ResolveAlias(gStartupDisk & "Development")
-	return ResolveAlias(Dev & "NCBI")
+	return ResolveAlias(DevDir() & "NCBI")
 	
 end DistribDir
 
@@ -270,7 +300,7 @@ on CToolkitRoot()
 		try
 			set modRoot to ResolveAlias(SandboxDir() & "distrib")
 		on error
-			set modRoot to ResolveAlias(gMW6root & "ncbi")
+			set modRoot to ResolveAlias(gMWroot & "ncbi")
 		end try
 	end try
 	
@@ -286,7 +316,7 @@ on CPlusPlusToolkitRoot()
 		try
 			set modRoot to ResolveAlias(ResolveAlias(SandboxDir() & "internal") & "c++")
 		on error
-			set modRoot to ResolveAlias(gMW6root & "cxx")
+			set modRoot to ResolveAlias(gMWroot & "cxx")
 		end try
 	end try
 	
@@ -304,10 +334,28 @@ on ModuleRoot()
 	
 end ModuleRoot
 
+on MWRootDir()
+	
+	set mwRoot to ""
+	set mwLocations to {gStartupDisk, gStartupDisk & "Applications:", gStartupDisk & "Applications (Mac OS 9):"}
+	repeat with mwVersion from 6 to 7
+		set dirName to "Metrowerks CodeWarrior " & mwVersion & ".0"
+		repeat with mwLoc in mwLocations
+			try
+				set mwRoot to ResolveAlias(mwLoc & dirName)
+				return mwRoot
+			end try
+		end repeat
+	end repeat
+	
+	error "Can't find the Metrowerks CodeWarrior folder."
+	
+end MWRootDir
+
 on FindOpenGL()
 	tell application "Finder"
 		
-		set results to every folder of folder gMW6root whose name starts with "OpenGL SDK"
+		set results to every folder of folder gMWroot whose name starts with "OpenGL SDK"
 		if (count results) > 0 then
 			set dir to item 1 of results as string
 		else
@@ -325,8 +373,10 @@ on SetGlobals()
 		set gProjectData to {}
 		
 		set gStartupDisk to startup disk as string
-		set gMW6root to gStartupDisk & "Metrowerks CodeWarrior 6.0:"
-		set gMWCWfolder to gMW6root & "Metrowerks CodeWarrior:"
+		set gIsOSX to my IsOSX()
+		set gHomeDir to my HomeDir()
+		set gMWroot to my MWRootDir()
+		set gMWCWfolder to gMWroot & "Metrowerks CodeWarrior:"
 		set gMacLibs to gMWCWfolder & "MacOS Support:Universal:Libraries:"
 		set gStubLibs to gMacLibs & "StubLibraries:"
 		set gPPCLibs to gMacLibs & "PPCLibraries:"
