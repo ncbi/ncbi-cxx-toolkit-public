@@ -45,6 +45,7 @@ extern "C" {
 #ifndef sfree
 #define sfree(x) __sfree((void**)&(x))
 #endif
+NCBI_XBLAST_EXPORT
 void __sfree(void** x); /* implemented in lib/util.c */
 
 /******************** Preprocessor definitions ******************************/
