@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/17 04:20:50  thiessen
+* now does correct structure alignment transformation
+*
 * Revision 1.8  2000/07/16 23:19:11  thiessen
 * redo of drawing system
 *
@@ -65,11 +68,19 @@
 #include <objects/mmdb1/Mmdb_id.hpp>
 #include <objects/mmdb1/Biostruc_descr.hpp>
 #include <objects/mmdb2/Biostruc_model.hpp>
+#include <objects/mmdb3/Biostruc_feature_set.hpp>
+#include <objects/mmdb3/Biostruc_feature.hpp>
+#include <objects/mmdb3/Chem_graph_alignment.hpp>
+#include <objects/mmdb3/Transform.hpp>
+#include <objects/mmdb3/Move.hpp>
+#include <objects/mmdb3/Trans_matrix.hpp>
+#include <objects/mmdb3/Rot_matrix.hpp>
 
 #include "cn3d/structure_set.hpp"
 #include "cn3d/coord_set.hpp"
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/atom_set.hpp"
+#include "cn3d/opengl_renderer.hpp"
 
 USING_NCBI_SCOPE;
 using namespace objects;
@@ -91,12 +102,19 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
         objects.push_back(object);
 
     } else if (mime.IsAlignstruc()) {
+        TESTMSG("Master:");
         object = new StructureObject(this, mime.GetAlignstruc().GetMaster(), true);
         objects.push_back(object);
         const CBiostruc_align::TSlaves& slaves = mime.GetAlignstruc().GetSlaves();
 		CBiostruc_align::TSlaves::const_iterator i, e=slaves.end();
         for (i=slaves.begin(); i!=e; i++) {
+            TESTMSG("Slave:");
             object = new StructureObject(this, i->GetObject(), false);
+            if (!object->SetTransformToMaster(
+                    mime.GetAlignstruc().GetAlignments(),
+                    objects.front()->mmdbID))
+                ERR_POST(Error << "Can't get alignment for slave " << object->pdbID
+                    << " with master " << objects.front()->pdbID);
             objects.push_back(object);
         }
 
@@ -160,17 +178,84 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
     graph = new ChemicalGraph(this, biostruc.GetChemical_graph());
 }
 
+bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int masterMMDBID)
+{
+    CBiostruc_annot_set::TFeatures::const_iterator f1, f1e=annot.GetFeatures().end();
+    for (f1=annot.GetFeatures().begin(); f1!=f1e; f1++) {
+        CBiostruc_feature_set::TFeatures::const_iterator f2, f2e=f1->GetObject().GetFeatures().end();
+        for (f2=f1->GetObject().GetFeatures().begin(); f2!=f2e; f2++) {
+        
+            // look for alignment feature
+            if (f2->GetObject().IsSetType() &&
+				f2->GetObject().GetType() == CBiostruc_feature::eType_alignment &&
+                f2->GetObject().GetLocation().IsAlignment()) {
+                const CChem_graph_alignment& graphAlign =
+					f2->GetObject().GetLocation().GetAlignment();
+
+                // find transform alignment of this object with master
+                if (graphAlign.GetDimension() == 2 &&
+                    graphAlign.GetBiostruc_ids().size() == 2 &&
+                    graphAlign.IsSetTransform() &&
+                    graphAlign.GetTransform().size() == 1 &&
+                    graphAlign.GetBiostruc_ids().front().GetObject().IsMmdb_id() &&
+                    graphAlign.GetBiostruc_ids().front().GetObject().GetMmdb_id().Get() == masterMMDBID &&
+                    graphAlign.GetBiostruc_ids().back().GetObject().IsMmdb_id() &&
+                    graphAlign.GetBiostruc_ids().back().GetObject().GetMmdb_id().Get() == mmdbID) {
+
+                    TESTMSG("Got transform for " << pdbID << "->master");
+                    // unpack transform into matrix, moves in reverse order;
+                    Matrix xform;
+                    transformToMaster = new Matrix();
+                    CTransform::TMoves::const_iterator 
+                        m, me=graphAlign.GetTransform().front().GetObject().GetMoves().end();
+                    for (m=graphAlign.GetTransform().front().GetObject().GetMoves().begin(); m!=me; m++) {
+                        Matrix xmat;
+                        double scale;
+                        if (m->GetObject().IsTranslate()) {
+                            const CTrans_matrix& trans = m->GetObject().GetTranslate();
+                            scale = 1.0 / trans.GetScale_factor();
+                            SetTranslationMatrix(&xmat,
+                                Vector(scale * trans.GetTran_1(),
+                                       scale * trans.GetTran_2(),
+                                       scale * trans.GetTran_3()));
+                        } else { // rotate
+                            const CRot_matrix& rot = m->GetObject().GetRotate();
+                            scale = 1.0 / rot.GetScale_factor();
+                            xmat.m[0]=scale*rot.GetRot_11(); xmat.m[1]=scale*rot.GetRot_21(); xmat.m[2]= scale*rot.GetRot_31(); xmat.m[3]=0;
+                            xmat.m[4]=scale*rot.GetRot_12(); xmat.m[5]=scale*rot.GetRot_22(); xmat.m[6]= scale*rot.GetRot_32(); xmat.m[7]=0;
+                            xmat.m[8]=scale*rot.GetRot_13(); xmat.m[9]=scale*rot.GetRot_23(); xmat.m[10]=scale*rot.GetRot_33(); xmat.m[11]=0;
+                            xmat.m[12]=0;                    xmat.m[13]=0;                    xmat.m[14]=0;                     xmat.m[15]=1;
+                        }
+                        ComposeInto(transformToMaster, xmat, xform);
+                        xform = *transformToMaster;
+                    }
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 // override DrawAll so that the graph will be applied to each CoordSet
 bool StructureObject::DrawAll(const StructureBase *data) const
 {
     TESTMSG("drawing StructureObject " << pdbID);
     
+    // apply relative transformation if this is a slave structure
+    const StructureSet *parentSet;
+    if (!GetParentOfType(&parentSet)) {
+        ERR_POST(Error << "StructureObject::DrawAll(): can't get StructureSet parent");
+        return false;
+    }
+    if (!isMaster && parentSet->renderer)
+        parentSet->renderer->PushMatrix(transformToMaster);
+
     // if this is the only StructureObject in this StructureSet, and if this
     // StructureObject has only one CoordSet, and if this CoordSet's AtomSet
     // has multiple ensembles, then draw multiple altConf ensembles
-    const StructureSet *parentSet;
     if (coordSets.size() == 1 && coordSets.front()->atomSet->ensembles.size() > 1 &&
-        GetParentOfType(&parentSet) && parentSet->objects.size() == 1) {
+        parentSet->objects.size() == 1) {
         AtomSet *atomSet = coordSets.front()->atomSet;
         AtomSet::EnsembleList::iterator e, ee=atomSet->ensembles.end();
         for (e=atomSet->ensembles.begin(); e!=ee; e++) {
@@ -188,7 +273,11 @@ bool StructureObject::DrawAll(const StructureBase *data) const
             if (!(graph->DrawAll((*c)->atomSet))) return true;
         }
     }
-	return true;
+    // revert GL matrix
+    if (!isMaster && parentSet->renderer)
+        parentSet->renderer->PopMatrix();
+
+    return true;
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/17 04:20:50  thiessen
+* now does correct structure alignment transformation
+*
 * Revision 1.2  2000/07/16 23:19:11  thiessen
 * redo of drawing system
 *
@@ -61,16 +64,19 @@ using namespace objects;
 BEGIN_SCOPE(Cn3D)
 
 const char Residue::NO_CODE = '?';
+const int Residue::NO_ALPHA_ID = -1;
+
 
 Residue::Residue(StructureBase *parent,
     const CResidue& residue, int moleculeID,
     const ResidueGraphList& standardDictionary,
     const ResidueGraphList& localDictionary) :
-    StructureBase(parent), code(NO_CODE)
+    StructureBase(parent), code(NO_CODE), alphaID(NO_ALPHA_ID)
 {
     // get ID
     id = residue.GetId().Get();
 
+    // get CResidue_graph*
     // standard (of correct type) or local dictionary?
     const ResidueGraphList *dictionary;
     int graphID;
@@ -98,7 +104,7 @@ Residue::Residue(StructureBase *parent,
     }
     if (!residueGraph) 
         ERR_POST(Fatal << "confused by Molecule #?, Residue #" << id 
-                       << "; can't find Residue-graph #" << graphID);
+            << "; can't find Residue-graph ID #" << graphID);
 
     // get iupac-code if present - assume it's the first character of the first VisibleString
     if (residueGraph->IsSetIupac_code())
@@ -122,6 +128,16 @@ Residue::Residue(StructureBase *parent,
         return;
     }
 
+    // name of alpha atom to store ID of
+    const char *alphaName = NULL;
+    if (residueGraph->IsSetResidue_type()) {
+        if (residueGraph->GetResidue_type() == CResidue_graph::eResidue_type_amino_acid)
+            alphaName = " CA ";
+        else if (residueGraph->GetResidue_type() == CResidue_graph::eResidue_type_amino_acid ||
+                 residueGraph->GetResidue_type() == CResidue_graph::eResidue_type_amino_acid)
+            alphaName = " P  ";
+    }
+
     // get atom info
     CResidue_graph::TAtoms::const_iterator a, ae = residueGraph->GetAtoms().end();
     for (a=residueGraph->GetAtoms().begin(); a!=ae; a++) {
@@ -136,6 +152,10 @@ Residue::Residue(StructureBase *parent,
             if (!((*c)->atomSet->GetAtom(moleculeID, id, atom.GetId().Get(), true, true))) break;
         }
         if (c != ce) continue;
+
+        // store alphaID
+        if (alphaName && atom.IsSetName() && atom.GetName()==alphaName)
+            alphaID = atom.GetId().Get();
 
         AtomInfo *info = new AtomInfo;
         // get name if present
@@ -211,7 +231,7 @@ bool Residue::Draw(const StructureBase *data) const
 
         // draw sphere
         const Element *element = PeriodicTable.GetElement(a->second->atomicNumber);
-        set->renderer->DrawSphere(atom->site, 0.4 /*element->vdWRadius*/, element->color);
+        //set->renderer->DrawSphere(atom->site, 0.4 /*element->vdWRadius*/, element->color);
     }
 
     return true;

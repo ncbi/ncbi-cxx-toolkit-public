@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/17 04:20:49  thiessen
+* now does correct structure alignment transformation
+*
 * Revision 1.2  2000/07/16 23:19:11  thiessen
 * redo of drawing system
 *
@@ -81,6 +84,8 @@ Molecule::Molecule(StructureBase *parent,
     if (graph.IsSetInter_residue_bonds()) {
         CMolecule_graph::TInter_residue_bonds::const_iterator j, je=graph.GetInter_residue_bonds().end();
         for (j=graph.GetInter_residue_bonds().begin(); j!=je; j++) {
+            
+            // regular peptide bonds 
             int order = j->GetObject().IsSetBond_order() ? 
                 j->GetObject().GetBond_order() : Bond::eUnknown;
             const Bond *bond = MakeBond(this, 
@@ -88,6 +93,18 @@ Molecule::Molecule(StructureBase *parent,
                 j->GetObject().GetAtom_id_2(),
                 order);
             if (bond) interResidueBonds.push_back(bond);
+
+            // virtual bonds
+            int alphaID1 = residues[j->GetObject().GetAtom_id_1().GetResidue_id().Get()]->alphaID;
+            if (alphaID1 == Residue::NO_ALPHA_ID) continue;
+            int alphaID2 = residues[j->GetObject().GetAtom_id_2().GetResidue_id().Get()]->alphaID;
+            if (alphaID2 == Residue::NO_ALPHA_ID) continue;
+            bond = MakeBond(this, 
+                id, j->GetObject().GetAtom_id_1().GetResidue_id().Get(), alphaID1,
+                id, j->GetObject().GetAtom_id_2().GetResidue_id().Get(), alphaID2,
+                Bond::eSingle);
+            if (bond) virtualBonds.push_back(bond);
+            
         }
     }
 }

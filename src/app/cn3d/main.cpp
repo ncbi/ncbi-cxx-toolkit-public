@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/17 04:20:49  thiessen
+* now does correct structure alignment transformation
+*
 * Revision 1.8  2000/07/12 23:27:49  thiessen
 * now draws basic CPK model
 *
@@ -104,7 +107,7 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
     } else {
         if (!logFrame) {
             logFrame = new MsgFrame(NULL, -1, "Cn3D++ Message Log", 
-                wxPoint(50, 50), wxSize(400, 200), wxDEFAULT_FRAME_STYLE);
+                wxPoint(50, 50), wxSize(400, 400), wxDEFAULT_FRAME_STYLE);
             logFrame->SetSizeHints(150, 100);
             logText = new wxTextCtrl(logFrame, -1, "", 
                 wxPoint(0,0), wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
@@ -125,7 +128,7 @@ bool Cn3DApp::OnInit(void)
     SetDiagPostLevel(eDiag_Info); // report all messages
 
     // Create the main frame window
-    frame = new Cn3DMainFrame(NULL, "Cn3D++", wxPoint(50, 50), wxSize(400, 400),
+    frame = new Cn3DMainFrame(NULL, "Cn3D++", wxPoint(450, 50), wxSize(400, 400),
         wxDEFAULT_FRAME_STYLE);
 
     // get file name from command line for now
@@ -186,7 +189,7 @@ Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoin
     glCanvas->SetCurrent();
 
     // center and Show the frame
-    Centre(wxBOTH);
+    //Centre(wxBOTH);
     Show(TRUE);
 }
 

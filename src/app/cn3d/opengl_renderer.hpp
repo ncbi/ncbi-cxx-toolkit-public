@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/17 04:21:09  thiessen
+* now does correct structure alignment transformation
+*
 * Revision 1.3  2000/07/16 23:18:34  thiessen
 * redo of drawing system
 *
@@ -99,6 +102,11 @@ public:
 
     // constructs the structure display lists (but doesn't draw them)
     void Construct(void);
+
+    // push the global view matrix, then apply transformation (e.g., for structure alignment)
+    void PushMatrix(const Matrix* xform) const;
+    // pop matrix
+    void PopMatrix(void) const;
 
     // drawing methods
     void DrawSphere(const Vector& site, double radius, const Vector& color);

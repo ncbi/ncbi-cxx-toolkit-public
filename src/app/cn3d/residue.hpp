@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/17 04:21:10  thiessen
+* now does correct structure alignment transformation
+*
 * Revision 1.2  2000/07/16 23:18:34  thiessen
 * redo of drawing system
 *
@@ -77,6 +80,8 @@ public:
     static const char NO_CODE;
     char code;
     std::string name;
+    static const int NO_ALPHA_ID;
+    int alphaID; // ID of "alpha" atom (C-alpha or P)
 
     typedef struct {
         std::string name, code;

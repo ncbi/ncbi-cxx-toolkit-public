@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/17 04:21:10  thiessen
+* now does correct structure alignment transformation
+*
 * Revision 1.8  2000/07/16 23:18:35  thiessen
 * redo of drawing system
 *
@@ -64,8 +67,10 @@
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/mmdb1/Biostruc.hpp>
+#include <objects/mmdb1/Biostruc_annot_set.hpp>
 
 #include "cn3d/structure_base.hpp"
+#include "cn3d/vector_math.hpp"
 
 USING_NCBI_SCOPE;
 using namespace objects;
@@ -110,6 +115,7 @@ public:
     static const int NO_MMDB_ID;
     int mmdbID;
     std::string pdbID;
+    Matrix *transformToMaster;
 
     // an object has one ChemicalGraph that can be applied to one or more 
     // CoordSets to generate the object's model(s)
@@ -119,6 +125,7 @@ public:
 
     // public methods
     bool DrawAll(const StructureBase *data) const;
+    bool SetTransformToMaster(const CBiostruc_annot_set& annot, int masterMMDBID);
 
 private:
 };

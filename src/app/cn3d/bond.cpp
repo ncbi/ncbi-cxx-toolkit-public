@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/17 04:20:49  thiessen
+* now does correct structure alignment transformation
+*
 * Revision 1.2  2000/07/16 23:19:10  thiessen
 * redo of drawing system
 *
@@ -136,11 +139,23 @@ bool Bond::Draw(const StructureBase *data) const
             ERR_POST(Warning << "Bond::Draw() - can't get ChemicalGraph parent");
             return false;
         }
+        // color by object for now
+        const StructureObject *object;
+        GetParentOfType(&object);
+        Vector color;
+        if (object->isMaster)
+            color = Vector(1,0,1); // magenta master
+        else
+            color = Vector(0,1,0); // green slaves
+        set->renderer->DrawLine(a1->site, a2->site, color, color);
+        /*
+        // color by element for now
         const Residue::AtomInfo *info = graph->GetAtomInfo(atom1.mID, atom1.rID, atom1.aID);
         const Element *element1 = PeriodicTable.GetElement(info->atomicNumber);
         info = graph->GetAtomInfo(atom2.mID, atom2.rID, atom2.aID);
         const Element *element2 = PeriodicTable.GetElement(info->atomicNumber);
         set->renderer->DrawLine(a1->site, a2->site, element1->color, element2->color);
+        */
     }
 
     return true;

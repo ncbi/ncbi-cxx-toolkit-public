@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/17 04:21:09  thiessen
+* now does correct structure alignment transformation
+*
 * Revision 1.2  2000/07/16 23:18:34  thiessen
 * redo of drawing system
 *
@@ -90,6 +93,7 @@ public:
     ResidueMap residues;
     typedef LIST_TYPE < const Bond * > BondList;
     BondList interResidueBonds;
+    BondList virtualBonds;
 
     // public methods
     bool IsProtein(void) { return (type == eProtein); }

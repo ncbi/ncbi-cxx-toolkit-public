@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/17 04:20:49  thiessen
+* now does correct structure alignment transformation
+*
 * Revision 1.3  2000/07/16 23:19:11  thiessen
 * redo of drawing system
 *
@@ -399,6 +402,23 @@ void OpenGLRenderer::ConstructLogo(void)
     }
 
     glEndList();
+}
+
+void OpenGLRenderer::PushMatrix(const Matrix* m) const
+{
+    glPushMatrix();
+    GLdouble g[16];
+    // convert from Matrix to GL-matrix ordering
+    g[0]=m->m[0];  g[4]=m->m[1];  g[8]=m->m[2];   g[12]=m->m[3];
+    g[1]=m->m[4];  g[5]=m->m[5];  g[9]=m->m[6];   g[13]=m->m[7];
+    g[2]=m->m[8];  g[6]=m->m[9];  g[10]=m->m[10]; g[14]=m->m[11];
+    g[3]=m->m[12]; g[7]=m->m[13]; g[11]=m->m[14]; g[15]=m->m[15];
+    glMultMatrixd(g);
+}
+
+void OpenGLRenderer::PopMatrix(void) const
+{
+    glPopMatrix();
 }
 
 void OpenGLRenderer::DrawSphere(const Vector& site, double radius, const Vector& color)
