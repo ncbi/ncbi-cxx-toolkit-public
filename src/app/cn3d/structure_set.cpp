@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2002/06/07 12:41:04  thiessen
+* change ambiguous master error to warning
+*
 * Revision 1.102  2002/06/05 17:50:08  thiessen
 * title tweaks
 *
@@ -628,7 +631,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
 
     // if still ambiguous, just use the first one
     if (!master) {
-        ERR_POST(Error << "Ambiguous master; using " << seq1->identifier->ToString());
+        ERR_POST(Warning << "Ambiguous master; using " << seq1->identifier->ToString());
         master = seq1;
     }
 
