@@ -183,32 +183,6 @@ list< CRef< CSeq_id > > GetSeqIdsForGI(int gi);
 bool IsResidue(unsigned char res);
 
 
-// =============================================================================
-// AnyObj:
-//
-// Returns true if an object of type T is embedded in object of type K,
-// else false.
-// =============================================================================
-template <class T, class K>
-bool AnyObj(const K& obj)
-{
-    CTypeConstIterator<T> i(ConstBegin(obj));
-    return i ? true : false;
-}
-
-
-// ====================  Debug only -- remove before release  ==================
-
-
-template<class T>
-void display_object(const T& obj)
-{
-    auto_ptr<CObjectOStream> os (CObjectOStream::Open(eSerial_AsnText, cout));
-    *os << obj;
-    cout << endl;
-}
-
-
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -218,6 +192,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/04/15 14:48:13  shomrat
+* Removed AnyObj and display_object
+*
 * Revision 1.9  2003/03/31 14:38:46  shomrat
 * $id: -> $id$
 *
