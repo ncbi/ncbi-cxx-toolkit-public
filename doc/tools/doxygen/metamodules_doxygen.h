@@ -448,19 +448,23 @@
  *  Algorithm members
  */
 
-/** @defgroup AlgoExcep Algorithm Exceptions
+/** @defgroup AlgoAlignExcep Global Alignment Algorithm Exceptions
  *  @ingroup ALGO
  */
 
-/** @defgroup AlgoGlobal Global Alignment Algorithm
+/** @defgroup AlgoAlignFormat Global Alignment Formatter
  *  @ingroup ALGO
  */
 
-/** @defgroup AlgoGlobalmRna Global Alignment with mRna, Dna
+/** @defgroup AlgoAlignRoot Generic Global(Needleman-Wunsch) Alignment Algorithm
  *  @ingroup ALGO
  */
 
-/** @defgroup AlgoAlignMM Myers & Milner Global Alignment Algorithm
+/** @defgroup AlgoAlignMM Linear Space Global Alignment Algorithm
+ *  @ingroup ALGO
+ */
+
+/** @defgroup AlgoAlignSpliced Spliced cDna-to-Genomic Alignment Algorithms
  *  @ingroup ALGO
  */
 
