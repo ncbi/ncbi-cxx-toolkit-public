@@ -674,7 +674,7 @@ Int4 PHIBlastIndexQuery(PHILookupTable* lookup,
 {
    ListNode* loc;
    Int4 from, to;
-   Int4 offset, loc_length;
+   Int4 loc_length;
    Uint1* sequence;
    patternSearchItems* pattern_info = lookup->pattern_info;
    Int4* hitArray;
@@ -686,7 +686,6 @@ Int4 PHIBlastIndexQuery(PHILookupTable* lookup,
       from = ((DoubleInt*) loc->ptr)->i1;
       to = ((DoubleInt*) loc->ptr)->i2;
       loc_length = to - from + 1;
-      offset = 0;
       sequence = query->sequence + from;
       
       twiceNumHits = FindPatternHits(hitArray, sequence, loc_length, is_dna,
@@ -719,7 +718,7 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
         Int4* offset_ptr, Uint4 * query_offsets, Uint4 * subject_offsets, 
         Int4 array_size)
 {
-   Uint1* subject, *query, *subject_start;
+   Uint1* subject, *query;
    PHILookupTable* lookup = (PHILookupTable*) lookup_wrap->lut;
    Int4 index, count = 0, twiceNumHits, i;
    Int4 *start_offsets = lookup->start_offsets;
@@ -728,7 +727,7 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
    Int4 hitArray[MAX_HIT];
 
    query = query_blk->sequence;
-   subject = subject_start = subject_blk->sequence;
+   subject = subject_blk->sequence;
    /* It must be guaranteed that all pattern matches for a given 
       subject sequence are processed in one call to this function.
    */

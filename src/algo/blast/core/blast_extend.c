@@ -782,7 +782,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
    Uint1* s_start = subject->sequence;
    Uint1* abs_start = s_start;
    Int4 i;
-   Uint1* s,* s_end;
+   Uint1* s;
    Uint1* q_start = query->sequence;
    Int4 hitsfound, total_hits = 0;
    Uint4 word_size, compressed_wordsize, reduced_word_length;
@@ -794,7 +794,6 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
 
    word_size = COMPRESSION_RATIO*lookup->wordsize;
    last_start = subject->length - word_size;
-   s_end = subject->sequence + subject->length/COMPRESSION_RATIO;
    start_offset = 0;
 
    compressed_wordsize = lookup->reduced_wordsize;

@@ -1118,7 +1118,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
                           hsp_list, thr_info);
    }
    
-   return 0; 
+   return status; 
 }
 
 Int2 BLAST_ResultsInit(Int4 num_queries, BlastHSPResults** results_ptr)

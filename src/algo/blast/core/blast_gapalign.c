@@ -3086,14 +3086,6 @@ Int2 PHIGetGappedScore (Uint1 program_number,
    {
       init_hsp = init_hsp_array[index];
 
-      if (!init_hsp->ungapped_data) {
-         q_start = init_hsp->q_off;
-         s_start = init_hsp->s_off;
-      } else {
-         q_start = init_hsp->ungapped_data->q_start;
-         s_start = init_hsp->ungapped_data->s_start;
-      }
-
       status =  PHIGappedAlignment(program_number, query, 
                    subject, gap_align, score_options, init_hsp);
 

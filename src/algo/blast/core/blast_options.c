@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.76  2004/02/02 18:49:32  dondosha
+ * Fixes for minor compiler warnings
+ *
  * Revision 1.75  2003/12/31 20:04:47  dondosha
  * Round best stride to a number divisible by 4 for all values except 6 and 7
  *
@@ -1113,7 +1116,7 @@ Int2 BlastHitSavingOptionsNew(Uint1 program_number,
 
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
-   Boolean is_gapped, double evalue, Int4 hitlist_size)
+                           double evalue, Int4 hitlist_size)
 {
    if (!options)
       return 1;

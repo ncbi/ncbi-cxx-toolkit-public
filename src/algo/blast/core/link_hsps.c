@@ -48,13 +48,11 @@ SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp,
    BlastHSP* head_hsp, BlastHSP* hsp, Int4* sumscore)
 {
    double gap_prob, gap_decay_rate, sum_evalue, score_prime;
-   Int4 gap_size;
    Int2 num;
    Int4 subject_eff_length, query_eff_length, length_adjustment;
    Int4 context = head_hsp->context;
    double eff_searchsp;
 
-   gap_size = hit_params->gap_size;
    gap_prob = hit_params->gap_prob;
    gap_decay_rate = hit_params->gap_decay_rate;
 
@@ -418,7 +416,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    BlastHSP** hsp_array;
 	BLAST_KarlinBlk** kbp;
 	Int4 maxscore, cutoff[2];
-	Boolean frame_change, linked_set, ignore_small_gaps;
+	Boolean linked_set, ignore_small_gaps;
 	double gap_decay_rate, gap_prob, prob[2];
 	Int4 index, index1, ordering_method, num_links, frame_index;
    Int4 num_query_frames, num_subject_frames;
@@ -489,7 +487,6 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 
 /* hook up the HSP's */
 	hp_frame_start[0] = hsp_array[0];
-	frame_change = FALSE;
 
 	/* Put entries with different frame parity into separate 'query_frame's. -cfj */
 	{
@@ -511,7 +508,6 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
            hp_frame_start[cur_frame] = H;
            H->prev->next = NULL;
            H->prev = NULL;
-           frame_change = TRUE;
         }
      }
      num_query_frames = cur_frame+1;
@@ -561,9 +557,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 
       while (number_of_hsps > 0)
       {
-         Int4 last[3];
          Int4 max[3];
-         last[0]=last[1]=last[2]=0;
          max[0]=max[1]=max[2]=-10000;
          /* Initialize the 'best' parameter */
          best[0] = best[1] = NULL;
@@ -641,10 +635,6 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                lh_helper[H_index].s_off_trim = s_off_t;
                for(i=0;i<BLAST_NUMBER_OF_ORDERING_METHODS;i++)
                   lh_helper[H_index].sum[i] = H->hsp_link.sum[i];
-               /* lh_helper[H_index].s_frame = SIGN(s_frame);
-                * lh_helper[H_index].prev_same = last[SIGN(s_frame)+1];
-                * last[SIGN(s_frame)+1]=H_index;
-                */
                max[SIGN(s_frame)+1]=
                   MAX(max[SIGN(s_frame)+1],H->hsp_link.sum[1]);
                lh_helper[H_index].maxsum1 =max[SIGN(s_frame)+1];					   

@@ -147,8 +147,8 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
    }
 
    template_type = GetDiscTemplateType(lookup_options->word_size,
-                                     lookup_options->mb_template_length, 
-                                     lookup_options->mb_template_type);
+                      lookup_options->mb_template_length, 
+                      (DiscWordType)lookup_options->mb_template_type);
    query_length = query->length;
    mb_lt = (MBLookupTable*) calloc(1, sizeof(MBLookupTable));
     
