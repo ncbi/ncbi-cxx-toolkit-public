@@ -22,6 +22,9 @@
 # include <OSUtils.h> /* for SysBeep */
 # include <Events.h> /* for TickCount */
 # include <Stdio.h>
+#ifdef __MWERKS__
+#include <MacTCP.h>
+#endif
 
 
 # include <s_types.h>
@@ -46,6 +49,43 @@ extern SpinFn spinroutine;	/* The spin routine. */
 static void sock_tcp_send_done(TCPiopb *pb);
 static void sock_tcp_listen_done(TCPiopb *pb);
 static void sock_tcp_connect_done(TCPiopb *pb);
+static void sock_tcp_recv_done(TCPiopb *pb);
+
+
+static TCPNotifyUPP sock_tcp_notify_proc ;
+static TCPIOCompletionUPP sock_tcp_connect_done_proc ;
+static TCPIOCompletionUPP sock_tcp_listen_done_proc ;
+static TCPIOCompletionUPP sock_tcp_send_done_proc ;
+static TCPIOCompletionUPP sock_tcp_recv_done_proc ;
+
+#ifndef __MACTCP__
+#if GENERATINGCFM
+#define NewTCPNotifyProc(userRoutine)		\
+		(TCPNotifyUPP) NewRoutineDescriptor((ProcPtr)(userRoutine), uppTCPNotifyProcInfo, GetCurrentArchitecture())
+#else
+#define NewTCPNotifyProc(userRoutine)		\
+		((TCPNotifyUPP) (userRoutine))
+#endif
+
+#if GENERATINGCFM
+#define NewTCPIOCompletionProc(userRoutine)		\
+		(TCPIOCompletionUPP) NewRoutineDescriptor((ProcPtr)(userRoutine), uppTCPIOCompletionProcInfo, GetCurrentArchitecture())
+#else
+#define NewTCPIOCompletionProc(userRoutine)		\
+		((TCPIOCompletionUPP) (userRoutine))
+#endif
+#endif
+
+void sock_tcp_init ( void )
+{
+	sock_tcp_notify_proc = NewTCPNotifyProc(sock_tcp_notify);
+	sock_tcp_connect_done_proc = NewTCPIOCompletionProc (sock_tcp_connect_done);
+	sock_tcp_listen_done_proc = NewTCPIOCompletionProc (sock_tcp_listen_done);
+	sock_tcp_send_done_proc = NewTCPIOCompletionProc (sock_tcp_send_done);
+	sock_tcp_recv_done_proc = NewTCPIOCompletionProc (sock_tcp_recv_done);
+
+}
+
 /*
  * sock_tcp_new_stream
  *
@@ -61,8 +101,10 @@ int sock_tcp_new_stream(
 #if SOCK_TCP_DEBUG >= 2
 	sock_print("sock_tcp_new_stream", sp);
 #endif
+
+	sock_tcp_init() ;
 	
-	io = xTCPCreate(STREAM_BUFFER_SIZE, (TCPNotifyProc) sock_tcp_notify, &pb);
+	io = xTCPCreate(STREAM_BUFFER_SIZE, sock_tcp_notify_proc, &pb);
 	switch(io)
 	{
 		case noErr:                 break;
@@ -92,6 +134,7 @@ int sock_tcp_new_stream(
 }
 
 
+
 /*
  *	sock_tcp_connect - initiate a connection on a TCP socket
  *
@@ -102,9 +145,6 @@ int sock_tcp_connect(
 {
 	OSErr io;
 	TCPiopb	*pb;
-#ifdef __MACTCP__
-	TCPIOCompletionUPP proc;
-#endif
 
 #if SOCK_TCP_DEBUG >= 2
 	sock_print("sock_tcp_connect",sp);
@@ -122,10 +162,8 @@ int sock_tcp_connect(
 		return sock_err(ENOMEM);
 	
 #ifdef __MACTCP__
-	proc = NewTCPIOCompletionProc (sock_tcp_connect_done);
 	io = xTCPActiveOpen(pb, sp->sa.sin_port,addr->sin_addr.s_addr, addr->sin_port, 
-			proc);
-	DisposeRoutineDescriptor (proc);
+			sock_tcp_connect_done_proc);
 #else
 	io = xTCPActiveOpen(pb, sp->sa.sin_port,addr->sin_addr.s_addr, addr->sin_port, 
 			sock_tcp_connect_done);
@@ -158,6 +196,7 @@ int sock_tcp_connect(
 		return 0;
 }
 
+
 /*
  * sock_tcp_listen() - put s into the listen state.
  */
@@ -166,9 +205,6 @@ int sock_tcp_listen(
 {
 	OSErr		io;
 	TCPiopb		*pb;
-#ifdef __MACTCP__
-	TCPIOCompletionUPP proc;
-#endif
 
 #if SOCK_TCP_DEBUG >= 2
 	sock_print("sock_tcp_listen",sp);
@@ -183,9 +219,7 @@ int sock_tcp_listen(
 	sp->sstate = SOCK_STATE_LISTENING;
 	
 #ifdef __MACTCP__
-	proc = NewTCPIOCompletionProc (sock_tcp_listen_done);
-	io = xTCPPassiveOpen(pb, sp->sa.sin_port, proc);
-	DisposeRoutineDescriptor (proc);
+	io = xTCPPassiveOpen(pb, sp->sa.sin_port, sock_tcp_listen_done_proc);
 #else
 	io = xTCPPassiveOpen(pb, sp->sa.sin_port, sock_tcp_listen_done);
 #endif
@@ -431,7 +465,6 @@ int sock_tcp_recv(
 	int flags)
 {
 #pragma unused(flags)
-	void	sock_tcp_recv_done();
 	TCPiopb	*pb;
 	int iter; /* iteration */
 	
@@ -515,8 +548,7 @@ int sock_tcp_recv(
 
 		sp->asyncerr			= inProgress;
 	
-		xTCPRcv(pb, sp->recvBuf, min (sp->torecv,TCP_MAX_MSG),0,
-			(TCPIOCompletionProc)sock_tcp_recv_done);
+		xTCPRcv(pb, sp->recvBuf, min (sp->torecv,TCP_MAX_MSG),0,sock_tcp_recv_done_proc);
 	
 		SPIN(sp->torecv&&(pb->ioResult==noErr||pb->ioResult==inProgress),
 			SP_TCP_READ,sp->torecv)
@@ -620,9 +652,6 @@ int sock_tcp_send(
 	short	wdsnum;
 	TCPiopb	*pb;
 	miniwds	wdsarray[TCP_MAX_WDS];
-#ifdef __MACTCP__
-	TCPIOCompletionUPP proc;
-#endif
 
 #if SOCK_TCP_DEBUG >= 2
 	sock_print("sock_tcp_send",sp);
@@ -714,11 +743,9 @@ int sock_tcp_send(
 		thiswds->ptr=buffer;
 				
 #ifdef __MACTCP__
-		proc = NewTCPIOCompletionProc (sock_tcp_send_done);
 		xTCPSend(pb,(wdsEntry *)thiswds,(count <= TCP_MAX_MSG), /* push */
 				flags & MSG_OOB,	/*urgent*/
-				proc);
-		DisposeRoutineDescriptor (proc);
+				sock_tcp_send_done_proc);
 #else
 		xTCPSend(pb,(wdsEntry *)thiswds,(count <= TCP_MAX_MSG), /* push */
 				flags & MSG_OOB,	/*urgent*/
@@ -773,7 +800,7 @@ int sock_tcp_close(
 	sock_flush_out(sp);
 	
 	/* close the stream */ 
-	io = xTCPClose(pb,(TCPIOCompletionProc)(-1));
+	io = xTCPClose(pb,(TCPIOCompletionUPP)(-1));
 	
 #if SOCK_TCP_DEBUG >= 5
 	dprintf("sock_tcp_close: xTCPClose returns %d\n",io);
@@ -862,7 +889,7 @@ pascal void sock_tcp_notify(
 	unsigned short eventCode,
 	Ptr userDataPtr,
 	unsigned short terminReason,
-	struct ICMPReport *icmpMsg)
+	ICMPReport *icmpMsg)
 	{
 #pragma unused (userDataPtr,terminReason,icmpMsg)
 	register 	StreamHashEntPtr	shep;
@@ -930,6 +957,7 @@ sock_tcp_listen_done(TCPiopb *pb)
 	}
 }
 
+
 static void
 sock_tcp_recv_done(
 	TCPiopb *pb)
@@ -947,8 +975,7 @@ sock_tcp_recv_done(
 		sp -> torecv  -= readin;
 		if ( sp -> torecv )
 			{
-			xTCPRcv(pb,sp->recvBuf,min(sp -> torecv,TCP_MAX_MSG),1,
-					(TCPIOCompletionProc)sock_tcp_recv_done);
+			xTCPRcv(pb,sp->recvBuf,min(sp -> torecv,TCP_MAX_MSG),1, sock_tcp_recv_done_proc);
 			}
 		}
 	}

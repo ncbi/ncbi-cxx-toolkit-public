@@ -18,6 +18,10 @@
  * there are too many complications in combining them.
  */
 
+#ifdef __MWERKS__
+#include <MacTCP.h>
+#endif
+
 typedef enum spin_msg
 	{
 	SP_MISC,			/* some weird thing */
@@ -38,25 +42,33 @@ extern int (*spinroutine)(int mesg,int param);
 
 /* tcpglue.c */
 
+#ifndef __MWERKS__
 #ifdef __MACTCP__
 #define TCPIOCompletionProc TCPIOCompletionUPP
 #define TCPNotifyProc TCPNotifyUPP
 #define UDPIOCompletionProc UDPIOCompletionUPP
+#else
+#define TCPIOCompletionUPP TCPIOCompletionProc
+#define TCPNotifyUPP TCPNotifyProc
+#define UDPIOCompletionUPP UDPIOCompletionProc
 #endif
 
+#endif
+
+
 OSErr xPBControlSync(TCPiopb *pb);
-OSErr xPBControl(TCPiopb *pb, TCPIOCompletionProc completion);
+OSErr xPBControl(TCPiopb *pb, TCPIOCompletionUPP completion);
 
 
 OSErr xOpenDriver(void);
-OSErr xTCPCreate(int buflen, TCPNotifyProc notify, TCPiopb *pb);
-OSErr xTCPPassiveOpen(TCPiopb *pb, short port, TCPIOCompletionProc completion);
-OSErr xTCPActiveOpen(TCPiopb *pb, short port, long rhost, short rport, TCPIOCompletionProc completion);
-OSErr xTCPRcv(TCPiopb *pb, char *buf, int buflen, int timeout, TCPIOCompletionProc completion);
-OSErr xTCPNoCopyRcv(TCPiopb *,rdsEntry *,int,int,TCPIOCompletionProc);
-OSErr xTCPBufReturn(TCPiopb *pb,rdsEntry *rds,TCPIOCompletionProc completion);
-OSErr xTCPSend(TCPiopb *pb, wdsEntry *wds, Boolean push, Boolean urgent, TCPIOCompletionProc completion);
-OSErr xTCPClose(TCPiopb *pb,TCPIOCompletionProc completion);
+OSErr xTCPCreate(int buflen, TCPNotifyUPP notify, TCPiopb *pb);
+OSErr xTCPPassiveOpen(TCPiopb *pb, short port, TCPIOCompletionUPP completion);
+OSErr xTCPActiveOpen(TCPiopb *pb, short port, long rhost, short rport, TCPIOCompletionUPP completion);
+OSErr xTCPRcv(TCPiopb *pb, char *buf, int buflen, int timeout, TCPIOCompletionUPP completion);
+OSErr xTCPNoCopyRcv(TCPiopb *,rdsEntry *,int,int,TCPIOCompletionUPP);
+OSErr xTCPBufReturn(TCPiopb *pb,rdsEntry *rds,TCPIOCompletionUPP completion);
+OSErr xTCPSend(TCPiopb *pb, wdsEntry *wds, Boolean push, Boolean urgent, TCPIOCompletionUPP completion);
+OSErr xTCPClose(TCPiopb *pb,TCPIOCompletionUPP completion);
 OSErr xTCPAbort(TCPiopb *pb);
 OSErr xTCPRelease(TCPiopb *pb);
 int xTCPBytesUnread(SocketPtr sp);
@@ -64,10 +76,10 @@ int xTCPBytesWriteable(SocketPtr sp);
 int xTCPWriteBytesLeft(SocketPtr sp);
 int xTCPState(TCPiopb *pb);
 OSErr xUDPCreate(SocketPtr sp,int buflen,ip_port port);
-OSErr xUDPRead(SocketPtr sp,UDPIOCompletionProc completion);
+OSErr xUDPRead(SocketPtr sp,UDPIOCompletionUPP completion);
 OSErr xUDPBfrReturn(SocketPtr sp);
 OSErr xUDPWrite(SocketPtr sp,ip_addr host,ip_port port,miniwds *wds,
-		UDPIOCompletionProc completion);
+		UDPIOCompletionUPP completion);
 OSErr xUDPRelease(SocketPtr sp);
 ip_addr xIPAddr(void);
 long xNetMask(void);
@@ -80,7 +92,7 @@ pascal void sock_tcp_notify(
 	unsigned short eventCode,
 	Ptr userDataPtr,
 	unsigned short terminReason,
-	struct ICMPReport *icmpMsg);
+	ICMPReport *icmpMsg);
 int sock_tcp_new_stream(SocketPtr sp);
 int sock_tcp_connect(SocketPtr sp, struct sockaddr_in *addr);
 int sock_tcp_listen(SocketPtr sp);

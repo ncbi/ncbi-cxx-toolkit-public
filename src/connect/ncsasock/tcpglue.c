@@ -41,7 +41,9 @@ static short driver = 0;
  * Hack fix for MacTCP 1.0.X bug
  */
  
+#if !defined(powerc) && !defined(__powerc) && !defined(__POWERPC)
 pascal char *ReturnA5(void) = {0x2E8D};
+#endif
 
 OSErr xOpenDriver() 
 { 
@@ -67,14 +69,14 @@ OSErr xOpenDriver()
  */
 OSErr xTCPCreate(
 	int buflen,
-	TCPNotifyProc notify,
+	TCPNotifyUPP notify,
 	TCPiopb *pb)
 {	
 	pb->ioCRefNum = driver;
 	pb->csCode = TCPCreate;
 	pb->csParam.create.rcvBuff = (char *)NewPtr(buflen);
 	pb->csParam.create.rcvBuffLen = buflen;
-	pb->csParam.create.notifyProc = notify;
+	pb->csParam.create.notifyProc = (TCPNotifyUPP) notify;
 	return (xPBControlSync(pb));
 }
 
@@ -84,7 +86,7 @@ OSErr xTCPCreate(
 OSErr xTCPPassiveOpen( 
 	TCPiopb *pb, 
 	short port,
-	TCPIOCompletionProc completion)
+	TCPIOCompletionUPP completion)
 {
 	if (driver == 0)
 		return(invalidStreamPtr);
@@ -114,7 +116,7 @@ OSErr xTCPActiveOpen(
 	short port,
 	long rhost,
 	short rport,
-	TCPIOCompletionProc completion)
+	TCPIOCompletionUPP completion)
 {
 	if (driver == 0)
 		return(invalidStreamPtr);
@@ -141,7 +143,7 @@ OSErr xTCPNoCopyRcv(
 	rdsEntry *rds, 
 	int rdslen,
 	int	timeout,
-	TCPIOCompletionProc completion)
+	TCPIOCompletionUPP completion)
 {
 	
 	if (driver == 0)
@@ -155,7 +157,7 @@ OSErr xTCPNoCopyRcv(
 	return (xPBControl(pb,completion));
 }
 
-OSErr xTCPBufReturn(TCPiopb *pb,rdsEntry *rds,TCPIOCompletionProc completion)
+OSErr xTCPBufReturn(TCPiopb *pb,rdsEntry *rds,TCPIOCompletionUPP completion)
 	{
 	pb->ioCRefNum = driver;
 	pb->csCode = TCPRcvBfrReturn;
@@ -172,7 +174,7 @@ OSErr xTCPSend(
 	wdsEntry *wds, 
 	Boolean push,
 	Boolean urgent,
-	TCPIOCompletionProc completion)
+	TCPIOCompletionUPP completion)
 {
 	if (driver == 0)
 		return invalidStreamPtr;
@@ -192,7 +194,7 @@ OSErr xTCPSend(
 /*
  * close a connection
  */
-OSErr xTCPClose(TCPiopb *pb,TCPIOCompletionProc completion) 
+OSErr xTCPClose(TCPiopb *pb,TCPIOCompletionUPP completion) 
 {
 	if (driver == 0)
 		return(invalidStreamPtr);
@@ -344,7 +346,7 @@ OSErr xUDPCreate(SocketPtr sp,int buflen,ip_port port)
 /*
  * ask for incoming data
  */
-OSErr xUDPRead(SocketPtr sp,UDPIOCompletionProc completion) 
+OSErr xUDPRead(SocketPtr sp,UDPIOCompletionUPP completion) 
 	{
 	UDPiopb *pb;
 	
@@ -358,7 +360,7 @@ OSErr xUDPRead(SocketPtr sp,UDPIOCompletionProc completion)
 	pb->csCode = UDPRead;
 	pb->csParam.receive.timeOut = 0 /* infinity */;
 	pb->csParam.receive.secondTimeStamp = 0/* must be zero */;
-	return (xPBControl ( (TCPiopb *)pb, (TCPIOCompletionProc)completion ));
+	return (xPBControl ( (TCPiopb *)pb, (TCPIOCompletionUPP)completion ));
 	}
 
 OSErr xUDPBfrReturn(SocketPtr sp) 
@@ -376,14 +378,14 @@ OSErr xUDPBfrReturn(SocketPtr sp)
 	pb->csParam.receive.rcvBuff = sp->recvBuf;
 	sp->recvBuf = 0;
 	sp->recvd   = 0;
-	return ( xPBControl( (TCPiopb *)pb,(TCPIOCompletionProc)-1 ) );
+	return ( xPBControl( (TCPiopb *)pb,(TCPIOCompletionUPP)-1 ) );
 	}
 
 /*
  * send data
  */
 OSErr xUDPWrite(SocketPtr sp,ip_addr host,ip_port port,miniwds *wds,
-		UDPIOCompletionProc completion) 
+		UDPIOCompletionUPP completion) 
 	{
 	UDPiopb	*pb;
 	
@@ -400,7 +402,7 @@ OSErr xUDPWrite(SocketPtr sp,ip_addr host,ip_port port,miniwds *wds,
 	pb->csParam.send.wdsPtr = (Ptr)wds;
 	pb->csParam.send.checkSum = true;
 	pb->csParam.send.sendLength = 0/* must be zero */;
-	return (xPBControl( (TCPiopb *)pb, (TCPIOCompletionProc)completion));
+	return (xPBControl( (TCPiopb *)pb, (TCPIOCompletionUPP)completion));
 	}
 
 /*
@@ -430,7 +432,11 @@ ip_addr xIPAddr(void)
 #if !defined(__GETMYIPADDR__) && !defined (__MWERKS__)
 	struct IPParamBlock pbr;
 #else
+#ifdef __MWERKS__
+	GetAddrParamBlock pbr;
+#else
 	struct GetAddrParamBlock pbr;
+#endif
 #endif
 	OSErr io;
 	
@@ -447,7 +453,11 @@ long xNetMask()
 #if !defined(__GETMYIPADDR__) && !defined (__MWERKS__)
 	struct IPParamBlock pbr;
 #else
+#ifdef __MWERKS__
+	GetAddrParamBlock pbr;
+#else
 	struct GetAddrParamBlock pbr;
+#endif
 #endif
 	OSErr io;
 	
@@ -461,7 +471,11 @@ long xNetMask()
 
 unsigned short xMaxMTU()
 {
+#ifdef __MWERKS__
+	UDPiopb pbr;
+#else
 	struct UDPiopb pbr;
+#endif
 	OSErr io;
 	
 	pbr.ioCRefNum = driver;
@@ -486,7 +500,7 @@ OSErr xTCPRcv(
 	Ptr buf, 
 	int buflen,
 	int	timeout,
-	TCPIOCompletionProc completion)
+	TCPIOCompletionUPP completion)
 {
 	
 	if (driver == 0)
@@ -501,23 +515,26 @@ OSErr xTCPRcv(
 }
 
 
-OSErr xPBControl(TCPiopb *pb,TCPIOCompletionProc completion) 
+OSErr xPBControl(TCPiopb *pb,TCPIOCompletionUPP completion) 
 { 
+
+#if !defined(powerc) && !defined(__powerc) && !defined(__POWERPC)
 	pb->ioNamePtr = ReturnA5();
+#endif
 	
 	if (completion == 0L) 
 	{ 
 		(pb)->ioCompletion = 0L; 
 		return(PBControl((ParmBlkPtr)(pb),false));		/* sync */
 	} 
-	else if (completion == (TCPIOCompletionProc)-1L) 
+	else if (completion == (TCPIOCompletionUPP)-1L) 
 	{ 
 		(pb)->ioCompletion = 0L; 
 		return(PBControl((ParmBlkPtr)(pb),true));		/* async */
 	} 
 	else 
 	{  
-		(pb)->ioCompletion = completion; 
+		(pb)->ioCompletion = (TCPIOCompletionUPP) completion; 
 		return(PBControl((ParmBlkPtr)(pb),true));		/* async */
 	} 
 }

@@ -197,7 +197,7 @@ static int sock_udp_read_ahead(SocketPtr sp)
 	{
 	OSErr io;
 	
-	io = xUDPRead(sp, (UDPIOCompletionProc)sock_udp_read_ahead_done);
+	io = xUDPRead(sp, (UDPIOCompletionUPP)sock_udp_read_ahead_done);
 	if (io != noErr) 
 		return(sock_err(io));
 
@@ -343,7 +343,7 @@ int sock_udp_send(SocketPtr sp,struct sockaddr_in *to,char *buffer,int count,int
 			return (sock_err(EHOSTUNREACH));
 	
 	io = xUDPWrite(sp, to->sin_addr.s_addr,to->sin_port, &awds, 
-			(UDPIOCompletionProc)sock_udp_send_done);
+			(UDPIOCompletionUPP)sock_udp_send_done);
 	
 	if (io != noErr )
 		return(io);
