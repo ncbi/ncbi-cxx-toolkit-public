@@ -127,6 +127,7 @@ int main()
 
 	unsigned char c = 10;
 	unsigned char c_max = get_limits(c).max();
+   c = c_max;  // just to eliminate "unused var" warning
 
     // Success
     return 0;
@@ -136,6 +137,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2004/07/22 15:27:31  vakatov
+ * Eliminate "unused var" warning
+ *
  * Revision 6.7  2004/06/01 14:12:33  kuznets
  * Fixed compilation (GCC)
  *
