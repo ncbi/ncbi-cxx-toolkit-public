@@ -130,8 +130,7 @@ struct SMakeProjectT
 
 struct SAppProjectT : public SMakeProjectT
 {
-    static void CreateNcbiCToolkitLibs(const string& applib_mfilepath,
-                                       const TFiles& makeapp,
+    static void CreateNcbiCToolkitLibs(const CSimpleMakeFileContents& makefile,
                                        list<string>* libs_list);
 
     static CProjKey DoCreate(const string& source_base_dir,
@@ -291,6 +290,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/16 23:54:49  gorelenk
+ * Changed parameters list of member-function CreateNcbiCToolkitLibs
+ * of struct SAppProjectT.
+ *
  * Revision 1.1  2004/03/02 16:35:16  gorelenk
  * Initial revision.
  *
