@@ -64,7 +64,6 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/seqref.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
 
 #ifdef HAVE_BERKELEY_DB
@@ -133,6 +132,7 @@ void CDemoApp::Init(void)
     arg_desc->SetConstraint("resolve",
                             &(*new CArgAllow_Strings,
                               "none", "tse", "all"));
+    arg_desc->AddFlag("limit_tse", "Limit annotations from sequence TSE only");
 
     arg_desc->AddDefaultKey("loader", "Loader",
                             "Use specified loaders",
@@ -259,6 +259,7 @@ int CDemoApp::Run(void)
         string env = "GENBANK_LOADER_METHOD="+args["loader"].AsString();
         ::putenv(::strdup(env.c_str()));
     }
+    bool limit_tse = args["limit_tse"];
 
     int repeat_count = args["count"].AsInteger();
     int pause = args["pause"].AsInteger();
@@ -423,20 +424,20 @@ int CDemoApp::Run(void)
         scope.AddTopLevelSeqEntry(*entry);
     }
 
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
     {{
-        CConstRef<CSeqref> sr = gb_loader->GetSatSatkey(*id);
-        if ( !sr ) {
+        CDataLoader::TBlobId blob_id = gb_loader->GetBlobId(idh);
+        if ( !blob_id ) {
             ERR_POST("Cannot resolve Seq-id "<<id->AsFastaString());
         }
         else {
             NcbiCout << "Resolved: "<<id->AsFastaString()<<
-                " gi="<<sr->GetGi()<<
-                " sat="<<sr->GetSat()<<" satkey="<<sr->GetSatKey()<<NcbiEndl;
+                " -> "<<gb_loader->GetBlobId(blob_id).ToString()<<NcbiEndl;
         }
     }}
 
     // Get bioseq handle for the seq-id. Most of requests will use this handle.
-    CBioseq_Handle handle = scope.GetBioseqHandle(*id);
+    CBioseq_Handle handle = scope.GetBioseqHandle(idh);
     // Check if the handle is valid
     if ( !handle ) {
         ERR_POST(Fatal << "Bioseq not found");
@@ -456,8 +457,6 @@ int CDemoApp::Run(void)
             *handle.GetTopLevelEntry().GetCompleteSeq_entry() << '\n';
         NcbiCout << "-------------------- END --------------------\n";
     }
-
-    CSeq_id_Handle master_id = CSeq_id_Handle::GetHandle(*id);
 
     CRef<CSeq_loc> whole_loc(new CSeq_loc);
     // No region restrictions -- the whole bioseq is used:
@@ -645,6 +644,9 @@ int CDemoApp::Run(void)
             .SetMaxSize(max_feat)
             .SetResolveDepth(depth)
             .SetAdaptiveDepth(adaptive);
+        if ( limit_tse ) {
+            base_sel.SetLimitTSE(handle.GetTopLevelEntry());
+        }
         if ( include_allnamed ) {
             base_sel.SetAllNamedAnnots();
         }
@@ -660,16 +662,18 @@ int CDemoApp::Run(void)
         ITERATE ( set<string>, it, exclude_named ) {
             base_sel.ExcludeNamedAnnots(*it);
         }
+        string sel_msg = "any";
+        if ( feat_type >= 0 ) {
+            base_sel.SetFeatType(SAnnotSelector::TFeatType(feat_type));
+            sel_msg = "req";
+        }
+        if ( feat_subtype >= 0 ) {
+            base_sel.SetFeatSubtype(SAnnotSelector::TFeatSubtype(feat_subtype));
+            sel_msg = "req";
+        }
 
         {{
-            SAnnotSelector sel = base_sel;
-            if ( feat_type >= 0 ) {
-                sel.SetFeatType(SAnnotSelector::TFeatType(feat_type));
-            }
-            if ( feat_subtype >= 0 ) {
-                sel.SetFeatSubtype(SAnnotSelector::TFeatSubtype(feat_subtype));
-            }
-            for ( CFeat_CI it(scope, *range_loc, sel); it;  ++it) {
+            for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 count++;
                 if ( get_mapped_location )
                     it->GetLocation();
@@ -701,16 +705,11 @@ int CDemoApp::Run(void)
                   const CSeq_id* mapped_id = 0;
                   it->GetLocation().CheckId(mapped_id);
                   _ASSERT(mapped_id);
-                  _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id) == master_id);
+                  _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id) == idh);
                 */
             }
-            if ( feat_type >= 0 || feat_subtype >= 0 ) {
-                NcbiCout << "Feat count (loc range, req):\t";
-            }
-            else {
-                NcbiCout << "Feat count (loc range, any):\t";
-            }
-            NcbiCout << count << NcbiEndl;
+            NcbiCout << "Feat count (loc range, " << sel_msg << "):\t"
+                     << count << NcbiEndl;
         }}
 
         if ( !only_features ) {
@@ -749,7 +748,7 @@ int CDemoApp::Run(void)
                     const CSeq_id* mapped_id = 0;
                     it->GetMappedFeature().GetLocation().CheckId(mapped_id);
                     _ASSERT(mapped_id);
-                    _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id)==master_id);
+                    _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id)==idh);
                 }
                 
                 sout = "";
@@ -774,7 +773,8 @@ int CDemoApp::Run(void)
         for ( CFeat_CI it(handle, range_from, range_to, base_sel); it; ++it ) {
             count++;
         }
-        NcbiCout << "Feat count (bh range, any):\t" << count << NcbiEndl;
+        NcbiCout << "Feat count (bh range, " << sel_msg << "):\t"
+                 << count << NcbiEndl;
 
         if ( only_features )
             continue;
@@ -797,7 +797,7 @@ int CDemoApp::Run(void)
             }
             CSeq_annot_Handle annot = it.GetAnnot();
         }
-        NcbiCout << "Graph count (loc range, any):\t" << count << NcbiEndl;
+        NcbiCout << "Graph count (loc range):\t" << count << NcbiEndl;
 
         if ( !skip_alignments ) {
             count = 0;
@@ -811,7 +811,7 @@ int CDemoApp::Run(void)
                     NcbiCout << MSerial_AsnText << *it;
                 }
             }
-            NcbiCout << "Align count (loc range, any):\t" <<count<<NcbiEndl;
+            NcbiCout << "Align count (loc range):\t" <<count<<NcbiEndl;
         }
         if ( used_memory_check ) {
             exit(0);
@@ -843,6 +843,11 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2004/08/19 17:02:35  vasilche
+* Use CBlob_id instead of obsolete CSeqref.
+* Use requested feature subtype for all feature iterations.
+* Added -limit_tse test option.
+*
 * Revision 1.79  2004/08/17 15:41:20  vasilche
 * Added -used_memory_check option.
 *
