@@ -54,6 +54,27 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_File& db)
     const CBDB_BufferManager* key  = db.GetKeyBuffer();
     const CBDB_BufferManager* data = db.GetDataBuffer();
 
+    // Print header
+    if (m_PrintNames == ePrintNames) {
+        if (key) {
+            for (unsigned i = 0; i < key->FieldCount(); ++i) {
+                const CBDB_Field& fld = key->GetField(i);
+                if (i != 0)
+                    out << m_ColumnSeparator;
+                out << fld.GetName();
+            }
+        }
+
+        if (data) {
+            for (unsigned i = 0; i < data->FieldCount(); ++i) {
+                const CBDB_Field& fld = data->GetField(i);
+                out << m_ColumnSeparator << fld.GetName();
+            }
+        }
+        out << endl;
+    }
+
+    // Print values
     CBDB_FileCursor cur(db);
     cur.SetCondition(CBDB_FileCursor::eFirst);
 
@@ -85,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/28 14:57:13  kuznets
+ * Implemeneted field names printing
+ *
  * Revision 1.1  2003/10/27 14:18:22  kuznets
  * Initial revision
  *
