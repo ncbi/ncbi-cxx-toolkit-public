@@ -2,7 +2,7 @@
 
 APP_PROJ = python_ncbi_dbapi_test
 
-REQUIRES = PYTHON
+REQUIRES = PYTHON CPPUNIT
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
