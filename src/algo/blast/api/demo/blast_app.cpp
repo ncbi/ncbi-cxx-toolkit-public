@@ -224,6 +224,11 @@ void CBlastApplication::Init(void)
         "File name for uploading a PSSM for PSI BLAST seach",
         CArgDescriptions::eInputFile);
 
+    arg_desc->AddOptionalKey("dbrange", "databaserange",
+                            "Range of ordinal ids in the BLAST database.\n"
+                             "Format: \"oid1 oid2\"",
+                             CArgDescriptions::eString);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -396,6 +401,7 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptions& opt,
     }
     if (args["frameshift"].AsInteger()) {
         opt.SetFrameShiftPenalty(args["frameshift"].AsInteger());
+        opt.SetOutOfFrameMode();
     }
 
     if (args["pattern"]) {
@@ -555,6 +561,8 @@ int CBlastApplication::Run(void)
     ENa_strand strand = (ENa_strand) args["strand"].AsInteger();
     Int4 from = args["qstart"].AsInteger();
     Int4 to = args["qend"].AsInteger();
+    Int4 first_oid = 0;
+    Int4 last_oid = 0;
 
     InitScope();
 
@@ -565,10 +573,20 @@ int CBlastApplication::Run(void)
                   *m_ObjMgr, strand, from, to, &id_counter, 
                   args["lcase"].AsBoolean());
 
+    if (args["dbrange"]) {
+        char* delimiters = " ,:;";
+        char* range_str = strdup(args["dbrange"].AsString().c_str());
+        char* ptr = NULL;
+        first_oid =
+            atoi(strtok_r(range_str, delimiters, &ptr));
+        last_oid = atoi(ptr);
+        sfree(range_str);
+    }
+
     BlastSeqSrc* seq_src = 
         ReaddbBlastSeqSrcInit(args["db"].AsString().c_str(), 
                               (program == eBlastp || program == eBlastx),
-                              0, 0, NULL);
+                              first_oid, last_oid, NULL);
                                                  
 
     CDbBlast blaster(query_loc, seq_src, program);
