@@ -45,6 +45,8 @@
 #include <objects/ncbimime/Biostruc_seqs.hpp>
 #include <objects/ncbimime/Biostruc_align.hpp>
 #include <objects/ncbimime/Biostruc_align_seq.hpp>
+#include <objects/ncbimime/Biostruc_seqs_aligns_cdd.hpp>
+#include <objects/ncbimime/Bundle_seqs_aligns.hpp>
 
 #include <objtools/cddalignview/cddalignview.h>
 #include <objtools/cddalignview/cav_seqset.hpp>
@@ -89,22 +91,31 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
     if (!isCDD) {
         ERR_POST(Info << "trying to read input as " <<
             ((isBinary) ? "binary" : "ascii") << " mime");
-        CNcbi_mime_asn1 mime;
+        CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1);
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
         asnIstream.seekg(0);
-        readOK = ReadASNFromIstream(asnIstream, mime, isBinary, err);
+        readOK = ReadASNFromIstream(asnIstream, *mime, isBinary, err);
         SetDiagPostLevel(defaultDiagPostLevel);
         if (readOK) {
             // copy lists
-            if (mime.IsStrucseqs()) {
-                *newSequences = mime.GetStrucseqs().GetSequences();
-                *newAlignments = mime.GetStrucseqs().GetSeqalign();
-            } else if (mime.IsAlignstruc()) {
-                *newSequences = mime.GetAlignstruc().GetSequences();
-                *newAlignments = mime.GetAlignstruc().GetSeqalign();
-            } else if (mime.IsAlignseq()) {
-                *newSequences = mime.GetAlignseq().GetSequences();
-                *newAlignments = mime.GetAlignseq().GetSeqalign();
+            if (mime->IsStrucseqs()) {
+                *newSequences = mime->GetStrucseqs().GetSequences();
+                *newAlignments = mime->GetStrucseqs().GetSeqalign();
+            } else if (mime->IsAlignstruc()) {
+                *newSequences = mime->GetAlignstruc().GetSequences();
+                *newAlignments = mime->GetAlignstruc().GetSeqalign();
+            } else if (mime->IsAlignseq()) {
+                *newSequences = mime->GetAlignseq().GetSequences();
+                *newAlignments = mime->GetAlignseq().GetSeqalign();
+            } else if (mime->IsGeneral()) {
+                if (mime->GetGeneral().GetSeq_align_data().IsBundle()) {
+                    *newSequences = mime->GetGeneral().GetSeq_align_data().GetBundle().GetSequences();
+                    *newAlignments = mime->GetGeneral().GetSeq_align_data().GetBundle().GetSeqaligns();
+                } else if (mime->GetGeneral().GetSeq_align_data().IsCdd()) {
+                    newSequences->resize(1);
+                    newSequences->front().Reset(&(mime->SetGeneral().SetSeq_align_data().SetCdd().SetSequences()));
+                    *newAlignments = mime->GetGeneral().GetSeq_align_data().GetCdd().GetSeqannot();
+                }
             }
         } else {
             ERR_POST(Warning << "error: " << err);
@@ -114,15 +125,15 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
     if (!readOK) {
         ERR_POST(Info << "trying to read input as " <<
             ((isBinary) ? "binary" : "ascii") << " cdd");
-        CCdd cdd;
+        CRef < CCdd > cdd(new CCdd);
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
         asnIstream.seekg(0);
-        readOK = ReadASNFromIstream(asnIstream, cdd, isBinary, err);
+        readOK = ReadASNFromIstream(asnIstream, *cdd, isBinary, err);
         SetDiagPostLevel(defaultDiagPostLevel);
         if (readOK) {
             newSequences->resize(1);
-            newSequences->front().Reset(&(cdd.SetSequences()));
-            *newAlignments = cdd.GetSeqannot();   // copy the list
+            newSequences->front().Reset(&(cdd->SetSequences()));
+            *newAlignments = cdd->GetSeqannot();   // copy the list
         } else {
             ERR_POST(Warning << "error: " << err);
         }
@@ -130,6 +141,10 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
 
     if (!readOK) {
         ERR_POST(Error << "Input is not a recognized data type (Ncbi-mime-asn1 or Cdd)");
+        return CAV_ERROR_BAD_ASN;
+    }
+    if (newSequences->size() == 0 || newAlignments->size() == 0) {
+        ERR_POST(Error << "Cannot find sequences and alignments in the input data!");
         return CAV_ERROR_BAD_ASN;
     }
 
@@ -395,6 +410,9 @@ int CAV_DisplayMultiple(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/10/04 22:45:58  thiessen
+* deal with new general mime type
+*
 * Revision 1.4  2004/05/21 21:42:51  gorelenk
 * Added PCH ncbi_pch.hpp
 *
