@@ -131,7 +131,14 @@ void CDemoApp::Init(void)
     arg_desc->SetConstraint("resolve",
                             &(*new CArgAllow_Strings,
                               "none", "tse", "all"));
+    arg_desc->AddDefaultKey("missing", "UnresolvableIdMethod",
+                            "Method of treating unresolvable ids",
+                            CArgDescriptions::eString, "ignore");
+    arg_desc->SetConstraint("missing",
+                            &(*new CArgAllow_Strings,
+                            "ignore", "search", "fail"));
     arg_desc->AddFlag("limit_tse", "Limit annotations from sequence TSE only");
+    arg_desc->AddFlag("externals", "Search for external features only");
 
     arg_desc->AddDefaultKey("loader", "Loader",
                             "Use specified loaders",
@@ -249,6 +256,14 @@ int CDemoApp::Run(void)
         resolve = SAnnotSelector::eResolve_None;
     if ( args["resolve"].AsString() == "tse" )
         resolve = SAnnotSelector::eResolve_TSE;
+    SAnnotSelector::EUnresolvedFlag missing = SAnnotSelector::eIgnoreUnresolved;
+    if ( args["missing"].AsString() == "ignore" )
+        missing = SAnnotSelector::eIgnoreUnresolved;
+    if ( args["missing"].AsString() == "search" )
+        missing = SAnnotSelector::eSearchUnresolved;
+    if ( args["missing"].AsString() == "fail" )
+        missing = SAnnotSelector::eFailUnresolved;
+    bool externals_only = args["externals"];
     if ( !args["loader"].AsString().empty() ) {
         string env = "GENBANK_LOADER_METHOD="+args["loader"].AsString();
         ::putenv(::strdup(env.c_str()));
@@ -643,7 +658,11 @@ int CDemoApp::Run(void)
             .SetSortOrder(order)
             .SetMaxSize(max_feat)
             .SetResolveDepth(depth)
-            .SetAdaptiveDepth(adaptive);
+            .SetAdaptiveDepth(adaptive)
+            .SetUnresolvedFlag(missing);
+        if ( externals_only ) {
+            base_sel.SetSearchExternal(handle);
+        }
         if ( limit_tse ) {
             base_sel.SetLimitTSE(handle.GetTopLevelEntry());
         }
@@ -862,6 +881,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2004/09/27 14:37:24  grichenk
+* More args (missing and external)
+*
 * Revision 1.83  2004/09/08 16:43:31  vasilche
 * More tuning of BDB cache.
 *
