@@ -31,6 +31,11 @@
 *
 *
 * $Log$
+* Revision 1.10  2002/10/21 20:38:08  kholodov
+* Added: GetParentConn() method to get the parent connection from IStatement,
+* ICallableStatement and ICursor objects.
+* Fixed: Minor fixes
+*
 * Revision 1.9  2002/10/03 18:50:00  kholodov
 * Added: additional TRACE diagnostics about object deletion
 * Fixed: setting parameters in IStatement object is fully supported
@@ -101,6 +106,11 @@ CCursor::~CCursor()
 }
 
   
+IConnection* CCursor::GetParentConn() 
+{
+    return m_conn;
+}
+
 void CCursor::SetParam(const CVariant& v, 
                        const string& name)
 {

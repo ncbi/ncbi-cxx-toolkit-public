@@ -31,6 +31,11 @@
 *
 *
 * $Log$
+* Revision 1.17  2002/10/21 20:38:08  kholodov
+* Added: GetParentConn() method to get the parent connection from IStatement,
+* ICallableStatement and ICursor objects.
+* Fixed: Minor fixes
+*
 * Revision 1.16  2002/10/03 18:50:00  kholodov
 * Added: additional TRACE diagnostics about object deletion
 * Fixed: setting parameters in IStatement object is fully supported
@@ -113,7 +118,7 @@ BEGIN_NCBI_SCOPE
 CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
     : m_conn(conn),
       m_rs(rs), m_istr(0), m_ostr(0), m_column(-1),
-      m_blobAsVariant(false)
+      m_bindBlob(false)
 {
     SetIdent("CResultSet");
 
@@ -158,9 +163,9 @@ EDB_ResType CResultSet::GetResultType()
     return m_rs->ResultType();
 }
 
-void CResultSet::SetBlobAsVariant(bool b) 
+void CResultSet::BindBlobToVariant(bool b) 
 {
-    m_blobAsVariant = b;
+    m_bindBlob = b;
 }
 
 bool CResultSet::Next() 
@@ -170,11 +175,13 @@ bool CResultSet::Next()
     EDB_Type type = eDB_UnsupportedType;
 
     if( m_rs->Fetch() ) {
+
+        
         for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
       
             type = m_rs->ItemDataType(i);
 
-            if( !IsBlobAsVariant() 
+            if( !IsBindBlob() 
                 && (type == eDB_Text || type == eDB_Image) ) {
                 m_column = m_rs->CurrentItemNo();
                 break;

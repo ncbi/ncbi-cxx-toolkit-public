@@ -34,6 +34,11 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/10/21 20:38:08  kholodov
+* Added: GetParentConn() method to get the parent connection from IStatement,
+* ICallableStatement and ICursor objects.
+* Fixed: Minor fixes
+*
 * Revision 1.5  2002/09/18 18:49:27  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -88,6 +93,7 @@ public:
     virtual void Delete(const string& table);
     virtual void Close();
 
+    virtual IConnection* GetParentConn();
 
     // Interface IEventListener implementation
     virtual void Action(const CDbapiEvent& e);

@@ -31,6 +31,11 @@
 *
 *
 * $Log$
+* Revision 1.14  2002/10/21 20:38:08  kholodov
+* Added: GetParentConn() method to get the parent connection from IStatement,
+* ICallableStatement and ICursor objects.
+* Fixed: Minor fixes
+*
 * Revision 1.13  2002/10/11 16:42:50  kholodov
 * Added: return Binary and Varbinary columns as CVariant::GetString()
 *
@@ -543,7 +548,7 @@ void CVariant::Truncate(size_t len)
         ((CDB_Text*)GetData())->Truncate(len);
         break;
     default:
-        throw CVariantException("CVariant::TruncateRight(): invalid type");
+        throw CVariantException("CVariant::Truncate(): invalid type");
     }
     return;
 }

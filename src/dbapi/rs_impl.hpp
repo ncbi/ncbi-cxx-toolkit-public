@@ -34,6 +34,11 @@
 *
 *
 * $Log$
+* Revision 1.9  2002/10/21 20:38:08  kholodov
+* Added: GetParentConn() method to get the parent connection from IStatement,
+* ICallableStatement and ICursor objects.
+* Fixed: Minor fixes
+*
 * Revision 1.8  2002/09/18 18:49:27  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -93,7 +98,7 @@ public:
     virtual const CVariant& GetVariant(unsigned int idx);
     virtual const CVariant& GetVariant(const string& colName);
 
-    virtual void SetBlobAsVariant(bool b);
+    virtual void BindBlobToVariant(bool b);
   
     virtual size_t Read(void* buf, size_t size);
     virtual void Close();
@@ -111,8 +116,8 @@ protected:
     
     int GetColNum(const string& name);
 
-    bool IsBlobAsVariant() {
-        return m_blobAsVariant;
+    bool IsBindBlob() {
+        return m_bindBlob;
     }
 
 private:
@@ -124,7 +129,7 @@ private:
     CBlobIStream *m_istr;
     CBlobOStream *m_ostr;
     int m_column;
-    bool m_blobAsVariant;
+    bool m_bindBlob;
 
 };
 
