@@ -37,6 +37,7 @@
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include "seqdbgeneral.hpp"
 #include "seqdbatlas.hpp"
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
