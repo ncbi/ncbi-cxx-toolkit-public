@@ -1254,13 +1254,15 @@ private:
 
 private:
     unsigned int m_SecAfterHour;  ///< Time interval in seconds after hour
-                             ///< in which we should avoid to do Tuneup().
-    CTime   m_LocalTime;     ///< Saved local time
+                              ///< in which we should avoid to do Tuneup().
+    CTime   m_LocalTime;      ///< Current local time
+    CTime   m_TunedTime;      ///< Last tuned time (changed by Tuneup())
     
-    time_t  m_LastTuneTime;  ///< Last Tuneup() time
-    time_t  m_LastSysTime;   ///< Last system time
-    int     m_Timezone;      ///< Cached timezone adjustment for local time
-    int     m_Daylight;      ///< Cached system daylight information
+    time_t  m_LastTuneupTime; ///< Last Tuneup() time
+    time_t  m_LastSysTime;    ///< Last system time
+    int     m_Timezone;       ///< Cached timezone adjustment for local time
+    int     m_Daylight;       ///< Cached system daylight information
+    bool    m_IsTuneup;       ///< Tuneup() in progress (MT)
 };
 
 
@@ -1989,6 +1991,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/02/17 20:16:46  ivanov
+ * Improved CFastLocalTime work in MT environment -- do not block all
+ * other threads while one call Tuneup().
+ *
  * Revision 1.44  2005/02/10 14:20:32  ivanov
  * Added quick and dirty getter of local time -- CFastLocalTime.
  * Also added global functions GetFastLocalTime() and TuneupFastLocalTime().
