@@ -1,3 +1,4 @@
+.PHONY: all install clean blast2seq blast2seq.pure
 all:
 	cd .. && make -f Makefile.blastxx_lib
 	make -f Makefile.blast2seq_app
@@ -11,3 +12,7 @@ blast2seq.pure:
 clean:
 	make -f Makefile.blast2seq_app clean
 	rm -fr blast2seq.pure *.out
+
+install: blast2seq
+	test -d ../../bin/ || mkdir ../../bin
+	install blast2seq ../../bin
