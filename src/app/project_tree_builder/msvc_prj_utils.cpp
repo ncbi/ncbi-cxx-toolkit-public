@@ -211,21 +211,26 @@ string CGuidGenerator::DoGenerateSlnGUID(void)
     }
 }
 
-
+ 
 string SourceFileExt(const string& file_path)
 {
-    string dir;
-    string base;
     string ext;
-    CDirEntry::SplitPath(file_path, &dir, &base, &ext);
+    CDirEntry::SplitPath(file_path, NULL, NULL, &ext);
+    
+    bool explicit_c   = NStr::CompareNocase(ext, ".c"  )== 0;
+    if (explicit_c  &&  CFile(file_path).Exists()) {
+        return ".c";
+    }
+    bool explicit_cpp = NStr::CompareNocase(ext, ".cpp")== 0;
+    if (explicit_cpp  &&  CFile(file_path).Exists()) {
+        return ".cpp";
+    }
 
-    string source_file_prefix = CDirEntry::ConcatPath(dir, base);
-
-    string file_path_cpp = source_file_prefix + ".cpp";
+    string file_path_cpp = file_path + ".cpp";
     if ( CFile(file_path_cpp).Exists() ) 
         return ".cpp";
 
-    string file_path_c = source_file_prefix + ".c";
+    string file_path_c = file_path + ".c";
     if ( CFile(file_path_c).Exists() ) 
         return ".c";
 
@@ -514,6 +519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/04/22 18:15:38  gorelenk
+ * Changed implementation of SourceFileExt .
+ *
  * Revision 1.17  2004/03/10 16:42:44  gorelenk
  * Changed implementation of class CMsvc7RegSettings.
  *
