@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/05/17 17:14:53  grichenk
+* +GetSeqData() for getting a range of characters from a seq-vector
+*
 * Revision 1.22  2002/05/09 14:16:31  grichenk
 * sm_SizeUnknown -> kPosUnknown, minor fixes for unsigned positions
 *
@@ -507,6 +510,45 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos)
         }
     }
     return m_CachedData[pos - m_CachedPos];
+}
+
+
+void CSeqVector::x_GetCacheForInterval(TSeqPos& start, TSeqPos stop, string& buffer)
+{
+    (*this)[start];
+    // Recalculate position from visible area to the whole sequence
+    TSeqPos vstart = start + m_OrgTo - m_CurTo;
+    TSeqPos vstop = stop + m_OrgTo - m_CurTo;
+
+    // Coordinates relative to the cache
+    TSeqPos cache_start = 0;
+    TSeqPos cache_stop = m_CachedLen;
+    if (m_CachedPos < vstart) {
+        cache_start += vstart - m_CachedPos;
+        cache_stop -= vstart - m_CachedPos;
+    }
+    if (cache_stop - cache_start > vstop - vstart) {
+        cache_stop = cache_start + vstop - vstart;
+    }
+    buffer += m_CachedData.substr(cache_start, cache_stop - cache_start);
+    start += cache_stop - cache_start;
+}
+
+
+void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
+{
+    // Force size calculation
+    TSeqPos seq_size = size();
+    // Convert position to destination strand
+    if ( !m_PlusStrand ) {
+        start = seq_size - start - 1;
+        stop = seq_size - stop - 1;
+    }
+
+    buffer = "";
+    while (start < stop) {
+        x_GetCacheForInterval(start, stop, buffer);
+    }
 }
 
 

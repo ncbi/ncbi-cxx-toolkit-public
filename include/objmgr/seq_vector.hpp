@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/05/17 17:14:50  grichenk
+* +GetSeqData() for getting a range of characters from a seq-vector
+*
 * Revision 1.14  2002/05/09 14:16:29  grichenk
 * sm_SizeUnknown -> kPosUnknown, minor fixes for unsigned positions
 *
@@ -110,6 +113,10 @@ public:
     // 0-based array of residues
     TResidue operator[] (TSeqPos pos);
 
+    // Fill the buffer string with the sequence data for the interval
+    // [start, stop).
+    void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer);
+
     // Target sequence coding. CSeq_data::e_not_set -- do not
     // convert sequence (use GetCoding() to check the real coding).
     TCoding GetCoding(void);
@@ -140,6 +147,12 @@ private:
     void x_UpdateSeqData(TSeqPos pos);
     // Get residue assuming the data in m_CurrentData are valid
     TResidue x_GetResidue(TSeqPos pos);
+
+    // Fill the buffer with as many characters as possible with the single
+    // data cache. Characters starting from the "start" position are added
+    // to the buffer; the last character added is at or before "stop" position;
+    // "start" is moved to the next position after the last character added.
+    void x_GetCacheForInterval(TSeqPos& start, TSeqPos stop, string& buffer);
 
     // Single visible interval
     typedef CRange<TSeqPos> TRange;
