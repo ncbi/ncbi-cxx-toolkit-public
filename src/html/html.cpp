@@ -1138,7 +1138,7 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
 
 CHTML_table::CHTML_table(void)
     : CParent("table"), m_CurrentRow(0), m_CurrentCol(TIndex(-1)),
-      m_ColSepL(kEmptyStr), m_ColSepM((kEmptyStr), m_ColSepR(kEmptyStr),
+      m_ColSepL(kEmptyStr), m_ColSepM(kEmptyStr), m_ColSepR(kEmptyStr),
       m_RowSepChar('-'), m_IsRowSep(eSkipRowSep)
 {
 }
@@ -1985,6 +1985,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2002/01/29 19:25:55  ivanov
+ * Typo fixed
+ *
  * Revision 1.70  2002/01/29 19:20:47  ivanov
  * (plain text) CHTML_table:: set def. medium sep. to "" instead of "\t".
  * Restored functionality of CHTML_tr::PrintEnd().
