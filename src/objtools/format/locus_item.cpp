@@ -210,7 +210,7 @@ void CLocusItem::x_SetStrand(CFFContext& ctx)
     // ss-any RNA don't show ss
     if ( (bmol > CSeq_inst::eMol_rna  ||  
           (m_Biomol >= CMolInfo::eBiomol_mRNA     &&
-           m_Biomol >= CMolInfo::eBiomol_peptide))  &&
+           m_Biomol <= CMolInfo::eBiomol_peptide))  &&
          m_Strand == CSeq_inst::eStrand_ss ) {
         m_Strand = CSeq_inst::eStrand_not_set;
     }
@@ -536,6 +536,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/05 18:41:14  shomrat
+* bug fix
+*
 * Revision 1.4  2004/02/13 14:23:08  shomrat
 * force CON division for contig style and genome view
 *
