@@ -121,6 +121,8 @@ int CDbBlast::SetupSearch()
     EProgram x_eProgram = m_OptsHandle->GetOptions().GetProgram();
 
     if ( !m_ibQuerySetUpDone ) {
+        double scale_factor;
+
         x_ResetQueryDs();
         bool translated_query = (x_eProgram == eBlastx || 
                                  x_eProgram == eTblastx);
@@ -132,6 +134,11 @@ int CDbBlast::SetupSearch()
 
         m_ipScoreBlock = 0;
 
+        if (x_eProgram == eRPSBlast || x_eProgram == eRPSTblastn)
+            scale_factor = m_pRpsInfo->aux_info.scale_factor;
+        else
+            scale_factor = 1.0;
+
         Blast_Message* blast_message = NULL;
 
         status = BLAST_MainSetUp(x_eProgram, 
@@ -139,6 +146,7 @@ int CDbBlast::SetupSearch()
                                  m_OptsHandle->GetOptions().GetScoringOpts(),
                                  m_OptsHandle->GetOptions().GetHitSaveOpts(),
                                  m_iclsQueries, m_iclsQueryInfo,
+                                 scale_factor,
                                  &m_ipLookupSegments, &m_ipFilteredRegions,
                                  &m_ipScoreBlock, &blast_message);
         if (status != 0) {
@@ -322,6 +330,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2004/05/07 15:28:41  papadopo
+ * add scale factor to BlastMainSetup
+ *
  * Revision 1.24  2004/05/05 15:28:56  dondosha
  * Renamed functions in blast_hits.h accordance with new convention Blast_[StructName][Task]
  *
