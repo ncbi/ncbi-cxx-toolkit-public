@@ -36,38 +36,33 @@ USING_NCBI_SCOPE;
 template <class T>
 void s_TestType(const char* type_name, T value)
 {
+    T minval = numeric_limits<T>::min(), maxval = numeric_limits<T>::max();
 
     LOG_POST("--------------");
 
     LOG_POST(type_name << ":  "
-             << numeric_limits<T>::min()
-             << " <= "<< value  << " <= "
-             << numeric_limits<T>::max());
+             << minval << " <= " << value  << " <= " << maxval);
 
-    assert(numeric_limits<T>::min() <= value);
-    assert(numeric_limits<T>::max() >= value);
-    assert(numeric_limits<T>::min() < numeric_limits<T>::max());
+    assert(minval <= value);
+    assert(maxval >= value);
+    assert(minval < maxval);
 
     if (value != (T) (int) value)
         return;
 
-    T min_minus_1 = numeric_limits<T>::min() - (T) 1;
+    T min_minus_1 = minval - (T) 1;
     LOG_POST(type_name << ":  "
-             << numeric_limits<T>::min()
-             << " <= "<< min_minus_1  << " <= "
-             << numeric_limits<T>::max());
+             << minval << " <= " << min_minus_1  << " <= " << maxval);
 
-    assert(numeric_limits<T>::min() <= min_minus_1);
-    assert(numeric_limits<T>::max() >= min_minus_1);
+    assert(minval <= min_minus_1);
+    assert(maxval >= min_minus_1);
 
-    T max_plus_1 = numeric_limits<T>::max() + (T) 1;
+    T max_plus_1 = maxval + (T) 1;
     LOG_POST(type_name << ":  "
-             << numeric_limits<T>::min()
-             << " <= "<< max_plus_1  << " <= "
-             << numeric_limits<T>::max());
+             << minval << " <= " << max_plus_1  << " <= " << maxval);
 
-    assert(numeric_limits<T>::min() <= max_plus_1);
-    assert(numeric_limits<T>::max() >= max_plus_1);
+    assert(minval <= max_plus_1);
+    assert(maxval >= max_plus_1);
 }
 
 
@@ -128,6 +123,10 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2004/02/10 16:31:45  ucko
+ * s_TestType: store the result of min() and max() in locals to work
+ * around a platform-dependent GCC 2.95 bug.
+ *
  * Revision 6.3  2002/04/16 18:49:07  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
