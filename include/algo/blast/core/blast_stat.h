@@ -34,6 +34,9 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 
 /* $Revision$ 
 * $Log$
+* Revision 1.5  2003/07/24 22:37:28  dondosha
+* Removed some unused function parameters
+*
 * Revision 1.4  2003/07/24 21:31:12  dondosha
 * Changed to calls to BlastConstructErrorMessage to API from blast_message.h
 *
@@ -546,11 +549,11 @@ Nlm_FloatHi BlastKarlinStoLen (BLAST_KarlinBlkPtr kbp, BLAST_Score S);
 Nlm_FloatHi BlastSumP (Int4 r, Nlm_FloatHi s);
 
 /* Functions to calculate SumE (for large and small gaps). */
-Nlm_FloatHi BlastSmallGapSumE (BLAST_KarlinBlkPtr kbp, Int4 gap, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num, Int4 sum,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length, Boolean min_length_one);
+Nlm_FloatHi BlastSmallGapSumE (BLAST_KarlinBlkPtr kbp, Int4 gap, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length);
 
-Nlm_FloatHi BlastUnevenGapSumE (BLAST_KarlinBlkPtr kbp, Int4 p_gap, Int4 n_gap, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num, Int4 sum,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length, Boolean min_length_one);
+Nlm_FloatHi BlastUnevenGapSumE (BLAST_KarlinBlkPtr kbp, Int4 p_gap, Int4 n_gap, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length);
 
-Nlm_FloatHi BlastLargeGapSumE (BLAST_KarlinBlkPtr kbp, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num, Int4 sum,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length, Boolean old_stats);
+Nlm_FloatHi BlastLargeGapSumE (BLAST_KarlinBlkPtr kbp, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length);
 
 /* Used to produce random sequences. */
 CharPtr  BlastRepresentativeResidues (Int2 length);
@@ -576,7 +579,7 @@ BLAST_ScoreFreqPtr BlastScoreFreqDestruct (BLAST_ScoreFreqPtr sfp);
 
 BLAST_MatrixPtr BLAST_MatrixDestruct (BLAST_MatrixPtr blast_matrix);
 
-BLAST_MatrixPtr BLAST_MatrixFill (BLAST_ScoreBlkPtr sbp, Boolean positionBased);
+BLAST_MatrixPtr BLAST_MatrixFill (BLAST_ScoreBlkPtr sbp);
 
 BLAST_MatrixPtr BLAST_MatrixFetch (CharPtr matrix_name);
 

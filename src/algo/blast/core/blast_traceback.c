@@ -82,8 +82,8 @@ SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlkPtr sbp,
    sum_evalue =  
       BlastUnevenGapSumE(sbp->kbp_gap[context], 2*WINDOW_SIZE, 
          hit_params->options->longest_intron + WINDOW_SIZE, 
-         gap_prob, gap_decay_rate, num,*sumscore, score_prime, 
-         query_eff_length, subject_eff_length, FALSE);
+         gap_prob, gap_decay_rate, num, score_prime, 
+         query_eff_length, subject_eff_length);
 
    eff_searchsp = ((FloatHi) subject_eff_length) * query_eff_length;
    

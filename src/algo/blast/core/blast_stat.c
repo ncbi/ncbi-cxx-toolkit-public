@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.7  2003/07/24 22:37:33  dondosha
+ * Removed some unused function parameters
+ *
  * Revision 1.6  2003/07/24 22:01:44  camacho
  * Removed unused variables
  *
@@ -1314,7 +1317,7 @@ BLAST_MatrixDestruct(BLAST_MatrixPtr blast_matrix)
 	than the 'normal' matrix.
 */
 BLAST_MatrixPtr
-BLAST_MatrixFill(BLAST_ScoreBlkPtr sbp, Boolean positionBased)
+BLAST_MatrixFill(BLAST_ScoreBlkPtr sbp)
 
 {
     BLAST_MatrixPtr blast_matrix;
@@ -1614,7 +1617,7 @@ BLAST_MatrixFetch(CharPtr matrix_name)
 
 	BlastScoreBlkMatFill(sbp, matrix_name);
 
-	matrix = BLAST_MatrixFill(sbp, FALSE);
+	matrix = BLAST_MatrixFill(sbp);
 
 	sbp = BLAST_ScoreBlkDestruct(sbp);	
 
@@ -4010,7 +4013,7 @@ f(FloatHi	x, VoidPtr	vp)
 */
 
 FloatHi
-BlastSmallGapSumE(BLAST_KarlinBlkPtr kbp, Int4 gap, FloatHi gap_prob, FloatHi gap_decay_rate, Int2 num, Int4 sum, FloatHi score_prime, Int4 query_length, Int4 subject_length, Boolean min_length_one)
+BlastSmallGapSumE(BLAST_KarlinBlkPtr kbp, Int4 gap, FloatHi gap_prob, FloatHi gap_decay_rate, Int2 num, FloatHi score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
@@ -4045,7 +4048,7 @@ BlastSmallGapSumE(BLAST_KarlinBlkPtr kbp, Int4 gap, FloatHi gap_prob, FloatHi ga
 */
 
 FloatHi
-BlastUnevenGapSumE(BLAST_KarlinBlkPtr kbp, Int4 p_gap, Int4 n_gap, FloatHi gap_prob, FloatHi gap_decay_rate, Int2 num, Int4 sum, FloatHi score_prime, Int4 query_length, Int4 subject_length, Boolean min_length_one)
+BlastUnevenGapSumE(BLAST_KarlinBlkPtr kbp, Int4 p_gap, Int4 n_gap, FloatHi gap_prob, FloatHi gap_decay_rate, Int2 num, FloatHi score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
@@ -4077,7 +4080,7 @@ BlastUnevenGapSumE(BLAST_KarlinBlkPtr kbp, Int4 p_gap, Int4 n_gap, FloatHi gap_p
 */
 
 FloatHi
-BlastLargeGapSumE(BLAST_KarlinBlkPtr kbp, FloatHi gap_prob, FloatHi gap_decay_rate, Int2 num, Int4 sum, FloatHi score_prime, Int4 query_length, Int4 subject_length, Boolean old_stats)
+BlastLargeGapSumE(BLAST_KarlinBlkPtr kbp, FloatHi gap_prob, FloatHi gap_decay_rate, Int2 num, FloatHi score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
