@@ -252,12 +252,45 @@ private:
 
 /* @} */
 
+extern NCBI_DBAPI_EXPORT const string kDBAPI_BlobCacheDriverName;
+
+extern "C" 
+{
+
+void NCBI_DBAPI_EXPORT NCBI_EntryPoint_DBAPI_BlobCache(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method);
+
+inline 
+void NCBI_DBAPI_EXPORT NCBI_EntryPoint_ICache(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DBAPI_BlobCache(info_list, method);
+}
+
+inline 
+void NCBI_DBAPI_EXPORT NCBI_EntryPoint_ICache_ncbi_dbapi(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DBAPI_BlobCache(info_list, method);
+}
+
+
+
+} // extern C
+
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/26 17:04:21  kuznets
+ * + plugin manager entry points
+ *
  * Revision 1.4  2004/07/26 14:05:39  kuznets
  * + Open with all connection parameters
  *
