@@ -204,6 +204,7 @@ void CNetCacheServer::Process(SOCK sock)
     try {
         CSocket socket;
         socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
+        socket.DisableOSSendDelay();
 
         string auth, request;
 
@@ -548,7 +549,7 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
 {
     _ASSERT(str);
 
-    str->clear();
+    str->erase();
     char ch;
     EIO_Status io_st;
     unsigned loop_cnt = 0;
@@ -777,6 +778,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/10/20 13:45:37  kuznets
+ * Disabled TCP/IP delay on write
+ *
  * Revision 1.8  2004/10/19 18:20:26  kuznets
  * Use ReadPeek to avoid net delays
  *
