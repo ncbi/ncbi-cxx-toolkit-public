@@ -369,7 +369,7 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
     }
     c_buff[aln_len * width] = '\0';
     buffer = c_buff;
-    delete c_buff;
+    delete [] c_buff;
     return buffer;
 }
 
@@ -754,6 +754,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2003/09/17 15:48:06  jianye
+* Added missing [] when de-allocating c_buff
+*
 * Revision 1.46  2003/09/17 14:46:39  todorov
 * Performance optimization: Use char * instead of string
 *
