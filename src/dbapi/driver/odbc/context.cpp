@@ -388,10 +388,13 @@ I_DriverContext* ODBC_CreateContext(map<string,string>* attr = 0)
     return cntx;
 }
 
+
+NCBI_DBAPIDRIVER_ODBC_EXPORT
 void DBAPI_RegisterDriver_ODBC(I_DriverMgr& mgr)
 {
     mgr.RegisterDriver("odbc", ODBC_CreateContext);
 }
+
 
 extern "C" {
     void* DBAPI_E_odbc()
@@ -408,6 +411,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/03/17 19:25:38  gorelenk
+ * Added NCBI_DBAPIDRIVER_ODBC_EXPORT export prefix for definition of
+ * DBAPI_RegisterDriver_ODBC .
+ *
  * Revision 1.11  2003/11/14 20:46:51  soussov
  * implements DoNotConnect mode
  *
