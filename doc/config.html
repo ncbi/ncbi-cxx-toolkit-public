@@ -780,6 +780,18 @@ to the "generic" ones
   </tr>
 
   <tr>
+	 <td><b>NCBI_GEO_PATH</b></td>
+	 <td><i>$NCBI/geo</i></td>
+	 <td>Path to the NCBI GEO package</td>
+  </tr>
+
+  <tr>
+	 <td><b>SP_PATH</b></td>
+	 <td><i>$NCBI/SP</i></td>
+	 <td>Path to the SP package</td>
+  </tr>
+
+  <tr>
 	 <td><b>NCBI_PM_PATH</b></td>
 	 <td><i>$NCBI/pubmed[64]</i></td>
 	 <td>Path to the NCBI PubMed package</td>
@@ -911,7 +923,7 @@ to use in the generated makefiles:
 
   <tr>
 	 <td><i><b>NCBI_SSS_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$NCBI_SSS_PATH/<i>include</i></td>
+	 <td><i><b>-I</b></i>$NCBI_SSS_PATH<i>/include</i></td>
 	 <td><i>#include</i> NCBI SSS headers</td>
   </tr>
 
@@ -921,6 +933,33 @@ to use in the generated makefiles:
 					 ....{Release|Debug}[GNU][64][mt]</i>
     </td>
 	 <td>link with NCBI SSS libs</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>NCBI_GEO_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$NCBI_GEO_PATH<i>/include</i></td>
+	 <td><i>#include</i> NCBI GEO headers</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>NCBI_GEO_LIBPATH</b></i></td>
+	 <td><i><b>-L</b></i>$NCBI_GEO_PATH<i>/lib/.... <br>
+					 ...[GCC-|KCC-|ICC-]{Release|Debug}[64]</i>
+    </td>
+	 <td>link with NCBI GEO libs</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>SP_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$SP_PATH<i>/include</i></td>
+	 <td><i>#include</i> SP headers</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>SP_LIBS</b></i></td>
+	 <td><i><b>-L</b></i>$SP_PATH<i>/{Release|Debug}[MT][64] <br>
+           <b>-l</b>sp</i></td>
+	 <td>link with the SP lib</td>
   </tr>
 
   <tr>
@@ -941,15 +980,17 @@ be prohibited to use -- using the following <b><i>configure</i></b>
 flags:
 
 <ul>
-  <li> <i><b>--without-sybase</b></i> (Sybase)
-  <li> <i><b>--without-fastcgi</b></i> (Fast-CGI)
-  <li> <i><b>--without-wxwin</b></i> (wxWindows)
-  <li> <i><b>--without-ncbi-c</b></i> (NCBI C Toolkit)
-  <li> <i><b>--without-sssdb</b></i> (NCBI SSS DB)
-  <li> <i><b>--without-sssutils</b></i> (NCBI SSS UTILS)
+  <li> <i><b>--without-sybase</b></i> (Sybase) </li>
+  <li> <i><b>--without-fastcgi</b></i> (Fast-CGI) </li>
+  <li> <i><b>--without-wxwin</b></i> (wxWindows) </li>
+  <li> <i><b>--without-ncbi-c</b></i> (NCBI C Toolkit) </li>
+  <li> <i><b>--without-sssdb</b></i> (NCBI SSS DB) </li>
+  <li> <i><b>--without-sssutils</b></i> (NCBI SSS UTILS) </li>
   <li> <i><b>--without-sss</b></i>
-		  (both <i><b>--without-sssdb</b></i> and <i><b>--without-sssutils</b></i>)
-  <li> <i><b>--without-pubmed</b></i> (NCBI PubMed)
+		  (both <i><b>--without-sssdb</b></i> and <i><b>--without-sssutils</b></i>) </li>
+  <li> <i><b>--without-geo</b></i> (NCBI GEO) </li>
+  <li> <i><b>--without-sp</b></i> (NCBI SP) </li>
+  <li> <i><b>--without-pubmed</b></i> (NCBI PubMed) </li>
 </ul>
 
 
