@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/05/04 16:22:19  vasilche
+* Cleaned and optimized blocks and members.
+*
 * Revision 1.48  2000/05/03 14:38:14  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -476,31 +479,13 @@ void CObjectIStream::Read(TObjectPtr object, const CTypeRef& type)
 
 CRef<CByteSource> CObjectIStream::DelayRead(TTypeInfo typeInfo)
 {
+#if 0
+    return 0;
+#else
     m_Input.StartSubSource();
     SkipData(typeInfo);
     return m_Input.EndSubSource();
-}
-
-void CObjectIStream::SetDefaultReadManager(CRef<CObjectReadManager> manager)
-{
-    m_DefaultReadManager = manager;
-}
-
-void CObjectIStream::SetReadManager(TTypeInfo ownerType,
-                                    const CMemberInfo* member,
-                                    CRef<CObjectReadManager> manager)
-{
-    m_ReadManagers.push_back(SReadManagerInfo(ownerType, member, manager));
-}
-
-CObjectReadManager* CObjectIStream::FindReadManager(TTypeInfo ownerType,
-                                                    const CMemberInfo* member)
-{
-    non_const_iterate ( TReadManagers, i, m_ReadManagers ) {
-        if ( i->type == ownerType && i->member == member )
-            return i->manager.GetPointer();
-    }
-    return m_DefaultReadManager.GetPointer();
+#endif
 }
 
 void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
@@ -829,27 +814,13 @@ void CObjectIStream::SkipValue(void)
     THROW1_TRACE(runtime_error, "cannot skip value");
 }
 
-void CObjectIStream::FBegin(Block& block)
-{
-    SetNonFixed(block);
-    VBegin(block);
-}
-
 void CObjectIStream::VBegin(Block& )
-{
-}
-
-void CObjectIStream::FNext(const Block& )
 {
 }
 
 bool CObjectIStream::VNext(const Block& )
 {
     return false;
-}
-
-void CObjectIStream::FEnd(const Block& )
-{
 }
 
 void CObjectIStream::VEnd(const Block& )
@@ -917,117 +888,19 @@ bool CObjectIStream::StackElement::CanClose(void) const
     }
 }
 
-CObjectIStream::Member::Member(CObjectIStream& in, const CMembers& members)
-    : StackElement(in), m_Index(-1)
-{
-    in.StartMember(*this, members);
-}
-
-CObjectIStream::Member::Member(CObjectIStream& in, LastMember& lastMember)
-    : StackElement(in), m_Index(-1)
-{
-    in.StartMember(*this, lastMember);
-}
-
-CObjectIStream::Member::Member(CObjectIStream& in, const CMemberId& member)
-    : StackElement(in), m_Index(-1)
-{
-    in.StartMember(*this, member);
-}
-
-CObjectIStream::Member::~Member(void)
-{
-    if ( CanClose() )
-        GetStream().EndMember(*this);
-}
-
 void CObjectIStream::EndMember(const Member& )
 {
-}
-
-CObjectIStream::Block::Block(CObjectIStream& in)
-    : StackElement(in, "E"), m_Fixed(false), m_RandomOrder(false),
-      m_Finished(false), m_Size(0), m_NextIndex(0)
-{
-    in.VBegin(*this);
-}
-
-CObjectIStream::Block::Block(EFixed , CObjectIStream& in)
-    : StackElement(in, "E"), m_Fixed(true), m_RandomOrder(false),
-      m_Finished(false), m_Size(0), m_NextIndex(0)
-{
-    in.FBegin(*this);
-    _ASSERT(!Fixed());
-}
-
-CObjectIStream::Block::Block(CObjectIStream& in, bool randomOrder)
-    : StackElement(in, "E"), m_Fixed(false), m_RandomOrder(randomOrder),
-      m_Finished(false), m_Size(0), m_NextIndex(0)
-{
-    in.VBegin(*this);
-}
-
-CObjectIStream::Block::Block(EFixed , CObjectIStream& in, bool randomOrder)
-    : StackElement(in, "E"), m_Fixed(true), m_RandomOrder(randomOrder),
-      m_Finished(false), m_Size(0), m_NextIndex(0)
-{
-    in.FBegin(*this);
-    _ASSERT(!Fixed());
 }
 
 bool CObjectIStream::Block::Next(void)
 {
     _ASSERT(!Ended());
-#if 0
-    if ( Fixed() ) {
-        if ( GetNextIndex() >= GetSize() ) {
-            return false;
-        }
-        GetStream().FNext(*this);
-    }
-    else
-#endif
-    {
-#if 0
-        if ( Finished() ) {
-            return false;
-        }
-#endif
-        if ( !GetStream().VNext(*this) ) {
-#if 0
-            m_Finished = true;
-#endif
-            End();
-            return false;
-        }
+    if ( !GetStream().VNext(*this) ) {
+        End();
+        return false;
     }
     IncIndex();
     return true;
-}
-
-CObjectIStream::Block::~Block(void)
-{
-    if ( CanClose() ) {
-#if 0
-        if ( Fixed() ) {
-            if ( GetNextIndex() != GetSize() ) {
-                GetStream().SetFailFlags(eFormatError);
-                THROW1_TRACE(runtime_error, "not all elements read");
-            }
-            GetStream().FEnd(*this);
-        }
-        else
-#endif
-        {
-#if 0
-            if ( !Finished() ) {
-                GetStream().SetFailFlags(eFormatError);
-                THROW1_TRACE(runtime_error, "not all elements read");
-            }
-#endif
-            GetStream().VEnd(*this);
-        }
-    }
 }
 
 CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)

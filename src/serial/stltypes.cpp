@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/05/04 16:22:20  vasilche
+* Cleaned and optimized blocks and members.
+*
 * Revision 1.20  2000/03/29 15:55:29  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -270,7 +273,7 @@ void CStlClassInfoMapImpl::WriteKeyValuePair(CObjectOStream& out,
                                              TConstObjectPtr key,
                                              TConstObjectPtr value) const
 {
-    CObjectOStream::Block block(2, out);
+    CObjectOStream::Block block(out);
     block.Next();
     {
         CObjectOStream::Member m(out, GetKeyId());
@@ -287,7 +290,7 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
                                             TObjectPtr key,
                                             TObjectPtr value) const
 {
-    CObjectIStream::Block block(CObjectIStream::eFixed, in);
+    CObjectIStream::Block block(in);
     if ( !block.Next() ) {
         THROW1_TRACE(runtime_error, "map key expected");
     }
@@ -311,7 +314,7 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
 
 void CStlClassInfoMapImpl::SkipKeyValuePair(CObjectIStream& in) const
 {
-    CObjectIStream::Block block(CObjectIStream::eFixed, in);
+    CObjectIStream::Block block(in);
     if ( !block.Next() ) {
         THROW1_TRACE(runtime_error, "map key expected");
     }

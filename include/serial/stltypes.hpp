@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/05/04 16:22:22  vasilche
+* Cleaned and optimized blocks and members.
+*
 * Revision 1.35  2000/04/10 21:01:39  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -522,7 +525,7 @@ protected:
         {
             const TObjectType& l = Get(object);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CObjectOStream::Block block(l.size(), out, RandomOrder());
+            CObjectOStream::Block block(out, RandomOrder());
             for ( TConstIterator i = l.begin(); i != l.end(); ++i ) {
                 block.Next();
                 dataTypeInfo->WriteData(out, &*i);
@@ -531,11 +534,8 @@ protected:
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
-            CObjectIStream::Block block(CObjectIStream::eFixed,
-                                        in, RandomOrder());
+            CObjectIStream::Block block(in, RandomOrder());
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            if ( block.Fixed() )
-                Reserve(object, block.GetSize());
             while ( block.Next() ) {
                 dataTypeInfo->ReadData(in, AddEmpty(object, block.GetIndex()));
             }
@@ -543,8 +543,7 @@ protected:
 
     virtual void SkipData(CObjectIStream& in) const
         {
-            CObjectIStream::Block block(CObjectIStream::eFixed,
-                                        in, RandomOrder());
+            CObjectIStream::Block block(in, RandomOrder());
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
             while ( block.Next() )
                 dataTypeInfo->SkipData(in);
@@ -674,8 +673,7 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             TObjectType& o = Get(object);
-            CObjectIStream::Block block(CObjectIStream::eFixed,
-                                        in, RandomOrder());
+            CObjectIStream::Block block(in, RandomOrder());
             while ( block.Next() ) {
                 Data data;
                 GetDataTypeInfo()->ReadData(in, &data);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/05/04 16:22:23  vasilche
+* Cleaned and optimized blocks and members.
+*
 * Revision 1.35  2000/04/28 16:58:02  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -301,71 +304,32 @@ public:
 
     class Member {
     public:
-        Member(CObjectOStream& out, const CMemberId& member)
-            : m_Out(out)
-            {
-                out.StartMember(*this, member);
-            }
+        Member(CObjectOStream& out, const CMemberId& member);
         Member(CObjectOStream& out,
-               const CMembers& members, TMemberIndex index)
-            : m_Out(out)
-            {
-                out.StartMember(*this, members, index);
-            }
-        ~Member(void)
-            {
-                m_Out.EndMember(*this);
-            }
+               const CMembers& members, TMemberIndex index);
+        ~Member(void);
     private:
         CObjectOStream& m_Out;
     };
     // block interface
     class Block {
     public:
-        Block(CObjectOStream& out);
-        Block(size_t size, CObjectOStream& out);
-        Block(CObjectOStream& out, bool randomOrder);
-        Block(size_t size, CObjectOStream& out, bool randomOrder);
+        Block(CObjectOStream& out, bool randomOrder = false);
         ~Block(void);
 
         void Next(void);
 
-        bool Fixed(void) const
-            {
-                return m_Fixed;
-            }
-        bool RandomOrder(void) const
-            {
-                return m_RandomOrder;
-            }
+        bool RandomOrder(void) const;
 
-        size_t GetNextIndex(void) const
-            {
-                return m_NextIndex;
-            }
-
-        size_t GetIndex(void) const
-            {
-                return GetNextIndex() - 1;
-            }
-
-        bool First(void) const
-            {
-                return GetNextIndex() == 0;
-            }
-
-        size_t GetSize(void) const
-            {
-                return m_Size;
-            }
+        size_t GetNextIndex(void) const;
+        size_t GetIndex(void) const;
+        bool First(void) const;
+        size_t GetSize(void) const;
 
     protected:
         CObjectOStream& m_Out;
 
-        void IncIndex(void)
-            {
-                ++m_NextIndex;
-            }
+        void IncIndex(void);
 
     private:
         // to prevent copying
@@ -374,7 +338,6 @@ public:
 
         friend class CObjectOStream;
 
-        bool m_Fixed;
         bool m_RandomOrder;
         size_t m_NextIndex;
         size_t m_Size;
@@ -384,10 +347,7 @@ public:
 		ByteBlock(CObjectOStream& out, size_t length);
 		~ByteBlock(void);
 
-		size_t GetLength(void) const
-		{
-			return m_Length;
-		}
+		size_t GetLength(void) const;
 
 		void Write(const void* bytes, size_t length);
 
@@ -401,22 +361,13 @@ public:
     public:
         AsnIo(CObjectOStream& out, const string& rootTypeName);
         ~AsnIo(void);
-        operator asnio*(void)
-            {
-                return m_AsnIo;
-            }
-        asnio* operator->(void)
-            {
-                return m_AsnIo;
-            }
-        const string& GetRootTypeName(void) const
-            {
-                return m_RootTypeName;
-            }
-        void Write(const char* data, size_t length)
-            {
-                m_Out.AsnWrite(*this, data, length);
-            }
+
+        void Write(const char* data, size_t length);
+
+        operator asnio*(void);
+        asnio* operator->(void);
+        const string& GetRootTypeName(void) const;
+
     private:
         CObjectOStream& m_Out;
         string m_RootTypeName;
@@ -438,16 +389,8 @@ protected:
     friend class Block;
     friend class Member;
 	friend class ByteBlock;
-    static void SetNonFixed(Block& block)
-        {
-            block.m_Fixed = false;
-            block.m_Size = 0;
-        }
-    virtual void FBegin(Block& block);
     virtual void VBegin(Block& block);
-    virtual void FNext(const Block& block);
     virtual void VNext(const Block& block);
-    virtual void FEnd(const Block& block);
     virtual void VEnd(const Block& block);
     // write member name
     virtual void StartMember(Member& member, const CMemberId& id) = 0;
@@ -507,7 +450,7 @@ protected:
     COStreamBuffer m_Output;
 };
 
-//#include <serial/objostr.inl>
+#include <serial/objostr.inl>
 
 END_NCBI_SCOPE
 

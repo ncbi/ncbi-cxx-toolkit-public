@@ -33,12 +33,132 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/05/04 16:22:24  vasilche
+* Cleaned and optimized blocks and members.
+*
 * Revision 1.1  1999/05/19 19:56:27  vasilche
 * Commit just in case.
 *
 * ===========================================================================
 */
 
+inline
+CObjectOStream::Member::Member(CObjectOStream& out, const CMemberId& member)
+    : m_Out(out)
+{
+    out.StartMember(*this, member);
+}
 
+inline
+CObjectOStream::Member::Member(CObjectOStream& out,
+                               const CMembers& members, TMemberIndex index)
+    : m_Out(out)
+{
+    out.StartMember(*this, members, index);
+}
+
+inline
+CObjectOStream::Member::~Member(void)
+{
+    m_Out.EndMember(*this);
+}
+
+inline
+bool CObjectOStream::Block::RandomOrder(void) const
+{
+    return m_RandomOrder;
+}
+
+inline
+size_t CObjectOStream::Block::GetNextIndex(void) const
+{
+    return m_NextIndex;
+}
+
+inline
+size_t CObjectOStream::Block::GetIndex(void) const
+{
+    return GetNextIndex() - 1;
+}
+
+inline
+bool CObjectOStream::Block::First(void) const
+{
+    return GetNextIndex() == 0;
+}
+
+inline
+size_t CObjectOStream::Block::GetSize(void) const
+{
+    return m_Size;
+}
+
+inline
+void CObjectOStream::Block::IncIndex(void)
+{
+    ++m_NextIndex;
+}
+
+inline
+size_t CObjectOStream::ByteBlock::GetLength(void) const
+{
+    return m_Length;
+}
+
+#if HAVE_NCBI_C
+
+inline
+CObjectOStream::AsnIo::operator asnio*(void)
+{
+    return m_AsnIo;
+}
+
+inline
+asnio* CObjectOStream::AsnIo::operator->(void)
+{
+    return m_AsnIo;
+}
+
+inline
+const string& CObjectOStream::AsnIo::GetRootTypeName(void) const
+{
+    return m_RootTypeName;
+}
+
+inline
+void CObjectOStream::AsnIo::Write(const char* data, size_t length)
+{
+    m_Out.AsnWrite(*this, data, length);
+}
+
+#endif
+
+inline
+CObjectOStream::Block::Block(CObjectOStream& out, bool randomOrder)
+    : m_Out(out), m_RandomOrder(randomOrder),
+      m_NextIndex(0), m_Size(0)
+{
+    out.VBegin(*this);
+}
+
+inline
+void CObjectOStream::Block::Next(void)
+{
+    m_Out.VNext(*this);
+    IncIndex();
+}
+
+inline
+CObjectOStream::Block::~Block(void)
+{
+    m_Out.VEnd(*this);
+}
+
+inline
+CObjectOStream::ByteBlock::ByteBlock(CObjectOStream& out, size_t length)
+    : m_Out(out), m_Length(length)
+{
+    out.Begin(*this);
+}
 
 #endif /* def OBJOSTR__HPP  &&  ndef OBJOSTR__INL */

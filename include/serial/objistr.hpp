@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/05/04 16:22:23  vasilche
+* Cleaned and optimized blocks and members.
+*
 * Revision 1.38  2000/04/28 16:58:02  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -184,23 +187,8 @@ class CTypeMapper;
 class CMemberId;
 class CMembers;
 class CDelayBuffer;
-class CObjectReadManager;
 class CByteSource;
 class CByteSourceReader;
-
-class CObjectReadManager : public CObject
-{
-public:
-    virtual bool DelayRead(CObjectIStream& in, TObjectPtr ownerObject,
-                           TTypeInfo ownerType, const CMemberInfo* member) = 0;
-};
-
-class CMemoryReadMemory : public CObjectReadManager
-{
-public:
-    virtual bool DelayRead(CObjectIStream& in, TObjectPtr ownerObject,
-                           TTypeInfo ownerType, const CMemberInfo* member);
-};
 
 class CObjectIStream
 {
@@ -472,20 +460,10 @@ public:
     class LastMember
     {
     public:
-        LastMember(const CMembers& members)
-            : m_Members(members), m_Index(-1)
-            {
-            }
+        LastMember(const CMembers& members);
 
-        const CMembers& GetMembers(void) const
-            {
-                return m_Members;
-            }
-
-        TMemberIndex GetIndex(void) const
-            {
-                return m_Index;
-            }
+        const CMembers& GetMembers(void) const;
+        TMemberIndex GetIndex(void) const;
 
     private:
         const CMembers& m_Members;
@@ -503,67 +481,22 @@ public:
             eNameId
         };
     public:
-        void SetName(const char* str)
-            {
-                m_NameType = eNameCharPtr;
-                m_NameCharPtr = str;
-            }
-        void SetName(const string& str)
-            {
-                m_NameType = eNameString;
-                m_NameString = &str;
-            }
-        void SetName(const CMemberId& id)
-            {
-                m_NameType = eNameId;
-                m_NameId = &id;
-            }
+        StackElement(CObjectIStream& s);
+        StackElement(CObjectIStream& s, const string& str);
+        StackElement(CObjectIStream& s, const char* str);
+        ~StackElement(void);
 
+        void SetName(const char* str);
+        void SetName(const string& str);
+        void SetName(const CMemberId& id);
 
-        StackElement(CObjectIStream& s)
-            : m_Stream(s), m_Previous(s.m_CurrentElement), m_Ended(false),
-              m_NameType(eNameEmpty)
-            {
-                s.m_CurrentElement = this;
-            }
-        StackElement(CObjectIStream& s, const string& str)
-            : m_Stream(s), m_Previous(s.m_CurrentElement), m_Ended(false)
-            {
-                SetName(str);
-                s.m_CurrentElement = this;
-            }
-        StackElement(CObjectIStream& s, const char* str)
-            : m_Stream(s), m_Previous(s.m_CurrentElement), m_Ended(false)
-            {
-                SetName(str);
-                s.m_CurrentElement = this;
-            }
-        ~StackElement(void)
-            {
-                m_Stream.m_CurrentElement = m_Previous;
-            }
-
-        CObjectIStream& GetStream(void) const
-            {
-                return m_Stream;
-            }
-
-        const StackElement* GetPrevous(void) const
-            {
-                return m_Previous;
-            }
+        CObjectIStream& GetStream(void) const;
+        const StackElement* GetPrevous(void) const;
 
         string ToString(void) const;
 
-        bool Ended(void) const
-            {
-                return m_Ended;
-            }
-        void End(void)
-            {
-                _ASSERT(!Ended());
-                m_Ended = true;
-            }
+        bool Ended(void) const;
+        void End(void);
         bool CanClose(void) const;
 
     private:
@@ -597,10 +530,7 @@ public:
         Member(CObjectIStream& in, LastMember& lastMember);
         ~Member(void);
 
-        TMemberIndex GetIndex(void) const
-            {
-                return m_Index;
-            }
+        TMemberIndex GetIndex(void) const;
 
     private:
         TMemberIndex m_Index;
@@ -609,66 +539,28 @@ public:
     };
 
     // block interface
-    enum EFixed {
-        eFixed
-    };
     class Block : public StackElement
     {
     public:
-        Block(CObjectIStream& in);
-        Block(EFixed eFixed, CObjectIStream& in);
-        Block(CObjectIStream& in, bool randomOrder);
-        Block(EFixed eFixed, CObjectIStream& in, bool randomOrder);
+        Block(CObjectIStream& in, bool randomOrder = false);
         ~Block(void);
 
         bool Next(void);
 
-        bool Fixed(void) const
-            {
-                return m_Fixed;
-            }
-        bool RandomOrder(void) const
-            {
-                return m_RandomOrder;
-            }
+        bool RandomOrder(void) const;
 
-        bool Finished(void) const
-            {
-                return m_Finished;
-            }
-
-        size_t GetNextIndex(void) const
-            {
-                return m_NextIndex;
-            }
-
-        size_t GetIndex(void) const
-            {
-                return GetNextIndex() - 1;
-            }
-
-        bool First(void) const
-            {
-                return GetNextIndex() == 0;
-            }
-
-        size_t GetSize(void) const
-            {
-                return m_Size;
-            }
+        size_t GetNextIndex(void) const;
+        size_t GetIndex(void) const;
+        bool First(void) const;
+        size_t GetSize(void) const;
 
     protected:
-        void IncIndex(void)
-            {
-                ++m_NextIndex;
-            }
+        void IncIndex(void);
 
     private:
         friend class CObjectIStream;
 
-        bool m_Fixed;
         bool m_RandomOrder;
-        bool m_Finished;
         size_t m_Size;
         size_t m_NextIndex;
     };
@@ -678,17 +570,10 @@ public:
 		ByteBlock(CObjectIStream& in);
 		~ByteBlock(void);
 
-        bool KnownLength(void) const
-        {
-            return m_KnownLength;
-        }
-
-		size_t GetExpectedLength(void) const
-		{
-			return m_Length;
-		}
-
 		size_t Read(void* dst, size_t length, bool forceLength = false);
+
+        bool KnownLength(void) const;
+		size_t GetExpectedLength(void) const;
 
 	private:
 		bool m_KnownLength;
@@ -704,22 +589,13 @@ public:
     public:
         AsnIo(CObjectIStream& in, const string& rootTypeName);
         ~AsnIo(void);
-        operator asnio*(void)
-            {
-                return m_AsnIo;
-            }
-        asnio* operator->(void)
-            {
-                return m_AsnIo;
-            }
-        const string& GetRootTypeName(void) const
-            {
-                return m_RootTypeName;
-            }
-        size_t Read(char* data, size_t length)
-            {
-                return GetStream().AsnRead(*this, data, length);
-            }
+
+        size_t Read(char* data, size_t length);
+
+        operator asnio*(void);
+        asnio* operator->(void);
+        const string& GetRootTypeName(void) const;
+
     private:
         string m_RootTypeName;
         asnio* m_AsnIo;
@@ -747,40 +623,15 @@ protected:
     virtual void StartMember(Member& member, const CMemberId& id) = 0;
     virtual void StartMember(Member& member, LastMember& lastMember) = 0;
     virtual void EndMember(const Member& member);
-    static void SetIndex(LastMember& lastMember, TMemberIndex index)
-        {
-            lastMember.m_Index = index;
-        }
+    static void SetIndex(LastMember& lastMember, TMemberIndex index);
     static void SetIndex(Member& member,
-                         TMemberIndex index, const CMemberId& id)
-        {
-            member.m_Index = index;
-            member.SetName(id);
-        }
+                         TMemberIndex index, const CMemberId& id);
 
     // block interface
-    static void SetNonFixed(Block& block, bool finished = false)
-        {
-            block.m_Fixed = false;
-            block.m_Size = 0;
-            block.m_Finished = finished;
-        }
-    static void SetFixed(Block& block, size_t size)
-        {
-            block.m_Fixed = true;
-            block.m_Size = size;
-        }
-    virtual void FBegin(Block& block);
     virtual void VBegin(Block& block);
-    virtual void FNext(const Block& block);
     virtual bool VNext(const Block& block);
-    virtual void FEnd(const Block& block);
     virtual void VEnd(const Block& block);
-	static void SetBlockLength(ByteBlock& block, size_t length)
-		{
-			block.m_Length = length;
-			block.m_KnownLength = true;
-		}
+	static void SetBlockLength(ByteBlock& block, size_t length);
 	virtual void Begin(ByteBlock& block);
 	virtual size_t ReadBytes(const ByteBlock& block,
                              char* buffer, size_t count) = 0;
@@ -842,45 +693,19 @@ protected:
             typeInfo->SkipData(*this);
         }
 
-    void SetDefaultReadManager(CRef<CObjectReadManager> manager);
-    void SetReadManager(TTypeInfo type, const CMemberInfo* member,
-                        CRef<CObjectReadManager> manager);
-    CObjectReadManager* FindReadManager(TTypeInfo type,
-                                        const CMemberInfo* member);
-
 protected:
     CIStreamBuffer m_Input;
 
 private:
-    struct SReadManagerInfo {
-        TTypeInfo type;
-        const CMemberInfo* member;
-        CRef<CObjectReadManager> manager;
-
-        SReadManagerInfo(void)
-            : type(0), member(0)
-            {
-            }
-        SReadManagerInfo(TTypeInfo t, const CMemberInfo*m,
-                         CRef<CObjectReadManager> mgr)
-            : type(t), member(m), manager(mgr)
-            {
-            }
-    };
-    typedef list<SReadManagerInfo> TReadManagers;
-
     vector<CObjectInfo> m_Objects;
 
     unsigned m_Fail;
     const StackElement* m_CurrentElement;
 
     CTypeMapper* m_TypeMapper;
-
-    CRef<CObjectReadManager> m_DefaultReadManager;
-    TReadManagers m_ReadManagers;
 };
 
-//#include <serial/objistr.inl>
+#include <serial/objistr.inl>
 
 END_NCBI_SCOPE
 

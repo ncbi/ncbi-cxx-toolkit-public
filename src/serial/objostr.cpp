@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/05/04 16:22:20  vasilche
+* Cleaned and optimized blocks and members.
+*
 * Revision 1.36  2000/04/28 16:58:13  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -427,20 +430,6 @@ void CObjectOStream::EndMember(const Member& )
 {
 }
 
-void CObjectOStream::FBegin(Block& block)
-{
-    SetNonFixed(block);
-    VBegin(block);
-}
-
-void CObjectOStream::FNext(const Block& )
-{
-}
-
-void CObjectOStream::FEnd(const Block& )
-{
-}
-
 void CObjectOStream::VBegin(Block& )
 {
 }
@@ -451,68 +440,6 @@ void CObjectOStream::VNext(const Block& )
 
 void CObjectOStream::VEnd(const Block& )
 {
-}
-
-CObjectOStream::Block::Block(CObjectOStream& out)
-    : m_Out(out), m_Fixed(false), m_RandomOrder(false),
-      m_NextIndex(0), m_Size(0)
-{
-    out.VBegin(*this);
-}
-
-CObjectOStream::Block::Block(size_t size, CObjectOStream& out)
-    : m_Out(out), m_Fixed(true), m_RandomOrder(false),
-      m_NextIndex(0), m_Size(size)
-{
-    out.FBegin(*this);
-}
-
-CObjectOStream::Block::Block(CObjectOStream& out, bool randomOrder)
-    : m_Out(out), m_Fixed(false), m_RandomOrder(randomOrder),
-      m_NextIndex(0), m_Size(0)
-{
-    out.VBegin(*this);
-}
-
-CObjectOStream::Block::Block(size_t size, CObjectOStream& out,
-                             bool randomOrder)
-    : m_Out(out), m_Fixed(true), m_RandomOrder(randomOrder),
-      m_NextIndex(0), m_Size(size)
-{
-    out.FBegin(*this);
-}
-
-void CObjectOStream::Block::Next(void)
-{
-    if ( Fixed() ) {
-        if ( GetNextIndex() >= GetSize() ) {
-            THROW1_TRACE(runtime_error, "too many elements");
-        }
-        m_Out.FNext(*this);
-    }
-    else {
-        m_Out.VNext(*this);
-    }
-    IncIndex();
-}
-
-CObjectOStream::Block::~Block(void)
-{
-    if ( Fixed() ) {
-        if ( GetNextIndex() != GetSize() ) {
-            THROW1_TRACE(runtime_error, "not all elements written");
-        }
-        m_Out.FEnd(*this);
-    }
-    else {
-        m_Out.VEnd(*this);
-    }
-}
-
-CObjectOStream::ByteBlock::ByteBlock(CObjectOStream& out, size_t length)
-    : m_Out(out), m_Length(length)
-{
-    out.Begin(*this);
 }
 
 CObjectOStream::ByteBlock::~ByteBlock(void)
