@@ -191,7 +191,8 @@ AC_PROG_CXX
 #### Detect KCC compiler
 if test "$GCC" != "yes" ; then
    touch kcc_test.c
-   kcc_ver="`$CXX -V -c kcc_test.c 2>&1 | tail -1`"
+   kcc_ver="`$CXX -V -c kcc_test.c 2>&1 | grep '^KAI '`"
+   kcc_license="`$CXX -V -c kcc_test.c 2>&1 | grep -v '^KAI '`"
    rm -f kcc_test.c kcc_test.o
    case "$kcc_ver" in 
       KAI* )  KCC="yes" ;;
@@ -577,6 +578,12 @@ if test "$compiler" = "KCC" ; then
    case "$host_os" in
       solaris* )  CPPFLAGS="-D__EXTENSIONS__ -D__STDC__=0 $CPPFLAGS" ;;
    esac
+   if test -n "$kcc_license" ; then
+      kcc_CC="$CC"
+      kcc_CXX="$CXX"
+      CC="./compilers/cxx_filter.KCC.sh $CC"
+      CXX="./compilers/cxx_filter.KCC.sh $CXX"
+   fi
 fi
 
 
@@ -1503,6 +1510,14 @@ case "$compiler" in
    test -d ti_files     &&  rm -r ti_files
    ;;
 esac
+
+
+### Get rid of the KCC "anti-license-warning" filter
+if test -n "$kcc_license" ; then
+   CC="$kcc_CC"
+   CXXCPP="$kcc_CXX -E"
+   CXX="$kcc_CXX"
+fi
 
 
 #############################################################################
