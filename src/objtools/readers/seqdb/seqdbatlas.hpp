@@ -47,7 +47,6 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ncbifile.hpp>
-#include <util/random_gen.hpp>
 #include <vector>
 #include <map>
 #include <set>
@@ -80,18 +79,33 @@ public:
 /// waiting for a lock will not give up the processor to tasks which
 /// are doing work.  Because of this, it should only be used for locks
 /// which are acquired many times and held for a short duration.
+/// In the special purpose environment of SeqDB, with local or NFS
+/// mapped databases, it was a noticeable win relative to the two
+/// standard locks.  This was true in both multithreaded and single
+/// threaded blast run tests.
 
 class CSeqDBSpinLock {
 public:
+    /// Constructor.
+    /// 
+    /// Spin locks are initialized to an unlocked state.
     CSeqDBSpinLock()
       : m_L(0)
     {
     }
     
+    /// Destructor
+    ///
+    /// On destruction, this class does not unlock or validate the
+    /// object in any way.
     ~CSeqDBSpinLock()
     {
     }
     
+    /// Lock
+    ///
+    /// Runs in a loop, trying to acquired the lock.  Does not return
+    /// until it succeeds.
     void Lock()
     {
         bool done = false;
@@ -109,6 +123,9 @@ public:
         }
     }
     
+    /// Unlock
+    ///
+    /// Sets the lock to an unlock state.
     void Unlock()
     {
         // If we hold the lock, atomicity shouldn't be an issue here.
@@ -116,6 +133,8 @@ public:
     }
     
 private:
+    /// The underlying data - if this is a 1, cast to a void pointer,
+    /// the lock is held (by someone).  If it is NULL, it's available.
     void * volatile m_L;
 };
 
@@ -123,30 +142,51 @@ private:
 /// CSeqDBLockHold
 /// 
 /// This class is used to keep track of whether this thread holds the
-/// lock in the atlas object.  The atlas code will skip subsequent
-/// Lock() operations during the same transaction if the lock is
-/// already held.  This allows code that needs locking to get the lock
-/// without worrying about whether the calling function has already
-/// done so.  The destructor of this object will call Unlock() on the
-/// atlas if this thread has it locked.
+/// atlas lock.  The atlas code will skip subsequent Lock() operations
+/// during the same transaction if the lock is already held.  This
+/// allows code that needs locking to get the lock without worrying
+/// about whether the calling function has already done so.  The
+/// destructor of this object will call Unlock() on the atlas if this
+/// thread has it locked.
 
 class CSeqDBLockHold {
 public:
+    /// Constructor
+    /// 
+    /// This object constructs to an unlocked state, which means that
+    /// the thread owning the stack frame where this object is stored
+    /// does not hold the atlas lock.  This object keeps a reference
+    /// to the atlas object so that it can release the lock on
+    /// destruction, making it easier to write exception safe code.
+    /// @param atlas
+    ///   A reference to the atlas object.
     CSeqDBLockHold(class CSeqDBAtlas & atlas)
         : m_Atlas(atlas),
           m_Locked(false)
     {
     }
     
+    /// Destructor
+    /// 
+    /// The class will unlock the atlas's lock on destruction (if it
+    /// is the owner of that lock).
     inline ~CSeqDBLockHold();
     
 private:
+    /// Private copy constructor
+    /// 
+    /// This is private to prevent automatic copy construction.
     CSeqDBLockHold(CSeqDBLockHold & oth);
     
+    /// Only the atlas code is permitted to modify this object - it
+    /// does so simply by editing the m_Locked member as needed.
     friend class CSeqDBAtlas;
     
+    /// This reference allows unlock on exit.
     class CSeqDBAtlas & m_Atlas;
-    bool                m_Locked;
+    
+    /// If this is true, this thread owns the atlas lock.
+    bool m_Locked;
 };
 
 
@@ -161,20 +201,76 @@ private:
 
 class CRegionMap {
 public:
+    /// This defines the type used for offsets into files.
     typedef Uint4 TIndx;
     
-    typedef map<const char *, CRegionMap*> TAddressTable;
-    
+    /// Constructor
+    /// 
+    /// Initializes the object, storing the provided filename, file
+    /// id, and byte range.  This object does not own the string
+    /// containing the filename, and does not map any memory or
+    /// do any filesystem operations during construction.
+    /// @param fname
+    ///   Pointer to a string containing the name of the file.
+    /// @param fid
+    ///   An integer uniquely identifying the file to the atlas.
+    /// @param begin
+    ///   The offset of the beginning of the byte range.
+    /// @param end
+    ///   The offset of the end of the byte range.
     CRegionMap(const string * fname,
                Uint4          fid,
                TIndx          begin,
                TIndx          end);
     
+    /// Destructor
+    /// 
+    /// Frees or unmaps any memory associated with this region.
     ~CRegionMap();
     
+    /// Memory map a region of a file
+    /// 
+    /// This uses CMemoryFile to map the file region associated with
+    /// this object.  The range of memory may be rounded up to the
+    /// nearest slice boundary, and may trigger (atlas's) garbage
+    /// collection routine if the new memory area won't fit into the
+    /// memory bound provided.  The mapping will be attempted even if
+    /// the memory bound requirements are not acheivable, but this
+    /// will probably result in performance degradation due to
+    /// thrashing atlas's garbage collector.
+    /// 
+    /// @param atlas
+    ///   Pointer to the atlas.
+    /// @return
+    ///   Returns true if the mapping succeeded.
     bool MapMmap(CSeqDBAtlas *);
+    
+    /// Read a region of a file into memory
+    /// 
+    /// This uses CNcbiIfstream to read the file region associated
+    /// with this object into an allocated memory block.  The range of
+    /// memory may be rounded up (but only to the nearest block
+    /// boundary), and may trigger (atlas's) garbage collection
+    /// routine if the new memory area won't fit into the memory bound
+    /// provided.  The read will be attempted even if the memory bound
+    /// requirements are not acheivable, but this will probably result
+    /// in performance degradation due to thrashing atlas's garbage
+    /// collector.
+    /// 
+    /// @param atlas
+    ///   Pointer to the atlas.
+    /// @return
+    ///   Returns true if the read succeeded.
     bool MapFile(CSeqDBAtlas *);
     
+    /// Increment this region's reference count.
+    /// 
+    /// This increments the count of "users" associated with this
+    /// region.  When too much memory is used, memory regions may be
+    /// freed.  This process (garbage collection) will skip over any
+    /// regions in use at the time.  This method is the way to
+    /// indicates that an operation is done using this memory region
+    /// and expects it to remain intact for the duration.
     void AddRef()
     {
         _ASSERT(m_Ref >= 0);
@@ -182,63 +278,155 @@ public:
         m_Clock = 0;
     }
     
+    /// Decrement this region's reference count.
+    /// 
+    /// This decrements the count of "users" associated with this
+    /// region.  If the count becomes zero, the region becomes
+    /// available for the next run of garbage collection.  This method
+    /// indicates that an operation is done using this memory region.
     void RetRef()
     {
         _ASSERT(m_Ref > 0);
         m_Ref --;
     }
     
+    /// Return true if memory region is in use.
+    /// 
+    /// This returns true if any users (normally, CSeqMemLease
+    /// objects) are holding a reference on this memory region.
+    ///
+    /// @return
+    ///   true if memory region has current users.
     bool InUse()
     {
         return m_Ref != 0;
     }
     
+    /// Return true if memory region contains the pointer.
+    /// 
+    /// This method returns true if the specified pointer points to a
+    /// character in the memory area managed by this object.  It is
+    /// used to find the region to decrement when a user provides a
+    /// region to "give back".
+    /// 
+    /// @return
+    ///   true if this memory region contains the pointer
     bool InRange(const char * p) const
     {
         _ASSERT(m_Data);
         return ((p >= m_Data) && (p < (m_Data + (m_End - m_Begin))));
     }
     
+    /// Return the name of the file.
+    /// 
+    /// Provides the name of the file from which this data was
+    /// obtained.
+    ///
+    /// @return
+    ///   A const reference to the file name string.
     const string & Name()
     {
         return *m_Fname;
     }
     
+    /// Return the beginning offset of this region.
+    /// 
+    /// Provides the file offset corresponding to the beginning of
+    /// this mapping.
+    /// 
+    /// @return
+    ///   The index of the beginning of this mapping.
     TIndx Begin()
     {
         return m_Begin;
     }
     
+    /// Return the end offset of this region.
+    /// 
+    /// Provides the file offset corresponding to the end of this
+    /// mapping.
+    /// 
+    /// @return
+    ///   The index of the end of this mapping.
     TIndx End()
     {
         return m_End;
     }
     
+    /// Return the length of this mapping in bytes.
     TIndx Length()
     {
         return m_End - m_Begin;
     }
     
+    /// Get a pointer to a section of this data.
+    /// 
+    /// This method takes an offset range (start and end), and returns
+    /// a pointer to the data at the start offset.  The offsets are
+    /// relative to the file, not the region.  The end offset is only
+    /// used to check that the region contains the entire range.
+    /// 
+    /// @param begin
+    ///   The offset of the first required byte.
+    /// @param end
+    ///   The offset of the last required byte, plus one.
+    /// @return
+    ///   A pointer to the beginning of the requested data.
     const char * Data(TIndx begin, TIndx end);
-        
+    
+    /// Get a pointer to all data in this region.
+    /// 
+    /// This method returns a pointer to the data at the start offset
+    /// of this region.
+    /// 
+    /// @return
+    ///   A pointer to the beginning of the region's data.
     const char * Data() { return m_Data; }
-        
+    
+    /// Return the file id associated with this region.
+    /// 
+    /// This method returns an integer used to identify this file
+    /// within the atlas code.  The integer used here is uniquely
+    /// associated with the filename (but costs slightly fewer CPU
+    /// cycles during certain common operations).
+    /// 
+    /// @return
+    ///   An integer identifying the file this mapping is of.
     Uint4 Fid()
     {
         return m_Fid;
     }
-        
+    
+    /// Get the garbage collection clock value.
+    /// 
+    /// This method is used by the atlas code's garbage collection
+    /// routine.  The clock concept is borrowed from certain operating
+    /// system paging techniques, and is described further in the
+    /// garbage collection.  This function returns that clock value
+    /// plus a penalty, which is used to preferentially page out
+    /// regions with undesireable "shapes", e.g. that don't have a
+    /// size of exactly one (large) slice.
+    /// 
+    /// @return
+    ///   The clock value plus the penalty for this region.
     int GetClock()
     {
         return m_Clock + m_Penalty;
     }
-        
+    
+    /// Increase the garbage collection clock count.
+    /// 
+    /// This method increments the clock value, used by the atlas
+    /// code's garbage collection routine.  This method should never
+    /// be called on an in-use region.  The higher the clock value
+    /// gets, the closer this region is to being freed by the garbage
+    /// collection code.
     void BumpClock()
     {
         _ASSERT(! m_Ref);
         m_Clock++;
     }
-        
+    
     inline const char *
     MatchAndUse(Uint4            fid,
                 TIndx          & begin,
@@ -566,20 +754,12 @@ private:
         
         m_Recent[0] = r;
     }
-
-
+    
+    
     // Data
     
-
-    // It might be wise to split this class into two layers - one that
-    // contains the list of regions and only handles adding, removing,
-    // and lookup of those, and another that dictates semantics,
-    // i.e. garbage collection, etc.
-    
     CSeqDBSpinLock m_Lock;
-    //CFastMutex m_Lock;
     
-
     bool       m_UseMmap;
     Uint4      m_CurAlloc;
     
@@ -603,8 +783,6 @@ private:
     
     TNameOffsetTable m_NameOffsetLookup;
     TAddressTable    m_AddressLookup;
-    
-    CRandom m_RandGen;
     
     // Recent region lookup
     

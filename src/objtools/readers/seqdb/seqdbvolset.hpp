@@ -30,15 +30,31 @@
  *
  */
 
-/// CSeqDBVolSet class
+/// @file seqdbimpl.hpp
+/// Manages a set of database volumes.
 /// 
-/// This object defines access to a set of database volume.
+/// Defines classes:
+///     CSeqDBVolSet
+///     CVolEntry
+/// 
+/// Implemented for: UNIX, MS-Windows
 
 #include "seqdbvol.hpp"
 
 BEGIN_NCBI_SCOPE
 
+#ifdef HAVE_OBJECTS
 using namespace ncbi::objects;
+#endif //HAVE_OBJECTS
+
+/// CSeqDBVolSet
+/// 
+/// This class stores a set of CSeqDBVol objects and defines an
+/// interface to control usage of them.  Several methods are provided
+/// to create the set of volumes, or to get the required volumes by
+/// different criteria.  Also, certain methods perform operations over
+/// the set of volumes.  The CVolEntry class, defined internally to
+/// this one, provides some of this abstraction.
 
 class CSeqDBVolSet {
 public:
@@ -260,6 +276,14 @@ public:
 private:
     CSeqDBVolSet(const CSeqDBVolSet &);
     CSeqDBVolSet & operator=(const CSeqDBVolSet &);
+    
+    /// CVolEntry class
+    /// 
+    /// This class provides access to the CSeqDBVol class.  It also
+    /// contains data that is not relevant to the internal operation
+    /// of a volume, but is associated with that volume for operations
+    /// over the volume set as a whole, such as the starting OID of
+    /// the volume and masking information (GI and OID lists).
     
     class CVolEntry {
     public:
