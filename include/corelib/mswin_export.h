@@ -119,6 +119,7 @@
 #  define NCBI_XOBJMANIP_EXPORTS
 #  define NCBI_FORMAT_EXPORTS
 #  define NCBI_XOBJEDIT_EXPORTS
+#  define NCBI_XOBJSIMPLE_EXPORTS
 #endif
 
 
@@ -910,6 +911,15 @@
 #endif
 
 /*
+ * Export specifier for library xobjsimple
+ */
+#ifdef NCBI_XOBJSIMPLE_EXPORTS
+#  define NCBI_XOBJSIMPLE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XOBJSIMPLE_EXPORT __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library xobjutil
  */
 #ifdef NCBI_XOBJUTIL_EXPORTS
@@ -1098,6 +1108,7 @@
 #  define NCBI_XOBJMANIP_EXPORT
 #  define NCBI_XOBJMGR_EXPORT
 #  define NCBI_XOBJREAD_EXPORT
+#  define NCBI_XOBJSIMPLE_EXPORT
 #  define NCBI_XOBJUTIL_EXPORT
 #  define NCBI_XOBJWRITE_EXPORT
 #  define NCBI_XOMSSA_EXPORT
@@ -1133,6 +1144,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.88  2004/12/13 18:00:08  jcherry
+ * Added NCBI_XOBJSIMPLE_EXPORT(S) (under NCBI_SEQEXT_EXPORTS)
+ *
  * Revision 1.87  2004/12/10 15:26:41  ssikorsk
  * FreeTDS is ported on windows
  *
