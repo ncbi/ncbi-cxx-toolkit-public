@@ -43,7 +43,7 @@ void CAppNWA::Init()
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "Global alignment application.\n"
-                              "Build 1.00.10 - 01/28/03");
+                              "Build 1.00.11 - 03/05/03");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
@@ -104,8 +104,10 @@ void CAppNWA::Init()
     argdescr->AddOptionalKey
         ("o2", "o2", "Filename for type 2 output", CArgDescriptions::eString);
 
-    argdescr->AddFlag("ofasta", 
-        "Generate gapped FastA output for the aligner sequences");
+    argdescr->AddOptionalKey
+        ("ofasta", "ofasta",
+         "Generate gapped FastA output for the aligner sequences",
+         CArgDescriptions::eString);
 
     argdescr->AddOptionalKey
         ("oasn", "oasn", "ASN.1 output filename", CArgDescriptions::eString);
@@ -226,8 +228,7 @@ void CAppNWA::x_RunOnPair() const
     auto_ptr<ofstream> pofs1 (0);
     auto_ptr<ofstream> pofs2 (0);
     auto_ptr<ofstream> pofsAsn (0);
-    auto_ptr<ofstream> pofsFastA_seq1 (0);
-    auto_ptr<ofstream> pofsFastA_seq2 (0);
+    auto_ptr<ofstream> pofsFastA (0);
 
     if(output_type1) {
         pofs1.reset(open_ofstream (args["o1"].AsString()).release());
@@ -242,10 +243,7 @@ void CAppNWA::x_RunOnPair() const
     }
 
     if(output_fasta) {
-        pofsFastA_seq1.reset(open_ofstream (args["seq1"].AsString() + ".gfa")
-                             .release());
-        pofsFastA_seq2.reset(open_ofstream (args["seq2"].AsString() + ".gfa")
-                             .release());
+        pofsFastA.reset(open_ofstream (args["ofasta"].AsString()).release());
     }
 
     aligner->SetSeqIds(seqname1, seqname2);
@@ -257,34 +255,27 @@ void CAppNWA::x_RunOnPair() const
     const size_t line_width = 50;
     if(pofs1.get()) {
         *pofs1 << aligner->FormatAsText(
-                                line_width, CNWAligner::eFormatType1);
+                                CNWAligner::eFormatType1, line_width);
     }
 
     if(pofs2.get()) {
         *pofs2 << aligner->FormatAsText(
-                                line_width, CNWAligner::eFormatType2);
+                                CNWAligner::eFormatType2, line_width);
     }
 
     if(pofsAsn.get()) {
         *pofsAsn << aligner->FormatAsText(
-                                line_width, CNWAligner::eFormatAsn);
+                                  CNWAligner::eFormatAsn, line_width);
     }
 
-    if(pofsFastA_seq1.get()) {
-        *pofsFastA_seq1 << '>' << seqname1 << endl;
-        *pofsFastA_seq1 << aligner->FormatAsText(
-                                line_width, CNWAligner::eFormatFastA, 1);
-    }
-
-    if(pofsFastA_seq2.get()) {
-        *pofsFastA_seq2 << '>' << seqname2 << endl;
-        *pofsFastA_seq2 << aligner->FormatAsText(
-                                line_width, CNWAligner::eFormatFastA, 2);
+    if(pofsFastA.get()) {
+        *pofsFastA << aligner->FormatAsText(
+                                    CNWAligner::eFormatFastA, line_width);
     }
     
     if(!output_type1 && !output_type2 && !output_asn && !output_fasta) {
         cout << aligner->FormatAsText(
-                                line_width, CNWAligner::eFormatType2);
+                                    CNWAligner::eFormatType2, line_width);
     }
 }
 
@@ -322,7 +313,7 @@ bool CAppNWA::x_ReadFastaFile
     while ( ifs ) {
         string s;
         ifs >> s;
-        NStr::ToLower(s);
+        NStr::ToUpper(s);
         copy(s.begin(), s.end(), back_inserter(vOut));
     }
 
@@ -334,11 +325,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/03/05 20:13:53  kapustin
+ * Simplify FormatAsText(). Fix FormatAsSeqAlign(). Convert sequence alphabets to capitals
+ *
  * Revision 1.10  2003/02/11 16:06:55  kapustin
  * Add end-space free alignment support
  *
  * Revision 1.9  2003/01/28 12:46:27  kapustin
- * Format() --> FormatAsText(). Fix the flag spelling forcing ASN output ("oasn").
+ * Format() --> FormatAsText(). Fix the flag spelling forcing ASN output.
  *
  * Revision 1.8  2003/01/24 19:43:03  ucko
  * Change auto_ptr assignment to use release and reset rather than =,
@@ -348,7 +342,7 @@ END_NCBI_SCOPE
  * Support different output formats
  *
  * Revision 1.6  2003/01/21 16:34:22  kapustin
- * mm
+ * 
  *
  * Revision 1.5  2003/01/21 12:42:02  kapustin
  * Add mm parameter

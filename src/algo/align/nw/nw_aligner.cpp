@@ -45,11 +45,11 @@
 BEGIN_NCBI_SCOPE
 
 static const char nucleotides [] = 
-         { 'a', 'g', 't', 'c', 'n' };
+         { 'A', 'G', 'T', 'C', 'N' };
 
 static const char aminoacids [] = 
-         { 'a', 'r', 'n', 'd', 'c', 'q', 'e', 'g', 'h', 'i', 'l', 'k', 'm',
-           'f', 'p', 's', 't', 'w', 'y', 'v', 'b', 'z', 'x' };
+         { 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M',
+           'F', 'P', 'S', 'T', 'W', 'Y', 'V', 'B', 'Z', 'X' };
 
 static const size_t kBlosumSize = sizeof aminoacids;
 static const char matrix_blosum62[kBlosumSize][kBlosumSize] = {
@@ -393,6 +393,7 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
     size_t seg_count = 0;
     {{ 
         const char *seq1 = m_Seq1, *seq2 = m_Seq2;
+        const char *start1 = seq1, *start2 = seq2;
 
         vector<ETranscriptSymbol>::const_reverse_iterator
             ib = m_Transcript.rbegin(),
@@ -402,7 +403,7 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
         ETranscriptSymbol ts = *ib;
         char seg_type0 = ((ts == eInsert || ts == eIntron)? 1:
                           (ts == eDelete)? 2: 0);
-        size_t seg_len = 1;
+        size_t seg_len = 0;
 
         for (ii = ib;  ii != ie; ++ii) {
             ts = *ii;
@@ -410,12 +411,15 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
                              (ts == eDelete)? 2: 0);
 
             if(seg_type0 != seg_type) {
-                starts.push_back( (seg_type0 == 1)? -1: seq1 - m_Seq1 + 1 );
-                starts.push_back( (seg_type0 == 2)? -1: seq2 - m_Seq2 + 1 );
+                starts.push_back( (seg_type0 == 1)? -1: start1 - m_Seq1 + 1 );
+                starts.push_back( (seg_type0 == 2)? -1: start2 - m_Seq2 + 1 );
                 lens.push_back(seg_len);
                 strands.push_back(eNa_strand_plus);
                 strands.push_back(eNa_strand_plus);
                 ++seg_count;
+                start1 = seq1;
+                start2 = seq2;
+                seg_type0 = seg_type;
                 seg_len = 1;
             }
             else {
@@ -424,11 +428,10 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
 
             if(seg_type != 1) ++seq1;
             if(seg_type != 2) ++seq2;
-            seg_type0 = seg_type;
         }
         // the last one
-        starts.push_back( (seg_type0 == 1)? -1: seq1 - m_Seq1 + 1 );
-        starts.push_back( (seg_type0 == 2)? -1: seq2 - m_Seq2 + 1 );
+        starts.push_back( (seg_type0 == 1)? -1: start1 - m_Seq1 + 1 );
+        starts.push_back( (seg_type0 == 2)? -1: start2 - m_Seq2 + 1 );
         lens.push_back(seg_len);
         strands.push_back(eNa_strand_plus);
         strands.push_back(eNa_strand_plus);
@@ -443,16 +446,15 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
 
 // creates formatted output of alignment;
 // requires prior call to Run
-string CNWAligner::FormatAsText( size_t line_width,
-                                 EFormat type, int param) const
+string CNWAligner::FormatAsText(EFormat type, size_t line_width) const
 {
     CNcbiOstrstream ss;
-    vector<char> v1, v2;
-    size_t aln_size = x_ApplyTranscript(&v1, &v2);
 
     switch (type) {
 
     case eFormatType1: {
+        vector<char> v1, v2;
+        size_t aln_size = x_ApplyTranscript(&v1, &v2);
         unsigned i1 = 0, i2 = 0;
         for (size_t i = 0;  i < aln_size; ) {
             ss << i << '\t' << i1 << ':' << i2 << endl;
@@ -484,6 +486,8 @@ string CNWAligner::FormatAsText( size_t line_width,
     break;
 
     case eFormatType2: {
+        vector<char> v1, v2;
+        size_t aln_size = x_ApplyTranscript(&v1, &v2);
         unsigned i1 = 0, i2 = 0;
         for (size_t i = 0;  i < aln_size; ) {
             ss << i << '\t' << i1 << ':' << i2 << endl;
@@ -525,7 +529,20 @@ string CNWAligner::FormatAsText( size_t line_width,
     break;
 
     case eFormatFastA: {
-        const vector<char>* pv = param == 1? &v1: &v2;
+        vector<char> v1, v2;
+        size_t aln_size = x_ApplyTranscript(&v1, &v2);
+        
+        ss << '>' << m_Seq1Id << endl;
+        const vector<char>* pv = &v1;
+        for(size_t i = 0; i < aln_size; ++i) {
+            for(size_t j = 0; j < line_width && i < aln_size; ++j, ++i) {
+                ss << (*pv)[i];
+            }
+            ss << endl;
+        }
+
+        ss << '>' << m_Seq2Id << endl;
+        pv = &v2;
         for(size_t i = 0; i < aln_size; ++i) {
             for(size_t j = 0; j < line_width && i < aln_size; ++j, ++i) {
                 ss << (*pv)[i];
@@ -830,6 +847,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/03/05 20:13:48  kapustin
+ * Simplify FormatAsText(). Fix FormatAsSeqAlign(). Convert sequence alphabets to capitals
+ *
  * Revision 1.13  2003/02/11 16:06:54  kapustin
  * Add end-space free alignment support
  *
