@@ -34,6 +34,8 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
@@ -57,15 +59,22 @@ BEGIN_SCOPE(objects)
 // PUBLIC
 
 // constructor
+CFlatFileGenerator::CFlatFileGenerator(const CFlatFileConfig& cfg) :
+    m_Ctx(new CFlatFileContext(cfg))
+{
+     if ( !m_Ctx ) {
+         NCBI_THROW(CFlatException, eInternal, "Unable to initialize context");
+     }
+}
+
 
 CFlatFileGenerator::CFlatFileGenerator
-(CScope& scope,
- TFormat format,
- TMode   mode,
- TStyle  style,
- TView   view,
- TFlatFileFlags  flags) :
-    m_Ctx(new CFFContext(scope, format, mode, style, view, flags))
+(CFlatFileConfig::TFormat format,
+ CFlatFileConfig::TMode   mode,
+ CFlatFileConfig::TStyle  style,
+ CFlatFileConfig::TFlags  flags,
+ CFlatFileConfig::TView   view) :
+    m_Ctx(new CFlatFileContext(CFlatFileConfig(format, mode, style, flags, view)))
 {
     if ( !m_Ctx ) {
        NCBI_THROW(CFlatException, eInternal, "Unable to initialize context");
@@ -84,7 +93,7 @@ CFlatFileGenerator::~CFlatFileGenerator(void)
 
 SAnnotSelector& CFlatFileGenerator::SetAnnotSelector(void)
 {
-    return *(m_Ctx->SetAnnotSelector());
+    return m_Ctx->SetAnnotSelector();
 }
 
 
@@ -95,16 +104,17 @@ void CFlatFileGenerator::Generate
 {
     _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
 
-    m_Ctx->SetTSE(entry);
+    m_Ctx->SetEntry(entry);
 
-    CRef<CFlatItemFormatter>  formatter(CFlatItemFormatter::New(m_Ctx->GetFormat()));
+    CFlatFileConfig::TFormat format = m_Ctx->GetConfig().GetFormat();
+    CRef<CFlatItemFormatter> formatter(CFlatItemFormatter::New(format));
     if ( !formatter ) {
         NCBI_THROW(CFlatException, eInternal, "Unable to initialize formatter");
     }
     formatter->SetContext(*m_Ctx);
     item_os.SetFormatter(formatter);
 
-    CRef<CFlatGatherer> gatherer(CFlatGatherer::New(m_Ctx->GetFormat()));
+    CRef<CFlatGatherer> gatherer(CFlatGatherer::New(format));
     if ( !gatherer ) {
         NCBI_THROW(CFlatException, eInternal, "Unable to initialize gatherer");
     }
@@ -114,6 +124,7 @@ void CFlatFileGenerator::Generate
 
 void CFlatFileGenerator::Generate
 (const CSeq_submit& submit,
+ CScope& scope,
  CFlatItemOStream& item_os)
 {
     _ASSERT(submit.CanGetData());
@@ -126,7 +137,7 @@ void CFlatFileGenerator::Generate
     // Seq-entry
     CConstRef<CSeq_entry> e(submit.GetData().GetEntrys().front());
     if ( e ) {
-        CSeq_entry_Handle entry = m_Ctx->GetScope().GetSeq_entryHandle(*e);
+        CSeq_entry_Handle entry = scope.GetSeq_entryHandle(*e);
         m_Ctx->SetSubmit(submit.GetSub());
         Generate(entry, item_os);
     }
@@ -135,14 +146,15 @@ void CFlatFileGenerator::Generate
 
 void CFlatFileGenerator::Generate
 (const CSeq_loc& loc,
+ CScope& scope,
  CFlatItemOStream& item_os)
 {
-    if ( !loc.IsWhole()  ||  !loc.IsInt() ) {
+    if ( !loc.IsWhole()  &&  !loc.IsInt() ) {
         NCBI_THROW(CFlatException, eInvalidParam, 
             "locations must be an interval on a bioseq (or whole)");
     }
 
-    CBioseq_Handle bsh = m_Ctx->GetScope().GetBioseqHandle(loc);
+    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
     if ( !bsh ) {
         NCBI_THROW(CFlatException, eInvalidParam, "location not in scope");
     }
@@ -150,22 +162,51 @@ void CFlatFileGenerator::Generate
     if ( !entry ) {
         NCBI_THROW(CFlatException, eInvalidParam, "Id not in scope");
     }
-    m_Ctx->SetLocation(&loc);
+    CRef<CSeq_loc> location(new CSeq_loc);
+    location->Assign(loc);
+    m_Ctx->SetLocation(location);
 
     Generate(entry, item_os);
 }
 
 
-void CFlatFileGenerator::Generate(const CSeq_submit& submit, CNcbiOstream& os)
+void CFlatFileGenerator::Generate
+(const CSeq_id& id,
+ const TRange& range,
+ ENa_strand strand,
+ CScope& scope,
+ CFlatItemOStream& item_os)
+{
+    CRef<CSeq_id> id2(new CSeq_id);
+    id2->Assign(id);
+    CRef<CSeq_loc> loc;
+    if ( range.IsWhole() ) {
+        loc.Reset(new CSeq_loc);
+        loc->SetWhole(*id2);
+    } else {
+        loc.Reset(new CSeq_loc(*id2, range.GetFrom(), range.GetTo(), strand));
+    }
+    if ( loc ) {
+        Generate(*loc, scope, item_os);
+    }
+}
+
+
+void CFlatFileGenerator::Generate
+(const CSeq_submit& submit,
+ CScope& scope,
+ CNcbiOstream& os)
 {
     CRef<CFlatItemOStream> 
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
-    Generate(submit, *item_os);
+    Generate(submit, scope, *item_os);
 }
 
 
-void CFlatFileGenerator::Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os)
+void CFlatFileGenerator::Generate
+(const CSeq_entry_Handle& entry,
+ CNcbiOstream& os)
 {
     CRef<CFlatItemOStream> 
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
@@ -174,41 +215,29 @@ void CFlatFileGenerator::Generate(const CSeq_entry_Handle& entry, CNcbiOstream& 
 }
 
 
-void CFlatFileGenerator::Generate(const CSeq_loc& loc, CNcbiOstream& os)
+void CFlatFileGenerator::Generate
+(const CSeq_loc& loc,
+ CScope& scope,
+ CNcbiOstream& os)
 {
     CRef<CFlatItemOStream> 
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
-    Generate(loc, *item_os);
+    Generate(loc, scope, *item_os);
 }
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// DEPRECATED
 
 void CFlatFileGenerator::Generate
-(const CSeq_entry& entry,
- CFlatItemOStream& item_os)
+(const CSeq_id& id,
+ const TRange& range, 
+ ENa_strand strand,
+ CScope& scope,
+ CNcbiOstream& os)
 {
-    ERR_POST_ONCE(Warning<<
-        "CFlatFileGenerator::Generate(const CSeq_entry&, ...) is deprecated"
-        <<" use CFlatFileGenerator::Generate(const CSeq_entry_Handle, ...).");
-    
-    CSeq_entry_Handle h = m_Ctx->GetScope().GetSeq_entryHandle(entry);
-    Generate(h, item_os);
-}
-
-
-void CFlatFileGenerator::Generate(const CSeq_entry& entry, CNcbiOstream& os)
-{
-    ERR_POST_ONCE(Warning<<
-        "CFlatFileGenerator::Generate(const CSeq_entry&, ...) is deprecated"
-        <<" use CFlatFileGenerator::Generate(const CSeq_entry_Handle, ...).");
-
     CRef<CFlatItemOStream> 
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
-    Generate(entry, os);
+    Generate(id, range, strand, scope, *item_os);
 }
 
 
@@ -220,6 +249,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/04/22 16:02:53  shomrat
+* Changed in API
+*
 * Revision 1.7  2004/03/31 17:18:24  shomrat
 * name changes
 *
