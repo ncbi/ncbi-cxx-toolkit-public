@@ -243,11 +243,15 @@ CDbapiSampleApp::CreateConnection(I_DriverContext::TConnectionMode mode,
 
     if ( m_UseSampleDatabase == eUseSampleDatabase ) {
         //  Change default database:
-        auto_ptr<CDB_LangCmd> set_cmd(conn->LangCmd("use DBAPI_Sample"));
+        // auto_ptr<CDB_LangCmd> set_cmd(conn->LangCmd("use DBAPI_Sample"));
+        CDB_LangCmd* set_cmd = conn->LangCmd("use DBAPI_Sample");
         set_cmd->Send();
         while ( set_cmd->HasMoreResults() ) {
-            auto_ptr<CDB_Result> r(set_cmd->Result());
+            // auto_ptr<CDB_Result> r(set_cmd->Result());
+            CDB_Result* r = set_cmd->Result();
+            delete r;
         }
+        delete set_cmd;
     }
 
     return conn;
@@ -465,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/12/29 19:58:02  ssikorsk
+ * Fixed memory ABW bug in dbapi/driver/samples/dbapi_testspeed
+ *
  * Revision 1.3  2004/12/28 22:50:58  ssikorsk
  * Fixed DBAPI usage bug in dbapi/driver/samples
  *

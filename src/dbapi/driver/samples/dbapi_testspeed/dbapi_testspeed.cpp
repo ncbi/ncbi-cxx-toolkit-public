@@ -272,7 +272,8 @@ CDbapiTestSpeedApp::RunSample(void)
         auto_ptr<CDB_LangCmd> ins_cmd;
         auto_ptr<CDB_BCPInCmd> bcp;
 
-        set_cmd.reset(GetConnection().LangCmd("set textsize 1024000"));
+        string cmd_str("set textsize 1024000");
+        set_cmd.reset(GetConnection().LangCmd(cmd_str));
         set_cmd->Send();
         while ( set_cmd->HasMoreResults() ) {
             auto_ptr<CDB_Result> r(set_cmd->Result());
@@ -519,7 +520,7 @@ CDbapiTestSpeedApp::FetchFile(const string& table_name, bool readItems)
 void
 CDbapiTestSpeedApp::FetchResults (const string& table_name, bool readItems)
 {
-    char* txt_buf = NULL ;
+    // char* txt_buf = NULL ; // Temporary disabled ...
     long len_txt = 0;
 
 
@@ -601,9 +602,11 @@ CDbapiTestSpeedApp::FetchResults (const string& table_name, bool readItems)
                         if ( text_val.IsNULL() ) {
                             // cout << "{NULL}";
                         } else {
-                            txt_buf = ( char*) malloc (text_val.Size());
+                            /* Do not do this at the moment ...
+                            txt_buf = ( char*) malloc (text_val.Size() + 1);
                             len_txt = text_val.Read (( char*)txt_buf, text_val.Size());
                             txt_buf[text_val.Size()] = '\0';
+                            */
                             // cout << txt_buf << endl<< endl ;
                         }
                     } else {
@@ -626,6 +629,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/12/29 19:58:03  ssikorsk
+ * Fixed memory ABW bug in dbapi/driver/samples/dbapi_testspeed
+ *
  * Revision 1.16  2004/12/21 23:17:43  ssikorsk
  * Fixes warnings in dbapi_testspeed.cpp
  *

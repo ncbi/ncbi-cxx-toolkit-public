@@ -144,8 +144,6 @@ int
 CDbapiCursorApp::RunSample(void)
 {
     try {
-        auto_ptr<CDB_LangCmd> set_cmd;
-
         // Change a default size of text(image)
         GetDriverContext().SetMaxTextImageSize(1000000);
 
@@ -175,11 +173,12 @@ CDbapiCursorApp::RunSample(void)
                 upd->UpdateTextImage (1, txt);
             }
         }
+        //close cursor
+        upd->Close();
+
         //print resutls on the screen
         ShowResults("select int_val,fl_val,date_val,str_val,txt_val from " +
             GetTableName());
-        //close cursor
-        upd->Close();
 
         //Delete table from database
         DeleteTable(GetTableName());
@@ -202,6 +201,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/12/29 19:58:02  ssikorsk
+ * Fixed memory ABW bug in dbapi/driver/samples/dbapi_testspeed
+ *
  * Revision 1.5  2004/12/20 16:20:29  ssikorsk
  * Refactoring of dbapi/driver/samples
  *
