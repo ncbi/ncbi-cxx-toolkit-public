@@ -81,7 +81,7 @@ class CSeqMatch_Info;
 class CSynonymsSet;
 class CBioseq_Handle;
 class CHandleRangeMap;
-class CDataSource_ScopeInfo;
+struct CDataSource_ScopeInfo;
 struct SAnnotTypeSelector;
 
 class NCBI_XOBJMGR_EXPORT CScope : public CObject
@@ -271,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2003/06/19 18:34:07  vasilche
+* Fixed compilation on Windows.
+*
 * Revision 1.51  2003/06/19 18:23:44  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.

@@ -49,7 +49,7 @@ class CPriorityIterator;
 class CTSE_Info;
 class CDataSource;
 class CDataLoader;
-class CDataSource_ScopeInfo;
+struct CDataSource_ScopeInfo;
 
 class NCBI_XOBJMGR_EXPORT CPriorityNode
 {
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/06/19 18:34:07  vasilche
+* Fixed compilation on Windows.
+*
 * Revision 1.7  2003/06/19 18:23:45  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.

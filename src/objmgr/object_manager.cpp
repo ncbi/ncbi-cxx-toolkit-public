@@ -175,7 +175,7 @@ CObjectManager::x_RevokeDataLoader(CDataLoader* loader)
     TMapToSource::iterator iter = m_mapToSource.find(loader);
     _ASSERT(iter != m_mapToSource.end());
     _ASSERT(iter->second->GetDataLoader() == loader);
-    bool is_default = m_setDefaultSource.erase(iter->second);
+    bool is_default = m_setDefaultSource.erase(iter->second) != 0;
     if ( !iter->second->ReferencedOnlyOnce() ) {
         // this means it is in use
         if ( is_default )
@@ -310,7 +310,7 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
                      loader_name << " already registered");
         }
         TMapToSource::const_iterator it = m_mapToSource.find(&loader);
-        _ASSERT(it != m_mapToSource.end() && it->second);
+        _ASSERT(it != m_mapToSource.end() && bool(it->second));
         return it->second;
     }
     ins.first->second = &loader;
@@ -431,6 +431,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/06/19 18:34:28  vasilche
+* Fixed compilation on Windows.
+*
 * Revision 1.25  2003/06/19 18:23:46  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
