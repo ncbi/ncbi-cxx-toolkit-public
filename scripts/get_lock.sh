@@ -5,9 +5,9 @@ user=$REMOTE_USER
 [ -z "$user" ] && user=$USER
 [ -z "$user" ] && user=`id`
 
-cat > "$file.$$" <<EOF
-$user appears to be running $1 here as process $2 on `hostname`.
-If you have received this message in error, delete $file and try again.
+fmt -79 > "$file.$$" <<EOF
+$user appears to be running $1 in `pwd` as process $2 on `hostname`.  If
+you have received this message in error, delete `pwd`/$file and try again.
 EOF
 
 # echo no | mv -i "$file.$$" "$file" # Doesn't work on Solaris. :-/
