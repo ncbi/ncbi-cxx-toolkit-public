@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/05/06 20:33:43  pubmed
+* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
+*
 * Revision 1.5  1999/05/04 16:14:44  vasilche
 * Fixed problems with program environment.
 * Added class CNcbiEnvironment for cached access to C environment.
@@ -93,12 +96,48 @@ CCgiServerContext& CCgiContext::x_GetServCtx( void ) const
     if ( !context ) {
         context = m_app.LoadServerContext(const_cast<CCgiContext&>(*this));
         if ( !context ) {
-            ERR_POST("CCgiContext::GetServCtx: no server context set");
+            ERR_POST("CCg13iContext::GetServCtx: no server context set");
             throw runtime_error("no server context set");
         }
         const_cast<CCgiContext&>(*this).m_srvCtx.reset(context);
     }
     return *context;
+}
+
+string CCgiContext::GetRequestValue(const string& name) const
+{
+    TCgiEntries& entries = const_cast<TCgiEntries&>( 
+                                                GetRequest().GetEntries() );
+    pair<TCgiEntriesI, TCgiEntriesI> range = entries.equal_range(name);
+    if ( range.second == range.first )
+        return NcbiEmptyString;
+    const string& value = range.first->second;
+    while ( ++range.first != range.second ) {
+        if ( range.first->second != value ) {
+            THROW1_TRACE(runtime_error,
+                         "duplicated entries in request with name: " +
+                         name + ": " + value + "!=" + range.first->second);
+        }
+    }
+    return value;
+}
+
+void CCgiContext::RemoveRequestValues(const string& name)
+{
+    const_cast<TCgiEntries&>(GetRequest().GetEntries()).erase(name);
+}
+
+void CCgiContext::AddRequestValue(const string& name, const string& value)
+{
+    const_cast<TCgiEntries&>( GetRequest().GetEntries()).insert(
+                                     TCgiEntries::value_type(name, value));
+}
+
+void CCgiContext::ReplaceRequestValue(const string& name, 
+                                      const string& value)
+{
+    RemoveRequestValues(name);
+    AddRequestValue(name, value);
 }
 
 

@@ -31,7 +31,7 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.23  1999/05/06 20:33:44  pubmed
+* Revision 1.1  1999/05/06 20:33:43  pubmed
 * CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
 *
 * Revision 1.22  1999/04/27 14:50:07  vasilche
@@ -102,8 +102,10 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbires.hpp>
+#include <corelib/dbres.hpp>
 #include <corelib/cgictx.hpp>
+
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -111,13 +113,152 @@ BEGIN_NCBI_SCOPE
 // class CNcbiResource 
 //
 
-CNcbiResource::CNcbiResource( CNcbiRegistry& config )
-    : m_config(config)
+CNcbiDbResource::CNcbiDbResource( CNcbiRegistry& config )
+    : CNcbiResource(config)
 {
 }
 
-CNcbiResource::~CNcbiResource( void )
+CNcbiDbResource::~CNcbiDbResource( void )
 {
+}
+
+void CNcbiDbResource::HandleRequest( CCgiContext& ctx )
+{
+    try {
+        TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
+                                         PRequested<CNcbiCommand>( ctx ) );
+    
+        auto_ptr<CNcbiCommand> cmd( ( it == m_cmd.end() ) 
+                                    ? GetDefaultCommand()
+                                    : (*it)->Clone() );
+        cmd->Execute( ctx );
+    
+    } catch( std::exception& e ) {
+        _TRACE( e.what() );
+        if( ctx.GetMsg().empty() ) {
+            ctx.GetMsg().push_back( "Unknown error" );
+        }
+        auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
+        cmd->Execute( ctx );
+    }
+}
+
+//
+// class CNcbiCommand
+//
+
+CNcbiCommand::CNcbiCommand( CNcbiDbResource& resource )
+    : m_resource( resource )
+{
+}
+
+CNcbiCommand::~CNcbiCommand( void )
+{
+}
+
+bool CNcbiCommand::IsRequested( const CCgiContext& ctx ) const
+{
+    const string value = GetName();
+  
+    TCgiEntries& entries = const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
+
+    pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
+    for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+        if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
+            return true;
+        } // if
+    } // for
+
+    // if there is no 'cmd' entry
+    if ( p.first == p.second ) {
+        // check the same for IMAGE value
+        p = entries.equal_range( NcbiEmptyString );
+        for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+            if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
+                return true;
+            } // if
+        } // for
+    }
+
+    return false;
+}
+
+//
+// class CNcbiDatabaseInfo
+//
+
+bool CNcbiDatabaseInfo::IsRequested( const CCgiContext& ctx ) const
+{  
+    TCgiEntries& entries =
+        const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
+    pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
+  
+    for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+        if( CheckName( itEntr->second ) == true ) {
+            return true;
+        } // if
+    } // for
+
+    return false;
+}
+
+//
+// class CNcbiDatabase
+//
+
+CNcbiDatabase::CNcbiDatabase( const CNcbiDatabaseInfo& dbinfo )
+    : m_dbinfo( dbinfo )
+{
+}
+
+CNcbiDatabase::~CNcbiDatabase( void )
+{
+}
+
+//
+// class CNcbiDatabaseReport
+//
+
+bool CNcbiDataObjectReport::IsRequested( const CCgiContext& ctx ) const
+{ 
+    const string value = GetName();
+  
+    TCgiEntries& entries =
+        const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
+    pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
+
+    for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+        if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
+            return true;
+        } // if
+    } // for
+
+    return false;
+}
+
+CNcbiQueryResult::CNcbiQueryResult(void)
+{
+}
+
+CNcbiQueryResult::~CNcbiQueryResult(void)
+{
+}
+
+void CNcbiQueryResult::FirstObject(TIterator& obj)
+{
+    FirstObject(obj, 0);
+}
+
+void CNcbiQueryResult::FirstObject(TIterator& obj, TSize StartPos)
+{
+    FirstObject(obj);
+    while ( obj && StartPos-- > 0 )
+        NextObject(obj);
+}
+
+void CNcbiQueryResult::FreeObject(CNcbiDataObject* object)
+{
+    delete object;
 }
 
 END_NCBI_SCOPE

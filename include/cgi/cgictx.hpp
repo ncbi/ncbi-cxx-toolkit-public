@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/05/06 20:32:48  pubmed
+* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
+*
 * Revision 1.3  1999/05/04 16:14:03  vasilche
 * Fixed problems with program environment.
 * Added class CNcbiEnvironment for cached access to C environment.
@@ -144,6 +147,17 @@ public:
 
     void PutMsg(const string& msg);
     void ClearMsgList(void);
+
+    // request access wrappers
+
+    // returns entry from request
+    // returns empty string if no such entry
+    // throws runtime_error if there are several entries with the same name
+    string GetRequestValue(const string& name) const;
+
+    void AddRequestValue(const string& name, const string& value);
+    void RemoveRequestValues(const string& name);
+    void ReplaceRequestValue(const string& name, const string& value);
 
 private:
     CNcbiRegistry& x_GetConfig(void) const;

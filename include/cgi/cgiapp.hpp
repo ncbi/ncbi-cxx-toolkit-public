@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/05/06 20:32:47  pubmed
+* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
+*
 * Revision 1.14  1999/04/30 16:38:08  vakatov
 * #include <ncbireg.hpp> to provide CNcbiRegistry class definition(see R1.13)
 *
@@ -86,7 +89,6 @@
 #include <corelib/ncbicgir.hpp>
 #include <corelib/ncbires.hpp>
 #include <corelib/ncbireg.hpp>
-#include <list>
 
 BEGIN_NCBI_SCOPE
 

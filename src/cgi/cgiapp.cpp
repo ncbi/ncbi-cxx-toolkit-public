@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/05/06 20:33:42  pubmed
+* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
+*
 * Revision 1.6  1999/05/04 16:14:43  vasilche
 * Fixed problems with program environment.
 * Added class CNcbiEnvironment for cached access to C environment.
@@ -58,7 +61,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbires.hpp>
 #include <corelib/cgiapp.hpp>
 #include <corelib/cgictx.hpp>
 
