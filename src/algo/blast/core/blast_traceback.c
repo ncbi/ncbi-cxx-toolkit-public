@@ -1075,6 +1075,8 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
    BlastHSPResults* results = NULL;
    Uint1 encoding;
    GetSeqArg seq_arg;
+   BlastQueryInfo* one_query_info = NULL;
+   BLAST_SequenceBlk* one_query = NULL;
    
 
    if (!hsp_stream || !concat_db_info || !seq_src || !results_out) {
@@ -1107,6 +1109,13 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
          continue;
       }
 
+      /* Restrict the query sequence block and information structures 
+         to the one query this HSP list corresponds to. */
+      if (Blast_GetOneQueryStructs(&one_query_info, &one_query, 
+                                   query_info, query, 
+                                   hsp_list->query_index) != 0)
+          return -1;
+
       /* Pick out one of the sequences from the concatenated DB (given by the 
          OID of this HSPList). The sequence length does not include the 
          trailing NULL. The sequence itself is only needed to calculate number
@@ -1125,10 +1134,12 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
       if (program_number == eBlastTypeRpsTblastn) {
          sbp->posMatrix = orig_pssm + db_seq_start;
       } else {
-         /* replace the PSSM and the Karlin values for this DB sequence. */
+         /* replace the PSSM and the Karlin values for this DB sequence
+            and this query sequence. */
          sbp->posMatrix = 
             RPSCalculatePSSM(score_params->scale_factor,
-                             query->length, query->sequence, seq_arg.seq->length,
+                             one_query->length, one_query->sequence, 
+                             seq_arg.seq->length,
                              orig_pssm + db_seq_start,
                              sbp->name);
          /* The composition of the query could have caused this one
@@ -1148,11 +1159,12 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
          sbp->kbp_gap[0]->logK = log(RPS_K_MULT * karlin_k[hsp_list->oid]);
       }
 
+
       /* compute the traceback information and calculate E values
          for all HSPs in the list */
       
       Blast_TracebackFromHSPList(program_number, hsp_list, seq_arg.seq, 
-         query, query_info, gap_align, sbp, score_params, 
+         one_query, one_query_info, gap_align, sbp, score_params, 
          ext_params->options, hit_params, db_options->gen_code_string);
 
       BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
@@ -1182,6 +1194,10 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
 
    /* Free the sequence block allocated inside the loop */
    BlastSequenceBlkFree(seq_arg.seq);
+
+   /* Free the single-query structures allocated inside the loop. */
+   BlastQueryInfoFree(one_query_info);
+   BlastSequenceBlkFree(one_query);
 
    /* The traceback calculated the E values, so it's safe
       to sort the results now */
