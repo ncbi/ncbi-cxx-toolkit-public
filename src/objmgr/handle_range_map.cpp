@@ -86,8 +86,12 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
     switch ( loc.Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
+    {
+        return;
+    }
     case CSeq_loc::e_Empty:
     {
+        AddRange(loc.GetEmpty(), CHandleRange::TRange::GetEmpty());
         return;
     }
     case CSeq_loc::e_Whole:
@@ -255,6 +259,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/09/27 19:01:38  grichenk
+* Allow adding empty seq-locs
+*
 * Revision 1.21  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
