@@ -296,7 +296,7 @@ if test "$exec_prefix" != "$top_srcdir" ; then
       fi
       cp -p "$src_dir/$x_makefile" "$dest_dir/"
    done
-   rm ${SAVE_makefiles}
+   cd "$top_srcdir"  &&  rm ${SAVE_makefiles}
 fi,
 
 SAVE_incdir="$incdir"

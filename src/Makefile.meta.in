@@ -13,47 +13,41 @@
 
 ### One-level build -- [PROJECT] makefiles
 
+PROJ_BRA = \
+if test ! -z "$(PROJECT)" ; then \
+   x_project="$(PROJECT)" ; \
+   for i in $$x_project ; do \
+		$(MAKE) -f $$i $(MFLAGS)
+PROJ_KET = ; \
+   done ; \
+fi
+
 all:
-	@if ! -z "$(PROJ)" ; then \
-		for i in $(PROJ) ; do \
-			$(MAKE) -f $$i $(MFLAGS) all ; \
-		done ; \
-	fi
+	@$(PROJ_BRA) all     $(PROJ_KET)
 
 install:
-	@if ! -z "$(PROJ)" ; then \
-		for i in $(PROJ) ; do \
-			$(MAKE) -f $$i $(MFLAGS) install ; \
-		done ; \
-	fi
+	@$(PROJ_BRA) install $(PROJ_KET)
 
 clean:
-	@if ! -z "$(PROJ)" ; then \
-		for i in $(PROJ) ; do \
-			$(MAKE) -f $$i $(MFLAGS) clean ; \
-		done ; \
-	fi
+	@$(PROJ_BRA) clean   $(PROJ_KET)
 
 
 ### Recursive build -- in the [SUBPROJ] directories
 
+SUB_BRA = \
+if test ! -z "$(SUBPROJ)" ; then \
+	x_subproj="$(SUBPROJ)" ; \
+	for i in $$x_subproj ; do \
+		( cd $$i ; $(MAKE) $(MFLAGS)
+SUB_KET = ) ; \
+	done ; \
+fi
+
 all_r: all
-	@if ! -z "$(SUBPROJ)" ; then \
-		for i in $(SUBPROJ) ; do \
-			( cd $$i ; $(MAKE) $(MFLAGS) all_r ) ; \
-		done ; \
-	fi
+	@$(SUB_BRA) all_r     $(SUB_KET)
 
 install_r: install
-	@if ! -z "$(SUBPROJ)" ; then \
-		for i in $(SUBPROJ) ; do \
-			( cd $$i ; $(MAKE) $(MFLAGS) install_r ) ; \
-		done ; \
-	fi
+	@$(SUB_BRA) install_r $(SUB_KET)
 
 clean_r: clean
-	@if ! -z "$(SUBPROJ)" ; then \
-		for i in $(SUBPROJ) ; do \
-			( cd $$i ; $(MAKE) $(MFLAGS) clear_r ) ; \
-		done ; \
-	fi
+	@$(SUB_BRA) clean_r   $(SUB_KET)
