@@ -351,7 +351,8 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             throw string("Pipe is closed");
         }
         if ( !count ) {
-            return eIO_Success;
+			m_ReadStatus = eIO_Success;
+            return m_ReadStatus;
         }
 
         DWORD x_timeout   = TimeoutToMSec(timeout);
@@ -364,7 +365,8 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             if ( !PeekNamedPipe(m_Pipe, NULL, 0, NULL, &bytes_avail, NULL) ) {
                 // Peer has been closed the connection?
                 if (GetLastError() == ERROR_BROKEN_PIPE) {
-                    return eIO_Closed;
+					m_ReadStatus = eIO_Closed;
+                    return m_ReadStatus;
                 }
                 throw string("Cannot peek data from the named pipe");
             }
@@ -383,7 +385,8 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
 
         // Data is available to read or time out
         if ( !bytes_avail ) {
-            return eIO_Timeout;
+			m_ReadStatus = eIO_Timeout;
+            return m_ReadStatus;
         }
         // We must read only "count" bytes of data regardless of the number
         // available to read
@@ -1220,6 +1223,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/03/17 15:45:30  jcherry
+ * Always record read status in Windows version of
+ * CNamedPipeHandle::Read
+ *
  * Revision 1.23  2004/03/10 16:09:00  jcherry
  * Reversed sense of test in unix version of CNamedPipeHandle::Listen
  *
