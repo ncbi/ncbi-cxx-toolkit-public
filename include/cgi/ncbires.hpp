@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/02/02 17:27:07  sandomir
+* PFindByName fixed
+*
 * Revision 1.17  1999/01/29 17:52:42  sandomir
 * FilterList changed
 *
@@ -231,7 +234,9 @@ class CNcbiDatabaseInfo
 {
 public:
 
-  virtual ~CNcbiDatabaseInfo() {}
+  virtual ~CNcbiDatabaseInfo( void ) {}
+  
+  virtual string GetName( void ) const = 0;
 
   virtual const CNcbiDbPresentation* GetPresentation() const
     { return 0; }
@@ -410,7 +415,7 @@ public:
         : m_name( name ) {}
     
     bool operator() ( const T* t ) const 
-        { return AStrEquiv( m_name, t->GetName() ); }
+        { return AStrEquiv( m_name, t->GetName(), PNocase() ); }
     
 }; // class PFindByName
 
