@@ -208,7 +208,8 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
                 abort();
             }
         } else {    // protein
-            context_offsets[ctx_index + 1] = length + 1;
+            context_offsets[ctx_index + 1] = 
+                context_offsets[ctx_index] + length + 1;
         }
 
         ctx_index += nframes;
@@ -758,6 +759,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2003/10/15 18:18:00  camacho
+* Fix to setup query info structure for proteins
+*
 * Revision 1.38  2003/10/15 15:09:32  camacho
 * Changes from Mike DiCuccio to use GetSequenceView to retrieve sequences.
 *
