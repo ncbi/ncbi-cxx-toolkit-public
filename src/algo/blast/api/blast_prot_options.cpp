@@ -65,7 +65,7 @@ CBlastProteinOptionsHandle::SetLookupTableDefaults()
 void
 CBlastProteinOptionsHandle::SetQueryOptionDefaults()
 {
-    SetFilterString("S");
+    SetSegFiltering(true);
     m_Opts->SetStrandOption(objects::eNa_strand_unknown);
 }
 
@@ -147,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/02/24 13:46:54  madden
+ * Changes to use structured filteing options instead of string
+ *
  * Revision 1.16  2005/02/10 16:09:47  dondosha
  * Use BLAST_DEFAULT_MATRIX macro instead of "BLOSUM62"
  *

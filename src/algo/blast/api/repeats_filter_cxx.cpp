@@ -182,26 +182,32 @@ s_SetRepeatsSearchDefaults(CBlastNucleotideOptionsHandle& opts)
     opts.SetXDropoff(REPEATS_SEARCH_XDROP_UNGAPPED);
     opts.SetGapOpeningCost(REPEATS_SEARCH_GAP_OPEN);
     opts.SetGapExtensionCost(REPEATS_SEARCH_GAP_EXTEND);
-    opts.SetFilterString(REPEATS_SEARCH_FILTER_STRING);
+    opts.SetDustFiltering(false);  // FIXME, is this correct?
     opts.SetWordSize(REPEATS_SEARCH_WORD_SIZE);
 }
 
 void
 Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_string)
 {
-    char* dbname = NULL;
-    const Boolean is_prot = FALSE;
-    char* repeats_filter_string = NULL;
+    const Boolean kIsProt = FALSE;
+    Blast_Message* blmsg=NULL;
+    SBlastFilterOptions* filtering_options=NULL;
 
-    /* If filter string does not contain a repeat option, just return with 
-       successful status. */
-    if (!(repeats_filter_string = Blast_GetRepeatsFilterOption(filter_string)))
+    if(BlastFilteringOptionsFromString(eBlastTypeBlastn, filter_string, &filtering_options, &blmsg) != 0)
+    {
+        string msg = blmsg ? blmsg->message : "Error parsing filter string";
+        NCBI_THROW(CBlastException, eInternal, msg);
+    }
+
+    if (filtering_options == NULL || filtering_options->repeatFilterOptions == NULL)
+    {
+        filtering_options = FilterOptionsFree(filtering_options);
         return;
+    }
 
-    Blast_ParseRepeatOptions(repeats_filter_string, &dbname);
-    sfree(repeats_filter_string);
-
-    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(dbname, is_prot);
+    SRepeatFilterOptions* repeat_options = filtering_options->repeatFilterOptions;
+    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(repeat_options->database, kIsProt);
+    filtering_options = FilterOptionsFree(filtering_options);
     char* error_str = BlastSeqSrcGetInitError(seq_src);
     if (error_str) {
         string msg(error_str);
@@ -226,7 +232,6 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_string)
     blaster.PartialRun();
 
     seq_src = BlastSeqSrcFree(seq_src);
-    sfree(dbname);
 
     // Restore the lower case masks
     for (unsigned int index = 0; index < query.size(); ++index) {
@@ -244,6 +249,9 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.16  2005/02/24 13:46:54  madden
+ *  Changes to use structured filteing options instead of string
+ *
  *  Revision 1.15  2005/02/08 20:35:37  dondosha
  *  Moved auxiliary functions and definitions for repeats filtering from C++ api into core; renamed FindRepeatFilterLoc into Blast_FindRepeatFilterLoc
  *

@@ -64,7 +64,7 @@ CBlastRPSOptionsHandle::SetLookupTableDefaults()
 void
 CBlastRPSOptionsHandle::SetQueryOptionDefaults()
 {
-    SetFilterString("F");
+    SetSegFiltering(false);
     m_Opts->SetStrandOption(objects::eNa_strand_unknown);
 }
 
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/02/24 13:46:54  madden
+ * Changes to use structured filteing options instead of string
+ *
  * Revision 1.10  2005/01/11 17:50:39  dondosha
  * Removed total HSP limit option
  *

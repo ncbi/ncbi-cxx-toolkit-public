@@ -120,7 +120,7 @@ CBlastNucleotideOptionsHandle::SetMBLookupTableDefaults()
 void
 CBlastNucleotideOptionsHandle::SetQueryOptionDefaults()
 {
-    SetFilterString("D");
+    SetDustFiltering(true);
     SetStrandOption(objects::eNa_strand_both);
 }
 
@@ -236,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/02/24 13:46:54  madden
+ * Changes to use structured filteing options instead of string
+ *
  * Revision 1.19  2005/01/11 17:50:39  dondosha
  * Removed total HSP limit option
  *

@@ -326,7 +326,9 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const Int8 & v)
 
 CBlastOptionsLocal::CBlastOptionsLocal()
 {
-    m_QueryOpts.Reset((QuerySetUpOptions*)calloc(1, sizeof(QuerySetUpOptions)));
+    QuerySetUpOptions* query_setup = NULL;
+    BlastQuerySetUpOptionsNew(&query_setup);
+    m_QueryOpts.Reset(query_setup);
     m_InitWordOpts.Reset((BlastInitialWordOptions*)calloc(1, sizeof(BlastInitialWordOptions)));
     m_LutOpts.Reset((LookupTableOptions*)calloc(1, sizeof(LookupTableOptions)));
     m_ExtnOpts.Reset((BlastExtensionOptions*)calloc(1, sizeof(BlastExtensionOptions)));
@@ -608,6 +610,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2005/02/24 13:46:54  madden
+* Changes to use structured filteing options instead of string
+*
 * Revision 1.58  2005/01/26 18:13:16  camacho
 * Fix compiler warning
 *
