@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/07/11 00:44:33  vakatov
+ * Added TEST_gethostby***() -- tests for SOCK_gethostby{addr,name}()
+ *
  * Revision 6.10  2001/05/21 15:11:13  ivanov
  * Added test for automatic read on write data from the socket
  * (stall protection).
@@ -318,7 +321,7 @@ static void TEST__server_1(SOCK sock)
                                &n_io_done, eIO_Persist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
-                               &n_io_done);
+                                &n_io_done);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
         for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
@@ -736,6 +739,105 @@ static void TEST_LockCleanup(void* user_data)
 }
 
 
+static int/*bool*/ TEST_gethostbyaddr(unsigned int host);
+
+static const char* s_ntoa(unsigned int host)
+{
+    static char buf[1024];
+    if (SOCK_ntoa(host, buf, sizeof(buf)) != 0) {
+        buf[0] = '?';
+        buf[1] = '\0';
+    }
+    return buf;
+}
+
+static int/*bool*/ TEST_gethostbyname(const char* name)
+{
+    char         buf[1024];
+    unsigned int host;
+
+    fprintf(log_fp, "------------\n");
+
+    host = SOCK_gethostbyname(name);
+    fprintf(log_fp, "SOCK_gethostbyname(\"%s\"):  %x [%s]\n",
+            name, (unsigned int) host, s_ntoa(host));
+    if ( !host ) {
+        return 0/*false*/;
+    }
+      
+    name = SOCK_gethostbyaddr(host, buf, sizeof(buf));
+    if ( name ) {
+        assert(name == buf);
+        assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
+        fprintf(log_fp, "SOCK_gethostbyaddr(%x [%s]):  \"%s\"\n",
+                (unsigned int) host, s_ntoa(host), name);
+    } else {
+        fprintf(log_fp, "SOCK_gethostbyaddr(%x [%s]):  <not found>\n",
+                (unsigned int) host, s_ntoa(host));
+    }
+
+    return 1/*true*/;
+}
+
+
+static int/*bool*/ TEST_gethostbyaddr(unsigned int host)
+{
+    const char*  name;
+    char         buf[1024];
+
+    fprintf(log_fp, "- - - - - - -\n");
+
+    name = SOCK_gethostbyaddr(host, buf, sizeof(buf));
+    if ( name ) {
+        assert(name == buf);
+        assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
+        fprintf(log_fp, "SOCK_gethostbyaddr(%x [%s]):  \"%s\"\n",
+                (unsigned int) host, s_ntoa(host), name);
+    } else {
+        fprintf(log_fp, "SOCK_gethostbyaddr(%x [%s]):   <not found>\n",
+                (unsigned int) host, s_ntoa(host));
+        return 0/*false*/;
+    }
+
+    host = SOCK_gethostbyname(name);
+    fprintf(log_fp, "SOCK_gethostbyname(\"%s\"):  %x [%s]\n",
+            name, (unsigned int) host, s_ntoa(host));
+      
+    return 1/*true*/;
+}
+
+
+/* Try SOCK_htonl(), SOCK_gethostbyname() and SOCK_gethostbyaddr()
+ */
+static void TEST_gethostby(void)
+{
+    fprintf(log_fp, "\n===============================\n");
+
+    assert( SOCK_htonl(0) == 0 );
+    assert( SOCK_htonl(0xFFFFFFFF) == 0xFFFFFFFF );
+
+    assert( !TEST_gethostbyname("  ") );
+    assert( !TEST_gethostbyname("a1....b1") );
+    assert( !TEST_gethostbyname("boo.foo.bar.doo") );
+
+    assert( !TEST_gethostbyaddr(0) );
+    assert( !TEST_gethostbyaddr(0xFFFFFFFF) );
+
+    fprintf(log_fp, "\n++++++++++++++++++++++\n");
+
+    (void) TEST_gethostbyname("localhost");
+    (void) TEST_gethostbyname("ncbi.nlm.nih.gov");
+
+    (void) TEST_gethostbyname("127.0.0.1");
+    (void) TEST_gethostbyname("130.14.25.1");
+
+    (void) TEST_gethostbyaddr(SOCK_gethostbyname("127.0.0.1"));
+    (void) TEST_gethostbyaddr(SOCK_gethostbyname("130.14.25.1"));
+
+    fprintf(log_fp, "\n===============================\n");
+}
+
+
 
 /* Main function
  * Parse command-line options, initialize and cleanup API internals;
@@ -829,6 +931,8 @@ extern int main(int argc, char** argv)
             timeout = &x_timeout;
         };
 #endif /* DO_CLIENT */
+
+        TEST_gethostby();
 
         TEST__client(server_host, (unsigned short)server_port, timeout);
         assert(SOCK_ShutdownAPI() == eIO_Success);
