@@ -98,7 +98,9 @@ EOF
 
 # Directories to install
 install_dirs="include compilers scripts"
-test "$with_src" != "no"  &&  install_dirs="$install_dirs src"
+if test "$with_src" != "no"; then 
+    install_dirs="$install_dirs src LICENSE gpl.txt configure config.guess config.sub config.h.in"
+fi
 test "$with_doc" != "no"  &&  install_dirs="$install_dirs doc"
 
 
