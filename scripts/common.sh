@@ -52,28 +52,37 @@ COMMON_SetupRunDirCmd()
 #  NOTE:  call "COMMON_SetupScriptName()" beforehand for nicer diagnostics.
 #
 
+COMMON_Error()
+{
+   {
+   echo
+   echo  "------------------------------------------------------"
+   echo  "Current dir:  `pwd`"
+   echo
+   echo "[$script_name] FAILED:"
+   err="   $1"
+   shift
+   for arg in "$@" ; do
+      arg=`echo "$arg" | sed "s%'%\\\\\'%g"`
+      err="$err '$arg'"
+   done
+   echo "$err"
+   } 1>&2
+
+   exit 1
+}
+
+
+#
+#  Post error message to STDERR and abort.
+#  NOTE:  call "COMMON_SetupScriptName()" beforehand for nicer diagnostics.
+#
+
 COMMON_Exec()
 {
    "$@"
 
    if test $? -ne 0 ; then
-      {
-      echo
-      echo  "------------------------------------------------------"
-      echo  "Current dir:  `pwd`"
-      echo
-      echo "[$script_name] FAILED:"
-      err="   $1"
-      shift
-      for arg in "$@" ; do
-         arg=`echo "$arg" | sed "s%'%\\\\\'%g"`
-         err="$err '$arg'"
-      done
-      echo "$err"
-      } 1>&2
-
-      exit 1
+      COMMON_Error "$@"
    fi
 }
-
-
