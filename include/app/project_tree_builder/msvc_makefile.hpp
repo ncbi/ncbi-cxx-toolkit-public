@@ -99,6 +99,9 @@ public:
 
     void GetCustomBuildInfo(list<SCustomBuildInfo>* info) const;
 
+    void GetResourceFiles        (const SConfigInfo& config, 
+                                  list<string>*      files) const;
+
 private:
     
     //Prohibited to
@@ -140,6 +143,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/23 18:49:24  gorelenk
+ * Added declaration of GetResourceFiles member-function
+ * to class CMsvcProjectMakefile.
+ *
  * Revision 1.4  2004/02/12 16:22:39  gorelenk
  * Changed generation of command line for custom build info.
  *
