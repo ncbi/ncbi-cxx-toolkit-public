@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.4 2002/06/26 15:51:31 lavr Exp $
+# $Id: ignore.lst,v 1.5 2002/07/06 23:45:32 vakatov Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -7,24 +7,50 @@
 #
 ###########################################################################
 
+
 ; Corelib
 
-corelib/test/test_ncbidll   KCC_400-Release--i686-pc-linux-gnuaout
-corelib/test/test_ncbidll   KCC_400-Debug--i686-pc-linux-gnuaout
-corelib/test/test_ncbidll   ICC_500-Debug--i686-pc-linux-gnu
-corelib/test/test_ncbidll   ICC_500-Release--i686-pc-linux-gnu
+corelib/test/test_ncbidll  KCC_400-Debug--i686-pc-linux-gnuaout
+corelib/test/test_ncbidll  KCC_400-Release--i686-pc-linux-gnuaout
+corelib/test/test_ncbidll  ICC_500-Debug--i686-pc-linux-gnu
+corelib/test/test_ncbidll  ICC_500-Release--i686-pc-linux-gnu
+
 corelib/test/test_ncbiexec  ICC_500-Debug--i686-pc-linux-gnu
 corelib/test/test_ncbiexec  ICC_500-Release--i686-pc-linux-gnu
+
 corelib/test/test_ncbipipe  ICC_500-Debug--i686-pc-linux-gnu
 corelib/test/test_ncbipipe  ICC_500-Release--i686-pc-linux-gnu
 
+
 ; Connect
 
-connect/test/test_ncbi_http_connector  GCC_295-Release--alphaev67-dec-osf5.1
-connect/test/test_ncbi_conn_stream     GCC_295-Release--alphaev67-dec-osf5.1
-connect/test/test_conn_stream_pushback GCC_295-Release--alphaev67-dec-osf5.1
 connect/test/test_ncbi_http_connector  Compaq_650-Debug--alphaev67-dec-osf5.1
-connect/test/test_ncbi_conn_stream     Compaq_650-Debug--alphaev67-dec-osf5.1
-connect/test/test_conn_stream_pushback Compaq_650-Debug--alphaev67-dec-osf5.1
+connect/test/test_ncbi_http_connector  GCC_295-Release--alphaev67-dec-osf5.1
+
+connect/test/test_ncbi_conn_stream  Compaq_650-Debug--alphaev67-dec-osf5.1
+connect/test/test_ncbi_conn_stream  GCC_295-Release--alphaev67-dec-osf5.1
+
+connect/test/test_conn_stream_pushback  Compaq_650-Debug--alphaev67-dec-osf5.1
+connect/test/test_conn_stream_pushback  GCC_295-Release--alphaev67-dec-osf5.1
+
+
+; Util
+;     Flaw in the KCC Standard C++ Library 
+
+util/test/test_resize_iter  KCC_400-Debug--i686-pc-linux-gnuaout
+util/test/test_resize_iter  KCC_400-Release--i686-pc-linux-gnuaout
+
+
+; ObjMgr
+;     Loader is unstable in MT mode.
+
+objects/objmgr/test/testobjmgr1_mt  GCC_300-DebugMT--i686-pc-linux-gnu
+objects/objmgr/test/testobjmgr1_mt  GCC_300-ReleaseMT--i686-pc-linux-gnu
+objects/objmgr/test/testobjmgr1_mt  WorkShop53_530-ReleaseMT--i386-pc-solaris2.7
+
+objects/objmgr/test/test_objmgr1_data_mt  GCC_300-DebugMT--i686-pc-linux-gnu
+objects/objmgr/test/test_objmgr1_data_mt  GCC_300-ReleaseMT--i686-pc-linux-gnu
+objects/objmgr/test/test_objmgr1_data_mt  WorkShop53_530-ReleaseMT--i386-pc-solaris2.7
+
 
 ; Other
