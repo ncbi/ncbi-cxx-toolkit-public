@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/07/01 15:31:57  grichenk
+* Fixed 'enumeration value e_not_set...' warning
+*
 * Revision 1.8  2002/05/29 21:21:13  gouriano
 * added debug dump
 *
@@ -83,6 +86,10 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
 {
     //### Check the implementation.
     switch ( align.GetSegs().Which() ) {
+    case CSeq_align::C_Segs::e_not_set:
+        {
+            break;
+        }
     case CSeq_align::C_Segs::e_Dendiag:
         {
             const CSeq_align::C_Segs::TDendiag& dendiag =
