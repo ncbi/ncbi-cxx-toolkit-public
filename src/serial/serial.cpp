@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/10/25 15:05:44  vasilche
+* Moved more code to libxcser library.
+*
 * Revision 1.19  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *
@@ -120,10 +123,6 @@
 #include <serial/objistr.hpp>
 #include <serial/memberlist.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-
-#if HAVE_NCBI_C
-# include <asn.h>
-#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -468,59 +467,6 @@ CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
 {
     return new CClassTypeInfo(size, name, cObject, createFunc, id, idFunc);
 }
-
-#if HAVE_NCBI_C
-static TObjectPtr CreateAsnStruct(TTypeInfo info)
-{
-    TObjectPtr object = calloc(info->GetSize(), 1);
-    if ( !object )
-        THROW_TRACE(bad_alloc, ());
-    return object;
-}
-
-static const type_info* GetNullId(TConstObjectPtr )
-{
-    return 0;
-}
-
-CClassTypeInfo* CClassInfoHelperBase::CreateAsnStructInfo(const char* name,
-                                                          size_t size,
-                                                          const type_info& id)
-{
-    return CreateClassInfo(name, size,
-                           TConstObjectPtr(0), &CreateAsnStruct,
-                           id, &GetNullId);
-}
-
-static TMemberIndex WhichAsn(const CChoiceTypeInfo* /*choiceType*/,
-                             TConstObjectPtr choicePtr)
-{
-    const valnode* node = static_cast<const valnode*>(choicePtr);
-    return node->choice + (kEmptyChoice - 0);
-}
-
-static void SelectAsn(const CChoiceTypeInfo* /*choiceType*/,
-                      TObjectPtr choicePtr,
-                      TMemberIndex index)
-{
-    valnode* node = static_cast<valnode*>(choicePtr);
-    node->choice = Uint1(index - (kEmptyChoice - 0));
-}
-
-static void ResetAsn(const CChoiceTypeInfo* /*choiceType*/,
-                     TObjectPtr choicePtr)
-{
-    valnode* node = static_cast<valnode*>(choicePtr);
-    node->choice = 0;
-}
-
-CChoiceTypeInfo* CClassInfoHelperBase::CreateAsnChoiceInfo(const char* name)
-{
-    return CreateChoiceInfo(name, sizeof(valnode),
-                            TConstObjectPtr(0), &CreateAsnStruct, typeid(void),
-                            &WhichAsn, &SelectAsn, &ResetAsn);
-}
-#endif
 
 void SetPreWrite(CClassTypeInfo* info, TPreWriteFunction func)
 {

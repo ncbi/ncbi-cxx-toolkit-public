@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/10/25 15:05:44  vasilche
+* Moved more code to libxcser library.
+*
 * Revision 1.3  2000/10/13 16:28:40  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -54,12 +57,16 @@
 * ===========================================================================
 */
 
+#if HAVE_NCBI_C
+
 #include <serial/autoptrinfo.hpp>
 #include <serial/asntypes.hpp>
+#include <serial/classinfo.hpp>
+#include <serial/choice.hpp>
+#include <serial/serialimpl.hpp>
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
-
-#if HAVE_NCBI_C
 
 TTypeInfo COctetStringTypeInfoGetTypeInfo(void)
 {
@@ -90,6 +97,57 @@ TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
     return new COldAsnTypeInfo(name, newProc, freeProc, readProc, writeProc);
 }
 
-#endif
+static TObjectPtr CreateAsnStruct(TTypeInfo info)
+{
+    TObjectPtr object = calloc(info->GetSize(), 1);
+    if ( !object )
+        THROW_TRACE(bad_alloc, ());
+    return object;
+}
+
+static const type_info* GetNullId(TConstObjectPtr )
+{
+    return 0;
+}
+
+CClassTypeInfo* CClassInfoHelperBase::CreateAsnStructInfo(const char* name,
+                                                          size_t size,
+                                                          const type_info& id)
+{
+    return CreateClassInfo(name, size,
+                           TConstObjectPtr(0), &CreateAsnStruct,
+                           id, &GetNullId);
+}
+
+static TMemberIndex WhichAsn(const CChoiceTypeInfo* /*choiceType*/,
+                             TConstObjectPtr choicePtr)
+{
+    const valnode* node = static_cast<const valnode*>(choicePtr);
+    return node->choice + (kEmptyChoice - 0);
+}
+
+static void SelectAsn(const CChoiceTypeInfo* /*choiceType*/,
+                      TObjectPtr choicePtr,
+                      TMemberIndex index)
+{
+    valnode* node = static_cast<valnode*>(choicePtr);
+    node->choice = Uint1(index - (kEmptyChoice - 0));
+}
+
+static void ResetAsn(const CChoiceTypeInfo* /*choiceType*/,
+                     TObjectPtr choicePtr)
+{
+    valnode* node = static_cast<valnode*>(choicePtr);
+    node->choice = 0;
+}
+
+CChoiceTypeInfo* CClassInfoHelperBase::CreateAsnChoiceInfo(const char* name)
+{
+    return CreateChoiceInfo(name, sizeof(valnode),
+                            TConstObjectPtr(0), &CreateAsnStruct, typeid(void),
+                            &WhichAsn, &SelectAsn, &ResetAsn);
+}
 
 END_NCBI_SCOPE
+
+#endif
