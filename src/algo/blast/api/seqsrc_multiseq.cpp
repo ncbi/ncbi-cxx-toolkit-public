@@ -38,6 +38,8 @@
 #include "blast_setup.hpp"
 #include <algo/blast/api/blast_exception.hpp>
 
+#include <memory>
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -456,6 +458,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2004/06/02 20:43:30  ucko
+ * +<memory> (previously included indirectly via sequence.hpp) due to
+ * use of auto_ptr<>.
+ *
  * Revision 1.17  2004/06/02 15:57:57  bealer
  * - Isolate object manager dependant code.
  *
