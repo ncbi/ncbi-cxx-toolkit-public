@@ -75,7 +75,7 @@ void CLDS_Database::Create()
     m_ObjTypeMap.insert(pair<string, int>("FastaEntry", id));
     ++id;
     ITERATE(CLDS_CoreObjectsReader::TCandidates, it, cand) {
-        string type_name = it->GetTypeInfo()->GetName();
+        string type_name = it->type_info.GetTypeInfo()->GetName();
 
         m_db.object_type_db.object_type = id;
         m_db.object_type_db.type_name = type_name;
@@ -163,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/08/05 14:32:01  kuznets
+ * Reflecting changes in obj_sniff.hpp
+ *
  * Revision 1.6  2003/07/09 19:33:40  kuznets
  * Modified databse Open/Create procedures. (Reflecting new sequence id list table)
  *
