@@ -58,12 +58,49 @@ void CFindPattern::Find(const string& seq, const string& pattern,
     }
 }
 
+
+/// Find cases of at least min_repeats consecutive occurences of any
+/// *particular* match to pattern.
+/// N.B.: pattern = "[ag]c" and min_repeats = 2 will match
+/// "acac" and "gcgc" but NOT "acgc" or "gcac".
+void CFindPattern::FindRepeatsOf(const string& seq, const string& pattern,
+                                 int min_repeats,
+                                 vector<TSeqPos>& starts,
+                                 vector<TSeqPos>& ends)
+{
+    string total_pattern;
+    total_pattern = "(" + pattern + ")\\1{"
+        + NStr::IntToString(min_repeats - 1) + ",}";
+    Find(seq, total_pattern, starts, ends);
+}
+
+
+/// Find all cases of at least min_repeats consecutive occurences
+/// of any n-mer consisting of unambiguous nucleotides ({a, g, c, t}).
+/// Note that, e.g., dinucelotide repeats can also qualify as
+/// tetranucleotide repeats.
+void CFindPattern::FindNucNmerRepeats(const string& seq,
+                                      int n, int min_repeats,
+                                      vector<TSeqPos>& starts,
+                                      vector<TSeqPos>& ends)
+{
+    string pattern;
+    for (int i = 0;  i < n;  ++i) {
+        pattern += "[agct]";
+    }
+    FindRepeatsOf(seq, pattern, min_repeats, starts, ends);
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/12/15 21:20:02  jcherry
+ * Added simple repeat searches
+ *
  * Revision 1.6  2003/12/15 20:16:09  jcherry
  * Changed CFindPattern::Find to take a string rather than a CSeqVector
  *

@@ -40,8 +40,24 @@ BEGIN_NCBI_SCOPE
 
 class CFindPattern {
 public:
+    /// Find non-overlapping matches of regular expression in sequence.
     static void Find(const string& seq, const string& pattern,
                      vector<TSeqPos>& starts, vector<TSeqPos>& ends);
+    /// Find cases of at least min_repeats consecutive occurences of any
+    /// *particular* match to pattern.
+    /// N.B.: pattern = "[ag]c" and min_repeats = 2 will match
+    /// "acac" and "gcgc" but NOT "acgc" or "gcac".
+    static void FindRepeatsOf(const string& seq, const string& pattern,
+                              int min_repeats,
+                              vector<TSeqPos>& starts, vector<TSeqPos>& ends);
+    /// Find all cases of at least min_repeats consecutive occurences
+    /// of any n-mer consisting of unambiguous nucleotides ({a, g, c, t}).
+    /// Note that, e.g., dinucelotide repeats can also qualify as
+    /// tetranucleotide repeats.
+    static void FindNucNmerRepeats(const string& seq,
+                                   int n, int min_repeats,
+                                   vector<TSeqPos>& starts,
+                                   vector<TSeqPos>& ends);
 };
 
 END_NCBI_SCOPE
@@ -51,6 +67,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/15 21:20:02  jcherry
+ * Added simple repeat searches
+ *
  * Revision 1.7  2003/12/15 20:16:09  jcherry
  * Changed CFindPattern::Find to take a string rather than a CSeqVector
  *
