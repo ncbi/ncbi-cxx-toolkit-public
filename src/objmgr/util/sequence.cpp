@@ -1697,76 +1697,11 @@ void CFastaOstream::Write(CBioseq_Handle& handle, const CSeq_loc* location)
 }
 
 
-static int s_ScoreNAForFasta(const CSeq_id* id)
-{
-    switch (id->Which()) {
-    case CSeq_id::e_not_set:
-    case CSeq_id::e_Giim:
-    case CSeq_id::e_Pir:
-    case CSeq_id::e_Swissprot:
-    case CSeq_id::e_Prf:       return kMax_Int;
-    case CSeq_id::e_Local:     return 230;
-    case CSeq_id::e_Gi:        return 120;
-    case CSeq_id::e_General:   return 50;
-    case CSeq_id::e_Patent:    return 40;
-    case CSeq_id::e_Gibbsq:
-    case CSeq_id::e_Gibbmt:
-    case CSeq_id::e_Pdb:       return 30;
-    case CSeq_id::e_Other:     return 15;
-    default:                   return 20; // [third party] GenBank/EMBL/DDBJ
-    }
-}
-
-
-static int s_ScoreAAForFasta(const CSeq_id* id)
-{
-    switch (id->Which()) {
-    case CSeq_id::e_not_set:
-    case CSeq_id::e_Giim:      return kMax_Int;
-    case CSeq_id::e_Local:     return 230;
-    case CSeq_id::e_Gi:        return 120;
-    case CSeq_id::e_General:   return 90;
-    case CSeq_id::e_Patent:    return 80;
-    case CSeq_id::e_Prf:       return 70;
-    case CSeq_id::e_Pdb:       return 50;
-    case CSeq_id::e_Gibbsq:
-    case CSeq_id::e_Gibbmt:    return 40;
-    case CSeq_id::e_Pir:       return 30;
-    case CSeq_id::e_Swissprot: return 20;
-    case CSeq_id::e_Other:     return 15;
-    default:                   return 60; // [third party] GenBank/EMBL/DDBJ
-    }
-}
-
-
 void CFastaOstream::WriteTitle(CBioseq_Handle& handle)
 {
-    CBioseq_Handle::TBioseqCore core = handle.GetBioseqCore();
-
-    bool is_na    = core->GetInst().GetMol() != CSeq_inst::eMol_aa;
-    bool found_gi = false;
-
-    m_Out << '>';
-
-    iterate (CBioseq::TId, id, core->GetId()) {
-        if ((*id)->IsGi()) {
-            (*id)->WriteAsFasta(m_Out);
-            found_gi = true;
-            break;
-        }
-    }
-
-    CRef<CSeq_id> id = FindBestChoice(core->GetId(),
-                                      is_na ? s_ScoreNAForFasta
-                                      : s_ScoreAAForFasta);
-    if (id.NotEmpty()  &&  id->Which() != CSeq_id::e_Gi) {
-        if (found_gi) {
-            m_Out << '|';
-        }
-        id->WriteAsFasta(m_Out);
-    }
-
-    m_Out << ' ' << sequence::GetTitle(handle) << NcbiEndl;
+    m_Out
+        << CSeq_id::GetStringDescr(handle.GetBioseq(), CSeq_id::eFormat_FastA)
+        << ' ' << sequence::GetTitle(handle) << NcbiEndl;
 }
 
 
@@ -2564,6 +2499,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2002/11/26 15:14:04  dicuccio
+* Changed CFastaOStream::WriteTitle() to make use of CSeq_id::GetStringDescr().
+*
 * Revision 1.18  2002/11/25 21:24:46  grichenk
 * Added TestForOverlap() function.
 *
