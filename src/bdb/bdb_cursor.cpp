@@ -169,11 +169,12 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, ECursorUpdateType utype)
   m_FirstFetched(false),
   m_FetchFlags(0)
 {
-    m_DBC = m_Dbf.CreateCursor();
     CBDB_Env* env = m_Dbf.GetEnv();
+    CBDB_Transaction* trans = dbf.GetTransaction();
     if (env && env->IsTransactional() && utype == eReadModifyUpdate) {
         m_FetchFlags = DB_RMW;
-    }
+   } 
+   m_DBC = m_Dbf.CreateCursor(trans);
 }
 
 CBDB_FileCursor::CBDB_FileCursor(CBDB_File&         dbf,
@@ -189,11 +190,11 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File&         dbf,
   m_FirstFetched(false),
   m_FetchFlags(0)
 {
-    m_DBC = m_Dbf.CreateCursor(&trans);
     CBDB_Env* env = m_Dbf.GetEnv();
     if (env && env->IsTransactional() && utype == eReadModifyUpdate) {
         m_FetchFlags = DB_RMW;
     }
+    m_DBC = m_Dbf.CreateCursor(&trans);
 }
 
 
@@ -499,6 +500,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/11/08 16:02:03  kuznets
+ * Fixed bug with edit cursors (taken transaction from the database file)
+ *
  * Revision 1.14  2004/11/01 16:54:53  kuznets
  * Added support for RMW locks
  *
