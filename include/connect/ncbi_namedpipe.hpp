@@ -35,7 +35,7 @@
 /// Portable interprocess named pipe API for:  UNIX, MS-Win
 ///
 /// Defines classes: 
-///     CNamedPipe        -  base class for work with named pipes
+///     CNamedPipe        -  base (abstract) class for work with named pipes
 ///     CNamedPipeClient  -  class for client-side named pipes
 ///     CNamedPipeServer  -  class for server-side named pipes
 
@@ -60,7 +60,7 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Forward declaraton for os-specific pipe handle class.
+/// Forward declaration of OS-specific pipe handle class.
 class CNamedPipeHandle;
 
 
@@ -68,7 +68,7 @@ class CNamedPipeHandle;
 ///
 /// CNamedPipe --
 ///
-/// Define base class for interprocess communication via named pipes.
+/// Define base abstract class for interprocess communication via named pipes.
 ///
 /// NOTES: 
 ///    - On some platforms pipe can be accessed over the network;
@@ -87,7 +87,7 @@ class CNamedPipeHandle;
 ///
 /// For UNIXs the pipe name is a generic file name (with or without path).
 ///
-/// Initially, all timeouts are infinite.
+/// Initially all timeouts are infinite.
 ///
 /// @sa
 ///   CNamedPipeClient, CNamedPipeServer, CPipe
@@ -95,19 +95,23 @@ class CNamedPipeHandle;
 class NCBI_XCONNECT_EXPORT CNamedPipe
 {
 public:
-    /// Default I/O buffer size.
-    static const size_t kDefaultBufferSize;
+    /// Default pipe size.
+    static const size_t kDefaultPipeSize;
 
     /// Constructor.
     CNamedPipe(void);
 
     /// Destructor. 
-    ~CNamedPipe(void);
+    virtual ~CNamedPipe(void);
 
+    // Implemented in derived specializations (Client/Server).
+    virtual EIO_Status Open  (const string&, const STimeout*, size_t) = 0;
+    virtual EIO_Status Create(const string&, const STimeout*, size_t) = 0;
+         
     /// Close pipe connection.
     ///
-    /// The pipe handle goes invalid after this function call, regardless
-    /// of whether the call was successful or not.
+    /// The pipe handle becomes invalid after this function call,
+    /// regardless of whether the call was successful or not.
     EIO_Status Close(void);
     
     /// Read data from the pipe.
@@ -120,18 +124,33 @@ public:
     /// the pipe file stream is encountered before reaching count.
     EIO_Status Read(void* buf, size_t count, size_t* n_read = 0);
 
-    /// Writes data to the pipe.
+    /// Write data to the pipe.
     ///
     /// Return eIO_Success if some data were written.
     /// Return other (error) code only if no data at all could be written.
-    /// Return in the n_written" the number of bytes actually written,
-    /// which may be less than "count" if an error occurs or times out.
+    /// Return in the "n_written" the number of bytes actually written,
+    /// which may be less than "count" if an error occurs or write times out.
     /// NOTE:
-    ///    On MS Windows client/server do not must to write into a pipe
-    ///    at a heat a data block with size more than size of pipe's
-    ///    buffer specified on the server side using
-    ///    CNamedPipeServer::Create().Such data block will be never written.
+    ///    On MS Windows client/server must not attempt to write
+    ///    a data block, whose size exceeds the pipe buffer size specified
+    ///    on other side of the pipe at the time of creation:  any such
+    ///    block will be refused for writing and an error will result.
     EIO_Status Write(const void* buf, size_t count, size_t* n_written = 0);
+
+
+    /// Wait for I/O readiness in the pipe.
+    ///
+    /// Return eIO_Success if within the specified time, an operation
+    /// requested in "event" (which can be either of eIO_Read, eIO_Write, or
+    /// eIO_ReadWrite) can be completed without blocking.
+    /// Pipe must be in connected state for this method to work; otherwise
+    /// eIO_Closed results.
+    /// Note that non-blocking is not guaranteed for more than one byte of
+    /// data (i.e. following Read or Write may complete with only one
+    /// byte read or written, successfully).  Also note that this method
+    /// is currently dummy on MS Windows (and always returns eIO_Success).
+    EIO_Status Wait(EIO_Event event, const STimeout* timeout);
+
 
     /// Return (for the specified "direction"):
     ///   eIO_Closed     -- if the pipe is closed;
@@ -162,9 +181,9 @@ public:
 
 protected:
     string            m_PipeName;          ///< pipe name 
-    CNamedPipeHandle* m_PipeHandle;        ///< os-specific handle
+    CNamedPipeHandle* m_NamedPipeHandle;   ///< os-specific handle
+    size_t            m_PipeSize;          ///< pipe size
     bool              m_IsClientSide;      ///< client/server-side pipe
-    size_t            m_Bufsize;           ///< IO buffer size
 
     /// Timeouts
     STimeout*         m_OpenTimeout;       ///< eIO_Open
@@ -174,6 +193,7 @@ protected:
     STimeout          m_ReadTimeoutValue;  ///< storage for m_ReadTimeout
     STimeout          m_WriteTimeoutValue; ///< storage for m_WriteTimeout
 
+private:
     /// Disable copy constructor and assignment.
     CNamedPipe(const CNamedPipe&);
     CNamedPipe& operator= (const CNamedPipe&);
@@ -201,20 +221,19 @@ public:
     ///
     /// This constructor just calls Open().
     /// NOTE: Timeout from the argument becomes new open timeout.
-    CNamedPipeClient
-        (const string&   pipename,
-         const STimeout* timeout = kDefaultTimeout,
-         size_t          bufsize = kDefaultBufferSize
-         );
+    CNamedPipeClient(const string&   pipename,
+                     const STimeout* timeout = kDefaultTimeout,
+                     size_t          pipesize = kDefaultPipeSize);
 
     /// Open a client-side pipe connection.
     ///
     /// NOTE: Should not be called if already opened.
-    EIO_Status Open
-        (const string&   pipename,
-         const STimeout* timeout = kDefaultTimeout,
-         size_t          bufsize = kDefaultBufferSize
-         );
+    virtual EIO_Status Open(const string&   pipename,
+                            const STimeout* timeout  = kDefaultTimeout,
+                            size_t          pipesize = kDefaultPipeSize);
+
+    // Always returns eIO_Unknown in this class.
+    virtual EIO_Status Create(const string&, const STimeout*, size_t);
 
 private:
     /// Disable copy constructor and assignment.
@@ -248,20 +267,19 @@ public:
     ///     transmitted through the pipe. The actual buffer size reserved
     ///     for each end of the named pipe is the specified size rounded
     ///     up to the next allocation boundary.
-    CNamedPipeServer
-        (const string&   pipename,
-         const STimeout* timeout  = kDefaultTimeout,
-         size_t          bufsize  = kDefaultBufferSize
-         );
+    CNamedPipeServer(const string&   pipename,
+                     const STimeout* timeout  = kDefaultTimeout,
+                     size_t          pipesize = kDefaultPipeSize);
 
-    /// Create a server-side pipe
-    ///.
+    /// Create a server-side pipe.
+    ///
     /// NOTE: Should not be called if already created.
-    EIO_Status Create
-        (const string&   pipename,
-         const STimeout* timeout  = kDefaultTimeout,
-         size_t          bufsize  = kDefaultBufferSize
-         );
+    virtual EIO_Status Create(const string&   pipename,
+                              const STimeout* timeout  = kDefaultTimeout,
+                              size_t          pipesize = kDefaultPipeSize);
+
+    /// Always returns eIO_Unknown in this class.
+    virtual EIO_Status Open(const string&, const STimeout*, size_t);
 
     /// Listen a pipe for new client connection.
     ///
@@ -290,12 +308,14 @@ private:
 /* @} */
 
 
-// Inline (getters)
+// Inline
+
 
 inline bool CNamedPipe::IsClientSide(void) const
 {
     return m_IsClientSide;
 }
+
 
 inline bool CNamedPipe::IsServerSide(void) const
 {
@@ -310,6 +330,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/09/23 21:01:44  lavr
+ * Slightly reworked to fit in CConn_...Streams better
+ *
  * Revision 1.5  2003/08/28 15:57:29  ivanov
  * Comments changes
  *
