@@ -620,8 +620,8 @@ TClass* CPluginManager<TClass, TIfVer>::CreateInstanceFromList(
     NStr::Split(driver_list, ":", drivers);
     ITERATE ( list<string>, it, drivers ) {
         string drv_name = *it;
-        const TPluginManagerParamTree* driver_params =
-            params->FindNode(drv_name);
+        const TPluginManagerParamTree* driver_params = params ?
+            params->FindNode(drv_name) : 0;
         try {
             drv = CreateInstance(drv_name, version, driver_params);
         }
@@ -926,6 +926,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/12/23 15:48:22  grichenk
+ * Check if params is null
+ *
  * Revision 1.38  2004/12/22 19:24:45  grichenk
  * Use CDllResolver_Getter() to add default DLL resolver
  *
