@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2002/02/28 19:11:52  thiessen
+* wrap sequences in single-structure mode
+*
 * Revision 1.43  2002/02/22 14:24:01  thiessen
 * sort sequences in reject dialog ; general identifier comparison
 *
@@ -237,19 +240,27 @@ bool DisplayRowFromAlignment::GetCharacterTraitsAt(
     return result;
 }
 
+DisplayRowFromSequence::DisplayRowFromSequence(const Sequence *s, int from, int to) :
+    sequence(s), fromIndex(from), toIndex(to)
+{
+    if (from < 0 || from >= sequence->Length() || from > to || to < 0 || to >= sequence->Length())
+        ERR_POST(Error << "DisplayRowFromSequence::DisplayRowFromSequence() - from/to indexes out of range");
+}
+
 bool DisplayRowFromSequence::GetCharacterTraitsAt(
 	int column, BlockMultipleAlignment::eUnalignedJustification justification,
     char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const
 {
-    if (column >= sequence->Length())
+    int index = column + fromIndex;
+    if (index > toIndex)
         return false;
 
-    *character = tolower(sequence->sequenceString[column]);
+    *character = tolower(sequence->sequenceString[index]);
     if (sequence->molecule)
-        *color = sequence->molecule->GetResidueColor(column);
+        *color = sequence->molecule->GetResidueColor(index);
     else
         color->Set(0,0,0);
-    if (GlobalMessenger()->IsHighlighted(sequence, column)) {
+    if (GlobalMessenger()->IsHighlighted(sequence, index)) {
         *drawBackground = true;
         *cellBackgroundColor = GlobalColors()->Get(Colors::eHighlight);
     } else {
@@ -261,30 +272,32 @@ bool DisplayRowFromSequence::GetCharacterTraitsAt(
 
 bool DisplayRowFromSequence::GetSequenceAndIndexAt(
     int column, BlockMultipleAlignment::eUnalignedJustification justification,
-    const Sequence **sequenceHandle, int *index) const
+    const Sequence **sequenceHandle, int *seqIndex) const
 {
-    if (column >= sequence->Length())
+    int index = column + fromIndex;
+    if (index > toIndex)
         return false;
 
     *sequenceHandle = sequence;
-    *index = column;
+    *seqIndex = index;
     return true;
 }
 
 void DisplayRowFromSequence::SelectedRange(int from, int to,
     BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const
 {
-    int len = sequence->Length();
+    from += fromIndex;
+    to += fromIndex;
 
     // skip if selected outside range
-    if (from < 0 && to < 0) return;
-    if (from >= len && to >= len) return;
+    if (from < fromIndex && to < fromIndex) return;
+    if (from > toIndex && to > toIndex) return;
 
     // trim to within range
-    if (from < 0) from = 0;
-    else if (from >= len) from = len - 1;
-    if (to < 0) to = 0;
-    else if (to >= len) to = len - 1;
+    if (from < fromIndex) from = fromIndex;
+    else if (from > toIndex) from = toIndex;
+    if (to < fromIndex) to = fromIndex;
+    else if (to > toIndex) to = toIndex;
 
     if (toggle)
         GlobalMessenger()->ToggleHighlights(sequence, from, to);
@@ -371,14 +384,14 @@ void SequenceDisplay::AddRowFromAlignment(int row, BlockMultipleAlignment *fromA
     AddRow(new DisplayRowFromAlignment(row, fromAlignment));
 }
 
-void SequenceDisplay::AddRowFromSequence(const Sequence *sequence)
+void SequenceDisplay::AddRowFromSequence(const Sequence *sequence, int from, int to)
 {
     if (!sequence) {
         ERR_POST(Error << "SequenceDisplay::AddRowFromSequence() failed");
         return;
     }
 
-    AddRow(new DisplayRowFromSequence(sequence));
+    AddRow(new DisplayRowFromSequence(sequence, from, to));
 }
 
 void SequenceDisplay::AddRowFromString(const std::string& anyString)
@@ -1234,36 +1247,25 @@ bool SequenceDisplay::GetDisplayCoordinates(const Molecule *molecule, int seqInd
     int displayRow;
     const Sequence *seq;
 
-    // first search by Molecule*
+    // search by Molecule*
     for (displayRow=0; displayRow<NRows(); displayRow++) {
         seq = rows[displayRow]->GetSequence();
-        if (seq && seq->molecule == molecule)
-            break;
-    }
+        if (seq && seq->molecule == molecule) {
+            *row = displayRow;
 
-    // if not found by Molecule*, search by identifier
-    if (displayRow == NRows()) {
-        for (displayRow=0; displayRow<NRows(); displayRow++) {
-            seq = rows[displayRow]->GetSequence();
-            if (seq && seq->identifier == molecule->identifier)
-                break;
+            const DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[displayRow]);
+            if (alnRow) {
+                *column = alnRow->alignment->GetAlignmentIndex(alnRow->row, seqIndex, justification);
+                return (*column >= 0);
+            }
+
+            const DisplayRowFromSequence *seqRow = dynamic_cast<DisplayRowFromSequence*>(rows[displayRow]);
+            if (seqRow && seqIndex >= seqRow->fromIndex && seqIndex <= seqRow->toIndex) {
+                *column = seqIndex - seqRow->fromIndex;
+                return true;
+            }
         }
     }
-    if (displayRow == NRows()) return false;
-    *row = displayRow;
-
-    const DisplayRowFromSequence *seqRow = dynamic_cast<DisplayRowFromSequence*>(rows[displayRow]);
-    if (seqRow) {
-        *column = seqIndex;
-        return (*column < seq->Length());
-    }
-
-    const DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[displayRow]);
-    if (alnRow) {
-        *column = alnRow->alignment->GetAlignmentIndex(alnRow->row, seqIndex, justification);
-        return (*column >= 0);
-    }
-
     return false;
 }
 

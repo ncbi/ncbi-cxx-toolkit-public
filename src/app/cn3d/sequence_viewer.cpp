@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2002/02/28 19:11:52  thiessen
+* wrap sequences in single-structure mode
+*
 * Revision 1.44  2001/12/06 23:13:45  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -175,6 +178,7 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -255,9 +259,10 @@ void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
 
 void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 {
-    ClearStacks();
+    int from, to, width = 50;
 
     SequenceDisplay *display = new SequenceDisplay(false, viewerWindow);
+
     // populate each line of the display with one sequence, with blank lines inbetween
     SequenceList::const_iterator s, se = sequenceList->end();
     for (s=sequenceList->begin(); s!=se; s++) {
@@ -266,10 +271,19 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
         if (!(*s)->parentSet->IsMultiStructure() &&
             (*s)->parentSet->objects.front()->mmdbID != (*s)->identifier->mmdbID) continue;
 
-        if (s != sequenceList->begin()) display->AddRowFromString("");
-        display->AddRowFromSequence(*s);
+        if (display->NRows() > 0) display->AddRowFromString("");
+
+        // wrap long sequences
+        from = 0;
+        to = width - 1;
+        do {
+            display->AddRowFromSequence(*s, from, ((to >= (*s)->Length()) ? (*s)->Length() - 1 : to));
+            from += width;
+            to += width;
+        } while (from < (*s)->Length());
     }
 
+    ClearStacks();
     InitStacks(NULL, display);
     if (sequenceWindow)
         sequenceWindow->UpdateDisplay(display);

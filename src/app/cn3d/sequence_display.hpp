@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/02/28 19:11:52  thiessen
+* wrap sequences in single-structure mode
+*
 * Revision 1.20  2002/02/05 18:53:25  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -170,13 +173,14 @@ class DisplayRowFromSequence : public DisplayRow
 {
 public:
     const Sequence * const sequence;
+    const int fromIndex, toIndex;
 
-    DisplayRowFromSequence(const Sequence *s) : sequence(s) { }
+    DisplayRowFromSequence(const Sequence *s, int from, int to);
 
-    int Width(void) const { return sequence->Length(); }
+    int Width(void) const { return toIndex - fromIndex + 1; }
 
     DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const
-        { return new DisplayRowFromSequence(sequence); }
+        { return new DisplayRowFromSequence(sequence, fromIndex, toIndex); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const;
@@ -249,7 +253,7 @@ public:
 
     // these functions add a row to the end of the display, from various sources
     void AddRowFromAlignment(int row, BlockMultipleAlignment *fromAlignment);
-    void AddRowFromSequence(const Sequence *sequence);
+    void AddRowFromSequence(const Sequence *sequence, int from, int to);
     void AddRowFromString(const std::string& anyString);
 
     // adds a string row to the alignment, that contains block boundary indicators
