@@ -899,11 +899,13 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program,
  * @param options The options [in] [out]
  * @param evalue The expected value threshold [in]
  * @param hitlist_size How many database sequences to save per query? [in]
+ * @param is_gapped is this a gapped alignment? [in]
 */
 NCBI_XBLAST_EXPORT
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
-                           double evalue, Int4 hitlist_size);
+                           double evalue, Int4 hitlist_size,
+                           Boolean is_gapped);
 
 /** Deallocate memory for BlastLinkHSPParameters;
  * @param parameters Structure to free [in] 
