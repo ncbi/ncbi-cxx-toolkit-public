@@ -64,7 +64,10 @@ public:
 
 void CTestNetScheduleNode::Init(void)
 {
-    // Setup command line arguments and parameters
+    SetDiagPostFlag(eDPF_Trace);
+    SetDiagPostLevel(eDiag_Info);
+
+       // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -90,7 +93,7 @@ int CTestNetScheduleNode::Run(void)
     const string& host  = args["hostname"].AsString();
     unsigned short port = args["port"].AsInteger();
 
-    CNetScheduleClient cl(host, port, "client_test", "noname");
+    CNetScheduleClient cl(host, port, "node_test", "noname");
 
     string    job_key;
     string    input;
@@ -98,12 +101,24 @@ int CTestNetScheduleNode::Run(void)
     int       no_jobs_counter = 0;
     unsigned  jobs_done = 0;
 
+    // The main job processing loop, polls the 
+    // queue for available jobs
+    // 
+    // There is no payload algorithm here, node just
+    // sleeps and reports the processing result back to server
+    // as string "DONE". Practical application should use
+    // netcache as result storage
+    //
+    // Well behaved node should not constantly poll the queue for
+    // jobs if queue reports there are no more jobs: worker node
+    // should take a brake and do not poll for a while
+    //
     while (1) {
         job_exists = cl.GetJob(&job_key, &input);
 
         if (job_exists) {
-            // do no job here, just delay for a while
-            SleepMilliSec(100);
+            // do no job here, just delay for a little while
+            SleepMilliSec(50);
             cl.PutResult(job_key, 0, "DONE");
 
             no_jobs_counter = 0;
@@ -115,7 +130,15 @@ int CTestNetScheduleNode::Run(void)
 
         } else {
             // when there are no more jobs just wait a bit
-            SleepMilliSec(200); 
+            // sleep increases progressively if queue reports
+            // that it got no more jobs for the node
+            
+            unsigned delay = 100 + no_jobs_counter * 10;
+            if (delay > 2000) {
+                delay = 2000;
+            }
+            
+            SleepMilliSec(delay);
 
             if (++no_jobs_counter > 200) { // no new jobs coming
                 break;
@@ -138,6 +161,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/14 13:47:33  kuznets
+ * Delay added to the tests to make it look more like normal programs
+ *
  * Revision 1.2  2005/02/10 20:00:04  kuznets
  * Work on test cases in progress
  *

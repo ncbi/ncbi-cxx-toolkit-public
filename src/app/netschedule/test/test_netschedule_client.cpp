@@ -39,6 +39,7 @@
 
 #include <connect/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_types.h>
 
 
@@ -63,6 +64,10 @@ public:
 
 void CTestNetScheduleClient::Init(void)
 {
+    CONNECT_Init();
+    SetDiagPostFlag(eDPF_Trace);
+    SetDiagPostLevel(eDiag_Info);
+    
     // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
@@ -107,19 +112,10 @@ int CTestNetScheduleClient::Run(void)
     const string input = "Hello NetSchedule!";
 
     string job_key = cl.SubmitJob(input);
-
     NcbiCout << job_key << NcbiEndl;
-/*
-    status = cl.GetStatus(job_key);
 
-    if (status == CNetScheduleClient::ePending) {
-        cl.CancelJob(job_key);
-        status = cl.GetStatus(job_key);
-        NcbiCout << "Job canceled." << NcbiEndl;
-        status = cl.GetStatus(job_key);
-    }
-    NcbiCout << "Job status:" << status << NcbiEndl;
-*/
+    
+    
     vector<string> jobs;
 
     {{
@@ -147,7 +143,11 @@ int CTestNetScheduleClient::Run(void)
 
     NcbiCout << "Waiting for jobs..." << jobs.size() << NcbiEndl;
     unsigned cnt = 0;
-
+    SleepMilliSec(5500);
+    
+    unsigned last_jobs = 0;
+    unsigned no_jobs_executes_cnt = 0;
+    
     while (jobs.size()) {
         NON_CONST_ITERATE(vector<string>, it, jobs) {
             const string& jk = *it;
@@ -162,18 +162,47 @@ int CTestNetScheduleClient::Run(void)
                 jobs.erase(it);
                 ++cnt;
                 break;
+            } else 
+            if (status != CNetScheduleClient::ePending) {
+                jobs.erase(it);
+                ++cnt;
+                break;                
             }
+            
             ++cnt;
             if (cnt % 1000 == 0) {
                 NcbiCout << "Waiting for " 
                          << jobs.size() 
                          << " jobs."
-                         << NcbiEndl;;
+                         << NcbiEndl;
+                // it is necessary to give system a rest periodically
+                SleepMilliSec(2000);
+                // check status of only first 1000 jobs
+                // since the JS queue execution priority is FIFO
+                break;
             }
         }
+        
+        // check if worker node picks up jobs, otherwise stop
+        // trying after 10 attempts.        
+        
+        if (jobs.size() == last_jobs) {
+            ++no_jobs_executes_cnt;
+            if (no_jobs_executes_cnt == 3) {
+                NcbiCout << "No progress in job execution. Stopping..."
+                         << NcbiEndl;
+                break;
+            } else {
+                last_jobs = jobs.size();
+            }
+        }
+        
     } // while
 
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+    if (jobs.size()) {
+        NcbiCout << "Remaning job count = " << jobs.size() << NcbiEndl;
+    }
     return 0;
 }
 
@@ -187,6 +216,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/14 13:47:33  kuznets
+ * Delay added to the tests to make it look more like normal programs
+ *
  * Revision 1.2  2005/02/10 20:00:04  kuznets
  * Work on test cases in progress
  *
