@@ -53,13 +53,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    static void s_Reset(SERV_ITER);
+    static void        s_Reset      (SERV_ITER);
     static SSERV_Info* s_GetNextInfo(SERV_ITER, char**);
-    static int/*bool*/ s_Update(SERV_ITER, TNCBI_Time, const char*);
-    static void s_Close(SERV_ITER);
+    static int/*bool*/ s_Update     (SERV_ITER, TNCBI_Time, const char*);
+    static void        s_Close      (SERV_ITER);
 
     static const SSERV_VTable s_op = {
-        s_Reset, s_GetNextInfo, s_Update, 0, s_Close, "DISPD"
+        s_Reset, s_GetNextInfo, s_Update, 0/*Penalize*/, s_Close, "DISPD"
     };
 #ifdef __cplusplus
 } /* extern "C" */
@@ -135,59 +135,57 @@ static int/*bool*/ s_ParseHeader(const char* header, void *data,
 static int/*bool*/ s_Resolve(SERV_ITER iter)
 {
     static const char service[] = "service=";
-    static const char stateless[] = "Client-Mode: STATELESS_ONLY\r\n";
-    static const char dispatch_mode[] = "Dispatch-Mode: INFORMATION_ONLY\r\n";
-    static const char stateful_capable[] = "Client-Mode: STATEFUL_CAPABLE\r\n";
+    static const char address[] = "&address=";
+    static const char platform[] = "&platform=";
     SConnNetInfo *net_info = ((SDISPD_Data*) iter->data)->net_info;
     const char *tag;
+    char node[128];
     CONNECTOR conn;
-    size_t buflen;
-    BUF buf = 0;
-    char *s;
+    size_t len;
+    char* s;
     CONN c;
 
-    /* Form service name argument (as CGI argument) */
-    if (sizeof(service) + strlen(iter->service) > sizeof(net_info->args))
+    /* Form service arguments (as CGI arguments) */
+    if (sizeof(service) + (len=strlen(iter->service)) > sizeof(net_info->args))
         return 0/*failed*/;
-    strcpy(net_info->args, service);
-    strcat(net_info->args, iter->service);
-    /* Reset request method to be GET (as no HTTP body will follow) */
-    net_info->req_method = eReqMethod_Get;
-    /* Obtain additional header information */
-    if ((s = SERV_Print(iter)) != 0) {
-        int status = BUF_Write(&buf, s, strlen(s));
-        free(s);
-        if (!status) {
-            BUF_Destroy(buf);
-            return 0/*failure*/;
+    memcpy(&net_info->args[0], service, sizeof(service) - 1);
+    memcpy(&net_info->args[sizeof(service) - 1], iter->service, len);
+    len += sizeof(service) - 1;
+    if ((tag = SOCK_gethostbyaddr(0, node, sizeof(node))) != 0 && *tag) {
+        size_t tlen = strlen(tag);
+        if (len + sizeof(address) + tlen <= sizeof(net_info->args)) {
+            memcpy(&net_info->args[len], address, sizeof(address) - 1);
+            memcpy(&net_info->args[len + sizeof(address) - 1], tag, tlen);
+            len += sizeof(address) - 1 + tlen;
         }
     }
-    tag = net_info->stateless ? stateless : stateful_capable;
-    if (!BUF_Write(&buf, tag, strlen(tag)) ||
-        !BUF_Write(&buf, dispatch_mode, sizeof(dispatch_mode)-1)) {
-        BUF_Destroy(buf);
-        return 0/*failure*/;
+    if ((tag = CORE_GetPlatform()) != 0 && *tag) {
+        size_t tlen = strlen(tag);
+        if (len + sizeof(platform) + tlen <= sizeof(net_info->args)) {
+            memcpy(&net_info->args[len], platform, sizeof(platform) - 1);
+            memcpy(&net_info->args[len + sizeof(platform) - 1], tag, tlen);
+            len += sizeof(platform) - 1 + tlen;
+        }
     }
-    /* Now the entire user header is ready, take it out of the buffer */
-    buflen = BUF_Size(buf);
-    assert(buflen != 0);
-    if ((s = (char*) malloc(buflen + 1)) != 0) {
-        if (BUF_Read(buf, s, buflen) != buflen) {
-            free(s);
-            s = 0;
-        } else
-            s[buflen] = '\0';
-    }
-    BUF_Destroy(buf);
-    if (!s)
-        return 0/*failure*/;
-    ConnNetInfo_SetUserHeader(net_info, s);
-    assert(strcmp(net_info->http_user_header, s) == 0);
-    free(s);
+    net_info->args[len] = '\0';
+    /* Reset request method to be GET ('cause no HTTP body will follow) */
+    net_info->req_method = eReqMethod_Get;
+    /* Obtain additional header information */
+    if ((s = SERV_Print(iter)) != 0)
+        ConnNetInfo_OverrideUserHeader(net_info, s);
+    ConnNetInfo_OverrideUserHeader(net_info, net_info->stateless
+                                   ? "Client-Mode: STATELESS_ONLY\r\n"
+                                   : "Client-Mode: STATEFUL_CAPABLE\r\n");
+    ConnNetInfo_OverrideUserHeader(net_info,
+                                   "Dispatch-Mode: INFORMATION_ONLY\r\n");
     /* All the rest in the net_info structure is fine with us */
     conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush/*flags*/,
                                   s_ParseHeader, 0/*adjust net_info*/,
                                   iter/*adj.data*/, 0/*adj.cleanup*/);
+    if (s) {
+        ConnNetInfo_DeleteUserHeader(net_info, s);
+        free(s);
+    }
     if (!conn || CONN_Create(conn, &c) != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[DISPATCHER]  Unable to create aux. %s",
                                conn ? "connection" : "connector"));
@@ -390,8 +388,13 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2002/10/11 19:55:20  lavr
+ * Append dispatcher request query with address and platform information
+ * (as the old dispatcher used to do). Also, take advantage of various new
+ * ConnNetInfo_*UserHeader() routines when preparing aux HTTP request.
+ *
  * Revision 6.44  2002/09/24 15:08:50  lavr
- * Change non-zero rate assertion into more readable (info->rate != 0)
+ * Change non-zero rate assertion into more readable (info->rate != 0.0)
  *
  * Revision 6.43  2002/09/18 16:31:38  lavr
  * Temporary fix for precision loss removed & replaced with assert()
