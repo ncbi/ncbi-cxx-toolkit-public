@@ -346,13 +346,14 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 
 int CSeq_id::CompareOrdered(const CSeq_id& sid2) const
 {
-    const CTextseq_id *tsip1 = GetTextseq_Id();
-    const CTextseq_id *tsip2 = sid2.GetTextseq_Id();
-    if ( tsip1 && tsip2 )
-        return tsip1->Compare(*tsip2);
     int ret = Which() - sid2.Which();
     if ( ret != 0 ) {
         return ret;
+    }
+    const CTextseq_id *tsip1 = GetTextseq_Id();
+    const CTextseq_id *tsip2 = sid2.GetTextseq_Id();
+    if ( tsip1 && tsip2 ) {
+        return tsip1->Compare(*tsip2);
     }
     switch ( Which() ) { // Now we only need to know one
     case e_Local:
@@ -1505,6 +1506,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.81  2004/06/01 15:26:07  johnson
+ * Make CompareOrdered a true model of strict weak ordering
+ *
  * Revision 6.80  2004/05/28 20:09:44  johnson
  * Added Compare for seq-id type General (CDbtag)
  *
