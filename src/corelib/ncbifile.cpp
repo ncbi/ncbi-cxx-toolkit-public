@@ -1327,6 +1327,101 @@ CDir::TEntries CDir::GetEntries(const string& mask) const
 }
 
 
+CDir::TEntries CDir::GetEntries(const vector<string>& masks) const
+{
+    if (masks.empty())
+        return GetEntries();
+
+    TEntries contents;
+    string path_base = GetPath();
+    if ( path_base[path_base.size() - 1] != GetPathSeparator() ) {
+        path_base += GetPathSeparator();
+    }
+
+#if defined(NCBI_OS_MSWIN)
+
+    // Append to the "path" mask for all files in directory
+    string pattern = path_base + string("*");
+
+    // Open directory stream and try read info about first entry
+    struct _finddata_t entry;
+    long desc = _findfirst(pattern.c_str(), &entry);  // get first entry's name
+    if (desc != -1) {
+        // check all masks
+        ITERATE(vector<string>, it, masks) {
+            const string& mask = *it;
+            if (mask.empty()) {
+                contents.push_back(new CDirEntry(path_base + entry.name));
+                break;
+            }
+            if (MatchesMask(entry.name, mask.c_str()) ) {
+                contents.push_back(new CDirEntry(path_base + entry.name));
+                break;
+            }                
+        } // ITERATE
+        while ( _findnext(desc, &entry) != -1 ) {
+            ITERATE(vector<string>, it, masks) {
+                const string& mask = *it;
+                if (mask.empty()) {
+                    contents.push_back(new CDirEntry(path_base + entry.name));
+                    break;
+                }
+                if (MatchesMask(entry.name, mask.c_str()) ) {
+                    contents.push_back(new CDirEntry(path_base + entry.name));
+                    break;
+                }
+            } // ITERATE
+        }
+        _findclose(desc);
+    }
+
+
+#elif defined(NCBI_OS_UNIX)
+    DIR* dir = opendir(GetPath().c_str());
+    if ( dir ) {
+        while (struct dirent* entry = readdir(dir)) {
+            ITERATE(vector<string>, it, masks) {
+                const string& mask = *it;
+                if (mask.empty()) {
+                    contents.push_back(new CDirEntry(path_base + entry->d_name));
+                    break;
+                }
+                if ( MatchesMask(entry->d_name, mask.c_str()) ) {
+                    contents.push_back(new CDirEntry(path_base + entry->d_name));
+                    break;
+                }
+            } // ITERATE
+        } // while
+        closedir(dir);
+    }
+
+#elif defined(NCBI_OS_MAC)
+    try {
+        for (int index = 1;  ;  index++) {
+            CDirEntry entry = MacGetIndexedItem(*this, index);
+            ITERATE(vector<string>, it, masks) {
+                const string& mask = *it;
+                if (mask.empty()) {
+                    contents.push_back(new CDirEntry(entry));
+                    break;
+                }
+                if ( MatchesMask(entry.GetName().c_str(), mask.c_str()) ) {
+                    contents.push_back(new CDirEntry(entry));
+                    break;
+                }
+            }
+        }
+    } catch (OSErr& err) {
+        if (err != fnfErr) {
+            throw COSErrException_Mac(err, "CDir::GetEntries() ");
+        }
+    }
+#endif
+
+    return contents;
+}
+
+
 bool CDir::Create(void) const
 {
     TMode user_mode, group_mode, other_mode;
@@ -1696,6 +1791,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2003/11/05 15:36:23  kuznets
+ * Implemented new variant of CDir::GetEntries()
+ *
  * Revision 1.61  2003/10/23 12:10:51  ucko
  * Use AutoPtr with CDeleter rather than auto_ptr, which is *not*
  * guaranteed to be appropriate for malloc()ed memory.
