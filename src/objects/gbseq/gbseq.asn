@@ -1,4 +1,4 @@
---$Revision: 6.3 $
+--$Revision: 6.4 $
 --*********************************************************
 --
 -- ASN.1 and XML for the components of a GenBank format sequence
@@ -111,9 +111,9 @@ GBSeq ::= SEQUENCE {
 	definition VisibleString ,
 	primary-accession VisibleString OPTIONAL ,
 	accession-version VisibleString OPTIONAL ,
-	other-seqids SEQUENCE OF Seqid OPTIONAL ,
-	secondary-accessions SEQUENCE OF Secondary-accession OPTIONAL,
-	keywords SEQUENCE OF Keyword OPTIONAL ,
+	other-seqids SEQUENCE OF GBSeqid OPTIONAL ,
+	secondary-accessions SEQUENCE OF GBSecondary-accn OPTIONAL,
+	keywords SEQUENCE OF GBKeyword OPTIONAL ,
 	segment VisibleString OPTIONAL ,
 	source VisibleString ,
 	organism VisibleString ,
@@ -126,15 +126,15 @@ GBSeq ::= SEQUENCE {
 	sequence VisibleString OPTIONAL ,  -- Optional for other dump forms
 	contig VisibleString OPTIONAL }
 
-	Secondary-accession ::= VisibleString
+	GBSecondary-accn ::= VisibleString
 
-	Seqid ::= VisibleString
+	GBSeqid ::= VisibleString
 
-	Keyword ::= VisibleString
+	GBKeyword ::= VisibleString
 
 	GBReference ::= SEQUENCE {
 		reference VisibleString ,
-		authors SEQUENCE OF Author OPTIONAL ,
+		authors SEQUENCE OF GBAuthor OPTIONAL ,
 		consortium VisibleString OPTIONAL ,
 		title VisibleString OPTIONAL ,
 		journal VisibleString ,
@@ -142,7 +142,7 @@ GBSeq ::= SEQUENCE {
 		pubmed INTEGER OPTIONAL ,
 		remark VisibleString OPTIONAL }
 
-	Author ::= VisibleString
+	GBAuthor ::= VisibleString
 
 	GBFeature ::= SEQUENCE {
 		key VisibleString ,
