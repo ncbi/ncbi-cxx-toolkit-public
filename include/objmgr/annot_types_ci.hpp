@@ -72,14 +72,16 @@ public:
 
     enum EObjectType {
         eType_null,
-        eType_AnnotObject_Info,
+        eType_Seq_annot_Info,
         eType_Seq_annot_SNP_Info
     };
 
     EObjectType GetObjectType(void) const;
 
-    const CAnnotObject_Info& GetAnnotObject_Info(void) const;
+    const CSeq_annot_Info& GetSeq_annot_Info(void) const;
     const CSeq_annot_SNP_Info& GetSeq_annot_SNP_Info(void) const;
+
+    const CAnnotObject_Info& GetAnnotObject_Info(void) const;
     const SSNP_Info& GetSNP_Info(void) const;
 
     TSeqPos GetFrom(void) const;
@@ -87,7 +89,6 @@ public:
     const TRange& GetTotalRange(void) const;
 
     bool IsPartial(void) const;
-    bool MinusStrand(void) const;
     int GetMappedIndex(void) const;
 
     const CSeq_annot& GetSeq_annot(void) const;
@@ -99,34 +100,33 @@ public:
     const CSeq_graph& GetGraph(void) const;
     const CSeq_align& GetAlign(void) const;
 
+    bool IsMappedLocation(int index) const;
     const CSeq_loc* GetMappedLocation(void) const;
-    TSeqPos GetSNP_Index(void) const;
+    Uint4 GetAnnotObjectIndex(void) const;
+    bool MappedNeedsUpdate(void) const;
+    void UpdateMappedLocation(CRef<CSeq_loc>& loc) const;
+    void UpdateMappedLocation(CRef<CSeq_loc>& loc,
+                              CRef<CSeq_point>& pnt_ref,
+                              CRef<CSeq_interval>& int_ref) const;
 
-    void SetAnnotObjectRange(const TRange& range);
-    void SetAnnotObjectRange(const TRange& range,
-                             bool partial, const CRef<CSeq_loc>& loc);
+    void SetAnnotObjectRange(const TRange& range, int index);
     void SetSNP_Point(const SSNP_Info& snp, CSeq_loc_Conversion* cvt);
 
     void SetPartial(bool value);
-    void SetMinusStrand(bool value);
     void SetMappedIndex(int index);
 
 private:
+    friend class CSeq_loc_Conversion;
+
     CConstRef<CObject>      m_Object;
     CRef<CSeq_loc>          m_MappedLocation; // master sequence coordinates
     TRange                  m_TotalRange;
-    Int2                    m_MappedIndex;
+    Uint4                   m_AnnotObject_Index;
+    Uint4                   m_MappedIndex;
     Int1                    m_ObjectType; // EObjectType
-    // Partial flag for mapped feature (same as in features)
-    // if object type is eType_Seq_annot_SNP_Info and m_MappedLocation is null
-    // m_Partual contains 'minus_strand' flag
-    enum FFlags {
-        fPartial     = (1<<0),
-        fMinusStrand = (1<<1)
-    };
-    typedef Int1 TFlags;
-    TFlags                  m_Flags;
-    TSeqPos                 m_SNP_Index;  // for eType_Seq_annot_SNP_Info
+    bool                    m_Partial;
+    Int1                    m_MappedType;
+    Int1                    m_MappedStrand;
 };
 
 
@@ -243,7 +243,10 @@ private:
 
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(void)
-    : m_ObjectType(eType_null)
+    : m_AnnotObject_Index(0),
+      m_ObjectType(eType_null),
+      m_Partial(false),
+      m_MappedType(CSeq_loc::e_not_set)
 {
 }
 
@@ -258,22 +261,6 @@ inline
 CAnnotObject_Ref::EObjectType CAnnotObject_Ref::GetObjectType(void) const
 {
     return EObjectType(m_ObjectType);
-}
-
-
-inline
-const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
-{
-    _ASSERT(m_ObjectType == eType_AnnotObject_Info);
-    return static_cast<const CAnnotObject_Info&>(*m_Object);
-}
-
-
-inline
-const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
-{
-    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
-    return *reinterpret_cast<const CSeq_annot_SNP_Info*>(m_Object.GetPointer());
 }
 
 
@@ -299,24 +286,30 @@ const CAnnotObject_Ref::TRange& CAnnotObject_Ref::GetTotalRange(void) const
 
 
 inline
-TSeqPos CAnnotObject_Ref::GetSNP_Index(void) const
+Uint4 CAnnotObject_Ref::GetAnnotObjectIndex(void) const
 {
-    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
-    return m_SNP_Index;
+    return m_AnnotObject_Index;
 }
 
 
 inline
 bool CAnnotObject_Ref::IsPartial(void) const
 {
-    return (m_Flags & fPartial) != 0;
+    return m_Partial;
 }
 
 
 inline
-bool CAnnotObject_Ref::MinusStrand(void) const
+bool CAnnotObject_Ref::IsMappedLocation(int index) const
 {
-    return (m_Flags & fMinusStrand) != 0;
+    return bool(m_MappedLocation) && m_MappedIndex == index;
+}
+
+
+inline
+bool CAnnotObject_Ref::MappedNeedsUpdate(void) const
+{
+    return m_MappedType != CSeq_loc::e_not_set;
 }
 
 
@@ -338,7 +331,7 @@ inline
 bool CAnnotObject_Ref::IsFeat(void) const
 {
     return m_ObjectType == eType_Seq_annot_SNP_Info ||
-        m_ObjectType == eType_AnnotObject_Info &&
+        m_ObjectType == eType_Seq_annot_Info &&
         GetAnnotObject_Info().IsFeat();
 }
 
@@ -353,7 +346,7 @@ bool CAnnotObject_Ref::IsSNPFeat(void) const
 inline
 bool CAnnotObject_Ref::IsGraph(void) const
 {
-    return m_ObjectType == eType_AnnotObject_Info &&
+    return m_ObjectType == eType_Seq_annot_Info &&
         GetAnnotObject_Info().IsGraph();
 }
 
@@ -361,7 +354,7 @@ bool CAnnotObject_Ref::IsGraph(void) const
 inline
 bool CAnnotObject_Ref::IsAlign(void) const
 {
-    return m_ObjectType == eType_AnnotObject_Info &&
+    return m_ObjectType == eType_Seq_annot_Info &&
         GetAnnotObject_Info().IsAlign();
 }
 
@@ -395,22 +388,10 @@ void CAnnotObject_Ref::SetMappedIndex(int index)
 
 
 inline
-void CAnnotObject_Ref::SetAnnotObjectRange(const TRange& range)
+void CAnnotObject_Ref::SetAnnotObjectRange(const TRange& range, int index)
 {
     m_TotalRange = range;
-    m_Flags = 0;
-    m_MappedLocation.Reset();
-}
-
-
-inline
-void CAnnotObject_Ref::SetAnnotObjectRange(const TRange& range,
-                                           bool partial,
-                                           const CRef<CSeq_loc>& loc)
-{
-    m_TotalRange = range;
-    m_Flags = partial? fPartial: 0;
-    m_MappedLocation = loc;
+    m_MappedIndex = index;
 }
 
 
@@ -481,6 +462,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/08/27 14:28:50  vasilche
+* Reduce amount of object allocations in feature iteration.
+*
 * Revision 1.47  2003/08/22 14:58:55  grichenk
 * Added NoMapping flag (to be used by CAnnot_CI for faster fetching).
 * Added GetScope().

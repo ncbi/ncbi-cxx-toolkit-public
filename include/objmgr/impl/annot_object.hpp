@@ -59,7 +59,7 @@ class CSeq_annot_Info;
 class CTSE_Info;
 
 // General Seq-annot object
-class NCBI_XOBJMGR_EXPORT CAnnotObject_Info : public CObject
+class NCBI_XOBJMGR_EXPORT CAnnotObject_Info
 {
 public:
     CAnnotObject_Info(void);
@@ -69,7 +69,8 @@ public:
                       CSeq_annot_Info& annot);
     CAnnotObject_Info(CSeq_graph& graph,
                       CSeq_annot_Info& annot);
-    virtual ~CAnnotObject_Info(void);
+    ~CAnnotObject_Info(void);
+
     CAnnotObject_Info(const CAnnotObject_Info&);
     const CAnnotObject_Info& operator=(const CAnnotObject_Info&);
 
@@ -116,8 +117,6 @@ public:
 
     void GetMaps(vector<CHandleRangeMap>& hrmaps) const;
 
-    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
-
 private:
     // Constructors used by CAnnotTypes_CI only to create fake annotations
     // for sequence segments. The annot object points to the seq-annot
@@ -125,11 +124,11 @@ private:
 
     void x_ProcessAlign(CHandleRangeMap& hrmap, const CSeq_align& align) const;
 
-    TAnnotType                   m_AnnotType;      // annot object type
-    TFeatType                    m_FeatType;       // feature type or e_not_set
-    TFeatSubtype                 m_FeatSubtype;    // feature subtype
-    CRef<CObject>                m_Object;         // annot object itself
     CSeq_annot_Info*             m_Seq_annot_Info; // parent annot
+    CRef<CObject>                m_Object;         // annot object itself
+    Uint1                        m_AnnotType;      // annot object type
+    Uint1                        m_FeatType;       // feature type or e_not_set
+    Uint1                        m_FeatSubtype;    // feature subtype
 };
 
 
@@ -143,28 +142,28 @@ private:
 inline
 CAnnotObject_Info::TAnnotType CAnnotObject_Info::Which(void) const
 {
-    return m_AnnotType;
+    return TAnnotType(m_AnnotType);
 }
 
 
 inline
 CAnnotObject_Info::TAnnotType CAnnotObject_Info::GetAnnotType(void) const
 {
-    return m_AnnotType;
+    return TAnnotType(m_AnnotType);
 }
 
 
 inline
 CAnnotObject_Info::TFeatType CAnnotObject_Info::GetFeatType(void) const
 {
-    return m_FeatType;
+    return TFeatType(m_FeatType);
 }
 
 
 inline
 CAnnotObject_Info::TFeatSubtype CAnnotObject_Info::GetFeatSubtype(void) const
 {
-    return m_FeatSubtype;
+    return TFeatSubtype(m_FeatSubtype);
 }
 
 
@@ -247,6 +246,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/08/27 14:28:51  vasilche
+* Reduce amount of object allocations in feature iteration.
+*
 * Revision 1.10  2003/08/14 20:05:18  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

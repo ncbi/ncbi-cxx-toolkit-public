@@ -78,6 +78,9 @@ public:
     typedef vector<SAnnotObject_Key>  TObjectKeys;
     typedef vector<CAnnotObject_Info> TObjectInfos;
 
+    const CAnnotObject_Info& GetAnnotObject_Info(size_t index) const;
+    size_t GetAnnotObjectIndex(const CAnnotObject_Info& info) const;
+
 private:
     friend class CDataSource;
     friend class CAnnotTypes_CI;
@@ -138,12 +141,23 @@ CSeq_entry_Info& CSeq_annot_Info::GetSeq_entry_Info(void)
 }
 
 
+inline
+const CAnnotObject_Info& CSeq_annot_Info::GetAnnotObject_Info(size_t index) const
+{
+    _ASSERT(index < m_ObjectInfos.size());
+    return m_ObjectInfos[index];
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/08/27 14:28:51  vasilche
+* Reduce amount of object allocations in feature iteration.
+*
 * Revision 1.4  2003/08/14 20:05:18  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

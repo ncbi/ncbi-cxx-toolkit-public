@@ -36,6 +36,7 @@
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_inst.hpp>
 
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
@@ -120,6 +121,10 @@ public:
 
     // Get bioseq core structure
     TBioseqCore GetBioseqCore(void) const;
+    
+    // Get some values from core:
+    TSeqPos GetBioseqLength(void) const;
+    CSeq_inst::TMol GetBioseqMolType(void) const;
 
     // Get sequence map.
     const CSeqMap& GetSeqMap(void) const;
@@ -219,6 +224,13 @@ bool CBioseq_Handle::operator!(void) const
 
 
 inline
+const CBioseq_Info& CBioseq_Handle::x_GetBioseq_Info(void) const
+{
+    return m_Bioseq_Info->GetBioseq_Info();
+}
+
+
+inline
 bool CBioseq_Handle::operator==(const CBioseq_Handle& h) const
 {
     if ( &GetScope() != &h.GetScope() ) {
@@ -262,20 +274,15 @@ CScope& CBioseq_Handle::GetScope(void) const
 }
 
 
-inline
-const CBioseq_Info& CBioseq_Handle::x_GetBioseq_Info(void) const
-{
-    _ASSERT(m_Bioseq_Info);
-    return m_Bioseq_Info->GetBioseq_Info();
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/08/27 14:28:50  vasilche
+* Reduce amount of object allocations in feature iteration.
+*
 * Revision 1.41  2003/07/15 16:14:06  grichenk
 * CBioseqHandle::IsSynonym() made public
 *

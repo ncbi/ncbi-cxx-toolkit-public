@@ -41,6 +41,7 @@
 #include <objmgr/scope.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
@@ -72,7 +73,6 @@ public:
     ~CSeq_loc_Conversion(void);
 
     TSeqPos ConvertPos(TSeqPos src_pos);
-    bool ConvertRange(TRange& range);
 
     bool GoodSrcId(const CSeq_id& id);
     bool MinusStrand(void) const
@@ -80,10 +80,10 @@ public:
             return m_Reverse;
         }
 
-    bool ConvertPoint(TSeqPos src_pos);
+    bool ConvertPoint(TSeqPos src_pos, ENa_strand src_strand);
     bool ConvertPoint(const CSeq_point& src);
 
-    bool ConvertInterval(TSeqPos src_from, TSeqPos src_to);
+    bool ConvertInterval(TSeqPos src_from, TSeqPos src_to, ENa_strand src_strand);
     bool ConvertInterval(const CSeq_interval& src);
 
     bool Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
@@ -117,26 +117,61 @@ public:
     
     ENa_strand ConvertStrand(ENa_strand strand) const;
 
+    void SetMappedLocation(CAnnotObject_Ref& ref, int index);
+
 private:
+    void CheckDstInterval(void);
+    void CheckDstPoint(void);
+
+    CRef<CSeq_interval> GetDstInterval(void);
+    CRef<CSeq_point> GetDstPoint(void);
+
+    void SetDstLoc(CRef<CSeq_loc>& loc);
+
+    bool IsSpecialLoc(void) const;
+
+    // Translation parameters:
+    //   Source id and bounds:
     CSeq_id_Handle m_Src_id;
     TSeqPos        m_Src_from;
     TSeqPos        m_Src_to;
+
+    //   Source to destination shift:
     TSignedSeqPos  m_Shift;
-    const CSeq_id& m_Dst_id;
-    TRange         m_TotalRange;
     bool           m_Reverse;
+
+    //   Destination id:
+    const CSeq_id& m_Dst_id;
+
+    // Results:
+    //   Cumulative results on destination:
+    TRange         m_TotalRange;
     bool           m_Partial;
+    
+    //   Last Point, Interval or other simple location's conversion result:
+    CSeq_loc::E_Choice m_LastType;
+    TRange         m_LastRange;
+    ENa_strand     m_LastStrand;
+
+    // Scope for id resolution:
     CScope*        m_Scope;
-    // temporaries for conversion results
-    CRef<CSeq_interval> dst_int;
-    CRef<CSeq_point>    dst_pnt;
+
+    // Temporaries for conversion results:
     CRef<CSeq_loc> m_DstLocWhole;
 };
 
 
 inline
+bool CSeq_loc_Conversion::IsSpecialLoc(void) const
+{
+    return m_LastType != CSeq_loc::e_not_set;
+}
+
+
+inline
 void CSeq_loc_Conversion::Reset(void)
 {
+    _ASSERT(!IsSpecialLoc());
     m_TotalRange = TRange::GetEmpty();
     m_Partial = false;
 }
@@ -175,20 +210,7 @@ inline
 ENa_strand CSeq_loc_Conversion::ConvertStrand(ENa_strand strand) const
 {
     if ( m_Reverse ) {
-        switch ( strand ) {
-        case eNa_strand_minus:
-            strand = eNa_strand_plus;
-            break;
-        case eNa_strand_plus:
-            strand = eNa_strand_minus;
-            break;
-        case eNa_strand_both:
-            strand = eNa_strand_both_rev;
-            break;
-        case eNa_strand_both_rev:
-            strand = eNa_strand_both;
-            break;
-        }
+        strand = Reverse(strand);
     }
     return strand;
 }
@@ -197,27 +219,16 @@ ENa_strand CSeq_loc_Conversion::ConvertStrand(ENa_strand strand) const
 inline
 bool CSeq_loc_Conversion::ConvertPoint(const CSeq_point& src)
 {
-    if ( !GoodSrcId(src.GetId()) || !ConvertPoint(src.GetPoint()) ) {
-        return false;
-    }
-    if ( src.IsSetStrand() ) {
-        dst_pnt->SetStrand(ConvertStrand(src.GetStrand()));
-    }
-    return true;
+    ENa_strand strand = src.IsSetStrand()? src.GetStrand(): eNa_strand_unknown;
+    return GoodSrcId(src.GetId()) && ConvertPoint(src.GetPoint(), strand);
 }
 
 
 inline
 bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
 {
-    if ( !GoodSrcId(src.GetId()) ||
-         !ConvertInterval(src.GetFrom(), src.GetTo()) ) {
-        return false;
-    }
-    if ( src.IsSetStrand() ) {
-        dst_int->SetStrand(ConvertStrand(src.GetStrand()));
-    }
-    return true;
+    ENa_strand strand = src.IsSetStrand()? src.GetStrand(): eNa_strand_unknown;
+    return GoodSrcId(src.GetId()) && ConvertInterval(src.GetFrom(), src.GetTo(), strand);
 }
 
 
@@ -227,6 +238,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/08/27 14:28:51  vasilche
+* Reduce amount of object allocations in feature iteration.
+*
 * Revision 1.2  2003/08/15 19:19:15  vasilche
 * Fixed memory leak in string packing hooks.
 * Fixed processing of 'partial' flag of features.

@@ -51,6 +51,8 @@ BEGIN_SCOPE(objects)
 class CSeq_feat;
 class CSeq_annot;
 class CSeq_annot_SNP_Info;
+class CSeq_point;
+class CSeq_interval;
 
 struct NCBI_XOBJMGR_EXPORT SSNP_Info
 {
@@ -97,9 +99,19 @@ public:
     CRef<CSeq_feat> CreateSeq_feat(const CSeq_annot_SNP_Info& annot_info) const;
     void UpdateSeq_feat(CRef<CSeq_feat>& seq_feat,
                         const CSeq_annot_SNP_Info& annot_info) const;
+    void UpdateSeq_feat(CRef<CSeq_feat>& seq_feat,
+                        CRef<CSeq_point>& seq_point,
+                        CRef<CSeq_interval>& seq_interval,
+                        const CSeq_annot_SNP_Info& annot_info) const;
     
     CRef<CSeq_feat> x_CreateSeq_feat(void) const;
+    void x_UpdateSeq_featData(CSeq_feat& feat,
+                              const CSeq_annot_SNP_Info& annot_info) const;
     void x_UpdateSeq_feat(CSeq_feat& feat,
+                          const CSeq_annot_SNP_Info& annot_info) const;
+    void x_UpdateSeq_feat(CSeq_feat& feat,
+                          CRef<CSeq_point>& seq_point,
+                          CRef<CSeq_interval>& seq_interval,
                           const CSeq_annot_SNP_Info& annot_info) const;
 
     enum {
@@ -169,6 +181,8 @@ public:
     int GetGi(void) const;
 
     const CSeq_annot& GetSeq_annot(void) const;
+
+    const SSNP_Info& GetSNP_Info(size_t index) const;
 
 protected:
     Int1 x_GetCommentIndex(const string& comment);
@@ -339,12 +353,23 @@ void CSeq_annot_SNP_Info::x_AddSNP(const SSNP_Info& snp_info)
 }
 
 
+inline
+const SSNP_Info& CSeq_annot_SNP_Info::GetSNP_Info(size_t index) const
+{
+    _ASSERT(index < m_SNP_Set.size());
+    return m_SNP_Set[index];
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/08/27 14:28:51  vasilche
+* Reduce amount of object allocations in feature iteration.
+*
 * Revision 1.4  2003/08/15 19:34:53  vasilche
 * Added missing #include <algorigm>
 *
