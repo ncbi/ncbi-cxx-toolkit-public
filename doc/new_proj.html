@@ -1,11 +1,11 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
 <head>
-  <title>Starting new C++ project</title>
+  <title>Starting a new C++ project</title>
 </head>
 
 <body>
-<h1>Starting new C++ project</h1>
+<h1>Starting a new C++ project</h1>
 
 <ul>
   <li> <a href="#ref_Checkout">
@@ -59,8 +59,8 @@
 <h2>Retrieve NCBI C++ source tree from CVS</h2>
 
 <p>
-You can checkout the whole NCBI C++ source tree from CVS to you local
-directory(e.g. <b><i>foo/c++/</i></b>) just by running:
+You can checkout the whole NCBI C++ source tree from CVS to your local
+directory (<i>e.g.</i>, <b><i>foo/c++/</i></b>) just by running:
 <pre>
 cd foo
 cvs checkout -d c++ internal/c++
@@ -69,20 +69,21 @@ cvs checkout -d c++ internal/c++
 <p>
 However, the whole NCBI C++ tree is very big because it contains a lot
 of internal user projects. There are also numerous platform-specific
-files (and even whole sub-trees) which you will never need if you
+files (and even whole sub-trees) which you will never need unless you
 work on other platforms.
 
 <br>
 To help one to retrieve the sources which are suitable for your
-platform, there are auxiliary scripts <b><i>scripts/cvs_core.sh</i></b></a> and
-<b><i>scripts/cvs_core_msvc.bat</i></b> to checkout only core (basic and portable)
-NCBI C++ toolkit sources.
+platform, there are auxiliary scripts
+<b><i>scripts/cvs_core.sh</i></b> and
+<b><i>scripts/cvs_core_msvc.bat</i></b> to checkout only core (basic
+and portable) NCBI C++ toolkit sources.
 
 <p>
-For the detailed info on the CVS utility see
-<a href="http://www.cs.utah.edu/csinfo/texinfo/cvs/cvs_toc.html">
-  CVS online manual</a> or run commands <i>"man cvs"</i> or <i>"cvs -H"</i> on
-your workstation.
+For the detailed info on the CVS utility see <a
+href="http://www.cs.utah.edu/csinfo/texinfo/cvs/cvs_toc.html">the CVS
+online manual</a> or run the commands <i>"man cvs"</i> or <i>"cvs
+--help"</i> on your workstation.
 
 
 <p>
@@ -91,8 +92,8 @@ your workstation.
 <h2>CVS tree structure of NCBI C++ projects</h2>
 
 <p>
-(For the overall NCBI C++ CVS tree structure see in
-<a href="config.html#ref_Source">NCBI C++ source code repository</a>.)
+(For the overall NCBI C++ CVS tree structure see
+<a href="config.html#ref_Source">the NCBI C++ source code repository</a>.)
 
 <p>
 The standard CVS location for NCBI C++/STL projects is
@@ -108,18 +109,32 @@ very top level contains:
     <ul>
       <li> <b><i>Makefile.in</i></b> -- makefile to perform a recursive
         build in all project subdirectories
-      <li> <b><i>Makefile.meta.in</i></b> -- to be included to all makefiles
+      <li> <b><i>Makefile.meta.in</i></b> -- included by all makefiles
         that provide both local and recursive builds
-      <li> <b><i>Makefile.lib.in</i></b> -- to be included to all makefiles
-        that perform a "standard" library build
-      <li> <b><i>Makefile.lib.tmpl.in</i></b> -- serve as a template for the
-        project <i>customized makefiles</i> (<b><i>Makefile.*.lib[.in]</i></b>) that perform
-        a "standard" library build
-      <li> <b><i>Makefile.app.in</i></b> -- to be included to all makefiles
+      <li> <b><i>Makefile.lib.in</i></b> -- included by all makefiles
+        that perform a "standard" library build, when building only
+        static libraries.
+      <li> <b><i>Makefile.dll.in</i></b> -- included by all makefiles
+        that perform a "standard" library build, when building only
+        shared libraries.
+      <li> <b><i>Makefile.both.in</i></b> -- included by all makefiles
+        that perform a "standard" library build, when building both
+        static and shared libraries.
+      <li> <b><i>Makefile.lib.tmpl.in</i></b> -- serves as a template
+        for the project <i>customized makefiles</i>
+        (<b><i>Makefile.*.lib[.in]</i></b>) that perform a "standard"
+        library build
+      <li> <b><i>Makefile.app.in</i></b> -- included by all makefiles
         that perform a "standard" application build
-      <li> <b><i>Makefile.lib.tmpl.in</i></b> -- serve as a template for the
-        project <i>customized makefiles</i> (<b><i>Makefile.*.app[.in]</i></b>) that perform
-        a "standard" application build
+      <li> <b><i>Makefile.lib.tmpl.in</i></b> -- serves as a template
+        for the project <i>customized makefiles</i>
+        (<b><i>Makefile.*.app[.in]</i></b>) that perform a "standard"
+        application build
+	  <li> <b><i>Makefile.rules.in,
+        Makefile.rules_with_autodep.in</i></b> -- instructions for
+        building object files; included by most other makefiles
+	  <li> <b><i>Makefile.mk.in</i></b> -- included by all makefiles;
+        sets a lot of configuration variables
     </ul>
 
   <p>
@@ -144,7 +159,7 @@ very top level contains:
 <h2>Creating source and include CVS dirs for a new C++ project</h2>
 
 <p>
-To create your new project(e.g. "bar_proj") directories in the
+To create your new project (<i>e.g.</i>, "bar_proj") directories in the
 NCBI C++ CVS tree (assuming that the whole NCBI C++ has been
 <a href="#ref_Checkout">checked out</a>
 to directory <b><i>foo/c++/</i></b>):<pre>
@@ -156,10 +171,10 @@ Now you can <a href="new_mod.html">add</a> and edit your project C++
 files in there.
 
 <p>
-NOTE: remember to add this new project directory to <i>$(SUB_PROJ)</i>
+NOTE: remember to add this new project directory to the <i>$(SUB_PROJ)</i>
 list of the upper level <a href="#ref_MakeMeta"><i>meta-makefile</i></a>
-configurable template
-(e.g., for this particular case, to <b><i>foo/c++/src/Makefile.in</i></b>).
+configurable template (<i>e.g.</i>, for this particular case, to
+<b><i>foo/c++/src/Makefile.in</i></b>).
 
 
 <p>
@@ -170,10 +185,10 @@ configurable template
 <a name="ref_MakeMeta"></a>
 <h3>Meta-makefiles (to provide multiple and/or recursive builds)</h3>
 
-All projects from the NCBI C++ hierarchy are tied together by a
-set of <i>meta-makefiles</i> which present in all project source directories
-and provide a uniform and easy way to perform both local and recursive
-builds. 
+All projects from the NCBI C++ hierarchy are tied together by a set of
+<i>meta-makefiles</i> which are present in all project source
+directories and provide a uniform and easy way to perform both local
+and recursive builds.
 
 A typical <i>meta-makefile</i> template(e.g. <i><b>Makefile.in</b></i> in your
 <b><i>foo/c++/src/bar_proj/</i></b> dir) looks like that:
@@ -192,28 +207,27 @@ provides build rules for the following standard targets:
 <ul>
   <li> <a href="#ref_MakeProjTarget"><b>all</b></a>:
     <ul>
-		<li> run <i>"make  -f {Makefile.*} all"</i> for the makefiles with
-		  the suffixes enlisted in macro <b>USR_PROJ</b>: <pre>
+		<li> run <i>"make  -f {Makefile.*} all"</i> for the makefiles
+		  with the suffixes listed in macro <b>USR_PROJ</b>: <pre>
 make -f Makefile.bar_u1 all
 make -f Makefile.bar_u2 all
 ...... </pre>
-		<li> build library(ies) using attributes defined in the
-		  <i>customized makefiles</i> <b>Makefile.*.lib</b> with the suffixes
-        enlisted in macro <b>LIB_PROJ</b>
-		  <li> build application(s) using attributes defined in the
-		  <i>customized makefiles</i> <b>Makefile.*.app</b> with the suffixes
-        enlisted in macro <b>APP_PROJ</b>
+		<li> build libraries using attributes defined in the
+		  <i>customized makefiles</i> <b>Makefile.*.lib</b>
+		  with the suffixes listed in macro <b>LIB_PROJ</b>
+		<li> build application(s) using attributes defined in the
+		  <i>customized makefiles</i> <b>Makefile.*.app</b> with the
+		  suffixes listed in macro <b>APP_PROJ</b>
     </ul>
   <li> <a href="#ref_MakeProjTarget"><b>all_r</b></a> --
-	 first do target <b>all</b>, then run <i>"make  all_r"</i>
+	 first make target <b>all</b>, then run <i>"make all_r"</i>
 	 in all subdirectories enlisted in <i>$(SUB_PROJ)</i>: <pre>
 cd bar_test       &&  make -f Makefile all_r
 cd bar_sub_proj1  &&  make -f Makefile all_r
 ...... </pre>
   <li> <a href="#ref_MakeProjTarget"><b>clean, clean_r</b></a> --
-	 run just the same makefiles but with targets <b>clean</b> and <b>clean_r</b>
-    (rather than <b>all</b> and <b>all_r</b>), respectively
-  <p>
+	 run just the same makefiles but with targets <b>clean</b> and
+	 <b>clean_r</b> (rather than <b>all</b> and <b>all_r</b>), respectively
   <li> <a href="#ref_MakeProjTarget"><b>purge, purge_r</b></a> --
 	 .....with targets <b>purge</b> and <b>purge_r</b>, respectively
 </ul>
@@ -224,15 +238,18 @@ cd bar_sub_proj1  &&  make -f Makefile all_r
 <a name="ref_MakeProj"></a>
 <h3>Project makefiles</h3>
 
-Just like <b><i>Makefile.meta.in</i></b> configurable template is used to ease
-and standardize the writing of
-<a href="#ref_MakeMeta"><i>meta-makefiles</i></a>, so there are templates
-to help in the creation of "regular" project makefiles to build
-a library or an application. These auxiliary template makefiles
-are <b><i>Makefile.mk.in</i></b>, <b><i>Makefile.lib.in</i></b>,
-<b><i>Makefile.app.in</i></b>, <b><i>Makefile.lib.tmpl.in</i></b> and
-<b><i>Makefile.app.tmpl.in</i></b>. The <b><i>configure</i></b>'d versions of
-them get put to the very top of a <i>build tree</i>.
+Just like the configurable template <b><i>Makefile.meta.in</i></b> is
+used to ease and standardize the writing of <a
+href="#ref_MakeMeta"><i>meta-makefiles</i></a>, so there are templates
+to help in the creation of "regular" project makefiles to build a
+library or an application. These auxiliary template makefiles are
+<b><i>Makefile.mk.in</i></b>, <b><i>Makefile.lib.in</i></b>,
+<b><i>Makefile.dll.in</i></b>, <b><i>Makefile.both.in</i></b>,
+<b><i>Makefile.app.in</i></b>, <b><i>Makefile.lib.tmpl.in</i></b>,
+<b><i>Makefile.app.tmpl.in</i></b>, <b><i>Makefile.rules.in</i></b>,
+and <b><i>Makefile.rules_with_autodep.in</i></b>.  The
+<b><i>configure</i></b>'d versions of them get put at the very top of
+a <i>build tree</i>.
 
 
 <p>
@@ -281,6 +298,13 @@ during the configuration process:
 	 <td><b>LDFLAGS</b></td>
 	 <td><i>$LDFLAGS</i></td>
 	 <td>Linker flags</td>
+  </tr>
+
+  <tr>
+     <td><b>STATIC</b></td>
+	 <td><i>@STATIC@</i></td>
+	 <td>Library suffix to force static linkage (see
+	 <a href="#ref_MakeProjApp">below</a>)</td>
   </tr>
 </table>
 
@@ -532,6 +556,12 @@ during the configuration process:
 	 <td><i>@BINCOPY@</i></td>
 	 <td>Copy a library or an executable -- but only if it was changed</td>
   </tr>
+
+  <tr>
+     <td><b>LN_S</b></td>
+	 <td><i>@LN_S</i></td>
+	 <td>Make a symbolic link if possible; otherwise, hard-link or copy</td>
+  <tr>
 </table>
 
 
@@ -557,35 +587,40 @@ CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
 CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
 
 <ul>
-  <li> Compile <i><b>xmy_src1.cpp</b></i> using C++ compiler <b>CXX</b> with
-       flags <b>CXXFLAGS CPPFLAGS</b> (which are the
-       original C++ and preprocessor flags, <b>ORIG_*FLAGS</b>,
-       plus some additional flags specified by user)
-  <li> Compile <i><b>xmy_src2.c</b></i> using C compiler <b>CC</b> with
-       flags <b>CFLAGS CPPFLAGS</b> (which are the
-       original C and preprocessor flags, <b>ORIG_*FLAGS</b>,
-       plus some additional flags specified by user)
-  <li> Using <b>AR</b> and <b>RANLIB</b>, compose
-       library <i><b>libxmylib.a</b></i> from the resultant object files,
-       plus pre-compiled <i><b>some_obj1.o</b></i>.
-  <li> Copy <i><b>libxmylib.a</b></i> to the
-       top-level <b><i>lib/</i></b> directory of
+  <li> Compile <i><b>xmy_src1.cpp</b></i> using the C++ compiler
+       <b>$(CXX)</b> with the flags <b>$(CXXFLAGS) $(CPPFLAGS)</b>
+       (which are the original C++ and preprocessor flags,
+       <b>$(ORIG_*FLAGS)</b>, plus some additional flags specified by
+       the user)
+  <li> Compile <i><b>xmy_src2.c</b></i> using the C compiler <b>CC</b>
+       with the flags <b>$(CFLAGS) $(CPPFLAGS)</b> (which are the
+       original C and preprocessor flags, <b>$(ORIG_*FLAGS)</b>,
+       plus some additional flags specified by the user)
+  <li> Using <b>$(AR)</b> and <b>$(RANLIB)</b> [<b>$(LINK_DLL)</b> if
+       building a shared library], compose the
+       library <i><b>libxmylib.a</b></i> [<i><b>libxmylib.so</b></i>]
+       from the resultant object files, plus the pre-compiled object file
+       <i><b>some_obj1.o</b></i>.
+  <li> Copy <i><b>libxmylib.*</b></i> to the
+       top-level <b><i>lib/</i></b> directory of the
        <i>build tree</i> (for the later use by other projects)
 </ul>
 
-This <i>customized makefile</i> should be referenced as <i><b>xmylib</b></i> in the
-<b>LIB_PROJ</b> macro of relevant
+This <i>customized makefile</i> should be referred to as
+<i><b>xmylib</b></i> in the <b>LIB_PROJ</b> macro of the relevant
 <a href="#ref_MakeMeta"><i>meta-makefile</i></a>. As usual,
 <a href="#ref_MakeProjMk"><i>Makefile.mk</i></a> will be
 implicitly included.
 
 <p>
 This <i>customized makefile</i> can be used to build both <i>static</i>
-and <a href="config.html#ref_DLL"><i>dynamic(DLL)</i></a> version of
+and <a href="config.html#ref_DLL"><i>dynamic (DLL)</i></a> versions of
 the library. <br>
 To encourage its build as a <i>DLL</i> on the capable
 platforms, you can explicitly specify:
 <pre>LIB_OR_DLL = dll</pre>
+or
+<pre>LIB_OR_DLL = both</pre>
 Conversely, if you want the library be always built as <i>static</i>, specify:
 <pre>LIB_OR_DLL = lib</pre>
 
@@ -595,55 +630,59 @@ Conversely, if you want the library be always built as <i>static</i>, specify:
 <a name="ref_MakeProjApp"></a>
 <h3><i>Customized makefile to build an application</i></h3>
 
-Here is an example of a <i>customized makefile</i> to build
+Here is an example of a <i>customized makefile</i> to build the
 application <i><b>my_exe</b></i> from three source files,
 <i><b>my_main.cpp</b></i>, <i><b>my_src1.cpp</b></i>,
 and <i><b>my_src2.c</b></i>.
 To make the example even more realistic, we assume that the said
 source files include headers from the NCBI SSS DB packages,
-and the target executable uses NCBI C++ libraries
-<a href="#ref_MakeProjLib"><i><b>libxmylib.a</b></i></a> and
-<i><b>libxncbi.a</b></i>, plus
-NCBI SSS DB, SYBASE, and system network libraries.<pre>
+and the target executable uses the NCBI C++ libraries
+<a href="#ref_MakeProjLib"><i><b>libxmylib.*</b></i></a> and
+<i><b>libxncbi.*</b></i>, plus
+NCBI SSS DB, SYBASE, and system network libraries.  We assume further
+that the user would prefer to link statically against libxmylib if
+building the toolkit as both shared and static libraries
+(<i><b>configure --with-dll --with-static ...</b></i>), but is fine
+with a shared libxncbi.
+<pre>
 File Makefile.my_exe.app:
 
 APP      = my_exe
 OBJ      = my_main my_src1 my_src2
-LIB      = xmylib xncbi
+LIB      = xmylib$(STATIC) xncbi
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_SSSDB_INCLUDE)
 LIBS     = $(NCBI_SSSDB_LIBS) $(SYBASE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)</pre>
 
 <ul>
   <li> Compile <i><b>my_main.cpp</b></i> and <i><b>my_src1.cpp</b></i>
-    using C++ compiler <b>CXX</b> with flags <b>CPPFLAGS</b>
+    using the C++ compiler <b>$(CXX)</b> with the flags <b>$(CPPFLAGS)</b>
     (<a href="#ref_Note1">*</a>)
-  <li> Compile <i><b>my_src2.c</b></i> using C compiler <b>CC</b> with
-    flags <b>CPPFLAGS</b>
+  <li> Compile <i><b>my_src2.c</b></i> using the C compiler
+    <b>$(CC)</b> with the flags <b>$(CPPFLAGS)</b>
     (<a href="#ref_Note1">*</a>)
-  <li> Using <b>CXX</b> as a linker, build an executable
-    <i><b>my_exe</b></i> from object files
+  <li> Using <b>$(CXX)</b> as a linker, build an executable
+    <i><b>my_exe</b></i> from the object files
     <b><i>my_main.o, my_src1.o, my_src2.o</i></b>, NCBI C++ Toolkit libraries
     <a href="#ref_MakeProjLib"><i><b>libxmylib.a</b></i></a> and
-    <i><b>libxncbi.a</b></i>, and NCBI SSS DB, SYBASE,
-    and system network libraries
-    (<a href="#ref_Note1">*</a>)
-  <li> Copy the library to top-level <b><i>lib/</i></b> directory of
+    <i><b>libxncbi.*</b></i>, and NCBI SSS DB, SYBASE, and system
+    network libraries (<a href="#ref_Note1">*</a>)
+  <li> Copy the application to the top-level <b><i>bin/</i></b> directory of
     the <i>build tree</i> (for later use by other projects)
 </ul>
 
 <a name="ref_Note1"></a>
 <i><b>(*)</b></i>
-as we did not redefine <b>CFLAGS</b>, <b>CXXFLAGS</b>, <b>LDFLAGS</b>,
-so their default values <b>ORIG_*FLAGS</b> (obtained during the <i>build
+Since we did not redefine <b>CFLAGS</b>, <b>CXXFLAGS</b>, or <b>LDFLAGS</b>,
+their default values <b>ORIG_*FLAGS</b> (obtained during the <i>build
 tree</i> <a href="config.html#ref_Configure">configuration</a>) will be
 <a href="config.html#ref_StdBuildRules">used</a>.
 
 <p>
-This <i>customized makefile</i> should be referenced as <i><b>my_exe</b></i> in the
-<b>APP_PROJ</b> macro of relevant
+This <i>customized makefile</i> should be referred to as
+<i><b>my_exe</b></i> in the <b>APP_PROJ</b> macro of the relevant
 <a href="#ref_MakeMeta"><i>meta-makefile</i></a>. Note also, that the
-<a href="#ref_MakeProjMk"><i>Makefile.mk</i></a> will be
-implicitly included.
+<a href="#ref_MakeProjMk"><i>Makefile.mk</i></a> will be implicitly
+included.
 
 
 <p>
@@ -652,12 +691,12 @@ implicitly included.
 <h3><i>User-defined makefile to build... whatever</i></h3>
 
 <p>
-In some cases, we may need more functionality than the <i>customized makefiles</i>
-(designed to build libraries and applications) can provide.
+In some cases, we may need more functionality than the <i>customized
+makefiles</i> (designed to build libraries and applications) can provide.
 
 <p>
 So, if you have a "regular" non-customized <i>user makefile</i>, and
-you want to make with it, then you must enlist this <i>user makefile</i>
+you want to make from it, then you must enlist this <i>user makefile</i>
 in the <b>USR_PROJ</b> macro of the project's
 <a href="#ref_MakeMeta"><i>meta-makefile</i></a>.
 
@@ -665,32 +704,32 @@ in the <b>USR_PROJ</b> macro of the project's
 Now, during the project build (and before any <i>customized makefiles</i>
 are processed), your makefile will be called with one of the 
 <a href="#ref_MakeProjTarget">standard make targets</a> from the
-project's build directory. Additionally,
+project's build directory. Additionally, the
 <a href="#ref_TablePath"><b>builddir</b></a> and
-<a href="#ref_TablePath"><b>srcdir</b></a> macro will be passed
+<a href="#ref_TablePath"><b>srcdir</b></a> macros will be passed
 to your makefile (via the <b>make</b> command line).
 
 <p>
-In most cases, it is necessary to know your "working environment", i.e.
-tools, flags and paths (those that you use in your <i>customized makefiles</i>).
-This can be easily done by including
-<a href="#ref_MakeProjMk"><i>Makefile.mk</i></a> to your makefile.
+In most cases, it is necessary to know your "working environment";
+<i>i.e.</i>, tools, flags and paths (those that you use in your
+<i>customized makefiles</i>).  This can be easily done by including <a
+href="#ref_MakeProjMk"><i>Makefile.mk</i></a> in your makefile.
 
 <p>
 Shown below is a real-life example of a <i>user makefile</i>:
 <ul>
-  <li> build an auxiliary application using <i>customized makefiles</i>
+  <li> build an auxiliary application using the <i>customized makefile</i>
     <i><b>Makefile.hc_gen_obj.app</b></i> (this part is a tricky one...)
   <li> use the resultant application <i><b>$(bindir)/hc_gen_obj</b></i>
-    to generate source an header files <i><b>humchrom_dat.[ch]</b></i>
-    from data file <i><b>humchrom.dat</b></i>
-  <li> carefully, using script <i><b>$(top_srcdir)/scripts/if_diff.sh</b></i>
-    to check if they really different, replace previous versions
-    of <i><b>humchrom_dat.[ch]</b></i> (if any) by the new (just generated)
-    ones
+    to generate the source and header files <i><b>humchrom_dat.[ch]</b></i>
+    from the data file <i><b>humchrom.dat</b></i>
+  <li> use the script <i><b>$(top_srcdir)/scripts/if_diff.sh</b></i>
+    to replace the previous copies (if any) of humchrom_dat.[ch] with
+    the newly generated versions if and only if the new versions are
+    different (or there were no old versions).
 </ul>
 
-And, of course, it provides build rules for all
+And, of course, it provides build rules for all the
 <a href="#ref_MakeProjTarget">standard make targets</a>.
 
 <pre>
@@ -704,7 +743,8 @@ File $(top_srcdir)/src/internal/humchrom/Makefile.hc_gen_obj:
 
 include $(builddir)/Makefile.mk
 
-BUILD__HC_GEN_OBJ = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="hc_gen_obj" $(MFLAGS)
+BUILD__HC_GEN_OBJ = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" \
+srcdir="$(srcdir)" TMPL="hc_gen_obj" $(MFLAGS)
 
 
 all_r: all
@@ -738,31 +778,35 @@ humchrom_dat.dep: $(srcdir)/data/humchrom.dat $(bindir)/hc_gen_obj
 <p>
 <br>
 <a name="ref_MakeProjTarget"></a>
-<h2>Standard build targets(<b>all, clean, purge</b>) in makefiles</h2>
+<h2>Standard build targets (<b>all, clean, purge</b>) in makefiles</h2>
 
 <ul>
-  <li> <b>all</b> -- compile object modules specified in the
-  <i>"$(OBJ)"</i> macro, and use them to build library <i>"$(LIB)"</i> or
-  application <i>"$(APP)"</i>;  then copy the resultant lib/app to the
-  <a href="#ref_TablePath"><b>libdir/bindir</b></a> directory, respectively
-  <li> <b>clean</b> -- remove all object modules and lib/app
+  <li> <b>all</b> -- compile the object modules specified in the
+  <i>"$(OBJ)"</i> macro, and use them to build the library
+  <i>"$(LIB)"</i> or the application <i>"$(APP)"</i>; then copy the
+  resultant lib/app to the <a
+  href="#ref_TablePath"><b>libdir/bindir</b></a> directory,
+  respectively
+  <li> <b>clean</b> -- remove all object modules and libs/apps
   that have been built by <b>all</b>
   <li> <b>purge</b> -- do <b>clean</b>, and then remove the copy
-  of lib/app from the <a href="#ref_TablePath"><b>libdir/bindir</b></a> directory
+  of the libs/apps from the <a
+  href="#ref_TablePath"><b>libdir/bindir</b></a> directory.
 </ul>
 
-Naturally, the <i>customized makefiles</i> will not make a difference between
-recursive(<b>all_r, clean_r, purge_r</b>) and non-recursive(<b>all, clean, purge</b>)
-targets -- because the recursion and multiple build is
-entirely up to the <a href="#ref_MakeMeta"><i>meta-makefiles</i></a>.
+Naturally, the <i>customized makefiles</i> will not distinguish
+between recursive (<b>all_r, clean_r, purge_r</b>) and
+non-recursive (<b>all, clean, purge</b>) targets -- because the
+recursion and multiple build is entirely up to the <a
+href="#ref_MakeMeta"><i>meta-makefiles</i></a>.
 
 
 <p>
 <br>
 <a name="ref_Outside"></a>
-<h2>Developing a project(lib, application) outside of the NCBI C++ tree</h2>
+<h2>Developing a project (lib, application) outside of the NCBI C++ tree</h2>
 
-NOTE:  in NCBI, you can use scripts located in the pre-built NCBI C++
+NOTE:  in NCBI, you can use the scripts located in the pre-built NCBI C++
 toolkit directory <b><i>$NCBI/c++/scripts/.</i></b>
 
 <p>
@@ -772,31 +816,29 @@ toolkit directory <b><i>$NCBI/c++/scripts/.</i></b>
 
 <p>
 In many cases, you work on your own project which <b>is a part</b> of the
-NCBI C++ tree, and you do not want to checkout, update and rebuild
+NCBI C++ tree, and you do not want to check out, update and rebuild
 the whole NCBI C++ tree. -- Instead, you just want to use headers and
 libraries of the pre-built NCBI C++ Toolkit to build your project.
 
 <p>
-Shell script <b><i>import_project.sh</i></b> will checkout
+The shell script <b><i>import_project.sh</i></b> will checkout
 your project's source and include directories from CVS, and it will create
 a (temporary) makefile based on the project's <i>customized makefile</i>.
 This makefile will also contain a reference to the pre-built NCBI C++ toolkit.
 
 <p>
-For
-<a href="new_project.import.session">
-EXAMPLE</a>:
+For <a href="new_project.import.session">EXAMPLE</a>:
 <br>&nbsp;&nbsp;&nbsp;
 <b>
    import_project.sh hello
 </b>
 <br>
-will checkout the whole <b>hello</b> demo project from the NCBI C++ tree
-(<b><i>$CVSROOT/internal/c++/src/hello/</i></b>), and create
+will check out the whole <b>hello</b> demo project from the NCBI C++ tree
+(<b><i>$CVSROOT/internal/c++/src/hello/</i></b>), and create a
 makefile <b><i>Makefile.hello_app</i></b> that uses the project's
 <i>customized makefile</i> <b><i>Makefile.hello.app</i></b>.
 Now you can just go to the created working directory
-<b><i>internal/c++/src/hello/</i></b> and build demo application
+<b><i>internal/c++/src/hello/</i></b> and build the demo application
 <b>hello.cgi</b> using:
 <br>&nbsp;&nbsp;&nbsp;
 <b>
@@ -809,9 +851,9 @@ Now you can just go to the created working directory
 <h3><b><i>scripts/new_project.sh &lt;name&gt; lib|app [builddir]</i></b> </h3>
 
 <p>
-This script will help you to write a makefile for a new, out-of-scratch
-project which uses NCBI C++ (and probably NCBI C) toolkit.
-You will just have to slightly edit the resultant makefile to:
+This script will help you to write a makefile for a new, from-scratch
+project which uses the NCBI C++ toolkit (and probably the C toolkit as
+well).  You will just have to slightly edit the resultant makefile to:
 <ul>
   <li> specify the name of your library (or application)
   <li> specify the list of source files going to it
@@ -822,9 +864,7 @@ You will just have to slightly edit the resultant makefile to:
 
 
 <p>
-For
-<a href="new_project.create.session">
-EXAMPLE</a>:
+For <a href="new_project.create.session"> EXAMPLE</a>:
 
 <br> &nbsp;&nbsp;&nbsp;
 <b>
@@ -857,14 +897,14 @@ by manually setting variable <b>$(builddir)</b> in
 <h3><b><i>scripts/hello.sh</i></b> </h3>
 
 <p>
-This script to:
+This script will:
 <ul>
   <li> retrieve the demo CGI application project HELLO
   <li> create a standalone makefile to build it
   <li> build HELLO application using this makefile
   <li> run HELLO application
 </ul>
-It will produce file <b><i>hello.html</i></b> containing a model
+It will produce the file <b><i>hello.html</i></b> containing a model
 HTTP response. For more info on the HELLO CGI project see
 in section
 <i><a href="tools.html">NCBI C++ tools and applications</a> /
