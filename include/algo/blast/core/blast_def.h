@@ -46,6 +46,12 @@ Detailed Contents:
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#define NCBI_INLINE __inline
+#else
+#define NCBI_INLINE inline
+#endif
+
 #define blast_type_blastn 0
 #define blast_type_blastp 1
 #define blast_type_blastx 2
