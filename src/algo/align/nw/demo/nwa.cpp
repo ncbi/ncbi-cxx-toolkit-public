@@ -116,7 +116,7 @@ void CAppNWA::x_RunOnPair() const
 
         NCBI_THROW(CAppNWAException,
                    eInconsistentParameters,
-                   "mrna2dna must go with nucl matrix only");
+                   "Wrong matrix specified");
     }
 
     // read input sequences
@@ -144,7 +144,7 @@ void CAppNWA::x_RunOnPair() const
 
     auto_ptr<CNWAligner> aligner (
         bMrna2Dna? 
-        new CNWAlignerMrna2Dna (&v1[0], v1.size(), &v2[0], v2.size(), smt)
+        new CNWAlignerMrna2Dna (&v1[0], v1.size(), &v2[0], v2.size())
         : new CNWAligner (&v1[0], v1.size(), &v2[0], v2.size(), smt));
 
     aligner->SetWm  (args["Wm"]. AsInteger());
@@ -185,7 +185,8 @@ bool CAppNWA::x_ReadFastaFile
     ifstream ifs(filename.c_str());
 
     // read sequence's name and offset
-    ifs >> *seqname >> *offset;
+    char c;
+    ifs >> c >> *seqname >> *offset;
     if ( !ifs )
         return false;
 
@@ -205,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/12/17 21:50:24  kapustin
+ * Remove unnecesary seq type parameter from the mrna2dna constructor
+ *
  * Revision 1.2  2002/12/12 17:59:30  kapustin
  * Enable spliced alignments
  *
