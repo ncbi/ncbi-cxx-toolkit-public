@@ -120,6 +120,27 @@ public:
     ///
     int GetTaxIdByOrgRef(const COrg_ref& inp_orgRef);
 
+    enum EOrgRefStatus {
+	eStatus_Ok = 0,
+	eStatus_WrongTaxId      = 0x001,
+	eStatus_WrongGC         = 0x002,
+	eStatus_WrongMGC        = 0x004,
+	eStatus_NoOrgname       = 0x008,
+	eStatus_WrongTaxname    = 0x010,
+	eStatus_WrongLineage    = 0x020,
+	eStatus_WrongCommonName = 0x040,
+	eStatus_WrongOrgname    = 0x080,
+	eStatus_WrongDivision   = 0x100,
+	eStatus_WrongOrgmod     = 0x200
+    };
+    typedef unsigned TOrgRefStatus;
+    //-----------------------------------------------
+    // Checks whether OrgRef is valid
+    // Returns: false on any error, stat_out filled with status flags
+    // (see above)
+    ///
+    bool CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out );
+
     enum ESearch {
 	eSearch_Exact,
 	eSearch_TokenSet,
@@ -625,6 +646,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.15  2004/03/12 20:07:24  domrach
+// CheckOrgRef() function added for checking the user orgref against the orgref from Taxonomy db
+//
 // Revision 1.14  2004/02/04 16:14:43  domrach
 // New iterator types (modes of operation) are introduced. They include:
 // full tree, branches'n'leaves, best, and blast. Position inquiry f-ns

@@ -1810,6 +1810,134 @@ ITreeIterator::TraverseAncestors(I4Each& cb)
     return stat;
 }
 
+bool
+CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
+{
+    CDiagAutoPrefix( "Taxon1::CheckOrgRef" );
+    SetLastError(NULL);
+    int tax_id;
+
+    tax_id = GetTaxIdByOrgRef( orgRef );
+    stat_out = eStatus_Ok;
+
+    if( tax_id == 0 ) {
+	SetLastError( "No organism found for specified org_ref" );
+	ERR_POST( GetLastError() );
+	return false;
+    } else if( tax_id < 0 ) {
+	SetLastError( "Multiple organisms found for specified org_ref" );
+	ERR_POST( GetLastError() );
+	return false;
+    } else {
+	CRef< CTaxon2_data > pData( GetById( tax_id ) );
+	if( pData ) {
+	    // Compare orgrefs
+	    const COrg_ref& goodOr = pData->GetOrg();
+
+	    if( !orgRef.IsSetOrgname() ) {
+		stat_out |= eStatus_NoOrgname;
+	    } else {
+		const COrgName& goodOn = goodOr.GetOrgname();
+		const COrgName& inpOn = orgRef.GetOrgname();
+
+		if( !inpOn.IsSetGcode() || !goodOn.IsSetGcode() ||
+		    inpOn.GetGcode() != goodOn.GetGcode() ) {
+		    stat_out |= eStatus_WrongGC;
+		}
+		if( !inpOn.IsSetMgcode() ) { // mgc not set in input
+		    if( goodOn.IsSetMgcode() &&
+			goodOn.GetMgcode() != 0 ) {
+			stat_out |= eStatus_WrongMGC;
+		    }
+		} else { // mgc set
+		    if( !goodOn.IsSetMgcode() ) {
+			if( inpOn.GetMgcode() != 0 ) { // not unassigned
+			    stat_out |= eStatus_WrongMGC;
+			}
+		    } else if( inpOn.GetMgcode() != goodOn.GetMgcode() ) {
+			stat_out |= eStatus_WrongMGC;
+		    }
+		}
+		if( !inpOn.IsSetLineage() || !goodOn.IsSetLineage() ||
+		    inpOn.GetLineage().compare( goodOn.GetLineage() ) != 0 ) {
+		    stat_out |= eStatus_WrongLineage;
+		}
+		if( !inpOn.IsSetName() || !goodOn.IsSetName() ||
+		    inpOn.GetName().Which() != goodOn.GetName().Which() ) {
+		    stat_out |= eStatus_WrongOrgname;
+		}
+		if( !inpOn.IsSetDiv() ) {
+		    if( goodOn.IsSetDiv() &&
+			goodOn.GetDiv().compare( "UNA" ) != 0 ) {
+			stat_out |= eStatus_WrongDivision;
+		    }
+		} else {
+		    if( !goodOn.IsSetDiv() ) {
+			if( inpOn.GetDiv().compare( "UNA" ) != 0 ) {
+			    stat_out |= eStatus_WrongDivision;
+			}
+		    } else if( inpOn.GetDiv().compare( goodOn.GetDiv() )
+			       != 0 ) {
+			stat_out |= eStatus_WrongDivision;
+		    }
+		}
+		if( goodOn.IsSetMod() ) {
+		    if( inpOn.IsSetMod() ) {
+			const COrgName::TMod& inpMods = inpOn.GetMod();
+			const COrgName::TMod& goodMods = goodOn.GetMod();
+			for( COrgName::TMod::const_iterator gi =
+				 goodMods.begin();
+			     gi != goodMods.end();
+			     ++gi ) {
+			    bool bFound = false;
+			    for( COrgName::TMod::const_iterator ii = 
+				     inpMods.begin();
+				 ii != inpMods.end();
+				 ++ii ) {
+				if( (*gi)->GetSubtype() == (*ii)->GetSubtype()
+				    && ((*gi)->GetSubname() ==
+					(*ii)->GetSubname()) ) {
+				    bFound = true;
+				    break;
+				}
+			    }
+			    if( !bFound ) {
+				stat_out |= eStatus_WrongOrgmod;
+				break;
+			    }
+			}
+		    } else {
+			stat_out |= eStatus_WrongOrgmod;
+		    }
+		}
+	    }
+	    // Check taxname
+	    if( orgRef.IsSetTaxname() ) {
+		if( !goodOr.IsSetTaxname() ||
+		    orgRef.GetTaxname().compare( goodOr.GetTaxname() ) != 0 ) {
+		    stat_out |= eStatus_WrongTaxname;
+		}
+	    } else if( goodOr.IsSetTaxname() ) {
+		stat_out |= eStatus_WrongTaxname;
+	    }
+	    // Check common name
+	    if( orgRef.IsSetCommon() ) {
+		if( !goodOr.IsSetCommon() ||
+		    orgRef.GetCommon().compare( goodOr.GetCommon() ) != 0 ) {
+		    stat_out |= eStatus_WrongCommonName;
+		}
+	    } else if( goodOr.IsSetCommon() ) {
+		stat_out |= eStatus_WrongCommonName;
+	    }
+	} else { // Internal error: Cannot find orgref by tax_id
+	    SetLastError( "No organisms found for tax id" );
+	    ERR_POST( GetLastError() );
+	    return false;
+	}
+    }
+    return true;
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE
 
@@ -1817,6 +1945,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.23  2004/03/12 20:07:24  domrach
+ * CheckOrgRef() function added for checking the user orgref against the orgref from Taxonomy db
+ *
  * Revision 6.22  2004/02/04 16:14:44  domrach
  * New iterator types (modes of operation) are introduced. They include:
  * full tree, branches'n'leaves, best, and blast. Position inquiry f-ns
