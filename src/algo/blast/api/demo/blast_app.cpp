@@ -385,15 +385,15 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
         CBlastNucleotideOptionsHandle* nucl_handle = 
             dynamic_cast<CBlastNucleotideOptionsHandle*>(opts_handle);
         switch(args["scantype"].AsInteger()) {
-        case 0:
-            nucl_handle->SetSeedExtensionMethod(eRight);
-            nucl_handle->SetSeedContainerType(eLastHitArray);
-            break;
         case 1:
             nucl_handle->SetSeedExtensionMethod(eRightAndLeft);
             nucl_handle->SetSeedContainerType(eLastHitArray);
             break;
         case 2:
+            nucl_handle->SetSeedExtensionMethod(eRight);
+            nucl_handle->SetSeedContainerType(eLastHitArray);
+            break;
+        case 3:
             nucl_handle->SetSeedExtensionMethod(eUpdateDiag);
             nucl_handle->SetSeedContainerType(eDiagArray);
             break;
