@@ -213,7 +213,7 @@ public:
         if (delta >= 0) { 
             PrintLevelMargin();
 
-            const TPluginManagerParamTree::TParent* pt = tr.GetParent();
+            // const TPluginManagerParamTree::TParent* pt = tr.GetParent();
 
             const string& node_id = tr.GetValue().id;
             const string& node_v = tr.GetValue().value;
@@ -338,6 +338,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/04 16:53:13  vakatov
+ * Unused var warning fix
+ *
  * Revision 1.6  2004/07/29 16:58:11  kuznets
  * + test for CTreePairNode::FindNode
  *
