@@ -39,42 +39,18 @@
 BEGIN_NCBI_SCOPE
 
 
-class CLockException : EXCEPTION_VIRTUAL_BASE public CException
-{
-public:
-    // Enumerated list of document management errors
-    enum EErrCode {
-        eLockFailed,
-        eUnlockFailed
-    };
-
-    // Translate the specific error code into a string representations of
-    // that error code.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eLockFailed:   return "eLockFailed";
-        case eUnlockFailed: return "eUnlockFailed";
-        default:            return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CLockException, CException);
-};
-
-
 ///
 /// SSimpleLock is a functor to wrap calling Lock().  While this may seem
 /// excessive, it permits a lot of flexibility in defining what it means
 /// to acquire a lock
 ///
-template <class Class>
+template <class Resource>
 struct SSimpleLock
 {
-    bool operator()(Class& inst)
+    typedef Resource resource_type;
+    void operator()(resource_type& resource)
     {
-        inst.Lock();
-        return true;
+        resource.Lock();
     }
 };
 
@@ -84,24 +60,13 @@ struct SSimpleLock
 /// excessive, it permits a lot of flexibility in defining what it means
 /// to release a lock
 ///
-template <class Class>
+template <class Resource>
 struct SSimpleUnlock
 {
-    void operator()(Class& inst)
+    typedef Resource resource_type;
+    void operator()(resource_type& resource)
     {
-        try {
-            inst.Unlock();
-        }
-        catch (CException& e) {
-            ERR_POST("Unlock(): failed to release lock: " << e.GetMsg());
-            NCBI_THROW(CLockException, eUnlockFailed,
-                       e.GetMsg());
-        }
-        catch (std::exception& e) {
-            ERR_POST("Unlock(): failed to release lock: " << e.what());
-            NCBI_THROW(CLockException, eUnlockFailed,
-                       e.what());
-        }
+        resource.Unlock();
     }
 };
 
@@ -125,27 +90,33 @@ struct SSimpleUnlock
 ///
 ///
 
-template <class Class,
-          class Lock = SSimpleLock<Class>,
-          class Unlock = SSimpleUnlock<Class> >
+template <class Resource,
+          class Lock = SSimpleLock<Resource>,
+          class Unlock = SSimpleUnlock<Resource> >
 class CGuard
 {
 public:
+    typedef Resource resource_type;
+    typedef Lock lock_type;
+    typedef Unlock unlock_type;
 
-    CGuard(Lock lock = Lock(), Unlock unlock = Unlock())
-        : m_Instance(NULL),
+    CGuard(const lock_type& lock = lock_type(),
+           const unlock_type unlock = unlock_type())
+        : m_Resource(0),
           m_Lock(lock),
           m_Unlock(unlock)
     {
     }
 
     /// This constructor locks the resource passed.
-    CGuard(Class& inst, Lock lock = Lock(), Unlock unlock = Unlock())
-        : m_Instance(NULL),
+    CGuard(resource_type& resource,
+           const lock_type& lock = lock_type(),
+           const unlock_type unlock = unlock_type())
+        : m_Resource(0),
           m_Lock(lock),
           m_Unlock(unlock)
     {
-        Guard(inst);
+        Guard(resource);
     }
 
     /// Destructor releases the resource.
@@ -157,25 +128,30 @@ public:
     /// Manually force the resource to be released.
     void Release()
     {
-        if (m_Instance) {
-            m_Unlock(*m_Instance);
-            m_Instance = NULL;
+        if (m_Resource) {
+            m_Unlock(*m_Resource);
+            m_Resource = 0;
         }
     }
 
     /// Manually force the guard to protect some other resource.
-    void Guard(Class& inst)
+    void Guard(resource_type& resource)
     {
         Release();
-        m_Lock(inst);
-        m_Instance = &inst;
+        m_Lock(resource);
+        m_Resource = &resource;
     }
 
 private:
     /// Maintain a pointer to the original resource that is being guarded
-    Class* m_Instance;
-    Lock m_Lock;
-    Unlock m_Unlock;
+    resource_type*  m_Resource;
+    lock_type       m_Lock;
+    unlock_type     m_Unlock;
+
+private:
+    // prevent copying
+    CGuard(const CGuard<resource_type, lock_type, unlock_type>&);
+    void operator=(const CGuard<resource_type, lock_type, unlock_type>&);
 };
 
 
@@ -186,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/06/17 19:20:12  vasilche
+ * Simplify CGuard code - no exceptions or return values.
+ *
  * Revision 1.1  2004/06/16 11:31:08  dicuccio
  * Initial revision
  *
