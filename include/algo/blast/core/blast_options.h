@@ -348,7 +348,6 @@ QuerySetUpOptionsPtr BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options);
 
 
 /** Allocate memory for QuerySetUpOptions and fill with default values.  
- * @param program Program name (blastn, blastp, etc.) [in]
  * @param options The options that have are being returned [out]
 */
 Int2 BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options);

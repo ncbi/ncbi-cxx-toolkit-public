@@ -362,7 +362,6 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
  * @param sbp Karlin-Altschul parameters [out]
  * @param query_info The query information block, which stores the effective
  *                   search spaces for all queries [in] [out]
- * @param query_slp List of query SeqLoc's [in]
 */
 static Int2 BLAST_CalcEffLengths (const Char *program, 
    const BlastScoringOptionsPtr scoring_options,

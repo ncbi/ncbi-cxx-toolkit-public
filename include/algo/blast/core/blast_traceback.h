@@ -53,6 +53,7 @@ extern "C" {
  * @param subject The subject sequence, in BLAST 2 Sequences case [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_options The scoring related options [in]
+ * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits [in]
  */
 Int2 BLAST_ComputeTraceback(BlastResultsPtr results, 
