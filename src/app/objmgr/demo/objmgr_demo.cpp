@@ -153,6 +153,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("print_cds", "print CDS");
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
+    arg_desc->AddFlag("by_product", "Search features by their product");
     arg_desc->AddFlag("count_types",
                       "print counts of different feature types");
     arg_desc->AddOptionalKey("range_from", "RangeFrom",
@@ -273,6 +274,7 @@ int CDemoApp::Run(void)
     int repeat_count = args["count"].AsInteger();
     int pause = args["pause"].AsInteger();
     bool only_features = args["only_features"];
+    bool by_product = args["by_product"];
     bool count_types = args["count_types"];
     bool print_tse = args["print_tse"];
     bool print_descr = args["print_descr"];
@@ -690,6 +692,7 @@ int CDemoApp::Run(void)
             base_sel.SetFeatSubtype(SAnnotSelector::TFeatSubtype(feat_subtype));
             sel_msg = "req";
         }
+        base_sel.SetByProduct(by_product);
 
         {{
             if ( count_types ) {
@@ -759,7 +762,8 @@ int CDemoApp::Run(void)
                 // Get seq vector filtered with the current feature location.
                 // e_ViewMerged flag forces each residue to be shown only once.
                 CSeqVector cds_vect = handle.GetSequenceView
-                    (it->GetLocation(), CBioseq_Handle::eViewMerged,
+                    (by_product? it->GetProduct(): it->GetLocation(),
+                     CBioseq_Handle::eViewMerged,
                      CBioseq_Handle::eCoding_Iupac);
                 // Print first 10 characters of each cd-region
                 if ( print_cds ) {
@@ -782,7 +786,7 @@ int CDemoApp::Run(void)
                     const CSeq_id* mapped_id = 0;
                     it->GetMappedFeature().GetLocation().CheckId(mapped_id);
                     _ASSERT(mapped_id);
-                    _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id)==idh);
+                    _ASSERT(by_product || CSeq_id_Handle::GetHandle(*mapped_id)==idh);
                 }
                 
                 sout = "";
@@ -881,6 +885,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2004/10/05 21:05:35  vasilche
+* Added option -by_product.
+*
 * Revision 1.84  2004/09/27 14:37:24  grichenk
 * More args (missing and external)
 *
