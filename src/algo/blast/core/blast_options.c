@@ -40,6 +40,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_filter.h>
 
+const int kUngappedHSPNumMax = 400;
 
 SDustOptions* DustOptionsFree(SDustOptions* dust_options)
 {
@@ -907,7 +908,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
    if (evalue)
       options->expect_value = evalue;
    if(!is_gapped)
-     options->hsp_num_max = 400;
+     options->hsp_num_max = kUngappedHSPNumMax;
 
    return 0;
 
@@ -1108,6 +1109,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.158  2005/02/28 17:14:48  camacho
+ * Move hard coded constant to header
+ *
  * Revision 1.157  2005/02/24 13:43:04  madden
  * Added new functions for structured filtering options
  *

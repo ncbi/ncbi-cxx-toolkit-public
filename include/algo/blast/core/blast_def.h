@@ -65,6 +65,11 @@ extern const int kSegWindow;  /**< Window that SEG examines at once. */
 extern const double kSegLocut;   /**< Locut parameter for SEG. */
 extern const double kSegHicut;   /**< Hicut parameter for SEG. */
 
+/** Maximum number of HPSs to be saved in an ungapped search.
+ * Value defined in blast_options.c
+ */
+extern const int kUngappedHSPNumMax; 
+
 /** Codons are always of length 3 */
 #ifndef CODON_LENGTH
 #define CODON_LENGTH 3
