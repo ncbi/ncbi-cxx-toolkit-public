@@ -504,7 +504,7 @@ bool CGenbankWriter::WriteLocus(const CBioseq_Handle& handle)
 
 bool CGenbankWriter::WriteDefinition(const CBioseq_Handle& handle)
 {
-    string definition = GetTitle(handle);
+    string definition = sequence::GetTitle(handle);
     if (definition.empty()  ||  definition[definition.size()-1] != '.') {
         definition += '.';
     }
@@ -2764,6 +2764,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2002/06/07 16:13:11  ucko
+* GetTitle() is now in sequence::.
+*
 * Revision 1.20  2002/06/06 18:36:02  clausen
 * Changed call from CBioseq_Handle::GetTitle() to GetTitle()
 *

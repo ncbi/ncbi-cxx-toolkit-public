@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/06/07 16:13:24  ucko
+* GetTitle() is now in sequence::.
+*
 * Revision 1.13  2002/06/06 19:49:54  clausen
 * Changed CBioseq_Handle::GetTitle() call to GetTitle()
 *
@@ -840,7 +843,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
 
     handle.GetTopLevelSeqEntry();
-    GetTitle(handle);
+    sequence::GetTitle(handle);
     CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
         const CSeqMap& seq_map = handle.GetSeqMap();

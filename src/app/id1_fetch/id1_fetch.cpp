@@ -746,7 +746,7 @@ void CId1FetchApp::WriteFastaEntry(const CBioseq& bioseq)
             }
         }
     }
-    *m_OutputFile << ' ' << GetTitle(handle);
+    *m_OutputFile << ' ' << sequence::GetTitle(handle);
 
     // Now print the actual sequence in an appropriate ASCII format.
     {{
@@ -906,6 +906,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/06/07 16:11:40  ucko
+* GetTitle() is now in sequence::.
+*
 * Revision 1.32  2002/06/06 23:46:24  vakatov
 * Use GetTitle() from <objects/util/sequence.hpp>
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/06/07 16:13:34  ucko
+* GetTitle() is now in sequence::.
+*
 * Revision 1.9  2002/06/07 14:34:33  ucko
 * More changes for GetTitle(): pull in <objects/util/sequence.hpp>, drop
 * CBioseq_Handle:: from flag-related identifiers.
@@ -90,6 +93,7 @@
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+USING_SCOPE(sequence);
 
 class CTitleTester : public CNcbiApplication
 {
