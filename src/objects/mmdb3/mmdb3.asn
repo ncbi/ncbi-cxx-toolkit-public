@@ -82,6 +82,7 @@ Biostruc-feature ::= SEQUENCE {
 				alignment(200),  -- VAST reserved 
 				similarity(201),
 				multalign(202),  -- multiple alignment
+                                indirect(203),   -- new
 				cn3dstate(254),  -- Cn3D reserved
 				other(255) } OPTIONAL,
 	property	CHOICE { 
@@ -278,14 +279,11 @@ RealValue ::= SEQUENCE {
 	scaled-integer-value	INTEGER }
 
 
--- A Transform implies an ordered list of 3-dimensional rotations or
--- translations (Modelmove) which are combined to orient the object.
--- Any number of Modelmove operations can be strung together into
--- a single Transform.
-
-Transform ::= SEQUENCE OF Modelmove
-
-Modelmove ::= CHOICE {
+Transform ::=  SEQUENCE {
+            id  INTEGER,
+            moves SEQUENCE OF Move }
+            
+Move ::= CHOICE {
 	rotate		Rot-matrix,
 	translate	Trans-matrix }
           
