@@ -174,9 +174,13 @@ private:
     typedef vector<CAnnotObject_Ref> TAnnotSet;
 
     void x_Initialize(const CHandleRangeMap& master_loc);
-    void x_Search(const CHandleRangeMap& loc, CSeq_loc_Conversion* cvt);
     void x_SearchMapped(const CSeqMap_CI& seg,
                         CHandleRangeMap::const_iterator master_loc);
+    void x_Search(const CHandleRangeMap& loc,
+                  CSeq_loc_Conversion* cvt);
+    void x_Search(const CSeq_id_Handle& id,
+                  const CHandleRange& hr,
+                  CSeq_loc_Conversion* cvt);
     
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
@@ -348,6 +352,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/02/28 19:27:20  vasilche
+* Cleaned Seq_loc conversion class.
+*
 * Revision 1.32  2003/02/27 20:56:51  vasilche
 * Use one method for lookup on main sequence and segments.
 *
