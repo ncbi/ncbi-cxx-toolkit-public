@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/04/29 19:13:13  kholodov
+* Modified: using C_DriverMgr as parent class of CDriverManager
+*
 * Revision 1.3  2002/04/02 18:16:03  ucko
 * More fixes to CDriverManager::LoadDriverDll.
 *
@@ -73,70 +76,6 @@ CDriverManager::~CDriverManager()
     delete (*i_ds_list).second;
   }
   m_ds_list.clear();
-}
-
-void CDriverManager::RegisterDriver(const string& driver_name,
-				    FDBAPI_CreateContext driver_ctx_func)
-{
-  if( s_drivers.find(driver_name) == s_drivers.end() ) {
-#ifdef NCBI_COMPILER_GCC
-    s_drivers[driver_name] = (void*) driver_ctx_func;
-#else
-    s_drivers[driver_name] = driver_ctx_func;
-#endif
-  }
-}
-
-
-FDBAPI_CreateContext
-CDriverManager::GetDriver(const string& driver_name)
-{
-  TDrivers::iterator i = s_drivers.find(driver_name);
-
-  if (i == s_drivers.end()) {
-
-    //#if defined(CAN_LOAD_DLLS)
-    if ( !LoadDriverDll(driver_name) ) {
-      return 0;
-    }
-    //#else
-    //    return 0;
-    //#endif
-  }
-
-
-#ifdef NCBI_COMPILER_GCC
-  return (FDBAPI_CreateContext) s_drivers[driver_name];
-#else
-  return s_drivers[driver_name];
-#endif
-}
-
-
-bool CDriverManager::LoadDriverDll(const string& driver_name)
-{
-  typedef void (*FRegistrationFunction)(I_DriverMgr& mgr);
-  typedef FRegistrationFunction (*FEntryPoint)(void);
-
-  CDll dll("dbapi_driver_" + driver_name);
-
-  FEntryPoint func = 0;
-  if( driver_name == "ctlib" ) {
-    dll.GetEntryPoint("DBAPI_E_ctlib", &func);
-  }
-  else if( driver_name == "dblib" ) {
-    dll.GetEntryPoint("DBAPI_E_dblib", &func);
-  }
-  else if( driver_name == "ftds" ) {
-    dll.GetEntryPoint("DBAPI_E_ftds", &func);
-  }
-
-  if( func != 0 ) {
-    func()(*this);
-    return true;
-  }
-
-  return false;
 }
 
 

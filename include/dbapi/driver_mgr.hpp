@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-#include <dbapi/driver/interfaces.hpp>
+#include <dbapi/driver/driver_mgr.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 //  Static class for registering drivers and getting the datasource
 //
 
-class CDriverManager : public I_DriverMgr
+class CDriverManager : public C_DriverMgr
 {
     friend class CSafeStaticPtr<CDriverManager>;
 
@@ -64,40 +64,18 @@ public:
     class IDataSource* CreateDsFrom(const string& drivers,
 				    CNcbiRegistry* reg = 0);
 
-    // Put the driver entry point into the drivers table
-    virtual void RegisterDriver(const string& driver_name,
-				FDBAPI_CreateContext driver_ctx_func);
-
 protected:
 
     // Prohibit explicit construction and destruction
     CDriverManager();
     virtual ~CDriverManager();
 
-    // Get the driver entry point from the drivers table
-    // If no static driver found, the attempt to load DLL
-    // driver is made
-    FDBAPI_CreateContext GetDriver(const string& driver_name);
-
-    // Load driver dll on request 
-    // NOTE: Currently it will attempt to load libraries
-    // with default name convention and path.
-    bool LoadDriverDll(const string& driver_name);
 
     // Put the new data source into the internal list with
     // corresponding driver name, return previous, if already exists
     class IDataSource* RegisterDs(const string& driver_name,
 				  class I_DriverContext* ctx);
 
-private:
-    // Define the type of the drivers table
-#ifdef NCBI_COMPILER_GCC
-    typedef map<string, void*> TDrivers;
-#else
-    typedef map<string, FDBAPI_CreateContext> TDrivers;
-#endif
-
-    TDrivers s_drivers;
     map<string, class IDataSource*> m_ds_list;
 };
 
@@ -107,6 +85,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/04/29 19:13:14  kholodov
+ * Modified: using C_DriverMgr as parent class of CDriverManager
+ *
  * Revision 1.1  2002/01/30 14:51:24  kholodov
  * User DBAPI implementation, first commit
  *
