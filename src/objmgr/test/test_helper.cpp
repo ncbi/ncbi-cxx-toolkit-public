@@ -821,7 +821,7 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
         bool got_exception = false; \
         try {
 #define CHECK_END2(MSG, have_errors) \
-        } catch (runtime_error) { \
+        } catch (exception) { \
             got_exception = true; \
             if ( !have_errors ) { \
                 LOG_POST("Can not " MSG); throw; \
@@ -1362,6 +1362,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2003/09/05 18:45:10  grichenk
+* Fixed exceptions
+*
 * Revision 1.42  2003/07/14 21:13:27  grichenk
 * Added possibility to resolve seq-map iterator withing a single TSE
 * and to skip intermediate references during this resolving.
