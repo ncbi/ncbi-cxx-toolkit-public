@@ -547,12 +547,12 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'C':
             switch (pfx[1]) {
             case 'A': case 'B': case 'D': case 'F':
-            case 'K':                               return eAcc_gb_est;
+            case 'K': case 'N':                     return eAcc_gb_est;
             case 'C': case 'E': case 'G': case 'L': return eAcc_gb_gss;
             case 'H': case 'M':                     return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
-                // no specific assignment for CN-CP yet
-            case 'N': case 'O': case 'P':           return eAcc_gb_other_nuc;
+                // no specific assignment for CO-CP yet
+            case 'O': case 'P':                     return eAcc_gb_other_nuc;
             case 'Q':                               return eAcc_embl_patent;
             case 'R':                               return eAcc_embl_genome;
             case 'S': case 'T': case 'U':           return eAcc_embl_other_nuc;
@@ -1497,6 +1497,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.74  2004/03/22 16:24:19  ucko
+ * CN is now specifically assigned to GenBank ESTs.
+ *
  * Revision 6.73  2004/01/22 21:03:58  dicuccio
  * Separated functionality of enums in GetLabel() into discrete mode and flags
  *
