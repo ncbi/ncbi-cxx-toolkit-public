@@ -47,8 +47,8 @@ int main(int argc, char* argv[])
     SetDiagPostFlag(eDPF_All);
 
     CNcbiFstream fs(filename,
-               IOS_BASE::in    | IOS_BASE::out   |
-               IOS_BASE::trunc | IOS_BASE::binary);
+                    IOS_BASE::in    | IOS_BASE::out   |
+                    IOS_BASE::trunc | IOS_BASE::binary);
 
     int ret = TEST_StreamPushback(fs,
                                   argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
@@ -62,8 +62,11 @@ int main(int argc, char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2003/11/21 19:59:16  lavr
+ * Minor code reindentation due to the last change
+ *
  * Revision 1.7  2003/11/21 16:55:32  vasilche
- * Use correct CNcbiFstream instead of fstream.
+ * Use correct CNcbiFstream instead of fstream (esp. crucial on MSVC).
  *
  * Revision 1.6  2002/04/16 18:52:15  ivanov
  * Centralize threatment of assert() in tests.
