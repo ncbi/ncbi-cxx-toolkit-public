@@ -148,18 +148,18 @@ private:
 inline
 CImage::TConstPixel CImage::operator() (size_t x, size_t y) const
 {
-    _ASSERT(x < m_Width);
-    _ASSERT(y < m_Height);
-    return &(m_Data[ (y * m_Width + x) * m_Depth ]);
+    _ASSERT(x < m_Height);
+    _ASSERT(y < m_Width);
+    return &(m_Data[ (x * m_Width + y) * m_Depth ]);
 }
 
 
 inline
 CImage::TPixel CImage::operator() (size_t x, size_t y)
 {
-    _ASSERT(x < m_Width);
-    _ASSERT(y < m_Height);
-    return &(m_Data[ (y * m_Width + x) * m_Depth ]);
+    _ASSERT(x < m_Height);
+    _ASSERT(y < m_Width);
+    return &(m_Data[ (x * m_Width + y) * m_Depth ]);
 }
 
 
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/03 15:15:08  dicuccio
+ * Fixed indexing of images - operator() now returns (row, column)
+ *
  * Revision 1.5  2003/08/27 16:44:32  ivanov
  * Changed class export specifier to NCBI_XIMAGE_EXPORT
  *
