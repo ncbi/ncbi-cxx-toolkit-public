@@ -36,6 +36,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/05/01 17:04:31  vasilche
+* MSVC doesn't allow contant initialization in class body.
+*
 * Revision 1.43  2000/05/01 16:58:12  vasilche
 * Allow missing Content-Length and Content-Type headers.
 *
@@ -398,6 +401,8 @@ typedef list<string>                 TCgiIndexes;
 class CNcbiArguments;
 class CNcbiEnvironment;
 
+// constant returned by GetContentLength() when Content-Length header is missing
+static const size_t kContentLengthUnknown = size_t(-1);
 
 //
 class CCgiRequest {
@@ -450,7 +455,6 @@ public:
     // Get content length (using value of the property 'eCgi_ContentLength')
     // may return kContentLengthUnknown if Content-Length header is missing
     size_t GetContentLength(void) const;
-    static const size_t kContentLengthUnknown = size_t(-1);
 
     // Retrieve the request cookies
     const CCgiCookies& GetCookies(void) const;
