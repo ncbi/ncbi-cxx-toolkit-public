@@ -781,13 +781,14 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             struct timeval* tmp;
             struct timeval  tm;
 
-            if ( !timeout ) {
+            if (timeout) {
                 // NB: Timeout has been normalized already
                 tm.tv_sec  = timeout->sec;
                 tm.tv_usec = timeout->usec;
                 tmp = &tm;
-            } else
+            } else {
                 tmp = 0;
+            }
             fd_set rfds;
             fd_set efds;
             FD_ZERO(&rfds);
@@ -1219,6 +1220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/03/10 16:09:00  jcherry
+ * Reversed sense of test in unix version of CNamedPipeHandle::Listen
+ *
  * Revision 1.22  2004/01/23 12:30:42  lavr
  * More explanatory stuff in posted error messages
  *
