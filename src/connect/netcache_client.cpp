@@ -42,6 +42,73 @@
 
 BEGIN_NCBI_SCOPE
 
+const string kNetCache_KeyPrefix = "NCID";
+
+void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
+{
+    _ASSERT(key);
+
+    // NCID_01_1_MYHOST_9000
+
+    const char* ch = key_str.c_str();
+    key->hostname = key->prefix = kEmptyStr;
+
+    // prefix
+
+    for (;*ch && *ch != '_'; ++ch) {
+        key->prefix += *ch;
+    }
+    if (*ch == 0) {
+        NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
+    }
+    ++ch;
+
+    if (key->prefix != kNetCache_KeyPrefix) {
+        NCBI_THROW(CNetCacheException, eKeyFormatError, "Invalid prefix");
+    }
+
+    // version
+    key->version = atoi(ch);
+    while (*ch && *ch != '_') {
+        ++ch;
+    }
+    if (*ch == 0) {
+        NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
+    }
+    ++ch;
+
+    // id
+    key->id = atoi(ch);
+    while (*ch && *ch != '_') {
+        ++ch;
+    }
+    if (*ch == 0) {
+        NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
+    }
+    ++ch;
+
+
+    // hostname
+    for (;*ch && *ch != '_'; ++ch) {
+        key->hostname += *ch;
+    }
+    if (*ch == 0) {
+        NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
+    }
+    ++ch;
+
+    // port
+    key->port = atoi(ch);
+}
+
+
+CNetCacheClient::CNetCacheClient(const string&  client_name)
+    : m_Sock(0),
+      m_OwnSocket(eTakeOwnership),
+      m_ClientName(client_name)
+{
+}
+
 
 CNetCacheClient::CNetCacheClient(const string&  host,
                                  unsigned short port,
@@ -52,8 +119,15 @@ CNetCacheClient::CNetCacheClient(const string&  host,
       m_OwnSocket(eTakeOwnership),
       m_ClientName(client_name)
 {
-    m_Sock = new CSocket(m_Host, m_Port);
+    CreateSocket(m_Host, m_Port);
+}
+
+void CNetCacheClient::CreateSocket(const string& hostname,
+                                   unsigned      port)
+{
+    m_Sock = new CSocket(hostname, port);
     m_Sock->DisableOSSendDelay();
+    m_OwnSocket = eTakeOwnership;
 }
 
 
@@ -121,14 +195,12 @@ string CNetCacheClient::PutData(const void*  buf,
     ReadStr(*m_Sock, &blob_id);
     if (NStr::FindCase(blob_id, "ID:") != 0) {
         // Answer is not in "ID:....." format
-        // (Most likely it is an error)
-        LOG_POST(Error << blob_id);
-        return kEmptyStr;
+        NCBI_THROW(CNetCacheException, eCommunicationError, blob_id);
     }
     blob_id.erase(0, 3);
     
     if (blob_id.empty())
-        return kEmptyStr;
+        NCBI_THROW(CNetCacheException, eCommunicationError, blob_id);
 
     // Write the actual BLOB
     WriteStr((const char*) buf, size);
@@ -161,8 +233,7 @@ string CNetCacheClient::ServerVersion()
     // Read BLOB_ID answer from the server
     ReadStr(*m_Sock, &version);
     if (NStr::FindCase(version, "OK:") != 0) {
-        LOG_POST(Error << version);
-        return kEmptyStr;
+        NCBI_THROW(CNetCacheException, eCommunicationError, version);
     }
 
     version.erase(0, 3);
@@ -215,7 +286,7 @@ IReader* CNetCacheClient::GetData(const string& key)
     bool res = ReadStr(*m_Sock, &answer);
     if (res) {
         if (NStr::strncmp(answer.c_str(), "OK:", 3) != 0) {
-            return 0;
+            NCBI_THROW(CNetCacheException, eCommunicationError, answer);
         }
     }
 
@@ -297,8 +368,7 @@ bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
             flag = false;
             break;
         case eIO_Timeout:
-            // TODO: add repetition counter or another protector here
-            break;
+            NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
         default: // invalid socket or request, bailing out
             return false;
         };
@@ -333,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/10/27 14:16:59  kuznets
+ * BLOB key parser moved from netcached
+ *
  * Revision 1.11  2004/10/25 14:36:39  kuznets
  * New methods IsAlive(), ServerVersion()
  *

@@ -50,6 +50,7 @@
 
 #include <connect/threaded_server.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <connect/netcache_client.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -57,30 +58,6 @@ const unsigned int kNetCacheBufSize = 64 * 1024;
 const unsigned int kObjectTimeout = 60 * 60; ///< Default timeout in seconds
 
 DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex);
-
-/// NetCache internal exception
-///
-/// @internal
-class CNetCacheServerException : public CException
-{
-public:
-    enum EErrCode {
-        eTimeout,
-        eCommunicationError,
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eTimeout:            return "eTimeout";
-        case eCommunicationError: return "eCommunicationError";
-        default:                  return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CNetCacheServerException, CException);
-};
 
 
 
@@ -135,19 +112,6 @@ private:
         string          req_id;
         string          err_msg;      
     };
-
-    /// Request id string can be parsed into this structure
-    struct BlobId
-    {
-        string    prefix;
-        unsigned  version;
-        unsigned  id;
-        string    hostname;
-        unsigned  timeout;
-    };
-
-    /// Return TRUE if request parsed correctly
-    bool ParseBlobId(const string& rid, BlobId* req_id);
 
     /// Process "PUT" request
     void ProcessPut(CSocket& sock, const Request& req);
@@ -237,7 +201,7 @@ bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
     case eIO_Success:
         return true;
     case eIO_Timeout:
-        NCBI_THROW(CNetCacheServerException, eTimeout, kEmptyStr);
+        NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
     default:
         return false;
     }
@@ -337,7 +301,7 @@ void CNetCacheServer::Process(SOCK sock)
         size_t n_read;
         socket.Read(buf, sizeof(buf), &n_read);
     } 
-    catch (CNetCacheServerException &ex)
+    catch (CNetCacheException &ex)
     {
         LOG_POST("Server error: " << ex.what());
     }
@@ -373,36 +337,24 @@ void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
         return;
     }
 
-    BlobId blob_id;
-    bool res = ParseBlobId(req_id, &blob_id);
-    if (!res) {
-format_err:
+    CNetCache_Key blob_id;
+    try {
+        CNetCache_ParseBlobKey(&blob_id, req_id);
+        if (blob_id.version != 1     ||
+            blob_id.hostname.empty() ||
+            blob_id.id == 0          ||
+            blob_id.port == 0) 
+        {
+            NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
+        }
+    } 
+    catch (CNetCacheException& )
+    {
         WriteMsg(sock, "ERR:", "BLOB id format error.");
         return;
     }
 
-    if (blob_id.prefix != "NCID" || 
-        blob_id.version != 1     ||
-        blob_id.hostname.empty() ||
-        blob_id.id == 0          ||
-        blob_id.timeout == 0) 
-    {
-        goto format_err;
-    }
-
-    // check timeout
-
-    CTime time_stamp(CTime::eCurrent);
-    unsigned tm = (unsigned)time_stamp.GetTimeT();
-
-    if (tm > blob_id.timeout) {
-        WriteMsg(sock, "ERR:", "BLOB expired.");
-        return;
-    }
-
     WaitForId(blob_id.id);
-    
-
 
     auto_ptr<IReader> rdr(m_Cache->GetReadStream(req_id, 0, kEmptyStr));
     if (!rdr.get()) {
@@ -435,11 +387,11 @@ blob_not_found:
                 case eIO_Success:
                     break;
                 case eIO_Timeout:
-                    NCBI_THROW(CNetCacheServerException, 
+                    NCBI_THROW(CNetCacheException, 
                                     eTimeout, kEmptyStr);
                     break;
                 default:
-                    NCBI_THROW(CNetCacheServerException, 
+                    NCBI_THROW(CNetCacheException, 
                                     eCommunicationError, kEmptyStr);
                     break;
                 } // switch
@@ -495,57 +447,6 @@ void CNetCacheServer::ProcessPut(CSocket& sock, const Request& req)
     iwrt->Flush();
     iwrt.reset(0);
 
-}
-
-bool CNetCacheServer::ParseBlobId(const string& rid, BlobId* req_id)
-{
-    _ASSERT(req_id);
-
-    // NCID_01_1_DIDIMO_1096382642
-
-    const char* ch = rid.c_str();
-    req_id->hostname = req_id->prefix = kEmptyStr;
-
-    // prefix
-
-    for (;*ch && *ch != '_'; ++ch) {
-        req_id->prefix += *ch;
-    }
-    if (*ch == 0)
-        return false;
-    ++ch;
-
-    // version
-    req_id->version = atoi(ch);
-    while (*ch && *ch != '_') {
-        ++ch;
-    }
-    if (*ch == 0)
-        return false;
-    ++ch;
-
-    // id
-    req_id->id = atoi(ch);
-    while (*ch && *ch != '_') {
-        ++ch;
-    }
-    if (*ch == 0)
-        return false;
-    ++ch;
-
-
-    // hostname
-    for (;*ch && *ch != '_'; ++ch) {
-        req_id->hostname += *ch;
-    }
-    if (*ch == 0)
-        return false;
-    ++ch;
-
-    // timeout
-    req_id->timeout = atoi(ch);
-
-    return true;
 }
 
 void CNetCacheServer::WaitForId(unsigned int id)
@@ -643,7 +544,7 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length
         break;
     case eIO_Timeout:
         *buffer_length = 0;
-        NCBI_THROW(CNetCacheServerException, eTimeout, kEmptyStr);
+        NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
         break;
     default: // invalid socket or request
         return false;
@@ -671,7 +572,7 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
             flag = false;
             break;
         case eIO_Timeout:
-            NCBI_THROW(CNetCacheServerException, eTimeout, kEmptyStr);
+            NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
             break;
         default: // invalid socket or request, bailing out
             return false;
@@ -722,11 +623,13 @@ void CNetCacheServer::GenerateRequestId(const Request& req,
     *id_str += "_";
     *id_str += m_Host;    
 
+    NStr::IntToString(tmp, GetPort());
+    *id_str += "_";
+    *id_str += tmp;
+
     CTime time_stamp(CTime::eCurrent);
     unsigned tm = (unsigned)time_stamp.GetTimeT();
-    tm += req.timeout ? req.timeout : kObjectTimeout;
     NStr::IntToString(tmp, tm);
-
     *id_str += "_";
     *id_str += tmp;
 }
@@ -928,6 +831,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/10/27 14:18:02  kuznets
+ * BLOB key parser moved from netcached
+ *
  * Revision 1.18  2004/10/26 14:21:41  kuznets
  * New parameter network_timeout
  *

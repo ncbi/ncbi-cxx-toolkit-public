@@ -47,6 +47,44 @@ BEGIN_NCBI_SCOPE
 
 class CSocket;
 
+/// NetCache internal exception
+///
+class CNetCacheException : public CException
+{
+public:
+    enum EErrCode {
+        eTimeout,
+        eCommunicationError,
+        eKeyFormatError
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eTimeout:            return "eTimeout";
+        case eCommunicationError: return "eCommunicationError";
+        case eKeyFormatError:     return "eKeyFormatError";
+        default:                  return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CNetCacheException, CException);
+};
+
+
+struct CNetCache_Key
+{
+    string       prefix;    ///< Key prefix
+    unsigned     version;   ///< Key version
+    unsigned     id;        ///< BLOB id
+    string       hostname;  ///< server name
+    unsigned     port;      ///< TCP/IP port number
+};
+
+extern NCBI_XCONNECT_EXPORT
+void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str);
+
 
 /// Client API for NetCache server
 ///
@@ -56,6 +94,8 @@ class CSocket;
 class NCBI_XCONNECT_EXPORT CNetCacheClient
 {
 public:
+    CNetCacheClient(const string&  client_name = kEmptyStr);
+
     CNetCacheClient(const string&  host,
                     unsigned short port,
                     const string&  client_name = kEmptyStr);
@@ -125,6 +165,9 @@ protected:
 
     void SendClientName();
 
+    void CreateSocket(const string& hostname,
+                      unsigned      port);
+
 private:
     CSocket*       m_Sock;
     string         m_Host;
@@ -140,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/10/27 14:16:45  kuznets
+ * BLOB key parser moved from netcached
+ *
  * Revision 1.6  2004/10/25 14:36:03  kuznets
  * New methods IsAlive(), ServerVersion()
  *
