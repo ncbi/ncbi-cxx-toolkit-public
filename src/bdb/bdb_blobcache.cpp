@@ -846,6 +846,54 @@ CBDB_Cache::EKeepVersions CBDB_Cache::GetVersionRetention() const
     return m_VersionFlag;
 }
 
+void CBDB_Cache::DropBlob(const string&  key,
+                          int            version,
+                          const string&  subkey)
+{
+    int overflow = 0;
+
+    {{
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
+    CCacheTransaction trans(*this);
+
+    {{
+        CBDB_FileCursor cur(*m_CacheAttrDB, trans);
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+
+        cur.From << key << version << subkey;
+
+        if (cur.Fetch() == eBDB_Ok) {
+            overflow = m_CacheAttrDB->overflow;
+            cur.Delete();
+
+            if (!overflow) {
+                m_CacheDB->key = key;
+                m_CacheDB->version = version;
+                m_CacheDB->subkey = subkey;
+
+                m_CacheDB->Delete(CBDB_RawFile::eIgnoreError);
+            }
+        } else {
+            return;
+        }
+    }}
+    trans.Commit();
+    }}
+
+    if (overflow) {
+        string path;
+        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
+
+        CDirEntry entry(path);
+        if (entry.Exists()) {
+            entry.Remove();
+        }
+    }
+
+}
+
+
 void CBDB_Cache::Store(const string&  key,
                        int            version,
                        const string&  subkey,
@@ -859,10 +907,13 @@ void CBDB_Cache::Store(const string&  key,
 
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
+    } else {
+        DropBlob(key, version, subkey);
     }
-    CCacheTransaction trans(*this);
 
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
+    CCacheTransaction trans(*this);
 
     unsigned overflow = 0;
 
@@ -872,7 +923,7 @@ void CBDB_Cache::Store(const string&  key,
         m_CacheDB->version = version;
         m_CacheDB->subkey = subkey;
 
-        m_CacheDB->Insert(data, size);
+        /*EBDB_ErrCode ret = */m_CacheDB->UpdateInsert(data, size);
 
         overflow = 0;
 
@@ -923,9 +974,11 @@ void CBDB_Cache::Store(const string&  key,
         m_MemAttr.Remove(CacheKey(key, version, sk));
     }
 */
+
     if (overflow == 0) { // inline BLOB
         x_PerformCheckPointNoLock(size);
     }
+
 }
 
 
@@ -1221,26 +1274,14 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
         Purge(key, subkey, 0, m_VersionFlag);
     }
 
+    DropBlob(key, version, subkey);
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
-
-    {
-        CCacheTransaction trans(*this);
-
-        x_DropBlob(key.c_str(), version, subkey.c_str(), 1);
-        trans.Commit();
-    }
 
     m_CacheDB->key = key;
     m_CacheDB->version = version;
     m_CacheDB->subkey = subkey;
-/*
-    if (m_MemAttr.IsActive()) {
-        const string& sk = 
-            (m_TimeStampFlag & fTrackSubKey) ? subkey : kEmptyStr;
 
-        m_MemAttr.Remove(CacheKey(key, version, sk));
-    }
-*/
     CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
     return 
         new CBDB_CacheIWriter(*this,
@@ -1373,11 +1414,6 @@ void CBDB_Cache::Remove(const string&    key,
 
 	trans.Commit();
     //m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
-/*
-    if (m_MemAttr.IsActive()) {
-        m_MemAttr.Remove(CacheKey(key, version, subkey));
-    }
-*/
 }
 
 
@@ -1568,6 +1604,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
              (j < batch_size) && (i < cache_entries.size()); 
              ++i,++j) {
                  const SCacheDescr& it = cache_entries[i];
+cerr << "D:" << it.key << endl;
                  x_DropBlob(it.key.c_str(), 
                             it.version, 
                             it.subkey.c_str(), 
@@ -2011,11 +2048,6 @@ void CBDB_Cache::x_DropBlob(const char*    key,
     m_CacheAttrDB->subkey = subkey;
 
     m_CacheAttrDB->Delete(CBDB_RawFile::eIgnoreError);
-/*
-    if (m_MemAttr.IsActive()) {
-        m_MemAttr.Remove(CacheKey(key, version, subkey));
-    }
-*/
 }
 
 void CBDB_Cache::x_SaveAttrStorage()
@@ -2307,6 +2339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.97  2004/12/28 16:46:23  kuznets
+ * +DropBlob()
+ *
  * Revision 1.96  2004/12/22 21:02:53  grichenk
  * BDB and DBAPI caches split into separate libs.
  * Added entry point registration, fixed driver names.

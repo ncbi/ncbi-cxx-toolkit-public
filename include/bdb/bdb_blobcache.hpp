@@ -301,6 +301,10 @@ public:
                        time_t           access_timeout,
                        EKeepVersions    keep_last_version = eDropAll);
 
+    void DropBlob(const string&  key,
+                  int            version,
+                  const string&  subkey);
+
 private:
     /// Return TRUE if cache item expired according to the current timestamp
     /// prerequisite: attributes record fetched to memory
@@ -517,6 +521,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/12/28 16:46:15  kuznets
+ * +DropBlob()
+ *
  * Revision 1.44  2004/12/22 21:02:53  grichenk
  * BDB and DBAPI caches split into separate libs.
  * Added entry point registration, fixed driver names.
