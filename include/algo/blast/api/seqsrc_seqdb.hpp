@@ -94,8 +94,8 @@ BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* seq_src);
  */
 NCBI_XBLAST_EXPORT
 BlastSeqSrc* 
-SeqDbSrcInit(const char* dbname, Boolean is_prot, int first_seq, 
-             int last_seq, void* extra_arg);
+SeqDbSrcInit(const char* dbname, Boolean is_prot, 
+             int first_seq = 0, int last_seq = 0, void* extra_arg = NULL);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -105,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/10/27 21:12:07  camacho
+ * Add default parameters to SeqDbSrcInit for convenience
+ *
  * Revision 1.7  2004/10/06 14:49:55  dondosha
  * Cosmetic change in parameter name
  *
