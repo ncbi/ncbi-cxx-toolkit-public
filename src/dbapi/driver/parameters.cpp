@@ -165,7 +165,7 @@ void g_SubstituteParam(string& query, const string& name, const string& val)
     size_t len = query.length();
     char q = 0;
 
-    for (size_t pos = 0; pos < len; pos++) {
+    for (size_t pos = 0;  pos < len;  pos++) {
         if (q) {
             if (query[pos] == q)
                 q = 0;
@@ -175,7 +175,7 @@ void g_SubstituteParam(string& query, const string& name, const string& val)
             q = query[pos];
             continue;
         }
-        if (query.compare(pos, name_len, name) == 0
+        if (NStr::Compare(query, pos, name_len, name) == 0
             && (pos == 0 || !isalnum(query[pos - 1]))
             && !isalnum(query[pos + name_len])
             && query[pos + name_len] != '_') {
@@ -194,6 +194,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2001/10/25 00:22:10  vakatov
+ * string::compare() with 4 args does not work with GCC ver. < 3, so
+ * use NStr::Compare() instead.
+ *
  * Revision 1.4  2001/10/24 19:05:29  lavr
  * g_SubstituteParam() fixed to correctly replace names with values
  *
