@@ -274,7 +274,9 @@ auto_ptr<CGen_code_table_imp> CGen_code_table::sm_Implementation;
 
 void CGen_code_table::x_InitImplementation()
 {
-    static CFastMutex s_Implementation_mutex;
+    // mutex guarding access to our images
+    DEFINE_STATIC_FAST_MUTEX(s_Implementation_mutex);
+
     CFastMutexGuard   LOCK(s_Implementation_mutex);
     if ( !sm_Implementation.get() ) {
         sm_Implementation.reset(new CGen_code_table_imp());
@@ -475,7 +477,8 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (int id)
     }
 
     // this mutex is automatically freed when the function exits
-    static CFastMutex mtx;
+    // mutex guarding access to our images
+    DEFINE_STATIC_FAST_MUTEX(mtx);
     CFastMutexGuard   LOCK (mtx);
 
     // test again within mutex lock to see if another thread was just adding it
@@ -696,6 +699,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.15  2004/03/23 20:08:10  friedman
+* Replaced 'static CFastMutex' with DEFINE_STATIC_FAST_MUTEX
+*
 * Revision 6.14  2003/08/19 19:23:00  kans
 * s_ValidCodon test should use && instead of || (AU)
 *
