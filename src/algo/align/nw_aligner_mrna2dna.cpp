@@ -44,7 +44,6 @@ CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
     m_Wi(GetDefaultWi()),
     m_IntronMinSize(GetDefaultIntronMinSize())
 {
-    SetEndSpaceFree(); // default for spliced alignments
 }
 
 
@@ -81,10 +80,10 @@ int CNWAlignerMrna2Dna::Run()
     const char* seq1   = m_Seq1 - 1;
     const char* seq2   = m_Seq2 - 1;
 
-    bool bFreeGapLeft1  = m_end_space_free;
-    bool bFreeGapRight1 = m_end_space_free;
-    bool bFreeGapLeft2  = m_end_space_free;
-    bool bFreeGapRight2 = m_end_space_free;
+    bool bFreeGapLeft1  = m_esf_L1;
+    bool bFreeGapRight1 = m_esf_R1;
+    bool bFreeGapLeft2  = m_esf_L2;
+    bool bFreeGapRight2 = m_esf_R2;
 
     TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
     TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
@@ -271,6 +270,7 @@ void CNWAlignerMrna2Dna::x_DoBackTrace(const unsigned char* backtrace)
 }
 
 
+
 END_NCBI_SCOPE
 
 
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/03/18 15:15:51  kapustin
+ * Implement virtual memory checking function. Allow separate free end gap specification
+ *
  * Revision 1.8  2003/03/17 13:42:24  kapustin
  * Make donor/acceptor characters uppercase
  *

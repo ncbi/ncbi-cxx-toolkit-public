@@ -105,7 +105,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
       m_Wms(GetDefaultWms()),
       m_Wg(GetDefaultWg()),
       m_Ws(GetDefaultWs()),
-      m_end_space_free(false),
+      m_esf_L1(false), m_esf_R1(false), m_esf_L2(false), m_esf_R2(false),
       m_Seq1(seq1), m_SeqLen1(len1),
       m_Seq2(seq2), m_SeqLen2(len2),
       m_MatrixType(matrix_type),
@@ -126,7 +126,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
                    "Zero length specified for sequence(s)");
     }
 
-    if( double(len1 + 1)*(len2 + 1) > kMax_UInt ) {
+    if(!x_CheckMemoryLimit()) {
         NCBI_THROW(
                    CNWAlignerException,
                    eMemoryLimit,
@@ -169,9 +169,12 @@ void CNWAligner::SetSeqIds(const string& id1, const string& id2)
 }
 
 
-void CNWAligner::SetEndSpaceFree(bool free)
+void CNWAligner::SetEndSpaceFree(bool L1, bool R1, bool L2, bool R2)
 {
-    m_end_space_free = free;
+    m_esf_L1 = L1;
+    m_esf_R1 = R1;
+    m_esf_L2 = L2;
+    m_esf_R2 = R2;
 }
 
 // evaluate score for each possible alignment;
@@ -212,10 +215,10 @@ int CNWAligner::Run()
         bNowExit = m_prg_callback(&m_prg_info);
     }
 
-    bool bFreeGapLeft1  = m_end_space_free;
-    bool bFreeGapRight1 = m_end_space_free;
-    bool bFreeGapLeft2  = m_end_space_free;
-    bool bFreeGapRight2 = m_end_space_free;
+    bool bFreeGapLeft1  = m_esf_L1;
+    bool bFreeGapRight1 = m_esf_R1;
+    bool bFreeGapLeft2  = m_esf_L2;
+    bool bFreeGapRight2 = m_esf_R2;
 
     TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
     TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
@@ -866,12 +869,21 @@ size_t CNWAligner::x_CheckSequence(const char* seq, size_t len) const
 }
 
 
+bool CNWAligner::x_CheckMemoryLimit()
+{
+    return double(m_SeqLen1 + 1)*(m_SeqLen2 + 1) > kMax_UInt;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/03/18 15:15:51  kapustin
+ * Implement virtual memory checking function. Allow separate free end gap specification
+ *
  * Revision 1.17  2003/03/17 15:31:46  kapustin
  * Forced conversion to double in memory limit checking to avoid integer overflow
  *

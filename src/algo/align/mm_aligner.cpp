@@ -317,8 +317,8 @@ CNWAligner::TScore CMMAligner::x_FindBestJ (
     TScore score = kMin_Int;
     TScore trans_alts [9];
 
-    bool bFreeGapLeft2  = m_end_space_free && dim == m_SeqLen2 + 1;
-    bool bFreeGapRight2 = m_end_space_free && dim == m_SeqLen2 + 1;
+    bool bFreeGapLeft2  = m_esf_L2 && dim == m_SeqLen2 + 1;
+    bool bFreeGapRight2 = m_esf_R2 && dim == m_SeqLen2 + 1;
 
     for(size_t i = 0; i < dim ; ++i) {
         trans_alts [0] = vEtop[i] + vEbtm[i] - m_Wg;   // II
@@ -437,9 +437,9 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
     const char* seq1 = m_Seq1 - 1 + rect.i1;
     const char* seq2 = m_Seq2 - 1 + rect.j1;
 
-    bool bFreeGapLeft1  = m_end_space_free && rect.i1 == 0;
-    bool bFreeGapLeft2  = m_end_space_free && rect.j1 == 0;
-    bool bFreeGapRight2  = m_end_space_free && rect.j2 == m_SeqLen2 - 1;
+    bool bFreeGapLeft1  = m_esf_L1 && rect.i1 == 0;
+    bool bFreeGapLeft2  = m_esf_L2 && rect.j1 == 0;
+    bool bFreeGapRight2  = m_esf_R2 && rect.j2 == m_SeqLen2 - 1;
 
     // first row
 
@@ -580,9 +580,9 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
     const char* seq1 = m_Seq1 + rect.i1;
     const char* seq2 = m_Seq2 + rect.j1;
 
-    bool bFreeGapRight1  = m_end_space_free && rect.i2 == m_SeqLen1 - 1;
-    bool bFreeGapRight2  = m_end_space_free && rect.j2 == m_SeqLen2 - 1;
-    bool bFreeGapLeft2  = m_end_space_free && rect.j1 == 0;
+    bool bFreeGapRight1  = m_esf_R1 && rect.i2 == m_SeqLen1 - 1;
+    bool bFreeGapRight2  = m_esf_R2 && rect.j2 == m_SeqLen2 - 1;
+    bool bFreeGapLeft2  =  m_esf_L2 && rect.j1 == 0;
 
     // bottom row
 
@@ -726,10 +726,10 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
     const char* seq1 = m_Seq1 + rect.i1 - 1;
     const char* seq2 = m_Seq2 + rect.j1 - 1;
 
-    bool bFreeGapLeft1  = m_end_space_free && rect.i1 == 0;
-    bool bFreeGapRight1 = m_end_space_free && rect.i2 == m_SeqLen1 - 1;
-    bool bFreeGapLeft2  = m_end_space_free && rect.j1 == 0;
-    bool bFreeGapRight2 = m_end_space_free && rect.j2 == m_SeqLen2 - 1;
+    bool bFreeGapLeft1  = m_esf_L1 && rect.i1 == 0;
+    bool bFreeGapRight1 = m_esf_R1 && rect.i2 == m_SeqLen1 - 1;
+    bool bFreeGapLeft2  = m_esf_L2 && rect.j1 == 0;
+    bool bFreeGapRight2 = m_esf_R2 && rect.j2 == m_SeqLen2 - 1;
 
     TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
     TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
@@ -857,11 +857,21 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
 }
 
 
+bool CMMAligner::x_CheckMemoryLimit()
+{
+    return true;
+}
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/03/18 15:15:51  kapustin
+ * Implement virtual memory checking function. Allow separate free end gap specification
+ *
  * Revision 1.6  2003/03/17 15:30:57  kapustin
  * Support end-space free alignments
  *
