@@ -80,20 +80,25 @@ public:
         SAlignedCompartment(void): m_id(0), m_error(true) {}
         SAlignedCompartment(size_t id, bool err, const char* msg):
             m_id(id), m_error(err), m_msg(msg) {}
+
+        // returns overall identity (including gaps)
+        double GetIdentity(void);
     
         size_t           m_id;
         TSegments        m_segments;
         size_t           m_mrnasize;
         bool             m_QueryStrand, m_SubjStrand;
-        size_t           m_qmin, m_smin, m_smax;
+
+        size_t           m_qmin;         // Span *before* the alignment -
+        size_t           m_smin, m_smax; // not the actual span of exons.
+                                         // Used by formatter to convert to
+                                         // the original coordinates
         bool             m_error;
         string           m_msg;
     };
     typedef vector<CHit> THits;
     typedef vector<SAlignedCompartment> TResults;
 
-
-public:
     CSplign(void);
 
     // setters and getters
@@ -137,7 +142,7 @@ public:
 
 protected:
 
-    // active ingridient :-)
+    // active ingredient :-)
     CRef<CSplicedAligner> m_aligner;
 
     // access to sequence data
@@ -198,6 +203,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/06/03 19:27:04  kapustin
+ * Add CSplign::GetIdentity()
+ *
  * Revision 1.10  2004/05/04 15:23:44  ucko
  * Split splign code out of xalgoalign into new xalgosplign.
  *
