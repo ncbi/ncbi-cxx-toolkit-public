@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/12/17 19:05:05  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.16  1999/09/14 18:54:21  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -97,6 +100,11 @@ CTypeInfo::CTypeInfo(const string& name)
 {
 }
 
+CTypeInfo::CTypeInfo(const char* name)
+    : m_Name(name)
+{
+}
+
 CTypeInfo::~CTypeInfo(void)
 {
 }
@@ -115,7 +123,7 @@ void CTypeInfo::CollectExternalObjects(COObjectList& , TConstObjectPtr ) const
 
 TObjectPtr CTypeInfo::Create(void) const
 {
-    THROW1_TRACE(runtime_error, GetName() + " cannot be allocated on heap");
+   THROW1_TRACE(runtime_error, GetName() + " cannot be allocated on heap");
 }
 
 TTypeInfo CTypeInfo::GetRealTypeInfo(TConstObjectPtr ) const

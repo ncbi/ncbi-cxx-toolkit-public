@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/17 19:05:05  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.3  1999/09/14 18:54:22  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -48,6 +51,100 @@
 
 BEGIN_NCBI_SCOPE
 
+CTypeRef::CTypeRef(CTypeInfoSource* source)
+    : m_Getter(sx_Abort)
+{
+    m_Resolve = source;
+    m_Getter = sx_Resolve;
+}
+
+CTypeRef::CTypeRef(TGet1Proc getProc, const CTypeRef& arg)
+    : m_Getter(sx_Abort)
+{
+    m_Resolve = new CGet1TypeInfoSource(getProc, arg);
+    m_Getter = sx_Resolve;
+}
+
+CTypeRef::CTypeRef(const CTypeRef& typeRef)
+    : m_Getter(sx_Abort)
+{
+    Assign(typeRef);
+}
+
+CTypeRef::~CTypeRef(void)
+{
+    Unref();
+}
+
+CTypeRef& CTypeRef::operator=(const CTypeRef& typeRef)
+{
+    if ( this != &typeRef ) {
+        Unref();
+        Assign(typeRef);
+    }
+    return *this;
+}
+
+void CTypeRef::Unref(void)
+{
+    if ( m_Getter == sx_Resolve ) {
+        m_Getter = sx_Abort;
+        if ( --m_Resolve->m_RefCount <= 0 ) {
+            delete m_Resolve;
+        }
+    }
+    else {
+        m_Getter = sx_Abort;
+    }
+}
+
+void CTypeRef::Assign(const CTypeRef& typeRef)
+{
+    if ( typeRef.m_Getter == sx_Return ) {
+        m_Return = typeRef.m_Return;
+        m_Getter = sx_Return;
+    }
+    else if ( typeRef.m_Getter == sx_GetProc ) {
+        m_GetProc = typeRef.m_GetProc;
+        m_Getter = sx_GetProc;
+    }
+    else if ( typeRef.m_Getter == sx_Resolve ) {
+        ++(m_Resolve = typeRef.m_Resolve)->m_RefCount;
+        m_Getter = sx_Resolve;
+    }
+}
+
+TTypeInfo CTypeRef::sx_Abort(const CTypeRef& )
+{
+    THROW1_TRACE(runtime_error, "uninitialized type ref");
+}
+
+TTypeInfo CTypeRef::sx_Return(const CTypeRef& typeRef)
+{
+    return typeRef.m_Return;
+}
+
+TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
+{
+    TTypeInfo typeInfo = typeRef.m_GetProc();
+    if ( !typeInfo )
+        THROW1_TRACE(runtime_error, "cannot resolve type ref");
+    const_cast<CTypeRef&>(typeRef).m_Return = typeInfo;
+    const_cast<CTypeRef&>(typeRef).m_Getter = sx_Return;
+    return typeInfo;
+}
+
+TTypeInfo CTypeRef::sx_Resolve(const CTypeRef& typeRef)
+{
+    TTypeInfo typeInfo = typeRef.m_Resolve->GetTypeInfo();
+    if ( !typeInfo )
+        THROW1_TRACE(runtime_error, "cannot resolve type ref");
+    const_cast<CTypeRef&>(typeRef).Unref();
+    const_cast<CTypeRef&>(typeRef).m_Return = typeInfo;
+    const_cast<CTypeRef&>(typeRef).m_Getter = sx_Return;
+    return typeInfo;
+}
+
 CTypeInfoSource::CTypeInfoSource(void)
     : m_RefCount(1)
 {
@@ -58,46 +155,19 @@ CTypeInfoSource::~CTypeInfoSource(void)
     _ASSERT(m_RefCount == 0);
 }
 
-CGetTypeInfoSource::CGetTypeInfoSource(TTypeInfo (*getter)(void))
-    : m_Getter(getter)
-{
-}
-
-TTypeInfo CGetTypeInfoSource::GetTypeInfo(void)
-{
-    return m_Getter();
-}
-
 CGet1TypeInfoSource::CGet1TypeInfoSource(TTypeInfo (*getter)(TTypeInfo ),
                                          const CTypeRef& arg)
     : m_Getter(getter), m_Argument(arg)
 {
 }
 
+CGet1TypeInfoSource::~CGet1TypeInfoSource(void)
+{
+}
+
 TTypeInfo CGet1TypeInfoSource::GetTypeInfo(void)
 {
     return m_Getter(m_Argument.Get());
-}
-
-TTypeInfo CTypeRef::sx_Abort(const CTypeRef& )
-{
-    THROW1_TRACE(runtime_error, "uninitialized type ref");
-}
-
-TTypeInfo CTypeRef::sx_Return(const CTypeRef& typeRef)
-{
-    return typeRef.m_TypeInfo;
-}
-
-TTypeInfo CTypeRef::sx_Resolve(const CTypeRef& typeRef)
-{
-    TTypeInfo typeInfo = typeRef.m_Source->GetTypeInfo();
-    if ( !typeInfo )
-        THROW1_TRACE(runtime_error, "cannot resolve type ref");
-    typeRef.m_TypeInfo = typeInfo;
-    typeRef.m_Getter = sx_Return;
-    typeRef.Unref();
-    return typeInfo;
 }
 
 END_NCBI_SCOPE

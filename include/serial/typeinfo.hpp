@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/12/17 19:04:55  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.18  1999/09/22 20:11:51  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -132,6 +135,7 @@ public:
 
 protected:
     CTypeInfo(const string& name);
+    CTypeInfo(const char* name);
 public:
     virtual ~CTypeInfo(void);
 
@@ -195,6 +199,8 @@ private:
     friend class CObjectIStream;
     friend class CClassInfoTmpl;
 
+    CTypeInfo(const CTypeInfo&);
+    CTypeInfo& operator=(const CTypeInfo&);
     string m_Name;
 };
 
@@ -224,6 +230,10 @@ public:
 
 protected:
     CTypeInfoTmpl<T>(const string& name)
+        : CParent(name)
+        {
+        }
+    CTypeInfoTmpl<T>(const char* name)
         : CParent(name)
         {
         }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/12/17 19:05:19  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.20  1999/12/09 20:01:23  vasilche
 * Fixed bug with missed internal classes.
 *
@@ -340,7 +343,9 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
 
     if ( dynamic_cast<const CEnumDataType*>(type) != 0 ) {
         // ENUMERATED type
-        AddType(type);
+        if ( type->GetParentType() == 0 || context == eChoice ) {
+            AddType(type);
+        }
         return;
     }
 

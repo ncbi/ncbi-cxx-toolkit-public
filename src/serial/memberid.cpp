@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/17 19:05:02  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.3  1999/07/22 19:40:54  vasilche
 * Fixed bug with complex object graphs (pointers to members of other objects).
 *
@@ -46,6 +49,26 @@
 #include <serial/memberid.hpp>
 
 BEGIN_NCBI_SCOPE
+
+CMemberId::CMemberId(const string& name)
+    : m_Name(name), m_Tag(-1)
+{
+}
+
+CMemberId::CMemberId(const string& name, TTag tag)
+    : m_Name(name), m_Tag(tag)
+{
+}
+
+CMemberId::CMemberId(const char* name)
+    : m_Name(name), m_Tag(-1)
+{
+}
+
+CMemberId::CMemberId(const char* name, TTag tag)
+    : m_Name(name), m_Tag(tag)
+{
+}
 
 void CMemberId::SetName(const string& name)
 {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/12/17 19:05:02  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.6  1999/11/16 15:40:19  vasilche
 * Added plain pointer choice.
 *
@@ -62,7 +65,7 @@
 
 BEGIN_NCBI_SCOPE
 
-CTypeInfoMap<CChoicePointerTypeInfo> CChoicePointerTypeInfo::sm_Map;
+//CTypeInfoMap<CChoicePointerTypeInfo> CChoicePointerTypeInfo::sm_Map;
 
 CChoicePointerTypeInfo::CChoicePointerTypeInfo(TTypeInfo typeInfo)
     : CPointerTypeInfo(typeInfo)
@@ -75,6 +78,22 @@ CChoicePointerTypeInfo::CChoicePointerTypeInfo(const string& name,
     : CPointerTypeInfo(name, typeInfo)
 {
     Init();
+}
+
+CChoicePointerTypeInfo::CChoicePointerTypeInfo(const char* name,
+                                               TTypeInfo typeInfo)
+    : CPointerTypeInfo(name, typeInfo)
+{
+    Init();
+}
+
+CChoicePointerTypeInfo::~CChoicePointerTypeInfo(void)
+{
+}
+
+TTypeInfo CChoicePointerTypeInfo::GetTypeInfo(TTypeInfo base)
+{
+    return new CChoicePointerTypeInfo(base);
 }
 
 TTypeInfo CChoicePointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr object) const

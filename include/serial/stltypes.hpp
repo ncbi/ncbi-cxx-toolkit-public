@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/12/17 19:04:54  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.24  1999/12/01 17:36:21  vasilche
 * Fixed CHOICE processing.
 *
@@ -135,9 +138,15 @@ class CStlOneArgTemplate : public CTypeInfo
     typedef CTypeInfo CParent;
 public:
 
-    CStlOneArgTemplate(const CTypeRef& dataType)
-        : CParent("stl<X>"), m_DataType(dataType)
-        { }
+    CStlOneArgTemplate(const char* templ, TTypeInfo dataType);
+    CStlOneArgTemplate(const char* templ, const CTypeRef& dataType);
+    ~CStlOneArgTemplate(void);
+
+    const CMemberId& GetDataId(void) const
+        {
+            return m_DataId;
+        }
+    void SetDataId(const CMemberId& id);
 
     TTypeInfo GetDataTypeInfo(void) const
         {
@@ -145,6 +154,7 @@ public:
         }
 
 private:
+    CMemberId m_DataId;
     CTypeRef m_DataType;
 };
 
@@ -153,26 +163,22 @@ class CStlTwoArgsTemplate : public CTypeInfo
     typedef CTypeInfo CParent;
 public:
 
-    CStlTwoArgsTemplate(const CTypeRef& keyType, const CTypeRef& valueType)
-        : CParent("stl<X,Y>"), m_KeyType(keyType), m_ValueType(valueType)
-        { }
+    CStlTwoArgsTemplate(const char* templ,
+                        TTypeInfo keyType, TTypeInfo valueType);
+    CStlTwoArgsTemplate(const char* templ,
+                        const CTypeRef& keyType, const CTypeRef& valueType);
+    ~CStlTwoArgsTemplate(void);
 
     const CMemberId& GetKeyId(void) const
         {
             return m_KeyId;
         }
-    void SetKeyId(const CMemberId& id)
-        {
-            m_KeyId = id;
-        }
     const CMemberId& GetValueId(void) const
         {
             return m_ValueId;
         }
-    void SetValueId(const CMemberId& id)
-        {
-            m_ValueId = id;
-        }
+    void SetKeyId(const CMemberId& id);
+    void SetValueId(const CMemberId& id);
 
     TTypeInfo GetKeyTypeInfo(void) const
         {
@@ -191,15 +197,18 @@ private:
 };
 
 template<typename Data>
-class CStlClassInfoAutoPtr : public CPointerTypeInfo
+class CStlClassInfo_auto_ptr : public CPointerTypeInfo
 {
     typedef CPointerTypeInfo CParent;
 public:
     typedef Data TDataType;
     typedef auto_ptr<TDataType> TObjectType;
 
-    CStlClassInfoAutoPtr<Data>(void)
-        : CParent("auto_ptr<X>", GetTypeRef(static_cast<TDataType*>(0)).Get())
+    CStlClassInfo_auto_ptr(TTypeInfo typeInfo)
+        : CParent("auto_ptr", typeInfo, typeInfo)
+        { }
+    CStlClassInfo_auto_ptr(const CTypeRef& typeRef)
+        : CParent("auto_ptr", "?", typeRef)
         { }
     
     TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
@@ -217,23 +226,25 @@ public:
             return sizeof(TObjectType);
         }
 
-    static TTypeInfo GetTypeInfo(void)
+    static TTypeInfo GetTypeInfo(TTypeInfo info)
         {
-            static TTypeInfo typeInfo = new CStlClassInfoAutoPtr<Data>;
-            return typeInfo;
+            return new CStlClassInfo_auto_ptr<Data>(info);
         }
 };
 
 template<typename Data>
-class CChoiceStlClassInfoAutoPtr : public CChoicePointerTypeInfo
+class CChoiceStlClassInfo_auto_ptr : public CChoicePointerTypeInfo
 {
     typedef CChoicePointerTypeInfo CParent;
 public:
     typedef Data TDataType;
     typedef auto_ptr<TDataType> TObjectType;
 
-    CChoiceStlClassInfoAutoPtr<Data>(void)
-        : CParent("auto_ptr<X>", GetTypeRef(static_cast<TDataType*>(0)).Get())
+    CChoiceStlClassInfo_auto_ptr(TTypeInfo info)
+        : CParent("auto_ptr", info, info)
+        { }
+    CChoiceStlClassInfo_auto_ptr(const CTypeRef& type)
+        : CParent("auto_ptr", "?", type)
         { }
     
     TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
@@ -251,23 +262,25 @@ public:
             return sizeof(TObjectType);
         }
 
-    static TTypeInfo GetTypeInfo(void)
+    static TTypeInfo GetTypeInfo(TTypeInfo type)
         {
-            static TTypeInfo typeInfo = new CChoiceStlClassInfoAutoPtr<Data>;
-            return typeInfo;
+            return new CChoiceStlClassInfo_auto_ptr<Data>(type);
         }
 };
 
 template<typename List>
-class CStlOneArgTemplateImpl : public CStlOneArgTemplate
+class CStlListTemplateImpl : public CStlOneArgTemplate
 {
     typedef CStlOneArgTemplate CParent;
 public:
     typedef List TObjectType;
     typedef typename TObjectType::const_iterator TConstIterator;
 
-    CStlOneArgTemplateImpl<List>(const CTypeRef& dataType)
-        : CParent(dataType), m_RandomOrder(false)
+    CStlListTemplateImpl(const char* templ, TTypeInfo dataType)
+        : CParent(templ, dataType), m_RandomOrder(false)
+        { }
+    CStlListTemplateImpl(const char* templ, const CTypeRef& dataType)
+        : CParent(templ, dataType), m_RandomOrder(false)
         { }
 
     bool RandomOrder(void) const
@@ -357,7 +370,8 @@ protected:
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
-            CObjectIStream::Block block(CObjectIStream::eFixed, in, RandomOrder());
+            CObjectIStream::Block block(CObjectIStream::eFixed,
+                                        in, RandomOrder());
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
             if ( block.Fixed() )
                 Reserve(object, block.GetSize());
@@ -375,23 +389,22 @@ private:
 };
 
 template<typename Data>
-class CStlClassInfoList : public CStlOneArgTemplateImpl< list<Data> >
+class CStlClassInfo_list : public CStlListTemplateImpl< list<Data> >
 {
-    typedef CStlOneArgTemplateImpl< list<Data> > CParent;
+    typedef CStlListTemplateImpl< list<Data> > CParent;
 public:
     typedef Data TDataType;
 
-    CStlClassInfoList<Data>(void)
-        : CParent(GetTypeRef(static_cast<const TDataType*>(0)))
+    CStlClassInfo_list(TTypeInfo typeInfo)
+        : CParent("std::list", typeInfo)
         { }
-    CStlClassInfoList<Data>(const CTypeRef& typeRef)
-        : CParent(typeRef)
+    CStlClassInfo_list(const CTypeRef& typeRef)
+        : CParent("std::list", typeRef)
         { }
 
-    static TTypeInfo GetTypeInfo(void)
+    static TTypeInfo GetTypeInfo(TTypeInfo info)
         {
-            static TTypeInfo typeInfo = new CStlClassInfoList<Data>;
-            return typeInfo;
+            return new CStlClassInfo_list<Data>(info);
         }
 
 protected:
@@ -409,23 +422,22 @@ protected:
 };
 
 template<typename Data>
-class CStlClassInfoVector : public CStlOneArgTemplateImpl< vector<Data> >
+class CStlClassInfo_vector : public CStlListTemplateImpl< vector<Data> >
 {
-    typedef CStlOneArgTemplateImpl< vector<Data> > CParent;
+    typedef CStlListTemplateImpl< vector<Data> > CParent;
 public:
     typedef Data TDataType;
 
-    CStlClassInfoVector<Data>(void)
-        : CParent(GetTypeRef(static_cast<const TDataType*>(0)))
+    CStlClassInfo_vector(TTypeInfo info)
+        : CParent("std::vector", info)
         { }
-    CStlClassInfoVector<Data>(const CTypeRef& typeRef)
-        : CParent(typeRef)
+    CStlClassInfo_vector(const CTypeRef& typeRef)
+        : CParent("std::vector", typeRef)
         { }
 
-    static TTypeInfo GetTypeInfo(void)
+    static TTypeInfo GetTypeInfo(TTypeInfo info)
         {
-            static TTypeInfo typeInfo = new CStlClassInfoVector<Data>;
-            return typeInfo;
+            return new CStlClassInfo_vector<Data>(info);
         }
 
 protected:
@@ -443,37 +455,19 @@ protected:
         }
 };
 
-class CStlClassInfoMapImpl : public CStlTwoArgsTemplate
-{
-    typedef CStlTwoArgsTemplate CParent;
-public:
-
-    CStlClassInfoMapImpl(const CTypeRef& keyType, const CTypeRef& valueType)
-        : CParent(keyType, valueType)
-        { }
-
-protected:
-    void CollectKeyValuePair(COObjectList& objectList,
-                             TConstObjectPtr key, TConstObjectPtr value) const;
-    void WriteKeyValuePair(CObjectOStream& out,
-                           TConstObjectPtr key, TConstObjectPtr value) const;
-    void ReadKeyValuePair(CObjectIStream& in,
-                          TObjectPtr key, TObjectPtr value) const;
-};
-
 template<class Set, typename Data>
-class CStlClassInfoSetBase : public CStlOneArgTemplateImpl<Set>
+class CStlClassInfoSetBase : public CStlListTemplateImpl<Set>
 {
-    typedef CStlOneArgTemplateImpl<Set> CParent;
+    typedef CStlListTemplateImpl<Set> CParent;
 public:
     typedef Data TDataType;
 
-    CStlClassInfoSetBase(void)
-        : CParent(GetTypeRef(static_cast<const TDataType*>(0)))
+    CStlClassInfoSetBase(const char* templ, TTypeInfo type)
+        : CParent(templ, type)
         {
         }
-    CStlClassInfoSetBase(const CTypeRef& typeRef)
-        : CParent(typeRef)
+    CStlClassInfoSetBase(const char* templ, const CTypeRef& typeRef)
+        : CParent(templ, typeRef)
         {
         }
 
@@ -501,45 +495,70 @@ protected:
 };
 
 template<typename Data>
-class CStlClassInfoSet :
+class CStlClassInfo_set :
     public CStlClassInfoSetBase<set<Data>, Data>
 {
     typedef CStlClassInfoSetBase<set<Data>, Data> CParent;
 public:
-    CStlClassInfoSet(void)
+    CStlClassInfo_set(TTypeInfo info)
+        : CParent("std::set", info)
         {
         }
-    CStlClassInfoSet(const CTypeRef& typeRef)
-        : CParent(typeRef)
+    CStlClassInfo_set(const CTypeRef& typeRef)
+        : CParent("std::set", typeRef)
         {
         }
 
-    static TTypeInfo GetTypeInfo(void)
+    static TTypeInfo GetTypeInfo(TTypeInfo info)
         {
-            static TTypeInfo typeInfo = new CStlClassInfoSet<Data>;
-            return typeInfo;
+            return new CStlClassInfo_set<Data>(info);
         }
 };
 
 template<typename Data>
-class CStlClassInfoMultiSet :
+class CStlClassInfo_multiset :
     public CStlClassInfoSetBase<multiset<Data>, Data>
 {
     typedef CStlClassInfoSetBase<multiset<Data>, Data> CParent;
 public:
-    CStlClassInfoMultiSet(void)
+    CStlClassInfo_multiset(TTypeInfo dataType)
+        : CParent("std::multiset", dataType)
         {
         }
-    CStlClassInfoMultiSet(const CTypeRef& typeRef)
-        : CParent(typeRef)
+    CStlClassInfo_multiset(const CTypeRef& dataType)
+        : CParent("std::multiset", dataType)
         {
         }
 
-    static TTypeInfo GetTypeInfo(void)
+    static TTypeInfo GetTypeInfo(TTypeInfo info)
         {
-            static TTypeInfo typeInfo = new CStlClassInfoMultiSet<Data>;
-            return typeInfo;
+            return new CStlClassInfo_multiset<Data>(info);
         }
+};
+
+class CStlClassInfoMapImpl : public CStlTwoArgsTemplate
+{
+    typedef CStlTwoArgsTemplate CParent;
+public:
+
+    CStlClassInfoMapImpl(const char* templ,
+                         TTypeInfo keyType, TTypeInfo valueType)
+        : CParent(templ, keyType, valueType)
+        { }
+    CStlClassInfoMapImpl(const char* templ,
+                         const CTypeRef& keyType, const CTypeRef& valueType)
+        : CParent(templ, keyType, valueType)
+        { }
+
+protected:
+    void CollectKeyValuePair(COObjectList& objectList,
+                             TConstObjectPtr key, TConstObjectPtr value) const;
+    void WriteKeyValuePair(CObjectOStream& out,
+                           TConstObjectPtr key, TConstObjectPtr value) const;
+    void ReadKeyValuePair(CObjectIStream& in,
+                          TObjectPtr key, TObjectPtr value) const;
+    bool EqualsKeyValuePair(TConstObjectPtr key1, TConstObjectPtr key2,
+                            TConstObjectPtr value1, TConstObjectPtr value2) const;
 };
 
 template<class Map, typename Key, typename Value>
@@ -553,13 +572,14 @@ public:
     typedef Map TObjectType;
     typedef typename TObjectType::const_iterator TConstIterator;
 
-    CStlClassInfoMapBase(void)
-        : CParent(GetTypeRef(static_cast<const TKeyType*>(0)),
-                  GetTypeRef(static_cast<const TValueType*>(0)))
+    CStlClassInfoMapBase(const char* templ,
+                         TTypeInfo keyType, TTypeInfo dataType)
+        : CParent(templ, keyType, dataType)
         {
         }
-    CStlClassInfoMapBase(const CTypeRef& keyType, const CTypeRef& dataType)
-        : CParent(keyType, dataType)
+    CStlClassInfoMapBase(const char* templ,
+                         const CTypeRef& keyType, const CTypeRef& dataType)
+        : CParent(templ, keyType, dataType)
         {
         }
 
@@ -592,12 +612,10 @@ public:
             const TObjectType& o2 = Get(object2);
             if ( o1.size() != o2.size() )
                 return false;
-            TTypeInfo keyTypeInfo = GetKeyTypeInfo();
-            TTypeInfo valueTypeInfo = GetValueTypeInfo();
             for ( TConstIterator i1 = o1.begin(), i2 = o2.begin();
                   i1 != o1.end(); ++i1, ++i2 ) {
-                if ( !keyTypeInfo->Equals(&i1->first, &i2->first) ||
-                     !valueTypeInfo->Equals(&i1->second, &i2->second) )
+                if ( !EqualsKeyValuePair(&i1->first, &i2->first,
+                                         &i1->second, &i2->second) )
                     return false;
             }
             return true;
@@ -612,7 +630,6 @@ public:
         {
             TObjectType& to = Get(dst);
             const TObjectType& from = Get(src);
-            to.clear();
             for ( TConstIterator i = from.begin(); i != from.end(); ++i ) {
                 to.insert(*i);
             }
@@ -631,7 +648,7 @@ protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
             const TObjectType& o = Get(object);
-            CObjectOStream::Block block(o.size(), out);
+            CObjectOStream::Block block(out);
             for ( TConstIterator i = o.begin(); i != o.end(); ++i ) {
                 block.Next();
                 WriteKeyValuePair(out, &i->first, &i->second);
@@ -641,7 +658,7 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             TObjectType& o = Get(object);
-            CObjectIStream::Block block(CObjectIStream::eFixed, in);
+            CObjectIStream::Block block(in);
             while ( block.Next() ) {
                 TKeyType key;
                 TValueType value;
@@ -653,64 +670,61 @@ protected:
 };
 
 template<typename Key, typename Value>
-class CStlClassInfoMap :
+class CStlClassInfo_map :
     public CStlClassInfoMapBase<map<Key, Value>, Key, Value>
 {
     typedef CStlClassInfoMapBase<map<Key, Value>, Key, Value> CParent;
 
 public:
-    CStlClassInfoMap(void)
+    CStlClassInfo_map(TTypeInfo keyType, TTypeInfo dataType)
+        : CParent("std::map", keyType, dataType)
         {
         }
-    CStlClassInfoMap(const CTypeRef& keyType, const CTypeRef& dataType)
-        : CParent(keyType, dataType)
+    CStlClassInfo_map(const CTypeRef& keyType, const CTypeRef& dataType)
+        : CParent("std::map", keyType, dataType)
         {
         }
 
-    static TTypeInfo GetTypeInfo(void)
+    static TTypeInfo GetTypeInfo(TTypeInfo keyInfo, TTypeInfo dataInfo)
         {
-            static TTypeInfo typeInfo = new CStlClassInfoMap<Key, Value>;
-            return typeInfo;
+            return new CStlClassInfo_map<Key, Value>(keyInfo, dataInfo);
         }
 };
 
 template<typename Key, typename Value>
-class CStlClassInfoMultiMap :
+class CStlClassInfo_multimap :
     public CStlClassInfoMapBase<multimap<Key, Value>, Key, Value>
 {
     typedef CStlClassInfoMapBase<multimap<Key, Value>, Key, Value> CParent;
 
 public:
-    CStlClassInfoMultiMap(void)
+    CStlClassInfo_multimap(TTypeInfo keyInfo, TTypeInfo dataInfo)
+        : CParent("std::multimap", keyType, dataType)
         {
         }
-    CStlClassInfoMultiMap(const CTypeRef& keyType,
-                                      const CTypeRef& dataType)
-        : CParent(keyType, dataType)
+    CStlClassInfo_multimap(const CTypeRef& keyType, const CTypeRef& dataType)
+        : CParent("std::multimap", keyType, dataType)
         {
         }
 
-    static TTypeInfo GetTypeInfo(void)
+    static TTypeInfo GetTypeInfo(TTypeInfo keyInfo, TTypeInfo dataInfo)
         {
-            static TTypeInfo typeInfo = new CStlClassInfoMultiMap<Key, Value>;
-            return typeInfo;
+            return new CStlClassInfo_multimap<Key, Value>(keyInfo, dataInfo);
         }
 };
 
 template<typename Char>
-class CStlClassInfoCharVector : public CTypeInfoTmpl< vector<Char> > {
+class CStlClassInfoChar_vector : public CTypeInfoTmpl< vector<Char> > {
     typedef CTypeInfoTmpl< vector<Char> > CParent;
 public:
-    CStlClassInfoCharVector<Char>(void)
-        : CParent("vector<Char>")
+    typedef Char TChar;
+
+    CStlClassInfoChar_vector<Char>(void)
+        : CParent("vector< ? char >")
         {
         }
 
-    static TTypeInfo GetTypeInfo(void)
-        {
-            static TTypeInfo typeInfo = new CStlClassInfoCharVector<Char>;
-            return typeInfo;
-        }
+    static TTypeInfo GetTypeInfo(void);
 
     virtual TObjectPtr Create(void) const
         {
@@ -759,8 +773,7 @@ protected:
             if ( block.KnownLength() ) {
                 size_t length = block.GetExpectedLength();
                 o.resize(length);
-                if ( block.Read(ToChar(&o.front()), length) != length )
-                    THROW1_TRACE(runtime_error, "read fault");
+                block.Read(ToChar(&o.front()), length, true);
             }
             else {
                 // length is known -> copy via buffer

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/12/17 19:04:55  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.6  1999/09/14 18:54:07  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -72,44 +75,36 @@ public:
 protected:
     int m_RefCount;
     friend class CTypeRef;
+
+private:
+    CTypeInfoSource(const CTypeInfoSource& );
+    CTypeInfoSource& operator=(const CTypeInfoSource& );
 };
 
 class CTypeRef
 {
 public:
     CTypeRef(void)
-        : m_Getter(sx_Abort), m_Source(0), m_TypeInfo(0)
+        : m_Getter(sx_Abort)
         {
         }
     CTypeRef(TTypeInfo typeInfo)
-        : m_Getter(sx_Return), m_Source(0), m_TypeInfo(typeInfo)
+        : m_Getter(sx_Return)
         {
+            m_Return = typeInfo;
         }
-    CTypeRef(TTypeInfo (*getter)(void));
-    CTypeRef(TTypeInfo (*getter)(TTypeInfo typeInfo), const CTypeRef& arg);
-    CTypeRef(CTypeInfoSource* source)
-        : m_Getter(sx_Resolve), m_Source(source), m_TypeInfo(0)
+    typedef TTypeInfo (*TGetProc)(void);
+    CTypeRef(TGetProc getProc)
+        : m_Getter(sx_GetProc)
         {
+            m_GetProc = getProc;
         }
-    CTypeRef(const CTypeRef& typeRef)
-        : m_Getter(typeRef.m_Getter), m_Source(Ref(typeRef.m_Source)),
-          m_TypeInfo(typeRef.m_TypeInfo)
-        {
-        }
-    CTypeRef& operator=(const CTypeRef& typeRef)
-        {
-            CTypeInfoSource* source = Ref(typeRef.m_Source);
-            m_Getter = sx_Abort;
-            Unref();
-            m_Getter = typeRef.m_Getter;
-            m_Source = source;
-            m_TypeInfo = typeRef.m_TypeInfo;
-            return *this;
-        }
-    ~CTypeRef(void)
-        {
-            Unref();
-        }
+    typedef TTypeInfo (*TGet1Proc)(TTypeInfo arg);
+    CTypeRef(TGet1Proc getter, const CTypeRef& arg);
+    CTypeRef(CTypeInfoSource* source);
+    CTypeRef(const CTypeRef& typeRef);
+    CTypeRef& operator=(const CTypeRef& typeRef);
+    ~CTypeRef(void);
 
     TTypeInfo Get(void) const
         {
@@ -118,54 +113,36 @@ public:
 
 private:
 
-    static CTypeInfoSource* Ref(CTypeInfoSource* source)
-        {
-            if ( source )
-                ++source->m_RefCount;
-            return source;
-        }
-    void Unref(void) const
-        {
-            CTypeInfoSource* source = m_Source;
-            m_Source = 0;
-            if ( source && --source->m_RefCount <= 0 )
-                delete source;
-        }
+    void Unref(void);
+    void Assign(const CTypeRef& typeRef);
     
     static TTypeInfo sx_Abort(const CTypeRef& typeRef);
     static TTypeInfo sx_Return(const CTypeRef& typeRef);
+    static TTypeInfo sx_GetProc(const CTypeRef& typeRef);
     static TTypeInfo sx_Resolve(const CTypeRef& typeRef);
 
-    mutable TTypeInfo (*m_Getter)(const CTypeRef& );
-    mutable CTypeInfoSource* m_Source;
-    mutable TTypeInfo m_TypeInfo;
-};
-
-class CGetTypeInfoSource : public CTypeInfoSource
-{
-public:
-    CGetTypeInfoSource(TTypeInfo (*getter)(void));
-
-    virtual TTypeInfo GetTypeInfo(void);
-
-private:
-    TTypeInfo (*m_Getter)(void);
+    TTypeInfo (*m_Getter)(const CTypeRef& );
+    union {
+        TTypeInfo m_Return;
+        TGetProc m_GetProc;
+        CTypeInfoSource* m_Resolve;
+    };
 };
 
 class CGet1TypeInfoSource : public CTypeInfoSource
 {
 public:
-    CGet1TypeInfoSource(TTypeInfo (*getter)(TTypeInfo ),
-                        const CTypeRef& arg);
+    CGet1TypeInfoSource(CTypeRef::TGet1Proc getter, const CTypeRef& arg);
+    ~CGet1TypeInfoSource(void);
 
     virtual TTypeInfo GetTypeInfo(void);
 
 private:
-    TTypeInfo (*m_Getter)(TTypeInfo );
+    CTypeRef::TGet1Proc m_Getter;
     CTypeRef m_Argument;
 };
 
-#include <serial/typeref.inl>
+//#include <serial/typeref.inl>
 
 END_NCBI_SCOPE
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/12/17 19:04:52  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.20  1999/10/04 16:22:08  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -130,6 +133,7 @@ public:
 
     CClassInfoTmpl(const type_info& ti, size_t size);
     CClassInfoTmpl(const string& name, const type_info& ti, size_t size);
+    CClassInfoTmpl(const char* name, const type_info& ti, size_t size);
     virtual ~CClassInfoTmpl(void);
 
     const type_info& GetId(void) const
@@ -147,8 +151,11 @@ public:
                                         const CTypeRef& typeRef);
 
     // AddMember will take ownership of member
-    CMemberInfo* AddMember(const string& name, CMemberInfo* member);
     CMemberInfo* AddMember(const CMemberId& id, CMemberInfo* member);
+    CMemberInfo* AddMember(const char* name, const void* member,
+                           TTypeInfo type);
+    CMemberInfo* AddMember(const char* name, const void* member,
+                           const CTypeRef& type);
 
     bool RandomOrder(void) const
         {
@@ -184,9 +191,11 @@ public:
     // finds type info (throws runtime_error if absent)
     static TTypeInfo GetClassInfoByName(const string& name);
     static TTypeInfo GetClassInfoById(const type_info& id);
-    static TTypeInfo GetClassInfoBy(const type_info& id, void (*creator)(void));
+    static TTypeInfo GetClassInfoBy(const type_info& id,
+                                    void (*creator)(void));
 
     void AddSubClass(const CMemberId& id, const CTypeRef& type);
+    void AddSubClass(const char* id, TTypeInfoGetter getter);
     const TSubClasses* SubClasses(void) const
         {
             return m_SubClasses.get();
@@ -258,6 +267,10 @@ public:
         : CParent(name, typeid(Class), sizeof(Class))
         {
         }
+    CStructInfo(const char* name)
+        : CParent(name, typeid(Class), sizeof(Class))
+        {
+        }
 
     virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const
         {
@@ -280,6 +293,14 @@ public:
         : CParent(name, typeid(TObjectType), sizeof(TObjectType))
         {
         }
+    CAbstractClassInfo(const char* name)
+        : CParent(name, typeid(TObjectType), sizeof(TObjectType))
+        {
+        }
+    CAbstractClassInfo(const char* name, const type_info& info)
+        : CParent(name, info, sizeof(TObjectType))
+        {
+        }
 
     virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const
         {
@@ -297,6 +318,14 @@ public:
         }
     CClassInfo(const string& name)
         : CParent(name)
+        {
+        }
+    CClassInfo(const char* name)
+        : CParent(name)
+        {
+        }
+    CClassInfo(const char* name, const type_info& info)
+        : CParent(name, info)
         {
         }
 

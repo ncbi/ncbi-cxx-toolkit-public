@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/17 19:04:55  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.3  1999/08/13 15:53:46  vasilche
 * C++ analog of asntool: datatool
 *
@@ -44,19 +47,5 @@
 *
 * ===========================================================================
 */
-
-inline
-CTypeRef::CTypeRef(TTypeInfo (*getter)(void))
-    : m_Getter(sx_Resolve), m_Source(new CGetTypeInfoSource(getter)),
-      m_TypeInfo(0)
-{
-}
-
-inline
-CTypeRef::CTypeRef(TTypeInfo (*getter)(TTypeInfo ), const CTypeRef& arg)
-    : m_Getter(sx_Resolve), m_Source(new CGet1TypeInfoSource(getter, arg)),
-      m_TypeInfo(0)
-{
-}
 
 #endif /* def TYPEREF__HPP  &&  ndef TYPEREF__INL */

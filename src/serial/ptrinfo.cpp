@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/17 19:05:04  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.13  1999/10/28 15:37:41  vasilche
 * Fixed null choice pointers handling.
 * Cleaned enumertion interface.
@@ -85,7 +88,41 @@
 
 BEGIN_NCBI_SCOPE
 
-CTypeInfoMap<CPointerTypeInfo> CPointerTypeInfo::sm_Map;
+CPointerTypeInfo::CPointerTypeInfo(TTypeInfo type)
+    : CParent(type->GetName() + '*'), m_DataType(type)
+{
+}
+
+CPointerTypeInfo::CPointerTypeInfo(const string& name, TTypeInfo type)
+    : CParent(name), m_DataType(type)
+{
+}
+
+CPointerTypeInfo::CPointerTypeInfo(const char* name, TTypeInfo type)
+    : CParent(name), m_DataType(type)
+{
+}
+
+CPointerTypeInfo::CPointerTypeInfo(const char* templ, TTypeInfo arg,
+                                   TTypeInfo type)
+    : CParent(string(templ) + "< " + arg->GetName() + " >"), m_DataType(type)
+{
+}
+
+CPointerTypeInfo::CPointerTypeInfo(const char* templ, const char* arg,
+                                   TTypeInfo type)
+    : CParent(string(templ) + "< " + arg + " >"), m_DataType(type)
+{
+}
+
+CPointerTypeInfo::~CPointerTypeInfo(void)
+{
+}
+
+TTypeInfo CPointerTypeInfo::GetTypeInfo(TTypeInfo base)
+{
+    return new CPointerTypeInfo(base);
+}
 
 pair<TConstObjectPtr, TTypeInfo>
 CPointerTypeInfo::GetSource(TConstObjectPtr object) const

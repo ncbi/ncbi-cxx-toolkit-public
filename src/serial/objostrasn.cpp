@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/12/17 19:05:04  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.28  1999/10/25 20:19:51  vasilche
 * Fixed strings representation in text ASN.1 files.
 *
@@ -168,7 +171,6 @@ bool CObjectOStreamAsn::WriteEnumName(const string& name)
     return true;
 }
 
-inline
 void CObjectOStreamAsn::WriteEscapedChar(char c)
 {
     if ( c == '"' ) {

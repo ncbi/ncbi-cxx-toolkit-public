@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/17 19:05:04  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.4  1999/11/22 21:04:41  vasilche
 * Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
 *
@@ -50,8 +53,40 @@
 #include <serial/ptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CGet2TypeInfoSource : public CTypeInfoSource
+{
+public:
+    CGet2TypeInfoSource(TTypeInfoGetter2 getter,
+                        const CTypeRef& arg1, const CTypeRef& arg2);
+    ~CGet2TypeInfoSource(void);
+
+    virtual TTypeInfo GetTypeInfo(void);
+
+private:
+    TTypeInfoGetter2 m_Getter;
+    CTypeRef m_Argument1, m_Argument2;
+};
+
+CGet2TypeInfoSource::CGet2TypeInfoSource(TTypeInfoGetter2 getter,
+                                         const CTypeRef& arg1,
+                                         const CTypeRef& arg2)
+    : m_Getter(getter), m_Argument1(arg1), m_Argument2(arg2)
+{
+}
+
+CGet2TypeInfoSource::~CGet2TypeInfoSource(void)
+{
+}
+
+TTypeInfo CGet2TypeInfoSource::GetTypeInfo(void)
+{
+    return m_Getter(m_Argument1.Get(), m_Argument2.Get());
+}
+                   
 
 TTypeInfo CPointerTypeInfoGetTypeInfo(TTypeInfo type)
 {
@@ -66,6 +101,72 @@ void Write(CObjectOStream& out, TConstObjectPtr object, const CTypeRef& type)
 void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
 {
     in.Read(object, type.Get());
+}
+
+// one argument:
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter f)
+{
+    return info->AddMember(name, member, CTypeRef(f));
+}
+
+// two arguments:
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter1 f, TTypeInfo t)
+{
+    return info->AddMember(name, member, CTypeRef(f, t));
+}
+
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter1 f, TTypeInfoGetter f1)
+{
+    return info->AddMember(name, member, CTypeRef(f, f1));
+}
+
+// three arguments:
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfo t1)
+{
+    return info->AddMember(name, member, CTypeRef(f, CTypeRef(f1, t1)));
+}
+
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfoGetter f11)
+{
+    return info->AddMember(name, member, CTypeRef(f, CTypeRef(f1, f11)));
+}
+
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfo t2)
+{
+    return info->AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, t1, t2)));
+}
+
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfo t2)
+{
+    return info->AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, f1, t2)));
+}
+
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfoGetter f2)
+{
+    return info->AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, t1, f2)));
+}
+
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfoGetter f2)
+{
+    return info->AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, f1, f2)));
 }
 
 END_NCBI_SCOPE

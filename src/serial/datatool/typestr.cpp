@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/12/17 19:05:19  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.5  1999/12/01 17:36:28  vasilche
 * Fixed CHOICE processing.
 *
@@ -225,7 +228,7 @@ void CTypeStrings::AddIncludes(const CTypeStrings& arg)
 void CTypeStrings::AddMember(CClassCode& code,
                              const string& member) const
 {
-    x_AddMember(code, "NCBI_NS_NCBI::NcbiEmptyString", member);
+    x_AddMember(code, "\"\"", member);
 }
 
 void CTypeStrings::AddMember(CClassCode& code,

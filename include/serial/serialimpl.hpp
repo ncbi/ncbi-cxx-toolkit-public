@@ -54,209 +54,112 @@ class CMemberInfo;
 // define type info getter for standard classes
 template<typename T>
 inline
-CTypeRef GetStdTypeRef(const T* )
+TTypeInfoGetter GetStdTypeInfoGetter(const T* )
 {
     return &CStdTypeInfo<T>::GetTypeInfo;
 }
 
 inline
-CTypeRef GetStdTypeRef(char* const* )
+TTypeInfoGetter GetStdTypeInfoGetter(char* const* )
 {
     return &CStdTypeInfo<char*>::GetTypeInfo;
 }
 
 inline
-CTypeRef GetStdTypeRef(const char* const* )
+TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 {
     return &CStdTypeInfo<const char*>::GetTypeInfo;
 }
 
 inline
-CTypeRef GetTypeRef(const bool* object)
+TTypeInfoGetter GetTypeInfoGetter(const bool* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const char* object)
+TTypeInfoGetter GetTypeInfoGetter(const char* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const unsigned char* object)
+TTypeInfoGetter GetTypeInfoGetter(const unsigned char* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const signed char* object)
+TTypeInfoGetter GetTypeInfoGetter(const signed char* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const short* object)
+TTypeInfoGetter GetTypeInfoGetter(const short* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const unsigned short* object)
+TTypeInfoGetter GetTypeInfoGetter(const unsigned short* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const int* object)
+TTypeInfoGetter GetTypeInfoGetter(const int* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const unsigned int* object)
+TTypeInfoGetter GetTypeInfoGetter(const unsigned int* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const long* object)
+TTypeInfoGetter GetTypeInfoGetter(const long* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const unsigned long* object)
+TTypeInfoGetter GetTypeInfoGetter(const unsigned long* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const float* object)
+TTypeInfoGetter GetTypeInfoGetter(const float* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const double* object)
+TTypeInfoGetter GetTypeInfoGetter(const double* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const string* object)
+TTypeInfoGetter GetTypeInfoGetter(const string* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(char* const* object)
+TTypeInfoGetter GetTypeInfoGetter(char* const* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
 
 inline
-CTypeRef GetTypeRef(const char* const* object)
+TTypeInfoGetter GetTypeInfoGetter(const char* const* object)
 {
-    return GetStdTypeRef(object);
+    return GetStdTypeInfoGetter(object);
 }
-
-#if 0
-// STL
-template<typename Data>
-inline
-CTypeRef GetStlTypeRef(const list<Data>* )
-{
-    return &CStlClassInfoList<Data>::GetTypeInfo;
-}
-
-inline
-CTypeRef GetStlTypeRef(const vector<char>* )
-{
-    return &CStlClassInfoCharVector<char>::GetTypeInfo;
-}
-
-inline
-CTypeRef GetStlTypeRef(const vector<unsigned char>* )
-{
-    return &CStlClassInfoCharVector<unsigned char>::GetTypeInfo;
-}
-
-inline
-CTypeRef GetStlTypeRef(const vector<signed char>* )
-{
-    return &CStlClassInfoCharVector<signed char>::GetTypeInfo;
-}
-
-template<typename Data>
-inline
-CTypeRef GetStlTypeRef(const vector<Data>* )
-{
-    return &CStlClassInfoVector<Data>::GetTypeInfo;
-}
-
-template<typename Data>
-inline
-CTypeRef GetStlTypeRef(const set<Data>* )
-{
-    return &CStlClassInfoSet<Data>::GetTypeInfo;
-}
-
-template<typename Key, typename Value>
-inline
-CTypeRef GetStlTypeRef(const map<Key, Value>* )
-{
-    return &CStlClassInfoMap<Key, Value>::GetTypeInfo;
-}
-
-template<typename Key, typename Value>
-inline
-CTypeRef GetStlTypeRef(const multimap<Key, Value>* )
-{
-    return &CStlClassInfoMultiMap<Key, Value>::GetTypeInfo;
-}
-
-template<typename Data>
-inline
-CTypeRef GetTypeRef(const list<Data>* object)
-{
-    return GetStlTypeRef(object);
-}
-
-inline
-CTypeRef GetTypeRef(const vector<char>* object)
-{
-    return GetStlTypeRef(object);
-}
-
-template<typename Data>
-inline
-CTypeRef GetTypeRef(const vector<Data>* object)
-{
-    return GetStlTypeRef(object);
-}
-
-template<typename Data>
-inline
-CTypeRef GetTypeRef(const set<Data>* object)
-{
-    return GetStlTypeRef(object);
-}
-
-template<typename Key, typename Value>
-inline
-CTypeRef GetTypeRef(const map<Key, Value>* object)
-{
-    return GetStlTypeRef(object);
-}
-
-template<typename Key, typename Value>
-inline
-CTypeRef GetTypeRef(const multimap<Key, Value>* object)
-{
-    return GetStlTypeRef(object);
-}
-#endif
 
 #define SERIAL_NAME2(n1, n2) n1##n2
 #define SERIAL_NAME3(n1, n2, n3) n1##n2##n3
@@ -276,55 +179,70 @@ CTypeRef GetTypeRef(const multimap<Key, Value>* object)
 
 #define SERIAL_TYPE_POINTER(Type,Args) SERIAL_TYPE(Type)Args*
 #define SERIAL_REF_POINTER(Type,Args) \
-    NCBI_NS_NCBI::CTypeRef(&NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo,SERIAL_REF(Type)Args)
+    &NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo, SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_multiset(Type,Args) \
     NCBI_NS_STD::multiset<SERIAL_TYPE(Type)Args>
 #define SERIAL_REF_STL_multiset(Type,Args) \
-    new NCBI_NS_NCBI::CStlClassInfoMultiSet<SERIAL_TYPE(Type)Args>(SERIAL_REF(Type)Args)
+    &NCBI_NS_NCBI::CStlClassInfo_multiset<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    SERIAL_REF(Type)Args
 
-#define SERIAL_TYPE_STL_set(Type,Args) NCBI_NS_STD::set<SERIAL_TYPE(Type)Args>
+#define SERIAL_TYPE_STL_set(Type,Args) \
+    NCBI_NS_STD::set<SERIAL_TYPE(Type)Args>
 #define SERIAL_REF_STL_set(Type,Args) \
-    new NCBI_NS_NCBI::CStlClassInfoSet<SERIAL_TYPE(Type)Args>(SERIAL_REF(Type)Args)
+    &NCBI_NS_NCBI::CStlClassInfo_set<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_multimap(KeyType,KeyArgs,ValueType,ValueArgs) \
     NCBI_NS_STD::multimap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>
 #define SERIAL_REF_STL_multimap(KeyType,KeyArgs,ValueType,ValueArgs) \
-    new NCBI_NS_NCBI::CStlClassInfoMultiMap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>(SERIAL_REF(KeyType)KeyArgs,SERIAL_REF(ValueType)ValueArgs)
+    &NCBI_NS_NCBI::CStlClassInfo_multimap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>::GetTypeInfo,\
+    SERIAL_REF(KeyType)KeyArgs,SERIAL_REF(ValueType)ValueArgs
 
 #define SERIAL_TYPE_STL_map(KeyType,KeyArgs,ValueType,ValueArgs) \
     NCBI_NS_STD::map<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>
 #define SERIAL_REF_STL_map(KeyType,KeyArgs,ValueType,ValueArgs) \
-    new NCBI_NS_NCBI::CStlClassInfoMap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>(SERIAL_REF(KeyType)KeyArgs,SERIAL_REF(ValueType)ValueArgs)
+    &NCBI_NS_NCBI::CStlClassInfo_map<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>::GetTypeInfo,\
+    SERIAL_REF(KeyType)KeyArgs,SERIAL_REF(ValueType)ValueArgs
 
-#define SERIAL_TYPE_STL_list(Type,Args) NCBI_NS_STD::list<SERIAL_TYPE(Type)Args>
+#define SERIAL_TYPE_STL_list(Type,Args) \
+    NCBI_NS_STD::list<SERIAL_TYPE(Type)Args>
 #define SERIAL_REF_STL_list(Type,Args) \
-    new NCBI_NS_NCBI::CStlClassInfoList<SERIAL_TYPE(Type)Args>(SERIAL_REF(Type)Args)
+    &NCBI_NS_NCBI::CStlClassInfo_list<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    SERIAL_REF(Type)Args
 
-#define SERIAL_TYPE_STL_vector(Type,Args) NCBI_NS_STD::vector<SERIAL_TYPE(Type)Args>
+#define SERIAL_TYPE_STL_vector(Type,Args) \
+    NCBI_NS_STD::vector<SERIAL_TYPE(Type)Args>
 #define SERIAL_REF_STL_vector(Type,Args) \
-    new NCBI_NS_NCBI::CStlClassInfoVector<SERIAL_TYPE(Type)Args>(SERIAL_REF(Type)Args)
+    &NCBI_NS_NCBI::CStlClassInfo_vector<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_CHAR_vector(Type) NCBI_NS_STD::vector<Type>
 #define SERIAL_REF_STL_CHAR_vector(Type) \
-    &NCBI_NS_NCBI::CStlClassInfoCharVector<Type>::GetTypeInfo
+    &NCBI_NS_NCBI::CStlClassInfoChar_vector<Type>::GetTypeInfo
 
-#define SERIAL_TYPE_STL_auto_ptr(Type,Args) NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args>
+#define SERIAL_TYPE_STL_auto_ptr(Type,Args) \
+    NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args>
 #define SERIAL_REF_STL_auto_ptr(Type,Args) \
-    &NCBI_NS_NCBI::CStlClassInfoAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
+    &NCBI_NS_NCBI::CStlClassInfo_auto_ptr<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_AutoPtr(Type,Args) NCBI_NS_NCBI::AutoPtr<SERIAL_TYPE(Type)Args>
 #define SERIAL_REF_STL_AutoPtr(Type,Args) \
-    &NCBI_NS_NCBI::CAutoPtrTypeInfo<SERIAL_TYPE(Type)Args>::GetTypeInfo
+    &NCBI_NS_NCBI::CAutoPtrTypeInfo<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    SERIAL_REF(Type)Args
 
 #define SERIAL_REF_CHOICE_POINTER(Type,Args) \
-    NCBI_NS_NCBI::CTypeRef(&NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo,SERIAL_REF(Type)Args)
+    &NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo,\
+    SERIAL_REF(Type)Args
 
 #define SERIAL_REF_CHOICE_STL_auto_ptr(Type,Args) \
-    &NCBI_NS_NCBI::CChoiceStlClassInfoAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
+    &NCBI_NS_NCBI::CChoiceStlClassInfo_auto_ptr<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    SERIAL_REF(Type)Args
 
 #define SERIAL_REF_CHOICE_STL_AutoPtr(Type,Args) \
-    &NCBI_NS_NCBI::CChoiceAutoPtrTypeInfo<SERIAL_TYPE(Type)Args>::GetTypeInfo
+    &NCBI_NS_NCBI::CChoiceAutoPtrTypeInfo<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_CHOICE(Type,Args) SERIAL_TYPE(Type)Args
 #define SERIAL_REF_CHOICE(Type,Args) SERIAL_REF(SERIAL_NAME2(CHOICE_,Type))Args
@@ -336,6 +254,15 @@ struct Check
         {
             return new CRealMemberInfo(size_t(member), type);
         }
+    static const void* Ptr(const T* member)
+        {
+            return member;
+        }
+private:
+    Check(void);
+    ~Check(void);
+    Check(const Check<T>&);
+    Check<T>& operator=(const Check<T>&);
 };
 
 template<typename T>
@@ -343,6 +270,12 @@ inline
 CMemberInfo* Member(const T* member)
 {
     return new CRealMemberInfo(size_t(member), GetTypeRef(member));
+}
+
+inline
+CMemberInfo* Member(const void* member, const CTypeRef& typeRef)
+{
+    return new CRealMemberInfo(size_t(member), typeRef);
 }
 
 template<typename T>
@@ -353,19 +286,26 @@ CMemberInfo* EnumMember(const T* member, const CEnumeratedTypeValues* enumInfo)
                                CreateEnumeratedTypeInfo(*member, enumInfo));
 }
 
-#define BASE_OBJECT(Class) const Class* const kObject = 0
-#define MEMBER_PTR(Name) &kObject->Name
-#define CLASS_PTR(Class) static_cast<const Class*>(kObject)
+#define DECLARE_BASE_OBJECT(Class) 
+#define BASE_OBJECT() static_cast<const CClass*>(0)
+#define MEMBER_PTR(Name) &BASE_OBJECT()->Name
+#define CLASS_PTR(Class) static_cast<const Class*>(BASE_OBJECT())
 
 #define M(Name,Type,Args) \
-    NCBI_NS_NCBI::Check<SERIAL_TYPE(Type)Args>::Member(MEMBER_PTR(Name),SERIAL_REF(Type)Args)
-#define STD_M(Name) NCBI_NS_NCBI::Member(MEMBER_PTR(Name))
+    NCBI_NS_NCBI::Check<SERIAL_TYPE(Type)Args>::Ptr(MEMBER_PTR(Name)),\
+    SERIAL_REF(Type)Args
+#define STD_M(Name) \
+    MEMBER_PTR(Name),NCBI_NS_NCBI::GetTypeInfoGetter(MEMBER_PTR(Name))
 #define ENUM_M(Name,Type) \
-    NCBI_NS_NCBI::EnumMember(MEMBER_PTR(Name), SERIAL_NAME2(GetEnumInfo_, Type)())
+    NCBI_NS_NCBI::EnumMember(MEMBER_PTR(Name),\
+    SERIAL_NAME2(GetEnumInfo_, Type)())
     
-#define ADD_N_M(Name,Mem,Type,Args) info->AddMember(Name,M(Mem,Type,Args))
-#define ADD_N_STD_M(Name,Mem) info->AddMember(Name,STD_M(Mem))
-#define ADD_N_ENUM_M(Name,Mem,Type) info->AddMember(Name,ENUM_M(Mem,Type))
+#define ADD_N_M(Name,Mem,Type,Args) \
+    NCBI_NS_NCBI::AddMember(info,Name,M(Mem,Type,Args))
+#define ADD_N_STD_M(Name,Mem) \
+    NCBI_NS_NCBI::AddMember(info,Name,STD_M(Mem))
+#define ADD_N_ENUM_M(Name,Mem,Type) \
+    NCBI_NS_NCBI::AddMember(info,Name,ENUM_M(Mem,Type))
 #define ADD_M(Name,Type,Args) ADD_N_M(#Name,Name,Type,Args)
 #define ADD_STD_M(Name) ADD_N_STD_M(#Name,Name)
 #define ADD_ENUM_M(Name,Type) ADD_N_ENUM_M(#Name,Name,Type)
@@ -469,7 +409,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     typedef Class CClass; \
     static Info* info = 0; \
     if ( info == 0 ) { \
-        BASE_OBJECT(CClass); \
+        DECLARE_BASE_OBJECT(CClass); \
         info = new Info Args;
 
 #define END_TYPE_INFO \
@@ -494,7 +434,8 @@ BEGIN_ABSTRACT_CLASS_INFO3(Name, Class, Class)
 BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CAbstractClassInfo<CClass>, ())
 
 #define SET_PARENT_CLASS(BaseClass) \
-    info->AddMember(NCBI_NS_NCBI::NcbiEmptyString, NCBI_NS_NCBI::MemberInfo(CLASS_PTR(BaseClass)))
+    NCBI_NS_NCBI::AddMember(info,"",CLASS_PTR(BaseClass), \
+                            &BaseClass::GetTypeInfo)
 
 #define BEGIN_DERIVED_CLASS_INFO(Class, BaseClass) \
 BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, ()) \
@@ -582,9 +523,63 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
     info->AddVariant(#Name, SERIAL_NAME3(Get, Type, TypeRef)(reinterpret_cast<const SERIAL_NAME2(struct_, Struct)* const*>(MEMBER_PTR(data.ptrvalue))))
 
 #define ADD_SUB_CLASS2(Name, SubClass) \
-    info->AddSubClass(NCBI_NS_NCBI::CMemberId(Name), NCBI_NS_NCBI::GetTypeRef(CLASS_PTR(SubClass)))
+    info->AddSubClass(Name, &SubClass::GetTypeInfo)
 #define ADD_SUB_CLASS(Class) \
     ADD_SUB_CLASS2(#Class, Class)
+
+#define CHOICE_VARIANT_METHODS(BaseClass,VariantClass,Name) \
+bool SERIAL_NAME2(BaseClass,_Base)::SERIAL_NAME2(Is,Name)(void) const \
+{ \
+    return dynamic_cast<const VariantClass*>(this) != 0; \
+} \
+VariantClass* SERIAL_NAME2(BaseClass,_Base)::SERIAL_NAME2(Get,Name)(void) \
+{ \
+    return dynamic_cast<VariantClass*>(this); \
+} \
+const VariantClass* SERIAL_NAME2(BaseClass,_Base)::SERIAL_NAME2(Get,Name)(void) const \
+{ \
+    return dynamic_cast<const VariantClass*>(this); \
+}
+
+
+inline
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfo typeInfo)
+{
+    return info->AddMember(name, member, typeInfo);
+}
+
+// one argument:
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter f);
+// two arguments:
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter1 f, TTypeInfo t);
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter1 f, TTypeInfoGetter f1);
+// three arguments:
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfo t1);
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfoGetter f11);
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfo t2);
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfo t2);
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfoGetter f2);
+CMemberInfo*
+AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+          TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfoGetter f2);
 
 END_NCBI_SCOPE
 

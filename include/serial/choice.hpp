@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/17 19:04:52  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.2  1999/10/08 21:00:39  vasilche
 * Implemented automatic generation of unnamed ASN.1 types.
 *
@@ -55,9 +58,12 @@ class CChoiceTypeInfoBase : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
     CChoiceTypeInfoBase(const string& name);
+    CChoiceTypeInfoBase(const char* name);
+    ~CChoiceTypeInfoBase(void);
 
     void AddVariant(const CMemberId& id, const CTypeRef& type);
     void AddVariant(const string& name, const CTypeRef& type);
+    void AddVariant(const char* name, const CTypeRef& type);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
@@ -107,6 +113,10 @@ public:
     } TObjectType;
 
     CChoiceTypeInfoTmpl(const string& name)
+        : CParent(name)
+        {
+        }
+    CChoiceTypeInfoTmpl(const char* name)
         : CParent(name)
         {
         }

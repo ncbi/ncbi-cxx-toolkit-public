@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  1999/12/17 19:04:53  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.40  1999/11/22 21:04:33  vasilche
 * Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
 *
@@ -178,12 +181,9 @@ class CObjectIStream;
 
 TTypeInfo CPointerTypeInfoGetTypeInfo(TTypeInfo type);
 
-// define type info getter for pointers
-template<typename T>
-inline CTypeRef GetTypeRef(const T* const* object);
 // define type info getter for classes
 template<class Class>
-inline CTypeRef GetTypeRef(const Class* object);
+inline TTypeInfoGetter GetTypeInfoGetter(const Class* object);
 
 
 // define type info getter for pointers
@@ -192,15 +192,22 @@ inline
 CTypeRef GetPtrTypeRef(const T* const* object)
 {
     const T* p = 0;
-    return CTypeRef(&CPointerTypeInfoGetTypeInfo, GetTypeRef(p));
+    return CTypeRef(&CPointerTypeInfoGetTypeInfo, GetTypeInfoGetter(p));
 }
 
 // define type info getter for user classes
 template<class Class>
 inline
-CTypeRef GetTypeRef(const Class* )
+TTypeInfoGetter GetTypeInfoGetter(const Class* )
 {
     return &Class::GetTypeInfo;
+}
+
+template<typename T>
+inline
+TTypeInfoGetter GetTypeRef(const T* object)
+{
+    return GetTypeInfoGetter(object);
 }
 
 void Write(CObjectOStream& out, TConstObjectPtr object, const CTypeRef& type);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/12/17 19:04:51  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.20  1999/11/22 21:04:32  vasilche
 * Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
 *
@@ -106,7 +109,6 @@
 #if HAVE_NCBI_C
 #include <serial/typeinfo.hpp>
 #include <serial/typeref.hpp>
-#include <serial/typemap.hpp>
 #include <serial/choice.hpp>
 #include <serial/serialasn.hpp>
 #include <map>
@@ -123,6 +125,7 @@ class CSequenceOfTypeInfo : public CTypeInfoTmpl<void*> {
 public:
     CSequenceOfTypeInfo(TTypeInfo type);
 	CSequenceOfTypeInfo(const string& name, TTypeInfo type);
+	CSequenceOfTypeInfo(const char* name, TTypeInfo type);
 
     static TObjectPtr& First(TObjectPtr object)
         {
@@ -151,10 +154,7 @@ public:
 
     virtual bool RandomOrder(void) const;
     
-    static TTypeInfo GetTypeInfo(TTypeInfo base)
-        {
-            return sm_Map.GetTypeInfo(base);
-        }
+    static TTypeInfo GetTypeInfo(TTypeInfo base);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
@@ -191,8 +191,6 @@ protected:
                           TObjectPtr object) const;
 
 private:
-    static CTypeInfoMap<CSequenceOfTypeInfo> sm_Map;
-
     TTypeInfo m_DataType;
     size_t m_NextOffset;  // offset in struct of pointer to next object (def 0)
     size_t m_DataOffset;  // offset in struct of data struct (def 0)
@@ -203,16 +201,12 @@ class CSetOfTypeInfo : public CSequenceOfTypeInfo {
 public:
     CSetOfTypeInfo(TTypeInfo type);
     CSetOfTypeInfo(const string& name, TTypeInfo type);
+    CSetOfTypeInfo(const char* name, TTypeInfo type);
 
-    static TTypeInfo GetTypeInfo(TTypeInfo base)
-        {
-            return sm_Map.GetTypeInfo(base);
-        }
+    static TTypeInfo GetTypeInfo(TTypeInfo base);
 
     virtual bool RandomOrder(void) const;
 
-private:
-    static CTypeInfoMap<CSetOfTypeInfo> sm_Map;
 };
 
 class CChoiceTypeInfo : public CChoiceTypeInfoBase {
@@ -221,6 +215,7 @@ public:
     typedef valnode TObjectType;
 
     CChoiceTypeInfo(const string& name);
+    CChoiceTypeInfo(const char* name);
 
     // object getters:
     static TObjectType& Get(TObjectPtr object)
@@ -246,13 +241,7 @@ class COctetStringTypeInfo : public CTypeInfoTmpl<bytestore*> {
 public:
     COctetStringTypeInfo(void);
 
-    static TTypeInfo GetTypeInfo(void)
-        {
-            static TTypeInfo typeInfo = 0;
-            if ( !typeInfo )
-                typeInfo = new COctetStringTypeInfo();
-            return typeInfo;
-        }
+    static TTypeInfo GetTypeInfo(void);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
@@ -279,6 +268,9 @@ public:
     typedef unsigned char (ASNCALL*TWriteProc)(TObjectPtr, asnio*, asntype*);
 
     COldAsnTypeInfo(const string& name,
+                    TNewProc newProc, TFreeProc freeProc,
+                    TReadProc readProc, TWriteProc writeProc);
+    COldAsnTypeInfo(const char* name,
                     TNewProc newProc, TFreeProc freeProc,
                     TReadProc readProc, TWriteProc writeProc);
 

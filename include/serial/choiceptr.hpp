@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/12/17 19:04:52  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.8  1999/12/01 17:36:20  vasilche
 * Fixed CHOICE processing.
 *
@@ -84,13 +87,18 @@ public:
 
     CChoicePointerTypeInfo(TTypeInfo typeInfo);
     CChoicePointerTypeInfo(const string& name, TTypeInfo typeInfo);
+    CChoicePointerTypeInfo(const char* name, TTypeInfo typeInfo);
+    CChoicePointerTypeInfo(const char* name, TTypeInfo arg,
+                           TTypeInfo typeInfo);
+    CChoicePointerTypeInfo(const char* name, const char* arg,
+                           TTypeInfo typeInfo);
+    ~CChoicePointerTypeInfo(void);
 
-    static TTypeInfo GetTypeInfo(TTypeInfo base)
-        {
-            return sm_Map.GetTypeInfo(base);
-        }
+    static TTypeInfo GetTypeInfo(TTypeInfo base);
 
     void AddVariant(const CMemberId& id, const CTypeRef& type);
+    void AddVariant(const string& id, const CTypeRef& type);
+    void AddVariant(const char* id, const CTypeRef& type);
 
 protected:
     virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
@@ -107,8 +115,6 @@ private:
     CMembers m_Variants;
     TVariantTypes m_VariantTypes;
     mutable auto_ptr<TVariantsByType> m_VariantsByType;
-
-    static CTypeInfoMap<CChoicePointerTypeInfo> sm_Map;
 };
 
 template<typename Data>
@@ -119,8 +125,8 @@ public:
     typedef Data TDataType;
     typedef AutoPtr<TDataType> TObjectType;
 
-    CChoiceAutoPtrTypeInfo<Data>(void)
-        : CParent("AutoPtr<X>", GetTypeRef(static_cast<TDataType*>(0)).Get())
+    CChoiceAutoPtrTypeInfo<Data>(TTypeInfo type)
+        : CParent("AutoPtr", type, type)
         { }
     
     TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
@@ -138,10 +144,9 @@ public:
             return sizeof(TObjectType);
         }
 
-    static TTypeInfo GetTypeInfo(void)
+    static TTypeInfo GetTypeInfo(TTypeInfo type)
         {
-            static TTypeInfo typeInfo = new CChoiceAutoPtrTypeInfo<Data>;
-            return typeInfo;
+            return new CChoiceAutoPtrTypeInfo<Data>(type);
         }
 };
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/12/17 19:05:05  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.12  1999/09/27 14:18:03  vasilche
 * Fixed bug with overloaded construtors of Block.
 *
@@ -79,6 +82,67 @@
 
 BEGIN_NCBI_SCOPE
 
+CStlOneArgTemplate::CStlOneArgTemplate(const char* templ, TTypeInfo type)
+    : CParent(string(templ) + "< " + type->GetName() + " >"),
+      m_DataType(type)
+{
+}
+
+CStlOneArgTemplate::CStlOneArgTemplate(const char* templ, const CTypeRef& type)
+    : CParent(string(templ) + "< ? >"),
+      m_DataType(type)
+{
+}
+
+CStlOneArgTemplate::~CStlOneArgTemplate(void)
+{
+}
+
+void CStlOneArgTemplate::SetDataId(const CMemberId& id)
+{
+    m_DataId = id;
+}
+
+CStlTwoArgsTemplate::CStlTwoArgsTemplate(const char* templ,
+                                         TTypeInfo keyType,
+                                         TTypeInfo dataType)
+    : CParent(string(templ) + "< " + keyType->GetName() + ", " +
+              dataType->GetName() + " >"),
+      m_KeyType(keyType), m_ValueType(dataType)
+{
+}
+
+CStlTwoArgsTemplate::CStlTwoArgsTemplate(const char* templ,
+                                         const CTypeRef& keyType,
+                                         const CTypeRef& dataType)
+    : CParent(string(templ) + "< ?, ? >"),
+      m_KeyType(keyType), m_ValueType(dataType)
+{
+}
+
+CStlTwoArgsTemplate::~CStlTwoArgsTemplate(void)
+{
+}
+
+void CStlTwoArgsTemplate::SetKeyId(const CMemberId& id)
+{
+    m_KeyId = id;
+}
+
+void CStlTwoArgsTemplate::SetValueId(const CMemberId& id)
+{
+    m_ValueId = id;
+}
+
+bool CStlClassInfoMapImpl::EqualsKeyValuePair(TConstObjectPtr key1,
+                                              TConstObjectPtr key2,
+                                              TConstObjectPtr value1,
+                                              TConstObjectPtr value2) const
+{
+    return GetKeyTypeInfo()->Equals(key1, key2) &&
+        GetValueTypeInfo()->Equals(value1, value2);
+}
+
 void CStlClassInfoMapImpl::CollectKeyValuePair(COObjectList& objectList,
                                                TConstObjectPtr key,
                                                TConstObjectPtr value) const
@@ -123,6 +187,27 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
     }
     if ( block.Next() )
         THROW1_TRACE(runtime_error, "too many elements in map pair");
+}
+
+template<>
+TTypeInfo CStlClassInfoChar_vector<char>::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CStlClassInfoChar_vector<TChar>;
+    return typeInfo;
+}
+
+template<>
+TTypeInfo CStlClassInfoChar_vector<signed char>::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CStlClassInfoChar_vector<TChar>;
+    return typeInfo;
+}
+
+template<>
+TTypeInfo CStlClassInfoChar_vector<unsigned char>::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CStlClassInfoChar_vector<TChar>;
+    return typeInfo;
 }
 
 END_NCBI_SCOPE

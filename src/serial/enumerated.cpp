@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/17 19:05:02  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.4  1999/10/28 15:37:40  vasilche
 * Fixed null choice pointers handling.
 * Cleaned enumertion interface.
@@ -55,6 +58,12 @@
 BEGIN_NCBI_SCOPE
 
 CEnumeratedTypeValues::CEnumeratedTypeValues(const string& name,
+                                             bool isInteger)
+    : m_Name(name), m_Integer(isInteger)
+{
+}
+
+CEnumeratedTypeValues::CEnumeratedTypeValues(const char* name,
                                              bool isInteger)
     : m_Name(name), m_Integer(isInteger)
 {
@@ -105,6 +114,11 @@ void CEnumeratedTypeValues::AddValue(const string& name, long value)
         THROW1_TRACE(runtime_error,
                      "duplicated enum value " + name);
     }
+}
+
+void CEnumeratedTypeValues::AddValue(const char* name, long value)
+{
+    AddValue(string(name), value);
 }
 
 pair<long, bool> CEnumeratedTypeValues::ReadEnum(CObjectIStream& in) const

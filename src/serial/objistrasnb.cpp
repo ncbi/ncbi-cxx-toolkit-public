@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/12/17 19:05:03  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.21  1999/10/19 15:41:03  vasilche
 * Fixed reference to IOS_BASE
 *
@@ -320,7 +323,6 @@ ETag CObjectIStreamAsnBinary::ReadSysTag(void)
     return ETag(m_LastTagByte & 0x1f);
 }
 
-inline
 void CObjectIStreamAsnBinary::BackSysTag(void)
 {
     switch ( m_LastTagState ) {
@@ -334,7 +336,6 @@ void CObjectIStreamAsnBinary::BackSysTag(void)
     }
 }
 
-inline
 void CObjectIStreamAsnBinary::FlushSysTag(bool constructed)
 {
     switch ( m_LastTagState ) {
@@ -387,7 +388,6 @@ bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed, ETag tag)
         m_LastTagByte == ((c << 6) | (constructed? 0x20: 0) | tag);
 }
 
-inline
 ETag CObjectIStreamAsnBinary::ReadSysTag(EClass c, bool constructed)
 {
     ETag tag = ReadSysTag();
@@ -413,7 +413,6 @@ string CObjectIStreamAsnBinary::ReadClassTag(void)
     return name + char(c & 0x7f);
 }
 
-inline
 TTag CObjectIStreamAsnBinary::ReadTag(EClass c, bool constructed)
 {
     TTag tag = ReadTag();
@@ -425,7 +424,6 @@ TTag CObjectIStreamAsnBinary::ReadTag(EClass c, bool constructed)
     return tag;
 }
 
-inline
 void CObjectIStreamAsnBinary::ExpectSysTag(EClass c, bool constructed,
                                            ETag tag)
 {
@@ -483,7 +481,6 @@ size_t CObjectIStreamAsnBinary::ReadLength(bool allowIndefinite)
     return length;
 }
 
-inline
 void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
 {
     if ( ReadShortLength() != length ) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/12/17 19:05:04  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.9  1999/09/23 18:57:02  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -91,6 +94,12 @@ INIT_TYPE_INFO(long)
 INIT_TYPE_INFO(unsigned long)
 INIT_TYPE_INFO(float)
 INIT_TYPE_INFO(double)
+
+
+CStdTypeInfo<void>::CStdTypeInfo(void)
+    : CParent("void")
+{
+}
 
 size_t CStdTypeInfo<void>::GetSize(void) const
 {

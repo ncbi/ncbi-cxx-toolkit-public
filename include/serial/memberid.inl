@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/17 19:04:53  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.3  1999/07/13 20:18:06  vasilche
 * Changed types naming.
 *
@@ -48,18 +51,6 @@
 inline
 CMemberId::CMemberId(void)
     : m_Tag(-1)
-{
-}
-
-inline
-CMemberId::CMemberId(const string& name)
-    : m_Name(name), m_Tag(-1)
-{
-}
-
-inline
-CMemberId::CMemberId(const string& name, TTag tag)
-    : m_Name(name), m_Tag(tag)
 {
 }
 

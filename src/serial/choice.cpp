@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/12/17 19:05:01  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.1  1999/09/24 18:20:07  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -48,6 +51,15 @@ CChoiceTypeInfoBase::CChoiceTypeInfoBase(const string& name)
 {
 }
 
+CChoiceTypeInfoBase::CChoiceTypeInfoBase(const char* name)
+    : CParent(name)
+{
+}
+
+CChoiceTypeInfoBase::~CChoiceTypeInfoBase(void)
+{
+}
+
 void CChoiceTypeInfoBase::AddVariant(const CMemberId& id,
                                      const CTypeRef& typeRef)
 {
@@ -56,6 +68,12 @@ void CChoiceTypeInfoBase::AddVariant(const CMemberId& id,
 }
 
 void CChoiceTypeInfoBase::AddVariant(const string& name,
+                                     const CTypeRef& typeRef)
+{
+    AddVariant(CMemberId(name), typeRef);
+}
+
+void CChoiceTypeInfoBase::AddVariant(const char* name,
                                      const CTypeRef& typeRef)
 {
     AddVariant(CMemberId(name), typeRef);

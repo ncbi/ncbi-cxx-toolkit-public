@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/12/17 19:05:02  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.25  1999/11/19 18:26:00  vasilche
 * Fixed conflict with SetImplicit() in generated choice variant classes.
 *
@@ -154,6 +157,14 @@ CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size)
 }
 
 CClassInfoTmpl::CClassInfoTmpl(const string& name, const type_info& id,
+                               size_t size)
+    : CParent(name), m_Id(id), m_Size(size),
+      m_RandomOrder(false), m_Implicit(false)
+{
+    Register();
+}
+
+CClassInfoTmpl::CClassInfoTmpl(const char* name, const type_info& id,
                                size_t size)
     : CParent(name), m_Id(id), m_Size(size),
       m_RandomOrder(false), m_Implicit(false)
@@ -288,7 +299,8 @@ size_t CClassInfoTmpl::GetSize(void) const
     return m_Size;
 }
 
-CMemberInfo* CClassInfoTmpl::AddMember(const CMemberId& id, CMemberInfo* member)
+CMemberInfo* CClassInfoTmpl::AddMember(const CMemberId& id,
+                                       CMemberInfo* member)
 {
     _TRACE(GetName() << ".AddMember:" << id.ToString() << ", " << member->GetOffset());
     m_MembersByOffset.reset(0);
@@ -297,10 +309,31 @@ CMemberInfo* CClassInfoTmpl::AddMember(const CMemberId& id, CMemberInfo* member)
     return member;
 }
 
-CMemberInfo* CClassInfoTmpl::AddMember(const string& name, CMemberInfo* member)
+CMemberInfo* CClassInfoTmpl::AddMember(const char* name, const void* member,
+                                       TTypeInfo type)
+{
+    return AddMember(name, new CRealMemberInfo(size_t(member), type));
+}
+
+CMemberInfo* CClassInfoTmpl::AddMember(const char* name, const void* member,
+                                       const CTypeRef& type)
+{
+    return AddMember(name, new CRealMemberInfo(size_t(member), type));
+}
+
+/*
+CMemberInfo* CClassInfoTmpl::AddMember(const string& name,
+                                       CMemberInfo* member)
 {
     return AddMember(CMemberId(name), member);
 }
+
+CMemberInfo* CClassInfoTmpl::AddMember(const char* name,
+                                       CMemberInfo* member)
+{
+    return AddMember(CMemberId(name), member);
+}
+*/
 
 void CClassInfoTmpl::AddSubClass(const CMemberId& id,
                                  const CTypeRef& type)
@@ -309,6 +342,11 @@ void CClassInfoTmpl::AddSubClass(const CMemberId& id,
     if ( !subclasses )
         m_SubClasses.reset(subclasses = new TSubClasses);
     subclasses->push_back(make_pair(id, type));
+}
+
+void CClassInfoTmpl::AddSubClass(const char* id, TTypeInfoGetter getter)
+{
+    AddSubClass(CMemberId(id), getter);
 }
 
 void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,

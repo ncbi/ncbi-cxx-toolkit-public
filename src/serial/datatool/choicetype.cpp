@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/12/17 19:05:18  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.1  1999/12/03 21:42:11  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -123,19 +126,7 @@ void CChoiceDataType::GenerateCode(CClassCode& code) const
             "    bool Is"<<variantName<<"(void) const;" << NcbiEndl <<
             "    "<<variantClass<<"* Get"<<variantName<<"(void);" << NcbiEndl <<
             "    const "<<variantClass<<"* Get"<<variantName<<"(void) const;" << NcbiEndl;
-        code.Methods() <<
-            "bool "<<className<<"_Base::Is"<<variantName<<"(void) const" << NcbiEndl <<
-            '{' << NcbiEndl <<
-            "    return dynamic_cast<const "<<variantClass<<"*>(this) != 0;" << NcbiEndl <<
-            '}' << NcbiEndl <<
-            variantClass<<"* "<<className<<"_Base::Get"<<variantName<<"(void)" << NcbiEndl <<
-            '{' << NcbiEndl <<
-            "    return dynamic_cast<"<<variantClass<<"*>(this);" << NcbiEndl <<
-            '}' << NcbiEndl <<
-            "const "<<variantClass<<"* "<<className<<"_Base::Get"<<variantName<<"(void) const" << NcbiEndl <<
-            '{' << NcbiEndl <<
-            "    return dynamic_cast<const "<<variantClass<<"*>(this);" << NcbiEndl <<
-            '}' << NcbiEndl;
+        code.Methods() << "CHOICE_VARIANT_METHODS("<<className<<","<<variantClass<<","<<variantName<<')'<<NcbiEndl;
     }
 }
 

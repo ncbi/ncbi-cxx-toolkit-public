@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/17 19:04:53  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.13  1999/10/28 15:37:37  vasilche
 * Fixed null choice pointers handling.
 * Cleaned enumertion interface.
@@ -83,7 +86,7 @@
 */
 
 #include <serial/typeinfo.hpp>
-#include <serial/typemap.hpp>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -92,17 +95,14 @@ class CPointerTypeInfo : public CTypeInfoTmpl<void*>
 {
     typedef CTypeInfoTmpl<void*> CParent;
 public:
-    CPointerTypeInfo(TTypeInfo type)
-        : CParent(type->GetName() + '*'), m_DataType(type)
-        { }
-    CPointerTypeInfo(const string& name, TTypeInfo type)
-        : CParent(name), m_DataType(type)
-        { }
+    CPointerTypeInfo(TTypeInfo type);
+    CPointerTypeInfo(const char* name, TTypeInfo type);
+    CPointerTypeInfo(const string& name, TTypeInfo type);
+    CPointerTypeInfo(const char* templ, TTypeInfo arg, TTypeInfo type);
+    CPointerTypeInfo(const char* templ, const char* arg, TTypeInfo type);
+    ~CPointerTypeInfo(void);
 
-    static TTypeInfo GetTypeInfo(TTypeInfo base)
-        {
-            return sm_Map.GetTypeInfo(base);
-        }
+    static TTypeInfo GetTypeInfo(TTypeInfo base);
 
     TTypeInfo GetDataTypeInfo(void) const
         {
@@ -136,7 +136,6 @@ protected:
 private:
     TTypeInfo m_DataType;
 
-    static CTypeInfoMap<CPointerTypeInfo> sm_Map;
 };
 
 //#include <ptrinfo.inl>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/12/17 19:05:03  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.25  1999/10/04 16:22:18  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -376,6 +379,27 @@ CObjectOStream::Block::~Block(void)
     else {
         m_Out.VEnd(*this);
     }
+}
+
+CObjectOStream::ByteBlock::ByteBlock(CObjectOStream& out, size_t length)
+    : m_Out(out), m_Length(length)
+{
+    out.Begin(*this);
+}
+
+CObjectOStream::ByteBlock::~ByteBlock(void)
+{
+    if ( m_Length != 0 )
+        THROW1_TRACE(runtime_error, "not all bytes written");
+    m_Out.End(*this);
+}
+
+void CObjectOStream::ByteBlock::Write(const void* bytes, size_t length)
+{
+    if ( length > m_Length )
+        THROW1_TRACE(runtime_error, "too many bytes written");
+    m_Out.WriteBytes(*this, static_cast<const char*>(bytes), length);
+    m_Length -= length;
 }
 
 void CObjectOStream::Begin(const ByteBlock& )

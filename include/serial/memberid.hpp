@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/17 19:04:52  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.4  1999/09/22 20:11:48  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -63,6 +66,8 @@ public:
     CMemberId(void);
     CMemberId(const string& name);
     CMemberId(const string& name, TTag tag);
+    CMemberId(const char* name);
+    CMemberId(const char* name, TTag tag);
     CMemberId(TTag tag);
 
     // return visible representation of CMemberId (as in ASN.1)

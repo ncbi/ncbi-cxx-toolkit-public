@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/17 19:04:52  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.3  1999/10/28 15:37:37  vasilche
 * Fixed null choice pointers handling.
 * Cleaned enumertion interface.
@@ -60,6 +63,7 @@ public:
     typedef map<long, string> TValueToName;
 
     CEnumeratedTypeValues(const string& name, bool isInteger);
+    CEnumeratedTypeValues(const char* name, bool isInteger);
     ~CEnumeratedTypeValues(void);
 
     const string& GetName(void) const
@@ -72,6 +76,7 @@ public:
         }
 
     void AddValue(const string& name, long value);
+    void AddValue(const char* name, long value);
 
     // returns value of enum element, if found
     // otherwise, throws exception

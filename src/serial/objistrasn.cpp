@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/12/17 19:05:03  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.29  1999/11/18 20:19:01  vakatov
 * ExpectString() -- get rid of the CodeWarrior(MAC) C++ compiler warning
 *
@@ -171,7 +174,6 @@ unsigned CObjectIStreamAsn::SetFailFlags(unsigned flags)
     return CObjectIStream::SetFailFlags(flags);
 }
 
-inline
 char CObjectIStreamAsn::GetChar(void)
 {
 	int unget = m_UngetChar;
@@ -188,7 +190,6 @@ char CObjectIStreamAsn::GetChar(void)
 	}
 }
 
-inline
 char CObjectIStreamAsn::GetChar0(void)
 {
 	int unget = m_UngetChar;
@@ -200,7 +201,6 @@ char CObjectIStreamAsn::GetChar0(void)
     return char(unget);
 }
 
-inline
 void CObjectIStreamAsn::UngetChar(char c)
 {
     if ( m_UngetChar1 >= 0 )
@@ -253,7 +253,6 @@ bool CObjectIStreamAsn::IdChar(char c)
     return isalnum(c) || c == '_' || c == '.';
 }
 
-inline
 void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
 {
     if ( !GetChar(expect, skipWhiteSpace) ) {
@@ -261,7 +260,6 @@ void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
     }
 }
 
-inline
 bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
                                       bool skipWhiteSpace)
 {

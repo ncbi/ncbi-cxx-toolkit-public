@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/12/17 19:05:01  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.29  1999/10/04 19:39:45  vasilche
 * Fixed bug in CObjectOStreamBinary.
 * Start using of BSRead/BSWrite.
@@ -138,6 +141,7 @@
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/classinfo.hpp>
+#include <serial/typemap.hpp>
 #include <asn.h>
 
 BEGIN_NCBI_SCOPE
@@ -155,7 +159,12 @@ T* Alloc(T*& ptr)
 	return ptr = static_cast<T*>(Alloc(sizeof(T)));
 }
 
-CTypeInfoMap<CSequenceOfTypeInfo> CSequenceOfTypeInfo::sm_Map;
+static CTypeInfoMap<CSequenceOfTypeInfo> CSequenceOfTypeInfo_map;
+
+TTypeInfo CSequenceOfTypeInfo::GetTypeInfo(TTypeInfo base)
+{
+    return CSequenceOfTypeInfo_map.GetTypeInfo(base);
+}
 
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(TTypeInfo type)
     : CParent("SEQUENCE OF " + type->GetName()), m_DataType(type)
@@ -164,6 +173,12 @@ CSequenceOfTypeInfo::CSequenceOfTypeInfo(TTypeInfo type)
 }
 
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name, TTypeInfo type)
+    : CParent(name), m_DataType(type)
+{
+	Init();
+}
+
+CSequenceOfTypeInfo::CSequenceOfTypeInfo(const char* name, TTypeInfo type)
     : CParent(name), m_DataType(type)
 {
 	Init();
@@ -353,7 +368,12 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
     }
 }
 
-CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo::sm_Map;
+static CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo_map;
+
+TTypeInfo CSetOfTypeInfo::GetTypeInfo(TTypeInfo base)
+{
+    return CSetOfTypeInfo_map.GetTypeInfo(base);
+}
 
 CSetOfTypeInfo::CSetOfTypeInfo(TTypeInfo type)
     : CParent("SET OF " + type->GetName(), type)
@@ -365,12 +385,22 @@ CSetOfTypeInfo::CSetOfTypeInfo(const string& name, TTypeInfo type)
 {
 }
 
+CSetOfTypeInfo::CSetOfTypeInfo(const char* name, TTypeInfo type)
+    : CParent(name, type)
+{
+}
+
 bool CSetOfTypeInfo::RandomOrder(void) const
 {
     return true;
 }
 
 CChoiceTypeInfo::CChoiceTypeInfo(const string& name)
+    : CParent(name)
+{
+}
+
+CChoiceTypeInfo::CChoiceTypeInfo(const char* name)
     : CParent(name)
 {
 }
@@ -492,9 +522,26 @@ void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     }
 }
 
+TTypeInfo COctetStringTypeInfo::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = 0;
+    if ( !typeInfo )
+        typeInfo = new COctetStringTypeInfo();
+    return typeInfo;
+}
+
 map<COldAsnTypeInfo::TNewProc, COldAsnTypeInfo*> COldAsnTypeInfo::m_Types;
 
 COldAsnTypeInfo::COldAsnTypeInfo(const string& name,
+                                 TNewProc newProc, TFreeProc freeProc,
+                                 TReadProc readProc, TWriteProc writeProc)
+    : CParent(name),
+      m_NewProc(newProc), m_FreeProc(freeProc),
+      m_ReadProc(readProc), m_WriteProc(writeProc)
+{
+}
+
+COldAsnTypeInfo::COldAsnTypeInfo(const char* name,
                                  TNewProc newProc, TFreeProc freeProc,
                                  TReadProc readProc, TWriteProc writeProc)
     : CParent(name),

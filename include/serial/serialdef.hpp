@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/17 19:04:54  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.2  1999/09/22 20:11:51  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -56,6 +59,9 @@ typedef const void* TConstObjectPtr;
 
 // shortcut typedef: almost everywhere in code we have pointer to const CTypeInfo
 typedef const CTypeInfo* TTypeInfo;
+typedef TTypeInfo (*TTypeInfoGetter)(void);
+typedef TTypeInfo (*TTypeInfoGetter1)(TTypeInfo);
+typedef TTypeInfo (*TTypeInfoGetter2)(TTypeInfo, TTypeInfo);
 
 // helper address functions:
 // add offset to object reference (to get object's member)

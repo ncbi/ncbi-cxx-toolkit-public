@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/12/17 19:05:19  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.5  1999/12/03 21:42:14  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -114,7 +117,7 @@ TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
 CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
 {
     return new CAutoPointerTypeInfo(
-        new CStlClassInfoList<AnyType>(
+        new CStlClassInfo_list<AnyType>(
             new CAnyTypeSource(m_ElementType.get())));
 }
 
@@ -145,8 +148,8 @@ const char* CUniSetDataType::GetASNKeyword(void) const
 
 CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
 {
-    CStlClassInfoList<AnyType>* l =
-        new CStlClassInfoList<AnyType>(new CAnyTypeSource(GetElementType()));
+    CStlClassInfo_list<AnyType>* l =
+        new CStlClassInfo_list<AnyType>(new CAnyTypeSource(GetElementType()));
     l->SetRandomOrder();
     return new CAutoPointerTypeInfo(l);
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/17 19:05:01  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.2  1999/09/14 18:54:15  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -41,12 +44,18 @@
 */
 
 #include <serial/autoptrinfo.hpp>
+#include <serial/typemap.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CTypeInfoMap<CAutoPointerTypeInfo> CAutoPointerTypeInfo::sm_Map;
+static CTypeInfoMap<CAutoPointerTypeInfo> CAutoPointerTypeInfo_map;
+
+TTypeInfo CAutoPointerTypeInfo::GetTypeInfo(TTypeInfo base)
+{
+    return CAutoPointerTypeInfo_map.GetTypeInfo(base);
+}
 
 void CAutoPointerTypeInfo::WriteData(CObjectOStream& out,
                                      TConstObjectPtr object) const

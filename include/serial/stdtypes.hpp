@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/12/17 19:04:54  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.12  1999/09/22 20:11:51  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -122,6 +125,10 @@ protected:
         : CParent(name)
         {
         }
+    CStdTypeInfo<T>(const char* name)
+        : CParent(name)
+        {
+        }
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
@@ -153,10 +160,7 @@ protected:
     virtual void WriteData(CObjectOStream& , TConstObjectPtr ) const;
 
 private:
-    CStdTypeInfo(void)
-        : CParent(typeid(void).name())
-        {
-        }
+    CStdTypeInfo(void);
 };
 
 // CTypeInfo for C++ STL type string
@@ -181,7 +185,7 @@ protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 };
 
-#include <serial/stdtypes.inl>
+//#include <serial/stdtypes.inl>
 
 END_NCBI_SCOPE
 

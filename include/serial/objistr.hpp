@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/12/17 19:04:53  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.28  1999/10/18 20:11:15  vasilche
 * Enum values now have long type.
 * Fixed template generation for enums.
@@ -391,11 +394,8 @@ public:
     };
 	class ByteBlock {
 	public:
-		ByteBlock(CObjectIStream& in)
-			: m_In(in), m_KnownLength(false), m_EndOfBlock(false), m_Length(0)
-		{
-			in.Begin(*this);
-		}
+		ByteBlock(CObjectIStream& in);
+		~ByteBlock(void);
 
         bool KnownLength(void) const
         {
@@ -407,26 +407,7 @@ public:
 			return m_Length;
 		}
 
-		~ByteBlock(void)
-		{
-            if ( KnownLength()? m_Length != 0: !m_EndOfBlock )
-				THROW1_TRACE(runtime_error, "not all bytes read");
-			m_In.End(*this);
-		}
-
-		size_t Read(void* dst, size_t length)
-		{
-			if ( KnownLength() )
-                length = min(length, m_Length);
-            
-			if ( m_EndOfBlock || length == 0 )
-                return 0;
-
-            length = m_In.ReadBytes(*this, static_cast<char*>(dst), length);
-            m_Length -= length;
-            m_EndOfBlock = length == 0;
-            return length;
-		}
+		size_t Read(void* dst, size_t length, bool forceLength = false);
 
 	private:
 		CObjectIStream& m_In;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/17 19:04:51  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.3  1999/09/22 20:11:48  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -50,7 +53,6 @@
 
 BEGIN_NCBI_SCOPE
 
-// CTypeInfo for auto_ptr<X> template from STL
 class CAutoPointerTypeInfo : public CPointerTypeInfo {
     typedef CPointerTypeInfo CParent;
 public:
@@ -58,10 +60,7 @@ public:
         : CParent(type->GetName(), type)
         { }
 
-    static TTypeInfo GetTypeInfo(TTypeInfo base)
-        {
-            return sm_Map.GetTypeInfo(base);
-        }
+    static TTypeInfo GetTypeInfo(TTypeInfo base);
 
 protected:
     
@@ -69,8 +68,6 @@ protected:
 
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
-private:
-    static CTypeInfoMap<CAutoPointerTypeInfo> sm_Map;
 };
 
 //#include <serial/autoptrinfo.inl>

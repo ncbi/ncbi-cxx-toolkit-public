@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  1999/12/17 19:05:02  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.33  1999/11/18 20:18:08  vakatov
 * ReadObjectInfo() -- get rid of the CodeWarrior(MAC) C++ compiler warning
 *
@@ -580,6 +583,42 @@ CObjectIStream::Block::~Block(void)
         }
         m_In.VEnd(*this);
     }
+}
+
+CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)
+    : m_In(in), m_KnownLength(false), m_EndOfBlock(false), m_Length(0)
+{
+    in.Begin(*this);
+}
+
+CObjectIStream::ByteBlock::~ByteBlock(void)
+{
+    if ( KnownLength()? m_Length != 0: !m_EndOfBlock )
+        THROW1_TRACE(runtime_error, "not all bytes read");
+    m_In.End(*this);
+}
+
+size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
+                                       bool forceLength)
+{
+    size_t length;
+    if ( KnownLength() && m_Length < needLength )
+        length = m_Length;
+    else
+        length = needLength;
+    
+    if ( m_EndOfBlock || length == 0 ) {
+        if ( forceLength && needLength != 0 )
+            THROW1_TRACE(runtime_error, "read fault");
+        return 0;
+    }
+    
+    length = m_In.ReadBytes(*this, static_cast<char*>(dst), length);
+    m_Length -= length;
+    m_EndOfBlock = length == 0;
+    if ( forceLength && needLength != length )
+        THROW1_TRACE(runtime_error, "read fault");
+    return length;
 }
 
 void CObjectIStream::Begin(ByteBlock& )

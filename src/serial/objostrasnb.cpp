@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/12/17 19:05:04  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
 * Revision 1.24  1999/10/21 15:44:22  vasilche
 * Added helper class CNcbiOstreamToString to convert CNcbiOstrstream buffer
 * to string.
@@ -259,8 +262,8 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
     if ( (m_CurrentPosition += size) == m_CurrentTagLimit )
         EndTag();
 #endif
-    if ( !m_Output.write(bytes, size) ) {
-        ERR_POST("write error: " << size);
+    if ( size != 0 && !m_Output.write(bytes, size) ) {
+        ERR_POST("write error: " << size << '@' << unsigned(bytes));
         THROW1_TRACE(runtime_error, "write error");
     }
 }
