@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2002/01/10 18:43:34  clausen
+ * Added GetLength
+ *
  * Revision 1.12  2001/08/31 15:59:59  clausen
  * Added new constructors for FastA construction and added tpg, tpd, and tpe id types
  *
@@ -95,6 +98,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CBioseq;
 class CAbstractObjectManager;
+class CScope;
 
 
 class CSeq_id : public CSeq_id_Base,
@@ -171,6 +175,11 @@ public:
     // Implement serializable interface
     virtual void WriteAsFasta(ostream& out) const;
     const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
+    
+    // Get sequence length if a scope is available to resolve sequence. If
+    // scope is null, returns kMax_Int
+    int GetLength(CScope* scope) const;
+    
 
 protected:
     // From CSerialUserOp
