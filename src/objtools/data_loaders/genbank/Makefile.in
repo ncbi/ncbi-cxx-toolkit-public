@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = readers
+SUB_PROJ = readers test
 
 LIB_PROJ = ncbi_xloader_genbank
 
