@@ -47,7 +47,7 @@ CProjectOneNodeFilter::CProjectOneNodeFilter(const string& root_src_dir,
 }
 
 
-bool CProjectOneNodeFilter::CheckProject(const string& project_base_dir) const
+bool CProjectOneNodeFilter::CheckProject(const string& project_base_dir, bool* weak) const
 {
     TPath project_path;
     CProjectTreeFolders::CreatePath(m_RootSrcDir, 
@@ -55,18 +55,22 @@ bool CProjectOneNodeFilter::CheckProject(const string& project_base_dir) const
                                     &project_path);
 
     if (project_path.size() < m_SubtreePath.size())
-        return false;
+        if (!weak) {
+            return false;
+        }
 
     TPath::const_iterator i = project_path.begin();
-    ITERATE(TPath, p, m_SubtreePath) {
+    TPath::const_iterator p = m_SubtreePath.begin();
+    for (; i != project_path.end() && p != m_SubtreePath.end(); ++i, ++p) {
         const string& subtree_i  = *p;
         const string& project_i = *i;
-        if (NStr::CompareNocase(subtree_i, project_i) != 0)
+        if (NStr::CompareNocase(subtree_i, project_i) != 0) {
+            if (weak) {weak=false;}
             return false;
-        ++i;
+        }
     }
-    return true;
-
+    if (weak) {*weak = (i == project_path.end());}
+    return p == m_SubtreePath.end();
 }
 
 //-----------------------------------------------------------------------------
@@ -131,7 +135,7 @@ bool CProjectsLstFileFilter::CmpLstElementWithPath(const SLstElement& elt,
 }
 
 
-bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir) const
+bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool*) const
 {
     TPath project_path;
     CProjectTreeFolders::CreatePath(m_RootSrcDir, 
@@ -165,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/09/13 13:49:08  gouriano
+ * Make it to rely more on UNIX makefiles
+ *
  * Revision 1.7  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *

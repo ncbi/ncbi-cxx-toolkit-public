@@ -55,12 +55,10 @@ struct SMakeProjectT
 {
     typedef CProjectItemsTree::TFiles TFiles;
 
-    static CProjItem::TProjType GetProjType(const string& base_dir,
-                                            const string& projname);
-
     struct SMakeInInfo
     {
         typedef enum {
+            eUnknown,
             eApp,
             eLib,
             eAsn,
@@ -81,13 +79,18 @@ struct SMakeProjectT
         bool m_Expendable;
     };
 
+    static CProjItem::TProjType GetProjType(const string& base_dir,
+                                            const string& projname,
+                                            SMakeInInfo::TMakeinType type=SMakeInInfo::eUnknown);
+
     typedef list<SMakeInInfo> TMakeInInfoList;
     static void    AnalyzeMakeIn(const CSimpleMakeFileContents& makein_contents,
                                  TMakeInInfoList*               info);
 
     
     static string CreateMakeAppLibFileName(const string& base_dir,
-                                           const string& projname);
+                                           const string& projname,
+                                           SMakeInInfo::TMakeinType type=SMakeInInfo::eUnknown);
 
     static void   CreateFullPathes        (const string&      dir, 
                                            const list<string> files,
@@ -328,6 +331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/09/13 13:49:36  gouriano
+ * Make it to rely more on UNIX makefiles
+ *
  * Revision 1.7  2004/08/04 13:24:58  gouriano
  * Added processing of EXPENDABLE projects
  *

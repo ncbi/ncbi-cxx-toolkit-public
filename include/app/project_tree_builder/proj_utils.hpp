@@ -50,8 +50,8 @@ public:
     virtual ~IProjectFilter(void)
     {
     }
-    virtual bool CheckProject(const string& project_base_dir) const = 0;
-    virtual bool PassAll     (void)                           const = 0;
+    virtual bool CheckProject(const string& project_base_dir, bool* weak=0) const = 0;
+    virtual bool PassAll     (void)                                         const = 0;
 };
 
 
@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/09/13 13:49:36  gouriano
+ * Make it to rely more on UNIX makefiles
+ *
  * Revision 1.13  2004/06/14 14:14:58  gorelenk
  * Added m_TreeNode to struct SProjectTreeInfo .
  *

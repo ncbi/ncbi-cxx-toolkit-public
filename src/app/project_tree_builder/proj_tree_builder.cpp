@@ -34,6 +34,7 @@
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
 
 #include <app/project_tree_builder/proj_projects.hpp>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -58,22 +59,32 @@ private:
 
 //-----------------------------------------------------------------------------
 CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
-                                                const string& projname)
+                                                const string& projname,
+                                                SMakeInInfo::TMakeinType type)
 {
     string fname = "Makefile." + projname;
-    
+    if (type == SMakeInInfo::eApp) {
+        if ( CDirEntry(CDirEntry::ConcatPath(base_dir, fname + ".app")).Exists())
+            return CProjKey::eApp;
+    } else if (type == SMakeInInfo::eLib) {
+        if ( CDirEntry(CDirEntry::ConcatPath(base_dir, fname + ".lib")).Exists())
+            return CProjKey::eLib;
+    } else if (type == SMakeInInfo::eMsvc) {
+        if ( CDirEntry(CDirEntry::ConcatPath(base_dir, fname + ".msvcproj")).Exists())
+            return CProjKey::eMsvc;
+    }
     if ( CDirEntry(CDirEntry::ConcatPath
-               (base_dir, fname + ".lib")).Exists() )
+            (base_dir, fname + ".lib")).Exists() )
         return CProjKey::eLib;
     else if (CDirEntry(CDirEntry::ConcatPath
-               (base_dir, fname + ".app")).Exists() )
+            (base_dir, fname + ".app")).Exists() )
         return CProjKey::eApp;
     else if (CDirEntry(CDirEntry::ConcatPath
-               (base_dir, fname + ".msvcproj")).Exists() )
+            (base_dir, fname + ".msvcproj")).Exists() )
         return CProjKey::eMsvc;
 
     LOG_POST(Error << "No .lib or .app projects for : " + projname +
-                      " in directory: " + base_dir);
+                    " in directory: " + base_dir);
     return CProjKey::eNoProj;
 }
 
@@ -317,10 +328,11 @@ void SMakeProjectT::AnalyzeMakeIn
 
 string SMakeProjectT::CreateMakeAppLibFileName
                 (const string&            base_dir,
-                 const string&            projname)
+                 const string&            projname,
+                 SMakeInInfo::TMakeinType type)
 {
     CProjItem::TProjType proj_type = 
-            SMakeProjectT::GetProjType(base_dir, projname);
+            SMakeProjectT::GetProjType(base_dir, projname, type);
 
     string fname = "Makefile." + projname;
     
@@ -410,7 +422,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     CProjectItemsTree::TFiles::const_iterator m = makeapp.find(applib_mfilepath);
     if (m == makeapp.end()) {
 
-        LOG_POST(Info << "No Makefile.*.app for Makefile.in :"
+        LOG_POST(Info << "No Makefile.*.app for Makefile.in:  "
                   + applib_mfilepath);
         return CProjKey();
     }
@@ -712,7 +724,7 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
                                       bool expendable)
 {
     CProjItem::TProjType proj_type = 
-        SMakeProjectT::GetProjType(source_base_dir, proj_name);
+        IsMakeLibFile( CDirEntry(applib_mfilepath).GetName()) ? CProjKey::eLib : CProjKey::eApp;
     
     CProjKey proj_id = 
         proj_type == CProjKey::eLib? 
@@ -760,7 +772,7 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
                                         bool expendable)
 {
     CProjItem::TProjType proj_type = 
-        SMakeProjectT::GetProjType(source_base_dir, proj_name);
+        IsMakeLibFile( CDirEntry(applib_mfilepath).GetName()) ? CProjKey::eLib : CProjKey::eApp;
     
 
     const TFiles& makefile = proj_type == CProjKey::eLib? makelib : makeapp;
@@ -1028,7 +1040,7 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
                     target_tree.m_Projects[prj_id] = n->second;
                     modified = true;
                 } else {
-                    LOG_POST (Error << "No project with id :" + prj_id.Id());
+                    LOG_POST (Error << "No project with id : " + prj_id.Id());
                 }
             }
 
@@ -1054,13 +1066,13 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                                      const IProjectFilter* filter,
                                      SMakeFiles*           makefiles)
 {
-#if 1
+#if 0
     // Do not collect makefile from root directory
     CDir dir(dir_name);
     CDir::TEntries contents = dir.GetEntries("*");
     ITERATE(CDir::TEntries, i, contents) {
         string name  = (*i)->GetName();
-        if ( name == "."  ||  name == ".."  ||  
+        if ( name == "."  ||  name == ".."  ||  name == "CVS" ||  
              name == string(1,CDir::GetPathSeparator()) ) {
             continue;
         }
@@ -1084,10 +1096,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             ProcessDir(path, false, filter, makefiles);
         }
     }
-#endif
-
-#if 0
-
+#else
     // Node - Makefile.in should present
     string node_path = 
         CDirEntry::ConcatPath(dir_name, 
@@ -1095,26 +1104,81 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     if ( !CDirEntry(node_path).Exists() )
         return;
     
-    bool process_projects = !is_root && filter->CheckProject(dir_name);
+    bool weak=false;
+    bool process_projects = !is_root && filter->CheckProject(dir_name,&weak);
     
-    // Process Makefile.*.lib
+    // Process Makefile.in
+    list<string> subprojects;
+    list<string> appprojects;
+    list<string> libprojects;
     if ( process_projects ) {
+        ProcessMakeInFile(node_path, makefiles);
+        TFiles::const_iterator p = makefiles->m_In.find(node_path);
+        const CSimpleMakeFileContents& makefile = p->second;
+        // 
+        CSimpleMakeFileContents::TContents::const_iterator k;
+        int j;
+        string subproj[] = {"SUB_PROJ","EXPENDABLE_SUB_PROJ","POTENTIAL_SUB_PROJ",""};
+        for (j=0; !subproj[j].empty(); ++j) {
+            k = makefile.m_Contents.find(subproj[j]);
+            if (k != makefile.m_Contents.end()) {
+                const list<string>& values = k->second;
+                copy(values.begin(), 
+                        values.end(), 
+                        back_inserter(subprojects));
+            }
+        }
+        string appproj[] = {"APP_PROJ","EXPENDABLE_APP_PROJ","POTENTIAL_APP_PROJ",""};
+        for (j=0; !appproj[j].empty(); ++j) {
+            k = makefile.m_Contents.find(appproj[j]);
+            if (k != makefile.m_Contents.end()) {
+                const list<string>& values = k->second;
+                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    appprojects.push_back("Makefile." + *i + ".app");
+                }
+            }
+        }
+        string libproj[] = {"LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ","ASN_PROJ",""};
+        for (j=0; !libproj[j].empty(); ++j) {
+            k = makefile.m_Contents.find(libproj[j]);
+            if (k != makefile.m_Contents.end()) {
+                const list<string>& values = k->second;
+                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    libprojects.push_back("Makefile." + *i + ".lib");
+                }
+            }
+        }
+    }
+    subprojects.sort();
+    subprojects.unique();
+    appprojects.sort();
+    appprojects.unique();
+    libprojects.sort();
+    libprojects.unique();
+
+
+    // Process Makefile.*.lib
+    if ( process_projects && !libprojects.empty()) {
         CDir dir(dir_name);
         CDir::TEntries contents = dir.GetEntries("Makefile.*.lib");
         ITERATE(CDir::TEntries, p, contents) {
             const AutoPtr<CDirEntry>& dir_entry = *p;
-            if ( SMakeProjectT::IsMakeLibFile(dir_entry->GetName()) )
+            const string name = dir_entry->GetName();
+            if (find(libprojects.begin(), libprojects.end(), name) != libprojects.end() &&
+                SMakeProjectT::IsMakeLibFile(dir_entry->GetName()) )
 	            ProcessMakeLibFile(dir_entry->GetPath(), makefiles);
 
         }
     }
     // Process Makefile.*.app
-    if ( process_projects ) {
+    if ( process_projects && !appprojects.empty() ) {
         CDir dir(dir_name);
         CDir::TEntries contents = dir.GetEntries("Makefile.*.app");
         ITERATE(CDir::TEntries, p, contents) {
             const AutoPtr<CDirEntry>& dir_entry = *p;
-            if ( SMakeProjectT::IsMakeAppFile(dir_entry->GetName()) )
+            const string name = dir_entry->GetName();
+            if (find(appprojects.begin(), appprojects.end(), name) != appprojects.end() &&
+                SMakeProjectT::IsMakeAppFile(dir_entry->GetName()) )
 	            ProcessMakeAppFile(dir_entry->GetPath(), makefiles);
 
         }
@@ -1131,42 +1195,16 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         }
     }
 
-    // Process Makefile.in
-    list<string> subprojects;
-    if ( process_projects ) {
-        ProcessMakeInFile(node_path, makefiles);
-        TFiles::const_iterator p = makefiles->m_In.find(node_path);
-        const CSimpleMakeFileContents& makefile = p->second;
-        // 
-        CSimpleMakeFileContents::TContents::const_iterator k = 
-            makefile.m_Contents.find("SUB_PROJ");
-        if (k != makefile.m_Contents.end()) {
-            const list<string>& values = k->second;
-            copy(values.begin(), 
-                 values.end(), 
-                 back_inserter(subprojects));
-        }
-        k = makefile.m_Contents.find("EXPENDABLE_SUB_PROJ");
-        if (k != makefile.m_Contents.end()) {
-            const list<string>& values = k->second;
-            copy(values.begin(), 
-                 values.end(), 
-                 back_inserter(subprojects));
-        }
-    }
-    subprojects.sort();
-    subprojects.unique();
-
     // Convert subprojects to subdirs
     list<string> subprojects_dirs;
-    if ( is_root ) {
+    if ( is_root || (!process_projects && weak) ) {
         // for root node we'll take all subdirs
         CDir dir(dir_name);
         CDir::TEntries contents = dir.GetEntries("*");
         ITERATE(CDir::TEntries, p, contents) {
             const AutoPtr<CDirEntry>& dir_entry = *p;
             string name  = dir_entry->GetName();
-            if ( name == "."  ||  name == ".."  ||  
+            if ( name == "."  ||  name == ".." ||  name == "CVS" ||  
                  name == string(1,CDir::GetPathSeparator()) ) {
                 continue;
             }
@@ -1354,6 +1392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/09/13 13:49:08  gouriano
+ * Make it to rely more on UNIX makefiles
+ *
  * Revision 1.15  2004/08/04 13:27:24  gouriano
  * Added processing of EXPENDABLE projects
  *

@@ -460,10 +460,10 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
             if (k == GetApp().GetWholeTree().m_Projects.end()) {
                 LOG_POST(Error << "No project " +
                                    lib_id + " hosted in dll : " + dll_id);
-                LOG_POST(Error << "DLL " + dll_id + " generation skipped");
-                //continue;
-                complete = false; // do not create incomplete DLLs
-                break;
+                continue;
+                //LOG_POST(Error << "DLL " + dll_id + " generation skipped");
+                //complete = false; // do not create incomplete DLLs
+                //break;
             }
 
             const CProjItem& lib = k->second;
@@ -541,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/09/13 13:49:08  gouriano
+ * Make it to rely more on UNIX makefiles
+ *
  * Revision 1.20  2004/06/23 14:15:59  gorelenk
  * CreateDllBuildTree - DLL generation will be skipped of not all libraries
  * are available in local build tree - for the sake of 'import_project.wsf' .

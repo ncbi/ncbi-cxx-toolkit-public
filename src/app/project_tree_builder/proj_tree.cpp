@@ -122,7 +122,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                 string applib_mfilepath = 
                     CDirEntry::ConcatPath(source_base_dir,
                     SMakeProjectT::CreateMakeAppLibFileName(source_base_dir, 
-                                                            proj_name));
+                                                            proj_name, info.m_Type));
                 if ( applib_mfilepath.empty() )
                     continue;
             
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/09/13 13:49:08  gouriano
+ * Make it to rely more on UNIX makefiles
+ *
  * Revision 1.4  2004/08/04 13:27:24  gouriano
  * Added processing of EXPENDABLE projects
  *

@@ -46,7 +46,7 @@ public:
     virtual ~CProjectDummyFilter(void)
     {
     }
-    virtual bool CheckProject(const string& project_base_dir) const
+    virtual bool CheckProject(const string& project_base_dir, bool* weak=0) const
     {
         return true;
     }
@@ -71,7 +71,7 @@ public:
     {
     }
 
-    virtual bool CheckProject(const string& project_base_dir) const;
+    virtual bool CheckProject(const string& project_base_dir, bool* weak=0) const;
     virtual bool PassAll     (void) const
     {
         return m_PassAll;
@@ -104,7 +104,7 @@ public:
     {
     }
 
-    virtual bool CheckProject(const string& project_base_dir) const;
+    virtual bool CheckProject(const string& project_base_dir, bool* weak=0) const;
     virtual bool PassAll     (void) const
     {
         return false;
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/09/13 13:49:36  gouriano
+ * Make it to rely more on UNIX makefiles
+ *
  * Revision 1.7  2004/08/04 13:24:58  gouriano
  * Added processing of EXPENDABLE projects
  *
