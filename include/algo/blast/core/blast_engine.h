@@ -62,6 +62,8 @@ extern "C" {
  * @param word_params Options for processing initial word hits [in]
  * @param ext_params Options and parameters for the gapped extension [in]
  * @param hit_params Options for saving the HSPs [in]
+ * @param psi_options Options specific to PSI-BLAST [in]
+ * @param db_options Options for handling BLAST database [in]
  * @param results_ptr Structure holding all saved results [out]
  */
 Int4 
@@ -73,8 +75,10 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
         BlastInitialWordParametersPtr word_params, 
         BlastExtensionParametersPtr ext_params, 
         BlastHitSavingParametersPtr hit_params, 
+        PSIBlastOptionsPtr psi_options, 
+        BlastDatabaseOptionsPtr db_options,
         BlastResultsPtr PNTR results_ptr,
-	BlastReturnStatPtr return_stats);
+        BlastReturnStatPtr return_stats);
 
 
 /** The high level function performing the BLAST search after all the setup
@@ -96,6 +100,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
  * @param hit_options Options for saving the HSPs [in]
  * @param word_params_ptr Parameters for processing initial word hits [out]
  * @param ext_params_ptr Parameters for the gapped extension [out]
+ * @param psi_options Options specific to PSI-BLAST [in]
+ * @param db_options Options for handling BLAST database [in]
  * @param results Structure holding all saved results [out]
  * @param return_stats Return statistics numbers [out]
  */
@@ -110,6 +116,8 @@ Int2 BLAST_SearchEngine(const Uint1 blast_program, BLAST_SequenceBlkPtr query,
         BlastHitSavingOptionsPtr hit_options, 
         BlastInitialWordParametersPtr PNTR word_params_ptr, 
         BlastExtensionParametersPtr PNTR ext_params_ptr, 
+        PSIBlastOptionsPtr psi_options, 
+        BlastDatabaseOptionsPtr db_options,
         BlastResultsPtr PNTR results, BlastReturnStatPtr return_stats);
 
 #ifdef __cplusplus

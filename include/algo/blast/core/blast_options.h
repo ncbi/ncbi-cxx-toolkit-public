@@ -120,6 +120,15 @@ extern "C" {
 #define NA_LOOKUP_TABLE 2
 #define AA_LOOKUP_TABLE 3
 
+/** Defaults for PSI-BLAST options */
+#define PSI_ETHRESH 0.005
+#define PSI_MAX_NUM_PASSES 1
+#define PSI_PSEUDO_COUNT_CONST 9
+#define PSI_SCALING_FACTOR 1
+
+/** Default genetic code for query and/or database */
+#define BLAST_GENETIC_CODE 1
+
 /** Options needed to construct a lookup table 
  * Also needed: query sequence and query length.
  */
@@ -145,6 +154,8 @@ typedef struct QuerySetUpOptions {
    BlastMaskPtr lcase_mask; /**< Lower case masked locations on the query */
    Uint1 strand_option; /**< In blastn: which strand to search: 1 = forward;
                            2 = reverse; 3 = both */
+   Int4 genetic_code;     /**< Genetic code to use for translation, 
+                             [t]blastx only */
 } QuerySetUpOptions, *QuerySetUpOptionsPtr;
 
 /** Options needed for initial word finding and processing */
@@ -288,7 +299,7 @@ typedef struct BlastEffectiveLengthsOptions {
 /** Options used in protein BLAST only (PSI, PHI, RPS and translated BLAST)
  *  Some of these possibly should be transfered elsewhere  
  */
-typedef struct ProteinBlastOptions {
+typedef struct PSIBlastOptions {
    FloatHi ethresh;       /**< PSI-BLAST */
    Int4 maxNumPasses;     /**< PSI-BLAST */
    Int4 pseudoCountConst; /**< PSI-BLAST */
@@ -303,9 +314,7 @@ typedef struct ProteinBlastOptions {
    CharPtr phi_pattern;    /**< PHI-BLAST */
    Int4 max_num_patterns; /**< PHI-BLAST */
    Boolean is_rps_blast;    /**< RPS-BLAST */
-   Int4 genetic_code;     /**< blastx, tblastx */
-   Int4 db_genetic_code;  /**< tblastn, tblastx */
-} ProteinBlastOptions, *ProteinBlastOptionsPtr;
+} PSIBlastOptions, *PSIBlastOptionsPtr;
 
 /** Options used to create the ReadDBFILE structure 
  *  Include database name and various information for restricting the database
@@ -314,13 +323,15 @@ typedef struct ProteinBlastOptions {
  */
 typedef struct BlastDatabaseSetUpOptions {
    CharPtr database; /**< Name of the database */
+   Int4 genetic_code;  /**< Genetic code to use for translation, 
+                             tblast[nx] only */
    CharPtr gifile;   /**< File to get a gi list from: REMOVE? */
    ValNodePtr gilist; /**< A list of gis this database should be restricted to:
                          REMOVE? */
    CharPtr entrez_query;/**< An Entrez query to get a OID list from: REMOVE? */
    Int4 first_db_seq; /**< The first ordinal id number (OID) to search */
    Int4 final_db_seq; /**< The last OID to search */
-} BlastDatabaseSetUpOptions, *BlastDatabaseSetUpOptionsPtr;
+} BlastDatabaseOptions, *BlastDatabaseOptionsPtr;
 
 /** Options for formatting BLAST results 
  */
@@ -657,8 +668,8 @@ Int2 BLAST_InitDefaultOptions(const Uint1 blast_program,
    BlastHitSavingOptionsPtr PNTR hit_options,
    BlastScoringOptionsPtr PNTR score_options,
    BlastEffectiveLengthsOptionsPtr PNTR eff_len_options,
-   ProteinBlastOptionsPtr PNTR protein_options,
-   BlastDatabaseSetUpOptionsPtr PNTR db_options);
+   PSIBlastOptionsPtr PNTR protein_options,
+   BlastDatabaseOptionsPtr PNTR db_options);
 
 
 #ifdef __cplusplus
