@@ -41,11 +41,6 @@ CMsvcProjectGenerator::~CMsvcProjectGenerator(void)
 bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 {
     CMsvcPrjProjectContext project_context(prj);
-    if ( !CMsvcPrjProjectContext::IsRequiresOk(prj) ) {
-        LOG_POST("====== Can not find all requires for project: " + prj.m_ID);
-        return false;
-    }
-
     CVisualStudioProject xmlprj;
     
     {{
@@ -521,7 +516,9 @@ CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
                                             (SConfigInfo(),&included_sources);
 
     ITERATE(list<string>, p, included_sources) {
-        sources.push_back(CDirEntry::ConcatPath(project.m_SourcesBaseDir, *p));
+        sources.push_back(CDirEntry::NormalizePath
+                                        (CDirEntry::ConcatPath
+                                              (project.m_SourcesBaseDir, *p)));
     }
 
     list<string> excluded_sources;
@@ -623,6 +620,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/01/29 15:48:58  gorelenk
+ * Support of projects fitering transfered to CProjBulderApp class
+ *
  * Revision 1.8  2004/01/28 17:55:48  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
