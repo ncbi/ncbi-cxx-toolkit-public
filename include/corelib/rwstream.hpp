@@ -58,6 +58,13 @@ public:
         init(&m_Sb);
     }
 
+#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
+    ~CRStream()
+    {
+        rdbuf(0);
+    }
+#endif
+
 private:
     CRWStreambuf m_Sb;
 };
@@ -76,6 +83,13 @@ public:
     {
         init(&m_Sb);
     }
+
+#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
+    ~CWStream()
+    {
+        rdbuf(0);
+    }
+#endif
 
 private:
     CRWStreambuf m_Sb;
@@ -96,6 +110,13 @@ public:
         init(&m_Sb);
     }
 
+#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
+    ~CRWStream()
+    {
+        rdbuf(0);
+    }
+#endif
+
 private:
     CRWStreambuf m_Sb;
 };
@@ -107,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/24 19:54:35  lavr
+ * Added stream dtors for AUTOMATIC_STREAMBUF_DESTRUCTION case
+ *
  * Revision 1.5  2004/05/17 15:48:45  lavr
  * Ownership argument added to stream constructors
  *
