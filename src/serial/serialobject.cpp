@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/07/30 20:24:58  grichenk
+* Fixed error messages in Assign() and Equals()
+*
 * Revision 1.3  2002/05/30 14:16:44  gouriano
 * fix in debugdump: memory leak
 *
@@ -56,7 +59,7 @@ void CSerialObject::Assign(const CSerialObject& source)
 {
     if ( typeid(source) != typeid(*this) ) {
         ERR_POST(Fatal <<
-            "SerialAssign() -- Assignment of incompatible types: " <<
+            "CSerialObject::Assign() -- Assignment of incompatible types: " <<
             typeid(*this).name() << " = " << typeid(source).name());
     }
     GetThisTypeInfo()->Assign(this, &source);
@@ -67,7 +70,7 @@ bool CSerialObject::Equals(const CSerialObject& object) const
 {
     if ( typeid(object) != typeid(*this) ) {
         ERR_POST(Fatal <<
-            "SerialAssign() -- Can not compare types: " <<
+            "CSerialObject::Equals() -- Can not compare types: " <<
             typeid(*this).name() << " == " << typeid(object).name());
     }
     return GetThisTypeInfo()->Equals(this, &object);
