@@ -49,6 +49,7 @@
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -108,6 +109,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/10 18:14:31  gorelenk
+ * Implemented overwriting of the _MasterProject only in case when it was
+ * realy changed.
+ *
  * Revision 1.5  2004/01/30 20:40:41  gorelenk
  * changed procedure of folders creation
  *
