@@ -33,6 +33,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/general/Date.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/format/gff_formatter.hpp>
@@ -41,6 +42,7 @@
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/format/items/basecount_item.hpp>
 #include <objtools/format/items/sequence_item.hpp>
+#include <objtools/format/items/ctrl_items.hpp>
 #include <objtools/format/context.hpp>
 #include <algorithm>
 
@@ -65,11 +67,12 @@ void CGFFFormatter::Start(IFlatTextOStream& text_os)
 }
 
 
-void CGFFFormatter::StartSection(IFlatTextOStream& text_os)
+void CGFFFormatter::StartSection(const CStartSectionItem& ssec, IFlatTextOStream& text_os)
 {
     list<string> l;
+    CBioseqContext& bctx = *ssec.GetContext();
 
-    switch (GetContext().GetMol()) {
+    switch (bctx.GetMol()) {
     case CSeq_inst::eMol_dna:  m_SeqType = "DNA";      break;
     case CSeq_inst::eMol_rna:  m_SeqType = "RNA";      break;
     case CSeq_inst::eMol_aa:   m_SeqType = "Protein";  break;
@@ -77,13 +80,13 @@ void CGFFFormatter::StartSection(IFlatTextOStream& text_os)
     }
     if ( !m_SeqType.empty() ) {
         l.push_back("##Type " + m_SeqType + ' '
-                    + GetContext().GetAccession());
+                    + bctx.GetAccession());
     }
     text_os.AddParagraph(l);
 }
 
 
-void CGFFFormatter::EndSection(IFlatTextOStream& text_os)
+void CGFFFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_os)
 {
     if ( !m_EndSequence.empty() ) {
         list<string> l;
@@ -127,7 +130,7 @@ void CGFFFormatter::FormatFeature
     const CSeq_feat& seqfeat = f.GetFeat();
     string           key(f.GetKey()), oldkey;
     bool             gtf     = false;
-    CFFContext& ctx = const_cast<CFFContext&>(f.GetContext());
+    CBioseqContext& ctx = *f.GetContext();
     CScope* scope = &ctx.GetScope();
 
     // CSeq_loc         tentative_stop;
@@ -192,7 +195,38 @@ void CGFFFormatter::FormatFeature
         const CCdregion& cds = seqfeat.GetData().GetCdregion();
         frame = max(cds.GetFrame() - 1, 0);
     }
-    x_AddFeature(l, f.GetLoc(), source, key, "." /*score*/, frame, attrs, gtf, ctx);
+
+    CRef<CSeq_loc> tentative_stop;
+    if (gtf  &&  seqfeat.GetData().IsCdregion()) {
+        const CCdregion& cds = seqfeat.GetData().GetCdregion();
+        if ( !f.GetLoc().IsPartialRight()  &&  seqfeat.IsSetProduct() ) {
+            TSeqPos loc_len = sequence::GetLength(f.GetLoc(), scope);
+            TSeqPos prod_len = sequence::GetLength(seqfeat.GetProduct(),
+                                                   scope);
+            if (loc_len >= frame + 3 * prod_len + 3) {
+                SRelLoc::TRange range;
+                range.SetFrom(frame + 3 * prod_len);
+                range.SetTo  (frame + 3 * prod_len + 2);
+                // needs to be partial for TranslateCdregion to DTRT
+                range.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+                SRelLoc::TRanges ranges;
+                ranges.push_back(CRef<SRelLoc::TRange>(&range));
+                tentative_stop = SRelLoc(f.GetLoc(), ranges).Resolve(scope);
+            }
+            if (tentative_stop.NotEmpty()  &&  !tentative_stop->IsNull()) {
+                string s;
+                CCdregion_translate::TranslateCdregion
+                    (s, ctx.GetHandle(), *tentative_stop, cds);
+                if (s != "*") {
+                    tentative_stop.Reset();
+                }
+            } else {
+                tentative_stop.Reset();
+            }
+        }
+    }
+
+    x_AddFeature(l, f.GetLoc(), source, key, "." /*score*/, frame, attrs, gtf, ctx, tentative_stop);
 
     if (gtf  &&  seqfeat.GetData().IsCdregion()) {
         const CCdregion& cds = seqfeat.GetData().GetCdregion();
@@ -223,31 +257,9 @@ void CGFFFormatter::FormatFeature
                              "." /* score */, 0, attrs, gtf, ctx);
             }
         }
-
-        if ( !f.GetLoc().IsPartialRight()  &&  seqfeat.IsSetProduct() ) {
-            TSeqPos loc_len = sequence::GetLength(f.GetLoc(), scope);
-            TSeqPos prod_len = sequence::GetLength(seqfeat.GetProduct(),
-                                                   scope);
-            CRef<CSeq_loc> tentative_stop;
-            if (loc_len >= frame + 3 * prod_len + 3) {
-                SRelLoc::TRange range;
-                range.SetFrom(frame + 3 * prod_len);
-                range.SetTo  (frame + 3 * prod_len + 2);
-                // needs to be partial for TranslateCdregion to DTRT
-                range.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
-                SRelLoc::TRanges ranges;
-                ranges.push_back(CRef<SRelLoc::TRange>(&range));
-                tentative_stop = SRelLoc(f.GetLoc(), ranges).Resolve(scope);
-            }
-            if (tentative_stop.NotEmpty()  &&  !tentative_stop->IsNull()) {
-                string s;
-                CCdregion_translate::TranslateCdregion
-                    (s, ctx.GetHandle(), *tentative_stop, cds);
-                if (s == "*") {
-                    x_AddFeature(l, *tentative_stop, source, "stop_codon",
+        if ( tentative_stop ) {
+            x_AddFeature(l, *tentative_stop, source, "stop_codon",
                                  "." /* score */, 0, attrs, gtf, ctx);
-                }
-            }
         }
     }
 
@@ -268,7 +280,7 @@ void CGFFFormatter::FormatBasecount
     if ( !(m_GFFFlags & fShowSeq) )
         return;
 
-    CFFContext& ctx = const_cast<CFFContext&>(bc.GetContext());
+    CBioseqContext& ctx = *bc.GetContext();
 
     list<string> l;
     l.push_back("##" + m_SeqType + ' ' + ctx.GetAccession());
@@ -287,7 +299,7 @@ void CGFFFormatter::FormatSequence
 {
     if ( !(m_GFFFlags & fShowSeq) )
         return;
-    CFFContext& ctx = const_cast<CFFContext&>(seq.GetContext());
+    CBioseqContext& ctx = *seq.GetContext();
 
     list<string> l;
     CSeqVector v = seq.GetSequence();
@@ -300,7 +312,7 @@ void CGFFFormatter::FormatSequence
         vi.GetSeqData(s, 70);
         l.push_back("##" + s);
     }
-    text_os.AddParagraph(l, &ctx.GetActiveBioseq());
+    text_os.AddParagraph(l, ctx.GetHandle().GetCompleteBioseq());
 }
 
 
@@ -309,13 +321,13 @@ void CGFFFormatter::FormatSequence
 string CGFFFormatter::x_GetGeneID
 (const CFlatFeature& feat,
  const string& gene,
- CFFContext& ctx) const
+ CBioseqContext& ctx) const
 {
     const CSeq_feat& seqfeat = feat.GetFeat();
 
     string               main_acc;
     if (ctx.IsPart()) {
-        const CSeq_id& id = *(ctx.Master()->GetHandle().GetSeqId());
+        const CSeq_id& id = *(ctx.GetMaster().GetHandle().GetSeqId());
         main_acc = ctx.GetPreferredSynonym(id).GetSeqIdString(true);
     } else {
         main_acc = ctx.GetAccession();
@@ -343,7 +355,7 @@ string CGFFFormatter::x_GetGeneID
 }
 
 
-string CGFFFormatter::x_GetSourceName(CFFContext& ctx) const
+string CGFFFormatter::x_GetSourceName(CBioseqContext& ctx) const
 {
     // XXX - get from annot name (not presently available from IFF)?
     switch ( ctx.GetPrimaryId()->Which() ) {
@@ -375,8 +387,14 @@ void CGFFFormatter::x_AddFeature
  int frame,
  const string& attrs,
  bool gtf,
- CFFContext& ctx) const
+ CBioseqContext& ctx,
+ bool tentative_stop) const
 {
+    
+    int num_exons = 0;
+    for (CSeq_loc_CI it(loc);  it;  ++it) {
+        ++num_exons;
+    }
     int exon_number = 1;
     for (CSeq_loc_CI it(loc);  it;  ++it) {
         TSeqPos from   = it.GetRange().GetFrom(), to = it.GetRange().GetTo();
@@ -392,6 +410,9 @@ void CGFFFormatter::x_AddFeature
 
         if (it.GetRange().IsWhole()) {
             to = sequence::GetLength(it.GetSeq_id(), &ctx.GetScope()) - 1;
+        }
+        if ( tentative_stop  &&  (exon_number == num_exons) ) {
+            to -= 3;
         }
 
         string extra_attrs;
@@ -450,6 +471,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/04/22 16:02:12  shomrat
+* fixed stop_codon
+*
 * Revision 1.3  2004/03/25 20:42:41  shomrat
 * Master returns a CBioseq_Handle instead of a CBioseq
 *
