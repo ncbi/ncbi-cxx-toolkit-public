@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/19 21:02:32  pubmed
+* minor change: show error if any
+*
 * Revision 1.7  1999/07/07 14:23:38  pubmed
 * minor changes for VC++
 *
@@ -154,9 +157,7 @@ void CNcbiDbResource::HandleRequest( CCgiContext& ctx )
     
     } catch( std::exception& e ) {
         _TRACE( e.what() );
-        if( ctx.GetMsg().empty() ) {
-            ctx.GetMsg().push_back( "Unknown error" );
-        }
+        ctx.GetMsg().push_back( string( "Error handling request: " ) + e.what() );        
         auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
         cmd->Execute( ctx );
     }
