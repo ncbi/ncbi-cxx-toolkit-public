@@ -40,7 +40,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_gapalign.h>
-#include <algo/blast/core/blast_util.h> /* for READDB_UNPACK_BASE macros */
+#include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/greedy_align.h>
 
@@ -1926,10 +1926,10 @@ static Int4 BLAST_AlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
   tt = 0;  j = i;
   for (j_r = 1; j_r <= M; j_r++) {
      if(reverse_sequence) {
-        base_pair = READDB_UNPACK_BASE_N(A[(M-j_r)/4], ((j_r-1)%4));
+        base_pair = NCBI2NA_UNPACK_BASE(A[(M-j_r)/4], ((j_r-1)%4));
         wa = matrix[base_pair];
      } else {
-        base_pair = READDB_UNPACK_BASE_N(A[1+((j_r-1)/4)], (3-((j_r-1)%4)));
+        base_pair = NCBI2NA_UNPACK_BASE(A[1+((j_r-1)/4)], (3-((j_r-1)%4)));
         wa = matrix[base_pair];
      }
      e = c = f = MININT;

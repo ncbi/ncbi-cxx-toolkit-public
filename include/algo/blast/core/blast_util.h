@@ -61,7 +61,7 @@ extern "C" {
 #define NCBI2NA_MASK 0x03
 
 /** Macro to extract base N from a byte x (N >= 0, N < 4) */
-#define READDB_UNPACK_BASE_N(x, N) (((x)>>(2*(N))) & NCBI2NA_MASK)
+#define NCBI2NA_UNPACK_BASE(x, N) (((x)>>(2*(N))) & NCBI2NA_MASK)
 
 
 /** Deallocate memory only for the sequence in the sequence block */

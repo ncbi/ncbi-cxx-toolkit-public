@@ -38,7 +38,7 @@
 static char const rcsid[] = "$Id$";
 
 #include <algo/blast/core/greedy_align.h>
-#include <algo/blast/core/blast_util.h> /* for READDB_UNPACK_BASE macros */
+#include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
 
 /* -------- From original file edit.c ------------- */
 
@@ -422,7 +422,7 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
        if (!(rem & 4)) {
           for (row = 0; row < len2 && row < len1 && 
                   (s2[len2-1-row] ==
-                   READDB_UNPACK_BASE_N(s1[(len1-1-row)/4], 
+                   NCBI2NA_UNPACK_BASE(s1[(len1-1-row)/4], 
                                         3-(len1-1-row)%4)); 
                row++)
              /*empty*/ ;
@@ -434,7 +434,7 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
        if (!(rem & 4)) {
           for (row = 0; row < len2 && row < len1 && 
                   (s2[row] == 
-                   READDB_UNPACK_BASE_N(s1[(row+rem)/4], 
+                   NCBI2NA_UNPACK_BASE(s1[(row+rem)/4], 
                                         3-(row+rem)%4)); 
                row++)
              /*empty*/ ;
@@ -497,7 +497,7 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
                if (reverse) {
                   if (!(rem & 4)) {
                      while (row < len2 && col < len1 && s2[len2-1-row] == 
-                            READDB_UNPACK_BASE_N(s1[(len1-1-col)/4],
+                            NCBI2NA_UNPACK_BASE(s1[(len1-1-col)/4],
                                                  3-(len1-1-col)%4)) {
                         ++row;
                         ++col;
@@ -512,7 +512,7 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
                } else {
                   if (!(rem & 4)) {
                      while (row < len2 && col < len1 && s2[row] == 
-                            READDB_UNPACK_BASE_N(s1[(col+rem)/4],
+                            NCBI2NA_UNPACK_BASE(s1[(col+rem)/4],
                                                  3-(col+rem)%4)) {
                         ++row;
                         ++col;
@@ -658,7 +658,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
        if (!(rem & 4)) {
           for (row = 0; row < len2 && row < len1 && 
                   (s2[len2-1-row] ==
-                   READDB_UNPACK_BASE_N(s1[(len1-1-row)/4], 
+                   NCBI2NA_UNPACK_BASE(s1[(len1-1-row)/4], 
                                         3-(len1-1-row)%4)); 
                row++)
              /*empty*/ ;
@@ -670,7 +670,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
        if (!(rem & 4)) {
           for (row = 0; row < len2 && row < len1 && 
                   (s2[row] == 
-                   READDB_UNPACK_BASE_N(s1[(row+rem)/4], 
+                   NCBI2NA_UNPACK_BASE(s1[(row+rem)/4], 
                                         3-(row+rem)%4)); 
                row++)
              /*empty*/ ;
@@ -766,7 +766,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
                if (reverse) {
                   if (!(rem & 4)) {
                      while (row < len2 && col < len1 && s2[len2-1-row] == 
-                            READDB_UNPACK_BASE_N(s1[(len1-1-col)/4],
+                            NCBI2NA_UNPACK_BASE(s1[(len1-1-col)/4],
                                                  3-(len1-1-col)%4)) {
                         ++row;
                         ++col;
@@ -781,7 +781,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
                } else {
                   if (!(rem & 4)) {
                      while (row < len2 && col < len1 && s2[row] == 
-                            READDB_UNPACK_BASE_N(s1[(col+rem)/4],
+                            NCBI2NA_UNPACK_BASE(s1[(col+rem)/4],
                                                  3-(col+rem)%4)) {
                         ++row;
                         ++col;

@@ -41,7 +41,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/mb_lookup.h>
-#include <algo/blast/core/blast_util.h> /* for READDB_UNPACK_BASE macros */
+#include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
 
 #define MIN_INIT_HITLIST_SIZE 100
 
@@ -530,7 +530,7 @@ BlastNaMiniExtendLeft(Uint1* q, const Uint1* s, Uint1 max_left)
    Uint1 left = 0;
 
    for (left = 0; left < max_left; ++left) {
-      if (READDB_UNPACK_BASE_N(*s, left) != *--q) {
+      if (NCBI2NA_UNPACK_BASE(*s, left) != *--q) {
 	 break;
       }
    }
@@ -551,7 +551,7 @@ BlastNaMiniExtendRight(Uint1* q, const Uint1* s, Uint1 max_right)
    Uint1 index = 3;
    
    for (right = 0; right < max_right; ++right, --index) {
-      if (READDB_UNPACK_BASE_N(*s, index) != *q++) {
+      if (NCBI2NA_UNPACK_BASE(*s, index) != *q++) {
 	 break;
       }
    }
@@ -601,7 +601,7 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
          ++base;
       }
       ch = *s;
-      if ((sum += matrix[*--q][READDB_UNPACK_BASE_N(ch, base)]) > 0) {
+      if ((sum += matrix[*--q][NCBI2NA_UNPACK_BASE(ch, base)]) > 0) {
          q_beg = q;
          score += sum;
          sum = 0;
@@ -637,7 +637,7 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
    
    while (s < sf || (s == sf && base > remainder)) {
       ch = *s;
-      if ((sum += matrix[*q++][READDB_UNPACK_BASE_N(ch, base)]) > 0) {
+      if ((sum += matrix[*q++][NCBI2NA_UNPACK_BASE(ch, base)]) > 0) {
          q_end = q;
          score += sum;
          sum = 0;

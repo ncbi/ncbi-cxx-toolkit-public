@@ -162,10 +162,10 @@ static void setting_tt(Int4* S, Int4 mask, Int4 mask2, Uint4* prefixPos,
   maskLeftPlusOne = (mask << 1)+1;
   for (i = 0; i < ASCII_SIZE; i++) {
     /*find out the 4 bases packed in integer i*/
-    a1 = READDB_UNPACK_BASE_N(i, 3);
-    a2 = READDB_UNPACK_BASE_N(i, 2);
-    a3 = READDB_UNPACK_BASE_N(i, 1);
-    a4 = READDB_UNPACK_BASE_N(i, 0);
+    a1 = NCBI2NA_UNPACK_BASE(i, 3);
+    a2 = NCBI2NA_UNPACK_BASE(i, 2);
+    a3 = NCBI2NA_UNPACK_BASE(i, 1);
+    a4 = NCBI2NA_UNPACK_BASE(i, 0);
     /*what positions match a prefix of a4 followed by a3*/
     tmp = ((S[a4]>>1) | mask) & S[a3];
     /*what positions match a prefix of a4 followed by a3 followed by a2*/
