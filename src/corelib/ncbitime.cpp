@@ -93,6 +93,7 @@ static void s_TlsFormatCleanup(string* fmt, void* /* data */)
 }
 
 
+
 //============================================================================
 //
 //  CTime
@@ -129,6 +130,10 @@ static const char* kDefaultFormat = "M/D/Y h:m:s";
 
 // Set of the checked format symbols (w,W not included)
 static const char* kFormatSymbols = "YyMbBDhmsSZwW";
+
+// Error messages
+static const string kMsgInvalidTime = "CTime:  invalid";
+
 
 
 // Get number of days in "date"
@@ -350,7 +355,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             m_NanoSecond = value;
             break;
         default:
-            _TROUBLE;
+            NCBI_THROW(CTimeException, eFormat, "CTime:  format is incorrect");
         }
     }
 
@@ -364,7 +369,7 @@ void CTime::x_Init(const string& str, const string& fmt)
     }
 
     if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid");
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
 }
 
@@ -385,7 +390,7 @@ CTime::CTime(int year, int month, int day, int hour,
     m_AdjustTimeDiff = 0;
 
     if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime is invalid");
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
 }
 
@@ -424,6 +429,81 @@ CTime::CTime(const string& str, const string& fmt,
 }
 
 
+void CTime::SetYear(int year)
+{
+    m_Year = year;
+    int n_days = DaysInMonth();
+    if ( m_Day > n_days ) {
+        m_Day = n_days;
+    }
+    if ( !IsValid() ) {
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
+    }
+}
+
+
+void CTime::SetMonth(int month)
+{
+    m_Month = month;
+    int n_days = DaysInMonth();
+    if ( m_Day > n_days ) {
+        m_Day = n_days;
+    }
+    if ( !IsValid() ) {
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
+    }
+}
+
+
+void CTime::SetDay(int day)
+{
+    m_Day = day;
+    int n_days = DaysInMonth();
+    if ( m_Day > n_days ) {
+        m_Day = n_days;
+    }
+    if ( !IsValid() ) {
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
+    }
+}
+
+
+void CTime::SetHour(int hour)
+{
+    m_Hour = hour;
+    if ( !IsValid() ) {
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
+    }
+}
+
+
+void CTime::SetMinute(int minute)
+{
+    m_Minute = minute;
+    if ( !IsValid() ) {
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
+    }
+}
+
+
+void CTime::SetSecond(int second)
+{
+    m_Second = second;
+    if ( !IsValid() ) {
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
+    }
+}
+
+
+void CTime::SetNanoSecond(long nanosecond)
+{
+    m_NanoSecond = nanosecond;
+    if ( !IsValid() ) {
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
+    }
+}
+
+
 int CTime::YearDayNumber(void) const
 {
     unsigned first = s_Date2Number(CTime(Year(), 1, 1));
@@ -433,16 +513,51 @@ int CTime::YearDayNumber(void) const
 }
 
 
+int CTime::YearWeekNumber(EDayOfWeek first_day_of_week) const
+{
+    if (first_day_of_week > eSaturday) {
+        NCBI_THROW(CTimeException, eArgument,
+                   "CTime:  first day of week parameter is incorrect");
+    }
+
+    int week_num = 0;
+    int wday = DayOfWeek();
+
+    // Adjust day of week (from default Sunday)
+    wday -= first_day_of_week;
+    if (wday < 0) {
+        wday += 7;
+    }
+
+    // Calculate week number
+    int yday = YearDayNumber() - 1;  // YearDayNumber() returns 1..366
+    if (yday >= wday) {
+        week_num = yday / 7;
+        if ( (yday % 7) >= wday ) {
+            week_num++;
+        }
+    }
+    // Adjust range from [0..53] to [1..54]
+    return week_num + 1;
+}
+
+
+int CTime::MonthWeekNumber(EDayOfWeek first_day_of_week) const
+{
+    CTime first_of_month(Year(), Month(), 1);
+    int week_num_first   = first_of_month.YearWeekNumber(first_day_of_week);
+    int week_num_current = YearWeekNumber(first_day_of_week);
+    return week_num_current - week_num_first + 1;
+}
+
+
 int CTime::DayOfWeek(void) const 
 {
-    int c = Year() / 100;
-    int y = Year() % 100;
-    int m = Month() - 2;
-    if (m <= 0) {
-        m += 12;
-        y--;
-    }
-    return ((13*m-1)/5 + Day() + y + y/4 + c/4 - (2*c)%7 + 7) % 7;
+    int y = Year();
+    int m = Month();
+
+    y -= int(m < 3);
+    return (y + y/4 - y/100 + y/400 + "-bed=pen+mad."[m] + Day()) % 7;
 }
 
 
@@ -548,7 +663,7 @@ string CTime::AsString(const string& fmt) const
     x_VerifyFormat(fmt);
 
     if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime is invalid");
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
 
     if ( IsEmpty() ) {
@@ -780,30 +895,6 @@ CTime& CTime::x_SetTime(const time_t* value)
     m_Second         = t->tm_sec;
     m_NanoSecond     = ns;
 
-    return *this;
-}
-
-
-CTime& CTime::AddYear(int years, EDaylight adl)
-{
-    if ( !years ) {
-        return *this;
-    }
-    CTime *pt = 0;
-    bool aflag = false; 
-    if ((adl == eAdjustDaylight)  &&  x_NeedAdjustTime()) {
-        pt = new CTime(*this);
-        if ( !pt ) {
-            NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
-        }
-        aflag = true;
-    }
-    m_Year = Year() + years;
-    x_AdjustDay();
-    if ( aflag ) {
-        x_AdjustTime(*pt);
-        delete pt;
-    }
     return *this;
 }
 
@@ -1368,6 +1459,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2003/11/25 19:55:49  ivanov
+ * Added setters for various components of time -- Set*().
+ * Added YearWeekNumber(), MonthWeekNumber().
+ * Reimplemented AddYear() as AddMonth(years*12).
+ * Changed DayOfWeek() to use other computation method.
+ *
  * Revision 1.43  2003/11/21 20:04:23  ivanov
  * + DaysInMonth()
  *
