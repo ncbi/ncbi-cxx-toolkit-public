@@ -31,9 +31,7 @@
  */
 
 #include <app/project_tree_builder/proj_item.hpp>
-
-#include <set>
-
+#include <app/project_tree_builder/proj_tree.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 
 #include <corelib/ncbienv.hpp>
@@ -102,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/03/02 16:34:12  gorelenk
+ * Added include to proj_tree.hpp.
+ *
  * Revision 1.9  2004/02/20 22:54:45  gorelenk
  * Added analysis of ASN projects depends.
  *
