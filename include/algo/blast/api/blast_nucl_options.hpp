@@ -163,14 +163,6 @@ public:
     void SetXDropoff(double x) { m_Opts->SetXDropoff(x); }
 
     /******************* Gapped extension options *******************/
-    /// Returns GapXDropoffFinal
-    double GetGapXDropoffFinal() const { 
-        return m_Opts->GetGapXDropoffFinal(); 
-    }
-    /// Sets GapXDropoffFinal
-    /// @param x GapXDropoffFinal [in]
-    void SetGapXDropoffFinal(double x) { m_Opts->SetGapXDropoffFinal(x); }
-
     /// Returns GapExtnAlgorithm
     EBlastPrelimGapExt GetGapExtnAlgorithm() const { return m_Opts->GetGapExtnAlgorithm(); }
     /// Sets GapExtnAlgorithm
@@ -298,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/03/31 13:43:49  camacho
+ * BLAST options API clean-up
+ *
  * Revision 1.24  2005/03/10 13:20:22  madden
  * Moved [GS]etWindowSize and [GS]etEffectiveSearchSpace to CBlastOptionsHandle
  *

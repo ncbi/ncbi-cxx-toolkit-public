@@ -50,10 +50,12 @@ class CBlastOptionsHandle;
 
 /** 
 * Creates BlastOptionsHandle objects with default values for the 
-* programs/tasks requested.
-*
-* Concrete factory to create various properly configured BLAST options 
-* objects with default values, given a program (or task). 
+* programs/tasks requested. This factory is provided as a convenience
+* to create CBlastOptionsHandles which are configured with default values for 
+* a given program/task and will NOT be modified before passing them to objects
+* which will execute the BLAST algorithm. If you need to set options for the
+* specific task at hand, please instantiate the appropriate CBlastOptionsHandle
+* subclass.
 *
 * Example:
 * @code
@@ -98,8 +100,9 @@ private:
 ///
 /// This abstract base class only defines those options that are truly 
 /// "universal" BLAST options (they apply to all flavors of BLAST).
-/// Derived classes define options that are applicable only to those programs
-/// whose options they manipulate.
+///
+/// @invariant Derived classes define options that are applicable only to 
+/// those programs whose options they manipulate.
 
 class NCBI_XBLAST_EXPORT CBlastOptionsHandle : public CObject
 {
@@ -111,17 +114,24 @@ public:
     /// Default c-tor
     CBlastOptionsHandle(EAPILocality locality);
     
-    /// Return the object which this object is a handle for.
-    ///
-    /// Assumes user knows exactly how to set the individual options 
-    /// correctly.
+    /// Validate the options contained in this object
+    /// @note This method is meant to be used before calling any code that
+    /// processes the BLAST options classes
+    bool Validate() const;
+
+    /// Return the object which this object is a handle for. This method is
+    /// intended to be used when one wants to INSPECT the values of options
+    /// which are not exposed by the classes derived from 
+    /// CBlastOptionsHandle.
     const CBlastOptions& GetOptions() const { return *m_Opts; }
 
     /// Returns a reference to the internal options class which this object is
-    /// a handle for.
+    /// a handle for. Please note that using objects of type CBlastOptions
+    /// directly allows one to set inconsistent combinations of options.
     ///
-    /// Assumes user knows exactly how to set the individual options 
-    /// correctly.
+    /// @note Assumes user knows exactly how to set the individual options 
+    /// correctly. Calling CBlastOptions::Validate on this object is STRONGLY
+    /// recommended.
     CBlastOptions& SetOptions() { return *m_Opts; }
     
     /// Resets the state of the object to all default values.
@@ -163,6 +173,14 @@ public:
     /// Sets GapTrigger
     /// @param g GapTrigger [in]
     void SetGapTrigger(double g) { m_Opts->SetGapTrigger(g); }
+
+    /// Returns GapXDropoffFinal
+    double GetGapXDropoffFinal() const { 
+        return m_Opts->GetGapXDropoffFinal(); 
+    }
+    /// Sets GapXDropoffFinal
+    /// @param x GapXDropoffFinal [in]
+    void SetGapXDropoffFinal(double x) { m_Opts->SetGapXDropoffFinal(x); }
 
     /******************* Hit saving options *************************/
     /// Returns HitlistSize
@@ -230,7 +248,6 @@ public:
         m_Opts->SetEffectiveSearchSpace(eff);
     }
 
-
 protected:
 
     /// Data type this class controls access to
@@ -265,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/03/31 13:43:49  camacho
+ * BLAST options API clean-up
+ *
  * Revision 1.19  2005/03/10 13:20:22  madden
  * Moved [GS]etWindowSize and [GS]etEffectiveSearchSpace to CBlastOptionsHandle
  *

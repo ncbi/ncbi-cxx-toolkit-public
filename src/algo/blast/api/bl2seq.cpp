@@ -38,7 +38,6 @@
 #include <objects/seqalign/Seq_align.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
-#include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/seqsrc_multiseq.hpp>
 #include <algo/blast/api/seqinfosrc_seqvec.hpp>
 #include "blast_seqalign.hpp"
@@ -368,6 +367,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.69  2005/03/31 13:45:35  camacho
+ * BLAST options API clean-up
+ *
  * Revision 1.68  2005/03/29 17:15:51  dondosha
  * Use CBlastOptionsHandle instead of CBlastOptions to retrieve gapped mode
  *

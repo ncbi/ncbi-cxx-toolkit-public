@@ -97,15 +97,6 @@ public:
     /// @param hicut seg filtering parameter hicut [in]
     void SetSegFilteringHicut(double hicut) { m_Opts->SetSegFilteringHicut(hicut); }
 
-    /******************* Gapped extension options *******************/
-    /// Returns GapXDropoffFinal
-    double GetGapXDropoffFinal() const { 
-        return m_Opts->GetGapXDropoffFinal(); 
-    }
-    /// Sets GapXDropoffFinal
-    /// @param x GapXDropoffFinal [in]
-    void SetGapXDropoffFinal(double x) { m_Opts->SetGapXDropoffFinal(x); }
-
     /************************ Scoring options ************************/
     /// Returns GapOpeningCost
     int GetGapOpeningCost() const { return m_Opts->GetGapOpeningCost(); }
@@ -147,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/31 13:43:49  camacho
+ * BLAST options API clean-up
+ *
  * Revision 1.10  2005/03/10 13:20:22  madden
  * Moved [GS]etWindowSize and [GS]etEffectiveSearchSpace to CBlastOptionsHandle
  *

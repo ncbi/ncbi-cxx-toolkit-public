@@ -103,13 +103,6 @@ public:
     /// Retrieve a vector of subject sequences.
     const TSeqLocVector& GetSubjects() const;
 
-
-    /// Set the options.
-    CBlastOptions& SetOptions();
-
-    /// Retrieve the options.
-    const CBlastOptions& GetOptions() const;
-
     /// Set the options handle.
     CBlastOptionsHandle& SetOptionsHandle();
 
@@ -263,19 +256,6 @@ CBl2Seq::GetSubjects() const
     return m_tSubjects;
 }
 
-inline CBlastOptions&
-CBl2Seq::SetOptions()
-{
-    mi_bQuerySetUpDone = false;
-    return m_OptsHandle->SetOptions();
-}
-
-inline const CBlastOptions&
-CBl2Seq::GetOptions() const
-{
-    return m_OptsHandle->GetOptions();
-}
-
 inline CBlastOptionsHandle&
 CBl2Seq::SetOptionsHandle()
 {
@@ -314,6 +294,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2005/03/31 13:43:49  camacho
+* BLAST options API clean-up
+*
 * Revision 1.39  2005/01/07 15:17:33  papadopo
 * additional clarification on using PartialRun() and GetResults()
 *

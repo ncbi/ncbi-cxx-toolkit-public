@@ -109,7 +109,7 @@ private:
 CDbBlastPrelim::CDbBlastPrelim(CDbBlast& blaster)
 {
     m_pHspStream = blaster.GetHSPStream();
-    m_Options.Reset(&blaster.SetOptions());    
+    m_Options.Reset(&blaster.SetOptionsHandle().SetOptions());    
     m_pQueries = blaster.GetQueryBlk();
     m_pLookupTable = blaster.GetLookupTable();
     m_pDiagnostics = blaster.GetDiagnostics();
@@ -397,16 +397,20 @@ CDbBlast::x_InitHSPStream()
 
         num_results = (int) m_tQueries.size();
 
+        const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
+
         m_pHspStream = 
-            Blast_HSPListCollectorInitMT(GetOptions().GetProgramType(), 
-                GetOptions().GetHitSaveOpts(), num_results, TRUE, lock);
+            Blast_HSPListCollectorInitMT(kOptions.GetProgramType(), 
+                                         kOptions.GetHitSaveOpts(), 
+                                         num_results, TRUE, lock);
     }
 }
 
 void CDbBlast::SetupSearch()
 {
     int status = 0;
-    EBlastProgramType x_eProgram = m_OptsHandle->GetOptions().GetProgramType();
+    const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
+    EBlastProgramType x_eProgram = kOptions.GetProgramType();
 
     // Check that query vector is not empty
     if (m_tQueries.size() == 0) {
@@ -452,11 +456,10 @@ void CDbBlast::SetupSearch()
 
         x_ResetQueryDs();
 
-        SetupQueryInfo(m_tQueries, m_OptsHandle->GetOptions(), 
-                       &m_iclsQueryInfo);
+        SetupQueryInfo(m_tQueries, kOptions, &m_iclsQueryInfo);
         Blast_Message* blast_message = NULL;
-        SetupQueries(m_tQueries, m_OptsHandle->GetOptions(), 
-                     m_iclsQueryInfo, &m_iclsQueries, &blast_message);
+        SetupQueries(m_tQueries, kOptions, m_iclsQueryInfo, &m_iclsQueries, 
+                     &blast_message);
         if (blast_message) {
             m_ivErrors.push_back(blast_message);
             blast_message = NULL;
@@ -474,9 +477,9 @@ void CDbBlast::SetupSearch()
 
         status = 
             BLAST_MainSetUp(x_eProgram, 
-                            GetOptions().GetQueryOpts(),
-                            GetOptions().GetScoringOpts(),
-                            GetOptions().GetHitSaveOpts(),
+                            kOptions.GetQueryOpts(),
+                            kOptions.GetScoringOpts(),
+                            kOptions.GetHitSaveOpts(),
                             m_iclsQueries, m_iclsQueryInfo,
                             scale_factor,
                             (m_ibTracebackOnly ? NULL : &m_ipLookupSegments),
@@ -497,7 +500,8 @@ void CDbBlast::SetupSearch()
         }
         
         if (!m_ibTracebackOnly) {
-            LookupTableWrapInit(m_iclsQueries, GetOptions().GetLutOpts(), 
+            LookupTableWrapInit(m_iclsQueries, 
+                                kOptions.GetLutOpts(), 
                                 m_ipLookupSegments, m_ipScoreBlock, 
                                 &m_ipLookupTable, m_ipRpsInfo);
         }
@@ -510,11 +514,11 @@ void CDbBlast::SetupSearch()
 
         /* Initialize the effective length parameters with real values of
            database length and number of sequences */
-        BlastEffectiveLengthsParametersNew(GetOptions().GetEffLenOpts(),
+        BlastEffectiveLengthsParametersNew(kOptions.GetEffLenOpts(),
                                            total_length, num_seqs, 
                                            &eff_len_params);
         status = 
-            BLAST_CalcEffLengths(x_eProgram, GetOptions().GetScoringOpts(), 
+            BLAST_CalcEffLengths(x_eProgram, kOptions.GetScoringOpts(), 
                                  eff_len_params, m_ipScoreBlock, 
                                  m_iclsQueryInfo);
         BlastEffectiveLengthsParametersFree(eff_len_params);
@@ -529,7 +533,7 @@ void CDbBlast::SetupSearch()
 
 void CDbBlast::PartialRun()
 {
-    GetOptions().Validate();
+    GetOptionsHandle().Validate();
     SetupSearch();
 
     RunPreliminarySearch();
@@ -618,12 +622,14 @@ void CDbBlast::x_RunTracebackSearch()
     if (!m_ibLocalResults && !m_ibTracebackOnly)
         return;
 
+    const CBlastOptions& options = GetOptionsHandle().GetOptions();
+
     if ((status = 
-         Blast_RunTracebackSearch(GetOptions().GetProgramType(), 
+         Blast_RunTracebackSearch(options.GetProgramType(), 
              m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, 
-             GetOptions().GetScoringOpts(), GetOptions().GetExtnOpts(), 
-             GetOptions().GetHitSaveOpts(), GetOptions().GetEffLenOpts(), 
-             GetOptions().GetDbOpts(), GetOptions().GetPSIBlastOpts(), 
+             options.GetScoringOpts(), options.GetExtnOpts(), 
+             options.GetHitSaveOpts(), options.GetEffLenOpts(), 
+             options.GetDbOpts(), options.GetPSIBlastOpts(), 
              m_ipScoreBlock, m_pHspStream, m_ipRpsInfo, &m_ipResults)) != 0)
         NCBI_THROW(CBlastException, eInternal, "Traceback failed"); 
 
@@ -639,7 +645,7 @@ CDbBlast::x_Results2SeqAlign()
         return retval;
 
     bool gappedMode = GetOptionsHandle().GetGappedMode();
-    bool outOfFrameMode = GetOptions().GetOutOfFrameMode();
+    bool outOfFrameMode = GetOptionsHandle().GetOptions().GetOutOfFrameMode();
     string db_name(BLASTSeqSrcGetName(m_pSeqSrc));
     bool db_is_prot = (BLASTSeqSrcGetIsProt(m_pSeqSrc) ? true : false);
 
@@ -647,7 +653,7 @@ CDbBlast::x_Results2SeqAlign()
     CSeqDbSeqInfoSrc seqinfo_src(db_name, db_is_prot);
 
     retval = BLAST_Results2CSeqAlign(m_ipResults, 
-                 GetOptions().GetProgram(),
+                 GetOptionsHandle().GetOptions().GetProgram(),
                  m_tQueries, &seqinfo_src, 
                  gappedMode, outOfFrameMode);
 
@@ -663,6 +669,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.59  2005/03/31 13:45:35  camacho
+ * BLAST options API clean-up
+ *
  * Revision 1.58  2005/03/29 17:15:51  dondosha
  * Use CBlastOptionsHandle instead of CBlastOptions to retrieve gapped mode
  *

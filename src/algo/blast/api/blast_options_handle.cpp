@@ -76,6 +76,12 @@ CBlastOptionsHandle::SetDefaults()
     SetSubjectSequenceOptionsDefaults();
 }
 
+bool
+CBlastOptionsHandle::Validate() const
+{
+    return m_Opts->Validate();
+}
+
 CBlastOptionsHandle*
 CBlastOptionsFactory::Create(EProgram program, EAPILocality locality) THROWS((CBlastException))
 {
@@ -150,6 +156,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/31 13:45:35  camacho
+ * BLAST options API clean-up
+ *
  * Revision 1.8  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

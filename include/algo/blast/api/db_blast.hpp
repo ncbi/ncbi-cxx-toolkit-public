@@ -109,10 +109,6 @@ public:
     void SetQueries(const TSeqLocVector& queries);
     /// Returns the vector of query Seq-locs
     const TSeqLocVector& GetQueries() const;
-    /// Returns the options object for modification
-    CBlastOptions& SetOptions();
-    /// Returns the read-only options object
-    const CBlastOptions& GetOptions() const;
     /// Returns the options handle for modification
     CBlastOptionsHandle& SetOptionsHandle();
     /// Returns the read only options handle
@@ -254,19 +250,6 @@ CDbBlast::GetQueries() const
     return m_tQueries;
 }
 
-inline CBlastOptions&
-CDbBlast::SetOptions()
-{
-    m_ibQuerySetUpDone = false;
-    return m_OptsHandle->SetOptions();
-}
-
-inline const CBlastOptions&
-CDbBlast::GetOptions() const
-{
-    return m_OptsHandle->GetOptions();
-}
-
 inline CBlastOptionsHandle&
 CDbBlast::SetOptionsHandle()
 {
@@ -336,6 +319,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2005/03/31 13:43:49  camacho
+* BLAST options API clean-up
+*
 * Revision 1.33  2005/01/21 15:38:44  papadopo
 * changed x_Blast_FillRPSInfo to x_Blast_RPSInfo{Init|Free}
 *
