@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  1999/11/12 17:31:51  vakatov
+ * Cosmetics -- get rid of an extra warning in Release build
+ *
  * Revision 6.1  1999/10/12 16:33:50  vakatov
  * Moved all TEST suite code from "ncbi_buffer.c" to "test/test_ncbi_buffer.c"
  *
@@ -111,7 +114,7 @@ BUF_Write %5lu\n", (unsigned long)n_bytes);
     n_times = X_TIMES;
     for (i = 0;  i < n_times  &&  BUF_Size(buf);  i++) {
       int/*bool*/ do_peek = (s_Rand() % 2 == 0);
-      size_t n_peek;
+      size_t n_peek = 0;
       size_t n_bytes = X_BYTES;
       if ( !n_bytes )
         continue;
