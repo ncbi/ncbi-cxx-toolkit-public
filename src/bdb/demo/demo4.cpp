@@ -40,18 +40,25 @@
 USING_NCBI_SCOPE;
 
 
-const char* s_LobDBFileName = "blobstore.db";
+const char* s_LobDBFileName  = "blobstore.db";
+const char* s_LobDBFileName2 = "blobstore2.db";
 
 
 const int array1[] = {1, 2, 3, 4, 5, 0};
 const int array2[] = {10, 20, 30, 40, 50, 0};
 
+////////////////////////////////////////////////////////////////
+// Demo case 1:
+// Demonstrates how to use CBDB_LobFile 
+//   (BLOBs are accessed using integer access key)
 
+//
+// Load LOB storage 
 
 void LoadBLOB_Table()
 {
     CBDB_LobFile lob;
-    lob.Open(s_LobDBFileName, CBDB_LobFile::eCreate);
+    lob.Open(s_LobDBFileName, CBDB_File::eCreate);
 
 
     EBDB_ErrCode ret = lob.Insert(1, array1, sizeof(array1));
@@ -73,7 +80,7 @@ void PrintBLOB_Table()
     int  buffer[256];
 
     CBDB_LobFile lob;
-    lob.Open(s_LobDBFileName, CBDB_LobFile::eReadOnly);
+    lob.Open(s_LobDBFileName, CBDB_File::eReadOnly);
 
     // The safest way to read a LOB is first to retrieve the correspondent
     // record and use LobSize() to get information about the BLOB size.
@@ -122,11 +129,88 @@ void PrintBLOB_Table()
 
 }
 
+////////////////////////////////////////////////////////////////
+// Demo case 2:
+// Demonstrates how to use custom BLOB storage 
+// (derived from CBDB_BLobFile)
 
-////////////////////////////////
-// BLob Demo application
-//
 
+// @internal
+struct SDemoDB : public CBDB_BLobFile
+{
+    CBDB_FieldString       key;
+    CBDB_FieldString       subkey;
+
+    SDemoDB() 
+    {
+        BindKey("key",     &key, 256);
+        BindKey("subkey",  &subkey, 256);
+    }
+};
+
+
+void LoadDemoDB()
+{
+    SDemoDB lob;
+    lob.Open(s_LobDBFileName2, CBDB_File::eCreate);
+
+
+    lob.key = "Key1";
+    lob.subkey = "SubKey1";
+
+    EBDB_ErrCode ret = lob.Insert(array1, sizeof(array1));
+    if (ret != eBDB_Ok) {
+        NcbiCout << "Insert failed!" << endl;
+        exit(1);
+    }
+
+    lob.key = "Key2";
+    lob.subkey = "SubKey2";
+
+    ret = lob.Insert(array2, sizeof(array2));
+    if (ret != eBDB_Ok) {
+        NcbiCerr << "Insert failed!" << endl;
+        exit(1);
+    }
+}
+
+void PrintDemoDB()
+{
+    int  buffer[256];
+
+    SDemoDB lob;
+    lob.Open(s_LobDBFileName2, CBDB_File::eReadOnly);
+    
+    lob.key = "Key1";
+    lob.subkey = "SubKey1";
+
+    EBDB_ErrCode ret = lob.Fetch();
+
+    if (ret == eBDB_Ok) {
+        unsigned size = lob.LobSize();
+        if (size > sizeof(buffer)) {
+            NcbiCout << "Insufficient buffer size!" << NcbiEndl;
+        }
+        else {
+            ret = lob.GetData(buffer, sizeof(buffer));
+            assert(ret == eBDB_Ok);
+            for (unsigned int i = 0; i < size / sizeof(buffer[0]); ++i) {
+                NcbiCout << buffer[i] << " ";
+            }
+            NcbiCout << NcbiEndl;
+        }
+    } else {
+        NcbiCout << "BLOB 1 not found" << NcbiEndl;
+    }
+
+}
+
+
+
+/// BLob Demo application
+///
+/// @internal
+///
 class CBDB_BLobDemo1 : public CNcbiApplication
 {
 public:
@@ -152,6 +236,9 @@ int CBDB_BLobDemo1::Run(void)
     {
         LoadBLOB_Table();
         PrintBLOB_Table();
+
+        LoadDemoDB();
+        PrintDemoDB();
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -176,6 +263,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/08/03 12:58:54  kuznets
+ * Demo case for composite key BLOB
+ *
  * Revision 1.5  2004/06/22 12:04:32  kuznets
  * Use single table in file variant of Open
  *
