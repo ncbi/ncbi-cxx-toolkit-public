@@ -1422,30 +1422,12 @@ diag_compare_match(VoidPtr v1, VoidPtr v2)
    return (h1->q_off - h1->s_off) - (h2->q_off - h2->s_off);
 }
 
-/** Mega BLAST function performing gapped alignment: 
- *  Sorts initial HSPs by diagonal; 
- *  For each HSP:
- *    - Removes HSP if it is included in another already extended HSP;
- *    - If required, performs ungapped extension;
- *    - Performs greedy gapped extension;
- *    - Saves qualifying HSPs with gapped information into an HSP list 
- *      structure.
- * @param query The query sequence [in]
- * @param subject The subject sequence [in]
- * @param gap_align A placeholder for gapped alignment information and 
- *        score block. [in] [out]
- * @param score_options Options related to scoring alignments [in]
- * @param ext_params Options related to alignment extension [in]
- * @param hit_options Options related to saving HSPs [in]
- * @param init_hitlist Contains all the initial hits [in]
- * @param hsp_list_ptr List of HSPs with full extension information [out]
-*/
 Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query, 
 			    BLAST_SequenceBlkPtr subject,
 			    BlastGapAlignStructPtr gap_align,
 			    BlastScoringOptionsPtr score_options, 
 			    BlastExtensionParametersPtr ext_params,
-			    BlastHitSavingOptionsPtr hit_options,
+			    BlastHitSavingParametersPtr hit_params,
 			    BlastInitHitListPtr init_hitlist,
 			    BlastHSPListPtr PNTR hsp_list_ptr)
 {
@@ -1455,6 +1437,7 @@ Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query,
    BlastInitHSPPtr init_hsp;
    BlastInitHSPPtr PNTR init_hsp_array;
    BlastHSPListPtr hsp_list;
+   BlastHitSavingOptionsPtr hit_options = hit_params->options;
 
    if (*hsp_list_ptr == NULL)
       *hsp_list_ptr = hsp_list = BlastHSPListNew();
@@ -2129,7 +2112,7 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
         BlastGapAlignStructPtr gap_align,
         BlastScoringOptionsPtr score_options,                               
         BlastExtensionParametersPtr ext_params,
-        BlastHitSavingOptionsPtr hit_options,
+        BlastHitSavingParametersPtr hit_params,
         BlastInitHitListPtr init_hitlist,
         BlastHSPListPtr PNTR hsp_list_ptr)
 
@@ -2139,7 +2122,6 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
    Int4 index, index1, next_offset;
    BlastInitHSPPtr init_hsp = NULL;
    BlastHSPPtr hsp1 = NULL;
-   Boolean check_gap_trigger = TRUE;
    Int4 q_start, s_start, q_end, s_end;
    Boolean is_prot;
    Int4 max_offset;
@@ -2148,12 +2130,19 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
    BlastInitHSPPtr PNTR init_hsp_array = NULL;
    BlastHSPListPtr hsp_list = NULL;
    FloatHi gap_trigger;
+   FloatHi cutoff_score;
+   Boolean further_process = FALSE;
+   BlastHitSavingOptionsPtr hit_options = hit_params->options;
 
    if (!query || !subject || !gap_align || !score_options || !ext_params ||
-       !hit_options || !init_hitlist || !hsp_list_ptr)
+       !hit_params || !init_hitlist || !hsp_list_ptr)
       return 1;
 
+   if (init_hitlist->total == 0)
+      return 0;
+
    gap_trigger = ext_params->gap_trigger;
+   cutoff_score = hit_params->cutoff_score;
 
    is_prot = (gap_align->program != blast_type_blastn);
 
@@ -2170,6 +2159,49 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
 
    HeapSort(init_hsp_array, init_hitlist->total,
             sizeof(BlastInitHSPPtr), score_compare_match);
+
+   /* If no initial HSPs passes the e-value threshold so far, check if any 
+      would do after gapped alignment, and exit if none are found. 
+      Only attempt to extend initial HSPs whose scores are already above 
+      gap trigger */
+   if (init_hsp_array[0]->ungapped_data->score < cutoff_score) {
+      for (index=0; index<init_hitlist->total; index++) {
+         init_hsp = init_hsp_array[index];
+         if (init_hsp->ungapped_data && 
+             init_hsp->ungapped_data->score < gap_trigger)
+            break;
+         if (is_prot) {
+            status =  BLAST_ProtGappedAlignment(query, subject, gap_align,
+                         score_options, init_hsp);
+         } else {
+            status = BLAST_DynProgNtGappedAlignment(query, subject, gap_align,
+                         score_options, init_hsp);
+         }
+         if (gap_align->score >= cutoff_score) {
+            further_process = TRUE;
+            break;
+         }
+      }
+   } else {
+      index = 0;
+      further_process = TRUE;
+   }
+
+   if (!further_process) {
+      /* Free the ungapped data */
+      for (index = 0; index < init_hitlist->total; ++index) {
+         init_hsp_array[index]->ungapped_data = 
+            MemFree(init_hsp_array[index]->ungapped_data);
+      }
+      return 0;
+   }
+   
+   /* Sort again, if necessary */
+   if (index > 0) {
+      HeapSort(init_hsp_array, init_hitlist->total,
+               sizeof(BlastInitHSPPtr), score_compare_match);
+   }
+
    /* helper contains most frequently used information to speed up access. */
    helper = (DoubleIntPtr) Malloc((init_hitlist->total)*sizeof(DoubleInt));
 
@@ -2179,11 +2211,6 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
       hsp_end_is_contained = FALSE;
       init_hsp = init_hsp_array[index];
 
-      /* If nothing has been saved so far, and the score is already below
-         the gap trigger, finish */
-      if (check_gap_trigger && init_hsp->ungapped_data &&
-          init_hsp->ungapped_data->score < gap_trigger)
-         break;
       /* This prefetches this value for the test below. */
       next_offset = init_hsp->q_off;
 
@@ -2278,9 +2305,6 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
          BLAST_SaveHsp(gap_align, init_hsp, hsp_list, hit_options, 
                        subject->frame);
 
-         /* Once at least one HSP is saved, try to extend all HSPs */
-         check_gap_trigger = FALSE;
-         
          /* Fill in the helper structure. */
          helper[hsp_list->hspcnt - 1].i1 = gap_align->query_start;
          helper[hsp_list->hspcnt - 1].i2 = gap_align->query_stop;
