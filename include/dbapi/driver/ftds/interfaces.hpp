@@ -170,6 +170,11 @@ public:
     virtual void TDS_SetHostName(const string& host_name);
     virtual void TDS_SetPacketSize(int p_size);
     virtual bool TDS_SetMaxNofConns(int n);
+
+    unsigned int TDS_GetTimeout(void) {
+	return m_Timeout;
+    }
+
     static  int  TDS_dberr_handler(DBPROCESS*    dblink,   int     severity,
                                    int           dberr,    int     oserr,
                                    const string& dberrstr,
@@ -187,6 +192,8 @@ private:
     string              m_HostName;
     short               m_PacketSize;
     LOGINREC*           m_Login;
+    unsigned int        m_LoginTimeout;
+    unsigned int        m_Timeout;
 
     DBPROCESS* x_ConnectToServer(const string&   srv_name,
                                  const string&   user_name,
@@ -251,8 +258,15 @@ protected:
 
     void DropCmd(CDB_BaseEnt& cmd);
 
+    
+
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
+
+    void TDS_SetTimeout(void) {
+	m_Link->tds_socket->timeout= m_Link->tds_socket->longquery_timeout= 
+	    (TDS_INT)(m_Context->TDS_GetTimeout());
+    }
 
     DBPROCESS*      m_Link;
     CTDSContext*    m_Context;
@@ -693,6 +707,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/01/14 20:38:01  soussov
+ * timeout support for tds added
+ *
  * Revision 1.2  2001/11/06 17:58:04  lavr
  * Formatted uniformly as the rest of the library
  *

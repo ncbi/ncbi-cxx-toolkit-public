@@ -96,6 +96,9 @@ bool CTDS_LangCmd::Send()
                            "dbcmd failed");
     }
 
+    
+    m_Connect->TDS_SetTimeout();
+
     if (dbsqlsend(m_Cmd) != SUCCEED) {
         m_HasFailed = true;
         throw CDB_ClientEx(eDB_Error, 220005, "CTDS_LangCmd::Send",
@@ -429,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/01/14 20:38:49  soussov
+ * timeout support for tds added
+ *
  * Revision 1.6  2001/12/18 19:29:08  soussov
  * adds conversion from nanosecs to milisecs for datetime args
  *

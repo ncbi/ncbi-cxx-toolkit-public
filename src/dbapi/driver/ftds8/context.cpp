@@ -83,6 +83,8 @@ CTDSContext::CTDSContext(DBINT version) :
                            "dbinit failed");
     }
 
+    m_Timeout= m_LoginTimeout= 0;
+
     dberrhandle(s_TDS_err_callback);
     dbmsghandle(s_TDS_msg_callback);
 
@@ -93,13 +95,17 @@ CTDSContext::CTDSContext(DBINT version) :
 
 bool CTDSContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    return dbsetlogintime(nof_secs) == SUCCEED;
+    m_LoginTimeout= nof_secs;
+    return true;
+    //    return dbsetlogintime(nof_secs) == SUCCEED;
 }
 
 
 bool CTDSContext::SetTimeout(unsigned int nof_secs)
 {
-    return dbsettime(nof_secs) == SUCCEED;
+    m_Timeout= nof_secs;
+    return true;
+    //    return dbsettime(nof_secs) == SUCCEED;
 }
 
 
@@ -360,6 +366,9 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
         DBSETLENCRYPT(m_Login, TRUE);
 #endif
 
+    
+    tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)m_LoginTimeout, 
+		     (int)m_Timeout, (int)m_Timeout);
     return dbopen(m_Login, (char*) srv_name.c_str());
 }
 
@@ -408,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/01/14 20:38:48  soussov
+ * timeout support for tds added
+ *
  * Revision 1.3  2002/01/11 20:25:46  soussov
  * driver manager support added
  *
