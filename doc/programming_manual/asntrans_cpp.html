@@ -48,7 +48,7 @@ int CTestAsn::Run() {
     auto_ptr&lt;CObjectOStream&gt; outObject =
         new CObjectOStreamAsn(*outStream);
 
-<font color = "red">    // Provide explicit object type information <font color = "black">
+<font color = "red">    // Read, then write the CBiostruc data <font color = "black">
 
     CBiostruc bs;
     *inObject >> bs;
@@ -63,10 +63,12 @@ USING_NCBI_SCOPE;
 <font color = "black">
 int main(int argc, const char* argv[]) 
 {
-<font color = "red">    // initialize the diagnostic stream <font color = "black">
+<font color = "red">    // Initialize the diagnostic stream <font color = "black">
 
     CNcbiOfstream diag("asntrans.log");
     SetDiagStream(&diag);
+
+<font color = "red">    // Run the application <font color = "black">
 
     CTestAsn theTestApp;
     return theTestApp.AppMain(argc, argv);
