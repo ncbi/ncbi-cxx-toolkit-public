@@ -360,7 +360,7 @@ typedef struct SOCK_tag {
     size_t          n_in;       /* DSOCK: msg #; SOCK: total # of bytes read */
     size_t          n_out;      /* DSOCK: msg #; SOCK: total # of bytes sent */
 
-    unsigned short  myport;     /* this socket's port number for debugging   */
+    unsigned short  myport;     /* this socket's port number, host byte order*/
 
 #ifdef NCBI_OS_UNIX
     /* pathname for UNIX socket */
@@ -1686,7 +1686,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                 addr.sin_len = addrlen;
 #  endif /*HAVE_SIN_LEN*/
                 if (getsockname(sock->sock,
-                                (struct sockaddr*)&addr, &addrlen) == 0) {
+                                (struct sockaddr*) &addr, &addrlen) == 0) {
                     assert(addr.sin_family == AF_INET);
                     sock->myport = ntohs(addr.sin_port);
                 }
@@ -4411,6 +4411,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.170  2005/03/11 20:01:55  lavr
+ * Document SOCK::myport byte order
+ *
  * Revision 6.169  2005/03/11 19:59:26  lavr
  * Introduce SOCK::myport, solely for interactive debugging purposes
  *
