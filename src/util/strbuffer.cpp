@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/10/22 19:01:36  gouriano
+* replaced THROW0_TRACE by throw in CIStreamBuffer::FillBuffer
+*
 * Revision 1.30  2002/01/29 16:01:21  grichenk
 * COStreamBuffer destructor fixed - no exceptions thrown
 *
@@ -382,11 +385,13 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
                     return pos;
                 }
                 m_Error = "end of file";
-                THROW0_TRACE(CEofException());
+                throw CEofException();
+//                THROW0_TRACE(CEofException());
             }
             else {
                 m_Error = "read fault";
-                THROW1_TRACE(CIOException, "read fault");
+                throw CIOException(m_Error);
+//                THROW1_TRACE(CIOException, "read fault");
             }
         }
         m_DataEndPos += count;
