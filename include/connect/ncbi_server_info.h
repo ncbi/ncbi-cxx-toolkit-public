@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2001/06/04 16:59:56  lavr
+ * MIME type/subtype added to server descriptor
+ *
  * Revision 6.20  2001/05/17 14:49:46  lavr
  * Typos corrected
  *
@@ -104,6 +107,7 @@
  * ==========================================================================
  */
 
+#include <connect/ncbi_connutil.h>
 #include <stddef.h>
 #include <time.h>
 
@@ -137,6 +141,7 @@ typedef enum {
 typedef int TSERV_Flags;
 
 #define SERV_DEFAULT_FLAG       fSERV_Regular
+#define SERV_MIME_UNDEFINED     ((unsigned)(-1))
 
 
 /* Verbal representation of a server type (no internal spaces allowed)
@@ -189,6 +194,8 @@ typedef struct {
     time_t                time; /* relaxation/expiration time/period         */
     double                coef; /* bonus coefficient for server run locally  */
     double                rate; /* rate of the server                        */
+    EMIME_Type          mime_t; /* type and                                  */
+    EMIME_SubType       mime_s; /*     subtype for content-type              */
     USERV_Info            u;    /* server type-specific data/params          */
 } SSERV_Info;
 
@@ -245,7 +252,7 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *                   path[?args] (here brackets denote the optional part).
  *                   Note that no spaces allowed within this parameter.
  *
- * Tags may follow in no specific order but no more than one instance
+ * Tags may follow in no particular order but no more than one instance
  * of each flag is allowed:
  *
  *    Load average calculation for the server:
@@ -253,25 +260,25 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *       Blast
  *
  *    Local server:
- *       L=no    (default)
+ *       L=no           (default)
  *       L=yes
  *           Local servers are accessible only by direct clients of LBSMD,
- *           that is such servers cannot be accessed by means of DISPD.
+ *           i.e. such servers cannot be accessed by means of DISPD.
  *
  *    Stateful server:
- *       S=no    (default)
+ *       S=no           (default)
  *       S=yes
  *           Indication of stateful server, which allows only dedicated socket
- *           (stateful) connections (HTTP mode - aka stateless - not allowed).
+ *           (stateful) connections. (Tag is not allowed for HTTP* servers.)
  *
  *    Validity period:
- *       T=integer    [0 = default]
+ *       T=integer      [0 = default]
  *           specifies the time in seconds this server entry is valid
  *           without update. (If equal to 0 then defaulted by
  *           the LBSM Daemon to some reasonable value.)
  *
  *    Reachability coefficient:
- *       R=double     [0.0 = default]
+ *       R=double       [0.0 = default]
  *           specifies availability ratio for the server, expressed as
  *           a floating point number with 0.0 meaning the server is down
  *           (unavailable) and 1000.0 meaning the server is up and running.
@@ -284,9 +291,12 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *           dynamically switches this rate to be maximal specified when
  *           the server is up, and to be zero when the server is down.
  *           Note that negative values are reserved for LBSMD private use.
+ *           To specify that a server as inactive in LBSMD configuration file,
+ *           one can use any negative number (note that value "0" in the config
+ *           file means "default" and replaced with the value 1000.0).
  *
  *    Bonus coefficient:
- *       B=double     [0.0 = default]
+ *       B=double       [0.0 = default]
  *           specifies a multiplicative bonus given to a server run locally,
  *           when calculating reachability rate.
  *           Special rules apply to negative/zero values:
@@ -300,6 +310,16 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *           servers for the same service. That is -5 instructs to
  *           ignore locally run server if its status is less than 5% of
  *           average status of remaining servers for the same service.
+ *
+ *    Content type indication:
+ *       C=type/subtype [no default]
+ *           specification of Content-Type, which server accepts.
+ *           The value of this tag gets added automatically to any packet
+ *           which is sent e.g. by SERVICE connector. The client has,
+ *           however, to know the data type accepted by the server, i.e.
+ *           a protocol, which server understands, in order to communicate.
+ *           This flag just helps insure that HTTP packets all get proper
+ *           content type, defined at service configuration.
  *
  *
  * Note that optional arguments can be omitted along with all preceding
