@@ -49,7 +49,7 @@
 #include <corelib/ncbitime.hpp>
 #include <objtools/readers/fasta.hpp>
 
-#include <Bl2Seq.hpp>
+#include <algo/blast/bl2seq.hpp>
 
 #ifdef WRITE_SEQALIGNS
 #include <ctools/asn_converter.hpp>
@@ -389,6 +389,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/04 15:31:29  dicuccio
+ * FIxed #include specification for C++ code
+ *
  * Revision 1.1  2003/08/04 14:22:15  dicuccio
  * Initial import into the C++ toolkit
  *
