@@ -545,7 +545,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'C':
             switch (pfx[1]) {
             case 'A': case 'B': case 'D':           return eAcc_gb_est;
-            case 'C':                               return eAcc_gb_gss;
+            case 'C': case 'E':                     return eAcc_gb_gss;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1343,6 +1343,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.57  2003/07/02 13:46:14  ucko
+ * +CE (eAcc_gb_gss)
+ *
  * Revision 6.56  2003/06/24 16:33:48  ucko
  * CSeq_id::IdentifyAccession: always return unknown for accessions that
  * contain no digits, even if they happen to look like prefixes.
