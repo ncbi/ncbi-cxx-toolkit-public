@@ -105,7 +105,7 @@ public:
               streamsize               buf_size = 0,
               CT_CHAR_TYPE*            buf = 0,
               CRWStreambuf::TOwnership own = 0) :
-        CNcbiIostream(0), m_Sb(rw, buf_size, buf)
+        CNcbiIostream(0), m_Sb(rw, buf_size, buf, own)
     {
         init(&m_Sb);
     }
@@ -128,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/10 20:50:45  vasilche
+ * Do not forget to pass ownership to CRWStreambuf.
+ *
  * Revision 1.6  2004/05/24 19:54:35  lavr
  * Added stream dtors for AUTOMATIC_STREAMBUF_DESTRUCTION case
  *
