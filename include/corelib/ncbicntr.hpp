@@ -111,7 +111,7 @@ extern "C" {
    typedef int TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) (fetch_and_add(p, d) + d)
 #elif defined(NCBI_OS_DARWIN)
-#  include <CarbonCore/DriverSynchronization.h> // Is this right?
+#  include <CoreServices/CoreServices.h>
    typedef SInt32 TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) (AddAtomic(d, p) + d)
 #elif defined(NCBI_OS_MAC)
@@ -342,6 +342,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/02/03 19:28:30  ucko
+* Darwin: include the master CoreServices header because
+* DriverSynchronization.h is officially internal.
+*
 * Revision 1.17  2003/07/11 12:47:09  siyan
 * Documentation changes.
 *
