@@ -250,11 +250,11 @@ void s_TestRegConvert()
     reg.Set("PARENT", "p2",  "blah");
 
 //    reg.Set("Section1", ".NodeName", "XXX");
-//    reg.Set("Section1", ".SubNode",  "Section2");
+    reg.Set("Section1", ".SubNode",  "Section2");
     reg.Set("Section1", "s1A",  "ugh");
     reg.Set("Section1", "s1B",  "33");
 
-//    reg.Set("Section2", ".NodeName", "AAA");
+    reg.Set("Section2", ".NodeName", "AAA");
     reg.Set("Section2", "s2A",  "eee");
     reg.Set("Section2", "s2B",  "boo");
 
@@ -267,7 +267,22 @@ void s_TestRegConvert()
 
     CParamTreePrintFunc func;
     TreeDepthFirstTraverse(*ptr, func);
-    
+
+    const TPluginManagerParamTree* nd = tr->FindNode("PARENT");
+    _ASSERT(nd);    
+    _ASSERT(nd->GetId() == "PARENT");
+
+    nd = nd->FindNode("Section1");
+    _ASSERT(nd);    
+    _ASSERT(nd->GetId() == "Section1");
+
+    nd = nd->FindNode("AAA");
+    _ASSERT(nd);    
+    _ASSERT(nd->GetId() == "AAA");
+
+    nd = nd->FindNode("PARENT");
+    _ASSERT(nd);    
+    _ASSERT(nd->GetId() == "PARENT");
 
     delete tr;
 }
@@ -323,6 +338,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/29 16:58:11  kuznets
+ * + test for CTreePairNode::FindNode
+ *
  * Revision 1.5  2004/07/29 13:15:34  kuznets
  * + test for registry converter
  *
