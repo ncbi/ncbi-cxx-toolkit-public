@@ -41,7 +41,7 @@
 extern "C" {
 #endif
 
-/** Structure holding raw cutoff values. */
+/** Structure holding raw cutoff and gap-x-drop values. */
 typedef struct BlastRawCutoffs {
    Int4 x_drop_ungapped; /**< Raw value of the x-dropoff for ungapped 
                             extensions */
@@ -50,6 +50,7 @@ typedef struct BlastRawCutoffs {
    Int4 x_drop_gap_final; /**< Raw value of the x-dropoff for gapped 
                              extensions with traceback */
    Int4 gap_trigger; /**< Minimal raw score for starting gapped extension */
+   Int4 cutoff_score; /**< Cutoff score corresponding to given evalue. */
 } BlastRawCutoffs;
 
 /** Structure containing hit counts from the ungapped stage of a BLAST 
