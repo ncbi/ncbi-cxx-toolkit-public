@@ -17,8 +17,8 @@
 <td>Denis Vakatov</td>
 
 <td>Fathered the Toolkit. Supervise all works on the portable (core, non-internal)
-projects of the Toolkit, actively participate in the design and sometimes
-implementation details of all core APIs.
+projects of the Toolkit, actively participate in the design (and sometimes
+implementation details) of all core APIs.
 <br>CONFIGURE -- UNIX configuration tool (using <i>autoconf</i>).
 <br>CORELIB -- orig.author and active supporter/developer
 <br>CGI -- orig.author of "CGI Request" and "CGI Application"; maintain
@@ -32,7 +32,7 @@ socket(SOCK) APIs, and FW-daemon.
 <td>Eugene Vasilchenko
 <br>(Nov 1999 - Feb 2001)</td>
 
-<td>CORELIB -- "CObject, CRef&lt;>"
+<td>CORELIB -- "CObject, CRef&lt;&gt;"
 <br>CGI -- "CGI Response", "Fast-CGI module"
 <br>HTML -- orig.author
 <br>SERIAL -- orig.author
@@ -49,31 +49,30 @@ and monitoring.
 <br>CTOOLS -- connectivity with the NCBI C Toolkit.
 <br>MSVC++ project mutli-configuration. Internal wxWindows installations
 on MS-Win and Solaris.
-<br>DOC -- documentation on the CONNECT project.</td>
+<br>DOC -- documentation on all of the above.</td>
 </tr>
 
 <tr>
 <td>Aleksey Grichenko
 <br>(since Jan 2001)</td>
 
-<td>CORELIB -- orig.author of the thread library, "safe-static"
+<td>CORELIB -- orig.author of the thread library
 <br>SERIAL -- support and further development
 <br>DATATOOL -- support and further development
-<br>OBJMGR (in progress) -- client-side API and implementation</td>
-</tr>
-
-<tr>
-<td>Diane Zimmerman
-<br>(2000)</td>
-
-<td>DOC -- "Programming Manual"</td>
+<br>OBJMGR (in progress) -- client-side API and implementation
+<br>Incorporation of MT-safety and "safe-static" features to all of the above
+</td>
 </tr>
 
 <tr>
 <td>Aaron Ucko
 <br>(since Aug 2001)</td>
 
-<td>ID1_FETCH -- develop from a test/demo application to a real client.</td>
+<td>ID1_FETCH -- developed from a test/demo application to a real client.
+<br>CONFIGURE -- multiple extentions to the configurator
+<br>CORELIB -- generalized error handlers, implemented E-mail and CGI/HTML ones
+<br>PubMed (internal) -- developing C++ bio-sequence indexer 
+</td>
 </tr>
 
 <tr>
@@ -81,8 +80,17 @@ on MS-Win and Solaris.
 <br>(since Apr 2001)</td>
 
 <td>HTML -- further support and development
-<br>CORELIB, UTIL -- porting of some very platform-dependent extensions</td>
+<br>CORELIB, UTIL -- porting of some very platform-dependent extensions
+</td>
 </tr>
+
+<tr>
+<td>Diane Zimmerman
+<br>(2000 only)</td>
+
+<td>DOC -- "Programming Manual"</td>
+</tr>
+
 
 <tr>
 <td><b><i>major contributors</i></b></td>
@@ -91,19 +99,42 @@ on MS-Win and Solaris.
 </tr>
 
 <tr>
+<td>Michael Kimelman</td>
+
+<td>OBJMGR (in progress) -- server-side API and implementation,
+client-side loader (both generic and its implementation for ID)
+</td>
+</tr>
+
+<tr>
+<td>Anton Butanaev</td>
+
+<td>OBJMGR (in progress) -- implementation of ID1 loader
+<br>DBAPI (future) -- author of the "high-level, user-friendly" layer of
+DB API (to be based on Michael Kholodov's and Vladimir Soussov's DB APIs)</td>
+</tr>
+
+<tr>
 <td>Michael Kholodov</td>
 
 <td>DBAPI (in progress) -- author of the "middle-level" database API based
 on Vladimir Soussov's portable DB driver API.
-<br>SERIAL, DATATOOL -- provided eventual support of in the beginning of
-2001</td>
+<br>SERIAL, DATATOOL -- provided eventual support of (in the beginning of
+2001)</td>
 </tr>
 
 <tr>
 <td>Vladimir Soussov</td>
 
-<td>DBAPI (in progress) -- author of the portable DB driver API and its
-implemementations for CTLIB and DBLIB</td>
+<td>DBAPI -- author of the portable DB driver API and its
+implemementations for CTLIB, DBLIB and FreeTDS</td>
+</tr>
+
+<tr>
+<td>Victor Sapojnikov</td>
+
+<td>DBAPI (in progress) -- implementation of the MS-SQL driver on MS Windows,
+and the multiplatform "network bridge" driver</td>
 </tr>
 
 <tr>
@@ -114,23 +145,17 @@ implemementations for CTLIB and DBLIB</td>
 </tr>
 
 <tr>
+<td>Cliff Clausen</td>
+
+<td>OBJECTS -- ported some of bio-sequence related code from C Toolkit</td>
+</tr>
+
+<tr>
 <td>Vsevolod Sandomirskiy</td>
 
 <td>CORELIB, CGI -- draft-authored some application- and context- classes</td>
 </tr>
 
-<tr>
-<td>Anton Butanaev</td>
-
-<td>DBAPI (future) -- author of the "high-level, user-friendly" layer of
-DB API (to be based on Michael Kholodov's and Vladimir Soussov's DB APIs)</td>
-</tr>
-
-<tr>
-<td>Mikhael Kimelman</td>
-
-<td>OBJMGR (in progress) -- server-side API and implementation</td>
-</tr>
 </table>
 
 <br><hr>
