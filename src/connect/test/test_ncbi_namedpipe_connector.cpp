@@ -66,10 +66,10 @@ static void Client(STimeout timeout)
     assert(log_file);
 
     // Tests for NAMEDPIPE CONNECTOR
-    _TRACE(string("Starting the NAMEDPIPE CONNECTOR test ...\n\n") +
-           kPipeName + ", timeout = " +
-           NStr::DoubleToString(timeout.sec + timeout.usec / 1000000, 6) +
-           "sec.\n");
+    LOG_POST(string("Starting the NAMEDPIPE CONNECTOR test ...\n\n") +
+             kPipeName + ", timeout = " +
+             NStr::DoubleToString(timeout.sec + timeout.usec / 1000000, 6) +
+             "sec.\n");
 
     connector = NAMEDPIPE_CreateConnector(kPipeName,
                                           CNamedPipe::kDefaultBufferSize);
@@ -91,10 +91,10 @@ static void Server(STimeout timeout, int n_cycle)
 {
     EIO_Status status;
 
-    _TRACE(string("Starting the NAMEDPIPE CONNECTOR io bouncer ...\n\n") +
-           kPipeName + ", timeout = " +
-           NStr::DoubleToString(timeout.sec + timeout.usec / 1000000, 6) +
-           ", n_cycle = " + NStr::UIntToString(n_cycle) + "\n");
+    LOG_POST(string("Starting the NAMEDPIPE CONNECTOR io bouncer ...\n\n") +
+             kPipeName + ", timeout = " +
+             NStr::DoubleToString(timeout.sec + timeout.usec / 1000000, 6) +
+             ", n_cycle = " + NStr::UIntToString(n_cycle) + "\n");
 
     // Create listening named pipe
     CNamedPipeServer pipe;
@@ -107,19 +107,19 @@ static void Server(STimeout timeout, int n_cycle)
         size_t  n_read, n_written;
         char    buf[kBufferSize];
 
-        _TRACE("Server(n_cycle = " + NStr::UIntToString(n_cycle) + ")");
+        LOG_POST("Server(n_cycle = " + NStr::UIntToString(n_cycle) + ")");
 
         // Listening pipe
         status = pipe.Listen();
         switch (status) {
         case eIO_Success:
-            _TRACE("Client is connected...");
+            LOG_POST("Client is connected...");
 
             // Bounce all incoming data back to the client
             while ((status = pipe.Read(buf, kBufferSize, &n_read))
                    == eIO_Success) {
                 // Dump received data
-                _TRACE("Read " + NStr::UIntToString(n_read) + " bytes:");
+                LOG_POST("Read " + NStr::UIntToString(n_read) + " bytes:");
                 NcbiCout.write(buf, n_read);
                 assert(NcbiCout.good());
 
@@ -129,27 +129,27 @@ static void Server(STimeout timeout, int n_cycle)
                     status = pipe.Write(buf + n_total, n_read - n_total,
                                         &n_written);
                     if (status != eIO_Success) {
-                        _TRACE("Failed to write " +
-                               NStr::UIntToString(n_read) +
-                               " bytes, status = " +
-                               IO_StatusStr(status));
+                        LOG_POST("Failed to write " +
+                                 NStr::UIntToString(n_read) +
+                                 " bytes, status = " +
+                                 IO_StatusStr(status));
                         break;
                     }
                     n_total += n_written;
-                    _TRACE("Written " + NStr::UIntToString(n_written) +
-                           ", remains " +
-                           NStr::UIntToString(n_read - n_total) + " bytes");
+                    LOG_POST("Written " + NStr::UIntToString(n_written) +
+                             ", remains " +
+                             NStr::UIntToString(n_read - n_total) + " bytes");
                 }
             }
             assert(status == eIO_Timeout  ||  status == eIO_Closed);
 
             // Disconnect client
-            _TRACE("Disconnect client...");
+            LOG_POST("Disconnect client...");
             assert(pipe.Disconnect() == eIO_Success);
             break;
 
         case eIO_Timeout:
-            _TRACE("Timeout detected...");
+            LOG_POST("Timeout detected...");
             break;
 
         default:
@@ -256,6 +256,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/08/20 14:24:06  ivanov
+ * Replaced _TRACE with LOG_POST
+ *
  * Revision 1.2  2003/08/19 16:37:31  ivanov
  * Replaced all sprintf() with stream output operators
  *

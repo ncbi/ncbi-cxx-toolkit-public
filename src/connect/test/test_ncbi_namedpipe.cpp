@@ -61,7 +61,7 @@ static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t size,
                              size_t* n_read) 
 {
     EIO_Status status = pipe.Read(buf, size, n_read);
-    _TRACE("Read from pipe "+ NStr::UIntToString(*n_read) + " bytes");
+    LOG_POST("Read from pipe "+ NStr::UIntToString(*n_read) + " bytes");
     return status;
 }
 
@@ -71,7 +71,7 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
                               size_t* n_written) 
 {
     EIO_Status status = pipe.Write(buf, size, n_written);
-    _TRACE("Write to pipe "+ NStr::UIntToString(*n_written) + " bytes");
+    LOG_POST("Write to pipe "+ NStr::UIntToString(*n_written) + " bytes");
     return status;
 }
 
@@ -131,7 +131,7 @@ static void Client(int num)
             assert(blob[i] == (unsigned char)i);
         }
         free(blob);
-        _TRACE("Blob test is OK...");
+        LOG_POST("Blob test is OK...");
     }}
 }
 
@@ -156,12 +156,12 @@ static void Server(void)
     assert(pipe.SetTimeout(eIO_Write, &timeout) == eIO_Success);
 
     for (;;) {
-        _TRACE("Listening pipe...");
+        LOG_POST("Listening pipe...");
 
         EIO_Status status = pipe.Listen();
         switch (status) {
         case eIO_Success:
-            _TRACE("Client is connected...");
+            LOG_POST("Client is connected...");
 
             // "Hello" test
             {{
@@ -198,14 +198,14 @@ static void Server(void)
                 }
                 memset(blob, 0, kBlobSize);
                 free(blob);
-                _TRACE("Blob test is OK...");
+                LOG_POST("Blob test is OK...");
             }}
-            _TRACE("Disconnect client...");
+            LOG_POST("Disconnect client...");
             assert(pipe.Disconnect() == eIO_Success);
             break;
 
         case eIO_Timeout:
-            _TRACE("Timeout detected...");
+            LOG_POST("Timeout detected...");
             break;
 
         default:
@@ -291,6 +291,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/20 14:24:06  ivanov
+ * Replaced _TRACE with LOG_POST
+ *
  * Revision 1.1  2003/08/18 19:23:07  ivanov
  * Initial revision
  *
