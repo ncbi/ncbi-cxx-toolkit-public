@@ -274,7 +274,6 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
             skip = true;
             break;
         case T_EOF:
-            AddElementContent(node, id_name);
             PopEntityLexer();
             break;
         }
@@ -628,13 +627,18 @@ CDataType* DTDParser::x_Type(
     CDataType* type;
 
 // if the node contains single embedded element - prune it
-    if (!fromInside && !node.HasAttributes()) {
+    if ((!fromInside || node.IsEmbedded()) && !node.HasAttributes()) {
         const list<string>& refs = node.GetContent();
         if (refs.size() == 1) {
             string refName = refs.front();
             if (m_MapElement[refName].IsEmbedded() &&
                 (node.GetOccurrence(refName) == DTDElement::eOne)) {
-                return x_Type(m_MapElement[refName],occ,fromInside);
+                type = x_Type(m_MapElement[refName],occ,fromInside);
+                if (node.IsEmbedded()) {
+                    DTDElement& emb = const_cast<DTDElement&>(node);
+                    emb.SetName(m_MapElement[refName].GetName());
+                }
+                return type;
             }
         }
     }
@@ -975,6 +979,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2003/01/21 19:34:17  gouriano
+ * corrected parsing of entities
+ *
  * Revision 1.8  2003/01/14 19:02:09  gouriano
  * added parsing of entities as attribute contents
  *
