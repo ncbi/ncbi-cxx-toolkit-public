@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.163 2003/01/30 21:01:32 ucko Exp $
+#  $Id: configure.ac,v 1.164 2003/02/05 18:34:29 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2004,7 +2004,7 @@ SYBASE_LIBPATH=
 freetds=
 if test "$with_ftds" != "no" ; then
    if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
-      with_ftds=7
+      with_ftds=8
    fi
    if test "$with_ftds" = 7 -o "$with_ftds" = 8 ; then
       FTDS7_LOCAL_PATH="dbapi/driver/ftds/freetds"

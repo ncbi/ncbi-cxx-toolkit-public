@@ -9383,7 +9383,7 @@ SYBASE_LIBPATH=
 freetds=
 if test "$with_ftds" != "no" ; then
    if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
-      with_ftds=7
+      with_ftds=8
    fi
    if test "$with_ftds" = 7 -o "$with_ftds" = 8 ; then
       FTDS7_LOCAL_PATH="dbapi/driver/ftds/freetds"
