@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/04/27 17:01:23  vakatov
+* #include <ncbires.hpp> to provide CNcbiResource class definition
+* for the "auto_ptr<CNcbiResource>" (required by "delete" under MSVC++)
+*
 * Revision 1.12  1999/04/27 14:49:46  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -77,12 +81,12 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbicgi.hpp>
 #include <corelib/ncbicgir.hpp>
+#include <corelib/ncbires.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
 
 class CNcbiRegistry;
-class CNcbiResource;
 class CCgiContext;
 class CCgiServerContext;
 class CCgiApplication;
