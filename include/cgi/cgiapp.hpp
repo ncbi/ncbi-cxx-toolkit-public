@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 
 class CCgiServerContext;
 class CCgiStatistics;
+class CCgiWatchFile;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -120,6 +121,7 @@ private:
     // Return FALSE overwise.
     // In the "result", return exit code of the last CGI iteration run.
     bool x_RunFastCGI(int* result, unsigned int def_iter = 3);
+    bool x_FCGI_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher);
 
     // Logging
     enum ELogPostFlags {
@@ -204,6 +206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/02/27 17:55:05  ucko
+* +x_FCGI_ShouldRestart
+*
 * Revision 1.33  2003/02/26 17:34:03  kuznets
 * CCgiStatistics::Reset changed to take exception as a parameter
 *
