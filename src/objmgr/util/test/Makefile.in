@@ -1,9 +1,0 @@
-# $Id$
-
-# Meta-makefile(tests for object utilities)
-#################################
-
-APP_PROJ = test_title test_relloc
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

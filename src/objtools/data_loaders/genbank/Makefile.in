@@ -2,7 +2,7 @@
 
 SUB_PROJ = readers test
 
-LIB_PROJ = ncbi_xloader_genbank
+LIB_PROJ = ncbi_xloader_genbank ncbi_xreader
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -21,45 +21,16 @@
  *  Please cite the author in any work or product based on this material.
  * ===========================================================================
  *
- *  Author:  Anton Butanaev, Eugene Vasilchenko
+ *  Author:  Eugene Vasilchenko
  *
  *  File Description: Base data reader interface
  *
  */
 
-#include <objmgr/reader.hpp>
-
-#include <serial/pack_string.hpp>
-#include <objmgr/annot_selector.hpp>
-#include <objmgr/objmgr_exception.hpp>
-#include <objmgr/impl/snp_annot_info.hpp>
-#include <objmgr/impl/tse_info.hpp>
-#include <objmgr/impl/tse_chunk_info.hpp>
-#include <objmgr/impl/seq_annot_info.hpp>
-
-#include <objects/general/Object_id.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/id2/ID2_Seq_loc.hpp>
-#include <objects/id2/ID2S_Split_Info.hpp>
-
-#include <serial/serial.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objistrasn.hpp>
-#include <serial/objectinfo.hpp>
-#include <serial/objectiter.hpp>
+#include <objtools/data_loaders/genbank/seqref.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-static const char* const STRING_PACK_ENV = "GENBANK_SNP_PACK_STRINGS";
-static const char* const SNP_SPLIT_ENV = "GENBANK_SNP_SPLIT";
-static const char* const SNP_TABLE_ENV = "GENBANK_SNP_TABLE";
-static const char* const ENV_YES = "YES";
 
 CSeqref::CSeqref(void)
     : m_Flags(fHasAllLocal),
@@ -106,258 +77,16 @@ const string CSeqref::printTSE(const TKeyByTSE& key)
 }
 
 
-CReader::CReader(void)
-{
-}
-
-
-CReader::~CReader(void)
-{
-}
-
-
-int CReader::GetConst(const string& ) const
-{
-    return 0;
-}
-
-
-bool CReader::s_GetEnvFlag(const char* env, bool def_val)
-{
-    const char* val = ::getenv(env);
-    if ( !val ) {
-        return def_val;
-    }
-    string s(val);
-    return s == "1" || NStr::CompareNocase(s, ENV_YES) == 0;
-}
-
-
-bool CReader::TrySNPSplit(void)
-{
-    static bool snp_split = s_GetEnvFlag(SNP_SPLIT_ENV, true);
-    return snp_split;
-}
-
-
-bool CReader::TrySNPTable(void)
-{
-    static bool snp_table = s_GetEnvFlag(SNP_TABLE_ENV, true);
-    return snp_table;
-}
-
-
-bool CReader::TryStringPack(void)
-{
-    static bool use_string_pack =
-        CPackString::TryStringPack() && s_GetEnvFlag(STRING_PACK_ENV, true);
-    return use_string_pack;
-}
-
-
-void CReader::SetSNPReadHooks(CObjectIStream& in)
-{
-    if ( !TryStringPack() ) {
-        return;
-    }
-
-    CObjectTypeInfo type;
-
-    type = CType<CGb_qual>();
-    type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
-    type.FindMember("val").SetLocalReadHook(in,
-                                            new CPackStringClassHook(4, 128));
-
-    type = CObjectTypeInfo(CType<CImp_feat>());
-    type.FindMember("key").SetLocalReadHook(in,
-                                            new CPackStringClassHook(32, 128));
-
-    type = CObjectTypeInfo(CType<CObject_id>());
-    type.FindVariant("str").SetLocalReadHook(in, new CPackStringChoiceHook);
-
-    type = CObjectTypeInfo(CType<CDbtag>());
-    type.FindMember("db").SetLocalReadHook(in, new CPackStringClassHook);
-
-    type = CObjectTypeInfo(CType<CSeq_feat>());
-    type.FindMember("comment").SetLocalReadHook(in, new CPackStringClassHook);
-}
-
-
-void CReader::SetSeqEntryReadHooks(CObjectIStream& in)
-{
-    if ( !TryStringPack() ) {
-        return;
-    }
-
-    CObjectTypeInfo type;
-
-    type = CObjectTypeInfo(CType<CObject_id>());
-    type.FindVariant("str").SetLocalReadHook(in, new CPackStringChoiceHook);
-
-    type = CObjectTypeInfo(CType<CImp_feat>());
-    type.FindMember("key").SetLocalReadHook(in,
-                                            new CPackStringClassHook(32, 128));
-
-    type = CObjectTypeInfo(CType<CDbtag>());
-    type.FindMember("db").SetLocalReadHook(in, new CPackStringClassHook);
-
-    type = CType<CGb_qual>();
-    type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
-}
-
-
-bool CReader::IsSNPSeqref(const CSeqref& seqref)
-{
-    return seqref.GetSat() == kSNP_Sat;
-}
-
-
-void CReader::AddSNPSeqref(TSeqrefs& srs, int gi, CSeqref::TFlags flags)
-{
-    flags |= CSeqref::fHasExternal;
-    CRef<CSeqref> sr(new CSeqref(gi, kSNP_Sat, gi));
-    sr->SetFlags(flags);
-    srs.push_back(sr);
-}
-
-
-void CReader::ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn)
-{
-    int gi;
-    if ( id.IsGi() ) {
-        gi = id.GetGi();
-    }
-    else {
-        gi = ResolveSeq_id_to_gi(id, conn);
-    }
-    if ( gi ) {
-        RetrieveSeqrefs(srs, gi, conn);
-    }
-}
-
-
-void CReader::PurgeSeq_id_to_gi(const CSeq_id& /*id*/)
-{
-}
-
-
-void CReader::PurgeSeqrefs(const TSeqrefs& /*srs*/,
-                           const CSeq_id& /*id*/)
-{
-}
-
-
-CRef<CTSE_Info> CReader::GetBlob(const CSeqref& seqref,
-                                 TConn conn,
-                                 CTSE_Chunk_Info* chunk_info)
-{
-    CRef<CTSE_Info> ret;
-    if ( chunk_info ) {
-        if ( IsSNPSeqref(seqref) && chunk_info->GetChunkId()==kSNP_ChunkId ) {
-            GetSNPChunk(seqref, *chunk_info, conn);
-        }
-        else {
-            GetTSEChunk(seqref, *chunk_info, conn);
-        }
-    }
-    else {
-        CRef<CID2S_Split_Info> split_info;
-        if ( IsSNPSeqref(seqref) ) {
-            ret = GetSNPBlob(split_info, seqref, conn);
-        }
-        else {
-            ret = GetTSEBlob(split_info, seqref, conn);
-        }
-        if ( split_info ) {
-            ret->SetSplitInfo(*split_info);
-        }
-    }
-    return ret;
-}
-
-
-CRef<CTSE_Info> CReader::GetSNPBlob(CRef<CID2S_Split_Info>& split_info,
-                                    const CSeqref& seqref, TConn /*conn*/)
-{
-    _ASSERT(IsSNPSeqref(seqref));
-    CRef<CSeq_entry> seq_entry(new CSeq_entry);
-    {{
-        // make Seq-entry
-        CNcbiStrstream str;
-        str <<
-            "Seq-entry ::= set {\n"
-            "  id id " << kSNP_EntryId << ",\n"
-            "  seq-set {\n" // it's not optional
-            "  }\n"
-            "}";
-        CObjectIStreamAsn in(str);
-        in >> *seq_entry;
-    }}
-    // create CTSE_Info
-    CRef<CTSE_Info> ret(new CTSE_Info(*seq_entry));
-    ret->SetName("SNP");
-
-    // make ID2S-Split-Info
-    CRef<CID2S_Split_Info> info(new CID2S_Split_Info);
-    {{
-        CNcbiStrstream str;
-        str <<
-            "ID2S-Split-Info ::= {\n"
-            "  chunks {\n"
-            "    {\n"
-            "      id "<<kSNP_ChunkId<<",\n"
-            "      content {\n"
-            "        seq-annot {\n"
-            "          name \"SNP\",\n"
-            "          feat {\n"
-            "            {\n"
-            "              type "<<CSeqFeatData::e_Imp<<",\n"
-            "              subtypes {\n"
-            "                "<<CSeqFeatData::eSubtype_variation<<"\n"
-            "              }\n"
-            "            }\n"
-            "          },\n"
-            "          seq-loc whole "<<seqref.GetGi()<<"\n"
-            "        }\n"
-            "      }\n"
-            "    }\n"
-            "  }\n"
-            "}";
-        CObjectIStreamAsn in(str);
-        in >> *info;
-    }}
-    split_info = info;
-    return ret;
-}
-
-
-void CReader::GetTSEChunk(const CSeqref& seqref,
-                          CTSE_Chunk_Info& chunk_info,
-                          TConn conn)
-{
-    NCBI_THROW(CLoaderException, eNoData,
-               "Chunks are not implemented");
-}
-
-
-void CReader::GetSNPChunk(const CSeqref& seqref,
-                          CTSE_Chunk_Info& chunk_info,
-                          TConn conn)
-{
-    _ASSERT(IsSNPSeqref(seqref));
-    _ASSERT(chunk_info.GetChunkId() == kSNP_ChunkId);
-    CRef<CSeq_annot_SNP_Info> snp_annot = GetSNPAnnot(seqref, conn);
-    CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(*snp_annot));
-    chunk_info.LoadAnnotBioseq_set(kSNP_EntryId, *annot_info);
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
 /*
  * $Log$
+ * Revision 1.1  2004/01/13 16:55:55  vasilche
+ * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
+ * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
+ *
  * Revision 1.27  2003/11/28 17:53:15  vasilche
  * Avoid calling CStreamUtils::Pushback() when constructing objects from text ASN.
  *

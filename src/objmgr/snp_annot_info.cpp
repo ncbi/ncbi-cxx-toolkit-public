@@ -30,7 +30,6 @@
 
 #include <corelib/ncbiobj.hpp>
 
-#include <objmgr/reader.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 
 #include <objects/general/Object_id.hpp>
@@ -463,11 +462,89 @@ void SSNP_Info::UpdateSeq_feat(CRef<CSeq_feat>& feat_ref,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_annot_SNP_Info
+/////////////////////////////////////////////////////////////////////////////
+
+CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(void)
+    : m_Gi(-1)
+{
+}
+
+
+CSeq_annot_SNP_Info::~CSeq_annot_SNP_Info(void)
+{
+}
+
+
+size_t CIndexedStrings::GetIndex(const string& s, size_t max_index)
+{
+    TIndices::iterator it = m_Indices.lower_bound(s);
+    if ( it != m_Indices.end() && it->first == s ) {
+        return it->second;
+    }
+    size_t index = m_Strings.size();
+    if ( index <= max_index ) {
+        //NcbiCout << "string["<<index<<"] = \"" << s << "\"\n";
+        m_Strings.push_back(s);
+        m_Indices.insert(it, TIndices::value_type(s, index));
+    }
+    else {
+        _ASSERT(index == max_index + 1);
+    }
+    return index;
+}
+
+
+SSNP_Info::TAlleleIndex
+CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
+{
+    if ( allele.size() > SSNP_Info::kMax_AlleleLength )
+        return SSNP_Info::kNo_AlleleIndex;
+    if ( m_Alleles.IsEmpty() ) {
+        // prefill by small alleles
+        for ( const char* c = "-NACGT"; *c; ++c ) {
+            m_Alleles.GetIndex(string(1, *c), SSNP_Info::kMax_AlleleIndex);
+        }
+        for ( const char* c1 = "ACGT"; *c1; ++c1 ) {
+            string s(1, *c1);
+            for ( const char* c2 = "ACGT"; *c2; ++c2 ) {
+                m_Alleles.GetIndex(s+*c2, SSNP_Info::kMax_AlleleIndex);
+            }
+        }
+    }
+    return m_Alleles.GetIndex(allele, SSNP_Info::kMax_AlleleIndex);
+}
+
+
+CRef<CSeq_entry> CSeq_annot_SNP_Info::GetEntry(void)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry); // return value
+    entry->SetSet().SetSeq_set(); // it's not optional
+    entry->SetSet().SetAnnot().push_back(m_Seq_annot); // store it in Seq-entry
+    return entry;
+}
+
+
+void CSeq_annot_SNP_Info::Reset(void)
+{
+    m_Gi = -1;
+    m_Comments.Clear();
+    m_Alleles.Clear();
+    m_SNP_Set.clear();
+    m_Seq_annot.Reset();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.8  2004/01/13 16:55:34  vasilche
+ * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
+ * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
+ *
  * Revision 1.7  2003/11/26 17:56:00  vasilche
  * Implemented ID2 split in ID1 cache.
  * Fixed loading of splitted annotations.

@@ -1,5 +1,5 @@
-#ifndef READER__HPP_INCLUDED
-#define READER__HPP_INCLUDED
+#ifndef SEQREF__HPP_INCLUDED
+#define SEQREF__HPP_INCLUDED
 /* */
 
 /*  $Id$
@@ -25,111 +25,129 @@
 *  Please cite the author in any work or product based on this material.
 * ===========================================================================
 *
-*  Author:  Anton Butanaev, Eugene Vasilchenko
+*  Author:  Eugene Vasilchenko
 *
 *  File Description: Base data reader interface
 *
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <corelib/plugin_manager.hpp>
-#include <objtools/data_loaders/genbank/seqref.hpp>
-#include <vector>
+#include <utility>
+#include <string>
 
 BEGIN_NCBI_SCOPE
-
-class CObjectIStream;
-
 BEGIN_SCOPE(objects)
 
-class CSeqref;
-class CSeq_id;
-class CTSE_Info;
-class CSeq_annot_SNP_Info;
-class CTSE_Chunk_Info;
-class CID2S_Split_Info;
-
-class NCBI_XREADER_EXPORT CReader : public CObject
+class NCBI_XREADER_EXPORT CSeqref : public CObject
 {
 public:
-    CReader(void);
-    virtual ~CReader(void);
-
+    CSeqref(void);
+    CSeqref(int gi, int sat, int satkey);
+    virtual ~CSeqref(void);
+    
     typedef TSeqPos TPos;
     typedef unsigned TConn;
 
-    typedef vector< CRef<CSeqref> > TSeqrefs;
+    typedef pair<int, int> TKeyByTSE;
 
-    virtual int ResolveSeq_id_to_gi(const CSeq_id& id, TConn conn) = 0;
-    virtual void RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn) = 0;
-    virtual void ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn);
-    virtual void PurgeSeq_id_to_gi(const CSeq_id& id);
-    virtual void PurgeSeqrefs(const TSeqrefs& srs, const CSeq_id& id);
+    const string print(void)    const;
+    const string printTSE(void) const;
+    static const string printTSE(const TKeyByTSE& key);
 
-    virtual CRef<CTSE_Info> GetBlob(const CSeqref& seqref,
-                                    TConn conn,
-                                    CTSE_Chunk_Info* chunk_info = 0);
+    enum FFlags {
+        fHasCore     = 1 << 0,
+        fHasDescr    = 1 << 1,
+        fHasSeqMap   = 1 << 2,
+        fHasSeqData  = 1 << 3,
+        fHasFeatures = 1 << 4,
+        fHasExternal = 1 << 5,
+        fHasAlign    = 1 << 6,
+        fHasGraph    = 1 << 7,
 
-    virtual CRef<CTSE_Info> GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
-                                       const CSeqref& seqref, TConn conn) = 0;
-    virtual CRef<CTSE_Info> GetSNPBlob(CRef<CID2S_Split_Info>& split_info,
-                                       const CSeqref& seqref, TConn conn);
+        fHasAll      = (1 << 16)-1,
+        fHasAllLocal = fHasCore | fHasDescr | fHasSeqMap | fHasSeqData,
 
-    virtual void GetTSEChunk(const CSeqref& seqref,
-                             CTSE_Chunk_Info& chunk_info,
-                             TConn conn);
-    virtual void GetSNPChunk(const CSeqref& seqref,
-                             CTSE_Chunk_Info& chunk_info,
-                             TConn conn);
-
-    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CSeqref& seqref,
-                                                  TConn conn) = 0;
-
-
-    // return the level of reasonable parallelism
-    // 1 - non MTsafe; 0 - no synchronization required,
-    // n - at most n connection is advised/supported
-    virtual TConn GetParallelLevel(void) const = 0;
-    virtual void SetParallelLevel(TConn conn) = 0;
-    virtual void Reconnect(TConn conn) = 0;
-
-    // returns the time in secons when already retrived data
-    // could become obsolete by fresher version 
-    // -1 - never
-    virtual int GetConst(const string& const_name) const;
-
-    enum {
-        kSNP_Sat = 15,
-        kTRACE_Sat = 28,
-
-        kSNP_EntryId = 0,
-        kSNP_ChunkId = 0
+        fPossible    = 1 << 16,
+        fPrivate     = 1 << 17
     };
+    typedef int TFlags;
 
-    static bool IsSNPSeqref(const CSeqref& seqref);
-    static void AddSNPSeqref(TSeqrefs& srs, int gi, int flags = 0);
+    int GetGi() const
+        {
+            return m_Gi;
+        }
+    int GetSat() const
+        {
+            return m_Sat;
+        }
+    int GetSatKey() const
+        {
+            return m_SatKey;
+        }
 
-    static bool s_GetEnvFlag(const char* env, bool def_val);
+    TKeyByTSE GetKeyByTSE(void) const
+        {
+            return TKeyByTSE(m_Sat, m_SatKey);
+        }
 
-    static bool TrySNPSplit(void);
-    static bool TrySNPTable(void);
-    static bool TryStringPack(void);
+    bool SameTSE(const CSeqref& seqRef) const
+        {
+            return m_Sat == seqRef.m_Sat && m_SatKey == seqRef.m_SatKey;
+        }
+    bool SameSeq(const CSeqref& seqRef) const
+        {
+            return m_Sat == seqRef.m_Sat && m_SatKey == seqRef.m_SatKey &&
+                m_Gi == seqRef.m_Gi;
+        }
+    bool LessByTSE(const CSeqref& seqRef) const
+        {
+            return
+                m_Sat < seqRef.m_Sat ||
+                m_Sat == seqRef.m_Sat && m_SatKey < seqRef.m_SatKey;
+        }
+    bool LessBySeq(const CSeqref& seqRef) const
+        {
+            return
+                m_Sat < seqRef.m_Sat ||
+                m_Sat == seqRef.m_Sat &&
+                (m_SatKey < seqRef.m_SatKey ||
+                 m_SatKey == seqRef.m_SatKey && m_Gi < seqRef.m_Gi);
+        }
 
-    static void SetSNPReadHooks(CObjectIStream& in);
-    static void SetSeqEntryReadHooks(CObjectIStream& in);
+    TFlags  GetFlags() const
+        {
+            return m_Flags;
+        }
+    void SetFlags(TFlags flags)
+        {
+            m_Flags = flags;
+        }
+
+    int GetVersion(void) const
+        {
+            return m_Version;
+        }
+    void SetVersion(int version)
+        {
+            m_Version = version;
+        }
+
+protected:
+    TFlags  m_Flags;
+
+    int m_Gi;
+    int m_Sat;
+    int m_SatKey;
+    int m_Version;
 };
 
 
-
 END_SCOPE(objects)
-
-NCBI_DECLARE_INTERFACE_VERSION(objects::CReader,  "omreader", 1, 1, 0);
-
 END_NCBI_SCOPE
 
 /*
 * $Log$
-* Revision 1.36  2004/01/13 16:55:52  vasilche
+* Revision 1.1  2004/01/13 16:55:53  vasilche
 * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
 * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
 *
@@ -290,5 +308,4 @@ END_NCBI_SCOPE
 *
 */
 
-#endif // READER__HPP_INCLUDED
-
+#endif//SEQREF__HPP_INCLUDED

@@ -27,7 +27,7 @@
  *
  */
 
-#include <objmgr/reader.hpp>
+#include <objtools/data_loaders/genbank/reader.hpp>
 
 #include <serial/pack_string.hpp>
 #include <objmgr/annot_selector.hpp>
@@ -60,51 +60,6 @@ static const char* const STRING_PACK_ENV = "GENBANK_SNP_PACK_STRINGS";
 static const char* const SNP_SPLIT_ENV = "GENBANK_SNP_SPLIT";
 static const char* const SNP_TABLE_ENV = "GENBANK_SNP_TABLE";
 static const char* const ENV_YES = "YES";
-
-CSeqref::CSeqref(void)
-    : m_Flags(fHasAllLocal),
-      m_Gi(0), m_Sat(0), m_SatKey(0),
-      m_Version(0)
-{
-}
-
-
-CSeqref::CSeqref(int gi, int sat, int satkey)
-    : m_Flags(fHasAllLocal),
-      m_Gi(gi), m_Sat(sat), m_SatKey(satkey),
-      m_Version(0)
-{
-}
-
-
-CSeqref::~CSeqref(void)
-{
-}
-
-
-const string CSeqref::print(void) const
-{
-    CNcbiOstrstream ostr;
-    ostr << "SeqRef("<<GetSat()<<','<<GetSatKey()<<','<<GetGi()<<')';
-    return CNcbiOstrstreamToString(ostr);
-}
-
-
-const string CSeqref::printTSE(void) const
-{
-    CNcbiOstrstream ostr;
-    ostr << "TSE(" << GetSat() << ',' << GetSatKey() << ')';
-    return CNcbiOstrstreamToString(ostr);
-}
-
-
-const string CSeqref::printTSE(const TKeyByTSE& key)
-{
-    CNcbiOstrstream ostr;
-    ostr << "TSE(" << key.first << ',' << key.second << ')';
-    return CNcbiOstrstreamToString(ostr);
-}
-
 
 CReader::CReader(void)
 {
@@ -358,6 +313,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.28  2004/01/13 16:55:55  vasilche
+ * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
+ * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
+ *
  * Revision 1.27  2003/11/28 17:53:15  vasilche
  * Avoid calling CStreamUtils::Pushback() when constructing objects from text ASN.
  *

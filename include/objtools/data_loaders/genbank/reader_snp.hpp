@@ -47,11 +47,30 @@ class CSeq_annot;
 class CSeq_feat;
 class CSeq_annot_SNP_Info;
 
+class NCBI_XREADER_EXPORT CSeq_annot_SNP_Info_Reader
+{
+public:
+    // parse ASN converting SNP features to packed table.
+    static void Parse(CObjectIStream& in,
+                      CSeq_annot_SNP_Info& snp_info);
+
+    // store table in platform specific format
+    static void Write(CNcbiOstream& stream,
+                      const CSeq_annot_SNP_Info& snp_info);
+    // load table in platform specific format
+    static void Read(CNcbiIstream& stream,
+                     CSeq_annot_SNP_Info& snp_info);
+};
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2004/01/13 16:55:53  vasilche
+* CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
+* Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
+*
 * Revision 1.1  2003/08/14 20:05:18  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

@@ -77,7 +77,6 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
-#include <objmgr/reader.hpp>
 
 // cache
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
@@ -668,6 +667,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/01/13 16:55:57  vasilche
+* CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
+* Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
+*
 * Revision 1.11  2004/01/07 17:37:37  vasilche
 * Fixed include path to genbank loader.
 * Moved split_cache application.

@@ -39,8 +39,6 @@
 
 #include <util/bytesrc.hpp>
 
-#include <objmgr/reader.hpp>
-
 #include <dbapi/driver/public.hpp>
 
 #include <memory>
@@ -68,6 +66,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2004/01/13 16:55:54  vasilche
+* CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
+* Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
+*
 * Revision 1.1  2003/12/30 22:14:41  vasilche
 * Updated genbank loader and readers plugins.
 *

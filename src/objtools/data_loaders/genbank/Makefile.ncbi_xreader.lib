@@ -1,8 +1,8 @@
 # $Id$
 
-SRC = gbloader gbload_util
+SRC = reader reader_snp seqref
 
-LIB = ncbi_xloader_genbank
+LIB = ncbi_xreader
 
 # Build shared version when possible
 LIB_OR_DLL = both

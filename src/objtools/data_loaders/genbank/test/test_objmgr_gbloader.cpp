@@ -49,7 +49,6 @@
 #include <connect/ncbi_util.h>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objmgr/reader.hpp>
 
 BEGIN_NCBI_SCOPE
 using namespace objects;
@@ -176,6 +175,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/01/13 16:55:58  vasilche
+* CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
+* Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
+*
 * Revision 1.2  2003/12/30 22:14:45  vasilche
 * Updated genbank loader and readers plugins.
 *

@@ -28,11 +28,9 @@
  *
  */
 
-#include <corelib/ncbiobj.hpp>
+#include <objtools/data_loaders/genbank/reader_snp.hpp>
 
-#include <objmgr/reader.hpp>
-#include <objmgr/objmgr_exception.hpp>
-#include <objmgr/impl/reader_snp.hpp>
+#include <objtools/data_loaders/genbank/reader.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
@@ -51,6 +49,8 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
+
+#include <objmgr/objmgr_exception.hpp>
 
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
@@ -104,234 +104,6 @@ private:
     CRef<CSeq_feat>             m_Feat;
     size_t                      m_Count[SSNP_Info::eSNP_Type_last];
 };
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CSeq_annot_SNP_Info
-/////////////////////////////////////////////////////////////////////////////
-
-CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(void)
-    : m_Gi(-1)
-{
-}
-
-
-CSeq_annot_SNP_Info::~CSeq_annot_SNP_Info(void)
-{
-}
-
-
-size_t CIndexedStrings::GetIndex(const string& s, size_t max_index)
-{
-    TIndices::iterator it = m_Indices.lower_bound(s);
-    if ( it != m_Indices.end() && it->first == s ) {
-        return it->second;
-    }
-    size_t index = m_Strings.size();
-    if ( index <= max_index ) {
-        //NcbiCout << "string["<<index<<"] = \"" << s << "\"\n";
-        m_Strings.push_back(s);
-        m_Indices.insert(it, TIndices::value_type(s, index));
-    }
-    else {
-        _ASSERT(index == max_index + 1);
-    }
-    return index;
-}
-
-
-void CIndexedStrings::StoreTo(CNcbiOstream& stream) const
-{
-    unsigned size = m_Strings.size();
-    stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
-    ITERATE ( TStrings, it, m_Strings ) {
-        size = it->size();
-        stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
-        stream.write(it->data(), size);
-    }
-}
-
-
-void CIndexedStrings::LoadFrom(CNcbiIstream& stream,
-                               size_t max_index,
-                               size_t max_length)
-{
-    Clear();
-    unsigned size;
-    stream.read(reinterpret_cast<char*>(&size), sizeof(size));
-    if ( !stream || (size > unsigned(max_index+1)) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "Bad format of SNP table");
-    }
-    m_Strings.resize(size);
-    AutoPtr<char, ArrayDeleter<char> > buf(new char[max_length]);
-    NON_CONST_ITERATE ( TStrings, it, m_Strings ) {
-        stream.read(reinterpret_cast<char*>(&size), sizeof(size));
-        if ( !stream || (size > max_length) ) {
-            Clear();
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Bad format of SNP table");
-        }
-        stream.read(buf.get(), size);
-        if ( !stream ) {
-            Clear();
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Bad format of SNP table");
-        }
-        it->assign(buf.get(), buf.get()+size);
-    }
-}
-
-
-SSNP_Info::TAlleleIndex
-CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
-{
-    if ( allele.size() > SSNP_Info::kMax_AlleleLength )
-        return SSNP_Info::kNo_AlleleIndex;
-    if ( m_Alleles.IsEmpty() ) {
-        // prefill by small alleles
-        for ( const char* c = "-NACGT"; *c; ++c ) {
-            m_Alleles.GetIndex(string(1, *c), SSNP_Info::kMax_AlleleIndex);
-        }
-        for ( const char* c1 = "ACGT"; *c1; ++c1 ) {
-            string s(1, *c1);
-            for ( const char* c2 = "ACGT"; *c2; ++c2 ) {
-                m_Alleles.GetIndex(s+*c2, SSNP_Info::kMax_AlleleIndex);
-            }
-        }
-    }
-    return m_Alleles.GetIndex(allele, SSNP_Info::kMax_AlleleIndex);
-}
-
-
-void CSeq_annot_SNP_Info::Read(CObjectIStream& in)
-{
-    m_Seq_annot.Reset(new CSeq_annot); // Seq-annot object
-
-    CReader::SetSNPReadHooks(in);
-
-    if ( CReader::TrySNPTable() ) { // set SNP hook
-        CObjectTypeInfo type = CType<CSeq_annot::TData>();
-        CObjectTypeInfoVI ftable = type.FindVariant("ftable");
-        ftable.SetLocalReadHook(in, new CSNP_Ftable_hook(*this));
-    }
-    
-    in >> *m_Seq_annot;
-
-    // we don't need index maps anymore
-    m_Comments.ClearIndices();
-    m_Alleles.ClearIndices();
-
-    sort(m_SNP_Set.begin(), m_SNP_Set.end());
-}
-
-    
-CRef<CSeq_entry> CSeq_annot_SNP_Info::GetEntry(void)
-{
-    CRef<CSeq_entry> entry(new CSeq_entry); // return value
-    entry->SetSet().SetSeq_set(); // it's not optional
-    entry->SetSet().SetAnnot().push_back(m_Seq_annot); // store it in Seq-entry
-    return entry;
-}
-
-
-void CSeq_annot_SNP_Info::Reset(void)
-{
-    m_Gi = -1;
-    m_Comments.Clear();
-    m_Alleles.Clear();
-    m_SNP_Set.clear();
-    m_Seq_annot.Reset();
-}
-
-
-static const unsigned MAGIC = 0x12340001;
-
-void CSeq_annot_SNP_Info::StoreTo(CNcbiOstream& stream) const
-{
-    // header
-    stream.write(reinterpret_cast<const char*>(&MAGIC), sizeof(MAGIC));
-    stream.write(reinterpret_cast<const char*>(&m_Gi), sizeof(m_Gi));
-
-    // strings
-    m_Comments.StoreTo(stream);
-    m_Alleles.StoreTo(stream);
-
-    // simple SNPs
-    unsigned size = m_SNP_Set.size();
-    stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
-    stream.write(reinterpret_cast<const char*>(&*m_SNP_Set.begin()),
-                 size*sizeof(SSNP_Info));
-
-    // complex SNPs
-    CObjectOStreamAsnBinary obj_stream(stream);
-    obj_stream << *m_Seq_annot;
-}
-
-
-void CSeq_annot_SNP_Info::LoadFrom(CNcbiIstream& stream)
-{
-    Reset();
-
-    // header
-    unsigned magic;
-    stream.read(reinterpret_cast<char*>(&magic), sizeof(magic));
-    if ( !stream || magic != MAGIC ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "Incompatible version of SNP table");
-    }
-    stream.read(reinterpret_cast<char*>(&m_Gi), sizeof(m_Gi));
-
-    // strings
-    m_Comments.LoadFrom(stream,
-                        SSNP_Info::kMax_CommentIndex,
-                        SSNP_Info::kMax_CommentLength);
-    m_Alleles.LoadFrom(stream,
-                       SSNP_Info::kMax_AlleleIndex,
-                       SSNP_Info::kMax_AlleleLength);
-
-    // simple SNPs
-    unsigned size;
-    stream.read(reinterpret_cast<char*>(&size), sizeof(size));
-    if ( stream ) {
-        m_SNP_Set.resize(size);
-        stream.read(reinterpret_cast<char*>(&*m_SNP_Set.begin()),
-                    size*sizeof(SSNP_Info));
-    }
-    size_t comments_size = m_Comments.GetSize();
-    size_t alleles_size = m_Alleles.GetSize();
-    ITERATE ( TSNP_Set, it, m_SNP_Set ) {
-        size_t index = it->m_CommentIndex;
-        if ( index != SSNP_Info::kNo_CommentIndex &&
-             index >= comments_size ) {
-            m_SNP_Set.clear();
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Bad format of SNP table");
-        }
-        for ( size_t i = 0; i < SSNP_Info::kMax_AllelesCount; ++i ) {
-            index = it->m_AllelesIndices[i];
-            if ( index != SSNP_Info::kNo_AlleleIndex &&
-                 index >= alleles_size ) {
-                m_SNP_Set.clear();
-                NCBI_THROW(CLoaderException, eLoaderFailed,
-                           "Bad format of SNP table");
-            }
-        }
-    }
-
-    // complex SNPs
-    CObjectIStreamAsnBinary obj_stream(stream);
-    if ( !m_Seq_annot ) {
-        m_Seq_annot.Reset(new CSeq_annot);
-    }
-    obj_stream >> *m_Seq_annot;
-
-    if ( !stream ) {
-        m_Seq_annot.Reset();
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "Bad format of SNP table");
-    }
-}
 
 
 void CSNP_Ftable_hook::ReadChoiceVariant(CObjectIStream& in,
@@ -430,11 +202,173 @@ void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
     }
 }
 
+
+void CIndexedStrings::StoreTo(CNcbiOstream& stream) const
+{
+    unsigned size = m_Strings.size();
+    stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    ITERATE ( TStrings, it, m_Strings ) {
+        size = it->size();
+        stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
+        stream.write(it->data(), size);
+    }
+}
+
+
+void CIndexedStrings::LoadFrom(CNcbiIstream& stream,
+                               size_t max_index,
+                               size_t max_length)
+{
+    Clear();
+    unsigned size;
+    stream.read(reinterpret_cast<char*>(&size), sizeof(size));
+    if ( !stream || (size > unsigned(max_index+1)) ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Bad format of SNP table");
+    }
+    m_Strings.resize(size);
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[max_length]);
+    NON_CONST_ITERATE ( TStrings, it, m_Strings ) {
+        stream.read(reinterpret_cast<char*>(&size), sizeof(size));
+        if ( !stream || (size > max_length) ) {
+            Clear();
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Bad format of SNP table");
+        }
+        stream.read(buf.get(), size);
+        if ( !stream ) {
+            Clear();
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Bad format of SNP table");
+        }
+        it->assign(buf.get(), buf.get()+size);
+    }
+}
+
+
+void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
+                                       CSeq_annot_SNP_Info& snp_info)
+{
+    snp_info.m_Seq_annot.Reset(new CSeq_annot); // Seq-annot object
+
+    CReader::SetSNPReadHooks(in);
+
+    if ( CReader::TrySNPTable() ) { // set SNP hook
+        CObjectTypeInfo type = CType<CSeq_annot::TData>();
+        CObjectTypeInfoVI ftable = type.FindVariant("ftable");
+        ftable.SetLocalReadHook(in, new CSNP_Ftable_hook(snp_info));
+    }
+    
+    in >> *snp_info.m_Seq_annot;
+
+    // we don't need index maps anymore
+    snp_info.m_Comments.ClearIndices();
+    snp_info.m_Alleles.ClearIndices();
+
+    sort(snp_info.m_SNP_Set.begin(), snp_info.m_SNP_Set.end());
+}
+
+
+static const unsigned MAGIC = 0x12340001;
+
+void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
+                                       const CSeq_annot_SNP_Info& snp_info)
+{
+    // header
+    stream.write(reinterpret_cast<const char*>(&MAGIC), sizeof(MAGIC));
+    stream.write(reinterpret_cast<const char*>(&snp_info.m_Gi), sizeof(int));
+
+    // strings
+    snp_info.m_Comments.StoreTo(stream);
+    snp_info.m_Alleles.StoreTo(stream);
+
+    // simple SNPs
+    unsigned size = snp_info.m_SNP_Set.size();
+    stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    stream.write(reinterpret_cast<const char*>(&snp_info.m_SNP_Set[0]),
+                 size*sizeof(SSNP_Info));
+
+    // complex SNPs
+    CObjectOStreamAsnBinary obj_stream(stream);
+    obj_stream << *snp_info.m_Seq_annot;
+}
+
+
+void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
+                                      CSeq_annot_SNP_Info& snp_info)
+{
+    snp_info.Reset();
+
+    // header
+    unsigned magic;
+    stream.read(reinterpret_cast<char*>(&magic), sizeof(magic));
+    if ( !stream || magic != MAGIC ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Incompatible version of SNP table");
+    }
+    stream.read(reinterpret_cast<char*>(&snp_info.m_Gi), sizeof(int));
+
+    // strings
+    snp_info.m_Comments.LoadFrom(stream,
+                                 SSNP_Info::kMax_CommentIndex,
+                                 SSNP_Info::kMax_CommentLength);
+    snp_info.m_Alleles.LoadFrom(stream,
+                                SSNP_Info::kMax_AlleleIndex,
+                                SSNP_Info::kMax_AlleleLength);
+
+    // simple SNPs
+    unsigned size;
+    stream.read(reinterpret_cast<char*>(&size), sizeof(size));
+    if ( stream ) {
+        snp_info.m_SNP_Set.resize(size);
+        stream.read(reinterpret_cast<char*>(&snp_info.m_SNP_Set[0]),
+                    size*sizeof(SSNP_Info));
+    }
+    size_t comments_size = snp_info.m_Comments.GetSize();
+    size_t alleles_size = snp_info.m_Alleles.GetSize();
+    ITERATE ( CSeq_annot_SNP_Info::TSNP_Set, it, snp_info.m_SNP_Set ) {
+        size_t index = it->m_CommentIndex;
+        if ( index != SSNP_Info::kNo_CommentIndex &&
+             index >= comments_size ) {
+            snp_info.Reset();
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Bad format of SNP table");
+        }
+        for ( size_t i = 0; i < SSNP_Info::kMax_AllelesCount; ++i ) {
+            index = it->m_AllelesIndices[i];
+            if ( index != SSNP_Info::kNo_AlleleIndex &&
+                 index >= alleles_size ) {
+                snp_info.Reset();
+                NCBI_THROW(CLoaderException, eLoaderFailed,
+                           "Bad format of SNP table");
+            }
+        }
+    }
+
+    // complex SNPs
+    CObjectIStreamAsnBinary obj_stream(stream);
+    if ( !snp_info.m_Seq_annot ) {
+        snp_info.m_Seq_annot.Reset(new CSeq_annot);
+    }
+    obj_stream >> *snp_info.m_Seq_annot;
+
+    if ( !stream ) {
+        snp_info.m_Seq_annot.Reset();
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Bad format of SNP table");
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.9  2004/01/13 16:55:55  vasilche
+ * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
+ * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
+ *
  * Revision 1.8  2003/10/23 13:47:56  vasilche
  * Fixed Reset() method: m_Gi should be -1.
  *

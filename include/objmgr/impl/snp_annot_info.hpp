@@ -200,7 +200,6 @@ public:
     CSeq_annot_SNP_Info(void);
     ~CSeq_annot_SNP_Info(void);
 
-    void Read(CObjectIStream& in);
     CRef<CSeq_entry> GetEntry(void);
 
     typedef vector<SSNP_Info> TSNP_Set;
@@ -221,9 +220,6 @@ public:
 
     void Reset(void);
 
-    void StoreTo(CNcbiOstream& stream) const;
-    void LoadFrom(CNcbiIstream& stream);
-
 protected:
     SSNP_Info::TCommentIndex x_GetCommentIndex(const string& comment);
     const string& x_GetComment(SSNP_Info::TCommentIndex index) const;
@@ -237,6 +233,7 @@ private:
     CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info&);
     CSeq_annot_SNP_Info& operator=(const CSeq_annot_SNP_Info&);
 
+    friend class CSeq_annot_SNP_Info_Reader;
     friend class CSNP_Seq_feat_hook;
     friend struct SSNP_Info;
 
@@ -412,6 +409,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/01/13 16:55:31  vasilche
+* CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
+* Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
+*
 * Revision 1.8  2003/10/21 16:29:14  vasilche
 * Added check for errors in SNP table loaded from cache.
 *
