@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
                     ++it;
                 }
             }
-            cout << ' ' << s2 << ' ' << it.AtEnd()
+            cout << ' ' << NStr::PrintableString(s2) << ' ' << it.AtEnd()
                  << ' ' << it2.AtEnd() << endl;
         }
     }
@@ -75,6 +75,9 @@ int main(int argc, char** argv) {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/12 20:11:48  ucko
+ * Use NStr::PrintableString, since we may get non-ASCII characters.
+ *
  * Revision 1.4  2002/12/30 20:56:51  ucko
  * Note location of bogus WorkShop warnings.
  *
