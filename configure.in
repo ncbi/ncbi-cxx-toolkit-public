@@ -230,12 +230,12 @@ changequote(, )dnl
 compiler=
 compiler_ver=
 ncbi_compiler="UNKNOWN"
-ncbi_compiler_ver="0.0"
+ncbi_compiler_ver="0"
 
 if test "$GCC" = "yes" ; then
    compiler_ver="`$CXX --version 2>&1`"
    case "$compiler_ver" in
-     2\.95* | 3.* )
+     2.95* | 3.* )
        compiler="GCC"
        ncbi_compiler="GCC"
        ncbi_compiler_ver="$compiler_ver" ;;
@@ -255,18 +255,22 @@ else
     solaris* )
       compiler_ver="`$CXX -V 2>&1`"
       case "$compiler_ver" in
-        *WorkShop*Compilers*5\.0)
+        *WorkShop*Compilers*5\.0 )
           compiler="WorkShop5"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.0" ;;
-        *Sun*WorkShop*6*5\.1*)
+        *Sun*WorkShop*6*5\.1* )
           compiler="WorkShop6"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.1" ;;
-        *Sun*WorkShop*6*5\.2*)
+        *Sun*WorkShop*6*5\.2* )
           compiler="WorkShop52"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.2" ;;
+        *Sun*WorkShop*6*5\.3* )
+          compiler="WorkShop53"
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.3" ;;
       esac ;;
 
     irix* )
@@ -287,7 +291,10 @@ else
       esac ;;
    esac
 fi
+
+ncbi_compiler_ver="`echo $ncbi_compiler_ver | sed 's%\([0-9]\)\.\([0-9][0-9]*\).*%\1\2%' | sed 's%^\([0-9][0-9]\)$%\10%'`"
 changequote([, ])dnl
+
 AC_DEFINE_UNQUOTED(NCBI_COMPILER_$ncbi_compiler, 1)
 AC_DEFINE_UNQUOTED(NCBI_COMPILER_VERSION, $ncbi_compiler_ver)
 
@@ -1207,20 +1214,24 @@ AC_MSG_RESULT()
 
 AC_MSG_CHECKING(which way the stack grows)
 AC_TRY_RUN(
-    [int f(int* p)
+    [
+     int f(int* p)
      {
          int i;
-         return &i < p;
+         return (&i < p) ? 1 : 0;
      }
-     int main(int argc, char** argv)
+     int main(void)
      {
-         return f(&argc);
-     }],
-     [AC_DEFINE(STACK_GROWS_UP)
-      stack_dir=up],
-     [test $? -eq 1 && AC_DEFINE(STACK_GROWS_DOWN)
-      stack_dir=down],
-     [stack_dir="unknown (cross-compiling)"])
+         int p;
+         return f(&p);
+     }
+    ],
+    [AC_DEFINE(STACK_GROWS_UP)
+      stack_dir=up
+    ],
+    [AC_DEFINE(STACK_GROWS_DOWN)
+     stack_dir=down],
+    [stack_dir="unknown (cross-compiling)"])
 AC_MSG_RESULT($stack_dir)
 
 ### Check for the availability of other packages
