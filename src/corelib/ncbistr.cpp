@@ -1320,6 +1320,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     SIZE_TYPE     pos = 0, len = str.size();
     string        hyphen; // "-" or empty
     bool          is_html  = flags & fWrap_HTMLPre ? true : false;
+    bool          do_flat = (flags & fWrap_FlatFile) != 0;
 
     enum EScore { // worst to best
         eForced,
@@ -1346,7 +1347,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 best_score = eNewline;
                 break;
             } else if (isspace(c)) {
-                if (pos2 > 0  &&  isspace(str[pos2 - 1])) {
+                if (!do_flat  &&  pos2 > 0  &&  isspace(str[pos2 - 1])) {
                     continue; // take the first space of a group
                 }
                 score = eSpace;
@@ -1361,13 +1362,21 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 score = eComma;
                 ++score_pos;
             } else if (ispunct(c)) {
-                if (c == '('  ||  c == '['  ||  c == '{'  ||  c == '<'
-                    ||  c == '`') { // opening element
-                    score = ePunct;
-                } else if (score_pos < len - 1  &&  column < width) {
-                    // Prefer breaking *after* most types of punctuation.
-                    score = ePunct;
-                    ++score_pos;
+                if (do_flat) {
+                    // ignore all punctuation other than commas and dashes
+                    if ((c == ','  ||  c == '-')  &&  score_pos < len - 1  &&  column < width) {
+                        score = ((c == ',') ? eComma : ePunct);
+                        ++score_pos;
+                    }
+                } else {
+                    if (c == '('  ||  c == '['  ||  c == '{'  ||  c == '<'
+		        ||  c == '`') { // opening element
+                        score = ePunct;
+                    } else if (score_pos < len - 1  &&  column < width) {
+                        // Prefer breaking *after* most types of punctuation.
+                        score = ePunct;
+                        ++score_pos;
+                    }
                 }
             }
 
@@ -1680,6 +1689,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.127  2004/11/24 15:17:02  shomrat
+ * Implemented flat-file specific line wrap
+ *
  * Revision 1.126  2004/11/23 17:04:40  ucko
  * Roll back changes to Wrap in revisions 1.118 and 1.120.
  *
