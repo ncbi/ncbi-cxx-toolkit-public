@@ -315,7 +315,7 @@ void CAlnMgrTestApp::View3(int screen_width)
     TSeqPos pos = 0;
     do {
         for (CAlnMap::TNumrow row = 0; row < nrows; row++) {
-            cout << m_AV->GetSeqId(row)
+            cout << m_AV->GetSeqId(row).DumpAsFasta()
                  << "\t"
                  << m_AV->GetSeqPosFromAlnPos(row, pos, CAlnMap::eLeft)
                  << "\t"
@@ -603,6 +603,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/01/16 22:11:48  ucko
+* Explicitly call DumpAsFasta() on Seq-ids intended to appear in FASTA format.
+*
 * Revision 1.17  2004/01/07 17:37:36  vasilche
 * Fixed include path to genbank loader.
 * Moved split_cache application.
