@@ -987,15 +987,35 @@ void CValidError_feat::ValidateRnaProductType
 }
 
 
+int s_NcbieaaValues[] = { 65, 66, 67, 68, 69, 70, 71, 72, 73, 75, 
+                          76, 77, 78, 80, 81, 82, 83, 84, 85, 86, 
+                          87, 88, 89, 90 };
+
 void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat)
 {
-    // Make sure AA coding is ncbieaa.
+    // Make sure AA coding is ncbieaa. (temporary implementation)
     if ( trna.GetAa().Which() != CTrna_ext::C_Aa::e_Ncbieaa ) {
         PostErr (eDiag_Error, eErr_SEQ_FEAT_TrnaCodonWrong,
             "tRNA AA coding does not match ncbieaa", feat);
         return;
     }
-    
+
+    unsigned char aa = trna.GetAa().GetNcbieaa();
+
+    // make sure the amino acid is valid
+    bool found = false;
+    for ( int i = 0; i < 24; ++i ) {
+        if ( aa == s_NcbieaaValues[i] ) {
+            found = true;
+            break;
+        }
+    }
+    if ( !found ) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_BadTrnaAA, 
+            "Invalid tRNA amino acid (" + NStr::IntToString(aa) + ")", feat);
+        return;
+    }
+
     // Retrive the Genetic code id for the tRna
     int gcode = 0;
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
@@ -1011,20 +1031,24 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
     
     const string& ncbieaa = CGen_code_table::GetNcbieaa(gcode);
     if ( ncbieaa.length() != 64 ) {
-        return;  // !!!  need to issue a warning/error?
+        return;
     }
     
+    EDiagSev sev = (aa == 'U') ? eDiag_Warning : eDiag_Error;
+
     ITERATE( CTrna_ext::TCodon, iter, trna.GetCodon() ) {
-        if ( *iter < 64 ) {  // 0-63 = codon,  255=no data in cell
-            unsigned char taa = ncbieaa[*iter];
-            unsigned char  aa = trna.GetAa().GetNcbieaa();
-            if ( (aa > 0)  &&  (aa != 255) ) {
-                if ( taa != aa ) {
-                    EDiagSev sev = (aa == 'U') ? eDiag_Warning : eDiag_Error;
-                    PostErr(sev, eErr_SEQ_FEAT_TrnaCodonWrong,
-                        "tRNA codon does not match genetic code", feat);
-                }
-            }
+        // test that codon value is in range 0 - 63
+        if ( *iter < 0  ||  *iter > 63 ) {
+            PostErr(sev, eErr_SEQ_FEAT_TrnaCodonWrong,
+                "tRNA codon value (" + NStr::IntToString(*iter) + 
+                ") out of range", feat);
+            continue;
+        }
+
+        unsigned char taa = ncbieaa[*iter];
+        if ( taa != aa ) {
+            PostErr(sev, eErr_SEQ_FEAT_TrnaCodonWrong,
+                "tRNA codon does not match genetic code", feat);
         }
     }
 }
@@ -2459,6 +2483,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2003/10/13 18:48:52  shomrat
+* added tests for TrnaCodonWrong and BadTrnaAA
+*
 * Revision 1.38  2003/10/13 12:49:37  shomrat
 *                     // now any text will be allowed
 *
