@@ -3516,7 +3516,7 @@ fi
 
 
 # Linker command-line to build DLL
-has_dll_loadable="@: "
+has_dll_loadable="@# "
 case "$compiler" in
  GCC | MIPSpro73 | ICC | Compaq )
    case "$host_os" in

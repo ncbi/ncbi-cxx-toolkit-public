@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.102 2002/06/30 03:16:13 vakatov Exp $
+#  $Id: configure.ac,v 1.103 2002/06/30 16:47:33 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -870,7 +870,7 @@ fi
 AC_SUBST(STATIC)
 
 # Linker command-line to build DLL
-has_dll_loadable="@: "
+has_dll_loadable="@# "
 case "$compiler" in
  GCC | MIPSpro73 | ICC | Compaq )
    case "$host_os" in
