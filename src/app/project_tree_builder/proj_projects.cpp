@@ -80,13 +80,30 @@ CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
 
     string strline;
     while ( NcbiGetlineEOL(ifs, strline) ) {
+        
+        // skip "update" statements
+        if (strline.find(" update-only") != NPOS)
+            continue;
+
         TPath project_path;
         NStr::Split(strline, " \r\n\t$/", project_path);
         if ( !project_path.empty() ) {
-            SLstElement elt;
-            elt.m_Path      = project_path;
-            elt.m_Recursive = strline.find("$") == NPOS;
-            m_LstFileContents.push_back(elt);
+            if ( NStr::StartsWith(project_path.front(), "-") ) {
+                
+                // exclusion statement
+                SLstElement elt;
+                // erase '-'
+                project_path.front().erase(0, 1);
+                elt.m_Path      = project_path;
+                elt.m_Recursive = true;
+                m_LstFileContentsExclude.push_back(elt);
+            } else {
+                // inclusion statement
+                SLstElement elt;
+                elt.m_Path      = project_path;
+                elt.m_Recursive = strline.find("$") == NPOS;
+                m_LstFileContentsInclude.push_back(elt);
+            }
         }
     }
 }
@@ -120,13 +137,25 @@ bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir) const
                                     project_base_dir, 
                                     &project_path);
 
-    ITERATE(TLstFileContents, p, m_LstFileContents) {
+    bool include_ok = false;
+    ITERATE(TLstFileContents, p, m_LstFileContentsInclude) {
         const SLstElement& elt = *p;
-        if ( CmpLstElementWithPath(elt, project_path) )
-            return true;
+        if ( CmpLstElementWithPath(elt, project_path) ) {
+            include_ok =  true;
+            break;
+        }
+    }
+    if ( !include_ok )
+        return false;
+
+    ITERATE(TLstFileContents, p, m_LstFileContentsExclude) {
+        const SLstElement& elt = *p;
+        if ( CmpLstElementWithPath(elt, project_path) ) {
+            return false;
+        }
     }
 
-    return false;
+    return true;
 }
 
 
@@ -135,6 +164,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/18 19:13:08  gorelenk
+ * Changed imlementations of class CProjectsLstFileFilter constructor and
+ * CProjectsLstFileFilter::CheckProject .
+ *
  * Revision 1.5  2004/03/02 16:27:10  gorelenk
  * Added include for proj_tree.hpp.
  *
