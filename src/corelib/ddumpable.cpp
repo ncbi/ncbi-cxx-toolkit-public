@@ -147,7 +147,7 @@ void CDebugDumpContext::Log(const string& name,
                             CDebugDumpFormatter::EValueType type,
                             const string& comment)
 {
-    Log(name,value ? (const string&)value : kEmptyStr,type,comment);
+    Log(name,value ? string(value) : kEmptyStr,type,comment);
 }
 
 
@@ -374,6 +374,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/18 14:13:43  gouriano
+ * Corrected odd typecast in CDebugDumpContext::Log method
+ *
  * Revision 1.6  2003/11/12 20:16:01  gouriano
  * Added more Log() methods: for short, int, and char* types
  *
