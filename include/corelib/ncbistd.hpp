@@ -34,7 +34,6 @@
  */
 
 #include <corelib/ncbitype.h>
-#include <corelib/ncbifloat.h>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistr.hpp>
@@ -309,6 +308,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2003/02/04 18:15:54  gouriano
+ * removed reference to ncbifloat.h
+ *
  * Revision 1.60  2003/02/04 17:02:53  gouriano
  * added reference to ncbifloat.h
  *
