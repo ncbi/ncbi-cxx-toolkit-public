@@ -57,8 +57,8 @@ protected:
   bool   x_GetNextQuery(ifstream* ifs, vector<CHit>* hits, string* first_line);
   size_t x_TestPolyA(const vector<char>& mrna);
 
-  // sequence loaders
-  CSeqLoader m_loader_mrna, m_loader_ctg;
+  // sequence loader
+  CSeqLoader m_seqloader;
 
   // seq quality
   unsigned char m_SeqQuality; // 0 == low, 1 == high
@@ -68,6 +68,9 @@ protected:
 
   // min exon identity for Splign
   double m_minidty;
+
+  // min query hit coverage
+  double m_min_query_coverage;
 
   // mandatory end gaps detection flag
   bool m_endgaps;
@@ -85,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/05 20:32:11  kapustin
+ * Include source information into the index
+ *
  * Revision 1.1  2003/10/30 19:37:20  kapustin
  * Initial toolkit revision
  *

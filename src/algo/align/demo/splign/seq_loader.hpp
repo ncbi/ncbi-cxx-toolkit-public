@@ -35,6 +35,7 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -43,20 +44,20 @@ class CSeqLoader
 {
 public:
 
-  CSeqLoader(): m_external_index(false) {}
-
-  void Open (const string& filename_data,
-	     const string& filename_idx = kEmptyStr);
+  void Open (const string& filename_index);
   
-  void Load(const string& id,
-	    vector<char>* seq,
-	    size_t from, size_t to);
+  void Load(const string& id, vector<char>* seq, size_t from, size_t to);
   
 private:
   
-  CNcbiIfstream       m_inputstream;
-  bool                m_external_index;
-  map<string, size_t> m_idx;
+  vector<string> m_filenames;
+
+  struct SIdxTarget {
+    SIdxTarget(): m_filename_idx(kMax_UInt), m_offset(kMax_UInt) {}
+    size_t m_filename_idx;
+    size_t m_offset;
+  };
+  map<string, SIdxTarget> m_idx;
   
 };
 
@@ -65,6 +66,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/05 20:32:11  kapustin
+ * Include source information into the index
+ *
  * Revision 1.2  2003/10/31 19:43:15  kapustin
  * Format and compatibility update
  *

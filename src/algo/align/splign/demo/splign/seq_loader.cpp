@@ -38,88 +38,153 @@
 
 BEGIN_NCBI_SCOPE
 
-void CSeqLoader::Open(const string& filename_data, const string& filename_idx)
+void CSeqLoader::Open(const string& filename_index)
 {
-  m_inputstream.open(filename_data.c_str());
-  if(!m_inputstream) {
-    NCBI_THROW(CSplignAppException, eCannotOpenFile,
-               filename_data.c_str());
-  }
-  
-  m_external_index = filename_idx != kEmptyStr;
+  CNcbiIfstream idxstream (filename_index.c_str());
+  if(idxstream) {
 
-  if(m_external_index) {
-    CNcbiIfstream idxstream (filename_idx.c_str());
-    if(idxstream) {
-      while(idxstream) { // read index
-        string query;
-        size_t offset;
-        idxstream >> query >> offset;
-        m_idx[query] = offset;
+    // first read file names
+    char buf [1024];
+    bool found_start = false;
+    while(idxstream.good()) {
+      buf[0] = 0;
+      idxstream.getline(buf, sizeof buf, '\n');
+      if(buf[0] == '#') continue;
+      if(idxstream.fail()) {
+	goto throw_file_corrupt;
+      }
+      if(strcmp(buf,"$$$FI") == 0) {
+	found_start = true;
+	break;
       }
     }
-    else {      
-      NCBI_THROW(CSplignAppException, eCannotOpenFile, filename_idx.c_str());
+    if(!found_start) {
+	goto throw_file_corrupt;
     }
+
+    vector<string> filenames;
+    vector<size_t> indices;
+    found_start = false;
+    while(idxstream.good()) {
+      buf[0] = 0;
+      idxstream.getline(buf, sizeof buf, '\n');
+
+      if(strcmp("$$$SI", buf) == 0) {
+	found_start = true;
+	break;
+      }
+      if(buf[0] == '#' || buf[0] == 0) {
+	continue;
+      }
+      CNcbiIstrstream iss (buf);
+      size_t idx = kMax_UInt;
+      string name;
+      iss >> name >> idx;
+      if(idx == kMax_UInt) {
+	goto throw_file_corrupt;
+      }
+      filenames.push_back(name);
+      indices.push_back(idx);
+    }
+    if(!found_start) goto throw_file_corrupt;
+
+    const size_t fndim = filenames.size();
+    m_filenames.resize(fndim);
+    for(size_t i = 0; i < fndim; ++i) {
+      m_filenames[indices[i]] = filenames[i];
+    }
+
+    m_idx.clear();
+    while(idxstream.good()) {
+
+      buf[0] = 0;
+      idxstream.getline(buf, sizeof buf, '\n');
+
+      if(buf[0] == '#') continue; // skip comments
+      if(idxstream.eof()) break;
+
+      if(idxstream.fail()) {
+	goto throw_file_corrupt;
+      }
+
+      CNcbiIstrstream iss (buf);
+      string id;
+      SIdxTarget s;
+      iss >> id >> s.m_filename_idx >> s.m_offset;
+      if(s.m_offset == kMax_UInt) {
+	goto throw_file_corrupt;
+      }
+      m_idx[id] = s;
+    }
+    
+    return;
   }
-  else {
-    NCBI_THROW(CSplignAppException, eInternal,
-               "Auto-indexing not yet supported. "
-               "Please specify index file for each "
-               "multi-FastA input file.");
+  else {      
+    NCBI_THROW(
+	       CSplignAppException,
+	       CSplignAppException::eCannotOpenFile,
+	       filename_index.c_str());
+  }
+
+ throw_file_corrupt: {
+
+    NCBI_THROW(
+	       CSplignAppException,
+	       CSplignAppException::eErrorReadingIndexFile,
+	       "File is corrupt");
   }
 }
 
 
 void CSeqLoader::Load(const string& id, vector<char>* seq,
-                      size_t from, size_t to)
+		      size_t from, size_t to)
 {
-  istream* input = 0;
+  auto_ptr<istream> input (0);
 
-  if(m_external_index) {
-    
-    map<string,size_t>::const_iterator im = m_idx.find(id);
-    if(im == m_idx.end()) {
-      string msg ("Unable to locate ");
-      msg += id;
-      NCBI_THROW(CSplignAppException, eInternal, msg.c_str());
-    }
-    else {
-      m_inputstream.seekg(im->second);
-      input = &m_inputstream;
-    }
+  map<string, SIdxTarget>::const_iterator im = m_idx.find(id);
+  if(im == m_idx.end()) {
+    string msg ("Unable to locate ");
+    msg += id;
+    NCBI_THROW(
+	       CSplignAppException,
+	       CSplignAppException::eInternal,
+	       msg.c_str());
   }
   else {
-    NCBI_THROW(CSplignAppException, eInternal,
-               "Auto-indexing not yet supported. "
-               "Please specify index file for each "
-               "multi-FastA input file.");
+    const string& filename = m_filenames[im->second.m_filename_idx];
+    input.reset(new ifstream (filename.c_str()));
+    input->seekg(im->second.m_offset);
   }
-  
-  seq->clear();
   
   char buf [1024];
   input->getline(buf, sizeof buf, '\n'); // info line
-  if(!input) {
-    NCBI_THROW(CSplignAppException, eCannotReadFile,
-               "Unable to read sequence data");
+  if(input->fail()) {
+    NCBI_THROW(
+	       CSplignAppException,
+	       CSplignAppException::eCannotReadFile,
+	       "Unable to read sequence data");
   }
+
+  seq->clear();
 
   if(from == 0 && to == kMax_UInt) {
     // read entire sequence until the next one or eof
     while(*input) {
       size_t i0 = input->tellg();
       input->getline(buf, sizeof buf, '\n');
+      if(!*input) {
+	break;
+      }
       size_t i1 = input->tellg();
       if(i1 - i0 > 1) {
-        size_t line_size = i1 - i0 - 1;
-        if(buf[0] == '>') break;
-        size_t size_old = seq->size();
-        seq->resize(size_old + line_size);
-        copy(buf, buf + line_size, seq->begin() + size_old);
+	size_t line_size = i1 - i0 - 1;
+	if(buf[0] == '>') break;
+	size_t size_old = seq->size();
+	seq->resize(size_old + line_size);
+	copy(buf, buf + line_size, seq->begin() + size_old);
       }
       else if (i0 == i1) {
-        break; // GCC hack
+	break; // GCC hack
       }
     }
   }
@@ -131,39 +196,40 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
     size_t dst_read = 0, src_read = 0;
     while(*input) {
       input->getline(buf, sizeof buf, '\n');
-      if(buf[0] == '>') {
-        seq->resize(dst_read);
-        return;
+      if(buf[0] == '>' || !*input) {
+	seq->resize(dst_read);
+	return;
       }
       i1 = input->tellg();
 
       if(i1 - i0 > 1) {
-        src_read += i1 - i0 - 1;
+	src_read += i1 - i0 - 1;
       }
       else if(i1 - i0 == 1) {
-        continue;
+	continue;
       }
       else { 
-        break; // GCC hack
+	break; // GCC hack
       }
 
-      if (src_read > from) {
-        size_t line_size = i1 - i0 - 1;
-        size_t start  = dst_read? 0: (line_size - (src_read - from));
-        size_t finish = (src_read > to)?
-                        (line_size - (src_read - to) + 1):
-                        line_size;
-        copy(buf + start, buf + finish, seq->begin() + dst_read);
-        dst_read += finish - start;
-        if (dst_read >= dst_seq_len) {
-          seq->resize(dst_seq_len);
-          return;
-        }
+      if(src_read > from) {
+	size_t line_size = i1 - i0 - 1;
+	size_t start  = dst_read? 0: (line_size - (src_read - from));
+	size_t finish = (src_read > to)?
+	                (line_size - (src_read - to) + 1):
+	                line_size;
+	copy(buf + start, buf + finish, seq->begin() + dst_read);
+	dst_read += finish - start;
+	if(dst_read >= dst_seq_len) {
+	  seq->resize(dst_seq_len);
+	  return;
+	}
       }
       i0 = i1;
     }
     seq->resize(dst_read);
   }
+
 }
 
 
@@ -172,9 +238,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.3  2003/10/31 22:20:13  ucko
- * Fixed usage of NCBI_THROW; exception codes must NOT explicitly specify
- * a class.  Also fixed some whitespace, and in particular got rid of tabs.
+ * Revision 1.4  2003/11/05 20:32:10  kapustin
+ * Include source information into the index
  *
  * Revision 1.2  2003/10/31 19:43:15  kapustin
  * Format and compatibility update
