@@ -58,10 +58,19 @@ struct NCBI_LDS_EXPORT SLDS_AnnotDB : public CBDB_File
     CBDB_FieldInt4    file_id;
     CBDB_FieldInt4    annot_type;
     CBDB_FieldInt4    file_offset;
+    CBDB_FieldInt4    top_level_id;
 
     SLDS_AnnotDB();
 };
 
+
+struct NCBI_LDS_EXPORT SLDS_SeqId_List : public CBDB_File
+{
+    CBDB_FieldInt4    object_id;
+    CBDB_FieldString  seq_id;
+
+    SLDS_SeqId_List();
+};
 
 struct NCBI_LDS_EXPORT SLDS_ObjectTypeDB : public CBDB_File
 {
@@ -111,8 +120,11 @@ struct NCBI_LDS_EXPORT SLDS_ObjectAttrDB : public CBDB_File
     SLDS_ObjectAttrDB();
 };
 
-
+//////////////////////////////////////////////////////////////////
+//
+// 
 // Structure puts together all tables used in LDS
+//
 struct NCBI_LDS_EXPORT SLDS_TablesCollection
 {
     SLDS_FileDB          file_db;
@@ -121,6 +133,7 @@ struct NCBI_LDS_EXPORT SLDS_TablesCollection
     SLDS_ObjectAttrDB    object_attr_db;
     SLDS_AnnotDB         annot_db;
     SLDS_Annot2ObjectDB  annot2obj_db;
+    SLDS_SeqId_List      seq_id_list;
 };
 
 
@@ -130,7 +143,8 @@ struct NCBI_LDS_EXPORT SLDS_TablesCollection
 
 
 
-inline SLDS_FileDB::SLDS_FileDB()
+inline 
+SLDS_FileDB::SLDS_FileDB()
 {
     BindKey("file_id", &file_id);
 
@@ -142,17 +156,28 @@ inline SLDS_FileDB::SLDS_FileDB()
 }
 
 
-inline SLDS_AnnotDB::SLDS_AnnotDB()
+inline 
+SLDS_AnnotDB::SLDS_AnnotDB()
 {
     BindKey("annot_id", &annot_id);
 
     BindData("file_id", &file_id);
     BindData("annot_type", &annot_type);
     BindData("file_offset", &file_offset);
+    BindData("top_level_id", &top_level_id);
 }
 
+inline
+SLDS_SeqId_List::SLDS_SeqId_List()
+: CBDB_File(CBDB_File::eDuplicatesEnable)
+{
+    BindKey("object_id", &object_id);
 
-inline SLDS_ObjectTypeDB::SLDS_ObjectTypeDB()
+    BindData("seq_id", &seq_id);
+}
+
+inline 
+SLDS_ObjectTypeDB::SLDS_ObjectTypeDB()
 {
     BindKey("object_type", &object_type);
 
@@ -160,7 +185,8 @@ inline SLDS_ObjectTypeDB::SLDS_ObjectTypeDB()
 }
 
 
-inline SLDS_ObjectDB::SLDS_ObjectDB()
+inline 
+SLDS_ObjectDB::SLDS_ObjectDB()
 {
     BindKey("object_id", &object_id);
 
@@ -175,7 +201,8 @@ inline SLDS_ObjectDB::SLDS_ObjectDB()
 }
 
 
-inline SLDS_ObjectAttrDB::SLDS_ObjectAttrDB()
+inline 
+SLDS_ObjectAttrDB::SLDS_ObjectAttrDB()
 {
     BindKey("object_attr_id", &object_attr_id);
 
@@ -187,7 +214,8 @@ inline SLDS_ObjectAttrDB::SLDS_ObjectAttrDB()
 
 
 
-inline SLDS_Annot2ObjectDB::SLDS_Annot2ObjectDB()
+inline 
+SLDS_Annot2ObjectDB::SLDS_Annot2ObjectDB()
 {
     BindKey("object_id", &object_id);
     BindKey("annot_id", &annot_id);
@@ -200,6 +228,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2003/07/09 19:27:59  kuznets
+* Added Sequence id list table.
+*
 * Revision 1.10  2003/06/27 14:37:22  kuznets
 * Fixed comilation problem
 *
