@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
 * Revision 1.23  2002/05/17 17:14:53  grichenk
 * +GetSeqData() for getting a range of characters from a seq-vector
 *
@@ -330,7 +335,7 @@ void CSeqVector::x_UpdateSeqData(TSeqPos pos)
 }
 
 
-CSeqVector::TResidue CSeqVector::GetGapChar(void)
+CSeqVector::TResidue CSeqVector::GetGapChar(void) const
 {
     switch (GetCoding()) {
     // DNA - N

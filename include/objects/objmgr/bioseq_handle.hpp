@@ -32,6 +32,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/05/31 17:52:58  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
 * Revision 1.18  2002/05/21 18:39:27  grichenk
 * CBioseq_Handle::GetResolvedSeqMap() -> CreateResolvedSeqMap()
 *
@@ -207,7 +212,9 @@ private:
     CScope*              m_Scope;
     mutable CDataSource* m_DataSource;  // Data source for resolved handles
     mutable CSeq_entry*  m_Entry;       // Seq-entry, containing the bioseq
-    mutable CTSE_Info*   m_TSE;         // Top level seq-entry
+
+    // Top-level seq-entry is declared as an atomic counter to use inline locks
+    mutable CMutableAtomicCounter* m_TSE;         // Top level seq-entry
 
     friend class CSeqVector;
     friend class CHandleRangeMap;
@@ -225,6 +232,33 @@ CBioseq_Handle::CBioseq_Handle(CSeq_id_Handle value)
       m_Entry(0),
       m_TSE(0)
 {
+}
+
+inline
+CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
+    : m_Value(h.m_Value),
+      m_Scope(h.m_Scope),
+      m_DataSource(h.m_DataSource),
+      m_Entry(h.m_Entry),
+      m_TSE(h.m_TSE)
+{
+    if ( m_TSE )
+        m_TSE->Add(1);
+}
+
+inline
+CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
+{
+    m_Value = h.m_Value;
+    m_Scope = h.m_Scope;
+    m_DataSource = h.m_DataSource;
+    m_Entry = h.m_Entry;
+    if ( m_TSE )
+        m_TSE->Add(-1);
+    m_TSE = h.m_TSE;
+    if ( m_TSE )
+        m_TSE->Add(1);
+    return *this;
 }
 
 inline

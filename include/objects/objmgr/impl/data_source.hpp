@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
 * Revision 1.23  2002/05/28 18:00:43  gouriano
 * DebugDump added
 *
@@ -229,7 +234,7 @@ public:
     void PopulateTSESet(CHandleRangeMap& loc,
                         TTSESet& tse_set,
                         CSeq_annot::C_Data::E_Choice sel,
-                        CScope& scope) const;
+                        CScope& scope);
 
     CSeqMatch_Info BestResolve(const CSeq_id& id, CScope& scope);
 
@@ -318,6 +323,9 @@ private:
     TTSEMap              m_TSE_seq;   // id -> TSEs with bioseq
     TTSEMap              m_TSE_ref;   // id -> TSEs with references to id
     TSeqMaps             m_SeqMaps;   // Sequence maps for bioseqs
+    // "true" if annotations need to be indexed immediately, "false" while
+    // delayed indexing is allowed.
+    bool m_IndexedAnnot;
 
     friend class CAnnot_CI;
     friend class CAnnotTypes_CI; // using mutex etc.
@@ -325,6 +333,42 @@ private:
     friend class CGBDataLoader;  //
 };
 
+inline
+CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
+    : m_Loader(&loader), m_pTopEntry(0), m_ObjMgr(&objmgr)
+{
+    m_Loader->SetTargetDataSource(*this);
+}
+
+inline
+CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
+    : m_Loader(0), m_pTopEntry(&entry), m_ObjMgr(&objmgr),
+      m_IndexedAnnot(false)
+{
+    x_AddToBioseqMap(entry, false, 0);
+}
+
+inline
+CDataSource::~CDataSource(void)
+{
+    // Find and drop each TSE
+    while (m_Entries.size() > 0) {
+        _ASSERT( !m_Entries.begin()->second->Locked() );
+        DropTSE(*(m_Entries.begin()->second->m_TSE));
+    }
+}
+
+inline
+CDataLoader* CDataSource::GetDataLoader(void)
+{
+    return m_Loader;
+}
+
+inline
+CSeq_entry* CDataSource::GetTopEntry(void)
+{
+    return m_pTopEntry;
+}
 
 inline
 bool CDataSource::IsEmpty(void) const

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
 * Revision 1.22  2002/05/24 14:58:55  grichenk
 * Fixed Empty() for unsigned intervals
 * SerialAssign<>() -> CSerialObject::Assign()
@@ -154,7 +159,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CBioseq_Handle& bioseq,
     : m_Selector(selector),
       m_AnnotCopy(0),
       m_Scope(bioseq.m_Scope),
-      m_NativeTSE(bioseq.m_TSE),
+      m_NativeTSE(static_cast<CTSE_Info*>(bioseq.m_TSE)),
       m_ResolveMethod(resolve)
 {
     // Convert interval to the seq-loc
@@ -198,6 +203,7 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
     m_Selector = it.m_Selector;
     m_Scope = it.m_Scope;
     m_ResolveMethod = it.m_ResolveMethod;
+
     // Copy TSE list, set TSE locks
     iterate (TTSESet, tse_it, it.m_TSESet) {
         m_TSESet.insert(*tse_it);
@@ -262,20 +268,33 @@ void CAnnotTypes_CI::x_Initialize(const CSeq_loc& loc)
 {
     CHandleRangeMap master_loc(m_Scope->x_GetIdMapper());
     master_loc.AddLocation(loc);
+    bool has_references = false;
     if (m_ResolveMethod != eResolve_None) {
         iterate(CHandleRangeMap::TLocMap, id_it, master_loc.GetMap()) {
+/*
+            CBioseq_Handle h = m_Scope->GetBioseqHandle(
+                m_Scope->x_GetIdMapper().GetSeq_id(id_it->first));
+            const CSeqMap& smap = h.GetSeqMap();
+            for (TSeqPos seg = 0; seg < smap.size(); seg++) {
+                has_references = has_references || (smap[seg].GetType() == CSeqMap::eSeqRef);
+            }
+            if ( !has_references )
+                continue;
+*/
+has_references = true;
             // Iterate intervals for the current id, resolve each interval
             iterate(CHandleRange::TRanges, rit, id_it->second.GetRanges()) {
-                // Resolve the master location
+                // Resolve the master location, check if there are annotations
+                // on referenced sequences.
                 x_ResolveReferences(id_it->first,             // master id
                     id_it->first,                             // id to resolve
                     rit->first.GetFrom(), rit->first.GetTo(), // ref. interval
-                    rit->second,                              // strand
-                    0);                                       // no shift
+                    rit->second, 0);                          // strand, no shift
             }
         }
     }
-    else {
+    if ( !has_references ) {
+        m_ResolveMethod = eResolve_None;
         x_SearchLocation(master_loc);
     }
     m_CurAnnot = m_AnnotSet.begin();
@@ -354,9 +373,7 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
                     adj_strand = eNa_strand_minus;
             }
             x_ResolveReferences(master_idh, seg.m_RefSeq,
-                                seg_min - rshift, seg_max - rshift,
-                                adj_strand,
-                                rshift);
+                seg_min - rshift, seg_max - rshift, adj_strand, rshift);
         }
     }
 }

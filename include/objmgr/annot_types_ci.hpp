@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/05/31 17:52:58  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
 * Revision 1.16  2002/05/24 14:58:53  grichenk
 * Fixed Empty() for unsigned intervals
 * SerialAssign<>() -> CSerialObject::Assign()
@@ -177,11 +182,13 @@ private:
     void x_Initialize(const CSeq_loc& loc);
     // Search the location for annotations, add all to the annot-set,
     // lock all TSEs found. Do nothing with the convertions map.
+    // Return "true" only if annotations were found on the location.
     void x_SearchLocation(CHandleRangeMap& loc);
     // Process the location, resolve references, add information
     // to the convertions map, search for annotations on references.
     // The master location needs to be mapped too, since iterations are made
     // over the map.
+    // Return "true" only if annotations were found on referenced sequences.
     void x_ResolveReferences(CSeq_id_Handle master_idh, // master id
                              CSeq_id_Handle ref_idh,    // ref. id
                              TSeqPos rmin, TSeqPos rmax,// ref. interval

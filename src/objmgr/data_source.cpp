@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
 * Revision 1.48  2002/05/29 21:21:13  gouriano
 * added debug dump
 *
@@ -210,58 +215,28 @@ BEGIN_SCOPE(objects)
 
 CMutex CDataSource::sm_DataSource_Mutex;
 
-CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
-    : m_Loader(&loader), m_pTopEntry(0), m_ObjMgr(&objmgr)
-{
-    m_Loader->SetTargetDataSource(*this);
-}
-
-
-CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
-    : m_Loader(0), m_pTopEntry(&entry), m_ObjMgr(&objmgr)
-{
-    x_AddToBioseqMap(entry, false, 0);
-}
-
-
-CDataSource::~CDataSource(void)
-{
-    // Find and drop each TSE
-    while (m_Entries.size() > 0) {
-        _ASSERT( !m_Entries.begin()->second->Locked() );
-        DropTSE(*(m_Entries.begin()->second->m_TSE));
-    }
-}
-
-
-CDataLoader* CDataSource::GetDataLoader(void)
-{
-    return m_Loader;
-}
-
-
-CSeq_entry* CDataSource::GetTopEntry(void)
-{
-    return m_pTopEntry;
-}
-
 
 CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
                                       const CScope::TRequestHistory& history) const
 {
-    CMutexGuard guard(sm_DataSource_Mutex);
-    TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
-    if ( tse_set == m_TSE_seq.end() )
-        return 0;
-    // The map should not contain empty entries
-    _ASSERT(tse_set->second.size() > 0);
-    TTSESet live;
-    if ( tse_set->second.size() == 1) {
+    const TTSESet* p_tse_set = 0;
+    {{
+        CMutexGuard guard(sm_DataSource_Mutex);
+        TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
+        if ( tse_set == m_TSE_seq.end() )
+            return 0;
+        p_tse_set = &tse_set->second;
+        //### Obtain MT-lock for the TSE
+    }}
+    if ( p_tse_set->size() == 1) {
         // There is only one TSE, no matter live or dead
-        return *tse_set->second.begin();
+        return *p_tse_set->begin();
     }
+    // The map should not contain empty entries
+    _ASSERT(p_tse_set->size() > 0);
+    TTSESet live;
     CTSE_Info* from_history = 0;
-    iterate(TTSESet, tse, tse_set->second) {
+    iterate(TTSESet, tse, *p_tse_set) {
         // Check history
         CScope::TRequestHistory::const_iterator hst = history.find(*tse);
         if (hst != history.end()) {
@@ -288,9 +263,9 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
     }
     else if ((live.size() == 0)  &&  m_Loader.GetPointer()) {
         // No live TSEs -- try to select the best dead TSE
-        CTSE_Info* best = m_Loader->ResolveConflict(handle, tse_set->second);
+        CTSE_Info* best = m_Loader->ResolveConflict(handle, *p_tse_set);
         if ( best ) {
-            return *tse_set->second.find(best);
+            return *p_tse_set->find(best);
         }
         THROW1_TRACE(runtime_error,
             "CDataSource::x_FindBestTSE() -- Multiple seq-id matches found");
@@ -299,7 +274,7 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
     // TSEs may change)
     CTSE_Info* best = m_Loader->ResolveConflict(handle, live);
     if ( best ) {
-        return *tse_set->second.find(best);
+        return *p_tse_set->find(best);
     }
     THROW1_TRACE(runtime_error,
         "CDataSource::x_FindBestTSE() -- Multiple live entries found");
@@ -311,16 +286,18 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
     CSeqMatch_Info info = BestResolve(id, scope);
     if ( !info )
         return CBioseq_Handle();
-    CSeq_id_Handle idh = info.m_Handle;
-    CBioseq_Handle h(idh);
-    CRef<CTSE_Info> tse = info.m_TSE;
-    CMutexGuard guard(sm_DataSource_Mutex);
-    TBioseqMap::iterator found = tse->m_BioseqMap.find(idh);
-    _ASSERT(found != tse->m_BioseqMap.end());
-    h.x_ResolveTo(scope, *this,
-        *found->second->m_Entry, *tse);
-    scope.x_AddToHistory(*tse);
-    tse->Unlock(); // Locked by BestResolve()
+    CSeq_entry* se = 0;
+    {{
+        CMutexGuard guard(sm_DataSource_Mutex);
+        TBioseqMap::iterator found = info.m_TSE->
+            m_BioseqMap.find(info.m_Handle);
+        _ASSERT(found != info.m_TSE->m_BioseqMap.end());
+        se = found->second->m_Entry;
+    }}
+    CBioseq_Handle h(info.m_Handle);
+    h.x_ResolveTo(scope, *this, *se, *info.m_TSE);
+    scope.x_AddToHistory(*info.m_TSE);
+    info.m_TSE->Unlock(); // Locked by BestResolve()
     return h;
 }
 
@@ -802,6 +779,9 @@ bool CDataSource::AttachAnnot(const CSeq_entry& entry,
     }
     annot_list->push_back(&annot);
 
+    if ( !m_IndexedAnnot )
+        return true; // skip annotations indexing
+
     switch ( annot.GetData().Which() ) {
         case CSeq_annot::C_Data::e_Ftable:
             {
@@ -843,7 +823,13 @@ CTSE_Info* CDataSource::x_AddToBioseqMap(CSeq_entry& entry,
     // Search for bioseqs, add each to map
     entry.Parentize();
     CTSE_Info* info = x_IndexEntry(entry, entry, dead, tse_set);
-    x_AddToAnnotMap(entry);
+    // Do not index new TSEs -- wait for annotations request
+    if ( info->IsIndexed() ) {
+        x_AddToAnnotMap(entry);
+    }
+    else {
+        m_IndexedAnnot = false; // reset the flag to enable indexing
+    }
     return info;
 }
 
@@ -922,6 +908,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
 {
     // The entry must be already in the m_Entries map
     CTSE_Info* tse = m_Entries[&entry];
+    tse->SetIndexed(true);
     const CBioseq::TAnnot* annot_list = 0;
     if ( entry.IsSeq() ) {
         if ( entry.GetSeq().IsSetAnnot() ) {
@@ -1235,8 +1222,16 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph,
 void CDataSource::PopulateTSESet(CHandleRangeMap& loc,
                                  TTSESet& tse_set,
                                  CSeq_annot::C_Data::E_Choice sel,
-                                 CScope& scope) const
+                                 CScope& scope)
 {
+    // Index all annotations if not indexed yet
+    if ( !m_IndexedAnnot ) {
+        iterate (TEntries, tse_it, m_Entries) {
+            if ( !tse_it->second->IsIndexed() )
+                x_AddToAnnotMap(*tse_it->second->m_TSE);
+        }
+        m_IndexedAnnot = true;
+    }
 /*
 Iterate each id from "loc". Find all TSEs with references to the id.
 Put TSEs, containing the sequence itself to "selected_with_seq" and

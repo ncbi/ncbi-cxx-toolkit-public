@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/05/31 17:52:58  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
 * Revision 1.15  2002/05/17 17:14:50  grichenk
 * +GetSeqData() for getting a range of characters from a seq-vector
 *
@@ -119,13 +124,13 @@ public:
 
     // Target sequence coding. CSeq_data::e_not_set -- do not
     // convert sequence (use GetCoding() to check the real coding).
-    TCoding GetCoding(void);
+    TCoding GetCoding(void) const;
     void SetCoding(TCoding coding);
     // Set coding to either Iupacaa or Iupacna depending on molecule type
     void SetIupacCoding(void);
 
     // Return gap symbol corresponding to the selected coding
-    TResidue GetGapChar(void);
+    TResidue GetGapChar(void) const;
 
 private:
     friend class CBioseq_Handle;
@@ -208,7 +213,7 @@ TSeqPos CSeqVector::size(void)
 }
 
 inline
-CSeqVector::TCoding CSeqVector::GetCoding(void)
+CSeqVector::TCoding CSeqVector::GetCoding(void) const
 {
     if (m_Coding != CSeq_data::e_not_set) {
         return m_Coding;

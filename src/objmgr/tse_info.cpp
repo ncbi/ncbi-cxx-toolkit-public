@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
 * Revision 1.4  2002/05/29 21:21:13  gouriano
 * added debug dump
 *
@@ -64,12 +69,10 @@ BEGIN_SCOPE(objects)
 //
 
 
-CFastMutex CTSE_Info::sm_LockMutex;
-
 CTSE_Info::CTSE_Info(void)
-    : m_Dead(false),
-      m_LockCount(0)
+    : m_Dead(false)
 {
+    m_LockCount.Set(0);
 }
 
 
@@ -142,7 +145,7 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
             }
         }
     }
-    DebugDumpValue(ddc, "m_LockCount", m_LockCount);
+    DebugDumpValue(ddc, "m_LockCount", m_LockCount.Get());
 }
 
 

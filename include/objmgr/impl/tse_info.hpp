@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
 * Revision 1.6  2002/05/29 21:21:13  gouriano
 * added debug dump
 *
@@ -61,7 +66,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbicntr.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -82,7 +87,7 @@ class CBioseq;
 class CAnnotObject;
 
 
-class CTSE_Info : public CObject
+class CTSE_Info : public CObject, public CMutableAtomicCounter
 {
 public:
     // 'ctors
@@ -92,6 +97,9 @@ public:
     void Lock(void) const;
     void Unlock(void) const;
     bool Locked(void) const;
+
+    bool IsIndexed(void) { return m_Indexed; }
+    void SetIndexed(bool value) { m_Indexed = value; }
 
     bool operator< (const CTSE_Info& info) const;
     bool operator== (const CTSE_Info& info) const;
@@ -114,8 +122,8 @@ private:
     CTSE_Info(const CTSE_Info& info);
     CTSE_Info& operator= (const CTSE_Info& info);
 
-    mutable int m_LockCount;
-    static CFastMutex sm_LockMutex;
+    mutable CAtomicCounter m_LockCount;
+    bool m_Indexed;
 };
 
 
@@ -130,16 +138,14 @@ private:
 inline
 void CTSE_Info::Lock(void) const
 {
-    CFastMutexGuard guard(sm_LockMutex);
-    m_LockCount++;
+    m_LockCount.Add(1);
 }
 
 inline
 void CTSE_Info::Unlock(void) const
 {
-    CFastMutexGuard guard(sm_LockMutex);
-    if (m_LockCount > 0) {
-        m_LockCount--;
+    if (m_LockCount.Get() > 0) {
+        m_LockCount.Add(-1);
     }
     else {
         THROW1_TRACE(runtime_error,
@@ -150,8 +156,7 @@ void CTSE_Info::Unlock(void) const
 inline
 bool CTSE_Info::Locked(void) const
 {
-    CFastMutexGuard guard(sm_LockMutex);
-    return m_LockCount > 0;
+    return m_LockCount.Get() > 0;
 }
 
 inline

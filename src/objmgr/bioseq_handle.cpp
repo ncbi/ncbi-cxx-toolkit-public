@@ -29,6 +29,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
 * Revision 1.16  2002/05/24 14:57:12  grichenk
 * SerialAssign<>() -> CSerialObject::Assign()
 *
@@ -104,35 +109,7 @@ BEGIN_SCOPE(objects)
 CBioseq_Handle::~CBioseq_Handle(void)
 {
     if ( m_TSE )
-        m_TSE->Unlock();
-}
-
-
-CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
-    : m_Value(h.m_Value),
-      m_Scope(h.m_Scope),
-      m_DataSource(h.m_DataSource),
-      m_Entry(h.m_Entry),
-      m_TSE(h.m_TSE)
-{
-    if ( m_TSE )
-        m_TSE->Lock();
-}
-
-
-CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
-{
-    m_Value = h.m_Value;
-    m_Scope = h.m_Scope;
-    m_DataSource = h.m_DataSource;
-    m_Entry = h.m_Entry;
-    CMutexGuard guard(CDataSource::sm_DataSource_Mutex);
-    if ( m_TSE )
-        m_TSE->Unlock();
-    m_TSE = h.m_TSE;
-    if ( m_TSE )
-        m_TSE->Lock();
-    return *this;
+        m_TSE->Add(-1);
 }
 
 
@@ -179,8 +156,10 @@ bool CBioseq_Handle::x_IsSynonym(const CSeq_id& id) const
     if ( !(*this) )
         return false;
     CSeq_id_Handle h = x_GetDataSource().GetIdMapper().GetHandle(id);
-    return m_TSE->m_BioseqMap[m_Value]->m_Synonyms.find(h) !=
-        m_TSE->m_BioseqMap[m_Value]->m_Synonyms.end();
+    return static_cast<CTSE_Info*>(m_TSE)->
+        m_BioseqMap[m_Value]->m_Synonyms.find(h) !=
+        static_cast<CTSE_Info*>(m_TSE)->
+        m_BioseqMap[m_Value]->m_Synonyms.end();
 }
 
 
@@ -266,9 +245,9 @@ void CBioseq_Handle::x_ResolveTo(
     m_Entry = &entry;
     CMutexGuard guard(CDataSource::sm_DataSource_Mutex);
     if ( m_TSE )
-        m_TSE->Unlock();
+        m_TSE->Add(-1);
     m_TSE = &tse;
-    m_TSE->Lock();
+    m_TSE->Add(1);
 }
 
 
