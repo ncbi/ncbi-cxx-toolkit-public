@@ -116,7 +116,7 @@ public:
   
   virtual void       Save(ostream &os) const { m_Flag.Save(os); }
   virtual void       Restore(istream &is) { m_Flag.Restore(is); }
-  virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl) = 0;
+  virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn = 0) = 0;
   virtual CBlob     *RetrieveBlob(istream &is) = 0;
   virtual CSeqref*   Dup() const = 0;
   virtual char*      print(char*,int)    const = 0;
@@ -129,7 +129,7 @@ public:
   };
   virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const = 0;
   CSeqrefFlag::TInt &Flag() { return m_Flag.Value(); }
-private:
+
   CSeqrefFlag m_Flag;
 };
 
@@ -138,18 +138,21 @@ class CReader
 public:
   
   virtual ~CReader() {}
-  virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId) = 0;
+  virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn = 0) = 0;
   virtual CSeqref *RetrieveSeqref(istream &is) = 0;
 
   // return the level of reasonable parallelism
   // 1 - non MTsafe; 0 - no synchronization required,
   // n - at most n connection is advised/supported
-  virtual int  ParalellLevel(void) const;
+  virtual int GetParalellLevel(void) const = 0;
+  virtual void SetParalellLevel(unsigned) = 0;
+  virtual void Reconnect(unsigned) = 0;
 
   // returns the time in secons when already retrived data
   // could become obsolete by fresher version 
   // -1 - never
   virtual CIntStreamable::TInt GetConst(string &const_name) const;
+
 };
 
 END_SCOPE(objects)
@@ -159,6 +162,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.12  2002/03/27 20:22:32  butanaev
+* Added connection pool.
+*
 * Revision 1.11  2002/03/26 20:23:21  coremake
 * fake change
 *

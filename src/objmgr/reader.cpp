@@ -41,15 +41,15 @@ istream & operator >> (istream &is, CStreamable &obj)
 
 void CIntStreamable::Save(ostream &os) const
 {
-  for(int i=0;i<sizeof(m_Value) ; ++i)
-    os.put(static_cast<char>((m_Value>>(8*i)) & 0xff));
+  for(unsigned i = 0; i < sizeof(m_Value); ++i)
+    os.put(static_cast<char>((m_Value>>(8 * i)) & 0xff));
 }
 
 void CIntStreamable::Restore(istream &is)
 {
   m_Value=0;
-  for(int i=0;i<sizeof(m_Value) ; ++i)
-    m_Value += static_cast<TInt>(is.get())<<(8*i);
+  for(unsigned i = 0; i < sizeof(m_Value); ++i)
+    m_Value += static_cast<TInt>(is.get())<<(8 * i);
 }
 
 void CStringStreamable::Save(ostream &os) const
@@ -80,23 +80,34 @@ void CBlob::Restore(istream &is)
 size_t CIStream::Read(istream &is, char* buffer, size_t bufferLength)
 {
 #ifdef NCBI_COMPILER_GCC
-  is.read(buffer, bufferLength);
-  size_t count = is.gcount();
-  if (count  &&  is.eof())
-    is.clear();
-  return count;
+#  if NCBI_COMPILER_VERSION < 300
+#    define NCBI_NO_READSOME
+#  endif
+#endif
 
+#ifdef NCBI_NO_READSOME
+#undef NCBI_NO_READSOME
+    // Special case: GCC had no readsome() prior to ver 3.0;
+    // read() will set "eof" flag if gcount() < bufferLength
+    is.read(buffer, bufferLength);
+    size_t count = is.gcount();
+    // Reset "eof" flag if some data have been read
+    if (count  &&  is.eof())
+        is.clear();
+    return count;
 #else
-  size_t n = is.readsome(buffer, bufferLength);
-  if(n != 0  ||  is.eof())
-    return n;
-  is.read(buffer, 1);
-  if( !is.good() )
-    return 0;
-  if(bufferLength == 1)
-    return 1;
-  return is.readsome(buffer + 1, bufferLength - 1) + 1;
-
+    // Try to read data
+    size_t n = is.readsome(buffer, bufferLength);
+    if (n != 0  ||  is.eof())
+        return n; // success
+    // No data found in the buffer, try to read from the real source
+    is.read(buffer, 1);
+    if ( !is.good() )
+        return 0;
+    if (bufferLength == 1)
+        return 1; // Do not need more data
+    // Read more data (up to the bufferLength)
+    return is.readsome(buffer+1, bufferLength-1) + 1;
 #endif
 }
 
@@ -112,11 +123,6 @@ bool CIStream::Eof()
   return false;
 }
 
-int CReader::ParalellLevel() const 
-{
-  return 0;
-};
-
 CIntStreamable::TInt
 CReader::GetConst(string &) const
 {
@@ -128,6 +134,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2002/03/27 20:23:50  butanaev
+* Added connection pool.
+*
 * Revision 1.4  2002/03/27 18:06:08  kimelman
 * stream.read/write instead of << >>
 *

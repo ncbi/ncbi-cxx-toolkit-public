@@ -107,7 +107,7 @@ private:
 class CTSEUpload {
 public:
   enum EChoice { eNone,eDone,ePartial };
-  CTSEUpload() : m_tse(0), m_mode(eNone) {};
+  CTSEUpload() : m_mode(eNone), m_tse(0) {};
   EChoice                       m_mode;
   CSeq_entry                   *m_tse;
 };
@@ -194,6 +194,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.7  2002/03/27 20:22:31  butanaev
+ * Added connection pool.
+ *
  * Revision 1.6  2002/03/26 15:39:24  kimelman
  * GC fixes
  *

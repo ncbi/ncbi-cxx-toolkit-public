@@ -51,14 +51,13 @@ int main()
   CSeq_id seqId;
   seqId.SetGi(5);
 
-  for(int k=0; k<1200; k++)
+  for(int k = 0; k < 500; k++)
   {
     CId1Reader reader;
     for(CIStream srs(reader.SeqrefStreamBuf(seqId)); ! srs.Eof(); )
     {
-      CSeqref *seqRef = reader.RetrieveSeqref(srs);
-
-      cout << "K: " << k << endl;
+      CId1Seqref *seqRef = static_cast<CId1Seqref *>(reader.RetrieveSeqref(srs));
+      cout << "K: " << k << " " << seqRef->Gi() << endl;
 
       CBlobClass cl;
       for(CIStream bs(seqRef->BlobStreamBuf(0, 0, cl)); ! bs.Eof(); )
@@ -79,6 +78,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.7  2002/03/27 20:23:50  butanaev
+* Added connection pool.
+*
 * Revision 1.6  2002/03/26 18:48:59  butanaev
 * Fixed bug not deleting streambuf.
 *

@@ -49,20 +49,26 @@ CT_INT_TYPE CStrStreamBuf::underflow()
   return n == 0 ? CT_EOF : CT_TO_INT_TYPE(buffer[0]);
 }
 
-streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
+streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
 {
-  strstream *ss = new strstream;
+  for(unsigned i = 0; i < 2; i++)
+  {
+    try
+    {
+      return x_SeqrefStreamBuf(seqId, conn);
+    }
+    catch(exception &e)
+    {
+      LOG_POST("Caugth exception " << e.what() << ", reconnectiong...");
+      Reconnect(conn);
+    }
+  }
+  throw runtime_error("CId1Reader::SeqrefStreamBuf fatal");
+}
 
-  int gi=0;
-  STimeout tmout;
-  tmout.sec = 20;
-  tmout.usec = 0;
-  auto_ptr<CConn_ServiceStream> m_ID1_Server;
-  
-  m_ID1_Server.reset(new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout));
-
-  CConn_ServiceStream *server = m_ID1_Server.get();
-
+streambuf *CId1Reader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
+{
+  CConn_ServiceStream *server = m_Pool[conn];
   {
     CID1server_request id1_request;
     id1_request.SetGetgi(seqId);
@@ -73,12 +79,13 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
 
   auto_ptr<CObjectIStream> server_input(CObjectIStream::Open(eSerial_AsnBinary, *server, false));
   CID1server_back id1_reply;
-
   *server_input >> id1_reply;
-  gi = id1_reply.GetGotgi();
+
+  int gi = id1_reply.GetGotgi();
+  auto_ptr<strstream> ss(new strstream);
 
   if(gi == 0)
-    return new CStrStreamBuf(ss);
+    return new CStrStreamBuf(ss.release());
 
   {
     CID1server_request id1_request1;
@@ -87,6 +94,7 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
     server_output << id1_request1;
     server_output.Flush();
   }
+
   *server_input >> id1_reply;
 
   for(CTypeConstIterator<CSeq_hist_rec> it = ConstBegin(id1_reply); it;  ++it)
@@ -121,11 +129,12 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
     id1Seqref.Sat() = dbname;
     id1Seqref.SatKey() = number;
     id1Seqref.Flag() = 0;
+
     try
     {
       *ss << id1Seqref;
     }
-    catch ( exception e )
+    catch (const exception &e)
     {
 
       LOG_POST( "TROUBLE: reader_id1:m_stream:: write failed for (" <<
@@ -134,7 +143,8 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
     }
     break; // mk - get only the first one
   }
-  return new CStrStreamBuf(ss);
+
+  return new CStrStreamBuf(ss.release());
 }
 
 void CId1Seqref::Save(ostream &os) const
@@ -157,13 +167,14 @@ CSeqref* CId1Seqref::Dup() const
 CSeqref *CId1Reader::RetrieveSeqref(istream &is)
 {
   CId1Seqref *id1Seqref = new CId1Seqref;
+  id1Seqref->m_Reader = this;
   is >> *id1Seqref;
   return id1Seqref;
 }
 
 struct CId1StreamBuf : public streambuf
 {
-  CId1StreamBuf(CId1Seqref &id1Seqref);
+  CId1StreamBuf(CId1Seqref &id1Seqref, CConn_ServiceStream *server);
   ~CId1StreamBuf();
   CT_INT_TYPE underflow();
   void Close() { m_Server = 0; }
@@ -171,10 +182,10 @@ struct CId1StreamBuf : public streambuf
   CId1Seqref&                   m_Id1Seqref;
   CT_CHAR_TYPE                  buffer[1024];
   CConn_ServiceStream          *m_Server;
-  auto_ptr<CConn_ServiceStream> m_ID1_Server;
 };
 
-CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref) : m_Id1Seqref(id1Seqref)
+CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref, CConn_ServiceStream *server) :
+m_Id1Seqref(id1Seqref)
 {
   
   CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
@@ -184,25 +195,21 @@ CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref) : m_Id1Seqref(id1Seqref)
   
   CID1server_request id1_request;
   id1_request.SetGetsefromgi(*params);
-  
+
   STimeout tmout;
-  tmout.sec = 2;
+  tmout.sec = 20;
   tmout.usec = 0;
-  m_ID1_Server.reset(new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout));
-  
-  m_Server = m_ID1_Server.get();
+
+  m_Server = server;
   {
     CObjectOStreamAsnBinary server_output(*m_Server);
     server_output << id1_request;
     server_output.Flush();
   }
-  //LOG_POST("CId1StreamBuf new (" << ((void*)this) << ")");
 }
 
 CId1StreamBuf::~CId1StreamBuf()
-{
-  //LOG_POST("CId1StreamBuf delete (" << ((void*)this) << ")");
-}
+{}
 
 CT_INT_TYPE CId1StreamBuf::underflow()
 {
@@ -214,9 +221,27 @@ CT_INT_TYPE CId1StreamBuf::underflow()
   return n == 0 ? CT_EOF : CT_TO_INT_TYPE(buffer[0]);
 }
 
-streambuf *CId1Seqref::BlobStreamBuf(int, int, const CBlobClass &)
+streambuf *CId1Seqref::BlobStreamBuf(int a, int b, const CBlobClass &c, unsigned conn)
 {
-  return new CId1StreamBuf(*this);
+  for(unsigned i = 0; i < 2; i++)
+  {
+    try
+    {
+      return x_BlobStreamBuf(a, b, c, conn);
+    }
+    catch(exception &e)
+    {
+      LOG_POST("Caugth exception " << e.what() << ", reconnectiong...");
+      m_Reader->Reconnect(conn);
+    }
+  }
+  throw runtime_error("CId1Seqref::BlobStreamBuf fatal");
+}
+
+streambuf *CId1Seqref::x_BlobStreamBuf(int, int, const CBlobClass &, unsigned conn)
+{
+  auto_ptr<CId1StreamBuf> b(new CId1StreamBuf(*this, m_Reader->m_Pool[conn]));
+  return b.release();
 }
 
 CSeq_entry *CId1Blob::Seq_entry()
@@ -297,11 +322,59 @@ int CId1Seqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
   return 0;
 }
 
+CId1Reader::CId1Reader(unsigned noConn)
+{
+  for(unsigned i = 0; i < noConn; ++i)
+    m_Pool.push_back(NewID1Service());
+}
+
+CId1Reader::~CId1Reader()
+{
+  for(unsigned i = 0; i < m_Pool.size(); ++i)
+    delete m_Pool[i];
+}
+
+int CId1Reader::GetParalellLevel(void) const
+{
+  return m_Pool.size();
+}
+
+void CId1Reader::SetParalellLevel(unsigned size)
+{
+  unsigned poolSize = m_Pool.size();
+  if(poolSize > size)
+    for(unsigned i = size; i < poolSize; ++i)
+      delete m_Pool[i];
+
+  m_Pool.resize(size);
+
+  if(poolSize < size)
+    for(unsigned i = poolSize; i < size; ++i)
+      m_Pool[i] = NewID1Service();
+}
+
+CConn_ServiceStream *CId1Reader::NewID1Service()
+{
+  STimeout tmout;
+  tmout.sec = 20;
+  tmout.usec = 0;
+  return new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout);
+}
+
+void CId1Reader::Reconnect(unsigned conn)
+{
+  delete m_Pool[conn];
+  m_Pool[conn] = NewID1Service();
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.14  2002/03/27 20:23:50  butanaev
+* Added connection pool.
+*
 * Revision 1.13  2002/03/26 23:31:08  gouriano
 * memory leaks and garbage collector fix
 *

@@ -49,12 +49,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CId1Reader;
 class CId1Seqref : public CSeqref
 {
 public:
   virtual void Save(ostream &os) const;
   virtual void Restore(istream &is);
-  virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl);
+  virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn = 0);
   virtual CBlob *RetrieveBlob(istream &is);
   virtual CSeqref* Dup() const;
   virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const ;
@@ -70,9 +71,12 @@ public:
   const CIntStreamable::TInt  SatKey() const { return m_SatKey.Value(); };
 
 private:
+  friend class CId1Reader;
+  streambuf *x_BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn);
   CIntStreamable m_Gi;
   CStringStreamable m_Sat;
   CIntStreamable m_SatKey;
+  CId1Reader *m_Reader;
 };
 
 class CId1Blob : public CBlob
@@ -94,9 +98,22 @@ private:
 class CId1Reader : public CReader
 {
 public:
-  virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId);
+  CId1Reader(unsigned noConn = 5);
+  ~CId1Reader();
+  virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn = 0);
   virtual CSeqref *RetrieveSeqref(istream &is);
 
+  virtual int GetParalellLevel(void) const;
+  virtual void SetParalellLevel(unsigned);
+  virtual void Reconnect(unsigned);
+
+protected:
+  CConn_ServiceStream *NewID1Service();
+
+private:
+  friend class CId1Seqref;
+  streambuf *x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn);
+  vector<CConn_ServiceStream *> m_Pool;
 };
 
 END_SCOPE(objects)
@@ -106,6 +123,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.6  2002/03/27 20:22:32  butanaev
+* Added connection pool.
+*
 * Revision 1.5  2002/03/26 18:48:31  butanaev
 * Fixed bug not deleting streambuf.
 *

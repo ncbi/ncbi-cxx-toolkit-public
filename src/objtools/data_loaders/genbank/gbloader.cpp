@@ -59,7 +59,7 @@ struct CGBDataLoader::STSEinfo
   
   TSeqids           m_SeqIds;
   CTSEUpload        m_upload;
-  STSEinfo() : prev(0), next(0),m_upload() { };
+  STSEinfo() : next(0), prev(0), m_upload() { };
 };
 
 struct CGBDataLoader::SSeqrefs
@@ -88,7 +88,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_th
   m_Driver=(driver?driver:new CId1Reader);
   m_UseListHead = m_UseListTail = 0;
   
-  int i = m_Driver->ParalellLevel();
+  int i = m_Driver->GetParalellLevel();
   m_Pool.SetSize(i<=0?10:i);
   m_SlowTraverseMode=0;
   
@@ -675,6 +675,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/03/27 20:23:50  butanaev
+* Added connection pool.
+*
 * Revision 1.15  2002/03/26 23:31:08  gouriano
 * memory leaks and garbage collector fix
 *

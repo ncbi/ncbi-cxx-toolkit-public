@@ -45,7 +45,7 @@ BEGIN_SCOPE(objects)
 // CTimer 
 
 CTimer::CTimer() :
-  m_Requests(0), m_RequestsDevider(0)
+  m_RequestsDevider(0), m_Requests(0)
 {
   m_ReasonableRefreshDelay = 0;
   m_LastCalibrated = m_Time= time(0);
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/03/27 20:23:49  butanaev
+* Added connection pool.
+*
 * Revision 1.3  2002/03/20 21:24:59  gouriano
 * *** empty log message ***
 *
