@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/05/09 16:36:54  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+*
 * Revision 1.7  2000/04/28 16:56:13  vasilche
 * Fixed implementation of CRef<> and CConstRef<>
 *
@@ -132,8 +135,6 @@ public:
 
     // remove reference without deleting object
     void ReleaseReference(void) const THROWS((runtime_error));
-
-    static const CTypeInfo* GetTypeInfo(void);
 
 private:
     void RemoveLastReference(void) const;
