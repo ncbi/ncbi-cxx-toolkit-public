@@ -101,6 +101,7 @@
 #  define NCBI_BLAST_EXPORTS
 #  define NCBI_FLAT_EXPORTS
 #  define NCBI_ID1_EXPORTS
+#  define NCBI_SCOREMAT_EXPORTS
 #  define NCBI_XALNMGR_EXPORTS
 #  define NCBI_XOBJMGR_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORTS
@@ -220,6 +221,15 @@
 #  define NCBI_BLAST_EXPORT        __declspec(dllexport)
 #else
 #  define NCBI_BLAST_EXPORT        __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objects_blast
+ */
+#ifdef NCBI_SCOREMAT_EXPORTS
+#  define NCBI_SCOREMAT_EXPORT        __declspec(dllexport)
+#else
+#  define NCBI_SCOREMAT_EXPORT        __declspec(dllimport)
 #endif
 
 /*
@@ -690,6 +700,7 @@
 #  define NCBI_OBJPRT_EXPORT
 #  define NCBI_PUBMED_EXPORT
 #  define NCBI_PUB_EXPORT
+#  define NCBI_SCOREMAT_EXPORT
 #  define NCBI_SEQALIGN_EXPORT
 #  define NCBI_SEQBLOCK_EXPORT
 #  define NCBI_SEQCODE_EXPORT
@@ -721,6 +732,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.21  2003/04/25 21:05:02  ucko
+ * +SCOREMAT (under SEQEXT)
+ *
  * Revision 1.20  2003/04/15 16:30:38  dicuccio
  * Moved BLAST object files into ncbi_seqext.dll
  *
