@@ -883,17 +883,16 @@ not be resolved (due to service inexistence or other error) with the use of loca
 
 <p>
 <a name="ref_Example">The following code example</a> uses both <a href="#ref_ServiceConnector">service connector</a> and the service
-mapping API to access certain service using an alternate way (other than connector's default supply) of choosing appropriate servers.
+mapping API to access certain service using an alternate way (other than connector's default) of choosing appropriate servers.
 By default, service connector opens an internal service iterator and then tries to connect to the next server,
 which <b><i>SERV_GetNextInfo()</i></b> returns when given the iterator. That is, the server with higher rate is
 tried first. If the user provides a pointer to structure <b><i>SSERVICE_Extra</i></b> as the last parameter of the connector's
 constructor, then the user-supplied routine (if any) can be called instead in order to obtain the next server. The routine is also
 given a supplemental custom argument <tt>data</tt> taken from <b><i>SSERVICE_Extra</i></b>.
 The (intentionally simplified) example below tries to create connector to an imaginary service <tt>"my_service"</tt>
-in restriction that additionally the server has to have a certain (user-specified) database present. The database name is taken
-from <a href="../tools/dispatcher/LBSMD.html#ref_HostEnvironment">host environment</a> of
-<a href="../tools/dispatcher/LBSMD.html"><tt>LBSMD</tt></a> named <tt>"my_service_env"</tt>, the first word of which is
-assumed to be the name.
+in restriction that the server has additionally to have a certain (user-specified) database present. The database name is taken
+from <a href="../tools/dispatcher/LBSMD.html#ref_HostEnvironment">LBSMD host environment</a> keyed <tt>"my_service_env"</tt>,
+the first word of which is assumed to be the name.
 
 <pre>
 #include &lt;<a href="../lxr/source/include/connect/ncbi_service_connector.h">connect/ncbi_service_connector.h</a>&gt;
