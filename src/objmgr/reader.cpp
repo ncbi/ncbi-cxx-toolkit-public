@@ -57,15 +57,17 @@ void CStringStreamable::Save(ostream &os) const
 {
     CIntStreamable length = m_Value.length();
     os << length;
-    os.write(m_Value.c_str(), m_Value.length());
+    os.write(m_Value.data(), m_Value.length());
 }
 
 void CStringStreamable::Restore(istream &is)
 {
     CIntStreamable length;
     is >> length;
-    m_Value.resize(length.Value());
-    is.read((char *)m_Value.c_str(), length.Value());
+    if ( is ) {
+        m_Value.resize(length.Value());
+        is.read(&m_Value[0], length.Value());
+    }
 }
 
 void CBlob::Save(ostream &os) const
@@ -90,7 +92,9 @@ bool CIStream::Eof()
     if (eof())
         return true;
 
-    putback(c);
+    if ( good() )
+        putback(c);
+
     return false;
 }
 
@@ -105,6 +109,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.9  2003/02/26 18:02:39  vasilche
+ * Added istream error check.
+ * Avoid use of string::c_str() method.
+ *
  * Revision 1.8  2003/02/25 22:03:44  vasilche
  * Fixed identation.
  *
