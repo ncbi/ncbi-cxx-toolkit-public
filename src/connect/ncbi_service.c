@@ -522,12 +522,13 @@ char* SERV_Print(SERV_ITER iter)
  */
 double SERV_Preference(double pref, double gap, unsigned int n)
 {
+    double spread;
     assert(0.0 <= pref && pref <= 1.0);
     assert(0.0 <  gap  && gap  <= 1.0);
     assert(n >= 2);
     if (gap >= pref)
         return gap;
-    double spread = 14.0/(n + 12.0);
+    spread = 14.0/(n + 12.0);
     if (gap >= spread*(1.0/(double) n))
         return pref;
     else
@@ -538,6 +539,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.57  2005/01/05 19:15:26  lavr
+ * Do not use C99-compliant declaration, kills MSVC compilation
+ *
  * Revision 6.56  2005/01/05 17:39:07  lavr
  * SERV_Preference() modified to use better load distribution
  *
