@@ -197,13 +197,16 @@ on SetProjectData()
 	AddSimpleProject("test_ncbifile", corelib, {"C++"})
 	AddSimpleProject("test_ncbiutil", corelib, {"C++"})
 	AddProject(DataPlusLibs(SimpleProjectData("test_seqport", "objects:seq:test", ¬
-		{"C++", "sockets"}), {"corelib"}))
+		{"C++"}), {"object_seq", "object_seqfeat", "object_featdef", "object_seqloc", ¬
+		"object_seqcode", "object_seqalign", "object_seqblock", "object_seqset", ¬
+		"object_pub", "object_biblio", "object_pubmed", "object_medline", "object_seqres", ¬
+		"object_general", "serial", "util", "corelib"}))
 	AddProject(DataPlusLibs(SimpleProjectData("test_utf8", util, ¬
-		{"C++", "sockets"}), {"corelib"}))
+		{"C++"}), {"corelib"}))
 	AddProject(DataPlusLibs(SimpleProjectData("test_resize_iter", util, ¬
-		{"C++", "sockets"}), {"corelib"}))
+		{"C++"}), {"corelib"}))
 	AddProject(DataPlusLibs(SimpleProjectData("test_fstream_pushback", util, ¬
-		{"C++", "sockets"}), {"corelib", "xpbacktest"}))
+		{"C++"}), {"corelib", "xpbacktest"}))
 	
 end SetProjectData
 
