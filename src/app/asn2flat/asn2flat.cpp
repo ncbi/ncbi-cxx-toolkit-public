@@ -39,6 +39,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/flat_expt.hpp>
@@ -57,11 +58,11 @@ private:
 
     CFlatFileGenerator* x_CreateFlatFileGenerator(CScope& scope, 
         const CArgs& args);
-    CFlatFileGenerator::TFormat x_GetFormat(const CArgs& args);
-    CFlatFileGenerator::TMode   x_GetMode(const CArgs& args);
-    CFlatFileGenerator::TStyle  x_GetStyle(const CArgs& args);
-    CFlatFileGenerator::TFlags  x_GetFlags(const CArgs& args);
-    CFlatFileGenerator::TFilter x_GetFilter(const CArgs& args);
+    TFormat x_GetFormat(const CArgs& args);
+    TMode   x_GetMode(const CArgs& args);
+    TStyle  x_GetStyle(const CArgs& args);
+    TFlags  x_GetFlags(const CArgs& args);
+    TFilter x_GetFilter(const CArgs& args);
 };
 
 
@@ -157,11 +158,14 @@ int CAsn2FlatApp::Run(void)
     if ( !objmgr ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
+    objmgr->RegisterDataLoader(*new CGBDataLoader("ID"),
+                                 CObjectManager::eDefault);
 
     CRef<CScope> scope(new CScope(*objmgr));
     if ( !scope) {
         NCBI_THROW(CFlatException, eInternal, "Could not create scope");
     }
+    scope->AddDefaults();
     
     const CArgs&   args = GetArgs();
 
@@ -169,7 +173,7 @@ int CAsn2FlatApp::Run(void)
     auto_ptr<CObjectIStream> in(x_OpenIStream(args));
 
     // read in the seq-entry
-    // ??? differ batch processing handling 
+    // !!! differ batch processing handling 
     CRef<CSeq_entry> se(new CSeq_entry);
     in->Read(ObjectInfo(*se));
 
@@ -180,10 +184,10 @@ int CAsn2FlatApp::Run(void)
     CNcbiOstream* os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
 
     // create the flat-file generator
-    CRef<CFlatFileGenerator> ffgenerator(x_CreateFlatFileGenerator(*scope,
-                                                                   args));
+    CRef<CFlatFileGenerator> ffg(x_CreateFlatFileGenerator(*scope, args));
+    
     // generate flat file
-    ffgenerator->Generate(*se, *os);
+    ffg->Generate(*se, *os);
 
     return 0;
 }
@@ -219,89 +223,89 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator
  const CArgs& args)
 {
     // !!! need to get format, style. mode etc. currently using defaults
-    CFlatFileGenerator::TFormat format = x_GetFormat(args);
-    CFlatFileGenerator::TMode   mode   = x_GetMode(args);
-    CFlatFileGenerator::TStyle  style  = x_GetStyle(args);
-    CFlatFileGenerator::TFlags  flags  = x_GetFlags(args);
-    CFlatFileGenerator::TFilter filter = x_GetFilter(args);
+    TFormat format = x_GetFormat(args);
+    TMode   mode   = x_GetMode(args);
+    TStyle  style  = x_GetStyle(args);
+    TFlags  flags  = x_GetFlags(args);
+    TFilter filter = x_GetFilter(args);
 
     return new CFlatFileGenerator(scope, format, mode, style, filter, flags);
 }
 
 
-CFlatFileGenerator::TFormat CAsn2FlatApp::x_GetFormat(const CArgs& args)
+TFormat CAsn2FlatApp::x_GetFormat(const CArgs& args)
 {
     const string& format = args["format"].AsString();
     if ( format == "genbank" ) {
-        return CFlatFileGenerator::eFormat_GenBank;
+        return eFormat_GenBank;
     } else if ( format == "embl" ) {
-        return CFlatFileGenerator::eFormat_EMBL;
+        return eFormat_EMBL;
     } else if ( format == "ddbj" ) {
-        return CFlatFileGenerator::eFormat_DDBJ;
+        return eFormat_DDBJ;
     } else if ( format == "gbseq" ) {
-        return CFlatFileGenerator::eFormat_GBSeq;
+        return eFormat_GBSeq;
     } else if ( format == "ftable" ) {
-        return CFlatFileGenerator::eFormat_FTable;
+        return eFormat_FTable;
     } else if ( format == "gff" ) {
-        return CFlatFileGenerator::eFormat_GFF;
+        return eFormat_GFF;
     }
 
-    return CFlatFileGenerator::eFormat_GenBank;
+    return eFormat_GenBank;
 }
 
 
-CFlatFileGenerator::TMode CAsn2FlatApp::x_GetMode(const CArgs& args)
+TMode CAsn2FlatApp::x_GetMode(const CArgs& args)
 {
     const string& mode = args["mode"].AsString();
     if ( mode == "release" ) {
-        return CFlatFileGenerator::eMode_Release;
+        return eMode_Release;
     } else if ( mode == "entrez" ) {
-        return CFlatFileGenerator::eMode_Entrez;
+        return eMode_Entrez;
     } else if ( mode == "gbench" ) {
-        return CFlatFileGenerator::eMode_GBench;
+        return eMode_GBench;
     } else if ( mode == "dump" ) {
-        return CFlatFileGenerator::eMode_Dump;
+        return eMode_Dump;
     } 
 
-    return CFlatFileGenerator::eMode_GBench;
+    return eMode_GBench;
 }
 
 
-CFlatFileGenerator::TStyle CAsn2FlatApp::x_GetStyle(const CArgs& args)
+TStyle CAsn2FlatApp::x_GetStyle(const CArgs& args)
 {
     const string& style = args["style"].AsString();
     if ( style == "normal" ) {
-        return CFlatFileGenerator::eStyle_Normal;
+        return eStyle_Normal;
     } else if ( style == "segment" ) {
-        return CFlatFileGenerator::eStyle_Segment;
+        return eStyle_Segment;
     } else if ( style == "master" ) {
-        return CFlatFileGenerator::eStyle_Master;
+        return eStyle_Master;
     } else if ( style == "contig" ) {
-        return CFlatFileGenerator::eStyle_Contig;
+        return eStyle_Contig;
     } 
 
-    return CFlatFileGenerator::eStyle_Normal;
+    return eStyle_Normal;
 }
 
 
-CFlatFileGenerator::TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
+TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
 {
     return args["flags"].AsInteger();
 }
 
 
-CFlatFileGenerator::TFilter CAsn2FlatApp::x_GetFilter(const CArgs& args)
+TFilter CAsn2FlatApp::x_GetFilter(const CArgs& args)
 {
     const string& filter = args["filter"].AsString();
     if ( filter == "none" ) {
-        return CFlatFileGenerator::fSkipNone;
+        return fSkipNone;
     } else if ( filter == "prot" ) {
-        return CFlatFileGenerator::fSkipProteins;
+        return fSkipProteins;
     } else if ( filter == "nuc" ) {
-        return CFlatFileGenerator::fSkipNucleotides;
+        return fSkipNucleotides;
     } 
 
-    return CFlatFileGenerator::fSkipProteins;
+    return fSkipProteins;
 }
 
 
@@ -318,6 +322,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 22:58:26  shomrat
+* using flags from flag file
+*
 * Revision 1.2  2004/01/20 20:41:53  ucko
 * Don't try to return auto_ptrs, or construct them with "=".
 *
