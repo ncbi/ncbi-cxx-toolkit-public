@@ -1,6 +1,6 @@
 #! /bin/sh
 #$Id$
 
-$*  &&  SYBASE="" $*
+GENBANK_LOADER_METHOD="PUBSEQOS" $*  &&  GENBANK_LOADER_METHOD="ID1" $*
 
 exit $?
