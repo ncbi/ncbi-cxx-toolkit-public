@@ -107,19 +107,27 @@ size_t CBDB_BLobFile::LobSize() const
 
 CBDB_BLobStream* CBDB_BLobFile::CreateStream()
 {
+    EBDB_ErrCode ret = Fetch();
+
     DBT* dbt = CloneDBT_Key();
-    return new CBDB_BLobStream(m_DB, dbt);
+    // lob exists, we can read it now (or write)
+    if (ret == eBDB_Ok) {
+        return new CBDB_BLobStream(m_DB, dbt, LobSize());
+    }
+    // no lob yet (write stream)
+    return new CBDB_BLobStream(m_DB, dbt, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_BLobFile::
 //
 
-CBDB_BLobStream::CBDB_BLobStream(DB* db, DBT* dbt_key)
+CBDB_BLobStream::CBDB_BLobStream(DB* db, DBT* dbt_key, size_t blob_size)
 : m_DB(db),
   m_DBT_Key(dbt_key),
   m_DBT_Data(0),
-  m_Pos(0)
+  m_Pos(0),
+  m_BlobSize(blob_size)
 {
     m_DBT_Data = new DBT;
     ::memset(m_DBT_Data, 0, sizeof(DBT));
@@ -339,6 +347,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/10/24 13:40:32  kuznets
+ * Implemeneted PendingCount
+ *
  * Revision 1.12  2003/09/29 16:44:56  kuznets
  * Reimplemented SetCmp to fix cross-platform byte swapping bug
  *
