@@ -29,7 +29,8 @@
  * Authors:  Vladimir Ivanov
  *
  * File Description:  TAR archive API
- *                    Now support only POSIX.1-1988 (ustar) format.
+ *                    Now supported only POSIX.1-1988 (ustar) format.
+ *                    GNU tar format is supported partially.
  *
  */
 
@@ -81,7 +82,6 @@ public:
         default:       return CException::GetErrCodeString();
         }
     }
-
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CTarException, CCoreException);
 };
@@ -96,27 +96,38 @@ public:
 class CTarEntryInfo
 {
 public:
+    /// Which entry type.
+    enum EType {
+        eFile = 0,     ///< Regular file
+        eDir,          ///< Directory
+        eLink,         ///< Symbolic link
+        eGNULongName,  ///< GNU long name
+        eGNULongLink,  ///< GNU long link
+        //
+        eUnknown       ///< Unknown type
+    };
+
     // Constructor
     CTarEntryInfo(void)
-        : m_Type(CDirEntry::eUnknown), m_Size(0) {}
+        : m_Type(eUnknown), m_Size(0) {}
 
     // Setters
     void SetName(const string& name)     { m_Name = name; }
-    void SetType(CDirEntry::EType type)  { m_Type = type; }
+    void SetType(EType type)             { m_Type = type; }
     void SetSize(Int8 size)              { m_Size = (streamsize)size; }
     void SetLinkName(const string& name) { m_LinkName = name; }
 
     // Getters
-    string           GetName(void)       { return m_Name; }
-    CDirEntry::EType GetType(void)       { return m_Type; }
-    Int8             GetSize(void)       { return m_Size; }
-    string           GetLinkName(void)   { return m_LinkName; }
+    string GetName(void)     { return m_Name; }
+    EType  GetType(void)     { return m_Type; }
+    Int8   GetSize(void)     { return m_Size; }
+    string GetLinkName(void) { return m_LinkName; }
 
 private:
-    string           m_Name;     //< Name of file
-    CDirEntry::EType m_Type;     //< Type
-    streamsize       m_Size;     //< File size (or 0)
-    string           m_LinkName; //< Name of linked file if 'type' = eLink
+    string      m_Name;       //< Name of file
+    string      m_LinkName;   //< Name of linked file if type is eLink
+    EType       m_Type;       //< Type
+    streamsize  m_Size;       //< File size (or 0)
 
     friend class CTar;
 };
@@ -153,17 +164,65 @@ protected:
         eEOF,
         eZeroBlock
     };
-    void    x_Open(EOpenMode mode);
-    void    x_Close(void);
+    
+    // Open/close file
+    void  x_Open(EOpenMode mode);
+    void  x_Close(void);
+    
+    // Read information about hext entry in the TAR archive
     EStatus x_ReadEntryInfo(CTarEntryInfo& info);
+    
+    // Increase absolute position in the stream
+    void x_IncreaseStreamPos(streamsize size);
+
+    // Read specified number of bytes from stream
+    streamsize x_ReadStream(char* buffer, streamsize n);
+
+    // Allocate memory
+    char* x_AllocateBuffer(streamsize n);
 
 protected:
     string         m_FileName;       //< TAR archive file name
-    CNcbiIos*      m_Stream;         //< Achive stream buffer (used for IO)
+    CNcbiIos*      m_Stream;         //< Achive stream (used for I/O)
     CNcbiFstream*  m_FileStream;     //< File archive stream
     bool           m_IsStreamOwned;  //< is m_Stream owned or not
+    streampos      m_StreamPos;      //< Current position in the m_Stream
     streamsize     m_BufferSize;     //< Buffer size for IO operations
+                   
+    string         m_LongName;       //< Previously defined long name
+    string         m_LongLinkName;   //< Previously defined long link name
 };
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Inline methods
+//
+
+
+inline 
+streamsize CTar::x_ReadStream(char* buffer, streamsize n)
+{
+    streamsize nread = m_Stream->rdbuf()->sgetn(buffer, n);
+    x_IncreaseStreamPos(nread);
+    return nread;
+}
+
+inline 
+void CTar::x_IncreaseStreamPos(streamsize size)
+{
+    m_StreamPos += size;
+}
+
+inline
+char* CTar::x_AllocateBuffer(streamsize n)
+{
+    char* buffer = new char[n];
+    if ( !buffer ) {
+        NCBI_THROW(CTarException, eMemory, "Unable to allocate memory");
+    }
+    return buffer;
+}
 
 
 END_NCBI_SCOPE
@@ -175,6 +234,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/14 17:55:48  ivanov
+ * Added GNU tar long name support
+ *
  * Revision 1.1  2004/12/02 17:46:14  ivanov
  * Initial draft revision
  *

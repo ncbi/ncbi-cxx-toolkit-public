@@ -46,9 +46,11 @@ static const streamsize kDefaultBufferSize = 4096;
 /// Null char
 static const char kNull = '\0';
 
-// Macro to check bits
-//#define F_ISSET(mask) ((GetFlags() & (mask)) == (mask))
-//#define F_ISSET(flags, mask) ((flags & (mask)) == (mask)))
+/// Macro to compute size that is multiple to kBlockSize
+#define ALIGN_BLOCK_SIZE(size) \
+    if ( size % kBlockSize != 0 ) { \
+        size = (size / kBlockSize + 1) * kBlockSize; \
+    }
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -57,7 +59,7 @@ static const char kNull = '\0';
 //
 
 
-// TAR posix file header
+// TAR POSIX file header
 struct SHeader {          // byte offset
     char name[100];       //   0
     char mode[8];         // 100
@@ -78,6 +80,7 @@ struct SHeader {          // byte offset
 };                        // 500
 
 
+// Block to read
 union TBlock {
   char     buffer[kBlockSize];
   SHeader  header;
@@ -99,7 +102,7 @@ CTar::CTar(const string& file_name)
 
 CTar::CTar(CNcbiIos& stream)
     : m_FileName(kEmptyStr), m_Stream(&stream), m_FileStream(0), m_IsStreamOwned(true),
-      m_BufferSize(kDefaultBufferSize)
+      m_StreamPos(0), m_BufferSize(kDefaultBufferSize)
 {
     return;
 }
@@ -124,7 +127,6 @@ void CTar::Extract(const string& dst_dir)
         x_Open(eRead);
     }
 
-    streamsize pos = 0;
     for(;;) {
         // Next block supposed to be a header
         CTarEntryInfo info;
@@ -134,29 +136,32 @@ void CTar::Extract(const string& dst_dir)
             return;
         case eZeroBlock:
             // skip zero blocks
-            pos += kBlockSize;
             continue;
         case eFailure:
             NCBI_THROW(CCoreException, eCore, "Unknown error");
         case eSuccess:
-        ; // below
-        }
-    
-        // Count absolute position in the archive
-        pos += kBlockSize;
-
-        // Get size of entry rounded up by kBlockSize
-        streamsize aligned_size = info.m_Size;
-        if ( aligned_size % kBlockSize != 0 ) {
-            aligned_size = (aligned_size / kBlockSize + 1) * kBlockSize;
+            ; // processed below
         }
 
-        // Extract entry
+        // Process entry
         {{
+            // Assign long names if defined
+            if ( info.GetType() == CTarEntryInfo::eFile  ||
+                 info.GetType() == CTarEntryInfo::eDir) {
+                if ( !m_LongName.empty() ) {
+                    info.SetName(m_LongName);
+                    m_LongName.clear();
+                }
+                if ( !m_LongLinkName.empty() ) {
+                    info.SetLinkName(m_LongLinkName);
+                    m_LongLinkName.clear();
+                }
+            }
+
             // Create entry
             switch(info.GetType()) {
                 // File
-                case CDirEntry::eFile:
+                case CTarEntryInfo::eFile:
                     {{
                     // Create base path
                     string dst_path = CDirEntry::ConcatPath(dst_dir, info.GetName());
@@ -170,18 +175,19 @@ void CTar::Extract(const string& dst_dir)
                         NCBI_THROW(CTarException, eCreate, "Unable to create file " + dst_path);
                     }   
 
+                    // Get size of entry rounded up by kBlockSize
+                    streamsize aligned_size = info.m_Size;
+                    ALIGN_BLOCK_SIZE(aligned_size);
+
                     // Allocate buffer
-                    char* buffer = new char[m_BufferSize];
-                    if ( !buffer ) {
-                        NCBI_THROW(CTarException, eMemory, "Unable to allocate memory");
-                    }
+                    char* buffer = x_AllocateBuffer(m_BufferSize);
                     // Copy file from archive to disk
                     streamsize to_read  = aligned_size;
                     streamsize to_write = info.m_Size;
                     while ( m_Stream->good() &&  to_read > 0 ) {
                         // Read archive
                         streamsize x_nread = ( to_read > m_BufferSize) ? m_BufferSize : to_read;
-                        streamsize nread = m_Stream->rdbuf()->sgetn(buffer, x_nread);
+                        streamsize nread = x_ReadStream(buffer, x_nread);
                         if ( !nread ) {
                             NCBI_THROW(CTarException, eRead, "Cannot read TAR file " + dst_path);
                         }
@@ -202,7 +208,7 @@ void CTar::Extract(const string& dst_dir)
                     break;
 
                 // Directory
-                case CDirEntry::eDir:
+                case CTarEntryInfo::eDir:
                     {{
                     string dst_path = CDir::ConcatPath(dst_dir, info.GetName());
                     CDir dir(dst_path);
@@ -212,18 +218,21 @@ void CTar::Extract(const string& dst_dir)
                     }}
                     break;
 
+                case CTarEntryInfo::eGNULongName:
+
+                    break;
+
+                case CTarEntryInfo::eGNULongLink:
+                    break;
+
                 // Link
-                case CDirEntry::eLink:
+                case CTarEntryInfo::eLink:
                 default:
                     ERR_POST(Warning << "Unsupported entry type. Skipped.");
             }
         }}
-
-        // Update position
-        pos += aligned_size;
-
-//        m_Stream->seekg(aligned_size, IOS_BASE::cur);
-//        m_Stream->rdbuf()->PUBSEEKPOS(pos);
+//      m_Stream->seekg(aligned_size, IOS_BASE::cur);
+//      m_Stream->rdbuf()->PUBSEEKPOS(pos);
 //???
     }
 }
@@ -283,7 +292,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 {
     // Read block
     TBlock block;
-    streamsize nread = m_Stream->rdbuf()->sgetn(block.buffer, kBlockSize);
+    streamsize nread = x_ReadStream(block.buffer, kBlockSize);
     if ( !nread ) {
         return eEOF;
     }   
@@ -335,32 +344,44 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     info.SetSize(NStr::StringToInt8(NStr::TruncateSpaces(h->size),
                                     8, NStr::eCheck_Skip));
 
-/*
-        uid      = oct2int
-        gid      = oct2int
-        mtime    = oct2int
-        linkflag = STAR only
-*/
-
     // Entry type 
     switch(h->typeflag) {
         case kNull:
         case '0':
-            info.SetType(CDirEntry::eFile);
+            info.SetType(CTarEntryInfo::eFile);
             break;
         case '1':
-            info.SetType(CDirEntry::eLink);
+            info.SetType(CTarEntryInfo::eLink);
             break;
         case '5':
-            info.SetType(CDirEntry::eDir);
+            info.SetType(CTarEntryInfo::eDir);
+            break;
+        case 'L':
+            info.SetType(CTarEntryInfo::eGNULongName);
+            {{
+                // Read long name
+                streamsize name_size = info.m_Size;
+                ALIGN_BLOCK_SIZE(name_size);
+                char* name = x_AllocateBuffer(name_size);
+                streamsize n = x_ReadStream(name, name_size);
+                if ( n != name_size ) {
+                    NCBI_THROW(CTarException, eRead, "Unexpected EOF in archive");
+                }
+                // Save name
+                m_LongName.assign(name, info.m_Size); 
+                delete name;
+            }}
+            break;
+        case 'K':
+            info.SetType(CTarEntryInfo::eGNULongLink);
             break;
         default:
-            info.SetType(CDirEntry::eUnknown);
+            info.SetType(CTarEntryInfo::eUnknown);
     }
 
-    // Link name is valid only if "type" field is eLink
+    // Link name field is valid only if "type" field is eLink
     // It is null-terminated unless every character is non-null.
-    if ( info.GetType() == CDirEntry::eLink ) {
+    if ( info.GetType() == CTarEntryInfo::eLink ) {
         h->magic[0] = kNull;
         info.SetLinkName(h->linkname);
     }
@@ -375,6 +396,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/12/14 17:55:58  ivanov
+ * Added GNU tar long name support
+ *
  * Revision 1.3  2004/12/07 15:29:40  ivanov
  * Fixed incorrect file size for extracted files
  *
