@@ -152,6 +152,10 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
                                     unsigned int query_length)
 {
     ASSERT(query);
+    if (query_length == 0) {
+        NCBI_THROW(CBlastException, eBadParameter, 
+                   "Query length provided by PssmInput interface is 0");
+    }
 
     // This program type will need to be changed when psi-tblastn is
     // implemented
@@ -349,6 +353,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/10/08 20:20:11  camacho
+ * Throw an exception is the query length is 0
+ *
  * Revision 1.12  2004/10/06 18:21:08  camacho
  * Fixed contents of posFreqs field in scoremat structure
  *
