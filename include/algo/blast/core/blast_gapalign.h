@@ -57,16 +57,21 @@ typedef enum {
     EXTEND_ALGO_MAX
 } ExtensionAlgorithmType;
 
-#define MB_DIAG_NEAR 30 /* Diagonal distance cutoff when looking for HSP 
-                           inclusion in Mega BLAST */ 
-#define MB_DIAG_CLOSE 6 /* Diagonal distance between HSPs for which one can be
-                           considered included in the other in Mega BLAST */
-#define MIN_NEIGHBOR_HSP_LENGTH 100 /* Minimal HSP length allowed for 
-                                       neighboring */
-#define MIN_NEIGHBOR_PERC_IDENTITY 96 /* Minimal percent of identities allowed
-                                         for neighboring */
+/** Diagonal distance cutoff when looking for HSP inclusion in Mega BLAST */ 
+#define MB_DIAG_NEAR 30 
 
-#define MAX_DBSEQ_LEN 5000000 /* Split subject sequences if longer than this */
+/** Diagonal distance between HSPs for which one can be considered included in 
+   the other in Mega BLAST */
+#define MB_DIAG_CLOSE 6 
+
+/** Minimal HSP length allowed for neighboring */
+#define MIN_NEIGHBOR_HSP_LENGTH 100 
+
+/** Minimal percent of identities allowed for neighboring */
+#define MIN_NEIGHBOR_PERC_IDENTITY 96 
+
+/** Split subject sequences if longer than this */
+#define MAX_DBSEQ_LEN 5000000 
 
 /** Auxiliary structure for dynamic programming gapped extension */
 typedef struct BlastGapDP {
