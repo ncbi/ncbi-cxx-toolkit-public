@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/03/15 21:23:59  vasilche
+* Error diagnostic about ambiguous types made more clear.
+*
 * Revision 1.1  2000/02/01 21:46:17  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -46,33 +49,56 @@
 * ===========================================================================
 */
 
-#include <stdexcept>
+#include <corelib/ncbiexpt.hpp>
+#include <list>
+
+class CDataType;
 
 class CTypeNotFound : public runtime_error
 {
 public:
-    CTypeNotFound(const string& msg)
-        : runtime_error(msg)
-        {
-        }
+    CTypeNotFound(const string& msg) THROWS_NONE;
+    ~CTypeNotFound(void) THROWS_NONE;
 };
 
 class CModuleNotFound : public CTypeNotFound
 {
 public:
-    CModuleNotFound(const string& msg)
-        : CTypeNotFound(msg)
-        {
-        }
+    CModuleNotFound(const string& msg) THROWS_NONE;
+    ~CModuleNotFound(void) THROWS_NONE;
 };
 
 class CAmbiguiousTypes : public CTypeNotFound
 {
 public:
-    CAmbiguiousTypes(const string& msg)
-        : CTypeNotFound(msg)
+    CAmbiguiousTypes(const string& msg,
+                     const list<CDataType*>& types) THROWS_NONE;
+    ~CAmbiguiousTypes(void) THROWS_NONE;
+
+    const list<CDataType*>& GetTypes(void) const THROWS_NONE
         {
+            return m_Types;
         }
+
+private:
+    list<CDataType*> m_Types;
+};
+
+class CResolvedTypeSet
+{
+public:
+    CResolvedTypeSet(const string& name);
+    CResolvedTypeSet(const string& module, const string& name);
+    ~CResolvedTypeSet(void);
+
+    void Add(CDataType* type);
+    void Add(const CAmbiguiousTypes& types);
+
+    CDataType* GetType(void) const THROWS((CTypeNotFound));
+
+private:
+    string m_Module, m_Name;
+    list<CDataType*> m_Types;
 };
 
 #endif

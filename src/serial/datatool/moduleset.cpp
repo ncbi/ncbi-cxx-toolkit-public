@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/03/15 21:24:12  vasilche
+* Error diagnostic about ambiguous types made more clear.
+*
 * Revision 1.18  2000/02/01 21:48:03  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -162,29 +165,19 @@ CDataType* CFileModules::ExternalResolve(const string& moduleName,
 CDataType* CFileModules::ResolveInAnyModule(const string& typeName,
                                           bool allowInternal) const
 {
-    int count = 0;
-    CDataType* type = 0;
+    CResolvedTypeSet types(typeName);
     for ( TModules::const_iterator i = m_Modules.begin();
           i != m_Modules.end(); ++i ) {
         try {
-            type = i->second->ExternalResolve(typeName, allowInternal);
-            count += 1;
+            types.Add(i->second->ExternalResolve(typeName, allowInternal));
         }
-        catch ( CAmbiguiousTypes& /* ignored */ ) {
-            count += 2;
+        catch ( CAmbiguiousTypes& exc ) {
+            types.Add(exc);
         }
         catch ( CTypeNotFound& /* ignored */ ) {
         }
     }
-    switch ( count ) {
-    case 0:
-        THROW1_TRACE(CTypeNotFound, "type not found: " + typeName);
-    case 1:
-        return type;
-    default:
-        THROW1_TRACE(CAmbiguiousTypes,
-                     "ambiguous type definition: " + typeName);
-    }
+    return types.GetType();
 }
 
 void CFileSet::AddFile(const AutoPtr<CFileModules>& moduleSet)
@@ -204,57 +197,37 @@ void CFileSet::PrintASN(CNcbiOstream& out) const
 CDataType* CFileSet::ExternalResolve(const string& module, const string& name,
                                      bool allowInternal) const
 {
-    int count = 0;
-    CDataType* type = 0;
+    CResolvedTypeSet types(module, name);
     for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
           i != m_ModuleSets.end(); ++i ) {
         try {
-            type = (*i)->ExternalResolve(module, name, allowInternal);
-            count += 1;
+            types.Add((*i)->ExternalResolve(module, name, allowInternal));
         }
-        catch ( CAmbiguiousTypes& /* ignored */ ) {
-            count += 2;
+        catch ( CAmbiguiousTypes& exc ) {
+            types.Add(exc);
         }
         catch ( CTypeNotFound& /* ignored */ ) {
         }
     }
-    switch ( count ) {
-    case 0:
-        THROW1_TRACE(CTypeNotFound, "type not found: " + module + '.' + name);
-    case 1:
-        return type;
-    default:
-        THROW1_TRACE(CAmbiguiousTypes,
-                     "ambiguous type definition: " + module + '.' + name);
-    }
+    return types.GetType();
 }
 
 CDataType* CFileSet::ResolveInAnyModule(const string& name,
                                         bool allowInternal) const
 {
-    int count = 0;
-    CDataType* type = 0;
+    CResolvedTypeSet types(name);
     for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
           i != m_ModuleSets.end(); ++i ) {
         try {
-            type = (*i)->ResolveInAnyModule(name, allowInternal);
-            count += 1;
+            types.Add((*i)->ResolveInAnyModule(name, allowInternal));
         }
-        catch ( CAmbiguiousTypes& /* ignored */ ) {
-            count += 2;
+        catch ( CAmbiguiousTypes& exc ) {
+            types.Add(exc);
         }
         catch ( CTypeNotFound& /* ignored */ ) {
         }
     }
-    switch ( count ) {
-    case 0:
-        THROW1_TRACE(CTypeNotFound, "type not found: " + name);
-    case 1:
-        return type;
-    default:
-        THROW1_TRACE(CAmbiguiousTypes,
-                     "ambiguous type definition: " + name);
-    }
+    return types.GetType();
 }
 
 bool CFileSet::Check(void) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/03/15 21:24:12  vasilche
+* Error diagnostic about ambiguous types made more clear.
+*
 * Revision 1.8  2000/02/01 21:48:05  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -88,8 +91,8 @@ bool CReferenceDataType::CheckType(void) const
         GetModule()->Resolve(m_UserTypeName);
         return true;
     }
-    catch ( CTypeNotFound& /* ignored */ ) {
-        Warning("Unresolved type: " + m_UserTypeName);
+    catch ( CTypeNotFound& exc ) {
+        Warning("Unresolved type: " + m_UserTypeName + ": " + exc.what());
         return false;
     }
 }
