@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2001/07/27 18:25:32  grichenk
+* Removed commented code
+*
 * Revision 1.65  2001/06/11 14:35:00  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -492,22 +495,6 @@ void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
         char c = *ptr++;
         CheckVisibleChar(c, m_FixMethod, startLine);
         --length;
-        /*
-        if ( (c & 0xff) > '~' ) {
-            // non ascii
-            if ( (GetFlags() & eFlagAllowNonAsciiChars) == 0 ) {
-                ERR_POST("bad char in string starting at line " << startLine <<
-                         ": " << (c & 0xff));
-                c = '#';
-            }
-        }
-        else if ( c < ' ' ) {
-            // control
-            ERR_POST("bad char in string starting at line " << startLine <<
-                     ": " << (c & 0xff));
-            c = '#';
-        }
-        */
         m_Output.WrapAt(78, true);
         m_Output.PutChar(c);
         if ( c == '"' )
