@@ -248,7 +248,7 @@ bool CTrans_table::IsAnyStart (int state) const
 inline
 bool CTrans_table::IsOrfStop (int state) const
 {
-    return (GetStartResidue (state) == '*');
+    return (GetCodonResidue (state) == '*');
 }
 
 inline
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/06/19 21:49:32  johnson
+* bug fix: IsOrfStop now calls GetCodonResidue instead of GetStartResidue
+*
 * Revision 1.9  2003/04/14 19:12:36  ivanov
 * Added export specifier for class CTrans_table
 *
