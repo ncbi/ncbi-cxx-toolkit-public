@@ -199,39 +199,45 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
     
     offset = x_ReadSwapped(lease, offset, & f_format_version, locked);
     
-    if (f_format_version != 4) {
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "Error: Not a valid version 4 database.");
+    TIndx off1(0), off2(0), off3(0), offend(0);
+    
+    try {
+        if (f_format_version != 4) {
+            NCBI_THROW(CSeqDBException,
+                       eFileErr,
+                       "Error: Not a valid version 4 database.");
+        }
+        
+        offset = x_ReadSwapped(lease, offset, & f_db_seqtype, locked);
+        offset = x_ReadSwapped(lease, offset, & m_Title,      locked);
+        offset = x_ReadSwapped(lease, offset, & m_Date,       locked);
+        offset = x_ReadSwapped(lease, offset, & m_NumSeqs,    locked);
+        offset = x_ReadSwapped(lease, offset, & m_TotLen,     locked);
+        offset = x_ReadSwapped(lease, offset, & m_MaxLen,     locked);
+        
+        TIndx region_bytes = 4 * (m_NumSeqs + 1);
+        
+        off1   = offset;
+        off2   = off1 + region_bytes;
+        off3   = off2 + region_bytes;
+        offend = off3 + region_bytes;
+        
+        // This could still be done this way, for example, by keeping
+        // leases on the parts of the index file.  If this was done a
+        // little effort may be needed to insure proper destruction order.
+        // For now, I will keep offsets and get the lease each time it is
+        // needed.  The atlas will still contain all the pieces.
+    }
+    catch(...) {
+        m_Atlas.RetRegion(lease);
+        throw;
     }
     
-    offset = x_ReadSwapped(lease, offset, & f_db_seqtype, locked);
-    offset = x_ReadSwapped(lease, offset, & m_Title,      locked);
-    offset = x_ReadSwapped(lease, offset, & m_Date,       locked);
-    offset = x_ReadSwapped(lease, offset, & m_NumSeqs,    locked);
-    offset = x_ReadSwapped(lease, offset, & m_TotLen,     locked);
-    offset = x_ReadSwapped(lease, offset, & m_MaxLen,     locked);
-    
-    TIndx region_bytes = 4 * (m_NumSeqs + 1);
-    
-    TIndx off1, off2, off3, offend;
-    
-    off1   = offset;
-    off2   = off1 + region_bytes;
-    off3   = off2 + region_bytes;
-    offend = off3 + region_bytes;
-    
-    // This could still be done this way, for example, by keeping
-    // leases on the parts of the index file.  If this was done a
-    // little effort may be needed to insure proper destruction order.
-    // For now, I will keep offsets and get the lease each time it is
-    // needed.  The atlas will still contain all the pieces.
+    m_Atlas.RetRegion(lease);
     
     char db_seqtype = ((f_db_seqtype == 1)
                        ? kSeqTypeProt
                        : kSeqTypeNucl);
-    
-    m_Atlas.RetRegion(lease);
     
     if (db_seqtype != x_GetSeqType()) {
         NCBI_THROW(CSeqDBException,
