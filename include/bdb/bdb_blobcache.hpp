@@ -70,17 +70,21 @@ struct NCBI_BDB_EXPORT SCache_AttrDB : public CBDB_File
     CBDB_FieldString       key;
     CBDB_FieldInt4         version;
     CBDB_FieldString       subkey;
-    CBDB_FieldInt4         time_stamp;
+    CBDB_FieldUint4        time_stamp;
     CBDB_FieldInt4         overflow;
+    CBDB_FieldUint4        ttl;  ///< time-to-live
 
     SCache_AttrDB()
     {
+        DisableNull();
+
         BindKey("key",     &key, 256);
         BindKey("version", &version);
         BindKey("subkey",  &subkey, 256);
 
         BindData("time_stamp", &time_stamp);
         BindData("overflow",   &overflow);
+        BindData("ttl",        &ttl);
     }
 };
 
@@ -207,7 +211,7 @@ public:
     /// Cache keeps all updates until it reaches the limit and saves it 
     /// all in one transaction.
     ///
-    void SetReadUpdateLimit(unsigned limit) { m_MemAttr.SetLimit(limit); }
+    void SetReadUpdateLimit(unsigned limit) { /*m_MemAttr.SetLimit(limit);*/ }
 
     /// Remove all non-active LOG files
     void CleanLog();
@@ -293,6 +297,7 @@ public:
 
 private:
     /// Return TRUE if cache item expired according to the current timestamp
+    /// prerequisite: attributes record fetched to memory
     bool x_CheckTimestampExpired(const string&  key,
                                  int            version,
                                  const string&  subkey);
@@ -315,7 +320,7 @@ private:
     void x_UpdateAccessTime_NonTrans(const string&  key,
                                      int            version,
                                      const string&  subkey,
-                                     int            timeout);
+                                     unsigned       timeout);
 
 	/// 1. Retrive overflow attributes for the BLOB (using subkey)
 	/// 2. If required retrive empty subkey attribute record 
@@ -325,7 +330,8 @@ private:
 	bool x_RetrieveBlobAttributes(const string&  key,
                                  int            version,
                                  const string&  subkey,
-								 int*           overflow);
+								 int*           overflow,
+                                 unsigned int*  ttl);
 
     void x_DropBlob(const char*    key,
                     int            version,
@@ -384,6 +390,7 @@ public:
 private:
     
     /// @internal
+/*
     class CMemAttrStorage
     {
     public:
@@ -421,9 +428,9 @@ private:
         unsigned   m_Limit;    ///< limit for in-memory storage
         TAttrMap   m_Attr;     ///< in-memory attributes
     };
-
+*/
     friend class CCacheTransaction;
-    friend class CMemAttrStorage;
+//    friend class CMemAttrStorage;
     friend class CBDB_CacheIWriter;
 
 
@@ -440,7 +447,7 @@ private:
     unsigned                m_MaxTimeout;   ///< Maximum time to live
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
 
-    CMemAttrStorage         m_MemAttr;      ///< In-memory cache for attrs
+//    CMemAttrStorage         m_MemAttr;      ///< In-memory cache for attrs
     EPageSize               m_PageSizeHint; ///< Suggested page size
     EWriteSyncMode          m_WSync;        ///< Write syncronization
     /// Number of records to process in Purge() (with locking)
@@ -524,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/11/08 16:00:44  kuznets
+ * Implemented individual timeouts
+ *
  * Revision 1.39  2004/11/03 17:54:04  kuznets
  * All time related parameters made unsigned
  *
