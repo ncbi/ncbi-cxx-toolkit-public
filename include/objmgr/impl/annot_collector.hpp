@@ -173,7 +173,7 @@ class CAnnot_Collector : public CObject
 {
 public:
     CAnnot_Collector(const SAnnotSelector& selector,
-                        CScope&               scope);
+                     CScope&               scope);
     ~CAnnot_Collector(void);
 
 private:
@@ -198,16 +198,9 @@ private:
     bool x_SearchMapped(const CSeqMap_CI&     seg,
                         CSeq_loc&             master_loc_empty,
                         const CSeq_id_Handle& master_id,
-                        const CHandleRange&   master_hr,
-                        TSeqPos               master_shift);
+                        const CHandleRange&   master_hr);
     bool x_Search(const CHandleRangeMap& loc,
                   CSeq_loc_Conversion*   cvt);
-/*
-    bool x_Search(const CSeq_id_Handle& id,
-                  const CBioseq_Handle& bh,
-                  const CHandleRange& hr,
-                  CSeq_loc_Conversion* cvt);
-*/
     bool x_Search(const TTSE_Lock&      tse_lock,
                   const CSeq_id_Handle& id,
                   const CHandleRange&   hr,
@@ -582,6 +575,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/07/19 14:24:00  grichenk
+* Simplified and fixed mapping through annot.locs
+*
 * Revision 1.9  2004/06/16 11:38:22  dicuccio
 * Replaced forward declaration for CReadGuard with #include for
 * <corelib/ncbimtx.hpp>

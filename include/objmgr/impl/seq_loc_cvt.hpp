@@ -74,17 +74,29 @@ class CSeq_loc_Conversion : public CObject
 public:
     typedef CRange<TSeqPos> TRange;
 
+    // Create conversion based on a seq-map segment
     CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
                         const CSeq_id_Handle& dst_id,
                         const CSeqMap_CI&     seg,
-                        TSeqPos               master_shift,
                         const CSeq_id_Handle& src_id,
+                        CScope*               scope);
+    // Create conversion based on ranges and IDs
+    CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
+                        const CSeq_id_Handle& dst_id,
+                        const TRange&         dst_rg,
+                        const CSeq_id_Handle& src_id,
+                        TSeqPos               src_start,
+                        bool                  reverse,
                         CScope*               scope);
     // Create conversion, mapping an ID to itself
     CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
                         CScope*               scope);
 
     ~CSeq_loc_Conversion(void);
+
+    // Add mapping from current destination through one more conversion
+    // The new destination becomes the one of cvt, range may be truncated.
+    void CombineWith(CSeq_loc_Conversion& cvt);
 
     TSeqPos ConvertPos(TSeqPos src_pos);
 
@@ -126,13 +138,13 @@ public:
         {
             m_Src_id_Handle = src;
         }
-    void SetConversion(const CSeqMap_CI& seg, TSeqPos master_shift);
+    void SetConversion(const CSeqMap_CI& seg);
 
     const TRange& GetTotalRange(void) const
         {
             return m_TotalRange;
         }
-    
+
     ENa_strand ConvertStrand(ENa_strand strand) const;
 
     void SetMappedLocation(CAnnotObject_Ref& ref, ELocationType loctype);
@@ -155,6 +167,17 @@ private:
     CSeq_id& GetDstId(void)
         {
             return m_Dst_loc_Empty->SetEmpty();
+        }
+
+    TRange GetDstRange(void)
+        {
+            return m_Reverse ?
+                TRange(ConvertPos(m_Src_to), ConvertPos(m_Src_from)) :
+                TRange(ConvertPos(m_Src_from), ConvertPos(m_Src_to));
+        }
+    TRange GetSrcRange(void) const
+        {
+            return TRange(m_Src_from, m_Src_to);
         }
 
     // Translation parameters:
@@ -318,6 +341,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/07/19 14:24:00  grichenk
+* Simplified and fixed mapping through annot.locs
+*
 * Revision 1.19  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

@@ -55,7 +55,6 @@ BEGIN_SCOPE(objects)
 CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
                                          const CSeq_id_Handle& dst_id,
                                          const CSeqMap_CI&     seg,
-                                         TSeqPos               master_shift,
                                          const CSeq_id_Handle& src_id,
                                          CScope*               scope)
     : m_Src_id_Handle(src_id),
@@ -70,7 +69,38 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
       m_LastStrand(eNa_strand_unknown),
       m_Scope(scope)
 {
-    SetConversion(seg, master_shift);
+    SetConversion(seg);
+    Reset();
+}
+
+
+CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
+                                         const CSeq_id_Handle& dst_id,
+                                         const TRange&         dst_rg,
+                                         const CSeq_id_Handle& src_id,
+                                         TSeqPos               src_start,
+                                         bool                  reverse,
+                                         CScope*               scope)
+    : m_Src_id_Handle(src_id),
+      m_Src_from(0),
+      m_Src_to(0),
+      m_Shift(0),
+      m_Reverse(reverse),
+      m_Dst_id_Handle(dst_id),
+      m_Dst_loc_Empty(&master_loc_empty),
+      m_Partial(false),
+      m_LastType(eMappedObjType_not_set),
+      m_LastStrand(eNa_strand_unknown),
+      m_Scope(scope)
+{
+    m_Src_from = src_start;
+    m_Src_to = m_Src_from + dst_rg.GetLength() - 1;
+    if ( !m_Reverse ) {
+        m_Shift = dst_rg.GetFrom() - m_Src_from;
+    }
+    else {
+        m_Shift = dst_rg.GetFrom() + m_Src_to;
+    }
     Reset();
 }
 
@@ -101,17 +131,63 @@ CSeq_loc_Conversion::~CSeq_loc_Conversion(void)
 }
 
 
-void CSeq_loc_Conversion::SetConversion(const CSeqMap_CI& seg,
-                                        TSeqPos           master_shift)
+void CSeq_loc_Conversion::CombineWith(CSeq_loc_Conversion& cvt)
+{
+    _ASSERT(cvt.m_Src_id_Handle == m_Dst_id_Handle);
+    TRange dst_rg = GetDstRange();
+    TRange cvt_src_rg = cvt.GetSrcRange();
+    TRange overlap = dst_rg & cvt_src_rg;
+    _ASSERT( !overlap.Empty() );
+
+    TSeqPos new_dst_from = cvt.ConvertPos(overlap.GetFrom());
+    TSeqPos new_dst_to = cvt.ConvertPos(overlap.GetTo());
+    _ASSERT(new_dst_from != kInvalidSeqPos);
+    _ASSERT(new_dst_to != kInvalidSeqPos);
+    bool new_reverse = cvt.m_Reverse ? !m_Reverse : m_Reverse;
+    if (overlap.GetFrom() > dst_rg.GetFrom()) {
+        TSeqPos l_trunc = overlap.GetFrom() - dst_rg.GetFrom();
+        // Truncated range
+        if ( !m_Reverse ) {
+            m_Src_from += l_trunc;
+        }
+        else {
+            m_Src_to -= l_trunc;
+        }
+    }
+    if (overlap.GetTo() < dst_rg.GetTo()) {
+        TSeqPos r_trunc = dst_rg.GetTo() - overlap.GetTo();
+        // Truncated range
+        if ( !m_Reverse ) {
+            m_Src_to -= r_trunc;
+        }
+        else {
+            m_Src_from += r_trunc;
+        }
+    }
+    m_Reverse = new_reverse;
+    if ( !m_Reverse ) {
+        m_Shift = new_dst_from - m_Src_from;
+    }
+    else {
+        m_Shift = new_dst_from + m_Src_to;
+    }
+    m_Dst_id_Handle = cvt.m_Dst_id_Handle;
+    m_Dst_loc_Empty = cvt.m_Dst_loc_Empty;
+    cvt.Reset();
+    Reset();
+}
+
+
+void CSeq_loc_Conversion::SetConversion(const CSeqMap_CI& seg)
 {
     m_Src_from = seg.GetRefPosition();
     m_Src_to = m_Src_from + seg.GetLength() - 1;
     m_Reverse = seg.GetRefMinusStrand();
     if ( !m_Reverse ) {
-        m_Shift = seg.GetPosition() + master_shift - m_Src_from;
+        m_Shift = seg.GetPosition() - m_Src_from;
     }
     else {
-        m_Shift = seg.GetPosition() + master_shift + m_Src_to;
+        m_Shift = seg.GetPosition() + m_Src_to;
     }
 }
 
@@ -850,6 +926,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/07/19 14:24:00  grichenk
+* Simplified and fixed mapping through annot.locs
+*
 * Revision 1.30  2004/06/07 17:01:17  grichenk
 * Implemented referencing through locs annotations
 *

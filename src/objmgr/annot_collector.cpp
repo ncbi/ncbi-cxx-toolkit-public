@@ -622,8 +622,7 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
                     found = x_SearchMapped(smit,
                                            *master_loc_empty,
                                            idit->first,
-                                           idit->second,
-                                           0);
+                                           idit->second);
                     deeper = !(found && m_Selector.m_AdaptiveDepth);
                     smit.Next(deeper);
                 }
@@ -1162,40 +1161,44 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info&      tse,
                 const CSeq_id* ref_id = 0;
                 ref_loc.CheckId(ref_id);
                 _ASSERT(ref_id);
+                CSeq_id_Handle ref_idh = CSeq_id_Handle::GetHandle(*ref_id);
+                if ( m_Selector.m_ResolveMethod ==
+                    SAnnotSelector::eResolve_TSE &&
+                    !tse.FindBioseq(ref_idh) ) {
+                    continue;
+                }
+                CHandleRange::TRange ref_range = ref_loc.GetTotalRange();
+
                 CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
                 master_loc_empty->SetEmpty(
                     const_cast<CSeq_id&>(*id.GetSeqId()));
-                CHandleRange master_hr;
-                master_hr.AddRange(aoit->first, eNa_strand_unknown);
-                CConstRef<CSeqMap> seqMap =
-                    CSeqMap::CreateSeqMapForSeq_loc(ref_loc, m_Scope);
                 CHandleRange::TRange master_range = range & aoit->first;
                 TSeqPos start = master_range.GetFrom() - aoit->first.GetFrom();
-                TSeqPos length = master_range.GetLength();
-                CSeqMap_CI smit(seqMap->
-                                ResolvedRangeIterator(m_Scope,
-                                                      start,
-                                                      length,
-                                                      eNa_strand_unknown,
-                                                      0, // do not resolve refs
-                                                      CSeqMap::fFindRef));
-                while ( smit  &&
-                    smit.GetPosition() <= aoit->first.GetToOpen() ) {
-                    _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
-                    if ( m_Selector.m_ResolveMethod ==
-                        SAnnotSelector::eResolve_TSE &&
-                        !tse.FindBioseq(smit.GetRefSeqid()) ) {
-                        smit.Next(false);
-                        continue;
-                    }
-                    bool found = x_SearchMapped(smit,
-                        *master_loc_empty,
-                        id,
-                        master_hr,
-                        aoit->first.GetFrom());
-                    bool deeper = !(found && m_Selector.m_AdaptiveDepth);
-                    smit.Next(deeper);
+                TSeqPos end = master_range.GetTo() - aoit->first.GetFrom();
+
+                CHandleRangeMap ref_rmap;
+                CHandleRange::TRange search_range(
+                    ref_range.GetFrom() + start, ref_range.GetFrom() + end);
+                ref_rmap.AddRanges(ref_idh).AddRange(search_range, eNa_strand_unknown);
+                bool found = false;
+                if (m_Selector.m_NoMapping) {
+                    found = x_Search(ref_rmap, 0);
                 }
+                else {
+                    CRef<CSeq_loc_Conversion> locs_cvt(new CSeq_loc_Conversion(
+                            *master_loc_empty,
+                            id,
+                            aoit->first,
+                            ref_idh,
+                            ref_range.GetFrom(),
+                            false, // no strand for locs
+                            m_Scope));
+                    if ( cvt ) {
+                        locs_cvt->CombineWith(*cvt);
+                    }
+                    found = x_Search(ref_rmap, &*locs_cvt);
+                }
+                bool deeper = !(found && m_Selector.m_AdaptiveDepth);
                 continue;
             }
 
@@ -1388,12 +1391,11 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
 bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
                                       CSeq_loc&             master_loc_empty,
                                       const CSeq_id_Handle& master_id,
-                                      const CHandleRange&   master_hr,
-                                      TSeqPos               master_shift)
+                                      const CHandleRange&   master_hr)
 {
     CHandleRange::TOpenRange master_seg_range(
-        seg.GetPosition() + master_shift,
-        seg.GetEndPosition() + master_shift);
+        seg.GetPosition(),
+        seg.GetEndPosition());
     CHandleRange::TOpenRange ref_seg_range(seg.GetRefPosition(),
                                            seg.GetRefEndPosition());
     bool reversed = seg.GetRefMinusStrand();
@@ -1434,7 +1436,6 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
         CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(master_loc_empty,
                                                               master_id,
                                                               seg,
-                                                              master_shift,
                                                               ref_id,
                                                               m_Scope));
         return x_Search(ref_loc, &*cvt);
@@ -1448,6 +1449,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/07/19 14:24:00  grichenk
+* Simplified and fixed mapping through annot.locs
+*
 * Revision 1.14  2004/07/15 16:51:30  vasilche
 * Fixed segment shift in Seq-annot.locs processing.
 *
