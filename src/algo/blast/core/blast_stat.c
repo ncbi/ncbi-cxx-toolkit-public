@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.27  2003/08/01 17:27:04  dondosha
+ * Renamed external functions to avoid collisions with ncbitool library; made other functions static
+ *
  * Revision 1.26  2003/07/31 18:48:49  dondosha
  * Use Int4 instead of BLAST_Score
  *
@@ -136,8 +139,6 @@ Detailed Contents:
 #include <blastkar.h>
 #include <blast_util.h>
 
-static Int2 BlastScoreFreqCalc (BLAST_ScoreBlk* sbp, BLAST_ScoreFreq* sfp, BLAST_ResFreq* rfp1, BLAST_ResFreq* rfp2);
-
 /* OSF1 apparently doesn't like this. */
 #if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1)
 #define BLASTKAR_HUGE_VAL HUGE_VAL
@@ -148,7 +149,6 @@ static Int2 BlastScoreFreqCalc (BLAST_ScoreBlk* sbp, BLAST_ScoreFreq* sfp, BLAST
 
 /* Allocates and Deallocates the two-dimensional matrix. */
 static BLASTMatrixStructure* BlastMatrixAllocate (Int2 alphabet_size);
-static BLASTMatrixStructure* BlastMatrixDestruct (BLASTMatrixStructure* matrix_struct);
 
 /* performs sump calculation, used by BlastSumPStd */
 static double BlastSumPCalc (int r, double s);
@@ -166,7 +166,7 @@ static double BlastSumPCalc (int r, double s);
 /** Translates between ncbi4na and blastna. The first four elements
  *	of this array match ncbi2na.
  */
-Uint1 ncbi4na_to_blastna[] = {
+Uint1 NCBI4NA_TO_BLASTNA[] = {
 15,/* Gap, 0 */
 0, /* A,   1 */
 1, /* C,   2 */
@@ -185,7 +185,7 @@ Uint1 ncbi4na_to_blastna[] = {
  14  /* N,  15 */
 };
 
-Uint1 blastna_to_ncbi4na[] = {
+static Uint1 blastna_to_ncbi4na[] = {
          	 1, /* A, 0 */
 				 2, /* C, 1 */
 				 4, /* G, 2 */
@@ -703,16 +703,16 @@ BLAST_MATRIX_NOMINAL
 };
 
 /*
-	Allocates memory for the BLAST_ScoreBlk*.
+	Allocates memory for the BlastScoreBlk*.
 */
 
-BLAST_ScoreBlk*
-BLAST_ScoreBlkNew(Uint1 alphabet, Int2 number_of_contexts)
+BlastScoreBlk*
+BlastScoreBlkNew(Uint1 alphabet, Int2 number_of_contexts)
 
 {
-	BLAST_ScoreBlk* sbp;
+	BlastScoreBlk* sbp;
 
-	sbp = (BLAST_ScoreBlk*) calloc(1, sizeof(BLAST_ScoreBlk));
+	sbp = (BlastScoreBlk*) calloc(1, sizeof(BlastScoreBlk));
 
 	if (sbp != NULL)
 	{
@@ -737,7 +737,7 @@ BLAST_ScoreBlkNew(Uint1 alphabet, Int2 number_of_contexts)
 		sbp->matrix_struct = BlastMatrixAllocate(sbp->alphabet_size);
 		if (sbp->matrix_struct == NULL)
 		{
-			sbp = BLAST_ScoreBlkDestruct(sbp);
+			sbp = BlastScoreBlkFree(sbp);
 			return sbp;
 		}
 		sbp->matrix = sbp->matrix_struct->matrix;
@@ -758,8 +758,45 @@ BLAST_ScoreBlkNew(Uint1 alphabet, Int2 number_of_contexts)
 	return sbp;
 }
 
-BLAST_ScoreBlk*
-BLAST_ScoreBlkDestruct(BLAST_ScoreBlk* sbp)
+static BLAST_ScoreFreq*
+BlastScoreFreqDestruct(BLAST_ScoreFreq* sfp)
+{
+	if (sfp == NULL)
+		return NULL;
+
+	if (sfp->sprob0 != NULL)
+		sfree(sfp->sprob0);
+	sfree(sfp);
+	return sfp;
+}
+
+/*
+	Deallocates the Karlin Block.
+*/
+static BLAST_KarlinBlk*
+BlastKarlinBlkDestruct(BLAST_KarlinBlk* kbp)
+
+{
+	sfree(kbp);
+
+	return kbp;
+}
+
+static BLASTMatrixStructure*
+BlastMatrixDestruct(BLASTMatrixStructure* matrix_struct)
+
+{
+
+	if (matrix_struct == NULL)
+		return NULL;
+
+	sfree(matrix_struct);
+
+	return matrix_struct;
+}
+
+BlastScoreBlk*
+BlastScoreBlkFree(BlastScoreBlk* sbp)
 
 {
     Int4 index, rows;
@@ -813,11 +850,11 @@ BLAST_ScoreBlkDestruct(BLAST_ScoreBlk* sbp)
 }
 
 /* 
-	Set the ambiguous residue (e.g, 'N', 'X') in the BLAST_ScoreBlk*.
+	Set the ambiguous residue (e.g, 'N', 'X') in the BlastScoreBlk*.
 	Convert from ncbieaa to sbp->alphabet_code (i.e., ncbistdaa) first.
 */
 Int2
-BlastScoreSetAmbigRes(BLAST_ScoreBlk* sbp, char ambiguous_res)
+BLAST_ScoreSetAmbigRes(BlastScoreBlk* sbp, char ambiguous_res)
 
 {
 	Int2 index;
@@ -857,124 +894,6 @@ BlastScoreSetAmbigRes(BLAST_ScoreBlk* sbp, char ambiguous_res)
 	return 0;
 }
 
-/*
-	Deallocates all data associated with the BLAST_Matrix*.
-*/
-BLAST_Matrix*
-BLAST_MatrixDestruct(BLAST_Matrix* blast_matrix)
-
-{
-    Int4 index;
-
-    if (blast_matrix == NULL)
-        return NULL;
-    
-    /* We may have 2 different matrices in there */
-    
-    if(blast_matrix->original_matrix && 
-       blast_matrix->original_matrix != blast_matrix->matrix) {
-        for (index=0; index < 26; index++) {
-            sfree(blast_matrix->original_matrix[index]);
-        }
-        sfree(blast_matrix->original_matrix);
-    }
-    
-    sfree(blast_matrix->name);
-    if (blast_matrix->matrix) {
-	for (index=0; index<blast_matrix->rows; index++) {
-	    sfree(blast_matrix->matrix[index]);
-	}
-	sfree(blast_matrix->matrix);
-    }
-    
-    if(blast_matrix->posFreqs != NULL) {
-        for (index = 0; index < blast_matrix->rows; index++) {
-            sfree(blast_matrix->posFreqs[index]);
-        }
-        sfree(blast_matrix->posFreqs);
-    }
-
-    sfree(blast_matrix);
-
-    return NULL;
-}
-
-
-/*
-	Allocates and fills the BLAST_Matrix*.  
-	positionBased indicates that the posMatrix
-	on BLAST_ScoreBlk* should be used rather
-	than the 'normal' matrix.
-*/
-BLAST_Matrix*
-BLAST_MatrixFill(BLAST_ScoreBlk* sbp)
-
-{
-    BLAST_Matrix* blast_matrix;
-    double karlinK = 0.0;
-    Int4 index1, index2, dim1, dim2;
-    Int4 **matrix, **original_matrix;
-    double **posFreqs = NULL;
-
-    if (sbp == NULL)
-        return NULL;
-    
-    blast_matrix = (BLAST_Matrix*) calloc(1, sizeof(BLAST_Matrix));
-    
-    dim1 = sbp->alphabet_size;
-    dim2 = sbp->alphabet_size;
-    original_matrix = sbp->matrix;
-
-    if (sbp->kbp_gap_psi[0])
-        karlinK = sbp->kbp_gap_psi[0]->K;
-    
-    matrix = (Int4 **) calloc(dim1, sizeof(Int4*));
-    for (index1=0; index1<dim1; index1++) {
-        matrix[index1] = (Int4 *) calloc(dim2, sizeof(Int4));
-        for (index2=0; index2<dim2; index2++) {
-            matrix[index1][index2] = original_matrix[index1][index2];
-        }
-    }
-
-    blast_matrix->original_matrix = matrix;
-    
-    /* For PSI BLAST blast_matrix->matrix will be position based */
-    if (sbp->posMatrix) {
-        dim1 = sbp->query_length + 1;
-        dim2 = sbp->alphabet_size;
-        original_matrix = sbp->posMatrix;
-        matrix = (Int4 **) calloc(dim1, sizeof(Int4*));
-        for (index1=0; index1<dim1; index1++) {
-           matrix[index1] = (Int4 *) calloc(dim2, sizeof(Int4));
-           for (index2=0; index2<dim2; index2++) {
-              matrix[index1][index2] = original_matrix[index1][index2];
-           }
-        }
-    }
-    blast_matrix->matrix = matrix;
-
-    /* Copying posFreqs to the BLAST_Matrix */
-    if ((sbp->posFreqs != NULL) && (sbp->posMatrix != NULL)) {
-        posFreqs = (double **) calloc(dim1, sizeof(double *));
-        for (index1 = 0; index1 < dim1; index1++) {
-            posFreqs[index1] = (double *) calloc(dim2, sizeof(double));
-            for (index2=0; index2 < dim2; index2++) {
-                posFreqs[index1][index2] = sbp->posFreqs[index1][index2];
-            }
-        }
-    }
-
-    blast_matrix->is_prot = sbp->protein_alphabet;
-    blast_matrix->name = strdup(sbp->name);
-    blast_matrix->rows = dim1;
-    blast_matrix->columns = dim2;
-    blast_matrix->matrix = matrix;
-    blast_matrix->posFreqs = posFreqs;
-    blast_matrix->karlinK = karlinK;
-    
-    return blast_matrix;
-}
-
 /* 
 	Fill in the matrix for blastn using the penaly and rewards
 
@@ -986,7 +905,8 @@ BLAST_MatrixFill(BLAST_ScoreBlk* sbp)
         if matrix==NULL, it is allocated and returned.
 */
 
-Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty, Int4 reward)
+static Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty, 
+                                       Int4 reward)
 {
 
 	Int2	index1, index2, degen;
@@ -1051,7 +971,7 @@ Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty, Int4 reward)
 }
 /* 
 	Fill in the matrix for blastn using the penaly and rewards on
-	the BLAST_ScoreBlk*.
+	the BlastScoreBlk*.
 
 	The query sequence alphabet is blastna, the subject sequence
 	is ncbi2na.  The alphabet blastna is defined in blastkar.h
@@ -1059,7 +979,7 @@ Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty, Int4 reward)
 
 	The query is in the first index, the subject is the second.
 */
-static Int2 BlastScoreBlkMatCreate(BLAST_ScoreBlk* sbp)
+static Int2 BlastScoreBlkMatCreate(BlastScoreBlk* sbp)
 {
    sbp->matrix = BlastScoreBlkMatCreateEx(sbp->matrix,sbp->penalty, sbp->reward);
 	sbp->mat_dim1 = BLASTNA_SIZE;
@@ -1067,152 +987,6 @@ static Int2 BlastScoreBlkMatCreate(BLAST_ScoreBlk* sbp)
 
 	return 0;
 }
-
-Int2
-BlastScoreBlkMatFill(BLAST_ScoreBlk* sbp, char* matrix_path)
-{
-    Int2 status = 0;
-    FILE *fp = NULL;
-    
-    if (sbp->read_in_matrix) {
-        ASSERT(matrix_path != NULL);
-
-        if((fp=fopen(matrix_path, "r")) == NULL)
-           return -1;
-
-        if((status=BlastScoreBlkMatRead(sbp, fp)) != 0) {
-           fclose(fp);
-           return status;
-        }
-        fclose(fp);
-    } else {
-       /* Nucleotide BLAST only! */
-       if((status=BlastScoreBlkMatCreate(sbp)) != 0)
-          return status;
-    }
-    
-    if((status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
-       return status;
-    
-    return status;
-}
-
-/*
-  Calculate the Karlin parameters.  This function should be called once
-  for each context, or frame translated.
-  
-  The rfp and stdrfp are calculated for each context, this should be
-  fixed. 
-*/
-
-Int2
-BlastScoreBlkFill(BLAST_ScoreBlk* sbp, char* query, Int4 query_length, Int2 context_number)
-{
-	BLAST_ResFreq* rfp,* stdrfp;
-	Int2 retval=0;
-
-	rfp = BlastResFreqNew(sbp);
-	stdrfp = BlastResFreqNew(sbp);
-	BlastResFreqStdComp(sbp, stdrfp);
-	BlastResFreqString(sbp, rfp, query, query_length);
-	sbp->sfp[context_number] = BlastScoreFreqNew(sbp->loscore, sbp->hiscore);
-	BlastScoreFreqCalc(sbp, sbp->sfp[context_number], rfp, stdrfp);
-	sbp->kbp_std[context_number] = BlastKarlinBlkCreate();
-	retval = BlastKarlinBlkCalc(sbp->kbp_std[context_number], sbp->sfp[context_number]);
-	if (retval)
-	{
-		rfp = BlastResFreqDestruct(rfp);
-		stdrfp = BlastResFreqDestruct(stdrfp);
-		return retval;
-	}
-	sbp->kbp_psi[context_number] = BlastKarlinBlkCreate();
-	retval = BlastKarlinBlkCalc(sbp->kbp_psi[context_number], sbp->sfp[context_number]);
-	rfp = BlastResFreqDestruct(rfp);
-	stdrfp = BlastResFreqDestruct(stdrfp);
-
-	return retval;
-}
-
-/*
-	Calculates the standard Karlin parameters.  This is used
-	if the query is translated and the calculated (real) Karlin
-	parameters are bad, as they're calculated for non-coding regions.
-*/
-
-BLAST_KarlinBlk*
-BlastKarlinBlkStandardCalcEx(BLAST_ScoreBlk* sbp)
-
-{
-	BLAST_KarlinBlk* kbp_ideal;
-	BLAST_ResFreq* stdrfp;
-	BLAST_ScoreFreq* sfp;
-
-	stdrfp = BlastResFreqNew(sbp);
-	BlastResFreqStdComp(sbp, stdrfp);
-	sfp = BlastScoreFreqNew(sbp->loscore, sbp->hiscore);
-	BlastScoreFreqCalc(sbp, sfp, stdrfp, stdrfp);
-	kbp_ideal = BlastKarlinBlkCreate();
-	BlastKarlinBlkCalc(kbp_ideal, sfp);
-	stdrfp = BlastResFreqDestruct(stdrfp);
-
-	sfp = BlastScoreFreqDestruct(sfp);
-
-	return kbp_ideal;
-}
-
-Int2
-BlastKarlinBlkStandardCalc(BLAST_ScoreBlk* sbp, Int2 context_start, Int2 context_end)
-{
-
-	BLAST_KarlinBlk* kbp_ideal,* kbp;
-	Int2 index;
-
-	kbp_ideal = BlastKarlinBlkStandardCalcEx(sbp);
-/* Replace the calculated values with ideal ones for blastx, tblastx. */
-	for (index=context_start; index<=context_end; index++)
-	{
-		kbp = sbp->kbp[index];	
-		if (kbp->Lambda >= kbp_ideal->Lambda)
-		{
-			kbp->Lambda = kbp_ideal->Lambda;
-			kbp->K = kbp_ideal->K;
-			kbp->logK = kbp_ideal->logK;
-			kbp->H = kbp_ideal->H;
-		}
-	}
-	kbp_ideal = BlastKarlinBlkDestruct(kbp_ideal);
-
-	return 0;
-}
-
-/*
-	Creates the Karlin Block.
-*/
-
-BLAST_KarlinBlk*
-BlastKarlinBlkCreate(void)
-
-{
-	BLAST_KarlinBlk* kbp;
-
-	kbp = (BLAST_KarlinBlk*) calloc(1, sizeof(BLAST_KarlinBlk));
-
-	return kbp;
-}
-
-/*
-	Deallocates the Karlin Block.
-*/
-
-BLAST_KarlinBlk*
-BlastKarlinBlkDestruct(BLAST_KarlinBlk* kbp)
-
-{
-	sfree(kbp);
-
-	return kbp;
-}
-
 
 /* 
 	Read in the matrix from the FILE *fp.
@@ -1222,8 +996,8 @@ BlastKarlinBlkDestruct(BLAST_KarlinBlk* kbp)
 	is expected that ncbistdaa will be used.
 */
 
-Int2
-BlastScoreBlkMatRead(BLAST_ScoreBlk* sbp, FILE *fp)
+static Int2
+BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
 {
     char	buf[512+3];
     char	temp[512];
@@ -1397,8 +1171,8 @@ BlastScoreBlkMatRead(BLAST_ScoreBlk* sbp, FILE *fp)
     return 0;
 }
 
-Int2
-BlastScoreBlkMaxScoreSet(BLAST_ScoreBlk* sbp)
+static Int2
+BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
 {
 	Int4 score, maxscore;
 	Int4 ** matrix; 
@@ -1437,270 +1211,79 @@ gaps), then use other scores. */
 	return 0;
 }
 
-/* maxscore for PSI Blast depends not on the residue, but on the position
-   in the posMatrix, so maxscore array has size of the length of posMatrix */
-/* SSH */
-Int4 *BlastPSIMaxScoreGet(Int4 **posMatrix, 
-                          Int4 start, Int4 length)
+Int2
+BLAST_ScoreBlkMatFill(BlastScoreBlk* sbp, char* matrix_path)
 {
-    Int4 score, maxscore;
-    Int4 *maxscore_pos;
-    Int4 index1, index2;
+    Int2 status = 0;
+    FILE *fp = NULL;
     
-    if(posMatrix == NULL)
-        return NULL;
-    
-    maxscore_pos = (Int4 *) calloc(length , sizeof(Int4));
-    
-    for (index1 = start; index1 < length; index1++) {
-        maxscore = BLAST_SCORE_MIN;
-        for (index2 = 0; index2 < PSI_ALPHABET_SIZE; index2++) {
-            score = posMatrix[index1][index2];
-            if (score <= BLAST_SCORE_MIN || score >= BLAST_SCORE_MAX)
-                continue;
-            if (score > maxscore) {
-                maxscore = score;
-            }
+    if (sbp->read_in_matrix) {
+        ASSERT(matrix_path != NULL);
+
+        if((fp=fopen(matrix_path, "r")) == NULL)
+           return -1;
+
+        if((status=BlastScoreBlkMatRead(sbp, fp)) != 0) {
+           fclose(fp);
+           return status;
         }
-
-        maxscore_pos[index1] = maxscore;
-    }    
-    return maxscore_pos;
+        fclose(fp);
+    } else {
+       /* Nucleotide BLAST only! */
+       if((status=BlastScoreBlkMatCreate(sbp)) != 0)
+          return status;
+    }
+    
+    if((status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
+       return status;
+    
+    return status;
 }
 
-static BLASTMatrixStructure*
-BlastMatrixAllocate(Int2 alphabet_size)
-
+static BLAST_ResFreq*
+BlastResFreqDestruct(BLAST_ResFreq* rfp)
 {
-	BLASTMatrixStructure* matrix_struct;
-	Int2 index;
-
-	if (alphabet_size <= 0 || alphabet_size >= BLAST_MATRIX_SIZE)
+	if (rfp == NULL)
 		return NULL;
 
-	matrix_struct =	(BLASTMatrixStructure*) calloc(1, sizeof(BLASTMatrixStructure));
+	if (rfp->prob0 != NULL)
+		sfree(rfp->prob0);
 
-	if (matrix_struct == NULL)
-		return NULL;
+	sfree(rfp);
 
-	for (index=0; index<BLAST_MATRIX_SIZE-1; index++)
-	{
-		matrix_struct->matrix[index] = matrix_struct->long_matrix + index*BLAST_MATRIX_SIZE;
-	}
-
-	return matrix_struct;
-}
-
-static BLASTMatrixStructure*
-BlastMatrixDestruct(BLASTMatrixStructure* matrix_struct)
-
-{
-
-	if (matrix_struct == NULL)
-		return NULL;
-
-	sfree(matrix_struct);
-
-	return matrix_struct;
-}
-
-/* 
-	Allocated the BLAST_ResComp* for a given alphabet.  Only the
-	alphabets ncbistdaa and ncbi4na should be used by BLAST.
-*/
-
-BLAST_ResComp*
-BlastResCompNew(BLAST_ScoreBlk* sbp)
-{
-	BLAST_ResComp*	rcp;
-
-	rcp = (BLAST_ResComp*) calloc(1, sizeof(BLAST_ResComp));
-	if (rcp == NULL)
-		return NULL;
-
-	rcp->alphabet_code = sbp->alphabet_code;
-
-/* comp0 has zero offset, comp starts at 0, only one 
-array is allocated.  */
-	rcp->comp0 = (Int4*) calloc(BLAST_MATRIX_SIZE, sizeof(Int4));
-	if (rcp->comp0 == NULL) 
-	{
-		rcp = BlastResCompDestruct(rcp);
-		return rcp;
-	}
-
-	rcp->comp = rcp->comp0 - sbp->alphabet_start;
-
-	return rcp;
-}
-
-
-BLAST_ResComp*
-BlastResCompDestruct(BLAST_ResComp* rcp)
-{
-	if (rcp == NULL)
-		return NULL;
-
-	if (rcp->comp0 != NULL)
-		sfree(rcp->comp0);
-
-	sfree(rcp);
-	return NULL;
+	return rfp;
 }
 
 /*
-	Store the composition of a (query) string.  
-*/
-Int2
-BlastResCompStr(BLAST_ScoreBlk* sbp, BLAST_ResComp* rcp, char* str, Int4 length)
+	Allocates the BLAST_ResFreq* and then fills in the frequencies
+	in the probabilities.
+*/ 
+
+static BLAST_ResFreq*
+BlastResFreqNew(BlastScoreBlk* sbp)
 {
-	char*	lp,* lpmax;
-	Int2 index;
-        Uint1 mask;
+	BLAST_ResFreq*	rfp;
 
-	if (sbp == NULL || rcp == NULL || str == NULL)
-		return 1;
-
-	if (rcp->alphabet_code != sbp->alphabet_code)
-		return 1;
-
-        /* For megablast, check only the first 4 bits of the sequence values */
-        mask = (sbp->protein_alphabet ? 0xff : 0x0f);
-
-/* comp0 starts at zero and extends for "num", comp is the same array, but 
-"start_at" offset. */
-	for (index=0; index<(sbp->alphabet_size); index++)
-		rcp->comp0[index] = 0;
-
-	for (lp = str, lpmax = lp+length; lp < lpmax; lp++)
+	if (sbp == NULL)
 	{
-		++rcp->comp[(int)(*lp & mask)];
-	}
-
-	/* Don't count ambig. residues. */
-	for (index=0; index<sbp->ambig_occupy; index++)
-	{
-		rcp->comp[sbp->ambiguous_res[index]] = 0;
-	}
-
-	return 0;
-}
-
-static Int2
-BlastScoreChk(Int4 lo, Int4 hi)
-{
-	if (lo >= 0 || hi <= 0 ||
-			lo < BLAST_SCORE_1MIN || hi > BLAST_SCORE_1MAX)
-		return 1;
-
-	if (hi - lo > BLAST_SCORE_RANGE_MAX)
-		return 1;
-
-	return 0;
-}
-
-BLAST_ScoreFreq*
-BlastScoreFreqNew(Int4 score_min, Int4 score_max)
-{
-	BLAST_ScoreFreq*	sfp;
-	Int4	range;
-
-	if (BlastScoreChk(score_min, score_max) != 0)
-		return NULL;
-
-	sfp = (BLAST_ScoreFreq*) calloc(1, sizeof(BLAST_ScoreFreq));
-	if (sfp == NULL)
-		return NULL;
-
-	range = score_max - score_min + 1;
-	sfp->sprob = (double*) calloc(range, sizeof(double));
-	if (sfp->sprob == NULL) 
-	{
-		BlastScoreFreqDestruct(sfp);
 		return NULL;
 	}
 
-	sfp->sprob0 = sfp->sprob;
-	sfp->sprob -= score_min;
-	sfp->score_min = score_min;
-	sfp->score_max = score_max;
-	sfp->obs_min = sfp->obs_max = 0;
-	sfp->score_avg = 0.0;
-	return sfp;
-}
-
-BLAST_ScoreFreq*
-BlastScoreFreqDestruct(BLAST_ScoreFreq* sfp)
-{
-	if (sfp == NULL)
+	rfp = (BLAST_ResFreq*) calloc(1, sizeof(BLAST_ResFreq));
+	if (rfp == NULL)
 		return NULL;
 
-	if (sfp->sprob0 != NULL)
-		sfree(sfp->sprob0);
-	sfree(sfp);
-	return sfp;
-}
+	rfp->alphabet_code = sbp->alphabet_code;
 
-static Int2
-BlastScoreFreqCalc(BLAST_ScoreBlk* sbp, BLAST_ScoreFreq* sfp, BLAST_ResFreq* rfp1, BLAST_ResFreq* rfp2)
-{
-	Int4 **	matrix;
-	Int4	score, obs_min, obs_max;
-	double		score_sum, score_avg;
-	Int2 		alphabet_start, alphabet_end, index1, index2;
-
-	if (sbp == NULL || sfp == NULL)
-		return 1;
-
-	if (sbp->loscore < sfp->score_min || sbp->hiscore > sfp->score_max)
-		return 1;
-
-	for (score = sfp->score_min; score <= sfp->score_max; score++)
-		sfp->sprob[score] = 0.0;
-
-	matrix = sbp->matrix;
-
-	alphabet_start = sbp->alphabet_start;
-	alphabet_end = alphabet_start + sbp->alphabet_size;
-	for (index1=alphabet_start; index1<alphabet_end; index1++)
+	rfp->prob0 = (double*) calloc(sbp->alphabet_size, sizeof(double));
+	if (rfp->prob0 == NULL) 
 	{
-		for (index2=alphabet_start; index2<alphabet_end; index2++)
-		{
-			score = matrix[index1][index2];
-			if (score >= sbp->loscore) 
-			{
-				sfp->sprob[score] += rfp1->prob[index1] * rfp2->prob[index2];
-			}
-		}
+		rfp = BlastResFreqDestruct(rfp);
+		return rfp;
 	}
+	rfp->prob = rfp->prob0 - sbp->alphabet_start;
 
-	score_sum = 0.;
-	obs_min = obs_max = BLAST_SCORE_MIN;
-	for (score = sfp->score_min; score <= sfp->score_max; score++)
-	{
-		if (sfp->sprob[score] > 0.) 
-		{
-			score_sum += sfp->sprob[score];
-			obs_max = score;
-			if (obs_min == BLAST_SCORE_MIN)
-				obs_min = score;
-		}
-	}
-	sfp->obs_min = obs_min;
-	sfp->obs_max = obs_max;
-
-	score_avg = 0.0;
-	if (score_sum > 0.0001 || score_sum < -0.0001)
-	{
-		for (score = obs_min; score <= obs_max; score++) 
-		{
-			sfp->sprob[score] /= score_sum;
-			score_avg += score * sfp->sprob[score];
-		}
-	}
-	sfp->score_avg = score_avg;
-
-	return 0;
+	return rfp;
 }
 
 typedef struct BLAST_LetterProb {
@@ -1790,50 +1373,10 @@ static BLAST_LetterProb	nt_prob[] = {
 	};
 
 /*
-	Allocates the BLAST_ResFreq* and then fills in the frequencies
-	in the probabilities.
-*/ 
-
-BLAST_ResFreq*
-BlastResFreqNew(BLAST_ScoreBlk* sbp)
-{
-	BLAST_ResFreq*	rfp;
-
-	if (sbp == NULL)
-	{
-		return NULL;
-	}
-
-	rfp = (BLAST_ResFreq*) calloc(1, sizeof(BLAST_ResFreq));
-	if (rfp == NULL)
-		return NULL;
-
-	rfp->alphabet_code = sbp->alphabet_code;
-
-	rfp->prob0 = (double*) calloc(sbp->alphabet_size, sizeof(double));
-	if (rfp->prob0 == NULL) 
-	{
-		rfp = BlastResFreqDestruct(rfp);
-		return rfp;
-	}
-	rfp->prob = rfp->prob0 - sbp->alphabet_start;
-
-	return rfp;
-}
-
-void BlastResFreqFree(BLAST_ResFreq* rfp)
-{
-    sfree(rfp->prob0);
-    sfree(rfp);
-
-    return;
-}
-
-/*
 	Normalize the frequencies to "norm".
 */
-Int2
-BlastResFreqNormalize(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, double norm)
+static Int2
+BlastResFreqNormalize(BlastScoreBlk* sbp, BLAST_ResFreq* rfp, double norm)
 {
 	Int2	alphabet_stop, index;
 	double	sum = 0., p;
@@ -1868,7 +1411,7 @@ BlastResFreqNormalize(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, double norm)
 	Negative returns upon error.
 */
 
-Int2
+static Int2
 BlastGetStdAlphabet (Uint1 alphabet_code, Uint1* residues, Uint4 residues_size)
 
 {
@@ -1893,8 +1436,8 @@ BlastGetStdAlphabet (Uint1 alphabet_code, Uint1* residues, Uint4 residues_size)
 	return index;
 }
 
-Int2
-BlastResFreqStdComp(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp)
+static Int2
+BlastResFreqStdComp(BlastScoreBlk* sbp, BLAST_ResFreq* rfp)
 {
 	Int2 retval;
    Uint4 index;
@@ -1927,72 +1470,103 @@ BlastResFreqStdComp(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp)
 	return 0;
 }
 
-char* 
-BlastRepresentativeResidues(Int2 length)
-
+static BLAST_ResComp*
+BlastResCompDestruct(BLAST_ResComp* rcp)
 {
-	char* buffer,* ptr;
-	Int2 index, total;
-	Int4 number;
-	total=0;
+	if (rcp == NULL)
+		return NULL;
 
-	for (index=0; index<(int)DIM(STD_AMINO_ACID_FREQS); index++) 
-	{
-		total += (Int2) STD_AMINO_ACID_FREQS[index].p;
-	}
+	if (rcp->comp0 != NULL)
+		sfree(rcp->comp0);
 
-	buffer = (char*) calloc((length+1), sizeof(char));
-
-	ptr = buffer;
-	for (index=0; index<(int)DIM(STD_AMINO_ACID_FREQS); index++) 
-	{
-		number = Nint((STD_AMINO_ACID_FREQS[index].p)*((double) length)/((double) total));
-		while (number > 0)
-		{
-			*ptr = STD_AMINO_ACID_FREQS[index].ch;
-			ptr++;
-			number--;
-		}
-	}
-
-	return buffer;
+	sfree(rcp);
+	return NULL;
 }
 
-Int2
-BlastResFreqString(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, char* string, Int4 length)
+/* 
+	Allocated the BLAST_ResComp* for a given alphabet.  Only the
+	alphabets ncbistdaa and ncbi4na should be used by BLAST.
+*/
+static BLAST_ResComp*
+BlastResCompNew(BlastScoreBlk* sbp)
 {
-	BLAST_ResComp* rcp;
-	
-	rcp = BlastResCompNew(sbp);
+	BLAST_ResComp*	rcp;
 
-	BlastResCompStr(sbp, rcp, string, length);
+	rcp = (BLAST_ResComp*) calloc(1, sizeof(BLAST_ResComp));
+	if (rcp == NULL)
+		return NULL;
 
-	BlastResFreqResComp(sbp, rfp, rcp);
+	rcp->alphabet_code = sbp->alphabet_code;
 
-	rcp = BlastResCompDestruct(rcp);
+/* comp0 has zero offset, comp starts at 0, only one 
+array is allocated.  */
+	rcp->comp0 = (Int4*) calloc(BLAST_MATRIX_SIZE, sizeof(Int4));
+	if (rcp->comp0 == NULL) 
+	{
+		rcp = BlastResCompDestruct(rcp);
+		return rcp;
+	}
+
+	rcp->comp = rcp->comp0 - sbp->alphabet_start;
+
+	return rcp;
+}
+
+/*
+	Store the composition of a (query) string.  
+*/
+static Int2
+BlastResCompStr(BlastScoreBlk* sbp, BLAST_ResComp* rcp, char* str, Int4 length)
+{
+	char*	lp,* lpmax;
+	Int2 index;
+        Uint1 mask;
+
+	if (sbp == NULL || rcp == NULL || str == NULL)
+		return 1;
+
+	if (rcp->alphabet_code != sbp->alphabet_code)
+		return 1;
+
+        /* For megablast, check only the first 4 bits of the sequence values */
+        mask = (sbp->protein_alphabet ? 0xff : 0x0f);
+
+/* comp0 starts at zero and extends for "num", comp is the same array, but 
+"start_at" offset. */
+	for (index=0; index<(sbp->alphabet_size); index++)
+		rcp->comp0[index] = 0;
+
+	for (lp = str, lpmax = lp+length; lp < lpmax; lp++)
+	{
+		++rcp->comp[(int)(*lp & mask)];
+	}
+
+	/* Don't count ambig. residues. */
+	for (index=0; index<sbp->ambig_occupy; index++)
+	{
+		rcp->comp[sbp->ambiguous_res[index]] = 0;
+	}
 
 	return 0;
 }
 
-BLAST_ResFreq*
-BlastResFreqDestruct(BLAST_ResFreq* rfp)
+static Int2
+BlastResFreqClr(BlastScoreBlk* sbp, BLAST_ResFreq* rfp)
 {
-	if (rfp == NULL)
-		return NULL;
-
-	if (rfp->prob0 != NULL)
-		sfree(rfp->prob0);
-
-	sfree(rfp);
-
-	return rfp;
+	Int2	alphabet_max, index;
+ 
+	alphabet_max = sbp->alphabet_start + sbp->alphabet_size;
+	for (index=sbp->alphabet_start; index<alphabet_max; index++)
+                rfp->prob[index] = 0.0;
+ 
+        return 0;
 }
 
 /*
 	Calculate the residue frequencies associated with the provided ResComp
 */
-Int2
-BlastResFreqResComp(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, BLAST_ResComp* rcp)
+static Int2
+BlastResFreqResComp(BlastScoreBlk* sbp, BLAST_ResFreq* rfp, BLAST_ResComp* rcp)
 {
 	Int2	alphabet_max, index;
 	double	sum = 0.;
@@ -2018,717 +1592,131 @@ BlastResFreqResComp(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, BLAST_ResComp* rcp)
 	return 0;
 }
 
-Int2
-BlastResFreqClr(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp)
+static Int2
+BlastResFreqString(BlastScoreBlk* sbp, BLAST_ResFreq* rfp, char* string, Int4 length)
 {
-	Int2	alphabet_max, index;
- 
-	alphabet_max = sbp->alphabet_start + sbp->alphabet_size;
-	for (index=sbp->alphabet_start; index<alphabet_max; index++)
-                rfp->prob[index] = 0.0;
- 
-        return 0;
-}
-
-
-/*
-	Deallocates MatrixInfo*
-*/
-
-static MatrixInfo*
-MatrixInfoDestruct(MatrixInfo* matrix_info)
-
-{
-	if (matrix_info == NULL)
-		return NULL;
-
-	sfree(matrix_info->name);
-	sfree(matrix_info);
-	return NULL;
-}
-
-/*
-	Makes New MatrixInfo*
-*/
-
-static MatrixInfo*
-MatrixInfoNew(char* name, array_of_8 *values, Int4* prefs, Int4 max_number)
-
-{
-	MatrixInfo* matrix_info;
-
-	matrix_info = (MatrixInfo*) calloc(1, sizeof(MatrixInfo));
-	matrix_info->name = strdup(name);
-	matrix_info->values = values;
-	matrix_info->prefs = prefs;
-	matrix_info->max_number_values = max_number;
-
-	return matrix_info;
-}
-
-static ListNode*
-BlastMatrixValuesDestruct(ListNode* vnp)
-
-{
-	ListNode* head;
-
-	head = vnp;
-	while (vnp)
-	{
-		MatrixInfoDestruct((MatrixInfo*) vnp->ptr);
-		vnp = vnp->next;
-	}
-
-	head = ListNodeFree(head);
-
-	return head;
-}
-
-/*
-	ListNode* BlastLoadMatrixValues (void)
+	BLAST_ResComp* rcp;
 	
-	Loads all the matrix values, returns a ListNode* chain that contains
-	MatrixInfo*'s.
+	rcp = BlastResCompNew(sbp);
 
-*/
-static ListNode* 
-BlastLoadMatrixValues (void)
+	BlastResCompStr(sbp, rcp, string, length);
 
-{
-	MatrixInfo* matrix_info;
-	ListNode* retval=NULL;
+	BlastResFreqResComp(sbp, rfp, rcp);
 
-	matrix_info = MatrixInfoNew("BLOSUM80", blosum80_values, blosum80_prefs, BLOSUM80_VALUES_MAX);
-	ListNodeAddPointer(&retval, 0, matrix_info);
-
-	matrix_info = MatrixInfoNew("BLOSUM62", blosum62_values, blosum62_prefs, BLOSUM62_VALUES_MAX);
-	ListNodeAddPointer(&retval, 0, matrix_info);
-
-	matrix_info = MatrixInfoNew("BLOSUM50", blosum50_values, blosum50_prefs, BLOSUM50_VALUES_MAX);
-	ListNodeAddPointer(&retval, 0, matrix_info);
-
-	matrix_info = MatrixInfoNew("BLOSUM45", blosum45_values, blosum45_prefs, BLOSUM45_VALUES_MAX);
-	ListNodeAddPointer(&retval, 0, matrix_info);
-
-	matrix_info = MatrixInfoNew("PAM250", pam250_values, pam250_prefs, PAM250_VALUES_MAX);
-	ListNodeAddPointer(&retval, 0, matrix_info);
-
-	matrix_info = MatrixInfoNew("BLOSUM62_20", blosum62_20_values, blosum62_20_prefs, BLOSUM62_20_VALUES_MAX);
-	ListNodeAddPointer(&retval, 0, matrix_info);
-
-	matrix_info = MatrixInfoNew("BLOSUM90", blosum90_values, blosum90_prefs, BLOSUM90_VALUES_MAX);
-	ListNodeAddPointer(&retval, 0, matrix_info);
-
-	matrix_info = MatrixInfoNew("PAM30", pam30_values, pam30_prefs, PAM30_VALUES_MAX);
-	ListNodeAddPointer(&retval, 0, matrix_info);
-
-	matrix_info = MatrixInfoNew("PAM70", pam70_values, pam70_prefs, PAM70_VALUES_MAX);
-	ListNodeAddPointer(&retval, 0, matrix_info);
-
-	return retval;
-}
-/*
-Int2
-BlastKarlinGetMatrixValues(char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H)
-	
-Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
-the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
-are not required should be set to NULL.  The Int2 return value is the length of the
-arrays.
-*/
-
-Int2
-BlastKarlinGetMatrixValues(char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, Int4** pref_flags)
-
-{
-	return BlastKarlinGetMatrixValuesEx2(matrix, open, extension, NULL, lambda, K, H, NULL, NULL, pref_flags);
-
-}
-
-/*
-Int2
-BlastKarlinGetMatrixValuesEx(char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H)
-	
-Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
-the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
-are not required should be set to NULL.  The Int2 return value is the length of the
-arrays.
-*/
-
-Int2
-BlastKarlinGetMatrixValuesEx(char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, Int4** pref_flags)
-
-{
-	return BlastKarlinGetMatrixValuesEx2(matrix, open, extension, decline_align, lambda, K, H, NULL, NULL, pref_flags);
-
-}
-
-/*
-Int2
-BlastKarlinGetMatrixValuesEx2(char* matrix, Int4* open, Int4* extension, Int4* decline_align, double* lambda, double* K, double* H)
-	
-Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
-the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
-are not required should be set to NULL.  The Int2 return value is the length of the
-arrays.
-*/
-
-Int2
-BlastKarlinGetMatrixValuesEx2(char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags)
-
-{
-	array_of_8 *values;
-	Boolean found_matrix=FALSE;
-	Int4 index, max_number_values=0;
-	Int4* open_array=NULL,* extension_array=NULL,* decline_align_array=NULL,* pref_flags_array=NULL,* prefs;
-	double* lambda_array=NULL,* K_array=NULL,* H_array=NULL,* alpha_array=NULL,* beta_array=NULL;
-	MatrixInfo* matrix_info;
-	ListNode* vnp,* head;
-
-	if (matrix == NULL)
-		return 0;
-
-	vnp = head = BlastLoadMatrixValues();
-
-	while (vnp)
-	{
-		matrix_info = vnp->ptr;
-		if (strcasecmp(matrix_info->name, matrix) == 0)
-		{
-			values = matrix_info->values;
-			max_number_values = matrix_info->max_number_values;
-			prefs = matrix_info->prefs;
-			found_matrix = TRUE;
-			break;
-		}
-		vnp = vnp->next;
-	}
-
-	if (found_matrix)
-	{
-		if (open)
-			*open = open_array = (Int4 *) calloc(max_number_values, sizeof(Int4));
-		if (extension)
-			*extension = extension_array = 
-            (Int4 *) calloc(max_number_values, sizeof(Int4));
-		if (decline_align)
-			*decline_align = decline_align_array = 
-            (Int4 *) calloc(max_number_values, sizeof(Int4));
-		if (lambda)
-			*lambda = lambda_array = 
-            (double*) calloc(max_number_values, sizeof(double));
-		if (K)
-			*K = K_array = (double*) calloc(max_number_values, sizeof(double));
-		if (H)
-			*H = H_array = (double*) calloc(max_number_values, sizeof(double));
-		if (alpha)
-			*alpha = alpha_array = (double*) calloc(max_number_values, sizeof(double));
-		if (beta)
-			*beta = beta_array = (double*) calloc(max_number_values, sizeof(double));
-		if (pref_flags)
-			*pref_flags = pref_flags_array = 
-            (Int4 *) calloc(max_number_values, sizeof(Int4));
-
-		for (index=0; index<max_number_values; index++)
-		{
-			if (open)
-				open_array[index] = values[index][0];
-			if (extension)
-				extension_array[index] = values[index][1];
-			if (decline_align)
-				decline_align_array[index] = values[index][2];
-			if (lambda)
-				lambda_array[index] = values[index][3];
-			if (K)
-				K_array[index] = values[index][4];
-			if (H)
-				H_array[index] = values[index][5];
-			if (alpha)
-				alpha_array[index] = values[index][6];
-			if (beta)
-				beta_array[index] = values[index][7];
-			if (pref_flags)
-				pref_flags_array[index] = prefs[index];
-		}
-	}
-
-	BlastMatrixValuesDestruct(head);
-
-	return max_number_values;
-}
-
-/*Extract the alpha and beta settings for this matrixName, and these
-  gap open and gap extension costs*/
-void getAlphaBeta(char* matrixName, double *alpha,
-double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
-{
-   Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
-   double* alpha_arr,* beta_arr;
-   Int2 num_values;
-   Int4 i; /*loop index*/
-
-   num_values = BlastKarlinGetMatrixValuesEx2(matrixName, &gapOpen_arr, 
-     &gapExtend_arr, NULL, NULL, NULL, NULL,  &alpha_arr, &beta_arr, 
-     &pref_flags);
-
-   if (gapped) {
-     if ((0 == gap_open) && (0 == gap_extend)) {
-       for(i = 1; i < num_values; i++) {
-	 if(pref_flags[i]==BLAST_MATRIX_BEST) {
-	   (*alpha) = alpha_arr[i];
-	   (*beta) = beta_arr[i];
-	   break;
-	 }
-       }
-     }
-     else {
-       for(i = 1; i < num_values; i++) {
-	 if ((gapOpen_arr[i] == gap_open) &&
-	     (gapExtend_arr[i] == gap_extend)) {
-	   (*alpha) = alpha_arr[i];
-	   (*beta) = beta_arr[i];
-	   break;
-	 }
-       }
-     }
-   }
-   else if (num_values > 0) {
-     (*alpha) = alpha_arr[0];
-     (*beta) = beta_arr[0];
-   }
-
-   sfree(gapOpen_arr);
-   sfree(gapExtend_arr);
-   sfree(pref_flags);
-   sfree(alpha_arr);
-   sfree(beta_arr);
-}
-
-/*
-  Conveniently return default/best Karling-Altschul parameters for a given matrix.
-  
- */
-
-Int2
-BlastKarlinGetDefaultMatrixValues(char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H) {
-    Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
-    double* Lambda_arr,* Kappa_arr,* H_arr;
-    Int4 i,n;
-    if(matrix==NULL)
-        matrix = "BLOSUM62";
-    n = BlastKarlinGetMatrixValues(matrix, &gapOpen_arr, &gapExtend_arr, &Lambda_arr, &Kappa_arr, &H_arr,&pref_flags);
-    if(n) {
-        *open = gapOpen_arr[0];
-        *extension = gapExtend_arr[0];
-        *K = Kappa_arr[0];
-        *lambda = Lambda_arr[0];
-        *H = H_arr[0];
-        for(i=0;i<n;i++) {
-            if(pref_flags[i]==BLAST_MATRIX_PREFERRED) {
-                *open = gapOpen_arr[i];
-                *extension = gapExtend_arr[i];
-                *K = Kappa_arr[i];
-                *lambda = Lambda_arr[i];
-                *H = H_arr[i];
-            } else if(pref_flags[i]==BLAST_MATRIX_BEST) {
-                *open = gapOpen_arr[i];
-                *extension = gapExtend_arr[i];
-                *K = Kappa_arr[i];
-                *lambda = Lambda_arr[i];
-                *H = H_arr[i];
-                i+=n;
-            }
-        }
-        sfree(gapOpen_arr);
-        sfree(gapExtend_arr);
-        sfree(Kappa_arr);
-        sfree(Lambda_arr);
-        sfree(H_arr);
-        sfree(pref_flags);
-        return 1;
-    } else
-        return 0;
-}
-/*
-	Supplies lambda, H, and K values, as calcualted by Stephen Altschul 
-	in Methods in Enzy. (vol 266, page 474).
-
-	if kbp is NULL, then a validation is perfomed.
-*/
-
-Int2
-BlastKarlinBlkGappedCalc(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, char* matrix_name, Blast_Message** error_return)
-
-{
-
-	return BlastKarlinBlkGappedCalcEx(kbp, gap_open, gap_extend, (double) INT2_MAX, matrix_name, error_return);
-
-}
-	
-/*
-	Supplies lambda, H, and K values, as calcualted by Stephen Altschul 
-	in Methods in Enzy. (vol 266, page 474).
-
-	if kbp is NULL, then a validation is perfomed.
-*/
-
-Int2
-BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name, Blast_Message** error_return)
-
-{
-	char buffer[256];
-	Int2 status = BlastKarlinkGapBlkFill(kbp, gap_open, gap_extend, decline_align, matrix_name);
-
-	if (status && error_return)
-	{
-		if (status == 1)
-		{
-			MatrixInfo* matrix_info;
-			ListNode* vnp,* head; 		
-
-			vnp = head = BlastLoadMatrixValues();
-
-			sprintf(buffer, "%s is not a supported matrix", matrix_name);
-			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
-
-			while (vnp)
-			{
-				matrix_info = vnp->ptr;
-				sprintf(buffer, "%s is a supported matrix", matrix_info->name);
-            Blast_MessageWrite(error_return, 2, 0, 0, buffer);
-				vnp = vnp->next;
-			}
-
-			BlastMatrixValuesDestruct(head);
-		}
-		else if (status == 2)
-		{
-			if (decline_align == INT2_MAX)
-				sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
-			else
-				sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
-			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
-			BlastKarlinReportAllowedValues(matrix_name, error_return);
-		}
-	}
-
-	return status;
-}
-
-/*
-	Attempts to fill KarlinBlk for given gap opening, extensions etc.  
-	Will return non-zero status if that fails.
-
-	return values:	-1 if matrix_name is NULL;
-			1 if matrix not found
-			2 if matrix found, but open, extend etc. values not supported.
-*/
-Int2
-BlastKarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name)
-{
-	Boolean found_matrix=FALSE, found_values=FALSE;
-	array_of_8 *values;
-	Int2 status=0;
-	Int4 index, max_number_values=0;
-	MatrixInfo* matrix_info;
-	ListNode* vnp,* head;
-	
-	if (matrix_name == NULL)
-		return -1;
-
-	values = NULL;
-
-	vnp = head = BlastLoadMatrixValues();
-	while (vnp)
-	{
-		matrix_info = vnp->ptr;
-		if (strcasecmp(matrix_info->name, matrix_name) == 0)
-		{
-			values = matrix_info->values;
-			max_number_values = matrix_info->max_number_values;
-			found_matrix = TRUE;
-			break;
-		}
-		vnp = vnp->next;
-	}
-
-
-	if (found_matrix)
-	{
-		for (index=0; index<max_number_values; index++)
-		{
-			if (Nint(values[index][0]) == gap_open &&
-				Nint(values[index][1]) == gap_extend &&
-				(Nint(values[index][2]) == INT2_MAX || Nint(values[index][2]) == decline_align))
-			{
-				if (kbp)
-				{
-					kbp->Lambda_real = kbp->Lambda = values[index][3];
-					kbp->K_real = kbp->K = values[index][4];
-					kbp->logK_real = kbp->logK = log(kbp->K);
-					kbp->H_real = kbp->H = values[index][5];
-				}
-				found_values = TRUE;
-				break;
-			}
-		}
-
-		if (found_values == TRUE)
-		{
-			status = 0;
-		}
-		else
-		{
-			status = 2;
-		}
-	}
-	else
-	{
-		status = 1;
-	}
-
-	BlastMatrixValuesDestruct(head);
-
-	return status;
-}
-
-char*
-PrintMatrixMessage(const char *matrix_name)
-{
-	char* buffer= (char *) calloc(1024, sizeof(char));
-	char* ptr;
-	MatrixInfo* matrix_info;
-        ListNode* vnp,* head;
-
-	ptr = buffer;
-        sprintf(ptr, "%s is not a supported matrix, supported matrices are:\n", matrix_name);
-
-	ptr += strlen(ptr);
-
-        vnp = head = BlastLoadMatrixValues();
-
-        while (vnp)
-        {
-        	matrix_info = vnp->ptr;
-        	sprintf(ptr, "%s \n", matrix_info->name);
-		ptr += strlen(ptr);
-		vnp = vnp->next;
-        }
-        BlastMatrixValuesDestruct(head);
-
-	return buffer;
-}
-
-char*
-PrintAllowedValuesMessage(const char *matrix_name, Int4 gap_open, Int4 gap_extend, Int4 decline_align) 
-{
-	array_of_8 *values;
-	Boolean found_matrix=FALSE;
-	char* buffer,* ptr;
-	Int4 index, max_number_values=0;
-	MatrixInfo* matrix_info;
-	ListNode* vnp,* head;
-
-	ptr = buffer = (char *) calloc(2048, sizeof(char));
-
-        if (decline_align == INT2_MAX)
-              sprintf(ptr, "Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n", 
-		(long) gap_open, (long) gap_extend, matrix_name);
-        else
-               sprintf(ptr, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s\n supported values are:\n", 
-		(long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
-
-	ptr += strlen(ptr);
-
-	vnp = head = BlastLoadMatrixValues();
-	while (vnp)
-	{
-		matrix_info = vnp->ptr;
-		if (strcasecmp(matrix_info->name, matrix_name) == 0)
-		{
-			values = matrix_info->values;
-			max_number_values = matrix_info->max_number_values;
-			found_matrix = TRUE;
-			break;
-		}
-		vnp = vnp->next;
-	}
-
-	if (found_matrix)
-	{
-		for (index=0; index<max_number_values; index++)
-		{
-			if (Nint(values[index][2]) == INT2_MAX)
-				sprintf(ptr, "%ld, %ld\n", (long) Nint(values[index][0]), (long) Nint(values[index][1]));
-			else
-				sprintf(ptr, "%ld, %ld, %ld\n", (long) Nint(values[index][0]), (long) Nint(values[index][1]), (long) Nint(values[index][2]));
-			ptr += strlen(ptr);
-		}
-	}
-
-	BlastMatrixValuesDestruct(head);
-
-	return buffer;
-}
-	
-
-Int2
-BlastKarlinReportAllowedValues(const char *matrix_name, 
-   Blast_Message** error_return)
-{
-	array_of_8 *values;
-	Boolean found_matrix=FALSE;
-	char buffer[256];
-	Int4 index, max_number_values=0;
-	MatrixInfo* matrix_info;
-	ListNode* vnp,* head;
-
-	vnp = head = BlastLoadMatrixValues();
-	while (vnp)
-	{
-		matrix_info = vnp->ptr;
-		if (strcasecmp(matrix_info->name, matrix_name) == 0)
-		{
-			values = matrix_info->values;
-			max_number_values = matrix_info->max_number_values;
-			found_matrix = TRUE;
-			break;
-		}
-		vnp = vnp->next;
-	}
-
-	if (found_matrix)
-	{
-		for (index=0; index<max_number_values; index++)
-		{
-			if (Nint(values[index][2]) == INT2_MAX)
-				sprintf(buffer, "Gap existence and extension values of %ld and %ld are supported", (long) Nint(values[index][0]), (long) Nint(values[index][1]));
-			else
-				sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld are supported", (long) Nint(values[index][0]), (long) Nint(values[index][1]), (long) Nint(values[index][2]));
-			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
-		}
-	}
-
-	BlastMatrixValuesDestruct(head);
+	rcp = BlastResCompDestruct(rcp);
 
 	return 0;
 }
 
-/* 
-        Everything below here was (more or less) copied from the old 
-        karlin.c and could work separately from the stuff above. 
-*/ 
-
-/**************** Statistical Significance Parameter Subroutine ****************
-
-    Version 1.0     February 2, 1990
-    Version 1.2     July 6,     1990
-
-    Program by:     Stephen Altschul
-
-    Address:        National Center for Biotechnology Information
-                    National Library of Medicine
-                    National Institutes of Health
-                    Bethesda, MD  20894
-
-    Internet:       altschul@ncbi.nlm.nih.gov
-
-See:  Karlin, S. & Altschul, S.F. "Methods for Assessing the Statistical
-    Significance of Molecular Sequence Features by Using General Scoring
-    Schemes,"  Proc. Natl. Acad. Sci. USA 87 (1990), 2264-2268.
-
-    Computes the parameters lambda and K for use in calculating the
-    statistical significance of high-scoring segments or subalignments.
-
-    The scoring scheme must be integer valued.  A positive score must be
-    possible, but the expected (mean) score must be negative.
-
-    A program that calls this routine must provide the value of the lowest
-    possible score, the value of the greatest possible score, and a pointer
-    to an array of probabilities for the occurence of all scores between
-    these two extreme scores.  For example, if score -2 occurs with
-    probability 0.7, score 0 occurs with probability 0.1, and score 3
-    occurs with probability 0.2, then the subroutine must be called with
-    low = -2, high = 3, and pr pointing to the array of values
-    { 0.7, 0.0, 0.1, 0.0, 0.0, 0.2 }.  The calling program must also provide
-    pointers to lambda and K; the subroutine will then calculate the values
-    of these two parameters.  In this example, lambda=0.330 and K=0.154.
-
-    The parameters lambda and K can be used as follows.  Suppose we are
-    given a length N random sequence of independent letters.  Associated
-    with each letter is a score, and the probabilities of the letters
-    determine the probability for each score.  Let S be the aggregate score
-    of the highest scoring contiguous segment of this sequence.  Then if N
-    is sufficiently large (greater than 100), the following bound on the
-    probability that S is greater than or equal to x applies:
-
-            P( S >= x )   <=   1 - exp [ - KN exp ( - lambda * x ) ].
-
-    In other words, the p-value for this segment can be written as
-    1-exp[-KN*exp(-lambda*S)].
-
-    This formula can be applied to pairwise sequence comparison by assigning
-    scores to pairs of letters (e.g. amino acids), and by replacing N in the
-    formula with N*M, where N and M are the lengths of the two sequences
-    being compared.
-
-    In addition, letting y = KN*exp(-lambda*S), the p-value for finding m
-    distinct segments all with score >= S is given by:
-
-                           2             m-1           -y
-            1 - [ 1 + y + y /2! + ... + y   /(m-1)! ] e
-
-    Notice that for m=1 this formula reduces to 1-exp(-y), which is the same
-    as the previous formula.
-
-*******************************************************************************/
-
-Int2
-BlastKarlinBlkCalc(BLAST_KarlinBlk* kbp, BLAST_ScoreFreq* sfp)
+static Int2
+BlastScoreChk(Int4 lo, Int4 hi)
 {
-	
-
-	if (kbp == NULL || sfp == NULL)
+	if (lo >= 0 || hi <= 0 ||
+			lo < BLAST_SCORE_1MIN || hi > BLAST_SCORE_1MAX)
 		return 1;
 
-	/* Calculate the parameter Lambda */
+	if (hi - lo > BLAST_SCORE_RANGE_MAX)
+		return 1;
 
-	kbp->Lambda_real = kbp->Lambda = BlastKarlinLambdaNR(sfp);
-	if (kbp->Lambda < 0.)
-		goto ErrExit;
-
-
-	/* Calculate H */
-
-	kbp->H_real = kbp->H = BlastKarlinLtoH(sfp, kbp->Lambda);
-	if (kbp->H < 0.)
-		goto ErrExit;
-
-
-	/* Calculate K and log(K) */
-
-	kbp->K_real = kbp->K = BlastKarlinLHtoK(sfp, kbp->Lambda, kbp->H);
-	if (kbp->K < 0.)
-		goto ErrExit;
-	kbp->logK_real = kbp->logK = log(kbp->K);
-
-	/* Normal return */
 	return 0;
-
-ErrExit:
-	kbp->Lambda = kbp->H = kbp->K
-		= kbp->Lambda_real = kbp->H_real = kbp->K_real = -1.;
-#ifdef BLASTKAR_HUGE_VAL
-	kbp->logK_real = kbp->logK = BLASTKAR_HUGE_VAL;
-#else
-	kbp->logK_real = kbp->logK = 1.e30;
-#endif
-	return 1;
 }
+
+static BLAST_ScoreFreq*
+BlastScoreFreqNew(Int4 score_min, Int4 score_max)
+{
+	BLAST_ScoreFreq*	sfp;
+	Int4	range;
+
+	if (BlastScoreChk(score_min, score_max) != 0)
+		return NULL;
+
+	sfp = (BLAST_ScoreFreq*) calloc(1, sizeof(BLAST_ScoreFreq));
+	if (sfp == NULL)
+		return NULL;
+
+	range = score_max - score_min + 1;
+	sfp->sprob = (double*) calloc(range, sizeof(double));
+	if (sfp->sprob == NULL) 
+	{
+		BlastScoreFreqDestruct(sfp);
+		return NULL;
+	}
+
+	sfp->sprob0 = sfp->sprob;
+	sfp->sprob -= score_min;
+	sfp->score_min = score_min;
+	sfp->score_max = score_max;
+	sfp->obs_min = sfp->obs_max = 0;
+	sfp->score_avg = 0.0;
+	return sfp;
+}
+
+static Int2
+BlastScoreFreqCalc(BlastScoreBlk* sbp, BLAST_ScoreFreq* sfp, BLAST_ResFreq* rfp1, BLAST_ResFreq* rfp2)
+{
+	Int4 **	matrix;
+	Int4	score, obs_min, obs_max;
+	double		score_sum, score_avg;
+	Int2 		alphabet_start, alphabet_end, index1, index2;
+
+	if (sbp == NULL || sfp == NULL)
+		return 1;
+
+	if (sbp->loscore < sfp->score_min || sbp->hiscore > sfp->score_max)
+		return 1;
+
+	for (score = sfp->score_min; score <= sfp->score_max; score++)
+		sfp->sprob[score] = 0.0;
+
+	matrix = sbp->matrix;
+
+	alphabet_start = sbp->alphabet_start;
+	alphabet_end = alphabet_start + sbp->alphabet_size;
+	for (index1=alphabet_start; index1<alphabet_end; index1++)
+	{
+		for (index2=alphabet_start; index2<alphabet_end; index2++)
+		{
+			score = matrix[index1][index2];
+			if (score >= sbp->loscore) 
+			{
+				sfp->sprob[score] += rfp1->prob[index1] * rfp2->prob[index2];
+			}
+		}
+	}
+
+	score_sum = 0.;
+	obs_min = obs_max = BLAST_SCORE_MIN;
+	for (score = sfp->score_min; score <= sfp->score_max; score++)
+	{
+		if (sfp->sprob[score] > 0.) 
+		{
+			score_sum += sfp->sprob[score];
+			obs_max = score;
+			if (obs_min == BLAST_SCORE_MIN)
+				obs_min = score;
+		}
+	}
+	sfp->obs_min = obs_min;
+	sfp->obs_max = obs_max;
+
+	score_avg = 0.0;
+	if (score_sum > 0.0001 || score_sum < -0.0001)
+	{
+		for (score = obs_min; score <= obs_max; score++) 
+		{
+			sfp->sprob[score] /= score_sum;
+			score_avg += score * sfp->sprob[score];
+		}
+	}
+	sfp->score_avg = score_avg;
+
+	return 0;
+}
+
 #define DIMOFP0	(iter*range + 1)
 #define DIMOFP0_MAX (BLAST_KARLIN_K_ITER_MAX*BLAST_SCORE_RANGE_MAX+1)
 
-double
+static double
 BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
 {
 #ifndef BLAST_KARLIN_STACKP
@@ -2869,12 +1857,20 @@ CleanUp:
 	return K;
 }
 
+/******************* Fast Lambda Calculation Subroutine ************************
+	Version 1.0	May 16, 1991
+	Program by:	Stephen Altschul
+
+	Uses Newton-Raphson method (fast) to solve for Lambda, given an initial
+	guess (lambda0) obtained perhaps by the bisection method.
+*******************************************************************************/
+
 /*
 	BlastKarlinLambdaBis
 
 	Calculate Lambda using the bisection method (slow).
 */
-double
+static double
 BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
 {
 	register double* sprob;
@@ -2940,15 +1936,7 @@ BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
 	return (lambda + up) / (2. * d);
 }
 
-/******************* Fast Lambda Calculation Subroutine ************************
-	Version 1.0	May 16, 1991
-	Program by:	Stephen Altschul
-
-	Uses Newton-Raphson method (fast) to solve for Lambda, given an initial
-	guess (lambda0) obtained perhaps by the bisection method.
-*******************************************************************************/
-
-double
+static double
 BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 {
 	Int4	low;			/* Lowest score (must be negative)  */
@@ -3011,7 +1999,7 @@ BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 
 	Calculate H, the relative entropy of the p's and q's
 */
-double
+static double
 BlastKarlinLtoH(BLAST_ScoreFreq* sfp, double	lambda)
 {
 	Int4	score;
@@ -3041,7 +2029,749 @@ BlastKarlinLtoH(BLAST_ScoreFreq* sfp, double	lambda)
     	return lambda * av;
 }
 
+/**************** Statistical Significance Parameter Subroutine ****************
 
+    Version 1.0     February 2, 1990
+    Version 1.2     July 6,     1990
+
+    Program by:     Stephen Altschul
+
+    Address:        National Center for Biotechnology Information
+                    National Library of Medicine
+                    National Institutes of Health
+                    Bethesda, MD  20894
+
+    Internet:       altschul@ncbi.nlm.nih.gov
+
+See:  Karlin, S. & Altschul, S.F. "Methods for Assessing the Statistical
+    Significance of Molecular Sequence Features by Using General Scoring
+    Schemes,"  Proc. Natl. Acad. Sci. USA 87 (1990), 2264-2268.
+
+    Computes the parameters lambda and K for use in calculating the
+    statistical significance of high-scoring segments or subalignments.
+
+    The scoring scheme must be integer valued.  A positive score must be
+    possible, but the expected (mean) score must be negative.
+
+    A program that calls this routine must provide the value of the lowest
+    possible score, the value of the greatest possible score, and a pointer
+    to an array of probabilities for the occurence of all scores between
+    these two extreme scores.  For example, if score -2 occurs with
+    probability 0.7, score 0 occurs with probability 0.1, and score 3
+    occurs with probability 0.2, then the subroutine must be called with
+    low = -2, high = 3, and pr pointing to the array of values
+    { 0.7, 0.0, 0.1, 0.0, 0.0, 0.2 }.  The calling program must also provide
+    pointers to lambda and K; the subroutine will then calculate the values
+    of these two parameters.  In this example, lambda=0.330 and K=0.154.
+
+    The parameters lambda and K can be used as follows.  Suppose we are
+    given a length N random sequence of independent letters.  Associated
+    with each letter is a score, and the probabilities of the letters
+    determine the probability for each score.  Let S be the aggregate score
+    of the highest scoring contiguous segment of this sequence.  Then if N
+    is sufficiently large (greater than 100), the following bound on the
+    probability that S is greater than or equal to x applies:
+
+            P( S >= x )   <=   1 - exp [ - KN exp ( - lambda * x ) ].
+
+    In other words, the p-value for this segment can be written as
+    1-exp[-KN*exp(-lambda*S)].
+
+    This formula can be applied to pairwise sequence comparison by assigning
+    scores to pairs of letters (e.g. amino acids), and by replacing N in the
+    formula with N*M, where N and M are the lengths of the two sequences
+    being compared.
+
+    In addition, letting y = KN*exp(-lambda*S), the p-value for finding m
+    distinct segments all with score >= S is given by:
+
+                           2             m-1           -y
+            1 - [ 1 + y + y /2! + ... + y   /(m-1)! ] e
+
+    Notice that for m=1 this formula reduces to 1-exp(-y), which is the same
+    as the previous formula.
+
+*******************************************************************************/
+static Int2
+BlastKarlinBlkCalc(BLAST_KarlinBlk* kbp, BLAST_ScoreFreq* sfp)
+{
+	
+
+	if (kbp == NULL || sfp == NULL)
+		return 1;
+
+	/* Calculate the parameter Lambda */
+
+	kbp->Lambda_real = kbp->Lambda = BlastKarlinLambdaNR(sfp);
+	if (kbp->Lambda < 0.)
+		goto ErrExit;
+
+
+	/* Calculate H */
+
+	kbp->H_real = kbp->H = BlastKarlinLtoH(sfp, kbp->Lambda);
+	if (kbp->H < 0.)
+		goto ErrExit;
+
+
+	/* Calculate K and log(K) */
+
+	kbp->K_real = kbp->K = BlastKarlinLHtoK(sfp, kbp->Lambda, kbp->H);
+	if (kbp->K < 0.)
+		goto ErrExit;
+	kbp->logK_real = kbp->logK = log(kbp->K);
+
+	/* Normal return */
+	return 0;
+
+ErrExit:
+	kbp->Lambda = kbp->H = kbp->K
+		= kbp->Lambda_real = kbp->H_real = kbp->K_real = -1.;
+#ifdef BLASTKAR_HUGE_VAL
+	kbp->logK_real = kbp->logK = BLASTKAR_HUGE_VAL;
+#else
+	kbp->logK_real = kbp->logK = 1.e30;
+#endif
+	return 1;
+}
+
+/*
+  Calculate the Karlin parameters.  This function should be called once
+  for each context, or frame translated.
+  
+  The rfp and stdrfp are calculated for each context, this should be
+  fixed. 
+*/
+
+Int2
+BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int2 context_number)
+{
+	BLAST_ResFreq* rfp,* stdrfp;
+	Int2 retval=0;
+
+	rfp = BlastResFreqNew(sbp);
+	stdrfp = BlastResFreqNew(sbp);
+	BlastResFreqStdComp(sbp, stdrfp);
+	BlastResFreqString(sbp, rfp, query, query_length);
+	sbp->sfp[context_number] = BlastScoreFreqNew(sbp->loscore, sbp->hiscore);
+	BlastScoreFreqCalc(sbp, sbp->sfp[context_number], rfp, stdrfp);
+	sbp->kbp_std[context_number] = BLAST_KarlinBlkCreate();
+	retval = BlastKarlinBlkCalc(sbp->kbp_std[context_number], sbp->sfp[context_number]);
+	if (retval)
+	{
+		rfp = BlastResFreqDestruct(rfp);
+		stdrfp = BlastResFreqDestruct(stdrfp);
+		return retval;
+	}
+	sbp->kbp_psi[context_number] = BLAST_KarlinBlkCreate();
+	retval = BlastKarlinBlkCalc(sbp->kbp_psi[context_number], sbp->sfp[context_number]);
+	rfp = BlastResFreqDestruct(rfp);
+	stdrfp = BlastResFreqDestruct(stdrfp);
+
+	return retval;
+}
+
+/*
+	Calculates the standard Karlin parameters.  This is used
+	if the query is translated and the calculated (real) Karlin
+	parameters are bad, as they're calculated for non-coding regions.
+*/
+
+static BLAST_KarlinBlk*
+BlastKarlinBlkStandardCalcEx(BlastScoreBlk* sbp)
+
+{
+	BLAST_KarlinBlk* kbp_ideal;
+	BLAST_ResFreq* stdrfp;
+	BLAST_ScoreFreq* sfp;
+
+	stdrfp = BlastResFreqNew(sbp);
+	BlastResFreqStdComp(sbp, stdrfp);
+	sfp = BlastScoreFreqNew(sbp->loscore, sbp->hiscore);
+	BlastScoreFreqCalc(sbp, sfp, stdrfp, stdrfp);
+	kbp_ideal = BLAST_KarlinBlkCreate();
+	BlastKarlinBlkCalc(kbp_ideal, sfp);
+	stdrfp = BlastResFreqDestruct(stdrfp);
+
+	sfp = BlastScoreFreqDestruct(sfp);
+
+	return kbp_ideal;
+}
+
+Int2
+BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int2 context_start, Int2 context_end)
+{
+
+	BLAST_KarlinBlk* kbp_ideal,* kbp;
+	Int2 index;
+
+	kbp_ideal = BlastKarlinBlkStandardCalcEx(sbp);
+/* Replace the calculated values with ideal ones for blastx, tblastx. */
+	for (index=context_start; index<=context_end; index++)
+	{
+		kbp = sbp->kbp[index];	
+		if (kbp->Lambda >= kbp_ideal->Lambda)
+		{
+			kbp->Lambda = kbp_ideal->Lambda;
+			kbp->K = kbp_ideal->K;
+			kbp->logK = kbp_ideal->logK;
+			kbp->H = kbp_ideal->H;
+		}
+	}
+	kbp_ideal = BlastKarlinBlkDestruct(kbp_ideal);
+
+	return 0;
+}
+
+/*
+	Creates the Karlin Block.
+*/
+
+BLAST_KarlinBlk*
+BLAST_KarlinBlkCreate(void)
+
+{
+	BLAST_KarlinBlk* kbp;
+
+	kbp = (BLAST_KarlinBlk*) calloc(1, sizeof(BLAST_KarlinBlk));
+
+	return kbp;
+}
+
+static BLASTMatrixStructure*
+BlastMatrixAllocate(Int2 alphabet_size)
+
+{
+	BLASTMatrixStructure* matrix_struct;
+	Int2 index;
+
+	if (alphabet_size <= 0 || alphabet_size >= BLAST_MATRIX_SIZE)
+		return NULL;
+
+	matrix_struct =	(BLASTMatrixStructure*) calloc(1, sizeof(BLASTMatrixStructure));
+
+	if (matrix_struct == NULL)
+		return NULL;
+
+	for (index=0; index<BLAST_MATRIX_SIZE-1; index++)
+	{
+		matrix_struct->matrix[index] = matrix_struct->long_matrix + index*BLAST_MATRIX_SIZE;
+	}
+
+	return matrix_struct;
+}
+
+static void BlastResFreqFree(BLAST_ResFreq* rfp)
+{
+    sfree(rfp->prob0);
+    sfree(rfp);
+
+    return;
+}
+
+/*
+	Deallocates MatrixInfo*
+*/
+
+static MatrixInfo*
+MatrixInfoDestruct(MatrixInfo* matrix_info)
+
+{
+	if (matrix_info == NULL)
+		return NULL;
+
+	sfree(matrix_info->name);
+	sfree(matrix_info);
+	return NULL;
+}
+
+/*
+	Makes New MatrixInfo*
+*/
+
+static MatrixInfo*
+MatrixInfoNew(char* name, array_of_8 *values, Int4* prefs, Int4 max_number)
+
+{
+	MatrixInfo* matrix_info;
+
+	matrix_info = (MatrixInfo*) calloc(1, sizeof(MatrixInfo));
+	matrix_info->name = strdup(name);
+	matrix_info->values = values;
+	matrix_info->prefs = prefs;
+	matrix_info->max_number_values = max_number;
+
+	return matrix_info;
+}
+
+static ListNode*
+BlastMatrixValuesDestruct(ListNode* vnp)
+
+{
+	ListNode* head;
+
+	head = vnp;
+	while (vnp)
+	{
+		MatrixInfoDestruct((MatrixInfo*) vnp->ptr);
+		vnp = vnp->next;
+	}
+
+	head = ListNodeFree(head);
+
+	return head;
+}
+
+/*
+	ListNode* BlastLoadMatrixValues (void)
+	
+	Loads all the matrix values, returns a ListNode* chain that contains
+	MatrixInfo*'s.
+
+*/
+static ListNode* 
+BlastLoadMatrixValues (void)
+
+{
+	MatrixInfo* matrix_info;
+	ListNode* retval=NULL;
+
+	matrix_info = MatrixInfoNew("BLOSUM80", blosum80_values, blosum80_prefs, BLOSUM80_VALUES_MAX);
+	ListNodeAddPointer(&retval, 0, matrix_info);
+
+	matrix_info = MatrixInfoNew("BLOSUM62", blosum62_values, blosum62_prefs, BLOSUM62_VALUES_MAX);
+	ListNodeAddPointer(&retval, 0, matrix_info);
+
+	matrix_info = MatrixInfoNew("BLOSUM50", blosum50_values, blosum50_prefs, BLOSUM50_VALUES_MAX);
+	ListNodeAddPointer(&retval, 0, matrix_info);
+
+	matrix_info = MatrixInfoNew("BLOSUM45", blosum45_values, blosum45_prefs, BLOSUM45_VALUES_MAX);
+	ListNodeAddPointer(&retval, 0, matrix_info);
+
+	matrix_info = MatrixInfoNew("PAM250", pam250_values, pam250_prefs, PAM250_VALUES_MAX);
+	ListNodeAddPointer(&retval, 0, matrix_info);
+
+	matrix_info = MatrixInfoNew("BLOSUM62_20", blosum62_20_values, blosum62_20_prefs, BLOSUM62_20_VALUES_MAX);
+	ListNodeAddPointer(&retval, 0, matrix_info);
+
+	matrix_info = MatrixInfoNew("BLOSUM90", blosum90_values, blosum90_prefs, BLOSUM90_VALUES_MAX);
+	ListNodeAddPointer(&retval, 0, matrix_info);
+
+	matrix_info = MatrixInfoNew("PAM30", pam30_values, pam30_prefs, PAM30_VALUES_MAX);
+	ListNodeAddPointer(&retval, 0, matrix_info);
+
+	matrix_info = MatrixInfoNew("PAM70", pam70_values, pam70_prefs, PAM70_VALUES_MAX);
+	ListNodeAddPointer(&retval, 0, matrix_info);
+
+	return retval;
+}
+
+/*
+Int2
+BlastKarlinGetMatrixValuesEx2(char* matrix, Int4* open, Int4* extension, Int4* decline_align, double* lambda, double* K, double* H)
+	
+Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
+the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
+are not required should be set to NULL.  The Int2 return value is the length of the
+arrays.
+*/
+
+static Int2
+BlastKarlinGetMatrixValuesEx2(char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags)
+
+{
+	array_of_8 *values;
+	Boolean found_matrix=FALSE;
+	Int4 index, max_number_values=0;
+	Int4* open_array=NULL,* extension_array=NULL,* decline_align_array=NULL,* pref_flags_array=NULL,* prefs;
+	double* lambda_array=NULL,* K_array=NULL,* H_array=NULL,* alpha_array=NULL,* beta_array=NULL;
+	MatrixInfo* matrix_info;
+	ListNode* vnp,* head;
+
+	if (matrix == NULL)
+		return 0;
+
+	vnp = head = BlastLoadMatrixValues();
+
+	while (vnp)
+	{
+		matrix_info = vnp->ptr;
+		if (strcasecmp(matrix_info->name, matrix) == 0)
+		{
+			values = matrix_info->values;
+			max_number_values = matrix_info->max_number_values;
+			prefs = matrix_info->prefs;
+			found_matrix = TRUE;
+			break;
+		}
+		vnp = vnp->next;
+	}
+
+	if (found_matrix)
+	{
+		if (open)
+			*open = open_array = (Int4 *) calloc(max_number_values, sizeof(Int4));
+		if (extension)
+			*extension = extension_array = 
+            (Int4 *) calloc(max_number_values, sizeof(Int4));
+		if (decline_align)
+			*decline_align = decline_align_array = 
+            (Int4 *) calloc(max_number_values, sizeof(Int4));
+		if (lambda)
+			*lambda = lambda_array = 
+            (double*) calloc(max_number_values, sizeof(double));
+		if (K)
+			*K = K_array = (double*) calloc(max_number_values, sizeof(double));
+		if (H)
+			*H = H_array = (double*) calloc(max_number_values, sizeof(double));
+		if (alpha)
+			*alpha = alpha_array = (double*) calloc(max_number_values, sizeof(double));
+		if (beta)
+			*beta = beta_array = (double*) calloc(max_number_values, sizeof(double));
+		if (pref_flags)
+			*pref_flags = pref_flags_array = 
+            (Int4 *) calloc(max_number_values, sizeof(Int4));
+
+		for (index=0; index<max_number_values; index++)
+		{
+			if (open)
+				open_array[index] = values[index][0];
+			if (extension)
+				extension_array[index] = values[index][1];
+			if (decline_align)
+				decline_align_array[index] = values[index][2];
+			if (lambda)
+				lambda_array[index] = values[index][3];
+			if (K)
+				K_array[index] = values[index][4];
+			if (H)
+				H_array[index] = values[index][5];
+			if (alpha)
+				alpha_array[index] = values[index][6];
+			if (beta)
+				beta_array[index] = values[index][7];
+			if (pref_flags)
+				pref_flags_array[index] = prefs[index];
+		}
+	}
+
+	BlastMatrixValuesDestruct(head);
+
+	return max_number_values;
+}
+
+/*
+Int2
+BlastKarlinGetMatrixValues(char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H)
+	
+Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
+the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
+are not required should be set to NULL.  The Int2 return value is the length of the
+arrays.
+*/
+
+static Int2
+BlastKarlinGetMatrixValues(char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, Int4** pref_flags)
+
+{
+	return BlastKarlinGetMatrixValuesEx2(matrix, open, extension, NULL, lambda, K, H, NULL, NULL, pref_flags);
+
+}
+
+/*Extract the alpha and beta settings for this matrixName, and these
+  gap open and gap extension costs*/
+void BLAST_GetAlphaBeta(char* matrixName, double *alpha,
+double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
+{
+   Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
+   double* alpha_arr,* beta_arr;
+   Int2 num_values;
+   Int4 i; /*loop index*/
+
+   num_values = BlastKarlinGetMatrixValuesEx2(matrixName, &gapOpen_arr, 
+     &gapExtend_arr, NULL, NULL, NULL, NULL,  &alpha_arr, &beta_arr, 
+     &pref_flags);
+
+   if (gapped) {
+     if ((0 == gap_open) && (0 == gap_extend)) {
+       for(i = 1; i < num_values; i++) {
+	 if(pref_flags[i]==BLAST_MATRIX_BEST) {
+	   (*alpha) = alpha_arr[i];
+	   (*beta) = beta_arr[i];
+	   break;
+	 }
+       }
+     }
+     else {
+       for(i = 1; i < num_values; i++) {
+	 if ((gapOpen_arr[i] == gap_open) &&
+	     (gapExtend_arr[i] == gap_extend)) {
+	   (*alpha) = alpha_arr[i];
+	   (*beta) = beta_arr[i];
+	   break;
+	 }
+       }
+     }
+   }
+   else if (num_values > 0) {
+     (*alpha) = alpha_arr[0];
+     (*beta) = beta_arr[0];
+   }
+
+   sfree(gapOpen_arr);
+   sfree(gapExtend_arr);
+   sfree(pref_flags);
+   sfree(alpha_arr);
+   sfree(beta_arr);
+}
+
+static Int2
+BlastKarlinReportAllowedValues(const char *matrix_name, 
+   Blast_Message** error_return)
+{
+	array_of_8 *values;
+	Boolean found_matrix=FALSE;
+	char buffer[256];
+	Int4 index, max_number_values=0;
+	MatrixInfo* matrix_info;
+	ListNode* vnp,* head;
+
+	vnp = head = BlastLoadMatrixValues();
+	while (vnp)
+	{
+		matrix_info = vnp->ptr;
+		if (strcasecmp(matrix_info->name, matrix_name) == 0)
+		{
+			values = matrix_info->values;
+			max_number_values = matrix_info->max_number_values;
+			found_matrix = TRUE;
+			break;
+		}
+		vnp = vnp->next;
+	}
+
+	if (found_matrix)
+	{
+		for (index=0; index<max_number_values; index++)
+		{
+			if (Nint(values[index][2]) == INT2_MAX)
+				sprintf(buffer, "Gap existence and extension values of %ld and %ld are supported", (long) Nint(values[index][0]), (long) Nint(values[index][1]));
+			else
+				sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld are supported", (long) Nint(values[index][0]), (long) Nint(values[index][1]), (long) Nint(values[index][2]));
+			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
+		}
+	}
+
+	BlastMatrixValuesDestruct(head);
+
+	return 0;
+}
+
+/*
+	Supplies lambda, H, and K values, as calcualted by Stephen Altschul 
+	in Methods in Enzy. (vol 266, page 474).
+
+	if kbp is NULL, then a validation is perfomed.
+*/
+Int2
+BLAST_KarlinBlkGappedCalc(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name, Blast_Message** error_return)
+
+{
+	char buffer[256];
+	Int2 status = BLAST_KarlinkGapBlkFill(kbp, gap_open, gap_extend, decline_align, matrix_name);
+
+	if (status && error_return)
+	{
+		if (status == 1)
+		{
+			MatrixInfo* matrix_info;
+			ListNode* vnp,* head; 		
+
+			vnp = head = BlastLoadMatrixValues();
+
+			sprintf(buffer, "%s is not a supported matrix", matrix_name);
+			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
+
+			while (vnp)
+			{
+				matrix_info = vnp->ptr;
+				sprintf(buffer, "%s is a supported matrix", matrix_info->name);
+            Blast_MessageWrite(error_return, 2, 0, 0, buffer);
+				vnp = vnp->next;
+			}
+
+			BlastMatrixValuesDestruct(head);
+		}
+		else if (status == 2)
+		{
+			if (decline_align == INT2_MAX)
+				sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
+			else
+				sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
+			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
+			BlastKarlinReportAllowedValues(matrix_name, error_return);
+		}
+	}
+
+	return status;
+}
+
+/*
+	Attempts to fill KarlinBlk for given gap opening, extensions etc.  
+	Will return non-zero status if that fails.
+
+	return values:	-1 if matrix_name is NULL;
+			1 if matrix not found
+			2 if matrix found, but open, extend etc. values not supported.
+*/
+Int2
+BLAST_KarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name)
+{
+	Boolean found_matrix=FALSE, found_values=FALSE;
+	array_of_8 *values;
+	Int2 status=0;
+	Int4 index, max_number_values=0;
+	MatrixInfo* matrix_info;
+	ListNode* vnp,* head;
+	
+	if (matrix_name == NULL)
+		return -1;
+
+	values = NULL;
+
+	vnp = head = BlastLoadMatrixValues();
+	while (vnp)
+	{
+		matrix_info = vnp->ptr;
+		if (strcasecmp(matrix_info->name, matrix_name) == 0)
+		{
+			values = matrix_info->values;
+			max_number_values = matrix_info->max_number_values;
+			found_matrix = TRUE;
+			break;
+		}
+		vnp = vnp->next;
+	}
+
+
+	if (found_matrix)
+	{
+		for (index=0; index<max_number_values; index++)
+		{
+			if (Nint(values[index][0]) == gap_open &&
+				Nint(values[index][1]) == gap_extend &&
+				(Nint(values[index][2]) == INT2_MAX || Nint(values[index][2]) == decline_align))
+			{
+				if (kbp)
+				{
+					kbp->Lambda_real = kbp->Lambda = values[index][3];
+					kbp->K_real = kbp->K = values[index][4];
+					kbp->logK_real = kbp->logK = log(kbp->K);
+					kbp->H_real = kbp->H = values[index][5];
+				}
+				found_values = TRUE;
+				break;
+			}
+		}
+
+		if (found_values == TRUE)
+		{
+			status = 0;
+		}
+		else
+		{
+			status = 2;
+		}
+	}
+	else
+	{
+		status = 1;
+	}
+
+	BlastMatrixValuesDestruct(head);
+
+	return status;
+}
+
+char*
+BLAST_PrintMatrixMessage(const char *matrix_name)
+{
+	char* buffer= (char *) calloc(1024, sizeof(char));
+	char* ptr;
+	MatrixInfo* matrix_info;
+        ListNode* vnp,* head;
+
+	ptr = buffer;
+        sprintf(ptr, "%s is not a supported matrix, supported matrices are:\n", matrix_name);
+
+	ptr += strlen(ptr);
+
+        vnp = head = BlastLoadMatrixValues();
+
+        while (vnp)
+        {
+        	matrix_info = vnp->ptr;
+        	sprintf(ptr, "%s \n", matrix_info->name);
+		ptr += strlen(ptr);
+		vnp = vnp->next;
+        }
+        BlastMatrixValuesDestruct(head);
+
+	return buffer;
+}
+
+char*
+BLAST_PrintAllowedValues(const char *matrix_name, Int4 gap_open, Int4 gap_extend, Int4 decline_align) 
+{
+	array_of_8 *values;
+	Boolean found_matrix=FALSE;
+	char* buffer,* ptr;
+	Int4 index, max_number_values=0;
+	MatrixInfo* matrix_info;
+	ListNode* vnp,* head;
+
+	ptr = buffer = (char *) calloc(2048, sizeof(char));
+
+        if (decline_align == INT2_MAX)
+              sprintf(ptr, "Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n", 
+		(long) gap_open, (long) gap_extend, matrix_name);
+        else
+               sprintf(ptr, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s\n supported values are:\n", 
+		(long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
+
+	ptr += strlen(ptr);
+
+	vnp = head = BlastLoadMatrixValues();
+	while (vnp)
+	{
+		matrix_info = vnp->ptr;
+		if (strcasecmp(matrix_info->name, matrix_name) == 0)
+		{
+			values = matrix_info->values;
+			max_number_values = matrix_info->max_number_values;
+			found_matrix = TRUE;
+			break;
+		}
+		vnp = vnp->next;
+	}
+
+	if (found_matrix)
+	{
+		for (index=0; index<max_number_values; index++)
+		{
+			if (Nint(values[index][2]) == INT2_MAX)
+				sprintf(ptr, "%ld, %ld\n", (long) Nint(values[index][0]), (long) Nint(values[index][1]));
+			else
+				sprintf(ptr, "%ld, %ld, %ld\n", (long) Nint(values[index][0]), (long) Nint(values[index][1]), (long) Nint(values[index][2]));
+			ptr += strlen(ptr);
+		}
+	}
+
+	BlastMatrixValuesDestruct(head);
+
+	return buffer;
+}
+	
 static double
 BlastGapDecayInverse(double pvalue, unsigned nsegs, double decayrate)
 {
@@ -3068,18 +2798,46 @@ BlastGapDecay(double pvalue, unsigned nsegs, double decayrate)
 	WRG (later modified by TLM).
 */
 Int2
-BlastCutoffs(Int4 *S, /* cutoff score */
+BLAST_Cutoffs(Int4 *S, /* cutoff score */
 	double* E, /* expected no. of HSPs scoring at or above S */
 	BLAST_KarlinBlk* kbp,
 	double qlen, /* length of query sequence */
 	double dblen, /* length of database or database sequence */
 	Boolean dodecay) /* TRUE ==> use gapdecay feature */
 {
-	return BlastCutoffs_simple(S, E, kbp, qlen*dblen, dodecay);
+	return BLAST_Cutoffs_simple(S, E, kbp, qlen*dblen, dodecay);
+}
+
+/* Smallest float that might not cause a floating point exception in
+	S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda ));
+below.
+*/
+#define BLASTKAR_SMALL_FLOAT 1.0e-297
+static Int4
+BlastKarlinEtoS_simple(double	E,	/* Expect value */
+	BLAST_KarlinBlk*	kbp,
+	double	searchsp)	/* size of search space */
+{
+
+	double	Lambda, K, H; /* parameters for Karlin statistics */
+	Int4	S;
+
+	Lambda = kbp->Lambda;
+	K = kbp->K;
+	H = kbp->H;
+	if (Lambda < 0. || K < 0. || H < 0.) 
+	{
+		return BLAST_SCORE_MIN;
+	}
+
+	E = MAX(E, BLASTKAR_SMALL_FLOAT);
+
+	S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda ));
+	return S;
 }
 
 Int2
-BlastCutoffs_simple(Int4 *S, /* cutoff score */
+BLAST_Cutoffs_simple(Int4 *S, /* cutoff score */
 	double* E, /* expected no. of HSPs scoring at or above S */
 	BLAST_KarlinBlk* kbp,
 	double searchsp, /* size of search space. */
@@ -3118,7 +2876,7 @@ BlastCutoffs_simple(Int4 *S, /* cutoff score */
 	*/
 	if (esave <= 0. || !s_changed) 
 	{
-		e = BlastKarlinStoE_simple(s, kbp, searchsp);
+		e = BLAST_KarlinStoE_simple(s, kbp, searchsp);
 		if (dodecay)
 			e = BlastGapDecay(e, 1, 0.5);
 		*E = e;
@@ -3128,96 +2886,12 @@ BlastCutoffs_simple(Int4 *S, /* cutoff score */
 }
 
 /*
-	BlastKarlinEtoS() -- given an Expect value, return the associated cutoff score
-
-	Error return value is BLAST_SCORE_MIN
-*/
-Int4
-BlastKarlinEtoS(double	E,	/* Expect value */
-	BLAST_KarlinBlk*	kbp,
-	double	qlen,	/* length of query sequence */
-	double	dblen)	/* length of database */
-{
-	return BlastKarlinEtoS_simple(E, kbp, qlen*dblen);
-}
-
-
-/* Smallest float that might not cause a floating point exception in
-	S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda ));
-below.
-*/
-#define BLASTKAR_SMALL_FLOAT 1.0e-297
-Int4
-BlastKarlinEtoS_simple(double	E,	/* Expect value */
-	BLAST_KarlinBlk*	kbp,
-	double	searchsp)	/* size of search space */
-{
-
-	double	Lambda, K, H; /* parameters for Karlin statistics */
-	Int4	S;
-
-	Lambda = kbp->Lambda;
-	K = kbp->K;
-	H = kbp->H;
-	if (Lambda < 0. || K < 0. || H < 0.) 
-	{
-		return BLAST_SCORE_MIN;
-	}
-
-	E = MAX(E, BLASTKAR_SMALL_FLOAT);
-
-	S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda ));
-	return S;
-}
-
-/*
-	BlastKarlinStoP
-	
-	Calculate the probability (as opposed to expectation)
-	of achieving a particular score.
-
-	On error, return value is -1. (same as BlastKarlinStoE()).
-*/
-double
-BlastKarlinStoP(Int4 S,
-		BLAST_KarlinBlk* kbp,
-		double	qlen,	/* length of query sequence */
-		double	dblen)	/* length of database */
-{
-	return BlastKarlinStoP_simple(S, kbp, qlen*dblen);
-}
-
-double
-BlastKarlinStoP_simple(Int4 S,
-		BLAST_KarlinBlk* kbp,
-		double	searchsp)	/* size of search space. */
-{
-	double	x, p;
-
-	x = BlastKarlinStoE_simple(S, kbp, searchsp);
-	if (x == -1.)
-		return x;
-	p = BlastKarlinEtoP(x);
-
-	return p;
-}
-
-/*
 	BlastKarlinStoE() -- given a score, return the associated Expect value
 
 	Error return value is -1.
 */
 double
-BlastKarlinStoE(Int4 S,
-		BLAST_KarlinBlk* kbp,
-		double	qlen,	/* length of query sequence */
-		double	dblen)	/* length of database */
-{
-	return BlastKarlinStoE_simple(S, kbp, qlen*dblen);
-}
-
-double
-BlastKarlinStoE_simple(Int4 S,
+BLAST_KarlinStoE_simple(Int4 S,
 		BLAST_KarlinBlk* kbp,
 		double	searchsp)	/* size of search space. */
 {
@@ -3236,7 +2910,7 @@ BlastKarlinStoE_simple(Int4 S,
 /*
 BlastKarlinPtoE -- convert a P-value to an Expect value
 */
-double
+static double
 BlastKarlinPtoE(double p)
 {
         if (p < 0. || p > 1.0) 
@@ -3248,26 +2922,6 @@ BlastKarlinPtoE(double p)
 		return INT4_MAX;
 
         return -Log1p(-p);
-}
-
-/*
-BlastKarlinEtoP -- convert an Expect value to a P-value
-*/
-double
-BlastKarlinEtoP(double x)
-{
-	return -Expm1((double)-x);
-}
-
-/*
-	BlastKarlinStoLen()
-
-	Given a score, return the length expected for an HSP of that score
-*/
-double
-BlastKarlinStoLen(BLAST_KarlinBlk* kbp, Int4 S)
-{
-	return kbp->Lambda * S / kbp->H;
 }
 
 static double	tab2[] = { /* table for r == 2 */
@@ -3307,7 +2961,7 @@ static double g (double,void*);
 	r = number of segments
 	s = total score (in nats), adjusted by -r*log(KN)
 */
-double
+static double
 BlastSumP(Int4 r, double s)
 {
 	Int4		i, r1, r2;
@@ -3486,7 +3140,7 @@ f(double	x, void*	vp)
 */
 
 double
-BlastSmallGapSumE(BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
+BLAST_SmallGapSumE(BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
@@ -3521,7 +3175,7 @@ BlastSmallGapSumE(BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_de
 */
 
 double
-BlastUnevenGapSumE(BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
+BLAST_UnevenGapSumE(BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
@@ -3553,7 +3207,7 @@ BlastUnevenGapSumE(BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob
 */
 
 double
-BlastLargeGapSumE(BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
+BLAST_LargeGapSumE(BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
@@ -3584,121 +3238,4 @@ BlastLargeGapSumE(BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, 
 	return sum_e;
 }
 
-/********************************************************************
-*
-*	The following function, from Stephen Altschul, calculates a 
-*	pseudoscore from a p-vlaue and n, the product of the database
-*	and query lengths.
-*	double	p;		 p-value	
-*	double	n;		 search space 
-*********************************************************************/
-/* Move the following constant into blast.h??, or only the last one. */
-#define		PSCALE 20.0
-#define 	PSEUDO_SCORE_MAX 32767
-#define 	SYBASE_MIN 1.0e-300
 
-Int2 
-ConvertPtoPseudoS(double p, double n)
-{
-	Int2	s;
-	double	E;
-
-/* If p is 1.0, then E is very large and E/n is about one. */
-	if (p > 0.99)
-		return 0.5;
-/* If p is very small, the highest score should be returned. */
-	else if (p < SYBASE_MIN)
-		return PSEUDO_SCORE_MAX;
-
-/* E = -ln(1-p); the following calculates it. */
-        E = -Log1p(-p);
-
-	s= ConvertEtoPseudoS (E, n);
-
-	return s;
-}
-
-/*******************************************************************
-*
-*	This function calculates a pseudo-score from an E value.
-*	The searchsp is the product of the query and database
-*	lengths.  As the E value is directly related to the search
-*	space, this effectively scales the database size out of
-*	the calculation of the pseudo-score.
-*******************************************************************/
-Int2 
-ConvertEtoPseudoS(double E, double searchsp)
-{
-	Int2	s;
-
-/* If E is very small, the highest score should be returned. */
-	if (E < SYBASE_MIN)
-		return PSEUDO_SCORE_MAX;
-
-	if (E > searchsp)
-		return 0;
-
-/* 0.5 is added to make sure this is rounded up, not down. */
-	s= 0.5-PSCALE*log(E/searchsp);
-
-	return s;
-}
-
-
- 
-/*
-Given a pseudoscore, a subroutine for calculating an E-value for a comparison
-of size n (the product of the sequence length) is:
-*/
-
-double 
-ConvertPseudoStoE(Int2 s, double n)
-{
-	return n*exp(-s/PSCALE);
-}
-
-#ifndef TX_MATRIX_SIZE
-#define TX_MATRIX_SIZE 128
-#endif
-
-Int4** BlastMatrixToTxMatrix(BLAST_Matrix* blast_matrix)
-{
-   Uint1 i, j, index1, index2;
-   Int4** matrix = blast_matrix->original_matrix;
-   Int4** txmatrix;
-
-   if (!blast_matrix->is_prot || matrix == NULL) 
-      return NULL;
-
-   txmatrix = malloc(TX_MATRIX_SIZE*sizeof(Int4*));
-
-   for (i=0; i<TX_MATRIX_SIZE; i++) {
-      txmatrix[i] = malloc(TX_MATRIX_SIZE*sizeof(Int4));
-      for (j=0; j<TX_MATRIX_SIZE; j++) 
-         txmatrix[i][j] = BLAST_SCORE_MIN;
-   }
-   
-   for (i=0; i < BLASTAA_SIZE; i++) {
-      for (j=0; j < BLASTAA_SIZE; j++) { 
-         index1 = ncbistdaa_to_ncbieaa[i];
-         index2 = ncbistdaa_to_ncbieaa[j];
-         txmatrix[index1][index2] = matrix[i][j];
-      }
-   }
-
-   return txmatrix;
-}
-
-Int4** TxMatrixDestruct(Int4** txmatrix) 
-{
-   Int2 i;
-
-   if (txmatrix == NULL)
-      return NULL;
-
-   for (i=0; i<TX_MATRIX_SIZE; i++)
-      sfree(txmatrix[i]);
-
-   sfree(txmatrix);
-   return NULL;
-}
