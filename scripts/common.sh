@@ -37,6 +37,18 @@ COMMON_PrintDate()
 }
 
 
+#
+#  COMMON_AbsPath <var> <path>
+#
+
+COMMON_AbsPath()
+{
+    COMMON_AbsPath__dir=`dirname "$2"`
+    COMMON_AbsPath__dir=`(cd "${COMMON_AbsPath__dir}" ; pwd)`
+    eval $1="${COMMON_AbsPath__dir}"
+}
+
+
 COMMON_SetupScriptName()
 {
     script_name=`basename $0`
