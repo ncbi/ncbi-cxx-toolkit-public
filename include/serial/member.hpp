@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/09/01 17:38:00  vasilche
+* Fixed vector<char> implementation.
+* Added explicit naming of class info.
+* Moved IMPLICIT attribute from member info to class info.
+*
 * Revision 1.4  1999/08/31 17:50:03  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -61,8 +66,6 @@ public:
     CMemberInfo(void);
     virtual ~CMemberInfo(void);
 
-    bool Implicit(void) const;
-    CMemberInfo* SetImplicit(void);
     bool Optional(void) const;
     CMemberInfo* SetOptional(void);
     TConstObjectPtr GetDefault(void) const;
@@ -82,7 +85,6 @@ public:
     size_t GetEndOffset(void) const;
 
 private:
-    bool m_Implicit;
     bool m_Optional;
     // default value
     TConstObjectPtr m_Default;

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/09/01 17:38:12  vasilche
+* Fixed vector<char> implementation.
+* Added explicit naming of class info.
+* Moved IMPLICIT attribute from member info to class info.
+*
 * Revision 1.4  1999/08/31 17:50:08  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -62,16 +67,8 @@ size_t CMemberInfo::GetSize(void) const
     return GetTypeInfo()->GetSize();
 }
 
-CMemberInfo* CMemberInfo::SetImplicit(void)
-{
-    _ASSERT(!Optional());
-    m_Implicit = true;
-    return this;
-}
-
 CMemberInfo* CMemberInfo::SetOptional(void)
 {
-    _ASSERT(!Implicit());
     m_Optional = true;
     return this;
 }

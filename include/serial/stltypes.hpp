@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/09/01 17:38:03  vasilche
+* Fixed vector<char> implementation.
+* Added explicit naming of class info.
+* Moved IMPLICIT attribute from member info to class info.
+*
 * Revision 1.17  1999/08/31 17:50:04  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -687,10 +692,14 @@ protected:
         }
 };
 
+template<typename Char>
 class CStlClassInfoCharVector : public CTypeInfo {
 public:
-    typedef vector<char> TObjectType;
-    CStlClassInfoCharVector(void);
+    typedef vector<Char> TObjectType;
+    CStlClassInfoCharVector(void)
+        : CTypeInfo(typeid(TObjectType).name())
+        {
+        }
 
     static const TObjectType& Get(TConstObjectPtr object)
         {
@@ -701,17 +710,74 @@ public:
             return *static_cast<TObjectType*>(object);
         }
 
-    static TTypeInfo GetTypeInfo(void);
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStlClassInfoCharVector;
+            return typeInfo;
+        }
 
-    virtual size_t GetSize(void) const;
-    virtual TObjectPtr Create(void) const;
+    virtual size_t GetSize(void) const
+        {
+            return sizeof(TObjectType);
+        }
+    virtual TObjectPtr Create(void) const
+        {
+            return new TObjectType;
+        }
 
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
+        {
+            /*
+              const TObjectType& o1 = Get(object1);
+              const TObjectType& o2 = Get(object2);
+              size_t length = o1.size();
+              if ( length != o2.size() )
+              return false;
+              return memcmp(&o1.front(), &o2.front(), length) == 0;
+            */
+            return Get(object1) == Get(object2);
+        }
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
+        {
+            Get(dst) = Get(src);
+        }
+
+private:
+    static char* ToChar(Char* p)
+        { return reinterpret_cast<char*>(p); }
+    static const char* ToChar(const Char* p)
+        { return reinterpret_cast<const char*>(p); }
 
 protected:
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
+        {
+            const TObjectType& o = Get(object);
+            size_t length = o.size();
+            CObjectOStream::ByteBlock block(out, length);
+            if ( length > 0 )
+                block.Write(ToChar(&o.front()), length);
+        }
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            TObjectType& o = Get(object);
+            CObjectIStream::ByteBlock block(in);
+            if ( block.KnownLength() ) {
+                size_t length = block.GetExpectedLength();
+                o.resize(length);
+                if ( block.Read(ToChar(&o.front()), length) != length )
+                    THROW1_TRACE(runtime_error, "read fault");
+            }
+            else {
+                // length is known -> copy via buffer
+                Char buffer[1024];
+                size_t count;
+                o.clear();
+                while ( (count = block.Read(ToChar(buffer),
+                                            sizeof(buffer))) != 0 ) {
+                    o.insert(o.end(), buffer, buffer + count);
+                }
+            }
+        }
 };
 
 END_NCBI_SCOPE

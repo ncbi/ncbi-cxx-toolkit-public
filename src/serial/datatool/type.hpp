@@ -10,6 +10,7 @@
 BEGIN_NCBI_SCOPE
 
 class CTypeInfo;
+class CClassInfoTmpl;
 
 END_NCBI_SCOPE
 
@@ -252,19 +253,27 @@ public:
 
     CTypeInfo* CreateTypeInfo(void);
 
+protected:
+    virtual CClassInfoTmpl* CreateClassInfo(void);
+
 private:
     string keyword;
 };
 
 class ASNSetType : public ASNContainerType {
+    typedef ASNContainerType CParent;
 public:
     ASNSetType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
+
+protected:
+    CClassInfoTmpl* CreateClassInfo(void);
 };
 
 class ASNSequenceType : public ASNContainerType {
+    typedef ASNContainerType CParent;
 public:
     ASNSequenceType(ASNModule& module);
 

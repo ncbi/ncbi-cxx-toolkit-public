@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/09/01 17:37:59  vasilche
+* Fixed vector<char> implementation.
+* Added explicit naming of class info.
+* Moved IMPLICIT attribute from member info to class info.
+*
 * Revision 1.17  1999/08/31 17:50:03  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -110,20 +115,13 @@ class CMemberInfo;
 class CClassInfoTmpl : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
-    enum ERandomOrder {
-        eRandomOrder
-    };
-
     typedef CMembers::TIndex TIndex;
     typedef vector<CMemberInfo*> TMembersInfo;
     typedef map<size_t, TIndex> TMembersByOffset;
     typedef vector<pair<CMemberId, CTypeRef> > TSubClasses;
 
-    CClassInfoTmpl(const string& name, const type_info& ti,
-                   size_t size, bool randomOrder);
-    CClassInfoTmpl(const type_info& ti, size_t size, bool randomOrder);
-    CClassInfoTmpl(const type_info& ti, size_t size, bool randomOrder,
-                   const CTypeRef& parent, size_t offset);
+    CClassInfoTmpl(const type_info& ti, size_t size);
+    CClassInfoTmpl(const string& name, const type_info& ti, size_t size);
     virtual ~CClassInfoTmpl(void);
 
     const type_info& GetId(void) const
@@ -150,6 +148,16 @@ public:
     CClassInfoTmpl* SetRandomOrder(bool random = true)
         {
             m_RandomOrder = random;
+            return this;
+        }
+
+    bool Implicit(void) const
+        {
+            return m_Implicit;
+        }
+    CClassInfoTmpl* SetImplicit(bool implicit = true)
+        {
+            m_Implicit = implicit;
             return this;
         }
 
@@ -194,6 +202,7 @@ protected:
 private:
     size_t m_Size;
     bool m_RandomOrder;
+    bool m_Implicit;
 
     CMembers m_Members;
     TMembersInfo m_MembersInfo;
@@ -222,9 +231,8 @@ private:
 class CStructInfoTmpl : public CClassInfoTmpl
 {
 public:
-    CStructInfoTmpl(const string& name, const type_info& id,
-                    size_t size, bool randomOrder)
-        : CClassInfoTmpl(name, id, size, randomOrder)
+    CStructInfoTmpl(const string& name, const type_info& id, size_t size)
+        : CClassInfoTmpl(name, id, size)
         {
         }
 
@@ -237,11 +245,7 @@ class CStructInfo : public CStructInfoTmpl
 public:
     typedef Class TObjectType;
     CStructInfo(const string& name)
-        : CStructInfoTmpl(name, typeid(Class), sizeof(Class), false)
-        {
-        }
-    CStructInfo(const string& name, ERandomOrder)
-        : CStructInfoTmpl(name, typeid(Class), sizeof(Class), true)
+        : CStructInfoTmpl(name, typeid(Class), sizeof(Class))
         {
         }
 
@@ -251,7 +255,7 @@ public:
         }
 };
 
-template<class CLASS, class PCLASS = CLASS>
+template<class CLASS>
 class CAbstractClassInfo : public CClassInfoTmpl
 {
     typedef CClassInfoTmpl CParent;
@@ -259,18 +263,11 @@ public:
     typedef CLASS TObjectType;
 
     CAbstractClassInfo(void)
-        : CParent(typeid(TObjectType), sizeof(TObjectType), false)
+        : CParent(typeid(TObjectType), sizeof(TObjectType))
         {
         }
-    CAbstractClassInfo(ERandomOrder)
-        : CParent(typeid(TObjectType), sizeof(TObjectType), true)
-        {
-        }
-    CAbstractClassInfo(const CTypeRef& pTypeRef)
-        : CParent(typeid(TObjectType), sizeof(TObjectType),
-                  pTypeRef,
-                  size_t(static_cast<const PCLASS*>
-                         (static_cast<const TObjectType*>(0))))
+    CAbstractClassInfo(const string& name)
+        : CParent(name, typeid(TObjectType), sizeof(TObjectType))
         {
         }
 
@@ -280,20 +277,16 @@ public:
         }
 };
 
-template<class CLASS, class PCLASS = CLASS>
-class CClassInfo : public CAbstractClassInfo<CLASS, PCLASS>
+template<class CLASS>
+class CClassInfo : public CAbstractClassInfo<CLASS>
 {
-    typedef CAbstractClassInfo<CLASS, PCLASS> CParent;
+    typedef CAbstractClassInfo<CLASS> CParent;
 public:
     CClassInfo(void)
         {
         }
-    CClassInfo(ERandomOrder random)
-        : CParent(random)
-        {
-        }
-    CClassInfo(const CTypeRef& pTypeRef)
-        : CParent(pTypeRef)
+    CClassInfo(const string& name)
+        : CParent(name)
         {
         }
 

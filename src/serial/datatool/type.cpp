@@ -107,7 +107,7 @@ bool ASNNullType::CheckValue(const ASNValue& value)
     return true;
 }
 
-TObjectPtr ASNNullType::CreateDefault(const ASNValue& value)
+TObjectPtr ASNNullType::CreateDefault(const ASNValue& )
 {
     THROW1_TRACE(runtime_error, "NULL type not implemented");
 }
@@ -161,7 +161,7 @@ bool ASNRealType::CheckValue(const ASNValue& value)
     return true;
 }
 
-TObjectPtr ASNRealType::CreateDefault(const ASNValue& value)
+TObjectPtr ASNRealType::CreateDefault(const ASNValue& )
 {
     THROW1_TRACE(runtime_error, "REAL default not implemented");
 }
@@ -214,7 +214,7 @@ bool ASNBitStringType::CheckValue(const ASNValue& value)
     return true;
 }
 
-TObjectPtr ASNBitStringType::CreateDefault(const ASNValue& value)
+TObjectPtr ASNBitStringType::CreateDefault(const ASNValue& )
 {
     THROW1_TRACE(runtime_error, "BIT STRING default not implemented");
 }
@@ -230,7 +230,7 @@ bool ASNOctetStringType::CheckValue(const ASNValue& value)
     return true;
 }
 
-TObjectPtr ASNOctetStringType::CreateDefault(const ASNValue& value)
+TObjectPtr ASNOctetStringType::CreateDefault(const ASNValue& )
 {
     THROW1_TRACE(runtime_error, "OCTET STRING default not implemented");
 }
@@ -409,7 +409,7 @@ bool ASNOfType::CheckValue(const ASNValue& value)
     return ok;
 }
 
-TObjectPtr ASNOfType::CreateDefault(const ASNValue& value)
+TObjectPtr ASNOfType::CreateDefault(const ASNValue& )
 {
     THROW1_TRACE(runtime_error, "SET/SEQUENCE OF default not implemented");
 }
@@ -466,8 +466,14 @@ bool ASNContainerType::Check(void)
 
 CTypeInfo* ASNContainerType::CreateTypeInfo(void)
 {
+    return new CAutoPointerTypeInfo(CreateClassInfo());
+}
+
+CClassInfoTmpl* ASNContainerType::CreateClassInfo(void)
+{
     auto_ptr<CClassInfoTmpl> typeInfo(new CStructInfoTmpl(name, typeid(void),
-        members.size()*sizeof(dataval), keyword == "SET"));
+        members.size()*sizeof(dataval)));
+
     int index = 0;
     for ( TMembers::const_iterator i = members.begin();
           i != members.end(); ++i, ++index ) {
@@ -482,11 +488,11 @@ CTypeInfo* ASNContainerType::CreateTypeInfo(void)
         else if ( member->defaultValue )
             memberInfo->SetDefault(type->CreateDefault(*member->defaultValue));
     }
-    return new CAutoPointerTypeInfo(typeInfo.release());
+    return typeInfo.release();
 }
 
 ASNSetType::ASNSetType(ASNModule& module)
-    : ASNContainerType(module, "SET")
+    : CParent(module, "SET")
 {
 }
 
@@ -534,13 +540,18 @@ bool ASNSetType::CheckValue(const ASNValue& value)
     return true;
 }
 
-TObjectPtr ASNSetType::CreateDefault(const ASNValue& value)
+CClassInfoTmpl* ASNSetType::CreateClassInfo(void)
+{
+    return CParent::CreateClassInfo()->SetRandomOrder();
+}
+
+TObjectPtr ASNSetType::CreateDefault(const ASNValue& )
 {
     THROW1_TRACE(runtime_error, "SET default not implemented");
 }
 
 ASNSequenceType::ASNSequenceType(ASNModule& module)
-    : ASNContainerType(module, "SEQUENCE")
+    : CParent(module, "SEQUENCE")
 {
 }
 
@@ -588,7 +599,7 @@ bool ASNSequenceType::CheckValue(const ASNValue& value)
     return true;
 }
 
-TObjectPtr ASNSequenceType::CreateDefault(const ASNValue& value)
+TObjectPtr ASNSequenceType::CreateDefault(const ASNValue& )
 {
     THROW1_TRACE(runtime_error, "SEQUENCE default not implemented");
 }
@@ -613,7 +624,7 @@ bool ASNChoiceType::CheckValue(const ASNValue& value)
     return false;
 }
 
-TObjectPtr ASNChoiceType::CreateDefault(const ASNValue& value)
+TObjectPtr ASNChoiceType::CreateDefault(const ASNValue& )
 {
     THROW1_TRACE(runtime_error, "CHOICE default not implemented");
 }

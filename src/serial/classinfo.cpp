@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/09/01 17:38:12  vasilche
+* Fixed vector<char> implementation.
+* Added explicit naming of class info.
+* Moved IMPLICIT attribute from member info to class info.
+*
 * Revision 1.19  1999/08/31 17:50:08  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -106,27 +111,17 @@
 
 BEGIN_NCBI_SCOPE
 
+CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size)
+    : CParent(id.name()), m_Id(id), m_Size(size), m_RandomOrder(false)
+{
+    Register();
+}
+
 CClassInfoTmpl::CClassInfoTmpl(const string& name, const type_info& id,
-                               size_t size, bool randomOrder)
-    : CParent(name), m_Id(id), m_Size(size), m_RandomOrder(randomOrder)
+                               size_t size)
+    : CParent(name), m_Id(id), m_Size(size), m_RandomOrder(false)
 {
     Register();
-}
-
-CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size,
-                               bool randomOrder)
-    : CParent(id.name()), m_Id(id), m_Size(size), m_RandomOrder(randomOrder)
-{
-    Register();
-}
-
-CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size,
-                               bool randomOrder,
-                               const CTypeRef& parent, size_t offset)
-    : CParent(id.name()), m_Id(id), m_Size(size), m_RandomOrder(randomOrder)
-{
-    Register();
-    AddMember(NcbiEmptyString, new CRealMemberInfo(offset, parent));
 }
 
 CClassInfoTmpl::~CClassInfoTmpl(void)
@@ -271,7 +266,7 @@ void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,
 void CClassInfoTmpl::WriteData(CObjectOStream& out,
                                TConstObjectPtr object) const
 {
-    if ( m_MembersInfo.size() == 1 && m_MembersInfo[0]->Implicit() ) {
+    if ( Implicit() && m_MembersInfo.size() == 1 ) {
         // special case: class contains only one implicit member
         // we'll behave as this one member
         const CMemberInfo& info = *m_MembersInfo[0];
@@ -296,7 +291,7 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
 
 void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    if ( m_MembersInfo.size() == 1 && m_MembersInfo[0]->Implicit() ) {
+    if ( Implicit() && m_MembersInfo.size() == 1 ) {
         // special case: class contains only one implicit member
         // we'll behave as this one member
         const CMemberInfo& info = *m_MembersInfo[0];

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/09/01 17:38:13  vasilche
+* Fixed vector<char> implementation.
+* Added explicit naming of class info.
+* Moved IMPLICIT attribute from member info to class info.
+*
 * Revision 1.8  1999/07/20 18:23:14  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -111,6 +116,7 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
         THROW1_TRACE(runtime_error, "too many elements in map pair");
 }
 
+/*
 CStlClassInfoCharVector::CStlClassInfoCharVector(void)
     : CTypeInfo("vector<char>")
 {
@@ -181,5 +187,5 @@ void CStlClassInfoCharVector::ReadData(CObjectIStream& in,
         }
     }
 }
-
+*/
 END_NCBI_SCOPE

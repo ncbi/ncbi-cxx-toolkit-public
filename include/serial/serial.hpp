@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/09/01 17:38:02  vasilche
+* Fixed vector<char> implementation.
+* Added explicit naming of class info.
+* Moved IMPLICIT attribute from member info to class info.
+*
 * Revision 1.25  1999/08/31 17:50:04  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -134,9 +139,11 @@ class CObjectIStream;
 class CObjectOStream;
 class CMemberInfo;
 
-#define JOIN(Name1,Name2) Name1##Name2
-#define TYPE(Name) JOIN(Name,_TYPE)
-#define REF(Name) JOIN(Name,_REF)
+#define NAME2(n1, n2) n1##n2
+#define NAME3(n1, n2, n3) n1##n2##n3
+
+#define TYPE(Name) NAME2(Name,_TYPE)
+#define REF(Name) NAME2(Name,_REF)
 
 #define CLASS_TYPE(Name) Name
 #define CLASS_REF(Name) CTypeRef(Name::GetTypeInfo)
@@ -170,6 +177,10 @@ class CMemberInfo;
 #define STL_VECTOR_REF(Type,Args) \
     CTypeRef(CStlClassInfoVector<TYPE(Type)Args>::GetTypeInfo)
 
+#define STL_CHAR_VECTOR_TYPE(Type) vector<Type>
+#define STL_CHAR_VECTOR_REF(Type) \
+    CTypeRef(CStlClassInfoCharVector<Type>::GetTypeInfo)
+
 #define STL_AUTO_PTR_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
 #define STL_AUTO_PTR_REF(Type,Args) \
     CTypeRef(CStlClassInfoAutoPtr<TYPE(Type)Args>::GetTypeInfo)
@@ -193,9 +204,11 @@ CMemberInfo* Member(const T* member)
     return Check<T>::Member(member, GetTypeRef(member));
 }
 
-#define MEMBER_PTR(Name) &static_cast<const CClass*>(0)->Name
+#define BASE_OBJECT(Class) const Class* const kObject = 0
+#define MEMBER_PTR(Name) &kObject->Name
+#define CLASS_PTR(Class) static_cast<const Class*>(kObject)
 #define M(Name,Type,Args) Check<TYPE(Type)Args>::Member(MEMBER_PTR(Name),REF(Type)Args)
-#define STD_M(Name) Member(&static_cast<const CClass*>(0)->Name)
+#define STD_M(Name) Member(MEMBER_PTR(Name))
 
 #define ADD_N_M(Name,Mem,Type,Args) info->AddMember(Name,M(Mem,Type,Args))
 #define ADD_N_STD_M(Name,Mem) info->AddMember(Name,STD_M(Mem))
@@ -257,7 +270,19 @@ CTypeRef GetStlTypeRef(const list<Data>* )
 inline
 CTypeRef GetStlTypeRef(const vector<char>* )
 {
-    return CTypeRef(CStlClassInfoCharVector::GetTypeInfo);
+    return CTypeRef(CStlClassInfoCharVector<char>::GetTypeInfo);
+}
+
+inline
+CTypeRef GetStlTypeRef(const vector<unsigned char>* )
+{
+    return CTypeRef(CStlClassInfoCharVector<unsigned char>::GetTypeInfo);
+}
+
+inline
+CTypeRef GetStlTypeRef(const vector<signed char>* )
+{
+    return CTypeRef(CStlClassInfoCharVector<signed char>::GetTypeInfo);
 }
 
 template<typename Data>
@@ -577,9 +602,6 @@ CMemberInfo* OldAsnMemberInfo(const T* const* member,
 }
 
 // type info declaration
-#define NAME2(n1, n2) n1##n2
-#define NAME3(n1, n2, n3) n1##n2##n3
-
 #define ASN_TYPE_INFO_GETTER_NAME(name) NAME2(GetTypeInfo_struct_, name)
 #define ASN_STRUCT_NAME(name) NAME2(struct_, name)
 
@@ -606,6 +628,7 @@ const CTypeInfo* Method(void) \
     typedef Class CClass; \
     static Info* info = 0; \
     if ( info == 0 ) { \
+        BASE_OBJECT(CClass); \
         info = new Info Args;
 
 #define END_TYPE_INFO \
@@ -613,6 +636,14 @@ const CTypeInfo* Method(void) \
     return info; \
 }
  
+#define BEGIN_CLASS_INFO2(Name, Class) \
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, (Name))
+#define END_CLASS_INFO END_TYPE_INFO
+
+#define BEGIN_ABSTRACT_CLASS_INFO2(Name, Class) \
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CAbstractClassInfo<CClass>, (Name))
+#define END_CLASS_INFO END_TYPE_INFO
+
 #define BEGIN_CLASS_INFO(Class) \
 BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ())
 #define END_CLASS_INFO END_TYPE_INFO
@@ -621,11 +652,17 @@ BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ())
 BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CAbstractClassInfo<CClass>, ())
 #define END_CLASS_INFO END_TYPE_INFO
 
+#define SET_PARENT_CLASS(BaseClass) \
+    info->AddMember(NcbiEmptyString, MemberInfo(CLASS_PTR(BaseClass)))
+
 #define BEGIN_DERIVED_CLASS_INFO(Class, BaseClass) \
 BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ()) \
-    info->AddMember(NcbiEmptyString, \
-                    MemberInfo(static_cast<const BaseClass*> \
-                               (static_cast<const CClass*>(0))));
+    SET_PARENT_CLASS(BaseClass);
+#define END_DERIVED_CLASS_INFO END_TYPE_INFO
+
+#define BEGIN_DERIVED_CLASS_INFO2(Name, Class, BaseClass) \
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, (Name)) \
+    SET_PARENT_CLASS(BaseClass);
 #define END_DERIVED_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_STRUCT_INFO2(Name, Class) \
@@ -642,37 +679,37 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
 
 // adding members
 #define MEMBER(Member, Type) \
-    MemberInfo(&static_cast<const CClass*>(0)->Member, Type)
+    MemberInfo(MEMBER_PTR(Member), Type)
 #define ADD_MEMBER2(Name, Member, Type) \
     info->AddMember(Name, MEMBER(Member, Type))
 #define ADD_MEMBER(Member, Type) ADD_MEMBER2(#Member, Member, Type)
 
 #define CLASS_MEMBER(Member) \
-	MemberInfo(&static_cast<const CClass*>(0)->Member)
+	MemberInfo(MEMBER_PTR(Member))
 #define ADD_CLASS_MEMBER2(Name, Member) \
 	info->AddMember(Name, CLASS_MEMBER(Member))
 #define ADD_CLASS_MEMBER(Member) ADD_CLASS_MEMBER2(#Member, Member)
 
 #define PTR_CLASS_MEMBER(Member) \
-	PtrMemberInfo(&static_cast<const CClass*>(0)->Member)
+	PtrMemberInfo(MEMBER_PTR(Member))
 #define ADD_PTR_CLASS_MEMBER2(Name, Member) \
 	info->AddMember(Name, PTR_CLASS_MEMBER(Member))
 #define ADD_PTR_CLASS_MEMBER(Member) ADD_PTR_CLASS_MEMBER2(#Member, Member)
 
 #define STL_CLASS_MEMBER(Member) \
-	StlMemberInfo(&static_cast<const CClass*>(0)->Member)
+	StlMemberInfo(MEMBER_PTR(Member))
 #define ADD_STL_CLASS_MEMBER2(Name, Member) \
 	info->AddMember(Name, STL_CLASS_MEMBER(Member))
 #define ADD_STL_CLASS_MEMBER(Member) ADD_STL_CLASS_MEMBER2(#Member, Member)
 
 #define ASN_MEMBER(Member, Type) \
-	NAME2(Type, MemberInfo)(&static_cast<const CClass*>(0)->Member)
+	NAME2(Type, MemberInfo)(MEMBER_PTR(Member))
 #define ADD_ASN_MEMBER2(Name, Member, Type) \
 	info->AddMember(Name, ASN_MEMBER(Member, Type))
 #define ADD_ASN_MEMBER(Member, Type) ADD_ASN_MEMBER2(#Member, Member, Type)
 
 #define OLD_ASN_MEMBER(Member, Type) \
-    OldAsnMemberInfo(&static_cast<const CClass*>(0)->Member, \
+    OldAsnMemberInfo(MEMBER_PTR(Member), \
                      NAME2(Type, New), NAME2(Type, Free), \
                      NAME2(Type, AsnRead), NAME2(Type, AsnWrite))
 #define ADD_OLD_ASN_MEMBER2(Name, Member, Type) \
@@ -681,7 +718,7 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
     ADD_OLD_ASN_MEMBER2(#Member, Member, Type)
 
 #define CHOICE_MEMBER(Member, Choices) \
-    ChoiceMemberInfo(&static_cast<const CClass*>(0)->Member, \
+    ChoiceMemberInfo(MEMBER_PTR(Member), \
                      NAME2(GetTypeInfo_struct_, Choices))
 #define ADD_CHOICE_MEMBER2(Name, Member, Choices) \
     info->AddMember(Name, CHOICE_MEMBER(Member, Choices))
@@ -689,12 +726,12 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
     ADD_CHOICE_MEMBER2(#Member, Member, Choices)
 
 #define ADD_CHOICE_STD_VARIANT(Name, Member) \
-    info->AddVariant(#Name, GetTypeRef(&static_cast<const valnode*>(0)->data.NAME2(Member, value)))
+    info->AddVariant(#Name, GetTypeRef(MEMBER_PTR(data.NAME2(Member, value))))
 #define ADD_CHOICE_VARIANT(Name, Type, Struct) \
-    info->AddVariant(#Name, NAME3(Get, Type, TypeRef)(reinterpret_cast<const NAME2(struct_, Struct)* const*>(&static_cast<const valnode*>(0)->data.ptrvalue)))
+    info->AddVariant(#Name, NAME3(Get, Type, TypeRef)(reinterpret_cast<const NAME2(struct_, Struct)* const*>(MEMBER_PTR(data.ptrvalue))))
 
-#define ADD_SUB_CLASS2(Name, Class) \
-    AddSubClass(CMemberId(Name), GetTypeRef(static_cast<const Class*>(0)))
+#define ADD_SUB_CLASS2(Name, SubClass) \
+    AddSubClass(CMemberId(Name), GetTypeRef(CLASS_PTR(SubClass)))
 #define ADD_SUB_CLASS(Class) \
     ADD_SUB_CLASS2(#Class, Class)
 
