@@ -64,23 +64,20 @@ public:
     virtual void Load(const string& id, vector<char> *seq,
                       size_t start, size_t finish)
     {
-        CSeq_id seqId(id);
-
         if (!seq) {
             NCBI_THROW(CAlgoAlignException, eNotInitialized,
                        "CSplignObjMgrAccessor::Load passed NULL sequence "
                        "pointer.");
         }
-        if (seqId.Which() == CSeq_id::e_not_set) {
-            NCBI_THROW(CAlgoAlignException, eInternal,
-                       "CSplignObjMgrAccessor::Load could not identify "
-                       "sequence for '"+id+"'.");
-        }
+
+        CSeq_id seqId(id);
 
         CSeqVector *sv = NULL;
-        if (m_Handle1.IsSynonym(seqId)) {
+        if (m_Handle1.IsSynonym(seqId)  ||
+            m_Handle1.GetSeqId()->GetSeqIdString(true) == id) {
             sv = &m_SeqVector1;
-        } else if (m_Handle2.IsSynonym(seqId)) {
+        } else if (m_Handle2.IsSynonym(seqId)  ||
+                   m_Handle1.GetSeqId()->GetSeqIdString(true) == id) {
             sv = &m_SeqVector2;
         } else {
             NCBI_THROW(CAlgoAlignException, eInternal,
@@ -189,6 +186,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.4  2004/05/12 16:59:13  johnson
+* CSplignObjMgrAccessor falls back to id strings if IsSynonym fails
+*
 * Revision 1.3  2004/05/04 19:39:35  johnson
 * return correct seq-ids in seq-align
 *
