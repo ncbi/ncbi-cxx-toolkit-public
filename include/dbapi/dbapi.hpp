@@ -404,6 +404,9 @@ public:
 
     // Returns all error messages as a single string
     virtual string GetErrorInfo() = 0;
+
+    // Returns the internal driver connection object
+    virtual CDB_Connection* GetCDB_Connection() = 0;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -453,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/09/10 18:28:04  kholodov
+ * Added: GetCDB_Connection() method
+ *
  * Revision 1.22  2003/05/16 20:17:01  kholodov
  * Modified: default 0 arguments in PrepareCall()
  *
