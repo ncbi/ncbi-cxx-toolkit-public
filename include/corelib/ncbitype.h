@@ -40,6 +40,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/04/16 18:51:05  vakatov
+* "Char" to become "char" rather than "signed char".
+* Introduced "Schar" for "signed char".
+*
 * Revision 1.6  2001/01/03 17:41:49  vakatov
 * All type limits moved to "ncbi_limits.h"
 *
@@ -86,7 +90,8 @@
 #endif
 
 
-typedef signed   char  Char;
+typedef          char  Char;
+typedef signed   char  Schar;
 typedef unsigned char  Uchar;
 typedef signed   char  Int1;
 typedef unsigned char  Uint1;
