@@ -139,6 +139,7 @@ enum EErrType {
     eErr_SEQ_INST_InternalNsInSeqLit,
     eErr_SEQ_INST_SeqLitGapLength0,
     eErr_SEQ_INST_TpaAssmeblyProblem,
+    eErr_SEQ_INST_SeqLocLength,
 
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
@@ -910,6 +911,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2003/12/16 17:34:48  shomrat
+* Added SEQ_INST_SeqLocLength
+*
 * Revision 1.51  2003/12/16 16:18:40  shomrat
 * Added ValidateCdConflict
 *

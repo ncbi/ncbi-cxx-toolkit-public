@@ -355,6 +355,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_INST_InternalNsInSeqLit",
     "SEQ_INST_SeqLitGapLength0",
     "SEQ_INST_TpaAssmeblyProblem",
+    "SEQ_INST_SeqLocLength",
 
     "SEQ_DESCR_BioSourceMissing",
     "SEQ_DESCR_InvalidForType",
@@ -654,6 +655,8 @@ not be a gap of 0 length.",
 //  SEQ_INST_TpaAssmeblyProblem
 "Third party annotation records should have a TpaAssembly user object and a \
 Seq-hist.assembly alignment for the PRIMARY block.",
+//  SEQ_INST_SeqLocLength
+"A SeqLoc component of a delta Bioseq is suspiciously small.",
 
 /* SEQ_DESCR */
 
@@ -1151,6 +1154,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/12/16 17:34:23  shomrat
+* Added SEQ_INST_SeqLocLength
+*
 * Revision 1.35  2003/12/16 16:17:43  shomrat
 * Added SEQ_FEAT_BadConflictFlag and SEQ_FEAT_ConflictFlagSet
 *
