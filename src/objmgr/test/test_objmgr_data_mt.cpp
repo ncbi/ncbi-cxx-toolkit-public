@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/11/03 21:21:41  vasilche
+* Limit amount of exceptions to catch while testing.
+*
 * Revision 1.12  2003/10/22 17:58:10  vasilche
 * Do not catch CLoaderException::eNoConnection.
 *
@@ -190,6 +193,8 @@ bool CTestOM::Thread_Run(int idx)
     delta = (to > from) ? 1 : -1;
 
     bool ok = true;
+    const int kMaxErrorCount = 3;
+    static int error_count = 0;
     for (int i = from;
         ((delta > 0) && (i <= to)) || ((delta < 0) && (i >= to)); i += delta) {
         try {
@@ -244,11 +249,17 @@ bool CTestOM::Thread_Run(int idx)
             if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
                 break;
             }
+            if ( ++error_count > kMaxErrorCount ) {
+                break;
+            }
         }
         catch (exception& e) {
             LOG_POST("T" << idx << ": gi = " << i 
                 << ": EXCEPTION = " << e.what());
             ok = false;
+            if ( ++error_count > kMaxErrorCount ) {
+                break;
+            }
         }
         scope.ResetHistory();
     }
