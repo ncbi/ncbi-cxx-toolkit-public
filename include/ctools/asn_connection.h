@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/12/02 21:17:28  lavr
+ * Fix in comment
+ *
  * Revision 1.3  2001/09/24 20:32:34  lavr
  * +SSERVICE_Extra* parameter in CreateAsnConn_ServiceEx()
  *
@@ -105,7 +108,7 @@ CONN CreateAsnConn_ServiceEx
  );
 
 
-/* Equivalent of CreateAsnConn_ServiceEx with zeroes in last two arguments.
+/* Equivalent of CreateAsnConn_ServiceEx with zeroes in last three arguments.
  */
 CONN CreateAsnConn_Service
 (const char*     service,
