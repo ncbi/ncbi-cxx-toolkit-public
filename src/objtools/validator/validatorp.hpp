@@ -765,6 +765,7 @@ private:
     void ValidateProt(const CProt_ref& prot, const CSerialObject& obj);
 
     void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
+    void ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat);
     void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
     void ValidateMrnaTrans(const CSeq_feat& feat);
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
@@ -937,6 +938,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2004/07/07 16:04:33  shomrat
+* + ValidateAnticodon
+*
 * Revision 1.68  2004/07/07 13:27:17  shomrat
 * + SEQ_FEAT_NoNameForProtein
 *

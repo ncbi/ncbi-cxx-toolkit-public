@@ -1053,12 +1053,12 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
          rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
         const CTrna_ext& trna = rna.GetExt ().GetTRNA ();
         if ( trna.CanGetAnticodon () ) {
-            const CSeq_loc& trna_loc = trna.GetAnticodon();
+            const CSeq_loc& anticodon = trna.GetAnticodon();
             size_t anticodon_len = 0;
             bool bad_anticodon = false;
-            for ( CSeq_loc_CI it(trna_loc); it; ++it ) {
-                anticodon_len += GetLength(trna_loc, m_Scope);
-                ECompare comp = sequence::Compare(trna_loc, feat.GetLocation());
+            for ( CSeq_loc_CI it(anticodon); it; ++it ) {
+                anticodon_len += GetLength(anticodon, m_Scope);
+                ECompare comp = sequence::Compare(anticodon, feat.GetLocation());
                 if ( comp != eContained  &&  comp != eSame ) {
                     bad_anticodon = true;
                 }
@@ -1071,6 +1071,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_Range,
                     "Anticodon is not 3 bases in length", feat);
             }
+            ValidateAnticodon(anticodon, feat);
         }
         ValidateTrnaCodons(trna, feat);
     }
@@ -1098,6 +1099,87 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
 
     if ( feat.CanGetProduct() ) {
         ValidateRnaProductType(rna, feat);
+    }
+}
+
+
+void CValidError_feat::ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat)
+{
+    bool ordered = true;
+    bool adjacent = false;
+    bool unmarked_strand = false;
+    bool mixed_strand = false;
+
+    CSeq_loc_CI prev;
+    for (CSeq_loc_CI curr(anticodon); curr; ++curr) {
+        if ( !curr.GetSeq_loc().IsInt()  &&  !curr.GetSeq_loc().IsPnt() ) {
+            continue;
+        }
+        
+        if ( prev  &&  curr  &&
+             IsSameBioseq(curr.GetSeq_id(), prev.GetSeq_id(), m_Scope) ) {
+            CSeq_loc_CI::TRange prev_range = prev.GetRange();
+            CSeq_loc_CI::TRange curr_range = curr.GetRange();
+            if ( ordered ) {
+                if ( curr.GetStrand() == eNa_strand_minus ) {
+                    if (prev_range.GetTo() < curr_range.GetTo()) {
+                        ordered = false;
+                    }
+                    if (curr_range.GetTo() + 1 == prev_range.GetFrom()) {
+                        adjacent = true;
+                    }
+                } else {
+                    if (prev_range.GetTo() > curr_range.GetTo()) {
+                        ordered = false;
+                    }
+                    if (prev_range.GetTo() + 1 == curr_range.GetFrom()) {
+                        adjacent = true;
+                    }
+                }
+            }
+            ENa_strand curr_strand = curr.GetStrand();
+            ENa_strand prev_strand = prev.GetStrand();
+            if ( curr_range == prev_range  &&  curr_strand == prev_strand ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_DuplicateInterval,
+                    "Duplicate anticodon exons in location", feat);
+            }
+            if ( curr_strand != prev_strand ) {
+                if (curr_strand == eNa_strand_plus  &&  prev_strand == eNa_strand_unknown) {
+                    unmarked_strand = true;
+                } else if (curr_strand == eNa_strand_unknown  &&  prev_strand == eNa_strand_plus) {
+                    unmarked_strand = true;
+                } else {
+                    mixed_strand = true;
+                }
+            }
+        }
+        prev = curr;
+    }
+    if (adjacent) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_AbuttingIntervals,
+            "Adjacent intervals in Anticodon", feat);
+    }
+
+    // trans splicing exception turns off both mixed_strand and out_of_order messages
+    bool trans_splice = false;
+    if (feat.CanGetExcept()  &&  feat.GetExcept()  && feat.CanGetExcept_text()) {
+        if (NStr::FindNoCase(feat.GetExcept_text(), "trans-splicing") != NPOS) {
+            trans_splice = true;
+        }
+    }
+    if (!trans_splice) {
+        if (mixed_strand) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
+                "Mixed strands in Anticodon", feat);
+        }
+        if (unmarked_strand) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
+                "Mixed plus and unknown strands in Anticodon", feat);
+        }
+        if (!ordered) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqLocOrder,
+                "Intervals out of order in Anticodon", feat);
+        }
     }
 }
 
@@ -2750,6 +2832,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2004/07/07 16:05:12  shomrat
+* + ValidateAnticodon
+*
 * Revision 1.60  2004/07/07 13:26:12  shomrat
 * added test for prot-ref with description but no name
 *
