@@ -56,7 +56,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 
-#include <objtools/alnmgr/alnvwr.hpp>
+#include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/alnmgr/alnpos_ci.hpp>
 
 
@@ -143,7 +143,8 @@ void CAlnVwrApp::Init(void)
          "   (Use row0 and row1 params to choose the rows)\n"
          "10. Iterate through alignment positions and show corresponding\n"
          "    native sequence positions for two chosen rows\n"
-         "    (Use row0 and row1 params to choose the rows)\n",
+         "    (Use row0 and row1 params to choose the rows)\n"
+         "11. Clustal style\n",
          CArgDescriptions::eInteger);
 
     arg_desc->AddDefaultKey
@@ -408,28 +409,31 @@ int CAlnVwrApp::Run(void)
     int row1         = args["row1"].AsInteger();
     m_AV->SetGapChar('-');
     m_AV->SetEndChar('.');
+
+    CAlnVecPrinter printer(*m_AV, NcbiCout);
+
     if (args["v"]) {
         switch (args["v"].AsInteger()) {
         case 1: 
-            CAlnVwr::CsvTable(*m_AV, NcbiCout);
+            printer.CsvTable();
             break;
         case 2:
-            CAlnVwr::PopsetStyle(*m_AV, NcbiCout, screen_width,
-                                 CAlnVwr::eUseAlnSeqString);
+            printer.PopsetStyle(screen_width,
+                                CAlnVecPrinter::eUseAlnSeqString);
             break;
         case 3: 
-            CAlnVwr::PopsetStyle(*m_AV, NcbiCout, screen_width,
-                                 CAlnVwr::eUseSeqString);
+            printer.PopsetStyle(screen_width,
+                                CAlnVecPrinter::eUseSeqString);
             break;
         case 4:
-            CAlnVwr::PopsetStyle(*m_AV, NcbiCout, screen_width,
-                                 CAlnVwr::eUseWholeAlnSeqString);
+            printer.PopsetStyle(screen_width,
+                                CAlnVecPrinter::eUseWholeAlnSeqString);
             break;
         case 5:
-            CAlnVwr::Segments(*m_AV, NcbiCout);
+            printer.Segments();
             break;
         case 6:
-            CAlnVwr::Chunks(*m_AV, NcbiCout, args["cf"].AsInteger());
+            printer.Chunks(args["cf"].AsInteger());
             break;
         case 7:
             View7();
@@ -443,11 +447,14 @@ int CAlnVwrApp::Run(void)
         case 10:
             View10(row0, row1);
             break;
+        case 11:
+            printer.ClustalStyle(screen_width,
+                                 CAlnVecPrinter::eUseWholeAlnSeqString);
+            break;
         default:
             NcbiCout << "Unknown view format." << NcbiEndl;
         }
     }
-    GetAlnPosFromSeqPosDemo();
     return 0;
 }
 
@@ -466,6 +473,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/03/15 17:45:10  todorov
+* Use the new printer class
+*
 * Revision 1.6  2005/03/01 17:23:10  todorov
 * + void GetAlnPosFromSeqPosDemo()
 *
