@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/01/16 21:30:18  grichenk
+* ANS.1 SET OF is implemented as list<> by default
+*
 * Revision 1.19  2000/11/15 20:34:56  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -260,7 +263,7 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
     CTypeStrings::AdaptForSTL(tData);
     if ( templ.empty() ) {
         if ( tData->CanBeKey() ) {
-            templ = "multiset";
+            templ = "list"; // "multiset";
         }
         else {
             return AutoPtr<CTypeStrings>(new CListTypeStrings("list", tData, true));
