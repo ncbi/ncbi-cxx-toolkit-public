@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2002/09/16 19:34:40  kholodov
+* Added: bulk insert support
+*
 * Revision 1.6  2002/09/09 20:48:57  kholodov
 * Added: Additional trace output about object life cycle
 * Added: CStatement::Failed() method to check command status
@@ -76,8 +79,8 @@ CCursor::CCursor(const string& name,
 {
     SetIdent("CCursor");
 
-    m_cmd = m_conn->GetCDB_Connection()->Cursor(name.c_str(), sql.c_str(),
-                                            nofArgs, batchSize);
+    m_cmd = m_conn->GetCDB_Connection()->Cursor(name, sql,
+                                                nofArgs, batchSize);
 }
 
 CCursor::~CCursor()
@@ -119,12 +122,12 @@ IResultSet* CCursor::Open()
 
 void CCursor::Update(const string& table, const string& updateSql) 
 {
-    GetCursorCmd()->Update(table.c_str(), updateSql.c_str());
+    GetCursorCmd()->Update(table, updateSql);
 }
 
 void CCursor::Delete(const string& table)
 {
-    GetCursorCmd()->Delete(table.c_str());
+    GetCursorCmd()->Delete(table);
 }
 
 ostream& CCursor::GetBlobOStream(unsigned int col,

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.14  2002/09/16 19:34:41  kholodov
+* Added: bulk insert support
+*
 * Revision 1.13  2002/09/09 20:48:57  kholodov
 * Added: Additional trace output about object life cycle
 * Added: CStatement::Failed() method to check command status
@@ -99,7 +102,8 @@ BEGIN_NCBI_SCOPE
 
 CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
     : m_conn(conn),
-      m_rs(rs), m_istr(0), m_ostr(0), m_column(-1)
+      m_rs(rs), m_istr(0), m_ostr(0), m_column(-1),
+      m_blobAsVariant(false)
 {
     SetIdent("CResultSet");
 
@@ -143,6 +147,11 @@ EDB_ResType CResultSet::GetResultType()
     return m_rs->ResultType();
 }
 
+void CResultSet::SetBlobAsVariant(bool b) 
+{
+    m_blobAsVariant = b;
+}
+
 bool CResultSet::Next() 
 {
 
@@ -154,7 +163,8 @@ bool CResultSet::Next()
       
             type = m_rs->ItemDataType(i);
 
-            if( type == eDB_Text || type == eDB_Image ) {
+            if( !IsBlobAsVariant() 
+                && (type == eDB_Text || type == eDB_Image) ) {
                 m_column = m_rs->CurrentItemNo();
                 break;
             }
@@ -193,7 +203,7 @@ size_t CResultSet::Read(void* buf, size_t size)
 #endif
         }
         else
-            _TRACE("End column: " << m_column);
+            _TRACE("Last column: " << m_column);
 
         m_column = m_rs->CurrentItemNo();
         return 0;

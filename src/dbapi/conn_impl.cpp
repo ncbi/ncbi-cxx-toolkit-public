@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.13  2002/09/16 19:34:40  kholodov
+* Added: bulk insert support
+*
 * Revision 1.12  2002/09/09 20:48:56  kholodov
 * Added: Additional trace output about object life cycle
 * Added: CStatement::Failed() method to check command status
@@ -82,24 +85,42 @@
 #include "stmt_impl.hpp"
 #include "cstmt_impl.hpp"
 #include "cursor_impl.hpp"
+#include "bulkinsert.hpp"
 
 BEGIN_NCBI_SCOPE
 
 // Implementation
 CConnection::CConnection(CDataSource* ds)
-    : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false)
+    : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false),
+      m_modeMask(0)
 {
     _TRACE("Default connection " << (void *)this << " created...");
     SetIdent("CConnection");
 }
 
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
-    : m_ds(ds), m_connection(conn), m_connCounter(-1), m_connUsed(false)
+    : m_ds(ds), m_connection(conn), m_connCounter(-1), m_connUsed(false),
+      m_modeMask(0)
 {
     _TRACE("Auxiliary connection " << (void *)this << " created...");
     SetIdent("CConnection");
 }
 
+
+void CConnection::SetMode(EConnMode mode)
+{
+    m_modeMask |= mode;
+}
+
+void CConnection::ResetMode(EConnMode mode)
+{
+    m_modeMask &= ~mode;
+}
+
+unsigned int CConnection::GetModeMask()
+{
+    return m_modeMask;
+}
 
 void CConnection::Connect(const string& user, 
                           const string& password,
@@ -108,10 +129,10 @@ void CConnection::Connect(const string& user,
 {
 
     m_connection = m_ds->
-        GetDriverContext()->Connect(server.c_str(),
-                                    user.c_str(),
-                                    password.c_str(),
-                                    0,
+        GetDriverContext()->Connect(server,
+                                    user,
+                                    password,
+                                    m_modeMask,
                                     m_ds->IsPoolUsed());
     SetDbName(database);
 					   
@@ -165,7 +186,7 @@ CDB_Connection* CConnection::CloneCDB_Conn()
    GetDriverContext()->Connect(GetCDB_Connection()->ServerName(),
                                GetCDB_Connection()->UserName(),
                                GetCDB_Connection()->Password(),
-                               0,
+                               m_modeMask,
                                true);
     _TRACE("CDB_Connection cloned");
     SetDbName(m_database, temp);
@@ -216,6 +237,15 @@ ICursor* CConnection::CreateCursor(const string& name,
     AddListener(cur);
     cur->AddListener(this);
     return cur;
+}
+
+IBulkInsert* CConnection::CreateBulkInsert(const string& table_name,
+                                           unsigned int nof_cols)
+{
+    CBulkInsert *bcp = new CBulkInsert(table_name, nof_cols, GetAuxConn());
+    AddListener(bcp);
+    bcp->AddListener(this);
+    return bcp;
 }
 
 void CConnection::Action(const CDbapiEvent& e) 

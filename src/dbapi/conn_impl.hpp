@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/09/16 19:34:41  kholodov
+* Added: bulk insert support
+*
 * Revision 1.5  2002/05/16 22:11:11  kholodov
 * Improved: using minimum connections possible
 *
@@ -70,6 +73,11 @@ public:
 public:
     virtual ~CConnection();
 
+    virtual void SetMode(EConnMode mode);
+    virtual void ResetMode(EConnMode mode);
+    virtual unsigned int GetModeMask();
+
+
     virtual void Connect(const string& user,
                          const string& password,
                          const string& server,
@@ -82,6 +90,9 @@ public:
                                   const string& sql,
                                   int nofArgs,
                                   int batchSize);
+
+    virtual IBulkInsert* CreateBulkInsert(const string& table_name,
+                                          unsigned int nof_cols);
 
     virtual void Close();
 
@@ -118,6 +129,7 @@ private:
     CDB_Connection *m_connection;
     int m_connCounter;
     bool m_connUsed;
+    unsigned int m_modeMask;
 };
 
 //====================================================================

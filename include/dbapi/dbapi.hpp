@@ -106,9 +106,13 @@ public:
     // NOTE:  no results are fetched before first call to this function.
     virtual bool Next() = 0;
 
-    // All data (except for BLOB data) is returned as CVariant.
+    // All data (for BLOB data see below) is returned as CVariant.
     virtual const CVariant& GetVariant(unsigned int col) = 0;
     virtual const CVariant& GetVariant(const string& colName) = 0;
+
+    // If this mode is true, BLOB data is returned as CVariant
+    // False by default
+    //virtual void SetBlobAsVariant(bool b) = 0;
   
     // Reads unformatted data, returns bytes actually read.
     // Advances to next column as soon as data is read from the previous one.
@@ -244,7 +248,6 @@ public:
                                     size_t blob_size, 
                                     EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
-
     // Update statement for cursor
     virtual void Update(const string& table, const string& updateSql) = 0;
 
@@ -253,6 +256,35 @@ public:
 
     // Close cursor
     virtual void Close() = 0;
+  
+};
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  IBulkInsert::
+//
+//  Interface for bulk insert
+//
+class IBulkInsert
+{
+public:
+
+    virtual ~IBulkInsert();
+  
+    // Bind columns
+    virtual void Bind(unsigned int col, CVariant* v) = 0;
+
+    // Add row to the batch
+    virtual void AddRow() = 0;
+
+    // Store batch of rows
+    virtual void StoreBatch() = 0;
+
+    // Cancel bulk insert
+    virtual void Cancel() = 0;
+
+    // Complete batch
+    virtual void Complete() = 0;
   
 };
 
@@ -267,6 +299,16 @@ public:
 class IConnection 
 {
 public:
+    enum EConnMode {
+        eBulkInsert = I_DriverContext::fBcpIn,
+        ePasswordEncrypted = I_DriverContext::fPasswordEncrypted 
+    };
+
+    // Connection modes
+    virtual void SetMode(EConnMode mode) = 0;
+    virtual void ResetMode(EConnMode mode) = 0;
+    virtual unsigned int GetModeMask() = 0;
+
     virtual ~IConnection();
 
     // Connect to the database
@@ -293,6 +335,10 @@ public:
 				  const string& sql,
 				  int nofArgs = 0,
 				  int batchSize = 1) = 0;
+
+    // Create bulk insert object
+    virtual IBulkInsert* CreateBulkInsert(const string& table_name,
+                                          unsigned int nof_cols) = 0;
     // Close connection
     virtual void Close() = 0;
 };
@@ -327,6 +373,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/09/16 19:34:41  kholodov
+ * Added: bulk insert support
+ *
  * Revision 1.9  2002/09/09 20:49:49  kholodov
  * Added: IStatement::Failed() method
  *

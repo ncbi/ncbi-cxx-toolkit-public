@@ -27,64 +27,88 @@
 *
 * Author:  Michael Kholodov
 *   
-* File Description:  DataSource implementation
+* File Description:  Base class for database access
 *
 *
 * $Log$
-* Revision 1.2  2002/09/16 19:34:41  kholodov
+* Revision 1.1  2002/09/16 19:34:40  kholodov
 * Added: bulk insert support
-*
-* Revision 1.1  2002/01/30 14:51:21  kholodov
-* User DBAPI implementation, first commit
-*
 *
 *
 *
 */
 
-#include <dbapi/dbapi.hpp>
+#include "conn_impl.hpp"
+#include "bulkinsert.hpp"
+#include <dbapi/driver/exception.hpp>
+#include <dbapi/driver/public.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
-IDataSource::~IDataSource()
+// implementation
+CBulkInsert::CBulkInsert(const string& name,
+                         unsigned int cols,
+                         CConnection* conn)
+    : m_nofCols(cols), m_cmd(0), m_conn(conn)
 {
+    SetIdent("CBulkInsert");
+
+    m_cmd = m_conn->GetCDB_Connection()->BCPIn(name, cols);
 }
 
-IConnection::~IConnection()
+CBulkInsert::~CBulkInsert()
 {
+    delete m_cmd;
+    m_cmd = 0;
+    if( m_conn != 0 ) {
+        if( m_conn->IsAux() ) {
+            delete m_conn;
+            m_conn = 0;
+        }
+        //Notify(CDbapiClosedEvent(this));
+    }
+    Notify(CDbapiDeletedEvent(this));
 }
 
-IStatement::~IStatement()
+  
+void CBulkInsert::Bind(unsigned int col, CVariant* v)
 {
+    GetBCPInCmd()->Bind(col - 1, v->GetData());
+}
+		
+		
+void CBulkInsert::AddRow()
+{
+    GetBCPInCmd()->SendRow();
 }
 
-ICallableStatement::~ICallableStatement() 
+void CBulkInsert::StoreBatch() 
 {
+    GetBCPInCmd()->CompleteBatch();
 }
 
-void ICallableStatement::Execute(const string& /*sql*/)
+void CBulkInsert::Cancel()
 {
+    GetBCPInCmd()->Cancel();
 }
 
-void ICallableStatement::ExecuteUpdate(const string& /*sql*/)
+void CBulkInsert::Complete()
 {
+    GetBCPInCmd()->CompleteBCP();
 }
 
-IResultSet::~IResultSet()
+void CBulkInsert::Action(const CDbapiEvent& e) 
 {
+    _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
+           << "' from " << e.GetSource()->GetIdent());
+
+    if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
+        RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
+        if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
+            _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
+            delete this;
+        }
+    }
 }
 
-IResultSetMetaData::~IResultSetMetaData()
-{
-}
-
-ICursor::~ICursor()
-{
-}
-
-IBulkInsert::~IBulkInsert()
-{
-}
-
-
-
+END_NCBI_SCOPE

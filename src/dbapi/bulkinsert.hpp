@@ -1,3 +1,6 @@
+#ifndef _BULK_INSERT_HPP_
+#define _BULK_INSERT_HPP_
+
 /* $Id$
 * ===========================================================================
 *
@@ -27,15 +30,12 @@
 *
 * Author:  Michael Kholodov
 *   
-* File Description:  DataSource implementation
+* File Description:  Array template class
 *
 *
 * $Log$
-* Revision 1.2  2002/09/16 19:34:41  kholodov
+* Revision 1.1  2002/09/16 19:34:41  kholodov
 * Added: bulk insert support
-*
-* Revision 1.1  2002/01/30 14:51:21  kholodov
-* User DBAPI implementation, first commit
 *
 *
 *
@@ -43,48 +43,46 @@
 */
 
 #include <dbapi/dbapi.hpp>
+#include "active_obj.hpp"
+#include <corelib/ncbistre.hpp>
+#include "dbexception.hpp"
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
-IDataSource::~IDataSource()
+class CBulkInsert : public CActiveObject, 
+                    public IEventListener,
+                    public IBulkInsert
 {
-}
+public:
+    CBulkInsert(const string& table,
+                unsigned int cols,
+                CConnection* conn);
 
-IConnection::~IConnection()
-{
-}
+    virtual ~CBulkInsert();
 
-IStatement::~IStatement()
-{
-}
+    virtual void Bind(unsigned int col,
+                      CVariant *v);
 
-ICallableStatement::~ICallableStatement() 
-{
-}
+    virtual void AddRow();
+    virtual void StoreBatch();
+    virtual void Cancel();
+    virtual void Complete();
 
-void ICallableStatement::Execute(const string& /*sql*/)
-{
-}
+    // Interface IEventListener implementation
+    virtual void Action(const CDbapiEvent& e);
 
-void ICallableStatement::ExecuteUpdate(const string& /*sql*/)
-{
-}
+protected:
 
-IResultSet::~IResultSet()
-{
-}
+    CDB_BCPInCmd* GetBCPInCmd() { return m_cmd; }
 
-IResultSetMetaData::~IResultSetMetaData()
-{
-}
+private:
+    int m_nofCols;
+    CDB_BCPInCmd* m_cmd;
+    CConnection* m_conn;
+  
+};
 
-ICursor::~ICursor()
-{
-}
+//====================================================================
+END_NCBI_SCOPE
 
-IBulkInsert::~IBulkInsert()
-{
-}
-
-
-
+#endif // _BULK_INSERT_HPP_

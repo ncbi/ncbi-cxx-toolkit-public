@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2002/09/16 19:34:41  kholodov
+* Added: bulk insert support
+*
 * Revision 1.6  2002/08/26 15:35:56  kholodov
 * Added possibility to disable transaction log
 * while updating BLOBs
@@ -86,6 +89,8 @@ public:
 
     virtual const CVariant& GetVariant(unsigned int idx);
     virtual const CVariant& GetVariant(const string& colName);
+
+    virtual void SetBlobAsVariant(bool b);
   
     virtual size_t Read(void* buf, size_t size);
     virtual void Close();
@@ -99,9 +104,15 @@ public:
     virtual void Action(const CDbapiEvent& e);
 
 
-private:
+protected:
     
     int GetColNum(const string& name);
+
+    bool IsBlobAsVariant() {
+        return m_blobAsVariant;
+    }
+
+private:
     
     class CConnection* m_conn;
     CDB_Result *m_rs;
@@ -110,6 +121,7 @@ private:
     CBlobIStream *m_istr;
     CBlobOStream *m_ostr;
     int m_column;
+    bool m_blobAsVariant;
 
 };
 
