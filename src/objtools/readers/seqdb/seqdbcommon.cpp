@@ -35,6 +35,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
+#include "seqdbatlas.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -112,27 +113,35 @@ string SeqDB_CombinePath(const string & one, const string & two)
 ///   Input path and filename
 /// @param dbtype
 ///   Database type, either protein or nucleotide
+/// @param atlas
+///   The memory management layer.
+/// @param locked
+///   The lock holder object for this thread.
 /// @return
 ///   true if either of the index or alias files is found
-static bool s_SeqDB_DBExists(const string & dbname, char dbtype)
+
+static bool s_SeqDB_DBExists(const string   & dbname,
+                             char             dbtype,
+                             CSeqDBAtlas    & atlas,
+                             CSeqDBLockHold & locked)
 {
-    return (CFile(dbname + "." + dbtype + "al").Exists() ||
-            CFile(dbname + "." + dbtype + "in").Exists());
+    return (atlas.DoesFileExist(dbname + "." + dbtype + "al", locked) ||
+            atlas.DoesFileExist(dbname + "." + dbtype + "in", locked));
 }
+
 
 /// Search for a file in a provided set of paths
 /// 
 /// This function takes a search path as a ":" delimited set of path
 /// names, and searches in those paths for the given database
 /// component.  The component name may include path components.  If
-/// the exact_name flag is set, the path is assumed to contain any
-/// required extension; otherwise extensions for index and alias files
-/// will be tried.  Each element of the search path is tried in
-/// sequential order for both index or alias files (if exact_name is
-/// not set), before moving to the next element of the search path.
-/// The path returned from this function will not contain a file
-/// extension unless the provided filename did (in which case,
-/// exact_name is normally set).
+/// the exact flag is set, the path is assumed to contain any required
+/// extension; otherwise extensions for index and alias files will be
+/// tried.  Each element of the search path is tried in sequential
+/// order for both index or alias files (if exact is not set), before
+/// moving to the next element of the search path.  The path returned
+/// from this function will not contain a file extension unless the
+/// provided filename did (in which case, exact is normally set).
 /// 
 /// @param blast_paths
 ///   List of filesystem paths seperated by ":".
@@ -140,14 +149,20 @@ static bool s_SeqDB_DBExists(const string & dbname, char dbtype)
 ///   Base name of the database index or alias file to search for.
 /// @param dbtype
 ///   Type of database, either protein or nucleotide.
-/// @param exact_name
+/// @param exact
 ///   Set to true if dbname already contains any needed extension.
+/// @param atlas
+///   The memory management layer.
+/// @param locked
+///   The lock holder object for this thread.
 /// @return
 ///   Full pathname, minus extension, or empty string if none found.
-static string s_SeqDB_TryPaths(const string & blast_paths,
-                               const string & dbname,
-                               char           dbtype,
-                               bool           exact_name)
+static string s_SeqDB_TryPaths(const string   & blast_paths,
+                               const string   & dbname,
+                               char             dbtype,
+                               bool             exact,
+                               CSeqDBAtlas    & atlas,
+                               CSeqDBLockHold & locked)
 {
     vector<string> roads;
     NStr::Tokenize(blast_paths, ":", roads, NStr::eMergeDelims);
@@ -157,13 +172,13 @@ static string s_SeqDB_TryPaths(const string & blast_paths,
     ITERATE(vector<string>, road, roads) {
         string attempt = SeqDB_CombinePath(*road, dbname);
         
-        if (exact_name) {
-            if (CFile(attempt).Exists()) {
+        if (exact) {
+            if (atlas.DoesFileExist(attempt, locked)) {
                 result = attempt;
                 break;
             }
         } else {
-            if (s_SeqDB_DBExists(attempt, dbtype)) {
+            if (s_SeqDB_DBExists(attempt, dbtype, atlas, locked)) {
                 result = attempt;
                 break;
             }
@@ -173,10 +188,12 @@ static string s_SeqDB_TryPaths(const string & blast_paths,
     return result;
 }
 
-string SeqDB_FindBlastDBPath(const string & dbname,
-                             char           dbtype,
-                             string       * sp,
-                             bool           exact_name)
+string SeqDB_FindBlastDBPath(const string   & dbname,
+                             char             dbtype,
+                             string         * sp,
+                             bool             exact,
+                             CSeqDBAtlas    & atlas,
+                             CSeqDBLockHold & locked)
 {
     // Local directory first;
     
@@ -192,7 +209,7 @@ string SeqDB_FindBlastDBPath(const string & dbname,
     
     CMetaRegistry::SEntry sentry =
         CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
+    
     if (sentry.registry) {
         pathology += sentry.registry->Get("BLAST", "BLASTDB");
         pathology += ":";
@@ -204,7 +221,7 @@ string SeqDB_FindBlastDBPath(const string & dbname,
         *sp = pathology;
     }
     
-    return s_SeqDB_TryPaths(pathology, dbname, dbtype, exact_name);
+    return s_SeqDB_TryPaths(pathology, dbname, dbtype, exact, atlas, locked);
 }
 
 void SeqDB_JoinDelim(string & a, const string & b, const string & delim)

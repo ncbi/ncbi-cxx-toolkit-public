@@ -32,6 +32,7 @@
 
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <corelib/ncbi_bswap.hpp>
+#include "seqdbatlas.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -238,14 +239,20 @@ string SeqDB_GetBaseName(string s);
 ///   Input file base name
 /// @param sp
 ///   If non-null, the ":" delimited search path is returned here
-/// @param exact_name
+/// @param exact
 ///   If true, the file_name already includes any needed extension
+/// @param atlas
+///   The memory management layer.
+/// @param locked
+///   The lock holder object for this thread.
 /// @return
 ///   Fully qualified filename and path, minus extension
-string SeqDB_FindBlastDBPath(const string & file_name,
-                             char           dbtype,
-                             string       * sp,
-                             bool           exact_name);
+string SeqDB_FindBlastDBPath(const string   & file_name,
+                             char             dbtype,
+                             string         * sp,
+                             bool             exact,
+                             CSeqDBAtlas    & atlas,
+                             CSeqDBLockHold & locked);
 
 /// Join two strings with a delimiter
 ///

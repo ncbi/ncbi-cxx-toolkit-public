@@ -765,6 +765,26 @@ public:
     /// The destructor unmaps and frees all associated memory.
     ~CSeqDBAtlas();
     
+    /// Check if file exists.
+    /// 
+    /// If the file exists, this method will return true, otherwise
+    /// false.  Also, if the file exists, the first slice of it will
+    /// be mapped.  This method exists for efficiency reasons; it is
+    /// cheaper to ask the atlas whether it already knows about a file
+    /// than to search the filesystem for the file, particularly in
+    /// the case of network file systems.  If a slice of the file has
+    /// already been mapped, this will return true without consulting
+    /// the file system, so this method will not detect files that
+    /// have been deleted since the mapping occurred.
+    /// 
+    /// @param fname
+    ///   The filename of the file to get.
+    /// @param locked
+    ///   The lock hold object for this thread.
+    /// @return
+    ///   A pointer to the beginning of the file's data.
+    bool DoesFileExist(const string & fname, CSeqDBLockHold & locked);
+    
     /// Get mapping of an entire file.
     /// 
     /// A file is mapped or read, in its entirety.  The region is held
@@ -799,7 +819,24 @@ public:
     
     /// Get size of a file.
     /// 
-    /// Checks whether a file exists and gets the file's size.
+    /// Check whether a file exists and get the file's size.
+    /// 
+    /// @param fname
+    ///   The filename of the file to get the size of.
+    /// @param length
+    ///   The length of the file is returned here.
+    /// @param locked
+    ///   The lock hold object for this thread.
+    /// @return
+    ///   true if the file exists.
+    bool GetFileSize(const string   & fname,
+                     TIndx          & length,
+                     CSeqDBLockHold & locked);
+    
+    /// Get size of a file.
+    /// 
+    /// Check whether a file exists and get the file's size.  This
+    /// version assumes the atlas lock is held.
     /// 
     /// @param fname
     ///   The filename of the file to get the size of.
@@ -807,7 +844,8 @@ public:
     ///   The length of the file is returned here.
     /// @return
     ///   true if the file exists.
-    static bool GetFileSize(const string & fname, TIndx & length);
+    bool CSeqDBAtlas::GetFileSizeL(const string & fname,
+                                   TIndx        & length);
     
     /// Gets a partial mapping of the file.
     /// 
@@ -1331,6 +1369,9 @@ private:
     
     /// Callback to flush memory leases before a garbage collector.
     CSeqDBFlushCB * m_FlushCB;
+    
+    /// Cache of file existence and length.
+    map< string, pair<bool, TIndx> > m_FileSize;
 };
 
 // Assumes lock is held.

@@ -40,9 +40,11 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
                            char                   prot_nucl)
     : m_RecentVol(0)
 {
+    CSeqDBLockHold locked(atlas);
+    
     try {
         for(Uint4 i = 0; i < vol_names.size(); i++) {
-            x_AddVolume(atlas, vol_names[i], prot_nucl);
+            x_AddVolume(atlas, vol_names[i], prot_nucl, locked);
         
             if (prot_nucl == kSeqTypeUnkn) {
                 // Once one volume picks a prot/nucl type, enforce that
@@ -80,11 +82,12 @@ CSeqDBVolSet::~CSeqDBVolSet()
     }
 }
 
-void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas  & atlas,
-                               const string & nm,
-                               char           pn)
+void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas    & atlas,
+                               const string   & nm,
+                               char             pn,
+                               CSeqDBLockHold & locked)
 {
-    CSeqDBVol * new_volp = new CSeqDBVol(atlas, nm, pn);
+    CSeqDBVol * new_volp = new CSeqDBVol(atlas, nm, pn, locked);
     
     CSeqDBVolEntry new_vol( new_volp );
     new_vol.SetStartEnd( x_GetNumOIDs() );

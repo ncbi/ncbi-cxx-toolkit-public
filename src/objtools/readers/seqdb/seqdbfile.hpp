@@ -89,9 +89,9 @@ public:
     ///     The filename to open.
     /// @return
     ///     true if the file was opened successfully.
-    bool Open(const string & name)
+    bool Open(const string & name, CSeqDBLockHold & locked)
     {
-        bool success = m_Atlas.GetFileSize(name, m_Length);
+        bool success = m_Atlas.GetFileSize(name, m_Length, locked);
         
         if (success) {
             m_FileName = name;
@@ -302,9 +302,10 @@ public:
     ///   The name of the managed file.
     /// @param prot_nucl
     ///   The sequence data type.
-    CSeqDBExtFile(CSeqDBAtlas   & atlas,
-                  const string  & dbfilename,
-                  char            prot_nucl);
+    CSeqDBExtFile(CSeqDBAtlas    & atlas,
+                  const string   & dbfilename,
+                  char             prot_nucl,
+                  CSeqDBLockHold & locked);
     
     /// Destructor
     virtual ~CSeqDBExtFile()
@@ -481,7 +482,8 @@ public:
     ///   The sequence data type.
     CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                   const string   & dbname,
-                  char             prot_nucl);
+                  char             prot_nucl,
+                  CSeqDBLockHold & locked);
     
     /// Destructor
     virtual ~CSeqDBIdxFile()
@@ -730,10 +732,11 @@ public:
     ///   The name of the database volume.
     /// @param prot_nucl
     ///   The sequence data type.
-    CSeqDBSeqFile(CSeqDBAtlas   & atlas,
-                  const string  & dbname,
-                  char            prot_nucl)
-        : CSeqDBExtFile(atlas, dbname + ".-sq", prot_nucl)
+    CSeqDBSeqFile(CSeqDBAtlas    & atlas,
+                  const string   & dbname,
+                  char             prot_nucl,
+                  CSeqDBLockHold & locked)
+        : CSeqDBExtFile(atlas, dbname + ".-sq", prot_nucl, locked)
     {
     }
     
@@ -814,10 +817,11 @@ public:
     ///   The name of the database volume.
     /// @param prot_nucl
     ///   The sequence data type.
-    CSeqDBHdrFile(CSeqDBAtlas   & atlas,
-                  const string  & dbname,
-                  char            prot_nucl)
-        : CSeqDBExtFile(atlas, dbname + ".-hr", prot_nucl)
+    CSeqDBHdrFile(CSeqDBAtlas    & atlas,
+                  const string   & dbname,
+                  char             prot_nucl,
+                  CSeqDBLockHold & locked)
+        : CSeqDBExtFile(atlas, dbname + ".-hr", prot_nucl, locked)
     {
     }
     

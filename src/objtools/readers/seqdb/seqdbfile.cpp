@@ -69,7 +69,10 @@ BEGIN_NCBI_SCOPE
 
 typedef CSeqDBAtlas::TIndx TIndx;
 
-TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, TIndx offset, Uint4 * value, CSeqDBLockHold & locked) const
+TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
+                                 TIndx            offset,
+                                 Uint4          * value,
+                                 CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
     
@@ -124,9 +127,10 @@ TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
     return offset + len;
 }
 
-CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas   & atlas,
-                             const string  & dbfilename,
-                             char            prot_nucl)
+CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas    & atlas,
+                             const string   & dbfilename,
+                             char             prot_nucl,
+                             CSeqDBLockHold & locked)
     : m_Atlas   (atlas),
       m_Lease   (atlas),
       m_FileName(dbfilename),
@@ -140,7 +144,7 @@ CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas   & atlas,
     
     x_SetFileType(prot_nucl);
     
-    if (! m_File.Open(m_FileName)) {
+    if (! m_File.Open(m_FileName, locked)) {
         string msg = string("Error: File (") + m_FileName + ") not found.";
         
         NCBI_THROW(CSeqDBException, eFileErr, msg);
@@ -149,8 +153,9 @@ CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas   & atlas,
 
 CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                              const string   & dbname,
-                             char             prot_nucl)
-    : CSeqDBExtFile(atlas, dbname + ".-in", prot_nucl),
+                             char             prot_nucl,
+                             CSeqDBLockHold & locked)
+    : CSeqDBExtFile(atlas, dbname + ".-in", prot_nucl, locked),
       m_NumOIDs       (0),
       m_VolLen        (0),
       m_MaxLen        (0),
@@ -177,8 +182,7 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
     Uint4 f_format_version = 0;
     Uint4 f_db_seqtype = 0;
     
-    CSeqDBMemLease lease(m_Atlas);
-    CSeqDBLockHold locked(m_Atlas);
+    CSeqDBMemLease lease  (m_Atlas);
     
     offset = x_ReadSwapped(lease, offset, & f_format_version, locked);
     

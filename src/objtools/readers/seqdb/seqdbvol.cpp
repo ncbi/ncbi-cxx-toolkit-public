@@ -47,14 +47,15 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBVol::CSeqDBVol(CSeqDBAtlas   & atlas,
-                     const string  & name,
-                     char            prot_nucl)
+CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
+                     const string   & name,
+                     char             prot_nucl,
+                     CSeqDBLockHold & locked)
     : m_Atlas   (atlas),
       m_VolName (name),
-      m_Idx     (atlas, name, prot_nucl),
-      m_Seq     (atlas, name, prot_nucl),
-      m_Hdr     (atlas, name, prot_nucl)
+      m_Idx     (atlas, name, prot_nucl, locked),
+      m_Seq     (atlas, name, prot_nucl, locked),
+      m_Hdr     (atlas, name, prot_nucl, locked)
 {
     // ISAM files are optional
     

@@ -76,9 +76,10 @@ public:
     ///   The base name of the volumes files
     /// @param prot_nucl
     ///   The sequence type, kSeqTypeProt, or kSeqTypeNucl
-    CSeqDBVol(CSeqDBAtlas   & atlas,
-              const string  & name,
-              char            prot_nucl);
+    CSeqDBVol(CSeqDBAtlas    & atlas,
+              const string   & name,
+              char             prot_nucl,
+              CSeqDBLockHold & locked);
     
     /// Sequence length for protein databases
     /// 

@@ -46,7 +46,10 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
     
     // It is reasonable for this database to not exist.
     
-    m_IndexFN = SeqDB_FindBlastDBPath("taxdb.bti", '-', 0, true);
+    CSeqDBLockHold locked(m_Atlas);
+    
+    m_IndexFN =
+        SeqDB_FindBlastDBPath("taxdb.bti", '-', 0, true, m_Atlas, locked);
     m_DataFN = m_IndexFN;
     m_DataFN[m_DataFN.size()-1] = 'd';
     
@@ -71,7 +74,6 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
                    "Error: Tax database file not found.");
     }
     
-    CSeqDBLockHold locked(m_Atlas);
     CSeqDBMemLease lease(m_Atlas);
     
     // Last check-up of the database validity

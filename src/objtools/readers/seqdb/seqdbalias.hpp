@@ -227,9 +227,9 @@ public:
     /// @param atlas
     ///   The memory management layer.
     /// @param name_list
-    ///   The memory management layer.
+    ///   The space delimited list of database names.
     /// @param prot_nucl
-    ///   The memory management layer.
+    ///   The type of sequences stored here.
     CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                     const string   & name_list,
                     char             prot_nucl);
@@ -497,7 +497,9 @@ private:
     ///
     /// @param prot_nucl
     ///   Indicates whether this is a protein or nucleotide database
-    void x_ResolveNames(char prot_nucl);
+    /// @param locked
+    ///   The lock hold object for this thread.
+    void x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked);
     
     /// Add an OID list filter to a volume
     /// 

@@ -254,7 +254,7 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
     Uint4 num_oids = 0;
     
     {
-        volmask.Open(mask_fname);
+        volmask.Open(mask_fname, locked);
         
         volmask.ReadSwapped(lease, 0, & num_oids, locked);
         
@@ -477,7 +477,7 @@ void CSeqDBOIDList::x_OrGiFileBits(const string    & gilist_fname,
     try {
         // Take exception to empty file
         
-        gilist.Open(gilist_fname);
+        gilist.Open(gilist_fname, locked);
         file_length = (Uint4) gilist.GetFileLength();
         
         if (! file_length) {

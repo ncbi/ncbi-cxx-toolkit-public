@@ -69,7 +69,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
     m_Values["DBLIST"] = dbname_list;
     
     NStr::Tokenize(dbname_list, " ", m_DBList, NStr::eMergeDelims);
-    x_ResolveNames(prot_nucl);
+    x_ResolveNames(prot_nucl, locked);
     
     CSeqDBAliasStack recurse;
     
@@ -111,15 +111,20 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas      & atlas,
     recurse.Pop();
 }
 
-void CSeqDBAliasNode::x_ResolveNames(char prot_nucl)
+void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
 {
     m_DBPath = ".";
     
     Uint4 i = 0;
     
     for(i = 0; i < m_DBList.size(); i++) {
-        string resolved_name = 
-            SeqDB_FindBlastDBPath(m_DBList[i], prot_nucl, 0, false);
+        string resolved_name =
+            SeqDB_FindBlastDBPath(m_DBList[i],
+                                  prot_nucl,
+                                  0,
+                                  false,
+                                  m_Atlas,
+                                  locked);
         
         if (resolved_name.empty()) {
             // Do over (to get the search path)
@@ -128,7 +133,9 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl)
             SeqDB_FindBlastDBPath(m_DBList[i],
                                   prot_nucl,
                                   & search_path,
-                                  false);
+                                  false,
+                                  m_Atlas,
+                                  locked);
             
             string msg("No alias or index file found for component [");
             msg += m_DBList[i] + "] in search path [" + search_path + "]";
@@ -296,7 +303,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const string     & this_name,
                        "Illegal configuration: DB alias files are mutually recursive.");
         }
         
-        if ( CFile(new_db_loc).Exists() ) {
+        if ( m_Atlas.DoesFileExist(new_db_loc, locked) ) {
             string newpath = SeqDB_GetDirName(new_db_loc);
             string newfile = SeqDB_GetBaseName(new_db_loc);
             

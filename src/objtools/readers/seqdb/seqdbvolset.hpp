@@ -848,9 +848,10 @@ private:
     ///   The name of the volume.
     /// @param pn
     ///   The sequence type.
-    void x_AddVolume(CSeqDBAtlas  & atlas,
-                     const string & nm,
-                     char           pn);
+    void x_AddVolume(CSeqDBAtlas    & atlas,
+                     const string   & nm,
+                     char             pn,
+                     CSeqDBLockHold & locked);
     
     /// Find a volume by name
     /// 

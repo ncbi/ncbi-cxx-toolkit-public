@@ -61,7 +61,7 @@ BEGIN_NCBI_SCOPE
 // leave the old ones alone (possibly marking the old regions as high
 // penalty).  Depending on refcnt, penalty, and region sizes.
 
-/// Create an empty atlas.
+/// Check the size of a number relative to the scope of a numeric type.
 
 template<class TIn, class TOut>
 TOut SeqDB_CheckLength(TIn value)
@@ -122,9 +122,15 @@ CSeqDBAtlas::~CSeqDBAtlas()
     m_Pool.clear();
 }
 
+bool CSeqDBAtlas::DoesFileExist(const string & fname, CSeqDBLockHold & locked)
+{
+    Uint4 length(0);
+    return GetFileSize(fname, length, locked);
+}
+
 const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLockHold & locked)
 {
-    if (! GetFileSize(fname, length)) {
+    if (! GetFileSize(fname, length, locked)) {
         NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
     }
     
@@ -154,9 +160,12 @@ const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLo
     return GetRegion(fname, 0, length, locked);
 }
 
-void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease, const string & fname, TIndx & length, CSeqDBLockHold & locked)
+void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease,
+                          const string   & fname,
+                          TIndx          & length,
+                          CSeqDBLockHold & locked)
 {
-    if (! GetFileSize(fname, length)) {
+    if (! GetFileSize(fname, length, locked)) {
         NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
     }
     
@@ -188,17 +197,42 @@ void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease, const string & fname, TIndx & 
     GetRegion(lease, fname, 0, length);
 }
 
-bool CSeqDBAtlas::GetFileSize(const string & fname, TIndx & length)
+bool CSeqDBAtlas::GetFileSize(const string   & fname,
+                              TIndx          & length,
+                              CSeqDBLockHold & locked)
 {
-    CFile whole(fname);
+    Lock(locked);
+    return GetFileSizeL(fname, length);
+}
+
+bool CSeqDBAtlas::GetFileSizeL(const string & fname,
+                               TIndx        & length)
+{
+    // Fields: file-exists, file-length
+    pair<bool, TIndx> data;
     
-    if (whole.Exists()) {
-        length = SeqDB_CheckLength<Uint8,TIndx>(whole.GetLength());
-        return true;
+    map< string, pair<bool, TIndx> >::iterator i =
+        m_FileSize.find(fname);
+    
+    if (i == m_FileSize.end()) {
+        CFile whole(fname);
+        Int8 file_length = whole.GetLength();
+        
+        if (file_length >= 0) {
+            data.first  = true;
+            data.second = SeqDB_CheckLength<Int8,TIndx>(file_length);
+        } else {
+            data.first  = false;
+            data.second = 0;
+        }
+        
+        m_FileSize[fname] = data;
+    } else {
+        data = (*i).second;
     }
     
-    length = 0;
-    return false;
+    length = data.second;
+    return data.first;
 }
 
 void CSeqDBAtlas::GarbageCollect(CSeqDBLockHold & locked)
@@ -882,11 +916,10 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
 {
     bool rv = false;
     
-    CFile file(*m_Fname);
+    TIndx flength(0);
+    bool file_exists = atlas->GetFileSizeL(*m_Fname, flength);
     
-    TIndx flength = (TIndx) file.GetLength();
-    
-    if (file.Exists()) {
+    if (file_exists) {
         try {
             m_MemFile = new CMemoryFileMap(*m_Fname);
             

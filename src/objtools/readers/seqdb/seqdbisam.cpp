@@ -67,7 +67,7 @@ CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
     m_Atlas.Lock(locked);
     
     bool found_index_file =
-        m_Atlas.GetFileSize(m_IndexFname, m_IndexFileLength);
+        m_Atlas.GetFileSize(m_IndexFname, m_IndexFileLength, locked);
     
     if ((! found_index_file) || (m_IndexFileLength < info_needed)) {
         return eWrongFile;
@@ -100,7 +100,7 @@ CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
         
         Uint4 disk_file_length(0);
         bool found_data_file =
-            m_Atlas.GetFileSize(m_DataFname, disk_file_length);
+            m_Atlas.GetFileSize(m_DataFname, disk_file_length, locked);
         
         if ((! found_data_file) || (m_DataFileLength != disk_file_length)) {
             return eWrongFile;
