@@ -38,6 +38,8 @@
 #include <corelib/ncbithr.hpp>
 #include <errno.h>
 
+#include <test/test_assert.h>  /* This header must go last */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -136,14 +138,14 @@ void CExceptApplication::f1(void)
     }
     catch (CException& e) {  // catch by reference
         // verify error code
-        _ASSERT(e.GetErrCode() == CException::eInvalid);
+        assert(e.GetErrCode() == CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CException>(e));
-        _ASSERT(UppermostCast<CSubsystemException>(e));
-        _ASSERT(!UppermostCast<CSupersystemException>(e));
+        assert(!UppermostCast<CException>(e));
+        assert(UppermostCast<CSubsystemException>(e));
+        assert(!UppermostCast<CSupersystemException>(e));
         // verify error code
         const CSubsystemException *pe = UppermostCast<CSubsystemException>(e);
-        _ASSERT(pe->GetErrCode() == CSubsystemException::eType2);
+        assert(pe->GetErrCode() == CSubsystemException::eType2);
 
         NCBI_RETHROW_SAME(e,"calling f2 from f1");
     }
@@ -163,7 +165,7 @@ void CExceptApplication::f2(void)
     while err.code becomes invalid
 */
         // verify error code
-        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
+        assert((int)e.GetErrCode() == (int)CException::eInvalid);
 
         NCBI_RETHROW(e,CSubsystemException,eType2,"calling f3 from f2");
     }
@@ -176,17 +178,17 @@ void CExceptApplication::f3(void)
     }
     catch (CSubsystemException& e) {  // catch by reference
         // verify error code
-        _ASSERT((int)(e.GetErrCode()) == (int)CException::eInvalid);
+        assert((int)(e.GetErrCode()) == (int)CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CException>(e));
-        _ASSERT(!UppermostCast<CSubsystemException>(e));
-        _ASSERT(UppermostCast<CSupersystemException>(e));
+        assert(!UppermostCast<CException>(e));
+        assert(!UppermostCast<CSubsystemException>(e));
+        assert(UppermostCast<CSupersystemException>(e));
         // verify error code
         const CSupersystemException *pe = UppermostCast<CSupersystemException>(e);
-        _ASSERT(pe->GetErrCode() == CSupersystemException::eSuper2);
+        assert(pe->GetErrCode() == CSupersystemException::eSuper2);
 
         // error code string is always correct
-        _ASSERT( strcmp(e.GetErrCodeString(),
+        assert( strcmp(e.GetErrCodeString(),
                         pe->GetErrCodeString())==0);
 
         NCBI_RETHROW_SAME(e,"calling f4 from f3");
@@ -224,13 +226,13 @@ int CExceptApplication::Run(void)
 
 // Attributes
         // verify error code
-        _ASSERT(e.GetErrCode() == CException::eInvalid);
+        assert(e.GetErrCode() == CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CException>(e));
-        _ASSERT(UppermostCast<CSubsystemException>(e));
-        _ASSERT(!UppermostCast<CSupersystemException>(e));
+        assert(!UppermostCast<CException>(e));
+        assert(UppermostCast<CSubsystemException>(e));
+        assert(!UppermostCast<CSupersystemException>(e));
         // verify error code
-        _ASSERT(UppermostCast<CSubsystemException>(e)->GetErrCode() ==
+        assert(UppermostCast<CSubsystemException>(e)->GetErrCode() ==
                 CSubsystemException::eType2);
 
 
@@ -239,38 +241,38 @@ int CExceptApplication::Run(void)
 
 
         pred = e.GetPredecessor();
-        _ASSERT(pred);
-        _ASSERT(pred->GetErrCode() == CException::eInvalid);
+        assert(pred);
+        assert(pred->GetErrCode() == CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CException>(*pred));
-        _ASSERT(UppermostCast<CSubsystemException>(*pred));
-        _ASSERT(!UppermostCast<CSupersystemException>(*pred));
+        assert(!UppermostCast<CException>(*pred));
+        assert(UppermostCast<CSubsystemException>(*pred));
+        assert(!UppermostCast<CSupersystemException>(*pred));
         // verify error code
-        _ASSERT(UppermostCast<CSubsystemException>(*pred)->GetErrCode() ==
+        assert(UppermostCast<CSubsystemException>(*pred)->GetErrCode() ==
                 CSubsystemException::eType2);
 
 
         pred = pred->GetPredecessor();
-        _ASSERT(pred);
-        _ASSERT(pred->GetErrCode() == CException::eInvalid);
+        assert(pred);
+        assert(pred->GetErrCode() == CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CException>(*pred));
-        _ASSERT(UppermostCast<CSubsystemException>(*pred));
-        _ASSERT(!UppermostCast<CSupersystemException>(*pred));
+        assert(!UppermostCast<CException>(*pred));
+        assert(UppermostCast<CSubsystemException>(*pred));
+        assert(!UppermostCast<CSupersystemException>(*pred));
         // verify error code
-        _ASSERT((int)UppermostCast<CSubsystemException>(*pred)->GetErrCode() ==
+        assert((int)UppermostCast<CSubsystemException>(*pred)->GetErrCode() ==
                 (int)CException::eInvalid);
 
 
         pred = pred->GetPredecessor();
-        _ASSERT(pred);
-        _ASSERT(pred->GetErrCode() == CException::eInvalid);
+        assert(pred);
+        assert(pred->GetErrCode() == CException::eInvalid);
         // verify exception class
-        _ASSERT(!UppermostCast<CException>(*pred));
-        _ASSERT(!UppermostCast<CSubsystemException>(*pred));
-        _ASSERT(UppermostCast<CSupersystemException>(*pred));
+        assert(!UppermostCast<CException>(*pred));
+        assert(!UppermostCast<CSubsystemException>(*pred));
+        assert(UppermostCast<CSupersystemException>(*pred));
         // verify error code
-        _ASSERT(UppermostCast<CSupersystemException>(*pred)->GetErrCode() ==
+        assert(UppermostCast<CSupersystemException>(*pred)->GetErrCode() ==
                 CSupersystemException::eSuper2);
 
 
@@ -310,7 +312,7 @@ int CExceptApplication::Run(void)
             "****** default reporter (diag) ******",e);
     }
     catch (exception& /*e*/) {
-        _ASSERT(0);
+        assert(0);
     }
 
 
@@ -318,34 +320,34 @@ int CExceptApplication::Run(void)
         t1();
     } catch (CErrnoTemplException<CCoreException>& e) {
         NCBI_REPORT_EXCEPTION("caught as CErrnoTemplException<CCoreException>", e);
-        _ASSERT(e.GetErrCode() == CErrnoTemplException<CCoreException>::eErrno);
+        assert(e.GetErrCode() == CErrnoTemplException<CCoreException>::eErrno);
     } catch (CCoreException& e) {
         NCBI_REPORT_EXCEPTION("caught as CCoreException", e);
         const CErrnoTemplException<CCoreException>* pe = UppermostCast< CErrnoTemplException<CCoreException> > (e);
-        _ASSERT(pe->GetErrCode() == CErrnoTemplException<CCoreException>::eErrno);
+        assert(pe->GetErrCode() == CErrnoTemplException<CCoreException>::eErrno);
     } catch (exception&) {
-        _ASSERT(0);
+        assert(0);
     }
 
     try {
         m1();
     } catch (CErrnoTemplException<CCoreException>& e) {
         NCBI_REPORT_EXCEPTION("caught as CErrnoTemplException<CCoreException>", e);
-        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
+        assert((int)e.GetErrCode() == (int)CException::eInvalid);
     } catch (CCoreException e) {
         NCBI_REPORT_EXCEPTION("caught as CCoreException", e);
-        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
+        assert((int)e.GetErrCode() == (int)CException::eInvalid);
     } catch (exception&) {
-        _ASSERT(0);
+        assert(0);
     }
 
     try {
         tp1();
     } catch (CParseTemplException<CCoreException>& e) {
         NCBI_REPORT_EXCEPTION("caught as CParseTemplException<CCoreException>", e);
-        _ASSERT(e.GetErrCode() == CParseTemplException<CCoreException>::eErr);
+        assert(e.GetErrCode() == CParseTemplException<CCoreException>::eErr);
     } catch (exception&) {
-        _ASSERT(0);
+        assert(0);
     }
 
     cout << "Test completed" << endl;
@@ -369,6 +371,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.14  2004/11/03 19:20:34  vakatov
+ * Replaced _ASSERT by assert;  fixed comp.warnings as well.
+ *
  * Revision 6.13  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
