@@ -170,6 +170,14 @@ private:
     static bool x_CompareAlnMatchScores(const CRef<CAlnMixMatch>& aln_match1,
                                         const CRef<CAlnMixMatch>& aln_match2);
         
+    
+#ifdef _DEBUG
+    void x_SegmentStartItsConsistencyCheck(const CAlnMixSegment& seg,
+                                           const CAlnMixSeq&     seq,
+                                           const TSeqPos&        start);
+#endif
+
+
     mutable CRef<CScope>        m_Scope;
     TConstDSs                   m_InputDSs;
     TConstAlns                  m_InputAlns;
@@ -190,6 +198,9 @@ private:
     TSeqIdMap                   m_SeqIds;
     bool                        m_ContainsAA;
     bool                        m_ContainsNA;
+#if _ALNMGR_DEBUG
+    size_t                      m_MatchIdx;
+#endif
 };
 
 
@@ -340,6 +351,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2004/10/13 16:30:33  todorov
+* + conditionally compiled x_SegmentStartItsConsistencyCheck and m_MatchIdx
+*
 * Revision 1.43  2004/10/12 19:44:29  rsmith
 * make x_CompareAlnSeqScores arguments match the container it compares on.
 *
