@@ -100,7 +100,6 @@ public:
 
     const_iterator begin(void) const
         {
-            _ASSERT(IsLoaded());
             return m_Seq_ids.begin();
         }
     const_iterator end(void) const
@@ -109,12 +108,10 @@ public:
         }
     size_t size(void) const
         {
-            _ASSERT(IsLoaded());
             return m_Seq_ids.size();
         }
     bool empty(void) const
         {
-            _ASSERT(IsLoaded());
             return m_Seq_ids.empty();
         }
 
@@ -163,17 +160,14 @@ public:
 
     const_iterator begin(void) const
         {
-            _ASSERT(IsLoaded());
             return m_Blob_ids.begin();
         }
     const_iterator end(void) const
         {
-            _ASSERT(IsLoaded());
             return m_Blob_ids.end();
         }
     bool empty(void) const
         {
-            _ASSERT(IsLoaded());
             return m_Blob_ids.empty();
         }
 
