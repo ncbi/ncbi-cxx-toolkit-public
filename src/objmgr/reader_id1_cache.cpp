@@ -185,7 +185,8 @@ void CCachedId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                                      const CSeqref& seqref,
                                      TConn conn)
 {
-    auto_ptr<IReader> reader(OpenBlob(seqref, GetVersion(seqref, conn)));
+    auto_ptr<IReader> reader;
+    //reader.reset(OpenBlob(seqref, GetVersion(seqref, conn)));
     if ( reader.get() ) {
 
         CIRByteSourceReader rd(reader.get());
@@ -204,8 +205,8 @@ void CCachedId1Reader::x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                                       const CSeqref& seqref,
                                       CByteSourceReader& reader)
 {
-    IWriter* wr = StoreBlob(seqref, seqref.GetVersion());
-    auto_ptr<IWriter> writer(wr);
+    auto_ptr<IWriter> writer;
+    //writer.reset(StoreBlob(seqref, seqref.GetVersion()));
     if ( writer.get() ) {
         try {
             CWriterCopyByteSourceReader proxy(&reader, writer.get());
@@ -239,6 +240,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.8  2003/10/14 21:06:25  vasilche
+ * Fixed compression statistics.
+ * Disabled caching of SNP blobs.
+ *
  * Revision 1.7  2003/10/14 19:31:18  kuznets
  * Removed unnecessary hook in SNP deserialization.
  *

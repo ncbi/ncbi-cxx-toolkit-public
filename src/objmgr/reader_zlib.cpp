@@ -35,23 +35,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CResultZBtSrc::CResultZBtSrc(CByteSourceReader* src)
-    : m_Src(src)
-{
-}
-
-
-CResultZBtSrc::~CResultZBtSrc()
-{
-}
-
-
-
-CRef<CByteSourceReader> CResultZBtSrc::Open(void)
-{
-    return CRef<CByteSourceReader>(new CResultZBtSrcRdr(m_Src));
-}
-
 
 class NCBI_XOBJMGR_EXPORT CResultZBtSrcX
 {
@@ -63,6 +46,11 @@ public:
     void ReadLength(void);
 
     size_t x_Read(char* buffer, size_t bufferLength);
+
+    size_t GetCompressedSize(void) const
+        {
+            return m_CompressedSize;
+        }
 
     enum {
         kMax_UncomprSize = 128*1024,
@@ -79,11 +67,12 @@ private:
     size_t            m_BufferEnd;
     CZipCompression   m_Decompressor;
     vector<char>      m_Compressed;
+    size_t            m_CompressedSize;
 };
 
 
 CResultZBtSrcRdr::CResultZBtSrcRdr(CByteSourceReader* src)
-    : m_Src(src), m_Type(eType_unknown)
+    : m_Src(src), m_Type(eType_unknown), m_CompressedSize(0)
 {
 }
 
@@ -134,8 +123,14 @@ size_t CResultZBtSrcRdr::Read(char* buffer, size_t buffer_length)
 }
 
 
+size_t CResultZBtSrcRdr::GetCompressedSize(void) const
+{
+    return m_Decompressor.get()? m_Decompressor->GetCompressedSize(): 0;
+}
+
+
 CResultZBtSrcX::CResultZBtSrcX(CByteSourceReader* src)
-    : m_Src(src), m_BufferPos(0), m_BufferEnd(0)
+    : m_Src(src), m_BufferPos(0), m_BufferEnd(0), m_CompressedSize(0)
 {
 }
 
@@ -149,26 +144,11 @@ size_t CResultZBtSrcX::x_Read(char* buffer, size_t buffer_length)
 {
     size_t ret = 0;
     while ( buffer_length > 0 ) {
-#if 0 && defined _DEBUG
-        NcbiCout << "Ask Data: " << buffer_length << NcbiEndl;
-#endif
         size_t cnt = m_Src->Read(buffer, buffer_length);
         if ( cnt == 0 ) {
-#if 0 && defined _DEBUG
-            NcbiCout << "No Data" << NcbiEndl;
-#endif
             break;
         }
         else {
-#if 0 && defined _DEBUG
-            NcbiCout << "Got Data "<<cnt<<" :";
-            for ( size_t i = 0; i < cnt; ++i ) {
-                NcbiCout << ' ' <<
-                    "0123456789abcdef"[(buffer[i]>>4)&15] << 
-                    "0123456789abcdef"[(buffer[i])&15];
-            }
-            NcbiCout << NcbiEndl;
-#endif
             buffer_length -= cnt;
             buffer += cnt;
             ret += cnt;
@@ -177,7 +157,6 @@ size_t CResultZBtSrcX::x_Read(char* buffer, size_t buffer_length)
     return ret;
 }
 
-//int s_ResultZBtSrcX_compr_size = 0;
 
 void CResultZBtSrcX::ReadLength(void)
 {
@@ -219,6 +198,7 @@ void CResultZBtSrcX::ReadLength(void)
     }
     m_BufferEnd = uncompr_size;
     m_BufferPos = 0;
+    m_CompressedSize += compr_size + 8;
 }
 
 
@@ -239,6 +219,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.6  2003/10/14 21:06:25  vasilche
+* Fixed compression statistics.
+* Disabled caching of SNP blobs.
+*
 * Revision 1.5  2003/10/14 18:59:55  vasilche
 * Temporarily remove collection of compression statistics.
 *

@@ -400,17 +400,15 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                                TConn conn)
 {
     CStopWatch sw;
-    //extern int s_ResultZBtSrcX_compr_size;
 
     if ( ConnectionStatistics() ) {
-        //s_ResultZBtSrcX_compr_size = 0;
-        
         sw.Start();
     }
 
     CConn_ServiceStream* stream = x_GetConnection(conn);
     x_SendRequest(seqref, stream, true);
 
+    size_t compr_size;
     {{
         const size_t kSkipHeader = 2, kSkipFooter = 2;
         
@@ -421,19 +419,18 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
         CResultZBtSrcRdr src2(&src);
         
         x_ReadSNPAnnot(snp_info, seqref, src2);
+        compr_size = src2.GetCompressedSize();
         
         Id1ReaderSkipBytes(src, kSkipFooter);
     }}
 
     if ( ConnectionStatistics() ) {
         double time = sw.Elapsed();
-        int s_ResultZBtSrcX_compr_size = 0;
         LOG_POST("CId1Reader: read SNP blob "<<seqref.printTSE()<<" "<<
-                 (s_ResultZBtSrcX_compr_size/1024)<<" kB in "<<
-                 (time*1000)<<" ms");
+                 (compr_size/1024)<<" kB in "<<(time*1000)<<" ms");
         blob_count++;
-        bytes_count += s_ResultZBtSrcX_compr_size;
-        compr_size += s_ResultZBtSrcX_compr_size;
+        bytes_count += compr_size;
+        compr_size += compr_size;
         decompr_size += last_bytes_count;
         bytes_time += time;
     }
@@ -520,6 +517,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.50  2003/10/14 21:06:25  vasilche
+ * Fixed compression statistics.
+ * Disabled caching of SNP blobs.
+ *
  * Revision 1.49  2003/10/14 18:59:55  vasilche
  * Temporarily remove collection of compression statistics.
  *

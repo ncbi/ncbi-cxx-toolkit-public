@@ -407,7 +407,7 @@ CRef<CSeq_annot_SNP_Info> CPubseqReader::x_ReceiveSNPAnnot(CDB_Result& result)
     
     {{
         CResultBtSrcRdr src(&result);
-        CResultZBtSrc src2(&src);
+        CResultZBtSrcRdr src2(&src);
         
         auto_ptr<CObjectIStream> in
             (CObjectIStream::Create(eSerial_AsnBinary, src2));
@@ -465,6 +465,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.37  2003/10/14 21:06:25  vasilche
+* Fixed compression statistics.
+* Disabled caching of SNP blobs.
+*
 * Revision 1.36  2003/09/30 16:22:02  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
