@@ -39,6 +39,9 @@
 #include <serial/enumvalues.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
+#include <objects/seqloc/Packed_seqpnt.hpp>
+#include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
@@ -818,7 +821,7 @@ const CSeq_id* s_GetLabel
     {
         *label += "(";
         bool first = true;
-        ITERATE(list<CRef<CSeq_interval> >, it, loc.GetPacked_int().Get()) {
+        ITERATE(CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
             if (!first) {
                 *label += ", ";
             }
@@ -832,9 +835,19 @@ const CSeq_id* s_GetLabel
         last_id = s_GetLabel(loc.GetPnt(), last_id, label);
         break;
     case CSeq_loc::e_Packed_pnt:
-        if (!loc.GetPacked_pnt().GetPoints().empty()) {
-            *label += "PackSeqPnt";
-        }
+        *label += "(" + loc.GetPacked_pnt().GetId().AsFastaString() + ":";
+        {{
+             string str;
+             ITERATE (CPacked_seqpnt::TPoints, iter,
+                      loc.GetPacked_pnt().GetPoints()) {
+                 if ( !str.empty() ) {
+                     str += ", ";
+                 }
+                 str += NStr::IntToString(*iter);
+             }
+             *label += str;
+         }}
+        *label += ")";
         last_id = &loc.GetPacked_pnt().GetId();
         break;
     case CSeq_loc::e_Mix:
@@ -923,6 +936,69 @@ void CSeq_loc::GetLabel(string* label) const
 }
 
 
+// assign the 'id' field of each sub-interval to the supplied id
+void CSeq_loc::SetId(CSeq_id& id)
+{
+    switch (Which()) {
+    case e_Int:
+        SetInt().SetId(id);
+        break;
+
+    case e_Pnt:
+        SetPnt().SetId(id);
+        break;
+
+    case e_Packed_int:
+        NON_CONST_ITERATE (CPacked_seqint::Tdata, iter, SetPacked_int().Set()) {
+            (*iter)->SetId(id);
+        }
+        break;
+
+    case e_Packed_pnt:
+        SetPacked_pnt().SetId(id);
+        break;
+
+    case e_Mix:
+        NON_CONST_ITERATE (CSeq_loc_mix::Tdata, iter, SetMix().Set()) {
+            (*iter)->SetId(id);
+        }
+        break;
+
+    case e_Whole:
+        SetWhole(id);
+        break;
+
+    case e_Empty:
+        SetEmpty(id);
+        break;
+
+    case e_Equiv:
+        NON_CONST_ITERATE (CSeq_loc_equiv::Tdata, iter, SetEquiv().Set()) {
+            (*iter)->SetId(id);
+        }
+        break;
+
+    case e_Bond:
+        if (GetBond().IsSetA()) {
+            SetBond().SetA().SetId(id);
+        }
+        if (GetBond().IsSetB()) {
+            SetBond().SetB().SetId(id);
+        }
+        break;
+
+    case e_Feat:
+        LOG_POST(Error << "unhandled loc type in CSeq_loc::SetId(): e_Feat");
+        break;
+
+    default:
+        LOG_POST(Error << "unhandled loc type in CSeq_loc::SetId(): "
+                 << Which());
+        break;
+    }
+}
+
+
 bool CSeq_loc::Equals(const CSerialObject& object) const
 {
     if ( typeid(object) != typeid(*this) ) {
@@ -941,6 +1017,10 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.34  2003/10/14 16:48:53  dicuccio
+ * Added SetId() function.  Added correct printing of packed seq-points in
+ * Getlabel()
+ *
  * Revision 6.33  2003/09/22 18:38:14  grichenk
  * Fixed circular seq-locs processing by TestForOverlap()
  *
