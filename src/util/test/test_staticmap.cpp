@@ -83,6 +83,28 @@ void CheckValue(const pair<int, int>& value1, const pair<int, int>& value2)
 }
 
 
+void CheckValue(const pair<const int, int>& value1, 
+                const pair<int, int>& value2)
+{
+    CheckValue(value1.first, value2.first);
+    CheckValue(value1.second, value2.second);
+}
+
+
+inline
+int distance(const int* p1, const int* p2)
+{
+    return p2 - p1;
+}
+
+
+inline
+int distance(const pair<int, int>* p1, const pair<int, int>* p2)
+{
+    return p2 - p1;
+}
+
+
 template<class TRef, class TTst>
 void CheckIter(const TRef& ref, const TTst& tst,
                const typename TRef::const_iterator& ref_iter,
@@ -177,14 +199,15 @@ void CTestStaticMap::TestStaticMap(void) const
 
     TRef ref;
     while ( int(ref.size()) < m_NumberOfElements ) {
-        ref.insert(make_pair(random(), random()));
+        ref.insert(TRef::value_type(random(), random()));
     }
 
     pair<int, int>* arr(new pair<int, int>[m_NumberOfElements]);
     {{
         int index = 0;
         ITERATE ( TRef, it, ref ) {
-            arr[index++] = *it;
+            arr[index++].first = it->first;
+            arr[index++].second = it->second;
         }
         if ( m_NumberOfElements >= 2 ) {
             switch ( m_TestBadData ) {
@@ -306,6 +329,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/23 18:09:42  vasilche
+ * Fixed for WorkShop compiler.
+ *
  * Revision 1.1  2004/01/23 18:02:25  vasilche
  * Cleaned implementation of CStaticArraySet & CStaticArrayMap.
  * Added test utility test_staticmap.
