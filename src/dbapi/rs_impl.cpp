@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.19  2002/11/07 14:50:31  kholodov
+* Fixed: truncate BLOB buffer befor each successful read into CVariant object
+*
 * Revision 1.18  2002/10/31 22:37:05  kholodov
 * Added: DisableBind(), GetColumnNo(), GetTotalColumns() methods
 * Fixed: minor errors, diagnostic messages
@@ -184,25 +187,36 @@ bool CResultSet::Next()
     EDB_Type type = eDB_UnsupportedType;
 
     more = m_rs->Fetch();
-    if( more ) {
+    if( more && !IsDisableBind() ) {
 
-        if( !IsDisableBind() ) {
-            for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
-      
-                type = m_rs->ItemDataType(i);
-                
-                if( !IsBindBlob() 
-                    && (type == eDB_Text || type == eDB_Image) ) {
+        for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
+            
+            type = m_rs->ItemDataType(i);
+            
+            if( !IsBindBlob() ) {
+                if( type == eDB_Text || type == eDB_Image )  {
                     m_column = m_rs->CurrentItemNo();
                     break;
                 }
-            
-                m_rs->GetItem(m_data[i].GetNonNullData());
             }
+            else {
+                switch(type) {
+                case eDB_Text:
+                    ((CDB_Text*)m_data[i].GetNonNullData())->Truncate();
+                    break;
+                case eDB_Image:
+                    ((CDB_Image*)m_data[i].GetNonNullData())->Truncate();
+                    break;
+                }
+            }
+
+            
+            m_rs->GetItem(m_data[i].GetNonNullData());
         }
 
     } 
-    else {
+
+    if( !more ) {
         if( m_ostr ) {
             _TRACE("CResulstSet: deleting BLOB output stream...");
                    delete m_ostr;
