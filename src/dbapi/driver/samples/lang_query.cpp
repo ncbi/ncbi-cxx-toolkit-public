@@ -172,8 +172,17 @@ int main(int argc, char* argv[])
                                 cout << v.Value();
                             }
                         } 
-                        else if (rt == eDB_Float ||
-                                 rt == eDB_Double) {
+                        else if (rt == eDB_Float) {
+                            CDB_Float v;
+                            r->GetItem(&v);
+                            if(v.IsNULL()) {
+                                cout << "{NULL}";
+                            }
+                            else {
+                                cout << v.Value();
+                            }
+                        }
+                        else if(rt == eDB_Double) {
                             CDB_Double v;
                             r->GetItem(&v);
                             if(v.IsNULL()) {
@@ -192,6 +201,16 @@ int main(int argc, char* argv[])
                             }
                             else {
                                 cout << v.Value().AsString();
+                            }
+                        }
+                        else if (rt == eDB_Numeric) {
+                            CDB_Numeric v;
+                            r->GetItem(&v);
+                            if(v.IsNULL()) {
+                                cout << "{NULL}";
+                            }
+                            else {
+                                cout << v.Value();
                             }
                         }
                         else if (rt == eDB_Text) {
@@ -231,6 +250,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/06/13 21:29:22  soussov
+ * numeric added; double and float separated
+ *
  * Revision 1.1  2002/06/13 19:43:07  vakatov
  * Initial revision
  *
