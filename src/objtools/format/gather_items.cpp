@@ -57,6 +57,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/align_ci.hpp>
 
 #include <algorithm>
 
@@ -75,6 +76,7 @@
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/format/items/segment_item.hpp>
 #include <objtools/format/items/ctrl_items.hpp>
+#include <objtools/format/items/alignment_item.hpp>
 #include <objtools/format/gather_items.hpp>
 #include <objtools/format/genbank_gather.hpp>
 #include <objtools/format/embl_gather.hpp>
@@ -106,6 +108,7 @@ CFlatGatherer* CFlatGatherer::New(CFlatFileConfig::TFormat format)
         return new CEmblGatherer;
 
     case CFlatFileConfig::eFormat_GFF:
+    case CFlatFileConfig::eFormat_GFF3:
         return new CGFFGatherer;
     
     case CFlatFileConfig::eFormat_FTable:
@@ -1238,6 +1241,26 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// ALIGNMENTS
+
+
+void CFlatGatherer::x_GatherAlignments(void) const
+{
+    CBioseqContext&  ctx    = *m_Current;
+    CSeq_loc_Mapper* mapper = ctx.GetMapper();
+    for (CAlign_CI it(ctx.GetScope(), ctx.GetLocation());  it;  ++it) {
+        if (mapper) {
+            *m_ItemOS << new CAlignmentItem(*mapper->Map(*it), ctx);
+        } else {
+            *m_ItemOS << new CAlignmentItem(const_cast<CSeq_align&>(*it), ctx);
+        }
+    }
+}
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -1246,6 +1269,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/06/21 18:52:56  ucko
+* +x_GatherAlignments
+*
 * Revision 1.21  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

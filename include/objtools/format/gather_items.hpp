@@ -104,6 +104,9 @@ protected:
     void x_MergeEqualBioSources(TSourceFeatSet& srcs) const;
     void x_SubtractFromFocus(TSourceFeatSet& srcs) const;
 
+    // alignments
+    void x_GatherAlignments(void) const;
+
     // comments
     void x_GatherComments  (void) const;
     void x_AddComment(CCommentItem* comment) const;
@@ -147,6 +150,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/06/21 18:50:19  ucko
+* +x_GatherAlignments
+*
 * Revision 1.12  2004/05/06 17:45:08  shomrat
 * private methods changes
 *
