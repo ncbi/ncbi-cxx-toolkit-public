@@ -208,8 +208,27 @@ private:
     void x_FindOid(int oid, int & indexB, int & indexE);
 };
 
+
 NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis);
+
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadGiList(const string & fname,
+                      vector<CSeqDBGiList::SGiOid> & gis);
+
+
+/// CSeqDBFileGiList
+/// 
+/// This class defines a CSeqDBGiList subclass which reads a GI list
+/// file given a filename.  It can read text or binary GI list files,
+/// and will automatically distinguish between them.
+
+class NCBI_XOBJREAD_EXPORT CSeqDBFileGiList : public CSeqDBGiList {
+public:
+    /// Build a GI list from a file.
+    CSeqDBFileGiList(const string & fname);
+};
 
 END_NCBI_SCOPE
 

@@ -405,5 +405,133 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
     }
 }
 
+void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis)
+{
+    CMemoryFile mfile(fname);
+    
+    Int8 file_size = mfile.GetSize();
+    const char * fbeginp = (char*) mfile.GetPtr();
+    const char * fendp   = fbeginp + (int)file_size;
+    
+    bool is_binary = false;
+    
+    if (file_size == 0) {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Specified file is empty.");
+    } else if (isdigit(*((char*) fbeginp))) {
+        is_binary = false;
+    } else if ((file_size >= 8) && (*fbeginp == (Int4)-1)) {
+        is_binary = true;
+    } else {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Specified file is not a valid GI list.");
+    }
+    
+    if (is_binary) {
+        Int4 * bbeginp = (Int4*) fbeginp;
+        Int4 * bendp = (Int4*) fendp;
+        
+        Int4 num_gis = (int)(bendp-bbeginp-2);
+        
+        gis.clear();
+        
+        if (((bendp - bbeginp) < 2) ||
+            (bbeginp[0] != -1) ||
+            (SeqDB_GetStdOrd(bbeginp + 1) != num_gis)) {
+            NCBI_THROW(CSeqDBException,
+                       eFileErr,
+                       "Specified file is not a valid binary GI file.");
+        }
+        
+        gis.reserve(num_gis);
+        
+        for(Int4 * elem = bbeginp + 2; elem < bendp; elem ++) {
+            gis.push_back((int) SeqDB_GetStdOrd(elem));
+        }
+    } else {
+        // We would prefer to do only one allocation, so assume
+        // average gi is 6 digits plus newline.  A few extra will be
+        // allocated, but this is preferable to letting the vector
+        // double itself (which it still will do if needed).
+        
+        gis.reserve(file_size / 7);
+        
+        Uint4 elem(0);
+        
+        for(const char * p = fbeginp; p < fendp; p ++) {
+            Uint4 dig = 0;
+            
+            switch(*p) {
+            case '0':
+                dig = 0;
+                break;
+            
+            case '1':
+                dig = 1;
+                break;
+            
+            case '2':
+                dig = 2;
+                break;
+            
+            case '3':
+                dig = 3;
+                break;
+            
+            case '4':
+                dig = 4;
+                break;
+            
+            case '5':
+                dig = 5;
+                break;
+            
+            case '6':
+                dig = 6;
+                break;
+            
+            case '7':
+                dig = 7;
+                break;
+            
+            case '8':
+                dig = 8;
+                break;
+            
+            case '9':
+                dig = 9;
+                break;
+            
+            case '\n':
+                // Skip blank lines by ignoring zero.
+                if (elem != 0) {
+                    gis.push_back(elem);
+                }
+                elem = 0;
+                continue;
+                
+            default:
+                {
+                    string msg = string("Invalid byte in text GI list [") +
+                        NStr::UIntToString(int(*p)) + " at location " +
+                        NStr::UIntToString(p-fbeginp) + "].";
+                    
+                    NCBI_THROW(CSeqDBException, eFileErr, msg);
+                }
+            }
+            
+            elem *= 10;
+            elem += dig;
+        }
+    }
+}
+
+CSeqDBFileGiList::CSeqDBFileGiList(const string & fname)
+{
+    SeqDB_ReadGiList(fname, m_GisOids);
+}
+
 END_NCBI_SCOPE
 
