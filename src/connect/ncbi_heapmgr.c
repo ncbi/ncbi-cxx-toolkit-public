@@ -510,7 +510,7 @@ TNCBI_Size HEAP_Trim(HEAP heap)
             return 0;
         if (f) {
             ptrdiff_t dp = (char*) f - (char*) heap->base;
-            f = (SHEAP_Block*)(base + dp);
+            f = (SHEAP_Block*)((char*) base + dp);
             f->flag |= HEAP_LAST;
             if (last_size)
                 f->size = last_size;
@@ -585,6 +585,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2003/08/25 16:47:08  lavr
+ * Fix in pointer arith since the base changed from "char*" to "void*"
+ *
  * Revision 6.20  2003/08/25 14:50:50  lavr
  * Heap arena ptrs changed to be "void*";  expand routine to take user arg
  *
