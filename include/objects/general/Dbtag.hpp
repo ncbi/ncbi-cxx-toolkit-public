@@ -78,6 +78,7 @@ public:
         eDbtagType_GOA,
         eDbtagType_GeneDB,
         eDbtagType_GeneID,
+        eDbtagType_H_InvDB,
         eDbtagType_IFO,
         eDbtagType_IMGT_HLA,
         eDbtagType_IMGT_LIGM,
@@ -182,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/08/30 13:23:53  shomrat
+ * + eDbtagType_H_InvDB
+ *
  * Revision 1.8  2004/05/28 20:09:44  johnson
  * Added Compare for seq-id type General (CDbtag)
  *

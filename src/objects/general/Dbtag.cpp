@@ -74,6 +74,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("GOA", CDbtag::eDbtagType_GOA),
     TDbxrefPair("GeneDB", CDbtag::eDbtagType_GeneDB),
     TDbxrefPair("GeneID", CDbtag::eDbtagType_GeneID),
+    TDbxrefPair("H-InvDB", CDbtag::eDbtagType_H_InvDB),
     TDbxrefPair("IFO", CDbtag::eDbtagType_IFO),
     TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
     TDbxrefPair("IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM),
@@ -249,6 +250,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.17  2004/08/30 13:24:23  shomrat
+ * + eDbtagType_H_InvDB
+ *
  * Revision 6.16  2004/05/28 20:09:44  johnson
  * Added Compare for seq-id type General (CDbtag)
  *
