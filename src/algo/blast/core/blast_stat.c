@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.32  2003/08/26 15:23:51  dondosha
+ * Rolled back previous change as it is not necessary any more
+ *
  * Revision 1.31  2003/08/25 22:29:07  dondosha
  * Default matrix loading is defined only in C++ toolkit
  *
@@ -150,9 +153,7 @@ Detailed Contents:
  * */
 #include <algo/blast/core/blastkar.h>
 #include <algo/blast/core/blast_util.h>
-#ifndef NCBI_C_TOOLKIT
 #include <util/tables/raw_scoremat.h>
-#endif
 
 /* OSF1 apparently doesn't like this. */
 #if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1)
@@ -1230,7 +1231,6 @@ Int2
 BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
 {
     Int2 status = 0;
-#ifndef NCBI_C_TOOLKIT
     SNCBIPackedScoreMatrix* psm;
     Int4** matrix = sbp->matrix;
     int i, j;   /* loop indices */
@@ -1268,7 +1268,6 @@ BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
                                            i, j);
         }
     }
-#endif /* NCBI_C_TOOLKIT */
     return status;
 }
 
