@@ -14,6 +14,10 @@ following notice:
 # This configure script is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
 
+The same goes for the auxiliary files "config.guess" and "config.sub"
+provided that you distribute them as part of the toolkit; on their
+own, they fall under the terms of the GNU General Public License [gpl.txt].
+
 The remainder of this software is a "United States Government Work"
 under the terms of the United States Copyright Act.  It was written as
 part of the authors' official duties as United States Government
