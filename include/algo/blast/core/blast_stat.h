@@ -188,7 +188,7 @@ Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
  * @param sbp Scoring block to work with [in] [out]
  * @param query Buffer containing (concatenated) query sequence [in]
  * @param query_info Information about offsets of concatenated queries [in]
- * @param return 0 if ungapped Karlin-Altschul parameters could be 
+ * @return 0 if ungapped Karlin-Altschul parameters could be 
  *               calculated for at least one context; 1 otherwise.
  */
 Int2
