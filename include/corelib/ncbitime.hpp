@@ -39,6 +39,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/07/06 15:11:30  ivanov
+* Added support DataBase-time's -- GetTimeDBI(), GetTimeDBU()
+*                                  SetTimeDBI(), SetTimeDBU()
+*
 * Revision 1.9  2001/07/04 19:41:07  vakatov
 * Get rid of an extra semicolon
 *
@@ -76,6 +80,7 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbitype.h>
 #include <time.h>
 
 
@@ -93,6 +98,20 @@ const long kMicroSecondsPerSecond = 1000000;
 // Number milliseconds in one second
 // Interval for it is from 0 to 999
 const long kMilliSecondsPerSecond = 1000;
+
+
+
+// Time formats in databases (always contain local time only!)
+
+typedef struct {
+    Uint2 days;   // days from 1/1/1900
+    Uint2 time;   // minutes from begin of current day
+} TDBTimeU, *TDBTimeUPtr;
+
+typedef struct {
+    Int4  days;   // days from 1/1/1900
+    Int4  time;   // x/300 seconds from begin of current day
+} TDBTimeI, *TDBTimeIPtr;
 
 
 
@@ -183,6 +202,16 @@ public:
     // Set/get time ("t" is always in GMT, nanosecs will be truncated)
     CTime& SetTimeT(const time_t& t);
     time_t GetTimeT(void) const;
+
+    // Set/get time from/to database formats
+    // NOTE:
+    //    1) "t" and return values always in local time format
+    //    2) object time's format always change to eLocal after SetTimeDB?()
+    //    3) seconds & nanosecs will be truncated (in object and structure)
+    CTime& SetTimeDBU(const TDBTimeU& t);
+    CTime& SetTimeDBI(const TDBTimeI& t);
+    TDBTimeU GetTimeDBU(void) const;
+    TDBTimeI GetTimeDBI(void) const;
 
     // Make the time current (in the presently active time zone)
     CTime& SetCurrent(void);

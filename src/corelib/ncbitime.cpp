@@ -29,6 +29,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/07/06 15:11:11  ivanov
+* Added support DataBase-time's -- GetTimeDBI(), GetTimeDBU()
+*                                  SetTimeDBI(), SetTimeDBU()
+*
 * Revision 1.11  2001/06/20 14:46:17  vakatov
 * Get rid of the '^M' symbols introduced in the R1.10 log
 *
@@ -474,6 +478,69 @@ time_t CTime::GetTimeT(void) const
             timer += 3600;
     }
     return timer;
+}
+
+
+TDBTimeU CTime::GetTimeDBU(void) const
+{
+    TDBTimeU dbt;
+    CTime t  = GetLocalTime();
+    unsigned first = s_Date2Number(CTime(1900, 1, 1));
+    unsigned curr  = s_Date2Number(t);
+
+    dbt.days = (Uint2)(curr - first + 1);
+    dbt.time = (Uint2)(t.Hour() * 60 + t.Minute());
+    return dbt;
+}
+
+
+TDBTimeI CTime::GetTimeDBI(void) const
+{
+    TDBTimeI dbt;
+    CTime t  = GetLocalTime();
+    unsigned first = s_Date2Number(CTime(1900, 1, 1));
+    unsigned curr  = s_Date2Number(t);
+
+    dbt.days = (Int4)(curr - first + 1);
+    dbt.time = (Int4)((t.Hour() * 3600 + t.Minute() * 60 + t.Second()) * 300) +
+        (Int4)((double)t.NanoSecond() * 300 / kNanoSecondsPerSecond);
+    return dbt;
+}
+
+
+CTime& CTime::SetTimeDBU(const TDBTimeU& t)
+{
+    // Local time - 1/1/1900 00:00:00.0
+    CTime time(1900, 1, 1, 0, 0, 0, 0, eLocal);
+
+    time.SetTimeZonePrecision(GetTimeZonePrecision());
+    if (t.days > 0) {
+        time.AddDay(t.days-1);
+    }
+    time.AddMinute(t.time);
+    time.ToTime(GetTimeZoneFormat());
+
+    *this = time;
+    return *this;
+}
+
+
+CTime& CTime::SetTimeDBI(const TDBTimeI& t)
+{
+    // Local time - 1/1/1900 00:00:00.0
+    CTime time(1900, 1, 1, 0, 0, 0, 0, eLocal);
+
+    time.SetTimeZonePrecision(GetTimeZonePrecision());
+    if (t.days > 0) {
+        time.AddDay(t.days-1);
+    }
+    time.AddSecond(t.time / 300);
+    time.AddNanoSecond((long)((t.time % 300) * 
+                              (double)kNanoSecondsPerSecond / 300));
+    time.ToTime(GetTimeZoneFormat());
+
+    *this = time;
+    return *this;
 }
 
 
