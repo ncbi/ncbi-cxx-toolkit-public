@@ -3059,7 +3059,6 @@ Int2 PHIGetGappedScore (Uint1 program_number,
    BlastInitHSP** init_hsp_array;
    BlastInitHSP* init_hsp;
    Int4 index;
-   Int4 q_start, s_start;
    Int2 status = 0;
    BlastHitSavingOptions* hit_options = hit_params->options;
 
