@@ -315,26 +315,34 @@ CObject::CObject(const CObject& /*src*/)
 }
 
 
+#ifdef _DEBUG
+# define ObjFatal Fatal
+#else
+# define ObjFatal Critical
+#endif
+
 CObject::~CObject(void)
 {
     TCount count = m_Counter.Get();
-    if ( count == TCount(eCounterInHeap)
-        ||  count == TCount(eCounterNotInHeap) ) {
+    if ( count == TCount(eCounterInHeap)  ||
+         count == TCount(eCounterNotInHeap) ) {
         // reference counter is zero -> ok
     }
     else if ( ObjectStateValid(count) ) {
         _ASSERT(ObjectStateReferenced(count));
         // referenced object
-        NCBI_THROW(CObjectException,eRefDelete,
-            "Referenced CObject may not be deleted");
+        ERR_POST(ObjFatal << "CObject::~CObject: "
+                 "Referenced CObject may not be deleted");
     }
     else if ( count == eCounterDeleted ) {
         // deleted object
-        NCBI_THROW(CObjectException,eDeleted,"CObject is already deleted");
+        ERR_POST(ObjFatal << "CObject::~CObject: "
+                 "CObject is already deleted");
     }
     else {
         // bad object
-        NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
+        ERR_POST(ObjFatal << "CObject::~CObject: "
+                 "CObject is corrupted");
     }
     // mark object as deleted
     m_Counter.Set(eCounterDeleted);
@@ -345,16 +353,18 @@ void CObject::CheckReferenceOverflow(TCount count) const
 {
     if ( ObjectStateValid(count) ) {
         // counter overflow
-        NCBI_THROW(CObjectException,eRefOverflow,
-            "CObject's reference counter overflow");
+        NCBI_THROW(CObjectException, eRefOverflow,
+                   "CObject's reference counter overflow");
     }
     else if ( count == eCounterDeleted ) {
         // deleted object
-        NCBI_THROW(CObjectException,eDeleted,"CObject is already deleted");
+        NCBI_THROW(CObjectException, eDeleted,
+                   "CObject is already deleted");
     }
     else {
         // bad object
-        NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
+        NCBI_THROW(CObjectException, eCorrupted,
+                   "CObject is corrupted");
     }
 }
 
@@ -380,8 +390,8 @@ void CObject::RemoveLastReference(void) const
     m_Counter.Add(eCounterStep);
     _ASSERT(!ObjectStateValid(count + eCounterStep));
     // bad object
-    NCBI_THROW(CObjectException, eNoRef,
-               "Unreferenced CObject may not be released");
+    ERR_POST(ObjFatal << "CObject::RemoveLastReference: "
+             "Unreferenced CObject may not be released");
 }
 
 
@@ -395,10 +405,11 @@ void CObject::ReleaseReference(void) const
 
     // error
     if ( !ObjectStateValid(count) ) {
-        NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
+        NCBI_THROW(CObjectException, eCorrupted,
+                   "CObject is corrupted");
     } else {
         NCBI_THROW(CObjectException, eNoRef,
-            "Unreferenced CObject may not be released");
+                   "Unreferenced CObject may not be released");
     }
 }
 
@@ -418,10 +429,12 @@ void CObject::DoNotDeleteThisObject(void)
     
 
     if ( is_valid ) {
-        NCBI_THROW(CObjectException,eRefUnref,
-            "Referenced CObject cannot be made unreferenced one");
-    } else {
-        NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
+        NCBI_THROW(CObjectException, eRefUnref,
+                   "Referenced CObject cannot be made unreferenced one");
+    }
+    else {
+        NCBI_THROW(CObjectException, eCorrupted,
+                   "CObject is corrupted");
     }
 }
 
@@ -438,7 +451,8 @@ void CObject::DoDeleteThisObject(void)
             return;
         }
     }}
-    NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
+    NCBI_THROW(CObjectException, eCorrupted,
+               "CObject is corrupted");
 }
 
 static bool s_EnvFlag(const char* env_var_name)
@@ -481,6 +495,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2003/12/17 20:10:07  vasilche
+ * Avoid throwing exceptions from destructors.
+ * Display Fatal message in Debug mode and Critical message in Release mode.
+ *
  * Revision 1.40  2003/09/17 15:58:29  vasilche
  * Allow debug abort when:
  * CObjectException is thrown - env var NCBI_ABORT_ON_COBJECT_THROW=[Yy1],
