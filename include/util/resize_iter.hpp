@@ -320,8 +320,12 @@ TOut CConstResizingIterator<TSeq, TOut>::operator*()
 template <class TSeq, class TOut>
 bool CConstResizingIterator<TSeq, TOut>::AtEnd() const
 {
-    return distance(m_RawIterator, m_End) * x_BitsPerElement(m_RawIterator)
-        < m_BitOffset + m_NewSize;
+    size_t avail = 0, goal = m_BitOffset + m_NewSize;
+    for (TRawIterator it2 = m_RawIterator;  it2 != m_End  &&  avail < goal;
+         ++it2) {
+        avail += x_BitsPerElement(m_RawIterator);
+    }
+    return avail >= goal;
 }
 
 
@@ -382,8 +386,12 @@ CResizingIterator<TSeq, TVal>::operator TVal()
 template <class TSeq, class TVal>
 bool CResizingIterator<TSeq, TVal>::AtEnd() const
 {
-    return distance(m_RawIterator, m_End) * x_BitsPerElement(m_RawIterator)
-        < m_BitOffset + m_NewSize;
+    size_t avail = 0, goal = m_BitOffset + m_NewSize;
+    for (TRawIterator it2 = m_RawIterator;  it2 != m_End  &&  avail < goal;
+         ++it2) {
+        avail += x_BitsPerElement(m_RawIterator);
+    }
+    return avail >= goal;
 }
 
 
@@ -393,6 +401,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/02/12 21:42:45  ucko
+* Rework AtEnd() to avoid distance(), which has no portable form.
+*
 * Revision 1.6  2004/02/12 20:09:46  ucko
 * Add safeguards to avoid overshooting when misaligned.
 *
