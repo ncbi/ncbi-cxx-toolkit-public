@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/01/25 16:58:33  lavr
+ * ConnNetInfo_SetUserHeader now used throughout to set/reset http_user_header
+ *
  * Revision 6.15  2001/01/23 23:06:18  lavr
  * SConnNetInfo.debug_printout converted from boolean to enum
  * BUF_StripToPattern() introduced
@@ -288,7 +291,7 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
     {{
         char x_path[sizeof(info->path)];
         sprintf(x_path, "http://%s:%hu/%s",
-                info->host, (unsigned short) info->port, info->path);
+                info->host, info->port, info->path);
         assert(strlen(x_path) < sizeof(x_path));
         strcpy(info->path, x_path);
     }}
@@ -303,12 +306,12 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 
 
 extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info,
-                                      const char *user_header)
+                                      const char*   user_header)
 {
     if (info->http_user_header)
-        free((char *)info->http_user_header);
+        free((void*) info->http_user_header);
     info->http_user_header = user_header ?
-        strcpy((char *)malloc(strlen(user_header) + 1), user_header) : 0;
+        strcpy((char*) malloc(strlen(user_header) + 1), user_header) : 0;
 }
 
 
@@ -320,11 +323,8 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
     x_info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo));
     *x_info = *info;
-    x_info->http_user_header =
-        info->http_user_header ?
-        strcpy((char *)malloc(strlen(info->http_user_header) + 1),
-               info->http_user_header) :
-        0;
+    x_info->http_user_header = 0;
+    ConnNetInfo_SetUserHeader(x_info, info->http_user_header);
     return x_info;
 }
 
@@ -389,8 +389,7 @@ extern void ConnNetInfo_Destroy(SConnNetInfo* info)
 {
     if (!info)
         return;
-    if (info->http_user_header)
-        free((char *)info->http_user_header);
+    ConnNetInfo_SetUserHeader(info, 0);
     free(info);
 }
 
