@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/08/17 14:24:06  thiessen
+* added working StyleManager
+*
 * Revision 1.18  2000/08/13 02:43:01  thiessen
 * added helix and strand objects
 *
@@ -287,15 +290,10 @@ void StructureSet::SelectedAtom(unsigned int name)
     // for now, if an atom is selected then use it as rotation center; use coordinate
     // from first CoordSet, default altConf
     const StructureObject *object;
-    if (!residue->GetParentOfType(&object)) {
-        ERR_POST(Error << "StructureSet::SelectedAtom() - can't get StructureObject parent");
-        return;
-    }
+    if (!residue->GetParentOfType(&object)) return;
     const Molecule *molecule;
-    if (!residue->GetParentOfType(&molecule)) {
-        ERR_POST(Error << "StructureSet::SelectedAtom() - can't get Molecule parent");
-        return;
-    }
+    if (!residue->GetParentOfType(&molecule)) return;
+
     TESTMSG("rotating about " << object->pdbID
         << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);
     object->coordSets.front()->atomSet->SetActiveEnsemble(NULL);

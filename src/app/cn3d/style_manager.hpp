@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/17 14:22:01  thiessen
+* added working StyleManager
+*
 * Revision 1.5  2000/08/13 02:42:13  thiessen
 * added helix and strand objects
 *
@@ -56,7 +59,82 @@
 
 BEGIN_SCOPE(Cn3D)
 
+// StyleSettings is a complete set of instructions on how to draw a set of
+// molecules. It is used for "global" settings as well as for individual
+// annotations. It is meant to contain all settings that can be saved on
+// a per-output file basis.
+
+class StyleSettings
+{
+public:
+    // for different types of backbone displays
+    enum eBackboneType {
+        eOff,
+        eTrace,
+        ePartial,
+        eComplete
+    };
+
+    // available drawing styles (not all necessarily applicable to all objects)
+    enum eDrawingStyle {
+        // for atoms and bonds
+        eWire,
+        eTubes,
+        eBallAndStick,
+        eSpaceFill,
+        eWireWorm,
+        eTubeWorm,
+
+        // for 3d-objects
+        eWithArrows,
+        eWithoutArrows
+    };
+
+    // available color schemes (not all necessarily applicable to all objects)
+    enum eColorScheme {
+        eElement,
+        eObject,
+        eMolecule,
+        eSecondaryStructure,
+        eUserSelect
+    };
+
+    typedef struct {
+        eBackboneType type;
+        eDrawingStyle style;
+        eColorScheme colorScheme;
+        Vector userColor;
+    } BackboneStyle;
+    
+    typedef struct {
+        bool isOn;
+        eDrawingStyle style;
+        eColorScheme colorScheme;
+        Vector userColor;
+    } GeneralStyle;
+    
+    BackboneStyle proteinBackbone, nucleotideBackbone;
+
+    GeneralStyle 
+        proteinSidechains, nucleotideSidechains,
+        heterogens,
+        solvents,
+        connections,
+        helixObjects, strandObjects;
+    
+    bool hydrogensOn;
+
+    double ballRadius, stickRadius, tubeRadius, tubeWormRadius,
+        helixRadius, strandWidth, strandThickness;
+    Vector backgroundColor;
+
+    // methods to set to predetermined states
+    void SetToSecondaryStructure(void);
+    StyleSettings::StyleSettings(void) { SetToSecondaryStructure(); }
+};
+
 class StructureObject;
+class Residue;
 class AtomPntr;
 class Bond;
 class BondStyle;
@@ -70,7 +148,7 @@ class StyleManager
 {
 public:
 
-    // display styles
+    // display styles for various types of objects
     enum eDisplayStyle {
         eSphereAtom,
         eLineBond,
@@ -82,8 +160,12 @@ public:
         eNotDisplayed
     };
 
-    // style accessors
-    bool GetAtomStyle(const StructureObject *object, const AtomPntr& atom, AtomStyle *atomStyle);
+    const Vector& GetBackgroundColor(void) const { return globalStyle.backgroundColor; }
+
+    // style accessors for individual objects
+    bool GetAtomStyle(const Residue *residue, const AtomPntr& atom, AtomStyle *atomStyle,
+        const StyleSettings::BackboneStyle* *saveBackboneStyle = NULL,
+        const StyleSettings::GeneralStyle* *saveGeneralStyle = NULL);
     bool GetBondStyle(const Bond *bond,
             const AtomPntr& atom1, const AtomPntr& atom2,
             BondStyle *bondStyle);
@@ -91,7 +173,14 @@ public:
     bool GetStrandStyle(const StructureObject *object, const Strand3D& strand, StrandStyle *strandStyle);
 
 private:
+    // StyleSettings accessors
+    StyleSettings globalStyle;
+    const StyleSettings& GetStyleForResidue(const StructureObject *object, int moleculeID, int residueID)
+        { return globalStyle; } // eventually this will know about annotations...
 };
+
+// the following are convenience containers to tell the Draw functions how
+// to render various individual objects
 
 class AtomStyle
 {
@@ -99,21 +188,20 @@ public:
     StyleManager::eDisplayStyle style;
     Vector color;
     double radius;
-    int slices, stacks;
     unsigned int name;
 };
 
 class BondStyle
 {
 public:
-    struct _endstyle {
+    typedef struct EndStyle {
         StyleManager::eDisplayStyle style;
         Vector color;
         double radius;
         bool atomCap;
-        int sides, segments;
         unsigned int name;
-    } end1, end2;
+    };
+    EndStyle end1, end2;
     bool midCap;
     double tension;
 };
@@ -125,7 +213,6 @@ public:
     double radius;
     Vector color;
     double arrowLength, arrowBaseWidthProportion, arrowTipWidthProportion;
-    int sides;
 };
 
 class StrandStyle

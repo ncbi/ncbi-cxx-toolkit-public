@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/17 14:22:01  thiessen
+* added working StyleManager
+*
 * Revision 1.1  2000/08/03 15:14:18  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -44,11 +47,19 @@
 
 BEGIN_SCOPE(Cn3D)
 
+class Residue;
+
 class ShowHideManager
 {
 public:
     // eventually this will be tied to a GUI element or something...
     bool OverlayConfEnsembles(void) const { return true; }
+
+    // eventually these will actually do something, too...
+    bool IsResidueHidden(const Residue *residue) const
+        { return false; }
+    bool IsResidueVisible(const Residue *residue) const
+        { return !IsResidueHidden(residue); }    
 
 private:
 };

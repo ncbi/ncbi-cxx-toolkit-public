@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/17 14:24:05  thiessen
+* added working StyleManager
+*
 * Revision 1.8  2000/08/11 12:58:31  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -112,7 +115,8 @@ Molecule::Molecule(StructureBase *parent,
                 }
             }
             prevBond = bond;
-        }
+        } else
+            prevBond = NULL;
         prevResidue = residue;
     }
 

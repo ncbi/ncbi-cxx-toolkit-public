@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/17 14:24:06  thiessen
+* added working StyleManager
+*
 * Revision 1.11  2000/08/13 02:43:01  thiessen
 * added helix and strand objects
 *
@@ -242,6 +245,7 @@ Residue::Residue(StructureBase *parent,
         if (c != ce) continue;
 
         AtomInfo *info = new AtomInfo;
+        info->residue = this;
         // get name if present
         if (atom.IsSetName()) info->name = atom.GetName();
         // get code if present - just use first one of the SEQUENCE
@@ -304,17 +308,11 @@ bool Residue::Draw(const AtomSet *atomSet) const
 
     // get Molecule parent
     const Molecule *molecule;
-    if (!GetParentOfType(&molecule)) {
-        ERR_POST(Error << "Residue::Draw(data) - can't get parent Molecule");
-        return false;
-    }
+    if (!GetParentOfType(&molecule)) return false;
 
     // get object parent
     const StructureObject *object;
-    if (!GetParentOfType(&object)) {
-        ERR_POST(Error << "Residue::Draw() - can't get StructureObject parent");
-        return false;
-    }
+    if (!GetParentOfType(&object)) return false;
 
     bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
     AtomStyle atomStyle;
@@ -327,11 +325,12 @@ bool Residue::Draw(const AtomSet *atomSet) const
         AtomPntr ap(molecule->id, id, a->first);
 
         // get Style
-        if (!parentSet->styleManager->GetAtomStyle(object, ap, &atomStyle))
+        if (!parentSet->styleManager->GetAtomStyle(this, ap, &atomStyle))
             return false;
 
         // get Atom* for appropriate altConf and draw the atom
         if (atomStyle.style != StyleManager::eNotDisplayed &&
+            atomStyle.radius > 0.0 &&
             (atom = atomSet->GetAtom(ap, overlayEnsembles)) != NULL)
             parentSet->renderer->DrawAtom(atom->site, atomStyle);
     }

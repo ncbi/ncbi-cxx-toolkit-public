@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/17 14:22:01  thiessen
+* added working StyleManager
+*
 * Revision 1.11  2000/08/11 12:59:13  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -127,7 +130,7 @@ protected:
 public:
     // go up the hierarchy to find a parent of the desired type
     template < class T >
-    bool GetParentOfType(T* *ptr) const
+    bool GetParentOfType(T* *ptr, bool warnIfNotFound = true) const
     {
         *ptr = NULL;
         for (const StructureBase *parent=this->_parent; parent; parent=parent->_parent) {
@@ -135,6 +138,8 @@ public:
                 return true;
             }
         }
+        if (warnIfNotFound)
+            ERR_POST(Warning << "can't get parent of requested type");
         return false;
     }
 };

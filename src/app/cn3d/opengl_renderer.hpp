@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/08/17 14:22:00  thiessen
+* added working StyleManager
+*
 * Revision 1.12  2000/08/13 02:42:13  thiessen
 * added helix and strand objects
 *
@@ -174,12 +177,15 @@ private:
     // controls for view changes
     double rotateSpeed;
 
-    // background color
-    float background[3];
-
     // misc rendering stuff
     bool selectMode;
     unsigned int currentFrame;
+
+    // Quality settings - will eventually be stored in program registry
+    int atomSlices, atomStacks;     // for atom spheres
+    int bondSides;                  // for bonds
+    int wormSides, wormSegments;    // for worm bonds
+    int helixSides;                 // for helix objects
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/08/17 14:24:06  thiessen
+* added working StyleManager
+*
 * Revision 1.16  2000/08/16 14:18:46  thiessen
 * map 3-d objects to molecules
 *
@@ -165,6 +168,14 @@ OpenGLRenderer::OpenGLRenderer(void) : selectMode(false)
         gluQuadricOrientation(qobj, GLU_OUTSIDE);
     }
    
+    // will eventually load these from registry...
+    atomSlices = 7;
+    atomStacks = 4;
+    bondSides = 6;
+    wormSides = 6;
+    wormSegments = 3;
+    helixSides = 12;
+
     AttachStructureSet(NULL);
 }
 
@@ -396,11 +407,14 @@ void OpenGLRenderer::ShowPreviousFrame(void)
 
 void OpenGLRenderer::Display(void) const
 {
-    glClearColor(background[0], background[1], background[2], 1.0);
+    if (structureSet) {
+        const Vector& background = structureSet->styleManager->GetBackgroundColor();
+        glClearColor(background[0], background[1], background[2], 1.0);
+    } else
+        glClearColor(0.0, 0.0, 0.0, 1.0);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glLoadIdentity();
-
     glMultMatrixd(viewMatrix);
 
     if (selectMode) {
@@ -477,7 +491,6 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
     }
 
     // make sure general GL stuff is set up
-    background[0] = background[1] = background[2] = 0.0;
     Init();
     ResetCamera();
     Construct();
@@ -647,21 +660,26 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
     glLoadName(static_cast<GLuint>(atomStyle.name));
     glPushMatrix();
     glTranslated(site.x, site.y, site.z);
-    gluSphere(qobj, atomStyle.radius, atomStyle.slices, atomStyle.stacks);
+    gluSphere(qobj, atomStyle.radius, atomSlices, atomStacks);
     glPopMatrix();
 }
 
 /* add a thick splined curve from point 1 *halfway* to point 2 */
-static void DrawHalfWorm(const Vector& p0, const Vector& p1,
-    const Vector& p2, const Vector& p3,
-    int segments, bool cap1, bool cap2, 
-    double radius, int sides, double tension)
+static void DrawHalfWorm(const Vector *p0, const Vector& p1,
+    const Vector& p2, const Vector *p3,
+    double radius, bool cap1, bool cap2,
+    double tension, int sides, int segments)
 {
     int i, j, k, m, offset;
     Vector R1, R2, Qt, p, dQt, H, V;
     double len, MG[4][3], T[4], t, prevlen, cosj, sinj;
     GLdouble *Nx = NULL, *Ny, *Nz, *Cx, *Cy, *Cz,
         *pNx, *pNy, *pNz, *pCx, *pCy, *pCz, *tmp;
+
+    if (!p0 || !p3) {
+        ERR_POST(Error << "DrawHalfWorm: got NULL 0th and/or 3rd coords for worm");
+        return;
+    }
 
     /*
      * The Hermite matrix Mh.
@@ -681,26 +699,26 @@ static void DrawHalfWorm(const Vector& p0, const Vector& p1,
         c = 0,                  /* continuity (should be 0) */
         b = 0;                  /* bias       (should be 0) */
 
-    if (sides % 2) sides++;     /* must be an even number! */
+    if (sides % 2) {
+        ERR_POST(Warning << "worm sides must be an even number");
+        sides++;
+    }
     GLdouble *fblock = new GLdouble[12 * sides];
 
     /* First, calculate the coordinate points of the center of the worm,
      * using the Kochanek-Bartels variant of the Hermite curve.
      */
-    R1 = 0.5 * (1 - a) * (1 + b) * (1 + c) * (p1 - p0) + 0.5 * (1 - a) * (1 - b) * (1 - c) * (p2 - p1);
-    R2 = 0.5 * (1 - a) * (1 + b) * (1 - c) * (p2 - p1) + 0.5 * (1 - a) * (1 - b) * (1 + c) * (p3 - p2);
+    R1 = 0.5 * (1 - a) * (1 + b) * (1 + c) * (p1 - *p0) + 0.5 * (1 - a) * (1 - b) * (1 - c) * ( p2 - p1);
+    R2 = 0.5 * (1 - a) * (1 + b) * (1 - c) * (p2 -  p1) + 0.5 * (1 - a) * (1 - b) * (1 + c) * (*p3 - p2);
 
     /*
      * Multiply MG=Mh.Gh, where Gh = [ P(1) P(2) R(1) R(2) ]. This
      * 4x1 matrix of vectors is constant for each segment.
      */
     for (i = 0; i < 4; i++) {   /* calculate Mh.Gh */
-        MG[i][0] =
-            Mh[i][0] * p1.x + Mh[i][1] * p2.x + Mh[i][2] * R1.x + Mh[i][3] * R2.x;
-        MG[i][1] =
-            Mh[i][0] * p1.y + Mh[i][1] * p2.y + Mh[i][2] * R1.y + Mh[i][3] * R2.y;
-        MG[i][2] =
-            Mh[i][0] * p1.z + Mh[i][1] * p2.z + Mh[i][2] * R1.z + Mh[i][3] * R2.z;
+        MG[i][0] = Mh[i][0] * p1.x + Mh[i][1] * p2.x + Mh[i][2] * R1.x + Mh[i][3] * R2.x;
+        MG[i][1] = Mh[i][0] * p1.y + Mh[i][1] * p2.y + Mh[i][2] * R1.y + Mh[i][3] * R2.y;
+        MG[i][2] = Mh[i][0] * p1.z + Mh[i][1] * p2.z + Mh[i][2] * R1.z + Mh[i][3] * R2.z;
     }
 
     for (i = 0; i <= segments; i++) {
@@ -756,8 +774,8 @@ static void DrawHalfWorm(const Vector& p0, const Vector& p1,
              */
             T[0] = t * t * 3;
             T[1] = t * 2;
-            T[2] = 1;
-            T[3] = 0;
+            //T[2] = 1;
+            //T[3] = 0;
             dQt.x = T[0] * MG[0][0] + T[1] * MG[1][0] + MG[2][0] /* *T[2] + T[3]*MG[3][0] */ ;
             dQt.y = T[0] * MG[0][1] + T[1] * MG[1][1] + MG[2][1] /* *T[2] + T[3]*MG[3][1] */ ;
             dQt.z = T[0] * MG[0][2] + T[1] * MG[1][2] + MG[2][2] /* *T[2] + T[3]*MG[3][2] */ ;
@@ -877,8 +895,7 @@ static void DoCylinderPlacementTransform(const Vector& a, const Vector& b, doubl
 
 static void DrawHalfBond(const Vector& site1, const Vector& midpoint,
     StyleManager::eDisplayStyle style, double radius, 
-    bool cap1, bool cap2, int sides, int segments, double tension,
-    const Vector *worm0, const Vector& worm1, const Vector& worm2, const Vector *worm3)
+    bool cap1, bool cap2, int bondSides)
 {
     // straight line bond
     if (style == StyleManager::eLineBond || (style == StyleManager::eCylinderBond && radius <= 0.0)) {
@@ -891,34 +908,23 @@ static void DrawHalfBond(const Vector& site1, const Vector& midpoint,
     // cylinder bond
     else if (style == StyleManager::eCylinderBond) {
         double length = (site1 - midpoint).length();
-        if (length <= 0.000001 || sides <= 0) return;
+        if (length <= 0.000001 || bondSides <= 0) return;
         glPushMatrix();
         DoCylinderPlacementTransform(site1, midpoint, length);
-        gluCylinder(qobj, radius, radius, length, sides, 1);
+        gluCylinder(qobj, radius, radius, length, bondSides, 1);
         if (cap1) {
             glPushMatrix();
             glRotated(180.0, 0.0, 1.0, 0.0);
-            gluDisk(qobj, 0.0, radius, sides, 1);
+            gluDisk(qobj, 0.0, radius, bondSides, 1);
             glPopMatrix();
         }
         if (cap2) {
             glPushMatrix();
             glTranslated(0.0, 0.0, length);
-            gluDisk(qobj, 0.0, radius, sides, 1);
+            gluDisk(qobj, 0.0, radius, bondSides, 1);
             glPopMatrix();
         }
         glPopMatrix();
-    }
-
-    // worm bond
-    else if (style == StyleManager::eLineWormBond || style == StyleManager::eThickWormBond) {
-        if (!worm0 || !worm3) {
-            ERR_POST(Error << "DrawHalfBond: got NULL 0th and/or 3rd coords for worm");
-            return;
-        }
-        DrawHalfWorm(*worm0, worm1, worm2, *worm3, segments, cap1, cap2,
-            (style == StyleManager::eThickWormBond) ? radius : 0.0, 
-            sides, tension);
     }
 }
 
@@ -934,11 +940,16 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
         ? GL_AMBIENT : GL_DIFFUSE;
     SetColor(colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
     glLoadName(static_cast<GLuint>(style.end1.name));
-    DrawHalfBond(
-        site1, midpoint,                // points used for straight bonds
-        style.end1.style, style.end1.radius,
-        style.end1.atomCap, style.midCap, style.end1.sides, style.end1.segments,
-        style.tension, site0, site1, site2, site3);    // points used for worm
+    if (style.end1.style == StyleManager::eLineWormBond || 
+         style.end1.style == StyleManager::eThickWormBond) 
+        DrawHalfWorm(site0, site1, site2, site3,
+            (style.end1.style == StyleManager::eThickWormBond) ? style.end1.radius : 0.0,
+            style.end1.atomCap, style.midCap, 
+            style.tension, wormSides, wormSegments);
+    else
+        DrawHalfBond(site1, midpoint,
+            style.end1.style, style.end1.radius,
+            style.end1.atomCap, style.midCap, bondSides);
 
     colorType =
         (style.end2.style == StyleManager::eLineBond ||
@@ -947,9 +958,16 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
         ? GL_AMBIENT : GL_DIFFUSE;
     SetColor(colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
     glLoadName(static_cast<GLuint>(style.end2.name));
-    DrawHalfBond(midpoint, site2, style.end2.style, style.end2.radius,
-        style.midCap, style.end2.atomCap, style.end2.sides, style.end2.segments,
-        style.tension, site3, site2, site1, site0);
+    if (style.end2.style == StyleManager::eLineWormBond || 
+         style.end2.style == StyleManager::eThickWormBond) 
+        DrawHalfWorm(site3, site2, site1, site0,
+            (style.end2.style == StyleManager::eThickWormBond) ? style.end2.radius : 0.0,
+            style.end2.atomCap, style.midCap, 
+            style.tension, wormSides, wormSegments);
+    else
+        DrawHalfBond(midpoint, site2,
+            style.end2.style, style.end2.radius,
+            style.midCap, style.end2.atomCap, bondSides);
 }
 
 void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& style)
@@ -958,18 +976,18 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
     glLoadName(static_cast<GLuint>(NO_NAME));
 
     double length = (Nterm - Cterm).length();
-    if (length <= 0.000001 || style.sides <= 0) return;
+    if (length <= 0.000001) return;
 
     glPushMatrix();
     DoCylinderPlacementTransform(Nterm, Cterm, length);
     if (style.style == StyleManager::eObjectWithArrow)
         length -= style.arrowLength;
-    gluCylinder(qobj, style.radius, style.radius, length, style.sides, 1);
+    gluCylinder(qobj, style.radius, style.radius, length, helixSides, 1);
     
     // Nterm cap
     glPushMatrix();
     glRotated(180.0, 0.0, 1.0, 0.0);
-    gluDisk(qobj, 0.0, style.radius, style.sides, 1);
+    gluDisk(qobj, 0.0, style.radius, helixSides, 1);
     glPopMatrix();
 
     // Cterm Arrow
@@ -979,14 +997,14 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
         if (style.arrowBaseWidthProportion > 1.0) {
             glPushMatrix();
             glRotated(180.0, 0.0, 1.0, 0.0);
-            gluDisk(qobj, 0.0, style.radius * style.arrowBaseWidthProportion, style.sides, 1);
+            gluDisk(qobj, 0.0, style.radius * style.arrowBaseWidthProportion, helixSides, 1);
             glPopMatrix();
         }
         gluCylinder(qobj, style.radius * style.arrowBaseWidthProportion,
-            style.radius * style.arrowTipWidthProportion, style.arrowLength, style.sides, 10);
+            style.radius * style.arrowTipWidthProportion, style.arrowLength, helixSides, 10);
         if (style.arrowTipWidthProportion > 0.0) {
             glTranslated(0.0, 0.0, style.arrowLength);
-            gluDisk(qobj, 0.0, style.radius * style.arrowTipWidthProportion, style.sides, 1);
+            gluDisk(qobj, 0.0, style.radius * style.arrowTipWidthProportion, helixSides, 1);
         }
         glPopMatrix();
 
@@ -994,7 +1012,7 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
     } else {
         glPushMatrix();
         glTranslated(0.0, 0.0, length);
-        gluDisk(qobj, 0.0, style.radius, style.sides, 1);
+        gluDisk(qobj, 0.0, style.radius, helixSides, 1);
         glPopMatrix();
     }
    

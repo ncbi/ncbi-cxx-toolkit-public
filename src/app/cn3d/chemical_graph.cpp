@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/17 14:24:05  thiessen
+* added working StyleManager
+*
 * Revision 1.9  2000/08/16 14:18:44  thiessen
 * map 3-d objects to molecules
 *
@@ -112,10 +115,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     // figure out what models we'll be drawing, based on contents of parent 
     // StructureSet and StructureObject
     const StructureObject *object;
-    if (!GetParentOfType(&object)) {
-        ERR_POST(Error << "ChemicalGraph::ChemicalGraph() - can't get StructureObject parent");
-        return;
-    }
+    if (!GetParentOfType(&object)) return;
 
     // if this is the only StructureObject in this StructureSet, and if this
     // StructureObject has only one CoordSet, and if this CoordSet's AtomSet
@@ -218,10 +218,8 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
 bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
 {
     const StructureObject *object;
-    if (!GetParentOfType(&object)) {
-        ERR_POST(Error << "ChemicalGraph::DrawAll() - can't get StructureObject parent");
-        return false;
-    }
+    if (!GetParentOfType(&object)) return false;
+
     TESTMSG("drawing ChemicalGraph of object " << object->pdbID);
 
     // put each protein (with its 3d-objects) or nucleotide chain in its own display list

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/17 14:22:00  thiessen
+* added working StyleManager
+*
 * Revision 1.8  2000/08/11 12:59:13  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -110,7 +113,7 @@ public:
         eAlphaBackboneAtom,     // C-alpha or P
         ePartialBackboneAtom,   // for unbranched backbone trace
         eCompleteBackboneAtom,  // all backbone atoms
-        eUnknownAtom
+        eUnknownAtom            // anything that's not known to be of an amino acid or nucleotide
     };
 
     typedef struct {
@@ -119,6 +122,7 @@ public:
         bool isIonizableProton;
         eAtomClassification classification;
         unsigned int glName;
+        const Residue *residue;  // convenient way to go from atom->residue
     } AtomInfo;
 
     typedef LIST_TYPE < const Bond * > BondList;

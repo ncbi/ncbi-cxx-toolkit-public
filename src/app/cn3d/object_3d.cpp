@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/17 14:24:06  thiessen
+* added working StyleManager
+*
 * Revision 1.3  2000/08/16 14:18:45  thiessen
 * map 3-d objects to molecules
 *
@@ -99,10 +102,7 @@ bool Helix3D::Draw(const AtomSet *data) const
 
     // get object parent
     const StructureObject *object;
-    if (!GetParentOfType(&object)) {
-        ERR_POST(Error << "Helix3D::Draw() - can't get StructureObject parent");
-        return false;
-    }
+    if (!GetParentOfType(&object)) return false;
 
     // get Style
     HelixStyle helixStyle;
@@ -145,10 +145,7 @@ bool Strand3D::Draw(const AtomSet *data) const
 
     // get object parent
     const StructureObject *object;
-    if (!GetParentOfType(&object)) {
-        ERR_POST(Error << "Strand3D::Draw() - can't get StructureObject parent");
-        return false;
-    }
+    if (!GetParentOfType(&object)) return false;
 
     // get Style
     StrandStyle strandStyle;
