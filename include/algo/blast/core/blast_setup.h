@@ -55,6 +55,7 @@ extern "C" {
  * @param hit_options options for saving hits. [in]
  * @param query_blk BLAST_SequenceBlk* for the query. [in]
  * @param query_info The query information block [in]
+ * @param scale_factor Multiplier for cutoff and dropoff scores [in]
  * @param lookup_segments Start/stop locations for non-masked query 
  *                        segments [out]
  * @param filter_slp_out Filtering/masking locations. [out]
@@ -66,9 +67,12 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         const BlastScoringOptions* scoring_options,
         const BlastHitSavingOptions* hit_options,
         BLAST_SequenceBlk* query_blk,
-        BlastQueryInfo* query_info, BlastSeqLoc* *lookup_segments,
+        BlastQueryInfo* query_info, 
+        double scale_factor,
+        BlastSeqLoc* *lookup_segments,
         BlastMaskLoc* *filter_slp_out,
-        BlastScoreBlk* *sbpp, Blast_Message* *blast_message);
+        BlastScoreBlk* *sbpp, 
+        Blast_Message* *blast_message);
 
 /** BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
  *      Should be moved to blast_stat.c in the future.
@@ -108,6 +112,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  * @param hit_options options for saving hits. [in]
  * @param query_info The query information block [in]
  * @param sbp Contains scoring information. [in]
+ * @param score_params Parameters for scoring [out]
  * @param ext_params Parameters for gapped extension [out]
  * @param hit_params Parameters for saving hits [out]
  * @param eff_len_params Parameters for search space calculations [out]
@@ -122,6 +127,7 @@ BLAST_GapAlignSetUp(Uint1 program_number,
    const BlastHitSavingOptions* hit_options,
    BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, 
+   BlastScoringParameters** score_params,
    BlastExtensionParameters** ext_params,
    BlastHitSavingParameters** hit_params,
    BlastEffectiveLengthsParameters** eff_len_params,
@@ -170,7 +176,7 @@ BlastScoreBlkMatrixInit(Uint1 program_number,
 Int2
 BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, 
     const BlastScoringOptions* scoring_options, Uint1 program_number, Boolean phi_align, 
-    BlastScoreBlk* *sbpp, Blast_Message* *blast_message);
+    BlastScoreBlk* *sbpp, double scale_factor, Blast_Message* *blast_message);
 
 #ifdef __cplusplus
 }
@@ -180,6 +186,9 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_inf
 /*
  *
 * $Log$
+* Revision 1.37  2004/05/07 15:36:40  papadopo
+* add scale factor as input argument to BlastMainSetup and GetScoreBlk
+*
 * Revision 1.36  2004/03/30 15:49:07  madden
 * Add prototype for BlastSetup_GetScoreBlock
 *
