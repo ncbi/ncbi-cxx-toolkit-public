@@ -1,0 +1,130 @@
+-- $Id: geno.asn,v 1.1 2002/08/16 16:31:23 kholodov Exp $
+-- $Log: geno.asn,v $
+-- Revision 1.1  2002/08/16 16:31:23  kholodov
+-- First commit
+--
+
+
+GENO DEFINITIONS ::=
+BEGIN
+
+EXPORTS GENO-PopSum, GENO-PedList, GENO-Ind, GENO-SnpSum, GENO-Freq,
+	    GENO-IndBySnp, GENO-IndBySnpList, GENO-IndGeno,  
+        GENO-SnpByIndList, GENO-SnpByInd, GENO-SnpGeno;
+
+GENO-PopSum ::= SEQUENCE {
+	pop-id INTEGER,						-- internal pop_id	Subpop table
+	pop-class INTEGER,					-- population geographic class
+	handle VisibleString,				-- institution identifier
+	loc-pop-id VisibleString,			-- external population identifier
+	ped-list SET OF GENO-Ped OPTIONAL, 	-- set of pedigrees in this population 
+	ind-list SET OF GENO-Ind OPTIONAL, 	-- set of individuals in this population
+	snp-list SET OF GENO-SnpSum 	 	-- summary of the genotype information for this population 	
+}
+
+GENO-PedList ::= SEQUENCE {
+	ped-id INTEGER OPTIONAL,			-- pedigree number all peds within population
+	ind-id INTEGER ,					-- individual id 
+	ma INTEGER ,			        	-- mothers id
+	pa INTEGER ,			        	-- fathers id	
+	ped-curator VisibleString,			-- pedigree  curator
+	curator-ped-id VisibleString,		-- curator ped id
+	curator-ped-ind-id VisibleString,   -- curator pedigree_individual id	
+	sex INTEGER 						-- individuals sex
+}
+
+GENO-Ind ::= SEQUENCE {
+	pop-id INTEGER,						-- internal pop_id	Subpop and SubInd table
+	pop-class INTEGER,			        -- population geographic class
+	loc-pop-id VisibleString,           -- external pop_id  Population table
+	handle VisibleString,			    -- institution identifier
+	ped-id INTEGER OPTIONAL,		    -- pedigree number
+	ind-id INTEGER ,			        -- individual id
+	loc-ind-id VisibleString,		    -- external individual id	
+	source-name VisibleString OPTIONAL,	-- source (i.e., coriell, ceph)
+	source-id INTEGER OPTIONAL		    -- source id		
+}
+
+GENO-SnpSum ::= SEQUENCE {
+	rs INTEGER,							-- referrence snp SubInd table
+	ss INTEGER,							-- submitted snp
+	chrom INTEGER,						-- chromosome
+	position  INTEGER,					-- chromosome position
+	data-type ENUMERATED{
+		pop (0),						-- constrain geno-freq by a specific population	
+		all (1)							-- geno-freq over all populations.  
+			},
+    geno-freq SET OF GENO-Freq,			-- genotypes and frequencies for this SNP limited to population
+    allele-freq SET OF GENO-Freq,		-- allele Frequencies for this SNP limited to population
+    est_het REAL,                  		-- estimated heterozygousity
+    obs_het REAL, 						-- observed heterozygousity
+	samplesize INTEGER,		 					-- chromosomes genotyped for this snp 
+	hw-prob REAL OPTIONAL,				-- Hardy Weinberg probabliity	----Calculated
+	hw-chi2 REAL OPTIONAL,				-- Hardy Weinberg chi square    ----Calculated
+	hw-df   INTEGER						-- Hardy Weinberg degrees of freedom ----Calculated	 
+	
+}
+
+GENO-Freq ::= SEQUENCE {
+	type ENUMERATED{
+		Allele   (0),						
+		Genotype (1)	
+		},								-- type (allele or genotype)		
+	frequency REAL OPTIONAL				-- frequency  Calculated
+}
+
+GENO-IndBySnpList ::= SEQUENCE { 	     -- makes the Ind By SNP report
+	snp-list SET OF GENO-IndBySNP
+}
+
+GENO-IndBySnp ::= SEQUENCE {
+	snp-header GENO-SnpSum,				-- header info for Individuals by SNP report all populations
+	individuals SET OF GENO-IndGeno		-- genotypes by individual
+}
+
+
+GENO-IndGeno ::= SEQUENCE {
+	pop-class INTEGER,					-- population geographic class
+	handle VisibleString,				-- institution identifie
+	pop-id INTEGER,						-- internal pop_id
+	ped-id INTEGER OPTIONAL,			-- internal pedigree number
+	ind-id INTEGER ,					-- individual id
+	loc-pop-id VisibleString,         	-- external pop_id -----Population table
+	loc-ind-id VisibleString,			-- external individual id	
+	sample-id VisibleString OPTIONAL,	-- source (i.e., coriell, ceph)
+	sample-src-id INTEGER OPTIONAL,		-- source id
+	allele1 VisibleString OPTIONAL,		-- first allele in genotype
+	allele2 VisibleString OPTIONAL,		-- second allele in genotype
+	flag INTEGER{
+		none (0),						-- No known errors	
+		incompatible (1),				-- genotype incompatible
+		inconsistent(2),				-- genotype inconsistent
+		orient (3)		 				-- Orientation of allele not specified
+	}		
+}
+
+GENO-SnpByIndList ::= SEQUENCE {
+	genotypes  SET OF GENO-SnpByInd     --Snps by Ind report
+}
+
+GENO-SnpByInd ::= SEQUENCE {
+	individuals GENO-Ind,		       --population individual info
+	genotypes  SET OF GENO-SnpGeno     --genotypes
+}
+
+GENO-SnpGeno ::= SEQUENCE {
+	rs INTEGER,				-- referrence snp
+	ss INTEGER,				-- submitted snp
+	chrom INTEGER,				-- chromosome
+	position  INTEGER,			-- chromosome position
+	allele1 VisibleString OPTIONAL,		-- first allele in genotype
+	allele2 VisibleString OPTIONAL,		-- second allele in genotype
+	flag INTEGER {
+		none (0),			-- No known errors	
+		inc (1),			-- genotype inconsitency
+		orient (2),			-- orientation flag
+		incompat (3)			-- genotype incompatible with parent				
+	} OPTIONAL		
+
+}		
+END
