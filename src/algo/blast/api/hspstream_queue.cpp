@@ -36,7 +36,6 @@ static char const rcsid[] =
     "$Id$";
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/core/blast_hits.h>
 #include <algo/blast/api/hspstream_queue.hpp>
 
 USING_NCBI_SCOPE;
