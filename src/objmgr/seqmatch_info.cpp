@@ -70,14 +70,7 @@ CDataSource& CSeqMatch_Info::GetDataSource(void) const
 
 CConstRef<CBioseq_Info> CSeqMatch_Info::GetBioseq_Info(void) const
 {
-    CRef<CBioseq_Info> ret;
-    // The TSE is locked by the scope, so, it can not be deleted.
-    CTSE_Info::TBioseqs::const_iterator it =
-        GetTSE_Info().m_Bioseqs.find(GetIdHandle());
-    if ( it != GetTSE_Info().m_Bioseqs.end() ) {
-        ret = it->second;
-    }
-    return ret;
+    return GetTSE_Info().FindBioseq(GetIdHandle());
 }
 
 
@@ -87,6 +80,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/08/19 14:20:43  vasilche
+* Use method instead of direct member access.
+*
 * Revision 1.16  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
