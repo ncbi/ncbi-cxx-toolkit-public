@@ -87,7 +87,17 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     static string GetBlobSubkey(int chunk_id = kMain_ChunkId);
 
     typedef CTreePairNode<string, string> TParams;
-    static ICache *CreateCache(const TParams* params, bool id_cache);
+    enum EReaderOrWriter {
+        eCacheReader,
+        eCacheWriter
+    };
+    enum EIdOrBlob {
+        eIdCache,
+        eBlobCache
+    };
+    static ICache *CreateCache(const TParams* params,
+                               EReaderOrWriter reader_or_writer,
+                               EIdOrBlob id_or_blob);
 };
 
 

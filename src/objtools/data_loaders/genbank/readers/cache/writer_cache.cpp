@@ -336,8 +336,14 @@ public:
         if ( !version.Match(NCBI_INTERFACE_VERSION(CWriter)) ) {
             return 0;
         }
-        auto_ptr<ICache> id_cache(SCacheInfo::CreateCache(params, true));
-        auto_ptr<ICache> blob_cache(SCacheInfo::CreateCache(params, false));
+        auto_ptr<ICache> id_cache
+            (SCacheInfo::CreateCache(params,
+                                     SCacheInfo::eCacheWriter,
+                                     SCacheInfo::eIdCache));
+        auto_ptr<ICache> blob_cache
+            (SCacheInfo::CreateCache(params,
+                                     SCacheInfo::eCacheWriter,
+                                     SCacheInfo::eBlobCache));
         if ( blob_cache.get()  ||  id_cache.get() ) {
             return new CCacheWriter(blob_cache.release(), id_cache.release(),
                                     CCacheWriter::fOwnAll);
