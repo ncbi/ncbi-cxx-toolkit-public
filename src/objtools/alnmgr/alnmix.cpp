@@ -54,34 +54,6 @@ CAlnMix::CAlnMix(CScope& scope)
 }
 
 
-CAlnMix::CAlnMix(CConstRef<CSeq_align> aln)
-{
-    x_CreateScope();
-    Add(aln);
-}
-
-
-CAlnMix::CAlnMix(const TAlns& alns)
-{
-    x_CreateScope();
-    Add(alns);
-}
-
-
-CAlnMix::CAlnMix(const TAlns& alns, CScope& scope)
-    : m_Scope(&scope)
-{
-    Add(alns);
-}
-
-
-CAlnMix::CAlnMix(CConstRef<CSeq_align> aln, CScope& scope)
-    : m_Scope(&scope)
-{
-    Add(aln);
-}
-
-
 CAlnMix::~CAlnMix(void)
 {
 }
@@ -90,12 +62,32 @@ CAlnMix::~CAlnMix(void)
 void CAlnMix::x_CreateScope() {
     m_ObjMgr = new CObjectManager;
     
-    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID", new CId1Reader, 2),
+    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID", NULL, 2),
                                  CObjectManager::eDefault);
     
     m_Scope = new CScope(*m_ObjMgr);
     m_Scope->AddDefaults();
 }
+
+
+void CAlnMix::Merge(TMergeFlags flags)
+{
+    if ( !m_DS  ||  m_MergeFlags != flags) {
+        switch (m_InputDSs.size()) {
+        case 0:
+            break; // nothing has been added
+        case 1:
+            // only one ds, nothing to merge
+            m_DS.Reset(const_cast<CDense_seg*>(&*m_InputDSs[0]));
+            break;
+        default:
+            m_DS = null;
+            m_MergeFlags = flags;
+            x_Merge();
+        }
+    }
+}
+
 
 
 #if 0
@@ -154,6 +146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/10/24 21:29:13  todorov
+* adding Dense-segs instead of Seq-aligns
+*
 * Revision 1.1  2002/08/23 14:43:52  ucko
 * Add the new C++ alignment manager to the public tree (thanks, Kamen!)
 *

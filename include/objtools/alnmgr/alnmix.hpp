@@ -49,23 +49,17 @@ class CAlnMix
 {
 public:
 
-    typedef list< CRef< CSeq_align > > TAlns;
-    typedef list< CConstRef< CSeq_align > > TConstAlns;
+    typedef vector< CConstRef< CDense_seg > > TConstDSs;
     
 
     // constructor
     CAlnMix(void);
     CAlnMix(CScope& scope);
-    CAlnMix(CConstRef<CSeq_align> aln);
-    CAlnMix(CConstRef<CSeq_align> aln, CScope& scope);
-    CAlnMix(const TAlns& alns);
-    CAlnMix(const TAlns& alns, CScope& scope);
 
     // destructor
     ~CAlnMix(void);
 
-    void Add(const TAlns& sa_lst);
-    void Add(CConstRef<CSeq_align> sa);
+    void Add(const CDense_seg& ds);
 
     enum EMergeFlags {
         fGen2EST              = 0x01, // otherwise Nucl2Nucl
@@ -75,8 +69,8 @@ public:
     typedef int TMergeFlags; // binary OR of EMergeFlags
     void Merge(TMergeFlags flags = 0);
 
-    CScope&               GetScope(void) const;
-    CConstRef<CDense_seg> Get()          const;
+    CScope&            GetScope(void)  const;
+    const CDense_seg&  GetDenseg(void) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -87,11 +81,11 @@ private:
     bool x_MergeInit                (void);
     void x_Merge                    (void);
 
-    CRef<CObjectManager>     m_ObjMgr;
-    CRef<CScope>             m_Scope;
-    TConstAlns               m_Alns;
-    CRef<CDense_seg>         m_DS;
-    TMergeFlags              m_MergeFlags;
+    CRef<CObjectManager>                 m_ObjMgr;
+    CRef<CScope>                         m_Scope;
+    TConstDSs                            m_InputDSs;
+    CRef<CDense_seg>                     m_DS;
+    TMergeFlags                          m_MergeFlags;
 };
 
 ///////////////////////////////////////////////////////////
@@ -106,38 +100,20 @@ CScope& CAlnMix::GetScope() const
 
 
 inline
-void CAlnMix::Add(const TAlns& alns)
+void CAlnMix::Add(const CDense_seg &ds)
 {
     m_DS.Reset();
-    iterate(TAlns, it, alns) {
-        m_Alns.push_back(*it);
+    m_InputDSs.push_back(&ds);
+}
+
+
+inline
+const CDense_seg& CAlnMix::GetDenseg() const
+{
+    if (!m_DS) {
+        /* throw */
     }
-}
-
-
-inline
-void CAlnMix::Add(CConstRef<CSeq_align> aln)
-{
-    m_DS.Reset();
-    m_Alns.push_back(aln);
-}
-
-
-inline
-void CAlnMix::Merge(TMergeFlags flags)
-{
-    if ( !m_DS  ||  m_MergeFlags != flags) {
-        m_DS = null;
-        m_MergeFlags = flags;
-        x_Merge();
-    }
-}
-
-
-inline
-CConstRef<CDense_seg> CAlnMix::Get() const
-{
-    return m_DS;
+    return *m_DS;
 }
 
 ///////////////////////////////////////////////////////////
@@ -152,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/10/24 21:31:33  todorov
+* adding Dense-segs instead of Seq-aligns
+*
 * Revision 1.2  2002/10/08 18:02:09  todorov
 * changed the aln lst input param
 *
