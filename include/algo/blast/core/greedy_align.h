@@ -51,7 +51,7 @@ enum EOpType {
 
 /** A collection of identical editing operations */
 typedef struct MBEditOp {
-    enum EOpType op_type : 2;     /**< the type of operation */
+    Uint4 op_type : 2;     /**< the type of operation */
     Uint4 num_ops : 30;    /**< number of operations of this type to perform */
 } MBEditOp;
 
