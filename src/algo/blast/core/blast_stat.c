@@ -2190,7 +2190,7 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
       context_offset = query_info->contexts[context].query_offset;
       buffer = &query[context_offset];
       
-      Blast_ResFreqString(sbp, rfp, buffer, query_length);
+      Blast_ResFreqString(sbp, rfp, (char*)buffer, query_length);
       sbp->sfp[context] = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
       BlastScoreFreqCalc(sbp, sbp->sfp[context], rfp, stdrfp);
       sbp->kbp_std[context] = kbp = Blast_KarlinBlkNew();
@@ -3644,6 +3644,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.108  2004/12/09 16:13:33  dondosha
+ * Cast Uint1* to char* in call to Blast_ResFreqString, to remove SunOS compiler warning
+ *
  * Revision 1.107  2004/12/09 16:05:36  dondosha
  * Added return on success in Blast_KarlinBlkCopy
  *
