@@ -150,7 +150,7 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                sequences, do the ungapped extension */
 
             right_extend = TRUE;
-            if (subject_offsets[i] + diag_offset > 
+            if ((Int4)(subject_offsets[i] + diag_offset) > 
                 diag_array[diag_coord].diag_level) {
 
                /* Extend this pair of hits. The extension to the left must 

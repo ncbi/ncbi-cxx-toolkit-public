@@ -660,7 +660,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       not needed */
 
    memset(&concat_db, 0, sizeof(concat_db)); /* fill in SequenceBlk */
-   concat_db.length = dbsize;
+   concat_db.length = (Int4) dbsize;
 
    memset(&concat_db_info, 0, sizeof(concat_db_info)); /* fill in QueryInfo */
    concat_db_info.num_queries = num_db_seqs;
