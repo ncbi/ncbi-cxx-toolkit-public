@@ -71,7 +71,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
             = m_Index.find(SKey(name, style, flags, reg_flags));
         if (iit != m_Index.end()) {
             _TRACE("found in cache");
-            _ASSERT(*iit < m_Contents.size());
+            _ASSERT(iit->second < m_Contents.size());
             return m_Contents[iit->second];
         }
 
@@ -242,6 +242,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2003/10/01 01:02:49  ucko
+ * Fix (syntactically) broken assertion.
+ *
  * Revision 1.8  2003/09/30 21:06:24  ucko
  * Refactored cache to allow flushing of path searches when the search
  * path changes.
