@@ -2,8 +2,7 @@
 
 SRC = ncbithr ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbiargs \
       ncbistd ncbiobj ncbitime ncbimtx ncbi_safe_static ncbi_system ncbifile \
-      ncbidbg ncbidll ncbicfg $(ncbicntr) ddumpable ddump_context \
-      ddump_formatter_text
+      ncbidbg ncbidll ncbicfg $(ncbicntr) ddumpable
 
 LIB = xncbi
 
