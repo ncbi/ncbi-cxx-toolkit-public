@@ -284,7 +284,9 @@ class CFlatGeneSynonymsQVal : public CFlatStringListQVal
 public:
     CFlatGeneSynonymsQVal(const CGene_ref::TSyn& syns) :
         CFlatStringListQVal(syns)
-    {}
+    {
+        m_Suffix = &kSemicolon;
+    }
 
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
@@ -501,7 +503,9 @@ private:
 class CFlatTrnaCodonsQVal : public IFlatQVal
 {
 public:
-    CFlatTrnaCodonsQVal(const CTrna_ext& trna) : m_Value(&trna) { }
+    CFlatTrnaCodonsQVal(const CTrna_ext& trna) : 
+      IFlatQVal(&kEmptyStr, &kSemicolon), m_Value(&trna)
+    {}
     void Format(TFlatQuals& q, const string& n, CBioseqContext& ctx,
                 TFlags) const;
 
@@ -532,6 +536,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/08/30 13:32:41  shomrat
+* fixed intialization of trna codon qual
+*
 * Revision 1.13  2004/08/19 16:26:15  shomrat
 * + CFlatGeneSynonymsQVal and CFlatNumberQVal
 *
