@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  1999/07/03 23:58:49  kans
+* now including MacTCP.h
+*
 * Revision 6.0  1997/08/25 18:38:06  madden
 * Revision changed to 6.0
 *
@@ -42,9 +45,12 @@
 #ifdef ParamBlockHeader
 #undef ParamBlockHeader
 #endif
+/*
 #include <GetMyIPAddr.h>
 #include <TCPPB.h>
 #include <UDPPB.h>
+*/
+#include <MacTCP.h>
 #include <AddressXlation.h>
 
 #ifdef __MWERKS__
