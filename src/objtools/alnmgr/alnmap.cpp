@@ -341,6 +341,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
             return (plus ? cur_top : last - cur_top);
         }
     }        
+
     // return either -1 or the closest segment in dir direction
     if (dir == eNone) {
         return -1;
@@ -349,6 +350,8 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
     } else if (dir == eForward  ||  dir == (plus ? eRight : eLeft)) {
         return (plus ? cur_top : last - cur_top);
     }
+
+    return -1;
 }
     
 
@@ -1208,6 +1211,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2004/11/04 14:11:07  dicuccio
+* Always return something from GetRawSeg()
+*
 * Revision 1.51  2004/10/20 20:04:16  todorov
 * Fixed the support for unaligned regions in GetRawSeg.
 *
