@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/12/26 19:28:00  gouriano
+* removed Get/SetSkipTag and eFrameAttlist - not needed any more
+*
 * Revision 1.8  2002/12/12 21:11:36  gouriano
 * added some debug tracing
 *
@@ -189,7 +192,6 @@ const char* CObjectStackFrame::GetFrameTypeName(void) const
     case eFrameClassMember:   s = "eFrameClassMember";   break;
     case eFrameChoice:        s = "eFrameChoice";        break;
     case eFrameChoiceVariant: s = "eFrameChoiceVariant"; break;
-    case eFrameAttlist:       s = "eFrameAttlist";       break;
     }
     return s;
 }

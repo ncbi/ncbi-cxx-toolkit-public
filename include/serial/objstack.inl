@@ -83,21 +83,6 @@ void CObjectStackFrame::SetMemberId(const CMemberId& memberid)
 }
 
 inline
-void CObjectStackFrame::SetSkipTag(bool set)
-{
-    m_SkipTag = set;
-#if defined(NCBI_SERIAL_IO_TRACE)
-    cout << ", "  << (m_SkipTag ? "S" : "!S");
-#endif
-}
-
-inline
-bool CObjectStackFrame::GetSkipTag(void) const
-{
-    return m_SkipTag;
-}
-
-inline
 void CObjectStackFrame::SetNotag(bool set)
 {
     m_Notag = set;
@@ -163,8 +148,7 @@ CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type,
                                               const CMemberId& memberId)
 {
     _ASSERT(type == TFrame::eFrameClassMember ||
-            type == TFrame::eFrameChoiceVariant ||
-            type == TFrame::eFrameAttlist);
+            type == TFrame::eFrameChoiceVariant);
     TFrame& frame = PushFrame(type);
     frame.m_MemberId = &memberId;
     return frame;
@@ -231,6 +215,9 @@ const CObjectStack::TFrame& CObjectStack::FetchFrameFromBottom(size_t index) con
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/12/26 19:27:31  gouriano
+* removed Get/SetSkipTag and eFrameAttlist - not needed any more
+*
 * Revision 1.13  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -60,8 +60,7 @@ public:
         eFrameClass,
         eFrameClassMember,
         eFrameChoice,
-        eFrameChoiceVariant,
-        eFrameAttlist
+        eFrameChoiceVariant
     };
 
     void Reset(void);
@@ -72,8 +71,6 @@ public:
     const CMemberId& GetMemberId(void) const;
     void SetMemberId(const CMemberId& memberid);
 
-    void SetSkipTag(bool set=true);
-    bool GetSkipTag(void) const;
     void SetNotag(bool set=true);
     bool GetNotag(void) const;
 
@@ -192,6 +189,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/12/26 19:27:31  gouriano
+* removed Get/SetSkipTag and eFrameAttlist - not needed any more
+*
 * Revision 1.16  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.
