@@ -623,12 +623,11 @@ static void s_ParseMultipartEntries(const string& boundary,
 
     SIZE_TYPE pos = 0;
     SIZE_TYPE boundary_size = boundary.size();
-    SIZE_TYPE tail_size = boundary_size + eol_size + 2;
-    SIZE_TYPE str_size = str.size();
+    SIZE_TYPE end_pos;
 
     if (NStr::Compare(str, 0, boundary_size + eol_size, boundary + s_Eol)
         != 0) {
-        if (str == boundary + "--") {
+        if (NStr::StartsWith(str, boundary + "--")) {
             // potential corner case: no actual data
             return;
         }
@@ -636,17 +635,22 @@ static void s_ParseMultipartEntries(const string& boundary,
                     s_Me + ": input does not start with boundary line "
                     + boundary,
                     0);
-    } else if (NStr::Compare(str, str_size - tail_size, tail_size,
-                             s_Eol + boundary + "--")
-               != 0) {
-        NCBI_THROW2(CParseException, eErr,
-                    s_Me + ": input does not end with trailing boundary "
-                    + boundary + "--",
-                    str_size - tail_size);
     }
 
+    {{
+        SIZE_TYPE tail_size = boundary_size + eol_size + 2;
+        SIZE_TYPE tail_start = str.find(s_Eol + boundary + "--");
+        if (tail_start == NPOS) {
+            NCBI_THROW2(CParseException, eErr,
+                        s_Me + ": input does not contain trailing boundary "
+                        + boundary + "--",
+                        0);
+        }
+        end_pos = tail_start + tail_size;
+    }}
+
     pos += boundary_size + eol_size;
-    while (pos < str_size) {
+    while (pos < end_pos) {
         SIZE_TYPE next_boundary = str.find(s_Eol + boundary, pos);
         _ASSERT(next_boundary != NPOS);
         string name, filename;
@@ -1133,6 +1137,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.63  2002/08/08 19:26:04  ucko
+* When parsing multipart forms, allow (but ignore) data after the
+* trailing boundary.
+*
 * Revision 1.62  2002/07/19 14:50:23  ucko
 * Substitute NStr::Compare for uses of string::compare added in last revision.
 *
