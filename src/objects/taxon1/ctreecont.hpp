@@ -112,6 +112,10 @@ public:
 	return (m_root == root);
     }
 
+    const CTreeContNodeBase* GetRoot() const {
+	return m_root;
+    }
+
     bool AddNode(CTreeContNodeBase* pParentNode, CTreeContNodeBase* pNewNode);
     void Clear()    { if (m_root) { DelNodeInternal(m_root); m_root = 0; } }
 
@@ -381,6 +385,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.2  2003/01/21 19:37:19  domrach
+ * GetRoot method added to CTreeCont class.
+ *
  * Revision 6.1  2002/01/30 16:13:37  domrach
  * Changes made to pass through MSVC compiler. Some src files renamed
  *
