@@ -40,9 +40,10 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 void CAlnMap::x_CreateAlnStarts(void)
 {
     m_AlnStarts.clear();
+    m_AlnStarts.reserve(GetNumSegs());
     
     int start = 0, len = 0;
-    for (int i = 0;  i < GetNumSegs();  i++) {
+    for (int i = 0;  i < GetNumSegs();  ++i) {
         start += len;
         m_AlnStarts.push_back(start);
         len = m_DS->GetLens()[i];
@@ -52,7 +53,6 @@ void CAlnMap::x_CreateAlnStarts(void)
 
 void CAlnMap::UnsetAnchor(void)
 {
-    x_CreateAlnStarts();
     m_AlnSegIdx.clear();
     m_NumSegWithOffsets.clear();
     if (m_RawSegTypes) {
@@ -60,10 +60,29 @@ void CAlnMap::UnsetAnchor(void)
         m_RawSegTypes = 0;
     }
     m_Anchor = -1;
+
+    // we must call this last, as it uses some internal shenanigans that
+    // are affected by the reset above
+    x_CreateAlnStarts();
 }
 
 
 void CAlnMap::SetAnchor(TNumrow anchor)
+{
+    x_SetAnchor(m_DS->GetStarts(), m_DS->GetLens(),
+                m_DS->GetDim(), m_DS->GetNumseg(), anchor);
+}
+
+
+//
+// internal version of SetAnchor that abstracts how the algorithm steps
+// through a matrix of data to set an anchor
+// the matrix is this case is cols x rows, not rows x cols (this is how the
+// data is stored in CDense_seg)
+//
+void CAlnMap::x_SetAnchor(const vector<TSignedSeqPos>& starts,
+                          const vector<TSeqPos>& lens,
+                          TNumrow numrow, TNumseg numseg, TNumrow anchor)
 {
     m_AlnSegIdx.clear();
     m_AlnStarts.clear();
@@ -76,18 +95,17 @@ void CAlnMap::SetAnchor(TNumrow anchor)
     int start = 0, len = 0, aln_seg = -1, offset = 0;
     
     m_Anchor = anchor;
-    for (int i = 0, pos = m_Anchor;  i < m_DS->GetNumseg();
-         i++, pos += m_DS->GetDim()) {
-        if (m_DS->GetStarts()[pos] != -1) {
-            aln_seg++;
+    for (int i = 0, pos = m_Anchor;  i < numseg;  ++i, pos += numrow) {
+        if (starts[pos] != -1) {
+            ++aln_seg;
             offset = 0;
             m_AlnSegIdx.push_back(i);
             m_NumSegWithOffsets.push_back(CNumSegWithOffset(aln_seg));
             start += len;
             m_AlnStarts.push_back(start);
-            len = m_DS->GetLens()[i];
+            len = lens[i];
         } else {
-            offset++;
+            ++offset;
             m_NumSegWithOffsets.push_back(CNumSegWithOffset(aln_seg, offset));
         }
     }
@@ -210,7 +228,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos) const
 
         while (cur <= top
                &&  (start = m_DS->GetStarts()[cur * dim + row]) < 0) {
-            cur++;
+            ++cur;
         }
         if (cur <= top && start >= 0) {
             if (sseq_pos >= start &&
@@ -228,7 +246,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos) const
         cur = mid-1;
         while (cur >= btm &&
                (start = m_DS->GetStarts()[cur * dim + row]) < 0) {
-            cur--;
+            --cur;
         }
         if (cur >= btm && start >= 0) {
             if (sseq_pos >= start
@@ -270,10 +288,28 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TSeqPos aln_pos, TNumrow for_row)
     if (seg < 0) {
         return -1;
     } else {
-        TSeqPos delta = aln_pos - GetAlnStart(seg);
-        return (GetStart(for_row, seg) + 
-                (IsPositiveStrand(for_row) ? delta
-                 : (GetLen(seg) - 1 - delta)));
+        TSignedSeqPos pos = GetStart(for_row, seg);
+        if (pos == -1) {
+            // our alignment position lies on a gap, so we return
+            // the best available offset
+            if (IsPositiveStrand(for_row)) {
+                for ( ; seg > 0 && pos == -1; --seg)
+                    pos = GetStop(for_row, seg);
+            } else {
+                for ( ; seg < GetNumSegs() && pos == -1; ++seg) {
+                    pos = GetStop(for_row, seg);
+                }
+            }
+        } else {
+            TSeqPos delta = aln_pos - GetAlnStart(seg);
+            if (IsPositiveStrand(for_row)) {
+                pos += delta;
+            } else {
+                pos += GetLen(seg) - 1 - delta;
+            }
+        }
+
+        return pos;
     }
 }
 
@@ -501,6 +537,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/09/05 19:30:39  dicuccio
+* - added ability to reference a consensus sequence for a given alignment
+* - added caching for CSeqVector objects (big performance gain)
+* - many small bugs fixed
+*
 * Revision 1.3  2002/08/23 20:34:17  ucko
 * Work around a Compaq C++ compiler bug.
 *
