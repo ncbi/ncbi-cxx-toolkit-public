@@ -599,6 +599,18 @@ bool CDB_CursorCmd::Update(const string& table_name, const string& upd_query)
     return m_Cmd->Update(table_name, upd_query);
 }
 
+bool CDB_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, bool log_it)
+{
+    s_CheckCursorCmd(m_Cmd, "UpdateTextImage");
+    return m_Cmd->UpdateTextImage(item_num, data, log_it);
+}
+
+CDB_SendDataCmd* CDB_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, bool log_it)
+{
+    s_CheckCursorCmd(m_Cmd, "SendDataCmd");
+    return m_Cmd->SendDataCmd(item_num, size, log_it);
+}
+
 
 bool CDB_CursorCmd::Delete(const string& table_name)
 {
@@ -660,7 +672,14 @@ CDB_SendDataCmd::~CDB_SendDataCmd()
     }
 }
 
+int CDB_ITDescriptor::DescriptorType() const
+{
+    return 0;
+}
 
+CDB_ITDescriptor::~CDB_ITDescriptor()
+{
+}
 END_NCBI_SCOPE
 
 
@@ -668,6 +687,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/03/26 15:32:24  soussov
+ * new image/text operations added
+ *
  * Revision 1.3  2001/11/06 17:59:54  lavr
  * Formatted uniformly as the rest of the library
  *

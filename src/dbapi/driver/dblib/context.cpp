@@ -236,6 +236,19 @@ unsigned int CDBLibContext::NofConnections(const string& srv_name) const
     return n;
 }
 
+bool CDBLibContext::IsAbleTo(ECapability cpb) const
+{
+    switch(cpb) {
+    case fBcp:
+    case fReturnITDescriptors:
+    case fReturnComputeResults:
+	return true;
+    default:
+	break;
+    }
+    return false;
+}
+
 
 CDBLibContext::~CDBLibContext()
 {
@@ -456,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/03/26 15:37:52  soussov
+ * new image/text operations added
+ *
  * Revision 1.10  2002/02/26 17:53:25  sapojnik
  * Removed blob size limits for MS SQL
  *

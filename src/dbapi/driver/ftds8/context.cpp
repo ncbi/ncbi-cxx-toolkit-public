@@ -202,6 +202,19 @@ unsigned int CTDSContext::NofConnections(const string& srv_name) const
     return n;
 }
 
+bool CTDSContext::IsAbleTo(ECapability cpb) const
+{
+    switch(cpb) {
+    case fReturnITDescriptors:
+	return true;
+    case fReturnComputeResults:
+    case fBcp:
+    default:
+	break;
+    }
+    return false;
+}
+
 
 CTDSContext::~CTDSContext()
 {
@@ -417,6 +430,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/03/26 15:35:10  soussov
+ * new image/text operations added
+ *
  * Revision 1.7  2002/01/28 19:59:00  soussov
  * removing the long query timout
  *

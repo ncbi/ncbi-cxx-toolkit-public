@@ -107,6 +107,8 @@ public:
     virtual unsigned int NofConnections(const string& srv_name = kEmptyStr)
         const;
 
+    virtual bool IsAbleTo(ECapability cpb) const;
+
     virtual ~CDBLibContext();
 
 
@@ -204,6 +206,8 @@ protected:
 
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
+    I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
+
 
     DBPROCESS*      m_Link;
     CDBLibContext*  m_Context;
@@ -324,6 +328,10 @@ protected:
     virtual bool BindParam(const string& param_name, CDB_Object* pVal);
     virtual CDB_Result* Open();
     virtual bool Update(const string& table_name, const string& upd_query);
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+				 bool log_it = true);
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
+					 bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount() const;
     virtual bool Close();
@@ -333,6 +341,7 @@ protected:
 
 private:
     bool x_AssignParams();
+    I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
 
     CDBL_Connection* m_Connect;
     DBPROCESS*       m_Cmd;
@@ -610,12 +619,16 @@ protected:
 //  CDBL_ITDescriptor::
 //
 
+#define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd00
+
 class CDBL_ITDescriptor : public I_ITDescriptor
 {
     friend class CDBL_RowResult;
     friend class CDBL_BlobResult;
     friend class CDBL_Connection;
+    friend class CDBL_CursorCmd;
 public:
+    virtual int DescriptorType() const;
     virtual ~CDBL_ITDescriptor();
 
 #ifndef NCBI_OS_MSWIN
@@ -625,6 +638,7 @@ private:
 
 protected:
     CDBL_ITDescriptor(DBPROCESS* m_link, int col_num);
+    CDBL_ITDescriptor(DBPROCESS* m_link, const CDB_ITDescriptor& inp_d);
 
     // data
     string   m_ObjName;
@@ -645,6 +659,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/03/26 15:26:23  soussov
+ * new image/text operations added
+ *
  * Revision 1.7  2002/01/14 20:26:15  sapojnik
  * new SampleDBAPI_Blob, etc.
  *

@@ -103,7 +103,20 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                            "wrong (zero) data size");
     }
 
-    CDBL_ITDescriptor& desc = dynamic_cast<CDBL_ITDescriptor&> (descr_in);
+    I_ITDescriptor* p_desc= 0;
+
+    // check what type of descriptor we've got
+    if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM) {
+	// this is not a native descriptor
+	p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
+	if(p_desc == 0) return false;
+    }
+    
+
+    C_ITDescriptorGuard d_guard(p_desc);
+
+    CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) : 
+	dynamic_cast<CDBL_ITDescriptor&> (descr_in);
 
     if (dbwritetext(m_Link,
                     (char*) desc.m_ObjName.c_str(),
@@ -246,7 +259,20 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     if (size < 1)
         return false;
 
-    CDBL_ITDescriptor& desc = dynamic_cast<CDBL_ITDescriptor&> (descr_in);
+    I_ITDescriptor* p_desc= 0;
+
+    // check what type of descriptor we've got
+    if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM) {
+	// this is not a native descriptor
+	p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
+	if(p_desc == 0) return false;
+    }
+    
+
+    C_ITDescriptorGuard d_guard(p_desc);
+
+    CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) : 
+	dynamic_cast<CDBL_ITDescriptor&> (descr_in);
     char buff[1800]; // maximal page size
 
     if (size <= sizeof(buff)) { // we could write a blob in one chunk
@@ -291,13 +317,60 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     }
 
     if (dbsqlok(m_Link) != SUCCEED || dbresults(m_Link) == FAIL) {
-        throw CDB_ClientEx(eDB_Error, 110034, "CDBL_Connection::SendData",
+        throw CDB_ClientEx(eDB_Error, 210034, "CDBL_Connection::SendData",
                            "dbsqlok/dbresults failed");
     }
 
     return true;
 }
 
+I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
+{
+    string q= "set rowcount 1\nupdate ";
+    q+= descr_in.TableName();
+    q+= " set ";
+    q+= descr_in.ColumnName();
+    q+= "=NULL where ";
+    q+= descr_in.SearchConditions();
+    q+= " \nselect ";
+    q+= descr_in.ColumnName();
+    q+= " from ";
+    q+= descr_in.TableName();
+    q+= " where ";
+    q+= descr_in.SearchConditions();
+    q+= " \nset rowcount 0";
+    
+    CDB_LangCmd* lcmd= LangCmd(q, 0);
+    if(!lcmd->Send()) {
+	throw CDB_ClientEx(eDB_Error, 210035, "CDBL_Connection::x_GetNativeITDescriptor",
+			   "can not send the language command");
+    }
+
+    CDB_Result* res;
+    I_ITDescriptor* descr= 0;
+    bool i;
+
+    while(lcmd->HasMoreResults()) {
+	res= lcmd->Result();
+	if(res == 0) continue;
+	if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
+	    EDB_Type tt= res->ItemDataType(0);
+	    if(tt == eDB_Text || tt == eDB_Image) {
+		while(res->Fetch()) {
+		    res->ReadItem(&i, 1);
+		
+		    descr= new CDBL_ITDescriptor(m_Link, descr_in);
+		    // descr= res->GetImageOrTextDescriptor();
+		    if(descr) break;
+		}
+	    }
+	}
+	delete res;
+    }
+    delete lcmd;
+		
+    return descr;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -375,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/03/26 15:37:52  soussov
+ * new image/text operations added
+ *
  * Revision 1.4  2002/01/08 18:10:18  sapojnik
  * Syabse to MSSQL name translations moved to interface_p.hpp
  *

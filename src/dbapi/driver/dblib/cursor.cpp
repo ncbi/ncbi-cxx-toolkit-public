@@ -164,6 +164,34 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
     return true;
 }
 
+I_ITDescriptor* CDBL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
+{
+    if(!m_IsOpen || (m_Res == 0)) {
+	return 0;
+    }
+    while(m_Res->CurrentItemNo() < item_num) {
+	if(!m_Res->SkipItem()) return 0;
+    }
+
+    I_ITDescriptor* desc= new CDBL_ITDescriptor(m_Cmd, item_num+1);
+    return desc;
+}
+
+bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+				    bool log_it)
+{
+    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
+
+    return (desc) ? m_Connect->x_SendData(*desc, data, log_it) : false;
+}
+
+CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, 
+					    bool log_it)
+{
+    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
+
+    return (desc) ? m_Connect->SendDataCmd(*desc, size, log_it) : 0;
+}					    
 
 bool CDBL_CursorCmd::Delete(const string& table_name)
 {
@@ -428,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/03/26 15:37:52  soussov
+ * new image/text operations added
+ *
  * Revision 1.6  2002/01/08 18:10:18  sapojnik
  * Syabse to MSSQL name translations moved to interface_p.hpp
  *

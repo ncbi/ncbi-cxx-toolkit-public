@@ -21,8 +21,8 @@
  *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
  *  purpose.
- *
- *  Please cite the author in any work or product based on this material.
+ *                                                                          
+ *  Please cite the author in any work or product based on this material.   
  *
  * ===========================================================================
  *
@@ -107,7 +107,7 @@ public:
     // Destructor
     virtual ~CDB_Connection();
 
-protected: // was 'private:'
+private:
     I_Connection* m_Connect;
 
     // The constructor should be called by "I_DriverContext" only!
@@ -115,7 +115,7 @@ protected: // was 'private:'
     CDB_Connection(I_Connection* c);
 
     // Prohibit default- and copy- constructors, and assignment
-    CDB_Connection() {m_Connect=NULL;}
+    CDB_Connection();
     CDB_Connection& operator= (const CDB_Connection&);
     CDB_Connection(const CDB_Connection&);
 };
@@ -176,7 +176,7 @@ public:
     // Destructor
     virtual ~CDB_Result();
 
-protected: // was 'private:'
+private:
     I_Result* m_Res;
 
     // The constructor should be called by "I_***Cmd" only!
@@ -186,7 +186,7 @@ protected: // was 'private:'
     // Prohibit default- and copy- constructors, and assignment
     CDB_Result& operator= (const CDB_Result&);
     CDB_Result(const CDB_Result&);
-    CDB_Result() {m_Res=NULL;}
+    CDB_Result();
 };
 
 
@@ -226,7 +226,7 @@ public:
     // Destructor
     virtual ~CDB_LangCmd();
 
-protected: // was 'private:'
+private:
     I_LangCmd* m_Cmd;
 
     // The constructor should be called by "I_Connection" only!
@@ -236,7 +236,7 @@ protected: // was 'private:'
     // Prohibit default- and copy- constructors, and assignment
     CDB_LangCmd& operator= (const CDB_LangCmd&);
     CDB_LangCmd(const CDB_LangCmd&);
-    CDB_LangCmd() {m_Cmd = NULL; }
+    CDB_LangCmd();
 };
 
 
@@ -282,8 +282,8 @@ public:
 
     // Destructor
     virtual ~CDB_RPCCmd();
-
-protected: // was 'private:'
+    
+private:
     I_RPCCmd* m_Cmd;
 
     // The constructor should be called by "I_Connection" only!
@@ -293,7 +293,7 @@ protected: // was 'private:'
     // Prohibit default- and copy- constructors, and assignment
     CDB_RPCCmd& operator= (const CDB_RPCCmd&);
     CDB_RPCCmd(const CDB_RPCCmd&);
-    CDB_RPCCmd() { m_Cmd = NULL; }
+    CDB_RPCCmd();
 };
 
 
@@ -350,6 +350,10 @@ public:
     // Update the last fetched row.
     // NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query);
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+				 bool log_it = true);
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
+					 bool log_it = true);
 
     // Delete the last fetched row.
     // NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
@@ -405,6 +409,32 @@ private:
     CDB_SendDataCmd();
 };
 
+class CDB_ITDescriptor : public I_ITDescriptor
+{
+public:
+    CDB_ITDescriptor(const string& table_name, const string& column_name, 
+		     const string& search_conditions) : 
+	m_TableName(table_name), m_ColumnName(column_name), 
+	m_SearchConditions(search_conditions)
+    {
+    }
+
+    virtual int DescriptorType() const;
+    const string& TableName() const {
+	return m_TableName;
+    }
+    const string& ColumnName() const {
+	return m_ColumnName;
+    }
+    const string& SearchConditions() const {
+	return m_SearchConditions;
+    }
+    virtual ~CDB_ITDescriptor();
+protected:
+    string m_TableName;
+    string m_ColumnName;
+    string m_SearchConditions;
+};
 
 END_NCBI_SCOPE
 
@@ -413,6 +443,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/03/26 15:25:17  soussov
+ * new image/text operations added
+ *
  * Revision 1.4  2002/02/13 22:11:16  sapojnik
  * several methods changed from private to protected to allow derived classes (needed for rdblib)
  *

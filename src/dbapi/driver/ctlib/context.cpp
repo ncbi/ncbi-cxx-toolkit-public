@@ -276,6 +276,18 @@ unsigned int CTLibContext::NofConnections(const string& srv_name) const
     return n;
 }
 
+bool CTLibContext::IsAbleTo(ECapability cpb) const
+{
+    switch(cpb) {
+    case fBcp:
+    case fReturnITDescriptors:
+    case fReturnComputeResults:
+	return true;
+    default:
+	break;
+    }
+    return false;
+}
 
 CTLibContext::~CTLibContext()
 {
@@ -812,6 +824,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/03/26 15:34:38  soussov
+ * new image/text operations added
+ *
  * Revision 1.10  2002/01/17 22:07:10  soussov
  * changes driver registration
  *

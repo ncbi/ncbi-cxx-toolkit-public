@@ -881,6 +881,31 @@ EDB_ResType CTL_CursorResult::ResultType() const
 }
 
 
+bool CTL_CursorResult::SkipItem()
+{
+    if (m_CurrItem < (int) m_NofCols) {
+        ++m_CurrItem;
+	char dummy[4];
+	switch ( ct_get_data(m_Cmd, m_CurrItem, dummy, 0, 0) ) {
+	case CS_END_ITEM:
+	case CS_END_DATA:
+	case CS_SUCCEED:
+	    break;
+	case CS_CANCELED:
+	    throw CDB_ClientEx(eDB_Error, 130004,
+			       "CTL_CursorResult::SkipItem",
+			       "the command has been canceled");
+	default:
+	    throw CDB_ClientEx(eDB_Error, 130000,
+			       "CTL_CursorResult::SkipItem",
+			       "ct_get_data failed");
+	}
+        return true;
+    }
+
+    return false;
+}
+
 CTL_CursorResult::~CTL_CursorResult()
 {
     if (m_EOR) { // this is not a bug
@@ -904,6 +929,11 @@ CTL_ITDescriptor::CTL_ITDescriptor()
     return;
 }
 
+int CTL_ITDescriptor::DescriptorType() const
+{
+    return CTL_ITDESCRIPTOR_TYPE_MAGNUM;
+}
+
 
 CTL_ITDescriptor::~CTL_ITDescriptor()
 {
@@ -918,6 +948,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/03/26 15:34:38  soussov
+ * new image/text operations added
+ *
  * Revision 1.12  2002/02/06 22:24:43  soussov
  * fixes the arguments order in numeric assign
  *

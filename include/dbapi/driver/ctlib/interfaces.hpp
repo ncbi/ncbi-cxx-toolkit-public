@@ -101,6 +101,8 @@ public:
     virtual void CTLIB_SetLoginRetryCount(CS_INT n);
     virtual void CTLIB_SetLoginLoopDelay(CS_INT nof_sec);
 
+    virtual bool IsAbleTo(ECapability cpb) const;
+
     virtual CS_CONTEXT* CTLIB_GetContext() const;
 
     static bool CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg);
@@ -182,6 +184,7 @@ protected:
 
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
+    I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
 
     CS_CONNECTION*  m_Link;
     CTLibContext*   m_Context;
@@ -301,6 +304,10 @@ protected:
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
     virtual CDB_Result* Open();
     virtual bool Update(const string& table_name, const string& upd_query);
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+				 bool log_it = true);
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
+					 bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount() const;
     virtual bool Close();
@@ -310,7 +317,7 @@ protected:
 
 private:
     bool x_AssignParams(bool just_declare = false);
-
+    I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
     CTL_Connection* m_Connect;
     CS_COMMAND*     m_Cmd;
     string          m_Name;
@@ -400,6 +407,7 @@ class CTL_RowResult : public I_Result
 {
     friend class CTL_LangCmd;
     friend class CTL_RPCCmd;
+    friend class CTL_CursorCmd;
 protected:
     CTL_RowResult(CS_COMMAND* cmd);
 
@@ -473,6 +481,7 @@ class CTL_CursorResult :  public CTL_RowResult
 protected:
     CTL_CursorResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
     virtual EDB_ResType ResultType() const;
+    virtual bool        SkipItem();
     virtual ~CTL_CursorResult();
 };
 
@@ -483,12 +492,16 @@ protected:
 //  CTL_ITDescriptor::
 //
 
+#define CTL_ITDESCRIPTOR_TYPE_MAGNUM 0xc00
+
 class CTL_ITDescriptor : public I_ITDescriptor
 {
     friend class CTL_RowResult;
     friend class CTL_Connection;
+    friend class CTL_CursorCmd;
 
 public:
+    virtual int DescriptorType() const;
     virtual ~CTL_ITDescriptor();
 
 protected:
@@ -530,6 +543,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/03/26 15:26:02  soussov
+ * new image/text operations added
+ *
  * Revision 1.8  2001/11/06 17:58:56  lavr
  * Get rid of inline methods - all moved into source files
  *

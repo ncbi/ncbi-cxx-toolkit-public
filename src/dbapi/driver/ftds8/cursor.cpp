@@ -168,6 +168,50 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
     return true;
 }
 
+I_ITDescriptor* CTDS_CursorCmd::x_GetITDescriptor(unsigned int item_num)
+{
+    if(!m_IsOpen || (m_Res == 0)) {
+	return 0;
+    }
+    while(m_Res->CurrentItemNo() < item_num) {
+	if(!m_Res->SkipItem()) return 0;
+    }
+
+    I_ITDescriptor* desc= new CTDS_ITDescriptor(m_Cmd, item_num+1);
+    return desc;
+}
+
+bool CTDS_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+				    bool log_it)
+{
+    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
+
+    if(desc) {
+	while(m_LCmd->HasMoreResults()) {
+	    CDB_Result* r= m_LCmd->Result();
+	    if(r) delete r;
+	}
+
+	return m_Connect->x_SendData(*desc, data, log_it);
+    }
+    return false;
+}
+
+CDB_SendDataCmd* CTDS_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, 
+					    bool log_it)
+{
+    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
+
+    if(desc) {
+	while(m_LCmd->HasMoreResults()) {
+	    CDB_Result* r= m_LCmd->Result();
+	    if(r) delete r;
+	}
+
+	return m_Connect->SendDataCmd(*desc, size, log_it);
+    }
+    return 0;
+}					    
 
 bool CTDS_CursorCmd::Delete(const string& table_name)
 {
@@ -437,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/03/26 15:35:10  soussov
+ * new image/text operations added
+ *
  * Revision 1.4  2001/12/18 19:29:08  soussov
  * adds conversion from nanosecs to milisecs for datetime args
  *

@@ -1387,6 +1387,33 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
         m_TimeStamp_is_NULL = true;
 }
 
+CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, const CDB_ITDescriptor& inp_d)
+{
+    m_ObjName= inp_d.TableName();
+    m_ObjName+= ".";
+    m_ObjName+= inp_d.ColumnName();
+    
+
+    DBBINARY* p = dbtxptr(dblink, 1);
+    if (p) {
+        memcpy(m_TxtPtr, p, DBTXPLEN);
+        m_TxtPtr_is_NULL = false;
+    } else
+        m_TxtPtr_is_NULL = true;
+
+    p = dbtxtimestamp(dblink, 1);
+    if (p) {
+        memcpy(m_TimeStamp, p, DBTXTSLEN);
+        m_TimeStamp_is_NULL = false;
+    } else
+        m_TimeStamp_is_NULL = true;
+}
+
+
+int CDBL_ITDescriptor::DescriptorType() const
+{
+    return CDBL_ITDESCRIPTOR_TYPE_MAGNUM;
+}
 
 CDBL_ITDescriptor::~CDBL_ITDescriptor()
 {
@@ -1418,6 +1445,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/03/26 15:37:52  soussov
+ * new image/text operations added
+ *
  * Revision 1.11  2002/02/06 22:27:54  soussov
  * fixes the arguments order in numeric assign
  *

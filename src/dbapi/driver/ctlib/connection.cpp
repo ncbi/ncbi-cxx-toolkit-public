@@ -184,6 +184,16 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                            "wrong (zero) data size");
     }
 
+    I_ITDescriptor* p_desc= 0;
+
+    // check what type of descriptor we've got
+    if(descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+	// this is not a native descriptor
+	p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
+	if(p_desc == 0) return 0;
+    }
+
+    C_ITDescriptorGuard d_guard(p_desc);
     CS_COMMAND* cmd;
 
     switch ( ct_cmd_alloc(m_Link, &cmd) ) {
@@ -204,7 +214,8 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                            "ct_command failed");
     }
 
-    CTL_ITDescriptor& desc = dynamic_cast<CTL_ITDescriptor&> (descr_in);
+    CTL_ITDescriptor& desc = p_desc? dynamic_cast<CTL_ITDescriptor&>(*p_desc) :
+	dynamic_cast<CTL_ITDescriptor&> (descr_in);
     // desc.m_Desc.datatype   = CS_TEXT_TYPE;
     desc.m_Desc.total_txtlen  = (CS_INT)data_size;
     desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;
@@ -355,6 +366,17 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
     if ( !size )
         return false;
 
+    I_ITDescriptor* p_desc= 0;
+
+    // check what type of descriptor we've got
+    if(descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+	// this is not a native descriptor
+	p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
+	if(p_desc == 0) return false;
+    }
+    
+
+    C_ITDescriptorGuard d_guard(p_desc);
     CS_COMMAND* cmd;
 
     switch ( ct_cmd_alloc(m_Link, &cmd) ) {
@@ -375,7 +397,8 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
                            "ct_command failed");
     }
 
-    CTL_ITDescriptor& desc = dynamic_cast<CTL_ITDescriptor&> (descr_in);
+    CTL_ITDescriptor& desc = p_desc? dynamic_cast<CTL_ITDescriptor&> (*p_desc) : 
+	dynamic_cast<CTL_ITDescriptor&> (descr_in);
     // desc->m_Desc.datatype = CS_TEXT_TYPE;
     desc.m_Desc.total_txtlen  = size;
     desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;
@@ -465,6 +488,48 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
     }
 }
 
+I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor(CDB_ITDescriptor& descr_in)
+{
+    string q= "set rowcount 1\nupdate ";
+    q+= descr_in.TableName();
+    q+= " set ";
+    q+= descr_in.ColumnName();
+    q+= "=NULL where ";
+    q+= descr_in.SearchConditions();
+    q+= " \nselect ";
+    q+= descr_in.ColumnName();
+    q+= " from ";
+    q+= descr_in.TableName();
+    q+= " where ";
+    q+= descr_in.SearchConditions();
+    q+= " \nset rowcount 0";
+    
+    CDB_LangCmd* lcmd= LangCmd(q, 0);
+    if(!lcmd->Send()) {
+	throw CDB_ClientEx(eDB_Error, 110035, "CTL_Connection::SendData",
+			   "can not send the language command");
+    }
+
+    CDB_Result* res;
+    I_ITDescriptor* descr= 0;
+    bool i;
+
+    while(lcmd->HasMoreResults()) {
+	res= lcmd->Result();
+	if(res == 0) continue;
+	if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
+	    while(res->Fetch()) {
+		//res->ReadItem(&i, 0);
+		descr= res->GetImageOrTextDescriptor();
+		if(descr) break;
+	    }
+	}
+	delete res;
+    }
+    delete lcmd;
+		
+    return descr;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -594,6 +659,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/03/26 15:34:37  soussov
+ * new image/text operations added
+ *
  * Revision 1.7  2002/02/01 21:49:37  soussov
  * ct_cmd_drop for the CTL_Connection::SendData added
  *

@@ -298,6 +298,49 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
     }
 }
 
+I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
+{
+    if(!m_IsOpen || (m_Res == 0)) {
+	return 0;
+    }
+    while(m_Res->CurrentItemNo() < item_num) {
+	if(!m_Res->SkipItem()) return 0;
+    }
+
+    I_ITDescriptor* desc= 0;
+    if(m_Res->CurrentItemNo() == item_num) {
+	desc= m_Res->GetImageOrTextDescriptor();
+    }
+    else {
+	CTL_ITDescriptor* dsc = new CTL_ITDescriptor;
+
+	if (ct_data_info(m_Cmd, CS_GET, item_num+1, &dsc->m_Desc)
+	    != CS_SUCCEED) {
+	    delete dsc;
+	    throw CDB_ClientEx(eDB_Error, 130010,
+			       "CTL_CursorCmd::UpdateTextImage",
+			       "ct_data_info failed");
+	}
+	desc= dsc;
+    }
+    return desc;
+}
+
+bool CTL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+				    bool log_it)
+{
+    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
+
+    return (desc) ? m_Connect->x_SendData(*desc, data, log_it) : false;
+}
+
+CDB_SendDataCmd* CTL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, 
+					    bool log_it)
+{
+    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
+
+    return (desc) ? m_Connect->SendDataCmd(*desc, size, log_it) : 0;
+}					    
 
 bool CTL_CursorCmd::Delete(const string& table_name)
 {
@@ -599,6 +642,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/03/26 15:34:38  soussov
+ * new image/text operations added
+ *
  * Revision 1.3  2001/11/06 17:59:55  lavr
  * Formatted uniformly as the rest of the library
  *

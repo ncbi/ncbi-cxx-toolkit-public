@@ -156,6 +156,8 @@ public:
     virtual unsigned int NofConnections(const string& srv_name = kEmptyStr)
         const;
 
+    virtual bool IsAbleTo(ECapability cpb) const;
+
     virtual ~CTDSContext();
 
 
@@ -262,6 +264,7 @@ protected:
 
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
+    I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
 
     void TDS_SetTimeout(void) {
 	m_Link->tds_socket->timeout= (TDS_INT)(m_Context->TDS_GetTimeout());
@@ -388,6 +391,10 @@ protected:
     virtual bool BindParam(const string& param_name, CDB_Object* pVal);
     virtual CDB_Result* Open();
     virtual bool Update(const string& table_name, const string& upd_query);
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+				 bool log_it = true);
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
+					 bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount() const;
     virtual bool Close();
@@ -397,6 +404,7 @@ protected:
 
 private:
     bool x_AssignParams();
+    I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
 
     CTDS_Connection* m_Connect;
     DBPROCESS*       m_Cmd;
@@ -674,18 +682,22 @@ protected:
 //
 //  CTDS_ITDescriptor::
 //
+#define CTDS_ITDESCRIPTOR_TYPE_MAGNUM 0xf00
 
 class CTDS_ITDescriptor : public I_ITDescriptor
 {
     friend class CTDS_RowResult;
     friend class CTDS_BlobResult;
     friend class CTDS_Connection;
+    friend class CTDS_CursorCmd;
 public:
+    virtual int DescriptorType() const;
     virtual ~CTDS_ITDescriptor();
 private:
     // bool x_MakeObjName(DBCOLINFO* col_info);
 protected:
     CTDS_ITDescriptor(DBPROCESS* m_link, int col_num);
+    CTDS_ITDescriptor(DBPROCESS* m_link, const CDB_ITDescriptor& inp_d);
 
     // data
     string   m_ObjName;
@@ -706,6 +718,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/03/26 15:29:30  soussov
+ * new image/text operations added
+ *
  * Revision 1.4  2002/01/28 19:57:13  soussov
  * removing the long query timout
  *

@@ -73,9 +73,22 @@ class CDB_SendDataCmd;
 class I_ITDescriptor
 {
 public:
+    virtual int DescriptorType() const= 0;
     virtual ~I_ITDescriptor();
 };
 
+
+class C_ITDescriptorGuard {
+public:
+    C_ITDescriptorGuard(I_ITDescriptor* d) {
+	m_D= d;
+    }
+    ~C_ITDescriptorGuard() {
+	if(m_D) delete m_D;
+    }
+private:
+    I_ITDescriptor* m_D;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -258,6 +271,11 @@ protected:
     // NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query) = 0;
 
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+				 bool log_it = true) = 0;
+
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
+					 bool log_it = true) = 0;
     // Delete the last fetched row.
     // NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
     virtual bool Delete(const string& table_name) = 0;
@@ -373,6 +391,12 @@ public:
     };
     typedef int TConnectionMode;
 
+    enum ECapability {
+	fBcp,
+	fReturnITDescriptors,
+	fReturnComputeResults
+    };
+
     // Set login and connection timeouts.
     // NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
     //        DB API), then set the timeout to infinite.
@@ -412,6 +436,8 @@ public:
 
     // Remove `per-connection' mess. handler "h" and all above it in the stack.
     virtual void PopDefConnMsgHandler(CDB_UserHandler* h);
+
+    virtual bool IsAbleTo(ECapability cpb) const= 0;
 
     virtual ~I_DriverContext();
 
@@ -542,6 +568,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/03/26 15:25:16  soussov
+ * new image/text operations added
+ *
  * Revision 1.12  2002/01/20 07:21:00  vakatov
  * I_DriverMgr:: -- added virtual destructor
  *
