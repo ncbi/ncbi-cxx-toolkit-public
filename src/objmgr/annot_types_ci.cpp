@@ -919,6 +919,9 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
             if ( cvt ) {
                 cvt->Convert(m_AnnotSet.back(), m_FeatProduct);
             }
+            // Limit number of annotations to m_MaxSize
+            if ( m_MaxSize  &&  m_AnnotSet.size() >= m_MaxSize )
+                return;
         }
     }
 }
@@ -1032,6 +1035,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/06/25 20:56:30  grichenk
+* Added max number of annotations to annot-selector, updated demo.
+*
 * Revision 1.72  2003/06/24 14:25:18  vasilche
 * Removed obsolete CTSE_Guard class.
 * Used separate mutexes for bioseq and annot maps.

@@ -153,7 +153,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
           m_SortOrder(eSortOrder_Normal),
           m_CombineMethod(eCombine_None),
           m_LimitObjectType(eLimit_None),
-          m_IdResolving(eIgnoreUnresolved)
+          m_IdResolving(eIgnoreUnresolved),
+          m_MaxSize(0)
     {
     }
 
@@ -168,7 +169,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
           m_SortOrder(eSortOrder_Normal),
           m_CombineMethod(eCombine_None),
           m_LimitObjectType(eLimit_None),
-          m_IdResolving(eIgnoreUnresolved)
+          m_IdResolving(eIgnoreUnresolved),
+          m_MaxSize(0)
     {
     }
     
@@ -247,6 +249,11 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             m_ResolveDepth = depth;
             return *this;
         }
+    SAnnotSelector& SetMaxSize(int max_size)
+        {
+            m_MaxSize = max_size;
+            return *this;
+        }
 
     SAnnotSelector& SetSegmentSelect(ESegmentSelect ss)
         {
@@ -298,6 +305,7 @@ protected:
     ELimitObject          m_LimitObjectType;
     EIdResolving          m_IdResolving;
     CConstRef<CObject>    m_LimitObject;
+    int                   m_MaxSize;
 };
 
 
@@ -307,6 +315,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/06/25 20:56:29  grichenk
+* Added max number of annotations to annot-selector, updated demo.
+*
 * Revision 1.11  2003/06/17 20:34:02  grichenk
 * Added flag to ignore sorting
 *

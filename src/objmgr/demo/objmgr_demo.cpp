@@ -116,7 +116,11 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
     arg_desc->AddFlag("reverse", "reverse order of features");
+    arg_desc->AddFlag("no_sort", "do not sort features");
     arg_desc->AddFlag("split", "split record");
+    arg_desc->AddDefaultKey("max_feat", "MaxFeat",
+                            "Max number of features to iterate",
+                            CArgDescriptions::eInteger, "0");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -612,8 +616,11 @@ int CDemoApp::Run(void)
     bool print_features = args["print_features"];
     bool split = args["split"];
     SAnnotSelector::ESortOrder order =
-        args["reverse"]?
-        SAnnotSelector::eSortOrder_Reverse: SAnnotSelector::eSortOrder_Normal;
+        args["reverse"] ?
+        SAnnotSelector::eSortOrder_Reverse : SAnnotSelector::eSortOrder_Normal;
+    if ( args["no_sort"] )
+        order = SAnnotSelector::eSortOrder_None;
+    int max_feat = args["max_feat"].AsInteger();
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
@@ -717,22 +724,26 @@ int CDemoApp::Run(void)
         count = 0;
         // Create CFeat_CI using the current scope and location.
         // No feature type restrictions.
-        for (CFeat_CI feat_it(scope, loc,
-                              SAnnotSelector()
-                              .SetResolveMethod(resolve)
-                              .SetSortOrder(order));
-             feat_it;  ++feat_it) {
-            count++;
-            // Get seq-annot containing the feature
-            if ( print_features ) {
-                auto_ptr<CObjectOStream>
-                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
-                *out << feat_it->GetMappedFeature();
-                *out << feat_it->GetLocation();
+        {{
+            CFeat_CI feat_it(scope, loc,
+                             SAnnotSelector()
+                             .SetResolveMethod(resolve)
+                             .SetSortOrder(order)
+                             .SetMaxSize(max_feat));
+            for ( ; feat_it;  ++feat_it) {
+                count++;
+                // Get seq-annot containing the feature
+                if ( print_features ) {
+                    auto_ptr<CObjectOStream>
+                        out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                    *out << feat_it->GetMappedFeature();
+                    *out << feat_it->GetLocation();
+                }
+                CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
             }
-            CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
-        }
-        NcbiCout << "Feat count (whole, any):       " << count << NcbiEndl;
+            NcbiCout << "Feat count (whole, any):       " << count << NcbiEndl;
+            _ASSERT(count == feat_it.GetSize());
+        }}
 
         if ( only_features )
             continue;
@@ -860,6 +871,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/06/25 20:56:32  grichenk
+* Added max number of annotations to annot-selector, updated demo.
+*
 * Revision 1.27  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

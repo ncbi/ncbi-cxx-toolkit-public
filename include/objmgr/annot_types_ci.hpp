@@ -148,6 +148,9 @@ public:
 
     const CSeq_annot& GetSeq_annot(void) const;
 
+    // Get number of annotations
+    size_t GetSize(void) const;
+
 protected:
     // Check if a datasource and an annotation are selected.
     bool IsValid(void) const;
@@ -323,6 +326,12 @@ const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
     return Get().Get().GetSeq_annot();
 }
 
+inline
+size_t CAnnotTypes_CI::GetSize(void) const
+{
+    return m_AnnotSet.size();
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -330,6 +339,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/06/25 20:56:29  grichenk
+* Added max number of annotations to annot-selector, updated demo.
+*
 * Revision 1.40  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr
