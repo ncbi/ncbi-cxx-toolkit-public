@@ -45,15 +45,20 @@
 
 BEGIN_NCBI_SCOPE
 
+// define cut-off strategy at the terminii
+static const size_t kMinTermExonSize = 45; // strategy applies below this limit
+static const double kMinTermExonIdty = 0.95; 
+static const size_t kIntronPerTermExon = 600;
+
 
 CSplign::CSplign( void )
 {
     m_min_query_coverage = 0.25;
-    m_compartment_penalty = 0.65;
+    m_compartment_penalty = 0.75;
     m_minidty = 0.75;
     m_endgaps = true;
     m_strand = true;
-    m_max_genomic_ext = 100000;
+    m_max_genomic_ext = 75000;
     m_nopolya = false;
     m_model_id = 0;
 }
@@ -261,8 +266,8 @@ void CSplign::x_SetPattern(THits* hits)
             if(max_seg_size) {
 
                 const size_t hitlen_q = pattern[i + 1] - pattern[i] + 1;
-                const size_t hlq3 = hitlen_q/3;
-                const size_t sh = hlq3;
+                const size_t hlq4 = hitlen_q/4;
+                const size_t sh = hlq4;
                 
                 size_t delta = sh > L1? sh - L1: 0;
                 size_t q0 = pattern[i] + L1 + delta;
@@ -285,7 +290,7 @@ void CSplign::x_SetPattern(THits* hits)
                 
                 const size_t pattern_dim = m_pattern.size();
                 if(map_elem.m_pattern_start == -1) {
-                    map_elem.m_pattern_start = pattern_dim - 4;;
+                    map_elem.m_pattern_start = pattern_dim - 4;
                 }
                 map_elem.m_pattern_end = pattern_dim - 1;
             }
@@ -300,6 +305,9 @@ void CSplign::x_SetPattern(THits* hits)
     }
 }
 
+
+// PRE:  Input Blast hits.
+// POST: TResults - a vector of aligned compartments.
 
 void CSplign::Run( THits* phits )
 {
@@ -337,6 +345,12 @@ void CSplign::Run( THits* phits )
     // pre-load the spliced sequence and calculate min coverage
     m_mrna.clear();
     m_sa->Load(query, &m_mrna, 0, kMax_UInt);
+
+    if(!m_strand) { // make reverse complimentary
+        reverse (m_mrna.begin(), m_mrna.end());
+        transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
+    }
+
     const size_t mrna_size = m_mrna.size();
     const size_t min_coverage = size_t(m_min_query_coverage * mrna_size);
     const size_t comp_penalty_bps = size_t(m_compartment_penalty * mrna_size);
@@ -344,14 +358,14 @@ void CSplign::Run( THits* phits )
     // iterate through compartments
     CCompartmentAccessor comps (hits.begin(), hits.end(),
                                 comp_penalty_bps, min_coverage);
-    THits comp_hits;
+
+//#define ISOLATED_COMPARTMENTS
+#ifdef  ISOLATED_COMPARTMENTS
 
     size_t smin = 0, smax = kMax_UInt;
     bool same_strand = false;
 
     for(size_t i = 0, dim = comps.GetCount(); i < dim; ++i) {
-
-      comps.Get(i, comp_hits);
       
       // limit the space beyond the compartment
       // to avoid shared exons
@@ -401,6 +415,8 @@ void CSplign::Run( THits* phits )
       }
      
       try {
+        THits comp_hits;
+        comps.Get(i, comp_hits);
         SAlignedCompartment ac = x_RunOnCompartment(&comp_hits, smin, smax);
         ac.m_id = ++m_model_id;
         ac.m_segments = m_segments;
@@ -414,246 +430,428 @@ void CSplign::Run( THits* phits )
 
       smin = same_strand? (smax + 1): 0;
     }
+
+
+    // convert the coordinates back to the originals
+    NON_CONST_ITERATE(TResults, ii, m_result) {
+        
+        if(!ii->m_error) {
+            
+            NON_CONST_ITERATE(TSegments, jj, ii->m_segments) {
+                
+                if(ii->m_QueryStrand) {
+                    jj->m_box[0] += ii->m_qmin;
+                    jj->m_box[1] += ii->m_qmin;
+                }
+                else {
+                    jj->m_box[0] = ii->m_mrnasize - jj->m_box[0] - 1;
+                    jj->m_box[1] = ii->m_mrnasize - jj->m_box[1] - 1;
+                }
+
+                if(jj->m_exon) {
+                    if(ii->m_SubjStrand) {
+                        jj->m_box[2] += ii->m_smin;
+                        jj->m_box[3] += ii->m_smin;
+                    }
+                    else {
+                        jj->m_box[2] = ii->m_smax - jj->m_box[2];
+                        jj->m_box[3] = ii->m_smax - jj->m_box[3];
+                    }
+                }
+            }
+        }
+    }
+
+#else // compartments share the space between them
+
+    size_t smin = 0, smax = kMax_UInt;
+    bool same_strand = false;
+
+    const size_t* box = comps.GetBox(0);
+    for(size_t i = 0, dim = comps.GetCount(); i < dim; ++i, box += 4) {
+        
+        if(i+1 == dim) {
+            smax = kMax_UInt;
+            same_strand = false;
+        }
+        else {            
+            bool strand_this = comps.GetStrand(i);
+            bool strand_next = comps.GetStrand(i+1);
+            same_strand = strand_this == strand_next;
+            smax = same_strand? (box+4)[2] - 1: kMax_UInt;
+        }
+     
+        try {
+            THits comp_hits;
+            comps.Get(i, comp_hits);
+            SAlignedCompartment ac = x_RunOnCompartment(&comp_hits, smin,smax);
+            ac.m_id = ++m_model_id;
+            ac.m_segments = m_segments;
+            ac.m_error = false;
+            ac.m_msg = "Ok";
+            m_result.push_back(ac);
+        }
+        catch(CException& e) {
+            m_result.push_back(SAlignedCompartment(0,true,e.GetMsg().c_str()));
+        }
+        smin = same_strand? box[3] + 1: 0;
+    }
+
+    // convert the coordinates back to the originals
+    NON_CONST_ITERATE(TResults, ii, m_result) {
+
+        if(!ii->m_error) {
+
+            NON_CONST_ITERATE(TSegments, jj, ii->m_segments) {
+      
+                if(ii->m_QueryStrand) {
+                    jj->m_box[0] += ii->m_qmin;
+                    jj->m_box[1] += ii->m_qmin;
+                }
+                else {
+                    jj->m_box[0] = ii->m_mrnasize - jj->m_box[0] - 1;
+                    jj->m_box[1] = ii->m_mrnasize - jj->m_box[1] - 1;
+                }
+
+                if(jj->m_exon) {
+                    if(ii->m_SubjStrand) {
+                        jj->m_box[2] += ii->m_smin;
+                        jj->m_box[3] += ii->m_smin;
+                    }
+                    else {
+                        jj->m_box[2] = ii->m_smax - jj->m_box[2];
+                        jj->m_box[3] = ii->m_smax - jj->m_box[3];
+                    }
+                }
+            }
+        }
+    }
+
+/*  Not yet implemented - resolve possible conflict: 
+    compartments can overlap over the shared space - leave the best one.
+
+    // resolve possible conflicts
+    vector<SAlignedCompartment*> vdel;
+    SAlignedCompartment* prev = 0;
+    NON_CONST_ITERATE(TResults, ii, m_result) {
+
+        SAlignedCompartment& ac = *ii;
+        if(ac.m_error) {
+            continue;
+        }
+
+        if(prev != 0 && prev->m_SubjStrand == ac.m_SubjStrand) {
+
+            // find the rightmost exon from 'prev'
+            const SSegment* sleft = 0;
+            for(int i = prev->m_segments.size() - 1; i >= 0; --i) {
+                if(prev->m_segments[i].m_exon) {
+                    sleft = &(prev->m_segments[i]);
+                    break;
+                }
+            }
+
+            // find the leftmost exon from ac
+            const SSegment* sright = 0;
+            for(int i = 0, dim = ac.m_segments.size(); i < dim; ++i) {
+                if(ac.m_segments[i].m_exon) {
+                    sright = &(ac.m_segments[i]);
+                    break;
+                }
+            }
+
+            if(sleft && sright) {
+
+                // test overlap
+
+                size_t right_prev, left_this;
+                if(ac.m_SubjStrand) {
+                    right_prev = prev->m_smin + sleft->m_box[3];
+                    left_this =  ac.m_smin + sright->m_box[2];
+                }
+                else {
+                    cerr << "Strand should be tested before sleft and sright"
+                         << endl;
+                }
+
+                if(right_prev >= left_this) {
+
+                    // favor the best of the two
+                    const double idty_prev = prev->GetIdentity();
+                    const double idty_this = ac.GetIdentity();
+                    vdel.push_back(idty_prev < idty_this? prev: &ac);
+                }
+            }
+        }
+
+        prev = &ac;
+    }
+
+    const size_t vdel_dim = vdel.size();
+    if(vdel_dim) {
+        size_t k = 0, dim = m_result.size();
+        for(size_t i = 0, j = 0; i < dim && j < dim; ++i, ++j) {
+
+            SAlignedCompartment* p = &(m_result[i]);
+            if(p == vdel[k]) {
+                ++j;
+                ++k;
+            }
+            else {
+                if(i < j) {
+                    m_result[i] = m_result[j];
+                }
+            }
+        }
+        m_result.resize(dim - vdel_dim);
+    }
+*/
+
+#endif
+
 }
 
 
 // naive polya detection
 size_t CSplign::x_TestPolyA(void)
 {
-  const size_t dim = m_mrna.size();
-  int i = dim - 1;
-  for(; i >= 0; --i) {
-    if(m_mrna[i] != 'A') break;
-  }
-  const size_t len = dim - i - 1;;
-  return len > 3 ? i + 1 : kMax_UInt;
+    const size_t dim = m_mrna.size();
+    int i = dim - 1;
+    for(; i >= 0; --i) {
+        if(m_mrna[i] != 'A') break;
+    }
+    const size_t len = dim - i - 1;;
+    return len > 3 ? i + 1 : kMax_UInt;
 }
 
 
-CSplign::SAlignedCompartment CSplign::x_RunOnCompartment( THits* hits,
-                                                          size_t range_left,
-                                                          size_t range_right )
-{
+// PRE:  Hits (initial, not transformed) reporesenting the compartment; 
+//       maximum genomic sequence span;
+//       pre-loaded and appropriately transformed query sequence.
+// POST: A set of segments packed into the aligned compartment.
 
-  SAlignedCompartment rv;
-  m_segments.clear();
-
-  if(range_left > range_right) {
-    NCBI_THROW( CAlgoAlignException, eInternal, "Invalid range data");
-  }
-
-  XFilter(hits);
-
-  if(hits->size() == 0) {
-    NCBI_THROW( CAlgoAlignException, eNoData,
-		"No hits left after filtering");
-  }
-
-  const string query ( hits->front().m_Query );
-  const string subj  ( hits->front().m_Subj );
-
-  const size_t mrna_size = m_mrna.size();  
-
-  if( !m_strand ) {
-
-    // make reverse complimentary
-    reverse (m_mrna.begin(), m_mrna.end());
-    transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(),
-	      SCompliment());
-
-    // adjust the hits
-    for(size_t i = 0, n = hits->size(); i < n; ++i) {
-      CHit& h = (*hits)[i];
-      bool plus = h.IsStraight();
-      size_t a0 = mrna_size - h.m_ai[0] + 1;
-      size_t a1 = mrna_size - h.m_ai[1] + 1;
-      h.m_an[0] = h.m_ai[0] = a1;
-      h.m_an[1] = h.m_ai[1] = a0;
-      // change strand
-      if(plus) {
-	h.m_an[2] = h.m_ai[3];
-	h.m_an[3] = h.m_ai[2];
-      }
-      else {
-	h.m_an[2] = h.m_ai[2];
-	h.m_an[3] = h.m_ai[3];
-      }
+CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
+    THits* hits, size_t range_left, size_t range_right )
+{    
+    SAlignedCompartment rv;
+    m_segments.clear();
+    
+    if(range_left > range_right) {
+        NCBI_THROW( CAlgoAlignException, eInternal, "Invalid range data");
     }
-  }
-
-  m_polya_start = m_nopolya? kMax_UInt: x_TestPolyA();
-
-  if(m_polya_start < kMax_UInt) {
-    CleaveOffByTail(hits, m_polya_start + 1); // cleave off hits beyond cds
+    
+    XFilter(hits);
+    
     if(hits->size() == 0) {
-      NCBI_THROW( CAlgoAlignException,
-                  eNoData,
-                  "No hits found beyond Poly(A), if any");
+        NCBI_THROW( CAlgoAlignException, eNoData,
+                    "No hits left after filtering");
     }
-  }
-
-  // find regions of interest on mRna (query)
-  // and contig (subj)
-  size_t qmin, qmax, smin, smax;
-  GetHitsMinMax(*hits, &qmin, &qmax, &smin, &smax);
-  --qmin; --qmax; --smin; --smax;
-
-  qmin = 0;
-  qmax = m_polya_start < kMax_UInt? m_polya_start - 1: mrna_size - 1;
-  smin = max(0, int(smin - m_max_genomic_ext));
-  smax += m_max_genomic_ext;
- 
-  if(smin < range_left) {
-    smin = range_left;
-  }
-  if(smax > range_right) {
-    smax = range_right;
-  }
-  
-  bool ctg_strand = (*hits)[0].IsStraight();
-
-  m_genomic.clear();
-  m_sa->Load(subj, &m_genomic, smin, smax);
-
-  const size_t ctg_end = smin + m_genomic.size();
-  if(ctg_end - 1 < smax) { // perhabs adjust smax
-    smax = ctg_end - 1;
-  }
-
-  if(!ctg_strand) {
-    // make reverse complementary
-    // for the contig's area of interest
-    reverse (m_genomic.begin(), m_genomic.end());
-    transform(m_genomic.begin(), m_genomic.end(), m_genomic.begin(),
-	      SCompliment());
-    // flip the hits
+    
+    const string query ( hits->front().m_Query );
+    const string subj  ( hits->front().m_Subj );
+    
+    const size_t mrna_size = m_mrna.size();  
+    
+    if( !m_strand ) {
+        
+        // adjust the hits
+        for(size_t i = 0, n = hits->size(); i < n; ++i) {
+            CHit& h = (*hits)[i];
+            size_t a0 = mrna_size - h.m_ai[0] + 1;
+            size_t a1 = mrna_size - h.m_ai[1] + 1;
+            h.m_an[0] = h.m_ai[0] = a1;
+            h.m_an[1] = h.m_ai[1] = a0;
+            swap(h.m_an[2], h.m_an[3]);
+        }
+    }
+    
+    m_polya_start = m_nopolya? kMax_UInt: x_TestPolyA();
+    
+    if(m_polya_start < kMax_UInt) {
+        CleaveOffByTail(hits, m_polya_start + 1); // cleave off hits beyond cds
+        if(hits->size() == 0) {
+            NCBI_THROW( CAlgoAlignException,
+                        eNoData,
+                        "No hits found beyond Poly(A), if any");
+        }
+    }
+    
+    // find regions of interest on mRna (query)
+    // and contig (subj)
+    size_t qmin, qmax, smin, smax;
+    GetHitsMinMax(*hits, &qmin, &qmax, &smin, &smax);
+    --qmin; --qmax; --smin; --smax;
+    
+    // select terminal genomic extents based on uncovered end sizes
+    {{
+        size_t extent = (qmin >= kMinTermExonSize)? m_max_genomic_ext:
+            (kIntronPerTermExon + 1)* qmin;
+        smin = max(0, int(smin - extent));
+    }}
+    {{
+        size_t qspace = m_mrna.size() - qmax + 1;
+        size_t extent = (qspace >= kMinTermExonSize)? m_max_genomic_ext:
+            (kIntronPerTermExon + 1)* qspace;
+        smax += extent;
+    }}
+    
+    // regardless of hits, all cDNA is aligned (without the tail, if any)
+    qmin = 0;
+    qmax = m_polya_start < kMax_UInt? m_polya_start - 1: mrna_size - 1;
+    
+    if(smin < range_left) {
+        smin = range_left;
+    }
+    if(smax > range_right) {
+        smax = range_right;
+    }
+    
+    bool ctg_strand = (*hits)[0].IsStraight();
+    
+    m_genomic.clear();
+    m_sa->Load(subj, &m_genomic, smin, smax);
+    
+    const size_t ctg_end = smin + m_genomic.size();
+    if(ctg_end - 1 < smax) { // perhabs adjust smax
+        smax = ctg_end - 1;
+    }
+    
+    if(!ctg_strand) {
+        // make reverse complementary
+        // for the contig's area of interest
+        reverse (m_genomic.begin(), m_genomic.end());
+        transform(m_genomic.begin(), m_genomic.end(), m_genomic.begin(),
+                  SCompliment());
+        // flip the hits
+        for(size_t i = 0, n = hits->size(); i < n; ++i) {
+            CHit& h = (*hits)[i];
+            size_t a2 = smax - (h.m_ai[3] - smin) + 2;
+            size_t a3 = smax - (h.m_ai[2] - smin) + 2;
+            h.m_an[2] = h.m_ai[2] = a2;
+            h.m_an[3] = h.m_ai[3] = a3;
+        }
+    }
+    
+    rv.m_QueryStrand = m_strand;
+    rv.m_SubjStrand  = ctg_strand;
+    rv.m_qmin = qmin;
+    rv.m_smin = smin;
+    rv.m_smax = smax;
+    rv.m_mrnasize = mrna_size;
+    
+    // shift hits so that they originate from qmin, smin;
+    // also make them zero-based
     for(size_t i = 0, n = hits->size(); i < n; ++i) {
-      CHit& h = (*hits)[i];
-      size_t a2 = smax - (h.m_ai[3] - smin) + 2;
-      size_t a3 = smax - (h.m_ai[2] - smin) + 2;
-      h.m_an[2] = h.m_ai[2] = a2;
-      h.m_an[3] = h.m_ai[3] = a3;
+        CHit& h = (*hits)[i];
+        h.m_an[0] = h.m_ai[0] -= qmin + 1;
+        h.m_an[1] = h.m_ai[1] -= qmin + 1;
+        h.m_an[2] = h.m_ai[2] -= smin + 1;
+        h.m_an[3] = h.m_ai[3] -= smin + 1;
+    }  
+    
+    x_SetPattern( hits );
+    x_Run(&m_mrna.front(), &m_genomic.front());
+    
+    const size_t seg_dim = m_segments.size();
+    if(seg_dim == 0) {
+        NCBI_THROW( CAlgoAlignException, eNoData, "No alignment found.");
     }
-  }
-
-  rv.m_QueryStrand = m_strand;
-  rv.m_SubjStrand  = ctg_strand;
-  rv.m_qmin = qmin;
-  rv.m_smin = smin;
-  rv.m_smax = smax;
-  rv.m_mrnasize = mrna_size;
-
-  // shift hits so that they originate from qmin, smin;
-  // also make them zero-based
-  for(size_t i = 0, n = hits->size(); i < n; ++i) {
-    CHit& h = (*hits)[i];
-    h.m_an[0] = h.m_ai[0] -= qmin + 1;
-    h.m_an[1] = h.m_ai[1] -= qmin + 1;
-    h.m_an[2] = h.m_ai[2] -= smin + 1;
-    h.m_an[3] = h.m_ai[3] -= smin + 1;
-  }  
-
-
-  x_SetPattern( hits );
-  x_Run(&m_mrna.front(), &m_genomic.front());
- 
-  const size_t seg_dim = m_segments.size();
-  if(seg_dim == 0) {
-    NCBI_THROW( CAlgoAlignException, eNoData, "No alignment found.");
-  }
-
-  // try to extend the last segment into the PolyA area  
-  if(m_polya_start < kMax_UInt && seg_dim && m_segments[seg_dim-1].m_exon) {
-    CSplign::SSegment& s = const_cast<CSplign::SSegment&>(
-				       m_segments[seg_dim-1]);
-    const char* p0 = &m_mrna.front() + s.m_box[1] + 1;
-    const char* q = &m_genomic.front() + s.m_box[3] + 1;
-    const char* p = p0;
-    const char* pe = &m_mrna.front() + mrna_size;
-    const char* qe = &m_genomic.front() + m_genomic.size();
-    for(; p < pe && q < qe; ++p, ++q) {
-      if(*p != 'A') break;
-      if(*p != *q) break;
+    
+    // try to extend the last segment into the PolyA area  
+    if(m_polya_start < kMax_UInt && seg_dim && m_segments[seg_dim-1].m_exon) {
+        CSplign::SSegment& s = const_cast<CSplign::SSegment&>(
+                                   m_segments[seg_dim-1]);
+        const char* p0 = &m_mrna.front() + s.m_box[1] + 1;
+        const char* q = &m_genomic.front() + s.m_box[3] + 1;
+        const char* p = p0;
+        const char* pe = &m_mrna.front() + mrna_size;
+        const char* qe = &m_genomic.front() + m_genomic.size();
+        for(; p < pe && q < qe; ++p, ++q) {
+            if(*p != 'A') break;
+            if(*p != *q) break;
+        }
+        
+        const size_t sh = p - p0;
+        if(sh) {
+            // resize
+            s.m_box[1] += sh;
+            s.m_box[3] += sh;
+            s.m_details.append(sh, 'M');
+            s.RestoreIdentity();
+            
+            // correct annotation
+            const size_t ann_dim = s.m_annot.size();
+            if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
+                ++q;
+                s.m_annot[ann_dim - 2] = q < qe? *q: ' ';
+                ++q;
+                s.m_annot[ann_dim - 1] = q < qe? *q: ' ';
+            }
+            
+            m_polya_start += sh;
+        }
     }
-
-    const size_t sh = p - p0;
-    if(sh) {
-      // resize
-      s.m_box[1] += sh;
-      s.m_box[3] += sh;
-      s.m_details.append(sh, 'M');
-      s.RestoreIdentity();
-
-      // correct annotation
-      const size_t ann_dim = s.m_annot.size();
-      if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
-          ++q;
-          s.m_annot[ann_dim - 2] = q < qe? *q: ' ';
-          ++q;
-          s.m_annot[ann_dim - 1] = q < qe? *q: ' ';
-      }
-
-      m_polya_start += sh;
+    
+    int j = seg_dim - 1;
+    
+    // look for PolyA in trailing segments:
+    // if a segment is mostly 'A's then we add it to PolyA
+    for(; j >= 0; --j) {
+        
+        const CSplign::SSegment& s = m_segments[j];
+        const char* p0 = &m_mrna[qmin] + s.m_box[0];
+        const char* p1 = &m_mrna[qmin] + s.m_box[1] + 1;
+        size_t count = 0;
+        for(const char* pc = p0; pc != p1; ++pc) {
+            if(*pc == 'A') ++count;
+        }
+        const size_t len = p1 - p0;
+        
+        double min_a_content = 0.799;
+        // also check splices
+        if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
+            if(!IsConsensus(m_segments[j-1].GetDonor(), s.GetAcceptor())) {
+                min_a_content = 0.599;
+            }
+        }
+        if(!s.m_exon) {
+            min_a_content = 0.599;
+        }
+        
+        if(double(count)/len < min_a_content) {
+            break;
+        }
     }
-  }
-
-  int j = seg_dim - 1;
-
-  // look for PolyA in trailing segments:
-  // if a segment is mostly 'A's then we add it to PolyA
-  for(; j >= 0; --j) {
-
-    const CSplign::SSegment& s = m_segments[j];
-    const char* p0 = &m_mrna[qmin] + s.m_box[0];
-    const char* p1 = &m_mrna[qmin] + s.m_box[1] + 1;
-    size_t count = 0;
-    for(const char* pc = p0; pc != p1; ++pc) {
-      if(*pc == 'A') ++count;
+    
+    if(j >= 0 && j < int(seg_dim - 1)) {
+        m_polya_start = m_segments[j].m_box[1] + 1;
     }
-    const size_t len = p1 - p0;
-
-    double min_a_content = 0.799;
-    // also check splices
-    if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
-      if(!IsConsensus(m_segments[j-1].GetDonor(), s.GetAcceptor())) {
-        min_a_content = 0.599;
-      }
+    
+    // test if we have at least one exon
+    bool some_exons = false;
+    for(int i = 0; i <= j; ++i ) {
+        if(m_segments[i].m_exon) {
+            some_exons = true;
+            break;
+        }
     }
-    if(!s.m_exon) {
-        min_a_content = 0.599;
+    if(!some_exons) {
+        NCBI_THROW( CAlgoAlignException, eNoData,
+                    "No exons found above identity limit.");
     }
-
-    if(double(count)/len < min_a_content) {
-        break;
-    }
-  }
-
-  if(j >= 0 && j < int(seg_dim - 1)) {
-    m_polya_start = m_segments[j].m_box[1] + 1;
-  }
-
-  // test if we have at least one exon
-  bool some_exons = false;
-  for(int i = 0; i <= j; ++i ) {
-    if(m_segments[i].m_exon) {
-      some_exons = true;
-      break;
-    }
-  }
-  if(!some_exons) {
-    NCBI_THROW( CAlgoAlignException, eNoData,
-                "No exons found above identity limit.");
-  }
-
-  m_segments.resize(j + 1);
-
-  return rv;
+    
+    m_segments.resize(j + 1);
+    
+    return rv;
 }
 
 
+// at this level and below, plus strand is assumed
+// for both sequences
 void CSplign::x_Run(const char* Seq1, const char* Seq2)
 {
     deque<SSegment> segments;
+    static const char kGap [] = "<GAP>";
 
     for(size_t i = 0, map_dim = m_alnmap.size(); i < map_dim; ++i) {
 
@@ -743,8 +941,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                 g.m_box[3] = m_alnmap[i+1].m_box[2] - 1;
                 g.m_idty = 0;
                 g.m_len = g.m_box[1] - g.m_box[0] + 1;
-                g.m_annot = "<GAP>";
-                g.m_details.append(Seq1+g.m_box[0], g.m_box[1]-g.m_box[0]+1);
+                g.m_annot = kGap;
+                g.m_details.resize(0);
                 segments.push_back(g);
             }
         }
@@ -784,8 +982,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         g.m_box[3] = segments[0].m_box[2] - 1;
         g.m_idty = 0;
         g.m_len = segments[0].m_box[0];
-        g.m_annot = "<GAP>";
-        g.m_details = string(Seq1 + g.m_box[0], g.m_box[1] + 1 - g.m_box[0]);
+        g.m_annot = kGap;
+        g.m_details.resize(0);
         ++seg_dim;
         ++k0;
     }
@@ -820,8 +1018,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         g.m_box[3] = SeqLen2 - 1;
         g.m_idty = 0;
         g.m_len = g.m_box[1] - g.m_box[0] + 1;
-        g.m_annot = "<GAP>";
-        g.m_details = string(Seq1 + g.m_box[0], g.m_box[1] + 1 - g.m_box[0]);
+        g.m_annot = kGap;
+        g.m_details.resize(0);
         segments.push_back(g);
         ++seg_dim;
     }
@@ -833,10 +1031,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             s.m_exon = false;
             s.m_idty = 0;
             s.m_len = s.m_box[1] - s.m_box[0] + 1;
-            s.m_annot = "<GAP>";
+            s.m_annot = kGap;
             s.m_details.resize(0);
-            s.m_details.append(Seq1 + s.m_box[0],
-			       s.m_box[1] + 1 - s.m_box[0]);
         }
     }
 
@@ -857,22 +1053,96 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             s.m_exon = false;
             s.m_idty = 0;
             s.m_len = s.m_box[1] - s.m_box[0] + 1;
-            s.m_annot = "<GAP>";
+            s.m_annot = kGap;
             s.m_details.resize(0);
-            s.m_details.append(Seq1 + s.m_box[0],
-			       s.m_box[1] + 1 - s.m_box[0]);
 	  }
 	  gap_prev = false;
 	}
     }
 
+//#define CLEAVE_WEAK_TERMINAL_EXONS
+#ifdef CLEAVE_WEAK_TERMINAL_EXONS
+
+    // turn to gaps terminal exons
+    // that are too short/too distant/low-identity
+    {{
+        // find the two leftmost exons
+        size_t exon_count = 0;
+        SSegment* term_segs[] = {0, 0};
+        for(size_t i = 0; i < seg_dim; ++i) {
+            SSegment& s = segments[i];
+            if(s.m_exon) {
+                term_segs[exon_count] = &s;
+                if(++exon_count == 2) {
+                    break;
+                }
+            }
+        }
+
+        if(exon_count == 2) {
+            size_t exon_size = 1 + term_segs[0]->m_box[1] -
+                term_segs[0]->m_box[0];
+            size_t intron_size = term_segs[1]->m_box[2] - 
+                term_segs[0]->m_box[3] - 1;
+            if(exon_size < kMinTermExonSize) {
+                if(kIntronPerTermExon*exon_size < intron_size ||
+                   term_segs[0]->m_idty < kMinTermExonIdty) {
+
+                    // turn this to a gap
+                    SSegment& s = *(term_segs[0]);
+                    s.m_exon = false;
+                    s.m_idty = 0;
+                    s.m_len = exon_size;
+                    s.m_annot = kGap;
+                    s.m_details.resize(0);
+                }
+            }
+        }
+    }}
+
+    {{
+        // find the two rightmost exons
+        size_t exon_count = 0;
+        SSegment* term_segs[] = {0, 0};
+        for(int i = seg_dim-1; i >= 0; --i) {
+            SSegment& s = segments[i];
+            if(s.m_exon) {
+                term_segs[exon_count] = &s;
+                if(++exon_count == 2) {
+                    break;
+                }
+            }
+        }
+        if(exon_count == 2) {
+            size_t exon_size = 1 + term_segs[0]->m_box[1]
+                - term_segs[0]->m_box[0];
+            size_t intron_size = term_segs[0]->m_box[2] - 
+                term_segs[1]->m_box[3] - 1;
+            if(exon_size < kMinTermExonSize) {
+                if(kIntronPerTermExon*exon_size < intron_size
+                   || term_segs[0]->m_idty < kMinTermExonIdty) {
+
+                    // turn this to a gap
+                    SSegment& s = *(term_segs[0]);
+                    s.m_exon = false;
+                    s.m_idty = 0;
+                    s.m_len = exon_size;
+                    s.m_annot = kGap;
+                    s.m_details.resize(0);
+                }
+            }
+        }
+    }}
+
+#endif
+
     // now merge all adjacent gaps
+    m_segments.resize(0);
     int gap_start_idx = -1;
-    if(segments.size() && segments[0].m_exon == false) {
+    if(seg_dim && segments[0].m_exon == false) {
         gap_start_idx = 0;
     }
-    size_t segs_dim = segments.size();
-    for(size_t k = 0; k < segs_dim; ++k) {
+    for(size_t k = 0; k < seg_dim; ++k) {
         SSegment& s = segments[k];
         if(!s.m_exon) {
             if(gap_start_idx == -1) {
@@ -890,8 +1160,6 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                g.m_box[3] = s.m_box[2] - 1;
                g.m_len = g.m_box[1] - g.m_box[0] + 1;
                g.m_details.resize(0);
-               g.m_details.append(Seq1 + g.m_box[0],
-				  g.m_box[1] + 1 - g.m_box[0]);
                m_segments.push_back(g);
                gap_start_idx = -1;
            }
@@ -900,11 +1168,10 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
     }
     if(gap_start_idx >= 0) {
         SSegment& g = segments[gap_start_idx];
-        g.m_box[1] = segments[segs_dim-1].m_box[1];
-        g.m_box[3] = segments[segs_dim-1].m_box[3];
+        g.m_box[1] = segments[seg_dim-1].m_box[1];
+        g.m_box[3] = segments[seg_dim-1].m_box[3];
         g.m_len = g.m_box[1] - g.m_box[0] + 1;
         g.m_details.resize(0);
-        g.m_details.append(Seq1 + g.m_box[0], g.m_box[1] + 1 - g.m_box[0]);
         m_segments.push_back(g);
     }
 }
@@ -1144,11 +1411,36 @@ const char* CSplign::SSegment::GetAcceptor() const
 }
 
 
+double CSplign::SAlignedCompartment::GetIdentity()
+{
+    string trans;
+    for(size_t i = 0, dim = m_segments.size(); i < dim; ++i) {
+        const SSegment& s = m_segments[i];
+        if(s.m_exon) {
+            trans.append(s.m_details);
+        }
+        else {
+            trans.append(s.m_len, 'D');
+        }
+    }
+    size_t matches = 0;
+    ITERATE(string, ii, trans) {
+        if(*ii == 'M') {
+            ++matches;
+        }
+    }
+    return double(matches) / trans.size();
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/06/03 19:27:54  kapustin
+ * Add CSplign::GetIdentity(). Limit the genomic extension for small terminal exons
+ *
  * Revision 1.12  2004/05/24 16:13:57  gorelenk
  * Added PCH ncbi_pch.hpp
  *
