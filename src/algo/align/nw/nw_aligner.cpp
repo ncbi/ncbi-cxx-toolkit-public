@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 static const char nucleotides [] = 
-         { 'a', 'g', 't', 'c' };
+         { 'a', 'g', 't', 'c', 'n' };
 
 static const char aminoacids [] = 
          { 'a', 'r', 'n', 'd', 'c', 'q', 'e', 'g', 'h', 'i', 'l', 'k', 'm',
@@ -95,7 +95,7 @@ CNWAligner::CNWAligner(const char* seq1, size_t len1,
     if(iErrPos1 < len1)
         NCBI_THROW(
                    CNWAlignerException,
-                   eInvalidSequence,
+                   eInvalidCharacter,
                    "The first sequence is inconsistent with the current "
                    "scoring matrix type");
 
@@ -103,7 +103,7 @@ CNWAligner::CNWAligner(const char* seq1, size_t len1,
     if(iErrPos2 < len2)
         NCBI_THROW(
                    CNWAlignerException,
-                   eInvalidSequence,
+                   eInvalidCharacter,
                    "The second sequence is inconsistent with the current "
                    "scoring matrix type");
 }
@@ -394,6 +394,7 @@ void CNWAligner::x_LoadMatrix()
                 }
                 m_Matrix[c1][c1] = m_Wm;
             }
+            m_Matrix['n']['n'] = m_Wms;
         }
         break;
 
@@ -456,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/12/12 17:59:28  kapustin
+ * Enable spliced alignments
+ *
  * Revision 1.1  2002/12/06 17:41:21  ivanov
  * Initial revision
  *

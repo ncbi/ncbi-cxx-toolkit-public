@@ -49,12 +49,15 @@ class CAppNWAException : public CException
 {
 public:
     enum EErrCode {
-        eCannotReadFile
+        eCannotReadFile,
+        eInconsistentParameters
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
         case eCannotReadFile:
             return "Cannot read from file";
+        case eInconsistentParameters:
+            return "Two or more parameters are inconsistent";
         default:
             return CException::GetErrCodeString();
         }
@@ -69,12 +72,16 @@ public:
 class CAppNWA : public CNcbiApplication
 {
 public:
+
     virtual void Init();
     virtual int  Run();
     virtual void Exit();
 
 private:
-    void x_RunOnPair() const throw(CAppNWAException);
+
+    void x_RunOnPair() const
+        throw(CAppNWAException, CNWAlignerException);
+
     bool x_ReadFastaFile(const string& filename,
                          string*       seqname,
                          vector<char>* sequence,
@@ -89,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/12/12 17:59:30  kapustin
+ * Enable spliced alignments
+ *
  * Revision 1.2  2002/12/09 15:47:36  kapustin
  * Declare exception class before the application
  *

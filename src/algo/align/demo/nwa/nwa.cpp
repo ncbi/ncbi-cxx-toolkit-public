@@ -29,8 +29,8 @@
  *                   
 */
 
+#include <algo/nw_aligner_mrna2dna.hpp>
 #include "nwa.hpp"
-#include <algo/nw_aligner.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -40,11 +40,13 @@ void CAppNWA::Init()
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "Needleman-Wunsch alignment test application.\n"
-                              "Build 1.00.03 - 12/03/02");
+                              "Build 1.00.05 - 12/12/02");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
          CArgDescriptions::eString, "nucl");
+
+    argdescr->AddFlag("mrna2dna", "mRna vs. Dna alignment");
 
     argdescr->AddKey
         ("seq1", "seq1",
@@ -74,6 +76,17 @@ void CAppNWA::Init()
         ("Ws", "space", "gap extension (space) penalty",
          CArgDescriptions::eInteger,
          NStr::IntToString(CNWAligner::GetDefaultWs()).c_str());
+
+    argdescr->AddDefaultKey
+        ("Wi", "intron", "intron weight",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi()).c_str());
+
+    int intron_min_size = CNWAlignerMrna2Dna::GetDefaultIntronMinSize();
+    argdescr->AddDefaultKey
+        ("IntronMinSize", "IntronMinSize", "intron minimum size",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(intron_min_size).c_str());
     
     CArgAllow_Strings* paa_st = new CArgAllow_Strings;
     paa_st->Allow("nucl")->Allow("blosum62");
@@ -90,9 +103,21 @@ int CAppNWA::Run()
 }
 
 
-void CAppNWA::x_RunOnPair() const throw(CAppNWAException)
+void CAppNWA::x_RunOnPair() const
+    throw(CAppNWAException, CNWAlignerException)
 {
     const CArgs& args = GetArgs();
+
+    // analyze parameters
+    const bool bMrna2Dna = args["mrna2dna"] ?
+        args["mrna2dna"].AsBoolean(): false;
+
+    if(bMrna2Dna && args["matrix"].AsString() != "nucl") {
+
+        NCBI_THROW(CAppNWAException,
+                   eInconsistentParameters,
+                   "mrna2dna must go with nucl matrix only");
+    }
 
     // read input sequences
     vector<char> v1, v2;
@@ -117,16 +142,27 @@ void CAppNWA::x_RunOnPair() const throw(CAppNWAException)
     else
         smt = CNWAligner::eNucl;
 
-    CNWAligner aligner(&v1[0], v1.size(), &v2[0], v2.size(), smt);
+    auto_ptr<CNWAligner> aligner (
+        bMrna2Dna? 
+        new CNWAlignerMrna2Dna (&v1[0], v1.size(), &v2[0], v2.size(), smt)
+        : new CNWAligner (&v1[0], v1.size(), &v2[0], v2.size(), smt));
 
-    aligner.SetWm  (args["Wm"]. AsInteger());
-    aligner.SetWms (args["Wms"].AsInteger());
-    aligner.SetWg  (args["Wg"]. AsInteger());
-    aligner.SetWs  (args["Ws"]. AsInteger());
+    aligner->SetWm  (args["Wm"]. AsInteger());
+    aligner->SetWms (args["Wms"].AsInteger());
+    aligner->SetWg  (args["Wg"]. AsInteger());
+    aligner->SetWs  (args["Ws"]. AsInteger());
 
-    int score = aligner.Run();
+    if( bMrna2Dna ) {
+        CNWAlignerMrna2Dna *aligner_mrna2dna = 
+            static_cast<CNWAlignerMrna2Dna *> (aligner.get());
+        
+        aligner_mrna2dna->SetWi (args["Wi"]. AsInteger());
+        aligner_mrna2dna->SetIntronMinSize(args["IntronMinSize"]. AsInteger());
+    }
+
+    int score = aligner->Run();
     cerr << "Score = " << score << endl;
-    cout << aligner.Format();
+    cout << aligner->Format();
 }
 
 
@@ -169,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/12/12 17:59:30  kapustin
+ * Enable spliced alignments
+ *
  * Revision 1.1  2002/12/06 17:44:25  ivanov
  * Initial revision
  *
