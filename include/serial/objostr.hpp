@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/04/28 16:58:02  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.34  2000/04/13 14:50:17  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -162,6 +166,7 @@
 #include <serial/typeinfo.hpp>
 #include <serial/objlist.hpp>
 #include <serial/object.hpp>
+#include <serial/strbuffer.hpp>
 #include <map>
 
 struct asnio;
@@ -170,6 +175,7 @@ BEGIN_NCBI_SCOPE
 
 class CMembers;
 class CMemberId;
+class CDelayBuffer;
 
 class CObjectOStream
 {
@@ -177,12 +183,36 @@ public:
     typedef unsigned TIndex;
     typedef int TMemberIndex;
 
-    static CObjectOStream* Open(const string& fileName, unsigned flags);
-    static CObjectOStream* Open(CNcbiOstream& outStream, unsigned flags,
+    static CObjectOStream* Open(ESerialDataFormat format,
+                                const string& fileName,
+                                unsigned openFlags = 0);
+    static CObjectOStream* Open(const string& fileName,
+                                ESerialDataFormat format)
+        {
+            return Open(format, fileName);
+        }
+    static CObjectOStream* Open(ESerialDataFormat format,
+                                CNcbiOstream& outStream,
                                 bool deleteOutStream = false);
 
-    CObjectOStream(void);
+protected:
+    CObjectOStream(CNcbiOstream& out, bool deleteOut = false)
+        : m_Output(out, deleteOut)
+        {
+        }
+public:
     virtual ~CObjectOStream(void);
+
+    virtual ESerialDataFormat GetDataFormat(void) const = 0;
+
+    void FlushBuffer(void)
+        {
+            m_Output.FlushBuffer();
+        }
+    void Flush(void)
+        {
+            m_Output.Flush();
+        }
 
     // root writer
     void Write(TConstObjectPtr object, TTypeInfo type);
@@ -266,6 +296,8 @@ public:
     virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
 
     virtual void WriteNull(void) = 0;
+
+    virtual bool Write(const CRef<CByteSource>& source);
 
     class Member {
     public:
@@ -470,6 +502,9 @@ protected:
             typeInfo->WriteData(*this, object);
         }
 #endif
+
+protected:
+    COStreamBuffer m_Output;
 };
 
 //#include <serial/objostr.inl>

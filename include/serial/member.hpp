@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/04/28 16:58:01  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.7  2000/03/07 14:05:29  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -73,12 +77,15 @@
 
 BEGIN_NCBI_SCOPE
 
+class CDelayBuffer;
+
 class CMemberInfo {
 public:
     CMemberInfo(size_t offset, const CTypeRef& type)
         : m_Optional(false), m_Pointer(false), m_ObjectPointer(false),
           m_Offset(offset), m_Type(type),
-          m_SetFlagOffset(size_t(-1)), m_Default(0)
+          m_SetFlagOffset(size_t(-1)), m_DelayOffset(size_t(-1)),
+          m_Default(0)
         {
         }
     ~CMemberInfo(void)
@@ -160,6 +167,24 @@ public:
             return this;
         }
 
+    bool CanBeDelayed(void) const
+        {
+            return m_DelayOffset != size_t(-1);
+        }
+    CMemberInfo* SetDelayBuffer(CDelayBuffer* buffer)
+        {
+            m_DelayOffset = size_t(buffer);
+            return this;
+        }
+    CDelayBuffer& GetDelayBuffer(TObjectPtr object) const
+        {
+            return CType<CDelayBuffer>::Get(Add(object, m_DelayOffset));
+        }
+    const CDelayBuffer& GetDelayBuffer(TConstObjectPtr object) const
+        {
+            return CType<const CDelayBuffer>::Get(Add(object, m_DelayOffset));
+        }
+
     TObjectPtr GetMember(TObjectPtr object) const
         {
             return Add(object, GetOffset());
@@ -194,6 +219,8 @@ private:
     CTypeRef m_Type;
     // offset of 'SET' flag inside object
     size_t m_SetFlagOffset;
+    // offset of delay buffer inside object
+    size_t m_DelayOffset;
     // default value
     TConstObjectPtr m_Default;
 };

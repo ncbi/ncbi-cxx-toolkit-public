@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/04/28 16:58:03  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.8  2000/04/13 14:50:18  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -73,17 +77,25 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <serial/exception.hpp>
 #include <string.h>
 
 BEGIN_NCBI_SCOPE
 
+class CByteSource;
+class CByteSourceReader;
+class CByteSourceSkipper;
+
 class CIStreamBuffer
 {
 public:
-    CIStreamBuffer(CNcbiIstream& in, bool deleteIn = false)
+    CIStreamBuffer(void)
         THROWS((bad_alloc));
     ~CIStreamBuffer(void);
+
+    void Open(const CRef<CByteSourceReader>& reader);
+    void Close(void);
 
     char PeekChar(size_t offset = 0) THROWS((CSerialIOException, bad_alloc))
         {
@@ -164,16 +176,16 @@ protected:
         THROWS((CSerialIOException, bad_alloc));
 
 private:
-    CNcbiIstream& m_Input;    // source stream
-    bool m_DeleteInput;
+    CRef<CByteSourceReader> m_Input;
 
-
-    size_t m_BufferOffset;   // offset of current buffer in source stream
+    size_t m_BufferOffset;    // offset of current buffer in source stream
     size_t m_BufferSize;      // buffer size
     char* m_Buffer;           // buffer pointer
     char* m_CurrentPos;       // current char position in buffer
     char* m_DataEndPos;       // end of valid content in buffer
     size_t m_Line;            // current line counter
+
+    friend class CByteSourceSkipper;
 };
 
 class COStreamBuffer
@@ -207,6 +219,7 @@ public:
         }
 
     void FlushBuffer(void) THROWS((CSerialIOException));
+    void Flush(void) THROWS((CSerialIOException));
 
 protected:
     // flush contents of buffer to underlying stream
@@ -268,14 +281,11 @@ public:
     void PutString(const char* str, size_t length)
         THROWS((CSerialIOException, bad_alloc))
         {
-            char* ptr = Skip(length);
-            if ( length <= 4 ) {
-                while ( length-- > 0 ) {
-                    *ptr++ = *str++;
-                }
+            if ( length < 1024 ) {
+                memcpy(Skip(length), str, length);
             }
             else {
-                memcpy(ptr, str, length);
+                Write(str, length);
             }
         }
     void PutString(const char* str)
@@ -332,6 +342,11 @@ public:
     void PutLong(long v)
         THROWS((CSerialIOException, bad_alloc));
     void PutULong(unsigned long v)
+        THROWS((CSerialIOException, bad_alloc));
+
+    void Write(const char* data, size_t dataLength)
+        THROWS((CSerialIOException, bad_alloc));
+    void Write(const CRef<CByteSourceReader>& reader)
         THROWS((CSerialIOException, bad_alloc));
 
 private:

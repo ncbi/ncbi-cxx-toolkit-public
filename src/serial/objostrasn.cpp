@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/04/28 16:58:13  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.35  2000/04/13 14:50:27  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -191,17 +195,22 @@ CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out, bool deleteOut)
 }
 
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out)
-    : m_Output(out)
+    : CObjectOStream(out)
 {
 }
 
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out, bool deleteOut)
-    : m_Output(out, deleteOut)
+    : CObjectOStream(out, deleteOut)
 {
 }
 
 CObjectOStreamAsn::~CObjectOStreamAsn(void)
 {
+}
+
+ESerialDataFormat CObjectOStreamAsn::GetDataFormat(void) const
+{
+    return eSerial_AsnText;
 }
 
 void CObjectOStreamAsn::WriteTypeName(const string& name)

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/04/28 16:58:02  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.20  2000/04/13 14:50:17  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -115,7 +119,6 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objstrasnb.hpp>
-#include <serial/strbuffer.hpp>
 #include <stack>
 
 BEGIN_NCBI_SCOPE
@@ -128,8 +131,11 @@ public:
     typedef CObjectStreamAsnBinaryDefs::ETag ETag;
     typedef CObjectStreamAsnBinaryDefs::EClass EClass;
 
+    CObjectIStreamAsnBinary(void);
     CObjectIStreamAsnBinary(CNcbiIstream& in);
     CObjectIStreamAsnBinary(CNcbiIstream& in, bool deleteIn);
+
+    ESerialDataFormat GetDataFormat(void) const;
 
     virtual string GetPosition(void) const;
 
@@ -186,7 +192,6 @@ private:
 
     bool SkipRealValue(void);
 
-    CIStreamBuffer m_Input;
     // states:
     // before StartTag (Peek*Tag/ExpectSysTag) tag:
     //     m_CurrentTagLength == 0

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/04/28 16:58:08  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.4  2000/04/13 14:50:22  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -119,9 +123,9 @@ private:
 
 struct FileInfo {
     FileInfo(void)
-        : type(ESerialOpenFlags(0))
+        : type(ESerialDataFormat(eSerial_None))
         { }
-    FileInfo(const string& n, ESerialOpenFlags t)
+    FileInfo(const string& n, ESerialDataFormat t)
         : name(n), type(t)
         { }
 
@@ -130,7 +134,7 @@ struct FileInfo {
     operator const string&(void) const
         { return name; }
     string name;
-    ESerialOpenFlags type;
+    ESerialDataFormat type;
 };
 
 class CDelayedOfstream : public CNcbiOstrstream

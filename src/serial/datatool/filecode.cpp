@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/04/28 16:58:16  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.20  2000/04/17 19:11:08  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -403,7 +407,7 @@ void CFileCode::GenerateHPP(const string& path) const
         bool begin = false;
         iterate ( TClasses, i, m_Classes ) {
             if ( !i->inlCode.empty() ) {
-                ns.Set(i->ns, header);
+                ns.Set(i->ns, header, false);
                 if ( !begin ) {
                     // have inline methods
                     header <<
@@ -470,7 +474,7 @@ void CFileCode::GenerateCPP(const string& path) const
         bool begin = false;
         iterate ( TClasses, i, m_Classes ) {
             if ( !i->cppCode.empty() ) {
-                ns.Set(i->ns, code);
+                ns.Set(i->ns, code, false);
                 if ( !begin ) {
                     code <<
                         "\n"
@@ -525,7 +529,7 @@ bool CFileCode::GenerateUserHPP(const string& path) const
             "// generated classes\n"
             "\n";
         iterate ( TClasses, i, m_Classes ) {
-            ns.Set(i->ns, header);
+            ns.Set(i->ns, header, false);
             i->code->GenerateUserHPPCode(header);
         }
     }
@@ -569,7 +573,7 @@ bool CFileCode::GenerateUserCPP(const string& path) const
             "// generated classes\n"
             "\n";
         iterate ( TClasses, i, m_Classes ) {
-            ns.Set(i->ns, code);
+            ns.Set(i->ns, code, false);
             i->code->GenerateUserCPPCode(code);
         }
     }

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/04/28 16:58:01  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.9  2000/04/06 16:10:50  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -133,7 +137,9 @@ public:
 
 protected:
     virtual TMemberIndex GetIndex(TConstObjectPtr object) const = 0;
+    virtual void ResetIndex(TObjectPtr object) const;
     virtual void SetIndex(TObjectPtr object, TMemberIndex index) const = 0;
+    virtual void SetDelayIndex(TObjectPtr object, TMemberIndex index) const;
     virtual TObjectPtr x_GetData(TObjectPtr object,
                                  TMemberIndex index) const = 0;
     TConstObjectPtr GetData(TConstObjectPtr object, TMemberIndex index) const
@@ -161,17 +167,21 @@ class CGeneratedChoiceInfo : public CChoiceTypeInfoBase
 public:
     typedef int TChoiceIndex;
     typedef TObjectPtr (*TCreateFunction)(void);
-    typedef TChoiceIndex (*TGetIndexFunction)(TConstObjectPtr object);
-    typedef void (*TSetIndexFunction)(TObjectPtr object, TChoiceIndex index);
+    typedef TChoiceIndex (*TWhichFunction)(TConstObjectPtr object);
+    typedef void (*TResetFunction)(TObjectPtr object);
+    typedef void (*TSelectFunction)(TObjectPtr object, TChoiceIndex index);
+    typedef void (*TSelectDelayFunction)(TObjectPtr object, TChoiceIndex index);
     typedef void (*TPostReadFunction)(TObjectPtr object);
     typedef void (*TPreWriteFunction)(TConstObjectPtr object);
 
     CGeneratedChoiceInfo(const char* name,
                          size_t size,
-                         TCreateFunction createFunction,
-                         TGetIndexFunction getIndexFunction,
-                         TSetIndexFunction setIndexFunction);
+                         TCreateFunction createFunc,
+                         TWhichFunction whichFunc,
+                         TResetFunction resetFunc,
+                         TSelectFunction selectFunc);
     
+    void SetSelectDelay(TSelectDelayFunction func);
     void SetPostRead(TPostReadFunction func);
     void SetPreWrite(TPreWriteFunction func);
     
@@ -180,7 +190,9 @@ protected:
     TObjectPtr Create(void) const;
 
     TMemberIndex GetIndex(TConstObjectPtr object) const;
+    void ResetIndex(TObjectPtr object) const;
     void SetIndex(TObjectPtr object, TMemberIndex index) const;
+    void SetDelayIndex(TObjectPtr object, TMemberIndex index) const;
     TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
 
 protected:
@@ -191,8 +203,10 @@ protected:
 private:
     size_t m_Size;
     TCreateFunction m_CreateFunction;
-    TGetIndexFunction m_GetIndexFunction;
-    TSetIndexFunction m_SetIndexFunction;
+    TWhichFunction m_WhichFunction;
+    TResetFunction m_ResetFunction;
+    TSelectFunction m_SelectFunction;
+    TSelectDelayFunction m_SelectDelayFunction;
     TPostReadFunction m_PostReadFunction;
     TPreWriteFunction m_PreWriteFunction;
 };

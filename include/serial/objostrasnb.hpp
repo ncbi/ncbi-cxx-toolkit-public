@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/04/28 16:58:03  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.19  2000/04/13 14:50:18  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -109,7 +113,6 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objstrasnb.hpp>
-#include <serial/strbuffer.hpp>
 #include <stack>
 
 BEGIN_NCBI_SCOPE
@@ -125,6 +128,8 @@ public:
     CObjectOStreamAsnBinary(CNcbiOstream& out);
     CObjectOStreamAsnBinary(CNcbiOstream& out, bool deleteOut);
     virtual ~CObjectOStreamAsnBinary(void);
+
+    ESerialDataFormat GetDataFormat(void) const;
 
     virtual bool WriteEnum(const CEnumeratedTypeValues& values, long value);
 
@@ -178,7 +183,6 @@ protected:
                             size_t length);
 
 private:
-    COStreamBuffer m_Output;
 
 #if CHECK_STREAM_INTEGRITY
     size_t m_CurrentPosition;

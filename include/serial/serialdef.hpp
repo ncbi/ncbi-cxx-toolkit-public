@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/04/28 16:58:03  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.7  2000/04/13 14:50:18  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -71,6 +75,8 @@ BEGIN_NCBI_SCOPE
 // forward declaration of two main classes
 class CTypeRef;
 class CTypeInfo;
+class CObjectIStream;
+class CObjectOStream;
 
 // typedef for object references (constant and nonconstant)
 typedef void* TObjectPtr;
@@ -102,16 +108,20 @@ struct StrCmp
 
 #define NCBISER_ALLOW_CYCLES 1
 
-enum ESerialOpenFlags {
+enum ESerialDataFormat {
+    eSerial_None         = 0,
     eSerial_AsnText      = 1,      // open ASN.1 text format
     eSerial_AsnBinary    = 2,      // open ASN.1 binary format
-    eSerial_Xml          = 3,      // open XML format (not supported yet)
-    eSerial_FormatMask   = 15,
-    eSerial_StdWhenEmpty = 1 << 4, // use std stream when filename is empty
-    eSerial_StdWhenDash  = 1 << 5, // use std stream when filename is "-"
-    eSerial_StdWhenStd   = 1 << 6, // use std when filename is "stdin"/"stdout"
-    eSerial_StdWhenMask  = 15 << 4,
-    eSerial_StdWhenAny   = eSerial_StdWhenMask
+    eSerial_Xml          = 3       // open XML format (not supported yet)
+};
+
+enum ESerialOpenFlags {
+    eSerial_StdWhenEmpty = 1 << 0, // use std stream when filename is empty
+    eSerial_StdWhenDash  = 1 << 1, // use std stream when filename is "-"
+    eSerial_StdWhenStd   = 1 << 2, // use std when filename is "stdin"/"stdout"
+    eSerial_StdWhenMask  = 15,
+    eSerial_StdWhenAny   = eSerial_StdWhenMask,
+    eSerial_UseFileForReread = 1 << 4
 };
 
 #include <serial/serialdef.inl>

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/28 16:58:01  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.2  2000/04/10 21:01:38  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -45,6 +49,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiexpt.hpp>
 
 BEGIN_NCBI_SCOPE
 

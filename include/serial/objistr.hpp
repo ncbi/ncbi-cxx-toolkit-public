@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/04/28 16:58:02  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.37  2000/04/13 14:50:17  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -164,10 +168,13 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/object.hpp>
+#include <serial/strbuffer.hpp>
 #include <vector>
+#include <list>
 
 struct asnio;
 
@@ -176,18 +183,65 @@ BEGIN_NCBI_SCOPE
 class CTypeMapper;
 class CMemberId;
 class CMembers;
+class CDelayBuffer;
+class CObjectReadManager;
+class CByteSource;
+class CByteSourceReader;
+
+class CObjectReadManager : public CObject
+{
+public:
+    virtual bool DelayRead(CObjectIStream& in, TObjectPtr ownerObject,
+                           TTypeInfo ownerType, const CMemberInfo* member) = 0;
+};
+
+class CMemoryReadMemory : public CObjectReadManager
+{
+public:
+    virtual bool DelayRead(CObjectIStream& in, TObjectPtr ownerObject,
+                           TTypeInfo ownerType, const CMemberInfo* member);
+};
 
 class CObjectIStream
 {
 public:
     typedef unsigned TIndex;
 
-    static CObjectIStream* Open(const string& fileName, unsigned flags);
-    static CObjectIStream* Open(CNcbiIstream& inStream, unsigned flags,
-                                bool deleteInStream = false);
+    static CObjectIStream* Create(ESerialDataFormat format);
+    static CObjectIStream* Create(ESerialDataFormat format,
+                                  const CRef<CByteSource>& source);
 
+    static CRef<CByteSource> GetSource(ESerialDataFormat format,
+                                       const string& fileName,
+                                       unsigned openFlags = 0);
+    static CRef<CByteSource> GetSource(CNcbiIstream& inStream,
+                                       bool deleteInStream = false);
+
+    virtual void Open(const CRef<CByteSourceReader>& reader);
+    void Open(const CRef<CByteSource>& source);
+    void Open(CNcbiIstream& inStream, bool deleteInStream = false);
+    void Close(void);
+
+    static CObjectIStream* Open(ESerialDataFormat format,
+                                CNcbiIstream& inStream,
+                                bool deleteInStream = false);
+    static CObjectIStream* Open(ESerialDataFormat format,
+                                const string& fileName,
+                                unsigned openFlags = 0);
+    static CObjectIStream* Open(const string& fileName,
+                                ESerialDataFormat format)
+        {
+            return Open(format, fileName);
+        }
+
+protected:
     CObjectIStream(void);
+    CObjectIStream(CNcbiIstream& in, bool deleteIn = false);
+
+public:
     virtual ~CObjectIStream(void);
+
+    virtual ESerialDataFormat GetDataFormat(void) const = 0;
 
     // root reader
     void Read(TObjectPtr object, TTypeInfo type);
@@ -195,6 +249,7 @@ public:
 
     void Skip(TTypeInfo type);
     void Skip(const CTypeRef& type);
+    virtual CRef<CByteSource> DelayRead(TTypeInfo type);
 
     CObjectInfo ReadObject(void);
 
@@ -359,7 +414,8 @@ public:
         eFormatError = 4,
         eOverflow = 8,
         eIllegalCall = 16,
-        eFail = 32
+        eFail = 32,
+        eNotOpen = 64
     };
     bool fail(void) const
         {
@@ -786,13 +842,42 @@ protected:
             typeInfo->SkipData(*this);
         }
 
+    void SetDefaultReadManager(CRef<CObjectReadManager> manager);
+    void SetReadManager(TTypeInfo type, const CMemberInfo* member,
+                        CRef<CObjectReadManager> manager);
+    CObjectReadManager* FindReadManager(TTypeInfo type,
+                                        const CMemberInfo* member);
+
+protected:
+    CIStreamBuffer m_Input;
+
 private:
+    struct SReadManagerInfo {
+        TTypeInfo type;
+        const CMemberInfo* member;
+        CRef<CObjectReadManager> manager;
+
+        SReadManagerInfo(void)
+            : type(0), member(0)
+            {
+            }
+        SReadManagerInfo(TTypeInfo t, const CMemberInfo*m,
+                         CRef<CObjectReadManager> mgr)
+            : type(t), member(m), manager(mgr)
+            {
+            }
+    };
+    typedef list<SReadManagerInfo> TReadManagers;
+
     vector<CObjectInfo> m_Objects;
 
     unsigned m_Fail;
     const StackElement* m_CurrentElement;
 
     CTypeMapper* m_TypeMapper;
+
+    CRef<CObjectReadManager> m_DefaultReadManager;
+    TReadManagers m_ReadManagers;
 };
 
 //#include <serial/objistr.inl>

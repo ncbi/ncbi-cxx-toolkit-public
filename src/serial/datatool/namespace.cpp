@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/28 16:58:17  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.3  2000/04/18 19:24:37  vasilche
 * Added BEGIN_SCOPE and END_SCOPE macros to allow source brawser gather names from namespaces.
 *
@@ -94,12 +98,12 @@ size_t CNamespace::EqualLevels(const CNamespace& ns) const
     return end;
 }
 
-void CNamespace::Set(const CNamespace& ns, CNcbiOstream& out)
+void CNamespace::Set(const CNamespace& ns, CNcbiOstream& out, bool mainHeader)
 {
     size_t equal = EqualLevels(ns);
     CloseAllAbove(equal, out);
     for ( size_t i = equal, end = ns.GetNamespaceLevel(); i < end; ++i )
-        Open(ns.GetNamespaces()[i], out);
+        Open(ns.GetNamespaces()[i], out, mainHeader);
 }
 
 string CNamespace::GetNamespaceRef(const CNamespace& ns) const
@@ -139,7 +143,7 @@ string CNamespace::GetNamespaceRef(const CNamespace& ns) const
     return s;
 }
 
-void CNamespace::Open(const string& s, CNcbiOstream& out)
+void CNamespace::Open(const string& s, CNcbiOstream& out, bool mainHeader)
 {
     m_Namespaces.push_back(s);
     if ( IsNCBI() ) {
@@ -148,11 +152,14 @@ void CNamespace::Open(const string& s, CNcbiOstream& out)
             "\n";
     }
     else {
+        if ( mainHeader ) {
+            out <<
+                "#ifndef BEGIN_"<<s<<"_SCOPE\n"
+                "#  define BEGIN_"<<s<<"_SCOPE BEGIN_SCOPE("<<s<<")\n"
+                "#  define END_"<<s<<"_SCOPE END_SCOPE("<<s<<")\n"
+                "#endif\n";
+        }
         out <<
-            "#ifndef BEGIN_"<<s<<"_SCOPE\n"
-            "#  define BEGIN_"<<s<<"_SCOPE BEGIN_SCOPE("<<s<<")\n"
-            "#  define END_"<<s<<"_SCOPE END_SCOPE("<<s<<")\n"
-            "#endif\n"
             "BEGIN_"<<s<<"_SCOPE // namespace "<<*this<<"\n"
             "\n";
     }

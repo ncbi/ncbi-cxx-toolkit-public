@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/04/28 16:58:13  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.31  2000/04/13 14:50:27  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -164,9 +168,9 @@ using namespace NCBI_NS_NCBI::CObjectStreamAsnBinaryDefs;
 BEGIN_NCBI_SCOPE
 
 
-CObjectIStream* OpenObjectIStreamAsnBinary(CNcbiIstream& in, bool deleteIn)
+CObjectIStream* CreateObjectIStreamAsnBinary(void)
 {
-    return new CObjectIStreamAsnBinary(in, deleteIn);
+    return new CObjectIStreamAsnBinary();
 }
 
 
@@ -206,8 +210,7 @@ TByte ExtractClassAndConstructed(TByte byte)
     return byte & 0xE0;
 }
 
-CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in)
-    : m_Input(in)
+CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(void)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
@@ -216,15 +219,30 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in)
     m_CurrentTagLength = 0;
 }
 
-CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
-                                                 bool deleteIn)
-    : m_Input(in, deleteIn)
+CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
     m_CurrentTagLimit = INT_MAX;
 #endif
     m_CurrentTagLength = 0;
+    Open(in);
+}
+
+CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
+                                                 bool deleteIn)
+{
+#if CHECK_STREAM_INTEGRITY
+    m_CurrentTagState = eTagStart;
+    m_CurrentTagLimit = INT_MAX;
+#endif
+    m_CurrentTagLength = 0;
+    Open(in, deleteIn);
+}
+
+ESerialDataFormat CObjectIStreamAsnBinary::GetDataFormat(void) const
+{
+    return eSerial_AsnBinary;
 }
 
 string CObjectIStreamAsnBinary::GetPosition(void) const

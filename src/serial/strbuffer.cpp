@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/04/28 16:58:14  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.10  2000/04/13 14:50:28  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -82,6 +86,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <serial/strbuffer.hpp>
+#include <serial/bytesrc.hpp>
 #include <limits.h>
 #include <ctype.h>
 
@@ -95,9 +100,9 @@ size_t BiggerBufferSize(size_t size) THROWS_NONE
     return size * 2;
 }
 
-CIStreamBuffer::CIStreamBuffer(CNcbiIstream& in, bool deleteIn)
+CIStreamBuffer::CIStreamBuffer(void)
     THROWS((bad_alloc))
-    : m_Input(in), m_DeleteInput(deleteIn), m_BufferOffset(0),
+    : m_BufferOffset(0),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
       m_Line(1)
@@ -107,8 +112,20 @@ CIStreamBuffer::CIStreamBuffer(CNcbiIstream& in, bool deleteIn)
 CIStreamBuffer::~CIStreamBuffer(void)
 {
     delete[] m_Buffer;
-    if ( m_DeleteInput )
-        delete &m_Input;
+}
+
+void CIStreamBuffer::Open(const CRef<CByteSourceReader>& reader)
+{
+    m_Input = reader;
+}
+
+void CIStreamBuffer::Close(void)
+{
+    m_Input.Reset();
+    m_BufferOffset = 0;
+    m_CurrentPos = m_Buffer;
+    m_DataEndPos = m_Buffer;
+    m_Line = 1;
 }
 
 // this method is highly optimized
@@ -188,12 +205,11 @@ char* CIStreamBuffer::FillBuffer(char* pos)
     }
     size_t load = m_BufferSize - dataSize;
     while ( load > 0 ) {
-        m_Input.read(m_DataEndPos, load);
-        size_t count = m_Input.gcount();
+        size_t count = m_Input->Read(m_DataEndPos, load);
         if ( count == 0 ) {
             if ( pos < m_DataEndPos )
                 return pos;
-            if ( m_Input.eof() )
+            if ( m_Input->EndOfData() )
                 THROW0_TRACE(CSerialEofException());
             else
                 THROW1_TRACE(CSerialIOException, "read fault");
@@ -324,11 +340,18 @@ void COStreamBuffer::FlushBuffer(void)
 {
     size_t count = m_CurrentPos - m_Buffer;
     if ( count != 0 ) {
-        m_Output.write(m_Buffer, count);
         m_CurrentPos = m_Buffer;
-        if ( !m_Output )
+        if ( !m_Output.write(m_Buffer, count) )
             THROW1_TRACE(CSerialIOException, "write fault");
     }
+}
+
+void COStreamBuffer::Flush(void)
+    THROWS((CSerialIOException))
+{
+    FlushBuffer();
+    if ( !m_Output.flush() )
+        THROW1_TRACE(CSerialIOException, "write fault");
 }
 
 char* COStreamBuffer::DoReserve(size_t count)
@@ -465,7 +488,7 @@ void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
             goodPlace = true;
             break;
         }
-        else if ( *pos == '"' || *pos == '\n' ) {
+        else if ( *pos == '\n' || *pos == '"' ) {
             // no suitable space found
             break;
         }
@@ -476,6 +499,18 @@ void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
             pos += lineLength - linePos;
             linePos = lineLength;
         }
+        // assure we will not break double ""
+        while ( pos > m_Buffer && *(pos - 1) == '"' ) {
+            --pos;
+            --linePos;
+        }
+        if ( pos == m_Buffer ) {
+            // it's possible that we already put some " before...
+            while ( pos < m_CurrentPos && *pos == '"' ) {
+                ++pos;
+                ++linePos;
+            }
+        }
     }
     // split there
     // insert '\n'
@@ -485,6 +520,72 @@ void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
     ++m_CurrentPos;
     *pos = '\n';
     ++m_Line;
+}
+
+void COStreamBuffer::Write(const char* data, size_t dataLength)
+    THROWS((CSerialIOException, bad_alloc))
+{
+    while ( dataLength > 0 ) {
+        size_t available = m_BufferEnd - m_CurrentPos;
+        if ( available == 0 ) {
+            FlushBuffer();
+            available = m_BufferEnd - m_CurrentPos;
+        }
+        if ( available >= dataLength )
+            break; // current chunk will fit in buffer
+        memcpy(m_CurrentPos, data, available);
+        m_CurrentPos += available;
+        data += available;
+        dataLength -= available;
+    }
+    memcpy(m_CurrentPos, data, dataLength);
+    m_CurrentPos += dataLength;
+}
+
+void COStreamBuffer::Write(const CRef<CByteSourceReader>& reader)
+    THROWS((CSerialIOException, bad_alloc))
+{
+    for ( ;; ) {
+        size_t available = m_BufferEnd - m_CurrentPos;
+        if ( available == 0 ) {
+            FlushBuffer();
+            available = m_BufferEnd - m_CurrentPos;
+        }
+        size_t count = reader.GetObject().Read(m_CurrentPos, available);
+        if ( count == 0 ) {
+            if ( reader->EndOfData() )
+                return;
+            else
+                THROW1_TRACE(CSerialIOException, "buffer read fault");
+        }
+        m_CurrentPos += count;
+    }
+}
+
+CByteSourceSkipper::CByteSourceSkipper(CIStreamBuffer& in)
+    : m_Input(in),
+      m_SourceReader(in.m_Input),
+      m_Collector(m_SourceReader->SubSource(in.m_CurrentPos,
+                                            in.m_DataEndPos-in.m_CurrentPos))
+{
+    in.m_Input = this;
+}
+
+size_t CByteSourceSkipper::Read(char* buffer, size_t bufferSize)
+{
+    size_t count = m_SourceReader->Read(buffer, bufferSize);
+    if ( count != 0 )
+        m_Collector->AddChunk(buffer, count);
+    return count;
+}
+
+void CByteSourceSkipper::Disconnect(void)
+{
+    if ( !m_SourceReader )
+        return; // already disconnected
+    m_Input.m_Input = m_SourceReader;
+    m_SourceReader.Reset();
+    m_Collector->ReduceLastChunkBy(m_Input.m_DataEndPos-m_Input.m_CurrentPos);
 }
 
 END_NCBI_SCOPE

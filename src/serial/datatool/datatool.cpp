@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/04/28 16:58:16  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.31  2000/04/13 17:30:37  vasilche
 * Avoid INTERNAL COMPILER ERROR on MSVC.
 * Problem is in "static inline" function which cannot be expanded inline.
@@ -193,8 +197,8 @@ static TObject LoadValue(CFileSet& types, const FileInfo& file,
 static void StoreValue(const TObject& object, const FileInfo& file);
 
 static
-ESerialOpenFlags FileType(const char* arg,
-                          ESerialOpenFlags defType = eSerial_AsnText)
+ESerialDataFormat FileType(const char* arg,
+                           ESerialDataFormat defType = eSerial_AsnText)
 {
     switch ( arg[2] ) {
     case 0:
@@ -209,7 +213,7 @@ ESerialOpenFlags FileType(const char* arg,
 
 static
 void GetFileIn(FileInfo& info, const char* typeArg, const char* name,
-               ESerialOpenFlags defType = eSerial_AsnText)
+               ESerialDataFormat defType = eSerial_AsnText)
 {
     info.type = FileType(typeArg, defType);
     info.name = FileInArgument(name);
@@ -219,7 +223,7 @@ static
 void GetFilesIn(list<FileInfo>& files, const char* typeArg,
                 const char* namesIn)
 {
-    ESerialOpenFlags type = FileType(typeArg);
+    ESerialDataFormat type = FileType(typeArg);
     string names = StringArgument(namesIn);
     SIZE_TYPE pos = 0;
     SIZE_TYPE next = names.find(',');
@@ -233,7 +237,7 @@ void GetFilesIn(list<FileInfo>& files, const char* typeArg,
 
 static
 void GetFileOut(FileInfo& info, const char* typeArg, const char* name,
-               ESerialOpenFlags defType = eSerial_AsnText)
+                ESerialDataFormat defType = eSerial_AsnText)
 {
     info.type = FileType(typeArg, defType);
     info.name = FileOutArgument(name);
@@ -470,8 +474,8 @@ void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
 TObject LoadValue(CFileSet& types, const FileInfo& file,
                   const string& defTypeName)
 {
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(file.name,
-                                                     file.type | eSerial_StdWhenAny));
+    auto_ptr<CObjectIStream> in(CObjectIStream::Open(file.type, file.name,
+                                                     eSerial_StdWhenAny));
     //    in->SetTypeMapper(&types);
     string typeName = in->ReadTypeName();
     if ( typeName.empty() ) {
@@ -488,8 +492,8 @@ TObject LoadValue(CFileSet& types, const FileInfo& file,
 
 void StoreValue(const TObject& object, const FileInfo& file)
 {
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(file.name,
-                                                      file.type | eSerial_StdWhenAny));
+    auto_ptr<CObjectOStream> out(CObjectOStream::Open(file.type, file.name,
+                                                      eSerial_StdWhenAny));
     out->Write(&object.first, object.second);
 }
 

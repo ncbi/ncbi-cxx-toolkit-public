@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/04/28 16:58:12  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.41  2000/04/13 14:50:27  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -221,19 +225,28 @@
 BEGIN_NCBI_SCOPE
 
 
-CObjectIStream* OpenObjectIStreamAsn(CNcbiIstream& in, bool deleteIn)
+CObjectIStream* CreateObjectIStreamAsn(void)
 {
-    return new CObjectIStreamAsn(in, deleteIn);
+    return new CObjectIStreamAsn();
+}
+
+CObjectIStreamAsn::CObjectIStreamAsn(void)
+{
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
-    : m_Input(in)
 {
+    Open(in);
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in, bool deleteIn)
-    : m_Input(in, deleteIn)
 {
+    Open(in, deleteIn);
+}
+
+ESerialDataFormat CObjectIStreamAsn::GetDataFormat(void) const
+{
+    return eSerial_AsnText;
 }
 
 string CObjectIStreamAsn::GetPosition(void) const

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/28 16:58:08  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.2  2000/04/12 15:36:41  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -59,7 +63,7 @@ public:
     CNamespace(void);
     CNamespace(const string& s);
 
-    void Set(const CNamespace& ns, CNcbiOstream& out);
+    void Set(const CNamespace& ns, CNcbiOstream& out, bool mainHeader = true);
 
     string GetNamespaceRef(const CNamespace& ns) const;
 
@@ -151,7 +155,7 @@ protected:
             return m_Namespaces.size();
         }
 
-    void Open(const string& s, CNcbiOstream& out);
+    void Open(const string& s, CNcbiOstream& out, bool mainHeader = true);
     void Close(CNcbiOstream& out);
     void CloseAllAbove(size_t level, CNcbiOstream& out);
 

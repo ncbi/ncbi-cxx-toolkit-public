@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/28 16:58:03  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.1  2000/04/03 18:47:09  vasilche
 * Added main include file for generated headers.
 * serialimpl.hpp is included in generated sources with GetTypeInfo methods
@@ -41,6 +45,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <serial/serialdef.hpp>
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE
@@ -48,6 +53,7 @@ BEGIN_NCBI_SCOPE
 // forward declaration
 class CGeneratedClassInfo;
 class CGeneratedChoiceInfo;
+class CDelayBufferData;
 
 // these methods are external to avoid inclusion of big headers
 void DoSetPostRead(CGeneratedClassInfo* info,
@@ -101,10 +107,20 @@ public:
         {
             return Get(object).Which()-1;
         }
+    static void ResetChoice(void* object)
+        {
+            if ( Which(object) != CClassType::e_not_set )
+                Reset(object);
+        }
     static void Select(void* object, int index)
         {
             typedef typename CClassType::E_Choice E_Choice;
             Get(object).Select(E_Choice(index+1));
+        }
+    static void SelectDelayBuffer(void* object, int index)
+        {
+            typedef typename CClassType::E_Choice E_Choice;
+            Get(object).SelectDelayBuffer(E_Choice(index+1));
         }
 
     static void SetPostRead(NCBI_NS_NCBI::CGeneratedClassInfo* info)
@@ -152,7 +168,8 @@ public:
             CGeneratedChoiceInfo* info =
                 new CGeneratedChoiceInfo(name,
                                          sizeof(CClassType),
-                                         &Create, &Which, &Select);
+                                         &Create, &Which,
+                                         &ResetChoice, &Select);
             SetMethods(info);
             return info;
         }

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/04/28 16:58:12  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.46  2000/04/13 14:50:26  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -201,6 +205,7 @@
 
 #include <exception>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <serial/objistr.hpp>
 #include <serial/typeref.hpp>
 #include <serial/member.hpp>
@@ -208,6 +213,7 @@
 #include <serial/typemapper.hpp>
 #include <serial/enumerated.hpp>
 #include <serial/memberlist.hpp>
+#include <serial/bytesrc.hpp>
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
@@ -218,57 +224,94 @@
 
 BEGIN_NCBI_SCOPE
 
-CObjectIStream* OpenObjectIStreamAsn(CNcbiIstream& in, bool deleteIn);
-CObjectIStream* OpenObjectIStreamAsnBinary(CNcbiIstream& in, bool deleteIn);
+CObjectIStream* CreateObjectIStreamAsn(void);
+CObjectIStream* CreateObjectIStreamAsnBinary(void);
 
-CObjectIStream* CObjectIStream::Open(const string& fileName, unsigned flags)
+CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
+                                            const string& fileName,
+                                            unsigned openFlags)
 {
-    CNcbiIstream* inStream = 0;
-    bool deleteStream;
-    if ( (flags & eSerial_StdWhenEmpty) && fileName.empty() ||
-         (flags & eSerial_StdWhenDash) && fileName == "-" ||
-         (flags & eSerial_StdWhenStd) && fileName == "stdin" ) {
-        inStream = &NcbiCin;
-        deleteStream = false;
+    if ( (openFlags & eSerial_StdWhenEmpty) && fileName.empty() ||
+         (openFlags & eSerial_StdWhenDash) && fileName == "-" ||
+         (openFlags & eSerial_StdWhenStd) && fileName == "stdin" ) {
+        return new CStreamByteSource(CObject::eCanDelete, NcbiCin);
     }
     else {
-        switch ( flags & eSerial_FormatMask ) {
+        bool binary;
+        switch ( format ) {
         case eSerial_AsnText:
-            inStream = new CNcbiIfstream(fileName.c_str());
+            binary = false;
             break;
         case eSerial_AsnBinary:
-            inStream = new CNcbiIfstream(fileName.c_str(),
-                                         IOS_BASE::in | IOS_BASE::binary);
+            binary = true;
             break;
         default:
             THROW1_TRACE(runtime_error,
                          "CObjectIStream::Open: unsupported format");
         }
-        if ( !*inStream ) {
-            delete inStream;
-            THROW1_TRACE(runtime_error, "file not found");
+        
+        if ( (openFlags & eSerial_UseFileForReread) )  {
+            // use file as permanent file
+            return new CFileByteSource(CObject::eCanDelete,
+                                       fileName, binary);
         }
-        deleteStream = true;
+        else {
+            // open file as stream
+            return new CFStreamByteSource(CObject::eCanDelete,
+                                          fileName, binary);
+        }
     }
-
-    return Open(*inStream, flags, deleteStream);
 }
 
-CObjectIStream* CObjectIStream::Open(CNcbiIstream& inStream, unsigned flags,
-                                     bool deleteStream)
+CRef<CByteSource> CObjectIStream::GetSource(CNcbiIstream& inStream,
+                                            bool deleteInStream)
 {
-    switch ( flags & eSerial_FormatMask ) {
+    if ( deleteInStream ) {
+        return new CFStreamByteSource(CObject::eCanDelete, inStream);
+    }
+    else {
+        return new CStreamByteSource(CObject::eCanDelete, inStream);
+    }
+}
+
+CObjectIStream* CObjectIStream::Create(ESerialDataFormat format)
+{
+    switch ( format ) {
     case eSerial_AsnText:
-        return OpenObjectIStreamAsn(inStream, deleteStream);
+        return CreateObjectIStreamAsn();
     case eSerial_AsnBinary:
-        return OpenObjectIStreamAsnBinary(inStream, deleteStream);
+        return CreateObjectIStreamAsnBinary();
+    default:
+        break;
     }
     THROW1_TRACE(runtime_error,
                  "CObjectIStream::Open: unsupported format");
 }
 
+CObjectIStream* CObjectIStream::Create(ESerialDataFormat format,
+                                       const CRef<CByteSource>& source)
+{
+    AutoPtr<CObjectIStream> stream(Create(format));
+    stream->Open(source);
+    return stream.release();
+}
+
+CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
+                                     CNcbiIstream& inStream,
+                                     bool deleteInStream)
+{
+    return Create(format, GetSource(inStream, deleteInStream));
+}
+
+CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
+                                     const string& fileName,
+                                     unsigned openFlags)
+{
+    return Create(format, GetSource(format, fileName, openFlags));
+}
+
 CObjectIStream::CObjectIStream(void)
-    : m_Fail(0), m_CurrentElement(0), m_TypeMapper(0)
+    : m_Fail(eNotOpen), m_CurrentElement(0), m_TypeMapper(0)
 {
 }
 
@@ -277,13 +320,40 @@ CObjectIStream::~CObjectIStream(void)
     _TRACE("~CObjectIStream: "<<m_Objects.size()<<" objects read");
 }
 
+void CObjectIStream::Open(const CRef<CByteSourceReader>& reader)
+{
+    Close();
+    _ASSERT(m_Fail == eNotOpen);
+    m_Input.Open(reader);
+    m_Fail = 0;
+}
+
+void CObjectIStream::Open(const CRef<CByteSource>& source)
+{
+    Open(source.GetObject().Open());
+}
+
+void CObjectIStream::Open(CNcbiIstream& inStream, bool deleteInStream)
+{
+    Open(GetSource(inStream, deleteInStream));
+}
+
+void CObjectIStream::Close(void)
+{
+    m_Input.Close();
+    m_Objects.clear();
+    m_Fail = eNotOpen;
+    _ASSERT(m_CurrentElement == 0);
+}
+
 unsigned CObjectIStream::SetFailFlags(unsigned flags)
 {
     unsigned old = m_Fail;
     m_Fail |= flags;
     if ( !old && flags ) {
         // first fail
-        ERR_POST("CObjectIStream: error at "<<GetPosition()<<": "<<MemberStack());
+        ERR_POST("CObjectIStream: error at "<<
+                 GetPosition()<<": "<<MemberStack());
     }
     return old;
 }
@@ -340,6 +410,39 @@ void CObjectIStream::ThrowIOError1(const char* file, int line,
     }
 }
 
+#if NCBISER_ALLOW_CYCLES
+void CObjectIStream::RegisterObject(TObjectPtr object, TTypeInfo typeInfo)
+{
+    _TRACE("CObjectIStream::RegisterObject(x, "<<
+           typeInfo->GetName()<<") = "<<m_Objects.size());
+    m_Objects.push_back(CObjectInfo(object, typeInfo));
+}
+#else
+inline
+void CObjectIStream::RegisterObject(TObjectPtr /*object*/,
+                                    TTypeInfo /*typeInfo*/)
+{
+}
+#endif
+
+const CObjectInfo& CObjectIStream::GetRegisteredObject(TIndex index) const
+{
+#if NCBISER_ALLOW_CYCLES
+    if ( index >= m_Objects.size() ) {
+        const_cast<CObjectIStream*>(this)->SetFailFlags(eFormatError);
+        THROW1_TRACE(runtime_error, "invalid object index");
+    }
+    const CObjectInfo& info = m_Objects[index];
+    if ( !info.GetObjectPtr() ) {
+        const_cast<CObjectIStream*>(this)->SetFailFlags(eFormatError);
+        THROW1_TRACE(runtime_error, "invalid reference to skipped object");
+    }
+    return info;
+#else
+    THROW1_TRACE(runtime_error, "invalid object index: NO_COLLECT defined");
+#endif
+}
+
 // root reader
 void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
@@ -352,9 +455,7 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
             THROW1_TRACE(runtime_error,
                          "incompatible type " + name + "<>" +
                          typeInfo->GetName());
-#if NCBISER_ALLOW_CYCLES
         RegisterObject(object, typeInfo);
-#endif
         ReadData(object, typeInfo);
         m.End();
     }
@@ -369,13 +470,40 @@ void CObjectIStream::Read(TObjectPtr object, const CTypeRef& type)
     Read(object, type.Get());
 }
 
+CRef<CByteSource> CObjectIStream::DelayRead(TTypeInfo typeInfo)
+{
+    CByteSourceSkipper skip(m_Input);
+    SkipData(typeInfo);
+    return skip.GetSkippedSource();
+}
+
+void CObjectIStream::SetDefaultReadManager(CRef<CObjectReadManager> manager)
+{
+    m_DefaultReadManager = manager;
+}
+
+void CObjectIStream::SetReadManager(TTypeInfo ownerType,
+                                    const CMemberInfo* member,
+                                    CRef<CObjectReadManager> manager)
+{
+    m_ReadManagers.push_back(SReadManagerInfo(ownerType, member, manager));
+}
+
+CObjectReadManager* CObjectIStream::FindReadManager(TTypeInfo ownerType,
+                                                    const CMemberInfo* member)
+{
+    non_const_iterate ( TReadManagers, i, m_ReadManagers ) {
+        if ( i->type == ownerType && i->member == member )
+            return i->manager.GetPointer();
+    }
+    return m_DefaultReadManager.GetPointer();
+}
+
 void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
 {
     _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ")");
-#if NCBISER_ALLOW_CYCLES
     RegisterObject(object, typeInfo);
-#endif
     ReadData(object, typeInfo);
 }
 
@@ -385,9 +513,7 @@ CObjectInfo CObjectIStream::ReadObject(void)
         TTypeInfo typeInfo = MapType(ReadTypeName());
         StackElement m(*this, typeInfo->GetName());
         CObjectInfo object(typeInfo);
-#if NCBISER_ALLOW_CYCLES
         RegisterObject(object.GetObjectPtr(), object.GetTypeInfo());
-#endif
         ReadData(object.GetObjectPtr(), object.GetTypeInfo());
         return object;
     }
@@ -466,9 +592,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
             {
                 _TRACE("CObjectIStream::ReadPointer: new");
                 TObjectPtr object = declaredType->Create();
-#if NCBISER_ALLOW_CYCLES
                 RegisterObject(object, declaredType);
-#endif
                 ReadData(object, declaredType);
                 ReadThisPointerEnd();
                 return object;
@@ -481,9 +605,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                 _TRACE("CObjectIStream::ReadPointer: new " << className);
                 TTypeInfo typeInfo = MapType(className);
                 TObjectPtr object = typeInfo->Create();
-#if NCBISER_ALLOW_CYCLES
                 RegisterObject(object, declaredType);
-#endif
                 ReadData(object, declaredType);
                 ReadOtherPointerEnd();
                 m.End();
@@ -543,9 +665,7 @@ CObjectInfo CObjectIStream::ReadObjectInfo(void)
             _TRACE("CObjectIStream::ReadPointer: new " << className);
             TTypeInfo typeInfo = MapType(className);
             TObjectPtr object = typeInfo->Create();
-#if NCBISER_ALLOW_CYCLES
             RegisterObject(object, typeInfo);
-#endif
             ReadData(object, typeInfo);
             ReadOtherPointerEnd();
             m.End();
@@ -598,6 +718,7 @@ void CObjectIStream::Skip(TTypeInfo typeInfo)
             THROW1_TRACE(runtime_error,
                          "incompatible type " + name + "<>" +
                          typeInfo->GetName());
+        RegisterObject(0, typeInfo);
         SkipData(typeInfo);
         m.End();
     }
@@ -614,7 +735,8 @@ void CObjectIStream::Skip(const CTypeRef& type)
 
 void CObjectIStream::SkipExternalObject(TTypeInfo typeInfo)
 {
-    _TRACE("CObjectIStream::SkipExternalObject(" << typeInfo->GetName() << ")");
+    _TRACE("CObjectIStream::SkipExternalObject("<<typeInfo->GetName()<<")");
+    RegisterObject(0, typeInfo);
     SkipData(typeInfo);
 }
 
@@ -637,6 +759,7 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
         case eThisPointer:
             {
                 _TRACE("CObjectIStream::ReadPointer: new");
+                RegisterObject(0, declaredType);
                 SkipData(declaredType);
                 ReadThisPointerEnd();
                 break;
@@ -648,6 +771,7 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
                 StackElement m(*this, className);
                 _TRACE("CObjectIStream::ReadPointer: new " << className);
                 TTypeInfo typeInfo = MapType(className);
+                RegisterObject(0, typeInfo);
                 SkipData(typeInfo);
                 ReadOtherPointerEnd();
                 m.End();
@@ -681,6 +805,7 @@ void CObjectIStream::SkipObjectInfo(void)
             StackElement m(*this, className);
             _TRACE("CObjectIStream::ReadPointer: new " << className);
             TTypeInfo typeInfo = MapType(className);
+            RegisterObject(0, typeInfo);
             SkipData(typeInfo);
             ReadOtherPointerEnd();
             m.End();
@@ -1087,28 +1212,6 @@ void CObjectIStream::SkipCString(void)
 void CObjectIStream::SkipStringStore(void)
 {
     SkipString();
-}
-
-void CObjectIStream::RegisterObject(TObjectPtr object, TTypeInfo typeInfo)
-{
-#if NCBISER_ALLOW_CYCLES
-    _TRACE("CObjectIStream::RegisterObject(x, "<<
-           typeInfo->GetName()<<") = "<<m_Objects.size());
-    m_Objects.push_back(CObjectInfo(object, typeInfo));
-#endif
-}
-
-const CObjectInfo& CObjectIStream::GetRegisteredObject(TIndex index) const
-{
-#if NCBISER_ALLOW_CYCLES
-    if ( index >= m_Objects.size() ) {
-        const_cast<CObjectIStream*>(this)->SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "invalid object index");
-    }
-    return m_Objects[index];
-#else
-    THROW1_TRACE(runtime_error, "invalid object index: NO_COLLECT defined");
-#endif
 }
 
 #if HAVE_NCBI_C

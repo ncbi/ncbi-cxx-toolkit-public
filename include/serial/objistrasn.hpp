@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/04/28 16:58:02  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.29  2000/04/13 14:50:17  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -160,7 +164,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
-#include <serial/strbuffer.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -169,8 +172,11 @@ class CObjectIStreamAsn : public CObjectIStream
 public:
     typedef unsigned char TByte;
 
+    CObjectIStreamAsn(void);
     CObjectIStreamAsn(CNcbiIstream& in);
     CObjectIStreamAsn(CNcbiIstream& in, bool deleteIn);
+
+    ESerialDataFormat GetDataFormat(void) const;
 
     virtual string GetPosition(void) const;
 
@@ -264,8 +270,6 @@ private:
     char SkipWhiteSpace(void);
     char SkipWhiteSpaceAndGetChar(void);
     void SkipComments(void);
-
-    CIStreamBuffer m_Input;
 };
 
 //#include <objistrb.inl>

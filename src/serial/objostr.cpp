@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/04/28 16:58:13  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.35  2000/04/13 14:50:27  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -168,6 +172,7 @@
 #include <serial/typeinfo.hpp>
 #include <serial/enumerated.hpp>
 #include <serial/memberlist.hpp>
+#include <serial/bytesrc.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -177,18 +182,20 @@ BEGIN_NCBI_SCOPE
 CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& in, bool deleteOut);
 CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& in, bool deleteOut);
 
-CObjectOStream* CObjectOStream::Open(const string& fileName, unsigned flags)
+CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
+                                     const string& fileName,
+                                     unsigned openFlags)
 {
     CNcbiOstream* outStream = 0;
     bool deleteStream;
-    if ( (flags & eSerial_StdWhenEmpty) && fileName.empty() ||
-         (flags & eSerial_StdWhenDash) && fileName == "-" ||
-         (flags & eSerial_StdWhenStd) && fileName == "stdout" ) {
+    if ( (openFlags & eSerial_StdWhenEmpty) && fileName.empty() ||
+         (openFlags & eSerial_StdWhenDash) && fileName == "-" ||
+         (openFlags & eSerial_StdWhenStd) && fileName == "stdout" ) {
         outStream = &NcbiCout;
         deleteStream = false;
     }
     else {
-        switch ( flags & eSerial_FormatMask ) {
+        switch ( format ) {
         case eSerial_AsnText:
             outStream = new CNcbiOfstream(fileName.c_str());
             break;
@@ -207,29 +214,28 @@ CObjectOStream* CObjectOStream::Open(const string& fileName, unsigned flags)
         deleteStream = true;
     }
 
-    return Open(*outStream, flags, deleteStream);
+    return Open(format, *outStream, deleteStream);
 }
 
-CObjectOStream* CObjectOStream::Open(CNcbiOstream& outStream, unsigned flags,
+CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
+                                     CNcbiOstream& outStream,
                                      bool deleteStream)
 {
-    switch ( flags & eSerial_FormatMask ) {
+    switch ( format ) {
     case eSerial_AsnText:
         return OpenObjectOStreamAsn(outStream, deleteStream);
     case eSerial_AsnBinary:
         return OpenObjectOStreamAsnBinary(outStream, deleteStream);
+    default:
+        break;
     }
     THROW1_TRACE(runtime_error,
                  "CObjectOStream::Open: unsupported format");
 }
 
-CObjectOStream::CObjectOStream(void)
-{
-}
-
 CObjectOStream::~CObjectOStream(void)
 {
-    _TRACE("~CObjectOStream: "<<m_Objects.GetObjectCount()<<" objects written");
+    _TRACE("~CObjectOStream:"<<m_Objects.GetObjectCount()<<" objects written");
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
@@ -249,6 +255,7 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
     WriteTypeName(typeInfo->GetName());
     WriteData(object, typeInfo);
 #endif
+    FlushBuffer();
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, const CTypeRef& type)
@@ -273,6 +280,12 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
 #else
     WriteData(object, typeInfo);
 #endif
+}
+
+bool CObjectOStream::Write(const CRef<CByteSource>& source)
+{
+    m_Output.Write(source.GetObject().Open());
+    return true;
 }
 
 void CObjectOStream::WriteTypeName(const string& )

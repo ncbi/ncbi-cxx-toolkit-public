@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/04/28 16:58:12  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.11  2000/04/10 21:01:48  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -93,6 +97,8 @@
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
 #include <serial/iteratorbase.hpp>
+#include <serial/bytesrc.hpp>
+#include <serial/delaybuf.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -145,6 +151,17 @@ bool CChoiceTypeInfoBase::IsDefault(TConstObjectPtr object) const
     return object == 0 || GetIndex(object) == -1;
 }
 
+void CChoiceTypeInfoBase::ResetIndex(TObjectPtr object) const
+{
+    SetIndex(object, -1);
+}
+
+void CChoiceTypeInfoBase::SetDelayIndex(TObjectPtr /*object*/,
+                                          TMemberIndex /*index*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
 bool CChoiceTypeInfoBase::Equals(TConstObjectPtr object1,
                                  TConstObjectPtr object2) const
 {
@@ -157,21 +174,24 @@ bool CChoiceTypeInfoBase::Equals(TConstObjectPtr object1,
         return GetVariantTypeInfo(index)->Equals(GetData(object1, index),
                                                  GetData(object2, index));
     }
-    return index == -1;
+    return false;
 }
 
 void CChoiceTypeInfoBase::SetDefault(TObjectPtr dst) const
 {
-    SetIndex(dst, -1);
+    ResetIndex(dst);
 }
 
 void CChoiceTypeInfoBase::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
     TMemberIndex index = GetIndex(src);
-    SetIndex(dst, index);
     if ( index >= 0 && index < GetVariantsCount() ) {
+        SetIndex(dst, index);
         GetVariantTypeInfo(index)->Assign(GetData(dst, index),
                                           GetData(src, index));
+    }
+    else {
+        ResetIndex(dst);
     }
 }
 
@@ -181,8 +201,17 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
     TMemberIndex index = GetIndex(object);
     if ( index >= 0 && index < GetVariantsCount() ) {
         CObjectOStream::Member m(out, GetMembers(), index);
-        GetVariantTypeInfo(index)->
-            WriteData(out, GetData(object, index));
+        const CMemberInfo* memberInfo = m_Members.GetMemberInfo(index);
+        if ( memberInfo->CanBeDelayed() &&
+             memberInfo->GetDelayBuffer(object).Write(out) ) {
+            // copied original delayed read buffer, do nothing
+        }
+        else {
+            memberInfo->GetTypeInfo()->WriteData(out, GetData(object, index));
+        }
+    }
+    else {
+        THROW1_TRACE(runtime_error, "cannot write unset choice");
     }
 }
 
@@ -191,9 +220,28 @@ void CChoiceTypeInfoBase::ReadData(CObjectIStream& in,
 {
     CObjectIStream::Member m(in, GetMembers());
     TMemberIndex index = m.GetIndex();
-    SetIndex(object, index);
-    GetVariantTypeInfo(index)->
-        ReadData(in, GetData(object, index));
+    const CMemberInfo* memberInfo = m_Members.GetMemberInfo(index);
+    bool sameIndex = (index == GetIndex(object));
+    if ( sameIndex ) {
+        // already have some values set -> plain read even if
+        // member can be delayed
+    }
+    else {
+        // index is differnet from current -> first, reset choice
+        ResetIndex(object);
+        if ( memberInfo->CanBeDelayed() &&
+             memberInfo->GetDelayBuffer(object).DelayRead(in,
+                                                          object, index,
+                                                          memberInfo) ) {
+            // we've got delayed buffer -> select using delay buffer
+            SetDelayIndex(object, index);
+            m.End();
+            return;
+        }
+        // select for reading
+        SetIndex(object, index);
+    }
+    memberInfo->GetTypeInfo()->ReadData(in, GetData(object, index));
     m.End();
 }
 
@@ -283,18 +331,27 @@ void CChoiceTypeInfoBase::Next(CChildrenIterator& cc) const
 
 void CChoiceTypeInfoBase::Erase(CChildrenIterator& cc) const
 {
-    SetIndex(cc.GetParentPtr(), -1);
+    ResetIndex(cc.GetParentPtr());
 }
 
 CGeneratedChoiceInfo::CGeneratedChoiceInfo(const char* name,
                                            size_t size,
-                                           TCreateFunction cF,
-                                           TGetIndexFunction gIF,
-                                           TSetIndexFunction sIF)
+                                           TCreateFunction createFunc,
+                                           TWhichFunction whichFunc,
+                                           TResetFunction resetFunc,
+                                           TSelectFunction selectFunc)
     : CParent(name), m_Size(size),
-      m_CreateFunction(cF), m_GetIndexFunction(gIF), m_SetIndexFunction(sIF),
-      m_PostReadFunction(0), m_PreWriteFunction(0)
+      m_CreateFunction(createFunc), m_WhichFunction(whichFunc),
+      m_ResetFunction(resetFunc), m_SelectFunction(selectFunc),
+      m_SelectDelayFunction(0), m_PostReadFunction(0), m_PreWriteFunction(0)
 {
+}
+
+void CGeneratedChoiceInfo::SetSelectDelay(TSelectDelayFunction func)
+{
+    _ASSERT(m_SelectDelayFunction == 0);
+    _ASSERT(func != 0);
+    m_SelectDelayFunction = func;
 }
 
 void CGeneratedChoiceInfo::SetPostRead(TPostReadFunction func)
@@ -335,21 +392,37 @@ TObjectPtr CGeneratedChoiceInfo::Create(void) const
 
 TMemberIndex CGeneratedChoiceInfo::GetIndex(TConstObjectPtr object) const
 {
-    return m_GetIndexFunction(object);
+    return m_WhichFunction(object);
+}
+
+void CGeneratedChoiceInfo::ResetIndex(TObjectPtr object) const
+{
+    m_ResetFunction(object);
 }
 
 void CGeneratedChoiceInfo::SetIndex(TObjectPtr object,
                                     TMemberIndex index) const
 {
-    m_SetIndexFunction(object, index);
+    m_SelectFunction(object, index);
+}
+
+void CGeneratedChoiceInfo::SetDelayIndex(TObjectPtr object,
+                                           TMemberIndex index) const
+{
+    m_SelectDelayFunction(object, index);
 }
 
 TObjectPtr CGeneratedChoiceInfo::x_GetData(TObjectPtr object,
                                            TMemberIndex index) const
 {
     _ASSERT(object != 0);
+    _ASSERT(GetIndex(object) == index);
     const CMemberInfo* info = GetMembers().GetMemberInfo(index);
     TObjectPtr memberPtr = info->GetMember(object);
+
+    if ( info->CanBeDelayed() )
+        info->GetDelayBuffer(object).Update();
+
     if ( info->IsPointer() ) {
         memberPtr = CType<TObjectPtr>::Get(memberPtr);
         _ASSERT(memberPtr != 0 );

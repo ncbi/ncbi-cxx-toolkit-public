@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/04/28 16:58:14  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
 * Revision 1.32  2000/04/13 14:50:28  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -167,7 +171,7 @@ CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out, bool deleteOut)
 }
 
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out)
-    : m_Output(out)
+    : CObjectOStream(out)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
@@ -178,7 +182,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out)
 
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  bool deleteOut)
-    : m_Output(out, deleteOut)
+    : CObjectOStream(out, deleteOut)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
@@ -193,6 +197,11 @@ CObjectOStreamAsnBinary::~CObjectOStreamAsnBinary(void)
     if ( !m_Limits.empty() || m_CurrentTagState != eTagStart )
         THROW1_TRACE(runtime_error, "CObjectOStreamAsnBinary not finished");
 #endif
+}
+
+ESerialDataFormat CObjectOStreamAsnBinary::GetDataFormat(void) const
+{
+    return eSerial_AsnBinary;
 }
 
 #if CHECK_STREAM_INTEGRITY
