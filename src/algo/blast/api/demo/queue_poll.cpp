@@ -421,10 +421,7 @@ s_ShowAlign(CNcbiOstream         & os,
         os << "This search did not find any matches.\n";
         return;
     }
-    
-    list <CDisplaySeqalign::SeqlocInfo*>  none1;
-    list <CDisplaySeqalign::FeatureInfo*> none2;
-    
+   
     AutoPtr<CDisplaySeqalign> dsa_ptr;
     
     // if (async_mode || (! gapped)) {
@@ -439,7 +436,7 @@ s_ShowAlign(CNcbiOstream         & os,
     CRef<CSeq_align_set> newalign =
         CDisplaySeqalign::PrepareBlastUngappedSeqalign(*alignments);
     
-    dsa_ptr = new CDisplaySeqalign(*newalign, none1, none2, 0, * scope);
+    dsa_ptr = new CDisplaySeqalign(*newalign, * scope);
     
     // } else {
     //     dsa_ptr = new CDisplaySeqalign(*alignments, none1, none2, 0, * scope);
@@ -589,6 +586,9 @@ QueueAndPoll(string                program,       ///< program name
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2005/02/14 19:06:26  jianye
+ * modification due to constructor change in showalign.cpp
+ *
  * Revision 1.14  2004/11/02 17:53:02  camacho
  * Add SKIP_DOXYGEN_PROCESSING to rcsid string
  *

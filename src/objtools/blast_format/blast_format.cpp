@@ -131,15 +131,13 @@ BLAST_FormatResults(TSeqAlignVector &seqalignv,
 {
     unsigned int index;
     
-    list <CDisplaySeqalign::FeatureInfo*> featureInfo;
-    
     for (index = 0; index < seqalignv.size(); ++index) {
         if (!seqalignv[index]->IsSet())
             continue;
         
         query[index].scope->AddDataLoader(format_options->GetDbLoaderName());
-        CDisplaySeqalign display(*seqalignv[index], maskv[index], 
-                                 featureInfo, 0, *query[index].scope);
+        CDisplaySeqalign display(*seqalignv[index], *query[index].scope,
+                                 &(maskv[index]), NULL, 0);
         SetDisplayParameters(display, format_options, program);
         display.DisplaySeqalign(*format_options->GetOstream());
     }

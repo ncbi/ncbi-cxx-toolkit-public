@@ -423,19 +423,16 @@ s_ShowAlign(CNcbiOstream       & os,
     }
     
     CSeq_align_set & alignment(cgsrr.SetAlignments());
-    
-    list <CDisplaySeqalign::SeqlocInfo*>  none1;
-    list <CDisplaySeqalign::FeatureInfo*> none2;
-    
+
     AutoPtr<CDisplaySeqalign> dsa_ptr;
     
     if (! gapped) {
         CRef<CSeq_align_set> newalign =
             CDisplaySeqalign::PrepareBlastUngappedSeqalign(alignment);
         
-        dsa_ptr = new CDisplaySeqalign(*newalign, none1, none2, 0, * scope);
+        dsa_ptr = new CDisplaySeqalign(*newalign,  * scope);
     } else {
-        dsa_ptr = new CDisplaySeqalign(alignment, none1, none2, 0, * scope);
+        dsa_ptr = new CDisplaySeqalign(alignment,  * scope);
     }
     
     alparms.AdjustDisplay(*dsa_ptr);
@@ -575,6 +572,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/02/14 19:09:02  jianye
+ * modification due to constructor change in showalign.cpp
+ *
  * Revision 1.11  2004/07/21 15:51:24  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added
