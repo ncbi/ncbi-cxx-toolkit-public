@@ -232,13 +232,14 @@ void CValidError_imp::PostErr
     // Append label for bioseq of feature location
     if (!m_SuppressContext) {
         try {
-            const CSeq_id& id = GetId(ft.GetLocation(), m_Scope.GetPointer());
+            const CSeq_id& id = GetId(ft.GetLocation(), m_Scope);
             CBioseq_Handle hnd = m_Scope.GetPointer()->GetBioseqHandle(id);
             CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
             msg += "[";
             bc->GetLabel(&msg, CBioseq::eBoth);
             msg += "]";
-        } catch (...){};
+        } catch (...){
+        };
     }
 
     // Append label for product of feature
@@ -419,6 +420,11 @@ void CValidError_imp::Validate(const CSeq_entry& se, const CCit_sub* cs)
     for (CTypeConstIterator <CSeq_descr> ei (se); ei; ++ei) {
         descr_validator.ValidateSeqDescr(*ei);
     }
+
+    ReportMissingPubs(se, cs);
+    ReportMissingBiosource(se);
+    ReportProtWithoutFullRef();
+    ReportBioseqsWithNoMolinfo();
 }
 
 
@@ -433,9 +439,8 @@ void CValidError_imp::Validate(const CSeq_submit& ss)
     const CCit_sub* cs = &ss.GetSub().GetCit();
 
     // Just loop thru CSeq_entrys
-    iterate( list< CRef< CSeq_entry > >, i, ss.GetData().GetEntrys() ) {
-        const CSeq_entry* se = i->GetPointer();
-        Validate(*se, cs);
+    iterate( list< CRef< CSeq_entry > >, se, ss.GetData().GetEntrys() ) {
+        Validate(**se, cs);
     }
 }
 
@@ -1179,61 +1184,83 @@ void CValidError_imp::AddBioseqWithNoBiosource(const CBioseq& seq)
 }
 
 
+void CValidError_imp::AddBioseqWithNoMolinfo(const CBioseq& seq)
+{
+    m_BioseqWithNoMolinfo.push_back(CConstRef<CBioseq>(&seq));
+}
+
+
 void CValidError_imp::AddProtWithoutFullRef(const CBioseq& seq)
 {
     m_ProtWithNoFullRef.push_back(CConstRef<CBioseq>(&seq));
 }
 
 
-void CValidError_imp::ReportMissingPubs(const CBioseq& seq, const CCit_sub* cs)
+void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs)
 {
-    if (m_NoPubs  &&  !m_IsGPS  &&  !m_IsRefSeq  &&  !cs) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoPubFound, 
-            "No publications anywhere on this entire record", seq);
-    } else {
-        size_t num_no_pubs = m_BioseqWithNoPubs.size();
-        if ( num_no_pubs > 10 ) {
+    if ( m_NoPubs ) {
+        if ( !m_IsGPS  &&  !m_IsRefSeq  &&  !cs) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_NoPubFound, 
+                "No publications anywhere on this entire record", se);
+        } 
+        return;
+    }
+
+    size_t num_no_pubs = m_BioseqWithNoPubs.size();
+
+    EDiagSev sev = IsCuratedRefSeq() ? eDiag_Error : eDiag_Warning;
+
+    if ( num_no_pubs == 1 ) {
+        PostErr(sev, eErr_SEQ_DESCR_NoPubFound, 
+            "No publications refer to this Bioseq.",
+            *(m_BioseqWithNoPubs[0]));
+    } else if ( num_no_pubs > 10 ) {
+        PostErr(sev, eErr_SEQ_DESCR_NoPubFound, 
+            NStr::IntToString(num_no_pubs) + 
+            " Bioseqs without publication in this record  (first reported)",
+            *(m_BioseqWithNoPubs[0]));
+    } else {
+        string msg;
+        for ( size_t i = 0; i < num_no_pubs; ++i ) {
+            msg = NStr::IntToString(i + 1) + " of " + 
                 NStr::IntToString(num_no_pubs) + 
-                " Bioseqs without publication in this record  (first reported)",
-                *(m_BioseqWithNoPubs[0]));
-        } else {
-            string msg;
-            for ( size_t i =0; i < num_no_pubs; ++i ) {
-                msg = NStr::IntToString(i + 1) + " of " + 
-                    NStr::IntToString(num_no_pubs) + 
-                    " Bioseqs without publication";
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_NoPubFound, msg, 
-                    *(m_BioseqWithNoPubs[0]));
-            }
+                " Bioseqs without publication";
+            PostErr(sev, eErr_SEQ_DESCR_NoPubFound, msg, 
+                *(m_BioseqWithNoPubs[i]));
         }
-    }        
+    }
 }
 
 
-void CValidError_imp::ReportMissingBiosource(const CBioseq& seq)
+void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
 {
     if(m_NoBioSource  &&  !m_IsPatent  &&  !m_IsPDB) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
-            "No organism name anywhere on this entire record", seq);
+            "No organism name anywhere on this entire record", se);
+        return;
+    }
+    
+    size_t num_no_source = m_BioseqWithNoSource.size();
+    
+    if ( num_no_source == 1 ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound, 
+            "No organism name has been applied to this Bioseq.",
+            *(m_BioseqWithNoSource[0]));
+    } else if ( num_no_source > 10 ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound, 
+            NStr::IntToString(num_no_source) + 
+            " Bioseqs without organism name in this record (first reported)",
+            *(m_BioseqWithNoSource[0]));
     } else {
-        size_t num_no_source = m_BioseqWithNoSource.size();
-        if ( num_no_source > 10 ) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound, 
+        string msg;
+        for ( size_t i = 0; i < num_no_source; ++i ) {
+            msg = NStr::IntToString(i + 1) + " of " + 
                 NStr::IntToString(num_no_source) + 
-                " Bioseqs without source in this record (first reported)",
-                *(m_BioseqWithNoSource[0]));
-        } else {
-            string msg;
-            for ( size_t i =0; i < num_no_source; ++i ) {
-                msg = NStr::IntToString(i + 1) + " of " + 
-                    NStr::IntToString(num_no_source) + 
-                    " Bioseqs without publication";
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound, msg, 
-                    *(m_BioseqWithNoSource[0]));
-            }
+                " Bioseqs without organism name";
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound, msg, 
+                *(m_BioseqWithNoSource[i]));
         }
-    }        
+    }
 }
 
 
@@ -1241,19 +1268,53 @@ void CValidError_imp::ReportProtWithoutFullRef(void)
 {
     size_t num = m_ProtWithNoFullRef.size();
     
-    if ( num > 10 ) {
+    if ( num == 1 ) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
+            "No full length Prot-ref feature applied to this Bioseq",
+            *(m_ProtWithNoFullRef[0]));
+    } else if ( num > 10 ) {
         PostErr(eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
             NStr::IntToString(num) + " Bioseqs with no full length " 
-            "Prot-ref feature (first reported)",
+            "Prot-ref feature applied to them (first reported)",
             *(m_ProtWithNoFullRef[0]));
     } else {
         string msg;
         for ( size_t i = 0; i < num; ++i ) {
             msg = NStr::IntToString(i + 1) + " of " + 
                 NStr::IntToString(num) + 
-                " Bioseqs without full length Prot-ref feature";
+                " Bioseqs without full length Prot-ref feature applied to";
             PostErr(eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, msg, 
-                *(m_ProtWithNoFullRef[0]));
+                *(m_ProtWithNoFullRef[i]));
+        }
+    }
+}   
+
+
+void CValidError_imp::ReportBioseqsWithNoMolinfo(void)
+{
+    if ( m_BioseqWithNoMolinfo.empty() ) {
+        return;
+    }
+
+    size_t num = m_BioseqWithNoMolinfo.size();
+    
+    if ( num == 1 ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoMolInfoFound, 
+            "No Mol-info applies to this Bioseq",
+            *(m_BioseqWithNoMolinfo[0]));
+    } else if ( num > 10 ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoMolInfoFound, 
+            NStr::IntToString(num) + " Bioseqs with no Mol-info " 
+            "applied to them (first reported)",
+            *(m_BioseqWithNoMolinfo[0]));
+    } else {
+        string msg;
+        for ( size_t i = 0; i < num; ++i ) {
+            msg = NStr::IntToString(i + 1) + " of " + 
+                NStr::IntToString(num) + 
+                " Bioseqs with no Mol-info applied to";
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_NoMolInfoFound, msg, 
+                *(m_BioseqWithNoMolinfo[i]));
         }
     }
 }   
@@ -1387,12 +1448,17 @@ bool CValidError_imp::IsMixedStrands(const CSeq_loc& loc)
 
 void CValidError_imp::Setup(const CSeq_entry& se) 
 {
+    // "Save" the Seq-entry
+    m_TSE = &se;
+
     // Set scope to CSeq_entry
     SetScope(se);
 
     // If no Pubs/BioSource in CSeq_entry, post only one error
-    m_NoPubs = !AnyObj<CPub, CSeq_entry>(se);
-    m_NoBioSource = !AnyObj<CBioSource, CSeq_entry>(se);
+    CTypeConstIterator<CPub> pub(ConstBegin(se));
+    m_NoPubs = !pub;
+    CTypeConstIterator<CBioSource> src(ConstBegin(se));
+    m_NoBioSource = !src;
 
     // Look for genomic product set
     for (CTypeConstIterator <CBioseq_set> si (se); si; ++si) {
@@ -1624,6 +1690,11 @@ void CValidError_imp::ValidateSourceQualTags
 }
 
 
+bool CValidError_imp::IsCuratedRefSeq(void) const {
+    return !(IsNM()  ||  IsNP()  || IsNG()  ||  IsNR());
+}
+
+
 // =============================================================================
 //                         CValidError_base Implementation
 // =============================================================================
@@ -1731,6 +1802,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/02/14 21:47:13  shomrat
+* Added methods to report Bioseqs with no MolInfo
+*
 * Revision 1.16  2003/02/12 17:49:24  shomrat
 * Added implementation of IsSerialNumberInComment; Changed implementation of IsFarLocation
 *
