@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/07/03 14:40:46  ucko
+* Use typedef rather than hard-coded type for Dense_diag.ids.
+*
 * Revision 1.14  2002/06/07 16:13:24  ucko
 * GetTitle() is now in sequence::.
 *
@@ -329,7 +332,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
                 // dimensionality = 2
                 diag->SetDim(2);
                 // list of Seq_ids (gi) (sequences in order)
-                list< CRef<CSeq_id> >& id_list = diag->SetIds();
+                CDense_diag::TIds& id_list = diag->SetIds();
                 CRef<CSeq_id> id(new CSeq_id);
                 id->SetGi(11+index*1000);
                 id_list.push_back(id);
