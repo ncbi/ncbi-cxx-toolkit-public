@@ -55,7 +55,9 @@
  */
 
 
-// threads configuration
+/*
+ * threads configuration
+ */
 #undef NCBI_NO_THREADS
 #undef NCBI_THREADS
 #undef NCBI_POSIX_THREADS
@@ -182,6 +184,9 @@ typedef long long intptr_t;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/03/08 14:54:50  vasilche
+ * Use C style comment in this file.
+ *
  * Revision 1.14  2005/01/31 16:32:54  ucko
  * Ensure that intptr_t is available.
  *
