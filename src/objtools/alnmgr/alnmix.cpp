@@ -573,9 +573,7 @@ void CAlnMix::x_Merge()
 
     refseq = *(m_Seqs.begin());
     TMatches::iterator match_i = m_Matches.begin();
-#if _ALNMGR_DEBUG
     m_MatchIdx = 0;
-#endif
     
     CRef<CAlnMixSegment> seg;
     CAlnMixSeq::TStarts::iterator start_i, lo_start_i, hi_start_i, tmp_start_i;
@@ -657,9 +655,8 @@ void CAlnMix::x_Merge()
 
         // save the match info into the segments map
         if (seq1) {
-#if _ALNMGR_DEBUG
             m_MatchIdx++;
-#endif
+
             // order the match
             match->m_AlnSeq1 = seq1;
             match->m_Start1 = start1;
@@ -2140,7 +2137,6 @@ void CAlnMix::ChooseSeqId(CSeq_id& id1, const CSeq_id& id2)
 }    
 
 
-#ifdef _DEBUG
 void CAlnMix::x_SegmentStartItsConsistencyCheck(const CAlnMixSegment& seg,
                                                 const CAlnMixSeq&     seq,
                                                 const TSeqPos&        start)
@@ -2151,9 +2147,7 @@ void CAlnMix::x_SegmentStartItsConsistencyCheck(const CAlnMixSegment& seg,
         if ((*st_it_i).second->second != &seg) {
             string errstr =
                 string("CAlnMix::x_SegmentStartItsConsistencyCheck")
-#if _ALNMGR_DEBUG
                 + " [match_idx=" + NStr::IntToString(m_MatchIdx) + "]"
-#endif
                 + " The internal consistency check failed for"
                 + " the segment containing ["
                 + " row=" + NStr::IntToString((*st_it_i).first->m_RowIndex)
@@ -2172,7 +2166,6 @@ void CAlnMix::x_SegmentStartItsConsistencyCheck(const CAlnMixSegment& seg,
         }
     }
 }
-#endif
 
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -2182,6 +2175,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.111  2004/10/13 17:51:33  todorov
+* rm conditional compilation logic
+*
 * Revision 1.110  2004/10/13 16:29:17  todorov
 * 1) Added x_SegmentStartItsConsistencyCheck.
 * 2) Within x_SecondRowFits, iterate through seq2->m_ExtraRow to find
