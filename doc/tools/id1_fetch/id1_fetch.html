@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>id1_fetch -- the ID1 and Entrez2 client (NCBI C++)</title>
+</head>
+<body>
+
+<h1>id1_fetch - the ID1 and Entrez2 client (NCBI C++)</h1>
+
+<ul>
+  <li><a href="#ref_Synopsis">Synopsis</a></li>
+  <li><a href="#ref_Invocation">Invocation</a><ul>
+    <li><a href="#ref_fmt">Output data formats</a></li>
+    <li><a href="#ref_lt">Lookup types</a></li>
+    <li><a href="#ref_maxplex">Output complexity levels</a></li>
+    <li><a href="#ref_flat">Flattened sequence ID format</a></li>
+    <li><a href="#ref_fasta">FASTA sequence ID format</a></li>
+  </ul></li>
+</ul>
+
+<a name="ref_Synopsis"></a>
+<table border="1">
+  <tr><td><b>Location:</b></td>
+      <td><i>c++/src/app/id1_fetch</i></td></tr>
+  <tr valign="top">
+     <td><b>Synopsis:</b></td>
+     <td><ol>
+         <li> Accept a list of sequences, specified either directly
+	      by ID or indirectly by an
+              <a href="http://www.ncbi.nlm.nih.gov/Entrez/">Entrez</a>
+	      query. </li>
+         <li> Produce more information about the sequences, either
+              as data from the ID server or as
+	      <a href="http://www.ncbi.nlm.nih.gov/Entrez/">Entrez</a>
+	      document summaries.</li>
+  </ol></td></tr>
+</table>
+<p>This program corresponds to <tt>idfetch</tt> from the C toolkit.</p>
+
+<a name="ref_Invocation">
+<h1>Invocation</h1></a>
+
+<table border="1">
+  <tr> <th>argument</th> <th>value</th> <th>effect</th> </tr>
+  <tr> <td>-h</td> <td></td>
+       <td>Print usage message and exit.</td> </tr>
+  <tr> <td>-gi <i>N</i></td> <td>integer</td>
+       <td>GenInfo ID of sequence to look up.</td> </tr>
+  <tr> <td>-fmt <i>fmt</i></td> <td><a href="#ref_fmt">format type</a></td>
+       <td>Output data format; default is <i>asn</i> (ASN.1 text).</td> </tr>
+  <tr> <td>-out <i>file</i></td> <td>filename</td>
+       <td>Write output to specified file rather than stdout.</td> </tr>
+  <tr> <td>-log <i>file</i></td> <td>filename</td>
+       <td>Write errors and messages to specified file rather than stderr.</td>
+  </tr>
+  <tr> <td>-db <i>str</i></td> <td>string</td>
+       <td>Use specified database.  <b>Mandatory for
+           <a href="http://www.ncbi.nlm.nih.gov/Entrez/">Entrez</a>
+           queries</b>, where it is normally either Nucleotide or
+	   Protein.  Also specifies satellite database for
+	   sequence-entry lookups.</td>
+  </tr>
+  <tr> <td>-ent <i>N</i></td> <td>integer</td>
+       <td>Dump specified subentity.  Only relevant for sequence-entry
+           lookups.</td> </tr>
+  <tr> <td>-lt <i>type</i></td> <td><a href="#ref_lt">lookup type</a></td>
+       <td>Type of lookup; default is <i>entry</i> (sequence entry).</td> </tr>
+  <tr> <td>-in <i>file</i></td> <td>filename</td>
+       <td>Read sequence IDs from file rather than command line.  May
+           contain raw GI IDs, <a href="#ref_flat">flattened IDs</a>,
+           and <a href="#ref_fasta">FASTA-format IDs</a>.</td> </tr>
+  <tr> <td>-maxplex <i>m</i></td>
+       <td><a href="#ref_maxplex">complexity</a></td>
+       <td>Maximum output complexity level; default is <i>entry</i>
+           (entire entry).</td> </tr>
+  <tr> <td>-flat <i>id</i></td> <td><a href="#ref_flat">flat ID</a></td>
+       <td>Flattened ID of sequence to look up.</td> </tr>
+  <tr> <td>-fasta <i>id</i></td> <td><a href="#ref_fasta">FASTA ID</a></td>
+       <td><a href="http://www.ncbi.nlm.nih.gov/BLAST/fasta.html">FASTA</a>-style
+           ID of sequence to look up.</td> </tr>
+  <tr> <td>-query <i>str</i></td> <td>string</td>
+       <td>Generate ID list from specified
+           <a href="http://www.ncbi.nlm.nih.gov/Entrez/">Entrez</a>
+           query.</td> </tr>
+  <tr> <td>-qf <i>file</i></td> <td>file</td>
+       <td>Generate ID list from
+           <a href="http://www.ncbi.nlm.nih.gov/Entrez/">Entrez</a>
+	   query in specified file.</td> </tr>
+</table>
+
+<p><b>Note</b>: You must specify exactly one of the options indicating
+what to look up: <i>-gi, -in, -flat, -fasta, -query, -qf</i>.</p>
+
+<a name="ref_fmt">
+<h2>Output data formats</h2></a>
+<p> These are the possible values of the <i>-fmt</i> argument: </p>
+<table border="1">
+  <tr> <th>value</th> <th>format</th> <th>comments</th> </tr>
+  <tr> <td>asn</td>
+       <td><a href="http://www.ncbi.nlm.nih.gov/Sitemap/Summary/asn1.html">ASN.1</a>
+           text (default)</td> </tr>
+  <tr> <td>asnb</td>
+       <td><a href="http://www.ncbi.nlm.nih.gov/Sitemap/Summary/asn1.html">ASN.1</a>
+           binary</td> </tr>
+  <tr> <td>docsum</td>
+       <td><a href="http://www.ncbi.nlm.nih.gov/Entrez/">Entrez</a>
+           document summary</td>
+       <td>Lookup type is irrelevant</td> </tr>
+  <tr> <td>fasta</td>
+       <td><a href="http://www.ncbi.nlm.nih.gov/BLAST/fasta.html">FASTA</a></td>
+       <td>Produces state as simple text; produces history in tabular
+           form.</td> </tr>
+  <tr> <td>genbank</td>
+       <td><a href="http://www.ncbi.nlm.nih.gov/Genbank/GenbankOverview.html">GenBank</a>
+           <a href="http://www.ncbi.nlm.nih.gov/Sitemap/samplerecord.html">flat-file format</a></td>
+       <td>Lookup type must be entry (default).</td> </tr>
+  <tr> <td>genpept</td> <td>GenPept flat-file format</td>
+       <td>Lookup type must be entry (default).</td> </tr>
+  <tr> <td>quality</td> <td>Quality scores</td>
+       <td>Lookup type must be entry (default);
+           data not always available.</td> </tr>
+  <tr> <td>raw</td> <td>Raw data from the server</td>
+       <td>Should be identical to ASN.1 binary output.</td> </tr>
+  <tr> <td>xml</td> <td>XML</td> <td>Isomorphic to ASN.1 output.</td> </tr>
+</table>
+
+<a name="ref_lt">
+<h2>Lookup types</h2></a>
+<p> These are the possible values of the <i>-lt</i> argument: </p>
+<table border="1">
+  <tr> <th>value</th> <th>description</th> </tr>
+  <tr> <td>entry</td> <td>The actual sequence entry (default)</td> </tr>
+  <tr> <td>history</td> <td>Summary of changes to the sequence data</td> </tr>
+  <tr> <td>ids</td> <td>All of the sequence's IDs</td> </tr>
+  <tr> <td>none</td> <td>Just the GI ID</td> </tr>
+  <tr> <td>revisions</td>
+       <td>Summary of changes to the sequence data or annotations</td> </tr>
+  <tr> <td>state</td> <td>The sequence's status</td> </tr>
+</table>
+
+<a name="ref_maxplex">
+<h2>Output complexity levels</h2></a>
+<p> These are the possible values of the <i>-maxplex</i> argument: </p>
+<table border="1">
+  <tr> <th>value</th> <th>description</th> </tr>
+  <tr> <td>bioseq</td> <td>Just the bioseq of interest</td> </tr>
+  <tr> <td>bioseq-set</td> <td>Minimal bioseq-set</td> </tr>
+  <tr> <td>entry</td> <td>Entire entry (default)</td> </tr>
+  <tr> <td>nuc-prot</td> <td>Minimal nuc-prot</td> </tr>
+  <tr> <td>pub-set</td> <td>Minimal pub-set</td> </tr>
+</table>
+
+<a name="ref_flat">
+<h2>Flattened sequence ID format</h2></a>
+<p> A flattened sequence ID has one of the following three formats,
+where square brackets [...] surround optional elements:</p>
+<ul>
+  <li>type([name or locus][,[accession][,[release][,version]]])</li>
+  <li>type=accession[.version]</li>
+  <li>type:number</li>
+</ul>
+The first format requires quotes in most shells.
+
+<p>The type is a number indicating who assigned the ID, as follows:</p>
+<ol>
+  <li>Local use</li>
+  <li>GenInfo backbone sequence ID</li>
+  <li>GenInfo backbone molecule type</li>
+  <li>GenInfo import ID</li>
+  <li><a href="http://www.ncbi.nlm.nih.gov/Genbank/GenbankOverview.html">GenBank</a></li>
+  <li><a href="http://www.embl-heidelberg.de/">The European Molecular
+      Biology Laboratory (EMBL)</a></td>
+  <li><a href="http://pir.georgetown.edu/">The Protein Information
+      Resource (PIR)</a></li>
+  <li><a href="http://www.ebi.ac.uk/swissprot/">SWISS-PROT</a></li>
+  <li>A patent</li>
+  <li>Catch-all</li>
+  <li>General database reference</li>
+  <li>GenInfo integrated database (GI)</li>
+  <li><a href="http://www.ddbj.nig.ac.jp">The DNA Data Bank of Japan
+      (DDBJ)</a></li>
+  <li><a href="http://www.prf.or.jp/">The Protein Research Foundation
+      (PRF)</a></li> 
+  <li><a href="http://www.rcsb.org/pdb/">The Protein DataBase (PDB)</a></li>
+  <li>Third-party annotation to
+      <a href="http://www.ncbi.nlm.nih.gov/Genbank/GenbankOverview.html">GenBank</a></li>
+  <li>Third-party annotation to
+      <a href="http://www.embl-heidelberg.de/">EMBL</a></li>
+  <li>Third-party annotation to
+      <a href="http://www.ddbj.nig.ac.jp">DDBJ</a></li>
+</ol>
+
+<a name="ref_flat">
+<h2>FASTA sequence ID format</h2></a>
+<p>This format consists of a two or three letter tag indicating the
+ID's type, followed by one or more data fields, which are separated
+from the tag and each other by vertical bars (|).  As such, most
+shells require quotes around the ID.  Here are the specific
+possibilities (spaces added for legibility, but should <b>NOT</b> be
+typed):</p>
+
+<table border="1">
+  <tr> <th>type</th> <th>format</th> </tr>
+  <tr> <td>local</td>
+       <td>lcl | <i>integer</i> <br> lcl | <i>string</i></td> </tr>
+  <tr> <td>GenInfo backbone seqid</td> <td>bbs | <i>integer</i></td> </tr>
+  <tr> <td>GenInfo backbone moltype</td> <td>bbm | <i>integer</i></td> </tr>
+  <tr> <td>GenInfo import ID</td> <td>gim | <i>integer</i></td> </tr>
+  <tr> <td><a href="http://www.ncbi.nlm.nih.gov/Genbank/GenbankOverview.html">GenBank</a></td>
+       <td>gb | <i>accession</i> | <i>locus</i></td> </tr>
+  <tr> <td><a href="http://www.embl-heidelberg.de/">EMBL</a></td>
+       <td>emb | <i>accession</i> | <i>locus</i></td> </tr>
+  <tr> <td><a href="http://pir.georgetown.edu/">PIR</a></td>
+       <td>pir | <i>accession</i> | <i>name</i></td> </tr>
+  <tr> <td><a href="http://www.ebi.ac.uk/swissprot/">SWISS-PROT</a></td>
+       <td>sp | <i>accession</i> | <i>name</i></td> </tr>
+  <tr> <td>patent</td>
+       <td>pat | <i>country</i> | <i>patent</i> | <i>sequence</i> </td> </tr>
+  <tr> <td>catch-all</td>
+       <td>ref | <i>accession</i> | <i>name</i> | <i>release</i> </td> </tr>
+  <tr> <td>general database reference</td>
+       <td>gnl | <i>database</i> | <i>integer</i> <br>
+           gnl | <i>database</i> | <i>string</i></td>
+  <tr> <td>GenInfo integrated database</td>
+       <td> gi | <i>integer</i> </td> </tr>
+  <tr> <td><a href="http://www.ddbj.nig.ac.jp">DDBJ</a></td>
+       <td>dbj | <i>accession</i> | <i>locus</i></td> </tr>
+  <tr> <td><a href="http://www.prf.or.jp/">PRF</a></td>
+       <td>prf | <i>accession</i> | <i>name</i></td> </tr>
+  <tr> <td><a href="http://www.rcsb.org/pdb/">PDB</a></td>
+       <td>pdb | <i>entry</i> | <i>chain</i></td> </tr>
+  <tr> <td>third-party
+           <a href="http://www.ncbi.nlm.nih.gov/Genbank/GenbankOverview.html">GenBank</a></td>
+       <td>tpg | <i>accession</i> | <i>name</i></td> </tr>
+  <tr> <td>third-party <a href="http://www.embl-heidelberg.de/">EMBL</a></td>
+       <td>tpe | <i>accession</i> | <i>name</i></td> </tr>
+  <tr> <td>third-party <a href="http://www.ddbj.nig.ac.jp">DDBJ</a></td>
+       <td>tpd | <i>accession</i> | <i>name</i></td> </tr>
+</table>
+
+</body>
+</html>
