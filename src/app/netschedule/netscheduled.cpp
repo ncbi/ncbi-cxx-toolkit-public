@@ -168,6 +168,8 @@ public:
     }
 
     void ProcessSubmit(CSocket& sock, SThreadData& tdata);
+    void ProcessCancel(CSocket& sock, SThreadData& tdata);
+    void ProcessStatus(CSocket& sock, SThreadData& tdata);
 
 private:
 
@@ -208,18 +210,12 @@ private:
 private:
     /// Host name where server runs
     string             m_Host;
-    /// ID counter
-    //unsigned           m_MaxId;
-//    bm::bvector<>      m_UsedIds;
     bool               m_Shutdown; 
     /// Time to wait for the client (seconds)
     unsigned           m_InactivityTimeout;
     
     /// Accept timeout for threaded server
     STimeout                        m_ThrdSrvAcceptTimeout;
-
-    /// Job scheduler status tracker
-    //CNetScheduler_JobStatusTracker  m_StatusTracker;
 
     CQueueDataBase*    m_QueueDB;
 };
@@ -308,8 +304,11 @@ void CNetScheduleServer::Process(SOCK sock)
             io_st = socket.ReadLine(tdata->queue);
             JS_CHECK_IO_STATUS(io_st)
 
-            if (tdata->queue.empty()) {  // TODO: check if queue exists.
-                WriteMsg(socket, "ERR:", "Empty queue name ");
+            if (!m_QueueDB->QueueExists(tdata->queue)) {
+                tdata->req.err_msg = "Queue ";
+                tdata->req.err_msg.append(tdata->queue);
+                tdata->req.err_msg.append(" not found.");
+                WriteMsg(socket, "ERR:", tdata->req.err_msg);
                 return;
             }
 
@@ -323,26 +322,34 @@ void CNetScheduleServer::Process(SOCK sock)
             if (req.req_type == eQuitSession) {
                 break;
             }
-
+/*
             CNetSchedule_Key jkey;
             if (req.req_type != eSubmitJob ||
                 req.req_type != eError) {
 
                 CNetSchedule_ParseJobKey(&jkey, req.job_key_str);
             }
-
+*/
             
             switch (req.req_type) {
             case eSubmitJob:
                 ProcessSubmit(socket, *tdata);
                 break;
             case eCancelJob:
+                ProcessCancel(socket, *tdata);
+                break;
             case eStatusJob:
+                ProcessStatus(socket, *tdata);
+                break;
             case eGetJob:
             case ePutJobResult:
             case eReturnJob:
             case eShutdown:
+                SetShutdownFlag();
+                break;
             case eVersion:
+                WriteMsg(socket, "OK:", "NCBI NetSchedule server version=0.1");
+                break;
             case eLogging:
             case eStatistics:
                 WriteMsg(socket, "ERR:", "Not implemented.");
@@ -387,20 +394,37 @@ void CNetScheduleServer::Process(SOCK sock)
 
 void CNetScheduleServer::ProcessSubmit(CSocket& sock, SThreadData& tdata)
 {
-
     SJS_Request& req = tdata.req;
-//    GenerateJobId(&req.job_key_str, &req.job_id);
 
-    _ASSERT(req.job_id != 0);
-/*
-    CNetSchedule_JS_Guard js_guard(m_StatusTracker, 
-                                   req.job_id,
-                                   CNetScheduler_JobStatusTracker::ePending);
-*/
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+    unsigned job_id = queue.Submit(req.input);
+
+    CNetSchedule_GenerateJobKey(&req.job_key_str, job_id, m_Host, GetPort());
 
     WriteMsg(sock, "OK:", req.job_key_str);
 }
 
+void CNetScheduleServer::ProcessCancel(CSocket& sock, SThreadData& tdata)
+{
+    SJS_Request& req = tdata.req;
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+    queue.Cancel(job_id);
+    WriteMsg(sock, "OK:", kEmptyStr);
+}
+
+void CNetScheduleServer::ProcessStatus(CSocket& sock, SThreadData& tdata)
+{
+    SJS_Request& req = tdata.req;
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+    CNetScheduleClient::EJobStatus status = m_QueueDB->GetStatus(job_id);
+    int st = (int) status;
+    char szBuf[256];
+    sprintf(szBuf, "%i", st);
+    WriteMsg(sock, "OK:", szBuf);
+}
 
 void CNetScheduleServer::x_WriteBuf(CSocket& sock,
                                     char*    buf,
@@ -555,6 +579,17 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         return;
     }
 
+    if (strncmp(s, "VERSION", 7) == 0) {
+        req->req_type = eVersion;
+        return;
+    }
+
+
+    if (strncmp(s, "SHUTDOWN", 8) == 0) {
+        req->req_type = eShutdown;
+        return;
+    }
+
     req->req_type = eError;
     req->err_msg = "Unknown request";
 }
@@ -620,25 +655,6 @@ void CNetScheduleServer::WriteMsg(CSocket&       sock,
                    eCommunicationError, "Socket write error.");
     }
 }
-
-/*
-void CNetScheduleServer::GenerateJobId(string*            id_str,
-                                       unsigned int*      transaction_id)
-{
-
-    unsigned int id;
-    {{
-    CFastMutexGuard guard(x_NetScheduleMutex);
-    if (++m_MaxId == 0) {
-        ++m_MaxId;
-    }
-    id = m_MaxId;
-    }}
-    *transaction_id = id;
-
-    CNetSchedule_GenerateJobKey(id_str, id, m_Host, GetPort());
-}
-*/
 
 bool CNetScheduleServer::x_CheckJobId(CSocket&          sock,
                                       CNetSchedule_Key* job_id, 
@@ -854,6 +870,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/09 18:56:42  kuznets
+ * Implemented SUBMIT, CANCEL, STATUS, SHUTDOWN
+ *
  * Revision 1.1  2005/02/08 16:42:55  kuznets
  * Initial revision
  *
