@@ -175,10 +175,10 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 
     if (user_loc != NULL) {
         // map the location to the current bioseq
-        CSeq_loc_Mapper mapper(m_Handle);
+        CSeq_loc_Mapper mapper(m_Handle, CSeq_loc_Mapper::eSeqMap_Up);
         mapper.SetMergeAll();  // just to be safe
         source.Reset(mapper.Map(*user_loc));
-        
+
         // no need to map if doing the entire bioseq
         if ( source->IsWhole()  ||
              source->GetStart() == 0  &&
@@ -194,7 +194,6 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 
             m_Mapper.Reset(new CSeq_loc_Mapper(*source, *target, &scope));
             m_Mapper->SetMergeAbutting();
-            m_Mapper->PreserveDestinationLocs();
             m_Mapper->KeepNonmappingRanges();
         }
     }
@@ -608,6 +607,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2005/02/01 21:55:11  grichenk
+* Added direction flag for mapping between top level sequence
+* and segments.
+*
 * Revision 1.31  2005/01/12 15:17:12  shomrat
 * Added GetPatentSeqId
 *

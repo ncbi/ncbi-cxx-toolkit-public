@@ -127,9 +127,9 @@ public:
         eProductToLocation
     };
     /// Method of treating locations already on the destination
-    enum EDestinationLocs {
-        eDestinationPreserve,  ///< preserve locations on the destination
-        eDestinationRemove     ///< remove any location not on the source
+    enum ESeqMapDirection {
+        eSeqMap_Up,    ///< map from segments to the top level bioseq
+        eSeqMap_Down   ///< map from a segmented bioseq to segments
     };
 
     /// Mapping through a feature, both location and product must be set.
@@ -156,26 +156,53 @@ public:
                     size_t            to_row,
                     CScope*           scope = 0);
 
-    /// Mapping from segments to the segmented sequence (same as
-    /// in annot iterator). If dst_id is set, all segments are
-    /// mapped to the id. Otherwise mapping is done to the top
-    /// level references in the map (e.g. if the map is created from
-    /// a seq-loc).
+    /// Mapping between segments and the top level sequence.
+    /// @param top_level_seq
+    ///  Top level bioseq
+    /// @param direction
+    ///  Direction of mapping: up (from segments to master) or down.
     CSeq_loc_Mapper(CBioseq_Handle   target_seq,
-                    EDestinationLocs dst_locs = eDestinationPreserve);
-    CSeq_loc_Mapper(const CSeqMap&   seq_map,
-                    const CSeq_id*   dst_id = 0,
-                    CScope*          scope = 0,
-                    EDestinationLocs dst_locs = eDestinationPreserve);
+                    ESeqMapDirection direction);
 
-    /// Mapping from master sequence to its segments, restricted
-    /// by depth. Depth = 0 is for synonyms conversion.
-    CSeq_loc_Mapper(size_t          depth,
-                    CBioseq_Handle& source_seq);
-    CSeq_loc_Mapper(size_t         depth,
-                    const CSeqMap& source_seqmap,
-                    const CSeq_id* src_id = 0,
-                    CScope*        scope = 0);
+    /// Mapping through a seq-map.
+    /// @param seq_map
+    ///  Sequence map defining the mapping
+    /// @param direction
+    ///  Direction of mapping: up (from segments to master) or down.
+    /// @param top_level_id
+    ///  Explicit destination id when mapping up, may be used with
+    ///  seq-maps constructed from a seq-loc with multiple ids.
+    CSeq_loc_Mapper(const CSeqMap&   seq_map,
+                    ESeqMapDirection direction,
+                    const CSeq_id*   top_level_id = 0,
+                    CScope*          scope = 0);
+
+    /// Mapping between segments and the top level sequence limited by depth.
+    /// @param depth
+    ///  Mapping depth. Depth of 0 converts synonyms.
+    /// @param top_level_seq
+    ///  Top level bioseq
+    /// @param direction
+    ///  Direction of mapping: up (from segments to master) or down.
+    CSeq_loc_Mapper(size_t           depth,
+                    CBioseq_Handle&  top_level_seq,
+                    ESeqMapDirection direction);
+
+    /// Depth-limited mapping through a seq-map.
+    /// @param depth
+    ///  Mapping depth. Depth of 0 converts synonyms.
+    /// @param seq_map
+    ///  Sequence map defining the mapping
+    /// @param direction
+    ///  Direction of mapping: up (from segments to master) or down.
+    /// @param top_level_id
+    ///  Explicit destination id when mapping up, may be used with
+    ///  seq-maps constructed from a seq-loc with multiple ids.
+    CSeq_loc_Mapper(size_t           depth,
+                    const CSeqMap&   top_level_seq,
+                    ESeqMapDirection direction,
+                    const CSeq_id*   top_level_id = 0,
+                    CScope*          scope = 0);
 
     ~CSeq_loc_Mapper(void);
 
@@ -196,11 +223,6 @@ public:
 
     CSeq_loc_Mapper& SetGapPreserve(void);
     CSeq_loc_Mapper& SetGapRemove(void);
-
-    /// Create target-to-target mapping to avoid truncation of ranges
-    /// already on the target sequence(s). This includes mapping
-    /// of each synonym to the same target ID if a scope is available.
-    void PreserveDestinationLocs(void);
 
     /// Keep ranges which can not be mapped. Does not affect truncation
     /// of partially mapped ranges. By default nonmapping ranges are
@@ -262,6 +284,11 @@ private:
 
     typedef vector< CRef<CMappingRange> > TSortedMappings;
 
+    // Create target-to-target mapping to avoid truncation of ranges
+    // already on the target sequence(s). This includes mapping
+    // of each synonym to the same target ID if a scope is available.
+    void x_PreserveDestinationLocs(void);
+
     // Check molecule type, return character width (3=na, 1=aa, 0=unknown).
     int x_CheckSeqWidth(const CSeq_id& id, int width);
     int x_CheckSeqWidth(const CSeq_loc& loc,
@@ -293,21 +320,23 @@ private:
                       const CSeq_id&    to_id);
     void x_Initialize(const CSeq_align& map_align,
                       size_t            to_row);
-    void x_Initialize(const CSeqMap& seq_map,
-                      const CSeq_id* top_id = 0);
-    void x_Initialize(const CSeqMap& seq_map,
-                      size_t         depth,
-                      const CSeq_id* top_id = 0);
+    void x_Initialize(const CSeqMap&   seq_map,
+                      const CSeq_id*   top_id,
+                      ESeqMapDirection direction);
+    void x_Initialize(const CSeqMap&   seq_map,
+                      size_t           depth,
+                      const CSeq_id*   top_id,
+                      ESeqMapDirection direction);
     void x_Initialize(const CBioseq_Handle& bioseq,
-                      const CSeq_id* top_id = 0);
+                      const CSeq_id*        top_id,
+                      ESeqMapDirection      direction);
     void x_Initialize(const CBioseq_Handle& bioseq,
-                      size_t         depth,
-                      const CSeq_id* top_id = 0);
-    void x_Initialize(CSeqMap_CI     seg_it,
-                      const CSeq_id* top_id);
-    void x_Initialize(CSeqMap_CI     seg_it,
-                      size_t         depth,
-                      const CSeq_id* top_id);
+                      size_t                depth,
+                      const CSeq_id*        top_id,
+                      ESeqMapDirection      direction);
+    void x_Initialize(CSeqMap_CI       seg_it,
+                      const CSeq_id*   top_id,
+                      ESeqMapDirection direction);
 
     void x_InitAlign(const CDense_diag& diag, size_t to_row);
     void x_InitAlign(const CDense_seg& denseg, size_t to_row);
@@ -521,6 +550,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/02/01 21:55:11  grichenk
+* Added direction flag for mapping between top level sequence
+* and segments.
+*
 * Revision 1.23  2004/12/22 15:56:14  vasilche
 * Used CHeapScope instead of plain CRef<CScope>.
 * Reorganized x_Initialize to allow used TSE linking.

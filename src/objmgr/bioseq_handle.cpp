@@ -552,7 +552,7 @@ CBioseq_Handle::GetExactComplexityLevel(CBioseq_set::EClass cls) const
 
 CRef<CSeq_loc> CBioseq_Handle::MapLocation(const CSeq_loc& loc) const
 {
-    CSeq_loc_Mapper mapper(*this);
+    CSeq_loc_Mapper mapper(*this, CSeq_loc_Mapper::eSeqMap_Up);
     return mapper.Map(loc);
 }
 
@@ -769,6 +769,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2005/02/01 21:55:11  grichenk
+* Added direction flag for mapping between top level sequence
+* and segments.
+*
 * Revision 1.82  2005/01/26 16:25:21  grichenk
 * Added state flags to CBioseq_Handle.
 *

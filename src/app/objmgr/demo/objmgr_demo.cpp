@@ -752,7 +752,8 @@ int CDemoApp::Run(void)
             }
             CRef<CSeq_loc_Mapper> mapper;
             if ( print_features ) {
-                mapper.Reset(new CSeq_loc_Mapper(handle));
+                mapper.Reset(new CSeq_loc_Mapper(handle,
+                                                 CSeq_loc_Mapper::eSeqMap_Up));
             }
             for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 if ( count_types ) {
@@ -1044,6 +1045,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2005/02/01 21:55:11  grichenk
+* Added direction flag for mapping between top level sequence
+* and segments.
+*
 * Revision 1.97  2005/01/27 20:06:17  grichenk
 * Fixed unused variable warning
 *

@@ -1133,10 +1133,10 @@ static CSeq_loc_Mapper* s_CreateMapper(CBioseqContext& ctx)
     }
 
     // ... otherwise
-    CSeq_loc_Mapper* mapper = new CSeq_loc_Mapper(ctx.GetHandle());
+    CSeq_loc_Mapper* mapper = new CSeq_loc_Mapper(ctx.GetHandle(),
+        CSeq_loc_Mapper::eSeqMap_Up);
     if (mapper != NULL) {
         mapper->SetMergeAbutting();
-        mapper->PreserveDestinationLocs();
         mapper->KeepNonmappingRanges();
     }
     return mapper;
@@ -1377,7 +1377,8 @@ void CFlatGatherer::x_GatherFeatures(void) const
         x_GatherFeaturesOnLocation(loc, *selp, ctx);
 
         // map the location on the segments        
-        CSeq_loc_Mapper mapper(1, ctx.GetHandle());
+        CSeq_loc_Mapper mapper(1, ctx.GetHandle(),
+                               CSeq_loc_Mapper::eSeqMap_Down);
         CRef<CSeq_loc> seg_loc(mapper.Map(loc));
         if ( seg_loc ) {
             // now go over each of the segments
@@ -1560,6 +1561,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2005/02/01 21:55:11  grichenk
+* Added direction flag for mapping between top level sequence
+* and segments.
+*
 * Revision 1.36  2005/01/12 16:44:35  shomrat
 * Added gap features; Fixed reference gathering
 *

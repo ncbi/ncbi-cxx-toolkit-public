@@ -263,9 +263,9 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq,
-                                 EDestinationLocs dst_locs)
-    : m_Scope(&target_seq.GetScope()),
+CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle top_level_seq,
+                                 ESeqMapDirection direction)
+    : m_Scope(&top_level_seq.GetScope()),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
@@ -273,94 +273,98 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq,
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
 {
-    CConstRef<CSeq_id> dst_id = target_seq.GetSeqId();
-    if ( !dst_id ) {
+    CConstRef<CSeq_id> top_level_id = top_level_seq.GetSeqId();
+    if ( !top_level_id ) {
         // Bioseq handle has no id, try to get one.
-        CConstRef<CSynonymsSet> syns = target_seq.GetSynonyms();
+        CConstRef<CSynonymsSet> syns = top_level_seq.GetSynonyms();
         if ( !syns->empty() ) {
-            dst_id = syns->GetSeq_id_Handle(syns->begin()).GetSeqId();
+            top_level_id = syns->GetSeq_id_Handle(syns->begin()).GetSeqId();
         }
     }
-    x_Initialize(target_seq, dst_id.GetPointerOrNull());
-    // Ignore seq-map destination ranges, map whole sequence to itself,
-    // use unknown strand only.
-    m_DstRanges.resize(1);
-    m_DstRanges[0].clear();
-    if ( m_Scope.IsSet() ) {
-        CConstRef<CSynonymsSet> dst_syns =
-            m_Scope.GetScope().GetSynonyms(*dst_id);
-        ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
-            m_DstRanges[0][target_seq.GetSeq_id_Handle()]
-                .push_back(TRange::GetWhole());
-        }
-    }
-    else {
-        m_DstRanges[0][target_seq.GetSeq_id_Handle()]
-            .push_back(TRange::GetWhole());
-    }
-    if (dst_locs == eDestinationPreserve) {
-        PreserveDestinationLocs();
-    }
-}
-
-
-CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
-                                 const CSeq_id*   dst_id,
-                                 CScope*          scope,
-                                 EDestinationLocs dst_locs)
-    : m_Scope(scope),
-      m_MergeFlag(eMergeNone),
-      m_GapFlag(eGapPreserve),
-      m_KeepNonmapping(false),
-      m_UseWidth(false),
-      m_Dst_width(0),
-      m_ReverseRangeOrder(false)
-{
-    x_Initialize(seq_map, dst_id);
-    if (dst_locs == eDestinationPreserve) {
-        PreserveDestinationLocs();
-    }
-}
-
-
-CSeq_loc_Mapper::CSeq_loc_Mapper(size_t          depth,
-                                 CBioseq_Handle& source_seq)
-    : m_Scope(&source_seq.GetScope()),
-      m_MergeFlag(eMergeNone),
-      m_GapFlag(eGapPreserve),
-      m_KeepNonmapping(false),
-      m_UseWidth(false),
-      m_Dst_width(0),
-      m_ReverseRangeOrder(false)
-{
-    if (depth > 0) {
-        depth--;
-        x_Initialize(source_seq, depth, source_seq.GetSeqId().GetPointer());
-    }
-    else /* if (depth == 0) */ {
-        // Synonyms conversion
-        CConstRef<CSeq_id> dst_id = source_seq.GetSeqId();
+    x_Initialize(top_level_seq, top_level_id.GetPointerOrNull(), direction);
+    if (direction == eSeqMap_Up) {
+        // Ignore seq-map destination ranges, map whole sequence to itself,
+        // use unknown strand only.
         m_DstRanges.resize(1);
+        m_DstRanges[0].clear();
         if ( m_Scope.IsSet() ) {
             CConstRef<CSynonymsSet> dst_syns =
-                m_Scope.GetScope().GetSynonyms(*dst_id);
+                m_Scope.GetScope().GetSynonyms(*top_level_id);
             ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
-                m_DstRanges[0][source_seq.GetSeq_id_Handle()]
+                m_DstRanges[0][top_level_seq.GetSeq_id_Handle()]
                     .push_back(TRange::GetWhole());
             }
         }
         else {
-            m_DstRanges[0][source_seq.GetSeq_id_Handle()]
+            m_DstRanges[0][top_level_seq.GetSeq_id_Handle()]
                 .push_back(TRange::GetWhole());
         }
     }
+    x_PreserveDestinationLocs();
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(size_t         depth,
-                                 const CSeqMap& source_seqmap,
-                                 const CSeq_id* src_id,
-                                 CScope*        scope)
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
+                                 ESeqMapDirection direction,
+                                 const CSeq_id*   top_level_id,
+                                 CScope*          scope)
+    : m_Scope(scope),
+      m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
+      m_UseWidth(false),
+      m_Dst_width(0),
+      m_ReverseRangeOrder(false)
+{
+    x_Initialize(seq_map, top_level_id, direction);
+    x_PreserveDestinationLocs();
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
+                                 CBioseq_Handle&  top_level_seq,
+                                 ESeqMapDirection direction)
+    : m_Scope(&top_level_seq.GetScope()),
+      m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
+      m_UseWidth(false),
+      m_Dst_width(0),
+      m_ReverseRangeOrder(false)
+{
+    if (depth > 0) {
+        depth--;
+        x_Initialize(top_level_seq,
+                     depth,
+                     top_level_seq.GetSeqId().GetPointer(),
+                     direction);
+    }
+    else if (direction == eSeqMap_Up) {
+        // Synonyms conversion
+        CConstRef<CSeq_id> top_level_id = top_level_seq.GetSeqId();
+        m_DstRanges.resize(1);
+        if ( m_Scope.IsSet() ) {
+            CConstRef<CSynonymsSet> dst_syns =
+                m_Scope.GetScope().GetSynonyms(*top_level_id);
+            ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
+                m_DstRanges[0][top_level_seq.GetSeq_id_Handle()]
+                    .push_back(TRange::GetWhole());
+            }
+        }
+        else {
+            m_DstRanges[0][top_level_seq.GetSeq_id_Handle()]
+                .push_back(TRange::GetWhole());
+        }
+    }
+    x_PreserveDestinationLocs();
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
+                                 const CSeqMap&   top_level_seq,
+                                 ESeqMapDirection direction,
+                                 const CSeq_id*   top_level_id,
+                                 CScope*          scope)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
@@ -371,21 +375,22 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t         depth,
 {
     if (depth > 0) {
         depth--;
-        x_Initialize(source_seqmap, depth, src_id);
+        x_Initialize(top_level_seq, depth, top_level_id, direction);
     }
-    else /* if (depth == 0) */ {
+    else if (direction == eSeqMap_Up) {
         // Synonyms conversion
         m_DstRanges.resize(1);
-        if ( m_Scope.IsSet()  &&  src_id) {
-            CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(*src_id);
+        if ( m_Scope.IsSet()  &&  top_level_id) {
+            CSeq_id_Handle top_level_idh = CSeq_id_Handle::GetHandle(*top_level_id);
             CConstRef<CSynonymsSet> dst_syns =
-                m_Scope.GetScope().GetSynonyms(*src_id);
+                m_Scope.GetScope().GetSynonyms(*top_level_id);
             ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
-                m_DstRanges[0][src_idh]
+                m_DstRanges[0][top_level_idh]
                     .push_back(TRange::GetWhole());
             }
         }
     }
+    x_PreserveDestinationLocs();
 }
 
 
@@ -395,7 +400,7 @@ CSeq_loc_Mapper::~CSeq_loc_Mapper(void)
 }
 
 
-void CSeq_loc_Mapper::PreserveDestinationLocs(void)
+void CSeq_loc_Mapper::x_PreserveDestinationLocs(void)
 {
     for (size_t str_idx = 0; str_idx < m_DstRanges.size(); str_idx++) {
         NON_CONST_ITERATE(TDstIdMap, id_it, m_DstRanges[str_idx]) {
@@ -1208,42 +1213,49 @@ void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
 }
 
 
-void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map,
-                                   const CSeq_id* top_id)
+void CSeq_loc_Mapper::x_Initialize(const CSeqMap&   seq_map,
+                                   const CSeq_id*   top_id,
+                                   ESeqMapDirection direction)
 {
-    x_Initialize(seq_map, size_t(-1), top_id);
+    x_Initialize(seq_map, size_t(-1), top_id, direction);
 }
 
 
 void CSeq_loc_Mapper::x_Initialize(const CBioseq_Handle& bioseq,
-                                   const CSeq_id* top_id)
+                                   const CSeq_id* top_id,
+                                   ESeqMapDirection direction)
 {
-    x_Initialize(bioseq, size_t(-1), top_id);
+    x_Initialize(bioseq, size_t(-1), top_id, direction);
 }
 
 
-void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map,
-                                   size_t         depth,
-                                   const CSeq_id* top_id)
+void CSeq_loc_Mapper::x_Initialize(const CSeqMap&   seq_map,
+                                   size_t           depth,
+                                   const CSeq_id*   top_id,
+                                   ESeqMapDirection direction)
 {
     SSeqMapSelector sel(CSeqMap::fFindRef, depth);
     sel.SetLinkUsedTSE();
     x_Initialize(CSeqMap_CI(ConstRef(&seq_map), m_Scope.GetScopeOrNull(), sel),
-                 top_id);
+                 top_id,
+                 direction);
 }
 
 
 void CSeq_loc_Mapper::x_Initialize(const CBioseq_Handle& bioseq,
-                                   size_t         depth,
-                                   const CSeq_id* top_id)
+                                   size_t                depth,
+                                   const CSeq_id*        top_id,
+                                   ESeqMapDirection      direction)
 {
     x_Initialize(CSeqMap_CI(bioseq, SSeqMapSelector(CSeqMap::fFindRef, depth)),
-                 top_id);
+                 top_id,
+                 direction);
 }
 
 
-void CSeq_loc_Mapper::x_Initialize(CSeqMap_CI     seg_it,
-                                   const CSeq_id* top_id)
+void CSeq_loc_Mapper::x_Initialize(CSeqMap_CI       seg_it,
+                                   const CSeq_id*   top_id,
+                                   ESeqMapDirection direction)
 {
     TSeqPos top_start = kInvalidSeqPos;
     TSeqPos top_stop = kInvalidSeqPos;
@@ -1279,8 +1291,16 @@ void CSeq_loc_Mapper::x_Initialize(CSeqMap_CI     seg_it,
         TSeqPos src_len = dst_len;
         ENa_strand src_strand = seg_it.GetRefMinusStrand() ?
             eNa_strand_minus : eNa_strand_unknown;
-        x_NextMappingRange(*src_id, src_from, src_len, src_strand,
-            *dst_id, dst_from, dst_len, eNa_strand_unknown);
+        switch (direction) {
+        case eSeqMap_Up:
+            x_NextMappingRange(*src_id, src_from, src_len, src_strand,
+                               *dst_id, dst_from, dst_len, eNa_strand_unknown);
+            break;
+        case eSeqMap_Down:
+            x_NextMappingRange(*dst_id, dst_from, dst_len, eNa_strand_unknown,
+                               *src_id, src_from, src_len, src_strand);
+            break;
+        }
         _ASSERT(src_len == 0  &&  dst_len == 0);
     }
 }
@@ -1989,6 +2009,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/02/01 21:55:11  grichenk
+* Added direction flag for mapping between top level sequence
+* and segments.
+*
 * Revision 1.34  2004/12/22 15:56:14  vasilche
 * Used CHeapScope instead of plain CRef<CScope>.
 * Reorganized x_Initialize to allow used TSE linking.
