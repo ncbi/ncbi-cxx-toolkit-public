@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/04/22 15:26:28  ivanov
+ * IRIX MIPSpro compiler fix -- assert.h was included above
+ *
  * Revision 1.3  2002/04/22 14:16:28  lavr
  * Add #undef assert, seems not to work otherwise on SGIs
  *
@@ -111,7 +114,7 @@ static void _SuppressDiagPopupMessages(void)
 }
 
 /* Put this function at startup init level 'V', far enough not to mess up with
- * base initializaion, which happens at preceding levels in alphabetical order.
+ * base initialization, which happens at preceding levels in alphabetical order.
  */
 #  pragma data_seg(".CRT$XIV")
 
@@ -127,6 +130,14 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #ifdef   assert
 #  undef assert
 #endif
+
+/* IRIX MIPSpro compiler fix: assert.h already included above */ 
+#ifdef   NCBI_COMPILER_MIPSPRO
+#  ifdef   __ASSERT_H__
+#    undef __ASSERT_H__
+#  endif
+#endif
+
 #include <assert.h>
 
 
