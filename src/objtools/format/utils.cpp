@@ -185,7 +185,7 @@ void AddPeriod(string& str)
 
 void TrimSpaces(string& str, int indent)
 {
-    if (str.empty()) {
+    if (str.empty()  ||  str.length()  <= indent) {
         return;
     }
     if (indent < 0) {
@@ -681,6 +681,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/03/29 18:18:09  shomrat
+* Bug fix in TrimSpaces
+*
 * Revision 1.21  2005/03/28 17:25:24  shomrat
 * ExpandTilde optimization
 *
