@@ -32,6 +32,8 @@
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
 
+#include <algorithm>
+
 #include <corelib/ncbistr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -82,6 +84,79 @@ string CMsvcMetaMakefile::GetResourceCompilerOpt
     return GetOpt(m_MakeFile, "ResourceCompiler", opt, config);
 }
 
+
+bool CMsvcMetaMakefile::IsPchEnabled(void) const
+{
+    return GetPchInfo().m_UsePch;
+}
+
+
+string CMsvcMetaMakefile::GetUsePchThroughHeader 
+                          (const string& project_id,
+                           const string& source_file_full_path,
+                           const string& tree_src_dir) const
+{
+    const SPchInfo& pch_info = GetPchInfo();
+
+    string source_file_dir;
+    CDirEntry::SplitPath(source_file_full_path, &source_file_dir);
+    source_file_dir = CDirEntry::AddTrailingPathSeparator(source_file_dir);
+
+    int max_match = 0;
+    string pch_file;
+    ITERATE(SPchInfo::TSubdirPchfile, p, pch_info.m_PchUsageMap) {
+        const string& branch_subdir = p->first;
+        string abs_branch_subdir = 
+            CDirEntry::ConcatPath(tree_src_dir, branch_subdir);
+        abs_branch_subdir = 
+            CDirEntry::AddTrailingPathSeparator(abs_branch_subdir);
+        if ( IsSubdir(abs_branch_subdir, source_file_dir) ) {
+            if ( branch_subdir.length() > max_match ) {
+                max_match = branch_subdir.length();
+                pch_file  = p->second;
+            }
+        }
+    }
+    if ( pch_file.empty() )
+        return "";
+    
+    if (find(pch_info.m_DontUsePchList.begin(),
+             pch_info.m_DontUsePchList.end(),
+             project_id) == pch_info.m_DontUsePchList.end())
+        return pch_file;
+
+    return "";
+}
+
+
+const CMsvcMetaMakefile::SPchInfo& CMsvcMetaMakefile::GetPchInfo(void) const
+{
+    if ( m_PchInfo.get() )
+        return *m_PchInfo;
+
+    (const_cast<CMsvcMetaMakefile&>(*this)).m_PchInfo.reset(new SPchInfo);
+
+    string use_pch_str = m_MakeFile.GetString("UsePch", "UsePch", "");
+    m_PchInfo->m_UsePch = (NStr::CompareNocase(use_pch_str, "TRUE") == 0);
+
+    list<string> projects_with_pch_dirs;
+    m_MakeFile.EnumerateEntries("UsePch", &projects_with_pch_dirs);
+    ITERATE(list<string>, p, projects_with_pch_dirs) {
+        const string& key = *p;
+        if (key == "DoNotUsePch")
+            continue;
+
+        string val = m_MakeFile.GetString("UsePch", key, "");
+        if ( !val.empty() )
+            m_PchInfo->m_PchUsageMap[key] = val;
+    }
+
+    string do_not_use_pch_str = 
+        m_MakeFile.GetString("UsePch", "DoNotUsePch", "");
+    NStr::Split(do_not_use_pch_str, LIST_SEPARATOR, m_PchInfo->m_DontUsePchList);
+
+    return *m_PchInfo;
+}
 //-----------------------------------------------------------------------------
 string CreateMsvcProjectMakefileName(const string&        project_name,
                                      CProjItem::TProjType type)
@@ -289,6 +364,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/10 14:27:04  gorelenk
+ * Implemented IsPchEnabled and GetUsePchThroughHeader.
+ *
  * Revision 1.9  2004/03/10 16:38:00  gorelenk
  * Added dll processing to function CreateMsvcProjectMakefileName.
  *
