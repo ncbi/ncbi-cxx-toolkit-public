@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2001/05/14 16:04:32  thiessen
+* fix minor row reordering bug
+*
 * Revision 1.58  2001/05/11 18:20:11  thiessen
 * fix loading of cdd with repeated master structure
 *
@@ -336,7 +339,7 @@ void StructureSet::MatchSequencesToMolecules(void)
             }
 
             // sanity check
-            if (objects.size() == 1) {
+            if (mimeData && objects.size() == 1) {
                 if (nSequenceMatches != nMolecules) { // must match all biopolymer molecules
                     ERR_POST(Error << "MatchSequencesToMolecules() - couldn't find sequence for "
                         "all biopolymers in " << (*o)->pdbID);

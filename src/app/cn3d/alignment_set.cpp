@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/05/14 16:04:31  thiessen
+* fix minor row reordering bug
+*
 * Revision 1.17  2001/05/02 13:46:27  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -294,7 +297,7 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
     int newRow;
     for (int row=1; row<multiple->NRows(); row++, sa++) {
         newRow = rowOrder[row];
-        CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks.get(), row);
+        CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks.get(), newRow);
         sa->Reset(seqAlign);
     }
 

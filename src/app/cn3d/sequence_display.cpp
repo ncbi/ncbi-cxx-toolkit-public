@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/05/14 16:04:31  thiessen
+* fix minor row reordering bug
+*
 * Revision 1.17  2001/05/11 02:10:42  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -615,7 +618,10 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
         return;
     }
 
-    // use vertical drag to reorder row; move rowFrom so that it ends up in the 'rowTo' row
+    // use vertical drag to reorder row; move rowFrom so that it ends up just before the
+    // initial rowTo row
+    if (rowFrom == rowTo - 1) return;
+    if (rowTo > rowFrom) rowTo--;
     RowVector newRows(rows);
     DisplayRow *row = newRows[rowFrom];
     RowVector::iterator r = newRows.begin();
