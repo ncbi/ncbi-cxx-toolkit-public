@@ -73,6 +73,7 @@
 #    elif NCBI_COMPILER_VERSION >= 310
 // Don't bug us about including <strstream>.
 #      define _CPP_BACKWARD_BACKWARD_WARNING_H 1
+#      define _BACKWARD_BACKWARD_WARNING_H 1
 #    endif
 #  endif
 #  include <iostream>
@@ -533,6 +534,10 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/04/26 14:45:08  ucko
+ * Continue to suppress warnings about strstream in GCC 3.4.0, which uses
+ * a slightly different include guard.
+ *
  * Revision 1.39  2003/11/26 15:21:08  lavr
  * Do ad-hoc fstream fix conditionally for MSVC 6 only
  *
