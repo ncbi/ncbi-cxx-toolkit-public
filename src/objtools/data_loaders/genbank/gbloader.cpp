@@ -815,10 +815,11 @@ void CGBDataLoader::AllocateConn(CGBReaderRequestResult& result)
 
 void CGBDataLoader::FreeConn(CGBReaderRequestResult& result)
 {
+#ifdef NCBI_NO_THREADS
+    result.m_Conn = -1;
+#else
     TConn conn = result.m_Conn;
     result.m_Conn = -1;
-#ifdef NCBI_NO_THREADS
-#else
     m_ConnMutexes[conn].Unlock();
 #endif
 }
