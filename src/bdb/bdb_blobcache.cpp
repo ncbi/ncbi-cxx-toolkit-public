@@ -1346,7 +1346,76 @@ public:
     ~CBDB_CacheReaderCF()
     {
     }
+
+    virtual 
+    ICache* CreateInstance(
+                   const string&    driver  = kEmptyStr,
+                   CVersionInfo     version = NCBI_INTERFACE_VERSION(ICache),
+                   const TPluginManagerParamTree* params = 0) const;
+
 };
+
+// List of parameters accepted by the CF
+
+static const string kCFParam_path           = "path";
+static const string kCFParam_name           = "name";
+
+static const string kCFParam_lock           = "lock";
+static const string kCFParam_lock_default   = "no_lock";
+static const string kCFParam_lock_pid_lock  = "pid_lock";
+
+static const string kCFParam_mem_size       = "mem_size";
+static const string kCFParam_read_only      = "read_only";
+
+ICache* CBDB_CacheReaderCF::CreateInstance(
+           const string&                  driver,
+           CVersionInfo                   version,
+           const TPluginManagerParamTree* params) const
+{
+    auto_ptr<CBDB_Cache> drv;
+    if (driver.empty() || driver == m_DriverName) {
+        if (version.Match(NCBI_INTERFACE_VERSION(ICache)) 
+                            != CVersionInfo::eNonCompatible) {
+            drv.reset(new CBDB_Cache());
+        }
+    } else {
+        return 0;
+    }
+
+    if (params) {
+
+        // cache configuration
+
+        const string& path = 
+            GetParam(params, kCFParam_path, true, kEmptyStr);
+        const string& name = 
+            GetParam(params, kCFParam_name, false, "lcache");
+        const string& locking = 
+            GetParam(params, kCFParam_lock, false, kCFParam_lock_default);
+
+        CBDB_Cache::ELockMode lock = CBDB_Cache::eNoLock;
+        if (NStr::CompareNocase(locking, kCFParam_lock_pid_lock) == 0) {
+            lock = CBDB_Cache::ePidLock;
+        }
+
+        const string& mem_size_str =
+            GetParam(params, kCFParam_mem_size, false, kEmptyStr);
+        unsigned mem_size = NStr::StringToUInt(mem_size_str);
+
+        const string& read_only =
+            GetParam(params, kCFParam_read_only, false, kEmptyStr);
+        bool ro = NStr::StringToBool(read_only);
+        if (ro) {
+            drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
+        } else {
+            drv->Open(path.c_str(), name.c_str(), lock, mem_size);
+        }
+
+    }
+    return drv.release();
+
+}
+
 
 void NCBI_BDB_ICacheEntryPoint(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
@@ -1373,6 +1442,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2004/07/26 19:20:21  kuznets
+ * + support of class factory parameters
+ *
  * Revision 1.60  2004/07/19 16:11:25  kuznets
  * + Remove for key,version,subkey
  *
