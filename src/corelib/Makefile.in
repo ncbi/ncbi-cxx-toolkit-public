@@ -7,7 +7,7 @@
 #################################
 
 LIB_PROJ = corelib
-#SUB_PROJ = test
+SUB_PROJ = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
