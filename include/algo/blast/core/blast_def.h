@@ -83,11 +83,26 @@ typedef enum {
 
 /********************* Structure definitions ********************************/
 
+/** A structure containing two integers, used e.g. for locations for the 
+ * lookup table.
+ */
+typedef struct SSeqRange {
+   Int4 left;
+   Int4 right;
+} SSeqRange;
+
+/** Used to hold a set of positions, mostly used for filtering. 
+ * oid holds the index of the query sequence.
+*/
+typedef struct BlastSeqLoc {
+        struct BlastSeqLoc *next;  /**< next in linked list */
+        SSeqRange *ssr;            /**< location data on the sequence. */
+} BlastSeqLoc;
+
 /** Structure for keeping the query masking information */
 typedef struct BlastMaskLoc {
-   Int4 index; /**< Index of the query sequence this mask is applied to */
-   ListNode* loc_list; /**< List of mask locations */
-   struct BlastMaskLoc* next; /**< Pointer to the next query mask */
+   Int4 total_size; /**< total size of the BlastSeqLoc array below (FIXME: same as # of contexts, or of queries?) */
+   BlastSeqLoc** seqloc_array; /**< array of mask locations. */
 } BlastMaskLoc;
 
 
@@ -138,19 +153,6 @@ typedef struct BlastQueryInfo {
                         queries */
 } BlastQueryInfo;
 
-/** A structure containing two integers, used e.g. for locations for the 
- * lookup table.
- */
-typedef struct SSeqRange {
-   Int4 left;
-   Int4 right;
-} SSeqRange;
-
-/** BlastSeqLoc is a ListNode with choice equal to the sequence local id,
- * and data->ptrvalue pointing to a SSeqRange structure defining the 
- * location interval in the sequence.
- */
-#define BlastSeqLoc ListNode
 
 #ifdef __cplusplus
 }
