@@ -1,5 +1,5 @@
-#if defined(HTML__HTML__HPP)  &&  !defined(HTML__HTML__INL)
-#define HTML__HTML__INL
+#if defined(HTML___HTML__HPP)  &&  !defined(HTML___HTML__INL)
+#define HTML___HTML__INL
 
 /*  $Id$
  * ===========================================================================
@@ -575,6 +575,10 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/11/03 15:07:55  ucko
+ * Fixed typo in include guards: there must be *three* underscores after
+ * the first "HTML".
+ *
  * Revision 1.29  2003/11/03 14:47:01  ivanov
  * Some formal code rearrangement
  *
@@ -692,4 +696,4 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
  * ===========================================================================
  */
 
-#endif /* def HTML__HTML__HPP  &&  ndef HTML__HTML__INL */
+#endif /* def HTML___HTML__HPP  &&  ndef HTML___HTML__INL */
