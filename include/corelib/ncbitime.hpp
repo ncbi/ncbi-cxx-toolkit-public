@@ -1093,7 +1093,7 @@ public:
     const CTimeSpan operator- (void) const;
 
     /// Invert time span. Changes time span sign.
-    void CTimeSpan::Invert(void);
+    void Invert(void);
 
     //
     // Comparison
@@ -1866,6 +1866,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/09/07 21:24:30  ucko
+ * Remove redundant CTimeSpan:: from Invert's declaration.
+ *
  * Revision 1.37  2004/09/07 18:47:04  ivanov
  * CTimeSpan::
  *   - added new constructor CTimeSpan(long sec, long nanosec)
