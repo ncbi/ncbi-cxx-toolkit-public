@@ -30,6 +30,11 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2001/09/28 20:50:16  lavr
+ * SERV_Update() modified to capture Used-Server-Info tags;
+ * Update VT method changed - now called on per-line basis;
+ * Few bugfixes related to keeping last info correct
+ *
  * Revision 6.27  2001/09/24 20:28:48  lavr
  * +SERV_Reset(); SERV_Close() changed to utilize SERV_Reset()
  *
@@ -239,6 +244,8 @@ static void s_SkipSkip(SERV_ITER iter)
             if (i < --iter->n_skip)
                 memmove(iter->skip + i, iter->skip + i + 1,
                         sizeof(*iter->skip)*(iter->n_skip - i));
+            if (info == iter->last)
+                iter->last = 0;
             free(info);
         } else
             i++;
@@ -250,17 +257,17 @@ const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER iter, char** env)
 {
     SSERV_Info* info = 0;
 
-    if (iter) {
+    if (iter && iter->op) {
         /* First, remove all outdated entries from our skip list */
         s_SkipSkip(iter);
         /* Next, obtain a fresh entry from the actual mapper */
-        if (iter->op && iter->op->GetNextInfo &&
+        if (iter->op->GetNextInfo &&
             (info = (*iter->op->GetNextInfo)(iter, env)) != 0 &&
             !s_AddSkipInfo(iter, info)) {
             free(info);
             info = 0;
         }
-        iter->last = iter->skip[iter->n_skip - 1];
+        iter->last = info;
     }
     return info;
 }
@@ -283,12 +290,14 @@ int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 void SERV_Reset(SERV_ITER iter)
 {
     size_t i;
-    if (!iter)
+    if (!iter || !iter->op)
         return;
     for (i = 0; i < iter->n_skip; i++)
         free(iter->skip[i]);
     iter->n_skip = 0;
     iter->last = 0;
+    if (iter->op->Reset)
+        (*iter->op->Reset)(iter);
 }
 
 
@@ -299,19 +308,62 @@ void SERV_Close(SERV_ITER iter)
     if (iter->op && iter->op->Close)
         (*iter->op->Close)(iter);
     SERV_Reset(iter);
+    iter->op = 0;
     if (iter->skip)
         free(iter->skip);
     free(iter);
 }
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+typedef int (*FUpdate)(SERV_ITER, TNCBI_Time, const char*);
+#ifdef __cplusplus
+}
+#endif
+
 int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
 {
-    if (!iter || !iter->op)
-        return 0/*not a valid call, failed*/;
-    if (!text || !iter->op->Update)
-        return 1/*no update provision, success*/;
-    return (*iter->op->Update)(iter, text);
+    static const char used_server_info[] = "Used-Server-Info-";
+    int retval = 0/*not updated yet*/;
+
+    if (iter && iter->op && text) {
+        TNCBI_Time now = (TNCBI_Time) time(0);
+        FUpdate update = iter->op->Update;
+        const char *c, *b;
+        for (b = text; (c = strchr(b, '\n')) != 0; b = c + 1) {
+            size_t len = (size_t)(c - b);
+            SSERV_Info* info;
+            unsigned int d1;
+            char* p, *t;
+            int d2;
+
+            if (!(t = (char*) malloc(len + 1)))
+                continue;
+            memcpy(t, b, len);
+            if (t[len - 1] == '\r')
+                t[len - 1] = 0;
+            else
+                t[len] = 0;
+            p = t;
+            if (update && (*update)(iter, now, p))
+                retval = 1/*updated*/;
+            if (strncasecmp(p, used_server_info,
+                            sizeof(used_server_info) - 1) == 0) {
+                p += sizeof(used_server_info) - 1;
+                if (sscanf(p, "%u: %n", &d1, &d2) >= 1 &&
+                    (info = SERV_ReadInfo(p + d2)) != 0) {
+                    if (!s_AddSkipInfo(iter, info))
+                        free(info);
+                    else
+                        retval = 1/*updated*/;
+                }
+            }
+            free(t);
+        }
+    }
+    return retval;
 }
 
 
