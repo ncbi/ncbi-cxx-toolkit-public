@@ -32,11 +32,11 @@
 
 #include <util/regexp.hpp>
 #include <memory>
- 
+
 BEGIN_NCBI_SCOPE
 
 
-CRegexp::CRegexp(const string &pat, int flags) : m_NumFound(0)
+CRegexp::CRegexp(const string &pat, TCompile flags) : m_NumFound(0)
 {
     const char *error;
     int erroffset;
@@ -49,16 +49,16 @@ CRegexp::CRegexp(const string &pat, int flags) : m_NumFound(0)
 
 CRegexp::~CRegexp()
 {
-    (*pcre_free)(m_PReg);    
+    (*pcre_free)(m_PReg);
 }
 
 
-void CRegexp::Set(const string &pat, int flags)
+void CRegexp::Set(const string &pat, TCompile flags)
 {
     if (m_PReg != NULL) {
         (*pcre_free)(m_PReg);
     }
-            
+
     const char *error;
     int erroffset;
     m_PReg = pcre_compile(pat.c_str(), flags, &error, &erroffset, NULL);
@@ -81,16 +81,16 @@ string CRegexp::GetSub(const char *str, size_t idx) const
 
 string CRegexp::GetMatch
 (const char *str,
- size_t offset,
+ TSeqPos offset,
  size_t idx,
- int flags,
+ TMatch flags,
  bool noreturn)
 {
     m_NumFound = pcre_exec(m_PReg, NULL, str, strlen(str), offset,
         flags, m_Results, (kRegexpMaxSubPatterns +1) * 3);
     if (noreturn) {
         return kEmptyStr;
-    } else {   
+    } else {
         return GetSub(str, idx);
     }
 }
@@ -111,17 +111,20 @@ const int* CRegexp::GetResults(size_t idx) const
 }
 
 END_NCBI_SCOPE
- 
+
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/07/16 19:13:50  clausen
+* Added TCompile and TMatch
+*
 * Revision 1.2  2003/06/20 18:26:37  clausen
 * Switched to native regexp interface
 *
 * Revision 1.1  2003/06/03 14:46:23  clausen
 * Initial version
 *
-* 
+*
 * ===========================================================================
 */
 
