@@ -227,6 +227,9 @@ public:
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id);
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
 
+    typedef vector<CSeq_entry_Handle> TTSE_Handles;
+    void GetAllTSEs(TTSE_Handles& tses, int kind);
+
 private:
     // constructor/destructor visible from CScope
     CScope_Impl(CObjectManager& objmgr);
@@ -370,6 +373,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/04/12 18:40:24  grichenk
+* Added GetAllTSEs()
+*
 * Revision 1.5  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

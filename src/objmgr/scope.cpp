@@ -148,6 +148,12 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
 }
 
 
+void CScope::GetAllTSEs(TTSE_Handles& tses, enum ETSEKind kind)
+{
+    m_Impl->GetAllTSEs(tses, int(kind));
+}
+
+
 CBioseq_EditHandle CScope::GetEditHandle(const CBioseq_Handle& seq)
 {
     return m_Impl->GetEditHandle(seq);
@@ -298,6 +304,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2004/04/12 18:40:24  grichenk
+* Added GetAllTSEs()
+*
 * Revision 1.104  2004/03/24 18:30:30  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

@@ -1301,6 +1301,22 @@ CScope_Impl::x_GetSynonyms(CBioseq_ScopeInfo& info)
 }
 
 
+void CScope_Impl::GetAllTSEs(TTSE_Handles& tses, int kind)
+{
+    // CScope::ETSEKind(kind)
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if (it->GetDataLoader() &&  kind == CScope::eManualTSEs) {
+            // Skip data sources with loaders
+            continue;
+        }
+        const TTSE_LockSet& tse_cache = it->GetTSESet();
+        ITERATE(TTSE_LockSet, tse_it, tse_cache) {
+            tses.push_back(CSeq_entry_Handle(*m_HeapScope, **tse_it));
+        }
+    }
+}
+
+
 void CScope_Impl::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
     ddc.SetFrame("CScope_Impl");
@@ -1320,6 +1336,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/04/12 18:40:24  grichenk
+* Added GetAllTSEs()
+*
 * Revision 1.9  2004/03/31 19:54:08  vasilche
 * Fixed removal of bioseqs and bioseq-sets.
 *

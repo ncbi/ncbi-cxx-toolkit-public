@@ -152,6 +152,13 @@ public:
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CSeq_entry& tse);
 
+    enum ETSEKind {
+        eManualTSEs,
+        eAllTSEs
+    };
+    typedef vector<CSeq_entry_Handle> TTSE_Handles;
+    void GetAllTSEs(TTSE_Handles& tses, enum ETSEKind kind = eManualTSEs);
+
 protected:
     CScope_Impl& GetImpl(void);
 
@@ -189,6 +196,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2004/04/12 18:40:24  grichenk
+* Added GetAllTSEs()
+*
 * Revision 1.74  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more
