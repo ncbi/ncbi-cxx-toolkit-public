@@ -108,54 +108,6 @@
  * memory area pointed by 'base' (if not 0) gets reformatted and lose
  * all previous contents.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.14  2002/04/13 06:33:52  lavr
- * +HEAP_Base(), +HEAP_Size(), +HEAP_Serial(), new HEAP_CopySerial()
- *
- * Revision 6.13  2001/07/31 15:07:58  lavr
- * Added paranoia log message: freeing a block in a NULL heap
- *
- * Revision 6.12  2001/07/13 20:09:27  lavr
- * If remaining space in a block is equal to block header,
- * do not leave this space as a padding of the block been allocated,
- * but instead form a new block consisting only of the header.
- * The block becomes a subject for a later garbage collecting.
- *
- * Revision 6.11  2001/07/03 20:24:03  lavr
- * Added function: HEAP_Copy()
- *
- * Revision 6.10  2001/06/25 15:32:41  lavr
- * Typo fixed
- *
- * Revision 6.9  2001/06/19 22:22:56  juran
- * Heed warning:  Make s_HEAP_Take() static
- *
- * Revision 6.8  2001/06/19 19:12:01  lavr
- * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
- *
- * Revision 6.7  2001/03/02 20:08:26  lavr
- * Typos fixed
- *
- * Revision 6.6  2001/02/14 22:03:09  lavr
- * 0x... constants explicitly made unsigned
- *
- * Revision 6.5  2001/01/12 23:51:39  lavr
- * Message logging modified for use LOG facility only
- *
- * Revision 6.4  2000/05/23 21:41:07  lavr
- * Alignment changed to 'double'
- *
- * Revision 6.3  2000/05/17 14:22:30  lavr
- * Small cosmetic changes
- *
- * Revision 6.2  2000/05/16 15:06:05  lavr
- * Minor changes for format <-> argument correspondence in warnings
- *
- * Revision 6.1  2000/05/12 18:33:44  lavr
- * First working revision
- *
- * ==========================================================================
  */
 
 #include "ncbi_priv.h"
@@ -467,9 +419,18 @@ SHEAP_Block* HEAP_Walk(HEAP heap, const SHEAP_Block* p)
                     return b;
                 if (HEAP_ISLAST(p))
                     CORE_LOG(eLOG_Warning, "Heap Walk: Misplaced last block");
-                else if (HEAP_ISFREE(b) && HEAP_ISFREE(p))
+                else if (HEAP_ISFREE(b) && HEAP_ISFREE(p)) {
+                    const SHEAP_Block* c = (const SHEAP_Block*) heap->base;
+                    while ((char*) c < (char*) p) {
+                        if (HEAP_ISFREE(c) &&
+                            (char*) c + c->size >= (char*) b + b->size)
+                            break;
+                        c = (SHEAP_Block*)((char*) c + c->size);
+                    }
+                    if ((char*) c < (char*) p)
+                        return b;
                     CORE_LOG(eLOG_Warning, "Heap Walk: Adjacent free blocks");
-                else
+                } else
                     return b;
             } else
                 CORE_LOGF(eLOG_Warning,
@@ -551,3 +512,58 @@ int HEAP_Serial(const HEAP heap)
         return heap->copy;
     return 0;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.15  2002/08/12 15:15:15  lavr
+ * More thorough check for free-in-the-middle heap block
+ *
+ * Revision 6.14  2002/04/13 06:33:52  lavr
+ * +HEAP_Base(), +HEAP_Size(), +HEAP_Serial(), new HEAP_CopySerial()
+ *
+ * Revision 6.13  2001/07/31 15:07:58  lavr
+ * Added paranoia log message: freeing a block in a NULL heap
+ *
+ * Revision 6.12  2001/07/13 20:09:27  lavr
+ * If remaining space in a block is equal to block header,
+ * do not leave this space as a padding of the block been allocated,
+ * but instead form a new block consisting only of the header.
+ * The block becomes a subject for a later garbage collecting.
+ *
+ * Revision 6.11  2001/07/03 20:24:03  lavr
+ * Added function: HEAP_Copy()
+ *
+ * Revision 6.10  2001/06/25 15:32:41  lavr
+ * Typo fixed
+ *
+ * Revision 6.9  2001/06/19 22:22:56  juran
+ * Heed warning:  Make s_HEAP_Take() static
+ *
+ * Revision 6.8  2001/06/19 19:12:01  lavr
+ * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
+ *
+ * Revision 6.7  2001/03/02 20:08:26  lavr
+ * Typos fixed
+ *
+ * Revision 6.6  2001/02/14 22:03:09  lavr
+ * 0x... constants explicitly made unsigned
+ *
+ * Revision 6.5  2001/01/12 23:51:39  lavr
+ * Message logging modified for use LOG facility only
+ *
+ * Revision 6.4  2000/05/23 21:41:07  lavr
+ * Alignment changed to 'double'
+ *
+ * Revision 6.3  2000/05/17 14:22:30  lavr
+ * Small cosmetic changes
+ *
+ * Revision 6.2  2000/05/16 15:06:05  lavr
+ * Minor changes for format <-> argument correspondence in warnings
+ *
+ * Revision 6.1  2000/05/12 18:33:44  lavr
+ * First working revision
+ *
+ * ==========================================================================
+ */
