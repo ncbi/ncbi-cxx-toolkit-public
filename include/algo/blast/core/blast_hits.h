@@ -61,7 +61,10 @@ typedef struct BlastHSP {
    BlastSeg subject;     /**< Subject sequence info. */
    Int4     context;     /**< Context number of query */
    GapEditBlock* gap_info;/**< ALL gapped alignment is here */
-   Int4 num;             /**< How many HSP's make up this (sum) segment? */
+   Int4 num;             /**< How many HSP's are linked together for sum 
+                              statistics evaluation? If unset (0), this HSP is
+                              not part of a linked set, i.e. value 0 is treated
+                              the same way as 1. */
    Uint4 pattern_length; /**< Length of pattern occurrence in this HSP, in 
                             PHI BLAST */
 } BlastHSP;
