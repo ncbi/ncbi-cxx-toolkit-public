@@ -249,10 +249,28 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
             if (start >= 0) {
                 // record the insert if requested
                 if (record_inserts) {
-                    insert_starts->push_back(start);
-                    insert_aln_starts->push_back(aln_pos / width);
-                    insert_lens->push_back(start + len - 1);
-                }
+                    static TSignedSeqPos prev_aln_pos, prev_start = -1;
+                    static TSeqPos       prev_len, ttl_len        = 0;
+                    if (prev_aln_pos == (aln_pos / width)  &&
+                        start == (plus ? prev_start + prev_len :
+                                  prev_start - len)) {
+                        // consolidate the adjacent inserts
+                        ttl_len += len;
+                        insert_lens->pop_back();
+                        insert_lens->push_back(ttl_len);
+                        if (!plus) {
+                            insert_starts->pop_back();
+                            insert_starts->push_back(start);
+                        }
+                    } else {
+                        prev_aln_pos = aln_pos / width;
+                        prev_len = ttl_len = len;
+                        prev_start = start;
+                        insert_starts->push_back(start);
+                        insert_aln_starts->push_back(prev_aln_pos);
+                        insert_lens->push_back(len);
+                    }
+		}
             }
         } else {
             if (start >= 0) {
@@ -750,6 +768,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2003/09/22 21:00:16  todorov
+* Consolidated adjacent inserts in GetWholeAlnSeqString
+*
 * Revision 1.48  2003/09/22 19:03:30  todorov
 * Use the new x_GetSeq{Left,Right}Seg methods
 *
