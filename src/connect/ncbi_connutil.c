@@ -463,7 +463,12 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
             if (newtaglen != taglen || strncasecmp(newline, line, taglen) != 0)
                 continue;
 
-            l = op == eUserHeaderOp_Extend ? linelen + len : len;
+            if (op == eUserHeaderOp_Extend) {
+                l = linelen + len;
+                if (len && linelen > 1 && line[linelen - 2] == '\r')
+                    --l;
+            } else
+                l = len;
             if (l != linelen) {
                 if (l > linelen) {
                     char*  temp = (char*)realloc(hdr, hdrlen + l - linelen +1);
@@ -483,16 +488,12 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
 
             if (len) {
                 if (op == eUserHeaderOp_Extend) {
-                    char* s = &line[linelen - 1];
-                    if (linelen > 1 && *(s - 1) == '\r')
-                        *(s - 1) = ',';
+                    char* s = &line[l - len - 1];
                     *s++ = ' ';
                     memcpy(s, newtagval, len);
-                    linelen += len;
-                } else {
+                } else
                     memcpy(line, newline, len);
-                    linelen  = len;
-                }
+                linelen = l;
                 used = 1;
             }
         }
@@ -1458,6 +1459,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2002/12/13 21:19:13  lavr
+ * Separate header tag values with spaces as most commonly required (rfc1945)
+ *
  * Revision 6.47  2002/12/10 17:34:15  lavr
  * Remove errno decoding on failed connect in URL_Connect()
  *
