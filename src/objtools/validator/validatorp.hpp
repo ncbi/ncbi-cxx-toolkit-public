@@ -64,6 +64,9 @@ class CDesc_CI;
 class CMolInfo;
 class CUser_object;
 class CSeqdesc_CI;
+class CSeq_graph;
+class CMappedGraph;
+
 
 BEGIN_SCOPE(validator)
 
@@ -300,6 +303,7 @@ public:
     typedef const CBioseq_set& TSet;
     typedef const CSeqdesc& TDesc;
     typedef const CSeq_annot& TAnnot;
+    typedef const CSeq_graph& TGraph;
     typedef const list< CRef< CDbtag > >& TDbtags;
     typedef map < const CSeq_feat*, const CSeq_annot* >& TFeatAnnotMap;
 
@@ -315,6 +319,9 @@ public:
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TSet set, 
         TDesc ds);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TAnnot annot);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TGraph graph);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
+        TGraph graph);
 
     // General use validation methods
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj);
@@ -484,12 +491,13 @@ class CValidError_base
 {
 protected:
     // typedefs:
-    typedef const CSeq_feat& TFeat;
-    typedef const CBioseq& TBioseq;
-    typedef const CBioseq_set& TSet;
-    typedef const CSeqdesc& TDesc;
-    typedef const CSeq_annot& TAnnot;
-    typedef const list< CRef< CDbtag > >&TDbtags;
+    typedef CValidError_imp::TFeat TFeat;
+    typedef CValidError_imp::TBioseq TBioseq;
+    typedef CValidError_imp::TSet TSet;
+    typedef CValidError_imp::TDesc TDesc;
+    typedef CValidError_imp::TAnnot TAnnot;
+    typedef CValidError_imp::TGraph TGraph;
+    typedef CValidError_imp::TDbtags TDbtags;
 
     CValidError_base(CValidError_imp& imp);
     virtual ~CValidError_base();
@@ -505,6 +513,9 @@ protected:
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TSet set, 
         TDesc ds);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TAnnot annot);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TGraph graph);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
+        TGraph graph);
 
     CValidError_imp& m_Imp;
     CScope* m_Scope;
@@ -571,6 +582,16 @@ private:
         const CBioseq& seq, const CSeqdesc& desc);
     void ValidateOrgContext(const CSeqdesc_CI& iter, const COrg_ref& this_org,
         const COrg_ref& org, const CBioseq& seq, const CSeqdesc& desc);
+
+    void ValidateGraphsOnBioseq(const CBioseq& seq);
+    void ValidateByteGraphOnBioseq(const CSeq_graph& graph, const CBioseq& seq);
+    void ValidateGraphOnDeltaBioseq(const CBioseq& seq);
+    void ValidateGraphValues(const CSeq_graph& graph, const CBioseq& seq);
+    void ValidateMinValues(const CByte_graph& bg);
+    void ValidateMaxValues(const CByte_graph& bg);
+    bool GetLitLength(const CDelta_seq& delta, TSeqPos& len);
+    bool IsSuportedGraphType(const CSeq_graph& graph) const;
+    SIZE_TYPE GetSeqLen(const CBioseq& seq);
 
     void ValidateSecondaryAccConflict(const string& primary_acc,
         const CBioseq& seq, int choice);
@@ -654,7 +675,6 @@ private:
 
     bool IsPlastid(int genome);
     bool IsOverlappingGenePseudo(const CSeq_feat& feat);
-    bool IsResidue(unsigned char res);
     unsigned char Residue(unsigned char res);
     int  CheckForRaggedEnd(const CSeq_loc&, const CCdregion& cdr);
     bool SuppressCheck(const string& except_text);
@@ -753,6 +773,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/03/28 16:28:53  shomrat
+* Added Seq-graph tests related methods
+*
 * Revision 1.19  2003/03/21 21:12:17  shomrat
 * Added eErr_SEQ_DESCR_UnnecessaryBioSourceFocus; Change to signature of ValidateOrgContext
 *
