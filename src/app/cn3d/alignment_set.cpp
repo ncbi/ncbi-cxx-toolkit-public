@@ -167,9 +167,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
         for (d=seqAlign.GetSegs().GetDendiag().begin(); d!=de; d++, blockNum++) {
             const CDense_diag& block = d->GetObject();
 
-            if (!block.IsSetDim() || block.GetDim() != 2 ||
-                block.GetIds().size() != 2 ||
-                block.GetStarts().size() != 2) {
+            if (block.GetDim() != 2 || block.GetIds().size() != 2 || block.GetStarts().size() != 2) {
                 ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - \n"
                     "incorrect dendiag block dimensions");
                 return;
@@ -269,6 +267,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/04/08 21:54:52  thiessen
+* fix for non-optional Dense-diag dim
+*
 * Revision 1.25  2003/02/03 19:20:00  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
