@@ -103,7 +103,7 @@ public:
     void Run(THits* hits);
   
     // a segment can represent an exon or an unaligning piece of mRna (a gap)
-    struct SSegment {
+    struct NCBI_XALGOALIGN_EXPORT SSegment {
         
     public:
         
@@ -136,7 +136,7 @@ public:
     typedef vector<SSegment> TSegments;
 
     // aligned compartment representation 
-    struct SAlignedCompartment {
+    struct NCBI_XALGOALIGN_EXPORT SAlignedCompartment {
         
         size_t           m_id;
         bool             m_error;
@@ -230,6 +230,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2005/03/28 17:38:05  jcherry
+ * Added export specifiers for nested structs
+ *
  * Revision 1.19  2005/01/26 21:32:31  kapustin
  * +CSplign::SSegment::s_IsConsensusSplice
  *
