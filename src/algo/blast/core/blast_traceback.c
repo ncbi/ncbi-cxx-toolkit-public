@@ -463,8 +463,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
        gap_align->program == blast_type_psitblastn);   
    Uint1Ptr PNTR translated_sequence = NULL, PNTR translated_sequence_orig;
    Int4Ptr translated_length = 0, translated_length_orig;
-   Uint1Ptr nucl_sequence = NULL;
-   Int4 nucl_length = 0;
+   Uint1Ptr nucl_sequence = NULL, nucl_sequence_rev = NULL;
    CharPtr genetic_code = NULL;
 
    if (hsp_list->hspcnt == 0) {
@@ -495,7 +494,8 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
             }
          }
          nucl_sequence = subject_blk->sequence_start;
-         nucl_length = subject_blk->length;
+         GetReverseNuclSequence(nucl_sequence, subject_blk->length, 
+                                &nucl_sequence_rev);
       }
    } else {
       /* For out-of-frame gapping, swith query and subject sequences */
@@ -557,8 +557,8 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
          }
          if (translated_sequence[hsp->subject.frame] == NULL) {
             translated_sequence[hsp->subject.frame] =
-               BLAST_GetTranslation(nucl_sequence, nucl_length, 
-                  hsp->subject.frame, 
+               BLAST_GetTranslation(nucl_sequence, nucl_sequence_rev, 
+                  subject_blk->length, hsp->subject.frame, 
                   &translated_length[hsp->subject.frame], genetic_code);
          }
          subject_start = translated_sequence[hsp->subject.frame] + 1;
@@ -763,10 +763,14 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
        hsp = hsp_array[index];
 
        if(is_ooframe) {
+          hsp->gap_info->original_length1 = subject_blk->length;
+          hsp->gap_info->original_length2 = query_blk->length;
           seqalign = 
              OOFGapXEditBlockToSeqAlign(hsp->gap_info, subject_blk->seqid, 
                                         query_blk->seqid, query_blk->length);
        } else {
+          hsp->gap_info->original_length1 = query_blk->length;
+          hsp->gap_info->original_length2 = subject_blk->length;
           seqalign = 
              GapXEditBlockToSeqAlign(hsp->gap_info, subject_blk->seqid, 
                                      query_blk->seqid); 

@@ -149,28 +149,33 @@ BLAST_SequenceBlkPtr BLAST_SequenceBlkDestruct(BLAST_SequenceBlkPtr seq_blk)
 }
 
 Uint1Ptr LIBCALL
-BLAST_GetTranslation(Uint1Ptr query_seq, Int4 nt_length, Int2 frame, 
-   Int4Ptr length, CharPtr genetic_code)
+BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
+   Int4 nt_length, Int2 frame, Int4Ptr length, CharPtr genetic_code)
 {
 	Uint1 codon[CODON_LENGTH];
 	Int4 index, index_prot;
 	SeqMapTablePtr smtp;
 	Uint1 residue, new_residue;
+        Uint1Ptr nucl_seq;
 	Uint1Ptr prot_seq;
 
 	smtp = SeqMapTableFind(Seq_code_ncbistdaa, Seq_code_ncbieaa);
 
-	/* Allocate two extra spaces for NULLB's at beginning and end of seq. */
-	prot_seq = (Uint1Ptr) MemNew((2+(nt_length+2)/CODON_LENGTH)*sizeof(Uint1));
+        nucl_seq = (frame >= 0 ? query_seq : query_seq_rev);
+
+	/* Allocate two extra spaces for NULLB's at beginning and end of 
+           sequence */
+	prot_seq = (Uint1Ptr) 
+           MemNew((2+(nt_length+2)/CODON_LENGTH)*sizeof(Uint1));
 
 	/* The first character in the protein is the NULLB sentinel. */
 	prot_seq[0] = NULLB;
 	index_prot = 1;
 	for (index=ABS(frame)-1; index<nt_length-2; index += CODON_LENGTH)
 	{
-		codon[0] = query_seq[index];
-		codon[1] = query_seq[index+1];
-		codon[2] = query_seq[index+2];
+		codon[0] = nucl_seq[index];
+		codon[1] = nucl_seq[index+1];
+		codon[2] = nucl_seq[index+2];
 		residue = AAForCodon(codon, genetic_code);
 		new_residue = SeqMapTableConvert(smtp, residue);
 		if (IS_residue(new_residue))
@@ -593,3 +598,30 @@ BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length,
    
    return (prot_seq - prot_seq_start);
 } /* BlastTranslateUnambiguousSequence */
+
+
+/** Reverse a nucleotide sequence in the ncbi4na encoding */
+Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length, 
+                            Uint1Ptr PNTR rev_sequence_ptr)
+{
+   Uint1Ptr rev_sequence;
+   Int4 index;
+   /* Conversion table from forward to reverse strand residue in the blastna 
+      encoding */
+   Uint1 conversion_table[17] = 
+      { 0, 8, 4, 12, 2, 10, 9, 14, 1, 6, 5, 13, 3, 11, 7, 15 };
+
+   if (!rev_sequence_ptr)
+      return -1;
+
+   rev_sequence = (Uint1Ptr) Malloc(length + 2);
+   
+   rev_sequence[0] = rev_sequence[length+1] = NULLB;
+
+   for (index = 0; index < length; ++index) {
+      rev_sequence[length-index] = conversion_table[sequence[index]];
+   }
+
+   *rev_sequence_ptr = rev_sequence + 1;
+   return 0;
+}
