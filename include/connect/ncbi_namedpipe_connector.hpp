@@ -60,10 +60,10 @@ BEGIN_NCBI_SCOPE
 /// Create CNamedPipe-based CONNECTOR.
 ///
 /// Create new CONNECTOR structure to handle a data transfer between two
-/// process over nemed pipe. Return NULL on error.
+/// process over nemed pipe.  Return NULL on error.
 extern NCBI_XCONNECT_EXPORT CONNECTOR NAMEDPIPE_CreateConnector
-(const char*  pipename,
- size_t       bufsize = CNamedPipe::kDefaultBufferSize
+(const string& pipename,
+ size_t        pipesize = CNamedPipe::kDefaultPipeSize
  );
 
 
@@ -76,6 +76,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/23 21:02:21  lavr
+ * Rename BufferSize into PipeSize; accept string instead of char*
+ *
  * Revision 1.3  2003/09/03 13:56:11  ivanov
  * Renamed to .hpp
  *
