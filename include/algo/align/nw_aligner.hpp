@@ -104,6 +104,9 @@ public:
     // Run generic Needleman-Wunsch algorithm, return the alignment's score
     virtual TScore Run();
 
+    // Time estimation routine
+    virtual unsigned EstimateRunningTime(unsigned test_duration_sec);
+
     // Formatters
     enum EFormat {
         eFormatType1,
@@ -178,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/01/30 20:32:51  kapustin
+ * Add EstiamteRunningTime()
+ *
  * Revision 1.6  2003/01/28 12:36:52  kapustin
  * Format() --> FormatAsText(). Add FormatAsSeqAlign() and support for sequence ids
  *

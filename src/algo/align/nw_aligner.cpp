@@ -105,6 +105,8 @@ CNWAligner::CNWAligner(const char* seq1, size_t len1,
                    eBadParameter,
                    "Zero length specified for sequence(s)");
 
+    x_LoadScoringMatrix();
+
     size_t iErrPos1 = x_CheckSequence(seq1, len1);
     if(iErrPos1 < len1) {
         ostrstream oss;
@@ -155,8 +157,6 @@ const unsigned char kMaskD   = 0x0008;
 
 int CNWAligner::Run()
 {
-    x_LoadScoringMatrix();
-
     const int N1 = m_SeqLen1 + 1;
     const int N2 = m_SeqLen2 + 1;
 
@@ -573,6 +573,125 @@ string CNWAligner::GetTranscript() const
 }
 
 
+// Tries to give a running time estimate (in seconds)
+unsigned CNWAligner::EstimateRunningTime(unsigned test_duration_sec)
+{
+    const int N1 = m_SeqLen1 + 1;
+    const int N2 = m_SeqLen2 + 1;
+    TScore* rowV    = new TScore [N2];
+    TScore* rowF    = new TScore [N2];
+    unsigned char* backtrace_matrix = new unsigned char [N1*N2];
+
+    unsigned ts = 0;
+    time_t t0 = time(unsigned(0));
+
+    try
+    {
+
+        TScore* pV = rowV - 1;
+
+        const char* seq1 = m_Seq1 - 1;
+        const char* seq2 = m_Seq2 - 1;
+
+        // first row
+        rowV[0] = m_Wg;
+        int k;
+        for (k = 1; k < N2; k++) {
+            rowV[k] = pV[k] + m_Ws;
+            rowF[k] = kInfMinus;
+            backtrace_matrix[k] = kMaskE | kMaskEc;
+        }
+        rowV[0] = 0;
+    
+        time_t t1;
+        double dt;
+
+            // recurrences
+        TScore V  = 0;
+        TScore V0 = m_Wg;
+        TScore E, G, n0;
+        unsigned char tracer;
+
+        int i, j;
+        for(i = 1;  i < N1;  ++i) {
+            
+            V = V0 += m_Ws;
+            E = kInfMinus;
+            backtrace_matrix[k++] = kMaskFc;
+            char ci = seq1[i];
+
+            for (j = 1; j < N2; ++j, ++k) {
+                
+                G = pV[j] + m_Matrix[ci][seq2[j]];
+                pV[j] = V;
+                
+                n0 = V + m_Wg;
+                if(E > n0) {
+                    E += m_Ws;      // continue the gap
+                    tracer = kMaskEc;
+                }
+                else {
+                    E = n0 + m_Ws;  // open a new gap
+                    tracer = 0;
+                }
+
+                n0 = rowV[j] + m_Wg;
+                if(rowF[j] > n0) {
+                    rowF[j] += m_Ws;
+                    tracer |= kMaskFc;
+                }
+                else {
+                    rowF[j] = n0 + m_Ws;
+                }
+                
+                if (E >= rowF[j]) {
+                    if(E >= G) {
+                        V = E;
+                        tracer |= kMaskE;
+                    }
+                    else {
+                        V = G;
+                        tracer |= kMaskD;
+                    }
+                } else {
+                    if(rowF[j] >= G) {
+                        V = rowF[j];
+                    }
+                    else {
+                        V = G;
+                        tracer |= kMaskD;
+                    }
+                }
+                backtrace_matrix[k] = tracer;
+            }
+            pV[j] = V;
+
+            t1 = time( unsigned(0) );
+            dt = difftime(t1, t0);
+            if( dt > test_duration_sec ) {
+                throw dt / k;
+            }
+        }
+
+        t1 = time( unsigned(0) );
+        dt = difftime(t1, t0);
+        ts = N1*N2*dt/k;
+    }
+    catch(double t) {
+        ts = t*N1*N2;
+    }
+    catch(...) {
+        ts = 0;
+    }
+
+    delete[] backtrace_matrix;
+    delete[] rowV;
+    delete[] rowF;
+
+    return ts;
+}
+
+
 // Load pairwise scoring matrix
 void CNWAligner::x_LoadScoringMatrix()
 {
@@ -653,6 +772,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/01/30 20:32:36  kapustin
+ * Add EstiamteRunningTime()
+ *
  * Revision 1.9  2003/01/28 12:39:03  kapustin
  * Implement ASN.1 and SeqAlign output
  *
