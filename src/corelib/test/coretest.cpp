@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  1999/04/14 20:12:52  vakatov
+* + <stdio.h>, <stdlib.h>
+*
 * Revision 1.36  1999/03/12 18:04:09  vakatov
 * Added ERR_POST macro to perform a plain "standard" error posting
 *
@@ -143,7 +146,6 @@
 *
 * Revision 1.5  1998/11/04 23:48:15  vakatov
 * Replaced <ncbidiag> by <ncbistd>
-*
 * ==========================================================================
 */
 
@@ -157,6 +159,8 @@
 #include <corelib/ncbicgir.hpp>
 #include <algorithm>
 #include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
@@ -668,7 +672,7 @@ static void TestCgi(int argc, char* argv[])
         char inp_str[] = "post11=val11&post12void=&post13=val13";
         CNcbiIstrstream istr(inp_str);
         char len[32];
-        _ASSERT( sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)) );
+        _ASSERT(::sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)));
         _ASSERT( !putenv(len) );
 
         _ASSERT( !putenv("SERVER_PORT=") );
