@@ -40,6 +40,9 @@
 #include "cn3d/structure_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
 
+#include <wx/clipbrd.h>
+#include <wx/tokenzr.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // The following is taken unmodified from wxDesigner's C++ header from cdd_book_ref_dialog.wdr
@@ -59,18 +62,20 @@
 
 #define ID_LISTBOX 10000
 #define ID_B_UP 10001
-#define ID_B_EDIT 10002
+#define ID_B_LAUNCH 10002
 #define ID_B_NEW 10003
-#define ID_B_DOWN 10004
-#define ID_B_SAVE 10005
-#define ID_B_DELETE 10006
-#define ID_LINE 10007
-#define ID_TEXT 10008
-#define ID_T_NAME 10009
-#define ID_C_TYPE 10010
-#define ID_T_ADDRESS 10011
-#define ID_T_SUBADDRESS 10012
-#define ID_B_DONE 10013
+#define ID_B_SAVE 10004
+#define ID_B_DOWN 10005
+#define ID_B_EDIT 10006
+#define ID_B_PASTE 10007
+#define ID_B_DELETE 10008
+#define ID_LINE 10009
+#define ID_TEXT 10010
+#define ID_T_NAME 10011
+#define ID_C_TYPE 10012
+#define ID_T_ADDRESS 10013
+#define ID_T_SUBADDRESS 10014
+#define ID_B_DONE 10015
 wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -89,17 +94,69 @@ BEGIN_SCOPE(Cn3D)
         return; \
     }
 
+template < class T >
+class TypeStringAssociator
+{
+private:
+    typename std::map < T , std::string > type2string;
+    typename std::map < std::string , T > string2type;
+public:
+    void Associate(const T& type, const std::string& name)
+    {
+        type2string[type] = name;
+        string2type[name] = type;
+    }
+    const T * Find(const std::string& name) const
+    {
+        std::map < std::string , T >::const_iterator i = string2type.find(name);
+        return ((i != string2type.end()) ? &(i->second) : NULL);
+    }
+    bool Get(const std::string& name, T *type) const
+    {
+        const T *found = Find(name);
+        if (found) *type = *found;
+        return (found != NULL);
+    }
+    const std::string * Find(const T& type) const
+    {
+        std::map < T , std::string >::const_iterator i = type2string.find(type);
+        return ((i != type2string.end()) ? &(i->second) : NULL);
+    }
+    bool Get(const T& type, std::string *name) const
+    {
+        const std::string *found = Find(type);
+        if (found) *name = *found;
+        return (found != NULL);
+    }
+    int Size(void) const { return type2string.size(); }
+};
+
 BEGIN_EVENT_TABLE(CDDBookRefDialog, wxDialog)
     EVT_CLOSE       (       CDDBookRefDialog::OnCloseWindow)
     EVT_BUTTON      (-1,    CDDBookRefDialog::OnClick)
     EVT_LISTBOX     (-1,    CDDBookRefDialog::OnClick)
 END_EVENT_TABLE()
 
+static TypeStringAssociator < CCdd_book_ref::ETextelement > enum2str;
+
 CDDBookRefDialog::CDDBookRefDialog(StructureSet *structureSet, CDDBookRefDialog **handle,
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos) :
         wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
         sSet(structureSet), dialogHandle(handle), selectedItem(-1), editOn(false)
 {
+    if (enum2str.Size() == 0) {
+        enum2str.Associate(CCdd_book_ref::eTextelement_unassigned, "unassigned");
+        enum2str.Associate(CCdd_book_ref::eTextelement_section, "section");
+        enum2str.Associate(CCdd_book_ref::eTextelement_figgrp, "figgrp");
+        enum2str.Associate(CCdd_book_ref::eTextelement_table, "table");
+        enum2str.Associate(CCdd_book_ref::eTextelement_chapter, "chapter");
+        enum2str.Associate(CCdd_book_ref::eTextelement_biblist, "biblist");
+        enum2str.Associate(CCdd_book_ref::eTextelement_box, "box");
+        enum2str.Associate(CCdd_book_ref::eTextelement_glossary, "glossary");
+        enum2str.Associate(CCdd_book_ref::eTextelement_appendix, "appendix");
+        enum2str.Associate(CCdd_book_ref::eTextelement_other, "other");
+    }
+
     if (!structureSet || !(descrSet = structureSet->GetCDDDescrSet())) {
         ERRORMSG("CDDBookRefDialog::CDDBookRefDialog() - error getting descr set data");
         Destroy();
@@ -145,6 +202,19 @@ void CDDBookRefDialog::OnCloseWindow(wxCloseEvent& event)
     Destroy();
 }
 
+static wxString MakeRID(const CCdd_book_ref& bref)
+{
+    wxString uid;
+    if (bref.IsSetSubelementid())
+        uid.Printf("%s.%s.%i#%i",
+            bref.GetBookname().c_str(), enum2str.Find(bref.GetTextelement())->c_str(),
+            bref.GetElementid(), bref.GetSubelementid());
+    else
+        uid.Printf("%s.%s.%i",
+            bref.GetBookname().c_str(), enum2str.Find(bref.GetTextelement())->c_str(), bref.GetElementid());
+    return uid;
+}
+
 void CDDBookRefDialog::SetWidgetStates(void)
 {
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(listbox, ID_LISTBOX, wxListBox)
@@ -155,7 +225,7 @@ void CDDBookRefDialog::SetWidgetStates(void)
     for (d=descrSet->Set().begin(); d!=de; d++) {
         if ((*d)->IsBook_ref()) {
             // make client data of menu item a pointer to the CRef containing the CCdd_descr object
-            listbox->Append((*d)->GetBook_ref().GetBookname().c_str(), &(*d));
+            listbox->Append(MakeRID((*d)->GetBook_ref()), &(*d));
         }
     }
     if (selectedItem < 0 && listbox->GetCount() > 0)
@@ -171,8 +241,7 @@ void CDDBookRefDialog::SetWidgetStates(void)
         const CCdd_book_ref& bref =
             (*(reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem))))->GetBook_ref();
         tName->SetValue(bref.GetBookname().c_str());
-        cType->SetSelection((bref.GetTextelement() == CCdd_book_ref::eTextelement_other)
-            ? (listbox->GetCount() - 1) : static_cast<int>(bref.GetTextelement()));
+        cType->SetStringSelection(enum2str.Find(bref.GetTextelement())->c_str());
         wxString s;
         s.Printf("%i", bref.GetElementid());
         tAddress->SetValue(s);
@@ -206,6 +275,8 @@ void CDDBookRefDialog::SetWidgetStates(void)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bSave, ID_B_SAVE, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNew, ID_B_NEW, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelete, ID_B_DELETE, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bLaunch, ID_B_LAUNCH, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bPaste, ID_B_PASTE, wxButton)
     bool readOnly;
     RegistryGetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, &readOnly);
     bUp->Enable(!readOnly && !editOn && selectedItem > 0);
@@ -214,20 +285,31 @@ void CDDBookRefDialog::SetWidgetStates(void)
     bSave->Enable(!readOnly && editOn);
     bNew->Enable(!readOnly && !editOn);
     bDelete->Enable(!readOnly && selectedItem >= 0 && selectedItem < listbox->GetCount());
+    bLaunch->Enable(!editOn);
+    bPaste->Enable(!readOnly && !editOn);
 }
 
 void CDDBookRefDialog::OnClick(wxCommandEvent& event)
 {
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(listbox, ID_LISTBOX, wxListBox)
+    CRef < CCdd_descr > *selDescr = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem));
 
     if (event.GetId() == ID_B_DONE) {
         Close(false);
         return;
     }
 
+    else if (event.GetId() == ID_B_LAUNCH) {
+        if (selDescr) {
+            wxString url;
+            url.Printf("http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=%s",
+                MakeRID((*selDescr)->GetBook_ref()).c_str());
+            LaunchWebPage(url.c_str());
+        }
+    }
+
     else if (event.GetId() == ID_B_UP || event.GetId() == ID_B_DOWN) {
-        CRef < CCdd_descr > *switchWith = NULL,
-            *sel = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem));
+        CRef < CCdd_descr > *switchWith = NULL;
         if (event.GetId() == ID_B_UP && selectedItem > 0) {
             switchWith = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem - 1));
             selectedItem--;
@@ -239,8 +321,8 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
             return;
         }
         CRef < CCdd_descr > tmp = *switchWith;
-        *switchWith = *sel;
-        *sel = tmp;
+        *switchWith = *selDescr;
+        *selDescr = tmp;
         sSet->SetDataChanged(StructureSet::eCDDData);
     }
 
@@ -260,11 +342,10 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
             ERRORMSG("Address (required) and sub-address (optional) must be integers");
             return;
         }
-        CRef < CCdd_descr > *sel = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem));
         CCdd_descr *descr;
-        if (sel) {
+        if (selDescr) {
             // editing existing item
-            descr = sel->GetPointer();
+            descr = selDescr->GetPointer();
         } else {
             // create new item
             CRef < CCdd_descr > newDescr(new CCdd_descr);
@@ -272,9 +353,7 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
             descr = newDescr.GetPointer();
         }
         descr->SetBook_ref().SetBookname(tName->GetValue().c_str());
-        descr->SetBook_ref().SetTextelement((cType->GetSelection() == cType->GetCount() - 1)
-            ? CCdd_book_ref::eTextelement_unassigned
-            : static_cast<CCdd_book_ref::ETextelement>(cType->GetSelection()));
+        descr->SetBook_ref().SetTextelement(*(enum2str.Find(string(cType->GetStringSelection().c_str()))));
         descr->SetBook_ref().SetElementid((int) address);
         if (tSubaddress->GetValue().size() > 0)
             descr->SetBook_ref().SetSubelementid((int) subaddress);
@@ -289,12 +368,44 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
         editOn = true;
     }
 
+    else if (event.GetId() == ID_B_PASTE) {
+        if (wxTheClipboard->Open()) {
+            if (wxTheClipboard->IsSupported(wxDF_TEXT)) {
+                wxTextDataObject data;
+                wxTheClipboard->GetData(data);
+                wxStringTokenizer tkz(data.GetText(), ".#", wxTOKEN_STRTOK);
+                if (tkz.CountTokens() == 3 || tkz.CountTokens() == 4) {
+                    bool haveSubaddr = (tkz.CountTokens() == 4);
+                    CRef < CCdd_descr > descr(new CCdd_descr);
+                    descr->SetBook_ref().SetBookname(tkz.GetNextToken().c_str());
+                    const CCdd_book_ref::ETextelement *type =
+                        enum2str.Find(string(tkz.GetNextToken().c_str()));
+                    long address, subaddress;
+                    bool
+                        gotAddr = tkz.GetNextToken().ToLong(&address),
+                        gotSubaddr = haveSubaddr ? tkz.GetNextToken().ToLong(&subaddress) : false;
+                    if (type && gotAddr && (!haveSubaddr || gotSubaddr)) {
+                        descr->SetBook_ref().SetTextelement(*type);
+                        descr->SetBook_ref().SetElementid((int) address);
+                        if (haveSubaddr)
+                            descr->SetBook_ref().SetSubelementid((int) subaddress);
+                        else
+                            descr->SetBook_ref().ResetSubelementid();
+                        descrSet->Set().push_back(descr);
+                        sSet->SetDataChanged(StructureSet::eCDDData);
+                        selectedItem = listbox->GetCount();
+                    }
+                }
+            }
+            wxTheClipboard->Close();
+        }
+    }
+
     else if (event.GetId() == ID_B_DELETE) {
-        CRef < CCdd_descr > *sel = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem));
-        if (sel) {
+        if (selDescr) {
             CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end();
             for (d=descrSet->Set().begin(); d!=de; d++) {
-                if (&(*d) == sel) {
+                if (&(*d) == selDescr) {
                     descrSet->Set().erase(d);
                     sSet->SetDataChanged(StructureSet::eCDDData);
                     if (selectedItem == listbox->GetCount() - 1)
@@ -332,48 +443,50 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     wxListBox *item3 = new wxListBox( parent, ID_LISTBOX, wxDefaultPosition, wxSize(80,100), 0, strs3, wxLB_SINGLE );
     item1->Add( item3, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxGridSizer *item4 = new wxGridSizer( 1, 0, 0, 0 );
+    wxGridSizer *item4 = new wxGridSizer( 2, 0, 0, 0 );
 
     wxButton *item5 = new wxButton( parent, ID_B_UP, wxT("Move Up"), wxDefaultPosition, wxDefaultSize, 0 );
     item4->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item6 = new wxButton( parent, ID_B_DOWN, wxT("Move Down"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item6 = new wxButton( parent, ID_B_LAUNCH, wxT("Launch"), wxDefaultPosition, wxDefaultSize, 0 );
     item4->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item7 = new wxButton( parent, ID_B_EDIT, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item7 = new wxButton( parent, ID_B_NEW, wxT("New"), wxDefaultPosition, wxDefaultSize, 0 );
     item4->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxButton *item8 = new wxButton( parent, ID_B_SAVE, wxT("Save"), wxDefaultPosition, wxDefaultSize, 0 );
     item4->Add( item8, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item9 = new wxButton( parent, ID_B_NEW, wxT("New"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item9 = new wxButton( parent, ID_B_DOWN, wxT("Move Down"), wxDefaultPosition, wxDefaultSize, 0 );
     item4->Add( item9, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item10 = new wxButton( parent, ID_B_DELETE, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item10 = new wxButton( parent, ID_B_EDIT, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0 );
     item4->Add( item10, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item11 = new wxButton( parent, ID_B_PASTE, wxT("Paste"), wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item11, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item12 = new wxButton( parent, ID_B_DELETE, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item12, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item1->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxStaticLine *item11 = new wxStaticLine( parent, ID_LINE, wxDefaultPosition, wxSize(20,-1), wxLI_HORIZONTAL );
-    item1->Add( item11, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    wxStaticLine *item13 = new wxStaticLine( parent, ID_LINE, wxDefaultPosition, wxSize(20,-1), wxLI_HORIZONTAL );
+    item1->Add( item13, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxFlexGridSizer *item12 = new wxFlexGridSizer( 2, 0, 0 );
-    item12->AddGrowableCol( 1 );
+    wxFlexGridSizer *item14 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item14->AddGrowableCol( 1 );
 
-    wxStaticText *item13 = new wxStaticText( parent, ID_TEXT, wxT("Name:"), wxDefaultPosition, wxDefaultSize, 0 );
-    item12->Add( item13, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxStaticText *item15 = new wxStaticText( parent, ID_TEXT, wxT("Name:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item14->Add( item15, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxTextCtrl *item14 = new wxTextCtrl( parent, ID_T_NAME, wxT(""), wxDefaultPosition, wxSize(80,-1), 0 );
-    item12->Add( item14, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    wxTextCtrl *item16 = new wxTextCtrl( parent, ID_T_NAME, wxT(""), wxDefaultPosition, wxSize(80,-1), 0 );
+    item14->Add( item16, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    item1->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    wxStaticText *item17 = new wxStaticText( parent, ID_TEXT, wxT("Type:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item14->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxFlexGridSizer *item15 = new wxFlexGridSizer( 1, 0, 0, 0 );
-
-    wxStaticText *item16 = new wxStaticText( parent, ID_TEXT, wxT("Type:"), wxDefaultPosition, wxDefaultSize, 0 );
-    item15->Add( item16, 0, wxALIGN_CENTRE|wxALL, 5 );
-
-    wxString strs17[] =
+    wxString strs18[] =
     {
         wxT("unassigned"),
         wxT("section"),
@@ -386,28 +499,32 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
         wxT("appendix"),
         wxT("other")
     };
-    wxChoice *item17 = new wxChoice( parent, ID_C_TYPE, wxDefaultPosition, wxSize(100,-1), 10, strs17, 0 );
-    item15->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxChoice *item18 = new wxChoice( parent, ID_C_TYPE, wxDefaultPosition, wxSize(100,-1), 10, strs18, 0 );
+    item14->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxStaticText *item18 = new wxStaticText( parent, ID_TEXT, wxT("Address:"), wxDefaultPosition, wxDefaultSize, 0 );
-    item15->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item1->Add( item14, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxTextCtrl *item19 = new wxTextCtrl( parent, ID_T_ADDRESS, wxT(""), wxDefaultPosition, wxSize(80,-1), 0 );
-    item15->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxFlexGridSizer *item19 = new wxFlexGridSizer( 1, 0, 0, 0 );
 
-    wxStaticText *item20 = new wxStaticText( parent, ID_TEXT, wxT("Sub-address:"), wxDefaultPosition, wxDefaultSize, 0 );
-    item15->Add( item20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxStaticText *item20 = new wxStaticText( parent, ID_TEXT, wxT("Address:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item19->Add( item20, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxTextCtrl *item21 = new wxTextCtrl( parent, ID_T_SUBADDRESS, wxT(""), wxDefaultPosition, wxSize(80,-1), 0 );
-    item15->Add( item21, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxTextCtrl *item21 = new wxTextCtrl( parent, ID_T_ADDRESS, wxT(""), wxDefaultPosition, wxSize(80,-1), 0 );
+    item19->Add( item21, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item1->Add( item15, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxStaticText *item22 = new wxStaticText( parent, ID_TEXT, wxT("Sub-address:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item19->Add( item22, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxTextCtrl *item23 = new wxTextCtrl( parent, ID_T_SUBADDRESS, wxT(""), wxDefaultPosition, wxSize(80,-1), 0 );
+    item19->Add( item23, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item1->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item22 = new wxButton( parent, ID_B_DONE, wxT("Done"), wxDefaultPosition, wxDefaultSize, 0 );
-    item22->SetDefault();
-    item0->Add( item22, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item24 = new wxButton( parent, ID_B_DONE, wxT("Done"), wxDefaultPosition, wxDefaultSize, 0 );
+    item24->SetDefault();
+    item0->Add( item24, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     if (set_sizer)
     {
@@ -426,6 +543,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/09/29 23:34:05  thiessen
+* add launch, paste buttons
+*
 * Revision 1.2  2003/09/26 17:39:14  thiessen
 * fixes for button states
 *
