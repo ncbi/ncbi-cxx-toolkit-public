@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/04/24 21:30:27  lavr
+ * Added treatment of CONN_DEFAULT_TIMEOUT
+ *
  * Revision 6.5  2001/01/25 17:04:44  lavr
  * Reversed:: DESTROY method calls free() to delete connector structure
  *
@@ -135,8 +138,11 @@ static EIO_Status s_VT_Open
     for (i = 0; i < xxx->max_try; i++) {
         /* connect */
         status = xxx->sock ?
-            SOCK_Reconnect(xxx->sock, 0, 0, timeout) :
-            SOCK_Create(xxx->host, xxx->port, timeout, &xxx->sock);
+            SOCK_Reconnect(xxx->sock, 0, 0,
+                           timeout == CONN_DEFAULT_TIMEOUT ? 0 : timeout) :
+            SOCK_Create(xxx->host, xxx->port,
+                        timeout == CONN_DEFAULT_TIMEOUT ? 0 : timeout,
+                        &xxx->sock);
 
         if (status == eIO_Success) {
             /* set data logging and write init data, if any */
@@ -182,7 +188,9 @@ static EIO_Status s_VT_Wait
 {
     SSockConnector* xxx = (SSockConnector*) connector->handle;
     assert(event == eIO_Read || event == eIO_Write);
-    return xxx->sock ? SOCK_Wait(xxx->sock, event, timeout) : eIO_Closed;
+    return xxx->sock ? SOCK_Wait(xxx->sock, event,
+                                 timeout == CONN_DEFAULT_TIMEOUT
+                                 ? 0 : timeout) : eIO_Closed;
 }
 
 
@@ -197,7 +205,8 @@ static EIO_Status s_VT_Write
 
     if (!xxx->sock)
         return eIO_Closed;
-    SOCK_SetTimeout(xxx->sock, eIO_Write, timeout);
+    SOCK_SetTimeout(xxx->sock, eIO_Write,
+                    timeout == CONN_DEFAULT_TIMEOUT ? 0 : timeout);
     return SOCK_Write(xxx->sock, buf, size, n_written);
 }
 
@@ -220,7 +229,8 @@ static EIO_Status s_VT_Read
     SSockConnector* xxx = (SSockConnector*) connector->handle;
     if (!xxx->sock)
         return eIO_Closed;
-    SOCK_SetTimeout(xxx->sock, eIO_Read, timeout);
+    SOCK_SetTimeout(xxx->sock, eIO_Read,
+                    timeout == CONN_DEFAULT_TIMEOUT ? 0 : timeout);
     return SOCK_Read(xxx->sock, buf, size, n_read, eIO_Plain);
 }
 
@@ -233,7 +243,8 @@ static EIO_Status s_VT_Close
     EIO_Status status = eIO_Success;
 
     if (xxx->sock) {
-        SOCK_SetTimeout(xxx->sock, eIO_Write, timeout);
+        SOCK_SetTimeout(xxx->sock, eIO_Write,
+                        timeout == CONN_DEFAULT_TIMEOUT ? 0 : timeout);
         status = SOCK_Close(xxx->sock);
         xxx->sock = 0;
     }
