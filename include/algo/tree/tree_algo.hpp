@@ -303,7 +303,8 @@ public:
         m_Level += delta;
         if (delta >= 0) { 
             PrintLevelMargin();
-            const string& node_str = m_Conv(tr.GetValue());
+            const typename TTreeNode::TValueType& v = tr.GetValue();
+            const string& node_str = m_Conv(v);
 
             if (m_PrintPtr) {
                 m_OStream  
@@ -946,6 +947,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/01 19:57:09  kuznets
+ * Code clenaup
+ *
  * Revision 1.8  2004/06/15 13:03:53  ckenny
  * + TreeCompare function
  *
