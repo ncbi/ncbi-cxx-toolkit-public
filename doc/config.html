@@ -384,6 +384,11 @@ the configuration is done, by setting the value of variable
 <a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>
 to either <i><b>rules</b></i> or <i><b>rules_with_autodep</b></i>. 
 
+<p>
+NOTE: You <b>must</b> use GNU <i>make</i> if you configured with
+<i><b>--with-autodep</b></i>, as in this case the makefiles would use
+very specific GNU <i>make</i> features!
+
 
 <p>
 <br>
@@ -853,7 +858,7 @@ directory, and now we have such wrappers for WorkShop 5.0, MIPSpro 7.30,
 GCC/Cygwin-NT, and MSVC++ compilers:
   <ul>
     <li> <i><b>WorkShop5.sh</b></i> {32|64} [build_dir] [--configure-flags]
-    <li> <i><b>MIPSpro73.sh</b></i> [--configure-flags]
+    <li> <i><b>MIPSpro73.sh</b></i> {32|64} [build_dir] [--configure-flags]
     <li> <i><b>gcc_nt.bash</b></i> [--configure-flags]
     <li> <i><b>msvc_nt.bash</b></i> [--configure-flags]
   </ul>
@@ -953,7 +958,7 @@ As for now, at least the following compilers give enough support
 (as concerns to the C++ and STL implementation) to build NCBI C++
 libraries and tools:
 <ul>
-  <li> <a href="http://egcs.cygnus.com/">
+  <li> <a href="http://gcc.gnu.org/">
        <b>GCC 2.95.[1,2]</b></a>
     <ul>
       <li> Solaris 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
@@ -981,14 +986,15 @@ libraries and tools:
       <li> Windows NT 4.0  --- <i>PC-Intel</i>
     </ul>
 
-  <li> <u><b>MIPSpro-7.30 (-n32)</b></u>
+  <li> <u><b>MIPSpro-7.30</b></u>
     <ul>
-      <li> IRIX64 6.5 --- <i>SGI-Mips</i>
+      <li> 32-bit (-n32): IRIX64 6.5 --- <i>SGI-Mips</i>
+      <li> 64-bit (-64):  IRIX64 6.5 --- <i>SGI-Mips</i>
     </ul>
 
   <li> <u><b>Metrowerks CodeWarrior</b></u>
     <ul>
-      <li> MacOS -- <i>PowerPC</i>  (very poor support)
+      <li> MacOS -- <i>PowerPC</i>  (relatively poor support)
     </ul>
 </ul>
 NOTE: Some projects are very platform-specific, and they cannot
@@ -1070,7 +1076,7 @@ Now when the installation is complete you can load workspace
 As for now, you can build <i>any</i> project in <b>Debug</b> mode,
 while <b>Release</b> versions are guranteed to build for <b>core_all</b>
 projects only.
-To switch from <b>Debug</b> to <b>Release</b> configuration use
+To switch from <b>Debug</b> to <b>Release</b> configuration, use
 <i>"Build"/"Set active configuration"</i>.
 
 
