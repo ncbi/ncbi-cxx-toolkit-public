@@ -18,12 +18,18 @@ if test "$?" -ne 0 ; then
    cat <<EOF
 ERROR:  cannot find Intel C++ compiler ($CXX)
 
-HINT:  if you are at NCBI, try to add the following path:
-  Linux:
-    setenv IA32ROOT /export/home/coremake/intel/compiler50/ia32
-    setenv LD_LIBRARY_PATH /export/home/coremake/intel/compiler50/ia32/lib:\$LD_LIBRARY_PATH
-    setenv INTEL_FLEXLM_LICENSE /export/home/coremake/intel/licenses/license.dat
-    setenv PATH /export/home/coremake/intel/compiler50/ia32/bin:\$PATH
+HINT:  if you are at NCBI, try to specify the following:
+ Linux:
+   sh, bash:
+      IA32ROOT="/opt/intel/compiler50/ia32"; export IA32ROOT
+      PATH="\$IA32ROOT/bin:\$PATH"; export PATH
+      LD_LIBRARY_PATH="\$IA32ROOT/lib:\$LD_LIBRARY_PATH"; export LD_LIBRARY_PATH
+      INTEL_FLEXLM_LICENSE="/opt/intel/licenses"; export INTEL_FLEXLM_LICENSE
+   tcsh:
+      setenv IA32ROOT /opt/intel/compiler50/ia32
+      setenv PATH \$IA32ROOT/bin:\$PATH
+      setenv LD_LIBRARY_PATH \$IA32ROOT/lib:\$LD_LIBRARY_PATH
+      setenv INTEL_FLEXLM_LICENSE /opt/intel/licenses
 
 EOF
     exit 1
