@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/12 23:59:53  lavr
+ * Message logging modified for use LOG facility only
+ *
  * Revision 6.4  2000/12/29 18:23:42  lavr
  * getpagesize() replaced by a constant 4096, which is "more portable".
  *
@@ -45,8 +48,8 @@
  * ==========================================================================
  */
 
+#include "../ncbi_priv.h"
 #include <connect/ncbi_heapmgr.h>
-#include "../ncbi_misc.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -80,18 +83,18 @@ int main(void)
 
     for (j = 1; j <= 3; j++) {
         srand((int)time(0));
-        Message("Creating heap %d\n", j);
+        CORE_LOGF(eLOG_Note, ("Creating heap %d", j));
         heap = HEAP_Create(0, 0, 4096, s_Expand);
         while (rand() != 12345) {
             r = rand() & 7;
             if (r == 2 || r == 4) {
                 i = rand() & 0xFF;
                 if (i) {
-                    Message("Allocating %d bytes", i);
+                    CORE_LOGF(eLOG_Note, ("Allocating %d bytes", i));
                     if (!(blk = HEAP_Alloc(heap, i)))
-                        Warning(0, "Allocation failed");
+                        CORE_LOG(eLOG_Warning, "Allocation failed");
                     else
-                        Message("Done\n");
+                        CORE_LOG(eLOG_Note, "Done");
                     c = (char *)blk + sizeof(*blk);
                     while (i--)
                         *c++ = rand();
@@ -106,43 +109,48 @@ int main(void)
                     i++;
                 } while (rand() & 0x7);
                 if (blk && (short)blk->flag) {
-                    Message("Deleting block #%d, size %u", i,
-                            (unsigned)(blk->size - sizeof(*blk)));
+                    CORE_LOGF(eLOG_Note,
+                              ("Deleting block #%d, size %u", i,
+                               (unsigned)(blk->size - sizeof(*blk))));
                     HEAP_Free(heap, blk);
-                    Message("Done\n");
+                    CORE_LOG(eLOG_Note, "Done");
                 }
             } else if (r == 7) {
                 blk = 0;
                 i = 0;
-                Message("Walking the heap");
+                CORE_LOG(eLOG_Note, "Walking the heap");
                 do {
                     blk = HEAP_Walk(heap, blk);
                     if (blk)
-                        Message("Block #%d (%s), size %u", ++i,
-                                (short)blk->flag ? "used" : "free",
-                                (unsigned)(blk->size - sizeof(*blk)));
+                        CORE_LOGF(eLOG_Note,
+                                  ("Block #%d (%s), size %u", ++i,
+                                   (short)blk->flag ? "used" : "free",
+                                   (unsigned)(blk->size - sizeof(*blk))));
                 } while (blk);
-                Message("Total of %d block%s\n", i, i == 1 ? "" : "s");
+                CORE_LOGF(eLOG_Note,
+                          ("Total of %d block%s\n", i, i == 1 ? "" : "s"));
             } else if (r == 6) {
                 HEAP newheap = HEAP_Attach(/* HACK! */*(char **)heap);
-
+                
                 blk = 0;
                 i = 0;
-                Message("Walking the newheap");
+                CORE_LOG(eLOG_Note, "Walking the newheap");
                 do {
                     blk = HEAP_Walk(newheap, blk);
                     if (blk)
-                        Message("Block #%d (%s), size %u", ++i,
-                                (short)blk->flag ? "used" : "free",
-                                (unsigned)(blk->size - sizeof(*blk)));
+                        CORE_LOGF(eLOG_Note,
+                                  ("Block #%d (%s), size %u", ++i,
+                                   (short)blk->flag ? "used" : "free",
+                                   (unsigned)(blk->size - sizeof(*blk))));
                 } while (blk);
-                Message("Total of %d block%s\n", i, i == 1 ? "" : "s");
+                CORE_LOGF(eLOG_Note,
+                          ("Total of %d block%s\n", i, i == 1 ? "" : "s"));
                 HEAP_Detach(newheap);
             }
         }
         HEAP_Destroy(heap);
-        Message("Heap %d done\n", j);
+        CORE_LOGF(eLOG_Note, ("Heap %d done\n", j));
     }
-    Message("Test completed");
+    CORE_LOG(eLOG_Note, "Test completed");
     return 0;
 }
