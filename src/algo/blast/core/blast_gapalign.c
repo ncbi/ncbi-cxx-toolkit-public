@@ -3263,16 +3263,19 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
             return status;
          }
 
-         Blast_HSPInit(gap_align->query_start, gap_align->query_stop,
+         if (gap_align->score >= hit_params->cutoff_score)
+         {
+             Blast_HSPInit(gap_align->query_start, gap_align->query_stop,
                        gap_align->subject_start, gap_align->subject_stop, 
                        init_hsp->q_off, init_hsp->s_off, 
                        context, subject->frame, gap_align->score,
                        &(gap_align->edit_block), &new_hsp);
-         Blast_HSPListSaveHSP(hsp_list, new_hsp);
+             Blast_HSPListSaveHSP(hsp_list, new_hsp);
 
-         /* Fill in the helper structure. */
-         helper[hsp_list->hspcnt - 1].left = gap_align->query_start;
-         helper[hsp_list->hspcnt - 1].right = gap_align->query_stop;
+             /* Fill in the helper structure. */
+             helper[hsp_list->hspcnt - 1].left = gap_align->query_start;
+             helper[hsp_list->hspcnt - 1].right = gap_align->query_stop;
+         }
       }
       /* Free ungapped data here - it's no longer needed */
       sfree(init_hsp->ungapped_data);
