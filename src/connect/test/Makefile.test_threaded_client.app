@@ -12,3 +12,4 @@ REQUIRES = MT
 # (neither of these can contain make variables)
 CHECK_CMD  = test_threaded_client_server.sh
 CHECK_COPY = test_threaded_client_server.sh
+CHECK_TIMEOUT = 300
