@@ -30,7 +30,7 @@
  */
 
 #include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/dblib/interfaces.hpp>
+#include <dbapi/driver/msdblib/interfaces.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -38,13 +38,9 @@ USING_NCBI_SCOPE;
 int main()
 {
     try {
-        CDBLibContext my_context;
+        CMSDBLibContext my_context;
 
-#ifdef NCBI_OS_MSWIN
         CDB_Connection* con = my_context.Connect("MSSQL2", "anyone", "allowed", 0);
-#else
-        CDB_Connection* con = my_context.Connect("MOZART", "anyone", "allowed", 0);
-#endif
 
         CDB_LangCmd* lcmd =
             con->LangCmd("select name, crdate from sysdatabases");
@@ -90,6 +86,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/07/02 16:20:55  lavr
+ * MS-DBLib patched samples
+ *
  * Revision 1.6  2002/04/25 20:36:42  soussov
  * makes it plain
  *
