@@ -293,6 +293,16 @@ typedef struct BlastExtensionParameters {
    Int4 gap_trigger; /**< Minimal raw score for starting gapped extension */
 } BlastExtensionParameters;
 
+/** Should sum statistics be performed? If not set, the engine decides this
+ * question based on the program and gapped calculation option.
+ */
+typedef enum ESumStatsMode {
+   eSumStatsNotSet = 0, /**< Let the engine decide, based on the program and 
+                           gapped calculation option. */
+   eSumStatsFalse, /**< Do not use sum statistics. */
+   eSumStatsTrue   /**< Use sum statistics. */
+} ESumStatsMode;
+ 
 /** Options used when evaluating and saving hits
  *  These include: 
  *  a. Restrictions on the number of hits to be saved;
@@ -327,8 +337,8 @@ typedef struct BlastHitSavingOptions {
    /********************************************************************/
    /* Merge all these in a structure for clarity? */
    /* applicable to all, except blastn */
-   Boolean do_sum_stats; /**< Force sum statistics to be used to combine 
-                            HSPs */
+   ESumStatsMode do_sum_stats; /**< Force sum statistics to be used to combine 
+                                  HSPs */
    /* tblastn w/ sum statistics */
    Int4 longest_intron; /**< The longest distance between HSPs allowed for
                            combining via sum statistics with uneven gaps */
