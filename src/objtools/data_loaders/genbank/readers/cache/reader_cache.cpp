@@ -426,62 +426,214 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
 END_SCOPE(objects)
 
 
-void GenBankReaders_Register_Cache(void)
-{
-    RegisterEntryPoint<objects::CReader>(NCBI_EntryPoint_CacheReader);
+namespace {
+    struct SCacheParams {
+        const char* name;
+        const char* value;
+    };
+    static const SCacheParams s_DefaultParams[] = {
+        { "path", ".genbank_cache" },
+        { "timeout", "432000" }, // 5 days
+        { "keep_versions", "all" },
+        { "write_sync", "no" },
+        { "mem_size", "10M" },
+        { "log_file_max", "20M" },
+        { "purge_thread", "yes" },
+        { 0, 0 }
+    };
+    static const SCacheParams s_DefaultIdParams[] = {
+        { "", NCBI_GBLOADER_READER_CACHE_PARAM_ID_SECTION },
+        { "name", "ids" },
+        { "timestamp", "subkey check_expiration" /* purge_on_startup"*/ },
+        { "page_size", "small" },
+        { 0, 0 }
+    };
+    static const SCacheParams s_DefaultBlobParams[] = {
+        { "", NCBI_GBLOADER_READER_CACHE_PARAM_BLOB_SECTION },
+        { "name", "blobs" },
+        { "timestamp", "onread expire_not_used" /* purge_on_startup"*/ },
+        { 0, 0 }
+    };
+
+    typedef TPluginManagerParamTree TParams;
+
+    static
+    TParams* FindSubNode(TParams* params,
+                         const string& name)
+    {
+        if ( params ) {
+            for ( TParams::TNodeList_I it = params->SubNodeBegin();
+                  it != params->SubNodeEnd(); ++it ) {
+                if ( NStr::CompareNocase((*it)->GetValue().id, name) == 0 ) {
+                    return static_cast<TParams*>(*it);
+                }
+            }
+        }
+        return 0;
+    }
+
+    static
+    const TParams* FindSubNode(const TParams* params,
+                               const string& name)
+    {
+        if ( params ) {
+            for ( TParams::TNodeList_CI it = params->SubNodeBegin();
+                  it != params->SubNodeEnd(); ++it ) {
+                if ( NStr::CompareNocase((*it)->GetValue().id, name) == 0 ) {
+                    return static_cast<const TParams*>(*it);
+                }
+            }
+        }
+        return 0;
+    }
+
+    static
+    TParams* SetSubNode(TParams* params,
+                        const string& name,
+                        const char* default_value = "")
+    {
+        _ASSERT(!name.empty());
+        TParams* node = FindSubNode(params, name);
+        if ( !node ) {
+            node = params->AddNode(name, default_value);
+        }
+        return node;
+    }
+    
+    static
+    TParams* SetSubSection(TParams* params, const string& name)
+    {
+        return SetSubNode(params, name, "");
+    }
+
+    static
+    const string& SetDefaultParam(TParams* params,
+                                  const string& name,
+                                  const char* default_value)
+    {
+        return SetSubNode(params, name, default_value)->GetValue();
+    }
+
+    static
+    void SetDefaultParams(TParams* params,
+                          const SCacheParams* default_params)
+    {
+        for ( ; default_params->name; ++default_params ) {
+            if ( default_params->name[0] ) {
+                SetDefaultParam(params,
+                                default_params->name,
+                                default_params->value);
+            }
+        }
+    }
+
+    bool IsDisabledCache(const TParams* params)
+    {
+        const TParams* driver =
+            FindSubNode(params, NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER);
+        if ( driver ) {
+            if ( driver->GetValue().empty() ) {
+                // driver is set empty, it means no cache
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    TParams* SetDriverParams(TParams* params)
+    {
+        const string& driver_name =
+            SetDefaultParam(params,
+                            NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER,
+                            "bdb");
+        return SetSubSection(params, driver_name);
+    }
+
+    TParams* GetCacheParams(const TParams* src_params,
+                            const SCacheParams* default_params)
+    {
+        _ASSERT(default_params);
+        _ASSERT(default_params[0].name && default_params[0].value);
+        _ASSERT(!default_params[0].name[0]);
+        const TParams* src_section =
+            FindSubNode(src_params, default_params[0].value);
+        if ( IsDisabledCache(src_section) ) {
+            return 0;
+        }
+        // make a copy of params and fill it with default values
+        auto_ptr<TParams> section(src_section?
+                                  new TParams(*src_section):
+                                  new TParams());
+        TParams* driver_params = SetDriverParams(section.get());
+        SetDefaultParams(driver_params, s_DefaultParams);
+        SetDefaultParams(driver_params, default_params);
+        return section.release();
+    }
+
+    TParams* GetCacheParams(const TParams* src_params, bool id_cache)
+    {
+        return GetCacheParams(src_params,
+                              id_cache?
+                              s_DefaultIdParams:
+                              s_DefaultBlobParams);
+    }
 }
+
+
+BEGIN_SCOPE(objects)
+
+ICache* SCacheInfo::CreateCache(const TParams* params, bool id_cache)
+{
+    auto_ptr<TParams> cache_params(GetCacheParams(params, id_cache));
+    if ( !cache_params.get() ) {
+        return 0;
+    }
+    typedef CPluginManager<ICache> TCacheManager;
+    CRef<TCacheManager> manager(CPluginManagerGetter<ICache>::Get());
+    _ASSERT(manager);
+    return manager->CreateInstanceFromKey
+        (cache_params.get(), NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER);
+}
+
+END_SCOPE(objects)
 
 
 /// Class factory for Cache reader
 ///
 /// @internal
 ///
+using namespace objects;
+
 class CCacheReaderCF :
-    public CSimpleClassFactoryImpl<objects::CReader, objects::CCacheReader>
+    public CSimpleClassFactoryImpl<CReader, CCacheReader>
 {
-public:
-    typedef objects::CCacheReader TReader;
-    typedef CSimpleClassFactoryImpl<objects::CReader, TReader> TParent;
+    typedef CSimpleClassFactoryImpl<CReader, CCacheReader> TParent;
 public:
     CCacheReaderCF()
-        : TParent(NCBI_GBLOADER_READER_CACHE_DRIVER_NAME, 0) {}
-    ~CCacheReaderCF() {}
-
-    ICache* CreateCache(const TPluginManagerParamTree* params,
-                        const string& section) const
+        : TParent(NCBI_GBLOADER_READER_CACHE_DRIVER_NAME, 0)
         {
-            typedef CPluginManager<ICache> TCacheManager;
-            typedef CPluginManagerGetter<ICache> TCacheManagerStore;
-            CRef<TCacheManager> CacheManager(TCacheManagerStore::Get());
-            _ASSERT(CacheManager);
-            const TPluginManagerParamTree* cache_params = params ?
-                params->FindSubNode(section) : 0;
-            return CacheManager->CreateInstanceFromKey
-                (cache_params,
-                 NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER);
         }
-    
-    objects::CReader* 
+    ~CCacheReaderCF()
+        {
+        }
+
+
+    CReader*
     CreateInstance(const string& driver  = kEmptyStr,
-                   CVersionInfo version =
-                   NCBI_INTERFACE_VERSION(objects::CReader),
+                   CVersionInfo version = NCBI_INTERFACE_VERSION(CReader),
                    const TPluginManagerParamTree* params = 0) const
     {
         if ( !driver.empty()  &&  driver != m_DriverName ) {
             return 0;
         }
-        if (version.Match(NCBI_INTERFACE_VERSION(objects::CReader)) 
-                            != CVersionInfo::eNonCompatible) {
-            auto_ptr<ICache> id_cache
-                (CreateCache(params,
-                             NCBI_GBLOADER_READER_CACHE_PARAM_ID_SECTION));
-            auto_ptr<ICache> blob_cache
-                (CreateCache(params,
-                             NCBI_GBLOADER_READER_CACHE_PARAM_BLOB_SECTION));
-            if ( blob_cache.get()  ||  id_cache.get() ) 
-                return new TReader(blob_cache.release(),
-                                   id_cache.release(),
-                                   TReader::fOwnAll);
+        if ( !version.Match(NCBI_INTERFACE_VERSION(CReader)) ) {
+            return 0;
+        }
+        auto_ptr<ICache> id_cache(SCacheInfo::CreateCache(params, true));
+        auto_ptr<ICache> blob_cache(SCacheInfo::CreateCache(params, false));
+        if ( blob_cache.get()  ||  id_cache.get() ) {
+            return new CCacheReader(blob_cache.release(), id_cache.release(),
+                                    CCacheReader::fOwnAll);
         }
         return 0;
     }
@@ -489,18 +641,25 @@ public:
 
 
 void NCBI_EntryPoint_CacheReader(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
+     CPluginManager<CReader>::TDriverInfoList&   info_list,
+     CPluginManager<CReader>::EEntryPointRequest method)
 {
-    CHostEntryPointImpl<CCacheReaderCF>::NCBI_EntryPointImpl(info_list, method);
+    CHostEntryPointImpl<CCacheReaderCF>::NCBI_EntryPointImpl(info_list,
+                                                             method);
 }
 
 
 void NCBI_EntryPoint_xreader_cache(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
+     CPluginManager<CReader>::TDriverInfoList&   info_list,
+     CPluginManager<CReader>::EEntryPointRequest method)
 {
     NCBI_EntryPoint_CacheReader(info_list, method);
+}
+
+
+void GenBankReaders_Register_Cache(void)
+{
+    RegisterEntryPoint<CReader>(NCBI_EntryPoint_CacheReader);
 }
 
 
