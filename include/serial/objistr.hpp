@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2001/07/17 14:52:39  kholodov
+* Fixed: replaced int argument by size_t in CheckVisibleChar() and
+* ReplaceVisibleChar to avoid truncation in 64 bit mode.
+*
 * Revision 1.68  2001/06/11 14:34:55  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -762,11 +766,11 @@ public:
 inline
 char& CheckVisibleChar(char& c,
                        EFixNonPrint fix_method,
-                       int at_line = 0);
+                       size_t at_line = 0);
 
 char& ReplaceVisibleChar(char& c,
                          EFixNonPrint fix_method,
-                         int at_line);
+                         size_t at_line);
 
 
 #include <serial/objistr.inl>

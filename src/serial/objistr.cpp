@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2001/07/17 14:52:48  kholodov
+* Fixed: replaced int argument by size_t in CheckVisibleChar() and
+* ReplaceVisibleChar to avoid truncation in 64 bit mode.
+*
 * Revision 1.80  2001/07/16 16:24:08  grichenk
 * Added "case eFNP_Allow:" to ReplaceVisibleChar()
 *
@@ -1366,7 +1370,7 @@ size_t CObjectIStream::AsnRead(AsnIo& , char* , size_t )
 #endif
 
 
-char& ReplaceVisibleChar(char& c, EFixNonPrint fix_method, int at_line)
+char& ReplaceVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line)
 {
     string message = "Bad char in VisibleString" +
         ((at_line > 0) ?

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/07/17 14:52:39  kholodov
+* Fixed: replaced int argument by size_t in CheckVisibleChar() and
+* ReplaceVisibleChar to avoid truncation in 64 bit mode.
+*
 * Revision 1.16  2001/06/11 14:34:55  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -477,7 +481,7 @@ void CObjectIStream::SkipStd(const char* const& )
 inline
 char& CheckVisibleChar(char& c,
                          EFixNonPrint fix_method,
-                         int at_line)
+                         size_t at_line)
 {
     if (fix_method == eFNP_Allow) {
         return c;
