@@ -59,7 +59,7 @@ private:
 };
 
 
-void s_SplitName(const string& name, string& type, string& field)
+static void s_SplitName(const string& name, string& type, string& field)
 {
     for (SIZE_TYPE pos = name.find('.');  pos != NPOS;
          pos = name.find('.', pos + 1)) {
@@ -74,37 +74,56 @@ void s_SplitName(const string& name, string& type, string& field)
 }
 
 
-const CChoiceDataType* s_ChoiceType(const CDataType* dtype,
-                                    const string& element)
+static const CChoiceDataType* s_ChoiceType(const CDataType* dtype,
+                                           const string& element)
 {
-    const CDataType* dtype2 = dtype;
+    vector<string> v;
     if ( !element.empty() ) {
-        const CDataContainerType* dct
-            = dynamic_cast<const CDataContainerType*>(dtype);
+        NStr::Tokenize(element, ".", v);
+    }
+    ITERATE (vector<string>, subelement, v) {
+        const CDataMemberContainerType* dct
+            = dynamic_cast<const CDataMemberContainerType*>(dtype);
         if ( !dct ) {
             NCBI_THROW(CDatatoolException, eInvalidData,
                        dtype->GlobalName() + " is not a container type");
         }
         bool found = false;
-        ITERATE (CDataContainerType::TMembers, it, dct->GetMembers()) {
-            if ((*it)->GetName() == element) {
+        ITERATE (CDataMemberContainerType::TMembers, it, dct->GetMembers()) {
+            if ((*it)->GetName() == *subelement) {
                 found = true;
-                dtype2 = (*it)->GetType()->Resolve();
+                dtype = (*it)->GetType()->Resolve();
                 break;
             }
         }
         if (!found) {
             NCBI_THROW(CDatatoolException, eInvalidData,
-                       dtype->GlobalName() + " has no element " + element);
+                       dtype->GlobalName() + " has no element " + *subelement);
         }
     }
     const CChoiceDataType* choicetype
-        = dynamic_cast<const CChoiceDataType*>(dtype2);
+        = dynamic_cast<const CChoiceDataType*>(dtype);
     if ( !choicetype ) {
         NCBI_THROW(CDatatoolException, eInvalidData,
-                   dtype2->GlobalName() + " is not a choice type");
+                   dtype->GlobalName() + " is not a choice type");
     }
     return choicetype;
+}
+
+
+static string s_SetterName(const string& element) {
+    if (element.empty()) {
+        return kEmptyStr;
+    }
+    SIZE_TYPE start = 0, dot;
+    string    result;
+    do {
+        dot = element.find('.', start);
+        result += ".Set" + Identifier(element.substr(start, dot - start))
+            + "()";
+        start = dot + 1;
+    } while (dot != NPOS);
+    return result;
 }
 
 
@@ -191,13 +210,11 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         code.ClassPublic() << "    typedef TRequest TRequestChoice;\n";
     }
     {{
-        string element;
         if ( !m_Source.m_ReplyElement.empty() ) {
             code.HPPIncludes().insert(m_Source.m_ReplyChoiceType->FileName());
             code.ClassPublic() << "    typedef "
                                << m_Source.m_ReplyChoiceType->ClassName()
                                << " TReplyChoice;\n\n";
-            element = ".Set" + Identifier(m_Source.m_ReplyElement, true) + "()";
         } else {
             code.ClassPublic() << "    typedef TReply TReplyChoice;\n\n";
         }
@@ -206,7 +223,8 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         code.MethodStart(true)
             << trep << "Choice& " << class_base << "::x_Choice(" << trep
             << "& reply)\n"
-            << "{\n    return reply" << element << ";\n}\n\n";
+            << "{\n    return reply" << s_SetterName(m_Source.m_ReplyElement)
+            << ";\n}\n\n";
     }}
 
     {{
@@ -242,6 +260,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
     // Add appropriate infrastructure if TRequest is not itself the choice
     // (m_DefaultRequest declared earlier to reduce ugliness)
     if ( !m_Source.m_RequestElement.empty() ) {
+        string setter = s_SetterName(m_Source.m_RequestElement);
         code.ClassPublic()
             << "\n"
             << "    virtual const TRequest& GetDefaultRequest(void) const;\n"
@@ -272,8 +291,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "    TRequest request;\n"
             << "    request.Assign(m_DefaultRequest);\n"
             // We have to copy req because SetXxx() wants a non-const ref.
-            << "    request.Set" << Identifier(m_Source.m_RequestElement, true)
-            << "().Assign(req);\n"
+            << "    request" << setter << ".Assign(req);\n"
             << "    Ask(request, reply);\n"
             << "}\n\n\n";
         code.MethodStart(false)
@@ -284,8 +302,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "    TRequest request;\n"
             << "    request.Assign(m_DefaultRequest);\n"
             // We have to copy req because SetXxx() wants a non-const ref.
-            << "    request.Set" << Identifier(m_Source.m_RequestElement, true)
-            << "().Assign(req);\n"
+            << "    request" << setter << ".Assign(req);\n"
             << "    Ask(request, reply, wanted);\n"
             << "}\n\n\n";
     }
@@ -451,6 +468,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/04/04 19:34:25  ucko
+* Let request and reply be deeply nested subelements.
+* Make s_* actually static.  (Oops.)
+*
 * Revision 1.6  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
