@@ -51,7 +51,14 @@ class CLDS_Database;
 class NCBI_XOBJMGR_DL_LDS_EXPORT CLDS_DataLoader : public CDataLoader
 {
 public:
+    // Construct dataloader, attach the external LDS database
     CLDS_DataLoader(CLDS_Database& lds_db);
+
+    // Construct dataloader, with opening its own database
+    CLDS_DataLoader(const string& db_path);
+
+    virtual ~CLDS_DataLoader();
+
     virtual bool GetRecords(const CHandleRangeMap& hrmap,
                             const EChoice choice);
     
@@ -60,6 +67,7 @@ public:
 private:
     CLDS_Database&      m_LDS_db;        // Reference on the LDS database 
     CLDS_Set            m_LoadedObjects; // Set of already loaded objects
+    bool                m_OwnDatabase;   // "TRUE" if datalaoder owns m_LDS_db
 };
 
 
@@ -70,6 +78,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/18 18:47:53  kuznets
+ * Minor change: LDS Dataloader can now own the LDS database.
+ *
  * Revision 1.2  2003/06/18 15:04:05  kuznets
  * Added dll export/import specs.
  *
