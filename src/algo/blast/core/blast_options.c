@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.60  2003/09/24 19:28:20  dondosha
+ * Correction in setting extend word method: unset options that are set by default but overridden
+ *
  * Revision 1.59  2003/09/12 17:26:01  dondosha
  * Added check that gap extension option cannot be 0 when gap open is not 0
  *
@@ -401,6 +404,8 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
    } else if (!greedy) {
       options->extend_word_method |= EXTEND_WORD_UNGAPPED;
       options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
+   } else {
+      options->extend_word_method &= ~EXTEND_WORD_UNGAPPED;
    }
 
    if (window_size != 0)
@@ -409,11 +414,17 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
       options->x_dropoff = xdrop_ungapped;
    if (variable_wordsize) 
       options->extend_word_method |= EXTEND_WORD_VARIABLE_SIZE;
+   else
+      options->extend_word_method &= ~EXTEND_WORD_VARIABLE_SIZE;
 
    if (ag_blast) {
       options->extend_word_method |= EXTEND_WORD_AG;
-   } else if (mb_lookup) {
-      options->extend_word_method |= EXTEND_WORD_MB_STACKS;
+   } else {
+      options->extend_word_method &= ~EXTEND_WORD_AG;
+      if (mb_lookup)
+         options->extend_word_method |= EXTEND_WORD_MB_STACKS;
+      else
+         options->extend_word_method &= ~EXTEND_WORD_MB_STACKS;
    }
 
    return 0;
@@ -1007,7 +1018,8 @@ Int2 BlastHitSavingOptionsNew(Uint1 program_number,
    (*options)->hitlist_size = 500;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
 
-   if (program_number != blast_type_blastn)
+   if (program_number != blast_type_blastn && 
+       program_number != blast_type_blastp)
       (*options)->do_sum_stats = TRUE;
 
    /* other stuff?? */
