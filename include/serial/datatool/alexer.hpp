@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/02/09 14:20:26  gouriano
+* Added GetName() method - for diagnostics
+*
 * Revision 1.11  2005/01/06 20:21:13  gouriano
 * Added name property to lexers - for better diagnostics
 *
@@ -168,6 +171,11 @@ public:
 
     void FlushComments(void);
     void FlushCommentsTo(CComments& comments);
+
+    const string& GetName(void) const
+        {
+            return m_Name;
+        }
 
 protected:
     virtual TToken LookupToken(void) = 0;
