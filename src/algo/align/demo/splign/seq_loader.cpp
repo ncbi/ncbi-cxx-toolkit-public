@@ -122,7 +122,7 @@ void CSeqLoader::Open(const string& filename_index)
   else {      
     NCBI_THROW(
 	       CSplignAppException,
-	       CSplignAppException::eCannotOpenFile,
+	       eCannotOpenFile,
 	       filename_index.c_str());
   }
 
@@ -130,7 +130,7 @@ void CSeqLoader::Open(const string& filename_index)
 
     NCBI_THROW(
 	       CSplignAppException,
-	       CSplignAppException::eErrorReadingIndexFile,
+	       eErrorReadingIndexFile,
 	       "File is corrupt");
   }
 }
@@ -147,7 +147,7 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
     msg += id;
     NCBI_THROW(
 	       CSplignAppException,
-	       CSplignAppException::eInternal,
+	       eInternal,
 	       msg.c_str());
   }
   else {
@@ -161,7 +161,7 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
   if(input->fail()) {
     NCBI_THROW(
 	       CSplignAppException,
-	       CSplignAppException::eCannotReadFile,
+	       eCannotReadFile,
 	       "Unable to read sequence data");
   }
 
@@ -238,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/11/06 02:07:41  kapustin
+ * Fix NCB_THROW usage
+ *
  * Revision 1.4  2003/11/05 20:32:10  kapustin
  * Include source information into the index
  *
