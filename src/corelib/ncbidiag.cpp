@@ -82,6 +82,7 @@ public:
     ~CDiagRecycler(void)
     {
         SetDiagHandler(0, false);
+        SetDiagErrCodeExplainer(0, false);
     }
 };
 
@@ -114,9 +115,11 @@ const char*    CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
 
 // Use s_DefaultHandler only for purposes of comparison, as installing
 // another handler will normally delete it.
-CDiagHandler* s_DefaultHandler = new CStreamDiagHandler(&NcbiCerr);
-CDiagHandler* CDiagBuffer::sm_Handler = s_DefaultHandler;
-bool          CDiagBuffer::sm_CanDeleteHandler = true;
+CDiagHandler*           s_DefaultHandler = new CStreamDiagHandler(&NcbiCerr);
+CDiagHandler*           CDiagBuffer::sm_Handler = s_DefaultHandler;
+bool                    CDiagBuffer::sm_CanDeleteHandler = true;
+CDiagErrCodeExplainer*  CDiagBuffer::sm_ErrCodeExplainer = 0;
+bool                    CDiagBuffer::sm_CanDeleteErrCodeExplainer = false;
 
 
 CDiagBuffer::CDiagBuffer(void)
@@ -310,6 +313,25 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
     if (print_file  ||  print_line)
         os << ": ";
 
+    // Get error code explanation message
+    bool have_explanation = false;
+    SDiagErrCodeMessage msg;
+    if ((m_ErrCode  ||  m_ErrSubCode)  &&
+        (IsSetDiagPostFlag(eDPF_ErrCodeName, m_Flags)  || 
+         IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags)  ||
+         IsSetDiagPostFlag(eDPF_UseErrCodeSeverity, m_Flags))  &&
+         IsSetDiagErrCodeExplainer()) {
+
+        CDiagErrCodeExplainer* explainer = GetDiagErrCodeExplainer();
+        if ( explainer  && 
+             explainer->GetExplanation(ErrCode(m_ErrCode,m_ErrSubCode), &msg) ) {
+            have_explanation = true;
+            if (IsSetDiagPostFlag(eDPF_UseErrCodeSeverity, m_Flags)) {
+                m_Severity = (EDiagSev)msg.m_Severity;
+            }
+        }
+    }
+
     // <severity>:
     if (IsSetDiagPostFlag(eDPF_Severity, m_Flags)  &&
         (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev)))
@@ -330,13 +352,25 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
         os << ") ";
     }
 
+    // <err_code_name>
+    if (have_explanation  &&  IsSetDiagPostFlag(eDPF_ErrCodeName, m_Flags) &&
+        !msg.m_Name.empty()) {
+        os << msg.m_Name << " ";
+    }
+
     // [<prefix1>::<prefix2>::.....]
     if (m_Prefix  &&  *m_Prefix  &&  IsSetDiagPostFlag(eDPF_Prefix, m_Flags))
         os << '[' << m_Prefix << "] ";
 
     // <message>
-    if ( m_BufferLen )
+    if (m_BufferLen)
         os.write(m_Buffer, m_BufferLen);
+
+    // <err_code_explanation>
+    if (have_explanation  &&  IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags)  &&
+        !msg.m_Explanation.empty()) {
+        os << NcbiEndl << msg.m_Explanation;
+    }
 
     // Endl
     os << NcbiEndl;
@@ -544,6 +578,30 @@ extern bool IsDiagStream(const CNcbiOstream* os)
 }
 
 
+extern void SetDiagErrCodeExplainer(CDiagErrCodeExplainer* explainer, bool can_delete)
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    if ( CDiagBuffer::sm_CanDeleteErrCodeExplainer )
+        delete CDiagBuffer::sm_ErrCodeExplainer;
+    CDiagBuffer::sm_ErrCodeExplainer = explainer;
+    CDiagBuffer::sm_CanDeleteErrCodeExplainer = can_delete;
+}
+
+extern bool IsSetDiagErrCodeExplainer(void)
+{
+    return (CDiagBuffer::sm_ErrCodeExplainer != 0);
+}
+
+extern CDiagErrCodeExplainer* GetDiagErrCodeExplainer(bool take_ownership)
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    if (take_ownership) {
+        _ASSERT(CDiagBuffer::sm_CanDeleteErrCodeExplainer);
+        CDiagBuffer::sm_CanDeleteErrCodeExplainer = false;
+    }
+    return CDiagBuffer::sm_ErrCodeExplainer;
+}
+
 
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
@@ -626,8 +684,10 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
     // Digital value
     int nsev = NStr::StringToNumeric(str_sev);
 
-    // String value
-    if ( nsev == -1 ) {
+    if (nsev > kDiagSevMax) {
+        nsev = kDiagSevMax;
+    } else if ( nsev == -1 ) {
+        // String value
         for (int s = eDiag_Info; s<= eDiag_Trace; s++) {
             if (NStr::CompareNocase(str_sev, CNcbiDiag::SeverityName((EDiagSev)s)) == 0) {
                 nsev = s;
@@ -637,7 +697,7 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
     }
     sev = (EDiagSev)nsev;
     // Unknown value
-    return sev >= eDiag_Info  && sev <= eDiag_Trace;
+    return sev >= 0  && sev <= kDiagSevMax;
 }
 
 
@@ -658,7 +718,11 @@ CDiagRestorer::CDiagRestorer(void)
     m_TraceEnabled          = buf.sm_TraceEnabled;
     m_Handler               = buf.sm_Handler;
     m_CanDeleteHandler      = buf.sm_CanDeleteHandler;
-    buf.sm_CanDeleteHandler = false; // avoid premature cleanup
+    m_ErrCodeExplainer      = buf.sm_ErrCodeExplainer;
+    m_CanDeleteErrCodeExplainer = buf.sm_CanDeleteErrCodeExplainer;
+    // avoid premature cleanup
+    buf.sm_CanDeleteHandler = false;
+    buf.sm_CanDeleteErrCodeExplainer = false;
 }
 
 CDiagRestorer::~CDiagRestorer(void)
@@ -676,6 +740,7 @@ CDiagRestorer::~CDiagRestorer(void)
         buf.sm_TraceEnabled       = m_TraceEnabled;
     }}
     SetDiagHandler(m_Handler, m_CanDeleteHandler);
+    SetDiagErrCodeExplainer(m_ErrCodeExplainer, m_CanDeleteErrCodeExplainer);
 }
 
 
@@ -775,6 +840,154 @@ extern void Abort(void)
 }
 
 
+///////////////////////////////////////////////////////
+//  CDiagErrCodeExplaner::
+//
+
+// Platform-specific EndOfLine
+#if   defined(NCBI_OS_MAC)
+const char s_Endl[] = "\r";
+#elif defined(NCBI_OS_MSWIN)
+const char s_Endl[] = "\r\n";
+#else /* assume UNIX-like EOLs */
+const char s_Endl[] = "\n";
+#endif
+
+
+/* Get the next line taking into account platform specifics of End-of-Line
+ */
+static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str)
+{
+#if   defined(NCBI_OS_MAC)
+    NcbiGetline(is, str, '\r');
+#elif defined(NCBI_OS_MSWIN)
+    NcbiGetline(is, str, '\n');
+    if (!str.empty()  &&  str[str.length()-1] == '\r')
+        str.resize(str.length() - 1);
+#else /* assume UNIX-like EOLs */
+    NcbiGetline(is, str, '\n');
+#endif
+    // special case -- an empty line
+    if (is.fail()  &&  !is.eof()  &&  !is.gcount()  &&  str.empty())
+        is.clear(is.rdstate() & ~IOS_BASE::failbit);
+    return is;
+}
+
+
+bool CDiagErrCodeExplainer::Read(const string& file_name)
+{
+    CNcbiIfstream is(file_name.c_str());
+    if ( !is.good() ) {
+        return false;
+    }
+    return ReadStream(is);
+}
+
+
+// Parse string 
+#define EXPLAINER_PARSE_STR(x_name, x_code) \
+    NStr::Split(str, ",", tokens); \
+    if (tokens.size() < 2) { \
+        ERR_POST("Incorrect format of verbose message file, line " + NStr::IntToString(line)); \
+        continue; \
+    } \
+    /* Symbolic name */ \
+    string token = tokens.front(); \
+    tokens.pop_front(); \
+    x_name = NStr::TruncateSpaces(token.c_str()+2); \
+    \
+    /* Error code */ \
+    token = tokens.front(); \
+    tokens.pop_front(); \
+    x_code = NStr::StringToInt(token); \
+    \
+    /* Severity */\
+    if (!tokens.empty()) { \
+        token = NStr::TruncateSpaces(tokens.front()); \
+        EDiagSev sev; \
+        if (CNcbiDiag::StrToSeverityLevel(token.c_str(), sev)) { \
+            err_severity = sev; \
+        } else { \
+            ERR_POST(Warning << "Incorrect severity level in the verbose message file, line " + NStr::IntToString(line)); \
+        } \
+    } \
+    error_ready = true
+
+  
+bool CDiagErrCodeExplainer::ReadStream(CNcbiIstream& is)
+{
+    string       str;                      // The line being parsed
+    SIZE_TYPE    line;                     // # of the line being parsed
+    list<string> tokens;                   // List with line tokens
+    bool         error_ready = false;      // Error data ready flag 
+    int          err_code     = 0;         // First level error code
+    int          err_subcode  = 0;         // Second level error code
+    string       err_name     = kEmptyStr; // Error symbolic name
+    string       err_subname  = kEmptyStr; // Error symbolic name second level
+    string       err_text     = kEmptyStr; // Error text explanation
+    int          err_severity = -1;        // Use default severity if it  
+                                           // has not specified
+
+    for (line = 1;  s_NcbiGetline(is, str);  line++) {
+        
+        // This is a comment or empty line
+        if (!str.length()  ||  NStr::StartsWith(str,"#")) {
+            continue;
+        }
+        // Add error explanation
+        if (error_ready  &&  str[0] == '$') {
+            string name = err_name;
+            if (!err_subname.empty()) {
+                name += "_" + err_subname;
+            }
+            SetExplanation(ErrCode(err_code, err_subcode), 
+                SDiagErrCodeMessage(name, err_text, err_severity));
+            // Clean
+            tokens.clear();
+            err_subname  = kEmptyStr;
+            err_text     = kEmptyStr;
+            err_severity = -1;
+            error_ready  = false;
+        }
+
+        // Get error code
+        if (NStr::StartsWith(str,"$$")) {
+            EXPLAINER_PARSE_STR(err_name, err_code);
+            err_subcode = 0;
+        
+        } else if (NStr::StartsWith(str,"$^")) {
+        // Get error subcode
+            EXPLAINER_PARSE_STR(err_subname, err_subcode);
+      
+        } else if (error_ready) {
+        // Get line of explanation message
+            if (!err_text.empty()) {
+                err_text += "\n";
+            }
+            err_text += str;
+        }
+    }
+    return true;
+}
+
+
+bool CDiagErrCodeExplainer::GetExplanation(const ErrCode& err_code, SDiagErrCodeMessage* message) const
+{
+    // Find entry
+    TErrCodeID id = GetErrCodeID(err_code);
+    TDiagErrCodeMessageMap::const_iterator find_entry = m_ExplanerMap.find(id);
+    if (find_entry == m_ExplanerMap.end()) {
+        return false;
+    }
+    // Get entry value
+    const SDiagErrCodeMessage& entry = find_entry->second;
+    if (message) {
+        *message = entry;
+    }
+    return true;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -782,6 +995,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.61  2002/07/25 13:35:05  ivanov
+ * Changed exit code of a faild test
+ *
  * Revision 1.60  2002/07/15 18:17:24  gouriano
  * renamed CNcbiException and its descendents
  *
