@@ -72,7 +72,7 @@ extern "C" {
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
-   const BlastSeqSrcNewInfo* bssn_info, BlastScoreBlk* sbp, 
+   const BlastSeqSrc* bssp, BlastScoreBlk* sbp, 
    const BlastScoringOptions* score_options, 
    LookupTableWrap* lookup_wrap, 
    const BlastInitialWordOptions* word_options, 
@@ -160,7 +160,6 @@ typedef Int4 (*BlastWordFinderType)
     to various preallocated structures and arrays. */
 typedef struct BlastCoreAuxStruct {
 
-   BlastSeqSrc* bssp;     /**< Source for subject sequences */
    BLAST_ExtendWord* ewp; /**< Structure for keeping track of diagonal
                                information for initial word matches */
    BlastWordFinderType WordFinder; /**< Word finder function pointer */
