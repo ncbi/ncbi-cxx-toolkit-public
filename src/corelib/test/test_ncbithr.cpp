@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/03/13 05:02:09  vakatov
+ * sNumThreads = 35;  sSpawnBy = 6;
+ *
  * Revision 6.2  2001/04/03 18:21:23  grichenk
  * + test for CThread::Exit()
  *
@@ -77,8 +80,8 @@ const int   cRCyclesMax    = 5000;
 const int   cWCyclesMin    = 5;
 const int   cWCyclesMax    = 1000;
 
-static int  sNumThreads    = 40;
-static int  sSpawnBy       = 13;
+static int  sNumThreads    = 35;
+static int  sSpawnBy       = 6;
 static int  sRCycles       = 100;
 static int  sWCycles       = 50;
 static int  s_NextIndex    = 0;
