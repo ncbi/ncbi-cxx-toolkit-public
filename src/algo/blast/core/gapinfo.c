@@ -32,8 +32,10 @@
  */
 
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/gapinfo.h>
 

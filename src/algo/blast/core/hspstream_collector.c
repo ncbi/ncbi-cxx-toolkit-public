@@ -32,8 +32,10 @@
  * a BLAST search, and subsequently return them in sorted order.
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 
 #include <algo/blast/core/blast_hits.h>

@@ -31,8 +31,10 @@
  * @todo FIXME file had copy-and-paste description!
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_lookup.h>

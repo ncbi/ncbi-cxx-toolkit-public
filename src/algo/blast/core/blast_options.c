@@ -28,8 +28,10 @@
  * @todo FIXME needs file description & doxygen comments
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_filter.h>
@@ -1641,6 +1643,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.139  2004/11/02 17:56:48  camacho
+ * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
+ *
  * Revision 1.138  2004/11/01 18:37:23  madden
  *    - In BLAST_FillHitSavingOption, set hsp_num_max to a finite value
  *      (400) for ungapped searches.

@@ -35,8 +35,10 @@
  * from ASN.1 spec.
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_dust.h>
 #include <algo/blast/core/blast_util.h>

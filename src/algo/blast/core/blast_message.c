@@ -28,8 +28,10 @@
  * @todo FIXME needs file description & doxygen comments
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_message.h>
 
@@ -90,6 +92,9 @@ Blast_MessagePost(Blast_Message* blast_msg)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/11/02 17:56:48  camacho
+ * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
+ *
  * Revision 1.12  2004/05/19 14:52:02  camacho
  * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
  * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i

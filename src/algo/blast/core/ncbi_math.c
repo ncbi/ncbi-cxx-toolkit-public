@@ -35,8 +35,10 @@
  * @todo FIXME doxygen comments and formatting
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #define THIS_MODULE g_corelib
 #define THIS_FILE _this_file
@@ -540,6 +542,9 @@ extern double BLAST_LnFactorial (double x) {
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/11/02 17:56:48  camacho
+ * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
+ *
  * Revision 1.9  2004/06/08 17:30:07  dondosha
  * Compiler warnings fixes
  *

@@ -36,7 +36,9 @@
 /// @file repeats_filter_cxx.cpp
 /// C++ version of repeats filtering
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
 #include <serial/iterator.hpp>
@@ -216,6 +218,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.8  2004/11/02 17:58:27  camacho
+ *  Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
+ *
  *  Revision 1.7  2004/09/13 15:55:04  madden
  *  Remove unused parameter from CSeqLoc2BlastSeqLoc
  *

@@ -36,8 +36,10 @@
 #include <algo/blast/core/blast_encoding.h>
 #include "blast_inline.h"
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 typedef struct NeighborInfo {
     BlastLookupTable *lookup;

@@ -49,8 +49,10 @@
  * @todo FIXME needs doxygen comments
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_util.h>
@@ -3619,6 +3621,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.98  2004/11/02 17:56:48  camacho
+ * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
+ *
  * Revision 1.97  2004/10/05 21:32:55  camacho
  * Return 1 to indicate error in BlastScoreBlkMatrixLoad
  *

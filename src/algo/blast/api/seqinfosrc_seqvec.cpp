@@ -1,5 +1,7 @@
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 /* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -98,6 +100,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/11/02 17:58:27  camacho
+ * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
+ *
  * Revision 1.2  2004/10/18 20:33:31  dondosha
  * Pass TSeqLocVector to constructor by reference
  *

@@ -31,8 +31,10 @@
  * Definition of ADT to save and retrieve lists of HSPs in the BLAST engine.
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_hspstream.h>
 #include <algo/blast/core/blast_def.h>      /* needed for sfree */

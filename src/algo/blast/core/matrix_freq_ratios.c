@@ -1,5 +1,7 @@
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 /* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -442,6 +444,9 @@ _PSIMatrixFrequencyRatiosFree(SFreqRatios* freq_ratios)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/11/02 17:56:48  camacho
+ * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
+ *
  * Revision 1.3  2004/06/09 14:21:03  camacho
  * Removed msvc compiler warnings
  *

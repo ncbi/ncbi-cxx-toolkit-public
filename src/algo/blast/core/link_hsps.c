@@ -32,8 +32,10 @@
  * Functions to link with use of sum statistics
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/link_hsps.h>
 #include <algo/blast/core/blast_util.h>
