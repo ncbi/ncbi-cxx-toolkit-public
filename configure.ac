@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.272 2004/02/11 15:18:13 ucko Exp $
+#  $Id: configure.ac,v 1.273 2004/02/12 16:45:56 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -892,12 +892,18 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         fi
         ;;
       WorkShop* )
-        # (Re)include ARCH_CFLAGS here because -fast implies -xtarget=native.
-        DEF_FAST_FLAGS="-fast $ARCH_CFLAGS"
-        case "$host_cpu" in
-           # Work around a WorkShop standard library bug.
-           i?86) DEF_FAST_FLAGS="$DEF_FAST_FLAGS -D_RWSTD_NO_TEST_AND_SET" ;;
+        DEF_FAST_FLAGS="-fast"
+        case "$with_ncbi_public:$host_cpu" in
+           yes:sparc* )
+              DEF_FAST_FLAGS="$DEF_FAST_FLAGS -xtarget=ultra"
+              ;;
+           *:i?86)
+              # Work around a WorkShop standard library bug.
+              DEF_FAST_FLAGS="$DEF_FAST_FLAGS -D_RWSTD_NO_TEST_AND_SET"
+              ;;
         esac
+        # (Re)include ARCH_CFLAGS here because -fast implies -xtarget=native.
+        DEF_FAST_FLAGS="$DEF_FAST_FLAGS $ARCH_CFLAGS"
         ;;
       KCC )
         DEF_FAST_FLAGS="+K3"
