@@ -76,8 +76,8 @@ public:
     const CBioseq_Handle&   GetConsensusHandle  (void)        const;
     TSignedSeqPos           GetConsensusStart   (TNumseg seg) const;
     TSignedSeqPos           GetConsensusStop    (TNumseg seg) const;
-    TSeqPos                 GetConsensusSeqStart(void)        const;
-    TSeqPos                 GetConsensusSeqStop (void)        const;
+    TSignedSeqPos           GetConsensusSeqStart(void)        const;
+    TSignedSeqPos           GetConsensusSeqStop (void)        const;
 
     string      GetConsensusString(TSeqPos from, TSeqPos to) const;
     string      GetConsensusString(TNumseg seg)              const;
@@ -188,7 +188,7 @@ TSignedSeqPos CAlnVec::GetConsensusStop(TNumseg seg) const
 }
 
 inline
-TSeqPos CAlnVec::GetConsensusSeqStart(void) const
+TSignedSeqPos CAlnVec::GetConsensusSeqStart(void) const
 {
     if ( !m_ConsensusBioseq ) {
         x_CreateConsensus();
@@ -204,7 +204,7 @@ TSeqPos CAlnVec::GetConsensusSeqStart(void) const
 }
 
 inline
-TSeqPos CAlnVec::GetConsensusSeqStop(void) const
+TSignedSeqPos CAlnVec::GetConsensusSeqStop(void) const
 {
     if ( !m_ConsensusBioseq ) {
         x_CreateConsensus();
@@ -270,6 +270,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/09/19 18:19:18  todorov
+* fixed unsigned to signed return type for GetConsensusSeq{Start,Stop}
+*
 * Revision 1.3  2002/09/05 19:31:18  dicuccio
 * - added ability to reference a consensus sequence for a given alignment
 * - added caching of CSeqVector (big performance win)
