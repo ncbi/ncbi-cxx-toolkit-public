@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/05/04 16:29:12  vakatov
+* s_ParsePostQuery():  do not throw on an unknown Content-Type
+*
 * Revision 1.41  2000/05/02 16:10:07  vasilche
 * CGI: Fixed URL parsing when Content-Length header is missing.
 *
@@ -788,27 +791,27 @@ static void s_ParsePostQuery(const string& contentType, const string& str,
         SIZE_TYPE eol = str.find_first_of("\r\n");
         if ( eol != NPOS ) {
              err_pos = CCgiRequest::ParseEntries(str.substr(0, eol), entries);
-        }
-        else {
+        } else {
              err_pos = CCgiRequest::ParseEntries(str, entries);
         }
         if ( err_pos != 0 )
             throw CParseException("Init CCgiRequest::ParseFORM(\"" +
                                   str + "\")", err_pos);
+        return;
     }
-    else if ( NStr::StartsWith(contentType, "multipart/form-data") ) {
+
+    if ( NStr::StartsWith(contentType, "multipart/form-data") ) {
         string start = "boundary=";
         SIZE_TYPE pos = contentType.find(start);
         if ( pos == NPOS )
             throw CParseException("CCgiRequest::ParsePostQuery(\"" +
                                   contentType + "\"): no boundary field", 0);
         s_ParseMultipartEntries("--" + contentType.substr(pos + start.size()),
-                              str, entries);
+                                str, entries);
+        return;
     }
-    else {
-        throw CParseException("CCgiRequest::ParsePostQuery(\"" +
-                              contentType + "\"): invalid content type", 0);
-    }
+
+    // if unknown content type, then just ignore the content data
 }
 
 
