@@ -92,7 +92,7 @@ class CClassCode
 public:
     typedef CFileCode::TIncludes TIncludes;
     typedef CFileCode::TForwards TForwards;
-    typedef list< pair<string, string> > TEnums;
+    typedef list< pair<string, string> > TMethods;
 
     CClassCode(CFileCode& file, const string& typeName, const ASNType* type);
     ~CClassCode(void);
@@ -135,6 +135,14 @@ public:
         {
             return m_Abstract;
         }
+    void SetNonClass(bool nonClass = true)
+        {
+            m_NonClass = nonClass;
+        }
+    bool IsNonClass(void) const
+        {
+            return m_NonClass;
+        }
 
     void AddHPPInclude(const string& s)
         {
@@ -160,9 +168,9 @@ public:
         {
             m_Code.AddForwardDeclarations(forwards);
         }
-    void AddEnum(const string& enumHPP, const string& enumCPP)
+    void AddMethod(const string& hpp, const string& cpp)
         {
-            m_Enums.push_back(make_pair(enumHPP, enumCPP));
+            m_Methods.push_back(make_pair(hpp, cpp));
         }
 
     CNcbiOstream& HPP(void)
@@ -177,6 +185,8 @@ public:
 
     CNcbiOstream& GenerateHPP(CNcbiOstream& header) const;
     CNcbiOstream& GenerateCPP(CNcbiOstream& code) const;
+    CNcbiOstream& GenerateUserHPP(CNcbiOstream& header) const;
+    CNcbiOstream& GenerateUserCPP(CNcbiOstream& code) const;
 
 private:
     CFileCode& m_Code;
@@ -186,10 +196,11 @@ private:
     string m_ClassName;
     string m_ParentClass;
     bool m_Abstract;
+    bool m_NonClass;
 
     mutable CNcbiOstrstream m_HPP;
     mutable CNcbiOstrstream m_CPP;
-    TEnums m_Enums;
+    TMethods m_Methods;
 };
 
 class CTypeStrings {

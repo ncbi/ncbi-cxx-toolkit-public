@@ -101,26 +101,9 @@ string GetTemplateMacro(const string& tmpl)
 }
 
 ASNType::ASNType(const CDataTypeContext& c)
-    : main(false), exported(false), context(c), inSet(false)
+    : context(c), inSet(false), main(false), exported(false), checked(false)
 {
-/*
-    _TRACE(c.GetFilePos().ToString() << ": ASNType() in [" <<
-           c.GetConfigPos().GetSection() << ']' <<
-           c.GetConfigPos().GetKeyPrefix());
-*/
 }
-
-/*
-ASNType::ASNType(const CDataTypeContext& c, const string& n)
-    : name(n), main(false), exported(false), context(c), inSet(false)
-{
-
-    _TRACE(c.GetFilePos().ToString() << ": ASNType(" << name << ") in [" <<
-           c.GetConfigPos().GetSection() << ']' <<
-           c.GetConfigPos().GetKeyPrefix());
-
-}
-*/
 
 ASNType::~ASNType()
 {
@@ -153,30 +136,48 @@ const string& ASNType::GetVar(const CNcbiRegistry& registry,
 string ASNType::IdName(void) const
 {
     const CConfigPosition& config = context.GetConfigPos();
-    if ( config.GetKeyPrefix().empty() )
-        return config.GetSection();
-    else
+    const ASNType* parent = config.GetParentType();
+    if ( !parent ) {
+        // root type
+        return config.GetCurrentMember();
+    }
+    else {
+        // member
         return config.GetSection() + '.' + config.GetKeyPrefix();
+    }
+}
+
+bool ASNType::Skipped(const CNcbiRegistry& registry) const
+{
+    return GetVar(registry, "_class") == "-";
 }
 
 string ASNType::ClassName(const CNcbiRegistry& registry) const
 {
-    const string& s = GetVar(registry, "_class");
-    if ( !s.empty() )
-        return s;
-    /*
-    if ( !name.empty() )
-        return Identifier(name);
-    */
-    return Identifier(IdName());
+    const string& cls = GetVar(registry, "_class");
+    if ( !cls.empty() )
+        return cls;
+    const CConfigPosition& config = context.GetConfigPos();
+    const ASNType* parent = config.GetParentType();
+    if ( parent ) {
+        return parent->ClassName(registry) +
+            '_' + Identifier(config.GetCurrentMember());
+    }
+    return Identifier(config.GetCurrentMember());
 }
 
 string ASNType::FileName(const CNcbiRegistry& registry) const
 {
-    const string& s = GetVar(registry, "_file");
-    if ( !s.empty() )
-        return s;
-    return Identifier(IdName());
+    const string& file = GetVar(registry, "_file");
+    if ( !file.empty() )
+        return file;
+    const CConfigPosition& config = context.GetConfigPos();
+    const ASNType* parent = config.GetParentType();
+    if ( parent ) {
+        return parent->FileName(registry) +
+            '_' + Identifier(config.GetCurrentMember());
+    }
+    return Identifier(config.GetCurrentMember());
 }
 
 string ASNType::Namespace(const CNcbiRegistry& registry) const
@@ -233,6 +234,11 @@ void ASNType::GenerateCode(CClassCode& code) const
     code.CPP() << ';' << endl;
 }
 
+bool ASNType::InChoice(void) const
+{
+    return dynamic_cast<const ASNChoiceType*>(GetParentType()) != 0;
+}
+
 void ASNType::GetCType(CTypeStrings& , CClassCode& ) const
 {
     THROW1_TRACE(runtime_error,
@@ -252,7 +258,7 @@ if ( dynamic_cast<const type*>(&(value)) == 0 ) { \
 
 
 ASNFixedType::ASNFixedType(const CDataTypeContext& context, const string& kw)
-    : ASNType(context), keyword(kw)
+    : CParent(context), keyword(kw)
 {
 }
 
@@ -278,7 +284,7 @@ string ASNFixedType::GetDefaultCType(void) const
 }
 
 ASNNullType::ASNNullType(const CDataTypeContext& context)
-    : ASNFixedType(context, "NULL")
+    : CParent(context, "NULL")
 {
 }
 
@@ -303,7 +309,7 @@ void ASNNullType::GenerateCode(CClassCode& ) const
 }
 
 ASNBooleanType::ASNBooleanType(const CDataTypeContext& context)
-    : ASNFixedType(context, "BOOLEAN")
+    : CParent(context, "BOOLEAN")
 {
 }
 
@@ -329,7 +335,7 @@ string ASNBooleanType::GetDefaultCType(void) const
 }
 
 ASNRealType::ASNRealType(const CDataTypeContext& context)
-    : ASNFixedType(context, "REAL")
+    : CParent(context, "REAL")
 {
 }
 
@@ -367,13 +373,13 @@ string ASNRealType::GetDefaultCType(void) const
 }
 
 ASNVisibleStringType::ASNVisibleStringType(const CDataTypeContext& context)
-    : ASNFixedType(context, "VisibleString")
+    : CParent(context, "VisibleString")
 {
 }
 
 ASNVisibleStringType::ASNVisibleStringType(const CDataTypeContext& context,
                                            const string& kw)
-    : ASNFixedType(context, kw)
+    : CParent(context, kw)
 {
 }
 
@@ -400,12 +406,12 @@ string ASNVisibleStringType::GetDefaultCType(void) const
 }
 
 ASNStringStoreType::ASNStringStoreType(const CDataTypeContext& context)
-    : ASNVisibleStringType(context, "StringStore")
+    : CParent(context, "StringStore")
 {
 }
 
 ASNBitStringType::ASNBitStringType(const CDataTypeContext& context)
-    : ASNFixedType(context, "BIT STRING")
+    : CParent(context, "BIT STRING")
 {
 }
 
@@ -421,7 +427,7 @@ TObjectPtr ASNBitStringType::CreateDefault(const ASNValue& )
 }
 
 ASNOctetStringType::ASNOctetStringType(const CDataTypeContext& context)
-    : ASNFixedType(context, "OCTET STRING")
+    : CParent(context, "OCTET STRING")
 {
 }
 
@@ -448,7 +454,7 @@ void ASNOctetStringType::GetCType(CTypeStrings& tType, CClassCode& code) const
 
 ASNEnumeratedType::ASNEnumeratedType(const CDataTypeContext& context,
                                      const string& kw)
-    : ASNType(context), keyword(kw), isInteger(kw == "INTEGER")
+    : CParent(context), keyword(kw), isInteger(kw == "INTEGER")
 {
 }
 
@@ -533,31 +539,48 @@ CTypeInfo* ASNEnumeratedType::CreateTypeInfo(void)
     return new CEnumeratedTypeInfo(info.release());
 }
 
+string ASNEnumeratedType::DefaultEnumName(CClassCode& code) const
+{
+    // generate enum name from ASN type or field name
+    const CConfigPosition& config = context.GetConfigPos();
+    if ( config.GetParentType() == 0 ) {
+        // root enum
+        return 'E' + ClassName(code);
+    }
+    else {
+        // internal enum
+        return 'E' + Identifier(config.GetKeyPrefix());
+    }
+}
+
 void ASNEnumeratedType::GetCType(CTypeStrings& tType, CClassCode& code) const
 {
+    CNcbiOstrstream h;
+    CNcbiOstrstream c;
+    GenerateCode(code, h, c, &tType);
+    code.AddMethod(string(h.str(), h.pcount()), string(c.str(), c.pcount()));
+}
+
+void ASNEnumeratedType::GenerateCode(CClassCode& code) const
+{
+    if ( InChoice() ) {
+        CParent::GenerateCode(code);
+        return;
+    }
+    code.SetNonClass();
+    GenerateCode(code, code.HPP(), code.CPP(), 0);
+}
+
+void ASNEnumeratedType::GenerateCode(CClassCode& code,
+                                     CNcbiOstream& hpp, CNcbiOstream& cpp,
+                                     CTypeStrings* tType) const
+{
+    code.AddForwardDeclaration("CEnumeratedTypeValues", "NCBI_NS_NCBI");
     string type = GetVar(code, "_type");
     string enumName;
-    {
-        // generate enum name from ASN type or field name
-        const string& keyPrefix = context.GetConfigPos().GetKeyPrefix();
-        if ( !keyPrefix.empty() ) {
-            // get field name from key (last part after dot)
-            SIZE_TYPE dot = keyPrefix.rfind('.');
-            if ( dot == NPOS ) {
-                // no dot -> key name is field name
-                enumName = 'E' + Identifier(keyPrefix);
-            }
-            else {
-                // get field name
-                enumName = 'E' + Identifier(keyPrefix.substr(dot + 1));
-            }
-        }
-        else {
-            enumName = 'E' + Identifier(context.GetConfigPos().GetSection());
-        }
-    }
     if ( type.empty() ) {
         // make C++ type name
+        enumName = DefaultEnumName(code);
         if ( IsInteger() )
             type = "int";
         else
@@ -567,37 +590,39 @@ void ASNEnumeratedType::GetCType(CTypeStrings& tType, CClassCode& code) const
         if ( type[0] == 'E' )
             enumName = type;
     }
-    {
-        CNcbiOstrstream h;
-        CNcbiOstrstream c;
-        h << "    enum " << enumName << " {";
-        c << "BEGIN_ENUM_INFO(" << code.GetType()->ClassName(code) <<
-            "_Base::GetEnumInfo_" << enumName << ", " << enumName << ", " <<
-            (IsInteger()? "true": "false") << ")" << endl <<
-            '{' << endl;
-        for ( TValues::const_iterator i = values.begin();
-              i != values.end(); ++i ) {
-            if ( i != values.begin() )
-                h << ',';
-            h << endl <<
-                "        e" << Identifier(i->id) << " = " << i->value;
-            c << "    ADD_ENUM_VALUE(\"" << i->id << "\", e" <<
-                Identifier(i->id) << ");" << endl;
-        }
-        h << endl <<
-            "    };" << endl <<
-            "    static const NCBI_NS_NCBI::CEnumeratedTypeValues* GetEnumInfo_"
-          << enumName << "(void);" << endl;
-        c <<
-            '}' << endl <<
-            "END_ENUM_INFO" << endl;
-        code.AddEnum(string(h.str(), h.pcount()), string(c.str(), c.pcount()));
+    string tab;
+    string method;
+    if ( tType ) {
+        tab = "    ";
+        method = code.GetType()->ClassName(code) + "_Base::";
+        tType->SetEnum(type, enumName);
     }
-    tType.SetEnum(type, enumName);
+    hpp << tab << "enum " << enumName << " {";
+    cpp << "BEGIN_ENUM_INFO(" << method << "GetEnumInfo_" << enumName <<
+        ", " << enumName << ", " << (IsInteger()? "true": "false") << ")" <<
+        endl <<
+        '{' << endl;
+    for ( TValues::const_iterator i = values.begin();
+          i != values.end(); ++i ) {
+        if ( i != values.begin() )
+            hpp << ',';
+        hpp << endl <<
+            tab << "    e" << Identifier(i->id) << " = " << i->value;
+        cpp << "    ADD_ENUM_VALUE(\"" << i->id << "\", e" <<
+            Identifier(i->id) << ");" << endl;
+    }
+    hpp << endl <<
+        tab << "};" << endl <<
+        tab << (tType? "static ": "") <<
+        "const NCBI_NS_NCBI::CEnumeratedTypeValues* GetEnumInfo_" <<
+        enumName << "(void);" << endl;
+    cpp <<
+        '}' << endl <<
+        "END_ENUM_INFO" << endl;
 }
 
 ASNIntegerType::ASNIntegerType(const CDataTypeContext& context)
-    : ASNFixedType(context, "INTEGER")
+    : CParent(context, "INTEGER")
 {
 }
 
@@ -623,7 +648,7 @@ string ASNIntegerType::GetDefaultCType(void) const
 }
 
 ASNUserType::ASNUserType(const CDataTypeContext& context, const string& n)
-    : ASNType(context), userTypeName(n)
+    : CParent(context), userTypeName(n)
 {
 }
 
@@ -634,7 +659,10 @@ CNcbiOstream& ASNUserType::Print(CNcbiOstream& out, int ) const
 
 bool ASNUserType::Check(void)
 {
-    return GetModule().FindType(userTypeName) != 0;
+    if ( GetModule().FindType(userTypeName) != 0 )
+        return true;
+    Warning("Unresolved type: " + userTypeName);
+    return false;
 }
 
 bool ASNUserType::CheckValue(const ASNValue& value)
@@ -661,7 +689,8 @@ TObjectPtr ASNUserType::CreateDefault(const ASNValue& value)
 void ASNUserType::GetCType(CTypeStrings& tType, CClassCode& code) const
 {
     const ASNType* userType = Resolve();
-    if ( dynamic_cast<const ASNChoiceType*>(userType) != 0 ) {
+    if ( dynamic_cast<const ASNChoiceType*>(userType) != 0 ||
+         dynamic_cast<const ASNEnumeratedType*>(userType) != 0 ) {
         userType->GetCType(tType, code);
         return;
     }
@@ -702,7 +731,7 @@ ASNType* ASNUserType::Resolve(void)
 }
 
 ASNOfType::ASNOfType(const CDataTypeContext& context, const string& kw)
-    : ASNType(context), keyword(kw)
+    : CParent(context), keyword(kw)
 {
 }
 
@@ -740,7 +769,7 @@ TObjectPtr ASNOfType::CreateDefault(const ASNValue& )
 }
 
 ASNSetOfType::ASNSetOfType(const CDataTypeContext& context)
-    : ASNOfType(context, "SET")
+    : CParent(context, "SET")
 {
 }
 
@@ -784,7 +813,7 @@ void ASNSetOfType::GetCType(CTypeStrings& tType, CClassCode& code) const
 }
 
 ASNSequenceOfType::ASNSequenceOfType(const CDataTypeContext& context)
-    : ASNOfType(context, "SEQUENCE")
+    : CParent(context, "SEQUENCE")
 {
 }
 
@@ -808,7 +837,7 @@ void ASNSequenceOfType::GetCType(CTypeStrings& tType, CClassCode& code) const
 
 ASNMemberContainerType::ASNMemberContainerType(const CDataTypeContext& context,
                                                const string& kw)
-    : ASNType(context), keyword(kw)
+    : CParent(context), keyword(kw)
 {
 }
 
@@ -877,6 +906,10 @@ CClassInfoTmpl* ASNContainerType::CreateClassInfo(void)
 
 void ASNContainerType::GenerateCode(CClassCode& code) const
 {
+    if ( InChoice() && choices.size() != 1 ) {
+        CParent::GenerateCode(code);
+        return;
+    }
     for ( TMembers::const_iterator i = members.begin();
           i != members.end();
           ++i ) {
@@ -1013,7 +1046,11 @@ bool ASNChoiceType::Check(void)
             ok = false;
         }
         else {
-            (*m)->type->Resolve()->choices.insert(this);
+            ASNType* variant = (*m)->type.get();
+            if ( GetParentType() != 0 )
+                variant->choices.insert(this);
+            else
+                variant->Resolve()->choices.insert(this);
         }
     }
     return ok;
@@ -1047,7 +1084,12 @@ CTypeInfo* ASNChoiceType::CreateTypeInfo(void)
 
 void ASNChoiceType::GenerateCode(CClassCode& code) const
 {
+    if ( InChoice() && choices.size() != 1 ) {
+        CParent::GenerateCode(code);
+        return;
+    }
     code.SetAbstract();
+    string className = ClassName(code);
     for ( TMembers::const_iterator i = members.begin();
           i != members.end();
           ++i ) {
@@ -1056,11 +1098,39 @@ void ASNChoiceType::GenerateCode(CClassCode& code) const
         if ( fieldName.empty() ) {
             continue;
         }
-        ASNType* variant = m->type->Resolve();
+        ASNType* variant = m->type.get();
+        ASNType* variantResolved = variant->Resolve();
+        if ( !GetParentType() && variantResolved->choices.size() == 1 ) {
+            // named choice AND variant appears only in this choice
+            variant = variantResolved;
+        }
+        string variantName = Identifier(m->name);
+        string variantClass = variant->ClassName(code);
         code.AddCPPInclude(variant->FileName(code));
+        code.AddForwardDeclaration(variantClass, variant->Namespace(code));
         code.CPP() <<
-            "    ADD_SUB_CLASS2(\"" << m->name << "\", " <<
-            variant->ClassName(code) << ");" << endl;
+            "    ADD_SUB_CLASS2(\"" << m->name << "\", " << variantClass <<
+                   ");" << endl;
+        CNcbiOstrstream hpp;
+        hpp <<
+            "    " << variantClass << "* Get" << variantName <<
+            "(void);" << endl <<
+            "    const " << variantClass << "* Get" << variantName <<
+            "(void) const;" << endl;
+        CNcbiOstrstream cpp;
+        cpp <<
+            variantClass << "* " << className << "_Base::Get" <<
+            variantName << "(void)" << endl <<
+            '{' << endl <<
+            "    return dynamic_cast<" << variantClass << "*>(this);" << endl <<
+            '}' << endl <<
+            "const " << variantClass << "* " << className << "_Base::Get" <<
+            variantName << "(void) const" << endl <<
+            '{' << endl <<
+            "    return dynamic_cast<const " << variantClass << "*>(this);" << endl <<
+            '}' << endl;
+        code.AddMethod(string(hpp.str(), hpp.pcount()),
+                       string(cpp.str(), cpp.pcount()));
     }
 }
 

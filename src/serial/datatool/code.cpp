@@ -238,7 +238,8 @@ bool CFileCode::GenerateUserHPP(const string& path) const
     }
 	header.seekp(0, IOS_BASE::end);
     if ( streampos(header.tellp()) != streampos(0) ) {
-        ERR_POST("Will not overwrite existing user file: " << fileName);
+        ERR_POST(Warning <<
+                 "Will not overwrite existing user file: " << fileName);
         return false;
     }
 
@@ -251,30 +252,11 @@ bool CFileCode::GenerateUserHPP(const string& path) const
         "// standard includes" << endl <<
         "#include <corelib/ncbistd.hpp>" << endl;
 
-    if ( !m_HPPIncludes.empty() ) {
-        header << endl <<
-            "// generated includes" << endl;
-        for ( TIncludes::const_iterator stri = m_HPPIncludes.begin();
-              stri != m_HPPIncludes.end();
-              ++stri) {
-            header <<
-                "#include " << *stri << endl;
-        }
-    }
-
-    CNamespace ns(header);
+    header << endl <<
+        "// generated includes" << endl <<
+        "#include <" << GetHPPName() << '>' << endl;
     
-    if ( !m_ForwardDeclarations.empty() ) {
-        header << endl <<
-            "// forward declarations" << endl;
-        for ( TForwards::const_iterator fi = m_ForwardDeclarations.begin();
-              fi != m_ForwardDeclarations.end();
-              ++fi) {
-            ns.Set(fi->second);
-            header <<
-                "class " << fi->first << ';'<< endl;
-        }
-    }
+    CNamespace ns(header);
     
     if ( !m_Classes.empty() ) {
         header << endl <<
@@ -284,7 +266,7 @@ bool CFileCode::GenerateUserHPP(const string& path) const
               ++ci) {
             CClassCode* cls = ci->second.get();
             ns.Set(cls->GetNamespace());
-            cls->GenerateHPP(header);
+            cls->GenerateUserHPP(header);
         }
     }
     ns.End();
@@ -307,7 +289,8 @@ bool CFileCode::GenerateUserCPP(const string& path) const
     }
 	code.seekp(0, IOS_BASE::end);
     if ( streampos(code.tellp()) != streampos(0) ) {
-        ERR_POST("Will not overwrite existing user file: " << fileName);
+        ERR_POST(Warning <<
+                 "Will not overwrite existing user file: " << fileName);
         return false;
     }
 
@@ -320,17 +303,6 @@ bool CFileCode::GenerateUserCPP(const string& path) const
         "// generated includes" << endl <<
         "#include <" << GetUserHPPName() << ">" << endl;
 
-    if ( !m_CPPIncludes.empty() ) {
-        code << endl <<
-            "// generated includes" << endl;
-        for ( TIncludes::const_iterator stri = m_CPPIncludes.begin();
-              stri != m_CPPIncludes.end();
-              ++stri) {
-            code <<
-                "#include " << *stri << endl;
-        }
-    }
-
     CNamespace ns(code);
     
     if ( !m_Classes.empty() ) {
@@ -341,7 +313,7 @@ bool CFileCode::GenerateUserCPP(const string& path) const
               ++ci) {
             CClassCode* cls = ci->second.get();
             ns.Set(cls->GetNamespace());
-            cls->GenerateCPP(code);
+            cls->GenerateUserCPP(code);
         }
     }
 
@@ -386,7 +358,7 @@ void CNamespace::End(void)
 {
     if ( !m_Namespace.empty() ) {
         m_Out << endl <<
-            "};" << endl;
+            "}" << endl << endl;
         m_Namespace.erase();
     }
 }
@@ -403,10 +375,10 @@ void CNamespace::Set(const string& ns)
 CClassCode::CClassCode(CFileCode& code,
                        const string& typeName, const ASNType* type)
     : m_Code(code), m_TypeName(typeName), m_Type(type),
-      m_Namespace(type->Namespace(code)),
-      m_ClassName(type->ClassName(code)),
-      m_Abstract(false)
+      m_Abstract(false), m_NonClass(false)
 {
+    m_Namespace = type->Namespace(*this);
+    m_ClassName = type->ClassName(*this);
     string include = type->GetVar(code, "_include");
     if ( !include.empty() )
         code.AddHPPInclude(include);
@@ -457,6 +429,10 @@ string CClassCode::GetParentClass(void) const
 
 CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
 {
+    if ( IsNonClass() ) {
+        // enum
+        return header << m_HPP.str();
+    }
     header <<
         "class " << GetClassName() << "_Base";
     if ( !GetParentClass().empty() )
@@ -464,16 +440,16 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
     header << endl <<
         '{' << endl <<
         "public:" << endl <<
-        "    " << GetClassName() << "_Base();" << endl <<
+        "    " << GetClassName() << "_Base(void);" << endl <<
         "    " << (IsAbstract()? "virtual ": "") << '~' <<
-        GetClassName() << "_Base();" << endl <<
+        GetClassName() << "_Base(void);" << endl <<
         endl <<
         "    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void);" <<
         endl;
-    for ( TEnums::const_iterator ei = m_Enums.begin();
-          ei != m_Enums.end(); ++ei ) {
+    for ( TMethods::const_iterator mi = m_Methods.begin();
+          mi != m_Methods.end(); ++mi ) {
         header << endl <<
-            ei->first << endl;
+            mi->first << endl;
     }
     header << endl <<
         "private:" << endl <<
@@ -486,27 +462,31 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
 
 CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
 {
+    if ( IsNonClass() ) {
+        // enum
+        return code << m_CPP.str();
+    }
     code <<
         GetClassName() << "_Base::" <<
-        GetClassName() << "_Base()" << endl <<
+        GetClassName() << "_Base(void)" << endl <<
         '{' << endl <<
         '}' << endl <<
         endl <<
         GetClassName() << "_Base::~" <<
-        GetClassName() << "_Base()" << endl <<
+        GetClassName() << "_Base(void)" << endl <<
         '{' << endl <<
         '}' << endl <<
         endl;
-    for ( TEnums::const_iterator ei = m_Enums.begin();
-          ei != m_Enums.end(); ++ei ) {
+    for ( TMethods::const_iterator mi = m_Methods.begin();
+          mi != m_Methods.end(); ++mi ) {
         code << endl <<
-            ei->second << endl;
+            mi->second << endl;
     }
     if ( IsAbstract() )
         code << "BEGIN_ABSTRACT_CLASS_INFO3(\"";
     else
         code << "BEGIN_CLASS_INFO3(\"";
-    code << GetTypeName() << "\", " <<
+    code << GetType()->IdName() << "\", " <<
         GetClassName() << ", " << GetClassName() << "_Base)" << endl <<
         '{' << endl;
     if ( GetParentType() ) {
@@ -517,6 +497,44 @@ CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
         m_CPP.str() <<
         '}' << endl <<
         "END_CLASS_INFO" << endl;
+    return code;
+}
+
+CNcbiOstream& CClassCode::GenerateUserHPP(CNcbiOstream& header) const
+{
+    if ( IsNonClass() ) {
+        // enum
+        return header;
+    }
+    header <<
+        "class " << GetClassName() << " : public " <<
+        GetClassName() << "_Base" << endl <<
+        '{' << endl <<
+        "public:" << endl <<
+        "    " << GetClassName() << "();" << endl <<
+        "    " << '~' << GetClassName() << "();" << endl <<
+        endl <<
+        "};" << endl;
+    return header;
+}
+
+CNcbiOstream& CClassCode::GenerateUserCPP(CNcbiOstream& code) const
+{
+    if ( IsNonClass() ) {
+        // enum
+        return code;
+    }
+    code <<
+        GetClassName() << "::" <<
+        GetClassName() << "()" << endl <<
+        '{' << endl <<
+        '}' << endl <<
+        endl <<
+        GetClassName() << "::~" <<
+        GetClassName() << "()" << endl <<
+        '{' << endl <<
+        '}' << endl <<
+        endl;
     return code;
 }
 

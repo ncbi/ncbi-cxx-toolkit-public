@@ -40,6 +40,7 @@ public:
         }
 
     string IdName(void) const;
+    bool Skipped(const CNcbiRegistry& registry) const;
     string ClassName(const CNcbiRegistry& registry) const;
     string FileName(const CNcbiRegistry& registry) const;
     string Namespace(const CNcbiRegistry& registry) const;
@@ -47,6 +48,13 @@ public:
     const ASNType* ParentType(const CNcbiRegistry& registry) const;
     const string& GetVar(const CNcbiRegistry& registry,
                          const string& value) const;
+
+    bool InChoice(void) const;
+
+    const ASNType* GetParentType(void) const
+        {
+            return context.GetConfigPos().GetParentType();
+        }
 
     virtual CNcbiOstream& Print(CNcbiOstream& out, int indent) const = 0;
 
@@ -67,14 +75,14 @@ public:
     virtual const ASNType* Resolve(void) const;
     virtual ASNType* Resolve(void);
 
-    bool main;      // true for types defined in main module
-    bool exported;  // true for types listed in EXPORT statements
-    bool checked;   // true if this type already checked
     CDataTypeContext context;
 
     // tree info
     set<const ASNChoiceType*> choices;
     bool inSet;
+    bool main;      // true for types defined in main module
+    bool exported;  // true for types listed in EXPORT statements
+    bool checked;   // true if this type already checked
 
 protected:
     virtual CTypeInfo* CreateTypeInfo(void);
@@ -84,6 +92,7 @@ private:
 };
 
 class ASNFixedType : public ASNType {
+    typedef ASNType CParent;
 public:
     ASNFixedType(const CDataTypeContext& context, const string& kw);
 
@@ -97,6 +106,7 @@ private:
 };
 
 class ASNNullType : public ASNFixedType {
+    typedef ASNFixedType CParent;
 public:
     ASNNullType(const CDataTypeContext& context);
 
@@ -108,6 +118,7 @@ public:
 };
 
 class ASNBooleanType : public ASNFixedType {
+    typedef ASNFixedType CParent;
 public:
     ASNBooleanType(const CDataTypeContext& context);
 
@@ -119,6 +130,7 @@ public:
 };
 
 class ASNRealType : public ASNFixedType {
+    typedef ASNFixedType CParent;
 public:
     ASNRealType(const CDataTypeContext& context);
 
@@ -130,6 +142,7 @@ public:
 };
 
 class ASNVisibleStringType : public ASNFixedType {
+    typedef ASNFixedType CParent;
 public:
     ASNVisibleStringType(const CDataTypeContext& context);
     ASNVisibleStringType(const CDataTypeContext& context, const string& kw);
@@ -142,11 +155,13 @@ public:
 };
 
 class ASNStringStoreType : public ASNVisibleStringType {
+    typedef ASNVisibleStringType CParent;
 public:
     ASNStringStoreType(const CDataTypeContext& context);
 };
 
 class ASNBitStringType : public ASNFixedType {
+    typedef ASNFixedType CParent;
 public:
     ASNBitStringType(const CDataTypeContext& context);
 
@@ -155,6 +170,7 @@ public:
 };
 
 class ASNOctetStringType : public ASNFixedType {
+    typedef ASNFixedType CParent;
 public:
     ASNOctetStringType(const CDataTypeContext& context);
 
@@ -164,6 +180,7 @@ public:
 };
 
 class ASNEnumeratedType : public ASNType {
+    typedef ASNType CParent;
 public:
     class Value {
     public:
@@ -197,8 +214,14 @@ public:
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
 
+    string DefaultEnumName(CClassCode& code) const;
+    void GenerateCode(CClassCode& code,
+                      CNcbiOstream& hpp, CNcbiOstream& cpp,
+                      CTypeStrings* tType) const;
+
     CTypeInfo* CreateTypeInfo(void);
     virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
+    virtual void GenerateCode(CClassCode& code) const;
 
 private:
     string keyword;
@@ -209,6 +232,7 @@ public:
 };
 
 class ASNIntegerType : public ASNFixedType {
+    typedef ASNFixedType CParent;
 public:
     ASNIntegerType(const CDataTypeContext& context);
 
@@ -220,6 +244,7 @@ public:
 };
 
 class ASNUserType : public ASNType {
+    typedef ASNType CParent;
 public:
     ASNUserType(const CDataTypeContext& context, const string& n);
 
@@ -240,6 +265,7 @@ public:
 };
 
 class ASNOfType : public ASNType {
+    typedef ASNType CParent;
 public:
     ASNOfType(const CDataTypeContext& context, const string& kw);
 
@@ -256,6 +282,7 @@ private:
 };
 
 class ASNSetOfType : public ASNOfType {
+    typedef ASNOfType CParent;
 public:
     ASNSetOfType(const CDataTypeContext& context);
 
@@ -265,6 +292,7 @@ public:
 };
 
 class ASNSequenceOfType : public ASNOfType {
+    typedef ASNOfType CParent;
 public:
     ASNSequenceOfType(const CDataTypeContext& context);
 
@@ -294,6 +322,7 @@ public:
 };
 
 class ASNMemberContainerType : public ASNType {
+    typedef ASNType CParent;
 public:
     typedef list<AutoPtr<ASNMember> > TMembers;
 

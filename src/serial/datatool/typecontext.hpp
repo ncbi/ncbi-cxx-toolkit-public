@@ -49,17 +49,22 @@ class CConfigPosition
 {
 public:
     CConfigPosition(void)
+        : m_ParentType(0)
         {
         }
-    CConfigPosition(const string& section)
-        : m_Section(section)
+    CConfigPosition(const CConfigPosition& base,
+                    const string& member);
+    CConfigPosition(const CConfigPosition& base,
+                    const ASNType* type, const string& member);
+
+    const ASNType* GetParentType(void) const
         {
+            return m_ParentType;
         }
-    CConfigPosition(const CConfigPosition& base, const string& value)
-        : m_Section(base.GetSection()), m_KeyPrefix(base.GetKeyName(value))
+    const string& GetCurrentMember(void) const
         {
+            return m_CurrentMember;
         }
-    
     const string& GetSection(void) const
         {
             return m_Section;
@@ -68,12 +73,14 @@ public:
         {
             return m_KeyPrefix;
         }
+    string AppendKey(const string& value) const;
 
-    string GetKeyName(const string& value) const;
     const string& GetVar(const CNcbiRegistry& reg,
                          const string& defSection, const string& value) const;
-    
+
 private:
+    const ASNType* m_ParentType;
+    string m_CurrentMember;
     string m_Section;
     string m_KeyPrefix;
 };
@@ -93,16 +100,16 @@ public:
         : m_Module(base.m_Module), m_FilePos(base, line), m_ConfigPos(base)
         {
         }
-    enum ESection { eSection };
-    enum EKey { eKey };
-    CDataTypeContext(const CDataTypeContext& base, const string& section,
-                     ESection /* ignored */)
-        : m_Module(base.m_Module), m_FilePos(base), m_ConfigPos(section)
+    // start new base type or new member
+    CDataTypeContext(const CDataTypeContext& base, const string& member)
+        : m_Module(base.m_Module), m_FilePos(base), m_ConfigPos(base, member)
         {
         }
-    CDataTypeContext(const CDataTypeContext& base, const string& value,
-                     EKey /* ignored */)
-        : m_Module(base.m_Module), m_FilePos(base), m_ConfigPos(base, value)
+    // start new subtype
+    CDataTypeContext(const CDataTypeContext& base, const ASNType* type,
+                     const string& member = NcbiEmptyString)
+        : m_Module(base.m_Module), m_FilePos(base),
+          m_ConfigPos(base, type, member)
         {
         }
     

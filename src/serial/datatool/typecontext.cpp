@@ -12,7 +12,33 @@ string CFilePosition::ToString(void) const
     return '"' + GetFileName() + "\", line " + NStr::IntToString(GetFileLine());
 }
 
-string CConfigPosition::GetKeyName(const string& value) const
+CConfigPosition::CConfigPosition(const CConfigPosition& base,
+                                 const string& member)
+    : m_ParentType(base.GetParentType()), m_CurrentMember(member)
+{
+    if ( GetParentType() ) {
+        // new member
+        m_Section = base.GetSection();
+        m_KeyPrefix = base.AppendKey(member);
+    }
+    else {
+        // new type
+        m_Section = member;
+    }
+}
+
+CConfigPosition::CConfigPosition(const CConfigPosition& base,
+                                 const ASNType* type, const string& member)
+    : m_ParentType(type), m_CurrentMember(member)
+{
+    m_Section = base.GetSection();
+    if ( member.empty() )
+        m_KeyPrefix = base.GetKeyPrefix();
+    else
+        m_KeyPrefix = base.AppendKey(member);
+}
+
+string CConfigPosition::AppendKey(const string& value) const
 {
     if ( GetKeyPrefix().empty() )
         return value;
@@ -26,7 +52,7 @@ const string& CConfigPosition::GetVar(const CNcbiRegistry& registry,
 {
     _ASSERT(!GetSection().empty());
     _ASSERT(!value.empty());
-    string keyName = GetKeyName(value);
+    string keyName = AppendKey(value);
     if ( !defaultSection.empty() ) {
         const string& s1 = registry.Get(defaultSection + '.' + GetSection(),
                                         keyName);

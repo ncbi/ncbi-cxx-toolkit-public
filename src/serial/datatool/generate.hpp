@@ -24,7 +24,13 @@ public:
     void GetAllTypes(void);
     static void GetTypes(TTypeNames& typeNames, const string& name);
 
-    void CollectTypes(const ASNType* type, bool force = false);
+    enum EContext {
+        eOther,
+        eRoot,
+        eChoice,
+        eReference
+    };
+    void CollectTypes(const ASNType* type, EContext context = eOther );
     bool AddType(const ASNType* type);
 
     CNcbiRegistry m_Config;

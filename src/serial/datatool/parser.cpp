@@ -70,7 +70,7 @@ void ASNParser::ModuleBody(const CDataTypeContext& ctx)
                 name = TypeReference();
                 Consume(T_DEFINE, "::=");
                 ctx.GetModule().AddDefinition(name,
-                    Type(CDataTypeContext(ctx, name, CDataTypeContext::eSection)));
+                    Type(CDataTypeContext(ctx, name)));
                 break;
             case T_DEFINE:
                 ERR_POST(Location() << "type name omitted");
@@ -128,33 +128,31 @@ AutoPtr<ASNType> ASNParser::x_Type(const CDataTypeContext& ctx)
         Consume();
         if ( ConsumeIf(K_OF) ) {
             AutoPtr<ASNOfType> s(new ASNSequenceOfType(ctx));
-            s->type = Type(CDataTypeContext(ctx, "._data",
-                                            CDataTypeContext::eKey));
+            s->type = Type(CDataTypeContext(ctx, s.get(), "_data"));
             return s.release();
         }
         else {
             AutoPtr<ASNSequenceType> s(new ASNSequenceType(ctx));
-            TypesBlock(ctx, *s);
+            TypesBlock(CDataTypeContext(ctx, s.get()), *s);
             return s.release();
         }
     case K_SET:
         Consume();
         if ( ConsumeIf(K_OF) ) {
             AutoPtr<ASNOfType> s(new ASNSetOfType(ctx));
-            s->type = Type(CDataTypeContext(ctx, "._data",
-                                            CDataTypeContext::eKey));
+            s->type = Type(CDataTypeContext(ctx, s.get(), "_data"));
             return s.release();
         }
         else {
             AutoPtr<ASNSetType> s(new ASNSetType(ctx));
-            TypesBlock(ctx, *s);
+            TypesBlock(CDataTypeContext(ctx, s.get()), *s);
             return s.release();
         }
     case K_CHOICE:
         Consume();
         {
             AutoPtr<ASNChoiceType> choice(new ASNChoiceType(ctx));
-            TypesBlock(ctx, *choice);
+            TypesBlock(CDataTypeContext(ctx, choice.get()), *choice);
             return choice.release();
         }
     case K_VisibleString:
@@ -191,8 +189,7 @@ AutoPtr<ASNMember> ASNParser::NamedDataType(const CDataTypeContext& ctx)
     else {
         memberKeyAdd = "_parent";
     }
-    member->type = Type(CDataTypeContext(ctx, memberKeyAdd,
-                                         CDataTypeContext::eKey));
+    member->type = Type(CDataTypeContext(ctx, memberKeyAdd));
     switch ( Next() ) {
     case K_OPTIONAL:
         Consume();

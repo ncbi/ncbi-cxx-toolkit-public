@@ -83,7 +83,7 @@ void CCodeGenerator::GenerateCode(void)
     for ( TTypeNames::const_iterator ti = m_GenerateTypes.begin();
           ti != m_GenerateTypes.end();
           ++ti ) {
-        CollectTypes(m_Modules.ResolveFull(*ti), true);
+        CollectTypes(m_Modules.ResolveFull(*ti), eRoot);
     }
     
     // generate output files
@@ -93,6 +93,8 @@ void CCodeGenerator::GenerateCode(void)
         CFileCode* code = filei->second.get();
         code->GenerateHPP(m_HeadersDir);
         code->GenerateCPP(m_SourcesDir);
+        code->GenerateUserHPP(m_HeadersDir);
+        code->GenerateUserCPP(m_SourcesDir);
     }
 
     if ( !m_FileListFileName.empty() ) {
@@ -117,12 +119,12 @@ bool CCodeGenerator::AddType(const ASNType* type)
     return file->AddType(type);
 }
 
-void CCodeGenerator::CollectTypes(const ASNType* type, bool force)
+void CCodeGenerator::CollectTypes(const ASNType* type, EContext context)
 {
     const ASNOfType* array = dynamic_cast<const ASNOfType*>(type);
     if ( array != 0 ) {
         // SET OF or SEQUENCE OF
-        if ( force ) {
+        if ( context != eOther ) {
             if ( !AddType(type) )
                 return;
         }
@@ -140,21 +142,29 @@ void CCodeGenerator::CollectTypes(const ASNType* type, bool force)
             ERR_POST(Warning << "Skipping type: " << user->userTypeName);
             return;
         }
-        CollectTypes(user->Resolve(), true);
+        const ASNType* resolved = user->Resolve();
+        if ( context == eChoice ) {
+            // in choice
+            if ( !user->choices.empty() || resolved->choices.size() != 1 ) {
+                // in unnamed choice OR in several choices
+                AddType(user);
+            }
+        }
+        CollectTypes(resolved, eReference);
         return;
     }
 
     if ( dynamic_cast<const ASNFixedType*>(type) != 0 ||
          dynamic_cast<const ASNEnumeratedType*>(type) != 0 ) {
         // STD type
-        if ( force ) {
+        if ( context != eOther ) {
             AddType(type);
         }
         return;
     }
 
-    if ( force ) {
-        if ( type->ClassName(m_Config) == "-" ) {
+    if ( context != eOther ) {
+        if ( type->Skipped(m_Config) ) {
             ERR_POST(Warning << "Skipping type: " << type->IdName());
             return;
         }
@@ -174,14 +184,14 @@ void CCodeGenerator::CollectTypes(const ASNType* type, bool force)
                   choice->members.begin();
               mi != choice->members.end(); ++mi ) {
             const ASNType* memberType = mi->get()->type.get();
-            CollectTypes(memberType, true);
+            CollectTypes(memberType, eChoice);
         }
     }
 
     const ASNMemberContainerType* cont =
         dynamic_cast<const ASNMemberContainerType*>(type);
     if ( cont != 0 ) {
-        if ( force ) {
+        if ( context != eOther ) {
             if ( !AddType(type) )
                 return;
         }
