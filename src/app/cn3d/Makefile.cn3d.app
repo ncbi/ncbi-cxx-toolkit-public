@@ -76,10 +76,12 @@ CPPFLAGS = \
 	$(WXWIN_INCLUDE) \
 	$(NCBI_C_INCLUDE)
 
+NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi
+
 LIBS = \
 	$(WXWIN_LIBS) $(WXWIN_GL_LIBS) \
 	$(NCBI_C_LIBPATH) \
-	-lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi \
+	$(NCBI_C_LIBS) \
 	$(ORIG_LIBS)
 
 
