@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-class NCBI_XALGOALIGN_EXPORT CNWFormatter
+class NCBI_XALGOALIGN_EXPORT CNWFormatter: public CObject
 {
 public:
 
@@ -91,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/10/27 20:46:41  kapustin
+ * Derive from CObject.
+ *
  * Revision 1.3  2003/09/26 14:43:01  kapustin
  * Remove exception specifications
  *
