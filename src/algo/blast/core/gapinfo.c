@@ -84,7 +84,7 @@ GapEditScriptNew(GapEditScriptPtr old)
 	return new;
 }
 
-GapEditScriptPtr LIBCALL
+GapEditScriptPtr
 GapEditScriptDelete(GapEditScriptPtr old)
 {
 	GapEditScriptPtr next;
@@ -98,7 +98,7 @@ GapEditScriptDelete(GapEditScriptPtr old)
 	return old;
 }
 
-GapEditBlockPtr LIBCALL
+GapEditBlockPtr
 GapEditBlockNew(Int4 start1, Int4 start2)
 
 {
@@ -111,7 +111,7 @@ GapEditBlockNew(Int4 start1, Int4 start2)
 	return edit_block;
 }
 
-GapEditBlockPtr LIBCALL
+GapEditBlockPtr
 GapEditBlockDelete(GapEditBlockPtr edit_block)
 
 {
