@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/01/15 17:47:56  vasilche
+* Changed CButtonList options: m_Name -> m_SubmitName, m_Select ->
+* m_SelectName. Added m_Selected.
+* Fixed CIDs Encode/Decode.
+*
 * Revision 1.2  1999/01/11 15:13:36  vasilche
 * Fixed CHTML_font size.
 * CHTMLHelper extracted to separate file.
@@ -45,12 +50,53 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbicgi.hpp>
 #include <html/html.hpp>
 #include <html/htmlhelper.hpp>
 
 BEGIN_NCBI_SCOPE
+
+void CIDs::Decode(const string& str)
+{
+    _TRACE( " decode: \"" << str << "\"" );
+    if ( str.empty() )
+        return;
+
+    if ( str[0] == '+' ) {
+        int id = 0;
+        SIZE_TYPE pos = 1;
+        SIZE_TYPE nextPos = str.find('+', pos);
+        while ( nextPos != NPOS ) {
+            _TRACE( " next id: \"" << str.substr(pos, nextPos - pos) << "\"" );
+            AddID(id += StringToInt(str.substr(pos, nextPos - pos)));
+            pos = nextPos + 1;
+            nextPos = str.find('+', pos);
+        }
+        _TRACE( " next id: \"" << str.substr(pos) << "\"" );
+        AddID(id += StringToInt(str.substr(pos)));
+    }
+    else {
+        SIZE_TYPE pos = 0;
+        SIZE_TYPE nextPos = str.find(',', pos);
+        while ( nextPos != NPOS ) {
+            AddID(StringToInt(str.substr(pos, nextPos - pos)));
+            pos = nextPos + 1;
+            nextPos = str.find(',', pos);
+        }
+        AddID(StringToInt(str.substr(pos)));
+    }
+}
+
+string CIDs::Encode(void) const
+{
+    string out;
+    int idPrev = 0;
+    for ( const_iterator i = begin(); i != end(); ++i ) {
+        int id = i->first;
+        out += IntToString(id - idPrev, true);
+        idPrev = id;
+    }
+    return out;
+}
 
 string CHTMLHelper::HTMLEncode(const string& input)
 {
@@ -92,121 +138,6 @@ string CHTMLHelper::HTMLEncode(const string& input)
         output.append(input, last, input.size() - last);
 
     return output;
-}
-
-void CHTMLHelper::LoadIDList(TIDList& ids,
-                const TCgiEntries& values,
-                const string& hiddenPrefix,
-                const string& checkboxName)
-{
-    ids.clear();
-    
-    string value = sx_ExtractHidden(values, hiddenPrefix);
-    if ( !value.empty() ) {
-        sx_DecodeIDList(ids, value);
-    }
-    sx_GetCheckboxes(ids, values, checkboxName);
-}
-
-void CHTMLHelper::StoreIDList(CHTML_form* form,
-                const TIDList& ids,
-                const string& hiddenPrefix,
-                const string& checkboxName)
-{
-    //    sx_SetCheckboxes(form, ids, checkboxName);
-    string value = sx_EncodeIDList(ids);
-    if ( !value.empty() )
-        sx_InsertHidden(form, value, hiddenPrefix);
-}
-
-string CHTMLHelper::sx_EncodeIDList(const TIDList& ids_)
-{
-    string value;
-    TIDList& ids = const_cast<TIDList&>(ids_); // SW_01
-    for ( TIDList::const_iterator i = ids.begin(); i != ids.end(); ++i ) {
-        if ( i->second )
-            value += ',' + IntToString(i->first);
-    }
-    value.erase(0, 1); // remove first comma
-    return value;
-}
-
-void CHTMLHelper::sx_AddID(TIDList& ids, const string& value)
-{
-    ids.insert(TIDList::value_type(StringToInt(value), true));
-}
-
-void CHTMLHelper::sx_DecodeIDList(TIDList& ids, const string& value)
-{
-    SIZE_TYPE pos = 0;
-    SIZE_TYPE commaPos = value.find(',', pos);
-    while ( commaPos != NPOS ) {
-        sx_AddID(ids, value.substr(pos, commaPos));
-        pos = commaPos + 1;
-        commaPos = value.find(',', pos);
-    }
-    sx_AddID(ids, value.substr(pos));
-}
-
-static const int kMaxHiddenCount = 10;
-static const SIZE_TYPE kMaxHiddenSize = 512;
-
-string CHTMLHelper::sx_ExtractHidden(const TCgiEntries& values_,
-                                     const string& hiddenPrefix)
-{
-    string value;
-    TCgiEntries& values = const_cast<TCgiEntries&>(values_); // SW_01
-    for ( int i = 0; i <= kMaxHiddenCount; ++i ) {
-        TCgiEntries::const_iterator pointer = values.find(hiddenPrefix + IntToString(i));
-        if ( pointer == values.end() ) // no more hidden values
-            return value;
-        value += pointer->second;
-    }
-    // what to do in this case?
-    throw runtime_error("Too many hidden values beginning with "+hiddenPrefix);
-}
-
-void CHTMLHelper::sx_InsertHidden(CHTML_form* form, const string& value,
-                                  const string& hiddenPrefix)
-{
-    SIZE_TYPE pos = 0;
-    for ( int i = 0; pos < value.size() && i < kMaxHiddenCount; ++i ) {
-        int end = min(value.size(), pos + kMaxHiddenSize);
-        form->AddHidden(hiddenPrefix + IntToString(i), value.substr(pos, end));
-        pos = end;
-    }
-    if ( pos != value.size() )
-        throw runtime_error("ID list too long to store in hidden values");
-}
-
-void CHTMLHelper::sx_SetCheckboxes(CNCBINode* root, TIDList& ids,
-                                   const string& checkboxName)
-{
-    if ( root->GetName() == CHTML_input::s_GetTagName() &&
-         root->GetAttribute(KHTMLAttributeName_type) == CHTML_checkbox::s_GetInputType() &&
-         root->GetAttribute(KHTMLAttributeName_name) == checkboxName) {
-        // found it
-        int id = StringToInt(root->GetAttribute(KHTMLAttributeName_value));
-        TIDList::iterator pointer = ids.find(id);
-        if ( pointer != ids.end() ) {
-            root->SetOptionalAttribute(KHTMLAttributeName_checked, pointer->second);
-            ids.erase(pointer);  // remove id from the list - already set
-        }
-    }
-    for ( CNCBINode::TChildList::iterator i = root->ChildBegin();
-          i != root->ChildEnd(); ++i ) {
-        sx_SetCheckboxes(*i, ids, checkboxName);
-    }
-}
-
-void CHTMLHelper::sx_GetCheckboxes(TIDList& ids, const TCgiEntries& values_,
-                                   const string& checkboxName)
-{
-    TCgiEntries& values = const_cast<TCgiEntries&>(values_); // SW_01
-    for ( TCgiEntries::const_iterator i = values.lower_bound(checkboxName),
-              end = values.upper_bound(checkboxName); i != end; ++i ) {
-        sx_AddID(ids, i->second);
-    }
 }
 
 END_NCBI_SCOPE

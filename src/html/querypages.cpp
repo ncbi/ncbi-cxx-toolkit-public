@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/01/15 17:47:56  vasilche
+* Changed CButtonList options: m_Name -> m_SubmitName, m_Select ->
+* m_SelectName. Added m_Selected.
+* Fixed CIDs Encode/Decode.
+*
 * Revision 1.9  1999/01/14 21:25:20  vasilche
 * Changed CPageList to work via form image input elements.
 *
@@ -150,14 +155,14 @@ CNCBINode* CPmDocSumPage::CreatePager(void)
     //
     CPagerBox * Pager = new CPagerBox;
     Pager->m_Width = 600;
-    Pager->m_TopButton->m_Name = "Display";
-    Pager->m_TopButton->m_Select = "display";
+    Pager->m_TopButton->m_SubmitName = "Display";
+    Pager->m_TopButton->m_SelectName = "display";
     Pager->m_TopButton->m_List["dopt"] = "Top";
-    Pager->m_RightButton->m_Name = "Save";
-    Pager->m_RightButton->m_Select = "save";
+    Pager->m_RightButton->m_SubmitName = "Save";
+    Pager->m_RightButton->m_SelectName = "save";
     Pager->m_RightButton->m_List["m_s"] = "Right";
-    Pager->m_LeftButton->m_Name = "Order";
-    Pager->m_LeftButton->m_Select = "order";
+    Pager->m_LeftButton->m_SubmitName = "Order";
+    Pager->m_LeftButton->m_SelectName = "order";
     Pager->m_LeftButton->m_List["m_o"] = "Left";
     Pager->m_PageList->m_Pages[1] = "page_one";
     Pager->m_PageList->m_Pages[2] = "page_two";

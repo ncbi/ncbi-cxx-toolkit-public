@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/01/15 17:47:55  vasilche
+* Changed CButtonList options: m_Name -> m_SubmitName, m_Select ->
+* m_SelectName. Added m_Selected.
+* Fixed CIDs Encode/Decode.
+*
 * Revision 1.17  1999/01/14 21:25:19  vasilche
 * Changed CPageList to work via form image input elements.
 *
@@ -175,13 +180,14 @@ void CButtonList::CreateSubNodes()
     if ( m_List.empty() )
         return; // nothing to display
 
-    AppendChild(new CHTML_submit(m_Name));
+    AppendChild(new CHTML_submit(m_SubmitName));
 
-    CHTML_select * Select = new CHTML_select(m_Select);
+    CHTML_select * Select = new CHTML_select(m_SelectName);
     AppendChild(Select);
     for (map<string, string>::iterator i = m_List.begin();
-         i != m_List.end(); ++i )
-        Select->AppendOption(i->second, i->first, i == m_List.begin());
+         i != m_List.end(); ++i ) {
+        Select->AppendOption(i->second, i->first, i->second == m_Selected);
+    }
 }
 
 
