@@ -387,6 +387,58 @@ void s_TestAlive(const string& host, unsigned short port)
     }
 }
 
+static
+void s_TestClientLB(const string& service_name)
+{
+    CNetCacheClient_LB nc_client("test", service_name, 2, 1);
+    const char test_data[] = "A quick brown fox, jumps over lazy dog.";
+    const char test_data2[] = "New data.";
+    string key = nc_client.PutData(test_data, sizeof(test_data));
+    NcbiCout << key << NcbiEndl;
+
+    assert(!key.empty());
+    char dataBuf[1024];
+    memset(dataBuf, 0xff, sizeof(dataBuf));
+    size_t blob_size;
+    IReader* reader = nc_client.GetData(key, &blob_size);
+    assert(reader);
+    reader->Read(dataBuf, 1024);
+    delete reader;
+
+    int res = strcmp(dataBuf, test_data);
+    assert(res == 0);
+
+    assert(blob_size == sizeof(test_data));
+
+    vector<string> keys;
+
+    {{
+    for (unsigned i = 0; i < 1000; ++i) {
+        key = nc_client.PutData(test_data, sizeof(test_data));
+        keys.push_back(key);
+    }
+    }}
+
+    {{
+    for (unsigned i = 0; i < 1000; ++i) {
+        key = keys[i];
+
+        char dataBuf[1024];
+        memset(dataBuf, 0xff, sizeof(dataBuf));
+        size_t blob_size;
+        IReader* reader = nc_client.GetData(key, &blob_size);
+        assert(reader);
+        reader->Read(dataBuf, 1024);
+        delete reader;
+        int res = strcmp(dataBuf, test_data);
+        assert(res == 0);
+        assert(blob_size == sizeof(test_data));
+    }
+    }}
+
+}
+
+
 int CTestNetCacheClient::Run(void)
 {
     CArgs args = GetArgs();
@@ -397,11 +449,24 @@ int CTestNetCacheClient::Run(void)
     const char test_data2[] = "New data.";
     string key;
 
+    // test load balancer
+    /*
+    {{
+        CNetCacheClient nc_client("test");
+        NetCache_ConfigureWithLB(&nc_client, "NetCache_shared");
+        key = nc_client.PutData(test_data, sizeof(test_data));
+        NcbiCout << key << NcbiEndl;
+
+        assert(!key.empty());
+        return 1;
+    }}
+    */
+
     {{
         CSocket sock(host, port);
 //        STimeout to = {0,0};
 //        sock.SetTimeout(eIO_ReadWrite, &to);
-        CNetCacheClient nc_client(&sock, "test");
+        CNetCacheClient nc_client(&sock, "");
 
         key = nc_client.PutData(test_data, sizeof(test_data));
         NcbiCout << key << NcbiEndl;
@@ -484,9 +549,12 @@ int CTestNetCacheClient::Run(void)
     s_RemoveBLOB_Test(host, port);
 
     s_ReadUpdateCharTest(host, port);
+
+//    s_TestClientLB("NetCache_shared");
+
     
     NcbiCout << "Testing IsAlive()... ";
-    s_TestAlive(host, port);
+//    s_TestAlive(host, port);
     NcbiCout << "Ok." << NcbiEndl;
 
 /*
@@ -502,6 +570,7 @@ int CTestNetCacheClient::Run(void)
     vector<STransactionInfo> log;
     vector<STransactionInfo> log_read;
     vector<string>           rep_keys;
+
 
     unsigned repeats = 5000;
 
@@ -543,6 +612,7 @@ int CTestNetCacheClient::Run(void)
     NcbiCout << NcbiEndl;
 
 
+
 /*
     cout << "Shutdown server" << endl;
     // Shutdown server
@@ -565,6 +635,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/01/19 12:22:24  kuznets
+ * + Test for LB client
+ *
  * Revision 1.23  2005/01/05 17:44:41  kuznets
  * Use name test to connect to server
  *
