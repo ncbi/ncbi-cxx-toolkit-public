@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/09 16:32:34  vasilche
+* Fixed warning under MS VS
+*
 * Revision 1.5  1999/06/07 15:21:09  vasilche
 * Fixed some warnings.
 *
@@ -58,7 +61,14 @@ USING_NCBI_SCOPE;  // this turns on the ncbi namespace
 // extern "C" main(...) is necessary to make main() visible
 // outside of the ncbi namespace
 
+static int Demo(void);
+
 extern "C" int main() 
+{
+	return Demo();
+}
+
+int Demo(void)
 {
     CCgiResponse Response; // used to write out the html
     CHTML_html * Html = 0; // the following are tags used in the page.
@@ -70,8 +80,8 @@ extern "C" int main()
         Response.WriteHeader();
 
         // create the tags
-        Html = new CHTML_html;
-        Body = new CHTML_body;
+        Html = new CHTML_html();
+        Body = new CHTML_body();
         Form = new CHTML_form("cgidemo", CHTML_form::eGet);
 
         // stick them together
