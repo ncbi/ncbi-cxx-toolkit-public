@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/03/05 23:10:29  lavr
+ * SERV_WriteInfo takes only one argument now
+ *
  * Revision 6.14  2001/03/02 20:09:51  lavr
  * Support added for SERV_LOCALHOST as preferred_host.
  *
@@ -295,7 +298,7 @@ char* SERV_Print(SERV_ITER iter)
     /* Put all the rest into rejection list */
     for (i = 0; i < iter->n_skip; i++) {
         char *s1, *s2;
-        if (!(str = SERV_WriteInfo(iter->skip[i], 0)))
+        if (!(str = SERV_WriteInfo(iter->skip[i])))
             break;
         /* Remove ugly " T=[0-9]*" (no harm to be there, however) */
         if ((s1 = strstr(str, " T=")) != 0) {
