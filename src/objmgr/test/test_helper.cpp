@@ -966,10 +966,12 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
         _ASSERT(NStr::PrintableString(sout) == seq_str);
         seq_vect.SetCoding(CBioseq_Handle::eCoding_Ncbi);
-        vit.SetPos(seq_vect.size() - 1);
-        for ( ; bool(vit); --vit) {
+        int pos = seq_vect.size() - 1;
+        vit.SetPos(pos);
+        for ( ; pos > 0; --vit, --pos) {
             _ASSERT(sout[vit.GetPos()] == *vit);
         }
+        _ASSERT(sout[vit.GetPos()] == *vit);
         vit.GetSeqData(0, seq_vect.size(), sout);
         _ASSERT(NStr::PrintableString(sout) == seq_str);
         sout = "";
@@ -1270,6 +1272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/05/30 19:30:32  vasilche
+* Fixed CSeqVector_CI test.
+*
 * Revision 1.37  2003/05/28 16:20:16  vasilche
 * Added check for REF segments.
 *
