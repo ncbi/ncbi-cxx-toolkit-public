@@ -131,11 +131,15 @@ public:
     // which can result in throwing an exception (if Load() fails).
     template <class TPointer>
     TPointer GetEntryPoint(const string& name, TPointer* entry_ptr) {
-        TPointer x_ptr = (TPointer) x_GetEntryPoint(name, sizeof(TPointer));
+        union {
+            TPointer type_ptr;
+            void*    void_ptr;
+        } ptr;
+        ptr.void_ptr = x_GetEntryPoint(name, sizeof(TPointer));
         if ( entry_ptr ) {
-            *entry_ptr = x_ptr; 
+            *entry_ptr = ptr.type_ptr; 
         }
-        return x_ptr;
+        return ptr.type_ptr;
     }
 
 private:
@@ -166,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/01/20 07:18:10  vakatov
+ * CDll::GetEntryPoint() -- fool-proof cast of void ptr to func ptr
+ *
  * Revision 1.2  2002/01/16 18:48:13  ivanov
  * Added new constructor and related "basename" rules for DLL names. Polished source code.
  *
