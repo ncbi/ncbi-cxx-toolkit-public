@@ -38,42 +38,6 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/blast_encoding.h>
-
-Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type)
-{
-   Int4 lut_width;
-   Int4 extra = 1;
-   Uint1 remainder;
-   Int4 stride;
-
-   if (lut_type == MB_LOOKUP_TABLE)
-      lut_width = 12;
-   else if (word_size >= 8)
-      lut_width = 8;
-   else
-      lut_width = 4;
-
-   remainder = word_size % COMPRESSION_RATIO;
-
-   if (var_words && (remainder == 0) )
-      extra = COMPRESSION_RATIO;
-
-   stride = word_size - lut_width + extra;
-
-   remainder = stride % 4;
-
-   /*
-    The resulting stride is rounded to a number divisible by 4 
-    for all values except 6 and 7. This is done because scanning database 
-    with a stride divisible by 4 does not require splitting bytes of 
-    compressed sequences. For values 6 and 7 however the advantage of a 
-    larger stride outweighs the disadvantage of splitting the bytes.
-    */
-   if (stride > 8 || (stride > 4 && remainder == 1) )
-      stride -= remainder;
-   return stride;
-}
 
 QuerySetUpOptions*
 BlastQuerySetUpOptionsFree(QuerySetUpOptions* options)
@@ -153,6 +117,7 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
       (*options)->gap_trigger = BLAST_GAP_TRIGGER_NUCL;
    }
 
+
    return 0;
 }
 
@@ -160,79 +125,21 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
 Int2
 BlastInitialWordOptionsValidate(EBlastProgramType program_number,
    const BlastInitialWordOptions* options, 
-   const LookupTableOptions* lookup_options,
    Blast_Message* *blast_msg)
 {
    Int4 code=2;
    Int4 subcode=1;
 
-   ASSERT(options && lookup_options);
-   
-   if (program_number == eBlastTypeBlastn) {
+   ASSERT(options);
 
-      if (options->extension_method == eRight && 
-          lookup_options->scan_step != COMPRESSION_RATIO) {
-         Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
-                            "Scanning stride must equal 4 if words are"
-                            " extended only in one direction");
+   /* For some blastn variants (i.e., megablast) there is no ungapped extension. */
+   if (program_number != eBlastTypeBlastn && options->x_dropoff <= 0.0)
+   {
+      Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode,
+                            "x_dropoff must be greater than zero");
          return (Int2) code;
-      }
-
-      if (options->variable_wordsize && 
-          ((lookup_options->word_size % 4) != 0) ) {
-         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
-                            "Word size must be divisible by 4 if only full "
-                            "bytes of subject sequences are matched to query");
-         return (Int2) code;
-      }
-      
-      if (options->extension_method == eUpdateDiag &&
-          lookup_options->mb_template_length == 0) {
-         if (lookup_options->lut_type != MB_LOOKUP_TABLE) {
-            Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
-                               "eUpdateDiag extension method works only with "
-                               "megablast lookup table");
-            return (Int2) code;
-         } else if (lookup_options->scan_step != COMPRESSION_RATIO ||
-                    lookup_options->word_size % 4 != 0) {
-
-            Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
-                               "eUpdateDiag extension method for contiguous"
-                               " megablast requires scanning stride 4 and"
-                               " word size divisible by 4");
-            return (Int2) code;
-         }
-      }
-
-      if (lookup_options->mb_template_length != 0 &&
-          options->extension_method != eUpdateDiag) {
-         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
-                            "Discontiguous megablast requires eUpdateDiag "
-                            "extension method ");
-         return (Int2) code;
-      }         
-
-   } else {
-      if (options->extension_method != eRight) {
-         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
-                            "For all protein BLAST varieties initial word "
-                            "extension method must be one-directional");
-         return (Int2) code;
-      }
-      if (options->variable_wordsize) {
-         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
-                            "For all protein BLAST varieties \"variable "
-                            "wordsize\" option is not applicable");
-         return (Int2) code;
-      }
-      if (options->container_type != eDiagArray) {
-         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
-                            "For all protein BLAST varieties only diagonal "
-                            "array container type is used");
-         return (Int2) code;
-      }
-
    }
+   
    return 0;
 }
 
@@ -240,7 +147,6 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
    EBlastProgramType program, Boolean greedy, Int4 window_size, 
-   Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
    double xdrop_ungapped)
 {
    if (!options)
@@ -262,21 +168,6 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
       options->window_size = window_size;
    if (xdrop_ungapped != 0)
       options->x_dropoff = xdrop_ungapped;
-
-   options->variable_wordsize = variable_wordsize;
-
-   if (ag_blast) {
-      options->extension_method = eRightAndLeft;
-      options->container_type = eDiagArray;
-   } else {
-      if (mb_lookup) {
-         options->container_type = eWordStacks;
-         options->extension_method = eUpdateDiag;
-      } else {
-         options->extension_method = eRight;
-         options->container_type = eDiagArray;
-      }
-   }
 
    return 0;
 }
@@ -629,24 +520,38 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
    if (*options == NULL)
       return 1;
    
-   if (program_number != eBlastTypeBlastn) {
+   if (program_number == eBlastTypeBlastn)
+   {     /* Blastn default is megablast. */
+         (*options)->word_size = BLAST_WORDSIZE_MEGABLAST;
+         (*options)->lut_type = MB_LOOKUP_TABLE;
+         (*options)->max_positions = INT4_MAX;
+         /* Discontig mb scanning default is one byte at at time. */
+         (*options)->full_byte_scan = TRUE; 
+   }
+   else if (program_number == eBlastTypeRpsBlast ||
+       program_number == eBlastTypeRpsTblastn)
+   {
       (*options)->word_size = BLAST_WORDSIZE_PROT;
-      (*options)->alphabet_size = BLASTAA_SIZE;
+      (*options)->lut_type = RPS_LOOKUP_TABLE;
+
+      if (program_number == eBlastTypeRpsBlast)
+         (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
+      else 
+         (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
+   }
+   else if (program_number != eBlastTypeBlastn) 
+   {
+      (*options)->word_size = BLAST_WORDSIZE_PROT;
       (*options)->lut_type = AA_LOOKUP_TABLE;
       
-      if (program_number == eBlastTypeBlastp ||
-          program_number == eBlastTypeRpsBlast)
+      if (program_number == eBlastTypeBlastp)
          (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
       else if (program_number == eBlastTypeBlastx)
          (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTX;
-      else if (program_number == eBlastTypeTblastn ||
-               program_number == eBlastTypeRpsTblastn)
+      else if (program_number == eBlastTypeTblastn)
          (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
       else if (program_number == eBlastTypeTblastx)
          (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
-      
-   } else {
-      (*options)->alphabet_size = BLASTNA_SIZE;
    }
 
    return 0;
@@ -655,7 +560,7 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    EBlastProgramType program_number, Boolean is_megablast, Int4 threshold,
-   Int4 word_size, Boolean ag_blast, Boolean variable_wordsize,
+   Int4 word_size, Boolean variable_wordsize,
    Boolean use_pssm)
 {
    if (!options)
@@ -692,12 +597,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    if (word_size)
       options->word_size = word_size;
    if (program_number == eBlastTypeBlastn) {
-      if (!ag_blast) {
-         options->scan_step = COMPRESSION_RATIO;
-      } else {
-         options->scan_step = CalculateBestStride(options->word_size, variable_wordsize,
-                                                  options->lut_type);
-      }
+      options->variable_wordsize = variable_wordsize;
    }
    return 0;
 }
@@ -770,6 +670,15 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 	}
 
 
+        /* FIXME: is this really needed?? */
+        if (options->variable_wordsize && 
+          ((options->word_size % 4) != 0) ) {
+         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                            "Word size must be divisible by 4 if only full "
+                            "bytes of subject sequences are matched to query");
+         return (Int2) code;
+      }
+
 	if (program_number != eBlastTypeBlastn && 
        options->lut_type == MB_LOOKUP_TABLE)
 	{
@@ -796,12 +705,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
          Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
             "Invalid lookup table type for discontiguous Mega BLAST");
          return (Int2) code;
-      } else if (options->scan_step != 1 && 
-                 options->scan_step != COMPRESSION_RATIO) {
-         Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
-            "Invalid scanning stride for discontiguous Mega BLAST");
-         return (Int2) code;
-      }
+      } 
    }
 	return 0;
 }
@@ -1031,7 +935,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                     lookup_options, blast_msg)) != 0)   
        return status;
    if ((status = BlastInitialWordOptionsValidate(program_number, 
-                    word_options, lookup_options, blast_msg)) != 0)   
+                    word_options, blast_msg)) != 0)   
        return status;
    if ((status = BlastHitSavingOptionsValidate(program_number, hit_options,
                                                blast_msg)) != 0)
@@ -1040,11 +944,13 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
    return status;
 }
 
-
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.151  2005/01/10 13:21:23  madden
+ * Move some fields from InitialWordOptions to InitialWordParameters, remove function CalculateBestStride
+ *
  * Revision 1.150  2004/12/29 13:33:47  madden
  * Removed functions relevant to parameters, move to blast_parameters.c
  *
