@@ -71,6 +71,7 @@ MakeDirs()
     COMMON_ExecRB mkdir -p $1/lib
     COMMON_ExecRB mkdir -p $1/etc
     COMMON_ExecRB mkdir -p $1/plugins
+    COMMON_ExecRB mkdir -p $1/share
     COMMON_ExecRB mkdir -p $1/executables
     COMMON_ExecRB mkdir -p $1/etc/patterns
 }
@@ -206,6 +207,14 @@ CopyFiles()
         fi
     done
 
+    for x in $src_dir/../src/gui/res/*.png; do
+        if [ -f $x ]; then
+            f=`basename $x`
+            echo "installing resource: $f"
+            rm -f $target_dir/share/$f
+            DoCopy $x $target_dir/share
+        fi
+    done
 }
 
 
