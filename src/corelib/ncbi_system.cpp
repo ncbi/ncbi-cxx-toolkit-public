@@ -1,99 +1,34 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Vladimir Ivanov, Denis Vakatov
-*
-* File Description:
-*
-*   System functions:
-*      SetHeapLimit()
-*      SetCpuTimeLimit()
-*      GetCpuCount()
-*      
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.17  2002/03/25 18:11:08  ucko
-* Include <sys/time.h> before <sys/resource.h> for FreeBSD build.
-*
-* Revision 1.16  2001/12/09 06:27:39  vakatov
-* GetCpuCount() -- get rid of warning (in 64-bit mode), change ret.val. type
-*
-* Revision 1.15  2001/11/16 16:39:58  ivanov
-* Typo, fixed NCBI_OS_WIN -> NCBI_OS_MSWIN
-*
-* Revision 1.14  2001/11/16 16:34:34  ivanov
-* Added including "windows.h" under MS Windows
-*
-* Revision 1.13  2001/11/09 16:22:16  ivanov
-* Polish source code of GetCpuCount()
-*
-* Revision 1.12  2001/11/08 21:31:44  ivanov
-* Renamed GetCPUNumber() -> GetCpuCount()
-*
-* Revision 1.11  2001/11/08 21:10:04  ivanov
-* Added function GetCPUNumber()
-*
-* Revision 1.10  2001/09/10 17:15:51  grichenk
-* Added definition of CLK_TCK (absent on some systems).
-*
-* Revision 1.9  2001/07/24 13:19:14  ivanov
-* Remove semicolon after functions header (for NCBI_OS_WIN)
-*
-* Revision 1.8  2001/07/23 16:09:26  ivanov
-* Added possibility using user defined dump print handler (fix comment)
-*
-* Revision 1.7  2001/07/23 15:23:58  ivanov
-* Added possibility using user defined dump print handler
-*
-* Revision 1.6  2001/07/05 22:09:07  vakatov
-* s_ExitHandler() -- do not printout the final statistics if the process
-* has terminated "normally"
-*
-* Revision 1.5  2001/07/05 05:27:49  vakatov
-* Get rid of the redundant <ncbireg.hpp>.
-* Added workarounds for the capricious IRIX MIPSpro 7.3 compiler.
-*
-* Revision 1.4  2001/07/04 20:03:37  vakatov
-* Added missing header <unistd.h>.
-* Check for the exit code of the signal() function calls.
-*
-* Revision 1.3  2001/07/02 21:33:07  vakatov
-* Fixed against SIGXCPU during the signal handling.
-* Increase the amount of reserved memory for the memory limit handler
-* to 10K (to fix for the 64-bit WorkShop compiler).
-* Use standard C++ arg.processing (ncbiargs) in the test suite.
-* Cleaned up the code. Get rid of the "Ncbi_" prefix.
-*
-* Revision 1.2  2001/07/02 18:45:14  ivanov
-* Added #include <sys/resource.h> and extern "C" to handlers
-*
-* Revision 1.1  2001/07/02 16:45:35  ivanov
-* Initialization
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Vladimir Ivanov, Denis Vakatov
+ *
+ * File Description:  System functions
+ *
+ * ---------------------------------------------------------------------------
+ */
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -124,15 +59,14 @@ BEGIN_NCBI_SCOPE
 // MIPSpro 7.3 workarounds:
 //   1) it declares set_new_handler() in both global and std:: namespaces;
 //   2) it apparently gets totally confused by `extern "C"' inside a namespace.
-#  if defined(NCBI_COMPILER_MIPSPRO)
-#    define set_new_handler std::set_new_handler
-#  else
+#if defined(NCBI_COMPILER_MIPSPRO)
+#  define set_new_handler std::set_new_handler
+#else
 extern "C" {
     static void s_ExitHandler(void);
     static void s_SignalHandler(int sig);
 }
-#  endif  /* NCBI_COMPILER_MIPSPRO */
-
+#endif  /* NCBI_COMPILER_MIPSPRO */
 
 
 //---------------------------------------------------------------------------
@@ -154,6 +88,7 @@ static TLimitsPrintParameter s_PrintHandlerParam = 0;
 #if !defined(CLK_TCK)  &&  defined(CLOCKS_PER_SEC)
 #  define CLK_TCK CLOCKS_PER_SEC
 #endif
+
 
 /* Routine to be called at the exit from application
  */
@@ -417,3 +352,70 @@ unsigned int GetCpuCount(void)
 
 
 END_NCBI_SCOPE
+
+
+/* ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.18  2002/04/01 18:52:49  ivanov
+ * Cosmetic changes
+ *
+ * Revision 1.17  2002/03/25 18:11:08  ucko
+ * Include <sys/time.h> before <sys/resource.h> for FreeBSD build.
+ *
+ * Revision 1.16  2001/12/09 06:27:39  vakatov
+ * GetCpuCount() -- get rid of warning (in 64-bit mode), change ret.val. type
+ *
+ * Revision 1.15  2001/11/16 16:39:58  ivanov
+ * Typo, fixed NCBI_OS_WIN -> NCBI_OS_MSWIN
+ *
+ * Revision 1.14  2001/11/16 16:34:34  ivanov
+ * Added including "windows.h" under MS Windows
+ *
+ * Revision 1.13  2001/11/09 16:22:16  ivanov
+ * Polish source code of GetCpuCount()
+ *
+ * Revision 1.12  2001/11/08 21:31:44  ivanov
+ * Renamed GetCPUNumber() -> GetCpuCount()
+ *
+ * Revision 1.11  2001/11/08 21:10:04  ivanov
+ * Added function GetCPUNumber()
+ *
+ * Revision 1.10  2001/09/10 17:15:51  grichenk
+ * Added definition of CLK_TCK (absent on some systems).
+ *
+ * Revision 1.9  2001/07/24 13:19:14  ivanov
+ * Remove semicolon after functions header (for NCBI_OS_WIN)
+ *
+ * Revision 1.8  2001/07/23 16:09:26  ivanov
+ * Added possibility using user defined dump print handler (fix comment)
+ *
+ * Revision 1.7  2001/07/23 15:23:58  ivanov
+ * Added possibility using user defined dump print handler
+ *
+ * Revision 1.6  2001/07/05 22:09:07  vakatov
+ * s_ExitHandler() -- do not printout the final statistics if the process
+ * has terminated "normally"
+ *
+ * Revision 1.5  2001/07/05 05:27:49  vakatov
+ * Get rid of the redundant <ncbireg.hpp>.
+ * Added workarounds for the capricious IRIX MIPSpro 7.3 compiler.
+ *
+ * Revision 1.4  2001/07/04 20:03:37  vakatov
+ * Added missing header <unistd.h>.
+ * Check for the exit code of the signal() function calls.
+ *
+ * Revision 1.3  2001/07/02 21:33:07  vakatov
+ * Fixed against SIGXCPU during the signal handling.
+ * Increase the amount of reserved memory for the memory limit handler
+ * to 10K (to fix for the 64-bit WorkShop compiler).
+ * Use standard C++ arg.processing (ncbiargs) in the test suite.
+ * Cleaned up the code. Get rid of the "Ncbi_" prefix.
+ *
+ * Revision 1.2  2001/07/02 18:45:14  ivanov
+ * Added #include <sys/resource.h> and extern "C" to handlers
+ *
+ * Revision 1.1  2001/07/02 16:45:35  ivanov
+ * Initialization
+ *
+ * ===========================================================================
+ */
