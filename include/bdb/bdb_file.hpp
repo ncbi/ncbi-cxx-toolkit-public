@@ -150,8 +150,12 @@ public:
     // Return the file open mode
     EOpenMode GetOpenMode() const { return m_OpenMode; }
 
-    // Flushe any cached information to disk
+    // Flush any cached information to disk
     void Sync();
+
+    // Compute database statistic, return number of records.
+    // (Can be time consuming)
+    unsigned CountRecs();
 
 private:
     CBDB_RawFile(const CBDB_RawFile&);
@@ -373,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/07/22 15:14:33  kuznets
+ * + RawFile::CountRecs() function
+ *
  * Revision 1.11  2003/07/18 20:11:05  kuznets
  * Added ReadWrite or Create open mode, added several accessor methods, Sync() method.
  *

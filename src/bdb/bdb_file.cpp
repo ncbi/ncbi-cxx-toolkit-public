@@ -332,6 +332,15 @@ void CBDB_RawFile::Sync()
     BDB_CHECK(ret, FileName().c_str());
 }
 
+unsigned CBDB_RawFile::CountRecs()
+{
+    DB_BTREE_STAT* stp;
+    int ret = m_DB->stat(m_DB, &stp, 0);
+    BDB_CHECK(ret, FileName().c_str());
+    u_int32_t rc = stp->bt_ndata;
+    return rc;
+}
+
 void CBDB_RawFile::x_Create(const char* filename, const char* database)
 {
     u_int32_t open_flags = DB_CREATE;
@@ -629,6 +638,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/07/22 15:15:02  kuznets
+ * + RawFile::CountRecs() function
+ *
  * Revision 1.15  2003/07/21 18:33:28  kuznets
  * Fixed bug with duplicate key tables
  *
