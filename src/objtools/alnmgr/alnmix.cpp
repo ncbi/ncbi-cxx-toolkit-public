@@ -319,6 +319,7 @@ void CAlnMix::Add(const CDense_seg &ds)
                                 CAlnVec::CalculateScore
                                 (s1, s2, aln_seq1->m_IsAA, aln_seq2->m_IsAA);
                         }}
+                        
                         aln_seq1->m_Score += match->m_Score;
                         aln_seq2->m_Score += match->m_Score;
 
@@ -907,10 +908,15 @@ void CAlnMix::x_CreateSegmentsVector()
                 seg->m_Index2 = row->m_RowIndex;
                 gapped_segs.push_back(seg);
 
-                if (row->m_PositiveStrand) {
-                    row->m_StartIt++;
-                } else {
-                    row->m_StartIt--;
+                // inc/dec iterators for each row of the gapped seg
+                ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
+                         seg->m_StartIts) {
+                    CAlnMixSeq * row = start_its_i->first;
+                    if (row->m_PositiveStrand) {
+                        row->m_StartIt++;
+                    } else {
+                        row->m_StartIt--;
+                    }
                 }
             }
             if (row->m_PositiveStrand) {
@@ -1276,6 +1282,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/03/18 17:16:05  todorov
+* multirow inserts bug fix
+*
 * Revision 1.37  2003/03/12 15:39:47  kuznets
 * iterate -> ITERATE
 *
