@@ -90,7 +90,9 @@
 #  include <fcntl.h>
 #  include <sys/socket.h>
 #  include <netinet/in.h>
-#  include <arpa/inet.h>
+#  ifndef NCBI_OS_BEOS
+#    include <arpa/inet.h>
+#  endif
 #  include <signal.h>
 
 #elif defined(NCBI_OS_MSWIN)
@@ -169,7 +171,11 @@ typedef int TSOCK_Handle;
 #  define SOCK_EINPROGRESS    EINPROGRESS
 #  define SOCK_ENOTCONN       ENOTCONN
 #  define SOCK_NFDS(s)        (s + 1)
-#  define SOCK_CLOSE(s)       close(s)
+#  ifdef NCBI_OS_BEOS
+#    define SOCK_CLOSE(s)     closesocket(s)
+#  else
+#    define SOCK_CLOSE(s)     close(s)	
+#  endif
 #  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
 #  if !defined(SHUT_RD)
 #    define SHUT_RD           0
@@ -896,7 +902,7 @@ static EIO_Status s_Close(SOCK sock)
     }
 
     /* Set the close()'s linger period be equal to the close timeout */
-#if defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MSWIN)
+#if (defined(NCBI_OS_UNIX) && !defined NCBI_OS_BEOS)  ||  defined(NCBI_OS_MSWIN)
     /* setsockopt() is not implemented for MAC (in MIT socket emulation lib) */
     if (sock->c_timeout  &&  sock->w_status != eIO_Closed) {
         struct linger lgr;
@@ -1838,6 +1844,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.50  2002/06/17 18:28:52  lavr
+ * +BeOS specifics (by Vladimir Ivanov)
+ *
  * Revision 6.49  2002/06/10 21:14:22  ucko
  * [SOCK_gethostbyaddr] When using getnameinfo, properly initialize the
  * sockaddr_in; in particular, set sin_len when present.
