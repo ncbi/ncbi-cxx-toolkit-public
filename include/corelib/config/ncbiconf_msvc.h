@@ -25,12 +25,14 @@
 #define HOST_VENDOR  "pc"
 #define HOST_OS      "win32"
 
-#define HAVE_STRDUP              1
-#define HAVE_STRICMP             1
-#define NCBI_USE_THROW_SPEC      1
-#define HAVE_NO_AUTO_PTR         1
-#define HAVE_NO_MINMAX_TEMPLATE  1
-#define STACK_GROWS_DOWN         1
+#define HAVE_STRDUP                1
+#define HAVE_STRICMP               1
+#define NCBI_USE_THROW_SPEC        1
+#define HAVE_NO_AUTO_PTR           1
+#define HAVE_NO_MINMAX_TEMPLATE    1
+#define STACK_GROWS_DOWN           1
+#define HAVE_IOS_REGISTER_CALLBACK 1
+#define HAVE_IOS_XALLOC            1
 
 #define SIZEOF___INT64      8
 #define SIZEOF_CHAR         1
@@ -71,4 +73,29 @@ typedef   int   ssize_t;
  *  Site localization
  */
 
+
+/* PROJECT_TREE_BUILDER-generated site localization
+ */
 #include "ncbiconf_msvc_site.h"
+
+
+/* Default site localization (for MSVC6)
+ */
+#if (_MSC_VER < 1300)
+#  if !defined(CORELIB_CONFIG___NCBICONF_MSVC_SITE__H)
+#    define HAVE_OPENGL      1
+#    define HAVE_FLTK        1
+
+#    define HAVE_ODBC        1
+#    define HAVE_ODBCSS_H    1
+
+/* optional parameters */
+/*#    define HAVE_PUBSEQ_OS   1*/
+/*#    define HAVE_LIBZ        1*/
+/*#    define HAVE_LIBBZ2      1*/
+#    define HAVE_LIBJPEG     1
+#    define HAVE_LIBTIFF     1
+#    define HAVE_LIBPNG      1
+#    define HAVE_LIBGIF      1
+#  endif
+#endif
