@@ -57,7 +57,7 @@ int main()
                 << endl;
 
             while (r->Fetch()) {
-                CDB_Char dbname(24);
+                CDB_LongChar dbname(240);
                 CDB_DateTime crdate;
 
                 r->GetItem(&dbname);
@@ -85,6 +85,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/30 18:22:10  soussov
+ * changing datatype for dbname to CDB_LongChar
+ *
  * Revision 1.1  2002/12/05 22:47:02  soussov
  * Initial revision
  *
