@@ -152,7 +152,7 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
         if (is_mature) {
             locations.insert(CConstRef<CSeq_loc>(&feat->GetLocation()));
         } else if (is_signal  &&  signal.Empty()) {
-            signal = &*feat;
+            signal = &feat->GetMappedFeature();
         }
     }
 
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2003/02/10 15:54:01  grichenk
+* Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
+*
 * Revision 1.17  2002/12/24 16:12:00  ucko
 * Make handle const per recent changes to CFeat_CI.
 *

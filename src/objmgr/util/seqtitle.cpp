@@ -231,11 +231,11 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             switch (it->GetData().Which()) {
             case CSeqFeatData::e_Gene:
                 ++genes;
-                gene.Reset(&*it);
+                gene.Reset(&it->GetMappedFeature());
                 break;
             case CSeqFeatData::e_Cdregion:
                 ++cdregions;
-                cdregion.Reset(&*it);
+                cdregion.Reset(&it->GetMappedFeature());
                 break;
             case CSeqFeatData::e_Prot:
                 ++prots;
@@ -630,11 +630,11 @@ static CConstRef<CSeq_feat> s_FindLongestFeature(const CSeq_loc& location,
             // kludge; length only works on a Seq-loc of type "whole"
             // if its Seq-id points to an object manager, which may not
             // be the case here.
-            result = &*it;
+            result = &it->GetMappedFeature();
             BREAK(it);
         } else if (GetLength(it->GetLocation(), &scope) > best_length) {
             best_length = GetLength(it->GetLocation(), &scope);
-            result = &*it;
+            result = &it->GetMappedFeature();
         }
     }
     return result;
@@ -815,6 +815,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2003/02/10 15:54:01  grichenk
+* Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
+*
 * Revision 1.14  2003/01/30 20:01:38  ucko
 * Move dot-stripping code up to match the C Toolkit's (arguably broken)
 * behavior; extend it to handle spaces too.

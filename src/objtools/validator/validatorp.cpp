@@ -1300,7 +1300,7 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
         if ( fi ) {
             // return the first one (should be the one packaged on the
             // nuc-prot set).
-            feat.Reset(&(*fi));
+            feat.Reset(&(fi->GetMappedFeature()));
         }
     }
 
@@ -1703,6 +1703,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/02/10 15:54:02  grichenk
+* Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
+*
 * Revision 1.14  2003/02/07 21:14:01  shomrat
 * IsMixedStrands signature changed
 *

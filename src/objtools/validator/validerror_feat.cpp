@@ -1309,7 +1309,7 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
             CFeat_CI::eResolve_None,
             CFeat_CI::e_Product);
         while ( mrna ) {
-            if ( (&(*mrna) != &feat) ) {
+            if ( &mrna->GetMappedFeature() != &feat ) {
                     PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleMRNAproducts,
                         "Same product Bioseq from multiple mRNA features", feat);
                     break;
@@ -2164,6 +2164,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/02/10 15:54:02  grichenk
+* Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
+*
 * Revision 1.14  2003/02/07 21:25:04  shomrat
 * SameAsCDS checks partial gene or mRNA for CDS with proper intervals, drops severity to INFO; Bug fixes
 *

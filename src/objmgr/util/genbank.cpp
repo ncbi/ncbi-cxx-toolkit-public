@@ -1565,7 +1565,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
             ||  feat->GetData().Which() == CSeqFeatData::e_Pub) {
             continue;
         }
-        v.push_back(CConstRef<CSeq_feat>(&*feat));
+        v.push_back(CConstRef<CSeq_feat>(&feat->GetMappedFeature()));
     }
     for (CFeat_CI feat(m_Scope,everywhere, CSeqFeatData::e_not_set,
                        CAnnot_CI::eOverlap_Intervals,
@@ -1576,7 +1576,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
             ||  feat->GetData().Which() == CSeqFeatData::e_Pub) {
             continue;
         }
-        v.push_back(CConstRef<CSeq_feat>(&*feat));
+        v.push_back(CConstRef<CSeq_feat>(&feat->GetMappedFeature()));
     }
     sort(v.begin(), v.end(), s_CompareFeats);
 
@@ -2848,6 +2848,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.32  2003/02/10 15:54:01  grichenk
+* Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
+*
 * Revision 1.31  2003/01/24 20:15:26  vasilche
 * Removed warning on GCC.
 *

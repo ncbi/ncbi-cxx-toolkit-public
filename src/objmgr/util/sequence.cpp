@@ -1730,7 +1730,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
             continue;
         if ( cur_diff < diff  ||  diff < 0 ) {
             diff = cur_diff;
-            feat_ref = &(*feat_it);
+            feat_ref = &feat_it->GetMappedFeature();
         }
     }
     return feat_ref;
@@ -1773,7 +1773,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
             continue;
         if ( cur_diff < diff  ||  diff < 0 ) {
             diff = cur_diff;
-            feat_ref = &(*feat_it);
+            feat_ref = &feat_it->GetMappedFeature();
         }
     }
     return feat_ref;
@@ -2815,6 +2815,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.36  2003/02/10 15:54:01  grichenk
+* Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
+*
 * Revision 1.35  2003/02/06 22:26:27  vasilche
 * Use CSeq_id::Assign().
 *
