@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/08/25 18:42:13  thiessen
+* rename main object
+*
 * Revision 1.21  2000/08/25 14:22:00  thiessen
 * minor tweaks
 *
@@ -95,6 +98,7 @@
 * ===========================================================================
 */
 
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <serial/serial.hpp>            
@@ -103,7 +107,7 @@
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 
 // For now, this module will contain a simple wxWindows + wxGLCanvas interface
-#include "cn3d/main.hpp"
+#include "cn3d/cn3d_main_wxwin.hpp"
 #include "cn3d/style_manager.hpp"
 
 USING_NCBI_SCOPE;
@@ -269,7 +273,8 @@ void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
     glCanvas->SetCurrent();
     switch (event.GetId()) {
         case MID_CENTER:
-            glCanvas->structureSet->rotationCenter = Vector(19.791, 50.519, 58.057);
+            if (glCanvas->structureSet)
+                glCanvas->structureSet->rotationCenter = Vector(19.791, 50.519, 58.057);
             break;
         case MID_TRANSLATE:
             glCanvas->renderer.ChangeView(OpenGLRenderer::eXYTranslateHV, 25, 25);
