@@ -301,12 +301,12 @@ public:
     /// Check if directory entry a file.
     /// @sa
     ///   IsDir(), GetType()
-    bool IsFile(void) const;
+    bool IsFile(EFollowLinks follow = eFollowLinks) const;
 
     /// Check if directory entry a directory.
     /// @sa
     ///   IsFile(), GetType()
-    bool IsDir(void) const;
+    bool IsDir(EFollowLinks follow = eFollowLinks) const;
 
     /// Which directory entry type.
     enum EType {
@@ -327,7 +327,7 @@ public:
     /// @return
     ///   Return one of the values in EType. If the directory entry does
     ///   not exist return "eUnknown".
-    EType GetType(void) const;
+    EType GetType(EFollowLinks follow = eIgnoreLinks) const;
 
     /// Get time stamp of directory entry.
     ///
@@ -987,15 +987,15 @@ string CDirEntry::GetExt(void) const
 }
 
 inline
-bool CDirEntry::IsFile(void) const
+bool CDirEntry::IsFile(EFollowLinks follow) const
 {
-    return GetType() == eFile;
+    return GetType(follow) == eFile;
 }
 
 inline
-bool CDirEntry::IsDir(void) const
+bool CDirEntry::IsDir(EFollowLinks follow) const
 {
-    return GetType() == eDir;
+    return GetType(follow) == eDir;
 }
 
 inline
@@ -1010,7 +1010,7 @@ bool CDirEntry::Exists(void) const
 inline
 bool CFile::Exists(void) const
 {
-    return GetType() == eFile;
+    return IsFile();
 }
 
 
@@ -1019,7 +1019,7 @@ bool CFile::Exists(void) const
 inline
 bool CDir::Exists(void) const
 {
-    return GetType() == eDir;
+    return IsDir();
 }
 
 
@@ -1044,6 +1044,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/04/28 19:04:16  ucko
+ * Give GetType(), IsFile(), and IsDir() an optional EFollowLinks
+ * parameter (currently only honored on Unix).
+ *
  * Revision 1.37  2004/03/17 15:39:37  ivanov
  * CFile:: Fixed possible race condition concerned with temporary file name
  * generation. Added ETmpFileCreationMode enum. Fixed GetTmpName[Ex] and

@@ -957,7 +957,7 @@ bool CDirEntry::SetTime(CTime *modification, CTime *last_access) const
 }
 
  
-CDirEntry::EType CDirEntry::GetType(void) const
+CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 {
 #if defined(NCBI_OS_MAC)
     OSErr   err;
@@ -971,11 +971,17 @@ CDirEntry::EType CDirEntry::GetType(void) const
 
 #else
     struct stat st;
+    int         errcode;
 #  if defined(NCBI_OS_MSWIN)
-    if (stat(GetPath().c_str(), &st) != 0) {
+    errcode = stat(GetPath().c_str(), &st);
 #  elif defined(NCBI_OS_UNIX)
-    if (lstat(GetPath().c_str(), &st) != 0) {
+    if (follow == eFollowLinks) {
+        errcode = stat(GetPath().c_str(), &st);
+    } else {
+        errcode = lstat(GetPath().c_str(), &st);
+    }
 #  endif
+    if (errcode != 0) {
         return eUnknown;
     }
     unsigned int mode = st.st_mode & S_IFMT;
@@ -1036,7 +1042,7 @@ bool CDirEntry::Remove(EDirRemoveMode mode) const
     OSErr err = ::FSpDelete(&FSS());
     return err == noErr;
 #else
-    if ( IsDir() ) {
+    if ( IsDir(eIgnoreLinks) ) {
         if (mode == eOnlyEmpty) {
             return rmdir(GetPath().c_str()) == 0;
         } else {
@@ -1671,7 +1677,7 @@ bool CDir::Remove(EDirRemoveMode mode) const
                 return false;
             }
         } else {
-            if ( item.IsDir() ) {
+            if ( item.IsDir(eIgnoreLinks) ) {
                 continue;
             }
             if ( !item.Remove() ) {
@@ -1963,6 +1969,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2004/04/28 19:04:29  ucko
+ * Give GetType(), IsFile(), and IsDir() an optional EFollowLinks
+ * parameter (currently only honored on Unix).
+ *
  * Revision 1.74  2004/04/28 15:56:49  ivanov
  * CDirEntry::GetType(): fixed bug with incorrect entry type determination
  * on some platforms
