@@ -21,7 +21,7 @@ ASNModule::~ASNModule()
 void ASNModule::AddDefinition(const string& def, const AutoPtr<ASNType> type)
 {
     //type->name = def;
-    _TRACE(name << '.' << def << " ::= " << typeid(*type).name());
+    //_TRACE(name << '.' << def << " ::= " << typeid(*type).name());
     definitions.push_back(make_pair(def, type));
 }
 

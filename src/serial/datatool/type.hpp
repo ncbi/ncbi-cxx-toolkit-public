@@ -67,9 +67,9 @@ public:
     virtual const ASNType* Resolve(void) const;
     virtual ASNType* Resolve(void);
 
-    //    string name; // for named type
     bool main;      // true for types defined in main module
     bool exported;  // true for types listed in EXPORT statements
+    bool checked;   // true if this type already checked
     CDataTypeContext context;
 
     // tree info

@@ -111,18 +111,18 @@ ASNType* CModuleSet::Resolve(const string& moduleName,
 {
     // find module definition
     TModules::const_iterator mi = modules.find(moduleName);
-    if ( mi != modules.end() ) {
-        ASNModule* module = mi->second.get();
-        const ASNModule::TypeInfo* t = module->FindType(typeName);
-        if ( t && t->type ) {
-            if ( !t->type->exported )
-                ERR_POST("not exported: " + moduleName + "." + typeName);
-            return t->type;
-        }
-        THROW1_TRACE(CTypeNotFound,
-                     "type not found: " + moduleName + '.' + typeName);
+    if ( mi == modules.end() ) {
+        // no such module
+        THROW1_TRACE(CModuleNotFound, "module not found: " + moduleName +
+                     " for type " + typeName);
     }
-    // no such module
-    THROW1_TRACE(CModuleNotFound, "module not found: " + moduleName +
-                 " for type " + typeName);
+    ASNModule* module = mi->second.get();
+    const ASNModule::TypeInfo* t = module->FindType(typeName);
+    if ( t && t->type ) {
+        if ( !t->type->exported )
+            ERR_POST("not exported: " + moduleName + "." + typeName);
+        return t->type;
+    }
+    THROW1_TRACE(CTypeNotFound,
+                 "type not found: " + moduleName + '.' + typeName);
 }

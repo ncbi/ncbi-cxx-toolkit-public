@@ -107,127 +107,6 @@ string GetTemplateMacro(const string& tmpl)
     return "STL_" + tmpl;
 }
 
-inline
-string CTypeStrings::GetRef(void) const
-{
-    switch ( type ) {
-    case eStdType:
-        return "STD, (" + cType + ')';
-    case eClassType:
-        return "CLASS, (" + cType + ')';
-    default:
-        return macro;
-    }
-}
-
-void CTypeStrings::SetStd(const string& c)
-{
-    type = eStdType;
-    cType = c;
-}
-
-void CTypeStrings::SetClass(const string& c)
-{
-    type = eClassType;
-    cType = c;
-}
-
-void CTypeStrings::SetComplex(const string& c, const string& m)
-{
-    type = eComplexType;
-    cType = c;
-    macro = m;
-}
-
-void CTypeStrings::SetComplex(const string& c, const string& m,
-                              const CTypeStrings& arg)
-{
-    string cc = c + "< " + arg.cType + " >";
-    string mm = m + ", (" + arg.GetRef() + ')';
-    AddIncludes(arg);
-    type = eComplexType;
-    cType = cc;
-    macro = mm;
-}
-
-void CTypeStrings::SetComplex(const string& c, const string& m,
-                              const CTypeStrings& arg1,
-                              const CTypeStrings& arg2)
-{
-    string cc = c + "< " + arg1.cType + ", " + arg2.cType + " >";
-    string mm = m + ", (" + arg1.GetRef() + ", " + arg2.GetRef() + ')';
-    AddIncludes(arg1);
-    AddIncludes(arg2);
-    type = eComplexType;
-    cType = cc;
-    macro = mm;
-}
-
-template<class C>
-inline
-void insert(C& dst, const C& src)
-{
-	for ( typename C::const_iterator i = src.begin(); i != src.end(); ++i )
-		dst.insert(*i);
-}
-
-void CTypeStrings::AddIncludes(const CTypeStrings& arg)
-{
-    insert(m_HPPIncludes, arg.m_HPPIncludes);
-    insert(m_CPPIncludes, arg.m_CPPIncludes);
-    insert(m_ForwardDeclarations, arg.m_ForwardDeclarations);
-}
-
-void CTypeStrings::ToSimple(void)
-{
-    switch (type ) {
-    case eStdType:
-    case ePointerType:
-        return;
-    case eClassType:
-    case eComplexType:
-        macro = "POINTER, (" + GetRef() + ')';
-        cType += '*';
-        m_CPPIncludes = m_HPPIncludes;
-        m_HPPIncludes.clear();
-        type = ePointerType;
-        break;
-    }
-}
-
-inline
-void CTypeStrings::AddMember(CClassCode& code,
-                             const string& member) const
-{
-    x_AddMember(code, "NCBI_NS_NCBI::NcbiEmptyString", member);
-}
-
-inline
-void CTypeStrings::AddMember(CClassCode& code,
-                             const string& name, const string& member) const
-{
-    x_AddMember(code, '"' + name + '"', member);
-}
-
-void CTypeStrings::x_AddMember(CClassCode& code,
-                               const string& name, const string& member) const
-{
-    code.AddForwardDeclarations(m_ForwardDeclarations);
-    code.AddHPPIncludes(m_HPPIncludes);
-    code.AddCPPIncludes(m_CPPIncludes);
-    code.HPP() <<
-        "    " << cType << ' ' << member << ';' << endl;
-
-    if ( type == eComplexType ) {
-        code.CPP() <<
-            "    ADD_N_M(" << name << ", " << member << ", " << macro << ')';
-    }
-    else {
-        code.CPP() <<
-            "    ADD_N_STD_M(" << name << ", " << member << ')';
-    }
-}
-
 ASNType::ASNType(const CDataTypeContext& c)
     : main(false), exported(false), context(c), inSet(false)
 {
@@ -652,21 +531,20 @@ TObjectPtr ASNEnumeratedType::CreateDefault(const ASNValue& value)
 
 CTypeInfo* ASNEnumeratedType::CreateTypeInfo(void)
 {
-    AutoPtr<CEnumeratedTypeInfo> info(new CEnumeratedTypeInfo(IdName(),
-                                                              IsInteger()));
+    AutoPtr<CEnumeratedTypeValues> info(new CEnumeratedTypeValues(IdName(),
+                                                                IsInteger()));
     for ( TValues::const_iterator i = values.begin();
           i != values.end(); ++i ) {
         info->AddValue(i->id, i->value);
     }
-    return info.release();
+    return new CEnumeratedTypeInfo(info.release());
 }
 
 void ASNEnumeratedType::GetCType(CTypeStrings& tType, CClassCode& code) const
 {
-    CNcbiOstrstream b;
     string type = GetVar(code, "_type");
     string enumName;
-    if ( type.empty() ) {
+    {
         // generate enum name from ASN type or field name
         const string& keyPrefix = context.GetConfigPos().GetKeyPrefix();
         if ( !keyPrefix.empty() ) {
@@ -684,6 +562,8 @@ void ASNEnumeratedType::GetCType(CTypeStrings& tType, CClassCode& code) const
         else {
             enumName = 'E' + Identifier(context.GetConfigPos().GetSection());
         }
+    }
+    if ( type.empty() ) {
         // make C++ type name
         if ( IsInteger() )
             type = "int";
@@ -691,20 +571,40 @@ void ASNEnumeratedType::GetCType(CTypeStrings& tType, CClassCode& code) const
             type = enumName;
     }
     else {
-        enumName = type;
+        if ( type[0] == 'E' )
+            enumName = type;
     }
-    b << "    enum " << enumName << " {";
-    for ( TValues::const_iterator i = values.begin();
-          i != values.end(); ++i ) {
-        if ( i != values.begin() )
-            b << ',';
-        b << endl <<
-            "        " << 'e' + Identifier(i->id) << " = " << i->value;
+    {
+        CNcbiOstrstream h;
+        h << "    enum " << enumName << " {";
+        for ( TValues::const_iterator i = values.begin();
+              i != values.end(); ++i ) {
+            if ( i != values.begin() )
+                h << ',';
+            h << endl <<
+                "        e" << Identifier(i->id) << " = " << i->value;
+        }
+        h << endl <<
+            "    };" << endl <<
+            "    static const NCBI_NS_NCBI::CEnumeratedTypeValues* GetEnumInfo_"
+          << enumName << "(void);" << endl;
+
+        CNcbiOstrstream c;
+        c << "BEGIN_ENUM_INFO(" << code.GetType()->ClassName(code) <<
+            "_Base::GetEnumInfo_" << enumName << ", " << enumName << ", " <<
+            (IsInteger()? "true": "false") << ")" << endl <<
+            '{' << endl;
+        for ( TValues::const_iterator i = values.begin();
+              i != values.end(); ++i ) {
+            c << "    ADD_ENUM_VALUE(\"" << i->id << "\", e" <<
+                Identifier(i->id) << ");" << endl;
+        }
+        c <<
+            '}' << endl <<
+            "END_ENUM_INFO" << endl;
+        code.AddEnum(string(h.str(), h.pcount()), string(c.str(), c.pcount()));
     }
-    b << endl <<
-        "    };" << endl;
-    code.AddEnum(string(b.str(), b.pcount()));
-    tType.SetStd(type);
+    tType.SetEnum(type, enumName);
 }
 
 ASNIntegerType::ASNIntegerType(const CDataTypeContext& context)
@@ -798,7 +698,13 @@ void ASNUserType::GetCType(CTypeStrings& tType, CClassCode& code) const
 
 const ASNType* ASNUserType::Resolve(void) const
 {
-    return GetModule().Resolve(userTypeName);
+    try {
+        return GetModule().Resolve(userTypeName);
+    }
+    catch (CTypeNotFound& exc) {
+        THROW1_TRACE(CTypeNotFound,
+                     context.GetFilePos().ToString() + ": " + exc.what());
+    }
 }
 
 ASNType* ASNUserType::Resolve(void)

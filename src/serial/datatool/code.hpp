@@ -30,9 +30,23 @@ public:
     ~CFileCode(void);
 
     bool AddType(const ASNType* type);
-    CClassCode* GetClassCode(const ASNType* type);
 
     string Include(const string& s) const;
+    const string& GetFileBaseName(void) const
+        {
+            return m_BaseName;
+        }
+    const string& GetHeaderPrefix(void) const
+        {
+            return m_HeaderPrefix;
+        }
+    string GetHPPName(void) const;
+    string GetCPPName(void) const;
+    string GetUserHPPName(void) const;
+    string GetUserCPPName(void) const;
+    string GetBaseDefine(void) const;
+    string GetHPPDefine(void) const;
+    string GetUserHPPDefine(void) const;
 
     void AddHPPInclude(const string& s);
     void AddCPPInclude(const string& s);
@@ -44,6 +58,8 @@ public:
 
     void GenerateHPP(const string& path) const;
     void GenerateCPP(const string& path) const;
+    bool GenerateUserHPP(const string& path) const;
+    bool GenerateUserCPP(const string& path) const;
 
     const CNcbiRegistry& GetRegistry(void) const
         {
@@ -55,11 +71,12 @@ public:
         }
     
 private:
+    // current type state
+    const CNcbiRegistry& m_Registry;
+
+    // file names
+    string m_BaseName;
     string m_HeaderPrefix;
-    string m_HeaderName;
-    string m_UserHeaderName;
-    string m_CPPName;
-    string m_HeaderDefineName;
 
     TIncludes m_HPPIncludes;
     TIncludes m_CPPIncludes;
@@ -68,8 +85,6 @@ private:
     // classes code
     TClasses m_Classes;
 
-    // current type state
-    const CNcbiRegistry& m_Registry;
 };
 
 class CClassCode
@@ -77,7 +92,7 @@ class CClassCode
 public:
     typedef CFileCode::TIncludes TIncludes;
     typedef CFileCode::TForwards TForwards;
-    typedef set<string> TEnums;
+    typedef list< pair<string, string> > TEnums;
 
     CClassCode(CFileCode& file, const string& typeName, const ASNType* type);
     ~CClassCode(void);
@@ -145,9 +160,9 @@ public:
         {
             m_Code.AddForwardDeclarations(forwards);
         }
-    void AddEnum(const string& enumDef)
+    void AddEnum(const string& enumHPP, const string& enumCPP)
         {
-            m_Enums.insert(enumDef);
+            m_Enums.push_back(make_pair(enumHPP, enumCPP));
         }
 
     CNcbiOstream& HPP(void)
@@ -186,10 +201,12 @@ public:
         eStdType,
         eClassType,
         eComplexType,
-        ePointerType
+        ePointerType,
+        eEnumType
     };
     void SetStd(const string& c);
     void SetClass(const string& c);
+    void SetEnum(const string& c, const string& e);
     void SetComplex(const string& c, const string& m);
     void SetComplex(const string& c, const string& m,
                     const CTypeStrings& arg);
