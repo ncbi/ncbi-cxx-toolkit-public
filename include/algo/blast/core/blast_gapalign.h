@@ -212,6 +212,8 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
 			    BlastInitHitList* init_hitlist,
 			    BlastHSPList** hsp_list_ptr);
 
+
+
 /** Performs gapped extension for all non-Mega BLAST programs, given
  * that ungapped extension has been done earlier.
  * Sorts initial HSPs by score (from ungapped extension);
@@ -244,6 +246,8 @@ Int2 BLAST_GetGappedScore (Uint1 program_number, BLAST_SequenceBlk* query,
  * @param subject The subject sequence [in]
  * @param gap_align The gapped alignment structure [in] [out]
  * @param score_options Scoring parameters [in]
+ * @param ext_options Extension options, specifying which algorithm to use
+ *                     for gapped extension [in]
  * @param q_start Offset in query where to start alignment [in]
  * @param s_start Offset in subject where to start alignment [in]
  * @param subject_length Maximal allowed extension in subject [in]
@@ -252,6 +256,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program,
         Uint1* query, Uint1* subject, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringOptions* score_options,
+        const BlastExtensionOptions* ext_options,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length);
 
 /** Perform a gapped alignment with traceback for PHI BLAST
