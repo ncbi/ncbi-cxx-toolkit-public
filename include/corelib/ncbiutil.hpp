@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/09/14 18:49:09  vasilche
+* Added AutoMap template to convert cached maps for set/list/vector of values.
+*
 * Revision 1.4  1999/09/03 21:29:56  vakatov
 * Fixes for AutoPtr::  specify template parameter for the base "auto_ptr"
 * + #include <memory>
@@ -93,6 +96,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <map>
+#include <set>
 #include <memory>
 #include <list>
 #include <vector>
@@ -254,6 +258,32 @@ public:
                     reset();
                     auto_ptr<X>::reset(p);
                 }
+        }
+};
+
+template<class Result, class Source, class ToKey>
+inline
+Result&
+AutoMap(auto_ptr<Result>& cache, const Source& source, const ToKey& toKey)
+{
+    Result* ret = cache.get();
+    if ( !ret ) {
+        cache.reset(ret = new Result);
+        for ( typename Source::const_iterator i = source.begin();
+              i != source.end();
+              ++i ) {
+            ret->insert(Result::value_type(toKey.GetKey(*i), *i));
+        }
+    }
+    return *ret;
+}
+
+template<class Value>
+struct CNameGetter
+{
+    const string& GetKey(const Value* value) const
+        {
+            return value->GetName();
         }
 };
 
