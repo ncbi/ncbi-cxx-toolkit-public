@@ -107,6 +107,8 @@ esac
 
 count_ok=0
 count_err=0
+count_absent=0
+
 rm -f "\$res_journal"
 rm -f "\$res_log"
 
@@ -125,8 +127,9 @@ echo "----------------------------------------------------------------------"
 if test ${result} -eq 0 ; then
     cat >> ${CHECK_RUN_FILE} <<EOF
 echo
-echo "Succeded: \${count_ok}"
-echo "Failed:   \${count_err}"
+echo "Succeded : \${count_ok}"
+echo "Failed   : \${count_err}"
+echo "Absent   : \${count_absent}"
 echo
 
 if test \${count_err} -eq 0 ; then

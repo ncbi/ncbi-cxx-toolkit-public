@@ -24,6 +24,7 @@
 x_out=$CHECK_RUN_FILE
 x_srcdir=$1
 x_test=$2
+x_exeext=$3
 
 
 # Check to test application
@@ -37,7 +38,7 @@ if grep -c CHECK_CMD $x_srcdir/Makefile.$x_test.app > /dev/null ; then
    echo "TEST -- ${x_tpath}"
 else 
    echo "SKIP -- ${x_tpath}"
-   exit 0; 
+   exit 0
 fi
 
 
@@ -57,13 +58,19 @@ if test ! -z "${x_files}" ; then
    done
 fi
 
+
+# Get app name
+x_app=`grep '^ *APP' ${x_srcdir}/Makefile.${x_test}.app`
+x_app=`echo "$x_app" | sed -e 's/^.*=//'`${x_exeext}
+
 # Get cmd-lines to run test
 x_run=`grep '^ *CHECK_CMD' ${x_srcdir}/Makefile.${x_test}.app`
 x_run=`echo "$x_run" | sed -e 's/^.*=//'`
 
 if test -z "${x_run}"; then
     # If command line not defined, then just run the test without parameters
-    x_run=${x_test}
+#    x_run=`echo "${x_app}" | sed -e 's/^ *//g'`
+    x_run="${x_test}${x_exeext}"
 fi
 x_run=`echo "${x_run}" | sed -e 's/ /%gj_s4%/g'`
 
@@ -87,25 +94,35 @@ cat >> $x_out <<EOF
      echo 
    ) > $test_out 2>&1
    rm -f $x_pwd/core
-   ( cd $x_pwd  &&  $x_cmd ) >> $test_out 2>&1
-   result=\$?
 
-   echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> $test_out
-   echo "@@@ EXIT CODE: \${result}" >> $test_out
-   if test -f $x_pwd/core ; then
-      echo "@@@ CORE DUMPED" >> $test_out
-      rm -f $x_pwd/core
-   fi
-
+   cd $x_pwd
    x_cmd=\`echo "$x_pwd/$x_cmd" | sed 's%^.*/build/%%'\`
-   if test \${result} -eq 0 ; then
-      echo "OK  --  \$x_cmd"
-      echo "OK  --  \$x_cmd" >> \${res_log}
-      count_ok=\`expr \${count_ok} + 1\`
+
+   if test -f $x_app; then
+      ($x_cmd) >> $test_out 2>&1
+      result=\$?
+
+      echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> $test_out
+      echo "@@@ EXIT CODE: \${result}" >> $test_out
+      if test -f $x_pwd/core ; then
+         echo "@@@ CORE DUMPED" >> $test_out
+         rm -f $x_pwd/core
+      fi
+
+      x_cmd=\`echo "$x_pwd/$x_cmd" | sed 's%^.*/build/%%'\`
+      if test \${result} -eq 0 ; then
+         echo "OK  --  \$x_cmd"
+         echo "OK  --  \$x_cmd" >> \${res_log}
+         count_ok=\`expr \${count_ok} + 1\`
+      else
+         echo "ERR --  \$x_cmd"
+         echo "ERR [\${result}] --  \$x_cmd" >> \${res_log}
+         count_err=\`expr \${count_err} + 1\`
+      fi
    else
-      echo "ERR --  \$x_cmd"
-      echo "ERR [\${result}] --  \$x_cmd" >> \${res_log}
-      count_err=\`expr \${count_err} + 1\`
+      echo "ABS --  \$x_cmd"
+      echo "ABS --  \$x_cmd" >> \${res_log}
+      count_absent=\`expr \${count_absent} + 1\`
    fi
 
 EOF
