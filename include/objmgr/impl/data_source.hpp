@@ -204,6 +204,7 @@ public:
     /// existing TSE tree of this data-source, or if "bioseq" is not a Bioseq.
     bool AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap);
 
+/*
     /// Add seq-data to a Bioseq.
     /// Return FALSE and do nothing if "bioseq" is not a node in an
     /// existing TSE tree of this data-source, or if "bioseq" is not a Bioseq.
@@ -217,6 +218,7 @@ public:
     bool AttachSeqData(CSeq_entry& bioseq, CDelta_ext& seq_seg,
                        size_t index,
                        TSeqPos start, TSeqPos length);
+*/
 
     /// Add annotations to a Seq-entry.
     /// Return FALSE and do nothing if "parent" is not a node in an
@@ -514,6 +516,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/08/06 20:51:16  grichenk
+* Removed declarations of non-existent methods
+*
 * Revision 1.61  2003/08/04 17:04:29  grichenk
 * Added default data-source priority assignment.
 * Added support for iterating all annotations from a

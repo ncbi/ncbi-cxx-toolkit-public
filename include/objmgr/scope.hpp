@@ -125,10 +125,12 @@ public:
     bool AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
     // Add sequence map for a bioseq if it is in this scope
     bool AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap);
+/*
     // Add seq-data to a bioseq if it is in this scope
     bool AttachSeqData(CSeq_entry& bioseq, CSeq_data& seq,
                        size_t index,
                        TSeqPos start, TSeqPos length);
+*/
 
     // Get bioseq handle by seq-id
     // Declared "virtual" to avoid circular dependencies with seqloc
@@ -280,6 +282,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2003/08/06 20:51:14  grichenk
+* Removed declarations of non-existent methods
+*
 * Revision 1.56  2003/08/04 17:02:57  grichenk
 * Added constructors to iterate all annotations from a
 * seq-entry or seq-annot.
