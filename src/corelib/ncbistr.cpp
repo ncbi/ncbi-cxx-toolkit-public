@@ -874,6 +874,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
 
     while (pos < len) {
         SIZE_TYPE column     = s_VisibleWidth(*pfx, is_html);
+        SIZE_TYPE column0    = column;
         // the next line will start at best_pos
         SIZE_TYPE best_pos   = NPOS;
         EScore    best_score = eForced;
@@ -914,6 +915,14 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 best_pos   = score_pos;
                 best_score = score;
             }
+
+            while (pos < len - 1  &&  str[pos + 1] == '\b') {
+                // Account for backspaces
+                ++pos;
+                if (column > column0) {
+                    --column;
+                }
+            }
         }
 
         if (best_score != eNewline  &&  column <= width) {
@@ -924,7 +933,18 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             --best_pos;
         }
         arr.push_back(*pfx);
-        arr.back() += str.substr(pos, best_pos - pos);
+        {{ // eat backspaces and the characters (if any) that precede them
+            string    line(str, pos, best_pos - pos);
+            SIZE_TYPE bs = 0;
+            while ((bs = line.find('\b', bs)) != NPOS) {
+                if (bs > 0) {
+                    line.erase(bs - 1, 2);
+                } else {
+                    line.erase(0, 1);
+                }
+            }
+            arr.back() += line;
+        }}
         arr.back() += hyphen;
         pos    = best_pos;
         pfx    = prefix;
@@ -936,6 +956,9 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 ++pos;
             }
         } else if (best_score == eNewline) {
+            ++pos;
+        }
+        while (pos < len  &&  str[pos] == '\b') {
             ++pos;
         }
     }
@@ -1014,6 +1037,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2003/03/11 16:57:12  ucko
+ * Process backspaces in NStr::Wrap, allowing in particular the use of
+ * " \b" ("-\b") to indicate mid-word break (hyphenation) points.
+ *
  * Revision 1.85  2003/03/10 18:57:08  kuznets
  * iterate->ITERATE
  *
