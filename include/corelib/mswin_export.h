@@ -84,8 +84,6 @@
  */
 #ifdef NCBI_SEQ_EXPORTS
 #  define NCBI_BLAST_EXPORTS
-#  define NCBI_FLAT_EXPORTS
-#  define NCBI_ID1_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
 #  define NCBI_SEQBLOCK_EXPORTS
 #  define NCBI_SEQCODE_EXPORTS
@@ -94,6 +92,15 @@
 #  define NCBI_SEQRES_EXPORTS
 #  define NCBI_SEQSET_EXPORTS
 #  define NCBI_SUBMIT_EXPORTS
+#endif
+
+
+/*
+ * Definitions for NCBI_SEQ.DLL
+ */
+#ifdef NCBI_SEQEXT_EXPORTS
+#  define NCBI_ID1_EXPORTS
+#  define NCBI_FLAT_EXPORTS
 #  define NCBI_XALNMGR_EXPORTS
 #  define NCBI_XOBJMGR_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORTS
@@ -714,6 +721,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.19  2003/04/14 19:37:42  ivanov
+ * Added master export group NCBI_SEQEXT_EXPORTS. Moved a part code from NCBI_SEQ.DLL to NCBI_SEQEXT.DLLmswin_export.h
+ *
  * Revision 1.18  2003/04/10 13:31:40  dicuccio
  * Added BLAST objects to NCBI_SEQ
  *
