@@ -95,14 +95,13 @@ TDS_INT tds_get_int(TDSSOCKET *tds);
 #endif
 
 #ifdef NCBI_FTDS
-#if !defined(UTIL_C_PROCESSING)  &&  defined(NDEBUG)
-#ifdef HAVE_CPP_STD_VARARGS
-#define tdsdump_log(...)
-#endif
-#ifdef HAVE_CPP_GNU_VARARGS
-#define tdsdump_log(args...)
-#endif
-#endif
+#  if !defined(UTIL_C_PROCESSING)  &&  defined(NDEBUG)
+#    if defined(HAVE_CPP_GNU_VARARGS)
+#      define tdsdump_log(args...)
+#    elif defined(HAVE_CPP_STD_VARARGS)
+#      define tdsdump_log(...)
+#    endif
+#  endif
 #endif
 
 #endif
