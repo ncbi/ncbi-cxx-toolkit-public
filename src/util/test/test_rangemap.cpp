@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/01/16 20:52:31  vasilche
+* Simplified some CRangeMap code.
+*
 * Revision 1.7  2001/01/11 15:00:47  vasilche
 * Added CIntervalTree for seraching on set of intervals.
 *
@@ -88,6 +91,7 @@ public:
     void StartFrom(TRange search) const;
     void From(TRange search, TRange range) const;
     void End(void) const;
+    void PrintTotalScannedNumber(size_t number) const;
 
     TRange RandomRange(void) const;
 
@@ -102,6 +106,7 @@ public:
     int m_ScanLength;
     
     bool m_Silent;
+    bool m_PrintTotalScannedNumber;
 };
 
 
@@ -177,6 +182,13 @@ void CTestRangeMap::End(void) const
 }
 
 inline
+void CTestRangeMap::PrintTotalScannedNumber(size_t number) const
+{
+    if ( m_PrintTotalScannedNumber )
+        NcbiCout << "Total scanned intervals: " << number << NcbiEndl;
+}
+
+inline
 CTestRangeMap::TRange CTestRangeMap::RandomRange(void) const
 {
     int from = int(rand() % m_Length);
@@ -211,6 +223,7 @@ void CTestRangeMap::TestIntervalTree(void) const
         FromAll(i.GetInterval());
     }
 
+    size_t scannedCount = 0;
     for ( int count = 0; count < m_ScanCount; ++count ) {
         for ( int pos = 0; pos <= m_Length + 2*m_RangeLength;
               pos += m_ScanStep ) {
@@ -221,9 +234,11 @@ void CTestRangeMap::TestIntervalTree(void) const
             
             for ( TMapCI i = m.IntervalsOverlapping(range); i; ++i ) {
                 From(range, i.GetInterval());
+                ++scannedCount;
             }
         }
     }
+    PrintTotalScannedNumber(scannedCount);
 
     End();
 }
@@ -255,6 +270,7 @@ void CTestRangeMap::TestRangeMap(void) const
         FromAll(i->first);
     }
 
+    size_t scannedCount = 0;
     for ( int count = 0; count < m_ScanCount; ++count ) {
         for ( int pos = 0; pos <= m_Length + 2*m_RangeLength;
               pos += m_ScanStep ) {
@@ -265,9 +281,11 @@ void CTestRangeMap::TestRangeMap(void) const
             
             for ( TMapCI i = m.begin(range), end = m.end(); i != end; ++i ) {
                 From(range, i->first);
+                ++scannedCount;
             }
         }
     }
+    PrintTotalScannedNumber(scannedCount);
 
     End();
 }
@@ -293,7 +311,9 @@ void CTestRangeMap::Init(void)
                      CArgDescriptions::eInteger, "1");
 
     d->AddFlag("s",
-               "do not write any output");
+               "silent operation - do not print log");
+    d->AddFlag("psn",
+               "print total number of scanned intervals");
 
     d->AddDefaultKey("n", "rangeNumber",
                      "number of intervals to use",
@@ -324,6 +344,7 @@ int CTestRangeMap::Run(void)
 
     m_Count = args["c"].AsInteger();
     m_Silent = args["s"];
+    m_PrintTotalScannedNumber = args["psn"];
     m_RangeNumber = args["n"].AsInteger();
     m_Length = args["l"].AsInteger();
     m_RangeLength = args["il"].AsInteger();

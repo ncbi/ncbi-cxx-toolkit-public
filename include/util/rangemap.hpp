@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/01/16 20:52:24  vasilche
+* Simplified some CRangeMap code.
+*
 * Revision 1.9  2001/01/11 15:00:39  vasilche
 * Added CIntervalTree for seraching on set of intervals.
 *
@@ -231,8 +234,9 @@ private:
     void Find(range_type key, TSelectMapRef selectMap)
         {
             if ( !key.Empty() ) {
-                position_type selectKey = TRangeMap::get_max_length(key);
-                TSelectIter selectIter = selectMap.find(selectKey);
+                TSelectIter selectIter =
+                    selectMap.lower_bound(traits::get_key_length(key));
+                // now selectIter->first >= key.length
                 TSelectIter selectIterEnd = selectMap.end();
                 if ( selectIter != selectIterEnd ) {
                     TLevelIter levelIter = selectIter->second.find(key);
@@ -266,6 +270,34 @@ public:
 	typedef CRange<position_type> range_type;
 	typedef Mapped mapped_type;
 	typedef pair<const range_type, mapped_type> value_type;
+
+    // private methods
+    static position_type get_key_length(range_type key)
+        {
+            _ASSERT(!key.Empty());
+            if ( key.HaveInfiniteBound() )
+                return key.GetWholeLength();
+            return key.GetLength();
+        }
+    // calculates selection key depending on length of interval
+    //            length           key
+    //                 1             1
+    //             2...3             3
+    //             4...7             7
+    // 2^n...(2^(n+1)-1)   (2^(n+1)-1)
+    static position_type get_max_length(range_type key)
+        {
+            position_type len = get_key_length(key);
+            if ( sizeof(position_type) > 4 )
+                len |= (len >> 32);
+            if ( sizeof(position_type) > 2 )
+                len |= (len >> 16);
+            len |= (len >> 8);
+            len |= (len >> 4);
+            len |= (len >> 2);
+            len |= (len >> 1);
+            return len;
+        }
 };
 
 template<typename Position, typename Mapped>
@@ -385,22 +417,28 @@ private:
 	typedef typename TRangeMapTraits::TLevelMap TLevelMap;
     typedef typename TSelectMap::iterator TSelectMapI;
     typedef typename TLevelMap::iterator TLevelMapI;
+    typedef typename TSelectMap::const_iterator TSelectMapCI;
+    typedef typename TLevelMap::const_iterator TLevelMapCI;
 
 public:
     // constructor
     explicit CRangeMap(void)
-        : m_ElementCount(0)
         {
         }
 
     // capacity
     bool empty(void) const
         {
-            return m_ElementCount == 0;
+            return m_SelectMap.empty();
         }
     size_type size(void) const
         {
-            return m_ElementCount;
+            size_type size = 0;
+            for ( TSelectMapCI i = m_SelectMap.begin(),
+                      end = m_SelectMap.end(); i != end; ++i ) {
+                size += i->second.size();
+            }
+            return size;
         }
     
     // iterators
@@ -461,9 +499,6 @@ public:
         {
             _ASSERT(iter != end());
 
-            // update total count
-            --m_ElementCount;
-
             // get element's level
             TLevelMap& level = iter.GetSelectIter()->second;
 
@@ -484,12 +519,10 @@ public:
     void clear(void)
         {
             m_SelectMap.clear();
-            m_ElementCount = 0;
         }
     void swap(TThisType& rangeMap)
         {
             m_SelectMap.swap(rangeMap.m_SelectMap);
-            swap(m_ElementCount, rangeMap.m_ElementCount);
         }
 
     pair<iterator, bool> insert(const value_type& value)
@@ -498,7 +531,8 @@ public:
                 THROW1_TRACE(runtime_error, "empty key range");
 
             // key in select map
-            position_type selectKey = get_max_length(value.first);
+            position_type selectKey =
+                TRangeMapTraits::get_max_length(value.first);
 
             // get level
             typedef typename TSelectMap::value_type select_value;
@@ -507,9 +541,6 @@ public:
             // insert element
             pair<TLevelMapI, bool> levelInsert =
                 selectIter->second.insert(value);
-            
-            if ( levelInsert.second )
-                ++m_ElementCount; // new element -> update count
             
             pair<iterator, bool> ret;
             ret.second = levelInsert.second;
@@ -525,27 +556,10 @@ public:
         {
             return insert(value_type(key, mapped_type())).first->second;
         }
-    
-private:
-    // private methods
-    static position_type get_max_length(key_type key)
-        {
-            _ASSERT(!key.Empty());
-            if ( key.HaveInfiniteBound() )
-                return key.GetWholeLength();
-            position_type len = key.GetLength() - 1;
-            len |= (len >> 16);
-            len |= (len >> 8);
-            len |= (len >> 4);
-            len |= (len >> 2);
-            len |= (len >> 1);
-            return len + 1;
-        }
 
 private:
     // data
     TSelectMap m_SelectMap;
-    size_type m_ElementCount; // count of elements
 };
 
 // range map
@@ -573,22 +587,28 @@ private:
 	typedef typename TRangeMapTraits::TLevelMap TLevelMap;
     typedef typename TSelectMap::iterator TSelectMapI;
     typedef typename TLevelMap::iterator TLevelMapI;
+    typedef typename TSelectMap::const_iterator TSelectMapCI;
+    typedef typename TLevelMap::const_iterator TLevelMapCI;
 
 public:
     // constructor
     explicit CRangeMultimap(void)
-        : m_ElementCount(0)
         {
         }
 
     // capacity
     bool empty(void) const
         {
-            return m_ElementCount == 0;
+            return m_SelectMap.empty();
         }
     size_type size(void) const
         {
-            return m_ElementCount;
+            size_type size = 0;
+            for ( TSelectMapCI i = m_SelectMap.begin(),
+                      end = m_SelectMap.end(); i != end; ++i ) {
+                size += i->second.size();
+            }
+            return size;
         }
     
     // iterators
@@ -649,9 +669,6 @@ public:
         {
             _ASSERT(iter != end());
 
-            // update total count
-            --m_ElementCount;
-
             // get element's level
             TLevelMap& level = iter.GetSelectIter()->second;
 
@@ -676,12 +693,10 @@ public:
     void clear(void)
         {
             m_SelectMap.clear();
-            m_ElementCount = 0;
         }
     void swap(TThisType& rangeMap)
         {
             m_SelectMap.swap(rangeMap.m_SelectMap);
-            swap(m_ElementCount, rangeMap.m_ElementCount);
         }
 
     void insert(const value_type& value)
@@ -690,35 +705,15 @@ public:
                 THROW1_TRACE(runtime_error, "empty key range");
 
             // select key
-            position_type selectKey = get_max_length(value.first);
+            position_type selectKey =
+                TRangeMapTraits::get_max_length(value.first);
 
             // insert element
             m_SelectMap[selectKey].insert(value);
-
-            // update count
-            ++m_ElementCount;
         }
-
-private:
-    // private methods
-    static position_type get_max_length(key_type key)
-        {
-            _ASSERT(!key.Empty());
-            if ( key.HaveInfiniteBound() )
-                return key.GetWholeLength();
-            position_type len = key.GetLength() - 1;
-            len |= (len >> 16);
-            len |= (len >> 8);
-            len |= (len >> 4);
-            len |= (len >> 2);
-            len |= (len >> 1);
-            return len + 1;
-        }
-
 private:
     // data
     TSelectMap m_SelectMap;
-    size_type m_ElementCount; // count of elements
 };
 
 //#include <util/rangemap.inl>
