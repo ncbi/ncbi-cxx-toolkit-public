@@ -37,14 +37,12 @@
 #include <serial/serialbase.hpp>
 
 #include <objtools/format/items/item.hpp>
-#include <objtools/format/context.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CDate;
-class CFlatItemFormatter;
+class CFFContext;
 
 
 class CFlatItem : public IFlatItem
@@ -56,7 +54,8 @@ public:
     bool IsSetObject(void) const;
     const CSerialObject* GetObject(void) const;
 
-    const CFFContext& GetContext(void) const;
+    CFFContext& GetContext(void);
+    CFFContext& GetContext(void) const;
 
     // should this item be skipped during formatting?
     bool Skip(void) const;
@@ -78,10 +77,89 @@ private:
     // The underlying CSerialObject from the information is obtained.
     CConstRef<CSerialObject>    m_Object;
     // a context associated with this item
-    CRef<CFFContext>            m_Context;
+    mutable CRef<CFFContext>    m_Context;
     // should this item be skipped?
     bool                        m_Skip;
 };
+
+
+///////////////////////////////////////////////////////////
+///////////////////// inline methods //////////////////////
+///////////////////////////////////////////////////////////
+
+// public methods
+
+inline
+const CSerialObject* CFlatItem::GetObject(void) const
+{
+    return m_Object;
+}
+
+
+inline
+bool CFlatItem::IsSetObject(void) const
+{
+    return m_Object; 
+}
+
+
+inline
+CFFContext& CFlatItem::GetContext(void)
+{
+    return *m_Context;
+}
+
+
+inline
+CFFContext& CFlatItem::GetContext(void) const
+{
+    return *m_Context;
+}
+
+
+inline
+bool CFlatItem::Skip(void) const
+{
+    return m_Skip;
+}
+
+
+inline
+CFlatItem::~CFlatItem(void)
+{
+}
+
+// protected methods:
+
+// constructor
+inline
+CFlatItem::CFlatItem(CFFContext& ctx) :
+    m_Object(0),
+    m_Context(&ctx),
+    m_Skip(false)
+{
+}
+
+
+// Shared utility functions
+inline
+void CFlatItem::x_SetObject(const CSerialObject& obj) 
+{
+    m_Object.Reset(&obj);
+}
+
+
+inline
+void CFlatItem::x_SetSkip(void)
+{
+    m_Skip = true;
+    m_Object.Reset();
+    m_Context.Reset();
+}
+
+///////////////////////////////////////////////////////////
+////////////////// end of inline methods //////////////////
+///////////////////////////////////////////////////////////
 
 
 END_SCOPE(objects)
@@ -92,6 +170,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 16:34:43  shomrat
+* inlined implementation
+*
 * Revision 1.2  2003/12/18 17:42:18  shomrat
 * context.hpp moved
 *
