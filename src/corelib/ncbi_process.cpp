@@ -112,13 +112,14 @@ bool CProcess::Kill(unsigned long timeout) const
 {
 #ifdef NCBI_OS_UNIX
     TPid pid = (TPid)m_Process;
+    int status;
+
     // Try to kill process
     if (kill(pid, SIGTERM) == -1  &&  errno == EPERM) {
         return false;
     }
     // Check process termination within timeout
-    while (timeout) {
-        int status;
+    do {
         if (waitpid(pid, &status, WNOHANG) == pid) {
             // Release zombie process from the system
             waitpid(pid, &status, 0);
@@ -128,12 +129,19 @@ bool CProcess::Kill(unsigned long timeout) const
         if (timeout < kWaitPrecision) {
             x_sleep = timeout;
         }
-        timeout -= x_sleep;
-        SleepMilliSec(x_sleep);
-    }
+        if ( x_sleep ) {
+            timeout -= x_sleep;
+            SleepMilliSec(x_sleep);
+        }
+    } while (timeout);
+
     // Try harder to kill stubborn process
     if (kill(pid, SIGKILL) == -1  &&  errno == EPERM) {
         return false;
+    }
+    // Release zombie process from the system
+    if (waitpid(pid, &status, WNOHANG) == pid) {
+        waitpid(pid, &status, 0);
     }
     return true;
 
@@ -362,6 +370,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/03 17:03:01  ivanov
+ * Fixed Kill() to handle zero timeouts
+ *
  * Revision 1.3  2003/10/01 20:23:26  ivanov
  * Added const specifier to CProcess class member functions
  *
