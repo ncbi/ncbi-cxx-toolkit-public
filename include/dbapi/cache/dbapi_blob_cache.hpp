@@ -46,6 +46,8 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+/// Register NCBI_EntryPoint_DBAPI_BlobCache
+void DBAPI_Register_Cache(void);
 
 /// DBAPI ICache exception 
 
@@ -93,7 +95,7 @@ public:
 ///
 /// (tested with MSSQL)
 
-class NCBI_DBAPI_EXPORT CDBAPI_Cache : public ICache
+class NCBI_DBAPI_CACHE_EXPORT CDBAPI_Cache : public ICache
 {
 public:
     CDBAPI_Cache();
@@ -263,19 +265,19 @@ private:
 
 /* @} */
 
-extern NCBI_DBAPI_EXPORT const string kDBAPI_BlobCacheDriverName;
+extern NCBI_DBAPI_CACHE_EXPORT const string kDBAPI_BlobCacheDriverName;
 
 extern "C" 
 {
 
-NCBI_DBAPI_EXPORT
+NCBI_DBAPI_CACHE_EXPORT
 void NCBI_EntryPoint_DBAPI_BlobCache(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method);
 
 
-NCBI_DBAPI_EXPORT
-void NCBI_EntryPoint_ICache_ncbi_dbapi(
+NCBI_DBAPI_CACHE_EXPORT
+void NCBI_EntryPoint_xcache_dbapi(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method);
 
@@ -287,6 +289,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/12/22 21:02:53  grichenk
+ * BDB and DBAPI caches split into separate libs.
+ * Added entry point registration, fixed driver names.
+ *
  * Revision 1.12  2004/12/22 14:34:56  kuznets
  * +GetBlobAccess()
  *

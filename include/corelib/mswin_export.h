@@ -207,6 +207,15 @@
 #endif
 
 /*
+ * Export specifier for library bdb
+ */
+#ifdef NCBI_BDB_CACHE_EXPORTS
+#  define NCBI_BDB_CACHE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_BDB_CACHE_EXPORT __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library biblo
  */
 #ifdef NCBI_BIBLIO_EXPORTS
@@ -330,6 +339,15 @@
 #  define NCBI_DBAPI_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_DBAPI_EXPORT __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library dbapi
+ */
+#ifdef NCBI_DBAPI_CACHE_EXPORTS
+#  define NCBI_DBAPI_CACHE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_DBAPI_CACHE_EXPORT __declspec(dllimport)
 #endif
 
 /*
@@ -1027,6 +1045,7 @@
 
 #  define NCBI_ACCESS_EXPORT
 #  define NCBI_BDB_EXPORT
+#  define NCBI_BDB_CACHE_EXPORT
 #  define NCBI_BIBLIO_EXPORT
 #  define NCBI_BIOTREE_EXPORT
 #  define NCBI_BLASTDB_EXPORT
@@ -1041,6 +1060,7 @@
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT
 #  define NCBI_DBAPIDRIVER_FTDS_EXPORT
 #  define NCBI_DBAPI_EXPORT
+#  define NCBI_DBAPI_CACHE_EXPORT
 #  define NCBI_DBAPIUTIL_BLOBSTORE_EXPORT
 #  define NCBI_DOCSUM_EXPORT
 #  define NCBI_ENTREZ2_EXPORT
@@ -1143,6 +1163,10 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.90  2004/12/22 21:02:53  grichenk
+ * BDB and DBAPI caches split into separate libs.
+ * Added entry point registration, fixed driver names.
+ *
  * Revision 1.89  2004/12/13 20:34:58  jcherry
  * Moved xobjsimple into its own dll
  *

@@ -49,8 +49,10 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+/// Register NCBI_BDB_ICacheEntryPoint
+void BDB_Register_Cache(void);
 
-struct NCBI_BDB_EXPORT SCacheDB : public CBDB_BLobFile
+struct NCBI_BDB_CACHE_EXPORT SCacheDB : public CBDB_BLobFile
 {
     CBDB_FieldString       key;
     CBDB_FieldInt4         version;
@@ -65,7 +67,7 @@ struct NCBI_BDB_EXPORT SCacheDB : public CBDB_BLobFile
 };
 
 
-struct NCBI_BDB_EXPORT SCache_AttrDB : public CBDB_File
+struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
 {
     CBDB_FieldString       key;
     CBDB_FieldInt4         version;
@@ -97,7 +99,7 @@ class CCacheCleanerThread;
 /// Class implements ICache interface using local Berkeley DB
 /// database.
 
-class NCBI_BDB_EXPORT CBDB_Cache : public ICache
+class NCBI_BDB_CACHE_EXPORT CBDB_Cache : public ICache
 {
 public:
     CBDB_Cache();
@@ -455,7 +457,7 @@ private:
 ///   Timestamp flags (see ICache)
 ///   (when 0 some reasonable default combination is taken)
 ///
-NCBI_BDB_EXPORT
+NCBI_BDB_CACHE_EXPORT
 void BDB_ConfigureCache(CBDB_Cache&             bdb_cache,
                         const string&           path,
                         const string&           name,
@@ -463,23 +465,18 @@ void BDB_ConfigureCache(CBDB_Cache&             bdb_cache,
                         ICache::TTimeStampFlags tflags);
 
 
-extern NCBI_BDB_EXPORT const char* kBDBCacheDriverName;
+extern NCBI_BDB_CACHE_EXPORT const char* kBDBCacheDriverName;
 
 extern "C" 
 {
 
-NCBI_BDB_EXPORT 
+NCBI_BDB_CACHE_EXPORT
 void  NCBI_BDB_ICacheEntryPoint(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method);
 
-NCBI_BDB_EXPORT 
-void NCBI_EntryPoint_ICache_bdb(
-     CPluginManager<ICache>::TDriverInfoList&   info_list,
-     CPluginManager<ICache>::EEntryPointRequest method);
-
-NCBI_BDB_EXPORT
-void NCBI_EntryPoint_ICache_bdbcache(
+NCBI_BDB_CACHE_EXPORT
+void NCBI_EntryPoint_xcache_bdb(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method);
 
@@ -493,7 +490,7 @@ void NCBI_EntryPoint_ICache_bdbcache(
 ///
 /// @internal
 
-class NCBI_BDB_EXPORT CBDB_CacheHolder : public CObject
+class NCBI_BDB_CACHE_EXPORT CBDB_CacheHolder : public CObject
 {
 public:
     CBDB_CacheHolder(ICache* blob_cache, ICache* id_cache); 
@@ -520,6 +517,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/12/22 21:02:53  grichenk
+ * BDB and DBAPI caches split into separate libs.
+ * Added entry point registration, fixed driver names.
+ *
  * Revision 1.43  2004/12/22 19:25:15  kuznets
  * Code cleanup
  *

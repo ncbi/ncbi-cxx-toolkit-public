@@ -47,6 +47,7 @@
 
 #include <util/cache/icache_cf.hpp>
 #include <util/cache/icache_clean_thread.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -2091,7 +2092,13 @@ CBDB_Cache::CMemAttrStorage::GetAccessTime(const CacheKey& cache_key) const
 */
 
 
-const char* kBDBCacheDriverName = "bdbcache";
+void BDB_Register_Cache(void)
+{
+    RegisterEntryPoint<ICache>(NCBI_BDB_ICacheEntryPoint);
+}
+
+
+const char* kBDBCacheDriverName = "bdb";
 
 /// Class factory for BDB implementation of ICache
 ///
@@ -2158,17 +2165,6 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
 
     if (!params)
         return drv.release();
-
-    const string& tree_id = params->GetId();
-    if (NStr::CompareNocase(tree_id, kBDBCacheDriverName) != 0) {
-        LOG_POST(Warning 
-            << "ICache class factory: Top level Id does not match driver name." 
-            << " Id = " << tree_id << " driver=" << kBDBCacheDriverName 
-            << " parameters ignored." );
-
-        return drv.release();
-    }
-
 
     // cache configuration
 
@@ -2255,14 +2251,7 @@ void NCBI_BDB_ICacheEntryPoint(
        NCBI_EntryPointImpl(info_list, method);
 }
 
-void NCBI_EntryPoint_ICache_bdb(
-     CPluginManager<ICache>::TDriverInfoList&   info_list,
-     CPluginManager<ICache>::EEntryPointRequest method)
-{
-    NCBI_BDB_ICacheEntryPoint(info_list, method);
-}
-
-void NCBI_EntryPoint_ICache_bdbcache(
+void NCBI_EntryPoint_xcache_bdb(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method)
 {
@@ -2318,6 +2307,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.96  2004/12/22 21:02:53  grichenk
+ * BDB and DBAPI caches split into separate libs.
+ * Added entry point registration, fixed driver names.
+ *
  * Revision 1.95  2004/12/22 14:34:34  kuznets
  * +GetBlobAccess()
  *

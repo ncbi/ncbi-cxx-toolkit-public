@@ -33,10 +33,17 @@
 #include <dbapi/cache/dbapi_blob_cache.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 BEGIN_NCBI_SCOPE
 
-const string kDBAPI_BlobCacheDriverName("dbapi_blob_cache");
+void DBAPI_Register_Cache(void)
+{
+    RegisterEntryPoint<ICache>(NCBI_EntryPoint_DBAPI_BlobCache);
+}
+
+
+const string kDBAPI_BlobCacheDriverName("dbapi");
 
 
 /// Class factory for DBAPI BLOB cache
@@ -174,7 +181,7 @@ void NCBI_EntryPoint_DBAPI_BlobCache(
 }
 
 
-void NCBI_EntryPoint_ICache_ncbi_dbapi(
+void NCBI_EntryPoint_xcache_dbapi(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method)
 {
@@ -189,6 +196,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/12/22 21:02:53  grichenk
+ * BDB and DBAPI caches split into separate libs.
+ * Added entry point registration, fixed driver names.
+ *
  * Revision 1.4  2004/08/10 16:56:11  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *

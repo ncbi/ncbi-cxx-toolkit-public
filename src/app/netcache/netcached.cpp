@@ -811,7 +811,7 @@ int CNetCacheDApp::Run(void)
 
             typedef CPluginManager<ICache> TCachePM;
             CPluginManager<ICache> pm_cache;
-            pm_cache.RegisterWithEntryPoint(NCBI_EntryPoint_ICache_bdbcache);
+            pm_cache.RegisterWithEntryPoint(NCBI_EntryPoint_xcache_bdb);
 
             ICache* ic;
 
@@ -916,6 +916,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/12/22 21:02:53  grichenk
+ * BDB and DBAPI caches split into separate libs.
+ * Added entry point registration, fixed driver names.
+ *
  * Revision 1.26  2004/12/22 14:36:13  kuznets
  * Performance optimization (ProcessGet)
  *
