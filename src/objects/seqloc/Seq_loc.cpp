@@ -133,6 +133,7 @@ inline
 void x_Assign(CPacked_seqint& dst, const CPacked_seqint& src)
 {
     CPacked_seqint::Tdata& data = dst.Set();
+    data.clear();
     iterate ( CPacked_seqint::Tdata, i, src.Get() ) {
         data.push_back(CRef<CSeq_interval>(new CSeq_interval));
         x_Assign(*data.back(), **i);
@@ -177,6 +178,7 @@ inline
 void x_Assign(CSeq_loc_mix& dst, const CSeq_loc_mix& src)
 {
     CSeq_loc_mix::Tdata& data = dst.Set();
+    data.clear();
     iterate ( CSeq_loc_mix::Tdata, i, src.Get() ) {
         data.push_back(CRef<CSeq_loc>(new CSeq_loc));
         data.back()->Assign(**i);
@@ -188,6 +190,7 @@ inline
 void x_Assign(CSeq_loc_equiv& dst, const CSeq_loc_equiv& src)
 {
     CSeq_loc_equiv::Tdata& data = dst.Set();
+    data.clear();
     iterate ( CSeq_loc_equiv::Tdata, i, src.Get() ) {
         data.push_back(CRef<CSeq_loc>(new CSeq_loc));
         data.back()->Assign(**i);
@@ -784,6 +787,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.26  2003/02/24 18:52:13  vasilche
+ * Added clearing of old data in assign.
+ *
  * Revision 6.25  2003/02/06 22:23:29  vasilche
  * Added CSeq_id::Assign(), CSeq_loc::Assign().
  * Added int CSeq_id::Compare() (not safe).
