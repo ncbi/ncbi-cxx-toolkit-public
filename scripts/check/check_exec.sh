@@ -39,5 +39,21 @@ $script_dir/check_exec_guard.sh $timeout $pid &
 wait $pid > /dev/null 2>&1
 status=$?
 
+# Special check on core file on Darwin
+if [ $status != 0  -a  `uname -s` = "Darwin" ]; then
+   sleep 0 > /dev/null 2>&1  &
+   end_pid=$!
+   p=$pid
+   while [ $p -lt $end_pid ]; do
+      core="/cores/core.$p"
+      if [ -O "$core" ]; then
+         # Move the core file to current directory with name "core"
+         mv $core ./core > /dev/null 2>&1
+         break
+      fi
+      p=`expr $p + 1`
+   done
+fi 
+
 # Return test exit code
 exit $status
