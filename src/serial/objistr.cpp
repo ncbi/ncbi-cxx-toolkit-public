@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2000/09/26 17:38:22  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.60  2000/09/18 20:00:23  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -563,8 +567,8 @@ void CObjectIStream::SkipTypeName(TTypeInfo typeInfo)
     
     string name = ReadTypeName();
     if ( !name.empty() && name != typeInfo->GetName() ) {
-        THROW1_TRACE(runtime_error,
-                     "incompatible type "+name+"<>"+typeInfo->GetName());
+        ThrowError(eFormatError,
+                   "incompatible type "+name+"<>"+typeInfo->GetName());
     }
 
     END_OBJECT_FRAME();

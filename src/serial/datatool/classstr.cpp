@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/09/26 17:38:25  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.24  2000/08/25 15:59:20  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -327,6 +331,8 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     CClassCode code(ctx, codeClassName);
     if ( !m_ParentClassName.empty() ) {
         code.SetParentClass(m_ParentClassName, m_ParentClassNamespace);
+        if ( !m_ParentClassFileName.empty() )
+            code.HPPIncludes().insert(m_ParentClassFileName);
     }
     else if ( GetKind() == eKindObject ) {
         code.SetParentClass("CObject", CNamespace::KNCBINamespace);
@@ -823,6 +829,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     }
     methods<<"(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassName()<<")\n"
         "{\n";
+    if ( !m_ParentClassName.empty() ) {
+        code.SetParentClass(m_ParentClassName, m_ParentClassNamespace);
+        methods <<
+            "    SET_PARENT_CLASS("<<m_ParentClassNamespace.GetNamespaceRef(code.GetNamespace())<<m_ParentClassName<<");\n";
+    }
     if ( m_Members.size() == 1 && m_Members.front().cName.empty() ) {
         methods <<
             "    info->SetImplicit();\n";

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/26 17:38:08  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.1  2000/09/18 20:00:12  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -55,15 +59,51 @@ CVariantInfo::EVariantType CVariantInfo::GetVariantType(void) const
 }
 
 inline
-bool CVariantInfo::IsPointer(void) const
+bool CVariantInfo::IsInline(void) const
 {
-    return GetVariantType() != eInlineVariant;
+    return GetVariantType() == eInlineVariant;
+}
+
+inline
+bool CVariantInfo::IsNonObjectPointer(void) const
+{
+    return GetVariantType() == eNonObjectPointerVariant;
 }
 
 inline
 bool CVariantInfo::IsObjectPointer(void) const
 {
     return GetVariantType() == eObjectPointerVariant;
+}
+
+inline
+bool CVariantInfo::IsSubClass(void) const
+{
+    return GetVariantType() == eSubClassVariant;
+}
+
+inline
+bool CVariantInfo::IsNotPointer(void) const
+{
+    return (GetVariantType() & ePointerFlag) == 0;
+}
+
+inline
+bool CVariantInfo::IsPointer(void) const
+{
+    return (GetVariantType() & ePointerFlag) != 0;
+}
+
+inline
+bool CVariantInfo::IsNotObject(void) const
+{
+    return (GetVariantType() & eObjectFlag) == 0;
+}
+
+inline
+bool CVariantInfo::IsObject(void) const
+{
+    return (GetVariantType() & eObjectFlag) != 0;
 }
 
 inline

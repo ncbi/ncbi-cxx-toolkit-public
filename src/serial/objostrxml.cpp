@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/26 17:38:22  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.9  2000/09/18 20:00:25  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -544,7 +548,7 @@ void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
         OpenTag(classType);
         
         for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
-            classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
+            classType->GetMemberInfo(*i)->WriteMember(*this, classPtr);
         }
         
         CloseTag(classType, true);
@@ -552,7 +556,7 @@ void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
     }
     else {
         for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
-            classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
+            classType->GetMemberInfo(*i)->WriteMember(*this, classPtr);
         }
     }
 }

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/09/26 17:38:21  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.19  2000/09/18 20:00:22  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -223,7 +227,7 @@ void CMembersInfo::UpdateTags(void) const
         if ( tag == CMemberId::eNoExplicitTag ) {
             if ( index == FirstIndex() && id.GetName().empty() ) {
                 // parent class
-                tag = CMemberId::eParentTag;
+                tag = CMemberId::eParentTag - 1;
             }
             else {
                 tag = nextTag;
@@ -289,7 +293,7 @@ TMemberIndex CMembersInfo::Find(TTag tag) const
             if ( currentTag == CMemberId::eNoExplicitTag ) {
                 if ( index == FirstIndex() && id.GetName().empty() ) {
                     // parent class - skip it
-                    currentTag = CMemberId::eParentTag;
+                    currentTag = CMemberId::eParentTag - 1;
                 }
                 else {
                     currentTag = nextTag;

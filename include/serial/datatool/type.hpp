@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/26 17:38:17  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.5  2000/05/24 20:08:32  vasilche
 * Implemented DTD generation.
 *
@@ -177,6 +181,11 @@ public:
 
     virtual const CDataType* Resolve(void) const;
     virtual CDataType* Resolve(void);
+
+    // resolve type from global level
+    CDataType* ResolveGlobal(const string& name) const;
+    // resolve type from local level
+    CDataType* ResolveLocal(const string& name) const;
 
     bool IsInSet(void) const
         {

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/09/26 17:38:26  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.24  2000/08/25 15:59:22  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -179,15 +183,15 @@ string CFileModules::GetFileNamePrefix(void) const
 }
 
 CDataType* CFileModules::ExternalResolve(const string& moduleName,
-                                       const string& typeName,
-                                       bool allowInternal) const
+                                         const string& typeName,
+                                         bool allowInternal) const
 {
     // find module definition
     TModulesByName::const_iterator mi = m_ModulesByName.find(moduleName);
     if ( mi == m_ModulesByName.end() ) {
         // no such module
-        throw CModuleNotFound("module not found: " + moduleName +
-                              " for type " + typeName);
+        THROW1_TRACE(CModuleNotFound,
+                     "module not found: "+moduleName+" for type "+typeName);
     }
     return mi->second->ExternalResolve(typeName, allowInternal);
 }

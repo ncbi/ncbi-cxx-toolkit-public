@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/09/26 17:38:26  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.21  2000/08/25 15:59:23  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -172,45 +176,45 @@ AutoPtr<CDataType> ASNParser::Type(void)
     return type;
 }
 
-AutoPtr<CDataType> ASNParser::x_Type(void)
+CDataType* ASNParser::x_Type(void)
 {
     switch ( Next() ) {
     case K_BOOLEAN:
         Consume();
-        return AutoPtr<CDataType>(new CBoolDataType());
+        return new CBoolDataType();
     case K_INTEGER:
         Consume();
         if ( CheckSymbol('{') )
             return EnumeratedBlock(new CIntEnumDataType());
         else
-            return AutoPtr<CDataType>(new CIntDataType());
+            return new CIntDataType();
     case K_ENUMERATED:
         Consume();
         return EnumeratedBlock(new CEnumDataType());
     case K_REAL:
         Consume();
-        return AutoPtr<CDataType>(new CRealDataType());
+        return new CRealDataType();
     case K_BIT:
         Consume();
         Consume(K_STRING, "STRING");
-        return AutoPtr<CDataType>(new CBitStringDataType());
+        return new CBitStringDataType();
     case K_OCTET:
         Consume();
         Consume(K_STRING, "STRING");
-        return AutoPtr<CDataType>(new COctetStringDataType());
+        return new COctetStringDataType();
     case K_NULL:
         Consume();
-        return AutoPtr<CDataType>(new CNullDataType());
+        return new CNullDataType();
     case K_SEQUENCE:
         Consume();
         if ( ConsumeIf(K_OF) )
-            return AutoPtr<CDataType>(new CUniSequenceDataType(Type()));
+            return new CUniSequenceDataType(Type());
         else
             return TypesBlock(new CDataSequenceType());
     case K_SET:
         Consume();
         if ( ConsumeIf(K_OF) )
-            return AutoPtr<CDataType>(new CUniSetDataType(Type()));
+            return new CUniSetDataType(Type());
         else
             return TypesBlock(new CDataSetType());
     case K_CHOICE:
@@ -218,20 +222,19 @@ AutoPtr<CDataType> ASNParser::x_Type(void)
         return TypesBlock(new CChoiceDataType());
     case K_VisibleString:
         Consume();
-        return AutoPtr<CDataType>(new CStringDataType());
+        return new CStringDataType();
     case K_StringStore:
         Consume();
-        return AutoPtr<CDataType>(new CStringStoreDataType());
+        return new CStringStoreDataType();
     case T_IDENTIFIER:
     case T_TYPE_REFERENCE:
-        return AutoPtr<CDataType>(new CReferenceDataType(TypeReference()));
+        return new CReferenceDataType(TypeReference());
     }
     ParseError("type");
-	return AutoPtr<CDataType>();
+	return 0;
 }
 
-AutoPtr<CDataType>
-ASNParser::TypesBlock(CDataMemberContainerType* containerType)
+CDataType* ASNParser::TypesBlock(CDataMemberContainerType* containerType)
 {
     AutoPtr<CDataMemberContainerType> container(containerType);
     ConsumeSymbol('{');
@@ -239,7 +242,7 @@ ASNParser::TypesBlock(CDataMemberContainerType* containerType)
         container->AddMember(NamedDataType());
     } while ( ConsumeIfSymbol(',') );
     ConsumeSymbol('}');
-    return AutoPtr<CDataType>(container.release());
+    return container.release();
 }
 
 AutoPtr<CDataMember> ASNParser::NamedDataType(void)
@@ -247,8 +250,9 @@ AutoPtr<CDataMember> ASNParser::NamedDataType(void)
     string name;
     if ( Next() == T_IDENTIFIER )
         name = Identifier();
+    AutoPtr<CDataType> type(Type());
 
-    AutoPtr<CDataMember> member(new CDataMember(name, Type()));
+    AutoPtr<CDataMember> member(new CDataMember(name, type));
     switch ( Next() ) {
     case K_OPTIONAL:
         Consume();
@@ -262,7 +266,7 @@ AutoPtr<CDataMember> ASNParser::NamedDataType(void)
     return member;
 }
 
-AutoPtr<CDataType> ASNParser::EnumeratedBlock(CEnumDataType* enumType)
+CEnumDataType* ASNParser::EnumeratedBlock(CEnumDataType* enumType)
 {
     AutoPtr<CEnumDataType> e(enumType);
     ConsumeSymbol('{');
@@ -270,7 +274,7 @@ AutoPtr<CDataType> ASNParser::EnumeratedBlock(CEnumDataType* enumType)
         EnumeratedValue(*e);
     } while ( ConsumeIfSymbol(',') );
     ConsumeSymbol('}');
-    return AutoPtr<CDataType>(e.release());
+    return e.release();
 }
 
 void ASNParser::EnumeratedValue(CEnumDataType& t)

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2000/09/26 17:38:27  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.51  2000/08/25 15:59:24  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -383,45 +387,7 @@ const CDataType* CDataType::InheritFromType(void) const
 {
     const string& parentName = GetVar("_parent");
     if ( !parentName.empty() )
-        return GetModule()->Resolve(parentName);
-
-#if 0
-    // try to detect implicit inheritance
-    if ( IsInChoice() ) // directly in CHOICE
-        return 0; //GetInChoice();
-
-    if ( IsReferenced() ) {
-        // have references to me
-        const CChoiceDataType* namedParent = 0;
-        const CChoiceDataType* unnamedParent = 0;
-        int unnamedParentCount = 0;
-        // try to find exactly one reference from named CHOICE
-        iterate ( TReferences, ri, GetReferences() ) {
-            const CReferenceDataType* ref = *ri;
-            if ( ref->IsInChoice() ) {
-                const CChoiceDataType* choice = ref->GetInChoice();
-                if ( !choice->GetParentType() ) {
-                    // named CHOICE
-                    if ( !namedParent )
-                        namedParent = choice;
-                    else
-                        return 0; // more then one named CHOICE
-                }
-                else {
-                    // unnamed CHOICE
-                    if ( unnamedParentCount++ == 0 )
-                        unnamedParent = choice;
-                }
-            }
-        }
-        if ( namedParent ) {
-            return 0; //namedParent;
-        }
-        if ( unnamedParentCount == 1 ) {
-            return 0; // unnamedParent;
-        }
-    }
-#endif
+        return ResolveGlobal(parentName);
     return 0;
 }
 
@@ -433,6 +399,27 @@ CDataType* CDataType::Resolve(void)
 const CDataType* CDataType::Resolve(void) const
 {
     return this;
+}
+
+CDataType* CDataType::ResolveLocal(const string& name) const
+{
+    return GetModule()->Resolve(name);
+}
+
+CDataType* CDataType::ResolveGlobal(const string& name) const
+{
+    SIZE_TYPE dot = name.find('.');
+    if ( dot == NPOS ) {
+        // no module specified
+        return GetModule()->Resolve(name);
+    }
+    else {
+        // resolve by module
+        string moduleName = name.substr(0, dot);
+        string typeName = name.substr(dot + 1);
+        return GetModule()->GetModuleContainer().InternalResolve(moduleName,
+                                                                 typeName);
+    }
 }
 
 CTypeRef CDataType::GetTypeInfo(void)
@@ -492,6 +479,22 @@ void CDataType::SetParentClassTo(CClassTypeStrings& code) const
         code.SetParentClass(parent->ClassName(),
                             parent->Namespace(),
                             parent->FileName());
+    }
+    else {
+        string parentClassName = InheritFromClass();
+        if ( !parentClassName.empty() ) {
+            SIZE_TYPE pos = parentClassName.rfind("::");
+            if ( pos != NPOS ) {
+                code.SetParentClass(parentClassName.substr(pos + 2),
+                                    CNamespace(parentClassName.substr(0, pos)),
+                                    NcbiEmptyString);
+            }
+            else {
+                code.SetParentClass(parentClassName,
+                                    CNamespace::KEmptyNamespace,
+                                    NcbiEmptyString);
+            }
+        }
     }
 }
 

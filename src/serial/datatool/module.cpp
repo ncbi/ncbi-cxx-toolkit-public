@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/09/26 17:38:26  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.23  2000/08/25 15:59:22  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -292,10 +296,10 @@ CDataType* CDataTypeModule::ExternalResolve(const string& typeName,
 
     if ( !allowInternal &&
          m_LocalTypes.find(typeName) != m_LocalTypes.end() ) {
-        throw CTypeNotFound("not exported type: " + typeName);
+        THROW1_TRACE(CTypeNotFound, "not exported type: "+typeName);
     }
 
-    throw CTypeNotFound("undefined type: " + typeName);
+    THROW1_TRACE(CTypeNotFound, "undefined type: "+typeName);
 }
 
 CDataType* CDataTypeModule::Resolve(const string& typeName) const
@@ -306,7 +310,7 @@ CDataType* CDataTypeModule::Resolve(const string& typeName) const
     TImportsByName::const_iterator i = m_ImportedTypes.find(typeName);
     if ( i != m_ImportedTypes.end() )
         return GetModuleContainer().InternalResolve(i->second, typeName);
-    throw CTypeNotFound("undefined type: " + typeName);
+    THROW1_TRACE(CTypeNotFound, "undefined type: "+typeName);
 }
 
 string CDataTypeModule::GetFileNamePrefix(void) const

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/26 17:38:26  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.4  2000/08/25 15:59:21  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -135,7 +139,7 @@ CDataType* CResolvedTypeSet::GetType(void) const
             msg += m_Module;
             msg += '.';
         }
-        throw CTypeNotFound(msg+m_Name);
+        THROW1_TRACE(CTypeNotFound, msg+m_Name);
     }
 
     {
@@ -158,7 +162,7 @@ CDataType* CResolvedTypeSet::GetType(void) const
         msg += ':';
         msg += NStr::IntToString((*i)->GetSourceLine());
     }
-    throw CAmbiguiousTypes(msg, m_Types);
+    THROW_TRACE(CAmbiguiousTypes, (msg, m_Types));
 }
 
 END_NCBI_SCOPE

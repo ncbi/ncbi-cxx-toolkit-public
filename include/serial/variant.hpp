@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/26 17:38:08  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.1  2000/09/18 20:00:12  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -60,6 +64,8 @@ class CCopyChoiceVariantHook;
 
 class CDelayBuffer;
 
+class CVariantInfoFunctions;
+
 class CVariantInfo : public CItemInfo
 {
     typedef CItemInfo CParent;
@@ -81,9 +87,12 @@ public:
                                  const CVariantInfo* variantInfo);
 
     enum EVariantType {
-        eInlineVariant,
-        ePointerVariant,
-        eObjectPointerVariant
+        ePointerFlag = 1 << 0,
+        eObjectFlag = 1 << 1,
+        eInlineVariant = 0,
+        eNonObjectPointerVariant = ePointerFlag,
+        eObjectPointerVariant = ePointerFlag | eObjectFlag,
+        eSubClassVariant = eObjectFlag
     };
 
     CVariantInfo(const CChoiceTypeInfo* choiceType,
@@ -100,11 +109,19 @@ public:
 
     EVariantType GetVariantType(void) const;
 
-    bool IsPointer(void) const;
-    CVariantInfo* SetPointer(void);
-    
+    bool IsInline(void) const;
+    bool IsNonObjectPointer(void) const;
     bool IsObjectPointer(void) const;
+    bool IsSubClass(void) const;
+
+    bool IsPointer(void) const;
+    bool IsNotPointer(void) const;
+    bool IsObject(void) const;
+    bool IsNotObject(void) const;
+
+    CVariantInfo* SetPointer(void);
     CVariantInfo* SetObjectPointer(void);
+    CVariantInfo* SetSubClass(void);
 
     bool CanBeDelayed(void) const;
     CVariantInfo* SetDelayBuffer(CDelayBuffer* buffer);
@@ -180,68 +197,9 @@ private:
     void SetCopyFunction(TVariantCopy func);
     void SetSkipFunction(TVariantSkip func);
 
-    void UpdateGetFunction(void);
-    void UpdateReadFunction(void);
-    void UpdateWriteFunction(void);
-    void UpdateCopyFunction(void);
-    void UpdateSkipFunction(void);
+    void UpdateFunctions(void);
 
-    static
-    TConstObjectPtr GetConstInlineVariant(const CVariantInfo* variantInfo,
-                                          TConstObjectPtr choicePtr);
-    static
-    TConstObjectPtr GetConstPointerVariant(const CVariantInfo* variantInfo,
-                                           TConstObjectPtr choicePtr);
-    static
-    TConstObjectPtr GetConstDelayedVariant(const CVariantInfo* variantInfo,
-                                           TConstObjectPtr choicePtr);
-    static TObjectPtr GetInlineVariant(const CVariantInfo* variantInfo,
-                                       TObjectPtr choicePtr);
-    static TObjectPtr GetPointerVariant(const CVariantInfo* variantInfo,
-                                        TObjectPtr choicePtr);
-    static TObjectPtr GetDelayedVariant(const CVariantInfo* variantInfo,
-                                        TObjectPtr choicePtr);
-
-    static void ReadInlineVariant(CObjectIStream& in,
-                                  const CVariantInfo* variantInfo,
-                                  TObjectPtr choicePtr);
-    static void ReadPointerVariant(CObjectIStream& in,
-                                   const CVariantInfo* variantInfo,
-                                   TObjectPtr choicePtr);
-    static void ReadObjectPointerVariant(CObjectIStream& in,
-                                         const CVariantInfo* variantInfo,
-                                         TObjectPtr choicePtr);
-    static void ReadDelayedVariant(CObjectIStream& in,
-                                   const CVariantInfo* variantInfo,
-                                   TObjectPtr choicePtr);
-    static void ReadHookedVariant(CObjectIStream& in,
-                                  const CVariantInfo* variantInfo,
-                                  TObjectPtr choicePtr);
-    static void WriteInlineVariant(CObjectOStream& out,
-                                   const CVariantInfo* variantInfo,
-                                   TConstObjectPtr choicePtr);
-    static void WritePointerVariant(CObjectOStream& out,
-                                    const CVariantInfo* variantInfo,
-                                    TConstObjectPtr choicePtr);
-    static void WriteObjectPointerVariant(CObjectOStream& out,
-                                          const CVariantInfo* variantInfo,
-                                          TConstObjectPtr choicePtr);
-    static void WriteDelayedVariant(CObjectOStream& out,
-                                    const CVariantInfo* variantInfo,
-                                    TConstObjectPtr choicePtr);
-    static void WriteHookedVariant(CObjectOStream& out,
-                                   const CVariantInfo* variantInfo,
-                                   TConstObjectPtr choicePtr);
-    static void CopyNonObjectVariant(CObjectStreamCopier& copier,
-                                     const CVariantInfo* variantInfo);
-    static void CopyObjectPointerVariant(CObjectStreamCopier& copier,
-                                         const CVariantInfo* variantInfo);
-    static void CopyHookedVariant(CObjectStreamCopier& copier,
-                                  const CVariantInfo* variantInfo);
-    static void SkipNonObjectVariant(CObjectIStream& in,
-                                     const CVariantInfo* variantInfo);
-    static void SkipObjectPointerVariant(CObjectIStream& in,
-                                         const CVariantInfo* variantInfo);
+    friend class CVariantInfoFunctions;
 };
 
 #include <serial/variant.inl>

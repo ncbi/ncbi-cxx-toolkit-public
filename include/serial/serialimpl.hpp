@@ -44,6 +44,7 @@
 #include <serial/classinfob.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
+#include <serial/choiceptr.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/serialbase.hpp>
 #include <typeinfo>
@@ -325,12 +326,12 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_TYPE_STL_multimap(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
     NCBI_NS_STD::multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >
 #define SERIAL_REF_STL_multimap(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs
+    CTypeRef(&NCBI_NS_NCBI::CStlClassInfo_multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
 
 #define SERIAL_TYPE_STL_map(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
     NCBI_NS_STD::map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >
 #define SERIAL_REF_STL_map(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs
+    CTypeRef(&NCBI_NS_NCBI::CStlClassInfo_map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
 
 #define SERIAL_TYPE_STL_list(TypeMacro,TypeMacroArgs) \
     NCBI_NS_STD::list<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
@@ -356,17 +357,27 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_REF_STL_auto_ptr(TypeMacro,TypeMacroArgs) \
     &NCBI_NS_NCBI::CStlClassInfo_auto_ptr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
-#define SERIAL_TYPE_STL_AutoPtr(TypeMacro,TypeMacroArgs) NCBI_NS_NCBI::AutoPtr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+#define SERIAL_TYPE_STL_AutoPtr(TypeMacro,TypeMacroArgs) \
+    NCBI_NS_NCBI::AutoPtr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_AutoPtr(TypeMacro,TypeMacroArgs) \
     &NCBI_NS_NCBI::CAutoPtrTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
-#define SERIAL_TYPE_STL_CRef(TypeMacro,TypeMacroArgs) NCBI_NS_NCBI::CRef<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+#define SERIAL_TYPE_STL_CRef(TypeMacro,TypeMacroArgs) \
+    NCBI_NS_NCBI::CRef<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_CRef(TypeMacro,TypeMacroArgs) \
     &NCBI_NS_NCBI::CRefTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_CHOICE(TypeMacro,TypeMacroArgs) \
     SERIAL_TYPE(TypeMacro)TypeMacroArgs
 #define SERIAL_REF_CHOICE(TypeMacro,TypeMacroArgs) \
+    &NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo, \
+    SERIAL_REF(TypeMacro)TypeMacroArgs
+
+//#define SERIAL_TYPE_CHOICERef(ClassName) NCBI_NS_NCBI::CRef<ClassName>
+//#define SERIAL_REF_CHOICERef(ClassName) &ClassName::GetChoiceRefTypeInfo
+#define SERIAL_TYPE_CHOICERef(TypeMacro,TypeMacroArgs) \
+    NCBI_NS_NCBI::CRef<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+#define SERIAL_REF_CHOICERef(TypeMacro,TypeMacroArgs) \
     &NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo, \
     SERIAL_REF(TypeMacro)TypeMacroArgs
 
@@ -605,101 +616,160 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define END_ENUM_IN_INFO END_ENUM_INFO_METHOD
 #define END_ENUM_INFO END_ENUM_INFO_METHOD
 
-// add member methods
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
-                       const void* member, const CTypeRef& typeRef);
-
-// one argument level:
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
-                       const void* member, TTypeInfo typeInfo);
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
-                       const void* member, TTypeInfoGetter f);
-
-// two arguments level:
+// internal methods
+// add member
 CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
                        const void* member,
-                       TTypeInfoGetter1 f, TTypeInfo t);
+                       TTypeInfo t);
 CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
                        const void* member,
-                       TTypeInfoGetter1 f, TTypeInfoGetter f1);
-
-// three arguments level:
+                       TTypeInfoGetter f);
 CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
                        const void* member,
-                       TTypeInfoGetter1 f,
-                       TTypeInfoGetter1 f1, TTypeInfo t1);
+                       const CTypeRef& r);
 CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
                        const void* member,
-                       TTypeInfoGetter1 f,
-                       TTypeInfoGetter1 f1, TTypeInfoGetter f11);
+                       TTypeInfoGetter1 f1,
+                       TTypeInfo t);
 CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
                        const void* member,
-                       TTypeInfoGetter2 f,
-                       TTypeInfo t1,
-                       TTypeInfo t2);
+                       TTypeInfoGetter1 f1,
+                       TTypeInfoGetter f);
 CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
                        const void* member,
-                       TTypeInfoGetter2 f,
-                       TTypeInfoGetter f1,
-                       TTypeInfo t2);
+                       TTypeInfoGetter1 f1,
+                       const CTypeRef& r);
 CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
                        const void* member,
-                       TTypeInfoGetter2 f,
-                       TTypeInfo t1,
-                       TTypeInfoGetter f2);
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfo t);
 CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
                        const void* member,
-                       TTypeInfoGetter2 f,
-                       TTypeInfoGetter f1,
-                       TTypeInfoGetter f2);
-
-// add varian methods
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfoGetter f);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       const CTypeRef& r);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfo t);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfoGetter f);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       const CTypeRef& r);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f4,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfo t);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f4,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfoGetter f);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f4,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       const CTypeRef& r);
+// add variant
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member, const CTypeRef& typeRef);
-
-// one argument level:
+                       const void* member,
+                       TTypeInfo t);
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member, TTypeInfo typeInfo);
+                       const void* member,
+                       TTypeInfoGetter f);
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member, TTypeInfoGetter f);
-
-// two arguments level:
+                       const void* member,
+                       const CTypeRef& r);
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member,
-                         TTypeInfoGetter1 f, TTypeInfo t);
+                       const void* member,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfo t);
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member,
-                         TTypeInfoGetter1 f, TTypeInfoGetter f1);
-
-// three arguments level:
+                       const void* member,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfoGetter f);
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member,
-                         TTypeInfoGetter1 f,
-                         TTypeInfoGetter1 f1, TTypeInfo t1);
+                       const void* member,
+                       TTypeInfoGetter1 f1,
+                       const CTypeRef& r);
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member,
-                         TTypeInfoGetter1 f,
-                         TTypeInfoGetter1 f1, TTypeInfoGetter f11);
+                       const void* member,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfo t);
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member,
-                         TTypeInfoGetter2 f,
-                         TTypeInfo t1,
-                         TTypeInfo t2);
+                       const void* member,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfoGetter f);
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member,
-                         TTypeInfoGetter2 f,
-                         TTypeInfoGetter f1,
-                         TTypeInfo t2);
+                       const void* member,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       const CTypeRef& r);
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member,
-                         TTypeInfoGetter2 f,
-                         TTypeInfo t1,
-                         TTypeInfoGetter f2);
+                       const void* member,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfo t);
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
-                         const void* member,
-                         TTypeInfoGetter2 f,
-                         TTypeInfoGetter f1,
-                         TTypeInfoGetter f2);
+                       const void* member,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfoGetter f);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       const CTypeRef& r);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f4,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfo t);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f4,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       TTypeInfoGetter f);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f4,
+                       TTypeInfoGetter1 f3,
+                       TTypeInfoGetter1 f2,
+                       TTypeInfoGetter1 f1,
+                       const CTypeRef& r);
+// end of internal methods
 
 END_NCBI_SCOPE
 

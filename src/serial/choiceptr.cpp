@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/09/26 17:38:20  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.21  2000/09/18 20:00:20  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -138,11 +142,11 @@
 BEGIN_NCBI_SCOPE
 
 CChoicePointerTypeInfo::CChoicePointerTypeInfo(TTypeInfo pointerType)
-    : CParent(pointerType->GetSize(), "",
+    : CParent(pointerType->GetSize(),
+              CTypeConverter<CPointerTypeInfo>::SafeCast(pointerType)->GetPointedType()->GetName(),
               TConstObjectPtr(0), &CVoidTypeFunctions::Create, typeid(void),
               &GetPtrIndex, &SetPtrIndex, &ResetPtrIndex)
 {
-    m_GetDataFunction = &GetPtrData;
     SetPointerType(pointerType);
 }
 
@@ -160,15 +164,18 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
     if ( base->GetTypeFamily() != eTypeFamilyPointer )
         THROW1_TRACE(runtime_error,
                      "invalid argument: must be CPointerTypeInfo");
-    const CPointerTypeInfo* pointerType =
+    const CPointerTypeInfo* ptrType =
         CTypeConverter<CPointerTypeInfo>::SafeCast(base);
-    m_PointerTypeInfo = pointerType;
+    m_PointerTypeInfo = ptrType;
 
-    if ( pointerType->GetPointedType()->GetTypeFamily() != eTypeFamilyClass )
+    if ( ptrType->GetPointedType()->GetTypeFamily() != eTypeFamilyClass )
         THROW1_TRACE(runtime_error,
                      "invalid argument: data must be CClassTypeInfo");
     const CClassTypeInfo* classType =
-        CTypeConverter<CClassTypeInfo>::SafeCast(pointerType->GetPointedType());
+        CTypeConverter<CClassTypeInfo>::SafeCast(ptrType->GetPointedType());
+    if ( !classType->IsCObject() )
+        THROW1_TRACE(runtime_error,
+                     "invalid argument:: choice ptr type must be CObject");
     const CClassTypeInfoBase::TSubClasses* subclasses =
         classType->SubClasses();
     if ( !subclasses )
@@ -183,7 +190,7 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
             // null
             variantType = nullTypeInfo;
         }
-        AddVariant(i->first, 0, variantType)->SetPointer();
+        AddVariant(i->first, 0, variantType)->SetSubClass();
         TMemberIndex index = GetVariants().LastIndex();
         if ( variantType == nullTypeInfo ) {
             if ( m_NullPointerIndex == kEmptyChoice )
@@ -202,17 +209,19 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
     }
 }
 
-TMemberIndex CChoicePointerTypeInfo::GetPtrIndex(const CChoiceTypeInfo* choiceType, TConstObjectPtr choicePtr)
+TMemberIndex
+CChoicePointerTypeInfo::GetPtrIndex(const CChoiceTypeInfo* choiceType,
+                                    TConstObjectPtr choicePtr)
 {
     const CChoicePointerTypeInfo* choicePtrType = 
         CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
 
-    const CPointerTypeInfo* pointerType = choicePtrType->m_PointerTypeInfo;
-    TConstObjectPtr classPtr = pointerType->GetObjectPointer(choicePtr);
+    const CPointerTypeInfo* ptrType = choicePtrType->m_PointerTypeInfo;
+    TConstObjectPtr classPtr = ptrType->GetObjectPointer(choicePtr);
     if ( !classPtr )
         return choicePtrType->m_NullPointerIndex;
     const CClassTypeInfo* classType =
-        CTypeConverter<CClassTypeInfo>::SafeCast(pointerType->GetPointedType());
+        CTypeConverter<CClassTypeInfo>::SafeCast(ptrType->GetPointedType());
     const TVariantsByType& variants = choicePtrType->m_VariantsByType;
     TVariantsByType::const_iterator v =
         variants.find(classType->GetCPlusPlusTypeInfo(classPtr));
@@ -228,8 +237,8 @@ void CChoicePointerTypeInfo::ResetPtrIndex(const CChoiceTypeInfo* choiceType,
     const CChoicePointerTypeInfo* choicePtrType = 
         CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
 
-    const CPointerTypeInfo* pointerType = choicePtrType->m_PointerTypeInfo;
-    pointerType->SetObjectPointer(choicePtr, 0);
+    const CPointerTypeInfo* ptrType = choicePtrType->m_PointerTypeInfo;
+    ptrType->SetObjectPointer(choicePtr, 0);
 }
 
 void CChoicePointerTypeInfo::SetPtrIndex(const CChoiceTypeInfo* choiceType,
@@ -239,22 +248,11 @@ void CChoicePointerTypeInfo::SetPtrIndex(const CChoiceTypeInfo* choiceType,
     const CChoicePointerTypeInfo* choicePtrType = 
         CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
 
-    const CPointerTypeInfo* pointerType = choicePtrType->m_PointerTypeInfo;
-    _ASSERT(!pointerType->GetObjectPointer(choicePtr));
+    const CPointerTypeInfo* ptrType = choicePtrType->m_PointerTypeInfo;
+    _ASSERT(!ptrType->GetObjectPointer(choicePtr));
     const CVariantInfo* variantInfo = choicePtrType->GetVariantInfo(index);
-    pointerType->SetObjectPointer(choicePtr,
-                                  variantInfo->GetTypeInfo()->Create());
-}
-
-TObjectPtr CChoicePointerTypeInfo::GetPtrData(const CChoiceTypeInfo* choiceType,
-                                              TObjectPtr choicePtr,
-                                              TMemberIndex /*index*/)
-{
-    const CChoicePointerTypeInfo* choicePtrType = 
-        CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
-
-    const CPointerTypeInfo* pointerType = choicePtrType->m_PointerTypeInfo;
-    return pointerType->GetObjectPointer(choicePtr);
+    ptrType->SetObjectPointer(choicePtr,
+                              variantInfo->GetTypeInfo()->Create());
 }
 
 class CNullFunctions

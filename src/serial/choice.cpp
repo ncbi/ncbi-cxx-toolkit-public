@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/09/26 17:38:20  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.21  2000/09/18 20:00:20  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -141,6 +145,23 @@
 
 BEGIN_NCBI_SCOPE
 
+class CChoiceTypeInfoFunctions
+{
+public:
+    static void ReadChoiceDefault(CObjectIStream& in,
+                                  TTypeInfo objectType,
+                                  TObjectPtr objectPtr);
+    static void WriteChoiceDefault(CObjectOStream& out,
+                                   TTypeInfo objectType,
+                                   TConstObjectPtr objectPtr);
+    static void SkipChoiceDefault(CObjectIStream& in,
+                                  TTypeInfo objectType);
+    static void CopyChoiceDefault(CObjectStreamCopier& copier,
+                                  TTypeInfo objectType);
+};
+
+typedef CChoiceTypeInfoFunctions TFunc;
+
 CChoiceTypeInfo::CChoiceTypeInfo(size_t size, const char* name, 
                                  const void* nonCObject,
                                  TTypeCreate createFunc,
@@ -199,12 +220,11 @@ CChoiceTypeInfo::CChoiceTypeInfo(size_t size, const string& name,
 
 void CChoiceTypeInfo::InitChoiceTypeInfoFunctions(void)
 {
-    SetReadFunction(&ReadChoiceDefault);
-    SetWriteFunction(&WriteChoiceDefault);
-    SetCopyFunction(&CopyChoiceDefault);
-    SetSkipFunction(&SkipChoiceDefault);
+    SetReadFunction(&TFunc::ReadChoiceDefault);
+    SetWriteFunction(&TFunc::WriteChoiceDefault);
+    SetCopyFunction(&TFunc::CopyChoiceDefault);
+    SetSkipFunction(&TFunc::SkipChoiceDefault);
     m_SelectDelayFunction = 0;
-    m_GetDataFunction = &GetChoiceData;
 }
 
 CVariantInfo* CChoiceTypeInfo::AddVariant(const char* memberId,
@@ -277,27 +297,9 @@ void CChoiceTypeInfo::SetDelayIndex(TObjectPtr objectPtr,
     m_SelectDelayFunction(this, objectPtr, index);
 }
 
-TObjectPtr CChoiceTypeInfo::GetChoiceData(const CChoiceTypeInfo* choiceType,
-                                          TObjectPtr choicePtr,
-                                          TMemberIndex index)
-{
-    _ASSERT(choicePtr != 0);
-    _ASSERT(choiceType->GetIndex(choicePtr) == index);
-    const CVariantInfo* info = choiceType->GetVariantInfo(index);
-    if ( info->CanBeDelayed() )
-        info->GetDelayBuffer(choicePtr).Update();
-
-    TObjectPtr variantPtr = info->GetItemPtr(choicePtr);
-    if ( info->IsPointer() ) {
-        variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
-        _ASSERT(variantPtr != 0 );
-    }
-    return variantPtr;
-}
-
-void CChoiceTypeInfo::ReadChoiceDefault(CObjectIStream& in,
-                                        TTypeInfo objectType,
-                                        TObjectPtr objectPtr)
+void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
+                                                 TTypeInfo objectType,
+                                                 TObjectPtr objectPtr)
 {
     const CChoiceTypeInfo* choiceType =
         CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
@@ -317,9 +319,9 @@ void CChoiceTypeInfo::ReadChoiceDefault(CObjectIStream& in,
     END_OBJECT_FRAME_OF(in);
 }
 
-void CChoiceTypeInfo::WriteChoiceDefault(CObjectOStream& out,
-                                         TTypeInfo objectType,
-                                         TConstObjectPtr objectPtr)
+void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
+                                                  TTypeInfo objectType,
+                                                  TConstObjectPtr objectPtr)
 {
     const CChoiceTypeInfo* choiceType =
         CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
@@ -340,14 +342,14 @@ void CChoiceTypeInfo::WriteChoiceDefault(CObjectOStream& out,
     END_OBJECT_FRAME_OF(out);
 }
 
-void CChoiceTypeInfo::CopyChoiceDefault(CObjectStreamCopier& copier,
-                                        TTypeInfo objectType)
+void CChoiceTypeInfoFunctions::CopyChoiceDefault(CObjectStreamCopier& copier,
+                                                 TTypeInfo objectType)
 {
     copier.CopyChoice(CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType));
 }
 
-void CChoiceTypeInfo::SkipChoiceDefault(CObjectIStream& in,
-                                        TTypeInfo objectType)
+void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
+                                                 TTypeInfo objectType)
 {
     const CChoiceTypeInfo* choiceType =
         CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/09/26 17:38:27  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.16  2000/09/18 20:00:29  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -130,7 +134,7 @@ void CReferenceDataType::FixTypeTree(void) const
 bool CReferenceDataType::CheckType(void) const
 {
     try {
-        GetModule()->Resolve(m_UserTypeName);
+        ResolveLocal(m_UserTypeName);
         return true;
     }
     catch ( CTypeNotFound& exc ) {
@@ -186,7 +190,7 @@ AutoPtr<CTypeStrings> CReferenceDataType::GetFullCType(void) const
 CDataType* CReferenceDataType::ResolveOrNull(void) const
 {
     try {
-        return GetModule()->Resolve(m_UserTypeName);
+        return ResolveLocal(m_UserTypeName);
     }
     catch (CTypeNotFound& /* ignored */) {
         return 0;
@@ -196,10 +200,10 @@ CDataType* CReferenceDataType::ResolveOrNull(void) const
 CDataType* CReferenceDataType::ResolveOrThrow(void) const
 {
     try {
-        return GetModule()->Resolve(m_UserTypeName);
+        return ResolveLocal(m_UserTypeName);
     }
     catch (CTypeNotFound& exc) {
-        throw CTypeNotFound(LocationString() + ": " + exc.what());
+        THROW1_TRACE(CTypeNotFound, LocationString()+": "+exc.what());
     }
 }
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/09/26 17:38:26  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.39  2000/09/18 20:00:28  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -282,6 +286,7 @@ extern "C"
 int main(int argc, const char*argv[])
 {
     SetDiagStream(&NcbiCerr);
+    SetDiagPostLevel(eDiag_Warning);
 
     string modulesDir;
     list<FileInfo> mainModules;

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/09/26 17:38:21  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.52  2000/09/18 20:00:21  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -370,7 +374,7 @@ void CClassTypeInfo::SetParentClass(TTypeInfo parentType)
     _ASSERT(!m_ParentClassInfo);
     m_ParentClassInfo = parentClass;
     _ASSERT(GetMembers().Empty());
-    AddMember(CMemberId(), 0, parentType);
+    AddMember(CMemberId(), 0, parentType)->SetParentClass();
 }
 
 TTypeInfo CClassTypeInfo::GetRealTypeInfo(TConstObjectPtr object) const

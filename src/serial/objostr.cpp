@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/09/26 17:38:22  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.46  2000/09/18 20:00:24  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -690,7 +694,7 @@ void CObjectOStream::WriteClass(const CClassTypeInfo* classType,
     BeginClass(classType);
     
     for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
-        classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
+        classType->GetMemberInfo(*i)->WriteMember(*this, classPtr);
     }
     
     EndClass();
@@ -791,7 +795,7 @@ void CObjectOStream::CopyClassSequential(const CClassTypeInfo* classType,
     BEGIN_OBJECT_FRAME(eFrameClassMember);
 
     TMemberIndex index;
-    while ( (index = copier.In().BeginClassMember(classType, pos)) !=
+    while ( (index = copier.In().BeginClassMember(classType, *pos)) !=
             kInvalidMember ) {
         const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
         copier.In().SetTopMemberId(memberInfo->GetId());

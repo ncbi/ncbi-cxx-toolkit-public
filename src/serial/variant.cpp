@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/26 17:38:23  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.1  2000/09/18 20:00:26  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -45,20 +49,97 @@
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/choiceptr.hpp>
+#include <serial/ptrinfo.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CVariantInfoFunctions
+{
+public:
+
+    static
+    TConstObjectPtr GetConstInlineVariant(const CVariantInfo* variantInfo,
+                                          TConstObjectPtr choicePtr);
+    static
+    TConstObjectPtr GetConstPointerVariant(const CVariantInfo* variantInfo,
+                                           TConstObjectPtr choicePtr);
+    static
+    TConstObjectPtr GetConstDelayedVariant(const CVariantInfo* variantInfo,
+                                           TConstObjectPtr choicePtr);
+    static
+    TConstObjectPtr GetConstSubclassVariant(const CVariantInfo* variantInfo,
+                                            TConstObjectPtr choicePtr);
+    static TObjectPtr GetInlineVariant(const CVariantInfo* variantInfo,
+                                       TObjectPtr choicePtr);
+    static TObjectPtr GetPointerVariant(const CVariantInfo* variantInfo,
+                                        TObjectPtr choicePtr);
+    static TObjectPtr GetDelayedVariant(const CVariantInfo* variantInfo,
+                                        TObjectPtr choicePtr);
+    static TObjectPtr GetSubclassVariant(const CVariantInfo* variantInfo,
+                                         TObjectPtr choicePtr);
+
+    static void ReadInlineVariant(CObjectIStream& in,
+                                  const CVariantInfo* variantInfo,
+                                  TObjectPtr choicePtr);
+    static void ReadPointerVariant(CObjectIStream& in,
+                                   const CVariantInfo* variantInfo,
+                                   TObjectPtr choicePtr);
+    static void ReadObjectPointerVariant(CObjectIStream& in,
+                                         const CVariantInfo* variantInfo,
+                                         TObjectPtr choicePtr);
+    static void ReadDelayedVariant(CObjectIStream& in,
+                                   const CVariantInfo* variantInfo,
+                                   TObjectPtr choicePtr);
+    static void ReadSubclassVariant(CObjectIStream& in,
+                                    const CVariantInfo* variantInfo,
+                                    TObjectPtr choicePtr);
+    static void ReadHookedVariant(CObjectIStream& in,
+                                  const CVariantInfo* variantInfo,
+                                  TObjectPtr choicePtr);
+    static void WriteInlineVariant(CObjectOStream& out,
+                                   const CVariantInfo* variantInfo,
+                                   TConstObjectPtr choicePtr);
+    static void WritePointerVariant(CObjectOStream& out,
+                                    const CVariantInfo* variantInfo,
+                                    TConstObjectPtr choicePtr);
+    static void WriteObjectPointerVariant(CObjectOStream& out,
+                                          const CVariantInfo* variantInfo,
+                                          TConstObjectPtr choicePtr);
+    static void WriteSubclassVariant(CObjectOStream& out,
+                                     const CVariantInfo* variantInfo,
+                                     TConstObjectPtr choicePtr);
+    static void WriteDelayedVariant(CObjectOStream& out,
+                                    const CVariantInfo* variantInfo,
+                                    TConstObjectPtr choicePtr);
+    static void WriteHookedVariant(CObjectOStream& out,
+                                   const CVariantInfo* variantInfo,
+                                   TConstObjectPtr choicePtr);
+    static void CopyNonObjectVariant(CObjectStreamCopier& copier,
+                                     const CVariantInfo* variantInfo);
+    static void CopyObjectPointerVariant(CObjectStreamCopier& copier,
+                                         const CVariantInfo* variantInfo);
+    static void CopyHookedVariant(CObjectStreamCopier& copier,
+                                  const CVariantInfo* variantInfo);
+    static void SkipNonObjectVariant(CObjectIStream& in,
+                                     const CVariantInfo* variantInfo);
+    static void SkipObjectPointerVariant(CObjectIStream& in,
+                                         const CVariantInfo* variantInfo);
+};
+
+typedef CVariantInfoFunctions TFunc;
 
 CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
                            const CMemberId& id, TOffset offset,
                            const CTypeRef& type)
     : CParent(id, offset, type), m_ChoiceType(choiceType),
       m_VariantType(eInlineVariant), m_DelayOffset(TOffset(eNoOffset)),
-      m_GetConstFunction(&GetConstInlineVariant),
-      m_GetFunction(&GetInlineVariant),
-      m_ReadHookData(&ReadInlineVariant, &ReadHookedVariant),
-      m_WriteHookData(&WriteInlineVariant, &WriteHookedVariant),
-      m_CopyHookData(&CopyNonObjectVariant, &CopyHookedVariant),
-      m_SkipFunction(&SkipNonObjectVariant)
+      m_GetConstFunction(&TFunc::GetConstInlineVariant),
+      m_GetFunction(&TFunc::GetInlineVariant),
+      m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
+      m_WriteHookData(&TFunc::WriteInlineVariant, &TFunc::WriteHookedVariant),
+      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant),
+      m_SkipFunction(&TFunc::SkipNonObjectVariant)
 {
 }
 
@@ -66,12 +147,12 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
                            const CMemberId& id, TOffset offset, TTypeInfo type)
     : CParent(id, offset, type), m_ChoiceType(choiceType),
       m_VariantType(eInlineVariant), m_DelayOffset(TOffset(eNoOffset)),
-      m_GetConstFunction(&GetConstInlineVariant),
-      m_GetFunction(&GetInlineVariant),
-      m_ReadHookData(&ReadInlineVariant, &ReadHookedVariant),
-      m_WriteHookData(&WriteInlineVariant, &WriteHookedVariant),
-      m_CopyHookData(&CopyNonObjectVariant, &CopyHookedVariant),
-      m_SkipFunction(&SkipNonObjectVariant)
+      m_GetConstFunction(&TFunc::GetConstInlineVariant),
+      m_GetFunction(&TFunc::GetInlineVariant),
+      m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
+      m_WriteHookData(&TFunc::WriteInlineVariant, &TFunc::WriteHookedVariant),
+      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant),
+      m_SkipFunction(&TFunc::SkipNonObjectVariant)
 {
 }
 
@@ -80,12 +161,12 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
                            const CTypeRef& type)
     : CParent(id, offset, type), m_ChoiceType(choiceType),
       m_VariantType(eInlineVariant), m_DelayOffset(TOffset(eNoOffset)),
-      m_GetConstFunction(&GetConstInlineVariant),
-      m_GetFunction(&GetInlineVariant),
-      m_ReadHookData(&ReadInlineVariant, &ReadHookedVariant),
-      m_WriteHookData(&WriteInlineVariant, &WriteHookedVariant),
-      m_CopyHookData(&CopyNonObjectVariant, &CopyHookedVariant),
-      m_SkipFunction(&SkipNonObjectVariant)
+      m_GetConstFunction(&TFunc::GetConstInlineVariant),
+      m_GetFunction(&TFunc::GetInlineVariant),
+      m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
+      m_WriteHookData(&TFunc::WriteInlineVariant, &TFunc::WriteHookedVariant),
+      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant),
+      m_SkipFunction(&TFunc::SkipNonObjectVariant)
 {
 }
 
@@ -93,12 +174,12 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
                            const char* id, TOffset offset, TTypeInfo type)
     : CParent(id, offset, type), m_ChoiceType(choiceType),
       m_VariantType(eInlineVariant), m_DelayOffset(TOffset(eNoOffset)),
-      m_GetConstFunction(&GetConstInlineVariant),
-      m_GetFunction(&GetInlineVariant),
-      m_ReadHookData(&ReadInlineVariant, &ReadHookedVariant),
-      m_WriteHookData(&WriteInlineVariant, &WriteHookedVariant),
-      m_CopyHookData(&CopyNonObjectVariant, &CopyHookedVariant),
-      m_SkipFunction(&SkipNonObjectVariant)
+      m_GetConstFunction(&TFunc::GetConstInlineVariant),
+      m_GetFunction(&TFunc::GetInlineVariant),
+      m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
+      m_WriteHookData(&TFunc::WriteInlineVariant, &TFunc::WriteHookedVariant),
+      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant),
+      m_SkipFunction(&TFunc::SkipNonObjectVariant)
 {
 }
 
@@ -108,332 +189,90 @@ CVariantInfo::~CVariantInfo(void)
 
 CVariantInfo* CVariantInfo::SetPointer(void)
 {
-    m_VariantType = ePointerVariant;
-    UpdateGetFunction();
-    UpdateReadFunction();
-    UpdateWriteFunction();
-    UpdateCopyFunction();
-    UpdateSkipFunction();
+    if ( !IsInline() )
+        THROW1_TRACE(runtime_error, "SetPointer() is not first call");
+    m_VariantType = eNonObjectPointerVariant;
+    UpdateFunctions();
     return this;
 }
 
 CVariantInfo* CVariantInfo::SetObjectPointer(void)
 {
+    if ( !IsInline() )
+        THROW1_TRACE(runtime_error, "SetObjectPointer() is not first call");
     m_VariantType = eObjectPointerVariant;
-    UpdateGetFunction();
-    UpdateReadFunction();
-    UpdateWriteFunction();
-    UpdateCopyFunction();
-    UpdateSkipFunction();
+    UpdateFunctions();
+    return this;
+}
+
+CVariantInfo* CVariantInfo::SetSubClass(void)
+{
+    if ( !IsInline() )
+        THROW1_TRACE(runtime_error, "SetSubClass() is not first call");
+    if ( CanBeDelayed() )
+        THROW1_TRACE(runtime_error, "sub class cannot be delayed");
+    m_VariantType = eSubClassVariant;
+    UpdateFunctions();
     return this;
 }
 
 CVariantInfo* CVariantInfo::SetDelayBuffer(CDelayBuffer* buffer)
 {
+    if ( IsSubClass() )
+        THROW1_TRACE(runtime_error, "sub class cannot be delayed");
     m_DelayOffset = size_t(buffer);
-    UpdateGetFunction();
-    UpdateReadFunction();
-    UpdateWriteFunction();
+    UpdateFunctions();
     return this;
 }
 
-void CVariantInfo::UpdateGetFunction(void)
+void CVariantInfo::UpdateFunctions(void)
 {
+    TVariantRead& readFunc = m_ReadHookData.GetDefaultFunction();
+    TVariantWrite& writeFunc = m_WriteHookData.GetDefaultFunction();
+    TVariantCopy& copyFunc = m_CopyHookData.GetDefaultFunction();
+
+    // read/write/get
     if ( CanBeDelayed() ) {
-        m_GetConstFunction = &GetConstDelayedVariant;
-        m_GetFunction = &GetDelayedVariant;
+        _ASSERT(!IsSubClass());
+        m_GetConstFunction = &TFunc::GetConstDelayedVariant;
+        m_GetFunction = &TFunc::GetDelayedVariant;
+        readFunc = &TFunc::ReadDelayedVariant;
+        writeFunc = &TFunc::WriteDelayedVariant;
     }
-    else if ( IsPointer() ) {
-        m_GetConstFunction = &GetConstPointerVariant;
-        m_GetFunction = &GetPointerVariant;
+    else if ( IsInline() ) {
+        m_GetConstFunction = &TFunc::GetConstInlineVariant;
+        m_GetFunction = &TFunc::GetInlineVariant;
+        readFunc = &TFunc::ReadInlineVariant;
+        writeFunc = &TFunc::WriteInlineVariant;
+    }
+    else if ( IsObjectPointer() ) {
+        m_GetConstFunction = &TFunc::GetConstPointerVariant;
+        m_GetFunction = &TFunc::GetPointerVariant;
+        readFunc = &TFunc::ReadObjectPointerVariant;
+        writeFunc = &TFunc::WriteObjectPointerVariant;
+    }
+    else if ( IsNonObjectPointer() ) {
+        m_GetConstFunction = &TFunc::GetConstPointerVariant;
+        m_GetFunction = &TFunc::GetPointerVariant;
+        readFunc = &TFunc::ReadPointerVariant;
+        writeFunc = &TFunc::WritePointerVariant;
+    }
+    else { // subclass
+        m_GetConstFunction = &TFunc::GetConstSubclassVariant;
+        m_GetFunction = &TFunc::GetSubclassVariant;
+        readFunc = &TFunc::ReadSubclassVariant;
+        writeFunc = &TFunc::WriteSubclassVariant;
+    }
+
+    // copy/skip
+    if ( IsObject() ) {
+        copyFunc = &TFunc::CopyObjectPointerVariant;
+        m_SkipFunction = &TFunc::SkipObjectPointerVariant;
     }
     else {
-        m_GetConstFunction = &GetConstInlineVariant;
-        m_GetFunction = &GetInlineVariant;
+        copyFunc = &TFunc::CopyNonObjectVariant;
+        m_SkipFunction = &TFunc::SkipNonObjectVariant;
     }
-}
-
-void CVariantInfo::UpdateReadFunction(void)
-{
-    m_ReadHookData.GetDefaultFunction() =
-        CanBeDelayed()? &ReadDelayedVariant:
-        !IsPointer()? &ReadInlineVariant:
-        IsObjectPointer()? &ReadObjectPointerVariant:
-        &ReadPointerVariant;
-}
-
-void CVariantInfo::UpdateWriteFunction(void)
-{
-    m_WriteHookData.GetDefaultFunction() =
-        CanBeDelayed()? &WriteDelayedVariant:
-        !IsPointer()? &WriteInlineVariant:
-        IsObjectPointer()? &WriteObjectPointerVariant:
-        &WritePointerVariant;
-}
-
-void CVariantInfo::UpdateCopyFunction(void)
-{
-    m_CopyHookData.GetDefaultFunction() =
-        IsObjectPointer()? &CopyObjectPointerVariant:
-        &CopyNonObjectVariant;
-}
-
-void CVariantInfo::UpdateSkipFunction(void)
-{
-    m_SkipFunction =
-        IsObjectPointer()? &SkipObjectPointerVariant:
-        &SkipNonObjectVariant;
-}
-
-TConstObjectPtr
-CVariantInfo::GetConstInlineVariant(const CVariantInfo* variantInfo,
-                                    TConstObjectPtr choicePtr)
-{
-    _ASSERT(!variantInfo->CanBeDelayed());
-    _ASSERT(!variantInfo->IsPointer());
-    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
-            variantInfo->GetIndex());
-    return variantInfo->GetItemPtr(choicePtr);
-}
-
-TConstObjectPtr
-CVariantInfo::GetConstPointerVariant(const CVariantInfo* variantInfo,
-                                     TConstObjectPtr choicePtr)
-{
-    _ASSERT(!variantInfo->CanBeDelayed());
-    _ASSERT(variantInfo->IsPointer());
-    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
-            variantInfo->GetIndex());
-    TConstObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
-    variantPtr = CTypeConverter<TConstObjectPtr>::Get(variantPtr);
-    _ASSERT(variantPtr);
-    return variantPtr;
-}
-
-TConstObjectPtr
-CVariantInfo::GetConstDelayedVariant(const CVariantInfo* variantInfo,
-                                     TConstObjectPtr choicePtr)
-{
-    _ASSERT(variantInfo->CanBeDelayed());
-    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
-            variantInfo->GetIndex());
-    const_cast<CDelayBuffer&>(variantInfo->GetDelayBuffer(choicePtr)).Update();
-    TConstObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
-    if ( variantInfo->IsPointer() ) {
-        variantPtr = CTypeConverter<TConstObjectPtr>::Get(variantPtr);
-        _ASSERT(variantPtr);
-    }
-    return variantPtr;
-}
-
-TObjectPtr CVariantInfo::GetInlineVariant(const CVariantInfo* variantInfo,
-                                          TObjectPtr choicePtr)
-{
-    _ASSERT(!variantInfo->CanBeDelayed());
-    _ASSERT(!variantInfo->IsPointer());
-    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
-            variantInfo->GetIndex());
-    return variantInfo->GetItemPtr(choicePtr);
-}
-
-TObjectPtr CVariantInfo::GetPointerVariant(const CVariantInfo* variantInfo,
-                                           TObjectPtr choicePtr)
-{
-    _ASSERT(!variantInfo->CanBeDelayed());
-    _ASSERT(variantInfo->IsPointer());
-    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
-            variantInfo->GetIndex());
-    TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
-    variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
-    _ASSERT(variantPtr);
-    return variantPtr;
-}
-
-TObjectPtr CVariantInfo::GetDelayedVariant(const CVariantInfo* variantInfo,
-                                           TObjectPtr choicePtr)
-{
-    _ASSERT(variantInfo->CanBeDelayed());
-    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
-            variantInfo->GetIndex());
-    variantInfo->GetDelayBuffer(choicePtr).Update();
-    TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
-    if ( variantInfo->IsPointer() ) {
-        variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
-        _ASSERT(variantPtr);
-    }
-    return variantPtr;
-}
-
-void CVariantInfo::ReadInlineVariant(CObjectIStream& in,
-                                     const CVariantInfo* variantInfo,
-                                     TObjectPtr choicePtr)
-{
-    _ASSERT(!variantInfo->IsPointer());
-    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
-    TMemberIndex index = variantInfo->GetIndex();
-    choiceType->SetIndex(choicePtr, index);
-    in.ReadObject(variantInfo->GetItemPtr(choicePtr),
-                  variantInfo->GetTypeInfo());
-}
-
-void CVariantInfo::ReadPointerVariant(CObjectIStream& in,
-                                      const CVariantInfo* variantInfo,
-                                      TObjectPtr choicePtr)
-{
-    _ASSERT(variantInfo->IsPointer());
-    _ASSERT(!variantInfo->IsObjectPointer());
-    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
-    TMemberIndex index = variantInfo->GetIndex();
-    choiceType->SetIndex(choicePtr, index);
-    TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
-    variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
-    _ASSERT(variantPtr != 0 );
-    in.ReadObject(variantPtr, variantInfo->GetTypeInfo());
-}
-
-void CVariantInfo::ReadObjectPointerVariant(CObjectIStream& in,
-                                            const CVariantInfo* variantInfo,
-                                            TObjectPtr choicePtr)
-{
-    _ASSERT(variantInfo->IsObjectPointer());
-    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
-    TMemberIndex index = variantInfo->GetIndex();
-    choiceType->SetIndex(choicePtr, index);
-    TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
-    variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
-    _ASSERT(variantPtr != 0 );
-    in.ReadExternalObject(variantPtr, variantInfo->GetTypeInfo());
-}
-
-void CVariantInfo::ReadDelayedVariant(CObjectIStream& in,
-                                      const CVariantInfo* variantInfo,
-                                      TObjectPtr choicePtr)
-{
-    _ASSERT(variantInfo->CanBeDelayed());
-    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
-    TMemberIndex index = variantInfo->GetIndex();
-    TTypeInfo variantType = variantInfo->GetTypeInfo();
-    if ( index != choiceType->GetIndex(choicePtr) ) {
-        // index is differnet from current -> first, reset choice
-        choiceType->ResetIndex(choicePtr);
-        CDelayBuffer& buffer = variantInfo->GetDelayBuffer(choicePtr);
-        if ( !buffer ) {
-            in.StartDelayBuffer();
-            if ( variantInfo->IsObjectPointer() )
-                in.SkipExternalObject(variantType);
-            else
-                in.SkipObject(variantType);
-            in.EndDelayBuffer(buffer, variantInfo, choicePtr);
-            // update index
-            choiceType->SetDelayIndex(choicePtr, index);
-            return;
-        }
-        buffer.Update();
-        _ASSERT(!variantInfo->GetDelayBuffer(choicePtr));
-    }
-    // select for reading
-    choiceType->SetIndex(choicePtr, index);
-
-    TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
-    if ( variantInfo->IsPointer() ) {
-        variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
-        _ASSERT(variantPtr != 0 );
-        if ( variantInfo->IsObjectPointer() ) {
-            in.ReadExternalObject(variantPtr, variantType);
-            return;
-        }
-    }
-    in.ReadObject(variantPtr, variantType);
-}
-
-void CVariantInfo::WriteInlineVariant(CObjectOStream& out,
-                                      const CVariantInfo* variantInfo,
-                                      TConstObjectPtr choicePtr)
-{
-    _ASSERT(!variantInfo->IsPointer());
-    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
-            variantInfo->GetIndex());
-    out.WriteObject(variantInfo->GetItemPtr(choicePtr),
-                    variantInfo->GetTypeInfo());
-}
-
-void CVariantInfo::WritePointerVariant(CObjectOStream& out,
-                                       const CVariantInfo* variantInfo,
-                                       TConstObjectPtr choicePtr)
-{
-    _ASSERT(variantInfo->IsPointer());
-    _ASSERT(!variantInfo->IsObjectPointer());
-    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
-            variantInfo->GetIndex());
-    TConstObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
-    variantPtr = CTypeConverter<TConstObjectPtr>::Get(variantPtr);
-    _ASSERT(variantPtr != 0 );
-    out.WriteObject(variantPtr, variantInfo->GetTypeInfo());
-}
-
-void CVariantInfo::WriteObjectPointerVariant(CObjectOStream& out,
-                                             const CVariantInfo* variantInfo,
-                                             TConstObjectPtr choicePtr)
-{
-    _ASSERT(variantInfo->IsObjectPointer());
-    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
-            variantInfo->GetIndex());
-    TConstObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
-    variantPtr = CTypeConverter<TConstObjectPtr>::Get(variantPtr);
-    _ASSERT(variantPtr != 0 );
-    out.WriteExternalObject(variantPtr, variantInfo->GetTypeInfo());
-}
-
-void CVariantInfo::WriteDelayedVariant(CObjectOStream& out,
-                                       const CVariantInfo* variantInfo,
-                                       TConstObjectPtr choicePtr)
-{
-    _ASSERT(variantInfo->CanBeDelayed());
-    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
-            variantInfo->GetIndex());
-    const CDelayBuffer& buffer = variantInfo->GetDelayBuffer(choicePtr);
-    if ( buffer.GetIndex() == variantInfo->GetIndex() ) {
-        if ( buffer.HaveFormat(out.GetDataFormat()) ) {
-            out.Write(buffer.GetSource());
-            return;
-        }
-        const_cast<CDelayBuffer&>(buffer).Update();
-        _ASSERT(!variantInfo->GetDelayBuffer(choicePtr));
-    }
-    TConstObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
-    if ( variantInfo->IsPointer() ) {
-        variantPtr = CTypeConverter<TConstObjectPtr>::Get(variantPtr);
-        _ASSERT(variantPtr != 0 );
-        if ( variantInfo->IsObjectPointer() ) {
-            out.WriteExternalObject(variantPtr, variantInfo->GetTypeInfo());
-            return;
-        }
-    }
-    out.WriteObject(variantPtr, variantInfo->GetTypeInfo());
-}
-
-void CVariantInfo::CopyNonObjectVariant(CObjectStreamCopier& copier,
-                                        const CVariantInfo* variantInfo)
-{
-    copier.CopyObject(variantInfo->GetTypeInfo());
-}
-
-void CVariantInfo::CopyObjectPointerVariant(CObjectStreamCopier& copier,
-                                            const CVariantInfo* variantInfo)
-{
-    copier.CopyExternalObject(variantInfo->GetTypeInfo());
-}
-
-void CVariantInfo::SkipNonObjectVariant(CObjectIStream& in,
-                                        const CVariantInfo* variantInfo)
-{
-    in.SkipObject(variantInfo->GetTypeInfo());
-}
-
-void CVariantInfo::SkipObjectPointerVariant(CObjectIStream& in,
-                                            const CVariantInfo* variantInfo)
-{
-    in.SkipExternalObject(variantInfo->GetTypeInfo());
 }
 
 void CVariantInfo::UpdateDelayedBuffer(CObjectIStream& in,
@@ -477,44 +316,382 @@ void CVariantInfo::SetSkipFunction(TVariantSkip func)
     m_SkipFunction = func;
 }
 
-void CVariantInfo::ReadHookedVariant(CObjectIStream& stream,
-                                     const CVariantInfo* variantInfo,
-                                     TObjectPtr choicePtr)
+TConstObjectPtr
+CVariantInfoFunctions::GetConstInlineVariant(const CVariantInfo* variantInfo,
+                                             TConstObjectPtr choicePtr)
 {
-    CReadChoiceVariantHook* hook = variantInfo->m_ReadHookData.GetHook(&stream);
-    if ( hook )
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsInline());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    return variantInfo->GetItemPtr(choicePtr);
+}
+
+TConstObjectPtr
+CVariantInfoFunctions::GetConstPointerVariant(const CVariantInfo* variantInfo,
+                                              TConstObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsPointer());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    TConstObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+    variantPtr = CTypeConverter<TConstObjectPtr>::Get(variantPtr);
+    _ASSERT(variantPtr);
+    return variantPtr;
+}
+
+TConstObjectPtr
+CVariantInfoFunctions::GetConstDelayedVariant(const CVariantInfo* variantInfo,
+                                              TConstObjectPtr choicePtr)
+{
+    _ASSERT(variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    const_cast<CDelayBuffer&>(variantInfo->GetDelayBuffer(choicePtr)).Update();
+    TConstObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+    if ( variantInfo->IsPointer() ) {
+        variantPtr = CTypeConverter<TConstObjectPtr>::Get(variantPtr);
+        _ASSERT(variantPtr);
+    }
+    return variantPtr;
+}
+
+TConstObjectPtr
+CVariantInfoFunctions::GetConstSubclassVariant(const CVariantInfo* variantInfo,
+                                               TConstObjectPtr choicePtr)
+{
+    _ASSERT(variantInfo->IsSubClass());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
+    const CChoicePointerTypeInfo* choicePtrType =
+        CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
+    TConstObjectPtr variantPtr =
+        choicePtrType->GetPointerTypeInfo()->GetObjectPointer(choicePtr);
+    _ASSERT(variantPtr);
+    return variantPtr;
+}
+
+TObjectPtr
+CVariantInfoFunctions::GetInlineVariant(const CVariantInfo* variantInfo,
+                                        TObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsInline());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    return variantInfo->GetItemPtr(choicePtr);
+}
+
+TObjectPtr
+CVariantInfoFunctions::GetPointerVariant(const CVariantInfo* variantInfo,
+                                         TObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsPointer());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+    variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
+    _ASSERT(variantPtr);
+    return variantPtr;
+}
+
+TObjectPtr
+CVariantInfoFunctions::GetDelayedVariant(const CVariantInfo* variantInfo,
+                                         TObjectPtr choicePtr)
+{
+    _ASSERT(variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    variantInfo->GetDelayBuffer(choicePtr).Update();
+    TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+    if ( variantInfo->IsPointer() ) {
+        variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
+        _ASSERT(variantPtr);
+    }
+    return variantPtr;
+}
+
+TObjectPtr
+CVariantInfoFunctions::GetSubclassVariant(const CVariantInfo* variantInfo,
+                                          TObjectPtr choicePtr)
+{
+    _ASSERT(variantInfo->IsSubClass());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
+    const CChoicePointerTypeInfo* choicePtrType =
+        CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
+    TObjectPtr variantPtr =
+        choicePtrType->GetPointerTypeInfo()->GetObjectPointer(choicePtr);
+    _ASSERT(variantPtr);
+    return variantPtr;
+}
+
+void CVariantInfoFunctions::ReadInlineVariant(CObjectIStream& in,
+                                              const CVariantInfo* variantInfo,
+                                              TObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsInline());
+    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
+    TMemberIndex index = variantInfo->GetIndex();
+    choiceType->SetIndex(choicePtr, index);
+    in.ReadObject(variantInfo->GetItemPtr(choicePtr),
+                  variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::ReadPointerVariant(CObjectIStream& in,
+                                               const CVariantInfo* variantInfo,
+                                               TObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsNonObjectPointer());
+    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
+    TMemberIndex index = variantInfo->GetIndex();
+    choiceType->SetIndex(choicePtr, index);
+    TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+    variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
+    _ASSERT(variantPtr != 0 );
+    in.ReadObject(variantPtr, variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::ReadObjectPointerVariant(CObjectIStream& in,
+                                                     const CVariantInfo* variantInfo,
+                                                     TObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsObjectPointer());
+    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
+    TMemberIndex index = variantInfo->GetIndex();
+    choiceType->SetIndex(choicePtr, index);
+    TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+    variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
+    _ASSERT(variantPtr != 0 );
+    in.ReadExternalObject(variantPtr, variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::ReadSubclassVariant(CObjectIStream& in,
+                                                const CVariantInfo* variantInfo,
+                                                TObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsSubClass());
+    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
+    TMemberIndex index = variantInfo->GetIndex();
+    choiceType->SetIndex(choicePtr, index);
+    const CChoicePointerTypeInfo* choicePtrType =
+        CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
+    TObjectPtr variantPtr =
+        choicePtrType->GetPointerTypeInfo()->GetObjectPointer(choicePtr);
+    _ASSERT(variantPtr);
+    in.ReadExternalObject(variantPtr, variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::ReadDelayedVariant(CObjectIStream& in,
+                                               const CVariantInfo* variantInfo,
+                                               TObjectPtr choicePtr)
+{
+    _ASSERT(variantInfo->CanBeDelayed());
+    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
+    TMemberIndex index = variantInfo->GetIndex();
+    TTypeInfo variantType = variantInfo->GetTypeInfo();
+    if ( index != choiceType->GetIndex(choicePtr) ) {
+        // index is differnet from current -> first, reset choice
+        choiceType->ResetIndex(choicePtr);
+        CDelayBuffer& buffer = variantInfo->GetDelayBuffer(choicePtr);
+        if ( !buffer ) {
+            in.StartDelayBuffer();
+            if ( variantInfo->IsObjectPointer() )
+                in.SkipExternalObject(variantType);
+            else
+                in.SkipObject(variantType);
+            in.EndDelayBuffer(buffer, variantInfo, choicePtr);
+            // update index
+            choiceType->SetDelayIndex(choicePtr, index);
+            return;
+        }
+        buffer.Update();
+        _ASSERT(!variantInfo->GetDelayBuffer(choicePtr));
+    }
+    // select for reading
+    choiceType->SetIndex(choicePtr, index);
+
+    TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+    if ( variantInfo->IsPointer() ) {
+        variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
+        _ASSERT(variantPtr != 0 );
+        if ( variantInfo->IsObjectPointer() ) {
+            in.ReadExternalObject(variantPtr, variantType);
+            return;
+        }
+    }
+    in.ReadObject(variantPtr, variantType);
+}
+
+void CVariantInfoFunctions::WriteInlineVariant(CObjectOStream& out,
+                                               const CVariantInfo* variantInfo,
+                                               TConstObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsInline());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    out.WriteObject(variantInfo->GetItemPtr(choicePtr),
+                    variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::WritePointerVariant(CObjectOStream& out,
+                                                const CVariantInfo* variantInfo,
+                                                TConstObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsNonObjectPointer());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    TConstObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+    variantPtr = CTypeConverter<TConstObjectPtr>::Get(variantPtr);
+    _ASSERT(variantPtr != 0 );
+    out.WriteObject(variantPtr, variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::WriteObjectPointerVariant(CObjectOStream& out,
+                                                      const CVariantInfo* variantInfo,
+                                                      TConstObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsObjectPointer());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    TConstObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+    variantPtr = CTypeConverter<TConstObjectPtr>::Get(variantPtr);
+    _ASSERT(variantPtr != 0 );
+    out.WriteExternalObject(variantPtr, variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::WriteSubclassVariant(CObjectOStream& out,
+                                                 const CVariantInfo* variantInfo,
+                                                 TConstObjectPtr choicePtr)
+{
+    _ASSERT(!variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->IsSubClass());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
+    const CChoicePointerTypeInfo* choicePtrType =
+        CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
+    TConstObjectPtr variantPtr =
+        choicePtrType->GetPointerTypeInfo()->GetObjectPointer(choicePtr);
+    _ASSERT(variantPtr);
+    out.WriteExternalObject(variantPtr, variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::WriteDelayedVariant(CObjectOStream& out,
+                                                const CVariantInfo* variantInfo,
+                                                TConstObjectPtr choicePtr)
+{
+    _ASSERT(variantInfo->CanBeDelayed());
+    _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
+            variantInfo->GetIndex());
+    const CDelayBuffer& buffer = variantInfo->GetDelayBuffer(choicePtr);
+    if ( buffer.GetIndex() == variantInfo->GetIndex() ) {
+        if ( buffer.HaveFormat(out.GetDataFormat()) ) {
+            out.Write(buffer.GetSource());
+            return;
+        }
+        const_cast<CDelayBuffer&>(buffer).Update();
+        _ASSERT(!variantInfo->GetDelayBuffer(choicePtr));
+    }
+    TConstObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+    if ( variantInfo->IsPointer() ) {
+        variantPtr = CTypeConverter<TConstObjectPtr>::Get(variantPtr);
+        _ASSERT(variantPtr != 0 );
+        if ( variantInfo->IsObjectPointer() ) {
+            out.WriteExternalObject(variantPtr, variantInfo->GetTypeInfo());
+            return;
+        }
+    }
+    out.WriteObject(variantPtr, variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::CopyNonObjectVariant(CObjectStreamCopier& copier,
+                                                 const CVariantInfo* variantInfo)
+{
+    _ASSERT(!variantInfo->IsNotObject());
+    copier.CopyObject(variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::CopyObjectPointerVariant(CObjectStreamCopier& copier,
+                                                     const CVariantInfo* variantInfo)
+{
+    _ASSERT(variantInfo->IsObject());
+    copier.CopyExternalObject(variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::SkipNonObjectVariant(CObjectIStream& in,
+                                                 const CVariantInfo* variantInfo)
+{
+    _ASSERT(!variantInfo->IsNotObject());
+    in.SkipObject(variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::SkipObjectPointerVariant(CObjectIStream& in,
+                                            const CVariantInfo* variantInfo)
+{
+    _ASSERT(variantInfo->IsObject());
+    in.SkipExternalObject(variantInfo->GetTypeInfo());
+}
+
+void CVariantInfoFunctions::ReadHookedVariant(CObjectIStream& stream,
+                                              const CVariantInfo* variantInfo,
+                                              TObjectPtr choicePtr)
+{
+    CReadChoiceVariantHook* hook =
+        variantInfo->m_ReadHookData.GetHook(&stream);
+    if ( hook ) {
+        CObjectInfo type(choicePtr, variantInfo->GetChoiceType(),
+                         CConstObjectInfo::eNonCObject);
+        TMemberIndex index = variantInfo->GetIndex();
         hook->ReadChoiceVariant(stream,
-                                CObjectInfo(choicePtr,
-                                            variantInfo->GetChoiceType(),
-                                            CObjectInfo::eNonCObject),
-                                variantInfo->GetIndex());
+                                CObjectInfo::CChoiceVariant(type,
+                                                            index));
+    }
     else
         variantInfo->DefaultReadVariant(stream, choicePtr);
 }
 
-void CVariantInfo::WriteHookedVariant(CObjectOStream& stream,
-                                      const CVariantInfo* variantInfo,
-                                      TConstObjectPtr choicePtr)
+void CVariantInfoFunctions::WriteHookedVariant(CObjectOStream& stream,
+                                               const CVariantInfo* variantInfo,
+                                               TConstObjectPtr choicePtr)
 {
-    CWriteChoiceVariantHook* hook = variantInfo->m_WriteHookData.GetHook(&stream);
-    if ( hook )
+    CWriteChoiceVariantHook* hook =
+        variantInfo->m_WriteHookData.GetHook(&stream);
+    if ( hook ) {
+        CConstObjectInfo type(choicePtr, variantInfo->GetChoiceType(),
+                              CConstObjectInfo::eNonCObject);
+        TMemberIndex index = variantInfo->GetIndex();
         hook->WriteChoiceVariant(stream,
-                                 CConstObjectInfo(choicePtr,
-                                                  variantInfo->GetChoiceType(),
-                                                  CObjectInfo::eNonCObject),
-                                 variantInfo->GetIndex());
+                                 CConstObjectInfo::CChoiceVariant(type,
+                                                                  index));
+    }
     else
         variantInfo->DefaultWriteVariant(stream, choicePtr);
 }
 
-void CVariantInfo::CopyHookedVariant(CObjectStreamCopier& stream,
-                                     const CVariantInfo* variantInfo)
+void CVariantInfoFunctions::CopyHookedVariant(CObjectStreamCopier& stream,
+                                              const CVariantInfo* variantInfo)
 {
-    CCopyChoiceVariantHook* hook = variantInfo->m_CopyHookData.GetHook(&stream);
-    if ( hook )
+    CCopyChoiceVariantHook* hook =
+        variantInfo->m_CopyHookData.GetHook(&stream);
+    if ( hook ) {
+        CObjectTypeInfo type(variantInfo->GetChoiceType());
+        TMemberIndex index = variantInfo->GetIndex();
         hook->CopyChoiceVariant(stream,
-                                variantInfo->GetChoiceType(),
-                                variantInfo->GetIndex());
+                                CObjectTypeInfo::CVariantIterator(type,
+                                                                  index));
+    }
     else
         variantInfo->DefaultCopyVariant(stream);
 }

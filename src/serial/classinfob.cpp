@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/26 17:38:21  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.4  2000/09/18 20:00:21  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -67,7 +71,6 @@ CClassTypeInfoBase::~CClassTypeInfoBase(void)
 void CClassTypeInfoBase::InitClassTypeInfoBase(const type_info& id)
 {
     m_Id = &id;
-    m_IsCObject = false;
     Register();
 }
 

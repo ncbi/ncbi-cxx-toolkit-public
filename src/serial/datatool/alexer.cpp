@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/26 17:38:25  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.9  2000/08/25 15:59:19  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -74,12 +78,13 @@ AbstractLexer::~AbstractLexer(void)
 
 void AbstractLexer::LexerError(const char* error)
 {
-    throw runtime_error(NStr::IntToString(m_Line) + ": lexer error: " + error);
+    THROW1_TRACE(runtime_error,
+                 NStr::IntToString(m_Line)+": lexer error: "+error);
 }
 
 void AbstractLexer::LexerWarning(const char* error)
 {
-    NcbiCerr << m_Line << ": lexer error: " << error << NcbiEndl;
+    ERR_POST(m_Line << ": lexer error: " << error);
 }
 
 string AbstractLexer::ConsumeAndValue(void)

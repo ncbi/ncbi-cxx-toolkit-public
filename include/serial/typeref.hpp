@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/26 17:38:08  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.8  2000/05/24 20:08:16  vasilche
 * Implemented XML dump.
 *
@@ -104,6 +108,8 @@ public:
         }
     typedef TTypeInfo (*TGet1Proc)(TTypeInfo arg);
     CTypeRef(TGet1Proc getter, const CTypeRef& arg);
+    typedef TTypeInfo (*TGet2Proc)(TTypeInfo arg1, TTypeInfo arg2);
+    CTypeRef(TGet2Proc getter, const CTypeRef& arg1, const CTypeRef& arg2);
     CTypeRef(CTypeInfoSource* source);
     CTypeRef(const CTypeRef& typeRef);
     CTypeRef& operator=(const CTypeRef& typeRef);
@@ -152,6 +158,21 @@ public:
 private:
     CTypeRef::TGet1Proc m_Getter;
     CTypeRef m_Argument;
+};
+
+class CGet2TypeInfoSource : public CTypeInfoSource
+{
+public:
+    CGet2TypeInfoSource(CTypeRef::TGet2Proc getter,
+                        const CTypeRef& arg1, const CTypeRef& arg2);
+    ~CGet2TypeInfoSource(void);
+
+    virtual TTypeInfo GetTypeInfo(void);
+
+private:
+    CTypeRef::TGet2Proc m_Getter;
+    CTypeRef m_Argument1;
+    CTypeRef m_Argument2;
 };
 
 //#include <serial/typeref.inl>

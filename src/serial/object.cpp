@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/26 17:38:21  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.8  2000/09/18 20:00:23  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -83,6 +87,11 @@
 #include <serial/objistr.hpp>
 
 BEGIN_NCBI_SCOPE
+
+void CObjectTypeInfo::WrongTypeFamily(ETypeFamily needFamily) const
+{
+    THROW1_TRACE(runtime_error, "wrong type family");
+}
 
 // container iterators
 

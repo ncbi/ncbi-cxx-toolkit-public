@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/26 17:38:23  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.4  1999/12/17 19:05:05  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -62,6 +66,14 @@ CTypeRef::CTypeRef(TGet1Proc getProc, const CTypeRef& arg)
     : m_Getter(sx_Abort)
 {
     m_Resolve = new CGet1TypeInfoSource(getProc, arg);
+    m_Getter = sx_Resolve;
+}
+
+CTypeRef::CTypeRef(TGet2Proc getProc,
+                   const CTypeRef& arg1, const CTypeRef& arg2)
+    : m_Getter(sx_Abort)
+{
+    m_Resolve = new CGet2TypeInfoSource(getProc, arg1, arg2);
     m_Getter = sx_Resolve;
 }
 
@@ -155,7 +167,7 @@ CTypeInfoSource::~CTypeInfoSource(void)
     _ASSERT(m_RefCount == 0);
 }
 
-CGet1TypeInfoSource::CGet1TypeInfoSource(TTypeInfo (*getter)(TTypeInfo ),
+CGet1TypeInfoSource::CGet1TypeInfoSource(CTypeRef::TGet1Proc getter,
                                          const CTypeRef& arg)
     : m_Getter(getter), m_Argument(arg)
 {
@@ -168,6 +180,22 @@ CGet1TypeInfoSource::~CGet1TypeInfoSource(void)
 TTypeInfo CGet1TypeInfoSource::GetTypeInfo(void)
 {
     return m_Getter(m_Argument.Get());
+}
+
+CGet2TypeInfoSource::CGet2TypeInfoSource(CTypeRef::TGet2Proc getter,
+                                         const CTypeRef& arg1,
+                                         const CTypeRef& arg2)
+    : m_Getter(getter), m_Argument1(arg1), m_Argument2(arg2)
+{
+}
+
+CGet2TypeInfoSource::~CGet2TypeInfoSource(void)
+{
+}
+
+TTypeInfo CGet2TypeInfoSource::GetTypeInfo(void)
+{
+    return m_Getter(m_Argument1.Get(), m_Argument2.Get());
 }
 
 END_NCBI_SCOPE

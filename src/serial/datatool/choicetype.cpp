@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/09/26 17:38:25  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.16  2000/09/18 20:00:28  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -109,6 +113,7 @@
 #include <serial/choice.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/choicestr.hpp>
+#include <serial/datatool/choiceptrstr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -208,27 +213,48 @@ AutoPtr<CTypeStrings> CChoiceDataType::GenerateCode(void) const
 
 AutoPtr<CTypeStrings> CChoiceDataType::GetRefCType(void) const
 {
-    return AutoPtr<CTypeStrings>(new CChoiceRefTypeStrings(ClassName(),
+    if ( !GetVar("_virtual_choice").empty() ) {
+        AutoPtr<CTypeStrings> cls(new CClassRefTypeStrings(ClassName(),
                                                            Namespace(),
                                                            FileName()));
+        return AutoPtr<CTypeStrings>(new CChoicePtrRefTypeStrings(cls));
+    }
+    else {
+        return AutoPtr<CTypeStrings>(new CChoiceRefTypeStrings(ClassName(),
+                                                               Namespace(),
+                                                               FileName()));
+    }
 }
 
 AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
 {
-    bool rootClass = GetParentType() == 0;
-    AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(GlobalName(),
-                                                            ClassName()));
-
-    bool haveUserClass = rootClass;
-    code->SetHaveUserClass(haveUserClass);
-    code->SetObject(true);
-    iterate ( TMembers, i, GetMembers() ) {
-        AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
-        bool delayed = !GetVar((*i)->GetName()+".Delay").empty();
-        code->AddVariant((*i)->GetName(), varType, delayed);
+    if ( !GetVar("_virtual_choice").empty() ) {
+        AutoPtr<CChoicePtrTypeStrings>
+            code(new CChoicePtrTypeStrings(GlobalName(),
+                                           ClassName()));
+        iterate ( TMembers, i, GetMembers() ) {
+            AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
+            code->AddVariant((*i)->GetName(), varType);
+        }
+        SetParentClassTo(*code);
+        return AutoPtr<CTypeStrings>(code.release());
     }
-    SetParentClassTo(*code);
-    return AutoPtr<CTypeStrings>(code.release());
+    else {
+        bool rootClass = GetParentType() == 0;
+        AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(GlobalName(),
+                                                                ClassName()));
+        
+        bool haveUserClass = rootClass;
+        code->SetHaveUserClass(haveUserClass);
+        code->SetObject(true);
+        iterate ( TMembers, i, GetMembers() ) {
+            AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
+            bool delayed = !GetVar((*i)->GetName()+".Delay").empty();
+            code->AddVariant((*i)->GetName(), varType, delayed);
+        }
+        SetParentClassTo(*code);
+        return AutoPtr<CTypeStrings>(code.release());
+    }
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/26 17:38:21  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.2  2000/09/18 20:00:23  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -64,12 +68,10 @@ CReadClassMemberHook::~CReadClassMemberHook(void)
 }
 
 void CReadClassMemberHook::ReadMissingClassMember(CObjectIStream& in,
-                                                  const CObjectInfo& object,
-                                                  TMemberIndex index)
+                                                  const CObjectInfoMI& member)
 {
-    const CMemberInfo* memberInfo =
-        object.GetClassTypeInfo()->GetMemberInfo(index);
-    memberInfo->DefaultReadMissingMember(in, object.GetObjectPtr());
+    member.GetMemberInfo()->
+        DefaultReadMissingMember(in, member.GetClassObject().GetObjectPtr());
 }
 
 CReadChoiceVariantHook::~CReadChoiceVariantHook(void)
@@ -84,19 +86,11 @@ CWriteObjectHook::~CWriteObjectHook(void)
 {
 }
 
-CWriteClassMembersHook::~CWriteClassMembersHook(void)
-{
-}
-
 CWriteClassMemberHook::~CWriteClassMemberHook(void)
 {
 }
 
 CWriteChoiceVariantHook::~CWriteChoiceVariantHook(void)
-{
-}
-
-CWriteContainerElementsHook::~CWriteContainerElementsHook(void)
 {
 }
 
@@ -109,12 +103,9 @@ CCopyClassMemberHook::~CCopyClassMemberHook(void)
 }
 
 void CCopyClassMemberHook::CopyMissingClassMember(CObjectStreamCopier& copier,
-                                                  const CObjectTypeInfo& type,
-                                                  TMemberIndex index)
+                                                  const CObjectTypeInfoMI& member)
 {
-    const CMemberInfo* memberInfo =
-        type.GetClassTypeInfo()->GetMemberInfo(index);
-    memberInfo->DefaultCopyMissingMember(copier);
+    member.GetMemberInfo()->DefaultCopyMissingMember(copier);
 }
 
 CCopyChoiceVariantHook::~CCopyChoiceVariantHook(void)

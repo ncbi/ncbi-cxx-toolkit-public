@@ -1,3 +1,6 @@
+#ifndef CHOICEPTRSTR__HPP
+#define CHOICEPTRSTR__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -26,61 +29,64 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Abstract parser class
+*   !!! PUT YOUR DESCRIPTION HERE !!!
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.8  2000/09/26 17:38:25  vasilche
+* Revision 1.1  2000/09/26 17:38:17  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
-*
-* Revision 1.7  2000/08/25 15:59:19  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.6  2000/04/07 19:26:23  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.5  2000/02/01 21:47:52  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.4  1999/11/15 19:36:12  vasilche
-* Fixed warnings on GCC
 *
 * ===========================================================================
 */
 
-#include <serial/datatool/aparser.hpp>
+#include <corelib/ncbistd.hpp>
+#include <serial/datatool/classstr.hpp>
+#include <serial/datatool/ptrstr.hpp>
 
 BEGIN_NCBI_SCOPE
 
-AbstractParser::AbstractParser(AbstractLexer& lexer)
-    : m_Lexer(lexer)
+class CChoicePtrTypeStrings : public CClassTypeStrings
 {
-}
+    typedef CClassTypeStrings CParent;
+public:
+    struct SVariantInfo {
+        string externalName;
+        string cName;
+        AutoPtr<CTypeStrings> type;
 
-AbstractParser::~AbstractParser(void)
-{
-}
+        SVariantInfo(const string& name, AutoPtr<CTypeStrings> type);
+    };
+    typedef list<SVariantInfo> TVariants;
 
-void AbstractParser::ParseError(const char* error, const char* expected,
-                                const AbstractToken& token)
-{
-    THROW1_TRACE(runtime_error,
-                 NStr::IntToString(token.GetLine())+
-                 ": Parse error: "+error+": "+expected+" expected");
-}
+    CChoicePtrTypeStrings(const string& globalName,
+                          const string& className);
 
-string AbstractParser::Location(void) const
+    void AddVariant(const string& name, AutoPtr<CTypeStrings> type);
+
+protected:
+    void GenerateClassCode(CClassCode& code,
+                           CNcbiOstream& getters,
+                           const string& methodPrefix,
+                           bool haveUserClass,
+                           const string& classPrefix) const;
+
+private:                             
+    TVariants m_Variants;
+};
+
+class CChoicePtrRefTypeStrings : public CRefTypeStrings
 {
-    const AbstractToken& token = NextToken();
-    return NStr::IntToString(token.GetLine()) + ':';
-}
+    typedef CRefTypeStrings CParent;
+public:
+    CChoicePtrRefTypeStrings(CTypeStrings* type);
+    CChoicePtrRefTypeStrings(AutoPtr<CTypeStrings> type);
+
+    string GetRef(const CNamespace& ns) const;
+};
+
+//#include <serial/datatool/choiceptrstr.inl>
 
 END_NCBI_SCOPE
+
+#endif  /* CHOICEPTRSTR__HPP */

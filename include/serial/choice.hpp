@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/09/26 17:38:06  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.16  2000/09/18 19:59:59  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -119,7 +123,10 @@ BEGIN_NCBI_SCOPE
 class CChoiceTypeInfoReader;
 class CClassInfoHelperBase;
 
-class CChoiceTypeInfo : public CClassTypeInfoBase {
+class CChoiceTypeInfoFunctions;
+
+class CChoiceTypeInfo : public CClassTypeInfoBase
+{
     typedef CClassTypeInfoBase CParent;
 public:
     typedef TMemberIndex (*TWhichFunction)(const CChoiceTypeInfo* choiceType,
@@ -194,20 +201,7 @@ public:
 protected:
     void SetSelectDelayFunction(TSelectDelayFunction func);
 
-    static TObjectPtr GetChoiceData(const CChoiceTypeInfo* choiceType,
-                                    TObjectPtr choicePtr,
-                                    TMemberIndex index);
-
-    static void ReadChoiceDefault(CObjectIStream& in,
-                                  TTypeInfo objectType,
-                                  TObjectPtr objectPtr);
-    static void WriteChoiceDefault(CObjectOStream& out,
-                                   TTypeInfo objectType,
-                                   TConstObjectPtr objectPtr);
-    static void SkipChoiceDefault(CObjectIStream& in,
-                                  TTypeInfo objectType);
-    static void CopyChoiceDefault(CObjectStreamCopier& copier,
-                                  TTypeInfo objectType);
+    friend CChoiceTypeInfoFunctions;
 
 private:
     void InitChoiceTypeInfoFunctions(void);
@@ -217,7 +211,6 @@ protected:
     TResetFunction m_ResetFunction;
     TSelectFunction m_SelectFunction;
     TSelectDelayFunction m_SelectDelayFunction;
-    TGetDataFunction m_GetDataFunction;
 };
 
 #include <serial/choice.inl>

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/26 17:38:07  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.2  2000/09/18 20:00:04  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -61,6 +65,12 @@ class CObjectStreamCopier;
 class CObjectInfo;
 class CConstObjectInfo;
 class CObjectTypeInfo;
+class CObjectInfoMI;
+class CConstObjectInfoMI;
+class CObjectTypeInfoMI;
+class CObjectInfoCV;
+class CConstObjectInfoCV;
+class CObjectTypeInfoVI;
 
 class CReadObjectHook : public CObject
 {
@@ -91,11 +101,9 @@ public:
     virtual ~CReadClassMemberHook(void);
 
     virtual void ReadClassMember(CObjectIStream& in,
-                                 const CObjectInfo& object,
-                                 TMemberIndex memberIndex) = 0;
+                                 const CObjectInfoMI& member) = 0;
     virtual void ReadMissingClassMember(CObjectIStream& in,
-                                        const CObjectInfo& object,
-                                        TMemberIndex memberIndex);
+                                        const CObjectInfoMI& member);
 };
 
 class CReadChoiceVariantHook : public CObject
@@ -111,8 +119,7 @@ public:
     virtual ~CReadChoiceVariantHook(void);
 
     virtual void ReadChoiceVariant(CObjectIStream& in,
-                                   const CObjectInfo& object,
-                                   TMemberIndex memberIndex) = 0;
+                                   const CObjectInfoCV& variant) = 0;
 };
 
 class CReadContainerElementHook : public CObject
@@ -147,22 +154,6 @@ public:
                              const CConstObjectInfo& object) = 0;
 };
 
-class CWriteClassMembersHook : public CObject
-{
-public:
-    CWriteClassMembersHook(void)
-        {
-        }
-    CWriteClassMembersHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
-    virtual ~CWriteClassMembersHook(void);
-    
-    virtual void WriteClassMembers(CObjectOStream& out,
-                                   const CConstObjectInfo& object) = 0;
-};
-
 class CWriteClassMemberHook : public CObject
 {
 public:
@@ -176,8 +167,7 @@ public:
     virtual ~CWriteClassMemberHook(void);
     
     virtual void WriteClassMember(CObjectOStream& out,
-                                  const CConstObjectInfo& object,
-                                  TMemberIndex memberIndex) = 0;
+                                  const CConstObjectInfoMI& member) = 0;
 };
 
 class CWriteChoiceVariantHook : public CObject
@@ -193,24 +183,7 @@ public:
     virtual ~CWriteChoiceVariantHook(void);
 
     virtual void WriteChoiceVariant(CObjectOStream& in,
-                                    const CConstObjectInfo& object,
-                                    TMemberIndex memberIndex) = 0;
-};
-
-class CWriteContainerElementsHook : public CObject
-{
-public:
-    CWriteContainerElementsHook(void)
-        {
-        }
-    CWriteContainerElementsHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
-    virtual ~CWriteContainerElementsHook(void);
-
-    virtual void WriteContainerElements(CObjectOStream& out,
-                                        const CConstObjectInfo& container) = 0;
+                                    const CConstObjectInfoCV& variant) = 0;
 };
 
 class CCopyObjectHook : public CObject
@@ -242,11 +215,9 @@ public:
     virtual ~CCopyClassMemberHook(void);
     
     virtual void CopyClassMember(CObjectStreamCopier& copier,
-                                 const CObjectTypeInfo& type,
-                                 TMemberIndex memberIndex) = 0;
+                                 const CObjectTypeInfoMI& member) = 0;
     virtual void CopyMissingClassMember(CObjectStreamCopier& copier,
-                                        const CObjectTypeInfo& type,
-                                        TMemberIndex memberIndex);
+                                        const CObjectTypeInfoMI& member);
 };
 
 class CCopyChoiceVariantHook : public CObject
@@ -262,8 +233,7 @@ public:
     virtual ~CCopyChoiceVariantHook(void);
 
     virtual void CopyChoiceVariant(CObjectStreamCopier& copier,
-                                   const CObjectTypeInfo& objectType,
-                                   TMemberIndex memberIndex) = 0;
+                                   const CObjectTypeInfoVI& variant) = 0;
 };
 
 //#include <serial/objhook.inl>

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/09/26 17:38:07  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.20  2000/09/18 19:59:59  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -155,9 +159,6 @@ protected:
                             TMemberIndex index);
     static void ResetPtrIndex(const CChoiceTypeInfo* choiceType,
                               TObjectPtr choicePtr);
-    static TObjectPtr GetPtrData(const CChoiceTypeInfo* choiceType,
-                                 TObjectPtr choicePtr,
-                                 TMemberIndex index);
 
 private:
     void SetPointerType(TTypeInfo pointerType);

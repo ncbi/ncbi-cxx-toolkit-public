@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/09/26 17:38:07  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.15  2000/09/19 14:10:24  vasilche
 * Added files to MSVC project
 * Updated shell scripts to use new datattool path on MSVC
@@ -121,6 +125,8 @@ class CCopyClassMemberHook;
 
 class CDelayBuffer;
 
+class CMemberInfoFunctions;
+
 class CMemberInfo : public CItemInfo
 {
     typedef CItemInfo CParent;
@@ -170,6 +176,8 @@ public:
     CMemberInfo* SetDelayBuffer(CDelayBuffer* buffer);
     CDelayBuffer& GetDelayBuffer(TObjectPtr object) const;
     const CDelayBuffer& GetDelayBuffer(TConstObjectPtr object) const;
+
+    void SetParentClass(void);
 
     // I/O
     void ReadMember(CObjectIStream& in, TObjectPtr classPtr) const;
@@ -264,80 +272,9 @@ private:
     void SetSkipFunction(TMemberSkip func);
     void SetSkipMissingFunction(TMemberSkip func);
 
-    void UpdateGetFunction(void);
-    void UpdateReadFunction(void);
-    void UpdateReadMissingFunction(void);
-    void UpdateWriteFunction(void);
-    void UpdateCopyMissingFunction(void);
-    void UpdateSkipMissingFunction(void);
+    void UpdateFunctions(void);
 
-    static TConstObjectPtr GetConstSimpleMember(const CMemberInfo* memberInfo,
-                                                TConstObjectPtr classPtr);
-    static TConstObjectPtr GetConstDelayedMember(const CMemberInfo* memberInfo,
-                                                 TConstObjectPtr classPtr);
-    static TObjectPtr GetSimpleMember(const CMemberInfo* memberInfo,
-                                      TObjectPtr classPtr);
-    static TObjectPtr GetWithSetFlagMember(const CMemberInfo* memberInfo,
-                                           TObjectPtr classPtr);
-    static TObjectPtr GetDelayedMember(const CMemberInfo* memberInfo,
-                                       TObjectPtr classPtr);
-    
-
-    static void ReadSimpleMember(CObjectIStream& in,
-                                 const CMemberInfo* memberInfo,
-                                 TObjectPtr classPtr);
-    static void ReadWithSetFlagMember(CObjectIStream& in,
-                                        const CMemberInfo* memberInfo,
-                                        TObjectPtr classPtr);
-    static void ReadLongMember(CObjectIStream& in,
-                                 const CMemberInfo* memberInfo,
-                                 TObjectPtr classPtr);
-    static void ReadHookedMember(CObjectIStream& in,
-                                 const CMemberInfo* memberInfo,
-                                 TObjectPtr classPtr);
-    static void ReadMissingSimpleMember(CObjectIStream& in,
-                                        const CMemberInfo* memberInfo,
-                                        TObjectPtr classPtr);
-    static void ReadMissingOptionalMember(CObjectIStream& in,
-                                            const CMemberInfo* memberInfo,
-                                            TObjectPtr classPtr);
-    static void ReadMissingHookedMember(CObjectIStream& in,
-                                        const CMemberInfo* memberInfo,
-                                        TObjectPtr classPtr);
-    static void WriteSimpleMember(CObjectOStream& out,
-                                  const CMemberInfo* memberInfo,
-                                  TConstObjectPtr classPtr);
-    static void WriteOptionalMember(CObjectOStream& out,
-                                      const CMemberInfo* memberInfo,
-                                      TConstObjectPtr classPtr);
-    static void WriteWithDefaultMember(CObjectOStream& out,
-                                         const CMemberInfo* memberInfo,
-                                         TConstObjectPtr classPtr);
-    static void WriteWithSetFlagMember(CObjectOStream& out,
-                                         const CMemberInfo* memberInfo,
-                                         TConstObjectPtr classPtr);
-    static void WriteLongMember(CObjectOStream& out,
-                                  const CMemberInfo* memberInfo,
-                                  TConstObjectPtr classPtr);
-    static void WriteHookedMember(CObjectOStream& out,
-                                  const CMemberInfo* memberInfo,
-                                  TConstObjectPtr classPtr);
-    static void CopySimpleMember(CObjectStreamCopier& copier,
-                                 const CMemberInfo* memberInfo);
-    static void CopyHookedMember(CObjectStreamCopier& copier,
-                                 const CMemberInfo* memberInfo);
-    static void CopyMissingSimpleMember(CObjectStreamCopier& copier,
-                                        const CMemberInfo* memberInfo);
-    static void CopyMissingOptionalMember(CObjectStreamCopier& copier,
-                                            const CMemberInfo* memberInfo);
-    static void CopyMissingHookedMember(CObjectStreamCopier& copier,
-                                        const CMemberInfo* memberInfo);
-    static void SkipSimpleMember(CObjectIStream& in,
-                                 const CMemberInfo* memberInfo);
-    static void SkipMissingSimpleMember(CObjectIStream& in,
-                                        const CMemberInfo* memberInfo);
-    static void SkipMissingOptionalMember(CObjectIStream& in,
-                                          const CMemberInfo* memberInfo);
+    friend class CMemberInfoFunctions;
 };
 
 #include <serial/member.inl>

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/26 17:38:17  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
 * Revision 1.3  2000/08/25 15:58:47  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -93,10 +97,10 @@ public:
     void Exports(CDataTypeModule& module);
     void ModuleBody(CDataTypeModule& module);
     AutoPtr<CDataType> Type(void);
-    AutoPtr<CDataType> x_Type(void);
-    AutoPtr<CDataType> TypesBlock(CDataMemberContainerType* containerType);
+    CDataType* x_Type(void);
+    CDataType* TypesBlock(CDataMemberContainerType* containerType);
     AutoPtr<CDataMember> NamedDataType(void);
-    AutoPtr<CDataType> EnumeratedBlock(CEnumDataType* enumType);
+    CEnumDataType* EnumeratedBlock(CEnumDataType* enumType);
     void EnumeratedValue(CEnumDataType& enumType);
     void TypeList(list<string>& ids);
     AutoPtr<CDataValue> Value(void);
