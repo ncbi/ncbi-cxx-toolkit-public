@@ -21,7 +21,10 @@
 #undef NCBI_OS_MSWIN
 #undef NCBI_OS_MAC
 
-/* Compiler name and version */
+/* Detailed platform info */
+#undef NCBI_OS_IRIX
+
+/* Compiler name */
 #undef NCBI_COMPILER_GCC
 #undef NCBI_COMPILER_KCC
 #undef NCBI_COMPILER_ICC
@@ -30,6 +33,8 @@
 #undef NCBI_COMPILER_VISUALAGE
 #undef NCBI_COMPILER_MSVC
 #undef NCBI_COMPILER_UNKNOWN
+
+/* Compiler version */
 #undef NCBI_COMPILER_VERSION
 
 /* Linker run path */
