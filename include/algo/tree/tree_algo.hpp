@@ -502,6 +502,8 @@ void TreeSetToNodeList(const TNode&  tree_node,
     TreeDepthFirstTraverse(node, func);
 }
 
+
+
 /// Class-algorithm to compute Non Redundant Set
 ///
 /// Takes a single nodelist as an arguiment and copies every node
@@ -539,7 +541,134 @@ public:
     }
 
 };
-                         
+
+/// Utility to join to node lists according to a set of ids
+template<class TNode, class TSet, class TNodeList>
+class CNodesToBitset
+{
+public:
+    /// Join two node lists
+    ///
+    /// @param src_nlist_a
+    ///    node list 1
+    /// @param src_nlist_b
+    ///    node list 2
+    /// @param mask_set
+    ///    subset of two nodelists assigns nodes coming to dst_list
+    /// @param dst_list
+    ///    destination node list
+    /// @param dst_set
+    ///    auxiliary set used to track in target set
+    ///    (to make sure we will have non repeated list of nodes)
+    void JoinNodeList(const TNodeList&  src_nlist_a,
+                      const TNodeList&  src_nlist_b,
+                      const TSet&       mask_set,
+                      TNodeList&        dst_list,
+                      TSet&             dst_set)
+    {
+        dst_set.clear();
+
+        MaskCopyNodes(src_nlist_a, mask_set, dst_list, dst_set);
+        unsigned dst_count = dst_set.count();
+        unsigned src_count = mask_set.count();
+
+        if (src_count != dst_count) {
+            MaskCopyNodes(src_nlist_b, mask_set, dst_list, dst_set);
+        }
+    }
+
+    /// Copy nodes from the source node list to destination
+    /// if nodes are in the mask set and not yet in the destination set
+    void MaskCopyNodes(const TNodeList&  src_nlist,
+                       const TSet&       mask_set,
+                       TNodeList&        dst_list,
+                       TSet&             dst_set)
+    {
+        ITERATE(typename TNodeList, it, src_nlist) {
+            unsigned id = (*it)->GetValue().GetId();
+            bool exists = mask_set[id];
+            if (exists) {
+                exists = dst_set[id];
+                if (!exists) {
+                    dst_list.push_back(*it);
+                    dst_set.set(id);
+                }
+            }
+        } // ITERATE
+    }
+
+};
+
+
+/// Node list AND (set intersection)
+template<class TNode, class TSet, class TNodeList>
+class CTreeNodesAnd
+{
+public:
+    void operator()(const TNodeList& src_nlist_a,
+                    const TNodeList& src_nlist_b,
+                    TNodeList&       dst_nlist)
+    {
+        TSet tmp_set;
+        this->operator()(src_nlist_a, src_nlist_b, dst_nlist, tmp_set);
+    }
+
+    void operator()(const TNodeList& src_nlist_a,
+                    const TNodeList& src_nlist_b,
+                    TNodeList&       dst_nlist,
+                    TSet&            dst_set)
+    {
+        TSet set_a;
+        TreeListToSet(src_nlist_a, set_a.inserter());
+
+        {{
+        TSet set_b;
+        TreeListToSet(src_nlist_b, set_b.inserter());        
+        set_a &= set_b;
+        }}
+
+
+        CNodesToBitset<TNode, TSet, TNodeList> merge_func;
+        merge_func.JoinNodeList(src_nlist_a, src_nlist_b, set_a, 
+                                dst_nlist, dst_set);
+    }
+};         
+
+
+/// Node list OR (set union)
+template<class TNode, class TSet, class TNodeList>
+class CTreeNodesOr
+{
+public:
+    void operator()(const TNodeList& src_nlist_a,
+                    const TNodeList& src_nlist_b,
+                    TNodeList&       dst_nlist)
+    {
+        TSet tmp_set;
+        this->operator()(src_nlist_a, src_nlist_b, dst_nlist, tmp_set);
+    }
+
+    void operator()(const TNodeList& src_nlist_a,
+                    const TNodeList& src_nlist_b,
+                    TNodeList&       dst_nlist,
+                    TSet&            dst_set)
+    {
+        TSet set_a;
+        TreeListToSet(src_nlist_a, set_a.inserter());
+
+        {{
+        TSet set_b;
+        TreeListToSet(src_nlist_b, set_b.inserter());        
+        set_a |= set_b;
+        }}
+
+
+        CNodesToBitset<TNode, TSet, TNodeList> merge_func;
+        merge_func.JoinNodeList(src_nlist_a, src_nlist_b, set_a, 
+                                dst_nlist, dst_set);
+    }
+};         
+
 
 /* @} */
 
@@ -549,6 +678,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/04/21 16:42:18  kuznets
+ * + AND, OR operations on node lists
+ *
  * Revision 1.3  2004/04/21 13:27:18  kuznets
  * Bug fix: typename in templates
  *
