@@ -49,9 +49,10 @@ enum EProgram {
     eBlastx,            //< Translated nucl-Protein
     eTblastn,           //< Protein-Translated nucl
     eTblastx,           //< Translated nucl-Translated nucl
-	eMegablast,			//< Nucl-Nucl (traditional megablast)
-	eDiscMegablast,		//< Nucl-Nucl using discontiguous megablast
     eRPSBlast,          //< protein-pssm (reverse-position-specific BLAST)
+    eRPSTblastn,        //< nucleotide-pssm (RPS blast with translated query)
+    eMegablast,         //< Nucl-Nucl (traditional megablast)
+    eDiscMegablast,	//< Nucl-Nucl using discontiguous megablast
     eBlastProgramMax    //< Undefined program
 };
 
@@ -83,6 +84,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/04/16 14:32:54  papadopo
+* add eRPSBlast and eRPSTblastn, moved the megablast enums so that the list of enums still corresponds to the list in blast_def.h
+*
 * Revision 1.9  2004/03/10 14:55:19  madden
 * Added enum type for eRPSBlast
 *
