@@ -246,7 +246,7 @@ s_SeqDBMapNA2ToNA8(const char   * buf2bit,
         Uint4 table_offset = (buf2bit[whole_input_chars] & 0xFF) * 4;
         
         while(bases_remain--) {
-            buf8bit.push_back(expanded[ ++table_offset ]);
+            buf8bit.push_back(expanded[ table_offset++ ]);
         }
     }
     
@@ -979,7 +979,7 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid, CSeqDBLockHold & locked
     return phil;
 }
 
-bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars, CSeqDBLockHold & locked) const
+bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;

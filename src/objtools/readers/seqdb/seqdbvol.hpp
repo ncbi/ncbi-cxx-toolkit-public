@@ -123,7 +123,7 @@ private:
 
     char   x_GetSeqType(void) const;
 
-    bool   x_GetAmbChar(Uint4 oid, vector<Int4> ambchars, CSeqDBLockHold & locked) const;
+    bool   x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const;
     
     Int4   x_GetAmbigSeq(Int4               oid,
                          char            ** buffer,
