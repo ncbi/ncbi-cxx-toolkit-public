@@ -285,7 +285,8 @@ RunTest() {
    echo "@@@ EXIT CODE: \$result" >> \$x_test_out
 
    # And write result also on the screen and into the log
-   x_cmd=\`echo "\$x_path/\$x_run" | sed -e 's%^.*/msvc_prj/%%'\`
+   x_path_tail=\`echo "\$x_path" | sed 's%^.*/msvc_prj/%%'\` 
+   x_cmd="[\$x_path_tail] \$x_run"
    if test \$result -eq 0; then
       echo "OK  --  \$x_cmd"
       echo "OK  --  \$x_cmd" >> \$res_log

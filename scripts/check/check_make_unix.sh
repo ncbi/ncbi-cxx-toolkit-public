@@ -230,7 +230,8 @@ RunTest() {
 
       # Goto the test's directory 
       cd "\$x_work_dir"
-      x_cmd=\`echo "\$x_work_dir/\$x_run" | sed 's%^.*/build/%%'\`
+      x_work_dir_tail=\`echo "\$x_work_dir" | sed 's%^.*/build/%%'\` 
+      x_cmd="[\$x_work_dir_tail] \$x_run"
 
       # And run test if it exist
       if test -f "\$x_app"; then
