@@ -420,8 +420,7 @@ public:
     
     virtual void AddString(const string & value)
     {
-        //m_Value = NStr::StringToUInt(value);
-        m_Value = atol(value.c_str());
+        m_Value = NStr::StringToUInt(value);
     }
     
     Uint4 GetMaxLength(void)
@@ -453,8 +452,7 @@ public:
     
     virtual void AddString(const string & value)
     {
-        //m_Value += NStr::StringToUInt(value);
-        m_Value += atol(value.c_str());
+        m_Value += NStr::StringToUInt(value);
     }
     
     Uint4 GetNumSeqs(void) const
@@ -486,8 +484,7 @@ public:
     
     virtual void AddString(const string & value)
     {
-        //m_Value += NStr::StringToUInt8(value);
-        m_Value += atoll(value.c_str());
+        m_Value += NStr::StringToUInt8(value);
     }
     
     Uint8 GetTotalLength(void) const
