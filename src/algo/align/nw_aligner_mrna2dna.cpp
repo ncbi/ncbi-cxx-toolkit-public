@@ -38,11 +38,11 @@
 BEGIN_NCBI_SCOPE
 
 static unsigned char donor[splice_type_count][2] = {
-    {'G','T'}, {'G','C'}, {'A','T'}
+    {'G','T'}, {'G','C'}, {'A','T'}, {'?','?'}
 };
 
 static unsigned char acceptor[splice_type_count][2] = {
-    {'A','G'}, {'A','G'}, {'A','C'}
+    {'A','G'}, {'A','G'}, {'A','C'}, {'?','?'}
 };
 
 
@@ -66,9 +66,10 @@ CNWAligner::TScore CNWAlignerMrna2Dna::GetDefaultWi(unsigned char splice_type)
     throw(CNWAlignerException)
 {
     switch(splice_type) {
-    case 0: return -10;
-    case 1: return -50;
-    case 2: return -50;
+    case 0: return -30;
+    case 1: return -30;
+    case 2: return -30;
+    case 3: return -40; // arbitrary splice (??/??)
     }
 
     NCBI_THROW(CNWAlignerException,
@@ -77,25 +78,43 @@ CNWAligner::TScore CNWAlignerMrna2Dna::GetDefaultWi(unsigned char splice_type)
 }
 
 
-// evaluate score for each possible alignment;
-// fill out backtrace matrix
-// bit coding (eight bits per value): D E Ec Fc Acc Dnr
-// D:    1 if diagonal; 0 - otherwise
-// E:    1 if space in 1st sequence; 0 if space in 2nd sequence
-// Ec:   1 if gap in 1st sequence was extended; 0 if it is was opened
-// Fc:   1 if gap in 2nd sequence was extended; 0 if it is was opened
-// The four remaining higher bits indicate splice type, if any:
-// Dnr  Acc
-// 00   00     no dnr/acc
-// 01   01     GT/AG
-// 10   10     GC/AG
-// 11   11     AT/AC
+void CNWAlignerMrna2Dna::SetWi  (unsigned char splice_type, TScore value) {
 
-const unsigned char kMaskFc    = 0x01;
-const unsigned char kMaskEc    = 0x02;
-const unsigned char kMaskE     = 0x04;
-const unsigned char kMaskD     = 0x08;
+    if(0 <= splice_type && splice_type < splice_type_count) {
+        m_Wi[splice_type]  = value;
+    }
+    else {
+        NCBI_THROW(CNWAlignerException,
+                   eInvalidSpliceTypeIndex,
+                   "Invalid splice type index");
+    }
+}
 
+
+// Bit coding (eleven bits per value) for backtrace.
+// --------------------------------------------------
+// [11-8] donors (bitwise OR for multiple types)
+//        1000     ??    (??/??) - arbitrary pair
+//        0100     AT    (AT/AC)
+//        0010     GC    (GC/AG)
+//        0001     GT    (GT/AG)
+// [7-5]  acceptor type
+//        100      ?? (??/??)
+//        011      AC (AT/AC)
+//        010      AG (GC/AG)
+//        001      AG (GT/AG)
+//        000      no acceptor
+// [4]    Fc:      1 if gap in 2nd sequence was extended; 0 if it is was opened
+// [3]    Ec:      1 if gap in 1st sequence was extended; 0 if it is was opened
+// [2]    E:       1 if space in 1st sequence; 0 if space in 2nd sequence
+// [1]    D:       1 if diagonal; 0 - otherwise
+
+const unsigned char kMaskFc       = 0x0001;
+const unsigned char kMaskEc       = 0x0002;
+const unsigned char kMaskE        = 0x0004;
+const unsigned char kMaskD        = 0x0008;
+
+// Evaluate dynamic programming matrix. Create transcript.
 CNWAligner::TScore CNWAlignerMrna2Dna::x_Align (
                          const char* seg1, size_t len1,
                          const char* seg2, size_t len2,
@@ -108,7 +127,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_Align (
     TScore* rowF    = new TScore [N2];
 
     // index calculation: [i,j] = i*n2 + j
-    unsigned char* backtrace_matrix = new unsigned char [N1*N2];
+    Uint2* backtrace_matrix = new Uint2 [N1*N2];
 
     TScore* pV = rowV - 1;
 
@@ -127,11 +146,12 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_Align (
     // recurrences
     TScore wgleft2   = bFreeGapLeft2? 0: m_Wg;
     TScore wsleft2   = bFreeGapLeft2? 0: m_Ws;
-    TScore V  = 0;
+    TScore V  = 0, V_max, vAcc;
     TScore V0 = 0;
     TScore E, G, n0;
-    unsigned char tracer;
+    Uint2 tracer;
 
+    // store candidate donors
     size_t* jAllDonors [splice_type_count];
     TScore* vAllDonors [splice_type_count];
     for(unsigned char st = 0; st < splice_type_count; ++st) {
@@ -172,13 +192,17 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_Align (
         TScore wg2 = m_Wg, ws2 = m_Ws;
             
         // detect donor candidate
-        for( unsigned char st = 0; st < splice_type_count && N2 > 2; ++st ) {
-            if( seq2[1] == donor[st][0] && seq2[2] == donor[st][1] ) {
+        for( char st = splice_type_count - 2; st >= 0 && N2 > 2; --st ) {
+            if( seq2[1] == donor[st][0] && seq2[2] == donor[st][1]) {
                 jAllDonors[st][jTail[st]] = j;
                 vAllDonors[st][jTail[st]] = V;
                 ++(jTail[st]);
             }
         }
+        // the first max value
+        jAllDonors[3][jTail[3]] = j;
+        vAllDonors[3][jTail[3]] = V_max = V;
+        ++(jTail[3]);
 
         for (j = 1; j < N2; ++j, ++k) {
             
@@ -186,7 +210,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_Align (
             pV[j] = V;
 
             n0 = V + wg1;
-            if(E > n0) {
+            if(E >= n0) {
                 E += ws1;      // continue the gap
                 tracer = kMaskEc;
             }
@@ -199,7 +223,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_Align (
                 wg2 = ws2 = 0;
             }
             n0 = rowV[j] + wg2;
-            if(rowF[j] > n0) {
+            if(rowF[j] >= n0) {
                 rowF[j] += ws2;
                 tracer |= kMaskFc;
             }
@@ -243,37 +267,44 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_Align (
                 
             // check splice signal
             size_t dnr_pos = 0;
-            unsigned char value = 0xFF;
-            unsigned char tracer_splice = 0;
-            for(unsigned char st = 0; st < splice_type_count; ++st) {
-
+            Uint2 tracer_dnr = 0xFFFF;
+            Uint2 tracer_acc = 0;
+            for(char st = splice_type_count - 1; st >= 0; --st) {
                 if(seq2[j-1] == acceptor[st][0] && seq2[j] == acceptor[st][1]
-                   && vBestDonor[st] > kInfMinus) {
-
-                    TScore vAcc = vBestDonor[st] + m_Wi[st];
+                   && vBestDonor[st] > kInfMinus || st == 3) {
+                    vAcc = vBestDonor[st] + m_Wi[st];
                     if(vAcc > V) {
                         V = vAcc;
-                        tracer_splice = (st+1) << 4;
+                        tracer_acc = (st+1) << 4;
                         dnr_pos = k0 + jBestDonor[st];
-                        value = (st+1) << 6;
+                        tracer_dnr = 0x0080 << st;
                     }
                 }
             }
-            if(value != 0xFF) {
-                backtrace_matrix[dnr_pos] |= value;
+
+            if(tracer_dnr != 0xFFFF) {
+                backtrace_matrix[dnr_pos] |= tracer_dnr;
+                tracer |= tracer_acc;
             }
-            
-            backtrace_matrix[k] = tracer | tracer_splice;
-            
+
+            backtrace_matrix[k] = tracer;
+
             // detect donor candidate
-            for( unsigned char st = 0;
-                 j < N2 - 2 && st < splice_type_count; ++st ) {
+            for( char st = splice_type_count - 1; 
+                 j < N2 - 2 && st >= 0; --st ) {
 
                 if( seq2[j+1] == donor[st][0] && seq2[j+2] == donor[st][1] ) {
                     jAllDonors[st][jTail[st]] = j;
                     vAllDonors[st][jTail[st]] = V;
                     ++(jTail[st]);
                 }
+            }
+
+            // detect new best value
+            if(V > V_max) {
+                jAllDonors[3][jTail[3]] = j;
+                vAllDonors[3][jTail[3]] = V_max = V;
+                ++(jTail[3]);
             }
         }
 
@@ -303,27 +334,30 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_Align (
 
 
 // perform backtrace step;
-void CNWAlignerMrna2Dna::x_DoBackTrace(const unsigned char* backtrace_matrix,
-                                 size_t N1, size_t N2,
-                                 vector<ETranscriptSymbol>* transcript)
+void CNWAlignerMrna2Dna::x_DoBackTrace ( const Uint2* backtrace_matrix,
+                                         size_t N1, size_t N2,
+                                         vector<ETranscriptSymbol>* transcript)
 {
+   
     transcript->clear();
     transcript->reserve(N1 + N2);
 
     size_t k = N1*N2 - 1;
     while (k != 0) {
-        unsigned char Key = backtrace_matrix[k];
+        Uint2 Key = backtrace_matrix[k];
+        while(Key & 0x0070) {  // acceptor
 
-        while(Key & 0x30) {  // detect acceptor
-            unsigned char acc_type = (Key & 0x30) >> 4, dnr_type = ~acc_type;
-            for( ; acc_type != dnr_type; dnr_type = (Key & 0xC0) >> 6 ) {
-                Key = 0; // make sure we enter the loop
-                while(!(Key & 0xC0)) {
-                    transcript->push_back(eIntron);
-                    Key = backtrace_matrix[--k];
-                }
+            unsigned char acc_type = (Key & 0x0070) >> 4;
+            Uint2 dnr_mask = 0x0040 << acc_type;
+            ETranscriptSymbol ets =
+                ETranscriptSymbol (eIntron_GT_AG + acc_type - 1);
+            do {
+                transcript->push_back(ets);
+                Key = backtrace_matrix[--k];
             }
-            if(Key & 0x30) {
+            while(!(Key & dnr_mask));
+
+            if(Key & 0x0070) {
                 NCBI_THROW(CNWAlignerException,
                            eInternal,
                            "Adjacent splices encountered during backtrace");
@@ -371,10 +405,26 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
     char state2;   // 0 = normal, 1 = gap
 
     switch( m_Transcript[dim - 1] ) {
-    case eMatch:    state1 = state2 = 0; break;
-    case eInsert:   state1 = 1; state2 = 0; score += m_Wg; break;
-    case eIntron:   state1 = 0; state2 = 0; break; // intron flag set later
-    case eDelete:   state1 = 0; state2 = 1; score += m_Wg; break;
+
+    case eMatch:
+        state1 = state2 = 0;
+        break;
+
+    case eInsert:
+        state1 = 1; state2 = 0; score += m_Wg;
+        break;
+
+    case eIntron_GT_AG:
+    case eIntron_GC_AG:
+    case eIntron_AT_AC:
+    case eIntron_Generic:
+        state1 = 0; state2 = 0;
+        break; // intron flag set later
+
+    case eDelete:
+        state1 = 0; state2 = 1; score += m_Wg;
+        break;
+
     default: {
         NCBI_THROW(
                    CNWAlignerException,
@@ -415,10 +465,15 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
         }
         break;
 
-        case eIntron: {
+        case eIntron_GT_AG:
+        case eIntron_GC_AG:
+        case eIntron_AT_AC:
+        case eIntron_Generic: {
+
             if(state1 != 2) {
                 for(unsigned char i = 0; i < splice_type_count; ++i) {
-                    if(*p2 == donor[i][0] && *(p2 + 1) == donor[i][1]) {
+                    if(*p2 == donor[i][0] && *(p2 + 1) == donor[i][1]
+                       || i == splice_type_count - 1) {
                         score += m_Wi[i];
                         break;
                     }
@@ -685,18 +740,32 @@ void CNWAlignerMrna2Dna::FormatAsText(string* output,
             }
         }
 
+        bool last_intron_generic = false, generic_intron = false;
+
         for(int tr_idx = tr_idx_hi; tr_idx >= tr_idx_lo;) {
             const char* p1_beg = p1;
             const char* p2_beg = p2;
             size_t matches = 0, exon_size = 0;
-            while(tr_idx >= tr_idx_lo && m_Transcript[tr_idx] != eIntron) {
-                if(*p1 == *p2) ++matches;
-                if(m_Transcript[tr_idx] != eInsert) ++p1;
-                if(m_Transcript[tr_idx] != eDelete) ++p2;
+
+            while(tr_idx >= tr_idx_lo && 
+                  !(m_Transcript[tr_idx] & eIntron_GT_AG)) {
+                
+                bool noins = m_Transcript[tr_idx] != eInsert;
+                bool nodel = m_Transcript[tr_idx] != eDelete;
+                if(noins && nodel) {
+                    if(*p1++ == *p2++) ++matches;
+                } else if( noins ) {
+                    ++p1;
+                } else {
+                    ++p2;
+                }
                 --tr_idx;
                 ++exon_size;
             }
+
             if(exon_size > 0) {
+
+                generic_intron = m_Transcript[tr_idx] == eIntron_Generic;
                 if(m_Seq1Id.size() && m_Seq2Id.size()) {
                     ss << m_Seq1Id << '\t' << m_Seq2Id << '\t';
                 }
@@ -709,11 +778,17 @@ void CNWAlignerMrna2Dna::FormatAsText(string* output,
                 char c2 = (p2_beg >= m_Seq2 + 1)? *(p2_beg - 1): ' ';
                 char c3 = (p2 < m_Seq2 + m_SeqLen2)? *(p2): ' ';
                 char c4 = (p2 < m_Seq2 + m_SeqLen2 - 1)? *(p2+1): ' ';
-                ss << c1 << c2 << "<exon>" << c3 << c4 << '\t';
+                ss << c1 << c2;
+                ss << (last_intron_generic? '(': '<') << "exon";
+                ss << (generic_intron? ')': '>');
+                ss << c3 << c4 << '\t';
                 ss << endl;
+                last_intron_generic = generic_intron;
             }
             // find next exon
-            while(tr_idx >= tr_idx_lo && m_Transcript[tr_idx] == eIntron) {
+            while(tr_idx >= tr_idx_lo &&
+                  (m_Transcript[tr_idx] & eIntron_GT_AG)) {
+
                 --tr_idx;
                 ++p2;
             }
@@ -738,8 +813,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/05/23 18:27:57  kapustin
+ * Use weak comparisons in core recurrences. Adjust for new transcript identifiers. Introduce new (generic) splice type.
+ *
  * Revision 1.16  2003/04/30 18:12:42  kapustin
- * Account for second sequence's esf hwen formatting output exon table
+ * Account for second sequence's esf when formatting output exon table
  *
  * Revision 1.15  2003/04/30 16:06:17  kapustin
  * Fix error in guide generation routine
