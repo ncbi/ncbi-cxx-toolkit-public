@@ -46,7 +46,7 @@ $(XAPP): $(XOBJ) $(XLIBDEP)
 ### Standard targets(non-recursive)
 
 all: $(XAPP)
-	$(COPY) $(XAPP) $(bindir)/
+	$(COPY_IF) $(bindir) $(XAPP)
 
 clean:
 	-$(RMDIR) SunWS_cache

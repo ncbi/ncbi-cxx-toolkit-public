@@ -29,9 +29,9 @@ XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
 ### C/C++ source file compilation rules
 
 %@obj_ext@: $(srcdir)/%.cpp
-	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@ $@
+	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@$@
 %@obj_ext@: $(srcdir)/%.c
-	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@ $@
+	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@$@
 
 
 ### The library build rule
@@ -44,7 +44,7 @@ $(XLIB): $(XLIBOBJ)
 ### Standard targets
 
 all: $(XLIB) $(XOBJ)
-	$(COPY) $(XLIB) $(XOBJ) $(libdir)/
+	$(COPY_IF) $(libdir) $(XLIB) $(XOBJ)
 
 clean:
 	-$(RMDIR) SunWS_cache

@@ -14,7 +14,7 @@
 
 ### Make sure we are using a right command shell
 
-@cmd_shell@
+@make_shell@
 
 
 ### Configurable directories
@@ -34,6 +34,7 @@ STD_INCLUDE = -I$(incdir) -I$(srcdir) -I$(includedir)
 RM    = rm
 RMDIR = rm -r
 COPY  = cp -p
+COPY_IF = @builddir@/if_diff.sh "cp -p"
 
 
 ### Configurable compiler/librarian/linker binaries and options

@@ -1,4 +1,4 @@
-#@bin_sh@
+@script_shell@
 #################################
 # $Id$
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
@@ -42,7 +42,8 @@ Copy()
 test $# -gt 0  ||  Usage "no cmd.-line parameters specified"
 
 if test -f $dest ; then
-  test -f "$3"  ||  Usage "destination argument is file, and the source is not"
+  test -f "$3"  ||  Usage "the destination is a file, and the source is not"
+  test $# -eq 3 ||  Usage "the destination is a file, and too many arguments"
   Copy $dest $3
   exit
 fi

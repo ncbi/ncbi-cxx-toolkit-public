@@ -11,6 +11,12 @@
 # include @builddir@/Makefile.meta
 #################################
 
+
+### Make sure we are using a right command shell
+
+@make_shell@
+
+
 ### One-level build -- [PROJECT] makefiles
 
 PROJ_BRA = \
