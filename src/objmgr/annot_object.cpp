@@ -118,21 +118,21 @@ SAnnotSelector& SAnnotSelector::SetDataSource(const string& source)
 
 
 CAnnotObject_Info::CAnnotObject_Info(void)
-    : m_AnnotType(CSeq_annot::C_Data::e_not_set),
-      m_FeatType(CSeqFeatData::e_not_set),
-      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
+    : m_Seq_annot_Info(0),
       m_Object(0),
-      m_Seq_annot_Info(0)
+      m_AnnotType(CSeq_annot::C_Data::e_not_set),
+      m_FeatType(CSeqFeatData::e_not_set),
+      m_FeatSubtype(CSeqFeatData::eSubtype_bad)
 {
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(const CAnnotObject_Info& info)
-    : m_AnnotType(info.m_AnnotType),
-      m_FeatType(info.m_FeatType),
-      m_FeatSubtype(info.m_FeatSubtype),
+    : m_Seq_annot_Info(info.m_Seq_annot_Info),
       m_Object(info.m_Object),
-      m_Seq_annot_Info(info.m_Seq_annot_Info)
+      m_AnnotType(info.m_AnnotType),
+      m_FeatType(info.m_FeatType),
+      m_FeatSubtype(info.m_FeatSubtype)
 {
 }
 
@@ -140,44 +140,44 @@ CAnnotObject_Info::CAnnotObject_Info(const CAnnotObject_Info& info)
 const CAnnotObject_Info&
 CAnnotObject_Info::operator=(const CAnnotObject_Info& info)
 {
+    m_Seq_annot_Info = info.m_Seq_annot_Info;
+    m_Object = info.m_Object;
     m_AnnotType = info.m_AnnotType;
     m_FeatType = info.m_FeatType;
     m_FeatSubtype = info.m_FeatSubtype;
-    m_Object = info.m_Object;
-    m_Seq_annot_Info = info.m_Seq_annot_Info;
     return *this;
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CSeq_feat& feat,
                                      CSeq_annot_Info& annot)
-    : m_AnnotType(CSeq_annot::C_Data::e_Ftable),
-      m_FeatType(feat.GetData().Which()),
-      m_FeatSubtype(feat.GetData().GetSubtype()),
+    : m_Seq_annot_Info(&annot),
       m_Object(&feat),
-      m_Seq_annot_Info(&annot)
+      m_AnnotType(CSeq_annot::C_Data::e_Ftable),
+      m_FeatType(feat.GetData().Which()),
+      m_FeatSubtype(feat.GetData().GetSubtype())
 {
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CSeq_align& align,
                                      CSeq_annot_Info& annot)
-    : m_AnnotType(CSeq_annot::C_Data::e_Align),
-      m_FeatType(CSeqFeatData::e_not_set),
-      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
+    : m_Seq_annot_Info(&annot),
       m_Object(&align),
-      m_Seq_annot_Info(&annot)
+      m_AnnotType(CSeq_annot::C_Data::e_Align),
+      m_FeatType(CSeqFeatData::e_not_set),
+      m_FeatSubtype(CSeqFeatData::eSubtype_bad)
 {
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CSeq_graph& graph,
                                      CSeq_annot_Info& annot)
-    : m_AnnotType(CSeq_annot::C_Data::e_Graph),
-      m_FeatType(CSeqFeatData::e_not_set),
-      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
+    : m_Seq_annot_Info(&annot),
       m_Object(&graph),
-      m_Seq_annot_Info(&annot)
+      m_AnnotType(CSeq_annot::C_Data::e_Graph),
+      m_FeatType(CSeqFeatData::e_not_set),
+      m_FeatSubtype(CSeqFeatData::eSubtype_bad)
 {
 }
 
@@ -488,6 +488,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/08/27 21:24:51  vasilche
+* Reordered member initializers.
+*
 * Revision 1.25  2003/08/27 14:29:52  vasilche
 * Reduce object allocations in feature iterator.
 *
