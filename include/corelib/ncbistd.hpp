@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/05/28 20:12:29  vakatov
+* [HAVE_NO_AUTO_PTR]  Prohibit "operator=" in the home-made "auto_ptr::"
+*
 * Revision 1.20  1999/04/16 17:45:31  vakatov
 * [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
 *
@@ -164,11 +167,6 @@ public:
     auto_ptr(X* p = 0) : m_Ptr(p) {}
     ~auto_ptr(void) { delete m_Ptr; }
 
-    auto_ptr<X>& operator=(X* p) {
-        reset(p);
-        return *this;
-    }
-
     X&  operator*(void)         const { return *m_Ptr; }
     X*  operator->(void)        const { return m_Ptr; }
     int operator==(const X* p)  const { return (m_Ptr == p); }
@@ -192,8 +190,9 @@ protected:
 
 private:
     // prohibited!
-    auto_ptr(auto_ptr<X>&) {}
-    auto_ptr<X>& operator=(auto_ptr<X>&) {}
+    auto_ptr(auto_ptr<X>&)               { throw 0; }
+    auto_ptr<X>& operator=(auto_ptr<X>&) { throw 0; }
+    auto_ptr<X>& operator=(X* p)         { throw 0; }
 };
 #endif /* HAVE_NO_AUTO_PTR */
 
