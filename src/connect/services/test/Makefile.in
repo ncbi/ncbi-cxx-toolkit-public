@@ -10,7 +10,7 @@ LIB_PROJ = conntest
 
 APP_PROJ = test_ncbi_buffer test_ncbi_core test_ncbi_socket \
            test_ncbi_connutil_hit test_ncbi_connutil_misc socket_io_bouncer \
-           test_ncbi_socket_connector
+           test_ncbi_socket_connector test_ncbi_file_connector
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
