@@ -108,7 +108,7 @@ BLAST_SequenceBlkDestruct(BLAST_SequenceBlkPtr seq_blk);
  * @param nt_length Length of the nucleotide sequence [in]
  * @param frame What frame to translate into? [in]
  * @param length Length of the translated sequence [out]
- * @param genetic code Genetic code to use for translation [in]
+ * @param genetic_code Genetic code to use for translation [in]
  * @return The translated sequence
 */
 Uint1Ptr LIBCALL
