@@ -50,6 +50,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/** @addtogroup ObjectManagerCore
+ *
+ * @{
+ */
+
 
 // fwd decl
 // objects
@@ -68,8 +73,11 @@ class CSynonymsSet;
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CScope
-/////////////////////////////////////////////////////////////////////////////
+///
+///  CScope --
+///
+///  Scope of cache visibility and reference resolution
+///
 
 class NCBI_XOBJMGR_EXPORT CScope : public CObject
 {
@@ -78,19 +86,25 @@ public:
     virtual ~CScope(void);
 
     // CBioseq_Handle methods:
-    // Get bioseq handle by seq-id
+    /// Get bioseq handle by seq-id
     CBioseq_Handle GetBioseqHandle(const CSeq_id& id);
+
+    /// Get bioseq handle by seq-id handle
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id);
+
+    /// Get bioseq handle by seq-id location
     CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc);
 
-    // Get bioseq handle without loading new data
     enum EGetBioseqFlag {
-        eGetBioseq_Resolved, // Search only in already resolved ids
-        eGetBioseq_Loaded,   // Search in all loaded TSEs in the scope
-        eGetBioseq_All       // Search bioseq, load if not loaded yet
+        eGetBioseq_Resolved, //< Search only in already resolved ids
+        eGetBioseq_Loaded,   //< Search in all loaded TSEs in the scope
+        eGetBioseq_All       //< Search bioseq, load if not loaded yet
     };
+
+    /// Get bioseq handle without loading new data
     CBioseq_Handle GetBioseqHandle(const CSeq_id& id,
                                    EGetBioseqFlag get_flag);
+    /// Get bioseq handle without loading new data
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id,
                                    EGetBioseqFlag get_flag);
 
@@ -99,15 +113,23 @@ public:
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
 
-    // Get bioseq handle for sequence withing one TSE
+
+    /// Get bioseq handle for sequence withing one TSE
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
                                           const CBioseq_Handle& bh);
+
+    /// Get bioseq handle for sequence withing one TSE
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
                                           const CSeq_entry_Handle& seh);
+
+    /// Get bioseq handle for sequence withing one TSE
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CBioseq_Handle& bh);
+
+    /// Get bioseq handle for sequence withing one TSE
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CSeq_entry_Handle& seh);
+
 
     // CScope contents modification methods
     typedef int TPriority;
@@ -115,45 +137,64 @@ public:
         kPriority_NotSet = -1
     };
 
-    // Add default data loaders from object manager
+    /// Add default data loaders from object manager
     void AddDefaults(TPriority pri = kPriority_NotSet);
-    // Add data loader by name.
-    // The loader (or its factory) must be known to Object Manager.
+
+    /// Add data loader by name.
+    /// The loader (or its factory) must be known to Object Manager.
     void AddDataLoader(const string& loader_name,
                        TPriority pri = kPriority_NotSet);
-    // Add the scope's datasources as a single group with the given priority
+
+    /// Add the scope's datasources as a single group with the given priority
     void AddScope(CScope& scope,
                   TPriority pri = kPriority_NotSet);
 
 
-    // Add seq_entry, default priority is higher than for defaults or loaders
+    /// Add seq_entry, default priority is higher than for defaults or loaders
     CSeq_entry_Handle AddTopLevelSeqEntry(CSeq_entry& top_entry,
                                           TPriority pri = kPriority_NotSet);
-    // Add bioseq, return bioseq handle. Try to use unresolved seq-id
-    // from the bioseq, fail if all ids are already resolved to
-    // other sequences.
+
+    /// Add bioseq, return bioseq handle. Try to use unresolved seq-id
+    /// from the bioseq, fail if all ids are already resolved to
+    /// other sequences.
     CBioseq_Handle AddBioseq(CBioseq& bioseq,
                              TPriority pri = kPriority_NotSet);
-    // Add Seq-annot
+    /// Add Seq-annot
     CSeq_annot_Handle AddSeq_annot(const CSeq_annot& annot,
                                    TPriority pri = kPriority_NotSet);
 
-    CBioseq_EditHandle GetEditHandle(const CBioseq_Handle& seq);
-    CSeq_entry_EditHandle GetEditHandle(const CSeq_entry_Handle& entry);
-    CSeq_annot_EditHandle GetEditHandle(const CSeq_annot_Handle& annot);
+    /// Get editable Biosec handle by regular one
+    CBioseq_EditHandle     GetEditHandle(const CBioseq_Handle&     seq);
+
+    /// Get editable SeqEntry handle by regular one
+    CSeq_entry_EditHandle  GetEditHandle(const CSeq_entry_Handle&  entry);
+
+    /// Get editable Seq-annot handle by regular one
+    CSeq_annot_EditHandle  GetEditHandle(const CSeq_annot_Handle&  annot);
+
+    /// Get editable Biosec-set handle by regular one
     CBioseq_set_EditHandle GetEditHandle(const CBioseq_set_Handle& seqset);
 
+    /// Clean scope's cache and release the memory
     void ResetHistory(void);
 
-    // Get "native" bioseq ids without filtering and matching.
     typedef CBioseq_Handle::TId TIds;
-    TIds GetIds(const CSeq_id& id);
+    /// Get "native" bioseq ids without filtering and matching.
+    TIds GetIds(const CSeq_id&        id );
+
+    /// Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id_Handle& idh);
 
-    // Get bioseq synonyms, resolving to the bioseq in this scope.
-    CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id& id);
+
+    /// Get bioseq synonyms, resolving to the bioseq in this scope.
+    CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id&        id);
+
+    /// Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id);
+
+    /// Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
+
 
     // deprecated interface
     void AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
@@ -207,6 +248,8 @@ CScope_Impl& CScope::GetImpl(void)
     return *m_Impl;
 }
 
+/* @} */
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -214,6 +257,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2004/09/27 13:55:23  kononenk
+* Added doxygen formating
+*
 * Revision 1.80  2004/08/31 21:03:48  grichenk
 * Added GetIds()
 *
