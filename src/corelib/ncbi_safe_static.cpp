@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/12/07 18:48:50  grichenk
+ * Improved CSafeStaticGuard behaviour.
+ *
  * Revision 1.2  2001/03/30 23:10:12  grichenk
  * Protected from double initializations and deadlocks in multithread
  * environment
@@ -117,9 +120,15 @@ CSafeStaticGuard::CSafeStaticGuard(void)
     sm_RefCount++;
 }
 
+static CSafeStaticGuard* sh_CleanupGuard;
 
 CSafeStaticGuard::~CSafeStaticGuard(void)
 {
+    if ( sh_CleanupGuard ) {
+        CSafeStaticGuard* tmp = sh_CleanupGuard;
+        sh_CleanupGuard = 0;
+        delete tmp;
+    }
     // If this is not the last reference, then do not destroy stack
     if (--sm_RefCount > 0) {
         return;
@@ -133,6 +142,7 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
     }
 
     delete sm_Stack;
+    sm_Stack = 0;
 }
 
 
@@ -148,6 +158,8 @@ CSafeStaticGuard* CSafeStaticGuard::Get(void)
     // as soon as the function is called (global static
     // variable may be still uninitialized at this moment)
     static CSafeStaticGuard sl_CleanupGuard;
+    if ( !sh_CleanupGuard )
+        sh_CleanupGuard = new CSafeStaticGuard;
     return &sl_CleanupGuard;
 }
 

@@ -41,6 +41,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/12/07 18:48:48  grichenk
+ * Improved CSafeStaticGuard behaviour.
+ *
  * Revision 1.5  2001/08/24 13:42:37  grichenk
  * Added CSafeStaticXXX::Set() methods for initialization with an
  * existing object
@@ -159,7 +162,7 @@ public:
             // Set the new object and register for cleanup
             try {
                 m_Ptr = object;
-                CSafeStaticGuard::Get()->Register(this);
+                CSafeStaticGuard::Register(this);
             }
             catch (...) {
                 Init_Unlock(mutex_locked);
@@ -177,7 +180,7 @@ private:
             // Create the object and register for cleanup
             try {
                 m_Ptr = new T;
-                CSafeStaticGuard::Get()->Register(this);
+                CSafeStaticGuard::Register(this);
             }
             catch (...) {
                 Init_Unlock(mutex_locked);
@@ -239,7 +242,7 @@ public:
             // Set the new object and register for cleanup
             try {
                 m_Ptr = new CRef<T> (object);
-                CSafeStaticGuard::Get()->Register(this);
+                CSafeStaticGuard::Register(this);
             }
             catch (...) {
                 Init_Unlock(mutex_locked);
@@ -257,7 +260,7 @@ private:
             // Create the object and register for cleanup
             try {
                 m_Ptr = new CRef<T> (new T);
-                CSafeStaticGuard::Get()->Register(this);
+                CSafeStaticGuard::Register(this);
             }
             catch (...) {
                 Init_Unlock(mutex_locked);
@@ -299,13 +302,16 @@ public:
     // Add new on-demand variable to the cleanup stack.
     static void Register(CSafeStaticPtr_Base* ptr)
     {
+        if ( !sm_Stack ) {
+            Get();
+        }
         sm_Stack->push(ptr);
     }
 
+private:
     // Initialize the guard, return pointer to it.
     static CSafeStaticGuard* Get(void);
 
-private:
     // Stack to keep registered variables.
     typedef stack<CSafeStaticPtr_Base*> TStack;
     static TStack* sm_Stack;
