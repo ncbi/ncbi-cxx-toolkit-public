@@ -1146,7 +1146,7 @@ double CStopWatch::GetTimeMark()
     if (gettimeofday (&time, 0)) {
         return 0.0;
     }
-    return double(time.tv_sec) + double(time.tv_usec) / 1e6f;
+    return double(time.tv_sec) + double(time.tv_usec) / 1e6;
 #endif
 }
 
@@ -1256,6 +1256,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2003/04/23 21:07:31  ivanov
+ * CStopWatch::GetTimeMark: removed 'f' to avoid a conversion float
+ * 1e6f to double.
+ *
  * Revision 1.35  2003/04/16 20:28:00  ivanov
  * Added class CStopWatch
  *
