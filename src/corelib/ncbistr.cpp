@@ -490,6 +490,16 @@ string NStr::PtrToString(const void* value)
 }
 
 
+const void* NStr::StringToPtr(const string& str)
+{
+    if (str.find("0x") != 0) {
+        NCBI_THROW(CStringException,eConvert,"String cannot be converted");
+    }
+    string s = str.substr(2, str.length()-2);
+    return reinterpret_cast<const void*> (NStr::StringToULong(s, 16));
+}
+
+
 static const string s_kTrueString  = "true";
 static const string s_kFalseString = "false";
 static const string s_kTString     = "t";
@@ -934,6 +944,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2003/02/20 18:41:28  dicuccio
+ * Added NStr::StringToPtr()
+ *
  * Revision 1.73  2003/02/11 22:11:03  ucko
  * Make NStr::WrapList a no-op if the input list is empty.
  *

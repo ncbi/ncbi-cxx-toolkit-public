@@ -127,14 +127,15 @@ public:
                                          ECheckEndPtr check = eCheck_Need);
     static double        StringToDouble (const string& str,
                                          ECheckEndPtr check = eCheck_Need);
-    static Int8          StringToInt8(const string& str);
-    static Uint8         StringToUInt8(const string& str);
+    static Int8          StringToInt8   (const string& str);
+    static Uint8         StringToUInt8  (const string& str);
+    static const void*   StringToPtr    (const string& str);
 
     /// X-to-String conversion functions
-    static string    IntToString(long value, bool sign = false);
-    static string    UIntToString(unsigned long value);
-    static string    Int8ToString(Int8 value, bool sign = false);
-    static string    UInt8ToString(Uint8 value);
+    static string    IntToString   (long value, bool sign = false);
+    static string    UIntToString  (unsigned long value);
+    static string    Int8ToString  (Int8 value, bool sign = false);
+    static string    UInt8ToString (Uint8 value);
     static string    DoubleToString(double value);
     /// Note: If precission is more that maximum for current platform,
     //        then it will be truncated to this maximum.
@@ -144,7 +145,7 @@ public:
     /// terminating '\0'.
     static SIZE_TYPE DoubleToString(double value, unsigned int precision,
                                     char* buf, SIZE_TYPE buf_size);
-    static string PtrToString(const void* ptr);
+    static string PtrToString      (const void* ptr);
 
     /// Return one of: 'true, 'false'
     static const string& BoolToString(bool value);
@@ -728,6 +729,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2003/02/20 18:41:49  dicuccio
+ * Added NStr::StringToPtr()
+ *
  * Revision 1.35  2003/01/24 16:58:54  ucko
  * Add an optional parameter to Split and Tokenize indicating whether to
  * merge adjacent delimiters; drop suggestion about joining WrapList's
