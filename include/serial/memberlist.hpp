@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/11/20 21:20:46  gouriano
+* added FindDeep method - to search the whole class type tree
+*
 * Revision 1.20  2002/09/05 21:20:24  vasilche
 * Added mutex for items map
 *
@@ -165,6 +168,7 @@ public:
         }
 
     TMemberIndex Find(const CLightString& name) const;
+    TMemberIndex FindDeep(const CLightString& name) const;
     TMemberIndex Find(const CLightString& name, TMemberIndex pos) const;
     TMemberIndex Find(TTag tag) const;
     TMemberIndex Find(TTag tag, TMemberIndex pos) const;

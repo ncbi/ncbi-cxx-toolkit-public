@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/11/20 21:23:56  gouriano
+* added FindDeep method - to search the whole class type tree
+*
 * Revision 1.29  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *
@@ -156,6 +159,7 @@
 #include <serial/memberlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
+#include <serial/classinfob.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbithr.hpp>
 
@@ -316,6 +320,28 @@ TMemberIndex CItemsInfo::Find(const CLightString& name) const
     if ( i == items.end() )
         return kInvalidMember;
     return i->second;
+}
+
+TMemberIndex CItemsInfo::FindDeep(const CLightString& name) const
+{
+    const TItemsByName& items = GetItemsByName();
+    TItemsByName::const_iterator i = items.find(name);
+    if ( i != items.end() ) {
+        return i->second;
+    }
+    for (CIterator item(*this); item.Valid(); ++item) {
+        const CItemInfo* info = GetItemInfo(item);
+        if (info->GetId().HaveNoPrefix()) {
+            const CClassTypeInfoBase* classType =
+                dynamic_cast<const CClassTypeInfoBase*>(info->GetTypeInfo());
+            if (classType) {
+                if (classType->GetItems().FindDeep(name) != kInvalidMember) {
+                    return *item;
+                }
+            }
+        }
+    }
+    return kInvalidMember;
 }
 
 TMemberIndex CItemsInfo::Find(const CLightString& name, TMemberIndex pos) const
