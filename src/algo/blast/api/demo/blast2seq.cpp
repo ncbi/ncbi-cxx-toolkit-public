@@ -79,7 +79,7 @@ private:
     virtual void Exit(void);
 
     void InitScope(void);
-    CBlastOption::EProgram GetBlastProgramNum(const string& prog);
+    EProgram GetBlastProgramNum(const string& prog);
 
     // needed for debugging only
     FILE* GetOutputFilePtr(void);
@@ -226,20 +226,20 @@ CBlast2seqApplication::InitScope(void)
     }
 }
 
-CBlastOption::EProgram
+EProgram
 CBlast2seqApplication::GetBlastProgramNum(const string& prog)
 {
     if (prog == "blastp")
-        return CBlastOption::eBlastp;
+        return eBlastp;
     if (prog == "blastn")
-        return CBlastOption::eBlastn;
+        return eBlastn;
     if (prog == "blastx")
-        return CBlastOption::eBlastx;
+        return eBlastx;
     if (prog == "tblastn")
-        return CBlastOption::eTblastn;
+        return eTblastn;
     if (prog == "tblastx")
-        return CBlastOption::eTblastx;
-    return CBlastOption::eBlastUndef;
+        return eTblastx;
+    return eBlastUndef;
 }
 
 FILE*
@@ -280,7 +280,7 @@ int CBlast2seqApplication::Run(void)
           eNa_strand_unknown, 0, 0, &counter, &lcase_mask);
 
     // Get program name
-    CBlastOption::EProgram prog =
+    EProgram prog =
         GetBlastProgramNum(args["program"].AsString());
 
     sw.Start();
@@ -288,24 +288,26 @@ int CBlast2seqApplication::Run(void)
     CRef<CSeq_align_set> seqalign = blaster.Run();
     double t = sw.Elapsed();
     cerr << "CBl2seq run took " << t << " seconds" << endl;
-    if (seqalign->Get().empty()) {
-        out << "No hits found" << endl;
-    } else {
-
 #ifdef WRITE_SEQALIGNS
         // Convert CSeq_align_set to linked list of SeqAlign structs
         DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
         SeqAlignPtr salp = NULL, tmp = NULL, tail = NULL;
 
-        ITERATE(list< CRef<CSeq_align> >, itr, seqalign->Get()) {
-            tmp = converter.ToC(**itr);
+        int query_index;
 
-            if (!salp)
-                salp = tail = tmp;
-            else {
-                tail->next = tmp;
-                while (tail->next)
-                    tail = tail->next;
+        for (query_index = 0; query_index < seqalign->size(); ++query_index)
+        {
+            ITERATE(list< CRef<CSeq_align> >, itr, 
+                    (*seqalign)[query_index]->Get()) {
+                tmp = converter.ToC(**itr);
+
+                if (!salp)
+                    salp = tail = tmp;
+                else {
+                    tail->next = tmp;
+                    while (tail->next)
+                        tail = tail->next;
+                }
             }
         }
 
@@ -334,7 +336,7 @@ int CBlast2seqApplication::Run(void)
 
         Uint4 align_opts = TXALIGN_MATRIX_VAL | TXALIGN_SHOW_QS
             | TXALIGN_COMPRESS | TXALIGN_END_NUM;
-        if (prog == CBlastOption::eBlastx) align_opts |= TXALIGN_BLASTX_SPECIAL;
+        if (prog == eBlastx) align_opts |= TXALIGN_BLASTX_SPECIAL;
 
         FILE *fp = GetOutputFilePtr();
         Uint1 feats[255] = { 0 };   // dummy argument
@@ -343,7 +345,6 @@ int CBlast2seqApplication::Run(void)
         seqannot = SeqAnnotFree(seqannot);
 
 #endif
-    }
 
     return 0;
 }
@@ -363,6 +364,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/08/19 20:36:44  dondosha
+ * EProgram enum type is no longer part of CBlastOption class
+ *
  * Revision 1.13  2003/08/18 20:58:57  camacho
  * Added blast namespace, removed *__.hpp includes
  *
