@@ -498,7 +498,7 @@ void CFlatModelEvQVal::Format
     CNcbiOstrstream text;
     text << "Derived by automated computational analysis";
     if ( method != 0  &&  !method->empty() ) {
-         text << " using gene prediction method: " << method;
+         text << " using gene prediction method: " << *method;
     }
     text << ".";
 
@@ -560,6 +560,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/08 15:24:27  dicuccio
+* FIxed dereference of string pointer
+*
 * Revision 1.5  2004/03/05 18:47:32  shomrat
 * Added qualifier classes
 *
