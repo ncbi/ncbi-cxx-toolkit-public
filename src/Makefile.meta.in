@@ -42,8 +42,12 @@ SUB_BRA = \
 if test ! -z "$(SUBPROJ)" ; then \
 	x_subproj="$(SUBPROJ)" ; \
 	for i in $$x_subproj ; do \
-		( cd $$i ; $(MAKE) $(MFLAGS)
-SUB_KET = ) ; \
+		( if test -d $$i ; then \
+          cd $$i  &&  $(MAKE) $(MFLAGS)
+
+SUB_KET = ; else \
+          echo "Warning:  non-existent sub-project \"$$i\"" ; \
+        fi ) ; \
 	done ; \
 fi
 
