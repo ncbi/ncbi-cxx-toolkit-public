@@ -91,8 +91,8 @@ typedef struct GapEditBlock {
  */
 typedef struct GapPrelimEditBlock {
     GapPrelimEditScript *edit_ops;  /**< array of edit operations */
-    Uint4 num_ops_allocated;        /**< size of allocated array */
-    Uint4 num_ops;                  /**< number of edit ops presently in use */
+    Int4 num_ops_allocated;        /**< size of allocated array */
+    Int4 num_ops;                  /**< number of edit ops presently in use */
     EGapAlignOpType last_op;        /**< most recent operation added */
 } GapPrelimEditBlock;
 
@@ -155,7 +155,7 @@ GapPrelimEditBlockNew(void);
  */
 void
 GapPrelimEditBlockAdd(GapPrelimEditBlock *edit_block, 
-                 EGapAlignOpType op_type, Uint4 num_ops);
+                 EGapAlignOpType op_type, Int4 num_ops);
 
 /** Reset a preliminary edit block without freeing it 
  * @param edit_block The preliminary edit block to reset

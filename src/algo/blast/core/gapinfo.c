@@ -120,10 +120,10 @@ GapEditBlockDelete(GapEditBlock* edit_block)
  *  @return 0 if successful, nonzero otherwise
  */
 Int2 
-s_GapPrelimEditBlockRealloc(GapPrelimEditBlock *edit_block, Uint4 total_ops)
+s_GapPrelimEditBlockRealloc(GapPrelimEditBlock *edit_block, Int4 total_ops)
 {
     if (edit_block->num_ops_allocated <= total_ops) {
-        Uint4 new_size = total_ops * 2;
+        Int4 new_size = total_ops * 2;
         GapPrelimEditScript *new_ops;
     
         new_ops = realloc(edit_block->edit_ops, new_size * 
@@ -146,7 +146,7 @@ s_GapPrelimEditBlockRealloc(GapPrelimEditBlock *edit_block, Uint4 total_ops)
 */
 static Int2 
 s_GapPrelimEditBlockAddNew(GapPrelimEditBlock *edit_block, 
-                           EGapAlignOpType op_type, Uint4 num_ops)
+                           EGapAlignOpType op_type, Int4 num_ops)
 {
     if (s_GapPrelimEditBlockRealloc(edit_block, edit_block->num_ops + 2) != 0)
         return -1;
@@ -163,7 +163,7 @@ s_GapPrelimEditBlockAddNew(GapPrelimEditBlock *edit_block,
 
 void
 GapPrelimEditBlockAdd(GapPrelimEditBlock *edit_block, 
-                 EGapAlignOpType op_type, Uint4 num_ops)
+                 EGapAlignOpType op_type, Int4 num_ops)
 {
     if (num_ops == 0)
         return;
