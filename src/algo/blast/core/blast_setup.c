@@ -539,19 +539,6 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    if (!query_info || !sbp)
       return -1;
 
-   /* If overriding search space value is provided in options, just assign it. 
-    * Also set length adjustments to 0, since they are not going to be used.
-    */
-   if (eff_len_options->searchsp_eff) {
-      for (index = query_info->first_context; 
-           index <= query_info->last_context; index++) {
-         query_info->contexts[index].eff_searchsp = 
-            eff_len_options->searchsp_eff;
-         query_info->contexts[index].length_adjustment = 0;
-      }
-      return 0;
-   }
-
    /* use overriding value from effective lengths options or the real value
       from effective lengths parameters. */
    if (eff_len_options->db_length > 0)
@@ -559,11 +546,13 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    else
       db_length = eff_len_params->real_db_length;
 
-   /* If database (subject) length is not available at this stage, do nothing.
+   /* If database (subject) length is not available at this stage, and
+    * overriding value of effective search space is not provided by user,
+    * do nothing.
     * This situation can occur in the initial set up for a non-database search,
     * where each subject is treated as an individual sequence. 
     */
-   if (db_length == 0)
+   if (db_length == 0 && eff_len_options->searchsp_eff == 0)
       return 0;
 
    if (program_number == eBlastTypeTblastn || 
@@ -611,9 +600,12 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
                                           query_length, db_length,
                                           db_num_seqs, &length_adjustment);
          }        
-         effective_search_space =
-            (query_length - length_adjustment) * 
-            (db_length - db_num_seqs*length_adjustment);
+         if (eff_len_options->searchsp_eff)
+            effective_search_space = eff_len_options->searchsp_eff;
+         else
+            effective_search_space =
+               (query_length - length_adjustment) * 
+               (db_length - db_num_seqs*length_adjustment);
       }
       query_info->contexts[index].eff_searchsp = effective_search_space;
       query_info->contexts[index].length_adjustment = length_adjustment;
