@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/03/06 19:37:19  grichenk
+* Fixed minor bugs and comments
+*
 * Revision 1.19  2002/03/05 18:44:55  grichenk
 * +x_UpdateTSEStatus()
 *
@@ -165,10 +168,20 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
         return 0;
     // The map should not contain empty entries
     _ASSERT(tse_set->second.size() > 0);
+    CRef<CTSE_Info> live = 0;
+    if ( tse_set->second.size() == 1) {
+        // There is only one TSE, no matter live or dead
+        return *tse_set->second.begin();
+    }
     iterate(TTSESet, tse, tse_set->second) {
-        // Select live TSE or the only dead TSE
-        if ( !(*tse)->m_Dead  ||  tse_set->second.size() == 1) {
-            return *tse;
+        // Find live TSEs
+        if ( !(*tse)->m_Dead ) {
+            // Make sure there is only one live TSE
+            if ( live ) {
+                throw runtime_error(
+                    "Seq-id conflict: multiple live entries found");
+            }
+            live = *tse;
         }
     }
     //### Try to resolve the conflict with the help of loader
@@ -595,7 +608,6 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
     }
     if ( gap != delta.end() ) {
         // Found the correct gap
-        //### Insert the new segment before, after, or into the gap.
         if ( ex_upper > start ) {
             // Insert the new segment before the gap
             delta.insert(gap, CRef<CDelta_seq>(&seq_seg));
@@ -995,7 +1007,6 @@ void CDataSource::x_DataToSeqMap(const CSeq_data& data,
     //### Search for gaps in the data
     CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
         CSeqMap::eSeqData, pos, len, false);
-    //###seg->m_RefData.Reset(&data);
     // Assume starting position on the referenced sequence is 0
     seg->m_RefPos = 0;
     seg->m_RefLen = len;
@@ -1115,8 +1126,7 @@ without the sequence but with references to the id and all dead TSEs
         else if (selected_with_seq.size() > 1) {
             //### Try to resolve the conflict with the help of loader
             throw runtime_error(
-                "CDataSource: ambigous request -- multiple TSEs found, "
-                "can not select the best one");
+                "CDataSource: ambigous request -- multiple TSEs found");
         }
         iterate(TTSESet, tse, selected_with_ref) {
             if ( !(*tse)->m_Dead  ||  history.find(*tse) != history.end()) {
@@ -1410,10 +1420,10 @@ void CDataSource::x_CleanupUnusedEntries(void)
 
 void CDataSource::x_UpdateTSEStatus(CSeq_entry& tse, bool dead)
 {
+    CMutexGuard guard(sm_DataSource_Mutex);
     TEntries::iterator tse_it = m_Entries.find(&tse);
     _ASSERT(tse_it != m_Entries.end());
     tse_it->second->m_Dead = dead;
-    //### Anything else?
 }
 
 
