@@ -43,6 +43,7 @@
  *
  */
 
+#include <connect/connect_export.h>
 #include <connect/ncbi_core.h>
 #include <stdio.h>
 
@@ -66,8 +67,8 @@ extern "C" {
  * If there is an active MT-lock handler set already, and it is different from
  * the new one, then MT_LOCK_Delete() is called for the old(replaced) handler.
  */
-extern void    CORE_SetLOCK(MT_LOCK lk);
-extern MT_LOCK CORE_GetLOCK(void);
+extern NCBI_XCONNECT_EXPORT void    CORE_SetLOCK(MT_LOCK lk);
+extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
 
 
 
@@ -112,13 +113,13 @@ extern MT_LOCK CORE_GetLOCK(void);
  * If there is an active log handler set already, and it is different from
  * the new one, then LOG_Delete() is called for the old(replaced) logger.
  */
-extern void CORE_SetLOG(LOG lg);
-extern LOG  CORE_GetLOG(void);
+extern NCBI_XCONNECT_EXPORT void CORE_SetLOG(LOG lg);
+extern NCBI_XCONNECT_EXPORT LOG  CORE_GetLOG(void);
 
 
 /* Standard logging to the specified file stream
  */
-extern void CORE_SetLOGFILE
+extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE
 (FILE*       fp,         /* the file stream to log to */
  int/*bool*/ auto_close  /* do "fclose(fp)" when the LOG is reset/destroyed */
  );
@@ -127,7 +128,7 @@ extern void CORE_SetLOGFILE
 /* CORE_SetLOGFILE(fopen(filename, "a"), TRUE)
  * Return zero on error, non-zero on success
  */
-extern int/*bool*/ CORE_SetLOGFILE_NAME
+extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME
 (const char* filename  /* log.-file name */
  );
 
@@ -146,7 +147,9 @@ typedef unsigned int TLOG_FormatFlags;  /* binary OR of "ELOG_FormatFlags"  */
 #define fLOG_Short  (fLOG_Level)
 #define fLOG_Full   (fLOG_Level | fLOG_Module | fLOG_FileLine)
 
-extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags);
+extern NCBI_XCONNECT_EXPORT TLOG_FormatFlags CORE_SetLOGFormatFlags
+(TLOG_FormatFlags
+);
 
 
 /* Compose message using the "call_data" info.
@@ -159,7 +162,7 @@ extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags);
  *
  * NOTE:  the returned string must be deallocated using "free()".
  */
-extern char* LOG_ComposeMessage
+extern NCBI_XCONNECT_EXPORT char* LOG_ComposeMessage
 (const SLOG_Handler* call_data,
  TLOG_FormatFlags    format_flags  /* which fields of "call_data" to use */
  );
@@ -167,7 +170,7 @@ extern char* LOG_ComposeMessage
 
 /* LOG_Reset() specialized to log to a "FILE*" stream.
  */
-extern void LOG_ToFILE
+extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
 (LOG         lg,         /* created by LOG_Create() */
  FILE*       fp,         /* the file stream to log to */
  int/*bool*/ auto_close  /* do "fclose(fp)" when the LOG is reset/destroyed */
@@ -178,7 +181,7 @@ extern void LOG_ToFILE
  *   <message> {errno=<errno>,<descr>}
  * Return "buf".
  */
-extern char* MessagePlusErrno
+extern NCBI_XCONNECT_EXPORT char* MessagePlusErrno
 (const char*  message,  /* [in]  message (can be NULL) */
  int          x_errno,  /* [in]  error code (if it's zero, use "descr" only) */
  const char*  descr,    /* [in]  if NULL, then use "strerror(x_errno)" */
@@ -210,8 +213,8 @@ extern char* MessagePlusErrno
  * If there is an active registry set already, and it is different from
  * the new one, then REG_Delete() is called for the old(replaced) registry.
  */
-extern void CORE_SetREG(REG rg);
-extern REG  CORE_GetREG(void);
+extern NCBI_XCONNECT_EXPORT void CORE_SetREG(REG rg);
+extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
 
 
 
@@ -221,7 +224,7 @@ extern REG  CORE_GetREG(void);
 
 /* Return read-only textual but machine-readable platform description.
  */
-extern const char* CORE_GetPlatform(void);
+extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 
 
 #ifdef __cplusplus
@@ -232,6 +235,9 @@ extern const char* CORE_GetPlatform(void);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/01/07 22:21:58  lavr
+ * Add NCBI_XCONNECT_EXPORT to public API functions
+ *
  * Revision 6.14  2002/12/04 20:59:21  lavr
  * +LOG_WRITE_ERRNO_EX()
  *
