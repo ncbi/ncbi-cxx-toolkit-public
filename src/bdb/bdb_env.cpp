@@ -107,7 +107,19 @@ void CBDB_Env::JoinEnv(const char* db_home, unsigned int opt)
     Open(db_home, flag);
 
     // Check if we joined the transactional environment
+    // Try to create a fake transaction to test the environment
+    DB_TXN* txn = 0;
+    int ret = m_Env->txn_begin(m_Env, 0, &txn, 0);
 
+    if (ret == 0) {
+        m_Transactional = true;
+        ret = txn->abort(txn);
+    }
+
+    // commented since it caused crash on windows trying to free
+    // txn_statp structure. (Why it happened remains unknown)
+
+/*
     DB_TXN_STAT *txn_statp = 0;
     int ret = m_Env->txn_stat(m_Env, &txn_statp, 0);
     if (ret == 0)
@@ -124,6 +136,7 @@ void CBDB_Env::JoinEnv(const char* db_home, unsigned int opt)
             ret = txn->abort(txn);
         }
     }
+*/
 }
 
 DB_TXN* CBDB_Env::CreateTxn(DB_TXN* parent_txn, unsigned int flags)
@@ -153,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/02/06 16:23:31  kuznets
+ * Simplified JoinEnv function to avoid misterious crash on some systems
+ *
  * Revision 1.13  2004/02/04 14:39:01  kuznets
  * Minor code clean up in JoinEnv when deallocating transaction statistics
  * structure
