@@ -245,8 +245,15 @@ public:
             m_Stack.push(AutoPtr<LevelIterator>(LevelIterator::CreateOne(TObjectInfo())));
         }
 
+
+    bool IsValid(void) const
+        {
+            _DEBUG_ARG(m_LastCall = eValid);
+            return CheckValid();
+        }
+
     // check whether iterator is not finished
-    DECLARE_OPERATOR_BOOL(m_CurrentObject);
+    DECLARE_OPERATOR_BOOL(IsValid());
 
     // go to next object
     TThis& operator++(void)
@@ -985,6 +992,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/01/24 21:58:46  vasilche
+* Fixed check for validity of CTypeIterator<>.
+*
 * Revision 1.35  2005/01/24 17:05:48  vasilche
 * Safe boolean operators.
 *
