@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.9 2005/01/14 13:21:48 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.10 2005/02/04 15:03:29 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -170,7 +170,7 @@ PC-CompoundType ::= SEQUENCE {
                     pka-state           (6),               -- Predicted Ionized pKa Form
 
                     unknown           (255)                -- Unknown Compound Type
-                },
+                }                                OPTIONAL,
     id          CHOICE {                --  Compound Namespace and ID  (absent for "deposited" type compounds)
                     cid        INTEGER,                    --  Standardized Compound
                     sid        INTEGER,                    --  PubChem Substance (for "mixture" type compounds)
@@ -645,6 +645,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.10  2005/02/04 15:03:29  bolton
+-- Made Compound id.type optional.
+--
 -- Revision 1.9  2005/01/14 13:21:48  bolton
 -- Update to add protein GI, nucleotide GI, and taxonomy Xref ID's.  Minor
 -- variable name change.
@@ -716,3 +719,4 @@ END
 -- structural information.
 --
 -- ===========================================================================
+
