@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 int
-BLAST_SetUpQuery(CBlastOption::EProgram program_number, 
+BLAST_SetUpQuery(EProgram program_number, 
     TSeqLocVector &query_slp, const QuerySetUpOptions* query_options, 
     BlastQueryInfo** query_info, BLAST_SequenceBlk* *query_blk);
 
@@ -53,6 +53,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/08/19 20:22:05  dondosha
+* EProgram definition moved from CBlastOption clase to blast scope
+*
 * Revision 1.6  2003/08/19 13:45:21  dicuccio
 * Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
 * compliant.  Added 'objects::' where necessary.

@@ -36,6 +36,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ddumpable.hpp>
 #include <objmgr/scope.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objtools/alnmgr/util/showalign.hpp>
 
 // NewBlast includes
 #include <algo/blast/core/blast_def.h>
@@ -53,6 +55,16 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 
 
+/// Enumeration analogous to blast_type_* defines from blast_def.h
+enum EProgram {
+    eBlastn = 0,        //< Nucl-Nucl (also includes megablast)
+    eBlastp,            //< Protein-Protein
+    eBlastx,            //< Translated nucl-Protein
+    eTblastn,           //< Protein-Translated nucl
+    eTblastx,           //< Translated nucl-Translated nucl
+    eBlastUndef = 255   //< Undefined program
+};
+
 struct SSeqLoc {
     CConstRef<objects::CSeq_loc>     seqloc;
     mutable CRef<objects::CScope>    scope;
@@ -63,8 +75,11 @@ struct SSeqLoc {
         : seqloc(sl), scope(s) {}
 };
 typedef vector<SSeqLoc>   TSeqLocVector;
+typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
+typedef list<objects::CDisplaySeqalign::SeqlocInfo> TSeqLocInfo; 
+typedef vector<TSeqLocInfo> TSeqLocInfoVector;
 
-/** Converts a CSeq_loc into a BlastMaskPtr structure used in NewBlast
+/** Converts a CSeq_loc into a BlastMask structure used in NewBlast
  * @param sl CSeq_loc to convert [in]
  * @param index Number of frame/query number? this CSeq_loc applies to [in]
  * @return Linked list of BlastMask structures
@@ -73,8 +88,8 @@ NCBI_XBLAST_EXPORT
 BlastMask*
 CSeqLoc2BlastMask(const objects::CSeq_loc *slp, int index);
 
-CRef<objects::CSeq_loc>
-BlastMask2CSeqLoc(BlastMask* mask);
+TSeqLocInfoVector
+BlastMask2CSeqLoc(BlastMask* mask, TSeqLocVector & slp, EProgram program);
 
 void BlastMaskDNAToProtein(BlastMask** mask, TSeqLocVector & slp);
 
@@ -144,6 +159,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/08/19 20:22:05  dondosha
+* EProgram definition moved from CBlastOption clase to blast scope
+*
 * Revision 1.16  2003/08/19 13:45:21  dicuccio
 * Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
 * compliant.  Added 'objects::' where necessary.

@@ -55,16 +55,6 @@ class NCBI_XBLAST_EXPORT CBlastOption : public CObject
 {
 public:
 
-    /// Enumeration analogous to blast_type_* defines from blast_def.h
-    enum EProgram {
-        eBlastn = 0,        //< Nucl-Nucl (also includes megablast)
-        eBlastp,            //< Protein-Protein
-        eBlastx,            //< Translated nucl-Protein
-        eTblastn,           //< Protein-Translated nucl
-        eTblastx,           //< Translated nucl-Translated nucl
-        eBlastUndef = 255   //< Undefined program
-    };
-
     /// Constructor
     CBlastOption(EProgram prog_name = eBlastp) THROWS((CBlastException));
     /// Destructor
@@ -305,16 +295,16 @@ private:
     CBlastOption& operator=(const CBlastOption& bo);
 };
 
-inline CBlastOption::EProgram
+inline EProgram
 CBlastOption::GetProgram() const
 {
     return m_Program;
 }
 
-CBlastOption::EProgram BLASTGetEProgram(Uint1 prog);
+EProgram BLASTGetEProgram(Uint1 prog);
 
 inline void
-CBlastOption::SetProgram(CBlastOption::EProgram p)
+CBlastOption::SetProgram(EProgram p)
 {
     _ASSERT(p >= eBlastn && p < eBlastUndef);
     m_Program = p;
@@ -475,7 +465,7 @@ CBlastOption::SetFilterString(const char* f)
     sfree(m_QueryOpts->filter_string);
 #if 0
     if (!StringICmp(f, "T")) {
-        if (m_Program == CBlastOption::eBlastn)
+        if (m_Program == eBlastn)
             m_QueryOpts->filter_string = strdup("D");
         else
             m_QueryOpts->filter_string = strdup("S");
@@ -500,7 +490,7 @@ CBlastOption::SetStrandOption(objects::ENa_strand s)
 
 #if 0
 vector< CConstRef<objects::CSeq_loc> >
-x_BlastMask2CSeqLoc(BlastMask* mask, CBlastOption::EProgram program)
+x_BlastMask2CSeqLoc(BlastMask* mask, EProgram program)
 {
     abort();
 }
@@ -916,7 +906,7 @@ inline void
 CBlastOption::SetOutOfFrameMode(bool m)
 {
 #if 0
-    if (m_Program != CBlastOption::eBlastx && m == true)
+    if (m_Program != eBlastx && m == true)
         NCBI_THROW(CBlastException, eBadParameter, 
                 "Out-of-Frame only allowed for blastx");
 #endif
@@ -1006,6 +996,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/08/19 20:22:05  dondosha
+* EProgram definition moved from CBlastOption clase to blast scope
+*
 * Revision 1.16  2003/08/19 13:45:21  dicuccio
 * Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
 * compliant.  Added 'objects::' where necessary.
