@@ -549,6 +549,8 @@ private:
 CDBAPI_Cache::CDBAPI_Cache()
 : m_Conn(0),
   m_OwnConnection(false),
+  m_Timeout(0),
+  m_MaxTimeout(0),
   m_MemBufferSize(s_WriterBufferSize)
 {
 }
@@ -613,11 +615,13 @@ void CDBAPI_Cache::Open(const string& driver,
 
 
 void CDBAPI_Cache::SetTimeStampPolicy(TTimeStampFlags policy, 
-                                    int             timeout)
+                                      int             timeout,
+                                      int             max_timeout)
 {
     CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
     m_TimeStampFlag = policy;
     m_Timeout = timeout;
+    m_MaxTimeout =  max_timeout;
 }
 
 CDBAPI_Cache::TTimeStampFlags CDBAPI_Cache::GetTimeStampPolicy() const
@@ -645,7 +649,8 @@ void CDBAPI_Cache::Store(const string&  key,
                          int            version,
                          const string&  subkey,
                          const void*    data,
-                         size_t         size)
+                         size_t         size,
+                         int            /*time_to_live*/)
 {
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
@@ -819,7 +824,8 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
 
 IWriter* CDBAPI_Cache::GetWriteStream(const string&    key,
                                       int              version,
-                                      const string&    subkey)
+                                      const string&    subkey,
+                                      int              /*time_to_live*/)
 {
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
@@ -1209,6 +1215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/11/03 17:09:16  kuznets
+ * ICache revision 2. Add individual timeouts
+ *
  * Revision 1.11  2004/08/25 15:44:08  kuznets
  * INSERT non-NULL BLOBs (workaround bug in FTDS)
  *
