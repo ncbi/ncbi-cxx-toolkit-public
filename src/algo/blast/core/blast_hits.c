@@ -1151,12 +1151,22 @@ BlastHSPList* Blast_HSPListNew(Int4 hsp_max)
    return hsp_list;
 }
 
-/** Duplicate HSPList's contents, copying only pointers to individual HSPs */
+/** Duplicate HSPList's contents, copying only pointers to individual HSPs,
+ * effectively transferring the ownership of the pointers to the return value.
+ * The caller is still responsible for calling Blast_HSPListFree on the first
+ * argument to this function.
+ * @param hsp_list source Blast_HSPList to copy HSP pointers from [in|out]
+ * @return duplicate of hsp_list or NULL if out of memory
+ */
 static BlastHSPList* 
-s_BlastHSPListDup(BlastHSPList* hsp_list)
+s_BlastHSPListReleaseHSPs(BlastHSPList* hsp_list)
 {
    BlastHSPList* new_hsp_list = (BlastHSPList*) 
       BlastMemDup(hsp_list, sizeof(BlastHSPList));
+   if ( !new_hsp_list ) {
+       return NULL;
+   }
+
    new_hsp_list->hsp_array = (BlastHSP**) 
       BlastMemDup(hsp_list->hsp_array, hsp_list->allocated*sizeof(BlastHSP*));
    if (!new_hsp_list->hsp_array) {
@@ -1164,6 +1174,12 @@ s_BlastHSPListDup(BlastHSPList* hsp_list)
       return NULL;
    }
    new_hsp_list->allocated = hsp_list->allocated;
+   ASSERT(hsp_list->hspcnt <= hsp_list->allocated);
+
+   /* hsp_list->hsp_array elements past hsp_list->hspcnt should be NULL, so it
+    * doesn't hurt to zero hsp_list->allocated */
+   memset(hsp_list->hsp_array, 0, hsp_list->allocated*sizeof(BlastHSP*));
+   hsp_list->hspcnt = 0;
 
    return new_hsp_list;
 }
@@ -1821,10 +1837,9 @@ Int2 Blast_HSPListAppend(BlastHSPList* hsp_list,
 
    /* If no previous HSP list, just return a copy of the new one. */
    if (!combined_hsp_list) {
-      if (!(combined_hsp_list = s_BlastHSPListDup(hsp_list)))
+      if (!(combined_hsp_list = s_BlastHSPListReleaseHSPs(hsp_list)))
          return 1;
       *combined_hsp_list_ptr = combined_hsp_list;
-      hsp_list->hspcnt = 0;
 
       return 0;
    }
@@ -1871,8 +1886,7 @@ Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list,
 
    /* If no previous HSP list, just return a copy of the new one. */
    if (!combined_hsp_list) {
-      *combined_hsp_list_ptr = s_BlastHSPListDup(hsp_list);
-      hsp_list->hspcnt = 0;
+      *combined_hsp_list_ptr = s_BlastHSPListReleaseHSPs(hsp_list);
       return 0;
    }
 
