@@ -28,9 +28,9 @@
  *
  * Author:  Anatoliy Kuznetsov
  *
- * File Description:  Collection of classes to implement different 
+ * File Description:  Collection of classes to implement different
  *                    plugin manager paradigms.
- * 
+ *
  *
  */
 
@@ -50,10 +50,10 @@ BEGIN_NCBI_SCOPE
 
 /// Template class helps to implement one driver class factory.
 ///
-/// Class supports one driver, one version class factory 
+/// Class supports one driver, one version class factory
 /// (the very basic one)
 /// Template parameters are:
-///   IFace - interface class 
+///   IFace - interface class
 ///   TDriver - driver class (implements IFace)
 
 template <class IFace, class TDriver>
@@ -61,6 +61,8 @@ class CSimpleClassFactoryImpl : public IClassFactory<IFace>
 {
 public:
 
+    typedef IFace                          IFace;
+    typedef TDriver                        TDriver;
     typedef IClassFactory<IFace>           TParent;
     typedef typename TParent::SDriverInfo  TDriverInfo;
     typedef typename TParent::TDriverList  TDriverList;
@@ -70,12 +72,12 @@ public:
     /// @param driver_name
     ///   Driver name string
     /// @param patch_level
-    ///   Patch level implemented by the driver. 
+    ///   Patch level implemented by the driver.
     ///   By default corresponds to interface patch level.
-    CSimpleClassFactoryImpl(const string& driver_name, int patch_level = -1) 
+    CSimpleClassFactoryImpl(const string& driver_name, int patch_level = -1)
         : m_DriverVersionInfo
-        (ncbi::CInterfaceVersion<IFace>::eMajor, 
-         ncbi::CInterfaceVersion<IFace>::eMinor, 
+        (ncbi::CInterfaceVersion<IFace>::eMajor,
+         ncbi::CInterfaceVersion<IFace>::eMinor,
          patch_level >= 0 ?
             patch_level : ncbi::CInterfaceVersion<IFace>::ePatchLevel),
           m_DriverName(driver_name)
@@ -84,14 +86,14 @@ public:
     }
 
     /// Create instance of TDriver
-    IFace* 
+    virtual IFace*
     CreateInstance(const string& driver  = kEmptyStr,
                    CVersionInfo version = NCBI_INTERFACE_VERSION(IFace),
                    const TPluginManagerParamTree* /*params*/ = 0) const
     {
         TDriver* drv = 0;
         if (driver.empty() || driver == m_DriverName) {
-            if (version.Match(NCBI_INTERFACE_VERSION(IFace)) 
+            if (version.Match(NCBI_INTERFACE_VERSION(IFace))
                                 != CVersionInfo::eNonCompatible) {
                 drv = new TDriver();
             }
@@ -103,17 +105,18 @@ public:
     {
         info_list.push_back(TDriverInfo(m_DriverName, m_DriverVersionInfo));
     }
+
 protected:
     /// Utility function to get an element of parameter tree
     /// Throws an exception when mandatory parameter is missing
     /// (or returns the deafult value)
     const string& GetParam(const TPluginManagerParamTree* params,
-                           const string&                  param_name, 
+                           const string&                  param_name,
                            bool                           mandatory,
                            const string&                  default_value) const
     {
-        return 
-            TParent::GetParam(m_DriverName, 
+        return
+            TParent::GetParam(m_DriverName,
                               params, param_name, mandatory, default_value);
     }
 
@@ -121,7 +124,7 @@ protected:
     /// Throws an exception when mandatory parameter is missing
     /// (or returns the deafult value)
     int GetParamInt(const TPluginManagerParamTree* params,
-                    const string&                  param_name, 
+                    const string&                  param_name,
                     bool                           /* mandatory */,
                     int                            default_value) const
     {
@@ -135,9 +138,9 @@ protected:
     /// Utility function to get an integer of parameter tree
     /// Throws an exception when mandatory parameter is missing
     /// (or returns the deafult value)
-    unsigned int 
+    unsigned int
     GetParamDataSize(const TPluginManagerParamTree* params,
-                const string&                  param_name, 
+                const string&                  param_name,
                 bool                           /* mandatory */,
                 unsigned int                   default_value) const
     {
@@ -153,7 +156,7 @@ protected:
     /// Throws an exception when mandatory parameter is missing
     /// (or returns the deafult value)
     bool GetParamBool(const TPluginManagerParamTree* params,
-                      const string&                  param_name, 
+                      const string&                  param_name,
                       bool                           /* mandatory */,
                       bool                           default_value) const
     {
@@ -174,25 +177,25 @@ protected:
 
 /// Template implements entry point
 ///
-/// The actual entry point is a C callable exported function 
-///   delegates the functionality to 
+/// The actual entry point is a C callable exported function
+///   delegates the functionality to
 ///               CHostEntryPointImpl<>::NCBI_EntryPointImpl()
 
-template<class TClassFactory> 
+template<class TClassFactory>
 struct CHostEntryPointImpl
 {
     typedef typename TClassFactory::TInterface                TInterface;
     typedef CPluginManager<TInterface>                        TPluginManager;
     typedef typename CPluginManager<TInterface>::SDriverInfo  TDriverInfo;
-    
-    typedef typename 
+
+    typedef typename
     CPluginManager<TInterface>::TDriverInfoList         TDriverInfoList;
-    typedef typename 
+    typedef typename
     CPluginManager<TInterface>::EEntryPointRequest      EEntryPointRequest;
     typedef typename TClassFactory::SDriverInfo         TCFDriverInfo;
-    
 
-    /// Entry point implementation. 
+
+    /// Entry point implementation.
     ///
     /// @sa CPluginManager::FNCBI_EntryPoint
     static void NCBI_EntryPointImpl(TDriverInfoList& info_list,
@@ -203,7 +206,7 @@ struct CHostEntryPointImpl
         cf.GetDriverVersions(cf_info_list);
 
         switch (method)
-            { 
+            {
             case TPluginManager::eGetFactoryInfo:
                 {
                     typename list<TCFDriverInfo>::const_iterator it =
@@ -224,13 +227,13 @@ struct CHostEntryPointImpl
                         if (it1->factory) {    // already instantiated
                             continue;
                         }
-                        typename list<TCFDriverInfo>::iterator it2 = 
+                        typename list<TCFDriverInfo>::iterator it2 =
                             cf_info_list.begin();
-                        typename list<TCFDriverInfo>::iterator it2_end = 
+                        typename list<TCFDriverInfo>::iterator it2_end =
                             cf_info_list.end();
                         for (; it2 != it2_end; ++it2) {
                             if (it1->name == it2->name) {
-                                if (it1->version.Match(it2->version) != 
+                                if (it1->version.Match(it2->version) !=
                                     CVersionInfo::eNonCompatible)
                                     {
                                         TClassFactory* cg = new TClassFactory();
@@ -260,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/02/28 17:45:29  ssikorsk
+ * Added new typedefs to the CSimpleClassFactoryImpl
+ *
  * Revision 1.12  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *
