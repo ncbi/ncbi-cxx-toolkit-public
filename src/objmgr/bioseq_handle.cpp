@@ -31,7 +31,7 @@
 
 #include <objects/objmgr/bioseq_handle.hpp>
 #include "data_source.hpp"
-#include "tse_info.hpp"
+#include <objects/objmgr/tse_info.hpp>
 #include "handle_range.hpp"
 #include <objects/objmgr/seq_vector.hpp>
 #include <objects/objmgr/scope.hpp>
@@ -246,6 +246,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/12/26 20:55:17  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.26  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *

@@ -33,7 +33,7 @@
 #include <objects/objmgr/annot_ci.hpp>
 #include "annot_object.hpp"
 #include "handle_range_map.hpp"
-#include "tse_info.hpp"
+#include <objects/objmgr/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -203,6 +203,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/12/26 20:55:17  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.11  2002/12/26 16:39:23  vasilche
 * Object manager class CSeqMap rewritten.
 *

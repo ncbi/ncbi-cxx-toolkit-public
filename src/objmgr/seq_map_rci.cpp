@@ -35,7 +35,7 @@
 #include <objects/objmgr/seq_map_rci.hpp>
 #include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/objmgr/scope.hpp>
-#include "seq_id_mapper.hpp"
+#include <objects/objmgr/seq_id_mapper.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -516,6 +516,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/12/26 20:55:18  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.1  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *

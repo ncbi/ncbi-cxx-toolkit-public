@@ -32,7 +32,7 @@
 */
 
 #include "handle_range_map.hpp"
-#include "seq_id_mapper.hpp"
+#include <objects/objmgr/seq_id_mapper.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -224,6 +224,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/12/26 20:55:17  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.7  2002/12/06 15:36:00  grichenk
 * Added overlap type for annot-iterators
 *

@@ -30,7 +30,7 @@
 *
 */
 
-#include "seq_id_mapper.hpp"
+#include <objects/objmgr/seq_id_mapper.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
 #include <objects/biblio/Id_pat.hpp>
@@ -1690,6 +1690,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/12/26 20:55:18  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.23  2002/11/08 19:43:35  grichenk
 * CConstRef<> constructor made explicit
 *

@@ -31,7 +31,7 @@
 */
 
 #include <objects/objmgr/seq_id_handle.hpp>
-#include "seq_id_mapper.hpp"
+#include <objects/objmgr/seq_id_mapper.hpp>
 #include <serial/typeinfo.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -137,6 +137,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/12/26 20:55:18  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.8  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *

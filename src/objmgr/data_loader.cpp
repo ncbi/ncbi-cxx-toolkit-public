@@ -32,7 +32,7 @@
 
 
 #include <objects/objmgr/data_loader.hpp>
-#include "seq_id_mapper.hpp"
+#include <objects/objmgr/seq_id_mapper.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -110,6 +110,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/12/26 20:55:17  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.4  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

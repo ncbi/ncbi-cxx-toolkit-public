@@ -31,7 +31,7 @@
 */
 
 
-#include "tse_info.hpp"
+#include <objects/objmgr/tse_info.hpp>
 
 #include "annot_object.hpp"
 
@@ -147,6 +147,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/12/26 20:55:18  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.10  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *

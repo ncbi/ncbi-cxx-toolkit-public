@@ -34,7 +34,7 @@
 #include <objects/objmgr/seqmatch_info.hpp>
 
 #include "data_source.hpp"
-#include "tse_info.hpp"
+#include <objects/objmgr/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/12/26 20:55:18  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.5  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *

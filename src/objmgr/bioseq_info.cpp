@@ -31,7 +31,7 @@
 */
 
 
-#include "bioseq_info.hpp"
+#include <objects/objmgr/bioseq_info.hpp>
 
 //#include <corelib/ncbistd.hpp>
 
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/12/26 20:55:17  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.5  2002/11/04 21:29:12  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

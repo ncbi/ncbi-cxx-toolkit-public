@@ -37,7 +37,7 @@
 
 #include <objects/objmgr/seq_map.hpp>
 #include <objects/objmgr/seq_map_ext.hpp>
-#include "seq_id_mapper.hpp"
+#include <objects/objmgr/seq_id_mapper.hpp>
 #include "data_source.hpp"
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/bioseq_handle.hpp>
@@ -721,6 +721,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/12/26 20:55:18  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.26  2002/12/26 20:35:14  ucko
 * #include <algorithm> for upper_bound<>
 *

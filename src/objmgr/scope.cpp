@@ -38,7 +38,7 @@
 
 #include <objects/objmgr/scope.hpp>
 #include "data_source.hpp"
-#include "tse_info.hpp"
+#include <objects/objmgr/tse_info.hpp>
 #include <objects/objmgr/object_manager.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
@@ -445,6 +445,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/12/26 20:55:18  dicuccio
+* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
+*
 * Revision 1.37  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *
