@@ -225,8 +225,58 @@ static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& 
 static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
 static void s_ColorDifferentBases(string& seq, char identityChar, CNcbiOstream& out);
 static void s_WrapOutputLine(CNcbiOstream& out, const string& str);
-static void s_ExtractSeqalign(CSeq_align_set& target, const  CSeq_align_set& source);
-
+static void s_ExtractSeqalign(CSeq_align_set& target, const CSeq_align_set& source);
+static void s_GetScoreString(double evalue, double bit_score, char* evalue_buf, char* bit_score_buf);
+static void s_GetScoreString(double evalue, double bit_score, char* evalue_buf, char* bit_score_buf){
+#ifdef OS_MAC
+   if (evalue < 1.0e-180) {
+      sprintf(evalue_buf, "0.0");
+   } else if (evalue < 1.0e-99) {
+      sprintf(evalue_buf, "%2.0Le", evalue);
+     
+   } else if (evalue < 0.0009) {
+      sprintf(evalue_buf, "%3.0Le", evalue);
+   } else if (evalue < 0.1) {
+      sprintf(evalue_buf, "%4.3Lf", evalue);
+   } else if (evalue < 1.0) { 
+      sprintf(evalue_buf, "%3.2Lf", evalue);
+   } else if (evalue < 10.0) {
+      sprintf(evalue_buf, "%2.1Lf", evalue);
+   } else { 
+      sprintf(evalue_buf, "%5.0Lf", evalue);
+   }
+   if (bit_score > 9999)
+      sprintf(bit_score_buf, "%4.3Le", bit_score);
+   else if (bit_score > 99.9)
+      sprintf(bit_score_buf, "%4.0ld", (long)bit_score);
+   else /* %4.1Lf is bad on 68K Mac, so cast to long */
+      sprintf(bit_score_buf, "%4.0ld", (long)bit_score);
+#else
+   if (evalue < 1.0e-180) {
+      sprintf(evalue_buf, "0.0");
+   } else if (evalue < 1.0e-99) {
+      sprintf(evalue_buf, "%2.0le", evalue);
+     
+   } else if (evalue < 0.0009) {
+      sprintf(evalue_buf, "%3.0le", evalue);
+   } else if (evalue < 0.1) {
+      sprintf(evalue_buf, "%4.3lf", evalue);
+   } else if (evalue < 1.0) { 
+      sprintf(evalue_buf, "%3.2lf", evalue);
+   } else if (evalue < 10.0) {
+      sprintf(evalue_buf, "%2.1lf", evalue);
+   } else { 
+      sprintf(evalue_buf, "%5.0lf", evalue);
+   }
+   if (bit_score > 9999)
+      sprintf(bit_score_buf, "%4.3le", bit_score);
+   else if (bit_score > 99.9)
+      sprintf(bit_score_buf, "%4.0ld", (long)bit_score);
+ 
+   else
+      sprintf(bit_score_buf, "%4.1lf", bit_score);
+#endif
+}
 static void s_ExtractSeqalign(CSeq_align_set& target, const CSeq_align_set& source){
     for(CSeq_align_set::Tdata::const_iterator iter = source.Get().begin(); iter != source.Get().end(); iter++) {
         if((*iter)->IsSetSegs()){
@@ -1933,9 +1983,11 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& av
         } 
     }
     if (m_AlignOption&eShowBlastInfo) {
-        out<<" Score = "<<(*iterAv)->bits<<" ";
+        char evalue_buf[10], bit_score_buf[10];
+        s_GetScoreString((*iterAv)->eValue, (*iterAv)->bits, evalue_buf, bit_score_buf);
+        out<<" Score = "<<bit_score_buf<<" ";
         out<<"bits ("<<(*iterAv)->score<<"),"<<"  ";
-        out<<"Expect = "<<(*iterAv)->eValue<<endl;
+        out<<"Expect = "<<evalue_buf<<endl;
     }
     
     DisplayAlnvec(out);
@@ -2142,6 +2194,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.45  2004/09/21 19:09:06  jianye
+*modify significant digits for evalue and bit score
+*
 *Revision 1.44  2004/09/20 18:10:58  jianye
 *Handles Disc alignment and some code clean up
 *
