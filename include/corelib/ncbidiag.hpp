@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/02/07 19:45:53  ucko
+* Optionally transfer ownership in GetDiagHandler.
+*
 * Revision 1.35  2001/11/14 15:14:58  ucko
 * Revise diagnostic handling to be more object-oriented.
 *
@@ -408,7 +411,7 @@ typedef void (*FDiagCleanup)(void* data);
 
 extern void          SetDiagHandler(CDiagHandler* handler,
                                     bool can_delete = true);
-extern CDiagHandler* GetDiagHandler(void);
+extern CDiagHandler* GetDiagHandler(bool take_ownership = false);
 
 extern void SetDiagHandler(FDiagHandler func,
                            void*        data,

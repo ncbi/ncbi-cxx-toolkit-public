@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/02/07 19:45:53  ucko
+* Optionally transfer ownership in GetDiagHandler.
+*
 * Revision 1.25  2001/11/14 15:14:59  ucko
 * Revise diagnostic handling to be more object-oriented.
 *
@@ -154,7 +157,7 @@ class CDiagBuffer
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
     friend void SetDiagHandler(CDiagHandler* handler, bool can_delete);
-    friend CDiagHandler* GetDiagHandler(void);
+    friend CDiagHandler* GetDiagHandler(bool take_ownership);
     friend bool IsDiagStream(const CNcbiOstream* os);
     friend bool IsSetDiagHandler(void);
 private:

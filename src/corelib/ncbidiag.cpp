@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2002/02/07 19:45:54  ucko
+* Optionally transfer ownership in GetDiagHandler.
+*
 * Revision 1.43  2002/02/05 22:01:36  lavr
 * Minor tweak
 *
@@ -224,10 +227,11 @@ bool         CDiagBuffer::sm_TraceEnabled;  // to be set on first request
 const char*  CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
     "Info", "Warning", "Error", "Critical", "Fatal", "Trace" };
 
-
-static CStreamDiagHandler s_DefaultHandler(&NcbiCerr);
-CDiagHandler* CDiagBuffer::sm_Handler          = &s_DefaultHandler;
-bool          CDiagBuffer::sm_CanDeleteHandler = false;
+// Use s_DefaultHandler only for purposes of comparison, as installing
+// another handler will normally delete it.
+CDiagHandler* s_DefaultHandler = new CStreamDiagHandler(&NcbiCerr);
+CDiagHandler* CDiagBuffer::sm_Handler = s_DefaultHandler;
+bool          CDiagBuffer::sm_CanDeleteHandler = true;
 
 
 CDiagBuffer::CDiagBuffer(void)
@@ -543,11 +547,16 @@ extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
 
 extern bool IsSetDiagHandler(void)
 {
-    return (CDiagBuffer::sm_Handler != &s_DefaultHandler);
+    return (CDiagBuffer::sm_Handler != s_DefaultHandler);
 }
 
-extern CDiagHandler* GetDiagHandler(void)
+extern CDiagHandler* GetDiagHandler(bool take_ownership)
 {
+    CMutexGuard LOCK(s_DiagMutex);
+    if (take_ownership) {
+        _ASSERT(CDiagBuffer::sm_CanDeleteHandler);
+        CDiagBuffer::sm_CanDeleteHandler = false;
+    }
     return CDiagBuffer::sm_Handler;
 }
 
