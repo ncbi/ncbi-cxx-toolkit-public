@@ -48,6 +48,7 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/objmgr/seq_map.hpp>
+#include <algorithm>
 #include <map>
 //#include <objects/objmgr/seq_map_rci.hpp>
 
@@ -592,6 +593,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/01/23 18:26:02  ucko
+* Explicitly #include <algorithm>
+*
 * Revision 1.38  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.
