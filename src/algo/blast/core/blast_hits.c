@@ -758,8 +758,10 @@ evalue_compare_hsp_lists(const void* v1, const void* v2)
    h2 = *(BlastHSPList**) v2;
    
    /* If any of the HSP lists is empty, it is considered "worse" than the 
-      other */
-   if (h1->hspcnt == 0)
+      other, unless the other is also empty. */
+   if (h1->hspcnt == 0 && h2->hspcnt == 0)
+      return 0;
+   else if (h1->hspcnt == 0)
       return 1;
    else if (h2->hspcnt == 0)
       return -1;
