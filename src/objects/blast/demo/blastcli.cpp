@@ -371,19 +371,24 @@ queue_search()
     CRef<CBioseq_set> seqset(new CBioseq_set);
     seqset->SetSeq_set().push_back(seqentry);
 
+	CRef<CBlast4_queries> queries(new CBlast4_queries);
+	queries->SetBioseq_set(*seqset);
+
     CRef<CBlast4_subject> subject(new CBlast4_subject);
     subject->SetDatabase("nr");
 
     CRef<CBlast4_queue_search_request> q(new CBlast4_queue_search_request);
     q->SetProgram("blastp");
     q->SetService("plain");
-    q->SetQueries(*seqset);
+    q->SetQueries(*queries);
     q->SetSubject(*subject);
 
     CRef<CBlast4_cutoff> cutoff(new CBlast4_cutoff);
     cutoff->SetE_value(2e4);
 
-    list<CRef<CBlast4_parameter> >& l = q->SetParams();
+	// CC: Shouldn't this be using the typedef's (e.g.: TAlgorithm_options)
+	// instead of the explicit types?
+    list<CRef<CBlast4_parameter> >& l = q->SetAlgorithm_options();
     setp(l, "cutoff", cutoff);
     setp(l, "filter", "L;");
     setp(l, "gap-open", 9);
