@@ -70,8 +70,29 @@
 		function Usage()
 		{
 			var usage_str;
-			usage_str  = "Usage:\n";
-			usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
+			//usage_str  = "Usage:\n";
+			//usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
+			usage_str += "USAGE: cscript new_project.wsf <name> <type> <builddir> [-dll]\n";
+			usage_str += "SYNOPSIS:\n";
+			usage_str += "    Create new MSVC7.1 application project from sample template:\n";
+			usage_str += "      Create local build tree structure. Fill-in local tree.\n";
+			usage_str += "      Copy and adjust sample code.\n";
+			usage_str += "      Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
+			usage_str += "      Run project tree builder on local build tree.\n";
+			usage_str += "      Open created solution in MSVC7.1 IDE.\n";
+			usage_str += "ARGUMENTS:\n";
+			usage_str += "    <name>      -- name of project\n";
+			usage_str += "    <type>      -- one of following:\n";
+			usage_str += "                   app/alnmgr  for application using the alignment manager\n";
+			usage_str += "                   app/basic   for simple application\n";
+			usage_str += "                   app/cgi     for CGI application\n";
+			usage_str += "                   app/dbapi   for DBAPI application\n";
+			usage_str += "                   app/gui     for FLTK application\n";
+			usage_str += "                   app/objects for application using ASN.1 objects\n";
+			usage_str += "                   app/objmgr  for application using object manager.\n";
+			usage_str += "    <builddir>  -- path to the pre-built NCBI C++ toolkit\n";
+			usage_str += "    [-dll]      -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
+			
 			return usage_str;
 		}
 		// Task object constructor

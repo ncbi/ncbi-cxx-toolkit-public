@@ -11,8 +11,24 @@
 		function Usage()
 		{
 			var usage_str;
-			usage_str  = "Usage:\n";
-			usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
+			//usage_str  = "Usage:\n";
+			//usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
+			usage_str += "USAGE: cscript import_project.wsf <cvs_tree_path> <builddir> [-dll]\n";
+			usage_str += "SYNOPSIS:\n";
+			usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
+			usage_str += "    CVS tree at:\n";
+			usage_str += "      internal/c++/src/<cvs_tree_path>\n";
+			usage_str += "      internal/c++/include/<cvs_tree_path>\n";
+			usage_str += "    Create local build tree structure. Fill-in local tree.\n";
+			usage_str += "    Adjust Makefile.in in src/<cvs_tree_path> for require NCBI C++ toolkit.\n";
+			usage_str += "    Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
+			usage_str += "    Run project tree builder on local build tree.\n";
+			usage_str += "    Open created solution in MSVC7.1 IDE.\n";
+			usage_str += "ARGUMENTS:\n";
+			usage_str += "    <cvs_tree_path>  -- starting path for import\n";
+			usage_str += "    <builddir>       -- path to the pre-built NCBI C++ toolkit\n";
+			usage_str += "    [-dll]           -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
+			
 			return usage_str;
 		}
 		// Verify command line arguments
