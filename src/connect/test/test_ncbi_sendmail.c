@@ -32,6 +32,7 @@
 
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_sendmail.h>
+#include <connect/ncbi_socket.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -58,6 +59,7 @@ int main(void)
         ".\n",
         "",
         "a\nb\nc\nd\n.",
+        "a\r\n\rb\r\nc\r\nd\r\n.",
         ".\na"
     };
     const char* subject[] = {
@@ -70,19 +72,27 @@ int main(void)
         "lavr@pavo",
         " \"Anton Lavrentiev\"   <lavr@pavo>  , lavr, <lavr>   ",
     };
+    const char* mx_host, *p;
     size_t i, j, k, n, m;
-    const char* mx_host;
     SSendMailInfo info;
     const char* retval;
     STimeout mx_tmo;
     char* huge_body;
     short mx_port;
-    FILE *fp;
+    FILE* fp;
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
     srand(time(0));
+    if ((p = getenv("CONN_DEBUG_PRINTOUT")) != 0) {
+        if (strncasecmp(p, "1",    1) == 0  ||
+            strncasecmp(p, "YES",  3) == 0  ||
+            strncasecmp(p, "SOME", 4) == 0  ||
+            strncasecmp(p, "DATA", 4) == 0) {
+            SOCK_SetDataLoggingAPI(eOn);
+        }
+    }
 
     CORE_LOG(eLOG_Note, "Phase 1 of 2: Testing CORE_SendMail");
 
@@ -246,6 +256,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2005/03/18 16:36:10  lavr
+ * Additional test for \r\n in body; debug output provision
+ *
  * Revision 6.11  2003/12/09 15:39:30  lavr
  * Added new test of custom-sized message body
  *
