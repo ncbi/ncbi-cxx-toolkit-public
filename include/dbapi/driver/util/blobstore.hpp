@@ -46,8 +46,10 @@ enum ECompressMethod {
 
 class CBlobReader : public IReader {
  public:
-    CBlobReader(CDB_Result* res) {
+    CBlobReader(CDB_Result* res, I_BaseCmd* cmd= 0, I_Connection* con= 0) {
         m_Res= res;
+        m_Cmd= cmd;
+        m_Con= con;
         m_ItemNum= 0;
         m_AllDone= false;
     }
@@ -66,10 +68,12 @@ class CBlobReader : public IReader {
     /// available (in case of an error or EOF).
     virtual ERW_Result PendingCount(size_t* count);
 
-    virtual ~CBlobReader() {}
+    virtual ~CBlobReader();
  private:
     CBlobReader();
     CDB_Result* m_Res;
+    I_BaseCmd* m_Cmd;
+    I_Connection* m_Con;
     int m_ItemNum;
     bool m_AllDone;
 };
@@ -79,15 +83,25 @@ class ItDescriptorMaker {
     virtual bool Init(CDB_Connection* con)= 0;
     virtual I_ITDescriptor& ItDescriptor(void)= 0;
     virtual bool Fini(void)= 0;
+    virtual ~ItDescriptorMaker(){};
 };
 
 class CBlobWriter : public IWriter
 {
 public:
+    enum EFlags {
+        fLogBlobs = 0x1,
+        fOwnDescr= 0x2, 
+        fOwnCon= 0x4,
+        fOwnAll= fOwnDescr + fOwnCon
+    };
+
+    typedef int TFlags;
+        
     CBlobWriter(CDB_Connection* con, 
                 ItDescriptorMaker*    desc_func, 
                 size_t          image_limit= 0x7FFFFFFF, 
-                bool            log_it = false);
+                TFlags          flags= 0);
     /// Write up to count bytes from the buffer pointed to by
     /// buf argument onto output device.  Store the number
     /// of bytes actually written, or 0 if either count was
@@ -109,6 +123,8 @@ public:
     size_t m_Limit;
     CDB_Connection* m_Con;
     bool m_LogIt;
+    bool m_DelDesc;
+    bool m_DelCon;
 };
 
 class CBlobRetriever {
@@ -159,7 +175,7 @@ class CBlobLoader {
  * it uses a table of the form:
  * create table TABLE_NAME (
  * ID varchar(n),
- * NUM int,
+ * NUM int,240-271-8512
  * DATA1 image NULL, ... DATAn image NULL)
  *
  */
@@ -182,7 +198,8 @@ class CSimpleBlobStore : public ItDescriptorMaker {
     CSimpleBlobStore(const string& table_name,
                      const string& key_col_name,
                      const string& num_col_name,
-                     const string blob_column[]);
+                     const string blob_column[],
+                     bool is_text= false);
     void SetKey(const string& key) {
         if(!key.empty())
             m_Key= key;
@@ -206,7 +223,47 @@ class CSimpleBlobStore : public ItDescriptorMaker {
     CMY_ITDescriptor m_Desc;
 };
 
+/***************************************************************************************
+ * CBlobStore - the simple interface to deal with reading and writing the image/text data
+ * from a C++ application
+ */
 
+class CBlobStore {
+ public:
+    CBlobStore(I_DriverContext* pCntxt,
+               const string& server, 
+               const string& user,
+               const string& passwd,
+               const string& table_name,
+               ECompressMethod cm= eNone, 
+               size_t image_limit= 0, 
+               bool log_it= false);
+
+    bool Exists(const string& blob_id);
+    //user has to delete istream240-271-8512
+    istream* OpenForRead(const string& blob_id);
+    // user has to delete ostream
+    ostream* OpenForWrite(const string& blob_id);
+    void Delete(const string& blob_id);
+    ~CBlobStore();
+ protected:
+    I_DriverContext* m_Cntxt;
+    string m_Server;
+    string m_User;
+    string m_Passwd;
+    string m_Table;
+    ECompressMethod m_Cm;
+    size_t m_Limit;
+    bool m_LogIt;
+    bool m_IsText;
+    string m_Pool;
+    string m_KeyColName;
+    string m_NumColName;
+    string m_ReadQuery;
+    string* m_BlobColumn;
+    int m_NofBC;
+};
+    
 END_NCBI_SCOPE
 
 
@@ -214,6 +271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/24 19:40:47  soussov
+ * adds CBlobStore implementation
+ *
  * Revision 1.1  2004/05/03 16:47:10  soussov
  * initial commit
  *

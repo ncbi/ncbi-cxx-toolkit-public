@@ -54,12 +54,14 @@ bool CBlobWriter::storeBlob(void)
 }
 
 CBlobWriter::CBlobWriter(CDB_Connection* con, ItDescriptorMaker* d_maker, 
-                         size_t image_limit, bool log_it)
+                         size_t image_limit, TFlags flags)
 {
     m_Con= con;
     m_dMaker= d_maker;
     m_Limit= (image_limit > 1)? image_limit : (16*1024*1024);
-    m_LogIt= log_it;
+    m_LogIt= ((flags & fLogBlobs) != 0);
+    m_DelDesc= ((flags & fOwnCon) != 0);
+    m_DelCon=  ((flags & fOwnCon) != 0);
 }
 
 ERW_Result CBlobWriter::Write(const void* buf,
@@ -86,6 +88,13 @@ ERW_Result CBlobWriter::Flush(void)
 CBlobWriter::~CBlobWriter()
 {
     Flush();
+    if(m_DelDesc) {
+        m_dMaker->Fini();
+        delete m_dMaker;
+    }
+    if(m_DelCon) {
+        delete m_Con;
+    }
 }
 
 ERW_Result CBlobReader::Read(void* buf, size_t count, size_t* bytes_read)
@@ -136,6 +145,17 @@ ERW_Result CBlobReader::PendingCount(size_t* count)
 {
     if(count) *count= 0;
     return m_AllDone? eRW_Eof : eRW_NotImplemented;
+}
+
+CBlobReader::~CBlobReader()
+{
+    if(m_Cmd) {
+        delete m_Res;
+        delete m_Cmd;
+    }
+    if(m_Con) {
+        delete m_Con;
+    }
 }
 
 CBlobRetriever::CBlobRetriever(I_DriverContext* pCntxt,
@@ -274,7 +294,8 @@ bool CBlobLoader::Load(istream& s, ECompressMethod cm, size_t image_limit, bool 
 CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
                                   const string& key_col_name,
                                   const string& num_col_name,
-                                  const string blob_column[]) :
+                                   const string blob_column[],
+                                   bool is_text) :
     m_TableName(table_name), m_KeyColName(key_col_name), 
     m_NumColName(num_col_name), m_Desc(table_name)
 {
@@ -283,6 +304,7 @@ CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
     for(m_nofDataCols= 0; !blob_column[m_nofDataCols].empty(); m_nofDataCols++);
     if(m_nofDataCols) {
         int i;
+        string init_val(is_text? "' '" : "0x0");
         m_DataColName= new string[m_nofDataCols];
         for(i= 0; i < m_nofDataCols; i++) {
             m_DataColName[i]= blob_column[i];
@@ -291,7 +313,7 @@ CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
             " where " + m_KeyColName + " = @key AND " + m_NumColName +
             " = @n) update " + m_TableName + " set";
         for(i= 0; i < m_nofDataCols; i++) {
-            m_sCMD+= (i? ", ":" ") + m_DataColName[i] + " = 0x0";
+            m_sCMD+= (i? ", ":" ") + m_DataColName[i] + "=" + init_val;
         }
         m_sCMD+= " where " + m_KeyColName + " = @key AND " + m_NumColName +
             " = @n else insert " + m_TableName + "(" + m_KeyColName + "," +
@@ -301,7 +323,7 @@ CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
         }
         m_sCMD+= ")values(@key,@n";
         for(i= 0; i < m_nofDataCols; i++) {
-            m_sCMD+= ", 0x0";
+            m_sCMD+= "," + init_val;
         }
         m_sCMD+=")";
     }
@@ -384,4 +406,247 @@ bool CSimpleBlobStore::Fini(void)
         return true;
     }
     return false;
+}
+
+/***************************************************************************************
+ * CBlobStore - the simple interface to deal with reading and writing the image/text data
+ * from a C++ application
+ */
+
+CBlobStore::CBlobStore(I_DriverContext* pCntxt,
+                       const string& server, 
+                       const string& user,
+                       const string& passwd,
+                       const string& table_name,
+                       ECompressMethod cm, 
+                       size_t image_limit, 
+                       bool log_it):
+    m_Cntxt(pCntxt), m_Server(server), m_User(user), m_Passwd(passwd), m_Table(table_name),
+    m_Cm(cm), m_Limit(image_limit), m_LogIt(log_it), m_Pool(server+user+table_name)
+{
+    if(!m_Cntxt) {
+        throw CDB_ClientEx(eDB_Error, 1000010, "CBlobStore", 
+                           "Null pointer to driver context");
+    }
+    CDB_Connection* con= m_Cntxt->Connect(m_Server, m_User, m_Passwd, 0, true, m_Pool);
+    if(!con) {
+        throw CDB_ClientEx(eDB_Error, 1000020, "CBlobStore",
+                           "Can not open connection to SQL server");
+    }
+    /* derive information regarding the table */
+    CDB_LangCmd* lcmd= con->LangCmd("select * from "+m_Table+" where 1=0");
+    if(!lcmd->Send()) {
+        throw CDB_ClientEx(eDB_Error, 1000030, "CBlobStore",
+                           "Failed to send a command to the server");
+    }
+
+    m_NofBC= 0;
+    m_KeyColName= kEmptyStr;
+    m_NumColName= kEmptyStr;
+    m_ReadQuery= kEmptyStr;
+    m_IsText= false;
+    unsigned int n;
+
+    while(lcmd->HasMoreResults()) {
+        CDB_Result* r= lcmd->Result();
+        if(!r) continue;
+        if(r->ResultType() == eDB_RowResult) {
+            n= r->NofItems();
+            if(n < 2) {
+                delete r;
+                continue;
+            }
+
+            m_BlobColumn= new string[n];
+
+            for(unsigned int j= 0; j < n; j++) {
+                switch (r->ItemDataType(j)) {
+                case eDB_VarChar:
+                case eDB_Char:
+                case eDB_LongChar: 
+                    m_KeyColName= r->ItemName(j);
+                    break;
+
+                case eDB_Int:
+                case eDB_SmallInt:
+                case eDB_TinyInt:
+                case eDB_BigInt:
+                    m_NumColName= r->ItemName(j);
+                    break;
+
+                case eDB_Text: m_IsText= true;
+                case eDB_Image:
+                    m_BlobColumn[m_NofBC++]= r->ItemName(j);
+                }
+            }
+            m_BlobColumn[m_NofBC]= kEmptyStr;
+            while(r->Fetch());
+        }
+        delete r;
+    }
+    delete lcmd;
+    delete con;
+
+    if((m_NofBC < 1) || m_KeyColName.empty()) {
+        throw CDB_ClientEx(eDB_Error, 1000040, "CBlobStore",
+                           "Table "+m_Table+" can not be used for BlobStore");
+    }
+}
+
+bool CBlobStore::Exists(const string& blob_id)
+{
+    CDB_Connection* con= m_Cntxt->Connect(m_Server, m_User, m_Passwd, 0, true, m_Pool);
+    if(!con) {
+        throw CDB_ClientEx(eDB_Error, 1000020, "CBlobStore::Exists",
+                           "Can not open connection to SQL server");
+    }
+    /* check the key */
+    CDB_LangCmd* lcmd= con->LangCmd("if EXISTS(select * from "+m_Table+" where "+
+                                    m_KeyColName+"='"+blob_id+"') select 1");
+    if(!lcmd->Send()) {
+        delete lcmd;
+        delete con;
+        throw CDB_ClientEx(eDB_Error, 1000030, "CBlobStore::Exists",
+                           "Failed to send a command to the server");
+    }
+
+    bool re= false;
+
+    while(lcmd->HasMoreResults()) {
+        CDB_Result* r= lcmd->Result();
+        if(!r) continue;
+        if(r->ResultType() == eDB_RowResult) {
+            while(r->Fetch())
+                re= true;
+        }
+        delete r;
+    }
+    delete lcmd;
+    delete con;
+    return re;
+}
+
+void CBlobStore::Delete(const string& blob_id)
+{
+    CDB_Connection* con= m_Cntxt->Connect(m_Server, m_User, m_Passwd, 0, true, m_Pool);
+    if(!con) {
+        throw CDB_ClientEx(eDB_Error, 1000020, "CBlobStore::Delete",
+                           "Can not open connection to SQL server");
+    }
+    /* check the key */
+    CDB_LangCmd* lcmd= con->LangCmd("delete "+m_Table+" where "+
+                                    m_KeyColName+"='"+blob_id+"'");
+    if(!lcmd->Send()) {
+        delete lcmd;
+        delete con;
+        throw CDB_ClientEx(eDB_Error, 1000030, "CBlobStore::delete",
+                           "Failed to send a command to the server");
+    }
+
+    lcmd->DumpResults();
+
+    delete lcmd;
+    delete con;
+}
+
+istream* CBlobStore::OpenForRead(const string& blob_id)
+{
+    CDB_Connection* con= m_Cntxt->Connect(m_Server, m_User, m_Passwd, 0, true, m_Pool);
+    if(!con) {
+        throw CDB_ClientEx(eDB_Error, 1000020, "CBlobStore::OpenForRead",
+                           "Can not open connection to SQL server");
+    }
+    if(m_ReadQuery.empty()) {
+        m_ReadQuery= "set TEXTSIZE 2147483647 select ";
+        for(int i= 0; i < m_NofBC; i++) {
+            if(i) m_ReadQuery+= ", ";
+            m_ReadQuery+= m_BlobColumn[i];
+        }
+        m_ReadQuery+= " from " + m_Table + " where " + m_KeyColName + "=@blob_id";
+        if(!m_NumColName.empty()) {
+            m_ReadQuery+= " order by " + m_NumColName + " ASC";
+        }
+    }
+
+    CDB_LangCmd* lcmd= con->LangCmd(m_ReadQuery, 1);
+    CDB_VarChar blob_key(blob_id);
+    lcmd->BindParam("@blob_id", &blob_key);
+
+    if(!lcmd->Send()) {
+        delete lcmd;
+        delete con;
+        throw CDB_ClientEx(eDB_Error, 1000030, "CBlobStore::OpenForRead",
+                           "Failed to send a command to the server");
+    }
+    
+    while(lcmd->HasMoreResults()) {
+        CDB_Result* r= lcmd->Result();
+        if(!r) continue;
+        if(r->ResultType() != eDB_RowResult) {
+            delete r;
+            continue;
+        }
+        if(r->Fetch()) {
+            // creating a stream
+            CBlobReader* bReader= new CBlobReader(r, lcmd, con);
+            CRStream* iStream= new CRStream(bReader, 0, 0, CRWStreambuf::fOwnReader);
+            CCompressionStreamProcessor* zProc;
+            switch(m_Cm) {
+                
+            case eZLib:
+                zProc= new CCompressionStreamProcessor((CZipDecompressor*)(new CZipDecompressor), 
+                                                       CCompressionStreamProcessor::eDelete);
+                break;
+            case eBZLib:
+                zProc=  new CCompressionStreamProcessor((CBZip2Decompressor*)(new CBZip2Decompressor), 
+                                                        CCompressionStreamProcessor::eDelete);
+                break;
+            default:
+                return iStream;
+            }
+            CCompressionIStream* zStream= new CCompressionIStream(*iStream, zProc, 
+                                                                  CCompressionStream::fOwnAll);
+            
+            return zStream;
+        } 
+    }
+    delete lcmd;
+    delete con;
+    return 0;
+}
+
+ostream* CBlobStore::OpenForWrite(const string& blob_id)
+{
+    CDB_Connection* con= m_Cntxt->Connect(m_Server, m_User, m_Passwd, 0, true, m_Pool);
+    if(!con) {
+        throw CDB_ClientEx(eDB_Error, 1000020, "CBlobStore::OpenForWrite",
+                           "Can not open connection to SQL server");
+    }
+
+    CSimpleBlobStore* sbs= new CSimpleBlobStore(m_Table, m_KeyColName, m_NumColName, m_BlobColumn,
+                                                m_IsText);
+    sbs->SetKey(blob_id);
+    // CBlobLoader* bload= new CBlobLoader(my_context, server_name, user_name, passwd, &sbs);
+    if(sbs->Init(con)) {
+        CBlobWriter* bWriter= new CBlobWriter(con, sbs, m_Limit, 
+                                              CBlobWriter::fOwnAll | (m_LogIt? CBlobWriter::fLogBlobs : 0));
+        CWStream* oStream= new CWStream(bWriter, 0, 0,  CRWStreambuf::fOwnWriter);
+        CCompressionStreamProcessor* zProc;
+
+        switch(m_Cm) {
+        case eZLib:
+            zProc= new CCompressionStreamProcessor((CZipCompressor*)(new CZipCompressor), 
+                                                   CCompressionStreamProcessor::eDelete);
+            break;
+        case eBZLib:
+            zProc=  new CCompressionStreamProcessor((CBZip2Compressor*)(new CBZip2Compressor), 
+                                                    CCompressionStreamProcessor::eDelete);
+            break;
+        default:
+            return oStream;
+        }
+        CCompressionOStream* zStream= new CCompressionOStream(*oStream, zProc, CCompressionStream::fOwnAll);
+        return zStream;
+    }
+    return 0;
 }
