@@ -64,6 +64,14 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
         ("barfooetc", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
 
     arg_desc.AddDefaultKey
+        ("kd8", "DefaultKey8",
+         "This is an optional Int8 key argument, with default value",
+         CArgDescriptions::eInt8, "123456789012");
+    arg_desc.SetConstraint
+        ("kd8", new CArgAllow_Int8s(-2, NStr::StringToInt8("123456789022")));
+
+
+    arg_desc.AddDefaultKey
         ("kd", "DefaultKey",
          "This is an optional integer key argument, with default value",
          CArgDescriptions::eInteger, "123");
@@ -518,6 +526,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.23  2004/07/22 15:26:09  vakatov
+ * Allow "Int8" arguments
+ *
  * Revision 6.22  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *

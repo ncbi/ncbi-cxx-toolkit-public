@@ -223,15 +223,24 @@ public:
     /// If it is a value of a flag argument, then return either "true"
     /// or "false".
     /// @sa
-    ///   AsInteger(), AsDouble(), AsBoolean()
+    ///   AsInteger(), AsInt8(), AsDouble(), AsBoolean()
     virtual const string& AsString(void) const = 0;
+
+    /// Get the argument's integer (8-byte long) value.
+    ///
+    /// If you request a wrong value type, such as a call to "AsInt8()"
+    /// for a "boolean" argument, an exception is thrown.
+    /// This will however work okay for "plain integer" argument.
+    /// @sa
+    ///   AsInteger(), AsString(), AsDouble, AsBoolean()
+    virtual Int8 AsInt8(void) const = 0;
 
     /// Get the argument's integer value.
     ///
     /// If you request a wrong value type, such as a call to "AsInteger()"
-    /// for a "boolean" argument, an exception is thrown.
+    /// for a "boolean" or even "Int8" argument, an exception is thrown.
     /// @sa
-    ///   AsString(), AsDouble, AsBoolean()
+    ///   AsInt8(), AsString(), AsDouble, AsBoolean()
     virtual int    AsInteger(void) const = 0;
 
     /// Get the argument's double value.
@@ -239,7 +248,7 @@ public:
     /// If you request a wrong value type, such as a call to "AsDouble()"
     /// for a "boolean" argument, an exception is thrown.
     /// @sa
-    ///   AsString(), AsInteger, AsBoolean()
+    ///   AsString(), AsInt8(), AsInteger, AsBoolean()
     virtual double AsDouble (void) const = 0;
 
     /// Get the argument's boolean value.
@@ -247,7 +256,7 @@ public:
     /// If you request a wrong value type, such as a call to "AsBoolean()"
     /// for a "integer" argument, an exception is thrown.
     /// @sa
-    ///   AsString(), AsInteger, AsDouble()
+    ///   AsString(), AsInt8(), AsInteger, AsDouble()
     virtual bool   AsBoolean(void) const = 0;
 
     /// Get the argument as an input file stream.
@@ -377,7 +386,8 @@ public:
     enum EType {
         eString = 0, ///< An arbitrary string
         eBoolean,    ///< {'true', 't', 'false', 'f'},  case-insensitive
-        eInteger,    ///< Convertible into an integer number (int)
+        eInt8,       ///< Convertible into an integer number (Int8 only)
+        eInteger,    ///< Convertible into an integer number (int or Int8)
         eDouble,     ///< Convertible into a floating point number (double)
         eInputFile,  ///< Name of file (must exist and be readable)
         eOutputFile, ///< Name of file (must be writeable)
@@ -734,6 +744,7 @@ public:
 ///  - CArgAllow_Symbols  -- symbol from a set of allowed symbols
 ///  - CArgAllow_String   -- string to contain only allowed symbols 
 ///  - CArgAllow_Strings  -- string from a set of allowed strings
+///  - CArgAllow_Int8s    -- Int8    value to fall within a given interval
 ///  - CArgAllow_Integers -- integer value to fall within a given interval
 ///  - CArgAllow_Doubles  -- floating-point value to fall in a given interval
 
@@ -893,20 +904,20 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CArgAllow_Integers --
+/// CArgAllow_Int8s --
 ///
-/// Define constraint to describe range of integer values.
+/// Define constraint to describe range of 8-byte integer values.
 ///
 /// Argument to have only integer values falling within given interval.
 ///
 /// Example:
-/// - SetConstraint("a2", new CArgAllow_Integers(-3, 34))
+/// - SetConstraint("a2", new CArgAllow_Int8s(-1001, 123456789012))
 
-class NCBI_XNCBI_EXPORT CArgAllow_Integers : public CArgAllow
+class NCBI_XNCBI_EXPORT CArgAllow_Int8s : public CArgAllow
 {
 public:
     /// Constructor specifying range of allowed integer values.
-    CArgAllow_Integers(int x_min, int x_max);
+    CArgAllow_Int8s(Int8 x_min, Int8 x_max);
 
 protected:
     /// Verify if specified value is allowed.
@@ -916,8 +927,28 @@ protected:
     virtual string GetUsage(void) const;
 
 private:
-    int m_Min;  ///< Minimum value of range
-    int m_Max;  ///< Maximum value of range 
+    Int8 m_Min;  ///< Minimum value of range
+    Int8 m_Max;  ///< Maximum value of range 
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgAllow_Integers --
+///
+/// Define constraint to describe range of integer values.
+///
+/// Argument to have only integer values falling within given interval.
+///
+/// Example:
+/// - SetConstraint("i", new CArgAllow_Integers(kMin_Int, 34))
+
+class NCBI_XNCBI_EXPORT CArgAllow_Integers : public CArgAllow_Int8s
+{
+public:
+    /// Constructor specifying range of allowed integer values.
+    CArgAllow_Integers(int x_min, int x_max);
 };
 
 
@@ -931,7 +962,7 @@ private:
 /// Argument to have only double values falling within given interval.
 ///
 /// Example:
-/// - SetConstraint("a2", new CArgAllow_Doubles(0.01, 0.99))
+/// - SetConstraint("d", new CArgAllow_Doubles(0.01, 0.99))
 
 class NCBI_XNCBI_EXPORT CArgAllow_Doubles : public CArgAllow
 {
@@ -1020,6 +1051,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/07/22 15:26:09  vakatov
+ * Allow "Int8" arguments
+ *
  * Revision 1.33  2003/07/30 16:14:01  siyan
  * Added explicit documentation for operators () and !()
  *

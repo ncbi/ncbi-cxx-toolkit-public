@@ -29,7 +29,7 @@
  *   PRIVATE header -- for inclusion by "ncbiargs.cpp" only!
  *   Command-line arguments' processing:
  *      descriptions  -- CArgDescriptions,  CArgDesc
- *      constraints   -- CArgAllow;  CArgAllow_{Strings,Integers,Doubles}
+ *      constraints   -- CArgAllow;  CArgAllow_{Strings,Integers,Int8s,Doubles}
  *      parsed values -- CArgs,             CArgValue
  *      exceptions    -- CArgException, ARG_THROW()
  *
@@ -46,14 +46,16 @@
 //  CArg_***::   classes representing various types of argument value
 //
 //    CArg_NoValue     : CArgValue
+//
 //    CArg_String      : CArgValue
 //
-//    CArg_Alnum       : CArg_String
-//    CArg_Integer     : CArg_String
-//    CArg_Double      : CArg_String
-//    CArg_Boolean     : CArg_String
-//    CArg_InputFile   : CArg_String
-//    CArg_OutputFile  : CArg_String
+//       CArg_Alnum       : CArg_String
+//       CArg_Int8        : CArg_String
+//          CArg_Integer  : CArg_Int8
+//       CArg_Double      : CArg_String
+//       CArg_Boolean     : CArg_String
+//       CArg_InputFile   : CArg_String
+//       CArg_OutputFile  : CArg_String
 //    
 
 
@@ -64,6 +66,7 @@ public:
     virtual bool HasValue(void) const;
 
     virtual const string&  AsString (void) const;
+    virtual Int8           AsInt8   (void) const;
     virtual int            AsInteger(void) const;
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
@@ -82,6 +85,7 @@ public:
     virtual bool HasValue(void) const;
 
     virtual const string&  AsString (void) const;
+    virtual Int8           AsInt8   (void) const;
     virtual int            AsInteger(void) const;
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
@@ -96,13 +100,22 @@ private:
 
 
 
-class CArg_Integer : public CArg_String
+class CArg_Int8 : public CArg_String
+{
+public:
+    CArg_Int8(const string& name, const string& value);
+    virtual Int8 AsInt8(void) const;
+protected:
+    Int8 m_Integer;
+};
+
+
+
+class CArg_Integer : public CArg_Int8
 {
 public:
     CArg_Integer(const string& name, const string& value);
     virtual int AsInteger(void) const;
-private:
-    int m_Integer;
 };
 
 
@@ -378,6 +391,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/22 15:26:09  vakatov
+ * Allow "Int8" arguments
+ *
  * Revision 1.5  2002/12/18 22:54:48  dicuccio
  * Shuffled some headers to avoid a potentially serious compiler warning
  * (deletion of incomplete type in Windows).

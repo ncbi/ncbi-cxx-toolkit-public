@@ -30,7 +30,7 @@
  *      descriptions  -- CArgDescriptions,  CArgDesc
  *      parsed values -- CArgs,             CArgValue
  *      exceptions    -- CArgException, ARG_THROW()
- *      constraints   -- CArgAllow;  CArgAllow_{Strings,Integers,Doubles}
+ *      constraints   -- CArgAllow;  CArgAllow_{Strings,Integers,Int8s,Doubles}
  *
  */
 
@@ -77,16 +77,15 @@ string s_ArgExptMsg(const string& name, const string& what, const string& attr)
 //  CArg_***::   classes representing various types of argument value
 //
 //    CArgValue
-//
-//       CArg_NoValue     : CArgValue
-//
-//       CArg_String      : CArgValue
-//          CArg_Integer     : CArg_String
+//       CArg_NoValue        : CArgValue
+//       CArg_String         : CArgValue
+//          CArg_Int8        : CArg_String
+//             CArg_Integer  : CArg_Int8
 //          CArg_Double      : CArg_String
 //          CArg_Boolean     : CArg_String
 //          CArg_InputFile   : CArg_String
 //          CArg_OutputFile  : CArg_String
-//    
+//
 
 
 ///////////////////////////////////////////////////////
@@ -142,6 +141,7 @@ bool CArg_NoValue::HasValue(void) const
         "Optional argument must have a default value", "NULL"));
 
 const string& CArg_NoValue::AsString    (void) const { THROW_CArg_NoValue; }
+Int8          CArg_NoValue::AsInt8      (void) const { THROW_CArg_NoValue; }
 int           CArg_NoValue::AsInteger   (void) const { THROW_CArg_NoValue; }
 double        CArg_NoValue::AsDouble    (void) const { THROW_CArg_NoValue; }
 bool          CArg_NoValue::AsBoolean   (void) const { THROW_CArg_NoValue; }
@@ -174,6 +174,10 @@ const string& CArg_String::AsString(void) const
 }
 
 
+Int8 CArg_String::AsInt8(void) const
+{ NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
+    "Attempt to cast to a wrong (Int8) type", AsString()));}
+
 int CArg_String::AsInteger(void) const
 { NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
     "Attempt to cast to a wrong (Integer) type", AsString()));}
@@ -201,24 +205,43 @@ void CArg_String::CloseFile(void) const
 
 
 ///////////////////////////////////////////////////////
-//  CArg_Integer::
+//  CArg_Int8::
 
-inline CArg_Integer::CArg_Integer(const string& name, const string& value)
+inline CArg_Int8::CArg_Int8(const string& name, const string& value)
     : CArg_String(name, value)
 {
     try {
-        m_Integer = NStr::StringToInt(value);
+        m_Integer = NStr::StringToInt8(value);
     } catch (CException& e) {
-        NCBI_RETHROW(e,CArgException,eConvert, s_ArgExptMsg(GetName(),
-            "Argument cannot be converted",value));
+        NCBI_RETHROW(e, CArgException, eConvert, s_ArgExptMsg(GetName(),
+            "Argument cannot be converted", value));
     }
+}
 
+
+Int8 CArg_Int8::AsInt8(void) const
+{
+    return m_Integer;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArg_Integer::
+
+inline CArg_Integer::CArg_Integer(const string& name, const string& value)
+    : CArg_Int8(name, value)
+{
+    if (m_Integer < kMin_Int  ||  kMin_Int > m_Integer) {
+        NCBI_THROW(CArgException, eConvert, s_ArgExptMsg(GetName(),
+            "Integer value is out of range", value));
+    }
 }
 
 
 int CArg_Integer::AsInteger(void) const
 {
-    return m_Integer;
+    return static_cast<int> (m_Integer);
 }
 
 
@@ -525,11 +548,11 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
             return;
     }
 
-    NCBI_THROW(CArgException, eArgType, s_ArgExptMsg(GetName(),
-        "Argument type/flags mismatch",
-        "(type=" + CArgDescriptions::GetTypeName(type) +
-        ", flags=" + NStr::UIntToString(flags) + ")"));
-        
+    NCBI_THROW(CArgException, eArgType,
+               s_ArgExptMsg(GetName(),
+                            "Argument type/flags mismatch",
+                            "(type=" + CArgDescriptions::GetTypeName(type) +
+                            ", flags=" + NStr::UIntToString(flags) + ")"));
 }
 
 
@@ -564,6 +587,9 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
         break;
     case CArgDescriptions::eBoolean:
         arg_value = new CArg_Boolean(GetName(), value);
+        break;
+    case CArgDescriptions::eInt8:
+        arg_value = new CArg_Int8(GetName(), value);
         break;
     case CArgDescriptions::eInteger:
         arg_value = new CArg_Integer(GetName(), value);
@@ -1171,6 +1197,7 @@ const string& CArgDescriptions::GetTypeName(EType type)
     static const string s_TypeName[k_EType_Size] = {
         "String",
         "Boolean",
+        "Int8r",
         "Integer",
         "Real",
         "File_In",
@@ -1324,7 +1351,7 @@ void CArgDescriptions::SetConstraint(const string& name, CArgAllow* constraint)
 
     TArgsI it = x_Find(name);
     if (it == m_Args.end()) {
-        NCBI_THROW(CArgException, eConstraint, 
+        NCBI_THROW(CArgException, eConstraint,
             "Attempt to set constraint for undescribed argument: "+ name);
     }
     (*it)->SetConstraint(constraint);
@@ -1559,7 +1586,7 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
     }
 
     // Check if all mandatory unnamed positional arguments are provided
-    if (m_PosArgs.size() <= n_plain  &&  
+    if (m_PosArgs.size() <= n_plain  &&
         n_plain < m_PosArgs.size() + m_nExtra){
         NCBI_THROW(CArgException,eNoArg,
             "Too few (" + NStr::UIntToString(n_plain) +
@@ -1744,7 +1771,7 @@ string& CArgDescriptions::PrintUsage(string& str) const
     if ( m_UsageSortArgs ) {
         // Alphabetically ordered,
         // mandatory keys to go first, then flags, then optional keys
-        TListI& it_opt_keys = it_pos; 
+        TListI& it_opt_keys = it_pos;
         args.push_front(0);
         TListI it_flags = args.begin();
         args.push_front(0);
@@ -1888,6 +1915,7 @@ string& CArgDescriptions::PrintUsage(string& str) const
 //   CArgAllow_Symbols::
 //   CArgAllow_String::
 //   CArgAllow_Strings::
+//   CArgAllow_Int8s::
 //   CArgAllow_Integers::
 //   CArgAllow_Doubles::
 //
@@ -2088,10 +2116,10 @@ CArgAllow_Strings::~CArgAllow_Strings(void)
 
 
 ///////////////////////////////////////////////////////
-//  CArgAllow_Integers::
+//  CArgAllow_Int8s::
 //
 
-CArgAllow_Integers::CArgAllow_Integers(int x_min, int x_max)
+CArgAllow_Int8s::CArgAllow_Int8s(Int8 x_min, Int8 x_max)
     : CArgAllow()
 {
     if (x_min <= x_max) {
@@ -2104,16 +2132,27 @@ CArgAllow_Integers::CArgAllow_Integers(int x_min, int x_max)
 }
 
 
-bool CArgAllow_Integers::Verify(const string& value) const
+bool CArgAllow_Int8s::Verify(const string& value) const
 {
-    int val = NStr::StringToInt(value);
+    Int8 val = NStr::StringToInt8(value);
     return (m_Min <= val  &&  val <= m_Max);
 }
 
 
-string CArgAllow_Integers::GetUsage(void) const
+string CArgAllow_Int8s::GetUsage(void) const
 {
-    return NStr::IntToString(m_Min) + ".." + NStr::IntToString(m_Max);
+    return NStr::Int8ToString(m_Min) + ".." + NStr::Int8ToString(m_Max);
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgAllow_Integers::
+//
+
+CArgAllow_Integers::CArgAllow_Integers(int x_min, int x_max)
+    : CArgAllow_Int8s(x_min, x_max)
+{
 }
 
 
@@ -2154,6 +2193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2004/07/22 15:26:09  vakatov
+ * Allow "Int8" arguments
+ *
  * Revision 1.48  2004/05/14 13:59:26  gorelenk
  * Added include of ncbi_pch.hpp
  *
