@@ -43,6 +43,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -252,6 +253,8 @@ void CValidError_feat::ValidateSeqFeatData
 
     if ( !data.IsGene() ) {
         ValidateGeneXRef(feat);
+    } else {
+        ValidateOperon(feat);
     }
 }
 
@@ -2264,6 +2267,28 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     }
     
     const CGene_ref& gene = overlap->GetData().GetGene();
+    if ( !gene.IsSuppressed() ) {
+        if ( gene.CanGetAllele()  && !gene.GetAllele().empty() ) {
+            const string& allele = gene.GetAllele();
+
+            ITERATE(CSeq_feat::TQual, qual_iter, feat.GetQual()) {
+                const CGb_qual& qual = **qual_iter;
+                if ( qual.CanGetQual()  &&
+                     NStr::Compare(qual.GetQual(), "allele") == 0 ) {
+                    if ( qual.CanGetVal()  &&
+                         NStr::CompareNocase(qual.GetVal(), allele) == 0 ) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            "Redundant allele qualifier (" + allele + 
+                            ") on gene and feature", feat);
+                    } else {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            "Mismatched allele qualifier on gene (" + allele + 
+                            ") and feature (" + qual.GetVal() +")", feat);
+                    }
+                }
+            }
+        }
+    }
 
     string label, gene_label;
     grp->GetLabel(&label);
@@ -2272,6 +2297,36 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     if ( NStr::CompareNocase(label, gene_label) == 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryGeneXref,
             "Unnecessary gene cross-reference " + label, feat);
+    }
+}
+
+
+void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
+{
+    CConstRef<CSeq_feat> operon = GetBestOverlappingFeat(
+        gene.GetLocation(),
+        CSeqFeatData::eSubtype_operon,
+        eOverlap_Contains,
+        *m_Scope);
+    if ( !operon  ||  !operon->CanGetQual() ) {
+        return;
+    }
+
+    string label;
+    feature::GetLabel(gene, &label, feature::eContent, m_Scope);
+    if ( label.empty() ) {
+        return;
+    }
+
+    ITERATE(CSeq_feat::TQual, qual_iter, gene.GetQual()) {
+        const CGb_qual& qual = **qual_iter;
+        if( qual.CanGetQual()  &&  qual.CanGetVal() ) {
+            if ( NStr::Compare(qual.GetQual(), "operon") == 0  &&
+                 NStr::CompareNocase(qual.GetVal(), label) ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                    "Operon is same as gene - " + label, gene);
+            }
+        }
     }
 }
 
@@ -2492,6 +2547,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2003/10/24 17:57:25  shomrat
+* warn about allele gbqual when inheriting allele from gene; warn about operon when same as gene
+*
 * Revision 1.41  2003/10/21 13:21:52  shomrat
 * added * Terminator codon
 *
