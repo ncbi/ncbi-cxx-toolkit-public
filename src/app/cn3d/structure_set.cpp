@@ -945,8 +945,19 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     const Molecule *molecule;
     if (!residue->GetParentOfType(&molecule)) return;
     GlobalMessenger()->ToggleHighlight(molecule, residue->id, true);
-    INFOMSG("selected " << molecule->identifier->ToString()
-        << " residue " << residue->id << " (PDB: " << residue->nameGraph << ' ' << residue->namePDB
+    wxString molresid;
+    if (molecule->IsHeterogen() || molecule->IsSolvent()) {
+        const StructureObject *object;
+        if (molecule->GetParentOfType(&object)) {
+            // assume hets/solvents are single residue
+            if (object->pdbID.size() > 0)
+                molresid.Printf("%s heterogen/solvent molecule %i", object->pdbID.c_str(), molecule->id);
+            else
+                molresid = molecule->identifier->ToString().c_str();
+        }
+    } else
+        molresid.Printf("chain %s residue %i", molecule->identifier->ToString().c_str(), residue->id);
+    INFOMSG("selected " << molresid.c_str() << " (PDB: " << residue->nameGraph << ' ' << residue->namePDB
         << ") atom " << atomID << " (PDB: " << residue->GetAtomInfo(atomID)->name << ')');
 
     // get coordinate of picked atom, in coordinates of master frame
@@ -1481,6 +1492,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.137  2004/02/05 19:00:08  thiessen
+* change mmdb->pdb upon het selection
+*
 * Revision 1.136  2004/01/05 17:09:16  thiessen
 * abort import and warn if same accession different gi
 *
