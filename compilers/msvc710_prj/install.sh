@@ -107,7 +107,7 @@ for i in 'DLL' '' ; do
 done
 
 
-# Compilers dir (copy all .pdb files for debug purposes)
+# Compiler dir (copy all .pdb files for debug purposes)
 makedir "$cldir" -p
 pdb_files=`find "$builddir"/compilers -type f -name '*.pdb' 2>/dev/null`
 cd "$cldir"
@@ -116,6 +116,13 @@ for pdb in $pdb_files ; do
   mkdir -p $rel_dir -p > /dev/null 2>&1
   cp -pr "$pdb" "$rel_dir"
 done
+
+# Compiler dir (other common stuff)
+makedir "$cldir"/static -p
+makedir "$cldir"/dll -p
+cp -p "$builddir"/compilers/$compiler/*        "$cldir"
+cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/static
+cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/dll
 
 
 # Gbench public installation
