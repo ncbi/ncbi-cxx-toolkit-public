@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.23 2001/08/20 20:27:57 sherry Exp $
+-- $Id: docsum.asn,v 1.24 2001/08/21 14:52:56 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.24  2001/08/21 14:52:56  sherry
+-- added subsnp-class (8) = mnp for multiple nucleotide polymorphisms with alleles of common length > 1 bp
+--
 -- Revision 1.23  2001/08/20 20:27:57  sherry
 -- added source-db (5) for RefSeq-genomic and ncbi-build-id for build number of genome mapping data
 --
@@ -317,7 +320,8 @@ NSE-ss ::= SEQUENCE {				-- data for an individual submission to dbSNP. All subm
 		het         (3),		--   variation has unknown sequence composition, but is observed to be heterozygous
 		microsat    (4),		--   microsatellite / simple sequence repeat
 		named       (5),		--   allele sequences defined by name tag instead of raw sequence, e.g. (Alu)/- 
-		no-variation (6) }, 		--   submission reports invariant region in surveyed sequence
+		no-variation (6), 		--   submission reports invariant region in surveyed sequence
+		mnp         (8)},		--   multiple nucleotide polymorphism (all alleles same length where length>1)
 	orient ENUMERATED {			-- orientation of refsnp cluster members to refsnp cluster sequence
 		forward	    (1),		-- ss flanking sequence is in same orientation as seq-ss-exemplar (above) 
 		reversed    (2) },		-- flanking sequence and alleles are reverse complement of refSNP as defined
