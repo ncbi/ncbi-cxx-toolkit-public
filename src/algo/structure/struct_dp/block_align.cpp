@@ -39,7 +39,7 @@
 #include <list>
 #include <algorithm>
 
-#include "struct_dp/struct_dp.h"
+#include <algo/structure/struct_dp/struct_dp.h>
 
 USING_NCBI_SCOPE;
 
@@ -909,6 +909,9 @@ unsigned int DP_CalculateMaxLoopLength(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/02/19 02:21:19  thiessen
+* fix struct_dp paths
+*
 * Revision 1.17  2003/12/19 14:37:50  thiessen
 * add local generic loop function alignment routines
 *

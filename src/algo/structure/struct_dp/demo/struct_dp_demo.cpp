@@ -38,8 +38,9 @@
 #include <map>
 #include <string>
 
-#include <struct_dp/demo/struct_dp_demo.hpp>
-#include <struct_dp/struct_dp.h>
+#include <algo/structure/struct_dp/struct_dp.h>
+
+#include "struct_dp_demo.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -199,6 +200,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/02/19 02:21:20  thiessen
+* fix struct_dp paths
+*
 * Revision 1.9  2003/12/11 19:47:48  thiessen
 * use built-in blosum62
 *

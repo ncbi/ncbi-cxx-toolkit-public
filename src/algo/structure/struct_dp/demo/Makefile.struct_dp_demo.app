@@ -13,5 +13,3 @@ LIB = \
 	xstruct_dp \
 	xncbi \
 	tables
-
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/../..
