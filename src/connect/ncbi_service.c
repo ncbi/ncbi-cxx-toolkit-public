@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/03/01 00:31:23  lavr
+ * SERV_OpenSimple now builds SConnNetInfo to use both LBSMD and DISPD.CGI
+ *
  * Revision 6.12  2001/02/09 17:33:06  lavr
  * Modified: fSERV_StatelessOnly overrides info->stateless
  *
@@ -84,18 +87,21 @@
 
 SERV_ITER SERV_OpenSimple(const char* service)
 {
-    return SERV_OpenEx(service, 0, 0, 0, 0, 0);
+    SConnNetInfo* info = ConnNetInfo_Create(service);
+    SERV_ITER iter = SERV_Open(service, fSERV_Any, 0, info);
+    ConnNetInfo_Destroy(info);
+    return iter;
 }
 
 
 SERV_ITER SERV_Open(const char* service, TSERV_Type type,
-                    unsigned int preferred_host, const SConnNetInfo *info)
+                    unsigned int preferred_host, const SConnNetInfo* info)
 {
     return SERV_OpenEx(service, type, preferred_host, info, 0, 0);
 }
 
 
-static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info *info)
+static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
 {
     if (iter->n_skip == iter->n_max_skip) {
         SSERV_Info** temp;
@@ -118,17 +124,18 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info *info)
 
 
 SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
-                      unsigned int preferred_host, const SConnNetInfo *info,
-                      const SSERV_Info *const skip[], size_t n_skip)
+                      unsigned int preferred_host, const SConnNetInfo* info,
+                      const SSERV_Info* const skip[], size_t n_skip)
 {
-    const SSERV_VTable *op;
+    const SSERV_VTable* op;
     time_t t = time(0);
     SERV_ITER iter;
     size_t i;
 
-    if (!(iter = (SERV_ITER)malloc(sizeof(*iter) + strlen(service) + 1)))
+    if (!service || !*service ||
+        !(iter = (SERV_ITER)malloc(sizeof(*iter) + strlen(service) + 1)))
         return 0;
-
+    
     iter->service = (char *)iter + sizeof(*iter);
     strcpy((char *)iter->service, service);
     iter->type = type;
@@ -196,9 +203,9 @@ static void s_SkipSkip(SERV_ITER iter)
 }
 
 
-const SSERV_Info *SERV_GetNextInfo(SERV_ITER iter)
+const SSERV_Info* SERV_GetNextInfo(SERV_ITER iter)
 {
-    SSERV_Info *info = 0;
+    SSERV_Info* info = 0;
 
     if (!iter)
         return 0;
@@ -231,7 +238,7 @@ void SERV_Close(SERV_ITER iter)
 }
 
 
-int/*bool*/ SERV_Update(SERV_ITER iter, const char *text)
+int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
 {
     if (!iter || !iter->op)
         return 0/*not a valid call, failed*/;
