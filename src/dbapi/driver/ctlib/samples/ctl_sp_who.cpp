@@ -31,8 +31,6 @@
 
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
-#include <dbapi/driver/samples/dbapi_driver_samples.hpp>
-
 
 USING_NCBI_SCOPE;
 
@@ -42,10 +40,46 @@ int main()
     try {
         CTLibContext my_context;
 
-        SampleDBAPI_SpWho(my_context, "MOZART");
+        CDB_Connection* con = my_context.Connect("MOZART", "anyone", "allowed", 0);
+
+        CDB_RPCCmd* rcmd = con->RPC("sp_who", 0);
+        rcmd->Send();
+
+        while (rcmd->HasMoreResults()) {
+            CDB_Result* r = rcmd->Result();
+            if (!r)
+                continue;
+            
+            if (r->ResultType() == eDB_RowResult) {
+                while (r->Fetch()) {
+                    for (unsigned int j = 0;  j < r->NofItems(); j++) {
+                        EDB_Type rt = r->ItemDataType(j);
+                        if (rt == eDB_Char || rt == eDB_VarChar) {
+                            CDB_VarChar r_vc;
+                            r->GetItem(&r_vc);
+                            cout << r->ItemName(j) << ": "
+                                 << (r_vc.IsNULL()? "" : r_vc.Value()) 
+                                 << " \t";
+                        } else if (rt == eDB_Int ||
+                                   rt == eDB_SmallInt ||
+                                   rt == eDB_TinyInt) {
+                            CDB_Int r_in;
+                            r->GetItem(&r_in);
+                            cout << r->ItemName(j) << ": " << r_in.Value() 
+                                 << ' ';
+                        } else
+                            r->SkipItem();
+                    }
+                    cout << endl;
+                }
+                delete r;
+            }
+        }
+        delete rcmd;
+        delete con;
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
-
+        
         myExHandler.HandleIt(&e);
         return 1;
     }
@@ -57,6 +91,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/04/25 16:43:18  soussov
+ * makes it plain
+ *
  * Revision 1.4  2001/11/06 17:59:57  lavr
  * Formatted uniformly as the rest of the library
  *

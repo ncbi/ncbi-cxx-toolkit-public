@@ -31,7 +31,6 @@
 
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
-#include <dbapi/driver/samples/dbapi_driver_samples.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -42,10 +41,39 @@ int main()
     try {
         CTLibContext my_context;
 
-        SampleDBAPI_Lang(my_context, "MOZART");
+        CDB_Connection* con= my_context.Connect("MOZART", "anyone", "allowed", 0);
+
+        CDB_LangCmd* lcmd= con->LangCmd("select name, crdate from sysdatabases");
+        lcmd->Send();
+
+        while (lcmd->HasMoreResults()) {
+            CDB_Result* r = lcmd->Result();
+            if (!r)
+                continue;
+            cout
+                << r->ItemName(0) << " \t\t\t"
+                << r->ItemName(1) << endl
+                << "-----------------------------------------------------" 
+                << endl;
+            
+            while (r->Fetch()) {
+                CDB_Char dbname(24);
+                CDB_DateTime crdate;
+                
+                r->GetItem(&dbname);
+                r->GetItem(&crdate);
+                
+                cout
+                    << dbname.Value() << ' '
+                    << crdate.Value().AsString("M/D/Y h:m") << endl;
+            }
+            delete r;
+        }
+        delete lcmd;
+        delete con;
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
-
+        
         myExHandler.HandleIt(&e);
         return 1;
     }
@@ -57,6 +85,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/04/25 16:43:17  soussov
+ * makes it plain
+ *
  * Revision 1.4  2001/11/06 17:59:57  lavr
  * Formatted uniformly as the rest of the library
  *
