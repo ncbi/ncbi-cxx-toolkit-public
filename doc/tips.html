@@ -118,11 +118,13 @@ might not build shared libraries properly on Solaris without
   is because the STL headers include files with names of the form *.cc. When make 
   sees these files, it tries to compile them using the implicit makefile rules.One 
   workaround is to redefine the implicit rules to ignore *.cc: <br>
-  .SUFFIXES: <br>
-  .SUFFIXES:  .o .c .h .hpp .cpp <br>
-  .cpp.o:<br>
-  $(CCC) $(CFLAGS) -c $&lt; <br>
-  and run make with "make -r" 
+<pre>
+.SUFFIXES:
+.SUFFIXES:  .o .c .h .hpp .cpp
+.cpp.o:
+$(CCC) $(CFLAGS) -c $&lt;
+and run make with "make -r" 
+</pre>
 
 <p>
     In SunPro environment, use <i>"CC -xar ..."</i> rather than <i>"ar ..."</i>

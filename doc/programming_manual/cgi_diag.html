@@ -14,7 +14,7 @@ behavior by overriding the virtual function
 (In particular, production applications may wish to disable these
 parameters by defining <b>ConfigureDiagnostics</b> to be a no-op.)
 
-<a name="ref_destination"><h2>diag-destination</h2></a>
+<a name="ref_destination"></a><h2>diag-destination</h2>
 <p>
 The parameter <b>diag-destination</b> controls where diagnostics
 appear.  By default, there are two possible values:
@@ -56,7 +56,7 @@ Those destinations are not available by default because they introduce
 additional dependencies; however, either may become a standard
 possibility in future versions of the toolkit.
 
-<a name="ref_threshold"><h2>diag-threshold</h2></a>
+<a name="ref_threshold"></a><h2>diag-threshold</h2>
 The parameter <b>diag-threshold</b> sets the minimum
 <a href="diag.html#severity">severity level</a> of displayed
 diagnostics; its value can be either <b>fatal</b>, <b>critical</b>,
@@ -67,7 +67,7 @@ However, setting <b>diag-threshold</b> to <b>trace</b> is <i>NOT</i>
 equivalent to calling <tt>SetDiagPostLevel(eDiag_Trace)</tt>; the
 former reports all diagnostics, whereas the latter reports only traces.
 
-<a name="ref_format"><h2>diag-format</h2></a>
+<a name="ref_format"></a><h2>diag-format</h2>
 
 Finally, the parameter <b>diag-format</b> controls diagnostics'
 default appearance; setting it is akin to calling
@@ -84,7 +84,7 @@ can be turned off by preceding its name with an exclamation point
 default: <b>line</b>, <b>prefix</b>, <b>code</b>, and <b>subcode</b>,
 and may not be subtracted.
 
-<br>
+<br><br>
 <a href="htmlcgi.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>

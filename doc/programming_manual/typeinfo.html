@@ -128,10 +128,13 @@ from a flat file. For example, we might like to have:
 <center><pre>bool LoadObject(Object&amp; myObj, istream&amp; is);</pre></center>
 where <i>myObj</i> is an instance of some subclass of <i>Object</i>. Assuming
 that the text in the file is of the form:
-<pre>MemberName1 value1
+
+<pre>
+MemberName1 value1
 MemberName5 value5
 MemberName2 value2
 :</pre>
+
 we would like to find the corresponding data member in <i>myObj</i> for
 each <i>MemberName</i>, and set that data member's value accordingly. Unfortunately,
 <i>myObj</i>
@@ -140,16 +143,19 @@ we seek are for a specific subclass of <i>Object</i>. Now suppose that
 we have an appropriate type information object available for
 <i>myObj</i>,
 and consider how this might be used:<a NAME="example"></a>
-<pre><font color="#000080">bool LoadObject(TypeInfo&amp; info, Object&amp; myObj, istream&amp; is)
-{
-&nbsp;&nbsp;&nbsp; string myName, myValue;
 
-&nbsp;&nbsp;&nbsp; while ( !is.eof() ) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; is >> myName >> myValue;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void* member = FindMember(info, myObj, myName);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AssignValue(member, myValue);
-&nbsp;&nbsp;&nbsp; }
-}</font></pre>
+<pre>
+bool LoadObject(TypeInfo&amp; info, Object&amp; myObj, istream&amp; is)
+{
+    string myName, myValue;
+
+    while ( !is.eof() ) {
+        is >> myName >> myValue;
+        void* member = FindMember(info, myObj, myName);
+        AssignValue(member, myValue);
+    }
+}
+</pre>
 Here, we assume that our type information object, <i>info</i>, stores information
 about the memory offset of each data member in <i>myObj</i>, and that such
 information can be retrieved using some sort of identifying member name
@@ -217,15 +223,18 @@ class interface is
 value indicating the <i>type family</i> for the object of interest. Five
 type families are defined by the <i><a href="../lxr/ident?i=ETypeFamily">ETypeFamily</a></i>
 enumeration:
-<pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ETypeFamily GetTypeFamily(void) const;
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum ETypeFamily {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTypeFamilyPrimitive,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTypeFamilyClass,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTypeFamilyChoice,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTypeFamilyContainer,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTypeFamilyPointer
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</font></pre>
+<pre>
+ETypeFamily GetTypeFamily(void) const;
+    enum ETypeFamily {
+    eTypeFamilyPrimitive,
+    eTypeFamilyClass,
+    eTypeFamilyChoice,
+    eTypeFamilyContainer,
+    eTypeFamilyPointer
+};
+</pre>
+
 Different queries become appropriate depending on the <i>ETypeFamily</i>
 of the object. For example, if the object is a container, one might need
 to determine the type of container (e.g. whether it is a <i>list, map</i>
@@ -367,23 +376,26 @@ or <i>OctetString</i>. In general, to get a primitive value, one first
 applies a <i>switch</i> statement to the value returned by <i>GetPrimitiveValueType()</i>,
 and then calls the appropriate <i>GetPrimitiveValueXxx()</i> method depending
 on the branch followed, e.g.:
-<pre><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch ( obj.GetPrimitiveValueType() ) {
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case ePrimitiveValueBool:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool b = obj.GetPrimitiveValueBool();
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+<pre>
+switch ( obj.GetPrimitiveValueType() ) {
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case ePrimitiveValueInteger:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if ( obj.IsPrimitiveValueSigned() ) {&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; long l = obj.GetPrimitiveValueLong();
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; unsigned long ul = obj.GetPrimitiveValueULong();</font></pre>
+case ePrimitiveValueBool:
+    bool b = obj.GetPrimitiveValueBool();
+    break;
 
-<pre><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+case ePrimitiveValueInteger:
+    if ( obj.IsPrimitiveValueSigned() ) {
+       long l = obj.GetPrimitiveValueLong();
+    } else {
+       unsigned long ul = obj.GetPrimitiveValueULong();
+    }
+    break;
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //... etc.
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></pre>
+    //... etc.
+}
+</pre>
+
 Member iterator methods are also defined in the <i>CConstObjectInfo</i>
 class, with a similar interface to that found in the <i>CObjectTypeInfo</i>
 class. In this case however, the dereferencing operators return a <i>CConstObjectInfo</i>
@@ -440,21 +452,24 @@ as does <i>CObjectInfo::CElementIterator::GetElement()</i>.
 Usage of object type information</h3>
 We can now reconsider how our <i><a href="#example">LoadObject()</a></i>
 function might be implemented using the <i>CObjectInfo</i> class:
-<pre><font color="#000080">bool LoadObject(CObjectInfo&amp; info, CNcbiIStream&amp; is)
+
+<pre>
+bool LoadObject(CObjectInfo&amp; info, CNcbiIStream&amp; is)
 {
-&nbsp;&nbsp;&nbsp;&nbsp; string alias, myValue;
+    string alias, myValue;
 
-&nbsp;&nbsp;&nbsp;&nbsp; while ( !is.eof() ) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; is >> alias >> myValue;
+    while ( !is.eof() ) {
+        is >> alias >> myValue;
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CObjectInfo dataMember(*info.FindClassMember(alias));
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (!dataMember) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ERR_POST(ERROR, "Couldn't find member named:" &lt;&lt; alias);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+        CObjectInfo dataMember(*info.FindClassMember(alias));
+        if (!dataMember) {
+           ERR_POST(ERROR, "Couldn't find member named:" &lt;&lt; alias);
+        }
+        SetValue(dataMember, myValue);
+    }
+}
+</pre>
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetValue(dataMember, myValue);
-&nbsp;&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp;&nbsp;
-}</font></pre>
 Here, <i>"info"</i> contains pointers to the <i>CObject</i> itself as well
 as to its associated <i>CTypeInfo</i> object. For each member alias read
 from the file, we apply <i>FindClassMember(alias)</i>, and dereference
@@ -462,26 +477,30 @@ the returned iterator to retrieve a <i>CObjectInfo</i> object for that
 member. We then use the operator <i>()</i> to verify that the member was
 located, and if so, use the member's <i>CObjectInfo</i> to set a value
 in the function <i>SetValue()</i>:
-<pre><font color="#000080">void SetValue(const CObjectInfo&amp; obj, const string value)
+
+<pre>
+void SetValue(const CObjectInfo&amp; obj, const string value)
 {
-&nbsp;&nbsp;&nbsp; if (obj.GetTypeFamily() == eTypeFamilyPrimitive) {
+    if (obj.GetTypeFamily() == eTypeFamilyPrimitive) {
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch ( obj.GetPrimitiveValueType() ) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case ePrimitiveValueBool:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; obj.SetPrimitiveValueBool (atoi (value.c_str()));
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+        switch ( obj.GetPrimitiveValueType() ) {
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case ePrimitiveValueChar:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; obj.SetPrimitiveValueChar (value.c_str()[0]);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+        case ePrimitiveValueBool:
+            obj.SetPrimitiveValueBool (atoi (value.c_str()));
+            break;
+   
+        case ePrimitiveValueChar:
+            obj.SetPrimitiveValueChar (value.c_str()[0]);
+            break;
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //... etc
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+        //... etc
+        }
+    } else {
+        ERR_POST(ERROR, "Attempt to assign non-primitive from string:" &lt;&lt; value);
+    }
+}
+</pre>
 
-&nbsp;&nbsp;&nbsp; } else {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ERR_POST(ERROR, "Attempt to assign non-primitive from string:" &lt;&lt; value);
-&nbsp;&nbsp;&nbsp; }
-}</font></pre>
 In this example, <i>SetValue()</i> can only assign primitive types. More
 generally however, the <i>CObjectInfo</i> class allows the assignment of
 more complex types that are simply not implemented here. Note also that
@@ -517,10 +536,14 @@ to the input and output streams, and a set of <i>Copy</i> methods which
 take a
 <i>CTypeInfo</i> argument. Using this class, it is easy to translate
 files between different formats; for example:
-<pre>&nbsp;auto_ptr&lt;CObjectIStream>&nbsp; in(CObjectIStream::Open("mydata.xml", eSerial_Xml));
-&nbsp;auto_ptr&lt;CObjectOStream> out(CObjectOStream::Open("mydata.asn", eSerial_AsnBinary));
-&nbsp;CObjectStreamCopier copier(*in, *out);
-&nbsp;copier.Copy (CBioseq_set::GetTypeInfo());</pre>
+
+<pre>
+auto_ptr&lt;CObjectIStream>&nbsp; in(CObjectIStream::Open("mydata.xml", eSerial_Xml));
+auto_ptr&lt;CObjectOStream> out(CObjectOStream::Open("mydata.asn", eSerial_AsnBinary));
+CObjectStreamCopier copier(*in, *out);
+copier.Copy (CBioseq_set::GetTypeInfo());
+</pre>
+
 copies a <i>CBioseq_set</i> encoded in XML to a new file, reformatted in
 ASN.1 binary format.
 <p><!--a href="cref.html"><i>previous</i>&nbsp;</a-->

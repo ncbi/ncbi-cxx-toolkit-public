@@ -89,7 +89,7 @@ color for a web page. A group of "Get/SetAttribute" member functions are
 provided for access and modification of the node's attributes. All of the
 "SetAttribute" methods return <i>this</i> - a pointer to the HTML node
 being operated on, and so, can be daisy-chained, as in:
-<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table->SetCellSpacing(0)->SetBgColor("CCCCCC");</pre>
+<pre>table->SetCellSpacing(0)->SetBgColor("CCCCCC");</pre>
 Care must be taken however, in the order of invocations, as the object
 type returned by each operation is determined by the class in which the
 method is defined. In the above example,
@@ -97,13 +97,17 @@ method is defined. In the above example,
 <i><a href="#CHTML_table">CHTML_table</a></i>, which is a subclass of <i>CNCBINode</i>
 - where <i>SetBgColor()</i> is defined. The above expression then, effectively
 executes:
-<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table->SetCellSpacing(0);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table->SetBgColor("CCCCCC");</pre>
+<pre>
+table->SetCellSpacing(0);
+table->SetBgColor("CCCCCC");
+</pre>
 In contrast, the expression:
-<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table->SetBgColor("CCCCCC")->SetCellSpacing(0);</pre>
+<pre>table->SetBgColor("CCCCCC")->SetCellSpacing(0);</pre>
 would fail to compile, as it would effectively execute:
-<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table->SetBgColor("CCCCCC");
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (CNCBINode*)table->SetCellSpacing(0);</pre>
+<pre>
+table->SetBgColor("CCCCCC");
+(CNCBINode*)table->SetCellSpacing(0);
+</pre>
 since the method <i>SetCellSpacing()</i> is undefined for <i>CNCBINode()</i>
 objects.
 <p>The <i>m_Children</i> data member of <i>CNCBINode</i> stores a dynamically
@@ -205,13 +209,13 @@ for the <i>CHTMLText</i> class, one new data member is introduced. <i>m_NoEncode
 is a Boolean variable that designates whether or not the text should be
 further encoded. <i>NoEncode()</i> and <i>SetNoEncode()</i> allow for access
 and modification of this private data member. For example:
-<pre>&nbsp;&nbsp;&nbsp;&nbsp; (new CHTMLText("&lt;br> testing BR &lt;br>"))->Print(cout);</pre>
+<pre>(new CHTMLText("&lt;br> testing BR &lt;br>"))->Print(cout);</pre>
 will generate the output:
 <pre>
-&nbsp;testing BR&nbsp;
+testing BR
 </pre>
 whereas:
-<pre>&nbsp;&nbsp;&nbsp; (new CHTMLPlainText("&lt;br> testing BR &lt;br>"))->Print(cout);</pre>
+<pre>(new CHTMLPlainText("&lt;br> testing BR &lt;br>"))->Print(cout);</pre>
 will generate:
 <pre>&lt;br> testing BR &lt;br></pre>
 The text in the <i>CHTMLText</i> node is output verbatim, and the web browser
@@ -275,7 +279,7 @@ of the page - some of which may not have been instantiated yet. Specifically,
 <i>m_TagMap</i> is defined as a
 <i>TTagMap</i> variable, which has the
 following type definition:
-<pre>&nbsp;&nbsp;&nbsp; typedef map&lt;string, BaseTagMapper*> TTagMap;</pre>
+<pre>typedef map&lt;string, BaseTagMapper*> TTagMap;</pre>
 <a NAME="tagmapper"></a>Here, <i><a href="../lxr/ident?i=BaseTagMapper">BaseTagMapper</a></i>
 is a base class for a set of functor-like structs. Each of the derived
 subclasses of <i>BaseTagMapper</i> has a single data member (e.g. <i>m_Node,
@@ -408,11 +412,13 @@ class definition returns a null pointer (0).</li>
 <i><a href="../lxr/ident?i=Init">Init()</a></i> is called by all of the
 <i>CHTMLPage</i> constructors, and initializes <i>m_TagMap</i> as follows:</li>
 
-<pre>void CHTMLPage::Init(void)
+<pre>
+void CHTMLPage::Init(void)
 {
-&nbsp;&nbsp;&nbsp; AddTagMap("TITLE", CreateTagMapper(this, &amp;CHTMLPage::CreateTitle));
-&nbsp;&nbsp;&nbsp; AddTagMap("VIEW",&nbsp; CreateTagMapper(this, &amp;CHTMLPage::CreateView));
-}</pre>
+    AddTagMap("TITLE", CreateTagMapper(this, &amp;CHTMLPage::CreateTitle));
+    AddTagMap("VIEW",&nbsp; CreateTagMapper(this, &amp;CHTMLPage::CreateView));
+}
+</pre>
 As described in the preceding section, <i><a href="../lxr/ident?i=CreateTagMapper">CreateTagMapper()</a></i>
 is an overloaded function that creates a tagmapper struct. In this case,
 <i>CreateTitle()</i> and <i>CreateView()</i> will be installed as the <i>m_Method</i>
@@ -420,10 +426,12 @@ data members in the resulting tagmappers. In general, the type of struct
 created by <i>CreateTagMapper</i> depends on the argument types to that
 function. In its usage here, <i>CreateTagMapper</i> is a template function,
 whose arguments are a pointer to an object and a pointer to a class method:
-<pre>template&lt;class C>
+<pre>
+template&lt;class C>
 BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(void)) {
-&nbsp;&nbsp;&nbsp; return new TagMapper&lt;C>(method);
-}</pre>
+    return new TagMapper&lt;C>(method);
+}
+</pre>
 The value returned is itself a template object, whose constructor expects
 a pointer to a method (which will be used as a callback to create an object
 of type <i>C</i>). Here, <i>AddTagMap()</i> installs <i>CreateTitle()</i>
@@ -434,26 +442,28 @@ concepts more concrete. The following code excerpt uses the standard NCBI
 template and inserts a text node at the <i>VIEW</i> tag position (compare
 <a href="xmplOut.html">output</a> to <a href="ncbi_page.html">unaltered
 template</a>):
-<pre><font color="#000080">#include &lt;html/html.hpp>
+<pre>
+#include &lt;html/html.hpp>
 #include &lt;html/page.hpp>
 
 USING_NCBI_SCOPE;
 
-int main()&nbsp;
+int main()
 {
-&nbsp;&nbsp;&nbsp; try {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHTMLPage *Page = new CHTMLPage("A CHTMLPage!", "ncbi_page.html");
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->AddTagMap( "VIEW", new CHTMLText("Insert this string at VIEW tag"));
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->Print(cout);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout.flush();
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 0;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp; }
+    try {
+        CHTMLPage *Page = new CHTMLPage("A CHTMLPage!", "ncbi_page.html");
+        Page->AddTagMap( "VIEW", new CHTMLText("Insert this string at VIEW tag"));
+        Page->Print(cout);
+        cout.flush();
+        return 0;
+    }
+    catch (exception&amp; exc) {
+        NcbiCerr &lt;&lt; "\n" &lt;&lt; exc.what() &lt;&lt; NcbiEndl;
+    }
+    return 1;
+}
+</pre>
 
-&nbsp;&nbsp;&nbsp; catch (exception&amp; exc) {&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NcbiCerr &lt;&lt; "\n" &lt;&lt; exc.what() &lt;&lt; NcbiEndl;
-&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp; return 1;
-}</font></pre>
 The name of the template file is stored in <i>m_TemplateFile</i>, and no
 further action on that file will be taken until <i>Page->Print(cout)</i>
 is executed. The call to <i>AddTagMap()</i> is in a sense then, a forward
@@ -483,15 +493,12 @@ review how the page classes work in combination with a template file:
 A page is first created with a title string and a template file name. These
 arguments are stored directly in the page's data members, <i>m_Title</i>
 and <i>m_TemplateFile</i>.</li>
-
-<br>&nbsp;
-<p>&nbsp;
+<br><br>
 <li>
 The page's <i>Init()</i> method is then called to establish tagmap entries
 for "TITLE" and "VIEW" in <i>m_TagMap</i>.</li>
 
-<br>&nbsp;
-<p>&nbsp;
+<br><br>
 <li>
 Additional HTML nodes which should be added to this page are inserted using
 the page's <i>AddTagMap(tagname, *node)</i> method, where the <i>string
@@ -499,8 +506,7 @@ tagname</i> appears in the template as <i>"&lt;@tagname@>"</i>. Typically,
 a CGI application defines a custom implementation of the <i>CreateView()</i>
 method, and installs it using <i>AddTagMap("VIEW", CreateView())</i>.</li>
 
-<br>&nbsp;
-<p>&nbsp;
+<br><br>
 <li>
 When the page's <i>Print()</i> method is called, it first checks to see
 if the page has any child nodes, and if so, assumes there is no template
@@ -510,8 +516,7 @@ however, <i>page->CreateSubNodes()</i> is called, which in turn calls the
 the template file and stores it directly in a <i>CHTMLText</i> node, which
 is installed as the only child of the parent page.</li>
 
-<br>&nbsp;
-<p>&nbsp;
+<br><br>
 <li>
 The page's <i>Print()</i> method then calls <i>PrintChildren()</i>, which
 (eventually) causes <i>CHTMLText::PrintBegin()</i> to be executed. This
@@ -569,37 +574,38 @@ of the template file and be appended as a child to the page. When <i>PrintBegin(
 is later invoked for the text node, <i>MapTagAll()</i> associates the <i>VIEW</i>
 string with the <i>CNCBINode</i>, and in turn, calls <i>Print()</i> on
 that node.
-<pre><font color="#000080">#include &lt;html/html.hpp>
+<pre>
+#include &lt;html/html.hpp>
 #include &lt;html/page.hpp>
 
 USING_NCBI_SCOPE;
 
-int main()&nbsp;
+int main()
 {
-&nbsp;&nbsp;&nbsp; try {
+    try {
+        CHTMLPage *Page = new CHTMLPage("myTitle", "ncbi_page.html");
+        CNCBINode *tagHolder = new CNCBINode();
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHTMLPage *Page = new CHTMLPage("myTitle", "ncbi_page.html");
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CNCBINode *tagHolder = new CNCBINode();
+        Page->AddTagMap( "VIEW", tagHolder);
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->AddTagMap( "VIEW", tagHolder);
+        tagHolder->AppendChild(new CHTMLTagNode("TAG1"));
+        tagHolder->AppendChild(new CHTML_br());
+        tagHolder->AppendChild(new CHTMLTagNode("TAG2"));
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tagHolder->AppendChild(new CHTMLTagNode("TAG1"));
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tagHolder->AppendChild(new CHTML_br());
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tagHolder->AppendChild(new CHTMLTagNode("TAG2"));
+        Page->AddTagMap( "TAG1", new CHTMLText("Insert this string at TAG1"));
+        Page->AddTagMap( "TAG2", new CHTMLText("Insert another string at TAG2"));
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->AddTagMap( "TAG1", new CHTMLText("Insert this string at TAG1"));
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->AddTagMap( "TAG2", new CHTMLText("Insert another string at TAG2"));
+        Page->Print(cout);
+        cout.flush();
+        return 0;
+    }
+    catch (exception&amp; exc) {
+        NcbiCerr &lt;&lt; "\n" &lt;&lt; exc.what() &lt;&lt; NcbiEndl;
+    }
+    return 1;
+}
+</pre>
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Page->Print(cout);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout.flush();
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 0;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp; }
-
-&nbsp;&nbsp;&nbsp; catch (exception&amp; exc) {&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NcbiCerr &lt;&lt; "\n" &lt;&lt; exc.what() &lt;&lt; NcbiEndl;
-&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp; return 1;
-}</font></pre>
 <a NAME="htmnode"></a>
 <h3>
 The <i><a href="../docxx/CHTMLNode.html">CHTMLNode</a></i> class</h3>
@@ -648,13 +654,13 @@ be displayed in <i>ePlainText</i> mode. The first argument of these constructors
 expects HTML text or pointer to an object of (or inherited from) CNCBINode
 class. It will be appended to the node using <i>AppendChild()</i> method,
 and printed out in <i>eHTML</i> mode. For example:
-<pre>&nbsp;&nbsp;&nbsp; (new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout);</pre>
+<pre>(new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout);</pre>
 will generate the output:
-<pre>&nbsp;&nbsp;&nbsp; &lt;p>text&lt;/p></pre>
+<pre> &lt;p>text&lt;/p></pre>
 whereas:
-<pre>&nbsp;&nbsp;&nbsp; (new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout, CNCBINode::ePlainText);</pre>
+<pre> (new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout, CNCBINode::ePlainText);</pre>
 will generate:
-<pre>&nbsp;&nbsp;&nbsp; \n TEXT \n</pre>
+<pre>\n TEXT \n</pre>
 <a NAME="cgiapp"></a>
 <h3>
 Using the HTML classes with a <i>CCgiApplication</i> object</h3>
@@ -703,7 +709,7 @@ as needed, inside the <i>Print()</i> function. The first call to <i>Print()</i>
 from say, a root <i>Page</i> node, generally specifies the output stream
 only, and uses a default <i>eHTML</i> enumeration value to initialize a
 <i>TMode</i> object. The <i>TMode</i> constructor in this case is:
-<center><pre>&nbsp;TMode(EMode m = eHTML): m_Mode(m), m_Node(0), m_Previous(0) {}</pre></center>
+<pre>TMode(EMode m = eHTML): m_Mode(m), m_Node(0), m_Previous(0) {}</pre>
 
 <p><br>The call to <i>Print()</i> with no <i>TMode</i> argument automatically
 calls this default constructor to create a <i>TMode</i> object which will
@@ -712,23 +718,23 @@ method. One way to think of this is that the initial print call - which
 will ultimately be propagated to all of the child nodes - is initiated
 with a "null parent" <i>TMode</i> object that only specifies the mode of
 output.
-<pre><font color="#000080">CNcbiOstream&amp; CNCBINode::Print(CNcbiOstream&amp; os, TMode prev)
+<pre>
+CNcbiOstream&amp; CNCBINode::Print(CNcbiOstream&amp; os, TMode prev)
 {
-&nbsp;&nbsp;&nbsp; // ...
+    // ...
 
-&nbsp;&nbsp;&nbsp; TMode mode(&amp;prev, this);
+    TMode mode(&amp;prev, this);
 
-&nbsp;&nbsp;&nbsp; PrintBegin(os, mode);
-
-&nbsp;&nbsp;&nbsp; try {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PrintChildren(out, mode);
-&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp; catch (...) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ...
-&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp; PrintEnd(os, mode);
-}</font></pre>
+    PrintBegin(os, mode);
+    try {
+        PrintChildren(out, mode);
+    }
+    catch (...) {
+        // ...
+    }
+    PrintEnd(os, mode);
+}
+</pre>
 In the first top-level call to <i>Print()</i>, <i>prev</i> is the default
 <i>TMode</i> object described above, with <i>NULL</i> values for <i>m_Previous</i>
 and <i>m_Node</i>. In the body of the <i>Print()</i> method however, a
@@ -1158,8 +1164,6 @@ which specifies the text for the label, and optionally, a second <i>string</i>
 argument specifying the <i>FOR</i> attribute. The <i>FOR</i> attribute
 explicitly identifies the form control to associate with this label.</dd>
 
-<br>&nbsp;
-<p>&nbsp;
 <dt>
 <a NAME="CHTML_legend"></a><i><a href="../docxx/CHTML_legend.html">CHTML_legend</a></i></dt>
 
@@ -1262,7 +1266,7 @@ are provided to get/set attributes of the table. Because each of the "set
 attribute" methods returns <i>this</i>, the invocations can be strung together
 in a single statement.</dd>
 
-<p><br>&nbsp;Use <i><a href="../lxr/search?string=InsertAt">InsertAt</a>(row,
+<p>Use <i><a href="../lxr/search?string=InsertAt">InsertAt</a>(row,
 col, contents)</i> to add <i>contents</i> to table cell <i>row, col</i>.
 To add contents to the next available cell, use <i>AppendChild (new <a href="#CHTML_tc">CHTML_tc</a>(tag,
 contents))</i>, where <i>tag</i> is type <i>char*</i> and

@@ -82,7 +82,8 @@ to the argument values is implemented using the built-in <i>[ ]</i> operator
 name) can be retrieved using the
 <i>CNcbiApplication::GetArguments()</i>
 method, as:
-<br><font color="#008080">&nbsp;&nbsp;&nbsp; string arg1_value = GetArguments()[1];</font>
+<br>
+<pre>string arg1_value = GetArguments()[1];</pre>
 <br>Here,
 <i>GetArguments()</i> returns the <i>CNcbiArguments</i> object,
 whose argument values can then be retrieved using the <i>[ ]</i> operator.
@@ -96,7 +97,7 @@ messages and the imposition of constraints on the values of the input arguments.
 class provides a data structure for storing, accessing, and modifying the
 environment variables accessed by the C library routine <i>getenv()</i>.
 For example, to retrieve the value of environment variable <b>PATH</b>:
-<br><font color="#008080">&nbsp;&nbsp;&nbsp; string arg1_value = GetEnvironment().Get("PATH");</font>
+<br><pre>string arg1_value = GetEnvironment().Get("PATH");</pre>
 <p><a NAME="CNcbiRegistry"></a>The
 <i><a href="registry.html">CNcbiRegistry</a></i>
 class is used to load, access, modify and store runtime information read
@@ -135,7 +136,8 @@ the subclass.
 <p>Define the subclass in a header file, and in the subclass declaration,
 declare
 <i>Run()</i> to be a virtual function:
-<pre><font color="#008080">// File name: justApp.hpp
+<pre>
+// File name: justApp.hpp
 
 #ifndef JUST_APP__HPP
 #define JUST_APP__HPP
@@ -151,13 +153,11 @@ public:
 
 END_NCBI_SCOPE
 
-#endif /* JUST_APP__HPP */</font></pre>
+#endif /* JUST_APP__HPP */</pre>
 
-<p><br><font color="#000000"><b>Step 2.</b> Define <i>main()</i> in the
-<i>*.cpp
-</i>file
-where you instantiate your application subclass.</font>
-<p><font color="#000000">Inside <i>main()</i>, instantiate your application
+<p><br><b>Step 2.</b> Define <i>main()</i> in the
+<i>*.cpp</i> file where you instantiate your application subclass.
+<p>Inside <i>main()</i>, instantiate your application
 subclass, and call its inherited function,
 <i>AppMain()</i>. This file
 is also a good place to put the implementation of the
@@ -167,8 +167,9 @@ Enclose the <i>Run() </i>implementation with <i>BEGIN_NCBI_SCOPE
 <i>END_NCBI_SCOPE
 </i>statements,
 and precede <i>main() </i>(as well as any other code using the NCBI C++
-Toolkit) with a <i>USING_NCBI_SCOPE </i>statement:</font>
-<pre><font color="#008080">// file justApp.cpp
+Toolkit) with a <i>USING_NCBI_SCOPE </i>statement:
+<pre>
+// file justApp.cpp
 
 #include "justApp.hpp"
 
@@ -179,79 +180,78 @@ int CTestApp::Run() {
 &nbsp;&nbsp;&nbsp; return 0;
 }
 
-END_NCBI_SCOPE</font></pre>
+END_NCBI_SCOPE</pre>
 
-<pre><font color="#008080"></font></pre>
-
-<pre><font color="#008080">USING_NCBI_SCOPE;
+<pre>USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])&nbsp;
 {
 &nbsp;&nbsp;&nbsp; CTestApp theTestApp;
 &nbsp;&nbsp;&nbsp; return theTestApp.AppMain(argc, argv);
-}</font>
-
+}
 </pre>
-<font color="#000000"><b>Step 3.</b> Assuming you have done all of this
+
+<b>Step 3.</b> Assuming you have done all of this
 work in a project directory called "justApp", and have already run the
 <i><a href="outside_tree.html">new_project.sh</a></i>
 script to create the makefile, you are now ready to build your first application
-using:</font>
-<center><pre><font color="#000000">make -f Makefile.justApp_app</font></pre></center>
-<font color="#000000">The <i>SCOPE</i> statements are actually macros defined
-in <i><a href="../lxr/source/include/corelib/ncbistl.hpp">include/corelib/ncbistl.hpp</a></i>:</font>
-<pre><font color="#000080">#define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
+using:
+<pre>make -f Makefile.justApp_app</pre>
+The <i>SCOPE</i> statements are actually macros defined
+in <i><a href="../lxr/source/include/corelib/ncbistl.hpp">include/corelib/ncbistl.hpp</a></i>:
+<pre>#define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
 #define END_NCBI_SCOPE }
-#define USING_NCBI_SCOPE using namespace NCBI_NS_NCBI</font></pre>
-<font color="#000000">All code occurring between the <i>BEGIN</i> and <i>END</i>
+#define USING_NCBI_SCOPE using namespace NCBI_NS_NCBI</pre>
+All code occurring between the <i>BEGIN</i> and <i>END</i>
 statements will be added to a namespace called <i>NCBI_NS_NCBI</i>. The
 <i>USING</i>
 macro allows you to access everything currently defined in the namespace
-without requiring the :: scope operator.</font>
-<p><font color="#000000">&nbsp;A more elaborate example, <i><a href="applic_cpp.html">applic.cpp</a></i>,
+without requiring the :: scope operator.
+<p>A more elaborate example, <i><a href="applic_cpp.html">applic.cpp</a></i>,
 combines the usage of the <i>CNcbiApplication</i> class with the&nbsp;<i>
 CArgDescriptions</i>, <i>CArgs, </i>and
 <i>CNcbiDiag</i> classes. For a
-more realistic usage of these classes, see also the test program, <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>.</font>
+more realistic usage of these classes, see also the test program, <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>.
 <p><a NAME="inside"></a>
-<h3>
-<font color="#000000">Inside the NCBI Application Class</font></h3>
-<font color="#000000">To review what we've done so far:</font>
+<h3>Inside the NCBI Application Class</h3>
+To review what we've done so far:
 <ol>
 <li>
-<font color="#000000">We defined a subclass of <i>CNcbiApplication </i>with
-an implementation of <i>Run()</i>.</font></li>
+We defined a subclass of <i>CNcbiApplication </i>with
+an implementation of <i>Run()</i>.</li>
 
 <li>
-<font color="#000000">We created an instance of this class in <i>main()</i>.</font></li>
+We created an instance of this class in <i>main()</i>.</li>
 
 <li>
-<font color="#000000">In <i>main()</i>, we invoked the class member function
+In <i>main()</i>, we invoked the class member function
 <i>AppMain()</i>,
-and passed <i>argc, argv[ ]</i> to it.</font></li>
+and passed <i>argc, argv[ ]</i> to it.</li>
 </ol>
-<font color="#000000">Here is a somewhat simplified view of the application
-class's definition:</font>
-<pre><font color="#008080">class CNcbiApplication
+Here is a somewhat simplified view of the application
+class's definition:
+<pre>
+class CNcbiApplication
 {
 public:
-&nbsp;&nbsp;&nbsp; int AppMain (int argc, const char **argv, const char **envp,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; EAppDiagStream diag, const char* config, const string&amp; name);
+   int AppMain (int argc, const char **argv, const char **envp,
+   EAppDiagStream diag, const char* config, const string&amp; name);
+  
+   virtual void Init();
+   virtual int  Run () = 0;
+   virtual void Exit();
 
-&nbsp;&nbsp;&nbsp; virtual void Init();
-&nbsp;&nbsp;&nbsp; virtual int&nbsp; Run () = 0;
-&nbsp;&nbsp;&nbsp; virtual void Exit();
-
-&nbsp;&nbsp;&nbsp; CNcbiArguments&amp;&nbsp;&nbsp; GetArguments();
-&nbsp;&nbsp;&nbsp; CNcbiEnvironment&amp; GetEnvironment();
-&nbsp;&nbsp;&nbsp; CNcbiRegistry&amp;&nbsp;&nbsp;&nbsp; GetConfig();
+   CNcbiArguments&amp;   GetArguments();
+   CNcbiEnvironment&amp; GetEnvironment();
+   CNcbiRegistry&amp;    GetConfig();
 
 protected:
-&nbsp;&nbsp;&nbsp; virtual bool SetupDiag_AppSpecific(void);
-&nbsp;&nbsp;&nbsp; virtual bool LoadConfig(CNcbiRegistry&amp; reg, const string* conf);
-&nbsp;&nbsp;&nbsp; .............
-};</font></pre>
-<font color="#000000">The protected virtual function <i>SetupDiag_AppSpecific()</i>
+   virtual bool SetupDiag_AppSpecific(void);
+   virtual bool LoadConfig(CNcbiRegistry&amp; reg, const string* conf);
+   .............
+};
+</pre>
+The protected virtual function <i>SetupDiag_AppSpecific()</i>
 can be redefined to setup error posting specific for your application.
 <i>SetupDiag_AppSpecific()</i>
 will be called inside <i>AppMain()</i> by default if the error posting
@@ -259,62 +259,57 @@ has not been setup already. Also, if you pass
 <b>diag</b>=<i>eDS_AppSpecific</i>
 to <i>AppMain()</i>, then <i>SetupDiag_AppSpecific()</i> will be called
 for sure, regardless of the error posting setup that was active before
-the <i>AppMain()</i> call.</font>
-<p><font color="#000000">The protected virtual function <i>LoadConfig()
+the <i>AppMain()</i> call.
+<p>The protected virtual function <i>LoadConfig()
 </i>reads
 the program's <i>.ini </i>configuration file to load the application's
-parameters into the registry.&nbsp; The default implementation of <i>LoadConfig()&nbsp;</i>
+parameters into the registry. The default implementation of <i>LoadConfig()</i>
 expects to find a configuration file named
 <i>progname.ini</i>, and will
-generate a warning to the user if no such file is found.</font>
+generate a warning to the user if no such file is found.
 <p><a NAME="appmain"></a>
-<br><font color="#000000">The <i>AppMain() </i>function is also inherited
+<br>The <i>AppMain() </i>function is also inherited
 from the parent class. Although this function accepts up to six arguments,
 this example passes only the first two, with missing values supplied by
-defaults. The remaining four arguments specify:</font>
+defaults. The remaining four arguments specify:
 <ul>
 <li>
-<font color="#000000">(#3)&nbsp; a NULL-terminated array of '\0'-terminated
-character strings from which the environment variables can be read</font></li>
+(#3) a NULL-terminated array of '\0'-terminated
+character strings from which the environment variables can be read</li>
 
 <li>
-<font color="#000000">(#4)&nbsp; how to setup a diagnostic stream for message
-posting</font></li>
+(#4) how to setup a diagnostic stream for message posting</li>
 
 <li>
-<font color="#000000">(#5)&nbsp; the name of a <i>.ini</i> configuration
-file (will use program name with suffix <i>.ini&nbsp;</i> by default)</font></li>
+(#5) the name of a <i>.ini</i> configuration
+file (will use program name with suffix <i>.ini</i> by default)</li>
 
 <li>
-<font color="#000000">(#6)&nbsp; a program name (to be used in lieu of
-<i>argv[0]</i>)</font></li>
+(#6) a program name (to be used in lieu of <i>argv[0]</i>)</li>
 </ul>
-<font color="#000000">I</font><font color="#003300">n order to avoid the
-display of a warning message when no configuration file is present, the
+In order to avoid the display of a warning message when no configuration file is present, the
 <i>.ini</i>
-file should be explicitly specified as <i>NULL (zero)</i>, as in:</font>
-<center>
-<p><i><font color="#008080">AppMain (argc, argv, envp, diag_stream, 0,
-progname);</font></i></center>
+file should be explicitly specified as <i>NULL (zero)</i>, as in:
+<p><pre>AppMain (argc, argv, envp, diag_stream, 0, progname);</pre>
 
-<p><font color="#000000"><i>AppMain() </i>begins by resetting the internal
+<p><i>AppMain() </i>begins by resetting the internal
 data members with the actual values provided by the arguments of <i>main()</i>.
 Once these internal data structures have been loaded, <i>AppMain() </i>calls
 the virtual functions <i>Init(), Run(), </i>and <i>Exit() </i>in succession
-to execute the application.</font>
-<p><font color="#000000">The <i>Init() </i>and <i>Exit() </i>virtual functions
+to execute the application.
+<p>The <i>Init() </i>and <i>Exit() </i>virtual functions
 are provided as places for developers to add their own methods for specific
 applications. As this example does not require any additional initialization/termination,
 these two functions simply return. The <i>Run() </i>method prints out the
-message defined in <i>justApp.cpp</i> and exits.</font>
-<p><font color="#000000">As exemplified here, source files which utilize
+message defined in <i>justApp.cpp</i> and exits.
+<p>As exemplified here, source files which utilize
 the <i>CNcbiApplication</i> class must
 <i>#include</i> the header file
 where that class is defined, <i>corelib/ncbiapp.hpp</i>, in the
 <b><i>include/</i></b>
 directory. This header file in turn includes <i>corelib/ncbistd.hpp</i>,
-which should <i>always</i> be <i>#include</i>'d.</font>
-<p><font color="#000000"><i><a href="../index.html">up&nbsp;</a></i> <i><a href="argdescr.html">next&nbsp;</a></i></font>
+which should <i>always</i> be <i>#include</i>'d.
+<p><i><a href="../index.html">up&nbsp;</a></i> <i><a href="argdescr.html">next&nbsp;</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <tr>

@@ -31,9 +31,9 @@ class looks for a configuration file with the default name.&nbsp; You can
 override this by calling your application's <i><a href="applic.html#appmain">AppMain()
 </a></i>method
 with the full set of arguments:
-<center>
-<p><tt><font color="#005050">AppMain (argc, argv, envp, diag_stream, config_file,
-progname);</font></tt></center>
+<pre>
+AppMain (argc, argv, envp, diag_stream, config_file, progname);
+</pre>
 
 <p>Here, <i>config_file</i> is a string specifying the name of the file
 to be used when loading the registry. If you do not need to use this facility,
@@ -133,6 +133,7 @@ By default, all of the configuration's parameters are <i>persistent, overridable
 and <i>truncatable</i>.&nbsp; The <i>EFlags</i> enumeration that quantifies
 these attributes, and the related <i>typedef</i> <i>TFlags</i>, are defined
 as:
+
 <blockquote>
 <blockquote>
 <blockquote><tt><font color="#005050">&nbsp;&nbsp;&nbsp; enum EFlags {</font></tt>

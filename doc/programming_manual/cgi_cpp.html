@@ -5,17 +5,19 @@
   <pre><font color = "red">// File name: justcgi.cpp
 // Description: Demonstrate the basic CGI classes and functions
 <font color = "green">
-#include <a href="cgi_hpp.html">"justcgi.hpp"</a>
+#include "<a href="cgi_hpp.html">justcgi.hpp</a>"
 #include &lt;cgi/cgictx.hpp>
 #include &lt;corelib/ncbistd.hpp>
 #include &lt;corelib/ncbireg.hpp>
 #include &lt;memory>
+</font>
 <font color = "blue">
 USING_NCBI_SCOPE;
-</font></font>
+</font>
 /////////////////////////////////////////////////////////////////////////
 // Implement the application's LoadResource() and ProcessRequest() methods
 </font>
+<font color = "black">
 CNcbiResource* CCgiApp::LoadResource(void)
 { 
     auto_ptr&lt;CCgiResource> resource(new CCgiResource(GetConfig()));  
@@ -100,7 +102,7 @@ int main(int argc, const char* argv[])
     SetDiagStream(&cerr);
     return theCgiApp.AppMain(argc, argv);
 }
-
+</font>
 </pre>
 
 <!--#include virtual="../ssi/footer.shtml" -->

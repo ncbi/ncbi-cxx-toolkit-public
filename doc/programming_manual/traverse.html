@@ -63,7 +63,7 @@ with the serializable object classes.</a></i>
 Accessing and Referencing Data Members</h3>
 Omitting some of the low-level details of the base class, we find the <i>CBiostruc_Base</i>
 class has essentially the following structure:
-<pre><font color="#000080">class CBiostruc_Base : public CObject
+<pre>class CBiostruc_Base : public CObject
 {
 public:
 &nbsp;&nbsp;&nbsp; // type definitions&nbsp;
@@ -93,7 +93,8 @@ private:
 &nbsp;&nbsp;&nbsp; TChemical_graph m_Chemical_graph;
 &nbsp;&nbsp;&nbsp; TFeatures m_Features;
 &nbsp;&nbsp;&nbsp; TModel m_Model;
-};</font></pre>
+};</pre>
+
 <font color="#000000">With the exception of the structure's chemical graph,
 each of the class's private data members is actually a <i>list</i> of references
 (pointers), as specified by the type definitions. For example, <i>TId</i>
@@ -136,8 +137,12 @@ looking at
 <i><a href="../lxr/source/include/objects/mmdb1/Biostruc_.hpp#L65">Biostruc_.hpp</a></i>,
 we learn that the structure's descriptor list can be accessed using <i>GetDescr()</i>,
 and that the type returned is a list of pointers to descriptors:</font>
-<pre><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp; typedef list&lt; CRef&lt;CBiostruc_descr> > TDescr;
-&nbsp;&nbsp;&nbsp;&nbsp; const TDescr&amp; GetDescr(void) const;</font></pre>
+
+<pre>
+typedef list&lt; CRef&lt;CBiostruc_descr> > TDescr;
+const TDescr&amp; GetDescr(void) const;
+</pre>
+
 <font color="#000000">Consulting the base class for <i><a href="../lxr/source/include/objects/mmdb1/Biostruc_descr_.hpp#L62">CBiostruc_desc</a></i>
 in turn, we learn that this class has a <i>choice state</i> defining the
 type of value stored there as well as the method that should be used to
@@ -149,14 +154,17 @@ statement over the current descriptor's choice state.&nbsp;</font><a NAME="itera
 <font color="#000000">Most of the <i>Visit()</i> functions implemented
 here rely on standard STL iterators to walk through a list of objects.
 The general syntax for using an iterator is:</font>
-<pre><font color="#000080">&nbsp; ContainerType ContainerName;
 
-&nbsp; for (ContainerType::IteratorType i = ContainerName.begin();
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; i != ContainerName.end(); ++i) {
+<pre>
+ContainerType ContainerName;
 
-&nbsp;&nbsp;&nbsp; ObjectType ObjectName = *i;
-&nbsp;&nbsp;&nbsp; // ...
-&nbsp; }</font></pre>
+for (ContainerType::IteratorType i = ContainerName.begin();
+    i != ContainerName.end(); ++i) {
+
+    ObjectType ObjectName = *i;
+    // ...
+}
+</pre>
 <font color="#000000">Dereferencing the iterator is required, as the iterator
 behaves like a pointer that traverses consecutive elements of the container.
 For example, to iterate over the list of descriptors in the <i>Biostruc</i>,
@@ -166,12 +174,14 @@ type
 body of the loop. Because the descriptor list contains pointers (<i><a href="cref.html#cref">CRefs</a></i>)
 to objects, we will actually need to dereference <i>twice</i> to get to
 the objects themselves.</font>
-<pre><font color="#000080">&nbsp; for (CBiostruc::TDescr::const_iterator i = descList.begin();
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; i != descList.end(); ++i) {
 
-&nbsp;&nbsp;&nbsp; const CBiostruc_descr&amp; thisDescr = **i;
-&nbsp;&nbsp;&nbsp; // ...
-&nbsp; }</font></pre>
+<pre>
+for (CBiostruc::TDescr::const_iterator i = descList.begin(); i != descList.end(); ++i) {
+
+    const CBiostruc_descr&amp; thisDescr = **i;
+    // ...
+}
+</pre>
 <font color="#000000">In traversing the descriptor list in this example,
 we handled each type of descriptor with an explicit <i>case</i> statement.
 In fact, however, we really only visit those descriptors whose types have
@@ -188,16 +198,20 @@ the above <i>switch</i> statement to visit elements of the descriptor list
 would have been to use an NCBI<i> <a href="iterators.html#stdType">CStdTypeIterator</a></i>
 that only visits strings. For example, we could implement the Visit function
 on a <i>CBiostruc::TDescr</i> as follows:</font>
-<pre><font color="#000080">void Visit (const CBiostruc::TDescr&amp; descList)
-{&nbsp;
-&nbsp;&nbsp;&nbsp; for (CBiostruc::TDescr::const_iterator i1 = descList.begin();
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; i1 != descList.end(); ++i1) {
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (CStdTypeConstIterator&lt;string> i = ConstBegin(**i1); i; ++i) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; *i &lt;&lt; endl;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp; }
-}</font></pre>
+<pre>
+void Visit (const CBiostruc::TDescr&amp; descList)
+{
+    for (CBiostruc::TDescr::const_iterator i1 = descList.begin();
+        i1 != descList.end(); ++i1) {
+
+        for (CStdTypeConstIterator&lt;string> i = ConstBegin(**i1); i; ++i) {
+            cout &lt;&lt; *i &lt;&lt; endl;
+        }
+    }
+}
+</pre>
+
 <font color="#000000">In this example, the iterator will skip over all
 but the string data members.</font><font color="#000000"></font>
 <p><font color="#000000">The <i>CStdTypeIterator </i></font>is one of several

@@ -62,26 +62,31 @@ is available, which greatly simplifies this effort. A pre-requisite to
 using these macros however, is that the class definition must include the
 following line:
 <p><a NAME="cdcl"></a>
-<center><pre>DECLARE_INTERNAL_TYPE_INFO();</pre></center>
+<pre>DECLARE_INTERNAL_TYPE_INFO();</pre>
 This pre-processor macro will generate the following in-line statement
 in the class definition:
-<center><pre>static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void);</pre></center>
+<pre>static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void);</pre>
 As with class objects, there must be some means of declaring the type information
 function for an enumeration prior to using the macros which implement that
 function. Given an enumeration named <i>EMyEnum</i>,
 <center><i>DECLARE_ENUM_INFO(EMyEnum)</i></center>
 will generate the following declaration:
-<center><pre>const CEnumeratedTypeValues* GetTypeInfo_enum_EMyEnum(void);</pre></center>
+<pre>const CEnumeratedTypeValues* GetTypeInfo_enum_EMyEnum(void);</pre>
 The <i>DECLARE_ENUM_INFO()</i> macro should appear in the header file where
 the enumeration is defined, immediately following the definition. The <i>DECLARE_INTERNAL_ENUM_INFO</i>
 macro is intended for usage with internal class definitions, as in:
-<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; class ClassWithEnum {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum EMyEnum {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DECLARE_INTERNAL_ENUM_INFO(EMyEnum);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</pre>
+
+<pre>
+class ClassWithEnum {
+    enum EMyEnum {
+        ...
+    };
+
+    DECLARE_INTERNAL_ENUM_INFO(EMyEnum);
+    ...
+};
+</pre>
+
 The C++ Toolkit also allows one to provide type information for legacy
 C style <i>struct</i> and
 <i>choice</i> elements defined in the C Toolkit.
@@ -119,21 +124,27 @@ of its arguments, and generates a call to the corresponding "named" macro
 using a quoted string. For example,
 <i>BEGIN_CLASS_INFO</i> is defined
 as:
-<pre><font color="#000080">#define BEGIN_CLASS_INFO(ClassName) \
-&nbsp;&nbsp;&nbsp; BEGIN_NAMED_CLASS_INFO(#ClassName, ClassName)</font></pre>
+<pre>
+#define BEGIN_CLASS_INFO(ClassName) \
+    BEGIN_NAMED_CLASS_INFO(#ClassName, ClassName)
+</pre>
 The next two macros implement global, uniquely named functions which provide
 access to type information for C++ enumerations; the resulting functions
 are named <i>GetTypeInfo_enum_[EnumName]</i>. The <i>DECLARE_ENUM_INFO()</i>
 or <i>DECLARE_ENUM_INFO_IN()</i> macro should be used in these cases to
 declare the <i>GetTypeInfo*()</i> functions.
-<p>&nbsp;The usage of these six macros generally takes the following form:
-<pre><font color="#808080">&nbsp;&nbsp;&nbsp;&nbsp; BEGIN_*_INFO(ClassName)
-&nbsp;&nbsp;&nbsp;&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_*(MemberName);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_*(memberName);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
-&nbsp;&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp;&nbsp; END_*_INFO</font></pre>
+<p>The usage of these six macros generally takes the following form:
+
+<pre>
+BEGIN_*_INFO(ClassName)
+{
+    ADD_*(MemberName);
+    ADD_*(memberName);
+    ...
+}
+END_*_INFO
+</pre>
+
 That is, the <i>BEGIN/END</i> macros are used to generate the function's
 signature and enclosing block, and various <i>ADD_*</i> macros are applied
 to add information about internal members and class relations.
@@ -207,21 +218,25 @@ ClassName)</a></i></li>
 virtual functions. For example, the <i>GetTypeInfo()</i> method for the
 <i><a href="iterators.html#CPerson">CPerson</a></i> class (used in the
 chapter on iterators) can be implemented as:
-<pre><font color="#000080">BEGIN_NAMED_CLASS_INFO("CPerson", CPerson)
+<pre>
+BEGIN_NAMED_CLASS_INFO("CPerson", CPerson)
 {
-&nbsp;&nbsp;&nbsp; ADD_NAMED_STD_MEMBER("m_Name", m_Name);
-&nbsp;&nbsp;&nbsp; ADD_NAMED_STD_MEMBER("m_Addr", m_Addr);
-&nbsp;&nbsp;&nbsp; ADD_NAMED_MEMBER("m_NextDoor", m_NextDoor, POINTER, (CLASS, (CPerson)));
+    ADD_NAMED_STD_MEMBER("m_Name", m_Name);
+    ADD_NAMED_STD_MEMBER("m_Addr", m_Addr);
+    ADD_NAMED_MEMBER("m_NextDoor", m_NextDoor, POINTER, (CLASS, (CPerson)));
 }
-END_CLASS_INFO</font></pre>
+END_CLASS_INFO
+</pre>
 <font color="#000000">or, equivalently, as:</font>
-<pre><font color="#000080">BEGIN_CLASS_INFO(CPerson)
+<pre>
+BEGIN_CLASS_INFO(CPerson)
 {
-&nbsp;&nbsp;&nbsp; ADD_STD_MEMBER(m_Name);
-&nbsp;&nbsp;&nbsp; ADD_STD_MEMBER(m_Addr);
-&nbsp;&nbsp;&nbsp; ADD_MEMBER(m_NextDoor, POINTER, (CLASS, (CPerson)));
+    ADD_STD_MEMBER(m_Name);
+    ADD_STD_MEMBER(m_Addr);
+    ADD_MEMBER(m_NextDoor, POINTER, (CLASS, (CPerson)));
 }
-END_CLASS_INFO</font></pre>
+END_CLASS_INFO
+</pre>
 <font color="#000000">Here, the <i>CPerson</i> class has two <i>string</i>
 data members, <i>m_Name</i> and
 <i>m_Addr</i>, as well as a pointer to
@@ -247,14 +262,16 @@ that will visit all objects of type <i>CA</i> and
 the <i>GetTypeInfo()</i> method on that abstract class. The
 <i>ABSTRACT_CLASS_INFO</i>
 macros do this for us:</font>
-<pre><font color="#000080">BEGIN_ABSTRACT_CLASS_INFO(CBase)
+<pre>
+BEGIN_ABSTRACT_CLASS_INFO(CBase)
 {
-&nbsp; // ... data member definitions for abstract base class
+    // ... data member definitions for abstract base class
 
-&nbsp; ADD_SUB_CLASS (CA);
-&nbsp; ADD_SUB_CLASS (CB);
+    ADD_SUB_CLASS (CA);
+    ADD_SUB_CLASS (CB);
 }
-END_ABSTRACT_CLASS_INFO</font></pre>
+END_ABSTRACT_CLASS_INFO
+</pre>
 <font color="#000000">The <i><a href="../lxr/ident?i=ADD_SUB_CLASS">ADD_SUB_CLASS</a></i>
 macro provides the class inheritance information for all objects - its
 usage is <i>not</i> restricted to abstract classes. However, each class
@@ -275,17 +292,19 @@ whose parent classes also have the
 <i>GetTypeInfo()</i> method implemented.
 Data members inherited from parent classes should not be included in the
 derived class type information.</font>
-<pre><font color="#000080">BEGIN_DERIVED_CLASS_INFO(CA, CBase)
+<pre>
+BEGIN_DERIVED_CLASS_INFO(CA, CBase)
 {
-&nbsp; // ... data members in CA not inherited from CBase
+    // ... data members in CA not inherited from CBase
 }
 END_DERIVED_CLASS_INFO
 
 BEGIN_DERIVED_CLASS_INFO(CB, CBase)
 {
-&nbsp; // ... data members in CB not inherited from CBase
+    // ... data members in CB not inherited from CBase
 }
-END_DERIVED_CLASS_INFO</font></pre>
+END_DERIVED_CLASS_INFO
+</pre>
 <font color="#FF0000">NOTE:</font><font color="#000000"> The type information
 for classes derived directly from <i>CObject</i> does
 <i>not</i> however,
@@ -319,23 +338,25 @@ IsInteger)</a></font></i>
 indicates whether or not the enumeration includes arbitrary integer values
 or only those explicitly specified.</font>
 <p><font color="#000000">Example usage:</font>
-<pre><font color="#000080">// hpp file:
+<pre>
+// hpp file:
 enum EMyEnum {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eZero = 0,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eOne,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTwo,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTen = 10
+    eZero = 0,
+    eOne,
+    eTwo,
+    eTen = 10
 };
 
 // cpp file:
 BEGIN_ENUM_INFO(EMyEnum, false)
 {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_ENUM_VALUE("zero", eZero);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_ENUM_VALUE("one", eOne);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_ENUM_VALUE("two", eTwo);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_ENUM_VALUE("ten", eTen);
+    ADD_ENUM_VALUE("zero", eZero);
+    ADD_ENUM_VALUE("one", eOne);
+    ADD_ENUM_VALUE("two", eTwo);
+    ADD_ENUM_VALUE("ten", eTen);
 }
-END_ENUM_INFO</font></pre>
+END_ENUM_INFO
+</pre>
 <font color="#000000">Enumerated values are specified with the <i>ADD_ENUM_VALUE</i>
 macro. As a result of executing the above macro, a global function named
 <i>GetTypeInfo_enum_EMyEnum()</i> will be implemented.</font>
@@ -358,14 +379,16 @@ postfixed with the scope operator (::). For example, if
 is itself defined in <i>CMyClass</i>, then we would use the following macros
 in the
 <i>*.cpp</i> file:</font>
-<pre><font color="#000080">BEGIN_ENUM_IN_INFO(CMyClass::, EMyEnum, false)
+<pre>
+BEGIN_ENUM_IN_INFO(CMyClass::, EMyEnum, false)
 {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_ENUM_VALUE("zero", eZero);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_ENUM_VALUE("one", eOne);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_ENUM_VALUE("two", eTwo);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADD_ENUM_VALUE("ten", eTen);
+    ADD_ENUM_VALUE("zero", eZero);
+    ADD_ENUM_VALUE("one", eOne);
+    ADD_ENUM_VALUE("two", eTwo);
+    ADD_ENUM_VALUE("ten", eTen);
 }
-END_ENUM_IN_INFO</font></pre>
+END_ENUM_IN_INFO
+</pre>
 </ul>
 <font color="#000000">Again, when using the above macros to install type
 information, the corresponding class definitions
@@ -687,16 +710,20 @@ arguments required for that type, are given in Table 3.
 
 <p>The <i>ADD_MEMBER</i> macro generates a call to the corresponding <i>ADD_NAMED_MEMBER</i>
 macro as follows:
-<pre><font color="#000080">#define ADD_MEMBER(MemberName,TypeMacro,TypeMacroArgs) \
-&nbsp;&nbsp;&nbsp;&nbsp; ADD_NAMED_MEMBER(#MemberName,MemberName,TypeMacro,TypeMacroArgs)</font></pre>
+<pre>
+#define ADD_MEMBER(MemberName,TypeMacro,TypeMacroArgs) \
+    ADD_NAMED_MEMBER(#MemberName,MemberName,TypeMacro,TypeMacroArgs)
+</pre>
 Some examples of using the ADD_MEMBER macro are:
-<pre><font color="#000080">&nbsp;&nbsp; ADD_MEMBER(m_X);
-&nbsp;&nbsp; ADD_MEMBER(m_A, STL_auto_ptr, (CLASS, (ClassName)));
-&nbsp;&nbsp; ADD_MEMBER(m_B, STL_CHAR_vector, (char));
-&nbsp;&nbsp; ADD_MEMBER(m_C, STL_vector, (STD, (int)));
-&nbsp;&nbsp; ADD_MEMBER(m_D, STL_list, (CLASS, (ClassName)));
-&nbsp;&nbsp; ADD_MEMBER(m_E, STL_list, (POINTER, (CLASS, (ClassName))));
-&nbsp;&nbsp; ADD_MEMBER(m_F, STL_map, (STD, (long), STD, (string)));</font></pre>
+<pre>
+ADD_MEMBER(m_X);
+ADD_MEMBER(m_A, STL_auto_ptr, (CLASS, (ClassName)));
+ADD_MEMBER(m_B, STL_CHAR_vector, (char));
+ADD_MEMBER(m_C, STL_vector, (STD, (int)));
+ADD_MEMBER(m_D, STL_list, (CLASS, (ClassName)));
+ADD_MEMBER(m_E, STL_list, (POINTER, (CLASS, (ClassName))));
+ADD_MEMBER(m_F, STL_map, (STD, (long), STD, (string)));
+</pre>
 Similarly, the <i>ADD_CHOICE_VARIANT</i> macro generates a call to the
 corresponding <i>ADD_NAMED_CHOICE_VARIANT</i> macro. These macros add type
 information for the <a href="choice.html"><i>choice</i> object's variants.</a>
