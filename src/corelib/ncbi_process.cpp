@@ -40,6 +40,7 @@
 #  include <signal.h>
 #  include <sys/wait.h>
 #  include <errno.h>
+#  include <unistd.h>
 #endif
 
 
@@ -361,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/25 17:18:21  ucko
+ * UNIX: +<unistd.h> for getpid()
+ *
  * Revision 1.1  2003/09/25 16:53:41  ivanov
  * Initial revision. CPIDGuard class moved from ncbi_system.cpp.
  *
