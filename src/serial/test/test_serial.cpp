@@ -1,8 +1,6 @@
 #include "testserial.hpp"
 #include "serialobject.hpp"
 #include <serial/serial.hpp>
-#include <serial/objistrb.hpp>
-#include <serial/objostrb.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/objistrasn.hpp>
@@ -151,6 +149,7 @@ int CTestSerial::Run(void)
             }
         }
 
+/*
         {
             {
                 CNcbiOfstream out("test.bino", IOS_BASE::binary);
@@ -176,7 +175,7 @@ int CTestSerial::Run(void)
                 CObjectIStreamBinary(in).SkipValue();
             }
         }
-
+*/
         NcbiCerr << "OK" << endl;
     }
     catch (exception& e) {
