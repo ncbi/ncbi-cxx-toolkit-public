@@ -46,13 +46,13 @@ extern "C" {
  * @param query_info Query information block [in]
  * @param subject Subject sequence block [in]
  * @param sbp Scoring and statistical data [in]
- * @param hit_params Hit saving parameters [in]
+ * @param link_hsp_params Parameters for linking of HSPs [in]
  * @param gapped_calculation Is this a gapped search? [in]
  */
 Int2 
 BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-   BlastScoreBlk* sbp, const BlastHitSavingParameters* hit_params,
+   BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation);
 
 #ifdef __cplusplus

@@ -227,13 +227,13 @@ typedef struct BlastInitialWordOptions {
 } BlastInitialWordOptions;
 
 /** Expect values corresponding to the default cutoff
- *  scores for ungapped alignments 
+ *  scores for all ungapped and gapped blastn alignments.
  */
-#define UNGAPPED_CUTOFF_E_BLASTN 0.05  /**< default ungapped evalue (blastn) */
-#define UNGAPPED_CUTOFF_E_BLASTP 1e-300 /**< default ungapped evalue (blastp) */
-#define UNGAPPED_CUTOFF_E_BLASTX 1.0  /**< default ungapped evalue (blastx) */
-#define UNGAPPED_CUTOFF_E_TBLASTN 1.0  /**< default ungapped evalue (tblastn) */
-#define UNGAPPED_CUTOFF_E_TBLASTX 1e-300  /**< default ungapped evalue (tblastx) */
+#define CUTOFF_E_BLASTN 0.025  /**< default evalue (blastn) */
+#define CUTOFF_E_BLASTP 1e-300 /**< default evalue (ungapped blastp) */
+#define CUTOFF_E_BLASTX 0.5 /**< default evalue (ungapped blastx) */
+#define CUTOFF_E_TBLASTN 0.5 /**< default evalue (ungapped tblastn) */
+#define CUTOFF_E_TBLASTX 1e-300/**< default evalue (tblastx) */
 
 /** Parameter block that contains a pointer to BlastInitialWordOptions
  * and parsed values for those options that require it 
@@ -241,7 +241,9 @@ typedef struct BlastInitialWordOptions {
  */
 typedef struct BlastInitialWordParameters {
    BlastInitialWordOptions* options; /**< The original (unparsed) options. */
-   Int4 x_dropoff; /**< Raw X-dropoff value for the ungapped extension */
+   Int4 x_dropoff_init; /**< Raw X-dropoff value corresponding to the bit 
+                           value in options. */
+   Int4 x_dropoff; /**< Raw X-dropoff value used in the ungapped extension */
    Int4 cutoff_score; /**< Cutoff score for saving ungapped hits. */
 } BlastInitialWordParameters;
 	
@@ -349,6 +351,20 @@ typedef struct BlastHitSavingOptions {
    Boolean phi_align;   /**< Is this a PHI BLAST search? */
 } BlastHitSavingOptions;
 
+/** Parameter block for linking HSPs with sum statistics. */
+typedef struct BlastLinkHSPParameters {
+   double gap_prob;       /**< Probability of decay for linking HSPs */
+   Int4 gap_size;          /**< Small gap size for linking HSPs */
+   double gap_decay_rate; /**< Decay rate for linking HSPs and calculating
+                             cutoff scores. */
+   Int4 cutoff_small_gap; /**< Cutoff sum score for linked HSPs with small 
+                             gaps. Small gap calculations are ignored if 
+                             this value is set to 0. */
+   Int4 cutoff_big_gap; /**< Cutoff sum score for linked HSPs with big gaps. */
+   Int4 longest_intron; /**< Length of a longest intron for uneven gap linking
+                           of HSPs. */
+} BlastLinkHSPParameters;
+
 /** Parameter block that contains a pointer to BlastHitSavingOptions
  * and parsed values for those options that require it
  * (in this case expect value).
@@ -357,16 +373,10 @@ typedef struct BlastHitSavingParameters {
    BlastHitSavingOptions* options; /**< The original (unparsed) options. */
    Int4 cutoff_score; /**< Raw cutoff score corresponding to the e-value 
                          provided by the user */
-   Boolean do_sum_stats; /**< Is sum statistics used to combine HSPs? */
-   double gap_prob;       /**< Probability of decay for linking HSPs */
-   double gap_decay_rate; /**< Decay rate for linking HSPs */
-   Int4 gap_size;          /**< Small gap size for linking HSPs */
-   Int4 cutoff_small_gap; /**< Cutoff sum score for linked HSPs with small 
-                             gaps */
-   Int4 cutoff_big_gap; /**< Cutoff sum score for linked HSPs with big gaps */
-   Boolean ignore_small_gaps; /**< Should small gaps be ignored? */
+   BlastLinkHSPParameters* link_hsp_params; /**< Parameters for linking HSPs
+                                               with sum statistics; linking 
+                                               is not done if NULL. */
 } BlastHitSavingParameters;
-	
 
 /** Scoring options block 
  *  Used to produce the BlastScoreBlk structure
@@ -561,9 +571,11 @@ BlastInitialWordParametersNew(Uint1 program_number,
 
 /** Update cutoff scores in BlastInitialWordParameters structure.
  * @param program_number Type of BLAST program [in]
- * @param hit_params The hit saving options (needed to calculate cutoff score 
- *                    for ungapped extensions) [in]
- * @param ext_params Extension parameters (containing gap trigger value) [in]
+ * @param hit_params The hit saving parameters, needed to calculate cutoff 
+ *                   score for ungapped extensions. The HSP linking cutoff
+ *                   might have to be adjusted here. [in] [out]
+ * @param ext_params Extension parameters, containing gap trigger value,
+ *                   which might be changed in this function [in] [out]
  * @param sbp Statistical (Karlin-Altschul) information [in]
  * @param query_info Query information [in]
  * @param subject_length Average subject sequence length [in]
@@ -815,6 +827,34 @@ Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
                            double evalue, Int4 hitlist_size);
 
+/** Deallocate memory for BlastLinkHSPParameters;
+ * @param parameters Structure to free [in] 
+ */
+BlastLinkHSPParameters* 
+BlastLinkHSPParametersFree(BlastLinkHSPParameters* parameters);
+
+/** Initialize the linking HSPs parameters with default values.
+ * @param program_number Type of BLAST program [in]
+ * @Param gapped_calculation Is this a gapped search? [in]
+ * @param link_hsp_params Initialized parameters structure [out]
+ */
+Int2 BlastLinkHSPParametersNew(Uint1 program_number, 
+                               Boolean gapped_calculation,
+                               BlastLinkHSPParameters** link_hsp_params);
+
+/** Update BlastLinkHSPParameters, using calculated values of other parameters.
+ * @param word_params Initial word parameters [in]
+ * @param ext_params Extension parameters [in]
+ * @param hit_params Hit saving parameters, including the link HSP 
+ *                   parameters [in] [out]
+ * @param gapped_calculation Is this a gapped search? [in]
+ */
+Int2 
+BlastLinkHSPParametersUpdate(const BlastInitialWordParameters* word_params,
+                             const BlastExtensionParameters* ext_params,
+                             const BlastHitSavingParameters* hit_params,
+                             Boolean gapped_calculation);
+
 /** Deallocate memory for BlastHitSavingOptions*. 
  * @param parameters Structure to free [in]
  */
@@ -908,8 +948,7 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
  * @param program BLAST program type [in]
  * @param query_info Query(ies) information [in]
  * @param sbp Scoring statistical parameters [in]
- * @param hit_params Hit saving parameters, including all cutoff 
- *                   scores [in] [out]
+ * @param link_hsp_params Parameters for linking HSPs [in] [out]
  * @param ext_params Extension parameters (gap_trigger used) [in]
  * @param db_length Total length of database (non-database search if 0) [in]
  * @param subject_length Length of the subject sequence. [in]
@@ -917,7 +956,7 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
 */
 void
 CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info, 
-   BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params, 
+   BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 
    BlastExtensionParameters* ext_params,
    Int8 db_length, Int4 subject_length);
 

@@ -95,7 +95,7 @@ typedef struct LinkHSPStruct {
 static double 
 SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-   const BlastHitSavingParameters* hit_params, 
+   const BlastLinkHSPParameters* link_hsp_params, 
    LinkHSPStruct* head_hsp, LinkHSPStruct* hsp, Int4* sumscore)
 {
    double gap_prob, gap_decay_rate, sum_evalue, score_prime;
@@ -104,8 +104,8 @@ SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp,
    Int4 context = head_hsp->hsp->context;
    double eff_searchsp;
 
-   gap_prob = hit_params->gap_prob;
-   gap_decay_rate = hit_params->gap_decay_rate;
+   gap_prob = link_hsp_params->gap_prob;
+   gap_decay_rate = link_hsp_params->gap_decay_rate;
 
    num = head_hsp->hsp->num + hsp->hsp->num;
 
@@ -126,7 +126,7 @@ SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp,
 
    sum_evalue =
        BLAST_UnevenGapSumE(sbp->kbp_gap[context], 2*WINDOW_SIZE,
-                           hit_params->options->longest_intron + WINDOW_SIZE,
+                           link_hsp_params->longest_intron + WINDOW_SIZE,
                            num, score_prime,
                            query_eff_length, subject_eff_length,
                            BLAST_GapDecayDivisor(gap_decay_rate, num));
@@ -495,7 +495,7 @@ static LinkHSPStruct* LinkHSPStructReset(LinkHSPStruct* lhsp)
 static Int2
 link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
-   BlastScoreBlk* sbp, const BlastHitSavingParameters* hit_params,
+   BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation)
 {
 	LinkHSPStruct* H,* H2,* best[2],* first_hsp,* last_hsp,** hp_frame_start;
@@ -541,9 +541,9 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	total_number_of_hsps = hsp_list->hspcnt;
 
 	number_of_hsps = total_number_of_hsps;
-	gap_size = hit_params->gap_size;
-	gap_prob = hit_params->gap_prob;
-	gap_decay_rate = hit_params->gap_decay_rate;
+	gap_size = link_hsp_params->gap_size;
+	gap_prob = link_hsp_params->gap_prob;
+	gap_decay_rate = link_hsp_params->gap_decay_rate;
 
 	translated_query = (program_number == eBlastTypeBlastx || 
                        program_number == eBlastTypeTblastx);
@@ -569,9 +569,9 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             rev_compare_hsps_tbn);
    }
 
-	cutoff[0] = hit_params->cutoff_small_gap;
-	cutoff[1] = hit_params->cutoff_big_gap;
-	ignore_small_gaps = hit_params->ignore_small_gaps;
+	cutoff[0] = link_hsp_params->cutoff_small_gap;
+	cutoff[1] = link_hsp_params->cutoff_big_gap;
+	ignore_small_gaps = (cutoff[0] == 0);
 	
 	if (translated_query)
 		num_query_frames = NUM_STRANDS*query_info->num_queries;
@@ -1210,7 +1210,7 @@ static void ConnectLinkHSPStructs(LinkHSPStruct** linkhsp_array, Int4 hspcnt,
 static Int2
 new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
-   BlastScoreBlk* sbp, const BlastHitSavingParameters* hit_params)
+   BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params)
 {
    BlastHSP** hsp_array;
    LinkHSPStruct** score_hsp_array,** offset_hsp_array,** end_hsp_array;
@@ -1219,7 +1219,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    double best_evalue, evalue;
    Int4 sumscore, best_sumscore = 0;
    Boolean reverse_link;
-   Int4 longest_intron = hit_params->options->longest_intron;
+   Int4 longest_intron = link_hsp_params->longest_intron;
    LinkHSPStruct** link_hsp_array;
 
    hspcnt = hsp_list->hspcnt;
@@ -1285,7 +1285,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
          /* Check if the e-value for the combined two HSPs is better than for
             one of them */
          if ((evalue = SumHSPEvalue(program_number, sbp, query_info, subject, 
-                                    hit_params, head_hsp, hsp, &sumscore)) < 
+                                    link_hsp_params, head_hsp, hsp, &sumscore)) < 
              MIN(best_evalue, hsp->hsp->evalue)) {
             best_hsp = hsp;
             best_evalue = evalue;
@@ -1313,7 +1313,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
          /* Check if the e-value for the combined two HSPs is better than for
             one of them */
          if ((evalue = SumHSPEvalue(program_number, sbp, query_info, subject, 
-                          hit_params, var_hsp, head_hsp, &sumscore)) < 
+                          link_hsp_params, var_hsp, head_hsp, &sumscore)) < 
              MIN(var_hsp->hsp->evalue, best_evalue)) {
             best_hsp = hsp;
             best_evalue = evalue;
@@ -1385,17 +1385,17 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 Int2 
 BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-   BlastScoreBlk* sbp, const BlastHitSavingParameters* hit_params,
+   BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation)
 {
 	if (hsp_list && hsp_list->hspcnt > 0)
 	{
       /* Link up the HSP's for this hsp_list. */
       if (program_number != eBlastTypeTblastn ||
-          hit_params->options->longest_intron <= 0)
+          link_hsp_params->longest_intron <= 0)
       {
          link_hsps(program_number, hsp_list, query_info, subject, sbp, 
-                   hit_params, gapped_calculation);
+                   link_hsp_params, gapped_calculation);
          /* The HSP's may be in a different order than they were before, 
             but hsp contains the first one. */
       } else {
@@ -1405,7 +1405,7 @@ BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list,
                                  gapped_calculation, sbp);
          
          new_link_hsps(program_number, hsp_list, query_info, subject, sbp, 
-                       hit_params);
+                       link_hsp_params);
       }
 	}
 

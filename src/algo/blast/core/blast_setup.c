@@ -718,6 +718,9 @@ Int2 BLAST_OneSubjectUpdateParameters(Uint1 program_number,
       /* Update cutoff scores in initial word parameters */
       BlastInitialWordParametersUpdate(program_number, hit_params, ext_params,
          sbp, query_info, subject_length, word_params);
+      /* Update the parameters for linking HSPs, if necessary. */
+      BlastLinkHSPParametersUpdate(word_params, ext_params, 
+         hit_params, scoring_options->gapped_calculation);
    }
    return status;
 }

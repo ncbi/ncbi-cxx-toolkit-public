@@ -445,7 +445,7 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
             
    if (keep == TRUE) {
       /* If sum statistics is not used, calcualte e-values here. */
-      if (!hit_params->do_sum_stats) {
+      if (!hit_params->link_hsp_params) {
          
          Blast_KarlinBlk** kbp;
          if (score_options->gapped_calculation)
@@ -789,9 +789,10 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
     Blast_HSPListPurgeNullHSPs(hsp_list);
     
     /* Relink and rereap the HSP list, if needed. */
-    if (hit_params->do_sum_stats) {
+    if (hit_params->link_hsp_params) {
        BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk,
-                      sbp, hit_params, score_options->gapped_calculation);
+                      sbp, hit_params->link_hsp_params, 
+                      score_options->gapped_calculation);
        Blast_HSPListReapByEvalue(hsp_list, hit_options);
     }
     

@@ -327,10 +327,10 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
 
    hsp_list = *hsp_list_out;
 
-   if (hit_params->do_sum_stats == TRUE) {
+   if (hit_params->link_hsp_params) {
       status = BLAST_LinkHsps(program_number, hsp_list, query_info,
-                              subject, gap_align->sbp, hit_params, 
-                              score_options->gapped_calculation);
+                  subject, gap_align->sbp, hit_params->link_hsp_params, 
+                  score_options->gapped_calculation);
    } else if (hit_options->phi_align) {
       /* These e-values will not be accurate yet, since we don't know
          the number of pattern occurrencies in the database. That
@@ -378,7 +378,8 @@ FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs,
    if (!return_cutoffs)
       return -1;
 
-   return_cutoffs->x_drop_ungapped = word_params->x_dropoff / scale_factor;
+   return_cutoffs->x_drop_ungapped = 
+      word_params->x_dropoff / scale_factor;
    return_cutoffs->x_drop_gap = ext_params->gap_x_dropoff / scale_factor;
    return_cutoffs->x_drop_gap_final = ext_params->gap_x_dropoff_final / 
                                                         scale_factor;
@@ -460,6 +461,10 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    BlastInitialWordParametersNew(program_number, word_options, 
       *hit_params, *ext_params, sbp, query_info, 
       avg_subj_length, word_params);
+   /* Update the parameters for linking HSPs, if necessary. */
+   BlastLinkHSPParametersUpdate(*word_params, *ext_params, 
+      *hit_params, scoring_options->gapped_calculation);
+   
 
    if (mb_lookup) {
       aux_struct->WordFinder = MB_WordFinder;
@@ -681,6 +686,15 @@ BLAST_SearchEngine(Uint1 program_number,
    Int8 db_length = 0;
    BlastRawCutoffs* raw_cutoffs = NULL;
    Boolean prelim_traceback;
+
+   if (program_number == eBlastTypeRpsBlast || 
+       program_number == eBlastTypeRpsTblastn) {
+      return          
+         BLAST_RPSSearchEngine(program_number, query, query_info, 
+            seq_src, sbp, score_options, lookup_wrap, 
+            word_options, ext_options, hit_options, eff_len_options, 
+            psi_options, db_options, hsp_stream, diagnostics, results);
+   }
    
    if ((status = 
        BLAST_SetUpAuxStructures(program_number, seq_src,
@@ -727,10 +741,11 @@ BLAST_SearchEngine(Uint1 program_number,
 
       /* Calculate cutoff scores for linking HSPs. Do this only for ungapped
          translated searches. */
-      if (hit_params->do_sum_stats && program_number != eBlastTypeBlastn &&
+      if (hit_params->link_hsp_params && program_number != eBlastTypeBlastn &&
           !score_options->gapped_calculation) {
          CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
-            hit_params, ext_params, db_length, seq_arg.seq->length); 
+            hit_params->link_hsp_params, ext_params, db_length, 
+            seq_arg.seq->length); 
       }
 
       BLAST_SearchEngineCore(program_number, query, query_info,
