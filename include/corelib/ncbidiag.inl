@@ -193,11 +193,13 @@ inline CNcbiDiag::~CNcbiDiag(void) {
     m_Buffer.Detach(this);
 }
 
+#ifdef NCBIDIAG_DEFER_GENERIC_PUT
 template<class X>
 inline const CNcbiDiag& CNcbiDiag::operator<< (const X& x) const {
     m_Buffer.Put(*this, x);
     return *this;
 }
+#endif
 
 inline const CNcbiDiag& CNcbiDiag::SetLine(size_t line) const {
     m_Line = line;
@@ -450,6 +452,9 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/04/26 19:28:24  ucko
+ * Make previous change compiler-dependent due to MSVC bugginess.
+ *
  * Revision 1.42  2004/04/26 14:35:48  ucko
  * Move CNcbiDiag::operator<< to ncbidiag.inl to make GCC 3.4 happy.
  *

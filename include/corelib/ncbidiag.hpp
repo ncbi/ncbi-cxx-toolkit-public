@@ -240,7 +240,18 @@ public:
     ~CNcbiDiag(void);
 
     /// Put object to be formatted to diagnostic stream.
-    template<class X> const CNcbiDiag& operator<< (const X& x) const;
+    // Some compilers need to see the body right away, but others need
+    // to meet CDiagBuffer first.
+    template<class X> const CNcbiDiag& operator<< (const X& x) const
+#ifdef NCBI_COMPILER_MSVC
+    {
+        m_Buffer.Put(*this, x);
+        return *this;
+    }
+#else
+      ;
+#  define NCBIDIAG_DEFER_GENERIC_PUT
+#endif
 
     /// Insert specified error code into diagnostic stream.
     ///
@@ -916,6 +927,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.72  2004/04/26 19:28:24  ucko
+ * Make previous change compiler-dependent due to MSVC bugginess.
+ *
  * Revision 1.71  2004/04/26 14:35:47  ucko
  * Move CNcbiDiag::operator<< to ncbidiag.inl to make GCC 3.4 happy.
  *
