@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/06/07 19:44:16  vasilche
+* Removed unneeded THROWS declaration - they lead to encreased code size.
+*
 * Revision 1.8  2000/05/09 16:36:54  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 *
@@ -134,7 +137,7 @@ public:
         }
 
     // remove reference without deleting object
-    void ReleaseReference(void) const THROWS((runtime_error));
+    void ReleaseReference(void) const;
 
 private:
     void RemoveLastReference(void) const;
@@ -175,13 +178,13 @@ public:
         : m_Ptr(0)
         {
         }
-    CRef(TObjectType* ptr) THROWS_NONE
+    CRef(TObjectType* ptr)
         {
             if ( ptr )
                 CRefBase<C>::AddReference(ptr);
             m_Ptr = ptr;
         }
-    CRef(const CRef<C>& ref) THROWS_NONE
+    CRef(const CRef<C>& ref)
         {
             TObjectType* ptr = ref.m_Ptr;
             if ( ptr )
@@ -244,7 +247,7 @@ public:
 
     // release
     inline
-    TObjectType* ReleaseOrNull(void) THROWS_NONE
+    TObjectType* ReleaseOrNull(void)
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
@@ -254,7 +257,7 @@ public:
             return ptr;
         }
     inline
-    TObjectType* Release(void) THROWS((CNullPointerError))
+    TObjectType* Release(void)
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
@@ -279,7 +282,7 @@ public:
             return m_Ptr;
         }
     inline
-    TObjectType* GetPointer(void) const THROWS((CNullPointerError))
+    TObjectType* GetPointer(void) const
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
@@ -287,28 +290,28 @@ public:
             return ptr;
         }
     inline
-    TObjectType& GetObject(void) const THROWS((CNullPointerError))
+    TObjectType& GetObject(void) const
         {
             return *GetPointer();
         }
 
     inline
-    const TObjectType& operator*(void) const THROWS((CNullPointerError))
+    const TObjectType& operator*(void) const
         {
             return GetObject();
         }
     inline
-    TObjectType& operator*(void) THROWS((CNullPointerError))
+    TObjectType& operator*(void)
         {
             return GetObject();
         }
     inline
-    const TObjectType* operator->(void) const THROWS((CNullPointerError))
+    const TObjectType* operator->(void) const
         {
             return GetPointer();
         }
     inline
-    TObjectType* operator->(void) THROWS((CNullPointerError))
+    TObjectType* operator->(void)
         {
             return GetPointer();
         }
@@ -327,20 +330,20 @@ public:
         : m_Ptr(0)
         {
         }
-    CConstRef(TObjectType* ptr) THROWS_NONE
+    CConstRef(TObjectType* ptr)
         {
             if ( ptr )
                 CRefBase<C>::AddReference(ptr);
             m_Ptr = ptr;
         }
-    CConstRef(const CConstRef<C>& ref) THROWS_NONE
+    CConstRef(const CConstRef<C>& ref)
         {
             TObjectType* ptr = ref.m_Ptr;
             if ( ptr )
                 CRefBase<C>::AddReference(ptr);
             m_Ptr = ptr;
         }
-    CConstRef(const CRef<C>& ref) THROWS_NONE
+    CConstRef(const CRef<C>& ref)
         {
             TObjectType* ptr = ref.GetPointerOrNull();
             if ( ptr )
@@ -403,7 +406,7 @@ public:
 
     // release
     inline
-    TObjectType* ReleaseOrNull(void) THROWS_NONE
+    TObjectType* ReleaseOrNull(void)
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
@@ -413,7 +416,7 @@ public:
             return ptr;
         }
     inline
-    TObjectType* Release(void) THROWS((CNullPointerError))
+    TObjectType* Release(void)
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
@@ -444,7 +447,7 @@ public:
             return m_Ptr;
         }
     inline
-    TObjectType* GetPointer(void) const THROWS((CNullPointerError))
+    TObjectType* GetPointer(void) const
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
@@ -452,18 +455,18 @@ public:
             return ptr;
         }
     inline
-    TObjectType& GetObject(void) const THROWS((CNullPointerError))
+    TObjectType& GetObject(void) const
         {
             return *GetPointer();
         }
 
     inline
-    TObjectType& operator*(void) const THROWS((CNullPointerError))
+    TObjectType& operator*(void) const
         {
             return GetObject();
         }
     inline
-    TObjectType* operator->(void) const THROWS((CNullPointerError))
+    TObjectType* operator->(void) const
         {
             return GetPointer();
         }

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/06/07 19:44:22  vasilche
+* Removed unneeded THROWS declaration - they lead to encreased code size.
+*
 * Revision 1.4  2000/03/29 15:50:41  vasilche
 * Added const version of CRef - CConstRef.
 * CRef and CConstRef now accept classes inherited from CObject.
@@ -92,7 +95,6 @@ void CObject::RemoveLastReference(void) const
 }
 
 void CObject::ReleaseReference(void) const
-    THROWS((runtime_error))
 {
     if ( m_Counter == 1 ) {
         m_Counter = 0;
