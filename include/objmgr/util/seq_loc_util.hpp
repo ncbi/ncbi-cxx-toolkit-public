@@ -90,6 +90,8 @@ bool IsValid(const CSeq_interval& interval, CScope* scope);
 /// Determines if two CSeq_ids represent the same CBioseq
 NCBI_XOBJUTIL_EXPORT
 bool IsSameBioseq(const CSeq_id& id1, const CSeq_id& id2, CScope* scope);
+NCBI_XOBJUTIL_EXPORT
+bool IsSameBioseq(const CSeq_id_Handle& id1, const CSeq_id_Handle& id2, CScope* scope);
 
 /// Returns true if all embedded CSeq_ids represent the same CBioseq, else false
 NCBI_XOBJUTIL_EXPORT
@@ -99,6 +101,8 @@ bool IsOneBioseq(const CSeq_loc& loc, CScope* scope);
 /// the first CSeq_id found, else throws CObjmgrUtilException exception.
 NCBI_XOBJUTIL_EXPORT
 const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope);
+NCBI_XOBJUTIL_EXPORT
+CSeq_id_Handle GetIdHandle(const CSeq_loc& loc, CScope* scope);
 
 
 /// Returns eNa_strand_unknown if multiple Bioseqs in loc
@@ -321,6 +325,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2004/12/06 14:54:39  shomrat
+* Added GetIdHandle and IsSameBioseq for CSeq_id_Handles
+*
 * Revision 1.6  2004/12/01 14:29:52  grichenk
 * Removed old SeqLocMerge
 *

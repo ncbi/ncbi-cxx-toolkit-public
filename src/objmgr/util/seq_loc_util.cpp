@@ -64,11 +64,16 @@ BEGIN_SCOPE(sequence)
 
 TSeqPos GetLength(const CSeq_id& id, CScope* scope)
 {
-    if ( !scope ) {
+    try {
+        if ( !scope ) {
+            return numeric_limits<TSeqPos>::max();
+        }
+
+        CBioseq_Handle hnd = scope->GetBioseqHandle(id);
+        return hnd.GetBioseqLength();
+    } catch (...) {
         return numeric_limits<TSeqPos>::max();
     }
-    CBioseq_Handle hnd = scope->GetBioseqHandle(id);
-    return hnd.GetBioseqLength();
 }
 
 
@@ -153,21 +158,30 @@ bool IsValid(const CSeq_interval& interval, CScope* scope)
 
 bool IsSameBioseq (const CSeq_id& id1, const CSeq_id& id2, CScope* scope)
 {
+    return IsSameBioseq(CSeq_id_Handle::GetHandle(id1),
+                        CSeq_id_Handle::GetHandle(id2),
+                        scope);
+}
+
+
+bool IsSameBioseq(const CSeq_id_Handle& id1, const CSeq_id_Handle& id2, CScope* scope)
+{
     // Compare CSeq_ids directly
-    if (id1.Compare(id2) == CSeq_id::e_YES) {
+    if (id1 == id2) {
         return true;
     }
 
     // Compare handles
-    if ( scope ) {
+    if (scope != NULL) {
         try {
-            CBioseq_Handle hnd1 = scope->GetBioseqHandle(id1);
-            CBioseq_Handle hnd2 = scope->GetBioseqHandle(id2);
+            CBioseq_Handle hnd1 =
+                scope->GetBioseqHandle(id1, CScope::eGetBioseq_Loaded);
+            CBioseq_Handle hnd2 =
+                scope->GetBioseqHandle(id2, CScope::eGetBioseq_Loaded);
             return hnd1  &&  hnd2  &&  (hnd1 == hnd2);
-        } catch (exception& e) {
-            ERR_POST(e.what() << ": CSeq_id1: " << id1.DumpAsFasta()
-                     << ": CSeq_id2: " << id2.DumpAsFasta());
-            return false;
+        } catch (CException& e) {
+            ERR_POST(e.what() << ": CSeq_id1: " << id1.GetSeqId()->DumpAsFasta()
+                     << ": CSeq_id2: " << id2.GetSeqId()->DumpAsFasta());
         }
     }
 
@@ -175,67 +189,70 @@ bool IsSameBioseq (const CSeq_id& id1, const CSeq_id& id2, CScope* scope)
 }
 
 
-bool IsOneBioseq(const CSeq_loc& loc, CScope* scope)
+static const CSeq_id* s_GetId(const CSeq_loc& loc, CScope* scope,
+                              string* msg = NULL)
 {
-    try {
-        GetId(loc, scope);
-        return true;
-    } catch (CObjmgrUtilException&) {
-        return false;
+    const CSeq_id* sip = NULL;
+    if (msg != NULL) {
+        msg->erase();
     }
+
+    for (CSeq_loc_CI it(loc); it; ++it) {
+        const CSeq_id& id = it.GetSeq_id();
+        if (id.Which() == CSeq_id::e_not_set) {
+            continue;
+        }
+        if (sip == NULL) {
+            sip = &id;
+        } else {
+            if (!IsSameBioseq(*sip, id, scope)) {
+                if (msg != NULL) {
+                    *msg = "Location contains segments on more than one bioseq.";
+                }
+                sip = NULL;
+                break;
+            }
+        }
+    }
+
+    if (sip == NULL  &&  msg != NULL  &&  msg->empty()) {
+        *msg = "Location contains no IDs.";
+    }
+
+    return sip;
 }
 
 
-struct SSeq_id_Sorter
-{
-    bool operator() (const CConstRef<CSeq_id>& ref1,
-                     const CConstRef<CSeq_id>& ref2) const
-    {
-        if (ref1 == ref2) {
-            return true;
-        }
-        if ( !ref1 ) {
-            return false;
-        }
-
-        return ref1->CompareOrdered(*ref2) < 0;
-    }
-};
-
 const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope)
 {
-    typedef set< CConstRef<CSeq_id>, SSeq_id_Sorter> TIds;
-    TIds ids;
+    string msg;
+    const CSeq_id* sip = s_GetId(loc, scope, &msg);
 
-    CTypeConstIterator<CSeq_id> iter(loc);
-    for ( ;  iter;  ++iter) {
-        ids.insert(CConstRef<CSeq_id>(&*iter));
+    if (sip == NULL) {
+        NCBI_THROW(CObjmgrUtilException, eNotUnique, msg);
     }
 
-    switch (ids.size()) {
-    case 0:
-        NCBI_THROW(CObjmgrUtilException, eNotUnique,
-                   "Location contains no IDs.");
+    return *sip;
+}
 
-    case 1:
-        return **ids.begin();
 
-    default:
-        {{
-            TIds::const_iterator iter = ids.begin();
-            TIds::const_iterator end  = ids.end();
-            CConstRef<CSeq_id> first_id = *iter++;
-            for ( ;  iter != end;  ++iter) {
-                if ( !IsSameBioseq(*first_id, **iter, scope) ) {
-                    NCBI_THROW(CObjmgrUtilException, eNotUnique,
-                               "Location contains segments on "
-                               "more than one bioseq.");
-                }
-            }
+CSeq_id_Handle GetIdHandle(const CSeq_loc& loc, CScope* scope)
+{
+    CSeq_id_Handle retval;
 
-            return *first_id;
-        }}
-    }
+    try {
+        if (!loc.IsNull()) {
+            retval = CSeq_id_Handle::GetHandle(GetId(loc, scope));
+        }
+    } catch (CObjmgrUtilException&) {}
+
+    return retval;
+}
+
+
+bool IsOneBioseq(const CSeq_loc& loc, CScope* scope)
+{
+    return s_GetId(loc, scope) != NULL;
 }
 
 
@@ -388,7 +405,7 @@ TSeqPos GetStop(const CSeq_loc& loc, CScope* scope)
 void ChangeSeqId(CSeq_id* id, bool best, CScope* scope)
 {
     // Return if no scope
-    if (!scope) {
+    if (!scope  ||  !id) {
         return;
     }
 
@@ -2595,6 +2612,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2004/12/06 14:55:15  shomrat
+* Added GetIdHandle and IsSameBioseq for CSeq_id_Handles
+*
 * Revision 1.10  2004/12/01 16:20:29  grichenk
 * Do not catch exceptions in GetLength()
 *
