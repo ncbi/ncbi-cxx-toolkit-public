@@ -248,7 +248,7 @@ static void s_Init(CNcbiRegistry*    reg = 0,
                    FConnectInitFlags flags = 0,
                    EConnectInit      how = eConnectInit_Weak)
 {
-    CORE_SetLOCK(MT_LOCK_cxx2c(lock, flags & eConnectInit_OwnLock));
+    CORE_SetLOCK(MT_LOCK_cxx2c(lock, flags & eConnectInit_OwnLock ? true : false));
     CORE_SetLOG(LOG_cxx2c());
     CORE_SetREG(REG_cxx2c(reg, flags & eConnectInit_OwnRegistry));
     s_ConnectInit = how;
@@ -294,6 +294,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2004/10/08 14:48:01  kuznets
+ * MSVC warning exterminated
+ *
  * Revision 6.24  2004/09/23 12:25:50  lavr
  * CONNECT_InitInternal(): Do not use CORE_LOCK_READ/UNLOCK
  *
