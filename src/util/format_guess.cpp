@@ -106,6 +106,8 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
 
     input.read((char*)buf, sizeof(buf));
     size_t count = input.gcount();
+	input.clear();  // in case we reached eof
+	input.seekg(orig_pos);
 
     if (!count) {
         return eUnknown;
@@ -127,7 +129,7 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
                 }
             }
             if (xml_flag) {
-                input.seekg(orig_pos);
+                
                 return eXml;
             }
         }
@@ -140,7 +142,6 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
     {{
         for (i = 0;  i < count;  ++i) {
             if ( !isgraph(buf[i])  &&  !isspace(buf[i]) ) {
-                input.seekg(orig_pos);
                 return eBinaryASN;
             }
         }
@@ -162,7 +163,6 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
         }
         seq_length = (unsigned)count - i;
         if (seq_length == 0) {
-            input.seekg(orig_pos);
             return eUnknown;   // No way to tell what format is this...
         }
     }
@@ -191,11 +191,9 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
     double a_content = (double)alpha_content / (double)count;
     if (buf[0] == '>') {
         if (dna_content > 0.7 && a_content > 0.91) {
-            input.seekg(orig_pos);
             return eFasta;  // DNA fasta file
         }
         if (prot_content > 0.7 && a_content > 0.91) {
-            input.seekg(orig_pos);
             return eFasta;  // Protein fasta file
         }
     }
@@ -217,7 +215,6 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
             if (!isspace(*ptr)) break;
         }
         if (*ptr == '{') {  // "{" symbol says it's most likely ASN text
-            input.seekg(orig_pos);
             return eTextASN;
         }
     }
@@ -225,16 +222,13 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
     // Signature check
     if (buf[1] == 0x80) {
         if (buf[0] == 0x30 || buf[0] == 0x31) {
-            input.seekg(orig_pos);
             //return eBinaryASN;
         }
         if (buf[0] >= 0xA0) {
-            input.seekg(orig_pos);
             //return eBinaryASN;
         }
     }
 
-    input.seekg(orig_pos);
     return format;
 
 }
@@ -244,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/03/23 23:04:23  jcherry
+ * clear() stream after reading; seekg() in just one place
+ *
  * Revision 1.13  2004/03/23 22:29:50  jcherry
  * Added Format(CNcbiIstream& input)
  *
