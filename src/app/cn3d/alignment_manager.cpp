@@ -197,7 +197,7 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
     } else {
 
         // check for row order change
-        TRACEMSG("checking for alignment changes..." << originalMultiple << ' ' << multiple);
+        TRACEMSG("checking for row order changes..." << originalMultiple << ' ' << multiple);
         if (originalMultiple->NRows() != multiple->NRows()) {
             TRACEMSG("row order changed");
             alignmentSet->parentSet->SetDataChanged(StructureSet::eRowOrderData);
@@ -214,6 +214,7 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
         }
 
         // check for PSSM change
+        TRACEMSG("checking for PSSM changes... " << originalPSSM << ' ' << currentPSSM);
         const BLAST_Matrix *originalPSSM = originalMultiple->GetPSSM(), *currentPSSM = multiple->GetPSSM();
         if (originalPSSM->rows != currentPSSM->rows ||
             originalPSSM->columns != currentPSSM->columns ||
@@ -941,6 +942,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2003/09/22 16:15:28  thiessen
+* better diagnostic messages for change checks
+*
 * Revision 1.85  2003/07/17 16:52:34  thiessen
 * add FileSaved message with edit typing
 *
