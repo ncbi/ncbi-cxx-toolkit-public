@@ -30,7 +30,8 @@ NCBI DBAPI Driver Reference</h1>
 <a name="ref_Overview"></a>
 <h2>
 Overview</h2>
-The <a href="../libs.html#TableDBAPI_DRIVER"><i>NCBI DBAPI driver</i> library</a>
+The
+<a href="../libs.html#ref_TableDBAPI_DRIVER"><i>NCBI DBAPI driver</i> library</a>
 describes and implements a set of objects needed to provide a
 uniform low-level access to the various relational database management
 systems (RDBMS). The basic driver functionality is the same as in most
@@ -55,7 +56,7 @@ The "Driver Context" is effectively a "Connection" factory. The only way
 to make a connection to the server is to call the <i>Connect()</i> method
 of a "Driver context" object. So, before doing anything with RDBMS, you
 need to create at least one driver context object. All driver contexts
-implement the same interface defined in <a href="docxx/I_DriverContext.html">I_DriverContext</a>
+implement the same interface defined in <a href="../docxx/I_DriverContext.html">I_DriverContext</a>
 class. If you are working on a library which could be used with various
 RDBMS it is a good idea do not create the driver context inside the library,
 but take a pointer to
@@ -66,7 +67,7 @@ RDBMS libraries from the different vendors. Most of them are written in
 C and the name collisions do exist.
 <p>The driver context creates the connection which is RDBMS specific, but
 before return it to the caller it puts it into an "envelope" of RDBMS independent
-object <a href="docxx/CDB_Connection.html">CDB_Connection</a>.
+object <a href="../docxx/CDB_Connection.html">CDB_Connection</a>.
 The same is true for the commands and for the results - user gets the pointer
 to RDBMS independent "envelope object" instead of the real one. This is
 a caller responsibility to delete those objects. The life spans of the
@@ -80,28 +81,28 @@ parallel, you can do it using multiple connections.
 <p>Another important part of the driver is an error and message handling.
 There are two different mechanisms implemented. The first one is exceptions.
 All exceptions which could be thrown by the driver are inherited from the
-single base class <a href="docxx/CDB_Exception.html">CDB_Exception</a>.
+single base class <a href="../docxx/CDB_Exception.html">CDB_Exception</a>.
 Driver uses the exception mechanism whenever it's possible, but in many
 cases the underlying client library uses the callbacks or handlers to report
 the error messages and prevents from throwing the exceptions. The driver
 supply a handler's stack mechanism to manage these cases.
 <p>To send and to receive the data through the driver you have to use the
-driver provided datatypes. The collection of the datatypes includes: <a href="docxx/CDB_TinyInt.html">one</a>,
-<a href="docxx/CDB_SmallInt.html">two</a>,
-<a href="docxx/CDB_Int.html">four</a>
-and <a href="docxx/CDB_BigInt.html">eight</a>
-		byte integers; <a href="docxx/CDB_Float.html">float</a>
-and <a href="docxx/CDB_Double.html">double</a>;
-<a href="docxx/CDB_Numeric.html">numeric</a>;
-<a href="docxx/CDB_Char.html">char</a>,
-<a href="docxx/CDB_VarChar.html">varchar</a>,
-<a href="docxx/CDB_Binary.html">binary</a>,
-<a href="docxx/CDB_VarBinary.html">varbinary</a>;
-<a href="docxx/CDB_DateTime.html">datetime</a>
-and <a href="docxx/CDB_SmallDateTime.html">smalldatetime</a>;
-<a href="docxx/CDB_Text.html">text</a>
-and <a href="docxx/CDB_Image.html">image</a>.
-All datatypes are derived from a single base class <a href="docxx/CDB_Object.html">CDB_Object</a>.
+driver provided datatypes. The collection of the datatypes includes: <a href="../docxx/CDB_TinyInt.html">one</a>,
+<a href="../docxx/CDB_SmallInt.html">two</a>,
+<a href="../docxx/CDB_Int.html">four</a>
+and <a href="../docxx/CDB_BigInt.html">eight</a>
+		byte integers; <a href="../docxx/CDB_Float.html">float</a>
+and <a href="../docxx/CDB_Double.html">double</a>;
+<a href="../docxx/CDB_Numeric.html">numeric</a>;
+<a href="../docxx/CDB_Char.html">char</a>,
+<a href="../docxx/CDB_VarChar.html">varchar</a>,
+<a href="../docxx/CDB_Binary.html">binary</a>,
+<a href="../docxx/CDB_VarBinary.html">varbinary</a>;
+<a href="../docxx/CDB_DateTime.html">datetime</a>
+and <a href="../docxx/CDB_SmallDateTime.html">smalldatetime</a>;
+<a href="../docxx/CDB_Text.html">text</a>
+and <a href="../docxx/CDB_Image.html">image</a>.
+All datatypes are derived from a single base class <a href="../docxx/CDB_Object.html">CDB_Object</a>.
 
 <a name="ref_SampleProgram"></a>
 <h2>
@@ -182,11 +183,11 @@ the error messages through the return codes, callbacks, handlers and/or
 exceptions. These messages could have a different formats. It could be
 just integer (error code) or some structure or a set of callback's arguments.
 The <i>NCBI DBAPI driver</i> intercepts all those error messages in all
-different formats and converts them into the objects of <a href="docxx/CDB_Exception.html">CDB_Exception</a>
+different formats and converts them into the objects of <a href="../docxx/CDB_Exception.html">CDB_Exception</a>
 derived types. The following types are used:
 <dl>
 <dt>
-<a href="docxx/CDB_SqlEx.html">CDB_SQLEx</a></dt>
+<a href="../docxx/CDB_SqlEx.html">CDB_SQLEx</a></dt>
 
 <dd>
 This type is used if error message has come from a SQL server and indicates
@@ -218,7 +219,7 @@ most of the time)</li>
 </ul>
 
 <dt>
-<a href="docxx/CDB_RPCEx.html">CDB_RPCEx</a></dt>
+<a href="../docxx/CDB_RPCEx.html">CDB_RPCEx</a></dt>
 
 <dd>
 An error message has come while RPC or stored procedure was executed on
@@ -245,7 +246,7 @@ a server. The methods to use:</dd>
 </ul>
 
 <dt>
-<a href="docxx/CDB_DeadlockEx.html">CDB_DeadlockEx</a></dt>
+<a href="../docxx/CDB_DeadlockEx.html">CDB_DeadlockEx</a></dt>
 
 <dd>
 To report about deadlock. The methods to use:</dd>
@@ -259,7 +260,7 @@ To report about deadlock. The methods to use:</dd>
 </ul>
 
 <dt>
-<a href="docxx/CDB_DSEx.html">CDB_DSEx</a></dt>
+<a href="../docxx/CDB_DSEx.html">CDB_DSEx</a></dt>
 
 <dd>
 Any error which has come from a RDBMS and is not a SQL query or RPC related.
@@ -280,7 +281,7 @@ The methods to use:</dd>
 </ul>
 
 <dt>
-<a href="docxx/CDB_TimeoutEx.html">CDB_TimeoutEx</a></dt>
+<a href="../docxx/CDB_TimeoutEx.html">CDB_TimeoutEx</a></dt>
 
 <dd>
 To report about timeout. The methods to use:</dd>
@@ -294,7 +295,7 @@ To report about timeout. The methods to use:</dd>
 </ul>
 
 <dt>
-<a href="docxx/CDB_ClientEx.html">CDB_ClientEx</a></dt>
+<a href="../docxx/CDB_ClientEx.html">CDB_ClientEx</a></dt>
 
 <dd>
 Any client side error. The methods to use:</dd>
@@ -316,7 +317,7 @@ the error</li>
 </dl>
 Driver uses two ways to deliver the error message object to an application.
 If it is possible to <b>throw</b> an exception, then driver throws the
-error message object. If not, then driver calls the <a href="docxx/CDB_UserHandler.html">user's
+error message object. If not, then driver calls the <a href="../docxx/CDB_UserHandler.html">user's
 error handler</a> with a pointer to this object as an argument. It's not
 always convenient to process all types of error messages in one error handler.
 Some users may want to use a special error message handler inside some
@@ -327,11 +328,11 @@ object first. If it knows how to deal with this message, then it processes
 the message and returns <b>true</b>. If handler wants to pass this message
 to the other handlers, then it returns <b>false</b>. So, driver pushing
 the error message object through the stack until it gets true from the
-handler. The <a href="docxx/CDB_UserHandler_Stream.html">default
+handler. The <a href="../docxx/CDB_UserHandler_Stream.html">default
 driver's error handler</a> which just printout the error message to stderr
 is always on a bottom of the stack. The another tool which user may want
-to use for error handling is the <a href="docxx/CDB_MultiEx.html">CDB_MultiEx</a>
-objects. This tool allows to collect the multiple <a href="docxx/CDB_Exception.html">CDB_Exception</a>
+to use for error handling is the <a href="../docxx/CDB_MultiEx.html">CDB_MultiEx</a>
+objects. This tool allows to collect the multiple <a href="../docxx/CDB_Exception.html">CDB_Exception</a>
 objects into one container and than <b>throw</b> this container as one
 object.
 
@@ -390,7 +391,7 @@ int main()
     }
 }</pre>
 The only way to get a connection to a server in <i>NCBI DBAPI driver</i>
-is through a <i>Connect()</i> method in <a href="docxx/I_DriverContext.html">driver
+is through a <i>Connect()</i> method in <a href="../docxx/I_DriverContext.html">driver
 context</a>. The first three arguments: server name, user name and password
 are obvious. Values for <i>mode</i> are constructed by a bitwise-inclusive-OR
 of flags defined in EConnectionMode. If <i>reusable</i> is <b>false</b>,
@@ -495,7 +496,7 @@ Fetch the row result and get a I_ITDescriptor for each column</li>
 Finish the results loop</li>
 
 <li>
-Use <i>SendData()</i> method or <a href="docxx/CDB_SendDataCmd.html">CDB_SendDataCmd</a>
+Use <i>SendData()</i> method or <a href="../docxx/CDB_SendDataCmd.html">CDB_SendDataCmd</a>
 object to populate the columns.</li>
 </ul>
 <b>Example</b>
@@ -555,7 +556,7 @@ Fetch the row result and get a I_ITDescriptor for each column</li>
 Finish the results loop</li>
 
 <li>
-Use <i>SendData()</i> method or <a href="docxx/CDB_SendDataCmd.html">CDB_SendDataCmd</a>
+Use <i>SendData()</i> method or <a href="../docxx/CDB_SendDataCmd.html">CDB_SendDataCmd</a>
 object to populate the columns.</li>
 </ul>
 <b>Example</b>
