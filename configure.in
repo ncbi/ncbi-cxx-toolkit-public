@@ -469,7 +469,7 @@ else
 fi
 
 
-#### Add "Release"/"Debug" and/or "MT" suffixes to "${exec_prefix}"
+#### Add "Release"/"Debug" and/or "MT", "DLL" suffixes to "${exec_prefix}"
 if test "$with_suffix" != "no" ; then
    if test "$with_debug" = "no" ; then
       exec_prefix="${exec_prefix}-Release"
@@ -478,6 +478,9 @@ if test "$with_suffix" != "no" ; then
    fi
    if test "$with_mt" = "yes" ; then
       exec_prefix="${exec_prefix}MT"
+   fi
+   if test "$with_dll" = "yes" ; then
+      exec_prefix="${exec_prefix}DLL"
    fi
 fi
 
