@@ -83,7 +83,9 @@ public:
 
     /// Obtain the diagnostics data that is requested from the PSSM engine
     /// Its results will be populated in the PssmWithParameters ASN.1 object
-    virtual const PSIDiagnosticsRequest* GetDiagnosticsRequest() = 0;
+    virtual const PSIDiagnosticsRequest* GetDiagnosticsRequest() {
+        return NULL;    // default is not requesting any diagnostics
+    }
 };
 
 END_SCOPE(blast)
@@ -93,6 +95,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2005/03/08 20:59:37  camacho
+ * IPssmInputData::GetDiagnosticsRequest() returns NULL by default
+ *
  * Revision 1.8  2005/02/10 16:10:27  dondosha
  * Use BLAST_DEFAULT_MATRIX macro instead of "BLOSUM62" when appropriate
  *
