@@ -74,8 +74,15 @@ public:
 
     virtual void Close();
     virtual const IResultSetMetaData* GetMetaData();
+
     virtual istream& GetBlobIStream(size_t buf_size);
+
     virtual ostream& GetBlobOStream(size_t blob_size, 
+                                    EAllowLog log_it,
+                                    size_t buf_size);
+
+    virtual ostream& GetBlobOStream(IConnection *conn,
+                                    size_t blob_size, 
                                     EAllowLog log_it,
                                     size_t buf_size);
 
@@ -135,6 +142,9 @@ private:
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.18  2004/11/16 19:59:46  kholodov
+* Added: GetBlobOStream() with explicit connection
+*
 * Revision 1.17  2004/07/21 18:43:58  kholodov
 * Added: separate row counter for resultsets
 *

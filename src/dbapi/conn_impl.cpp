@@ -93,6 +93,11 @@ void CConnection::ForceSingle(bool enable)
     m_forceSingle = enable;
 }
 
+CDB_Connection* 
+CConnection::GetCDB_Connection() {
+    return m_connection;
+}
+
 void CConnection::Connect(const string& user,
                           const string& password,
                           const string& server,
@@ -500,6 +505,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.36  2004/11/16 19:59:46  kholodov
+* Added: GetBlobOStream() with explicit connection
+*
 * Revision 1.35  2004/11/08 14:52:50  kholodov
 * Added: additional TRACE messages
 *

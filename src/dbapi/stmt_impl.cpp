@@ -190,7 +190,7 @@ bool CStatement::Failed()
 int CStatement::GetRowCount() 
 {
     int v;
-    if( (v = GetBaseCmd()->RowCount()) > 0 ) {
+    if( (v = GetBaseCmd()->RowCount()) >= 0 ) {
         m_rowCount = v;
     }
     return m_rowCount;
@@ -270,6 +270,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.26  2004/11/16 19:59:46  kholodov
+* Added: GetBlobOStream() with explicit connection
+*
 * Revision 1.25  2004/07/21 18:43:58  kholodov
 * Added: separate row counter for resultsets
 *

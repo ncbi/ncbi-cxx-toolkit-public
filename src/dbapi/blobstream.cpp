@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2004/11/16 19:59:46  kholodov
+* Added: GetBlobOStream() with explicit connection
+*
 * Revision 1.8  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *
@@ -81,8 +84,9 @@ CBlobOStream::CBlobOStream(CDB_Connection* connAux,
                            I_ITDescriptor* desc,
                            size_t datasize, 
                            streamsize bufsize,
-                           bool log_it)
-                           : ostream(new CByteStreamBuf(bufsize)), m_desc(desc), m_conn(connAux)
+                           bool log_it,
+                           bool destroyConn)
+    : ostream(new CByteStreamBuf(bufsize)), m_desc(desc), m_conn(connAux), m_destroyConn(destroyConn)
 {
     if( log_it ) {
         _TRACE("CBlobOStream::ctor(): Transaction log enabled");
@@ -113,7 +117,8 @@ CBlobOStream::~CBlobOStream()
 {
     delete rdbuf();
     delete m_desc;
-    delete m_conn;
+    if( m_destroyConn )
+        delete m_conn;
 }
 
 END_NCBI_SCOPE

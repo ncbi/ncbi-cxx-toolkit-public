@@ -95,20 +95,19 @@ public:
     virtual void Close();
 
 
-    CConnection* Clone();
-
-    CDB_Connection* GetCDB_Connection() {
-        return m_connection;
-    }
-
-    CDB_Connection* CloneCDB_Conn();
+    virtual CDB_Connection* GetCDB_Connection();
 
     virtual void SetDatabase(const string& name);
+
     virtual string GetDatabase();
 
     virtual bool IsAlive();
 
+    CConnection* Clone();
+
     void SetDbName(const string& name, CDB_Connection* conn = 0);
+
+    CDB_Connection* CloneCDB_Conn();
 
     bool IsAux() {
         return m_connCounter < 0;
@@ -158,6 +157,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.18  2004/11/16 19:59:46  kholodov
+* Added: GetBlobOStream() with explicit connection
+*
 * Revision 1.17  2004/11/08 14:52:50  kholodov
 * Added: additional TRACE messages
 *

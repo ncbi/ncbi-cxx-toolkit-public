@@ -33,6 +33,9 @@
 * File Description: stream implementation for reading and writing BLOBs
 *
 * $Log$
+* Revision 1.6  2004/11/16 19:59:46  kholodov
+* Added: GetBlobOStream() with explicit connection
+*
 * Revision 1.5  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *
@@ -76,7 +79,8 @@ public:
 	             I_ITDescriptor* desc,
                  size_t datasize, 
                  streamsize bufsize,
-                 bool log_it);
+                 bool log_it,
+                 bool destroyConn = false);
     
     CBlobOStream(CDB_CursorCmd* curCmd,
 	             unsigned int item_num,
@@ -89,6 +93,7 @@ public:
 private:
     I_ITDescriptor* m_desc;
     CDB_Connection* m_conn;
+    bool m_destroyConn;
 };
 
 //====================================================================

@@ -306,6 +306,38 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
                               desc,
                               blob_size,
                               buf_size,
+                              log_it == eEnableLog,
+                              true);
+    return *m_ostr;
+}
+
+ostream& CResultSet::GetBlobOStream(IConnection *conn, size_t blob_size, 
+                                    EAllowLog log_it,
+                                    size_t buf_size)
+{
+    // GetConnAux() returns pointer to pooled CDB_Connection.
+    // we need to delete it every time we request new one.
+    // The same with ITDescriptor
+    delete m_ostr;
+
+    // Call ReadItem(0, 0) before getting text/image descriptor
+    m_rs->ReadItem(0, 0);
+
+    
+    I_ITDescriptor* desc = m_rs->GetImageOrTextDescriptor();
+    if( desc == 0 ) {
+#ifdef _DEBUG
+        NcbiCerr << "CResultSet::GetBlobOStream(): zero IT Descriptor" << endl;
+        _ASSERT(0);
+#else
+        throw CDbapiException("CResultSet::GetBlobOStream(): Invalid IT Descriptor");
+#endif
+    }
+
+    m_ostr = new CBlobOStream(conn->GetCDB_Connection(),
+                              desc,
+                              blob_size,
+                              buf_size,
                               log_it == eEnableLog);
     return *m_ostr;
 }
@@ -388,6 +420,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.38  2004/11/16 19:59:46  kholodov
+* Added: GetBlobOStream() with explicit connection
+*
 * Revision 1.37  2004/10/25 21:39:27  kholodov
 * Fixed: moving to the next column if no data read
 *

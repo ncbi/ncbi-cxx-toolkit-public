@@ -120,6 +120,8 @@ public:
 ///
 ///  Used to retrieve a resultset from a query or cursor
 
+class IConnection;
+
 class NCBI_DBAPI_EXPORT IResultSet
 {
 public:
@@ -211,7 +213,8 @@ public:
     ///   buf_size is the size of internal buffer, default 1024.
     virtual istream& GetBlobIStream(size_t buf_size = 1024) = 0;
 
-    /// Get Blob output stream.
+    /// Get Blob output stream. The existing connection is
+    /// cloned for writing blob.
     ///
     /// @param blob_size
     ///   blob_size is the size of the BLOB to be written.
@@ -224,6 +227,22 @@ public:
                                     EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
 
+    /// Get Blob output stream with explicit additional connection.
+    ///
+    /// @param conn
+    ///   addtional connection used for writing blob (the above method
+    ///   clones the existing connection implicitly)    
+    /// @param blob_size
+    ///   blob_size is the size of the BLOB to be written.
+    /// @param log_it
+    ///    Enables transaction log for BLOB (enabled by default).
+    ///    Make sure you have enough log segment space, or disable it.
+    /// @param buf_size
+    ///   The size of internal buffer, default 1024.
+    virtual ostream& GetBlobOStream(IConnection *conn,
+                                    size_t blob_size, 
+                                    EAllowLog log_it = eEnableLog,
+                                    size_t buf_size = 1024) = 0;
     /// Get the Blob Reader.
     ///
     /// @param
@@ -717,6 +736,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/11/16 19:58:28  kholodov
+ * Added: GetBlobOStream() with explicit connection
+ *
  * Revision 1.33  2004/07/28 18:40:56  kholodov
  * Added: setting ownership for connection objects
  *
