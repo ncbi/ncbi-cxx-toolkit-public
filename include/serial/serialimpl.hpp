@@ -241,21 +241,21 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 { \
     typedef ClassName CClass; \
 	typedef BaseClassName CClass_Base; \
-    static InfoType* info = 0; \
-    volatile static bool info_ready = false; \
-    if ( !info_ready ) { \
+    static InfoType* volatile s_info = 0; \
+    InfoType* info = s_info; \
+    if ( !info ) { \
         CMutexGuard GUARD(GetTypeInfoMutex()); \
-        if ( info_ready ) { \
-            return info; \
-        } \
-        DECLARE_BASE_OBJECT(CClass); \
-        info = Code; \
-        NCBI_NS_NCBI::RegisterTypeInfoObject(info);
+        info = s_info; \
+        if ( !info ) { \
+            DECLARE_BASE_OBJECT(CClass); \
+            info = Code; \
+            NCBI_NS_NCBI::RegisterTypeInfoObject(info);
 #define BEGIN_TYPE_INFO(ClassName, Method, InfoType, Code) \
 	BEGIN_BASE_TYPE_INFO(ClassName, ClassName, Method, InfoType, Code)
     
 #define END_TYPE_INFO \
-        info_ready = true; \
+            s_info = info; \
+        } \
     } \
     return info; \
 }
@@ -438,17 +438,22 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 // enum definition macros
 #define BEGIN_ENUM_INFO_METHOD(MethodName, EnumAlias, EnumName, IsInteger) \
 const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
-{   static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = 0; \
-    volatile static bool info_ready = false; \
-    if ( !info_ready ) { \
+{ \
+    static NCBI_NS_NCBI::CEnumeratedTypeValues* volatile s_enumInfo = 0; \
+    NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = s_enumInfo; \
+    if ( !enumInfo ) { \
         CMutexGuard GUARD(GetTypeInfoMutex()); \
-        if ( info_ready ) { \
-            return enumInfo; \
+        enumInfo = s_enumInfo; \
+        if ( !enumInfo ) { \
+            enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \
+            NCBI_NS_NCBI::RegisterEnumTypeValuesObject(enumInfo); \
+            EnumName enumValue;
+#define END_ENUM_INFO_METHOD \
+            s_enumInfo = enumInfo; \
         } \
-        enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \
-        NCBI_NS_NCBI::RegisterEnumTypeValuesObject(enumInfo); \
-        EnumName enumValue;
-#define END_ENUM_INFO_METHOD info_ready = true; } return enumInfo; }
+    } \
+    return enumInfo; \
+}
 
 #define BEGIN_NAMED_ENUM_IN_INFO(EnumAlias, CppContext, EnumName, IsInteger) \
     BEGIN_ENUM_INFO_METHOD(CppContext ENUM_METHOD_NAME(EnumName), EnumAlias, EnumName, IsInteger)
