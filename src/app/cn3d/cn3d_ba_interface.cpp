@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/09/23 19:12:32  thiessen
+* add option to allow long gaps between frozen blocks
+*
 * Revision 1.16  2002/09/21 12:36:28  thiessen
 * add frozen block position validation; add select-other-by-distance
 *
@@ -156,7 +159,7 @@ public:
 private:
     IntegerSpinCtrl *iSingle, *iMultiple, *iExtend, *iSize;
     FloatingPointSpinCtrl *fpPercent, *fpLambda, *fpK;
-    wxCheckBox *cGlobal, *cMerge, *cAlignAll;
+    wxCheckBox *cGlobal, *cMerge, *cAlignAll, *cLongGaps;
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
@@ -176,6 +179,7 @@ BlockAligner::BlockAligner(void)
     currentOptions.globalAlignment = true;
     currentOptions.mergeAfterEachSequence = false;
     currentOptions.alignAllBlocks = true;
+    currentOptions.allowLongGaps = true;
 }
 
 static Int4 Round(double d)
@@ -324,7 +328,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     Int4 masterLength;
     BLAST_Score **thisScoreMat;
     Uint1Ptr masterSequence;
-    Int4 *allowedGaps;
+    Int4 *allowedGaps, *currentAllowedGaps;
     SeqIdPtr subject_id;
     SeqIdPtr query_id;
     Int4 bestFirstBlock, bestLastBlock;
@@ -372,6 +376,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     blockStarts = (Int4*) MemNew(sizeof(Int4) * masterLength);
     blockEnds = (Int4*) MemNew(sizeof(Int4) * masterLength);
     allowedGaps = (Int4*) MemNew(sizeof(Int4) * (numBlocks - 1));
+    currentAllowedGaps = (Int4*) MemNew(sizeof(Int4) * (numBlocks - 1));
     for (i=0, b=blocks->begin(); b!=be; i++, b++) {
         const Block::Range *range = (*b)->GetRangeOfRow(0);
         blockStarts[i] = range->from;
@@ -412,6 +417,8 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
                 ((*s)->alignTo + 1) : query->Length();
 
         // set frozen blocks
+        for (i=0; i<numBlocks-1; i++)
+            currentAllowedGaps[i] = allowedGaps[i];
         Boolean validFrozenBlocks = TRUE;
         if (currentOptions.alignAllBlocks) {
             for (i=0; i<numBlocks; i++) frozenBlocks[i] = -1;
@@ -419,7 +426,19 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             FreezeBlocks(multiple, *s, frozenBlocks);
             validFrozenBlocks = ValidateFrozenBlockPositions(frozenBlocks,
                 numBlocks, startQueryPosition, endQueryPosition,
-                blockStarts, blockEnds, allowedGaps);
+                blockStarts, blockEnds, currentAllowedGaps);
+
+            // if frozen block positions aren't valid as-is, try relaxing gap length restrictions
+            // between adjacent frozen blocks and see if that fixes it
+            if (!validFrozenBlocks && currentOptions.allowLongGaps) {
+                TESTMSG("trying to relax gap length restrictions between frozen blocks...");
+                for (i=0; i<numBlocks-1; i++)
+                    if (frozenBlocks[i] >= 0 && frozenBlocks[i+1] >= 0)
+                        currentAllowedGaps[i] = 1000000;
+                validFrozenBlocks = ValidateFrozenBlockPositions(frozenBlocks,
+                        numBlocks, startQueryPosition, endQueryPosition,
+                        blockStarts, blockEnds, currentAllowedGaps);
+            }
         }
 
         // actually do the block alignment
@@ -433,7 +452,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             sortAlignPieces(numBlocks);
             results = makeMultiPieceAlignments(convertedQuery, numBlocks,
                 queryLength, masterSequence, masterLength,
-                blockStarts, blockEnds, allowedGaps, scoreThresholdMultipleBlock,
+                blockStarts, blockEnds, currentAllowedGaps, scoreThresholdMultipleBlock,
                 subject_id, query_id, &bestFirstBlock, &bestLastBlock,
                 Lambda, K, searchSpaceSize, localAlignment);
         } else
@@ -509,6 +528,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     MemFree(blockStarts);
     MemFree(blockEnds);
     MemFree(allowedGaps);
+    MemFree(currentAllowedGaps);
     if (listOfSeqAligns) SeqAlignSetFree(listOfSeqAligns);
     MemFree(masterSequence);
     MemFree(frozenBlocks);
@@ -548,8 +568,9 @@ void BlockAligner::SetOptions(wxWindow* parent)
 #define ID_C_GLOBAL 10015
 #define ID_C_MERGE 10016
 #define ID_C_ALIGN_ALL 10017
-#define ID_B_OK 10018
-#define ID_B_CANCEL 10019
+#define ID_C_GAPS 10018
+#define ID_B_OK 10019
+#define ID_B_CANCEL 10020
 
 BEGIN_EVENT_TABLE(BlockAlignerOptionsDialog, wxDialog)
     EVT_BUTTON(-1,  BlockAlignerOptionsDialog::OnButton)
@@ -660,6 +681,13 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     item3->Add( cAlignAll, 0, wxALIGN_CENTRE|wxALL, 5 );
     item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
 
+    wxStaticText *item31 = new wxStaticText( panel, ID_TEXT, "Allow long gaps between frozen blocks:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item31, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    cLongGaps = new wxCheckBox( panel, ID_C_GAPS, "", wxDefaultPosition, wxDefaultSize, 0 );
+    cLongGaps->SetValue(init.allowLongGaps);
+    item3->Add( cLongGaps, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
+
     item1->Add( item3, 0, wxALIGN_CENTRE, 5 );
 
     item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
@@ -699,6 +727,7 @@ bool BlockAlignerOptionsDialog::GetValues(BlockAligner::BlockAlignerOptions *opt
     options->globalAlignment = cGlobal->IsChecked();
     options->mergeAfterEachSequence = cMerge->IsChecked();
     options->alignAllBlocks = cAlignAll->IsChecked();
+    options->allowLongGaps = cLongGaps->IsChecked();
     return (
         iSingle->GetInteger(&(options->singleBlockThreshold)) &&
         iMultiple->GetInteger(&(options->multipleBlockThreshold)) &&

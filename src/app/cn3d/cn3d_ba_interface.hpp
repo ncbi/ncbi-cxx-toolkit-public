@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/09/23 19:12:32  thiessen
+* add option to allow long gaps between frozen blocks
+*
 * Revision 1.5  2002/09/16 21:24:58  thiessen
 * add block freezing to block aligner
 *
@@ -90,6 +93,7 @@ public:
         bool globalAlignment;
         bool mergeAfterEachSequence;
         bool alignAllBlocks;
+        bool allowLongGaps;
     } BlockAlignerOptions;
 
 private:
