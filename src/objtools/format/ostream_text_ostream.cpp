@@ -66,22 +66,6 @@ void COStreamTextOStream::AddParagraph
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// TextOStreamFactory
-/*
-COStreamTextOStreamFactory::COStreamTextOStreamFactory(void) :
-    m_TextOStream(new COStreamTextOStream)
-{
-}
-
-
-COStreamTextOStreamFactory::COStreamTextOStreamFactory(CNcbiOstream& os) :
-    m_TextOStream(new COStreamTextOStream(os))
-{
-}
-*/
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -90,6 +74,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:59:35  shomrat
+* Removed unused code
+*
 * Revision 1.1  2003/12/17 20:23:45  shomrat
 * Initial Revision (adapted from flat lib)
 *
