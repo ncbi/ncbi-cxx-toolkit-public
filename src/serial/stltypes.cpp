@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/07/22 21:46:42  vasilche
+* Added SET OF implemented as vector<>.
+*
 * Revision 1.38  2003/05/08 15:57:28  grichenk
 * Declared static maps as CSafeStaticPtr<>-s
 *
@@ -210,6 +213,7 @@ static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_AutoPtr;
 static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_list;
 static CSafeStaticPtr<CTypeInfoMap> s_TypeMapSet_list;
 static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_vector;
+static CSafeStaticPtr<CTypeInfoMap> s_TypeMapSet_vector;
 static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_set;
 static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_multiset;
 
@@ -246,6 +250,11 @@ TTypeInfo CStlClassInfoUtil::GetSet_list(TTypeInfo arg, TTypeInfoCreator1 f)
 TTypeInfo CStlClassInfoUtil::Get_vector(TTypeInfo arg, TTypeInfoCreator1 f)
 {
     return s_TypeMap_vector->GetTypeInfo(arg, f);
+}
+
+TTypeInfo CStlClassInfoUtil::GetSet_vector(TTypeInfo arg, TTypeInfoCreator1 f)
+{
+    return s_TypeMapSet_vector->GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_set(TTypeInfo arg, TTypeInfoCreator1 f)

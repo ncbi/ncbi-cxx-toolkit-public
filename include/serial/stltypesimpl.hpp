@@ -57,6 +57,7 @@ public:
     static TTypeInfo Get_list(TTypeInfo arg, TTypeInfoCreator1 f);
     static TTypeInfo GetSet_list(TTypeInfo arg, TTypeInfoCreator1 f);
     static TTypeInfo Get_vector(TTypeInfo arg, TTypeInfoCreator1 f);
+    static TTypeInfo GetSet_vector(TTypeInfo arg, TTypeInfoCreator1 f);
     static TTypeInfo Get_set(TTypeInfo arg, TTypeInfoCreator1 f);
     static TTypeInfo Get_multiset(TTypeInfo arg, TTypeInfoCreator1 f);
     static TTypeInfo Get_map(TTypeInfo arg1, TTypeInfo arg2,
@@ -150,6 +151,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/07/22 21:47:04  vasilche
+* Added SET OF implemented as vector<>.
+*
 * Revision 1.6  2003/04/15 16:19:04  siyan
 * Added doxygen support
 *

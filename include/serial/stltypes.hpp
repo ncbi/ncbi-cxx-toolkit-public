@@ -506,12 +506,30 @@ public:
                 new CStlOneArgTemplate(sizeof(TObjectType), elementType,
                                        false);
 
+            SetFunctions(info);
+            return info;
+        }
+
+    static TTypeInfo GetSetTypeInfo(TTypeInfo elementType)
+        {
+            return CStlClassInfoUtil::GetSet_vector(elementType,
+                                                    &CreateSetTypeInfo);
+        }
+    static CTypeInfo* CreateSetTypeInfo(TTypeInfo elementType)
+        {
+            CStlOneArgTemplate* info =
+                new CStlOneArgTemplate(sizeof(TObjectType), elementType,
+                                       true);
+            SetFunctions(info);
+            return info;
+        }
+
+    static void SetFunctions(CStlOneArgTemplate* info)
+        {
             CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
             CStlClassInfoFunctions<TObjectType>::SetAddElementFunctions(info);
             CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
             CStlClassInfoFunctionsI<TObjectType>::SetIteratorFunctions(info);
-
-            return info;
         }
 };
 
@@ -644,6 +662,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/07/22 21:47:04  vasilche
+* Added SET OF implemented as vector<>.
+*
 * Revision 1.63  2003/04/15 16:19:03  siyan
 * Added doxygen support
 *

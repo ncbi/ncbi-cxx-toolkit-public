@@ -160,6 +160,11 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_REF_STL_vector(TypeMacro,TypeMacroArgs) \
     &NCBI_NS_NCBI::CStlClassInfo_vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
+#define SERIAL_TYPE_STL_vector_set(TypeMacro,TypeMacroArgs) \
+    NCBI_NS_STD::vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+#define SERIAL_REF_STL_vector_set(TypeMacro,TypeMacroArgs) \
+    &NCBI_NS_NCBI::CStlClassInfo_vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetSetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+
 #define SERIAL_TYPE_STL_CHAR_vector(CharType) NCBI_NS_STD::vector<CharType>
 #define SERIAL_REF_STL_CHAR_vector(CharType) \
     &NCBI_NS_NCBI::CStdTypeInfo< SERIAL_TYPE(STL_CHAR_vector)(CharType) >::GetTypeInfo
