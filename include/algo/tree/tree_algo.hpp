@@ -438,7 +438,7 @@ void TreeMakeParentsSet(const TNode& tree_node, TBackInsert back_ins)
 }
 
 
-/// Create set of all tree nodes (ids)
+/// Create set of all sub-nodes (recursively)
 /// 
 /// @param tree_node
 ///    root node
@@ -450,8 +450,29 @@ void TreeMakeSet(const TNode& tree_node, TBackInsert back_ins)
 {
     TNode* node = const_cast<TNode*>(&tree_node);
     CTreeIdToSetFunc<TNode, TBackInsert> func(back_ins);
-    TreeDepthFirstTraverse(node, func);
+    TreeDepthFirstTraverse(*node, func);
 }
+
+/// Create set of all immediate sub-nodes (one level down from the root)
+/// 
+/// @param tree_node
+///    root node
+/// @param back_ins
+///   Back insert iterator (represents set)
+///
+template<class TNode, class TBackInsert>
+void TreeMakeSubNodesSet(const TNode& tree_node, TBackInsert back_ins)
+{
+    typename TNode::TNodeList_CI it     = tree_node.SubNodeBegin();
+    typename TNode::TNodeList_CI it_end = tree_node.SubNodeEnd();
+
+    for(;it != it_end; ++it) {
+        const TNode* node = *it;
+        *back_ins = node->GetValue().GetId();
+        ++back_ins;
+    }
+}
+
 
 
 /// Functor to convert tree to a nodelist by the set pattern
@@ -538,6 +559,130 @@ public:
             }
 
         } // ITERATE
+    }
+
+};
+
+
+template<class TNode, class TSet, class TNodeList>
+class CTreeMinimalSet
+{
+public:
+    void operator()(const TNodeList& src_nlist,
+                    TNodeList&       dst_nlist)
+    {
+        TSet src_set;
+        TreeListToSet(src_nlist, src_set.inserter());
+
+        TSet child_set;
+        TSet tmp_set;
+
+        bool moved_up; // flag that group of nodes got substituted for parent
+
+        do {
+            moved_up = 
+                CheckNodeList(src_nlist, dst_nlist, 
+                              src_set,   tmp_set, child_set);
+
+            if (moved_up) {
+                moved_up =
+                 CheckNodeList(dst_nlist, dst_nlist, 
+                               src_set,   tmp_set, child_set);
+            }
+        } while (moved_up); // repeat while we can move nodes up
+
+        loop_restart:
+
+        // clean the destination node list from reduced parents
+        NON_CONST_ITERATE(typename TNodeList, it, dst_nlist) {
+            TNode* snode = *it;
+            unsigned id = snode->GetValue().GetId();
+
+            // check if node was excluded from the source set
+            bool b = src_set[id];
+            if (!b) {
+                dst_nlist.erase(it);
+                goto loop_restart;
+            }
+        }
+
+        // add non reduced source nodes to the destination list
+        ITERATE(typename TNodeList, it, src_nlist) {
+            TNode* snode = *it;
+            unsigned id = snode->GetValue().GetId();
+
+            bool b = src_set[id];
+            if (b) {
+                dst_nlist.push_back(snode);
+            }            
+        }
+
+    }
+protected:
+
+    bool CheckNodeList(const TNodeList& nlist, 
+                       TNodeList&       dst_nlist,
+                       TSet&            src_set,
+                       TSet&            tmp_set,
+                       TSet&            child_set)
+    {
+        TNodeList  tmp_nlist; // (to avoid problems when &nlist == &dst_nlist)
+
+        bool promo_flag = false;
+
+        ITERATE(typename TNodeList, it, nlist) {
+            TNode* snode = *it;
+
+            unsigned id = snode->GetValue().GetId();
+            TNode* parent = snode->GetParent();
+
+            // check if node was excluded from the source set
+            bool b = src_set[id];
+            if (!b || (parent == 0)) 
+                continue;
+
+            unsigned parent_id = parent->GetValue().GetId();
+
+            child_set.clear();
+            // Add immediate subnodes
+            TreeMakeSubNodesSet(*parent, child_set.inserter());
+            tmp_set = child_set;
+            tmp_set -= src_set;
+
+            if (tmp_set.none()) {  // we can move up to the parent
+
+                // Add ALL subordinate node, not just children
+                TreeMakeSet(*parent, child_set.inserter());
+
+                src_set -= child_set;
+                
+                bool parent_in = src_set[parent_id];
+
+                if (!parent_in) {
+                    src_set[parent_id] = true;
+                    //
+                    // precautionary measure: make sure we do not 
+                    // invalidate the source iterator 
+                    // (TNodeList can be a vector)
+                    //
+                    if (&nlist != &dst_nlist) {
+                        dst_nlist.push_back(parent);
+                    } else {
+                        tmp_nlist.push_back(parent);
+                    }
+                }
+                promo_flag = true;
+            }
+
+        } // ITERATE
+
+        // copy temp node list to the dst set
+        //
+        ITERATE(typename TNodeList, it, tmp_nlist) {
+            TNode* snode = *it;
+            dst_nlist.push_back(snode);
+        }
+        return promo_flag;
     }
 
 };
@@ -678,6 +823,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/04/22 13:52:09  kuznets
+ * + CTreeMinimalSet
+ *
  * Revision 1.4  2004/04/21 16:42:18  kuznets
  * + AND, OR operations on node lists
  *
