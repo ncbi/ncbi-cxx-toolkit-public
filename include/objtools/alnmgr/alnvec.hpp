@@ -55,8 +55,6 @@ public:
     typedef vector<int>                     TResidueCount;
 
     // constructor
-    CAlnVec(const CDense_seg& ds);
-    CAlnVec(const CDense_seg& ds, TNumrow anchor);
     CAlnVec(const CDense_seg& ds, CScope& scope);
     CAlnVec(const CDense_seg& ds, TNumrow anchor, CScope& scope);
 
@@ -162,13 +160,6 @@ private:
 inline
 CScope& CAlnVec::GetScope(void) const
 {
-    if (!m_Scope) {
-        NCBI_THROW(CAlnException, eInvalidRequest,
-                   "CAlnVec::GetScope(): "
-                   "AlnVec will no longer create a scope for you."
-                   "Please create one in advance and provide reference "
-                   "through CAlnVec constructor.");
-    }
     return *m_Scope;
 }
 
@@ -363,6 +354,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2003/12/22 19:14:13  todorov
+ * Only left constructors that accept CScope&
+ *
  * Revision 1.31  2003/12/22 18:30:38  todorov
  * ObjMgr is no longer created internally. Scope should be passed as a reference in the ctor
  *

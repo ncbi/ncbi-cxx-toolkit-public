@@ -55,22 +55,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-CAlnVec::CAlnVec(const CDense_seg& ds) 
-    : CAlnMap(ds),
-      m_set_GapChar(false),
-      m_set_EndChar(false)
-{
-}
-
-
-CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor)
-    : CAlnMap(ds, anchor),
-      m_set_GapChar(false),
-      m_set_EndChar(false)
-{
-}
-
-
 CAlnVec::CAlnVec(const CDense_seg& ds, CScope& scope) 
     : CAlnMap(ds),
       m_Scope(&scope),
@@ -850,6 +834,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2003/12/22 19:14:12  todorov
+* Only left constructors that accept CScope&
+*
 * Revision 1.56  2003/12/22 18:30:37  todorov
 * ObjMgr is no longer created internally. Scope should be passed as a reference in the ctor
 *
