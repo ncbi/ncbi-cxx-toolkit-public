@@ -310,7 +310,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'D':                               return eAcc_ddbj_patent;
             case 'E': case 'F': case 'G': case 'I':
             case 'M': case 'Q': case 'U':           return eAcc_gb_est;
-            case 'H':                               return eAcc_gb_gss;
+            case 'H': case 'Z':                     return eAcc_gb_gss;
             case 'K': case 'L':                     return eAcc_gb_tpa_nuc;
             case 'N':                               return eAcc_embl_tpa_nuc;
             case 'R':                               return eAcc_ddbj_tpa_nuc;
@@ -819,6 +819,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.35  2002/10/03 16:03:00  ucko
+ * +BZ (eAcc_gb_gss)
+ *
  * Revision 6.34  2002/09/23 16:43:46  ucko
  * Change check for absence of '|' to use string::find.
  *
