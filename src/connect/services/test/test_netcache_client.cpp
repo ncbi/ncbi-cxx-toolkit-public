@@ -100,6 +100,7 @@ bool s_CheckExists(const string&  host,
     } 
     catch (CNetCacheException&)
     {
+        throw;
         return false;
     }
 
@@ -398,6 +399,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/11/09 19:08:28  kuznets
+ * Correct test for BLOB not found
+ *
  * Revision 1.12  2004/11/02 17:30:56  kuznets
  * +test for extraction host name and port from the key
  *
