@@ -159,8 +159,7 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
     BlastEffectiveLengthsParameters* eff_len_params);
 
 /** Initializes the substitution matrix in the BlastScoreBlk according to the
- * scoring options specified. Also calculates the ideal Karlin-Altschul
- * parameters. 
+ * scoring options specified.
  * @todo Should be moved to blast_stat.c in the future.
  * @param program_number Used to set fields on sbp [in]
  * @param scoring_options Scoring_options [in]
@@ -212,6 +211,9 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
 /*
  *
 * $Log$
+* Revision 1.49  2004/12/09 21:16:26  camacho
+* Removed inaccurate comment for Blast_ScoreBlkMatrixInit
+*
 * Revision 1.48  2004/12/09 15:21:32  dondosha
 * Renamed some functions dealing with BlastScoreBlk and Blast_KarlinBlk structures
 *
