@@ -1,4 +1,4 @@
--- $Id: docsum.asn,v 1.42 2004/05/27 18:15:35 kholodov Exp $
+-- $Id: docsum.asn,v 1.43 2004/08/09 20:42:18 kholodov Exp $
 
 NSE DEFINITIONS ::=
 BEGIN
@@ -322,7 +322,8 @@ NSE-rsContigHit ::= SEQUENCE {		-- data from SNPContigLoc, ContigInfo tables, & 
 	locations SET OF NSE-rsMaploc,		-- set of all valid locations for variation on contig
 	accession VisibleString OPTIONAL,	-- Accession number of the contig
 	version INTEGER OPTIONAL,		-- version number of the contig	
-	chromosome VisibleString OPTIONAL	-- Chromosome number
+	chromosome VisibleString OPTIONAL,	-- Chromosome number
+	assembly VisibleString OPTIONAL     -- Genomic assembly
 }
 	
 
@@ -480,6 +481,9 @@ NSE-Date-std ::= SEQUENCE {        		-- NOTE: this is NOT a unix tm struct
 END
 
 -- $Log: docsum.asn,v $
+-- Revision 1.43  2004/08/09 20:42:18  kholodov
+-- Added: assembly field
+--
 -- Revision 1.42  2004/05/27 18:15:35  kholodov
 -- Modified: allele info moved to popinfo structure
 --
