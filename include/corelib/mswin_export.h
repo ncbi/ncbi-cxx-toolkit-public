@@ -84,6 +84,9 @@
  * Definitions for NCBI_SEQ.DLL
  */
 #ifdef NCBI_SEQ_EXPORTS
+#  define NCBI_BLAST_EXPORTS
+#  define NCBI_ID1_EXPORTS
+#  define NCBI_SCOREMAT_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
 #  define NCBI_SEQBLOCK_EXPORTS
 #  define NCBI_SEQCODE_EXPORTS
@@ -99,10 +102,7 @@
  * Definitions for NCBI_SEQEXT.DLL
  */
 #ifdef NCBI_SEQEXT_EXPORTS
-#  define NCBI_BLAST_EXPORTS
-#  define NCBI_ID1_EXPORTS
 #  define NCBI_FLAT_EXPORTS
-#  define NCBI_SCOREMAT_EXPORTS
 #  define NCBI_XALNMGR_EXPORTS
 #  define NCBI_XOBJMGR_EXPORTS
 #  define NCBI_XOBJREAD_EXPORTS
@@ -773,6 +773,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.28  2003/06/27 19:00:08  dicuccio
+ * Moved BLAST, scoremat, and ID1 from ncbi_seq.dll to ncbi_seqext.dll
+ *
  * Revision 1.27  2003/06/04 17:05:35  ucko
  * +NCBI_XOBJREAD_EXPORT(S), under NCBI_SEQEXT_EXPORTS.
  *
