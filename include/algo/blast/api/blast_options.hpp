@@ -50,7 +50,6 @@ class CBlastGapAlignTest;
 class CBlastTraceBackTest; 
 class CScoreBlkTest; 
 class CRPSTest; 
-class CBlastRedoAlignmentTest; 
 class CBlastEngineTest;
 class CBlastSetupTest;
 
@@ -387,7 +386,6 @@ private:
     friend class ::CBlastTraceBackTest;    // unit test class
     friend class ::CScoreBlkTest;          // unit test class
     friend class ::CRPSTest;               // unit test class
-    friend class ::CBlastRedoAlignmentTest;// unit test class
     friend class ::CBlastSetupTest;        // unit test class
     friend class ::CBlastEngineTest;       // unit test class
 };
@@ -403,6 +401,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.91  2005/03/31 20:45:49  camacho
+* Remove friend declaration for CBlastRedoAlignmentTest
+*
 * Revision 1.90  2005/03/31 13:43:49  camacho
 * BLAST options API clean-up
 *
