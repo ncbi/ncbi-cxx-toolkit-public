@@ -112,17 +112,22 @@ void CNetCache_GenerateBlobKey(string*        key,
 class NCBI_XCONNECT_EXPORT CNetCacheClient
 {
 public:
+    /// Construct the client without linking it to any particular
+    /// server. Actual server (host and port) will be extracted from the
+    /// BLOB key 
     CNetCacheClient(const string&  client_name = kEmptyStr);
 
+    /// Construct client, working with the specified server (host and port)
     CNetCacheClient(const string&  host,
                     unsigned short port,
                     const string&  client_name = kEmptyStr);
 
     /// Construction.
     /// @param sock
-    ///    Connected socket to the server
+    ///    Connected socket to the primary server. CNetCacheCleint does not take 
+    ///    socket ownership.
     /// @param client_name
-    ///    Identification name of connecting client
+    ///    Identification name of the connecting client
     CNetCacheClient(CSocket*      sock,
                     const string& client_name = kEmptyStr);
 
@@ -154,6 +159,8 @@ public:
     ///
     /// @param key
     ///    BLOB key to read (returned by PutData)
+    /// @param blob_size
+    ///    Size of the BLOB
     /// @return
     ///    IReader* (caller must delete this). 
     ///    When NULL BLOB was not found (expired).
@@ -199,6 +206,14 @@ protected:
     void CreateSocket(const string& hostname,
                       unsigned      port);
 
+    /// If client is not already connected to the primary server it 
+    /// tries to connect to the server specified in the BLOB key
+    /// (all infomation is encoded in there)
+    void CheckConnect(const string key);
+private:
+    CNetCacheClient(const CNetCacheClient&);
+    CNetCacheClient& operator=(const CNetCacheClient&);
+
 private:
     CSocket*       m_Sock;
     string         m_Host;
@@ -214,6 +229,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/02 17:29:55  kuznets
+ * Implemented reconnection mode and no-default server mode
+ *
  * Revision 1.10  2004/11/01 16:02:17  kuznets
  * GetData now returns BLOB size
  *

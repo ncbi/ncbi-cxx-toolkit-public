@@ -134,7 +134,7 @@ void CNetCache_GenerateBlobKey(string*        key,
 
 CNetCacheClient::CNetCacheClient(const string&  client_name)
     : m_Sock(0),
-      m_OwnSocket(eTakeOwnership),
+      m_OwnSocket(eNoOwnership),
       m_ClientName(client_name)
 {
 }
@@ -146,18 +146,10 @@ CNetCacheClient::CNetCacheClient(const string&  host,
     : m_Sock(0),
       m_Host(host),
       m_Port(port),
-      m_OwnSocket(eTakeOwnership),
+      m_OwnSocket(eNoOwnership),
       m_ClientName(client_name)
 {
-    CreateSocket(m_Host, m_Port);
-}
-
-void CNetCacheClient::CreateSocket(const string& hostname,
-                                   unsigned      port)
-{
-    m_Sock = new CSocket(hostname, port);
-    m_Sock->DisableOSSendDelay();
-    m_OwnSocket = eTakeOwnership;
+    //CreateSocket(m_Host, m_Port);
 }
 
 
@@ -182,9 +174,48 @@ CNetCacheClient::CNetCacheClient(CSocket*      sock,
 
 CNetCacheClient::~CNetCacheClient()
 {
-    if (m_OwnSocket) {
+    if (m_OwnSocket == eTakeOwnership) {
         delete m_Sock;
     }
+}
+
+
+
+
+void CNetCacheClient::CreateSocket(const string& hostname,
+                                   unsigned      port)
+{
+    if (m_OwnSocket == eTakeOwnership) {
+        delete m_Sock;
+    }
+    m_Sock = new CSocket(hostname, port);
+    m_Sock->DisableOSSendDelay();
+    m_OwnSocket = eTakeOwnership;
+}
+
+void CNetCacheClient::CheckConnect(const string key)
+{
+    if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
+        return; // we are connected, nothing to do
+    }
+
+    // not connected
+
+    if (!m_Host.empty()) { // we can restore connection
+        CreateSocket(m_Host, m_Port);
+        return;
+    }
+
+    // no primary host information
+
+    if (key.empty()) {
+        NCBI_THROW(CNetCacheException, eCommunicationError,
+           "Cannot establish connection with a server. Unknown host name.");
+    }
+
+    CNetCache_Key blob_key;
+    CNetCache_ParseBlobKey(&blob_key, key);
+    CreateSocket(blob_key.hostname, blob_key.port);
 }
 
 
@@ -201,6 +232,7 @@ void s_WaitForServer(CSocket& sock)
     }
 }        
 
+
 string CNetCacheClient::PutData(const void*  buf,
                                 size_t       size,
                                 unsigned int time_to_live)
@@ -213,6 +245,8 @@ string  CNetCacheClient::PutData(const string& key,
                                  size_t        size,
                                  unsigned int  time_to_live)
 {
+    CheckConnect(key);
+
     string blob_id;
     string request;
     
@@ -315,6 +349,8 @@ void CNetCacheClient::SendClientName()
 
 void CNetCacheClient::Remove(const string& key)
 {
+    CheckConnect(key);
+
     string request;
     
     const char* client = 
@@ -329,6 +365,8 @@ void CNetCacheClient::Remove(const string& key)
 
 IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
 {
+    CheckConnect(key);
+
     string request;
     
     const char* client = 
@@ -482,6 +520,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/11/02 17:30:15  kuznets
+ * Implemented reconnection mode and no-default server mode
+ *
  * Revision 1.16  2004/11/02 13:51:42  kuznets
  * Improved diagnostics
  *
