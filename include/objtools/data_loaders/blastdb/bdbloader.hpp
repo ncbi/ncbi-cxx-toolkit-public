@@ -35,7 +35,7 @@
 */
 
 #include <objmgr/data_loader.hpp>
-#include <readdb.h>
+#include <objtools/readers/seqdb/seqdb.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -97,9 +97,7 @@ private:
 
     const string m_dbname;      ///< blast database name
     EDbType m_dbtype;           ///< is this database protein or nucleotide?
-    ReadDBFILEPtr m_rdfp;       ///< blast database handle
-    CFastMutex *m_mutex;        ///< mutex to access the blast database
-
+    CRef<CSeqDB> m_seqdb;
     typedef map<int, CRef<CBioseq> > TOid2Bioseq;
     TOid2Bioseq m_cache;
 };
@@ -130,6 +128,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.10  2004/10/05 16:44:33  jianye
+ * Use CSeqDB
+ *
  * Revision 1.9  2004/08/10 16:56:10  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *
