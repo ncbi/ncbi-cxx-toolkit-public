@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/09/24 20:35:34  lavr
+ * +Test for SERV_Reset()
+ *
  * Revision 6.7  2001/07/18 17:44:18  lavr
  * Added parameter to switch to local test
  *
@@ -81,9 +84,12 @@ int main(int argc, const char* argv[])
             CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
             n_found++;
         }
+        SERV_Reset(iter);
+        if (n_found && !(info = SERV_GetNextInfo(iter)))
+            CORE_LOG(eLOG_Fatal, "Service not found after reset");
         SERV_Close(iter);
     }
-    
+
     if (n_found != 0)
         CORE_LOGF(eLOG_Note, ("Test complete: %d server(s) found", n_found));
     else
