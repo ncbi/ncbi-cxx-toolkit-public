@@ -37,6 +37,8 @@
 #include <objects/ncbimime/Biostruc_seq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/mmdb1/Biostruc_id.hpp>
+#include <objects/mmdb1/Mmdb_id.hpp>
 
 // for file/directory manipulation stuff
 #ifdef __WXMSW__
@@ -137,7 +139,7 @@ static bool GetStructureFromCacheFolder(int mmdbID, EModel_type modelType,
     return true;
 }
 
-static bool GetStructureViaHTTPAndAddToCache(int mmdbID, EModel_type modelType,
+static bool GetStructureViaHTTPAndAddToCache(const string& uid, int mmdbID, EModel_type modelType,
     CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
 {
     bool gotStructure = false;
@@ -145,7 +147,10 @@ static bool GetStructureViaHTTPAndAddToCache(int mmdbID, EModel_type modelType,
     // construct URL
     static const wxString host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
     wxString args;
-    args.Printf("uid=%i&form=6&db=t&save=Save&dopt=j&Complexity=", mmdbID);
+    if (mmdbID > 0)
+        args.Printf("uid=%i&form=6&db=t&save=Save&dopt=j&Complexity=", mmdbID);
+    else    // assume PDB id
+        args.Printf("uid=%s&form=6&db=t&save=Save&dopt=j&Complexity=", uid.c_str());
     switch (modelType) {
         case eModel_type_ncbi_all_atom: args += "Cn3D%20Subset"; break;
         case eModel_type_pdb_model: args += "All%20Models"; break;
@@ -160,10 +165,21 @@ static bool GetStructureViaHTTPAndAddToCache(int mmdbID, EModel_type modelType,
     CNcbi_mime_asn1 mime;
     gotStructure = (GetAsnDataViaHTTP(host.c_str(), path.c_str(), args.c_str(), &mime, &err) &&
         ExtractBiostrucAndBioseqs(mime, biostruc, sequences));
-    if (!gotStructure)
-        WARNINGMSG("Failed to read structure from network\nreason: " << err);
 
-    if (gotStructure) {
+    if (!gotStructure) {
+        ERRORMSG("Failed to read structure from network\nreason: " << err);
+
+    } else {
+        // get MMDB ID from biostruc if not already known
+        if (mmdbID == 0) {
+            if (biostruc->GetId().front()->IsMmdb_id())
+                mmdbID = biostruc->GetId().front()->GetMmdb_id().Get();
+            else {
+                ERRORMSG("Can't get MMDB ID from Biostruc!");
+                return true;
+            }
+        }
+
         bool cacheEnabled;
         if (RegistryGetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, &cacheEnabled) && cacheEnabled) {
             // add to cache
@@ -184,19 +200,35 @@ static bool GetStructureViaHTTPAndAddToCache(int mmdbID, EModel_type modelType,
     return gotStructure;
 }
 
-bool LoadStructureViaCache(int mmdbID, ncbi::objects::EModel_type modelType,
+bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType,
     CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
 {
     bool gotStructure = false;
 
-    // try loading from local cache folder first, if cache enabled in registry
+    // determine whether this is an integer MMDB ID or alphanumeric PDB ID
+    int mmdbID = 0;
+    if (uid.size() == 4 && (isalpha(uid[1]) || isalpha(uid[2]) || isalpha(uid[3]))) {
+        TRACEMSG("Fetching PDB " << uid);
+    } else {    // mmdb id
+        unsigned long tmp;
+        if (wxString(uid.c_str()).ToULong(&tmp)) {
+            mmdbID = (int) tmp;
+        } else {
+            ERRORMSG("LoadStructureViaCache() - invalid uid " << uid);
+            return false;
+        }
+        TRACEMSG("Fetching MMDB " << mmdbID);
+    }
+
+    // try loading from local cache folder first, if cache enabled in registry (but only with known mmdb id)
     bool cacheEnabled;
-    if (RegistryGetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, &cacheEnabled) && cacheEnabled)
+    if (mmdbID > 0 &&
+            RegistryGetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, &cacheEnabled) && cacheEnabled)
         gotStructure = GetStructureFromCacheFolder(mmdbID, modelType, biostruc, sequences);
 
     // otherwise, load via HTTP (and save in cache folder)
     if (!gotStructure)
-        gotStructure = GetStructureViaHTTPAndAddToCache(mmdbID, modelType, biostruc, sequences);
+        gotStructure = GetStructureViaHTTPAndAddToCache(uid, mmdbID, modelType, biostruc, sequences);
 
     return gotStructure;
 }
@@ -262,6 +294,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/04/02 17:49:18  thiessen
+* allow pdb id's in structure import dialog
+*
 * Revision 1.10  2003/02/03 19:20:02  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -174,8 +174,9 @@ bool StructureSet::LoadMaster(int masterMMDBID)
     }
     if (masterMMDBID != MoleculeIdentifier::VALUE_NOT_SET && objects.size() == 0) {
         CRef < CBiostruc > biostruc;
-        if (LoadStructureViaCache(masterMMDBID,
-                dataManager->GetBiostrucModelType(), biostruc, NULL))
+        wxString id;
+        id.Printf("%i", masterMMDBID);
+        if (LoadStructureViaCache(id.c_str(), dataManager->GetBiostrucModelType(), biostruc, NULL))
             objects.push_back(new StructureObject(this, *biostruc, true));
     }
     return (objects.size() > 0);
@@ -468,7 +469,9 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
 
                     // if not in list, load Biostruc via HTTP/cache
                     if (biostruc.Empty()) {
-                        if (!LoadStructureViaCache((*l)->slave->identifier->mmdbID,
+                        wxString id;
+                        id.Printf("%i", (*l)->slave->identifier->mmdbID);
+                        if (!LoadStructureViaCache(id.c_str(),
                                 dataManager->GetBiostrucModelType(), biostruc, NULL)) {
                             ERRORMSG("Failed to load MMDB #" << (*l)->slave->identifier->mmdbID);
                             continue;
@@ -1457,6 +1460,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.130  2003/04/02 17:49:18  thiessen
+* allow pdb id's in structure import dialog
+*
 * Revision 1.129  2003/02/05 14:55:22  thiessen
 * always load single structure even if structureLimit == 0
 *

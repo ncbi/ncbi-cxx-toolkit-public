@@ -36,6 +36,7 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <string>
 #include <list>
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
@@ -59,7 +60,8 @@ BEGIN_SCOPE(Cn3D)
 
 typedef std::list < ncbi::CRef < ncbi::objects::CBioseq > > BioseqRefList;
 
-bool LoadStructureViaCache(int mmdbID, ncbi::objects::EModel_type modelType,
+// uid can either be an integer MMDB ID or a 4-character PDB ID
+bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType,
     ncbi::CRef < ncbi::objects::CBiostruc >& biostruc, BioseqRefList *sequences);
 
 // utility function for mimes
@@ -77,6 +79,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/04/02 17:49:18  thiessen
+* allow pdb id's in structure import dialog
+*
 * Revision 1.4  2003/02/03 19:20:02  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

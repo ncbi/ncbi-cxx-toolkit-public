@@ -611,20 +611,16 @@ void UpdateViewer::ImportStructure(void)
         N_CHOICES, choiceStrings, *viewerWindow);
     if (importFrom < 0) return;     // cancelled
 
-    int mmdbID;
     CRef < CBiostruc > biostruc;
     BioseqRefList bioseqs;
 
     if (importFrom == FROM_NETWORK) {
-        wxString id = wxGetTextFromUser("Enter an MMDB ID:", "Input Identifier", "", *viewerWindow);
-        unsigned long idL;
-        if (id.size() == 0 || !id.ToULong(&idL)) return;
-        mmdbID = (int) idL;
+        wxString id = wxGetTextFromUser("Enter a PDB or MMDB ID:", "Input Identifier", "", *viewerWindow);
         biostruc.Reset(new CBiostruc());
-        if (!LoadStructureViaCache(mmdbID,
+        if (!LoadStructureViaCache(id.c_str(),
                 (master->parentSet->isAlphaOnly ? eModel_type_ncbi_backbone : eModel_type_ncbi_all_atom),
                 biostruc, &bioseqs)) {
-            ERRORMSG("Failed to load MMDB #" << mmdbID);
+            ERRORMSG("Failed to load structure " << id);
             return;
         }
     }
@@ -655,13 +651,14 @@ void UpdateViewer::ImportStructure(void)
         }
 
         ExtractBiostrucAndBioseqs(*mime, biostruc, &bioseqs);
-
-        if (biostruc->GetId().size() == 0 || !biostruc->GetId().front()->IsMmdb_id()) {
-            ERRORMSG("Can't get MMDB ID from loaded structure");
-            return;
-        }
-        mmdbID = biostruc->GetId().front()->GetMmdb_id().Get();
     }
+
+    int mmdbID;
+    if (biostruc->GetId().size() == 0 || !biostruc->GetId().front()->IsMmdb_id()) {
+        ERRORMSG("Can't get MMDB ID from loaded structure");
+        return;
+    }
+    mmdbID = biostruc->GetId().front()->GetMmdb_id().Get();
 
     // make sure Biostruc is of correct type
     if (biostruc->GetModel().size() != 1 ||
@@ -699,6 +696,7 @@ void UpdateViewer::ImportStructure(void)
         // get gi
         if ((*m)->IsSetSeq_id() && (*m)->GetSeq_id().IsGi())
             gi = (*m)->GetSeq_id().GetGi();
+
 
         // add protein to list
         if (isProtein && name && gi > 0) {
@@ -811,7 +809,8 @@ void UpdateViewer::ImportStructure(void)
             (const_cast<MoleculeIdentifier*>((*w)->identifier))->mmdbID = mmdbID;
         } else {
             if ((*w)->identifier->mmdbID != mmdbID)
-                ERRORMSG("MMDB ID mismatch in sequence " << (*w)->identifier->ToString());
+                ERRORMSG("MMDB ID mismatch in sequence " << (*w)->identifier->ToString()
+                    << "; " << (*w)->identifier->mmdbID << " vs " << mmdbID);
         }
         if (moleculeIDs.find((*w)->identifier->gi) != moleculeIDs.end()) {
             if ((*w)->identifier->moleculeID == MoleculeIdentifier::VALUE_NOT_SET) {
@@ -1168,6 +1167,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/04/02 17:49:18  thiessen
+* allow pdb id's in structure import dialog
+*
 * Revision 1.60  2003/03/14 19:57:07  thiessen
 * adjust wxStringTokenizer mode
 *
