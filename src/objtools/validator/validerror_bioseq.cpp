@@ -559,10 +559,11 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
         ValidateSeqParts(seq);
     }
     
-    if ( seq.IsAa() ) {
-        // Validate protein title (amino acids only)
+    x_ValidateTitle(seq);
+    /*if ( seq.IsAa() ) {
+         Validate protein title (amino acids only)
         ValidateProteinTitle(seq);
-    }
+    }*/
     
     if ( seq.IsNa() ) {
         // check for N bases at start or stop of sequence
@@ -1280,22 +1281,51 @@ void CValidError_bioseq::ValidateSeqParts(const CBioseq& seq)
 }
 
 
-// Assumes seq is an amino acid sequence
-void CValidError_bioseq::ValidateProteinTitle(const CBioseq& seq)
+void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
 {
-    const CSeq_id* id = seq.GetFirstId();
-    if (!id) {
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if (!bsh) {
         return;
     }
 
-    CBioseq_Handle hnd = m_Scope->GetBioseqHandle(*id);
-    string title_no_recon = GetTitle(hnd);
-    string title_recon = GetTitle(hnd, fGetTitle_Reconstruct);
-    if ( title_no_recon != title_recon ) {
-        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
-            "Instantiated protein title does not match automatically "
-            "generated title. Instantiated: " + title_no_recon + 
-            " Generated: " + title_recon, seq);
+    CMolInfo::TTech tech = CMolInfo::eTech_unknown;
+    CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo);
+    if (desc) {
+        const CMolInfo& mi = desc->GetMolinfo();
+        tech = mi.GetTech();
+        if (mi.GetCompleteness() != CMolInfo::eCompleteness_complete) {
+            if (m_Imp.IsGenbank()) {
+                string title = GetTitle(bsh);
+                if (NStr::Find(title, "complete genome") != NPOS) {
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteTitleProblem,
+                        "Complete genome in title without complete flag set",
+                        seq);
+                }
+            }
+            if (bsh.GetInst_Topology() == CSeq_inst::eTopology_circular) {
+                PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteCircleProblem,
+                    "Circular topology without complete flag set", seq);
+            }
+        }
+    }
+
+    // specific test for proteins
+    if (seq.IsAa()) {
+        CSeqdesc_CI desc(bsh, CSeqdesc::e_Title);
+        if (desc) {
+            CSeq_entry_Handle entry =
+                bsh.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+            if (entry) {
+                const string& instantiated = desc->GetTitle();
+                string generated = GetTitle(bsh, fGetTitle_Reconstruct);
+                if (!NStr::EqualNocase(instantiated, generated)) {
+                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
+                        "Instantiated protein title does not match automatically "
+                        "generated title. Instantiated: " + instantiated + 
+                        " Generated: " + generated, seq);
+                }
+            }
+        }
     }
 }
 
@@ -3732,6 +3762,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.84  2004/08/09 14:55:40  shomrat
+* Added title validation
+*
 * Revision 1.83  2004/07/29 17:11:37  shomrat
 * Added test for transgenic problem
 *
