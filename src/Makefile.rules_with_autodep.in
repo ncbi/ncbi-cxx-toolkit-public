@@ -14,22 +14,19 @@ include $(builddir)/Makefile.rules
 
 ### Dependencies (GNU make only)
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
+	 | sed -e 's%[^ :][^ :]*%$$(wildcard &)%g' \
+	       -e 's%\$$(wildcard $*@obj_ext@) *:%$*@obj_ext@ $@ :%g' > $@_ \
+	  &&  test -s $@_  &&  mv -f $@_ $@
+
 %.d: ./%.cpp
-	$(CXX_WRAPPER) $(CXX) $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
-	test -s $@.tmp  &&  mv -f $@.tmp $@
+	$(CXX_WRAPPER) $(CXX) $(D_TAIL)
 %.d: $(srcdir)/%.cpp
-	$(CXX_WRAPPER) $(CXX) $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
-	test -s $@.tmp  &&  mv -f $@.tmp $@
+	$(CXX_WRAPPER) $(CXX) $(D_TAIL)
 %.d: ./%.c
-	$(CC_WRAPPER) $(CC)  $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
-	test -s $@.tmp  &&  mv -f $@.tmp $@
+	$(CC_WRAPPER) $(CC)   $(D_TAIL)
 %.d: $(srcdir)/%.c
-	$(CC_WRAPPER) $(CC)  $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
-	test -s $@.tmp  &&  mv -f $@.tmp $@
+	$(CC_WRAPPER) $(CC)   $(D_TAIL)
 
 
 ifeq ($(MAKECMDGOALS),clean)
