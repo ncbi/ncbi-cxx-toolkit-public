@@ -673,6 +673,8 @@ ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
 
    /* In case of no traceback, return without doing anything */
    if (!hsp_list->traceback_done && gapped_calculation) {
+      if (hsp_list->hspcnt > 1)
+         status = BlastSortUniqHspArray(hsp_list);
       return status;
    }
 
