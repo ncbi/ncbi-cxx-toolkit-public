@@ -39,6 +39,12 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Tag delimiters
+const char* kTagStart    = "<@";   ///< Tag start.
+const char* kTagEnd      = "@>";   ///< Tag end.
+const char* kTagStartEnd = "</@";  ///< Tag start in the end of
+                                   ///< block definition.
+
 #define CHECK_STREAM_WRITE(out)                                               \
     if ( !out ) {                                                             \
         int x_errno = errno;                                                  \
@@ -384,12 +390,7 @@ void CHTMLText::SetText(const string& text)
     m_Name = text;
 }
 
-static const char* KTagStart      = "<@";
-static SIZE_TYPE   KTagStart_size = 2;
-static const char* KTagEnd        = "@>";
-static SIZE_TYPE   KTagEnd_size   = 2;
 
-inline
 static SIZE_TYPE s_Find(const string& s, const char* target,
                         SIZE_TYPE start = 0)
 {
@@ -421,16 +422,19 @@ CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
 CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     const string& text = GetText();
-    SIZE_TYPE tagStart = s_Find(text, KTagStart);
+    SIZE_TYPE tagStart = s_Find(text, kTagStart);
     if ( tagStart == NPOS ) {
         return x_PrintBegin(out, mode, text);
     }
 
+    SIZE_TYPE tag_start_size = strlen(kTagStart);
+    SIZE_TYPE tag_end_size   = strlen(kTagEnd);
+
     x_PrintBegin(out, mode, text.substr(0, tagStart));
     SIZE_TYPE last = tagStart;
     do {
-        SIZE_TYPE tagNameStart = tagStart + KTagStart_size;
-        SIZE_TYPE tagNameEnd = s_Find(text, KTagEnd, tagNameStart);
+        SIZE_TYPE tagNameStart = tagStart + tag_start_size;
+        SIZE_TYPE tagNameEnd = s_Find(text, kTagEnd, tagNameStart);
         if ( tagNameEnd == NPOS ) {
             // tag not closed
             NCBI_THROW(CHTMLException, eTextUnclosedTag, "tag not closed");
@@ -441,14 +445,21 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
                 x_PrintBegin(out, mode, text.substr(last, tagStart - last));
             }
 
-            CNodeRef tag = MapTagAll(text.substr(tagNameStart,
-                                                 tagNameEnd - tagNameStart),
-                                     mode);
-            if ( tag ) {
-                tag->Print(out, mode);
+            string name = text.substr(tagNameStart,tagNameEnd-tagNameStart);
+            // Resolve and repeat tag
+            for (;;) {
+                CNodeRef tag = MapTagAll(name, mode);
+                if ( tag ) {
+                    tag->Print(out, mode);
+                    if ( tag->NeedRepeatTag() ) {
+                        RepeatTag(false);
+                        continue;
+                    }
+                }
+                break;
             }
-            last = tagNameEnd + KTagEnd_size;
-            tagStart = s_Find(text, KTagStart, last);
+            last = tagNameEnd + tag_end_size;
+            tagStart = s_Find(text, kTagStart, last);
         }
     } while ( tagStart != NPOS );
 
@@ -959,14 +970,14 @@ CNcbiOstream& CHTML_tr::PrintChildren(CNcbiOstream& out, TMode mode)
     return out;
 }
 
-size_t CHTML_tr::GetTextLength(TMode mode)
+SIZE_TYPE CHTML_tr::GetTextLength(TMode mode)
 {
     if ( !HaveChildren() ) {
         return 0;
     }
 
     CNcbiOstrstream sout;
-    size_t cols = 0;
+    SIZE_TYPE cols = 0;
 
     NON_CONST_ITERATE ( TChildren, i, Children() ) {
         Node(i)->Print(sout, mode);
@@ -974,7 +985,7 @@ size_t CHTML_tr::GetTextLength(TMode mode)
     }
     sout.put('\0');
 
-    size_t textlen = strlen(sout.str());
+    SIZE_TYPE textlen = strlen(sout.str());
     if ( mode == ePlainText ) {
         textlen += m_Parent->m_ColSepL.length() +
             m_Parent->m_ColSepR.length();
@@ -1365,7 +1376,8 @@ CHTML_table_Cache& CHTML_table::GetCache(void) const
 {
     CHTML_table_Cache* cache = m_Cache.get();
     if ( !cache ) {
-        m_Cache.reset(cache = new CHTML_table_Cache(const_cast<CHTML_table*>(this)));
+        m_Cache.reset(cache =
+                      new CHTML_table_Cache(const_cast<CHTML_table*>(this)));
     }
     return *cache;
 }
@@ -1433,10 +1445,11 @@ CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
         out << CHTMLHelper::GetNL();
         CHECK_STREAM_WRITE(out);
         if ( m_IsRowSep == ePrintRowSep ) {
-            size_t seplen = 0;
+            SIZE_TYPE seplen = 0;
             // Find length of first non-empty row
             NON_CONST_ITERATE ( TChildren, i, Children() ) {
-                if ( (seplen = dynamic_cast<CHTML_tr*>(&**i)->GetTextLength(mode)) > 0 ) {
+                if ( (seplen =
+                      dynamic_cast<CHTML_tr*>(&**i)->GetTextLength(mode)) >0) {
                     break;
                 }
             }
@@ -1708,7 +1721,8 @@ CHTML_radio::CHTML_radio(const string& name, const string& value)
     SetAttribute("value", value);
 }
 
-CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, const string& description)
+CHTML_radio::CHTML_radio(const string& name, const string& value,
+                         bool checked, const string& description)
     : CParent(sm_InputType, name)
 {
     SetAttribute("value", value);
@@ -1858,7 +1872,8 @@ CHTML_text::CHTML_text(const string& name, int size, const string& value)
     SetOptionalAttribute("value", value);
 }
 
-CHTML_text::CHTML_text(const string& name, int size, int maxlength, const string& value)
+CHTML_text::CHTML_text(const string& name, int size, int maxlength,
+                       const string& value)
     : CParent(sm_InputType, name)
 {
     SetSize(size);
@@ -2284,6 +2299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.96  2004/02/02 14:30:24  ivanov
+ * CHTMLText::PrintBegin - added repeat tag support. Some cosmetic changes.
+ *
  * Revision 1.95  2004/01/30 14:03:50  lavr
  * Print last errno along with "write failure" message
  *
