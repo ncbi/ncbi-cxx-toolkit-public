@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2004/11/15 19:13:17  shomrat
+ * Fixed label generation
+ *
  * Revision 6.4  2004/09/29 13:57:10  shomrat
  * Fixed call to GetLabelContent
  *
@@ -132,14 +135,16 @@ void CCit_art::GetLabel(string* label, bool unique) const
     case CCit_art::C_From::e_Book:
         book = &GetFrom().GetBook();
         imprint = &book->GetImp();
-        authors = &book->GetAuthors();
-        title = &book->GetTitle();
+        if (!authors) {
+            authors = &book->GetAuthors();
+        }
         break;
     case CCit_art::C_From::e_Proc:
         book = &GetFrom().GetProc().GetBook();
         imprint = &book->GetImp();
-        authors = &book->GetAuthors();
-        title = &book->GetTitle();
+        if (!authors) {
+            authors = &book->GetAuthors();
+        }
     default:
         break;
     }
