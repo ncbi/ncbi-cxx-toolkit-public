@@ -1,0 +1,2 @@
+LIB = ncbimime
+SRC = ncbimime__ ncbimime___

@@ -1,0 +1,2 @@
+LIB = tinyseq
+SRC = tinyseq__ tinyseq___

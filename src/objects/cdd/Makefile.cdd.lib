@@ -1,0 +1,2 @@
+LIB = cdd
+SRC = cdd__ cdd___

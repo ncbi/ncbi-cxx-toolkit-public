@@ -1,0 +1,2 @@
+LIB = featdef
+SRC = featdef__ featdef___

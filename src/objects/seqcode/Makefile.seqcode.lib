@@ -1,0 +1,2 @@
+LIB = seqcode
+SRC = seqcode__ seqcode___

@@ -1,0 +1,2 @@
+LIB = seqset
+SRC = seqset__ seqset___

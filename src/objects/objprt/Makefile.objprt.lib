@@ -1,0 +1,2 @@
+LIB = objprt
+SRC = objprt__ objprt___
