@@ -319,7 +319,7 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menuBar->Append(menu, "&Help");
 
     // accelerators for special keys
-    wxAcceleratorEntry entries[10];
+    wxAcceleratorEntry entries[11];
     entries[0].Set(wxACCEL_NORMAL, WXK_RIGHT, MID_NEXT_FRAME);
     entries[1].Set(wxACCEL_NORMAL, WXK_LEFT, MID_PREV_FRAME);
     entries[2].Set(wxACCEL_NORMAL, WXK_DOWN, MID_FIRST_FRAME);
@@ -330,7 +330,8 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     entries[7].Set(wxACCEL_NORMAL, 'p', MID_PLAY);
     entries[8].Set(wxACCEL_NORMAL, 'n', MID_SPIN);
     entries[9].Set(wxACCEL_NORMAL, 's', MID_STOP);
-    wxAcceleratorTable accel(10, entries);
+    entries[10].Set(wxACCEL_NORMAL, 'e', MID_SHOW_ALL);
+    wxAcceleratorTable accel(11, entries);
     SetAcceleratorTable(accel);
 
     SetMenuBar(menuBar);
@@ -1409,6 +1410,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/05/05 22:47:18  thiessen
+* add e = show-everything shortcut
+*
 * Revision 1.7  2003/03/20 20:33:51  thiessen
 * implement Highlight command
 *
