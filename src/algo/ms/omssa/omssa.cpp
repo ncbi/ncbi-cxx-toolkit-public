@@ -650,17 +650,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			// return peak where theoretical mass is < precursor mass + tol
             for(im = PeakSet.SetIntervalTree().IntervalsContaining(OldMass); im; ++im )
             {
-                // im.GetValue();
-                //const ncbi::CConstRef<ncbi::CObject>& myref = im.GetValue();
                 MassPeak = static_cast <const TMassPeak *> (im.GetValue().GetPointerOrNull());
 
-#if 0
-			MassPeak = PeakSet.GetIndexLo(OldMass);
-					
-			for(;MassPeak < PeakSet.GetEndMassPeak() && 
-				OldMass > MassPeak->Mass - MassPeak->Peptol;
-			    MassPeak++) {
-#endif
 			    Peaks = MassPeak->Peak;
 			    // make sure we look thru other mod masks with the same mass
 			    NoMassMatch = false;
@@ -685,7 +676,6 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 						
 						
 			    if(!LadderCalc[iMod]) {
-				LadderCalc[iMod] = true;	
 				if(CreateLadders(Sequence, iSearch, position,
 						 endposition,
 						 Masses,
@@ -701,6 +691,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
                          ForwardIon,
                          BackwardIon
                          ) != 0) continue;
+				LadderCalc[iMod] = true;	
 				// continue to next sequence if ladders not successfully made
 			    }
 			    else {
@@ -1243,6 +1234,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.34  2004/12/20 20:24:16  lewisg
+fix uncalc ladder bug, cleanup
+
 Revision 1.33  2004/12/07 23:38:22  lewisg
 add modification handling code
 

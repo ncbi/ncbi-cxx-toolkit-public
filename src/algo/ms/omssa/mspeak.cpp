@@ -316,13 +316,6 @@ bool CMSPeak::AddHit(CMSHit& in, CMSHit *& out)
     }
 }
 
-#if 0
-void CMSPeak::AddTotalMass(int massin, int tolin)
-{
-    TotalMass = massin;
-    tol = tolin;
-}
-#endif
 
 void CMSPeak::Sort(int Which)
 {
@@ -1004,16 +997,7 @@ CMSPeakSet::~CMSPeakSet()
 	PeakSet.pop_front();
     }
 }
-#if 0
-// compares m/z.  Lower m/z first in sort.
-struct CMassPeakCompareHi {
-    bool operator() (TMassPeak x, TMassPeak y)
-    {
-	if(x.Mass + x.Peptol < y.Mass + y.Peptol) return true;
-	return false;
-    }
-};
-#endif
+
 void CMSPeakSet::SortPeaks(int Peptol)
 {
     int iCharges;
@@ -1038,12 +1022,6 @@ void CMSPeakSet::SortPeaks(int Peptol)
     	    // correction for incorrect charge determination.
     	    // see 12/13/02 notebook, pg. 135
     	    ptol = Peaks->GetCharges()[iCharges] * Peptol;
-#if 0
-    	    CalcMass = static_cast <int> ((Peaks->GetMass() +
-    					   Peaks->GetCharge()*kProton*MSSCALE) * 
-    					  Peaks->GetCharges()[iCharges]/(double)(Peaks->GetCharge()) - 
-    					  Peaks->GetCharges()[iCharges]*kProton*MSSCALE);
-#endif
             CalcMass = static_cast <int> (Peaks->GetPrecursormz() * Peaks->GetCharges()[iCharges] -
                                           Peaks->GetCharges()[iCharges]*kProton*MSSCALE);
             temp = new TMassPeak;
@@ -1060,46 +1038,5 @@ void CMSPeakSet::SortPeaks(int Peptol)
     } 
 
 
-#if 0
-    // then create static array
-
-    ArraySize = MassMap.size();
-    MassPeak.reset(new TMassPeak[ArraySize]);
-
-    TMassPeakMap::iterator iMassMap;
-    int i(0);
-    for(iMassMap = MassMap.begin(); iMassMap != MassMap.end(); iMassMap++, i++) {
-    	GetMassPeak(i).Mass =
-     iMassMap->second.Mass;
-    	GetMassPeak(i).Peptol = iMassMap->second.Peptol;
-    	GetMassPeak(i).Peak = iMassMap->second.Peak;
-    	GetMassPeak(i).Charge = iMassMap->second.Charge;
-    }
-
-    MassMap.clear();
-#endif
 }
 
-#if 0
-
-// Get the first index into the sorted array where the mass
-// + tolerance is >= the given calculated mass. 
-TMassPeak *CMSPeakSet::GetIndexLo(int Mass)
-{
-    TMassPeak temp;
-    TMassPeak *retval;
-    temp.Mass = Mass;
-    temp.Peptol = 0;
-    // look for first spectrum whose upper mass value + tolerance exceeds calculated mass
-    retval = lower_bound(MassPeak.get(), MassPeak.get() + ArraySize, temp, 
-			 CMassPeakCompareHi());
-    return retval;
-}
-
-// get peak for sorted list by index into list
-CMSPeak *CMSPeakSet::GetPeak(int Index)
-{
-    if(Index < 0 || Index >= ArraySize) return 0;
-    return GetMassPeak(Index).Peak;
-}
-#endif

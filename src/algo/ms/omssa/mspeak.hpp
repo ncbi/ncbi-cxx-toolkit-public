@@ -283,7 +283,6 @@ CMSHit::CMSHit(int StartIn, int StopIn, int IndexIn, int MassIn, int HitsIn,
 inline 
 CMSHit::~CMSHit() 
 { 
-    //    delete [] HitInfo; 
 }
 
 inline 
@@ -514,13 +513,11 @@ private:
 public:
     ~CMSPeak(void);
 	
-//    void AddTotalMass(int massin, int tolin);
     void Sort(int Which = MSORIGINAL);
 	
     // Read a spectrum set into a CMSPeak
     int Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale);
     // Write out a CMSPeak in dta format (useful for debugging)
-//    enum EFileType { eDTA, eASC, ePKL, ePKS, eSCIEX, eUnknown };
     void Write(std::ostream& FileOut, EFileType FileType = eDTA, int Which = MSORIGINAL);
 
     // functions used in SmartCull
@@ -641,13 +638,10 @@ public:
 
 
     // getter-setters
-//    int GetMass(void);
     // get precursor m/z
     int GetPrecursormz(void);
     // gets a calculated neutral mass
     int CalcPrecursorMass(int PrecursorCharge);
-    // get charge that came from input file
-//    int GetCharge(void);
 	// gets min precursor charge to consider multiply charged product ions
 	int GetConsiderMult(void);  
     EMSHitError GetError(void);
@@ -679,9 +673,7 @@ private:
     bool Sorted[MSNUMDATA]; // have the CMZI been sorted?
     bool *Match;    // is a peak matched or not?
     CMZI ** IntensitySort;  // points to CMZI original, sorted.
-//    int TotalMass;  // neutral mass
     int Precursormz;
-//    int Charge;    // Charge from input file
     int Charges[MSMAXCHARGE];  // Computed allowed charges
     int NumCharges;  // array size of Charges[]
     int tol;        // error tolerance of peptide
@@ -752,12 +744,6 @@ inline int& CMSPeak::SetPeptidesExamined(int ChargeIn)
     return PeptidesExamined[ChargeIn - Charges[0]];
 }
 
-#if 0
-inline int CMSPeak::GetMass(void) 
-{ 
-    return TotalMass; 
-}
-#endif
 
 inline int CMSPeak::GetPrecursormz(void)
 {
@@ -769,13 +755,6 @@ inline int CMSPeak::CalcPrecursorMass(int PrecursorCharge)
     return Precursormz * PrecursorCharge - PrecursorCharge * kProton * MSSCALE;
 }
 
-#if 0
-// get charge that came from input file
-inline int CMSPeak::GetCharge(void) 
-{ 
-    return Charge; 
-}
-#endif
 
 inline
 int CMSPeak::GetConsiderMult(void)  
@@ -871,9 +850,6 @@ public:
 
 typedef _MassPeak TMassPeak;
 
-//typedef AutoPtr <TMassPeak, ArrayDeleter<TMassPeak> > TAPMassPeak;
-
-//typedef multimap <int, TMassPeak *> TMassPeakMap;
 
 // range type for peptide mass +/- some tolerance
 typedef CRange<TSignedSeqPos> TMassRange;
@@ -891,25 +867,11 @@ public:
 		   int Peptol  // the precursor mass tolerance
 		   );
 
-//    int GetArraySize(void);
-    // Get the first index into the sorted array where the mass
-    // is >= the given mass.  Remember to subtract the tolerance and
-    // check for out of bounds
-
-//    TMassPeak *GetIndexLo(int Mass);
-    // get peak for sorted list by index into list
-
-//    CMSPeak *GetPeak(int Index);  
-//    TMassPeak *GetEndMassPeak(void); 
-    // get a particular MassPeak
-//    TMassPeak& GetMassPeak(int i);
     TPeakSet& GetPeaks(void);
     CIntervalTree& SetIntervalTree(void);
 
 private:
     TPeakSet PeakSet;  // peak list for deletion
-//    TAPMassPeak MassPeak; // array of neutral masses
-//    int ArraySize;  // size of above array
     CIntervalTree MassIntervals;
 };
 
@@ -922,22 +884,6 @@ inline void CMSPeakSet::AddPeak(CMSPeak *PeakIn)
 { 
     PeakSet.push_back(PeakIn); 
 }
-#if 0
-inline int CMSPeakSet::GetArraySize(void) 
-{ 
-    return ArraySize; 
-}
-
-inline TMassPeak * CMSPeakSet::GetEndMassPeak(void) 
-{ 
-    return MassPeak.get()+ArraySize; 
-}
-
-inline TMassPeak& CMSPeakSet::GetMassPeak(int i) 
-{ 
-    return *(MassPeak.get()+i); 
-}
-#endif
 
 inline
 CIntervalTree& CMSPeakSet::SetIntervalTree(void)
@@ -961,6 +907,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.24  2004/12/20 20:24:16  lewisg
+  fix uncalc ladder bug, cleanup
+
   Revision 1.23  2004/12/06 23:35:16  lewisg
   get rid of file charge
 
