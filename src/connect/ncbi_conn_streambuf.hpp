@@ -40,6 +40,9 @@
 #ifdef NCBI_COMPILER_MIPSPRO
 #  include <util/stream_utils.hpp>
 #  define CConn_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
+#elif defined(NCBI_COMPILER_GCC) && defined(NO_PUBSYNC)
+#  include <util/stream_utils.hpp>
+#  define CConn_StreambufBase CGCC_ShowmanycStreambuf
 #else
 #  if defined(NCBI_COMPILER_WORKSHOP) && defined(_MT)
 #    ifdef HAVE_IOS_XALLOC
@@ -94,6 +97,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2003/12/18 03:45:06  ucko
+ * Add CGCC_ShowmanycStreambuf as a layer between streambuf and
+ * CConn_Streambuf for the benefit of Readsome.
+ *
  * Revision 6.25  2003/11/12 17:45:38  lavr
  * Minor rearrangement
  *
