@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/08/15 19:42:39  ivanov
+* Added test for use method AddMenuItem( node, ...)
+*
 * Revision 1.2  2001/08/14 17:02:00  ivanov
 * Changed tests for popup menu in connection with change means init menu.
 * Added second test for use menu in HTML templates.
@@ -91,16 +94,31 @@ static void Test_Html(void)
 
     body->AppendChild(m2);
 
+    // Create menu with HTML items
+    CHTMLPopupMenu* m3 = new CHTMLPopupMenu("Menu3");
+
+    m3->AddItem("<b>Bold item</b>");
+    m3->AddItem("<img src='someimage.gif'> Image item");
+
+    CHTML_a* anchor = new CHTML_a("some link...", "Link item");
+    m3->AddItem(*anchor);
+
+    body->AppendChild(m3);
+
     // Add menus call
     CHTML_a* anchor1 = new CHTML_a("javascript:" + m1->ShowMenu(),
                                    "Color Menu");
     body->AppendChild(anchor1);
-
     body->AppendChild(new CHTML_p(""));
 
     CHTML_a* anchor2 = new CHTML_a("javascript:" + m2->ShowMenu(), "URL Menu");
     anchor2->SetEventHandler(eHTML_EH_MouseOver, m2->ShowMenu());
     body->AppendChild(anchor2);
+    body->AppendChild(new CHTML_p(""));
+
+    CHTML_a* anchor3 = new CHTML_a("javascript:" + m3->ShowMenu(),
+                                   "HTML Menu");
+    body->AppendChild(anchor3);
 
     // Enable using popup menus (we can skip call this function)
     // html->EnablePopupMenu();
