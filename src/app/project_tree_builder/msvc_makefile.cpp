@@ -210,6 +210,7 @@ string CreateMsvcProjectMakefileName(const CProjItem& project)
 CMsvcProjectMakefile::CMsvcProjectMakefile(const string& file_path)
     :CMsvcMetaMakefile(file_path)
 {
+    CDirEntry::SplitPath(file_path, &m_ProjectBaseDir);
 }
 
 
@@ -321,8 +322,186 @@ void CMsvcProjectMakefile::GetResourceFiles(const SConfigInfo& config,
 
 
 //-----------------------------------------------------------------------------
-string GetCompilerOpt(const CMsvcMetaMakefile&    meta_file, 
-                      const CMsvcProjectMakefile& project_file,
+CMsvcProjectRuleMakefile::CMsvcProjectRuleMakefile(const string& file_path)
+    :CMsvcProjectMakefile(file_path)
+{
+}
+
+
+int CMsvcProjectRuleMakefile::GetRulePriority(const SConfigInfo& config) const
+{
+    string priority_string = 
+        GetOpt(m_MakeFile, "Rule", "Priority", config);
+    
+    if ( priority_string.empty() )
+        return 0;
+
+    return NStr::StringToInt(priority_string);
+}
+
+
+//-----------------------------------------------------------------------------
+static string s_CreateRuleMakefileFilename(CProjItem::TProjType project_type,
+                                           const string& requires)
+{
+    string name = "Makefile." + requires;
+    switch (project_type) {
+    case CProjKey::eApp:
+        name += ".app";
+        break;
+    case CProjKey::eLib:
+        name += ".lib";
+        break;
+    case CProjKey::eDll:
+        name += ".dll";
+        break;
+    }
+    return name + ".msvc";
+}
+
+CMsvcCombinedProjectMakefile::CMsvcCombinedProjectMakefile
+                              (CProjItem::TProjType        project_type,
+                               const CMsvcProjectMakefile* project_makefile,
+                               const string&               rules_basedir,
+                               const list<string>          requires_list)
+    :m_ProjectMakefile(project_makefile)
+{
+    ITERATE(list<string>, p, requires_list) {
+        const string& requires = *p;
+        string rule_path = rules_basedir;
+        rule_path = 
+            CDirEntry::ConcatPath(rule_path, 
+                                  s_CreateRuleMakefileFilename(project_type, requires));
+        
+        TRule rule(new CMsvcProjectRuleMakefile(rule_path));
+        if ( !rule->IsEmpty() )
+            m_Rules.push_back(rule);
+    }
+}
+
+
+#define IMPLEMENT_COMBINED_MAKEFILE_OPT(X)  \
+string CMsvcCombinedProjectMakefile::##X(const string&       opt,             \
+                                         const SConfigInfo&  config) const    \
+{                                                                             \
+    string prj_val = m_ProjectMakefile->##X(opt, config);                     \
+    if ( !prj_val.empty() )                                                   \
+        return prj_val;                                                       \
+    string val;                                                               \
+    int priority = 0;                                                         \
+    ITERATE(TRules, p, m_Rules) {                                             \
+        const TRule& rule = *p;                                               \
+        string rule_val = rule->##X(opt, config);                             \
+        if ( !rule_val.empty() && priority < rule->GetRulePriority(config)) { \
+            val      = rule_val;                                              \
+            priority = rule->GetRulePriority(config);                         \
+        }                                                                     \
+    }                                                                         \
+    return val;                                                               \
+}                                                                          
+
+
+IMPLEMENT_COMBINED_MAKEFILE_OPT(GetCompilerOpt)
+IMPLEMENT_COMBINED_MAKEFILE_OPT(GetLinkerOpt)
+IMPLEMENT_COMBINED_MAKEFILE_OPT(GetLibrarianOpt)
+IMPLEMENT_COMBINED_MAKEFILE_OPT(GetResourceCompilerOpt)
+
+bool CMsvcCombinedProjectMakefile::IsExcludeProject(bool default_val) const
+{
+    return m_ProjectMakefile->IsExcludeProject(default_val);
+}
+
+
+static void s_ConvertRelativePaths(const string&       rule_base_dir,
+                                   const list<string>& rules_paths_list,
+                                   const string&       project_base_dir,
+                                   list<string>*       project_paths_list)
+{
+    project_paths_list->clear();
+    ITERATE(list<string>, p, rules_paths_list) {
+        const string& rules_path = *p;
+        string rules_abs_path = 
+            CDirEntry::ConcatPath(rule_base_dir, rules_path);
+        string project_path = 
+            CDirEntry::CreateRelativePath(project_base_dir, rules_abs_path);
+        project_paths_list->push_back(project_path);
+    }
+}
+
+
+#define IMPLEMENT_COMBINED_MAKEFILE_VALUES(X)  \
+void CMsvcCombinedProjectMakefile::##X(const SConfigInfo& config,             \
+                                       list<string>*      values_list) const  \
+{                                                                             \
+    list<string> prj_val;                                                     \
+    m_ProjectMakefile->##X(config, &prj_val);                                 \
+    if ( !prj_val.empty() ) {                                                 \
+        *values_list = prj_val;                                               \
+        return;                                                               \
+    }                                                                         \
+    list<string> val;                                                         \
+    int priority = 0;                                                         \
+    ITERATE(TRules, p, m_Rules) {                                             \
+        const TRule& rule = *p;                                               \
+        list<string> rule_val;                                                \
+        rule->##X(config, &rule_val);                                         \
+        if ( !rule_val.empty() && priority < rule->GetRulePriority(config)) { \
+            val      = rule_val;                                              \
+            priority = rule->GetRulePriority(config);                         \
+        }                                                                     \
+    }                                                                         \
+    *values_list = val;                                                       \
+}
+
+
+#define IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(X)  \
+void CMsvcCombinedProjectMakefile::##X(const SConfigInfo& config,             \
+                                       list<string>*      values_list) const  \
+{                                                                             \
+    list<string> prj_val;                                                     \
+    m_ProjectMakefile->##X(config, &prj_val);                                 \
+    if ( !prj_val.empty() ) {                                                 \
+        *values_list = prj_val;                                               \
+        return;                                                               \
+    }                                                                         \
+    list<string> val;                                                         \
+    int priority = 0;                                                         \
+    string rule_base_dir;                                                     \
+    ITERATE(TRules, p, m_Rules) {                                             \
+        const TRule& rule = *p;                                               \
+        list<string> rule_val;                                                \
+        rule->##X(config, &rule_val);                                         \
+        if ( !rule_val.empty() && priority < rule->GetRulePriority(config)) { \
+            val      = rule_val;                                              \
+            priority = rule->GetRulePriority(config);                         \
+            rule_base_dir = rule->m_ProjectBaseDir;                           \
+        }                                                                     \
+    }                                                                         \
+    s_ConvertRelativePaths(rule_base_dir,                                     \
+                           val,                                               \
+                           m_ProjectMakefile->m_ProjectBaseDir,               \
+                           values_list);                                      \
+}
+
+
+IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetAdditionalSourceFiles)                                                                          
+IMPLEMENT_COMBINED_MAKEFILE_VALUES   (GetAdditionalLIB)
+IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetExcludedSourceFiles)
+IMPLEMENT_COMBINED_MAKEFILE_VALUES   (GetExcludedLIB)
+IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetAdditionalIncludeDirs)
+IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetResourceFiles)
+
+
+void CMsvcCombinedProjectMakefile::GetCustomBuildInfo
+                                           (list<SCustomBuildInfo>* info) const
+{
+    m_ProjectMakefile->GetCustomBuildInfo(info);
+}
+
+
+//-----------------------------------------------------------------------------
+string GetCompilerOpt(const IMsvcMetaMakefile&    meta_file, 
+                      const IMsvcMetaMakefile& project_file,
                       const string&               opt,
                       const SConfigInfo&          config)
 {
@@ -334,10 +513,10 @@ string GetCompilerOpt(const CMsvcMetaMakefile&    meta_file,
 }
 
 
-string GetLinkerOpt(const CMsvcMetaMakefile&    meta_file, 
-                    const CMsvcProjectMakefile& project_file,
-                    const string&               opt,
-                    const SConfigInfo&          config)
+string GetLinkerOpt(const IMsvcMetaMakefile& meta_file, 
+                    const IMsvcMetaMakefile& project_file,
+                    const string&            opt,
+                    const SConfigInfo&       config)
 {
    string val = project_file.GetLinkerOpt(opt, config);
    if ( !val.empty() )
@@ -347,10 +526,10 @@ string GetLinkerOpt(const CMsvcMetaMakefile&    meta_file,
 }
 
 
-string GetLibrarianOpt(const CMsvcMetaMakefile&    meta_file, 
-                       const CMsvcProjectMakefile& project_file,
-                       const string&               opt,
-                       const SConfigInfo&          config)
+string GetLibrarianOpt(const IMsvcMetaMakefile& meta_file, 
+                       const IMsvcMetaMakefile& project_file,
+                       const string&            opt,
+                       const SConfigInfo&       config)
 {
    string val = project_file.GetLibrarianOpt(opt, config);
    if ( !val.empty() )
@@ -359,10 +538,10 @@ string GetLibrarianOpt(const CMsvcMetaMakefile&    meta_file,
    return meta_file.GetLibrarianOpt(opt, config);
 }
 
-string GetResourceCompilerOpt(const CMsvcMetaMakefile&    meta_file, 
-                              const CMsvcProjectMakefile& project_file,
-                              const string&               opt,
-                              const SConfigInfo&          config)
+string GetResourceCompilerOpt(const IMsvcMetaMakefile& meta_file, 
+                              const IMsvcMetaMakefile& project_file,
+                              const string&            opt,
+                              const SConfigInfo&       config)
 {
    string val = project_file.GetResourceCompilerOpt(opt, config);
    if ( !val.empty() )
@@ -376,6 +555,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/06/07 13:50:29  gorelenk
+ * Added implementation of classes
+ * CMsvcProjectRuleMakefile and CMsvcCombinedProjectMakefile.
+ *
  * Revision 1.13  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
