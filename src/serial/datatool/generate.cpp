@@ -433,7 +433,7 @@ void CCodeGenerator::GenerateClientCode(void)
         list<string> l;
         // if multiple items, may have whitespace, commas, or both...
         NStr::Split(clients, ", \t", l);
-        iterate (list<string>, it, l) {
+        ITERATE (list<string>, it, l) {
             if ( !it->empty() ) {
                 GenerateClientCode(*it, true);
             }
@@ -661,6 +661,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2003/04/18 20:40:17  ucko
+* Oops, s/iterate/ITERATE/ in my latest change.
+*
 * Revision 1.50  2003/04/08 20:40:08  ucko
 * Get client name(s) from [-]clients rather than hardcoding "client"
 *
