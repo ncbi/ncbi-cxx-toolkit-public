@@ -107,9 +107,9 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
         fields.resize(index + 1);
 
         // Number of fields can be 9 or 8, but 8 is valid
-        // only if field[4] == "N".
+        // only if field[4] == "N" or "U".
         if (fields.size() != 9) {
-            if (fields.size() >= 5 && fields[4] != "N") {
+            if (fields.size() >= 5 && fields[4] != "N" && fields[4] != "U") {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
                             string("error at line ") + 
                             NStr::IntToString(line_num) + ": found " +
@@ -174,10 +174,13 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
 
         CRef<CDelta_seq> delta_seq(new CDelta_seq);
 
-        if (fields[4] == "N") {
+        if (fields[4] == "N" || fields[4] == "U") {
             // a gap
             TSeqPos gap_len = NStr::StringToInt(fields[5]);
             delta_seq->SetLiteral().SetLength(gap_len);
+            if (fields[4] == "U") {
+                delta_seq->SetLiteral().SetFuzz().SetLim();
+            }
             length += gap_len;
         } else if (fields[4].size() == 1 && 
                    fields[4].find_first_of("ADFGPOW") == 0) {
@@ -227,6 +230,10 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.8  2004/06/30 20:57:54  jcherry
+ * Handle new component type "U", which specifies a gap whose
+ * length is unknown.
+ *
  * Revision 1.7  2004/06/14 18:16:28  jcherry
  * Tolerate tabs at ends of lines
  *
