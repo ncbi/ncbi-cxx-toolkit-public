@@ -361,6 +361,8 @@ void CSplign::Run( THits* phits )
 
 //#define ISOLATED_COMPARTMENTS
 #ifdef  ISOLATED_COMPARTMENTS
+    // space btw compartments divided proprtionally to
+    // the unaligned ends
 
     size_t smin = 0, smax = kMax_UInt;
     bool same_strand = false;
@@ -527,7 +529,7 @@ void CSplign::Run( THits* phits )
         }
     }
 
-/*  Not yet implemented - resolve possible conflict: 
+/*  FIXME: resolve possible conflict: 
     compartments can overlap over the shared space - leave the best one.
 
     // resolve possible conflicts
@@ -904,6 +906,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 #endif
 
             // create list of segments
+            // FIXME: Move segmentation to CSplicedAligner.
+            // Use it both here and in the formatter.
             CNWFormatter formatter (*m_aligner);
             string exons;
             formatter.AsText(&exons, CNWFormatter::eFormatExonTableEx);      
@@ -1036,30 +1040,6 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
     }
 
-    // turn to gaps extra-short exons preceeded/followed by gaps
-    bool gap_prev = false;
-    for(size_t k = 0; k < seg_dim; ++k) {
-        SSegment& s = segments[k];
-	if(s.m_exon == false) {
-	  gap_prev = true;
-	}
-	else {
-	  size_t length = s.m_box[1] - s.m_box[0] + 1;
-	  bool gap_next = false;
-	  if(k + 1 < seg_dim) {
-	    gap_next = !segments[k+1].m_exon;
-	  }
-	  if(length <= 5 && (gap_prev || gap_next)) {
-            s.m_exon = false;
-            s.m_idty = 0;
-            s.m_len = s.m_box[1] - s.m_box[0] + 1;
-            s.m_annot = kGap;
-            s.m_details.resize(0);
-	  }
-	  gap_prev = false;
-	}
-    }
-
 //#define CLEAVE_WEAK_TERMINAL_EXONS
 #ifdef CLEAVE_WEAK_TERMINAL_EXONS
 
@@ -1136,7 +1116,31 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
 #endif
 
-    // now merge all adjacent gaps
+    // turn to gaps extra-short exons preceeded/followed by gaps
+    bool gap_prev = false;
+    for(size_t k = 0; k < seg_dim; ++k) {
+        SSegment& s = segments[k];
+	if(s.m_exon == false) {
+	  gap_prev = true;
+	}
+	else {
+	  size_t length = s.m_box[1] - s.m_box[0] + 1;
+	  bool gap_next = false;
+	  if(k + 1 < seg_dim) {
+	    gap_next = !segments[k+1].m_exon;
+	  }
+	  if(length <= 5 && (gap_prev || gap_next)) {
+            s.m_exon = false;
+            s.m_idty = 0;
+            s.m_len = s.m_box[1] - s.m_box[0] + 1;
+            s.m_annot = kGap;
+            s.m_details.resize(0);
+	  }
+	  gap_prev = false;
+	}
+    }
+
+    // merge all adjacent gaps
     m_segments.resize(0);
     int gap_start_idx = -1;
     if(seg_dim && segments[0].m_exon == false) {
@@ -1438,6 +1442,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/06/07 13:46:46  kapustin
+ * Rearrange seg-level postprocessing steps
+ *
  * Revision 1.13  2004/06/03 19:27:54  kapustin
  * Add CSplign::GetIdentity(). Limit the genomic extension for small terminal exons
  *
