@@ -51,25 +51,25 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 Uint1
-GetQueryEncoding(EProgram program)
+GetQueryEncoding(EBlastProgramType program)
 {
     Uint1 retval = 0;
 
     switch (program) {
-    case eBlastn: 
+    case eBlastTypeBlastn: 
         retval = BLASTNA_ENCODING; 
         break;
 
-    case eBlastp: 
-    case eTblastn:
-    case eRPSBlast: 
-    case ePSIBlast:
+    case eBlastTypeBlastp: 
+    case eBlastTypeTblastn:
+    case eBlastTypeRpsBlast: 
+    case eBlastTypePsiBlast:
         retval = BLASTP_ENCODING; 
         break;
 
-    case eBlastx:
-    case eTblastx:
-    case eRPSTblastn:
+    case eBlastTypeBlastx:
+    case eBlastTypeTblastx:
+    case eBlastTypeRpsTblastn:
         retval = NCBI4NA_ENCODING;
         break;
 
@@ -81,23 +81,23 @@ GetQueryEncoding(EProgram program)
 }
 
 Uint1
-GetSubjectEncoding(EProgram program)
+GetSubjectEncoding(EBlastProgramType program)
 {
     Uint1 retval = 0;
 
     switch (program) {
-    case eBlastn: 
+    case eBlastTypeBlastn: 
         retval = BLASTNA_ENCODING; 
         break;
 
-    case eBlastp: 
-    case eBlastx:
-    case ePSIBlast:
+    case eBlastTypeBlastp: 
+    case eBlastTypeBlastx:
+    case eBlastTypePsiBlast:
         retval = BLASTP_ENCODING; 
         break;
 
-    case eTblastn:
-    case eTblastx:
+    case eBlastTypeTblastn:
+    case eBlastTypeTblastx:
         retval = NCBI4NA_ENCODING;
         break;
 
@@ -374,25 +374,23 @@ FindBlastDbPath(const char* dbname, bool is_prot)
 }
 
 unsigned int
-GetNumberOfFrames(EProgram p)
+GetNumberOfFrames(EBlastProgramType p)
 {
     unsigned int retval = 0;
 
     switch (p) {
-    case eBlastn:
-    case eMegablast:
-    case eDiscMegablast:
+    case eBlastTypeBlastn:
         retval = NUM_STRANDS;
         break;
-    case eBlastp:
-    case eRPSBlast:
-    case eTblastn: 
-    case ePSIBlast:
+    case eBlastTypeBlastp:
+    case eBlastTypeRpsBlast:
+    case eBlastTypeTblastn: 
+    case eBlastTypePsiBlast:
         retval = 1;
         break;
-    case eBlastx:
-    case eTblastx:
-    case eRPSTblastn: 
+    case eBlastTypeBlastx:
+    case eBlastTypeTblastx:
+    case eBlastTypeRpsTblastn: 
         retval = NUM_FRAMES;
         break;
     default:
@@ -416,6 +414,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.81  2005/04/06 21:06:18  dondosha
+ * Use EBlastProgramType instead of EProgram in non-user-exposed functions
+ *
  * Revision 1.80  2005/03/04 16:53:27  camacho
  * more doxygen fixes
  *

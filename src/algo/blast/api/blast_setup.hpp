@@ -88,7 +88,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
  */
 void
 SetupSubjects(const TSeqLocVector& subjects, 
-              EProgram program,
+              EBlastProgramType program,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen);
 
@@ -209,21 +209,21 @@ FindBlastDbPath(const char* dbname, bool is_prot);
  * @param p program 
  */
 unsigned int 
-GetNumberOfFrames(EProgram p);
+GetNumberOfFrames(EBlastProgramType p);
 
 
 /// Returns the encoding for the sequence data used in BLAST for the query
 /// @param program program type [in]
 /// @throws CBlastException in case of unsupported program
 Uint1
-GetQueryEncoding(EProgram program);
+GetQueryEncoding(EBlastProgramType program);
 
 /// Returns the encoding for the sequence data used in BLAST2Sequences for 
 /// the subject
 /// @param program program type [in]
 /// @throws CBlastException in case of unsupported program
 Uint1
-GetSubjectEncoding(EProgram program);
+GetSubjectEncoding(EBlastProgramType program);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -234,6 +234,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2005/04/06 21:06:18  dondosha
+* Use EBlastProgramType instead of EProgram in non-user-exposed functions
+*
 * Revision 1.34  2005/03/04 16:53:27  camacho
 * more doxygen fixes
 *

@@ -297,8 +297,8 @@ void CDbBlast::x_Blast_RPSInfoFree(BlastRPSInfo **ppinfo,
 
 void CDbBlast::x_InitRPSFields()
 {
-    EProgram program = m_OptsHandle->GetOptions().GetProgram();
-    if (program == eRPSBlast || program == eRPSTblastn) {
+    EBlastProgramType program = m_OptsHandle->GetOptions().GetProgramType();
+    if (program == eBlastTypeRpsBlast || program == eBlastTypeRpsTblastn) {
         string dbname(BLASTSeqSrcGetName(m_pSeqSrc));
         x_Blast_RPSInfoInit(&m_ipRpsInfo, &m_ipRpsMmap, 
                             &m_ipRpsPssmMmap, dbname);
@@ -653,7 +653,7 @@ CDbBlast::x_Results2SeqAlign()
     CSeqDbSeqInfoSrc seqinfo_src(db_name, db_is_prot);
 
     retval = BLAST_Results2CSeqAlign(m_ipResults, 
-                 GetOptionsHandle().GetOptions().GetProgram(),
+                 GetOptionsHandle().GetOptions().GetProgramType(),
                  m_tQueries, &seqinfo_src, 
                  gappedMode, outOfFrameMode);
 
@@ -669,6 +669,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.60  2005/04/06 21:06:18  dondosha
+ * Use EBlastProgramType instead of EProgram in non-user-exposed functions
+ *
  * Revision 1.59  2005/03/31 13:45:35  camacho
  * BLAST options API clean-up
  *

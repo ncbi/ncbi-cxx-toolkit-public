@@ -68,7 +68,7 @@ BEGIN_SCOPE(blast)
  */
 TSeqAlignVector
 BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
-                          EProgram prog,
+                          EBlastProgramType prog,
                           TSeqLocVector &query, 
                           const IBlastSeqInfoSrc* seqinfo_src, 
                           bool is_gapped=true, bool is_ooframe=false);
@@ -89,7 +89,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
  */
 TSeqAlignVector
 BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results, 
-                          EProgram prog,
+                          EBlastProgramType prog,
                           TSeqLocVector &query, 
                           const IBlastSeqInfoSrc* seqinfo_src, 
                           Uint4 subject_index,
@@ -114,6 +114,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/04/06 21:06:18  dondosha
+* Use EBlastProgramType instead of EProgram in non-user-exposed functions
+*
 * Revision 1.24  2004/10/06 14:55:31  dondosha
 * Use IBlastSeqInfoSrc interface in BLAST_Results2CSeqAlign; added Blast_RemapToSubjectLoc function
 *

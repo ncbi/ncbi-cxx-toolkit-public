@@ -55,7 +55,8 @@ BEGIN_SCOPE(blast)
  * @sa FIXME usage of calloc
  */
 NCBI_XBLAST_EXPORT BlastSeqSrc* 
-MultiSeqBlastSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program);
+MultiSeqBlastSeqSrcInit(const TSeqLocVector& seq_vector, 
+                        EBlastProgramType program);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -65,6 +66,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/06 21:06:30  dondosha
+ * Use EBlastProgramType instead of EProgram in non-user-exposed functions
+ *
  * Revision 1.13  2005/03/28 20:42:44  jcherry
  * Added export specifier
  *

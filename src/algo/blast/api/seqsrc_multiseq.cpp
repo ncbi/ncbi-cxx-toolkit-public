@@ -54,7 +54,7 @@ class CMultiSeqInfo : public CObject
 public: 
     /// Constructor from a vector of sequence location/scope pairs and a 
     /// BLAST program type.
-    CMultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program);
+    CMultiSeqInfo(const TSeqLocVector& seq_vector, EBlastProgramType program);
     ~CMultiSeqInfo();
     /// Setter and getter functions for the private fields
     Uint4 GetMaxLength();
@@ -117,10 +117,11 @@ inline BLAST_SequenceBlk* CMultiSeqInfo::GetSeqBlk(int index)
 }
 
 /// Constructor
-CMultiSeqInfo::CMultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program)
+CMultiSeqInfo::CMultiSeqInfo(const TSeqLocVector& seq_vector, 
+                             EBlastProgramType program)
 {
-    m_ibIsProt = (program == eBlastp || program == eBlastx || 
-                  program == ePSIBlast || program == eRPSBlast);
+    m_ibIsProt = (program == eBlastTypeBlastp || program == eBlastTypeBlastx || 
+                  program == eBlastTypePsiBlast || program == eBlastTypeRpsBlast);
     
     SetupSubjects(seq_vector, program, &m_ivSeqBlkVec, &m_iMaxLength);
 
@@ -345,10 +346,10 @@ s_MultiSeqGetNextChunk(void* multiseq_handle, BlastSeqSrcIterator* itr)
 
 /// Encapsulates the arguments needed to initialize multi-sequence source.
 struct SMultiSeqSrcNewArgs {
-    TSeqLocVector seq_vector; ///< Vector of sequences
-    EProgram program;         ///< BLAST program
+    TSeqLocVector seq_vector;  ///< Vector of sequences
+    EBlastProgramType program; ///< BLAST program
     /// Constructor
-    SMultiSeqSrcNewArgs(TSeqLocVector sv, EProgram p)
+    SMultiSeqSrcNewArgs(TSeqLocVector sv, EBlastProgramType p)
         : seq_vector(sv), program(p) {}
 };
 
@@ -422,7 +423,8 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
 } // extern "C"
 
 BlastSeqSrc*
-MultiSeqBlastSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
+MultiSeqBlastSeqSrcInit(const TSeqLocVector& seq_vector, 
+                        EBlastProgramType program)
 {
     BlastSeqSrc* seq_src = NULL;
     BlastSeqSrcNewInfo bssn_info;
@@ -448,6 +450,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2005/04/06 21:06:18  dondosha
+ * Use EBlastProgramType instead of EProgram in non-user-exposed functions
+ *
  * Revision 1.28  2005/02/09 21:03:36  dondosha
  * Minor doxygen fixes
  *

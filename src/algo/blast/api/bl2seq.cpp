@@ -242,7 +242,7 @@ CBl2Seq::SetupSearch()
 
     mi_pSeqSrc = 
         MultiSeqBlastSeqSrcInit(m_tSubjects, 
-                                m_OptsHandle->GetOptions().GetProgram());
+                                m_OptsHandle->GetOptions().GetProgramType());
     char* error_str = BlastSeqSrcGetInitError(mi_pSeqSrc);
     if (error_str) {
         string msg(error_str);
@@ -308,7 +308,7 @@ CBl2Seq::x_Results2SeqAlign()
     {
         TSeqAlignVector seqalign =
             BLAST_OneSubjectResults2CSeqAlign(mi_pResults,
-                 m_OptsHandle->GetOptions().GetProgram(),
+                 m_OptsHandle->GetOptions().GetProgramType(),
                  m_tQueries, &seqinfo_src, index, 
                  gappedMode, outOfFrameMode);
 
@@ -367,6 +367,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.70  2005/04/06 21:06:18  dondosha
+ * Use EBlastProgramType instead of EProgram in non-user-exposed functions
+ *
  * Revision 1.69  2005/03/31 13:45:35  camacho
  * BLAST options API clean-up
  *
