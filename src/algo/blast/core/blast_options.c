@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.13  2003/05/06 14:34:51  dondosha
+ * Fix in comment
+ *
  * Revision 1.12  2003/05/01 16:56:30  dondosha
  * Fixed strict compiler warnings
  *
@@ -275,11 +278,11 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options,
    if (!options)
       return 1;
 
-   if (!StringCmp(program, "blastn")) {	/* protein-protein options. */
-      if (!greedy) {
-         options->extend_word_method |= EXTEND_WORD_UNGAPPED;
-         options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
-      }
+   if (StringCmp(program, "blastn") || !greedy) {
+      /* Ungapped extension is performed in all cases except when greedy
+         gapped extension is used */
+      options->extend_word_method |= EXTEND_WORD_UNGAPPED;
+      options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
    }
 
    if (window_size != 0)
