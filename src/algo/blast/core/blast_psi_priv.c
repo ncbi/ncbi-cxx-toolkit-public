@@ -53,7 +53,6 @@ const double kPSINearIdentical = 0.94;
 const double kPSIIdentical = 1.0;
 const unsigned int kQueryIndex = 0;
 const double kEpsilon = 0.0001;
-/*const double kDefaultEvalueForPosition = 1.0;*/
 const int kPSIScaleFactor = 200;
 
 /****************************************************************************/
@@ -464,6 +463,7 @@ _PSIPurgeSimilarAlignments(_PSIMsa* msa,
 /**************** PurgeMatches stage of PSSM creation ***********************/
 int
 _PSIPurgeBiasedSegments(_PSIMsa* msa)
+    /* FIXME: will need ignore_query option */
 {
     if ( !msa ) {
         return PSIERR_BADPARAM;
@@ -544,6 +544,156 @@ _PSIUpdatePositionCounts(_PSIMsa* msa)
     }
 }
 
+/** Defines the states of the finite state machine used in
+ * _PSIPurgeSimilarAlignments. Successor to posit.c's POS_COUNTING and
+ * POS_RESTING */
+typedef enum _EPSIPurgeFsmState {
+    eCounting,
+    eResting
+} _EPSIPurgeFsmState;
+
+/** Auxiliary structure to maintain information about two aligned regions
+ * between the query and a subject sequence. It is used to store the data
+ * manipulated by the finite state machine used in _PSIPurgeSimilarAlignments.
+ */
+typedef struct _PSIAlignmentTraits {
+    Uint4 start;            /**< starting offset of alignment w.r.t. query */
+    Uint4 effective_length; /**< length of alignment not including Xs */
+    Uint4 n_x_residues;     /**< number of X residues in alignment */
+    Uint4 n_identical;      /**< number of identical residues in alignment */
+} _PSIAlignmentTraits;
+
+#ifdef DEBUG
+static
+void DEBUG_printTraits(_PSIAlignmentTraits* traits, 
+                       _EPSIPurgeFsmState state, Uint4 position)
+{
+    fprintf(stderr, "Position: %d - State: %s\n", position,
+            state == eCounting ? "eCounting" : "eResting");
+    fprintf(stderr, "\tstart: %d\n", traits->start);
+    fprintf(stderr, "\teffective_length: %d\n", traits->effective_length);
+    fprintf(stderr, "\tn_x_residues: %d\n", traits->n_x_residues);
+    fprintf(stderr, "\tn_identical: %d\n", traits->n_identical);
+}
+#endif
+
+void
+_PSIResetAlignmentTraits(_PSIAlignmentTraits* traits, Uint4 position)
+{
+    ASSERT(traits);
+    memset((void*) traits, 0, sizeof(_PSIAlignmentTraits));
+    traits->start = position;
+}
+
+/** Handles neither is aligned event */
+static void
+_handleNeitherAligned(_PSIAlignmentTraits* traits, _EPSIPurgeFsmState* state,
+                      _PSIMsa* msa, Uint4 seq_index, 
+                      double max_percent_identity)
+{
+    ASSERT(traits);
+    ASSERT(state);
+
+    switch (*state) {
+    case eCounting:
+        /* Purge aligned region if max_percent_identity is exceeded */
+        {
+            if (traits->effective_length > 0) {
+                double percent_identity = 
+                    ((double)traits->n_identical) / traits->effective_length;
+                if (percent_identity >= max_percent_identity) {
+                    const unsigned int align_stop = 
+                        traits->start + traits->effective_length +
+                        traits->n_x_residues;
+                    int rv = _PSIPurgeAlignedRegion(msa, seq_index, 
+                                                    traits->start, align_stop);
+                    ASSERT(rv == PSI_SUCCESS);
+                }
+            }
+        }
+
+        *state = eResting;
+        break;
+
+    case eResting:
+        /* No-op */
+        break;
+
+    default:
+        abort();
+    }
+}
+
+/** Handle event when both positions are aligned, using the same residue, but
+ * this residue is not X */
+static void
+_handleBothAlignedSameResidueNoX(_PSIAlignmentTraits* traits, 
+                                 _EPSIPurgeFsmState* state)
+{
+    ASSERT(traits);
+    ASSERT(state);
+
+    switch (*state) {
+    case eCounting:
+        traits->n_identical++;
+        break;
+
+    case eResting:
+        /* No-op */
+        break;
+
+    default:
+        abort();
+    }
+}
+
+/** Handle the event when either position is aligned and either is X */
+static void
+_handleEitherAlignedEitherX(_PSIAlignmentTraits* traits, 
+                            _EPSIPurgeFsmState* state)
+{
+    ASSERT(traits);
+    ASSERT(state);
+
+    switch (*state) {
+    case eCounting:
+        traits->n_x_residues++;
+        break;
+
+    case eResting:
+        /* No-op */
+        break;
+
+    default:
+        abort();
+    }
+}
+
+/** Handle the event when either position is aligned and neither is X */
+static void
+_handleEitherAlignedNeitherX(_PSIAlignmentTraits* traits, 
+                             _EPSIPurgeFsmState* state,
+                             Uint4 position)
+{
+    ASSERT(traits);
+    ASSERT(state);
+
+    switch (*state) {
+    case eCounting:
+        traits->effective_length++;
+        break;
+
+    case eResting:
+        _PSIResetAlignmentTraits(traits, position);
+        traits->effective_length = 1;   /* count this residue */
+        *state = eCounting;
+        break;
+
+    default:
+        abort();
+    }
+}
+
 /** This function compares the sequences in the msa->cell
  * structure indexed by sequence_index1 and seq_index2. If it finds aligned 
  * regions that have a greater percent identity than max_percent_identity, 
@@ -555,8 +705,11 @@ _PSIPurgeSimilarAlignments(_PSIMsa* msa,
                            Uint4 seq_index2,
                            double max_percent_identity)
 {
+
     const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
-    Uint4 i = 0;
+    _EPSIPurgeFsmState state = eCounting;   /* initial state of the fsm */
+    _PSIAlignmentTraits traits;
+    Uint4 p = 0;                    /* position on alignment */
 
     /* Nothing to do if sequences are the same or not selected for further
        processing */
@@ -566,70 +719,53 @@ _PSIPurgeSimilarAlignments(_PSIMsa* msa,
         return;
     }
 
-    for (i = 0; i < msa->dimensions->query_length; i++) {
+    _PSIResetAlignmentTraits(&traits, p);
+
+    /* Examine each position of the aligned sequences and use the fsm to
+     * determine if a region of the alignment should be purged */
+    for (p = 0; p < msa->dimensions->query_length; p++) {
 
         const _PSIMsaCell* seq1 = msa->cell[seq_index1];
         const _PSIMsaCell* seq2 = msa->cell[seq_index2];
-
-        /* starting index of the aligned region */
-        Uint4 align_start = i;    
-        /* length of the aligned region */
-        Uint4 align_length = 0;   
-        /* # of identical residues in aligned region */
-        Uint4 nidentical = 0;     
-        /* # of X residues in either sequence */
-        Uint4 nXresidues = 0;
 
         /* Indicates if the position in seq_index1 currently being examined is 
          * aligned. In the special case for seq_index1 == kQueryIndex, this 
          * variable is set to FALSE to force the other sequence's position to 
          * be used to proceed with processing. */
-        Boolean pos1_aligned = (seq_index1 == kQueryIndex ? 
-                                FALSE : seq1[i].is_aligned);
+        const Boolean pos1_aligned = (seq_index1 == kQueryIndex ? 
+                                FALSE : seq1[p].is_aligned);
         /* Indicates if the position in seq_index2 currently being examined is 
          * aligned. */
-        Boolean pos2_aligned = seq2[i].is_aligned;
+        const Boolean pos2_aligned = seq2[p].is_aligned;
 
-        if ( !(pos1_aligned || pos2_aligned)) {
-            continue;
-        }
+        Boolean neither_is_aligned = !pos1_aligned && !pos2_aligned;
+        /* FIXME: kludgy solution, need to document fsm */
+        Boolean both_are_aligned = seq1[p].is_aligned && pos2_aligned;
+        Boolean either_is_aligned = pos1_aligned || pos2_aligned;
 
-        /* Examine the aligned region */
-        for ( ; i < msa->dimensions->query_length; i++ ) {
+        Boolean neither_is_X = seq1[p].letter != X && seq2[p].letter != X;
+        Boolean either_is_X = seq1[p].letter == X || seq2[p].letter == X;
+        Boolean same_residue = seq1[p].letter == seq2[p].letter;
 
-            pos1_aligned = (seq_index1 == kQueryIndex ? 
-                         FALSE : seq1[i].is_aligned);
-            pos2_aligned = seq2[i].is_aligned;
+        /* Look for events interesting to the finite state machine */
+        if (neither_is_aligned) {
+            _handleNeitherAligned(&traits, &state, msa, seq_index2,
+                                  max_percent_identity);
+        } else {
 
-            if ( !(pos1_aligned || pos2_aligned)) {
-                continue;
+            if (either_is_aligned && either_is_X) {
+                _handleEitherAlignedEitherX(&traits, &state);
+            } 
+            if (either_is_aligned && neither_is_X) {
+                _handleEitherAlignedNeitherX(&traits, &state, p);
             }
-
-            if (seq1[i].letter == X || seq2[i].letter == X) {
-                nXresidues++;
-            } else {
-                if (seq1[i].letter == seq2[i].letter) {
-                    nidentical++;
-                }
-                align_length++;
-            }
-
-        }
-        ASSERT(align_length != 0);
-
-        /* percentage of similarity of an aligned region between seq1 and 
-           seq2 */
-        {
-            double percent_identity = ((double)nidentical) / align_length;
-            if (percent_identity >= max_percent_identity) {
-                const unsigned int align_stop = 
-                    align_start + align_length + nXresidues;
-                int rv = _PSIPurgeAlignedRegion(msa, seq_index2, 
-                                                align_start, align_stop);
-                ASSERT(rv == PSI_SUCCESS);
-            }
+            if (both_are_aligned && same_residue && neither_is_X) {
+                _handleBothAlignedSameResidueNoX(&traits, &state);
+            } 
         }
     }
+    _handleNeitherAligned(&traits, &state, msa, seq_index2,
+                          max_percent_identity);
 }
 
 /****************************************************************************/
@@ -883,6 +1019,7 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
 
         /* ignore positions of no interest */
         if (aligned_blocks->size[pos] == 0 || msa->num_matching_seqs[pos] <= 1) {
+        /* FIXME: num_matching_seqs could be 0 if ignore_query */
             continue;
         }
 
@@ -891,6 +1028,8 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
 
         num_aligned_seqs = _PSIGetAlignedSequencesForPosition(msa, pos,
                                                               aligned_seqs);
+        ASSERT(msa->num_matching_seqs[pos] == num_aligned_seqs);
+        /* FIXME: could be 0 if ignore_query */
         if (num_aligned_seqs <= 1) {
             continue;
         }
@@ -1176,6 +1315,7 @@ _PSICheckSequenceWeights(const _PSIMsa* msa,
         double running_total = 0.0;
         Uint4 residue = 0;
 
+        /* FIXME: num_matching_seqs might be 0 if ignore_query... */
         if (msa->num_matching_seqs[pos] <= 1 ||
             msa->cell[kQueryIndex][pos].letter == X) {
             continue;
@@ -1211,7 +1351,7 @@ _PSIComputeResidueFrequencies(const _PSIMsa* msa,     /* [in] */
                               const BlastScoreBlk* sbp,              /* [in] */
                               const _PSIAlignedBlock* aligned_blocks, /* [in] */
                               Int4 pseudo_count,          /* [in] */
-                              _PSIInternalPssmData* internal_pssm)               /* [out] */
+                              _PSIInternalPssmData* internal_pssm) /* [out] */
 {
     const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
     SFreqRatios* freq_ratios = NULL;/* matrix-specific frequency ratios */
@@ -1889,6 +2029,7 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
         }
     }
 
+    /* FIXME: should save seq_weights->match_weights instead? */
     if (diagnostics->raw_residue_counts) {
         for (p = 0; p < diagnostics->dimensions->query_length; p++) {
             for (r = 0; r < diagnostics->alphabet_size; r++) {
@@ -1918,6 +2059,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/08/13 22:32:16  camacho
+ * Refactoring of _PSIPurgeSimilarAlignments to use finite state machine
+ *
  * Revision 1.21  2004/08/04 20:18:26  camacho
  * 1. Renaming of structures and functions that pertain to the internals of PSSM
  *    engine.
