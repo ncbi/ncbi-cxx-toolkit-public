@@ -66,59 +66,6 @@ CSeqMap_CI_SegmentInfo::CSeqMap_CI_SegmentInfo(void)
 {
 }
 
-/*
-inline
-CSeqMap_CI_SegmentInfo::CSeqMap_CI_SegmentInfo(CConstRef<CSeqMap> seqMap, size_t index)
-    : m_SeqMap(seqMap), m_Index(index),
-      m_LevelRangePos(0), m_LevelRangeEnd(seqMap->x_GetSegmentLength(index))
-{
-}
-*/
-
-/////////////////////////////////////////////////////////////////////
-//  CSeqMap_CI
-
-
-inline
-const CSeqMap_CI::TSegmentInfo& CSeqMap_CI::x_GetSegmentInfo(void) const
-{
-    return m_Stack.back();
-}
-
-
-inline
-CSeqMap_CI::TSegmentInfo& CSeqMap_CI::x_GetSegmentInfo(void)
-{
-    return m_Stack.back();
-}
-
-
-inline
-const CSeqMap& CSeqMap_CI::x_GetSeqMap(void) const
-{
-    return x_GetSegmentInfo().x_GetSeqMap();
-}
-
-
-inline
-size_t CSeqMap_CI::x_GetIndex(void) const
-{
-    return x_GetSegmentInfo().x_GetIndex();
-}
-
-
-inline
-const CSeqMap::CSegment& CSeqMap_CI::x_GetSegment(void) const
-{
-    return x_GetSegmentInfo().x_GetSegment();
-}
-
-
-inline
-CScope* CSeqMap_CI::GetScope(void) const
-{
-    return m_Scope;
-}
 
 
 inline
@@ -185,6 +132,85 @@ bool CSeqMap_CI_SegmentInfo::GetRefMinusStrand(void) const
 
 
 inline
+bool CSeqMap_CI_SegmentInfo::InRange(void) const
+{
+    const CSeqMap::CSegment& seg = x_GetSegment();
+    return seg.m_Position < m_LevelRangeEnd &&
+        seg.m_Position + seg.m_Length > m_LevelRangePos;
+}
+
+
+inline
+CSeqMap::ESegmentType CSeqMap_CI_SegmentInfo::GetType(void) const
+{
+    return InRange()?
+        CSeqMap::ESegmentType(x_GetSegment().m_SegType): CSeqMap::eSeqEnd;
+}
+
+
+/*
+inline
+CSeqMap_CI_SegmentInfo::CSeqMap_CI_SegmentInfo(CConstRef<CSeqMap> seqMap, size_t index)
+    : m_SeqMap(seqMap), m_Index(index),
+      m_LevelRangePos(0), m_LevelRangeEnd(seqMap->x_GetSegmentLength(index))
+{
+}
+*/
+
+/////////////////////////////////////////////////////////////////////
+//  CSeqMap_CI
+
+
+inline
+const CSeqMap_CI::TSegmentInfo& CSeqMap_CI::x_GetSegmentInfo(void) const
+{
+    return m_Stack.back();
+}
+
+
+inline
+CSeqMap_CI::TSegmentInfo& CSeqMap_CI::x_GetSegmentInfo(void)
+{
+    return m_Stack.back();
+}
+
+
+inline
+const CSeqMap& CSeqMap_CI::x_GetSeqMap(void) const
+{
+    return x_GetSegmentInfo().x_GetSeqMap();
+}
+
+
+inline
+size_t CSeqMap_CI::x_GetIndex(void) const
+{
+    return x_GetSegmentInfo().x_GetIndex();
+}
+
+
+inline
+const CSeqMap::CSegment& CSeqMap_CI::x_GetSegment(void) const
+{
+    return x_GetSegmentInfo().x_GetSegment();
+}
+
+
+inline
+CScope* CSeqMap_CI::GetScope(void) const
+{
+    return m_Scope;
+}
+
+
+inline
+CSeqMap::ESegmentType CSeqMap_CI::GetType(void) const
+{
+    return x_GetSegmentInfo().GetType();
+}
+
+
+inline
 TSeqPos CSeqMap_CI::GetPosition(void) const
 {
     return m_Position;
@@ -208,8 +234,7 @@ TSeqPos CSeqMap_CI::GetEndPosition(void) const
 inline
 CSeqMap_CI::operator bool(void) const
 {
-    const CSeqMap_CI_SegmentInfo& info = m_Stack.front();
-    return m_Position < info.m_LevelRangeEnd - info.m_LevelRangePos;
+    return m_Stack.front().InRange();
 }
 
 
@@ -303,15 +328,6 @@ CSeqMap_CI& CSeqMap_CI::operator++(void)
 
 
 inline
-CSeqMap_CI CSeqMap_CI::operator++(int)
-{
-    CSeqMap_CI old(*this);
-    Next();
-    return old;
-}
-
-
-inline
 CSeqMap_CI& CSeqMap_CI::operator--(void)
 {
     Prev();
@@ -320,17 +336,19 @@ CSeqMap_CI& CSeqMap_CI::operator--(void)
 
 
 inline
-CSeqMap_CI CSeqMap_CI::operator--(int)
+CSeqMap_CI::TFlags CSeqMap_CI::GetFlags(void) const
 {
-    CSeqMap_CI old(*this);
-    Prev();
-    return old;
+    return m_Flags;
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/02/05 15:57:29  vasilche
+ * Added eSeqEnd segment at the beginning of seq map.
+ * Added flags to CSeqMap_CI to stop on data, gap, or references.
+ *
  * Revision 1.2  2003/01/22 20:11:53  vasilche
  * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
  * CSeqMap_CI now supports resolution and iteration over sequence range.

@@ -56,6 +56,9 @@ public:
     size_t x_GetIndex(void) const;
     const CSeqMap::CSegment& x_GetSegment(void) const;
     const CSeqMap::CSegment& x_GetNextSegment(void) const;
+
+    bool InRange(void) const;
+    CSeqMap::ESegmentType GetType(void) const;
     bool x_Move(bool minusStrand, CScope* scope);
 
     TSeqPos x_GetLevelRealPos(void) const;
@@ -92,23 +95,36 @@ public:
     enum EIndex    { eIndex    };
     enum EPosition { ePosition };
 
+    enum EFlags {
+        fFindData = (1<<0),
+        fFindGap  = (1<<1),
+        fFindRef  = (1<<2),
+        fDefaultFlags = fFindData | fFindGap
+    };
+    typedef int TFlags;
+
     CSeqMap_CI(void);
     CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
                EIndex byIndex, size_t index,
-               size_t maxResolveCount = 0);
+               size_t maxResolveCount = 0,
+               TFlags flags = fDefaultFlags);
     CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
                EPosition byPosition, TSeqPos position,
-               size_t maxResolveCount = 0);
+               size_t maxResolveCount = 0,
+               TFlags flags = fDefaultFlags);
     CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
                EBegin toBegin,
-               size_t maxResolveCount = 0);
+               size_t maxResolveCount = 0,
+               TFlags flags = fDefaultFlags);
     CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
                EEnd toEnd,
-               size_t maxResolveCount = 0);
+               size_t maxResolveCount = 0,
+               TFlags flags = fDefaultFlags);
     CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
                TSeqPos start, TSeqPos length, ENa_strand strand,
                EBegin toBegin,
-               size_t maxResolveCount = 0);
+               size_t maxResolveCount = 0,
+               TFlags flags = fDefaultFlags);
     ~CSeqMap_CI(void);
 
     operator bool(void) const;
@@ -120,15 +136,16 @@ public:
     bool operator<=(const CSeqMap_CI& seg) const;
     bool operator>=(const CSeqMap_CI& seg) const;
 
-    // go to next segment, return false if no more segments
-    bool Next(void);
-    // go to prev segment, return false if no more segments
+    // go to next/next segment, return false if no more segments
+    // if no_resolve_current == true, do not resolve current segment
+    bool Next(bool resolveExternal = true);
     bool Prev(void);
 
+    TFlags GetFlags(void) const;
+    void SetFlags(TFlags flags);
+
     CSeqMap_CI& operator++(void);
-    CSeqMap_CI operator++(int);
     CSeqMap_CI& operator--(void);
-    CSeqMap_CI operator--(int);
 
     // return position of current segment in sequence
     TSeqPos      GetPosition(void) const;
@@ -168,13 +185,22 @@ private:
 
     TSeqPos x_GetTopOffset(void) const;
     void x_Resolve(TSeqPos pos);
-    bool x_Push(TSeqPos offset);
+
+    bool x_Found(void) const;
+
+    bool x_Push(TSeqPos offset, bool resolveExternal);
     void x_Push(CConstRef<CSeqMap> seqMap,
                 TSeqPos from, TSeqPos length, bool minusStrand, TSeqPos pos);
     bool x_Pop(void);
+
+    bool x_Next(bool resolveExternal);
+    bool x_Prev(void);
+
     bool x_TopNext(void);
     bool x_TopPrev(void);
-    bool x_StopOnIntermediateSegments(void) const;
+
+    bool x_SettleNext(void);
+    bool x_SettlePrev(void);
 
     typedef vector<TSegmentInfo> TStack;
 
@@ -188,6 +214,8 @@ private:
     CScope*        m_Scope;
     // maximum resolution level
     size_t         m_MaxResolveCount;
+    // return all intermediate resolved sequences
+    TFlags         m_Flags;
 };
 
 
@@ -199,6 +227,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/02/05 15:55:26  vasilche
+* Added eSeqEnd segment at the beginning of seq map.
+* Added flags to CSeqMap_CI to stop on data, gap, or references.
+*
 * Revision 1.3  2003/01/22 20:11:53  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

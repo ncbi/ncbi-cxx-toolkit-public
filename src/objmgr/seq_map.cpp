@@ -72,7 +72,6 @@ CSeqMap::CSegment::CSegment(ESegmentType seg_type,
     : m_Position(kInvalidSeqPos),
       m_Length(length),
       m_SegType(seg_type),
-      m_RefObjectType(eNull),
       m_RefMinusStrand(false),
       m_RefPosition(0)
 {
@@ -109,6 +108,7 @@ CSeqMap::CSeqMap(CSeq_loc& ref, CDataSource* source)
       m_Resolved(0),
       m_Source(source)
 {
+    x_AddEnd();
     x_Add(ref);
     x_AddEnd();
 }
@@ -120,6 +120,7 @@ CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length, CDataSource* source)
       m_Resolved(0),
       m_Source(source)
 {
+    x_AddEnd();
     x_Add(data, length);
     x_AddEnd();
 }
@@ -131,6 +132,7 @@ CSeqMap::CSeqMap(TSeqPos length, CDataSource* source)
       m_Resolved(0),
       m_Source(source)
 {
+    x_AddEnd();
     x_AddGap(length);
     x_AddEnd();
 }
@@ -333,10 +335,6 @@ CConstRef<CSeqMap> CSeqMap::x_GetSubSeqMap(const CSegment& seg, CScope* scope,
             THROW1_TRACE(runtime_error,
                          "CSeqMap::x_GetSubSeqMap: null CSeqMap pointer");
         }
-        if ( seg.m_RefObjectType != eSeqMap ) {
-            THROW1_TRACE(runtime_error,
-                         "CSeqMap::x_GetSubSeqMap: incompatible object type");
-        }
         ret.Reset(static_cast<const CSeqMap*>(seg.m_RefObject.GetPointer()));
     }
     else if ( resolveExternal && seg.m_SegType == eSeqRef ) {
@@ -372,10 +370,6 @@ const CSeq_data& CSeqMap::x_GetSeq_data(const CSegment& seg) const
             THROW1_TRACE(runtime_error,
                          "CSeqMap::x_GetSeq_data: null CSeq_data pointer");
         }
-        if ( seg.m_RefObjectType != eSeq_data ) {
-            THROW1_TRACE(runtime_error,
-                         "CSeqMap::x_GetSeq_data: incompatible object type");
-        }
         return *static_cast<const CSeq_data*>(seg.m_RefObject.GetPointer());
     }
     THROW1_TRACE(runtime_error,
@@ -400,13 +394,16 @@ void CSeqMap::x_SetSeq_data(size_t index, CSeq_data& data)
     }
     // set object
     seg.m_RefObject.Reset(&data);
-    seg.m_RefObjectType = eSeq_data;
 }
 
 
 const CSeq_id& CSeqMap::x_GetRefSeqid(const CSegment& seg) const
 {
     if ( seg.m_SegType == eSeqRef ) {
+        if ( !seg.m_RefObject ) {
+            THROW1_TRACE(runtime_error,
+                         "CSeqMap::x_GetRefSeqid: null CSeq_id pointer");
+        }
         return static_cast<const CSeq_id&>(*seg.m_RefObject);
     }
     THROW1_TRACE(runtime_error,
@@ -463,49 +460,55 @@ CSeqMap::const_iterator CSeqMap::find(TSeqPos pos, CScope* scope) const
 }
 
 
-CSeqMap::TSegment_CI CSeqMap::BeginResolved(CScope* scope, size_t maxResolveCount) const
+CSeqMap::TSegment_CI CSeqMap::BeginResolved(CScope* scope, size_t maxResolveCount,
+                                            TFlags flags) const
 {
-    return begin_resolved(scope, maxResolveCount);
+    return begin_resolved(scope, maxResolveCount, flags);
 }
 
 
-CSeqMap::TSegment_CI CSeqMap::EndResolved(CScope* scope, size_t maxResolveCount) const
+CSeqMap::TSegment_CI CSeqMap::EndResolved(CScope* scope, size_t maxResolveCount,
+                                          TFlags flags) const
 {
-    return end_resolved(scope, maxResolveCount);
+    return end_resolved(scope, maxResolveCount, flags);
 }
 
 
 CSeqMap::TSegment_CI CSeqMap::FindResolved(TSeqPos pos, CScope* scope,
-                                           size_t maxResolveCount) const
+                                           size_t maxResolveCount,
+                                           TFlags flags) const
 {
-    return find_resolved(pos, scope, maxResolveCount);
+    return find_resolved(pos, scope, maxResolveCount, flags);
 }
 
 
 CSeqMap::const_iterator CSeqMap::begin_resolved(CScope* scope,
-                                                size_t maxResolveCount) const
+                                                size_t maxResolveCount,
+                                                TFlags flags) const
 {
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
                        TSegment_CI::eBegin,
-                       maxResolveCount);
+                       maxResolveCount, flags);
 }
 
 
 CSeqMap::const_iterator CSeqMap::end_resolved(CScope* scope,
-                                              size_t maxResolveCount) const
+                                              size_t maxResolveCount,
+                                              TFlags flags) const
 {
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
                        TSegment_CI::eEnd,
-                       maxResolveCount);
+                       maxResolveCount, flags);
 }
 
 
 CSeqMap::const_iterator CSeqMap::find_resolved(TSeqPos pos, CScope* scope,
-                                               size_t maxResolveCount) const
+                                               size_t maxResolveCount,
+                                               TFlags flags) const
 {
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
                        TSegment_CI::ePosition, pos,
-                       maxResolveCount);
+                       maxResolveCount, flags);
 }
 
 
@@ -514,7 +517,8 @@ CSeqMap::ResolvedRangeIterator(CScope* scope,
                                ENa_strand strand,
                                TSeqPos from,
                                TSeqPos length,
-                               size_t maxResolveCount) const
+                               size_t maxResolveCount,
+                               TFlags flags) const
 {
     if ( strand == eNa_strand_minus ) {
         from = GetLength(scope) - from - length;
@@ -522,7 +526,7 @@ CSeqMap::ResolvedRangeIterator(CScope* scope,
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
                        from, length, strand,
                        TSegment_CI::eBegin,
-                       maxResolveCount);
+                       maxResolveCount, flags);
 }
 
 
@@ -531,12 +535,13 @@ CSeqMap::ResolvedRangeIterator(CScope* scope,
                                TSeqPos from,
                                TSeqPos length,
                                ENa_strand strand,
-                               size_t maxResolveCount) const
+                               size_t maxResolveCount,
+                               TFlags flags) const
 {
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
                        from, length, strand,
                        TSegment_CI::eBegin,
-                       maxResolveCount);
+                       maxResolveCount, flags);
 }
 
 
@@ -610,9 +615,10 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
 {
     if ( strand == eNa_strand_minus ) {
         CRef<CSeqMap> ret(new CSeqMap());
+        ret->x_AddEnd();
         ret->x_AddSegment(eSeqSubMap,
                           const_cast<CSeqMap*>(seqMap.GetPointer()),
-                          0, kInvalidSeqPos, strand).m_RefObjectType = eSeqMap;
+                          0, kInvalidSeqPos, strand);
         ret->x_AddEnd();
         seqMap = ret;
     }
@@ -623,8 +629,6 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
 CSeqMap::CSegment& CSeqMap::x_AddSegment(ESegmentType type, TSeqPos len)
 {
     m_Segments.push_back(CSegment(type, len));
-    if ( m_Segments.size() == 1 )
-        m_Segments.front().m_Position = 0;
     return m_Segments.back();
 }
 
@@ -653,7 +657,8 @@ CSeqMap::CSegment& CSeqMap::x_AddSegment(ESegmentType type,
 
 void CSeqMap::x_AddEnd(void)
 {
-    x_AddSegment(eSeqEnd, 0);
+    TSeqPos pos = m_Segments.empty()? 0: kInvalidSeqPos;
+    x_AddSegment(eSeqEnd, 0).m_Position = pos;
 }
 
 
@@ -677,43 +682,33 @@ CSeqMap::CSegment& CSeqMap::x_AddUnloadedSeq_data(TSeqPos len)
 
 CSeqMap::CSegment& CSeqMap::x_Add(CSeq_data& data, TSeqPos len)
 {
-    CSegment& seg = x_AddSegment(eSeqData, len, &data);
-    seg.m_RefObjectType = eSeq_data;
-    return seg;
+    return x_AddSegment(eSeqData, len, &data);
 }
 
 
 CSeqMap::CSegment& CSeqMap::x_Add(CSeq_point& ref)
 {
-    CSegment& seg = x_AddSegment(eSeqRef, &ref.SetId(),
-                                 ref.GetPoint(), 1, ref.GetStrand());
-    seg.m_RefObjectType = eSeq_id;
-    return seg;
+    return x_AddSegment(eSeqRef, &ref.SetId(),
+                        ref.GetPoint(), 1, ref.GetStrand());
 }
 
 
 CSeqMap::CSegment& CSeqMap::x_Add(CSeq_interval& ref)
 {
-    CSegment& seg = x_AddSegment(eSeqRef, &ref.SetId(),
+    return x_AddSegment(eSeqRef, &ref.SetId(),
                         ref.GetFrom(), ref.GetLength(), ref.GetStrand());
-    seg.m_RefObjectType = eSeq_id;
-    return seg;
 }
 
 
 CSeqMap::CSegment& CSeqMap::x_Add(CSeq_id& ref)
 {
-    CSegment& seg = x_AddSegment(eSeqRef, &ref, 0, kInvalidSeqPos);
-    seg.m_RefObjectType = eSeq_id;
-    return seg;
+    return x_AddSegment(eSeqRef, &ref, 0, kInvalidSeqPos);
 }
 
 
 CSeqMap::CSegment& CSeqMap::x_Add(CSeqMap* submap)
 {
-    CSegment& seg = x_AddSegment(eSeqSubMap, kInvalidSeqPos, submap);
-    seg.m_RefObjectType = eSeqMap;
-    return seg;
+    return x_AddSegment(eSeqSubMap, kInvalidSeqPos, submap);
 }
 
 
@@ -809,6 +804,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/02/05 15:55:26  vasilche
+* Added eSeqEnd segment at the beginning of seq map.
+* Added flags to CSeqMap_CI to stop on data, gap, or references.
+*
 * Revision 1.29  2003/01/28 17:16:06  vasilche
 * Added CSeqMap::ResolvedRangeIterator with strand coordinate translation.
 *

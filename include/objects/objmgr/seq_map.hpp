@@ -88,12 +88,14 @@ public:
         eSeqRef,              // reference to Bioseq
         eSeqEnd
     };
+    /*
     enum EObjectType {
         eNull,
         eSeq_id,
         eSeq_data,
         eSeqMap
     };
+    */
 
 protected:
     class CSegment;
@@ -116,8 +118,6 @@ protected:
 
         // Segment type
         char                 m_SegType;
-
-        char                 m_RefObjectType; // eNull, eSeq_data, eSeqMap, eSeq_id
 
         // reference info, valid for eSeqData, eSeqSubMap, eSeqRef
         bool                 m_RefMinusStrand;
@@ -157,37 +157,53 @@ public:
     TSegment_CI End(CScope* scope = 0) const;
     TSegment_CI FindSegment(TSeqPos pos, CScope* scope = 0) const;
 
+    enum EFlags {
+        fFindData = (1<<0),
+        fFindGap  = (1<<1),
+        fFindRef  = (1<<2),
+        fDefaultFlags = fFindData | fFindGap
+    };
+    typedef int TFlags;
+
     // resolved iterators
     const_iterator begin_resolved(CScope* scope,
-                                  size_t maxResolveCount = size_t(-1)) const;
+                                  size_t maxResolveCount = size_t(-1),
+                                  TFlags flags = fDefaultFlags) const;
     const_iterator find_resolved(TSeqPos pos, CScope* scope,
-                                 size_t maxResolveCount = size_t(-1)) const;
+                                 size_t maxResolveCount = size_t(-1),
+                                 TFlags flags = fDefaultFlags) const;
     const_iterator end_resolved(CScope* scope,
-                                size_t maxResolveCount = size_t(-1)) const;
+                                size_t maxResolveCount = size_t(-1),
+                                TFlags flags = fDefaultFlags) const;
 
     TSegment_CI BeginResolved(CScope* scope,
-                              size_t maxResolveCount = size_t(-1)) const;
+                              size_t maxResolveCount = size_t(-1),
+                              TFlags flags = fDefaultFlags) const;
     TSegment_CI FindResolved(TSeqPos pos, CScope* scope,
-                             size_t maxResolveCount = size_t(-1)) const;
+                             size_t maxResolveCount = size_t(-1),
+                             TFlags flags = fDefaultFlags) const;
     TSegment_CI EndResolved(CScope* scope,
-                            size_t maxResolveCount = size_t(-1)) const;
+                            size_t maxResolveCount = size_t(-1),
+                            TFlags flags = fDefaultFlags) const;
 
     // iterate range with plus strand coordinates
     TSegment_CI ResolvedRangeIterator(CScope* scope,
                                       TSeqPos from,
                                       TSeqPos length,
                                       ENa_strand strand = eNa_strand_plus,
-                                      size_t maxResolve = size_t(-1)) const;
+                                      size_t maxResolve = size_t(-1),
+                                      TFlags flags = fDefaultFlags) const;
     // iterate range with specified strand coordinates
     TSegment_CI ResolvedRangeIterator(CScope* scope,
                                       ENa_strand strand,
                                       TSeqPos from,
                                       TSeqPos length,
-                                      size_t maxResolve = size_t(-1)) const;
+                                      size_t maxResolve = size_t(-1),
+                                      TFlags flags = fDefaultFlags) const;
     
     // deprecated interface
     //size_t size(void) const;
-    CSeqMap_CI operator[] (size_t seg_idx) const;
+    //CSeqMap_CI operator[] (size_t seg_idx) const;
     
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
@@ -314,6 +330,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/02/05 15:55:26  vasilche
+* Added eSeqEnd segment at the beginning of seq map.
+* Added flags to CSeqMap_CI to stop on data, gap, or references.
+*
 * Revision 1.31  2003/01/28 17:16:22  vasilche
 * Added CSeqMap::ResolvedRangeIterator with strand coordinate translation.
 *
