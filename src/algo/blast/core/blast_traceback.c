@@ -949,7 +949,7 @@ Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hs
                   length */
                if ((status = BLAST_OneSubjectUpdateParameters(program_number, 
                                 seq_arg.seq->length, score_params->options, 
-                                query_info, sbp, ext_params, hit_params, 
+                                query_info, sbp, hit_params, 
                                 NULL, eff_len_params)) != 0)
                   return status;
             }
