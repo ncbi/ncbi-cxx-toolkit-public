@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2002/10/22 19:02:59  gouriano
+* commented out ERR_POST in CObjectIStream::SetFailFlags
+*
 * Revision 1.91  2002/10/15 13:48:00  gouriano
 * modified to handle "standard" (generated from DTD) XML i/o
 *
@@ -531,11 +534,13 @@ unsigned CObjectIStream::SetFailFlags(unsigned flags, const char* message)
 {
     unsigned old = m_Fail;
     m_Fail |= flags;
+/*
     if ( !old && flags ) {
         // first fail
         ERR_POST("CObjectIStream: error at "<<
                  GetPosition()<<": "<<GetStackTrace() << ": " << message);
     }
+*/
     return old;
 }
 
