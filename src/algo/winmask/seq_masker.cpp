@@ -478,10 +478,11 @@ void CSeqMasker::MergeMaskInfo( TMaskList * dest, const TMaskList * src )
             break;
         }
 
-        if( seg.second < next_seg.first ) {
+        if( seg.second + 1 < next_seg.first ) {
             res.push_back( seg );
             seg = next_seg;
-        } if( seg.second < next_seg.second ) {
+        } 
+        else if( seg.second < next_seg.second ) {
             seg.second = next_seg.second;
         }
     }
@@ -497,6 +498,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.12  2005/04/06 15:57:10  morgulis
+ * Fix in the output fasta formatter for skipping a base in the case of two
+ * adjacent masked intervals.
+ * Fix in the interval merging code for not merging adjacent intervals.
+ *
  * Revision 1.11  2005/04/04 14:28:46  morgulis
  * Decoupled reading and accessing unit counts information from seq_masker
  * core functionality and changed it to be able to support several unit
