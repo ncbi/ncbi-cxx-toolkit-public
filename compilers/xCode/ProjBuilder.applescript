@@ -58,7 +58,7 @@ property buildSettings10_2 : {|MACOSX_DEPLOYMENT_TARGET|:"10.2", |SDKROOT|:"/Dev
 
 property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"G4", |LIBRARY_SEARCH_PATHS|:"", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD", |GCC_ALTIVEC_EXTENSIONS|:"YES", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO"}
 property buildSettingsDevelopment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"YES", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"YES", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0"}
-property buildSettingsDeployment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO"}
+property buildSettingsDeployment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |DEPLOYMENT_POSTPROCESSING|:"YES"}
 property buildSettingsProfiling : buildSettingsDevelopment & {|GCC_GENERATE_PROFILING_CODE|:"YES"}
 
 (* Build styles for the project *)
@@ -472,7 +472,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 			
 			set theScript to theScript & "  " & TheOUTPath & "/bin/datatool -oR " & TheNCBIPath
 			if asnName is "gui_project" then
-				set theScript to theScript & "-opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/core\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
+				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/core\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
 			else
 				set theScript to theScript & " -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"objects/$m\" -oc \"$m\" -odi -od \"$m.def\"" & ret
 			end if
@@ -514,11 +514,13 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/06/25 15:11:52  lebedev
+ * DEPLOYMENT_POSTPROCESSING set to YES in Deployment build. Missing space before -opm datatool flag added
+ *
  * Revision 1.2  2004/06/24 15:32:51  lebedev
  * datatool generation parameters changed for gui_project
  *
  * Revision 1.1  2004/06/23 17:09:52  lebedev
  * Initial revision
- *
  * ===========================================================================
  *)
