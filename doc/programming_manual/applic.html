@@ -105,8 +105,10 @@ allows <i>[]</i> access with string rather than integer indexes.
 is used to store, access, and modify runtime information read from a configuration
 file. Previously, these files were by convention named ".*rc" files on
 <i>unix
-</i>systems. The convention for all platforms now is to name such files
-<i>*.ini</i> (where * is by default the application name).
+</i>systems.
+The convention for all platforms now is to name such files
+<i>*.ini</i>
+(where * is by default the application name).
 <p>Like the environment class, the registry class uses map structures to
 associate keys with values. A configuration file entails more structure
 than environment variables however, as the key-value pairs must be associated
@@ -282,7 +284,8 @@ that constructor is inherited from the parent class. The constructor simply
 resets (clears) the values of the private data members, and sets
 <i>m_Instance</i>
 to point to the newly created object.</font>
-<p><font color="#000000">The <i>AppMain() </i>function is also inherited
+<br><a NAME="appmain"></a>
+<br><font color="#000000">The <i>AppMain() </i>function is also inherited
 from the parent class. Although this function accepts up to six arguments,
 this example passes only the first two, with missing values supplied by
 defaults. The remaining four arguments specify (1) a string from which
@@ -291,7 +294,7 @@ posting, (3) the name of a <i>.ini</i> configuration file, and (4) a program
 name (to be used in lieu of <i>argv[0]</i>). </font><font color="#008080">I</font><font color="#003300">n
 order to avoid the display of a warning message when no configuration file
 is present, the <i>.ini</i> file should be explicitly specified as <i>NULL</i>,
-as in:</font><font color="#008080"></font>
+as in:</font>
 <center>
 <p><i><font color="#008080">AppMain (argc, argv, envp, diag_stream, NULL,
 progname);</font></i></center>
@@ -314,7 +317,6 @@ that class is defined, <i>corelib/ncbiapp.hpp</i>, in the
 directory. This header file in turn includes <i>corelib/ncbistd.hpp</i>,
 which should <i>always</i> be <i>#included</i>.</font>
 <p><font color="#000000"><i><a href="../index.html">up&nbsp;</a></i>&nbsp;
-
 <i><a href="argdescr.html">next&nbsp;</a></i></font>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
