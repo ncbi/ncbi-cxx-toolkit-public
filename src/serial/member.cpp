@@ -454,7 +454,11 @@ void CMemberInfo::UpdateDelayedBuffer(CObjectIStream& in,
     _ASSERT(CanBeDelayed());
     _ASSERT(GetDelayBuffer(classPtr).GetIndex() == GetIndex());
 
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameClass, GetClassType());
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameClassMember, GetId());
     GetTypeInfo()->ReadData(in, GetItemPtr(classPtr));
+    END_OBJECT_FRAME_OF(in);
+    END_OBJECT_FRAME_OF(in);
 }
 
 void CMemberInfo::SetReadFunction(TMemberReadFunction func)
@@ -1158,6 +1162,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.40  2004/09/09 19:18:24  vasilche
+* Some object streams require class/choice to be in stack.
+*
 * Revision 1.39  2004/09/09 15:33:35  vasilche
 * Allow to disable delayed parsing.
 *

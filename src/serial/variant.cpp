@@ -313,7 +313,11 @@ void CVariantInfo::UpdateDelayedBuffer(CObjectIStream& in,
         }
     }
 
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, GetChoiceType());
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, GetId());
     variantType->ReadData(in, variantPtr);
+    END_OBJECT_FRAME_OF(in);
+    END_OBJECT_FRAME_OF(in);
 }
 
 void CVariantInfo::SetReadFunction(TVariantReadFunction func)
@@ -880,6 +884,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2004/09/09 19:18:24  vasilche
+* Some object streams require class/choice to be in stack.
+*
 * Revision 1.15  2004/09/09 15:33:35  vasilche
 * Allow to disable delayed parsing.
 *
