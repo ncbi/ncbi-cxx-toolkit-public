@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/11/26 18:45:17  golikov
+* NStr::Replace added
+*
 * Revision 1.19  1999/11/17 22:05:04  vakatov
 * [!HAVE_STRDUP]  Emulate "strdup()" -- it's missing on some platforms
 *
@@ -198,7 +201,32 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
     return str.substr(beg, end - beg + 1);
 }
 
+string& NStr::Replace(const string& src, const string& search, const string& replace,
+                      string& dst, SIZE_TYPE start_pos, size_t max_replace)
+{
+    dst = src;
 
+    if( start_pos < 0 ||
+        start_pos + search.size() > src.size() ||
+        search == replace)
+        return dst;
+
+    for(size_t count = 0; !(max_replace && count >= max_replace); count++) {
+        start_pos = dst.find(search, start_pos);
+        if(start_pos == NPOS)
+            break;
+        dst.replace(start_pos, search.size(), replace);
+        start_pos += replace.size();
+    }
+    return dst;
+}
+
+string NStr::Replace(const string& src, const string& search, const string& replace,
+                     SIZE_TYPE start_pos, size_t max_replace)
+{
+    string dst;
+    return Replace(src, search, replace, dst, start_pos, max_replace);
+}
 
 // predicates
 

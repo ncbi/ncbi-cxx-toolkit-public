@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/11/26 18:45:08  golikov
+* NStr::Replace added
+*
 * Revision 1.29  1999/11/17 22:05:02  vakatov
 * [!HAVE_STRDUP]  Emulate "strdup()" -- it's missing on some platforms
 *
@@ -173,6 +176,21 @@ struct NStr {
         eTrunc_Both
     };
     static string TruncateSpaces(const string& str, ETrunc where=eTrunc_Both);
+
+    /* starting from position "start_pos", replace no more than "max_replace"
+     * occurencies of substring "search" by string "replace"
+     * if "max_replace" is zero -- then replace all occurences. */
+    static string& Replace(const string& src,
+                           const string& search,
+                           const string& replace,
+                           string& dst,
+                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
+    /* the same buit returns new string */
+    static string Replace(const string& src,
+                          const string& search,
+                          const string& replace,
+                          SIZE_TYPE start_pos = 0, size_t max_replace = 0);
+
 }; // struct NStr
        
 // predicates
