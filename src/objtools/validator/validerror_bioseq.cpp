@@ -266,10 +266,11 @@ void CValidError_bioseq::ValidateSeqIds
                         if (!(**k).IsDdbj()  ||
                             seq.GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
                             CNcbiOstrstream os;
-                            os << "Missing accession for " << (**k).DumpAsFasta();
+                            os << "Missing accession for "
+                               << (**k).DumpAsFasta();
                             PostErr(eDiag_Error,
-                                eErr_SEQ_INST_BadSeqIdFormat,
-                                string(os.str()), seq);
+                                    eErr_SEQ_INST_BadSeqIdFormat,
+                                    CNcbiOstrstreamToString(os), seq);
                         }
                     }
                 }
@@ -1223,7 +1224,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
                 if (IsSameBioseq(id1, id2, m_Scope)) {
                     CNcbiOstrstream os;
                     os << id1.DumpAsFasta();
-                    string sid(os.str());
+                    string sid = CNcbiOstrstreamToString(os);
                     if ((**i1).IsWhole()  &&  (**i2).IsWhole()) {
                         PostErr(eDiag_Error,
                             eErr_SEQ_INST_DuplicateSegmentReferences,
@@ -1954,6 +1955,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/12/30 23:46:22  vakatov
+* Use "CNcbiOstrstreamToString" for more correct strstream-to-string conversion
+*
 * Revision 1.2  2002/12/24 16:53:11  shomrat
 * Changes to include directives
 *
