@@ -330,7 +330,7 @@ static void s_TEST_File(void)
 
     // Get temporary file name
     cout << CFile::GetTmpName() << endl;
-    cout << CFile::GetTmpNameExt(".","tmp_") << endl;
+    cout << CFile::GetTmpNameEx(".","tmp_") << endl;
 }
 
 
@@ -586,6 +586,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/08/08 14:30:06  meric
+ * Accommodate rename of CFile::GetTmpNameExt() to CFile::GetTmpNameEx()
+ *
  * Revision 1.22  2003/03/10 18:57:08  kuznets
  * iterate->ITERATE
  *
