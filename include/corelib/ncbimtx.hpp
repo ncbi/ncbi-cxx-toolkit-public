@@ -178,6 +178,7 @@ protected:
     // Destroy mutex
     void Destroy(void);
 
+public:
     // Acquire mutex for the current thread (no nesting checks)
     void Lock(void);
     // Release mutex (no owner or nesting checks)
@@ -201,7 +202,7 @@ public:
     static void ThrowUnlockFailed(void);
     static void ThrowTryLockFailed(void);
 
-	friend struct SSystemMutex;
+    friend struct SSystemMutex;
     friend class CAutoInitializeStaticFastMutex;
 
     friend class CFastMutex;
@@ -244,6 +245,7 @@ protected:
     // Destroy mutex
     void Destroy(void);
 
+public:
     // Acquire mutex for the current thread
     void Lock(void);
     // Release mutex
@@ -375,6 +377,7 @@ public:
 
     void Lock(void);
     void Unlock(void);
+    bool TryLock(void);
 
     // return initialized mutex object
     operator TObject&(void);
@@ -407,6 +410,7 @@ public:
 
     void Lock(void);
     void Unlock(void);
+    bool TryLock(void);
 
     // return initialized mutex object
     operator TObject&(void);
@@ -453,14 +457,12 @@ public:
     // Close mutex handle (no checks if it's still acquired)
     ~CFastMutex(void);
 
-    /*
     // Acquire mutex for the current thread (no nesting checks)
     void Lock(void);
     // Release mutex (no owner or nesting checks)
     void Unlock(void);
     //
-    void TryLock(void);
-    */
+    bool TryLock(void);
 
     // for CFastMutexGuard
     operator SSystemFastMutex&(void);
@@ -809,6 +811,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/09/20 20:02:07  vasilche
+ * Added public Lock/Unlock/TryLock
+ *
  * Revision 1.15  2002/09/20 19:28:21  vasilche
  * Fixed missing initialization with NCBI_NO_THREADS
  *

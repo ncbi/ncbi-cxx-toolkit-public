@@ -274,6 +274,12 @@ void CAutoInitializeStaticFastMutex::Unlock(void)
 }
 
 inline
+bool CAutoInitializeStaticFastMutex::TryLock(void)
+{
+    return Get().TryLock();
+}
+
+inline
 CAutoInitializeStaticMutex::TObject&
 CAutoInitializeStaticMutex::Get(void)
 {
@@ -302,6 +308,12 @@ void CAutoInitializeStaticMutex::Unlock(void)
     Get().Unlock();
 }
 
+inline
+bool CAutoInitializeStaticMutex::TryLock(void)
+{
+    return Get().TryLock();
+}
+
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -324,6 +336,24 @@ inline
 CFastMutex::operator SSystemFastMutex&(void)
 {
     return m_Mutex;
+}
+
+inline
+void CFastMutex::Lock(void)
+{
+    m_Mutex.Lock();
+}
+
+inline
+void CFastMutex::Unlock(void)
+{
+    m_Mutex.Unlock();
+}
+
+inline
+bool CFastMutex::TryLock(void)
+{
+    return m_Mutex.TryLock();
 }
 
 // CFastMutexGuard
@@ -434,6 +464,9 @@ void CMutexGuard::Guard(SSystemMutex& mtx)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/09/20 20:02:07  vasilche
+ * Added public Lock/Unlock/TryLock
+ *
  * Revision 1.1  2002/09/19 20:05:41  vasilche
  * Safe initialization of static mutexes
  *
