@@ -1251,9 +1251,10 @@ void CAlnMix::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
             TLenMap::iterator len_i_end;
             seg_i = seg_i_begin;
             while (seg_i != seg_i_end) {
+                TSeqPos orig_len = (*seg_i)->m_Len;
 
                 // determine the span of the current seg
-                len_i_end = len_map.find((*seg_i)->m_Len);
+                len_i_end = len_map.find(orig_len);
                 len_i_end++;
 
                 // loop through its sequences
@@ -1273,8 +1274,7 @@ void CAlnMix::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
                         // calc the start
                         TSeqPos this_start = orig_start + 
                             (seq->m_PositiveStrand ? 
-                             len_so_far :
-                             seg2->m_Len - len_so_far);
+                             len_so_far : orig_len - 1 - len_so_far);
 
                         // create the bindings:
                         seq->m_Starts[this_start] = seg;
@@ -1354,31 +1354,31 @@ void CAlnMix::x_CreateDenseg()
 #if OBJECTS_ALNMGR___ALNMIX__DBG
     offset = 0;
     for (numrow = 0;  numrow < numrows;  numrow++) {
-
         TSignedSeqPos max_start = -1, start;
+        bool plus = strands[numrow] == eNa_strand_plus;
 
-        if (strands[numrow] == eNa_strand_plus) {
+        if (plus) {
             offset = 0;
         } else {
             offset = (numsegs -1) * numrows;
         }
 
         for (numseg = 0;  numseg < numsegs;  numseg++) {
-          start = starts[offset + numrow];
+            start = starts[offset + numrow];
             if (start >= 0) {
                 if (start < max_start) {
                     string errstr = string("CAlnMix::x_CreateDenseg():")
                         + " Starts are not consistent!"
                         + " Row=" + NStr::IntToString(numrow) +
-                        " Seg=" + NStr::IntToString(numseg) +
+                        " Seg=" + NStr::IntToString(plus ? numseg :
+                                                    numsegs - 1 - numseg) +
                         " MaxStart=" + NStr::IntToString(max_start) +
                         " Start=" + NStr::IntToString(start);
                     
                     NCBI_THROW(CAlnException, eMergeFailure, errstr);
                 }
                 max_start = start + 
-                  lens[strands[numrow] == eNa_strand_plus ?
-                      numseg : numsegs - 1 - numseg];
+                  lens[plus ? numseg : numsegs - 1 - numseg];
             }
             if (strands[numrow] == eNa_strand_plus) {
                 offset += numrows;
@@ -1398,6 +1398,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2003/05/15 23:31:26  todorov
+* Minimize gaps bug fix
+*
 * Revision 1.45  2003/05/09 16:41:27  todorov
 * Optional mixing of the query sequence only
 *
