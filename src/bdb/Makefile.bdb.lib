@@ -5,7 +5,7 @@
 
 SRC = bdb_types bdb_file bdb_cursor bdb_blob \
       bdb_expt bdb_env bdb_blobcache bdb_filedump \
-      bdb_trans
+      bdb_trans bdb_query bdb_query_parser_main
       
 LIB = bdb
 
