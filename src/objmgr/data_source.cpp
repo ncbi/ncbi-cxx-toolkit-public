@@ -1382,16 +1382,6 @@ void CDataSource::PopulateTSESet(CHandleRangeMap& loc,
                                  CSeq_annot::C_Data::E_Choice sel,
                                  CScope& scope)
 {
-    // Index all annotations if not indexed yet
-    if ( !m_IndexedAnnot ) {
-        non_const_iterate (TEntries, tse_it, m_Entries) {
-            //### Lock TSE so that another thread can not index it too
-            CTSE_Guard guard(*tse_it->second);
-            if ( !tse_it->second->IsIndexed() )
-                x_AddToAnnotMap(*tse_it->second->m_TSE);
-        }
-        m_IndexedAnnot = true;
-    }
 /*
 Iterate each id from "loc". Find all TSEs with references to the id.
 Put TSEs, containing the sequence itself to "selected_with_seq" and
@@ -1423,6 +1413,16 @@ without the sequence but with references to the id and all dead TSEs
             m_Loader->GetRecords(loc, CDataLoader::eGraph);
             break;
         }
+    }
+    // Index all annotations if not indexed yet
+    if ( !m_IndexedAnnot ) {
+        non_const_iterate (TEntries, tse_it, m_Entries) {
+            //### Lock TSE so that another thread can not index it too
+            CTSE_Guard guard(*tse_it->second);
+            if ( !tse_it->second->IsIndexed() )
+                x_AddToAnnotMap(*tse_it->second->m_TSE);
+        }
+        m_IndexedAnnot = true;
     }
     x_ResolveLocationHandles(loc, scope.m_History);
     TTSESet non_history;
@@ -2459,6 +2459,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2003/02/04 22:01:26  grichenk
+* Fixed annotations loading/indexing order
+*
 * Revision 1.78  2003/02/04 21:46:32  grichenk
 * Added map of annotations by intervals (the old one was
 * by total ranges)
