@@ -229,6 +229,33 @@ CProt_ref& CSeq_feat::SetProtXref(void)
 }
 
 
+void CSeq_feat::AddQualifier(const string& qual_name, const string& qual_val)
+{
+    CRef<CGb_qual> qual(new CGb_qual());
+    qual->SetQual(qual_name);
+    qual->SetVal(qual_val);
+    SetQual().push_back(qual);
+}
+
+
+void CSeq_feat::AddDbxref(const string& db, const string& tag)
+{
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb(db);
+    dbtag->SetTag().SetStr(tag);
+    SetDbxref().push_back(dbtag);
+}
+
+
+void CSeq_feat::AddDbxref(const string& db, int tag)
+{
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb(db);
+    dbtag->SetTag().SetId(tag);
+    SetDbxref().push_back(dbtag);
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -237,6 +264,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.17  2004/01/05 19:16:57  dicuccio
+ * Added APIs to ease adding qualifiers and dbxrefs
+ *
  * Revision 6.16  2003/12/31 15:36:08  grichenk
  * Moved CompareLocations() from CSeq_feat to CSeq_loc,
  * renamed it to Compare().

@@ -76,6 +76,13 @@ public:
     void SetProtXref(CProt_ref& value);
     CProt_ref& SetProtXref(void);
 
+    // Add a qualifier to this feature
+    void AddQualifier(const string& qual_name, const string& qual_val);
+
+    // add a DB xref to this feature
+    void AddDbxref(const string& db_name, const string& db_key);
+    void AddDbxref(const string& db_name, int db_key);
+
     // Optional locations are used for features with locations
     // re-mapped to a master sequence
     int CompareNonLocation(const CSeq_feat& f2,
@@ -150,6 +157,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2004/01/05 19:16:36  dicuccio
+* Added APIs to ease adding qualifiers and dbxrefs
+*
 * Revision 1.15  2003/12/31 15:36:07  grichenk
 * Moved CompareLocations() from CSeq_feat to CSeq_loc,
 * renamed it to Compare().
