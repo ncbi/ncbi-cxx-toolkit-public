@@ -1,8 +1,8 @@
 # $Id$
 
-SUB_PROJ = driver cache lang_bind
+APP_PROJ = python_ncbi_dbapi_test
 
-LIB_PROJ = dbapi
+REQUIRES = PYTHON
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

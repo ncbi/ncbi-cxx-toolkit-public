@@ -244,6 +244,9 @@
 /* Define to 1 if the PUBSEQ service is available. */
 #undef HAVE_PUBSEQ_OS
 
+/* Define to 1 if Python libraries are available. */
+#undef HAVE_PYTHON
+
 /* If you have the `readdir_r' function, define to the number of arguments it
    takes (normally 2 or 3). */
 #undef HAVE_READDIR_R

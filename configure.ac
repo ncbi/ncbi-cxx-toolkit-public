@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.338 2005/01/07 17:03:19 ucko Exp $
+#  $Id: configure.ac,v 1.339 2005/01/18 19:22:58 ssikorsk Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -177,7 +177,7 @@ AC_ARG_WITH(ftds2,
 AC_ARG_WITH(ftds-renamed,
    [ --without-ftds-renamed  do not rename Sybase DBLIB symbols in built-in FTDS])
 AC_ARG_WITH(mysql,
-   [ --without-mysql         do not use MySQL])      
+   [ --without-mysql         do not use MySQL])
 AC_ARG_WITH(mysql2,
    [ --with-mysql=DIR        use MySQL installation in DIR])
 AC_ARG_WITH(fltk,
@@ -222,6 +222,10 @@ AC_ARG_WITH(odbc,
    [ --with-odbc=DIR         use ODBC installation in DIR])
 AC_ARG_WITH(odbc2,
    [ --without-odbc          do not use ODBC])
+AC_ARG_WITH(python,
+   [ --with-python=DIR         use Python installation in DIR])
+AC_ARG_WITH(python2,
+   [ --without-python          do not use Python])
 AC_ARG_WITH(sqlite,
    [ --with-sqlite=DIR       use SQLite installation in DIR])
 AC_ARG_WITH(sqlite2,
@@ -296,7 +300,7 @@ check static-exe strip version lfs pch \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
-fltk opengl mesa glut bdb odbc sqlite \
+fltk opengl mesa glut bdb odbc python sqlite \
 expat sablot libxml oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
@@ -336,7 +340,7 @@ for x_arg in "$@" ; do
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-libxml=* \
-      | --with-bdb=* | --with-odbc=* | --with-gif=* | --with-jpeg=* \
+      | --with-bdb=* | --with-odbc=* | --with-python=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
@@ -404,7 +408,7 @@ if test "$GCC" != "yes" ; then
    kcc_ver="`$real_CC -V -c kcc_test.cpp 2>&1 | grep '^KAI '`"
    kcc_license="`$real_CC -V -c kcc_test.cpp 2>&1 | grep -v '^KAI '`"
    rm -f kcc_test.cpp kcc_test.o
-   case "$kcc_ver" in 
+   case "$kcc_ver" in
       KAI* )  KCC="yes" ;;
    esac
 fi
@@ -414,7 +418,7 @@ fi
 if test "$KCC" != "yes"; then
    icc_ver="`$real_CC -V 2>&1 | grep '^Intel(R) C++ Compiler'`"
    icc_license="`$real_CC -c 2>&1 | grep '^icc: NOTE: The evaluation period for this product ends on '`"
-   case "$icc_ver" in 
+   case "$icc_ver" in
       Intel*C*Compiler* )  ICC="yes"; GCC="no" ;;
    esac
 fi
@@ -435,8 +439,8 @@ if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
   -a  "$VAC" != "yes"; then
    # Must use CXX rather than real_CC to ensure correct version number.
    ccc_ver="`$CXX -V 2>&1 | grep '^Compaq C++ V'`"
-   case "$ccc_ver" in 
-      *Compaq* ) CCC="yes" ;; 
+   case "$ccc_ver" in
+      *Compaq* ) CCC="yes" ;;
    esac
 fi
 
@@ -515,7 +519,7 @@ else
     cygwin* )
       case "$real_CC" in
         *cl\.exe* | cl)
-          compiler="MSVC" 
+          compiler="MSVC"
           ncbi_compiler="MSVC"
           ncbi_compiler_ver="6.0" ;;
       esac ;;
@@ -907,7 +911,7 @@ else
          # May not work prior to GCC 3.1.
          ARCH_CFLAGS="-m32"
          ;;
-   
+
        mips-sgi-irix*:MIPSpro73 )
          ARCH_CFLAGS="-n32"
          CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
@@ -1178,7 +1182,7 @@ case "$with_dll:$with_static" in
    *:no)    AC_MSG_ERROR([--without-static requires --with-dll]) ;;
    *)       LIB_OR_DLL="lib";  dll_sfx=""  ;;
 esac
-  
+
 if test "$with_dll" = "no"; then # no DLLs whatsoever!
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
 else
@@ -1745,8 +1749,8 @@ if test "$compiler" != "MSVC" ; then
       CFLAGS="$NOPT_CFLAGS"
       CXXFLAGS="$NOPT_CXXFLAGS"
       LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-O[0-9]*//g'`
-      FAST_CFLAGS="$CFLAGS" 
-      FAST_CXXFLAGS="$CXXFLAGS" 
+      FAST_CFLAGS="$CFLAGS"
+      FAST_CXXFLAGS="$CXXFLAGS"
       FAST_LDFLAGS="$LDFLAGS"
    else
       if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
@@ -2055,7 +2059,7 @@ AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
    [AC_DEFINE(HAVE_SIN_LEN, 1,
       [Define to 1 if `sin_len' is a member of `struct sockaddr_in'.])],
    [], [#include <sys/types.h>
-        #include <netinet/in.h>])   
+        #include <netinet/in.h>])
 
 
 AC_CACHE_CHECK([whether function prototypes can use throw(...)],
@@ -2594,13 +2598,13 @@ if test "$with_sybase" != "no" ; then
           fi])
       if test "$ncbi_cv_db_pubseq" = yes; then
          AC_DEFINE(HAVE_PUBSEQ_OS, 1,
-                   [Define to 1 if the PUBSEQ service is available.]) 
+                   [Define to 1 if the PUBSEQ service is available.])
       fi
 
       SYBASE_DBLIBS="$SYBASE_LPATH -lsybdb${bit64_sfx}"
       AC_CACHE_CHECK([for Sybase DBLib], ncbi_cv_lib_sybdb,
          [CPPFLAGS="$SYBASE_INCLUDE $prig_CPPFLAGS"
-          LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"   
+          LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
              [[
               #include <sybfront.h>
@@ -2874,6 +2878,36 @@ else
    AC_DEFINE(HAVE_ODBC, 1, [Define to 1 if ODBC libraries are available.])
 fi
 
+## Python
+if test "$with_python" != "no" ; then
+   case "$with_python" in
+      yes | "" ) : ${PYTHON_PATH:="/usr/local/python-2.4"} ;;
+      */*      ) PYTHON_PATH=$with_python                  ;;
+   esac
+   PYTHON_INCLUDE="-I$PYTHON_PATH/include/python2.4 -I$srcdir/src/dbapi/lang_bind/python"
+   PYTHON_LIBPATH="$PYTHON_PATH/lib/python2.4/config"
+   PYTHON_LIBS="-L$PYTHON_LIBPATH ${CONF_f_runpath}${PYTHON_LIBPATH} -lpython2.4 -lutil -lpthread -lm -ldl"
+   CPPFLAGS="$PYTHON_INCLUDE $orig_CPPFLAGS"
+   LIBS="$PYTHON_LIBS $orig_LIBS"
+   AC_CACHE_CHECK([for PYTHON libraries in $PYTHON_PATH], ncbi_cv_lib_python,
+      [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <Python.h>]],
+          [[Py_Initialize(); Py_Finalize();]])],
+          [ncbi_cv_lib_python=yes], [ncbi_cv_lib_python=no])])
+   if test "$ncbi_cv_lib_python" = "no"; then
+      with_python="no"
+   fi
+fi
+if test "$with_python" = "no" ; then
+   PYTHON_PATH="No_Python"
+   PYTHON_INCLUDE=
+   PYTHON_LIBS=
+   WithoutPackages="$WithoutPackages PYTHON"
+else
+   WithPackages="$WithPackages PYTHON"
+   AC_DEFINE(HAVE_PYTHON, 1, [Define to 1 if Python libraries are available.])
+fi
+
 
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
@@ -2924,7 +2958,7 @@ if test "$with_opengl" != "no"; then
       darwin) # Use native interface
          OPENGL_LIBS="-framework Carbon -framework AGL -framework OpenGL"
          ;;
-      # cygwin) ... ;; 
+      # cygwin) ... ;;
       *) # Default -- assume X-based
          LIBS="$orig_LIBS"
          CPPFLAGS="$orig_CPPFLAGS"
@@ -3058,7 +3092,7 @@ if test "$with_fltk" != "no"; then
       [if test -x "$FLTK_BINPATH/fltk-config" ; then
           FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
           FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
-    
+
           CPPFLAGS="$FLTK_INCLUDE $orig_CPPFLAGS"
           LIBS="$FLTK_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -3134,7 +3168,7 @@ if test "$with_wxwin" != "no" ; then
       [if test -x "$wxconf" ; then
           WXWIN_INCLUDE="`$gtkconf --cflags` `$wxconf --cflags`"
           WXWIN_LIBS=`$wxconf --libs`
-    
+
           CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIN_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -3217,7 +3251,7 @@ fi
 
 case "$host_os:$compiler:$compiler_version" in
    linux*:GCC:34*)
-      : ${with_included_sss=yes} 
+      : ${with_included_sss=yes}
       : ${with_included_geo=yes}
    ;;
 esac
@@ -4179,6 +4213,8 @@ AC_SUBST(BERKELEYDB_STATIC_LIBS)
 AC_SUBST(BERKELEYDB_LIBS)
 AC_SUBST(ODBC_INCLUDE)
 AC_SUBST(ODBC_LIBS)
+AC_SUBST(PYTHON_INCLUDE)
+AC_SUBST(PYTHON_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(OPENGL_INCLUDE)
@@ -4338,7 +4374,7 @@ dnl print out additional configuration options
 case "$LIB_OR_DLL" in
 both) DLL_USAGE="LIBRARIES:   build both static and dynamic by default" ;;
 dll)  DLL_USAGE="LIBRARIES:   build as dynamic by default" ;;
-lib) 
+lib)
    if test "$with_dll" = "no" ; then
       DLL_USAGE="LIBRARIES:   build as static only"
    else

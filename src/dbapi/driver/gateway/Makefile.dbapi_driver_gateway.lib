@@ -18,5 +18,5 @@ REQUIRES = SSSUTILS
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = dbapi_driver xconnect
+DLL_LIB = dbapi_driver xconnect xncbi
 #LIBS = $(ORIG_LIBS)
