@@ -32,8 +32,8 @@
  *   NCBI C++ diagnostic API
  *
  *   More elaborate documentation could be found in:
- *   http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/
- *          programming_manual/diag.html
+ *     http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/
+ *            programming_manual/diag.html
  */
 
 #include <corelib/ncbistre.hpp>
@@ -105,7 +105,7 @@ enum EDiagPostFlag {
     eDPF_ErrCodeUseSeverity = 0x400, // set by default (always)
     eDPF_DateTime           = 0x80,  //
     eDPF_OmitInfoSev        = 0x4000,// no severity indication if eDiag_Info 
-                                     // is sev.
+
     // set all flags
     eDPF_All                = 0x3FFF,
     // set all flags for using with __FILE__ and __LINE__
@@ -242,7 +242,7 @@ inline bool IsSetDiagPostFlag(EDiagPostFlag  flag,
 extern TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
 
 // Set/unset the specified flag (globally)
-extern void SetDiagPostFlag(EDiagPostFlag flag);
+extern void SetDiagPostFlag  (EDiagPostFlag flag);
 extern void UnsetDiagPostFlag(EDiagPostFlag flag);
 
 // Specify a string to prefix all subsequent error postings with
@@ -250,15 +250,16 @@ extern void SetDiagPostPrefix(const char* prefix);
 
 // Push/pop a string to/from the list of message prefixes
 extern void PushDiagPostPrefix(const char* prefix);
-extern void PopDiagPostPrefix(void);
+extern void PopDiagPostPrefix (void);
 
-// Auxiliary class for work with prefixes. Automaticaly removes the passed parameter 
-// from the list of prefixes at destruction of a object of this class. 
+// Auxiliary class to temporarily add a prefix.
 class CDiagAutoPrefix
 {
 public:
+    // Add prefix "prefix"
     CDiagAutoPrefix(const string& prefix);
-    CDiagAutoPrefix(const char* prefix);
+    CDiagAutoPrefix(const char*   prefix);
+    // Remove the prefix (automagically, when the object gets out of scope)
     ~CDiagAutoPrefix(void);
 };
 
@@ -303,6 +304,7 @@ enum EDiagTrace {
 };
 extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 
+
 // Set new message handler("func"), data("data") and destructor("cleanup").
 // The "func(..., data)" to be called when any instance of "CNcbiDiagBuffer"
 // has a new diagnostic message completed and ready to post.
@@ -329,18 +331,19 @@ struct SDiagMessage {
     TDiagPostFlags   m_Flags;   // bitwise OR of "EDiagPostFlag"
     const char*      m_Prefix;
     const char*      m_ErrText; // sometimes 'error' has no numeric code,
-                              // still it can be represented as text
+                                // still it can be represented as text
 
     // Compose a message string in the standard format(see also "flags"):
-    //    "<file>", line <line>: <severity>: [<prefix>] <message> EOL
+    //    "<file>", line <line>: <severity>: [<prefix>] <message> [EOL]
     // and put it to string "str", or write to an output stream "os".
     enum EDiagWriteFlags {
         fNone   = 0x0,
         fNoEndl = 0x01
     };
-    typedef int TDiagWriteFlags;
-    void          Write(string& str,     TDiagWriteFlags flags = fNone) const;
-    CNcbiOstream& Write(CNcbiOstream& os,TDiagWriteFlags flags = fNone) const;
+    typedef int TDiagWriteFlags;  // binary OR of "EDiagWriteFlags"
+
+    void          Write(string& str,      TDiagWriteFlags flags = fNone) const;
+    CNcbiOstream& Write(CNcbiOstream& os, TDiagWriteFlags flags = fNone) const;
 };
 
 inline CNcbiOstream& operator<< (CNcbiOstream& os, const SDiagMessage& mess) {
@@ -513,10 +516,10 @@ private:
 
 // Set/get handler for processing error codes. 
 // By default this handler is unset. 
-// NcbiApplication can init it self only if registry key DIAG_MESSAGE_FILE
-// section DEBUG) has specified. The value of this key should be a hame 
-// of the file with error codes explanations.
-// About message file format see documentation.
+// NcbiApplication can init itself only if registry key DIAG_MESSAGE_FILE
+// section DEBUG) is specified. The value of this key should be a name 
+// of the file with the error codes explanations.
+// http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/programming_manual/diag.html#errcodes
 
 #define DIAG_MESSAGE_FILE "MessageFile"
 
@@ -543,6 +546,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.51  2002/09/16 20:49:06  vakatov
+ * Cosmetics and comments
+ *
  * Revision 1.50  2002/08/20 19:13:09  gouriano
  * added DiagWriteFlags into SDiagMessage::Write
  *
