@@ -129,7 +129,7 @@ on SetProjectData()
 			"ncbi_os_mac"})
 	
 	AddSimpleProject("util", {"C++"}, "util", ¬
-		{"bytesrc", "strbuffer", "checksum", "itree", "stream_pushback"})
+		{"bytesrc", "strbuffer", "checksum", "itree", "stream_pushback", "utf8", "random_gen", "smalldns"})
 	
 	AddSimpleProject("serial", {"C++"}, "serial", ¬
 		{"asntypes", "autoptrinfo", "choice", ¬
