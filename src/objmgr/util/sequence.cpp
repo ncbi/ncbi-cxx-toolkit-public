@@ -2012,13 +2012,13 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     if ( scope && loc1.IsWhole() ) {
         CBioseq_Handle h1 = scope->GetBioseqHandle(loc1.GetWhole());
         if ( h1 ) {
-            int_rg1.Set(0, h1.GetBioseqLength());
+            int_rg1.Set(0, h1.GetBioseqLength() - 1);
         }
     }
     if ( scope && loc2.IsWhole() ) {
         CBioseq_Handle h2 = scope->GetBioseqHandle(loc2.GetWhole());
         if ( h2 ) {
-            int_rg2.Set(0, h2.GetBioseqLength());
+            int_rg2.Set(0, h2.GetBioseqLength() - 1);
         }
     }
     rg1.Set(int_rg1.GetFrom(), int_rg1.GetTo());
@@ -4179,6 +4179,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.92  2004/10/01 19:16:05  grichenk
+* Fixed bioseq length in TestForOverlap
+*
 * Revision 1.91  2004/10/01 15:33:46  grichenk
 * TestForOverlap -- try to get bioseq's length for whole locations.
 * Perform all calculations with Int8, check for overflow when
