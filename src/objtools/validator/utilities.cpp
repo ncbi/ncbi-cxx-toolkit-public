@@ -102,6 +102,7 @@ BEGIN_NAMED_ENUM_IN_INFO("", CGbqualType::, EType, false)
     ADD_ENUM_VALUE("frequency",         e_Frequency);
     ADD_ENUM_VALUE("function",          e_Function);
     ADD_ENUM_VALUE("gene",              e_Gene);
+    ADD_ENUM_VALUE("insertion_seq",     e_Insertion_seq);
     ADD_ENUM_VALUE("label",             e_Label);
     ADD_ENUM_VALUE("locus_tag",         e_Locus_tag);
     ADD_ENUM_VALUE("map",               e_Map);
@@ -448,11 +449,11 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Usedin );
 
     // modified_base
-    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Frequency );
-    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Label );
-    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Map );
-    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Mod_base );
-    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Usedin );
+    Associate( CSeqFeatData::eSubtype_modified_base, CGbqualType::e_Frequency );
+    Associate( CSeqFeatData::eSubtype_modified_base, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_modified_base, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_modified_base, CGbqualType::e_Mod_base );
+    Associate( CSeqFeatData::eSubtype_modified_base, CGbqualType::e_Usedin );
 
     // N_region
     Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Label );
@@ -501,12 +502,12 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Usedin );
 
     // protein_bind
-    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Bound_moiety );
-    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Function );
-    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Label );
-    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Map );
-    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Standard_name );
-    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Usedin );
+    Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Bound_moiety );
+    Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Usedin );
 
     // RBS
     Associate( CSeqFeatData::eSubtype_RBS, CGbqualType::e_Label );
@@ -524,6 +525,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Transposon );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Usedin );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Insertion_seq );
 
     // repeat_unit
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Function );
@@ -1107,6 +1109,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/05/28 16:20:59  shomrat
+* Corrections to feature-gbqual associations
+*
 * Revision 1.12  2003/05/02 21:10:16  shomrat
 * Serbia and Montenegro restored to list of countries, but Yugoslavia also remains
 *
