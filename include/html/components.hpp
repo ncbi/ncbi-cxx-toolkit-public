@@ -124,15 +124,16 @@ public:
         kNoCOMMENTS = 0x2
     };
 
-    CSubmitDescription m_Submit;
-    CSelectDescription m_Database;
-    CTextInputDescription m_Term;
-    CSelectDescription m_DispMax;
-
     // Subpages
     virtual void CreateSubNodes(void);
     virtual CNCBINode* CreateComments(void);
+
 public:
+    CSubmitDescription    m_Submit;
+    CSelectDescription    m_Database;
+    CTextInputDescription m_Term;
+    CSelectDescription    m_DispMax;
+
     int     m_Width;    // in pixels
     string  m_BgColor;
 };
@@ -222,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/01/27 15:38:54  ivanov
+ * Get rid of Sun Workshop compilation warning.
+ *
  * Revision 1.25  2003/11/05 18:41:06  dicuccio
  * Added export specifiers
  *

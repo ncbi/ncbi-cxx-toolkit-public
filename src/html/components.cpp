@@ -157,8 +157,8 @@ CNCBINode* CTextInputDescription::CreateComponent(void) const
 
 
 CQueryBox::CQueryBox(void)
-    : m_Width(-1), m_Submit("cmd", "Search"), m_Database("db"),
-      m_Term("term"), m_DispMax("dispmax")
+    : m_Submit("cmd", "Search"), m_Database("db"),
+      m_Term("term"), m_DispMax("dispmax"), m_Width(-1)
 {
     SetCellSpacing(0);
     SetCellPadding(5);
@@ -328,6 +328,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/01/27 15:39:52  ivanov
+ * Get rid of Sun Workshop compilation warning.
+ *
  * Revision 1.31  2003/11/03 17:03:08  ivanov
  * Some formal code rearrangement. Move log to end.
  *
