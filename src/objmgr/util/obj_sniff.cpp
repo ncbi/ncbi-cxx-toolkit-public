@@ -42,16 +42,24 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+
 //////////////////////////////////////////////////////////////////
 //
 // Internal class capturing stream offsets of objects while 
 // ASN parsing.
 //
-
 class COffsetReadHook : public CReadObjectHook
 {
 public:
+    COffsetReadHook(CObjectsSniffer* sniffer)
+    : m_Sniffer(sniffer)
+    {
+        _ASSERT(sniffer);
+    }
+
     virtual void  ReadObject (CObjectIStream &in, const CObjectInfo &object);
+private:
+    CObjectsSniffer*  m_Sniffer;
 };
 
 void COffsetReadHook::ReadObject(CObjectIStream &in, 
@@ -59,16 +67,24 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
 {
     const CTypeInfo *type_info = object.GetTypeInfo();
     const string& class_name = type_info->GetName();
+
+    m_Sniffer->ObjectFoundPre(object, m_Sniffer->GetStreamOffset());
      
     DefaultRead(in, object);
+
+    m_Sniffer->ObjectFoundPost(object);
 }
 
 
-
-
-void CObjectsSniffer::TopObjectFound(CObjectInfo& object)
+void CObjectsSniffer::ObjectFoundPre(const CObjectInfo& object, 
+                                     size_t stream_offset)
 {
 }
+
+void CObjectsSniffer::ObjectFoundPost(const CObjectInfo& object)
+{
+}
+
 
 void CObjectsSniffer::Probe(CObjectIStream& input)
 {
@@ -82,7 +98,7 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
     TCandidates::const_iterator it;
 
     for (it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
-        CRef<COffsetReadHook> h(new COffsetReadHook());
+        CRef<COffsetReadHook> h(new COffsetReadHook(this));
         
         it->SetLocalReadHook(input, &(*h));
         hooks.push_back(h);
@@ -115,16 +131,22 @@ void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
 
     while (true) {
         try {
-            size_t offset = input.GetStreamOffset();
+            m_StreamOffset = input.GetStreamOffset();
             string header = input.ReadFileHeader();
 
             for (it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
-                if (header == it->GetTypeInfo()->GetName()) {
-                    CObjectInfo object_info(it->GetTypeInfo());
-
-                    input.Read(object_info, CObjectIStream::eNoFileHeader);
-                    m_TopLevelMap.push_back(SObjectDescription(*it, offset));
+                if (header != it->GetTypeInfo()->GetName()) {
+                    continue;
                 }
+                CObjectInfo object_info(it->GetTypeInfo());
+
+                input.Read(object_info, CObjectIStream::eNoFileHeader);
+                m_TopLevelMap.push_back(
+                              SObjectDescription(*it, m_StreamOffset));
+
+                LOG_POST(Info 
+                         << "ASN.1 text top level object found:" 
+                         << it->GetTypeInfo()->GetName() );                
             } // for
         }
         catch (CEofException& ) {
@@ -153,16 +175,14 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
         CObjectInfo object_info(it->GetTypeInfo());
 
         try {
-            size_t offset = input.GetStreamOffset();
+            m_StreamOffset = input.GetStreamOffset();
 
             input.Read(object_info);
-            m_TopLevelMap.push_back(SObjectDescription(*it, offset));
+            m_TopLevelMap.push_back(SObjectDescription(*it, m_StreamOffset));
 
             LOG_POST(Info 
-                     << "ASN.1 Top level object found:" 
+                     << "ASN.1 binary top level object found:" 
                      << it->GetTypeInfo()->GetName() );
-
-            TopObjectFound(object_info);
         }
         catch (CEofException& ) {
             break;
@@ -181,6 +201,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2003/05/21 14:28:27  kuznets
+* Implemented ObjectFoundPre, ObjectFoundPost
+*
 * Revision 1.2  2003/05/19 16:38:51  kuznets
 * Added support for ASN text
 *
