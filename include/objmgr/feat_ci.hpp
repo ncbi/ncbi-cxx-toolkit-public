@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CMappedFeat
+class NCBI_XOBJMGR_EXPORT CMappedFeat
 {
 public:
     CMappedFeat(void)
@@ -315,6 +315,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/02/25 14:24:19  dicuccio
+* Added Win32 export specifier to CMappedFeat
+*
 * Revision 1.22  2003/02/24 18:57:20  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.
