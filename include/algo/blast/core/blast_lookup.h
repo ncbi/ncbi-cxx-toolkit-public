@@ -25,8 +25,8 @@
  */
 
 /** @file blast_lookup.h
- * @todo FIXME: Need description (protein/rps lookup structures & word finding
- * routines?)
+ *  Contains definitions and prototypes for the lookup table
+ *  construction and scanning phase of blastn, blastp, RPS blast
  */
 
 #include <algo/blast/core/blast_def.h>
@@ -44,69 +44,96 @@ extern "C" {
 /* some defines for the pv_array, as this changes from 32-bit to 64-bit systems. */
 #if defined(LONG_BIT) && LONG_BIT==64
 
-#define PV_ARRAY_TYPE Uint8     /* The pv_array 'native' type. */
-#define PV_ARRAY_BYTES 8        /* number of BYTES in 'native' type. */
-#define PV_ARRAY_BTS 6          /* bits-to-shift from lookup_index to pv_array index. */
-#define PV_ARRAY_MASK 63        /* amount to mask off. */
+#define PV_ARRAY_TYPE Uint8     /**< The pv_array 'native' type. */
+#define PV_ARRAY_BYTES 8        /**< number of BYTES in 'native' type. */
+#define PV_ARRAY_BTS 6          /**< bits-to-shift from lookup_index to pv_array index. */
+#define PV_ARRAY_MASK 63        /**< amount to mask off. */
 
 #else
 
-#define PV_ARRAY_TYPE Uint4     /* The pv_array 'native' type. */
-#define PV_ARRAY_BYTES 4        /* number of BYTES in 'native' type. */
-#define PV_ARRAY_BTS 5          /* bits-to-shift from lookup_index to pv_array index. */
-#define PV_ARRAY_MASK 31        /* amount to mask off. */
+#define PV_ARRAY_TYPE Uint4     /**< The pv_array 'native' type. */
+#define PV_ARRAY_BYTES 4        /**< number of BYTES in 'native' type. */
+#define PV_ARRAY_BTS 5          /**< bits-to-shift from lookup_index to pv_array index. */
+#define PV_ARRAY_MASK 31        /**< amount to mask off. */
 
 #endif
 
+/** Set the bit at position 'index' in the PV 
+ *  array bitfield within 'lookup'
+ */
 #define PV_SET(lookup, index) ( (lookup)->pv[(index)>>PV_ARRAY_BTS] |= 1 << ((index) & PV_ARRAY_MASK) )
+/** Test the bit at position 'index' in the PV 
+ *  array bitfield within 'lookup'
+ */
 #define PV_TEST(lookup, index) ( (lookup)->pv[(index)>>PV_ARRAY_BTS] & 1 << ((index) & PV_ARRAY_MASK) )
 
-/* Number of bits to shift in lookup index calculation when scanning compressed
- * nucleotide sequence
- */
-#define FULL_BYTE_SHIFT 8
+#define FULL_BYTE_SHIFT 8 /**< Number of bits to shift in lookup 
+                               index calculation when scanning 
+                               compressed nucleotide sequence */
 
-  /* structure defining one cell of the compacted lookup table */
-  /* stores the number of hits and
-      up to three hits if the total number of hits is <= 3
-        or
-      a pointer to more hits if the total number of hits is > 3
-  */
+#define HITS_ON_BACKBONE 3 /**< maximum number of hits in one lookup
+                                table cell */
 
-#define HITS_ON_BACKBONE 3
-
-  typedef struct LookupBackboneCell {
-    Int4 num_used;       /* num valid positions */
+/** structure defining one cell of the compacted lookup table */
+typedef struct LookupBackboneCell {
+    Int4 num_used;       /**< number of hits stored for this cell */
 
     union {
-      Int4 overflow_cursor;
-      Int4 entries[HITS_ON_BACKBONE];
+      Int4 overflow_cursor; /**< integer offset into the overflow array
+                                 where the list of hits for this cell begins */
+      Int4 entries[HITS_ON_BACKBONE];  /**< if the number of hits for this
+                                            cell is HITS_ON_BACKBONE or less,
+                                            the hits are all stored directly in
+                                            the cell */
     } payload;
 
-  } LookupBackboneCell;
+} LookupBackboneCell;
     
-  typedef struct LookupTable {
-    Int4 threshold; /* the score threshold for neighboring words */
-    Int4 neighbor_matches; /* the number of neighboring words found while indexing the queries, used for informational/debugging purposes */
-    Int4 exact_matches; /* the number of exact matches found while indexing the queries, used for informational/debugging purposes */
-    Int4 mask; /* part of index to mask off, that is, top (wordsize*charsize) bits should be discarded. */
-    Int4 word_length; /* Length in bases of the full word match required to 
-			  trigger extension */
-    Int4 wordsize; /* number of full bytes in a full word */
-    Int4 reduced_wordsize; /* number of bytes in a word stored in the LT */
-    Int4 charsize; /* number of bits for a base/residue */
-    Int4 scan_step; /* number of bases between successive words */
-    Int4 alphabet_size; /* number of letters in the alphabet */
-    Int4 backbone_size; /* number of cells in the backbone */
-    Int4 longest_chain; /* length of the longest chain on the backbone */
-    Int4 ** thin_backbone; /* the "thin" backbone. for each index cell, maintain a pointer to a dynamically-allocated chain of hits. */
-    LookupBackboneCell * thick_backbone; /* the "thick" backbone. after queries are indexed, compact the backbone to put at most HITS_ON_BACKBONE hits on the backbone, otherwise point to some overflow storage */
-    Int4 * overflow; /* the overflow array for the compacted lookup table */
-    Int4  overflow_size; /* Number of elements in the overflow array (above). */
-    PV_ARRAY_TYPE *pv; /* presence vector. a bit vector indicating which cells are occupied */
-    Uint1* neighbors; /* neighboring word array */
-    Int4 neighbors_length; /* length of neighboring word array */
-    Boolean use_pssm; /* if True use PSSM rather than (protein) sequence to construct lookup table. */
+/** The basic lookup table structure for blastn
+ *  and blastp searches
+ */
+typedef struct LookupTable {
+    Int4 threshold;        /**< the score threshold for neighboring words */
+    Int4 neighbor_matches; /**< the number of neighboring words found while 
+                                indexing the queries, used for informational/
+                                debugging purposes */
+    Int4 exact_matches;    /**< the number of exact matches found while 
+                                indexing the queries, used for informational/
+                                debugging purposes */
+    Int4 mask;             /**< part of index to mask off, that is, top 
+                                (wordsize*charsize) bits should be discarded. */
+    Int4 word_length;      /**< Length in bases of the full word match 
+                                required to trigger extension */
+    Int4 wordsize;         /**< number of full bytes in a full word */
+    Int4 reduced_wordsize; /**< number of bytes in a word stored in the LUT */
+    Int4 charsize;         /**< number of bits for a base/residue */
+    Int4 scan_step;        /**< number of bases between successive words */
+    Int4 alphabet_size;    /**< number of letters in the alphabet */
+    Int4 backbone_size;    /**< number of cells in the backbone */
+    Int4 longest_chain;    /**< length of the longest chain on the backbone */
+    Int4 ** thin_backbone; /**< the "thin" backbone. for each index cell, 
+                                maintain a pointer to a dynamically-allocated 
+                                chain of hits. */
+    LookupBackboneCell * thick_backbone; /**< the "thick" backbone. after 
+                                              queries are indexed, compact the 
+                                              backbone to put at most 
+                                              HITS_ON_BACKBONE hits on the 
+                                              backbone, otherwise point to 
+                                              some overflow storage */
+    Int4 * overflow;       /**< the overflow array for the compacted 
+                                lookup table */
+    Int4  overflow_size;   /**< Number of elements in the overflow array */
+    PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
+                                are set indicate that the corresponding thick
+                                backbone cell contains hits */
+    Uint1* neighbors;      /**< neighboring word array, used during lookup 
+                                table construction to hold the complete set 
+                                of subject words that can occur during the 
+                                search*/
+    Int4 neighbors_length; /**< length of neighboring word array */
+    Boolean use_pssm;      /**< if TRUE, lookup table construction will assume
+                                that the underlying score matrix is position-
+                                specific */
   } LookupTable;
   
   /** Create a mapping from word w to the supplied query offset
@@ -143,11 +170,11 @@ Int4 _BlastAaLookupFinalize(LookupTable* lookup);
  * @param array_size length of the offset arrays [in]
  * @return The number of hits found.
  */
-Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap, /* in: the LUT */
+Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk *subject,
                         Int4* offset,
-                        Uint4 * NCBI_RESTRICT query_offsets, /* out: pointer to the array to which hits will be copied */
-                        Uint4 * NCBI_RESTRICT subject_offsets, /* out : pointer to the array where offsets will be stored */
+                        Uint4 * NCBI_RESTRICT query_offsets,
+                        Uint4 * NCBI_RESTRICT subject_offsets,
                         Int4 array_size);
 
 /**
@@ -165,16 +192,17 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap, /* in: the LUT */
  * @param array_size length of the offset arrays [in]
  * @return The number of hits found.
  */
-Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap, /* in: the LUT */
+Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk *sequence,
                         Int4* offset,
-		        Uint4 * table_offsets, /* out : pointer to the array where offsets will be stored */
-                        Uint4 * sequence_offsets, /* out: pointer to the array to which hits will be copied */
+		        Uint4 * table_offsets,
+                        Uint4 * sequence_offsets,
 		        Int4 array_size);
 
 /** Create a new protein lookup table.
   * @param opt pointer to lookup table options structure [in]
   * @param lut handle to lookup table structure [in/modified]
+  * @return 0 if successful, nonzero on failure
   */
   
 Int4 BlastAaLookupNew(const LookupTableOptions* opt, LookupTable* * lut);
@@ -184,12 +212,16 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt, LookupTable* * lut);
   * @param opt pointer to lookup table options structure [in]
   * @param lut handle to lookup table [in/modified]
   * @param is_protein boolean indicating protein or nucleotide [in]
+  * @return 0 if successful, nonzero on failure
   */
   
 Int4 LookupTableNew(const LookupTableOptions* opt, LookupTable* * lut, 
 		    Boolean is_protein);
 
-/** Free the lookup table. */
+/** Free the lookup table.
+ *  @param lookup The lookup table structure to be frees
+ *  @return NULL
+ */
 LookupTable* LookupTableDestruct(LookupTable* lookup);
 
 /** Index an array of queries.
@@ -258,46 +290,68 @@ Int4 AddNeighboringWords(LookupTable* lookup,
 
 /* RPS blast structures and functions */
 
-#define RPS_HITS_PER_CELL 3
+#define RPS_HITS_PER_CELL 3 /**< maximum number of hits in an RPS backbone
+                                 cell; this may be redundant (have the same
+                                 value as HITS_ON_BACKBONE) but must be
+                                 separate to guarantee binary compatibility
+                                 with existing RPS blast databases */
 
+/** structure defining one cell of the RPS lookup table */
 typedef struct RPSBackboneCell {
-    Int4 num_used;
-    Int4 entries[RPS_HITS_PER_CELL];
+    Int4 num_used;                   /**< number of hits in this cell */
+    Int4 entries[RPS_HITS_PER_CELL]; /**< if the number of hits in this cell
+                                          is RPS_HITS_PER_CELL or less, all
+                                          hits go into this array. Otherwise,
+                                          the first hit in the list goes into
+                                          element 0 of the array, and element 1
+                                          contains the byte offset into the 
+                                          overflow array where the list of the
+                                          remaining hits begins */
 } RPSBackboneCell;
 
+/** 
+ * The basic lookup table structure for RPS blast searches
+ */
 typedef struct RPSLookupTable {
-    Int4 wordsize; /* number of full bytes in a full word */
-    Int4 longest_chain; /* length of the longest chain on the backbone */
-    Int4 mask; /* part of index to mask off, that is, top (wordsize*charsize) bits should be discarded. */
-    Int4 alphabet_size; /* number of letters in the alphabet */
-    Int4 charsize; /* number of bits for a base/residue */
-    Int4 backbone_size; /* number of cells in the backbone */
-    RPSBackboneCell * rps_backbone; /* the lookup table used for RPS blast */
-    Int4 ** rps_pssm; /* Pointer to memory-mapped RPS Blast profile file */
-    Int4 * rps_seq_offsets; /* array of start offsets for each RPS DB seq. */
-    RPSAuxInfo* rps_aux_info; /* RPS Blast auxiliary information */
-    Int4 * overflow; /* the overflow array for the compacted lookup table */
-    Int4  overflow_size; /* Number of elements in the overflow array (above). */
-    PV_ARRAY_TYPE *pv; /* presence vector. a bit vector indicating which cells are occupied */
+    Int4 wordsize;      /**< number of full bytes in a full word */
+    Int4 longest_chain; /**< length of the longest chain on the backbone */
+    Int4 mask;          /**< part of index to mask off, that is, 
+                             top (wordsize*charsize) bits should be 
+                             discarded. */
+    Int4 alphabet_size; /**< number of letters in the alphabet */
+    Int4 charsize;      /**< number of bits for a base/residue */
+    Int4 backbone_size; /**< number of cells in the backbone */
+    RPSBackboneCell * rps_backbone; /**< the lookup table used for RPS blast */
+    Int4 ** rps_pssm;   /**< Pointer to memory-mapped RPS Blast profile file */
+    Int4 * rps_seq_offsets; /**< array of start offsets for each RPS DB seq. */
+    RPSAuxInfo* rps_aux_info; /**< RPS Blast auxiliary information */
+    Int4 * overflow;    /**< the overflow array for the compacted 
+                             lookup table */
+    Int4  overflow_size;/**< Number of elements in the overflow array */
+    PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
+                                are set indicate that the corresponding thick
+                                backbone cell contains hits */
 } RPSLookupTable;
   
 /** Create a new RPS blast lookup table.
   * @param rps_info pointer to structure with RPS setup information [in]
   * @param lut handle to lookup table [in/modified]
+  * @return 0 if successful, nonzero on failure
   */
   
 Int4 RPSLookupTableNew(const RPSInfo *rps_info, RPSLookupTable* * lut);
 
-/** Free the lookup table. */
+/** Free the lookup table. 
+ *  @param lookup The lookup table structure to free; note that
+ *          the rps_backbone and rps_seq_offsets fields are not freed
+ *          by this call, since they may refer to memory-mapped arrays
+ *  @return NULL
+ */
 RPSLookupTable* RPSLookupTableDestruct(RPSLookupTable* lookup);
 
-/*********************************
- * 
- * Nucleotide functions
- *
- *********************************/
+/********************* Nucleotide functions *******************/
 
-/* Macro to test the presence vector array value for a lookup table index */
+/** Macro to test the presence vector array value for a lookup table index */
 #define NA_PV_TEST(pv_array, index, pv_array_bts) (pv_array[(index)>>pv_array_bts]&(((PV_ARRAY_TYPE) 1)<<((index)&PV_ARRAY_MASK)))
 
 /** Scan the compressed subject sequence, returning all word hits, using the 
@@ -331,6 +385,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
  * @param max_hits The allocated size of the above arrays - how many offsets 
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
+ * @return The number of hits found from the lookup table
 */
 Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk* subject,
@@ -344,8 +399,10 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
  * @param lookup Pointer to the lookup table structure [in] [out]
  * @param query The query sequence [in]
  * @param location What locations on the query sequence to index? [in]
+ * @return Always 0
  */
-Int4 BlastNaLookupIndexQuery(LookupTable* lookup, BLAST_SequenceBlk* query,
+Int4 BlastNaLookupIndexQuery(LookupTable* lookup, 
+                             BLAST_SequenceBlk* query,
                              ListNode* location);
 
 #ifdef __cplusplus
