@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/10/15 13:45:15  gouriano
+* added "UndoClassMember" function
+*
 * Revision 1.14  2001/10/17 20:41:19  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -204,6 +207,7 @@ protected:
     virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType,
                                           TMemberIndex pos);
     void EndClassMember(void);
+    virtual void UndoClassMember(void);
 
     virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
     virtual void EndChoiceVariant(void);
@@ -260,6 +264,8 @@ private:
         eTagSelfClosed
     };
     ETagState m_TagState;
+    string m_LastTag;
+    string m_RejectedTag;
 };
 
 #include <serial/objistrxml.inl>

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2002/10/15 13:45:15  gouriano
+* added "UndoClassMember" function
+*
 * Revision 1.71  2002/09/09 18:13:59  grichenk
 * Added CObjectHookGuard class.
 * Added methods to be used by hooks for data
@@ -732,6 +735,7 @@ public:
     virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType,
                                           TMemberIndex pos) = 0;
     virtual void EndClassMember(void);
+    virtual void UndoClassMember(void) {}
 
     // choice
     virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType) = 0;
