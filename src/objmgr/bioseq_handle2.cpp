@@ -31,6 +31,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/21 20:09:06  ucko
+* Look at parents' title descriptors in some cases.
+* Incorporate recent changes from the C version (CreateDefLineEx):
+*  * honor wgs (whole genome shotgun) technology.
+*  * don't add strain if already present in organism name.
+* [Also fixed in old objmgr.]
+*
 * Revision 1.4  2002/03/21 17:01:20  ucko
 * Fix stupid bug in s_FindLongestFeature (also fixed in old objmgr).
 *
@@ -173,17 +180,25 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
     case CMolInfo::eTech_est:
     case CMolInfo::eTech_sts:
     case CMolInfo::eTech_survey:
+    case CMolInfo::eTech_wgs:
         use_biosrc = true;
     default:
         break;
     }
 
     if (!(flags & fGetTitle_Reconstruct)) {
-        // Don't use CSeqdesc_CI here because parents' titles are not
-        // necessarily relevant.
-        for (CTypeConstIterator<CSeqdesc> it = ConstBegin(*core);
-             it;  ++it) {
-            if (it->IsTitle()) {
+        // Ignore parents' titles for non-PDB proteins.
+        if (core->GetInst().GetMol() == CSeq_inst::eMol_aa
+            &&  pdb_id.IsNull()) {
+            for (CTypeConstIterator<CSeqdesc> it = ConstBegin(*core);
+                 it;  ++it) {
+                if (it->IsTitle()) {
+                    title = it->GetTitle();
+                    BREAK(it);
+                }
+            }
+        } else {
+            for (CSeqdesc_CI it(handle, CSeqdesc::e_Title);  it;  ++it) {
                 title = it->GetTitle();
                 BREAK(it);
             }
@@ -330,6 +345,12 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
             suffix = ", genomic survey sequence";
         }
         break;
+
+    case CMolInfo::eTech_wgs:
+        if (title.find("whole genome shotgun sequence") == NPOS) {
+            suffix = ", whole genome shotgun sequence";
+        }
+        break;
     }
 
     if (flags & fGetTitle_Organism) {
@@ -382,7 +403,8 @@ static string s_TitleFromBioSource(const CBioSource& source)
 
     if (org.IsSetOrgname()  &&  org.GetOrgname().IsSetMod()) {
         iterate (COrgName::TMod, it, org.GetOrgname().GetMod()) {
-            if ((*it)->GetSubtype() == COrgMod::eSubtype_strain) {
+            if ((*it)->GetSubtype() == COrgMod::eSubtype_strain
+                && !NStr::EndsWith(name, (*it)->GetSubname(), NStr::eNocase)) {
                 strain = " strain " + (*it)->GetSubname();
             }
         }
