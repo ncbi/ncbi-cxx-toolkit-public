@@ -826,6 +826,17 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
     return rdr.release();
 }
 
+void CDBAPI_Cache::GetBlobAccess(const string&     key, 
+                                 int               version,
+                                 const string&     subkey,
+                                 BlobAccessDescr*  blob_descr)
+{
+    _ASSERT(0); // Not implemented yet
+    blob_descr->blob_size = 0;
+}
+
+
+
 IWriter* CDBAPI_Cache::GetWriteStream(const string&    key,
                                       int              version,
                                       const string&    subkey,
@@ -1219,6 +1230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/12/22 14:35:24  kuznets
+ * +GetBlobAccess()
+ *
  * Revision 1.13  2004/11/03 17:55:01  kuznets
  * All time related parameters made unsigned
  *

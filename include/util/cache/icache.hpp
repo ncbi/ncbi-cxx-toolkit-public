@@ -223,6 +223,28 @@ public:
                                    int            version,
                                    const string&  subkey) = 0;
 
+    /// BLOB access descriptor
+    struct BlobAccessDescr
+    {
+        IReader*   reader;
+        char*      buf;
+        size_t     buf_size;
+        size_t     blob_size;
+    };
+
+    /// Get BLOB access using BlobAccessDescr.
+    ///
+    /// Method fills blob_descr parameter.
+    /// If provided buffer has sufficient capacity for BLOB storage, BLOB
+    /// is saved into the buffer, otherwise IReader is created.
+    /// 
+    /// @note 
+    ///  Method supposed to provide fast access to relatively small BLOBs
+    virtual void GetBlobAccess(const string&     key, 
+                               int               version,
+                               const string&     subkey,
+                               BlobAccessDescr*  blob_descr) = 0;
+
     /// Return sequential stream interface to write BLOB data.
     ///
     /// @param key 
@@ -315,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/12/22 14:33:52  kuznets
+ * +GetBlobAccess()
+ *
  * Revision 1.11  2004/11/03 17:53:47  kuznets
  * All time related parameters made unsigned
  *

@@ -271,6 +271,10 @@ public:
     virtual IReader* GetReadStream(const string&  key, 
                                    int            version,
                                    const string&  subkey);
+    virtual void GetBlobAccess(const string&     key, 
+                               int               version,
+                               const string&     subkey,
+                               BlobAccessDescr*  blob_descr);
 
     virtual IWriter* GetWriteStream(const string&    key,
                                     int              version,
@@ -349,6 +353,12 @@ private:
     void x_PidLock(ELockMode lm);
 
     void x_PerformCheckPointNoLock(unsigned bytes_written);
+
+    IReader* x_CreateOverflowReader(int overflow,
+                                    const string&  key, 
+                                    int            version,
+                                    const string&  subkey,
+                                    size_t&        file_length);
 
 private:
     CBDB_Cache(const CBDB_Cache&);
@@ -488,6 +498,7 @@ private:
 ///   Timestamp flags (see ICache)
 ///   (when 0 some reasonable default combination is taken)
 ///
+NCBI_BDB_EXPORT
 void BDB_ConfigureCache(CBDB_Cache&             bdb_cache,
                         const string&           path,
                         const string&           name,
@@ -552,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/12/22 14:34:17  kuznets
+ * +GetBlobAccess()
+ *
  * Revision 1.41  2004/12/16 14:25:12  kuznets
  * + BDB_ConfigureCache (simple BDB configurator)
  *

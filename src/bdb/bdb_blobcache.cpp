@@ -1039,6 +1039,32 @@ bool CBDB_Cache::Read(const string& key,
 
 }
 
+IReader* CBDB_Cache::x_CreateOverflowReader(int            overflow,
+                                            const string&  key, 
+                                            int            version,
+                                            const string&  subkey,
+                                            size_t&        file_length)
+{
+    if (overflow) {
+        string path;
+        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
+        auto_ptr<CNcbiIfstream> 
+            overflow_file(new CNcbiIfstream(path.c_str(),
+                                            IOS_BASE::in | IOS_BASE::binary));
+        if (!overflow_file->is_open()) {
+            return 0;
+        }
+        if ( m_TimeStampFlag & fTimeStampOnRead ) {
+            x_UpdateReadAccessTime(key, version, subkey);
+        }
+        CFile entry(path);
+        file_length = (size_t) entry.GetLength();        
+
+        return new CBDB_CacheIReader(overflow_file.release(), m_WSync);
+    }
+    return 0;
+}
+
 
 IReader* CBDB_Cache::GetReadStream(const string&  key, 
                                    int            version,
@@ -1061,25 +1087,14 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
             return 0;
         }
     }
+    size_t bsize;
 
     // Check if it's an overflow BLOB (external file)
-
-    if (overflow) {
-        string path;
-        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
-        auto_ptr<CNcbiIfstream> 
-            overflow_file(new CNcbiIfstream(path.c_str(),
-                                            IOS_BASE::in | IOS_BASE::binary));
-        if (!overflow_file->is_open()) {
-            return 0;
-        }
-        if ( m_TimeStampFlag & fTimeStampOnRead ) {
-            x_UpdateReadAccessTime(key, version, subkey);
-        }
-        return new CBDB_CacheIReader(overflow_file.release(), m_WSync);
-
-    }
-
+    {{
+    IReader *rd = x_CreateOverflowReader(overflow, key, version, subkey, bsize);
+    if (rd)
+        return rd;
+    }}
     // Inline BLOB, reading from BDB storage
 
     m_CacheDB->key = key;
@@ -1091,8 +1106,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
         return 0;
     }
 
-    size_t bsize = m_CacheDB->LobSize();
-
+    bsize = m_CacheDB->LobSize();
     unsigned char* buf = new unsigned char[bsize+1];
 
     ret = m_CacheDB->GetData(buf, bsize);
@@ -1106,6 +1120,90 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     return new CBDB_CacheIReader(buf, bsize, m_WSync);
 }
 
+void CBDB_Cache::GetBlobAccess(const string&     key, 
+                               int               version,
+                               const string&     subkey,
+                               BlobAccessDescr*  blob_descr)
+{
+    _ASSERT(blob_descr);
+    blob_descr->reader = 0;
+    blob_descr->blob_size = 0;
+
+	EBDB_ErrCode ret;
+
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
+	int overflow;
+    unsigned int ttl;
+	bool rec_exists = 
+        x_RetrieveBlobAttributes(key, version, subkey, &overflow, &ttl);
+	if (!rec_exists) {
+		return;
+	}
+    // check expiration
+    if (m_TimeStampFlag & fCheckExpirationAlways) {
+        if (x_CheckTimestampExpired(key, version, subkey)) {
+            return;
+        }
+    }
+    // Check if it's an overflow BLOB (external file)
+    blob_descr->reader = 
+        x_CreateOverflowReader(overflow, 
+                               key, version, subkey, 
+                               blob_descr->blob_size);
+    if (blob_descr->reader) {
+        return;
+    }
+
+    // Inline BLOB, reading from BDB storage
+
+    m_CacheDB->key = key;
+    m_CacheDB->version = version;
+    m_CacheDB->subkey = subkey;
+    
+    ret = m_CacheDB->Fetch();
+    if (ret != eBDB_Ok) {
+        blob_descr->blob_size = 0;
+        return;
+    }
+    blob_descr->blob_size = m_CacheDB->LobSize();
+
+    // trying to read the BLOB into the user's buffer
+/*
+    if (blob_descr->buf  &&
+        blob_descr->blob_size < blob_descr->buf_size) {
+    
+        ret = m_CacheDB->GetData(blob_descr->buf, blob_descr->blob_size);
+        if (ret != eBDB_Ok) {
+            blob_descr->blob_size = 0;
+            return;
+        }
+        if ( m_TimeStampFlag & fTimeStampOnRead ) {
+            x_UpdateReadAccessTime(key, version, subkey);
+        }
+    }
+*/
+    // read the BLOB into a custom in-memory buffer
+    CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
+    blob_descr->reader = 
+        new CBDB_CacheIReader(bstream, m_WSync);
+    return;
+
+    unsigned char* buf = new unsigned char[blob_descr->blob_size+1];
+
+    ret = m_CacheDB->GetData(buf, blob_descr->blob_size);
+    if (ret != eBDB_Ok) {
+        blob_descr->blob_size = 0;
+        return;
+    }
+
+    if ( m_TimeStampFlag & fTimeStampOnRead ) {
+        x_UpdateReadAccessTime(key, version, subkey);
+    }
+    blob_descr->reader = 
+        new CBDB_CacheIReader(buf, blob_descr->blob_size, m_WSync);
+
+}
 
 
 IWriter* CBDB_Cache::GetWriteStream(const string&    key,
@@ -2220,6 +2318,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.95  2004/12/22 14:34:34  kuznets
+ * +GetBlobAccess()
+ *
  * Revision 1.94  2004/12/16 14:25:20  kuznets
  * + BDB_ConfigureCache (simple BDB configurator)
  *

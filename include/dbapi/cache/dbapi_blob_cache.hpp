@@ -164,6 +164,11 @@ public:
     virtual IReader* GetReadStream(const string&  key, 
                                    int            version,
                                    const string&  subkey);
+    virtual void GetBlobAccess(const string&     key, 
+                               int               version,
+                               const string&     subkey,
+                               BlobAccessDescr*  blob_descr);
+
 
     /// Specifics of this IWriter implementation is that IWriter::Flush here
     /// cannot be called twice, because it finalises transaction
@@ -282,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/12/22 14:34:56  kuznets
+ * +GetBlobAccess()
+ *
  * Revision 1.11  2004/11/03 17:54:50  kuznets
  * All time related parameters made unsigned
  *
