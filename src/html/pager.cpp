@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/09/13 15:37:39  golikov
+* Image sizes in page numbers added
+*
 * Revision 1.17  1999/06/25 20:02:38  golikov
 * "Show:" trasfered to pager
 *
@@ -101,8 +104,6 @@ const string CPager::KParam_DisplayPage = "page";
 const string CPager::KParam_Page = "page ";
 const string CPager::KParam_PreviousPages = "previous pages";
 const string CPager::KParam_NextPages = "next pages";
-
-string CPagerView::sm_DefaultImagesDir = "/images/";
 
 CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
     : m_PageSize(GetPageSize(request, defaultPageSize)),
@@ -287,17 +288,19 @@ CNCBINode* CPager::GetItemInfo(void) const
         " items of " + NStr::IntToString(m_ItemCount));
 }
 
-CNCBINode* CPager::GetPagerView(void) const
+CNCBINode* CPager::GetPagerView(const string& imgDir,
+                                const int imgX, const int imgY) const
 {
     if ( m_ItemCount <= m_PageSize )
         return 0;
-    return new CPagerView(*this);
+    return new CPagerView(*this, imgDir, imgX, imgY);
 }
 
 // pager view
 
-CPagerView::CPagerView(const CPager& pager)
-    : m_ImagesDir(sm_DefaultImagesDir), m_Pager(pager)
+CPagerView::CPagerView(const CPager& pager, const string& imgDir,
+                       const int imgX, const int imgY)
+    : m_ImagesDir(imgDir), m_ImgSizeX(imgX), m_ImgSizeY(imgY), m_Pager(pager)
 {
 }
 
@@ -306,10 +309,15 @@ void CPagerView::AddImageString(CNCBINode* node, int number,
 {
     string s = NStr::IntToString(number + 1);
     string name = CPager::KParam_Page + s;
+    CHTML_image* img;
 
     for ( size_t i = 0; i < s.size(); ++i ) {
-        node->AppendChild(new CHTML_image(name,
-                    m_ImagesDir + prefix + s[i] + suffix, 0));
+        img = new CHTML_image(name, m_ImagesDir + prefix + s[i] + suffix, 0);
+        if( m_ImgSizeX )
+            img->SetWidth( m_ImgSizeX );
+        if( m_ImgSizeY )
+            img->SetHeight( m_ImgSizeY );
+        node->AppendChild( img );
     }
 }
 
@@ -317,10 +325,15 @@ void CPagerView::AddInactiveImageString(CNCBINode* node, int number,
                                   const string& prefix, const string& suffix)
 {
     string s = NStr::IntToString(number + 1);
+    CHTML_img* img;
 
     for ( size_t i = 0; i < s.size(); ++i ) {
-        node->AppendChild(new CHTML_img(
-                    m_ImagesDir + prefix + s[i] + suffix));
+        img = new CHTML_img(m_ImagesDir + prefix + s[i] + suffix);
+        if( m_ImgSizeX )
+            img->SetWidth( m_ImgSizeX );
+        if( m_ImgSizeY )
+            img->SetHeight( m_ImgSizeY );
+        node->AppendChild( img );
     }
 }
 
@@ -338,8 +351,13 @@ void CPagerView::CreateSubNodes()
     int lastBlockPage = min(firstBlockPage + blockSize - 1, lastPage);
 
     if ( firstBlockPage > 0 ) {
-        InsertAt(0, column++, new CHTML_image(CPager::KParam_PreviousPages,
-                                              m_ImagesDir + "prev.gif", 0));
+        CHTML_image* img = new CHTML_image(CPager::KParam_PreviousPages,
+                                           m_ImagesDir + "prev.gif", 0);
+        if( m_ImgSizeX )
+            img->SetWidth( m_ImgSizeX );
+        if( m_ImgSizeY )
+            img->SetHeight( m_ImgSizeY );
+        InsertAt(0, column++, img);
     }
 
     for ( int i = firstBlockPage; i <= lastBlockPage ; ++i ) {
@@ -354,8 +372,13 @@ void CPagerView::CreateSubNodes()
     }
 
     if ( lastPage != lastBlockPage ) {
-        InsertAt(0, column++, new CHTML_image(CPager::KParam_NextPages,
-                                              m_ImagesDir + "next.gif", 0));
+        CHTML_image* img = new CHTML_image(CPager::KParam_NextPages,
+                                           m_ImagesDir + "next.gif", 0);
+        if( m_ImgSizeX )
+            img->SetWidth( m_ImgSizeX );
+        if( m_ImgSizeY )
+            img->SetHeight( m_ImgSizeY );
+        InsertAt(0, column++, img);
     }
 }
 

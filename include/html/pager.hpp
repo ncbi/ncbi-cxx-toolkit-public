@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/09/13 15:37:16  golikov
+* Image sizes in page numbers added
+*
 * Revision 1.5  1999/06/25 20:02:58  golikov
 * "Show:" trasfered to pager
 *
@@ -79,7 +82,9 @@ public:
 
     pair<int, int> GetRange(void) const;
 
-    CNCBINode* GetPagerView(void) const;
+    CNCBINode* GetPagerView(const string& imgDir,
+                            const int imgX, const int imgY) const;
+
     CNCBINode* GetPageInfo(void) const;
     CNCBINode* GetItemInfo(void) const;
 
@@ -124,17 +129,19 @@ private:
 class CPagerView : public CHTML_table
 {
 public:
-    CPagerView(const CPager& pager);
+
+    CPagerView(const CPager& pager, const string& imgDir,
+               const int imgX, const int imgY);
 
     virtual void CreateSubNodes(void);
 
-    // source of images
-    string m_ImagesDir;
-
-    // default source of images
-    static string sm_DefaultImagesDir;
-    
 private:
+
+    // source of images and it's sizes
+    string m_ImagesDir;
+    int m_ImgSizeX;
+    int m_ImgSizeY;
+
     const CPager& m_Pager;
 
     void AddInactiveImageString(CNCBINode* node, int number,
