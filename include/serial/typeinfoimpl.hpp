@@ -51,8 +51,10 @@ public:
 
     static bool IsDefault(TConstObjectPtr objectPtr);
     static void SetDefault(TObjectPtr objectPtr);
-    static bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2);
-    static void Assign(TObjectPtr dst, TConstObjectPtr src);
+    static bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2,
+                       ESerialRecursionMode how = eRecursive);
+    static void Assign(TObjectPtr dst, TConstObjectPtr src,
+                       ESerialRecursionMode how = eRecursive);
 
     static void Read(CObjectIStream& in, TTypeInfo objectType,
                      TObjectPtr objectPtr);
@@ -78,6 +80,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/25 15:57:55  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.4  2003/04/15 16:19:07  siyan
 * Added doxygen support
 *

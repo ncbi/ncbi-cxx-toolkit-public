@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.63  2003/10/24 15:54:28  grichenk
 * Removed or blocked exceptions in destructors
 *
@@ -616,7 +619,8 @@ void CSequenceOfTypeInfo::SetDefault(TObjectPtr dst) const
     FirstNode(dst) = 0;
 }
 
-void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
+                                 ESerialRecursionMode how) const
 {
     src = FirstNode(src);
     if ( src == 0 ) {
@@ -626,10 +630,10 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 
     TTypeInfo dataType = GetElementType();
     dst = FirstNode(dst) = CreateNode();
-    dataType->Assign(Data(dst), Data(src));
+    dataType->Assign(Data(dst), Data(src), how);
     while ( (src = NextNode(src)) != 0 ) {
         dst = NextNode(dst) = CreateNode();
-        dataType->Assign(Data(dst), Data(src));
+        dataType->Assign(Data(dst), Data(src), how);
     }
 }
 
@@ -674,8 +678,8 @@ bool COctetStringTypeInfo::IsDefault(TConstObjectPtr object) const
     return Get(object)->totlen == 0;
 }
 
-bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
-                                  TConstObjectPtr obj2) const
+bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1, TConstObjectPtr obj2,
+                                  ESerialRecursionMode) const
 {
     bytestore* bs1 = Get(obj1);
     bytestore* bs2 = Get(obj2);
@@ -708,7 +712,8 @@ void COctetStringTypeInfo::SetDefault(TObjectPtr dst) const
     Get(dst) = BSNew(0);
 }
 
-void COctetStringTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void COctetStringTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
+                                  ESerialRecursionMode) const
 {
     if ( Get(src) == 0 ) {
         NCBI_THROW(CSerialException,eInvalidData, "null bytestore pointer");
@@ -827,8 +832,8 @@ bool COldAsnTypeInfo::IsDefault(TConstObjectPtr object) const
     return Get(object) == 0;
 }
 
-bool COldAsnTypeInfo::Equals(TConstObjectPtr object1,
-                             TConstObjectPtr object2) const
+bool COldAsnTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                             ESerialRecursionMode) const
 {
     return Get(object1) == 0 && Get(object2) == 0;
 }
@@ -838,7 +843,8 @@ void COldAsnTypeInfo::SetDefault(TObjectPtr dst) const
     Get(dst) = 0;
 }
 
-void COldAsnTypeInfo::Assign(TObjectPtr , TConstObjectPtr ) const
+void COldAsnTypeInfo::Assign(TObjectPtr , TConstObjectPtr,
+                             ESerialRecursionMode ) const
 {
     NCBI_THROW(CSerialException,eInvalidData, "cannot assign non default value");
 }

@@ -208,7 +208,7 @@ void x_Assign(CPDB_seq_id& dst, const CPDB_seq_id& src)
 }
 
 
-void CSeq_id::Assign(const CSerialObject& obj)
+void CSeq_id::Assign(const CSerialObject& obj, ESerialRecursionMode how)
 {
     if ( GetTypeInfo() == obj.GetThisTypeInfo() ) {
         const CSeq_id& id = static_cast<const CSeq_id&>(obj);
@@ -272,7 +272,7 @@ void CSeq_id::Assign(const CSerialObject& obj)
             return;
         }
     }
-    CSerialObject::Assign(obj);
+    CSerialObject::Assign(obj, how);
 }
 
 
@@ -1479,14 +1479,14 @@ CSeq_id::x_Init
 }
 
 
-bool CSeq_id::Equals(const CSerialObject& object) const
+bool CSeq_id::Equals(const CSerialObject& object, ESerialRecursionMode how) const
 {
     if ( typeid(object) != typeid(*this) ) {
         ERR_POST(Fatal <<
             "CSeq_id::Assign() -- Assignment of incompatible types: " <<
             typeid(*this).name() << " = " << typeid(object).name());
     }
-    return CSerialObject::Equals(object);
+    return CSerialObject::Equals(object, how);
 }
 
 
@@ -1497,6 +1497,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.75  2004/03/25 15:59:06  gouriano
+ * Added possibility to copy and compare serial object non-recursively
+ *
  * Revision 6.74  2004/03/22 16:24:19  ucko
  * CN is now specifically assigned to GenBank ESTs.
  *

@@ -106,9 +106,11 @@ public:
                              const CTypeRef& variantType);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
+    virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2,
+                        ESerialRecursionMode how = eRecursive) const;
     virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                        ESerialRecursionMode how = eRecursive) const;
 
     // iterators interface
     TMemberIndex GetIndex(TConstObjectPtr object) const;
@@ -148,6 +150,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/03/25 15:56:27  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.22  2003/04/15 14:14:54  siyan
 * Added doxygen support
 *

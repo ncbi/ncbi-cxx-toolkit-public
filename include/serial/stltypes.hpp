@@ -223,7 +223,8 @@ public:
         }
 
     static void AddElement(const CContainerTypeInfo* containerType,
-                           TObjectPtr containerPtr, TConstObjectPtr elementPtr)
+                           TObjectPtr containerPtr, TConstObjectPtr elementPtr,
+                           ESerialRecursionMode how = eRecursive)
         {
             TObjectType& container = Get(containerPtr);
 #if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
@@ -232,7 +233,7 @@ public:
             //container.push_back(CTypeConverter<TElementType>::Get(elementPtr));
             TElementType elm;
             containerType->GetElementType()->Assign
-                (&elm, &CTypeConverter<TElementType>::Get(elementPtr));
+                (&elm, &CTypeConverter<TElementType>::Get(elementPtr), how);
             container.push_back(elm);
         }
     static void AddElementIn(const CContainerTypeInfo* containerType,
@@ -279,7 +280,8 @@ public:
                 CStlClassInfoUtil::ThrowDuplicateElementError();
         }
     static void AddElement(const CContainerTypeInfo* /*containerType*/,
-                           TObjectPtr containerPtr, TConstObjectPtr elementPtr)
+                           TObjectPtr containerPtr, TConstObjectPtr elementPtr,
+                           ESerialRecursionMode how = eRecursive)
         {
             InsertElement(containerPtr,
                           CTypeConverter<TElementType>::Get(elementPtr));
@@ -317,7 +319,8 @@ public:
             container.insert(element);
         }
     static void AddElement(const CContainerTypeInfo* /*containerType*/,
-                           TObjectPtr containerPtr, TConstObjectPtr elementPtr)
+                           TObjectPtr containerPtr, TConstObjectPtr elementPtr,
+                           ESerialRecursionMode how = eRecursive)
         {
             InsertElement(containerPtr,
                           CTypeConverter<TElementType>::Get(elementPtr));
@@ -707,6 +710,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2004/03/25 15:57:55  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.66  2003/08/26 19:24:47  gouriano
 * added possibility to discard a member of an STL container
 * (from a read hook)

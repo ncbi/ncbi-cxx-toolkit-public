@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/25 15:56:27  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.4  2003/12/08 22:14:40  grichenk
 * Fixed CAliasTypeInfo::IsType()
 *
@@ -66,10 +69,11 @@ public:
     TTypeInfo GetReferencedType(void) const;
     
     bool IsDefault(TConstObjectPtr object) const;
-    bool Equals(TConstObjectPtr object1,
-                TConstObjectPtr object2) const;
+    bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                ESerialRecursionMode how = eRecursive) const;
     void SetDefault(TObjectPtr dst) const;
-    void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+    void Assign(TObjectPtr dst, TConstObjectPtr src,
+                ESerialRecursionMode how = eRecursive) const;
 
     void Delete(TObjectPtr object) const;
     void DeleteExternalObjects(TObjectPtr object) const;

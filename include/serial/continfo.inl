@@ -224,9 +224,10 @@ void CContainerTypeInfo::EraseAllElements(CIterator& it) const
 
 inline
 void CContainerTypeInfo::AddElement(TObjectPtr containerPtr,
-                                    TConstObjectPtr elementPtr) const
+                                    TConstObjectPtr elementPtr,
+                                    ESerialRecursionMode how) const
 {
-    m_AddElement(this, containerPtr, elementPtr);
+    m_AddElement(this, containerPtr, elementPtr, how);
 }
 
 inline
@@ -411,6 +412,9 @@ pair<TConstObjectPtr, TTypeInfo> CConstContainerElementIterator::Get(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/25 15:56:27  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.4  2003/08/14 20:03:57  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.

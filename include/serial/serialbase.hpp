@@ -94,8 +94,10 @@ public:
     CSerialObject(void);
     virtual ~CSerialObject(void);
     virtual const CTypeInfo* GetThisTypeInfo(void) const = 0;
-    virtual void Assign(const CSerialObject& source);
-    virtual bool Equals(const CSerialObject& object) const;
+    virtual void Assign(const CSerialObject& source,
+                        ESerialRecursionMode how = eRecursive);
+    virtual bool Equals(const CSerialObject& object,
+                        ESerialRecursionMode how = eRecursive) const;
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     void ThrowUnassigned(TMemberIndex index) const;
@@ -295,27 +297,37 @@ public:
 //
 
 template <class C>
-C& SerialAssign(C& dest, const C& src)
+C& SerialAssign(C& dest, const C& src, ESerialRecursionMode how = eRecursive)
 {
     if ( typeid(src) != typeid(dest) ) {
         ERR_POST(Fatal <<
                  "SerialAssign() -- Assignment of incompatible types: " <<
                  typeid(dest).name() << " = " << typeid(src).name());
     }
-    C::GetTypeInfo()->Assign(&dest, &src);
+    C::GetTypeInfo()->Assign(&dest, &src, how);
     return dest;
 }
 
-
 template <class C>
-bool SerialEquals(const C& object1, const C& object2)
+bool SerialEquals(const C& object1, const C& object2,
+                  ESerialRecursionMode how = eRecursive)
 {
     if ( typeid(object1) != typeid(object2) ) {
         ERR_POST(Fatal <<
                  "SerialAssign() -- Can not compare types: " <<
                  typeid(object1).name() << " == " << typeid(object2).name());
     }
-    return C::GetTypeInfo()->Equals(&object1, &object2);
+    return C::GetTypeInfo()->Equals(&object1, &object2, how);
+}
+
+// create on heap a clone of the source object
+template <typename C>
+C* SerialClone(const C& src)
+{
+    TTypeInfo type = C::GetTypeInfo();
+    TObjectPtr obj = type->Create();
+    type->Assign(obj, &src);
+    return static_cast<C*>(obj);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -423,6 +435,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/03/25 15:56:28  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.29  2004/02/02 14:39:52  vasilche
 * Removed call to string::resize(0) in constructor - it's empty by default.
 *

@@ -307,7 +307,7 @@ void x_Assign(CSeq_loc_equiv& dst, const CSeq_loc_equiv& src)
 }
 
 
-void CSeq_loc::Assign(const CSerialObject& obj)
+void CSeq_loc::Assign(const CSerialObject& obj, ESerialRecursionMode how)
 {
     if ( GetTypeInfo() == obj.GetThisTypeInfo() ) {
         const CSeq_loc& loc = static_cast<const CSeq_loc&>(obj);
@@ -350,7 +350,7 @@ void CSeq_loc::Assign(const CSerialObject& obj)
             return;
         }
     }
-    CSerialObject::Assign(obj);
+    CSerialObject::Assign(obj, how);
 }
 
 
@@ -1141,14 +1141,14 @@ void CSeq_loc::SetId(CSeq_id& id)
 }
 
 
-bool CSeq_loc::Equals(const CSerialObject& object) const
+bool CSeq_loc::Equals(const CSerialObject& object, ESerialRecursionMode how) const
 {
     if ( typeid(object) != typeid(*this) ) {
         ERR_POST(Fatal <<
             "CSeq_loc::Assign() -- Assignment of incompatible types: " <<
             typeid(*this).name() << " = " << typeid(object).name());
     }
-    return CSerialObject::Equals(object);
+    return CSerialObject::Equals(object, how);
 }
 
 
@@ -1462,6 +1462,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.39  2004/03/25 15:59:06  gouriano
+ * Added possibility to copy and compare serial object non-recursively
+ *
  * Revision 6.38  2004/01/29 19:58:52  shomrat
  * Adding missing cache invalidation
  *

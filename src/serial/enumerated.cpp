@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.27  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -260,10 +263,10 @@ bool CEnumeratedTypeInfo::IsDefault(TConstObjectPtr object) const
     return m_ValueType->IsDefault(object);
 }
 
-bool CEnumeratedTypeInfo::Equals(TConstObjectPtr object1,
-                                 TConstObjectPtr object2) const
+bool CEnumeratedTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                                 ESerialRecursionMode how) const
 {
-    return m_ValueType->Equals(object1, object2);
+    return m_ValueType->Equals(object1, object2, how);
 }
 
 void CEnumeratedTypeInfo::SetDefault(TObjectPtr dst) const
@@ -271,9 +274,10 @@ void CEnumeratedTypeInfo::SetDefault(TObjectPtr dst) const
     m_ValueType->SetDefault(dst);
 }
 
-void CEnumeratedTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void CEnumeratedTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
+                                 ESerialRecursionMode how) const
 {
-    m_ValueType->Assign(dst, src);
+    m_ValueType->Assign(dst, src, how);
 }
 
 bool CEnumeratedTypeInfo::IsSigned(void) const

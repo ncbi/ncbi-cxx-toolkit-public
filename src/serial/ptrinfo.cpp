@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.33  2003/11/24 14:10:05  grichenk
 * Changed base class for CAliasTypeInfo to CPointerTypeInfo
 *
@@ -275,12 +278,15 @@ bool CPointerTypeInfo::IsDefault(TConstObjectPtr object) const
     return GetObjectPointer(object) == 0;
 }
 
-bool CPointerTypeInfo::Equals(TConstObjectPtr object1,
-                              TConstObjectPtr object2) const
+bool CPointerTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                              ESerialRecursionMode how) const
 {
     TConstObjectPtr data1 = GetObjectPointer(object1);
     TConstObjectPtr data2 = GetObjectPointer(object2);
-    if ( data1 == 0 ) {
+    if ( how != eRecursive ) {
+        return how == eShallow ? (data1 == data2) : (data1 == 0 || data2 == 0);
+    }
+    else if ( data1 == 0 ) {
         return data2 == 0;
     }
     else {
@@ -288,7 +294,7 @@ bool CPointerTypeInfo::Equals(TConstObjectPtr object1,
             return false;
         TTypeInfo type1 = GetRealDataTypeInfo(data1);
         TTypeInfo type2 = GetRealDataTypeInfo(data2);
-        return type1 == type2 && type1->Equals(data1, data2);
+        return type1 == type2 && type1->Equals(data1, data2, how);
     }
 }
 
@@ -297,16 +303,20 @@ void CPointerTypeInfo::SetDefault(TObjectPtr dst) const
     SetObjectPointer(dst, 0);
 }
 
-void CPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void CPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
+                              ESerialRecursionMode how) const
 {
     TConstObjectPtr data = GetObjectPointer(src);
-    if ( data == 0 ) {
+    if ( how != eRecursive ) {
+        SetObjectPointer(dst, how == eShallow ? (const_cast<void*>(data)) : 0);
+    }
+    else if ( data == 0) {
         SetObjectPointer(dst, 0);
     }
     else {
         TTypeInfo type = GetRealDataTypeInfo(data);
         TObjectPtr object = type->Create();
-        type->Assign(object, data);
+        type->Assign(object, data, how);
         SetObjectPointer(dst, object);
     }
 }

@@ -88,11 +88,13 @@ public:
             Get(objectPtr).Clear();
         }
 
-    static bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2)
+    static bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2,
+                       ESerialRecursionMode)
         {
             return Get(obj1) == Get(obj2);
         }
-    static void Assign(TObjectPtr dst, TConstObjectPtr src)
+    static void Assign(TObjectPtr dst, TConstObjectPtr src,
+                       ESerialRecursionMode)
         {
             Get(dst) = Get(src);
         }
@@ -215,6 +217,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/25 15:57:55  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.4  2003/09/29 21:22:43  golikov
 * fix GetStdTypeInfoGetter to actually work, remove unused vars warnings
 *

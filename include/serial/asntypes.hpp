@@ -109,8 +109,8 @@ public:
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst,
-                        TConstObjectPtr src) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                        ESerialRecursionMode how = eRecursive) const;
 
     TObjectPtr CreateNode(void) const;
     void DeleteNode(TObjectPtr node) const;
@@ -158,9 +158,11 @@ public:
     static TTypeInfo GetTypeInfo(void);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
+    virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2,
+                        ESerialRecursionMode how = eRecursive) const;
     virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                        ESerialRecursionMode how = eRecursive) const;
 
     virtual void GetValueOctetString(TConstObjectPtr objectPtr,
                                      vector<char>& value) const;
@@ -202,10 +204,11 @@ public:
         }
 
     virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr object1,
-                        TConstObjectPtr object2) const;
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                        ESerialRecursionMode how = eRecursive) const;
     virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                 ESerialRecursionMode how = eRecursive) const;
 
 protected:
     
@@ -238,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.41  2004/03/25 15:56:27  gouriano
+ * Added possibility to copy and compare serial object non-recursively
+ *
  * Revision 1.40  2003/12/01 19:04:21  grichenk
  * Moved Add and Sub from serialutil to ncbimisc, made them methods
  * of CRawPointer class.

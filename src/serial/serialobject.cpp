@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.22  2004/02/09 18:22:35  gouriano
 * enforced checking environment vars when setting initialization
 * verification parameters
@@ -122,7 +125,7 @@ CSerialObject::~CSerialObject()
 {
 }
 
-void CSerialObject::Assign(const CSerialObject& source)
+void CSerialObject::Assign(const CSerialObject& source, ESerialRecursionMode how)
 {
     if (this == &source) {
         ERR_POST(Warning <<
@@ -134,18 +137,18 @@ void CSerialObject::Assign(const CSerialObject& source)
             "CSerialObject::Assign() -- Assignment of incompatible types: " <<
             typeid(*this).name() << " = " << typeid(source).name());
     }
-    GetThisTypeInfo()->Assign(this, &source);
+    GetThisTypeInfo()->Assign(this, &source, how);
 }
 
 
-bool CSerialObject::Equals(const CSerialObject& object) const
+bool CSerialObject::Equals(const CSerialObject& object, ESerialRecursionMode how) const
 {
     if ( typeid(object) != typeid(*this) ) {
         ERR_POST(Fatal <<
             "CSerialObject::Equals() -- Can not compare types: " <<
             typeid(*this).name() << " == " << typeid(object).name());
     }
-    return GetThisTypeInfo()->Equals(this, &object);
+    return GetThisTypeInfo()->Equals(this, &object, how);
 }
 
 void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const

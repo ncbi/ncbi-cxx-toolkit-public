@@ -69,10 +69,11 @@ public:
     virtual bool MayContainType(TTypeInfo type) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr object1,
-                        TConstObjectPtr object2) const;
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                        ESerialRecursionMode how = eRecursive) const;
     virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                        ESerialRecursionMode how = eRecursive) const;
 
     typedef TObjectPtr (*TGetDataFunction)(const CPointerTypeInfo* objectType,
                                            TObjectPtr objectPtr);
@@ -125,6 +126,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/03/25 15:56:27  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.28  2003/11/24 14:10:04  grichenk
 * Changed base class for CAliasTypeInfo to CPointerTypeInfo
 *

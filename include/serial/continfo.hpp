@@ -73,8 +73,10 @@ public:
     
     virtual bool MayContainType(TTypeInfo type) const;
 
-    void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-    bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
+    void Assign(TObjectPtr dst, TConstObjectPtr src,
+                ESerialRecursionMode how = eRecursive) const;
+    bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                ESerialRecursionMode how = eRecursive) const;
 
     // iterators methods (private)
     class CConstIterator
@@ -125,7 +127,8 @@ public:
     bool EraseElement(CIterator& it) const;
     void EraseAllElements(CIterator& it) const;
 
-    void AddElement(TObjectPtr containerPtr, TConstObjectPtr elementPtr) const;
+    void AddElement(TObjectPtr containerPtr, TConstObjectPtr elementPtr,
+                    ESerialRecursionMode how = eRecursive) const;
     void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const;
 
     typedef bool (*TInitIteratorConst)(CConstIterator&);
@@ -143,7 +146,8 @@ public:
     typedef void (*TEraseAllElements)(CIterator&);
 
     typedef void (*TAddElement)(const CContainerTypeInfo* cType,
-                                TObjectPtr cPtr, TConstObjectPtr ePtr);
+                                TObjectPtr cPtr, TConstObjectPtr ePtr,
+                                ESerialRecursionMode how);
     typedef void (*TAddElementIn)(const CContainerTypeInfo* cType,
                                   TObjectPtr cPtr, CObjectIStream& in);
 
@@ -265,6 +269,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/03/25 15:56:27  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.9  2003/08/14 20:03:57  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.

@@ -59,9 +59,11 @@ public:
         }
 
     virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
+    virtual bool Equals(TConstObjectPtr , TConstObjectPtr,
+                        ESerialRecursionMode how = eRecursive) const;
     virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                        ESerialRecursionMode how = eRecursive) const;
 
     virtual bool IsSigned(void) const;
 
@@ -112,6 +114,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/03/25 15:56:27  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.15  2003/04/15 14:15:09  siyan
 * Added doxygen support
 *

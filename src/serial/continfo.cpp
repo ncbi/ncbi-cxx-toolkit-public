@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.9  2003/08/14 20:03:58  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.
@@ -154,7 +157,8 @@ public:
         }
     static void AddElement(const CContainerTypeInfo* /*containerType*/,
                            TObjectPtr /*containerPtr*/,
-                           TConstObjectPtr /*elementPtr*/)
+                           TConstObjectPtr /*elementPtr*/,
+                           ESerialRecursionMode)
         {
             Throw("illegal call");
         }
@@ -221,10 +225,13 @@ bool CContainerTypeInfo::MayContainType(TTypeInfo type) const
     return GetElementType()->IsOrMayContainType(type);
 }
 
-void CContainerTypeInfo::Assign(TObjectPtr dst,
-                                TConstObjectPtr src) const
+void CContainerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
+                                ESerialRecursionMode how) const
 {
     //SetDefault(dst); // clear destination container
+    if (how == eShallowChildless) {
+        return;
+    }
     CConstIterator i;
     if ( InitIterator(i, src) ) {
         do {
@@ -237,27 +244,30 @@ void CContainerTypeInfo::Assign(TObjectPtr dst,
                     continue;
                 }
             }
-            AddElement(dst, GetElementPtr(i));
+            AddElement(dst, GetElementPtr(i), how);
         } while ( NextElement(i) );
     }
 }
 
-bool CContainerTypeInfo::Equals(TConstObjectPtr object1,
-                                TConstObjectPtr object2) const
+bool CContainerTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                                ESerialRecursionMode how) const
 {
+    if (how == eShallowChildless) {
+        return true;
+    }
     TTypeInfo elementType = GetElementType();
     CConstIterator i1, i2;
     if ( InitIterator(i1, object1) ) {
         if ( !InitIterator(i2, object2) )
             return false;
         if ( !elementType->Equals(GetElementPtr(i1),
-                                  GetElementPtr(i2)) )
+                                  GetElementPtr(i2), how) )
             return false;
         while ( NextElement(i1) ) {
             if ( !NextElement(i2) )
                 return false;
             if ( !elementType->Equals(GetElementPtr(i1),
-                                      GetElementPtr(i2)) )
+                                      GetElementPtr(i2), how) )
                 return false;
         }
         return !NextElement(i2);

@@ -118,11 +118,13 @@ public:
             Get(objectPtr) = TObjectType(0);
         }
 
-    static bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2)
+    static bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2,
+                       ESerialRecursionMode)
         {
             return Get(obj1) == Get(obj2);
         }
-    static void Assign(TObjectPtr dst, TConstObjectPtr src)
+    static void Assign(TObjectPtr dst, TConstObjectPtr src,
+                       ESerialRecursionMode)
         {
             Get(dst) = Get(src);
         }
@@ -159,7 +161,8 @@ public:
 
 EMPTY_TEMPLATE
 bool CPrimitiveTypeFunctions<double>::Equals(TConstObjectPtr obj1,
-                                             TConstObjectPtr obj2)
+                                             TConstObjectPtr obj2,
+                                             ESerialRecursionMode)
 {
     const double& x = Get(obj1);
     const double& y = Get(obj2);
@@ -172,7 +175,8 @@ bool CPrimitiveTypeFunctions<double>::Equals(TConstObjectPtr obj1,
 
 EMPTY_TEMPLATE
 bool CPrimitiveTypeFunctions<float>::Equals(TConstObjectPtr obj1,
-                                            TConstObjectPtr obj2)
+                                            TConstObjectPtr obj2,
+                                            ESerialRecursionMode)
 {
     const float& x = Get(obj1);
     const float& y = Get(obj2);
@@ -183,7 +187,8 @@ bool CPrimitiveTypeFunctions<float>::Equals(TConstObjectPtr obj1,
 
 EMPTY_TEMPLATE
 bool CPrimitiveTypeFunctions<long double>::Equals(TConstObjectPtr obj1,
-                                                  TConstObjectPtr obj2)
+                                                  TConstObjectPtr obj2,
+                                                  ESerialRecursionMode)
 {
     const long double& x = Get(obj1);
     const long double& y = Get(obj2);
@@ -207,7 +212,8 @@ bool CVoidTypeFunctions::IsDefault(TConstObjectPtr )
     return true;
 }
 
-bool CVoidTypeFunctions::Equals(TConstObjectPtr , TConstObjectPtr )
+bool CVoidTypeFunctions::Equals(TConstObjectPtr , TConstObjectPtr,
+                                ESerialRecursionMode )
 {
     ThrowIllegalCall();
     return false;
@@ -217,7 +223,7 @@ void CVoidTypeFunctions::SetDefault(TObjectPtr )
 {
 }
 
-void CVoidTypeFunctions::Assign(TObjectPtr , TConstObjectPtr )
+void CVoidTypeFunctions::Assign(TObjectPtr , TConstObjectPtr, ESerialRecursionMode )
 {
     ThrowIllegalCall();
 }
@@ -335,15 +341,16 @@ void CPrimitiveTypeInfo::SetDefault(TObjectPtr objectPtr) const
     m_SetDefault(objectPtr);
 }
 
-bool CPrimitiveTypeInfo::Equals(TConstObjectPtr obj1,
-                                    TConstObjectPtr obj2) const
+bool CPrimitiveTypeInfo::Equals(TConstObjectPtr obj1, TConstObjectPtr obj2,
+                                ESerialRecursionMode how) const
 {
-    return m_Equals(obj1, obj2);
+    return m_Equals(obj1, obj2, how);
 }
 
-void CPrimitiveTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void CPrimitiveTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
+                                ESerialRecursionMode how) const
 {
-    m_Assign(dst, src);
+    m_Assign(dst, src, how);
 }
 
 void CPrimitiveTypeInfo::SetValueBool(TObjectPtr /*objectPtr*/, bool /*value*/) const
@@ -504,11 +511,13 @@ public:
         {
         }
 
-    static bool Equals(TConstObjectPtr, TConstObjectPtr)
+    static bool Equals(TConstObjectPtr, TConstObjectPtr,
+                       ESerialRecursionMode)
         {
             return true;
         }
-    static void Assign(TObjectPtr, TConstObjectPtr)
+    static void Assign(TObjectPtr, TConstObjectPtr,
+                       ESerialRecursionMode)
         {
         }
 
@@ -634,11 +643,13 @@ public:
         {
             Get(objectPtr) = 0;
         }
-    static bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2)
+    static bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2,
+                       ESerialRecursionMode)
         {
             return Get(obj1) == Get(obj2);
         }
-    static void Assign(TObjectPtr dst, TConstObjectPtr src)
+    static void Assign(TObjectPtr dst, TConstObjectPtr src,
+                       ESerialRecursionMode)
         {
             Get(dst) = Get(src);
         }
@@ -1173,11 +1184,13 @@ public:
             free(const_cast<char*>(Get(dst)));
             Get(dst) = 0;
         }
-    static bool Equals(TConstObjectPtr object1, TConstObjectPtr object2)
+    static bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                       ESerialRecursionMode)
         {
             return strcmp(Get(object1), Get(object2)) == 0;
         }
-    static void Assign(TObjectPtr dst, TConstObjectPtr src)
+    static void Assign(TObjectPtr dst, TConstObjectPtr src,
+                       ESerialRecursionMode)
         {
             typename CPrimitiveTypeFunctions<T>::TObjectType value = Get(src);
             _ASSERT(Get(dst) != value);
@@ -1317,7 +1330,8 @@ public:
         {
             return Get(object).empty();
         }
-    static bool Equals(TConstObjectPtr object1, TConstObjectPtr object2)
+    static bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                       ESerialRecursionMode)
         {
             return Get(object1) == Get(object2);
         }
@@ -1325,7 +1339,8 @@ public:
         {
             Get(dst).clear();
         }
-    static void Assign(TObjectPtr dst, TConstObjectPtr src)
+    static void Assign(TObjectPtr dst, TConstObjectPtr src,
+                       ESerialRecursionMode)
         {
             Get(dst) = Get(src);
         }
@@ -1530,6 +1545,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.41  2004/02/04 19:03:00  ucko
 * Make floating-point comparison slightly looser, as I/O may introduce
 * insignificant discrepancies.

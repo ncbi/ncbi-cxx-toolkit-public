@@ -52,8 +52,10 @@ class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfo : public CTypeInfo
 public:
     typedef bool (*TIsDefaultFunction)(TConstObjectPtr objectPtr);
     typedef void (*TSetDefaultFunction)(TObjectPtr objectPtr);
-    typedef bool (*TEqualsFunction)(TConstObjectPtr o1, TConstObjectPtr o2);
-    typedef void (*TAssignFunction)(TObjectPtr dst, TConstObjectPtr src);
+    typedef bool (*TEqualsFunction)(TConstObjectPtr o1, TConstObjectPtr o2,
+                                    ESerialRecursionMode how);
+    typedef void (*TAssignFunction)(TObjectPtr dst, TConstObjectPtr src,
+                                    ESerialRecursionMode how);
 
     CPrimitiveTypeInfo(size_t size,
                        EPrimitiveValueType valueType, bool isSigned = true);
@@ -63,9 +65,11 @@ public:
                        EPrimitiveValueType valueType, bool isSigned = true);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
+    virtual bool Equals(TConstObjectPtr , TConstObjectPtr,
+                        ESerialRecursionMode how = eRecursive) const;
     virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                        ESerialRecursionMode how = eRecursive) const;
 
     EPrimitiveValueType GetPrimitiveValueType(void) const;
 
@@ -357,6 +361,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/03/25 15:57:55  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.30  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.73  2003/11/13 14:07:37  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *
@@ -700,15 +703,15 @@ void CClassTypeInfo::SetDefault(TObjectPtr dst) const
     }
 }
 
-bool CClassTypeInfo::Equals(TConstObjectPtr object1,
-                            TConstObjectPtr object2) const
+bool CClassTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                            ESerialRecursionMode how) const
 {
     for ( TMemberIndex i = GetMembers().FirstIndex(),
               last = GetMembers().LastIndex();
           i <= last; ++i ) {
         const CMemberInfo* info = GetMemberInfo(i);
         if ( !info->GetTypeInfo()->Equals(GetMember(info, object1),
-                                          GetMember(info, object2)) )
+                                          GetMember(info, object2), how) )
             return false;
         if ( info->HaveSetFlag() ) {
             if ( !info->CompareSetFlags(object1,object2) )
@@ -731,15 +734,15 @@ bool CClassTypeInfo::Equals(TConstObjectPtr object1,
     return true;
 }
 
-void CClassTypeInfo::Assign(TObjectPtr dst,
-                            TConstObjectPtr src) const
+void CClassTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
+                            ESerialRecursionMode how) const
 {
     for ( TMemberIndex i = GetMembers().FirstIndex(),
               last = GetMembers().LastIndex();
           i <= last; ++i ) {
         const CMemberInfo* info = GetMemberInfo(i);
         info->GetTypeInfo()->Assign(GetMember(info, dst),
-                                    GetMember(info, src));
+                                    GetMember(info, src), how);
         if ( info->HaveSetFlag() ) {
             info->UpdateSetFlag(dst,info->GetSetFlag(src));
         }

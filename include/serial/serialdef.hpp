@@ -154,6 +154,14 @@ enum EStringType {
     eStringTypeUTF8
 };
 
+// How to assign and compare child sub-objects of serial objects
+
+enum ESerialRecursionMode {
+    eRecursive,            // Recursively
+    eShallow,              // Assign/Compare pointers only
+    eShallowChildless      // Set sub-object pointers to 0
+};
+
 //type used for indexing class members and choice variants
 typedef size_t TMemberIndex;
 
@@ -182,6 +190,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/03/25 15:56:28  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.28  2004/03/23 15:39:52  gouriano
 * Added setup options for skipping unknown data members
 *

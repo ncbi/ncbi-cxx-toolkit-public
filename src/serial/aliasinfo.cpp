@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.5  2003/12/08 22:14:41  grichenk
 * Fixed CAliasTypeInfo::IsType()
 *
@@ -115,10 +118,10 @@ bool CAliasTypeInfo::IsDefault(TConstObjectPtr object) const
 }
 
 
-bool CAliasTypeInfo::Equals(TConstObjectPtr object1,
-                            TConstObjectPtr object2) const
+bool CAliasTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                            ESerialRecursionMode how) const
 {
-    return GetPointedType()->Equals(object1, object2);
+    return GetPointedType()->Equals(object1, object2, how);
 }
 
 
@@ -128,9 +131,10 @@ void CAliasTypeInfo::SetDefault(TObjectPtr dst) const
 }
 
 
-void CAliasTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void CAliasTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
+                            ESerialRecursionMode how) const
 {
-    GetPointedType()->Assign(dst, src);
+    GetPointedType()->Assign(dst, src, how);
 }
 
 

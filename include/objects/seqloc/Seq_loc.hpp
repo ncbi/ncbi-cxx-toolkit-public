@@ -122,8 +122,10 @@ public:
     void CheckId(const CSeq_id*& id) const;
     void InvalidateIdCache(void);
 
-    virtual void Assign(const CSerialObject& source);
-    virtual bool Equals(const CSerialObject& object) const;
+    virtual void Assign(const CSerialObject& source,
+                        ESerialRecursionMode how = eRecursive);
+    virtual bool Equals(const CSerialObject& object,
+                        ESerialRecursionMode how = eRecursive) const;
 
     // Compare locations if they are defined on the same single sequence
     // or throw exception.
@@ -434,6 +436,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/03/25 15:58:41  gouriano
+ * Added possibility to copy and compare serial object non-recursively
+ *
  * Revision 1.35  2004/03/16 18:08:56  vasilche
  * Use GetPointer() to avoid ambiguity
  *

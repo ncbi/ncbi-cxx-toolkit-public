@@ -89,10 +89,11 @@ public:
     const CMemberInfo* GetMemberInfo(const string& name) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr object1,
-                        TConstObjectPtr object2) const;
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                        ESerialRecursionMode how = eRecursive) const;
     virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                        ESerialRecursionMode how = eRecursive) const;
 
     bool RandomOrder(void) const;
     CClassTypeInfo* SetRandomOrder(bool random = true);
@@ -187,6 +188,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/03/25 15:56:27  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.44  2003/06/24 20:54:13  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *

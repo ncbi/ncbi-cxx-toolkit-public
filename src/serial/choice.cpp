@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.36  2004/01/05 14:25:19  gouriano
 * Added possibility to set serialization hooks by stack path
 *
@@ -324,8 +327,8 @@ TConstObjectPtr GetMember(const CMemberInfo* memberInfo,
     return memberInfo->GetItemPtr(object);
 }
 
-bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
-                                 TConstObjectPtr object2) const
+bool CChoiceTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                             ESerialRecursionMode how) const
 {
     // User defined comparison
     if ( IsCObject() ) {
@@ -349,7 +352,7 @@ bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
         const CMemberInfo* info =
             dynamic_cast<const CMemberInfo*>(GetVariants().GetItemInfo(index));
         if ( !info->GetTypeInfo()->Equals(GetMember(info, object1),
-                                          GetMember(info, object2)) ) {
+                                          GetMember(info, object2), how) ) {
             return false;
         }
     }
@@ -362,7 +365,7 @@ bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
         return true;
     return
         GetVariantInfo(index)->GetTypeInfo()->Equals(GetData(object1, index),
-                                                     GetData(object2, index));
+                                                     GetData(object2, index), how);
 }
 
 void CChoiceTypeInfo::SetDefault(TObjectPtr dst) const
@@ -370,7 +373,8 @@ void CChoiceTypeInfo::SetDefault(TObjectPtr dst) const
     ResetIndex(dst);
 }
 
-void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
+                             ESerialRecursionMode how) const
 {
     TMemberIndex index;
 
@@ -380,7 +384,7 @@ void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
         const CMemberInfo* info =
             dynamic_cast<const CMemberInfo*>(GetVariants().GetItemInfo(index));
         info->GetTypeInfo()->Assign(GetMember(info, dst),
-                                    GetMember(info, src));
+                                    GetMember(info, src),how);
     }
 
     index = GetIndex(src);
@@ -391,7 +395,7 @@ void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
                 index <= GetVariants().LastIndex());
         SetIndex(dst, index);
         GetVariantInfo(index)->GetTypeInfo()->Assign(GetData(dst, index),
-                                                     GetData(src, index));
+                                                     GetData(src, index), how);
     }
 
     // User defined assignment

@@ -117,12 +117,13 @@ public:
     // check, whether object contains default value
     virtual bool IsDefault(TConstObjectPtr object) const = 0;
     // check if both objects contain the same values
-    virtual bool Equals(TConstObjectPtr object1,
-                        TConstObjectPtr object2) const = 0;
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                        ESerialRecursionMode how = eRecursive) const = 0;
     // set object to default value
     virtual void SetDefault(TObjectPtr dst) const = 0;
     // set object to copy of another one
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                        ESerialRecursionMode how = eRecursive) const = 0;
 
     // return true if type is inherited from CObject
     bool IsCObject(void) const;
@@ -225,6 +226,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2004/03/25 15:57:55  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
 * Revision 1.45  2004/01/05 14:24:09  gouriano
 * Added possibility to set serialization hooks by stack path
 *

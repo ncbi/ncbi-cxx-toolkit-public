@@ -314,8 +314,10 @@ public:
     static int BestRank(const CRef<CSeq_id>& id);
     static int WorstRank(const CRef<CSeq_id>& id);
 
-    virtual void Assign(const CSerialObject& source);
-    virtual bool Equals(const CSerialObject& object) const;
+    virtual void Assign(const CSerialObject& source,
+                        ESerialRecursionMode how = eRecursive);
+    virtual bool Equals(const CSerialObject& object,
+                        ESerialRecursionMode how = eRecursive) const;
 
 private:
     void x_Init
@@ -456,6 +458,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2004/03/25 15:58:41  gouriano
+ * Added possibility to copy and compare serial object non-recursively
+ *
  * Revision 1.41  2004/03/01 18:26:04  dicuccio
  * Modified CSeq_id::Score(), CSeq_id::BestRank(), and CSeq_id::WorstRank to
  * consider an accession's version if present.
