@@ -1,6 +1,0 @@
-*.files
-[A-Z]*.cpp
-blast__.cpp
-blast___.cpp
-blastclient.cpp
-blastclient_.cpp
