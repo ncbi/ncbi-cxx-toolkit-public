@@ -586,6 +586,12 @@ Int2
 BlastScoringOptionsValidate(Uint1 program_number, 
    const BlastScoringOptions* options, Blast_Message* *blast_msg);
 
+/** Produces copy of "old" options, with new memory allocated.
+ * @param contains copied BlastScoringOptions upon return [out]
+ * @param BlastScoringOptions to be copied [in]
+*/
+Int2 BlastScoringOptionsDup(BlastScoringOptions* *new_opt, const BlastScoringOptions* old_opt);
+
 /** Deallocate memory for BlastEffectiveLengthsOptions*. 
  * @param options Structure to free [in]
  */
