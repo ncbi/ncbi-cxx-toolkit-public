@@ -30,7 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <util/obj_store.hpp>
+#include <corelib/obj_store.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -44,6 +44,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/12/21 21:40:17  grichenk
+* Moved obj_store and plugin_manager_store to corelib
+*
 * Revision 1.1  2004/08/02 13:44:49  kuznets
 * Initial revision
 *

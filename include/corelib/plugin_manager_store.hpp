@@ -30,7 +30,7 @@
  */
 
 #include <corelib/plugin_manager.hpp>
-#include <util/obj_store.hpp>
+#include <corelib/obj_store.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2004/12/21 21:40:15  grichenk
+ * Moved obj_store and plugin_manager_store to corelib
+ *
  * Revision 1.3  2004/08/05 18:42:44  kuznets
  * +CPMMake::Get() accepting interface name
  *

@@ -56,7 +56,7 @@
 #include <corelib/ncbithr.hpp>
 
 #include <corelib/plugin_manager_impl.hpp>
-#include <util/plugin_manager_store.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
