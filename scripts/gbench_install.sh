@@ -183,6 +183,7 @@ CopyFiles()
         echo copying: `basename $src_file`
         if [ -f $src_file ]; then
             rm -f $target_dir/lib/`basename $src_file`
+            rm -f $target_dir/plugins/`basename $src_file .so`.dylib
             DoCopy $src_file $target_dir/lib/
         else
             $x_common_rb
@@ -193,6 +194,7 @@ CopyFiles()
     for x in $PLUGINS; do
         echo installing plugin: $x
         rm -f $target_dir/plugins/libgui_$x.so
+        rm -f $target_dir/plugins/libgui_$x.dylib
         DoMove $target_dir/lib/libgui_$x.so $target_dir/plugins/
     done
 
@@ -222,7 +224,7 @@ BINCOPY="ln -sf"
 BINMOVE="mv -f"
 MAC_BINCOPY=
 MAC_BINCOPY_OPTS=
-MAC_BINMOVE="/Developer/Tools/MvMac"
+MAC_BINMOVE=
 while :; do
     case "$1" in
         --copy)
@@ -230,11 +232,13 @@ while :; do
             BINCOPY="cp -pf"
             MAC_BINCOPY="/Developer/Tools/CpMac"
             MAC_BINCOPY_OPTS="-p"
+            MAC_BINMOVE="/Developer/Tools/MvMac"
             ;;
         --hardlink)
             copy_all="yes"
             BINCOPY="ln -f"
             MAC_BINCOPY="$script_dir/ln_mac.sh"
+            MAC_BINMOVE="/Developer/Tools/MvMac"
             ;;
         --setup-src)
             setup_src="yes"
