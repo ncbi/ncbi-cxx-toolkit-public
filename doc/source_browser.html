@@ -35,10 +35,25 @@
 </tr>
 </form>
 
-<form method=get action="lxr/find">
+<form method=get action="lxr/ident">
 <tr>
-<td><input type="SUBMIT" value=" Filename Search "></td>
-<td><input name="string" value="" size="45"></td>
+<td><input type="SUBMIT" value="  Identifier Search "></td>
+<td><input name="i" value="" size="45">
+  <select name="d">
+	<option value=""     >All
+	<option value="smart">Any first entry
+	<option value="C"    >Class
+	<option value="S"    >Struct type
+	<option value="E"    >Enum type
+	<option value="U"    >Union type
+	<option value="T"    >Type
+	<option value="f"    >Function prototype
+	<option value="F"    >Function
+	<option value="c"    >Class (forwarded)
+	<option value="M"    >Macro
+	<option value="V"    >Variable
+  </select>
+</td>
 </tr>
 </form>
 
