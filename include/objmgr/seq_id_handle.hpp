@@ -36,6 +36,7 @@
 
 #include <corelib/ncbiobj.hpp>
 
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -55,7 +56,7 @@ typedef size_t TSeq_id_Key;
 class CSeq_id_Mapper;
 class CSeq_id;
 
-class CSeq_id_Handle
+class NCBI_XOBJMGR_EXPORT CSeq_id_Handle
 {
 public:
     // 'ctors
@@ -158,9 +159,21 @@ bool CSeq_id_Handle::operator! (void) const
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
+
+// We explicitly include seq_id_mapper.hpp at the bottom of this file
+// This is done because CSeq_id_Mapper has a circular #include dependency
+// with seq_if_handle.hpp; we skirt the circular reference by placing the
+// #include at the bottom
+#include <objects/objmgr/seq_id_mapper.hpp>
+
+
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/12/26 20:44:02  dicuccio
+* Added Win32 export specifier.  Added #include for seq_id_mapper - at bottom of
+* file to skirt circular include dependency.
+*
 * Revision 1.9  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
