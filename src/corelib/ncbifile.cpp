@@ -156,6 +156,26 @@ CDirEntry::CDirEntry()
 {
 }
 
+#ifndef NCBI_OS_MAC
+void CDirEntry::Reset(const string& path)
+{
+    m_Path = path;
+    size_t len = path.length();
+    // Root dir
+    if ((len == 1)  &&  IsPathSeparator(path[0])) {
+        return;
+    }
+    // Disk name
+#  if defined(DISK_SEPARATOR)
+    if ( (len == 2 || len == 3) && (path[1] == DISK_SEPARATOR) ) {
+        return;
+    }
+#  endif
+    m_Path = DeleteTrailingPathSeparator(path);
+}
+#endif
+
+
 #if defined(NCBI_OS_MAC)
 CDirEntry::CDirEntry(const CDirEntry& other) : m_FSS(new FSSpec(*other.m_FSS))
 {
@@ -667,7 +687,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
                 // absolute path
                 head.clear();
 #  ifdef NCBI_OS_MSWIN
-                // Remove leading "\\?\". Replace leading "\\?\UNC\" with "\\"
+                // Remove leading "\\?\". Replace leading "\\?\UNC\" with "\\".
                 static const char* const kUNC[] = { "", "", "?", "UNC" };
                 list<string>::iterator it = pretail.begin();
                 unsigned int matched = 0;
@@ -690,18 +710,22 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
             tail.splice(tail.begin(), pretail);
         }
 
-        string next = tail.front();
-        tail.pop_front();
+        string next;
+        if (!tail.empty()) {
+            next = tail.front();
+            tail.pop_front();
+        }
         if ( !head.empty() ) { // empty heads should accept anything
             string& last = head.back();
             if (last == DIR_CURRENT) {
                 head.pop_back();
                 _ASSERT(head.empty());
             } else if (next == DIR_CURRENT) {
-                continue; // leave out, since we already have content
+                // Leave out, since we already have content
+                continue;
 #  ifdef DISK_SEPARATOR
             } else if (last[last.size()-1] == DISK_SEPARATOR) {
-                // allow almost anything right after a volume specification
+                // Allow almost anything right after a volume specification
 #  endif
             } else if (next.empty()) {
                 continue; // leave out empty components in most cases
@@ -709,9 +733,9 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 #  ifdef DISK_SEPARATOR
                 SIZE_TYPE pos;
 #  endif
-                // back up if possible, assuming existing path to be "physical"
+                // Back up if possible, assuming existing path to be "physical"
                 if (last.empty()) {
-                    // already at the root; .. is a no-op
+                    // Already at the root; .. is a no-op
                     continue;
 #  ifdef DISK_SEPARATOR
                 } else if ((pos = last.find(DISK_SEPARATOR) != NPOS)) {
@@ -743,10 +767,15 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
             }
         }
 #  endif
-        // normal case: just append the next element to head
+        // Normal case: just append the next element to head
         head.push_back(next);
     }
+    if (head.size() == 1  &&  head.front().empty() ) {
+        // root dir
+        return string(1, DIR_SEPARATOR);
+    }
     return NStr::Join(head, string(1, DIR_SEPARATOR));
+
 #else // Not Unix or  Windows
     // NOT implemented!
     return path;
@@ -2285,6 +2314,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2004/10/08 12:43:53  ivanov
+ * Fixed CDirEntry::Reset() -- delete trailing path separator always except
+ * some special cases, like root dir and PC's disk names.
+ * CDirEntry::NormalizePath() -- 2 small fixes to prevent crashing on some
+ * path strings and correct processing root dirs variations.
+ *
  * Revision 1.83  2004/08/10 16:57:31  grichenk
  * Fixed leading / in ConcatPath()
  *
