@@ -40,12 +40,8 @@ Contents: Functions needed for formatting of BLAST results
 #include <corelib/ncbistd.hpp>
 #include <objtools/alnmgr/util/showalign.hpp>
 
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/api/blast_types.hpp>
-#include <algo/blast/api/blast_exception.hpp>
-
-#include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/blast_hits.h>
-#include <algo/blast/core/blast_seqsrc.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -93,7 +89,7 @@ class NCBI_XALNUTIL_EXPORT CBlastFormatOptions : public CObject
 public:
 
     /// Constructor
-    CBlastFormatOptions(EProgram program, CNcbiOstream &ostr) THROWS((CBlastException));
+    CBlastFormatOptions(EProgram program, CNcbiOstream &ostr);
     /// Destructor
     virtual ~CBlastFormatOptions();
 
