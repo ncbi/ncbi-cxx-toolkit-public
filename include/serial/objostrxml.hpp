@@ -66,10 +66,13 @@ public:
     void SetReferenceSchema(bool use_schema = true);
     bool GetReferenceSchema(void) const;
 
-    virtual void WriteFileHeader(TTypeInfo type);
+    void SetUseSchemaLocation(bool use_loc = true);
+    bool GetUseSchemaLocation(void) const;
 
     static void   SetDefaultSchemaNamespace(const string& schema_ns);
     static string GetDefaultSchemaNamespace(void);
+
+    virtual void WriteFileHeader(TTypeInfo type);
 
     // DTD file name and prefix. The final module name is built as
     // DTDFilePrefix + DTDFileName.
@@ -254,6 +257,8 @@ private:
     void x_WriteClassNamespace(TTypeInfo type);
     bool x_ProcessTypeNamespace(TTypeInfo type);
     void x_EndTypeNamespace(void);
+    bool x_BeginNamespace(const string& ns_name, const string& ns_prefix);
+    void x_EndNamespace(const string& ns_name);
 
     enum ETagAction {
         eTagOpen,
@@ -277,6 +282,7 @@ private:
     ERealValueFormat m_RealFmt;
     EEncoding m_Encoding;
     bool m_UseSchemaRef;
+    bool m_UseSchemaLoc;
     static string sm_DefaultSchemaNamespace;
     string m_CurrNsPrefix;
     map<string,string> m_NsNameToPrefix;
@@ -298,6 +304,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/09/16 14:49:15  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.35  2003/08/25 15:58:32  gouriano
 * added possibility to use namespaces in XML i/o streams
 *

@@ -86,6 +86,9 @@ public:
     void SetNotag(void);
     bool HasNotag(void) const;
 
+    void SetAnyContent(void);
+    bool HasAnyContent(void) const;
+
 private:
     // identification
     string m_Name;
@@ -94,6 +97,7 @@ private:
     bool m_NoPrefix;
     bool m_Attlist;
     bool m_Notag;
+    bool m_AnyContent;
 };
 
 
@@ -110,6 +114,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/09/16 14:49:15  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.17  2003/04/15 14:15:24  siyan
 * Added doxygen support
 *

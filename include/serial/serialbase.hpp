@@ -120,7 +120,24 @@ private:
     static ESerialVerifyData ms_VerifyDataDefault;
 };
 
-class NCBI_XSERIAL_EXPORT CAnyContentObject
+class NCBI_XSERIAL_EXPORT CSerialAttribInfoItem
+{
+public:
+    CSerialAttribInfoItem(const string& name,
+                          const string& ns_name, const string& value);
+    CSerialAttribInfoItem(const CSerialAttribInfoItem& other);
+    virtual ~CSerialAttribInfoItem(void);
+
+    const string& GetName(void) const;
+    const string& GetNamespaceName(void) const;
+    const string& GetValue(void) const;
+private:
+    string m_Name;
+    string m_NsName;
+    string m_Value;
+};
+
+class NCBI_XSERIAL_EXPORT CAnyContentObject : public CObject
 {
 public:
     CAnyContentObject(void);
@@ -135,9 +152,24 @@ public:
     const string& GetName(void) const;
     void SetValue(const string& value);
     const string& GetValue(void) const;
+
+    void SetNamespaceName(const string& ns_name);
+    const string& GetNamespaceName(void) const;
+    void SetNamespacePrefix(const string& ns_prefix);
+    const string& GetNamespacePrefix(void) const;
+
+    void AddAttribute(const string& name,
+                      const string& ns_name, const string& value);
+    const vector<CSerialAttribInfoItem>& GetAttributes(void) const;
+
 private:
+    void x_Copy(const CAnyContentObject& other);
+    void x_Decode(const string& value);
     string m_Name;
     string m_Value;
+    string m_NsName;
+    string m_NsPrefix;
+    vector<CSerialAttribInfoItem> m_Attlist;
 };
 
 // Base class for user-defined serializable classes
@@ -267,6 +299,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/09/16 14:49:15  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.21  2003/08/25 15:58:32  gouriano
 * added possibility to use namespaces in XML i/o streams
 *

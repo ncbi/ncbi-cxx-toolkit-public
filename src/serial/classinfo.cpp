@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2003/09/16 14:48:35  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.70  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *
@@ -565,12 +568,12 @@ void CClassTypeInfo::ReadImplicitMember(CObjectIStream& in,
         CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
 
     const CMemberInfo* memberInfo = classType->GetImplicitMember();
-    in.ReadNamedType(classType,
-                     memberInfo->GetTypeInfo(),
-                     memberInfo->GetItemPtr(objectPtr));
     if( memberInfo->HaveSetFlag()) {
         memberInfo->UpdateSetFlag(objectPtr,CMemberInfo::eSetYes);
     }
+    in.ReadNamedType(classType,
+                     memberInfo->GetTypeInfo(),
+                     memberInfo->GetItemPtr(objectPtr));
 }
 
 void CClassTypeInfo::WriteClassRandom(CObjectOStream& out,

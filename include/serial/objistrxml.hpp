@@ -58,6 +58,7 @@ public:
     virtual string GetPosition(void) const;
 
     virtual string ReadFileHeader(void);
+    virtual string PeekNextTypeName(void);
 
     enum EEncoding {
         eEncoding_Unknown,
@@ -124,6 +125,7 @@ protected:
                                TTypeInfo typeInfo,
                                TObjectPtr object);
 
+    bool HasAnyContent(const CClassTypeInfoBase* classType);
     bool HasMoreElements(TTypeInfo elementType);
     virtual void ReadContainer(const CContainerTypeInfo* containerType,
                                TObjectPtr containerPtr);
@@ -250,6 +252,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/09/16 14:49:15  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.29  2003/08/25 15:58:32  gouriano
 * added possibility to use namespaces in XML i/o streams
 *

@@ -576,6 +576,11 @@ string CObjectIStream::ReadFileHeader(void)
     return NcbiEmptyString;
 }
 
+string CObjectIStream::PeekNextTypeName(void)
+{
+    return NcbiEmptyString;
+}
+
 pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStream::ReadPointer("<<declaredType->GetName()<<")");
@@ -1268,6 +1273,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.114  2003/09/16 14:48:36  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.113  2003/09/10 20:56:45  gouriano
 * added possibility to ignore missing mandatory members on reading
 *

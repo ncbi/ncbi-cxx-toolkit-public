@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/09/16 14:48:36  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.14  2003/08/25 15:59:09  gouriano
 * added possibility to use namespaces in XML i/o streams
 *
@@ -247,14 +250,40 @@ void CSerialObject::SetNamespacePrefix(const string& ns_prefix)
 }
 
 
+CSerialAttribInfoItem::CSerialAttribInfoItem(
+    const string& name, const string& ns_name, const string& value)
+    : m_Name(name), m_NsName(ns_name), m_Value(value)
+{
+}
+CSerialAttribInfoItem::CSerialAttribInfoItem(const CSerialAttribInfoItem& other)
+    : m_Name(other.m_Name), m_NsName(other.m_NsName), m_Value(other.m_Value)
+{
+}
+
+CSerialAttribInfoItem::~CSerialAttribInfoItem(void)
+{
+}
+const string& CSerialAttribInfoItem::GetName(void) const
+{
+    return m_Name;
+}
+const string& CSerialAttribInfoItem::GetNamespaceName(void) const
+{
+    return m_NsName;
+}
+const string& CSerialAttribInfoItem::GetValue(void) const
+{
+    return m_Value;
+}
+
+
 CAnyContentObject::CAnyContentObject(void)
 {
 }
 
 CAnyContentObject::CAnyContentObject(const CAnyContentObject& other)
 {
-    m_Name = other.m_Name;
-    m_Value= other.m_Value;
+    x_Copy(other);
 }
 
 CAnyContentObject::~CAnyContentObject(void)
@@ -265,18 +294,34 @@ void CAnyContentObject::Reset(void)
 {
     m_Name.erase();
     m_Value.erase();
+    m_NsName.erase();
+    m_NsPrefix.erase();
+    m_Attlist.clear();
 }
 
+void CAnyContentObject::x_Copy(const CAnyContentObject& other)
+{
+    m_Name = other.m_Name;
+    m_Value= other.m_Value;
+    m_NsName= other.m_NsName;
+    m_NsPrefix= other.m_NsPrefix;
+    m_Attlist.clear();
+    vector<CSerialAttribInfoItem>::const_iterator it;
+    for (it = other.m_Attlist.begin(); it != other.m_Attlist.end(); ++it) {
+        m_Attlist.push_back( *it);
+    }
+}
 CAnyContentObject& CAnyContentObject::operator= (const CAnyContentObject& other)
 {
-    m_Name = other.GetName();
-    m_Value= other.GetValue();
+    x_Copy(other);
     return *this;
 }
 
 bool CAnyContentObject::operator== (const CAnyContentObject& other) const
 {
-    return m_Name == other.GetName() && m_Value == other.GetValue();
+    return m_Name == other.GetName() &&
+           m_Value == other.GetValue() &&
+           m_NsName == other.m_NsName;
 }
 
 void CAnyContentObject::SetName(const string& name)
@@ -289,11 +334,43 @@ const string& CAnyContentObject::GetName(void) const
 }
 void CAnyContentObject::SetValue(const string& value)
 {
-    m_Value = value;
+    x_Decode(value);
 }
 const string& CAnyContentObject::GetValue(void) const
 {
     return m_Value;
+}
+void CAnyContentObject::SetNamespaceName(const string& ns_name)
+{
+    m_NsName = ns_name;
+}
+const string& CAnyContentObject::GetNamespaceName(void) const
+{
+    return m_NsName;
+}
+void CAnyContentObject::SetNamespacePrefix(const string& ns_prefix)
+{
+    m_NsPrefix = ns_prefix;
+}
+const string& CAnyContentObject::GetNamespacePrefix(void) const
+{
+    return m_NsPrefix;
+}
+void CAnyContentObject::x_Decode(const string& value)
+{
+    m_Value = value;
+}
+void CAnyContentObject::AddAttribute(
+    const string& name, const string& ns_name, const string& value)
+{
+// TODO: check if an attrib with this name+ns_name already exists
+    m_Attlist.push_back( CSerialAttribInfoItem( name,ns_name,value));
+}
+
+const vector<CSerialAttribInfoItem>&
+CAnyContentObject::GetAttributes(void) const
+{
+    return m_Attlist;
 }
 
 /////////////////////////////////////////////////////////////////////////////

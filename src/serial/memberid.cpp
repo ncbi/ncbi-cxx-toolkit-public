@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/09/16 14:48:36  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.16  2003/06/24 20:57:36  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *
@@ -107,38 +110,38 @@ BEGIN_NCBI_SCOPE
 
 CMemberId::CMemberId(void)
     : m_Tag(eNoExplicitTag), m_ExplicitTag(false),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
 {
 }
 
 CMemberId::CMemberId(TTag tag, bool explicitTag)
     : m_Tag(tag), m_ExplicitTag(explicitTag),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
 {
 }
 
 CMemberId::CMemberId(const string& name)
     : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
 {
 }
 
 CMemberId::CMemberId(const string& name, TTag tag, bool explicitTag)
     : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
 {
 }
 
 CMemberId::CMemberId(const char* name)
     : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
 {
     _ASSERT(name);
 }
 
 CMemberId::CMemberId(const char* name, TTag tag, bool explicitTag)
     : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
 {
     _ASSERT(name);
 }
@@ -191,6 +194,15 @@ void CMemberId::SetNotag(void)
 bool CMemberId::HasNotag(void) const
 {
     return m_Notag;
+}
+
+void CMemberId::SetAnyContent(void)
+{
+    m_AnyContent = true;
+}
+bool CMemberId::HasAnyContent(void) const
+{
+    return m_AnyContent;
 }
 
 END_NCBI_SCOPE

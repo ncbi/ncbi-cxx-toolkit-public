@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/09/16 14:48:36  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.40  2003/08/26 19:25:58  gouriano
 * added possibility to discard a member of an STL container
 * (from a read hook)
@@ -226,6 +229,27 @@ public:
                              TTypeInfo objectType);
 };
 
+class CNamespaceInfoItem
+{
+public:
+    CNamespaceInfoItem(void);
+    CNamespaceInfoItem(const CNamespaceInfoItem& other);
+    virtual ~CNamespaceInfoItem(void);
+
+    bool HasNamespaceName(void) const;
+    const string& GetNamespaceName(void) const;
+    void SetNamespaceName(const string& ns_name);
+
+    bool HasNamespacePrefix(void) const;
+    const string& GetNamespacePrefix(void) const;
+    void SetNamespacePrefix(const string& ns_prefix);
+
+private:
+    string m_NsName;
+    string m_NsPrefix;
+    bool   m_NsPrefixSet;
+};
+
 typedef CTypeInfoFunctions TFunc;
 
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
@@ -313,7 +337,7 @@ void CTypeInfo::SetNamespacePrefix(const string& ns_prefix) const
 void CTypeInfo::x_CreateInfoItemIfNeeded(void) const
 {
     if (!m_InfoItem) {
-        m_InfoItem = new CSerialInfoItem;
+        m_InfoItem = new CNamespaceInfoItem;
     }
 }
 
@@ -541,48 +565,48 @@ void CTypeInfoFunctions::CopyWithHook(CObjectStreamCopier& stream,
 }
 
 
-CSerialInfoItem::CSerialInfoItem(void)
+CNamespaceInfoItem::CNamespaceInfoItem(void)
 {
     m_NsPrefixSet = false;
 }
 
-CSerialInfoItem::CSerialInfoItem(const CSerialInfoItem& other)
+CNamespaceInfoItem::CNamespaceInfoItem(const CNamespaceInfoItem& other)
 {
     m_NsName      = other.m_NsName;
     m_NsPrefix    = other.m_NsPrefix;
     m_NsPrefixSet = other.m_NsPrefixSet;
 }
 
-CSerialInfoItem::~CSerialInfoItem(void)
+CNamespaceInfoItem::~CNamespaceInfoItem(void)
 {
 }
 
-bool CSerialInfoItem::HasNamespaceName(void) const
+bool CNamespaceInfoItem::HasNamespaceName(void) const
 {
     return !m_NsName.empty();
 }
 
-const string& CSerialInfoItem::GetNamespaceName(void) const
+const string& CNamespaceInfoItem::GetNamespaceName(void) const
 {
     return m_NsName;
 }
 
-void CSerialInfoItem::SetNamespaceName(const string& ns_name)
+void CNamespaceInfoItem::SetNamespaceName(const string& ns_name)
 {
     m_NsName = ns_name;
 }
 
-bool CSerialInfoItem::HasNamespacePrefix(void) const
+bool CNamespaceInfoItem::HasNamespacePrefix(void) const
 {
     return m_NsPrefixSet;
 }
 
-const string& CSerialInfoItem::GetNamespacePrefix(void) const
+const string& CNamespaceInfoItem::GetNamespacePrefix(void) const
 {
     return m_NsPrefix;
 }
 
-void CSerialInfoItem::SetNamespacePrefix(const string& ns_prefix)
+void CNamespaceInfoItem::SetNamespacePrefix(const string& ns_prefix)
 {
     m_NsPrefix = ns_prefix;
     m_NsPrefixSet = !m_NsPrefix.empty();

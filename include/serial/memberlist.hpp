@@ -69,6 +69,10 @@ public:
         {
             return m_Items.empty();
         }
+    size_t Size(void) const
+        {
+            return m_Items.size();
+        }
 
     static TMemberIndex FirstIndex(void)
         {
@@ -148,6 +152,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/09/16 14:49:15  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.24  2003/04/15 14:15:26  siyan
 * Added doxygen support
 *

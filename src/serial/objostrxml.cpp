@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/09/16 14:48:36  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.61  2003/08/25 15:59:09  gouriano
 * added possibility to use namespaces in XML i/o streams
 *
@@ -293,7 +296,7 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_UsePublicId( true),
       m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
       m_RealFmt( eRealScientificFormat ), m_Encoding( eEncoding_Unknown ),
-      m_UseSchemaRef( false )
+      m_UseSchemaRef( false ), m_UseSchemaLoc( true )
 {
     m_Output.SetBackLimit(1);
 }
@@ -325,6 +328,15 @@ void CObjectOStreamXml::SetReferenceSchema(bool use_schema)
 bool CObjectOStreamXml::GetReferenceSchema(void) const
 {
     return m_UseSchemaRef;
+}
+
+void CObjectOStreamXml::SetUseSchemaLocation(bool use_loc)
+{
+    m_UseSchemaLoc = use_loc;
+}
+bool CObjectOStreamXml::GetUseSchemaLocation(void) const
+{
+    return m_UseSchemaLoc;
 }
 
 
@@ -430,8 +442,11 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
 {
     OpenTagEndBack();
 
-    m_Output.PutEol();
-    m_Output.PutString("    xmlns");
+    if (m_UseSchemaLoc) {
+        m_Output.PutEol();
+        m_Output.PutString("   ");
+    }
+    m_Output.PutString(" xmlns");
     if (!m_CurrNsPrefix.empty()) {
        m_Output.PutChar(':');
        m_Output.PutString(m_CurrNsPrefix);
@@ -443,56 +458,44 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
         ns_name = GetDefaultSchemaNamespace();
     }
     m_Output.PutString(ns_name + "\"");
-    m_Output.PutEol();
 
-    string xs_name("http://www.w3.org/2001/XMLSchema-instance");
-    string xs_prefix("xs");
-    if (m_NsNameToPrefix.find(xs_name) == m_NsNameToPrefix.end()) {
-        for (char a='a';
-            m_NsPrefixToName.find(xs_prefix) != m_NsPrefixToName.end(); ++a) {
-            xs_prefix += a;
+    if (m_UseSchemaLoc) {
+        m_Output.PutEol();
+        string xs_name("http://www.w3.org/2001/XMLSchema-instance");
+        string xs_prefix("xs");
+        if (m_NsNameToPrefix.find(xs_name) == m_NsNameToPrefix.end()) {
+            for (char a='a';
+                m_NsPrefixToName.find(xs_prefix) != m_NsPrefixToName.end(); ++a) {
+                xs_prefix += a;
+            }
+            m_NsPrefixToName[xs_prefix] = xs_name;
+            m_NsNameToPrefix[xs_name] = xs_prefix;
+            m_Output.PutString("    xmlns:");
+            m_Output.PutString(xs_prefix + "=\"");
+            m_Output.PutString(xs_name + "\"");
+            m_Output.PutEol();
+            m_Output.PutString("    ");
+            m_Output.PutString(xs_prefix);
+            m_Output.PutString(":schemaLocation=\"");
+            m_Output.PutString(ns_name + " ");
+            m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
+            m_Output.PutString(".xsd\"");
+            m_Output.PutEol();
         }
-        m_NsPrefixToName[xs_prefix] = xs_name;
-        m_NsNameToPrefix[xs_name] = xs_prefix;
-        m_Output.PutString("    xmlns:");
-        m_Output.PutString(xs_prefix + "=\"");
-        m_Output.PutString(xs_name + "\"");
-        m_Output.PutEol();
-        m_Output.PutString("    ");
-        m_Output.PutString(xs_prefix);
-        m_Output.PutString(":schemaLocation=\"");
-        m_Output.PutString(ns_name + " ");
-        m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
-        m_Output.PutString(".xsd\"");
-        m_Output.PutEol();
     }
     OpenTagEnd();
 }
 
 bool CObjectOStreamXml::x_ProcessTypeNamespace(TTypeInfo type)
 {
-    bool needNs = false;
     if (m_UseSchemaRef) {
+        string nsName = GetDefaultSchemaNamespace();
         if (type->HasNamespaceName()) {
-            string nsName = type->GetNamespaceName();
-            string nsPrefix;
-            if (m_NsNameToPrefix.find(nsName) == m_NsNameToPrefix.end()) {
-                nsPrefix = type->GetNamespacePrefix();
-                for (char a='a';
-                    m_NsPrefixToName.find(nsPrefix) != m_NsPrefixToName.end(); ++a) {
-                    nsPrefix += a;
-                }
-                m_CurrNsPrefix = nsPrefix;
-                m_NsNameToPrefix[nsName] = nsPrefix;
-                m_NsPrefixToName[nsPrefix] = nsName;
-                m_NsPrefixes.push(nsPrefix);
-                needNs = true;
-            } else {
-                m_CurrNsPrefix = m_NsNameToPrefix[nsName];
-            }
+            nsName = type->GetNamespaceName();
         }
+        return x_BeginNamespace(nsName,type->GetNamespacePrefix());
     }
-    return needNs;
+    return false;
 }
 
 void CObjectOStreamXml::x_EndTypeNamespace(void)
@@ -501,19 +504,47 @@ void CObjectOStreamXml::x_EndTypeNamespace(void)
         if (TopFrame().HasTypeInfo()) {
             TTypeInfo type = TopFrame().GetTypeInfo();
             if (type->HasNamespaceName()) {
-                string nsName = type->GetNamespaceName();
-                string nsPrefix = m_NsNameToPrefix[nsName];
-                m_NsNameToPrefix.erase(nsName);
-                m_NsPrefixToName.erase(nsPrefix);
-                m_NsPrefixes.pop();
-                m_CurrNsPrefix = m_NsPrefixes.empty() ?
-                    kEmptyStr : m_NsPrefixes.top();
+                x_EndNamespace(type->GetNamespaceName());
             }
         }
-        if (GetStackDepth() <= 2) {
-            m_NsNameToPrefix.clear();
-            m_NsPrefixToName.clear();
+    }
+}
+
+bool CObjectOStreamXml::x_BeginNamespace(const string& ns_name,
+                                         const string& ns_prefix)
+{
+    _ASSERT(m_UseSchemaRef);
+    if (!ns_name.empty()) {
+        string nsPrefix(ns_prefix);
+        if (m_NsNameToPrefix.find(ns_name) == m_NsNameToPrefix.end()) {
+            for (char a='a';
+                m_NsPrefixToName.find(nsPrefix) != m_NsPrefixToName.end(); ++a) {
+                nsPrefix += a;
+            }
+            m_CurrNsPrefix = nsPrefix;
+            m_NsNameToPrefix[ns_name] = nsPrefix;
+            m_NsPrefixToName[nsPrefix] = ns_name;
+            m_NsPrefixes.push(nsPrefix);
+            return true;
+        } else {
+            m_CurrNsPrefix = m_NsNameToPrefix[ns_name];
         }
+    }
+    return false;
+}
+
+void CObjectOStreamXml::x_EndNamespace(const string& ns_name)
+{
+    _ASSERT(m_UseSchemaRef);
+    string nsPrefix = m_NsNameToPrefix[ns_name];
+// not sure about it - should we erase them or not?
+//    m_NsNameToPrefix.erase(ns_name);
+//    m_NsPrefixToName.erase(nsPrefix);
+    m_NsPrefixes.pop();
+    m_CurrNsPrefix = m_NsPrefixes.empty() ? kEmptyStr : m_NsPrefixes.top();
+    if (GetStackDepth() <= 2) {
+        m_NsNameToPrefix.clear();
+        m_NsPrefixToName.clear();
     }
 }
 
@@ -704,21 +735,82 @@ void CObjectOStreamXml::WriteNull(void)
 
 void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
 {
-    m_Output.PutEol();
+    if (obj.GetName().empty()) {
+        return;
+    }
 // open tag
-    m_Output.PutChar('<');
-    m_Output.PutString(obj.GetName());
-    m_Output.PutChar('>');
+    string ns_name(obj.GetNamespaceName());
+    if (m_UseSchemaRef) {
+        x_BeginNamespace(ns_name,obj.GetNamespacePrefix());
+    }
+    OpenTag(obj.GetName());
+
+    if (m_UseSchemaRef) {
+        OpenTagEndBack();
+        if (!m_CurrNsPrefix.empty()) {
+            m_Output.PutString(" xmlns");
+            m_Output.PutChar(':');
+            m_Output.PutString(m_CurrNsPrefix);
+            m_Output.PutString("=\"");
+            m_Output.PutString(ns_name);
+            m_Output.PutChar('\"');
+        }
+
+        const vector<CSerialAttribInfoItem>& attlist = obj.GetAttributes();
+        if (!attlist.empty()) {
+            vector<CSerialAttribInfoItem>::const_iterator it;
+            for ( it = attlist.begin(); it != attlist.end(); ++it) {
+                m_Output.PutChar(' ');
+                m_Output.PutString(m_NsNameToPrefix[it->GetNamespaceName()]);
+                m_Output.PutChar(':');
+                m_Output.PutString(it->GetName());
+                m_Output.PutString("=\"");
+                m_Output.PutString(it->GetValue());
+                m_Output.PutChar('\"');
+            }
+        }
+        OpenTagEnd();
+    }
+
 // value
 // no verification on write!
-    m_Output.PutString(obj.GetValue());
-// close tag
-    m_Output.PutString("</");
-    m_Output.PutString(obj.GetName());
-    m_Output.PutChar('>');
+    const string& value = obj.GetValue();
+    bool wasOpen = true;
+    if (m_UseSchemaRef) {
+        for (string::const_iterator is=value.begin(); is != value.end(); ++is) {
+            if (*is == '<') {
+                if (*(is+1) == '/') {
+                    m_Output.DecIndentLevel();
+                    if (!wasOpen) {
+                        m_Output.PutEol();
+                    }
+                    wasOpen = false;
+                } else {
+                    m_Output.PutEol();
+                    m_Output.IncIndentLevel();
+                    wasOpen = true;
+                }
+            }
+            m_Output.PutChar(*is);
+            if (*is == '<') {
+                if (*(is+1) == '/') {
+                    m_Output.PutChar(*(++is));
+                }
+                m_Output.PutString(m_CurrNsPrefix);
+                m_Output.PutChar(':');
+            }
+        }
+    } else {
+        m_Output.PutString(obj.GetValue());
+    }
 
-    m_Output.PutEol(false);
-    m_EndTag = true;
+// close tag
+    if (!wasOpen) {
+        m_Output.PutEol(false);
+        m_EndTag = true;
+    }
+    CloseTag(obj.GetName());
+    x_EndNamespace(ns_name);
 }
 
 void CObjectOStreamXml::CopyAnyContentObject(CObjectIStream& in)
@@ -804,7 +896,7 @@ void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
 
 void CObjectOStreamXml::WriteTag(const string& name)
 {
-    if (!m_CurrNsPrefix.empty()) {
+    if (!m_Attlist && !m_CurrNsPrefix.empty()) {
         m_Output.PutString(m_CurrNsPrefix);
         m_Output.PutChar(':');
     }

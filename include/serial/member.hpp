@@ -88,6 +88,7 @@ public:
     CMemberInfo* SetNoPrefix(void);
     CMemberInfo* SetAttlist(void);
     CMemberInfo* SetNotag(void);
+    CMemberInfo* SetAnyContent(void);
 
     bool NonEmpty(void) const;
     CMemberInfo* SetNonEmpty(void);
@@ -220,6 +221,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/09/16 14:49:15  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.30  2003/08/14 20:03:57  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.

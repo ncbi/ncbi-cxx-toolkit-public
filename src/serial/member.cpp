@@ -302,6 +302,12 @@ CMemberInfo* CMemberInfo::SetNotag(void)
     return this;
 }
 
+CMemberInfo* CMemberInfo::SetAnyContent(void)
+{
+    GetId().SetAnyContent();
+    return this;
+}
+
 CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
 {
     m_Optional = true;
@@ -1021,6 +1027,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.33  2003/09/16 14:48:35  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.32  2003/08/26 19:25:58  gouriano
 * added possibility to discard a member of an STL container
 * (from a read hook)

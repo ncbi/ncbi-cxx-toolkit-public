@@ -142,6 +142,7 @@ public:
     // file header readers
     virtual string ReadFileHeader(void);
     void SkipFileHeader(TTypeInfo typeInfo);
+    virtual string PeekNextTypeName(void);
 
     enum ENoFileHeader {
         eNoFileHeader
@@ -596,6 +597,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2003/09/16 14:49:15  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
 * Revision 1.88  2003/09/10 20:57:23  gouriano
 * added possibility to ignore missing mandatory members on reading
 *
