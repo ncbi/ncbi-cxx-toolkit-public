@@ -424,7 +424,7 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const string& name,
         default:                   break;
         }
         break;
-    case CMolInfo::eBiomol_pre_RNA:  s = "pre-mRNA";  break;
+    case CMolInfo::eBiomol_pre_RNA:  s = "pre-RNA";   break;
     case CMolInfo::eBiomol_mRNA:     s = "mRNA";      break;
     case CMolInfo::eBiomol_rRNA:     s = "rRNA";      break;
     case CMolInfo::eBiomol_tRNA:     s = "tRNA";      break;
@@ -779,6 +779,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/08/20 16:28:27  shomrat
+* fixed mol type for pre_RNA biomol
+*
 * Revision 1.16  2004/08/19 16:37:52  shomrat
 * + CFlatNumberQVal and CFlatGeneSynonymsQVal
 *
