@@ -39,6 +39,11 @@ static NCBI_INLINE Int4 ComputeWordScore(Int4 ** matrix,
 				    const Uint1* w2,
 				    Boolean *exact);
 
+static NCBI_INLINE Int4 ComputePSSMWordScore(Int4 ** matrix,
+				    Int4 wordsize,
+				    Int4 offset, 
+				    const Uint1* w1); 
+
 static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
 				  Int4 charsize,
 				  Int4 mask,
@@ -92,6 +97,7 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
   lookup->threshold = opt->threshold;
   lookup->thin_backbone = 
      (Int4**) calloc(lookup->backbone_size , sizeof(Int4*));
+  lookup->use_pssm = opt->use_pssm;
 
   return 0;
 }
@@ -227,6 +233,8 @@ for(i=0;i<lookup->backbone_size;i++)
         }
     } /* end for */
 
+ lookup->overflow_size = overflow_cursor;
+
 /* done copying hit info- free the backbone */
  sfree(lookup->thin_backbone);
  lookup->thin_backbone=NULL;
@@ -259,7 +267,10 @@ static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
 
   *index = 0;
   for(i=0;i<wordsize;i++)
+{
     *index = ((*index << charsize) | word[i]) & mask;
+}
+
   return;
 }
 
@@ -380,7 +391,8 @@ Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
   /* index queries */
   for(i=0;i<num_queries;i++)
     {
-      _BlastAaLookupIndexQuery(lookup, matrix, &(query[i]), &(locations[i]));
+      _BlastAaLookupIndexQuery(lookup, matrix, (lookup->use_pssm == TRUE) ? NULL : &(query[i]), 
+         &(locations[i]));
     }
 
   /* free neighbor array*/
@@ -447,9 +459,13 @@ Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk*
 {
   Uint1* s = lookup->neighbors;
   Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize;
-  Boolean exact;
+  Boolean exact=FALSE;
   Int4 score;
-  Uint1* w = query->sequence + offset;
+  Uint1* w = NULL;
+
+
+  if (query)
+	w = query->sequence + offset;
   
   if (lookup->threshold == 0)
     {
@@ -460,7 +476,10 @@ Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk*
   
   while (s < s_end)
     {
-      score = ComputeWordScore(matrix,lookup->wordsize,w,s,&exact);
+      if (lookup->use_pssm)
+           score = ComputePSSMWordScore(matrix,lookup->wordsize,offset,s);
+      else
+           score = ComputeWordScore(matrix,lookup->wordsize,w,s,&exact);
       
       /*
        * If the score is higher than the threshold or this is an exact
@@ -491,7 +510,7 @@ Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk*
  *
  * @param matrix the substitution matrix [in]
  * @param wordsize the word size [in]
- * @param w1 the first word [in
+ * @param w1 the first word [in]
  * @param w2 the second word [in]
  * @param exact a pointer to a boolean which specifies whether or not this was an exact match or not.
  * @return The score of the pair of words.
@@ -512,6 +531,36 @@ for(i=0;i<wordsize;i++)
     score += matrix[ w1[i] ][ w2[i] ];
     if ( w1[i] != w2[i] )
       *exact=FALSE;
+  }
+ 
+return score;
+}
+
+
+/**
+ *  Compute the score of a pair of words using a Position-Specific-Scoring-Matrix (PSSM)
+ *  Used for PSI-BLAST as well as building RPS-BLAST databases.
+ *
+ * @param matrix the substitution matrix [in]
+ * @param wordsize the word size [in]
+ * @param offset of query (PSSM) word [in]
+ * @param w1 the first word (to check for exact matches) [in]
+ * @param w2 the second word [in]
+ * @param exact a pointer to a boolean which specifies whether or not this was an exact match or not.
+ * @return The score of the pair of words.
+ */
+static NCBI_INLINE Int4 ComputePSSMWordScore(Int4 ** matrix,
+				    Int4 wordsize,
+				    Int4 offset, /* offset of query (PSSM) word. */
+				    const Uint1* w2 /* the second word */)
+{
+Int4 i;
+Int4 score=0;
+
+
+for(i=0;i<wordsize;i++)
+  {
+    score += matrix[offset+i][ w2[i] ];
   }
  
 return score;

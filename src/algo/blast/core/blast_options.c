@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.56  2003/09/08 12:55:57  madden
+ * Allow use of PSSM to construct lookup table
+ *
  * Revision 1.55  2003/08/27 15:05:37  camacho
  * Use symbolic name for alphabet sizes
  *
@@ -834,7 +837,8 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptions* *options)
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    Uint1 program_number, Boolean is_megablast, Int4 threshold,
-   Int2 word_size, Boolean ag_blast, Boolean variable_wordsize)
+   Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
+   Boolean use_pssm)
 {
    if (!options)
       return 1;
@@ -852,6 +856,8 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
 
    if (threshold)
       options->threshold = threshold;
+   if (use_pssm)
+      options->use_pssm = use_pssm;
    if (word_size)
       options->word_size = word_size;
    if (program_number == blast_type_blastn) {
