@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 // class CImage defines exceptions valid for images.  These exceptions are
 // largely related to image reading
 //
-class CImageException : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XIMAGE_EXPORT CImageException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/27 16:43:48  ivanov
+ * Added export specifier to class definition
+ *
  * Revision 1.1  2003/06/03 15:17:41  dicuccio
  * Initial revision of image library
  *
