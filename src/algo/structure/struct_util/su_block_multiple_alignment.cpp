@@ -98,7 +98,7 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     return copy;
 }
 
-static inline char ScreenResidueCharacter(char original)
+static inline unsigned int ScreenResidueCharacter(char original)
 {
     char ch = toupper(original);
     switch (ch) {
@@ -1647,6 +1647,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/28 10:07:39  thiessen
+* fix GCC warning
+*
 * Revision 1.8  2004/05/28 09:46:57  thiessen
 * restructure C-toolkit header usage ; move C Bioseq storage into su_sequence_set
 *
