@@ -191,6 +191,8 @@ private:
     CSeq_annot_Handle GetAnnot(const CAnnotObject_Ref& ref) const;
 
     SAnnotSelector& GetSelector(void);
+    CScope::EGetBioseqFlag GetGetFlag(void) const;
+    bool CanResolveId(const CSeq_id_Handle& idh, CBioseq_Handle& bh);
 
     void x_Clear(void);
     void x_Initialize(const CBioseq_Handle& bioseq,
@@ -599,12 +601,31 @@ SAnnotSelector& CAnnot_Collector::GetSelector(void)
 }
 
 
+inline
+CScope::EGetBioseqFlag CAnnot_Collector::GetGetFlag(void) const
+{
+    switch (m_Selector.m_ResolveMethod) {
+    case SAnnotSelector::eResolve_All:
+        return CScope::eGetBioseq_All;
+    case SAnnotSelector::eResolve_TSE:
+        // TSE is already resolved
+        return CScope::eGetBioseq_Resolved;
+    }
+    // Do not load new TSEs
+    return CScope::eGetBioseq_Loaded;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/09/27 14:35:46  grichenk
+* +Flag for handling unresolved IDs (search/ignore/fail)
+* +Selector method for external annotations search
+*
 * Revision 1.14  2004/08/17 14:31:46  grichenk
 * operators <, == and != made inline
 *

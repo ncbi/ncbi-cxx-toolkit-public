@@ -47,6 +47,7 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CSeq_annot;
 
+class CBioseq_Handle;
 class CSeq_entry_Handle;
 class CSeq_annot_Handle;
 class CAnnotObject_Info;
@@ -62,9 +63,9 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     };
     // Flag to indicate references resolution method
     enum EResolveMethod {
-        eResolve_None, // Do not search annotations on segments
-        eResolve_TSE,  // default - search only on segments in the same TSE
-        eResolve_All   // Search annotations for all referenced sequences
+        eResolve_None,   // Do not search annotations on segments
+        eResolve_TSE,    // default - search only on segments in the same TSE
+        eResolve_All     // Search annotations for all referenced sequences
     };
     // Flag to indicate adaptive segment selection
     enum ESegmentSelect {
@@ -78,9 +79,9 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         eSortOrder_Normal,  // default - increasing start, decreasing length
         eSortOrder_Reverse  // decresing end, decreasing length
     };
-    enum EIdResolving {
-        eLoadedOnly,       // Resolve only ids already loaded into the scope
+    enum EUnresolvedFlag {
         eIgnoreUnresolved, // Ignore unresolved ids (default)
+        eSearchUnresolved, // Search annotations for unresolvable IDs
         eFailUnresolved    // Throw exception for unresolved ids
     };
 
@@ -256,25 +257,38 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& SetLimitSeqEntry(const CSeq_entry_Handle& limit);
     SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot_Handle& limit);
 
-    EIdResolving GetIdResolving(void)
+    EUnresolvedFlag GetUnresolvedFlag(void)
         {
-            return m_IdResolving;
+            return m_UnresolvedFlag;
         }
-    SAnnotSelector& SetIdResolvingLoaded(void)
+    SAnnotSelector& SetUnresolvedFlag(EUnresolvedFlag flag)
         {
-            m_IdResolving = eLoadedOnly;
+            m_UnresolvedFlag = flag;
             return *this;
         }
-    SAnnotSelector& SetIdResolvingIgnore(void)
+    SAnnotSelector& SetIgnoreUnresolved(void)
         {
-            m_IdResolving = eIgnoreUnresolved;
+            m_UnresolvedFlag = eIgnoreUnresolved;
             return *this;
         }
-    SAnnotSelector& SetIdResolvingFail(void)
+    SAnnotSelector& SetSearchUnresolved(void)
         {
-            m_IdResolving = eFailUnresolved;
+            m_UnresolvedFlag = eSearchUnresolved;
             return *this;
         }
+    SAnnotSelector& SetFailUnresolved(void)
+        {
+            m_UnresolvedFlag = eFailUnresolved;
+            return *this;
+        }
+
+    // Set all flags for searching external annotations. "seq" or "tse"
+    // should contain the virtual segmented bioseq. The flags set are:
+    //   ResolveTSE - prevent loading external bioseqs
+    //   LimitTSE   - search only external annotations near the virtual bioseq
+    //   SearchUnresolved - search on unresolved IDs.
+    SAnnotSelector& SetSearchExternal(const CSeq_entry_Handle& tse);
+    SAnnotSelector& SetSearchExternal(const CBioseq_Handle& seq);
 
     typedef vector<CAnnotName> TAnnotsNames;
     /// Select annotations from all Seq-annots
@@ -351,7 +365,7 @@ protected:
         eLimit_Seq_annot
     };
     ELimitObject          m_LimitObjectType;
-    EIdResolving          m_IdResolving;
+    EUnresolvedFlag       m_UnresolvedFlag;
     CConstRef<CObject>    m_LimitObject;
     TTSE_Lock             m_LimitTSE_Lock;
     size_t                m_MaxSize; //
@@ -371,6 +385,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/09/27 14:35:45  grichenk
+* +Flag for handling unresolved IDs (search/ignore/fail)
+* +Selector method for external annotations search
+*
 * Revision 1.33  2004/09/07 14:11:11  grichenk
 * Added getters
 *

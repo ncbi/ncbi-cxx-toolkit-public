@@ -36,6 +36,7 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/annot_type_index.hpp>
 
+#include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 
@@ -62,7 +63,7 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
       m_LimitObjectType(eLimit_None),
-      m_IdResolving(eIgnoreUnresolved),
+      m_UnresolvedFlag(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
       m_AdaptiveDepth(false)
@@ -81,7 +82,7 @@ SAnnotSelector::SAnnotSelector(TFeatType feat)
       m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
       m_LimitObjectType(eLimit_None),
-      m_IdResolving(eIgnoreUnresolved),
+      m_UnresolvedFlag(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
       m_AdaptiveDepth(false)
@@ -100,7 +101,7 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
       m_LimitObjectType(eLimit_None),
-      m_IdResolving(eIgnoreUnresolved),
+      m_UnresolvedFlag(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
       m_AdaptiveDepth(false)
@@ -120,7 +121,7 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
       m_LimitObjectType(eLimit_None),
-      m_IdResolving(eIgnoreUnresolved),
+      m_UnresolvedFlag(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
       m_AdaptiveDepth(false)
@@ -145,7 +146,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_SegmentSelect = sel.m_SegmentSelect;
         m_SortOrder = sel.m_SortOrder;
         m_LimitObjectType = sel.m_LimitObjectType;
-        m_IdResolving = sel.m_IdResolving;
+        m_UnresolvedFlag = sel.m_UnresolvedFlag;
         m_LimitObject = sel.m_LimitObject;
         m_LimitTSE_Lock = sel.m_LimitTSE_Lock;
         m_MaxSize = sel.m_MaxSize;
@@ -253,6 +254,23 @@ SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* limit)
     m_LimitObject.Reset(limit);
     m_LimitTSE_Lock.Reset();
     return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::SetSearchExternal(const CSeq_entry_Handle& tse)
+{
+    _ASSERT( tse );
+    SetResolveTSE();
+    SetLimitTSE(tse);
+    SetSearchUnresolved();
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::SetSearchExternal(const CBioseq_Handle& seq)
+{
+    _ASSERT( seq );
+    return SetSearchExternal(seq.GetTopLevelEntry());
 }
 
 
@@ -594,6 +612,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/09/27 14:35:46  grichenk
+* +Flag for handling unresolved IDs (search/ignore/fail)
+* +Selector method for external annotations search
+*
 * Revision 1.14  2004/08/25 17:11:25  grichenk
 * Removed obsolete SAnnotSelector::SetCombineMethod()
 *

@@ -574,6 +574,19 @@ void CAnnot_Collector::x_Initialize(const CBioseq_Handle& bioseq,
 }
 
 
+bool CAnnot_Collector::CanResolveId(const CSeq_id_Handle& idh, CBioseq_Handle& bh)
+{
+    switch ( m_Selector.m_ResolveMethod ) {
+    case SAnnotSelector::eResolve_All:
+        return true;
+    case SAnnotSelector::eResolve_TSE:
+        return m_Scope->GetBioseqHandleFromTSE(idh, bh);
+    default:
+        return false;
+    }
+}
+
+
 void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
 {
     try {
@@ -590,17 +603,20 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
             m_Selector.m_ResolveDepth > 0;
         if ( deeper ) {
             ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
-                //### Check for eLoadedOnly
-                CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first,
-                    CScope::eGetBioseq_All);
+                CBioseq_Handle bh = m_Scope->
+                    GetBioseqHandle(idit->first, GetGetFlag());
                 if ( !bh ) {
-                    if (m_Selector.m_IdResolving ==
+                    if (m_Selector.m_UnresolvedFlag ==
                         SAnnotSelector::eFailUnresolved) {
                         // resolve by Seq-id only
                         NCBI_THROW(CAnnotException, eFindFailed,
                                    "Cannot resolve master id");
                     }
-                    continue; // Do not crash - just skip unresolvable IDs
+                    if (m_Selector.m_UnresolvedFlag ==
+                        SAnnotSelector::eIgnoreUnresolved) {
+                        continue; // Do not crash - just skip unresolvable IDs
+                    }
+                    // Still try to find annotations on the ID
                 }
 
                 CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
@@ -610,25 +626,46 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
                 CHandleRange::TRange idrange =
                     idit->second.GetOverlappingRange();
                 const CSeqMap& seqMap = bh.GetSeqMap();
-                CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
-                                                    m_Scope,
-                                                    m_Selector.m_ResolveDepth-1,
-                                                    CSeqMap::fFindRef));
+                SSeqMapSelector sel;
+                sel.SetPosition(idrange.GetFrom())
+                    .SetResolveCount(m_Selector.m_ResolveDepth - 1)
+                    .SetFlags(CSeqMap::fFindRef);
+                if ( m_Selector.m_ResolveMethod ==
+                    SAnnotSelector::eResolve_TSE ) {
+                    sel.SetLimitTSE(bh.GetTopLevelEntry());
+                }
+                CSeqMap_CI smit(seqMap.FindResolved(m_Scope, sel));
                 while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
                     _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
-                    if ( m_Selector.m_ResolveMethod ==
-                        SAnnotSelector::eResolve_TSE &&
-                        !m_Scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(),
-                                                         bh) ) {
-                        smit.Next(false);
-                        continue;
+                    if ( !CanResolveId(smit.GetRefSeqid(), bh) ) {
+                        // External bioseq, try to search if limit is set
+                        if ( m_Selector.m_UnresolvedFlag !=
+                            SAnnotSelector::eSearchUnresolved  ||
+                            !m_Selector.m_LimitObject ) {
+                            // Do not try to search on external segments
+                            smit.Next(false);
+                            continue;
+                        }
                     }
                     found = x_SearchMapped(smit,
                                            *master_loc_empty,
                                            idit->first,
                                            idit->second);
                     deeper = !(found && m_Selector.m_AdaptiveDepth);
-                    smit.Next(deeper);
+                    try {
+                        smit.Next(deeper);
+                    }
+                    catch (CSeqMapException) {
+                        switch ( m_Selector.m_UnresolvedFlag ) {
+                        case SAnnotSelector::eIgnoreUnresolved:
+                        case SAnnotSelector::eSearchUnresolved:
+                            // Skip unresolved segment
+                            smit.Next(false);
+                            break;
+                        default:
+                            throw;
+                        }
+                    }
                 }
             }
         }
@@ -1290,7 +1327,8 @@ bool CAnnot_Collector::x_Search(const CHandleRangeMap& loc,
             CConstRef<CScope_Impl::TAnnotRefMap> tse_map =
                 m_Scope->GetTSESetWithAnnots(idit->first);
             if (!tse_map) {
-                if (m_Selector.m_IdResolving == SAnnotSelector::eFailUnresolved) {
+                if (m_Selector.m_UnresolvedFlag ==
+                    SAnnotSelector::eFailUnresolved) {
                     NCBI_THROW(CAnnotException, eFindFailed,
                                 "Cannot find id synonyms");
                 }
@@ -1305,18 +1343,20 @@ bool CAnnot_Collector::x_Search(const CHandleRangeMap& loc,
         }
         else {
             // Search in the limit objects
-            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first,
-                CScope::eGetBioseq_All);
+            CConstRef<CSynonymsSet> syns =
+                m_Scope->GetSynonyms(idit->first, GetGetFlag());
             TSeq_id_HandleSet idh_set;
-            if (bh) {
-                CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetInstance();
-                ITERATE(CBioseq_Handle::TId, syn_it, bh.GetId()) {
-                    if (mapper.HaveReverseMatch(*syn_it)) {
-                        mapper.GetReverseMatchingHandles(*syn_it, idh_set);
+            if (syns) {
+                CRef<CSeq_id_Mapper> mapper = CSeq_id_Mapper::GetInstance();
+                ITERATE(CSynonymsSet, syn_it, *syns) {
+                    idh_set.insert(syns->GetSeq_id_Handle(syn_it));
+                    /*CSeq_id_Handle syn = syns->GetSeq_id_Handle(syn_it);
+                    if (mapper->HaveReverseMatch(syn)) {
+                        mapper->GetReverseMatchingHandles(syn, idh_set);
                     }
                     else {
-                        idh_set.insert(*syn_it);
-                    }
+                        idh_set.insert(syn);
+                    }*/
                 }
             }
             else {
@@ -1482,6 +1522,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/09/27 14:35:46  grichenk
+* +Flag for handling unresolved IDs (search/ignore/fail)
+* +Selector method for external annotations search
+*
 * Revision 1.23  2004/08/31 14:23:47  vasilche
 * Use methods instead of data members directly.
 *
