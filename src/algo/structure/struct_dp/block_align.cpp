@@ -416,7 +416,7 @@ int DP_LocalBlockAlign(
         ERROR_MESSAGE("DP_LocalBlockAlign() - invalid parameters");
         return STRUCT_DP_PARAMETER_ERROR;
     }
-    for (int block=0; block<blocks->nBlocks; block++) {
+    for (unsigned int block=0; block<blocks->nBlocks; block++) {
         if (blocks->freezeBlocks[block] != UNFROZEN_BLOCK) {
             WARNING_MESSAGE("DP_LocalBlockAlign() - frozen block specifications are ignored...");
             break;
@@ -442,7 +442,7 @@ DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks)
     blocks->blockSizes = new unsigned int[nBlocks];
     blocks->maxLoops = new unsigned int[nBlocks - 1];
     blocks->freezeBlocks = new unsigned int[nBlocks];
-    for (int i=0; i<nBlocks; i++)
+    for (unsigned int i=0; i<nBlocks; i++)
         blocks->freezeBlocks[i] = UNFROZEN_BLOCK;
     return blocks;
 }
@@ -469,6 +469,9 @@ void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/06/22 12:18:16  thiessen
+* fixes for unsigned/signed comparison
+*
 * Revision 1.6  2003/06/22 12:11:37  thiessen
 * add local alignment
 *
