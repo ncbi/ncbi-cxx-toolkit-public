@@ -868,6 +868,7 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
 
             if (!modified) {
                 //we done - no more projects was added to target_tree
+                AddDatatoolSourcesDepends(&target_tree);
                 *tree = target_tree;
                 return;
             } else {
@@ -1020,6 +1021,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/04 23:31:10  gorelenk
+ * Added call to AddDatatoolSourcesDepends in implementation of
+ * CProjectTreeBuilder::BuildProjectTree.
+ *
  * Revision 1.1  2004/03/02 16:23:57  gorelenk
  * Initial revision.
  *
