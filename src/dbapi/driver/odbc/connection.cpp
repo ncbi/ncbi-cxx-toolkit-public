@@ -31,7 +31,9 @@
 
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <string.h>
+#ifdef HAVE_ODBCSS_H
 #include <odbcss.h>
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -108,8 +110,8 @@ CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name,
 CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
                                     unsigned int  nof_columns)
 {
-#if 0
-    return 0;
+#ifdef NCBI_OS_UNIX
+    return 0; // not implemented
 #else
     if (!m_BCPable) {
         throw CDB_ClientEx(eDB_Error, 410003, "CODBC_Connection::BCPIn",
@@ -339,6 +341,7 @@ static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
     q+= descr_in.SearchConditions();
     //q+= " ;\nset rowcount 0";
 
+#ifdef SQL_TEXTPTR_LOGGING
 	if(!logit) {
 		switch(SQLSetStmtAttr(cmd, SQL_TEXTPTR_LOGGING, /*SQL_SOPT_SS_TEXTPTR_LOGGING,*/
 			(SQLPOINTER)SQL_TL_OFF, SQL_IS_INTEGER)) {
@@ -348,6 +351,7 @@ static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
 		default: break;
 		}
 	}
+#endif
 
 	switch(SQLPrepare(cmd, (SQLCHAR*)q.c_str(), SQL_NTS)) {
 	case SQL_SUCCESS_WITH_INFO:
@@ -589,6 +593,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/05 20:47:45  ucko
+ * Check HAVE_ODBCSS_H; regardless, disable BCP on Unix, since even
+ * DataDirect's implementation lacks the relevant bcp_* functions.
+ *
  * Revision 1.2  2002/07/05 20:47:56  soussov
  * fixes bug in SendData
  *
