@@ -149,7 +149,7 @@ void* SwapPointers(void * volatile * location, void* new_value)
 #      ifdef NCBI_COMPILER_WORKSHOP
     old_value = NCBICORE_asm_xchg(new_value, nv_loc);
 #      else
-    asm volatile("xchg %0, %1" : "+m" (*nv_loc), "=r" (old_value)
+    asm volatile("xchg %0, %1" : "=m" (*nv_loc), "=r" (old_value)
                  : "1" (new_value), "m" (*nv_loc));
 #      endif
     return old_value;
@@ -168,8 +168,8 @@ void* SwapPointers(void * volatile * location, void* new_value)
 #      ifdef NCBI_COMPILER_WORKSHOP
         tmp = NCBICORE_asm_casx(tmp, nv_loc, old_value);
 #      else
-        asm volatile("casx [%3], %2, %1" : "+m" (*nv_loc), "+r" (tmp)
-                     : "r" (old_value), "r" (nv_loc));
+        asm volatile("casx [%3], %2, %1" : "=m" (*nv_loc), "+r" (tmp)
+                     : "r" (old_value), "r" (nv_loc), m (*nv_loc));
 #      endif
         if (tmp == old_value) {
             // swap was successful
@@ -185,8 +185,8 @@ void* SwapPointers(void * volatile * location, void* new_value)
         (NCBICORE_asm_swap(reinterpret_cast<TNCBIAtomicValue>(new_value),
                            reinterpret_cast<TNCBIAtomicValue*>(nv_loc)));
 #      else
-    asm volatile("swap [%2], %1" : "+m" (*nv_loc), "=r" (old_value)
-                 : "r" (nv_loc), "1" (new_value));
+    asm volatile("swap [%2], %1" : "=m" (*nv_loc), "=r" (old_value)
+                 : "r" (nv_loc), "1" (new_value), "m" (*nv_loc));
 #      endif
     return old_value;
 #    else
@@ -210,6 +210,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/04/26 14:31:11  ucko
+ * Split up "+m" constraints for GCC assembly, as versions 3.4 and up
+ * complain about them.
+ *
  * Revision 1.9  2004/02/19 16:50:57  vasilche
  * Use spin counter before sched_yield().
  * Check if new_value == old_value before cacx - logic doesn't work in this case.
