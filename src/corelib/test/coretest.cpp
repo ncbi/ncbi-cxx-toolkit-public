@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  1999/05/27 15:22:16  vakatov
+* Extended and fixed tests for the StringToXXX() functions
+*
 * Revision 1.45  1999/05/11 14:47:38  vakatov
 * Added missing <algorithm> header (for MSVC++)
 *
@@ -501,43 +504,52 @@ static void TestException(void)
 // Utilities
 //
 
-static const string s_Strings[] = {
-    "",
-    "1.",
-    "-2147483649",
-    "-2147483648",
-    "-1",
-    "0",
-    "2147483647",
-    "2147483648",
-    "4294967295",
-    "4294967296",
-};
-
 static void TestUtilities(void)
 {
+    static const string s_Strings[] = {
+        "",
+        "1.",
+        "-2147483649",
+        "-2147483648",
+        "-1",
+        "0",
+        "2147483647",
+        "2147483648",
+        "4294967295",
+        "4294967296",
+        "zzz"
+    };
+
     NcbiCout << "TestUtilities:" << NcbiEndl;
+
     const int count = sizeof(s_Strings) / sizeof(s_Strings[0]);
+
     for ( int i = 0; i < count; ++i ) {
         const string& str = s_Strings[i];
         NcbiCout << "Checking string: '" << str << "':" << NcbiEndl;
+
         try {
             int value = NStr::StringToInt(str);
             NcbiCout << "int value: " << value << ", toString: '"
                      << NStr::IntToString(value) << "'" << NcbiEndl;
         }
-        catch ( runtime_error& error ) {
-            NcbiCout << "Error: " << error.what() << NcbiEndl;
-        }
+        STD_CATCH("TestUtilities");
+
         try {
-            unsigned int value = NStr::StringToInt(str);
+            unsigned int value = NStr::StringToUInt(str);
             NcbiCout << "unsigned int value: " << value << ", toString: '"
-                     << NStr::IntToString(value) << "'" << NcbiEndl;
+                     << NStr::UIntToString(value) << "'" << NcbiEndl;
         }
-        catch ( runtime_error& error ) {
-            NcbiCout << "Error: " << error.what() << NcbiEndl;
+        STD_CATCH("TestUtilities");
+
+        try {
+            double value = NStr::StringToDouble(str);
+            NcbiCout << "double value: " << value << ", toString: '"
+                     << NStr::DoubleToString(value) << "'" << NcbiEndl;
         }
+        STD_CATCH("TestUtilities");
     }
+
     NcbiCout << "TestUtilities finished" << NcbiEndl;
 }
 
