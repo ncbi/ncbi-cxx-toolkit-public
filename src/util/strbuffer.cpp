@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/09/07 14:27:41  vasilche
+* Allow nested CSubSourceCollectors.
+*
 * Revision 1.44  2004/08/30 18:20:23  gouriano
 * Use CNcbiStreamoff instead of size_t for stream offset operations
 *
@@ -262,8 +265,13 @@ void CIStreamBuffer::Close(void)
 
 void CIStreamBuffer::StartSubSource(void)
 {
-    _ASSERT(!m_CollectPos);
-
+    if ( m_Collector ) {
+        // update current collector data
+        _ASSERT(m_CollectPos);
+        size_t count = m_CurrentPos - m_CollectPos;
+        if ( count )
+            m_Collector->AddChunk(m_CollectPos, count);
+    }
     m_CollectPos = m_CurrentPos;
     m_Collector = m_Input->SubSource(m_DataEndPos - m_CurrentPos, m_Collector);
 }
@@ -274,13 +282,17 @@ CRef<CByteSource> CIStreamBuffer::EndSubSource(void)
     _ASSERT(m_CollectPos);
 
     _ASSERT(m_CollectPos <= m_CurrentPos);
-    if ( m_CurrentPos != m_CollectPos )
-        m_Collector->AddChunk(m_CollectPos, m_CurrentPos - m_CollectPos);
+    size_t count = m_CurrentPos - m_CollectPos;
+    if ( count )
+        m_Collector->AddChunk(m_CollectPos, count);
 
     CRef<CByteSource> source = m_Collector->GetSource();
 
-    m_CollectPos = 0;
-    m_Collector.Reset();
+    m_Collector = m_Collector->GetParentCollector();
+    if ( m_Collector )
+        m_CollectPos = m_CurrentPos;
+    else
+        m_CollectPos = 0;
 
     return source;
 }
@@ -460,7 +472,8 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
     _ASSERT(m_CurrentPos <= pos);
     _ASSERT(pos < m_DataEndPos);
     _ASSERT(m_DataEndPos <= m_Buffer + m_BufferSize);
-    _ASSERT(!m_CollectPos || (m_CollectPos>=m_Buffer && m_CollectPos<=m_CurrentPos));
+    _ASSERT(!m_CollectPos ||
+            (m_CollectPos>=m_Buffer && m_CollectPos<=m_CurrentPos));
     return pos;
 }
 

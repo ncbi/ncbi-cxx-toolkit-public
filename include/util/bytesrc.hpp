@@ -130,9 +130,14 @@ public:
     ///   CByteSource, CByteSourceReader
     virtual CRef<CByteSource> GetSource(void) = 0;
 
+    const CRef<CSubSourceCollector>& GetParentCollector(void) const
+        {
+            return m_ParentCollector;
+        }
+
 protected:
     /// Pointer on parent (or chained) collector.
-    CRef<CSubSourceCollector> m_ParentSubSource;
+    CRef<CSubSourceCollector> m_ParentCollector;
 };
 
 
@@ -474,6 +479,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2004/09/07 14:27:41  vasilche
+ * Allow nested CSubSourceCollectors.
+ *
  * Revision 1.25  2004/08/30 18:14:23  gouriano
  * use CNcbiStreamoff instead of size_t for stream offset operations
  *

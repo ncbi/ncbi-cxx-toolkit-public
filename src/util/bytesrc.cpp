@@ -109,22 +109,20 @@ CByteSourceReader::SubSource(size_t /*prevent*/,
 
 
 CSubSourceCollector::CSubSourceCollector(CRef<CSubSourceCollector> parent)
-    : m_ParentSubSource(parent)
+    : m_ParentCollector(parent)
 {
-    return;
 }
 
 
 CSubSourceCollector::~CSubSourceCollector(void)
 {
-    return;
 }
 
 
 void CSubSourceCollector::AddChunk(const char* buffer, size_t bufferLength)
 {
-    if ( !m_ParentSubSource.IsNull() ) {
-        m_ParentSubSource->AddChunk(buffer,bufferLength);
+    if ( m_ParentCollector ) {
+        m_ParentCollector->AddChunk(buffer, bufferLength);
     }
 }
 
@@ -578,8 +576,13 @@ void CWriterSourceCollector::SetWriter(IWriter*   writer,
 
 void CWriterSourceCollector::AddChunk(const char* buffer, size_t bufferLength)
 {
-    size_t written;
-    m_Writer->Write(buffer, bufferLength, &written);
+    CSubSourceCollector::AddChunk(buffer, bufferLength);
+    while ( bufferLength ) {
+        size_t written;
+        m_Writer->Write(buffer, bufferLength, &written);
+        buffer += written;
+        bufferLength -= written;
+    }
 }
 
 
@@ -665,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/09/07 14:27:41  vasilche
+ * Allow nested CSubSourceCollectors.
+ *
  * Revision 1.36  2004/08/30 18:20:23  gouriano
  * Use CNcbiStreamoff instead of size_t for stream offset operations
  *
