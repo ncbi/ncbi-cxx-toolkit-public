@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2001/01/22 23:11:22  vakatov
+* CObjectIStream::{Read,Skip}ClassSequential() -- use curr.member "pos"
+*
 * Revision 1.74  2001/01/05 20:10:50  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -987,7 +990,7 @@ void CObjectIStream::ReadClassSequential(const CClassTypeInfo* classType,
     ReadClassSequentialContentsBegin();
 
     TMemberIndex index;
-    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
+    while ( (index = BeginClassMember(classType, *pos)) != kInvalidMember ) {
 
         ReadClassSequentialContentsMember();
 
@@ -1029,7 +1032,7 @@ void CObjectIStream::SkipClassSequential(const CClassTypeInfo* classType)
     SkipClassSequentialContentsBegin();
 
     TMemberIndex index;
-    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
+    while ( (index = BeginClassMember(classType, *pos)) != kInvalidMember ) {
 
         SkipClassSequentialContentsMember();
 
