@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/02/27 20:57:36  vasilche
+* Addef some options for better performance testing.
+*
 * Revision 1.14  2003/02/24 19:02:01  vasilche
 * Reverted testing shortcut.
 *
@@ -85,6 +88,8 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <serial/objostr.hpp>
+#include <serial/serial.hpp>
 
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
@@ -138,7 +143,17 @@ void CDemoApp::Init(void)
     // GI to fetch
     arg_desc->AddDefaultKey("count", "RepeatCount", "repeat test work RepeatCount times",
          CArgDescriptions::eInteger, "1");
-    arg_desc->AddFlag("resolve_all", "resolve far references");
+
+    arg_desc->AddDefaultKey
+        ("resolve", "ResolveMethod",
+         "Method of segments resolution",
+         CArgDescriptions::eString, "tse");
+    arg_desc->SetConstraint("resolve",
+                            &(*new CArgAllow_Strings,
+                              "none", "tse", "all"));
+
+    arg_desc->AddFlag("print_features", "print all found features");
+    arg_desc->AddFlag("only_features", "do only one scan of features");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -157,9 +172,18 @@ int CDemoApp::Run(void)
     // Process command line args: get GI to load
     const CArgs& args = GetArgs();
     int gi = args["gi"].AsInteger();
-    int count = args["count"].AsInteger();
-    CFeat_CI::EResolveMethod resolve =
-        args["resolve_all"]? CFeat_CI::eResolve_All: CFeat_CI::eResolve_TSE;
+
+    CFeat_CI::EResolveMethod resolve = CFeat_CI::eResolve_TSE;
+    if ( args["resolve"].AsString() == "all" )
+        resolve = CFeat_CI::eResolve_All;
+    if ( args["resolve"].AsString() == "none" )
+        resolve = CFeat_CI::eResolve_None;
+    if ( args["resolve"].AsString() == "tse" )
+        resolve = CFeat_CI::eResolve_TSE;
+
+    int repeat_count = args["count"].AsInteger();
+    bool only_features = args["only_features"];
+    bool print_features = args["print_features"];
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
@@ -190,43 +214,47 @@ int CDemoApp::Run(void)
         return 0;
     }
 
-    for ( int c = 0; c < count; ++c ) {
-        // List other sequences in the same TSE
-        NcbiCout << "TSE sequences:" << NcbiEndl;
-        CBioseq_CI bit;
-        bit = CBioseq_CI(scope, handle.GetTopLevelSeqEntry());
-        for ( ; bit; ++bit) {
-            NcbiCout << "    " << bit->GetSeqId()->DumpAsFasta() << NcbiEndl;
-        }
+    for ( int c = 0; c < repeat_count; ++c ) {
+        string sout;
+        int count;
+        if ( !only_features ) {
+            // List other sequences in the same TSE
+            NcbiCout << "TSE sequences:" << NcbiEndl;
+            CBioseq_CI bit;
+            bit = CBioseq_CI(scope, handle.GetTopLevelSeqEntry());
+            for ( ; bit; ++bit) {
+                NcbiCout << "    " << bit->GetSeqId()->DumpAsFasta() << NcbiEndl;
+            }
 
-        // Get the bioseq
-        CConstRef<CBioseq> bioseq(&handle.GetBioseq());
-        // -- use the bioseq: print the first seq-id
-        NcbiCout << "First ID = " <<
-            (*bioseq->GetId().begin())->DumpAsFasta() << NcbiEndl;
+            // Get the bioseq
+            CConstRef<CBioseq> bioseq(&handle.GetBioseq());
+            // -- use the bioseq: print the first seq-id
+            NcbiCout << "First ID = " <<
+                (*bioseq->GetId().begin())->DumpAsFasta() << NcbiEndl;
 
-        // Get the sequence using CSeqVector. Use default encoding:
-        // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
-        CSeqVector seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-        // -- use the vector: print length and the first 10 symbols
-        NcbiCout << "Sequence: length=" << seq_vect.size();
-        NcbiCout << " data=";
-        string sout = "";
-        for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
-            // Convert sequence symbols to printable form
-            sout += seq_vect[i];
-        }
-        NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
+            // Get the sequence using CSeqVector. Use default encoding:
+            // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
+            CSeqVector seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+            // -- use the vector: print length and the first 10 symbols
+            NcbiCout << "Sequence: length=" << seq_vect.size();
+            NcbiCout << " data=";
+            sout = "";
+            for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
+                // Convert sequence symbols to printable form
+                sout += seq_vect[i];
+            }
+            NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
 
-        // CSeq_descr iterator: iterates all descriptors starting
-        // from the bioseq and going the seq-entries tree up to the
-        // top-level seq-entry.
-        int count = 0;
-        for (CDesc_CI desc_it(handle);
-             desc_it;  ++desc_it) {
-            count++;
+            // CSeq_descr iterator: iterates all descriptors starting
+            // from the bioseq and going the seq-entries tree up to the
+            // top-level seq-entry.
+            count = 0;
+            for (CDesc_CI desc_it(handle);
+                 desc_it;  ++desc_it) {
+                count++;
+            }
+            NcbiCout << "Desc count: " << count << NcbiEndl;
         }
-        NcbiCout << "Desc count: " << count << NcbiEndl;
 
         // CSeq_feat iterator: iterates all features which can be found in the
         // current scope including features from all TSEs.
@@ -242,9 +270,17 @@ int CDemoApp::Run(void)
              feat_it;  ++feat_it) {
             count++;
             // Get seq-annot containing the feature
+            if ( print_features ) {
+                auto_ptr<CObjectOStream>
+                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << feat_it->GetMappedFeature();
+            }
             CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
         }
         NcbiCout << "Feat count (whole, any):       " << count << NcbiEndl;
+
+        if ( only_features )
+            continue;
 
         count = 0;
         // The same region (whole sequence), but restricted feature type:
