@@ -47,7 +47,7 @@ x_delim_internal="~"
 x_list=$1
 x_out=$2
 x_build_dir=$3
-x_confs="${4:-Debug DebugMT DebugDll Release ReleaseMT ReleaseDLL}"
+x_confs="${4:-Debug DebugMT Release ReleaseMT}"
 
 if test ! -z "$x_build_dir"; then
    if test ! -d "$x_build_dir"; then
