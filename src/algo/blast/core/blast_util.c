@@ -786,7 +786,7 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
  * @return The translation table.
 */
 static Uint1*
-BLAST_GetTranslationTable(Uint1* genetic_code, Boolean reverse_complement)
+BLAST_GetTranslationTable(const Uint1* genetic_code, Boolean reverse_complement)
 
 {
 	Int2 index1, index2, index3, bp1, bp2, bp3;
@@ -842,7 +842,7 @@ BLAST_GetTranslationTable(Uint1* genetic_code, Boolean reverse_complement)
 
 
 Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
-        Int4 nucl_length, Uint1* genetic_code,
+        Int4 nucl_length, const Uint1* genetic_code,
         Uint1** translation_buffer_ptr, Int4** frame_offsets_ptr,
         Uint1** mixed_seq_ptr)
 {
@@ -935,7 +935,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
 }
 
 int GetPartialTranslation(const Uint1* nucl_seq,
-        Int4 nucl_length, Int2 frame, Uint1* genetic_code,
+        Int4 nucl_length, Int2 frame, const Uint1* genetic_code,
         Uint1** translation_buffer_ptr, Int4* protein_length, 
         Uint1** mixed_seq_ptr)
 {
