@@ -2996,36 +2996,36 @@ echo "$ac_t""$NCBI_C_PATH" 1>&6
 echo $ac_n "checking if wxWindows is available""... $ac_c" 1>&6
 echo "configure:2998: checking if wxWindows is available" >&5
 if test "$with_wxwin" != "no" ; then
-   if test -n "$NCBI_WXWIN_PATH" ; then
-      NCBI_WXWIN_BINPATH=${NCBI_WXWIN_BINPATH:="$NCBI_WXWIN_PATH/bin"}
-      NCBI_WXWIN_LIBPATH=${NCBI_WXWIN_LIBPATH:="$NCBI_WXWIN_PATH/lib"}
+   if test -n "$WXWIN_PATH" ; then
+      WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_PATH/bin"}
+      WXWIN_LIBPATH=${WXWIN_LIBPATH:="$WXWIN_PATH/lib"}
    else
-      NCBI_WXWIN_PATH="$NCBI/wxwin"
-      if test -z "$NCBI_WXWIN_LIBPATH" ; then
-         NCBI_WXWIN_LIBPATH="$NCBI_WXWIN_PATH/"
+      WXWIN_PATH="$NCBI/wxwin"
+      if test -z "$WXWIN_LIBPATH" ; then
+         WXWIN_LIBPATH="$WXWIN_PATH/"
          if test "$compiler" = "GCC" ; then
-            NCBI_WXWIN_LIBPATH="${NCBI_WXWIN_LIBPATH}GCC-"
+            WXWIN_LIBPATH="${WXWIN_LIBPATH}GCC-"
          fi
          if test "$with_debug" = "no" ; then
-            NCBI_WXWIN_LIBPATH="${NCBI_WXWIN_LIBPATH}Release"
-            NCBI_WXWIN_GTK="wx_gtk"
+            WXWIN_LIBPATH="${WXWIN_LIBPATH}Release"
+            WXWIN_GTK="wx_gtk"
          else
-            NCBI_WXWIN_LIBPATH="${NCBI_WXWIN_LIBPATH}Debug"
-            NCBI_WXWIN_GTK="wx_gtkd"
+            WXWIN_LIBPATH="${WXWIN_LIBPATH}Debug"
+            WXWIN_GTK="wx_gtkd"
          fi
          if test "$with_mt" = "yes" ; then
-            NCBI_WXWIN_LIBPATH="${NCBI_WXWIN_LIBPATH}MT"
+            WXWIN_LIBPATH="${WXWIN_LIBPATH}MT"
          fi
       fi
-      NCBI_WXWIN_BINPATH=${NCBI_WXWIN_BINPATH:="$NCBI_WXWIN_LIBPATH/bin"}
-      NCBI_WXWIN_LIBPATH="$NCBI_WXWIN_LIBPATH/lib"
+      WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_LIBPATH/bin"}
+      WXWIN_LIBPATH="$WXWIN_LIBPATH/lib"
    fi
 
-   NCBI_WXWIN_INCLUDE=`$NCBI_WXWIN_BINPATH/wx-config --cflags`
-   NCBI_WXWIN_LIBS="-L$NCBI_WXWIN_LIBPATH ${CONF_f_runpath}$NCBI_WXWIN_LIBPATH -l${NCBI_WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
+   WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
+   WXWIN_LIBS="-L$WXWIN_LIBPATH ${CONF_f_runpath}$WXWIN_LIBPATH -l${WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
 
-   CPPFLAGS="$NCBI_WXWIN_INCLUDE $orig_CPPFLAGS"
-   LIBS="$NCBI_WXWIN_LIBS $orig_LIBS"
+   CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
+   LIBS="$WXWIN_LIBS $orig_LIBS"
    cat > conftest.$ac_ext <<EOF
 #line 3031 "configure"
 #include "confdefs.h"
@@ -3051,14 +3051,14 @@ rm -f conftest*
 fi
 
 if test "$with_wxwin" = "no" ; then
-   NCBI_WXWIN_LIBPATH="No_wxWindows"
-   NCBI_WXWIN_INCLUDE=
-   NCBI_WXWIN_LIBS=
+   WXWIN_LIBPATH="No_wxWindows"
+   WXWIN_INCLUDE=
+   WXWIN_LIBS=
    WithoutPackages="$WithoutPackages wxWindows"
 else
    WithPackages="$WithPackages wxWindows"
 fi
-echo "$ac_t""$NCBI_WXWIN_LIBPATH" 1>&6
+echo "$ac_t""$WXWIN_LIBPATH" 1>&6
 
 
 ## Inhouse Fast-CGI library
@@ -4152,8 +4152,8 @@ s%@SYBASE_INCLUDE@%$SYBASE_INCLUDE%g
 s%@SYBASE_LIBS@%$SYBASE_LIBS%g
 s%@NCBI_C_INCLUDE@%$NCBI_C_INCLUDE%g
 s%@NCBI_C_LIBPATH@%$NCBI_C_LIBPATH%g
-s%@NCBI_WXWIN_INCLUDE@%$NCBI_WXWIN_INCLUDE%g
-s%@NCBI_WXWIN_LIBS@%$NCBI_WXWIN_LIBS%g
+s%@WXWIN_INCLUDE@%$WXWIN_INCLUDE%g
+s%@WXWIN_LIBS@%$WXWIN_LIBS%g
 s%@FASTCGI_INCLUDE@%$FASTCGI_INCLUDE%g
 s%@FASTCGI_LIBS@%$FASTCGI_LIBS%g
 s%@FASTCGI_OBJS@%$FASTCGI_OBJS%g
