@@ -68,7 +68,10 @@ typedef struct {
     unsigned int usec; /* microseconds (always truncated by mod. 1,000,000) */
 } STimeout;
 
-#if defined(__cplusplus)  &&  !defined(NCBI_COMPILER_WORKSHOP)
+#ifdef CONN_SUPPLY_TIMEOUTS
+       const STimeout *      kDefaultTimeout  = (const STimeout*)(-1);
+       const STimeout *      kInfiniteTimeout = (const STimeout*)( 0);
+#elif defined(__cplusplus)
 static const STimeout *const kDefaultTimeout  = (const STimeout*)(-1);
 static const STimeout *const kInfiniteTimeout = (const STimeout*)( 0);
 #else
@@ -103,6 +106,9 @@ typedef unsigned int TNCBI_Time;
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2003/08/27 12:32:25  ucko
+ * Yet another attempt to work around the WorkShop lossage with k*Timeout.
+ *
  * Revision 6.6  2003/08/27 02:00:11  ucko
  * Sigh... WorkShop still mishandles kXxxTimeout in some cases, so fall
  * back to making them macros.

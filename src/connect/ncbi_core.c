@@ -30,6 +30,8 @@
  *
  */
 
+#define CONN_SUPPLY_TIMEOUTS
+
 #include "ncbi_ansi_ext.h"
 #include <connect/ncbi_core.h>
 #include <stdlib.h>
@@ -461,6 +463,9 @@ extern void REG_Set
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2003/08/27 12:32:30  ucko
+ * Yet another attempt to work around the WorkShop lossage with k*Timeout.
+ *
  * Revision 6.12  2003/05/05 20:17:17  lavr
  * LOG_WriteInternal() to require data ptr only if data size is not zero
  *
