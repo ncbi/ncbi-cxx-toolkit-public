@@ -384,7 +384,8 @@ void CPagerViewButtons::CreateSubNodes()
 
     if ( currentPage > 0 ) {
         CHTML_a* prev = new CHTML_a("javascript:var frm = document.frmQueryBox; "
-                                    "frm.cmd.value=''; frm.inputpage.value=" +
+                                    "frm.cmd.value=''; frm.CMD.value='Pager'; "
+									"frm.inputpage.value=" +
                                     NStr::IntToString(currentPage) + 
                                     "; frm.submit();", "Previous");
         prev->SetClass("dblinks");
@@ -396,9 +397,10 @@ void CPagerViewButtons::CreateSubNodes()
     butt->SetClass("dblinks");
     butt->SetAttribute("value", "Page");
     butt->SetEventHandler(eHTML_EH_Click,
-                          "form.cmd.value='';form." + CPager::KParam_InputPage +
+                          "form.cmd.value='';form." +
+						  CPager::KParam_InputPage +
                           ".value=form.textpage" + m_jssuffix +
-                          ".value;form.submit();");
+                          ".value; frm.CMD.value='Pager'; form.submit();");
     InsertAt(0, column, butt);
     InsertAt(0, column, new CHTML_nbsp);
 
@@ -416,8 +418,8 @@ void CPagerViewButtons::CreateSubNodes()
                               + suffix +".value=" + "this.value}");
     
     textpage->SetEventHandler(eHTML_EH_KeyPress,
-                              "form." + CPager::KParam_InputPage +
-                              ".value=" + "this.value; KeyPress('',event);");
+                              "form." + CPager::KParam_InputPage +".value=" 
+							  "this.value; frm.CMD.value='Pager'; KeyPress('',event);");
                                          
     InsertAt(0, column++, textpage);
 
@@ -434,7 +436,8 @@ void CPagerViewButtons::CreateSubNodes()
                                            m_jssuffix, kEmptyStr));
     if ( currentPage < lastPage ) {
         CHTML_a* next = new CHTML_a("javascript:var frm = document.frmQueryBox;"
-                                    "frm.cmd.value=''; frm.inputpage.value=" +
+                                    "frm.cmd.value=''; frm.CMD.value='Pager'; "
+									"frm.inputpage.value=" +
                                     NStr::IntToString(currentPage + 2) + 
                                     ";frm.submit();", "Next");
         next->SetClass("dblinks");
