@@ -48,7 +48,17 @@
 BEGIN_NCBI_SCOPE
 
 
-class CHTMLException : public CException
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CHTMLException --
+///
+/// Define an extended exception class based on the CException
+///
+/// CHTMLException inherits its basic functionality from CException and
+/// defines additional reporting capabilities.
+
+class NCBI_XHTML_EXPORT CHTMLException
+    : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -58,9 +68,12 @@ public:
         eTableCellUse,
         eTableCellType,
         eTemplateAccess,
-        eTemplateTooBig
+        eTemplateTooBig,
+        eUnknown
     };
-    virtual const char* GetErrCodeString(void) const {
+
+    virtual const char* GetErrCodeString(void) const
+    {
         switch ( GetErrCode() ) {
         case eNullPtr:         return "eNullPtr";
         case eWrite:           return "eWrite";
@@ -69,10 +82,32 @@ public:
         case eTableCellType:   return "eTableCellType";
         case eTemplateAccess:  return "eTemplateAccess";
         case eTemplateTooBig:  return "eTemplateTooBig";
+        case eUnknown:         return "eUnknown";
         default:               return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CHTMLException,CException);
+
+    /// Constructor.
+    CHTMLException(const char* file, int line,
+                   const CException* prev_exception, EErrCode err_code,
+                   const string& message)
+        throw()
+        : CException(file, line, prev_exception, CException::eInvalid,message)
+        NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CHTMLException, CException);
+
+public:
+    /// Add node name to tracing path.
+    virtual void AddTraceInfo(const string& node_name);
+
+    /// Report node trace into the "out" stream.
+    virtual void ReportExtra(ostream& out) const;
+
+protected:
+    /// Helper method for copying exception data.
+    virtual void x_Assign(const CException& src);
+
+protected:
+    list<string>  m_Trace;  ///< Node trace list.
 };
 
 
@@ -85,6 +120,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/23 17:59:51  ivanov
+ * Added exception tracing. Moved code to separate .cpp file.
+ *
  * Revision 1.3  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *
