@@ -27,13 +27,6 @@
 *
 * File Description:
 *   Client for Medline archive server
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 6.1  2002/03/06 22:07:12  ucko
-* Add simple code to communicate with the medarch server.
-*
-* ===========================================================================
 */
 
 #include <objects/mla/mla.hpp>
@@ -71,7 +64,7 @@ const char* CMLAClient::CException::what(void) const THROWS_NONE
 inline
 CRef<CMla_back> CMLAClient::SendRequest(const CMla_request& request)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CMutexGuard guard(m_Mutex);
     if ( !m_Stream ) {
         Init();
     }
@@ -97,9 +90,7 @@ void CMLAClient::Init(void)
     request.SetInit();
     CRef<CMla_back> response = SendRequest(request);
     if ( !response->IsInit() ) {
-        // Workaround for WS5.3 stupidity
-        static const char* s_Error = "Failure initializing MLA client";
-        THROW0_TRACE(s_Error);
+        THROW1_TRACE(runtime_error, "Failure initializing MLA client");
     }
 }
 
@@ -169,3 +160,17 @@ METHOD(CRef<CMedlars_entry>, GetMlrUid, int, SetGetmlruid(in),
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 6.2  2002/04/22 19:01:19  ucko
+* Switch from CFastMutex to CMutex because SendRequest can call itself via Init.
+* Throw runtime_error rather than string from Init.
+* Move log to end.
+*
+* Revision 6.1  2002/03/06 22:07:12  ucko
+* Add simple code to communicate with the medarch server.
+*
+* ===========================================================================
+*/
