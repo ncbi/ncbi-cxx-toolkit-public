@@ -550,26 +550,27 @@ protected:
     CException(void) throw();
 
     /// Helper method for reporting to the system debugger.
-    void x_ReportToDebugger(void) const;
+    virtual void x_ReportToDebugger(void) const;
 
     /// Helper method for cloning the exception.
     virtual const CException* x_Clone(void) const;
 
     /// Helper method for initializing exception data.
-    void x_Init(const string& file,int line,const string& message,
-                const CException* prev_exception);
+    virtual void x_Init(const string& file, int line,
+                        const string& message,
+                        const CException* prev_exception);
 
     /// Helper method for copying exception data.
-    void x_Assign(const CException& src);
+    virtual void x_Assign(const CException& src);
     
     /// Helper method for assigning error code.
-    void x_AssignErrCode(const CException& src);
+    virtual void x_AssignErrCode(const CException& src);
 
     /// Helper method for initializing error code.
-    void x_InitErrCode(CException::EErrCode err_code);
+    virtual void x_InitErrCode(CException::EErrCode err_code);
 
     /// Helper method for getting error code.
-    int  x_GetErrCode(void) const { return m_ErrCode; }
+    virtual int  x_GetErrCode(void) const { return m_ErrCode; }
 
 private:
     string  m_File;                  ///< File to report on
@@ -581,7 +582,7 @@ private:
     const CException* m_Predecessor; ///< Previous exception
 
     mutable bool m_InReporter;       ///< Reporter flag
-    static bool sm_BkgrEnabled;      ///< Background reporting enabled flag
+    static  bool sm_BkgrEnabled;     ///< Background reporting enabled flag
 
     /// Private assignment operator to prohibit assignment.
     CException& operator= (const CException&) throw();
@@ -877,7 +878,8 @@ public:
     }
 
     /// Copy constructor.
-    CErrnoTemplExceptionEx(const CErrnoTemplExceptionEx<TBase, PErrstr>& other) throw()
+    CErrnoTemplExceptionEx(const CErrnoTemplExceptionEx<TBase, PErrstr>& other)
+        throw()
         : TBase( other)
     {
         m_Errno = other.m_Errno;
@@ -896,14 +898,17 @@ public:
     // Attributes.
 
     /// Get type of class.
-    virtual const char* GetType(void) const {return "CErrnoTemplException";}
+    virtual const char* GetType(void) const { return "CErrnoTemplException"; }
 
     /// Get error code.
     EErrCode GetErrCode(void) const
     {
-        return typeid(*this) == typeid(CErrnoTemplExceptionEx<TBase, PErrstr>) ?
-            (CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode) x_GetErrCode() :
-            (CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode) CException::eInvalid;
+        return typeid(*this) == 
+            typeid(CErrnoTemplExceptionEx<TBase, PErrstr>) ?
+               (CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode) 
+                  x_GetErrCode() :
+               (CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode)
+                  CException::eInvalid;
     }
 
     /// Get error number.
@@ -911,10 +916,7 @@ public:
 
 protected:
     /// Constructor.
-    CErrnoTemplExceptionEx(void) throw()
-    {
-        m_Errno = errno;
-    }
+    CErrnoTemplExceptionEx(void) throw() { m_Errno = errno; }
 
     /// Helper clone method.
     virtual const CException* x_Clone(void) const
@@ -947,7 +949,8 @@ public:
         typename CParent::EErrCode err_code,const string& message) throw()
         : CParent(file, line, prev_exception,
                  (typename CParent::EErrCode) CException::eInvalid, message)
-    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(CErrnoTemplException<TBase>, CParent)
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(CErrnoTemplException<TBase>,
+                                                CParent)
 };
 
 
@@ -1019,7 +1022,7 @@ public:
     // Attributes.
 
     /// Get exception class type.
-    virtual const char* GetType(void) const {return "CParseTemplException";}
+    virtual const char* GetType(void) const { return "CParseTemplException"; }
 
     /// Get error code.
     EErrCode GetErrCode(void) const
@@ -1112,6 +1115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2003/12/22 20:20:12  ivanov
+ * Made all CException protected methods virtual
+ *
  * Revision 1.48  2003/10/24 13:24:54  vasilche
  * Moved body of virtual method to *.cpp file.
  *
@@ -1130,7 +1136,8 @@ END_NCBI_SCOPE
  * Add eInvalidArg type of CCoreException
  *
  * Revision 1.43  2003/04/24 16:25:32  kuznets
- * Farther templatefication of CErrnoTemplException, added CErrnoTemplExceptionEx.
+ * Farther templatefication of CErrnoTemplException,
+ * added CErrnoTemplExceptionEx.
  * This will allow easy creation of Errno-like exception classes.
  * Added NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL macro
  * (fixes some warning with templates compilation (gcc 3.2.2)).
