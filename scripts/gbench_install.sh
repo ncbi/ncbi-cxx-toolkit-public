@@ -275,11 +275,12 @@ COMMON_ExecRB ${target_dir}/bin/move-gbench.sh ${target_dir}
 
 echo "Configuring plugin cache"
 # COMMON_AddRunpath may interfere with compiled-in runpaths, so we
-# explicitly search FLTK's and Berkeley DB's library directories.
+# explicitly search third-party library directories.
 fltk_config=`sed -ne 's/^FLTK_CONFIG *= *//p' ${src_dir}/build/Makefile.mk`
 fltk_libdir=`dirname \`dirname $fltk_config\``/lib
 bdb_libdir=`sed -ne 's/BERKELEYDB_LIBS *= *-L\([^ ]*\).*/\1/p' ${src_dir}/build/Makefile.mk`
-COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}:${bdb_libdir}
+sqlite_libdir=`sed -ne 's/SQLITE_LIBS *= *-L\([^ ]*\).*/\1/p' ${src_dir}/build/Makefile.mk`
+COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}:${bdb_libdir}:${sqlite_libdir}
 COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan -strict ${target_dir}/plugins
 
 echo "Copying executable plugins:"
