@@ -270,6 +270,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
     RETCODE r;
 
     for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
+        if(m_Params.GetParamStatus(i) == 0) continue;
         CDB_Object& param = *m_Params.GetParam(i);
         BYTE status =
             (m_Params.GetParamStatus(i) & CDB_Params::fOutput)
@@ -395,6 +396,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/05/16 20:25:20  soussov
+ * adds code to skip parameter if it was not set
+ *
  * Revision 1.9  2002/07/22 20:02:59  soussov
  * fixes the RowCount calculations
  *

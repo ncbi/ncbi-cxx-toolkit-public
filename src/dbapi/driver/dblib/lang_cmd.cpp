@@ -274,6 +274,7 @@ bool CDBL_LangCmd::x_AssignParams()
     static const char s_hexnum[] = "0123456789ABCDEF";
 
     for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
+        if(m_Params.GetParamStatus(n) == 0) continue;
         const string& name  =  m_Params.GetParamName(n);
         CDB_Object&   param = *m_Params.GetParam(n);
         char          val_buffer[1024];
@@ -447,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/05/16 20:25:20  soussov
+ * adds code to skip parameter if it was not set
+ *
  * Revision 1.11  2002/07/22 20:02:59  soussov
  * fixes the RowCount calculations
  *

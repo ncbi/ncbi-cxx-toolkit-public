@@ -262,6 +262,7 @@ bool CTDS_LangCmd::x_AssignParams()
     static const char s_hexnum[] = "0123456789ABCDEF";
 
     for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
+        if(m_Params.GetParamStatus(n) == 0) continue;
         const string& name  =  m_Params.GetParamName(n);
         CDB_Object&   param = *m_Params.GetParam(n);
         char          val_buffer[16*1024];
@@ -476,6 +477,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/05/16 20:26:09  soussov
+ * adds code to skip parameter if it was not set
+ *
  * Revision 1.10  2003/04/29 21:15:03  soussov
  * new datatypes CDB_LongChar and CDB_LongBinary added
  *

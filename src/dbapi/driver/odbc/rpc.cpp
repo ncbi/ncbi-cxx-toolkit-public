@@ -333,6 +333,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
     bool param_named= !m_Params.GetParamName(0).empty();
 
     for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
+        if(m_Params.GetParamStatus(n) == 0) continue;
         const string& name  =  m_Params.GetParamName(n);
         CDB_Object&   param = *m_Params.GetParam(n);
         const char*   type;
@@ -541,6 +542,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/05/16 20:26:44  soussov
+ * adds code to skip parameter if it was not set
+ *
  * Revision 1.3  2003/05/08 20:30:24  soussov
  * CDB_LongChar CDB_LongBinary added
  *

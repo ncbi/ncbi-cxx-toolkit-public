@@ -297,6 +297,7 @@ CODBC_LangCmd::~CODBC_LangCmd()
 bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER* indicator)
 {
     for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
+        if(m_Params.GetParamStatus(n) == 0) continue;
         const string& name  =  m_Params.GetParamName(n);
         CDB_Object&   param = *m_Params.GetParam(n);
         const char*   type;
@@ -482,6 +483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/05/16 20:26:44  soussov
+ * adds code to skip parameter if it was not set
+ *
  * Revision 1.3  2003/05/08 20:40:08  soussov
  * adds stdio.h for sprintf
  *
