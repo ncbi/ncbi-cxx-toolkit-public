@@ -7,63 +7,139 @@
 <body>
 <h1>NCBI C++ libraries</h1>
 
-In this table, the <i><b>module</b></i>'s header and sources are usually
-located in:
-<i>
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-c++/include/<b>&lt;project&gt;</b>/module.{hpp,inl,h}
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-c++/src/<b>&lt;project&gt;</b>/module.{cpp,c}
-</i>
-<br>
-where <i><b>&lt;project&gt;</b></i> is one of: { <b><i>corelib,  cgi, html, serial</i></b> }.
-
 
 <br></br>
-<a name="ref_TableClasses">
+<a name="ref_TableLibs">
 <table border=1 cellspacing=0>
   <caption></caption>
   <tr>
-	 <th><i>module</i></th>
-	 <th>Classes,<br>functions,<br>macro</th>
+	 <th><i>Library</i></th>
+	 <th>Project</th>
+	 <th>Synopsis &amp; Hints</th>
+  </tr>
+
+  <tr>
+	 <td><a href="#ref_TableX"><i></i></a></td>
+    <td align=center>
+       <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/"><b></b></a>
+    </td>
+	 <td>
+      
+    </td>
+  </tr>
+
+  <tr>
+	 <td><a href="#ref_TableXNCBI"><i>xncbi</i></a></td>
+    <td align=center>
+       <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib"><b>corelib</b></a>
+    </td>
+	 <td>
+      Provide a portable low-level API and a lot of useful classes, functions
+      and macro.
+      <br><b>HINT:</b>
+      It must be linked to every executable which uses the NCBI C++ toolkit!
+    </td>
+  </tr>
+
+  <tr>
+	 <td><a href="#ref_TableXCGI"><i>xcgi</i></a></td>
+    <td align=center>
+       <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/cgi"><b>cgi</b></a>
+    </td>
+	 <td>
+      An <a href="libs/cgi.html">integrated framework</a>
+      to write CGI applications:
+      helps to retrieve and parse HTTP request,
+      and then to compose and send out HTTP response.
+    </td>
+  </tr>
+
+  <tr>
+	 <td><a href="#ref_TableXCGI"><i>xfcgi</i></a></td>
+    <td align=center>
+       <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/cgi"><b>cgi</b></a>
+    </td>
+	 <td>
+      A Fast-CGI version of <a href="#ref_TableXCGI"><i>xcgi</i></a>.
+      <br><b>HINT:</b>
+      Requires the target executable to be linked with a 3rd-party FastCGI
+      library, as in: <a href="new_proj.html#ref_MakeProjApp">LIBS</a>=
+      <a href="config.html#ref_TableLocalization1"><b>$(FASTCGI_LIBS)</b></a>.
+      <br><b>HINT:</b>
+      On non-FastCGI capable platforms (or if run as a plain CGI on a
+      a FastCGI capable platform), it works just as a plain CGI.
+    </td>
+  </tr>
+
+  <tr>
+	 <td><a href="#ref_TableXHTML"><i>xhtml</i></a></td>
+    <td align=center>
+       <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/html"><b>html</b></a>
+    </td>
+	 <td>
+      
+    </td>
+  </tr>
+
+  <tr>
+	 <td><a href="#ref_TableXSERIAL"><i>xserial</i></a></td>
+    <td align=center>
+       <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial"><b>serial</b></a>
+    </td>
+	 <td>
+      
+    </td>
+  </tr>
+</table>
+
+
+
+<br></br>
+<a name="ref_TableXNCBI">
+<table border=1 cellspacing=0>
+  <caption> Library <a href="#ref_TableLibs"><i><b>xncbi</b></i></a>
+            ( project <i><b>corelib</b></i> )
+  </caption>
+  <tr>
+	 <th><a href="#ref_ModuleNote"><i>Module</i></a></th>
+	 <th>Content</th>
 	 <th>Synopsis</th>
   </tr>
 
   <tr>
-	 <td><i></i></td>
+	 <td><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/.hpp"><i></i></a>
+    </td>
     <td align=center><b></b></td>
 	 <td></td>
   </tr>
 
   <tr>
-	 <td align=center colspan=3>
-      <i><u>XNCBI</u></i> library ---> <i><b>corelib/</b></i>
+	 <td><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbidbg.hpp"><i>ncbidbg</i></a>
     </td>
-  </tr>
-
-  <tr>
-	 <td><i>ncbidbg</i></td>
     <td align=center><b>_ASSERT()<br>_VERIFY()</b></td>
 	 <td><a href="libs/err_msg.html#ref_Assert">
         Debug-mode checks and diagnostics</a></td>
   </tr>
 
   <tr>
-	 <td><i>ncbiexpt</i></td>
+	 <td><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbiexpt.hpp"><i>ncbiexpt</i></a>
+    </td>
     <td align=center><b>CErrnoException<br>CParseException<br>STD_CATCH()</b></td>
 	 <td><a href="libs/err_msg.html#ref_Exception">
         Auxiliary C++ exceptions, related macros</a></td>
   </tr>
 
   <tr>
-	 <td><i>ncbidiag</i></td>
+	 <td><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbidiag.hpp"><i>ncbidiag</i></a>
+    </td>
     <td align=center><b>CNcbiDiag<br>SetDiagStream<br>ERR_POST()</b></td>
 	 <td><a href="libs/err_msg.html#ref_Message">
 		  Standard NCBI C++ message posting</a></td>
   </tr>
 
   <tr>
-	 <td><i>ncbireg</i></td>
+	 <td><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbireg.hpp"><i>ncbireg</i></a>
+    </td>
     <td align=center><b>CNcbiRegistry</b></td>
 	 <td>To handle application parameters arranged in the
         <b>{module, [section], name = <i>value</i>}</b> fashion;
@@ -72,7 +148,8 @@ where <i><b>&lt;project&gt;</b></i> is one of: { <b><i>corelib,  cgi, html, seri
   </tr>
 
   <tr>
-	 <td><i>ncbistre</i></td>
+	 <td><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbistre.hpp"><i>ncbistre</i></a>
+    </td>
     <td align=center><b>C++ i/o streams</b></td>
 	 <td>Aliases (#define's) to switch between the "old"
         and the "new" (<b>std::</b>, template-based) C++ i/o stream classes,
@@ -82,73 +159,100 @@ where <i><b>&lt;project&gt;</b></i> is one of: { <b><i>corelib,  cgi, html, seri
   </tr>
 
   <tr>
-	 <td><i>ncbiutil</i></td>
+	 <td><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbiutil.hpp"><i>ncbiutil</i></a>
+    </td>
     <td align=center><b>.....</b></td>
 	 <td>Miscellaneous useful classes, functions, predicates,
         <b>auto_ptr</b>-like template, <b>map</b>-related auxiliary functions,
         etc.</td>
   </tr>
+</table>
 
+
+
+<br></br>
+<a name="ref_TableXCGI">
+<table border=1 cellspacing=0>
+  <caption> Libraries <a href="#ref_TableLibs"><i><b>xcgi, xfcgi</b></i></a>
+            ( project <i><b>cgi</b></i> )
+  </caption>
   <tr>
-	 <td><i></i></td>
-    <td align=center><b></b></td>
-	 <td></td>
+	 <th><a href="#ref_ModuleNote"><i>Module</i></a></th>
+	 <th>Content</th>
+	 <th>Synopsis</th>
   </tr>
 
   <tr>
-	 <td align=center colspan=3>
-      <i><u>XCGI</u></i> library ---> <i><b>cgi/</b></i>
+	 <td><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include//.hpp"><i></i></a>
     </td>
-  </tr>
-
-  <tr>
-	 <td><i>.....</i></td>
-    <td align=center><b>.....</b></td>
-	 <td>.....</td>
-  </tr>
-
-  <tr>
-	 <td><i></i></td>
-    <td align=center><b></b></td>
-	 <td></td>
-  </tr>
-
-  <tr>
-	 <td align=center colspan=3>
-      <i><u>XHTML</u></i> library ---> <i><b>html/</b></i>
-    </td>
-  </tr>
-
-  <tr>
-	 <td><i>.....</i></td>
-    <td align=center><b>.....</b></td>
-	 <td>.....</td>
-  </tr>
-
-  <tr>
-	 <td><i></i></td>
-    <td align=center><b></b></td>
-	 <td></td>
-  </tr>
-
-  <tr>
-	 <td align=center colspan=3>
-      <i><u>XSERIAL</u></i> library ---> <i><b>html/</b></i>
-    </td>
-  </tr>
-
-  <tr>
-	 <td><i>.....</i></td>
-    <td align=center><b>.....</b></td>
-	 <td>.....</td>
-  </tr>
-
-  <tr>
-	 <td><i></i></td>
     <td align=center><b></b></td>
 	 <td></td>
   </tr>
 </table>
+
+
+
+<br></br>
+<a name="ref_TableXHTML">
+<table border=1 cellspacing=0>
+  <caption> Library <a href="#ref_TableLibs"><i><b>xhtml</b></i></a>
+            ( project <i><b>html</b></i> )
+  </caption>
+  <tr>
+	 <th><a href="#ref_ModuleNote"><i>Module</i></a></th>
+	 <th>Content</th>
+	 <th>Synopsis</th>
+  </tr>
+
+  <tr>
+	 <td><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include//.hpp"><i></i></a>
+    </td>
+    <td align=center><b></b></td>
+	 <td></td>
+  </tr>
+</table>
+
+
+
+<br></br>
+<a name="ref_TableXSERIAL">
+<table border=1 cellspacing=0>
+  <caption> Library <a href="#ref_TableLibs"><i><b>xserial</b></i></a>
+            ( project <i><b>serial</b></i> )
+  </caption>
+  <tr>
+	 <th><a href="#ref_ModuleNote"><i>Module</i></a></th>
+	 <th>Content</th>
+	 <th>Synopsis</th>
+  </tr>
+
+  <tr>
+	 <td><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include//.hpp"><i></i></a>
+    </td>
+    <td align=center><b></b></td>
+	 <td></td>
+  </tr>
+</table>
+
+
+
+
+<p>
+<br></br>
+<a name="ref_ModuleNote">NOTE:</a>
+In the tables above, the module's header and source code are located in the
+project directory of the containing library:
+<i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+c++/include/<b>project</b>/module.{hpp,inl,h}
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+c++/src/<b>project</b>/module.{cpp,c}
+</i>
+<br>
+For example, module <i><b>ncbidbg</b></i> consists of
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<i>c++/include/<b>corelib</b>/ncbidbg.hpp, c++/src/<b>corelib</b>/ncbidbg.cpp</i>.
+
 
 
 <br></br>
