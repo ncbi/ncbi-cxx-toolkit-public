@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/01/06 16:13:17  vasilche
+* Fail of file generation now fatal.
+*
 * Revision 1.8  1999/12/28 18:55:57  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -171,7 +174,7 @@ void CFileCode::GenerateHPP(const string& path) const
     string fileName = Path(path, GetHPPName());
     CDelayedOfstream header(fileName.c_str());
     if ( !header ) {
-        ERR_POST("Cannot create file: " << fileName);
+        ERR_POST(Fatal << "Cannot create file: " << fileName);
         return;
     }
 
@@ -233,7 +236,7 @@ void CFileCode::GenerateCPP(const string& path) const
     string fileName = Path(path, GetCPPName());
     CDelayedOfstream code(fileName.c_str());
     if ( !code ) {
-        ERR_POST("Cannot create file: " << fileName);
+        ERR_POST(Fatal << "Cannot create file: " << fileName);
         return;
     }
 
@@ -274,7 +277,7 @@ bool CFileCode::GenerateUserHPP(const string& path) const
     string fileName = Path(path, GetUserHPPName());
     CNcbiOfstream header(fileName.c_str(), IOS_BASE::app);
     if ( !header ) {
-        ERR_POST("Cannot create file: " << fileName);
+        ERR_POST(Fatal << "Cannot create file: " << fileName);
         return false;
     }
 	header.seekp(0, IOS_BASE::end);
@@ -323,7 +326,7 @@ bool CFileCode::GenerateUserCPP(const string& path) const
     string fileName = Path(path, GetUserCPPName());
     CNcbiOfstream code(fileName.c_str(), IOS_BASE::app);
     if ( !code ) {
-        ERR_POST("Cannot create file: " << fileName);
+        ERR_POST(Fatal << "Cannot create file: " << fileName);
         return false;
     }
 	code.seekp(0, IOS_BASE::end);

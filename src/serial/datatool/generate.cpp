@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/01/06 16:13:18  vasilche
+* Fail of file generation now fatal.
+*
 * Revision 1.24  1999/12/28 18:55:57  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -251,6 +254,10 @@ void CCodeGenerator::GenerateCode(void)
 
     if ( !m_FileListFileName.empty() ) {
         CNcbiOfstream fileList(m_FileListFileName.c_str());
+        if ( !fileList ) {
+            ERR_POST(Fatal <<
+                     "cannot create file list file: " << m_FileListFileName);
+        }
         
         fileList << "GENFILES =";
         {
