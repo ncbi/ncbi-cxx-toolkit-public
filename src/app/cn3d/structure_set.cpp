@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.126  2003/01/10 20:10:53  thiessen
+* undo previous change - don't want full Bioseqs (with multiple Seq-ids) in converted C-Bioseqs
+*
 * Revision 1.125  2003/01/09 16:15:42  thiessen
 * use ConvertAsnFromCPPToC to convert full Bioseqs
 *
@@ -976,7 +979,6 @@ BioseqPtr StructureSet::GetOrCreateBioseq(const Sequence *sequence)
     if (b != bioseqs.end()) return b->second;
 
     // create new Bioseq and fill it in from Sequence data
-/*
     BioseqPtr bioseq = BioseqNew();
     bioseq->mol = Seq_mol_aa;
     bioseq->seq_data_type = Seq_code_ncbieaa;
@@ -984,14 +986,6 @@ BioseqPtr StructureSet::GetOrCreateBioseq(const Sequence *sequence)
     bioseq->length = sequence->Length();
     bioseq->seq_data = BSNew(bioseq->length);
     BSWrite(bioseq->seq_data, const_cast<char*>(sequence->sequenceString.c_str()), bioseq->length);
-*/
-    std::string err;
-    BioseqPtr bioseq = (BioseqPtr)
-        ConvertAsnFromCPPToC(sequence->bioseqASN.GetObject(), (AsnReadFunc) BioseqAsnRead, &err);
-    if (!bioseq || err.size() > 0) {
-        ERR_POST(Error << "ConvertAsnFromCPPToC failed: " << err);
-        return NULL;
-    }
 
     // create Seq-id
     sequence->AddCSeqId(&(bioseq->id), true);
