@@ -995,7 +995,7 @@ private:
 /// defined at the moment the compiler instantiates the destructor of
 /// AutoPtr<CArgDesc>.
 
-class CArgDesc
+class NCBI_XNCBI_EXPORT CArgDesc
 {
 public:
     /// Constructor.
@@ -1051,6 +1051,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/08/17 14:33:53  dicuccio
+ * Export CArgDesc
+ *
  * Revision 1.34  2004/07/22 15:26:09  vakatov
  * Allow "Int8" arguments
  *
