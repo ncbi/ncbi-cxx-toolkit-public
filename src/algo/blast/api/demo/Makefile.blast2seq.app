@@ -1,6 +1,6 @@
 APP = blast2seq
 SRC = blast2seq blast_input
-LIB = xblast xobjutil xobjread $(OBJMGR_LIBS) tables
+LIB = xblast xobjutil xobjread $(OBJMGR_LIBS) tables xnetblast scoremat
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
