@@ -1,5 +1,8 @@
-[client]
-class   = CBlastClient
+[-]
+clients = blastclient
+
+[blastclient]
+class   = CBlast4Client
 service = blast4
 request = Blast4-request.body
 reply   = Blast4-reply.body
