@@ -135,7 +135,7 @@ BEGIN_EVENT_TABLE(StructureWindow, wxFrame)
     EVT_MENU_RANGE(MID_SAVE_SAME, MID_SAVE_AS,              StructureWindow::OnSave)
     EVT_MENU      (MID_PNG,                                 StructureWindow::OnPNG)
     EVT_MENU_RANGE(MID_ZOOM_IN,  MID_STEREO,                StructureWindow::OnAdjustView)
-    EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED_DOMAINS,           StructureWindow::OnShowHide)
+    EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SELECT_MOLECULE,     StructureWindow::OnShowHide)
     EVT_MENU_RANGE(MID_DIST_SELECT_RESIDUES, MID_DIST_SELECT_OTHER_ALL, StructureWindow::OnDistanceSelect)
     EVT_MENU      (MID_REFIT_ALL,                           StructureWindow::OnAlignStructures)
     EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            StructureWindow::OnSetStyle)
@@ -170,7 +170,7 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menuBar = new wxMenuBar;
     fileMenu = new wxMenu;
     fileMenu->Append(MID_OPEN, "&Open\tCtrl+O");
-    fileMenu->Append(MID_NETWORK_OPEN, "&Network Load...");
+    fileMenu->Append(MID_NETWORK_OPEN, "&Network Load\tCtrl+N");
     fileMenu->Append(MID_SAVE_SAME, "&Save\tCtrl+S");
     fileMenu->Append(MID_SAVE_AS, "Save &As...");
     fileMenu->Append(MID_PNG, "&Export PNG");
@@ -241,6 +241,7 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     subMenu->Append(MID_DIST_SELECT_OTHER_RESIDUES, "&Other Residues");
     subMenu->Append(MID_DIST_SELECT_OTHER_ALL, "Other &Molecules");
     menu->Append(MID_DIST_SELECT, "Select by Dis&tance...", subMenu);
+    menu->Append(MID_SELECT_MOLECULE, "Select Molecule...\tm");
     menuBar->Append(menu, "Show/&Hide");
 
     // Style menu
@@ -1134,6 +1135,31 @@ void StructureWindow::OnShowHide(wxCommandEvent& event)
             break;
         }
 
+        case MID_SELECT_MOLECULE:
+        {
+            if (!glCanvas->structureSet || glCanvas->structureSet->objects.size() > 1)
+                return;
+            wxString numStr = wxGetTextFromUser("Enter a molecule ID to select:", "Select molecule");
+            unsigned long num;
+            if (!numStr.ToULong(&num))
+                return;
+            ChemicalGraph::MoleculeMap::const_iterator m =
+                glCanvas->structureSet->objects.front()->graph->molecules.find((int) num);
+            if (m == glCanvas->structureSet->objects.front()->graph->molecules.end()) {
+                ERRORMSG("Can't find molecule #" << num);
+                return;
+            }
+            GlobalMessenger()->RemoveAllHighlights(true);
+            if (m->second->sequence) {
+                GlobalMessenger()->AddHighlights(m->second->sequence, 0, m->second->sequence->Length() - 1);
+            } else {
+                Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
+                for (r=m->second->residues.begin(); r!=re; ++r)
+                    GlobalMessenger()->ToggleHighlight(m->second, r->second->id);
+            }
+            break;
+        }
+
         case MID_SHOW_ALL:
             glCanvas->structureSet->showHideManager->MakeAllVisible();
             break;
@@ -1535,6 +1561,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/04/22 00:05:03  thiessen
+* add seclect molecule
+*
 * Revision 1.29  2004/03/15 18:38:52  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

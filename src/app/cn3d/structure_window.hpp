@@ -127,6 +127,7 @@ public:
                 MID_SHOW_UNALIGNED_ALN_DOMAIN,
             MID_SHOW_SELECTED_RESIDUES,
             MID_SHOW_SELECTED_DOMAINS,
+            MID_SELECT_MOLECULE,
             MID_DIST_SELECT,
                 MID_DIST_SELECT_RESIDUES,
                 MID_DIST_SELECT_ALL,
@@ -267,6 +268,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/04/22 00:05:04  thiessen
+* add seclect molecule
+*
 * Revision 1.12  2004/02/19 17:05:17  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
