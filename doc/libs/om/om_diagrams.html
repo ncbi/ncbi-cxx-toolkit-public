@@ -1,53 +1,61 @@
 <!--#set var="TITLE" value="NCBI C++ CGI library" -->
 <!--#set var="DOCROOT" value="../.." -->
 <!--#include virtual="../../ssi/header.shtml" -->
+
+
    
 <div align="Center">  
 <h1>Object Manager</h1>
-  </div>
+</div>
+
+
+
    
 <h2>Class diagrams.</h2>
+
+
    
 <h3>Associations.</h3>
-  One Data loader is linked to one out-of-process source of data (database).
- One Scope may contain multiple Data sources. One Data source is linked to
- zero or one Data loader. One Data source (or a pair of Data source + Data
- loader) may belong to multiple Scopes. Once a Data source is not used (referenced)
- by any scope, it may be "revoked" in Object manager and deleted. Once a
+<p>
+One Data loader is linked to one out-of-process source of data (database).
+One Scope may contain multiple Data sources. One Data source is linked to
+zero or one Data loader. One Data source (or a pair of Data source + Data
+loader) may belong to multiple Scopes. Once a Data source is not used (referenced)
+by any scope, it may be "revoked" in Object manager and deleted. Once a
 top-level  Seq_entry in a given data source is not used (referenced) by any
-scope, it  may be deleted.<br>
+scope, it  may be deleted.
+</p>
+
    
-<div align="Center"><img src="om_assoc.gif" alt="associations diagram">
- &nbsp; <br>
+<p align="Center">
+<img src="om_assoc.gif" alt="associations diagram">
+</p>
    
-<div align="Left"> 
+
+
 <h3>Collaborations.</h3>
  
+
 <h4>Initialize Object manager.</h4>
  
-<div align="Center"><img src="om_initom.gif" alt="initialize object manager">
- <br>
+<p align="Center">
+<img src="om_initom.gif" alt="initialize object manager">
+</p>
+
  
-<div align="Left"> 
 <h4>Define a scope.</h4>
  
-<div align="Center"><img src="om_scope.gif" alt="define a scope">
- <br>
- </div>
- <br>
+<p align="Center">
+<img src="om_scope.gif" alt="define a scope">
+</p>
+
  
 <h4>Examine bioseq data.</h4>
- 
-<div align="Center"><img src="om_seq.gif" alt="examine bioseq data">
- <br>
- </div>
- <br>
- <br>
-  </div>
- </div>
- </div>
- 
-<div align="Center"> </div>
- </div>
-   
+
+<p align="Center">
+<img src="om_seq.gif" alt="examine bioseq data">
+</p>
+
+
+  
 <!--#include virtual="../../ssi/footer.shtml" -->
