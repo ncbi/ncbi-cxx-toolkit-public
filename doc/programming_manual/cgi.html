@@ -96,10 +96,10 @@ definitions, refer to the header files via the source browsers.
 <a href="../docxx/CCgiApplication.html">
 <h3> The CCgiApplication class </h3></a>
 As mentioned, the <i>CCgiApplication </i> class implements its own version of 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=Init">
+<a href="../lxr/ident?i=Init">
 <i>Init()</i></a>, where it instantiates a <a href="#cncbires"><i>CNcbiResource</i></a> object using 
 <i>LoadResource()</i>. 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=Run">
+<a href="../lxr/ident?i=Run">
 <i>Run</i></a> is no longer a pure virtual
 function in this subclass, and its implementation now calls <i>CreateContext(),
 ProcessRequest()</i>, and <i>CCgiContext::GetResponse()</i>. The <i>CCgiApplication</i> 
@@ -142,7 +142,7 @@ private:
 
 If the program was <i>not</i> compiled as a Fast-CGI application (or the environment does
 not support Fast-CGI), then 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=RunFastCGI">
+<a href="../lxr/ident?i=RunFastCGI">
 <i> RunFastCGI()</i></a> will return <i>false</i>. Otherwise, a "Fast-CGI loop" will be
 iterated over <i>def_iter</i> times, with the initialization methods and
 <i>ProcessRequest()</i> function being executed on each iteration. The value returned by
@@ -162,7 +162,7 @@ href="applic.html#CNcbiRegistry"><i>CNcbiRegistry</i></a> object, which defines 
 paths, resources, and possibly environmental variables for the application. This
 information is stored in the resource class's data member, <i>m_config</i>. The only other
 data member is a
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=TCmdList">
+<a href="../lxr/ident?i=TCmdList">
 <i>TCmdList</i></a> (a list of <i>CNcbiCommand</i>s) called <i>m_cmd</i>.
 
 <font color = "#000080"> <pre>
@@ -190,7 +190,7 @@ protected:
 The <i>AddCommand()</i> method is used when a resource is being initialized, to add
 commands to the command list.  Given a <i>CCgiRequest</i> object defined in a particular
 context <i>ctx</i>, 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=HandleRequest">
+<a href="../lxr/ident?i=HandleRequest">
 <i>HandleRequest(ctx)</i></a> compares entries in the context's request to
 commands in <i>m_cmd</i>. The first command in <i>m_cmd</i> which <i>matches</i>
 an entry in the request is then executed (see
@@ -318,7 +318,7 @@ string (stored in <i>m_Entries</i>)
 <i>m_Cookies</i>)
 </ol>
 As implied by the "T" prefix,
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=TCgiEntries">
+<a href="../lxr/ident?i=TCgiEntries">
 <i>TCgiEntries</i></a> is a type defintion, and defines <i>m_Entries</i> to be an STL
 multimap of <i>&lt;string,string></i> pairs. The <i>CCgiCookies</i> class (described <a
 href="#cookies"> below</a>) contains an STL set of <a
@@ -568,7 +568,7 @@ last three data members are only used in complex web applications such as the <a
 href="../tools.html#ref_TableTools"> <i>query</i></a> program, where it is necessary to store
 more complex run-time data with the context object.  The message buffer is essentially an STL
 list of string objects whose class definition 
-(<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CCtxMsgString"><i>CCtxMsgString</i></a>)
+(<a href="../lxr/ident?i=CCtxMsgString"><i>CCtxMsgString</i></a>)
 includes a <i>Write()</i> output function. <i>GetServCtx()</i> returns <i>m_srvCtx</i> if it
 has been defined and otherwise, calls the application's
 <i>CCgiApplication::LoadServerContext()</i> to obtain it.
@@ -640,7 +640,7 @@ to that command.
 The <a href="make_cgi.html"> Makefile</a> for this example links
 to both the <i>xncbi</i> and <i>xcgi</i> libraries. 
 Additional examples using the CGI classes can be found in 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/cgi/test/">
+<a href="../lxr/source/src/cgi/test/">
 <i>src/cgi/test</i></a>.
 
 <a name=appendix> <h3>Appendix</h3>

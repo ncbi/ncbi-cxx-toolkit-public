@@ -62,7 +62,7 @@ Since you will be working inside the C++ source tree you will first need
 to checkout <i>$CVSROOT/internal/c++</i>. If you do not wish to include
 all of the subprojects contained in <i>$CVSROOT/internal/c++/internal</i>,
 you may want to use
-<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/scripts/cvs_core.sh">cvs_core.sh</a></i>
+<i><a href="../lxr/source/scripts/cvs_core.sh">cvs_core.sh</a></i>
 (provided in the <i><a href="../new_proj.html#ref_Checkout">scripts</a></i>
 directory) for checking out.
 <p>&nbsp;Once you have done so, you will need to run one of the <i>configure</i>
@@ -394,7 +394,7 @@ in the project makefile, e.g.:
 CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
 CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)
 LINK&nbsp;&nbsp;&nbsp;&nbsp; = purify $(ORIG_LINK)</pre>
-For a simple example, see <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/corelib/Makefile.corelib.lib">Makefile.corelib.lib</a>,
+For a simple example, see <a href="../lxr/source/src/corelib/Makefile.corelib.lib">Makefile.corelib.lib</a>,
 and for additional documentation, refer to the <a href="../new_proj.html#ref_MakeProjLib">Reference
 Manual</a> section. This customized makefile can be used to build both
 static and dynamic(DLL) versions of the library. To build as a DLL on the
@@ -428,7 +428,7 @@ use:
 <pre>&nbsp;LIBS = $(NCBI_C_LIBPATH) -lncbi $(ORIG_LIBS)</pre>
 The project's application makefile can also redefine the compiler and linker,
 along with other flags and tools affecting the build process, as described
-above for <i>Makefile.*.lib</i> files, For an example, see <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/corelib/test/Makefile.coretest.app">Makefile.coretest.app</a>.
+above for <i>Makefile.*.lib</i> files, For an example, see <a href="../lxr/source/src/corelib/test/Makefile.coretest.app">Makefile.coretest.app</a>.
 For additional documentation refer also to the <a href="../new_proj.html#ref_MakeProjApp">Reference
 Manual</a> section.
 <p><a NAME="config"></a>
@@ -439,7 +439,7 @@ in the
 <a href="../config.html#ref_Wrappers">Reference Manual</a>. Each
 of these wrappers performs some pre-initialization for the tools and flags
 used in the <i>configure</i> script before running it. The compiler-specific
-wrappers are in the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/compilers/">c++/compilers</a></i>
+wrappers are in the <i><a href="../lxr/source/compilers/">c++/compilers</a></i>
 directory. The <i>configure</i> script serves two very different types
 of function: (1) it tests the selected compiler and environment for a multitude
 of features and generates <i>#include</i> and

@@ -121,7 +121,7 @@ eSerial_Xml));</i></center>
 
 <p>Here, an XML format is specified by the enumerated value <i>eSerial_Xml</i>,
 defined in
-<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=ESerialDataFormat">ESerialDataFormat</a></i>.
+<i><a href="../lxr/ident?i=ESerialDataFormat">ESerialDataFormat</a></i>.
 Because these methods are static, they can be used to create a new instance
 of a <i>CObjectIStream</i> subclass, <i>and</i> open it with one statement.
 In this example, a <i><a href="../docxx/CObjectIStreamXml.html">CObjectIStreamXml</a></i>
@@ -179,8 +179,8 @@ embedded objects, and the default behavior of <i>Read()</i> is to load
 the top-level object, along with all of its contained subobjects into memory.
 In some cases this may require significant memory allocation, and it may
 be only the top-level object which is needed by the application. The next
-two methods, <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=ReadObject">ReadObject()</a></i>and
-<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=ReadSeparateObject">ReadSeparateObject()</a></i>,
+two methods, <i><a href="../lxr/ident?i=ReadObject">ReadObject()</a></i>and
+<i><a href="../lxr/ident?i=ReadSeparateObject">ReadSeparateObject()</a></i>,
 can be used to load subobjects as either persistent data members of the
 root object or as temporary local objects. In contrast to <i>Read()</i>,
 these methods assume that there is <i>not</i> a file header on the stream.
@@ -455,7 +455,7 @@ method defined in</li>
 </ul>
 </ol>
 For a good example of using a <i>CReadClassMemberHook</i> object, see the
-<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
+<i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 demo program.
 <p><a NAME="writehooks"></a>
 <h3>
@@ -493,7 +493,7 @@ the examples for read hooks then, we would have:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CSeq_entry::GetTypeInfo()->FindVariant("Bioseq")
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ->SetGlobalWriteChoiceVariantHook(myWriteBioseqHook);</font></pre>
-The <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
+The <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 demo program also demonstrates the usage of the <i>CWriteClassMemberHook</i>
 class.
 <p><a NAME="copyhooks"></a>

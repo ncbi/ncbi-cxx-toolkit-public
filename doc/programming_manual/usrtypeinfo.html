@@ -51,7 +51,7 @@ for a pointer provides convenient methods of access to the type information
 for the type pointed to.
 <p>&nbsp;For all types, the type information is encoded in a static <i>CTypeInfo</i>
 object, which is then accessed by all instances of a given type using a
-<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=GetTypeInfo">GetTypeInfo()</a></i>
+<i><a href="../lxr/ident?i=GetTypeInfo">GetTypeInfo()</a></i>
 function. For <i>class</i> types, this function is implemented as a static
 method for the class. For non class types, <i>GetTypeInfoXxx()</i> is implemented
 as a static global function, where <i>Xxx</i> is a unique suffix generated
@@ -204,10 +204,10 @@ to add information about internal members and class relations.
 
 <ul>
 <li>
-<a NAME="class"></a><i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_NAMED_CLASS_INFO">BEGIN_NAMED_CLASS_INFO(ClassAlias,
+<a NAME="class"></a><i><a href="../lxr/ident?i=BEGIN_NAMED_CLASS_INFO">BEGIN_NAMED_CLASS_INFO(ClassAlias,
 ClassName)</a></i></li>
 
-<br><i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_CLASS_INFO">BEGIN_CLASS_INFO(ClassName)</a></i>
+<br><i><a href="../lxr/ident?i=BEGIN_CLASS_INFO">BEGIN_CLASS_INFO(ClassName)</a></i>
 <br>These macros should be used on classes that do not contain any pure
 virtual functions. For example, the <i>GetTypeInfo()</i> method for the
 <i><a href="iterators.html#CPerson">CPerson</a></i> class (used in the
@@ -235,10 +235,10 @@ as <i>int, float, string</i> etc., use the <i>ADD_NAMED_STD_MEMBER</i>
 or <i>ADD_STD_MEMBER</i> macros. These and other macros used to add members
 are defined in <a href="#addm">Table 2</a>.</font>
 <li>
-<a NAME="abstr"></a><font color="#000000"><i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_NAMED_ABSTRACT_CLASS_INFO">BEGIN_NAMED_ABSTRACT_CLASS_INFO(ClassAlias,
+<a NAME="abstr"></a><font color="#000000"><i><a href="../lxr/ident?i=BEGIN_NAMED_ABSTRACT_CLASS_INFO">BEGIN_NAMED_ABSTRACT_CLASS_INFO(ClassAlias,
 ClassName)</a></i></font></li>
 
-<br><i><font color="#000000"><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_ABSTRACT_CLASS_INFO">BEGIN_ABSTRACT_CLASS_INFO(ClassName)</a></font></i>
+<br><i><font color="#000000"><a href="../lxr/ident?i=BEGIN_ABSTRACT_CLASS_INFO">BEGIN_ABSTRACT_CLASS_INFO(ClassName)</a></font></i>
 <br><font color="#000000">These macros must be used on abstract base classes
 which contain pure virtual functions. Because these abstract classes cannot
 be instantiated, special handling is required in order to install their
@@ -260,7 +260,7 @@ macros do this for us:</font>
 &nbsp; ADD_SUB_CLASS (CB);
 }
 END_ABSTRACT_CLASS_INFO</font></pre>
-<font color="#000000">The <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=ADD_SUB_CLASS">ADD_SUB_CLASS</a></i>
+<font color="#000000">The <i><a href="../lxr/ident?i=ADD_SUB_CLASS">ADD_SUB_CLASS</a></i>
 macro provides the class inheritance information for all objects - its
 usage is <i>not</i> restricted to abstract classes. However, each class
 listed as a subclass by these macros must also use the DERIVED_CLASS macros
@@ -270,10 +270,10 @@ macros will not lead to compile-time errors, but the iterator will
 <i>not</i>
 recognize these objects as instances of the parent class.</font>
 <li>
-<a NAME="derive"></a><i><font color="#000000"><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_NAMED_DERIVED_CLASS_INFO">BEGIN_NAMED_DERIVED_CLASS_INFO(ClassAlias,
+<a NAME="derive"></a><i><font color="#000000"><a href="../lxr/ident?i=BEGIN_NAMED_DERIVED_CLASS_INFO">BEGIN_NAMED_DERIVED_CLASS_INFO(ClassAlias,
 ClassName, BaseClassName)</a></font></i></li>
 
-<br><i><font color="#000000"><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_DERIVED_CLASS_INFO">BEGIN_DERIVED_CLASS_INFO(ClassName,
+<br><i><font color="#000000"><a href="../lxr/ident?i=BEGIN_DERIVED_CLASS_INFO">BEGIN_DERIVED_CLASS_INFO(ClassName,
 BaseClassName)</a></font></i>
 <br><font color="#000000">These macros should be used on derived subclasses
 whose parent classes also have the
@@ -299,25 +299,25 @@ from <i>CObject</i>, you should <i>not</i> use the <i>DERIVED_CLASS</i>
 macros to implement
 <i>GetTypeInfo()</i>, but instead use the usual <i>BEGIN_CLASS_INFO</i>
 macro. <i>CObject</i>'s have a slightly different interface to their type
-information (see <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CObjectGetTypeInfo">CObjectGetTypeInfo</a></i>),
+information (see <i><a href="../lxr/ident?i=CObjectGetTypeInfo">CObjectGetTypeInfo</a></i>),
 and apply these macros differently.</font>
 <li>
-<a NAME="choice"></a><i><font color="#000000"><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_NAMED_CHOICE_INFO">BEGIN_NAMED_CHOICE_INFO(ClassAlias,
+<a NAME="choice"></a><i><font color="#000000"><a href="../lxr/ident?i=BEGIN_NAMED_CHOICE_INFO">BEGIN_NAMED_CHOICE_INFO(ClassAlias,
 ClassName)</a></font></i></li>
 
-<br><i><font color="#000000"><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_CHOICE_INFO">BEGIN_CHOICE_INFO(ClassName)</a></font></i>
+<br><i><font color="#000000"><a href="../lxr/ident?i=BEGIN_CHOICE_INFO">BEGIN_CHOICE_INFO(ClassName)</a></font></i>
 <br><font color="#000000">These macros install <i>GetTypeInfo()</i> for
 C++ <i>choice</i> objects, which are implemented as C++ classes. See <i><a href="choice.html">Choice
 objects in the C++ Toolkit</a></i> for a description of C++ <i>choice</i>
 objects. Each of the choice variants occurs as a data member in the class,
-and the macros used to add choice variants (<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=ADD_NAMED_CHOICE_VARIANT">ADD_NAMED_*_CHOICE_VARIANT</a></i>)
+and the macros used to add choice variants (<i><a href="../lxr/ident?i=ADD_NAMED_CHOICE_VARIANT">ADD_NAMED_*_CHOICE_VARIANT</a></i>)
 are used similarly to those which add data members to classes (see discussion
 of the <i><a href="#addm">ADD*</a></i> macros below).</font>
 <li>
-<a NAME="enum"></a><i><font color="#000000"><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_NAMED_ENUM_INFO">BEGIN_NAMED_ENUM_INFO(EnumAlias,
+<a NAME="enum"></a><i><font color="#000000"><a href="../lxr/ident?i=BEGIN_NAMED_ENUM_INFO">BEGIN_NAMED_ENUM_INFO(EnumAlias,
 EnumName, IsInteger)</a></font></i></li>
 
-<br><i><font color="#000000"><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_ENUM_INFO">BEGIN_ENUM_INFO(EnumName,
+<br><i><font color="#000000"><a href="../lxr/ident?i=BEGIN_ENUM_INFO">BEGIN_ENUM_INFO(EnumName,
 IsInteger)</a></font></i>
 <br><font color="#000000">In addition to the two arguments used by the
 <i>BEGIN_*_INFO</i> macros for classes, a Boolean argument (<i>IsInteger</i>)
@@ -347,10 +347,10 @@ macro. As a result of executing the above macro, a global function named
 <br>&nbsp;
 <br>&nbsp;
 <li>
-<a NAME="enum_in"></a><i><font color="#000000"><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_NAMED_ENUM_IN_INFO">BEGIN_NAMED_ENUM_IN_INFO(EnumAlias,
+<a NAME="enum_in"></a><i><font color="#000000"><a href="../lxr/ident?i=BEGIN_NAMED_ENUM_IN_INFO">BEGIN_NAMED_ENUM_IN_INFO(EnumAlias,
 CppContext, EnumName, IsInteger)</a></font></i></li>
 
-<br><i><font color="#000000"><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BEGIN_ENUM_IN_INFO">BEGIN_ENUM_IN_INFO(CppContext,
+<br><i><font color="#000000"><a href="../lxr/ident?i=BEGIN_ENUM_IN_INFO">BEGIN_ENUM_IN_INFO(CppContext,
 EnumName, IsInteger)</a></font></i>
 <br><font color="#000000">These macros also implement the type information
 functions for C++ enumerations --but in this case, the enumeration is defined

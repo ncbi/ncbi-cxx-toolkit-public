@@ -59,7 +59,7 @@ of a single message ensures that multiple threads writing to the same stream
 will not have interleaving message texts.&nbsp;<a NAME="severity"></a>
 <h3>
 Severity levels</h3>
-Each <i>CNcbiDiag</i> instance has its own (<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=EDiagSev">EDiagSev</a></i>)
+Each <i>CNcbiDiag</i> instance has its own (<i><a href="../lxr/ident?i=EDiagSev">EDiagSev</a></i>)
 severity level, which is compared to a global severity threshold to determine
 whether or not its message should be posted. Six levels of severity are
 defined by the <i>EDiagSev</i> enumeration:
@@ -75,13 +75,13 @@ The default is to post only those messages whose severity level exceeds
 the
 <i>eDiag_Warning</i> level (i.e. <i>eDiag_Error, eDiag_Critical</i>,
 and <i>eDiag_Fatal</i>). The global severity threshold for posting messages
-can be reset using <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetDiagPostLevel">SetDiagPostLevel</a>
-(EDiagSev postSev)</i>. A parallel function, <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetDiagDieLevel">SetDiagDieLevel</a>
+can be reset using <i><a href="../lxr/ident?i=SetDiagPostLevel">SetDiagPostLevel</a>
+(EDiagSev postSev)</i>. A parallel function, <i><a href="../lxr/ident?i=SetDiagDieLevel">SetDiagDieLevel</a>
 (EDiagSev dieSev)</i>, defines the severity level at which execution will
 abort.
 <p>Tracing is considered to be a special, debug-oriented feature, and therefore
 messages with severity level <i>eDiag_Trace</i> are not affected by these
-global <i>post/die</i> levels. Instead, <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetDiagTrace">SetDiagTrace</a>
+global <i>post/die</i> levels. Instead, <i><a href="../lxr/ident?i=SetDiagTrace">SetDiagTrace</a>
 (EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on
 or off. By default, the tracing is off -- unless you assign the environment
 variable $DIAG_TRACE to an arbitrary non-empty string or, alternatively,
@@ -104,7 +104,7 @@ the message body. The standard format of a message is:
 "&lt;file>", line &lt;line>:&lt;severity>: [&lt;prefix>] &lt;message body></pre></center>
 where the <i>file, line, severity</i> and <i>prefix</i> fields are displayed
 (or not) depending on the post flags
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=EDiagPostFlag">EDiagPostFlag
+<a href="../lxr/ident?i=EDiagPostFlag">EDiagPostFlag
 </a>associated with the <i>CNcbiDiag</i>:
 <pre>enum EDiagPostFlag {
 &nbsp;&nbsp;&nbsp; eDPF_File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x1,&nbsp; // set by default #if _DEBUG;&nbsp; else -- not set
@@ -122,7 +122,7 @@ where the <i>file, line, severity</i> and <i>prefix</i> fields are displayed
 };</pre>
 The default message format displays only the severity level and the message
 body. This can be overridden inside the constructor for a specific instance
-of <i>CNcbiDiag</i>, or globally, using <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetDiagPostFlag">SetDiagPostFlag</a>(EDiagSev
+of <i>CNcbiDiag</i>, or globally, using <i><a href="../lxr/ident?i=SetDiagPostFlag">SetDiagPostFlag</a>(EDiagSev
 postSev)</i> on a selected flag.&nbsp;<a NAME="setStream"></a>
 <h3>
 Defining the output stream</h3>
@@ -131,9 +131,9 @@ callback, which often writes the messages to an output stream. The default
 is to post messages to <i>cerr</i>, but the stream destination can be reset
 at any time using:
 <center>
-<p><i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetDiagStream">SetDiagStream</a>
+<p><i><a href="../lxr/ident?i=SetDiagStream">SetDiagStream</a>
 (CNcbiOstream* os, bool quick_flush,
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=FDiagCleanup">FDiagCleanup</a>
+<a href="../lxr/ident?i=FDiagCleanup">FDiagCleanup</a>
 cleanup, void* cleanup_data)</i></center>
 
 <p>This function can be called numerous times, thus allowing different
@@ -144,9 +144,9 @@ message will appear on whatever stream is active at the time the message
 actually completes.
 <p>And, of course, you can
 <a href="#callback">provide</a> (using
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetDiagHandler">SetDiagHandler</a>)
+<a href="../lxr/ident?i=SetDiagHandler">SetDiagHandler</a>)
 your own message posting callback
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=FDiagHandler">FDiagHandler</a>,
+<a href="../lxr/ident?i=FDiagHandler">FDiagHandler</a>,
 which does not necessarily write the messages to a standard C++ output
 stream.&nbsp;<a NAME="buffering"></a>
 <h3>
@@ -171,7 +171,7 @@ the following two <i>manipulators</i>:
 <i>Reset</i> -- empty the contents of current message buffer</li>
 </ul>
 When the message controlled by an instance of <i>CNcbiDiag</i> is complete,
-<i>CNcbiDiag</i> calls a global callback function (of type <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=FDiagHandler">FDiagHandler</a></i>)
+<i>CNcbiDiag</i> calls a global callback function (of type <i><a href="../lxr/ident?i=FDiagHandler">FDiagHandler</a></i>)
 and passes the message (along with its severity level) as the function
 arguments. The default callback function posts errors to the currently
 designated output stream, with the action (continue or abort) determined
@@ -181,10 +181,10 @@ by the severity level of the message.
 FDiagHandler functions</h3>
 The user can install his own callback function (of type <i>FDiagHandler</i>)
 using
-<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetDiagHandler">SetDiagHandler()</a></i>.
+<i><a href="../lxr/ident?i=SetDiagHandler">SetDiagHandler()</a></i>.
 The signature of the callback function is given by the typedef:
 <center><pre>typedef void (*FDiagHandler)(const SDiagMessage&amp; mess);</pre></center>
-where <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SDiagMessage">SDiagMessage</a></i>
+where <i><a href="../lxr/ident?i=SDiagMessage">SDiagMessage</a></i>
 is a simple struct defined in <i>ncbidiag.hpp</i> whose data members' values
 are obtained from the <i>CNcbiDiag</i> object. The transfer of data values
 occurs at the time that the callback is invoked. See also the discussion
@@ -216,7 +216,7 @@ on. If <i>DIAG_TRACE</i> is defined as an enviroment variable, or as an
 entry in the [DEBUG] section of your configuration file (<i>*.ini</i>),
 the initial state of tracing is <b><i>on</i></b>. By default, if no such
 variable or registry entry is defined, tracing is
-<b><i>off</i></b>. <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetDiagTrace">SetDiagTrace</a>
+<b><i>off</i></b>. <i><a href="../lxr/ident?i=SetDiagTrace">SetDiagTrace</a>
 (EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on/off.
 <p>&nbsp;Just like <i>ERR_POST</i>, the <i>_TRACE</i> macro takes a message,
 and the message will be posted only if tracing has been enabled. For example:

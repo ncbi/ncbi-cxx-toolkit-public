@@ -31,9 +31,9 @@
 This page describes how to add multithreading to your
 application and how to use basic synchronization objects.
 All classes are defined in
-<a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/corelib/ncbithr.hpp><i>include/corelib/ncbithr.hpp</i></a>
+<a href=../lxr/source/include/corelib/ncbithr.hpp><i>include/corelib/ncbithr.hpp</i></a>
 and
-<a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/corelib/ncbimtx.hpp><i>include/corelib/ncbimtx.hpp</i></a>.
+<a href=../lxr/source/include/corelib/ncbimtx.hpp><i>include/corelib/ncbimtx.hpp</i></a>.
 <p>
 
 
@@ -145,7 +145,7 @@ function is used to wait for the child thread termination.
 
 
 <a name=cthreadpublic>
-<h4><a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CThread>CThread</a>
+<h4><a href=../lxr/ident?i=CThread>CThread</a>
 class public methods</h4>
 <p>
 
@@ -207,7 +207,7 @@ has no associated <i><b>CThread</i></b> object, a special value of 0
 
 
 <a name=cthreadprotected>
-<h4><a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CThread>CThread</a> class protected methods</h4>
+<h4><a href=../lxr/ident?i=CThread>CThread</a> class protected methods</h4>
 <p>
 
 <dl>
@@ -396,12 +396,12 @@ The following classes implement threads synchronization mechanisms:
 
 
 <a name=cfastmutex>
-<h4><a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CFastMutex>CFastMutex</a>,
-<a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CFastMutexGuard>CFastMutexGuard</a></h4>
+<h4><a href=../lxr/ident?i=CFastMutex>CFastMutex</a>,
+<a href=../lxr/ident?i=CFastMutexGuard>CFastMutexGuard</a></h4>
 <p>
 
 <i><b>CFastMutex</i></b> class is defined in
-<a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/corelib/ncbimtx.hpp><i>include/corelib/ncbimtx.hpp</i></a>.
+<a href=../lxr/source/include/corelib/ncbimtx.hpp><i>include/corelib/ncbimtx.hpp</i></a>.
 This class implements basic mutex behavior with minimum performance overheads.
 <i><b>Lock()</i></b> and <i><b>Unlock()</i></b>
 methods will acquire and release the mutex
@@ -433,9 +433,9 @@ void ThreadSafe(void)
 
 
 <a name=cmutex>
-<h4><a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CMutex>CMutex</a>,
-<a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CAutoMutex>CAutoMutex</a>,
-<a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CMutexGuard>CMutexGuard</a></h4>
+<h4><a href=../lxr/ident?i=CMutex>CMutex</a>,
+<a href=../lxr/ident?i=CAutoMutex>CAutoMutex</a>,
+<a href=../lxr/ident?i=CMutexGuard>CMutexGuard</a></h4>
 <p>
 
 <i><b>CMutex</i></b> uses the functionality of <i><b>CFastMutex</i></b>.
@@ -500,10 +500,10 @@ regular <i><b>Lock()</i></b>.
 
 
 <a name=crwlock>
-<h4><a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CRWLock>CRWLock</a>,
-<a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CAutoRW>CAutoRW</a>,
-<a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CReadLockGuard>CReadLockGuard</a>,
-<a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CWriteLockGuard>CWriteLockGuard</a></h4>
+<h4><a href=../lxr/ident?i=CRWLock>CRWLock</a>,
+<a href=../lxr/ident?i=CAutoRW>CAutoRW</a>,
+<a href=../lxr/ident?i=CReadLockGuard>CReadLockGuard</a>,
+<a href=../lxr/ident?i=CWriteLockGuard>CWriteLockGuard</a></h4>
 <p>
 
 This class implements sharing a resource between multiple
@@ -539,7 +539,7 @@ on success (the RW-lock becomes R-locked or W-locked) or
 
 <a name=tls>
 <h3>Thread local storage
-(<a href=http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CTls>CTls&lt;&gt;</a> class)</h3>
+(<a href=../lxr/ident?i=CTls>CTls&lt;&gt;</a> class)</h3>
 
 The library provides a template class to store
 thread specific data: <i><b>CTls&lt;&gt;</i></b>. This means that each

@@ -93,20 +93,20 @@ containing <i>CHTML_li</i> (<i>&lt;li></i>) subcomponents.  <p>
 
 A number of member functions are provided to operate on <i>m_Children</i>.  These include
 methods to access, add, and remove children, along with a pair of <i>begin/end</i> iterators
-(<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/search?string=ChildBegin"><i>ChildBegin</i>()</a>
+(<a href="../lxr/search?string=ChildBegin"><i>ChildBegin</i>()</a>
 and 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/search?string=ChildEnd"><i>ChildEnd</i>()</a>),
+<a href="../lxr/search?string=ChildEnd"><i>ChildEnd</i>()</a>),
 and a function to dereference these iterators (<i>Node(i)</i>). <p>
 
 Depending on flags set at compile time, <i>m_Children</i> is represented as
 either a list of <i>CNodeRef</i> objects, or a list of <i>auto_ptr&lt;CNodeRef</i>>, where
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CNodeRef">
+<a href="../lxr/ident?i=CNodeRef">
 <i>CNodeRef</i></a> is a typedef for <a href="cref.html#cref"> <i>CRef</i></a>&lt;<i>CNCBINode</i>>.  
 This distinction is transparent to the user however, and the important point is that
 the deallocation of all dynamically embedded child nodes is handled automatically by the
 containing class.<p>
 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=Print">
+<a href="../lxr/ident?i=Print">
 <i>CNCBINode::Print()</i></a> recursively generates the HTML text for the node and all of its
 children, and outputs the result to a specified output stream.  The <i>Print()</i> function
 takes two arguments: (1) an output stream, and (2) a <i>CNCBINode::TMode</i> object, where <a
@@ -149,9 +149,9 @@ described next.
 The <i>CHTMLText</i> class uses the <i>m_Name</i> data member (inherited from <i>CNCBINode</i>)
 to store a text string of arbitrary length.  No new data members are introduced, but two new
 member functions are defined. 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetText">
+<a href="../lxr/ident?i=SetText">
 <i>SetText()</i></a> resets <i>m_Name</i> to a new string, and
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=GetText">
+<a href="../lxr/ident?i=GetText">
 <i>GetText()</i></a> returns the value currently stored in <i>m_Name</i>.  With the exception of
 specially <i>tagged</i> sections (described below), all text occurring in a <i>CHTMLText</i>
 node is sent directly to the output without further encoding. <p>
@@ -198,7 +198,7 @@ href="#page"> NCBI page classes</a>, which contain a <i>TTagMap</i>. <p>
 
 The page classes serve as generalized containers for collections of other HTML components, which
 are mapped to the page by a <i>tagmap</i>.  In general, subcomponents are added to a page
-using the <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddTagMap">
+using the <a href="../lxr/ident?i=AddTagMap">
 <i>AddTagMap()</i></a> method (described below), instead of the <i>AppendChild()</i>
 method. The page classes define the following subtree in the C++ Toolkit class hierarchy:
 
@@ -228,25 +228,25 @@ some of which may not have been instantiated yet. Specifically, <i>m_TagMap</i> 
 </pre>
 <a name="tagmapper">
 Here, 
-<a href ="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=BaseTagMapper">
+<a href ="../lxr/ident?i=BaseTagMapper">
 <i>BaseTagMapper</i></a> is a base class for a set of functor-like structs.
 Each of the derived subclasses of <i>BaseTagMapper</i> has a single data
 member (e.g. <i>m_Node, m_Function</i> or <i>m_Method</i>), which points to 
 either a <i>CNCBINode</i>, or a function that
 <i>returns</i> a pointer to a <i>CNCBINode</i>. The <i>BaseTagMapper</i> class also has
 a single member function, 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=MapTag">
+<a href="../lxr/ident?i=MapTag">
 <i>MapTag()</i></a>, which knows how to "invoke" its data 
 member. <p>
 
 The simplest subclass of <i>BaseTagMapper</i> is the
-<a href ="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=ReadyTagMapper">
+<a href ="../lxr/ident?i=ReadyTagMapper">
 
 <i>ReadyTagMapper</i></a> class whose sole data member, <i>m_Node</i>, is a <a
 href="cref.html#cref"><i>CRef</i></a> pointer to a <i>CNCBINode</i>. In this case the
 <i>MapTag()</i> function simply returns <i>&*m_Node</i>.  Several different types of tagmappers
 are derived from the <i>BaseTagMapper</i> class in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/html/nodemap.hpp">
+<a href="../lxr/source/include/html/nodemap.hpp">
 nodemap.hpp</a>. Each of these subclasses specializes a different type of data member, which
 may be a pointer to a free function, a pointer to a member function, or a pointer to an 
 object, as in the case of the <i>ReadyTagMapper</i>. The action taken by the tagmapper's
@@ -260,11 +260,11 @@ member function is then invoked, which finally returns a pointer to
 a <i>CNCBINode</i>.<p>
 
 A second member function, <i>CHTMLBasicPage::</i><a href=
-"http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddTagMap"><i>AddTagMap(str,
+"../lxr/ident?i=AddTagMap"><i>AddTagMap(str,
 obj) </i></a>, provides for the insertion of a new tag string and its associated tagmapper
 struct to <i>m_TagMap</i>.  Depending on the object type of the second argument, a
 type-specific implementation of an overloaded helper function, <a
-href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CreateTagMapper">
+href="../lxr/ident?i=CreateTagMapper">
 <i>CreateTagMapper()</i></a>, can be used to install the desired tagmapper.<p>
 
 In order for a new mapping to have any effect however, the tag must also occur in one of the
@@ -286,7 +286,7 @@ are available that do not require an application argument.
 
 <a name="ncbipage"> <h3> Using the <i>CHTMLPage</i> class with template files </h3>
 
-The <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLPage">
+The <a href="../lxr/ident?i=CHTMLPage">
 <i>CHTMLPage</i></a> class is derived from the <i>CHTMLBasicPage</i>. In combination with the
 appropriate template file, this class can be used to generate
 the standard <a href="ncbi_page.html"> <i>NCBI web page</i></a>, which includes:
@@ -317,24 +317,24 @@ argument are optional for the second constructor. The member functions, <i>SetTi
 Five additional member functions support the usage of template files and tagnodes as follows:
 <ul>
 <li>
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CreateTemplate">
+<a href="../lxr/ident?i=CreateTemplate">
 <i>CreateTemplate()</i></a> reads the contents of file <i>m_TemplateFile</i> into a <i>CHTMLText</i> 
 node, and returns a pointer to that node. <p>
 
-<li><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CreateSubNodes">
+<li><a href="../lxr/ident?i=CreateSubNodes">
 <i>CreateSubNodes()</i></a> executes <i>AppendChild(CreateTemplate())</i>, and is called at the
 top of <i>Print()</i> when <i>m_Children</i> is empty. Thus, the contents of the template file
 are read into the <i>m_Name</i> data member of a <i>CHTMLText</i> node, and that node
 is then installed as a child in the page's <i>m_Children</i>.<p>
 
-<li><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CreateTitle"><i>CreateTitle()</i></a>
+<li><a href="../lxr/ident?i=CreateTitle"><i>CreateTitle()</i></a>
 returns <i>new CHTMLText(m_Title)</i>.<p>
 
-<li><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CreateView"><i>CreateView()</i></a>
+<li><a href="../lxr/ident?i=CreateView"><i>CreateView()</i></a>
 is effectively a virtual function that must be redefined by the application. The
 <i>CHTMLPage</i> class definition returns a null pointer (0).<p>
 
-<li><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=Init"><i>Init()</i></a>
+<li><a href="../lxr/ident?i=Init"><i>Init()</i></a>
 is called by all of the <i>CHTMLPage</i> constructors, and initializes <i>m_TagMap</i> as follows:
 <pre>
 void CHTMLPage::Init(void)
@@ -344,7 +344,7 @@ void CHTMLPage::Init(void)
 }
 </pre>
 As described in the preceding section, 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CreateTagMapper"><i>CreateTagMapper()</i></a> 
+<a href="../lxr/ident?i=CreateTagMapper"><i>CreateTagMapper()</i></a> 
 
 is an overloaded function that creates a tagmapper struct. In this case, <i>CreateTitle()</i>
 and <i>CreateView()</i> will be installed as the <i>m_Method</i> data members in the resulting
@@ -460,9 +460,9 @@ the template file.<p>
 The <i>CHTMLTagNode</i> class addresses this issue. Derived directly from <i>CNCBINode</i>, 
 the class's constructor takes a single (<i>string</i> or <i>char*</i>) argument, <i>tagname</i>,
 which is stored as <i>m_Name</i>. The 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=PrintChildren">
+<a href="../lxr/ident?i=PrintChildren">
 <i>CHTMLTagNode::PrintChildren()</i></a> method is specialized to handle tags, and makes
-a call to <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=MapTagAll">
+a call to <a href="../lxr/ident?i=MapTagAll">
 <i>MapTagAll</i></a><i>(GetName(), mode)</i>. Here, <i>GetName()</i> returns the <i>m_Name</i> of the
 <i>CHTMLTagNode</i>, and <i>mode</i> is the <a href="#tmode"> <i>TMode</i></a> argument that 
 was passed in to <i>PrintChildren()</i>. In addition to an enumeration variable specifying the
@@ -539,7 +539,7 @@ descriptions of the class constructors. <p>
 
 In addition to the subclasses explicitly defined in the hierarchy, a large number of lightweight 
 subclasses of <i>CHTMLNode</i> are defined by the preprocessor macro <a href=
-"http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=DECLARE_HTML_ELEMENT">
+"../lxr/ident?i=DECLARE_HTML_ELEMENT">
 <i>DECLARE_HTML_ELEMENT</i></a><i>(Tag, Parent)</i> defined in <i>html.hpp</i>. All of these
 elements have the same interface as other <i>CHTMLNode</i> classes however, and the
 distinction is invisible to the user.<p>
@@ -627,20 +627,20 @@ Thus, the output encoding specified at the top level is propagated to the <i>Pri
 of all the child nodes embedded in the parent. The <i>CNCBINode::PrintXxx()</i> methods essentially do nothing;
 <i>PrintBegin()</i> and <i>PrintEnd()</i> simply return 0, and <i>PrintChildren()</i> just
 calls <i>Print()</i> on each child. Thus, the actual printing is implemented by the 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=PrintBegin"> 
+<a href="../lxr/ident?i=PrintBegin"> 
 <i>PrintBegin()</i></a>  and
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=PrintEnd"> 
+<a href="../lxr/ident?i=PrintEnd"> 
 <i>PrintEnd()</i></a> methods that are specialized by the child objects. 
 <p>
 
 As the foregoing discussion implies, a generic <i>CNCBINode</i> which has no children explicitly installed
 will generate no output. For example, a 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLPage">
+<a href="../lxr/ident?i=CHTMLPage">
 <i>CHTMLPage</i></a> object which has been initialized by loading a 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CreateTemplate">
+<a href="../lxr/ident?i=CreateTemplate">
 template</a> file has no children until they are explicitly created. In this case, the <i>Print()</i>
 method will first call
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CreateSubNodes">
+<a href="../lxr/ident?i=CreateSubNodes">
 <i>CreateSubNodes()</i></a> before executing <i>PrintChildren()</i>. The use of template files, and
 the associated set of <i>TagMap</i> functions are discussed in the section on the
 NCBI <a href="#tagmap"> Page</a> classes. <p>
@@ -732,19 +732,19 @@ NCBI <a href="#tagmap"> Page</a> classes. <p>
 <i>CButtonList</i></a>
 (Custom feature not for general use.)  
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CButtonList">
+<a href="../lxr/ident?i=CButtonList">
 <i>components.hpp</i></a>.
 
 An HTML select button with a drop down list; used in <a href="#CPagerBox">
 <i>CPagerBox</i></a>. The constructor takes no arguments, and child nodes (options) are added using method 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CreateSubNodes">
+<a href="../lxr/ident?i=CreateSubNodes">
 <i>CbuttonList::CreateSubNodes()</i></a>
 <p>
 
 <dt><a name="CHTML_a"> <a href="../docxx/CHTML_a.html">
 <i>CHTML_a</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_a">
+defined in <a href="../lxr/ident?i=CHTML_a">
 <i>html.hpp</i></a> - 
 an HTML anchor element, as used in <i>&lt;a href="..."></i>. The constructor takes the URL string
 as the argument, and optionally, a <i>CNCBINode</i> to be appended as a child node. The label
@@ -756,7 +756,7 @@ has been created.
 <dt><a name="CHTML_basefont"> <a href="../docxx/CHTML_basefont.html">
 <i>CHTML_basefont</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_basefont">
+defined in <a href="../lxr/ident?i=CHTML_basefont">
 <i>html.hpp</i></a> - 
 
 an HTML basefont element used to define the font size and/or typeface for text embedded in
@@ -767,7 +767,7 @@ typeface, or both.
 <dt><a name="CHTML_br"> <a href="../docxx/CHTML_br.html">
 <i>CHTML_br</i></a>
 <dd>Derived from <a href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_br">
+defined in <a href="../lxr/ident?i=CHTML_br">
 <i>html.hpp</i></a> - 
 the HTML component used to insert line breaks. The constructor takes no arguments.
 <p>
@@ -775,7 +775,7 @@ the HTML component used to insert line breaks. The constructor takes no argument
 <dt><a name="CHTML_checkbox"> <a href="../docxx/CHTML_checkbox.html">
 <i>CHTML_checkbox</i></a>
 <dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_checkbox">
+defined in <a href="../lxr/ident?i=CHTML_checkbox">
 <i>html.hpp</i></a> - 
 can only be used inside
 a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a checkbox. The
@@ -786,7 +786,7 @@ state (<i>bool</i>), and description (<i>string</i>) for the node.
 <dt><a name="CHTML_color"> <a href="../docxx/CHTML_color.html">
 <i>CHTML_color</i></a>
 <dd>Derived from <a href="#CHTML_font"><i>CHTML_font</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_color">
+defined in <a href="../lxr/ident?i=CHTML_color">
 <i>html.hpp</i></a> - 
 an HTML font color element. Two constructors are available, and both expect <i>string color</i>
 as the first argument. If no other argument is provided, a <i>NULL CNCBINode</i> is assumed
@@ -797,7 +797,7 @@ An alternative constructor accepts a simple <i>string text</i> argument.
 <dt><a name="CHTML_dir"> <a href="../docxx/CHTML_dir.html">
 <i>CHTML_dir</i></a>
 <dd>Derived from <a href="#CHTMLListElement"><i>CHTMLListElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_dir">
+defined in <a href="../lxr/ident?i=CHTML_dir">
 <i>html.hpp</i></a> - 
 the HTML component used to insert a <i>dir</i> list. 
 The constructor takes zero to two arguments; if no arguments are provided, the <i>compact</i> attribute
@@ -810,11 +810,11 @@ Items can be added to the list using
 <dt><a name="CHTML_dl"> <a href="../docxx/CHTML_dl.html">
 <i>CHTML_dl</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_dl">
+defined in <a href="../lxr/ident?i=CHTML_dl">
 <i>html.hpp</i></a> - an HTML glossary list. 
 The constructor takes a single <i>bool</i> argument; if no arguments are provided, the
 <i>compact</i> attribute is by default false.  Terms are added to the list using
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AppendTerm">
+<a href="../lxr/ident?i=AppendTerm">
 <i>AppendTerm()</i></a>.
 <p>
 
@@ -822,7 +822,7 @@ The constructor takes a single <i>bool</i> argument; if no arguments are provide
 <a href="../docxx/CHTML_fieldset.html">
 <i>CHTML_fieldset</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_fieldset">
+defined in <a href="../lxr/ident?i=CHTML_fieldset">
 
 <i>html.hpp</i></a> - an element that groups related form controls (such as checkboxes, radio
 buttons, etc.)  together to define a <i>form control group</i>.  The constructors take at most 1
@@ -835,7 +835,7 @@ the <i>fieldset</i>. The individual form controls to be included in the group ar
 <dt><a name="CHTML_file"> <a href="../docxx/CHTML_file.html">
 <i>CHTML_file</i></a>
 <dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_file">
+defined in <a href="../lxr/ident?i=CHTML_file">
 <i>html.hpp</i></a> - used only inside
 a <a href="#CHTML_form"><i>CHTML_form</i></a> -
 a <i>form</i> input type to create a file widget for selecting files to be sent to the server. 
@@ -847,7 +847,7 @@ The constructor takes a <i>string</i> name and an optional <i>string</i> value.
 <dt><a name="CHTML_font"> <a href="../docxx/CHTML_font.html">
 <i>CHTML_font</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_font">
+defined in <a href="../lxr/ident?i=CHTML_font">
 <i>html.hpp</i></a> - an HTML font element. 
 The constructor takes up to four arguments. The first three arguments specify the font typeface and
 size, along with a Boolean value indicating whether the given font size is absolute or relative.
@@ -858,7 +858,7 @@ text should be added using the  <i>AppendChild()</i> method.
 <dt><a name="CHTML_form"> <a href="../docxx/CHTML_form.html">
 <i>CHTML_form</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_form">
+defined in <a href="../lxr/ident?i=CHTML_form">
 <i>html.hpp</i></a> - an HTML <i>form</i> node with two constructors. The first takes the URL
 <i>string</i> (for submission of form data) and method (<i>CHTML::eGet</i> or <i>CHTML::ePost</i>),
 and the <i>AppendChild()</i> method is used to add nodes. The second constructor takes three
@@ -869,7 +869,7 @@ arguments, specifying the URL, an HTML node to append to the form, and the enume
 <dt><a name="CHTML_hidden"> <a href="../docxx/CHTML_hidden.html">
 <i>CHTML_hidden</i></a>
 <dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_hidden">
+defined in <a href="../lxr/ident?i=CHTML_hidden">
 <i>html.hpp</i></a> - used only inside
 a <a href="#CHTML_form"><i>CHTML_form</i></a> -
 the HTML node for adding <i>hidden</i> key/value pairs to the data that
@@ -880,7 +880,7 @@ value, where the latter may be either a <i>string</i> or an <i>int</i>.
 <dt><a name="CHTML_hr"> <a href="../docxx/CHTML_hr.html">
 <i>CHTML_hr</i></a>
 <dd>Derived from <a href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_hr">
+defined in <a href="../lxr/ident?i=CHTML_hr">
 <i>html.hpp</i></a> - 
 the HTML component used to insert a horizontal rule. The constructor takes up to three arguments,
 specifying the size, width and shading to be used in the display.
@@ -889,7 +889,7 @@ specifying the size, width and shading to be used in the display.
 <dt><a name="CHTML_image"> <a href="../docxx/CHTML_image.html">
 <i>CHTML_image</i></a>
 <dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_image">
+defined in <a href="../lxr/ident?i=CHTML_image">
 <i>html.hpp</i></a> - used only inside
 a <a href="#CHTML_form"><i>CHTML_form</i></a> -
 the HTML component used to add an inline active image to an HTML <i>form</i>. Clicking on the
@@ -901,7 +901,7 @@ indicating whether or not the displayed image should have a border.
 <dt><a name="CHTML_img"> <a href="../docxx/CHTML_img.html">
 <i>CHTML_img</i></a>
 <dd>Derived from <a href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_img">
+defined in <a href="../lxr/ident?i=CHTML_img">
 <i>html.hpp</i></a> - an HTML <i>img</i> component for adding an inline image to
 a web page. The constructor takes a single URL <i>string</i> argument for the image's <i>src</i>.
 The alternative constructor also accepts two integer arguments specifiying the width and height
@@ -911,7 +911,7 @@ of the displayed image.
 <dt><a name="CHTML_input"> <a href="../docxx/CHTML_input.html">
 <i>CHTML_input</i></a>
 <dd>Derived from <a href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_input">
+defined in <a href="../lxr/ident?i=CHTML_input">
 <i>html.hpp</i></a> - the base class for all HTML input elements to be added to a <a href="#CHTML_form">
 <i>CHTML_form</i></a>. The constructor takes a (<i>char*</i>) input type  and a (<i>string</i>) 
 name. The constructor for each of the subclasses has a static member <i>sm_InputType</i> which
@@ -922,7 +922,7 @@ is passed as the first argument to the <i>CParent</i>'s (<i>CHTML_input</i>) con
 <a href="../docxx/CHTML_label.html">
 <i>CHTML_label</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_label">
+defined in <a href="../lxr/ident?i=CHTML_label">
 <i>html.hpp</i></a> - associates a label with a form control. 
 
 The constructors take a <i>string</i> argument which specifies the text for the label,
@@ -934,7 +934,7 @@ The <i>FOR</i> attribute explicitly identifies the form control to associate wit
 <a href="../docxx/CHTML_legend.html">
 <i>CHTML_legend</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_legend">
+defined in <a href="../lxr/ident?i=CHTML_legend">
 <i>html.hpp</i></a> - 
 defines a caption for a <a href="#CHTML_fieldset"><i>CHTML_fieldset</i></a> element. 
 The constructors take a single argument which may be either a <i>string</i> or
@@ -943,7 +943,7 @@ a <i>CHTMLNode</i>. <p>
 <dt><a name="CHTML_menu"> <a href="../docxx/CHTML_menu.html">
 <i>CHTML_menu</i></a>
 <dd>Derived from <a href="#CHTMLListElement"><i>CHTMLListElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_menu">
+defined in <a href="../lxr/ident?i=CHTML_menu">
 <i>html.hpp</i></a> - 
 the HTML component used to insert a <i>menu</i> list. 
 The constructor takes zero to two arguments; if no arguments are provided, the <i>compact</i> attribute
@@ -955,7 +955,7 @@ Items can be added to the list using <i>AppendChild(new CHTMLText("&lt;li>...")<
 <dt><a name="CHTML_ol"> <a href="../docxx/CHTML_ol.html">
 <i>CHTML_ol</i></a>
 <dd>Derived from <a href="#CHTMLListElement"><i>CHTMLListElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_ol">
+defined in <a href="../lxr/ident?i=CHTML_ol">
 <i>html.hpp</i></a> - 
 the HTML component used to insert an enumerated list. The constructor takes up to three arguments,
 specifying the starting number, the <i>type</i> of enumeration (Arabic, Roman Numeral etc.), 
@@ -966,7 +966,7 @@ Items can be added to the list using <i>AppendChild(new CHTMLText("&lt;li>...")<
 <dt><a name="CHTML_option"> <a href="../docxx/CHTML_option.html">
 <i>CHTML_option</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_option">
+defined in <a href="../lxr/ident?i=CHTML_option">
 <i>html.hpp</i></a> - an HTML <i>option</i> associated with a <a href="#CHTML_select">
 <i>CHTML_select</i></a> component. The constructor takes a value (<i>string</i>), a
 label (<i>string</i> or <i>char*</i>), and a Boolean indicating whether or not the
@@ -977,7 +977,7 @@ is <i>not</i> selected.
 <dt><a name="CHTML_radio"> <a href="../docxx/CHTML_radio.html">
 <i>CHTML_radio</i></a>
 <dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_radio">
+defined in <a href="../lxr/ident?i=CHTML_radio">
 <i>html.hpp</i></a> - 
 can only be used inside
 a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a radio button. The
@@ -988,7 +988,7 @@ state (<i>bool</i>), and description (<i>string</i>) for the node.
 <dt><a name="CHTML_reset"> <a href="../docxx/CHTML_reset.html">
 <i>CHTML_reset</i></a>
 <dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_reset">
+defined in <a href="../lxr/ident?i=CHTML_reset">
 <i>html.hpp</i></a> - 
 can only be used inside
 a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a reset button. The
@@ -998,7 +998,7 @@ constructor takes a single optional argument specifying the button's label.
 <dt><a name="CHTML_select"> <a href="../docxx/CHTML_select.html">
 <i>CHTML_select</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_select">
+defined in <a href="../lxr/ident?i=CHTML_select">
 <i>html.hpp</i></a> - an HTML <i>select</i> component. The constructor takes up to three arguments,
 specifying the name (<i>string</i>) and size (<i>int</i>) of the selection box, along with a Boolean 
 specifying whether or not multiple selections are allowed (default is false). Select options should
@@ -1009,7 +1009,7 @@ be added using the <i>AppendOption()</i> method.
 <dt><a name="CHTML_submit"> <a href="../docxx/CHTML_submit.html">
 <i>CHTML_submit</i></a>
 <dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_submit">
+defined in <a href="../lxr/ident?i=CHTML_submit">
 <i>html.hpp</i></a> - 
 can only be used inside
 a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a submit button. The
@@ -1020,13 +1020,13 @@ sent to the <i>form</i>'s URL. <p>
 <dt><a name="CHTML_table"> <a href="../docxx/CHTML_table.html">
 <i>CHTML_table</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_table">
+defined in <a href="../lxr/ident?i=CHTML_table">
 <i>html.hpp</i></a> - an HTML table element. The constructor takes no arguments, but many
 member functions are provided to get/set attributes of the table. Because each of the "set
 attribute" methods returns <i>this</i>, the invocations can be strung together in a single
 statement.<p>
 
-Use <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/search?string=InsertAt">
+Use <a href="../lxr/search?string=InsertAt">
 <i>InsertAt</i></a><i>(row, col, contents)</i> to add <i>contents</i> to table cell <i>row,
 col</i>.  To add contents to the next available cell, use <i>AppendChild (new <a
 href="#CHTML_tc">CHTML_tc</a>(tag, contents))</i>, where <i>tag</i> is type <i>char*</i> and
@@ -1036,7 +1036,7 @@ href="#CHTML_tc">CHTML_tc</a>(tag, contents))</i>, where <i>tag</i> is type <i>c
 <dt><a name="CHTML_tc"> <a href="../docxx/CHTML_tc.html">
 <i>CHTML_tc</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_tc">
+defined in <a href="../lxr/ident?i=CHTML_tc">
 <i>html.hpp</i></a> - an HTML table cell element. All of the constructors expect the first
 argument to be a <i>char* tagname</i>. The second argument, if present, may be text
 (<i>char*</i> or <i>string</i>) or a pointer to a <i>CNCBINode</i>. 
@@ -1045,7 +1045,7 @@ argument to be a <i>char* tagname</i>. The second argument, if present, may be t
 <dt><a name="CHTML_text"> <a href="../docxx/CHTML_text.html">
 <i>CHTML_text</i></a>
 <dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_text">
+defined in <a href="../lxr/ident?i=CHTML_text">
 <i>html.hpp</i></a> - 
 can only be used inside
 a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a text box inside
@@ -1057,7 +1057,7 @@ Only the first argument is required.
 <dt><a name="CHTML_textarea"> <a href="../docxx/CHTML_textarea.html">
 <i>CHTML_textarea</i></a>
 <dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_textarea">
+defined in <a href="../lxr/ident?i=CHTML_textarea">
 <i>html.hpp</i></a> - 
 can only be used inside
 a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a textarea inside
@@ -1069,7 +1069,7 @@ Only the last argument is optional.
 <dt><a name="CHTML_tr"> <a href="../docxx/CHTML_tr.html">
 <i>CHTML_tr</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_tr">
+defined in <a href="../lxr/ident?i=CHTML_tr">
 <i>html.hpp</i></a> - an HTML table row element. The constructors take a single argument,
 which may be either a <i>string</i> or a pointer to a <i>CNCBINode</i>.
 <p>
@@ -1077,7 +1077,7 @@ which may be either a <i>string</i> or a pointer to a <i>CNCBINode</i>.
 <dt><a name="CHTML_ul"> <a href="../docxx/CHTML_ul.html">
 <i>CHTML_ul</i></a>
 <dd>Derived from <a href="#CHTMLListElement"><i>CHTMLListElement</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML_ul">
+defined in <a href="../lxr/ident?i=CHTML_ul">
 <i>html.hpp</i></a> - 
 the HTML component used to insert an unordered list. 
 The constructor takes zero to two arguments; if no arguments are provided, the <i>compact</i> attribute
@@ -1089,7 +1089,7 @@ Items can be added to the list using <i>AppendChild(new CHTMLText("&lt;li>...")<
 <dt><a name="CHTMLBasicPage"> <a href="../docxx/CHTMLBasicPage.html">
 <i>CHTMLBasicPage</i></a>
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLBasicPage">
+defined in <a href="../lxr/ident?i=CHTMLBasicPage">
 <i>page.hpp</i></a> - 
 The base class for <a href="#CHTMLPage"><i>CHTMLPage</i></a> and its descendants. The HTML page
 classes serve as generalized containers for collections of other HTML elements, which together
@@ -1102,13 +1102,13 @@ defined. The first takes no arguments, and the other, takes a pointer to a <a hr
 <dt><a name="CHTMLComment"> <a href="../docxx/CHTMLComment.html">
 <i>CHTMLComment</i></a>
 <dd>Derived from <a href="#CHTMLNode"><i>CHTMLNode</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLComment">
+defined in <a href="../lxr/ident?i=CHTMLComment">
 <i>html.hpp</i></a> - used to insert an HTML comment. The constructor takes at
 most one argument, which may be a <i>char*</i>, a <i>string</i>, or a <i>CNCBINode</i>. The
 constructor then uses
-<a href = "http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AppendPlainText">
+<a href = "../lxr/ident?i=AppendPlainText">
 <i>AppendPlainText()</i></a> or 
-<a href = "http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AppendChild">
+<a href = "../lxr/ident?i=AppendChild">
 <i>AppendChild()</i></a>, depending on the type of argument,  to append the argument to 
 the comment node.<p>
 
@@ -1117,10 +1117,10 @@ the comment node.<p>
 <i>CHTMLElement</i></a>
 <dd>Derived from <a href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>,
 defined in <a
-href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLElement">
+href="../lxr/ident?i=CHTMLElement">
 <i>html.hpp</i></a> - the base class for all tagged elements which require a closing tag of the
 form <i>&lt;/tagname></i>. <i>CHTMLElement</i> specializes the 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=PrintEnd">
+<a href="../lxr/ident?i=PrintEnd">
 <i>PrintEnd()</i></a> method by generating the end tag <i>&lt;/m_Name></i> on the output, where
 <i>m_Name</i> stores the tagname of the instance's subclass.
 Subclasses include <i>CHTML_a, CHTML_basefont, CHTML_dl, CHTML_font,
@@ -1131,7 +1131,7 @@ CHTML_form, CHTML_option, CHTML_select, CHTML_table, CHTML_tc, CHTML_textarea,</
 <dt><a name="CHTMLListElement"> <a href="../docxx/CHTMLListElement.html">
 <i>CHTMLListElement</i></a>
 <dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLListElement">
+defined in <a href="../lxr/ident?i=CHTMLListElement">
 <i>html.hpp</i></a> - the base class for <i>CHTML_ul, CHTML_ol, CHTML_dir,</i> and <i>CHTML_menu</i> lists.
 Arguments to the constructor include the <i>tagname</i> and <i>type</i> strings for the list,
 along with a Boolean indicating whther or not the list is compact. <p>
@@ -1140,7 +1140,7 @@ along with a Boolean indicating whther or not the list is compact. <p>
 <dt><a name="CHTMLNode"> <a href="../docxx/CHTMLNode.html">
 <i>CHTMLNode</i></a>
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>,
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLNode">
+defined in <a href="../lxr/ident?i=CHTMLNode">
 <i>html.hpp</i></a> - the base class for <a href="#CHTMLComment"><i>CHTMLComment</i></a> and <a
 href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>. Attributes include 
 <i>style, id, title, accesskey, color, bgcolor, height, width, align, valign, size, name,</i> and <i>class</i>. 
@@ -1152,7 +1152,7 @@ All of the constructors require a <i>tagname</i> argument, which may be either t
 <dt><a name="CHTMLOpenElement"> <a href="../docxx/CHTMLOpenElement.html">
 <i>CHTMLOpenElement</i></a>
 <dd>Derived from <a href="#CHTMLNode"><i>CHTMLNode</i></a>,
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLOpenElement">
+defined in <a href="../lxr/ident?i=CHTMLOpenElement">
 <i>html.hpp</i></a> - the base class for all tag elements, including
 <i>CHTMLElement</i>, <i>CHTML_br</i>, <i>CHTML_hr</i>, <i>CHTML_img</i>, and
 <i>CHTML_input</i>. All of the constructors require a
@@ -1163,7 +1163,7 @@ second argument may be type <i>char*</i>, <i>string</i>, or <i>CNCBINode</i>. <p
 <dt><a name="CHTMLPage"> <a href="../docxx/CHTMLPage.html">
 <i>CHTMLPage</i></a>
 <dd>Derived from <a href="#CHTMLBasicPage"><i>CHTMLBasicPage</i></a>;
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLPage">
+defined in <a href="../lxr/ident?i=CHTMLPage">
 <i>page.hpp</i></a> - the basic 3 section NCBI page. There are two constructors. The first takes
 a title (type <i>string</i>) and the name of a template file (type <i>string</i>). Both
 arguments are optional. The other constructor takes a pointer to a <a href="cgi.html#ccgiapp">
@@ -1174,7 +1174,7 @@ name. All but the first argument are optional. <p>
 <dt><a name="CHTMLPlainText"> <a href="../docxx/CHTMLPlainText.html">
 <i>CHTMLPlainText</i></a>
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLPlainText">
+defined in <a href="../lxr/ident?i=CHTMLPlainText">
 <i>html.hpp</i></a> - 
 A simple text component, which can be used to insert text that will be displayed verbatim 
 by a browser (may require encoding). The constructor takes two arguments: the text to be inserted
@@ -1185,19 +1185,19 @@ output <i>should</i> be encoded. See also <a href="CHTMLText"> <i>CHTMLText</i><
 <dt><a name="CHTMLTagNode"> <a href="../docxx/CHTMLTagNode.html">
 <i>CHTMLTagNode</i></a>
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLTagNode">
+<a href="../lxr/ident?i=CHTMLTagNode">
 <i>html.hpp</i></a>.
 <p>
 
 <dt><a name="CHTMLText"> <a href="../docxx/CHTMLText.html">
 <i>CHTMLText</i></a>
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLText">
+defined in <a href="../lxr/ident?i=CHTMLText">
 <i>html.hpp</i></a> - 
 A simple text component which can be used to install a default web page design (stored in a
 <i>template</i> file) on a <a href="#CHTMLPage"><i>CHTMLPage</i></a> or to simply insert
 <b>encoded</b> text. The 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=PrintBegin"> 
+<a href="../lxr/ident?i=PrintBegin"> 
 <i>PrintBegin()</i></a> is specialized to handle <a href="#CHTMLTagNode"> <i>tagnodes</i></a>
 occurring in the text. The constructor takes a single argument - the text itself - which
 may be of type <i>char*</i> or <i>string</i>.
@@ -1208,19 +1208,19 @@ insert text that does not embed any <i>tagnodes</i> and requires further encodin
 <dt><a name="CLinkBar"> <a href="../docxx/CLinkBar.html">
 <i>CLinkBar</i></a> (Custom feature not for general use.)  
 <dd>Derived from <a href="#CHTML_table"><i>CHTML_table</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CLinkBar">
+<a href="../lxr/ident?i=CLinkBar">
 <i>linkbar.hpp</i></a> - 
 Used to create a horizontal linkbar on a page. The constructor takes a list of <a href="#CLinkDefinition">
 <i>CLinkDefinition</i></a>, a width (<i>int</i>), and a height (<i>int</i>), where the last two arguments
-are optional. Use <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddLink">
+are optional. Use <a href="../lxr/ident?i=AddLink">
 <i>CLinkBar::AddLink()</i></a> to add links, and 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CreateSubNodes">
+<a href="../lxr/ident?i=CreateSubNodes">
 <i>CLinkBar::CreateSubNodes()</i></a> to install newly added links as subnodes. <p>
 
 <dt><a name="CLinkDefinition"> <a href="../docxx/CLinkDefinition.html">
 <i>CLinkDefinition</i></a> (Custom feature not for general use.)  
 <dd>Not derived from any other class; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CLinkDefinition">
+<a href="../lxr/ident?i=CLinkDefinition">
 <i>linkbar.hpp</i></a> - 
 Used to create a link that can be installed to a <a href="#CLinkBar"><i>CLinkBar</i></a>.  The
 constructors take up to five arguments, including a name (<i>string</i>), a width (<i>int</i>),
@@ -1230,7 +1230,7 @@ a height (<i>int</i>), a path to an image file (<i>string</i>), and a path to a 
 
 <dt><a name="CNCBINode"> <a href="../docxx/CNCBINode.html"><i>CNCBINode</i></a>
 <dd>Derived from <a href="#CObject"><i>CObject</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CNCBINode">
+defined in <a href="../lxr/ident?i=CNCBINode">
 <i>node.hpp</i></a> - 
 
 A base class for all other HTML node classes. Contains data members <i>m_Name,
@@ -1242,7 +1242,7 @@ m_Attributes</i>, and <i>m_Children</i>. The constructor takes at most one argum
 <i>CPageList</i></a>
 (Custom feature not for general use.)  
 <dd>Derived from <a href="#CHTML_table"><i>CHTML_table</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CPageList">
+<a href="../lxr/ident?i=CPageList">
 <i>components.hpp</i></a>.
 Used by the pager box components to page between results pages; contains forward and backward URLs,
 the current page number, and a <i>map&lt;int, string></i> that associates page numbers with URLs.
@@ -1252,7 +1252,7 @@ the current page number, and a <i>map&lt;int, string></i> that associates page n
 <i>CPager</i></a>
 (Custom feature not for general use.)  
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>, 
-defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTMLPlainText">
+defined in <a href="../lxr/ident?i=CHTMLPlainText">
 <i>html.hpp</i></a> - 
 <p>
 
@@ -1260,7 +1260,7 @@ defined in <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHTML
 <i>CPagerBox</i></a>
 (Custom feature not for general use.)  
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CPagerBox">
+<a href="../lxr/ident?i=CPagerBox">
 <i>components.hpp</i></a>.
 A more elaborate paging component than the <a href="#CSmallPagerBox"> <i>CSmallPagerBox</i></a>;
 contains pointers to a <a href="#CPageList"> <i>CPageList</i></a> and (3) <a href="#CButtonList">
@@ -1272,14 +1272,14 @@ width, background color, and number of results.
 <i>CPagerView</i></a>
 (Custom feature not for general use.)  
 <dd>Derived from <a href="#CHTML_table"><i>CHTML_table</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CPagerView">
+<a href="../lxr/ident?i=CPagerView">
 <i>pager.hpp</i></a>.<p>
 
 <dt><a name="CPmDocSumPage"> <a href="../docxx/CPmDocSumPage.html">
 <i>CPmDocSumPage</i></a>
 (Custom feature not for general use.)  
 <dd>Derived from <a href="#CHTMLPage"><i>CHTMLPage</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CPmDocSumPage">
+<a href="../lxr/ident?i=CPmDocSumPage">
 <i>querypages.hpp</i></a>.<p>
 <p>
 
@@ -1287,7 +1287,7 @@ width, background color, and number of results.
 <i>CPmFrontPage</i></a>
 (Custom feature not for general use.)  
 <dd>Derived from <a href="#CHTMLPage"><i>CHTMLPage</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CPmFrontPage">
+<a href="../lxr/ident?i=CPmFrontPage">
 <i>querypages.hpp</i></a>.<p>
 <p>
 
@@ -1295,7 +1295,7 @@ width, background color, and number of results.
 <i>CQueryBox</i></a>
 (Custom feature not for general use.)  
 <dd>Derived from <a href="#CHTML_table"><i>CHTML_table</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CQueryBox">
+<a href="../lxr/ident?i=CQueryBox">
 <i>components.hpp</i></a>.
 <p>
 
@@ -1303,11 +1303,11 @@ width, background color, and number of results.
 <i>CSelection</i></a> 
 (Custom feature not for general use.)  
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSelection">
+<a href="../lxr/ident?i=CSelection">
 <i>components.hpp</i></a>.
 A checkbox-like component whose choices are generated (using the
 <i>CreateSubNodes()</i> method) from the 
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=TCgiEntries">
+<a href="../lxr/ident?i=TCgiEntries">
 <i>TCgiEntries</i></a> of a <a href="cgi.html#ccgireq"><i>CCgiRequest</i></a> object.
 <p>
 
@@ -1315,7 +1315,7 @@ A checkbox-like component whose choices are generated (using the
 <i>CSmallPagerBox</i></a> 
 (Custom feature not for general use.)  
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
-<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSmallPagerBox">
+<a href="../lxr/ident?i=CSmallPagerBox">
 <i>components.hpp</i></a>.
 A minimal paging component that displays the number of results
 from the query and the current page being viewed. Has background color and width attributes
