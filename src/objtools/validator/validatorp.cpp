@@ -578,11 +578,11 @@ void CValidError_imp::ValidatePubArticle
                                     PostErr(sev, eErr_GENERIC_BadPageNumbering,
                                         "Page numbering greater than 50", obj);
                                 }
-                            } catch ( CStringException e ) {
+                            } catch ( CStringException& e ) {
                                 PostErr(sev, eErr_GENERIC_BadPageNumbering,
                                     "Page numbering stop looks strange", obj);
                             }
-                        } catch ( CStringException e ) {
+                        } catch ( CStringException& e ) {
                             PostErr(sev, eErr_GENERIC_BadPageNumbering,
                                 "Page numbering start looks strange", obj);
                         }
@@ -1023,7 +1023,7 @@ void CValidError_imp::ValidateSeqLoc
                 strand_prv = strand_cur;
                 id_prv = id_cur;
             }
-        } catch( runtime_error rt ) {
+        } catch( runtime_error& rt ) {
             string label;
             lit->GetLabel(&label);
             PostErr(eDiag_Error, eErr_SEQ_FEAT_Range,  // !!! need to chenge error type
@@ -1625,6 +1625,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/01/24 19:14:47  ucko
+* Catch exceptions by reference rather than value; fixes a build error
+* with WorkShop in release mode.
+*
 * Revision 1.6  2003/01/21 20:19:07  shomrat
 * Implemented ValidatePubDesc
 *
