@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.108 2002/07/25 14:57:35 ucko Exp $
+#  $Id: configure.ac,v 1.109 2002/07/25 19:21:51 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -141,6 +141,10 @@ AC_ARG_WITH(ftds,
    [ --without-ftds          do not use FreeTDS libraries])
 AC_ARG_WITH(ftds2,
    [ --with-ftds=DIR         use FreeTDS installation in DIR])
+AC_ARG_WITH(fltk,
+   [ --without-fltk          do not use FLTK])
+AC_ARG_WITH(fltk2,
+   [ --with-fltk=DIR         use FLTK installation in DIR])
 AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows])
 AC_ARG_WITH(wxwin2,
@@ -182,7 +186,7 @@ x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds orbacus \
+sybase-new ftds orbacus fltk \
 local-lbsm serial objects dbapi app ctools gui internal"
 
 changequote(, )dnl
@@ -217,7 +221,7 @@ for x_arg in "$@" ; do
       | --cache-file=* | --build=* | --host=* \
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
-      | --with-ftds=* \
+      | --with-ftds=* | --with-fltk=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -1823,6 +1827,59 @@ else
 fi
 
 
+## FLTK
+if test "$with_fltk" != "no"; then
+   if test -z "$FLTK_PATH"; then
+      if test -d "$with_fltk"; then
+         FLTK_PATH=$with_fltk
+      else
+         FLTK_PATH="$NCBI/fltk"
+      fi
+   fi
+   if test -d "$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}/lib" \
+        -a -z "$FLTK_ARCH_PATH"; then
+      FLTK_ARCH_PATH="$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}"
+   else
+      FLTK_ARCH_PATH="$FLTK_PATH"
+   fi
+   FLTK_BINPATH=${FLTK_BINPATH:="$FLTK_ARCH_PATH/bin"}
+   FLTK_LIBPATH=${FLTK_LIBPATH:="$FLTK_ARCH_PATH/lib"}
+   FLTK_INCLUDE=
+   AC_CACHE_CHECK([for FLTK in $FLTK_ARCH_PATH], ncbi_cv_lib_fltk,
+      [if test -x "$FLTK_BINPATH/fltk-config" ; then
+          FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags`
+          FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
+    
+          CPPFLAGS="$FLTK_INCLUDE $orig_CPPFLAGS"
+          LIBS="$FLTK_LIBS $orig_LIBS"
+          AC_TRY_LINK(
+             [#include <FL/Fl.H>],
+             [ Fl::run(); ],
+             [ncbi_cv_lib_fltk=yes], [ncbi_cv_lib_fltk=no])
+       else
+          ncbi_cv_lib_fltk=no
+       fi])
+   if test "$ncbi_cv_lib_fltk" = "no"; then
+      with_fltk="no"
+   fi
+fi
+
+if test "$with_fltk" = "no" ; then
+   FLTK_LIBPATH="No_FLTK"
+   FLTK_INCLUDE=
+   FLTK_LIBS=
+   WithoutPackages="$WithoutPackages FLTK"
+else
+   WithPackages="$WithPackages FLTK"
+   # The "yes" may have been cached; get the actual settings again if needed
+   if test -z "$FLTK_INCLUDE"; then
+      FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags`
+      FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
+   fi
+   AC_DEFINE(HAVE_FLTK, 1, [Define to 1 if FLTK is available.])
+fi
+
+
 ## wxWindows
 if test "$with_wxwin" != "no" ; then
    if test -z "$WXWIN_PATH"; then
@@ -2659,6 +2716,8 @@ AC_SUBST(SYBASE_DLLS)
 AC_SUBST(SYBASE_DBLIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
+AC_SUBST(FLTK_INCLUDE)
+AC_SUBST(FLTK_LIBS)
 AC_SUBST(WXWIN_INCLUDE)
 AC_SUBST(WXWIN_LIBS)
 AC_SUBST(FASTCGI_INCLUDE)

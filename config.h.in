@@ -13,6 +13,9 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* Define to 1 if FLTK is available. */
+#undef HAVE_FLTK
+
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 
