@@ -74,7 +74,7 @@ private:
 class CIStream : public istream
 {
 public:
-  CIStream(streambuf *sb) : istream(sb), m_sb(sb) { setf(0, ios_base::skipws); }
+  CIStream(streambuf *sb) : istream(sb), m_sb(sb) { unsetf(ios_base::skipws); }
   ~CIStream() { delete m_sb; }
 
   bool Eof();
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.8  2002/03/26 19:43:01  butanaev
+* Fixed compilation for g++.
+*
 * Revision 1.7  2002/03/26 18:48:30  butanaev
 * Fixed bug not deleting streambuf.
 *
