@@ -730,7 +730,7 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
 #endif   
 
    abs_start = subject->sequence;
-   s = abs_start + start_offset;
+   s = abs_start + start_offset/COMPRESSION_RATIO;
    s_end = abs_start + (*end_offset)/COMPRESSION_RATIO;
 
    s = BlastNaLookupInitIndex(mb_lt->compressed_wordsize, s, &index);
@@ -792,7 +792,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
 #endif   
    
    abs_start = subject->sequence;
-   s_start = abs_start + start_offset;
+   s_start = abs_start + start_offset/COMPRESSION_RATIO;
    s_end = abs_start + (*end_offset)/COMPRESSION_RATIO;
 
    s = BlastNaLookupInitIndex(mb_lt->compressed_wordsize, s_start, &word);
